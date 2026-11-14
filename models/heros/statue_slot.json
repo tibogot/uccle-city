@@ -1,0 +1,4 @@
+{
+ "about": "The bronze group's slot (docs/landmarks/HEROS.md 10.1). glb null = our scripted bronze (inside heros.glb). tools/blender/heros_statue_slot.py rewrites this file (glb, normal, ao, LOD distances, triangle counts) when a source model goes through the pipeline; set glb back to null (or ?herostatue=ours) for ours.",
+ "glb": null
+}

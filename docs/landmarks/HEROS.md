@@ -222,3 +222,164 @@ Not done (optional): the south flight's cheek kerbs still stand 0.2-0.5 m proud 
 beside the terrace edge); the contact audit has the same 1 floating 0.2 m edge as before.
 Mesh audit: raw / packed LOD0 and far **0 blocking**. Contact: 56,949 tris, 1 floating (0.2 m, the landing corner), 10
 overhangs = the seats over the platform. LOD0 grew 43 k -> 57 k triangles (the bouquets: 8 x 2 k).
+
+## 10. Round 3 (branch claude/heros3, 2026-11-14): the owner's photos
+
+Inputs: the owner's two photos of the real monument (the front close-up with the inscription; the whole monument from the
+foot of the 12 steps: looked at, never stored or shipped), Commons C2 (2025, the Brugmann path mouth: the ornate lamp
+column, the two bins, the obelisk's west face and the corner bouquets), the round 2 references. The owner's decisions
+(docs/TODO.md 2026-11-14): the statue becomes a SWAPPABLE slot (his own model, made in Tripo AI); our bronze itself is NOT
+re-sculpted now (it reads well from afar); the names come later from the commune archives.
+
+### 10.1 The bronze group: a swappable slot
+
+`models/heros/statue_slot.json` is always there. `"glb": null` = our scripted bronze (inside heros.glb, unchanged:
+3.81 m); when a model has gone through the pipeline it names `statue.glb` and the city shows that instead
+(`viewer/heros/herosStatue.js`), our bronze + rock primitive left out. **`?herostatue=ours` forces ours** (A/B).
+
+**The pipeline** (any source: Tripo's .glb / .gltf, .obj, .fbx, .ply, .stl, or our statue_raw.json):
+
+```
+"C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/heros_statue_slot.py -- <source>
+    [--height 4.5] [--yaw 0] [--rock 0.36] [--lod 26000,7000,1600] [--tex 2048] [--keep-scale]
+```
+
+1. import, join, apply transforms, triangulate, turn by `--yaw`;
+2. normalise: metres, scaled to `--height`, the pivot = the centre of the base's footprint (the lowest 8 % of the
+   height) at the origin, sunk 2 cm (the base sits INTO the cap: JOINS);
+3. LOD0 = the source simplified by meshoptimizer (`tools/heros_statue_lods.mjs`, the project's rule: never Blender's
+   decimate) to ~26 k triangles; unwrapped (smart projection run on a smoothed copy of the same topology, so the islands
+   follow limbs / wing panels / robe folds instead of crumbling on a remeshed surface, then average island scale + pack);
+   the SOURCE's detail baked onto it with Cycles: a tangent-space **normal map** (2048², selected-to-active, cage 1.2 cm)
+   and **ambient occlusion** (1024², LOD0 on its own);
+4. LOD1 (~7 k) and LOD2 (~1.6 k, meshopt "Permissive": it may collapse across UV seams) = LOD0 simplified again, keeping
+   LOD0's UVs: the same two maps serve all three;
+5. `--rock`: the faces entirely under that height become the `stone_rock` part (grey stone: the photos show a stone rock,
+   not gilded);
+6. writes `statue.glb` (meshopt-packed by `tools/hero_pack.mjs --nolod`), `statue_normal.png`, `statue_ao.png`,
+   `statue_slot.json`.
+
+**The contract of statue.glb** (what the city expects, whatever made it):
+
+| | |
+|---|---|
+| nodes | `Statue_LOD0`, `Statue_LOD1`, `Statue_LOD2` (a missing level reuses the one above) |
+| frame | metres, **+Y up**, the group's **front toward +Z** (glTF's front; the city turns it to the monument's front, south, toward the 12 steps) |
+| pivot | (0, 0, 0) = the centre of the statue's base standing on the obelisk's cap (the rock's foot), the base 2 cm below it |
+| height | **4.5 m** expected from the foot of the rock to the tip of the raised wing (measured on the owner's photos: 1.0-1.15 x the visible shaft, ~3.0-3.2 x the shaft's top width; Commons C2 agrees within 5 %): 4.2-4.8 m is plausible. Our scripted bronze is 3.81 m (kept as it is) |
+| placement | the cap top, `heros.json statue_slot.base_local` = (0, 7.15, 0) in the monument's frame (57.15 m TAW); the cap is 1.40 x 1.30 m |
+| triangles | LOD0 20-30 k with the normal map, LOD1 ~7 k, LOD2 ~1.6 k |
+| attributes | POSITION, NORMAL, TANGENT, TEXCOORD_0; no colour, no texture inside |
+| materials | by NAME: `bronze_gilt` (everything bronze) and optionally `stone_rock` (a name containing rock / stone); our materials replace them: the bronze of `herosModel.js bronzeMaterial` (three tones: dark brown-black in the folds and hollows from the AO map, the brown bronze body, gold on the raised parts facing the sky, a little verdigris in the deepest folds; the normal map on top), the rock in the grey of our stone |
+| LOD distances | `statue_slot.json lod_m` [40, 110] m with dithered bands `band_m` [6, 12] m (lodFade.js through setLodFades: no pop) |
+| colliders | LOD2 as an invisible mesh inside the monument's `heros_lod0` group (heroColliders.js / contactAudit.js read it) |
+
+Tested end to end with OUR statue_raw.json (864 k triangles) as the source: 26,000 / 6,990 / 1,590 triangles, 0.8 MB +
+2.9 MB normal + 0.9 MB AO, 21 s on half the CPU; `slot_test_*.jpg`. That test output was deleted again (the slot is empty:
+our bronze shows) - the owner's model goes through the same command.
+
+### 10.2 The inscription, against the owner's front photo
+
+`tools/heros_letters.py` now lays the front out as the photo shows it, on the stones it is cut in: the FRENCH stone
+"ERIGE / PAR LA COMMUNE / D'UCCLE / A LA MEMOIRE / DE SES ENFANTS / MORTS POUR LA PATRIE" with "1914-1918" larger (9 cm
+capitals against 6.2) and bolder (the stroke widened) at its foot, a bed joint, the DUTCH stone "OPGERICHT / DOOR DE
+GEMEENTE UKKEL / TER GEDACHTENIS / HARER KINDEREN / VOOR 'T VADERLAND / GESNEUVELD" (6.4 cm). No accents (the stone has
+none). Every line's height in its stone, the cap heights and the longest line's width (MORTS POUR LA PATRIE 0.78 of the
+face, DOOR DE GEMEENTE UKKEL 0.87, 1914-1918 0.37) are fractions measured on the photo. Centred lines, sans-serif
+capitals (Century Gothic Bold: round O's, the G as a C with a short bar, as cut).
+- **Incised**: the stone material reads the mask's slope as a 4.5 mm V-cut (surface-gradient bump, only on the lettered
+  faces) on top of the darkening; the mask is blurred 1.1 px for that slope.
+- **The shaft's four stones** (the photos: a plain top stone, the French one, the Dutch one, the relief stone) are now real
+  stones: 1.6 cm V-groove bed joints all round (`JOINTS`), each stone face its own quad. The shaft is stouter (1.68 x 1.58 m
+  at the foot, 1.48 x 1.38 at the top, 4.25 m: photo proportions 2.7 : 1, taper 0.89), its moulded plinth just over the
+  railing's top, a thin cap slab (cap top 57.15 m; DSM 57.34).
+- Lettered faces now carry METRIC planar UVs (the tapered faces had corner-pinned UVs that sheared one triangle of each:
+  slanted letters).
+
+### 10.3 The names: ready to engrave
+
+`models/heros/names.json` (EMPTY; never invented names): `"1914-1918"` (138, spread in order over the shaft's west, back
+and east faces, upper then lower stone), `"1940-1945"` (193, over the eight bench backs from the front, turning west),
+`"panels"` (a list for one named panel). Every names panel is ALREADY a lettered face in the model (cells
+`shaft_<w|n|e>_<1|2>`, `bench_0..7`: heros.json `lettering.cells`), so engraving the names is only:
+
+```
+python tools/heros_letters.py          # lays the names out in centred columns (1-5 columns, the tallest capitals that fit, <= 4.5 cm)
+```
+
+(no Blender run, no repack). A cell with no names is absent from `heros_letters.json` and reads as plain stone. The atlas
+packs the tallest cells first; the viewer uploads it as ONE 8-bit channel (R8 with mipmaps: 2048 x 2432 with every panel
+filled = 5 MB + mips instead of 20 MB RGBA). Tested locally with clearly fake strings ("PLACEHOLDER 001", "TEST NAME 001":
+`names_test_shaft_west.jpg`, `names_test_bench.jpg`: 2 columns x 12 rows of 4.5 cm capitals per shaft stone, 4 x 7 of
+3.3 cm per bench back), then the empty file restored.
+
+### 10.4 The rest of the list
+
+- **Railing** (the owner's photo, C2): dark green painted iron (cast_iron_green), round bars every 11 cm rising 8 cm over
+  the top rail to square spear tips, posts with a ball finial on a neck at every corner and mid-side, top + bottom rails as
+  closed rings (21 mm thick: the bars end inside them), 0.62 m (was black, 0.74 m, with a row of rings: the 2025 railing
+  has plain spear bars).
+- **Flower bed** (the owner's photo: orange / yellow marigolds, red begonias): ~95 overlapping low leafy domes, smooth
+  shaded, dotted with round 2 cm flowers by the shader (seen from above) and two 3D heads each; far: fewer domes, no heads.
+- **Saint Peter relief**: a 0.66 x 0.78 m panel sunk 3 cm into the lowest stone, the relief a 56 x 66 height field
+  (1.2 cm cells, 7.3 k triangles) of carved "pillow" forms: the saint seated before a throne back, halo, bearded head,
+  mantle and robe with folds to the feet on a footstool, the right arm bent holding up the two crossed keys, the left hand
+  on a book on the knee (was a flat silhouette).
+- **Steps** (the owner's photo: rough worn mossy stone): treads dip 4-12 mm toward a 2.5 cm worn chamfered nosing; the
+  stone material darkens the steps to a brown-grey, coursed rubble (bending courses, random stones, dark joints) on the
+  risers and the cheek kerbs, moss by noise in the joints and on the risers; six handrail posts a side (was three).
+- **Corner pieces** (the "lion-like" blocks beside the top of the steps in the owner's photo = the carved rose bouquets,
+  also in C2): the bouquets now sit ON the low corner pedestals (six front and side corners), crowns near the coping, as
+  the photos; the frog and the tortoise on the two back corners.
+- **The lawn**: a layer on the DRAWN terrain's own triangles clipped to the three OSM lawns (5.4 k triangles, +1 cm, the
+  terrain's normals): the ground scan's lawn layer lifted to the photos' fresh mown green (`lawnLook.tone`);
+  `?heroslawn=city` keeps the city's lawn. (A free drape sank under the simplified terrain in polygonal patches: the
+  terrain mesh is the 1 m grid simplified, so the layer is built from the mesh itself.)
+- **South cheek kerbs (JOINS)**: the bank beside both flights is built UP to the kerbs (`carve.fill`: up to 6 cm under the
+  kerb top, flat 0.3 m, then down at the bank's slope, beside the flight only), in the tile worker (herosSurface.js
+  carveFlights) and in the AO bake's ground: the kerbs no longer stand 0.2-0.5 m proud (`after_kerb.jpg`).
+- **Lamp column + bin + floodlight**: at the top of the west flight (C2): the ornate green column (moulded base, fluted
+  drum and shaft, collar, hexagonal lantern under a domed roof, the glass glowing at night only: emissive, no light) on the
+  north side and ONE Brussels bin (ribbed green drum, red band, domed hood) on the south side (the city's furniture already
+  stands a round bin in the middle of this path mouth: the two read as C2's pair); the monument's floodlight (a grey lamp box
+  on a short post, right of the 12 steps' top: the owner's photo), tilted at the obelisk, emissive glass only.
+- Our bronze: NOT re-sculpted (the owner); its rock is now grey stone (the photos), and the shared bronze material is
+  browner, with gold only on the raised, sky-facing parts (the owner's front photo).
+
+### 10.5 Checks and cost
+
+- Mesh audit (`models/heros/audit`): raw LOD0 61,257 triangles **0 blocking**, raw far 3,242 **0**, packed LOD0 **0**,
+  packed far **0**. Fixed on the way: rails / posts smoothed at the octagon's corners (streaks: round shading now only on
+  lathed parts, stretched faces flat), bars ending on the rail faces (rails thickened), coplanar flower-dome bottoms (each
+  at its own depth). Three new allow entries: a flower head touching a neighbouring dome (0.5 cm2, hidden among flowers).
+- Contact audit `viewer.contactAudit("heros")`: 61,257 tris, **1 floating (the same 0.2 m landing corner as round 2)**,
+  10 overhangs (the seats over the platform, as before).
+- LOD flight (`debug/herosFlight.js`, 400 -> 12 -> 400 m): **0 pops**, states 01@395 11@105 10@75 11@76 01@105.
+- Cost, `renderer.info` model + ground on minus off, median of 10 (main + shadow passes): foot of the steps **+12 draws,
+  +136 k triangles**; 20 m **+10 / +132 k**; 158 m (far) **+12 / +19 k**. LOD0 61 k (was 57 k), far 3.2 k; the lawn layer
+  5.4 k once. GLB 2.0 MB, AO 1.9 MB, lettering 117 KB (R8 on the GPU). GPU ms not claimed: preflight RED.
+- No console errors; `?heros=old` unchanged.
+- Shared files touched this round: `viewer/tileWorker.bundle.js` (rebuilt: herosSurface.js changed), `.gitignore`
+  (`models/heros/statue_work/`), `docs/TODO.md`. Everything else is under viewer/heros/, tools/, models/heros/, textures/heros/, debug/herosViews.js.
+
+Images (`docs/landmarks/heros3/`, our renders only: the owner's photos are not stored): `before_* / after_*` from the same
+cameras (golden hour, the city's default): `steps` (the owner's angle from the foot of the 12 steps), `front` (his front
+close-up angle, portrait), `enclosure`, `relief`, `kerb`, `brugmann`, `aerial`; `pair_front_before_after.jpg`,
+`pair_steps_before_after.jpg`; midday: `after_midday_photo46 / photo47 / insc / relief / bed / kerb / mouth`;
+`slot_test_front / statue` (the slot pipeline on our own statue), `names_test_*` (the names path with fake strings).
+Views: `debug/herosViews.js` (photo46, photo47, insc, relief, bed, kerb, mouth added).
+
+### 10.6 Left / weak spots
+
+- The library's blue-stone scan still draws its 0.25 m ashlar coursing over the obelisk, the benches and the platform;
+  the real stones are big and smooth (now with real joints of their own): a "weathered blue stone" library material
+  without coursing is the fix (shared library: not done here).
+- The relief is a carved height field: legible as a seated saint with keys and book from the platform, not a sculptor's
+  relief; the real panel's composition is only seen small in the owner's photo.
+- The flower domes read as a planted bed from the steps; up close they are smooth domes with painted flowers.
+- The bin and the lamp are placed from C2 by eye (no OSM points).
+- Our bronze is unchanged (owner's decision); the slot waits for his model. The pipeline's unwrap is a smart projection
+  (no seam-aware unwrap in headless Blender): islands follow the forms but are many; fine for a bronze seen from 5 m+.
+- `THREE.AttributeNode: Vertex attribute "uv" not found` and an inline-Fn return warning show with the hero place on
+  (warnings, not errors; not traced to a single mesh).
+- GPU ms on a GREEN machine.

@@ -32,10 +32,11 @@ function subdivide(tris, maxLen) {
 }
 
 /** the mesh (positions in city metres), ground(x, z) = the drawn terrain */
-export function dolomiteGeometry(site, ground) {
+export function dolomiteGeometry(site, ground, pieces = site.dolomite, lift = LIFT) {
+  const LIFT_ = lift;
   const pos = [], edge = [];
   let tris = 0;
-  for (const piece of site.dolomite || []) {
+  for (const piece of pieces || []) {
     const outer = piece.rings[0].map(([x, z]) => new THREE.Vector2(x, z));
     const holes = piece.rings.slice(1).map((r) => r.map(([x, z]) => new THREE.Vector2(x, z)));
     if (THREE.ShapeUtils.isClockWise(outer)) outer.reverse();
@@ -57,7 +58,7 @@ export function dolomiteGeometry(site, ground) {
     };
     for (const t of fine) {
       // wound so the face points up: (x, z) counter-clockwise seen from above is clockwise in three's frame
-      for (const p of [t[0], t[2], t[1]]) { pos.push(p[0], ground(p[0], p[1]) + LIFT, p[1]); edge.push(Math.min(1, edgeDist(p[0], p[1]) / 0.4)); }
+      for (const p of [t[0], t[2], t[1]]) { pos.push(p[0], ground(p[0], p[1]) + LIFT_, p[1]); edge.push(Math.min(1, edgeDist(p[0], p[1]) / 0.4)); }
       tris++;
     }
     // the skirt: every boundary edge, split to EDGE, down SKIRT under the terrain, facing out of the dolomite
@@ -70,7 +71,7 @@ export function dolomiteGeometry(site, ground) {
         for (let k = 0; k < n; k++) {
           const p = [a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n], q = [a[0] + (b[0] - a[0]) * (k + 1) / n, a[1] + (b[1] - a[1]) * (k + 1) / n];
           const yp = ground(p[0], p[1]), yq = ground(q[0], q[1]);
-          const P0 = [p[0], yp + LIFT, p[1]], Q0 = [q[0], yq + LIFT, q[1]], P1 = [p[0], yp - SKIRT, p[1]], Q1 = [q[0], yq - SKIRT, q[1]];
+          const P0 = [p[0], yp + LIFT_, p[1]], Q0 = [q[0], yq + LIFT_, q[1]], P1 = [p[0], yp - SKIRT, p[1]], Q1 = [q[0], yq - SKIRT, q[1]];
           // outward for a ccw (x, z) outer ring = right of the edge direction; holes the other way: the winding picks it
           const quad = (sgn > 0) === ccwOuter ? [P0, P1, Q1, P0, Q1, Q0] : [P0, Q1, P1, P0, Q0, Q1];
           for (const v of quad) { pos.push(...v); edge.push(0); }
@@ -118,6 +119,147 @@ export function dolomiteMaterial() {
     m.normalNode = bumpNormal(fine.mul(0.002));
   }
   m.side = THREE.DoubleSide;            // (the skirts face either way: they are a few cm2 of the screen at most)
+  addLampLight(m);
+  m.userData.shared = true;
+  return m;
+}
+
+// ------------------------------------------------------------------------------------------------ THE LAWNS
+/** the park's three OSM lawns (site.json "grass") as a layer ON the drawn terrain: the city's lawn reads darker and duller
+ *  than every photo of the square (the owner's, Commons C2: a bright, fresh, mown green). Built from the DRAWN terrain's
+ *  own triangles (the tile's terrain mesh: the 1 m grid simplified, so its triangles are larger than the grid), each clipped
+ *  exactly to the lawn polygon: every piece lies in its terrain triangle's plane (+1 cm) with the terrain's normals, so
+ *  nothing dips under the ground anywhere and it shades as the ground (a free 0.5 m drape needed 77 k triangles and still
+ *  cut through on the convex banks; a grid-based one sank under the simplified terrain in polygonal patches).
+ *  terrainTris(x0, z0, x1, z1) -> [{ p: [[x, y, z] x 3], n: [[nx, ny, nz] x 3] }] the drawn triangles over that box. */
+export function lawnGeometry(site, terrainTris) {
+  const pos = [], edge = [], nrm = [];
+  let tris = 0;
+  const LIFT_L = 0.01;
+  for (const ring of Object.values(site.grass || {})) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const [x, z] of ring) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    const segs = ring.map((p, i) => [p, ring[(i + 1) % ring.length]]);
+    const edgeDist = (x, z) => {
+      let best = 1e9;
+      for (const [[ax, az], [bx, bz]] of segs) {
+        const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
+        best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+      }
+      return best;
+    };
+    for (const { p: tri, n: tn } of terrainTris(x0, z0, x1, z1)) {
+      // the lawn polygon clipped by the (convex) terrain triangle
+      let poly = ring.map(([x, z]) => [x, z]);
+      for (let e = 0; e < 3 && poly.length; e++) {
+        const p = tri[e], q = tri[(e + 1) % 3], o = tri[(e + 2) % 3];
+        const side = (x, z) => (q[0] - p[0]) * (z - p[2]) - (q[2] - p[2]) * (x - p[0]);
+        const sg = Math.sign(side(o[0], o[2]));
+        if (!sg) { poly = []; break; }
+        const inn = (v) => side(v[0], v[1]) * sg >= -1e-9;
+        const out = [];
+        for (let i = 0; i < poly.length; i++) {
+          const u = poly[i], v = poly[(i + 1) % poly.length], ui = inn(u), vi = inn(v);
+          if (ui) out.push(u);
+          if (ui !== vi) {
+            const su = side(u[0], u[1]), sv = side(v[0], v[1]), t = su / (su - sv);
+            out.push([u[0] + (v[0] - u[0]) * t, u[1] + (v[1] - u[1]) * t]);
+          }
+        }
+        poly = out;
+      }
+      if (poly.length < 3) continue;
+      const [P0, P1, P2] = tri;
+      const det = (P1[2] - P2[2]) * (P0[0] - P2[0]) + (P2[0] - P1[0]) * (P0[2] - P2[2]);
+      const bary = (x, z) => {
+        const l1 = ((P1[2] - P2[2]) * (x - P2[0]) + (P2[0] - P1[0]) * (z - P2[2])) / det;
+        const l2 = ((P2[2] - P0[2]) * (x - P2[0]) + (P0[0] - P2[0]) * (z - P2[2])) / det;
+        return [l1, l2, 1 - l1 - l2];
+      };
+      const v2 = poly.map(([x, z]) => new THREE.Vector2(x, z));
+      if (THREE.ShapeUtils.isClockWise(v2)) { v2.reverse(); poly.reverse(); }
+      for (const t of THREE.ShapeUtils.triangulateShape(v2, [])) {
+        const ps = [poly[t[0]], poly[t[2]], poly[t[1]]];
+        const ar = (ps[1][0] - ps[0][0]) * (ps[2][1] - ps[0][1]) - (ps[2][0] - ps[0][0]) * (ps[1][1] - ps[0][1]);
+        if (Math.abs(ar) < 1e-6) continue;
+        for (const [x, z] of ps) {
+          const l = bary(x, z);
+          pos.push(x, l[0] * P0[1] + l[1] * P1[1] + l[2] * P2[1] + LIFT_L, z);
+          const nn = [0, 1, 2].map((i) => l[0] * tn[0][i] + l[1] * tn[1][i] + l[2] * tn[2][i]), L = Math.hypot(...nn) || 1;
+          nrm.push(nn[0] / L, nn[1] / L, nn[2] / L);
+          edge.push(Math.min(1, edgeDist(x, z) / 0.4));
+        }
+        tris++;
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("aEdge", new THREE.Float32BufferAttribute(edge, 1));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+  g.computeBoundingSphere();
+  return { geometry: g, tris };
+}
+
+/** the drawn terrain triangles over a box (city x, z), from the loaded tiles' terrain meshes (their world matrices applied) */
+export function terrainTrianglesIn(scene, tileNames) {
+  const meshes = [];
+  scene.traverse((o) => { if (o.isMesh && o.name === "terrain" && tileNames.some((n) => o.parent?.name === `${n}-terrain`)) meshes.push(o); });
+  return (x0, z0, x1, z1) => {
+    const out = [], v = new THREE.Vector3();
+    for (const m of meshes) {
+      m.updateMatrixWorld();
+      const P = m.geometry.attributes.position, N = m.geometry.attributes.normal, I = m.geometry.index;
+      const nm = new THREE.Matrix3().getNormalMatrix(m.matrixWorld);
+      const cnt = I ? I.count : P.count;
+      for (let t = 0; t < cnt; t += 3) {
+        const ids = [0, 1, 2].map((k) => (I ? I.getX(t + k) : t + k));
+        const xs = ids.map((i) => P.getX(i)), zs = ids.map((i) => P.getZ(i));
+        if (Math.max(...xs) < x0 || Math.min(...xs) > x1 || Math.max(...zs) < z0 || Math.min(...zs) > z1) continue;
+        const p = ids.map((i) => v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld).toArray());
+        const n = ids.map((i) => (N ? v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize().toArray() : [0, 1, 0]));
+        out.push({ p, n });
+      }
+    }
+    return out;
+  };
+}
+
+export const lawnLook = { tone: uniform(new THREE.Color(1.2, 1.38, 0.88)), rim: uniform(0.25) };
+
+/** the lawn: the ground textures' "lawn" scan sampled twice (no repeat), lifted to the photos' fresh mown green, a
+ *  little darker and yellower in large patches, a slightly worn rim at the paths; procedural when the textures are off */
+export function lawnMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  const P = positionWorld;
+  const S = groundLook();
+  const e = attribute("aEdge", "float");
+  const blotch = n3(P.x.mul(0.08), P.z.mul(0.08), 5.0);
+  const rimK = smoothstep(0.5, 0.0, e).mul(lawnLook.rim);
+  const L = S?.idx?.lawn;
+  let col;
+  if (S && L !== undefined) {
+    const inv = 1 / S.G.layers.find((l) => l.cover === "lawn").size_m;
+    const st = vec2(P.x, P.z);
+    const a = 1.1, cs = Math.cos(a), sn = Math.sin(a);
+    const st2 = vec2(st.x.mul(cs).sub(st.y.mul(sn)), st.x.mul(sn).add(st.y.mul(cs))).mul(1.29).add(vec2(0.53, 0.21));
+    const A1 = texture(S.G.albedo, st.mul(inv)).depth(L), A2 = texture(S.G.albedo, st2.mul(inv)).depth(L);
+    const R1 = texture(S.G.nra, st.mul(inv)).depth(L), R2 = texture(S.G.nra, st2.mul(inv)).depth(L);
+    const k = smoothstep(0.3, 0.7, n3(P.x.mul(0.13), P.z.mul(0.13), 4.0).mul(0.5).add(0.5));
+    const A = mix(A1, A2, k), R = mix(R1, R2, k);
+    col = A.rgb.mul(vec3(lawnLook.tone)).mul(R.a.mul(0.4).add(0.6));
+    m.roughnessNode = R.b.max(0.8);
+  } else {
+    const fine = n3(P.x.mul(23.0), P.z.mul(23.0), 2.0);
+    col = mix(vec3(0.16, 0.3, 0.07), vec3(0.24, 0.38, 0.1), fine.mul(0.5).add(0.5));
+    m.roughnessNode = float(0.9);
+    m.normalNode = bumpNormal(fine.mul(0.003));
+  }
+  col = mix(col, col.mul(vec3(1.08, 1.0, 0.8)), smoothstep(0.2, 0.8, blotch).mul(0.35));    // drier, yellower patches
+  col = mix(col, col.mul(vec3(0.85, 0.8, 0.7)), rimK);
+  m.colorNode = col;
+  m.side = THREE.DoubleSide;
   addLampLight(m);
   m.userData.shared = true;
   return m;

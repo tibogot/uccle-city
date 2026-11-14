@@ -1,34 +1,50 @@
 {
- "about": "tools/heros_letters.py: the war memorial's lettering mask (white = letter): the real front inscription and '1940-1945' only; the names' panels are uninscribed (no reliable transcription of the monument).",
+ "about": "tools/heros_letters.py: the war memorial's lettering mask (white = letter): the real front inscription (FR + NL), '1940-1945', and the names from models/heros/names.json when it has them (a cell absent here reads as plain stone).",
  "size": [
   1024,
   1536
  ],
  "cells": [
   {
-   "name": "front",
+   "index": 0,
+   "name": "front_fr",
    "px": [
-    0,
-    0,
-    624,
-    1048
+    8,
+    8,
+    951,
+    637
    ],
    "size_m": [
-    1.16,
-    1.95
+    1.4737,
+    0.984
    ]
   },
   {
-   "name": "years",
+   "index": 1,
+   "name": "front_nl",
    "px": [
-    0,
-    1080,
-    1000,
-    1310
+    8,
+    645,
+    981,
+    1274
    ],
    "size_m": [
-    1.65,
-    0.38
+    1.5208,
+    0.984
+   ]
+  },
+  {
+   "index": 2,
+   "name": "years",
+   "px": [
+    8,
+    1282,
+    843,
+    1479
+   ],
+   "size_m": [
+    1.6713,
+    0.395
    ]
   }
  ]

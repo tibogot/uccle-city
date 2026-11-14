@@ -1,21 +1,20 @@
 {
  "asset": "Square des Heros: the war memorial (L. Grandmoulin 1925, enlarged 1948) and the two flights of steps (tools/blender/heros.py)",
- "triangles_lod0": 56949,
- "triangles_far": 2216,
+ "triangles_lod0": 61257,
+ "triangles_far": 3242,
  "triangles_per_slot_lod0": {
-  "stone_blue": 21582,
+  "stone_blue": 22804,
   "bronze_gilt": 19989,
-  "cast_iron_black": 12288,
-  "cast_iron_green": 288,
+  "cast_iron_green": 9182,
   "soil_bed": 12,
-  "plant_grass": 2790
+  "plant_grass": 9270
  },
  "triangles_per_slot_far": {
   "stone_blue": 834,
   "bronze_gilt": 882,
-  "cast_iron_green": 128,
+  "cast_iron_green": 832,
   "soil_bed": 12,
-  "plant_grass": 360
+  "plant_grass": 682
  },
  "slots": [
   "stone_blue",
@@ -57,22 +56,188 @@
   "TEXCOORD_0": "world metres, per face; lettered faces (code 'letters'): 1000 (cell + 1) + s, v (metres on the panel)",
   "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
  },
- "letters_cells": [
-  "front: the 1914-1918 inscription",
-  "names A",
-  "names B",
-  "names C",
-  "bench backs: names 1940-1945",
-  "1940-1945 (front seat)"
- ],
+ "lettering": {
+  "about": "every lettered face's atlas cell (TEXCOORD_0.x = 1000 (index + 1) + s): tools/heros_letters.py draws the ones with text (the front FR / NL blocks, 1940-1945, and the names from models/heros/names.json)",
+  "cells": [
+   {
+    "index": 0,
+    "name": "front_fr",
+    "size_m": [
+     1.4737,
+     0.984
+    ],
+    "kind": "front"
+   },
+   {
+    "index": 1,
+    "name": "front_nl",
+    "size_m": [
+     1.5208,
+     0.984
+    ],
+    "kind": "front"
+   },
+   {
+    "index": 2,
+    "name": "years",
+    "size_m": [
+     1.6713,
+     0.395
+    ],
+    "kind": "front"
+   },
+   {
+    "index": 3,
+    "name": "shaft_w_1",
+    "size_m": [
+     1.5737,
+     0.984
+    ],
+    "kind": "shaft"
+   },
+   {
+    "index": 4,
+    "name": "shaft_w_2",
+    "size_m": [
+     1.6208,
+     0.984
+    ],
+    "kind": "shaft"
+   },
+   {
+    "index": 5,
+    "name": "shaft_n_1",
+    "size_m": [
+     1.4737,
+     0.984
+    ],
+    "kind": "shaft"
+   },
+   {
+    "index": 6,
+    "name": "shaft_n_2",
+    "size_m": [
+     1.5208,
+     0.984
+    ],
+    "kind": "shaft"
+   },
+   {
+    "index": 7,
+    "name": "shaft_e_1",
+    "size_m": [
+     1.5737,
+     0.984
+    ],
+    "kind": "shaft"
+   },
+   {
+    "index": 8,
+    "name": "shaft_e_2",
+    "size_m": [
+     1.6208,
+     0.984
+    ],
+    "kind": "shaft"
+   },
+   {
+    "index": 9,
+    "name": "bench_0",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   },
+   {
+    "index": 10,
+    "name": "bench_1",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   },
+   {
+    "index": 11,
+    "name": "bench_2",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   },
+   {
+    "index": 12,
+    "name": "bench_3",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   },
+   {
+    "index": 13,
+    "name": "bench_4",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   },
+   {
+    "index": 14,
+    "name": "bench_5",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   },
+   {
+    "index": 15,
+    "name": "bench_6",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   },
+   {
+    "index": 16,
+    "name": "bench_7",
+    "size_m": [
+     1.7313,
+     0.42
+    ],
+    "kind": "bench"
+   }
+  ]
+ },
+ "statue_slot": {
+  "about": "the bronze group's place (viewer/heros/herosStatue.js: models/heros/statue.glb replaces our scripted bronze)",
+  "base_local": [
+   0.0,
+   7.15,
+   0.0
+  ],
+  "base_taw": 57.15,
+  "front_local": "+X (u: south, the 12 steps)",
+  "height_m": 4.5,
+  "rock_m": 0.36,
+  "cap_top_half_m": [
+   0.7,
+   0.65
+  ]
+ },
  "lightmap": {
   "px": 2048,
   "split_v": [
    0.86,
    1.0
   ],
-  "lod0_px_per_m": 65.8,
-  "far_px_per_m": 35.4
+  "lod0_px_per_m": 66.2,
+  "far_px_per_m": 34.1
  },
  "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
  "placement": {
@@ -89,16 +254,16 @@
  },
  "bounds_city": {
   "x": [
-   -555.0,
+   -555.7,
    -527.7
   ],
   "z": [
-   -496.6,
+   -498.2,
    -468.2
   ],
   "y": [
    47.7,
-   60.9
+   61.0
   ]
  },
  "levels_taw": {
@@ -106,13 +271,13 @@
   "platform": 50.709999999999994,
   "seat": 51.16,
   "wall_top": 51.78999999999999,
-  "railing_top": 52.529999999999994,
+  "railing_top": 52.40999999999999,
   "bed": 51.629999999999995,
-  "pedestal": 52.489999999999995,
-  "plinth": 53.029999999999994,
-  "shaft_top": 56.709999999999994,
-  "cap": 57.129999999999995,
-  "statue_top": 60.94
+  "pedestal": 52.16,
+  "plinth": 52.66,
+  "shaft_top": 56.91,
+  "cap": 57.15,
+  "statue_top": 60.96
  },
  "sizes": {
   "platform_r": 4.05,
@@ -125,27 +290,27 @@
    1.11
   ],
   "plinth_half": [
-   0.94,
-   0.89
+   0.98,
+   0.93
   ],
   "shaft_half": [
+   [
+    0.84,
+    0.79
+   ],
+   [
+    0.74,
+    0.69
+   ]
+  ],
+  "cap_half": [
    [
     0.8,
     0.75
    ],
    [
-    0.63,
-    0.58
-   ]
-  ],
-  "cap_half": [
-   [
-    0.73,
-    0.68
-   ],
-   [
-    0.6,
-    0.55
+    0.7,
+    0.65
    ]
   ]
  },
@@ -156,7 +321,7 @@
   },
   "enclosure": {
    "r": 3.546,
-   "top": 52.53,
+   "top": 52.41,
    "seat": 51.16,
    "seat_r": 3.501
   },
@@ -165,15 +330,15 @@
     1.17,
     1.11
    ],
-   "top": 57.129999999999995
+   "top": 57.15
   },
   "statue": {
    "half": [
     0.75,
     1.5
    ],
-   "bottom": 57.129999999999995,
-   "top": 60.94
+   "bottom": 57.15,
+   "top": 60.96
   }
  },
  "flights": [
@@ -214,7 +379,13 @@
     ],
     "h_from": 50.37,
     "h_to": 48.418,
-    "floor": 48.27
+    "floor": 48.27,
+    "fill": {
+     "over_line": 0.14,
+     "flat": 0.3,
+     "slope": 0.6,
+     "reach": 1.6
+    }
    },
    "handrails_blender": [
     [
@@ -300,7 +471,13 @@
     ],
     "h_from": 51.07,
     "h_to": 50.598,
-    "floor": 50.47
+    "floor": 50.47,
+    "fill": {
+     "over_line": 0.14,
+     "flat": 0.3,
+     "slope": 0.6,
+     "reach": 1.6
+    }
    },
    "handrails_blender": []
   }

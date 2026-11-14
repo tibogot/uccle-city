@@ -61,3 +61,4 @@ textures/shops/interiors.png
 models/heros/statue_raw.json
 models/heros/*.raw.glb
 models/heros/audit/*/*.json
+models/heros/statue_work/

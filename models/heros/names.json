@@ -1,0 +1,6 @@
+{
+ "about": "The names carved on the war memorial of the Square des Heros, to be filled from the Uccle commune archives (the owner). EMPTY until then: never put invented or approximated names here. One string per carved line, as on the stone (e.g. surname + initial). '1914-1918': the 138 dead of the First World War, spread in order over the shaft's west, back (north) and east faces (upper stone, then lower). '1940-1945': the 193 dead of the Second World War, spread over the eight bench backs from the front (south), turning west. 'panels': optional, puts a list on one named panel instead (the names: models/heros/heros.json lettering.cells). Then run: python tools/heros_letters.py (no Blender run, no repack).",
+ "1914-1918": [],
+ "1940-1945": [],
+ "panels": {}
+}
