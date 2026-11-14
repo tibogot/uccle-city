@@ -1,1 +1,95 @@
-{ "about": "curated terraces (docs/assets/SHOPS.md)", "terraces": {} }
+{
+ "about": "Curated shopfronts and terraces of the shopfront kit (viewer/shops/shopLayout.js), each checked on Google Street View (look only, never traced or stored; docs/assets/SHOPS.md). terraces.<OSM id>: depth (m out from the wall), from / to (m along the front, left to right seen from the street), hedge (planters along the outer edge), parasols, parasol (canvas palette index), none (no terrace); front: family classic | modern, paint / canvas (palette index of shopLayout.js), awning, stripes, lightbox.",
+ "terraces": {
+  "osm:n11685293316": {
+   "_name": "Le refuge, Ch. de Saint-Job (ex Au Petit Job): a front-yard terrace behind a clipped hedge, square parasols, dark bistro chairs; blue awning with lettering on the valance",
+   "depth": 4.2,
+   "hedge": true,
+   "parasols": true,
+   "parasol": 4,
+   "start": 0.4,
+   "front": {
+    "family": "classic",
+    "paint": 2,
+    "awning": true,
+    "canvas": 2,
+    "stripes": false
+   }
+  },
+  "osm:n10904517080": {
+   "_name": "Miska (the ice-cream / cupcake cafe next to the coiffeur): a raised timber deck with a white railing in front, a few tables",
+   "depth": 2.4,
+   "parasols": false,
+   "front": {
+    "family": "classic",
+    "paint": 4
+   }
+  },
+  "osm:n11685233717": {
+   "_name": "Chez Clementine, Place de Saint-Job: the glazed pavilion's covered terrace with long tables (no parasols: under its roof)",
+   "depth": 2.8,
+   "parasols": false,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "awning": false
+   }
+  },
+  "osm:n6966406037": {
+   "_name": "Madonna: no terrace on Street View (2024)",
+   "none": true
+  },
+  "osm:n3981790357": {
+   "_name": "Pizza Hut, Place de Saint-Job: brick front with arched windows, red fascia on Street View; no terrace",
+   "none": true,
+   "front": {
+    "family": "classic",
+    "paint": 1
+   }
+  },
+  "osm:n5501826363": {
+   "_name": "Au Repos de la Montagne, Montagne de Saint-Job (OSM outdoor_seating=yes): tables along the front, parasols",
+   "depth": 2.6,
+   "parasols": true,
+   "parasol": 0
+  },
+  "osm:n4361797887": {
+   "_name": "Barat (bakery, Place de Saint-Job 36): on Street View 2024 a black fascia board with three gooseneck spotlights over a roller-shutter front (the shop now trades as another bakery)",
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "awning": false,
+    "spots": true,
+    "lightbox": false
+   }
+  },
+  "osm:n5520234527": {
+   "_name": "Le Bouquet Varie (florist): a grey retractable awning over the front, plants on the pavement",
+   "front": {
+    "family": "classic",
+    "paint": 5,
+    "awning": true,
+    "canvas": 6,
+    "stripes": false
+   }
+  },
+  "osm:n5520234525": {
+   "_name": "Espace photo: grey fascia, painted stall risers (red panels on Street View)",
+   "front": {
+    "family": "classic",
+    "paint": 5,
+    "awning": false
+   }
+  },
+  "osm:n10864464955": {
+   "_name": "St-Job (butcher, Av. du Prince de Ligne): grey fascia with white lettering and a grey canopy over the window",
+   "front": {
+    "family": "modern",
+    "paint": 4,
+    "awning": true,
+    "canvas": 6,
+    "stripes": false
+   }
+  }
+ }
+}

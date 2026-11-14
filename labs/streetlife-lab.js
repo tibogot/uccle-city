@@ -20,10 +20,15 @@ import { lodEye } from "../viewer/lodFade.js";
 import { loadStJob, STJOB_BU_ID } from "../viewer/stjobModel.js";
 import { StreetLife, streetUniforms } from "../viewer/streetlife/streetlife.js";
 import { flickerTest, showHeat } from "./flickerTest.js";
+import { windowUniforms, INTERIOR_TYPES } from "../viewer/shops/shopWindow.js";
+// the Shops Lab (labs/shops-lab.html) is this lab with the shops' folder first: the shopfront kit (viewer/shops/), A/B
+// against the old flat fronts (?shops=old), the interior uniforms, a jump to any shop of the site
+const SHOPS_LAB = !!globalThis.SHOPS_LAB;
 
 const qp = new URLSearchParams(location.search);
 const $info = document.getElementById("info"), $names = document.getElementById("names");
 const SITES = {
+  vanderkindere: { label: "Rue Vanderkindere (F1 + G1)", tiles: ["F1", "G1"], home: "Beobank", street: /Vanderkindere/ },
   stjob: { label: "Place de Saint-Job (I5 + I6)", tiles: ["I6", "I5"], home: "Botanea", street: /Saint-Job|Prince de Ligne|Carsoel/ },
   fortjaco: { label: "Chaussée de Waterloo, Fort-Jaco (J6)", tiles: ["J6"], home: "Neuhaus", street: /Waterloo/ },
   alsemberg: { label: "Chaussée d'Alsemberg / Xavier De Bue / Parvis Saint-Pierre (E4)", tiles: ["E4"], home: "Etam", street: /Alsemberg|Xavier De Bue/ },
@@ -44,7 +49,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 const preset = PRESETS[qp.get("time")] ? qp.get("time") : "golden";
 const lighting = new Lighting(scene, renderer, preset);
-const say = (s) => { $info.textContent = s; console.log("[streetlife lab]", s); };
+const say = (s) => { $info.textContent = s; console.log(SHOPS_LAB ? "[shops lab]" : "[streetlife lab]", s); };
 
 // ------------------------------------------------------------------------------------------------ the city tiles (read-only)
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -105,7 +110,8 @@ if (site === "stjob") {               // the scripted church instead of its UrbI
 
 // ------------------------------------------------------------------------------------------------ the street-life layer
 say("street life: kits + worker…");
-const SL = await StreetLife.create(scene);
+const SHOPS = qp.get("shops") !== "old";
+const SL = await StreetLife.create(scene, { shops: SHOPS, renderer });
 const tileStats = [];
 for (const t of SITE.tiles) tileStats.push(await SL.addTile(t));
 console.log("[streetlife lab] tiles", tileStats);
@@ -197,13 +203,30 @@ const S = {
   stats: "", bench: "—", flicker: "—", namesOn: false,
 };
 streetUniforms.night.value = S.night;
-const ui = new Panel({ title: "Street Life Lab" });
+const ui = new Panel({ title: SHOPS_LAB ? "Shops Lab" : "Street Life Lab" });
 const fs = ui.addFolder("Site & view");
-fs.add(S, "site", Object.keys(SITES)).name("site (reloads)").onChange((v) => { location.search = `?site=${v}&time=${S.time}`; });
+fs.add(S, "site", Object.keys(SITES)).name("site (reloads)").onChange((v) => { location.search = `?site=${v}&time=${S.time}${SHOPS ? "" : "&shops=old"}`; });
 fs.add({ go: () => goHome() }, "go").name("back to the start view");
 fs.add({ go: () => startRide("walk") }, "go").name("walk past the shops (5 km/h)");
 fs.add({ go: () => startRide("drive") }, "go").name("drive past (30 km/h)");
 fs.add(S, "namesOn").name("names check (every text vs the data)").onChange((v) => { $names.style.display = v ? "block" : "none"; });
+if (SHOPS_LAB) {
+  // ---- the shops: A/B with the old fronts, the interiors, a jump to every shop of the site
+  const shopNames = docs.flatMap((d) => d.pois).filter((p) => p.face && p.name && !["atm", "school", "civic"].includes(p.kind)).map((p) => p.name).sort((a, b) => a.localeCompare(b, "fr"));
+  S.shop = SITE.home; S.day = windowUniforms.day.value; S.nightOpen = windowUniforms.nightOpen.value; S.card = true; S.reflect = 1;
+  const fsh = ui.addFolder("Shops");
+  fsh.add({ go: () => { const q = new URLSearchParams(location.search); if (SHOPS) q.set("shops", "old"); else q.delete("shops"); q.set("cam", [...camera.position.toArray(), ...controls.target.toArray()].map((v) => v.toFixed(2)).join(",")); location.search = q.toString(); } }, "go").name(SHOPS ? "A/B: show the OLD fronts (reloads, same view)" : "A/B: show the NEW shopfronts (reloads, same view)");
+  fsh.add(S, "shop", shopNames).name("go to a shop").onChange((v) => viewPoi(v, 8, 2.5));
+  fsh.add({ go: () => viewPoi(S.shop, 3.5, 1.2) }, "go").name("close-up (3.5 m)");
+  fsh.add({ go: () => viewPoi(S.shop, 6, -6) }, "go").name("oblique (the interior's parallax)");
+  if (SHOPS) {
+    fsh.add(S, "day", 0, 1, 0.01).name("interior by day").onChange((v) => { windowUniforms.day.value = v; });
+    fsh.add(S, "nightOpen", 0, 2, 0.01).name("interior at night (open)").onChange((v) => { windowUniforms.nightOpen.value = v; });
+    fsh.add(S, "card").name("furniture card (mid layer)").onChange((v) => { windowUniforms.card.value = v ? 1 : 0; });
+    fsh.add(S, "reflect", 0, 1, 0.01).name("glass specular (IBL)").onChange((v) => { windowUniforms.reflect.value = v; });
+    S.mirror = 1; fsh.add(S, "mirror", 0, 2, 0.01).name("glass street reflection").onChange((v) => { windowUniforms.mirror.value = v; });
+  }
+}
 const fl = ui.addFolder("Light");
 fl.add(S, "time", Object.keys(PRESETS)).name("preset").onChange((v) => { lighting.apply(v); lighting.hourOverride = null; pipe?.look(v); S.hour = lighting.hour; S.night = v === "night" ? 1 : v === "twilight" ? 0.7 : 0; streetUniforms.night.value = S.night; });
 fl.add(S, "hour", 4, 23.9, 0.05).name("solar hour").onChange((v) => { lighting.hourOverride = v; }).listen();
@@ -318,7 +341,7 @@ async function measureUpload(tile = "J6", rounds = 3) {
   return { res, note: uploadNote };
 }
 let renderOnce = () => {};
-window.lab = { measureUpload, renderOnce: () => renderOnce(), viewPoi, rideAt, renderer, scene, camera, controls, SL, streetUniforms, lighting, bench, flicker, startRide, goHome, gpu, S, tileStats, paths, docs, cityMs };
+window.lab = { SHOPS, INTERIOR_TYPES, windowUniforms, measureUpload, renderOnce: () => renderOnce(), viewPoi, rideAt, renderer, scene, camera, controls, SL, streetUniforms, lighting, bench, flicker, startRide, goHome, gpu, S, tileStats, paths, docs, cityMs };
 
 renderOnce = () => { lodEye.value.copy(camera.position); SL.update(camera); if (S.post) pipe.render(hazeHook); else renderer.render(scene, camera); };
 let last = performance.now(), frames = 0, fpsAcc = 0, fpsN = 0, fps = 0;

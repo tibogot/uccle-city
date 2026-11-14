@@ -42,7 +42,7 @@ export function interiorType(p) {
   if (k === "bakery" || ["bakery", "pastry", "chocolate", "confectionery", "butcher", "cheese", "deli", "seafood", "caterer", "beekeeper"].includes(c)) return 0;
   if (k === "pharmacy" || ["pharmacy", "optician", "cosmetics", "perfumery", "chemist", "hearing_aids", "medical_supply"].includes(c)) return 1;
   if (["clothes", "shoes", "jewelry", "watches", "leather", "bag", "fashion_accessories", "boutique", "sports"].includes(c)) return 3;
-  if (k === "supermarket" || ["supermarket", "convenience", "greengrocer", "general", "frozen_food", "alcohol", "wine", "newsagent", "farm", "organic"].includes(c)) return 4;
+  if (k === "supermarket" || ["florist", "garden_centre", "supermarket", "convenience", "greengrocer", "general", "frozen_food", "alcohol", "wine", "newsagent", "farm", "organic"].includes(c)) return 4;
   if (k === "bank" || k === "post" || ["bank", "travel_agency", "estate_agent", "insurance", "telecommunication", "copyshop", "post_office", "driving_school", "veterinary", "employment_agency"].includes(c)) return 5;
   if (["hairdresser", "beauty", "massage", "wellness", "tattoo", "nails"].includes(c)) return 6;
   return 7;
@@ -62,11 +62,13 @@ export function layoutShop(p, f, frame, lit, env) {
   const lowFloor = f.eaves - f.y < 4.0;
   const fasciaY = lowFloor ? 2.55 : 3.0, dH = fasciaY - 2.55;
   const cat = p.cat || p.kind;
-  const classic = MODERN_CATS.has(cat) || p.kind === "bank" || p.kind === "supermarket" || p.kind === "pharmacy" || p.kind === "fastfood" ? false
+  // curated (data/shops/terraces.json "front": checked on Street View): family, paint / canvas (palette index), awning
+  const cf = env.cur?.front || {};
+  const classic = cf.family ? cf.family === "classic" : MODERN_CATS.has(cat) || p.kind === "bank" || p.kind === "supermarket" || p.kind === "pharmacy" || p.kind === "fastfood" ? false
     : CLASSIC_CATS.has(cat) || ["cafe", "bar", "bakery"].includes(p.kind) ? true
     : p.kind === "restaurant" ? hash01(id + "fam") < 0.7 : hash01(id + "fam") < 0.5;
-  const paint = classic ? pick(CLASSIC, id, "p") : pick(MODERN, id, "p");
-  const lightbox = !classic && hash01(id + "lb") < 0.35;
+  const paint = cf.paint != null ? (classic ? CLASSIC : MODERN)[cf.paint] : classic ? pick(CLASSIC, id, "p") : pick(MODERN, id, "p");
+  const lightbox = cf.lightbox ?? (!classic && hash01(id + "lb") < 0.35);
   const at = (u, y = 0, z = 0) => add(base, X, u, Y, y, Z, z);
   const put = (kind, u, y, dW, dHh, tint, amt = 1, stripes = 0) => {
     const o = at(u, y);
@@ -105,7 +107,7 @@ export function layoutShop(p, f, frame, lit, env) {
   if (p.name) used.names.push(p.name);
   const board = lightbox ? [0.86, 0.86, 0.84] : paint;
   const ink = lum(board) > 0.18 ? pick(INK_ON_LIGHT, id, "i") : (classic ? pick(INK_ON_DARK, id, "i") : [0.97, 0.97, 0.95]);
-  const sign = classic ? (hash01(id + "s") < 0.55 ? "spots" : "paint") : lightbox ? "lightbox" : "backlit";
+  const sign = cf.spots || (classic && hash01(id + "s") < 0.55) ? "spots" : classic ? "paint" : lightbox ? "lightbox" : "backlit";
   const inkGlow = sign === "backlit" ? 1.6 * lit : sign === "spots" ? 0.35 * lit : 0, boardGlow = sign === "lightbox" ? 1.1 * lit : sign === "spots" ? 0.3 * lit : 0;
   if (classic) {
     // the panel inside the moulded frame, between the consoles (shopfronts.py: |x| < W/2 - 0.2, 0.04 .. 0.71 up)
@@ -117,15 +119,15 @@ export function layoutShop(p, f, frame, lit, env) {
   if (sign === "spots" && !lowFloor) {
     const k = W > 4.5 ? 3 : 2;
     for (let i = 0; i < k; i++) {
-      const o = at((i - (k - 1) / 2) * (W / k), fasciaY + 0.97, 0.18);
+      const o = at((i - (k - 1) / 2) * (W / k), fasciaY + (classic ? 0.97 : 0.69), classic ? 0.18 : 0.12);
       prop("spot", o[0], o[1], o[2], yaw);
       night.spots.push(...add(o, X, 0, Y, 0.1, Z, 0.55));
     }
   } else night.signs.push(...at(0, fasciaY + 0.35, 0.5));
   // ---- awning (food and fresh shops), the name on its valance
-  const awn = (AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat)) && !lowFloor && hash01(id + "aw") < 0.8;
+  const awn = cf.awning ?? ((AWNING_KINDS.has(p.kind) || AWNING_CATS.has(p.cat)) && !lowFloor && hash01(id + "aw") < 0.8);
   if (awn) {
-    const canvas = pick(CANVAS, id, "c"), stripes = hash01(id + "st") < 0.3 ? 0.24 : 0;
+    const canvas = cf.canvas != null ? CANVAS[cf.canvas] : pick(CANVAS, id, "c"), stripes = cf.stripes ?? (hash01(id + "st") < 0.3) ? 0.24 : 0;
     put("awning", 0, fasciaY, W - W0, 0, canvas, 1, stripes);
     const vlab = p.name ? label([p.name], "shopSans") : null;
     const vink = lum(canvas) > 0.25 ? [0.03, 0.03, 0.03] : [0.9, 0.87, 0.78];
@@ -166,6 +168,7 @@ export function layoutTerrace(p, f, frame, front, cur, env) {
   const { X, Y, Z } = frame;
   const base = [f.x, f.y, f.z], id = p.id;
   let depth, from, to, hedge, parasols, start;
+  if (cur && !cur.none && cur.depth == null) cur = null;           // (a curated FRONT only: the terrace by rule)
   if (cur) {
     if (cur.none) return 0;
     depth = cur.depth; from = cur.from ?? -front.W / 2; to = cur.to ?? front.W / 2; hedge = !!cur.hedge; parasols = cur.parasols ?? depth >= 2.4; start = cur.start ?? 0.35;
@@ -178,7 +181,7 @@ export function layoutTerrace(p, f, frame, front, cur, env) {
   }
   // leave the door clear (a 1.1 m gap in front of it)
   const door = front.doorU;
-  const canvas = pick(CANVAS, id, "c");
+  const canvas = cur?.parasol != null ? CANVAS[cur.parasol] : pick(CANVAS, id, "c");
   const at = (u, z) => add(base, X, u, Y, 0, Z, z);
   let n = 0;
   const rows = depth >= 2.5 ? 2 : 1, rowZ = (r) => start + 0.55 + r * 1.3;
@@ -200,10 +203,14 @@ export function layoutTerrace(p, f, frame, front, cur, env) {
     if (rows === 1 && depth >= 1.9) { const c = add(o, Z, 0.56, Y, 0, X, 0); prop("chair", c[0], c[1], c[2], yawTo(-Z[0], -Z[2]) + Math.PI); }
     n++;
   }
+  // parasols: clear of an awning (it reaches 1.8 m out; a parasol's canopy 1.3 m round its mast)
+  let pz = start + Math.min(depth, 2.6) / 2 + 0.1;
+  if (front.awning) pz = Math.max(pz, 1.8 + 1.35);
+  if (pz > start + depth + 0.2) parasols = false;
   if (parasols && n) for (let k = 0; k < cols; k += 2) {
     const u = from + (k + 0.5 + (cols > 1 ? 0.5 : 0)) * ((to - from) / cols);
     if (u > to) break;
-    const o = at(u, start + Math.min(depth, 2.6) / 2 + 0.1);
+    const o = at(u, pz);
     shop("parasol_sq", o[0], o[1], o[2], yawTo(Z[0], Z[2]), 0, 0, 99, 0, canvas[0], canvas[1], canvas[2], 1);
     collide("parasol", o[0], o[1], o[2], 0);
   }

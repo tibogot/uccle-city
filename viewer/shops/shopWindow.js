@@ -13,7 +13,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uniform, texture, vec2, vec3, float, uv, positionWorld, positionLocal, cameraPosition, normalWorld, dot, max, min, abs,
-  step, mix, clamp, select, fwidth, log2, pow, normalize, smoothstep, length,
+  step, mix, clamp, select, fwidth, log2, pow, normalize, smoothstep, length, reflect,
 } from "three/tsl";
 import { ktxLoader } from "../materials/scans.js";
 
@@ -28,6 +28,7 @@ export const windowUniforms = {
   nightOpen: uniform(1.0),     // at night when open
   reflect: uniform(1),         // glass specular
   card: uniform(1),            // the furniture card on / off (lab)
+  mirror: uniform(1),          // the street-side reflection (sky / street) over the room
 };
 
 let texP = null;
@@ -111,15 +112,20 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
   const card = texture(I.tex, cell(cuv, float(2))).level(lod);
   const ca = card.a.mul(cIn).mul(U.card);
   const inside = mix(room, card.rgb, ca);
-  // the glass: grazing views mirror more and show less of the room
+  // the glass: a street-side mirror (sky above the horizon, the street's grey below, mostly at grazing views) over the
+  // room; by day the reflection carries the glass, at night the lit room does (Schlick-like, with a floor: shop glass
+  // reflects ~10 % even head-on)
   const view = normalize(cameraPosition.sub(positionWorld));
-  const fres = pow(clamp(float(1).sub(abs(dot(view, n))), 0, 1), 3);
+  const fres = float(0.1).add(float(0.9).mul(pow(clamp(float(1).sub(abs(dot(view, n))), 0, 1), 4)));
+  const rv = reflect(view.negate(), n);
+  const sky = mix(vec3(0.07, 0.07, 0.072), vec3(0.42, 0.5, 0.6), smoothstep(-0.05, 0.4, rv.y));
   const light = mix(U.day, U.nightOpen.mul(mix(0.3, 1, lit)), night);
   m.colorNode = vec3(0.004, 0.0045, 0.005);
   m.roughnessNode = float(0.03);
   m.metalnessNode = float(0);
   m.specularIntensityNode = U.reflect;
-  m.emissiveNode = inside.mul(light).mul(float(1).sub(fres.mul(0.75))).mul(glow);
+  const mirror = sky.mul(fres).mul(U.mirror).mul(float(1).sub(night.mul(0.85)));
+  m.emissiveNode = inside.mul(light).mul(float(1).sub(fres)).add(mirror).mul(glow);
   m.positionNode = positionLocal.mul(shrink(attribute("iWinC", "vec4")));
   m.name = "shops-window";
   m.userData.shared = true;

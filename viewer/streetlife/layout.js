@@ -142,9 +142,9 @@ export function layoutTile(doc, measure, stopsDoc = null, opts = {}) {
     }
     if (SHOPS) {
       const env = { box, label, prop, windows, night, used, hash01, pick, add, twoLines, yawTo, WIN_STRIDE,
-        shop: (k, ...r) => shops[k].push(...r), collide: (k, x, y, z, yaw) => colliders[k].push(x, y, z, yaw) };
+        cur: curated[p.id], shop: (k, ...r) => shops[k].push(...r), collide: (k, x, y, z, yaw) => colliders[k].push(x, y, z, yaw) };
       const front = layoutShop(p, f, { X, Y, Z }, lit, env);
-      if (TERRACE_KINDS.has(p.kind) || p.seating === "yes" || curated[p.id]) layoutTerrace(p, f, { X, Y, Z }, front, curated[p.id], env);
+      if (TERRACE_KINDS.has(p.kind) || p.seating === "yes" || curated[p.id]?.depth != null) layoutTerrace(p, f, { X, Y, Z }, front, curated[p.id], env);
       continue;
     }
     // shopfront: stall riser, jambs, head, door mullion; the window (parallax interior) between them

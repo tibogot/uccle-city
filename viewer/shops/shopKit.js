@@ -205,7 +205,7 @@ function shopMaterial(lod, aoTex) {
   m.positionNode = positionLocal.add(vec3(cos(yaw).mul(shift.x), shift.y, sin(yaw).negate().mul(shift.x)));
   const local = positionGeometry.add(shift);
   const ao = lod >= 1 ? fract(sl.add(0.0005)).div(0.99).min(1) : texture(aoTex, uv(1)).r;
-  let base = mix(A.xyz, tint.xyz, tint.w.mul(B.z));
+  let base = mix(A.xyz, tint.xyz, tint.w.mul(B.y));          // (B = metalness, tintable, emissive)
   // canvas stripes (awnings, parasols): alternate the tint with a cream stripe along the local x (after the stretch)
   const isCanvas = step(abs(sl.floor().sub(S_CANVAS)), 0.5);
   const sw = band.w.max(0.01);
