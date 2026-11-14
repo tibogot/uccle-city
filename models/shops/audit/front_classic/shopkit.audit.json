@@ -1,0 +1,9187 @@
+{
+ "summary": {
+  "triangles": 3320,
+  "vertices_welded": 1716,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 62,
+  "warnings": 380,
+  "counts": {
+   "sliver": 376,
+   "bentflat": 14,
+   "nonmanifold": 4,
+   "backtoback": 158,
+   "coplanar": 48,
+   "seam": 62
+  },
+  "ms": 289
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "front_classic",
+   "slot": "paint",
+   "triangles": 3084,
+   "maxDistance": 120
+  },
+  {
+   "name": "front_classic",
+   "slot": "bluestone",
+   "triangles": 216,
+   "maxDistance": 120
+  },
+  {
+   "name": "front_classic",
+   "slot": "lead",
+   "triangles": 20,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.291,
+     0.045
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.291,
+     0.043
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.293,
+     0.041
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.295,
+     0.041
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.334,
+     0.045
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.334,
+     0.043
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.332,
+     0.041
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.33,
+     0.041
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.291,
+     0.105
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.291,
+     0.107
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.293,
+     0.109
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.295,
+     0.109
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.334,
+     0.105
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.334,
+     0.107
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.332,
+     0.109
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.33,
+     0.109
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.318,
+     0.11
+    ],
+    "part": "front_classic/paint",
+    "aspect": 47,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.307,
+     0.11
+    ],
+    "part": "front_classic/paint",
+    "aspect": 47,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.318,
+     0.04
+    ],
+    "part": "front_classic/paint",
+    "aspect": 47,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.307,
+     0.04
+    ],
+    "part": "front_classic/paint",
+    "aspect": 47,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.006,
+     0.404,
+     0.234
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     0.236,
+     0.233
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.01,
+     0.404,
+     0.231
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.011,
+     0.236,
+     0.229
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.006,
+     0.236,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.008,
+     0.404,
+     0.002
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.01,
+     0.236,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.011,
+     0.404,
+     0.006
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.769,
+     0.236,
+     0.006
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.77,
+     0.404,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.772,
+     0.236,
+     0.002
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.774,
+     0.404,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.774,
+     0.236,
+     0.234
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.772,
+     0.404,
+     0.233
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.77,
+     0.236,
+     0.231
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.769,
+     0.404,
+     0.229
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.947,
+     1.173,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.948,
+     1.737,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.928,
+     1.173,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.937,
+     1.737,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.917,
+     1.173,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.918,
+     1.737,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.862,
+     1.173,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.863,
+     1.737,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.843,
+     1.173,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.852,
+     1.737,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.832,
+     1.173,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.833,
+     1.737,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.4,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.401,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.403,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.404,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.43,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.429,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.427,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.426,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.4,
+     0.236
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.401,
+     0.237
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.403,
+     0.239
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.404,
+     0.24
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.43,
+     0.236
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.429,
+     0.237
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.932,
+     2.427,
+     0.239
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.848,
+     2.426,
+     0.24
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.774,
+     0.404,
+     0.234
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.772,
+     0.236,
+     0.233
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.77,
+     0.404,
+     0.231
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.769,
+     0.236,
+     0.229
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.774,
+     0.236,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.772,
+     0.404,
+     0.002
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.77,
+     0.236,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.769,
+     0.404,
+     0.006
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.011,
+     0.236,
+     0.006
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.01,
+     0.404,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     0.236,
+     0.002
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.006,
+     0.404,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.006,
+     0.236,
+     0.234
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.008,
+     0.404,
+     0.233
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.01,
+     0.236,
+     0.231
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.011,
+     0.404,
+     0.229
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.504
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.833,
+     1.173,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.832,
+     1.737,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.852,
+     1.173,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.843,
+     1.737,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.863,
+     1.173,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.862,
+     1.737,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.918,
+     1.173,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.917,
+     1.737,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.937,
+     1.173,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.928,
+     1.737,
+     0.192
+    ],
+    "part": "front_classic/paint",
+    "aspect": 68,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.948,
+     1.173,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.947,
+     1.737,
+     0.195
+    ],
+    "part": "front_classic/paint",
+    "aspect": 179,
+    "longest": 1.69
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.4,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.401,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.403,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.404,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.43,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.429,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.427,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.426,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.4,
+     0.236
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.401,
+     0.237
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.403,
+     0.239
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.404,
+     0.24
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.43,
+     0.236
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.429,
+     0.237
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.848,
+     2.427,
+     0.239
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.932,
+     2.426,
+     0.24
+    ],
+    "part": "front_classic/paint",
+    "aspect": 65,
+    "longest": 0.25
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.336,
+     0.005
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.336,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.338,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.34,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.549,
+     0.005
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.549,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.547,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.545,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.336,
+     0.125
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.336,
+     0.127
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.338,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.34,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.549,
+     0.125
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.549,
+     0.127
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.258,
+     2.547,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.258,
+     2.545,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 337,
+    "longest": 1.548
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.259,
+     2.351,
+     0.12
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.351,
+     0.118
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.259,
+     2.346,
+     0.126
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.348,
+     0.124
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.259,
+     2.339,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.342,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.259,
+     2.332,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.334,
+     0.129
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.259,
+     2.326,
+     0.124
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.328,
+     0.126
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.259,
+     2.323,
+     0.118
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.323,
+     0.12
+    ],
+    "part": "front_classic/paint",
+    "aspect": 200,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.259,
+     2.342,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 52,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.259,
+     2.332,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 52,
+    "longest": 1.552
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.036,
+     3.048,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.037,
+     2.802,
+     0.199
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     3.048,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     2.802,
+     0.196
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.036,
+     2.802,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.037,
+     3.048,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.039,
+     2.802,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.04,
+     3.048,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     2.55,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     2.551,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     2.553,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     2.554,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     3.3,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     3.299,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     3.297,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     3.296,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     2.802,
+     0.004
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     3.048,
+     0.003
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.037,
+     2.802,
+     0.001
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.036,
+     3.048,
+     0
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.036,
+     2.802,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.037,
+     3.048,
+     0.199
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.039,
+     2.802,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.04,
+     3.048,
+     0.196
+    ],
+    "part": "front_classic/paint",
+    "aspect": 193,
+    "longest": 0.74
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     2.55,
+     0.196
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     2.551,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     2.553,
+     0.199
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     2.554,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     3.3,
+     0.196
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     3.299,
+     0.197
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.345,
+     3.297,
+     0.199
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.345,
+     3.296,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 541,
+    "longest": 2.07
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.591,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.591,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.593,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.595,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.629,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.629,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.627,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.625,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.591,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.591,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.593,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.595,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.629,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.629,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.627,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.625,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.59,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.59,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.615,
+     0.218
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.605,
+     0.218
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.63,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.63,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     2.615,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     2.605,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.221,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.221,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.223,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.225,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.259,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.259,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.257,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.255,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.221,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.221,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.223,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.225,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.259,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.259,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.257,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.255,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 346,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.22,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.22,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.245,
+     0.218
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.235,
+     0.218
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.26,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.26,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 265,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.265,
+     3.245,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.265,
+     3.235,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "aspect": 57,
+    "longest": 1.588
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.795,
+     3.021,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     2.829,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.799,
+     3.021,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.799,
+     2.829,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.795,
+     2.829,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.797,
+     3.021,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.799,
+     2.829,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.799,
+     3.021,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     2.829,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     3.021,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.763,
+     2.829,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.765,
+     3.021,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.765,
+     2.829,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.763,
+     3.021,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     2.829,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     3.021,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.8,
+     3.021,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.8,
+     2.829,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.76,
+     3.021,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.76,
+     2.829,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.765,
+     3.021,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.763,
+     2.829,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     3.021,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     2.829,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.765,
+     2.829,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.763,
+     3.021,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     2.829,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     3.021,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.799,
+     2.829,
+     0.205
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.799,
+     3.021,
+     0.203
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     2.829,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.795,
+     3.021,
+     0.201
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.795,
+     2.829,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.797,
+     3.021,
+     0.217
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.799,
+     2.829,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.799,
+     3.021,
+     0.213
+    ],
+    "part": "front_classic/paint",
+    "aspect": 126,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.76,
+     3.021,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.76,
+     2.829,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.8,
+     3.021,
+     0.208
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.8,
+     2.829,
+     0.21
+    ],
+    "part": "front_classic/paint",
+    "aspect": 96,
+    "longest": 0.578
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.98,
+     2.718,
+     0.221
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.98,
+     2.958,
+     0.27
+    ],
+    "part": "front_classic/paint",
+    "aspect": 212,
+    "longest": 0.293
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.98,
+     2.838,
+     0.243
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.589
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.987,
+     3.27,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.988,
+     3.271,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.989,
+     3.272,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.99,
+     3.273,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.987,
+     3.3,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.988,
+     3.299,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.989,
+     3.298,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.99,
+     3.297,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.833,
+     3.27,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.832,
+     3.271,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.831,
+     3.272,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.83,
+     3.273,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.833,
+     3.3,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.832,
+     3.299,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.831,
+     3.298,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.83,
+     3.297,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.84,
+     2.718,
+     0.221
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.84,
+     2.958,
+     0.27
+    ],
+    "part": "front_classic/paint",
+    "aspect": 212,
+    "longest": 0.293
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.84,
+     2.838,
+     0.243
+    ],
+    "part": "front_classic/paint",
+    "aspect": 82,
+    "longest": 0.589
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.833,
+     3.27,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.832,
+     3.271,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.831,
+     3.272,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.83,
+     3.273,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.833,
+     3.3,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.832,
+     3.299,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.831,
+     3.298,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.83,
+     3.297,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.987,
+     3.27,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.988,
+     3.271,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.989,
+     3.272,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.99,
+     3.273,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.987,
+     3.3,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.988,
+     3.299,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.989,
+     3.298,
+     0.219
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.99,
+     3.297,
+     0.111
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 0.322
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.48,
+     0.36
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.485,
+     0.355
+    ],
+    "part": "front_classic/paint",
+    "aspect": 105,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.445,
+     0.365
+    ],
+    "part": "front_classic/paint",
+    "aspect": 49,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.46,
+     0.365
+    ],
+    "part": "front_classic/paint",
+    "aspect": 49,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.43,
+     0.358
+    ],
+    "part": "front_classic/paint",
+    "aspect": 222,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.43,
+     0.362
+    ],
+    "part": "front_classic/paint",
+    "aspect": 222,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.428,
+     0.349
+    ],
+    "part": "front_classic/paint",
+    "aspect": 243,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.429,
+     0.352
+    ],
+    "part": "front_classic/paint",
+    "aspect": 243,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.422,
+     0.34
+    ],
+    "part": "front_classic/paint",
+    "aspect": 192,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.425,
+     0.343
+    ],
+    "part": "front_classic/paint",
+    "aspect": 192,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.412,
+     0.332
+    ],
+    "part": "front_classic/paint",
+    "aspect": 155,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.416,
+     0.335
+    ],
+    "part": "front_classic/paint",
+    "aspect": 155,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.399,
+     0.323
+    ],
+    "part": "front_classic/paint",
+    "aspect": 139,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.404,
+     0.326
+    ],
+    "part": "front_classic/paint",
+    "aspect": 139,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.386,
+     0.314
+    ],
+    "part": "front_classic/paint",
+    "aspect": 139,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.391,
+     0.317
+    ],
+    "part": "front_classic/paint",
+    "aspect": 139,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.374,
+     0.305
+    ],
+    "part": "front_classic/paint",
+    "aspect": 155,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.378,
+     0.308
+    ],
+    "part": "front_classic/paint",
+    "aspect": 155,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.365,
+     0.297
+    ],
+    "part": "front_classic/paint",
+    "aspect": 192,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.368,
+     0.3
+    ],
+    "part": "front_classic/paint",
+    "aspect": 192,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.361,
+     0.288
+    ],
+    "part": "front_classic/paint",
+    "aspect": 243,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.362,
+     0.291
+    ],
+    "part": "front_classic/paint",
+    "aspect": 243,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.36,
+     0.275
+    ],
+    "part": "front_classic/paint",
+    "aspect": 148,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.36,
+     0.28
+    ],
+    "part": "front_classic/paint",
+    "aspect": 148,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.353,
+     0.27
+    ],
+    "part": "front_classic/paint",
+    "aspect": 222,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.357,
+     0.27
+    ],
+    "part": "front_classic/paint",
+    "aspect": 222,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.349,
+     0.263
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.349,
+     0.266
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.345,
+     0.253
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.347,
+     0.256
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.338,
+     0.244
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.341,
+     0.247
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.329,
+     0.238
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.332,
+     0.24
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.319,
+     0.236
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.322,
+     0.236
+    ],
+    "part": "front_classic/paint",
+    "aspect": 203,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.315,
+     0.222
+    ],
+    "part": "front_classic/paint",
+    "aspect": 111,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.315,
+     0.228
+    ],
+    "part": "front_classic/paint",
+    "aspect": 111,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     3.305,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 148,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     3.31,
+     0.215
+    ],
+    "part": "front_classic/paint",
+    "aspect": 148,
+    "longest": 2.22
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.015,
+     -0.062,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.017,
+     -0.178,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.019,
+     -0.062,
+     0.247
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.019,
+     -0.178,
+     0.245
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.015,
+     -0.178,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.017,
+     -0.062,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.019,
+     -0.178,
+     0.003
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1.019,
+     -0.062,
+     0.005
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     -0.178,
+     0.005
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     -0.062,
+     0.003
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.763,
+     -0.178,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.765,
+     -0.062,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.765,
+     -0.178,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.763,
+     -0.062,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     -0.178,
+     0.247
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.761,
+     -0.062,
+     0.245
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.765,
+     -0.062,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.763,
+     -0.178,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     -0.062,
+     0.247
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     -0.178,
+     0.245
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.765,
+     -0.178,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.763,
+     -0.062,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     -0.178,
+     0.003
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.761,
+     -0.062,
+     0.005
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.019,
+     -0.178,
+     0.005
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.019,
+     -0.062,
+     0.003
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.017,
+     -0.178,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.015,
+     -0.062,
+     0.001
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.015,
+     -0.178,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.017,
+     -0.062,
+     0.249
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.019,
+     -0.178,
+     0.247
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.019,
+     -0.062,
+     0.245
+    ],
+    "part": "front_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.372,
+     3.489,
+     0.368
+    ],
+    "part": "front_classic/lead",
+    "aspect": 87,
+    "longest": 2.23
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.372,
+     3.495,
+     0.362
+    ],
+    "part": "front_classic/lead",
+    "aspect": 87,
+    "longest": 2.23
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.372,
+     3.479,
+     0.372
+    ],
+    "part": "front_classic/lead",
+    "aspect": 236,
+    "longest": 2.23
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.372,
+     3.481,
+     0.373
+    ],
+    "part": "front_classic/lead",
+    "aspect": 236,
+    "longest": 2.23
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.372,
+     3.484,
+     0.358
+    ],
+    "part": "front_classic/lead",
+    "aspect": 103,
+    "longest": 2.23
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.372,
+     3.48,
+     0.364
+    ],
+    "part": "front_classic/lead",
+    "aspect": 103,
+    "longest": 2.23
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.372,
+     3.524,
+     0
+    ],
+    "part": "front_classic/lead",
+    "aspect": 124,
+    "longest": 2.23
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.372,
+     3.518,
+     0
+    ],
+    "part": "front_classic/lead",
+    "aspect": 124,
+    "longest": 2.23
+   }
+  ],
+  "bentflat": [
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.258,
+     2.476,
+     0.13
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.258,
+     2.409,
+     0.13
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.258,
+     2.476,
+     0
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.258,
+     2.409,
+     0
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.345,
+     2.55,
+     0.068
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1966,
+    "region_m2": 0.39
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.345,
+     2.55,
+     0.132
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1966,
+    "region_m2": 0.39
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.345,
+     3.048,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.7659,
+    "region_m2": 1.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.345,
+     2.802,
+     0.2
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.7659,
+    "region_m2": 1.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.345,
+     3.3,
+     0.068
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1966,
+    "region_m2": 0.39
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.345,
+     3.3,
+     0.132
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.1966,
+    "region_m2": 0.39
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.345,
+     3.048,
+     0
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.7659,
+    "region_m2": 1.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.345,
+     2.802,
+     0
+    ],
+    "part": "front_classic/paint",
+    "deg": 14.7,
+    "area": 0.7659,
+    "region_m2": 1.53
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.372,
+     3.504,
+     0.117
+    ],
+    "part": "front_classic/lead",
+    "deg": 14.9,
+    "area": 0.3934,
+    "region_m2": 0.79
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.372,
+     3.496,
+     0.235
+    ],
+    "part": "front_classic/lead",
+    "deg": 14.9,
+    "area": 0.3934,
+    "region_m2": 0.79
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.794,
+     2.63,
+     0.209
+    ],
+    "part": "front_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.794,
+     2.63,
+     0.209
+    ],
+    "part": "front_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.794,
+     3.22,
+     0.209
+    ],
+    "part": "front_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.794,
+     3.22,
+     0.209
+    ],
+    "part": "front_classic/paint",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.78,
+     2.298,
+     0.073
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00022
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.347,
+     2.335,
+     0.052
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01315
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.427,
+     2.335,
+     0.067
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.03174
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.537,
+     2.335,
+     0.081
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02413
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.237,
+     2.335,
+     0.096
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02076
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.78,
+     2.298,
+     0.077
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00022
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.861,
+     0.06,
+     0.038
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01333
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.813,
+     0.06,
+     0.121
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01164
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.973,
+     0.06,
+     0.146
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01332
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.886,
+     0.06,
+     0.192
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01165
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.863,
+     0.58,
+     0.037
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01242
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.973,
+     0.58,
+     0.09
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01167
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.811,
+     0.58,
+     0.146
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01271
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.921,
+     0.58,
+     0.199
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01138
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.858,
+     0.61,
+     0.032
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01114
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.94,
+     0.61,
+     0.062
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00166
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.946,
+     0.61,
+     0.068
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.983,
+     0.61,
+     0.12
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00492
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.974,
+     0.61,
+     0.096
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00063
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.956,
+     0.61,
+     0.078
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00349
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.969,
+     0.61,
+     0.09
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00198
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.805,
+     0.61,
+     0.081
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00956
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.88,
+     0.61,
+     0.197
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.833,
+     0.61,
+     0.166
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00296
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.898,
+     0.61,
+     0.195
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00024
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.872,
+     0.61,
+     0.161
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.955,
+     0.61,
+     0.196
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.949,
+     0.61,
+     0.191
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.903,
+     0.61,
+     0.171
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00227
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.936,
+     0.61,
+     0.183
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00042
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.806,
+     0.61,
+     0.198
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.892,
+     2.3,
+     0.037
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01062
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.964,
+     2.3,
+     0.102
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01051
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.974,
+     2.3,
+     0.198
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.9,
+     2.3,
+     0.197
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.835,
+     2.3,
+     0.056
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00142
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.943,
+     2.3,
+     0.162
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0032
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.882,
+     2.3,
+     0.195
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00024
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.829,
+     2.3,
+     0.062
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00092
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.903,
+     2.3,
+     0.156
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00148
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.79,
+     2.3,
+     0.115
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00429
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.813,
+     2.3,
+     0.189
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00071
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.803,
+     2.3,
+     0.085
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.828,
+     2.3,
+     0.181
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.819,
+     2.3,
+     0.07
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00287
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.873,
+     2.3,
+     0.164
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00289
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.808,
+     2.3,
+     0.08
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00158
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.841,
+     2.3,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00082
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.92,
+     2.33,
+     0.034
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01106
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.965,
+     2.33,
+     0.109
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01029
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.805,
+     2.33,
+     0.107
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0119
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.894,
+     2.33,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01031
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.903,
+     2.33,
+     0.155
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.897,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.923,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.913,
+     2.33,
+     0.16
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00031
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.91,
+     2.33,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00057
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.776,
+     2.324,
+     0.056
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00041
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.92,
+     2.4,
+     0.037
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01273
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.967,
+     2.4,
+     0.116
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01109
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.808,
+     2.4,
+     0.14
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01277
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.894,
+     2.4,
+     0.183
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.935,
+     2.43,
+     0.063
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01191
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.892,
+     2.43,
+     0.089
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00648
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.878,
+     2.43,
+     0.145
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00611
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.919,
+     0.06,
+     0.038
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01333
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.967,
+     0.06,
+     0.121
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01164
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.807,
+     0.06,
+     0.146
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01332
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.894,
+     0.06,
+     0.192
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "area": 0.01165
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.917,
+     0.58,
+     0.037
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01242
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.807,
+     0.58,
+     0.09
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01167
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.969,
+     0.58,
+     0.146
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01271
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.859,
+     0.58,
+     0.199
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01138
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.922,
+     0.61,
+     0.032
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01114
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.84,
+     0.61,
+     0.062
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00166
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.834,
+     0.61,
+     0.068
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.797,
+     0.61,
+     0.12
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00492
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.806,
+     0.61,
+     0.096
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00063
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.824,
+     0.61,
+     0.078
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00349
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.811,
+     0.61,
+     0.09
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00198
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.975,
+     0.61,
+     0.081
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00956
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.9,
+     0.61,
+     0.197
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.947,
+     0.61,
+     0.166
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00296
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.882,
+     0.61,
+     0.195
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00024
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.908,
+     0.61,
+     0.161
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.825,
+     0.61,
+     0.196
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.831,
+     0.61,
+     0.191
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.877,
+     0.61,
+     0.171
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00227
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.844,
+     0.61,
+     0.183
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00042
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.974,
+     0.61,
+     0.198
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.888,
+     2.3,
+     0.037
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01062
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.816,
+     2.3,
+     0.102
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01051
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.806,
+     2.3,
+     0.198
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.88,
+     2.3,
+     0.197
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.945,
+     2.3,
+     0.056
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00142
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.837,
+     2.3,
+     0.162
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0032
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.898,
+     2.3,
+     0.195
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00024
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.951,
+     2.3,
+     0.062
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00092
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.877,
+     2.3,
+     0.156
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00148
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.99,
+     2.3,
+     0.115
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00429
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.967,
+     2.3,
+     0.189
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00071
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.977,
+     2.3,
+     0.085
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0005
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.952,
+     2.3,
+     0.181
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.961,
+     2.3,
+     0.07
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00287
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.907,
+     2.3,
+     0.164
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00289
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.972,
+     2.3,
+     0.08
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00158
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.939,
+     2.3,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00082
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.776,
+     2.324,
+     0.06
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00037
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.776,
+     2.323,
+     0.015
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.86,
+     2.33,
+     0.034
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01106
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.815,
+     2.33,
+     0.109
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01029
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.975,
+     2.33,
+     0.107
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0119
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.886,
+     2.33,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01031
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.917,
+     2.33,
+     0.155
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.923,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.897,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.907,
+     2.33,
+     0.16
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00031
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.91,
+     2.33,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00057
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.86,
+     2.4,
+     0.037
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01273
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.813,
+     2.4,
+     0.116
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01109
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.972,
+     2.4,
+     0.14
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01277
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.886,
+     2.4,
+     0.183
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.884,
+     2.43,
+     0.077
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01164
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.954,
+     2.43,
+     0.044
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00188
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.853,
+     2.43,
+     0.159
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00027
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.92,
+     2.43,
+     0.132
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01071
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.246,
+     2.55,
+     0.03
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.06445
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.585,
+     2.55,
+     0.078
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02688
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.4,
+     2.55,
+     0.084
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.06901
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.24,
+     2.55,
+     0.11
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02233
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.78,
+     3.209,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00028
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.265,
+     3.245,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02223
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.265,
+     3.235,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02223
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.773,
+     2.933,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.785,
+     2.835,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00781
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.265,
+     2.615,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02223
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.265,
+     2.605,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02223
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.785,
+     3.015,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00781
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.773,
+     2.917,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.78,
+     2.641,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00028
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.345,
+     3.3,
+     0.068
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.19665
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.033,
+     3.3,
+     0.101
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01469
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.389,
+     3.3,
+     0.132
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.18196
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.773,
+     2.63,
+     0.209
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.787,
+     2.63,
+     0.21
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.787,
+     2.63,
+     0.208
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.777,
+     2.63,
+     0.21
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.773,
+     3.22,
+     0.209
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.787,
+     3.22,
+     0.21
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.787,
+     3.22,
+     0.208
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.777,
+     3.22,
+     0.21
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.933,
+     3.3,
+     0.102
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.02073
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.958,
+     3.3,
+     0.208
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00083
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.864,
+     3.3,
+     0.13
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.0084
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.882,
+     3.3,
+     0.204
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00211
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.909,
+     3.3,
+     0.012
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.00232
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.884,
+     3.3,
+     0.117
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01924
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.96,
+     3.3,
+     0.114
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "area": 0.01049
+   }
+  ],
+  "coplanar": [
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.903,
+     2.33,
+     0.155
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.897,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.923,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.913,
+     2.33,
+     0.16
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 3.1,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.91,
+     2.33,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 5.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.769,
+     2.415,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.917,
+     2.33,
+     0.155
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.923,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.897,
+     2.33,
+     0.18
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.907,
+     2.33,
+     0.16
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 3.1,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.91,
+     2.33,
+     0.174
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 5.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     -1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.769,
+     2.415,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 1.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.746,
+     2.348,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 4.6,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.058,
+     2.348,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 134.6,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.585,
+     2.345,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 31.1,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.945,
+     3.299,
+     0.003
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 2.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.92,
+     -0.38
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.88,
+     3.299,
+     0.003
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 1.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.92,
+     -0.38
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.874,
+     3.299,
+     0.003
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 2.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.92,
+     -0.38
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.938,
+     3.299,
+     0.002
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 2.1,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.92,
+     -0.38
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.938,
+     3.298,
+     0.001
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 2.1,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.38,
+     -0.92
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.874,
+     3.297,
+     0.001
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 2.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.38,
+     -0.92
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.88,
+     3.297,
+     0.001
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 1.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.38,
+     -0.92
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.945,
+     3.297,
+     0.001
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0.38,
+    "overlap_cm2": 2.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0.38,
+     -0.92
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.931,
+     3.3,
+     0.096
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 197.9,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.855,
+     3.3,
+     0.093
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 73.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.909,
+     3.3,
+     0.011
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 17.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.954,
+     3.3,
+     0.191
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 4.8,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.878,
+     3.3,
+     0.188
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 12.6,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.887,
+     3.3,
+     0.106
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 185.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.963,
+     3.3,
+     0.102
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 86,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     1,
+     0
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.939,
+     2.935,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 583.9,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.878,
+     2.833,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 382.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.938,
+     3.288,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 15.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.874,
+     3.285,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 16.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.909,
+     3.27,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 55.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.882,
+     3.288,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 15.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.952,
+     3.283,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 16.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.969,
+     2.567,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.899,
+     2.58,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 57.2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.879,
+     2.902,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 533.9,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.949,
+     2.915,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 439.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.945,
+     3.285,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 7.9,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.904,
+     3.281,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 14.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.875,
+     3.285,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 7.9,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.916,
+     3.281,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 14.3,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.988,
+     3.514,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/lead"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 5.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.155,
+     3.513,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/lead"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 60.7,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     1.1,
+     3.513,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/lead"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.5,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.986,
+     3.3,
+     0.005
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.97,
+    "pieces": 59,
+    "min_angle_deg": 16.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.833,
+     3.299,
+     0.002
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.97,
+    "pieces": 59,
+    "min_angle_deg": 16.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.776,
+     2.337,
+     0.127
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 4.96,
+    "pieces": 49,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.84,
+     2.55,
+     0.005
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 4.08,
+    "pieces": 47,
+    "min_angle_deg": 11.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.78,
+     2.4,
+     0.005
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.39,
+    "pieces": 46,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.764,
+     2.4,
+     0.13
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.39,
+    "pieces": 46,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.98,
+     2.551,
+     0.003
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 4.08,
+    "pieces": 46,
+    "min_angle_deg": 11.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.77,
+     2.336,
+     0.004
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.39,
+    "pieces": 45,
+    "min_angle_deg": 22.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.905,
+     2.33,
+     0.191
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.24,
+    "pieces": 42,
+    "min_angle_deg": 23.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.889,
+     2.33,
+     0.17
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.24,
+    "pieces": 42,
+    "min_angle_deg": 23.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.772,
+     2.337,
+     0.002
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.39,
+    "pieces": 41,
+    "min_angle_deg": 22.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.776,
+     2.332,
+     0.108
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 3.28,
+    "pieces": 40,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.778,
+     2.329,
+     0.108
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.25,
+    "pieces": 39,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.778,
+     2.329,
+     0.108
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.25,
+    "pieces": 39,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.776,
+     2.331,
+     0.005
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.46,
+    "pieces": 35,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.776,
+     2.331,
+     0.005
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.46,
+    "pieces": 34,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.88,
+     2.43,
+     0.182
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.21,
+    "pieces": 34,
+    "min_angle_deg": 32
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.887,
+     2.432,
+     0.193
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.21,
+    "pieces": 34,
+    "min_angle_deg": 32
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.909,
+     2.43,
+     0.137
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.21,
+    "pieces": 30,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.908,
+     2.405,
+     0.154
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.1,
+    "pieces": 30,
+    "min_angle_deg": 80
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.912,
+     2.405,
+     0.154
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.1,
+    "pieces": 30,
+    "min_angle_deg": 80
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.927,
+     3.515,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/lead"
+    ],
+    "length_m": 9.59,
+    "pieces": 30,
+    "min_angle_deg": 11.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.908,
+     2.4,
+     0.153
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.11,
+    "pieces": 28,
+    "min_angle_deg": 80
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.898,
+     2.4,
+     0.182
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.11,
+    "pieces": 28,
+    "min_angle_deg": 80
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.891,
+     2.43,
+     0.197
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.21,
+    "pieces": 28,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.928,
+     3.29,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.22,
+    "pieces": 28,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.892,
+     3.29,
+     0
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.22,
+    "pieces": 28,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.776,
+     2.33,
+     0.109
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.15,
+    "pieces": 27,
+    "min_angle_deg": 63.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.775,
+     2.331,
+     0.109
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.15,
+    "pieces": 25,
+    "min_angle_deg": 63.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1,
+     0.61,
+     0.103
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.62,
+    "pieces": 23,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1,
+     2.3,
+     0.102
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.63,
+    "pieces": 23,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.78,
+     0.61,
+     0.103
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.62,
+    "pieces": 23,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.78,
+     2.3,
+     0.102
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.63,
+    "pieces": 23,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.905,
+     2.33,
+     0.191
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.14,
+    "pieces": 14,
+    "min_angle_deg": 23.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.889,
+     2.33,
+     0.17
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.14,
+    "pieces": 14,
+    "min_angle_deg": 23.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.774,
+     2.335,
+     0.075
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 3.44,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.004,
+     2.4,
+     0.012
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.87,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.776,
+     2.326,
+     0.01
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.25,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.776,
+     2.4,
+     0.012
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.87,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.774,
+     2.55,
+     0.017
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 3.33,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1,
+     2.33,
+     0.01
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.84,
+    "pieces": 9,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.776,
+     2.324,
+     0.004
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.25,
+    "pieces": 9,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.78,
+     2.33,
+     0.01
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.84,
+    "pieces": 9,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.986,
+     3.3,
+     0.103
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.73,
+    "pieces": 9,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.834,
+     3.3,
+     0.015
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.73,
+    "pieces": 9,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.889,
+     0.58,
+     0.008
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.88,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.891,
+     0.58,
+     0.008
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.88,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.912,
+     2.43,
+     0.005
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.63,
+    "pieces": 7,
+    "min_angle_deg": 11.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.908,
+     2.43,
+     0.005
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.63,
+    "pieces": 7,
+    "min_angle_deg": 11.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.004,
+     0.06,
+     0.117
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "length_m": 0.89,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.776,
+     0.06,
+     0.117
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/bluestone"
+    ],
+    "length_m": 0.89,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.035,
+     3.3,
+     0.1
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 4.52,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.794,
+     3.211,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.21,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.766,
+     2.933,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 1.21,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.78,
+     2.296,
+     0.075
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.12,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.78,
+     2.298,
+     0.046
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.12,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.794,
+     3.24,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 3.23,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.794,
+     2.61,
+     0.2
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 3.23,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.766,
+     2.63,
+     0.209
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.766,
+     2.63,
+     0.206
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.766,
+     3.22,
+     0.206
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.766,
+     3.22,
+     0.209
+    ],
+    "parts": [
+     "front_classic/paint",
+     "front_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

@@ -1,0 +1,7159 @@
+{
+ "summary": {
+  "triangles": 2412,
+  "vertices_welded": 1234,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 21,
+  "warnings": 404,
+  "counts": {
+   "sliver": 396,
+   "bentflat": 20,
+   "nonmanifold": 8,
+   "backtoback": 93,
+   "coplanar": 1,
+   "seam": 40
+  },
+  "ms": 202
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "door_classic",
+   "slot": "bluestone",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "door_classic",
+   "slot": "paint",
+   "triangles": 1596,
+   "maxDistance": 120
+  },
+  {
+   "name": "door_classic",
+   "slot": "brass",
+   "triangles": 708,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.614,
+     -0.299,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.616,
+     -0.298,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     -0.296,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.619,
+     -0.294,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.614,
+     -0.036,
+     0.339
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.616,
+     -0.164,
+     0.338
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     -0.036,
+     0.336
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.619,
+     -0.164,
+     0.334
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.614,
+     0.099,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.616,
+     0.098,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     0.096,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.619,
+     0.094,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.614,
+     -0.164,
+     0.001
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.616,
+     -0.036,
+     0.002
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.618,
+     -0.164,
+     0.004
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.619,
+     -0.036,
+     0.006
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     -0.299,
+     0.006
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     -0.298,
+     0.004
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     -0.296,
+     0.002
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     -0.294,
+     0.001
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     0.099,
+     0.006
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     0.098,
+     0.004
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     0.096,
+     0.002
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     0.094,
+     0.001
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.619,
+     -0.164,
+     0.006
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     -0.036,
+     0.004
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.616,
+     -0.164,
+     0.002
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.614,
+     -0.036,
+     0.001
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.614,
+     -0.299,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.616,
+     -0.298,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     -0.296,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.619,
+     -0.294,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.614,
+     0.099,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.616,
+     0.098,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     0.096,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.619,
+     0.094,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 53,
+    "longest": 0.324
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.614,
+     -0.164,
+     0.339
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.616,
+     -0.036,
+     0.338
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.618,
+     -0.164,
+     0.336
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.619,
+     -0.036,
+     0.334
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 63,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     -0.299,
+     0.334
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     -0.298,
+     0.336
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     -0.296,
+     0.338
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     -0.294,
+     0.339
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     0.099,
+     0.334
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     0.098,
+     0.336
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.204,
+     0.096,
+     0.338
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.204,
+     0.094,
+     0.339
+    ],
+    "part": "door_classic/bluestone",
+    "aspect": 200,
+    "longest": 1.224
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.566,
+     1.598,
+     0.16
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.567,
+     0.852,
+     0.159
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.569,
+     1.598,
+     0.157
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.57,
+     0.852,
+     0.156
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.566,
+     0.852,
+     0
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.567,
+     1.598,
+     0.001
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.569,
+     0.852,
+     0.003
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.57,
+     1.598,
+     0.004
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.5,
+     0.852,
+     0.004
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.501,
+     1.598,
+     0.003
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.503,
+     0.852,
+     0.001
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.504,
+     1.598,
+     0
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.504,
+     0.852,
+     0.16
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.503,
+     1.598,
+     0.159
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.501,
+     0.852,
+     0.157
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.5,
+     1.598,
+     0.156
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.504,
+     1.598,
+     0.16
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.503,
+     0.852,
+     0.159
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.501,
+     1.598,
+     0.157
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.5,
+     0.852,
+     0.156
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.504,
+     0.852,
+     0
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.503,
+     1.598,
+     0.001
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.501,
+     0.852,
+     0.003
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.5,
+     1.598,
+     0.004
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.57,
+     0.852,
+     0.004
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.569,
+     1.598,
+     0.003
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.567,
+     0.852,
+     0.001
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.566,
+     1.598,
+     0
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.566,
+     0.852,
+     0.16
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.567,
+     1.598,
+     0.159
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.569,
+     0.852,
+     0.157
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.57,
+     1.598,
+     0.156
+    ],
+    "part": "door_classic/paint",
+    "aspect": 585,
+    "longest": 2.24
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.2,
+     0.004
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.201,
+     0.003
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.203,
+     0.001
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.204,
+     0
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.28,
+     0.004
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.279,
+     0.003
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.277,
+     0.001
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.276,
+     0
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.2,
+     0.156
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.201,
+     0.157
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.203,
+     0.159
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.204,
+     0.16
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.28,
+     0.156
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.279,
+     0.157
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.277,
+     0.159
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.276,
+     0.16
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.305,
+     0.044
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.306,
+     0.043
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.308,
+     0.041
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.309,
+     0.04
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.35,
+     0.044
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.349,
+     0.043
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.347,
+     0.041
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.346,
+     0.04
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.305,
+     0.106
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.306,
+     0.107
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.308,
+     0.109
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.309,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.35,
+     0.106
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.349,
+     0.107
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.165,
+     2.347,
+     0.109
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.165,
+     2.346,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 259,
+    "longest": 0.99
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.477,
+     1.495,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.478,
+     0.805,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.479,
+     1.495,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     0.805,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.477,
+     0.805,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.478,
+     1.495,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.479,
+     0.805,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     1.495,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     0.805,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.371,
+     1.495,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.372,
+     0.805,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.373,
+     1.495,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.373,
+     0.805,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.372,
+     1.495,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.371,
+     0.805,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     1.495,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     1.495,
+     0.119
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     0.805,
+     0.106
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     1.495,
+     0.106
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     0.805,
+     0.119
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.373,
+     1.495,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.372,
+     0.805,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.371,
+     1.495,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     0.805,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.373,
+     0.805,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.372,
+     1.495,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.371,
+     0.805,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     1.495,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     0.805,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.479,
+     1.495,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.478,
+     0.805,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.477,
+     1.495,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.477,
+     0.805,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.478,
+     1.495,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.479,
+     0.805,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     1.495,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 677,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     1.495,
+     0.119
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     0.805,
+     0.106
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     1.495,
+     0.106
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     0.805,
+     0.119
+    ],
+    "part": "door_classic/paint",
+    "aspect": 56,
+    "longest": 2.072
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.11,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.111,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.112,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.113,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.3,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.299,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.298,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.297,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.11,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.111,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.112,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.113,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.3,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.299,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.298,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.297,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.84,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.841,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.842,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.843,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.97,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.969,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.968,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.967,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.84,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.841,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.842,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.843,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.97,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.969,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.968,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.967,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.08,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.081,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.082,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.083,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.19,
+     0.093
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.189,
+     0.092
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.188,
+     0.091
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.187,
+     0.09
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.08,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.081,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.082,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.083,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.19,
+     0.132
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.189,
+     0.133
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.188,
+     0.134
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.187,
+     0.135
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.367,
+     0.659,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.368,
+     0.481,
+     0.122
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.369,
+     0.659,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     0.481,
+     0.12
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.367,
+     0.481,
+     0.1
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.368,
+     0.659,
+     0.101
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.369,
+     0.481,
+     0.102
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     0.659,
+     0.103
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.3,
+     0.103
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.301,
+     0.102
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.302,
+     0.101
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.303,
+     0.1
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.84,
+     0.103
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.839,
+     0.102
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.838,
+     0.101
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.837,
+     0.1
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     0.481,
+     0.103
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.369,
+     0.659,
+     0.102
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.368,
+     0.481,
+     0.101
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.367,
+     0.659,
+     0.1
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.367,
+     0.481,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.368,
+     0.659,
+     0.122
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.369,
+     0.481,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     0.659,
+     0.12
+    ],
+    "part": "door_classic/paint",
+    "aspect": 174,
+    "longest": 0.532
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.3,
+     0.12
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.301,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.302,
+     0.122
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.303,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.84,
+     0.12
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.839,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.838,
+     0.122
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.837,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 239,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.3,
+     0.109
+    ],
+    "part": "door_classic/paint",
+    "aspect": 49,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.3,
+     0.114
+    ],
+    "part": "door_classic/paint",
+    "aspect": 49,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.84,
+     0.109
+    ],
+    "part": "door_classic/paint",
+    "aspect": 49,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.84,
+     0.114
+    ],
+    "part": "door_classic/paint",
+    "aspect": 49,
+    "longest": 0.732
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.307,
+     0.635,
+     0.131
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.308,
+     0.505,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.309,
+     0.635,
+     0.129
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.31,
+     0.505,
+     0.128
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.307,
+     0.505,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.308,
+     0.635,
+     0.124
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.309,
+     0.505,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "aspect": 125,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.31,
+     0.635,
+     0.126
+    ],
+    "part": "door_classic/paint",
+    "aspect": 125,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.37,
+     0.126
+    ],
+    "part": "door_classic/paint",
+    "aspect": 194,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.371,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "aspect": 194,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.372,
+     0.124
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.373,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.77,
+     0.126
+    ],
+    "part": "door_classic/paint",
+    "aspect": 194,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.769,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "aspect": 194,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.768,
+     0.124
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.767,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.31,
+     0.505,
+     0.126
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.309,
+     0.635,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "aspect": 125,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.308,
+     0.505,
+     0.124
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.307,
+     0.635,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.307,
+     0.505,
+     0.131
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.308,
+     0.635,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.309,
+     0.505,
+     0.129
+    ],
+    "part": "door_classic/paint",
+    "aspect": 125,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.31,
+     0.635,
+     0.128
+    ],
+    "part": "door_classic/paint",
+    "aspect": 131,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.37,
+     0.128
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.371,
+     0.129
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.372,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.373,
+     0.131
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.77,
+     0.128
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.769,
+     0.129
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.102,
+     0.768,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.102,
+     0.767,
+     0.131
+    ],
+    "part": "door_classic/paint",
+    "aspect": 204,
+    "longest": 0.612
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.97,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.971,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.972,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.972,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.992,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.991,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.99,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.99,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.97,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.971,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.972,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.972,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.992,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.991,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.99,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.99,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.984,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.978,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.984,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     0.978,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.058,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.059,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.06,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.06,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.08,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.079,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.078,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.078,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.058,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.059,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.06,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.06,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.08,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.079,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.078,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.078,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 320,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.072,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.066,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     2.072,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     2.066,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 46,
+    "longest": 0.734
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.368,
+     1.702,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.368,
+     1.348,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.369,
+     1.702,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     1.348,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.368,
+     1.348,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.368,
+     1.702,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.369,
+     1.348,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     1.702,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.348,
+     1.348,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.349,
+     1.702,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     1.348,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     1.702,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     1.348,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.35,
+     1.702,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.349,
+     1.348,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.348,
+     1.702,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     1.702,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     1.348,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.356,
+     1.702,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.362,
+     1.348,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.362,
+     1.702,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.356,
+     1.348,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.348,
+     1.702,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.348,
+     1.348,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     1.702,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     1.348,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.349,
+     1.702,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.348,
+     1.348,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     1.348,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     1.702,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.349,
+     1.348,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.348,
+     1.702,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     1.348,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.369,
+     1.702,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.368,
+     1.348,
+     0.111
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.368,
+     1.702,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.368,
+     1.348,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.368,
+     1.702,
+     0.14
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.369,
+     1.348,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     1.702,
+     0.139
+    ],
+    "part": "door_classic/paint",
+    "aspect": 462,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.348,
+     1.702,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.348,
+     1.348,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.362,
+     1.702,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.356,
+     1.348,
+     0.141
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.356,
+     1.702,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.362,
+     1.348,
+     0.11
+    ],
+    "part": "door_classic/paint",
+    "aspect": 66,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     1.702,
+     0.121
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.37,
+     1.348,
+     0.13
+    ],
+    "part": "door_classic/paint",
+    "aspect": 42,
+    "longest": 1.06
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.88,
+     0.135
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.88,
+     0.134
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.881,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.882,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.93,
+     0.135
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.93,
+     0.134
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.929,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.928,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.88,
+     0.139
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.88,
+     0.14
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.881,
+     0.141
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.882,
+     0.141
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.93,
+     0.139
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.93,
+     0.14
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.929,
+     0.141
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.928,
+     0.141
+    ],
+    "part": "door_classic/brass",
+    "aspect": 193,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.88,
+     0.136
+    ],
+    "part": "door_classic/brass",
+    "aspect": 74,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.88,
+     0.138
+    ],
+    "part": "door_classic/brass",
+    "aspect": 74,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.049,
+     0.93,
+     0.136
+    ],
+    "part": "door_classic/brass",
+    "aspect": 74,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.049,
+     0.93,
+     0.138
+    ],
+    "part": "door_classic/brass",
+    "aspect": 74,
+    "longest": 0.296
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.115,
+     0.135
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.115,
+     0.134
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.116,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.117,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.26,
+     0.135
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.26,
+     0.134
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.259,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.258,
+     0.133
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.115,
+     0.137
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.115,
+     0.138
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.116,
+     0.139
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.117,
+     0.139
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.26,
+     0.137
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.26,
+     0.138
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.259,
+     0.139
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.258,
+     0.139
+    ],
+    "part": "door_classic/brass",
+    "aspect": 598,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.115,
+     0.136
+    ],
+    "part": "door_classic/brass",
+    "aspect": 458,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.115,
+     0.136
+    ],
+    "part": "door_classic/brass",
+    "aspect": 458,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.153,
+     0.26,
+     0.136
+    ],
+    "part": "door_classic/brass",
+    "aspect": 458,
+    "longest": 0.916
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.153,
+     0.26,
+     0.136
+    ],
+    "part": "door_classic/brass",
+    "aspect": 458,
+    "longest": 0.916
+   }
+  ],
+  "bentflat": [
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.204,
+     -0.3,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1983,
+    "region_m2": 0.4
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.204,
+     -0.3,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1983,
+    "region_m2": 0.4
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.204,
+     -0.036,
+     0.34
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.235,
+    "region_m2": 0.47
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.204,
+     -0.164,
+     0.34
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.235,
+    "region_m2": 0.47
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.204,
+     0.1,
+     0.116
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1983,
+    "region_m2": 0.4
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.204,
+     0.1,
+     0.224
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1983,
+    "region_m2": 0.4
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.204,
+     -0.036,
+     0
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.235,
+    "region_m2": 0.47
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.204,
+     -0.164,
+     0
+    ],
+    "part": "door_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.235,
+    "region_m2": 0.47
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.57,
+     1.598,
+     0.105
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.57,
+     0.852,
+     0.055
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.5,
+     1.598,
+     0.055
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.5,
+     0.852,
+     0.105
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.5,
+     1.598,
+     0.105
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.5,
+     0.852,
+     0.055
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.57,
+     1.598,
+     0.055
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.57,
+     0.852,
+     0.105
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.168,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.122,
+     0.659,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.1947,
+    "region_m2": 0.39
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.122,
+     0.481,
+     0.123
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.1947,
+    "region_m2": 0.39
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.122,
+     0.659,
+     0.1
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.1947,
+    "region_m2": 0.39
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.122,
+     0.481,
+     0.1
+    ],
+    "part": "door_classic/paint",
+    "deg": 14.7,
+    "area": 0.1947,
+    "region_m2": 0.39
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     0.114,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.37,
+     2.186,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.37,
+     0.114,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.37,
+     2.186,
+     0.112
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.367,
+     0.992,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.367,
+     0.992,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.367,
+     2.058,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.367,
+     2.058,
+     0.125
+    ],
+    "part": "door_classic/paint",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.525,
+     0.1,
+     0.057
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "area": 0.00432
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.55,
+     0.1,
+     0.082
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "area": 0.0045
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.538,
+     0.1,
+     0.017
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "area": 0.00105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.508,
+     0.1,
+     0.021
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "area": 0.00018
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.549,
+     0.1,
+     0.07
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "area": 0.00327
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.523,
+     0.1,
+     0.095
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "area": 0.00432
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.253,
+     0.1
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00478
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.224,
+     0.075
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00523
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.333,
+     0.085
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.322,
+     0.065
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.241,
+     0.152
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00047
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.253,
+     0.06
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00478
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.224,
+     0.085
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00523
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.333,
+     0.065
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.322,
+     0.085
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00105
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.241,
+     0.008
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00047
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.201,
+     0.095
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00027
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.815,
+     0.106
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.761,
+     0.105
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00014
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.95,
+     0.104
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00036
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.893,
+     0.101
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00136
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     1.929,
+     0.121
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00296
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     1.637,
+     0.116
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00391
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     2.162,
+     0.121
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0018
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     2.111,
+     0.112
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00188
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     2.074,
+     0.124
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     2.066,
+     0.121
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00017
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.247,
+     0.114
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00334
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.156,
+     0.104
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0031
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.687,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0039
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.514,
+     0.108
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00385
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.932,
+     0.122
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.863,
+     0.119
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00089
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.985,
+     0.125
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.978,
+     0.122
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00018
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     1.77,
+     0.128
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00391
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     1.227,
+     0.122
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0083
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.37,
+     2.136,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.201,
+     0.13
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00027
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.95,
+     0.121
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00036
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.893,
+     0.124
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00136
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.984,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00015
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.976,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     1.608,
+     0.12
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.01213
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     1.199,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00681
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     2.162,
+     0.104
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0018
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     2.111,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00188
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     2.072,
+     0.122
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00018
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     2.065,
+     0.125
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.247,
+     0.111
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00334
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.156,
+     0.121
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0031
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.698,
+     0.111
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00398
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.553,
+     0.115
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00398
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.924,
+     0.105
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.863,
+     0.106
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00089
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     1.056,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     1.013,
+     0.114
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.37,
+     2.146,
+     0.094
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.377,
+     0.972,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.379,
+     0.945,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "area": 0.00042
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.38,
+     1.038,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.388,
+     1.013,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "area": 0.00012
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.38,
+     1.019,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.061,
+     0.3,
+     0.107
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00208
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.212,
+     0.3,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00371
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.256,
+     0.3,
+     0.11
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00341
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.084,
+     0.3,
+     0.117
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00178
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.061,
+     0.84,
+     0.107
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00208
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.212,
+     0.84,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00371
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.256,
+     0.84,
+     0.11
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00341
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.084,
+     0.84,
+     0.117
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00178
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.361,
+     0.949,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "area": 0.00031
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.363,
+     0.928,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "area": 0.00009
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.224,
+     0.97,
+     0.115
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.295,
+     0.97,
+     0.121
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00191
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.146,
+     0.97,
+     0.122
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00714
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.119,
+     0.97,
+     0.127
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00283
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.224,
+     2.08,
+     0.115
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.295,
+     2.08,
+     0.121
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00191
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.146,
+     2.08,
+     0.122
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00714
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.119,
+     2.08,
+     0.127
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.00283
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.012,
+     0.701,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.05646
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.22,
+     0.521,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.06357
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.22,
+     0.619,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.06357
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.012,
+     0.439,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.05646
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.355,
+     0.992,
+     0.125
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.363,
+     0.992,
+     0.132
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.363,
+     0.992,
+     0.119
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.355,
+     0.992,
+     0.126
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.355,
+     2.058,
+     0.125
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.363,
+     2.058,
+     0.132
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.363,
+     2.058,
+     0.119
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.355,
+     2.058,
+     0.126
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "area": 0.0002
+   }
+  ],
+  "coplanar": [
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.363,
+     0.976,
+     0.141
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.368,
+     0.993,
+     0.139
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 0.15,
+    "pieces": 66,
+    "min_angle_deg": 25
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.366,
+     0.115,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 3.23,
+    "pieces": 40,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.367,
+     0.97,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 0.07,
+    "pieces": 40,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.373,
+     0.115,
+     0.134
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 0.78,
+    "pieces": 31,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.374,
+     0.26,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 0.78,
+    "pieces": 28,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.148,
+     0.93,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 1.39,
+    "pieces": 28,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.377,
+     1.019,
+     0.167
+    ],
+    "parts": [
+     "door_classic/brass",
+     "door_classic/brass"
+    ],
+    "length_m": 0.05,
+    "pieces": 18,
+    "min_angle_deg": 72.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.371,
+     1.028,
+     0.155
+    ],
+    "parts": [
+     "door_classic/brass",
+     "door_classic/brass"
+    ],
+    "length_m": 0.05,
+    "pieces": 16,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.374,
+     1.043,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 0.11,
+    "pieces": 14,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.24,
+     0.005
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.72,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.24,
+     0.155
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.72,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.905,
+     0.094
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.81,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.905,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.81,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.366,
+     0.3,
+     0.112
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 1.55,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.366,
+     0.84,
+     0.112
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 1.55,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.536,
+     0.1,
+     0.008
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "length_m": 0.41,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.37,
+     1.673,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 2.16,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.37,
+     2.071,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.07,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.987,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.07,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.37,
+     1.907,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 2.16,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.366,
+     0.97,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 1.5,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.366,
+     2.08,
+     0.122
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 1.5,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.345,
+     0.075
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.31,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.345,
+     0.075
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.31,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.755,
+     0.104
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 1.09,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.811,
+     0.119
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 1.09,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.288,
+     0.374,
+     0.123
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 2.01,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.534,
+     0.1,
+     0.008
+    ],
+    "parts": [
+     "door_classic/bluestone",
+     "door_classic/paint"
+    ],
+    "length_m": 0.41,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.983,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.07,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.374,
+     0.968,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 0.13,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.37,
+     2.075,
+     0.131
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.07,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.366,
+     0.954,
+     0.135
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/brass"
+    ],
+    "length_m": 0.11,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.37,
+     0.296,
+     0.096
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.37,
+     2.084,
+     0.112
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.37,
+     0.296,
+     0.129
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.37,
+     2.084,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.351,
+     0.992,
+     0.125
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.03,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.351,
+     0.992,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.03,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.351,
+     2.058,
+     0.113
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.03,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.351,
+     2.058,
+     0.125
+    ],
+    "parts": [
+     "door_classic/paint",
+     "door_classic/paint"
+    ],
+    "length_m": 0.03,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

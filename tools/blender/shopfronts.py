@@ -192,7 +192,7 @@ def front_classic():
         box(P, PAINT, a - 0.02, b + 0.02, 0.0, 0.24, 2.40, 2.43, 0.005, X)
     # head rail (under the fascia) with a bead under it
     box(P, PAINT, -xi, xi, 0.0, 0.13, 2.335, HF, 0.006, X)
-    sweep_x(P, PAINT, [(0.0, 2.33), (0.115, 2.33)] + arc((0.115, 2.345), 0.015, -90, 90, 6)[1:] + [(0.0, 2.36)], -xi, xi)
+    sweep_x(P, PAINT, [(0.0, 2.322), (0.115, 2.322)] + arc((0.115, 2.337), 0.015, -90, 90, 6)[1:] + [(0.0, 2.352)], -xi + 0.004, xi - 0.004)
     # fascia board + its raised frame; the sign panel inside (|x| < 0.80) is where the SDF text box sits
     box(P, PAINT, -H - 0.04, H + 0.04, 0.0, 0.20, HF, 3.30, 0.005, X)
     rect_ring(P, PAINT, -H + 0.2, H - 0.2, HF + 0.04, 3.26, 0.04, 0.20, 0.218, 0.006)
@@ -322,9 +322,9 @@ def door_modern():
 def mullion():
     P = Part("mullion")
     prof = [(-0.032, 0.02), (-0.032, 0.11), (-0.024, 0.13), (-0.01, 0.138), (0.01, 0.138), (0.024, 0.13), (0.032, 0.11), (0.032, 0.02)]
-    sweep_z(P, PAINT, prof, 0.50, 2.34)
-    box(P, PAINT, -0.045, 0.045, 0.02, 0.15, 0.50, 0.56, 0.005, X)                     # its foot block on the sill
-    box(P, PAINT, -0.045, 0.045, 0.02, 0.15, 2.28, 2.34, 0.005, X)                     # its head block
+    sweep_z(P, PAINT, prof, 0.52, 2.32)
+    box(P, PAINT, -0.045, 0.045, 0.025, 0.15, 0.50, 0.56, 0.005, X)                    # its foot block on the sill
+    box(P, PAINT, -0.045, 0.045, 0.025, 0.15, 2.28, 2.34, 0.005, X)                    # its head block
     return P.to_object(smooth_angle=30)
 
 
@@ -398,8 +398,8 @@ def parasol_sq():
     P = Part("parasol_sq")
     S = 1.3                                                                          # half side (2.6 m)
     # base: a cast cross foot with four concrete slabs
-    for r in (0, math.pi / 2):
-        P.add_bm(bm_box(0.9, 0.08, 0.06, 0.008), CAST, X, M((0, 0, 0.03), (0, 0, r + math.pi / 4)))
+    for k, r in enumerate((0, math.pi / 2)):                                         # (the second bar 3 mm higher: no shared top face)
+        P.add_bm(bm_box(0.9, 0.08, 0.06, 0.008), CAST, X, M((0, 0, 0.03 + 0.003 * k), (0, 0, r + math.pi / 4)))
     for k in range(4):
         a = math.pi / 4 + k * math.pi / 2
         P.add_bm(bm_box(0.3, 0.3, 0.05, 0.006), STONE, X, M((0.3 * math.cos(a), 0.3 * math.sin(a), 0.085), (0, 0, a)))
@@ -434,7 +434,7 @@ def parasol_sq():
         if f.normal.z < 0: f.normal_flip()
     # thickness: solidify to 6 mm (both faces drawn)
     bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=0.006)
-    for f in bm.faces: f.smooth = True
+    for f in bm.faces: f.smooth = False
     P.add_bm(bm, CANVAS, (0, 0, 0))
     # valance flaps along the four edges
     for side in range(4):
@@ -446,7 +446,7 @@ def parasol_sq():
         rr = S * (math.sqrt(2) if k % 2 == 0 else 1)
         aa = a + (math.pi / 4 if True else 0)
         ex, ey = rr * math.cos(aa), rr * math.sin(aa)
-        tube(P, WOOD, [(0, 0, top - 0.02), (ex * 0.98, -ey * 0.98, edge_z - 0.015)], 0.009, 6)
+        tube(P, WOOD, [(0, 0, top - 0.06), (ex * 0.97, -ey * 0.97, edge_z - 0.035)], 0.009, 6)
         tube(P, WOOD, [(0, 0, 1.78), (ex * 0.45, -ey * 0.45, (top + edge_z) / 2 - 0.04)], 0.007, 6)
     cyl(P, WOOD, 0, 0, top - 0.04, 0.035, 0.10, 14, 0.008)
     cyl(P, CANVAS, 0, 0, top + 0.02, 0.12, 0.04, 16, 0.0, r2=0.05)                       # the vent cap
@@ -459,8 +459,8 @@ def table_sq():
     box(P, TOP, -0.35, 0.35, -0.35, 0.35, 0.715, 0.735, 0.004, X)
     box(P, CAST, -0.33, 0.33, -0.33, 0.33, 0.69, 0.715, 0.004, X)                       # the steel under-frame
     cyl(P, CAST, 0, 0, 0.06, 0.03, 0.64, 16, 0.004)
-    for r in (0, math.pi / 2):
-        P.add_bm(bm_box(0.62, 0.05, 0.04, 0.008), CAST, X, M((0, 0, 0.03), (0, 0, r + math.pi / 4)))
+    for k, r in enumerate((0, math.pi / 2)):
+        P.add_bm(bm_box(0.62, 0.05, 0.04, 0.008), CAST, X, M((0, 0, 0.03 + 0.003 * k), (0, 0, r + math.pi / 4)))
     for k in range(4):                                                                 # levelling feet (into the ground)
         a = math.pi / 4 + k * math.pi / 2
         cyl(P, RUBBER, 0.29 * math.cos(a), -0.29 * math.sin(a), -0.05, 0.022, 0.06, 12)
@@ -491,7 +491,7 @@ def planter():
     random.seed(4)
     for v in bm.verts:
         p = v.co
-        n = noise.noise(Vector((p.x * 7, p.y * 7, p.z * 7))) * 0.035 + noise.noise(Vector((p.x * 19, p.y * 19, p.z * 19 + 3))) * 0.012
+        n = noise.noise(Vector((p.x * 7, p.y * 7, p.z * 7))) * 0.018 + noise.noise(Vector((p.x * 19, p.y * 19, p.z * 19 + 3))) * 0.005
         v.co = p + p.normalized() * n * 0.0 + Vector((p.x, p.y, p.z * 0.6)).normalized() * n
     bmesh.ops.translate(bm, vec=(0, 0, Hh - 0.04 + 0.31), verts=bm.verts)
     for f in bm.faces: f.smooth = True

@@ -1,0 +1,438 @@
+{
+ "summary": {
+  "triangles": 120,
+  "vertices_welded": 64,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 24,
+  "counts": {
+   "sliver": 24,
+   "backtoback": 4,
+   "seam": 1
+  },
+  "ms": 11
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "riser_modern",
+   "slot": "alu",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "riser_modern",
+   "slot": "rubber",
+   "triangles": 12,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.17,
+     0.002
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.171,
+     0.002
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.172,
+     0.001
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.172,
+     0
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.23,
+     0.002
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.229,
+     0.002
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.228,
+     0.001
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.228,
+     0
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.17,
+     0.108
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.171,
+     0.108
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.172,
+     0.109
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.172,
+     0.11
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.23,
+     0.108
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.229,
+     0.108
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.228,
+     0.109
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.228,
+     0.11
+    ],
+    "part": "riser_modern/alu",
+    "aspect": 868,
+    "longest": 1.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.237,
+     0.06
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 200,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.233,
+     0.06
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 200,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.237,
+     0.09
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 200,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.233,
+     0.09
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 200,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.23,
+     0.07
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 67,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.23,
+     0.08
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 67,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.24,
+     0.07
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 67,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.24,
+     0.08
+    ],
+    "part": "riser_modern/rubber",
+    "aspect": 67,
+    "longest": 2
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.597,
+     0.23,
+     0.063
+    ],
+    "parts": [
+     "riser_modern/alu",
+     "riser_modern/rubber"
+    ],
+    "area": 0.00476
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.741,
+     0.23,
+     0.078
+    ],
+    "parts": [
+     "riser_modern/alu",
+     "riser_modern/rubber"
+    ],
+    "area": 0.01364
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.4,
+     0.23,
+     0.07
+    ],
+    "parts": [
+     "riser_modern/alu",
+     "riser_modern/rubber"
+    ],
+    "area": 0.02515
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.256,
+     0.23,
+     0.085
+    ],
+    "parts": [
+     "riser_modern/alu",
+     "riser_modern/rubber"
+    ],
+    "area": 0.01627
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.997,
+     0.23,
+     0.06
+    ],
+    "parts": [
+     "riser_modern/alu",
+     "riser_modern/rubber"
+    ],
+    "length_m": 4.05,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

@@ -62,7 +62,7 @@ export function loadInteriors(renderer, base = new URL("../../", import.meta.url
  * the material of the street-life window mesh (viewer/streetlife/streetlife.js) when the shops are on; per instance:
  * iWin = (w, h, seed, lit), iWinC = (centre xyz, range), iWinT = (type 0..7, floor below the glass (m), mirror 0/1, 0)
  * night: the city's night value (streetUniforms.night), glow: its glow multiplier, shrink(c): the street life's
- * distance shrink (the quad collapses past its range: no pop, nothing drawn beyond)
+ * distance shrink, the shrunk vertex position (the quad collapses to its centre past its range: no pop)
  */
 export function shopWindowMaterial(I, { night, glow, shrink }) {
   const U = windowUniforms;
@@ -126,7 +126,7 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
   m.specularIntensityNode = U.reflect;
   const mirror = sky.mul(fres).mul(U.mirror).mul(float(1).sub(night.mul(0.85)));
   m.emissiveNode = inside.mul(light).mul(float(1).sub(fres)).add(mirror).mul(glow);
-  m.positionNode = positionLocal.mul(shrink(attribute("iWinC", "vec4")));
+  m.positionNode = shrink(attribute("iWinC", "vec4"));
   m.name = "shops-window";
   m.userData.shared = true;
   return m;

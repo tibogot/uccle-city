@@ -1,0 +1,895 @@
+{
+ "summary": {
+  "triangles": 1004,
+  "vertices_welded": 520,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 6,
+  "warnings": 36,
+  "counts": {
+   "sliver": 36,
+   "backtoback": 6,
+   "coplanar": 6,
+   "seam": 10
+  },
+  "ms": 76
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "blade",
+   "slot": "iron",
+   "triangles": 1004,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.057,
+     -0.145,
+     0.015
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.058,
+     -0.345,
+     0.014
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     -0.145,
+     0.013
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     -0.345,
+     0.012
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.057,
+     -0.345,
+     0
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.058,
+     -0.145,
+     0.001
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.059,
+     -0.345,
+     0.002
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     -0.145,
+     0.003
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     -0.345,
+     0.003
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.059,
+     -0.145,
+     0.002
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.058,
+     -0.345,
+     0.001
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.057,
+     -0.145,
+     0
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.057,
+     -0.345,
+     0.015
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.058,
+     -0.145,
+     0.014
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.059,
+     -0.345,
+     0.013
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     -0.145,
+     0.012
+    ],
+    "part": "blade/iron",
+    "aspect": 197,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     -0.145,
+     0.009
+    ],
+    "part": "blade/iron",
+    "aspect": 86,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.06,
+     -0.345,
+     0.006
+    ],
+    "part": "blade/iron",
+    "aspect": 86,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     -0.145,
+     0.006
+    ],
+    "part": "blade/iron",
+    "aspect": 86,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.06,
+     -0.345,
+     0.009
+    ],
+    "part": "blade/iron",
+    "aspect": 86,
+    "longest": 0.602
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     -0.007,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.013,
+     -0.003,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.003,
+     -0.013,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.007,
+     -0.011,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.007,
+     -0.011,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.003,
+     -0.013,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.013,
+     -0.003,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.011,
+     -0.007,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.011,
+     0.007,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.013,
+     0.003,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.003,
+     0.013,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.007,
+     0.011,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.007,
+     0.011,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.003,
+     0.013,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.013,
+     0.003,
+     0.327
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     0.007,
+     0.653
+    ],
+    "part": "blade/iron",
+    "aspect": 91,
+    "longest": 0.98
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.003,
+     -0.016,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0,
+     -0.025,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.002,
+     -0.019,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.003,
+     -0.476,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0,
+     -0.485,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "area": 0.00006
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.002,
+     -0.479,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "area": 0.0001
+   }
+  ],
+  "coplanar": [
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.008,
+     0.008,
+     0
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.008,
+     0.008,
+     0
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0.008,
+     -0.008,
+     0
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     -0.008,
+     -0.008,
+     0
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 0.4,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0,
+     0.005,
+     0
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   },
+   {
+    "check": "coplanar",
+    "severity": "block",
+    "at": [
+     0,
+     -0.005,
+     0
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "separation_mm": 0,
+    "overlap_cm2": 2,
+    "angle_deg": 0,
+    "maxDistance": 120,
+    "need_mm": 0.92,
+    "sameComponent": false,
+    "normal": [
+     0,
+     0,
+     -1
+    ]
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.004,
+     -0.04,
+     0.253
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.07,
+    "pieces": 40,
+    "min_angle_deg": 30.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.007,
+     -0.011,
+     0.037
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 73.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.01,
+     -0.01,
+     0.979
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.09,
+    "pieces": 30,
+    "min_angle_deg": 44.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.009,
+     -0.452,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.16,
+    "pieces": 25,
+    "min_angle_deg": 41.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.012,
+     -0.005,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.17,
+    "pieces": 24,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.01,
+     -0.01,
+     0.659
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.09,
+    "pieces": 20,
+    "min_angle_deg": 43.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     -0.013,
+     0.246
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.03,
+    "pieces": 14,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     -0.014,
+     0.855
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.03,
+    "pieces": 14,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.003,
+     -0.029,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.06,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.003,
+     -0.489,
+     0.015
+    ],
+    "parts": [
+     "blade/iron",
+     "blade/iron"
+    ],
+    "length_m": 0.06,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

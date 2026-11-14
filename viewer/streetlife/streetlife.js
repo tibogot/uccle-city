@@ -75,6 +75,11 @@ export class TextAtlas {
 
 /** 1 near, 0 past the range c.w (from 75 % of it), by the VIEW camera's distance to the instance centre c.xyz */
 const shrinkAt = (c) => smoothstep(c.w, c.w.mul(0.75), length(c.xyz.sub(lodEye)));
+/** the vertex shrunk toward the instance centre c.xyz. three r187 applies the instance matrix BEFORE positionNode
+ *  (positionLocal there is the INSTANCED position, the tile meshes sit at the origin: world space), so the shrink is
+ *  about the centre, not positionLocal.mul(s) (that slid a far box toward the world origin; found 2026-11-14 with the
+ *  shops' stretch, docs/assets/SHOPS.md) */
+export const shrinkToward = (c) => c.xyz.add(positionLocal.sub(c.xyz).mul(shrinkAt(c)));
 
 // ------------------------------------------------------------------------------------------------ the textured box
 /** unit box centred at 0, uv per face; attribute face: 1 = front (+z), 2 = back (-z, uv mirrored so text reads), 0 = sides */
@@ -108,7 +113,7 @@ function boxMaterial(atlas) {
   const iSize = attribute("iSize", "vec4"), iMisc = attribute("iMisc", "vec4"), iCen = attribute("iCen", "vec4");
   // distance LOD without a pop: past 75 % of its range (iCen.w, ~350 x its middle size) a box shrinks to its centre,
   // sub-pixel by then (no discard: early-z stays on; nothing is drawn of it beyond the range)
-  m.positionNode = positionLocal.mul(shrinkAt(iCen));
+  m.positionNode = shrinkToward(iCen);
   const face = attribute("face", "float"), fu = uv();
   const front = step(0.5, face).mul(step(face, 1.5)), back = step(1.5, face);
   const textFace = max(front, back.mul(step(0.5, iMisc.x))).mul(step(0, iRect.x));
@@ -187,7 +192,7 @@ function windowMaterial() {
   m.specularIntensityNode = float(1);
   m.metalnessNode = float(0);
   m.emissiveNode = r.color.mul(mix(float(0.5), float(0.6), U.night)).mul(r.glow.mul(0.3).add(0.75)).mul(U.glow);
-  m.positionNode = positionLocal.mul(shrinkAt(attribute("iWinC", "vec4")));
+  m.positionNode = shrinkToward(attribute("iWinC", "vec4"));
   m.name = "streetlife-window";
   m.userData.shared = true;
   return m;
@@ -195,7 +200,7 @@ function windowMaterial() {
 
 function glassMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ transparent: true, depthWrite: false, color: 0xcfd8dc, roughness: 0.05, metalness: 0, opacity: 0.16 });
-  m.positionNode = positionLocal.mul(shrinkAt(attribute("iCen", "vec4")));
+  m.positionNode = shrinkToward(attribute("iCen", "vec4"));
   m.name = "streetlife-glass";
   m.userData.shared = true;
   return m;
@@ -295,7 +300,7 @@ export class StreetLife {
       const [kit, I] = await Promise.all([loadShopKit(propFades), loadInteriors(this.renderer)]);
       this.shopKit = kit; this.interiors = I;
       for (const piece of Object.values(kit.pieces)) this.shopPools.push(new ShopPool(piece, kit.mats, this.group));
-      this.winMat = shopWindowMaterial(I, { night: streetUniforms.night, glow: streetUniforms.glow, shrink: shrinkAt });
+      this.winMat = shopWindowMaterial(I, { night: streetUniforms.night, glow: streetUniforms.glow, shrink: shrinkToward });
       this.shopStretch = stretchCheck(kit);
       const g = (sx, sy, sz) => { const b = new THREE.BoxGeometry(sx, sy, sz); b.translate(0, sy / 2, 0); b.userData.shared = true; return b; };
       this.colliderGeo = { table: g(1.75, 0.9, 0.75), parasol: g(0.3, 2.4, 0.3), planter: g(1.06, 0.95, 0.48) };

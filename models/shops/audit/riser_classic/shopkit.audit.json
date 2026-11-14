@@ -1,0 +1,3064 @@
+{
+ "summary": {
+  "triangles": 916,
+  "vertices_welded": 468,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 16,
+  "warnings": 178,
+  "counts": {
+   "sliver": 174,
+   "bentflat": 16,
+   "nonmanifold": 4,
+   "backtoback": 32,
+   "seam": 12
+  },
+  "ms": 70
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "riser_classic",
+   "slot": "bluestone",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "riser_classic",
+   "slot": "paint",
+   "triangles": 808,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.995,
+     -0.062,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.997,
+     -0.178,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     -0.062,
+     0.167
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     -0.178,
+     0.165
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.995,
+     -0.178,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.997,
+     -0.062,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     -0.178,
+     0.003
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     -0.062,
+     0.005
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     -0.299,
+     0.005
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     -0.299,
+     0.003
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     -0.297,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     -0.295,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.059,
+     0.005
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.059,
+     0.003
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.057,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.055,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     -0.178,
+     0.005
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     -0.062,
+     0.003
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.997,
+     -0.178,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.995,
+     -0.062,
+     0.001
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.995,
+     -0.178,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.997,
+     -0.062,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     -0.178,
+     0.167
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     -0.062,
+     0.165
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     -0.299,
+     0.165
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     -0.299,
+     0.167
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     -0.297,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     -0.295,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.059,
+     0.165
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.059,
+     0.167
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.057,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.055,
+     0.169
+    ],
+    "part": "riser_classic/bluestone",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.997,
+     0.325,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.998,
+     0.195,
+     0.139
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     0.325,
+     0.138
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.195,
+     0.137
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.997,
+     0.195,
+     0
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.998,
+     0.325,
+     0.001
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.999,
+     0.195,
+     0.002
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -1,
+     0.325,
+     0.003
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.06,
+     0.003
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.061,
+     0.002
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.062,
+     0.001
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.063,
+     0
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.46,
+     0.003
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.459,
+     0.002
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.458,
+     0.001
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.457,
+     0
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.195,
+     0.003
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     0.325,
+     0.002
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.998,
+     0.195,
+     0.001
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.997,
+     0.325,
+     0
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.997,
+     0.195,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.998,
+     0.325,
+     0.139
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.999,
+     0.195,
+     0.138
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1,
+     0.325,
+     0.137
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 128,
+    "longest": 0.392
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.06,
+     0.137
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.061,
+     0.138
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.062,
+     0.139
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.063,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.46,
+     0.137
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.459,
+     0.138
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.332,
+     0.458,
+     0.139
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.457,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 651,
+    "longest": 1.992
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.12,
+     0.144
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.121,
+     0.143
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.123,
+     0.141
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.124,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.155,
+     0.144
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.154,
+     0.143
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.152,
+     0.141
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.151,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.12,
+     0.152
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.121,
+     0.153
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.123,
+     0.155
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.124,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.155,
+     0.152
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.154,
+     0.153
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.152,
+     0.155
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.151,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.12,
+     0.147
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.12,
+     0.149
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.142,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.133,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.155,
+     0.147
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.155,
+     0.149
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.142,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.133,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.365,
+     0.144
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.366,
+     0.143
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.368,
+     0.141
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.369,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.4,
+     0.144
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.399,
+     0.143
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.397,
+     0.141
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.396,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.365,
+     0.152
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.366,
+     0.153
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.368,
+     0.155
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.369,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.4,
+     0.152
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.399,
+     0.153
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.397,
+     0.155
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.396,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 478,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.365,
+     0.147
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.365,
+     0.149
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.387,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.378,
+     0.156
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.4,
+     0.147
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.4,
+     0.149
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 305,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.305,
+     0.387,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.305,
+     0.378,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 73,
+    "longest": 1.83
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.165,
+     0.144
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.166,
+     0.143
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.168,
+     0.141
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.169,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.355,
+     0.144
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.354,
+     0.143
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.352,
+     0.141
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.351,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.165,
+     0.146
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.166,
+     0.147
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.168,
+     0.149
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.169,
+     0.15
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.355,
+     0.146
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.354,
+     0.147
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.352,
+     0.149
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.351,
+     0.15
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 461,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.165,
+     0.145
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 8651,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.165,
+     0.145
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 8651,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.288,
+     0.355,
+     0.145
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 8651,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.288,
+     0.355,
+     0.145
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 8651,
+    "longest": 1.73
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.5,
+     0.19
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 65,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.502,
+     0.18
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 65,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.493,
+     0.204
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.495,
+     0.202
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.486,
+     0.209
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.489,
+     0.207
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.478,
+     0.209
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.481,
+     0.21
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.47,
+     0.207
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.472,
+     0.208
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.464,
+     0.201
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.465,
+     0.203
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.461,
+     0.193
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.461,
+     0.196
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 231,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.46,
+     0.18
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 133,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.46,
+     0.185
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 133,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.465,
+     0.175
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 250,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.463,
+     0.175
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 250,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.468,
+     0.168
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 200,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.468,
+     0.172
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 200,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.333,
+     0.463,
+     0.165
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 250,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.333,
+     0.465,
+     0.165
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 250,
+    "longest": 2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.516,
+     0.045
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.516,
+     0.043
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.518,
+     0.041
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.52,
+     0.041
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.559,
+     0.045
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.559,
+     0.043
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.557,
+     0.041
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.555,
+     0.041
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.516,
+     0.105
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.516,
+     0.107
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.518,
+     0.109
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.52,
+     0.109
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.559,
+     0.105
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.559,
+     0.107
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.557,
+     0.109
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.555,
+     0.109
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 433,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.543,
+     0.11
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 60,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.532,
+     0.11
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 60,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.331,
+     0.543,
+     0.04
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 60,
+    "longest": 1.988
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.331,
+     0.532,
+     0.04
+    ],
+    "part": "riser_classic/paint",
+    "aspect": 60,
+    "longest": 1.988
+   }
+  ],
+  "bentflat": [
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.331,
+     -0.3,
+     0.059
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.331,
+     -0.3,
+     0.111
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.331,
+     -0.062,
+     0.17
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.3459,
+    "region_m2": 0.69
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.331,
+     -0.178,
+     0.17
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.3459,
+    "region_m2": 0.69
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.331,
+     0.06,
+     0.059
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.331,
+     0.06,
+     0.111
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.1571,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.331,
+     -0.062,
+     0
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.3459,
+    "region_m2": 0.69
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.331,
+     -0.178,
+     0
+    ],
+    "part": "riser_classic/bluestone",
+    "deg": 14.7,
+    "area": 0.3459,
+    "region_m2": 0.69
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.332,
+     0.325,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.3904,
+    "region_m2": 0.78
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.332,
+     0.195,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.3904,
+    "region_m2": 0.78
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.332,
+     0.325,
+     0
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.3904,
+    "region_m2": 0.78
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.332,
+     0.195,
+     0
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.3904,
+    "region_m2": 0.78
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.288,
+     0.29,
+     0.15
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.1559,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.288,
+     0.23,
+     0.15
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.1559,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.288,
+     0.29,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.1559,
+    "region_m2": 0.31
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.288,
+     0.23,
+     0.14
+    ],
+    "part": "riser_classic/paint",
+    "deg": 14.7,
+    "area": 0.1559,
+    "region_m2": 0.31
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.915,
+     0.155,
+     0.148
+    ],
+    "part": "riser_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.915,
+     0.155,
+     0.148
+    ],
+    "part": "riser_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.915,
+     0.365,
+     0.148
+    ],
+    "part": "riser_classic/paint",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.915,
+     0.365,
+     0.148
+    ],
+    "part": "riser_classic/paint",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.06,
+     0.03
+    ],
+    "parts": [
+     "riser_classic/bluestone",
+     "riser_classic/paint"
+    ],
+    "area": 0.0694
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.699,
+     0.06,
+     0.072
+    ],
+    "parts": [
+     "riser_classic/bluestone",
+     "riser_classic/paint"
+    ],
+    "area": 0.08272
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.697,
+     0.06,
+     0.073
+    ],
+    "parts": [
+     "riser_classic/bluestone",
+     "riser_classic/paint"
+    ],
+    "area": 0.05786
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.362,
+     0.06,
+     0.121
+    ],
+    "parts": [
+     "riser_classic/bluestone",
+     "riser_classic/paint"
+    ],
+    "area": 0.04846
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.685,
+     0.148,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00081
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.775,
+     0.136,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0065
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.136,
+     0.32,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0596
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.547,
+     0.237,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.09629
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.118,
+     0.388,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.01637
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.172,
+     0.377,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.02207
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.898,
+     0.293,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.907,
+     0.227,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.172,
+     0.143,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.02207
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.118,
+     0.132,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.01637
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.907,
+     0.293,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.898,
+     0.227,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.547,
+     0.283,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.09629
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.136,
+     0.2,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0596
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.775,
+     0.384,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.0065
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.685,
+     0.372,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00081
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.068,
+     0.46,
+     0.041
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.13114
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.906,
+     0.46,
+     0.009
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00033
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.292,
+     0.46,
+     0.097
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.02033
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.528,
+     0.46,
+     0.074
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.11114
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.896,
+     0.155,
+     0.148
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.909,
+     0.155,
+     0.149
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.909,
+     0.155,
+     0.147
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.896,
+     0.155,
+     0.148
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.896,
+     0.365,
+     0.148
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.909,
+     0.365,
+     0.149
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.909,
+     0.365,
+     0.147
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.896,
+     0.365,
+     0.148
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "area": 0.00007
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.996,
+     0.516,
+     0.097
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 4.14,
+    "pieces": 31,
+    "min_angle_deg": 8.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.994,
+     0.06,
+     0.071
+    ],
+    "parts": [
+     "riser_classic/bluestone",
+     "riser_classic/paint"
+    ],
+    "length_m": 4.24,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.996,
+     0.46,
+     0.07
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 4.25,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.801,
+     0.125,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 3.71,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.661,
+     0.17,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 3.82,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.178,
+     0.37,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 3.71,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.89,
+     0.26,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 0.45,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.915,
+     0.26,
+     0.14
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 0.45,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.89,
+     0.155,
+     0.148
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.89,
+     0.155,
+     0.145
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.89,
+     0.365,
+     0.145
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.89,
+     0.365,
+     0.148
+    ],
+    "parts": [
+     "riser_classic/paint",
+     "riser_classic/paint"
+    ],
+    "length_m": 0.01,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

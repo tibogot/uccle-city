@@ -1,0 +1,4087 @@
+{
+ "summary": {
+  "triangles": 1340,
+  "vertices_welded": 688,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 40,
+  "warnings": 232,
+  "counts": {
+   "sliver": 228,
+   "bentflat": 8,
+   "streak": 32,
+   "nonmanifold": 4,
+   "backtoback": 32,
+   "seam": 13
+  },
+  "ms": 95
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "door_modern",
+   "slot": "bluestone",
+   "triangles": 108,
+   "maxDistance": 120
+  },
+  {
+   "name": "door_modern",
+   "slot": "steel",
+   "triangles": 368,
+   "maxDistance": 120
+  },
+  {
+   "name": "door_modern",
+   "slot": "alu",
+   "triangles": 756,
+   "maxDistance": 120
+  },
+  {
+   "name": "door_modern",
+   "slot": "rubber",
+   "triangles": 108,
+   "maxDistance": 120
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.595,
+     -0.299,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.597,
+     -0.299,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     -0.297,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     -0.295,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.595,
+     -0.062,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.597,
+     -0.178,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     -0.062,
+     0.297
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     -0.178,
+     0.295
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.595,
+     0.059,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.597,
+     0.059,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     0.057,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     0.055,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.595,
+     -0.178,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.597,
+     -0.062,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     -0.178,
+     0.003
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.599,
+     -0.062,
+     0.005
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     -0.299,
+     0.005
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     -0.299,
+     0.003
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     -0.297,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     -0.295,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     0.059,
+     0.005
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     0.059,
+     0.003
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     0.057,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     0.055,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     -0.178,
+     0.005
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     -0.062,
+     0.003
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.597,
+     -0.178,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.595,
+     -0.062,
+     0.001
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.595,
+     -0.299,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.597,
+     -0.299,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     -0.297,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     -0.295,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.595,
+     0.059,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.597,
+     0.059,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     0.057,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     0.055,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 63,
+    "longest": 0.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.595,
+     -0.178,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.597,
+     -0.062,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     -0.178,
+     0.297
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.599,
+     -0.062,
+     0.295
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 76,
+    "longest": 0.348
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     -0.299,
+     0.295
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     -0.299,
+     0.297
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     -0.297,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     -0.295,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     0.059,
+     0.295
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     0.059,
+     0.297
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.198,
+     0.057,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.198,
+     0.055,
+     0.299
+    ],
+    "part": "door_modern/bluestone",
+    "aspect": 259,
+    "longest": 1.188
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.06,
+     0.002
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.06,
+     0.001
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.061,
+     0
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.062,
+     0
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.075,
+     0.002
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.075,
+     0.001
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.074,
+     0
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.073,
+     0
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.06,
+     0.108
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.06,
+     0.109
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.061,
+     0.11
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.062,
+     0.11
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.075,
+     0.108
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.075,
+     0.109
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.074,
+     0.11
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.073,
+     0.11
+    ],
+    "part": "door_modern/steel",
+    "aspect": 651,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.069,
+     0.11
+    ],
+    "part": "door_modern/steel",
+    "aspect": 91,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.066,
+     0.11
+    ],
+    "part": "door_modern/steel",
+    "aspect": 91,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     0.069,
+     0
+    ],
+    "part": "door_modern/steel",
+    "aspect": 91,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     0.066,
+     0
+    ],
+    "part": "door_modern/steel",
+    "aspect": 91,
+    "longest": 0.996
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.342,
+     1.415,
+     0.194
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.344,
+     0.985,
+     0.195
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.336,
+     1.415,
+     0.195
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.338,
+     0.985,
+     0.194
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.348,
+     1.415,
+     0.196
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     0.985,
+     0.198
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.352,
+     1.415,
+     0.2
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.354,
+     0.985,
+     0.202
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.355,
+     1.415,
+     0.206
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.356,
+     0.985,
+     0.208
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.356,
+     1.415,
+     0.212
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.355,
+     0.985,
+     0.214
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.354,
+     1.415,
+     0.218
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.352,
+     0.985,
+     0.22
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.35,
+     1.415,
+     0.222
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.348,
+     0.985,
+     0.224
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.344,
+     1.415,
+     0.225
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.342,
+     0.985,
+     0.226
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.338,
+     1.415,
+     0.226
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.336,
+     0.985,
+     0.225
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     1.415,
+     0.224
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.33,
+     0.985,
+     0.222
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.328,
+     1.415,
+     0.22
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.326,
+     0.985,
+     0.218
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     1.415,
+     0.214
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.324,
+     0.985,
+     0.212
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.324,
+     1.415,
+     0.208
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.325,
+     0.985,
+     0.206
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.326,
+     1.415,
+     0.202
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.328,
+     0.985,
+     0.2
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.33,
+     1.415,
+     0.198
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.332,
+     0.985,
+     0.196
+    ],
+    "part": "door_modern/steel",
+    "aspect": 206,
+    "longest": 1.288
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.553,
+     1.672,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.553,
+     0.868,
+     0.109
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.554,
+     1.672,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.555,
+     0.868,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.553,
+     0.868,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.553,
+     1.672,
+     0.001
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.554,
+     0.868,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.555,
+     1.672,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.5,
+     0.868,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.501,
+     1.672,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.502,
+     0.868,
+     0.001
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.502,
+     1.672,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.502,
+     0.868,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.502,
+     1.672,
+     0.109
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.501,
+     0.868,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.5,
+     1.672,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.519,
+     1.672,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.536,
+     0.868,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.536,
+     1.672,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.519,
+     0.868,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.502,
+     1.672,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.502,
+     0.868,
+     0.109
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.501,
+     1.672,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.5,
+     0.868,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.502,
+     0.868,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.502,
+     1.672,
+     0.001
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.501,
+     0.868,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.5,
+     1.672,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.555,
+     0.868,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.554,
+     1.672,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.553,
+     0.868,
+     0.001
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.553,
+     1.672,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.553,
+     0.868,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.553,
+     1.672,
+     0.109
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.554,
+     0.868,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.555,
+     1.672,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 1051,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.536,
+     1.672,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.519,
+     0.868,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.519,
+     1.672,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.536,
+     0.868,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.414
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.24,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.241,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.242,
+     0.001
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.242,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.3,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.299,
+     0.002
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.298,
+     0.001
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.298,
+     0
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.24,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.241,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.242,
+     0.109
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.242,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.3,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.299,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.166,
+     2.298,
+     0.109
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.166,
+     2.298,
+     0.11
+    ],
+    "part": "door_modern/alu",
+    "aspect": 433,
+    "longest": 0.994
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.478,
+     1.512,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.478,
+     0.798,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.479,
+     1.512,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     0.798,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.478,
+     0.798,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.478,
+     1.512,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.479,
+     0.798,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     1.512,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.41,
+     0.798,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.411,
+     1.512,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.412,
+     0.798,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.412,
+     1.512,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.412,
+     0.798,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.412,
+     1.512,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.411,
+     0.798,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.41,
+     1.512,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     1.512,
+     0.122
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.48,
+     0.798,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.41,
+     1.512,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.41,
+     0.798,
+     0.122
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.412,
+     1.512,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.412,
+     0.798,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.411,
+     1.512,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.41,
+     0.798,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.412,
+     0.798,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.412,
+     1.512,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.411,
+     0.798,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.41,
+     1.512,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     0.798,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.479,
+     1.512,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.478,
+     0.798,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.478,
+     1.512,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.478,
+     0.798,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.478,
+     1.512,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.479,
+     0.798,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     1.512,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 934,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.41,
+     1.512,
+     0.122
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.41,
+     0.798,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     1.512,
+     0.108
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.48,
+     0.798,
+     0.122
+    ],
+    "part": "door_modern/alu",
+    "aspect": 49,
+    "longest": 2.144
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.08,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.081,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.082,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.082,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.2,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.199,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.198,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.198,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.08,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.081,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.082,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.082,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.2,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.199,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     0.198,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     0.198,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.16,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.161,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.162,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.162,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.23,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.229,
+     0.092
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.228,
+     0.091
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.228,
+     0.09
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.16,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.161,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.162,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.162,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.23,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.229,
+     0.138
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.136,
+     2.228,
+     0.139
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.136,
+     2.228,
+     0.14
+    ],
+    "part": "door_modern/alu",
+    "aspect": 355,
+    "longest": 0.814
+   }
+  ],
+  "bentflat": [
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.198,
+     -0.3,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.1711,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.198,
+     -0.3,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.1711,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.198,
+     -0.062,
+     0.3
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.2067,
+    "region_m2": 0.41
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.198,
+     -0.178,
+     0.3
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.2067,
+    "region_m2": 0.41
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.198,
+     0.06,
+     0.102
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.1711,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.198,
+     0.06,
+     0.198
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.1711,
+    "region_m2": 0.34
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     -0.198,
+     -0.062,
+     0
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.2067,
+    "region_m2": 0.41
+   },
+   {
+    "check": "bentflat",
+    "severity": "block",
+    "at": [
+     0.198,
+     -0.178,
+     0
+    ],
+    "part": "door_modern/bluestone",
+    "deg": 14.7,
+    "area": 0.2067,
+    "region_m2": 0.41
+   }
+  ],
+  "streak": [
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.342,
+     1.415,
+     0.194
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.344,
+     0.985,
+     0.195
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.336,
+     1.415,
+     0.195
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.338,
+     0.985,
+     0.194
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.348,
+     1.415,
+     0.196
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.35,
+     0.985,
+     0.198
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.352,
+     1.415,
+     0.2
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.354,
+     0.985,
+     0.202
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.355,
+     1.415,
+     0.206
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.356,
+     0.985,
+     0.208
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.356,
+     1.415,
+     0.212
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.355,
+     0.985,
+     0.214
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.354,
+     1.415,
+     0.218
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.352,
+     0.985,
+     0.22
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.35,
+     1.415,
+     0.222
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.348,
+     0.985,
+     0.224
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.344,
+     1.415,
+     0.225
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.342,
+     0.985,
+     0.226
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.338,
+     1.415,
+     0.226
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.336,
+     0.985,
+     0.225
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.332,
+     1.415,
+     0.224
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.33,
+     0.985,
+     0.222
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.328,
+     1.415,
+     0.22
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.326,
+     0.985,
+     0.218
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.325,
+     1.415,
+     0.214
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.324,
+     0.985,
+     0.212
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.324,
+     1.415,
+     0.208
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.325,
+     0.985,
+     0.206
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.326,
+     1.415,
+     0.202
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.328,
+     0.985,
+     0.2
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.33,
+     1.415,
+     0.198
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   },
+   {
+    "check": "streak",
+    "severity": "block",
+    "at": [
+     0.332,
+     0.985,
+     0.196
+    ],
+    "part": "door_modern/steel",
+    "why": "stretched triangle with diverging corner normals",
+    "spread": 32,
+    "aspect": 206,
+    "longest": 1.29
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.41,
+     0.083,
+     0.115
+    ],
+    "part": "door_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.41,
+     2.227,
+     0.115
+    ],
+    "part": "door_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.41,
+     0.083,
+     0.115
+    ],
+    "part": "door_modern/alu",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.41,
+     2.227,
+     0.115
+    ],
+    "part": "door_modern/alu",
+    "uses": 4
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.202,
+     0.06,
+     0.031
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/steel"
+    ],
+    "area": 0.04
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.202,
+     0.06,
+     0.062
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/steel"
+    ],
+    "area": 0.04881
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.519,
+     0.06,
+     0.04
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "area": 0.0024
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.539,
+     0.06,
+     0.056
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "area": 0.00255
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.531,
+     0.06,
+     0.013
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "area": 0.00066
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.506,
+     0.06,
+     0.016
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.423,
+     0.06,
+     0.074
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/steel"
+    ],
+    "area": 0.00888
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.315,
+     0.06,
+     0.1
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/steel"
+    ],
+    "area": 0.0039
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.539,
+     0.06,
+     0.05
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "area": 0.00174
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.518,
+     0.06,
+     0.067
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "area": 0.00242
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     0.069,
+     0.064
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/alu"
+    ],
+    "area": 0.00057
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     0.066,
+     0.035
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/alu"
+    ],
+    "area": 0.00047
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     0.069,
+     0.046
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/alu"
+    ],
+    "area": 0.00057
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     0.066,
+     0.075
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/alu"
+    ],
+    "area": 0.00047
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.281,
+     0.066
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00235
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.258,
+     0.05
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00278
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.271,
+     0.103
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00046
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.281,
+     0.044
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00235
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.258,
+     0.06
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00278
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.271,
+     0.007
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00046
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.41,
+     0.139,
+     0.094
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.41,
+     2.211,
+     0.126
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00137
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.41,
+     2.179,
+     0.114
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00141
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.41,
+     0.167,
+     0.116
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.0025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.41,
+     0.11,
+     0.105
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00238
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.41,
+     2.202,
+     0.137
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.41,
+     0.139,
+     0.136
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00013
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.41,
+     2.211,
+     0.104
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00137
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.41,
+     2.179,
+     0.116
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00141
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.41,
+     0.167,
+     0.114
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.0025
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.41,
+     0.11,
+     0.125
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00238
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.41,
+     2.202,
+     0.093
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "area": 0.00004
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.34,
+     0.759,
+     0.194
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/steel"
+    ],
+    "length_m": 0.06,
+    "pieces": 30,
+    "min_angle_deg": 56.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.342,
+     1.658,
+     0.194
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/steel"
+    ],
+    "length_m": 0.06,
+    "pieces": 30,
+    "min_angle_deg": 56.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.5,
+     2.27,
+     0.003
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "length_m": 0.53,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.5,
+     2.27,
+     0.107
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "length_m": 0.53,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.019,
+     0.06,
+     0.006
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/steel"
+    ],
+    "length_m": 2.2,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.528,
+     0.06,
+     0.006
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "length_m": 0.3,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.5,
+     0.073,
+     0.003
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/alu"
+    ],
+    "length_m": 0.23,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.5,
+     0.073,
+     0.107
+    ],
+    "parts": [
+     "door_modern/steel",
+     "door_modern/alu"
+    ],
+    "length_m": 0.23,
+    "pieces": 7,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.527,
+     0.06,
+     0.006
+    ],
+    "parts": [
+     "door_modern/bluestone",
+     "door_modern/alu"
+    ],
+    "length_m": 0.3,
+    "pieces": 5,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.41,
+     0.197,
+     0.094
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.41,
+     2.163,
+     0.114
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.41,
+     0.197,
+     0.136
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.41,
+     2.163,
+     0.116
+    ],
+    "parts": [
+     "door_modern/alu",
+     "door_modern/alu"
+    ],
+    "length_m": 0.04,
+    "pieces": 2,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "shopkit.glb"
+}

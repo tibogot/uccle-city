@@ -83,6 +83,7 @@ export function loadShopKit(fades, base = new URL("../../", import.meta.url)) {
       pieces[name] = { name, lods: [lod0, lod1], tris: [lod0.index.count / 3, lod1.index.count / 3], band: P, r: lod0.boundingSphere.radius + 4 };
     }
     const mats = [0, 1].map((lod) => shopMaterial(lod, ao.tex));
+    mats.push(shopMaterial(0, ao.tex, true));                   // [2]: LOD0 drawn to the end (single-LOD pieces)
     return { pieces, mats, aoTex: ao.tex, loadMs: performance.now() - t0 };
   })());
 }
@@ -196,7 +197,7 @@ export const sliceShift = Fn(([p, size]) => {
   return vec3(sx.mul(size.x).mul(0.5), step(size.z, p.y).mul(size.y), 0);
 });
 
-function shopMaterial(lod, aoTex) {
+function shopMaterial(lod, aoTex, single = false) {
   const m = new THREE.MeshStandardNodeMaterial();
   const sl = attribute("slot", "float"), idx = sl.add(0.0005).floor().toInt();
   const A = slotA.element(idx), B = slotB.element(idx);
@@ -227,9 +228,9 @@ function shopMaterial(lod, aoTex) {
   const n = ditherNoise();
   const f = shopFadeRef.fades.fade(band.z);
   const tileKeep = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
-  m.maskNode = (lod === 0 ? keepBand(t, float(1.01), n) : keepBand(e, t, n)).and(tileKeep);
+  m.maskNode = (single ? keepBand(e, float(1.01), n) : lod === 0 ? keepBand(t, float(1.01), n) : keepBand(e, t, n)).and(tileKeep);
   m.maskShadowNode = m.maskNode;
-  m.name = `shops-lod${lod}`;
+  m.name = single ? "shops-single" : `shops-lod${lod}`;
   m.userData.shared = true; m.userData.noFade = true;
   return m;
 }
@@ -257,12 +258,12 @@ export function shopSource(piece, a, slot) {
 export class ShopPool {
   constructor(piece, mats, group, margin) {
     this.piece = piece; this.kind = piece.name; this.meshes = [];
-    const [s, e] = piece.band.lod, live = [[0, s * 1.1], [s * 0.9, e]], spec = [];
-    for (let lod = 0; lod < 2; lod++) {
+    const [s, e] = piece.band.lod, single = !!piece.band.single, live = single ? [[0, e]] : [[0, s * 1.1], [s * 0.9, e]], spec = [];
+    for (let lod = 0; lod < (single ? 1 : 2); lod++) {
       const geo = new THREE.BufferGeometry(), src = piece.lods[lod];
       for (const k of Object.keys(src.attributes)) geo.setAttribute(k, src.attributes[k]);
       geo.setIndex(src.index);
-      const mesh = new THREE.InstancedMesh(geo, mats[lod], 1);
+      const mesh = new THREE.InstancedMesh(geo, single ? mats[2] : mats[lod], 1);
       mesh.castShadow = piece.band.shadow; mesh.receiveShadow = true;
       mesh.name = `shops-${piece.name}-lod${lod}`;
       mesh.boundingSphere = new THREE.Sphere();
