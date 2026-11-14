@@ -5,8 +5,10 @@
 //   - data: data/gardens/<T>.json (tools/gardens/build_gardens.py): runs on the DRAWN sidewalk's back edge (the street
 //     surfaces as viewer/surfaces.js draws them, tools/gardens/drawnSurfaces.mjs) in front of every street face with a
 //     gap >= 1 m, openings at the real doors and driveways
-//   - drawing: the kit (viewer/gardens/gardenKit.js) as ONE pool per piece for the whole city (LOD0-2), re-filled every
-//     2 m of camera travel (or every frame while a tile fades); the hedges are the kit's instanced modules
+//   - drawing: the kit (viewer/gardens/gardenKit.js) as ONE pool per piece for the whole city (LOD0-2), streamed by
+//     viewer/instanceStream.js (a gather every 2 m of travel, time-sliced over frames with a 0.35 ms budget, 6 m of
+//     margin round every LOD band; the tile fade is a uniform per tile slot: a fading tile never re-gathers; docs/perf/
+//     AUDIT.md "instance pools"); the hedges are the kit's instanced modules
 //     (viewer/gardens/gardenHedge.js: 3 body LODs + the near leaf cards, the same pools)
 //   - collisions: per tile, InstancedMeshes of unit boxes named furniture-gardenwall / -gardenpillar / -gardengate (wall +
 //     coping + railing as one sheared box, each hedge module, the pillars, the closed driveway gates), never drawn
@@ -14,17 +16,18 @@
 //     and the collision test read them like the furniture kits' stand-ins. The pedestrian gates are drawn OPEN: the
 //     walker gets in at the door
 import * as THREE from "three/webgpu";
-import { loadGardenKit, GardenPool, PIECES, STRIDE, gardenInstances, standinGeometries } from "./gardenKit.js";
+import { loadGardenKit, GardenPool, PIECES, gardenInstances, gardenSources, gardenFades, standinGeometries } from "./gardenKit.js";
+import { Streamer, MARGIN } from "../instanceStream.js";
 import { wind } from "../foliage/wind.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
-  on: qs.get("gardens") === "1",          // OFF by default again (coordinator, 2026-11-14): driving at 14 m/s the pool gather (1.5-4.7 ms CPU every 2 m) made 31 frames > 33 ms on the return run vs 2 without; ON again once the gather is spread / off the main thread; ?gardens=1 on
+  on: qs.get("gardens") !== "0",          // ON by default again (2026-11-14, claude/gather-perf): the pools stream time-sliced (viewer/instanceStream.js; driving: gardens on = off within noise, docs/perf/AUDIT.md "instance pools"); ?gardens=0 off
   hedges: qs.get("gardenhedges") !== "0",     // round 2: instanced hedge modules through the kit's pools (gardenHedge.js), ?gardenhedges=0 off
   kit: null, pools: [], tiles: new Map(), group: null, stand: null,
-  last: new THREE.Vector3(1e9, 0, 0), dirty: true, gatherMs: 0, tWind: 0,
+  streamer: null, tWind: 0,
   async start({ scene, updaters, log = console.log }) {
     if (!this.on) return null;
     const t0 = performance.now();
@@ -32,7 +35,8 @@ export const cityGardens = {
     this.stand = standinGeometries();
     this.group = new THREE.Group(); this.group.name = "gardens";
     scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new GardenPool(this.kit.pieces[p], this.kit.mats, this.group));
+    for (const p of PIECES) this.pools.push(new GardenPool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    this.streamer = new Streamer({ name: "gardens", pools: this.pools.map((p) => p.stream), fades: gardenFades, budget: 0.35 });
     updaters.push((eye, cam) => this.update(cam));
     window.__gardens = this;
     log(`gardens: on (?gardens=0 off; ?gardenhedges=0 without the hedges), kit ${PIECES.length} pieces, ${Math.round(performance.now() - t0)} ms`);
@@ -61,8 +65,9 @@ export const cityGardens = {
       grp.add(m);
     }
     parent.add(grp);
-    this.tiles.set(name, { name, raw: g.settled, hedgeRuns: doc.hedges || [], groundAt, inst: g.inst, cells: g.cells, group: grp, fade: 1, counts: g.counts, doc: { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length, hedges: doc.hedges.length } });
-    this.dirty = true;
+    let srcs = null;
+    this.streamer.addTile(name, grp, (slot) => (srcs = gardenSources(g.inst, slot)));
+    this.tiles.set(name, { name, raw: g.settled, hedgeRuns: doc.hedges || [], groundAt, srcs, group: grp, counts: g.counts, doc: { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length, hedges: doc.hedges.length } });
     return { ...g.counts, ms: Math.round(performance.now() - t0) };
   },
   removeTile(name) {
@@ -71,28 +76,14 @@ export const cityGardens = {
     t.group.removeFromParent();
     t.group.traverse((o) => { if (o.isInstancedMesh) o.dispose?.(); });
     this.tiles.delete(name);
-    this.dirty = true;
+    this.streamer.removeTile(name);
   },
   update(camera) {
     if (!this.on || !this.kit) return;
-    const c = camera.position;
-    let fading = false;
-    for (const t of this.tiles.values()) {
-      const f = t.group.userData.fade ?? t.group.parent?.userData.fade ?? 1;
-      if (f !== t.fade) { t.fade = f; fading = true; }
-    }
     if (this.hedges && qs.get("grass") !== "1") {          // the leaf cards' flutter (?grass=1: the grass field steps the shared wind)
       const now = performance.now(); wind.update(Math.min(0.1, (now - (this.tWind || now)) / 1000)); this.tWind = now;
     }
-    if (!this.dirty && !fading && c.distanceToSquared(this.last) < 4) return;
-    const t0 = performance.now();
-    const tiles = [];
-    for (const t of this.tiles.values()) {
-      if (t.group.parent && t.group.parent.visible !== false) tiles.push(t);
-    }
-    for (const p of this.pools) p.gather(tiles, c);
-    this.last.copy(c); this.dirty = false;
-    this.gatherMs = performance.now() - t0;
+    this.streamer.update(camera);
   },
   /** JOINS check (HANDOFF: no floating edge where a model meets the ground) against the drawn ground of a tile:
    *  every wall / railing segment sampled every 0.5 m on both faces, every pillar at its 4 corners; floating = the
@@ -125,9 +116,9 @@ export const cityGardens = {
     }
     // the hedge modules (gardenHedge.js): the body's foot (12 % of its height under the base line) against the lower
     // of the hedge's two faces, every 0.5 m
-    const H = t.inst.hedge;
+    const H = t.srcs?.hedge?.cols.instanceMatrix;             // (the streaming source's matrices, stride 16)
     out.hedgeModules = 0; out.hedgeFloating = 0; out.hedgeMaxFloat = 0;
-    if (H) for (let o = 0; o < H.length; o += STRIDE) {
+    if (H) for (let o = 0; o < H.length; o += 16) {
       const x0 = H[o + 12], y0 = H[o + 13], z0 = H[o + 14], dx = H[o], dy = H[o + 1], dz = H[o + 2], h = H[o + 5];
       const wx = H[o + 8] / 2, wz = H[o + 10] / 2, L = Math.hypot(dx, dz), n = Math.max(2, Math.ceil(L / 0.5) + 1);
       out.hedgeModules++;
@@ -148,6 +139,6 @@ export const cityGardens = {
     let tris = 0;
     for (const p of this.pools) p.meshes.forEach((m, k) => { if (m.visible) tris += m.count * p.piece.tris[k]; });
     return { tiles: this.tiles.size, instances: n, drawn: this.pools.reduce((s, p) => s + p.drawn, 0), tris,
-      live: Object.fromEntries(this.pools.map((p) => [p.piece.name, p.instances])), gatherMs: +(this.gatherMs || 0).toFixed(2) };
+      live: Object.fromEntries(this.pools.map((p) => [p.piece.name, p.instances])), stream: { ...this.streamer.stats } };
   },
 };

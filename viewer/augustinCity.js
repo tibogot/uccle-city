@@ -10,6 +10,7 @@
 import * as THREE from "three/webgpu";
 import { loadAugustin, AU_LODS, setLodFades } from "./augustinModel.js";
 import { SMOOTH, fadeProxies } from "./lodFade.js";
+import { liteShown } from "./liteShown.js";
 
 export async function addAugustin({ scene, updaters, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -37,7 +38,7 @@ export async function addAugustin({ scene, updaters, world, manifest, log, compi
     let n = 0, home = false;
     const state = { shown: [false, false, false], fades: [1, 1, 1], d: 0, home: false };
     updaters.push((camPos) => {
-      if (n++ % 30 === 0) home = !!window.__horizon || homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+      if (n++ % 30 === 0) home = !!window.__horizon || homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
       root.visible = home; state.home = home;
       if (!home) return;
       const d = m.distance(camPos);

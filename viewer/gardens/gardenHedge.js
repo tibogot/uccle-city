@@ -29,6 +29,10 @@ import { noiseAt } from "../foliage/noise.js";
 import { leafCard } from "../foliage/cards.js";
 import { bumpNormal } from "../tslkit.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
+import { FadeSlots } from "../instanceStream.js";
+
+/** the gardens' tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
+export const gardenFades = new FadeSlots();
 
 // species (the foliage hedges' palette, viewer/foliage/hedges.js SP): summer, winter (sRGB), card size (m), lumps (m),
 // gloss, holds (marcescence: beech keeps its brown leaves all winter)
@@ -175,13 +179,13 @@ function leafColour(spi) {
   const winterAmt = select(holds.greaterThan(0.01), S.beechHold.mul(holds).add(S.autumn.mul(0.6).mul(holds)).clamp(0, 1), float(1).sub(S.leaf).mul(0.5));
   return mix(vec3(uSummer.element(spi)), vec3(uWinter.element(spi)), winterAmt);
 }
-/** the kit's LOD keep (gardenKit.js lodKeep): the per-pixel band hand-over + the tile fade (iBand.w); only = a one-LOD
+/** the kit's LOD keep (gardenKit.js lodKeep): the per-pixel band hand-over + the tile fade (slot iBand.w); only = a one-LOD
  *  piece (kept to its end band) */
 function keep(lod, only = false) {
   const band = attribute("iBand", "vec4"), n = ditherNoise();
   const d = length(positionWorld.sub(lodEye));
   const t1 = smoothstep(band.x.mul(0.9), band.x.mul(1.1), d), t2 = smoothstep(band.y.mul(0.9), band.y.mul(1.1), d), e = smoothstep(band.z.mul(0.85), band.z, d);
-  const f = band.w;
+  const f = gardenFades.fade(band.w);
   const tile = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
   const k = only ? keepBand(e, float(1.01), n) : lod === 0 ? keepBand(t1, float(1.01), n) : lod === 1 ? keepBand(t2, t1, n) : keepBand(e, t2, n);
   return k.and(tile);
@@ -210,7 +214,10 @@ export function hedgeMaterials() {
     }
     const vu = varying(u, "v_hU");
     const leafC = leafColour(I.spi);
-    const n1 = noiseAt(vu, 1 / 2.2).b, n2 = noiseAt(vu, 1 / 0.55).a, n3 = noiseAt(vu.mul(1.3).add(5.1), 1 / 0.16).a;
+    // (the fine-variation channel A carries octaves down to 1/64 of a tile: at 1/0.55 and 1/0.16 m that is 9 and 2.5 mm,
+    // a pixel-sized grain that read as SPECKLE close up and crawled at the mip hand-overs when moving; a mip bias of 1.5
+    // drops that last octave: leaf-sized clumps, no grain)
+    const n1 = noiseAt(vu, 1 / 2.2).b, n2 = noiseAt(vu, 1 / 0.55).bias(1.5).a, n3 = noiseAt(vu.mul(1.3).add(5.1), 1 / 0.16).bias(1.5).a;
     const clumps = smoothstep(0.25, 0.75, n1);
     const leaves = n2.mul(0.5).add(n3.mul(0.5));
     const crev = smoothstep(0.15, 0.55, leaves);

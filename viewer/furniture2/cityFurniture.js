@@ -4,8 +4,9 @@
 //
 //   - data: data/furniture/<T>.json (tools/furniture/build_furniture.py): the OSM benches and bike parkings on the
 //     measured sidewalk (hoop rows, parking.brussels boxes), the bins by rule, the glass banks at the street life's sites
-//   - drawing: the kit (viewer/furniture2/furnitureKit.js) as ONE pool per piece for the whole city (LOD0-2), re-filled
-//     every 2 m of camera travel (or every frame while a tile fades) with the loaded tiles' instances
+//   - drawing: the kit (viewer/furniture2/furnitureKit.js) as ONE pool per piece for the whole city (LOD0-2), streamed
+//     by viewer/instanceStream.js (a gather every 2 m of travel, time-sliced, 6 m margin round the bands; the tile fade
+//     is a uniform per tile slot: a fading tile never re-gathers)
 //   - collisions: per tile, an InstancedMesh per piece named like the furniture the collision code reads
 //     (furniture-bench / furniture-bikes / furniture-bikebox / furniture-bin / furniture-glassbank), with LOD1's
 //     triangles at the same matrices, never drawn (visible = false): the car (viewer/drive featureColliders), the walker
@@ -13,7 +14,8 @@
 //   - lamps: the procedural lamps (viewer/lamps.js) keep clear of the furniture (keepLampsClear: slid along the kerb or
 //     dropped); parked cars (viewer/cars.js) leave the bike boxes' parking spaces (keepCarsClear)
 import * as THREE from "three/webgpu";
-import { loadFurnitureKit, FurniturePool, PIECES } from "./furnitureKit.js";
+import { loadFurnitureKit, FurniturePool, PIECES, furnitureSource, furnitureFades } from "./furnitureKit.js";
+import { Streamer, MARGIN } from "../instanceStream.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/furniture/", import.meta.url);
@@ -58,14 +60,15 @@ function blockedBy(inst, x, z, pad) {
 export const cityFurniture = {
   on: qs.get("furniture") !== "old",
   kit: null, pools: [], tiles: new Map(), group: null,
-  last: new THREE.Vector3(1e9, 0, 0), dirty: true, stats: { lampsMoved: 0, lampsDropped: 0, carsDropped: 0 },
+  streamer: null, stats: { lampsMoved: 0, lampsDropped: 0, carsDropped: 0 },
   async start({ scene, updaters, log = console.log }) {
     if (!this.on) return null;
     const t0 = performance.now();
     try { this.kit = await loadFurnitureKit(); } catch (e) { log(`furniture2: kit failed (${e.message}), ?furniture=old`); this.on = false; return null; }
     this.group = new THREE.Group(); this.group.name = "furniture2";
     scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new FurniturePool(this.kit.pieces[p], this.kit.mats, this.group));
+    for (const p of PIECES) this.pools.push(new FurniturePool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    this.streamer = new Streamer({ name: "furniture2", pools: this.pools.map((p) => p.stream), fades: furnitureFades, budget: 0.15 });
     updaters.push((eye, cam) => this.update(cam));
     window.__furniture2 = this;
     log(`furniture2: on (?furniture=old for the placeholders), kit ${PIECES.map((p) => `${p} ${this.kit.pieces[p].tris.join("/")}`).join(", ")} tris, ${Math.round(performance.now() - t0)} ms`);
@@ -124,8 +127,8 @@ export const cityFurniture = {
       g.add(m);
     }
     parent.add(g);
-    this.tiles.set(name, { name, inst, group: g, fade: 1, counts });
-    this.dirty = true;
+    this.tiles.set(name, { name, inst, group: g, counts });
+    this.streamer.addTile(name, g, (slot) => Object.fromEntries(PIECES.filter((k) => inst[k]).map((k) => [k, furnitureSource(this.kit.pieces[k], inst[k], slot)])));
     return counts;
   },
   removeTile(name) {
@@ -134,27 +137,15 @@ export const cityFurniture = {
     t.group.removeFromParent();
     for (const m of t.group.children) m.dispose?.();
     this.tiles.delete(name);
-    this.dirty = true;
+    this.streamer.removeTile(name);
   },
   update(camera) {
     if (!this.on || !this.kit) return;
-    const c = camera.position;
-    let fading = false;
-    for (const t of this.tiles.values()) {
-      const f = t.group.userData.fade ?? t.group.parent?.userData.fade ?? 1;
-      if (f !== t.fade) { t.fade = f; fading = true; }
-    }
-    if (!this.dirty && !fading && c.distanceToSquared(this.last) < 4) return;
-    const t0 = performance.now();
-    const tiles = [];
-    for (const t of this.tiles.values()) if (t.group.parent && t.group.parent.visible !== false) tiles.push(t);
-    for (const p of this.pools) p.gather(tiles, c);
-    this.last.copy(c); this.dirty = false;
-    this.gatherMs = performance.now() - t0;
+    this.streamer.update(camera);
   },
   report() {
     const n = Object.fromEntries(PIECES.map((p) => [p, 0]));
     for (const t of this.tiles.values()) for (const k of PIECES) n[k] += t.counts[k] || 0;
-    return { tiles: this.tiles.size, instances: n, drawn: this.pools.reduce((s, p) => s + p.drawn, 0), gatherMs: +(this.gatherMs || 0).toFixed(2), ...this.stats };
+    return { tiles: this.tiles.size, instances: n, drawn: this.pools.reduce((s, p) => s + p.drawn, 0), stream: { ...this.streamer.stats }, ...this.stats };
   },
 };

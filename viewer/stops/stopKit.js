@@ -9,7 +9,7 @@
 //   draws    per piece and LOD ONE opaque draw (every slot in one material: a per-vertex slot index into a palette),
 //            + the posters (one draw, the atlas) + the glass (one see-through draw). Shared materials: 3 opaque LODs,
 //            poster, glass: 5 pipelines for every stop, shelter and panel of the city.
-//   LOD hand-over: per instance band (iBand: switch 0-1, switch 1-2, end, the tile's fade) and the per-pixel dither of
+//   LOD hand-over: per instance band (iBand: switch 0-1, switch 1-2, end, the tile's fade slot) and the per-pixel dither of
 //            viewer/lodFade.js (outgoing keeps n >= t, incoming n < t, same noise in the shadow pass: no pop, no shadow
 //            snap); beyond the end the last LOD dithers out.
 //   night    the poster faces, the poster case's light margin and the roof LED strip glow through their emissive slot,
@@ -21,6 +21,10 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
+import { FadeSlots, StreamPool, sourceFromYaw, MARGIN } from "../instanceStream.js";
+
+/** the stops' tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
+export const stopFades = new FadeSlots();
 import { env } from "../lighting.js";
 
 /** slot palette (linear rgb, roughness, metalness, emissive at night, emissive by day) - by NAME, from the Blender slots */
@@ -199,11 +203,11 @@ function standin(lod1, glass) {
 // ------------------------------------------------------------------------------------------------ materials
 const slotA = uniformArray(SLOTS.map((s) => new THREE.Vector4(s[1][0], s[1][1], s[1][2], s[2])), "vec4");
 const slotB = uniformArray(SLOTS.map((s) => new THREE.Vector4(s[3], s[4], s[5], 0)), "vec4");
-/** the LOD's dither keep (iBand = switch01, switch12, end, tile fade), lodFade.js conventions */
+/** the LOD's dither keep (iBand = switch01, switch12, end, tile slot), lodFade.js conventions */
 function lodKeep(lod, band, n = ditherNoise()) {
   const d = length(positionWorld.sub(lodEye));
   const t1 = smoothstep(band.x.mul(0.9), band.x.mul(1.1), d), t2 = smoothstep(band.y.mul(0.9), band.y.mul(1.1), d), e = smoothstep(band.z.mul(0.85), band.z, d);
-  const f = band.w;
+  const f = stopFades.fade(band.w);
   const tile = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
   const k = lod === 0 ? keepBand(t1, float(1.01), n) : lod === 1 ? keepBand(t2, t1, n) : lod === 2 ? keepBand(e, t2, n) : keepBand(e, float(1.01), n);
   return k.and(tile);
@@ -224,7 +228,7 @@ function materials(aoTex, posterTex) {
     m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
     m.maskShadowNode = m.maskNode;
     m.name = `stops-lod${lod}`;
-    m.userData.shared = true; m.userData.noFade = true;           // (the tile fade rides in iBand.w)
+    m.userData.shared = true; m.userData.noFade = true;           // (the tile fade: its slot rides in iBand.w)
     return m;
   });
   // posters: u 0..1 face A (iPost.x), 1..2 face B (iPost.y); the atlas cell by index; glossy (behind glass); backlit
@@ -247,7 +251,7 @@ function materials(aoTex, posterTex) {
   const glass = new THREE.MeshStandardNodeMaterial({ transparent: true, depthWrite: false, roughness: 0.04, metalness: 0 });
   {
     const band = attribute("iBand", "vec4"), d = length(positionWorld.sub(lodEye));
-    const f = band.w, tileA = select(f.greaterThan(1.5), float(3).sub(f), f.min(1));
+    const f = stopFades.fade(band.w), tileA = select(f.greaterThan(1.5), float(3).sub(f), f.min(1));
     glass.colorNode = vec3(0.62, 0.68, 0.7);
     glass.opacityNode = float(0.16).mul(smoothstep(band.z, band.z.mul(0.7), d)).mul(tileA);
     glass.name = "stops-glass";
@@ -260,75 +264,55 @@ function materials(aoTex, posterTex) {
 }
 
 // ------------------------------------------------------------------------------------------------ the pools
+/** a tile's instance array of one piece (x y z yaw posterA posterB 0 0) as a streaming source (viewer/instanceStream.js):
+ *  matrix, iBand (bands + the tile slot), iBandGlass (the glass's end), iPost */
+export function stopSource(piece, a, slot) {
+  const b = piece.band, [s1, s2, end] = b.lod;
+  return sourceFromYaw(a, 8, piece.lods[0].boundingSphere.radius, {
+    iBand: (o, v) => { v[0] = s1; v[1] = s2; v[2] = end; v[3] = slot; },
+    iBandGlass: (o, v) => { v[0] = s1; v[1] = s2; v[2] = b.glass || 0; v[3] = slot; },
+    iPost: (o, v) => { v[0] = a[o + 4]; v[1] = a[o + 5]; },
+  });
+}
+
 /** ONE pool per piece for the whole city (like the street life's PropPool): LOD0..2 + poster + glass instanced meshes,
- *  re-filled from the loaded tiles' instances near the camera. Static buffers (needsUpdate + update ranges over the
- *  live count, never DynamicDrawUsage); a mesh with nothing to draw is not visible (count 0 still costs a draw). */
+ *  streamed from the loaded tiles' sources near the camera (viewer/instanceStream.js StreamPool: static buffers, update
+ *  ranges over the live count, never DynamicDrawUsage; a mesh with nothing to draw is not visible: count 0 still costs
+ *  a draw). margin: the distance (m) each mesh holds beyond its band (the streamer's hysteresis). */
 export class StopPool {
-  constructor(piece, mats, group) {
-    this.piece = piece; this.cap = 0; this.meshes = [];
-    const mk = (geo, mat, name, shadow) => {
+  constructor(piece, mats, group, margin = MARGIN) {
+    this.piece = piece; this.meshes = [];
+    const [s1, s2, end] = piece.band.lod, spec = [];
+    const mk = (geo, mat, name, shadow, l0, l1, band = "iBand") => {
       const g = new THREE.BufferGeometry();
       for (const k of Object.keys(geo.attributes)) g.setAttribute(k, geo.attributes[k]);
       g.setIndex(geo.index);
       const m = new THREE.InstancedMesh(g, mat, 1);
-      m.count = 0; m.visible = false; m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = true;
+      m.receiveShadow = true; m.castShadow = shadow; m.frustumCulled = true;
       m.boundingSphere = new THREE.Sphere(); m.name = `stops-${piece.name}-${name}`;
       group.add(m); this.meshes.push(m);
+      spec.push({ mesh: m, l0, l1, attrs: [["instanceMatrix", "instanceMatrix", 16], ["iBand", band, 4], ["iPost", "iPost", 4]] });
       return m;
     };
     const sh = piece.band.shadow;
-    this.lod = piece.lods.map((g, k) => mk(g, mats.opaque[k], `lod${k}`, sh));
-    this.poster = piece.poster ? mk(piece.poster, mats.poster, "poster", false) : null;
-    this.glass = piece.glass && piece.band.glass > 0 ? mk(piece.glass, mats.glass, "glass", false) : null;
+    // what the shaders may draw (lodKeep's smoothstep windows; the poster to the end; the glass to its own end)
+    const live = [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, end]];
+    this.lod = piece.lods.map((g, k) => mk(g, mats.opaque[k], `lod${k}`, sh, live[k][0], live[k][1]));
+    this.poster = piece.poster ? mk(piece.poster, mats.poster, "poster", false, 0, end) : null;
+    this.glass = piece.glass && piece.band.glass > 0 ? mk(piece.glass, mats.glass, "glass", false, 0, piece.band.glass, "iBandGlass") : null;
     if (this.glass) this.glass.renderOrder = 2;
-    this.r = piece.lods[0].boundingSphere.radius;
-    this.grow(32);
+    this.stream = new StreamPool(piece.name, spec, piece.lods[0].boundingSphere.radius, margin);
   }
-  grow(n) {
-    if (n <= this.cap) return;
-    this.cap = Math.max(n, this.cap * 2);
-    for (const m of this.meshes) {
-      m.instanceMatrix = new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 16), 16);
-      m.geometry.setAttribute("iBand", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
-      m.geometry.setAttribute("iPost", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
+  /** the labs: a synchronous gather of tiles [{ inst: { <piece>: Float32Array stride 8 } }] (fade 1: slot 0) round c */
+  gather(tiles, c) {
+    const srcs = [], k = this.piece.name;
+    for (const t of tiles) {
+      const a = t.inst[k]; if (!a) continue;
+      t.__src ||= {};
+      srcs.push({ src: (t.__src[k] ||= stopSource(this.piece, a, 0)) });
     }
-  }
-  /** tiles: [{ inst: { <piece>: Float32Array(x y z yaw posterA posterB 0 0) }, fade }]; c = the camera position */
-  gather(tiles, c, margin = 4) {
-    const b = this.piece.band, [s1, s2, end] = b.lod, kind = this.piece.name;
-    let total = 0;
-    for (const t of tiles) total += (t.inst[kind]?.length || 0) / 8;
-    this.grow(total);
-    const lims = [[0, s1 * 1.1 + margin], [s1 * 0.9 - margin, s2 * 1.1 + margin], [s2 * 0.9 - margin, end + margin]];
-    const fill = (m, d0, d1) => {
-      if (!m) return;
-      const M = m.instanceMatrix.array, B = m.geometry.attributes.iBand.array, Pp = m.geometry.attributes.iPost.array;
-      let n = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-      for (const t of tiles) {
-        const a = t.inst[kind]; if (!a) continue;
-        for (let o = 0; o < a.length; o += 8) {
-          const x = a[o], y = a[o + 1], z = a[o + 2], d = Math.hypot(x - c.x, y - c.y, z - c.z);
-          if (d < d0 || d > d1) continue;
-          const yaw = a[o + 3], cs = Math.cos(yaw), sn = Math.sin(yaw), k = n * 16;
-          M[k] = cs; M[k + 1] = 0; M[k + 2] = -sn; M[k + 3] = 0; M[k + 4] = 0; M[k + 5] = 1; M[k + 6] = 0; M[k + 7] = 0;
-          M[k + 8] = sn; M[k + 9] = 0; M[k + 10] = cs; M[k + 11] = 0; M[k + 12] = x; M[k + 13] = y; M[k + 14] = z; M[k + 15] = 1;
-          B[n * 4] = s1; B[n * 4 + 1] = s2; B[n * 4 + 2] = m === this.glass ? b.glass : end; B[n * 4 + 3] = t.fade;
-          Pp[n * 4] = a[o + 4]; Pp[n * 4 + 1] = a[o + 5]; Pp[n * 4 + 2] = 0; Pp[n * 4 + 3] = 0;
-          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
-          n++;
-        }
-      }
-      m.count = n; m.visible = n > 0;
-      if (!n) return;
-      m.boundingSphere.center.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-      m.boundingSphere.radius = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 + this.r;
-      for (const [att, w] of [[m.instanceMatrix, 16], [m.geometry.attributes.iBand, 4], [m.geometry.attributes.iPost, 4]]) {
-        att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;
-      }
-    };
-    this.lod.forEach((m, k) => fill(m, Math.max(0, lims[k][0]), lims[k][1]));
-    fill(this.poster, 0, end + margin);
-    fill(this.glass, 0, b.glass + margin);
+    const it = this.stream.gather(srcs, c, () => false);
+    while (!it.next().done);
   }
   get drawn() { return this.meshes.filter((m) => m.visible).length; }
 }

@@ -266,3 +266,91 @@ additions off (`?stops=old&furniture=old&bridges2=0&augustin=0&russian=0&rosaire
 Verdict: the night's content (stops, furniture, six rail bridges, three churches, rail fences) costs ~0-0.5 ms where it is
 seen; every view stays under 13 ms p50 / 15 ms p95 (60 fps on the RTX 4050 laptop). Not measured here: front gardens
 (off by default), grass (opt-in, ~0 ms measured), horizon (+1.3 ms from 500 m, opt-in).
+
+## Step 9: driving stutter from the city-wide instance pools (2026-11-14, branch claude/gather-perf)
+
+The trigger: driving the camera at 14 m/s along Avenue Alphonse XIII / Boulenger (I6), the front gardens made 31 frames
+> 33 ms vs 2 without (coordinator). Their pools re-gathered 1.5-4.7 ms of main-thread CPU every 2 m of travel, and
+EVERY FRAME while any tile faded (the tile fade rode in each instance's iBand.w). The stops, furniture 2 and street-life
+pools were copies of the same code; the façade kit re-bucketed every frame of a tile's 0.9 s fade too.
+
+**Machine: RED** (`tools/perf/preflight.ps1`: another agent's city tab rendering, GPU 72 % busy at rest, 0.6 GB free).
+Frames > 33 ms are therefore mostly GPU / vsync misses of the shared GPU (the same build and URL gave 23 and 501 in two
+runs); the reliable numbers are the main-thread ones (the pools' own cost per frame, the main loop's CPU per frame).
+
+### The harness: `debug/driveStutter.js`
+`D.start({ repeats: 3, pops: true })` then `D.status()` (or `await D.run(...)`): the camera along a fixed street path
+(default the coordinator's (1470, 900) -> (1434, 640), 262 m; `stjob` = the Saint-Job route) at 14 m/s, eye height
+(walk surface + 1.6 m), moved by the rAF clock; a warm-up out-and-back, then `repeats` measured out-and-back legs. Per
+leg: frame p50 / p95 / p99 / max, frames > 25 / 33 ms, long tasks and long animation frames, the main loop's CPU per
+frame (three r187 `renderer._animation._animationLoop` timed: updates + render submission, independent of the GPU), GPU
+ms, each pool's update (gardens, stops, furniture 2, street life, façade kit: max, ms/s, frames > 0.5 ms), the gathers
+forced whole (the camera outran the margin), and EVERY per-frame updater of the viewer (`viewer.updaters`, profiled
+through the array's own iterator so tiles still remove theirs by identity; grouped by source). `pops: true` adds two
+untimed legs that check, every frame, that each instance a pool mesh's shader may draw is inside that mesh's held band
+(0 = no pop). The tab must be in front (chrome-devtools `select_page` with `bringToFront`), else rAF is throttled and
+the run is marked invalid.
+
+### What changed
+- **`viewer/instanceStream.js`** (new, shared): `FadeSlots` (the tile fade as ONE uniform float per tile slot, the
+  instances carry the slot: a fading tile changes a float, nothing re-gathers), `buildSource` / `sourceFromYaw` (a
+  tile's instances turned ONCE into columns in the pool's layout, sorted in 50 m cells, with a centre + half extent per
+  instance), `StreamPool` (a gather copies whole cells, or runs of accepted instances, with one typed-array `set` each;
+  only cells on a band edge are tested instance by instance; grown back arrays, no allocation per gather; commit = copy
+  into the static attributes + `addUpdateRange` over the live count + `needsUpdate`; never DynamicDrawUsage; empty
+  meshes hidden), `Streamer` (a gather every TRIGGER = 2 m, each LOD holding its band + MARGIN = 6 m, run as a generator
+  TIME-SLICED over frames; forced whole only if the camera gets 0.9 x MARGIN from the drawn centre: a teleport),
+  `frameBudget` (ONE streaming budget a frame, 0.45 ms, shared by every streamer, the façade kit and the tree fields; a
+  job past it still moves on by a 0.08 ms sliver so it ends before the margin is used up).
+- The front gardens, STIB stops, furniture kit 2 and street-life props run on it (their labs keep a synchronous
+  `pool.gather(tiles, camera)`).
+- Façade kit (`viewer/facadeKit/kitField.js`): the re-bucket is a generator into back arrays committed at its end,
+  0.25 ms a frame inside the shared budget, MOVE 2 -> 2.5 m, MARGIN 3 -> 5 m (the slack covers the frames a re-bucket
+  takes), finished at once on a teleport or a turn past 80 % of the cone margin; the tile fade is a slot (`kitFades`): a
+  fading tile no longer re-buckets every frame.
+- Trees (`viewer/treesStylized.js`, `viewer/impostors.js`; vendor untouched): every tile's field and far impostor field
+  re-bucketed in the SAME frame each 5 m (1-4 ms). Now a tile is due after 3 m and served within the frame budget, at
+  once past 4.5 m (the vendor's own 5 m trigger stays the backstop; its re-bucket is forced by a 1e-6 nudge of
+  `lodSlack`, part of its key); the impostor re-bucket writes its arrays directly (no array literal per tree).
+- Heroes, rail bridges, tunnels (11 `*City.js`, `main.js` x 2, `rail/tunnelModel.js`): every 30 frames each checked
+  `scene.getObjectByName(home + "-lite")`, a walk of the whole scene graph when the home tile was not loaded
+  (0.5-1.3 ms, a > 0.5 ms frame every ~4 frames while driving); now `viewer/liteShown.js` asks the viewer's map of lite
+  tiles (`window.viewer.lite`).
+- Hedges (`viewer/gardens/gardenHedge.js`): the "speckle" close up was the leaf noise's last octave (9 mm and 2.5 mm
+  grain at its 0.55 / 0.16 m scales): a mip bias of 1.5 drops it (leaf-sized clumps). Flicker test (Gardens Lab, street
+  view, hedge region, 24 frames): strafe / dolly / orbit 23 / 5 / 7 blinking px after vs 24 / 5 / 7 before: the hedge
+  never shimmered (the lab's blinks are the railing bars' edges).
+
+### Per pool: its cost in a frame while driving (6 legs, ~2,700 frames a run)
+| pool / updater | before: max ms / frames > 0.5 ms | after |
+|---|---|---|
+| front gardens | 3.9-9.4 / 624-688 | 0.6-0.9 / 1-5 |
+| STIB stops | 0.2-0.3 / 0 | 0.1-0.3 / 0 |
+| furniture kit 2 | 0.2 / 0 | 0.2-0.3 / 0 |
+| street-life props | 0.2-0.3 / 0 | 0.2-0.4 / 0 |
+| façade kit | 0.5-2.5 / 1-5 (and every frame of a tile fade) | 0.5-0.6 / 0-1 (a turn-around) |
+| tree fields + impostors | 1.9-3.9 / ~300 | 0.8-1.2 / 38-91 |
+| heroes' lite check | 1.0-1.4 / 381-617 | gone from the list |
+
+Pops: 0 missing in 6.1-6.3 M instance-LOD checks (gardens), 85 k (stops), 3 k (furniture), 11 k (street life).
+
+### Drive-stutter runs (Boulenger, 14 m/s, 3 out-and-back repeats; RED machine)
+| build, URL | frames > 33 ms | frame p95 per leg | CPU p50 / p95 per leg (ms) | CPU frames > 16.7 ms |
+|---|---|---|---|---|
+| before, `?gardens=1` | 541 / 201 | 33.3 / 16.8-17.2 | 9.9-11.0 / 11.6-17.1 | 111 / 52 |
+| before, default (gardens off) | 390 / 289 | 16.9-33.3 | 9.0-9.9 / 10.5-15.9 | 37 / 84 |
+| after, default (gardens ON) | 23 / 389 / 501 | 16.8 / 33.3 | 10.0-11.1 / 11.4-17.5 | 31 / 73 / 50 |
+| after, `?gardens=0` | 241 / 134 | 16.8-33.3 | 9.2-10.4 / 10.9-13.9 | 50 / 31 |
+
+(Two or three runs per row, separate page loads, interleaved; the GPU was shared with another agent's tab throughout.)
+
+Verdict: the pool spikes are gone (the gardens' > 0.5 ms frames 624-688 -> 1-5) and nothing pops. Frames > 33 ms on
+this machine follow the other tab's GPU load (23 to 501 for one build), so gardens on vs off are within that noise; the
+one real difference left is the gardens' DRAWS: +0.8 ms main-thread CPU p50 a frame (~25-35 more meshes at street
+level and their shadow passes), not a spike. **The front gardens are ON by default again** (`?gardens=0` off). To
+re-check on a GREEN machine: `D.start({ repeats: 3 })` with `?gardens=0` and the default, alternated.
+
+### Left (seen by the updater profile while driving)
+- Traffic (`viewer/traffic/cityTraffic.js` update): 0.5-2.6 ms in 50-95 frames of 2,700; the car fleet's bound update
+  (rare 1-7 ms); the falcon flyer (rare ~1-1.5 ms). Not pools; not touched.
+- The gardens' draws (above): a BatchedMesh / multi-draw per LOD material would cut the +0.8 ms.

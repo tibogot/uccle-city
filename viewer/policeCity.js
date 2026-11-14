@@ -16,6 +16,7 @@ import { buildPoliceCars } from "./policeCars.js";
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
+import { liteShown } from "./liteShown.js";
 
 /** The SHADOW pass is not in compileAsync: warm its pipelines (every mesh of every level and every fading copy drawn a
  *  frame far under the city, pipelines created async) before the model shows (the villa's / Wolvendael's) */
@@ -97,7 +98,7 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     const state = { d: 0, shown: [], fades: [], on: true, yardOn: true, carsOn: true };
     const tmpC = new THREE.Vector3();
     updaters.push((camPos) => {
-      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
       root.visible = home && state.on;
       if (!home) { yard.mesh.visible = false; if (cars) cars.group.visible = false; return; }
       const d = m.distance(camPos);

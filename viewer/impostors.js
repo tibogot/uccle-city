@@ -352,9 +352,11 @@ export function impostorField(placements, variantOf, material, { near = null } =
   let key = "";
   // the instances: every tree from the start of the cross-fade band (less the 5 m the camera may move before the
   // next re-bucketing, and a metre) to the end; the material's dither decides the pixels
-  const update = (cam) => {
+  // force: re-bucket now (viewer/treesStylized.js spreads the tiles' re-buckets over frames, docs/perf/AUDIT.md
+  // "instance pools"), else every 5 m
+  const update = (cam, force = false) => {
     const k0 = `${IMP.start.value},${IMP.band.value},${IMP.end.value}`;
-    if (cam.distanceToSquared(last) < 25 && k0 === key) return;
+    if (!force && cam.distanceToSquared(last) < 25 && k0 === key) return;
     last.copy(cam); key = k0;
     const s = near ?? Math.max(0, IMP.start.value - IMP.band.value - 6), start2 = s * s, end2 = (IMP.end.value + 6) ** 2;
     let k = 0;
@@ -362,8 +364,9 @@ export function impostorField(placements, variantOf, material, { near = null } =
       const [x, z, y, rot, s] = placements[i];
       const d2 = (x - cam.x) ** 2 + (y - cam.y) ** 2 + (z - cam.z) ** 2;
       if (d2 < start2 || d2 > end2) continue;
-      pos.array.set([x, y - 0.25, z], k * 3);                 // the vendor's placement (y - 0.25)
-      data.array.set([rot, s, variantOf[i], 0], k * 4);
+      const P = pos.array, D = data.array, k3 = k * 3, k4 = k * 4;   // (no array literal per tree: no garbage)
+      P[k3] = x; P[k3 + 1] = y - 0.25; P[k3 + 2] = z;          // the vendor's placement (y - 0.25)
+      D[k4] = rot; D[k4 + 1] = s; D[k4 + 2] = variantOf[i]; D[k4 + 3] = 0;
       k++;
     }
     mesh.count = k;

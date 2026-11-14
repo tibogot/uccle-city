@@ -11,6 +11,7 @@ import * as THREE from "three/webgpu";
 import { loadCalevoet, CV_LODS, setLodFades, cvLodState } from "./calevoetModel.js";
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
+import { liteShown } from "./liteShown.js";
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow built its shadow pipelines on the
  *  frame (the villa's 117 ms first hand-over). Warm them before the model shows: every mesh of every level and every
@@ -71,7 +72,7 @@ export async function addCalevoet({ scene, updaters, hide, world, manifest, log,
     let n = 0, home = false;
     const state = { d: 0, shown: [], fades: [], on: true };
     updaters.push((camPos) => {
-      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+      if (n++ % 30 === 0) home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
       root.visible = home && state.on;
       if (!home) return;
       const d = m.distance(camPos);

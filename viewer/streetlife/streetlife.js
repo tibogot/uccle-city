@@ -17,6 +17,10 @@ import {
   max, min, clamp, step, select, length, abs, positionLocal,
 } from "three/tsl";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
+import { FadeSlots, StreamPool, Streamer, sourceFromYaw, MARGIN } from "../instanceStream.js";
+
+/** the props' tile fades (viewer/instanceStream.js): iBand.z = the instance's tile slot */
+export const propFades = new FadeSlots();
 import { SLOTS, KITS } from "./kits.js";
 import { simplifyKit } from "./kitLod.js";
 import { shopInterior } from "../../vendor/slop-street/shopInterior.js";
@@ -157,16 +161,16 @@ function propMaterial(lod) {
   m.metalnessNode = B.x;
   m.emissiveNode = base.mul(B.y).mul(max(U.night, float(0.08))).mul(U.glow);
   // LOD band (iBand.x = switch, .y = range end, per instance: ONE material per LOD for every kind): LOD0 keeps n >= t
-  // (t: 0 -> 1 across the switch), LOD1 keeps e <= n < t (e: 0 -> 1 across the range end); iBand.z = its tile's fade
+  // (t: 0 -> 1 across the switch), LOD1 keeps e <= n < t (e: 0 -> 1 across the range end); iBand.z = its tile's fade slot
   // (lodFade.js objectFade: 0..1 fading in keeps n < f, 2..3 fading out keeps n >= f - 2, 1 = whole)
   const dist = length(positionWorld.sub(lodEye));
   const t = smoothstep(band.x.mul(0.9), band.x.mul(1.1), dist), e = smoothstep(band.y.mul(0.9), band.y, dist);
-  const n = ditherNoise(), f = band.z;
+  const n = ditherNoise(), f = propFades.fade(band.z);
   const tileKeep = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
   m.maskNode = (lod === 0 ? keepBand(t, float(1.01), n) : keepBand(e, t, n)).and(tileKeep);
   m.maskShadowNode = m.maskNode;
   m.name = `streetlife-prop-lod${lod}`;
-  m.userData.shared = true; m.userData.noFade = true;     // (its per-instance iBand.z carries the tile fade)
+  m.userData.shared = true; m.userData.noFade = true;     // (its per-instance iBand.z carries the tile's fade slot)
   return m;
 }
 
@@ -204,69 +208,33 @@ const MESH_RANGE = { boxes: 600, windows: 600, glass: 250 };
 const TEXT_KEEP = 400;
 
 /** PROPS (kits): ONE pool per kind and LOD for the whole city, not one mesh per tile (draws: the kinds near the camera,
- *  not tiles x kinds). Every ~4 m of camera travel (and every frame while a tile fades) the instances of the loaded
- *  tiles within the kind's LOD range are gathered into the pool's buffers (static usage, needsUpdate + update range,
- *  never DynamicDrawUsage: r187 re-uploads those whole in every pass); a pool with nothing to draw is not visible (an
- *  instanced mesh with count 0 still costs a draw per pass). */
+ *  not tiles x kinds), streamed by viewer/instanceStream.js: a gather every 2 m of travel, time-sliced, 6 m margin round
+ *  the LOD bands; the tile fade is a uniform per tile slot (a fading tile never re-gathers); static buffers with update
+ *  ranges (never DynamicDrawUsage: r187 re-uploads those whole in every pass); a pool with nothing to draw is not
+ *  visible (an instanced mesh with count 0 still costs a draw per pass). */
 class PropPool {
-  constructor(kind, K, group, shadows, mats) {
-    this.kind = kind; this.K = K; this.cap = 0; this.meshes = [];
+  constructor(kind, K, group, shadows, mats, margin = MARGIN) {
+    this.kind = kind; this.K = K; this.meshes = [];
+    const s = K.lod[0], e = K.lod[1], live = [[0, s * 1.1], [s * 0.9, e]];     // propMaterial's smoothstep windows
+    const spec = [];
     for (let lod = 0; lod < 2; lod++) {
       const geo = K.lods[lod].clone();
       const mesh = new THREE.InstancedMesh(geo, mats[lod], 1);
-      mesh.count = 0; mesh.visible = false;
       mesh.castShadow = shadows && K.shadow; mesh.receiveShadow = true;
       mesh.name = `streetlife-${kind}-lod${lod}`;
       mesh.boundingSphere = new THREE.Sphere();
       group.add(mesh); this.meshes.push(mesh);
+      spec.push({ mesh, l0: live[lod][0], l1: live[lod][1], attrs: [["instanceMatrix", "instanceMatrix", 16], ["iTint", "iTint", 4], ["iBand", "iBand", 4]] });
     }
-    this.r = K.lods[0].boundingSphere.radius;
-    this.grow(64);
+    this.stream = new StreamPool(kind, spec, K.lods[0].boundingSphere.radius, margin);
   }
-  grow(n) {
-    if (n <= this.cap) return;
-    this.cap = Math.max(n, this.cap * 2);
-    for (const mesh of this.meshes) {
-      mesh.instanceMatrix = new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 16), 16);
-      mesh.geometry.setAttribute("iTint", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
-      mesh.geometry.setAttribute("iBand", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
-    }
-  }
-  /** gather the instances of `tiles` (records with .props[kind] = Float32Array of x y z yaw r g b amt, .fade) near c */
-  gather(tiles, c, margin) {
-    const K = this.K, s = K.lod[0], e = K.lod[1];
-    const lim = [[0, s * 1.1 + margin], [Math.max(0, s * 0.9 - margin), e + margin]];
-    let total = 0;
-    for (const t of tiles) total += (t.props[this.kind]?.length || 0) / 8;
-    this.grow(total);
-    for (let lod = 0; lod < 2; lod++) {
-      const mesh = this.meshes[lod], M = mesh.instanceMatrix.array, T = mesh.geometry.attributes.iTint.array, B = mesh.geometry.attributes.iBand.array;
-      const [d0, d1] = lim[lod];
-      let n = 0, sx = 0, sy = 0, sz = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-      for (const t of tiles) {
-        const a = t.props[this.kind]; if (!a) continue;
-        for (let o = 0; o < a.length; o += 8) {
-          const x = a[o], y = a[o + 1], z = a[o + 2];
-          const d = Math.hypot(x - c.x, y - c.y, z - c.z);
-          if (d < d0 || d > d1) continue;
-          const yaw = a[o + 3], cs = Math.cos(yaw), sn = Math.sin(yaw), k = n * 16;
-          // rotation about +y by yaw (three's makeRotationY), then the translation; column-major
-          M[k] = cs; M[k + 1] = 0; M[k + 2] = -sn; M[k + 3] = 0; M[k + 4] = 0; M[k + 5] = 1; M[k + 6] = 0; M[k + 7] = 0;
-          M[k + 8] = sn; M[k + 9] = 0; M[k + 10] = cs; M[k + 11] = 0; M[k + 12] = x; M[k + 13] = y; M[k + 14] = z; M[k + 15] = 1;
-          T[n * 4] = a[o + 4]; T[n * 4 + 1] = a[o + 5]; T[n * 4 + 2] = a[o + 6]; T[n * 4 + 3] = a[o + 7];
-          B[n * 4] = s; B[n * 4 + 1] = e; B[n * 4 + 2] = t.fade; B[n * 4 + 3] = 0;
-          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
-          n++;
-        }
-      }
-      mesh.count = n; mesh.visible = n > 0;
-      if (!n) continue;
-      mesh.boundingSphere.center.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-      mesh.boundingSphere.radius = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 + this.r;
-      for (const [att, w] of [[mesh.instanceMatrix, 16], [mesh.geometry.attributes.iTint, 4], [mesh.geometry.attributes.iBand, 4]]) {
-        att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;
-      }
-    }
+  /** a tile's props of this kind (x y z yaw r g b amt) as a streaming source */
+  source(a, slot) {
+    const s = this.K.lod[0], e = this.K.lod[1];
+    return sourceFromYaw(a, 8, this.K.lods[0].boundingSphere.radius, {
+      iTint: (o, v) => { v[0] = a[o + 4]; v[1] = a[o + 5]; v[2] = a[o + 6]; v[3] = a[o + 7]; },
+      iBand: (o, v) => { v[0] = s; v[1] = e; v[2] = slot; },
+    });
   }
 }
 
@@ -296,8 +264,7 @@ export class StreetLife {
     this.worker.onmessage = (e) => { const p = this.req.get(e.data.id); this.req.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data); };
     this.tileMeshes = [];
     this.pools = [];
-    this.last = new THREE.Vector3(1e9, 0, 0);
-    this.dirty = true;
+    this.streamer = new Streamer({ name: "streetlife", pools: [], fades: propFades, budget: 0.15 });
   }
   /** every mesh of the layer: the tiles' (boxes, windows, glass) and the prop pools' */
   get meshes() { return [...this.tileMeshes, ...this.pools.flatMap((p) => p.meshes)]; }
@@ -319,6 +286,7 @@ export class StreetLife {
       this.kit[kind] = { lods: [geo(a0), geo(a1)], tris: [a0.index.length / 3, a1.index.length / 3], lod: k.lod, shadow: k.shadow };
       this.pools.push(new PropPool(kind, this.kit[kind], this.group, this.propShadows, this.propMats));
     }
+    this.streamer.pools = this.pools.map((p) => p.stream);
     this.kitMs = performance.now() - t0;
   }
   _work(tile) {
@@ -389,9 +357,9 @@ export class StreetLife {
     };
     const rec = { name: tile, group: g, meshes, night: r.night, stats, pages: null, nPages: r.nPages, pagesData: r.pages, ib, text, box: meshes[0]?.boundingBox ?? null, props: r.props, fade: 1 };
     this.tiles.set(tile, rec);
+    this.streamer.addTile(tile, g, (slot) => Object.fromEntries(this.pools.filter((p) => r.props[p.kind]?.length).map((p) => [p.kind, p.source(r.props[p.kind], slot)])));
     // its text pages go into the atlas from update() (a slice of its own: ~1 ms for the copy), once it is near
     stats.mainMs = +(performance.now() - tm).toFixed(2);
-    this.dirty = true;
     return stats;
   }
   /** TEXT PAGES: a tile's labels are in the atlas while it is within TEXT_KEEP m of the camera (its text shows from
@@ -431,7 +399,7 @@ export class StreetLife {
     this.evictions = (this.evictions || 0) + 1;
   }
   /** per frame: tile meshes past their range are not drawn (every instance in them has shrunk away); the prop pools are
-   *  re-gathered every 4 m of travel, or every frame while a tile fades (its fade rides in the pools' iBand.z) */
+   *  streamed (viewer/instanceStream.js: time-sliced gathers, the tile fades as uniform slots) */
   update(camera) {
     const c = camera.position;
     let visible = 0;
@@ -439,19 +407,7 @@ export class StreetLife {
       m.visible = m.boundingBox.distanceToPoint(c) < m.userData.range;
       if (m.visible) visible++;
     }
-    let fading = false;
-    for (const t of this.tiles.values()) {
-      const f = t.group.userData.fade ?? 1;
-      if (f !== t.fade) { t.fade = f; fading = true; }
-    }
-    if (this.dirty || fading || c.distanceToSquared(this.last) > 16) {
-      const t0 = performance.now();
-      const tiles = [];
-      for (const t of this.tiles.values()) if (t.group.parent && t.group.parent.visible !== false) tiles.push(t);
-      for (const p of this.pools) p.gather(tiles, c, 4);
-      this.last.copy(c); this.dirty = false;
-      this.gatherMs = performance.now() - t0;
-    }
+    this.streamer.update(camera);
     for (const t of this.tiles.values()) if (!t.pages && t.nPages && this._place(t, c)) break;   // one tile's text pages per frame
     for (const p of this.pools) for (const m of p.meshes) if (m.visible) visible++;
     this.visibleMeshes = visible;
@@ -477,7 +433,7 @@ export class StreetLife {
     t.group.removeFromParent();
     if (t.pages) this.atlas.removeTile(t.pages);
     this.tiles.delete(tile);
-    this.dirty = true;
+    this.streamer.removeTile(tile);
   }
   get triangles() {
     let n = 0;

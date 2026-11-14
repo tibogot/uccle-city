@@ -10,6 +10,7 @@ import * as THREE from "three/webgpu";
 import { color, float } from "three/tsl";
 import { loadBridge, placeBridge, warmBridge } from "./bridgeModel.js";
 import { TUNNELS } from "./tunnels.js";
+import { liteShown } from "../liteShown.js";
 
 /** the lamps' lens: a warm (sodium, Kleindalstraat) or white (LED, Brasserie) glow, constant day and night */
 function lampMaterial(rgb) {
@@ -55,7 +56,7 @@ export function addTunnels(ctx) {
       updaters.push((camPos) => {
         pb.update(camPos);
         if (n++ % 30) return;
-        pb.group.visible = world.tiles.some((t) => t.name === home) || !!scene.getObjectByName(`${home}-lite`);
+        pb.group.visible = world.tiles.some((t) => t.name === home) || liteShown(scene, home);
       });
       log(`road tunnel ${name} (${b.info.road} under the ${b.info.line}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles; warmed in ${Math.round(warm.ms)} ms${warm.err ? ` (${warm.err})` : ""}`);
       return pb;

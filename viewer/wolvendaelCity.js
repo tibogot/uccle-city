@@ -19,6 +19,7 @@ import { precompile } from "./warmup.js";
 import { Heightmap } from "./heightmap.js";
 import { pondBedGrid } from "./water/pondBed.js";
 import { createPond, POND_LAYER, REFL_MRT, buildReflectionTrees } from "./water/pondWater.js";
+import { liteShown } from "./liteShown.js";
 
 /** the pond's measured description (site.json "pond"): the same object goes to the tiles (the carve) and the water */
 export function wolvendaelPond(site) {
@@ -178,7 +179,7 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     Object.assign(state, { d: 0, shown: [], pond: pond.stats, pondOn: true, chateauOn: true });
     updaters.push((camPos, cam) => {
       if (n++ % 30 === 0) {
-        home = homes.some((h) => world.tiles.some((t) => t.name === h) || !!scene.getObjectByName(`${h}-lite`));
+        home = homes.some((h) => world.tiles.some((t) => t.name === h) || liteShown(scene, h));
         scanTiles();
       }
       root.visible = home && state.chateauOn; pond.group.visible = state.pondOn && home && world.tiles.some((t) => t.name === tileOf.name);

@@ -6,7 +6,8 @@
 //     tram island), its shelter where OSM says there is one (open to the road, or its back to the road on a narrow
 //     pavement), the free-standing double-sided ad panels placed by rule; + the tram platforms' shelters from tram.js
 //   - drawing: the kit (viewer/stops/stopKit.js) as ONE pool per piece for the whole city (LOD0-2 + posters + glass),
-//     re-filled every 4 m of camera travel (or every frame while a tile fades) with the loaded tiles' instances
+//     streamed by viewer/instanceStream.js (a gather every 2 m of travel, time-sliced, 6 m margin round the bands; the
+//     tile fade is a uniform per tile slot: a fading tile never re-gathers)
 //   - collisions: per tile, an InstancedMesh per piece named like the furniture the collision code already reads
 //     (furniture-shelter / furniture-stopPole / furniture-adpanel), with LOD1's triangles + the glass at the same
 //     matrices, never drawn (visible = false): the car (viewer/drive featureColliders), the walker / third person
@@ -16,7 +17,8 @@
 //   - text: the stop name and the line numbers (STIB colours from the GTFS) on the pole flag and the shelter's roof
 //     board are the street-life layer's SDF boxes (viewer/streetlife/layout.js reads the same data/stops/<T>.json)
 import * as THREE from "three/webgpu";
-import { loadStopKit, StopPool } from "./stopKit.js";
+import { loadStopKit, StopPool, stopSource, stopFades } from "./stopKit.js";
+import { Streamer, MARGIN } from "../instanceStream.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/stops/", import.meta.url);
@@ -57,14 +59,15 @@ function blocked(inst, x, z, margin = 0.7) {
 export const cityStops = {
   on: qs.get("stops") !== "old",
   kit: null, pools: [], tiles: new Map(), group: null,
-  last: new THREE.Vector3(1e9, 0, 0), dirty: true, stats: { lampsMoved: 0, lampsDropped: 0 },
+  streamer: null, stats: { lampsMoved: 0, lampsDropped: 0 },
   async start({ scene, updaters, log = console.log }) {
     if (!this.on) return null;
     const t0 = performance.now();
     try { this.kit = await loadStopKit(); } catch (e) { log(`stops: kit failed (${e.message}), ?stops=old`); this.on = false; return null; }
     this.group = new THREE.Group(); this.group.name = "stops";
     scene.add(this.group);
-    for (const p of PIECES) this.pools.push(new StopPool(this.kit.pieces[p], this.kit.mats, this.group));
+    for (const p of PIECES) this.pools.push(new StopPool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    this.streamer = new Streamer({ name: "stops", pools: this.pools.map((p) => p.stream), fades: stopFades, budget: 0.15 });
     updaters.push((eye, cam) => this.update(cam));
     window.__stops = this;
     log(`stops: on (?stops=old for the placeholders), kit ${PIECES.map((p) => `${p} ${this.kit.pieces[p].tris.join("/")}`).join(", ")} tris, ${Math.round(performance.now() - t0)} ms`);
@@ -115,8 +118,8 @@ export const cityStops = {
       g.add(m);
     }
     parent.add(g);
-    this.tiles.set(name, { name, inst, group: g, fade: 1, counts });
-    this.dirty = true;
+    this.tiles.set(name, { name, inst, group: g, counts });
+    this.streamer.addTile(name, g, (slot) => Object.fromEntries(PIECES.filter((k) => inst[k]).map((k) => [k, stopSource(this.kit.pieces[k], inst[k], slot)])));
     return counts;
   },
   removeTile(name) {
@@ -125,29 +128,16 @@ export const cityStops = {
     t.group.removeFromParent();
     for (const m of t.group.children) m.dispose?.();
     this.tiles.delete(name);
-    this.dirty = true;
+    this.streamer.removeTile(name);
   },
   update(camera) {
     if (!this.on || !this.kit) return;
-    const c = camera.position;
-    let fading = false;
-    for (const t of this.tiles.values()) {
-      // the tile's fade (lodFade.js Fader writes userData.fade on the features group and its children)
-      const f = t.group.userData.fade ?? t.group.parent?.userData.fade ?? 1;
-      if (f !== t.fade) { t.fade = f; fading = true; }
-    }
-    if (!this.dirty && !fading && c.distanceToSquared(this.last) < 16) return;
-    const t0 = performance.now();
-    const tiles = [];
-    for (const t of this.tiles.values()) if (t.group.parent && t.group.parent.visible !== false) tiles.push(t);
-    for (const p of this.pools) p.gather(tiles, c);
-    this.last.copy(c); this.dirty = false;
-    this.gatherMs = performance.now() - t0;
+    this.streamer.update(camera);
   },
   /** counts for the HUD / docs: instances loaded per piece, meshes drawn now */
   report() {
     const n = { shelter: 0, pole: 0, adpanel: 0 };
     for (const t of this.tiles.values()) for (const k of PIECES) n[k] += t.counts[k] || 0;
-    return { tiles: this.tiles.size, instances: n, drawn: this.pools.reduce((s, p) => s + p.drawn, 0), gatherMs: +(this.gatherMs || 0).toFixed(2), lamps: { ...this.stats } };
+    return { tiles: this.tiles.size, instances: n, drawn: this.pools.reduce((s, p) => s + p.drawn, 0), stream: { ...this.streamer.stats }, lamps: { ...this.stats } };
   },
 };
