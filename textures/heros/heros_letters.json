@@ -1,0 +1,35 @@
+{
+ "about": "tools/heros_letters.py: the war memorial's lettering mask (white = letter): the real front inscription and '1940-1945' only; the names' panels are uninscribed (no reliable transcription of the monument).",
+ "size": [
+  1024,
+  1536
+ ],
+ "cells": [
+  {
+   "name": "front",
+   "px": [
+    0,
+    0,
+    624,
+    1048
+   ],
+   "size_m": [
+    1.16,
+    1.95
+   ]
+  },
+  {
+   "name": "years",
+   "px": [
+    0,
+    1080,
+    1000,
+    1310
+   ],
+   "size_m": [
+    1.65,
+    0.38
+   ]
+  }
+ ]
+}

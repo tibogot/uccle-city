@@ -1,0 +1,6 @@
+[
+ {"check": "coplanar", "at": [-0.108, 9.71, -0.06], "radius": 0.08, "why": "bronze group, 9.7 m over the terrace: a fold of the Victory's robe where meshoptimizer brought two sheets of the same voxel-remeshed shell within 0.3 mm over 0.8 cm2 (sameComponent); never nearer than ~8 m to an eye"},
+ {"check": "coplanar", "at": [0.159, 8.435, -0.295], "radius": 0.08, "why": "bronze group, 8.4 m up: the soldier's loincloth against his hip, the same kind of 0.7 cm2 fold (sameComponent)"},
+ {"check": "coplanar", "at": [-0.113, 8.847, -0.282], "radius": 0.08, "why": "bronze group, 8.8 m up: the Victory's hand on the soldier's side, 0.6 cm2 fold (sameComponent)"},
+ {"check": "leak", "at": [0.322, 9.327, 1.376], "radius": 0.08, "why": "bronze group, 9.3 m up: an 8 mm open edge on the trailing feathers of the left wing (the wing shell is 2.7 mm thick after simplification): a 12 mm slit seen only from above the statue"}
+]

@@ -20,6 +20,7 @@ import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
 import { addStPierre } from "./stpierreCity.js";
 import { addRussian } from "./russianCity.js";
+import { addHeros } from "./heros/herosCity.js";
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addAugustin } from "./augustinCity.js";
@@ -486,11 +487,18 @@ const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
  *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
 const ROAD_SURFACES = params.get("roads") !== "engine";
+/** Square des Heros as a hero place (viewer/heros/, docs/landmarks/HEROS.md); ?heros=old: the city as before (the
+ *  square drawn as one raised setts plaza, no memorial). */
+const HEROS = params.get("heros") !== "old";
+/** what the tile worker needs from the hero place (filled by addHeros from models/heros/heros.json + site.json before
+ *  the first tile): the terrain carves under its steps, the park's path ways the land cover leaves out */
+const HEROS_TILE = { carves: [], paths: [] };
 const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
+    heros: HEROS ? HEROS_TILE : null,                                                                // Square des Heros: the park cut out of the UrbIS square surface, its steps' carves (viewer/heros/herosSurface.js)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
@@ -990,6 +998,9 @@ async function main() {
   if (params.get("stpierre") !== "0") heroes.push(() => addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // the Russian Orthodox church of Saint-Job (tools/blender/russian.py, viewer/russianCity.js); ?russian=0 = the UrbIS solid
   if (params.get("russian") !== "0") heroes.push(() => addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  // Square des Heros as a hero place (viewer/heros/, docs/landmarks/HEROS.md): the war memorial + steps (tools/blender/heros.py),
+  // the dolomite ground, the park cut out of the UrbIS square surface; ?heros=old = the setts plaza as before
+  if (HEROS) heroes.push(() => addHeros({ scene, updaters, hide: HIDE_BU_IDS, tile: HEROS_TILE, world, manifest, log, compiler: () => compileFor, renderer }));
   // the Eglise Notre-Dame du Rosaire (tools/blender/rosaire.py, viewer/rosaireCity.js); ?rosaire=0 = the UrbIS solid
   if (params.get("rosaire") !== "0") heroes.push(() => addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,

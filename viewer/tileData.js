@@ -18,6 +18,7 @@ import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround,
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
+import { applyParkSquares, carveFlights, withoutLines } from "./heros/herosSurface.js";
 
 let railP = null;
 let grassKindsP = null;
@@ -238,6 +239,9 @@ export async function buildTileData(entry, base) {
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
+  // Square des Heros (viewer/heros/herosSurface.js; ?heros=old: the setts plaza as before): the UrbIS square surface minus
+  // the park, as sidewalk paving; the park is the hero place's own ground
+  if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
   if (tunnels?.length) tunnelRoads(roads, tunnels);                 // the lanes through the bores
   const hm = new Heightmap(tHdr, tBuf);
   // measured markings (pipeline/build_markings.py): crossings, stop lines, lines, OSM crossing / control nodes
@@ -297,6 +301,8 @@ export async function buildTileData(entry, base) {
   // (and their OSM water areas leave the land-cover mask: the ground under the pond is the bank / bed, the water is the pond's own surface)
   if (entry.ponds?.length) { const ids = new Set(entry.ponds.map((p) => p.osm).filter(Boolean)); feats.areas = (feats.areas || []).filter((a) => !ids.has(a.id)); }
   if (entry.ponds?.length) await step("pond beds", () => carvePonds(hm, entry.ponds.filter((p) => p.ring.some(([x, z]) => x >= x0 - 5 && x <= x1 + 5 && z >= z0 - 5 && z <= z1 + 5))));
+  // Square des Heros: the terrain under the memorial's two flights of steps (viewer/heros/herosSurface.js carveFlights)
+  if (entry.heros?.carves?.length) await step("heros steps", () => carveFlights(hm, entry.heros.carves));
   // ?trains=1: the terrain under the ballast / platforms / hero arches, the fills at viaduct ends; then the tile's rail
   // geometry as typed arrays (viewer/rail/railData.js; the main thread only wraps them in buffers)
   let railOut = null;
@@ -352,7 +358,7 @@ export async function buildTileData(entry, base) {
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
-  const cover = await step("land cover", () => landCoverData(feats, bounds));
+  const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds));   // (Square des Heros: its paths are the hero ground's)
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut, grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d) })),   // OSM road bridges: heights for walk / car + their drawn deck

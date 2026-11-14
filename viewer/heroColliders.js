@@ -14,7 +14,7 @@ import * as THREE from "three/webgpu";
 import { KIND } from "./drive/colliders.js";
 import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 
-export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "augustin", "russian", "rosaire",
+export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "augustin", "russian", "rosaire", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
   "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
   ...TUNNEL_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js)
