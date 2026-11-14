@@ -126,7 +126,7 @@ function lodKeep(lod, band, n = ditherNoise()) {
 const hash2 = (a, b) => fract(sin(dot(vec2(a, b), vec2(12.9898, 78.233))).mul(43758.5453));
 
 /** the brick face: stretcher bond in world space; returns [colour multiplier (vec3), mortar 0..1] */
-function brickPattern(tone) {
+export function brickPattern(tone) {
   const n = normalize(normalWorld);
   const wallFace = abs(n.y).lessThan(0.7);
   const t = normalize(vec2(n.z.negate(), n.x).add(vec2(1e-5, 0)));

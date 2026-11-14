@@ -13,6 +13,7 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
+import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
 import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
@@ -346,7 +347,11 @@ export async function buildTileData(entry, base) {
   // entry.streetlife (the street-life layer, viewer/streetlife/, on by default in the city): its shopfronts replace the
   // OSM shop points of the façade analysis (data/streetlife/<T>.json; a tile without one keeps the OSM shops)
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts }));
+  // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
+  const roofKit = entry.roofs !== false ? roofCollector() : null;
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit }));
+  // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
+  if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(feats, bounds));
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut, grassTypes,

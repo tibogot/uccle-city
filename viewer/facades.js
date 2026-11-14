@@ -25,7 +25,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
-  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod, select,
 } from "three/tsl";
 import { lampLight } from "./lampLight.js";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
@@ -188,7 +188,9 @@ export function wallMaterial(opts = {}) {
   const m = bldMaterial();
   const P = positionWorld;
   const wall = attribute("aWall", "vec4"), bld = attribute("aBld", "vec4");
-  const u = wall.x, fw = wall.y, h = wall.z, eh = wall.w;
+  // aWall.w < 0: a PARAPET of the roof kit (viewer/roofs/roofPlace.js; facadeGeom.js draws its outer face as wall): the
+  // wall surface continues up it, but no windows, no blind-wall marks, no cornice band
+  const u = wall.x, fw = wall.y, h = wall.z, eh = abs(wall.w), par = step(wall.w, 0.0);
   // rnd quantised: it is a per-building constant, but as an interpolated vertex attribute it arrives with
   // last-bit differences per pixel, and the room / curtain hashes (sin x 43758) turned those into random
   // white dots in every window (2026-11-04; same bug as the trees' tint)
@@ -221,7 +223,7 @@ export function wallMaterial(opts = {}) {
   const pulseY = (a, b, w) => clamp(min(yl.add(w.mul(0.5)), b).sub(max(yl.sub(w.mul(0.5)), a)), 0.0, 1e3).div(max(w, 0.0001));
   const winTopAbs = mix(yb.mul(G), G.add(fl.sub(1).add(yb).mul(S)), up);
   const isLM = band(style, 6).toVar();                                          // landmark (church, chapel...)
-  const ok = float(1).sub(party).mul(float(1).sub(isLM)).mul(step(float(1.6), fw)).mul(step(float(2.8), eh))
+  const ok = float(1).sub(party).mul(float(1).sub(isLM)).mul(float(1).sub(par)).mul(step(float(1.6), fw)).mul(step(float(2.8), eh))
     .mul(step(winTopAbs.add(0.35), eh))                                          // the whole window fits under the eaves
     .mul(step(0.0, gx)).mul(step(gx, nb)).toVar();
   // the front door replaces one ground-floor window on a street face
@@ -286,7 +288,7 @@ export function wallMaterial(opts = {}) {
   // low-frequency noise only.
   const aaE = fwidth(h).add(0.002);
   const aboveEaves = smoothstep(eh.add(0.25).sub(aaE), eh.add(0.25).add(aaE), h).mul(step(4.0, fw));
-  const blind = max(party.mul(step(998.0, bld.y)), aboveEaves).mul(float(1).sub(isLM)).toVar();
+  const blind = max(party.mul(step(998.0, bld.y)), aboveEaves).mul(float(1).sub(isLM)).mul(float(1).sub(par)).toVar();
   const boxBand = (x, a, b, w) => clamp(min(x.add(w.mul(0.5)), b).sub(max(x.sub(w.mul(0.5)), a)), 0.0, 1e3).div(w);
   {
     const k1 = hash2D(vec2(rnd.mul(53.0), 7.1)), k2 = hash2D(vec2(rnd.mul(71.0), 3.3)), k3 = hash2D(vec2(rnd.mul(29.0), 1.7));
@@ -324,7 +326,7 @@ export function wallMaterial(opts = {}) {
   col = mix(col, C(0.075, 0.08, 0.09).add(grain.mul(0.01)), plinth);
   height = height.add(float(1).sub(smoothstep(float(0.5).sub(aaHR), float(0.5).add(aaHR), h)).mul(0.03));
   const band2 = (lo, hi, a) => smoothstep(lo.sub(a), lo.add(a), h).mul(float(1).sub(smoothstep(hi.sub(a), hi.add(a), h)));
-  const cornOn = step(float(4.5), eh).mul(float(1).sub(party));
+  const cornOn = step(float(4.5), eh).mul(float(1).sub(party)).mul(float(1).sub(par));
   const corn = band2(eh.sub(0.42), eh.sub(0.12), aaH).mul(cornOn).toVar();
   col = mix(col, C(0.55, 0.53, 0.49), corn.mul(0.85));
   height = height.add(band2(eh.sub(0.42), eh.sub(0.12), aaHR).mul(cornOn).mul(0.05));
@@ -551,6 +553,59 @@ export function wallMaterial(opts = {}) {
   return m;
 }
 
+/** the roof kit (docs/assets/ROOFS.md): flat roofs drawn as what they are (?roofs=old: the colour with a speckle) */
+const ROOFS_NEW = !/[?&]roofs=old/.test(location.search);
+/**
+ * A FLAT ROOF's surface from its real (orthophoto) colour `base` and the building's (u, v) along its longest side:
+ *  - dark: torched bitumen felt in 1 m rolls (a 9 cm lap at each roll edge, a little glossier, its edge line), rolls of
+ *    slightly different tones, end laps every 5-8 m, mineral granules, fresh repair patches, ponding stains
+ *  - light grey: gravel ballast (60 % of them) or light PVC sheets 2 m wide with welded seams
+ *  - green: a sedum roof (mottled green / red-brown)
+ * Lines fade out under a pixel. Returns { col, rough, height (m, for the bump) }.
+ */
+function flatRoofLook(u, v, base, P, seed, near) {
+  const lum = dot(base, vec3(0.2126, 0.7152, 0.0722));
+  const green = smoothstep(0.012, 0.035, base.y.sub(max(base.x, base.z)));
+  const light = smoothstep(0.13, 0.22, lum).mul(float(1).sub(green));
+  const gravel = step(fract(seed.mul(13.7)), 0.6);
+  // bitumen rolls
+  const rv = v.div(1.0), roll = floor(rv), fv = fract(rv), w = fwidth(rv).add(1e-4);
+  const sharp = float(1).sub(smoothstep(0.08, 0.3, w));                          // lines exist while a roll is > ~4 px
+  const lap = float(1).sub(smoothstep(float(0.09).sub(w), float(0.09).add(w), fv)).mul(sharp);
+  const edge = float(1).sub(smoothstep(float(0.0), w.mul(1.5).add(0.012), fv)).mul(sharp);
+  const rollTone = hash2D(vec2(roll, seed.mul(91.0)));
+  const eu = u.div(mix(float(5.0), float(8.0), rollTone)).add(rollTone.mul(3.0)), fe = fract(eu), we = fwidth(eu).add(1e-4);
+  const endLap = float(1).sub(smoothstep(float(0.012).sub(we), float(0.012).add(we), fe)).mul(sharp);
+  const cell = vec2(floor(u.div(2.6)), floor(v.div(2.6)));
+  const patchOn = step(0.88, hash2D(cell.add(seed.mul(17.0))));
+  const pc = vec2(fract(u.div(2.6)), fract(v.div(2.6)));
+  const patch = patchOn.mul(smoothstep(0.18, 0.2, pc.x)).mul(smoothstep(0.82, 0.8, pc.x)).mul(smoothstep(0.25, 0.27, pc.y)).mul(smoothstep(0.75, 0.73, pc.y));
+  const pond = smoothstep(0.25, 0.65, n3(P.x.mul(0.18), seed.mul(7.0), P.z.mul(0.18)));
+  const gran = n3(P.x.mul(35.0), P.y.mul(35.0), P.z.mul(35.0)).mul(near);
+  // weathering at the roof's scale: sun-bleached and dirty areas (+-12 %), then the rolls' own tones (+-9 %)
+  const blot = n3(P.x.mul(0.06), seed.mul(5.0), P.z.mul(0.06)).add(n3(P.x.mul(0.21), 1.7, P.z.mul(0.21)).mul(0.5));
+  let bit = base.mul(blot.mul(0.12).add(1.0)).mul(rollTone.sub(0.5).mul(0.18).add(1.0)).mul(gran.mul(0.08).add(1.0));
+  bit = bit.mul(float(1).add(lap.mul(0.09))).mul(float(1).sub(edge.mul(0.35))).mul(float(1).sub(endLap.mul(0.25)));
+  bit = mix(bit, base.mul(mix(float(0.55), float(1.25), hash2D(cell.add(3.3)))), patch.mul(0.85));   // repairs: fresh (dark) or silvered (light)
+  bit = bit.mul(float(1).sub(pond.mul(0.22)));
+  const bitH = lap.mul(0.003).add(patch.mul(0.002));
+  // gravel ballast: pebbles (two scales), a little greyer in the hollows
+  const g1 = n3(P.x.mul(28.0), 0.0, P.z.mul(28.0)), g2 = n3(P.x.mul(9.0), 3.0, P.z.mul(9.0));
+  const grav = base.mul(g1.mul(0.22).mul(near.mul(0.7).add(0.3)).add(g2.mul(0.08)).add(1.0));
+  // PVC: 2 m sheets, welded seams a little lighter, dirt in streaks along them
+  const pv = v.div(2.0), fp = fract(pv), wp = fwidth(pv).add(1e-4);
+  const seam = float(1).sub(smoothstep(float(0.02).sub(wp), float(0.02).add(wp), fp)).mul(float(1).sub(smoothstep(0.06, 0.25, wp)));
+  const pvc = base.mul(float(1).add(seam.mul(0.12))).mul(float(1).sub(pond.mul(0.15))).mul(n3(P.x.mul(0.6), 1.0, P.z.mul(0.6)).mul(0.04).add(1.0));
+  // sedum
+  const sd = n3(P.x.mul(1.8), 2.0, P.z.mul(1.8)), sd2 = n3(P.x.mul(7.0), 5.0, P.z.mul(7.0));
+  const sedum = mix(base.mul(0.8), mix(vec3(0.07, 0.1, 0.03), vec3(0.16, 0.08, 0.04), smoothstep(-0.2, 0.5, sd)), 0.45).mul(sd2.mul(0.18).add(1.0));
+  const lightCol = mix(pvc, grav, gravel);
+  const col = mix(mix(bit, lightCol, light), sedum, green);
+  const rough = mix(mix(mix(float(0.86), float(0.55), pond.mul(0.6)), mix(float(0.62), float(0.95), gravel), light), float(0.9), green);
+  const height = mix(mix(bitH, g1.mul(0.004).mul(gravel), light), sd2.mul(0.01), green).mul(near);
+  return { col, rough, height };
+}
+
 export function roofMaterial() {
   const m = bldMaterial();
   const P = positionWorld;
@@ -580,6 +635,14 @@ export function roofMaterial() {
   const flatCol = base.mul(n3(P.x.mul(30.0), 0.0, P.z.mul(30.0)).mul(0.18).add(1.0)).add(weather.mul(0.01));
   // (2026-11-13) pitched roofs: the library's shipped slate / pantile sets on the roof's real colour (viewer/facadeLib.js)
   const rl = facadeLibOn() ? facadeRoofLook(u, v, base, clayK) : null;
+  if (ROOFS_NEW) {
+    const fr = flatRoofLook(u, v, base, P, style, near);
+    m.colorNode = mix(rl ? rl.col : col, fr.col, flat);
+    const nPitch = rl ? normalize(normalView.add(rl.nView)) : bumpNormal(relief);
+    m.normalNode = select(flat.greaterThan(0.5), bumpNormal(fr.height), nPitch);
+    m.roughnessNode = mix(rl ? rl.rough : mix(float(0.62), float(0.78), clayK), fr.rough, flat);
+    return m;
+  }
   m.colorNode = mix(rl ? rl.col : col, flatCol, flat);
   m.normalNode = rl ? normalize(normalView.add(rl.nView.mul(float(1).sub(flat)))) : bumpNormal(relief);
   m.roughnessNode = mix(rl ? rl.rough : mix(float(0.62), float(0.78), clayK), float(0.95), flat);
@@ -628,7 +691,7 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     meshes.push(kitWalls);
   }
   return {
-    meshes, kitWalls, kit: a.kit,
+    meshes, kitWalls, kit: a.kit, roofKit: a.roofKit,
     stats: a.stats, triangles: a.stats.triangles, vertices: a.stats.vertices,
   };
 }
