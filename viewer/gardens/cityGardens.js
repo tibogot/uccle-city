@@ -1,16 +1,18 @@
 // FRONT GARDENS IN THE CITY (docs/assets/GARDENS.md): low brick walls with copings, railings, pillars with caps, gates,
-// hedges behind the railings, between each house and the measured sidewalk. OFF by default for now: ?gardens=1 on (the city as
-// before); ?gardenhedges=1 = with the hedges (opt-in until the foliage city hookup: their cost, docs/assets/GARDENS.md).
+// clipped hedges, between each house and the measured sidewalk. ON by default (round 2, 2026-11-14): ?gardens=0 = the
+// city without them; ?gardenhedges=0 = without the hedges.
 //
-//   - data: data/gardens/<T>.json (tools/gardens/build_gardens.py): runs along the property line (the measured sidewalk's
-//     back edge) in front of every street face with a gap >= 1 m, openings at the real doors and driveways
+//   - data: data/gardens/<T>.json (tools/gardens/build_gardens.py): runs on the DRAWN sidewalk's back edge (the street
+//     surfaces as viewer/surfaces.js draws them, tools/gardens/drawnSurfaces.mjs) in front of every street face with a
+//     gap >= 1 m, openings at the real doors and driveways
 //   - drawing: the kit (viewer/gardens/gardenKit.js) as ONE pool per piece for the whole city (LOD0-2), re-filled every
-//     2 m of camera travel (or every frame while a tile fades); the hedges are the foliage system's own
-//     (viewer/foliage/hedges.js buildHedges), one group per tile, hidden beyond HEDGE_FAR of the camera
+//     2 m of camera travel (or every frame while a tile fades); the hedges are the kit's instanced modules
+//     (viewer/gardens/gardenHedge.js: 3 body LODs + the near leaf cards, the same pools)
 //   - collisions: per tile, InstancedMeshes of unit boxes named furniture-gardenwall / -gardenpillar / -gardengate (wall +
-//     coping + railing as one sheared box, the pillars, the closed driveway gates), never drawn (visible = false): the car
-//     (viewer/drive featureColliders), the walker / third person (viewer/character/cityHook) and the collision test read
-//     them like the furniture kits' stand-ins. The pedestrian gates are drawn OPEN: the walker gets in at the door
+//     coping + railing as one sheared box, each hedge module, the pillars, the closed driveway gates), never drawn
+//     (visible = false): the car (viewer/drive featureColliders), the walker / third person (viewer/character/cityHook)
+//     and the collision test read them like the furniture kits' stand-ins. The pedestrian gates are drawn OPEN: the
+//     walker gets in at the door
 import * as THREE from "three/webgpu";
 import { loadGardenKit, GardenPool, PIECES, STRIDE, gardenInstances, standinGeometries } from "./gardenKit.js";
 import { wind } from "../foliage/wind.js";
@@ -19,7 +21,7 @@ const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
-  on: qs.get("gardens") === "1",          // OFF by default until the look check, mesh audit, the sidewalk-to-wall lawn gap and a GREEN GPU measure are done (coordinator, 2026-11-13); ?gardens=1 on
+  on: qs.get("gardens") !== "0",          // round 2 (2026-11-14): on by default (lawn strip fixed, look check, mesh audit 0 blocking, hedges in the pools, cost measured); ?gardens=0 off
   hedges: qs.get("gardenhedges") !== "0",     // round 2: instanced hedge modules through the kit's pools (gardenHedge.js), ?gardenhedges=0 off
   kit: null, pools: [], tiles: new Map(), group: null, stand: null,
   last: new THREE.Vector3(1e9, 0, 0), dirty: true, gatherMs: 0, tWind: 0,
@@ -33,7 +35,7 @@ export const cityGardens = {
     for (const p of PIECES) this.pools.push(new GardenPool(this.kit.pieces[p], this.kit.mats, this.group));
     updaters.push((eye, cam) => this.update(cam));
     window.__gardens = this;
-    log(`gardens: on (?gardens=1; ?gardenhedges=1 with the hedges), kit ${PIECES.length} pieces x 3 LODs, ${Math.round(performance.now() - t0)} ms`);
+    log(`gardens: on (?gardens=0 off; ?gardenhedges=0 without the hedges), kit ${PIECES.length} pieces, ${Math.round(performance.now() - t0)} ms`);
     return this;
   },
   fetchTile(name) {

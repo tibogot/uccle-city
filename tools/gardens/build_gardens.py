@@ -568,7 +568,11 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             if not q.is_empty:
                 q = q if q.geom_type == "Point" else min(getattr(q, "geoms", [q]), key=lambda g: g.distance(Point(dx, dz)))
                 s = ls.project(q if q.geom_type == "Point" else q.centroid)
-                ops.append([s - 0.55, s + 0.55, "ped"]); stats["door_gates"] += 1
+                # round 2: 1.3 m between the pillars' centres (0.94 m clear: a real garden gate, and the walker's 0.6 m
+                # body gets through); no gate where a building stands right behind the line (an annex, a garage)
+                gp = ls.interpolate(s)
+                if R.in_building(gp.x - f["nx"] * 0.6, gp.y - f["nz"] * 0.6): stats["door_gate_blocked"] += 1
+                else: ops.append([s - 0.65, s + 0.65, "ped"]); stats["door_gates"] += 1
             else: stats["door_off_run"] += 1
         for dl in ([drives[k] for k in drive_tree.query(ls.buffer(1.5))] if drive_tree is not None else []):
             if dl.distance(ls) > 1.5: continue
