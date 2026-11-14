@@ -13,16 +13,14 @@
 //     them like the furniture kits' stand-ins. The pedestrian gates are drawn OPEN: the walker gets in at the door
 import * as THREE from "three/webgpu";
 import { loadGardenKit, GardenPool, PIECES, gardenInstances, standinGeometries } from "./gardenKit.js";
-import { buildHedges } from "../foliage/hedges.js";
 import { wind } from "../foliage/wind.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/gardens/", import.meta.url);
-const HEDGE_FAR = 260;                     // a tile's hedges hide when the camera is this far from all of them
 
 export const cityGardens = {
   on: qs.get("gardens") === "1",          // OFF by default until the look check, mesh audit, the sidewalk-to-wall lawn gap and a GREEN GPU measure are done (coordinator, 2026-11-13); ?gardens=1 on
-  hedges: qs.get("gardenhedges") === "1",     // opt-in: ~100-200 k triangles and up to 10 draws a tile (docs/assets/GARDENS.md)
+  hedges: qs.get("gardenhedges") !== "0",     // round 2: instanced hedge modules through the kit's pools (gardenHedge.js), ?gardenhedges=0 off
   kit: null, pools: [], tiles: new Map(), group: null, stand: null,
   last: new THREE.Vector3(1e9, 0, 0), dirty: true, gatherMs: 0, tWind: 0,
   async start({ scene, updaters, log = console.log }) {
@@ -47,7 +45,7 @@ export const cityGardens = {
   addTile(name, doc, parent, groundAt) {
     if (!this.on || !this.kit || !doc) return null;
     const t0 = performance.now();
-    const g = gardenInstances(doc, groundAt, { hedgeFronts: this.hedges });
+    const g = gardenInstances(doc, groundAt, { hedgeFronts: this.hedges, hedges: this.hedges });
     const grp = new THREE.Group(); grp.name = `gardens-${name}`;
     const M = new THREE.Matrix4();
     for (const [k, nm] of [["wall", "furniture-gardenwall"], ["pillar", "furniture-gardenpillar"], ["gate", "furniture-gardengate"]]) {
@@ -60,19 +58,10 @@ export const cityGardens = {
       m.userData.collisionStandin = true;
       grp.add(m);
     }
-    let hedge = null, hedgeStats = null;
-    if (this.hedges && doc.hedges?.length && groundAt) {
-      const h = buildHedges(doc.hedges, groundAt, { step: 0.6, split: 0.32, cards: 0.6 });   // (a coarser body than the foliage lab: these line every street)
-      hedge = h.group; hedge.name = `gardens-hedges-${name}`; hedgeStats = h.stats;
-      // (the hedges' bounds, for the distance cut)
-      const b = new THREE.Box3(); for (const r of doc.hedges) for (const [x, z] of r.points) b.expandByPoint(new THREE.Vector3(x, 0, z));
-      hedge.userData.box = b;
-      grp.add(hedge);
-    }
     parent.add(grp);
-    this.tiles.set(name, { name, raw: g.settled, groundAt, inst: g.inst, cells: g.cells, group: grp, hedge, fade: 1, counts: g.counts, hedgeStats, doc: { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length, hedges: doc.hedges.length } });
+    this.tiles.set(name, { name, raw: g.settled, hedgeRuns: doc.hedges || [], groundAt, inst: g.inst, cells: g.cells, group: grp, fade: 1, counts: g.counts, doc: { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length, hedges: doc.hedges.length } });
     this.dirty = true;
-    return { ...g.counts, hedgeTris: hedgeStats?.tris || 0, ms: Math.round(performance.now() - t0) };
+    return { ...g.counts, ms: Math.round(performance.now() - t0) };
   },
   removeTile(name) {
     const t = this.tiles.get(name);
@@ -90,7 +79,7 @@ export const cityGardens = {
       const f = t.group.userData.fade ?? t.group.parent?.userData.fade ?? 1;
       if (f !== t.fade) { t.fade = f; fading = true; }
     }
-    if (this.hedges && qs.get("grass") !== "1") {          // (?grass=1: the grass field steps the shared wind)
+    if (this.hedges && qs.get("grass") !== "1") {          // the leaf cards' flutter (?grass=1: the grass field steps the shared wind)
       const now = performance.now(); wind.update(Math.min(0.1, (now - (this.tWind || now)) / 1000)); this.tWind = now;
     }
     if (!this.dirty && !fading && c.distanceToSquared(this.last) < 4) return;
@@ -98,7 +87,6 @@ export const cityGardens = {
     const tiles = [];
     for (const t of this.tiles.values()) {
       if (t.group.parent && t.group.parent.visible !== false) tiles.push(t);
-      if (t.hedge) t.hedge.visible = t.hedge.userData.box.distanceToPoint(new THREE.Vector3(c.x, 0, c.z)) < HEDGE_FAR;
     }
     for (const p of this.pools) p.gather(tiles, c);
     this.last.copy(c); this.dirty = false;
@@ -133,17 +121,31 @@ export const cityGardens = {
       let lo = Infinity; for (const [ox, oz] of [[0.18, 0.18], [-0.18, 0.18], [0.18, -0.18], [-0.18, -0.18]]) lo = Math.min(lo, G(x + ox, z + oz));
       if (bottom - lo > 0.01) out.pillarFloating++;
     }
+    // the hedge modules (gardenHedge.js): the body's foot (12 % of its height under the base line) against the lower
+    // of the hedge's two faces, every 0.5 m
+    const H = t.inst.hedge;
+    out.hedgeModules = 0; out.hedgeFloating = 0; out.hedgeMaxFloat = 0;
+    if (H) for (let o = 0; o < H.length; o += 20) {
+      const x0 = H[o + 12], y0 = H[o + 13], z0 = H[o + 14], dx = H[o], dy = H[o + 1], dz = H[o + 2], h = H[o + 5];
+      const wx = H[o + 8] / 2, wz = H[o + 10] / 2, L = Math.hypot(dx, dz), n = Math.max(2, Math.ceil(L / 0.5) + 1);
+      out.hedgeModules++;
+      let worst = 0;
+      for (let k = 0; k < n; k++) {
+        const f = k / (n - 1), x = x0 + dx * f, z = z0 + dz * f, y = y0 + dy * f - 0.12 * h;
+        worst = Math.max(worst, y - Math.min(G(x + wx, z + wz), G(x - wx, z - wz)));
+      }
+      if (worst > 0.01) { out.hedgeFloating++; out.hedgeMaxFloat = Math.max(out.hedgeMaxFloat, +worst.toFixed(3)); }
+    }
     out.maxFloat = +out.maxFloat.toFixed(3);
     return out;
   },
   report() {
     const n = Object.fromEntries(PIECES.map((p) => [p, 0]));
-    let hedgeTris = 0, hedgeCards = 0, hedgesShown = 0;
-    for (const t of this.tiles.values()) {
-      for (const k of PIECES) n[k] += t.counts[k] || 0;
-      if (t.hedgeStats) { hedgeTris += t.hedgeStats.tris; hedgeCards += t.hedgeStats.cards; if (t.hedge.visible) hedgesShown++; }
-    }
-    return { tiles: this.tiles.size, instances: n, drawn: this.pools.reduce((s, p) => s + p.drawn, 0),
-      live: Object.fromEntries(this.pools.map((p) => [p.piece.name, p.instances])), gatherMs: +(this.gatherMs || 0).toFixed(2), hedgeTris, hedgeCards, hedgesShown };
+    for (const t of this.tiles.values()) for (const k of PIECES) n[k] += t.counts[k] || 0;
+    // triangles drawn per pass by the kit (instances x the LOD's triangles)
+    let tris = 0;
+    for (const p of this.pools) p.meshes.forEach((m, k) => { if (m.visible) tris += m.count * p.piece.tris[k]; });
+    return { tiles: this.tiles.size, instances: n, drawn: this.pools.reduce((s, p) => s + p.drawn, 0), tris,
+      live: Object.fromEntries(this.pools.map((p) => [p.piece.name, p.instances])), gatherMs: +(this.gatherMs || 0).toFixed(2) };
   },
 };

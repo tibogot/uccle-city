@@ -22,14 +22,19 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
+import { hedgeGeometries, hedgeMaterials, hedgeInstances } from "./gardenHedge.js";
 
 export const RAILS = ["spear", "flat", "rings"];
-export const PIECES = ["wall", "cap", "pillar", "pcap", ...RAILS.map((r) => `rail_${r}`), ...RAILS.map((r) => `gate_${r}`), ...RAILS.map((r) => `cargate_${r}`)];
+export const PIECES = ["wall", "cap", "pillar", "pcap", ...RAILS.map((r) => `rail_${r}`), ...RAILS.map((r) => `gate_${r}`), ...RAILS.map((r) => `cargate_${r}`), "hedge", "hedgecard"];
+const IRON = PIECES.slice(4, 4 + 3 * RAILS.length);           // the Blender pieces
 /** LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end]: the walls go by ~220 m (the façade's own painted look takes
  *  over), the ironwork by ~150 m */
 export const BANDS = {
   wall: [35, 90, 220], cap: [35, 90, 220], pillar: [35, 90, 220], pcap: [30, 80, 200],
   rail: [22, 60, 150], gate: [22, 60, 150], cargate: [25, 70, 160],
+  // round 2: the hedges (viewer/gardens/gardenHedge.js): big soft solids, seen far (the end dithers out over 255-300 m);
+  // the leaf cards near only (they shrink into the body by 18 m)
+  hedge: [30, 90, 300], hedgecard: [22, 22, 22],
 };
 export const bandOf = (p) => BANDS[p] || BANDS[p.split("_")[0]];
 const GATE_W = { gate: 1.0, cargate: 1.6 }, GATE_H = { gate: 1.2, cargate: 1.3 };
@@ -69,7 +74,10 @@ export function loadGardenKit(base = new URL("../../", import.meta.url)) {
       pieces[name] = { name, lods, tris: lods.map((g) => (g.index ? g.index.count : g.attributes.position.count) / 3), band: bandOf(name) };
     };
     add("wall", boxy.wall); add("cap", boxy.cap_slab); add("pillar", boxy.pillar); add("pcap", boxy.pcap);
-    for (const p of PIECES.slice(4)) {
+    const hg = hedgeGeometries(), hm = hedgeMaterials();
+    add("hedge", hg.body); add("hedgecard", hg.cards);
+    pieces.hedge.mats = hm.body; pieces.hedgecard.mats = [hm.card];
+    for (const p of IRON) {
       const lods = [0, 1, 2].map((l) => { const r = raw[`${p}_lod${l}`]; if (!r) throw new Error(`gardens kit: ${p}_lod${l} missing`); return mergePrims(r); });
       add(p, lods);
     }
@@ -194,7 +202,7 @@ const rnd01 = (x, z) => { let h = Math.imul(Math.round(x * 100) | 0, 73856093) ^
  * stand: { wall: [mat16...], pillar: [...], gate: [...] } (collision stand-ins: unit boxes), counts }.
  * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style].
  */
-export function gardenInstances(doc, groundAt = null, { hedgeFronts = true } = {}) {
+export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedges = true } = {}) {
   const L = Object.fromEntries(PIECES.map((p) => [p, []]));
   const SW = [], SP = [], SG = [];
   const styles = doc.styles || [];
@@ -270,6 +278,22 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true } = {
       const mm = rot(x, y, z, yaw, 1, 1, 1);
       for (let k = 0; k < 16; k++) SG.push(shear(x, y, z, c * w, 0, -sn * w, H)[k]);
       void mm;
+    }
+  }
+  // the hedges: ~1 m modules on the drawn ground (gardenHedge.js); the leaf cards ride on the same instances
+  if (hedges && groundAt && doc.hedges?.length) {
+    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v) => {
+      const lh = Math.hypot(dx, dz) || 1e-6;
+      m.set([dx, dy, dz, 0, 0, sy, 0, 0, -dz / lh * w, 0, dx / lh * w, 0, x0, y0, z0, 1]);
+      push(out, m, v);
+    };
+    hedgeInstances(doc.hedges, groundAt, shearW, L.hedge);
+    L.hedgecard = L.hedge;
+    // collision stand-ins: each module as a wall box (the unit stand-in is 30 cm thick: scaled to the hedge's width)
+    for (let o = 0; o < L.hedge.length; o += STRIDE) {
+      const q = L.hedge.slice(o, o + 16);
+      q[8] /= 0.3; q[10] /= 0.3;                               // (the module's z column has the hedge's width as length)
+      for (let k = 0; k < 16; k++) SW.push(q[k]);
     }
   }
   const inst = {}, cells = {};
@@ -354,10 +378,11 @@ export class GardenPool {
       const g = new THREE.BufferGeometry();
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
       g.setIndex(geo.index);
-      const m = new THREE.InstancedMesh(g, mats.opaque[k], 1);
+      const m = new THREE.InstancedMesh(g, (piece.mats || mats.opaque)[k], 1);
       // shadows: the walls / pillars from LOD0 + 1, the ironwork from LOD0 only (its shadow dithers out across the 0-1
       // hand-over: no far shadows for thin bars)
-      m.castShadow = /^(rail|gate|cargate)_/.test(piece.name) ? k === 0 : k < 2;
+      // (the hedges' bodies from LOD0 + 1 like the walls; their leaf cards never: the body carries the shadow)
+      m.castShadow = piece.name === "hedgecard" ? false : /^(rail|gate|cargate)_/.test(piece.name) ? k === 0 : k < 2;
       m.count = 0; m.visible = false; m.receiveShadow = true; m.frustumCulled = true;
       m.boundingSphere = new THREE.Sphere(); m.name = `gardens-${piece.name}-lod${k}`;
       group.add(m); this.meshes.push(m);
