@@ -1,0 +1,1585 @@
+{
+ "generated": "2026-11-14",
+ "coords": "lat/lon WGS84; city_xz = pipeline/common.py wgs_to_local (EPSG:31370 pinned Helmert, origin E 148643 N 165394, z = south)",
+ "sources": {
+  "osm": "Overpass API (maps.mail.ru mirror) 2026-11-14, area admin_level 8 'Uccle - Ukkel': tourism=artwork, historic=*, amenity=fountain|drinking_water|clock, memorial=*, artwork_type=*, man_made=obelisk|flagpole, natural=spring",
+  "heritage": "collections.heritage.brussels institution 267 'Art en espace public - Uccle' (33 objects, XLS export)",
+  "commune": "https://www.uccle.be/sites/default/files/filemanager/Legal/CC-Finances/RCUZ_GA_III_Annexe_5_REPERTOIRE_DES_OEUVRES_D_ART_2025-07-03.pdf",
+  "wikidata": "items P131 Q203312 with P625",
+  "commons": "Category:Monuments_and_memorials_in_the_Municipality_of_Uccle and subcategories",
+  "topoguide": "https://ccu.be/wp-content/uploads/2024/11/Topoguide.pdf"
+ },
+ "legend": {
+  "visibility": "1 hidden .. 5 main street / square / tram line",
+  "difficulty": "easy geometric/stone/lettering, medium bust/relief/abstract bronze, hard full figurative",
+  "status": "todo | already_modelled | no_position | outside_uccle"
+ },
+ "items": [
+  {
+   "id": "heros",
+   "name": "Monument aux Heros (Ucclois morts pour la patrie 1914-18 / 1940-45)",
+   "type": "memorial",
+   "lat": 50.803353,
+   "lon": 4.341939,
+   "place": "Square des Heros",
+   "size": "large (plaza memorial)",
+   "material": "gilded bronze, blue stone",
+   "artist": "Leandre Grandmoulin; Verbeyst (founder); Ch. Van Hoey (architect)",
+   "date": "1925 / 1948",
+   "visibility": 5,
+   "difficulty": "hard",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Monuments_and_memorials_in_the_Municipality_of_Uccle",
+   "sources": [
+    "https://www.openstreetmap.org/node/5762014649",
+    "https://collections.heritage.brussels/fr/objects/70330",
+    "https://www.wikidata.org/wiki/Q124037478",
+    "https://www.uccle.be/sites/default/files/filemanager/Legal/CC-Finances/RCUZ_GA_III_Annexe_5_REPERTOIRE_DES_OEUVRES_D_ART_2025-07-03.pdf"
+   ],
+   "notes": "Already modelled (claude/heros, heros3).",
+   "status": "already_modelled",
+   "city_xz": [
+    -533.0,
+    -484.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "churchill",
+   "name": "Monument Winston Churchill",
+   "type": "statue",
+   "lat": 50.812058,
+   "lon": 4.354011,
+   "place": "Rond-point Churchill (Av. Churchill x Av. Brugmann)",
+   "size": "standing figure ~2.5-3 m on a stepped plinth (estimate)",
+   "material": "bronze; blue stone + concrete slab plinth",
+   "artist": "Oscar Nemon",
+   "date": "1967-10-04",
+   "visibility": 5,
+   "difficulty": "hard",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Statue_of_Winston_Churchill_in_Brussels",
+   "sources": [
+    "https://www.openstreetmap.org/node/7430237259",
+    "https://collections.heritage.brussels/fr/objects/44197",
+    "https://www.wikidata.org/wiki/Q124037484",
+    "https://www.uccle.be/sites/default/files/filemanager/Legal/CC-Finances/RCUZ_GA_III_Annexe_5_REPERTOIRE_DES_OEUVRES_D_ART_2025-07-03.pdf"
+   ],
+   "notes": "Duff Cooper poem on the front of the plinth, dedication on the back. Managed by Brussels Mobility.",
+   "status": "todo",
+   "city_xz": [
+    318.1,
+    -1452.1
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "monolithes",
+   "name": "Dix Monolithes (Ten Monoliths)",
+   "type": "abstract sculpture",
+   "lat": 50.795617,
+   "lon": 4.317733,
+   "place": "Roundabout rue de Stalle, entry from the Ring",
+   "size": "7 standing + 3 lying stones, up to 6.0 m high, 1.45 x 1.45 m section, ~40 t each; island raised 0.5 m",
+   "material": "petit granit (Soignies blue stone), rough / drill marks",
+   "artist": "Florence Freson (with Jean-Philippe Charlier)",
+   "date": "1992-1993 (inaugurated 1994-01-28)",
+   "visibility": 5,
+   "difficulty": "easy",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://www.openstreetmap.org/node/11724520082",
+    "https://collections.heritage.brussels/fr/objects/54251",
+    "https://www.wikidata.org/wiki/Q124037475"
+   ],
+   "notes": "Recycled cobbles + two hornbeam hedges along the tram tracks complete the island.",
+   "status": "todo",
+   "city_xz": [
+    -2239.9,
+    375.7
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "evades",
+   "name": "La Victoire - Monument aux evades de guerre (the 'V')",
+   "type": "memorial",
+   "lat": 50.801519,
+   "lon": 4.340262,
+   "place": "Square Georges Marlow (Av. Brugmann)",
+   "size": "V-shaped steel form on a blue-stone base, ~2-3 m (estimate)",
+   "material": "stainless steel, blue stone",
+   "artist": "Raymond Glorie",
+   "date": "2001-09-20",
+   "visibility": 5,
+   "difficulty": "easy",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://www.openstreetmap.org/node/9183655685",
+    "https://collections.heritage.brussels/fr/objects/70329",
+    "https://www.wikidata.org/wiki/Q124037471",
+    "https://www.uccle.be/sites/default/files/filemanager/Legal/CC-Finances/RCUZ_GA_III_Annexe_5_REPERTOIRE_DES_OEUVRES_D_ART_2025-07-03.pdf"
+   ],
+   "notes": "Lambert 72 in the commune list: x 147992.24, y 165677.83.",
+   "status": "todo",
+   "city_xz": [
+    -651.3,
+    -280.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "accueil",
+   "name": "L'Accueil",
+   "type": "abstract sculpture",
+   "lat": 50.811905,
+   "lon": 4.368246,
+   "place": "Junction Av. Winston Churchill x Chaussee de Waterloo (island)",
+   "size": "large organic bronze (size not published; OSM maps it as an area)",
+   "material": "bronze",
+   "artist": "Olivier Strebelle",
+   "date": "2002",
+   "visibility": 5,
+   "difficulty": "medium",
+   "photos": "Commons file 'Belgique - Uccle - L'Accueil (2004).jpg'",
+   "sources": [
+    "https://www.openstreetmap.org/way/224918084",
+    "https://collections.heritage.brussels/fr/objects/62229",
+    "https://www.wikidata.org/wiki/Q124037470",
+    "https://www.uccle.be/sites/default/files/filemanager/Legal/CC-Finances/RCUZ_GA_III_Annexe_5_REPERTOIRE_DES_OEUVRES_D_ART_2025-07-03.pdf"
+   ],
+   "notes": "Owned by the Region, managed by Brussels Mobility.",
+   "status": "todo",
+   "city_xz": [
+    1321.4,
+    -1435.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "gobert",
+   "name": "Monument a Rene Gobert",
+   "type": "memorial",
+   "lat": 50.802954,
+   "lon": 4.342365,
+   "place": "Avenue De Fre, beside Square des Heros",
+   "size": "small architectural memorial with sculpture (OSM building outline)",
+   "material": "stone (not published)",
+   "artist": "Joseph Witterwulghe (sculptor), Marcel Chabot (architect)",
+   "date": "after 1943",
+   "visibility": 4,
+   "difficulty": "medium",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://www.openstreetmap.org/way/245080563",
+    "https://collections.heritage.brussels/fr/objects/70356",
+    "https://www.wikidata.org/wiki/Q124037481"
+   ],
+   "notes": "Inscription: union of Uccle veterans to its president Rene Gobert, shot 17 Sept 1943.",
+   "status": "todo",
+   "city_xz": [
+    -503.0,
+    -439.6
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "zerlina",
+   "name": "Zerlina",
+   "type": "statue",
+   "lat": 50.804552,
+   "lon": 4.327822,
+   "place": "Junction rue Gatti de Gamond x avenue du Globe",
+   "size": "2.10 x 0.90 x 0.80 m on a 0.65 m base; 3 t",
+   "material": "Soignies stone (pierre de Soignies)",
+   "artist": "Eugene Dodeigne",
+   "date": "1990 (placed 2001-06-17)",
+   "visibility": 4,
+   "difficulty": "medium",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/45473",
+    "https://www.wikidata.org/wiki/Q124037476"
+   ],
+   "notes": "Roughly hewn figure: blocky mass, readable as stone carving from afar.",
+   "status": "todo",
+   "city_xz": [
+    -1528.1,
+    -617.8
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "cavell_depage",
+   "name": "Monument a Edith Cavell et Marie Depage",
+   "type": "statue",
+   "lat": 50.813225,
+   "lon": 4.356849,
+   "place": "Rue Marie Depage x rue Edith Cavell",
+   "size": "sculpted group on a blue-stone pedestal (size not published)",
+   "material": "bronze, blue stone",
+   "artist": "Paul Du Bois",
+   "date": "1920-07-15",
+   "visibility": 4,
+   "difficulty": "hard",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Edith_Cavell_and_Marie_Depage_monument",
+   "sources": [
+    "https://www.openstreetmap.org/node/9977870562",
+    "https://collections.heritage.brussels/fr/objects/70327",
+    "https://www.wikidata.org/wiki/Q124037480"
+   ],
+   "notes": "Winged genius + female figure. Front: 'A EDITH CAVELL / A MARIE DEPAGE / 1915 / PASSANT, DIS-LE A TES ENFANTS / ILS LES ONT TUEES'.",
+   "status": "todo",
+   "city_xz": [
+    518.1,
+    -1581.9
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "ukkelbeek_fountain",
+   "name": "Borne-fontaine of the Ukkelbeek spring",
+   "type": "fountain",
+   "lat": 50.804162,
+   "lon": 4.352565,
+   "place": "Avenue De Fre (near no. 66, foot of Chemin de la Source)",
+   "size": "cast-iron standpipe fountain ~1.5 m (estimate)",
+   "material": "cast iron",
+   "artist": "unknown",
+   "date": "before 1833 (from the Grand-Place)",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "photo in CCU Topoguide p.26",
+   "sources": [
+    "https://www.openstreetmap.org/node/350297775",
+    "https://ccu.be/wp-content/uploads/2024/11/Topoguide.pdf"
+   ],
+   "notes": "Position = OSM natural=spring node; fountain itself not mapped: verify on site. Awaiting restoration (Topoguide).",
+   "status": "todo",
+   "city_xz": [
+    216.0,
+    -573.7
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "km5",
+   "name": "Borne '5 km' (milestone)",
+   "type": "other",
+   "lat": 50.810875,
+   "lon": 4.369017,
+   "place": "Chaussee de Waterloo (Longchamp)",
+   "size": "small stone milestone ~1 m (estimate)",
+   "material": "stone",
+   "artist": "unknown",
+   "date": "1745-1815",
+   "visibility": 4,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/9035019613",
+    "https://monument.heritage.brussels/ (ref:urbanbrussels 38737)"
+   ],
+   "notes": "Listed (heritage 4).",
+   "status": "todo",
+   "city_xz": [
+    1375.7,
+    -1320.4
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "vanderelst_fountain",
+   "name": "Fountain, Place Jean Vander Elst (possibly 'La Tendresse')",
+   "type": "fountain",
+   "lat": 50.803531,
+   "lon": 4.334036,
+   "place": "Place Jean Vander Elst",
+   "size": "unknown",
+   "material": "La Tendresse: polished black granite on blue stone",
+   "artist": "La Tendresse: Paul Gaudier",
+   "date": "unknown",
+   "visibility": 4,
+   "difficulty": "medium",
+   "photos": "heritage inventory page photos (70328)",
+   "sources": [
+    "https://www.openstreetmap.org/node/3495569996",
+    "https://collections.heritage.brussels/fr/objects/70328"
+   ],
+   "notes": "OSM has a bare amenity=fountain on the square; the heritage list places 'La Tendresse' on the same square. Same object? Verify.",
+   "status": "todo",
+   "city_xz": [
+    -1090.1,
+    -504.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "danco_jets",
+   "name": "Floor fountain jets, Place Emile Danco",
+   "type": "fountain",
+   "lat": 50.800316,
+   "lon": 4.337533,
+   "place": "Place Emile Danco",
+   "size": "6 jets in a ~3 m cluster",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 3,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/8895267493"
+   ],
+   "notes": "6 OSM fountain nodes = one jet group.",
+   "status": "todo",
+   "city_xz": [
+    -843.8,
+    -146.2
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "stjob_fountain",
+   "name": "Fountain, Chaussee de Saint-Job",
+   "type": "fountain",
+   "lat": 50.791662,
+   "lon": 4.351297,
+   "place": "Chaussee de Saint-Job (Saint-Job centre)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 3,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/8081138387"
+   ],
+   "notes": "Check whether the Saint-Job hero area already has it.",
+   "status": "todo",
+   "city_xz": [
+    126.3,
+    816.7
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "baudouin",
+   "name": "Baudouin I, roi des Belges",
+   "type": "statue",
+   "lat": 50.799701,
+   "lon": 4.358781,
+   "place": "Square Charles Lagrange (near the Observatory)",
+   "size": "life-size figure on a blue-stone base (estimate)",
+   "material": "bronze, blue stone",
+   "artist": "Elisabeth Barmarin; Harze foundry (Alsemberg)",
+   "date": "1996",
+   "visibility": 3,
+   "difficulty": "hard",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://www.openstreetmap.org/node/9384553319",
+    "https://collections.heritage.brussels/fr/objects/70318",
+    "https://www.wikidata.org/wiki/Q124037473"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    654.1,
+    -77.4
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "albert_bust",
+   "name": "Monument au roi Albert Ier ('Roi Albert casque')",
+   "type": "bust",
+   "lat": 50.796541,
+   "lon": 4.356703,
+   "place": "Avenue Circulaire x avenue de Mercure",
+   "size": "helmeted bust on a concrete pedestal (estimate ~2.5 m overall)",
+   "material": "bronze bust, concrete, blue-stone paving",
+   "artist": "Victor Demanet; J. Sergeys (Leuven) founder",
+   "date": "1952",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://www.openstreetmap.org/node/13722474740",
+    "https://collections.heritage.brussels/fr/objects/70322",
+    "https://www.wikidata.org/wiki/Q124037477"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    507.6,
+    274.1
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "cavell_bust",
+   "name": "Edith Cavell (bust)",
+   "type": "bust",
+   "lat": 50.809855,
+   "lon": 4.357855,
+   "place": "Avenue Montjoie",
+   "size": "bust on a blue-stone pedestal with FR/NL/EN texts",
+   "material": "bronze (lost wax), blue stone",
+   "artist": "Nathalie Lambert",
+   "date": "2015-10-12",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Bust_Edith_Cavell,_Uccle",
+   "sources": [
+    "https://www.openstreetmap.org/node/10052311637",
+    "https://collections.heritage.brussels/fr/objects/70359",
+    "https://www.wikidata.org/wiki/Q124037468"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    589.0,
+    -1207.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "stmichel",
+   "name": "Saint Michel",
+   "type": "abstract sculpture",
+   "lat": 50.80276,
+   "lon": 4.348818,
+   "place": "Rue Groeselenberg",
+   "size": "unknown",
+   "material": "steel (OSM)",
+   "artist": "Pierre Rulens",
+   "date": "1998",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "Panoramax 01604aa6-66e7-41d8-b40c-a56f0cf9c1fb",
+   "sources": [
+    "https://www.openstreetmap.org/node/12598593282",
+    "https://collections.heritage.brussels/fr/objects/68156",
+    "https://www.wikidata.org/wiki/Q124037472"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -48.2,
+    -417.8
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "signe",
+   "name": "Signe",
+   "type": "abstract sculpture",
+   "lat": 50.804589,
+   "lon": 4.348552,
+   "place": "Square De Fre",
+   "size": "unknown",
+   "material": "stainless steel",
+   "artist": "Andre Willequet",
+   "date": "1970 (placed 1971)",
+   "visibility": 3,
+   "difficulty": "easy",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/70342"
+   ],
+   "notes": "No OSM node: position = Nominatim centre of Square De Fre.",
+   "status": "todo",
+   "city_xz": [
+    -66.8,
+    -621.3
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "cycle_temps",
+   "name": "L'Homme et le Temps - Le Cycle du Temps",
+   "type": "statue",
+   "lat": 50.803932,
+   "lon": 4.340023,
+   "place": "Rue du Doyenne (near Saint-Pierre)",
+   "size": "1.40 x 0.90 x 0.90 m",
+   "material": "bronze",
+   "artist": "Therese Chotteau",
+   "date": "2008",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://www.openstreetmap.org/node/11976364938",
+    "https://collections.heritage.brussels/fr/objects/70346",
+    "https://www.wikidata.org/wiki/Q124037469"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -668.1,
+    -548.4
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "combat_ange",
+   "name": "Le Combat avec l'Ange",
+   "type": "abstract sculpture",
+   "lat": 50.792827,
+   "lon": 4.347863,
+   "place": "Chaussee de Saint-Job (Engeland)",
+   "size": "1.80 m",
+   "material": "granite",
+   "artist": "Andre Willequet",
+   "date": "1964 (placed 2003)",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://www.openstreetmap.org/node/11962752005",
+    "https://collections.heritage.brussels/fr/objects/70354"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -115.8,
+    687.1
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "reveil",
+   "name": "Le reveil du printemps",
+   "type": "relief",
+   "lat": 50.802147,
+   "lon": 4.343626,
+   "place": "Parc de Wolvendael, Allee Paul Auguste Masui",
+   "size": "marble bas-relief in a blue-stone frame (size not published)",
+   "material": "white marble, blue stone",
+   "artist": "Frans Huygelen",
+   "date": "1926 (placed 1953-09-26)",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "Commons file '0 Uccle (Parc du Wolvendael) - Monument Franz Huygelen.JPG'",
+   "sources": [
+    "https://www.openstreetmap.org/node/5762015321",
+    "https://collections.heritage.brussels/fr/objects/70331"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -414.2,
+    -349.8
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "janssen",
+   "name": "Bust of Baron Leon Janssen",
+   "type": "bust",
+   "lat": 50.799869,
+   "lon": 4.34265,
+   "place": "Parc de Wolvendael, Allee Kurt Peiser",
+   "size": "bust on pedestal",
+   "material": "bronze, blue stone",
+   "artist": "unknown",
+   "date": "unknown",
+   "visibility": 2,
+   "difficulty": "medium",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/10862839658",
+    "https://www.wikidata.org/wiki/Q120159805"
+   ],
+   "notes": "'Domaine de Wolvendael 1909-1921'.",
+   "status": "todo",
+   "city_xz": [
+    -483.1,
+    -96.4
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "vanderkindere",
+   "name": "Leon Vanderkindere stele",
+   "type": "memorial",
+   "lat": 50.798285,
+   "lon": 4.343974,
+   "place": "Parc de Wolvendael, Allee Suzanne Cocq",
+   "size": "stone stele",
+   "material": "stone",
+   "artist": "unknown",
+   "date": "unknown",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/5762015330"
+   ],
+   "notes": "Mayor 1899-1906.",
+   "status": "todo",
+   "city_xz": [
+    -389.8,
+    79.8
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "ulenspiegel",
+   "name": "Thyl Ulenspiegel / Charles De Coster plaque",
+   "type": "memorial",
+   "lat": 50.803086,
+   "lon": 4.343243,
+   "place": "Wolvendael (near Vieux Cornet)",
+   "size": "stone plaque",
+   "material": "stone",
+   "artist": "unknown",
+   "date": "1927",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/5762014648",
+    "https://ccu.be/wp-content/uploads/2024/11/Topoguide.pdf"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -441.1,
+    -454.2
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "carsoel",
+   "name": "Monument funeraire Jean et Pierre Carsoel",
+   "type": "memorial",
+   "lat": 50.810606,
+   "lon": 4.359458,
+   "place": "Parc Montjoie (Av. Churchill 159)",
+   "size": "funerary monument (size not published)",
+   "material": "stone",
+   "artist": "unknown",
+   "date": "unknown",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Monument_Jean_et_Pierre_Carsoel",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/101182",
+    "https://www.uccle.be/sites/default/files/filemanager/Legal/CC-Finances/RCUZ_GA_III_Annexe_5_REPERTOIRE_DES_OEUVRES_D_ART_2025-07-03.pdf",
+    "https://monument.heritage.brussels/fr/buildings/39572"
+   ],
+   "notes": "Lambert 72 in the commune list: x 149350.37, y 166678.85 (coords here from Commons photo).",
+   "status": "todo",
+   "city_xz": [
+    702.0,
+    -1290.5
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "foresters",
+   "name": "Monument aux Forestiers",
+   "type": "memorial",
+   "lat": 50.770421,
+   "lon": 4.403687,
+   "place": "Foret de Soignes (Uccle part)",
+   "size": "dolmen + 11 named menhirs + '1918' stone, 12 x 12 m, 3 m high",
+   "material": "Weris puddingstone",
+   "artist": "Richard Viandier",
+   "date": "1920-05-30",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Monument_to_the_Foresters",
+   "sources": [
+    "https://www.openstreetmap.org/way/947385051",
+    "https://collections.heritage.brussels/fr/objects/70339",
+    "https://www.wikidata.org/wiki/Q13104247"
+   ],
+   "notes": "43 Commons photos: best-documented item.",
+   "status": "todo",
+   "city_xz": [
+    3821.4,
+    3179.1
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "memorial2203",
+   "name": "Memorial 22/03",
+   "type": "memorial",
+   "lat": 50.787687,
+   "lon": 4.397266,
+   "place": "Foret de Soignes",
+   "size": "clearing with a ring of birches and blue stone",
+   "material": "birch, blue stone",
+   "artist": "Bas Smets (landscape architect)",
+   "date": "2017-03-21",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Memorial_22/03",
+   "sources": [
+    "https://www.openstreetmap.org/way/947247805",
+    "https://www.wikidata.org/wiki/Q63311466"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    3367.7,
+    1258.6
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "deridder",
+   "name": "Marc De Ridder - 1990 (obelisk)",
+   "type": "obelisk",
+   "lat": 50.775866,
+   "lon": 4.39024,
+   "place": "Sentier du Vuylbeek (forest)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "1990",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/812197886"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    2872.6,
+    2573.8
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "stele1830",
+   "name": "Stele 1830-1930",
+   "type": "memorial",
+   "lat": 50.770081,
+   "lon": 4.398214,
+   "place": "Sentier de Grasdelle (forest)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "1930",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/9183673837"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    3435.3,
+    3217.1
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "stele_allard",
+   "name": "Stele, rue Victor Allard",
+   "type": "memorial",
+   "lat": 50.802489,
+   "lon": 4.324187,
+   "place": "Rue Victor Allard (near no. 256)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/13767425391"
+   ],
+   "notes": "Untagged subject: verify.",
+   "status": "todo",
+   "city_xz": [
+    -1784.4,
+    -388.4
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "neerstalle_war",
+   "name": "War memorial, chaussee de Neerstalle",
+   "type": "memorial",
+   "lat": 50.798458,
+   "lon": 4.318753,
+   "place": "Chaussee de Neerstalle (near no. 425)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 3,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/12345229267"
+   ],
+   "notes": "Untagged: verify form on photos.",
+   "status": "todo",
+   "city_xz": [
+    -2167.8,
+    59.7
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "merlo",
+   "name": "MERLO 1865 plaque",
+   "type": "memorial",
+   "lat": 50.798826,
+   "lon": 4.320777,
+   "place": "Neerstalle",
+   "size": "plaque",
+   "material": "-",
+   "artist": "-",
+   "date": "1865",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/12339544479"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -2025.1,
+    18.9
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "argentina_stone",
+   "name": "Unnamed stone monument (subject: Argentina)",
+   "type": "memorial",
+   "lat": 50.80009,
+   "lon": 4.366103,
+   "place": "Avenue de l'Observatoire",
+   "size": "unknown",
+   "material": "stone",
+   "artist": "-",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "Panoramax da9637df-38e4-40e4-a7ca-3150b641a6a2",
+   "sources": [
+    "https://www.openstreetmap.org/way/1510216185"
+   ],
+   "notes": "Subject Q414 (Argentina); purpose unknown.",
+   "status": "todo",
+   "city_xz": [
+    1170.3,
+    -120.7
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "milestone0",
+   "name": "Milestone '0'",
+   "type": "other",
+   "lat": 50.799812,
+   "lon": 4.375374,
+   "place": "Vert Chasseur",
+   "size": "small",
+   "material": "stone",
+   "artist": "-",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/2446370859"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    1823.9,
+    -89.8
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "milestone1",
+   "name": "Old milestone '1'",
+   "type": "other",
+   "lat": 50.793042,
+   "lon": 4.361774,
+   "place": "Fond'Roy area",
+   "size": "small",
+   "material": "stone",
+   "artist": "-",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/11486992613"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    865.0,
+    663.3
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "charlesquint1",
+   "name": "Borne de Charles Quint",
+   "type": "other",
+   "lat": 50.788513,
+   "lon": 4.38605,
+   "place": "Foret de Soignes",
+   "size": "boundary stone",
+   "material": "stone",
+   "artist": "-",
+   "date": "16th c. (name)",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/660604408"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    2576.8,
+    1167.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "charlesquint2",
+   "name": "Borne de Charles Quint",
+   "type": "other",
+   "lat": 50.788632,
+   "lon": 4.350423,
+   "place": "Saint-Job / Fond'Roy edge",
+   "size": "boundary stone",
+   "material": "stone",
+   "artist": "-",
+   "date": "16th c. (name)",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/2264896394"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    64.6,
+    1153.8
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "planet_earth",
+   "name": "Planet walk: Terre / Lune",
+   "type": "abstract sculpture",
+   "lat": 50.799257,
+   "lon": 4.358848,
+   "place": "Square Charles Lagrange (Pole Espace, Observatory)",
+   "size": "spheres + info boards",
+   "material": "-",
+   "artist": "Luc de Meersman",
+   "date": "-",
+   "visibility": 3,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/9005272578",
+    "https://www.openstreetmap.org/node/9005272579",
+    "https://ccu.be/wp-content/uploads/2024/11/Topoguide.pdf"
+   ],
+   "notes": "Only Earth and Moon are mapped; other planets may exist.",
+   "status": "todo",
+   "city_xz": [
+    658.8,
+    -28.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "rose_saron",
+   "name": "Je suis la rose de Saron (+3 unnamed sculptures)",
+   "type": "abstract sculpture",
+   "lat": 50.809612,
+   "lon": 4.354033,
+   "place": "Avenue Leo Errera",
+   "size": "unknown",
+   "material": "bronze",
+   "artist": "Andre Willequet",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "medium",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/9784918478",
+    "https://www.openstreetmap.org/node/9784918842",
+    "https://www.openstreetmap.org/node/9784918843",
+    "https://www.openstreetmap.org/node/9784918844"
+   ],
+   "notes": "Possibly in a private / institutional garden: verify.",
+   "status": "todo",
+   "city_xz": [
+    319.6,
+    -1180.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "chaisart",
+   "name": "Chais'Art Presse",
+   "type": "abstract sculpture",
+   "lat": 50.807556,
+   "lon": 4.347968,
+   "place": "Avenue de la Ferme Rose",
+   "size": "unknown",
+   "material": "-",
+   "artist": "Cleon Angelo",
+   "date": "2023-04-06",
+   "visibility": 3,
+   "difficulty": "medium",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/10930243428"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -107.9,
+    -951.4
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "muyle",
+   "name": "Il ne faut pas rire du bonheur",
+   "type": "other",
+   "lat": 50.799473,
+   "lon": 4.319505,
+   "place": "Stalle",
+   "size": "wall work",
+   "material": "-",
+   "artist": "Johan Muyle",
+   "date": "2009",
+   "visibility": 3,
+   "difficulty": "easy",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/9174275537"
+   ],
+   "notes": "Tagged artwork_type=mural (ref:urbanbrussels 64608).",
+   "status": "todo",
+   "city_xz": [
+    -2114.7,
+    -53.1
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "mural_benaets",
+   "name": "Mural, rue Jean Benaets",
+   "type": "other",
+   "lat": 50.792056,
+   "lon": 4.361718,
+   "place": "Rue Jean Benaets (Saint-Job)",
+   "size": "wall mural",
+   "material": "paint",
+   "artist": "artist Wikidata Q3370990",
+   "date": "-",
+   "visibility": 3,
+   "difficulty": "easy",
+   "photos": "Panoramax 0eba210e-8525-4785-8530-9227ae99c90f",
+   "sources": [
+    "https://www.openstreetmap.org/node/13185492791"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    861.1,
+    773.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "herinckx_cluster",
+   "name": "11 unnamed sculptures, avenue Guillaume Herinckx",
+   "type": "abstract sculpture",
+   "lat": 50.796074,
+   "lon": 4.33026,
+   "place": "Avenue Guillaume Herinckx (Stalle)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "medium",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/10102169817"
+   ],
+   "notes": "11 bare artwork_type=sculpture nodes in ~150 m: likely a garden / campus. Verify.",
+   "status": "todo",
+   "city_xz": [
+    -1356.7,
+    325.4
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "lecomte_statue",
+   "name": "Unnamed metal statue, rue Emile Lecomte",
+   "type": "statue",
+   "lat": 50.810958,
+   "lon": 4.343576,
+   "place": "Rue Emile Lecomte",
+   "size": "unknown",
+   "material": "metal",
+   "artist": "-",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "hard",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/10757544725"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -417.4,
+    -1329.9
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "dolez_sculpture",
+   "name": "Unnamed sculpture, avenue Dolez",
+   "type": "abstract sculpture",
+   "lat": 50.780781,
+   "lon": 4.356324,
+   "place": "Avenue Dolez (Verrewinkel)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "medium",
+   "photos": "-",
+   "sources": [
+    "https://www.openstreetmap.org/node/12036565410"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    480.6,
+    2027.2
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "esclave",
+   "name": "Esclave",
+   "type": "statue",
+   "lat": 50.798881,
+   "lon": 4.347096,
+   "place": "Ecole La Cime, avenue Paul Stroobant",
+   "size": "unknown",
+   "material": "cast iron",
+   "artist": "anonymous",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "hard",
+   "photos": "-",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/70317",
+    "https://www.wikidata.org/wiki/Q124037483"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -169.7,
+    13.6
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "clerx",
+   "name": "Dr Hubert Clerx (grave)",
+   "type": "bust",
+   "lat": 50.79536,
+   "lon": 4.346604,
+   "place": "Dieweg cemetery",
+   "size": "funerary monument",
+   "material": "-",
+   "artist": "Paul Du Bois",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "medium",
+   "photos": "https://commons.wikimedia.org/wiki/Category:Grave_of_Hubert_Clerx_(Dieweg_Cemetery)",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/70352",
+    "https://www.wikidata.org/wiki/Q124037482"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -204.5,
+    405.3
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "silence_tombe",
+   "name": "Le silence de la tombe",
+   "type": "statue",
+   "lat": 50.783124,
+   "lon": 4.330811,
+   "place": "Saint-Gilles cemetery (in Uccle, Calevoet)",
+   "size": "life-size figure",
+   "material": "-",
+   "artist": "Julien Dillens",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "hard",
+   "photos": "https://commons.wikimedia.org/wiki/Category:The_Silence_of_the_Tomb",
+   "sources": [
+    "https://www.openstreetmap.org/node/11374821216"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -1318.6,
+    1766.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "brigades",
+   "name": "Memorial to the Belgian volunteers of the International Brigades 1936-1939",
+   "type": "memorial",
+   "lat": 50.779914,
+   "lon": 4.32956,
+   "place": "Rue de Linkebeek (Calevoet)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "Mapillary 1984997719057430",
+   "sources": [
+    "https://www.openstreetmap.org/node/13785116810"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -1407.0,
+    2123.0
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "jacquemotte",
+   "name": "Tomb of Joseph Jacquemotte",
+   "type": "memorial",
+   "lat": 50.780571,
+   "lon": 4.328527,
+   "place": "Cemetery, Calevoet",
+   "size": "mausoleum",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "medium",
+   "photos": "Mapillary 352800280558012",
+   "sources": [
+    "https://www.openstreetmap.org/way/1506800647"
+   ],
+   "notes": "",
+   "status": "todo",
+   "city_xz": [
+    -1479.8,
+    2049.9
+   ],
+   "in_uccle": true
+  },
+  {
+   "id": "gregala",
+   "name": "Le cheval Gregala",
+   "type": "statue",
+   "lat": 50.797029,
+   "lon": 4.395854,
+   "place": "Chaussee de La Hulpe, entrance of the Boitsfort racecourse",
+   "size": "horse 4.50 m high on a 0.85 m base",
+   "material": "bronze; pink travertine + metal base",
+   "artist": "Lucie Sentjens",
+   "date": "1993 (placed 1994)",
+   "visibility": 3,
+   "difficulty": "hard",
+   "photos": "heritage inventory page photos",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/44191",
+    "https://www.wikidata.org/wiki/Q124037474"
+   ],
+   "notes": "Listed in Uccle's public-art collection, but Nominatim puts the spot in the City of Brussels: see in_uccle flag.",
+   "status": "outside_uccle",
+   "city_xz": [
+    3267.7,
+    219.5
+   ],
+   "in_uccle": false
+  },
+  {
+   "id": "her70345",
+   "name": "L'Abondance",
+   "type": "statue",
+   "lat": null,
+   "lon": null,
+   "place": "unknown",
+   "size": "unknown",
+   "material": "French stone",
+   "artist": "Joseph Witterwulghe",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "hard",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/70345"
+   ],
+   "notes": "No coordinates found.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her70324",
+   "name": "Perroquet joueur de flute",
+   "type": "statue",
+   "lat": null,
+   "lon": null,
+   "place": "unknown",
+   "size": "unknown",
+   "material": "pink Portuguese marble, ferruginous stone base",
+   "artist": "Monique Dervichian-Guebels",
+   "date": "1962 (placed 1965)",
+   "visibility": 2,
+   "difficulty": "hard",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/70324"
+   ],
+   "notes": "No coordinates found. Inventory notes 'possibly disappeared'.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her45514",
+   "name": "Le Crepuscule",
+   "type": "statue",
+   "lat": null,
+   "lon": null,
+   "place": "Avenue De Fre (exact spot unknown)",
+   "size": "unknown",
+   "material": "bronze",
+   "artist": "Alfred Blondel",
+   "date": "-",
+   "visibility": 2,
+   "difficulty": "hard",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/45514"
+   ],
+   "notes": "No coordinates found. Crouching nude woman.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her103942",
+   "name": "Monument Maurice Raindorf (plaque)",
+   "type": "memorial",
+   "lat": null,
+   "lon": null,
+   "place": "Dieweg x avenue du Wolvendael",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/103942"
+   ],
+   "notes": "No coordinates found.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her103940",
+   "name": "Monument aux anciens du Tomberg (plaque)",
+   "type": "memorial",
+   "lat": null,
+   "lon": null,
+   "place": "Rond-point Charles Solau (not found by Nominatim)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/103940"
+   ],
+   "notes": "No coordinates found.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her87426",
+   "name": "Bench-tribute to the painter Maurice Guilbert",
+   "type": "other",
+   "lat": null,
+   "lon": null,
+   "place": "unknown",
+   "size": "unknown",
+   "material": "-",
+   "artist": "Leon Sneyers",
+   "date": "1938",
+   "visibility": 2,
+   "difficulty": "hard",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/87426"
+   ],
+   "notes": "No coordinates found. Inscribed bench.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her92451",
+   "name": "Memorial Jean Burgers (plaque)",
+   "type": "memorial",
+   "lat": null,
+   "lon": null,
+   "place": "unknown",
+   "size": "unknown",
+   "material": "-",
+   "artist": "Martin Guyaux",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/92451"
+   ],
+   "notes": "No coordinates found.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her92454",
+   "name": "Plaque Jean Druart",
+   "type": "memorial",
+   "lat": null,
+   "lon": null,
+   "place": "unknown",
+   "size": "unknown",
+   "material": "-",
+   "artist": "J. Segers",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/92454"
+   ],
+   "notes": "No coordinates found. Commons: Category:Jean_Druart_memorial.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her92456",
+   "name": "Plaque Joseph Wauters",
+   "type": "memorial",
+   "lat": null,
+   "lon": null,
+   "place": "his house (address not given)",
+   "size": "unknown",
+   "material": "-",
+   "artist": "Dolf Ledel",
+   "date": "1959",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/92456"
+   ],
+   "notes": "No coordinates found.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her103912",
+   "name": "Plaque, former pupils of Uccle-Calevoet school killed for the country",
+   "type": "memorial",
+   "lat": null,
+   "lon": null,
+   "place": "Ecole communale de Calevoet, rue Francois Vervloet",
+   "size": "unknown",
+   "material": "-",
+   "artist": "G. Vande Cruys",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/103912"
+   ],
+   "notes": "No coordinates found.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  },
+  {
+   "id": "her103941",
+   "name": "Plaque Andre Didier",
+   "type": "memorial",
+   "lat": null,
+   "lon": null,
+   "place": "Ecole communale de Calevoet, rue Francois Vervloet",
+   "size": "unknown",
+   "material": "-",
+   "artist": "-",
+   "date": "-",
+   "visibility": 1,
+   "difficulty": "easy",
+   "photos": "heritage inventory page",
+   "sources": [
+    "https://collections.heritage.brussels/fr/objects/103941"
+   ],
+   "notes": "No coordinates found.",
+   "status": "no_position",
+   "city_xz": null,
+   "in_uccle": null
+  }
+ ]
+}
