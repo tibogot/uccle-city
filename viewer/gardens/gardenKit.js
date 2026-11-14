@@ -22,7 +22,9 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
-import { hedgeGeometries, hedgeMaterials, hedgeInstances } from "./gardenHedge.js";
+import { hedgeGeometries, hedgeMaterials, hedgeInstances, gardenFades } from "./gardenHedge.js";
+import { StreamPool, buildSource } from "../instanceStream.js";
+export { gardenFades };
 
 export const RAILS = ["spear", "flat", "rings"];
 export const PIECES = ["wall", "cap", "pillar", "pcap", ...RAILS.map((r) => `rail_${r}`), ...RAILS.map((r) => `gate_${r}`), ...RAILS.map((r) => `cargate_${r}`), "hedge", "hedgecard"];
@@ -115,7 +117,7 @@ const uPaint = uniformArray(PAINT.map((c) => new THREE.Vector4(...c)), "vec4");
 function lodKeep(lod, band, n = ditherNoise()) {
   const d = length(positionWorld.sub(lodEye));
   const t1 = smoothstep(band.x.mul(0.9), band.x.mul(1.1), d), t2 = smoothstep(band.y.mul(0.9), band.y.mul(1.1), d), e = smoothstep(band.z.mul(0.85), band.z, d);
-  const f = band.w;
+  const f = gardenFades.fade(band.w);                          // the tile fade by its slot (viewer/instanceStream.js)
   const tile = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
   const k = lod === 0 ? keepBand(t1, float(1.01), n) : lod === 1 ? keepBand(t2, t1, n) : keepBand(e, t2, n);
   return k.and(tile);
@@ -179,7 +181,7 @@ function materials() {
     m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
     m.maskShadowNode = m.maskNode;
     m.name = `gardens-lod${lod}`;
-    m.userData.shared = true; m.userData.noFade = true;          // (the tile fade rides in iBand.w)
+    m.userData.shared = true; m.userData.noFade = true;          // (the tile fade: its slot rides in iBand.w)
     return m;
   });
   const standin = new THREE.MeshStandardNodeMaterial({ color: 0x555555 });
@@ -198,7 +200,7 @@ function styleVar(st, rnd) {
 const rnd01 = (x, z) => { let h = Math.imul(Math.round(x * 100) | 0, 73856093) ^ Math.imul(Math.round(z * 100) | 0, 19349663); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 
 /**
- * A tile's data/gardens doc -> { inst: { <piece>: Float32Array stride 20 }, cells: { <piece>: [{ x, z, r, a, b }] },
+ * A tile's data/gardens doc -> { inst: { <piece>: Float32Array stride 24 } (gardenSources: the streaming sources),
  * stand: { wall: [mat16...], pillar: [...], gate: [...] } (collision stand-ins: unit boxes), counts }.
  * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style].
  */
@@ -296,14 +298,9 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
       for (let k = 0; k < 16; k++) SW.push(q[k]);
     }
   }
-  const inst = {}, cells = {};
-  for (const k of PIECES) {
-    if (!L[k].length) continue;
-    const a = new Float32Array(L[k]);
-    const sorted = sortCells(a);
-    inst[k] = sorted.a; cells[k] = sorted.cells;
-  }
-  return { inst, cells, settled: { styles, segs, pillars }, stand: { wall: SW, pillar: SP, gate: SG }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
+  const inst = {};
+  for (const k of PIECES) if (L[k].length) inst[k] = k === "hedgecard" && inst.hedge ? inst.hedge : new Float32Array(L[k]);
+  return { inst, settled: { styles, segs, pillars }, stand: { wall: SW, pillar: SP, gate: SG }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
 }
 
 /**
@@ -348,33 +345,46 @@ function settlePillars(doc, G) {
   });
 }
 
-/** instances sorted into 50 m cells (a pool skips a whole cell beyond its range): { a, cells: [{ x, z, r, a, b }] } */
-function sortCells(a) {
-  const n = a.length / STRIDE, C = 50, keyOf = new Map();
-  const cx = (i) => a[i * STRIDE + 12] + a[i * STRIDE] * 0.5, cz = (i) => a[i * STRIDE + 14] + a[i * STRIDE + 2] * 0.5;
-  const idx = Array.from({ length: n }, (_, i) => i);
-  const key = (i) => `${Math.floor(cx(i) / C)},${Math.floor(cz(i) / C)}`;
-  for (const i of idx) keyOf.set(i, key(i));
-  idx.sort((p, q) => (keyOf.get(p) < keyOf.get(q) ? -1 : keyOf.get(p) > keyOf.get(q) ? 1 : 0));
-  const out = new Float32Array(a.length), cells = [];
-  let cur = null;
-  idx.forEach((i, j) => {
-    out.set(a.subarray(i * STRIDE, (i + 1) * STRIDE), j * STRIDE);
-    const k = keyOf.get(i);
-    if (!cur || cur.k !== k) { const [ix, iz] = k.split(",").map(Number); cur = { k, x: (ix + 0.5) * C, z: (iz + 0.5) * C, r: C * 0.71 + 6, a: j, b: j }; cells.push(cur); }
-    cur.b = j + 1;
-  });
-  return { a: out, cells };
+// ------------------------------------------------------------------------------------------------ the pools
+/** a tile's instances (gardenInstances().inst) as streaming sources per piece (viewer/instanceStream.js): the matrix,
+ *  iVar, iAux (the hedges) columns, iBand = the piece's bands + the tile's fade slot */
+export function gardenSources(inst, slot) {
+  const out = {};
+  const cache = new Map();                    // (the hedge cards ride on the hedge's instances: the same columns)
+  for (const k of PIECES) {
+    const a = inst[k]; if (!a) continue;
+    const n = a.length / STRIDE, [s1, s2, end] = bandOf(k);
+    let base = cache.get(a);
+    if (!base) {
+      const M = new Float32Array(n * 16), V = new Float32Array(n * 4), X = new Float32Array(n * 4), C = new Float32Array(n * 4);
+      for (let i = 0; i < n; i++) {
+        const o = i * STRIDE;
+        M.set(a.subarray(o, o + 16), i * 16); V.set(a.subarray(o + 16, o + 20), i * 4); X.set(a.subarray(o + 20, o + 24), i * 4);
+        const hx = a[o] * 0.5, hy = a[o + 1] * 0.5, hz = a[o + 2] * 0.5;
+        C[i * 4] = a[o + 12] + hx; C[i * 4 + 1] = a[o + 13] + hy; C[i * 4 + 2] = a[o + 14] + hz; C[i * 4 + 3] = Math.hypot(hx, hz);
+      }
+      base = { M, V, X, C }; cache.set(a, base);
+    }
+    const B = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) { B[i * 4] = s1; B[i * 4 + 1] = s2; B[i * 4 + 2] = end; B[i * 4 + 3] = slot; }
+    out[k] = buildSource(n, { instanceMatrix: [base.M, 16], iBand: [B, 4], iVar: [base.V, 4], iAux: [base.X, 4] }, base.C);
+  }
+  return out;
 }
 
-// ------------------------------------------------------------------------------------------------ the pools
-/** ONE pool per piece for the whole city: LOD0..2 instanced meshes re-filled from the loaded tiles' instances near the
- *  camera. Static buffers (needsUpdate + update ranges over the live count, never DynamicDrawUsage); a mesh with nothing
- *  to draw is not visible. */
+/** ONE pool per piece for the whole city: LOD0..2 instanced meshes streamed from the loaded tiles' sources near the
+ *  camera (viewer/instanceStream.js StreamPool: static buffers, update ranges over the live count, never
+ *  DynamicDrawUsage; a mesh with nothing to draw is not visible). margin: the distance (m) each LOD holds beyond its band
+ *  (the streamer's hysteresis). */
 export class GardenPool {
-  constructor(piece, mats, group) {
-    this.piece = piece; this.cap = 0; this.meshes = []; this.aux = piece.name === "hedge";
-    this.lod = piece.lods.map((geo, k) => {
+  constructor(piece, mats, group, margin = 12) {
+    this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge";
+    const [s1, s2, end] = piece.band;
+    // what the shaders may draw per LOD (gardenKit.js lodKeep / gardenHedge.js keep smoothstep windows); a one-LOD piece
+    // (the hedge cards) to its end
+    const one = piece.lods.length === 1;
+    const live = one ? [[0, end]] : [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, end]];
+    const spec = piece.lods.map((geo, k) => {
       const g = new THREE.BufferGeometry();
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
       g.setIndex(geo.index);
@@ -383,71 +393,25 @@ export class GardenPool {
       // hand-over: no far shadows for thin bars)
       // (the hedges' bodies from LOD0 + 1 like the walls; their leaf cards never: the body carries the shadow)
       m.castShadow = piece.name === "hedgecard" ? false : /^(rail|gate|cargate)_/.test(piece.name) ? k === 0 : k < 2;
-      m.count = 0; m.visible = false; m.receiveShadow = true; m.frustumCulled = true;
+      m.receiveShadow = true; m.frustumCulled = true;
       m.boundingSphere = new THREE.Sphere(); m.name = `gardens-${piece.name}-lod${k}`;
       group.add(m); this.meshes.push(m);
-      return m;
+      const attrs = [["instanceMatrix", "instanceMatrix", 16], ["iBand", "iBand", 4], ["iVar", "iVar", 4]];
+      if (this.aux) attrs.push(["iAux", "iAux", 4]);
+      return { mesh: m, l0: live[k][0], l1: live[k][1], attrs };
     });
-    this.r = Math.max(piece.lods[0].boundingSphere.radius, 1.0);
-    this.grow(64);
+    this.lod = this.meshes;
+    this.stream = new StreamPool(piece.name, spec, Math.max(piece.lods[0].boundingSphere.radius, 1.0), margin);
   }
-  grow(n) {
-    if (n <= this.cap) return;
-    this.cap = Math.max(n, this.cap * 2);
-    for (const m of this.meshes) {
-      m.instanceMatrix = new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 16), 16);
-      m.geometry.setAttribute("iBand", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
-      m.geometry.setAttribute("iVar", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
-      if (this.aux) m.geometry.setAttribute("iAux", new THREE.InstancedBufferAttribute(new Float32Array(this.cap * 4), 4));
-    }
-  }
-  /** tiles: [{ inst: { <piece>: Float32Array }, cells, fade }]; c = the camera position */
-  gather(tiles, c, margin = 4) {
-    const [s1, s2, end] = this.piece.band, kind = this.piece.name;
-    const lims = [[0, s1 * 1.1 + margin], [s1 * 0.9 - margin, s2 * 1.1 + margin], [s2 * 0.9 - margin, end + margin]];
-    // the candidates (cells in range) first: their count bounds every LOD's count
-    let total = 0;
-    const live = [];
+  /** the labs: a synchronous gather of tiles [{ inst }] (fade 1: slot 0) round c */
+  gather(tiles, c) {
+    const srcs = [];
     for (const t of tiles) {
-      const a = t.inst[kind]; if (!a) continue;
-      for (const cl of t.cells[kind]) {
-        if (Math.hypot(cl.x - c.x, cl.z - c.z) - cl.r > end + margin) continue;
-        live.push(t, cl); total += cl.b - cl.a;
-      }
+      t.__src ||= gardenSources(t.inst, 0);
+      if (t.__src[this.piece.name]) srcs.push({ src: t.__src[this.piece.name] });
     }
-    this.grow(total);
-    this.lod.forEach((m, li) => {
-      const d0 = Math.max(0, lims[li][0]), d1 = lims[li][1];
-      const M = m.instanceMatrix.array, B = m.geometry.attributes.iBand.array, Vv = m.geometry.attributes.iVar.array, X = this.aux ? m.geometry.attributes.iAux.array : null;
-      let n = 0, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity, ext = 0;
-      for (let q = 0; q < live.length; q += 2) {
-        const t = live[q], cl = live[q + 1], a = t.inst[kind];
-        const dc = Math.hypot(cl.x - c.x, cl.z - c.z);
-        if (dc - cl.r > d1 || dc + cl.r < d0) continue;
-        for (let i = cl.a; i < cl.b; i++) {
-          const o = i * STRIDE;
-          const hx = a[o] * 0.5, hy = a[o + 1] * 0.5, hz = a[o + 2] * 0.5;
-          const x = a[o + 12] + hx, y = a[o + 13] + hy, z = a[o + 14] + hz;
-          const half = Math.hypot(hx, hz);
-          const d = Math.hypot(x - c.x, y - c.y, z - c.z);
-          if (d + half < d0 || d - half > d1) continue;
-          M.set(a.subarray(o, o + 16), n * 16);
-          B[n * 4] = s1; B[n * 4 + 1] = s2; B[n * 4 + 2] = end; B[n * 4 + 3] = t.fade;
-          Vv[n * 4] = a[o + 16]; Vv[n * 4 + 1] = a[o + 17]; Vv[n * 4 + 2] = a[o + 18]; Vv[n * 4 + 3] = a[o + 19];
-          if (X) { X[n * 4] = a[o + 20]; X[n * 4 + 1] = a[o + 21]; X[n * 4 + 2] = a[o + 22]; X[n * 4 + 3] = a[o + 23]; }
-          x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
-          ext = Math.max(ext, half);
-          n++;
-        }
-      }
-      m.count = n; m.visible = n > 0;
-      if (!n) return;
-      m.boundingSphere.center.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-      m.boundingSphere.radius = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 + this.r + ext + 2;
-      for (const [att, w] of [[m.instanceMatrix, 16], [m.geometry.attributes.iBand, 4], [m.geometry.attributes.iVar, 4], ...(X ? [[m.geometry.attributes.iAux, 4]] : [])]) {
-        att.clearUpdateRanges(); att.addUpdateRange(0, n * w); att.needsUpdate = true;
-      }
-    });
+    const it = this.stream.gather(srcs, c, () => false);
+    while (!it.next().done);
   }
   get drawn() { return this.meshes.filter((m) => m.visible).length; }
   get instances() { return this.meshes.map((m) => (m.visible ? m.count : 0)); }
