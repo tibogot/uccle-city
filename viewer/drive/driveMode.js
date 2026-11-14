@@ -57,6 +57,25 @@ carFleet.onChange((c) => { if (c.driveBox && !c.hidden) setBox(c.driveBox.col, c
  * benches / bike racks / bus and tram shelters as oriented boxes), the tram poles and the rail masts (posts at their
  * foot). From the features group's instanced meshes, by name (the same ones viewer/character/cityHook.js uses).
  */
+const COLCACHE = new URLSearchParams(location.search).get("colcache") !== "0";
+const localBlocks = new WeakMap();          // geometry -> Map(scale key -> blocker rings in the piece's scaled frame)
+const cPos = new THREE.Vector3(), cQ = new THREE.Quaternion(), cS = new THREE.Vector3();
+const BAND_LO = 0.30, MIN_HALF = 0.125;                       // (heroColliders.js BAND[0]: the car band's bottom over the drive surface)
+const boxes = new WeakMap();
+/** 12 triangles whose corners all sit on the bounding box's corners: a box (the garden walls, pillars, gates). */
+function isBox(g) {
+  let r = boxes.get(g);
+  if (r !== undefined) return r;
+  const P = g.attributes.position, I = g.index, n = I ? I.count : P.count;
+  r = n === 36;
+  if (r) {
+    if (!g.boundingBox) g.computeBoundingBox();
+    const b = g.boundingBox, e = 1e-4, on = (a, lo, hi) => Math.abs(a - lo) < e || Math.abs(a - hi) < e;
+    for (let i = 0; i < P.count && r; i++) r = on(P.getX(i), b.min.x, b.max.x) && on(P.getY(i), b.min.y, b.max.y) && on(P.getZ(i), b.min.z, b.max.z);
+  }
+  boxes.set(g, r);
+  return r;
+}
 export function featureColliders(features, bounds) {
   const polys = [], circles = [], counts = { cars: 0, furniture: 0, poles: 0 };
   const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), o = new THREE.Vector3();
@@ -84,6 +103,40 @@ export function featureColliders(features, bounds) {
       }
       // benches, bike racks, shelters: what they draw at car height (a shelter's roof overhangs its posts and glass;
       // a bike rack is hoops, not a box), sliced like the landmarks (viewer/heroColliders.js)
+      if (COLCACHE) {
+        // (perf audit 2026-11-14, docs/perf/AUDIT.md step 11: per instance this cost 20-110 ms of main thread per tile
+        // landing, 13.7k garden-wall boxes for the 9 start tiles. ?colcache=0: per instance, world grid, as before)
+        // a plain box (garden walls / pillars / gates: 12 triangles on its bounding box): its plan rectangle, placed by
+        // the instance's whole matrix, when it stands at least 0.30 m tall (the bottom of the car band)
+        if (isBox(m.geometry)) {
+          if (cS.setFromMatrixColumn(W, 1).length() * (bb.max.y - bb.min.y) < BAND_LO) continue;
+          // (at least one 0.25 m grid cell thick, as the raster made them: a thin wall is not tunnelled through)
+          const sx = cS.setFromMatrixColumn(W, 0).length() || 1, sz = cS.setFromMatrixColumn(W, 2).length() || 1;
+          const cx = (bb.min.x + bb.max.x) / 2, cz = (bb.min.z + bb.max.z) / 2;
+          const hx = Math.max((bb.max.x - bb.min.x) / 2, MIN_HALF / sx), hz = Math.max((bb.max.z - bb.min.z) / 2, MIN_HALF / sz);
+          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: KIND.furniture });
+          counts.furniture++;
+          continue;
+        }
+        // other pieces: once per geometry x scale in the piece's own frame, then placed by its yaw + position
+        W.decompose(cPos, cQ, cS);
+        if (Math.abs(cQ.x) < 1e-4 && Math.abs(cQ.z) < 1e-4) {
+          const key = `${cS.x.toFixed(3)},${cS.y.toFixed(3)},${cS.z.toFixed(3)}`;
+          let per = localBlocks.get(m.geometry);
+          if (!per) localBlocks.set(m.geometry, (per = new Map()));
+          let rects = per.get(key);
+          if (!rects) {
+            const P = m.geometry.attributes.position, I = m.geometry.index, cnt = I ? I.count : P.count, T = new Float32Array(cnt * 3);
+            for (let q = 0; q < cnt; q++) { v.fromBufferAttribute(P, I ? I.getX(q) : q).multiply(cS); T[q * 3] = v.x; T[q * 3 + 1] = v.y; T[q * 3 + 2] = v.z; }
+            const base = bb.min.y * cS.y;
+            rects = carBlockersSync(T, () => base, { kind: KIND.furniture }).map((pq) => pq.rings[0]);
+            per.set(key, rects);
+          }
+          for (const ring of rects) polys.push({ rings: [ring.map(([x, z]) => { v.set(x, 0, z).applyQuaternion(cQ).add(cPos); return [v.x, v.z]; })], kind: KIND.furniture });
+          counts.furniture++;
+          continue;
+        }
+      }
       const P = m.geometry.attributes.position, I = m.geometry.index, cnt = I ? I.count : P.count, T = new Float32Array(cnt * 3);
       for (let q = 0; q < cnt; q++) { v.fromBufferAttribute(P, I ? I.getX(q) : q).applyMatrix4(W); T[q * 3] = v.x; T[q * 3 + 1] = v.y; T[q * 3 + 2] = v.z; }
       v.set(0, bb.min.y, 0).applyMatrix4(W);

@@ -64,10 +64,25 @@ export function withObjectFade(m) {
  *  A discard costs early-z, and on every façade, road and terrain material it cost ~3 ms of GPU time in the
  *  Saint-Job view (measured 2026-11-05), so a tile's meshes draw with these copies only WHILE they fade. */
 const variants = new WeakMap();
+/** ?fadeclone=old: clone with three's own userData copy (perf audit 2026-11-14, docs/perf/AUDIT.md step 11). r187's
+ *  NodeMaterial.copy deep-copies userData through JSON.stringify: a userData holding NODES or typed arrays (the road
+ *  marking atlas, the weather's dry nodes, a fade copy's fadeOf) serialised whole node graphs and DataTextures
+ *  (Array.from of every texel): 100-580 ms per clone, the 300-850 ms long tasks while tiles stream, GBs of garbage.
+ *  Default: clone with an empty userData, then a SHALLOW copy of the source's (nested objects shared, read-only). */
+const FADE_CLONE_OLD = qs.get("fadeclone") === "old";
+export function cloneMaterial(m) {
+  if (FADE_CLONE_OLD) return m.clone();
+  const ud = m.userData;
+  m.userData = {};
+  let c;
+  try { c = m.clone(); } finally { m.userData = ud; }
+  c.userData = { ...ud };
+  return c;
+}
 export function fadeVariant(m) {
   let v = variants.get(m);
   if (!v) {
-    v = withObjectFade(m.clone());
+    v = withObjectFade(cloneMaterial(m));
     v.name = `${m.name || m.type}:fade`;
     v.userData.shared = !!m.userData.shared;
     v.userData.fadeOf = m;

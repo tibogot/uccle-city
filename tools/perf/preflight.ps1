@@ -51,7 +51,7 @@ $servers = Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -ge 
 if ($servers.Count -gt 1) { Add-Check "other city servers" "WARN" "listening: $($servers -join ', ') (agents may be rendering: stop them)" } else { Add-Check "other city servers" "OK" "$($servers -join ', ')" }
 
 # --- verdict ---
-$fail = ($checks | Where-Object state -eq "FAIL").Count; $warn = ($checks | Where-Object state -eq "WARN").Count
+$fail = @($checks | Where-Object state -eq "FAIL").Count; $warn = @($checks | Where-Object state -eq "WARN").Count
 $checks | Format-Table -AutoSize | Out-String -Width 160 | Write-Output
 if ($gpuUsers) { "GPU 3D users now:"; $gpuUsers | Format-Table -AutoSize | Out-String | Write-Output }
 "Busiest processes (CPU seconds since start):"; $top | Format-Table -AutoSize | Out-String | Write-Output
