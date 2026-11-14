@@ -160,7 +160,7 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
     const vdir = normalize(vel), sideF = normalize(cross(vdir, normalize(toCam)));
     const sLen = s.add(length(vel).mul(0.025));
     mat.positionNode = C.add(sideF.mul(positionGeometry.x.mul(s))).add(vdir.mul(positionGeometry.y.mul(sLen)));
-    const energy = varying(s0.div(s).mul(edge).mul(smoothstep(0.4, 1.5, dist)));   // widened -> fainter (linear: a 1.6 px dot keeps its look)
+    const energy = varying(s0.div(s).mul(edge).mul(smoothstep(0.8, 3.0, dist)));   // (city: big cotton flakes right at the lens read wrong: fade them over 0.8-3 m)   // widened -> fainter (linear: a 1.6 px dot keeps its look)
     const q = uv().sub(0.5).mul(2);
     const r = length(vec2(q.x, q.y.mul(0.85)));
     mat.colorNode = vec3(uColor);

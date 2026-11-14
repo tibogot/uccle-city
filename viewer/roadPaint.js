@@ -180,7 +180,8 @@ export function asphaltMaterial(atlas) {
   m.roughnessNode = mix(rough, float(0.62), paint);
   if (T) { m.normalNode = pavingNormal(T.n, t, s, T.nK.mul(float(1).sub(paint.mul(0.7)))); m.aoNode = mix(T.ao, float(1), paint); }
   // weather: wet asphalt + puddles in the gutters (lane edges), salted in winter: black wet road, slush at the edges
-  { const edge = smoothstep(float(0.7), float(1.0), abs(lat)); wxMat(m, { porosity: 0.75, puddles: true, puddleBias: edge.mul(0.22), slush: true, road: true, edge, map: true }); }
+  { const edge = smoothstep(float(0.7), float(1.0), abs(lat)); const sr = floor(surf.add(0.5)), saltMask = select(sr.equal(1).or(sr.equal(3)).or(sr.equal(4)), float(0.15), float(1));   // sett lanes, gravel: hardly salted
+    wxMat(m, { porosity: 0.75, puddles: true, puddleBias: edge.mul(0.22), slush: true, road: true, edge, saltMask, map: true }); }
   return addLampLight(m);
 }
 

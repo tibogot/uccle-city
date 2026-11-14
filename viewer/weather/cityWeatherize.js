@@ -56,7 +56,9 @@ function graph(I, o, wantNormal) {
   if (o.map && MAP) {
     const s = MAP.sample(P.xz), inside = MAP.inside(P.xz);
     const gap = s.x.sub(P.y);
-    exposed = select(inside, max(smoothstep(s.x.sub(0.3), s.x.sub(0.06), P.y), smoothstep(1.2, 4.0, gap).mul(0.65)), float(1));
+    // (city tolerance 0.25-0.6 m, the lab's 0.06-0.3: the bake's smoothed heights sit a few cm over real lawns / mounds and
+    // grass, and a lawn came out half "sheltered": blotchy thin snow at 15 cm depth. A car or an eave is > 1 m over)
+    exposed = select(inside, max(smoothstep(s.x.sub(0.6), s.x.sub(0.25), P.y), smoothstep(1.2, 4.0, gap).mul(0.65)), float(1));
     shelter = select(inside, s.y, float(0)).mul(season.uLeafDensity.mul(0.75).add(0.25));
   }
   const t = wx.uTime;
@@ -71,14 +73,16 @@ function graph(I, o, wantNormal) {
   let roadKeep = float(1);
   if (o.road) {
     const edge = I.edge ?? float(0);
-    roadKeep = float(1).sub(wx.uSalt.mul(float(1).sub(edge.mul(0.85))));
-    wet = max(wet, wx.uSalt.mul(smoothstep(0.0, 0.3, wx.uSnowCover)).mul(0.6).mul(float(1).sub(edge.mul(0.5))));
+    // o.saltMask (node 0..1): how much of the salting reaches this road (sett lanes and side streets: little)
+    const salt = wx.uSalt.mul(I.saltMask ?? float(1));
+    roadKeep = float(1).sub(salt.mul(float(1).sub(edge.mul(0.85))));
+    wet = max(wet, salt.mul(smoothstep(0.0, 0.3, wx.uSnowCover)).mul(0.6).mul(float(1).sub(edge.mul(0.5))));
   }
   let col = I.col.mul(float(1).sub(wet.mul(porosity).mul(wxLook.uDarken)));
   let rough = mix(I.rough, I.rough.mul(0.3).add(0.06), wet.mul(mix(float(0.55), float(1), horiz)));
   let metal = mix(I.metal, max(I.metal, float(0.12)), wet.mul(horiz));
   if (o.road) {
-    const sc = wx.uSalt.mul(wx.uSnowCover.min(1));
+    const sc = wx.uSalt.mul(I.saltMask ?? float(1)).mul(wx.uSnowCover.min(1));
     rough = mix(rough, max(rough, float(0.55)), sc); metal = metal.mul(float(1).sub(sc.mul(0.6)));
   }
   let nView = I.n;
@@ -151,7 +155,7 @@ function graph(I, o, wantNormal) {
 
   // ---- snow cover
   if (o.snow !== false) {
-    const slush = o.slush ? max(wx.uSlush, o.road ? wx.uSalt.mul(0.85) : float(0)) : wx.uSlush.mul(0.35);
+    const slush = o.slush ? max(wx.uSlush, o.road ? wx.uSalt.mul(I.saltMask ?? float(1)).mul(0.85) : float(0)) : wx.uSlush.mul(0.35);
     if (lite) {
       const cov = smoothstep(0.42, 0.78, up).mul(exposed).mul(wx.uSnowCover);
       const sm = smoothstep(0.32, 0.5, cov.mul(1.45).sub(noise2D(P.xz.mul(0.6)).mul(0.45))).mul(roadKeep).mul(I.snowMask ?? float(1));
@@ -213,7 +217,7 @@ export function wxMat(m, o = {}) {
   const rV = float(rough0).toVar(), mV = float(metal0).toVar();
   const ins = (top) => {
     const I = { P: positionWorld.toVar(), Nw: normalWorldGeometry.toVar(), porosity: asNode(o.porosity, 0.5).toVar() };
-    for (const k of ["edge", "puddleBias", "streakMask", "glassMask", "snowMask"]) if (o[k]) I[k] = float(o[k]).toVar();
+    for (const k of ["edge", "puddleBias", "streakMask", "glassMask", "snowMask", "saltMask"]) if (o[k]) I[k] = float(o[k]).toVar();
     if (o.ground?.isNode) I.ground = float(o.ground).toVar();
     Object.assign(I, top);
     return I;

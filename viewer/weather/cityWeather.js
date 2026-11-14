@@ -19,6 +19,7 @@ import { wxLook } from "./surfaceWeather.js";
 import { season, setDay } from "../seasons/season.js";
 import { fetchLive, mapLive } from "./liveWeather.js";
 import { env } from "../lighting.js";
+import { season as foliageSeason } from "../foliage/seasons.js";   // hedges, garden plants, grass read its uSnow / uWet
 
 const qp = new URLSearchParams(location.search);
 
@@ -128,6 +129,9 @@ export const cityWeather = {
     // leaves: autumn, only while there is weather (wind) on: clear stays the city as before
     this.leavesOn = this.w > 0 && map.ready && this.crowns ? season.uLeafFall.value * (0.3 + 0.7 * Math.min(1, W.input.wind / 6)) * this.w : 0;
     this.leaves.update(cam, dt, this.leavesOn * 0.6, H);
+    // the foliage family (hedges, garden plants, our grass) has its own snow / wet uniforms: the weather drives them
+    foliageSeason.uSnow.value = wx.uSnowCover.value * Math.min(1, wx.uSnowDepth.value / 0.03);
+    foliageSeason.uWet.value = wx.uWet.value;
     // ---- the snow layer
     this.layer.update(dt, this.stamps?.() ?? []);
     this.layer.mesh.visible = map.ready && wx.uSnowDepth.value > 0.003;
