@@ -1,0 +1,1436 @@
+{
+ "summary": {
+  "triangles": 1084,
+  "vertices_welded": 564,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 80,
+  "counts": {
+   "sliver": 80,
+   "backtoback": 18,
+   "seam": 8
+  },
+  "ms": 112
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "plate_diamond",
+   "slot": "sign_face",
+   "triangles": 18,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_diamond",
+   "slot": "sign_back",
+   "triangles": 98,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_diamond",
+   "slot": "sign_rail",
+   "triangles": 432,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_diamond",
+   "slot": "galvanised",
+   "triangles": 360,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_diamond",
+   "slot": "bolt_steel",
+   "triangles": 176,
+   "maxDistance": 320
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     0.122,
+     -0.002
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.121,
+     0.23,
+     -0.001
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.122,
+     0.23,
+     -0.002
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     0.121,
+     -0.001
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.23,
+     -0.122,
+     -0.002
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.121,
+     -0.23,
+     -0.001
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.122,
+     -0.23,
+     -0.002
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.23,
+     -0.121,
+     -0.001
+    ],
+    "part": "plate_diamond/sign_back",
+    "aspect": 130,
+    "longest": 0.46
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.09,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.091,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.092,
+     -0.04
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.092,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.13,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.129,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.128,
+     -0.04
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.128,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.09,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.091,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.092,
+     -0.021
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.092,
+     -0.02
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.13,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.129,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     0.128,
+     -0.021
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     0.128,
+     -0.02
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.082,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.082,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.083,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.083,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.138,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.138,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.137,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.137,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.082,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.082,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.083,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.083,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.138,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.138,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.137,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.137,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.082,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.082,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     0.138,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     0.138,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.13,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.129,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.128,
+     -0.04
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.128,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.09,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.091,
+     -0.039
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.092,
+     -0.04
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.092,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.13,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.129,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.128,
+     -0.021
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.128,
+     -0.02
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.09,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.091,
+     -0.022
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.092,
+     -0.021
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.092,
+     -0.02
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 183,
+    "longest": 0.421
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.138,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.138,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.137,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.137,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.082,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.082,
+     -0.044
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.083,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.083,
+     -0.045
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.138,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.138,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.137,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.137,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.082,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.082,
+     -0.042
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.083,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.083,
+     -0.041
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 376,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.138,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.138,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.082,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.082,
+     -0.043
+    ],
+    "part": "plate_diamond/sign_rail",
+    "aspect": 432,
+    "longest": 0.432
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.207,
+     -0.123,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.073,
+     -0.099,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00172
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.108,
+     -0.114,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00528
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.097,
+     0.122,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00187
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.122,
+     0.107,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00537
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.207,
+     0.123,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.122,
+     -0.107,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00537
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.097,
+     -0.122,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00187
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.108,
+     0.114,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00528
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.073,
+     0.099,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00172
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.024,
+     0.121,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00297
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.14,
+     0.114,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00419
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.14,
+     0.106,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00419
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.024,
+     0.099,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00297
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.024,
+     -0.099,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00297
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.14,
+     -0.106,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00419
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.14,
+     -0.114,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00419
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.024,
+     -0.121,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "area": 0.00297
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     0.114,
+     -0.055
+    ],
+    "parts": [
+     "plate_diamond/galvanised",
+     "plate_diamond/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     0.106,
+     -0.055
+    ],
+    "parts": [
+     "plate_diamond/galvanised",
+     "plate_diamond/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     -0.106,
+     -0.055
+    ],
+    "parts": [
+     "plate_diamond/galvanised",
+     "plate_diamond/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     -0.114,
+     -0.055
+    ],
+    "parts": [
+     "plate_diamond/galvanised",
+     "plate_diamond/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.204,
+     -0.127,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "length_m": 0.91,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.211,
+     0.104,
+     -0.02
+    ],
+    "parts": [
+     "plate_diamond/sign_back",
+     "plate_diamond/sign_rail"
+    ],
+    "length_m": 0.91,
+    "pieces": 10,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.211,
+     0.11,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "length_m": 0.91,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.211,
+     -0.11,
+     -0.041
+    ],
+    "parts": [
+     "plate_diamond/sign_rail",
+     "plate_diamond/sign_rail"
+    ],
+    "length_m": 0.91,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}

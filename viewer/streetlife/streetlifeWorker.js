@@ -15,7 +15,7 @@ export const rangeOf = (sx, sy, sz) => { const s = [Math.abs(sx), Math.abs(sy), 
 
 let terracesP = null;
 self.onmessage = async (e) => {
-  const { id, url, tile, pageW, pageH, stopsUrl, noBubbles, noFuel, shops, terracesUrl } = e.data;
+  const { id, url, tile, pageW, pageH, stopsUrl, noBubbles, noFuel, noStreetKit, shops, terracesUrl } = e.data;
   const t0 = performance.now(), times = {};
   try {
     const r = await fetch(url);
@@ -25,6 +25,8 @@ self.onmessage = async (e) => {
     if (noBubbles && doc.glass) doc.glass = doc.glass.filter((g) => g.underground);
     // the petrol station kit (viewer/fuel/) draws the stations: this layer draws none of its own
     if (noFuel) doc.fuel = [];
+    // the street kit (viewer/streetkit/) draws the Villo stations: this layer draws none of its own
+    if (noStreetKit) doc.villo = [];
     times.fetch = performance.now() - t0;
     let t = performance.now();
     // the STIB stops kit's data (viewer/stops/): its text is laid out here; none for the tile = no stop text (and no old poles)
@@ -32,6 +34,8 @@ self.onmessage = async (e) => {
     // the shopfront kit (viewer/shops/): its curated terraces (data/shops/terraces.json), fetched once
     const terraces = shops && terracesUrl ? await (terracesP ??= fetch(terracesUrl).then((q) => (q.ok ? q.json() : {})).then((j) => j.terraces || {}).catch(() => ({}))) : {};
     const L = layoutTile(doc, measureLabel, stops, { shops, terraces });
+    // ... and the street-name plates' posts (the plates and their text stay here)
+    if (noStreetKit) L.props.post = [];
     times.layout = performance.now() - t; t = performance.now();
     // the labels' distance fields, packed into pages of pageW x pageH (local page numbers 0..n-1, tallest first)
     const sdf = L.labels.map((l) => labelSDF(l.lines, l.style, { w: l.w, h: l.h, px: measureLabel(l.lines, l.style).px }));

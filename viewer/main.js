@@ -57,6 +57,7 @@ import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 import { cityStops } from "./stops/cityStops.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
+import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityGardens } from "./gardens/cityGardens.js";
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
@@ -650,6 +651,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fuelP = cityFuel.fetchTile(entry.name);         // the petrol stations (viewer/fuel/cityFuel.js), ?fuel=old off
   const stopsP = cityStops.fetchTile(entry.name);       // the STIB stops and ad panels (viewer/stops/cityStops.js), ?stops=old off
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
+  const skP = cityStreetKit.fetchTile(entry.name);      // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
@@ -707,8 +709,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fo.userData.update) ups.push(fo.userData.update);
   await frame("trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
-  const stopsDoc = await stopsP, furnDoc = await furnP;
-  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: cityFurniture.keepLampsClear(cityStops.keepLampsClear(fit?.placeLamp, stopsDoc), furnDoc), lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
+  const stopsDoc = await stopsP, furnDoc = await furnP, skDoc = await skP;
+  const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: cityStreetKit.keepLampsClear(cityFurniture.keepLampsClear(cityStops.keepLampsClear(fit?.placeLamp, stopsDoc), furnDoc), skDoc), lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
   own.features.add(lamps.group);
   ups.push(lamps.update);
   await frame("lamps");
@@ -730,6 +732,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(tram.group);
   const stopCounts = cityStops.addTile(entry.name, stopsDoc, own.features, { shelters: tram.shelterSites });
   const furnCounts = cityFurniture.addTile(entry.name, furnDoc, own.features);
+  const skCounts = cityStreetKit.addTile(entry.name, skDoc, own.features);
+  if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z));
@@ -740,7 +744,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityFurniture.keepCarsClear(fit?.placeCar, furnDoc) });
+  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc) });
   await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
   if (bollards) own.features.add(bollards);
@@ -766,6 +770,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
+    cityStreetKit.removeTile(entry.name);           // its instances leave the street kit pools
     cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)
     cityFuel.removeTile(entry.name);                // its instances leave the fuel pools (its slabs / stand-ins go with the groups below)
     cityStops.removeTile(entry.name);               // its instances leave the stop pools (its stand-ins go with the groups below)
@@ -979,6 +984,7 @@ async function main() {
     () => cityKit.start({ scene, updaters, log }),                   // ?kit=1: the façade kit (before the first tile and the warm-up)
     () => cityStreetLife.start({ scene, updaters, log, renderer }),            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
     () => cityFurniture.start({ scene, updaters, log }),             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
+    () => cityStreetKit.start({ scene, updaters, log }),             // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
     () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
     () => cityStops.start({ scene, updaters, log }),                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
     () => cityFuel.start({ scene, updaters, renderer, log }),        // the petrol stations (viewer/fuel/), ?fuel=old off

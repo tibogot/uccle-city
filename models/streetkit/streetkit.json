@@ -1,0 +1,192 @@
+{
+ "asset": "Street kit: Belgian sign posts and plates, the street-name plate post, Villo totem / dock / bike (tools/blender/streetKit.py)",
+ "pieces": {
+  "sign_pole": {
+   "slots": [
+    "galvanised",
+    "cap_dark"
+   ],
+   "triangles": 416,
+   "size_m": [
+    0.082,
+    0.082,
+    3.477
+   ]
+  },
+  "sign_pole_tall": {
+   "slots": [
+    "galvanised",
+    "cap_dark"
+   ],
+   "triangles": 416,
+   "size_m": [
+    0.082,
+    0.082,
+    3.977
+   ]
+  },
+  "plate_post": {
+   "slots": [
+    "galvanised",
+    "cap_dark",
+    "bolt_steel"
+   ],
+   "triangles": 1068,
+   "size_m": [
+    0.069,
+    0.068,
+    3.324
+   ]
+  },
+  "plate_circle": {
+   "slots": [
+    "sign_face",
+    "sign_back",
+    "sign_rail",
+    "galvanised",
+    "bolt_steel"
+   ],
+   "triangles": 1252,
+   "size_m": [
+    0.6,
+    0.13,
+    0.6
+   ]
+  },
+  "plate_tri_down": {
+   "slots": [
+    "sign_face",
+    "sign_back",
+    "sign_rail",
+    "galvanised",
+    "bolt_steel"
+   ],
+   "triangles": 1090,
+   "size_m": [
+    0.64,
+    0.13,
+    0.566
+   ]
+  },
+  "plate_tri_up": {
+   "slots": [
+    "sign_face",
+    "sign_back",
+    "sign_rail",
+    "galvanised",
+    "bolt_steel"
+   ],
+   "triangles": 1090,
+   "size_m": [
+    0.64,
+    0.13,
+    0.566
+   ]
+  },
+  "plate_octagon": {
+   "slots": [
+    "sign_face",
+    "sign_back",
+    "sign_rail",
+    "galvanised",
+    "bolt_steel"
+   ],
+   "triangles": 1012,
+   "size_m": [
+    0.6,
+    0.13,
+    0.6
+   ]
+  },
+  "plate_diamond": {
+   "slots": [
+    "sign_face",
+    "sign_back",
+    "sign_rail",
+    "galvanised",
+    "bolt_steel"
+   ],
+   "triangles": 1084,
+   "size_m": [
+    0.691,
+    0.13,
+    0.691
+   ]
+  },
+  "plate_square": {
+   "slots": [
+    "sign_face",
+    "sign_back",
+    "sign_rail",
+    "galvanised",
+    "bolt_steel"
+   ],
+   "triangles": 1108,
+   "size_m": [
+    0.6,
+    0.13,
+    0.6
+   ]
+  },
+  "plate_rect": {
+   "slots": [
+    "sign_face",
+    "sign_back",
+    "sign_rail",
+    "galvanised",
+    "bolt_steel"
+   ],
+   "triangles": 1108,
+   "size_m": [
+    0.6,
+    0.13,
+    0.9
+   ]
+  },
+  "villo_totem": {
+   "slots": [
+    "villo_body",
+    "villo_dark",
+    "villo_head",
+    "villo_screen"
+   ],
+   "triangles": 2713,
+   "size_m": [
+    0.55,
+    0.365,
+    2.46
+   ]
+  },
+  "villo_dock": {
+   "slots": [
+    "galvanised",
+    "bolt_steel",
+    "villo_body",
+    "villo_dark",
+    "status_led"
+   ],
+   "triangles": 902,
+   "size_m": [
+    0.85,
+    0.34,
+    1.041
+   ]
+  },
+  "villo_bike": {
+   "slots": [
+    "bike_black",
+    "bike_chrome",
+    "bike_frame",
+    "reflector",
+    "villo_ochre"
+   ],
+   "triangles": 9188,
+   "size_m": [
+    0.645,
+    1.85,
+    1.041
+   ]
+  }
+ },
+ "frame": "glTF Y up; posts / totem / dock: origin on the ground; plates: origin = face centre, the post axis 0.088 m behind; bike: origin = front tyre contact, runs toward +Z"
+}

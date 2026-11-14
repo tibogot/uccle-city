@@ -1,0 +1,1256 @@
+{
+ "summary": {
+  "triangles": 1068,
+  "vertices_welded": 539,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 84,
+  "counts": {
+   "sliver": 56,
+   "nonmanifold": 28,
+   "seam": 12
+  },
+  "ms": 128
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.001,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "plate_post",
+   "slot": "galvanised",
+   "triangles": 640,
+   "maxDistance": 260
+  },
+  {
+   "name": "plate_post",
+   "slot": "cap_dark",
+   "triangles": 252,
+   "maxDistance": 260
+  },
+  {
+   "name": "plate_post",
+   "slot": "bolt_steel",
+   "triangles": 176,
+   "maxDistance": 260
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.74,
+     -0.004
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     1.83,
+     -0.002
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     0.74,
+     -0.011
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     1.83,
+     -0.009
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.025,
+     0.74,
+     -0.017
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.026,
+     1.83,
+     -0.015
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.02,
+     0.74,
+     -0.022
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.022,
+     1.83,
+     -0.02
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.74,
+     -0.026
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.017,
+     1.83,
+     -0.025
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.009,
+     0.74,
+     -0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.011,
+     1.83,
+     -0.028
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.002,
+     0.74,
+     -0.03
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.004,
+     1.83,
+     -0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.004,
+     0.74,
+     -0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.002,
+     1.83,
+     -0.03
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     0.74,
+     -0.028
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.009,
+     1.83,
+     -0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.017,
+     0.74,
+     -0.025
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     1.83,
+     -0.026
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.022,
+     0.74,
+     -0.02
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.02,
+     1.83,
+     -0.022
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.026,
+     0.74,
+     -0.015
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     1.83,
+     -0.017
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.74,
+     -0.009
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     1.83,
+     -0.011
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.74,
+     -0.002
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     1.83,
+     -0.004
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.74,
+     0.004
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     1.83,
+     0.002
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     0.74,
+     0.011
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     1.83,
+     0.009
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     0.74,
+     0.017
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.026,
+     1.83,
+     0.015
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.02,
+     0.74,
+     0.022
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.022,
+     1.83,
+     0.02
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.74,
+     0.026
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.017,
+     1.83,
+     0.025
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.009,
+     0.74,
+     0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.011,
+     1.83,
+     0.028
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.002,
+     0.74,
+     0.03
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.004,
+     1.83,
+     0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.004,
+     0.74,
+     0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.002,
+     1.83,
+     0.03
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.011,
+     0.74,
+     0.028
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.009,
+     1.83,
+     0.029
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.017,
+     0.74,
+     0.025
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     1.83,
+     0.026
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.022,
+     0.74,
+     0.02
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.02,
+     1.83,
+     0.022
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.026,
+     0.74,
+     0.015
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.025,
+     1.83,
+     0.017
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.74,
+     0.009
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.028,
+     1.83,
+     0.011
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.74,
+     0.002
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     1.83,
+     0.004
+    ],
+    "part": "plate_post/galvanised",
+    "aspect": 487,
+    "longest": 3.27
+   }
+  ],
+  "nonmanifold": [
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.03,
+     2.92,
+     -0.003
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.028,
+     2.92,
+     -0.01
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.025,
+     2.92,
+     -0.016
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.021,
+     2.92,
+     -0.021
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.016,
+     2.92,
+     -0.025
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.01,
+     2.92,
+     -0.028
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.003,
+     2.92,
+     -0.03
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.003,
+     2.92,
+     -0.03
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.01,
+     2.92,
+     -0.028
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     2.92,
+     -0.025
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.021,
+     2.92,
+     -0.021
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     2.92,
+     -0.016
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     2.92,
+     -0.01
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     2.92,
+     -0.003
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     2.92,
+     0.003
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.028,
+     2.92,
+     0.01
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.025,
+     2.92,
+     0.016
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.021,
+     2.92,
+     0.021
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     2.92,
+     0.025
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.01,
+     2.92,
+     0.028
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     -0.003,
+     2.92,
+     0.03
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.003,
+     2.92,
+     0.03
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.01,
+     2.92,
+     0.028
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.016,
+     2.92,
+     0.025
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.021,
+     2.92,
+     0.021
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.025,
+     2.92,
+     0.016
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.028,
+     2.92,
+     0.01
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     0.03,
+     2.92,
+     0.003
+    ],
+    "part": "plate_post/galvanised",
+    "uses": 3
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.007,
+     2.498,
+     0.029
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/galvanised"
+    ],
+    "length_m": 0.13,
+    "pieces": 34,
+    "min_angle_deg": 19.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.007,
+     2.658,
+     0.029
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/galvanised"
+    ],
+    "length_m": 0.13,
+    "pieces": 34,
+    "min_angle_deg": 19.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.026,
+     2.523,
+     0.025
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.04,
+    "pieces": 32,
+    "min_angle_deg": 22.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.026,
+     2.683,
+     0.025
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.04,
+    "pieces": 32,
+    "min_angle_deg": 22.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.027,
+     2.523,
+     0.025
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.04,
+    "pieces": 30,
+    "min_angle_deg": 20.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.027,
+     2.683,
+     0.025
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.04,
+    "pieces": 30,
+    "min_angle_deg": 20.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.019,
+     2.516,
+     0.023
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.03,
+    "pieces": 18,
+    "min_angle_deg": 41.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.019,
+     2.676,
+     0.023
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.03,
+    "pieces": 18,
+    "min_angle_deg": 41.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.018,
+     2.517,
+     0.024
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.03,
+    "pieces": 18,
+    "min_angle_deg": 41.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.018,
+     2.677,
+     0.024
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/bolt_steel"
+    ],
+    "length_m": 0.03,
+    "pieces": 18,
+    "min_angle_deg": 41.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.024,
+     2.505,
+     0.027
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/galvanised"
+    ],
+    "length_m": 0.13,
+    "pieces": 16,
+    "min_angle_deg": 65.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.024,
+     2.665,
+     0.027
+    ],
+    "parts": [
+     "plate_post/galvanised",
+     "plate_post/galvanised"
+    ],
+    "length_m": 0.13,
+    "pieces": 16,
+    "min_angle_deg": 65.2
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}

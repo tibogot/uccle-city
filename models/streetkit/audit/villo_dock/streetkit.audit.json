@@ -1,0 +1,1104 @@
+{
+ "summary": {
+  "triangles": 902,
+  "vertices_welded": 484,
+  "open_edges": 28,
+  "rays": 512,
+  "blocking": 0,
+  "warnings": 64,
+  "counts": {
+   "sliver": 64,
+   "backtoback": 8,
+   "seam": 8
+  },
+  "ms": 37
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.001,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "villo_dock",
+   "slot": "galvanised",
+   "triangles": 324,
+   "maxDistance": 200
+  },
+  {
+   "name": "villo_dock",
+   "slot": "bolt_steel",
+   "triangles": 88,
+   "maxDistance": 200
+  },
+  {
+   "name": "villo_dock",
+   "slot": "villo_body",
+   "triangles": 302,
+   "maxDistance": 200
+  },
+  {
+   "name": "villo_dock",
+   "slot": "villo_dark",
+   "triangles": 152,
+   "maxDistance": 200
+  },
+  {
+   "name": "villo_dock",
+   "slot": "status_led",
+   "triangles": 36,
+   "maxDistance": 200
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.423,
+     0.03,
+     -0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.423,
+     0.029,
+     0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.424,
+     0.028,
+     -0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.425,
+     0.028,
+     0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.03,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.029,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.028,
+     -0.169
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.028,
+     -0.17
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.423,
+     0.03,
+     0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.423,
+     0.029,
+     -0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.424,
+     0.028,
+     0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.425,
+     0.028,
+     -0.056
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 145,
+    "longest": 0.334
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.03,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.029,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.028,
+     0.169
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.028,
+     0.17
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 368,
+    "longest": 0.844
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.03,
+     0.154
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.03,
+     0.153
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.031,
+     0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.032,
+     0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.045,
+     0.154
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.045,
+     0.153
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.044,
+     0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.043,
+     0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.03,
+     0.166
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.03,
+     0.167
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.031,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.032,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.045,
+     0.166
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.045,
+     0.167
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.044,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.043,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.03,
+     0.158
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.03,
+     0.162
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.039,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.036,
+     0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.045,
+     0.158
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.045,
+     0.162
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.039,
+     0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.036,
+     0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.03,
+     -0.166
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.03,
+     -0.167
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.031,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.032,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.045,
+     -0.166
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.045,
+     -0.167
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.044,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.043,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.03,
+     -0.154
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.03,
+     -0.153
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.031,
+     -0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.032,
+     -0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.045,
+     -0.154
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.045,
+     -0.153
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.044,
+     -0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.043,
+     -0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 553,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.03,
+     -0.162
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.03,
+     -0.158
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.039,
+     -0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.036,
+     -0.152
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.045,
+     -0.162
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.045,
+     -0.158
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 71,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.141,
+     0.039,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.141,
+     0.036,
+     -0.168
+    ],
+    "part": "villo_dock/galvanised",
+    "aspect": 77,
+    "longest": 0.846
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.009,
+     0.03,
+     -0.163
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "area": 0.00486
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.016,
+     0.03,
+     -0.157
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "area": 0.00506
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.413,
+     0.03,
+     0.16
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.3,
+     0.03,
+     -0.1
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/bolt_steel"
+    ],
+    "area": 0.0001
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.413,
+     0.03,
+     -0.16
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "area": 0.0002
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.016,
+     0.03,
+     0.157
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "area": 0.00506
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.009,
+     0.03,
+     0.163
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "area": 0.00486
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.3,
+     0.03,
+     -0.1
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/bolt_steel"
+    ],
+    "area": 0.0001
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.065,
+     0.771,
+     -0.012
+    ],
+    "parts": [
+     "villo_dock/villo_body",
+     "villo_dock/villo_body"
+    ],
+    "length_m": 0.42,
+    "pieces": 73,
+    "min_angle_deg": 30.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.076,
+     0.03,
+     -0.03
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/villo_body"
+    ],
+    "length_m": 0.5,
+    "pieces": 58,
+    "min_angle_deg": 88.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.059,
+     0.921,
+     -0.049
+    ],
+    "parts": [
+     "villo_dock/villo_body",
+     "villo_dock/villo_dark"
+    ],
+    "length_m": 0.49,
+    "pieces": 30,
+    "min_angle_deg": 49.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.041,
+     0.837,
+     0.147
+    ],
+    "parts": [
+     "villo_dock/villo_body",
+     "villo_dock/villo_dark"
+    ],
+    "length_m": 0.31,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.422,
+     0.03,
+     -0.166
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "length_m": 1.71,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.422,
+     0.03,
+     0.154
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/galvanised"
+    ],
+    "length_m": 1.71,
+    "pieces": 8,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.296,
+     0.03,
+     -0.094
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/bolt_steel"
+    ],
+    "length_m": 0.05,
+    "pieces": 6,
+    "min_angle_deg": 45
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.304,
+     0.03,
+     -0.094
+    ],
+    "parts": [
+     "villo_dock/galvanised",
+     "villo_dock/bolt_steel"
+    ],
+    "length_m": 0.05,
+    "pieces": 6,
+    "min_angle_deg": 45
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}

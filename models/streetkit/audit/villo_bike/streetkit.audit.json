@@ -1,0 +1,8666 @@
+{
+ "summary": {
+  "triangles": 9188,
+  "vertices_welded": 4926,
+  "open_edges": 384,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 536,
+  "counts": {
+   "sliver": 536,
+   "backtoback": 3,
+   "seam": 233
+  },
+  "ms": 714
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": -0.001,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "villo_bike",
+   "slot": "bike_black",
+   "triangles": 2956,
+   "maxDistance": 180
+  },
+  {
+   "name": "villo_bike",
+   "slot": "bike_chrome",
+   "triangles": 1660,
+   "maxDistance": 180
+  },
+  {
+   "name": "villo_bike",
+   "slot": "bike_frame",
+   "triangles": 4140,
+   "maxDistance": 180
+  },
+  {
+   "name": "villo_bike",
+   "slot": "reflector",
+   "triangles": 216,
+   "maxDistance": 180
+  },
+  {
+   "name": "villo_bike",
+   "slot": "villo_ochre",
+   "triangles": 216,
+   "maxDistance": 180
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.332,
+     -0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.331,
+     -0.188
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.333,
+     -0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.331,
+     -0.189
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.333,
+     -0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.332,
+     -0.189
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.353,
+     -0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.368,
+     -0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.354,
+     -0.102
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.368,
+     -0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.354,
+     -0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.369,
+     -0.184
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.372,
+     -0.096
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.403,
+     -0.174
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.373,
+     -0.096
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.403,
+     -0.174
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.373,
+     -0.096
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.404,
+     -0.173
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.39,
+     -0.086
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.436,
+     -0.156
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.391,
+     -0.085
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.436,
+     -0.156
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.391,
+     -0.086
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.437,
+     -0.156
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.406,
+     -0.073
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.464,
+     -0.132
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.407,
+     -0.072
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.464,
+     -0.133
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.407,
+     -0.072
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.465,
+     -0.132
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.419,
+     -0.056
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.487,
+     -0.104
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.419,
+     -0.055
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.487,
+     -0.104
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.419,
+     -0.056
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.488,
+     -0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.428,
+     -0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.505,
+     -0.071
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.428,
+     -0.037
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.505,
+     -0.07
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.428,
+     -0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.505,
+     -0.071
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.433,
+     -0.018
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.515,
+     -0.036
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.434,
+     -0.017
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.515,
+     -0.035
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.434,
+     -0.018
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.515,
+     -0.035
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.435,
+     0.003
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.519,
+     0.001
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.435,
+     0.004
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.519,
+     0.002
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.435,
+     0.002
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.518,
+     0.001
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.432,
+     0.023
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.515,
+     0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.432,
+     0.024
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.514,
+     0.039
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.433,
+     0.023
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.515,
+     0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.426,
+     0.043
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.504,
+     0.073
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.426,
+     0.043
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.503,
+     0.074
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.426,
+     0.042
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.503,
+     0.073
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.415,
+     0.061
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.486,
+     0.106
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.416,
+     0.061
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.486,
+     0.106
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.416,
+     0.06
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.486,
+     0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.402,
+     0.077
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.462,
+     0.135
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.402,
+     0.076
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.462,
+     0.134
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.402,
+     0.076
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.463,
+     0.134
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.385,
+     0.089
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.433,
+     0.158
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.386,
+     0.089
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.433,
+     0.158
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.386,
+     0.089
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.434,
+     0.157
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.367,
+     0.098
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.4,
+     0.175
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.368,
+     0.098
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.4,
+     0.175
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.368,
+     0.098
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.401,
+     0.174
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.347,
+     0.104
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.365,
+     0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.348,
+     0.104
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.365,
+     0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.348,
+     0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.366,
+     0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.326,
+     0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.328,
+     0.189
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.327,
+     0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.328,
+     0.188
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.327,
+     0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.329,
+     0.189
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.306,
+     0.102
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.291,
+     0.184
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.307,
+     0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.291,
+     0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.307,
+     0.102
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.292,
+     0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.286,
+     0.096
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.256,
+     0.174
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.287,
+     0.096
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.256,
+     0.173
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.287,
+     0.096
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.257,
+     0.174
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.269,
+     0.085
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.224,
+     0.156
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.27,
+     0.086
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.224,
+     0.156
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.27,
+     0.086
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.225,
+     0.156
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.253,
+     0.072
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.195,
+     0.132
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.254,
+     0.072
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.195,
+     0.132
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.254,
+     0.073
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.196,
+     0.133
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.241,
+     0.055
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.172,
+     0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.241,
+     0.056
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.172,
+     0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.241,
+     0.056
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.173,
+     0.104
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.232,
+     0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.155,
+     0.071
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.232,
+     0.037
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.155,
+     0.07
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.232,
+     0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.155,
+     0.071
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.227,
+     0.018
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.145,
+     0.036
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.226,
+     0.017
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.145,
+     0.035
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.226,
+     0.018
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.145,
+     0.035
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.225,
+     -0.003
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.141,
+     -0.001
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.225,
+     -0.004
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.141,
+     -0.002
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.225,
+     -0.002
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.142,
+     -0.001
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.228,
+     -0.023
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.145,
+     -0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.228,
+     -0.024
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.146,
+     -0.039
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.227,
+     -0.023
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.145,
+     -0.038
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.234,
+     -0.043
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.156,
+     -0.073
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.234,
+     -0.043
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.157,
+     -0.074
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.234,
+     -0.042
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.157,
+     -0.073
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.244,
+     -0.06
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.174,
+     -0.106
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.244,
+     -0.061
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.174,
+     -0.105
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.244,
+     -0.061
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.174,
+     -0.106
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.257,
+     -0.076
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.197,
+     -0.134
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.258,
+     -0.077
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.197,
+     -0.134
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.258,
+     -0.076
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.198,
+     -0.135
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.273,
+     -0.089
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.226,
+     -0.157
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.274,
+     -0.089
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.226,
+     -0.157
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.274,
+     -0.089
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.227,
+     -0.158
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.292,
+     -0.098
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.259,
+     -0.174
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.293,
+     -0.098
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.259,
+     -0.175
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.293,
+     -0.098
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.26,
+     -0.175
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.312,
+     -0.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.294,
+     -0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.313,
+     -0.104
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.294,
+     -0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.313,
+     -0.104
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.295,
+     -0.185
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.332,
+     1.015
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.331,
+     0.932
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.333,
+     1.015
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.331,
+     0.931
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.333,
+     1.015
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.332,
+     0.931
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.353,
+     1.017
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.368,
+     0.935
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.354,
+     1.018
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.368,
+     0.935
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.354,
+     1.017
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.369,
+     0.936
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.372,
+     1.024
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.403,
+     0.946
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.373,
+     1.024
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.403,
+     0.946
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.373,
+     1.024
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.404,
+     0.947
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.39,
+     1.034
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.436,
+     0.964
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.391,
+     1.035
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.436,
+     0.964
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.391,
+     1.034
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.437,
+     0.964
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.406,
+     1.047
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.464,
+     0.988
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.407,
+     1.048
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.464,
+     0.987
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.407,
+     1.048
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.465,
+     0.988
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.419,
+     1.064
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.487,
+     1.016
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.419,
+     1.065
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.487,
+     1.016
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.419,
+     1.064
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.488,
+     1.017
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.428,
+     1.082
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.505,
+     1.049
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.428,
+     1.083
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.505,
+     1.05
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.428,
+     1.082
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.505,
+     1.049
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.433,
+     1.102
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.515,
+     1.084
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.434,
+     1.103
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.515,
+     1.085
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.434,
+     1.102
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.515,
+     1.085
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.435,
+     1.123
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.519,
+     1.121
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.435,
+     1.124
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.519,
+     1.122
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.435,
+     1.122
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.518,
+     1.121
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.432,
+     1.143
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.515,
+     1.158
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.432,
+     1.144
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.514,
+     1.159
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.433,
+     1.143
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.515,
+     1.158
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.426,
+     1.163
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.504,
+     1.193
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.426,
+     1.163
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.503,
+     1.194
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.426,
+     1.162
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.503,
+     1.193
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.415,
+     1.181
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.486,
+     1.226
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.416,
+     1.181
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.486,
+     1.226
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.416,
+     1.18
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.486,
+     1.225
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.402,
+     1.197
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.462,
+     1.255
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.402,
+     1.196
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.462,
+     1.254
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.402,
+     1.196
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.463,
+     1.254
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.385,
+     1.209
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.433,
+     1.278
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.386,
+     1.209
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.433,
+     1.278
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.386,
+     1.209
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.434,
+     1.277
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.367,
+     1.218
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.4,
+     1.295
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.368,
+     1.218
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.4,
+     1.295
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.368,
+     1.218
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.401,
+     1.294
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.347,
+     1.224
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.365,
+     1.305
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.348,
+     1.224
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.365,
+     1.305
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.348,
+     1.223
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.366,
+     1.305
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.326,
+     1.225
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.328,
+     1.309
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.327,
+     1.225
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.328,
+     1.308
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.327,
+     1.225
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.329,
+     1.309
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.306,
+     1.222
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.291,
+     1.304
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.307,
+     1.223
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.291,
+     1.305
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.307,
+     1.222
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.292,
+     1.305
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.286,
+     1.216
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.256,
+     1.294
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.287,
+     1.216
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.256,
+     1.293
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.287,
+     1.216
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.257,
+     1.294
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.269,
+     1.205
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.224,
+     1.276
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.27,
+     1.206
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.224,
+     1.276
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.27,
+     1.206
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.225,
+     1.276
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.253,
+     1.192
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.195,
+     1.252
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.254,
+     1.192
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.195,
+     1.252
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.254,
+     1.193
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.196,
+     1.253
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.241,
+     1.175
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.172,
+     1.223
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.241,
+     1.176
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.172,
+     1.223
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.241,
+     1.176
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.173,
+     1.224
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.232,
+     1.158
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.155,
+     1.191
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.232,
+     1.157
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.155,
+     1.19
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.232,
+     1.158
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.155,
+     1.191
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.227,
+     1.138
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.145,
+     1.156
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.226,
+     1.137
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.145,
+     1.155
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.226,
+     1.138
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.145,
+     1.155
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.225,
+     1.117
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.141,
+     1.119
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.225,
+     1.116
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.141,
+     1.118
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.225,
+     1.118
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.142,
+     1.119
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.228,
+     1.097
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.145,
+     1.082
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.228,
+     1.096
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.146,
+     1.081
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.227,
+     1.097
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.145,
+     1.082
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.234,
+     1.077
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.156,
+     1.047
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.234,
+     1.077
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.157,
+     1.046
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.234,
+     1.078
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.157,
+     1.047
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.244,
+     1.06
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.174,
+     1.014
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.244,
+     1.059
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.174,
+     1.015
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.244,
+     1.059
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.174,
+     1.014
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.257,
+     1.044
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.197,
+     0.986
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.258,
+     1.043
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.197,
+     0.986
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.258,
+     1.044
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.198,
+     0.985
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.273,
+     1.031
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.226,
+     0.963
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.274,
+     1.031
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.226,
+     0.963
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.274,
+     1.031
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.227,
+     0.962
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.03,
+     0.292,
+     1.022
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.014,
+     0.259,
+     0.946
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.031,
+     0.293,
+     1.022
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.016,
+     0.259,
+     0.945
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.029,
+     0.293,
+     1.022
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.015,
+     0.26,
+     0.945
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.03,
+     0.312,
+     1.017
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.016,
+     0.294,
+     0.935
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.029,
+     0.313,
+     1.016
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.014,
+     0.294,
+     0.935
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.031,
+     0.313,
+     1.016
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.015,
+     0.295,
+     0.935
+    ],
+    "part": "villo_bike/bike_chrome",
+    "aspect": 122,
+    "longest": 0.254
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.056,
+     0.292,
+     0.867
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.063,
+     0.311,
+     0.993
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.05,
+     0.287,
+     0.868
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.058,
+     0.305,
+     0.994
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.042,
+     0.288,
+     0.868
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.05,
+     0.303,
+     0.995
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.037,
+     0.294,
+     0.867
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.044,
+     0.308,
+     0.994
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.038,
+     0.302,
+     0.866
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.043,
+     0.316,
+     0.993
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.045,
+     0.307,
+     0.865
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.047,
+     0.322,
+     0.992
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.052,
+     0.305,
+     0.865
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.055,
+     0.323,
+     0.992
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.057,
+     0.299,
+     0.866
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.061,
+     0.318,
+     0.992
+    ],
+    "part": "villo_bike/bike_frame",
+    "aspect": 46,
+    "longest": 0.384
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.006,
+     0.781,
+     0.837
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.779,
+     0.846
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "area": 0.00011
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.78,
+     0.839
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "area": 0.00016
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.005,
+     0.343,
+     -0.287
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 3.62,
+    "pieces": 216,
+    "min_angle_deg": 52.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.005,
+     0.343,
+     0.833
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 3.62,
+    "pieces": 216,
+    "min_angle_deg": 52.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.024,
+     0.615,
+     0.22
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 1.06,
+    "pieces": 124,
+    "min_angle_deg": 44
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.058,
+     0.277,
+     0.678
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.29,
+    "pieces": 90,
+    "min_angle_deg": 45.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.023,
+     0.605,
+     0.224
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.25,
+    "pieces": 73,
+    "min_angle_deg": 53.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.023,
+     0.277,
+     0.679
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.19,
+    "pieces": 72,
+    "min_angle_deg": 20
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.006,
+     0.632,
+     0.198
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.34,
+    "pieces": 64,
+    "min_angle_deg": 64.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.004,
+     0.295,
+     0.684
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.14,
+    "pieces": 62,
+    "min_angle_deg": 27.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.023,
+     0.601,
+     0.226
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.19,
+    "pieces": 56,
+    "min_angle_deg": 20.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.059,
+     0.799,
+     0.134
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.49,
+    "pieces": 52,
+    "min_angle_deg": 60
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.011,
+     0.602,
+     0.191
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.19,
+    "pieces": 47,
+    "min_angle_deg": 15.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.019,
+     0.295,
+     0.697
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.12,
+    "pieces": 46,
+    "min_angle_deg": 30.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.206,
+     0.996,
+     0.364
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_black"
+    ],
+    "length_m": 0.08,
+    "pieces": 44,
+    "min_angle_deg": 73.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.205,
+     0.997,
+     0.364
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_black"
+    ],
+    "length_m": 0.08,
+    "pieces": 42,
+    "min_angle_deg": 73.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.065,
+     0.337,
+     1.112
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.08,
+    "pieces": 36,
+    "min_angle_deg": 20.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.014,
+     0.98,
+     0.276
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.09,
+    "pieces": 35,
+    "min_angle_deg": 39
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.053,
+     0.339,
+     0.023
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.1,
+    "pieces": 35,
+    "min_angle_deg": 56.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.05,
+     0.337,
+     1.111
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.08,
+    "pieces": 35,
+    "min_angle_deg": 20.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.053,
+     0.339,
+     0.022
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.1,
+    "pieces": 34,
+    "min_angle_deg": 56.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.129,
+     0.262,
+     0.709
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.09,
+    "pieces": 32,
+    "min_angle_deg": 54.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.127,
+     0.283,
+     0.679
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.09,
+    "pieces": 31,
+    "min_angle_deg": 54.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.054,
+     0.318,
+     1.101
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.09,
+    "pieces": 31,
+    "min_angle_deg": 66.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.054,
+     0.318,
+     1.101
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.09,
+    "pieces": 31,
+    "min_angle_deg": 66.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.052,
+     0.353,
+     1.112
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.08,
+    "pieces": 31,
+    "min_angle_deg": 63.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.051,
+     0.353,
+     1.112
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.08,
+    "pieces": 31,
+    "min_angle_deg": 63.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.012,
+     0.592,
+     0.19
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.16,
+    "pieces": 30,
+    "min_angle_deg": 49.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.005,
+     0.55,
+     0.242
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.2,
+    "pieces": 26,
+    "min_angle_deg": 24
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.856,
+     0.255
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.1,
+    "pieces": 26,
+    "min_angle_deg": 76.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.057,
+     0.329,
+     1.11
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.07,
+    "pieces": 23,
+    "min_angle_deg": 40.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.136,
+     0.367,
+     0.557
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_black"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 16.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.136,
+     0.195,
+     0.81
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_black"
+    ],
+    "length_m": 0.09,
+    "pieces": 22,
+    "min_angle_deg": 16.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.004,
+     0.59,
+     0.25
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.26,
+    "pieces": 20,
+    "min_angle_deg": 40
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.058,
+     0.319,
+     1.119
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.57,
+    "pieces": 17,
+    "min_angle_deg": 8.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.047,
+     0.57,
+     0.2
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.08,
+    "pieces": 16,
+    "min_angle_deg": 43.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.002,
+     0.796,
+     0.11
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.02,
+    "pieces": 16,
+    "min_angle_deg": 49.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.797,
+     0.11
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.02,
+    "pieces": 16,
+    "min_angle_deg": 49.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.004,
+     0.783,
+     0.829
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.04,
+    "pieces": 14,
+    "min_angle_deg": 85.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.055,
+     0.57,
+     0.222
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.08,
+    "pieces": 14,
+    "min_angle_deg": 43.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.041,
+     0.796,
+     0.11
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.02,
+    "pieces": 14,
+    "min_angle_deg": 49.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.123,
+     0.28,
+     0.689
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.09,
+    "pieces": 12,
+    "min_angle_deg": 20.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.331,
+     -0.27
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.599,
+     0
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 53
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.331,
+     0.269
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 50
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.061,
+     0
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 53
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.331,
+     0.85
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.599,
+     1.12
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 53
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.331,
+     1.389
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 50
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.061,
+     1.12
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 12,
+    "min_angle_deg": 53
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.381,
+     -0.264
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.593,
+     0.053
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 53.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.277,
+     0.264
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 66.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.067,
+     -0.053
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 53.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.347,
+     0.018
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 74.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.042,
+     0.355,
+     0.022
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.03,
+    "pieces": 10,
+    "min_angle_deg": 14.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.381,
+     0.856
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.593,
+     1.173
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 53.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.277,
+     1.384
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 66.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.067,
+     1.067
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 53.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.347,
+     1.138
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 10,
+    "min_angle_deg": 74.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.339,
+     0.023
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 77.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.339,
+     1.143
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 77.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.128,
+     0.799,
+     0.126
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.086,
+     0.799,
+     0.126
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.043,
+     0.799,
+     0.125
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.042,
+     0.799,
+     0.126
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.085,
+     0.799,
+     0.125
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.127,
+     0.799,
+     0.126
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 9,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.003,
+     0.598,
+     0.188
+    ],
+    "parts": [
+     "villo_bike/bike_black",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.03,
+    "pieces": 8,
+    "min_angle_deg": 30.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.432,
+     -0.249
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.478,
+     -0.223
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.519,
+     -0.191
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 65
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.552,
+     -0.15
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.579,
+     -0.102
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 56.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.594,
+     -0.052
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 57.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.578,
+     0.104
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 54.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.553,
+     0.149
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.519,
+     0.19
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.479,
+     0.223
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 67
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.432,
+     0.248
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.382,
+     0.264
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 67.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.226,
+     0.247
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.181,
+     0.223
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 65.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.14,
+     0.189
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.107,
+     0.149
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 63.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.081,
+     0.102
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 56.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.066,
+     0.052
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 57.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.082,
+     -0.104
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 54.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.108,
+     -0.15
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 51
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.139,
+     -0.189
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.182,
+     -0.223
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.226,
+     -0.248
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.279,
+     -0.264
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.329,
+     -0.025
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.321,
+     -0.023
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.338,
+     -0.023
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.312,
+     -0.018
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.307,
+     -0.01
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.305,
+     0
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.307,
+     0.009
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 70.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.312,
+     0.017
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 72.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.32,
+     0.023
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 74
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.33,
+     0.025
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 75.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.353,
+     0.01
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.355,
+     0
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.353,
+     -0.009
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.348,
+     -0.017
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.432,
+     0.871
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.478,
+     0.897
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.519,
+     0.929
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 65
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.552,
+     0.97
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 51.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.579,
+     1.018
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 56.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.594,
+     1.068
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 57.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.578,
+     1.224
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 54.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.553,
+     1.269
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.519,
+     1.31
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.479,
+     1.343
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 67
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.432,
+     1.368
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.382,
+     1.384
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 67.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.226,
+     1.367
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.181,
+     1.343
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 65.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.14,
+     1.309
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.107,
+     1.269
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 63.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.081,
+     1.222
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 56.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.066,
+     1.172
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 57.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.082,
+     1.016
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 54.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.108,
+     0.97
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 51
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.139,
+     0.931
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.182,
+     0.897
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.226,
+     0.872
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 67.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0,
+     0.279,
+     0.856
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 50.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.329,
+     1.095
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.321,
+     1.097
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.338,
+     1.097
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.312,
+     1.102
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 64.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.307,
+     1.11
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.305,
+     1.12
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.307,
+     1.129
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 70.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.312,
+     1.137
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 72.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.32,
+     1.143
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 74
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.33,
+     1.145
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 75.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.353,
+     1.13
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.043,
+     0.355,
+     1.12
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.353,
+     1.111
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 66.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.044,
+     0.348,
+     1.103
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 8,
+    "min_angle_deg": 65.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.799,
+     0.126
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 7,
+    "min_angle_deg": 30
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.324,
+     -0.024
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.334,
+     -0.024
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.316,
+     -0.02
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.309,
+     -0.013
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.306,
+     -0.004
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.306,
+     0.006
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.31,
+     0.014
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.316,
+     0.02
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.325,
+     0.024
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.335,
+     0.024
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.344,
+     0.02
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.351,
+     0.013
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.354,
+     0.004
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.354,
+     -0.006
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.35,
+     -0.014
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.343,
+     -0.021
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.355,
+     0.014
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.02,
+    "pieces": 6,
+    "min_angle_deg": 16.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.324,
+     1.096
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.334,
+     1.096
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.316,
+     1.1
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.309,
+     1.107
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.306,
+     1.116
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.306,
+     1.126
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.31,
+     1.134
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.316,
+     1.14
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.325,
+     1.144
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.335,
+     1.144
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.344,
+     1.14
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.351,
+     1.133
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.354,
+     1.124
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.354,
+     1.114
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 75.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.35,
+     1.106
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.343,
+     1.099
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_chrome"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 74.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.129,
+     0.804,
+     0.131
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.087,
+     0.804,
+     0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.043,
+     0.804,
+     0.132
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.002,
+     0.804,
+     0.13
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.041,
+     0.804,
+     0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.084,
+     0.804,
+     0.132
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.125,
+     0.804,
+     0.13
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.172,
+     0.804,
+     0.088
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.17,
+     0.804,
+     0.046
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.169,
+     0.804,
+     0
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.172,
+     0.804,
+     -0.041
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.17,
+     0.804,
+     -0.082
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.17,
+     0.804,
+     -0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.127,
+     0.804,
+     -0.172
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.084,
+     0.804,
+     -0.171
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.042,
+     0.804,
+     -0.172
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     0.804,
+     -0.171
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     0.804,
+     -0.171
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.086,
+     0.804,
+     -0.172
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.129,
+     0.804,
+     -0.171
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.172,
+     0.804,
+     -0.128
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.171,
+     0.804,
+     -0.086
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.171,
+     0.804,
+     -0.043
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.172,
+     0.804,
+     0.001
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.171,
+     0.804,
+     0.043
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.171,
+     0.804,
+     0.086
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.129,
+     1.016,
+     0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.086,
+     1.016,
+     0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.043,
+     1.016,
+     0.128
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     1.016,
+     0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.041,
+     1.016,
+     0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.084,
+     1.016,
+     0.128
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.126,
+     1.016,
+     0.129
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.168,
+     1.016,
+     0.087
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.169,
+     1.016,
+     0.043
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.169,
+     1.016,
+     0
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.168,
+     1.016,
+     -0.042
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.168,
+     1.016,
+     -0.085
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.169,
+     1.016,
+     -0.128
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.127,
+     1.016,
+     -0.168
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.083,
+     1.016,
+     -0.17
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.042,
+     1.016,
+     -0.168
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.001,
+     1.016,
+     -0.169
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.044,
+     1.016,
+     -0.171
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.086,
+     1.016,
+     -0.168
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.13,
+     1.016,
+     -0.17
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.168,
+     1.016,
+     -0.127
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.17,
+     1.016,
+     -0.086
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.171,
+     1.016,
+     -0.043
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.168,
+     1.016,
+     0.002
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.17,
+     1.016,
+     0.042
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.171,
+     1.016,
+     0.085
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.085,
+     0.351,
+     1.034
+    ],
+    "parts": [
+     "villo_bike/bike_frame",
+     "villo_bike/villo_ochre"
+    ],
+    "length_m": 0.09,
+    "pieces": 6,
+    "min_angle_deg": 21.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.045,
+     0.344,
+     0.021
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.02,
+    "pieces": 5,
+    "min_angle_deg": 30.3
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.045,
+     0.351,
+     0.009
+    ],
+    "parts": [
+     "villo_bike/bike_chrome",
+     "villo_bike/bike_frame"
+    ],
+    "length_m": 0.01,
+    "pieces": 3,
+    "min_angle_deg": 56
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}

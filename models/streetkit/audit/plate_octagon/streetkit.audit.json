@@ -1,0 +1,1480 @@
+{
+ "summary": {
+  "triangles": 1012,
+  "vertices_welded": 528,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 72,
+  "counts": {
+   "sliver": 72,
+   "backtoback": 28,
+   "seam": 8
+  },
+  "ms": 96
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "plate_octagon",
+   "slot": "sign_face",
+   "triangles": 6,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_octagon",
+   "slot": "sign_back",
+   "triangles": 38,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_octagon",
+   "slot": "sign_rail",
+   "triangles": 432,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_octagon",
+   "slot": "galvanised",
+   "triangles": 360,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_octagon",
+   "slot": "bolt_steel",
+   "triangles": 176,
+   "maxDistance": 320
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.13,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.131,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.132,
+     -0.04
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.132,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.17,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.169,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.168,
+     -0.04
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.168,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.13,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.131,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.132,
+     -0.021
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.132,
+     -0.02
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.17,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.169,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     0.168,
+     -0.021
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     0.168,
+     -0.02
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.122,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.122,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.123,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.123,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.178,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.178,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.177,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.177,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.122,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.122,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.123,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.123,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.178,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.178,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.177,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.177,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.122,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.122,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     0.178,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     0.178,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.17,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.169,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.168,
+     -0.04
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.168,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.13,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.131,
+     -0.039
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.132,
+     -0.04
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.132,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.17,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.169,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.168,
+     -0.021
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.168,
+     -0.02
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.13,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.131,
+     -0.022
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.08,
+     -0.132,
+     -0.021
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.08,
+     -0.132,
+     -0.02
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 210,
+    "longest": 0.483
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.178,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.178,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.177,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.177,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.122,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.122,
+     -0.044
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.123,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.123,
+     -0.045
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.178,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.178,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.177,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.177,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.122,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.122,
+     -0.042
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.123,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.123,
+     -0.041
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 430,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.178,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.178,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.082,
+     -0.122,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.082,
+     -0.122,
+     -0.043
+    ],
+    "part": "plate_octagon/sign_rail",
+    "aspect": 494,
+    "longest": 0.494
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.091,
+     -0.138,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.095,
+     -0.155,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00141
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.03,
+     0.16,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00282
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.033,
+     0.143,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00352
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.213,
+     0.151,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00178
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.209,
+     0.134,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.183,
+     -0.148,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0035
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.163,
+     -0.164,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00048
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.155,
+     0.153,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00171
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.158,
+     0.136,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.033,
+     -0.143,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00352
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.03,
+     -0.16,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00282
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.095,
+     0.155,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00141
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.091,
+     0.138,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0007
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.209,
+     -0.134,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00008
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.213,
+     -0.151,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00178
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.163,
+     0.164,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00048
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.183,
+     0.148,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0035
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.158,
+     -0.136,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.155,
+     -0.153,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00171
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.028,
+     0.161,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0034
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.16,
+     0.154,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00481
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.16,
+     0.146,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00481
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.028,
+     0.139,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0034
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.028,
+     -0.139,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0034
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.16,
+     -0.146,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00481
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.16,
+     -0.154,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.00481
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.028,
+     -0.161,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "area": 0.0034
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     0.154,
+     -0.055
+    ],
+    "parts": [
+     "plate_octagon/galvanised",
+     "plate_octagon/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     0.146,
+     -0.055
+    ],
+    "parts": [
+     "plate_octagon/galvanised",
+     "plate_octagon/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     -0.146,
+     -0.055
+    ],
+    "parts": [
+     "plate_octagon/galvanised",
+     "plate_octagon/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     -0.154,
+     -0.055
+    ],
+    "parts": [
+     "plate_octagon/galvanised",
+     "plate_octagon/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.097,
+     -0.167,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "length_m": 1.03,
+    "pieces": 12,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.035,
+     0.133,
+     -0.02
+    ],
+    "parts": [
+     "plate_octagon/sign_back",
+     "plate_octagon/sign_rail"
+    ],
+    "length_m": 1.03,
+    "pieces": 12,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.241,
+     0.15,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "length_m": 1.03,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.241,
+     -0.15,
+     -0.041
+    ],
+    "parts": [
+     "plate_octagon/sign_rail",
+     "plate_octagon/sign_rail"
+    ],
+    "length_m": 1.03,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}

@@ -1,0 +1,910 @@
+{
+ "summary": {
+  "triangles": 1090,
+  "vertices_welded": 567,
+  "open_edges": 0,
+  "rays": 0,
+  "blocking": 0,
+  "warnings": 42,
+  "counts": {
+   "sliver": 42,
+   "backtoback": 13,
+   "seam": 8
+  },
+  "ms": 99
+ },
+ "options": {
+  "weld": 0.0001,
+  "coplanarAngleDeg": 5,
+  "coincident": 0.0006,
+  "nearDist": 0.003,
+  "minOverlapArea": 0.00004,
+  "depthEps": 1.1920928955078125e-7,
+  "depthSafety": 64,
+  "quantum": 0,
+  "defaultMaxDistance": 120,
+  "shallowCrossDeg": 12,
+  "sliverAspect": 40,
+  "sliverMinEdge": 0.25,
+  "streakSpreadDeg": 30,
+  "streakAspect": 6,
+  "bentFlatDeg": 3,
+  "bentFlatArea": 0.3,
+  "normalBlockDeg": 85,
+  "flipDot": -0.25,
+  "flipMinArea": 0.000001,
+  "degenerateArea": 1e-9,
+  "leakStep": 0.1,
+  "leakOffsets": [
+   0.0015,
+   0.004,
+   0.012,
+   0.03
+  ],
+  "leakNarrow": 0.03,
+  "leakDeep": 0.5,
+  "frontClear": 0.25,
+  "insideVotes": 3,
+  "insideSkin": 0.03,
+  "ignoreBelow": null,
+  "maxItemsPerCheck": 400,
+  "vertexSeparation": 0,
+  "debugTris": 0,
+  "traceAt": null
+ },
+ "parts": [
+  {
+   "name": "plate_tri_up",
+   "slot": "sign_face",
+   "triangles": 19,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_tri_up",
+   "slot": "sign_back",
+   "triangles": 103,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_tri_up",
+   "slot": "sign_rail",
+   "triangles": 432,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_tri_up",
+   "slot": "galvanised",
+   "triangles": 360,
+   "maxDistance": 320
+  },
+  {
+   "name": "plate_tri_up",
+   "slot": "bolt_steel",
+   "triangles": 176,
+   "maxDistance": 320
+  }
+ ],
+ "items": {
+  "sliver": [
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.093,
+     -0.302,
+     -0.002
+    ],
+    "part": "plate_tri_up/sign_back",
+    "aspect": 159,
+    "longest": 0.561
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.094,
+     -0.301,
+     -0.001
+    ],
+    "part": "plate_tri_up/sign_back",
+    "aspect": 159,
+    "longest": 0.561
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.221,
+     -0.081,
+     -0.002
+    ],
+    "part": "plate_tri_up/sign_back",
+    "aspect": 159,
+    "longest": 0.561
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.127,
+     0.08,
+     -0.001
+    ],
+    "part": "plate_tri_up/sign_back",
+    "aspect": 159,
+    "longest": 0.561
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.128,
+     0.081,
+     -0.002
+    ],
+    "part": "plate_tri_up/sign_back",
+    "aspect": 159,
+    "longest": 0.561
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.22,
+     -0.082,
+     -0.001
+    ],
+    "part": "plate_tri_up/sign_back",
+    "aspect": 159,
+    "longest": 0.561
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.14,
+     -0.039
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.139,
+     -0.039
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.138,
+     -0.04
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.138,
+     -0.041
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.1,
+     -0.039
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.101,
+     -0.039
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.102,
+     -0.04
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.102,
+     -0.041
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.14,
+     -0.022
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.139,
+     -0.022
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.138,
+     -0.021
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.138,
+     -0.02
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.1,
+     -0.022
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.101,
+     -0.022
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.07,
+     -0.102,
+     -0.021
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.07,
+     -0.102,
+     -0.02
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 184,
+    "longest": 0.423
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.148,
+     -0.044
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.148,
+     -0.044
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.147,
+     -0.045
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.147,
+     -0.045
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.092,
+     -0.044
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.092,
+     -0.044
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.093,
+     -0.045
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.093,
+     -0.045
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.148,
+     -0.042
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.148,
+     -0.042
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.147,
+     -0.041
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.147,
+     -0.041
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.092,
+     -0.042
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.092,
+     -0.042
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.093,
+     -0.041
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.093,
+     -0.041
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 378,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.148,
+     -0.043
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 434,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.148,
+     -0.043
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 434,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.072,
+     -0.092,
+     -0.043
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 434,
+    "longest": 0.434
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     0.072,
+     -0.092,
+     -0.043
+    ],
+    "part": "plate_tri_up/sign_rail",
+    "aspect": 434,
+    "longest": 0.434
+   }
+  ],
+  "backtoback": [
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.07,
+     -0.114,
+     -0.02
+    ],
+    "parts": [
+     "plate_tri_up/sign_back",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00718
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.07,
+     -0.126,
+     -0.02
+    ],
+    "parts": [
+     "plate_tri_up/sign_back",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00718
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.055,
+     0.042,
+     -0.02
+    ],
+    "parts": [
+     "plate_tri_up/sign_back",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00378
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.04,
+     0.034,
+     -0.02
+    ],
+    "parts": [
+     "plate_tri_up/sign_back",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00404
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.112,
+     0.048,
+     -0.02
+    ],
+    "parts": [
+     "plate_tri_up/sign_back",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00027
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.013,
+     0.051,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00169
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.079,
+     0.044,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00235
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.079,
+     0.036,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00235
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.013,
+     0.029,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00169
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.024,
+     -0.109,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00298
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.14,
+     -0.116,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00421
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.14,
+     -0.124,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00421
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.024,
+     -0.131,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "area": 0.00298
+   }
+  ],
+  "seam": [
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     0.044,
+     -0.055
+    ],
+    "parts": [
+     "plate_tri_up/galvanised",
+     "plate_tri_up/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     0.036,
+     -0.055
+    ],
+    "parts": [
+     "plate_tri_up/galvanised",
+     "plate_tri_up/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.048,
+     -0.116,
+     -0.055
+    ],
+    "parts": [
+     "plate_tri_up/galvanised",
+     "plate_tri_up/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.048,
+     -0.124,
+     -0.055
+    ],
+    "parts": [
+     "plate_tri_up/galvanised",
+     "plate_tri_up/bolt_steel"
+    ],
+    "length_m": 0.07,
+    "pieces": 34,
+    "min_angle_deg": 23.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.119,
+     0.04,
+     -0.02
+    ],
+    "parts": [
+     "plate_tri_up/sign_back",
+     "plate_tri_up/sign_rail"
+    ],
+    "length_m": 0.54,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.119,
+     0.04,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "length_m": 0.54,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.211,
+     -0.12,
+     -0.041
+    ],
+    "parts": [
+     "plate_tri_up/sign_rail",
+     "plate_tri_up/sign_rail"
+    ],
+    "length_m": 0.91,
+    "pieces": 6,
+    "min_angle_deg": 22.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.211,
+     -0.12,
+     -0.02
+    ],
+    "parts": [
+     "plate_tri_up/sign_back",
+     "plate_tri_up/sign_rail"
+    ],
+    "length_m": 0.91,
+    "pieces": 4,
+    "min_angle_deg": 22.5
+   }
+  ]
+ },
+ "file": "streetkit.glb"
+}
