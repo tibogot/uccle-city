@@ -46,15 +46,16 @@ FR = SITE["frame"]
 MON = SITE["monument"]
 rnd = random.Random(1925)
 
-SLOTS = ["stone_blue", "bronze_gilt", "cast_iron_black", "cast_iron_green", "soil_bed", "plant_grass", "cobbles"]
-STONE, BRONZE, IRON, GREEN, SOIL, PLANT, SETTS = range(7)
+SLOTS = ["stone_blue", "bronze_gilt", "cast_iron_black", "cast_iron_green", "soil_bed", "plant_grass"]
+STONE, BRONZE, IRON, GREEN, SOIL, PLANT = range(6)
 CODES = ["plain", "panel", "letters", "nosing", "riser", "tread", "kerb", "relief", "bouquet", "animal", "rail", "post",
          "finial", "cap", "plinth", "seat"]
 (C_PLAIN, C_PANEL, C_LETTERS, C_NOSING, C_RISER, C_TREAD, C_KERB, C_RELIEF, C_BOUQUET, C_ANIMAL, C_RAIL, C_POST,
  C_FINIAL, C_CAP, C_PLINTH, C_SEAT) = range(16)
 FAR = lambda: K.FAR
 # the lettering atlas cells (tools/heros_letters.py writes the same table into textures/heros/heros_letters.json)
-CELL_FRONT, CELL_NAMES_A, CELL_NAMES_B, CELL_NAMES_C, CELL_BENCH, CELL_YEARS = range(6)
+# (ONLY the real texts: the names' panels are uninscribed, no reliable transcription of the monument exists for us)
+CELL_FRONT, CELL_YEARS = range(2)
 
 # ------------------------------------------------------------------------------------------------ LEVELS (m TAW)
 # the terrace: DTM 50.46-50.60 at 4.5-6 m round the centre (median 50.55); the DSM shows the platform ring at ~3.6-4.1 m
@@ -123,11 +124,18 @@ def blob(c, rx, ry, rz, mat, code, segs=8, rings=5, squash=0.0):
             elif i == rings - 1: K.B.face([a, b, d], mat, code)
             else: K.B.face([a, b, cc, d], mat, code)
 
-def letters_face(corners, cell, s_len, v_len, mat=STONE):
-    """a planar quad (4 Blender points, ccw seen from outside: bottom-left, bottom-right, top-right, top-left) lettered from
-    the atlas cell: TEXCOORD_0 = (1000 (cell + 1) + s, v) metres on the panel"""
+def letters_face(corners, cell, s_len, v_len, mat=STONE, out=None):
+    """a planar quad lettered from the atlas cell, read from in front: corners = bottom-left, bottom-right, top-right,
+    top-left SEEN FROM OUTSIDE (`out` = the outward normal: the order is checked against it, s must run to the reader's
+    right = Z x out, and the face must face out). TEXCOORD_0 = (1000 (cell + 1) + s, v) metres on the panel. The glTF
+    exporter writes v' = 1 - v: written here as 1 - v so the file carries v (the reader's up)."""
+    bl, br, tr, tl = corners
+    if out is not None:
+        right = Z.cross(out) if abs(out.z) < 0.9 else Vector((1, 0, 0))   # (a horizontal face: s along the given order)
+        if abs(out.z) < 0.9 and (br - bl).dot(right) < 0: bl, br, tr, tl = br, bl, tl, tr
+        assert newell_dot([bl, br, tr, tl], out) > 0, "lettered face wound inward"
     o = 1000.0 * (cell + 1)
-    K.B.face(corners, mat, C_LETTERS, [(o, 0.0), (o + s_len, 0.0), (o + s_len, v_len), (o, v_len)])
+    K.B.face([bl, br, tr, tl], mat, C_LETTERS, [(o, 1.0), (o + s_len, 1.0), (o + s_len, 1.0 - v_len), (o, 1.0 - v_len)])
 
 # ------------------------------------------------------------------------------------------------ THE PLATFORM
 def platform():
@@ -205,7 +213,7 @@ def enclosure():
                 face_dir([st0, fr.p(s0 + 0.18, hz(SEAT), seat_front - ch), fr.p(s0 + 0.18, hz(SEAT), 0.0), sb0], Z, STONE, C_SEAT)
                 face_dir([fr.p(s1 - 0.18, hz(SEAT), seat_front - ch), st1, sb1, fr.p(s1 - 0.18, hz(SEAT), 0.0)], Z, STONE, C_SEAT)
                 letters_face([fr.p(s0 + 0.18, hz(SEAT), seat_front - ch), fr.p(s1 - 0.18, hz(SEAT), seat_front - ch),
-                              fr.p(s1 - 0.18, hz(SEAT), 0.0), fr.p(s0 + 0.18, hz(SEAT), 0.0)], CELL_YEARS, L, seat_front - ch)
+                              fr.p(s1 - 0.18, hz(SEAT), 0.0), fr.p(s0 + 0.18, hz(SEAT), 0.0)], CELL_YEARS, L, seat_front - ch, out=Z)
             else:
                 face_dir([st0, st1, sb1, sb0], Z, STONE, C_SEAT)
         else:
@@ -219,9 +227,7 @@ def enclosure():
             outer_r = rect(-hs, v0, hs, v1); hole = rect(-hs + 0.3, v0 + pf, hs - 0.3, v1 - pf)
             fill2d(fr, [outer_r, list(reversed(hole))], 0.0, STONE, C_PANEL)
             strip2d(fr, hole, 0.0, -0.02, STONE, C_PANEL)
-            a, b = hole[0], hole[2]
-            letters_face([fr.p(a[0], a[1], -0.02), fr.p(b[0], a[1], -0.02), fr.p(b[0], b[1], -0.02), fr.p(a[0], b[1], -0.02)],
-                         CELL_BENCH, b[0] - a[0], b[1] - a[1])
+            fill2d(fr, [hole], -0.02, STONE, C_PANEL)      # uninscribed (the names: no reliable transcription)
     # the coping: ONE octagonal ring slab over the wall (3 cm proud outside and inside), its underside closed
     co = octagon((OCT_A + 0.03) / math.cos(math.pi / 8)); ci = octagon((OCT_A - WALL_T - 0.03) / math.cos(math.pi / 8))
     v1 = WALL_TOP - 0.07
@@ -260,16 +266,11 @@ def corners():
         box(Vector((c.x, c.y, 0)), t, Z, n, -0.2, 0.2, hz(SEAT + 0.12), hz(WALL_TOP - 0.07), -0.25, 0.14, STONE, C_PLINTH, skip=("bottom",))
         if FAR():
             continue
-        # the bouquet of roses: a dome of roses over a sheaf of stems, in front of the pilaster's top half
-        bc = c + n * 0.2 + Z * (hz(WALL_TOP) - 0.36)
-        r2 = random.Random(k)
-        lathe_axis(bc + Z * -0.26, Z, n, [(0.05, 0.0), (0.09, 0.1), (0.13, 0.2), (0.0, 0.2)], 8, STONE, C_BOUQUET)   # the sheaf
-        for j in range(13):
-            ring = 0 if j < 7 else (1 if j < 12 else 2)
-            a = 2 * math.pi * (j / 7 if ring == 0 else (j - 7) / 5 + 0.3) + r2.uniform(-0.15, 0.15)
-            rr = (0.13, 0.075, 0.0)[ring] + (r2.uniform(-0.008, 0.008) if ring < 2 else 0.0)
-            p = bc + t * (rr * math.cos(a)) + n * (rr * math.sin(a) * 0.7 + 0.02) + Z * (0.02 + 0.07 * ring)
-            blob(p, 0.055, 0.055, 0.045, STONE, C_BOUQUET, segs=7, rings=4)
+        # the bouquet of roses (IMG_0040 / DSC_4602): carved as ONE form in front of the pilaster's top: a fluted sheaf of
+        # stems flaring up into a domed head of roses, the dome scalloped into rose heads (lobes round it and over the top)
+        # with a spiral petal groove in each: reads as a carved bouquet at street distance, no loose blobs
+        bc = c + n * 0.2 + Z * (hz(WALL_TOP) - 0.4)
+        rose_bouquet(bc, n, t)
         # the animal on the pedestal (alternately a frog and a tortoise; the photos show a frog and leave the rest unclear)
         ac = c + n * 0.3 + Z * hz(SEAT + 0.12)
         if k % 2 == 0:
@@ -281,6 +282,46 @@ def corners():
         else:
             blob(ac + Z * 0.05, 0.14, 0.12, 0.07, STONE, C_ANIMAL, segs=12, rings=5)                   # the shell
             blob(ac + Z * 0.04 + n * 0.15, 0.045, 0.04, 0.035, STONE, C_ANIMAL, segs=8, rings=4)       # the head
+
+def rose_bouquet(bc, n, t, segs=42, rings=24):
+    """a carved bouquet round the vertical axis through bc: a fluted sheaf (z -0.26..-0.04) under a scalloped dome
+    (z -0.04..0.2), r(theta, z) modulated by 7 rose lobes round the waist and 4 + 1 over the crown; one closed lathe-like
+    grid (top closed by a fan, bottom by a cap); flattened a little against the pilaster (n: out of it)"""
+    K.B.new_group()
+    def r_at(th, z):
+        # the photos: a tall egg of rose heads in staggered tiers, the stems gathered into a narrow sheaf that FLARES into
+        # it (no undercut: a mushroom read came from a thin stem under a wide cap)
+        if z < -0.1:                                           # the sheaf: 0.05 at the foot flaring to the head, 10 flutes
+            f = (z + 0.26) / 0.16
+            return (0.05 + 0.055 * f ** 1.6) * (1 + 0.07 * math.cos(10 * th)), z
+        f = (z + 0.1) / 0.36                                   # the head: 0 at the sheaf, 1 at the crown
+        prof = 0.165 * math.sin(math.pi * (0.13 + 0.87 * f)) ** 0.55 + 0.003   # an egg: ~0.1 at the sheaf, 0.165 wide, closed at the crown
+        # rose heads: 4 staggered tiers of 7, each a round bump (raised-cosine in angle and height), a spiral groove each
+        tier = f * 4.0
+        i = min(3, int(tier)); ft = tier - i
+        ang = 7 * th + i * math.pi                              # staggered by half a head per tier
+        head = (0.5 + 0.5 * math.cos(ang)) * math.sin(math.pi * ft)
+        groove = 1 - 0.035 * math.sin(3 * ang + 9 * ft) * head
+        return prof * (1 + 0.14 * math.sqrt(head)) * groove, z   # (sqrt: round heads, not spikes)
+    zs = [-0.26 + 0.16 * k / 3 for k in range(4)] + [-0.1 + 0.36 * k / 24 for k in range(1, 25)]
+    grid = []
+    for z in zs:
+        row = []
+        for k in range(segs):
+            th = 2 * math.pi * k / segs
+            r, zz = r_at(th, z)
+            d = t * math.cos(th) + n * (math.sin(th) * (0.75 if math.sin(th) < 0 else 1.0))
+            row.append(bc + d * r + Z * zz)
+        grid.append(row)
+    cen = bc + Z * (zs[-1] + 0.006)
+    for i in range(len(grid) - 1):
+        for k in range(segs):
+            a, b, c2, d2 = grid[i][k], grid[i][(k + 1) % segs], grid[i + 1][(k + 1) % segs], grid[i + 1][k]
+            mid = (a + b + c2 + d2) / 4
+            face_dir([a, b, c2, d2], mid - (bc + Z * ((zs[i] + zs[i + 1]) / 2)), STONE, C_BOUQUET)
+    for k in range(segs):
+        face_dir([grid[-1][k], grid[-1][(k + 1) % segs], cen], Z, STONE, C_BOUQUET)
+    face_dir([grid[0][k] for k in range(segs)], -Z, STONE, C_BOUQUET)
 
 def railing_rails(V8, h0, h1):
     """the three rails as closed octagonal rings (no box ends overlapping at the corners): a flat bar 35 x 24 mm on top,
@@ -374,23 +415,23 @@ def obelisk():
 
 def shaft():
     """the tapering shaft, each face split in rows / columns so the lettered panel is its own quad: the front carries the
-    1914-1918 inscription over the Saint Peter relief, the three others the names (gibberish rows in the atlas: the real
-    names are not in our data)"""
+    1914-1918 inscription over the Saint Peter relief; the three others (the names of 1914-1918 in reality) uninscribed:
+    no reliable transcription of the monument's lists was found"""
     h0, h1 = PLI[2], SHAFT_TOP
     def at(su, sw, h):                             # a point on the shaft at fraction (su, sw) of the half sizes, height h
         f = (h - h0) / (h1 - h0)
         a = SHAFT0[0] + (SHAFT1[0] - SHAFT0[0]) * f; b = SHAFT0[1] + (SHAFT1[1] - SHAFT0[1]) * f
         return PW(su * a, sw * b, h)
     # faces: (outward normal (u, w), the 4 corners' (su, sw) from the viewer's left to right seen from outside)
-    faces = [((1, 0), ((1, 1), (1, -1)), CELL_FRONT), ((0, -1), ((1, -1), (-1, -1)), CELL_NAMES_A),
-             ((-1, 0), ((-1, -1), (-1, 1)), CELL_NAMES_B), ((0, 1), ((-1, 1), (1, 1)), CELL_NAMES_C)]
+    faces = [((1, 0), ((1, 1), (1, -1)), CELL_FRONT), ((0, -1), ((1, -1), (-1, -1)), None),
+             ((-1, 0), ((-1, -1), (-1, 1)), None), ((0, 1), ((-1, 1), (1, 1)), None)]
     rows = [h0, h0 + 1.25, h0 + 3.2, h1] if not FAR() else [h0, h1]
     K.B.new_group()
     for (nu, nw), (L_, R_), cell in faces:
         out = Vector((nu, -nw, 0))
         for i in range(len(rows) - 1):
             ha, hb = rows[i], rows[i + 1]
-            lettered = (not FAR()) and i == 1
+            lettered = (not FAR()) and i == 1 and cell is not None
             if lettered:
                 m = 0.16                                # side margins (fraction of the half width)
                 pl = lambda f, h: at(L_[0] + (R_[0] - L_[0]) * f, L_[1] + (R_[1] - L_[1]) * f, h)
@@ -398,8 +439,7 @@ def shaft():
                 face_dir([pl(0, ha), pl(fa, ha), pl(fa, hb), pl(0, hb)], out, STONE, C_PLAIN)
                 face_dir([pl(fb, ha), pl(1, ha), pl(1, hb), pl(fb, hb)], out, STONE, C_PLAIN)
                 c = [pl(fa, ha), pl(fb, ha), pl(fb, hb), pl(fa, hb)]
-                if newell_dot(c, out) < 0: c = [c[1], c[0], c[3], c[2]]
-                letters_face(c, cell, (c[1] - c[0]).length, hb - ha)
+                letters_face(c, cell, (c[1] - c[0]).length, hb - ha, out=out)
             else:
                 face_dir([at(*L_, ha), at(*R_, ha), at(*R_, hb), at(*L_, hb)], out, STONE, C_PLAIN)
     if not FAR(): relief()
@@ -480,7 +520,7 @@ def flight(name, line, risers, bottom, top, s_top, width, handrails, run=0.42, c
         if FAR():
             face_up([P_(sa, -hw, h), P_(sb, -hw, h), P_(sb, hw, h), P_(sa, hw, h)], STONE, C_TREAD)
         else:
-            face_up([P_(sa, -hw, h), P_(sb - nose, -hw, h), P_(sb - nose, hw, h), P_(sa, hw, h)], SETTS, C_TREAD)
+            face_up([P_(sa, -hw, h), P_(sb - nose, -hw, h), P_(sb - nose, hw, h), P_(sa, hw, h)], STONE, C_TREAD)
             face_up([P_(sb - nose, -hw, h), P_(sb, -hw, h), P_(sb, hw, h), P_(sb - nose, hw, h)], STONE, C_NOSING)
         dn = Vector((D.x, -D.y, 0))                                # Blender direction down the flight
         face_dir([P_(sb, -hw, h - r), P_(sb, hw, h - r), P_(sb, hw, h), P_(sb, -hw, h)], dn, STONE, C_RISER)
@@ -580,13 +620,16 @@ def sharpen(o):
     import bmesh
     me = o.data
     bronze = [i for i, m in enumerate(me.materials) if m and m.name == "bronze_gilt"]
+    # carved forms (the rose bouquets, the animals) shade smooth like the bronze: read each face's code from COLOR_0.r
+    col = me.color_attributes["Col"]; cd = [0.0] * (4 * len(me.loops)); col.data.foreach_get("color", cd)
+    carved = set(p_.index for p_ in me.polygons if int(cd[4 * p_.loop_indices[0]] * 16) in (C_BOUQUET, C_ANIMAL))
     bm = bmesh.new(); bm.from_mesh(me); bm.faces.ensure_lookup_table()
     n = 0
     for e in bm.edges:
         lf = e.link_faces
         if len(lf) != 2: e.smooth = False; continue
         ang = lf[0].normal.angle(lf[1].normal, 0.0)
-        isb = lf[0].material_index in bronze and lf[1].material_index in bronze
+        isb = (lf[0].material_index in bronze and lf[1].material_index in bronze) or (lf[0].index in carved and lf[1].index in carved)
         if ang > math.radians(30.0 if isb else 2.5): e.smooth = False; n += 1   # (stone: the platform's 64 segments read as its cut stones)
     for f in bm.faces:
         if f.material_index not in bronze or len(f.verts) != 3: continue
@@ -597,6 +640,18 @@ def sharpen(o):
     print(f"  {o.name}: {n} sharp edges by angle")
 for o in (obj, far): sharpen(o)
 print(f"uv done {time.time() - T0:.1f}s")
+
+def carved(x, z, h):
+    """the bake's ground as the city carves it under the flights (viewer/heros/herosSurface.js carveFlights): the raw DTM
+    runs through the treads and buried the risers in the AO bake (they came out black)"""
+    for f in FLIGHTS:
+        c = f["carve"]; ring = c["ring"]
+        (ax, az), (bx, bz) = c["from_"], c["to"]
+        dx, dz = bx - ax, bz - az; L2 = dx * dx + dz * dz
+        t = min(1.0, max(0.0, ((x - ax) * dx + (z - az) * dz) / L2))
+        line = c["h_from"] + (c["h_to"] - c["h_from"]) * t
+        if SC.inside((x, z), ring): h = min(h, max(c["floor"], line - 0.27))
+    return h
 
 def load_ground():
     import numpy as np
@@ -610,7 +665,7 @@ def load_ground():
         for c in range(cols):
             x, z = g["x0"] + c * step, g["z0"] + r * step
             u, w = G.local(x, z)
-            verts.append((u, -w, a[r, c] - OY - 0.02))
+            verts.append((u, -w, carved(x, z, a[r, c]) - OY - 0.02))
     faces = [(r * cols + c, r * cols + c + 1, (r + 1) * cols + c + 1, (r + 1) * cols + c) for r in range(rows - 1) for c in range(cols - 1)]
     gm = bpy.data.meshes.new("Ground"); gm.from_pydata(verts, [], faces); gm.update()
     for p in gm.polygons:

@@ -71,8 +71,10 @@ raster (else a blurred 1.6 m gravel band crossed the lawns). The terrain is carv
 octagon's centroid, front = south):
 - round platform r 4.05 (64 cut stones), one low step;
 - the 1948 enclosure on the OSM octagon: 8 benches (seat 0.45, 0.42 deep) with recessed names' panels as backs,
-  "1940-1945" lettered in the front seat, corner blocks with an animal (frog / tortoise) and a pilaster with a bouquet
-  of 13 roses, ONE octagonal coping ring, the black railing (square posts with ball finials, three rails as closed
+  "1940-1945" lettered in the front seat, corner blocks with an animal (frog / tortoise) and a pilaster carrying a carved
+  bouquet (ONE smooth carved form: a fluted sheaf flaring into an egg of rose heads in four staggered tiers of seven,
+  each with a spiral petal groove, as the clustered bouquets of IMG_0040 / DSC_4602; the first version was a pile of
+  loose blobs that read as mushrooms), ONE octagonal coping ring, the black railing (square posts with ball finials, three rails as closed
   rings, square bars every 12 cm, a row of rings), soil bed with 34 clumps of ornamental grass (closed wedge blades);
 - the obelisk on the OSM base: pedestal, moulded plinth, tapering shaft (1.6 x 1.5 -> 1.26 x 1.16 m, 3.7 m), the
   Saint Peter relief plaque (robe, head, halo, keys), the lettered panels, a cornice slab + upper block (top 57.13 m;
@@ -81,17 +83,26 @@ octagon's centroid, front = south):
   skeletons, sculpted heads and hair, script-sculpted robe / loincloth / scarf, feathered wings, a rock; voxel-remeshed
   into one cast, 864 k tris -> `tools/heros_statue_pack.mjs` meshoptimizer 20 k (0.9 mm) / far 900): 3.81 m, top
   ~60.9 m (~10.4 m over the terrace, as the photos' proportions);
-- the 12 south steps (OSM line, risers 0.18 m, treads 0.42 m, 3.0 m wide: blue-stone nosings, setts treads, cheek
-  kerbs, green handrails both sides on capped posts) and the 4 west steps (2.4 m, no handrail, as OSM);
+- the 12 south steps (OSM line, risers 0.18 m, treads 0.42 m, 3.0 m wide: blue stone treads, risers and nosings (the
+  photos: grey stone; the first version used the streets' dark setts and the AO bake buried the risers under the uncarved
+  DTM: they read black; the bake's ground is now carved as the city's), cheek kerbs, green handrails both sides on capped
+  posts) and the 4 west steps (2.4 m, no handrail, as OSM);
 - named slots, no baked colour: `stone_blue` (the library's shipped blue-stone scan, lifted to the weathered ash grey of
   the photos; lettered faces read the lettering atlas), `bronze_gilt` (gold on raised parts, dark bronze in the hollows),
   `cast_iron_black`, `cast_iron_green`, `soil_bed`, `plant_grass`, `cobbles` (the streets' setts scan);
 - Cycles AO lightmap (2048², LOD0 + far) + per-vertex AO of the thin parts; **two scripted LODs** (LOD0 43,253 tris,
   far 2,216: no bars / rings / roses / animals / blades, the bronze at 900 tris), packed with `hero_pack.mjs --nolod`
   (a meshopt LOD1 failed the audit: 1,545 streaks), dithered hand-over at 90 m ± 15.
-- **Lettering** (`tools/heros_letters.py` -> `textures/heros/heros_letters.png`, 244 KB): the front inscription and
-  "1940-1945" are the real texts; **the names' panels carry PLACEHOLDER rows of random letters** (the real lists of 138 +
-  193 names are not in our data). See "left".
+- **Lettering** (`tools/heros_letters.py` -> `textures/heros/heros_letters.png`, 30 KB): ONLY the real texts: the front
+  inscription with "1914 - 1918", and "1940-1945" on the front seat. Every lettered face is written "read from in front"
+  in `letters_face` (s along the reader's right = Z x outward normal, checked; the glTF exporter's v flip compensated),
+  checked in the city render (`after_front.jpg`, `after_bench.jpg`).
+- **The names' panels are UNINSCRIBED** (the 138 names of 1914-1918 on the shaft's three other faces, the 193 of
+  1940-1945 on the benches' backs): plain recessed stone. Searched (2026-11-14): heritage.uccle.be, the Brussels heritage
+  inventory, bel-memorial.org, Ucclensia. The only list found is Ucclensia 156 (1995, bel-memorial.org): 251 Uccle dead of
+  1940-1945 compiled by a parish from civil records: NOT a transcription of the monument (193 names, its own layout), and
+  nothing for 1914-1918 (Ucclensia 251 announces a revised survey). One bench panel is legible in photo IMG_0040, not the
+  rest. So no names are drawn rather than invented or approximated.
 
 **In the city**: `viewer/heros/herosCity.js` (`addHeros`, called before the first tile: hides solid 534309, hands the
 worker its carves + path ids), `herosModel.js` (loader, slot materials), `herosGround.js`, `herosSurface.js` (worker).
@@ -115,8 +126,8 @@ node tools/build_worker.mjs                                                     
   stones (ours: setts with stone nosings); the real obelisk reads a little stouter; C1 has flowers in the bed (ours:
   the grasses of the 2025 photos).
 - **The enclosure (after_enclosure vs H2 / H3 / H4)**: round platform, octagonal benches with the names' backs, rose
-  bouquets and animals at the corners, the black railing with rings, grasses inside: matches. Differences: our roses and
-  animals are simple carved forms (H4's frog and bouquet are far more detailed); the names are placeholders; the scan's
+  bouquets and animals at the corners, the black railing with rings, grasses inside: matches. Differences: our bouquets and
+  animals are simpler carved forms than H4's; the names' panels are blank (no transcription, see above); the scan's
   ashlar coursing (0.25 m) is finer than the real large blocks.
 - **The bronze (vs H1)**: a winged woman upright, left arm raised with an open hand, the great wing behind it, the nude
   soldier sinking against her right side with his arm stretched out, a rock base, gilded: the silhouette and the reading
@@ -131,13 +142,13 @@ node tools/build_worker.mjs                                                     
 
 ## 5. Checks
 
-- **Mesh audit** (tools/mesh_audit, `models/heros/audit/*/*.md`): raw LOD0 43,253 tris **0 blocking** (4 allowed in
+- **Mesh audit** (tools/mesh_audit, `models/heros/audit/*/*.md`; re-run after the review fixes): raw LOD0 56,949 tris **0 blocking** (4 allowed in
   `heros.allow.json`: three 0.6-0.8 cm² folds and one 8 mm slit in the bronze, 8.4-9.7 m up, with reasons), raw far 2,216
   **0**, packed LOD0 **0**, packed far **0**. Fixed on the way (from 1004 blocking): per-side coping boxes and rails
   overlapping at the octagon's corners (now closed rings), coincident roses, doubled grass blades (now closed wedges),
   open handrail posts (capped), shallow-angle smoothing on the cheek kerbs (stone sharp above 2.5 deg), meshopt slivers
   on the bronze (stretched triangles flat-shaded).
-- **Contact (JOINS)** `await viewer.contactAudit("heros")`: 43,253 tris, **0 floating at the ground except one 0.2 m
+- **Contact (JOINS)** `await viewer.contactAudit("heros")`: 56,949 tris, **0 floating at the ground except one 0.2 m
   edge** at the south flight's top landing corner (the landing 5 cm proud of the dolomite; gap <= 8 cm) and 10
   "overhang" items that are the bench seats' 5 cm projection 0.36 m over the model's own platform (the audit compares
   with the terrain only). The platform goes 0.35 m into the terrace, the steps' blocks 0.5 m and the cheek kerbs 0.7 m
@@ -184,8 +195,8 @@ noise. Re-measure on GREEN.
 
 ## 8. Left / weak spots
 
-- **The names**: placeholder random-letter rows on the shaft and the benches; typeset the real 138 + 193 names (the
-  commune's / Ucclensia's lists) into `tools/heros_letters.py`.
+- **The names**: the panels are blank; when a reliable transcription of the monument's 138 + 193 names turns up (the
+  commune, the Cercle d'histoire d'Uccle), typeset it in `tools/heros_letters.py` (cells + lettered quads in heros.py).
 - **The bronze** is a credible silhouette, not Grandmoulin's sculpture: anatomy, drapery folds, feathers are simplified;
   the soldier should sag lower and further back (H1).
 - **Lamps and bins**: C2 shows an ornate green cast-iron lamp column and two Brussels bins at the north-east path mouth;
@@ -193,8 +204,21 @@ noise. Re-measure on GREEN.
   a lamp-site hook in `viewer/lamps.js` and the column type modelled).
 - The obelisk's stone: the library scan's 0.25 m ashlar coursing is finer than the real big blocks; the stone lift is a
   per-model multiply (3.8x) rather than a proper "weathered blue stone" library entry.
-- Rose bouquets / animals are coarse (fine at 5+ m, crude up close).
+- The animals are still simple blob forms (fine at 5+ m, crude up close); the bouquets are clean but stylised.
 - The terrain under the steps is carved on the 1 m grid; the cheek kerbs' outer faces show 0.2-0.5 m above the bank at the
   top of the south flight.
 - The lawn is the city's lawn (darker than the photos); no flower beds.
 - GPU ms on a GREEN machine.
+
+## 9. Review round (2026-11-14, coordinator)
+
+1. Mirrored "1914-1918" (read "8161-4161"): `letters_face` now orders every lettered quad for the reader (right = Z x
+   outward normal, asserted outward) and writes v as 1 - v (the glTF exporter flips v); checked from in front in the city:
+   `after_front.jpg` (the inscription, "1914 - 1918"), `after_bench.jpg` ("1940-1945").
+2. No placeholder names: uninscribed panels (section 3), the atlas holds only the real texts.
+3. Treads / risers: blue stone; the AO bake's ground carved under the flights (the risers were buried in it): `after_treads.jpg`.
+4. Bouquets remodelled as one carved form: `after_enclosure.jpg`.
+Not done (optional): the south flight's cheek kerbs still stand 0.2-0.5 m proud of the bank at its top (the bank drops
+beside the terrace edge); the contact audit has the same 1 floating 0.2 m edge as before.
+Mesh audit: raw / packed LOD0 and far **0 blocking**. Contact: 56,949 tris, 1 floating (0.2 m, the landing corner), 10
+overhangs = the seats over the platform. LOD0 grew 43 k -> 57 k triangles (the bouquets: 8 x 2 k).

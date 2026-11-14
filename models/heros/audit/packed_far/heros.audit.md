@@ -1,6 +1,6 @@
 # Mesh audit: heros.glb
 
-2,216 triangles, 1,393 welded vertices, 416 open edges, 84,680 rays, 316 ms.
+2,216 triangles, 1,393 welded vertices, 416 open edges, 84,680 rays, 321 ms.
 
 **0 blocking**, 211 warnings. Clean (no blocking item).
 

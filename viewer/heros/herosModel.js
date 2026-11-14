@@ -8,7 +8,8 @@
 //     LETTERED faces (code "letters": TEXCOORD_0.x = 1000 (cell + 1) + s) read the lettering mask
 //     (textures/heros/heros_letters.png, tools/heros_letters.py) on top: carved letters, darker and duller;
 //   - the other slots are new names with temporary TSL materials here (bronze_gilt, cast_iron_black, soil_bed,
-//     plant_grass; cast_iron_green and cobbles: the library names, not shipped: temporary too);
+//     plant_grass; cast_iron_green: the library name, not shipped: temporary too); the steps' treads and risers are
+//     stone_blue (the photos: grey blue stone / rubble), no longer the streets' dark setts;
 //   - every slot material is wrapped with the model's baked AO (lighting only); the dithered LOD cross-fade comes from
 //     lodFade.js through setLodFades (shared with Saint-Pierre).
 // LODs: both SCRIPTED in Blender (packed with hero_pack.mjs --nolod: a meshopt LOD1 of this model failed the mesh audit,
@@ -22,10 +23,9 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { bumpNormal } from "../tslkit.js";
 import { loadAO, setLodFades } from "../stpierreModel.js";
 import { libSource } from "../materials/libSwitch.js";
-import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "../streets/paving.js";
 
 export { setLodFades };
-export const HE_SLOTS = ["stone_blue", "bronze_gilt", "cast_iron_black", "cast_iron_green", "soil_bed", "plant_grass", "cobbles"];
+export const HE_SLOTS = ["stone_blue", "bronze_gilt", "cast_iron_black", "cast_iron_green", "soil_bed", "plant_grass"];
 export const NEW_NAMES = ["bronze_gilt", "cast_iron_black", "soil_bed", "plant_grass"];
 export const HE_CODES = ["plain", "panel", "letters", "nosing", "riser", "tread", "kerb", "relief", "bouquet", "animal", "rail", "post",
   "finial", "cap", "plinth", "seat"];
@@ -227,26 +227,6 @@ const TEMP = {
     const m = std({ colorNode: c, roughnessNode: float(0.8), metalnessNode: float(0) });
     m.side = THREE.DoubleSide;
     return m;
-  },
-  /** the steps' treads: the streets' setts (viewer/streets/paving.js, the same scan as Place de Saint-Job) when the
-   *  street textures are loaded, else a procedural grey setts pattern */
-  cobbles: () => {
-    if (pavingTextures()) {
-      const w = uv(0);
-      const S = pavingSample(w.x, w.y, float(LAYER.setts), float(1.3));
-      return std({ colorNode: regrade(S.col, "setts", [0.085, 0.082, 0.078], 0.8).mul(mix(float(1), S.ao, 0.5)), roughnessNode: S.rough.mul(1.05).min(0.97),
-        metalnessNode: float(0), aoNode: S.ao, normalNode: pavingNormal(S.n, w.x, w.y, float(1)) });
-    }
-    const col = Fn(() => {
-      const w = uv(0).toVar();
-      const cu = w.x.div(0.14), cv = w.y.div(0.12);
-      const row = floor(cv), cc = floor(cu.add(mod(row, 2).mul(0.5)));
-      const fu = fract(cu.add(mod(row, 2).mul(0.5))), fv = fract(cv);
-      const j = smoothstep(0.0, 0.08, min(min(fu, float(1).sub(fu)), min(fv, float(1).sub(fv))));
-      const t = hash2(vec2(cc, row));
-      return mix(lin(0x2a2826), mix(lin(0x55524c), lin(0x6e6a62), t), j);
-    })();
-    return std({ colorNode: col, roughnessNode: float(0.85), metalnessNode: float(0) });
   },
 };
 export const HE_TEMP_MATERIALS = TEMP;
