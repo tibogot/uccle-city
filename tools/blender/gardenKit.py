@@ -246,10 +246,31 @@ def bake_vertex_ao(objs):
             c.scale = (3.0, 0.25, 0.85); stand.append(c)
         else:
             bpy.ops.mesh.primitive_plane_add(size=8, location=(0.5, 0, 0)); stand.append(bpy.context.active_object)
+        # every other piece out of the render: they all sit at the origin (baked together they occluded each other:
+        # the railings came out at ~0.001 mean AO, drawn ~30 % too dark; found by claude/roofs)
+        for x in objs: x.hide_render = x is not o
         for x in scn.objects: x.select_set(False)
         o.select_set(True); bpy.context.view_layer.objects.active = o
         bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
         for c in stand: bpy.data.objects.remove(c)
+    for x in objs: x.hide_render = False
+    # the coarser LODs bake much darker than LOD0 (thin merged bars occlude themselves): scale each LOD1 / LOD2's AO so
+    # its mean matches its LOD0's, so the hand-over does not change the brightness (smooth LOD, no popping)
+    def mean(o):
+        d = o.data.color_attributes["Col"].data
+        return sum(c.color[0] for c in d) / max(1, len(d))
+    by = {o.name: o for o in objs}
+    for o in objs:
+        for k in ("_lod1", "_lod2"):
+            if not o.name.endswith(k): continue
+            ref = by.get(o.name[: -len(k)] + "_lod0")
+            if ref is None: continue
+            m0, m = mean(ref), mean(o)
+            if m <= 1e-4 or k == "_lod2": f = None      # LOD2 (far): one flat value, the AO detail is sub-pixel there
+            else: f = m0 / m
+            for c in o.data.color_attributes["Col"].data:
+                v = m0 if f is None else min(1.0, c.color[0] * f)
+                c.color = (v, v, v, 1.0)
     print(f"AO baked {time.time() - t:.0f}s")
 
 
