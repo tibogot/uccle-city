@@ -320,8 +320,16 @@ export function makeSpecies(def) {
     }
     // the weather (viewer/weather/cityWeatherize.js): wet bark, snow on the upper side of limbs and on the crowns' tops,
     // plastered on the windward side of trunks; the crowns shelter the ground under them in the overhead bake
-    for (const m of new Set([shared.trunkMat, shared.trunkFar])) wxMat(m, { porosity: 0.7, snowUp: [0.12, 0.45], plaster: true });
-    for (const m of new Set([shared.leafMat, shared.leafFar])) { wxMat(m, { porosity: 0.2, snowUp: [0.45, 0.9], snowMask: float(0.8) }); m.userData.wxCanopy = true; }
+    // snow round 2 (claude/snowtracks, ?snowlimbs=old = before): snow lay as a white stripe on EVERY branch and the crowns
+    // read as blossom (white specks on every up-facing card). Now: a soft cap on the upper side of the thicker limbs
+    // only (the ring radius from the bark attribute: none under ~3 cm, full from ~7 cm), and on the crowns only the top
+    // ~40 % of the crown and its open (unoccluded) cards hold snow
+    const OLD_LIMBS = /[?&]snowlimbs=old(&|$)/.test(location.search);
+    const bark = attribute("bark", "vec4"), card = attribute("card", "vec4");
+    const limb = smoothstep(0.03, 0.07, positionGeometry.sub(bark.xyz).length());
+    for (const m of new Set([shared.trunkMat, shared.trunkFar])) wxMat(m, OLD_LIMBS ? { porosity: 0.7, snowUp: [0.12, 0.45], plaster: true } : { porosity: 0.7, snowUp: [0.3, 0.75], snowMask: limb, plaster: true });
+    const crownTop = smoothstep(0.58, 0.9, card.w).mul(mix(float(0.35), float(1), card.z.clamp(0, 1)));
+    for (const m of new Set([shared.leafMat, shared.leafFar])) { wxMat(m, OLD_LIMBS ? { porosity: 0.2, snowUp: [0.45, 0.9], snowMask: float(0.8) } : { porosity: 0.2, snowUp: [0.5, 0.95], snowMask: crownTop.mul(0.85) }); m.userData.wxCanopy = true; }
     // (a streamed tile's trees fade in with the tile: lodFade.js gives them fading copies of these while it fades)
     for (const m of new Set([shared.leafMat, shared.leafFar, shared.trunkMat, shared.trunkFar])) m.userData.shared = true;
     // the trees' shadow distance fade (shadow pass only: the masks the shadow pass reads)

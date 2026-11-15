@@ -22,6 +22,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { FadeSlots, StreamPool, sourceFromYaw, MARGIN } from "../instanceStream.js";
+import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
 
 /** the kit's tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
 export const furnitureFades = new FadeSlots();
@@ -247,6 +248,7 @@ function materials(aoTex) {
     m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
     m.maskShadowNode = m.maskNode;
     m.name = `furniture2-lod${lod}`;
+    wxMat(m, { porosity: 0.3, beads: true, frost: true });     // snow round 2: the weather (snow caps: viewer/weather/cityCaps.js)
     m.userData.shared = true; m.userData.noFade = true;           // (the tile fade: its slot rides in iBand.w)
     return m;
   });

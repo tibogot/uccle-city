@@ -272,6 +272,7 @@ export const cityWeather = {
    *  bake's override material), canopy = tree crowns, road = the carriageway material (salted in winter) */
   mark() {
     let n = 0, cars = 0;
+    const pools = new Set();
     // snowtracks / snow caps: MOVERS are not ground. Baked at the pose they had at the bake, the layer drew a snow slab
     // floating where the player's car, a tram or a traffic car had been (and a hole in the street under it) until the
     // next bake; their snow is the caps' job (snowCaps.js)
@@ -286,7 +287,13 @@ export const cityWeather = {
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
       if (!m) return;
       // crowns: their cards' wind / morph (positionNode) is not in the bake, the instanced crown volume is: shelter only
-      if (m.userData?.wxCanopy || o.userData?.wxCanopy) { o.layers.enable(CANOPY_LAYER); o.layers.disable(SOLID_LAYER); return; }
+      if (m.userData?.wxCanopy || o.userData?.wxCanopy) {
+        // snow round 2: the city-wide tree POOL (perf pass 2, multiDraw.js: indirect draws, the instances' live ranges in
+        // its parts) baked as ~98 % "under a crown" (every slot of the buffer drawn: the Heros lawn's blotchy snow);
+        // its crowns go into the bake as proxies built from the live ranges instead (canopyProxy below)
+        if (o.userData?.multiDraw) { pools.add(o.userData.multiDraw); o.layers.disable(CANOPY_LAYER); o.layers.disable(SOLID_LAYER); return; }
+        o.layers.enable(CANOPY_LAYER); o.layers.disable(SOLID_LAYER); return;
+      }
       if (m.positionNode) { o.layers.disable(SOLID_LAYER); return; }
       if (m.transparent && !m.userData?.wxRoad) { o.layers.disable(SOLID_LAYER); return; }
       o.layers.enable(SOLID_LAYER); n++;
@@ -297,7 +304,38 @@ export const cityWeather = {
     }
     for (const r of own) off(r);
     map.carsMarked = cars > 0;
+    this.canopyProxy(pools);
     return n;
+  },
+  /** crown proxies for the bake's canopy pass (snow round 2): one squashed sphere per live tree of the multi-draw tree
+   *  pools within the map window, on CANOPY_LAYER only (never drawn by the city's cameras) */
+  canopyProxy(pools) {
+    if (!this._canopy) {
+      const g = new THREE.SphereGeometry(1, 10, 6);
+      const m = new THREE.MeshBasicNodeMaterial();
+      const mesh = new THREE.InstancedMesh(g, m, 2048);
+      mesh.layers.set(CANOPY_LAYER); mesh.frustumCulled = false; mesh.count = 0; mesh.name = "wx-canopy-proxy";
+      mesh.userData.wxSkip = true;
+      this.scene.add(mesh);
+      this._canopy = mesh;
+    }
+    const P = this._canopy, M = P.instanceMatrix.array, c = map.centre, R = MAP_SIZE * 0.75;
+    let n = 0;
+    const seen = new Set();
+    for (const set of pools) {
+      const A = set.buf?.instanceMatrix?.array; if (!A) continue;
+      for (const part of set.parts) for (let i = part.off; i < part.off + part.n && n < 2048; i++) {
+        const o = i * 16, x = A[o + 12], y = A[o + 13], z = A[o + 14];
+        if (Math.abs(x - c.x) > R || Math.abs(z - c.z) > R) continue;
+        const key = Math.round(x * 10) * 100003 + Math.round(z * 10);
+        if (seen.has(key)) continue; seen.add(key);
+        const sx = Math.hypot(A[o], A[o + 2]), sy = A[o + 5], H = 11 * sy, r = 4.2 * sx;      // (a stylized tree ~11 m, its crown ~0.4 H wide)
+        M.set([r, 0, 0, 0, 0, H * 0.3, 0, 0, 0, 0, r, 0, x, y + H * 0.62, z, 1], n * 16); n++;
+      }
+    }
+    P.count = n; P.visible = n > 0;
+    P.instanceMatrix.clearUpdateRanges(); P.instanceMatrix.addUpdateRange(0, Math.max(1, n) * 16); P.instanceMatrix.needsUpdate = true;
+    if (n) P.layers.set(CANOPY_LAYER);
   },
   /** autumn leaves fall from the crowns the bake found (the 8 most sheltered 8 x 8 m blocks) */
   findCrowns() {

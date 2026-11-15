@@ -173,6 +173,7 @@ export const FEATURES = [
   // polish round 1 (docs/POLISH.md): each look change has its own A/B; ?polish1=old = all of them at once
   old("polish1", "ab", "polish 1: all", "Every look change of the polish batch 1 as before (docs/POLISH.md).", { sub: "Look" }),
   old("snowedge", "ab", "snow edge (old)", "Snow layer cut per 12.5 cm cell + nearest-cell exposure: the stepped / jagged snow edge along kerbs (polish 1 item 1).", { sub: "Look" }),
+  old("snowlimbs", "ab", "snow on every branch (old)", "Snow as a white stripe on every branch and white specks over the whole crown (blossom look); now only the thicker limbs and the crown tops (snow round 2).", { sub: "Look" }),
   old("snowwb", "ab", "snow white balance (old)", "Snow scenes with the 75 % grade correction and the warm highlights: beige snow (polish 1 item 1).", { sub: "Look" }),
   old("treedither", "ab", "tree hand-over dither (old)", "Fixed 30-50 m mesh -> impostor / shadow-fade bands: a static checker on crowns standing in the band (polish 1 item 2).", { sub: "Look" }),
   old("bark", "ab", "zebra bark (old)", "The street trees' striped bark before (polish 1 item 3).", { sub: "Look" }),

@@ -16,6 +16,7 @@
 //   night    emissive only (fixed light count): the plates' retroreflective faces give back a little light toward the
 //            viewer (x env.uNight), the Villo screens and status lamps glow
 import * as THREE from "three/webgpu";
+import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
 import {
   attribute, uniformArray, texture, uv, vec2, vec3, float, int, mix, smoothstep, length, positionWorld, positionGeometry, normalGeometry,
   select, fract, clamp, floor, mod, max, pow, normalView, positionView, normalize, dot,
@@ -252,6 +253,7 @@ function materials(aoTex, faces) {
     m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
     m.maskShadowNode = m.maskNode;
     m.name = `streetkit-lod${lod}`;
+    wxMat(m, { porosity: 0.1, beads: true, frost: true });     // snow round 2: the weather (signs, Villo docks)
     m.userData.shared = true; m.userData.noFade = true;
     return m;
   });
