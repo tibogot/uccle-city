@@ -1128,6 +1128,9 @@ async function main() {
   if (params.get("sacrecoeur") !== "0") heroes.push(() => addLandmark5("sacrecoeur", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // ... and the Eglise Saint-Marc, Avenue De Fre (tools/blender/saintmarc.py); ?saintmarc=0 = the UrbIS solid
   if (params.get("saintmarc") !== "0") heroes.push(() => addLandmark5("saintmarc", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  // castle1 >>> the Chateau Latour de Frein, Rue Engeland 555 (tools/blender/latourdefrein.py, same loader); ?latourdefrein=0 = the UrbIS solid
+  if (params.get("latourdefrein") !== "0") heroes.push(() => addLandmark5("latourdefrein", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  // <<< castle1
   // the public art kit (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md): the Dix Monolithes, La Victoire, the Gobert
   // memorial, the milestones and the Charles V stones; ?art=old = the city without them (the monoliths' UrbIS boxes back)
   if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));

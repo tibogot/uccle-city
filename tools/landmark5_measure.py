@@ -42,6 +42,12 @@ CHURCHES = {
     # front line (OSM (441.21,-620.17)->(467.16,-619.14)) half-way
     "saintmarc": dict(way=225781790, tile="G3", solid="548515", axis_deg=-87.61, front=((441.21, -620.17), (467.16, -619.14)),
                       name="Eglise Saint-Marc (Sint-Markuskerk), Avenue De Fre", box=(-14.0, 40.0, -24.0, 24.0), base=50.0),
+    # castle1 (branch claude/castle1): the Chateau Latour de Frein, Rue Engeland 555 (1899-1903, Henri Maquet, neo-Renaissance;
+    # Ucclensia 221): the long front faces north-north-east onto the drive from Rue Engeland. The axis from the OSM front
+    # walls (29.5 deg: 81.02,2301.06 -> 102.39,2313.14 and 114.39,2320.11 -> 135.74,2332.18) turned to point INTO the
+    # building (119.5 deg); origin on the central avant-corps' front (OSM 106.22,2306.41 -> 118.29,2313.25) half-way.
+    "latourdefrein": dict(way=30498629, tile="G9", solid="538562", axis_deg=119.5, front=((106.219, 2306.412), (118.292, 2313.245)),
+                          name="Chateau Latour de Frein, Rue Engeland 555", box=(-16.0, 58.0, -44.0, 44.0)),
 }
 
 

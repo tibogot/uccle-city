@@ -129,6 +129,7 @@ export const FEATURES = [
   on("augustin", "world", "Saint-Augustin", "Église Saint-Augustin.", { sub: "Landmarks" }),
   on("sacrecoeur", "world", "Sacré-Cœur", "Église du Sacré-Cœur (Rue Vanderkindere); off: the UrbIS block.", { sub: "Landmarks" }),
   on("saintmarc", "world", "Saint-Marc", "Église Saint-Marc (Avenue De Fré); off: the UrbIS block.", { sub: "Landmarks" }),
+  on("latourdefrein", "world", "Latour de Frein", "Château Latour de Frein (Rue Engeland 555); off: the UrbIS block.", { sub: "Landmarks" }),
   on("stalle", "world", "Stalle chapel", "Chapelle de Stalle (+ interior).", { sub: "Landmarks" }),
   on("vanbuuren", "world", "van Buuren house", "Musée van Buuren.", { sub: "Landmarks" }),
   on("calevoet", "world", "Calevoet station", "Uccle-Calevoet station.", { sub: "Landmarks" }),

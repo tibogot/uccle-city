@@ -1,0 +1,315 @@
+{
+ "asset": "Chateau Latour de Frein, Rue Engeland 555 (tools/blender/latourdefrein.py)",
+ "triangles": {
+  "lod0": 46012,
+  "lod1": 9199,
+  "lod2": 3602
+ },
+ "triangles_per_slot": {
+  "lod0": {
+   "brick_red_brussels": 11393,
+   "stone_white": 23521,
+   "slate": 212,
+   "zinc_roof": 730,
+   "wood_frame_white": 7036,
+   "glass_window": 339,
+   "cast_iron_green": 208,
+   "stone_blue": 1740,
+   "wood_frame_dark": 828,
+   "terrace_tiles": 5
+  },
+  "lod1": {
+   "brick_red_brussels": 1462,
+   "stone_white": 4721,
+   "slate": 212,
+   "zinc_roof": 510,
+   "wood_frame_white": 620,
+   "glass_window": 325,
+   "stone_blue": 1186,
+   "wood_frame_dark": 158,
+   "terrace_tiles": 5
+  },
+  "lod2": {
+   "brick_red_brussels": 832,
+   "stone_white": 1531,
+   "slate": 212,
+   "zinc_roof": 2,
+   "wood_frame_white": 80,
+   "glass_window": 242,
+   "stone_blue": 580,
+   "wood_frame_dark": 118,
+   "terrace_tiles": 5
+  }
+ },
+ "levels": {
+  "LOD0": "LatourDeFrein",
+  "LOD1": "LatourDeFrein_far (scripted far variant)",
+  "LOD2": "LatourDeFrein_xfar (scripted very-far variant, flat shaded)"
+ },
+ "slots": [
+  "brick_red_brussels",
+  "stone_white",
+  "slate",
+  "zinc_roof",
+  "wood_frame_white",
+  "glass_window",
+  "cast_iron_green",
+  "stone_blue",
+  "wood_frame_dark",
+  "terrace_tiles"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "coping",
+   "surround",
+   "cornice",
+   "plinth",
+   "band",
+   "sill",
+   "sculpture",
+   "ridge",
+   "louvre",
+   "gutter",
+   "gilt",
+   "door",
+   "mosaic",
+   "frame",
+   "lead"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": [
+   0.74,
+   0.9
+  ],
+  "px_per_m": [
+   11.7,
+   5.7,
+   6.0
+  ],
+  "bake_device": "OPTIX"
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   112.255,
+   50.0,
+   2309.828
+  ],
+  "rotation_y_rad": -2.085668,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/538562"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1594647"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   62.7,
+   143.8
+  ],
+  "z": [
+   2290.3,
+   2361.0
+  ],
+  "y": [
+   100.0,
+   123.4
+  ]
+ },
+ "new_slot_names": {
+  "terrace_tiles": "the gallery's flat roof terrace (salmon on the 2024 orthophoto; not in the shared library: temporary material)"
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    112.255,
+    2309.828
+   ],
+   "rotation_rad": 2.085668,
+   "rotation_deg": 119.5,
+   "axes": "u = (cos r, sin r) in city (x, z): from the entrance front to the back; w = (-sin r, cos r)"
+  },
+  "footprint_osm": [
+   [
+    38.507,
+    30.039
+   ],
+   [
+    19.455,
+    29.996
+   ],
+   [
+    19.454,
+    31.6
+   ],
+   [
+    15.797,
+    31.595
+   ],
+   [
+    15.792,
+    34.481
+   ],
+   [
+    10.584,
+    34.469
+   ],
+   [
+    10.586,
+    31.511
+   ],
+   [
+    7.745,
+    31.505
+   ],
+   [
+    7.742,
+    6.957
+   ],
+   [
+    -0.001,
+    6.936
+   ],
+   [
+    0.003,
+    1.497
+   ],
+   [
+    -0.003,
+    -1.814
+   ],
+   [
+    0.001,
+    -6.936
+   ],
+   [
+    7.895,
+    -6.921
+   ],
+   [
+    7.893,
+    -31.445
+   ],
+   [
+    10.986,
+    -31.444
+   ],
+   [
+    10.983,
+    -34.432
+   ],
+   [
+    16.05,
+    -34.42
+   ],
+   [
+    16.048,
+    -31.486
+   ],
+   [
+    19.746,
+    -31.479
+   ],
+   [
+    19.744,
+    -29.922
+   ],
+   [
+    38.747,
+    -29.876
+   ],
+   [
+    38.743,
+    -20.661
+   ],
+   [
+    37.424,
+    -20.668
+   ],
+   [
+    37.421,
+    -17.848
+   ],
+   [
+    22.309,
+    -17.882
+   ],
+   [
+    22.325,
+    -2.691
+   ],
+   [
+    22.309,
+    2.366
+   ],
+   [
+    22.318,
+    18.022
+   ],
+   [
+    37.276,
+    18.056
+   ],
+   [
+    37.278,
+    20.906
+   ],
+   [
+    38.51,
+    20.915
+   ]
+  ],
+  "solid_top": {
+   "h": 122.48,
+   "uw": [
+    13.58,
+    0.01
+   ]
+  }
+ },
+ "levels_taw": {
+  "ground_front": 102.2,
+  "floor": 103.7,
+  "eaves": 115.0,
+  "main_ridge": 120.85,
+  "avant_corps_ridge": 120.75,
+  "lucarne": [
+   117.6,
+   119.2
+  ],
+  "wing_ridge": 119.55,
+  "gallery_terrace": 109.15,
+  "pavilions": [
+   112.5,
+   113.9
+  ],
+  "lantern": [
+   119.3,
+   121.55,
+   122.45
+  ],
+  "chimneys": 121.7,
+  "ground_floor": [
+   104.6,
+   107.0,
+   108.1
+  ],
+  "first_floor": [
+   110.2,
+   112.2,
+   113.25
+  ]
+ },
+ "estimated": "every opening of the side, back, wing and courtyard walls (not visible from public streets: the front's rhythm and details repeated), the gallery's windows, the skylights, the wing dormers, the door's panelling, the lantern's louvres, the wall depths; the front from photos (calibrated on the eaves and the ground, +-0.3 m)"
+}
