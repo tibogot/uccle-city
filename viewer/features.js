@@ -81,7 +81,8 @@ export const FEATURES = [
   num("windfrom", "weather", "falcon wind from (°)", "Falcon flight: the wind's direction.", 240, 0, 360, 5),
 
   // ---------------------------------------------------------------- night (docs/NIGHT_HOOKUP.md)
-  opt("night", "night", "night lights", "The clustered night lights: lamp pools, shadowed lamps, car lights, shop windows, glare (boot flag)."),
+  on("night", "night", "night lights", "The clustered night lights: lamp pools, shadowed lamps, car lights, shop windows, glare (boot flag; default since 2026-11-15). ?night=0 = the old lamp path: 6 pooled PointLights + the R8 lamp light map (docs/NIGHT_HOOKUP.md round 4)."),
+  on("nightgate", "night", "day gate", "Round 4: by day the 2 shadowed lamp spots sit in a uniform branch of every lit material and the cluster pass is skipped while the pool is empty (?nightgate=0: evaluated every frame at intensity 0, as fix3: +0.5-1 ms GPU by day).", { sub: "Perf" }),
   on("nightpool", "night", "lamp light pool", "?night=1: the lamp pool lights."),
   on("nightglare", "night", "glare cards", "?night=1: the lamp glare cards."),
   sel("nightshadow", "night", "lamp shadows", "?night=1: lamp shadow maps re-rendered only when something moves, at most one map a frame when both lamps have movers (alt, default since round 3), every mover frame for both (smart, round 2) or every frame (full, round 1).", [[null, "alt (1 map a frame)"], ["smart", "smart (round 2)"], ["full", "full (round 1)"]]),

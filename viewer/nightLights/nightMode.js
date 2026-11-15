@@ -1,4 +1,5 @@
-// ?night=1: THE CITY'S NIGHT LIGHTS (docs/NIGHT_HOOKUP.md). A BOOT flag: decided once when the page loads, never
+// THE CITY'S NIGHT LIGHTS (docs/NIGHT_HOOKUP.md), ON BY DEFAULT since 2026-11-15 (round 4); ?night=0 = the old lamp
+// path (lamps.js lampLightPool's 6 PointLights + lampLight.js's R8 map). A BOOT flag: decided once when the page loads, never
 // toggled at runtime (switching the lighting model or the light set rebuilds every lit material: a freeze).
 //
 // This file is what the always-loaded city code imports (viewer/lampLight.js): the flag, and when it is on the
@@ -9,7 +10,7 @@ import * as THREE from "three/webgpu";
 import { Fn, If, texture, uniform, vec2, vec3, float, positionWorld, normalWorld, normalize, select, smoothstep, length, cameraPosition } from "three/tsl";
 import { createNightMap } from "./nightMap.js";
 
-export const NIGHT = /[?&]night=1(&|$)/.test(location.search);
+export const NIGHT = !/[?&]night=0(&|$)/.test(location.search);
 
 /** the dynamic ground layer (the far cars' low-beam / rear-light pools, groundLight.js createDynamic): a square of
  *  SIZE m round the camera, TEXEL m per texel, half float RGBA */

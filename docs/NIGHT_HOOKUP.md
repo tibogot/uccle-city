@@ -478,3 +478,110 @@ hidden when empty). Shared, small hunks: `viewer/facades.js` (interiorRoom integ
 path), `viewer/main.js` (2 hunks: addTile extras; rail `nightLightScale`), `viewer/tramline.js` (`drawn.rear`),
 `viewer/flagsCity.js` (2 mover tags), `viewer/features.js` (rows `litwin`, `lampproxy`, `nightshadow` default).
 No shadow code outside viewer/nightLights/ was changed.
+
+# ROUND 4 (branch claude/nightdef, 2026-11-15): THE FLIP - the night system is the default (`?night=0` = the old path)
+
+**Measuring conditions.** `tools/perf/preflight.ps1` **YELLOW** at the start (1 warning: CPU 12 % at rest; port 8820,
+an idle server of the owner's, left alone), no other agent; page check (`debug/preflight.js`): CPU bench 74.3 ms, fixed
+view 10.03 / 11.34 ms GPU, 218 draws, 1600 x 828 at DPR 1 (no baseline file: YELLOW by construction). The tab in
+front the whole time. **Method (new, `debug/loadAB.js`):** boot flags can only be compared across page loads, so the
+city runs in a full-window iframe of one tab and the variants' URLs are loaded in turn (A B, B A, A B ... per round),
+each load: cover, +20 s, then a job in the iframe's own realm (`debug/featureAB.js` at / measure: GPU p50 / p95 by
+timestamp queries, CPU = the render loop's callback, draws; after each teleport the draw count must hold within 2 %
+for 4 s before measuring). Paired differences per round (B - A): median, mean +- s.e. (Its first version kept every
+old city alive through cross-realm result objects: 6 GB of heap after 4 loads; results are now copied as JSON.)
+
+## The finding: `?night=1` was SLOWER by day, not faster
+
+The TODO's premise (perf pass 3: the old path's 6 day-time PointLights cost ~2.2 ms) holds, but `?night=1` had its own
+day-time cost in every lit material: the **2 shadowed lamp SpotLights** (intensity 0 by day, but three evaluates every
+scene light per fragment, here with two 512 px shadow-map lookups each) and **the cluster compute pass** (dispatched
+every frame for an empty pool). First 5 load pairs, by day (traffic off), GPU p50 `?night=1` minus default (mean):
+overview +0.49, Saint-Job 45 m +1.01, Place Saint-Job street +1.02, Stalle +0.58, Saint-Augustin -0.07 ms.
+
+**The fix (the day gate, `?nightgate=0` = without it):**
+- `nightLighting.js` `setupLights`: the lights flagged `userData.nightShadowLamp` are built inside a uniform branch
+  `If(nightSpotsOn > 0.5)`; `cityNight.js` sets `nightSpotsOn` each frame (1 while either spot's intensity > 0). Same
+  pipelines day and night (the branch is compiled in at boot); the spots' shadow maps render only at night as before.
+- `NightLightsNode.updateBefore`: three's, but the cluster compute is skipped while the pool is empty (it runs once
+  empty, then not until a light comes; the fragment loop is skipped on `_lightsCount == 0` already, so the clusters'
+  lists are never read by day).
+
+## Numbers (RTX 4050 laptop, 1600 x 828, YELLOW; GPU / CPU ms)
+
+**By day** (`?ring=1&far=1&traffic=0`, 10 load pairs, default = the OLD path then vs `?night=1` + the gate). Views: the
+4 of perf step 8 (`stalle` = the Stalle chapel place in D5 stands in for "under the viaduct", which has no saved camera)
++ Place Saint-Job street.
+
+| view | GPU p50 old / night (median) | paired diff: median, mean +- s.e. | GPU p95 old / night | CPU p50 old / night | draws |
+|---|---|---|---|---|---|
+| overview | 10.22 / 8.98 | **-1.18**, -1.45 +- 0.40 | 11.47 / 9.96 | 6.7 / 7.4 | 245 / 245 |
+| Saint-Job, 45 m | 9.76 / 9.04 | **-0.65**, -0.84 +- 0.43 | 10.75 / 9.76 | 7.2 / 7.6 | 216 / 214 |
+| Place Saint-Job, street | 9.31 / 8.91 | **0.00**, -0.59 +- 0.42 | 10.09 / 9.63 | 7.6 / 7.9 | 201 / 201 |
+| Stalle (D5) | 10.94 / 10.88 | -0.06, -0.05 +- 0.07 | 11.67 / 12.32 | 7.1 / 7.6 | 164 / 163 |
+| Saint-Augustin (E1) | 3.47 / 3.41 | -0.06, -0.09 +- 0.04 | 3.80 / 3.67 | 5.0 / 5.1 | 96 / 97 |
+| cover (boot, s) | 22.9 / 23.6 | +0.62, +0.57 +- 0.22 | | | |
+
+GPU: equal or cheaper everywhere (the old path's spread is wider: its dead PointLights cost most where many lit
+pixels are on screen). CPU: **+0.3-0.5 ms** per frame by day (the night update: registries, warm-up of the lamp-shadow
+casters, the light texture pass; `__night.stats.msAvg` 0.25 ms). The 2.2 ms of pass 3 was an off-screen render of the
+whole scene with the 6 lights hidden; live frames show 0-1.2 ms.
+
+**At night** (`?time=night`, traffic on, 10 load pairs: the OLD night (lamp PointLights + R8 map) vs the night system):
+
+| view | GPU p50 old / new (median) | paired diff: median, mean +- s.e. | GPU p95 old / new | CPU p50 old / new | draws old / new |
+|---|---|---|---|---|---|
+| Place Saint-Job, street | 10.78 / 12.36 | **+1.28**, +1.41 +- 0.28 | 12.00 / 13.80 | 8.7 / 10.1 | 217 / 248 |
+| Saint-Job, 45 m | 10.55 / 10.72 | -0.22, -0.26 +- 0.30 | 12.29 / 11.67 | 7.5 / 8.7 | 213 / 215 |
+| Chaussee d'Alsemberg | 11.96 / 11.05 | **-0.95**, -1.10 +- 0.20 | 12.65 / 12.16 | 7.3 / 8.4 | 137 / 139 |
+| cover at night (s) | 24.7 / 26.3 | +1.48 (mean -0.04 +- 1.81) | | | |
+
+Live in the night page, Place Saint-Job street, `__night.master` 0 / 1 (10 loads x 4 rounds, alternated): GPU p50
+**+2.45** median (mean +1.97 +- 0.68), p95 +2.88, CPU +1.0, draws +29 (the lamp shadow maps). Not comparable with
+fix3's +0.92: master 0 now also closes the spots' branch and skips the cluster pass (they were paid on both sides).
+Of the street's +1.3 ms vs the old night, the lamp shadow maps (+31 draws: traffic near the two shadowed lamps
+re-renders them, `alt` schedule) are the visible part.
+
+## Decision: FLIPPED
+
+The 1 ms bar at night at street level is **not** met (+1.3 ms GPU, +1.6 ms CPU at Place Saint-Job street vs the old
+night). Flipped anyway, on the whole frame budget: by day (the default time, most of the play) the GPU is equal or
+cheaper on every view (-1.2 .. 0 ms) for +0.3-0.5 ms CPU; at night two of three views are cheaper (45 m -0.2,
+Alsemberg -1.0) and the worst stays at 12.4 ms p50 / 13.8 ms p95 (60 fps with ~3 ms headroom on this laptop); and
+the night is the round 1-3 night (pools, pole shadows, car beams, lit windows, shop fronts, wet streaks) instead of
+6 point lights. The edits:
+- `nightMode.js` `NIGHT = !/[?&]night=0(&|$)/` (was `/[?&]night=1/`);
+- `features.js`: the `night` row `on` (`?night=0` = the old lamp pool + R8 map, kept whole); new row `nightgate`;
+- the dev panel's Night note.
+Next lever at night: the lamp shadow maps at street level with traffic (a cheaper caster set or 15 Hz when only cars
+move), then the CPU of the night update (+1-1.6 ms at night).
+
+## The runtime switch (day -> night -> day -> night -> day, `debug/nightDefault.js switchJob`, Place Saint-Job street)
+
+Night system, 3 loads with 40 s settled: **0 pipelines, 0 long tasks** in all 12 switches; new render objects only at
+the first switch to night (0-50 lamp-shadow objects, no pipeline); one 282 ms frame without a long task in one load
+(2.97 s after the switch: not reproduced). With 20 s settle (2 loads) one load still streamed content during the
+switch (759 main / 473 sun-shadow render objects, a 376 ms long task: the tiles' late content, not the switch) and one
+had 1 synchronous pipeline (`MeshStandardNodeMaterial_57`, at the 2nd switch to night: something arriving then). The
+old path (2 loads): 0 pipelines, single 80-100 ms long tasks.
+
+## Visual checks (`docs/night/round4/`)
+
+- **By day nothing changes**: Place Saint-Job street at a fixed 17:00 sun, `?night=0` vs the default, two page loads:
+  mean |RGB diff| 0.63 / 255 (lower 45 %: 0.62), 0.03 % of pixels over 24 (clouds, TAA), mean grey 97.6 vs 98.2. The
+  old path's 6 PointLights are intensity 0 by day, the night system's spots too (and now not evaluated).
+- **Night** (default URL, traffic off, the dev panel's preset `night`): `stjob_street_night.jpg` (the shadowed spot's
+  pole shadow on the cobbles: the gate opens at night; pools, lit windows), `alsemberg_night.jpg` (shop fronts, lit
+  storeys, pools both sides; the "Celio" interior still blows out: round 3 leftover), `residential_night.jpg` (the
+  front-garden street of I6: lamp pools on the sidewalk, crowns lit from below, lit windows; the hedge under the lamp
+  reads a saturated bright green: check the hedge material's response to a near lamp), `stjob_street_wet.jpg`
+  (preset rain: the lamp's streak on the wet cobbles).
+
+## Files touched (round 4)
+
+`viewer/nightLights/nightMode.js` (the flip), `viewer/nightLights/nightLighting.js` (`nightSpotsOn`, the spots'
+branch in `setupLights`, `updateBefore` skipping the empty cluster pass, `?nightgate=0`), `viewer/nightLights/cityNight.js`
+(sets `nightSpotsOn`), `viewer/features.js` (`night` row -> on, new `nightgate` row), `viewer/devPanel.js` (the Night
+note). New: `debug/loadAB.js` (page loads alternated in one tab's iframe + summary), `debug/nightDefault.js` (the jobs:
+views + live master / snow A/B, the switch check). Raw results (scratchpad, not committed): `day_D_vs_Ngated.json`,
+`night_O_vs_N.json`, `night_O_vs_N_2.json`, `green.json`.

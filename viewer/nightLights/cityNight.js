@@ -32,7 +32,7 @@ import { nightGround, DYN, nightMap } from "./nightMode.js";
 import { MAP } from "./nightMap.js";
 import { NIGHT_WIN_STRIDE } from "./litHash.js";
 import { createCones, coneLook } from "./lightCones.js";
-import { nightLook } from "./nightLighting.js";
+import { nightLook, nightSpotsOn } from "./nightLighting.js";
 import { env } from "../lighting.js";
 import { carFleet } from "../carFleet.js";
 import { wx } from "../weather/weatherState.js";
@@ -699,6 +699,8 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         pool.profile(antiBase + k, 0); pool.diffuseOnly(antiBase + k, true); pool.groundOnly(antiBase + k, true);
       } else pool.weight(antiBase + k, 0);
     }
+    // (night default) the spots' branch in every lit material: open only while one of them gives light
+    nightSpotsOn.value = shadowLights[0].intensity > 0 || shadowLights[1].intensity > 0 ? 1 : 0;
     lastScale = scale;
     if (dbg && scale > 0) popMetric(nc, D, dt, camPos);
     // ---- step 4: the far glare cards

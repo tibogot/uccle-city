@@ -803,3 +803,64 @@ contention). **A GREEN re-run is needed.**
 5. Ivy far LOD: per-leaf light / dark in the mask (a second channel); more than 16 tile regions with ring 2.
 6. Cell culling: a tile's meshes are sorted once first rendered (the boot tiles: at their first frame); the tile cache
    could keep the sorted index.
+
+## Step 14: the night default + a quiet-machine re-measure (2026-11-15, branch claude/nightdef)
+
+**Machine.** `tools/perf/preflight.ps1` **YELLOW** at the start (CPU 12 % at rest: 1 warn; 6.2 GB free; GPU 0 % at
+rest, 50 C; port 8820: the owner's idle server, left alone), **YELLOW** at the end (CPU 5 %, 3.4 GB free, Chrome 4.9
+GB: 2 warns). No other agent. Page check (`debug/preflight.js`): CPU bench 74.3 ms, fixed view 10.03 / 11.34 ms GPU,
+218 draws (no baseline file). 1600 x 828, DPR 1, one tab in front. Mid-run the first version of the new harness
+leaked every loaded city (6 GB heap, preflight RED): those runs were dropped and re-done.
+
+**Harness (new): `debug/loadAB.js`** - page loads alternated in ONE tab (the city in a full-window iframe; per round
+the variants' order reversed), a job module run in the iframe's realm per load, results copied as JSON, `summary()`
+= paired per-round differences. Jobs in `debug/nightDefault.js` (views incl. the bench views of `groupBench.js`, live
+`__night.master` / snow A/B, the day / night switch check). After a teleport the draw count must hold 4 s (2 %).
+
+### 14.1 The night default (details: docs/NIGHT_HOOKUP.md round 4)
+
+`?night=1` was **+0.5-1.0 ms GPU by day** (its 2 shadowed lamp spots were evaluated per fragment at intensity 0 with
+their shadow lookups, and the cluster pass ran every frame for an empty pool) - not the -2.2 ms expected. Fixed (the
+spots in a uniform branch, the empty cluster pass skipped; `?nightgate=0` = before), then flipped to the default
+(`?night=0` = the old 6 PointLights + R8 map). GPU p50, paired median over 10 load pairs, new minus old:
+
+| | overview | Saint-Job 45 m | Place Saint-Job street | Stalle (D5) | Saint-Augustin (E1) | Alsemberg |
+|---|---|---|---|---|---|---|
+| by day (traffic off) | **-1.18** | **-0.65** | 0.00 (mean -0.59) | -0.06 | -0.06 | - |
+| at night (traffic on) | - | -0.22 | **+1.28** (mean +1.41 +- 0.28) | - | - | **-0.95** |
+| CPU per frame, day / night | +0.5 / - | +0.4 / +1.05 | +0.4 / +1.6 | +0.5 / - | +0.2 / - | - / +1.25 |
+
+Boot to the cover by day 22.9 -> 23.6 s. Day -> night -> day switches: 0 pipelines, 0 long tasks (3 settled loads).
+
+### 14.2 The "needs GREEN" list, re-measured (YELLOW, quiet)
+
+**Page loads**, default vs the switch, 3 rounds x 7 variants (21 loads, traffic off); cost = default minus the
+switched-off load, GPU p50: paired median (mean +- s.e.). With n = 3 a load pair still swings +-1-1.6 ms at the
+street view: only the bold cells are outside 2 s.e.
+
+| switch | Place Saint-Job street | front-garden street (I6) | ivy wall I6 | Wolvendael lawn (F4) |
+|---|---|---|---|---|
+| default, absolute (GPU p50 / p95, CPU, draws) | 10.49 / 11.27, 8.1, 199 | 12.52 / 14.16, 8.1, 231 | 11.21 / 12.78, 7.7, 196 | **16.38 / 18.22**, 7.4, 172 |
+| plants (`?plants=0`) | +1.90 (+1.44 +- 1.36) | 0.00 (-0.06 +- 0.59) | **+1.31 (+1.24 +- 0.36)** | +0.19 (+0.46 +- 0.40) |
+| ivy (`?ivy=0`) | +1.51 (+1.07 +- 1.38) | -0.19 (+0.20 +- 0.43) | +0.59 (+0.92 +- 0.39) | -1.25 (-1.14 +- 0.18) (noise: no ivy there) |
+| grass (`?grass=0`) | +0.53 (+1.32 +- 0.92) | -0.06 (+0.18 +- 0.31) | +0.06 (+0.07 +- 0.23) | -0.86 (-0.61 +- 0.45) |
+| weather, clear (`?weather=old`) | -0.06 (+0.83 +- 1.17) | **+0.85 (+0.74 +- 0.29)** | -0.32 (+0.09 +- 0.55) | +0.45 (-0.05 +- 0.50) |
+| building types (`?styles=old`) | -0.98 (-0.41 +- 1.61) | +0.46 (-0.04 +- 0.54) | +0.59 (+0.31 +- 0.53) | -1.11 (-0.72 +- 0.89) |
+| perf pass 3, all 7 switches old: what pass 3 saves | -1.11 (-0.50 +- 1.06) | -0.13 (-0.55 +- 0.95) | **-1.57 (-1.55 +- 0.66)** | -0.92 (-1.31 +- 0.82) |
+| - pass 3: draws / CPU saved | -144 / -1.8 ms | -129 / -1.8 ms | -154 / -2.4 ms | -31 / -0.4 ms |
+
+**Live in one page** (tighter: the objects hidden / shown, or the preset switched, alternated; 6 rounds; default
+city, i.e. the night system by day):
+
+| what | view | GPU p50 cost (mean; spread of the rounds) | draws / tris |
+|---|---|---|---|
+| plants (the `plants` pools: beds, window boxes, box balls) | front-garden street / Place street / ivy wall | **-0.13 / -0.05 / -0.13 (spreads within +-0.9): ~0, the 0.3 ms target is met** | +1-3 / ~0 |
+| ivy (cards, stems, far quads) | ivy wall I6 | **+0.46** (+0.13 .. +0.66) | +2 / +0.02 M |
+| grass | Wolvendael lawn | +1.07 (-0.66 .. +5.6: one round); a second run -0.02 with no draw / triangle change (the hidden group no longer the drawn one): **inconclusive** | +11 / +0.1 M |
+| snowfall vs clear (`cityWeather` preset) | Place street | **+2.21** (+0.86 .. +4.19), p95 +1.7, CPU +1.5 ms | +56 / +0.44 M |
+
+Readings: the plants are no longer a cost at street level (the load A/B's +1.3 at the ivy wall is not seen live: load
+noise); the ivy wall is +0.46 live vs pass 3's +0.26 off-screen; snowfall is still the most expensive switch (+2.2,
+the lab budget was +0.62); perf pass 3's merges are worth ~130-150 draws and ~2 ms CPU at street level; the lawn view
+(F4, 16.4 ms p50 / 18.2 p95) is the slowest view measured today (over 16.7 ms at p95): the next target with grass.
+Raw results (scratchpad, not committed): `green.json`, `day_D_vs_Ngated.json`, `night_O_vs_N*.json`.
