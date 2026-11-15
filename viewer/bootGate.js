@@ -8,7 +8,11 @@
 //   pipelines, but the cover time did not move beyond the machine's noise, and the deferred models' processing landed
 //   in the first seconds after the reveal (long tasks after the cover 0.6-0.7 s -> 3.0-3.8 s, one 2.2 s): worse to play.
 const params = new URLSearchParams(location.search);
-export const BOOT_DEFER = params.get("bootdefer") === "1";
+// boot3 (docs/BOOT.md section 5): ON BY DEFAULT now (?bootdefer=0 = everything under the cover, as before). With the
+// boot warm-up no longer waiting for the far models' compiles (warmup.js bootQuiet) and the other boot3 changes, the cover
+// is 13.0-13.3 s vs 20-22 s (docs/BOOT.md section 5); the deferred models' processing after the reveal: ~1.2 s of long
+// tasks in the first 20 s, the longest 0.55-0.68 s (the first model's GLB parse + build: fix in the landmark loaders).
+export const BOOT_DEFER = params.get("bootdefer") !== "0";
 const STAGGER = 600;
 
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)
@@ -43,4 +47,30 @@ export function whenNeeded(id) {
   if (p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin) return Promise.resolve();
   const k = queued++;
   return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER)));
+}
+
+// boot3 (docs/BOOT.md section 5): which precompile jobs the FIRST VIEW needs (warmup.js warmBoot / bootQuiet): a job whose
+// root is a gated model OUTSIDE the boot's ring (+ margin) cannot be on screen at the reveal (its home tile is not
+// loaded); models in the ring are needed, the public art when a piece is within its drawing range of the reveal's camera
+// (revealCheck); roots of other names (the
+// weather's draws, the falcon mode, a bridge's fading copies, generic groups) are not (the tiles' jobs, queued `first`,
+// always are: warmup.js bootQuiet).
+const ROOT_KEY = (n) => (n.startsWith("bridge-") ? n.slice(7).replace(/-lod\d+$/, "") : n.startsWith("tunnel-") ? `tunnel_${n.slice(7)}` : n);
+const checks = new Map();
+let revealCam = null;
+/** a model spread over the city (the public art) says itself whether the first view can show it: fn(x, z) of the camera */
+export function revealCheck(name, fn) { checks.set(name, fn); }
+/** main.js, before the boot warm-up: the camera the cover lifts on (city metres) */
+export function setRevealCamera(x, z) { revealCam = [x, z]; }
+export function neededAtReveal(names) {
+  if (!start) return true;
+  return names.some((n) => {
+    if (checks.has(n)) return !revealCam || checks.get(n)(revealCam[0], revealCam[1]);
+    let k = ROOT_KEY(String(n || ""));
+    if ((k === "stjob" || k === "calevoet") && String(n).startsWith("bridge-")) k = `rail:${k}`;
+    const p = GATED[k];
+    if (!p) return false;
+    const margin = 150;
+    return p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin;
+  });
 }

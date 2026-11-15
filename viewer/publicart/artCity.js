@@ -11,6 +11,7 @@
 //   - colliders: each piece's root "art-<id>" has a "_lod0" child (its LOD0, drawn or not): viewer/heroColliders.js builds
 //     the car blocks and the walker's triangles from it (ART_ROOTS), the contact audit reads it.
 import * as THREE from "three/webgpu";
+import { revealCheck } from "../bootGate.js";   // boot3
 import { loadArtKit, MEDALLIONS } from "./artKit.js";
 import { setLodFades } from "../stpierreModel.js";
 import { SMOOTH, fadeProxies, settleRamp } from "../lodFade.js";
@@ -66,6 +67,10 @@ export async function addPublicArt({ scene, updaters, hide, world, manifest, log
     field.group.name = "publicart-instanced";
     group.add(field.group);
     const inst = small.map((p) => ({ p, piece: MODEL[p.id], y: p.y, refined: false, root: null }));
+    // boot3 (viewer/bootGate.js revealCheck): the boot warm-up waits for this kit's compile only if a piece can be drawn
+    // from the camera the cover lifts on (a landmark within its last LOD's range; a small stone within 200 m)
+    revealCheck("publicart", (x, z) => L.some((l) => l.box.distanceToPoint(new THREE.Vector3(x, l.box.min.y, z)) <= l.piece.range[2] * 1.1 + 50) ||
+      inst.some((s) => Math.hypot(s.p.x - x, s.p.z - z) <= 200));
     const mat4 = new THREE.Matrix4(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
     const rebuild = () => {
       field.clear();

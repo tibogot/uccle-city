@@ -2849,12 +2849,12 @@ function cleanRing(ring2) {
   }
   return out;
 }
-function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [] }) {
+function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [], clipBand = true }) {
   const polys = [], circles = [];
   const ground = driveGround(hm, parts);
   let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
   if (bBuf && !legacy) {
-    fromWalls = buildingBlocks(bDoc, bBuf, (x, z) => driveHeight(hm, ground, x, z), bounds);
+    fromWalls = buildingBlocks(bDoc, bBuf, (x, z) => driveHeight(hm, ground, x, z), bounds, { clipBand });
     polys.push(...fromWalls.polys);
   }
   if (!fromWalls) for (const bd of bDoc.buildings) {
@@ -2905,7 +2905,7 @@ function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf
   const col2 = buildColliders(polys, circles, bounds);
   return { col: col2, medians, ground, legacy, counts: { buildings: fromWalls ? fromWalls.polys.length : bDoc.buildings.length - overhead, overhead, buildingRegions: fromWalls?.regions, islands, islandsHidden, medianIslands, trees: circles.length } };
 }
-function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, step = 0.12, band = [0.3, 1.3], tol = 0.15 } = {}) {
+function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, step = 0.12, band = [0.3, 1.3], tol = 0.15, clipBand = true } = {}) {
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T2 * 3);
   const x0 = bounds.x0 - margin, z0 = bounds.z0 - margin;
@@ -2933,19 +2933,48 @@ function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, 
       if (Math.min(ay, by, cy) > gm + band[1] + 2 || Math.max(ay, by, cy) < gm + band[0] - 2) continue;
       walls++;
       const n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / step)), n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / step));
-      for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) {
+      const sample2 = (i, j) => {
         let u = i / n1, w = j / n2;
         if (u + w > 1) {
-          if (u + w > 1 + 1 / Math.max(n1, n2)) continue;
+          if (u + w > 1 + 1 / Math.max(n1, n2)) return;
           const s = u + w;
           u /= s;
           w /= s;
         }
         const x = ax + (bx - ax) * u + (cx - ax) * w, y = ay + (by - ay) * u + (cy - ay) * w, z = az + (bz - az) * u + (cz - az) * w;
         const h = y - gAt(x, z);
-        if (h < band[0] || h > band[1]) continue;
+        if (h < band[0] || h > band[1]) return;
         const ci = Math.floor((x - x0) / cell), ck = Math.floor((z - z0) / cell);
         if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) g[ck * nx + ci] = 1;
+      };
+      if (!clipBand) {
+        for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) sample2(i, j);
+        continue;
+      }
+      let gLo = Infinity, gHi = -Infinity;
+      const li0 = Math.max(0, Math.round(Math.min(ax, bx, cx) - x0) - 1), li1 = Math.min(lx - 1, Math.round(Math.max(ax, bx, cx) - x0) + 1);
+      const lk0 = Math.max(0, Math.round(Math.min(az, bz, cz) - z0) - 1), lk1 = Math.min(lz - 1, Math.round(Math.max(az, bz, cz) - z0) + 1);
+      for (let k = lk0; k <= lk1; k++) for (let i = li0; i <= li1; i++) {
+        const v = Lm[k * lx + i];
+        if (v < gLo) gLo = v;
+        if (v > gHi) gHi = v;
+      }
+      const yLo = gLo + band[0] - 1e-4, yHi = gHi + band[1] + 1e-4, dY = cy - ay;
+      for (let i = 0; i <= n1; i++) {
+        const u = i / n1, yU = ay + (by - ay) * u;
+        let ja = 0, jb = n2;
+        if (Math.abs(dY) < 1e-9) {
+          if (yU < yLo - 1e-3 || yU > yHi + 1e-3) {
+            ja = 1;
+            jb = 0;
+          }
+        } else {
+          const p = (yLo - yU) * n2 / dY, q = (yHi - yU) * n2 / dY;
+          ja = Math.max(0, Math.floor(Math.min(p, q)) - 1);
+          jb = Math.min(n2, Math.ceil(Math.max(p, q)) + 1);
+        }
+        for (let j = ja; j <= jb; j++) sample2(i, j);
+        for (let j = Math.max(jb + 1, Math.floor((1 - u) * n2)); j <= n2; j++) if (u + j / n2 > 1) sample2(i, j);
       }
     }
   }
@@ -7995,10 +8024,24 @@ function rampKerbPoints(surf) {
     const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1e-12, t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2));
     return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dz * t);
   };
-  const onKerb = (p) => (surf.kerbs || []).some((l) => {
-    for (let k = 1; k < l.length; k++) if (segD2(p, l[k - 1], l[k]) < 0.05) return true;
+  const KB = 2, kcell = /* @__PURE__ */ new Map();
+  for (const l of surf.kerbs || []) for (let k = 1; k < l.length; k++) {
+    const a = l[k - 1], b = l[k];
+    for (let i = Math.floor((Math.min(a[0], b[0]) - 0.06) / KB); i <= Math.floor((Math.max(a[0], b[0]) + 0.06) / KB); i++)
+      for (let j = Math.floor((Math.min(a[1], b[1]) - 0.06) / KB); j <= Math.floor((Math.max(a[1], b[1]) + 0.06) / KB); j++) {
+        const key2 = i * 100003 + j;
+        let c = kcell.get(key2);
+        if (!c) kcell.set(key2, c = []);
+        c.push(a, b);
+      }
+  }
+  const onKerb = (p) => {
+    const c = kcell.get(Math.floor(p[0] / KB) * 100003 + Math.floor(p[1] / KB));
+    if (c) {
+      for (let k = 0; k < c.length; k += 2) if (segD2(p, c[k], c[k + 1]) < 0.05) return true;
+    }
     return false;
-  });
+  };
   const ins = /* @__PURE__ */ new Map();
   let n = 0;
   for (const q of surf.surfaces) {
@@ -14399,6 +14442,8 @@ async function buildTileData(entry, base) {
     bounds,
     surf,
     legacy: !!entry.driveLegacy,
+    clipBand: entry.colBand !== false,
+    // boot3: ?colband=old every wall sample (colliders.js buildingBlocks)
     // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
     // or the line's fence passes over them
     walls: keep ? [] : [

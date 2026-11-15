@@ -19,6 +19,7 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { hash2D, noise2D, filteredPulse, bumpNormal } from "../tslkit.js";
 import { SMOOTH, fadeVariant, fadeProxies, settleRamp } from "../lodFade.js";
 import { libOn } from "../materials/libSwitch.js";
+import { decodeAO, AO_DECODE_OLD } from "../aoDecode.js";
 
 export const BRIDGE_LODS = [
   { ratio: 1, until: 140 },
@@ -231,6 +232,13 @@ export function roadBridgeColliders(info) {
 }
 
 async function loadAO(url) {
+  if (!AO_DECODE_OLD) {        // boot3: decoded in a worker (viewer/aoDecode.js), the same texture
+    const { w, h, r } = await decodeAO(url);
+    const t = new THREE.DataTexture(r, w, h, THREE.RedFormat, THREE.UnsignedByteType);
+    t.flipY = false; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
+    t.colorSpace = THREE.NoColorSpace; t.needsUpdate = true;
+    return t;
+  }
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
   const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
   const cx = c.getContext("2d", { willReadFrequently: true }); cx.drawImage(img, 0, 0);

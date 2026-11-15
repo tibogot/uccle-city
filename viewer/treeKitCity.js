@@ -146,9 +146,20 @@ export function startTreeKit(renderer, shared, leafMask, variants) {
   /** The far fade's target: the mean colour of the far tiles' orthophotos (linear), a running mean over the tiles. */
   let groundN = 0;
   const acc = [0, 0, 0];
+  // boot3 (docs/BOOT.md section 5; ?groundnote=old = before): the 16 x 16 reduction of each far tile's orthophoto by
+  // createImageBitmap (resized off the main thread) instead of drawImage of the full image on the main thread + a
+  // readback (~50 ms per far tile, 0.9-1.0 s of the boot's main thread for the ring's far tiles)
+  const NOTE_OLD = qs.get("groundnote") === "old";
   kit.noteGround = (image) => {
+    if (!NOTE_OLD && typeof createImageBitmap === "function") {
+      createImageBitmap(image, { resizeWidth: 16, resizeHeight: 16, resizeQuality: "medium" }).then((b) => { note(b); b.close(); }).catch(() => {});
+      return;
+    }
+    note(image);
+  };
+  const note = (image) => {
     try {
-      const c = new OffscreenCanvas(16, 16), x = c.getContext("2d");
+      const c = new OffscreenCanvas(16, 16), x = c.getContext("2d", NOTE_OLD ? undefined : { willReadFrequently: true });
       x.drawImage(image, 0, 0, 16, 16);
       const d = x.getImageData(0, 0, 16, 16).data, lin = (v) => Math.pow(v / 255, 2.2);
       const m = [0, 0, 0];

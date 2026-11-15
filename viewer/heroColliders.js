@@ -21,6 +21,7 @@ export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvenda
   ...TUNNEL_ROOTS, ...ART_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/)
 const CELL = 0.25, STEP = 0.12, BAND = [0.30, 1.30];
 const SLICE_OLD = new URLSearchParams(location.search).get("heroslice") === "old";
+const BAND_OLD = new URLSearchParams(location.search).get("colband") === "old";
 
 /** Not a collider: cloth, foliage cards, glow / light cones, decals. */
 const soft = (o) => /flag|fabric|leaves|leaf|foliage|light|glow|beam|decal/i.test(`${o.name} ${[].concat(o.material || [])[0]?.name || ""}`);
@@ -93,14 +94,30 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
     const g = gAt((ax + bx + cx) / 3, (az + bz + cz) / 3);
     if (Math.min(ay, by, cy) > g + band[1] + 1 || Math.max(ay, by, cy) < g + band[0] - 1) continue;
     const n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / STEP)), n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / STEP));
-    for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) {
+    const sample = (i, j) => {
       let u = i / n1, w = j / n2;
-      if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) continue; const s = u + w; u /= s; w /= s; }
+      if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) return; const s = u + w; u /= s; w /= s; }
       const x = ax + (bx - ax) * u + (cx - ax) * w, y = ay + (by - ay) * u + (cy - ay) * w, z = az + (bz - az) * u + (cz - az) * w;
       const h = y - gAt(x, z);
-      if (h < band[0] || h > band[1]) continue;
+      if (h < band[0] || h > band[1]) return;
       const ci = Math.floor((x - x0) / CELL), ck = Math.floor((z - z0) / CELL);
       if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) grid[ck * nx + ci] = 1;
+    };
+    if (BAND_OLD) { for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) sample(i, j); continue; }
+    // boot3 (docs/BOOT.md section 5; ?colband=old = every sample, as before): only the rows of j whose height can be in the
+    // band over the surface's min / max under the triangle (the same samples kept: viewer/drive/colliders.js buildingBlocks)
+    let gLo = Infinity, gHi = -Infinity;
+    const li0 = Math.max(0, Math.round((Math.min(ax, bx, cx) - x0) / 0.5) - 1), li1 = Math.min(gx - 1, Math.round((Math.max(ax, bx, cx) - x0) / 0.5) + 1);
+    const lk0 = Math.max(0, Math.round((Math.min(az, bz, cz) - z0) / 0.5) - 1), lk1 = Math.min(gz - 1, Math.round((Math.max(az, bz, cz) - z0) / 0.5) + 1);
+    for (let k = lk0; k <= lk1; k++) for (let i = li0; i <= li1; i++) { const v = G[k * gx + i]; if (v < gLo) gLo = v; if (v > gHi) gHi = v; }
+    const yLo = gLo + band[0] - 1e-4, yHi = gHi + band[1] + 1e-4, dY = cy - ay;
+    for (let i = 0; i <= n1; i++) {
+      const u = i / n1, yU = ay + (by - ay) * u;
+      let ja = 0, jb = n2;
+      if (Math.abs(dY) < 1e-9) { if (yU < yLo - 1e-3 || yU > yHi + 1e-3) { ja = 1; jb = 0; } }
+      else { const p = (yLo - yU) * n2 / dY, q = (yHi - yU) * n2 / dY; ja = Math.max(0, Math.floor(Math.min(p, q)) - 1); jb = Math.min(n2, Math.ceil(Math.max(p, q)) + 1); }
+      for (let j = ja; j <= jb; j++) sample(i, j);
+      for (let j = Math.max(jb + 1, Math.floor((1 - u) * n2)); j <= n2; j++) if (u + j / n2 > 1) sample(i, j);
     }
   }
   // rectangles: runs along x per row, then equal runs of consecutive rows merged

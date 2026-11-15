@@ -159,6 +159,24 @@ export function fadeProxies(obj) {
   });
   return g.children.length ? g : null;
 }
+/** boot3 (docs/BOOT.md section 5): stand-ins drawn with the OWN materials of obj's meshes that are fading right now (a tile
+ *  streamed under the boot cover holds its fade: the warm-up drew only its fading copies, and the end of its fade, ~1 s
+ *  after the reveal, built the own materials on a frame: 9-16 node builds + sync pipelines, a 160-260 ms long task).
+ *  Null when nothing fades. ?fadewarm=old: none (as before). */
+export function ownProxies(obj) {
+  if (!SMOOTH || qs.get("fadewarm") === "old") return null;
+  const g = new THREE.Group();
+  obj.traverse((o) => {
+    const m = o.userData.fadeOrig;
+    if (!o.isMesh || !m || Array.isArray(m)) return;
+    const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, m, 1) : new THREE.Mesh(o.geometry, m);
+    if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
+    p.castShadow = o.castShadow; p.receiveShadow = o.receiveShadow;
+    p.matrixWorld.copy(o.matrixWorld);
+    g.add(p);
+  });
+  return g.children.length ? g : null;
+}
 /** Free the fading copy of a tile's own material (its tile is disposed). The copy is kept between a tile's
  *  fade-in and its fade-out: a new copy is a new shader build on the main thread. */
 export function dropFadeVariant(m) {

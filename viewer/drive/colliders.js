@@ -372,13 +372,13 @@ function cleanRing(ring) {
  *  - lamps and bollards: added on the main thread from the drawn lists (driveMode.js tileDrive).
  * legacy = true: the old sets (every engine island, every footprint) for the audit's "before".
  */
-export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [] }) {
+export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [], clipBand = true }) {
   const polys = [], circles = [];
   const ground = driveGround(hm, parts);
   let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
   // the drawn walls at car height (buildingBlocks); the footprints for ?drivecol=legacy and ?colfix=0 (no bBuf)
   if (bBuf && !legacy) {
-    fromWalls = buildingBlocks(bDoc, bBuf, (x, z) => driveHeight(hm, ground, x, z), bounds);
+    fromWalls = buildingBlocks(bDoc, bBuf, (x, z) => driveHeight(hm, ground, x, z), bounds, { clipBand });
     polys.push(...fromWalls.polys);
   }
   if (!fromWalls) for (const bd of bDoc.buildings) {
@@ -433,7 +433,7 @@ export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bound
  * region, its courtyards as holes (even-odd). A passage under a building has no wall at car height: open.
  * bDoc / bBuf: buildings.json + buildings.bin (V, T, positions, indices); height(x, z) = the drive surface.
  */
-export function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, step = 0.12, band = [0.3, 1.3], tol = 0.15 } = {}) {
+export function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, step = 0.12, band = [0.3, 1.3], tol = 0.15, clipBand = true } = {}) {
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
   const x0 = bounds.x0 - margin, z0 = bounds.z0 - margin;
@@ -460,14 +460,33 @@ export function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell =
       if (Math.min(ay, by, cy) > gm + band[1] + 2 || Math.max(ay, by, cy) < gm + band[0] - 2) continue;
       walls++;
       const n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / step)), n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / step));
-      for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) {
+      const sample = (i, j) => {
         let u = i / n1, w = j / n2;
-        if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) continue; const s = u + w; u /= s; w /= s; }
+        if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) return; const s = u + w; u /= s; w /= s; }
         const x = ax + (bx - ax) * u + (cx - ax) * w, y = ay + (by - ay) * u + (cy - ay) * w, z = az + (bz - az) * u + (cz - az) * w;
         const h = y - gAt(x, z);
-        if (h < band[0] || h > band[1]) continue;
+        if (h < band[0] || h > band[1]) return;
         const ci = Math.floor((x - x0) / cell), ck = Math.floor((z - z0) / cell);
         if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) g[ck * nx + ci] = 1;
+      };
+      if (!clipBand) { for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) sample(i, j); continue; }
+      // boot3 (docs/BOOT.md section 5; ?colband=old = every sample): a wall triangle 15 m tall was sampled over its
+      // whole height for a 1 m band. The drive surface under the triangle lies within [gLo, gHi] (the lattice's min /
+      // max over its box, +1 cell): a sample whose height is outside [gLo + band0, gHi + band1] fails the band test
+      // whatever gAt says, so only the rows of j that can pass are visited (the same samples kept, the same grid)
+      let gLo = Infinity, gHi = -Infinity;
+      const li0 = Math.max(0, Math.round(Math.min(ax, bx, cx) - x0) - 1), li1 = Math.min(lx - 1, Math.round(Math.max(ax, bx, cx) - x0) + 1);
+      const lk0 = Math.max(0, Math.round(Math.min(az, bz, cz) - z0) - 1), lk1 = Math.min(lz - 1, Math.round(Math.max(az, bz, cz) - z0) + 1);
+      for (let k = lk0; k <= lk1; k++) for (let i = li0; i <= li1; i++) { const v = Lm[k * lx + i]; if (v < gLo) gLo = v; if (v > gHi) gHi = v; }
+      const yLo = gLo + band[0] - 1e-4, yHi = gHi + band[1] + 1e-4, dY = cy - ay;
+      for (let i = 0; i <= n1; i++) {
+        const u = i / n1, yU = ay + (by - ay) * u;
+        let ja = 0, jb = n2;
+        if (Math.abs(dY) < 1e-9) { if (yU < yLo - 1e-3 || yU > yHi + 1e-3) { ja = 1; jb = 0; } }
+        else { const p = (yLo - yU) * n2 / dY, q = (yHi - yU) * n2 / dY; ja = Math.max(0, Math.floor(Math.min(p, q)) - 1); jb = Math.min(n2, Math.ceil(Math.max(p, q)) + 1); }
+        for (let j = ja; j <= jb; j++) sample(i, j);
+        // the corner samples past the diagonal are renormalised (their height moves): always tried, as before
+        for (let j = Math.max(jb + 1, Math.floor((1 - u) * n2)); j <= n2; j++) if (u + j / n2 > 1) sample(i, j);
       }
     }
   }

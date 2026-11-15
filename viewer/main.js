@@ -45,13 +45,13 @@ import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
-import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, dropFadeVariant, settleRamp } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
@@ -69,7 +69,7 @@ import { liteShown } from "./liteShown.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
-import { setBootStart, coverLifted, whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
+import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -98,8 +98,13 @@ const preCompile = async (roots, fading) => {
     return;
   }
   await compileFor(roots, { first: true });           // (a tile: ahead of the landmarks' background compiles)
-  if (fading) await compileFor([].concat(roots).map(fadeProxies), { first: true });
+  const fp = fading ? [].concat(roots).map(fadeProxies).filter(Boolean) : [];
+  if (fp.length) await compileFor(fp, { first: true });
+  // boot3 (docs/BOOT.md section 5; ?tileshadowwarm=0: off): the tile's shadow pass too (not in compileAsync), two meshes a
+  // frame far under the city (warmup.js warmShadows): its first shadow node builds were one 60-100 ms frame at its landing
+  if (shadowWarm) await shadowWarm([...[].concat(roots), ...fp]);
 };
+let shadowWarm = null;
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
 
 const $ = (id) => document.getElementById(id);
@@ -497,6 +502,30 @@ if (workers.length && params.get("liteworker") !== "0") {
     liteWorker = w;
   } catch { liteWorker = null; }
 }
+// ---- boot3 (docs/BOOT.md section 5): A SECOND FULL-TILE WORKER FOR THE BOOT ONLY. The cover waits for the start tile
+// AND the first full neighbour (the warm-up must see a second full tile: main.js "neighbours"), and one worker built them
+// one after the other (I6 then H5: ~11 s of worker time on the cover's critical path). This worker takes the boot ring's
+// full tiles while the main one builds the start tile, and is closed once the cover has lifted and it is idle (streaming
+// keeps the single worker: the 3-worker pool's freeze). OPT-IN ?bootworker=1 (measured: the cover did not move, the start tile
+// built ~1 s slower beside it: CPU-bound).
+let bootWorker = null, bootWorkerOpen = true;
+if (workers.length === 1 && params.get("bootworker") === "1" && (navigator.hardwareConcurrency || 4) >= 6) {
+  try {
+    const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
+    w.busy = 0;
+    w.onmessage = onWorkerMessage(w);
+    w.onerror = (e) => { log(`boot tile worker failed (${e.message || "error"})`); bootWorker = null; for (const [id, p] of pendingReq) if (p.w === w) { pendingReq.delete(id); p.retry(); } };
+    bootWorker = w;
+  } catch { bootWorker = null; }
+}
+/** after the cover: the boot worker closes when its last build is in */
+function closeBootWorker() {
+  bootWorkerOpen = false;                     // (no new build for it: pumpBoot's chain 2)
+  if (!bootWorker) return;
+  if (bootWorker.busy > 0) { setTimeout(closeBootWorker, 1000); return; }
+  bootWorker.terminate(); bootWorker = null;
+}
+// ---- /boot3
 /** worker builds started ahead of loadTile (key "name|lite"): stream() prefetches the next wanted tiles */
 const tilePrefetch = new Map();
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
@@ -518,7 +547,7 @@ const HEROS = params.get("heros") !== "old";
 const HEROS_TILE = { carves: [], paths: [] };
 const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
-function tileData(entry, lite = false) {
+function tileData(entry, lite = false, viaBoot = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     heros: HEROS ? HEROS_TILE : null,                                                                // Square des Heros: the park cut out of the UrbIS square surface, its steps' carves (viewer/heros/herosSurface.js)
@@ -539,13 +568,14 @@ function tileData(entry, lite = false) {
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
     roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
+    colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     cache: params.get("tilecache") !== "0" };                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
   const key = `${entry.name}|${lite ? 1 : 0}`;
   const pre = tilePrefetch.get(key);
   if (pre) { tilePrefetch.delete(key); pumpBoot(); return pre; }
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!workers.length) return local();
-  const w = lite && liteWorker ? liteWorker : workers.reduce((a, b) => (b.busy < a.busy ? b : a));
+  const w = lite && liteWorker ? liteWorker : viaBoot && bootWorker ? bootWorker : workers.reduce((a, b) => (b.busy < a.busy ? b : a));   // (boot3: the boot worker)
   return new Promise((resolve, reject) => {
     const id = ++reqId;
     w.busy++;
@@ -555,11 +585,11 @@ function tileData(entry, lite = false) {
   });
 }
 /** start the worker builds of these manifest tiles now (their loadTile takes the result) */
-function prefetchTiles(entries, lite = false) {
+function prefetchTiles(entries, lite = false, viaBoot = false) {
   for (const e of entries) {
     const key = `${e.name}|${lite ? 1 : 0}`;
     if (tilePrefetch.has(key)) continue;
-    const p = tileData(e, lite);
+    const p = tileData(e, lite, viaBoot);
     p.catch(() => tilePrefetch.delete(key));
     tilePrefetch.set(key, p);
   }
@@ -592,20 +622,23 @@ function bootPrefetch(manifest, entry) {
 // ONE build at a time per worker: a worker runs every request it holds at once (its handler awaits fetches), so four
 // tiles sent together all finished late (the start tile took 11.7 s instead of 3 s, measured): the next goes when one
 // is done. Full and far tiles are two chains (two workers: liteWorker above)
-const bootBusy = [false, false];
+// (boot3: chain 2 = the boot worker's full tiles, in parallel with chain 0)
+const bootBusy = [false, false, false];
 function pumpBoot() {
   if (!bootRing) return;
-  for (const lite of [false, true]) {
-    if (bootBusy[+lite] || (lite && !liteWorker && bootBusy[0])) continue;
+  for (const chain of [0, 1, 2]) {
+    const lite = chain === 1;
+    if (chain === 2 && (!bootWorker || !bootWorkerOpen)) continue;
+    if (bootBusy[chain] || (lite && !liteWorker && bootBusy[0])) continue;
     const i = bootRing.findIndex((x) => x[1] === lite);
     if (i < 0) continue;
     if (!lite) { let held = 0; for (const k of tilePrefetch.keys()) if (k.endsWith("|0")) held++; if (held >= BOOT_AHEAD) continue; }   // taken by loadTile -> tileData -> pumpBoot()
     const [e] = bootRing.splice(i, 1)[0];
-    prefetchTiles([e], lite);
+    prefetchTiles([e], lite, chain === 2);
     const p = tilePrefetch.get(`${e.name}|${lite ? 1 : 0}`);
     if (!p) continue;
-    bootBusy[+lite] = true;
-    p.catch(() => {}).finally(() => { bootBusy[+lite] = false; pumpBoot(); });
+    bootBusy[chain] = true;
+    p.catch(() => {}).finally(() => { bootBusy[chain] = false; pumpBoot(); });
   }
   if (!bootRing.length) bootRing = null;
 }
@@ -894,6 +927,7 @@ async function main() {
 
   const scene = new THREE.Scene();
   const bootPipes = params.get("warmup") !== "0" ? openBootPipelines(renderer, scene) : null;   // ?warmup=0: old boot, for A/B
+  if (params.get("tileshadowwarm") !== "0") shadowWarm = (roots) => warmShadows(renderer, scene, roots).catch(() => {});   // boot3 (preCompile)
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
@@ -1078,7 +1112,14 @@ async function main() {
   // tiles: its node builds run now (the main thread idled here) and its pipelines compile in parallel meanwhile; the
   // boot warm-up's forced frames then find them built. (Not compileAsync: it keeps at most 16 pipelines in flight, 8.5 s
   // for the same scene, and the compile queue waited behind it.)
-  if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(async () => {
+  // ---- boot3 (docs/BOOT.md section 5): the boot goes on once the pipeline is SET UP; the early warm-up's chunks keep running
+  // beside the neighbours' loading (they interleave with the frames and the tile landing as before) and the boot warm-up
+  // waits for them (earlyWarm, below). It held the "neighbours" stage 2-4 s after the first tile. ?earlygate=old: before
+  const EARLY_GATE_OLD = params.get("earlygate") === "old";
+  let earlyWarm = null;
+  // ---- /boot3
+  if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(() => { earlyWarm = earlyWarmUp(); return EARLY_GATE_OLD ? earlyWarm : null; });
+  const earlyWarmUp = async () => {
     if (!bootPipes) return;
     bootStage("shaders");
     const draw = () => (pipe ? pipe.render(null) : renderer.render(scene, camera));
@@ -1087,7 +1128,7 @@ async function main() {
     draw.device = renderer.backend?.device;
     const w = chunk ? await warmNowChunked(scene, draw, { chunk }) : warmNow(scene, draw);
     log(`early warm-up: ${w.drawables} drawables built in ${w.ms} ms${w.frames ? ` (${w.frames} chunks)` : ""} (their pipelines compile in parallel while the first tile builds)`);
-  });
+  };
   if (trackP) trackProf = await (trackEarly ?? trackP());
   // the ground's cover textures (viewer/materials/groundTex.js; ?groundtex=0: the procedural ground), before the first tile
   setGroundTextures(await (groundP ?? loadGroundTextures(renderer)));
@@ -1531,7 +1572,7 @@ async function main() {
   // One neighbour tile and the first far tiles load under the cover too: the first material built
   // emits its shared TSL functions in a different order than all later ones (same code, other WGSL
   // text, so one more compile), and far tiles have their own shaders.
-  let landing = null;
+  let landing = null, lateWarm = null;
   if (bootPipes) {
     // the tiles streamed under the cover hold their fade (smooth LOD): the warm-up then compiles their fading
     // copies too (lodFade.js fadeVariant); the first far tile does not fade, so its own materials compile
@@ -1548,7 +1589,11 @@ async function main() {
       // functions in another order than the first (other WGSL text: new pipelines), so the warm-up must see one, or the
       // first full tile after the cover waited ~4 s on its 15 new pipelines (measured)
       await streamBootLites();
-      if (ring > 0) await stream();
+      // boot3 (docs/BOOT.md section 5; ?bootfull=1 = before): NO full neighbour under the cover. It was held at fade 0 for
+      // the warm-up (the reveal frame showed its far tile anyway) and the cover waited ~4 s for its worker build after the
+      // start tile's; now the worker builds it right after the start tile all the same and it streams in after the
+      // reveal, its new pipelines compiled before it shows (preCompile): the fill-in a few seconds later, not the cover
+      if (ring > 0 && params.get("bootfull") === "1") await stream();
     } else {
       if (ring > 0) await stream();
       if (far > ring && params.get("earlyshow") !== "1") await stream(true);
@@ -1562,16 +1607,24 @@ async function main() {
     { const d = controls.enabled ? camera.position.distanceTo(controls.target) : 60, at = camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(d).add(camera.position);
       landing = window.__loader?.land({ p: camera.position.toArray(), t: at.toArray(), fov: camera.fov }); }
     const tick = setInterval(() => bootStage("warmup", { done: bootPipes.progress.done, total: Math.max(1, bootPipes.progress.started) }), 250);
+    await earlyWarm;                                  // boot3: the early warm-up's last chunks (EARLY_GATE_OLD: done long before)
+    setRevealCamera(camera.position.x, camera.position.z);   // boot3: the public art's reveal check (bootGate.js)
     // the full tiles' FADING copies (lodFade.js fadeVariant): with the ring as far tiles no full tile fades in under the
     // cover, so the start tile's copies are drawn here (stand-ins, removed after): the next full tiles then compile
     // no new pipeline (measured: the first one after the cover waited 3.3 s on 40 of them)
-    const fadeWarm = TILE_FADE ? world.tiles.flatMap((t) => t.groups.map(fadeProxies)).filter(Boolean) : [];
+    // boot3 (docs/BOOT.md section 5): + the held tiles' own materials (lodFade.js ownProxies); the start tile's fading copies
+    // (~30 node builds, 1.0-1.5 s of the warm-up's forced frames) are compiled AFTER the cover (warmup.js warmLater): the
+    // start tile does not fade until the player leaves it, and a streamed tile's fade compiles what it lacks first
+    // (preCompile / retire). ?fadedefer=old: all under the cover, as before
+    const FADE_DEFER = params.get("fadedefer") !== "old";
+    const fadeWarm = TILE_FADE ? world.tiles.flatMap((t) => t.groups.flatMap((g) => [FADE_DEFER ? null : fadeProxies(g), ownProxies(g)])).filter(Boolean) : [];
+    if (TILE_FADE && FADE_DEFER) lateWarm = world.tiles.flatMap((t) => t.groups.map(fadeProxies)).filter(Boolean);
     for (const g of fadeWarm) scene.add(g);
-    const w = await warmBoot(renderer, scene, bootPipes).finally(() => clearInterval(tick));
+    const w = await warmBoot(renderer, scene, bootPipes, neededAtReveal).finally(() => clearInterval(tick));   // (boot3: waits only for the jobs the first view needs, bootGate.js neededAtReveal)
     for (const g of fadeWarm) g.removeFromParent();
     interiorWarm?.removeFromParent();
     fader.hold = false;
-    log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after`);
+    log(`warm-up: ${w.ms} ms (${w.phases}), ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after${w.skipped?.length ? `; still compiling in the background (not in the first view): ${w.skipped.join(", ")}` : ""}`);
   }
   // the hand-over: the loading flight is on the city's first camera (at most 3 s more): the cover (that view) cross-fades
   // into the city's frames from the same camera (index.html #cover.gone, 1.1 s), then the loader's worker stops
@@ -1587,6 +1640,8 @@ async function main() {
   document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
   coverLifted();                                    // boot2: the far landmarks / bridges start now (bootGate.js)
+  closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
+  if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
