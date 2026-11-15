@@ -25,7 +25,7 @@
 import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, positionWorld, normalWorld, cameraPosition, color, float, vec2, vec3, vec4, mix, step, smoothstep, floor, fract,
-  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod, select, varying,
+  abs, min, max, clamp, fwidth, sin, sign, dot, normalize, length, pow, atan, normalView, mrt, roughness, mod, select, varying, uint,
 } from "three/tsl";
 import { lampLight } from "./lampLight.js";
 import { hash2D, noise2D, bumpNormal, filteredPulse } from "./tslkit.js";
@@ -66,10 +66,23 @@ export function storeyK(eh) {
  * gx: bay coordinate along the wall (bays), gy: storey coordinate (storeys), winUV: 0..1 inside the
  * window, bayW / storeyH in metres. Returns vec4(colour, emission 0..1).
  */
+// ---- ?night=1 round 3 (docs/NIGHT_HOOKUP.md step 6): the room / lit hashes are INTEGER hashes, bit-exact with the
+// tile worker's CPU copy (viewer/nightLights/litHash.js h3 / roomOf, KEEP IN SYNC), so the lit windows can be night
+// light sources. ?litwin=old: the sin x 43758 hashes of before (no CPU copy possible: float32 sin).
+const LITWIN_OLD = /[?&]litwin=old(&|$)/.test(location.search);
+const h3 = (a, b, c) => {
+  let h = uint(a).mul(uint(0x8da6b343)).bitXor(uint(b).mul(uint(0xd8163841))).bitXor(uint(c).mul(uint(0xcb1ab31f))).toVar();
+  h = h.bitXor(h.shiftRight(uint(16))).mul(uint(0x7feb352d)).toVar();
+  h = h.bitXor(h.shiftRight(uint(15))).mul(uint(0x846ca68b)).toVar();
+  h = h.bitXor(h.shiftRight(uint(16))).toVar();
+  return float(h.shiftRight(uint(8))).mul(1 / 16777216);
+};
+// ---- (end night round 3 hunk)
 const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, fw, drapeFw]) => {
   const floorIdx = floor(gy).toVar();
-  const fh1 = fract(sin(floorIdx.mul(41.3).add(seed)).mul(43758.5453));
-  const fh2 = fract(sin(floorIdx.mul(73.7).add(seed.mul(1.7))).mul(43758.5453));
+  const seedI = floor(seed.mul(40.96).add(0.5)).max(0.0).toVar();               // (night round 3) the building hash x 4096 (an integer)
+  const fh1 = LITWIN_OLD ? fract(sin(floorIdx.mul(41.3).add(seed)).mul(43758.5453)) : h3(floorIdx.max(0.0), seedI, 11);
+  const fh2 = LITWIN_OLD ? fract(sin(floorIdx.mul(73.7).add(seed.mul(1.7))).mul(43758.5453)) : h3(floorIdx.max(0.0), seedI, 12);
   const roomBays = mix(float(1.0), float(2.0), step(0.5, fh1)).toVar();          // Uccle houses: 1-2 bay rooms
   const roomU = gx.add(floor(fh2.mul(roomBays))).div(roomBays).toVar();
   const roomId = vec2(floor(roomU), floorIdx).toVar();
@@ -94,8 +107,9 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
   const onBack = step(tZ, tX).mul(step(tZ, tY)).toVar();
   const isY = step(tY, tX).mul(step(tY, tZ)).toVar();
   const onCeil = isY.mul(step(0.0, dirY)), onFloor = isY.mul(float(1).sub(step(0.0, dirY)));
-  const s1 = hash2D(roomId.add(vec2(seed, 19.4))).toVar(), s2 = hash2D(roomId.add(vec2(seed.mul(1.9), 83.1))).toVar();
-  const s3 = hash2D(roomId.add(vec2(63.2, seed.mul(0.7))));
+  const rx = roomId.x.max(0.0), fl0 = floorIdx.max(0.0), s4 = seedI.mul(4);
+  const s1 = (LITWIN_OLD ? hash2D(roomId.add(vec2(seed, 19.4))) : h3(rx, fl0, s4.add(1))).toVar(), s2 = (LITWIN_OLD ? hash2D(roomId.add(vec2(seed.mul(1.9), 83.1))) : h3(rx, fl0, s4.add(2))).toVar();
+  const s3 = LITWIN_OLD ? hash2D(roomId.add(vec2(63.2, seed.mul(0.7)))) : h3(rx, fl0, s4.add(3));
   const lod = smoothstep(0.3, 0.8, max(fw.x, fw.y)).toVar();
   const litRoom = step(float(1).sub(litProb), s3).toVar();
   const lit = mix(litRoom, 1.0, lod);

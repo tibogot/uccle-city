@@ -734,7 +734,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   ups.push(lamps.update);
   await frame("lamps");
   addLamps(entry.name, lamps.heads);                 // every lamp lights the street (viewer/lampLight.js)
-  cityNight?.addTile(entry.name, lamps.heads);       // ?night=1: its lamps join the night pool (fading in)
+  cityNight?.addTile(entry.name, lamps.heads, { windows: d.buildings?.walls?.nightWindows, bounds, ground: (x, z) => hm.surface(x, z) });   // ?night=1: its lamps + lit windows join the night pool (fading in); round 3: its ground light map
   await frame("lamp light map");
   // (the street-life layer draws the STIB stops from the Brussels Mobility data: not the OSM bus-stop poles too)
   // (and with the stops kit on, viewer/stops/ draws them: furniture.js keeps its placeholder poles for ?stops=old)

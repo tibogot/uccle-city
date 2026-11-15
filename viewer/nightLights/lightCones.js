@@ -41,10 +41,12 @@ export function createCones(max) {
       C[k * 3] = r; C[k * 3 + 1] = g; C[k * 3 + 2] = b;
     },
     commit(n) {
-      // whole-buffer uploads (96 cones: 7.5 kB): addUpdateRange() allocates a range object per call, every frame
-      mesh.count = n;
-      mesh.instanceMatrix.needsUpdate = true;
-      col.needsUpdate = true;
+      // (city round 3) only the cones in use are uploaded (static buffers + ranges), nothing at all while none is drawn
+      // two frames running; an empty mesh is hidden
+      const last = mesh.count;
+      mesh.count = n; mesh.visible = n > 0;
+      if (n === 0 && last === 0) return;
+      if (n > 0) for (const [a, k] of [[mesh.instanceMatrix, 16], [col, 3]]) { a.clearUpdateRanges(); a.addUpdateRange(0, n * k); a.needsUpdate = true; }
     },
   };
 }

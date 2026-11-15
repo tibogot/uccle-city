@@ -65,7 +65,7 @@ export class NightSources {
     this.base.tram = pool.reserve(5);
     this.carData = new Float32Array(cars * CAR.STRIDE); this.carCount = 0;
     this.shadow = new ShadowLamps(shadowLights, S.lamps.x.length);
-    this.tram = { on: false, hx: 0, hy: 0, hz: 0, fx: 1, fz: 0, rx: 0, rz: 0, len: 32 };
+    this.tram = { on: false, hx: 0, hy: 0, hz: 0, fx: 1, fz: 0, rx: 0, rz: 0, len: 32, gy: 0 };   // gy: the rail top (the city; the lab's street is at 0)
     this.track = { lamps: new Track(S.lamps.x.length), windows: new Track(S.windows.x.length), heads: new Track(cars), rear: new Track(cars) };
     this.stats = { lamps: 0, windows: 0, shops: 0, signs: 0, heads: 0, rear: 0, tram: 0, total: 0 };
     this.ms = 0;
@@ -92,7 +92,7 @@ export class NightSources {
         const id = sel.i[k], w = sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1);
         tr.cur[id] = w;
         P.set(b + k, S.x[id], S.y[id], S.z[id], p.lampRange, LAMP_RGB[0] * I, LAMP_RGB[1] * I, LAMP_RGB[2] * I, w * (1 - this.shadow.blend(id) * p.shadowShare), 0.22);
-        P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing); P.baked(b + k, this.bakedK.lamps);
+        P.omni(b + k); P.profile(b + k, PROFILE.LANTERN, p.lampUp, p.lampBatwing); P.baked(b + k, S.inMap ? S.inMap[id] === 1 : this.bakedK.lamps);
         if (C && this.conesOn && w > 0.01) C.write(cone++, S.x[id], S.y[id] - 0.1, S.z[id], 0, -1, 0, S.y[id] - 0.1, 3.4, LAMP_RGB[0] * w, LAMP_RGB[1] * w, LAMP_RGB[2] * w);
       }
       tr.end();
@@ -122,7 +122,7 @@ export class NightSources {
         // street: the side's +-z offset)
         const id = sel.i[k], s = L[id], out = s.nx !== undefined ? 0 : s.side < 0 ? 1 : -1, I = p.signI;
         P.set(b + k, S.x[id], S.y[id] - 0.1, S.z[id] + out * 0.7, p.signRange, s.col[0] * I, s.col[1] * I, s.col[2] * I, sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1), 0.4);
-        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN); P.diffuseOnly(b + k, true); P.baked(b + k, this.bakedK.signs);
+        P.omni(b + k); P.profile(b + k, PROFILE.PLAIN); P.diffuseOnly(b + k, true); P.baked(b + k, S.inMap ? S.inMap[id] === 1 : this.bakedK.signs);
       }
       this.stats.signs = sel.count;
     }
@@ -186,14 +186,15 @@ export class NightSources {
       if (w <= 0) for (let k = 0; k < 5; k++) P.weight(b + k, 0);
       else {
         const I = p.tramI, pitch = 0.03, fx = T.fx * Math.cos(pitch), fz = T.fz * Math.cos(pitch), fy = -Math.sin(pitch);
-        P.set(b, T.hx, 1.1, T.hz, p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.3);
+        const gy = T.gy ?? 0;
+        P.set(b, T.hx, gy + 1.1, T.hz, p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.3);
         P.spot(b, fx, fy, fz, 0.7, 0.4); P.profile(b, PROFILE.LOWBEAM, -0.01, 0);
-        if (C && this.conesOn) C.write(cone++, T.hx, 1.1, T.hz, fx, fy - 0.02, fz, 18, 3.6, 0.45 * w, 0.44 * w, 0.42 * w);
-        P.set(b + 1, T.rx, 1.2, T.rz, 6, REAR_RGB[0] * p.rearI * 1.5, REAR_RGB[1] * p.rearI * 1.5, REAR_RGB[2] * p.rearI * 1.5, w, 0.15);
+        if (C && this.conesOn) C.write(cone++, T.hx, gy + 1.1, T.hz, fx, fy - 0.02, fz, 18, 3.6, 0.45 * w, 0.44 * w, 0.42 * w);
+        P.set(b + 1, T.rx, gy + 1.2, T.rz, 6, REAR_RGB[0] * p.rearI * 1.5, REAR_RGB[1] * p.rearI * 1.5, REAR_RGB[2] * p.rearI * 1.5, w, 0.15);
         P.omni(b + 1); P.profile(b + 1, PROFILE.PLAIN); P.diffuseOnly(b + 1, true);
         for (let k = 0; k < 3; k++) {
           const f = (k + 1) / 4, x = T.hx + (T.rx - T.hx) * f, z = T.hz + (T.rz - T.hz) * f, I2 = p.tramSaloon;
-          P.set(b + 2 + k, x, 2.1, z, 8, SALOON_RGB[0] * I2, SALOON_RGB[1] * I2, SALOON_RGB[2] * I2, w, 1.0);
+          P.set(b + 2 + k, x, gy + 2.1, z, 8, SALOON_RGB[0] * I2, SALOON_RGB[1] * I2, SALOON_RGB[2] * I2, w, 1.0);
           P.omni(b + 2 + k); P.profile(b + 2 + k, PROFILE.PLAIN); P.diffuseOnly(b + 2 + k, true);
         }
       }
@@ -214,13 +215,19 @@ export class NightSources {
     tr?.begin();
     for (let k = 0; k < this.N[kind]; k++) {
       if (k >= sel.count) { P.weight(b + k, 0); continue; }
-      const id = sel.i[k], s = L[id], w = sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1), g = I * (s.b ?? 1);
-      // the opening's outward axis: the facade's own normal (the city's sources carry nx, nz), else the lab street's +-z
-      const ax = s.nx !== undefined ? s.nx : 0, az = s.nx !== undefined ? s.nz : s.side < 0 ? 1 : -1;
+      const id = sel.i[k], w = sel.weight(k) * this.nearFade(sel.d[k]) * (F ? F[id] : 1);
+      // a source's record: an object (nx, nz, hw, hh, col, b), or (the city's lit windows, round 3) a typed array row
+      // (nx nz hw hh r g b); the opening's outward axis: the facade's own normal, else the lab street's +-z
+      let ax, az, hw, hh, cr, cg, cb;
+      if (S.rec) { const R = S.rec, o = id * S.recStride; ax = R[o]; az = R[o + 1]; hw = R[o + 2]; hh = R[o + 3]; cr = R[o + 4] * I; cg = R[o + 5] * I; cb = R[o + 6] * I; }
+      else {
+        const s = L[id], g = I * (s.b ?? 1);
+        ax = s.nx !== undefined ? s.nx : 0; az = s.nx !== undefined ? s.nz : s.side < 0 ? 1 : -1; hw = s.hw; hh = s.hh; cr = s.col[0] * g; cg = s.col[1] * g; cb = s.col[2] * g;
+      }
       if (tr) tr.cur[id] = w;
-      P.set(b + k, S.x[id] - ax * depth, S.y[id], S.z[id] - az * depth, range + depth, s.col[0] * g, s.col[1] * g, s.col[2] * g, w, 0.35);
+      P.set(b + k, S.x[id] - ax * depth, S.y[id], S.z[id] - az * depth, range + depth, cr, cg, cb, w, 0.35);
       P.spot(b + k, ax, 0, az, 1.25, 0.95);
-      P.profile(b + k, PROFILE.APERTURE, s.hw, s.hh, depth, mullion); P.diffuseOnly(b + k, true); P.baked(b + k, this.bakedK[kind]);
+      P.profile(b + k, PROFILE.APERTURE, hw, hh, depth, mullion); P.diffuseOnly(b + k, true); P.baked(b + k, S.inMap ? S.inMap[id] === 1 : this.bakedK[kind]);
     }
     tr?.end();
     this.stats[kind] = sel.count;

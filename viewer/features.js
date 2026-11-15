@@ -83,6 +83,7 @@ export const FEATURES = [
   sel("nightshadow", "night", "lamp shadows", "?night=1: lamp shadow maps re-rendered only when something moves (smart) or every frame (full, round 1).", [[null, "smart"], ["alt", "alternate (1 map a frame)"], ["full", "full (round 1)"]]),
   on("lampreach", "night", "lamp shadows: tile reach", "?night=1: a tile's instanced sets (trees, lamps, bollards) drawn into a lamp shadow map only when the lamp is within reach of the tile (?lampreach=0: every loaded tile, ~135 draws a map).", { sub: "Perf" }),
   num("nightev", "night", "night look EV", "The night look's exposure.", 0.6, 0, 3, 0.1),
+  sel("litwin", "night", "lit-window hash", "Round 3: the facade's lit rooms from an INTEGER hash, the same in the tile worker (the lit windows light the street); old = the sin hashes of before (no CPU copy).", [[null, "integer (round 3)"], ["old", "old"]], { sub: "A/B" }),
   opt("nightdebug", "night", "night pop metrics", "?night=1: per lamp / per car weight jump metrics (CPU).", { sub: "Debug" }),
 
   // ---------------------------------------------------------------- traffic, trams & trains

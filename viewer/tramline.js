@@ -297,7 +297,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   const near = { x: 0, z: 0, r: 1800 };
   // the drawn trams' front positions (x, z) this frame, for movers' checks (?night=1: the lamp shadows re-render when a
   // tram passes a shadowed lamp): preallocated, no per-frame garbage
-  const drawn = { n: 0, xz: new Float32Array(MAX_TRAMS * 2) };
+  const drawn = { n: 0, xz: new Float32Array(MAX_TRAMS * 2), rear: new Float32Array(MAX_TRAMS * 3) };   // (night round 3: rear x z + rail y, the tram's lights)
   let running = 0;
 
   const placeTrip = (t, s, d, flipCab) => {
@@ -327,7 +327,9 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       const [x, z] = at(shapes[t.shape], d);
       running++;
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
-      drawn.xz[drawn.n * 2] = x; drawn.xz[drawn.n * 2 + 1] = z; drawn.n++;
+      drawn.xz[drawn.n * 2] = x; drawn.xz[drawn.n * 2 + 1] = z;
+      { const r = at(shapes[t.shape], d - MODS * MOD_L - (MODS - 1) * GAP); drawn.rear[drawn.n * 3] = r[0]; drawn.rear[drawn.n * 3 + 1] = r[1]; drawn.rear[drawn.n * 3 + 2] = railTop(x, z); }
+      drawn.n++;
       if (fleet) {
         const shape = shapes[t.shape];
         tramPose(model.layout, (q) => at(shape, q), d, pose, false, prof ? (q) => yAlong(shape, q) : null);

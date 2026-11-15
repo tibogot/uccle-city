@@ -61,7 +61,7 @@ export const S = {
   DX: 8, DY: 9, DZ: 10, CONE: 11, PEN: 12,                    // beam direction (unit, light -> target), cos(outer), cos(inner)
   PROF: 13, P1: 14, P2: 15, P3: 16, P4: 17,                   // profile + its parameters
   W: 18,                                                      // weight (fade) 0..1: 0 = not drawn
-  FLAGS: 19,                                                  // +1 diffuse only (a soft source), +2 baked in the ground map
+  FLAGS: 19,                                                  // +1 diffuse only (a soft source), +2 baked in the ground map, +4 ground only (subtracted)
   STRIDE: 20,
 };
 
@@ -99,9 +99,12 @@ export class LightPool {
     d[o + 13] = p; d[o + 14] = p1; d[o + 15] = p2; d[o + 16] = p3; d[o + 17] = p4;
   }
   weight(i, w) { this.data[i * S.STRIDE + S.W] = w; }
-  diffuseOnly(i, on) { const o = i * S.STRIDE + S.FLAGS, f = this.data[o]; this.data[o] = (f >= 2 ? 2 : 0) + (on ? 1 : 0); }
+  diffuseOnly(i, on) { const o = i * S.STRIDE + S.FLAGS, f = this.data[o]; this.data[o] = (f & ~1) | (on ? 1 : 0); }
   /** this light is also in the ground light map (groundLight.js): ground materials skip it in the loop */
-  baked(i, on) { const o = i * S.STRIDE + S.FLAGS, f = this.data[o]; this.data[o] = (f % 2) + (on ? 2 : 0); }
+  baked(i, on) { const o = i * S.STRIDE + S.FLAGS, f = this.data[o]; this.data[o] = (f & ~2) | (on ? 2 : 0); }
+  /** (city, round 3) a light only GROUND materials take, and SUBTRACT (diffuse): a shadowed lamp's share taken back
+   *  out of the ground map, whose spot light adds it again with its shadow (cityNight.js: no double light) */
+  groundOnly(i, on) { const o = i * S.STRIDE + S.FLAGS, f = this.data[o]; this.data[o] = (f & ~4) | (on ? 4 : 0); }
 }
 
 const ROW = { POS: 0, COLOR: 1, SPOT: 2, BOUNDS: 3 };   // three's rows (its compute reads BOUNDS)
@@ -153,7 +156,7 @@ class NightLightsNode extends ClusteredLightsNode {
       // saves two matrix products per light
       const x = D[o], y = D[o + 1], z = D[o + 2], ax = D[o + 8], ay = D[o + 9], az = D[o + 10];
       T[ROW.POS * line + q] = m[0] * x + m[4] * y + m[8] * z + m[12]; T[ROW.POS * line + q + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
-      T[ROW.POS * line + q + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; T[ROW.POS * line + q + 3] = D[o + S.PROF] === PROFILE.LOWBEAM ? -D[o + 3] : D[o + S.FLAGS] >= 2 ? D[o + 3] + 10000 : D[o + 3];   // < 0: a low beam; > 5000: baked
+      T[ROW.POS * line + q + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]; T[ROW.POS * line + q + 3] = D[o + S.PROF] === PROFILE.LOWBEAM ? -D[o + 3] : D[o + S.FLAGS] & 4 ? D[o + 3] + 20000 : D[o + S.FLAGS] & 2 ? D[o + 3] + 10000 : D[o + 3];   // < 0: a low beam; > 5000: baked; > 15000: ground only
       T[ROW.COLOR * line + q] = D[o + 4] * w; T[ROW.COLOR * line + q + 1] = D[o + 5] * w; T[ROW.COLOR * line + q + 2] = D[o + 6] * w; T[ROW.COLOR * line + q + 3] = D[o + 7];
       T[ROW.SPOT * line + q] = m[0] * ax + m[4] * ay + m[8] * az; T[ROW.SPOT * line + q + 1] = m[1] * ax + m[5] * ay + m[9] * az;
       T[ROW.SPOT * line + q + 2] = m[2] * ax + m[6] * ay + m[10] * az; T[ROW.SPOT * line + q + 3] = D[o + 11];
@@ -342,12 +345,13 @@ class NightLightsNode extends ClusteredLightsNode {
         // a fragment that the light reaches (a cluster lists every light whose bounding sphere touches it: most fail)
         const A = select(j.equal(0), A0, select(j.equal(1), A1, select(j.equal(2), A2, A3))).toVar();
         const Lv = A.xyz.sub(positionView).toVar();             // fragment -> light (view space)
-        const baked = A.w.greaterThan(5000);
-        const d2 = dot(Lv, Lv).toVar(), range = select(baked, A.w.sub(10000), abs(A.w)).toVar();
+        const gOnly = A.w.greaterThan(15000);
+        const baked = A.w.greaterThan(5000).and(gOnly.not());
+        const d2 = dot(Lv, Lv).toVar(), range = select(gOnly, A.w.sub(20000), select(baked, A.w.sub(10000), abs(A.w))).toVar();
         // a ground material (road, sidewalk, lawn) has the baked lights' diffuse in its light map: skip them, unless
-        // the street is wet (then their specular only: the streaks)
+        // the street is wet (then their specular only: the streaks); a ground-only light (round 3) only on the ground
         const skip = ground ? baked.and(nightLook.uWet.lessThan(0.02)) : null;
-        If(ground ? d2.lessThan(range.mul(range)).and(skip.not()) : d2.lessThan(range.mul(range)), () => {
+        If(ground ? d2.lessThan(range.mul(range)).and(skip.not()) : d2.lessThan(range.mul(range)).and(gOnly.not()), () => {
           const C = textureLoad(tex, ivec2(idx, ROW.SPOT)).toVar();
           const d = sqrt(d2);
           const L = Lv.div(max(d, 1e-4)).toVar();               // unit, fragment -> light
@@ -400,7 +404,9 @@ class NightLightsNode extends ClusteredLightsNode {
               });
             };
             if (ground) {
-              If(bakedHere, () => {          // wet ground, a baked light: specular only (its diffuse is in the map)
+              If(gOnly, () => {               // (round 3) a shadowed lamp's share taken back out of the map: minus its diffuse
+                reflected.directDiffuse.subAssign(irr.mul(BRDF_Lambert({ diffuseColor: diffuseContribution })));
+              }).ElseIf(bakedHere, () => {   // wet ground, a baked light: specular only (its diffuse is in the map)
                 If(E1.z.mod(2).lessThan(0.5), () => {
                   reflected.directSpecular.addAssign(irr.mul(BRDF_GGX({ lightDirection: L, f0: specularColorBlended, f90: specularF90, roughness })));
                 });
