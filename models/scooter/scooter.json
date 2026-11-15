@@ -1,0 +1,233 @@
+{
+ "note": "tools/blender/scooter.py: glTF frame (x left, y up, z forward), metres, origin = the ground midway between the axles",
+ "kind": "scooter",
+ "wheelbase": 1.37,
+ "wheels": {
+  "F": {
+   "pos": [
+    0,
+    0.229,
+    0.685
+   ],
+   "r": 0.229,
+   "crown": 0.055
+  },
+  "R": {
+   "pos": [
+    0,
+    0.235,
+    -0.685
+   ],
+   "r": 0.235,
+   "crown": 0.06
+  }
+ },
+ "steer": {
+  "pivot": [
+   0,
+   1.02,
+   0.25528
+  ],
+  "axis": [
+   0,
+   0.89101,
+   -0.45399
+  ],
+  "rake": 27,
+  "trail": 0.09
+ },
+ "rider": {
+  "hip": [
+   0,
+   0.885,
+   -0.275
+  ],
+  "shoulder": {
+   "L": [
+    0.185,
+    1.35127,
+    -0.18437
+   ],
+   "R": [
+    -0.185,
+    1.35127,
+    -0.18437
+   ]
+  },
+  "grip": {
+   "L": [
+    0.32,
+    0.998,
+    0.22544
+   ],
+   "R": [
+    -0.32,
+    0.998,
+    0.22544
+   ]
+  },
+  "upper": 0.29,
+  "fore": 0.33,
+  "elbowOut": 0.55,
+  "eye": [
+   0,
+   1.57341,
+   -0.03126
+  ]
+ },
+ "lamps": {
+  "head": [
+   0,
+   1.012,
+   0.453
+  ],
+  "tail": [
+   0,
+   0.56,
+   -0.985
+  ]
+ },
+ "sideStand": {
+  "lean_deg": 7,
+  "contact": [
+   0.3,
+   0,
+   -0.08
+  ],
+  "side": "left"
+ },
+ "size": [
+  0.76,
+  1.32,
+  1.99
+ ],
+ "slots": [
+  "Boot",
+  "Chrome",
+  "Disc",
+  "Engine",
+  "Frame",
+  "Glass",
+  "Glove",
+  "HeadLight",
+  "Helmet",
+  "Jacket",
+  "Metal",
+  "Paint",
+  "Plastic",
+  "Plate",
+  "Rim",
+  "Rubber",
+  "Seat",
+  "Skin",
+  "TailLight",
+  "Trousers",
+  "Visor"
+ ],
+ "tris": {
+  "Body": 20440,
+  "Steer": 9624,
+  "Wheel_F": 4344,
+  "Wheel_R": 3696,
+  "RiderLegs": 4892,
+  "RiderTorso": 5252,
+  "ArmU_L": 276,
+  "ArmU_R": 276,
+  "ArmF_L": 1608,
+  "ArmF_R": 1608,
+  "Wheel_F_far": 320,
+  "Wheel_R_far": 320
+ },
+ "ao": "vertex (COLOR_0.r)",
+ "pack": {
+  "file": "scooter.glb",
+  "bytes": 924972,
+  "city": "scooter_city.glb",
+  "cityBytes": 503312,
+  "rigLodErrors": [
+   0,
+   0.0025,
+   0.011
+  ],
+  "cityLodErrors": [
+   0.004,
+   0.012,
+   0.035
+  ],
+  "wheelLod1": 0.0015,
+  "tris": {
+   "Body": [
+    20440,
+    4682,
+    744
+   ],
+   "Steer": [
+    9624,
+    2324,
+    398
+   ],
+   "Wheel_F": [
+    4344,
+    1822,
+    320
+   ],
+   "Wheel_R": [
+    3696,
+    1766,
+    320
+   ],
+   "RiderLegs": [
+    4892,
+    1534,
+    382
+   ],
+   "RiderTorso": [
+    5252,
+    2872,
+    486
+   ],
+   "ArmU_L": [
+    276,
+    218,
+    46
+   ],
+   "ArmU_R": [
+    276,
+    218,
+    50
+   ],
+   "ArmF_L": [
+    1608,
+    862,
+    134
+   ],
+   "ArmF_R": [
+    1608,
+    862,
+    134
+   ],
+   "parked": [
+    5778,
+    1666,
+    882
+   ],
+   "ridden": [
+    9692,
+    2722,
+    1164
+   ]
+  },
+  "note": "tools/moto/pack.mjs: <Node>_lod0..2 (rig), parked_lod1..3 / ridden_lod1..3 (city); attribute _SLOT = slot index + 0.01 + 0.97 AO (viewer/moto/twoWheelSlots.js)",
+  "audit": {
+   "rig_lod0": 0,
+   "rig_lod1": 19,
+   "rig_lod2": 10,
+   "parked_lod1": 3,
+   "ridden_lod1": 16,
+   "parked_lod2": 8,
+   "ridden_lod2": 15,
+   "parked_lod3": 1,
+   "ridden_lod3": 3
+  }
+ }
+}

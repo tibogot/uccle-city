@@ -11,6 +11,13 @@
 //            the bike falls on its side and slides, the rider tumbles off, respawn after ~2.5 s at the last safe pose
 //   ENGINE   6 gears, rpm for the sound and the HUD; a shift cuts the drive for 80 ms
 // Heading convention as the car: forward = (sin h, cos h) in x / z; h grows turning left; lean > 0 = leaning left.
+// Round 2 (docs/MOTO.md): ONE core for the three two-wheelers, the numbers per vehicle (MOTO, SCOOTER, VILLO):
+//   SCOOTER  a ~125 cc four-stroke single with a CVT (no gears: the revs hold near peak power while the speed rises,
+//            a centrifugal clutch), ~90 km/h, combined brakes, smaller tyres (less grip), lighter (quicker to lean),
+//            no wheelie
+//   VILLO    a human: ~125 W cruising, ~250 W standing on the pedals (Shift), three hub gears for the cadence, roller
+//            brakes, freewheel; on Uccle's steep hills it slows to a crawl and the rider gets off and PUSHES (walking
+//            beside it at 1.2 m/s), back on the saddle where it flattens; feet down at a stop
 // Pure JS (no three).
 import { hitSlide, HIT_OLD } from "../drive/carPhysics.js";
 
@@ -35,13 +42,70 @@ export const MOTO = {
   gravity: 9.81,
   bounce: 0.2,
   respawn: 2.6,          // s on the ground before the respawn
+  gears: [17, 28, 38, 48, 59, 74],   // m/s at the redline per gear
+  rpm: { idle: 1350, red: 11800, up: 11200, down: 5200 },
+  side: [0.40, 1.04, 0.42, 1.19, 0.27, 0.34, 0.24, 0.42, 0.2, 0.97],   // (|x|, height) of what touches the ground first when it falls
+};
+
+/** the scooter: a ~125 cc single with a CVT (tools/blender/scooter.py) */
+export const SCOOTER = {
+  ...MOTO,
+  topSpeed: 25,          // m/s (90 km/h)
+  reverseSpeed: 1.0,
+  power: 3.4, powerSpeed: 7,     // 0-50 km/h ~5 s
+  boost: 1.0,            // (no clutch to dump)
+  brakeFront: 8.0, brakeRear: 4.6,   // combined brakes: the rear lever also bites the front a little
+  rolling: 0.18, drag: 0.0006, coast: 0.35,      // (the CVT freewheels: little engine braking)
+  wheelbase: 1.37,
+  grip: 9.0,             // small 12" tyres
+  maxLean: 0.68,         // rad (39 deg: the floorboard / centre stand would scrape further)
+  leanRate: 6.5,         // light: quicker to lean
+  lowSteer: 0.62,
+  cgHeight: 0.6, cgToRear: 0.6, cgToFront: 0.77,
+  wheelieMax: 0.06, stoppieMax: 0.12,
+  crashSpeed: 7.5,
+  gears: null, cvt: { idle: 1600, engage: 3200, hold: 6600, top: 8400 },
+  rpm: { idle: 1600, red: 9000, up: 9000, down: 0 },
+  side: [0.37, 0.42, 0.38, 1.0, 0.33, 0.25, 0.3, 0.75],
+};
+
+/** the Villo: the station bike + its rider (tools/blender/villo_ride.py); ~97 kg together */
+export const VILLO = {
+  ...MOTO,
+  topSpeed: 9,           // m/s pedalling (downhill it rolls faster: gravity is added on top)
+  reverseSpeed: 0.8,     // walking it backwards
+  power: 1.3, powerSpeed: 1.0,   // ~125 W / 97 kg: a ~ 1.3 / v (force-limited to 1.3 m/s2 at low speed)
+  boost: 2.0,            // Shift: standing on the pedals (~250 W)
+  brakeFront: 3.8, brakeRear: 2.4,   // roller brakes
+  rolling: 0.08, drag: 0.0037, coast: 0.02,   // (Cd A ~0.6 m2 upright; freewheel: no engine braking)
+  wheelbase: 1.12,
+  grip: 7.5,
+  maxLean: 0.55,         // rad (31 deg)
+  leanRate: 6,
+  lowSteer: 0.75,
+  cgHeight: 1.0, cgToRear: 0.62, cgToFront: 0.5,
+  wheelieMax: 0, stoppieMax: 0.08,
+  crashSpeed: 6,
+  respawn: 2.2,
+  gears: null, pedal: { ratios: [0.78, 0.6, 0.47], shift: [2.8, 4.6], wheelR: 0.33 },
+  push: { grade: 0.085, speed: 1.4, walk: 1.2, off: 0.05 },
+  rpm: { idle: 0, red: 120, up: 120, down: 0 },
+  side: [0.31, 1.02, 0.2, 0.3, 0.12, 0.9],
 };
 
 /** The bike's box (half width, half length), narrow: it filters between cars. */
 export const MOTO_BODY = { hx: 0.40, hz: 1.06, height: 1.2 };
+export const SCOOTER_BODY = { hx: 0.37, hz: 0.98, height: 1.35 };
+export const VILLO_BODY = { hx: 0.32, hz: 0.9, height: 1.8 };
+/** the box by handling set (the impact response needs it) */
+const BODY_OF = new Map();
 
-const GEARS = [17, 28, 38, 48, 59, 74];    // m/s at the 11,800 rpm redline per gear
-export const RPM = { idle: 1350, red: 11800, up: 11200, down: 5200 };
+export const RPM = MOTO.rpm;
+/** the handling sets by vehicle */
+export const TWO_WHEELERS = { moto: MOTO, scooter: SCOOTER, villo: VILLO };
+/** the vehicle's box (half width / length, height) */
+export const BODIES = { moto: MOTO_BODY, scooter: SCOOTER_BODY, villo: VILLO_BODY };
+BODY_OF.set(MOTO, MOTO_BODY); BODY_OF.set(SCOOTER, SCOOTER_BODY); BODY_OF.set(VILLO, VILLO_BODY);
 
 export function createMotoState(x, z, heading) {
   return {
@@ -51,6 +115,7 @@ export function createMotoState(x, z, heading) {
     lean: 0, leanTarget: 0, wheelie: 0, wheelieVel: 0, slide: 0, tuck: 0,
     gear: 1, rpm: RPM.idle, shiftT: 0, shifts: 0, throttle: 0, frontBrake: 0, rearBrake: 0, boost: 0,
     crashed: false, crashT: 0, crashes: 0, crashDir: 1, overGrip: 0,
+    crank: 0, pedal: 0, pushing: 0, pushT: 0, walk: 0, footDown: 1, stillT: 1, grade: 0, bell: 9, bells: 0,
     safe: { x, z, heading, t: 0 },
     hits: 0, lastHit: null, accel: 0,
   };
@@ -102,20 +167,50 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
   env.prepare?.(c, Math.abs(c.speed) * dt + 6);
 
   // gearbox (sound / HUD; a shift cuts the drive)
-  const v0 = Math.abs(c.speed);
+  const v0 = Math.abs(c.speed), RP = H.rpm, GE = H.gears;
   if (c.shiftT > 0) c.shiftT -= dt;
-  const rpmOf = (g, v) => Math.max(RPM.idle, (v / GEARS[g - 1]) * RPM.red);
-  if (v0 < 1.5) c.gear = 1;
-  else if (c.shiftT <= 0) {
-    if (c.gear < 6 && rpmOf(c.gear, v0) > RPM.up && throttle > 0.2) { c.gear++; c.shiftT = 0.08; c.shifts++; }
-    else if (c.gear > 1 && rpmOf(c.gear, v0) < RPM.down && rpmOf(c.gear - 1, v0) < RPM.up * 0.92) { c.gear--; c.shiftT = 0.05; c.shifts++; }
+  let rpmT;
+  if (GE) {
+    const rpmOf = (g, v) => Math.max(RP.idle, (v / GE[g - 1]) * RP.red);
+    if (v0 < 1.5) c.gear = 1;
+    else if (c.shiftT <= 0) {
+      if (c.gear < GE.length && rpmOf(c.gear, v0) > RP.up && throttle > 0.2) { c.gear++; c.shiftT = 0.08; c.shifts++; }
+      else if (c.gear > 1 && rpmOf(c.gear, v0) < RP.down && rpmOf(c.gear - 1, v0) < RP.up * 0.92) { c.gear--; c.shiftT = 0.05; c.shifts++; }
+    }
+    rpmT = rpmOf(c.gear, v0);
+    if (v0 < 4 && throttle > 0) rpmT = Math.max(rpmT, 2500 + throttle * (c.boost ? 7500 : 4200) * (1 - v0 / 6));   // the clutch slipping off the line
+    if (c.shiftT > 0 && throttle > 0) rpmT *= 0.9;
+  } else if (H.cvt) {
+    // the CVT: with the gas the revs jump to near peak power and hold there while the ratio changes (rising a little
+    // toward the top speed); off the gas they fall with the speed (the belt still turning the engine)
+    const C = H.cvt, f = Math.min(1, v0 / H.topSpeed);
+    c.gear = 0;
+    rpmT = throttle > 0 ? C.hold + (C.top - C.hold) * f * f : C.idle + (C.engage - C.idle) * Math.min(1, v0 / 8) + 1500 * f;
+  } else {
+    // the bicycle: three hub gears by speed, the cadence (rpm) from the wheel when pedalling
+    const Pd = H.pedal;
+    c.gear = v0 < Pd.shift[0] ? 1 : v0 < Pd.shift[1] ? 2 : 3;
+    rpmT = throttle > 0 && !c.pushing ? (v0 / Pd.wheelR) * Pd.ratios[c.gear - 1] * 60 / (2 * Math.PI) : 0;
   }
-  let rpmT = rpmOf(c.gear, v0);
-  if (v0 < 4 && throttle > 0) rpmT = Math.max(rpmT, 2500 + throttle * (c.boost ? 7500 : 4200) * (1 - v0 / 6));   // the clutch slipping off the line
-  if (c.shiftT > 0 && throttle > 0) rpmT *= 0.9;
-  if (c.crashed) rpmT = RPM.idle * 1.2;
-  c.rpm += (Math.min(RPM.red, rpmT) - c.rpm) * (1 - Math.exp(-dt * (rpmT > c.rpm ? 14 : 9)));
+  if (c.crashed) rpmT = RP.idle * 1.2;
+  c.rpm += (Math.min(RP.red, rpmT) - c.rpm) * (1 - Math.exp(-dt * (rpmT > c.rpm ? 14 : 9)));
   const drive = c.shiftT > 0 ? throttle * 0.15 : throttle;
+  // the bicycle on a steep climb: crawling while pedalling hard -> off the saddle, PUSHING it (walking pace)
+  const Pu = H.push;
+  let walking = false;
+  if (Pu) {
+    const up = grade * Math.sign(c.speed || 1);
+    c.grade = up;
+    if (!c.pushing && throttle > 0 && up > Pu.grade && v0 < Pu.speed && !c.crashed) { c.pushT += dt; if (c.pushT > 0.8) { c.pushing = 1; c.pushT = 0; } }
+    else if (!c.pushing) c.pushT = 0;
+    if (c.pushing && (up < Pu.off || c.crashed)) { c.pushT += dt; if (c.pushT > 0.6) { c.pushing = 0; c.pushT = 0; } }
+    else if (c.pushing) c.pushT = 0;
+    walking = c.pushing > 0;
+    // feet down when stopped (not pedalling for a moment)
+    c.stillT = v0 < 0.35 && !throttle ? c.stillT + dt : 0;
+    c.footDown += ((c.stillT > 0.25 && !walking ? 1 : 0) - c.footDown) * (1 - Math.exp(-dt * 6));
+    c.bell += dt;
+  }
 
   const steps = Math.max(1, Math.ceil(dt * 120)), step = dt / steps;
   const tireResponse = 1 - Math.exp(-6 * step);
@@ -129,11 +224,15 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     const rearOn = c.wheelie > -0.03 ? 1 : 0, frontOn = c.wheelie < 0.03 ? 1 : 0;
     const brake = front * H.brakeFront * frontOn + rear * H.brakeRear * rearOn + (c.crashed ? 6.5 : 0);
     let speed;
-    if (paddle) speed = Math.max(-H.reverseSpeed, forward - paddle * 2.5 * step);
+    if (walking) {
+      // pushing: the walker sets the pace (gravity is the walker's to carry); S stops, back = walking it backwards
+      const want = throttle ? Pu.walk * (grade > 0.14 ? 0.85 : 1) : paddle ? -H.reverseSpeed : 0;
+      speed = forward + Math.max(-2.5 * step, Math.min(2.5 * step, want - forward));
+    } else if (paddle) speed = Math.max(-H.reverseSpeed, forward - paddle * 2.5 * step);
     else if (forward < 0 && throttle) speed = forward + (H.power * drive + 2) * step;          // rolling back: the gas pulls forward
     else if (forward < 0) speed = Math.min(0, forward + (2 + brake) * step);
     else speed = driveSpeed(forward, drive * (c.crashed ? 0 : 1) * rearOn, brake, step, H, c.boost ? H.boost : 1);
-    if (Math.abs(speed) > 0.3 || throttle) speed += gAlong * step;
+    if (!walking && (Math.abs(speed) > 0.3 || throttle)) speed += gAlong * step;
     if (!throttle && !paddle && Math.abs(speed) < 0.3 && Math.abs(gAlong) < 1.5) speed *= Math.exp(-8 * step);   // feet down: held still
     const acceleration = (speed - forward) / step;
     accel = acceleration;
@@ -224,6 +323,14 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
   const TAU = Math.PI * 2;
   if (!(c.wheelie < -0.03 && c.speed > 0)) c.wheelSpin = (c.wheelSpin + (rear && !c.crashed ? fwd * 0.1 : fwd) / 0.32) % TAU;   // the rear locks under the rear brake
   c.frontSpin = (c.frontSpin + fwd / 0.30) % TAU;
+  if (H.pedal) {
+    // the cranks turn with the rear wheel through the hub gear while pedalling, freewheel otherwise; walking: the gait
+    const pedalling = throttle > 0 && !walking && !c.crashed;
+    c.pedal += ((pedalling && fwd > 0 ? 1 : 0) - c.pedal) * (1 - Math.exp(-dt * 8));
+    if (pedalling && fwd > 0) c.crank = (c.crank + fwd / H.pedal.wheelR * H.pedal.ratios[c.gear - 1]) % TAU;
+    else if (pedalling && v0 < 0.4) c.crank = (c.crank + dt * 3) % TAU;      // (pushing off from a stop)
+    if (walking) c.walk = (c.walk + Math.abs(fwd) / 0.75 * Math.PI) % TAU;
+  }
   // crash timer -> respawn; the last safe pose (upright, moving, nothing touching)
   if (c.crashed) {
     c.crashT += dt;
@@ -264,7 +371,7 @@ export function motoHit(c, nx, nz, kind, H = MOTO) {
     c.angularVel += side * 3.5;
   } else if (!HIT_OLD) {
     // collisions round 2 (?carhit=old = before): the car's collide-and-slide (viewer/drive/carPhysics.js hitSlide)
-    return hitSlide(c, nx, nz, kind, H, MOTO_BODY);
+    return hitSlide(c, nx, nz, kind, H, BODY_OF.get(H) || MOTO_BODY);
   } else if (headOn > 0.72) {
     c.speed = -c.speed * H.bounce; c.vx *= 0.5; c.vz *= 0.5;
   } else {
@@ -280,11 +387,9 @@ export function motoHit(c, nx, nz, kind, H = MOTO) {
 
 /** How far to lift the bike so nothing of it sinks into the ground at this lean (tyre crowns, then the bar ends,
  *  pegs, mirrors once it lies on its side). */
-export function leanLift(lean, crownR = 0.095) {
-  const a = Math.abs(lean), s = Math.sin(a), k = Math.cos(a);
+export function leanLift(lean, crownR = 0.095, kind = "moto") {
+  const a = Math.abs(lean), s = Math.sin(a), k = Math.cos(a), P = TWO_WHEELERS[kind]?.side ?? MOTO.side;
   let lift = crownR * (1 - k);
-  for (let i = 0; i < SIDE_PTS.length; i += 2) lift = Math.max(lift, SIDE_PTS[i] * s - SIDE_PTS[i + 1] * k);
+  for (let i = 0; i < P.length; i += 2) lift = Math.max(lift, P[i] * s - P[i + 1] * k);
   return lift;
 }
-// (|y|, z) of the parts that touch the ground first when it falls (moto.json frame)
-const SIDE_PTS = [0.40, 1.04, 0.42, 1.19, 0.27, 0.34, 0.24, 0.42, 0.2, 0.97];

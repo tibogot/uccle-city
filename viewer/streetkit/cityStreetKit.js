@@ -138,6 +138,7 @@ export const cityStreetKit = {
     const g = new THREE.Group(); g.name = `streetkit-${name}`;
     const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
     const counts = {};
+    let bikeRefs = null;
     for (const k of PIECES) {
       const a = inst[k]; counts[k] = a ? a.length / 8 : 0;
       const sg = this.kit.pieces[k].standin;
@@ -150,10 +151,13 @@ export const cityStreetKit = {
       m.visible = false;
       m.castShadow = m.receiveShadow = false;
       m.userData.collisionStandin = true;
+      // (motorbike round 2: each station bike's collider knows its ref: off once the player takes that bike,
+      // viewer/moto/villoDocks.js; driveMode.js featureColliders carries it)
+      if (k === "villo_bike") m.userData.refs = bikeRefs = Array.from({ length: a.length / 8 }, (_, i) => ({ hidden: false, villo: i }));
       g.add(m);
     }
     parent.add(g);
-    this.tiles.set(name, { name, inst, group: g, counts });
+    this.tiles.set(name, { name, inst, group: g, counts, bikeRefs });
     this.streamer.addTile(name, g, (slot) => Object.fromEntries(PIECES.filter((k) => inst[k]).map((k) => [k, streetKitSource(this.kit.pieces[k], inst[k], slot)])));
     return counts;
   },

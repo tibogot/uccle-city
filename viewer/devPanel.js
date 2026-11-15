@@ -59,13 +59,14 @@ const KEYS = [
   ["Orbit", [["drag · right-drag · wheel", "turn · pan · zoom"]]],
   ["Walk", [["W A S D / arrows", "move"], ["drag", "look"], ["Shift", "run"]]],
   ["Drive", [["W A S D / arrows", "throttle, brake, steer"], ["R", "reset the car"], ["C", "camera"], ["G", "the car colliders"]]],
+  ["Scooter / Villo", [["K", "ride the scooter (from any mode)"], ["V", "a Villo bike from the nearest station"], ["E", "on foot: take a docked Villo · riding: dock it at a free dock"], ["W / Shift + W", "pedal / stand on the pedals (Villo)"], ["Q", "the Villo's bell"]]],
   ["Motorbike", [["B", "ride the motorbike (from any mode)"], ["W / S", "gas / front brake (S stopped: paddle back)"], ["A / D", "lean (counter-steer feel)"], ["Shift + W", "full gas: wheelie"], ["Space", "rear brake: slide"], ["C", "camera (chase / far / helmet / orbit)"], ["R", "reset"], ["N", "sound on / off (off by default, ?motosound=1)"]]],
   ["Third person", [["W A S D", "move"], ["Shift", "run"], ["Space", "jump"], ["G", "the character colliders"]]],
   ["Falcon", [["W / S", "nose down / up"], ["A / D", "bank"], ["Space", "flap"], ["Shift", "tuck (stoop)"], ["C", "half fold (fast glide)"], ["Q", "brake"], ["F", "talons / strike"], ["E", "land"], ["V", "camera"], ["R", "reset"], ["G", "flight debug"]]],
 ];
 
 export function createDevPanel(ctx) {
-  const { renderer, scene, camera, controls, lighting, pipe, layers, contourOn, setView, walk, fly, drive, moto, thirdPerson, driver, getThird, getTram, tsel, dev, gpuStats, resetGpu, params, log,
+  const { renderer, scene, camera, controls, lighting, pipe, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird, getTram, tsel, dev, gpuStats, resetGpu, params, log,
     teleport, getPlayer, manifest, world, getLite, frames, gpuPasses } = ctx;
   const sky = lighting.sky, SP = sky?.params;
   document.body.classList.add("devpanel");
@@ -81,7 +82,7 @@ export function createDevPanel(ctx) {
     history.replaceState(null, "", `${location.pathname}?${q}`);
     renderChips();
   };
-  const mode = () => (getThird()?.on ? "third" : driver?.on ? (driver.vehicle === "moto" ? "moto" : "drive") : ctx.flyer?.on ? "fly" : ctx.walker?.on ? "walk" : "orbit");
+  const mode = () => (getThird()?.on ? "third" : driver?.on ? (driver.twoWheel ? driver.vehicle : "drive") : ctx.flyer?.on ? "fly" : ctx.walker?.on ? "walk" : "orbit");
   const tileAt = (x, z) => manifest?.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1])?.name ?? null;
 
   // ---------------------------------------------------------------- the URL switches (viewer/features.js)
@@ -249,18 +250,24 @@ export function createDevPanel(ctx) {
 
   // ---------------------------------------------------------------- Modes & camera
   const fC = section("modes", "Modes & camera");
-  const viewParam = { overview: null, stjob: "stjob", walk: "walk", fly: "fly", drive: "drive", moto: "moto", third: "third" };
+  const viewParam = { overview: null, stjob: "stjob", walk: "walk", fly: "fly", drive: "drive", moto: "moto", scooter: "scooter", villo: "villo", third: "third" };
   const go = (k, f) => () => { f(); setParam("view", viewParam[k]); };
   fC.buttons([
     ["Overview", go("overview", () => setView("overview")), "orbit, the start tile from above"], ["Close-up", go("stjob", () => setView("stjob")), "orbit, Saint-Job (or ?at / ?cam)"],
     ["Walk", go("walk", () => walk()), "first person: WASD, drag to look, Shift run"], ["Fly (falcon)", go("fly", () => fly()), "the falcon flight"],
     ["Drive", go("drive", () => drive()), "the car, on the nearest road"], ["Third person", go("third", () => thirdPerson()), "a character on foot"],
     ["Motorbike (B)", go("moto", () => moto?.()), "the motorbike, on the nearest road: W gas, S brake, Space rear brake, A / D lean, Shift full gas (wheelie), N mute"],
+    ["Scooter (K)", go("scooter", () => scooter?.()), "the scooter (CVT, ~90 km/h), on the nearest road: W gas, S brake, Space rear, A / D lean, N mute"],
+    ["Villo bike (V)", go("villo", () => villo?.()), "a Villo from the nearest station (else on the nearest road): W pedal, Shift stand on the pedals, S / Space brakes, Q bell; E docks it at a free dock. On foot: E near a docked bike takes it"],
   ], 3);
-  fC.add({ on: /[?&]motosound=1/.test(location.search) }, "on").name("motorbike sound").onChange((v) => { driver.audio?.setMuted(!v); setParam("motosound", v ? "1" : null); });
+  fC.add({ on: /[?&]motosound=1/.test(location.search) }, "on").name("two-wheeler sound").onChange((v) => { if (driver.setSound) driver.setSound(v); else driver.audio?.setMuted(!v); setParam("motosound", v ? "1" : null); });
   fC.add({ paint: "racing red" }, "paint", ["racing red", "acid green", "pearl white", "matte black", "cobalt blue", "orange"]).name("bike paint").onChange(async (v) => {
     const { loadMotoModel, MOTO_PAINTS } = await import("./moto/motoModel.js");
     (await loadMotoModel()).setPaint(MOTO_PAINTS[v]);
+  });
+  fC.add({ paint: "mint" }, "paint", ["mint", "cream", "sky", "burgundy", "black", "sage"]).name("scooter paint").onChange(async (v) => {
+    const { loadMotoModel, SCOOTER_PAINTS } = await import("./moto/motoModel.js");
+    (await loadMotoModel("scooter")).setPaint(SCOOTER_PAINTS[v]);
   });
   const cars = ["scripted", ...FACETED.map((id) => `faceted:${id}`)];
   if (!cars.includes(S.car)) cars.push(S.car);
@@ -591,7 +598,7 @@ export function createDevPanel(ctx) {
       if (st.hour != null) { lighting.hourOverride = st.hour; S.hour = st.hour; }
       if (SM && st.smooth) for (const c of gui.controllersRecursive()) if (c.object === SM && c.property in st.smooth) c.setValue(st.smooth[c.property]);
       if (st.cam && st.tgt && (!st.mode || st.mode === "orbit")) { setView("stjob"); camera.position.fromArray(st.cam); controls.target.fromArray(st.tgt); controls.update(); }
-      else if (st.mode === "drive") drive(); else if (st.mode === "moto") moto?.(); else if (st.mode === "third") thirdPerson(); else if (st.mode === "fly") fly(); else if (st.mode === "walk") walk();
+      else if (st.mode === "drive") drive(); else if (st.mode === "moto") moto?.(); else if (st.mode === "scooter") scooter?.(); else if (st.mode === "villo") villo?.(); else if (st.mode === "third") thirdPerson(); else if (st.mode === "fly") fly(); else if (st.mode === "walk") walk();
       refresh();
       // the link has done its job: drop it from the address bar, or a reload would put the shared state back over
       // everything changed since (the live settings are mirrored into their own parameters)

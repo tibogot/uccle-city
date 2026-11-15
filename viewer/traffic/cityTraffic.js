@@ -10,6 +10,7 @@
 //   parking    the parked fleet's cars (viewer/carFleet.js) can pull out / be parked into
 import { createTraffic } from "./traffic.js";
 import { carFleet } from "../carFleet.js";
+import { cityTwoWheelers } from "../moto/cityTwoWheelers.js";
 
 const CAR_KIND = 6;
 /** ?bikeroom=old: the motorbike seen by the traffic as two 0.55 m circles, no room made (before collisions round 2) */
@@ -17,7 +18,8 @@ const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
 const BIKE_OLD = /[?&]bikeroom=old(&|$)/.test(location.search);   // drive colliders: a car (hit() treats any kind the same)
 
 export function createCityTraffic({ scene, renderer, camera, ground, night, focus, driver, getThird, getTram, log = console.log }) {
-  const T = createTraffic({ scene, renderer, camera, ground, night });
+  const T = createTraffic({ scene, renderer, camera, ground, night, twoWheelers: cityTwoWheelers.on });
+  T.onDraw = (sim, types, alpha, cam) => cityTwoWheelers.traffic?.update(sim, types, alpha, cam);   // (motorbikes / scooters, docs/MOTO.md)
   const sim = T.sim;
   sim.setParking(function* () { for (const r of carFleet.regs) if (r.live) yield* r.cars; }, (name) => T.types.findIndex((t) => t.name === name));
   sim.onPark = (c) => carFleet.touch(c);     // (the slot's colliders follow: off while the car drives, its new type's size when one parks in)
@@ -54,11 +56,12 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
   T.setObstacleSource((s) => {
     if (driver?.on && driver.state) {
       const c = driver.state, fx = Math.sin(c.heading), fz = Math.cos(c.heading), vx = fx * c.speed + (c.vx || 0), vz = fz * c.speed + (c.vz || 0);
-      const bike = driver.vehicle === "moto";
+      const bike = !!driver.twoWheel;
       if (bike && !BIKE_OLD) {
         // collisions round 2: the bike as its own narrow oriented box (viewer/moto/motoPhysics.js MOTO_BODY 0.8 x 2.1 m)
         // + the filtering hook (trafficSim.js makeRoom: queued cars beside it ease aside)
-        s.addBoxObstacle(c.x, c.z, c.heading, 0.42, 1.08, vx, vz);
+        const B0 = driver.body;                                   // (round 2: the scooter's / Villo's own box)
+        s.addBoxObstacle(c.x, c.z, c.heading, (B0?.hx ?? 0.4) + 0.02, (B0?.hz ?? 1.06) + 0.02, vx, vz);
         const B = s.bike; B.on = !c.crashed; B.x = c.x; B.z = c.z; B.h = c.heading; B.v = Math.hypot(vx, vz);
       } else {
         const r = bike ? 0.55 : 1.15, o = bike ? 0.55 : 1.2;   // (the motorbike before round 2: two 0.55 m circles)

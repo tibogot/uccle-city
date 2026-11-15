@@ -4,7 +4,7 @@
  "wheels": {
   "F": {
    "pos": [
-    0.0,
+    0,
     0.3,
     0.725
    ],
@@ -13,7 +13,7 @@
   },
   "R": {
    "pos": [
-    0.0,
+    0,
     0.32,
     -0.725
    ],
@@ -23,12 +23,12 @@
  },
  "steer": {
   "pivot": [
-   0.0,
+   0,
    0.93697,
    0.398
   ],
   "axis": [
-   0.0,
+   0,
    0.90996,
    -0.41469
   ],
@@ -37,7 +37,7 @@
  },
  "rider": {
   "hip": [
-   0.0,
+   0,
    0.925,
    -0.27
   ],
@@ -71,12 +71,12 @@
  },
  "lamps": {
   "head": [
-   0.0,
+   0,
    0.862,
    0.645
   ],
   "tail": [
-   0.0,
+   0,
    0.88,
    -0.875
   ]
@@ -86,17 +86,133 @@
   1.24,
   2.12
  ],
+ "slots": [
+  "Anodized",
+  "Boot",
+  "Chrome",
+  "Disc",
+  "Engine",
+  "Frame",
+  "Glass",
+  "Glove",
+  "HeadLight",
+  "Helmet",
+  "Jacket",
+  "Metal",
+  "Paint",
+  "Plastic",
+  "Plate",
+  "Rim",
+  "Rubber",
+  "Seat",
+  "TailLight",
+  "Trousers",
+  "Visor"
+ ],
  "tris": {
   "Body": 30504,
   "Steer": 8160,
   "Wheel_F": 8280,
   "Wheel_R": 7044,
-  "RiderLegs": 4124,
-  "RiderTorso": 3784,
+  "RiderLegs": 6436,
+  "RiderTorso": 6720,
   "ArmU_L": 396,
   "ArmU_R": 396,
-  "ArmF_L": 440,
-  "ArmF_R": 440
+  "ArmF_L": 1468,
+  "ArmF_R": 1468,
+  "Wheel_F_far": 320,
+  "Wheel_R_far": 320
  },
- "ao": "vertex (COLOR_0.r)"
+ "ao": "vertex (COLOR_0.r)",
+ "pack": {
+  "file": "moto.glb",
+  "bytes": 1280148,
+  "city": "moto_city.glb",
+  "cityBytes": 728452,
+  "rigLodErrors": [
+   0,
+   0.0025,
+   0.011
+  ],
+  "cityLodErrors": [
+   0.004,
+   0.012,
+   0.035
+  ],
+  "wheelLod1": 0.0015,
+  "tris": {
+   "Body": [
+    30504,
+    8054,
+    1596
+   ],
+   "Steer": [
+    8160,
+    1874,
+    438
+   ],
+   "Wheel_F": [
+    8280,
+    3438,
+    320
+   ],
+   "Wheel_R": [
+    7044,
+    3546,
+    320
+   ],
+   "RiderLegs": [
+    6436,
+    2226,
+    482
+   ],
+   "RiderTorso": [
+    6720,
+    3298,
+    634
+   ],
+   "ArmU_L": [
+    396,
+    314,
+    64
+   ],
+   "ArmU_R": [
+    396,
+    314,
+    64
+   ],
+   "ArmF_L": [
+    1468,
+    826,
+    128
+   ],
+   "ArmF_R": [
+    1468,
+    824,
+    130
+   ],
+   "parked": [
+    8806,
+    2462,
+    934
+   ],
+   "ridden": [
+    13732,
+    3798,
+    1250
+   ]
+  },
+  "note": "tools/moto/pack.mjs: <Node>_lod0..2 (rig), parked_lod1..3 / ridden_lod1..3 (city); attribute _SLOT = slot index + 0.01 + 0.97 AO (viewer/moto/twoWheelSlots.js)",
+  "audit": {
+   "rig_lod0": 0,
+   "rig_lod1": 16,
+   "rig_lod2": 41,
+   "parked_lod1": 25,
+   "ridden_lod1": 38,
+   "parked_lod2": 17,
+   "ridden_lod2": 42,
+   "parked_lod3": 0,
+   "ridden_lod3": 3
+  }
+ }
 }

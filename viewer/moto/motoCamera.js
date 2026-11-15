@@ -6,6 +6,12 @@ import { ChaseCamera } from "../drive/chaseCamera.js";
 
 export const MOTO_CAMERA = { mode: "chase", distance: 4.3, height: 1.45, lookHeight: 1.05, fov: 62, stiffness: 9, lookAhead: 0.3,
   baseFov: 62, fovKick: 16, tilt: 0.28, helmetTilt: 0.7 };
+/** round 2: the numbers per two-wheeler (the scooter sits higher and slower; the Villo: close, little kick, little roll) */
+export const MOTO_CAMERAS = {
+  moto: MOTO_CAMERA,
+  scooter: { ...MOTO_CAMERA, distance: 4.0, height: 1.55, lookHeight: 1.15, fovKick: 8, tilt: 0.24, helmetTilt: 0.6 },
+  villo: { ...MOTO_CAMERA, distance: 3.6, height: 1.65, lookHeight: 1.2, fov: 60, baseFov: 60, fovKick: 5, tilt: 0.18, helmetTilt: 0.5, stiffness: 8 },
+};
 
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
@@ -15,6 +21,8 @@ export class MotoCamera extends ChaseCamera {
     this.roll = 0; this.kick = 0;
   }
   reset() { super.reset(); this.roll = 0; }
+  /** switch to another two-wheeler's numbers (the view mode is kept) */
+  setKind(kind) { const c = MOTO_CAMERAS[kind] || MOTO_CAMERA; if (c === this.cfg) return; c.mode = this.cfg.mode; this.cfg = c; this.first = true; }
   /** c: motoPhysics state; head: optional () => [x, y, z] of the rider's eyes (helmet view) */
   update(c, dt, ground, insideWall = null, head = null) {
     const cfg = this.cfg, cam = this.camera;

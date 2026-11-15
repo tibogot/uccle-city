@@ -176,3 +176,135 @@ positions from moto.json), so the head lamp throws its pool on the road (docs/mo
 - **Sound**: designed, not tuned by ear (the owner asked for silence while working): needs a listening pass; no Doppler /
   occlusion (the city's audio bus, when there is one, should own it).
 - **Not done this round**: a screencast (stills only), GPU A/B on GREEN, the scooter and the bicycle (TODO).
+
+---
+
+# Round 2 (2026-11-15, branch claude/moto2): scooter, Villo bike, two-wheelers in the city
+
+## Start / controls
+
+| | |
+|---|---|
+| **K** / dev panel *Scooter (K)* / `?view=scooter` | the scooter on the nearest road (W gas, S front brake, Space rear, A / D lean, C camera, N sound) |
+| **V** / *Villo bike (V)* / `?view=villo` | a Villo taken from the nearest station's dock within 250 m (else a bike on the nearest road) |
+| **E** on foot (walk / third person) | near a docked Villo ("E: take a Villo bike"): take it; it rolls out of its dock turned toward the road |
+| **E** riding a Villo, slow, at a free dock | "E: dock the bike": it stays in the dock, riderless; you are on foot behind it (the on-foot mode you came from) |
+| Villo keys | W pedal, Shift stand on the pedals, S front / Space rear roller brake, Q bell, C camera |
+| `?at=x,z` | now honoured for every vehicle (round 1 searched the BOOT tile only and spawned at Saint-Job): the ?at tile streams in first |
+
+Go to and the share link keep the mode (`view=scooter` / `view=villo`). Sound: OFF by default for all three (`?motosound=1`,
+the dev panel's "two-wheeler sound", N).
+
+## Files (round 2)
+
+| file | what |
+|---|---|
+| `tools/blender/scooter.py`, `villo_ride.py`, `twowheel_kit.py`, `rider_kit.py` | the scooter, the rideable Villo (the street kit's bike split into rig nodes + a cyclist), shared helpers / rider parts; vertex AO on the GPU (OptiX, 32 samples, cached per piece) |
+| `tools/moto/pack.mjs` | raw GLB -> `models/<kind>/<kind>.glb` (the rig, every LOD baked in, one primitive per node, slots merged into `_SLOT`) + `<kind>_city.glb` (parked / ridden for the city); meshopt-compressed, no UVs; `--audit` |
+| `tools/moto/physicsTest2.mjs`, `audit2.mjs` | headless numbers of the three; mesh audit of any raw GLB |
+| `viewer/moto/twoWheelSlots.js`, `twoWheelMats.js` | one slot table for the three kinds; one material per kind (player) / per LOD (city) |
+| `viewer/moto/motoModel.js` | loader (packed GLB), `createMoto` (motorbike / scooter), `createVillo` (cranks, level pedals, leg IK, pushing, feet), ragdoll-ish crash blend, `loadCityTwoWheeler` |
+| `viewer/moto/villoDocks.js`, `cityRide.js` | the stations as a vehicle source (take / dock / prompts / K / V / E), kept out of main.js |
+| `viewer/moto/cityTwoWheelers.js` | parked pools + the traffic's two-wheelers |
+
+Shared code touched (small): `main.js` (one delimited block: drive(), the ?at fix, hookRides; the city two-wheelers'
+tile hooks), `drive/driveMode.js` (vehicle kinds, envs per kind, dockVillo, the station bikes' collider refs),
+`drive/input.js` (E, Q), `devPanel.js`, `features.js` (`twowheelers`, view options, sound label), `cars.js`
+(`buildCars twoWheel` option), `streetkit/cityStreetKit.js` (refs on the station bikes' colliders),
+`traffic/traffic.js` / `trafficSim.js` / `trafficFleet.js` / `cityTraffic.js` (two-wheeler types, draw hook, each
+two-wheeler's own box), `grass/cityGrass.js`, `weather/snowMovers.js`, `character/cityHook.js`,
+`tools/mesh_audit/glb.mjs` (COLOR_0 AO + node translation).
+
+## The models
+
+| | LOD0 | LOD1 | LOD2 | GLB |
+|---|---|---|---|---|
+| motorbike (rig, rider round 2) | 70,872 | 24,714 | 4,176 | 1.22 MB (round 1: 4.9 MB raw) + city 0.69 MB |
+| scooter | 52,016 | 17,160 | 3,014 | 0.88 MB + city 0.48 MB |
+| Villo (the bike 9.2k = the street kit's) | 21,720 | 9,854 | 2,144 | 0.52 MB |
+| city parked moto / scooter | 8,806 / 5,778 (< 25 m) | 2,462 / 1,666 (< 80 m) | 934 / 882 (< 220 m) | |
+| city ridden moto / scooter (+ rider) | 13,732 / 9,692 | 3,798 / 2,722 | 1,250 / 1,164 | |
+
+- **Scooter**: an invented classic step-through (no brand): pressed-steel body with bulging rear cowls (engine right),
+  apron + leg shield, floorboard with rubber strips, fork-mounted front mudguard, handlebar casing with the round
+  headlight and speedo, round mirrors, two-up seat, rear rack, 12" split rims, single-sided front link and engine-arm
+  rear, front disc, rear drum; wheelbase 1.37 m, seat 0.79 m. Rider: upright commuter, jet helmet with a peak, jacket,
+  jeans, gloves round the grips, short boots. Previews `docs/moto2/scooter_*.jpg`.
+- **Villo**: the street kit's station bike, the same geometry, split into Body / Steer / wheels / Cranks / two pedals;
+  the cyclist (bicycle helmet, jacket, jeans, sneakers) with thighs and shins as IK segments.
+- **Motorbike rider**: full-face helmet (0.30 x 0.24 x 0.27 m, chin bar, visor pivots, vents, spoiler), jacket + riding
+  trousers over the armour, gauntlet gloves with finger rolls, boots with sole / heel / toe box / shin plate.
+- **Round-1 leftovers fixed**: LODs made at pack time; the wheels' LOD2 is a solid-disc stand-in (`Wheel_*_far`): rig
+  LOD2 blocking 83 -> 41; **meshes per bike 41 -> 10** (one per rig node, slots merged in one material); UVs dropped,
+  meshopt-compressed (1.22 MB); load ~0.5 s -> ~35 ms (the lab); `?view=moto&at=` spawns at `at`.
+
+Mesh audit (`node tools/moto/pack.mjs <kind> --audit`, blocking per drawn group): rig LOD0 **0** for all three; rig
+LOD1 / LOD2: moto 16 / 41, scooter 19 / 10, Villo 0 / 1; city parked LOD1-3: moto 25 / 17 / 0, scooter 3 / 8 / 1;
+ridden: moto 38 / 42 / 3, scooter 16 / 15 / 3 (shallow crossings of simplified parts, fists round the grips; 25 m+ away).
+
+## Physics (`node tools/moto/physicsTest2.mjs`)
+
+One core (`stepMoto` with a handling set per kind: MOTO, SCOOTER, VILLO; gears / CVT / pedals by the set).
+
+| | scooter | Villo |
+|---|---|---|
+| drive | CVT: the revs jump to ~6,600 rpm and hold, rising to 8,400 at the top; no gears, no wheelie | ~125 W (~250 W with Shift), 3 hub gears for the cadence, freewheel |
+| 0-30 / 0-50 km/h | 2.6 / 5.6 s | 21 km/h top on the flat |
+| top | 90 km/h | 9 m/s pedalling; 40 km/h coasting down 8 % |
+| brakes | 50-0 in 10.5 m (front 8, rear 4.6 m/s2) | 25-0 in 6 m (roller brakes 3.8 / 2.4 m/s2) |
+| lean | max 39 deg (lean rate 6.5/s: lighter); 30 km/h full lean = 8.3 m radius | max 31 deg; 22 km/h = 9.3 m radius |
+| climbs (25 s, full gas) | 5 / 8 / 12 %: 77 / 67 / 56 km/h | 8 / 5.4 / 4.3 km/h; on 12 % it crawls, the rider gets off and PUSHES (4.3 km/h), back on where the grade drops under 5 % |
+| stopped | | a foot down |
+
+Boxes: scooter 0.74 x 1.96 m, Villo 0.64 x 1.8 m (the traffic sees them, collisions use them).
+
+## Rider / crash
+
+Arms: two-bone IK kept (all three). Villo: the legs by two-bone IK from the hips to the pedals (the feet follow the
+cranks, the pedals stay level), a slight hip rock with the strokes, the pushing pose (standing left of the bike, left hand
+on the grip, right on the saddle, a walking gait). Crash (all): the rider tumbles off as in round 1, now blending
+(0.33 s) into a limp / bracing pose (the torso folding back at the hip, the hands out): ragdoll-ish, no physics.
+
+## Two-wheelers in the city (`?twowheelers=0` off)
+
+- **Parked**: about 1 parking-lane slot in 6 within 30 m of a shop / cafe / restaurant (data/streetlife pois), 1 in 40
+  elsewhere, becomes 2-3 motorbikes / scooters across the slot (rear or front to the kerb, small yaw jitter; the
+  motorbike on its side stand: 7.5 deg lean, bar turned; scooters on the centre stand), pitched to their two tyre
+  contacts, lowest tyre point 8 mm in. Around Avenue Kamerdelle: 101 bikes in 41 slots over 7 tiles. Drawn like the
+  street kit: one stream pool per kind and LOD, multi-draw merged per LOD -> **3 render objects** (+ shadows of LOD0-1),
+  dithered LOD bands 25 / 80 / 220 m, the tile fade. Colliders: invisible boxes (`furniture-twowheel`), posts on foot.
+- **Traffic**: motorbikes (weight 0.03) and scooters (0.035) as sim types after the cars (~6 % of the traffic): quicker
+  off the line (x1.9 / x1.4), never parking into car slots; drawn from the interpolated poses, leaning into bends
+  (atan(v * yaw rate / g)), wheels rolled in the vertex shader; one instanced mesh per kind and LOD (capacity 1100), at
+  most 6 render objects; draw update **~0.005-0.01 ms**.
+- Loading: the city GLBs (0.69 + 0.48 MB) load 6 s after the boot (not on the startup path).
+
+## Costs (RED: another agent on the machine; indicative)
+
+- CPU per frame riding (physics + rig + camera; sound off): Villo **0.12 ms**, scooter **0.14**, motorbike **0.15**.
+- Player meshes: motorbike / scooter 10, Villo 16 (round 1: 41).
+- City parked: stream gathers time-sliced (0.7 ms max slice); traffic two-wheelers ~0.01 ms.
+- GPU ms: not measured on GREEN.
+
+## Images (docs/moto2/)
+
+- Blender: `scooter_34front.jpg`, `scooter_side.jpg`, `scooter_34rear.jpg`, `scooter_rider_detail.jpg`,
+  `villo_ride_34front.jpg`, `villo_ride_side.jpg`, `moto_rider2_34front.jpg`, `moto_rider2_detail.jpg`
+- City: `city_villo_side_stjob.jpg` (just taken from the Saint-Job station), `city_villo_docked_stjob.jpg` (docked back,
+  the prompt), `city_villo_pushing_benaets.jpg` (pushing up a 12.5 % climb, Rue Jean Benaets; taken BEFORE the fix of
+  the pushing torso: it leaned back, now 9 deg forward), `city_parked_kamerdelle.jpg` (parked groups beside the
+  motorbike), `city_traffic_scooter_kamerdelle.jpg` (a traffic scooter far down the street)
+
+## Leftovers / weak spots (round 2)
+
+- Riders still mannequins (volumes, featureless faces); the Villo shoe is fixed to the shin (flat only at the rest pose);
+  the scooter apron has a slight "chin", the cowl louvres read scribbly side-on.
+- The pushing pose re-checked in code only after the lean fix; no mount / dismount animation (0.2 s blend); taking a bike
+  turns it 180 deg in its dock footprint at once.
+- A docked player bike is the rideable rig left in the dock; the street kit instance it replaced stays hidden for the
+  session (taken bikes do not return to the pool).
+- Traffic two-wheelers ride the lane centre (no filtering), use the car paint palette and the car fallback lamp
+  positions at night; only a far-away traffic screenshot.
+- City LOD / ridden audit items (crossings of simplified parts, 25 m+).
+- Scooter / bicycle / bell sounds designed, not tuned by ear (off by default).
+- GPU A/B on GREEN and the perf preflight not run (shared machine).

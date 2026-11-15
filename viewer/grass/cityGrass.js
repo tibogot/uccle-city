@@ -60,8 +60,9 @@ export const cityGrass = {
     if (c) {
       const s = Math.sin(c.heading), co = Math.cos(c.heading);       // forward (sin h, cos h), right (cos h, -sin h)
       let i = 0;
-      const bike = P.driver.vehicle === "moto";            // (the motorbike: two wheels on the centre line)
-      for (const f of bike ? [0.725, -0.725] : [1.3, -1.25]) for (const r of bike ? [0] : [0.78, -0.78]) {
+      const bike = !!P.driver.twoWheel;                     // (a two-wheeler: two wheels on the centre line)
+      const hw = bike ? (P.driver.motoModel?.info?.wheelbase ?? 1.45) / 2 : 0;
+      for (const f of bike ? [hw, -hw] : [1.3, -1.25]) for (const r of bike ? [0] : [0.78, -0.78]) {
         const x = c.x + s * f + co * r, z = c.z + co * f - s * r, gy = ground(x, z);
         g.push.set(i++, { x, y: gy, z, radius: bike ? 0.25 : 0.4, strength: 1, vx: c.vx, vz: c.vz, ground: gy });
       }

@@ -35,6 +35,8 @@ from mathutils import Vector, Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kitlib as K
+import twowheel_kit as TW      # (round 2: the far wheels, the UV-free export)
+import rider_kit as RK         # (round 2: the rider's helmet, jacket, gloves, boots)
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = os.path.abspath(ARGS[0] if ARGS and not ARGS[0].startswith("--") else "models/moto")
@@ -79,6 +81,10 @@ HEAD = mat("HeadLight", (0.85, 0.88, 0.92), 0.1, 0.5)
 TAIL = mat("TailLight", (0.45, 0.02, 0.02), 0.15)
 PLATE = mat("Plate", (0.9, 0.9, 0.9), 0.4)
 SUIT = mat("Suit", (0.04, 0.04, 0.05), 0.6)
+JACKET = mat("Jacket", (0.06, 0.06, 0.07), 0.55)       # (round 2: a leather jacket ...
+TROUSERS = mat("Trousers", (0.05, 0.055, 0.07), 0.7)   #  ... over riding trousers,
+GLOVE = mat("Glove", (0.03, 0.03, 0.032), 0.5)          #  gauntlet gloves,
+BOOT = mat("Boot", (0.025, 0.025, 0.028), 0.45)         #  sport boots)
 HELMET = mat("Helmet", (0.85, 0.85, 0.86), 0.2, 0.1)
 VISOR = mat("Visor", (0.02, 0.02, 0.025), 0.05)
 
@@ -659,74 +665,49 @@ def build_legs():
         x = HIP.x - 0.11 + 0.22 * t
         k = math.sin(math.pi * (0.08 + 0.84 * t)) ** 0.5
         secs.append(((x, 0, HIP.z - 0.005), (0, 0.175 * k, 0), (0, 0, 0.09 * k), (0, 0, 0.09 * k), 2.6))
-    P.add_bm(loft(secs, n=32), SUIT)
+    P.add_bm(loft(secs, n=32), TROUSERS)
     for s in (1, -1):
         hipj = HIP + Vector((0.0, s * 0.098, -0.01))
         knee = Vector((0.045, s * 0.238, 0.785))
         ankle = Vector((-0.20, s * 0.245, 0.43))
-        P.add_bm(tube(smooth_path([hipj, (hipj + knee) / 2 + Vector((0, 0, 0.012)), knee], 4), [0.088, 0.083, 0.078, 0.072, 0.066, 0.06, 0.056, 0.054, 0.052], segs=16), SUIT)
-        P.add_bm(ellipsoid(knee, (0.07, 0.068, 0.07), 18, 10), SUIT)
+        P.add_bm(tube(smooth_path([hipj, (hipj + knee) / 2 + Vector((0, 0, 0.012)), knee], 4), [0.088, 0.083, 0.078, 0.072, 0.066, 0.06, 0.056, 0.054, 0.052], segs=16), TROUSERS)
+        P.add_bm(ellipsoid(knee, (0.07, 0.068, 0.07), 18, 10), TROUSERS)
         P.add_bm(ellipsoid(knee + Vector((0.05, 0.03 * s, 0.0)), (0.032, 0.038, 0.042), 14, 8), PLASTIC)        # knee slider
-        P.add_bm(tube([knee, (knee + ankle) / 2 + Vector((0.01, 0, 0)), ankle], [0.052, 0.049, 0.045], segs=16), SUIT)
-        # boot: on the peg, toe forward
-        boot = []
-        for i in range(10):
-            t = i / 9
-            x = -0.275 + 0.235 * t
-            hw = 0.042 + 0.006 * math.sin(math.pi * t)
-            zt = 0.40 + 0.08 * (1 - t) ** 2 + 0.01
-            zb = 0.338
-            boot.append((x, hw, zt, zb))
-        bm = loft_x(boot, stations=14, n=20, p_top=2.4, p_bot=5.0, y0=s * 0.238)
-        P.add_bm(bm, RUBBER)
+        P.add_bm(tube([knee, (knee + ankle) / 2 + Vector((0.01, 0, 0)), ankle], [0.052, 0.049, 0.045], segs=16), TROUSERS)
+        # the boot on the peg, toe forward: upper + sole + heel (rider_kit.shoe), the shaft along the shin, its shin plate
+        RK.shoe(P, Vector((-0.282, s * 0.244, 0.346)), 0.252, s, BOOT, RUBBER, hw=0.046, high=0.105)
         dsh = (knee - ankle).normalized()
-        P.add_bm(cyl_between(ankle - dsh * 0.05, ankle + dsh * 0.12, 0.057, segs=24, bevel=0.01), RUBBER)  # boot shaft
+        P.add_bm(cyl_between(ankle - dsh * 0.045, ankle + dsh * 0.13, 0.056, segs=24, bevel=0.01, r2=0.060), BOOT)  # shaft
+        fw = Vector((1, 0, 0)) - dsh * dsh.x; fw.normalize()
+        P.add_bm(ellipsoid(ankle + dsh * 0.055 + fw * 0.050, (0.016, 0.040, 0.075), 14, 8, rot=Vector((0, 0, 1)).rotation_difference(dsh).to_matrix()), PLASTIC)   # shin plate
+        P.add_bm(cyl_between(ankle + dsh * 0.122, ankle + dsh * 0.142, 0.064, segs=24, bevel=0.004), RUBBER)    # the shaft's top band
     return P.to_object(smooth_angle=50)
 
 def build_torso():
     P = K.Part("RiderTorso")
     keys = [(0.02, 0.150, 0.102), (0.16, 0.148, 0.098), (0.30, 0.185, 0.118), (0.44, 0.205, 0.108), (0.52, 0.17, 0.085), (0.56, 0.09, 0.06)]
-    secs = []
-    for i in range(17):
-        s_ = keys[0][0] + (keys[-1][0] - keys[0][0]) * i / 16
-        hw, hd = sample(keys, s_)
-        c = spine(s_) + FWD_T * (0.012 * math.sin(math.pi * i / 16))
-        secs.append((c, (0, hw, 0), FWD_T * hd, FWD_T * hd, 2.5))
-    P.add_bm(loft(secs, n=28), SUIT)
+    RK.torso(P, HIP, SPINE, FWD_T, keys, JACKET, zip_mat=PLASTIC)          # jacket: chest / back, hem band, zip, collar
     # hump (aero back protector) + shoulders
-    P.add_bm(ellipsoid(spine(0.36) - FWD_T * 0.07, (0.07, 0.13, 0.17), 18, 10, rot=Matrix.Rotation(math.radians(27), 3, "Y")), SUIT)
+    P.add_bm(ellipsoid(spine(0.36) - FWD_T * 0.07, (0.07, 0.13, 0.17), 18, 10, rot=Matrix.Rotation(math.radians(27), 3, "Y")), JACKET)
     for s in (1, -1):
-        P.add_bm(ellipsoid(SHOULDER[s], (0.062, 0.062, 0.062), 16, 8), SUIT)
+        P.add_bm(ellipsoid(SHOULDER[s], (0.062, 0.062, 0.062), 16, 8), JACKET)
         P.add_bm(ellipsoid(SHOULDER[s] + Vector((0.0, s * 0.02, 0.04)), (0.05, 0.05, 0.04), 14, 8), PLASTIC)   # shoulder armour
-    # neck + helmet
+    # neck (the jacket's collar / a neck tube) + the full-face helmet (rider_kit: shell, chin bar, visor, pivot plates, vents, spoiler)
     hc = spine(0.70) + FWD_T * 0.035
-    P.add_bm(cyl_between(spine(0.52), hc - SPINE * 0.06, 0.055, segs=16, bevel=0.0), SUIT)
+    P.add_bm(cyl_between(spine(0.52), hc - SPINE * 0.06, 0.055, segs=16, bevel=0.0), JACKET)
     hr = Matrix.Rotation(math.radians(18), 3, "Y")
-    P.add_bm(ellipsoid(hc, (0.158, 0.132, 0.142), 28, 16, rot=hr), HELMET)
-    P.add_bm(ellipsoid(hc + hr @ Vector((0.085, 0, -0.07)), (0.085, 0.105, 0.075), 20, 10, rot=hr), HELMET)    # chin bar
-    # visor: the helmet's front window, 4 mm proud
-    bm = ellipsoid(Vector((0, 0, 0)), (0.162, 0.136, 0.146), 32, 18)
-    kill = [f for f in bm.faces if not (f.calc_center_median().x > 0.085 and -0.035 < f.calc_center_median().z < 0.065)]
-    bmesh.ops.delete(bm, geom=kill, context="FACES")
-    # thicken the visor shell (closed: no open edge to see through)
-    r = bmesh.ops.solidify(bm, geom=list(bm.faces), thickness=0.003)
-    bm.transform(Matrix.Translation(hc) @ hr.to_4x4())
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    P.add_bm(bm, VISOR)
-    P.add_bm(ellipsoid(hc + hr @ Vector((-0.13, 0, 0.06)), (0.05, 0.07, 0.022), 14, 8, rot=hr @ Matrix.Rotation(math.radians(-15), 3, "Y")), HELMET)   # spoiler
+    RK.full_helmet(P, hc, hr, HELMET, VISOR, PLASTIC)
     return P.to_object(smooth_angle=50)
 
-def build_arm(name, upper):
+def build_arm(name, upper, side=1):
     """an arm segment along +X from its joint (turned to glTF +Z on export): upper arm (with elbow) or forearm (+ glove)"""
     P = K.Part(name)
     if upper:
-        P.add_bm(tube([(0, 0, 0), (ARM_U * 0.5, 0, 0), (ARM_U, 0, 0)], [0.052, 0.047, 0.043], segs=14), SUIT)
-        P.add_bm(ellipsoid((ARM_U, 0, 0), (0.046, 0.046, 0.046), 14, 8), SUIT)
+        RK.sleeve_upper(P, ARM_U, JACKET, r0=0.052, r1=0.043)
         P.add_bm(ellipsoid((ARM_U + 0.012, 0, 0.012), (0.035, 0.04, 0.03), 12, 6), PLASTIC)      # elbow armour
     else:
-        P.add_bm(tube([(0, 0, 0), (0.15, 0, 0), (0.27, 0, 0)], [0.042, 0.04, 0.034], segs=14), SUIT)
-        P.add_bm(cyl_between((0.25, 0, 0), (0.29, 0, 0), 0.04, segs=14, bevel=0.006), RUBBER)    # gauntlet cuff
-        P.add_bm(ellipsoid((ARM_F - 0.012, 0, 0.0), (0.052, 0.036, 0.042), 14, 8), RUBBER)        # fist round the grip
+        RK.sleeve_fore(P, ARM_F, JACKET, GLOVE, cuff=False, gauntlet=True)                       # sleeve into the gauntlet
+        RK.fist(P, (ARM_F, 0, 0), side, GLOVE, grip_r=0.0175)                                     # fingers round the grip
     return P.to_object(smooth_angle=50)
 
 # ------------------------------------------------------------------------------------------------ build all
@@ -737,7 +718,10 @@ steer = build_steer()
 body = build_body()
 legs = build_legs()
 torso = build_torso()
-arms = [build_arm("ArmU_L", True), build_arm("ArmU_R", True), build_arm("ArmF_L", False), build_arm("ArmF_R", False)]
+arms = [build_arm("ArmU_L", True, 1), build_arm("ArmU_R", True, -1), build_arm("ArmF_L", False, 1), build_arm("ArmF_R", False, -1)]
+# (round 2) the far-LOD stand-ins of the wheels: a closed dished rim disc + a coarse tyre
+wff = TW.far_wheel("Wheel_F_far", RF, WF, RIM, RUBBER, RIMM, hub_w=0.045)
+wrf = TW.far_wheel("Wheel_R_far", RR, WR, RIM, RUBBER, RIMM, hub_w=0.055)
 print(f"built in {time.time() - t0:.1f}s", flush=True)
 
 # origins: wheels at their axles (already built at the origin: move), steer at its pivot, torso at the hip
@@ -745,12 +729,13 @@ def set_origin(o, p):
     o.data.transform(Matrix.Translation(-Vector(p)))
     o.location = Vector(p)
 wf.location = A_F; wr.location = A_R           # wheels were built round (0, 0, 0)
+wff.location = A_F; wrf.location = A_R
 set_origin(steer, H)
 set_origin(torso, HIP)
 
 # to the export frame: build X forward -> Blender -Y (= glTF +Z)
 R = Matrix.Rotation(-math.pi / 2, 4, "Z")
-pieces = [body, steer, wf, wr, legs, torso, *arms]
+pieces = [body, steer, wf, wr, legs, torso, *arms, wff, wrf]
 for o in pieces:
     o.data.transform(R)
     o.location = R @ o.location
@@ -828,7 +813,7 @@ def bake_vertex_ao(objs, bake=True):
 bake_vertex_ao(pieces, BAKE)
 
 # ------------------------------------------------------------------------------------------------ export + rig numbers
-K.export_glb(pieces, os.path.join(OUT, "moto.raw.glb"), colors=True)
+TW.export_glb(pieces, os.path.join(OUT, "moto.raw.glb"))     # (round 2: COLOR_0, no TEXCOORD_0: the viewer uses no textures)
 info = {
     "note": "tools/blender/motorbike.py: glTF frame (x left, y up, z forward), metres, origin = the ground midway between the axles",
     "wheelbase": WB,
@@ -838,11 +823,12 @@ info = {
               "upper": ARM_U, "fore": ARM_F, "elbowOut": 0.35},
     "lamps": {"head": gl(Vector((0.645, 0, 0.862))), "tail": gl(Vector((-0.875, 0, 0.88)))},
     "size": [0.80, 1.24, 2.12],
+    "slots": sorted({m.name for o in pieces for m in o.data.materials}),
     "tris": {o.name: K.tris(o) for o in pieces},
     "ao": "vertex (COLOR_0.r)",
 }
 with open(os.path.join(OUT, "moto.json"), "w") as f: json.dump(info, f, indent=1)
-print("MOTO tris", info["tris"], "total", sum(info["tris"].values()), flush=True)
+print("MOTO tris", info["tris"], "total (no far)", sum(v for k, v in info["tris"].items() if not k.endswith("_far")), flush=True)
 
 # ------------------------------------------------------------------------------------------------ previews (only with --preview; renders: after "machine free")
 if PREVIEW:
@@ -868,6 +854,12 @@ if PREVIEW:
             q = Vector((1, 0, 0)).rotation_difference((B_ - A_).normalized())
             o.matrix_world = R @ Matrix.Translation(A_) @ q.to_matrix().to_4x4() @ R.inverted()
     scn.cycles.samples = 64
+    for o in (wff, wrf): o.hide_render = True
+    if "--rider2" in ARGS:                            # (round 2: the rider close-ups only, denoised)
+        scn.cycles.samples = 48; scn.cycles.use_denoising = True
+        K.render(cam, os.path.join(PREVIEW, "moto_rider2_34front.jpg"), (2.0, -2.6, 1.7), (0, -0.05, 0.95), lens=40)
+        K.render(cam, os.path.join(PREVIEW, "moto_rider2_detail.jpg"), (1.05, -1.25, 1.55), (0, -0.25, 1.15), lens=45)
+        sys.exit(0)
     # (build frame turned: forward = -Y, left = +X)
     K.render(cam, os.path.join(PREVIEW, "moto_34front.jpg"), (2.4, -3.2, 1.5), (0, -0.1, 0.62), lens=40)
     K.render(cam, os.path.join(PREVIEW, "moto_side.jpg"), (-4.6, 0, 0.9), (0, 0, 0.6), lens=45)
