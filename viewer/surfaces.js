@@ -58,6 +58,7 @@ const CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
  *  2026-11-05: the raised square is old setts, the roads round it asphalt), parking pavers */
 const BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
 export const CELL = 6;             // m: height-field grid
+const H_MARGIN = 0.6;              // m: a fitted corner within this of its street samples' heights (opts.clampH)
 // corner smoothing passes: 0. Tried 1-3 (plane-preserving, 4-neighbour): the street moves away from the DTM
 // (I6 median |H - DTM| 3.6 -> 6-10 cm), so folds are handled by the wide-stencil normals instead
 const SMOOTH_PASSES = 0;
@@ -493,7 +494,7 @@ export function rampKerbPoints(surf) {
   return surf._rampPts;
 }
 
-export function prepareSurfaces(surf, ground, bounds, trees = null) {
+export function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
   const t0 = (globalThis.performance ?? Date).now();
   const tapered = taperSteps(surf);
   const curved = smoothCurves(surf);
@@ -596,18 +597,23 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
   // it (1 m lattice within one CELL, tent weights), evaluated at the corner. Then two smoothing passes over the
   // corners of the street (each corner halfway to the mean of its street neighbours), so the planes do not fold.
   const fitCorner = (cx, cz) => {
-    let sw = 0, sx = 0, sz = 0, sxx = 0, sxz = 0, szz = 0, sy = 0, sxy = 0, szy = 0, n = 0;
+    let sw = 0, sx = 0, sz = 0, sxx = 0, sxz = 0, szz = 0, sy = 0, sxy = 0, szy = 0, n = 0, lo = Infinity, hi = -Infinity;
     for (let dx = -CELL + 0.5; dx < CELL; dx += 1) for (let dz = -CELL + 0.5; dz < CELL; dz += 1) {
       const x = cx + dx, z = cz + dz;
       if (classAt(x, z) < 0) continue;                         // only the street's own ground
       const w = (1 - Math.abs(dx) / CELL) * (1 - Math.abs(dz) / CELL), y = G(x, z);
       sw += w; sx += w * dx; sz += w * dz; sxx += w * dx * dx; sxz += w * dx * dz; szz += w * dz * dz; sy += w * y; sxy += w * dx * y; szy += w * dz * y; n++;
+      if (y < lo) lo = y; if (y > hi) hi = y;
     }
     if (n === (2 * CELL) ** 2 || n < 6) return G(cx, cz);       // all street (G is right) / too little street
     const det3 = (a, b, c, d, e, f, g, h, k) => a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g);
     const D = det3(sw, sx, sz, sx, sxx, sxz, sz, sxz, szz);
     if (Math.abs(D) < 1e-9) return sy / sw;
-    return det3(sy, sx, sz, sxy, sxx, sxz, szy, sxz, szz) / D;
+    const v = det3(sy, sx, sz, sxy, sxx, sxz, szy, sxz, szz) / D;
+    // joins2 (docs/JOINS2.md; ?surfh=old = unclamped): a narrow path's points are a thin strip, its plane's cross slope
+    // ill-conditioned: extrapolated 6 m to the corner it stood a park path up to 3 m over the ground (Kauwberg, D7
+    // -1462, 1148: a spike). The corner stays within H_MARGIN of the street ground it was fitted to.
+    return opts.clampH ? Math.min(hi + H_MARGIN, Math.max(lo - H_MARGIN, v)) : v;
   };
   const inside = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
   const corner = new Map();
@@ -1603,6 +1609,46 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   }
 
   const skirtTris = (C.idx.length - triAtSkirts) / 3;
+  // ---- SIDEWALK TO THE FAÇADE (joins2, docs/JOINS2.md; opts.wallRay, ?sidewalkfill=0 = none): UrbIS's sidewalk stops
+  // at the property line and the façade often stands 0.2-1.5 m behind it: the bare terrain showed in that sliver (the
+  // pale patch along a wall of Place Saint-Job, 1175, 549). Along every raised outer edge, a ray every 0.5 m outward:
+  // a wall within FILL_GAP with no street surface between -> the paving carries on to the wall (and 15 cm into it), at
+  // the edge's height, same paving frame; the strip ends where the ray finds no wall (the weld banks the terrain up to it)
+  const fill = { len: 0, tris: 0, gapLen: 0 };
+  if (opts.wallRay) {
+    const FILL_GAP = 1.8, STEP = 0.5, INTO = 0.15;
+    for (const e of surf.edges) {
+      if (!e.raised) continue;
+      const pts = [];
+      const L0 = e.line;
+      for (let k = 1; k < L0.length; k++) {
+        const [ax, az] = L0[k - 1], [bx, bz] = L0[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP));
+        for (let q = k === 1 ? 0 : 1; q <= n; q++) pts.push([ax + (bx - ax) * q / n, az + (bz - az) * q / n, k]);
+      }
+      let prev = null;
+      for (let k = 0; k < pts.length; k++) {
+        const [x, z, seg] = pts[k], [ax, az] = L0[seg - 1], [bx, bz] = L0[seg];
+        const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1, nx = dz / L, nz = -dx / L;     // outward (surface on the left)
+        let cur = null;
+        if (inTile(x, z)) {
+          const t = opts.wallRay(x, z, nx, nz, FILL_GAP);
+          // a gap: a wall within reach, no street surface in it (another sidewalk, a road), not already a wall at the edge
+          if (t > 0.05 && t < FILL_GAP && [0.35, 0.65].every((f) => prep.classAt(x + nx * t * f, z + nz * t * f) < 0)) {
+            const q = raisedAt(x - nx * 0.2, z - nz * 0.2), r = q ? riseAt(q.cls, x, z) : KERB, y = H(x, z) + r;
+            const ks = prep.nearKerbUV(x, z), qx = x + nx * (t + INTO), qz = z + nz * (t + INTO), ks2 = prep.nearKerbUV(qx, qz, ks ? ks.li : undefined);
+            const ex = (k2) => ({ aKind: k2 ? KIND.framed : KIND.slab, aUv2: [0, 0], aFrameW: 0 });
+            cur = {
+              a: C.vert(x, y, z, UP, ks ? ks.s : x, ks ? ks.d : z, ex(ks)),
+              b: C.vert(qx, y, qz, UP, ks2 ? ks2.s : qx, ks2 ? ks2.d : qz, ex(ks2)), t,
+            };
+            fill.gapLen += STEP;
+          }
+        }
+        if (cur && prev) { C.tri(prev.a, cur.a, cur.b, UP); C.tri(prev.a, cur.b, prev.b, UP); fill.tris += 2; fill.len += STEP; }
+        prev = cur;
+      }
+    }
+  }
   const parts = {};
   for (const [name, p] of Object.entries(out)) if (p.count) parts[name] = p.finish(name === "asphalt" ? "aSurf" : null);
   const seq = (n) => Uint32Array.from({ length: n }, (_, i) => i);
@@ -1612,7 +1658,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const bollards = (surf.bollards || []).filter(([x, z]) => inTile(x, z)).map(([x, z]) => { const c = prep.classAt(x, z); return [x, H(x, z) + (c >= 0 ? riseAt(c, x, z) : 0), z]; });
   const stats = {
     surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
-    kerbTris, skirtTris, foldDropped, linesCutAtCrossings: linesCut, baseHiddenUnderLayer: baseHidden, skirtsInWalls,
+    kerbTris, skirtTris, sidewalkFill: fill, foldDropped, linesCutAtCrossings: linesCut, baseHiddenUnderLayer: baseHidden, skirtsInWalls,
     liftTiers: lift ? { pieces: lift.size, overlapping: [...lift.values()].filter((t) => t > 0).length, max: Math.max(0, ...lift.values()) } : null,
     keptSideTris: keptSide, kerbLength: Math.round(kerbLen), mappedPieces: mapped.size, unmappedPieces: tally.size - mapped.size,
     unframedSidewalkTris: unframed, cutFallbacks: prep.fallbacks, bollards: bollards.length, treePits: (prep.pits || []).length,

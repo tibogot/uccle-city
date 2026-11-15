@@ -49,6 +49,31 @@ export function streetKitInstances(doc) {
   return out;
 }
 
+// joins2 (docs/JOINS2.md; ?artsigns=old = as placed): the street kit's rule signs are placed from the road graph and two
+// speed-limit signs (C43) landed INSIDE the Dix Monolithes' round island, among the stones. A sign inside a public-art
+// island (models/publicart/site.json island.r) moves out along its radius to the island's rim (0.6 m in from the kerb),
+// its foot height carried along the island's centre -> rim ground fall.
+const ARTSIGNS = qs.get("artsigns") !== "old";
+let islandsP = null;
+const artIslands = () => (islandsP ||= fetch(new URL("../../models/publicart/site.json", import.meta.url)).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+  .then((site) => (site?.pieces || []).filter((p) => p.island?.r).map((p) => {
+    const g = p.ground_samples || {}, edge = ["edge_n", "edge_s", "edge_e", "edge_w"].map((k) => g[k]).filter((v) => v != null);
+    const c = g.centre ?? p.y, e = edge.length ? edge.reduce((a, b) => a + b, 0) / edge.length : c;
+    return { x: p.x, z: p.z, r: p.island.r, ground: (rr) => c + (e - c) * Math.min(1, rr / p.island.r) };
+  })));
+export const signStats = { movedOffIslands: 0 };
+function signsOffIslands(doc, islands) {
+  for (const s of doc.signs || []) for (const I of islands) {
+    const dx = s.x - I.x, dz = s.z - I.z, rr = Math.hypot(dx, dz), to = I.r - 0.6;
+    if (rr >= to) continue;
+    const ux = rr > 0.01 ? dx / rr : 1, uz = rr > 0.01 ? dz / rr : 0;
+    s.y += I.ground(to) - I.ground(rr);
+    s.x = I.x + ux * to; s.z = I.z + uz * to;
+    signStats.movedOffIslands++;
+  }
+  return doc;
+}
+
 export const cityStreetKit = {
   on: qs.get("streetkit") !== "old",
   kit: null, pools: [], tiles: new Map(), group: null,
@@ -68,7 +93,8 @@ export const cityStreetKit = {
   },
   fetchTile(name) {
     if (!this.on) return Promise.resolve(null);
-    return fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const doc = fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    return ARTSIGNS ? Promise.all([doc, artIslands()]).then(([d, isl]) => (d && isl.length ? signsOffIslands(d, isl) : d)) : doc;
   },
   /** a cars.js `place` (x, z, yaw) -> { x, z, yaw } | null that leaves the Villo stations' parking-lane space free */
   keepCarsClear(place, doc) {

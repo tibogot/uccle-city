@@ -73,7 +73,7 @@ export function buildRoadData(o) {
   const lap = (k) => { const t = now(); times[k] = Math.round(t - t0); t0 = t; };
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
   const ground = o.ground ?? hm.ground;   // o.ground: e.g. the hero road bridges' decks over the cutting (rail/railData.js roadDeckGround)
-  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null) : null;
+  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true }) : null;
   // paint v2 needs the measured street; a tile without surfaces keeps the engine's rules
   const v2 = o.paint === "v2" && !!prep;
   const ctx = v2 ? preparePaintV2(roads, prep, o.markings ?? null, bounds) : null;     // edits the engine's inputs
@@ -121,7 +121,7 @@ export function buildRoadData(o) {
       const H0 = prep.H, pin = o.levelPins;
       prep.H = (x, z) => { const h = H0(x, z), p = pin(x, z); return p ? h + (p[0] - h) * p[1] : h; };
     }
-    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
+    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, { ...(priority ? { priority, dropFolds: true, lineCuts } : {}), wallRay: o.wallRay ?? null });
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
     // (the weld meets the DRAWN surfaces: a sidewalk is its kerb height above the carve's base)
     for (const part of Object.values(S.parts)) welds.push({ position: part.position, index: part.index });
@@ -149,7 +149,9 @@ export function buildRoadData(o) {
   lap("road meshes + carve");
   const noDTM = hm.h?.min != null ? (x, z) => hm.ground(x, z) <= hm.h.min + 0.02 : () => false;
   const weldSkip = (x, z) => noDTM(x, z) || (ground !== hm.ground && Math.abs(ground(x, z) - hm.ground(x, z)) > 0.3);
-  const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip }) : 0;
+  const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip, nearest: o.weldNearest === true }) : 0;   // joins2: each cell banks on its nearest edge (heightmap.js weld)
+  // joins2: then no terrain over any surface (heightmap.js clampUnder; ?groundweld=old: none)
+  const clampedCells = hm.clampUnder && o.weldNearest === true ? hm.clampUnder(welds, { skip: weldSkip }) : 0;
   const atlas = compactAtlas(built.atlas);
   lap("terrain weld");
   if (v2) {
@@ -158,7 +160,7 @@ export function buildRoadData(o) {
     if (paintPart) { parts.paint = paintPart; triangles += paintPart.index.length / 3; }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, weldedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }

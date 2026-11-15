@@ -7,7 +7,7 @@
 // Pole spacing, heights and widths are typical STIB values, not surveyed. Everything is instanced or
 // merged: 4 draw calls for the whole tile.
 import * as THREE from "three/webgpu";
-import { attribute, uv, vec3, color, mix, mx_noise_float, cameraPosition, positionLocal, length, max, normalize, cross, clamp, float, smoothstep } from "three/tsl";
+import { attribute, uv, vec3, vec4, color, mix, mx_noise_float, cameraPosition, cameraViewMatrix, positionLocal, length, max, normalize, cross, clamp, float, smoothstep, varying } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
 import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.js";
@@ -15,6 +15,11 @@ import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.j
 const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4, WIRE_R = 0.012;
 let wireMat = null;
 const OLD_WIRE = typeof location !== "undefined" && /[?&]aawire=0/.test(location.search);
+// joins2 (docs/JOINS2.md; ?wire2=0 = the 2.4 cm flat-lit ribbon before): the true 12 mm contact wire (r 6 mm), lit as a
+// ROUND wire (a normal that turns across the ribbon: a thin highlight line, darker flanks), never under ~1 px: close to
+// the camera (a tram stop, the top deck view) it read as a thick flat grey bar (polish1, 1102, 542)
+const WIRE2 = !(typeof location !== "undefined" && /[?&]wire2=0/.test(location.search));
+const WIRE_RR = WIRE2 ? 0.006 : WIRE_R;
 /** The contact wire's material (shared by every tile): the AA-wire ribbon of viewer/rail/railway.js */
 function wireMaterial() {
   if (wireMat) return wireMat;
@@ -22,7 +27,14 @@ function wireMaterial() {
   const tan = attribute("aTan", "vec3"), side = attribute("aSide", "float"), r = attribute("aR", "float");
   const toCam = cameraPosition.sub(positionLocal), dist = length(toCam);
   const w = max(r, dist.mul(0.0011));                                   // ~1 px at 1080p, 60 deg fov
-  m.positionNode = positionLocal.add(normalize(cross(tan, toCam)).mul(side).mul(w));
+  const sideV = normalize(cross(tan, toCam));
+  m.positionNode = positionLocal.add(sideV.mul(side).mul(w));
+  if (WIRE2) {
+    // round profile: the normal leans to each edge of the ribbon and faces the camera in the middle (interpolated)
+    const nW = varying(sideV.mul(side).add(normalize(toCam).mul(0.6)));
+    m.normalNode = normalize(cameraViewMatrix.mul(vec4(normalize(nW), 0)).xyz);
+    m.color.set(0x2e3236); m.roughness = 0.35;
+  }
   m.opacityNode = clamp(r.div(w), 0.08, 1).mul(float(1).sub(smoothstep(500, 900, dist)));
   m.alphaToCoverage = true;
   m.userData.shared = true;
@@ -190,7 +202,7 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
     // widened to >= ~1 px in the vertex shader, its true width as alpha-to-coverage. It was a 1.2 cm 4-sided cylinder:
     // sub-pixel from ~10 m, so MSAA caught it on some pixels only: the "aliased dashed black lines" across the blank
     // party walls behind it (owner playtest 2026-11-14, item 4)
-    const n = segs.length, P = new Float32Array(n * 12), T = new Float32Array(n * 12), Sd = new Float32Array(n * 4), R = new Float32Array(n * 4).fill(WIRE_R), I = new Uint32Array(n * 6);
+    const n = segs.length, P = new Float32Array(n * 12), T = new Float32Array(n * 12), Sd = new Float32Array(n * 4), R = new Float32Array(n * 4).fill(WIRE_RR), I = new Uint32Array(n * 6);
     segs.forEach(([ax, ay, az, bx, by, bz], i) => {
       const L = Math.hypot(bx - ax, by - ay, bz - az) || 1, t = [(bx - ax) / L, (by - ay) / L, (bz - az) / L];
       P.set([ax, ay, az, ax, ay, az, bx, by, bz, bx, by, bz], i * 12);

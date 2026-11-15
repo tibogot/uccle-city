@@ -43,6 +43,8 @@ export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
 const PLINTH_OLD = /[?&](plinth|polish1)=old(&|$)/.test(location.search);   // polish1 item 4
+// joins2 (docs/JOINS2.md; ?cellar=0 = the plain blue-stone plinth): the basement under a tall downhill plinth (aCel)
+export const CELLAR = !(typeof location !== "undefined" && /[?&]cellar=0(&|$)/.test(location.search));
 
 // FITTED STOREYS (docs/STOREYS.md; owner 2026-11-14: "very empty at the first or second floor"). The fixed storeys
 // (ground 3.4 m, then 3.0 m) dropped every storey whose window missed the eaves by a few cm: a 6 m house showed its
@@ -260,9 +262,14 @@ export function wallMaterial(opts = {}) {
   const pulseY = (a, b, w) => clamp(min(yl.add(w.mul(0.5)), b).sub(max(yl.sub(w.mul(0.5)), a)), 0.0, 1e3).div(max(w, 0.0001));
   const winTopAbs = mix(yb.mul(G), G.add(fl.sub(1).add(yb).mul(S)), up);
   const isLM = band(style, 6).toVar();                                          // landmark (church, chapel...)
+  const cel = CELLAR ? attribute("aCel", "float") : null;
   const ok = float(1).sub(party).mul(float(1).sub(isLM)).mul(float(1).sub(par)).mul(step(float(1.6), fw)).mul(step(float(2.8), eh))
     .mul(step(winTopAbs.add(0.35), eh))                                          // the whole window fits under the eaves
-    .mul(step(0.0, gx)).mul(step(gx, nb)).toVar();
+    .mul(step(0.0, gx)).mul(step(gx, nb))
+    // joins2 (CELLAR): the grid ran on UNDER the ground-floor line on a downhill wall: windows of storey -1 / -2 cut by the
+    // ground or half buried in the plinth. A row under the line now stands only if its window clears the ground at its
+    // highest point along the face (aCel) by 0.3 m: a real lower-ground floor; else the soupiraux below take over
+    .mul(CELLAR ? select(fl.lessThan(0.0), step(cel.negate().add(0.3), fl.add(ya).mul(G)), float(1)) : float(1)).toVar();
   // the front door replaces one ground-floor window on a street face
   const doorBay = floor(rnd.mul(nb));
   // the kit's faces (aKit): z = 1 no door on this face (the house's door is on its widest street face: a window here),
@@ -378,8 +385,41 @@ export function wallMaterial(opts = {}) {
   // polish1 (docs/POLISH.md item 4, ?plinth=old = before): the blue-stone plinth was albedo 0.075-0.09 (sRGB ~78): in
   // shade, with the AO at the wall foot, it went black (Fort-Jaco, Av. Alphonse XIII). Weathered petit granit reads
   // mid-dark grey in photos (sRGB ~100-115): albedo 0.125-0.14, a little washed paler, the grain a touch stronger
+  const wallCol = col;
   col = mix(col, PLINTH_OLD ? C(0.075, 0.08, 0.09).add(grain.mul(0.01)) : C(0.125, 0.13, 0.137).add(grain.mul(0.018)), plinth);
   height = height.add(float(1).sub(smoothstep(float(0.5).sub(aaHR), float(0.5).add(aaHR), h)).mul(0.03));
+  if (CELLAR) {
+    // THE BASEMENT (joins2): aCel = the wall exposed under the ground-floor line where the ground is highest along the
+    // face (facadeGeom.js cellarOf). > 1.5 m: a soupirail (low barred cellar light, blue-stone surround) under each
+    // window bay; > 2.4 m: a LOWER-GROUND FLOOR: the wall material below a 35 cm blue-stone band, a full window per
+    // bay (frame in the house's frame colour). The openings stay 0.35 m clear of the ground at its highest point.
+    // Box-filtered edges (filteredPulse / boxBand): no new aliased line.
+    const wallOk = float(1).sub(party).mul(float(1).sub(isLM)).mul(float(1).sub(par)).mul(step(float(1.6), fw)).toVar();
+    // a lower-ground floor: the grid's storey -1 window clears the ground (as the test above): the wall material under a
+    // 35 cm blue-stone band, the grid draws its windows
+    const lg = step(cel.negate().add(0.3), float(-0.73).mul(G)).mul(wallOk).toVar();
+    col = mix(col, wallCol, lg.mul(float(1).sub(smoothstep(float(-0.35).sub(aaH), float(-0.35).add(aaH), h))));
+    // else, 1.5 m+ of plinth: a soupirail under each window bay (not under the door)
+    const doorCol = street.mul(step(abs(floor(gx).sub(floor(rnd.mul(nb)))), 0.5));
+    const cOn = step(1.5, cel).mul(float(1).sub(lg)).mul(wallOk).mul(step(0.0, gx)).mul(step(gx, nb)).mul(float(1).sub(doorCol)).toVar();
+    const cTop = float(-0.45), cBot = max(cel.negate().add(0.35), cTop.sub(0.62));
+    const hw = min(float(0.42), bw.mul(0.3)).div(bw);
+    const cx2 = filteredPulse(gx, float(0.5).sub(hw), float(0.5).add(hw), fwx);
+    const cy2 = boxBand(h, cBot, cTop, aaH);
+    const cWin = cx2.mul(cy2).mul(cOn).toVar();
+    const fr = float(0.07);
+    const gIn = filteredPulse(gx, float(0.5).sub(hw).add(fr.div(bw)), float(0.5).add(hw).sub(fr.div(bw)), fwx).mul(boxBand(h, cBot.add(fr), cTop.sub(fr), aaH)).mul(cOn);
+    // the soupirail's bars: 5 round bars across its light
+    const bx = fract(gx).sub(float(0.5).sub(hw)).div(hw.mul(2)).mul(5.0);
+    const bar = filteredPulse(bx, float(0.42), float(0.58), fwidth(bx));
+    col = mix(col, C(0.13, 0.135, 0.14), cWin);                                  // blue-stone surround
+    col = mix(col, C(0.02, 0.022, 0.025).add(env.uSunColor.mul(0.01)), gIn.mul(float(1).sub(bar)));
+    col = mix(col, C(0.04, 0.05, 0.045), gIn.mul(bar));
+    // a blue-stone sill under each one, the reveal sunk 10 cm
+    const cSill = cx2.mul(boxBand(h, cBot.sub(0.07), cBot, aaH)).mul(cOn);
+    col = mix(col, C(0.16, 0.165, 0.17), cSill);
+    height = height.sub(gIn.mul(0.1)).add(cSill.mul(0.03));
+  }
   const band2 = (lo, hi, a) => smoothstep(lo.sub(a), lo.add(a), h).mul(float(1).sub(smoothstep(hi.sub(a), hi.add(a), h)));
   const cornOn = step(float(4.5), eh).mul(float(1).sub(party)).mul(float(1).sub(par));
   const corn = band2(eh.sub(0.42), eh.sub(0.12), aaH).mul(cornOn).toVar();
@@ -735,7 +775,7 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(part.position, 3));
     g.setAttribute("normal", new THREE.BufferAttribute(part.normal, 3));
-    for (const [k, n] of attrs) g.setAttribute(k, new THREE.BufferAttribute(part[k], n));
+    for (const [k, n, p] of attrs) g.setAttribute(k, new THREE.BufferAttribute(p && !p[k] ? new Float32Array(part.position.length / 3) : part[k], n));   // (aCel: zeros from an older worker / cache)
     const mesh = new THREE.Mesh(g, mat);
     mesh.castShadow = mesh.receiveShadow = true;
     mesh.name = name;
@@ -753,7 +793,8 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     for (const m of Object.values(MATS)) m.userData.shared = true;
   }
   const detailMat = MATS.detail;
-  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 4]], MATS.wall, "buildings-walls")];
+  const cel = (p) => (CELLAR ? [["aCel", 1, p]] : []);
+  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 4], ...cel(a.walls)], MATS.wall, "buildings-walls")];
   if (ROOF_SPLIT) {
     const [pitched, flat] = splitRoofs(a.roofs);
     if (pitched) meshes.push(mk(pitched, [["aRoof", 4], ["aRoofCol", 3]], MATS.roof, "buildings-roofs"));
@@ -765,7 +806,7 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
   if (a.walls.kit?.position.length) {
     MATS.wallKit ??= Object.assign(wallMaterial({ kit: true }), { name: "walls (kit)" });
     MATS.wallKit.userData.shared = true;
-    kitWalls = mk(a.walls.kit, [["aWall", 4], ["aBld", 4], ["aFN", 4], ["aKit", 4]], MATS.wallKit, "buildings-walls-kit");
+    kitWalls = mk(a.walls.kit, [["aWall", 4], ["aBld", 4], ["aFN", 4], ["aKit", 4], ...cel(a.walls.kit)], MATS.wallKit, "buildings-walls-kit");
     // out of the kit's reach the plain wall material draws them (no discard, early-z back): kitField.js swaps
     // (the far one: same painted façade, no discard)
     MATS.wallKitFar ??= Object.assign(wallMaterial({ kit: true, cut: false }), { name: "walls (kit, far)" });

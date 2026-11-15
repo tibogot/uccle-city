@@ -380,9 +380,24 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     return best < STREET_REACH;
   };
 
-  const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aCel: [] };
   const NW = [];                       // (night round 3) the LIT windows: litHash.js NIGHT_WIN_STRIDE records
-  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };   // the kit's faces
+  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [], aCel: [] };
+  // joins2 (docs/JOINS2.md; entry.cellar === false / ?cellar=0: none): THE BASEMENT under a tall downhill plinth. Per face,
+  // the wall exposed UNDER the ground-floor line where the drawn ground is highest along its foot (0.35 m out, every
+  // 0.5 m): the band the shader can open cellar windows / a lower-ground floor in, never cut by the ground (aCel, m)
+  const cellarOf = (f, base, u0, width, tx, tz) => {
+    if (!opts.ground || opts.cellar === false || width < 1.6) return 0;
+    let dd = 0, nq = 0;
+    for (const { p } of f.tris) for (const q of p) { dd += q[0] * f.nx + q[2] * f.nz; nq++; }
+    dd = dd / nq + 0.35;
+    let hi = -Infinity;
+    for (let u = 0.3; u <= width - 0.3 + 1e-6; u += 0.5) {
+      const g = opts.ground(tx * (u0 + u) + f.nx * dd, tz * (u0 + u) + f.nz * dd);
+      if (Number.isFinite(g) && g > hi) hi = g;
+    }
+    return hi === -Infinity ? 0 : Math.max(0, base - hi);
+  };   // the kit's faces
   // OSM shops (features.json points kind "shop") -> a shopfront on the nearest street face
   const shops = new Grid(40);
   // opts.fronts (the street-life layer is on, viewer/streetlife/): ITS shopfronts (data/streetlife/<T>.json pois[].face:
@@ -657,7 +672,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         const gd = opts.ground(tx * (u0 + du) + f.nx * dd, tz * (u0 + du) + f.nz * dd);
         if (Number.isFinite(gd) && Math.abs(gd - base) > 0.25) { streetA = 0; stats.doorsOff = (stats.doorsOff || 0) + 1; }
       }
+      const cel = !landmark && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
+      if (cel > 1.5) { stats.cellarFaces = (stats.cellarFaces || 0) + 1; if (cel > 2.4) stats.lowerGround = (stats.lowerGround || 0) + 1; }
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
+        T.aCel.push(cel);
         T.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
         T.normal.push(sn[0], sn[1], sn[2]);
@@ -757,7 +775,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           const v = quadW[i];
           W.position.push(v[0], v[1], v[2]); W.normal.push(nx, 0, nz);
           W.aWall.push(v[0] * tx + v[2] * tz - u0, fw, v[1] - base, -Math.max(eaves, 0.01));
-          W.aBld.push(fstyle, 0, 0, rnd); W.aFN.push(nx, nz, 0, 0);
+          W.aBld.push(fstyle, 0, 0, rnd); W.aFN.push(nx, nz, 0, 0); W.aCel.push(0);
         }
         const top = Math.max(A[1], B[1]) + h, inner = [rc[0] * 0.85, rc[1] * 0.85, rc[2] * 0.85];
         const cope = q.cope < 0.5 ? [0.44, 0.45, 0.46] : q.cope < 0.65 ? [0.38, 0.37, 0.34] : q.cope < 0.8 ? [0.085, 0.09, 0.095] : [0.06, 0.063, 0.068];
@@ -854,8 +872,8 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   emitStrips(D, SD, stats);
   const f32 = (a) => new Float32Array(a);
   return {
-    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN),
-      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null,
+    walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN), aCel: f32(W.aCel),
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit), aCel: f32(WK.aCel) } : null,
       nightWindows: f32(NW) },        // (night round 3) the lit windows (litHash.js NIGHT_WIN_STRIDE)
     kit: kit ? kit.finish() : null,
     roofKit: roofs ? roofs.finish() : null,
