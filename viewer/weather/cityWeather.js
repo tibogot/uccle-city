@@ -20,6 +20,7 @@ import { season, setDay } from "../seasons/season.js";
 import { fetchLive, mapLive } from "./liveWeather.js";
 import { env } from "../lighting.js";
 import { season as foliageSeason } from "../foliage/seasons.js";   // hedges, garden plants, grass read its uSnow / uWet
+import { polishOld } from "../polish.js";
 
 const qp = new URLSearchParams(location.search);
 
@@ -39,6 +40,7 @@ const MAP_SIZE = Math.max(32, Math.min(128, +(qp.get("wxmap") ?? 64)));
 const map = WX_ON ? createOverheadMap({ renderer: null, size: MAP_SIZE, res: 512, depth: 260, height: 160 }) : null;
 if (map) setWeatherMap(map);      // before any material is built: the ground families read its exposure
 
+const SNOW_WB = !polishOld("snowwb");
 const lerp = THREE.MathUtils.lerp, sstep = THREE.MathUtils.smoothstep;
 
 export const cityWeather = {
@@ -153,6 +155,7 @@ export const cityWeather = {
         if (p) for (const k of Object.keys(s.p)) p[k] = s.p[k];
         if (L.hemi) L.hemi.intensity = s.hemi;
         if (this.pipe?.lookId) this.pipe.look(this.pipe.lookId);     // the grade as the time preset has it
+        if (this.pipe) { this.pipe.wxEV = 0; if (this.pipe.grade?.warmHighs) this.pipe.grade.warmHighs.value = 1; }
         this.saved = null;
       }
       if (F) { F.uBeta.value = 0; F.uMist.value = 0; F.uGrey.value = 0; }
@@ -187,9 +190,21 @@ export const cityWeather = {
       // white balance: under a full deck the light is the cloud's, near neutral grey; Firmament's horizon still carries
       // the low sun's warmth (golden hour): neutralise most of its tint (the photos of rainy / snowy Uccle are cool grey)
       const hz = L.uFogColor?.value, lum = hz ? 0.2126 * hz.x + 0.7152 * hz.y + 0.0722 * hz.z : 0;
-      const inv = (c) => (hz && c > 1e-4 ? THREE.MathUtils.clamp(lum / c, 0.75, 1.3) : 1);
-      const nb = hz ? [inv(hz.x), inv(hz.y), inv(hz.z) * 1.03] : [1, 1, 1];
-      G.balance.value.set(lerp(l.balance[0], o.balance[0] * lerp(1, nb[0], 0.75), kk), lerp(l.balance[1], o.balance[1] * lerp(1, nb[1], 0.75), kk), lerp(l.balance[2], o.balance[2] * lerp(1, nb[2], 0.75), kk));
+      // polish1 (docs/POLISH.md item 1, ?snowwb=old = before): with snow on the ground the eye takes the snow as the
+      // white: the correction goes all the way (the fog colour = the cloud-lit ambient becomes neutral, a touch cool, as
+      // the photos of Brussels in snow), with a wider clamp; without snow it is the 75 % of before
+      const sn = SNOW_WB ? Math.min(1, wx.uSnowCover.value * Math.min(1, wx.uSnowDepth.value / 0.02)) : 0;
+      const lo = lerp(0.75, 0.5, sn), hi = lerp(1.3, 2.3, sn), amt = lerp(0.75, 1.0, sn), cool = [lerp(1, 0.84, sn), 1, lerp(1.03, 1.02, sn)];
+      // (the snow is lit by the sky dome + what is left of the key, warmer than the horizon colour itself: under snow the
+      // correction is the horizon's inverse to the power 1.65, measured on the snow at golden hour, Place Saint-Job)
+      const pw = lerp(1, 1.65, sn);
+      const inv = (c) => (hz && c > 1e-4 ? THREE.MathUtils.clamp(Math.pow(lum / c, pw), lo, hi) : 1);
+      const nb = hz ? [inv(hz.x) * cool[0], inv(hz.y), inv(hz.z) * cool[2]] : [1, 1, 1];
+      G.balance.value.set(lerp(l.balance[0], o.balance[0] * lerp(1, nb[0], amt), kk), lerp(l.balance[1], o.balance[1] * lerp(1, nb[1], amt), kk), lerp(l.balance[2], o.balance[2] * lerp(1, nb[2], amt), kk));
+      // under snow: no warm split-tone on the highlights (the snow is the highlight) and +0.45 EV (snow scenes are
+      // metered up, as a photographer does: the snow reads white, not mid-grey)
+      if (G.warmHighs) G.warmHighs.value = 1 - sn * kk;
+      this.pipe.wxEV = 0.45 * sn * w;
     }
     if (F) {
       F.uBeta.value = W.fogBeta * w;

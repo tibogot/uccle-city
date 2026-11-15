@@ -318,7 +318,7 @@ const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
-    if (!e) { e = { fn: Object.assign(deckHeight(d, (x, z) => (worldRef?.at ? worldRef.at(x, z).hm.ground(x, z) : hm.ground(x, z)), { drawn: true }), { osm: true }), n: 0 };   // (the nearest tile's ground: a deck may cross a tile edge, road fix round 2)
+    if (!e) { e = { fn: Object.assign(deckHeight(d, (x, z) => (worldRef?.tiles.length ? worldRef.at(x, z).hm.ground(x, z) : hm.ground(x, z)), { drawn: true }), { osm: true }), n: 0 };   // (the nearest tile's ground: a deck may cross a tile edge, road fix round 2; before the first tile is in world.tiles, e.g. ?tile=H6 whose bridge deck is asked during its own build, this tile's hm)
      bridgeDeckRefs.set(d.id, e); worldRef?.decks.push(e.fn); }
     e.n++;
   }
