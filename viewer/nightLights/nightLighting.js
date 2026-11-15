@@ -333,6 +333,9 @@ class NightLightsNode extends ClusteredLightsNode {
       // dependent load per iteration: the loop is latency-bound, not ALU-bound - measured in the lab)
       const A0 = vec4(0).toVar(), A1 = vec4(0).toVar(), A2 = vec4(0).toVar(), A3 = vec4(0).toVar();
       const row = (k) => textureLoad(tex, ivec2(max(chunk.element(k).sub(1), 0), ROW.POS));
+      // (city round 3) no pool light this frame (by day): the whole loop is skipped on a uniform branch - before, every
+      // lit fragment still loaded its cluster chunk + 4 light rows to find the list empty
+      If(this._lightsCount.greaterThan(int(0)), () => {
       Loop(this.maxLightsPerCluster, ({ i }) => {
         const ii = int(i), j = ii.mod(4);
         If(j.equal(0), () => {
@@ -418,6 +421,7 @@ class NightLightsNode extends ClusteredLightsNode {
             } else shade();
           });
         });
+      });
       });
     }, "void")();
   }

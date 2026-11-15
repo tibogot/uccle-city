@@ -63,7 +63,7 @@ const LAMP_SHADOW_LAYER = 6;
 // switch creates none (it made 66-182 ms long tasks: 377 render objects, the first two lamp passes ~45 ms)
 const WARM_LAYER = 7;
 const DEBUG = qp.get("nightdebug") === "1";       // the pop metrics (per lamp / per car weight jumps): off by default (CPU)
-const SHADOW_MODE = qp.get("nightshadow") || "smart";   // "smart" (re-render on change, round 2) | "full" (every frame, round 1)
+const SHADOW_MODE = qp.get("nightshadow") || "alt";    // "alt" (round 3 default: on a busy street both maps had movers every frame, +0.8-1.8 ms; alt renders at most one of them a frame then) | "smart" (re-render on change, round 2) | "full" (every frame, round 1)
 const BUILDING = /^(buildings-|kit |facade|roof|terrain|ground|bridge|tunnel)/i;
 function tagCasters(root, warm, tileCasters = null) {
   let n = 0;
@@ -265,7 +265,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   // holds the lamps only): they light the ground through the loop
   const shopReg = new LampRegistry(4096), signReg = new LampRegistry(4096);
   // round 3, step 6: the LIT WINDOWS of every loaded tile (the tile worker's records, litHash.js: the facade shader's
-  // own hash, so the windows that glow are the ones that light): the 24 nearest are real APERTURE pool lights (the
+  // own hash, so the windows that glow are the ones that light): the 16 nearest are real APERTURE pool lights (the
   // patch on the pavement, the front garden, the opposite wall), faded out at 40-60 m; all of them light the ground
   // through the tile's ground map (step 7)
   const winReg = new LampRegistry(1 << 17, NIGHT_WIN_STRIDE - 3);
@@ -277,7 +277,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   cones.mesh.visible = false;
   scene.add(cones.mesh);
   // (the ground skips a static light in the loop only once its tile's map has it: registry inMap, per source)
-  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, cones, sizes: { windows: 24, shops: 8, signs: 8 }, ground });
+  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, cones, sizes: { windows: 16, shops: 8, signs: 8, heads: 6, rear: 6 }, ground });   // (round 3: 6 + 6 real car lights, was 12 + 12: the low beams were most of the night GPU at street level, +0.5-1.1 ms; the others light the road through the dynamic layer)
   // round 3: the ground's SUBTRACT slots, one per shadowed lamp (nightLighting.js groundOnly): the ground map has every
   // lamp in full, the shadowed lamp's SpotLight adds its share again WITH its shadow: minus the same spot unshadowed,
   // plus the spot shadowed = the map where nothing shades it (rounds 1-2 lit the ground under the 2 nearest lamps twice)

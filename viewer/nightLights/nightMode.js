@@ -6,7 +6,7 @@
 // node graph is created when the flag is off: the default city is unchanged. The rest lives in cityNight.js, which
 // main.js imports only under the flag.
 import * as THREE from "three/webgpu";
-import { texture, uniform, vec2, vec3, float, positionWorld, normalWorld, normalize, select, smoothstep, length, cameraPosition } from "three/tsl";
+import { Fn, If, texture, uniform, vec2, vec3, float, positionWorld, normalWorld, normalize, select, smoothstep, length, cameraPosition } from "three/tsl";
 import { createNightMap } from "./nightMap.js";
 
 export const NIGHT = /[?&]night=1(&|$)/.test(location.search);
@@ -48,10 +48,18 @@ export function mapSpill(heightAbove, height = 6) {
 /** irradiance (RGB, W/m2-ish like the pool's) of the dynamic ground layer at world xz; 0 outside it / flag off */
 export function dynIrradiance(xz = positionWorld.xz) {
   if (!nightGround) return vec3(0);
-  const G = nightGround, u = xz.sub(G.uOrigin).mul(G.uInv);
-  const inside = u.x.greaterThan(0).and(u.x.lessThan(1)).and(u.y.greaterThan(0)).and(u.y.lessThan(1));
-  // (a render target: v = 0 at the bottom of the ortho view = world z1)
-  return select(inside, texture(G.rt.texture, vec2(u.x, float(1).sub(u.y))).rgb.mul(G.uDyn), vec3(0));
+  const G = nightGround;
+  // (round 3) by day (uDyn 0) nothing is read: a uniform branch (the select read the texture on every ground fragment)
+  return Fn(() => {
+    const out = vec3(0).toVar();
+    If(G.uDyn.greaterThan(0.0), () => {
+      const u = xz.sub(G.uOrigin).mul(G.uInv);
+      const inside = u.x.greaterThan(0).and(u.x.lessThan(1)).and(u.y.greaterThan(0)).and(u.y.lessThan(1));
+      // (a render target: v = 0 at the bottom of the ortho view = world z1; level 0: non-uniform control flow)
+      out.assign(select(inside, texture(G.rt.texture, vec2(u.x, float(1).sub(u.y))).level(0).rgb.mul(G.uDyn), vec3(0)));
+    });
+    return out;
+  })();
 }
 
 /** 0 within uNear0 of the camera, 1 beyond uNear1: what the lamp light MAP may still add to a wall (the pool's real
