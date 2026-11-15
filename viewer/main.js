@@ -25,6 +25,7 @@ import { addPublicArt } from "./publicart/artCity.js";
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addAugustin } from "./augustinCity.js";
+import { addLandmark5 } from "./landmark5City.js";   // landmark5: the Sacre-Coeur (+ Saint-Marc)
 import { addFlags } from "./flagsCity.js";
 import { buildFurniture, updateSignals } from "./furniture.js";
 import { buildTram } from "./tram.js";
@@ -1051,6 +1052,9 @@ async function main() {
   // The Eglise Saint-Augustin at Altitude Cent (Forest, just north of Uccle: tools/blender/augustin.py,
   // viewer/augustinCity.js), the skyline landmark; its UrbIS solid is not in the tiles (outside Uccle), nothing hidden
   if (params.get("augustin") !== "0") heroes.push(() => addAugustin({ scene, updaters, world, manifest, log, compiler: () => compileFor }));
+  // landmark5 (viewer/landmark5City.js): the Eglise du Sacre-Coeur, Rue Vanderkindere (tools/blender/sacrecoeur.py);
+  // ?sacrecoeur=0 = the UrbIS solid
+  if (params.get("sacrecoeur") !== "0") heroes.push(() => addLandmark5("sacrecoeur", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   // the public art kit (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md): the Dix Monolithes, La Victoire, the Gobert
   // memorial, the milestones and the Charles V stones; ?art=old = the city without them (the monoliths' UrbIS boxes back)
   if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));

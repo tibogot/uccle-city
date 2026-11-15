@@ -14,7 +14,7 @@ const STAGGER = 600;
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)
 export const GATED = {
   augustin: [-896, -1961], calevoet: [-1225, 790], heros: [-533, -484], observatory: [654, 60], police: [-514, -340],
-  rosaire: [1279, -1254], russian: [-354, -468], stalle: [-1150, 57], stpierre: [-709, -493], townhall: [-1148, -506],
+  rosaire: [1279, -1254], sacrecoeur: [-264, -1631], russian: [-354, -468], stalle: [-1150, 57], stpierre: [-709, -493], townhall: [-1148, -506],
   vanbuuren: [303, -1230], wolvendael: [-469, -366],
   // the hero rail bridges / road tunnels (models/rail/<name>.json)
   bigarreaux: [-1106, 1636], "rail:calevoet": [-1125, 1123], engeland: [-691, 1795], engeland_chord: [-701, 1787],
