@@ -28,7 +28,7 @@ import {
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
-import { ditherNoise, SMOOTH } from "./lodFade.js";
+import { ditherNoise, SMOOTH, cloneMaterial } from "./lodFade.js";
 
 export const KITS = ["rockkit", "playgroundkit"];
 /** live look controls (uniforms) */
@@ -467,7 +467,9 @@ export class KitField {
 
 /** the masked copy of a slot material for the fading instances (per-instance value: lodFade's objectFade convention) */
 function fadeCopy(mat, attr) {
-  const m = mat.clone();
+  // perf pass 2 (docs/perf/AUDIT.md step 12): lodFade's clone (no JSON deep copy of userData: three r187 serialised the
+  // weather's dry nodes / textures here, a 920 ms long task when the public art landed while driving); ?fadeclone=old = before
+  const m = cloneMaterial(mat);
   const f = instancedBufferAttribute(attr, "float");
   const n = ditherNoise();
   m.maskNode = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
