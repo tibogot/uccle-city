@@ -13,7 +13,7 @@ import * as THREE from "three/webgpu";
 import { color, uniform } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { loadPack, packMaterial, PACK_LODS, PACK_SOURCES } from "./carPacks.js";
+import { loadPack, packMaterial, packLook, PACK_LODS, PACK_SOURCES } from "./carPacks.js";
 import { BODY, HANDLING } from "./carPhysics.js";
 
 export const CAR_LODS = [
@@ -137,6 +137,7 @@ function mergeAll(list) {
 }
 
 // light switches shared by every car: head lights (0 = off .. 1 = on), and the player car's brake / tail lights
+const CARLIGHTS_OLD = typeof location !== "undefined" && /[?&](carlights|polish1)=old(&|$)/.test(location.search);   // polish1 item 6
 export const carLights = { head: uniform(0), tail: uniform(0), brake: uniform(0) };
 
 let MATS = null;
@@ -148,7 +149,9 @@ function materials() {
   const HeadLight = new THREE.MeshStandardNodeMaterial({ color: 0xc9ced4, roughness: 0.12, metalness: 0.9 });
   HeadLight.emissiveNode = color(0xfff1dc).mul(carLights.head.mul(6));
   const TailLight = new THREE.MeshStandardNodeMaterial({ color: 0x4a0405, roughness: 0.2 });
-  TailLight.emissiveNode = color(0xff1408).mul(carLights.tail.mul(1.2).add(carLights.brake.mul(5)));
+  // (polish1 item 6, ?carlights=old: x1.2 / x5): the traffic's levels (carPacks.js packLook)
+  TailLight.emissiveNode = CARLIGHTS_OLD ? color(0xff1408).mul(carLights.tail.mul(1.2).add(carLights.brake.mul(5)))
+    : color(0xff1408).mul(carLights.tail.mul(packLook.tailNight).add(carLights.brake.mul(packLook.brake)));
   const Plate = new THREE.MeshStandardNodeMaterial({ color: 0xe9e9e4, roughness: 0.5 });
   const Tyre = new THREE.MeshStandardNodeMaterial({ color: 0x141414, roughness: 0.88 });
   const Rim = new THREE.MeshStandardNodeMaterial({ color: 0xb9bdc3, roughness: 0.3, metalness: 1 });

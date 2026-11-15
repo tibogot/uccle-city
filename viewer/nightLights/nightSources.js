@@ -18,6 +18,7 @@ import * as THREE from "three/webgpu";
 import { PROFILE } from "./nightLighting.js";
 import { NearestN, StaticSources, ShadowLamps, smooth01 } from "./lightSelect.js";
 
+const HEAD_NEAR = typeof location !== "undefined" && /[?&](carlights|polish1)=old(&|$)/.test(location.search) ? 0.15 : 3.0;   // polish1 item 6
 /** Moving lights: car i at CAR.STRIDE * i (written by the owner of the cars). */
 export const CAR = { HX: 0, HY: 1, HZ: 2, FX: 3, FY: 4, FZ: 5, TX: 6, TY: 7, TZ: 8, HEAD: 9, TAIL: 10, FADE: 11, GY: 12, STRIDE: 13 };   // GY: the road's y under the car (the dynamic ground layer)
 
@@ -146,7 +147,10 @@ export class NightSources {
         if (k >= sh.count) { P.weight(bh + k, 0); continue; }
         const i = sh.i[k], o = i * CAR.STRIDE, w = sh.weight(k) * D[o + CAR.FADE] * D[o + CAR.HEAD], I = p.headI;
         th.cur[i] = w; RH[i] = sh.weight(k);
-        P.set(bh + k, D[o], D[o + 1], D[o + 2], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, 0.15);
+        // (polish1 item 6, ?carlights=old: 0.15): the falloff's source radius 3 m = a NEAR-FIELD softening (a reflector's
+        // beam forms over a few metres): a car 2-4 m ahead took 1000 / d^2 (60-250) and its pale paint blew out to white;
+        // now x0.31 at 2 m, x0.64 at 4 m, x0.92 at 10 m, the road at 15-30 m unchanged (<= 4 %)
+        P.set(bh + k, D[o], D[o + 1], D[o + 2], p.headRange, HEAD_RGB[0] * I, HEAD_RGB[1] * I, HEAD_RGB[2] * I, w, HEAD_NEAR);
         P.spot(bh + k, D[o + 3], D[o + 4], D[o + 5], p.headCone, p.headCone * 0.3);
         P.profile(bh + k, PROFILE.LOWBEAM, -0.012, 0.268);
         if (C && this.conesOn && w > 0.01) C.write(cone++, D[o], D[o + 1], D[o + 2], D[o + 3], D[o + 4] - 0.02, D[o + 5], 16, 3.2, 0.45 * w, 0.44 * w, 0.42 * w);
