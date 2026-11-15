@@ -86,6 +86,13 @@ function tagCasters(root, warm, tileCasters = null) {
 // tree meshes + lamps + bollards ...: ~135 draws, ~0.5 M triangles a map). A tile's sets now stay in the lamp layer
 // only while a shadowed lamp is within REACH of that tile's square (the lamp's 26 m range + a crown). ?lampreach=0: off.
 const TILE_REACH = qp.get("lampreach") !== "0", REACH = 26 + 12;
+// round 3: a tile's instanced set (trees, bollards, chairs, parked cars...) is no longer drawn whole into a lamp map: a
+// PROXY per (set, lamp) holds only its instances within REACH of that lamp (refilled each time the map renders; the
+// set's own geometry + material: the same shadow pipeline, its per-instance attributes copied), on that lamp's own layer
+// (PROXY_LAYER + k: the main camera never sees it). Round 2 drew 72 tree draws / 318 k triangles per 2 maps at Place
+// Saint-Job. ?lampproxy=0: the tile gate above (whole sets).
+const EMPTY_WARM = /^(traffic-car-batch|parked-car-batch|train-)/;      // (round 3) empty by day, filled at night: warmed with one zero-size instance
+const PROXY = TILE_REACH && qp.get("lampproxy") !== "0", PROXY_LAYER = 8, PROXY_CAP = 128;
 
 /** step 0: before renderer.init() */
 export async function installNightLighting(renderer) {
@@ -211,6 +218,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     L.castShadow = true; L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.0006; L.shadow.normalBias = 0.03; L.shadow.radius = 3;
     L.shadow.camera.near = 0.3; L.shadow.camera.far = 26;
     L.shadow.camera.layers.set(LAMP_SHADOW_LAYER);                 // only the street-scale casters (tagCasters below)
+    L.shadow.camera.layers.enable(PROXY_LAYER + k);                 // (round 3) + its own proxies of the tile-wide sets
     L.position.set(0, -500, 0); L.target.position.set(0, -510, 0);
     scene.add(L, L.target); shadowLights.push(L);
   }
@@ -482,8 +490,12 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   let warming = 0;
   const warmShadows = (camPos) => {
     if (warming === 1) {                                              // (the warm render happened last frame: restore)
-      for (const L of shadowLights) { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; }
-      for (let i = 0; i < warmNow.length; i++) warmNow[i].layers.disable(WARM_LAYER);
+      shadowLights.forEach((L, k) => { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.layers.enable(PROXY_LAYER + k); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; });
+      for (let i = 0; i < warmNow.length; i++) {
+        const o = warmNow[i]; o.layers.disable(WARM_LAYER);
+        if (o.userData.proxyOf) { o.count = 0; o.visible = false; }
+        if (o.userData.__warmEmpty) { const M = o.instanceMatrix.array; if (o.count === 1 && M[0] === 0 && M[5] === 0 && M[10] === 0) { o.count = 0; if (o.userData.__warmEmpty === 2) o.visible = false; } delete o.userData.__warmEmpty; }
+      }
       stats.warmed += warmNow.length; warmNow.length = 0; warming = 0;
       return;
     }
@@ -498,6 +510,27 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
       if (!o.parent) continue;                                         // (its tile is gone)
       // drawn as the night will draw it: shown (a streamed tile stays hidden while its shaders compile), not fading
       // (lodFade's material copies), not an empty instanced bucket; else again later (8 tries, then left out)
+      // (a lamp-shadow proxy: drawn with one zero-size instance - only its render object is wanted - when its set is
+      // shown and not fading; it is never on a layer the main camera draws)
+      const src = o.userData.proxyOf;
+      if (src) {
+        let ok = !src.userData.fadeOrig;
+        for (let q = src; ok && q; q = q.parent) if (!q.visible && q !== src) ok = false;
+        if (ok && src.parent) { o.material = src.material; o.instanceMatrix.array.fill(0, 0, 16); o.count = 1; o.visible = true; o.layers.enable(WARM_LAYER); warmNow.push(o); }
+        else if (src.parent && (o.userData.__nightWarmTries = (o.userData.__nightWarmTries || 0) + 1) < 8) retry.push(o);
+        continue;
+      }
+      // (round 3) an EMPTY instanced batch whose cars only come at night (traffic-car-batch: round 2's 8 render objects
+      // at the switch): drawn once with one zero-size instance (its instance 0 is unused while its count is 0)
+      if (o.isInstancedMesh && o.count === 0 && EMPTY_WARM.test(o.name || "") && !o.userData.fadeOrig && (o.userData.__nightWarmTries || 0) >= 2) {
+        let ok = true;
+        for (let q = o.parent; ok && q; q = q.parent) if (!q.visible) ok = false;
+        if (ok) {
+          o.instanceMatrix.array.fill(0, 0, 16); o.instanceMatrix.clearUpdateRanges(); o.instanceMatrix.addUpdateRange(0, 16); o.instanceMatrix.needsUpdate = true;
+          o.userData.__warmEmpty = o.visible ? 1 : 2; o.count = 1; o.visible = true; o.layers.enable(WARM_LAYER); warmNow.push(o);
+          continue;
+        }
+      }
       let shown = !o.userData.fadeOrig && !(o.isInstancedMesh && o.count === 0);
       for (let q = o; shown && q; q = q.parent) if (!q.visible) shown = false;
       if (shown) { o.layers.enable(WARM_LAYER); warmNow.push(o); }
@@ -625,6 +658,18 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
       const TD = tram?.drawn;
       if (TD) for (let k = 0; k < TD.n; k++) { const x = TD.xz[k * 2], z = TD.xz[k * 2 + 1]; if (near2(x, z, S0, TRAM_R)) mover[0] = 1; if (near2(x, z, S1, TRAM_R)) mover[1] = 1; }
       if (camPos.distanceToSquared(lastCam) > 1e-4) { if (near2(camPos.x, camPos.z, S0, MOVER_R)) mover[0] = 1; if (near2(camPos.x, camPos.z, S1, MOVER_R)) mover[1] = 1; }
+      // (round 3) the other movers: SNCB trains (points along each train near the camera, refreshed every 12 frames:
+      // +8 m for the motion in between), skinned meshes (the falcons, characters) and anything tagged
+      // userData.nightMover (the flags), each at its world position when shown
+      if ((frames % 12) === 0) trainPoints(camPos);
+      for (let k = 0; k < trainPts.n; k++) { const x = trainPts.xz[k * 2], z = trainPts.xz[k * 2 + 1]; if (near2(x, z, S0, MOVER_R + 8)) mover[0] = 1; if (near2(x, z, S1, MOVER_R + 8)) mover[1] = 1; }
+      for (let k = 0; k < moverObjs.length; k++) {
+        const o = moverObjs[k];
+        if (!o.visible || !o.parent?.visible) continue;
+        const e = o.matrixWorld.elements, r = MOVER_R + (o.userData.nightMover > 1 ? o.userData.nightMover : 2);
+        if (near2(e[12], e[14], S0, r)) mover[0] = 1;
+        if (near2(e[12], e[14], S1, r)) mover[1] = 1;
+      }
     }
     lastCam.copy(camPos);
     night.carCount = nc;
@@ -688,7 +733,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     if (scale > 0 && warming) warmShadows(camPos);                    // (night fell during a warm-up frame: restore first)
     if (scale > 0) {
       let refreshed = false;
-      if (TILE_REACH) gateTiles();
+      if (TILE_REACH && !PROXY) gateTiles();
       for (let k = 0; k < 2; k++) {
         const L = shadowLights[k], id = night.shadow.lamp[k];
         L.shadow.autoUpdate = false;
@@ -699,7 +744,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         if (go && api.shadowMode === "alt" && id === sLamp[k] && (refreshed || (refreshTurn & 1) !== k) && mover[1 - k] === 1) go = false;
         // (the camera-moved refresh: one map per frame, alternating)
         if (!go && !refreshed && (refreshTurn & 1) === k && camPos.distanceToSquared(sCam[k]) > MOVE_REFRESH * MOVE_REFRESH) { go = true; refreshed = true; }
-        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; if (api.shadowMode === "alt") refreshed = true; } else stats.shadowSkips++;
+        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; if (api.shadowMode === "alt") refreshed = true; if (PROXY) fillProxies(k, L.position); } else stats.shadowSkips++;
       }
       refreshTurn++;
     } else if (lastScale <= 0 && frames >= 4) {
@@ -713,7 +758,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     // moved far (a jump); the layer's origin follows the camera only when it is drawn, so the texture and the origin the
     // ground materials read always match
     const jump = Math.abs(camPos.x - (ground.x0 + half)) > 40 || Math.abs(camPos.z - (ground.z0 + half)) > 40;
-    if (dynReady && (q > 0 || dynLast !== 0) && ((frames & 1) === 0 || jump || q === 0)) {   // (nothing to draw twice in a row: skip)
+    if (dynReady && (q > 0 || dynLast !== 0) && (frames % 3 === 0 || jump || q === 0)) {   // (nothing to draw twice in a row: skip; round 3: 20 Hz, the far pools step < 1 m)
       ground.recentre(camPos.x - half, camPos.z - half);
       dynMesh.visible = q > 0;
       ground.renderDynamic(renderer, q);
@@ -769,12 +814,103 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     }
     return pLamps;
   };
+  // (round 3) the trains' points for the movers' check (positions() allocates: every 12 frames only)
+  const trainPts = { n: 0, xz: new Float32Array(512) };
+  const trainPoints = (camPos) => {
+    trainPts.n = 0;
+    const T = window.__trains;
+    if (!T?.positions || !T.routes) return;
+    for (const t of T.positions()) {
+      if (Math.hypot(t.x - camPos.x, t.z - camPos.z) > 600) continue;
+      const R = T.routes[t.route], len = 80 * (t.units || 1);
+      for (let q = -len; q <= len && trainPts.n < 256; q += 20)   // (either way along the route: its direction of travel is not kept here)
+        { const a = R.at(t.d - q); trainPts.xz[trainPts.n * 2] = a[0]; trainPts.xz[trainPts.n * 2 + 1] = a[2]; trainPts.n++; }
+    }
+  };
+  const moverObjs = [];
   updaters.push(update);
   // tag the lamp-shadow casters as things arrive (tiles, fleets, landmarks): a sweep every 2 s, each mesh once
   let tagged = 0;
   const tileCasters = [];
+  // ---- (round 3) the lamp-shadow proxies of the tile-wide instanced sets (see PROXY)
+  const proxyGroup = new THREE.Group();
+  proxyGroup.name = "night-lamp-shadow-proxies";
+  scene.add(proxyGroup);
+  const proxies = new Map();                    // source InstancedMesh -> { p: [proxy lamp 0, proxy lamp 1], tile, attrs }
+  const proxyStats = { sets: 0, inst: 0, ms: 0 };
+  const makeProxy = (src, k) => {
+    const G = src.geometry, g = new THREE.BufferGeometry();
+    for (const [n, a] of Object.entries(G.attributes)) g.setAttribute(n, a.isInstancedBufferAttribute ? new THREE.InstancedBufferAttribute(new a.array.constructor(PROXY_CAP * a.itemSize), a.itemSize, a.normalized) : a);
+    g.setIndex(G.index); g.boundingSphere = G.boundingSphere; g.groups = G.groups; g.drawRange = G.drawRange;
+    g.userData.shared = true;
+    const p = new THREE.InstancedMesh(g, src.userData.fadeOrig || src.material, PROXY_CAP);
+    p.count = 0; p.visible = false; p.frustumCulled = false; p.castShadow = true; p.receiveShadow = false;
+    p.layers.set(PROXY_LAYER + k); p.matrixAutoUpdate = false; p.matrixWorldAutoUpdate = false;
+    p.name = `night-lamp-proxy-${k}`; p.userData.proxyOf = src;
+    proxyGroup.add(p);
+    warmList.push(p, performance.now());
+    return p;
+  };
+  const addProxy = (src, tile) => {
+    if (proxies.has(src)) return;
+    src.layers.disable(LAMP_SHADOW_LAYER);
+    const attrs = Object.entries(src.geometry.attributes).filter(([, a]) => a.isInstancedBufferAttribute).map(([n, a]) => [n, a.itemSize]);
+    proxies.set(src, { p: [makeProxy(src, 0), makeProxy(src, 1)], tile, attrs });
+  };
+  const dropProxy = (src) => {
+    const e = proxies.get(src);
+    if (!e) return;
+    for (const p of e.p) proxyGroup.remove(p);
+    proxies.delete(src);
+  };
+  const proxyNear = new Set();
+  /** lamp k's proxies: the instances of every set (of a tile within reach) within REACH of the lamp */
+  const fillProxies = (k, P) => {
+    const t0 = performance.now(), R2 = REACH * REACH, tiles = window.viewer?.world?.tiles;
+    proxyNear.clear();
+    if (tiles) for (const t of tiles) {
+      const b = t.bounds, dx = Math.max(b.x0 - P.x, 0, P.x - b.x1), dz = Math.max(b.z0 - P.z, 0, P.z - b.z1);
+      if (dx * dx + dz * dz < R2) proxyNear.add(t.name);
+    }
+    let sets = 0, inst = 0;
+    for (const [src, e] of proxies) {
+      const p = e.p[k];
+      let n = 0;
+      if ((e.tile === null || proxyNear.has(e.tile)) && src.parent && src.count > 0 && !src.userData.fadeOrig) {
+        let shown = true;
+        for (let q = src.parent; shown && q; q = q.parent) if (!q.visible) shown = false;
+        if (shown) {
+          src.updateMatrixWorld();
+          const W = src.matrixWorld.elements, M = src.instanceMatrix.array, D = p.instanceMatrix.array;
+          for (let i = 0, c = src.count; i < c && n < PROXY_CAP; i++) {
+            const o = i * 16, x = M[o + 12] + W[12], z = M[o + 14] + W[14], dx = x - P.x, dz = z - P.z;
+            if (dx * dx + dz * dz > R2) continue;
+            for (let j = 0; j < 16; j++) D[n * 16 + j] = M[o + j];
+            for (const [name, sz] of e.attrs) { const A = src.geometry.attributes[name].array, B = p.geometry.attributes[name].array; for (let j = 0; j < sz; j++) B[n * sz + j] = A[i * sz + j]; }
+            n++;
+          }
+          if (n) { p.material = src.material; p.matrix.copy(src.matrixWorld); p.matrixWorld.copy(src.matrixWorld); }
+        }
+      }
+      if (n > 0) {
+        p.instanceMatrix.clearUpdateRanges(); p.instanceMatrix.addUpdateRange(0, n * 16); p.instanceMatrix.needsUpdate = true;
+        for (const [name, sz] of e.attrs) { const a = p.geometry.attributes[name]; a.clearUpdateRanges(); a.addUpdateRange(0, n * sz); a.needsUpdate = true; }
+        sets++; inst += n;
+      }
+      p.count = n; p.visible = n > 0;
+    }
+    proxyStats.sets = sets; proxyStats.inst = inst; proxyStats.ms = performance.now() - t0;
+  };
   const sweep = () => {
     tagged += tagCasters(scene, warmList, TILE_REACH ? tileCasters : null);
+    if (PROXY) {
+      for (const { o, tile } of tileCasters) addProxy(o, tile);
+      // (the city-wide pools - parked cars, street life, gardens, furniture - were tried as proxies too: their instances
+      // near the camera are within the lamps' reach anyway: 517 -> 502 k triangles for 2 maps, more draws and fill CPU)
+      for (const src of proxies.keys()) if (!src.parent) dropProxy(src);
+    }
+    moverObjs.length = 0;
+    scene.traverse((o) => { if (o.isSkinnedMesh || o.userData.nightMover) moverObjs.push(o); });
     for (let i = tileCasters.length - 1; i >= 0; i--) if (!tileCasters[i].o.parent) { tileCasters[i] = tileCasters[tileCasters.length - 1]; tileCasters.pop(); }   // (tile gone)
   };
   /** keep a tile's instanced sets in the lamp layer only near a shadowed lamp (both lamps: their union) */
@@ -797,7 +933,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   const api = {
     master: 1,                          // (A/B in one page: 0 = every night light off, the lighting model kept)
     shadowMode: SHADOW_MODE,            // (A/B in one page: "smart" / "full")
-    pool, night, lamps, ground, shadowLights, stats, nightParams, glare,
+    pool, night, lamps, ground, shadowLights, stats, nightParams, glare, proxyStats, proxies,
     /** a tile's lamp heads; (round 3) extra = { windows: its lit windows (litHash.js records, the tile worker),
      *  bounds: { x0, z0, ... }, ground(x, z): the surface height } for its ground map */
     addTile: (name, heads, extra = null) => {

@@ -323,6 +323,7 @@ class NightLightsNode extends ClusteredLightsNode {
     LightsNode.prototype.setupLights.call(this, builder, lightNodes);     // sun, moon, shadowed spots
     const tex = this._lightsTexture, extra = this._extra;
     const ground = builder.material?.userData?.groundLight === true;        // reads groundLight.js' map
+    const lscale = builder.material?.userData?.nightLightScale ?? 1;
     Fn(() => {
       const upV = normalize(cameraViewMatrix.mul(vec4(0, 1, 0, 0)).xyz).toVar();
       // the cluster's list is ivec4 chunks: one storage load per 4 lights (three's loop reloads the chunk per light)
@@ -390,7 +391,10 @@ class NightLightsNode extends ClusteredLightsNode {
             // falloff: finite source (radius B.w) x Frostbite's window at the range
             const win = float(1).sub(d2.div(range.mul(range)).pow2()).clamp().pow2();
             const att = win.div(d2.add(B.w.mul(B.w)));
-            const lc = B.rgb.mul(spot.mul(k).mul(att));
+            let lc = B.rgb.mul(spot.mul(k).mul(att));
+            // (city round 3) a material may tone the pool lights down (userData.nightLightScale: the polished tram rail
+            // heads took a 1000 cd low beam as a white specular line)
+            if (lscale !== 1) lc = lc.mul(lscale);
             // soft sources (windows, shop fronts, signs, rear lights: flag E1.z) light the DIFFUSE term only: Lambert,
             // no GGX / clear coat (their glossy reflections come from SSR of the lit glass); lamps and headlights keep
             // the full BRDF (the long specular streaks on a wet road)

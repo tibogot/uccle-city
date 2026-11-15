@@ -229,6 +229,7 @@ function railMaterial() {
   m.colorNode = col;
   m.metalnessNode = mix(head.mul(0.85).add(lip.mul(0.5)), float(0.3), far);
   m.roughnessNode = mix(float(0.9).sub(head.mul(0.62)).sub(lip.mul(0.3)), float(0.6), far);
+  m.userData.nightLightScale = 0.35;     // ?night=1 round 3: the night pool's lights x 0.35 here (the low beams' rail glint read white)
   return m;
 }
 
