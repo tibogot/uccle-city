@@ -665,6 +665,9 @@ function classify(doc, P, I, legacyStyle) {
       }
       const p = period(r, SH.flats, w);
       type2 = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+    } else if ((form2 === "terraced" || form2 === "semi") && g.eaves >= 11) {
+      const p = period(r, SH.flats, flat > 0.6 ? [0.5, 1, 1.2, 1.2] : [2, 1.5, 0.7, 0.6]);
+      type2 = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
     } else if (form2 === "terraced" || form2 === "semi" && g.area < 110) {
       const sh = form2 === "terraced" ? SH.closed : SH.semi;
       const w = [1, 1, 1, 1];
@@ -1402,6 +1405,27 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const at2 = (u, d = 0) => [tx * (u0 + u) + f.nx * (dd + d), 0, tz * (u0 + u) + f.nz * (dd + d)];
       const { bw, doorBay, nb } = faceBays({ width, rnd: Math.fround(rq) });
       const du = 0.55 + bw * (doorBay + 0.5);
+      const T22 = f.tris.map(({ p }) => p.map((v) => [v[0] * tx + v[2] * tz - u0, v[1] - base2]));
+      const on = (u, hh) => T22.some(([A, B, C]) => {
+        const det = (B[1] - C[1]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[1] - C[1]);
+        if (Math.abs(det) < 1e-9) return false;
+        const l1 = ((B[1] - C[1]) * (u - C[0]) + (C[0] - B[0]) * (hh - C[1])) / det, l2 = ((C[1] - A[1]) * (u - C[0]) + (A[0] - C[0]) * (hh - C[1])) / det;
+        return l1 >= -1e-4 && l2 >= -1e-4 && 1 - l1 - l2 >= -1e-4;
+      });
+      const runsOn = (a, c, h0, h1) => {
+        const out = [];
+        let s0 = null;
+        for (let u = a; u <= c + 1e-6; u += 0.25) {
+          const ok = on(u, h0) && on(u, h1);
+          if (ok && s0 === null) s0 = u;
+          if ((!ok || u + 0.25 > c + 1e-6) && s0 !== null) {
+            const e = ok ? Math.min(u, c) : u - 0.25;
+            if (e - s0 > 0.01) out.push([s0, e]);
+            s0 = null;
+          }
+        }
+        return out;
+      };
       const doorHere = street && width >= 1.6 && faceEaves >= 2.8 && !(sw > 0.5);
       if (btype2 === TYPE.MAITRE && doorHere && !kitOn) {
         const g = opts.ground ? opts.ground(tx * (u0 + du) + f.nx * (dd + 0.6), tz * (u0 + du) + f.nz * (dd + 0.6)) : base2;
@@ -1413,7 +1437,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       if ((btype2 === TYPE.DECO || btype2 === TYPE.BELETAGE || btype2 === TYPE.BLOCK) && doorHere) {
         const sk = storeyFit(Math.fround(faceEaves), opts.storeys !== false, btype2);
         const y = base2 + 0.72 * sk.G + 0.22, hw = btype2 === TYPE.BLOCK ? 1.4 : 0.85;
-        if (faceEaves > 0.72 * sk.G + 1.2) {
+        if (faceEaves > 0.72 * sk.G + 1.2 && on(du - hw, y - base2 - 0.05) && on(du + hw, y - base2 - 0.05)) {
           box(D, at2(du - hw), at2(du + hw), y, 0.1, btype2 === TYPE.BLOCK ? 1.1 : 0.7, f.nx, f.nz, [0.5, 0.49, 0.47]);
           stats.canopies = (stats.canopies || 0) + 1;
         }
@@ -1428,7 +1452,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         for (let fl3 = 1; fl3 < 40; fl3++) {
           const y = sk.G + (fl3 - 1) * sk.S;
           if (y + 2.2 > faceEaves) break;
-          for (const [a, c] of spans) {
+          for (const [a, c] of spans.flatMap(([a0, c0]) => runsOn(a0, c0, y - 0.1, y + 1.05))) {
             if (c - a < 1.2) continue;
             box(D, at2(a), at2(c), base2 + y, 0.16, D0 - PT, f.nx, f.nz, [0.4, 0.39, 0.37]);
             box(D, at2(a, D0 - PT), at2(c, D0 - PT), base2 + y + 1, 1.16, PT, f.nx, f.nz, pc, true);
@@ -11300,7 +11324,7 @@ function kitCollector(opts = {}) {
               stats.stepsDropped = (stats.stepsDropped || 0) + n - k + 1;
               break;
             }
-            put("step", x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+            (out.step ??= []).push(x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed, 0, 0, 0, 0, 0);
           }
         }
         continue;

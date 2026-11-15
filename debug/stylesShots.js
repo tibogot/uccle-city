@@ -10,7 +10,7 @@ export const VIEWS = {
   brugmann: { x: -905, z: -150, h: 1.7, tx: -850, tz: -184, th: 5, fov: 60 },          // Avenue Brugmann (D4)
   defre: { x: -392, z: -478, h: 1.7, tx: -445, tz: -469, th: 3, fov: 60 },              // Avenue De Fré (E3 / E4)
   coghen: { x: -650, z: -935, h: 1.7, tx: -675, tz: -1020, th: 3, fov: 60 },            // Avenue Coghen (E2): interwar / art deco
-  orange: { x: 820, z: 1890, h: 1.7, tx: 880, tz: 1990, th: 2, fov: 60 },              // Avenue du Prince d'Orange (H8): villas
+  orange: { x: 836, z: 1905, h: 1.7, tx: 880, tz: 1990, th: 3, fov: 60 },              // Avenue du Prince d'Orange (H8): villas
   churchill: { x: 330, z: -1431, h: 1.7, tx: 450, tz: -1412, th: 6, fov: 60 },          // Avenue Winston Churchill (G1): blocks
 };
 /** the orbit controls clamp the camera up (~8 m over the street); the eye is put back where the view says, no

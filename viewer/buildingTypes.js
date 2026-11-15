@@ -145,6 +145,10 @@ export function classify(doc, P, I, legacyStyle) {
       if (g.h > 24) { w[0] = 0; w[1] *= 0.15; }
       const p = period(r, SH.flats, w);
       type = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
+    } else if ((form === "terraced" || form === "semi") && g.eaves >= 11) {
+      // a terraced front of 4+ storeys is a block of flats ("immeuble de rapport"), not a bel-étage house: the flats' shares
+      const p = period(r, SH.flats, flat > 0.6 ? [0.5, 1, 1.2, 1.2] : [2, 1.5, 0.7, 0.6]);
+      type = p === 0 ? TYPE.MAITRE : p === 1 ? TYPE.DECO : TYPE.BLOCK;
     } else if (form === "terraced" || (form === "semi" && g.area < 110)) {
       const sh = form === "terraced" ? SH.closed : SH.semi;
       const w = [1, 1, 1, 1];

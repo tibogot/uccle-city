@@ -545,6 +545,25 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const at = (u, d = 0) => [tx * (u0 + u) + f.nx * (dd + d), 0, tz * (u0 + u) + f.nz * (dd + d)];
       const { bw, doorBay, nb } = faceBays({ width, rnd: Math.fround(rq) });
       const du = 0.55 + bw * (doorBay + 0.5);
+      // the face's own wall at (u, h over the base)? (a face can hold two wings in one plane with a gap between them, or
+      // stop short of the eaves on one side: no slab may cross the air)
+      const T2 = f.tris.map(({ p }) => p.map((v) => [v[0] * tx + v[2] * tz - u0, v[1] - base]));
+      const on = (u, hh) => T2.some(([A, B, C]) => {
+        const det = (B[1] - C[1]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[1] - C[1]);
+        if (Math.abs(det) < 1e-9) return false;
+        const l1 = ((B[1] - C[1]) * (u - C[0]) + (C[0] - B[0]) * (hh - C[1])) / det, l2 = ((C[1] - A[1]) * (u - C[0]) + (A[0] - C[0]) * (hh - C[1])) / det;
+        return l1 >= -1e-4 && l2 >= -1e-4 && 1 - l1 - l2 >= -1e-4;
+      });
+      /** [a, c] cut to the runs where the wall stands at both heights (sampled every 0.25 m) */
+      const runsOn = (a, c, h0, h1) => {
+        const out = []; let s0 = null;
+        for (let u = a; u <= c + 1e-6; u += 0.25) {
+          const ok = on(u, h0) && on(u, h1);
+          if (ok && s0 === null) s0 = u;
+          if ((!ok || u + 0.25 > c + 1e-6) && s0 !== null) { const e = ok ? Math.min(u, c) : u - 0.25; if (e - s0 > 0.01) out.push([s0, e]); s0 = null; }
+        }
+        return out;
+      };
       const doorHere = street && width >= 1.6 && faceEaves >= 2.8 && !(sw > 0.5);
       if (btype === TYPE.MAITRE && doorHere && !kitOn) {
         // three 17 cm steps up to the raised door (TYPE_GRID raise 0.51 m): a landing and two treads, each lower one 2 cm
@@ -559,7 +578,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         // a flat concrete canopy over the entrance (interwar / post-war): door width + 0.5 m, 0.7 m deep, 10 cm thick
         const sk = storeyFit(Math.fround(faceEaves), opts.storeys !== false, btype);
         const y = base + 0.72 * sk.G + 0.22, hw = btype === TYPE.BLOCK ? 1.4 : 0.85;
-        if (faceEaves > 0.72 * sk.G + 1.2) { box(D, at(du - hw), at(du + hw), y, 0.1, btype === TYPE.BLOCK ? 1.1 : 0.7, f.nx, f.nz, [0.5, 0.49, 0.47]); stats.canopies = (stats.canopies || 0) + 1; }
+        if (faceEaves > 0.72 * sk.G + 1.2 && on(du - hw, y - base - 0.05) && on(du + hw, y - base - 0.05)) { box(D, at(du - hw), at(du + hw), y, 0.1, btype === TYPE.BLOCK ? 1.1 : 0.7, f.nx, f.nz, [0.5, 0.49, 0.47]); stats.canopies = (stats.canopies || 0) + 1; }
       }
       if (btype === TYPE.BLOCK && width >= 5 && hash01(kk + "|balc") < 0.65) {
         // BALCONIES on every upper storey: a 16 cm slab 1.25 m deep and a 1.0 m parapet on its front edge (concrete,
@@ -574,7 +593,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         for (let fl = 1; fl < 40; fl++) {
           const y = sk.G + (fl - 1) * sk.S;                     // the storey's floor over the ground-floor line
           if (y + 2.2 > faceEaves) break;
-          for (const [a, c] of spans) {
+          for (const [a, c] of spans.flatMap(([a0, c0]) => runsOn(a0, c0, y - 0.1, y + 1.05))) {
             if (c - a < 1.2) continue;
             box(D, at(a), at(c), base + y, 0.16, D0 - PT, f.nx, f.nz, [0.4, 0.39, 0.37]);                       // slab
             box(D, at(a, D0 - PT), at(c, D0 - PT), base + y + 1.0, 1.16, PT, f.nx, f.nz, pc, true);               // parapet

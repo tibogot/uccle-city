@@ -21,7 +21,7 @@ export function facesOf(a) {
   for (let i = 0; i < nV; i++) {
     const rnd = W.aBld[i * 4 + 3], nx = W.aFN[i * 4], nz = W.aFN[i * 4 + 1], width = W.aWall[i * 4 + 1];
     const k = `${rnd}|${nx.toFixed(4)}|${nz.toFixed(4)}|${width.toFixed(3)}`;
-    if (!faces.has(k)) faces.set(k, { rnd, nx, nz, width, eh: W.aWall[i * 4 + 3], style: W.aBld[i * 4], partyH: W.aBld[i * 4 + 1], street: W.aBld[i * 4 + 2], shopW: W.aFN[i * 4 + 3], verts: [] });
+    if (!faces.has(k)) faces.set(k, { rnd, nx, nz, width, eh: W.aWall[i * 4 + 3], style: W.aBld[i * 4], partyH: W.aBld[i * 4 + 1], street: Math.round(W.aBld[i * 4 + 2]) % 2, shopW: W.aFN[i * 4 + 3], verts: [] });
     faces.get(k).verts.push(i);
   }
   const byRnd = new Map();

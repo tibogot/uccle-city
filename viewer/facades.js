@@ -584,7 +584,8 @@ export function wallMaterial(opts = {}) {
       height = height.add(boxBand(h, G.sub(0.04), G.add(0.16), aaHR).mul(isM).mul(kitless).mul(wallT).mul(step(G.add(2.4), eh)).mul(0.04));
       // rustication: V-grooves every 34 cm from the plinth to the first-floor line (render only)
       const rq = h.sub(plinthTop).div(0.34), rfw = fwidth(rq);
-      const groove = filteredPulse(rq, float(0.0), float(0.07), rfw).mul(step(plinthTop, h)).mul(step(h, G.sub(0.1))).mul(isM).mul(float(1).sub(isBrick)).mul(wallT).toVar();
+      const groove = filteredPulse(rq, float(0.0), float(0.07), rfw).mul(step(plinthTop, h)).mul(step(h, G.sub(0.1))).mul(isM).mul(float(1).sub(isBrick)).mul(wallT)
+        .mul(float(1).sub(smoothstep(0.12, 0.25, rfw))).toVar();
       col = col.mul(float(1).sub(groove.mul(0.28)));
       height = height.sub(filteredPulse(rq, float(0.0), float(0.07), rfw.mul(RELIEF_PX)).mul(step(plinthTop, h)).mul(step(h, G.sub(0.1))).mul(isM).mul(float(1).sub(isBrick)).mul(wallT).mul(0.008));
     }
@@ -596,7 +597,9 @@ export function wallMaterial(opts = {}) {
       col = mix(col, C(0.66, 0.65, 0.61).add(grain.mul(0.012)), brickB);
       height = height.add(max(pulseY(wyb, wyb.add(float(0.22).div(storeyH)), fwyR), pulseY(wya.sub(float(0.16).div(storeyH)), wya, fwyR)).mul(rowOk).mul(isD).mul(isBrick).mul(0.02));
       const dm = yl.sub(wyb).mul(storeyH).sub(0.09).div(0.075), dfw = fwidth(dm);   // 7.5 cm pitch over the head
-      const gr = filteredPulse(dm, float(0.0), float(0.3), dfw).mul(step(0.0, dm)).mul(step(dm, 2.9)).mul(rowOk).mul(isD).mul(float(1).sub(isBrick)).toVar();
+      // (the lines fade out before a 7.5 cm pitch falls under ~4 px: a box filter alone left a dotted moiré row)
+      const gr = filteredPulse(dm, float(0.0), float(0.3), dfw).mul(step(0.0, dm)).mul(step(dm, 2.9)).mul(rowOk).mul(isD).mul(float(1).sub(isBrick))
+        .mul(float(1).sub(smoothstep(0.12, 0.25, dfw))).toVar();
       col = col.mul(float(1).sub(gr.mul(0.3)));
       height = height.sub(gr.mul(0.006));
       const sB = sillB.mul(rowOk).mul(isD).mul(float(1).sub(isBrick));

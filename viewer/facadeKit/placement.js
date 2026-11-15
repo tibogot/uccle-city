@@ -219,7 +219,10 @@ export function kitCollector(opts = {}) {
             const top = f.base + raise - 0.17 * (k - 1) - 0.06;
             const gk = Math.max(opts.ground(x + f.nx * (0.3 * k + 0.15) - f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) + f.nx * 0.5), opts.ground(x + f.nx * (0.3 * k + 0.15) + f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) - f.nx * 0.5));
             if (top < gk + 0.04) { stats.stepsDropped = (stats.stepsDropped || 0) + n - k + 1; break; }
-            put("step", x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+            // (a step is packed as a RUN (kit.json kind "run"): kitField reads its end mitres from the spare and F[0], which
+            // held the face's u0 (hundreds of m): its end rings sheared into a long band across Place Saint-Job once the
+            // raised doors put steps everywhere. Its mitres are 0: square ends)
+            (out.step ??= []).push(x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed, 0, 0, 0, 0, 0);
           }
         }
         continue;

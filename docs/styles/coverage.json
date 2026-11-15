@@ -1,0 +1,38 @@
+{
+ "byType": {
+  "apartment block": 1846,
+  "generic": 6229,
+  "villa": 3392,
+  "(garage doors)": 6082,
+  "art deco / modernist": 5256,
+  "post-war bel-étage": 4531,
+  "maison de maître": 4144
+ },
+ "byForm": {
+  "block": 2898,
+  "small": 6213,
+  "detached": 2956,
+  "semi": 3125,
+  "terraced": 10190,
+  "landmark": 16
+ },
+ "cross": {
+  "block -> apartment block": 1521,
+  "small -> generic": 6213,
+  "detached -> villa": 2561,
+  "block -> art deco / modernist": 1192,
+  "detached -> art deco / modernist": 362,
+  "semi -> villa": 831,
+  "semi -> post-war bel-étage": 1219,
+  "semi -> art deco / modernist": 559,
+  "terraced -> post-war bel-étage": 3312,
+  "terraced -> maison de maître": 3446,
+  "terraced -> apartment block": 289,
+  "semi -> maison de maître": 480,
+  "terraced -> art deco / modernist": 3143,
+  "block -> maison de maître": 185,
+  "detached -> maison de maître": 33,
+  "semi -> apartment block": 36,
+  "landmark -> generic": 16
+ }
+}
