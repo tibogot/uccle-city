@@ -253,6 +253,7 @@ export class Driver {
       this.moto.root.visible = false;
       this.scene.add(this.moto.root);
     }
+    if (this.vehicle === "car" && !this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "faceted:hatch_c").catch(() => this.setCar("scripted"));
     if (this.on && was !== this.vehicle) {
       const s = this.state;
       this.startPose = { x: s.x, z: s.z, heading: s.heading };

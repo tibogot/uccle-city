@@ -32,7 +32,7 @@ export function pathOf(ids, keep = 0) {
   return out;
 }
 /** a polyline along the lane graph from the lane nearest (x, z) heading h, choosing successors by `turn` */
-export function lanePath(x, z, h, { tile = "I6", meters = 700, turn = "straight", seed = 7 } = {}) {
+export function lanePath(x, z, h, { tile = "I6", meters = 700, turn = "straight", seed = 7, left = 0 } = {}) {
   const G = window.__trafficTiles.get(tile), XY = G.xy;
   let best = null, bd = 1e9;
   for (let p = 0; p < G.paths; p++) for (let k = G.off[p]; k < G.off[p + 1] - 1; k++) {
@@ -66,6 +66,11 @@ export function lanePath(x, z, h, { tile = "I6", meters = 700, turn = "straight"
   for (let i = 1; i < out.length; i++) {
     acc += Math.hypot(out[i][0] - out[i - 1][0], out[i][1] - out[i - 1][1]);
     if (acc >= 2) { rs.push(out[i]); acc = 0; }
+  }
+  if (left) {                                    // shift sideways (m, + = left of the travel direction: past the parked cars)
+    const sh = rs.map((q, i) => { const a = rs[Math.max(0, i - 1)], b = rs[Math.min(rs.length - 1, i + 1)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return [q[0] + (b[1] - a[1]) / L * left, q[1] - (b[0] - a[0]) / L * left]; });
+    return sh;
   }
   return rs;
 }
