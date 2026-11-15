@@ -1,0 +1,7 @@
+[
+ {"check": "bentflat", "at": [-10.49, 6.01, 10.58], "radius": 0.12, "why": "Dix Monolithes LOD1 (drawn 70-220 m only): a 0.016 m2 triangle at a standing stone's top arris, a corner normal 25 deg off its 0.6 m2 near-planar region after the welded simplification; < 1 px at 70 m"},
+ {"check": "bentflat", "at": [-7.3, 0.49, 9.29], "radius": 0.12, "why": "Dix Monolithes LOD1 (70-220 m): 14 deg on a 0.05 m2 triangle at the foot of the 7th standing stone, half behind the planted bed"},
+ {"check": "bentflat", "at": [12.18, 0.53, -7.9], "radius": 0.12, "why": "Dix Monolithes LOD1 (70-220 m): 4 deg on a hornbeam hedge's foot (a leafy surface, the bend invisible)"},
+ {"check": "bentflat", "at": [-7.54, 0.26, 9.37], "radius": 0.15, "why": "Dix Monolithes LOD2 (220-1100 m): 3.4 deg on a stone's foot at the bed line"},
+ {"check": "bentflat", "at": [-10.96, 0.52, -1.78], "radius": 0.15, "why": "Dix Monolithes LOD2 (220-1100 m): 6.9 deg on a hornbeam hedge's foot (a leafy surface, sub-pixel at that range)"}
+]

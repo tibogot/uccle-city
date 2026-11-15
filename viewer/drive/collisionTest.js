@@ -28,6 +28,7 @@ import { gather, itemContact, heightClear, KIND } from "./colliders.js";
 import { ledgeContact } from "./carEnv.js";
 import { carFleet } from "../carFleet.js";
 import { TUNNEL_ROOTS } from "../rail/tunnels.js";
+import { ART_ROOTS } from "../publicart/artRoots.js";
 const carSizeOf = (t) => carFleet.sizeOf(t);
 
 const CELL = 0.25;
@@ -39,7 +40,7 @@ const SRC_NAME = Object.fromEntries(Object.entries(SRC).map(([k, v]) => [v, k]))
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "augustin", "russian", "rosaire", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
   "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
-  ...TUNNEL_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js)
+  ...TUNNEL_ROOTS, ...ART_ROOTS];                     // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/)
 
 /** A plan grid over the tile bounds. */
 function makeGrid(b) {
