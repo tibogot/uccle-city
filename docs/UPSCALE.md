@@ -85,8 +85,9 @@ the preset at boot.
 
 ## Switches (rows in viewer/features.js, Lighting & post > Upscaling)
 
-`?upscale=0` native + MSAA · `?dynres=0` fixed scale · `?rscale=0.75` the scale (alone it fixes it; with `?dynres=1`
-it is the start) · `?quality=` · `?gputarget=14` · `?taasharp=` · (debug) `?taakernel=1.6`, `?mipbias=-0.3|off`.
+`?upscale=0` native + MSAA · `?instmotion=0` no per-instance / skinned / wind motion · `?thinaa=old` hard-edged
+cards + full-strength wires · `?dynres=0` fixed scale · `?rscale=0.75` the scale (alone it fixes it; with `?dynres=1`
+it is the start) · `?quality=` · `?gputarget=14` · `?taasharp=` · (debug) `?taakernel=1.6`, `?mipbias=-0.3|off`, `?taamoving=0.03`.
 
 ## Image checks (`docs/upscale/`, 1600 x 828 at DPR 1)
 
@@ -101,18 +102,71 @@ it is the start) · `?quality=` · `?gputarget=14` · `?taasharp=` · (debug) `?
 - Moving objects: `tram_close_before_motion_mrt.jpg` = the first version (camera motion only): a tram passing 14 m away
   showed the input's staircase on its window edges; fixed by the object-motion MRT + the wide kernel at low history
   confidence. `moving_car_instanced_x3.jpg`: a traffic car (instanced, camera motion only): its trailing edge and its
-  dithered parts speckle while it moves; the remaining weak spot.
+  dithered parts speckle while it moves (fixed: "Moving objects" below).
 - SSR, AO, bloom, haze: unchanged in look (their inputs are at the internal size; SSR on wet roads not checked).
+
+## Moving objects + thin geometry (branch claude/motionvec, 2026-11-15)
+
+The motion output (`PreviousWorld` in viewer/upscale.js) is built per material x object kind: where this fragment's
+surface point was LAST frame, before the object's rigid motion (`ObjectMotionMatrix` on top, the camera in the resolve):
+
+| what | how | data / cost |
+|---|---|---|
+| traffic cars (`traffic/trafficFleet.js`), traffic two-wheelers (`moto/cityTwoWheelers.js`), trams (`tram2Model.js`), trains (`rail/trainModel.js`), pigeons (`falconFlight/pigeons.js`) | `viewer/instMotion.js` `InstancePrev`: one STORAGE row (vec4) per drawn instance, read at (mesh base + instanceIndex) in the vertex stage: `prev = rotY(p - O, dyaw) + c + O` (a yaw-only delta about the instance origin + its translation; O = a per-frame origin at the camera, the same f32 on CPU and GPU). The CPU keeps each mover's last drawn pose by key (sim index + generation; trip + piece) and writes c / dyaw where it writes the instance matrix | 16 B per drawn instance per frame, static buffer + update ranges (one per mesh written, adjacent ones merged). Measured 2.8-2.9 KB / frame at Place Saint-Job (26 cars 416 B, 150 pigeons 2.4 KB, a tram 160 B, a train 64 B). No vertex buffer (the fleets' geometries sit near WebGPU's 8, past which three makes object-specific builds) |
+| sky flocks (`birds/skyFlocks.js`, GPU compute) | no buffer: this frame's move pass did `p += v dt`, so last frame = `p - v dt` (velocity and dt are in the storage buffer / uniforms already); the turn and wing beat between two frames are left out | 3 ALU per vertex |
+| skinned meshes (falcons, characters) | three's own previous-bone skinning: `NodeBuilder.needsPreviousData()` answers true for SkinnedMeshes in the scene pass (never for instanced / batched meshes: three would copy every instance-matrix array), the motion reads `positionPrevious` | one bone-matrix copy per skeleton per frame + a second skin transform (scene pass only) |
+| wind foliage (hedges, garden hedges, ivy x2, plants x2: the `foliage/wind.js` users) | `windAt` / `flutter` take the time at graph construction; `windPrev(build)` builds the same offset again with last rendered frame's wind time (`wind.uTimePrev`, an onFrameUpdate uniform) and the material gets the difference | the wind evaluated twice in those vertex shaders (scene pass only) |
+
+The city's stylized street trees run with `windAmp: 0` (no sway): nothing to do there. Not covered: the pedestrians
+(crowd, later), the old `trees.js` cards (three's `time`), grass (default off), the flags' cloth. A mover not drawn
+last frame (spawned, entering the view) writes 0. `?instmotion=0` = none of this (no buffer, no shader change); live
+A/B in one page: `window.instMotion.set(false)` (a uniform multiplies the motion away; same shaders). The resolve's
+extra current-frame weight on pixels with their own motion is 0.03 now that the motion is exact (0.08 with
+`?instmotion=0`; `?taamoving=`): the stochastic see-through glass of a followed car averages calmer, edges unchanged.
+
+**Thin geometry** (`?thinaa=old` = as merged before): the WIRES (`thinWire()`: tram catenary, railway wires) are
+BLENDED (transparent) under the TAAU: the ribbon's minimum half-width is 0.6 INTERNAL pixels (`wireHalfPx`, set per
+frame from the fov and the internal height; native keeps 0.0011 per metre) and its alpha = true width / ribbon width
+(the coverage), so a 12 mm wire reads as a soft, continuous, faint line: no dots, never darker than its coverage.
+The other alpha-to-coverage materials (tree / hedge / ivy cards, welded-mesh fences) get a per-frame stochastic alpha
+in the scene pass (`a < ditherNoise()` discards, the noise phase moving each frame): their alpha is 1 inside a leaf
+and only falls off over the pixel-wide alpha-test band (or over a wide even veil far away), so dropped pixels always
+sit next to kept ones and the history averages them into A2C's soft edge (the earlier "dotted wire" failure was a
+lone sub-pixel feature, which the wires no longer are).
+
+Image checks (`docs/upscale/motion/`, 1600 x 828, internal 0.75 unless said; `debug/motionShots.js`, the main loop
+stepped at 1/60 s; OFF row = `instMotion.set(false)`, ON row = default; the two rows are two cars / the same tram with
+its clock rewound):
+- `car_pass_075_off_on.jpg`: a car passing a fixed camera 9 m away: OFF speckles the lower body and staircases the
+  wheel arches and outline; ON clean (wheels, sills, roof line).
+- `chase_075_off_on.jpg`: chase camera behind a car (the followed car still on screen, the world moving): ON crisp,
+  plate readable.
+- `night_chase_auto_off_on.jpg` (night, auto quality): OFF smears the car ahead into headlight streaks and a white
+  ghost and jags the followed car; ON clean.
+- `tram_pass_075_off_on.jpg`: tram 92 passing at 12 m: OFF staircased window frames and ghosted seat silhouettes; ON
+  straight frames. The see-through glass dither stays visible in both (weak spot 1).
+- `birds_075_off_on_x3.jpg`: near birds of a flock at ~22 m: OFF the history clamp ERASES them (a faint ghost at
+  most); ON they read as birds.
+- `thin_wire_crown_old_new_x2.jpg`, `thin_stjob_old_new.jpg`, `thin_ivy_old_new.jpg`: the catenary dark and heavy
+  (old) vs soft and continuous (new); crown and ivy edges anti-aliased like A2C, no visible dither when still.
+
+Cost (preflight YELLOW: free-memory warning; another agent's WebGPU tab opened mid-run, mine kept in front): Place
+Saint-Job street at 0.75 fixed, 3 x 5 s per load, loads alternated: default GPU p50 8.2-10.9 ms (median ~8.8),
+`?instmotion=0&thinaa=old` 7.8-11.8 ms (median ~9.3): no difference measurable under the +-1.5 ms contention noise;
+CPU per frame unchanged (8.8-10.5 vs 8.9-9.4 ms). The shader work is added only in the scene pass of the movers and the
+wind foliage (a storage read + ~12 ALU per vertex for the fleets). A clean GREEN re-measure is still worth doing.
 
 ## Weak spots / next
 
-1. Instanced movers (traffic fleet, birds) have no per-instance motion: speckled trailing edges in motion. Next: the
-   fleet writes a previous-position instance attribute (it keeps `lastPos` already) and the motion output reads it.
-2. Coverage-as-alpha wires / fences / cards lost their A2C softness (hard edge + TAA): could draw the wire ribbons at
-   their true radius under TAAU (the jitter then gives the coverage) instead of widening them to a pixel.
+1. (done 2026-11-15, "Moving objects" above) per-instance motion. Left: the see-through glass (car packs, tram,
+   train) is a per-pixel stochastic coverage: on a moving vehicle the history cannot average all of it, a fine dither
+   shows in the windows (most on trams seen close). A real fix: the glass as its own blended draw. Pedestrians have no
+   motion yet. The yaw-only delta ignores a pitch / lean change between two frames (sub-pixel) and the wheels' spin.
+2. (done 2026-11-15, above) thin geometry. The wires are now transparent draws (sorted, after the opaques): a wire
+   crossing a moving car overwrites the car's motion with its own (0) on its pixels.
 3. The native twin in `debug/upscaleAB.js liveViews` compiles its 4x pipelines lazily: at views it has not seen it
    skips not-yet-compiled objects (lawn: 232 vs 250 draws), so its native number there is a little LOW.
 4. GPU contention from other tabs / apps raises the measured GPU time, so the DR lowers the scale then too (right for
    a game sharing the GPU, misleading for A/B measurements: measure at fixed scales, `?dynres=0`).
 5. Text on shop signs at 0.6: legible but soft (the sharpen helps); the "auto" floor 0.6 is a choice.
-6. Vegetation wind / vertex animation is not in the motion (camera + rigid only): leaves rely on the clamp.
+6. (done 2026-11-15 for the wind.js foliage) Grass (default off) and the flags' cloth are not in the motion.

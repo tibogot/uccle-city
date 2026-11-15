@@ -396,7 +396,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
         tramPose(model.layout, (q) => at(shape, q), d, pose, false, prof ? (q) => yAlong(shape, q) : null);
         doorsLR[0] = doorsLR[1] = 0;
         if (dOpen > 0) doorsLR[platformSide(t, stop) > 0 ? 0 : 1] = dOpen;
-        fleet.add(pose, railTop, { sign: model.sign.index[t.head] ?? 0, doors: doorsLR, brake });
+        fleet.add(pose, railTop, { sign: model.sign.index[t.head] ?? 0, doors: doorsLR, brake, key: t });   // (key: --- instmotion)
         s.cab += 2;
       } else placeTrip(t, s, d);
     }

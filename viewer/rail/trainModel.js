@@ -18,6 +18,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "../lighting.js";
 import { SMOOTH, ditherNoise } from "../lodFade.js";
+import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-piece motion vectors for the TAAU (docs/UPSCALE.md)
 const VFIX2_OLD = typeof location !== "undefined" && /[?&]vfix2=old(&|$)/.test(location.search);
 
 export const TRAIN_LODS = [
@@ -202,6 +203,12 @@ export function trainPose(layout, at, d, out = [], { reversed = false, leadFront
 /** InstancedMeshes per piece and LOD. Per frame: begin(camera); add(pose) per unit; end(). Counters for pops. */
 export function createTrainFleet(model, parent, maxUnits = 24) {
   const meshes = [];
+  // --- instmotion: a row per instance slot of every piece mesh (fixed regions), keyed by (trip, unit, piece)
+  let rows = 0;
+  for (let k = 0; k < model.lods.length; k++) for (const p of PIECES) if (model.lods[k][p]) rows += Math.max(1025, maxUnits * PER_UNIT[p]);
+  const prev = new InstancePrev(rows, "trainPrev");
+  prev.hook(model.material);
+  let kid = -1;
   for (let k = 0; k < model.lods.length; k++) {
     const row = {};
     for (const p of PIECES) {
@@ -216,6 +223,7 @@ export function createTrainFleet(model, parent, maxUnits = 24) {
       const mesh = new THREE.InstancedMesh(geo, model.material, cap);
       mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true;
       mesh.name = `train-${p}-lod${k}`;
+      prev.register(mesh, cap);                                    // --- instmotion
       parent.add(mesh);
       row[p] = { mesh, inst, n: 0 };
     }
@@ -231,12 +239,14 @@ export function createTrainFleet(model, parent, maxUnits = 24) {
       cam = camera; eye = camera ? camera.position : camPos;
       if (cam) { pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); frustum.setFromProjectionMatrix(pm); }
       for (const row of meshes) for (const r of Object.values(row)) r.n = 0;
+      if (eye) prev.begin(eye);                                    // --- instmotion
       stats.units = 0; stats.perLod = [0, 0, 0]; stats.culled = 0; stats.cars = 0;
     },
     /** pose from trainPose(); LOD + fade per CAR (an 80 m unit spans LOD bands) - its bogies / panto / gangways follow
      *  the nearest car's choice */
-    add(pose) {
+    add(pose, key = null, sub = 0) {
       let carLod = null, carFade = null, any = false;
+      kid = key !== null ? prev.id(key) * 32 + sub * 16 : -1;       // --- instmotion (key: the trip, sub: the unit of a pair)
       // per car: LOD by distance from the eye to the car centre
       const decide = (x, y, z) => {
         sphere.center.set(x, y + 2, z); sphere.radius = 15;
@@ -261,6 +271,7 @@ export function createTrainFleet(model, parent, maxUnits = 24) {
         const r = meshes[k][p.piece];
         if (!r || r.n >= r.mesh.instanceMatrix.count) return;
         r.mesh.setMatrixAt(r.n, p.m);
+        if (kid >= 0) prev.putMatrix(r.mesh, r.n, kid + pose.indexOf(p), 0, p.m.elements);   // --- instmotion
         r.inst.array.set([p.lead || 0, 0, 0, fade], r.n * 4);
         r.n++;
       };
@@ -280,6 +291,7 @@ export function createTrainFleet(model, parent, maxUnits = 24) {
       if (any) stats.units++;
     },
     end() {
+      prev.end();                                                  // --- instmotion
       for (const row of meshes) for (const r of Object.values(row)) {
         r.mesh.count = r.n; r.mesh.visible = r.n > 0;     // (an empty instanced mesh still costs a draw per pass)
         if (r.n) { r.mesh.instanceMatrix.clearUpdateRanges(); r.mesh.instanceMatrix.addUpdateRange(0, r.n * 16); r.mesh.instanceMatrix.needsUpdate = true;

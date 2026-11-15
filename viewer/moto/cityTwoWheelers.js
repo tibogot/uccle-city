@@ -17,6 +17,7 @@
 import * as THREE from "three/webgpu";
 import { FadeSlots, StreamPool, Streamer, buildSource, MARGIN } from "../instanceStream.js";
 import { cityMaterial } from "./twoWheelMats.js";
+import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-bike motion vectors for the TAAU (docs/UPSCALE.md)
 import { CITY_PAINTS } from "./twoWheelSlots.js";
 import { loadCityTwoWheeler } from "./motoModel.js";
 
@@ -207,6 +208,8 @@ export class TwoWheelTraffic {
   }
   build(geo) {
     const mats = [0, 1, 2].map((lod) => cityMaterial(lod, { roll: true, name: "traffic" }));
+    this.prev = new InstancePrev(TW_KINDS.length * 3 * CAP, "twoWheelPrev");      // --- instmotion
+    for (const m of mats) this.prev.hook(m);
     this.meshes = TW_KINDS.map((k) => geo[k].ridden.map((src, lod) => {
       const g = new THREE.BufferGeometry();
       for (const a of Object.keys(src.attributes)) g.setAttribute(a, src.attributes[a]);
@@ -217,6 +220,7 @@ export class TwoWheelTraffic {
       const m = new THREE.InstancedMesh(g, mats[lod], CAP);
       m.count = 0; m.visible = false; m.frustumCulled = false; m.castShadow = lod < 2; m.receiveShadow = true;
       m.name = `twowheel-traffic-${k}-lod${lod}`;
+      this.prev.register(m, CAP);                                                  // --- instmotion
       this.group.add(m);
       return m;
     }));
@@ -233,6 +237,7 @@ export class TwoWheelTraffic {
     this.frustum.setFromProjectionMatrix(this.pm, THREE.WebGPUCoordinateSystem, camera.reversedDepth);
     const cp = camera.position, a = alpha, b1 = 1 - alpha;
     for (const L of this.meshes) for (const m of L) m.count = 0;
+    this.prev.begin(cp);                                                           // --- instmotion
     let drawn = 0;
     for (let i = 0; i < sim.cap; i++) {
       if (!sim.alive[i]) continue;
@@ -270,6 +275,7 @@ export class TwoWheelTraffic {
         G.iBand.array[k4] = BAND[0]; G.iBand.array[k4 + 1] = BAND[1]; G.iBand.array[k4 + 2] = BAND[2]; G.iBand.array[k4 + 3] = 0;
         G.iPaint.array[k4] = sim.paint[i * 3]; G.iPaint.array[k4 + 1] = sim.paint[i * 3 + 1]; G.iPaint.array[k4 + 2] = sim.paint[i * 3 + 2]; G.iPaint.array[k4 + 3] = spin;
         G.iPose.array[k4] = yaw; G.iPose.array[k4 + 1] = -lean; G.iPose.array[k4 + 2] = sim.steer[i]; G.iPose.array[k4 + 3] = 0;
+        this.prev.put(m, n, i, sim.gen[i], x, y, z, yaw);                          // --- instmotion
       }
       drawn++;
     }
@@ -279,6 +285,7 @@ export class TwoWheelTraffic {
       m.instanceMatrix.clearUpdateRanges(); m.instanceMatrix.addUpdateRange(0, m.count * 16); m.instanceMatrix.needsUpdate = true;
       for (const nm of ["iBand", "iPaint", "iPose"]) { const at = m.geometry.attributes[nm]; at.clearUpdateRanges(); at.addUpdateRange(0, m.count * 4); at.needsUpdate = true; }
     }
+    this.prev.end();                                                               // --- instmotion
     this.stats.drawn = drawn;
     this.stats.ms = this.stats.ms * 0.95 + (performance.now() - t0) * 0.05;
   }

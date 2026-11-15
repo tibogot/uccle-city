@@ -10,6 +10,7 @@ import * as THREE from "three/webgpu";
 import { uniform } from "three/tsl";
 import { carFleet, TYPE_MIX, FADE_FROM, FADE_TO, BANDS } from "../carFleet.js";
 import { packMaterial } from "../drive/carPacks.js";
+import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-car motion vectors for the TAAU (docs/UPSCALE.md)
 
 export const TYPE_NAMES = TYPE_MIX.map(([t]) => t);
 export const trafficTime = uniform(0);
@@ -31,6 +32,7 @@ export class TrafficFleet {
     this.drawnLast = new Uint8Array(maxCars); this.genLast = new Uint32Array(maxCars);
     this.lastPos = new THREE.Vector3(); this.hasLast = false;
     this.all = [];
+    this.prev = new InstancePrev(J, "trafficPrev");   // --- instmotion (one row per drawn instance this frame)
   }
   /** Wait for the parked fleet's geometries, build the batches + materials, compile them off the frame. */
   async load(renderer, scene, camera) {
@@ -46,6 +48,7 @@ export class TrafficFleet {
       const far = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false, motion });
       const nearFade = packMaterial({ paint: "instance", rich: true, crossFade: true, motion });
       const farFade = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false, crossFade: true, motion });
+      for (const m of [near, far, nearFade, farFade]) this.prev.hook(m);   // --- instmotion
       this.types = [];
       for (const name of TYPE_NAMES) {
         await frame();
@@ -145,6 +148,8 @@ export class TrafficFleet {
     for (let q = 0; q < nj; q++) all[this.jb[q]].n++;
     for (let q = 0; q < all.length; q++) if (all[q].n > all[q].cap) this.grow(all[q], Math.ceil(all[q].n * 1.5 / 32) * 32);
     for (let q = 0; q < all.length; q++) all[q].mesh.count = 0;
+    this.prev.begin(camPos);                                                       // --- instmotion
+    for (let q = 0; q < all.length; q++) if (all[q].n) this.prev.alloc(all[q].mesh, all[q].n);
     for (let q = 0; q < nj; q++) {
       const bt = all[this.jb[q]], m = bt.mesh, n = m.count++, i = this.jc[q];
       // interpolated pose -> matrix (column-major): x = model left, y = up, z = the bonnet (heading + pitch)
@@ -163,7 +168,9 @@ export class TrafficFleet {
       else { pa[n * 3] = P.paint[i * 3]; pa[n * 3 + 1] = P.paint[i * 3 + 1]; pa[n * 3 + 2] = P.paint[i * 3 + 2]; }
       mo[n * 4] = P.pspin[i] * b1 + P.spin[i] * a; mo[n * 4 + 1] = P.steer[i]; mo[n * 4 + 2] = P.bits[i]; mo[n * 4 + 3] = yaw;
       if (bt.fade) bt.geo.attributes.lodFade.array[n] = this.jf[q];
+      this.prev.put(m, n, i, P.gen[i], e[o + 12], e[o + 13], e[o + 14], yaw);       // --- instmotion
     }
+    this.prev.end();                                                               // --- instmotion
     st.draws = 0;
     for (let q = 0; q < all.length; q++) {
       const bt = all[q], m = bt.mesh;

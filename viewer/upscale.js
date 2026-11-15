@@ -23,12 +23,45 @@
 import * as THREE from "three/webgpu";
 import TAAUNode from "three/addons/tsl/display/TAAUNode.js";
 import { clipAABB, flickerReduction, sampleCurrentDepth, samplePreviousDepth } from "three/addons/tsl/utils/TAAUtils.js";
-import { Fn, float, vec2, vec3, vec4, ivec2, uniform, uv, exp, max, min, mix, luminance, property, outputStruct, context, texture, getViewPosition, positionWorld, renderGroup, diffuseColor } from "three/tsl";
+import { Fn, float, vec2, vec3, vec4, ivec2, uniform, uv, exp, max, min, mix, luminance, property, outputStruct, context, texture, getViewPosition, positionWorld, positionPrevious, modelWorldMatrix, varying, renderGroup, diffuseColor } from "three/tsl";
 import { ditherFrame, ditherNoise } from "./lodFade.js";
 
 const qs = new URLSearchParams(location.search);
 /** ?upscale=0: the native path (MSAA, every pass at the drawing buffer's size), as before */
 export const UPSCALE = qs.get("upscale") !== "0" && qs.get("fx") !== "0";
+
+/** ?instmotion=0: the per-instance / skinned / wind motion off (camera + rigid object motion only, as on 2026-11-15) */
+export const INST_MOTION = UPSCALE && qs.get("instmotion") !== "0";
+/** ?thinaa=old: the coverage cards / wires as merged on 2026-11-15 (hard alpha edge, full-strength 1 px wires) */
+export const THIN_OLD = qs.get("thinaa") === "old";
+
+/**
+ * PER-VERTEX MOTION (2026-11-15, docs/UPSCALE.md "Moving objects"): a material whose vertices move on their own (an
+ * instanced fleet re-written each frame, GPU-simulated birds, wind) gives the motion output the offset from THIS
+ * frame's vertex to where it was LAST frame, in the object's local space (positionLocal: three r187 has applied the
+ * instance matrix and the positionNode already), evaluated in the vertex stage (a varying). Zero = no own motion.
+ * The object's rigid motion (ObjectMotionMatrix) and the camera's (the resolve) come on top.
+ */
+/** live A/B (debug, window.instMotion.set(false)): 0 = the vertex motion multiplied away, same shaders */
+export const uInstMotion = uniform(1);
+export function setMotionDelta(material, deltaNode) {
+  if (INST_MOTION && deltaNode) material.motionDeltaNode = deltaNode;
+  return material;
+}
+
+// ---- skinned meshes: three's skinning keeps last frame's bone matrices and skins positionPrevious with them when
+// the builder "needs previous data" (normally: a `velocity` MRT output). Turned on here for SkinnedMeshes drawn in the
+// scene pass only (the characters, the falcons): one copy of the bone matrices per skeleton per frame, a second skin
+// transform in their vertex shader. Not for instanced / batched meshes (three would keep a copy of every instance
+// matrix array: the reason `velocity` is not used, see CityTAAU).
+if (INST_MOTION) {
+  const NB = THREE.NodeBuilder.prototype, need = NB.needsPreviousData;
+  NB.needsPreviousData = function () {
+    if (need.call(this)) return true;
+    const o = this.object;
+    return o?.isSkinnedMesh === true && sceneMRTRef !== null && this.renderer.getMRT?.() === sceneMRTRef;
+  };
+}
 
 // ---- see-through glass without MSAA: the car / tram / train glass is ONE opaque draw made see-through by
 // alphaToCoverage, which only acts on an MSAA target; at 1 sample three draws it fully opaque (black windows).
@@ -37,12 +70,35 @@ export const UPSCALE = qs.get("upscale") !== "0" && qs.get("fx") !== "0";
 // see-through glass A2C gave. Not for the coverage-as-alpha cards and wires (trees, hedges, ivy, catenary, mesh
 // fences): a thin stochastic feature is clipped away by the history's neighbourhood clamp (dotted wires, tried); those
 // keep three's 1-sample fallback (a hard alpha edge), which the jitter + history anti-alias. Native: untouched.
+//
+// THIN GEOMETRY (2026-11-15, ?thinaa=old = as above): the other alpha-to-coverage materials (tree / hedge / ivy cards,
+// the welded-mesh fences) get the same stochastic coverage in the scene pass, which is what A2C gave them at 4x:
+// their alpha is 1 inside a leaf and only falls off over the pixel-wide band of the alpha-test edge (three's
+// smoothstep(alphaTest, alphaTest + fwidth)) or over a wide even veil (a far fence), so the dropped pixels always sit
+// next to kept ones and the history averages them (no lone sub-pixel feature for the clamp to throw away). The WIRES
+// (thinWire(): the tram catenary, the railway wires) are the exception: a ribbon >= ~1.2 internal pixels wide whose
+// alpha is its true width over the ribbon's (coverage) is BLENDED (transparent) instead: soft and continuous, never
+// dotted, as faint as the real 12 mm wire. Both only in the upscaled city pipeline (post.js enableThinAA()).
+let thinOn = false;
+const _wires = new Set();
+/** the wires' minimum half-width per metre of distance (native: 0.0011 = ~1 px at 1080p / 60 deg; upscaled: 0.6
+ *  INTERNAL pixels, set per frame by the upscaler) */
+export const wireHalfPx = uniform(0.0011);
+/** a coverage-as-alpha wire material (opacity = true width / ribbon width): blended under the TAAU */
+export function thinWire(m) { _wires.add(m); if (thinOn) { m.transparent = true; m.needsUpdate = true; } return m; }
+/** post.js, upscaled pipeline: the thin-geometry path on */
+export function enableThinAA() {
+  if (!UPSCALE || THIN_OLD || thinOn) return;
+  thinOn = true;
+  for (const m of _wires) { m.transparent = true; m.needsUpdate = true; }
+}
 if (UPSCALE) {
   const NM = THREE.NodeMaterial.prototype, setup = NM.setupDiffuseColor;
   NM.setupDiffuseColor = function (builder) {
     setup.call(this, builder);
-    if (this.alphaToCoverage === true && this.userData?.seeThrough === true && this.transparent !== true && (builder.renderer.currentSamples ?? 1) <= 1) {
-      diffuseColor.a.lessThan(ditherNoise()).discard();
+    if (this.alphaToCoverage === true && this.transparent !== true && (builder.renderer.currentSamples ?? 1) <= 1) {
+      if (this.userData?.seeThrough === true) diffuseColor.a.lessThan(ditherNoise()).discard();
+      else if (thinOn && sceneMRTRef !== null && builder.renderer.getMRT?.() === sceneMRTRef) diffuseColor.a.lessThan(ditherNoise()).discard();
     }
   };
 }
@@ -98,6 +154,9 @@ class CityTAAU extends TAAUNode {
     this.uWeight = uniform(0.05);                        // baseline weight of the current frame
     this.uReset = uniform(0);                            // 1: drop the history this frame (camera cut)
     this.uKernel = uniform(+(qs.get("taakernel") ?? 1.6));   // reconstruction sharpness when the history is good (three: 1)
+    // extra current-frame weight on pixels with their own motion (resampling the history each frame softens; a moving
+    // object's motion was approximate before the per-instance motion; ?taamoving=)
+    this.uMovingW = uniform(+(qs.get("taamoving") ?? (INST_MOTION ? 0.03 : 0.08)));
   }
 
   setup(builder) {
@@ -167,7 +226,7 @@ class CityTAAU extends TAAUNode {
       const canLock = isValidUV.and(isDepthChanged.not()).and(moving.not());
       const lock = max(canLock.select(thinFeature, float(0)), lockNode.r.mul(isDisocclusion.select(0, 0.5))).saturate();
       const history = mix(clipped, historyColor, lock);
-      const weight = hasValidHistory.select(this.uWeight.add(motionFactor).add(moving.select(0.08, 0)).saturate(), float(1));
+      const weight = hasValidHistory.select(this.uWeight.add(motionFactor).add(moving.select(this.uMovingW, 0)).saturate(), float(1));
       colorOutput.assign(flickerReduction(currentColor, history, weight));
       lockOutput.assign(lock);
       return vec4(0);
@@ -210,6 +269,25 @@ class ObjectMotionMatrix extends THREE.Node {
     p.m.copy(object.matrixWorld); p.f = frameId;
   }
   setup() { return this.delta; }
+}
+
+/**
+ * Per BUILD (each material x object kind): where this fragment's surface point was last frame BEFORE the object's
+ * rigid motion (vec4 world position, w = 1): the material's own motion (setMotionDelta: instanced fleets, birds, wind),
+ * a skinned mesh's last-frame skinning (positionPrevious, see needsPreviousData above), or here (everything else).
+ */
+class PreviousWorld extends THREE.Node {
+  static get type() { return "PreviousWorld"; }
+  constructor() { super("vec4"); }
+  setup(builder) {
+    if (INST_MOTION) {
+      const d = builder.material?.motionDeltaNode;
+      if (d) return vec4(positionWorld.add(modelWorldMatrix.mul(vec4(varying(d), 0)).xyz.mul(uInstMotion)), 1);
+      const o = builder.object;
+      if (o?.isSkinnedMesh === true && !o.isInstancedMesh) return vec4(mix(positionWorld, modelWorldMatrix.mul(vec4(positionPrevious, 1)).xyz, uInstMotion), 1);
+    }
+    return vec4(positionWorld, 1);
+  }
 }
 
 /** A 5-tap sharpen of the resolved image, clamped to the cross's min / max (no halo, no ringing). */
@@ -260,7 +338,7 @@ export function createUpscaler(renderer, camera) {
    *  motion minus without it); exactly 0 for static objects */
   U.motionOutput = () => {
     const D = new ObjectMotionMatrix(), wp = vec4(positionWorld, 1);
-    const ps = U.prevVP.mul(wp), po = U.prevVP.mul(D.mul(wp));
+    const ps = U.prevVP.mul(wp), po = U.prevVP.mul(D.mul(new PreviousWorld()));
     return vec4(ps.xy.div(ps.w.max(1e-4)).sub(po.xy.div(po.w.max(1e-4))).mul(vec2(0.5, -0.5)), 0, 1);
   };
   U.makeTAAU = (beauty, depth, motion) => {
@@ -293,6 +371,8 @@ export function createUpscaler(renderer, camera) {
     const k = 1 - 0.5 * U._motion;                      // full jitter still, half while moving
     T._jitterOffset.value.set(hx * k, hy * k);
     camera.setViewOffset(inW, inH, hx * k, hy * k, inW, inH);
+    // the wires' minimum half-width: 0.6 internal pixels (metres per pixel per metre = 2 tan(fov / 2) / height)
+    if (thinOn) wireHalfPx.value = 0.6 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / (camera.zoom || 1) / inH;
     // the dithered fades / cross-fades: a new noise phase each frame, resolved by the history (Jimenez's IGN offset)
     const f = U._frame % 16;
     ditherFrame.value.set(5.588238 * f, 5.588238 * f);

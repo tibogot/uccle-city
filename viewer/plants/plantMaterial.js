@@ -17,7 +17,8 @@ import {
   positionLocal, normalLocal, positionWorld, cameraPosition, cameraViewMatrix, varying, sign, dot, fwidth, positionView,
 } from "three/tsl";
 import { season } from "../foliage/seasons.js";
-import { wind, windAt } from "../foliage/wind.js";
+import { wind, windAt, windPrev } from "../foliage/wind.js";
+import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at last frame's time)
 import { noiseAt } from "../foliage/noise.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
 import { FadeSlots } from "../instanceStream.js";
@@ -126,6 +127,17 @@ export function plantMaterial(lod) {
   const isShell = step(2.5, kind);
   const lump = noiseAt(p0.xz.mul(1.3).add(p0.y.mul(0.9)).add(rnd.mul(13)), 1 / 0.6, true).a.sub(0.5).mul(H.mul(0.14)).mul(isShell);
   m.positionNode = positionLocal.add(rot(local.sub(p0).add(leafOff).add(normalize(p0.sub(vec3(0, H.mul(0.45), 0)).add(vec3(0, 1e-4, 0))).mul(lump)).mul(sc))).add(vec3(lean.x, 0, lean.y));
+  {
+    // --- instmotion: the same wind offset (flutter turned with the plant + the lean) at last frame's time
+    const off = () => {
+      const w = windAt(root.xz);
+      const fl = sin(wind.uTime.mul(7.0).add(prnd.mul(40))).mul(w.z.mul(0.25).add(0.08)).mul(wind.uStrength);
+      const le = w.xy.mul(hN.mul(hN)).mul(H.mul(sc).mul(0.18));
+      return rot(p0.sub(base).mul(fl.mul(0.25)).mul(isLeaf.add(isFlower)).mul(sc)).add(vec3(le.x, 0, le.y));
+    };
+    const [o0, o1] = windPrev(off);
+    setMotionDelta(m, o1.sub(o0));
+  }
   // CROWN NORMALS (the lab's): leaves lit partly as the crown's ellipsoid, more with distance (tiny flat leaves flip
   // light / dark as the camera moves otherwise)
   const nF = normalize(normalLocal);
