@@ -696,3 +696,110 @@ returned blank frames while another agent held the front tab).
 5. Night lamp maps: a per-chunk proxy of the tree pool (instances within REACH) if the lamp maps' triangles matter.
 6. The pond water shader built synchronously on first sight (294 ms); other `material.clone()` calls on weatherized
    materials (the JSON userData copy).
+
+## Step 13: perf pass 3 (2026-11-15, branch claude/perf4)
+
+**Machine.** `tools/perf/preflight.ps1`: **YELLOW** at the start (CPU 12 % at rest, 4.8 GB free), then **RED for the rest
+of the session**: another agent's city tab (:8902, later a night city) rendering on the same GPU, GPU 81-83 C with a
+power cap, 0.5-1.2 GB free, Chrome 6-8 GB. Page check (`debug/preflight.js`, start): CPU bench 71.6 ms, fixed view GPU
+9.5 ms / 285 draws (no baseline file). Live frame A/B was useless (render loop 27-35 ms a frame at times). What was used:
+- **`debug/groupBench.js` (new)**: the render loop paused; the whole scene (`full`) or some groups + the tile layers
+  (`only`) rendered N times into an off-screen 4x MSAA target from a fixed camera; GPU timestamps; variants alternated
+  with the order reversed every other round; median of 6-10 rounds. Absolute numbers drift from run to run (the GPU's
+  clocks / the other tab): only deltas WITHIN one run are quoted. Also `VIEWS` (street / garden / ivy / lawn, I6 + F4),
+  `lightToggle`, `ivyState` (the ivy before / after, live), `cullStats`.
+- render-object and triangle counts (load-independent): `debug/drawBreakdown.js`, `cullStats()`.
+
+### 13.1 What changed (each behind a switch; rows in `viewer/features.js`, section A/B, sub "Perf")
+
+| change | switch (before) | what |
+|---|---|---|
+| **Foliage lit per vertex** (`viewer/foliage/vertexLight.js`) | `?vlight=old` | plants (3 LOD materials), ivy cards, ivy far quads: the sun's BRDF (Lambert x (1 - F) + GGX, f0 0.04) in the VERTEX stage, packed in one vec2 varying; the shadow (in the light's colour), the albedo, the sky (PMREM) and the DFG multi-scatter stay per fragment (a `PhysicalLightingModel` whose `direct()` reads the varyings) |
+| **Foliage takes sun + sky only** | `?foliagelamps=old` | plants, ivy, mulch beds, window boxes: `lightsNode = lights([sun, hemisphere])` + the lamp light map (`addLampLight`), as the grass already did; before, every fragment evaluated the six pooled lamp point lights (intensity 0 by day) |
+| **Ivy cards cropped** (`cityIvy.js cardGeometry`) | `?ivycrop=old` | the card quad = the spray's opaque box in its 128 px texture (texels 18-107 x 19-120): 54 % of the square, the same pixels, -46 % fragments |
+| **Ivy far LOD** (`cityIvy.js`, `ivyWorker.js bakeFar`) | `?ivyfar=0` | the worker splats every wall's leaves into a coverage mask (shelf-packed into the tile's 512 x 512 region of ONE 2048 x 2048 R8 atlas, up to 10 px a metre, 16 regions, 5.6 MB with mips); past 22 m one quad per wall draws the mask (bilinear, cut by the spray texture tiled at 0.3 m, alpha to coverage, mean-matched colour, normal tilted up 0.3) instead of 4-9 layers of cards; the cards dither out 17.6-22 m and collapse to a point in the vertex stage past their end (no fragments), the quads dither in (the complement) and out at 60-75 m as before; stems already ended at 12 m. A tile with no free region keeps its cards to 75 m. Live tuning: `__ivy.farU` |
+| **Facade kit merged** (`facadeKit/kitField.js`) | `?kitfield=old` | the 15 pieces of each (kind, LOD) as parts of ONE `MultiDrawSet` (opaque / glass x 2 LODs); the per-piece meshes stay as the bucket's targets, out of the scene; `aKitV` + `aKitW` (two Uint8 x 4) interleaved into one vertex buffer (the glass view needed 9, WebGPU allows 8) |
+| **Parked-car fleet merged** (`carFleet.js mergeBatches`) | `?carmerge=old` | the 64 batches (8 types x 4 LODs x plain / fade) grouped by (material, casts shadow) into 6 sets; the fleet already culls per car on the CPU, so a part = one chunk; the four materials are compiled async on the merged views |
+| **Tile buildings culled per cell and pass** (`viewer/cellCull.js`, `cellSort.js`, `cellCullWorker.js`) | `?cellcull=old` | a tile's walls / roofs / flat roofs / details: the triangles re-ordered by 40 m cell in a worker (~20 ms for 90 k triangles: off the main thread; the mesh draws whole until it lands), one indexed indirect record per cell, the mesh's `onBeforeRender` keeps the cells in THAT pass's frustum (view, sun shadow, lamp shadows) |
+| **Details' sun shadow fades with distance** (`facades.js` detail material `maskShadowNode`) | `?cellcull=old` | the details (cornices, sills, frames: 20-40 cm) cast a sun shadow dithered out 100-140 m from the eye; their cells past 142 m skip the sun's pass (nothing left to draw there: no pop) |
+| Static tile layers (`viewer/staticFreeze.js`) | OPT-IN `?freeze=1` | `matrixWorldAutoUpdate = false` on the 4 tile layers + an `Object3D.add` hook (a late child gets its world matrix once); `checkFrozen()` found 0 stale objects at the Place and from 45 m. Not default: no measurable gain (13.5) |
+| Grass lit per vertex | OPT-IN `?grassvl=1` | measured slower (13.4) |
+
+### 13.2 Ivy (target <= 0.3 ms near a wall): met
+
+Ivy wall I6 (camera 1382, 606 -> 1372, 588; 6,091 cards in range, wall at 10-25 m), 1600 x 828. Same run, 8 rounds.
+
+| view | before (the four ivy / foliage switches old) | after | |
+|---|---|---|---|
+| ivy wall at 10-25 m, whole scene off screen | +0.81 ms | **+0.26 ms** | met |
+| same, the ivy alone over the tile layers | +1.21 | +0.36 | |
+| the same wall from ~30 m, whole scene | +0.14 | ~0 (-0.06) | |
+
+Split (one run, isolated, 10 rounds): whole squares + per-fragment light 1.27 ms; per-vertex light 0.72; cropped 0.88;
+both **0.49**; then the far LOD takes the cards past 22 m. Earlier probes: the six dead lamp lights about half of the lit
+cost, the sun's shadow sampling ~0.04, the environment ~0.03-0.07: the cost was per-fragment lighting x the cards'
+overdraw.
+
+Look (scratchpad, not committed): `ivy30_cards.jpeg` / `ivy30_far3.jpeg`, the same ivy at 25-30 m, cards vs far quads:
+same outline and colour; the quads are a little flatter (less per-leaf light / dark) and their edge a little less leafy.
+The 17.6-22 m band is a complementary dither (as every LOD band); checked in a still only, a tree in front.
+
+### 13.3 Plants (target <= 0.3 ms at street level): NOT shown met
+
+RED machine: the whole-scene deltas swung (street: per-fragment +0.07 / per-vertex +0.70 in one run). Isolated over the
+tile layers (one run, 8 rounds): street 1.07 -> 1.04 ms, garden 0.61 -> 0.56 ms (per-vertex light is a small win here:
+the plants' colour was already per vertex). Per object at the street view (isolated, ms): mulch beds 0.15 (17 beds),
+window boxes LOD0 0.23 (5 boxes), plants LOD0 0.14 (7 instances), LOD1 0.16 (25), LOD2 0.16 (215). The beds and window
+boxes were standard materials with all the scene's lights: they now take sun + sky only (`?foliagelamps=old`), not
+re-measured. Not done: far cards / impostors, quantised instance data, fewer instances (13.7).
+
+### 13.4 Grass (target ~0.3-0.4 ms on a lawn): NOT reached
+
+Per-vertex sun light on the blades (`?grassvl=1`) measured SLOWER (grassBench, Wolvendael lawn, one run: 1.72 -> 2.36 ms
+with two vec3 varyings): a blade is 1-2 px wide, so it has about as many vertices as fragments, and the varyings cost.
+The re-measure with one packed vec2 was invalid (RED, and a variant-order bug in the probe left the grass hidden in some
+rounds). Kept as an opt-in. Next lever: per-BLADE lighting in the compute pass (one evaluation per blade: a 5th vec4 in
+the blade data), and the lamp lights (13.7 item 1: the grass already skips them).
+
+### 13.5 Render objects, triangles, CPU
+
+| what | before | after |
+|---|---|---|
+| facade kit, Place Saint-Job street (scene + shadow render objects) | 57 + 16 | **4 + 1** |
+| parked cars, same view | 24 + 9 | **5 + 3** |
+| buildings in the sun's pass at 45 m (`stjob`): details / walls / roofs + flat roofs (k triangles) | 205 / 47 / 23 | **21 / 21 / 8** |
+| buildings in the view pass at 45 m: details / walls | 205 / 47 | **112 / 23** |
+| `scene.updateMatrixWorld` (1,355 objects, Place street) | 0.129 ms | 0.134 (tile layers frozen); 0.184 vs 0.191 (44 more static roots frozen): noise |
+
+CPU per frame for the merges could not be measured (RED: the render loop's CPU time was dominated by waits). Visual
+check at 45 m (`stjob`, before = `?cellcull=old`): mean |RGB diff| 4.6 / 765, TAA noise and two parapet-shadow strips
+100+ m away (`stjob45_zoom.jpg`, scratchpad: the same shadows, a few pixels). Facade kit and parked cars after the merge:
+`stjob_after.jpeg` (scratchpad), windows / doors / cars all drawn.
+
+### 13.6 Moving paths (`debug/perfRun.js`, one round each, RED: another city rendering on the GPU)
+
+| path | frames > 33 ms before / after | worst frames before / after (ms) | long tasks before / after (max ms) | sync pipelines before / after | GPU p50 / p95 before -> after |
+|---|---|---|---|---|---|
+| stjob | 1,023 / **576** (2 repeats: 800, 1,141) | 200, 183 / 750, 633 (repeats 1,433, 883; 100, 83) | 13 (191) / 5 (162) (repeats 10 (781); 0) | 5 / 8 | 14.6 / 24.5 -> 12.5 / 20.8 |
+| turn | 114 / **49** | 983, 783 / 1,250, 133 | 0 / 0 | 0 / 0 | 11.3 / 17.6 -> 11.6 / 18.7 |
+| flight | 760 / 894 | 850, 567 / 800, 683 | 7 (343) / 7 (566) | 12 / 13 | 12.6 / 24.4 -> 13.4 / 25.9 |
+
+The synchronous pipelines are streetlife-box:fade, the grass bake, MeshBasic and the falcon nest props (none from this
+pass). Not conclusive: three after-runs of the same path gave 576-1,141 frames > 33 ms and 0-10 long tasks (the third,
+with a long-animation-frame observer: nothing over 102 ms); the big worst frames have no matching long task (GPU
+contention). **A GREEN re-run is needed.**
+
+### 13.7 Left / next
+
+1. **The six pooled lamp point lights by day**: intensity 0, but every lit material evaluates them per fragment. Hiding
+   them (a full shader rebuild: a test only) made the whole street view **~2.2 ms faster** off screen (16.1 -> 13.9 ms,
+   8 rounds, RED but consistent). The foliage skips them now; the ground / roads / walls / roofs (most pixels) still
+   pay. Option: the big ground materials take `lights([sun, hemi])` + the lamp light map they already read; the point
+   lights stay for cars / trees / walls (the fixed light count is kept); needs the owner's eye at night.
+2. A GREEN re-run of everything above (plants and grass especially; the suite).
+3. Grass: per-blade lighting in the compute pass.
+4. Plants: far cards / impostors past ~30 m, quantised instance data (96 B an instance), the LOD0 / window-box close-up
+   cost, fewer instances where they don't read.
+5. Ivy far LOD: per-leaf light / dark in the mask (a second channel); more than 16 tile regions with ring 2.
+6. Cell culling: a tile's meshes are sorted once first rendered (the boot tiles: at their first frame); the tile cache
+   could keep the sorted index.

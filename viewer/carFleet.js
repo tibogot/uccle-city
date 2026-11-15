@@ -16,6 +16,12 @@
 //     (setRenderer) before the first car is drawn, so no pipeline is built in a frame either
 import * as THREE from "three/webgpu";
 import { PACK_SOURCES, packMaterial } from "./drive/carPacks.js";
+import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
+
+/** ?carmerge=old: one InstancedMesh per (type, LOD, plain / fade): 26 scene + 11 shadow render objects in a street,
+ *  instead of one multi-draw mesh per (material, shadow) (6 + 4; viewer/multiDraw.js, docs/perf/AUDIT.md step 13) */
+const CAR_MERGE = typeof location === "undefined" || new URLSearchParams(location.search).get("carmerge") !== "old";
+const _carBox = new Float64Array(6);
 
 // the mix (a residential Brussels street): mostly hatchbacks, estates and saloons, some SUVs and compact vans, a few
 // panel vans, an occasional taxi
@@ -136,14 +142,17 @@ class CarFleet {
       this.types = types;
       // pipelines: compile the four materials (and their shadow variants) off the frame, one batch of each
       for (let i = 0; i < 300 && !(this.renderer && this.camera); i++) await frame();   // the camera comes with the first update
+      const views = this.mergeBatches();
       if (this.renderer?.compileAsync) {
         const probes = [];
         const T = Object.values(types)[0];
-        for (const b of [T.lods[0].plain, T.lods[0].fade, T.lods[2].plain, T.lods[2].fade]) { b.mesh.count = 1; b.mesh.visible = true; probes.push(b.mesh); }
+        if (views.length) for (const v of views) { v.mesh.visible = true; probes.push(v.mesh); }
+        else for (const b of [T.lods[0].plain, T.lods[0].fade, T.lods[2].plain, T.lods[2].fade]) { b.mesh.count = 1; b.mesh.visible = true; probes.push(b.mesh); }
         const keep = this.group.children.filter((o) => !probes.includes(o) && o.visible);
         for (const o of keep) o.visible = false;
         try { await this.renderer.compileAsync(this.group, this.camera, this.scene); } catch (e) { console.warn("[cars] compileAsync:", e); }
-        for (const m of probes) { m.count = 0; m.visible = false; }
+        if (views.length) for (const v of views) v.mesh.visible = false;
+        else for (const m of probes) { m.count = 0; m.visible = false; }
       }
       const now = performance.now();
       // the types go live one per frame (their geometry uploads spread over frames), each fading its cars in
@@ -152,6 +161,32 @@ class CarFleet {
       this.ready = true; this.dirty = true;
       console.log(`[cars] faceted fleet ready in ${(now - t).toFixed(0)} ms (LODs in a worker: ${data.ms.toFixed(0)} ms; main thread: longest slice ${slice.toFixed(1)} ms; materials compiled async): ${data.cars.length} types x ${this.lodDist.length} LODs`);
     } catch (e) { this.failed = e; console.warn("[cars] faceted fleet failed:", e); }
+  }
+  /** perf pass 3: the batches of one (material, shadow) as the parts of ONE multi-draw set (viewer/multiDraw.js); the
+   *  batch meshes stay as the per-part CPU buffers (not in the scene). The cars are culled per car on the CPU already, so
+   *  a part is one chunk. Returns the views (none: ?carmerge=old, or no indirect-first-instance). */
+  mergeBatches() {
+    if (!CAR_MERGE || !multiDrawOK()) return [];
+    const groups = new Map();
+    for (const T of Object.values(this.types)) for (const l of T.lods) for (const b of [l.plain, l.fade]) {
+      const key = `${b.mat.uuid}|${b.cast}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(b);
+    }
+    const views = [];
+    for (const list of groups.values()) {
+      const b0 = list[0];
+      try {
+        const set = new MultiDrawSet({ name: "parked-cars", parts: list.length, attrs: [["instanceMatrix", 16], ["paint", 3], ...(b0.fade ? [["lodFade", 1]] : [])], cap0: 64 });
+        set.pad = 3;
+        const v = set.addView({ geoms: list.map((b) => b.geo), material: b0.mat, castShadow: b0.cast, receiveShadow: true, name: `parked-cars:merged(${list.length})` });
+        list.forEach((b, k) => { b.set = set; b.part = k; this.group.remove(b.mesh); });
+        this.group.add(v.mesh);
+        views.push(v);
+      } catch (e) { console.warn(`[cars] batches not merged (${e.message})`); }
+    }
+    this.merged = views.length > 0;
+    return views;
   }
   batch(geo, mat, cast, fade, cap = 64) {
     const g = new THREE.BufferGeometry();
@@ -171,7 +206,7 @@ class CarFleet {
     // (static usage: written on change with needsUpdate + the used range; DynamicDrawUsage is re-uploaded whole in
     // every render pass of every frame by three r187)
     m.name = "parked-car-batch";
-    this.group.add(m);
+    if (!b.set) this.group.add(m);
     b.mesh = m;
   }
   update(camPos, camera) {
@@ -251,8 +286,17 @@ class CarFleet {
       if (b.fade) b.geo.attributes.lodFade.setX(i, f);
     }
     st.draws = 0;
+    // (merged: every part into its set; the box = the drawn range round the camera, the cars being culled above)
+    const B = _carBox; B[0] = camPos.x - FADE_TO; B[1] = -1000; B[2] = camPos.z - FADE_TO; B[3] = camPos.x + FADE_TO; B[4] = 5000; B[5] = camPos.z + FADE_TO;
     for (const b of all) {
       const m = b.mesh;
+      if (b.set) {
+        const n = m.count;
+        b.set.write(b.part, n, { instanceMatrix: m.instanceMatrix.array, paint: b.geo.attributes.paint.array, lodFade: b.geo.attributes.lodFade?.array }, B);
+        m.visible = n > 0;
+        if (n) st.draws++;
+        continue;
+      }
       m.visible = m.count > 0;
       if (!m.visible) continue;
       st.draws++;

@@ -64,6 +64,9 @@ import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traff
 import { cityGardens } from "./gardens/cityGardens.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
+import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
+import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
+import { freeze } from "./staticFreeze.js";                       // perf4: ?freeze=1 the tile layers' world matrices computed once (opt-in)
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
@@ -949,6 +952,10 @@ async function main() {
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
+  // --- perf4 (docs/perf/AUDIT.md step 13): the foliage materials (grass, plants, ivy) take the sun + hemisphere only
+  setFoliageLights(lighting);
+  setCellCullSun(lighting.sun?.shadow?.camera || null, lodEye);
+  // --- perf4 end
   setTreeRenderer(renderer);
   updaters.push(treeBandSettle());     // the tree hand-over / shadow-fade bands follow the camera speed (no static dither, docs/POLISH.md item 2)
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
@@ -956,6 +963,9 @@ async function main() {
   const contourOn = uniform(0);
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
+  // --- perf4: ?freeze=1 (opt-in, no measurable gain): the tile layers are static, no per-frame world-matrix walk
+  for (const g of Object.values(layers)) freeze(g);
+  // --- perf4 end
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   if (!NIGHT) updaters.push(lampLightPool(scene));   // the city's lamp lights: ONE fixed pool for the session (light count never changes)

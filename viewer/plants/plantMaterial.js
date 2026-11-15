@@ -22,6 +22,8 @@ import { noiseAt } from "../foliage/noise.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
 import { FadeSlots } from "../instanceStream.js";
 import { wxMat } from "../weather/cityWeatherize.js";
+import { vertexLit, foliageLights } from "../foliage/vertexLight.js";
+import { addLampLight } from "../lampLight.js";
 
 export const PLANT_TYPES = ["box_ball", "laurel", "rhododendron", "hydrangea", "rose", "lavender", "bulbs", "geranium"];
 /** the plants' tile fades: iBand.w = the instance's tile slot */
@@ -131,7 +133,8 @@ export function plantMaterial(lod) {
   const crownN = normalize(positionLocal.sub(crownC).mul(vec3(1, 1.4, 1)).add(vec3(0, 0.25, 0)));
   const dCam = length(cameraPosition.sub(root));
   const kCrown = mix(float(0.35), float(0.9), smoothstep(3, 12, dCam)).mul(isLeaf.add(isFlower).add(step(2.5, kind)).min(1));
-  const nW = varying(normalize(mix(nF.mul(sign(dot(nF, crownN)).add(0.001)), crownN, kCrown)), "v_plN");
+  const nWv = normalize(mix(nF.mul(sign(dot(nF, crownN)).add(0.001)), crownN, kCrown));
+  const nW = varying(nWv, "v_plN");
   const nV = normalize(cameraViewMatrix.mul(vec4(nW, 0)).xyz);
   // colours per slot
   const S = season.u;
@@ -170,6 +173,10 @@ export function plantMaterial(lod) {
   m.colorNode = mix(varying(colr.mul(ao), "v_plC").mul(grain), vec3(0.88, 0.9, 0.94), snow);
   m.roughnessNode = mix(select(slot.lessThan(0.5), float(0.55), float(0.75)), float(0.9), snow);
   m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
+  // perf pass 3: the sun per vertex, sun + sky only (no pooled lamp point lights: the lamp light map at night)
+  const snowV = season.uSnow.mul(smoothstep(0.15, 0.7, nWv.y)).mul(0.85);
+  vertexLit(m, { normal: nWv, roughness: mix(select(slot.lessThan(0.5), float(0.55), float(0.75)), float(0.9), snowV) });
+  if (foliageLights()) addLampLight(m);
   m.name = `plants-lod${lod}`;
   wxMat(m, { porosity: 0.15, snow: false });            // wet in rain (darker, glossier); the snow is ours
   m.userData.shared = true; m.userData.noFade = true;
