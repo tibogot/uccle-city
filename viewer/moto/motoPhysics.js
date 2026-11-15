@@ -129,7 +129,8 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     const brake = front * H.brakeFront * frontOn + rear * H.brakeRear * rearOn + (c.crashed ? 6.5 : 0);
     let speed;
     if (paddle) speed = Math.max(-H.reverseSpeed, forward - paddle * 2.5 * step);
-    else if (forward < 0) speed = Math.min(0, forward + (2 + brake + (throttle ? 6 : 0)) * step);
+    else if (forward < 0 && throttle) speed = forward + (H.power * drive + 2) * step;          // rolling back: the gas pulls forward
+    else if (forward < 0) speed = Math.min(0, forward + (2 + brake) * step);
     else speed = driveSpeed(forward, drive * (c.crashed ? 0 : 1) * rearOn, brake, step, H, c.boost ? H.boost : 1);
     if (Math.abs(speed) > 0.3 || throttle) speed += gAlong * step;
     if (!throttle && !paddle && Math.abs(speed) < 0.3 && Math.abs(gAlong) < 1.5) speed *= Math.exp(-8 * step);   // feet down: held still

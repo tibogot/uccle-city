@@ -34,7 +34,7 @@ export class ColliderDebug {
 
   /** sets(x, z, r) -> collider sets; ground(x, z); c = car state; touching = contacts this frame;
    *  flagsOf(col) -> Set of the set's item ids with no visible object (or null) */
-  update(sets, ground, c, touching, radius = 40, flagsOf = () => null) {
+  update(sets, ground, c, touching, radius = 40, flagsOf = () => null, body = BODY) {
     if (!this.want) return;
     if (!this.lines.parent) this.scene.add(this.lines);
     if (this.frame++ % 4) return;
@@ -88,7 +88,7 @@ export class ColliderDebug {
     // the car's box
     const sn = Math.sin(c.heading), cs = Math.cos(c.heading), rgb = touching ? [1, 0.2, 0.2] : [1, 1, 1];
     const corner = (u, v) => [c.x + cs * u + sn * v, c.z - sn * u + cs * v];
-    const cs4 = [corner(-BODY.hx, -BODY.hz), corner(BODY.hx, -BODY.hz), corner(BODY.hx, BODY.hz), corner(-BODY.hx, BODY.hz)];
+    const cs4 = [corner(-body.hx, -body.hz), corner(body.hx, -body.hz), corner(body.hx, body.hz), corner(-body.hx, body.hz)];   // (body: the vehicle's box)
     for (let i = 0; i < 4; i++) {
       const a = cs4[i], b = cs4[(i + 1) % 4];
       seg(a[0], c.y + 0.3, a[1], b[0], c.y + 0.3, b[1], rgb);

@@ -48,3 +48,5 @@ for (let t = 0; t < 6; t++) for (let i = 0; i < 60; i++) stepMoto(c, { throttle:
 console.log(`gap 1.3 m: z ${c.z.toFixed(1)} (past the cars at 63), hits ${c.hits}, crashed ${c.crashed}, ${(c.speed * 3.6).toFixed(0)} km/h`);
 
 }
+// regression (2026-11-15, found in the city): a stop on an uphill with the gas held stayed stuck at -0.003 m/s
+{ const c = createMotoState(0, 0, 0); c.speed = -0.01; run(c, { throttle: 1 }, 2, flat(-0.04)); console.log(`gas from a roll-back on a 4 % climb: ${(c.speed * 3.6).toFixed(0)} km/h after 2 s (must be > 0)`); }

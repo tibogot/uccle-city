@@ -339,7 +339,7 @@ export class Driver {
     this.camNear.length = 0;
     for (const col of this.sets(c.x, c.z, 14)) gather(col, c.x, c.z, 14, this.camNear);
     this.motoChase.update(c, dt, this.ground, this.insideWall, this.headAt);
-    this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf);
+    this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, MOTO_BODY);
     this.audio.update(c, dt);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
     if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0) {
