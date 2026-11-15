@@ -398,7 +398,8 @@ export class GameKit {
     }
   }
   hudTick() {
-    const H = this.hud, c = this.current, o = this.mission?.objective() ?? null;
+    // (no mission: the game may show its own idle objective with a prompt, e.g. the police shift's "E: end the shift" at HQ)
+    const H = this.hud, c = this.current, o = this.mission?.objective() ?? c.def.idleObjective?.(this) ?? null;
     H.objective(o, c.def.title, c.def.modes?.find((m) => m.id === c.mode)?.label);
     H.timer(o?.timeLeft ?? null);
     if (o?.timeLeft != null && o.timeLeft <= 5 && Math.ceil(o.timeLeft) !== this._tickS) { this._tickS = Math.ceil(o.timeLeft); this.audio.tick(); }

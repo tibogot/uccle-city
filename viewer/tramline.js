@@ -292,6 +292,66 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
     if (side) sideCache.set(key, side);
     return side || 1;
   };
+  // ---- POLICE GAME (docs/POLICE_GAME.md): a BLOCKED TRACK. setBlock({ x, z, heading }) finds the shapes whose track
+  // passes within 2.5 m of (x, z) in that direction (a car parked on the rails); a tram of such a shape whose front
+  // reaches the block's line (5 m before it) stops there: its trip gathers a delay (the timetable time it is held), so
+  // when the block is cleared it carries on from where it stood (late), no jump. setBlock(null) clears it. Trips keep
+  // their delay (they run late, as after a real blockage). No block: nothing changes (one null test per trip).
+  let block = null, lastClock = null;
+  const tripD = (t, tt) => tripState(t, tt - (t.delay || 0));
+  const setBlock = (b) => {
+    for (const t of trips) t._bd = null;
+    if (!b) { block = null; return []; }
+    const hx = Math.sin(b.heading ?? 0), hz = Math.cos(b.heading ?? 0), out = new Map();
+    for (const [id, s] of Object.entries(shapes)) {
+      const P = s.pts, C = s.cum;
+      let best = b.r ?? 2.5, bd = -1;
+      for (let i = 1; i < P.length; i++) {
+        const ax = P[i - 1][0], az = P[i - 1][1], dx = P[i][0] - ax, dz = P[i][1] - az, L = Math.hypot(dx, dz) || 1e-9;
+        if (b.heading != null && (dx * hx + dz * hz) / L < 0.6) continue;
+        const u = Math.max(0, Math.min(1, ((b.x - ax) * dx + (b.z - az) * dz) / (L * L)));
+        const e = Math.hypot(ax + dx * u - b.x, az + dz * u - b.z);
+        if (e < best) { best = e; bd = C[i - 1] + u * L; }
+      }
+      if (bd >= 0) out.set(id, bd - (b.gap ?? 5));
+    }
+    block = out.size ? out : null;
+    return [...out.entries()];
+  };
+  /** the nearest track point to (x, z) within maxD: { x, z, heading (forward = (sin, cos)), shape, d } or null */
+  const trackNear = (x, z, maxD = 30) => {
+    let best = null, bd = maxD;
+    for (const [id, s] of Object.entries(shapes)) {
+      const P = s.pts, C = s.cum;
+      for (let i = 1; i < P.length; i++) {
+        const ax = P[i - 1][0], az = P[i - 1][1], dx = P[i][0] - ax, dz = P[i][1] - az, L = Math.hypot(dx, dz) || 1e-9;
+        if (Math.abs(ax - x) > maxD + L || Math.abs(az - z) > maxD + L) continue;
+        const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (L * L)));
+        const e = Math.hypot(ax + dx * u - x, az + dz * u - z);
+        if (e < bd) { bd = e; best = { x: ax + dx * u, z: az + dz * u, heading: Math.atan2(dx, dz), shape: id, d: C[i - 1] + u * L, off: e }; }
+      }
+    }
+    return best;
+  };
+  /** the point d metres along the shape: { x, z, heading } */
+  const shapePoint = (id, d) => { const s = shapes[id]; if (!s) return null; const [x, z, h] = at(s, d); return { x, z, heading: Math.atan2(Math.cos(h), -Math.sin(h)) }; };
+  const holdTrips = (T) => {
+    const dt = lastClock == null ? 0 : Math.max(0, Math.min(5, T - lastClock));
+    lastClock = T;
+    if (!block) return;
+    for (const t of trips) {
+      const line = block.get(t.shape);
+      if (line == null) { t._bd = null; continue; }
+      const st = t.stops, first = st[0][2], last = st[st.length - 1][1], Tn = T + 86400;
+      const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
+      if (tt < 0) continue;
+      const d = tripD(t, tt).d;
+      // held: it was before the line and the timetable would take it past: the clock stops for this trip
+      if (d > line && t._bd != null && t._bd <= line + 0.5) t.delay = (t.delay || 0) + dt;
+      else t._bd = d;
+    }
+  };
+  // ---- /POLICE GAME
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
   const doorsLR = [0, 0];
   const near = { x: 0, z: 0, r: 1800 };
@@ -314,6 +374,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   };
   const update = (camPos, camera = null) => {
     const T = clock() % 86400, Tn = T + 86400;                          // trips can run past midnight
+    holdTrips(T);                                                      // (police game: a blocked track)
     near.x = camPos.x; near.z = camPos.z;
     const s = { cab: 0, mid: 0 };
     drawn.n = 0;
@@ -323,7 +384,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       const st = t.stops, first = st[0][2], last = st[st.length - 1][1];
       const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
       if (tt < 0) continue;
-      const { d, doors: dOpen, stop, brake } = tripState(t, tt);
+      const { d, doors: dOpen, stop, brake } = tripD(t, tt);
       const [x, z] = at(shapes[t.shape], d);
       running++;
       if ((x - near.x) ** 2 + (z - near.z) ** 2 > near.r * near.r || s.cab >= MAX_TRAMS * 2) continue;
@@ -354,7 +415,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       const st = t.stops, first = st[0][2], last = st[st.length - 1][1];
       const tt = T >= first && T <= last ? T : Tn >= first && Tn <= last ? Tn : -1;
       if (tt < 0) continue;
-      const { d, doors, brake } = tripState(t, tt);
+      const { d, doors, brake } = tripD(t, tt);
       const [x, z, yaw] = at(shapes[t.shape], d);
       out.push({ trip: t.id ?? t.head, d, x, z, yaw, T: tt, doors, brake });
     }
@@ -365,5 +426,5 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   // live clock (the dev panel): set the time of day (seconds) or the speed; both re-anchor, so nothing jumps but the set
   const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };   // null: Brussels now
   const setTimescale = (k) => { startSecs = clock(); t0 = performance.now(); scale = k; };
-  return { update, snapTile, info, doc, fleet, model, positions, drawn, trackAt, railTop, railY, yAlong: (id, q) => { const t = trips.find((r) => (r.id ?? r.head) === id); return t ? yAlong(shapes[t.shape], q) : null; }, prof, setClock, setTimescale, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
+  return { update, snapTile, info, doc, fleet, model, positions, drawn, trackAt, railTop, railY, yAlong: (id, q) => { const t = trips.find((r) => (r.id ?? r.head) === id); return t ? yAlong(shapes[t.shape], q) : null; }, prof, setClock, setTimescale, setBlock, trackNear, shapePoint, get blocked() { return !!block; }, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
 }
