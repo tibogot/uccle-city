@@ -329,7 +329,7 @@ export function makeSpecies(def) {
     const limb = smoothstep(0.03, 0.07, positionGeometry.sub(bark.xyz).length());
     for (const m of new Set([shared.trunkMat, shared.trunkFar])) wxMat(m, OLD_LIMBS ? { porosity: 0.7, snowUp: [0.12, 0.45], plaster: true } : { porosity: 0.7, snowUp: [0.3, 0.75], snowMask: limb, plaster: true });
     const crownTop = smoothstep(0.45, 0.85, card.w).mul(mix(float(0.45), float(1), card.z.clamp(0, 1)));
-    for (const m of new Set([shared.leafMat, shared.leafFar])) { wxMat(m, OLD_LIMBS ? { porosity: 0.2, snowUp: [0.45, 0.9], snowMask: float(0.8) } : { porosity: 0.2, snowUp: [0.4, 0.88], snowMask: crownTop }); m.userData.wxCanopy = true; }
+    for (const m of new Set([shared.leafMat, shared.leafFar])) { wxMat(m, OLD_LIMBS ? { porosity: 0.2, snowUp: [0.45, 0.9], snowMask: float(0.8) } : { porosity: 0.2, snowUp: [0.4, 0.88], snowMask: crownTop }); m.userData.wxCanopy = true; m.userData.nightFoliage = true; }   // (fix3: the night loop's cheap foliage path, nightLighting.js)
     // (a streamed tile's trees fade in with the tile: lodFade.js gives them fading copies of these while it fades)
     for (const m of new Set([shared.leafMat, shared.leafFar, shared.trunkMat, shared.trunkFar])) m.userData.shared = true;
     // the trees' shadow distance fade (shadow pass only: the masks the shadow pass reads)

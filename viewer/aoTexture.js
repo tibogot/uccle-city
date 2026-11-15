@@ -16,7 +16,7 @@ let bcSupported = null;
 export function setAORenderer(renderer) {
   try { bcSupported = renderer?.backend?.isWebGPUBackend === true && renderer.hasFeature("texture-compression-bc") === true; } catch { bcSupported = false; }
 }
-export const aoKtx2Stats = { maps: 0, fileBytes: 0, gpuBytes: 0, fallbacks: 0, ms: 0 };
+export const aoKtx2Stats = { maps: 0, fileBytes: 0, gpuBytes: 0, fallbacks: 0, ms: 0, log: [] };   // log: [map, format, ms from navigation when ready]
 
 let worker = null, seq = 0;
 const waiting = new Map();
@@ -79,11 +79,13 @@ export function loadAOKtx2(url) {
 
 /** the KTX2 when there is one (and BC4 is supported), else / on failure pngLoader(url) */
 export async function withAOKtx2(url, pngLoader) {
-  const k = aoKtx2Url(url);
+  const k = aoKtx2Url(url), name = String(url).replace(/^.*\/models\//, "");
   if (k) {
-    try { return await loadAOKtx2(k); }
+    try { const t = await loadAOKtx2(k); aoKtx2Stats.log.push([name, "ktx2", Math.round(performance.now())]); return t; }
     catch (e) { aoKtx2Stats.fallbacks++; console.warn(`[ao] ${k}: ${e.message}; the PNG instead`); }
   }
-  return pngLoader(url);
+  const t = await pngLoader(url);
+  aoKtx2Stats.log.push([name, "png", Math.round(performance.now())]);
+  return t;
 }
 if (typeof window !== "undefined") window.aoKtx2Stats = aoKtx2Stats;
