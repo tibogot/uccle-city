@@ -81,9 +81,9 @@ export const cityWeather = {
     const group = new THREE.Group(); group.name = "weather";
     group.add(rain.mesh, rain.splashes, snow.mesh, leaves.mesh, layer.mesh);
     // snow caps: their own group (precompiled with the weather's draws: one dummy instance per family)
-    const [{ cityFurniture }, { cityStops }, { cityGardens }] = await Promise.all([import("../furniture2/cityFurniture.js"), import("../stops/cityStops.js"), import("../gardens/cityGardens.js")]);
+    const [{ cityFurniture }, { cityStops }, { cityGardens }, { cityPlants }] = await Promise.all([import("../furniture2/cityFurniture.js"), import("../stops/cityStops.js"), import("../gardens/cityGardens.js"), import("../plants/cityPlants.js")]);
     const capGroup = new THREE.Group(); capGroup.name = "snow-caps";
-    const caps = createCityCaps({ group: capGroup, getMovers: () => this.movers, kits: { furniture: () => cityFurniture, stops: () => cityStops, gardens: () => cityGardens } });
+    const caps = createCityCaps({ group: capGroup, getMovers: () => this.movers, kits: { furniture: () => cityFurniture, stops: () => cityStops, gardens: () => cityGardens, plants: () => cityPlants } });
     if (caps) group.add(capGroup);
     group.traverse((o) => { o.userData.wxSkip = true; });
     scene.add(group);

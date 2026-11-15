@@ -33,7 +33,8 @@ export const cityGrass = {
   },
   /** a full tile's surfaces (loadTile, after its terrain / roads / buildings exist) */
   /** types: the tile worker's grassTypeData() result (tileData.js, entry.grass); without it (no worker) built here */
-  async addTile(entry, base, { terrain, roads = [], buildings = [], feats, bounds, cover, types = null }) {
+  /** extraSolids: more meshes grass must not cross (the plants' mulch beds, viewer/plants/cityPlants.js bedSolid) */
+  async addTile(entry, base, { terrain, roads = [], buildings = [], feats, bounds, cover, types = null, extraSolids = [] }) {
     if (!this.grass) return;
     const t0 = performance.now();
     const surfaces = !types && entry.files.surfaces ? await fetch(new URL(entry.files.surfaces, base)).then((r) => r.json()).catch(() => null) : null;
@@ -42,7 +43,7 @@ export const cityGrass = {
     this.grass.field.addTile(entry.name, {
       terrain, cover, types, bounds,
       grass: roads.filter((m) => m.name === "roads-grass"),
-      solids: [...roads.filter((m) => m.name !== "roads-grass"), ...buildings],
+      solids: [...roads.filter((m) => m.name !== "roads-grass"), ...buildings, ...extraSolids],
       trunks: trunkDiscs(feats, bounds),
     });
     return { typesMs: +(performance.now() - t1).toFixed(1), fetchMs: +(t1 - t0).toFixed(1) };

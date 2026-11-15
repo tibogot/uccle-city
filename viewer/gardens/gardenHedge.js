@@ -21,11 +21,12 @@ import * as THREE from "three/webgpu";
 import {
   attribute, uniformArray, vec2, vec3, vec4, float, mix, smoothstep, length, normalize, cross, cos, sin, select, abs, max,
   fwidth, saturate, texture, uv, cameraPosition, cameraViewMatrix, varying, positionLocal, normalLocal, normalWorld,
-  positionWorld, fract, floor,
+  positionWorld, fract, floor, log2,
 } from "three/tsl";
 import { season } from "../foliage/seasons.js";
 import { wind, windAt } from "../foliage/wind.js";
-import { noiseAt } from "../foliage/noise.js";
+import { noiseAt, noiseTexture } from "../foliage/noise.js";
+const HEDGE_MIP_OLD = /[?&]hedgemip=old(&|$)/.test(location.search);
 import { leafCard } from "../foliage/cards.js";
 import { bumpNormal } from "../tslkit.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
@@ -217,7 +218,12 @@ export function hedgeMaterials() {
     // (the fine-variation channel A carries octaves down to 1/64 of a tile: at 1/0.55 and 1/0.16 m that is 9 and 2.5 mm,
     // a pixel-sized grain that read as SPECKLE close up and crawled at the mip hand-overs when moving; a mip bias of 1.5
     // drops that last octave: leaf-sized clumps, no grain)
-    const n1 = noiseAt(vu, 1 / 2.2).b, n2 = noiseAt(vu, 1 / 0.55).bias(1.5).a, n3 = noiseAt(vu.mul(1.3).add(5.1), 1 / 0.16).bias(1.5).a;
+    // (plants round, 2026-11-15: the bias also applied when MAGNIFIED, so 1-2 m from a hedge the leaves were the coarse
+    // mip's texels, bilinear and sharpened by the crevice smoothstep: square "dots". Now the level is the footprint's own
+    // + 1.5, clamped at 0: the same grain-free look from 3 m out, full-resolution leaves close up; ?hedgemip=old = before)
+    const lv = (p) => max(float(0), log2(max(length(fwidth(p)).mul(256), float(1e-4))).add(1.5));
+    const nl = (p, sc) => (HEDGE_MIP_OLD ? noiseAt(p, sc).bias(1.5) : texture(noiseTexture(), p.mul(sc)).level(lv(p.mul(sc))));
+    const n1 = noiseAt(vu, 1 / 2.2).b, n2 = nl(vu, 1 / 0.55).a, n3 = nl(vu.mul(1.3).add(5.1), 1 / 0.16).a;
     const clumps = smoothstep(0.25, 0.75, n1);
     const leaves = n2.mul(0.5).add(n3.mul(0.5));
     const crev = smoothstep(0.15, 0.55, leaves);

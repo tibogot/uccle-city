@@ -85,7 +85,7 @@ export function loadPlants() {
   })());
 }
 
-function thinLeaves(g, keep) {
+export function thinLeaves(g, keep) {
   const P = g.attributes.position, U1 = g.attributes.uv1, U2 = g.attributes.uv2, U3 = g.attributes.uv3, I = g.index.array;
   const grow = 1 / Math.sqrt(keep);
   const pos = new Float32Array(P.array);
