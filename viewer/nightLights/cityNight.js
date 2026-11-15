@@ -152,7 +152,7 @@ const TILE_REACH = qp.get("lampreach") !== "0", REACH = 26 + 12;
 // (PROXY_LAYER + k: the main camera never sees it). Round 2 drew 72 tree draws / 318 k triangles per 2 maps at Place
 // Saint-Job. ?lampproxy=0: the tile gate above (whole sets).
 const EMPTY_WARM = /^(traffic-car-batch|parked-car-batch|train-)/;      // (round 3) empty by day, filled at night: warmed with one zero-size instance
-const PROXY = TILE_REACH && qp.get("lampproxy") !== "0", PROXY_LAYER = 8, PROXY_CAP = 128;
+const PROXY = TILE_REACH && qp.get("lampproxy") !== "0", PROXY_LAYER = 12, PROXY_CAP = 128;   // (fix4: was 8, so lamp 1 drew on 9 = the pond reflection's POND_LAYER)
 
 /** step 0: before renderer.init() */
 export async function installNightLighting(renderer) {
@@ -555,6 +555,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
       for (let i = 0; i < warmNow.length; i++) {
         const o = warmNow[i]; o.layers.disable(WARM_LAYER);
         if (o.userData.proxyOf) { o.count = 0; o.visible = false; }
+        if (o.userData.__warmHid0) { o.layers.enable(0); delete o.userData.__warmHid0; }
         if (o.userData.__warmEmpty) { const M = o.instanceMatrix.array; if (o.count === 1 && M[0] === 0 && M[5] === 0 && M[10] === 0) { o.count = 0; if (o.userData.__warmEmpty === 2) o.visible = false; } delete o.userData.__warmEmpty; }
       }
       stats.warmed += warmNow.length; warmNow.length = 0; warming = 0;
@@ -589,6 +590,10 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         if (ok) {
           o.instanceMatrix.array.fill(0, 0, 16); o.instanceMatrix.clearUpdateRanges(); o.instanceMatrix.addUpdateRange(0, 16); o.instanceMatrix.needsUpdate = true;
           o.userData.__warmEmpty = o.visible ? 1 : 2; o.count = 1; o.visible = true; o.layers.enable(WARM_LAYER); warmNow.push(o);
+          // (fix4 item 5) off the MAIN camera's layer for this warm frame: shown with count 1 it was drawn by the main pass
+          // too, and the traffic's 64 batches built their main node graphs in that ONE frame (a 0.8-0.9 s long task
+          // ~10 s after the reveal); their main pass is precompiled one batch at a time (trafficFleet.js)
+          if (o.layers.isEnabled(0)) { o.layers.disable(0); o.userData.__warmHid0 = true; }
           continue;
         }
       }
