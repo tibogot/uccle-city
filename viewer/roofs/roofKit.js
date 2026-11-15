@@ -19,7 +19,8 @@ import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { FadeSlots, StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 import { brickPattern } from "../gardens/gardenKit.js";
 import { PIECES, STRIDE } from "./roofPlace.js";
-import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
+import { wxMat } from "../weather/cityWeatherize.js";
+import { MultiDrawSet, MultiStreamPool } from "../multiDraw.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 export { PIECES, STRIDE };
 
 export const roofFades = new FadeSlots();
@@ -255,4 +256,35 @@ export class RoofPool {
   }
   get drawn() { return this.meshes.filter((m) => m.visible).length; }
   get instances() { return this.meshes.map((m) => (m.visible ? m.count : 0)); }
+}
+
+// ------------------------------------------------------------------------------------------------ merged (multi-draw)
+/** perf pass 2 (docs/perf/AUDIT.md step 12, ?roofmerge=old = the 45 meshes): the kit as FOUR render objects for the
+ *  whole city: per LOD one mesh holding every piece (viewer/multiDraw.js: one indirect draw per piece), LOD1 split in
+ *  two (the small pieces cast no shadow at LOD1, as before). Same materials, bands, sources and gathers as RoofPool. */
+export class RoofMulti {
+  constructor(kit, group) {
+    const attrs = [["instanceMatrix", 16], ["iBand", 4], ["iVar", 4], ["iAux", 4]];
+    const P = PIECES.map((p) => kit.pieces[p]);
+    const small = (p) => ["pot", "cowl", "vent", "dish", "pvframe"].includes(p.name);
+    this.sets = [0, 1, 2].map((l) => new MultiDrawSet({ name: `roofs-lod${l}`, parts: P.length, attrs, cap0: 256 }));
+    const pad = Math.max(...P.map((p) => p.lods[0].boundingSphere.radius), 1) + 1;
+    for (const s of this.sets) s.pad = pad;
+    const view = (l, pick, castShadow, name) => {
+      const v = this.sets[l].addView({ geoms: P.map((p) => (pick(p) ? p.lods[l] : null)), material: kit.mats.opaque[l], castShadow, name });
+      group.add(v.mesh);
+    };
+    view(0, () => true, true, "roofs-lod0");
+    view(1, (p) => !small(p), true, "roofs-lod1");
+    view(1, small, false, "roofs-lod1-small");
+    view(2, () => true, false, "roofs-lod2");
+  }
+  pool(piece, k, margin = MARGIN) {
+    const [s1, s2, end] = piece.band;
+    const live = [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, end]];
+    const attrs = [["instanceMatrix", "instanceMatrix", 16], ["iBand", "iBand", 4], ["iVar", "iVar", 4], ["iAux", "iAux", 4]];
+    const stream = new MultiStreamPool(piece.name, live.map(([l0, l1], l) => ({ set: this.sets[l], part: k, l0, l1, attrs })), Math.max(piece.lods[0].boundingSphere.radius, 1.0), margin);
+    const meshes = stream.meshes.map((m) => m.mesh);
+    return { piece, stream, meshes, get drawn() { return meshes.filter((m) => m.visible).length; }, get instances() { return meshes.map((m) => (m.visible ? m.count : 0)); } };
+  }
 }

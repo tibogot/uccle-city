@@ -9,15 +9,16 @@
 // placements from features.json (height from the LiDAR, a stable turn per tree), one shared set of
 // materials and built trees for every tile, and the sun from viewer/lighting.js.
 import * as THREE from "three/webgpu";
-import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform } from "three/tsl";
+import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform, attribute, select } from "three/tsl";
 import { createStylizedTrees, lodMorph } from "../vendor/stylized-trees/stylizedTrees.js";
 import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
 import { bakeTreeImpostors, impostorMaterial, impostorField, IMPOSTOR_START, IMP } from "./impostors.js";
-import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
+import { SMOOTH, lodEye, keepBand, rampTo, ditherNoise, cloneMaterial } from "./lodFade.js";
 import { env } from "./lighting.js";
 import { useTreeKit, startTreeKit } from "./treeKitCity.js";
-import { frameBudget } from "./instanceStream.js";
+import { frameBudget, FadeSlots, Streamer, buildSource } from "./instanceStream.js";
+import { setMultiDrawRenderer, multiDrawOK, MultiDrawSet, MultiStreamPool } from "./multiDraw.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // ---- the tree fields' re-buckets, spread over frames (docs/perf/AUDIT.md "instance pools"): within the city's
@@ -66,7 +67,7 @@ export function treeBandSettle() {
   };
 }
 /** main.js passes the renderer once (the impostor bake renders on it). */
-export function setTreeRenderer(r) { renderer = r; }
+export function setTreeRenderer(r) { renderer = r; setMultiDrawRenderer(r); }
 
 // Street trees are pruned upright: the offroad game's "broad" (low fork, wide) and "tall" (long trunk,
 // high fork) styles, picked per variant from the variant's own random stream (the same for its 3 LODs).
@@ -261,7 +262,7 @@ export function makeSpecies(def) {
   // pollards are half as tall as its avenue trees); the street trees keep the mean (as in the city)
   const VARIANT_HEIGHT = [];
   const shared = {};
-  let PARAMS = null, impMat = null, impMatFar = null, impBake = null;
+  let PARAMS = null, impMat = null, impMatFar = null, impBake = null, pool = null;
   const kitMode = useImpostors && useTreeKit && def.id === "street";
   let kit = null;
   // the vendor's variant per tree (stylizedTrees.js: rng(i * 7919 + 13) -> floor(x * variants)), the
@@ -401,6 +402,11 @@ export function makeSpecies(def) {
     calibrate();
     const variantOf = opts.variantOf ?? variantOfIndex;
     const placements = treePlacements(trees, ground, inTile, variantOf);
+    // perf pass 2 (docs/perf/AUDIT.md step 12): the street trees as ONE city-wide pool (?treepool=old = per tile)
+    if (def.id === "street" && TREE_POOL && usePrepass && !opts.variantOf && multiDrawOK()) {
+      pool ??= makeTreePool(shared, params(), VARIANTS, { kitRegister: kit ? (pl, vo) => kit.register(pl, vo, "full") : null });
+      return pool.addField(placements, variantOf);
+    }
     const holder = new THREE.Group();
     holder.name = "StylizedTreesTile";
     const P = params();
@@ -513,7 +519,7 @@ export function makeSpecies(def) {
 
   const sp = {
     def, shared, variants: VARIANTS, calibrate, buildField, buildFarField, dispose, treePlacements, variantOfIndex, params,
-    buildMs: 0, bakeMs: 0,
+    buildMs: 0, bakeMs: 0, get pool() { return pool; },
     get naturalHeight() { return NATURAL_HEIGHT; }, variantHeight: (v) => (def.perVariantHeight ? VARIANT_HEIGHT[v] : NATURAL_HEIGHT), get bake() { return impBake; }, get impMat() { return impMat; }, get impMatFar() { return impMatFar; },
   };
   return sp;
@@ -588,3 +594,126 @@ export const STREET = makeSpecies({
 export const treeParams = () => STREET.params();
 export const buildStylizedTreeField = (trees, ground, inTile) => STREET.buildField(trees, ground, inTile);
 export const buildFarTreeField = (trees, ground, inTile) => STREET.buildFarField(trees, ground, inTile);
+
+// ------------------------------------------------------------------------------------------------ the city tree pool
+// Perf pass 2 (docs/perf/AUDIT.md step 12; ?treepool=old = the per-tile fields). Before: every loaded tile had its own
+// vendor field, 6 variants x 3 LODs x (leaves, their depth pre-pass twin, bark) = 54 instanced meshes a tile: 108 scene
+// + 54 shadow draws at the Place (9 tiles). Now ONE pool for the city: per LOD a multi-draw set (viewer/multiDraw.js)
+// whose parts are the 6 variants, drawn by 3 meshes (leaves, depth twin, bark): 9 render objects, 4 of them in the
+// shadow pass. The tiles' trees are streaming sources (viewer/instanceStream.js: 50 m cells, the gather time-sliced in
+// the city's streaming budget); the LOD of a tree = the vendor's: distance from the gather centre to its foot, the
+// bands lodDist / farDist / impostor start + lodSlack (the morph covers the lag, as with the vendor's re-bucket). The
+// tile fade: a slot per tile (FadeSlots) read by the pool's own copies of the shared materials (dithered, as lodFade.js).
+const TREE_POOL = !/[?&]treepool=old(&|$)/.test(location.search);
+const treeFades = new FadeSlots();
+
+function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
+  const slotKeep = () => {
+    const f = treeFades.fade(attribute("treeSlot", "float")), n = ditherNoise();
+    return select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
+  };
+  const own = (base, name) => { const m = cloneMaterial(base); m.name = name; m.userData.shared = true; m.userData.noFade = true; return m; };
+  const and = (a, b) => (a ? a.and(b) : b);
+  const mats = [shared.leafMat, shared.leafFar].map((leaf, far) => {
+    const pm = prepassMaterials(leaf), tr = far ? shared.trunkFar : shared.trunkMat;
+    const depth = own(pm.depth, `${pm.depth.name}:pool`); depth.maskNode = and(pm.depth.maskNode, slotKeep());
+    const colour = own(pm.colour, `${pm.colour.name}:pool`); colour.maskShadowNode = and(pm.colour.maskShadowNode, slotKeep());
+    const bark = own(tr, `${tr.name || "stylized-bark"}:pool`); bark.maskNode = and(tr.maskNode, slotKeep()); bark.maskShadowNode = and(tr.maskShadowNode, slotKeep());
+    return { depth, colour, bark };
+  });
+  const group = new THREE.Group(); group.name = "trees-pool";
+  const attrs = [["instanceMatrix", 16], ["treeXf", 3], ["treePos", 3], ["treeSlot", 1]];
+  const sets = [0, 1, 2].map((l) => {
+    const set = new MultiDrawSet({ name: `trees-lod${l}`, parts: VARIANTS, attrs, cap0: l === 2 ? 1024 : 256 });
+    set.pad = 26;
+    const M = mats[l === 2 ? 1 : 0], cast = l <= SHADOW_LODS;
+    const leaves = set.addView({ geoms: Array.from({ length: VARIANTS }, (_, v) => shared.geoms.get(`${v}:${l}`).leaves), material: M.colour, castShadow: cast, name: `trees-leaves-lod${l}` });
+    const twin = set.addView({ shareOf: leaves, material: M.depth, castShadow: false, receiveShadow: false, renderOrder: -1, name: `trees-leaves-depth-lod${l}` });
+    twin.mesh.userData.depthPrepass = true;
+    const bark = set.addView({ geoms: Array.from({ length: VARIANTS }, (_, v) => shared.geoms.get(`${v}:${l}`).trunk), material: M.bark, castShadow: cast, name: `trees-bark-lod${l}` });
+    for (const v of [leaves, twin, bark]) group.add(v.mesh);
+    return set;
+  });
+  // the bands (m from the gather centre to a tree's foot), live from the params (the dev panel) and the impostor start
+  const bands = () => { const sl = P.lodSlack ?? 0; return [[0, P.lodDist + sl], [P.lodDist + sl, P.farDist + sl], [P.farDist + sl, (SMOOTH ? IMP.start.value : P.maxDist) + sl]]; };
+  const cols = [["instanceMatrix", "instanceMatrix", 16], ["treeXf", "treeXf", 3], ["treePos", "treePos", 3], ["treeSlot", "treeSlot", 1]];
+  const B0 = bands();
+  // (StreamPool margin 0: one LOD per tree; the streamer's margin is only its outrun check: past it a gather is finished at once)
+  const pools = Array.from({ length: VARIANTS }, (_, v) => new MultiStreamPool(`tree${v}`, B0.map(([l0, l1], l) => ({ set: sets[l], part: v, l0, l1, attrs: cols })), 0, 0));
+  const streamer = new Streamer({ name: "trees", pools, fades: treeFades, margin: 6, trigger: RELOD_DUE, budget: 0.3 });
+  let bandKey = B0.flat().join(",");
+  // the vendor field of no trees: its update() writes the shared uniforms from the params every frame (as each tile's did)
+  const uni = createStylizedTrees({ scene: new THREE.Group(), trees: [], shared, variants: VARIANTS, params: P });
+  uni.stats = () => {
+    let trees = 0, tris = 0;
+    sets.forEach((s, l) => s.parts.forEach((p, v) => { const g = shared.geoms.get(`${v}:${l}`); trees += p.n; tris += p.n * (g.leaves.index.count + g.trunk.index.count) / 3; }));
+    return { trees, tris: Math.round(tris) };
+  };
+  window.__stylizedTrees = [uni];
+  const fields = new Map();
+  let seq = 0, lastFrame = -1;
+  const cam = { position: new THREE.Vector3() }, light = { sunDir, sunColor: sunCol };
+  const m4 = new THREE.Matrix4(), sc = new THREE.Vector3();
+
+  function sources(placements, variantOf, slot) {
+    const by = Array.from({ length: VARIANTS }, () => []);
+    placements.forEach((p, i) => by[variantOf(i)].push(p));
+    const out = {};
+    by.forEach((list, v) => {
+      const n = list.length; if (!n) return;
+      const M = new Float32Array(n * 16), X = new Float32Array(n * 3), Q = new Float32Array(n * 3), S = new Float32Array(n), C = new Float32Array(n * 4);
+      list.forEach(([x, z, y, rot, s], i) => {
+        m4.makeRotationY(rot); m4.scale(sc.set(s, s, s)); m4.setPosition(x, y - 0.25, z);   // (the vendor's matrix)
+        M.set(m4.elements, i * 16);
+        X[i * 3] = Math.cos(rot); X[i * 3 + 1] = Math.sin(rot); X[i * 3 + 2] = s;
+        Q[i * 3] = x; Q[i * 3 + 1] = y - 0.25; Q[i * 3 + 2] = z;
+        S[i] = slot;
+        C[i * 4] = x; C[i * 4 + 1] = y; C[i * 4 + 2] = z; C[i * 4 + 3] = 0;           // (the vendor's distance: to the foot)
+      });
+      out[`tree${v}`] = buildSource(n, { instanceMatrix: [M, 16], treeXf: [X, 3], treePos: [Q, 3], treeSlot: [S, 1] }, C);
+    });
+    return out;
+  }
+  /** every tile's update calls this; the first call of a frame does the work */
+  function tick(p) {
+    const frame = renderer?.info.render.frame ?? -2;
+    if (frame === lastFrame && frame !== -2) return;
+    lastFrame = frame;
+    if (!group.parent) for (const f of fields.values()) { let o = f.holder; while (o.parent) o = o.parent; if (o.isScene) { o.add(group); break; } }
+    if (lighting) {
+      sunDir.copy(lighting.sunDir);
+      const c = lighting.keyColor, k = 0.18 * (1 - 0.8 * env.uNight.value);
+      sunCol[0] = c.r * k; sunCol[1] = c.g * k; sunCol[2] = c.b * k;
+    }
+    if (SMOOTH) P.maxDist = IMP.start.value;
+    cam.position.copy(p);
+    uni.update(cam, light);
+    if (shared.U?.fill) shared.U.fill.value = P.fill * (1 - 0.92 * env.uNight.value);
+    const B = bands(), key = B.flat().join(",");
+    if (key !== bandKey) {
+      bandKey = key;
+      for (const pl of pools) pl.meshes.forEach((m, l) => { m.d0 = B[l][0]; m.d1 = B[l][1]; });
+      streamer.dirty = true;
+    }
+    // the tile fades: the holder's (lodFade.js Fader sets userData.fade on the tile's objects), 0 under a hidden ancestor
+    for (const f of fields.values()) {
+      let vis = true; for (let o = f.holder; o; o = o.parent) if (o.visible === false) { vis = false; break; }
+      f.stub.parent.visible = vis; f.stub.userData.fade = f.holder.userData.fade ?? 1;
+    }
+    streamer.update(cam);
+  }
+  function addField(placements, variantOf) {
+    const holder = new THREE.Group();
+    holder.name = "StylizedTreesTile";
+    const id = `t${++seq}`, stub = { parent: { visible: true }, userData: { fade: 0 } };
+    fields.set(id, { holder, stub });
+    if (placements.length) streamer.addTile(id, stub, (slot) => sources(placements, variantOf, slot));
+    const release = kitRegister && placements.length ? kitRegister(placements, variantOf) : null;
+    const dispose = () => { if (!fields.has(id)) return; fields.delete(id); streamer.removeTile(id); release?.(); holder.removeFromParent(); };
+    holder.dispose = dispose;
+    return { group: holder, update: tick, count: placements.length, field: uni, imp: null, placements, dispose };
+  }
+  const api = { group, sets, pools, streamer, fields, addField, tick, stats: () => sets.map((s) => s.stats()) };
+  window.__treePool = api;
+  return api;
+}

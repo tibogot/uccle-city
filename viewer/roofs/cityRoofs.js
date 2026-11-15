@@ -12,7 +12,8 @@
 //     stampRoofCols -> viewer/tileData.js roofSurface): the bird hits the stacks, parapets and roof furniture it sees (the
 //     G key draws that grid). Nothing on a roof can be reached on foot or by car.
 import * as THREE from "three/webgpu";
-import { loadRoofKit, RoofPool, PIECES, roofSources, roofFades } from "./roofKit.js";
+import { loadRoofKit, RoofPool, RoofMulti, PIECES, roofSources, roofFades } from "./roofKit.js";
+import { multiDrawOK } from "../multiDraw.js";
 import { Streamer } from "../instanceStream.js";
 
 const ROOF_MARGIN = 14, ROOF_TRIGGER = 4;
@@ -31,13 +32,16 @@ export const cityRoofs = {
     // a wider margin and trigger than the street-level pools (6 / 2 m): the roof kit's bands reach 480 m, so a gather
     // copies many instances (~10 frames a gather on a 9-tile ring); with 6 m the camera outran it at car speed
     // (432 forced gathers on the Saint-Job drive); 14 m / 4 m: half the gathers, none forced (docs/assets/ROOFS.md)
-    for (const p of PIECES) this.pools.push(new RoofPool(this.kit.pieces[p], this.kit.mats, this.group, ROOF_MARGIN));
+    // perf pass 2 (docs/perf/AUDIT.md step 12): the 45 piece x LOD meshes as 4 multi-draw meshes (?roofmerge=old = before)
+    this.merged = qs.get("roofmerge") !== "old" && multiDrawOK();
+    if (this.merged) { this.multi = new RoofMulti(this.kit, this.group); PIECES.forEach((p, k) => this.pools.push(this.multi.pool(this.kit.pieces[p], k, ROOF_MARGIN))); }
+    else for (const p of PIECES) this.pools.push(new RoofPool(this.kit.pieces[p], this.kit.mats, this.group, ROOF_MARGIN));
     this.streamer = new Streamer({ name: "roofs", pools: this.pools.map((p) => p.stream), fades: roofFades, budget: 0.3, margin: ROOF_MARGIN, trigger: ROOF_TRIGGER });
     updaters.push((eye, cam) => this.update(cam));
     for (const [name, t] of this.pending || []) this.addTile(name, t.kit, t.parent);
     this.pending = null;
     window.__roofs = this;
-    log(`roofs: on (?roofs=old = before), kit ${PIECES.length} pieces, ${Math.round(performance.now() - t0)} ms`);
+    log(`roofs: on (?roofs=old = before), kit ${PIECES.length} pieces${this.merged ? ", merged: 4 meshes" : ""}, ${Math.round(performance.now() - t0)} ms`);
     return this;
   },
   /** a tile's roof kit (the worker's analyseBuildings().roofKit); its fade follows `parent` (the tile's buildings group) */
