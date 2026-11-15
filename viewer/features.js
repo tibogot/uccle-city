@@ -72,6 +72,9 @@ export const FEATURES = [
   sel("wx", "weather", "weather", "The weather at start (viewer/weather/cityWeather.js): rain, snow, fog... (clear = the city as before); 'live' = Uccle now (Open-Meteo).",
     [[null, "clear"], ["overcast", "overcast"], ["drizzle", "drizzle"], ["rain", "rain"], ["storm", "storm"], ["snowfall", "snowfall"], ["snow_cover", "snow cover"], ["fog", "fog"], ["live", "live (Open-Meteo)"]], { live: "weather" }),
   old("weather", "weather", "no weather system", "?weather=old: the city before the weather hookup (no wet / snow layer in the materials, no rain, no overhead bake)."),
+  on("snowtracks", "weather", "snow tracks", "Footprints, tyre and motorbike tracks in the snow (viewer/weather/snowTrails.js: a camera-centred trail texture the walker / character / cars stamp; the snow layer and the ground cover read it)."),
+  on("snowcaps", "weather", "snow caps", "Snow caps with thickness and rounded rims on car roofs / bonnets (parked, traffic, yours), benches, bins, bike boxes, glass banks, bus shelters, garden copings and hedge tops (viewer/weather/snowCaps.js + cityCaps.js); parked cars' tops then cut the snow layer."),
+  num("snowtrailres", "weather", "snow track texels", "Snow track texture size over the weather window (1024 = 6.25 cm over 64 m; 512 = 12.5 cm).", 1024, 256, 2048, 256),
   num("wxmap", "weather", "weather window (m)", "Size of the overhead map + volumetric snow window round the camera (512 cells; 64 m = 12.5 cm cells).", 64, 32, 128, 16),
   txt("wind", "weather", "wind (flags / falcon)", "Flags: 'speed,deg' (default 5,70); the falcon flight reads the speed (default 4).", "5,70"),
   num("windfrom", "weather", "falcon wind from (°)", "Falcon flight: the wind's direction.", 240, 0, 360, 5),
@@ -170,6 +173,7 @@ export const FEATURES = [
   // polish round 1 (docs/POLISH.md): each look change has its own A/B; ?polish1=old = all of them at once
   old("polish1", "ab", "polish 1: all", "Every look change of the polish batch 1 as before (docs/POLISH.md).", { sub: "Look" }),
   old("snowedge", "ab", "snow edge (old)", "Snow layer cut per 12.5 cm cell + nearest-cell exposure: the stepped / jagged snow edge along kerbs (polish 1 item 1).", { sub: "Look" }),
+  old("snowlimbs", "ab", "snow on every branch (old)", "Snow as a white stripe on every branch and white specks over the whole crown (blossom look); now only the thicker limbs and the crown tops (snow round 2).", { sub: "Look" }),
   old("snowwb", "ab", "snow white balance (old)", "Snow scenes with the 75 % grade correction and the warm highlights: beige snow (polish 1 item 1).", { sub: "Look" }),
   old("treedither", "ab", "tree hand-over dither (old)", "Fixed 30-50 m mesh -> impostor / shadow-fade bands: a static checker on crowns standing in the band (polish 1 item 2).", { sub: "Look" }),
   old("bark", "ab", "zebra bark (old)", "The street trees' striped bark before (polish 1 item 3).", { sub: "Look" }),

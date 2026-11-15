@@ -340,3 +340,110 @@ hour: fixed by the white balance under the deck). Uccle's sett lanes stay white 
 - The weather's boot precompile waits behind the tiles in warmup's queue ("ready" 65-78 s after boot); the weather
   runs before that (a preset chosen before then compiles on first use).
 - Rivulets are 3 cm procedural columns (plain up close); no drips from the eaves in the city.
+
+
+---
+
+# Snow round 2: tracks, caps, the rest weatherized (branch claude/snowtracks, 2026-11-15)
+
+Switches (viewer/features.js): `?snowtracks=0` (no tracks), `?snowtrailres=512|1024|2048` (track texels over the window),
+`?snowcaps=0` (no caps; parked cars' tops keep the layer as before), `?snowlimbs=old` (snow on every branch + the
+blossom-like crowns). Console: `debug/snowTracks.js` (`walk`, `drive`, `look`, `stats`, `proofView`). Images:
+`docs/weather/snow2/` (same camera before / after; "before" = `?snowtracks=0&snowcaps=0&snowlimbs=old`).
+
+## References looked at (owner's rule: check before building)
+- Batman: Arkham Origins, "Deformable Snow Rendering" (GDC 2014, Barre-Brisebois): a heightmap the movers write into,
+  refilled over time while it snows, displaced mesh.
+- Rise of the Tomb Raider, "Deferred Snow Deformation" (GPU Pro 7, Michels + Sikachev): cheap writes (depressions only),
+  the raised rim RECONSTRUCTED when the snow is drawn.
+- God of War Ragnarok (GDC 2023, Surricchio; 80.lv interview): capsules carve the snow every frame; a normal map in the
+  displaced area + a finer detail normal from a top-down mask in the shading.
+- The snowflow demo (toroidal window: uv = fract(world / size), only the entering strips cleared) and Bruno Simon's
+  folio-2025 `Tracks.js` / `Snow.js` (three.js WebGPU / TSL: wheel ribbons into a render target round the car).
+- Snow on objects: Company of Heroes 2 (normal-based cover), the Unity / Unreal "snow accumulation" shaders (a vertex
+  push along the normal: the floating sheet on box-like low-poly models). So the caps here are their own meshes.
+
+## Tracks (viewer/weather/snowTrails.js, snowMovers.js)
+- One RGBA16F render target, 1024^2 over the 64 m weather window (6.25 cm texels), linear filtered, REPEAT-wrapped: the
+  window follows the camera texel by texel without copying (toroidal); only the strips entering it are cleared.
+  A = packed (0 fresh .. 1 flat), MAX-blended (a track never undoes another); RG = the travel direction, B = boot / tyre
+  (blended "last brush wins" by its weight) for the tread.
+- Writes: one small render per frame while there is snow: instanced brush quads (a capsule per wheel from its last
+  position, a boot sole with a waist per planted foot; walls sloping out to ~1.5-1.7 x the radius: a 21 cm tyre leaves a
+  ~35 cm trench in deep snow) + a few clear / refill rects (A x (1 - k) blend). No ping-pong and no full-screen pass per
+  frame; snowfall fills the grooves back (~4 cm of new snow fills one) as one rect every 8th frame.
+- Movers: the walker (a print every 0.74 m stride, alternate sides), the third-person character (its foot-IK ankles when
+  planted), the player's car (4 tyres) and the motorbike (2 thin tyres), the 32 nearest traffic cars (sim poses as drawn,
+  4 tyres each); a brush only when the mover is on the drawn ground. Hook for pedestrians / animals:
+  `cityWeather.movers.extra = [fn(out, { boot, touches })]`.
+- Readers: the snow layer's vertex shader (one bilinear tap at each 12.5 cm cell centre = the 2 x 2 texels under it: a
+  box prefilter, no aliasing; groove x 0.72 depth + a fuller berm from the neighbours, normals from the neighbours'
+  heights), its fragment (per-pixel packed colour; a detail normal from central differences over 2 texels: smooth, no
+  texel facets; ambient occlusion in the groove so tracks read in shade; tread bars across the travel direction / boot
+  lugs, faded out by their screen footprint), and the ground families' material cover (`wxMat({ map })`: greyer
+  compacted snow, pressed through to the ground in thin snow, darker wetter tyre lines in the slush of a salted road).
+- Fixed on the way: the trail's v orientation (a render target is written with clip y = 1 - 2v), the brush quads
+  double-sided (the mirror flips the winding).
+- Movers out of the overhead bake: the player's car, the motorbike, trams, trains, the traffic, birds and skinned meshes
+  were baked as "ground": the layer drew a snow slab floating where the car had been (and a hole under it) until the
+  next bake (`MOVER_RE` in cityWeather.mark()).
+
+## Caps (viewer/weather/snowCaps.js, cityCaps.js)
+- Baked ONCE per model from its own triangles (lazily when snow first lies, one model per frame, 15-50 ms): a top-down
+  z-buffer on a 2-5 cm grid (the topmost triangle per cell; its normal turned up: the garden coping's top has downward
+  normals), holding cells (normal.y > 0.45-0.62), patches split at steps > 3.5 cm, an exact Euclidean distance transform
+  to each patch's rim (a cell next to a non-holding cell that is not higher, or a drop), the directional distances along
+  x / z (stretched pieces), each patch's half-width; a grid mesh over the holding cells.
+- Vertex shader: thickness = D sqrt(1 - (1 - e / D)^2) (a quarter circle at the rim: the bead; zero AT the rim, so the
+  cap sits on the surface, never a floating sheet), D = snow depth x k, never more than the patch's half-width x 1.1 (a
+  4 cm slat holds ~4 cm); normals analytic (surface slope + profile slope, turned by the instance's yaw); the distance
+  fade sinks the cap under the surface (45-60 m cars, 36-50 m kits): no pop.
+- Who: parked cars (per type, LOD0 geometry; their tops now CUT the snow layer: a car pass in the overhead bake,
+  `CAR_LAYER`), traffic cars (drawn poses, every frame), the player's faceted car; furniture2 benches / bins / bike boxes
+  / glass banks; stop shelters (roof glass included) and ad panels; garden copings, pillar caps (stretched: directional
+  edge distance, a run's joints only dimple) and hedge tops (lumpy). One instanced draw per model, re-gathered every
+  0.4 s / 3 m, the traffic every frame; static buffers + update ranges; hidden without snow.
+- Not capped: facade-kit sills and cornices (their stretched pieces live in the kit's own positionNode: material cover
+  only), street-kit signs and lamps (material cover), the hedges of viewer/foliage (their own season snow).
+
+## Weatherized (wxMat, uniform-gated, no new textures)
+furniture2 (3 LOD materials), stops opaque, street kit (signs, Villo), garden kit (brick, copings, ironwork, with
+rivulets), lamp posts (`lamps.js`, `lampModel.js` iron). Glass and posters left dry.
+
+## The leftovers
+- Heros lawn blotchy: the city-wide tree POOL (perf pass 2, multi-draw) was baked as ~98 % "under a crown" (every slot of
+  its buffer drawn). Its crowns now go into the canopy pass as proxies built from the pool's live ranges
+  (`canopyProxy`; 29 trees at Heros: 49 % of the window sheltered), and a crown now takes a share of the snow DEPTH, not
+  of the cover (6 cm under a lime at 15 cm in the open = a full white cover). `heros_lawn_before / after`.
+- Limbs: the cover only on the thicker limbs (ring radius from the bark attribute: none under ~3 cm, full from ~7 cm),
+  up-facing 0.3-0.75; crowns: only the top half of the crown and its open cards (no white specks everywhere).
+
+## Cost (Place Saint-Job, 1600 x 828; machine RED: 1.9 GB free, another agent's city tab rendering; frame noise +/- 2 ms)
+| What | How | Result |
+|---|---|---|
+| Trail update (24 brushes + a refill rect) | 1 vs 41 updates per frame, 6 interleaved rounds | GPU below noise (slope -0.02 ms per update): < 0.05 ms; CPU 0.06-0.13 ms (one three render call), peaks 0.24 |
+| Caps (10 draws, 40 instances) | 1 vs 11 copies, 6 rounds | ~0.04 ms GPU |
+| Layer + material readers | 4 extra layers with / without trails | not resolvable on this machine (both within noise) |
+| Weather switch clear -> snow cover -> snowfall -> clear | weatherCity.switchTest | 0 new pipelines, 0 long tasks |
+
+Re-measure on GREEN.
+
+## Images (docs/weather/snow2/)
+`walk_before / walk_after` (prints in deep snow, Place Saint-Job), `drive_before / drive_after` (unsalted street: the
+car's two tyre trenches with tread, traffic tracks), `moto_after` (the motorbike's thin line between them),
+`car_close_before` (the layer's slab with a jagged rear on the roof) / `car_close_after` (caps: roof pillow, bonnet,
+windscreen; another car: the first one had driven off into the traffic), `car20_limbs_before / after` (cars at 20 m,
+limbs), `wall_before / after` (copings, pillar domes), `bench_before / after`, `shelter_before / after`,
+`heros_lawn_before / after`, `heros_terrace_before_shelter_fix`, `car_cap_first_bake_before_fix` (the first car caps:
+beltline teeth, a drape down the hatch).
+
+## Weak spots
+- Tracks in thin snow (< 2.5 cm) live only in the materials' cover (the layer dissolves there): faint.
+- The cap bake runs on the main thread (15-50 ms per model, once): move it to the overhead worker.
+- Car caps follow the faceted body: a little lumpy on rear hatches; the player's car only when it is a faceted pack car.
+- Traffic cars carry a full cap while driving (no snow sliding / blowing off).
+- Footprints are 6.25 cm texels: boot outlines are soft ovals (the lug tread is shading only); no kicked-up spray.
+- Pre-existing, still visible: the jagged layer cut round shelters / car bases and at Heros terrain creases (12.5 cm
+  cells), a thin bright straight line across the Heros lawn snow (east of the monument), the dark kerb face as a zig-zag
+  crack where the road is unsalted.
+- Costs measured on a RED machine only.

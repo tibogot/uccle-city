@@ -11,10 +11,13 @@
 // ?wx=<preset> (clear, overcast, drizzle, rain, storm, snowfall, snow cover, fog, live) starts with a weather.
 import * as THREE from "three/webgpu";
 import { Weather, WEATHER_PRESETS, wx } from "./weatherState.js";
-import { WX_ON, setWeatherMap } from "./cityWeatherize.js";
-import { createOverheadMap, SOLID_LAYER, CANOPY_LAYER, ROAD_LAYER } from "./overheadMap.js";
+import { WX_ON, setWeatherMap, setWeatherTrails } from "./cityWeatherize.js";
+import { createOverheadMap, SOLID_LAYER, CANOPY_LAYER, ROAD_LAYER, CAR_LAYER } from "./overheadMap.js";
 import { createPrecipitation } from "./precipitation.js";
 import { createSnowLayer } from "./snowLayer.js";
+import { createSnowTrails, TRAILS_ON } from "./snowTrails.js";      // snowtracks: footprints / tyre tracks (?snowtracks=0)
+import { createSnowMovers } from "./snowMovers.js";
+import { createCityCaps } from "./cityCaps.js";                     // snow caps on cars / furniture / shelters / copings (?snowcaps=0)
 import { wxLook } from "./surfaceWeather.js";
 import { season, setDay } from "../seasons/season.js";
 import { fetchLive, mapLive } from "./liveWeather.js";
@@ -39,8 +42,17 @@ const MIST = { fog: 0.02 };
 const MAP_SIZE = Math.max(32, Math.min(128, +(qp.get("wxmap") ?? 64)));
 const map = WX_ON ? createOverheadMap({ renderer: null, size: MAP_SIZE, res: 512, depth: 260, height: 160 }) : null;
 if (map) setWeatherMap(map);      // before any material is built: the ground families read its exposure
+// snowtracks: the camera-centred trail texture (same window as the map) the movers stamp into; the ground families
+// read it too (compacted / darker where trodden), so it exists before any material is built
+const trails = map && TRAILS_ON ? createSnowTrails({ size: MAP_SIZE }) : null;
+if (trails) setWeatherTrails(trails);
 
 const SNOW_WB = !polishOld("snowwb");
+/** scene children that move (never baked as ground): trams, trains, the traffic, the player's car, birds */
+/** snow caps: the parked cars' batches (their tops cut the layer: the cap meshes carry the snow) */
+const CAR_RE = /^parked-car-batch/;
+const CAPS_CUT = new URLSearchParams(location.search).get("snowcaps") !== "0";
+const MOVER_RE = /^(tram2?-|tram$|trains$|traffic-fleet$|car$|moto|player-falcon$|falcons$|pigeons$|air-streaks$)/;
 const lerp = THREE.MathUtils.lerp, sstep = THREE.MathUtils.smoothstep;
 
 export const cityWeather = {
@@ -57,12 +69,19 @@ export const cityWeather = {
     const rain = createPrecipitation({ renderer, kind: "rain", map });
     const snow = createPrecipitation({ renderer, kind: "snow", map });
     const leaves = createPrecipitation({ renderer, kind: "leaves", map, trees: Array.from({ length: 8 }, () => ({ x: 0, z: 0, r: 4, y: -1e4 })) });
-    const layer = createSnowLayer({ renderer, map, edgeFade: true });
+    trails?.setRenderer(renderer);
+    const movers = trails ? createSnowMovers({ ground: world?.tiles ? (x, z) => world.surface(x, z) : null, getMovers: () => this.movers }) : null;
+    const layer = createSnowLayer({ renderer, map, edgeFade: true, trail: trails });
     const group = new THREE.Group(); group.name = "weather";
     group.add(rain.mesh, rain.splashes, snow.mesh, leaves.mesh, layer.mesh);
+    // snow caps: their own group (precompiled with the weather's draws: one dummy instance per family)
+    const [{ cityFurniture }, { cityStops }, { cityGardens }] = await Promise.all([import("../furniture2/cityFurniture.js"), import("../stops/cityStops.js"), import("../gardens/cityGardens.js")]);
+    const capGroup = new THREE.Group(); capGroup.name = "snow-caps";
+    const caps = createCityCaps({ group: capGroup, getMovers: () => this.movers, kits: { furniture: () => cityFurniture, stops: () => cityStops, gardens: () => cityGardens } });
+    if (caps) group.add(capGroup);
     group.traverse((o) => { o.userData.wxSkip = true; });
     scene.add(group);
-    Object.assign(this, { scene, renderer, camera, lighting, world, pipe, rain, snow, leaves, layer, group, log });
+    Object.assign(this, { scene, renderer, camera, lighting, world, pipe, rain, snow, leaves, layer, group, log, trails, snowMovers: movers, caps });
     // the start weather: ?wx=, else clear (the city as before)
     const want = (qp.get("wx") || "clear").replace(/_/g, " ");
     if (want === "live") this.goLive(); else this.setPreset(CITY_PRESETS.includes(want) || WEATHER_PRESETS[want] ? want : "clear", 0);
@@ -71,6 +90,7 @@ export const cityWeather = {
     // compile now (boot), not on the first rain: the compute passes and the draws, shown once in a hidden-count state
     for (const p of [rain, snow, leaves]) p.warm();
     layer.warm();
+    trails?.warm();
     // the draws for the post chain's scene pass (its MRT target: compileAsync on the canvas built other pipelines)
     try {
       const { precompile } = await import("../warmup.js");
@@ -136,6 +156,15 @@ export const cityWeather = {
     foliageSeason.uWet.value = wx.uWet.value;
     // ---- the snow layer
     this.layer.update(dt, this.stamps?.() ?? []);
+    this.caps?.update(camPos, dt);          // snow caps (hidden without snow)
+    // ---- snowtracks: the movers stamp the trail texture while there is snow; snowfall fills the grooves back
+    if (this.trails) {
+      const snowOn = wx.uSnowDepth.value > 0.003 && wx.uSnowCover.value > 0.05;
+      const cmh = W.input.snow > 0 && W.input.temp <= 1 ? W.input.snow : 0;
+      // packed amount decays as fresh snow covers the groove: ~4 cm of new snow fills a track (per real second)
+      const refill = (cmh / 100 / 3600) * W.timeScale / 0.04;
+      this.trails.update(camPos, dt, { snow: snowOn, refill, stamps: snowOn ? this.snowMovers.gather(camPos, dt) : [] });
+    }
     this.layer.mesh.visible = map.ready && wx.uSnowDepth.value > 0.003;
     // particle colours: drops lens the sky behind them; flakes are white grains lit by the whole sky
     const fc = L.uFogColor?.value ?? { x: 0.5, y: 0.55, z: 0.6 }, night = this.night();
@@ -242,19 +271,71 @@ export const cityWeather = {
   /** solid = every visible opaque mesh (its own instancing / batching only: a custom positionNode is not seen by the
    *  bake's override material), canopy = tree crowns, road = the carriageway material (salted in winter) */
   mark() {
-    let n = 0;
-    this.scene.traverseVisible((o) => {
+    let n = 0, cars = 0;
+    const pools = new Set();
+    // snowtracks / snow caps: MOVERS are not ground. Baked at the pose they had at the bake, the layer drew a snow slab
+    // floating where the player's car, a tram or a traffic car had been (and a hole in the street under it) until the
+    // next bake; their snow is the caps' job (snowCaps.js)
+    const off = (o) => o.traverse((m) => { if (m.isMesh) { m.layers.disable(SOLID_LAYER); m.layers.disable(ROAD_LAYER); } });
+    const M = this.movers, own = new Set([M?.driver?.car?.root, M?.driver?.moto?.root, M?.third?.()?.tp?.body?.root].filter(Boolean));
+    for (const r of own) off(r);
+    for (const top of this.scene.children) {
+      if (MOVER_RE.test(top.name) || own.has(top)) { off(top); continue; }
+      top.traverseVisible((o) => {
       if (!o.isMesh || o.userData.wxSkip) return;
+      if (o.isSkinnedMesh) { o.layers.disable(SOLID_LAYER); return; }
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
       if (!m) return;
       // crowns: their cards' wind / morph (positionNode) is not in the bake, the instanced crown volume is: shelter only
-      if (m.userData?.wxCanopy || o.userData?.wxCanopy) { o.layers.enable(CANOPY_LAYER); o.layers.disable(SOLID_LAYER); return; }
+      if (m.userData?.wxCanopy || o.userData?.wxCanopy) {
+        // snow round 2: the city-wide tree POOL (perf pass 2, multiDraw.js: indirect draws, the instances' live ranges in
+        // its parts) baked as ~98 % "under a crown" (every slot of the buffer drawn: the Heros lawn's blotchy snow);
+        // its crowns go into the bake as proxies built from the live ranges instead (canopyProxy below)
+        if (o.userData?.multiDraw) { pools.add(o.userData.multiDraw); o.layers.disable(CANOPY_LAYER); o.layers.disable(SOLID_LAYER); return; }
+        o.layers.enable(CANOPY_LAYER); o.layers.disable(SOLID_LAYER); return;
+      }
       if (m.positionNode) { o.layers.disable(SOLID_LAYER); return; }
       if (m.transparent && !m.userData?.wxRoad) { o.layers.disable(SOLID_LAYER); return; }
       o.layers.enable(SOLID_LAYER); n++;
       if (m.userData?.wxRoad) o.layers.enable(ROAD_LAYER);
-    });
+      // snow caps: a parked car carries its own cap (snowCaps.js): the layer is cut on its top (overheadShape carPx)
+      if (CAPS_CUT && CAR_RE.test(o.name)) { o.layers.enable(CAR_LAYER); cars++; } else o.layers.disable(CAR_LAYER);
+      });
+    }
+    for (const r of own) off(r);
+    map.carsMarked = cars > 0;
+    this.canopyProxy(pools);
     return n;
+  },
+  /** crown proxies for the bake's canopy pass (snow round 2): one squashed sphere per live tree of the multi-draw tree
+   *  pools within the map window, on CANOPY_LAYER only (never drawn by the city's cameras) */
+  canopyProxy(pools) {
+    if (!this._canopy) {
+      const g = new THREE.SphereGeometry(1, 10, 6);
+      const m = new THREE.MeshBasicNodeMaterial();
+      const mesh = new THREE.InstancedMesh(g, m, 2048);
+      mesh.layers.set(CANOPY_LAYER); mesh.frustumCulled = false; mesh.count = 0; mesh.name = "wx-canopy-proxy";
+      mesh.userData.wxSkip = true;
+      this.scene.add(mesh);
+      this._canopy = mesh;
+    }
+    const P = this._canopy, M = P.instanceMatrix.array, c = map.centre, R = MAP_SIZE * 0.75;
+    let n = 0;
+    const seen = new Set();
+    for (const set of pools) {
+      const A = set.buf?.instanceMatrix?.array; if (!A) continue;
+      for (const part of set.parts) for (let i = part.off; i < part.off + part.n && n < 2048; i++) {
+        const o = i * 16, x = A[o + 12], y = A[o + 13], z = A[o + 14];
+        if (Math.abs(x - c.x) > R || Math.abs(z - c.z) > R) continue;
+        const key = Math.round(x * 10) * 100003 + Math.round(z * 10);
+        if (seen.has(key)) continue; seen.add(key);
+        const sx = Math.hypot(A[o], A[o + 2]), sy = A[o + 5], H = 11 * sy, r = 4.2 * sx;      // (a stylized tree ~11 m, its crown ~0.4 H wide)
+        M.set([r, 0, 0, 0, 0, H * 0.3, 0, 0, 0, 0, r, 0, x, y + H * 0.62, z, 1], n * 16); n++;
+      }
+    }
+    P.count = n; P.visible = n > 0;
+    P.instanceMatrix.clearUpdateRanges(); P.instanceMatrix.addUpdateRange(0, Math.max(1, n) * 16); P.instanceMatrix.needsUpdate = true;
+    if (n) P.layers.set(CANOPY_LAYER);
   },
   /** autumn leaves fall from the crowns the bake found (the 8 most sheltered 8 x 8 m blocks) */
   findCrowns() {

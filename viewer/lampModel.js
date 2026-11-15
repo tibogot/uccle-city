@@ -4,6 +4,7 @@
 // and two more levels of detail made here by meshoptimizer (error budgets in metres: invisible at their switch
 // distance). The materials are the city's: dark-green satin iron, glass that glows at night.
 import * as THREE from "three/webgpu";
+import { wxMat } from "./weather/cityWeatherize.js";      // the weather (gated)
 import { vec3, color, mix, float } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
@@ -78,5 +79,6 @@ function materials() {
   glass.colorNode = vec3(0.86, 0.85, 0.8);
   glass.emissiveNode = color(0xffd9a0).mul(mix(float(0.0), float(9.0), env.uNight));   // lit at night
   iron.userData.shared = glass.userData.shared = true;
+  wxMat(iron, { porosity: 0.05, beads: true, frost: true });   // snow round 2: the weather
   return (MATS = { iron, glass });
 }

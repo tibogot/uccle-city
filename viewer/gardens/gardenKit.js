@@ -24,6 +24,7 @@ import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
 import { hedgeGeometries, hedgeMaterials, hedgeInstances, gardenFades } from "./gardenHedge.js";
 import { StreamPool, buildSource, MARGIN } from "../instanceStream.js";
+import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
 export { gardenFades };
 
 export const RAILS = ["spear", "flat", "rings"];
@@ -181,6 +182,7 @@ function materials() {
     m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
     m.maskShadowNode = m.maskNode;
     m.name = `gardens-lod${lod}`;
+    wxMat(m, { porosity: 0.5, streaks: true, frost: true });   // snow round 2: the weather (brick, copings, ironwork)
     m.userData.shared = true; m.userData.noFade = true;          // (the tile fade: its slot rides in iBand.w)
     return m;
   });

@@ -8,6 +8,7 @@
 // additive light pool on the ground, so N lamps cost 3 draw calls. At night a small pool of
 // PointLights follows the lamps nearest the camera (?lamplights=0 to disable).
 import * as THREE from "three/webgpu";
+import { wxMat } from "./weather/cityWeatherize.js";      // the weather (gated)
 import { float, vec3, uv, length, smoothstep, mix, color, uniform, positionWorld } from "three/tsl";
 import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
 import { lampPoolsOn } from "./lampLight.js";
@@ -110,6 +111,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   if (!sites.length) return { group, count: 0, update() {}, heads: [], sites };
 
   const postMat = new THREE.MeshStandardNodeMaterial({ color: 0x1d2420, roughness: 0.45, metalness: 0.6 });
+  wxMat(postMat, { porosity: 0.05, beads: true, frost: true });   // snow round 2: the weather
   const glassMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.15 });
   const warm = color(0xffc27a);
   glassMat.colorNode = vec3(0.55, 0.53, 0.48);
