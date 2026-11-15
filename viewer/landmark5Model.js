@@ -35,7 +35,7 @@ export const CHURCHES = {
   },
   saintmarc: {
     label: "Saint-Marc", names: ["SaintMarc", "SaintMarc_far", "SaintMarc_xfar"],
-    slots: ["brick_red_brussels", "stone_blue", "zinc_roof", "concrete_white", "wood_oak", "glass_window", "cast_iron_green"],
+    slots: ["brick_dark", "stone_blue", "zinc_roof", "concrete_white", "wood_oak", "glass_window", "cast_iron_green"],
     newNames: ["wood_oak", "concrete_white"],
     lods: [{ until: 110, band: 18 }, { until: 420, band: 50 }, { until: Infinity }],
   },

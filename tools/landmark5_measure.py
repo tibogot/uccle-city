@@ -37,8 +37,11 @@ CHURCHES = {
                        name="Eglise du Sacre-Coeur (Heilig Hartkerk), Rue Vanderkindere", box=(-12.0, 72.0, -22.0, 22.0)),
     # the square church: the axis from the OSM long walls; the entrance front faces north-east onto Avenue De Fre (set
     # after the first dump, see SAINTMARC.md)
-    "saintmarc": dict(way=225781790, tile="G3", solid="548515", axis_deg=None, front=None,
-                      name="Eglise Saint-Marc (Sint-Markuskerk), Avenue De Fre", box=(-12.0, 40.0, -24.0, 24.0)),
+    # the square church (1970): u from the entrance front on Avenue De Fre (south) to the back (north), w to the EAST;
+    # the axis from the OSM back wall (437.63,-645.67)->(467.40,-644.43) (2.39 deg) turned to point north; origin on the
+    # front line (OSM (441.21,-620.17)->(467.16,-619.14)) half-way
+    "saintmarc": dict(way=225781790, tile="G3", solid="548515", axis_deg=-87.61, front=((441.21, -620.17), (467.16, -619.14)),
+                      name="Eglise Saint-Marc (Sint-Markuskerk), Avenue De Fre", box=(-14.0, 40.0, -24.0, 24.0), base=50.0),
 }
 
 
@@ -93,6 +96,8 @@ def sample(kind, x, z):
 def main():
     name = sys.argv[1]
     C = CHURCHES[name]
+    global GROUND_BASE
+    GROUND_BASE = C.get("base", GROUND_BASE)       # u16 centimetres above this (the ground at Saint-Marc is ~67 m TAW)
     OUT = ROOT / "models" / name; OUT.mkdir(parents=True, exist_ok=True)
     b, tris = solid(C["tile"], C["solid"])
     osm = osm_outline(C["way"])
