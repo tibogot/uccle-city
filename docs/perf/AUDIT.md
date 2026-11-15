@@ -864,3 +864,61 @@ noise); the ivy wall is +0.46 live vs pass 3's +0.26 off-screen; snowfall is sti
 the lab budget was +0.62); perf pass 3's merges are worth ~130-150 draws and ~2 ms CPU at street level; the lawn view
 (F4, 16.4 ms p50 / 18.2 p95) is the slowest view measured today (over 16.7 ms at p95): the next target with grass.
 Raw results (scratchpad, not committed): `green.json`, `day_D_vs_Ngated.json`, `night_O_vs_N*.json`.
+
+## Step 15: temporal upscaling + dynamic resolution (2026-11-15, branch claude/upscale, docs/UPSCALE.md)
+
+**Machine.** `tools/perf/preflight.ps1`: **YELLOW** at the start with my tab parked (CPU 14 % at rest, 5.4 GB free);
+**RED** with my city tab open next to the game-kit agent's (port 8905: 0.6 GB free, Chrome 8 GB, GPU 82 C, 93 % busy
+at rest); **YELLOW** again for the day block (the other agents' tabs parked: CPU 19 %, 5.4 GB free, GPU 16 % at rest);
+the night block and the paths ran while a third agent (port 8907, a night police game) rendered: **RED**, read only the
+direction. Page check (`debug/preflight.js`, native): CPU bench 81.6 ms, fixed view 9.9 / 11.4 ms GPU, 248 draws (no
+baseline file). 1600 x 828, DPR 1, my tab in front while measuring.
+
+**Harness (new): `debug/upscaleAB.js`**: `liveViews` builds a native TWIN pipeline in the page (post.js
+`createPipeline` without the upscaler, 4x MSAA scene target) and alternates N / TAAU 1.0 / 0.75 / auto per view and
+round (order reversed every round); page loads A/B swung +-3 ms under the other agents' load, the live A/B +-0.3 ms in
+the quiet window. Caveat: the twin compiles its 4x pipelines lazily, so where it has not drawn yet it skips objects
+(lawn: 232 vs 250 draws): its number there is LOW. `dr` (the DR's trace), `tramPass` (a tram past a still camera).
+
+### 15.1 GPU p50 / p95 ms, day (live interleaved, 4 rounds, medians; YELLOW, quiet)
+
+| view | native (MSAA 4x) | TAAU 1.0 | TAAU 0.75 | auto (scale) | 0.75 vs native |
+|---|---|---|---|---|---|
+| Saint-Job from 45 m (`stjob`) | 10.16 / 11.34 | 7.73 / 8.39 | 5.18 / 5.77 | 6.68 / 7.73 (0.95) | **-4.98** |
+| Place Saint-Job street | 9.57 / 10.94 | 7.93 / 8.59 | 5.96 / 6.75 | 7.08 / 8.06 (0.95) | **-3.61** |
+| front-garden street I6 (`gstreet`) | 12.85 / 13.70 | 11.67 / 12.32 | 8.26 / 8.91 | 10.42 / 11.34 (0.95) | **-4.59** |
+| ivy wall I6 | 10.55 / 11.80 | 9.57 / 10.16 | 7.08 / 7.67 | 8.39 / 9.31 (0.95) | **-3.47** |
+| Wolvendael lawn F4 (native short 18 draws) | 18.02 / 21.30 | 18.48 / 21.43 | 14.75 / 18.02 | 12.85 / 15.86 (0.6-0.8) | -3.27 |
+
+CPU per frame equal within 0.6 ms (7-9.5 ms); draws equal. TAA at full resolution is already 1-2.4 ms cheaper than
+MSAA 4x (the 3 HalfFloat MRT targets x 4 samples + their resolve), except the lawn (equal: grass / fragment bound);
+0.75 is 34-49 % less. "auto" had 6 s to climb from 0.8 (0.05 per 2.5-4 s), hence 0.95 under budget; on the lawn
+it held 0.6-0.8 for a p50 under 14 ms. The resolve itself: ~0.37 ms at 1600 x 828 (`TAAUNode.resolve` pass).
+
+### 15.2 Night (`time=night`, traffic on, 4 rounds; RED: a third city rendering)
+
+| view | native | TAAU 1.0 | TAAU 0.75 | auto (scale) |
+|---|---|---|---|---|
+| Saint-Job 45 m | 19.92 / 27.53 | 10.75 / 20.71 | 8.13 / 18.42 | 12.98 (0.6-0.9) |
+| Place Saint-Job street | 17.69 / 27.79 | 15.66 / 23.40 | 14.48 / 19.40 | 13.89 (0.6) |
+| front-garden street | 17.56 / 29.03 | 16.91 / 27.53 | 14.48 / 23.46 | 15.40 (0.6) |
+| Wolvendael lawn | 23.27 / 42.01 | 19.99 / 31.92 | 20.05 / 30.74 | 17.37 (0.6) |
+
+Same direction as by day; absolute values inflated by the shared GPU (the DR dropped to its floor there).
+
+### 15.3 Moving paths (`debug/perfRun.js`, page loads, 1 round; YELLOW-RED)
+
+| path | frames > 33 ms N / U | GPU p50 / p95 N | GPU p50 / p95 U | worst frame N / U |
+|---|---|---|---|---|
+| stjob (street) | 946 / 702 | 13.7 / 23.1 | 11.6 / 17.5 | 650 / 233 |
+| turn | 166 / 89 | 13.7 / 21.8 | 12.2 / 15.5 | 50 / 50 |
+| orbit | 552 / 217 | 13.8 / 24.4 | 5.4 / 12.7 | 83 / **6,783** |
+| orbit, re-run alone | 568 / 114 | 11.8 / 23.1 | 8.9 / 14.0 | 450 / 467 |
+
+The 6.8 s frame (no long task on the main thread: a GPU-side stall, another agent's city rendering) did not come back in
+two U re-runs (1,717 ms in one with the same pattern, 467 ms in the other); 0 pipelines compiled synchronously more
+than native on the paths. Needs a GREEN re-run.
+
+### 15.4 Left
+GREEN re-measure (same tables, plus the auto DR with time to settle); per-instance motion for the traffic fleet; the
+wires' width under TAAU; the canvas itself (antialias false now) and DPR 1.5 at the owner's screen.
