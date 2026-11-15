@@ -1,0 +1,237 @@
+{
+ "about": "Public art kit sites (tools/publicart/build_site.py). City metres x east, z south, y m TAW; yaw = atan2(fx, fz) of the front.",
+ "pieces": [
+  {
+   "id": "monolithes",
+   "tile": "B5",
+   "x": -2240.007,
+   "z": 375.958,
+   "y": 27.929,
+   "yaw": 0.0,
+   "island": {
+    "r": 19.919,
+    "fit_residual_m": 0.127,
+    "source": "UrbIS street surface 40050 (median), circle fit"
+   },
+   "stones": [
+    {
+     "urbis": "514510",
+     "x": -7.458,
+     "z": 6.682,
+     "len": 1.493,
+     "wid": 1.439,
+     "axis_yaw": 0.313,
+     "top": 6.221,
+     "base_urbis": 27.93,
+     "top_urbis": 34.15,
+     "lying": false
+    },
+    {
+     "urbis": "514511",
+     "x": 0.574,
+     "z": 10.065,
+     "len": 1.412,
+     "wid": 1.327,
+     "axis_yaw": 0.136,
+     "top": 6.181,
+     "base_urbis": 28.01,
+     "top_urbis": 34.11,
+     "lying": false
+    },
+    {
+     "urbis": "514570",
+     "x": 0.272,
+     "z": 14.757,
+     "len": 6.011,
+     "wid": 1.334,
+     "axis_yaw": 0.259,
+     "top": 1.551,
+     "base_urbis": 27.93,
+     "top_urbis": 29.48,
+     "lying": true
+    },
+    {
+     "urbis": "514571",
+     "x": 9.127,
+     "z": 3.892,
+     "len": 1.424,
+     "wid": 1.227,
+     "axis_yaw": -1.322,
+     "top": 6.291,
+     "base_urbis": 27.94,
+     "top_urbis": 34.22,
+     "lying": false
+    },
+    {
+     "urbis": "514572",
+     "x": 0.177,
+     "z": -14.403,
+     "len": 5.94,
+     "wid": 1.293,
+     "axis_yaw": 0.26,
+     "top": 1.531,
+     "base_urbis": 27.95,
+     "top_urbis": 29.46,
+     "lying": true
+    },
+    {
+     "urbis": "514644",
+     "x": 5.902,
+     "z": -13.738,
+     "len": 1.536,
+     "wid": 1.373,
+     "axis_yaw": 0.217,
+     "top": 6.371,
+     "base_urbis": 28.02,
+     "top_urbis": 34.3,
+     "lying": false
+    },
+    {
+     "urbis": "515111",
+     "x": -10.306,
+     "z": 9.767,
+     "len": 1.479,
+     "wid": 1.4,
+     "axis_yaw": 0.309,
+     "top": 6.141,
+     "base_urbis": 27.93,
+     "top_urbis": 34.07,
+     "lying": false
+    },
+    {
+     "urbis": "515290",
+     "x": 6.489,
+     "z": -11.645,
+     "len": 1.433,
+     "wid": 1.316,
+     "axis_yaw": -1.258,
+     "top": 6.361,
+     "base_urbis": 28.01,
+     "top_urbis": 34.29,
+     "lying": false
+    },
+    {
+     "urbis": "515953",
+     "x": -11.568,
+     "z": 5.272,
+     "len": 5.89,
+     "wid": 1.437,
+     "axis_yaw": 0.28,
+     "top": 1.671,
+     "base_urbis": 27.98,
+     "top_urbis": 29.6,
+     "lying": true
+    },
+    {
+     "urbis": "none (aerial)",
+     "x": -7.5,
+     "z": 10.1,
+     "len": 1.45,
+     "wid": 1.38,
+     "axis_yaw": 0.31,
+     "top": 6.021,
+     "base_urbis": null,
+     "top_urbis": null,
+     "lying": false,
+     "source": "heritage record (7 standing) + Google aerial / Street View, by eye; not in UrbIS"
+    }
+   ],
+   "hide_solids": [
+    "https://databrussels.be/id/buildingsolid/514510",
+    "https://databrussels.be/id/buildingsolid/514511",
+    "https://databrussels.be/id/buildingsolid/514570",
+    "https://databrussels.be/id/buildingsolid/514571",
+    "https://databrussels.be/id/buildingsolid/514572",
+    "https://databrussels.be/id/buildingsolid/514644",
+    "https://databrussels.be/id/buildingsolid/515111",
+    "https://databrussels.be/id/buildingsolid/515290",
+    "https://databrussels.be/id/buildingsolid/515953"
+   ],
+   "ground_samples": {
+    "centre": 27.929,
+    "edge_n": 27.359,
+    "edge_s": 27.313,
+    "edge_e": 27.47,
+    "edge_w": 27.377
+   }
+  },
+  {
+   "id": "evades",
+   "tile": "E4",
+   "x": -651.3,
+   "z": -280.0,
+   "y": 45.77,
+   "yaw": 3.142,
+   "faces": "north, toward the square's apex where the paths from Brugmann / Wolvendael meet (aerial, photos)"
+  },
+  {
+   "id": "gobert",
+   "tile": "E4",
+   "x": -503.084,
+   "z": -439.738,
+   "y": 46.828,
+   "yaw": -2.732,
+   "faces": "Avenue De Fré - De Frélaan (13.0 m)",
+   "osm_length_m": 6.611,
+   "source": "OSM way 245080563 (UrbIS 6155638): the central pier + the two dated panels",
+   "ground_samples": {
+    "west_end": 46.767,
+    "centre": 46.828,
+    "east_end": 46.921
+   }
+  },
+  {
+   "id": "km5",
+   "tile": "I2",
+   "x": 1375.7,
+   "z": -1320.4,
+   "y": 100.276,
+   "yaw": -1.283,
+   "faces": "the nearest road (Chaussée de Waterloo - Waterloosesteenweg, 9.6 m)",
+   "numeral": "5",
+   "kind": "milestone"
+  },
+  {
+   "id": "milestone0",
+   "tile": "J4",
+   "x": 1823.9,
+   "z": -89.8,
+   "y": 105.119,
+   "yaw": 0.124,
+   "faces": "the nearest road (Chaussée de La Hulpe - Terhulpsesteenweg / Chaussée de La Hulpe - Terhulpensesteenweg, 7.9 m)",
+   "numeral": "0",
+   "kind": "milestone"
+  },
+  {
+   "id": "milestone1",
+   "tile": "H6",
+   "x": 865.0,
+   "z": 663.3,
+   "y": 64.858,
+   "yaw": 0.387,
+   "faces": "the nearest road (Chaussée de Saint-Job - Sint-Jobsesteenweg, 4.8 m)",
+   "numeral": "1",
+   "kind": "milestone"
+  },
+  {
+   "id": "charlesquint1",
+   "tile": "L7",
+   "x": 2576.8,
+   "z": 1167.0,
+   "y": 118.798,
+   "yaw": -1.372,
+   "faces": "the nearest road (Drève de Lorraine - Lorrainedreef, 18.4 m)",
+   "kind": "boundary"
+  },
+  {
+   "id": "charlesquint2",
+   "tile": "G7",
+   "x": 64.6,
+   "z": 1153.8,
+   "y": 93.987,
+   "yaw": -1.085,
+   "faces": "the nearest road (Avenue de la Chênaie - Eikenboslaan, 21.3 m)",
+   "kind": "boundary"
+  }
+ ]
+}

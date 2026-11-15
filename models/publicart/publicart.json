@@ -1,0 +1,706 @@
+{
+ "asset": "Public art kit (tools/blender/publicart.py): Dix Monolithes, La Victoire (the V), Monument Rene Gobert, milestone, Charles V boundary stone",
+ "pieces": {
+  "monolithes": {
+   "triangles_raw": 54418,
+   "slots": [
+    "stone_blue",
+    "stone_kerb",
+    "bed_planting",
+    "hedge_hornbeam"
+   ],
+   "size_m": [
+    39.84,
+    39.84,
+    7.56
+   ],
+   "atlas": [
+    0,
+    0,
+    0.7366
+   ]
+  },
+  "evades": {
+   "triangles_raw": 14514,
+   "slots": [
+    "gravel",
+    "stone_blue",
+    "steel_stainless",
+    "iron_black"
+   ],
+   "size_m": [
+    7.35,
+    5.24,
+    4.88
+   ],
+   "atlas": [
+    0,
+    0.7446,
+    0.1885
+   ]
+  },
+  "gobert": {
+   "triangles_raw": 1112,
+   "slots": [
+    "stone_pale",
+    "bronze",
+    "stone_cream",
+    "bed_planting",
+    "stone_blue"
+   ],
+   "size_m": [
+    13.2,
+    2.62,
+    2.97
+   ],
+   "atlas": [
+    0.7446,
+    0,
+    0.2401
+   ]
+  },
+  "milestone": {
+   "triangles_raw": 1386,
+   "slots": [
+    "stone_blue"
+   ],
+   "size_m": [
+    0.6,
+    0.6,
+    1.36
+   ],
+   "atlas": [
+    0.1965,
+    0.7446,
+    0.0377
+   ]
+  },
+  "boundary": {
+   "triangles_raw": 1630,
+   "slots": [
+    "stone_blue"
+   ],
+   "size_m": [
+    0.41,
+    0.3,
+    1.03
+   ],
+   "atlas": [
+    0.2422,
+    0.7446,
+    0.0249
+   ]
+  }
+ },
+ "sculpt_triangles": {
+  "monolithes": 1745732,
+  "evades": 155178,
+  "gobert": 21868,
+  "milestone": 1386,
+  "boundary": 20412
+ },
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "names": [
+   "plain",
+   "split",
+   "kerb",
+   "letters",
+   "medallion",
+   "ashlar",
+   "cross",
+   "gilt",
+   "relief",
+   "coping",
+   "step",
+   "chain",
+   "drill"
+  ]
+ },
+ "cells": [
+  "evades_fr",
+  "evades_nl",
+  "gobert_pier",
+  "gobert_1914",
+  "gobert_1940"
+ ],
+ "attributes": {
+  "TEXCOORD_0": "metres per face (grain); lettered faces 1000 (cell + 1) + s, v = t (metres)",
+  "TEXCOORD_1": "the kit atlas: publicart_ao.png + tangent-space normals publicart_nrm.jpg"
+ },
+ "frame": "glTF Y up, origin = the piece's ground point (site.json x, y, z), front +Z",
+ "details": {
+  "stones": [
+   {
+    "urbis": "514510",
+    "size_m": [
+     1.44,
+     1.49,
+     6.34
+    ],
+    "top_local": 6.221
+   },
+   {
+    "urbis": "514511",
+    "size_m": [
+     1.33,
+     1.41,
+     6.29
+    ],
+    "top_local": 6.181
+   },
+   {
+    "urbis": "514570",
+    "size_m": [
+     1.33,
+     6.01,
+     1.67
+    ],
+    "top_local": 1.551
+   },
+   {
+    "urbis": "514571",
+    "size_m": [
+     1.23,
+     1.42,
+     6.44
+    ],
+    "top_local": 6.291
+   },
+   {
+    "urbis": "514572",
+    "size_m": [
+     1.29,
+     5.94,
+     1.67
+    ],
+    "top_local": 1.531
+   },
+   {
+    "urbis": "514644",
+    "size_m": [
+     1.37,
+     1.54,
+     6.48
+    ],
+    "top_local": 6.371
+   },
+   {
+    "urbis": "515111",
+    "size_m": [
+     1.4,
+     1.48,
+     6.23
+    ],
+    "top_local": 6.141
+   },
+   {
+    "urbis": "515290",
+    "size_m": [
+     1.32,
+     1.43,
+     6.47
+    ],
+    "top_local": 6.361
+   },
+   {
+    "urbis": "515953",
+    "size_m": [
+     1.44,
+     5.89,
+     1.75
+    ],
+    "top_local": 1.671
+   },
+   {
+    "urbis": "none (aerial)",
+    "size_m": [
+     1.38,
+     1.45,
+     6.14
+    ],
+    "top_local": 6.021
+   }
+  ],
+  "monolithes": {
+   "kerb_top_local": [
+    -0.089,
+    0.09
+   ],
+   "island_r": 19.919
+  },
+  "evades": {
+   "bars": {
+    "section_m": 0.15,
+    "length_m": 4.3,
+    "tilt_deg": 19
+   },
+   "block_top_m": 0.62,
+   "gravel_r_m": 2.62,
+   "slabs": "1.05 x 0.62 x 0.10, 15 deg, x = +-3.15 m"
+  },
+  "gobert": {
+   "pier_m": [
+    1.2,
+    0.7,
+    2.62
+   ],
+   "panels_m": [
+    2.7,
+    0.42,
+    1.63
+   ],
+   "walls_m": [
+    3.3,
+    0.36,
+    1.27
+   ],
+   "length_m": 13.2
+  },
+  "milestone": {
+   "height_m": 1.106,
+   "shaft_d_m": 0.34,
+   "plinth_m": 0.6,
+   "medallion": {
+    "r_m": 0.085,
+    "centre_z_m": 0.83
+   }
+  },
+  "boundary": {
+   "size_m": [
+    0.36,
+    0.26,
+    0.72
+   ],
+   "note": "form not documented (no photo found): a rough-dressed upright"
+  }
+ },
+ "lods": {
+  "monolithes": {
+   "lods": [
+    {
+     "node": "monolithes_lod0",
+     "triangles": 54418,
+     "draws": 4,
+     "slots": [
+      "stone_blue",
+      "stone_kerb",
+      "bed_planting",
+      "hedge_hornbeam"
+     ],
+     "slot_triangles": [
+      39522,
+      2640,
+      3472,
+      8784
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "monolithes_lod1",
+     "triangles": 14229,
+     "draws": 4,
+     "slots": [
+      "stone_blue",
+      "stone_kerb",
+      "bed_planting",
+      "hedge_hornbeam"
+     ],
+     "slot_triangles": [
+      5589,
+      2640,
+      2974,
+      3026
+     ],
+     "error_m": 0.05,
+     "vertex_ao": true
+    },
+    {
+     "node": "monolithes_lod2",
+     "triangles": 7000,
+     "draws": 4,
+     "slots": [
+      "stone_blue",
+      "stone_kerb",
+      "bed_planting",
+      "hedge_hornbeam"
+     ],
+     "slot_triangles": [
+      1541,
+      2506,
+      2070,
+      883
+     ],
+     "error_m": 0.18,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    70,
+    220,
+    1100
+   ]
+  },
+  "evades": {
+   "lods": [
+    {
+     "node": "evades_lod0",
+     "triangles": 14514,
+     "draws": 4,
+     "slots": [
+      "gravel",
+      "stone_blue",
+      "steel_stainless",
+      "iron_black"
+     ],
+     "slot_triangles": [
+      718,
+      8288,
+      216,
+      5292
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "evades_lod1",
+     "triangles": 5939,
+     "draws": 4,
+     "slots": [
+      "gravel",
+      "stone_blue",
+      "steel_stainless",
+      "iron_black"
+     ],
+     "slot_triangles": [
+      394,
+      3987,
+      88,
+      1470
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    },
+    {
+     "node": "evades_lod2",
+     "triangles": 2416,
+     "draws": 4,
+     "slots": [
+      "gravel",
+      "stone_blue",
+      "steel_stainless",
+      "iron_black"
+     ],
+     "slot_triangles": [
+      232,
+      1652,
+      70,
+      462
+     ],
+     "error_m": 0.06999999999999999,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    35,
+    110,
+    500
+   ]
+  },
+  "gobert": {
+   "lods": [
+    {
+     "node": "gobert_lod0",
+     "triangles": 1112,
+     "draws": 5,
+     "slots": [
+      "stone_pale",
+      "bronze",
+      "stone_cream",
+      "bed_planting",
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      588,
+      44,
+      304,
+      88,
+      88
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "gobert_lod1",
+     "triangles": 896,
+     "draws": 5,
+     "slots": [
+      "stone_pale",
+      "bronze",
+      "stone_cream",
+      "bed_planting",
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      462,
+      44,
+      214,
+      88,
+      88
+     ],
+     "error_m": 0.01,
+     "vertex_ao": true
+    },
+    {
+     "node": "gobert_lod2",
+     "triangles": 794,
+     "draws": 5,
+     "slots": [
+      "stone_pale",
+      "bronze",
+      "stone_cream",
+      "bed_planting",
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      398,
+      44,
+      176,
+      88,
+      88
+     ],
+     "error_m": 0.04,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    35,
+    110,
+    450
+   ]
+  },
+  "milestone": {
+   "lods": [
+    {
+     "node": "milestone_lod0",
+     "triangles": 1386,
+     "draws": 1,
+     "slots": [
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      1386
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "milestone_lod1",
+     "triangles": 802,
+     "draws": 1,
+     "slots": [
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      802
+     ],
+     "error_m": 0.004,
+     "vertex_ao": true
+    },
+    {
+     "node": "milestone_lod2",
+     "triangles": 206,
+     "draws": 1,
+     "slots": [
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      206
+     ],
+     "error_m": 0.02,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    140
+   ]
+  },
+  "boundary": {
+   "lods": [
+    {
+     "node": "boundary_lod0",
+     "triangles": 1630,
+     "draws": 1,
+     "slots": [
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      1630
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "boundary_lod1",
+     "triangles": 1024,
+     "draws": 1,
+     "slots": [
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      1024
+     ],
+     "error_m": 0.006,
+     "vertex_ao": true
+    },
+    {
+     "node": "boundary_lod2",
+     "triangles": 290,
+     "draws": 1,
+     "slots": [
+      "stone_blue"
+     ],
+     "slot_triangles": [
+      290
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    12,
+    40,
+    110
+   ]
+  }
+ },
+ "glb_bytes": 2613564,
+ "lod_ranges_m": {
+  "note": "per piece (lods[piece].range): each LOD's band END (camera distance)"
+ },
+ "audit": {
+  "monolithes_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 13,
+    "opening": 295
+   }
+  },
+  "monolithes_lod1": {
+   "blocking": 0,
+   "warnings": 18,
+   "counts": {
+    "sliver": 18,
+    "seam": 13,
+    "opening": 110
+   }
+  },
+  "monolithes_lod2": {
+   "blocking": 0,
+   "warnings": 71,
+   "counts": {
+    "sliver": 71,
+    "seam": 13,
+    "opening": 49
+   }
+  },
+  "evades_lod0": {
+   "blocking": 0,
+   "warnings": 204,
+   "counts": {
+    "sliver": 204,
+    "backtoback": 3,
+    "seam": 82
+   }
+  },
+  "evades_lod1": {
+   "blocking": 0,
+   "warnings": 115,
+   "counts": {
+    "sliver": 112,
+    "nonmanifold": 3,
+    "backtoback": 2,
+    "seam": 80
+   }
+  },
+  "evades_lod2": {
+   "blocking": 0,
+   "warnings": 167,
+   "counts": {
+    "sliver": 111,
+    "nonmanifold": 56,
+    "backtoback": 118,
+    "seam": 78
+   }
+  },
+  "gobert_lod0": {
+   "blocking": 0,
+   "warnings": 332,
+   "counts": {
+    "sliver": 332,
+    "backtoback": 58,
+    "seam": 15
+   }
+  },
+  "gobert_lod1": {
+   "blocking": 0,
+   "warnings": 276,
+   "counts": {
+    "sliver": 276,
+    "backtoback": 58,
+    "seam": 15
+   }
+  },
+  "gobert_lod2": {
+   "blocking": 0,
+   "warnings": 221,
+   "counts": {
+    "sliver": 221,
+    "backtoback": 58,
+    "seam": 15
+   }
+  },
+  "milestone_lod0": {
+   "blocking": 0,
+   "warnings": 16,
+   "counts": {
+    "sliver": 16,
+    "seam": 1
+   }
+  },
+  "milestone_lod1": {
+   "blocking": 0,
+   "warnings": 16,
+   "counts": {
+    "sliver": 16,
+    "seam": 1
+   }
+  },
+  "milestone_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {
+    "seam": 1
+   }
+  },
+  "boundary_lod0": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "boundary_lod1": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  },
+  "boundary_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "counts": {}
+  }
+ }
+}

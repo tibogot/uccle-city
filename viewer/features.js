@@ -152,6 +152,7 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- A/B: the versions before (each ?x=old / ?x=0 kept for comparisons)
   old("heros", "ab", "Square des Héros", "The square before: one raised setts plaza, no memorial.", { sub: "Places & assets" }),
+  old("art", "ab", "Public art", "The city without the public art kit (Dix Monolithes, La Victoire, Monument Gobert, milestones, Charles V stones): the monoliths' UrbIS boxes back.", { sub: "Places & assets" }),
   old("roofs", "ab", "roofs", "Roof tops before (docs/assets/ROOFS.md).", { sub: "Places & assets" }),
   old("streetkit", "ab", "street kit", "Road signs, plate posts, Villo before.", { sub: "Places & assets" }),
   old("stops", "ab", "STIB stops", "The stops kit before.", { sub: "Places & assets" }),

@@ -26,6 +26,12 @@ export const PLACES = [
   { id: "vanbuuren", name: "Van Buuren house", group: "Landmarks", tile: "G2", p: [350, 35, -1180], t: [303, 6, -1230] },
   { id: "rosaire", name: "Notre-Dame du Rosaire", group: "Landmarks", tile: "I2", p: [1340, 45, -1190], t: [1279, 15, -1254] },
   { id: "augustin", name: "Saint-Augustin", group: "Landmarks", tile: "E1", p: [-830, 60, -1890], t: [-896, 20, -1961] },
+  // public art (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md)
+  { id: "monolithes", name: "Dix Monolithes", group: "Public art", tile: "B5", p: [-2214, 1.7, 400], t: [-2240, 3, 376], fov: 55 },
+  { id: "monolithes-air", name: "Dix Monolithes, from above", group: "Public art", tile: "B5", p: [-2205, 35, 335], t: [-2240, 2, 376] },
+  { id: "evades", name: "La Victoire (the V)", group: "Public art", tile: "E4", p: [-652, 1.7, -290], t: [-651, 2.5, -280], fov: 55 },
+  { id: "gobert", name: "Monument René Gobert", group: "Public art", tile: "E4", p: [-506, 1.7, -449], t: [-503, 1.5, -440], fov: 55 },
+  { id: "km5", name: "Borne 5 km (milestone)", group: "Public art", tile: "I2", p: [1371.6, 1.5, -1322.2], t: [1375.7, 0.7, -1320.4], fov: 50 },
   // streets & areas
   { id: "fortjaco", name: "Fort-Jaco (Ch. de Waterloo)", group: "Streets & parks", tile: "J7", p: [1805, 1.7, 1125], t: [1830, 3, 1220] },
   { id: "fortjaco-air", name: "Fort-Jaco, from above", group: "Streets & parks", tile: "J7", p: [1740, 90, 1060], t: [1813, 0, 1165] },

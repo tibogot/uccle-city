@@ -8,11 +8,12 @@
 import { partFromBufferGeometry } from "../tools/mesh_audit/audit.js";
 import { auditContact } from "../tools/mesh_audit/contact.js";
 import { TUNNEL_ROOTS } from "./rail/tunnels.js";
+import { ART_ROOTS } from "./publicart/artRoots.js";
 
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "stpierre", "observatory", "augustin", "russian", "rosaire", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
   "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
-  ...TUNNEL_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js)
+  ...TUNNEL_ROOTS, ...ART_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/)
 
 const meshParts = (root, name, filter = null) => {
   const out = [];

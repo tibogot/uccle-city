@@ -1,6 +1,7 @@
 # Public art and small monuments in Uccle
 
-Research pass 2026-11-14 (branch `claude/publicart`, no code changed). Data: `data/publicart/inventory.json`
+Research pass 2026-11-14 (branch `claude/publicart`, no code changed). **Round 1 built (2026-11-15, `claude/art1`): the Dix
+Monolithes, La Victoire, the Monument Rene Gobert, the milestones and the Charles V stones: `docs/publicart/PUBLIC_ART_KIT.md`.** Data: `data/publicart/inventory.json`
 (62 items, real data only, every row with source links). Use it to pick what to model next.
 
 **Sources:** OpenStreetMap via Overpass (area `Uccle - Ukkel`, admin_level 8: artwork, historic=*, fountains,
@@ -42,13 +43,13 @@ photos, dolmen + 11 named menhirs; Memorial 22/03) are easy but only seen by wal
 
 | # | Item | Type | Where | City x, z (m) | Vis | Diff | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | Dix Monolithes (Ten Monoliths) | abstract sculpture | Roundabout rue de Stalle, entry from the Ring | -2240, 376 | 5 | easy |  |
-| 2 | La Victoire - Monument aux evades de guerre (the 'V') | memorial | Square Georges Marlow (Av. Brugmann) | -651, -280 | 5 | easy |  |
+| 1 | Dix Monolithes (Ten Monoliths) | abstract sculpture | Roundabout rue de Stalle, entry from the Ring | -2240, 376 | 5 | easy || modelled (art1) |
+| 2 | La Victoire - Monument aux evades de guerre (the 'V') | memorial | Square Georges Marlow (Av. Brugmann) | -651, -280 | 5 | easy || modelled (art1) |
 | 3 | L'Accueil | abstract sculpture | Junction Av. Winston Churchill x Chaussee de Waterloo (island) | 1321, -1435 | 5 | medium |  |
 | 4 | Monument Winston Churchill | statue | Rond-point Churchill (Av. Churchill x Av. Brugmann) | 318, -1452 | 5 | hard |  |
-| 5 | Borne '5 km' (milestone) | other | Chaussee de Waterloo (Longchamp) | 1376, -1320 | 4 | easy |  |
+| 5 | Borne '5 km' (milestone) | other | Chaussee de Waterloo (Longchamp) | 1376, -1320 | 4 | easy || modelled (art1) |
 | 6 | Fountain, Place Jean Vander Elst (possibly 'La Tendresse') | fountain | Place Jean Vander Elst | -1090, -504 | 4 | medium |  |
-| 7 | Monument a Rene Gobert | memorial | Avenue De Fre, beside Square des Heros | -503, -440 | 4 | medium |  |
+| 7 | Monument a Rene Gobert | memorial | Avenue De Fre, beside Square des Heros | -503, -440 | 4 | medium || modelled (art1) |
 | 8 | Zerlina | statue | Junction rue Gatti de Gamond x avenue du Globe | -1528, -618 | 4 | medium |  |
 | 9 | Monument a Edith Cavell et Marie Depage | statue | Rue Marie Depage x rue Edith Cavell | 518, -1582 | 4 | hard |  |
 | 10 | Floor fountain jets, Place Emile Danco | fountain | Place Emile Danco | -844, -146 | 3 | easy |  |
@@ -70,9 +71,9 @@ photos, dolmen + 11 named menhirs; Memorial 22/03) are easy but only seen by wal
 | 26 | Baudouin I, roi des Belges | statue | Square Charles Lagrange (near the Observatory) | 654, -77 | 3 | hard |  |
 | 27 | Leon Vanderkindere stele | memorial | Parc de Wolvendael, Allee Suzanne Cocq | -390, 80 | 2 | easy |  |
 | 28 | Memorial 22/03 | memorial | Foret de Soignes | 3368, 1259 | 2 | easy |  |
-| 29 | Milestone '0' | other | Vert Chasseur | 1824, -90 | 2 | easy |  |
+| 29 | Milestone '0' | other | Vert Chasseur | 1824, -90 | 2 | easy || modelled (art1) |
 | 30 | Monument aux Forestiers | memorial | Foret de Soignes (Uccle part) | 3821, 3179 | 2 | easy |  |
-| 31 | Old milestone '1' | other | Fond'Roy area | 865, 663 | 2 | easy |  |
+| 31 | Old milestone '1' | other | Fond'Roy area | 865, 663 | 2 | easy || modelled (art1) |
 | 32 | Stele, rue Victor Allard | memorial | Rue Victor Allard (near no. 256) | -1784, -388 | 2 | easy |  |
 | 33 | Thyl Ulenspiegel / Charles De Coster plaque | memorial | Wolvendael (near Vieux Cornet) | -441, -454 | 2 | easy |  |
 | 34 | Unnamed stone monument (subject: Argentina) | memorial | Avenue de l'Observatoire | 1170, -121 | 2 | easy |  |
@@ -82,8 +83,8 @@ photos, dolmen + 11 named menhirs; Memorial 22/03) are easy but only seen by wal
 | 38 | Unnamed sculpture, avenue Dolez | abstract sculpture | Avenue Dolez (Verrewinkel) | 481, 2027 | 2 | medium |  |
 | 39 | Esclave | statue | Ecole La Cime, avenue Paul Stroobant | -170, 14 | 2 | hard |  |
 | 40 | Unnamed metal statue, rue Emile Lecomte | statue | Rue Emile Lecomte | -417, -1330 | 2 | hard |  |
-| 41 | Borne de Charles Quint | other | Foret de Soignes | 2577, 1167 | 1 | easy |  |
-| 42 | Borne de Charles Quint | other | Saint-Job / Fond'Roy edge | 65, 1154 | 1 | easy |  |
+| 41 | Borne de Charles Quint | other | Foret de Soignes | 2577, 1167 | 1 | easy || modelled (art1) |
+| 42 | Borne de Charles Quint | other | Saint-Job / Fond'Roy edge | 65, 1154 | 1 | easy || modelled (art1) |
 | 43 | MERLO 1865 plaque | memorial | Neerstalle | -2025, 19 | 1 | easy |  |
 | 44 | Marc De Ridder - 1990 (obelisk) | obelisk | Sentier du Vuylbeek (forest) | 2873, 2574 | 1 | easy |  |
 | 45 | Memorial to the Belgian volunteers of the International Brigades 1936-1939 | memorial | Rue de Linkebeek (Calevoet) | -1407, 2123 | 1 | easy |  |

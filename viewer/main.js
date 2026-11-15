@@ -21,6 +21,7 @@ import { addCalevoet } from "./calevoetCity.js";
 import { addStPierre } from "./stpierreCity.js";
 import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
+import { addPublicArt } from "./publicart/artCity.js";
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addAugustin } from "./augustinCity.js";
@@ -1027,6 +1028,9 @@ async function main() {
   // The Eglise Saint-Augustin at Altitude Cent (Forest, just north of Uccle: tools/blender/augustin.py,
   // viewer/augustinCity.js), the skyline landmark; its UrbIS solid is not in the tiles (outside Uccle), nothing hidden
   if (params.get("augustin") !== "0") heroes.push(() => addAugustin({ scene, updaters, world, manifest, log, compiler: () => compileFor }));
+  // the public art kit (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md): the Dix Monolithes, La Victoire, the Gobert
+  // memorial, the milestones and the Charles V stones; ?art=old = the city without them (the monoliths' UrbIS boxes back)
+  if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));

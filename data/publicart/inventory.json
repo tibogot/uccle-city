@@ -78,7 +78,7 @@
    "lat": 50.795617,
    "lon": 4.317733,
    "place": "Roundabout rue de Stalle, entry from the Ring",
-   "size": "7 standing + 3 lying stones, up to 6.0 m high, 1.45 x 1.45 m section, ~40 t each; island raised 0.5 m",
+   "size": "7 standing + 3 lying blocks (UrbIS solids 514510/511/570/571/572, 514644, 515111/290/953): standing 1.23-1.54 x 1.4 m, tops 6.1-6.4 m over the island; lying 5.9-6.0 x 1.3-1.4 m, 1.5-1.7 m; island r 19.92 m (UrbIS median 40050), raised ~0.5 m",
    "material": "petit granit (Soignies blue stone), rough / drill marks",
    "artist": "Florence Freson (with Jean-Philippe Charlier)",
    "date": "1992-1993 (inaugurated 1994-01-28)",
@@ -90,13 +90,15 @@
     "https://collections.heritage.brussels/fr/objects/54251",
     "https://www.wikidata.org/wiki/Q124037475"
    ],
-   "notes": "Recycled cobbles + two hornbeam hedges along the tram tracks complete the island.",
-   "status": "todo",
+   "notes": "Recycled cobbles + two hornbeam hedges along the tram tracks complete the island. Position: the island centre (UrbIS median circle fit); the OSM node is 0.4 m off.",
+   "status": "modelled",
    "city_xz": [
-    -2239.9,
-    375.7
+    -2240.0,
+    376.0
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: heritage photo OM2020_097_001, Google Street View (June 2024: the island now planted with heather and ornamental grasses, no longer cobbles; the two hedges across the middle), aerial; the 10 stones are in UrbIS 3D as solids (positions, sections, tops used as is)",
+   "model": "tools/blender/publicart.py \"monolithes\" (viewer/publicart/)"
   },
   {
    "id": "evades",
@@ -105,7 +107,7 @@
    "lat": 50.801519,
    "lon": 4.340262,
    "place": "Square Georges Marlow (Av. Brugmann)",
-   "size": "V-shaped steel form on a blue-stone base, ~2-3 m (estimate)",
+   "size": "two stainless square bars 0.15 m, 4.3 m long, 19 deg off vertical (top ~4.6 m) on a dressed blue-stone block in a ~3 m cairn of split blue stone, a ~5.2 m gravel circle; 2 inscribed slabs 1.05 x 0.62 m (FR / NL) on posts (sizes from the photos: cars, people)",
    "material": "stainless steel, blue stone",
    "artist": "Raymond Glorie",
    "date": "2001-09-20",
@@ -119,12 +121,14 @@
     "https://www.uccle.be/sites/default/files/filemanager/Legal/CC-Finances/RCUZ_GA_III_Annexe_5_REPERTOIRE_DES_OEUVRES_D_ART_2025-07-03.pdf"
    ],
    "notes": "Lambert 72 in the commune list: x 147992.24, y 165677.83.",
-   "status": "todo",
+   "status": "modelled",
    "city_xz": [
     -651.3,
     -280.0
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: 11 heritage photos (collections.heritage.brussels object 70329), aerial: the V stands at the OSM node, the gravel circle in the lawn; the inscriptions read on photos 2022_050_212 / OM_2022_060_004",
+   "model": "tools/blender/publicart.py \"evades\""
   },
   {
    "id": "accueil",
@@ -161,7 +165,7 @@
    "lat": 50.802954,
    "lon": 4.342365,
    "place": "Avenue De Fre, beside Square des Heros",
-   "size": "small architectural memorial with sculpture (OSM building outline)",
+   "size": "13.2 m long: pier 1.2 x 0.7 x 2.6 m with a bronze portrait relief (0.5 x 0.52) and the inscription; two dated panels 2.7 x 0.42 x 1.63 m (\"1914-1918\", \"1940-1943\" gilt); flanking cream walls 3.3 m each, 1.27 m",
    "material": "stone (not published)",
    "artist": "Joseph Witterwulghe (sculptor), Marcel Chabot (architect)",
    "date": "after 1943",
@@ -174,12 +178,14 @@
     "https://www.wikidata.org/wiki/Q124037481"
    ],
    "notes": "Inscription: union of Uccle veterans to its president Rene Gobert, shot 17 Sept 1943.",
-   "status": "todo",
+   "status": "modelled",
    "city_xz": [
     -503.0,
     -439.6
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: 8 heritage photos (object 70356); OSM way 245080563 (6.6 m: pier + panels); faces Avenue De Fre; inscription read on OM_2022_061_002",
+   "model": "tools/blender/publicart.py \"gobert\""
   },
   {
    "id": "zerlina",
@@ -267,7 +273,7 @@
    "lat": 50.810875,
    "lon": 4.369017,
    "place": "Chaussee de Waterloo (Longchamp)",
-   "size": "small stone milestone ~1 m (estimate)",
+   "size": "1.11 m: plinth 0.6 m square, torus base, round shaft 0.34 m, domed top, sunk medallion 0.17 m with the numeral 5",
    "material": "stone",
    "artist": "unknown",
    "date": "1745-1815",
@@ -279,12 +285,14 @@
     "https://monument.heritage.brussels/ (ref:urbanbrussels 38737)"
    ],
    "notes": "Listed (heritage 4).",
-   "status": "todo",
+   "status": "modelled",
    "city_xz": [
     1375.7,
     -1320.4
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: heritage photo 11801348_A001_P01, Google Street View (June 2024): at no. 817 Chaussee de Waterloo, back of the east sidewalk against the hedge, medallion toward the road",
+   "model": "tools/blender/publicart.py \"milestone\" (instanced)"
   },
   {
    "id": "vanderelst_fountain",
@@ -899,12 +907,14 @@
     "https://www.openstreetmap.org/node/2446370859"
    ],
    "notes": "",
-   "status": "todo",
+   "status": "modelled",
    "city_xz": [
     1823.9,
     -89.8
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: no photo found; modelled with the 5 km milestone's form and the numeral 0 (OSM ref): FORM NOT VERIFIED",
+   "model": "\"milestone\" (instanced)"
   },
   {
    "id": "milestone1",
@@ -924,12 +934,14 @@
     "https://www.openstreetmap.org/node/11486992613"
    ],
    "notes": "",
-   "status": "todo",
+   "status": "modelled",
    "city_xz": [
     865.0,
     663.3
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: no photo found; the 5 km form, numeral 1 (OSM inscription): FORM NOT VERIFIED",
+   "model": "\"milestone\" (instanced)"
   },
   {
    "id": "charlesquint1",
@@ -949,12 +961,14 @@
     "https://www.openstreetmap.org/node/660604408"
    ],
    "notes": "",
-   "status": "todo",
+   "status": "modelled",
    "city_xz": [
     2576.8,
     1167.0
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: no photo found; a rough-dressed upright with the Burgundy cross (the 1520-66 boundary stones are documented as marked with it): FORM NOT VERIFIED",
+   "model": "\"boundary\" (instanced)"
   },
   {
    "id": "charlesquint2",
@@ -974,12 +988,14 @@
     "https://www.openstreetmap.org/node/2264896394"
    ],
    "notes": "",
-   "status": "todo",
+   "status": "modelled",
    "city_xz": [
     64.6,
     1153.8
    ],
-   "in_uccle": true
+   "in_uccle": true,
+   "verified": "2026-11-15: no photo found; as charlesquint1: FORM NOT VERIFIED",
+   "model": "\"boundary\" (instanced)"
   },
   {
    "id": "planet_earth",

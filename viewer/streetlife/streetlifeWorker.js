@@ -15,7 +15,7 @@ export const rangeOf = (sx, sy, sz) => { const s = [Math.abs(sx), Math.abs(sy), 
 
 let terracesP = null;
 self.onmessage = async (e) => {
-  const { id, url, tile, pageW, pageH, stopsUrl, noBubbles, noFuel, noStreetKit, shops, terracesUrl } = e.data;
+  const { id, url, tile, pageW, pageH, stopsUrl, noBubbles, noFuel, noStreetKit, shops, terracesUrl, dropWallPlates } = e.data;
   const t0 = performance.now(), times = {};
   try {
     const r = await fetch(url);
@@ -27,6 +27,8 @@ self.onmessage = async (e) => {
     if (noFuel) doc.fuel = [];
     // the street kit (viewer/streetkit/) draws the Villo stations: this layer draws none of its own
     if (noStreetKit) doc.villo = [];
+    // wall plates on a wall that is hidden (the public art kit replaces the Dix Monolithes' UrbIS boxes they were put on)
+    if (dropWallPlates?.length && doc.plates) doc.plates = doc.plates.filter((p) => p.mount !== "wall" || !dropWallPlates.some(([x, z, r]) => (p.x - x) ** 2 + (p.z - z) ** 2 < r * r));
     times.fetch = performance.now() - t0;
     let t = performance.now();
     // the STIB stops kit's data (viewer/stops/): its text is laid out here; none for the tile = no stop text (and no old poles)

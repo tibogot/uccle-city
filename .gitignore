@@ -62,3 +62,10 @@ models/heros/statue_raw.json
 models/heros/*.raw.glb
 models/heros/audit/*/*.json
 models/heros/statue_work/
+
+# public art kit (tools/blender/publicart.py): the build cache, the raw export, the audit json
+models/publicart/work/
+models/publicart/*.raw.glb
+models/publicart/audit/*.json
+!models/publicart/audit/publicart.allow.json
+models/publicart/previews/
