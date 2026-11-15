@@ -25,7 +25,8 @@ import { loadAO, setLodFades } from "../stpierreModel.js";
 import { libSource } from "../materials/libSwitch.js";
 import { env } from "../lighting.js";
 import { loadStatueSlot } from "./herosStatue.js";
-import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
+import { wxMat } from "../weather/cityWeatherize.js";
+const HEROS_SNOW_OLD = /[?&](herosnow|polish1)=old(&|$)/.test(location.search);   // polish1 item 8   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 export { setLodFades };
 export const HE_SLOTS = ["stone_blue", "bronze_gilt", "cast_iron_black", "cast_iron_green", "soil_bed", "plant_grass"];
@@ -155,6 +156,12 @@ function wrapAO(src, aoTex, slot, L) {
   const ao = texture(aoTex, uv(1)).r.mul(attribute("color", "vec4").g);
   const aoK = mix(float(1), ao, heLook.aoStrength);
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
+  // polish1 item 8 (?herosnow=old = before): the source came WEATHERIZED (library / sourceMaterial) and this wrap built
+  // the stone's look on top of its weathered colour (x lift, brown tint, min(0.5)): the snow on the steps was clamped to
+  // grey 0.5 and its roughness overridden, the steps read DRY under snow. Now the look is built on the DRY colour /
+  // roughness / normal and the wrapped material is weatherized itself, last (snow over the steps, wet stone in rain)
+  const dry = !HEROS_SNOW_OLD && src.userData?.weatherized ? (src.userData.wxDry || {}) : null;
+  if (dry) { src = Object.create(src, { colorNode: { value: dry.color ?? null }, roughnessNode: { value: dry.roughness ?? null }, metalnessNode: { value: dry.metalness ?? null }, normalNode: { value: dry.normal ?? null } }); m.roughnessNode = src.roughnessNode; m.metalnessNode = src.metalnessNode; m.normalNode = src.normalNode; m.userData.weatherized = false; }
   let base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
   if (slot === "stone_blue" && L) {
     // a century outdoors: the memorial's blue stone has weathered to a light ash grey (all the photos, 2010s-2025), far
@@ -191,6 +198,7 @@ function wrapAO(src, aoTex, slot, L) {
   }
   m.colorNode = base.mul(mix(float(1), aoK, heLook.aoDirect));
   m.userData.shared = true; m.userData.slot = slot;
+  if (dry) wxMat(m, { porosity: slot === "stone_blue" ? 0.45 : 0.4 });
   return m;
 }
 

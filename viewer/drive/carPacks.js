@@ -15,6 +15,7 @@ import { lodMesh, lodOpts } from "./carLod.js";
 import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // ?vfix2=old: the traffic's light bits decoded as before round 2 of the visual fixes (A/B)
+const CARLIGHTS_OLD = typeof location !== "undefined" && /[?&](carlights|polish1)=old(&|$)/.test(location.search);   // polish1 item 6
 const VFIX2_OLD = typeof location !== "undefined" && /[?&]vfix2=old\b/.test(location.search);
 
 export const PACK_SOURCES = {
@@ -132,7 +133,10 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
   }
   if (lights) {
     const head = select(isHead, lights.head.mul(5), float(0));
-    const tail = select(isTail, lights.tail.mul(1.2).add(lights.brake ? lights.brake.mul(5) : float(0)), float(0));
+    // (polish1 item 6, ?carlights=old: x1.2 tail / x5 brake): the player's car on the traffic's measured levels (packLook:
+    // brake 0.35, night tail 0.4), the brake lens a lit red like every other car's, not a cream-salmon blob
+    const kT = CARLIGHTS_OLD ? 1.2 : packLook.tailNight, kBr = CARLIGHTS_OLD ? 5 : packLook.brake;
+    const tail = select(isTail, lights.tail.mul(kT).add(lights.brake ? lights.brake.mul(kBr) : float(0)), float(0));
     // rich: the lamp's own vertex colour glows (white lamps, amber taxi sign); packs: a fixed warm white
     m.emissiveNode = (rich ? vc.mul(1.15) : color(0xfff1dc)).mul(head).add(color(0xff1408).mul(tail));
   }

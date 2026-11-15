@@ -32,7 +32,7 @@ export const SECTIONS = {
 
 export const FEATURES = [
   // ---------------------------------------------------------------- navigation (written by Go to / the share link)
-  txt("tile", "nav", "start tile", "The tile the city boots on (I6 = Saint-Job). NB: ?tile=H6 at boot crashes (known bug, TODO.md).", "I6", { ui: false }),
+  txt("tile", "nav", "start tile", "The tile the city boots on (I6 = Saint-Job).", "I6", { ui: false }),
   sel("view", "nav", "start view", "The first view / mode: overview, stjob (close-up / ?at / ?cam), walk, fly, drive, moto (the motorbike, docs/MOTO.md), third.",
     [[null, "overview"], ["stjob", "close-up"], ["walk", "walk"], ["fly", "fly"], ["drive", "drive"], ["moto", "motorbike"], ["third", "third person"]], { ui: false }),
   txt("at", "nav", "at x,z", "Close-up target / walk / drive start, city metres (x east, z south).", "1153,540", { ui: false }),
@@ -164,6 +164,15 @@ export const FEATURES = [
   old("storeys", "ab", "fitted storeys", "Façade storeys before: fixed 3.4 / 3.0 m, a storey dropped when it missed the eaves (docs/STOREYS.md).", { sub: "Places & assets" }),
   old("sky", "ab", "old sky", "The sky before Firmament.", { sub: "Look" }),
   old("skyground", "ab", "sky ground albedo", "Firmament's ground albedo before.", { sub: "Look" }),
+  // polish round 1 (docs/POLISH.md): each look change has its own A/B; ?polish1=old = all of them at once
+  old("polish1", "ab", "polish 1: all", "Every look change of the polish batch 1 as before (docs/POLISH.md).", { sub: "Look" }),
+  old("snowedge", "ab", "snow edge (old)", "Snow layer cut per 12.5 cm cell + nearest-cell exposure: the stepped / jagged snow edge along kerbs (polish 1 item 1).", { sub: "Look" }),
+  old("snowwb", "ab", "snow white balance (old)", "Snow scenes with the 75 % grade correction and the warm highlights: beige snow (polish 1 item 1).", { sub: "Look" }),
+  old("treedither", "ab", "tree hand-over dither (old)", "Fixed 30-50 m mesh -> impostor / shadow-fade bands: a static checker on crowns standing in the band (polish 1 item 2).", { sub: "Look" }),
+  old("bark", "ab", "zebra bark (old)", "The street trees' striped bark before (polish 1 item 3).", { sub: "Look" }),
+  old("plinth", "ab", "black plinth (old)", "Blue-stone plinths at albedo 0.075: black in shade (polish 1 item 4).", { sub: "Look" }),
+  old("carlights", "ab", "car lights (old)", "Player car / motorbike brake x5, tail x1.2; headlights without the near-field softening (polish 1 item 6).", { sub: "Look" }),
+  old("herosnow", "ab", "Héros dry in snow (old)", "The memorial's slot materials over their weathered colour: steps dry under snow (polish 1 item 8).", { sub: "Look" }),
   old("vfix2", "ab", "visual fixes 2", "Façades / car packs / trains / ponds before visual fixes round 2.", { sub: "Look" }),
   sel("paint", "ab", "road markings", "Road markings: current or the road engine's own (v1 / v2).", [[null, "current"], ["v1", "v1"], ["v2", "v2"]], { sub: "Look" }),
   sel("relief", "ab", "façade relief", "Façade relief offset: 3 px (current) or 1 px (before).", [[null, "3 px"], ["1px", "1 px (old)"]], { sub: "Look" }),
@@ -198,6 +207,7 @@ export const FEATURES = [
   on("worker", "streaming", "tile worker", "Tiles built in a worker (off: main thread).", { sub: "Boot & loading" }),
   num("workers", "streaming", "tile workers", "Worker pool size (capped at cores - 2).", 1, 1, 6, 1, { sub: "Boot & loading" }),
   on("liteworker", "streaming", "far tiles in worker", "Far tiles built in the worker.", { sub: "Boot & loading" }),
+  num("tilewatchdog", "streaming", "tile watchdog (s)", "A tile request with no answer from the worker after this long is reported (console.error + the loader's red line); 0 = off (polish 1 item 0).", 45, 0, 300, 5, { sub: "Boot & loading" }),
   on("tilecache", "streaming", "tile cache", "Built tiles kept in IndexedDB: a return visit reads the start tile back instead of building it (~10 s of worker; on since boot2, docs/BOOT.md).", { sub: "Boot & loading" }),
   on("warmup", "streaming", "boot warm-up", "Every pipeline compiled under the cover (off: old boot, A/B).", { sub: "Boot & loading" }),
   on("precompile", "streaming", "precompile", "Streamed objects' shaders compiled before they show (A/B).", { sub: "Boot & loading" }),

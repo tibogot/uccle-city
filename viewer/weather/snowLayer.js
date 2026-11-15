@@ -19,6 +19,14 @@ import { season } from "../seasons/season.js";
 import { SHAPE } from "./overheadMap.js";
 import { noise2D, bumpNormal } from "../tslkit.js";
 import { glint, SNOW_ALBEDO, wxLook, snowMask } from "./surfaceWeather.js";
+import { polishOld } from "../polish.js";
+
+// polish1 (docs/POLISH.md item 1, ?snowedge=old = before): the cut used to drop every triangle that touched one hidden
+// vertex, so the layer's edge along kerbs / road edges followed the 12.5 cm cells as a staircase. Now the hide flag is
+// softened over the 4 neighbours, the layer's thickness tapers to 0 toward it (no vertical lip at the cut), and the
+// fragment cuts at the 0.5 iso-line of the interpolated flag (a straight, chamfered line through the triangles);
+// a face steeper than ~55 deg (a sliver across a kerb face) is cut too.
+const SOFT_EDGE = !polishOld("snowedge");
 
 const NSTAMP = 6;
 
@@ -107,15 +115,32 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   const nb = (X) => select(isCliff(X).or(X.s.x.sub(C.s.x).abs().greaterThan(0.3)), hC, hOf(X, float(0)));
   const hL = nb(L), hR = nb(R), hU = nb(U), hD = nb(D);
   const nW = normalize(vec3(hL.sub(hR), uCell.mul(2), hU.sub(hD)));
-  const hide = select(isCliff(C).or(C.d.lessThan(0.004)).or(C.s.x.lessThan(-1000)), float(1), float(0));
-  mat.positionNode = vec3(positionGeometry.x, hC.add(0.003), positionGeometry.z);
-  const vHide = varying(hide), vN = varying(nW), vTrack = varying(C.tr), vDepth = varying(C.d);
+  const hideOf = (X) => select(isCliff(X).or(X.d.lessThan(0.004)).or(X.s.x.lessThan(-1000)), float(1), float(0));
+  const hide = hideOf(C);
+  let vHide, cutAt;
+  if (SOFT_EDGE) {
+    // soft flag: 1 on a hidden vertex, (its hidden 4-neighbours) / 6 next to one; thickness x (1 - flag)^2 so the
+    // surface meets the materials' own cover at the cut instead of ending in a 1-cell step
+    const soft = max(hide, hide.mul(2).add(hideOf(L)).add(hideOf(R)).add(hideOf(U)).add(hideOf(D)).div(6));
+    const keepT = float(1).sub(soft).pow(2);
+    mat.positionNode = vec3(positionGeometry.x, C.s.x.add(hC.sub(C.s.x).mul(keepT)).add(0.003), positionGeometry.z);
+    vHide = varying(soft); cutAt = 0.42;
+  } else {
+    mat.positionNode = vec3(positionGeometry.x, hC.add(0.003), positionGeometry.z);
+    vHide = varying(hide); cutAt = 0.001;
+  }
+  const vN = varying(nW), vTrack = varying(C.tr), vDepth = varying(C.d);
   const P = positionWorld;
   const fw = fwidth(P.x).add(fwidth(P.z)).mul(0.5).add(0.0002);
   const gl = glint(P, fw);
   const packed = smoothstep(0.15, 0.7, vTrack);
   mat.colorNode = Fn(() => {
-    If(vHide.greaterThan(0.001), () => { Discard(); });
+    If(vHide.greaterThan(cutAt), () => { Discard(); });
+    if (SOFT_EDGE) {
+      // the triangle's own (flat) normal from the screen derivatives: a sliver standing across a kerb / eave is dropped
+      const fn = normalize(P.dFdx().cross(P.dFdy()));
+      If(fn.y.abs().lessThan(0.57), () => { Discard(); });
+    }
     // thin snow is patchy: the layer keeps the materials' own cover pattern (same noise) and, while it is thin, opens
     // where wheels and feet packed it down to the ground (the Bosveldweg photo: dark tyre lines in 1 cm of snow)
     const thin = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));

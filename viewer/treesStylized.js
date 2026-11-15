@@ -41,6 +41,30 @@ const useImpostors = SMOOTH ? !/[?&]impostors=0/.test(location.search) : /[?&]im
 let renderer = null;
 /** The trees' shadow range (live: dev panel "Smoothness"): shadows fade out over [end - band, end] (m, view camera). */
 export const TREE_SHADOW = { end: uniform(+(new URLSearchParams(location.search).get("treeshadowend") ?? 120)), band: uniform(40) };
+// polish1 (docs/POLISH.md item 2, ?treedither=old = before): SETTLED HAND-OVER BANDS. The mesh -> impostor hand-over
+// (IMP.band, 30-50 m at 400 m) and the trees' shadow fade (TREE_SHADOW.band, 40 m at 120 m) are pixel splits by a
+// static screen dither: every tree standing in a band showed a checker for as long as the camera stood still. Now
+// the bands follow the camera's SPEED: band = speed x 0.8 s (clamped to [1 m, the configured band]), widening in
+// ~0.15 s when the camera moves and narrowing over ~0.6 s when it stops. A tree crossing the hand-over spends
+// ~0.8 s in the dissolve whatever the speed (a timed fade, as the landmarks' ?lodsettle), and standing still the
+// trees settle to one side: whole mesh or whole impostor, no dither. CPU only (two uniforms per frame).
+export function treeBandSettle() {
+  if (!SMOOTH || /[?&](treedither|polish1)=old(&|$)/.test(location.search)) return () => {};
+  const base = { imp: null, sh: TREE_SHADOW.band.value };
+  let last = null, t0 = performance.now(), speed = 0;
+  return (camPos) => {
+    const now = performance.now(), dt = Math.min(0.1, Math.max(1e-3, (now - t0) / 1000)); t0 = now;
+    base.imp ??= IMP.band.value;                  // (after the tree kit set the lab's band)
+    if (!last) { last = camPos.clone(); return; }
+    const v = camPos.distanceTo(last) / dt; last.copy(camPos);
+    // (a teleport is not a speed: Go to / a tile jump)
+    speed = v > 400 ? speed : speed + (v - speed) * (1 - Math.exp(-dt / (v > speed ? 0.05 : 0.25)));
+    for (const [u, b0] of [[IMP.band, base.imp], [TREE_SHADOW.band, base.sh]]) {
+      const goal = Math.min(b0, Math.max(1, speed * 0.8));
+      u.value += (goal - u.value) * (1 - Math.exp(-dt / (goal > u.value ? 0.15 : 0.6)));
+    }
+  };
+}
 /** main.js passes the renderer once (the impostor bake renders on it). */
 export function setTreeRenderer(r) { renderer = r; }
 
@@ -504,7 +528,15 @@ function fieldSphere(placements) {
 /** Bark: vertical ridges and furrows (3D noise stretched along the trunk), lichen-grey on the ridges,
  *  a little moss low down, the ridges as bump. In the tree's own space (positionGeometry), so the
  *  pattern stays on the bark whatever the instance's turn and scale. */
+// polish1 (docs/POLISH.md item 3, ?bark=old = before): the old bark below read as ZEBRA stripes: one noise stretched
+// 8:1 along the tree's own y (on a leaning trunk / limb: diagonal bands), ~0.3-0.5 m wide, and a 0.07 -> 0.26 ramp
+// (near-black furrows over half the surface). Brussels street trees are London planes and limes (photos, look only):
+// a plane's bark is soft, flaking PATCHES (grey, olive-grey, cream, 10-30 cm), a lime's fine shallow vertical
+// fissures, both mid grey-brown with low contrast. Now: isotropic patches + thin, short fissures (only ~15 % of the
+// surface, darkened by a third), base 0.09-0.175 linear (contrast ~1.9:1, the old mean), the same bump channel scaled down.
+const BARK_OLD = /[?&](bark|polish1)=old(&|$)/.test(location.search);
 function barkMaterial(m) {
+  if (!BARK_OLD) return barkMaterialReal(m);
   const p = positionGeometry;
   const ridge = mx_noise_float(vec3(p.x.mul(7.0), p.y.mul(0.9), p.z.mul(7.0))).mul(0.5).add(0.5);
   const fine = mx_noise_float(vec3(p.x.mul(23.0), p.y.mul(3.0), p.z.mul(23.0))).mul(0.5).add(0.5);
@@ -516,6 +548,28 @@ function barkMaterial(m) {
   m.colorNode = col;
   m.normalNode = bumpNormal(furrow.mul(0.02).add(fine.mul(0.006)));
   m.roughnessNode = float(0.92);
+  m.needsUpdate = true;
+}
+
+function barkMaterialReal(m) {
+  const p = positionGeometry;
+  // plane patches: two octaves of isotropic noise, soft-edged into three tones
+  const pa = mx_noise_float(p.mul(2.2)).mul(0.65).add(mx_noise_float(p.mul(5.1).add(7.3)).mul(0.35)).mul(0.5).add(0.5);
+  const grey = vec3(0.13, 0.122, 0.105), olive = vec3(0.092, 0.088, 0.068), cream = vec3(0.175, 0.163, 0.13);
+  let col = mix(olive, grey, smoothstep(0.38, 0.52, pa));
+  col = mix(col, cream, smoothstep(0.6, 0.72, pa).mul(0.8));
+  // fine fissures: short (y x 2.6 vs x / z x 16: 3:1, not 8:1), thin, a third darker
+  const fis = mx_noise_float(vec3(p.x.mul(16.0), p.y.mul(2.6), p.z.mul(16.0))).mul(0.5).add(0.5);
+  const crack = smoothstep(0.34, 0.24, fis);
+  col = col.mul(float(1).sub(crack.mul(0.33)));
+  const fine = mx_noise_float(vec3(p.x.mul(41.0), p.y.mul(9.0), p.z.mul(41.0))).mul(0.5).add(0.5);
+  col = col.mul(fine.mul(0.16).add(0.92));
+  const moss = smoothstep(1.6, 0.2, p.y).mul(smoothstep(0.2, 0.9, normalGeometry.y.add(normalGeometry.x.mul(0.5)).add(0.3)));
+  col = mix(col, vec3(0.15, 0.18, 0.09), moss.mul(0.45));
+  m.colorNode = col;
+  // relief: the patches' edges barely (flakes are flush), the fissures a little, the grain
+  m.normalNode = bumpNormal(crack.mul(-0.006).add(smoothstep(0.55, 0.62, pa).mul(0.0025)).add(fine.mul(0.003)));
+  m.roughnessNode = float(0.9);
   m.needsUpdate = true;
 }
 

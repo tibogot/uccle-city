@@ -32,7 +32,7 @@ function db() {
     } catch { res(null); }
   });
   return (dbP ||= new Promise((res) => {
-    try { const q = indexedDB.open(DB); q.onsuccess = () => { const v = Math.max(VERSION, q.result.version); q.result.close(); open(v).then(res); }; q.onerror = () => res(null); }
+    try { const q = indexedDB.open(DB); q.onsuccess = () => { const v = Math.max(VERSION, q.result.version); q.result.close(); open(v).then(res); }; q.onerror = () => res(null); q.onblocked = () => res(null); }
     catch { res(null); }
   }));
 }
@@ -96,16 +96,23 @@ export async function cacheGet(entry, lite, base) {
 const DEBUG = false;          // true: log why a tile missed the cache (worker console)
 function say(entry, lite, msg, key = "") { if (DEBUG) console.log(`[tilecache] ${entry.name}${lite ? " (far)" : ""}: ${msg} ${key}`); }
 
+// polish1 (2026-11-15): an IndexedDB that never answers (seen after a Chrome crash: the open / get fired no event at
+// all) held the start tile forever, the boot stuck on "Compiling shaders" (stage "tiles"). Every cache step now has a
+// deadline: past it the tile is a miss and is built (the cache is skipped for the rest of the session).
+let dead = false;
+const deadline = (p, ms, what) => Promise.race([p, new Promise((res) => setTimeout(() => { if (!dead) console.warn(`[tilecache] ${what}: no answer in ${ms} ms, cache off for this session`); dead = true; res(null); }, ms))]);
+
 /** Build through the cache: returns the result (the caller then transfers its buffers). */
 export async function cached(entry, lite, base, build) {
-  const hit = await cacheGet(entry, lite, base);
+  if (dead) entry = { ...entry, cache: false };
+  const hit = await deadline(cacheGet(entry, lite, base), 8000, `read ${entry.name}`);
   if (hit) { hit.times = { ...(hit.times || {}), cache: true }; return hit; }
   const deps = new Map();
   recording.add(deps);
   let r;
   try { r = await build(); } finally { recording.delete(deps); }
   for (const [u, tg] of everFetched) if (!deps.has(u)) deps.set(u, tg);
-  if (entry.cache === true) await cachePut(entry, lite, base, r, deps).catch(() => {});
+  if (entry.cache === true && !dead) await deadline(cachePut(entry, lite, base, r, deps).catch(() => {}), 8000, `write ${entry.name}`);
   return r;
 }
 

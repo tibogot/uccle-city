@@ -266,6 +266,7 @@ const brick = (c1, c2, burnt, mortar) => (st) => {
   const b = mix(lin(c1), lin(c2), h).mul(mix(float(0.85), float(1.1), h2));
   return { col: mix(mix(b, lin(burnt), step(0.93, h2).mul(0.6)), lin(mortar), float(1).sub(mask)), rough: float(0.9) };
 };
+const PLINTH_OLD = /[?&](plinth|polish1)=old(&|$)/.test(location.search);
 export const LOOKS = {
   stone_white(st) {
     const { row, cell, mask, fw } = courses(st, 0.62, 0.32, 0.005);
@@ -276,7 +277,9 @@ export const LOOKS = {
     // petit granit: bush-hammered dark grey, paler where the rain washes the tops, fine speckle
     const g = hashFade(hash2(floor(st.mul(180.0))), max(fwidth(st.x), fwidth(st.y)).mul(180.0)), g2 = hash2(floor(st.mul(9.0)).add(7.0));
     const up = clamp(normalWorld.y, 0, 1);
-    return { col: mix(lin(0x55595f), lin(0x484c52), g.mul(0.6).add(g2.mul(0.4))).mul(mix(float(1), float(1.25), up.mul(kitLook.weather))), rough: float(0.74) };
+    // (polish1 item 4, ?plinth=old: 0x55595f / 0x484c52, black in shade; now weathered petit granit's mid-dark grey)
+    const [a, b] = PLINTH_OLD ? [0x55595f, 0x484c52] : [0x666a70, 0x585c62];
+    return { col: mix(lin(a), lin(b), g.mul(0.6).add(g2.mul(0.4))).mul(mix(float(1), float(1.25), up.mul(kitLook.weather))), rough: float(0.74) };
   },
   brick_red_brussels: brick(0x93503d, 0x7a3d2c, 0x3e2219, 0x8a8278),
   brick_yellow: brick(0xaa8c62, 0x977a52, 0x6e5a3c, 0x9a9488),

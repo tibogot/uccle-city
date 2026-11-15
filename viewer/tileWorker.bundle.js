@@ -13813,6 +13813,7 @@ function db() {
         open(v).then(res);
       };
       q.onerror = () => res(null);
+      q.onblocked = () => res(null);
     } catch {
       res(null);
     }
@@ -13889,8 +13890,15 @@ var DEBUG = false;
 function say(entry, lite, msg, key = "") {
   if (DEBUG) console.log(`[tilecache] ${entry.name}${lite ? " (far)" : ""}: ${msg} ${key}`);
 }
+var dead = false;
+var deadline = (p, ms, what) => Promise.race([p, new Promise((res) => setTimeout(() => {
+  if (!dead) console.warn(`[tilecache] ${what}: no answer in ${ms} ms, cache off for this session`);
+  dead = true;
+  res(null);
+}, ms))]);
 async function cached(entry, lite, base, build) {
-  const hit = await cacheGet(entry, lite, base);
+  if (dead) entry = { ...entry, cache: false };
+  const hit = await deadline(cacheGet(entry, lite, base), 8e3, `read ${entry.name}`);
   if (hit) {
     hit.times = { ...hit.times || {}, cache: true };
     return hit;
@@ -13904,8 +13912,8 @@ async function cached(entry, lite, base, build) {
     recording.delete(deps);
   }
   for (const [u, tg] of everFetched) if (!deps.has(u)) deps.set(u, tg);
-  if (entry.cache === true) await cachePut(entry, lite, base, r, deps).catch(() => {
-  });
+  if (entry.cache === true && !dead) await deadline(cachePut(entry, lite, base, r, deps).catch(() => {
+  }), 8e3, `write ${entry.name}`);
   return r;
 }
 function byteSize(o, seen = /* @__PURE__ */ new Set()) {
@@ -13957,6 +13965,8 @@ function drop(d, keys) {
 }
 
 // viewer/tileWorker.js
+self.addEventListener("unhandledrejection", (e) => self.postMessage({ fatal: String(e.reason?.stack || e.reason) }));
+self.addEventListener("error", (e) => self.postMessage({ fatal: String(e.error?.stack || e.message) }));
 self.onmessage = async (e) => {
   const { id, entry, base, lite } = e.data;
   try {

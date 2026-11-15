@@ -106,6 +106,7 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
   }
 
   const exposure = uniform(1.0), contrast = uniform(1.0), saturation = uniform(1.0), balance = uniform(new THREE.Vector3(1, 1, 1));
+  const warmHighs = uniform(1.0);     // the split-tone's warm highlights (the weather takes it to 0 under snow: white snow, docs/POLISH.md)
   const exposed = max(lit.add(refl), vec3(0)).mul(exposure).mul(balance);
   const peak = max(max(exposed.r, exposed.g), exposed.b);
   const bloomPass = bloom(vec4(exposed.mul(float(8.0).div(max(peak, 8.0))), 1.0), 0.24, 0.4, 1.2);
@@ -116,7 +117,7 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     const c = exposed.add(bloomPass.rgb).toVar();
     const luma = dot(c, vec3(0.2126, 0.7152, 0.0722)).toVar();
     const shadows = mix(vec3(0.965, 1.005, 1.045), vec3(1), smoothstep(0.02, 0.6, luma));
-    const highs = mix(vec3(1), vec3(1.035, 1.005, 0.965), smoothstep(0.6, 3.0, luma));
+    const highs = mix(vec3(1), vec3(1.035, 1.005, 0.965), smoothstep(0.6, 3.0, luma).mul(warmHighs));
     c.mulAssign(shadows.mul(highs));
     c.mulAssign(pow(max(luma, 0.0001).div(0.18), contrast.sub(1.0)));
     const gray = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -136,11 +137,11 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     /** k x every look's exposure (Firmament's light is in Tidewater's units: k = 0.55) */
     setExposureScale(k) { this.exposureScale = k; this.look(this.lookId || "golden"); },
     /** the sky's eye adaptation, each frame (x on top of the look and the scale) */
-    setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f * Math.pow(2, this.evBias || 0); },
+    setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f * Math.pow(2, (this.evBias || 0) + (this.wxEV || 0)); },
     /** dev panel handles: AO / SSR weights, bloom pass, exposure bias (stops, this.evBias) */
     get uniforms() { return { ao: uAo, ssr: uSsr }; },
     /** the grade's uniforms + the looks (the weather blends toward a grey, wet-day grade: viewer/weather/cityWeather.js) */
-    get grade() { return { contrast, saturation, balance, looks: LOOKS }; },
+    get grade() { return { contrast, saturation, balance, warmHighs, looks: LOOKS }; },
     get bloomPass() { return bloomPass; },
     /** the linear HDR scene target (the sky meters it for its eye adaptation) */
     sceneTarget: hdrRT,

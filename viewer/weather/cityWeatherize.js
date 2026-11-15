@@ -26,6 +26,10 @@ import { hash2D, noise2D } from "../tslkit.js";
 import { rippleSlope, glint, snowMask, SNOW_ALBEDO, wxLook } from "./surfaceWeather.js";
 
 export const WX_ON = !/[?&]weather=old(&|$)/.test(location.search);
+// polish1 (docs/POLISH.md item 1, ?snowedge=old = before): the exposure test bilinear over the 4 nearest overhead cells
+// (it was the nearest 12.5 cm cell: where a surface dips under a neighbour, the terrain of a planted bed meeting a
+// sidewalk, the snow cover's edge came out as a staircase of cells)
+const SMOOTH_EXPOSURE = !/[?&](snowedge|polish1)=old(&|$)/.test(location.search);
 const H2 = (p) => hash2D(fract(p.div(1024)).mul(1024));
 const toView = (n) => normalize(cameraViewMatrix.mul(vec4(n, 0)).xyz);
 /** step(edge, x) as a soft 0..1 */
@@ -58,10 +62,16 @@ function graph(I, o, wantNormal) {
   let exposed = float(1), shelter = float(0);
   if (o.map && MAP) {
     const s = MAP.sample(P.xz), inside = MAP.inside(P.xz);
-    const gap = s.x.sub(P.y);
     // (city tolerance 0.25-0.6 m, the lab's 0.06-0.3: the bake's smoothed heights sit a few cm over real lawns / mounds and
     // grass, and a lawn came out half "sheltered": blotchy thin snow at 15 cm depth. A car or an eave is > 1 m over)
-    exposed = select(inside, max(smoothstep(s.x.sub(0.6), s.x.sub(0.25), P.y), smoothstep(1.2, 4.0, gap).mul(0.65)), float(1)).toVar();
+    const expOf = (h) => max(smoothstep(h.sub(0.6), h.sub(0.25), P.y), smoothstep(1.2, 4.0, h.sub(P.y)).mul(0.65));
+    let e;
+    if (SMOOTH_EXPOSURE && !o.lite) {
+      const c = P.xz.sub(MAP.uOrigin).div(MAP.cell).sub(0.5), c0 = floor(c), f = fract(c), N1 = MAP.res - 1;
+      const ld = (di, dj) => MAP.load(clamp(c0.x.add(di), 0, N1), clamp(c0.y.add(dj), 0, N1)).x;
+      e = mix(mix(expOf(ld(0, 0)), expOf(ld(1, 0)), f.x), mix(expOf(ld(0, 1)), expOf(ld(1, 1)), f.x), f.y);
+    } else e = expOf(s.x);
+    exposed = select(inside, e, float(1)).toVar();
     shelter = select(inside, s.y, float(0)).mul(season.uLeafDensity.mul(0.75).add(0.25)).toVar();
   }
   const t = wx.uTime;
