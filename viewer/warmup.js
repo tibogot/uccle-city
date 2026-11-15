@@ -8,6 +8,7 @@
 // pools, off-screen objects, their shadow passes), then wait until no new pipeline is asked for and
 // every async compile is done. Streamed tiles reuse these pipelines (same WGSL; see RENDER_PLAN.md).
 // Machinery: vendor/engine (game-engine-v1, unchanged).
+import * as THREE from "three/webgpu";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { warmGamePipelines, awaitPipelinesQuiet } from "../vendor/engine/pipelineWarmup.js";
 import { neededAtReveal } from "./bootGate.js";
@@ -56,13 +57,20 @@ export async function warmBoot(renderer, scene, win, needed = () => true) {
   // visible/count it touched to the value it saw BEFORE its frames, and the tree field only re-checks
   // when the camera moves 4 m, so warming before its first update left the trees hidden.
   for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
+  const t1 = performance.now();
   const warm = await warmGamePipelines({ scene }, new Set(), { frames: 2 });
+  const t2 = performance.now();
   const quiet = BOOT_QUIET_ALL || !win.framePipes ? await awaitPipelinesQuiet({ renderer }, { quietFrames: 12, maxMs: 15000 }) : await bootQuiet(renderer, win, needed);
+  const t3 = performance.now();
   const par = await win.end();
   try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
+  const t4 = performance.now();
   // a couple of frames with the finished pipelines, so the reveal frame is not the first real draw
   for (let i = 0; i < 2; i++) await new Promise((r) => requestAnimationFrame(r));
-  return { ms: Math.round(performance.now() - t0), warmed: warm.warmed, parallel: par.created, late: quiet.pipelines, skipped: quiet.skipped };
+  // boot3: where the warm-up's time goes (settle frames, the forced frames, the quiet wait, the window's last pipelines, the 2 frames)
+  const R = (a, b) => Math.round(b - a), t5 = performance.now();
+  return { ms: Math.round(t5 - t0), warmed: warm.warmed, parallel: par.created, late: quiet.pipelines, skipped: quiet.skipped,
+    phases: `settle ${R(t0, t1)}, forced ${R(t1, t2)}, quiet ${R(t2, t3)}, pipelines ${R(t3, t4)}, frames ${R(t4, t5)} ms` };
 }
 
 // ------------------------------------------------------------------ streaming: compile before showing
@@ -273,31 +281,36 @@ export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
   return { drawables: list.length, ms: Math.round(performance.now() - t0), frames };
 }
 
-// ------------------------------------------------------------------ boot3: compile yields under the cover
-// r187 compileAsync (every landmark's / bridge's / tile's precompile above) yields to the main thread after every 8 ms
-// of node building, and each yield waits for the NEXT RENDERED FRAME (requestAnimationFrame + setTimeout). Under the
-// boot cover the frames are slow (tiles landing, forced warm-up frames: 100 ms - 3 s), so the queue built ~one shader
-// per frame: the Villa van Buuren's job ran 10.4 s, the boot warm-up (awaitPipelinesQuiet: no new pipeline for 12
-// frames) waited for the whole landmark queue, and the cover with it (measured 2026-11-15, docs/BOOT.md boot3).
-// Nothing under the cover needs that frame pacing (the loading screen is CSS on the compositor), so until the cover
-// lifts the yield is a plain macrotask: three takes its "page hidden" path (document.hidden: yieldToMain ->
-// scheduler.yield), and scheduler.yield is a MessageChannel task here (FIFO with the page's other tasks: the tile
-// worker's messages, fetches; the real scheduler.yield's continuations would jump ahead of them). The same node
-// builds, the same pipelines, only less waiting. Undone at the cover (bootYieldTurbo's return value).
-// ?bootyield=frame: three's frame-paced yields throughout, as before.
-export function bootYieldTurbo() {
-  if (new URLSearchParams(location.search).get("bootyield") === "frame" || typeof document === "undefined") return () => {};
-  const ch = new MessageChannel(), q = [];
-  ch.port1.onmessage = () => { const r = q.shift(); if (r) r(); };
-  const fast = () => new Promise((r) => { q.push(r); ch.port2.postMessage(0); });
-  const S = self.scheduler, ownS = !S;
-  try { Object.defineProperty(document, "hidden", { configurable: true, get: () => true }); } catch { return () => {}; }
-  if (S) S.yield = fast; else self.scheduler = { yield: fast };
-  let done = false;
-  return () => {
-    if (done) return;
-    done = true;
-    delete document.hidden;                        // the own property: Document.prototype's getter again
-    if (ownS) delete self.scheduler; else delete S.yield;   // (the instance property shadowed the prototype's method)
-  };
+// ------------------------------------------------------------------ boot3: warm after the cover
+/** boot3 (docs/BOOT.md section 5): compile `roots` (stand-ins: lodFade.js fadeProxies) AFTER the cover, gently: the main
+ *  pass through the precompile queue (compileAsync: async node builds, frame-paced), then their SHADOW pass (not in
+ *  compileAsync), `perFrame` meshes a frame far under the city with the pipelines created async (as the landmarks'
+ *  warmShadowPass): at most a couple of small shadow builds per frame. Resolves when done. */
+export async function warmLater(renderer, scene, roots, compile, { perFrame = 2 } = {}) {
+  if (!roots.length) return;
+  if (compile) await compile(roots, { first: true });
+  await warmShadows(renderer, scene, roots, { perFrame });
+}
+/** the shadow-pass half of warmLater: `perFrame` shadow-casting meshes of `roots` a frame, far under the city */
+export async function warmShadows(renderer, scene, roots, { perFrame = 2 } = {}) {
+  const meshes = [];
+  for (const r of roots) r.traverse((o) => { if (o.isMesh && o.castShadow && !Array.isArray(o.material)) meshes.push(o); });
+  if (!meshes.length || !renderer.backend?.isWebGPUBackend) return;
+  const g = new THREE.Group(); g.name = "boot3-late-warm"; g.position.set(0, -4000, 0);
+  scene.add(g);
+  const win = openParallelPipelines(renderer, scene);
+  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  try {
+    for (let i = 0; i < meshes.length; i += perFrame) {
+      g.clear();
+      for (const o of meshes.slice(i, i + perFrame)) {
+        const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, o.material, 1) : new THREE.Mesh(o.geometry, o.material);
+        if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
+        p.castShadow = true; p.receiveShadow = o.receiveShadow; p.frustumCulled = false; p.userData = { ...o.userData, fade: 0.5 };
+        g.add(p);
+      }
+      await frame();
+    }
+    await win.end();
+  } finally { g.clear(); scene.remove(g); }
 }

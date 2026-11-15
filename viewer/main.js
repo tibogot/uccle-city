@@ -44,7 +44,7 @@ import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, bootYieldTurbo } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -97,8 +97,13 @@ const preCompile = async (roots, fading) => {
     return;
   }
   await compileFor(roots, { first: true });           // (a tile: ahead of the landmarks' background compiles)
-  if (fading) await compileFor([].concat(roots).map(fadeProxies), { first: true });
+  const fp = fading ? [].concat(roots).map(fadeProxies).filter(Boolean) : [];
+  if (fp.length) await compileFor(fp, { first: true });
+  // boot3 (docs/BOOT.md section 5; ?tileshadowwarm=0: off): the tile's shadow pass too (not in compileAsync), two meshes a
+  // frame far under the city (warmup.js warmShadows): its first shadow node builds were one 60-100 ms frame at its landing
+  if (shadowWarm) await shadowWarm([...[].concat(roots), ...fp]);
 };
+let shadowWarm = null;
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
 
 const $ = (id) => document.getElementById(id);
@@ -500,9 +505,10 @@ if (workers.length && params.get("liteworker") !== "0") {
 // AND the first full neighbour (the warm-up must see a second full tile: main.js "neighbours"), and one worker built them
 // one after the other (I6 then H5: ~11 s of worker time on the cover's critical path). This worker takes the boot ring's
 // full tiles while the main one builds the start tile, and is closed once the cover has lifted and it is idle (streaming
-// keeps the single worker: the 3-worker pool's freeze). ?bootworker=0: off.
+// keeps the single worker: the 3-worker pool's freeze). OPT-IN ?bootworker=1 (measured: the cover did not move, the start tile
+// built ~1 s slower beside it: CPU-bound).
 let bootWorker = null, bootWorkerOpen = true;
-if (workers.length === 1 && params.get("bootworker") !== "0" && (navigator.hardwareConcurrency || 4) >= 6) {
+if (workers.length === 1 && params.get("bootworker") === "1" && (navigator.hardwareConcurrency || 4) >= 6) {
   try {
     const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
     w.busy = 0;
@@ -920,9 +926,7 @@ async function main() {
 
   const scene = new THREE.Scene();
   const bootPipes = params.get("warmup") !== "0" ? openBootPipelines(renderer, scene) : null;   // ?warmup=0: old boot, for A/B
-  // ---- boot3 (docs/BOOT.md section 5): compile yields as plain tasks until the cover lifts (warmup.js; ?bootyield=frame: off)
-  const endBootYield = bootYieldTurbo();
-  // ---- /boot3
+  if (params.get("tileshadowwarm") !== "0") shadowWarm = (roots) => warmShadows(renderer, scene, roots).catch(() => {});   // boot3 (preCompile)
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
@@ -1562,7 +1566,7 @@ async function main() {
   // One neighbour tile and the first far tiles load under the cover too: the first material built
   // emits its shared TSL functions in a different order than all later ones (same code, other WGSL
   // text, so one more compile), and far tiles have their own shaders.
-  let landing = null;
+  let landing = null, lateWarm = null;
   if (bootPipes) {
     // the tiles streamed under the cover hold their fade (smooth LOD): the warm-up then compiles their fading
     // copies too (lodFade.js fadeVariant); the first far tile does not fade, so its own materials compile
@@ -1579,7 +1583,11 @@ async function main() {
       // functions in another order than the first (other WGSL text: new pipelines), so the warm-up must see one, or the
       // first full tile after the cover waited ~4 s on its 15 new pipelines (measured)
       await streamBootLites();
-      if (ring > 0) await stream();
+      // boot3 (docs/BOOT.md section 5; ?bootfull=1 = before): NO full neighbour under the cover. It was held at fade 0 for
+      // the warm-up (the reveal frame showed its far tile anyway) and the cover waited ~4 s for its worker build after the
+      // start tile's; now the worker builds it right after the start tile all the same and it streams in after the
+      // reveal, its new pipelines compiled before it shows (preCompile): the fill-in a few seconds later, not the cover
+      if (ring > 0 && params.get("bootfull") === "1") await stream();
     } else {
       if (ring > 0) await stream();
       if (far > ring && params.get("earlyshow") !== "1") await stream(true);
@@ -1598,13 +1606,19 @@ async function main() {
     // the full tiles' FADING copies (lodFade.js fadeVariant): with the ring as far tiles no full tile fades in under the
     // cover, so the start tile's copies are drawn here (stand-ins, removed after): the next full tiles then compile
     // no new pipeline (measured: the first one after the cover waited 3.3 s on 40 of them)
-    const fadeWarm = TILE_FADE ? world.tiles.flatMap((t) => t.groups.flatMap((g) => [fadeProxies(g), ownProxies(g)])).filter(Boolean) : [];   // (boot3: + the held tiles' own materials, lodFade.js ownProxies)
+    // boot3 (docs/BOOT.md section 5): + the held tiles' own materials (lodFade.js ownProxies); the start tile's fading copies
+    // (~30 node builds, 1.0-1.5 s of the warm-up's forced frames) are compiled AFTER the cover (warmup.js warmLater): the
+    // start tile does not fade until the player leaves it, and a streamed tile's fade compiles what it lacks first
+    // (preCompile / retire). ?fadedefer=old: all under the cover, as before
+    const FADE_DEFER = params.get("fadedefer") !== "old";
+    const fadeWarm = TILE_FADE ? world.tiles.flatMap((t) => t.groups.flatMap((g) => [FADE_DEFER ? null : fadeProxies(g), ownProxies(g)])).filter(Boolean) : [];
+    if (TILE_FADE && FADE_DEFER) lateWarm = world.tiles.flatMap((t) => t.groups.map(fadeProxies)).filter(Boolean);
     for (const g of fadeWarm) scene.add(g);
     const w = await warmBoot(renderer, scene, bootPipes, neededAtReveal).finally(() => clearInterval(tick));   // (boot3: waits only for the jobs the first view needs, bootGate.js neededAtReveal)
     for (const g of fadeWarm) g.removeFromParent();
     interiorWarm?.removeFromParent();
     fader.hold = false;
-    log(`warm-up: ${w.ms} ms, ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after${w.skipped?.length ? `; still compiling in the background (not in the first view): ${w.skipped.join(", ")}` : ""}`);
+    log(`warm-up: ${w.ms} ms (${w.phases}), ${w.warmed} drawables, ${w.parallel} pipelines compiled in parallel, ${w.late} after${w.skipped?.length ? `; still compiling in the background (not in the first view): ${w.skipped.join(", ")}` : ""}`);
   }
   // the hand-over: the loading flight is on the city's first camera (at most 3 s more): the cover (that view) cross-fades
   // into the city's frames from the same camera (index.html #cover.gone, 1.1 s), then the loader's worker stops
@@ -1620,8 +1634,8 @@ async function main() {
   document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
   coverLifted();                                    // boot2: the far landmarks / bridges start now (bootGate.js)
-  endBootYield();                                   // boot3: compile yields frame-paced again (warmup.js bootYieldTurbo)
   closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
+  if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
