@@ -344,7 +344,7 @@ export function createDevPanel(ctx) {
 
   // ---------------------------------------------------------------- Night (docs/NIGHT_HOOKUP.md)
   const fN = section("night", "Night");
-  fN.note("The night lights are a boot flag (?night=1). The night look itself: Time & sun → preset 'night'.");
+  fN.note("The night lights are a boot flag, on by default (?night=0: the old lamp path). The night look itself: Time & sun → preset 'night'.");
   switches(fN, "night");
 
   // ---------------------------------------------------------------- Traffic, trams & trains (line 92 on STIB's timetable)

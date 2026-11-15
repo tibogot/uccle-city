@@ -52,6 +52,12 @@ export function lowBeamK(f, axis, upV, cosA, aim, kink) {
 
 /** live switches (uniforms: no rebuild) */
 export const nightLook = { uDiffuseOnly: uniform(0), uWet: uniform(0) };
+/** (night default, 2026-11-15) 1 while a shadowed lamp spot (userData.nightShadowLamp) gives light, else 0: the spots'
+ *  light + shadow lookups sit in a uniform branch of every lit material (cityNight.js sets it each frame). By day they
+ *  were evaluated per fragment at intensity 0 with their shadow-map reads */
+export const nightSpotsOn = uniform(0);
+/** ?nightgate=0: the spots without the branch and the cluster pass every frame by day (fix3's day path, for A/B) */
+const DAY_GATE = typeof location === "undefined" || new URLSearchParams(location.search).get("nightgate") !== "0";
 
 export const PROFILE = { PLAIN: 0, LOWBEAM: 1, LANTERN: 2, APERTURE: 3 };
 
@@ -124,6 +130,23 @@ class NightLightsNode extends ClusteredLightsNode {
   }
   // every scene Light keeps three's default path (sun, moon, the shadowed lamp spots): the pool is ours
   _isClusteredLight() { return false; }
+
+  // three's updateBefore, but the cluster pass is skipped while the pool is empty (by day): the fragment loop is
+  // skipped then too (_lightsCount 0), so the clusters' lists are never read; run once empty, then not until a light
+  updateBefore(frame) {
+    if (!DAY_GATE) return super.updateBefore(frame);
+    const { renderer, camera } = frame;
+    this._initGrid(renderer);
+    this._updateLightsTexture(camera);
+    this._cameraNear.value = camera.near;
+    this._cameraFar.value = camera.far;
+    this._cameraViewMatrix.value = camera.matrixWorldInverse;
+    this._cameraProjectionMatrix.value = camera.projectionMatrix;
+    const empty = this._lightsCount.value === 0;
+    if (empty && this._emptyDone) return;
+    this._emptyDone = empty;
+    renderer.compute(this._compute);
+  }
 
   _updateLightsTexture(camera) {
     const P = this.pool, D = P.data, T = this._lightsTexture.image.data, E = this._extra.image.data;
@@ -320,7 +343,10 @@ class NightLightsNode extends ClusteredLightsNode {
         try { return setup.call(this, b); } finally { o.receiveShadow = true; }
       };
     }
-    LightsNode.prototype.setupLights.call(this, builder, lightNodes);     // sun, moon, shadowed spots
+    // sun, moon (+ the shadowed spots with ?nightgate=0); the spots in a uniform branch: nothing of them runs by day
+    const spots = DAY_GATE ? lightNodes.filter((ln) => ln.light?.userData?.nightShadowLamp) : [];
+    LightsNode.prototype.setupLights.call(this, builder, spots.length ? lightNodes.filter((ln) => !spots.includes(ln)) : lightNodes);
+    if (spots.length) Fn(() => { If(nightSpotsOn.greaterThan(0.5), () => { for (const ln of spots) ln.build(builder); }); }, "void")();
     const tex = this._lightsTexture, extra = this._extra;
     const ground = builder.material?.userData?.groundLight === true;        // reads groundLight.js' map
     const lscale = builder.material?.userData?.nightLightScale ?? 1;
