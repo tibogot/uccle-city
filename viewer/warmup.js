@@ -10,6 +10,7 @@
 // Machinery: vendor/engine (game-engine-v1, unchanged).
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { warmGamePipelines, awaitPipelinesQuiet } from "../vendor/engine/pipelineWarmup.js";
+import { neededAtReveal } from "./bootGate.js";
 
 export function openBootPipelines(renderer, scene) {
   const win = openParallelPipelines(renderer, scene);
@@ -36,22 +37,32 @@ export function openBootPipelines(renderer, scene) {
     dev.createRenderPipelineAsync = function (d) { prog.started++; const p = create(d); p.then(() => prog.done++, () => prog.done++); return p; };   // (kept: two counters)
   }
   win.progress = prog;
+  // boot3: the pipelines the FRAMES ask for (three's render path: no promise list), apart from the ones the precompile
+  // queue's compileAsync jobs create (they pass one): warmBoot's quiet test counts only these (bootQuiet below)
+  const be = renderer.backend, crp = be.createRenderPipeline;
+  win.framePipes = { n: 0 };
+  // (a landmark's own shadow-pass warm group, "<name>-warm" far under the city: counted only if the first view needs it)
+  const warmOf = (o) => { for (let k = 0; o && k < 5; k++, o = o.parent) if (o.name?.endsWith("-warm")) return o.name.slice(0, -5); return null; };
+  be.createRenderPipeline = function (ro, promises) {
+    if (!promises) { const w = win.needed ? warmOf(ro.object) : null; if (!w || win.needed([w])) win.framePipes.n++; }
+    return crp.call(this, ro, promises);
+  };
   return win;
 }
 
-export async function warmBoot(renderer, scene, win) {
+export async function warmBoot(renderer, scene, win, needed = () => true) {
   const t0 = performance.now();
   // Let the per-frame updaters settle first (tree LOD, lamps, cars): the warm-up restores every
   // visible/count it touched to the value it saw BEFORE its frames, and the tree field only re-checks
   // when the camera moves 4 m, so warming before its first update left the trees hidden.
   for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
   const warm = await warmGamePipelines({ scene }, new Set(), { frames: 2 });
-  const quiet = await awaitPipelinesQuiet({ renderer }, { quietFrames: 12, maxMs: 15000 });
+  const quiet = BOOT_QUIET_ALL || !win.framePipes ? await awaitPipelinesQuiet({ renderer }, { quietFrames: 12, maxMs: 15000 }) : await bootQuiet(renderer, win, needed);
   const par = await win.end();
   try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
   // a couple of frames with the finished pipelines, so the reveal frame is not the first real draw
   for (let i = 0; i < 2; i++) await new Promise((r) => requestAnimationFrame(r));
-  return { ms: Math.round(performance.now() - t0), warmed: warm.warmed, parallel: par.created, late: quiet.pipelines };
+  return { ms: Math.round(performance.now() - t0), warmed: warm.warmed, parallel: par.created, late: quiet.pipelines, skipped: quiet.skipped };
 }
 
 // ------------------------------------------------------------------ streaming: compile before showing
@@ -71,15 +82,20 @@ export async function warmBoot(renderer, scene, win) {
 // goes before every queued job without it (a landmark's background compile: measured 2026-11-14, the third tile
 // waited 4.4 s behind eleven landmarks and the bridges).
 let rawCompile = null, passFor = null, running = false;
+// boot3: every precompile job's root names + its promise, for warmBoot (bootQuiet: the jobs the first view needs)
+const bootJobs = [];
 const jobs = [];
 const pump = () => {
   if (running || !jobs.length) return;
-  const i = jobs.findIndex((j) => j.first);
+  let i = jobs.findIndex((j) => j.first);
+  // boot3: until the cover lifts, the jobs the first view needs (bootGate.js neededAtReveal: the models in the boot's
+  // ring) go before the others (the far landmarks queued first had the in-ring ones wait 15-17 s). ?bootquiet=all: FIFO
+  if (i < 0 && !bootJobsClosed && !BOOT_QUIET_ALL) i = jobs.findIndex((j) => j.names && neededAtReveal(j.names));
   const j = jobs.splice(i >= 0 ? i : 0, 1)[0];
   running = true;
   Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { running = false; pump(); });
 };
-const enqueue = (job, first = false) => new Promise((resolve, reject) => { jobs.push({ job, first, resolve, reject }); pump(); });
+const enqueue = (job, first = false, names = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, resolve, reject }); pump(); });
 export function installCompileQueue(renderer) {
   if (rawCompile) return;
   rawCompile = renderer.compileAsync.bind(renderer);
@@ -111,7 +127,7 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
   installCompileQueue(renderer);
   const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
   if (rec) (globalThis.__boot.jobs ||= []).push(rec);
-  return enqueue(async () => {
+  const job = enqueue(async () => {
     if (rec) { rec.s = Math.round(performance.now()); rec.first = first; }
     try {
     for (const root of [].concat(roots)) {
@@ -141,7 +157,35 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
     } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
-  }, first);
+  }, first, [].concat(roots).map((r) => r?.name || ""));
+  if (!bootJobsClosed) { const j = { names: [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
+  return job;
+}
+let bootJobsClosed = false;
+
+// boot3 (docs/BOOT.md section 5; ?bootquiet=all = before): the boot warm-up waited for the WHOLE device to stop making
+// pipelines for 12 frames (vendor awaitPipelinesQuiet), and the background compiles of every landmark in Uccle kept it
+// busy: the cover waited for the Saint-Pierre / Villa van Buuren / town hall queue (8-10 s jobs) although a landmark
+// outside the boot's ring cannot be on screen at the reveal (its home tile is not loaded: it shows with its tile, and
+// it is added to the scene only once compiled: nothing builds on a frame later). Now: quiet = no new pipeline asked for
+// by the FRAMES for 12 frames, and every precompile job the first view needs done: the tiles' (queued `first`) and the
+// models in the boot's ring (`needed(names)`, bootGate.js neededAtReveal). Not waited for: models outside the ring, the
+// weather's precipitation draws (hidden in clear weather), the falcon mode's bird / pigeons, the bridges' fading copies
+// (each model is added to the scene only once its own compile is done). At most 15 s, as before.
+const BOOT_QUIET_ALL = typeof location !== "undefined" && /[?&]bootquiet=all(&|$)/.test(location.search);
+async function bootQuiet(renderer, win, needed, { quietFrames = 12, maxMs = 15000 } = {}) {
+  win.needed = needed;
+  const t0 = performance.now(), c = win.framePipes, start = c.n;
+  let quiet = 0, frames = 0, last = c.n;
+  const jobsLeft = () => bootJobs.some((j) => !j.done && (j.first || needed(j.names)));
+  while ((quiet < quietFrames || jobsLeft()) && performance.now() - t0 < maxMs) {
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    frames++;
+    if (c.n === last) quiet++; else { quiet = 0; last = c.n; }
+  }
+  bootJobsClosed = true;
+  try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* lost device */ }
+  return { frames, pipelines: c.n - start, ms: Math.round(performance.now() - t0), skipped: bootJobs.filter((j) => !j.done).map((j) => j.names[0]).slice(0, 12) };
 }
 
 // ------------------------------------------------------------------ shadow pass: one shader for every opaque material
@@ -227,4 +271,33 @@ export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
     await new Promise((r) => setTimeout(r, 16));
   }
   return { drawables: list.length, ms: Math.round(performance.now() - t0), frames };
+}
+
+// ------------------------------------------------------------------ boot3: compile yields under the cover
+// r187 compileAsync (every landmark's / bridge's / tile's precompile above) yields to the main thread after every 8 ms
+// of node building, and each yield waits for the NEXT RENDERED FRAME (requestAnimationFrame + setTimeout). Under the
+// boot cover the frames are slow (tiles landing, forced warm-up frames: 100 ms - 3 s), so the queue built ~one shader
+// per frame: the Villa van Buuren's job ran 10.4 s, the boot warm-up (awaitPipelinesQuiet: no new pipeline for 12
+// frames) waited for the whole landmark queue, and the cover with it (measured 2026-11-15, docs/BOOT.md boot3).
+// Nothing under the cover needs that frame pacing (the loading screen is CSS on the compositor), so until the cover
+// lifts the yield is a plain macrotask: three takes its "page hidden" path (document.hidden: yieldToMain ->
+// scheduler.yield), and scheduler.yield is a MessageChannel task here (FIFO with the page's other tasks: the tile
+// worker's messages, fetches; the real scheduler.yield's continuations would jump ahead of them). The same node
+// builds, the same pipelines, only less waiting. Undone at the cover (bootYieldTurbo's return value).
+// ?bootyield=frame: three's frame-paced yields throughout, as before.
+export function bootYieldTurbo() {
+  if (new URLSearchParams(location.search).get("bootyield") === "frame" || typeof document === "undefined") return () => {};
+  const ch = new MessageChannel(), q = [];
+  ch.port1.onmessage = () => { const r = q.shift(); if (r) r(); };
+  const fast = () => new Promise((r) => { q.push(r); ch.port2.postMessage(0); });
+  const S = self.scheduler, ownS = !S;
+  try { Object.defineProperty(document, "hidden", { configurable: true, get: () => true }); } catch { return () => {}; }
+  if (S) S.yield = fast; else self.scheduler = { yield: fast };
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    delete document.hidden;                        // the own property: Document.prototype's getter again
+    if (ownS) delete self.scheduler; else delete S.yield;   // (the instance property shadowed the prototype's method)
+  };
 }

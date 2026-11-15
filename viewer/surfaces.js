@@ -444,7 +444,17 @@ export function rampKerbPoints(surf) {
   const key = (p) => `${Math.round(p[0] * 100)},${Math.round(p[1] * 100)}`;
   const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
   const segD2 = (p, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1e-12, t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2)); return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dz * t); };
-  const onKerb = (p) => (surf.kerbs || []).some((l) => { for (let k = 1; k < l.length; k++) if (segD2(p, l[k - 1], l[k]) < 0.05) return true; return false; });
+  // (boot3, docs/BOOT.md section 5: a 2 m bucket grid of the kerb segments, each in every cell its box + 5 cm touches:
+  // the same answer as testing every segment of every kerb line, which was ~0.2 s of the start tile's road stage)
+  const KB = 2, kcell = new Map();
+  for (const l of surf.kerbs || []) for (let k = 1; k < l.length; k++) {
+    const a = l[k - 1], b = l[k];
+    for (let i = Math.floor((Math.min(a[0], b[0]) - 0.06) / KB); i <= Math.floor((Math.max(a[0], b[0]) + 0.06) / KB); i++)
+      for (let j = Math.floor((Math.min(a[1], b[1]) - 0.06) / KB); j <= Math.floor((Math.max(a[1], b[1]) + 0.06) / KB); j++) {
+        const key = i * 100003 + j; let c = kcell.get(key); if (!c) kcell.set(key, (c = [])); c.push(a, b);
+      }
+  }
+  const onKerb = (p) => { const c = kcell.get(Math.floor(p[0] / KB) * 100003 + Math.floor(p[1] / KB)); if (c) for (let k = 0; k < c.length; k += 2) if (segD2(p, c[k], c[k + 1]) < 0.05) return true; return false; };
   const ins = new Map();
   let n = 0;
   for (const q of surf.surfaces) {
