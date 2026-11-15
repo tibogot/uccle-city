@@ -29,6 +29,12 @@ export const windowUniforms = {
   reflect: uniform(1),         // glass specular
   card: uniform(1),            // the furniture card on / off (lab)
   mirror: uniform(1),          // the street-side reflection (sky / street) over the room
+  // (fix4 item 3, ?shopnight=old = 0) at night a WHITE room (the boutique / office renders: Celio, Chaussee d'Alsemberg)
+  // read as a blown-out white box next to the dark street (median 185 / 168 / 158 over the whole window): its bright
+  // texels are toned down (x (1 - 0.8) above a luminance of ~0.75: median 186 -> 146) and the room takes the warm cast of shop
+  // lamps (3000-3500 K), so the shelves and the floor read again; colourful rooms (pharmacy, grocery) barely change
+  nightWhite: uniform(/[?&]shopnight=old(&|$)/.test(location.search) ? 0 : 0.8),
+  nightWarm: uniform(/[?&]shopnight=old(&|$)/.test(location.search) ? 0 : 1),
 };
 
 let texP = null;
@@ -111,7 +117,10 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
   const room = texture(I.tex, cell(ruv, float(0))).level(lod).rgb;
   const card = texture(I.tex, cell(cuv, float(2))).level(lod);
   const ca = card.a.mul(cIn).mul(U.card);
-  const inside = mix(room, card.rgb, ca);
+  const inside0 = mix(room, card.rgb, ca);
+  const yIn = dot(inside0, vec3(0.2126, 0.7152, 0.0722));
+  const inside = inside0.mul(float(1).sub(U.nightWhite.mul(night).mul(smoothstep(0.3, 0.75, yIn))))
+    .mul(mix(vec3(1, 1, 1), vec3(1.0, 0.9, 0.76), U.nightWarm.mul(night).mul(0.6)));
   // the glass: a street-side mirror (sky above the horizon, the street's grey below, mostly at grazing views) over the
   // room; by day the reflection carries the glass, at night the lit room does (Schlick-like, with a floor: shop glass
   // reflects ~10 % even head-on)

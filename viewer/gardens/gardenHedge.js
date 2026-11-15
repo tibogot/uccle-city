@@ -29,6 +29,7 @@ import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at
 import { noiseAt, noiseTexture } from "../foliage/noise.js";
 const HEDGE_MIP_OLD = /[?&]hedgemip=old(&|$)/.test(location.search);
 import { leafCard } from "../foliage/cards.js";
+import { nightLeaf } from "../foliage/nightLeaf.js";
 import { bumpNormal } from "../tslkit.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
 import { FadeSlots } from "../instanceStream.js";
@@ -215,7 +216,7 @@ export function hedgeMaterials() {
       m.positionNode = positionLocal.add(dirW.mul(amp));
     }
     const vu = varying(u, "v_hU");
-    const leafC = leafColour(I.spi);
+    const leafC = nightLeaf(leafColour(I.spi));   // (fix4: an olive green under the lamps at night)
     // (the fine-variation channel A carries octaves down to 1/64 of a tile: at 1/0.55 and 1/0.16 m that is 9 and 2.5 mm,
     // a pixel-sized grain that read as SPECKLE close up and crawled at the mip hand-overs when moving; a mip bias of 1.5
     // drops that last octave: leaf-sized clumps, no grain)
@@ -271,7 +272,7 @@ export function hedgeMaterials() {
   const a = select(I.sI.equal(3), a2, select(I.sI.equal(1).or(I.sI.equal(2)), a1, a0));
   card.opacityNode = saturate(a.a.sub(0.5).div(max(fwidth(a.a), 1e-4)).add(0.5));
   const vShade = varying(cr.w.mul(0.3).add(0.8), "v_hS");
-  card.colorNode = mix(leafColour(I.spi).mul(a.r).mul(vShade).mul(1.08), vec3(0.88, 0.9, 0.94), season.uSnow.mul(smoothstep(0.3, 0.9, cn.y)));
+  card.colorNode = mix(nightLeaf(leafColour(I.spi)).mul(a.r).mul(vShade).mul(1.08), vec3(0.88, 0.9, 0.94), season.uSnow.mul(smoothstep(0.3, 0.9, cn.y)));
   // lighting normal: mostly the hedge's surface (a coherent mass), a little of the card's own
   const nW = normalize(mix(cn, cardN, 0.35));
   card.normalNode = normalize(cameraViewMatrix.mul(vec4(varying(nW, "v_hN"), 0)).xyz);

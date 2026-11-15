@@ -1414,7 +1414,7 @@ async function main() {
         return fpos;
       };
       cityTraffic = createCityTraffic({ scene, renderer, camera, ground: (x, z) => world.surface(x, z) + CARVE, night: env.uNight, focus: focusOf,
-        driver, getThird: () => third, getTram: () => tramLine, log });
+        driver, getThird: () => third, getTram: () => tramLine, log, compile: compileFor });   // (fix4: its batches compiled one by one)
       for (const [n, g] of trafficTiles) cityTraffic.addTile(n, g);
       cityNight?.setTraffic(cityTraffic);               // ?night=1: its cars' head / tail lights
       const ci = updaters.indexOf(carFleet.update);

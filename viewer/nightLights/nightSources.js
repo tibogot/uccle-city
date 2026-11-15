@@ -10,7 +10,7 @@
 //   signs      a small coloured omni in front of the fascia
 //   headlights one LOW BEAM spot per car (the two lamps merged: the same light on the road beyond a few metres; GTA V
 //              draws "only 2 headlights" for far cars, we go one step further for the lit pool)
-//   rear       one red omni per car (5 m)
+//   rear       one red spot per car aimed back-down (4.5 m; fix4: an omni lit its own bumper)
 //   tram       the lead cab's low beam (symmetric), a red rear omni, three saloon omnis (light through the windows)
 // Volumetric cones (lightCones.js) follow the lamp and headlight slots.
 // Per frame: no allocation (typed arrays, preallocated selections); cost = the grid cells / cars visited.
@@ -19,11 +19,14 @@ import { PROFILE } from "./nightLighting.js";
 import { NearestN, StaticSources, ShadowLamps, smooth01 } from "./lightSelect.js";
 
 const HEAD_NEAR = typeof location !== "undefined" && /[?&](carlights|polish1)=old(&|$)/.test(location.search) ? 0.15 : 3.0;   // polish1 item 6
+const REAR_OLD = typeof location !== "undefined" && /[?&]rearpool=old(&|$)/.test(location.search);   // fix4 item 1
+const REAR_OUTER = 68 * Math.PI / 180, REAR_INNER = 30 * Math.PI / 180;
 /** Moving lights: car i at CAR.STRIDE * i (written by the owner of the cars). */
 export const CAR = { HX: 0, HY: 1, HZ: 2, FX: 3, FY: 4, FZ: 5, TX: 6, TY: 7, TZ: 8, HEAD: 9, TAIL: 10, FADE: 11, GY: 12, STRIDE: 13 };   // GY: the road's y under the car (the dynamic ground layer)
 
 export const nightParams = {
   lamps: true, windows: true, shops: true, signs: true, headlights: true, rear: true, tram: true,
+  rearSpot: !REAR_OLD,     // fix4 item 1 (live; ?rearpool=old = false): the rear light a back-down spot, not an omni
   cones: 'wet only',       // the beams in damp air: 'on' / 'wet only' / 'off' (~0.3 ms when on: additive overdraw)
   lampI: 110, lampRange: 16, lampUp: 0.3, lampBatwing: 0.35,
   windowI: 14, windowRange: 9, shopI: 24, shopRange: 12, signI: 6, signRange: 5, rearRange: 4.5, headI: 1000, headRange: 34, headCone: 0.55, rearI: 1.6, tramI: 900, tramSaloon: 7,
@@ -160,7 +163,16 @@ export class NightSources {
         const i = sr.i[k], o = i * CAR.STRIDE, w = sr.weight(k) * D[o + CAR.FADE] * D[o + CAR.TAIL], I = p.rearI * D[o + CAR.TAIL];
         trr.cur[i] = w; RR[i] = sr.weight(k);
         P.set(br + k, D[o + 6], D[o + 7], D[o + 8], p.rearRange, REAR_RGB[0] * I, REAR_RGB[1] * I, REAR_RGB[2] * I, w, 0.35);
-        P.omni(br + k); P.profile(br + k, PROFILE.PLAIN); P.diffuseOnly(br + k, true);
+        if (!p.rearSpot) P.omni(br + k);
+        else {
+          // (fix4 item 1, ?rearpool=old: an omni) a SPOT aimed back and down: the omni 60 cm behind the lamps lit the
+          // car's own tailgate / bumper from 0.5-1 m (1 / (d^2 + r^2) ~ 2-4 x 1.6 red: the whole rear a blown red block
+          // at night). The cone (outer 68 deg, inner 30 deg round back-down) never reaches forward of the light: the
+          // body gets nothing, the road behind the car the same soft red pool, the following car's nose a red tint
+          const fx = D[o + 3], fz = D[o + 5], fl = Math.hypot(fx, fz) || 1, ax = -fx / fl * 0.75, az = -fz / fl * 0.75, al = Math.hypot(ax, 1, az);
+          P.spot(br + k, ax / al, -1 / al, az / al, REAR_OUTER, REAR_INNER);
+        }
+        P.profile(br + k, PROFILE.PLAIN); P.diffuseOnly(br + k, true);
       }
       th.end(); trr.end();
       this.stats.heads = sh.count; this.stats.rear = sr.count;
