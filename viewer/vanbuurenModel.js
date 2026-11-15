@@ -28,6 +28,7 @@ import { env } from "./lighting.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
 import { libSource } from "./materials/libSwitch.js";
 
+import { withAOKtx2 } from "./aoTexture.js";
 /** the slots the GLB uses (one primitive = one draw call each per LOD and node) */
 export const VB_SLOTS = ["brick_orange_amsterdam", "brick_pattern", "concrete_white", "roof_tiles_flat_dark", "wood_varnished", "wood_frame_white",
   "glass_window", "glass_leaded", "oak_door", "metal_green_veranda", "zinc_gutter", "stone_blue"];
@@ -190,7 +191,9 @@ function wrapAO(src, aoTex, slot) {
 }
 
 /** The AO map decoded OFF the main thread (worker: fetch, createImageBitmap, red channel), uploaded as R8 + mips. */
-function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+function loadAOPng(url) {
   const src = `self.onmessage = async (e) => {
     const bmp = await createImageBitmap(await (await fetch(e.data)).blob());
     const c = new OffscreenCanvas(bmp.width, bmp.height), x = c.getContext("2d", { willReadFrequently: true });

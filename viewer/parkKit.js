@@ -30,6 +30,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { ditherNoise, SMOOTH, cloneMaterial } from "./lodFade.js";
 
+import { withAOKtx2 } from "./aoTexture.js";
 export const KITS = ["rockkit", "playgroundkit"];
 /** live look controls (uniforms) */
 export const kitLook = { ao: uniform(1.0), aoDirect: uniform(0.5), moss: uniform(1.0), normal: uniform(1.0), normalY: uniform(-1.0), bump: uniform(1.0), detailMode: uniform(1) };
@@ -77,7 +78,9 @@ export function loadParkKit(name) {
   return p;
 }
 
-function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+function loadAOPng(url) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => {

@@ -151,7 +151,7 @@ export function buildRoadData(o) {
   const weldSkip = (x, z) => noDTM(x, z) || (ground !== hm.ground && Math.abs(ground(x, z) - hm.ground(x, z)) > 0.3);
   const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip, nearest: o.weldNearest === true }) : 0;   // joins2: each cell banks on its nearest edge (heightmap.js weld)
   // joins2: then no terrain over any surface (heightmap.js clampUnder; ?groundweld=old: none)
-  const clampedCells = hm.clampUnder && o.weldNearest === true ? hm.clampUnder(welds, { skip: weldSkip }) : 0;
+  const clampedCells = hm.clampUnder && o.weldNearest === true ? hm.clampUnder(welds, { skip: weldSkip, stackTop: o.clampTop === true, stackGap: 0.3, minWidth: o.clampTop === true ? 0.02 : 0 }) : 0;
   const atlas = compactAtlas(built.atlas);
   lap("terrain weld");
   if (v2) {

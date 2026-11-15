@@ -24,6 +24,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "./lighting.js";
 import { libSource } from "./materials/libSwitch.js";
 
+import { withAOKtx2 } from "./aoTexture.js";
 export const OBS_SLOTS = ["brick_red_brussels", "stone_white", "stone_blue", "copper_patina", "painted_metal_white", "zinc_roof", "slate",
   "render_white", "wood_frame_white", "glass_window", "cast_iron_green", "gravel_path", "lawn_edge"];
 export const OBS_CODES = ["plain", "band", "surround", "cornice", "plinth", "pilaster", "sill", "keystone", "dome", "rib", "shutter",
@@ -131,7 +132,9 @@ function wrapAO(src, aoTex, slot, vtx = true) {
 
 /** The AO map decoded OFF the main thread (a worker: fetch, createImageBitmap, read the red channel) and uploaded as
  *  one channel (R8 + GPU mips: 2048 px = 5.6 MB, not 22 MB as RGBA). */
-function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+function loadAOPng(url) {
   const src = `self.onmessage = async (e) => {
     const bmp = await createImageBitmap(await (await fetch(e.data)).blob());
     const c = new OffscreenCanvas(bmp.width, bmp.height), x = c.getContext("2d", { willReadFrequently: true });

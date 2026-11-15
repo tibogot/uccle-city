@@ -28,6 +28,7 @@ import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, 
 export const stopFades = new FadeSlots();
 import { env } from "../lighting.js";
 
+import { withAOKtx2 } from "../aoTexture.js";
 /** slot palette (linear rgb, roughness, metalness, emissive at night, emissive by day) - by NAME, from the Blender slots */
 export const SLOTS = [
   ["frame_anthracite", [0.028, 0.031, 0.033], 0.42, 0.55, 0, 0],
@@ -86,7 +87,9 @@ export function loadStopKit(base = new URL("../../", import.meta.url)) {
   })());
 }
 
-function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+function loadAOPng(url) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => {

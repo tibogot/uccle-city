@@ -67,6 +67,7 @@ import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
 import { cityBirds } from "./birds/cityBirds.js";
 import { liteShown } from "./liteShown.js";
+import { setAORenderer } from "./aoTexture.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
@@ -558,6 +559,7 @@ function tileData(entry, lite = false, viaBoot = false) {
     sidewalkFill: params.get("sidewalkfill") !== "0",                                               // the sidewalk paving carried on to the façade where UrbIS stops short of it (viewer/surfaces.js, docs/JOINS2.md), ?sidewalkfill=0 = none
     surfH: params.get("surfh") !== "old",                                                           // street heights fitted within 0.6 m of their own ground (viewer/surfaces.js fitCorner, docs/JOINS2.md), ?surfh=old = unclamped (path spikes)
     groundWeld: params.get("groundweld") !== "old",                                                 // the terrain beside a street / path banks on its NEAREST edge (viewer/heightmap.js weld, docs/JOINS2.md), ?groundweld=old = the highest edge within reach (saw-tooth over climbing paths)
+    clampTop: params.get("clamptop") !== "old",                                                     // fix3: stacked surfaces hold the terrain under the TOP one (viewer/heightmap.js clampUnder, docs/FIX3.md), ?clamptop=old = under the lowest (joins2: the top one floated)
     groundSdf: params.get("groundsdf") !== "old",                                                   // land-cover edges as distance fields (viewer/landcover.js coverSDF, docs/JOINS2.md), ?groundsdf=old = the 1 m coverage mask
     storeys: params.get("storeys") !== "old", styles: params.get("styles") !== "old",              // styles: building types (viewer/buildingTypes.js, docs/STYLES.md), ?styles=old = one generic façade
                                                           // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
@@ -916,6 +918,7 @@ async function main() {
   await nightMod?.installNightLighting(renderer);
   await renderer.init();
   window.__bootHook?.(renderer, THREE);              // a boot probe's hook (debug/bootTimeline.js), when one is installed
+  setAORenderer(renderer);                          // fix3: the AO maps as BC4 KTX2 when the GPU samples BC (viewer/aoTexture.js, ?aoktx2=0 = the PNGs)
   if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
   // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade

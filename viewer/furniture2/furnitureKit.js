@@ -22,6 +22,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { FadeSlots, StreamPool, sourceFromYaw, MARGIN } from "../instanceStream.js";
+import { withAOKtx2 } from "../aoTexture.js";
 import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
 
 /** the kit's tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
@@ -93,7 +94,9 @@ export function loadFurnitureKit(base = new URL("../../", import.meta.url)) {
   })());
 }
 
-function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+function loadAOPng(url) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => {

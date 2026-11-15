@@ -21,6 +21,7 @@ import { SMOOTH, fadeVariant, fadeProxies, settleRamp } from "../lodFade.js";
 import { libOn } from "../materials/libSwitch.js";
 import { decodeAO, AO_DECODE_OLD } from "../aoDecode.js";
 
+import { withAOKtx2 } from "../aoTexture.js";
 export const BRIDGE_LODS = [
   { ratio: 1, until: 140 },
   { ratio: 0.3, until: 420 },
@@ -231,7 +232,9 @@ export function roadBridgeColliders(info) {
   return [{ rings, kind: 5 }];
 }
 
-async function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+async function loadAOPng(url) {
   if (!AO_DECODE_OLD) {        // boot3: decoded in a worker (viewer/aoDecode.js), the same texture
     const { w, h, r } = await decodeAO(url);
     const t = new THREE.DataTexture(r, w, h, THREE.RedFormat, THREE.UnsignedByteType);

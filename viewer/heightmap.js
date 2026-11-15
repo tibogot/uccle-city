@@ -153,12 +153,19 @@ export class Heightmap {
    * natural ground beyond the ring is kept: a short bank one cell out. Only lowers; skipped where it would drop more than
    * maxDrop (a structure: a road through a tunnel / under an embankment) or skip(x, z). Returns the cells lowered.
    */
-  clampUnder(meshes, { lift = 0.012, rise = 0.1, maxDrop = 1.2, skip = null } = {}) {
+  clampUnder(meshes, { lift = 0.012, rise = 0.1, maxDrop = 1.2, skip = null, stackTop = false, stackGap = 0, minWidth = 0 } = {}) {
     const { x0, z0, cols, rows, step } = this.h, Y = this.y;
     const cap = new Float32Array(cols * rows).fill(Infinity), reach2 = (1.5 * step) ** 2;
     // a vertex UNDER a surface takes only the triangles over it (a folded street's lower half next to it must not pull
     // it down: the street floated over a hole); a vertex beside one takes the nearest edges round it
     const capIn = new Float32Array(cols * rows).fill(Infinity);
+    // fix3 (docs/FIX3.md; ?clamptop=old = false): where surfaces are STACKED over a vertex (a stair / ramp path over a
+    // sidewalk, a folded junction pad over the road) the vertex was held under the LOWEST one: the top one, the one seen,
+    // then floated up to 1.2 m over the terrain (JOINS2's +13 % surfaces > 50 cm over the terrain, the contact audit's
+    // floating length +8-12 %). stackTop: held under the HIGHEST covering surface when the stack is more than stackGap
+    // tall (the lower one is under the top one there: terrain poking through it is hidden)
+    const capHi = stackTop ? new Float32Array(cols * rows).fill(-Infinity) : null;
+    const capBHi = stackTop ? new Float32Array(cols * rows).fill(-Infinity) : null, capN = stackTop ? new Float32Array(cols * rows) : null, capND = stackTop ? new Float32Array(cols * rows).fill(Infinity) : null;
     const near = (px, pz, ax, az, bx, bz) => {           // closest point of segment ab to p: [t, d2]
       const ex = bx - ax, ez = bz - az, L = ex * ex + ez * ez || 1e-12;
       const t = Math.min(1, Math.max(0, ((px - ax) * ex + (pz - az) * ez) / L)), dx = px - ax - t * ex, dz = pz - az - t * ez;
@@ -172,6 +179,12 @@ export class Heightmap {
       if (Math.abs(ny) < 0.6 * Math.hypot(nx, ny, nz)) continue;              // kerb faces, skirts
       const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
       if (Math.abs(det) < 1e-9) continue;
+      // fix3 (minWidth, a guard): a SLIVER under minWidth wide in plan draws nothing, but its edges (up to 160 m long in a
+      // fan-triangulated sidewalk) would pull every grid vertex along them down to its height
+      if (minWidth > 0) {
+        const L = Math.max(Math.hypot(bx - ax, bz - az), Math.hypot(cx - bx, cz - bz), Math.hypot(ax - cx, az - cz));
+        if (Math.abs(det) / L < minWidth) continue;              // |det| = 2 x plan area; / longest edge = the width
+      }
       // the corners of every cell the triangle's box touches
       const c0 = Math.max(0, Math.floor((Math.min(ax, bx, cx) - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx, cx) - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(az, bz, cz) - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz, cz) - z0) / step));
@@ -188,12 +201,19 @@ export class Heightmap {
           d = Math.sqrt(d2);
         }
         const v = y - lift + rise * d, kk = r * cols + cc;
-        if (d === 0) { if (v < capIn[kk]) capIn[kk] = v; } else if (v < cap[kk]) cap[kk] = v;
+        if (d === 0) { if (v < capIn[kk]) capIn[kk] = v; if (capHi && v > capHi[kk]) capHi[kk] = v; }
+        else {
+          if (v < cap[kk]) cap[kk] = v;
+          if (capHi) { if (v > capBHi[kk]) capBHi[kk] = v; if (d < capND[kk]) { capND[kk] = d; capN[kk] = v; } }
+        }
       }
     }
     let n = 0;
     for (let k = 0; k < Y.length; k++) {
-      const c = capIn[k] < Infinity ? capIn[k] : cap[k];
+      // fix3: a vertex BESIDE surfaces whose caps differ by more than stackGap (between a road and a sidewalk 0.9 m
+      // lower, J6) follows its NEAREST edge, as the weld does, not the lowest one (the other surface floated over it)
+      const spread = capHi && cap[k] < Infinity && capBHi[k] - cap[k] > stackGap;
+      const c = capIn[k] < Infinity ? (capHi && capHi[k] - capIn[k] > stackGap ? capHi[k] : capIn[k]) : spread ? capN[k] : cap[k];
       if (!(c < Y[k])) continue;
       if (Y[k] - c > maxDrop) continue;
       if (skip && skip(x0 + (k % cols) * step, z0 + Math.floor(k / cols) * step)) continue;

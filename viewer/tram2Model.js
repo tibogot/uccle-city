@@ -28,6 +28,7 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "./lighting.js";
 import { SMOOTH, ditherNoise } from "./lodFade.js";
 import { makeSignAtlas, LED, tramPose, headsignText } from "./tramModel.js";
+import { withAOKtx2 } from "./aoTexture.js";
 export { tramPose, headsignText };
 
 /** smooth LOD: half-width of the cross-fade band at each switch (a share of its distance), the far fade-out (m) */
@@ -87,7 +88,7 @@ export function loadTramModel() {
     const [gltf, layout, aoTex] = await Promise.all([
       new GLTFLoader().loadAsync(base + "t3000.glb"),
       fetch(base + "t3000.json").then((r) => r.json()),
-      new THREE.TextureLoader().loadAsync(base + "t3000_ao.png"),
+      withAOKtx2(base + "t3000_ao.png", (u) => new THREE.TextureLoader().loadAsync(u)),   // fix3: BC4 KTX2 when built (viewer/aoTexture.js)
     ]);
     aoTex.colorSpace = THREE.NoColorSpace; aoTex.flipY = false; aoTex.anisotropy = 4;
     await MeshoptSimplifier.ready;
