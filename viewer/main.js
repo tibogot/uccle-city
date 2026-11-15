@@ -77,6 +77,7 @@ import { setAORenderer } from "./aoTexture.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
+import { farBuildingMaterial } from "./farLook.js";   // farcity: the far tiles' façades (docs/FARCITY.md)
 import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -560,6 +561,7 @@ function tileData(entry, lite = false, viaBoot = false) {
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     heros: HEROS ? HEROS_TILE : null,                                                                // Square des Heros: the park cut out of the UrbIS square surface, its steps' carves (viewer/heros/herosSurface.js)
     kit: cityKit.on && !lite, kitExclude: cityKit.exclude,                                           // the façade kit (viewer/facadeKit/), ?kit=0 off
+    farLook: params.get("farlook") !== "old",                                                       // farcity: the far tiles' façades (viewer/farLook.js, docs/FARCITY.md), ?farlook=old = the flat-coloured solids
     groundFit: params.get("groundfit") !== "old",                                                  // façades' ground-floor line on the drawn ground (viewer/groundFit.js, docs/GROUND_FIT.md), ?groundfit=old = before
     cellar: params.get("cellar") !== "0",                                                           // cellar lights / a lower-ground floor in tall downhill plinths (viewer/facades.js CELLAR, docs/JOINS2.md), ?cellar=0 = plain blue stone
     sidewalkFill: params.get("sidewalkfill") !== "0",                                               // the sidewalk paving carried on to the façade where UrbIS stops short of it (viewer/surfaces.js, docs/JOINS2.md), ?sidewalkfill=0 = none
@@ -674,8 +676,17 @@ async function loadLiteTile(entry, group) {
   const bg = new THREE.BufferGeometry();
   bg.setAttribute("position", new THREE.BufferAttribute(d.buildings.position, 3));
   bg.setAttribute("normal", new THREE.BufferAttribute(d.buildings.normal, 3));
-  bg.setAttribute("color", new THREE.BufferAttribute(d.buildings.color, 3));
-  g.add(new THREE.Mesh(bg, sharedMat("lite-buildings", () => new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 }))));
+  if (d.buildings.aFA) {
+    // farcity (docs/FARCITY.md): the type's window grid, wall colour, plinth, base AO, roof courses (viewer/farLook.js)
+    bg.setAttribute("aFA", new THREE.BufferAttribute(d.buildings.aFA, 4));
+    bg.setAttribute("aFB", new THREE.BufferAttribute(d.buildings.aFB, 4));
+    const bm = new THREE.Mesh(bg, farBuildingMaterial());
+    bm.name = "far-buildings";
+    g.add(bm);
+  } else {
+    bg.setAttribute("color", new THREE.BufferAttribute(d.buildings.color, 3));
+    g.add(new THREE.Mesh(bg, sharedMat("lite-buildings", () => new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 }))));
+  }
   // its trees, as the full tile's impostors (the same placements and variants: no change when it swaps), so a
   // tile no longer brings a whole forest with it at ~500 m (smooth LOD; none with ?impostors=0)
   let trees = null;

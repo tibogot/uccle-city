@@ -7,6 +7,7 @@ import { carvePonds } from "./water/pondBed.js";
 import { Heightmap } from "./heightmap.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
 import { classify, TYPE } from "./buildingTypes.js";
+import { farBuildings } from "./farLookData.js";   // the far city's façades (docs/FARCITY.md), ?farlook=old = the flat solids
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
@@ -447,6 +448,12 @@ export async function buildLiteData(entry, base) {
   hideBuildings(bDoc, entry.hide);
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V * 3), I = new Uint32Array(bBuf, 8 + V * 12, T * 3);
+  // (farcity, docs/FARCITY.md) the walls' face coordinates + the building type for viewer/farLook.js; entry.farLook ===
+  // false (?farlook=old): the flat-coloured solids below
+  if (entry.farLook !== false) {
+    const fbd = farBuildings(bDoc, P, I, { styles: entry.styles !== false, storeys: entry.storeys !== false });
+    return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: fbd, buildingCount: bDoc.count };
+  }
   let n = 0;
   for (const b of bDoc.buildings) n += b.walls.count + b.roof.count;
   const bp = new Float32Array(n * 9), bn = new Float32Array(n * 9), bc = new Float32Array(n * 9);
