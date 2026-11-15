@@ -86,7 +86,9 @@ export class MultiDrawSet {
     this.alloc();
   }
   layout() { let off = 0; for (const p of this.parts) { p.off = off; off += p.cap; } this.total = Math.max(off, MIN_CAP); }
-  alloc() { this.buf = {}; for (const [name, w] of this.attrs) this.buf[name] = new THREE.InstancedBufferAttribute(new Float32Array(this.total * w), w); }
+  /** the instance buffers, with room to spare (a part that outgrows its region re-lays the regions in place while they
+   *  fit: no new GPU buffer, one upload of the used range) */
+  alloc(cap = this.total) { this.bufCap = Math.max(cap, this.total); this.buf = {}; for (const [name, w] of this.attrs) this.buf[name] = new THREE.InstancedBufferAttribute(new Float32Array(this.bufCap * w), w); }
   /** a view = one InstancedMesh: geoms[k] the part's geometry (null: not drawn by this view); shareOf: draw the
    *  geometry (and so the indirect draws) of an earlier view (a depth pre-pass twin) */
   addView({ geoms = null, material, castShadow = false, receiveShadow = true, name = this.name, renderOrder = 0, shareOf = null }) {
@@ -100,7 +102,7 @@ export class MultiDrawSet {
     }
     const mesh = new THREE.InstancedMesh(geo, material, 1);
     mesh.instanceMatrix = this.buf.instanceMatrix;
-    mesh.count = this.total;
+    mesh.count = this.bufCap;
     mesh.castShadow = castShadow; mesh.receiveShadow = receiveShadow;
     mesh.frustumCulled = true; mesh.boundingSphere = this.sphere;
     mesh.renderOrder = renderOrder; mesh.name = name; mesh.visible = false;
@@ -190,19 +192,31 @@ export class MultiDrawSet {
   }
   /** a part outgrew its region: every region re-laid (x2 for the one that grew), the buffers re-made (uploaded whole) */
   grow(k, n) {
-    const old = this.buf, olds = this.parts.map((p) => ({ off: p.off, n: p.n }));
-    this.parts[k].cap = Math.max(n, this.parts[k].cap * 2);
-    this.layout(); this.alloc();
-    for (const [name, w] of this.attrs) this.parts.forEach((p, j) => { if (olds[j].n) this.buf[name].array.set(old[name].array.subarray(olds[j].off * w, (olds[j].off + olds[j].n) * w), p.off * w); });
-    for (const v of this.views) {
-      v.mesh.instanceMatrix = this.buf.instanceMatrix; v.mesh.count = this.total;
-      if (v.shared) continue;
-      for (const [a] of this.attrs) if (a !== "instanceMatrix") v.geo.setAttribute(a, this.buf[a]);
+    const olds = this.parts.map((p) => ({ off: p.off, n: p.n }));
+    this.parts[k].cap = Math.max(Math.ceil(n * 1.25), this.parts[k].cap * 2);
+    this.layout();
+    const relay = (src, dst) => { for (const [name, w] of this.attrs) this.parts.forEach((p, j) => { if (olds[j].n) dst[name].array.set(src[name].subarray(olds[j].off * w, (olds[j].off + olds[j].n) * w), p.off * w); }); };
+    if (this.total <= this.bufCap) {
+      // in place: the regions move inside the same buffers (one upload of the used range, no new GPU buffer)
+      const tmp = {}; for (const [name] of this.attrs) tmp[name] = this.buf[name].array.slice();
+      relay(tmp, this.buf);
+      for (const [name, w] of this.attrs) { const a = this.buf[name]; a.addUpdateRange(0, this.total * w); a.needsUpdate = true; }
+    } else {
+      const old = {}; for (const [name] of this.attrs) old[name] = this.buf[name].array;
+      this.alloc(Math.ceil(this.total * 1.5));
+      relay(old, this.buf);
+      for (const v of this.views) {
+        v.mesh.instanceMatrix = this.buf.instanceMatrix; v.mesh.count = this.bufCap;
+        if (v.shared) continue;
+        for (const [a] of this.attrs) if (a !== "instanceMatrix") v.geo.setAttribute(a, this.buf[a]);
+      }
+      this.reallocs = (this.reallocs || 0) + 1;
     }
     this.parts.forEach((p, j) => { if (j !== k) this.records(j); });
-    // (the old attributes: three frees their GPU buffers with the geometry; growth is rare: x2 a time)
     this.grows = (this.grows || 0) + 1;
+    (globalThis.__multiDrawGrows ||= []).push([performance.now(), this.name, k, this.total, this.bufCap]);
   }
+
   refresh() {
     const B = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
     let any = false;
@@ -215,7 +229,7 @@ export class MultiDrawSet {
     let chunks = 0, inst = 0;
     for (const p of this.parts) { inst += p.n; chunks += p.nch; }
     const last = this.culls.map((c) => c.all.length / 2);
-    return { views: this.views.filter((v) => v.mesh.visible).length, chunks, drawnChunks: last, inst, total: this.total, grows: this.grows || 0 };
+    return { views: this.views.filter((v) => v.mesh.visible).length, chunks, drawnChunks: last, inst, total: this.total, bufCap: this.bufCap, grows: this.grows || 0, reallocs: this.reallocs || 0 };
   }
 }
 
@@ -271,7 +285,7 @@ export function mergeStreamPools(pools) {
     const o0 = list[0].m.mesh;
     let set, view;
     try {
-      set = new MultiDrawSet({ name: `${o0.name}:merged`, parts: list.length, attrs: list[0].m.attrs.map(([a, , w]) => [a, w]), cap0: 64 });
+      set = new MultiDrawSet({ name: `${o0.name}:merged`, parts: list.length, attrs: list[0].m.attrs.map(([a, , w]) => [a, w]), cap0: 192 });
       view = set.addView({ geoms: list.map((e) => e.m.mesh.geometry), material: o0.material, castShadow: o0.castShadow, receiveShadow: o0.receiveShadow, renderOrder: o0.renderOrder, name: `${o0.name.replace(/-lod\d$/, "")}:merged(${list.length})` });
     } catch (e) { console.warn(`multiDraw: ${o0.name} not merged (${e.message})`); continue; }
     set.pad = Math.max(...list.map((e) => e.p.r)) + 1;
