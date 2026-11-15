@@ -1,4 +1,4 @@
-# Boot: the loading screen and the startup (boot2, 2026-11-15)
+# Boot: the loading screen and the startup (boot2 + boot3, 2026-11-15; boot3 = section 5)
 
 Owner, 2026-11-15: the loader's live aerial flight JUMPS ("nothing more annoying than jumps"), and the startup regressed
 (cover 14.4 s on 2026-11-13, 20-25 s on 2026-11-14). Branch `claude/boot2`. Earlier boot work: docs/perf/AUDIT.md
@@ -147,3 +147,117 @@ After the deploy (https://uccle-city-pipeline.vercel.app/), with chrome-devtools
   material clones / fade variants, AUDIT step 11).
 - The stills are golden hour whatever `?time=` the city boots with; re-shoot them when the city's look changes a lot.
 - The tile cache stores ~37 MB per full tile in IndexedDB (600 MB cap, LRU); a first visit's stores are in the worker.
+
+## 5. Boot3 (2026-11-15, branch `claude/boot3`): cover 20-22 s -> 13.0-13.3 s
+
+**Machine state: GREEN / YELLOW** (preflight GREEN at the start; YELLOW for the final runs = only "another city server
+listening"; the measured tab in front; local `tools/serve_nocache.py`). Final runs in FRESH isolated contexts (no
+IndexedDB tile cache; no service-worker list locally), new and old alternated; "old" = every boot3 switch set back:
+`?bootdefer=0&bootquiet=all&bootfull=1&fadedefer=old&tileshadowwarm=0&earlygate=old&colband=old&fadewarm=old&groundnote=old&aodecode=old`.
+
+### What the cover really waited for
+
+Measured first (a trace of the boot, `debug/bootTimeline.js`, `tools/boot3/profile.mjs`): the boot is **main-thread
+bound**, not worker bound. In a traced 30 s boot the main thread was idle 0.7 s; node builds (three building TSL graphs
+into WGSL) were 10.7 s of it (traced), the rest landmark GLB parsing / model building, collider slices, AO decodes, tile
+landings. The chain to the cover was: the start tile (worker) -> **the early warm-up** (the `neighbours` stage waited
+for its last chunk) -> **the first full neighbour's worker build** (H5, serial after I6: ~4 s) -> the boot warm-up,
+whose quiet test (`awaitPipelinesQuiet`: the whole DEVICE quiet for 12 frames) **waited for the background compiles of
+every landmark in Uccle** (Saint-Pierre / Villa van Buuren / town hall / public art jobs of 8-12 s: the precompile queue
+builds about one shader per frame and the frames under the cover are slow), although a landmark outside the boot's ring
+cannot be on screen at the reveal (it shows only with its home tile, and is added to the scene only once compiled).
+
+### Changes (each behind a switch, rows in `viewer/features.js`)
+
+| change | switch (= before) | effect |
+|---|---|---|
+| far landmarks / bridges after the cover, now **ON by default** (bootGate.js) | `?bootdefer=0` | ~40 MB and ~120 node builds less before the cover |
+| the boot warm-up waits only for the FRAMES' pipelines + the compile jobs the first view needs (the tiles' `first` jobs, the models in the ring, the public art when a piece is within its drawing range of the reveal camera: `bootGate.js neededAtReveal / revealCheck`); under the cover those jobs go first in the queue (`warmup.js bootQuiet`) | `?bootquiet=all` | the cover no longer waits for far landmarks' shaders (nothing builds on a frame: each model is added once compiled) |
+| **no full neighbour under the cover** (it was held at fade 0: the reveal frame showed its far tile anyway); the worker still builds it right after the start tile, it streams in after the reveal, its pipelines compiled before it shows | `?bootfull=1` | ~4 s off the `neighbours` stage |
+| the early warm-up runs beside the neighbours' loading; the boot warm-up awaits it | `?earlygate=old` | 2-4 s off the `neighbours` stage |
+| the start tile's fading copies compiled AFTER the cover (`warmup.js warmLater`: compileAsync + their shadow pass, 2 meshes a frame far under the city) | `?fadedefer=old` | ~1.0-1.5 s of the warm-up's forced frames |
+| a streamed tile's shadow pass compiled before it shows (`warmup.js warmShadows`, 2 meshes a frame) | `?tileshadowwarm=0` | its first shadow node builds were one 60-100 ms frame at its landing |
+| a held tile's OWN materials in the boot warm-up (`lodFade.js ownProxies`) | `?fadewarm=old` | (with `?bootfull=1`) the 9-16 node builds + sync pipelines ~1 s after the reveal (a 160-260 ms task) gone |
+| drive colliders (tile worker, `colliders.js buildingBlocks`) and the landmarks' LOD0 car blockers (`heroColliders.js`): only the rows of wall samples that can fall in the 0.3-1.3 m car band | `?colband=old` | I6 drive colliders 1.47 -> 0.84 s (node); the SAME colliders: tile build hash-identical on I6, F4, C5, G7 (`profile.mjs --hash`), Saint-Job / Observatory blockers identical in the browser |
+| the ramp-kerb test (`surfaces.js rampKerbPoints`) through a 2 m segment grid | (none: hash-identical) | ~0.2 s of I6's road stage |
+| the tree kit's ground colour: `createImageBitmap` resize instead of drawImage + readback of each far orthophoto | `?groundnote=old` | 0.9-1.0 s of main thread (traced) |
+| the rail bridges' AO PNGs decoded in a worker (`viewer/aoDecode.js`) | `?aodecode=old` | 0.38 s of main thread (traced) |
+| the warm-up's log line says where its time goes (`settle / forced / quiet / pipelines / frames`) | | |
+| tried, kept OFF: a second full-tile worker for the boot ring (`?bootworker=1`): the start tile built ~1 s slower beside it (CPU-bound), the cover did not move. Tried and removed: compile yields as plain tasks under the cover (a document.hidden / scheduler.yield override): no gain | | |
+
+### Before / after (cold = fresh isolated context; return = the same context again, tile cache filled)
+
+| run | cover | first tile | I6 worker done | long tasks before cover | node builds before cover | MB before cover | 20 s after the cover: long tasks, max | max frame gap | sync pipelines after cover |
+|---|---|---|---|---|---|---|---|---|---|
+| OLD cold (o1) | 20.1 s | 9.0 s | 8.5 s | 42, 13.8 s | 454, 7.1 s | 150.3 | 6, 0.71 s, 216 ms | 1,067 ms (3 > 250) | 30 |
+| **NEW cold (n1)** | **13.2 s** | **7.4 s** | 7.1 s | **27, 7.0 s** | **242, 2.9 s** | **110.4** | 10, 1.22 s, 675 ms | 600 ms (1 > 250) | 10 |
+| OLD return (o1 again) | 22.2 s | 7.6 s | 3.2 s (cache) | 50, 14.7 s | 472, 8.1 s | 149.8 | 9, 0.92 s, 188 ms | 600 ms (2 > 250) | 28 |
+| **NEW return (n1 again)** | **13.0 s** | **4.7 s** | 3.4 s (cache) | 25, 6.9 s | 260, 2.8 s | 109.7 | 10, 1.12 s, 553 ms | 600 ms (1 > 250) | 10 |
+| **NEW cold (n2)** | **13.3 s** | **8.0 s** | 7.7 s | 29, 7.4 s | 248, 2.9 s | 110.1 | 10, 1.26 s, 550 ms | 617 ms (1 > 250) | 10 |
+
+Loader stages (n2, ms from navigation): data 27, renderer 509, materials 740, landmarks 2,026, tiles 2,064, tile 7,983,
+neighbours 8,462, warmup 9,887, gpu 13,234, ready 13,314; warm-up 3.3 s (settle 0.56, forced 1.28, quiet 1.46).
+`?tilecache=0` pairs in the same tab during the session: new 13.7-17.7 s (as the changes landed), old 21.0-22.8 s.
+`?weather=old` on top of the new defaults: 15.5 vs 16.8 s (same moment): the weather's node graphs are still ~1.3 s.
+
+Visual check: the same view at cover + 20 s, old vs new (screenshots in the session's scratchpad): the same city; the
+new boot has fewer full tiles in at that moment (the fill-in after the reveal starts later: weak spots).
+
+### The tile worker, step by step (node, `tools/boot3/profile.mjs`, median of 3 runs, the city's exact entry)
+
+| step (ms) | I6 old | I6 new | F4 old | F4 new | C5 old | C5 new | G7 old | G7 new |
+|---|---|---|---|---|---|---|---|---|
+| **total** | 4826 | 4424 | 3413 | 3140 | 6051 | 5236 | 1721 | 1596 |
+| roads | 1962 | 2031 | 1615 | 1618 | 2654 | 2478 | 722 | 710 |
+| surfaces + width fit | 409 | 450 | 320 | 319 | 488 | 458 | 183 | 167 |
+| road meshes + carve | 1039 | 1086 | 827 | 822 | 1369 | 1283 | 326 | 326 |
+| **drive colliders** | 1471 | 844 | 737 | 535 | 1804 | 1058 | 317 | 309 |
+| facade analysis | 819 | 832 | 336 | 400 | 996 | 940 | 61 | 53 |
+| terrain simplify | 230 | 233 | 250 | 235 | 234 | 285 | 212 | 227 |
+| road network | 197 | 221 | 195 | 194 | 373 | 349 | 72 | 67 |
+| terrain weld | 166 | 161 | 178 | 161 | 167 | 165 | 95 | 88 |
+| traffic graph | 126 | 118 | 123 | 137 | 184 | 182 | 95 | 92 |
+| lane graph | 79 | 87 | 99 | 100 | 196 | 189 | 71 | 86 |
+| land cover* | 84 | 95 | 107 | 94 | 78 | 92 | 95 | 92 |
+| wall feet | 66 | 65 | 29 | 29 | 81 | 84 | 8 | 8 |
+
+(* land cover / grass types: node paints on a no-op canvas; their browser times are in the worker log line. "old" = `--set colBand=false`; the kerb grid is in both.)
+
+In the browser the worker is ~1.6x slower than in node (fetches, the real land-cover / grass canvases, the CPU shared
+with the main thread, the far-tile worker and Dawn's compile threads): I6 7.1-7.7 s cold in the final boots.
+`node --import ./tools/road_audit/register.mjs tools/boot3/profile.mjs I6 F4 --runs 3 [--set colBand=false] [--hash]`.
+
+### The frame gap after the reveal (target 3)
+
+Old boots had one to three 0.6-1.1 s gaps 1-3 s after the reveal: (1) the full neighbour held at fade 0 under the cover
+ended its fade ~1 s after the reveal and swapped its OWN materials in: 9-16 node builds + sync pipelines in one frame
+(fixed: no held neighbour by default; `ownProxies` when there is one); (2) frames held by the GPU process (LoAFs with
+~30 ms of script: texture / GLB uploads of landmarks finishing just after the reveal). **Left in the new boot: one
+0.55-0.68 s task 1-1.5 s after the reveal** = the first deferred landmark's GLB parse + model build on the main thread
+(`Worker.onmessage@stpierreModel.js` -> GLTFLoader + its material setup; the town hall's too). The fix belongs in the
+landmark loaders (parse / build in slices or in a worker); not done here (the landmark agents' files). The pond-water
+shader's synchronous build on first sight (perf pass 2) was not reproduced or changed here (needs a flight to the
+Wolvendael pond).
+
+### Weak spots / next levers (boot3)
+
+- **The weather's node graphs** (~1.3 s of the cover now, ~25 % of every node build): build the materials DRY when the
+  boot weather is clear and weatherize them later through a compiled twin: clone, `wxMat` the clone, `compileAsync` it
+  on stand-ins with the same geometries, then give the original the clone's colour / roughness / metalness / normal
+  NODES (the same node objects = the same cache key: three reuses the twin's build, nothing builds on a frame); the
+  fading copies (`fadeVariant`) and every material cloned from a weatherized one need the same. Not done: too many
+  couplings for this pass.
+- **The fill-in after the reveal**: the first full neighbour shows ~8-12 s after the reveal (before: it faded in ~1 s
+  after, built under the cover): its compile waits in the single precompile queue behind the late fading-copy warm-up and
+  any running landmark job (compileAsync jobs cannot be pre-empted). `?bootfull=1` = before.
+- The tile worker is still ~7 s of the cover in the browser: roads (surfaces + width fit, meshes + carve) ~2 s, the
+  facade analysis ~0.9 s (the per-building forEach: string keys / Maps in `smoother` and the face grouping), terrain
+  simplify ~0.25 s. Shipping a prebuilt start tile would mean ~37 MB (the tile cache's record) per tile.
+- The main thread, not the worker, is the limit: the return visit (tile cache: first tile 4.7 s) lifts the cover at
+  13.0 s too.
+- `[tilecache] read <T>: no answer in 8000 ms, cache off for this session` seen in a cold context (IndexedDB busy with
+  the first visit's 37 MB writes): the cache then stays off for that session (boot2 mechanism).
+- Not done: KTX2 for the big AO PNGs (40 PNGs over 300 KB, up to 5.3 MB, `models/*/*_ao.png`, uploaded as R8 + GPU mips;
+  BC4 / UASTC would cut the download and the GPU-process time; `C:/Program Files/KTX-Software/bin/ktx.exe` is installed),
+  the street-life atlas (16 x 2048x1024 RGBA).
+- Measure on the live site (section 3) after the deploy: the remote downloads add to the `landmarks` / `tiles` stages.

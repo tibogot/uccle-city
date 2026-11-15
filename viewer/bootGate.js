@@ -9,9 +9,9 @@
 //   in the first seconds after the reveal (long tasks after the cover 0.6-0.7 s -> 3.0-3.8 s, one 2.2 s): worse to play.
 const params = new URLSearchParams(location.search);
 // boot3 (docs/BOOT.md section 5): ON BY DEFAULT now (?bootdefer=0 = everything under the cover, as before). With the
-// boot warm-up no longer waiting for the far models' compiles (warmup.js bootQuiet), their AO maps decoded off the main
-// thread and the drive colliders' band clip, the deferred processing after the reveal measured max 179 ms long tasks in
-// the 26 s after the cover (boot2: 2.2 s), and the cover 17.6 s vs 22-24 s (GREEN, same session).
+// boot warm-up no longer waiting for the far models' compiles (warmup.js bootQuiet) and the other boot3 changes, the cover
+// is 13.0-13.3 s vs 20-22 s (docs/BOOT.md section 5); the deferred models' processing after the reveal: ~1.2 s of long
+// tasks in the first 20 s, the longest 0.55-0.68 s (the first model's GLB parse + build: fix in the landmark loaders).
 export const BOOT_DEFER = params.get("bootdefer") !== "0";
 const STAGGER = 600;
 
