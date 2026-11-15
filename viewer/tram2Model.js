@@ -262,6 +262,7 @@ function makeMaterial(sign, aoTex, layout) {
 
   // ---- glass: see-through (alpha to coverage, one opaque draw), lighter shadow
   m.alphaToCoverage = true;
+  m.userData.seeThrough = true;   // (upscaled, no MSAA: stochastic see-through, viewer/upscale.js)
   m.opacityNode = select(is("Glass"), tramLook.glassOpacity, select(is("GlassCab"), tramLook.glassOpacity.mul(0.4).add(0.5), float(1)));
   const glassShadow = isGlass.not().or(screenCoordinate.x.floor().add(screenCoordinate.y.floor()).mod(3).equal(0));
 

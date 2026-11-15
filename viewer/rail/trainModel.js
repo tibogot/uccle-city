@@ -146,6 +146,7 @@ function makeMaterial() {
   // see-through glass (alpha-to-coverage, the same opaque draw), the saloon behind it
   m.opacityNode = mix(float(1), float(1).sub(trainLook.seeThrough), glass.mul(float(1).sub(attribute("aFar", "float"))));
   m.alphaToCoverage = true;
+  m.userData.seeThrough = true;   // (upscaled, no MSAA: stochastic see-through, viewer/upscale.js)
   const ssrFade = smoothstep(360.0, 180.0, positionView.z.negate());
   m.mrtNode = mrt({ metalRough: vec3(rough.lessThan(0.75).select(metal.mul(ssrFade), float(0)), rough, float(1).sub(glass)) });
   if (SMOOTH) {
