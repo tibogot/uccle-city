@@ -1,0 +1,102 @@
+{
+ "note": "tools/blender/motorbike.py: glTF frame (x left, y up, z forward), metres, origin = the ground midway between the axles",
+ "wheelbase": 1.45,
+ "wheels": {
+  "F": {
+   "pos": [
+    0.0,
+    0.3,
+    0.725
+   ],
+   "r": 0.3,
+   "crown": 0.061
+  },
+  "R": {
+   "pos": [
+    0.0,
+    0.32,
+    -0.725
+   ],
+   "r": 0.32,
+   "crown": 0.096
+  }
+ },
+ "steer": {
+  "pivot": [
+   0.0,
+   0.93697,
+   0.398
+  ],
+  "axis": [
+   0.0,
+   0.90996,
+   -0.41469
+  ],
+  "rake": 24.5,
+  "trail": 0.1
+ },
+ "rider": {
+  "hip": [
+   0.0,
+   0.925,
+   -0.27
+  ],
+  "shoulder": {
+   "L": [
+    0.19,
+    1.34377,
+    -0.05662
+   ],
+   "R": [
+    -0.19,
+    1.34377,
+    -0.05662
+   ]
+  },
+  "grip": {
+   "L": [
+    0.322,
+    1.026,
+    0.341
+   ],
+   "R": [
+    -0.322,
+    1.026,
+    0.341
+   ]
+  },
+  "upper": 0.29,
+  "fore": 0.335,
+  "elbowOut": 0.35
+ },
+ "lamps": {
+  "head": [
+   0.0,
+   0.862,
+   0.645
+  ],
+  "tail": [
+   0.0,
+   0.88,
+   -0.875
+  ]
+ },
+ "size": [
+  0.8,
+  1.24,
+  2.12
+ ],
+ "tris": {
+  "Body": 30504,
+  "Steer": 8160,
+  "Wheel_F": 8280,
+  "Wheel_R": 7044,
+  "RiderLegs": 4124,
+  "RiderTorso": 3784,
+  "ArmU_L": 396,
+  "ArmU_R": 396,
+  "ArmF_L": 440,
+  "ArmF_R": 440
+ },
+ "ao": "vertex (COLOR_0.r)"
+}

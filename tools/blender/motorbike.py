@@ -249,6 +249,7 @@ def cyl(r, h, loc, rot=None, segs=20, bevel=0.002, r2=None):
     return bm
 
 def cyl_between(a, b, r, segs=20, bevel=0.0015, r2=None):
+    if r < 0.02: bevel = 0.0
     m, L = K.align_z(a, b)
     bm = K.bm_cyl(r, L, segs=segs, bevel=bevel, r2=r2)
     bm.transform(m)
@@ -257,6 +258,13 @@ def cyl_between(a, b, r, segs=20, bevel=0.0015, r2=None):
 ROT_Y = Matrix.Rotation(math.pi / 2, 3, "X")        # +Z -> -Y ... (cylinders along Y)
 def along_y(r, y0, y1, x, z, segs=24, bevel=0.002):
     return cyl_between((x, y0, z), (x, y1, z), r, segs=segs, bevel=bevel)
+
+def bar_between(a, b, w, t, bevel=0.003):
+    """a bevelled flat bar from a to b (w across in the XZ-ish plane, t thick along Y)"""
+    m, L = K.align_z(a, b)
+    bm = K.bm_box(w, t, L, bevel=bevel, segs=1)
+    bm.transform(m @ Matrix.Translation((0, 0, L / 2)))
+    return bm
 
 def plate(outline_xz, y, thick, bevel=0.003, yaw=0.0):
     """a flat outline in the XZ plane extruded across Y (thick), centred on y"""
@@ -339,14 +347,17 @@ def wheel(name, R, W, front):
     if front:
         for y in (0.068, -0.068):
             P.add_bm(disc(y, 0.160, 0.112), DISC)
-            P.add_bm(lathe([(0.050, y - 0.003), (0.113, y - 0.003), (0.113, y + 0.003), (0.050, y + 0.003)], segs=36), RIMM)   # carrier
+            P.add_bm(lathe([(0.050, y - 0.003), (0.107, y - 0.003), (0.107, y + 0.003), (0.050, y + 0.003)], segs=36), RIMM)   # carrier
             for k in range(8):                                   # floating-disc bobbins
                 a = 2 * math.pi * k / 8
                 P.add_bm(along_y(0.007, y - 0.0045, y + 0.0045, 0.1125 * math.cos(a), 0.1125 * math.sin(a), segs=14, bevel=0.0), METAL)
     else:
         y = -0.088
         P.add_bm(disc(y, 0.110, 0.072, petals=10), DISC)
-        P.add_bm(lathe([(0.046, y - 0.003), (0.073, y - 0.003), (0.073, y + 0.003), (0.046, y + 0.003)], segs=32), RIMM)
+        P.add_bm(lathe([(0.046, y - 0.003), (0.069, y - 0.003), (0.069, y + 0.003), (0.046, y + 0.003)], segs=32), RIMM)
+        for k in range(5):                                       # disc bolts bridging carrier and disc
+            a = 2 * math.pi * k / 5
+            P.add_bm(along_y(0.0065, y - 0.005, y + 0.005, 0.0705 * math.cos(a), 0.0705 * math.sin(a), segs=8, bevel=0.0), METAL)
         # sprocket (left): toothed ring
         bm = bmesh.new(); n = 42 * 2; ys = 0.098; t = 0.003
         rr = [(0.106 if i % 2 == 0 else 0.098) for i in range(n)]
@@ -376,7 +387,6 @@ def build_steer():
         P.add_bm(cyl_between(fork(0.745, y) - AXD * 0.003, fork(0.77, y), 0.022, segs=16, bevel=0.003), METAL)   # preload cap
         foot = box((0.085, 0.062, 0.11), fork(0.0, y) + AXD * 0.015, bevel=0.012, rot=Matrix.Rotation(-RAKE, 3, "Y"))
         P.add_bm(foot, METAL)
-        P.add_bm(along_y(0.014, y - 0.032 * s, y + 0.006 * s, A_F.x, A_F.z, segs=14), METAL)   # axle pinch
         # radial 4-pot caliper behind the leg, straddling the disc
         dy = 0.068 * s
         ang = math.radians(152)
@@ -384,7 +394,7 @@ def build_steer():
         rotc = Matrix.Rotation(-(ang - math.pi / 2), 3, "Y")
         P.add_bm(box((0.026, 0.044, 0.105), (cc.x, dy, cc.z), bevel=0.009, rot=rotc), ANOD)
         # mount ears from the caliper to the foot
-        P.add_bm(cyl_between((cc.x, dy + 0.012 * s, cc.z), fork(0.03, y - 0.012 * s), 0.011, segs=14), METAL)
+        P.add_bm(bar_between(Vector((cc.x, y - 0.008 * s, cc.z)), fork(0.012, y - 0.008 * s), 0.03, 0.016), METAL)
     # yokes
     for s_, th in ((0.52, 0.03), (0.70, 0.022)):
         a, b = fork(s_, 0), axis_at(fork(s_, 0).z)
@@ -395,12 +405,13 @@ def build_steer():
     P.add_bm(cyl_between(H, H + AXD * 0.022, 0.018, segs=16), METAL)
     # handlebar: tapered alloy bar on risers, swept back
     for s in (1, -1):
-        P.add_bm(cyl_between(fork(0.70, s * 0.042) + AXD * 0.008, Vector((H.x - 0.01, s * 0.042, 1.000)), 0.016, segs=14), PLASTIC)
-    bar = smooth_path([(0.338, -0.375, 1.030), (0.352, -0.27, 1.022), (0.382, -0.13, 1.006), (0.392, 0.0, 1.002),
-                       (0.382, 0.13, 1.006), (0.352, 0.27, 1.022), (0.338, 0.375, 1.030)], per=4)
+        P.add_bm(cyl_between(fork(0.70, s * 0.042) + AXD * 0.008, Vector((H.x - 0.01, s * 0.042, 1.013)), 0.017, segs=20), PLASTIC)
+    mid = smooth_path([(0.352, -0.27, 1.022), (0.382, -0.13, 1.006), (0.392, 0.0, 1.002), (0.382, 0.13, 1.006), (0.352, 0.27, 1.022)], per=4)
+    bar = [Vector((0.338, -0.375, 1.030))] + mid + [Vector((0.338, 0.375, 1.030))]
     P.add_bm(tube(bar, 0.0125, segs=14), METAL)
     for s in (1, -1):
-        g0, g1 = Vector((0.346, s * 0.262, 1.022)), Vector((0.337, s * 0.382, 1.031))
+        A_, B_ = Vector((0.352, s * 0.27, 1.022)), Vector((0.338, s * 0.375, 1.030)); dg = (B_ - A_).normalized()
+        g0, g1 = A_ + dg * 0.006, B_ + dg * 0.006
         P.add_bm(cyl_between(g0, g1, 0.0175, segs=16, bevel=0.004), RUBBER)                     # grip
         P.add_bm(cyl_between(g1 - (g1 - g0).normalized() * 0.003, g1 + (g1 - g0).normalized() * 0.022, 0.0215, segs=20, bevel=0.004), METAL)   # bar end
         # lever + perch + master cylinder / switch block
@@ -474,23 +485,26 @@ def build_body():
     def rails(s):
         up = [(0.405, s * 0.048, 0.905), (0.27, s * 0.118, 0.875), (0.08, s * 0.145, 0.815), (-0.12, s * 0.152, 0.665)]
         lo = [(0.455, s * 0.048, 0.785), (0.34, s * 0.112, 0.68), (0.22, s * 0.142, 0.56)]
-        diag = [((0.27, s * 0.118, 0.875), (0.34, s * 0.112, 0.68)), ((0.08, s * 0.145, 0.815), (0.34, s * 0.112, 0.68)),
-                ((0.08, s * 0.145, 0.815), (0.22, s * 0.142, 0.56)), ((0.08, s * 0.145, 0.815), (-0.10, s * 0.152, 0.50))]
+        diag = [((0.27, s * 0.118, 0.875), (0.352, s * 0.11, 0.692)), ((0.115, s * 0.142, 0.828), (0.31, s * 0.124, 0.652)),
+                ((0.08, s * 0.145, 0.815), (0.22, s * 0.142, 0.56)), ((0.045, s * 0.147, 0.79), (-0.10, s * 0.152, 0.50))]
         return up, lo, diag
     for s in (1, -1):
         up, lo, diag = rails(s)
         P.add_bm(tube(smooth_path(up, 5), 0.0135, segs=16), FRAME)
         P.add_bm(tube(smooth_path(lo, 5), 0.0135, segs=16), FRAME)
         for a, b in diag: P.add_bm(cyl_between(a, b, 0.0115, segs=14, bevel=0.0), FRAME)
-        for p in [up[1], up[2], up[3], lo[1], lo[2], (-0.10, s * 0.152, 0.50)]:
-            P.add_bm(ellipsoid(p, (0.025, 0.025, 0.025), 16, 10), FRAME)
+        for p in [up[1], up[2], up[3], lo[1], lo[2], (-0.10, s * 0.152, 0.50), (0.115, s * 0.142, 0.828), (0.045, s * 0.147, 0.79), (0.31, s * 0.124, 0.652), (0.352, s * 0.11, 0.692)]:
+            P.add_bm(ellipsoid(p, (0.029, 0.029, 0.029), 18, 10), FRAME)
         # swingarm pivot plate (cast) + pivot bolt
         P.add_bm(plate([(-0.07, 0.69), (-0.20, 0.66), (-0.21, 0.36), (-0.12, 0.33), (-0.05, 0.40), (-0.06, 0.55)], s * 0.157, 0.026, bevel=0.006), METAL)
         P.add_bm(along_y(0.022, s * 0.170, s * 0.182, -0.135, 0.45, segs=16), METAL)
         # subframe
-        P.add_bm(tube([(-0.12, s * 0.15, 0.665), (-0.40, s * 0.105, 0.735), (-0.70, s * 0.07, 0.815)], 0.011, segs=14), FRAME)
-        P.add_bm(cyl_between((-0.17, s * 0.15, 0.40), (-0.55, s * 0.09, 0.765), 0.0095, segs=14, bevel=0.0), FRAME)
-    P.add_bm(cyl_between((-0.12, 0.15, 0.665), (-0.12, -0.15, 0.665), 0.012, segs=14), FRAME)           # cross tube (shock top)
+        P.add_bm(tube([(-0.12, s * 0.15, 0.665), (-0.40, s * 0.105, 0.695), (-0.70, s * 0.07, 0.765)], 0.011, segs=14), FRAME)
+        P.add_bm(cyl_between((-0.575, s * 0.084, 0.736), (-0.575, s * 0.084, 0.81), 0.009, segs=14), FRAME)
+        P.add_bm(ellipsoid((-0.46, s * 0.098, 0.709), (0.024, 0.024, 0.024), 16, 10), FRAME)
+        P.add_bm(cyl_between((-0.69, s * 0.072, 0.758), (-0.69, s * 0.072, 0.855), 0.009, segs=14), FRAME)
+        P.add_bm(cyl_between((-0.17, s * 0.15, 0.40), (-0.46, s * 0.098, 0.709), 0.0095, segs=14, bevel=0.0), FRAME)
+    P.add_bm(cyl_between((-0.12, 0.15, 0.665), (-0.12, -0.15, 0.665), 0.012, segs=20), FRAME)           # cross tube (shock top)
     # ---- engine: canted inline four
     P.add_bm(box((0.42, 0.30, 0.22), (0.08, 0, 0.36), bevel=0.03, segs=4), ENGINE)               # crankcase
     P.add_bm(box((0.30, 0.22, 0.07), (0.06, 0, 0.245), bevel=0.022, segs=4), ENGINE)             # sump
@@ -510,7 +524,7 @@ def build_body():
     # radiator (+ core) in front of the headers
     rt = Matrix.Rotation(math.radians(-12), 3, "Y")
     P.add_bm(box((0.05, 0.34, 0.29), (0.505, 0, 0.565), bevel=0.01, rot=rt), PLASTIC)
-    P.add_bm(box((0.006, 0.30, 0.25), Vector((0.505, 0, 0.565)) + rt @ Vector((0.025, 0, 0)), bevel=0.001, rot=rt, segs=1), ENGINE)
+    P.add_bm(box((0.006, 0.30, 0.25), Vector((0.505, 0, 0.565)) + rt @ Vector((0.025, 0, 0)), bevel=0.0, rot=rt), ENGINE)
     # ---- exhaust: 4-2-1 headers, collector, link, short upswept can (right)
     port = base + cz * 0.31 + (tilt @ Vector((0.1, 0, 0))) + Vector((0, 0, -0.01))
     for yy in (-0.14, -0.047, 0.047, 0.14):
@@ -539,17 +553,25 @@ def build_body():
             (0.02, 0.158, 0.99, 0.785), (-0.07, 0.12, 0.925, 0.80), (-0.105, 0.075, 0.895, 0.825)]
     P.add_bm(loft_x(tank, stations=26, n=32, p_top=2.4, p_bot=3.6), PAINT)
     for s in (1, -1):
-        P.add_bm(plate([(0.47, 0.80), (0.385, 0.925), (0.27, 0.90), (0.255, 0.74), (0.33, 0.64), (0.44, 0.66)], s * 0.208, 0.011, bevel=0.004, yaw=-s * math.radians(6)), PAINT)
-        P.add_bm(plate([(0.0, 0.775), (-0.25, 0.765), (-0.25, 0.672), (-0.12, 0.61), (0.03, 0.68)], s * 0.128, 0.010, bevel=0.003), PLASTIC)
+        # radiator shroud: a thin curved fin beside the radiator, tapering forward and down (toe-in)
+        secs = []
+        fk = [(0.245, 0.835, 0.05), (0.29, 0.815, 0.105), (0.36, 0.785, 0.125), (0.43, 0.745, 0.10), (0.485, 0.71, 0.05), (0.505, 0.70, 0.018)]
+        for i in range(16):
+            x = fk[0][0] + (fk[-1][0] - fk[0][0]) * i / 15
+            zc, hz = sample(fk, x)
+            y = s * (0.205 - 0.03 * (x - 0.245))
+            secs.append(((x, y, zc), (0, 0.011, 0), (0, 0, hz), (0, 0, hz), 2.2))
+        P.add_bm(loft(secs, n=20), PAINT)
+        P.add_bm(plate([(0.0, 0.775), (-0.25, 0.765), (-0.25, 0.672), (-0.12, 0.61), (0.03, 0.68)], s * 0.10, 0.010, bevel=0.003), PLASTIC)
     # ---- seat, pillion pad, tail
-    seat = [(-0.075, 0.095, 0.880, 0.765), (-0.13, 0.128, 0.858, 0.762), (-0.26, 0.136, 0.838, 0.765), (-0.40, 0.122, 0.846, 0.775), (-0.49, 0.10, 0.862, 0.79)]
+    seat = [(-0.075, 0.095, 0.880, 0.765), (-0.13, 0.128, 0.858, 0.762), (-0.26, 0.136, 0.838, 0.765), (-0.40, 0.122, 0.852, 0.775), (-0.49, 0.10, 0.876, 0.79)]
     P.add_bm(loft_x(seat, stations=18, n=28, p_top=3.2, p_bot=4.0), SEAT)
-    pill = [(-0.475, 0.082, 0.905, 0.835), (-0.56, 0.085, 0.912, 0.84), (-0.68, 0.068, 0.918, 0.85), (-0.73, 0.045, 0.918, 0.86)]
+    pill = [(-0.47, 0.072, 0.895, 0.80), (-0.54, 0.078, 0.915, 0.82), (-0.64, 0.066, 0.935, 0.845), (-0.70, 0.04, 0.94, 0.87)]
     P.add_bm(loft_x(pill, stations=12, n=24, p_top=3.2, p_bot=4.0), SEAT)
-    tail = [(-0.29, 0.148, 0.805, 0.655), (-0.42, 0.135, 0.835, 0.70), (-0.58, 0.108, 0.868, 0.76), (-0.74, 0.074, 0.895, 0.81), (-0.87, 0.036, 0.91, 0.85), (-0.895, 0.016, 0.905, 0.868)]
+    tail = [(-0.29, 0.148, 0.805, 0.665), (-0.42, 0.13, 0.845, 0.725), (-0.58, 0.10, 0.885, 0.79), (-0.74, 0.066, 0.915, 0.845), (-0.87, 0.032, 0.935, 0.885), (-0.90, 0.012, 0.935, 0.905)]
     P.add_bm(loft_x(tail, stations=20, n=28, p_top=2.4, p_bot=2.2), PAINT)
     # tail light: a slim LED blade under the tail tip
-    P.add_bm(loft_x([(-0.835, 0.045, 0.856, 0.842), (-0.865, 0.032, 0.868, 0.851), (-0.886, 0.016, 0.876, 0.858)], stations=6, n=16, p_top=4, p_bot=4), TAIL)
+    P.add_bm(box((0.03, 0.10, 0.022), (-0.86, 0, 0.881), bevel=0.004), TAIL)
     # hugger arm + plate + indicators
     P.add_bm(tube(smooth_path([(-0.70, 0.0, 0.80), (-0.80, 0.0, 0.72), (-0.86, 0.0, 0.64)], 4), 0.014, segs=14), PLASTIC)
     P.add_bm(box((0.006, 0.20, 0.13), (-0.875, 0, 0.60), bevel=0.0025, rot=Matrix.Rotation(math.radians(-12), 3, "Y")), PLATE)
@@ -570,7 +592,7 @@ def build_body():
             secs.append((c, (0, 0.021, 0), nz * h, nz * h, 4.0))
         P.add_bm(loft(secs, n=20), METAL)
         P.add_bm(box((0.05, 0.03, 0.045), (XR + 0.01, s * 0.14, RR), bevel=0.008), METAL)            # adjuster block
-    P.add_bm(box((0.05, 0.25, 0.05), (-0.31, 0, 0.43), bevel=0.012), METAL)                           # brace
+    P.add_bm(box((0.05, 0.25, 0.05), (-0.31, 0, 0.458), bevel=0.012), METAL)                           # brace
     sh0, sh1 = Vector((-0.30, 0, 0.455)), Vector((-0.13, 0, 0.645))
     P.add_bm(cyl_between(sh0, sh1, 0.021, segs=24, bevel=0.003), METAL)
     sd = (sh1 - sh0); L = sd.length; sd.normalize()
@@ -612,8 +634,8 @@ def build_body():
     for s in (1, -1):
         P.add_bm(plate([(-0.05, 0.47), (-0.11, 0.48), (-0.20, 0.37), (-0.19, 0.315), (-0.13, 0.32)], s * 0.182, 0.008, bevel=0.0025), METAL)
         P.add_bm(along_y(0.0125, s * 0.186, s * 0.262, -0.168, 0.338, segs=14, bevel=0.003), METAL)
-        P.add_bm(plate([(-0.38, 0.60), (-0.43, 0.61), (-0.46, 0.46), (-0.41, 0.44)], s * 0.10, 0.008, bevel=0.0025), METAL)
-        P.add_bm(along_y(0.011, s * 0.104, s * 0.172, -0.44, 0.455, segs=14, bevel=0.003), METAL)
+        P.add_bm(plate([(-0.38, 0.60), (-0.43, 0.61), (-0.46, 0.46), (-0.41, 0.44)], s * 0.112, 0.008, bevel=0.0025), METAL)
+        P.add_bm(along_y(0.011, s * 0.115, s * 0.18, -0.44, 0.455, segs=14, bevel=0.003), METAL)
     P.add_bm(tube([(-0.16, -0.188, 0.35), (-0.08, -0.205, 0.33), (-0.02, -0.21, 0.355)], 0.0055, segs=8), METAL)   # brake pedal
     P.add_bm(tube([(-0.16, 0.188, 0.35), (-0.08, 0.205, 0.37), (-0.03, 0.21, 0.36)], 0.0055, segs=8), METAL)      # gear lever
     o = P.to_object(smooth_angle=40)
@@ -637,14 +659,14 @@ def build_legs():
         x = HIP.x - 0.11 + 0.22 * t
         k = math.sin(math.pi * (0.08 + 0.84 * t)) ** 0.5
         secs.append(((x, 0, HIP.z - 0.005), (0, 0.175 * k, 0), (0, 0, 0.09 * k), (0, 0, 0.09 * k), 2.6))
-    P.add_bm(loft(secs, n=24), SUIT)
+    P.add_bm(loft(secs, n=32), SUIT)
     for s in (1, -1):
         hipj = HIP + Vector((0.0, s * 0.098, -0.01))
         knee = Vector((0.045, s * 0.238, 0.785))
         ankle = Vector((-0.20, s * 0.245, 0.43))
         P.add_bm(tube(smooth_path([hipj, (hipj + knee) / 2 + Vector((0, 0, 0.012)), knee], 4), [0.088, 0.083, 0.078, 0.072, 0.066, 0.06, 0.056, 0.054, 0.052], segs=16), SUIT)
         P.add_bm(ellipsoid(knee, (0.07, 0.068, 0.07), 18, 10), SUIT)
-        P.add_bm(ellipsoid(knee + Vector((0.038, 0.02 * s, 0.0)), (0.035, 0.04, 0.045), 14, 8), PLASTIC)        # knee slider
+        P.add_bm(ellipsoid(knee + Vector((0.05, 0.03 * s, 0.0)), (0.032, 0.038, 0.042), 14, 8), PLASTIC)        # knee slider
         P.add_bm(tube([knee, (knee + ankle) / 2 + Vector((0.01, 0, 0)), ankle], [0.052, 0.049, 0.045], segs=16), SUIT)
         # boot: on the peg, toe forward
         boot = []
@@ -653,11 +675,12 @@ def build_legs():
             x = -0.275 + 0.235 * t
             hw = 0.042 + 0.006 * math.sin(math.pi * t)
             zt = 0.40 + 0.08 * (1 - t) ** 2 + 0.01
-            zb = 0.318
+            zb = 0.338
             boot.append((x, hw, zt, zb))
         bm = loft_x(boot, stations=14, n=20, p_top=2.4, p_bot=5.0, y0=s * 0.238)
         P.add_bm(bm, RUBBER)
-        P.add_bm(cyl_between(ankle + Vector((0, 0, -0.04)), ankle + Vector((-0.02, 0, 0.12)), 0.05, segs=24, bevel=0.01), RUBBER)  # boot shaft
+        dsh = (knee - ankle).normalized()
+        P.add_bm(cyl_between(ankle - dsh * 0.05, ankle + dsh * 0.12, 0.057, segs=24, bevel=0.01), RUBBER)  # boot shaft
     return P.to_object(smooth_angle=50)
 
 def build_torso():
@@ -737,31 +760,16 @@ def gl(v):
     """build frame (X fwd, Y left, Z up) -> glTF (x left, y up, z fwd)"""
     return [round(v[1], 5), round(v[2], 5), round(v[0], 5)]
 
-# ------------------------------------------------------------------------------------------------ AO (lightmap atlas, GPU bake, per-piece cache)
-for o in pieces:
-    for p in o.data.polygons: pass
-t0 = time.time()
-layout = K.atlas_layout(pieces)
-_pack = bpy.ops.uv.pack_islands
-def _fast_pack(**kw):
-    kw["shape_method"] = "AABB"
-    return _pack(**kw)
-bpy.ops.uv.pack_islands = _fast_pack
-for o in pieces: K.lightmap_uv(o, layout[o.name])
-bpy.ops.uv.pack_islands = _pack
-print(f"lightmap UVs {time.time() - t0:.1f}s", flush=True)
-
-AO_PX = 2048
-AO_PNG = os.path.join(OUT, "moto_ao.png")
+# ------------------------------------------------------------------------------------------------ AO per VERTEX (GPU bake, per-piece cache)
+# (a lightmap atlas was tried first: the grain UVs make one island per face, thousands per piece, and the packed atlas was
+# mostly seams; these meshes are dense enough for a per-vertex AO, which also survives the LOD simplification for free)
 CACHE = os.path.join(OUT, ".aocache")
 
 def piece_hash(o):
     me = o.data
     h = hashlib.sha1()
     co = [0.0] * (3 * len(me.vertices)); me.vertices.foreach_get("co", co)
-    uv = [0.0] * (2 * len(me.loops)); me.uv_layers["Lightmap"].data.foreach_get("uv", uv)
-    h.update(str([round(c, 5) for c in co]).encode()); h.update(str([round(c, 5) for c in uv]).encode())
-    h.update(str((AO_PX, 48, 0.35)).encode())
+    h.update(str([round(c, 5) for c in co]).encode()); h.update(str((64, 0.3, "vertex")).encode())
     return h.hexdigest()[:16]
 
 def gpu_setup(scn):
@@ -775,61 +783,52 @@ def gpu_setup(scn):
     except Exception as e:
         print("cycles: CPU fallback", e, flush=True); scn.cycles.device = "CPU"
 
-def bake_atlas(objs):
+def bake_vertex_ao(objs, bake=True):
+    """COLOR_0 "Col" (POINT domain, grey) = ambient occlusion of each piece ALONE on a ground plane; cached per piece
+    (models/moto/.aocache/<piece>_<geometry hash>.npy): an unchanged piece is not re-baked. bake=False: cache or white."""
     import numpy as np
     os.makedirs(CACHE, exist_ok=True)
-    gpu_setup(scn)
-    scn.cycles.samples = 48
-    if scn.world is None: scn.world = bpy.data.worlds.new("World")
-    scn.world.light_settings.distance = 0.35
-    atlas = np.ones((AO_PX, AO_PX), dtype=np.float32)
+    if bake:
+        gpu_setup(scn)
+        scn.cycles.samples = 64
+        if scn.world is None: scn.world = bpy.data.worlds.new("World")
+        scn.world.light_settings.distance = 0.3
+        scn.render.bake.target = "VERTEX_COLORS"
     gmat = bpy.data.materials.new("bake_ground"); gmat.use_nodes = True
-    for i, o in enumerate(objs):
-        hsh = piece_hash(o); cp = os.path.join(CACHE, f"{o.name}_{hsh}.npy")
-        x0, y0, s = layout[o.name]
-        px0, py0, pn = int(x0 * AO_PX) - 6, int(y0 * AO_PX) - 6, int(s * AO_PX) + 12
-        px0, py0 = max(0, px0), max(0, py0); px1, py1 = min(AO_PX, px0 + pn), min(AO_PX, py0 + pn)
-        if os.path.exists(cp):
-            atlas[py0:py1, px0:px1] = np.load(cp); print("  AO cached", o.name, flush=True); continue
+    done = 0
+    for o in objs:
+        me = o.data
+        attr = me.color_attributes.get("Col") or me.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
+        me.color_attributes.active_color = attr; me.attributes.active_color = attr
+        cp = os.path.join(CACHE, f"{o.name}_{piece_hash(o)}.npy")
+        n = len(me.vertices)
+        if os.path.exists(cp) or not bake:
+            v = np.load(cp) if os.path.exists(cp) else np.ones(n, dtype=np.float32)
+            rgba = np.repeat(v[:, None], 4, axis=1); rgba[:, 3] = 1
+            attr.data.foreach_set("color", rgba.ravel())
+            print("  AO", "cached" if os.path.exists(cp) else "none", o.name, flush=True); continue
         t = time.time()
-        img = bpy.data.images.new("ao_" + o.name, AO_PX, AO_PX, alpha=False, float_buffer=True)
-        img.colorspace_settings.name = "Non-Color"
-        img.generated_color = (1, 1, 1, 1)
-        nodes = []
-        for m in o.data.materials:
-            n = m.node_tree.nodes.new("ShaderNodeTexImage"); n.image = img; m.node_tree.nodes.active = n; nodes.append((m, n))
-        # alone: every other piece hidden from the render, a ground plane under it (contact shadow)
         for q in objs: q.hide_render = (q is not o)
-        bpy.ops.mesh.primitive_plane_add(size=6, location=(o.location.x, o.location.y, -0.001))
-        g = bpy.context.active_object; g.data.materials.append(gmat)
+        g = None
+        if not o.name.startswith("Arm"):                 # (the arm segments are built lying at the origin: no ground for them)
+            bpy.ops.mesh.primitive_plane_add(size=6, location=(o.location.x, o.location.y, -0.001))
+            g = bpy.context.active_object; g.data.materials.append(gmat)
         for x in scn.objects: x.select_set(False)
         o.select_set(True); bpy.context.view_layer.objects.active = o
-        o.data.uv_layers.active = o.data.uv_layers["Lightmap"]
-        bpy.ops.object.bake(type="AO", uv_layer="Lightmap", margin=6, use_clear=True)
-        o.data.uv_layers.active = o.data.uv_layers["UVMap"]
-        a = np.array(img.pixels[:], dtype=np.float32).reshape(AO_PX, AO_PX, 4)[:, :, 0]
-        crop = a[py0:py1, px0:px1].copy()
-        np.save(cp, crop)
-        atlas[py0:py1, px0:px1] = crop
-        bpy.data.objects.remove(g)
-        for m, n in nodes: m.node_tree.nodes.remove(n)
-        bpy.data.images.remove(img)
-        print(f"  AO {o.name} {time.time() - t:.1f}s", flush=True)
+        bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+        c = np.zeros(n * 4, dtype=np.float32); attr.data.foreach_get("color", c)
+        v = c.reshape(n, 4)[:, 0].copy()
+        np.save(cp, v)
+        if g: bpy.data.objects.remove(g)
+        done += 1
+        print(f"  AO {o.name} {time.time() - t:.1f}s (mean {v.mean():.2f})", flush=True)
     for q in objs: q.hide_render = False
-    out = bpy.data.images.new("moto_ao", AO_PX, AO_PX, alpha=False, float_buffer=False)
-    out.colorspace_settings.name = "Non-Color"
-    rgba = np.repeat(atlas[:, :, None], 4, axis=2); rgba[:, :, 3] = 1
-    out.pixels.foreach_set(rgba.ravel())
-    st = scn.render.image_settings
-    st.file_format = "PNG"; st.color_mode = "BW"; st.color_depth = "8"; st.compression = 90
-    out.save_render(AO_PNG, scene=scn)
-    print("AO atlas", AO_PNG, flush=True)
-    return out
+    return done
 
-ao_img = bake_atlas(pieces) if BAKE else None
+bake_vertex_ao(pieces, BAKE)
 
 # ------------------------------------------------------------------------------------------------ export + rig numbers
-K.export_glb(pieces, os.path.join(OUT, "moto.raw.glb"))
+K.export_glb(pieces, os.path.join(OUT, "moto.raw.glb"), colors=True)
 info = {
     "note": "tools/blender/motorbike.py: glTF frame (x left, y up, z forward), metres, origin = the ground midway between the axles",
     "wheelbase": WB,
@@ -837,10 +836,10 @@ info = {
     "steer": {"pivot": gl(H), "axis": gl(AXD), "rake": round(math.degrees(RAKE), 2), "trail": TRAIL},
     "rider": {"hip": gl(HIP), "shoulder": {"L": gl(SHOULDER[1]), "R": gl(SHOULDER[-1])}, "grip": {"L": gl(GRIP[1]), "R": gl(GRIP[-1])},
               "upper": ARM_U, "fore": ARM_F, "elbowOut": 0.35},
-    "lamps": {"head": gl(Vector((0.645, 0, 0.862))), "tail": gl(Vector((-0.89, 0, 0.862)))},
+    "lamps": {"head": gl(Vector((0.645, 0, 0.862))), "tail": gl(Vector((-0.875, 0, 0.88)))},
     "size": [0.80, 1.24, 2.12],
     "tris": {o.name: K.tris(o) for o in pieces},
-    "ao": "moto_ao.png" if (BAKE or os.path.exists(AO_PNG)) else None,
+    "ao": "vertex (COLOR_0.r)",
 }
 with open(os.path.join(OUT, "moto.json"), "w") as f: json.dump(info, f, indent=1)
 print("MOTO tris", info["tris"], "total", sum(info["tris"].values()), flush=True)
@@ -850,8 +849,12 @@ if PREVIEW:
     os.makedirs(PREVIEW, exist_ok=True)
     gpu_setup(scn)
     if scn.world is None: scn.world = bpy.data.worlds.new("World")
-    img = bpy.data.images.load(AO_PNG) if os.path.exists(AO_PNG) else bpy.data.images.new("noao", 4, 4)
+    img = bpy.data.images.new("white", 4, 4); img.generated_color = (1, 1, 1, 1)
     sun, cam = K.preview_setup(img, sun_elev=38, sun_az=145)
+    for m in K._MATS.values():                       # (preview: the AO from the vertex colours, not the lightmap)
+        nt = m.node_tree; tex = next(n for n in nt.nodes if n.bl_idname == "ShaderNodeTexImage")
+        vc = nt.nodes.new("ShaderNodeVertexColor"); vc.layer_name = "Col"
+        for l in list(tex.outputs["Color"].links): nt.links.new(vc.outputs["Color"], l.to_socket)
     # pose the arm segments as the viewer does (two-bone IK, elbows out and down); build frame -> export frame by R
     for side, s_ in (("L", 1), ("R", -1)):
         S_, G_ = SHOULDER[s_], GRIP[s_]

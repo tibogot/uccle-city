@@ -1,5 +1,5 @@
 // THE MOTORBIKE MODEL in the viewer: tools/blender/motorbike.py -> models/moto/moto.raw.glb (+ moto.json: the rig
-// numbers, moto_ao.png: the AO atlas), our materials by slot name, three LODs (motoLod.js, meshoptimizer at load), and
+// numbers; the baked AO per vertex in COLOR_0), our materials by slot name, three LODs (motoLod.js, meshoptimizer at load), and
 // the rig that poses it from a motoPhysics.js state:
 //   root (the ground midway between the axles, heading, slope) > lean (about the contact line, lifted so nothing sinks)
 //   > pitchR (wheelie, about the rear contact) > pitchF (stoppie, about the front contact) > bike:
@@ -9,7 +9,7 @@
 // On a crash the rider leaves the bike (a tumbling rigid body that slides to a stop) and comes back on the respawn.
 // No per-frame allocation in update(). Materials are shared (userData.shared) and built once.
 import * as THREE from "three/webgpu";
-import { color, uniform, texture, uv, attribute, float } from "three/tsl";
+import { color, uniform, attribute } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { MOTO_LODS, weld, lodPart } from "./motoLod.js";
@@ -31,7 +31,6 @@ export function loadMotoModel() {
       fetch(new URL("moto.json", BASE)).then((r) => r.json()),
       new GLTFLoader().loadAsync(new URL("moto.raw.glb", BASE).href),
     ]);
-    const ao = info.ao ? await loadAO(new URL(info.ao, BASE).href).catch(() => null) : null;
     await MeshoptSimplifier.ready;
     gltf.scene.updateMatrixWorld(true);
     // per node: its meshes (in the node's own frame) grouped by slot
@@ -49,12 +48,14 @@ export function loadMotoModel() {
       });
       raw[name] = bySlot;
     }
-    const mats = materials(ao?.tex ?? null);
+    raw.ao = false;
+    const mats = materials();
     const lods = MOTO_LODS.map(() => ({}));
     let tris = [0, 0, 0];
     for (const name of NODES) {
       for (const L of lods) L[name] = [];
       for (const [slot, gs] of raw[name]) {
+        if (gs.some((g) => g.attributes.color)) raw.ao = true;
         const part = toArrays(gs);
         const w = weld(part);
         MOTO_LODS.forEach((spec, k) => {
@@ -62,64 +63,41 @@ export function loadMotoModel() {
           const g = new THREE.BufferGeometry();
           g.setAttribute("position", new THREE.BufferAttribute(q.P, 3));
           g.setAttribute("normal", new THREE.BufferAttribute(q.N, 3));
-          if (q.U && k === 0) g.setAttribute("uv1", new THREE.BufferAttribute(q.U, 2));
-          if (k > 0) {                                     // LOD1+: the AO per vertex (sampled from the atlas)
-            const A = new Float32Array(q.P.length / 3);
-            for (let i = 0; i < A.length; i++) A[i] = ao && q.U ? ao.at(q.U[i * 2], q.U[i * 2 + 1]) : 1;
-            g.setAttribute("aoV", new THREE.BufferAttribute(A, 1));
-          }
+          g.setAttribute("aoV", new THREE.BufferAttribute(q.A ?? new Float32Array(q.P.length / 3).fill(1), 1));
           g.setIndex(new THREE.BufferAttribute(q.I, 1));
           g.computeBoundingSphere();
           g.userData.shared = true;
           tris[k] += q.I.length / 3;
-          lods[k][name].push({ geo: g, slot, mat: (k === 0 ? mats.lod0 : mats.far)[slot] || (k === 0 ? mats.lod0 : mats.far).Metal });
+          lods[k][name].push({ geo: g, slot, mat: mats[slot] || mats.Metal });
         });
       }
     }
-    for (const gs of Object.values(raw)) for (const list of gs.values()) for (const g of list) g.dispose();
-    return { info, lods, mats, tris, ao: !!ao, loadMs: performance.now() - t0, lodDist: MOTO_LODS.map((l) => l.until),
-      size: info.size, lamps: info.lamps, setPaint: (hex) => { for (const m of [mats.lod0.Paint, mats.far.Paint]) m.color.setHex(hex); } };
+    for (const name of NODES) for (const list of raw[name].values()) for (const g of list) g.dispose();
+    return { info, lods, mats, tris, ao: raw.ao, loadMs: performance.now() - t0, lodDist: MOTO_LODS.map((l) => l.until),
+      size: info.size, lamps: info.lamps, setPaint: (hex) => mats.Paint.color.setHex(hex) };
   })());
 }
 
 function toArrays(gs) {
   let nv = 0, ni = 0;
   for (const g of gs) { nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
-  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), hasU = gs.every((g) => g.attributes.uv1), U = hasU ? new Float32Array(nv * 2) : null, I = new Uint32Array(ni);
+  const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3), A = new Float32Array(nv).fill(1), I = new Uint32Array(ni);
   let v = 0, i = 0;
   for (const g of gs) {
     const n = g.attributes.position.count;
     P.set(g.attributes.position.array, v * 3); N.set(g.attributes.normal.array, v * 3);
-    if (U) U.set(g.attributes.uv1.array, v * 2);
+    const C = g.attributes.color;                       // (the baked AO: COLOR_0.r)
+    if (C) for (let k = 0; k < n; k++) A[v + k] = C.getX(k);
     if (g.index) { const s = g.index.array; for (let k = 0; k < s.length; k++) I[i + k] = s[k] + v; i += s.length; }
     else { for (let k = 0; k < n; k++) I[i + k] = v + k; i += n; }
     v += n;
   }
-  return { P, N, U, I };
-}
-
-function loadAO(url) {
-  return new Promise((res, rej) => {
-    const img = new Image();
-    img.onload = () => {
-      const W = img.width, H = img.height, c = document.createElement("canvas"); c.width = W; c.height = H;
-      const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(img, 0, 0);
-      const d = x.getImageData(0, 0, W, H).data, r = new Uint8Array(W * H);
-      for (let i = 0; i < r.length; i++) r[i] = d[i * 4];
-      const tex = new THREE.DataTexture(r, W, H, THREE.RedFormat, THREE.UnsignedByteType);
-      Object.assign(tex, { flipY: false, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, colorSpace: THREE.NoColorSpace, anisotropy: 4 });
-      tex.needsUpdate = true;
-      const at = (u, v) => { const px = Math.min(W - 1, Math.max(0, Math.round(u * W - 0.5))), py = Math.min(H - 1, Math.max(0, Math.round(v * H - 0.5))); return r[py * W + px] / 255; };
-      res({ tex, at });
-    };
-    img.onerror = () => rej(new Error(`AO map ${url}`));
-    img.src = url;
-  });
+  return { P, N, A, I };
 }
 
 // ------------------------------------------------------------------------------------------------ materials
 let MATS = null;
-function materials(aoTex) {
+function materials() {
   if (MATS) return MATS;
   const spec = {
     Paint: { phys: true, color: MOTO_PAINTS["racing red"], metalness: 0.35, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 },
@@ -141,22 +119,16 @@ function materials(aoTex) {
     Helmet: { phys: true, color: 0xe9e9e6, metalness: 0.1, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 },
     Visor: { color: 0x050607, metalness: 0.4, roughness: 0.04 },
   };
-  const make = (far) => {
-    const out = {};
-    for (const [name, s] of Object.entries(spec)) {
-      const { phys, emissive, ...p } = s;
-      const m = phys ? new THREE.MeshPhysicalNodeMaterial(p) : new THREE.MeshStandardNodeMaterial(p);
-      m.name = `moto-${name}${far ? "-far" : ""}`;
-      if (emissive) m.emissiveNode = emissive(m);
-      // AO: LOD0 from the atlas (TEXCOORD_1), the far LODs per vertex
-      if (far) m.aoNode = attribute("aoV", "float");
-      else if (aoTex) m.aoNode = texture(aoTex, uv(1)).r;
-      m.userData.shared = true;
-      out[name] = m;
-    }
-    return out;
-  };
-  MATS = { lod0: make(false), far: make(true) };
+  MATS = {};
+  for (const [name, s] of Object.entries(spec)) {
+    const { phys, emissive, ...p } = s;
+    const m = phys ? new THREE.MeshPhysicalNodeMaterial(p) : new THREE.MeshStandardNodeMaterial(p);
+    m.name = `moto-${name}`;
+    if (emissive) m.emissiveNode = emissive(m);
+    m.aoNode = attribute("aoV", "float");              // the baked AO, per vertex (every LOD)
+    m.userData.shared = true;
+    MATS[name] = m;
+  }
   return MATS;
 }
 

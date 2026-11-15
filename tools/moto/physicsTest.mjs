@@ -1,6 +1,8 @@
 // Headless checks of the motorbike physics (viewer/moto/motoPhysics.js) on flat ground and a 10 % hill:
 //   node tools/moto/physicsTest.mjs
-import { createMotoState, stepMoto, MOTO } from "../../viewer/moto/motoPhysics.js";
+import { createMotoState, stepMoto, MOTO, MOTO_BODY, motoHit } from "../../viewer/moto/motoPhysics.js";
+import { buildColliders, KIND } from "../../viewer/drive/colliders.js";
+import { createCarEnv } from "../../viewer/drive/carEnv.js";
 const flat = (g = 0) => ({ ground: (x, z) => -z * g, prepare() {}, collide() {}, contacts: 0 });
 const run = (c, inp, secs, env = flat(), each) => { for (let t = 0; t < secs; t += 1 / 60) { stepMoto(c, inp, 1 / 60, env); each?.(c, t); } };
 const kmh = (c) => +(c.speed * 3.6).toFixed(1);
@@ -34,3 +36,15 @@ const kmh = (c) => +(c.speed * 3.6).toFixed(1);
 { const c = createMotoState(0, 0, 0); c.speed = 2; run(c, { throttle: 0.15, steer: 1 }, 3); console.log(`walking pace full lock: yaw ${c.angularVel.toFixed(2)} rad/s, radius ${(c.speed / c.angularVel).toFixed(1)} m, lean ${(c.lean * 57.3).toFixed(1)}`); }
 // rear brake slide
 { const c = createMotoState(0, 0, 0); c.speed = 15; run(c, { rear: true, steer: 1 }, 1.2); console.log(`rear brake slide 54 km/h: speed ${kmh(c)}, slip ${Math.hypot(c.vx, c.vz).toFixed(2)} m/s, crashed ${c.crashed}`); }
+{
+// filtering check: ride straight between two lanes of parked boxes 1.3 m apart (headless, the real env)
+const polys = [];
+const box = (cx, cz, w, l) => polys.push({ rings: [[[cx - w / 2, cz - l / 2], [cx + w / 2, cz - l / 2], [cx + w / 2, cz + l / 2], [cx - w / 2, cz + l / 2]]], kind: KIND.car });
+for (let k = 0; k < 6; k++) { box(-1.55, 30 + k * 6, 1.8, 4.3); box(1.55, 30 + k * 6, 1.8, 4.3); }
+const COL = buildColliders(polys, [], { x0: -100, x1: 100, z0: -100, z1: 100 });
+const env = createCarEnv({ sets: () => [COL], ground: () => 0, handling: MOTO, dims: MOTO_BODY, onHit: motoHit });
+const c = createMotoState(0, 0, 0);
+for (let t = 0; t < 6; t++) for (let i = 0; i < 60; i++) stepMoto(c, { throttle: 0.5 }, 1 / 60, env);
+console.log(`gap 1.3 m: z ${c.z.toFixed(1)} (past the cars at 63), hits ${c.hits}, crashed ${c.crashed}, ${(c.speed * 3.6).toFixed(0)} km/h`);
+
+}

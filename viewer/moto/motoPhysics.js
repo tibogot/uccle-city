@@ -189,7 +189,7 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     if (!c.crashed) {
       const h = H.cgHeight, w = c.wheelie, aw = Math.abs(w), cw = Math.cos(aw), sw = Math.sin(aw);
       // front up: the drive force (a h) against gravity's arm to the rear contact (shrinks as it rises: the balance point)
-      const up = Math.max(0, acceleration) * (c.boost && throttle ? 1.28 : 1) * h * cw - H.gravity * (H.cgToRear * cw - h * sw) - (throttle ? 0 : 6);
+      const up = Math.max(0, acceleration) * (c.boost && throttle ? 1 + 0.28 * smooth(24, 12, v) : 1) * h * cw - H.gravity * (H.cgToRear * cw - h * sw) - (throttle ? 0 : 6);
       // rear up: the braking force (d h) against gravity's arm to the front contact
       const down = Math.max(0, -acceleration) * (front > 0.8 ? 1.12 : 0.9) * h * cw - H.gravity * (H.cgToFront * cw - h * sw);
       let torque = 0;                                 // > 0 lifts the front

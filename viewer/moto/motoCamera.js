@@ -4,7 +4,7 @@
 // most of the lean). C cycles chase / far / helmet / orbit as in the car.
 import { ChaseCamera } from "../drive/chaseCamera.js";
 
-export const MOTO_CAMERA = { mode: "chase", distance: 4.3, height: 1.45, lookHeight: 1.05, fov: 62, stiffness: 8, lookAhead: 0.3,
+export const MOTO_CAMERA = { mode: "chase", distance: 4.3, height: 1.45, lookHeight: 1.05, fov: 62, stiffness: 9, lookAhead: 0.3,
   baseFov: 62, fovKick: 16, tilt: 0.28, helmetTilt: 0.7 };
 
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -36,6 +36,9 @@ export class MotoCamera extends ChaseCamera {
       this.first = true;
       return;
     }
+    // feed-forward: the boom moves with the bike (the spring only smooths the swing / bumps; a world-space spring lags
+    // 2 v / stiffness behind: ~9 m at 150 km/h)
+    if (!this.first) { this.pos.x += (Math.sin(c.heading) * c.speed + c.vx) * dt; this.pos.z += (Math.cos(c.heading) * c.speed + c.vz) * dt; }
     super.update(c, dt, ground, insideWall);
     if (cfg.mode !== "orbit") cam.rotateZ(this.roll);
   }

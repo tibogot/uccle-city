@@ -28,7 +28,7 @@ for (const [g, ps] of Object.entries(groups)) {
   for (let k = 0; k < (ONLY0 ? 1 : MOTO_LODS.length); k++) {
     const L = MOTO_LODS[k];
     const aps = ps.map((p) => {
-      const w = weld({ P: p.positions, N: p.normals, U: p.uv1, I: p.index });
+      const w = weld({ P: p.positions, N: p.normals, A: null, I: p.index });
       const q = lodPart(w, L.error, MeshoptSimplifier);
       tris[`${p.node}`] ??= [0, 0, 0]; tris[p.node][k] += q.I.length / 3;
       return { name: `${p.node}/${p.slot}`, slot: p.slot, positions: q.P, normals: q.N, index: q.I, maxDistance: Math.min(L.until, 250) };
