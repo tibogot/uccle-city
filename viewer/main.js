@@ -449,13 +449,27 @@ function roadStart(data, x, z, bounds) {
 // sooner, but one 30 s fast flight had a 7.5 s freeze (one worker: 0.2 s) on a long-running machine: test on a fresh one.
 let tileWorker = null, reqId = 0;
 const pendingReq = new Map(), workers = [];
+// BOOT NEVER HANGS SILENTLY (polish1 item 0): a worker error is a console.error + the log + the loader's red line; a
+// tile request with no answer after TILE_WATCHDOG_S says so the same way (it is kept: a slow machine may still answer)
+const TILE_WATCHDOG_S = +(params.get("tilewatchdog") ?? 45);
+function bootProblem(msg) { console.error(`[boot] ${msg}`); log(`ERROR: ${msg}`); window.__loader?.error?.(msg); }
+function onWorkerMessage(w) {
+  return (e) => {
+    if (e.data.fatal) { bootProblem(`tile worker: ${e.data.fatal.split("\n")[0]}`); console.error(e.data.fatal); return; }
+    w.busy--; const p = pendingReq.get(e.data.id); pendingReq.delete(e.data.id);
+    if (!p) return;
+    clearTimeout(p.watch);
+    if (e.data.error) { bootProblem(`tile ${p.name}: ${e.data.error.split("\n")[0]}`); console.error(e.data.error); p.reject(new Error(e.data.error)); }
+    else p.resolve(e.data.r);
+  };
+}
 if (params.get("worker") !== "0") {
   const n = Math.max(1, Math.min(+(params.get("workers") || 1), Math.max(1, (navigator.hardwareConcurrency || 4) - 2)));
   for (let i = 0; i < n; i++) {
     try {
       const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
       w.busy = 0;
-      w.onmessage = (e) => { w.busy--; const p = pendingReq.get(e.data.id); pendingReq.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data.r); };
+      w.onmessage = onWorkerMessage(w);
       w.onerror = (e) => {
         log(`tile worker failed (${e.message || "error"})`);
         workers.splice(workers.indexOf(w), 1); tileWorker = workers[0] ?? null;
@@ -474,7 +488,7 @@ if (workers.length && params.get("liteworker") !== "0") {
   try {
     const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
     w.busy = 0;
-    w.onmessage = (e) => { w.busy--; const p = pendingReq.get(e.data.id); pendingReq.delete(e.data.id); e.data.error ? p.reject(new Error(e.data.error)) : p.resolve(e.data.r); };
+    w.onmessage = onWorkerMessage(w);
     w.onerror = (e) => { log(`far-tile worker failed (${e.message || "error"})`); liteWorker = null; for (const [id, p] of pendingReq) if (p.w === w) { pendingReq.delete(id); p.retry(); } };
     liteWorker = w;
   } catch { liteWorker = null; }
@@ -525,7 +539,8 @@ function tileData(entry, lite = false) {
   return new Promise((resolve, reject) => {
     const id = ++reqId;
     w.busy++;
-    pendingReq.set(id, { resolve, reject, w, retry: () => local().then(resolve, reject) });
+    const watch = TILE_WATCHDOG_S > 0 ? setTimeout(() => { if (pendingReq.has(id)) bootProblem(`tile ${entry.name}${lite ? " (far)" : ""}: no answer from the tile worker in ${TILE_WATCHDOG_S} s (try ?tilecache=0; the worker's own console may say more)`); }, TILE_WATCHDOG_S * 1000) : null;
+    pendingReq.set(id, { resolve, reject, w, name: entry.name, watch, retry: () => { clearTimeout(watch); local().then(resolve, reject); } });
     w.postMessage({ id, entry, base: DATA.href, lite });
   });
 }

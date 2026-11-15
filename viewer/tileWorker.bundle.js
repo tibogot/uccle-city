@@ -13965,6 +13965,8 @@ function drop(d, keys) {
 }
 
 // viewer/tileWorker.js
+self.addEventListener("unhandledrejection", (e) => self.postMessage({ fatal: String(e.reason?.stack || e.reason) }));
+self.addEventListener("error", (e) => self.postMessage({ fatal: String(e.error?.stack || e.message) }));
 self.onmessage = async (e) => {
   const { id, entry, base, lite } = e.data;
   try {

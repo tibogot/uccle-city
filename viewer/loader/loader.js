@@ -101,6 +101,11 @@ window.__loader = {
       if (p > at() + 0.002) glideTo(endOf(name), Math.max(400, STAGES[name][1] * pace(name) * (1 - f)));
     } else if (typeof detail === "string") $stage.textContent = `${STAGES[name][0]} ${detail}`;
   },
+  /** a boot problem the player must see (a tile that never comes back, a worker error): shown on the cover in red, kept */
+  error(text) {
+    $stage.textContent = text; $stage.style.color = "#ff8a80";
+    times.push(["error", Math.round(performance.now())]);
+  },
   /** the city's first frame is on the GPU: the bar completes (the cover's fade, index.html, runs alongside) */
   done() {
     times.push(["ready", Math.round(performance.now())]);
