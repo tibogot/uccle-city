@@ -44,6 +44,7 @@ export const FEATURES = [
   // ---------------------------------------------------------------- modes & camera (live ones are the section's own controls)
   txt("car", "modes", "car (drive)", "The drive mode's car: scripted or faceted:<id>.", "faceted:hatch_c", { live: "car (drive)" }),
   txt("char", "modes", "character", "Third person character: hoodie, casual, capsule.", "hoodie", { live: "character (3rd person)" }),
+  opt("motosound", "modes", "motorbike sound", "The motorbike's procedural engine / wind / tyre sound (OFF by default; N toggles it while riding). docs/MOTO.md.", { live: "motorbike sound" }),
   opt("drivedebug", "modes", "car colliders", "Draw the drive colliders (key G in drive mode).", { live: "car colliders (G)" }),
   opt("chardebug", "modes", "character colliders", "Draw the third-person collision world (key G).", { live: "character colliders (G)" }),
   opt("invert", "modes", "invert falcon pitch", "Falcon flight: inverted pitch on the mouse / keys.", { sub: "Falcon flight" }),

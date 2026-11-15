@@ -7,12 +7,14 @@
 //   shifts   a short drive cut (the gain dips 60 ms) and a click; downshifts blip
 //   overrun  throttle shut above 6,500 rpm: crackles and pops from the exhaust for ~0.7 s
 //   wind     noise through a low-pass opening with speed; tyres: a screech in a slide; crash: a thump + scrape
-// Starts on the first key / click while the bike is active (browsers need a gesture). N mutes.
+// OFF by default (owner 2026-11-15: annoying while working): ?motosound=1 or the dev panel's "motorbike sound" toggle
+// turns it on; then it starts on the first key / click while the bike is active (browsers need a gesture). N mutes.
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 
 export class MotoAudio {
   constructor() {
-    this.ctx = null; this.muted = false; this.volume = 0.55; this.active = false;
+    this.ctx = null; this.volume = 0.55; this.active = false;
+    this.muted = !/[?&]motosound=1/.test(location.search);      // (off by default)
     this.lastShifts = 0; this.lastCrashes = 0; this.popUntil = 0; this.nextPop = 0; this.prevThrottle = 0;
     const start = () => { if (!this.ctx && this.active && !this.muted) this.init(); else if (this.ctx?.state === "suspended" && this.active) this.ctx.resume(); };
     addEventListener("pointerdown", start); addEventListener("keydown", start);
@@ -135,6 +137,13 @@ export class MotoAudio {
       this.burst(t, { f: 160, dur: 0.5, gain: 0.9 }); this.burst(t + 0.05, { f: 900, dur: 0.25, gain: 0.5 });
     }
   }
-  stop() { this.active = false; if (this.ctx) this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); }
-  toggleMute() { this.muted = !this.muted; if (!this.muted && !this.ctx && this.active) this.init(); return this.muted; }
+  stop() { this.active = false; if (this.ctx) { this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); setTimeout(() => { if (!this.active) this.ctx.suspend(); }, 200); } }
+  toggleMute() { return this.setMuted(!this.muted); }
+  /** on / off: off suspends the audio context (nothing runs on the audio thread) */
+  setMuted(m) {
+    this.muted = m;
+    if (!m && !this.ctx && this.active) this.init();
+    if (this.ctx) { if (m) this.ctx.suspend(); else if (this.active) this.ctx.resume(); }
+    return m;
+  }
 }

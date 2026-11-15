@@ -20,7 +20,7 @@ physics and poses the bike from sliders).
 | A / D, ← / → | lean (the bike turns by leaning; the front wheel counter-steers first) |
 | C | camera: chase / far / helmet / orbit (drag to look round, wheel to zoom) |
 | R | back to the start |
-| N | mute the engine |
+| N | sound on / off (the sound is OFF by default: `?motosound=1` or the dev panel's "motorbike sound" toggle) |
 | G | the colliders (as the car) |
 
 HUD: speed, gear, a rev bar (red over 10,000 rpm), rpm.

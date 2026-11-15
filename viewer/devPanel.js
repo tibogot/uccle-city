@@ -59,7 +59,7 @@ const KEYS = [
   ["Orbit", [["drag · right-drag · wheel", "turn · pan · zoom"]]],
   ["Walk", [["W A S D / arrows", "move"], ["drag", "look"], ["Shift", "run"]]],
   ["Drive", [["W A S D / arrows", "throttle, brake, steer"], ["R", "reset the car"], ["C", "camera"], ["G", "the car colliders"]]],
-  ["Motorbike", [["B", "ride the motorbike (from any mode)"], ["W / S", "gas / front brake (S stopped: paddle back)"], ["A / D", "lean (counter-steer feel)"], ["Shift + W", "full gas: wheelie"], ["Space", "rear brake: slide"], ["C", "camera (chase / far / helmet / orbit)"], ["R", "reset"], ["N", "mute the engine"]]],
+  ["Motorbike", [["B", "ride the motorbike (from any mode)"], ["W / S", "gas / front brake (S stopped: paddle back)"], ["A / D", "lean (counter-steer feel)"], ["Shift + W", "full gas: wheelie"], ["Space", "rear brake: slide"], ["C", "camera (chase / far / helmet / orbit)"], ["R", "reset"], ["N", "sound on / off (off by default, ?motosound=1)"]]],
   ["Third person", [["W A S D", "move"], ["Shift", "run"], ["Space", "jump"], ["G", "the character colliders"]]],
   ["Falcon", [["W / S", "nose down / up"], ["A / D", "bank"], ["Space", "flap"], ["Shift", "tuck (stoop)"], ["C", "half fold (fast glide)"], ["Q", "brake"], ["F", "talons / strike"], ["E", "land"], ["V", "camera"], ["R", "reset"], ["G", "flight debug"]]],
 ];
@@ -257,6 +257,7 @@ export function createDevPanel(ctx) {
     ["Drive", go("drive", () => drive()), "the car, on the nearest road"], ["Third person", go("third", () => thirdPerson()), "a character on foot"],
     ["Motorbike (B)", go("moto", () => moto?.()), "the motorbike, on the nearest road: W gas, S brake, Space rear brake, A / D lean, Shift full gas (wheelie), N mute"],
   ], 3);
+  fC.add({ on: /[?&]motosound=1/.test(location.search) }, "on").name("motorbike sound").onChange((v) => { driver.audio?.setMuted(!v); setParam("motosound", v ? "1" : null); });
   fC.add({ paint: "racing red" }, "paint", ["racing red", "acid green", "pearl white", "matte black", "cobalt blue", "orange"]).name("bike paint").onChange(async (v) => {
     const { loadMotoModel, MOTO_PAINTS } = await import("./moto/motoModel.js");
     (await loadMotoModel()).setPaint(MOTO_PAINTS[v]);

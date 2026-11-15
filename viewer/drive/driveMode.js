@@ -346,7 +346,7 @@ export class Driver {
       const rpm = Math.round(c.rpm / 100) * 100, bar = Math.round(Math.min(1, c.rpm / 11800) * 10);
       this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h · ${c.crashed ? "CRASH" : `gear ${c.gear}`} ` +
         `<span style="letter-spacing:-1px;color:${bar > 8 ? "#ff6a4a" : "#9fe08a"}">${"▮".repeat(bar)}</span><span style="letter-spacing:-1px;color:#4a525c">${"▮".repeat(10 - bar)}</span> ${rpm} rpm` +
-        ` · Shift wheelie · Space rear · C camera · N ${this.audio.muted ? "unmute" : "mute"}</small>`;
+        ` · Shift wheelie · Space rear · C camera · N sound ${this.audio.muted ? "off" : "on"}</small>`;
     }
   }
   /** the rider's eyes in world space (the helmet view) */
