@@ -11,7 +11,10 @@
 import { createTraffic } from "./traffic.js";
 import { carFleet } from "../carFleet.js";
 
-const CAR_KIND = 6;   // drive colliders: a car (hit() treats any kind the same)
+const CAR_KIND = 6;
+/** ?bikeroom=old: the motorbike seen by the traffic as two 0.55 m circles, no room made (before collisions round 2) */
+const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
+const BIKE_OLD = /[?&]bikeroom=old(&|$)/.test(location.search);   // drive colliders: a car (hit() treats any kind the same)
 
 export function createCityTraffic({ scene, renderer, camera, ground, night, focus, driver, getThird, getTram, log = console.log }) {
   const T = createTraffic({ scene, renderer, camera, ground, night });
@@ -51,10 +54,19 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
   T.setObstacleSource((s) => {
     if (driver?.on && driver.state) {
       const c = driver.state, fx = Math.sin(c.heading), fz = Math.cos(c.heading), vx = fx * c.speed + (c.vx || 0), vz = fz * c.speed + (c.vz || 0);
-      const bike = driver.vehicle === "moto", r = bike ? 0.55 : 1.15, o = bike ? 0.55 : 1.2;   // (the motorbike: narrow, it filters)
-      s.addObstacle(c.x + fx * o, c.z + fz * o, r, vx, vz);
-      s.addObstacle(c.x - fx * o, c.z - fz * o, r, vx, vz);
-    }
+      const bike = driver.vehicle === "moto";
+      if (bike && !BIKE_OLD) {
+        // collisions round 2: the bike as its own narrow oriented box (viewer/moto/motoPhysics.js MOTO_BODY 0.8 x 2.1 m)
+        // + the filtering hook (trafficSim.js makeRoom: queued cars beside it ease aside)
+        s.addBoxObstacle(c.x, c.z, c.heading, 0.42, 1.08, vx, vz);
+        const B = s.bike; B.on = !c.crashed; B.x = c.x; B.z = c.z; B.h = c.heading; B.v = Math.hypot(vx, vz);
+      } else {
+        const r = bike ? 0.55 : 1.15, o = bike ? 0.55 : 1.2;   // (the motorbike before round 2: two 0.55 m circles)
+        s.addObstacle(c.x + fx * o, c.z + fz * o, r, vx, vz);
+        s.addObstacle(c.x - fx * o, c.z - fz * o, r, vx, vz);
+        s.bike.on = false;
+      }
+    } else s.bike.on = false;
     const th = getThird?.();
     if (th?.on && th.tp) { const p = th.tp.ctl.pos, v = th.tp.ctl.vel; s.addObstacle(p[0], p[2], 0.9, v[0], v[2]); }
     for (let i = 0; i < TR.n; i++) s.addObstacle(TR.x[i], TR.z[i], 1.5, TR.vx[i], TR.vz[i], TR.cross[i]);
@@ -67,6 +79,8 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
       const n = T.boxesNear(c.x, c.z, 12, boxes);
       for (let k = 0; k < n; k++) {
         const o = k * 7;
+        // (collisions round 2: a car on a deck over the street / under it is not in the way: the box's height band)
+        if (!BOX_OLD && Number.isFinite(c.y) && (boxes[o + 5] > c.y + 1.6 || boxes[o + 5] + boxes[o + 6] < c.y + 0.2)) continue;
         if (obbObb(c.x, c.z, c.heading, body.hx, body.hz, boxes[o], boxes[o + 1], boxes[o + 2], boxes[o + 3], boxes[o + 4], out)) push(c, out.nx, out.nz, out.depth, CAR_KIND);
       }
     };

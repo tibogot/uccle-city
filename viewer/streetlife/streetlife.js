@@ -219,6 +219,10 @@ const TEXT_KEEP = 400;
  *  the LOD bands; the tile fade is a uniform per tile slot (a fading tile never re-gathers); static buffers with update
  *  ranges (never DynamicDrawUsage: r187 re-uploads those whole in every pass); a pool with nothing to draw is not
  *  visible (an instanced mesh with count 0 still costs a draw per pass). */
+/** the props that stand at car / body height on the ground (not the façade ones: cross, spot; not the terraces': their
+ *  own colliders above) */
+const SOLID_PROPS = ["postbox", "chute", "bubble", "pump", "column", "pole", "post", "dock"];
+const PROP_COLLIDERS = !/[?&]propcol=0(&|$)/.test(location.search);
 class PropPool {
   constructor(kind, K, group, shadows, mats, margin = MARGIN) {
     this.kind = kind; this.K = K; this.meshes = [];
@@ -378,6 +382,22 @@ export class StreetLife {
       const n = a.length / 4, mesh = new THREE.InstancedMesh(this.colliderGeo[k], this.colliderMat, n), M = new THREE.Matrix4();
       for (let i = 0; i < n; i++) { M.makeRotationY(a[i * 4 + 3]).setPosition(a[i * 4], a[i * 4 + 1], a[i * 4 + 2]); mesh.setMatrixAt(i, M); }
       mesh.name = "furniture-terrace"; mesh.visible = false; mesh.userData.collider = k;
+      g.add(mesh);
+    }
+    // ---- street props' colliders (never drawn; collisions round 2, docs/COLLISIONS.md; ?propcol=0 = before: the car and
+    // the walker went through the bpost boxes, the container chutes, the Morris columns...): the drawn prop's LOD1
+    // triangles at the drawn matrices, an InstancedMesh per kind named furniture-streetprop (featureColliders "box",
+    // cityHook "post")
+    if (PROP_COLLIDERS) for (const k of SOLID_PROPS) {
+      const a = r.props[k], K = this.kit[k];
+      if (!a?.length || !K) continue;
+      // (one geometry / material for every tile, marked shared: a tile leaving disposes only what is its own)
+      const geo = ((this.propColGeo ||= {})[k] ||= Object.assign((K.lods[1] || K.lods[0]).clone(), {}));
+      geo.userData.shared = true;
+      if (!this.propColMat) { this.propColMat = new THREE.MeshBasicNodeMaterial(); this.propColMat.userData.shared = true; }
+      const n = a.length / 8, mesh = new THREE.InstancedMesh(geo, this.propColMat, n), M = new THREE.Matrix4();
+      for (let i = 0; i < n; i++) { M.makeRotationY(a[i * 8 + 3]).setPosition(a[i * 8], a[i * 8 + 1], a[i * 8 + 2]); mesh.setMatrixAt(i, M); }
+      mesh.name = "furniture-streetprop"; mesh.visible = false; mesh.castShadow = mesh.receiveShadow = false; mesh.userData.collider = k;
       g.add(mesh);
     }
     parent.add(g);

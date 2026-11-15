@@ -18,6 +18,10 @@
 // down, a right turn).
 
 export const G = 9.81, RHO = 1.2;
+/** ?falconhit=old: the falcon's contact response before collisions round 2 (normal against the motion on every wall,
+ *  fixed tangential factors, touch-down under 13 m/s) */
+const TRIM_OLD = typeof location !== "undefined" && /[?&]falcontrim=old(&|$)/.test(location.search);
+const FALCON_HIT_OLD = typeof location !== "undefined" && /[?&]falconhit=old(&|$)/.test(location.search);
 
 /** Peregrine numbers (a ~1 kg female juvenile; see docs/FALCON_FLIGHT.md for where they come from). */
 export const FALCON = {
@@ -149,6 +153,16 @@ export class FalconFlight {
     const vTrim = lerp(P.trim[0], P.trim[1], clamp(this.fold / 0.5, 0, 1)) * (this.fold > 0.75 ? 0 : 1);
     if (V < vTrim) nCmd -= P.trimGain * (vTrim - V) / vTrim * (1 - Math.abs(u)) * cg;
     else if (this.fold < 0.25 && C.flap < 0.05) nCmd += 0.5 * Math.min(1, (V - vTrim) / vTrim) * (1 - Math.abs(u)) * cg * (1 - this.fold / 0.25);   // spread: back toward trim
+    // PATH TRIM (collisions round 2, ?falcontrim=old = the pure path hold): hands off, the held path angle relaxes to
+    // the configuration's glide angle (spread ~ -4 deg at L/D 14.5, half folded ~ -7.5 deg), time constant ~1 s, as a
+    // statically stable glider / a bird that is not being steered does. Before, neutral held ANY angle forever: the
+    // nest launch at -11 deg went on into the roofs hands-off ("hit the ground at 11 m/s: stunned" seconds after the
+    // intro), a dive released at -40 deg stayed a -40 deg dive. The tuck keeps its dive (no trim, as before); a turn
+    // keeps its bank (only the path's climb / dive angle is trimmed).
+    if (!TRIM_OLD && this.fold < 0.75 && C.flap < 0.05 && !stunned) {
+      const gTrim = -Math.atan(1 / lerp(14.5, 7.6, clamp(this.fold / 0.5, 0, 1)));
+      nCmd += 1.2 * clamp(gTrim - this.gamma, -0.6, 0.6) * (1 - Math.abs(u)) * (1 - this.fold / 0.75);
+    }
     // ---- what the wings can give at this airspeed: CL = n W / (q S), up to the stall
     const q = 0.5 * RHO * V * V, qS = q * w.S;
     const pol0 = polar(0, w, this.brake, P);
@@ -257,8 +271,16 @@ export class FalconFlight {
         if (ny < 0.35) { const hl = Math.hypot(nx, nz) || 1; nx /= hl; nz /= hl; ny = 0; wall = true; this.pos.x = x0; this.pos.z = z0; this.pos.y = Math.max(y0, y); }
         else { this.pos.x = x; this.pos.z = z; this.pos.y = f + R; }
       }
+      // collisions round 2 (?falconhit=old = before): a wall's REAL normal (the solid round the hit point at the bird's
+      // height), not "against the motion": a glancing touch of a façade / crown side then slides along it instead of
+      // stopping the bird dead (and stunning it above 6 m/s, whatever the angle)
+      if (!FALCON_HIT_OLD && wall) {
+        const w = this._wallN(x0, y0, z0, dx, dz, world);
+        if (w) { nx = w[0]; nz = w[1]; ny = 0; }
+      }
       const vn = this.vel.x * nx + this.vel.y * ny + this.vel.z * nz;
       const speed = Math.hypot(this.vel.x, this.vel.y, this.vel.z);
+      if (!FALCON_HIT_OLD) { this._respond(nx, ny, nz, vn, speed, wall, under, hitTree); return; }
       const land = !wall && !under && ny > 0.85 && -vn < 4.5 && speed < 13;
       if (vn < 0) {
         const rest = land ? 0 : 0.3, fric = land ? 0.5 : wall ? 0.55 : 0.8;
@@ -273,5 +295,47 @@ export class FalconFlight {
       this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx, ny, nz, vn: -vn, speed, wall, land, hard, under, tree: hitTree };
       return;
     }
+  }
+
+  /** the horizontal outward normal of the solid round (x, y, z): the directions (8, at 0.7 and 1.5 m) where the bird's
+   *  sphere would be inside the solid, averaged and reversed; null when nothing is found (a thin solid: the caller keeps
+   *  the against-the-motion normal) */
+  _wallN(x, y, z, dx, dz, world) {
+    const R = 0.35, C = world.column ? world : null;
+    let sx = 0, sz = 0;
+    for (const d of [0.7, 1.5]) for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4, ux = Math.cos(a), uz = Math.sin(a), qx = x + ux * d, qz = z + uz * d;
+      let solid;
+      if (C) { const c = C.column(qx, qz, y); solid = y < c.floor + R || y > c.ceil - R; } else solid = y < world.floor(qx, qz) + R;
+      if (solid) { const wgt = d < 1 ? 1.5 : 1; sx += ux * wgt; sz += uz * wgt; }
+    }
+    const L = Math.hypot(sx, sz);
+    if (L < 0.5) return null;
+    let nx = -sx / L, nz = -sz / L;
+    // it must face the motion (the bird ran into it)
+    const hl = Math.hypot(dx, dz) || 1;
+    if ((nx * dx + nz * dz) / hl > 0.2) return null;
+    return [nx, nz];
+  }
+
+  /** the contact response (collisions round 2): the normal part of the velocity reflected with a little restitution,
+   *  the tangential part kept minus a Coulomb scrape (mu x the normal speed, as a rigid body sliding; before: a fixed
+   *  x0.55 / x0.8 per contact, so skimming a roof or a façade bled 20-45 % of the speed EVERY 8 ms substep); a small
+   *  push off a wall (0.6 m/s, before 2.5 m/s + 1.5 m/s up: a glancing touch kicked the bird away); a touch-down only
+   *  when it is really landing (slow: under 7 m/s, or flaring under 10), not any gentle contact under 13 m/s (the
+   *  bird used to "perch" whenever it skimmed a roof). */
+  _respond(nx, ny, nz, vn, speed, wall, under, hitTree) {
+    const v = this.vel;
+    const land = !wall && !under && ny > 0.85 && -vn < 3.5 && (speed < 7 || (this.brake > 0.3 && speed < 10));
+    if (vn < 0) {
+      const rest = land ? 0 : -vn > 4 ? 0.3 : 0.1, mu = land ? 0.8 : wall ? 0.35 : 0.3;
+      const tx = v.x - vn * nx, ty = v.y - vn * ny, tz = v.z - vn * nz, tl = Math.hypot(tx, ty, tz);
+      const k = land ? 0.5 : tl > 1e-6 ? Math.max(0, tl - mu * -vn) / tl : 0;
+      v.x = tx * k - rest * vn * nx; v.y = ty * k - rest * vn * ny; v.z = tz * k - rest * vn * nz;
+      if (wall) { v.x += nx * 0.6; v.z += nz * 0.6; }
+    }
+    const hard = -vn > 9 || (wall && -vn > 6);
+    if (hard) { this.stun = 0.9; this.stamina = Math.max(0, this.stamina - 0.15); if (wall) v.y = Math.max(v.y, 1.5); }
+    this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx, ny, nz, vn: -vn, speed, wall, land, hard, under, tree: hitTree };
   }
 }

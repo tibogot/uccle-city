@@ -110,3 +110,8 @@ Invisible parked cars (tiles streamed in after the boot drew no parked car; pull
 with a city-wide parked-car check (`debug/parkedCheck.js`, 15,888 -> 0 boxes with no car); the falcon on the drawn roof
 surface and its G view; test routes round the roundabouts (Churchill); all 120 terrains rebuilt with the exact resample
 (every tile edge matches): `ROAD_FIX3.md`.
+
+## Collisions round 2 (2026-11-15)
+The drawn-side audit (`debug/drawnAudit.js`), tile-edge furniture, street props, furniture heights, the car / bike
+collide-and-slide response, traffic boxes at the drawn pose and room for the filtering motorbike, the falcon's contact
+and hands-off trim, the robot character test: `docs/COLLISIONS.md`.

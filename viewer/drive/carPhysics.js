@@ -142,6 +142,10 @@ export function stepCar(c, input, dt, env, H = HANDLING) {
  * (slop-newyork resolveHorizontalCollision) Head-on bounces back, a glancing hit keeps most speed and yaws the car.
  */
 export function hit(c, nx, nz, kind, H = HANDLING) {
+  return HIT_OLD ? hitLegacy(c, nx, nz, kind, H) : hitSlide(c, nx, nz, kind, H);
+}
+/** the response before collisions round 2 (?carhit=old) */
+export function hitLegacy(c, nx, nz, kind, H = HANDLING) {
   const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
   const tvx = sinH * c.speed + c.vx, tvz = cosH * c.speed + c.vz;
   const vn = -(tvx * nx + tvz * nz);          // approach speed into the obstacle
@@ -158,6 +162,66 @@ export function hit(c, nx, nz, kind, H = HANDLING) {
   c.pitchVel += (sinH * nx + cosH * nz) * Math.min(14, vn) * 0.16;
   c.rollVel -= side * Math.min(14, vn) * 0.22;
   c.heaveVel += Math.min(1.4, vn * 0.11);
+  c.hits++;
+  if (vn > 2) c.lastHit = { x: c.x, z: c.z, nx, nz, speed: vn, kind, t: performance.now() };
+  return vn;
+}
+
+// ---------------------------------------------------------------- collisions round 2 (docs/COLLISIONS.md)
+/** ?carhit=old: the impact response before collisions round 2 (hit() above): each substep a contact with more than
+ *  0.5 m/s into the wall bounced / yawed the car again while the forward speed kept pushing it in: a car scraping a wall
+ *  stuttered, lost speed in steps and was kicked round (the owner's "sticky walls"). */
+export const HIT_OLD = typeof location !== "undefined" && /[?&]carhit=old(&|$)/.test(location.search);
+
+/**
+ * The impact response, collide-and-slide with a rigid-body impulse at the corner that hit (Unity / Godot character
+ * controllers slide the velocity along the contact; Chris Hecker's "Physics, Part 3: Collision Response" gives the
+ * impulse with rotation; slop-newyork resolveHorizontalCollision only pushes and kicks). The contact point is the car's
+ * corner deepest along the push; the point's velocity into the obstacle (the car's velocity + its yaw rate at that
+ * corner) is removed by an impulse j = vn (1 + e) / (1 + a^2 / I) (e: a small restitution, only for a hit that is mostly
+ * head-on; I / m = (L^2 + W^2) / 12, a = the lever arm of the normal), a Coulomb scrape takes up to mu j along the wall,
+ * and the normal impulse turns the car (a front corner hitting a wall swings the car parallel to it, as a real car does).
+ * The result is split back into the forward speed + the sideways slip (the tyres then take the slip out as in a
+ * skid). After the first substep the corner no longer moves into the wall, so a car pressed along a wall slides on with
+ * no new kick: no stutter, no "sticky" wall, no launch; the body kicks (pitch / roll / heave) come once per impact.
+ */
+const MU_WALL = 0.35, YAW_KICK_MAX = 2.2;
+export function hitSlide(c, nx, nz, kind, H = HANDLING, dims = null) {
+  const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
+  const hx = dims?.hx ?? c.bodyHx ?? BODY.hx, hz = dims?.hz ?? c.bodyHz ?? BODY.hz;
+  const Im = (4 * hx * hx + 4 * hz * hz) / 12;
+  // the corner that hit: the deepest along -n (forward = (sin, cos), left = (cos, -sin))
+  const fn = sinH * nx + cosH * nz, ln = cosH * nx - sinH * nz;
+  const sf = Math.abs(fn) < 0.05 ? 0 : fn > 0 ? -1 : 1, sl = Math.abs(ln) < 0.05 ? 0 : ln > 0 ? -1 : 1;
+  const rx = sinH * hz * sf + cosH * hx * sl, rz = cosH * hz * sf - sinH * hx * sl;
+  // the corner's velocity (a yaw rate w moves a point at r by w (rz, -rx))
+  const w = c.angularVel;
+  const tvx = sinH * c.speed + c.vx, tvz = cosH * c.speed + c.vz;
+  const pvx = tvx + w * rz, pvz = tvz - w * rx;
+  const vn = -(pvx * nx + pvz * nz);           // the corner's approach speed into the obstacle
+  if (vn <= 0.02) return 0;
+  const headOn = Math.abs(fn);
+  const e = vn > 1.5 ? H.bounce * headOn * headOn : 0;
+  const a = nx * rz - nz * rx;
+  const j = vn * (1 + e) / (1 + a * a / Im);
+  let dvx = nx * j, dvz = nz * j, dw = a * j / Im;
+  // the scrape along the wall
+  const ptx = pvx + nx * vn, ptz = pvz + nz * vn, pt = Math.hypot(ptx, ptz);
+  if (pt > 1e-4) {
+    // (linear only: the scrape's torque at the nose would screw a car pushed along a wall round into it)
+    const tx = ptx / pt, tz = ptz / pt, jt = Math.min(MU_WALL * j, pt);
+    dvx -= tx * jt; dvz -= tz * jt;
+  }
+  dw = Math.max(-YAW_KICK_MAX, Math.min(YAW_KICK_MAX, dw));
+  const wx = tvx + dvx, wz = tvz + dvz;
+  const fwd = wx * sinH + wz * cosH, lat = wx * cosH - wz * sinH;
+  c.speed = fwd; c.vx = cosH * lat; c.vz = -sinH * lat;
+  c.angularVel = w + dw;
+  if (vn > 0.8) {
+    c.pitchVel += fn * Math.min(14, vn) * 0.12;
+    c.rollVel -= ln * Math.min(14, vn) * 0.16;
+    c.heaveVel += Math.min(1.0, vn * 0.08);
+  }
   c.hits++;
   if (vn > 2) c.lastHit = { x: c.x, z: c.z, nx, nz, speed: vn, kind, t: performance.now() };
   return vn;
