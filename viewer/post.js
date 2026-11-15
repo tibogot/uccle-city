@@ -16,7 +16,7 @@ import { ssr } from "three/addons/tsl/display/SSRNode.js";
 import { ao } from "three/addons/tsl/display/GTAONode.js";
 import { denoise } from "three/addons/tsl/display/DenoiseNode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { sharpenTap, setSceneMRT } from "./upscale.js";
+import { sharpenTap, setSceneMRT, enableThinAA } from "./upscale.js";
 
 const LOOKS = {
   misty: { exposure: 1.06, contrast: 1.04, saturation: 0.94, balance: [1.01, 1.0, 0.99], bloom: 0.2, threshold: 1.3 },
@@ -58,6 +58,7 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     ...(up ? { motion: up.motionOutput() } : {}),
   });
   if (up) setSceneMRT(sceneMRT);                     // (the upscaler's mip bias: scene-pass texture samples only)
+  if (up) enableThinAA();                            // (wires blended, coverage cards stochastic: viewer/upscale.js)
   sceneMRT.setBlendMode("normal", new THREE.BlendMode(THREE.MaterialBlending));
   sceneMRT.setBlendMode("metalRough", new THREE.BlendMode(THREE.MaterialBlending));
   const color = texture(hdrRT.texture);

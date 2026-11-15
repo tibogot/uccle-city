@@ -31,6 +31,7 @@ import {
   sign, positionLocal, cameraPosition, cameraViewMatrix, frontFacing, textureLoad, atan, lights,
 } from "three/tsl";
 import { SP, SP_STRIDE, PART, speciesTable, nearBirdGeometry, farBirdGeometry } from "./birdMesh.js";
+import { setMotionDelta } from "../upscale.js";   // --- instmotion: the birds' motion vectors for the TAAU (docs/UPSCALE.md)
 
 export const LATTICE = 1, SCAN = 0;
 /** the fixed flock slots: a range of the buffer each (multiples of 64: one workgroup never mixes two loop lengths much) */
@@ -313,7 +314,7 @@ export class SkyFlocks {
     const b = x.x;
     const r = r0.mul(cos(b)).add(u0.mul(sin(b))), u = u0.mul(cos(b)).sub(r0.mul(sin(b)));
     const scale = B5.x.mul(hash(uint(idx).mul(uint(97))).mul(0.16).add(0.92));
-    return { p: p.xyz, f, r, u, s: int(B3.x), phase: v.w, amp: x.y, scale, idx };
+    return { p: p.xyz, v: v.xyz, f, r, u, s: int(B3.x), phase: v.w, amp: x.y, scale, idx };
   }
 
   buildNear() {
@@ -342,6 +343,9 @@ export class SkyFlocks {
     const c = select(part.equal(PART.back), col(0), select(part.equal(PART.belly), col(1), select(part.equal(PART.head), col(5), select(part.equal(PART.beak), col(6), select(isTail, col(0), wingC)))));
     m.colorNode = c;
     if (this.lightList) m.lightsNode = lights(this.lightList);
+    // --- instmotion: this frame's move pass did p += v dt, so last frame the bird was v dt back (its turn and the
+    // wing beat between the two frames are left out: a few cm)
+    setMotionDelta(m, F.v.mul(this.u.dt).negate());
     const mesh = new THREE.Mesh(this.nearGeo, m);
     mesh.name = "sky-birds-near"; mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = false;
     return mesh;
@@ -369,6 +373,7 @@ export class SkyFlocks {
     m.positionNode = F.p.add(F.r.mul(side.mul(half))).add(U.mul(abs(side).mul(flapY).mul(half).add(edge.mul(thick))));
     // unlit silhouette: the species' back colour lit by the hour (a white gull is not a lamp at dusk)
     m.colorNode = mix(sp(3).xyz, sp(4).xyz, 0.5).mul(this.u.light);
+    setMotionDelta(m, F.v.mul(this.u.dt).negate());               // --- instmotion
     const mesh = new THREE.Mesh(this.farGeo, m);
     mesh.name = "sky-birds-far"; mesh.frustumCulled = false; mesh.castShadow = false; mesh.receiveShadow = false;
     return mesh;

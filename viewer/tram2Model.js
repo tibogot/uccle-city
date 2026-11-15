@@ -29,6 +29,7 @@ import { env } from "./lighting.js";
 import { SMOOTH, ditherNoise } from "./lodFade.js";
 import { makeSignAtlas, LED, tramPose, headsignText } from "./tramModel.js";
 import { withAOKtx2 } from "./aoTexture.js";
+import { InstancePrev } from "./instMotion.js";   // --- instmotion: per-piece motion vectors for the TAAU (docs/UPSCALE.md)
 export { tramPose, headsignText };
 
 /** smooth LOD: half-width of the cross-fade band at each switch (a share of its distance), the far fade-out (m) */
@@ -309,6 +310,11 @@ function makeMaterial(sign, aoTex, layout) {
  *  { sign, doors: [right, left], brake }) per tram; end(). */
 export function createTramFleet(model, parent, maxTrams = 40) {
   const meshes = [];
+  // --- instmotion: a row per instance slot of every piece mesh (fixed regions), keyed by (trip, piece)
+  let rows = 0;
+  for (let k = 0; k < model.lods.length; k++) for (const p of PIECES) if (model.lods[k][p]) rows += Math.max(1025, maxTrams * PER_TRAM[p]);
+  const prev = new InstancePrev(rows, "tramPrev");
+  prev.hook(model.material);
   for (let k = 0; k < model.lods.length; k++) {
     const row = {};
     for (const p of PIECES) {
@@ -326,6 +332,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       const mesh = new THREE.InstancedMesh(geo, model.material, cap);
       mesh.count = 0; mesh.frustumCulled = false; mesh.castShadow = SMOOTH || k < 2; mesh.receiveShadow = true;
       mesh.name = `tram2-${p}-lod${k}`;
+      prev.register(mesh, cap);                                    // --- instmotion
       parent.add(mesh);
       row[p] = { mesh, inst, inst2, n: 0 };
     }
@@ -345,10 +352,12 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       cam = camera; eye = camera ? camera.position : camPos;
       if (cam) { pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); frustum.setFromProjectionMatrix(pm); }
       for (const row of meshes) for (const r of Object.values(row)) r.n = 0;
+      prev.begin(eye ?? camPos ?? v.set(0, 0, 0));                 // --- instmotion
       stats.trams = 0; stats.perLod = [0, 0, 0]; stats.culled = 0;
     },
     /** pose from tramPose(); ground(x, z) -> rail-top height; returns the LOD used or -1 */
-    add(pose, ground, { sign = 0, doors = null, brake = 0 } = {}) {
+    add(pose, ground, { sign = 0, doors = null, brake = 0, key = null } = {}) {
+      const kid = key !== null ? prev.id(key) * 32 : -1;            // --- instmotion (key: the trip; null = no motion)
       let cx = 0, cz = 0;
       for (const p of pose) { cx += p.x; cz += p.z; }
       cx /= pose.length; cz /= pose.length;
@@ -390,6 +399,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
           q.setFromAxisAngle(up, p.yaw); qp.setFromAxisAngle(zAx, placed[i * 2 + 1]); q.multiply(qp);
           M.compose(v.set(p.x, placed[i * 2], p.z), q, one);
           r.mesh.setMatrixAt(r.n, M);
+          if (kid >= 0) prev.put(r.mesh, r.n, kid + i, 0, p.x, placed[i * 2], p.z, p.yaw);   // --- instmotion
           r.inst.array.set([p.lead ? 1 : 0, sign, p.angle || 0, fade], r.n * 4);
           r.inst2.array.set(p.flip ? [dL, dR, brake, p.yaw] : [dR, dL, brake, p.yaw], r.n * 4);
           r.n++;
@@ -401,6 +411,7 @@ export function createTramFleet(model, parent, maxTrams = 40) {
       return k;
     },
     end() {
+      prev.end();                                                  // --- instmotion
       for (const row of meshes) for (const r of Object.values(row)) {
         r.mesh.count = r.n; r.mesh.visible = r.n > 0;     // (an empty instanced mesh still costs a draw per pass)
         if (r.n) {

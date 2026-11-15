@@ -22,6 +22,7 @@ import {
 } from "three/tsl";
 import { hash2D, noise2D, filteredPulse } from "../tslkit.js";
 import { SMOOTH, ditherNoise, lodEye } from "../lodFade.js";
+import { thinWire, wireHalfPx } from "../upscale.js";   // (the wires under the TAAU)
 
 import { prepRail, carveGrid, railTileData, SLEEPER_STEP, SLEEPER_FAR, RAIL_C, WIRE_H, MESSENGER_H, MAST_OFF, FENCE_H } from "./railData.js";
 export { GAUGE, RAIL_C, CREST, BED } from "./railData.js";
@@ -105,13 +106,14 @@ export function railMaterials() {
     const tan = attribute("aTan", "vec3"), side = attribute("aSide", "float"), r = attribute("aR", "float");
     const toCam = cameraPosition.sub(positionLocal);
     const dist = length(toCam);
-    const px = dist.mul(0.0011);                                   // ~1 px at 1080p, 60 deg fov
+    const px = dist.mul(wireHalfPx);                               // ~1 px at 1080p, 60 deg fov (native 0.0011; TAAU: viewer/upscale.js)
     const w = max(r, px);
     const off = normalize(cross(tan, toCam)).mul(side).mul(w);
     wire.positionNode = positionLocal.add(off);
     wire.opacityNode = clamp(r.div(w), 0.08, 1).mul(float(1).sub(smoothstep(500, 900, dist)));
     wire.alphaToCoverage = true;
     wire.transparent = false;
+    thinWire(wire);                                                // (blended under the TAAU)
   }
   const concrete = new THREE.MeshStandardNodeMaterial({ roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
   {

@@ -112,8 +112,8 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
       if (p.d - len > R.len + 50 || p.d < -50) continue;       // wholly beyond the route's ends (outside the tiles)
       stats.running++;
       trainPose(model.layout, R.at, p.d, pose, { pool });
-      fleet.add(pose);
-      if ((t.units || 1) > 1) { trainPose(model.layout, R.at, p.d - L, pose2, { reversed: true, leadFront: false, pool: pool2 }); fleet.add(pose2); }
+      fleet.add(pose, t, 0);                                       // (t, 0 / 1: the motion key, --- instmotion)
+      if ((t.units || 1) > 1) { trainPose(model.layout, R.at, p.d - L, pose2, { reversed: true, leadFront: false, pool: pool2 }); fleet.add(pose2, t, 1); }
       // pop bookkeeping: is the train's middle in view, near enough to matter?
       if (camera) {
         const m = R.at(p.d - len / 2);

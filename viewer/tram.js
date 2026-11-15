@@ -11,6 +11,7 @@ import { attribute, uv, vec3, vec4, color, mix, mx_noise_float, cameraPosition, 
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
 import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.js";
+import { thinWire, wireHalfPx } from "./upscale.js";   // (the wire under the TAAU: blended, >= 0.6 internal px half-width)
 
 const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4, WIRE_R = 0.012;
 let wireMat = null;
@@ -26,7 +27,7 @@ function wireMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ color: 0x3b4044, roughness: 0.5, metalness: 0.7 });
   const tan = attribute("aTan", "vec3"), side = attribute("aSide", "float"), r = attribute("aR", "float");
   const toCam = cameraPosition.sub(positionLocal), dist = length(toCam);
-  const w = max(r, dist.mul(0.0011));                                   // ~1 px at 1080p, 60 deg fov
+  const w = max(r, dist.mul(wireHalfPx));                                // ~1 px at 1080p, 60 deg fov (native: 0.0011)
   const sideV = normalize(cross(tan, toCam));
   m.positionNode = positionLocal.add(sideV.mul(side).mul(w));
   if (WIRE2) {
@@ -38,6 +39,7 @@ function wireMaterial() {
   m.opacityNode = clamp(r.div(w), 0.08, 1).mul(float(1).sub(smoothstep(500, 900, dist)));
   m.alphaToCoverage = true;
   m.userData.shared = true;
+  thinWire(m);
   return (wireMat = m);
 }
 

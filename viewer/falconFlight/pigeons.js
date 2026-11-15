@@ -11,6 +11,7 @@
 // r187's examples/webgpu_compute_birds.html, with our own lit mesh).
 import * as THREE from "three/webgpu";
 import { attribute, vec3, vec4, float, sin, cos, abs, sign, normalize, cross, mix, positionLocal, smoothstep, max } from "three/tsl";
+import { InstancePrev } from "../instMotion.js";   // --- instmotion
 
 const PERCH = 0, FLY = 1, LAND = 2, GONE = 3;
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
@@ -140,6 +141,8 @@ export class Pigeons {
     g.setAttribute("iTint", new THREE.InstancedBufferAttribute(tint, 3));
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(home.x, 100, home.z), 600);
     this.mesh = new THREE.Mesh(g, pigeonMaterial());
+    this.prev = new InstancePrev(n, "pigeonPrev");                 // --- instmotion: the pigeons' motion vectors (TAAU)
+    this.prev.register(this.mesh, n); this.prev.hook(this.mesh.material);
     this.mesh.name = "pigeons"; this.mesh.frustumCulled = false;
     this.mesh.castShadow = false; this.mesh.receiveShadow = true;
     this.stats = { flying: 0, perched: 0, gone: 0, cpuMs: 0, takeoffs: 0 };
@@ -340,6 +343,7 @@ export class Pigeons {
 
   writeInstances(dt, t) {
     const n = this.max, p = this.p, v = this.v, A = this.aPos.array, D = this.aDir.array, M = this.aAnim.array, sc = this.scale;
+    this.prev.begin(this.home.y !== undefined ? this.home : { x: this.home.x, y: 0, z: this.home.z });   // --- instmotion
     for (let i = 0; i < n; i++) {
       const o = i * 3, q = i * 4, s = this.state[i];
       if (s === GONE) { A[q + 3] = 0; continue; }
@@ -373,7 +377,9 @@ export class Pigeons {
       }
       this.fold[i] = fold; this.amp[i] = amp; this.liftV[i] = lift;
       M[q] = this.phase[i] % 62.83; M[q + 1] = amp; M[q + 2] = fold; M[q + 3] = lift;
+      this.prev.put(this.mesh, i, i, 0, A[q], A[q + 1], A[q + 2], 0);    // --- instmotion (translation only)
     }
+    this.prev.end();
     this.aPos.needsUpdate = true; this.aDir.needsUpdate = true; this.aAnim.needsUpdate = true;
   }
 
