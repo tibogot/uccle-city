@@ -46,6 +46,7 @@ export class Minimap {
     this.whereState = { at: 0, inflight: false, key: null, text: '', next: '' };
     this.scale = 0;             // CSS px per metre (smoothed)
     this.paused = false;
+    this.overlay = null;        // (ctx, toScreen(x, z) -> [X, Y], s px/m, R, p): the game kit's markers (docs/GAMEKIT.md)
     this.profile = new URLSearchParams(location.search).get('mapprof') === '1';
     this.stats = { frames: 0, total: 0, max: 0, recent: [], rebuilds: 0, rebuildMs: [], labelMs: [], whereMs: [], skipped: 0 };
     this.last = null;
@@ -83,6 +84,9 @@ export class Minimap {
     for (const c of T.cur) { const q = T.prev.get(c.trip) || c; T.now.push(q.x + (c.x - q.x) * k, q.z + (c.z - q.z) * k); }
     return T.now;
   }
+
+  /** force a redraw next update (an overlay changed) */
+  redraw() { this.last = null; }
 
   setLang(l) { if (l !== this.lang) { this.lang = l; this.labels.at = 0; this.labels.list = []; this.whereState.text = '#'; } }
 
@@ -252,6 +256,8 @@ export class Minimap {
       if (X * X + Y * Y > reach2) continue;
       ctx.save(); ctx.translate(X, Y); drawGlyph(ctx, lm.kind, lm.kind === 'hero' ? 6 : 5); ctx.restore();
     }
+    // the game kit's overlay (viewer/game/mapMarkers.js: route + waypoints, under the arrow); set redraw() when it changes
+    if (this.overlay) { ctx.save(); this.overlay(ctx, toScreen, s, R, p); ctx.restore(); }
     // view cone (the camera looks up) and the player's arrow (its own heading relative to the camera)
     if (!this.cone || this.cone.R !== R) {
       const g = ctx.createRadialGradient(0, 0, 2, 0, 0, R * 0.62);
