@@ -14,7 +14,7 @@ export const SHAPE = {
   shelter: 0.65,        // under a full crown, snow depth x (1 - shelter)
 };
 
-export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, res, cell, origin }) {
+export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, carPx = null, res, cell, origin }) {
   const N = res, S = SHAPE;
   const H = new Float32Array(N * N), Hs = new Float32Array(N * N), shelter = new Float32Array(N * N), shape = new Float32Array(N * N), cliff = new Uint8Array(N * N);
   const uOrigin = { value: { x: origin[0], y: origin[1] } };
@@ -119,6 +119,9 @@ export function computeOverheadShape({ solidPx, canopyPx, roadPx = null, res, ce
   for (let k = 0; k < N * N; k++) shelter[k] = Cn[k] > H[k] + 0.8 ? 1 : 0;
   blur(shelter, 3);
   computeShape();
+  // snow caps (claude/snowtracks): a parked car's top cuts the layer (the car carries its own cap mesh); the ground under
+  // it stays the topmost-surface test's "sheltered"
+  if (carPx) { const Cr = new Float32Array(N * N); toGrid(carPx, Cr, -1e4); for (let k = 0; k < N * N; k++) if (Cr[k] > H[k] - 0.05) cliff[k] = 1; }
   // road cells: a carriageway is the topmost surface here
   const road = new Uint8Array(N * N);
   if (roadPx) { const Rd = new Float32Array(N * N); toGrid(roadPx, Rd, -1e4); for (let k = 0; k < N * N; k++) road[k] = Rd[k] > H[k] - 0.05 ? 1 : 0; }

@@ -119,7 +119,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     return { s, tr, d };
   };
   const C = depthAt(ii, jj), L = depthAt(ii.sub(1), jj), R = depthAt(ii.add(1), jj), U = depthAt(ii, jj.sub(1)), D = depthAt(ii, jj.add(1));
-  const rimOf = (X) => max(float(0), L.tr.add(R.tr).add(U.tr).add(D.tr).mul(0.25).sub(X.tr)).mul(0.5);
+  const rimOf = (X) => max(float(0), L.tr.add(R.tr).add(U.tr).add(D.tr).mul(0.25).sub(X.tr)).mul(trail ? 0.9 : 0.5);   // (snowtracks: a fuller berm)
   const hOf = (X, rim) => X.s.x.add(X.d.mul(float(1).sub(X.tr.mul(0.72))).mul(float(1).add(rim)));
   const hC = hOf(C, rimOf(C));
   // a neighbour across a cliff is replaced by the centre (no normal bent toward the street below)
@@ -153,7 +153,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   // ---- snowtracks: the shading reads the trail per pixel (6.25 cm, finer than the 12.5 cm groove of the geometry): the
   // packed colour follows the boot / tyre outline, a detail normal from its slope (central differences over 2 texels:
   // smooth, no texel facets), and the tread (tyre bars across the travel direction, boot lugs) as a bump
-  let trailN = null, tread = float(0);
+  let trailN = null, tread = float(0), trailAO = null;
   if (trail) {
     const T = trail.texelAt(P.xz), e = trail.texel;
     const on = trail.uOn.greaterThan(0.5);
@@ -169,6 +169,8 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     const bars = abs(fract(along.div(0.034)).sub(0.5)).mul(2).smoothstep(0.35, 0.65).mul(0.0035);
     // boot sole: lug bars across the sole (2 cm pitch), broken up along their length
     const lugs = abs(fract(along.div(0.022)).sub(0.5)).mul(2).smoothstep(0.3, 0.7).mul(noise2D(P.xz.mul(18.0)).mul(0.5).add(0.5)).mul(0.002);
+    // the sky a groove's floor sees is narrower: ambient occlusion by its depth (reads in shade, where normals do not)
+    trailAO = float(1).sub(smoothstep(0.1, 0.85, fine).mul(min(vDepth.div(0.12), 1)).mul(0.42));
     tread = select(on, mix(lugs, bars, T.z.smoothstep(0.3, 0.7)).mul(smoothstep(0.2, 0.6, fine)).mul(float(1).sub(smoothstep(0.003, 0.009, fwT))), float(0));
   }
   // ---- /snowtracks
@@ -199,6 +201,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     c = mix(c, vec3(0.07, 0.068, 0.065), packed.mul(thinT).mul(0.9));
     return c;
   })();
+  if (trailAO) mat.aoNode = trailAO;        // (snowtracks)
   mat.roughnessNode = mix(mix(mix(float(0.74), float(0.12), gl.w), float(0.5), packed), float(0.22), wx.uSlush);
   const bump = noise2D(P.xz.mul(7.0)).mul(0.008).add(noise2D(P.xz.mul(23.0)).mul(0.002)).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).mul(float(1).sub(packed.mul(0.7))).add(tread);
   const toView = (n) => normalize(cameraViewMatrix.mul(vec4(n, 0)).xyz);

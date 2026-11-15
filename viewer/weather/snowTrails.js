@@ -41,7 +41,8 @@ export function createSnowTrails({ renderer = null, size = 64, res = +(qp.get("s
   const uOn = uniform(0);                                 // 1 while any trail may be in the window (readers skip it at 0)
   const uSize = float(size), uTexel = float(texel);
 
-  // ---- the writers (clip space straight from uv: x = 2u - 1, y = 2v - 1; three flips v when it samples a render target)
+  // ---- the writers (clip space straight from uv: x = 2u - 1, y = 1 - 2v: clip +y is the target's first row, which a
+  // texture() lookup of this render target reads at v = 0; checked with a debug plane over a car's tracks)
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const scene = new THREE.Scene();
   // brushes: a capsule p -> q (uv units, already wrapped by the CPU), radius r (m), strength, kind, waist
@@ -53,7 +54,7 @@ export function createSnowTrails({ renderer = null, size = 64, res = +(qp.get("s
   const bDir = new THREE.InstancedBufferAttribute(new Float32Array(MAXB * 2), 2);
   bGeo.setAttribute("aSeg", bSeg); bGeo.setAttribute("aPar", bPar); bGeo.setAttribute("aDir", bDir);
   bGeo.instanceCount = 0;
-  const bMat = new THREE.MeshBasicNodeMaterial({ depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  const bMat = new THREE.MeshBasicNodeMaterial({ depthTest: false, depthWrite: false, fog: false, toneMapped: false, side: THREE.DoubleSide });
   Object.assign(bMat, { transparent: true, blending: THREE.CustomBlending,
     blendEquation: THREE.AddEquation, blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
     blendEquationAlpha: THREE.MaxEquation, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor });
@@ -64,9 +65,10 @@ export function createSnowTrails({ renderer = null, size = 64, res = +(qp.get("s
     const ax = select(L.greaterThan(1e-7), pq.div(max(L, 1e-7)), vec2(1, 0)), ay = vec2(ax.y.negate(), ax.x);
     const m = p.add(q).mul(0.5), g = positionGeometry;
     const pad = float(texel * 1.5).div(uSize);
-    const at = m.add(ax.mul(g.x.mul(L.mul(0.5).add(r).add(pad)))).add(ay.mul(g.y.mul(r.add(pad))));
+    const R = r.mul(1.8);
+    const at = m.add(ax.mul(g.x.mul(L.mul(0.5).add(R).add(pad)))).add(ay.mul(g.y.mul(R.add(pad))));
     const vAt = varying(at), vP = varying(p), vQ = varying(q), vPar = varying(par), vDir = varying(dirA);
-    bMat.vertexNode = vec4(at.mul(2).sub(1), 0, 1);
+    bMat.vertexNode = vec4(at.x.mul(2).sub(1), float(1).sub(at.y.mul(2)), 0, 1);
     bMat.fragmentNode = Fn(() => {
       const pp = vP, qq = vQ, d0 = qq.sub(pp);
       const h = clamp(vAt.sub(pp).dot(d0).div(max(d0.dot(d0), 1e-12)), 0, 1);
@@ -75,7 +77,9 @@ export function createSnowTrails({ renderer = null, size = 64, res = +(qp.get("s
       const waist = vPar.w.mul(float(1).sub(abs(h.mul(2).sub(1))).mul(0.22)).negate().add(1).mul(mix(float(0.92), float(1.06), h));
       const rr = vPar.x.mul(select(vPar.z.greaterThan(0.5), float(1), waist));
       // the profile: a flat floor with soft walls (the walls read as the groove's rim in the shading)
-      const w = smoothstep(rr, rr.mul(select(vPar.z.greaterThan(0.5), float(0.55), float(0.62))), d).mul(vPar.y);
+      // (the walls slope out: a 21 cm tyre leaves a ~35 cm trench at the top in deep snow, readable on the 12.5 cm grid)
+      const tyre = vPar.z.greaterThan(0.5);
+      const w = smoothstep(rr.mul(select(tyre, float(1.7), float(1.45))), rr.mul(select(tyre, float(0.5), float(0.6))), d).mul(vPar.y);
       return vec4(vDir.mul(0.5).add(0.5), vPar.z, w);
     })();
   }
@@ -89,13 +93,14 @@ export function createSnowTrails({ renderer = null, size = 64, res = +(qp.get("s
   const rK = new THREE.InstancedBufferAttribute(new Float32Array(MAXR), 1);
   rGeo.setAttribute("aRect", rRect); rGeo.setAttribute("aK", rK);
   rGeo.instanceCount = 0;
-  const rMat = new THREE.MeshBasicNodeMaterial({ depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  const rMat = new THREE.MeshBasicNodeMaterial({ depthTest: false, depthWrite: false, fog: false, toneMapped: false, side: THREE.DoubleSide });
   Object.assign(rMat, { transparent: true, blending: THREE.CustomBlending,
     blendEquation: THREE.AddEquation, blendSrc: THREE.ZeroFactor, blendDst: THREE.OneFactor,
     blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor });
   {
     const R = attribute("aRect", "vec4"), g = positionGeometry;
-    rMat.vertexNode = vec4(mix(R.xy, R.zw, g.xy).mul(2).sub(1), 0, 1);
+    const ruv = mix(R.xy, R.zw, g.xy);
+    rMat.vertexNode = vec4(ruv.x.mul(2).sub(1), float(1).sub(ruv.y.mul(2)), 0, 1);
     rMat.fragmentNode = vec4(0, 0, 0, varying(attribute("aK", "float")));
   }
   const rects = new THREE.Mesh(rGeo, rMat);
@@ -108,7 +113,7 @@ export function createSnowTrails({ renderer = null, size = 64, res = +(qp.get("s
   /** a brush (world metres): capsule p -> q, radius r, strength 0..1, kind 0 boot / 1 tyre, travel direction (dx, dz) */
   function brush(px, pz, qx, qz, r, s, kind, dx, dz) {
     const u0 = wrap(px / size), v0 = wrap(pz / size), u1 = u0 + (qx - px) / size, v1 = v0 + (qz - pz) / size;
-    const e = (r + 2 * texel) / size;
+    const e = (r * 1.8 + 2 * texel) / size;
     const lo = [Math.min(u0, u1) - e, Math.min(v0, v1) - e], hi = [Math.max(u0, u1) + e, Math.max(v0, v1) + e];
     const dl = Math.hypot(dx, dz) || 1;
     for (const ou of [0, -1, 1]) {

@@ -12,11 +12,12 @@
 import * as THREE from "three/webgpu";
 import { Weather, WEATHER_PRESETS, wx } from "./weatherState.js";
 import { WX_ON, setWeatherMap, setWeatherTrails } from "./cityWeatherize.js";
-import { createOverheadMap, SOLID_LAYER, CANOPY_LAYER, ROAD_LAYER } from "./overheadMap.js";
+import { createOverheadMap, SOLID_LAYER, CANOPY_LAYER, ROAD_LAYER, CAR_LAYER } from "./overheadMap.js";
 import { createPrecipitation } from "./precipitation.js";
 import { createSnowLayer } from "./snowLayer.js";
 import { createSnowTrails, TRAILS_ON } from "./snowTrails.js";      // snowtracks: footprints / tyre tracks (?snowtracks=0)
 import { createSnowMovers } from "./snowMovers.js";
+import { createCityCaps } from "./cityCaps.js";                     // snow caps on cars / furniture / shelters / copings (?snowcaps=0)
 import { wxLook } from "./surfaceWeather.js";
 import { season, setDay } from "../seasons/season.js";
 import { fetchLive, mapLive } from "./liveWeather.js";
@@ -47,6 +48,11 @@ const trails = map && TRAILS_ON ? createSnowTrails({ size: MAP_SIZE }) : null;
 if (trails) setWeatherTrails(trails);
 
 const SNOW_WB = !polishOld("snowwb");
+/** scene children that move (never baked as ground): trams, trains, the traffic, the player's car, birds */
+/** snow caps: the parked cars' batches (their tops cut the layer: the cap meshes carry the snow) */
+const CAR_RE = /^parked-car-batch/;
+const CAPS_CUT = new URLSearchParams(location.search).get("snowcaps") !== "0";
+const MOVER_RE = /^(tram2?-|tram$|trains$|traffic-fleet$|car$|moto|player-falcon$|falcons$|pigeons$|air-streaks$)/;
 const lerp = THREE.MathUtils.lerp, sstep = THREE.MathUtils.smoothstep;
 
 export const cityWeather = {
@@ -68,9 +74,14 @@ export const cityWeather = {
     const layer = createSnowLayer({ renderer, map, edgeFade: true, trail: trails });
     const group = new THREE.Group(); group.name = "weather";
     group.add(rain.mesh, rain.splashes, snow.mesh, leaves.mesh, layer.mesh);
+    // snow caps: their own group (precompiled with the weather's draws: one dummy instance per family)
+    const [{ cityFurniture }, { cityStops }, { cityGardens }] = await Promise.all([import("../furniture2/cityFurniture.js"), import("../stops/cityStops.js"), import("../gardens/cityGardens.js")]);
+    const capGroup = new THREE.Group(); capGroup.name = "snow-caps";
+    const caps = createCityCaps({ group: capGroup, getMovers: () => this.movers, kits: { furniture: () => cityFurniture, stops: () => cityStops, gardens: () => cityGardens } });
+    if (caps) group.add(capGroup);
     group.traverse((o) => { o.userData.wxSkip = true; });
     scene.add(group);
-    Object.assign(this, { scene, renderer, camera, lighting, world, pipe, rain, snow, leaves, layer, group, log, trails, snowMovers: movers });
+    Object.assign(this, { scene, renderer, camera, lighting, world, pipe, rain, snow, leaves, layer, group, log, trails, snowMovers: movers, caps });
     // the start weather: ?wx=, else clear (the city as before)
     const want = (qp.get("wx") || "clear").replace(/_/g, " ");
     if (want === "live") this.goLive(); else this.setPreset(CITY_PRESETS.includes(want) || WEATHER_PRESETS[want] ? want : "clear", 0);
@@ -145,6 +156,7 @@ export const cityWeather = {
     foliageSeason.uWet.value = wx.uWet.value;
     // ---- the snow layer
     this.layer.update(dt, this.stamps?.() ?? []);
+    this.caps?.update(camPos, dt);          // snow caps (hidden without snow)
     // ---- snowtracks: the movers stamp the trail texture while there is snow; snowfall fills the grooves back
     if (this.trails) {
       const snowOn = wx.uSnowDepth.value > 0.003 && wx.uSnowCover.value > 0.05;
@@ -259,9 +271,18 @@ export const cityWeather = {
   /** solid = every visible opaque mesh (its own instancing / batching only: a custom positionNode is not seen by the
    *  bake's override material), canopy = tree crowns, road = the carriageway material (salted in winter) */
   mark() {
-    let n = 0;
-    this.scene.traverseVisible((o) => {
+    let n = 0, cars = 0;
+    // snowtracks / snow caps: MOVERS are not ground. Baked at the pose they had at the bake, the layer drew a snow slab
+    // floating where the player's car, a tram or a traffic car had been (and a hole in the street under it) until the
+    // next bake; their snow is the caps' job (snowCaps.js)
+    const off = (o) => o.traverse((m) => { if (m.isMesh) { m.layers.disable(SOLID_LAYER); m.layers.disable(ROAD_LAYER); } });
+    const M = this.movers, own = new Set([M?.driver?.car?.root, M?.driver?.moto?.root, M?.third?.()?.tp?.body?.root].filter(Boolean));
+    for (const r of own) off(r);
+    for (const top of this.scene.children) {
+      if (MOVER_RE.test(top.name) || own.has(top)) { off(top); continue; }
+      top.traverseVisible((o) => {
       if (!o.isMesh || o.userData.wxSkip) return;
+      if (o.isSkinnedMesh) { o.layers.disable(SOLID_LAYER); return; }
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
       if (!m) return;
       // crowns: their cards' wind / morph (positionNode) is not in the bake, the instanced crown volume is: shelter only
@@ -270,7 +291,12 @@ export const cityWeather = {
       if (m.transparent && !m.userData?.wxRoad) { o.layers.disable(SOLID_LAYER); return; }
       o.layers.enable(SOLID_LAYER); n++;
       if (m.userData?.wxRoad) o.layers.enable(ROAD_LAYER);
-    });
+      // snow caps: a parked car carries its own cap (snowCaps.js): the layer is cut on its top (overheadShape carPx)
+      if (CAPS_CUT && CAR_RE.test(o.name)) { o.layers.enable(CAR_LAYER); cars++; } else o.layers.disable(CAR_LAYER);
+      });
+    }
+    for (const r of own) off(r);
+    map.carsMarked = cars > 0;
     return n;
   },
   /** autumn leaves fall from the crowns the bake found (the 8 most sheltered 8 x 8 m blocks) */

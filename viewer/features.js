@@ -73,6 +73,7 @@ export const FEATURES = [
     [[null, "clear"], ["overcast", "overcast"], ["drizzle", "drizzle"], ["rain", "rain"], ["storm", "storm"], ["snowfall", "snowfall"], ["snow_cover", "snow cover"], ["fog", "fog"], ["live", "live (Open-Meteo)"]], { live: "weather" }),
   old("weather", "weather", "no weather system", "?weather=old: the city before the weather hookup (no wet / snow layer in the materials, no rain, no overhead bake)."),
   on("snowtracks", "weather", "snow tracks", "Footprints, tyre and motorbike tracks in the snow (viewer/weather/snowTrails.js: a camera-centred trail texture the walker / character / cars stamp; the snow layer and the ground cover read it)."),
+  on("snowcaps", "weather", "snow caps", "Snow caps with thickness and rounded rims on car roofs / bonnets (parked, traffic, yours), benches, bins, bike boxes, glass banks, bus shelters, garden copings and hedge tops (viewer/weather/snowCaps.js + cityCaps.js); parked cars' tops then cut the snow layer."),
   num("snowtrailres", "weather", "snow track texels", "Snow track texture size over the weather window (1024 = 6.25 cm over 64 m; 512 = 12.5 cm).", 1024, 256, 2048, 256),
   num("wxmap", "weather", "weather window (m)", "Size of the overhead map + volumetric snow window round the camera (512 cells; 64 m = 12.5 cm cells).", 64, 32, 128, 16),
   txt("wind", "weather", "wind (flags / falcon)", "Flags: 'speed,deg' (default 5,70); the falcon flight reads the speed (default 4).", "5,70"),

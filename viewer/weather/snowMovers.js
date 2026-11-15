@@ -73,7 +73,7 @@ export function createSnowMovers({ ground = null, getMovers }) {
           if (sp > 0.2) { st.tfx = vx / sp; st.tfz = vz / sp; }
           for (let i = 0; i < 2; i++) {
             const e = legs[i].foot.matrixWorld.elements, x = e[12], y = e[13], z = e[14];
-            const L = (st.third[i] ??= { lo: y, x: NaN, z: NaN });
+            const L = (st.third[i] ??= { lo: y, x: 1e9, z: 1e9 });
             L.lo = Math.min(y, L.lo + dt * 0.05);                   // the lowest the ankle gets (slowly forgets)
             const planted = y < L.lo + 0.035 && ctl.grounded !== false && Math.abs(y - y0) < 0.4;
             if (planted && sp > 0.2 && Math.hypot(x - L.x, z - L.z) > 0.3) {

@@ -67,7 +67,8 @@ export const cityGardens = {
     parent.add(grp);
     let srcs = null;
     this.streamer.addTile(name, grp, (slot) => (srcs = gardenSources(g.inst, slot)));
-    this.tiles.set(name, { name, raw: g.settled, hedgeRuns: doc.hedges || [], groundAt, srcs, group: grp, counts: g.counts, doc: { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length, hedges: doc.hedges.length } });
+    // (inst: the snow caps read the copings / hedges, viewer/weather/cityCaps.js)
+    this.tiles.set(name, { name, inst: g.inst, raw: g.settled, hedgeRuns: doc.hedges || [], groundAt, srcs, group: grp, counts: g.counts, doc: { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length, hedges: doc.hedges.length } });
     return { ...g.counts, ms: Math.round(performance.now() - t0) };
   },
   removeTile(name) {
