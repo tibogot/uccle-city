@@ -893,7 +893,9 @@ the quiet window. Caveat: the twin compiles its 4x pipelines lazily, so where it
 CPU per frame equal within 0.6 ms (7-9.5 ms); draws equal. TAA at full resolution is already 1-2.4 ms cheaper than
 MSAA 4x (the 3 HalfFloat MRT targets x 4 samples + their resolve), except the lawn (equal: grass / fragment bound);
 0.75 is 34-49 % less. "auto" had 6 s to climb from 0.8 (0.05 per 2.5-4 s), hence 0.95 under budget; on the lawn
-it held 0.6-0.8 for a p50 under 14 ms. The resolve itself: ~0.37 ms at 1600 x 828 (`TAAUNode.resolve` pass).
+it held 0.6-0.8 for a p50 under 14 ms. The resolve pass (`TAAUNode.resolve`) is a small share of the post passes on
+the path reports. These tables were taken BEFORE the mip bias and the sharper kernel (commit 2): textureSampleBias at a
+negative bias reads finer mips (a little more bandwidth); not re-measured (the GPU was shared again afterwards).
 
 ### 15.2 Night (`time=night`, traffic on, 4 rounds; RED: a third city rendering)
 

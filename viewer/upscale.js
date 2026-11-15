@@ -47,6 +47,28 @@ if (UPSCALE) {
   };
 }
 
+// ---- texture mip bias: at an internal scale s the GPU picks mips for the SMALLER image (blurry bricks / cobbles after
+// the upscale); the scene pass's fragment texture samples get bias log2(s) + MIP_EXTRA (FSR2's rule; the history
+// averages the extra aliasing). WebGPU samplers have no LOD bias: done in the shader (textureSampleBias) for samples
+// with no level / bias / grad / compare of their own, in the pass whose MRT is the scene's (not shadows, not post).
+export const uMipBias = uniform(0);
+const MIP_EXTRA = +(qs.get("mipbias") ?? -0.3);
+let sceneMRTRef = null;
+/** post.js: the scene pass's MRT (the mip bias applies to its builds only) */
+export function setSceneMRT(m) { sceneMRTRef = m; }
+if (UPSCALE && qs.get("mipbias") !== "off") {
+  const TN = THREE.TextureNode.prototype, gen = TN.generateSnippet;
+  TN.generateSnippet = function (builder, textureProperty, uvSnippet, levelSnippet, biasSnippet, depthSnippet, compareSnippet, gradSnippet, gatherSnippet, ...rest) {
+    const t = this.value;
+    if (!levelSnippet && !biasSnippet && !gradSnippet && !gatherSnippet && !compareSnippet && builder.shaderStage === "fragment" && sceneMRTRef &&
+        builder.renderer.getMRT?.() === sceneMRTRef && t && !t.isRenderTargetTexture && !t.isDepthTexture &&
+        t.minFilter !== THREE.NearestFilter && t.minFilter !== THREE.LinearFilter && (t.generateMipmaps || t.mipmaps?.length > 1)) {
+      biasSnippet = uMipBias.build(builder, "float");
+    }
+    return gen.call(this, builder, textureProperty, uvSnippet, levelSnippet, biasSnippet, depthSnippet, compareSnippet, gradSnippet, gatherSnippet, ...rest);
+  };
+}
+
 // ---- quality presets: internal scale range for the dynamic resolution, start, and effect switches
 export const PRESETS = {
   native: { label: "Native (TAA, full resolution)", min: 1, max: 1, start: 1, ao: true, ssr: true },
@@ -75,6 +97,7 @@ class CityTAAU extends TAAUNode {
     this._prevVP = prevVP;                               // last frame's
     this.uWeight = uniform(0.05);                        // baseline weight of the current frame
     this.uReset = uniform(0);                            // 1: drop the history this frame (camera cut)
+    this.uKernel = uniform(+(qs.get("taakernel") ?? 1.6));   // reconstruction sharpness when the history is good (three: 1)
   }
 
   setup(builder) {
@@ -119,7 +142,7 @@ class CityTAAU extends TAAUNode {
 
       // the reconstruction kernel widens where the history counts for little (disocclusion, fast motion): the
       // current frame alone then reads as a soft upscale, not as the input's pixel staircase (FSR2's kernel scale)
-      const kernel = hasValidHistory.select(mix(float(1), float(0.45), motionFactor.mul(4).saturate()), float(0.45));
+      const kernel = hasValidHistory.select(mix(this.uKernel, float(0.45), motionFactor.mul(4).saturate()), float(0.45));
       const sumColor = vec4(0).toVar(), sumWeight = float(0).toVar(), moment1 = vec4(0).toVar(), moment2 = vec4(0).toVar();
       const taps = [[-1, -1], [0, -1], [1, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
       for (const [x, y] of taps) {
@@ -222,7 +245,8 @@ export function createUpscaler(renderer, camera) {
     s = clamp(quant(s), 0.4, 1);
     if (s === U.scale) return;
     U.scale = s;
-    U.uSharp.value = sharp0 ?? (0.12 + 0.55 * (1 - s));   // more sharpening the lower the scale
+    U.uSharp.value = sharp0 ?? (0.2 + 0.5 * (1 - s));     // more sharpening the lower the scale
+    uMipBias.value = Math.log2(s) + MIP_EXTRA;
     for (const f of U.listeners) f(s);
   };
   U.onScale = (f) => { U.listeners.push(f); f(U.scale); };
@@ -328,7 +352,8 @@ export function createUpscaler(renderer, camera) {
   });
 
   applyScale(fixed ?? U.preset.start);
-  U.uSharp.value = sharp0 ?? (0.12 + 0.55 * (1 - U.scale));
+  U.uSharp.value = sharp0 ?? (0.2 + 0.5 * (1 - U.scale));
+  uMipBias.value = Math.log2(U.scale) + MIP_EXTRA;
   return U;
 }
 
