@@ -650,11 +650,24 @@ function flatRoofLook(u, v, base, P, seed, near) {
   return { col, rough, height };
 }
 
-export function roofMaterial() {
+/** perf pass 2 (docs/perf/AUDIT.md step 12, ?roofsplit=old = one material): every roof pixel shaded BOTH looks (the
+ *  pitched tiles / slates and the flat-roof membrane: ~20 noise lookups) and mixed them by the roof's flat flag. The
+ *  roofs are now two meshes a tile (pitched, flat), each with the material of its own look only: kind "pitched" | "flat"
+ *  (the same nodes as before with flat = 0 / 1 folded in), null = both (the old one). */
+export const ROOF_SPLIT = ROOFS_NEW && !/[?&]roofsplit=old(&|$)/.test(location.search);
+export function roofMaterial(kind = null) {
   const m = bldMaterial();
   const P = positionWorld;
   const r = attribute("aRoof", "vec4"), base = attribute("aRoofCol", "vec3");
-  const u = r.x, v = r.y, flat = r.z, style = r.w;
+  const u = r.x, v = r.y, style = r.w;
+  const flat = kind === "pitched" ? float(0) : kind === "flat" ? float(1) : r.z;
+  if (kind === "flat") {
+    const near = float(1).sub(smoothstep(16.0, 160.0, length(P.sub(cameraPosition))));
+    const fr = flatRoofLook(u, v, base, P, style, near);
+    m.colorNode = fr.col; m.normalNode = bumpNormal(fr.height); m.roughnessNode = fr.rough;
+    m.name = "roofs (flat)";
+    return wxMat(m, { porosity: float(0.4) });
+  }
   const near = float(1).sub(smoothstep(16.0, 160.0, length(P.sub(cameraPosition))));
   const grain = n3(P.x.mul(6.0), P.y.mul(6.0), P.z.mul(6.0));
   const weather = n3(P.x.mul(0.25), P.y.mul(0.25), P.z.mul(0.25));
@@ -679,6 +692,13 @@ export function roofMaterial() {
   const flatCol = base.mul(n3(P.x.mul(30.0), 0.0, P.z.mul(30.0)).mul(0.18).add(1.0)).add(weather.mul(0.01));
   // (2026-11-13) pitched roofs: the library's shipped slate / pantile sets on the roof's real colour (viewer/facadeLib.js)
   const rl = facadeLibOn() ? facadeRoofLook(u, v, base, clayK) : null;
+  if (ROOFS_NEW && kind === "pitched") {
+    m.colorNode = rl ? rl.col : col;
+    m.normalNode = rl ? normalize(normalView.add(rl.nView)) : bumpNormal(relief);
+    m.roughnessNode = rl ? rl.rough : mix(float(0.62), float(0.78), clayK);
+    m.name = "roofs (pitched)";
+    return wxMat(m, { porosity: float(0.25) });
+  }
   if (ROOFS_NEW) {
     const fr = flatRoofLook(u, v, base, P, style, near);
     m.colorNode = mix(rl ? rl.col : col, fr.col, flat);
@@ -714,12 +734,17 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     const detailMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, side: THREE.FrontSide });
     detailMat.shadowSide = THREE.DoubleSide;
     detailMat.colorNode = attribute("aCol", "vec3");
-    MATS = { wall: wallMaterial(), roof: roofMaterial(), detail: detailMat };
+    MATS = { wall: wallMaterial(), roof: ROOF_SPLIT ? roofMaterial("pitched") : roofMaterial(), detail: detailMat };
+    if (ROOF_SPLIT) MATS.roofFlat = roofMaterial("flat");
     for (const m of Object.values(MATS)) m.userData.shared = true;
   }
   const detailMat = MATS.detail;
-  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 4]], MATS.wall, "buildings-walls"),
-    mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], MATS.roof, "buildings-roofs")];
+  const meshes = [mk(a.walls, [["aWall", 4], ["aBld", 4], ["aFN", 4]], MATS.wall, "buildings-walls")];
+  if (ROOF_SPLIT) {
+    const [pitched, flat] = splitRoofs(a.roofs);
+    if (pitched) meshes.push(mk(pitched, [["aRoof", 4], ["aRoofCol", 3]], MATS.roof, "buildings-roofs"));
+    if (flat) meshes.push(mk(flat, [["aRoof", 4], ["aRoofCol", 3]], MATS.roofFlat, "buildings-roofs-flat"));
+  } else meshes.push(mk(a.roofs, [["aRoof", 4], ["aRoofCol", 3]], MATS.roof, "buildings-roofs"));
   if (a.details.position.length) meshes.push(mk(a.details, [["aCol", 3]], detailMat, "buildings-details"));
   // the façade kit's faces (?kit=1): their own mesh, so only they pay for the cut (a discard costs early-z)
   let kitWalls = null;
@@ -738,4 +763,26 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     meshes, kitWalls, kit: a.kit, roofKit: a.roofKit,
     stats: a.stats, triangles: a.stats.triangles, vertices: a.stats.vertices,
   };
+}
+
+/** the roofs part split by its flat flag (aRoof.z, per vertex; a triangle goes by its first vertex): [pitched, flat],
+ *  null for an empty one (non-indexed triangles, as the worker builds them) */
+function splitRoofs(part) {
+  const R = part.aRoof, n = part.position.length / 9;
+  let nf = 0;
+  for (let t = 0; t < n; t++) if (R[t * 12 + 2] > 0.5) nf++;
+  const sizes = { position: 3, normal: 3, aRoof: 4, aRoofCol: 3 };
+  const mkPart = (want, count) => {
+    if (!count) return null;
+    const out = {};
+    for (const [k, w] of Object.entries(sizes)) out[k] = new Float32Array(count * 3 * w);
+    let o = 0;
+    for (let t = 0; t < n; t++) {
+      if ((R[t * 12 + 2] > 0.5) !== want) continue;
+      for (const [k, w] of Object.entries(sizes)) out[k].set(part[k].subarray(t * 3 * w, (t + 1) * 3 * w), o * 3 * w);
+      o++;
+    }
+    return out;
+  };
+  return [mkPart(false, n - nf), mkPart(true, nf)];
 }
