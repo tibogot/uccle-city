@@ -24,7 +24,8 @@ import {
   positionWorld, fract, floor, log2,
 } from "three/tsl";
 import { season } from "../foliage/seasons.js";
-import { wind, windAt } from "../foliage/wind.js";
+import { wind, windAt, windPrev } from "../foliage/wind.js";
+import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at last frame's time)
 import { noiseAt, noiseTexture } from "../foliage/noise.js";
 const HEDGE_MIP_OLD = /[?&]hedgemip=old(&|$)/.test(location.search);
 import { leafCard } from "../foliage/cards.js";
@@ -262,8 +263,8 @@ export function hedgeMaterials() {
   const cardN = normalize(cn.mul(cos(tilt)).add(ay.mul(sin(tilt))));
   const cardY = normalize(cross(cardN, ax));
   const size = sp.x.mul(cr.z.mul(0.5).add(0.75)).mul(grow);
-  const w = windAt(anchor.xz);
-  const flick = sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(w.z.mul(0.02).add(0.004));
+  const [flick, flickP] = windPrev(() => sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(windAt(anchor.xz).z.mul(0.02).add(0.004)));
+  setMotionDelta(card, vec3(flickP.sub(flick), 0, flickP.sub(flick)));   // --- instmotion
   card.positionNode = anchor.add(cn.mul(size.mul(0.42))).add(ax.mul(corner.x.mul(size))).add(cardY.mul(corner.y.add(0.35).mul(size))).add(vec3(flick, 0, flick));
   const uvc = uv();
   const a0 = texture(tex[0], uvc), a1 = texture(tex[1], uvc), a2 = texture(tex[2], uvc);

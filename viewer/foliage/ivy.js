@@ -19,7 +19,8 @@ import {
   sin, cos, fwidth, saturate, varying, cameraViewMatrix,
 } from "three/tsl";
 import { season } from "./seasons.js";
-import { wind, windAt } from "./wind.js";
+import { wind, windAt, windPrev } from "./wind.js";
+import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at last frame's time)
 import { leafCard } from "./cards.js";
 import { noiseAt } from "./noise.js";
 import { growIvyData } from "./ivyGrow.js";
@@ -97,8 +98,8 @@ export function growIvy(wall, { roots = [0.5], maxHeight = wall.height * 0.8, av
   const cardY = normalize(cross(cardN, ax));
   const size = float(0.24).mul(crr.z.mul(0.5).add(0.75)).mul(grow);
   const p = attribute("position", "vec3");
-  const w = windAt(cpos.xz);
-  const flick = sin(wind.uTime.mul(5.5).add(crr.w.mul(40))).mul(w.z.mul(0.015).add(0.003));
+  const [flick, flickP] = windPrev(() => sin(wind.uTime.mul(5.5).add(crr.w.mul(40))).mul(windAt(cpos.xz).z.mul(0.015).add(0.003)));
+  setMotionDelta(cardM, cnn.mul(flickP.sub(flick)));               // --- instmotion
   cardM.positionNode = cpos.add(ax.mul(p.x.mul(size))).add(cardY.mul(p.y.mul(size))).add(cnn.mul(flick));
   const tex = leafCard("ivy");
   const a = texture(tex, uv());

@@ -15,7 +15,8 @@ import {
   texture, sin, cos, positionWorld, normalWorld, fwidth, cameraViewMatrix, varying, instanceIndex, select, abs, saturate,
 } from "three/tsl";
 import { season } from "./seasons.js";
-import { wind, windAt } from "./wind.js";
+import { wind, windAt, windPrev } from "./wind.js";
+import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at last frame's time)
 import { noiseAt } from "./noise.js";
 import { leafCard } from "./cards.js";
 import { bumpNormal } from "../tslkit.js";
@@ -211,8 +212,8 @@ function speciesMaterials(name) {
   const cardY = normalize(cross(cardN, ax));
   const size = float(sp.card).mul(cr.z.mul(0.5).add(0.75)).mul(grow);
   const p = attribute("position", "vec3");                        // quad -0.5..0.5 in x, y
-  const w = windAt(cpos.xz);
-  const flick = sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(w.z.mul(0.02).add(0.004));
+  const [flick, flickP] = windPrev(() => sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(windAt(cpos.xz).z.mul(0.02).add(0.004)));
+  setMotionDelta(card, vec3(flickP.sub(flick), 0, flickP.sub(flick)));   // --- instmotion
   card.positionNode = cpos.add(cn.mul(size.mul(0.42))).add(ax.mul(p.x.mul(size))).add(cardY.mul(p.y.add(0.35).mul(size))).add(vec3(flick, 0, flick));
   const a = texture(tex, uv());
   // alpha to coverage, sharpened around 0.5 by its own screen derivative (Golus) on a coverage-preserving chain

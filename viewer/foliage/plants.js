@@ -22,7 +22,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { season } from "./seasons.js";
-import { windAt, wind } from "./wind.js";
+import { windAt, wind, windPrev } from "./wind.js";
+import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at last frame's time)
 import { noiseAt } from "./noise.js";
 
 export const SLOTS = ["leaf", "leaf_mass", "stem", "flower_a", "flower_b", "flower_centre"];
@@ -235,6 +236,18 @@ class PlantField {
     const rot = vec3(lp.x.mul(c).sub(lp.z.mul(s)), lp.y, lp.x.mul(s).add(lp.z.mul(c)));
     const lean = w.xy.mul(hN.mul(hN)).mul(float(H).mul(sc).mul(0.18));
     mat.positionNode = root.add(rot).add(vec3(lean.x, 0, lean.y));
+    {
+      // --- instmotion: the same wind offset (the leaves' flutter turned with the plant + the lean) at last frame's time
+      const off = () => {
+        const w = windAt(root.xz);
+        const fl = sin(wind.uTime.mul(7.0).add(prnd.mul(40))).mul(w.z.mul(0.25).add(0.08)).mul(wind.uStrength);
+        const lo = p0.sub(base).mul(fl.mul(0.25)).mul(isLeaf.add(isFlower)).mul(sc);
+        const le = w.xy.mul(hN.mul(hN)).mul(float(H).mul(sc).mul(0.18));
+        return vec3(lo.x.mul(c).sub(lo.z.mul(s)).add(le.x), lo.y, lo.x.mul(s).add(lo.z.mul(c)).add(le.y));
+      };
+      const [o0, o1] = windPrev(off);
+      setMotionDelta(mat, o1.sub(o0));
+    }
     // the normal rotates with the plant
     const n0 = attribute("normal", "vec3");
     const nF = vec3(n0.x.mul(c).sub(n0.z.mul(s)), n0.y, n0.x.mul(s).add(n0.z.mul(c)));

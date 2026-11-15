@@ -38,10 +38,23 @@ export const wind = {
   },
 };
 
-/** TSL: the wind at world xz -> vec3(bend x, bend z, gust 0..1). Vertex or compute stage (explicit level 0). */
-export const windAt = Fn(([xz]) => {
+// The time each wind expression reads is wind.uTime AT GRAPH CONSTRUCTION (windAt / flutter below are plain functions
+// that pass it in): windPrev() builds the same expression a second time with last frame's time (wind.uTimePrev), the
+// TAAU's motion vectors for the foliage (docs/UPSCALE.md "Moving objects"; ?instmotion=0 = none).
+let _seen = 0;
+/** last rendered frame's wind time (updated once per frame when a foliage material draws) */
+wind.uTimePrev = uniform(0).onFrameUpdate(() => { const p = _seen; _seen = wind.uTime.value; return p; });
+/** build(): a node made from wind.uTime / windAt / flutter -> [this frame's, last frame's] */
+export function windPrev(build) {
+  const cur = build(), T = wind.uTime;
+  wind.uTime = wind.uTimePrev;
+  try { return [cur, build()]; } finally { wind.uTime = T; }
+}
+
+/** TSL: the wind at world xz and time t -> vec3(bend x, bend z, gust 0..1). Vertex or compute stage (explicit level 0). */
+const windAtT = Fn(([xz, t]) => {
   // gust fronts ~40 m apart travel at ~0.6 x the wind speed (what you see crossing a field), a finer ~12 m ripple at 0.8
-  const scroll = wind.uDir.mul(wind.uSpeed).mul(wind.uTime).mul(wind.uRate);
+  const scroll = wind.uDir.mul(wind.uSpeed).mul(t).mul(wind.uRate);
   const a = noiseAt(xz.sub(scroll.mul(0.6)), wind.uScale.div(160), true).r;
   const b = noiseAt(xz.sub(scroll.mul(0.8)).add(vec2(37.0, 11.0)), wind.uScale.div(48), true).g;
   const g = clamp(a.mul(0.7).add(b.mul(0.3)), 0, 1);
@@ -50,6 +63,9 @@ export const windAt = Fn(([xz]) => {
   const s = wind.uStrength.mul(k);
   return vec3(wind.uDir.x.mul(s), wind.uDir.y.mul(s), g);
 });
+/** TSL: the wind at world xz -> vec3(bend x, bend z, gust 0..1) (at wind.uTime as it is when this is called) */
+export const windAt = (xz) => windAtT(xz, wind.uTime);
 
 /** TSL: a small fast flutter (leaves, flower heads) 0..1 amplitude * gust, phase per object */
-export const flutter = Fn(([phase, gust]) => sin(wind.uTime.mul(6.3).add(phase)).mul(gust.mul(0.6).add(0.4)).mul(wind.uStrength));
+const flutterT = Fn(([phase, gust, t]) => sin(t.mul(6.3).add(phase)).mul(gust.mul(0.6).add(0.4)).mul(wind.uStrength));
+export const flutter = (phase, gust) => flutterT(phase, gust, wind.uTime);

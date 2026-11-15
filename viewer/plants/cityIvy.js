@@ -15,7 +15,8 @@ import {
   varying, cameraViewMatrix, positionLocal, normalLocal, positionWorld, select, uv, sqrt, clamp, abs, fract, vec2,
 } from "three/tsl";
 import { season } from "../foliage/seasons.js";
-import { wind, windAt } from "../foliage/wind.js";
+import { wind, windAt, windPrev } from "../foliage/wind.js";
+import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at last frame's time)
 import { leafCard } from "../foliage/cards.js";
 import { StreamPool, Streamer, buildSource, MARGIN } from "../instanceStream.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
@@ -87,11 +88,11 @@ function cardMaterial() {
   const cardN = normalize(cn.mul(cos(tilt)).add(ay.mul(sin(tilt))));
   const cardY = normalize(cross(cardN, ax));
   const size = float(0.4).mul(K.z.mul(0.5).add(0.75)).mul(grow).mul(select(fence, float(0.85), float(1)));
-  const w = windAt(anchor.xz);
-  const flick = sin(wind.uTime.mul(5.5).add(K.w.mul(40))).mul(w.z.mul(0.015).add(0.003));
+  const [flick, flickP] = windPrev(() => sin(wind.uTime.mul(5.5).add(K.w.mul(40))).mul(windAt(anchor.xz).z.mul(0.015).add(0.003)));
   // (a dropped card collapses to its anchor: no fragment at all)
   const B0 = attribute("iBand", "vec4");
   m.positionNode = select(keepK.and(d.lessThan(B0.z.mul(ivyFarU.cardEnd))), anchor.add(ax.mul(corner.x.mul(size))).add(cardY.mul(corner.y.mul(size))).add(cn.mul(flick)), anchor);
+  setMotionDelta(m, select(keepK.and(d.lessThan(B0.z.mul(ivyFarU.cardEnd))), cn.mul(flickP.sub(flick)), vec3(0)));   // --- instmotion
   const a = texture(leafCard("ivy"), uv());
   m.opacityNode = saturate(a.a.sub(0.5).div(max(fwidth(a.a), 1e-4)).add(0.5));
   const winterDark = mix(float(1), float(0.8), float(1).sub(season.u.leaf).mul(0.6));

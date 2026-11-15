@@ -156,7 +156,7 @@ class CityTAAU extends TAAUNode {
     this.uKernel = uniform(+(qs.get("taakernel") ?? 1.6));   // reconstruction sharpness when the history is good (three: 1)
     // extra current-frame weight on pixels with their own motion (resampling the history each frame softens; a moving
     // object's motion was approximate before the per-instance motion; ?taamoving=)
-    this.uMovingW = uniform(+(qs.get("taamoving") ?? 0.08));
+    this.uMovingW = uniform(+(qs.get("taamoving") ?? (INST_MOTION ? 0.03 : 0.08)));
   }
 
   setup(builder) {

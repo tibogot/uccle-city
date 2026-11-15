@@ -133,3 +133,95 @@ export async function grab() {
   return await finish(o);
 }
 export { toDataURL };
+
+/** grab 3 crops `every` frames apart once the target is well inside the screen (x in 20-80 %) */
+async function passRun({ frames, before, target, crop, zoom, row, g, cellW, label, every = 14, n = 3 }) {
+  const v = V(), canvas = v.renderer.domElement, cam = v.camera;
+  const held = v.controls.update; v.controls.update = () => {};
+  const out = []; let first = -1;
+  try {
+    for (let f = 0; f < frames && out.length < n; f++) {
+      before(f);
+      v.step(1 / 60);
+      const p = target(f);
+      if (!p) continue;
+      const [sx, sy, sz] = project(p, cam, canvas);
+      const inside = sz < 1 && sx > canvas.width * 0.2 && sx < canvas.width * 0.8 && sy > 0 && sy < canvas.height;
+      if (first < 0 && inside) first = f;
+      if (first >= 0 && (f - first) % every === 0 && inside) {
+        const k = out.length, w = crop, h = Math.round(crop * 0.62), y0 = 30 + row * (cellW * 0.62 + 22);
+        g.imageSmoothingEnabled = false;
+        g.drawImage(canvas, sx - w / 2, sy - h / 2, w, h, k * (cellW + 4), y0, cellW, cellW * 0.62);
+        g.fillStyle = "#ddd"; g.font = "13px monospace"; g.fillText(`${label} f${f}`, k * (cellW + 4) + 4, y0 + cellW * 0.62 + 15);
+        out.push([f, Math.round(sx), Math.round(sy)]);
+      }
+      if (f % 3 === 0) await sleep(0);
+    }
+  } finally { v.controls.update = held; }
+  return out;
+}
+
+/** a tram passes a fixed camera `side` m off the track (A/B instmotion off / on, a tram each) */
+export async function tramPass({ rewind = 0, ab = true, side = 12, height = 2, ahead = 30, frames = 900, crop = 420, zoom = 1.4, every = 14, title = "" } = {}) {
+  const v = V(), T = v.tram(), THREE = v.camera.position.constructor;
+  const cellW = Math.round(crop * zoom), modes = ab ? [false, true] : [true];
+  const { c, g } = sheet(3, modes.length, cellW, title || `tram passing a fixed camera ${side} m off the track (crops x${zoom}, scale ${window.cityQuality.stats().scale})`);
+  v.pause(true);
+  const res = [], used = new Set(), c0 = T.clockSecs - rewind;
+  try {
+    for (let r = 0; r < modes.length; r++) {
+      window.instMotion.set(modes[r]);
+      T.setClock(c0); used.clear();                       // (the same tram, the same pass, for each mode)
+      const cp = v.camera.position;
+      // the nearest moving tram to the camera
+      const a = T.positions(); v.step(1 / 60); await sleep(50); v.step(1 / 60);
+      const b = new Map(T.positions().map((p) => [p.trip, p]));
+      let best = null, bd = 1e9;
+      for (const p of a) { const q = b.get(p.trip); if (!q || used.has(p.trip) || Math.abs(q.d - p.d) < 0.05) continue; const d = Math.hypot(p.x - cp.x, p.z - cp.z); if (d < bd) { bd = d; best = q; } }
+      if (!best) throw new Error("no moving tram");
+      used.add(best.trip);
+      const dx = Math.cos(best.yaw), dz = -Math.sin(best.yaw);
+      const P = new THREE(best.x + dx * ahead, T.railTop(best.x + dx * ahead, best.z + dz * ahead) + 1.6, best.z + dz * ahead);
+      const C = new THREE(P.x + dz * side, P.y + height, P.z - dx * side);
+      const tgt = new THREE();
+      const out = await passRun({
+        frames, crop, zoom, row: r, g, cellW, every, label: modes[r] ? "instmotion ON " : "instmotion OFF",
+        before: () => { v.camera.position.copy(C); v.camera.lookAt(P); v.camera.updateMatrixWorld(true); },
+        target: () => { const q = T.positions().find((p) => p.trip === best.trip); if (!q) return null; const qx = Math.cos(q.yaw), qz = -Math.sin(q.yaw); return tgt.set(q.x - qx * 6, P.y, q.z - qz * 6); },
+      });
+      res.push({ trip: best.trip, at: out });
+    }
+  } finally { window.instMotion.set(true); v.pause(false); }
+  return { url: await finish(c), res };
+}
+
+/** a bird of the sky flocks passing a fixed camera `dist` m away (A/B instmotion off / on, the flock read back each run;
+ *  the crop follows the bird's read-back position + velocity x time) */
+export async function birdPass({ ab = true, dist = 22, frames = 40, grab = [16, 24, 32], crop = 160, zoom = 3, title = "" } = {}) {
+  const v = V(), S = window.__birds.sky, THREE = v.camera.position.constructor;
+  const cellW = Math.round(crop * zoom), modes = ab ? [false, true] : [true];
+  const { c, g } = sheet(grab.length, modes.length, cellW, title || `a bird of the sky flocks passing ${dist} m from a fixed camera (crops x${zoom}, scale ${window.cityQuality.stats().scale})`);
+  v.pause(true);
+  const res = [];
+  try {
+    for (let r = 0; r < modes.length; r++) {
+      window.instMotion.set(modes[r]);
+      v.step(1 / 60);
+      const a = await S.readBirds(), cp = v.camera.position;
+      let i = -1, bd = 1e9;
+      for (let k = 0; k < a.length / 12; k++) { const y = a[k * 12 + 1]; if (y < -1000) continue; const d = Math.hypot(a[k * 12] - cp.x, y - cp.y, a[k * 12 + 2] - cp.z); if (d < bd) { bd = d; i = k; } }
+      const p0 = new THREE(a[i * 12], a[i * 12 + 1], a[i * 12 + 2]), vel = new THREE(a[i * 12 + 4], a[i * 12 + 5], a[i * 12 + 6]);
+      const mid = p0.clone().addScaledVector(vel, 24 / 60);
+      const side = new THREE(vel.z, 0, -vel.x).normalize();
+      const C = mid.clone().addScaledVector(side, dist).add(new THREE(0, -3, 0));
+      const tgt = new THREE();
+      const out = await run({
+        frames, grab, before: () => { v.camera.position.copy(C); v.camera.lookAt(mid); v.camera.updateMatrixWorld(true); },
+        target: (f) => tgt.copy(p0).addScaledVector(vel, (f + 1) / 60), crop, zoom, row: r, g, cellW,
+        label: modes[r] ? "instmotion ON " : "instmotion OFF",
+      });
+      res.push({ bird: i, speed: +vel.length().toFixed(1), at: out });
+    }
+  } finally { window.instMotion.set(true); v.pause(false); }
+  return { url: await finish(c), res };
+}
