@@ -417,10 +417,18 @@ class NightLightsNode extends ClusteredLightsNode {
               const upP = cross(right, axis);
               const t = E0.w.div(max(cosA, 0.05));
               const px = abs(dot(f, right).mul(t)), py = abs(dot(f, upP).mul(t));
+              // (fix4 item 2) a NEGATIVE mullion parameter = no mullions and a SOFT beam: a gaussian in each direction
+              // (exp(-a (p / half)^2), a = 2 / (1 + k)^2, k = -E1.y; ~ the box's integral: 2.26 x half at k 0.8) in place
+              // of the box: the police beacon's road footprint was a hard-edged rectangle (a box's smoothstep edge
+              // stays hard once the bright core clips in the tone map; a gaussian's long tail does not)
+              const softB = E1.y.lessThan(0);
+              const aG = float(2).div(float(1).add(E1.y.negate()).pow2());
               const soft = E0.y.min(E0.z).mul(0.22);
-              const box = float(1).sub(smoothstep(E0.y.sub(soft), E0.y.add(soft), px)).mul(float(1).sub(smoothstep(E0.z.sub(soft), E0.z.add(soft), py)));
+              const hardBox = float(1).sub(smoothstep(E0.y.sub(soft), E0.y.add(soft), px)).mul(float(1).sub(smoothstep(E0.z.sub(soft), E0.z.add(soft), py)));
+              const gauss = exp(aG.mul(px.div(E0.y).pow2().add(py.div(E0.z).pow2())).negate());
+              const box = select(softB, gauss, hardBox);
               const bar = float(1).sub(smoothstep(0.02, 0.05, px)).max(float(1).sub(smoothstep(0.02, 0.05, abs(dot(f, upP).mul(t).sub(E0.z.mul(0.35))))));
-              k.assign(box.mul(float(1).sub(bar.mul(E1.y))));
+              k.assign(box.mul(float(1).sub(bar.mul(E1.y.max(0)))));
             });
             // falloff: finite source (radius B.w) x Frostbite's window at the range
             const win = float(1).sub(d2.div(range.mul(range)).pow2()).clamp().pow2();

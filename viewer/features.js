@@ -211,6 +211,8 @@ export const FEATURES = [
   old("treedither", "ab", "tree hand-over dither (old)", "Fixed 30-50 m mesh -> impostor / shadow-fade bands: a static checker on crowns standing in the band (polish 1 item 2).", { sub: "Look" }),
   old("bark", "ab", "zebra bark (old)", "The street trees' striped bark before (polish 1 item 3).", { sub: "Look" }),
   old("plinth", "ab", "black plinth (old)", "Blue-stone plinths at albedo 0.075: black in shade (polish 1 item 4).", { sub: "Look" }),
+  old("rearpool", "ab", "car rear lights (old)", "Night: each car's red rear light an omni 60 cm behind the lamps (lit its own tailgate: the whole rear a blown red block) and flat tail lenses; new = a back-down spot + view-angle lens shading (fix4 item 1, docs/FIX4.md).", { sub: "Look" }),
+  old("beam", "ab", "police beam (old)", "The police beacon's fan as a hard-edged box (its road footprint a sharp rectangle); new = a gaussian fan with a soft cone (fix4 item 2).", { sub: "Look" }),
   old("carlights", "ab", "car lights (old)", "Player car / motorbike brake x5, tail x1.2; headlights without the near-field softening (polish 1 item 6).", { sub: "Look" }),
   old("herosnow", "ab", "Héros dry in snow (old)", "The memorial's slot materials over their weathered colour: steps dry under snow (polish 1 item 8).", { sub: "Look" }),
   old("vfix2", "ab", "visual fixes 2", "Façades / car packs / trains / ponds before visual fixes round 2.", { sub: "Look" }),

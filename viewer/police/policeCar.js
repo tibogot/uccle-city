@@ -33,6 +33,9 @@ export const LIGHT = {
   beam: 1500,           // the rotating beam (pool units: colour x intensity, falloff 1 / (d^2 + size^2))
   fanW: 0.15, fanH: 0.55,   // the beam's fan: half width / half height at 1 m (~ +-8.5 deg x +-29 deg)
   beamRange: 30,        // m (cut at the first wall)
+  // (fix4 item 2, live; ?beam=old = 0) the fan's edges spread over +-beamSoft x its half sizes (the pool's APERTURE
+  // profile, a negative mullion value): the road footprint was a hard-edged blue rectangle
+  beamSoft: /[?&]beam=old(&|$)/.test(location.search) ? 0 : 0.8,
   grille: 260,          // the grille / visor flash cone (forward, LED slots)
   grilleAngle: 0.6,
   grilleRange: 16,
@@ -212,8 +215,11 @@ export class PoliceCar {
         poolRef.set(poolSlot, _bp.x, _bp.y, _bp.z, R, BLUE.r * I, BLUE.g * I, BLUE.b * I, 1, 0.4);
         // a TALL NARROW FAN, not a round cone (the dome's flutes spread a real reflector's beam vertically): the pool's
         // APERTURE profile (a light behind a rectangular opening) with a narrow, tall opening 1 m out
-        poolRef.spot(poolSlot, _d.x, _d.y, _d.z, 0.95, 0.85);
-        poolRef.profile(poolSlot, 3, LIGHT.fanW, LIGHT.fanH, 1, 0);
+        // (fix4) the soft fan also needs a soft cone: 0.95 / 0.85 rad cut the fan's lower edge (the footprint's near
+        // edge on the road) over 5 deg; 1.25 / 0.55 lets the profile shape it (the bounding sphere is the same 30 m)
+        if (LIGHT.beamSoft > 0) poolRef.spot(poolSlot, _d.x, _d.y, _d.z, 1.25, 0.55);
+        else poolRef.spot(poolSlot, _d.x, _d.y, _d.z, 0.95, 0.85);
+        poolRef.profile(poolSlot, 3, LIGHT.fanW, LIGHT.fanH, 1, LIGHT.beamSoft > 0 ? -LIGHT.beamSoft : 0);
       } else {
         const g = Math.max(s.beacon, s.grilleL, s.grilleR, s.visor * 0.6);
         const fy = P.flashers.length ? P.flashers[0].position.y : 0.6;
