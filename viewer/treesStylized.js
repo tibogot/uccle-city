@@ -528,7 +528,15 @@ function fieldSphere(placements) {
 /** Bark: vertical ridges and furrows (3D noise stretched along the trunk), lichen-grey on the ridges,
  *  a little moss low down, the ridges as bump. In the tree's own space (positionGeometry), so the
  *  pattern stays on the bark whatever the instance's turn and scale. */
+// polish1 (docs/POLISH.md item 3, ?bark=old = before): the old bark below read as ZEBRA stripes: one noise stretched
+// 8:1 along the tree's own y (on a leaning trunk / limb: diagonal bands), ~0.3-0.5 m wide, and a 0.07 -> 0.26 ramp
+// (near-black furrows over half the surface). Brussels street trees are London planes and limes (photos, look only):
+// a plane's bark is soft, flaking PATCHES (grey, olive-grey, cream, 10-30 cm), a lime's fine shallow vertical
+// fissures, both mid grey-brown with low contrast. Now: isotropic patches + thin, short fissures (only ~15 % of the
+// surface, darkened by a third), base 0.09-0.175 linear (contrast ~1.9:1, the old mean), the same bump channel scaled down.
+const BARK_OLD = /[?&](bark|polish1)=old(&|$)/.test(location.search);
 function barkMaterial(m) {
+  if (!BARK_OLD) return barkMaterialReal(m);
   const p = positionGeometry;
   const ridge = mx_noise_float(vec3(p.x.mul(7.0), p.y.mul(0.9), p.z.mul(7.0))).mul(0.5).add(0.5);
   const fine = mx_noise_float(vec3(p.x.mul(23.0), p.y.mul(3.0), p.z.mul(23.0))).mul(0.5).add(0.5);
@@ -540,6 +548,28 @@ function barkMaterial(m) {
   m.colorNode = col;
   m.normalNode = bumpNormal(furrow.mul(0.02).add(fine.mul(0.006)));
   m.roughnessNode = float(0.92);
+  m.needsUpdate = true;
+}
+
+function barkMaterialReal(m) {
+  const p = positionGeometry;
+  // plane patches: two octaves of isotropic noise, soft-edged into three tones
+  const pa = mx_noise_float(p.mul(2.2)).mul(0.65).add(mx_noise_float(p.mul(5.1).add(7.3)).mul(0.35)).mul(0.5).add(0.5);
+  const grey = vec3(0.13, 0.122, 0.105), olive = vec3(0.092, 0.088, 0.068), cream = vec3(0.175, 0.163, 0.13);
+  let col = mix(olive, grey, smoothstep(0.38, 0.52, pa));
+  col = mix(col, cream, smoothstep(0.6, 0.72, pa).mul(0.8));
+  // fine fissures: short (y x 2.6 vs x / z x 16: 3:1, not 8:1), thin, a third darker
+  const fis = mx_noise_float(vec3(p.x.mul(16.0), p.y.mul(2.6), p.z.mul(16.0))).mul(0.5).add(0.5);
+  const crack = smoothstep(0.34, 0.24, fis);
+  col = col.mul(float(1).sub(crack.mul(0.33)));
+  const fine = mx_noise_float(vec3(p.x.mul(41.0), p.y.mul(9.0), p.z.mul(41.0))).mul(0.5).add(0.5);
+  col = col.mul(fine.mul(0.16).add(0.92));
+  const moss = smoothstep(1.6, 0.2, p.y).mul(smoothstep(0.2, 0.9, normalGeometry.y.add(normalGeometry.x.mul(0.5)).add(0.3)));
+  col = mix(col, vec3(0.15, 0.18, 0.09), moss.mul(0.45));
+  m.colorNode = col;
+  // relief: the patches' edges barely (flakes are flush), the fissures a little, the grain
+  m.normalNode = bumpNormal(crack.mul(-0.006).add(smoothstep(0.55, 0.62, pa).mul(0.0025)).add(fine.mul(0.003)));
+  m.roughnessNode = float(0.9);
   m.needsUpdate = true;
 }
 
