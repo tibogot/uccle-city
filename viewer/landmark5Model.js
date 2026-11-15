@@ -1,5 +1,6 @@
 // LANDMARK CHURCHES ROUND 5 (branch claude/landmark5): the models of the Eglise du Sacre-Coeur (Rue Vanderkindere;
-// tools/blender/sacrecoeur.py) and the Eglise Saint-Marc (Avenue De Fre; tools/blender/saintmarc.py) -> tools/hero_pack.mjs
+// tools/blender/sacrecoeur.py) and the Eglise Saint-Marc (Avenue De Fre; tools/blender/saintmarc.py), and since castle1 the
+// Chateau Latour de Frein (Rue Engeland 555; tools/blender/latourdefrein.py) -> tools/hero_pack.mjs
 // --nolod -> models/<key>/. Same contract as Saint-Augustin (viewer/augustinModel.js): THREE SCRIPTED levels (LOD1 = the
 // far variant, LOD2 = the very-far variant; no meshopt simplification, it streaks), one primitive per NAMED material slot
 // per level, a per-face code in COLOR_0.r (L5_CODES), the thin parts' baked AO in COLOR_0.g, world-metre UVs in TEXCOORD_0,
@@ -39,6 +40,16 @@ export const CHURCHES = {
     newNames: ["wood_oak", "concrete_white"],
     lods: [{ until: 110, band: 18 }, { until: 420, band: 50 }, { until: Infinity }],
   },
+  // castle1 (branch claude/castle1): the Chateau Latour de Frein, Rue Engeland 555 (tools/blender/latourdefrein.py);
+  // every slot from the shared library except the gallery's terrace tiles (temporary look below)
+  latourdefrein: {
+    label: "Latour de Frein", names: ["LatourDeFrein", "LatourDeFrein_far", "LatourDeFrein_xfar"],
+    slots: ["brick_red_brussels", "stone_white", "slate", "zinc_roof", "wood_frame_white", "glass_window", "cast_iron_green",
+      "stone_blue", "wood_frame_dark", "terrace_tiles"],
+    newNames: ["terrace_tiles"],
+    nightLit: true,              // at night only the windows whose glass has the code "gilt" glow (~30 %, chosen in Blender)
+    lods: [{ until: 120, band: 20 }, { until: 450, band: 55 }, { until: Infinity }],
+  },
 };
 
 const SOURCE = libSource("landmark5", "./materials/shipped.js");   // ?libmat=0 / -landmark5: the temporary materials only
@@ -71,6 +82,11 @@ export function loadChurch(key) {
     const tris = lods.map((l) => l.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0));
     const materials = {};
     for (const s of C.slots) materials[s] = wrapAO(sourceMaterial(s, lib, C, key), aoTex, s, key);
+    if (C.nightLit && materials.glass_window?.emissiveNode) {
+      // per window: the glass code "gilt" (11) = lit, set per window in Blender (castle_kit.lit_code)
+      const lit = float(1).sub(codeV().sub(11).abs().min(1));
+      materials.glass_window.emissiveNode = materials.glass_window.emissiveNode.mul(lit);
+    }
     const pl = notes.placement;
     const placement = { position: new THREE.Vector3(...pl.city_local_position), rotationY: pl.rotation_y_rad };
     const b = notes.bounds_city;
@@ -95,7 +111,8 @@ export function loadChurch(key) {
 /** the weather families of the temporary looks (as library.js weatherOpts for its kinds) */
 const WX = {
   rubble_stone: { porosity: 0.7, streaks: true }, concrete_white: { porosity: 0.5, streaks: true }, wood_oak: { porosity: 0.3 },
-  zinc_roof: { porosity: 0.05 }, cast_iron_green: { porosity: 0.05 }, glass_window: { porosity: 0, glass: true, streaks: true, snow: false },
+  zinc_roof: { porosity: 0.05 }, cast_iron_green: { porosity: 0.05 }, terrace_tiles: { porosity: 0.45 },
+  wood_frame_white: { porosity: 0.2 }, wood_frame_dark: { porosity: 0.2 }, glass_window: { porosity: 0, glass: true, streaks: true, snow: false },
 };
 
 function sourceMaterial(name, lib, C, key) {
@@ -199,6 +216,21 @@ const TEMP = {
       return lin(0xd2cdc2).mul(float(0.94).add(n));
     })();
     return std({ colorNode: col, roughnessNode: float(0.85), metalnessNode: float(0) });
+  },
+  /** TERRACE TILES (castle1: the Latour de Frein gallery's flat roof, salmon on the 2024 orthophoto): square quarry
+   *  tiles 0.3 m, salmon / terracotta tones per tile, grey-brown joints, weathered (the weather layer adds wet / snow) */
+  terrace_tiles: () => {
+    const out = Fn(() => {
+      const w = uv(0).toVar();
+      const q = w.div(0.3).toVar(), cell = floor(q).toVar(), f = fract(q).toVar();
+      const fw = max(fwidth(q.x), fwidth(q.y)).max(0.0001).toVar();
+      const e = min(min(f.x, float(1).sub(f.x)), min(f.y, float(1).sub(f.y))).toVar();
+      const joint = float(1).sub(smoothstep(0.0, max(fw.mul(1.5), 0.035), e)).mul(float(1).sub(smoothstep(0.2, 0.7, fw))).toVar();
+      const h = hash2(cell).toVar();
+      const tile = mix(lin(0xa86e55), lin(0xbf8a6c), h).mul(float(0.85).add(vnoise(w.mul(3.0)).mul(0.25)));
+      return vec4(mix(tile, lin(0x6a5e55), joint.mul(0.8)), joint);
+    })();
+    return std({ colorNode: out.xyz, roughnessNode: float(0.85), metalnessNode: float(0), normalNode: bumpNormal(out.w.mul(-0.003)) });
   },
 };
 export const L5_TEMP_MATERIALS = TEMP;

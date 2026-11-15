@@ -30,6 +30,9 @@ export const PLACES = [
   { id: "sacrecoeur-street", name: "Sacré-Cœur, Rue Vanderkindere", group: "Landmarks", tile: "F1", p: [-262, 1.7, -1648], t: [-264, 8, -1630], fov: 60 },
   { id: "saintmarc", name: "Saint-Marc church", group: "Landmarks", tile: "G3", p: [470, 30, -580], t: [452, 8, -628] },
   { id: "saintmarc-street", name: "Saint-Marc, Avenue De Fré", group: "Landmarks", tile: "G3", p: [453, 1.7, -600], t: [453, 6, -622], fov: 60 },
+  { id: "latourdefrein", name: "Château Latour de Frein", group: "Landmarks", tile: "G9", p: [180, 45, 2291], t: [102, 10, 2327] },
+  { id: "latourdefrein-gate", name: "Latour de Frein, Rue Engeland gate", group: "Landmarks", tile: "G9", p: [166, 1.7, 2219], t: [118, 9, 2300], fov: 50 },
+  { id: "latourdefrein-front", name: "Latour de Frein, the front", group: "Landmarks", tile: "G9", p: [132, 1.7, 2275], t: [112, 9, 2310], fov: 60 },
   // public art (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md)
   { id: "monolithes", name: "Dix Monolithes", group: "Public art", tile: "B5", p: [-2214, 1.7, 400], t: [-2240, 3, 376], fov: 55 },
   { id: "monolithes-air", name: "Dix Monolithes, from above", group: "Public art", tile: "B5", p: [-2205, 35, 335], t: [-2240, 2, 376] },

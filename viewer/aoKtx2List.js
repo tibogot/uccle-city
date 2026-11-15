@@ -4,6 +4,7 @@ export const AO_KTX2 = {
  "models/augustin/augustin_ao.png": "32df7b87c6",
  "models/calevoet_station/calevoet_ao.png": "90822f1172",
  "models/heros/heros_ao.png": "ffd618f019",
+ "models/latourdefrein/latourdefrein_ao.png": "093ce662dd",
  "models/observatory/observatory_ao.png": "12bfb86e03",
  "models/parkkit/playgroundkit_ao.png": "e7a1129b08",
  "models/parkkit/rockkit_ao.png": "dfbbbd2a2f",

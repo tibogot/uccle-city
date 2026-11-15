@@ -23,7 +23,7 @@ station, the police station.
 
 | name | footprint | note |
 |---|---|---|
-| Château Latour de Frein (Q127161341) | ~1,430 m² | the largest |
+| Château Latour de Frein (Q127161341) | ~1,430 m² | DONE 2026-11-15 (branch claude/castle1, `?latourdefrein=0`; docs/landmarks/LATOURDEFREIN.md); north front visible from Rue Engeland through the gate only |
 | Château Zeecrabbe | ~605 m² | |
 | Château de La Fougeraie (Q2969549) | ~590 m² | |
 | Château Fond'Roy (Q2967876) | ~410 m² | |

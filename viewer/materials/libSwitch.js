@@ -5,7 +5,7 @@
 //   ?libmat=0                 every consumer on its own temporary materials (the "before")
 //   ?libmat=kit,townhall      only these on the library (the rest temporary)
 //   ?libmat=-stalle           all on the library except these
-// Consumers: kit, stalle, townhall, vanbuuren, wolvendael, police, calevoet, stpierre, observatory, bridges, landmark5.
+// Consumers: kit, stalle, townhall, vanbuuren, wolvendael, police, calevoet, stpierre, observatory, bridges, landmark5 (+ the castle1 Latour de Frein).
 // OFF lists consumers that stay on their own materials by default (a regression found in the review: see
 // docs/TEXTURE_FACTORY.md "City switch").
 const OFF = [];
