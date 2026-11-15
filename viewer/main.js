@@ -65,6 +65,7 @@ import { cityGardens } from "./gardens/cityGardens.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
+import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
@@ -952,6 +953,7 @@ async function main() {
   setTreeLighting(lighting);
   // --- perf4 (docs/perf/AUDIT.md step 13): the foliage materials (grass, plants, ivy) take the sun + hemisphere only
   setFoliageLights(lighting);
+  setCellCullSun(lighting.sun?.shadow?.camera || null, lodEye);
   // --- perf4 end
   setTreeRenderer(renderer);
   updaters.push(treeBandSettle());     // the tree hand-over / shadow-fade bands follow the camera speed (no static dither, docs/POLISH.md item 2)

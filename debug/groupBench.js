@@ -94,3 +94,18 @@ export function ivyState() {
     none: () => { card.visible = false; if (far) far.visible = false; },
   };
 }
+
+/** perf pass 3: the cell-culled tile meshes (viewer/cellCull.js): triangles held / drawn by the view and the sun's pass
+ *  in the last frames, per mesh name (a mesh still waiting / sorting counts whole) */
+export function cullStats() {
+  const V = window.viewer, f = V.renderer.info.frame, out = {}, states = {};
+  V.scene.traverse((o) => {
+    const c = o.userData?.cellCull; if (!c) return;
+    states[c.state] = (states[c.state] || 0) + 1;
+    const b = (out[o.name] ||= { tris: 0, sun: 0, view: 0 });
+    b.tris += c.tris;
+    const sun = c.culls.find((e) => e.cam.isOrthographicCamera && e.frame >= f - 3), vw = c.culls.find((e) => e.cam === V.camera && e.frame >= f - 3);
+    if (sun) b.sun += sun.tris; if (vw) b.view += vw.tris;
+  });
+  return { states, meshes: out };
+}

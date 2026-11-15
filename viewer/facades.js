@@ -36,6 +36,8 @@ import { analyseBuildings } from "./facadeGeom.js";
 import { houseCut, cutOpacity } from "./interior/cut.js";
 import { kitShows, wallKitFade } from "./facadeKit/kitFade.js";
 import { FRENCH_SILL } from "./facadeKit/placement.js";
+import { cellCull, CELL_CULL, DETAIL_SHADOW } from "./cellCull.js";
+import { lodEye, ditherNoise } from "./lodFade.js";
 import { G as G0, S as S0, STOREY_TOP, STOREY_STEP, K_MIN, K_MAX } from "./interior/facadeWindows.js";
 import { facadeLibOn, facadeWallLook, facadeRoofLook } from "./facadeLib.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
@@ -946,6 +948,9 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     const detailMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, side: THREE.FrontSide });
     detailMat.shadowSide = THREE.DoubleSide;
     detailMat.colorNode = attribute("aCol", "vec3");
+    // perf pass 3 (?cellcull=old): the details are small casters (cornices, sills, frames: 20-40 cm): their sun shadow
+    // dithers out 100-140 m from the eye, so viewer/cellCull.js can skip their cells past 140 m in the sun's pass
+    if (CELL_CULL) detailMat.maskShadowNode = ditherNoise().greaterThanEqual(smoothstep(DETAIL_SHADOW[0], DETAIL_SHADOW[1], length(positionWorld.sub(lodEye))));
     MATS = { wall: wallMaterial(), roof: ROOF_SPLIT ? roofMaterial("pitched") : roofMaterial(), detail: detailMat };
     if (ROOF_SPLIT) MATS.roofFlat = roofMaterial("flat");
     for (const m of Object.values(MATS)) m.userData.shared = true;
@@ -972,6 +977,9 @@ export function buildingMeshes(doc, buf, roads, feats, pre) {
     kitWalls.userData.cutMat = MATS.wallKit; kitWalls.userData.plainMat = MATS.wallKitFar;
     meshes.push(kitWalls);
   }
+  // perf pass 3 (?cellcull=old): the tile's big meshes drawn cell by cell, culled per pass camera (the sun's shadow
+  // pass drew every tile its box touched WHOLE: viewer/cellCull.js, sorted in a worker); WebGPU only
+  for (const m of meshes) cellCull(m, { sunReach: m.name === "buildings-details" ? DETAIL_SHADOW[1] + 2 : Infinity });
   return {
     meshes, kitWalls, kit: a.kit, roofKit: a.roofKit,
     stats: a.stats, triangles: a.stats.triangles, vertices: a.stats.vertices,
