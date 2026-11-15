@@ -171,7 +171,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     const lugs = abs(fract(along.div(0.022)).sub(0.5)).mul(2).smoothstep(0.3, 0.7).mul(noise2D(P.xz.mul(18.0)).mul(0.5).add(0.5)).mul(0.002);
     // the sky a groove's floor sees is narrower: ambient occlusion by its depth (reads in shade, where normals do not)
     trailAO = float(1).sub(smoothstep(0.1, 0.85, fine).mul(min(vDepth.div(0.12), 1)).mul(0.42));
-    tread = select(on, mix(lugs, bars, T.z.smoothstep(0.3, 0.7)).mul(smoothstep(0.2, 0.6, fine)).mul(float(1).sub(smoothstep(0.003, 0.009, fwT))), float(0));
+    tread = select(on, mix(lugs, bars, T.z.smoothstep(0.3, 0.7)).mul(smoothstep(0.2, 0.6, fine)).mul(float(1).sub(smoothstep(0.0015, 0.005, fwT))), float(0));
   }
   // ---- /snowtracks
   mat.colorNode = Fn(() => {

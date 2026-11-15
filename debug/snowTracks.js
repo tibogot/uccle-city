@@ -50,3 +50,29 @@ export async function shot(name, url = null) {
   if (url) return w.save(name, url);
   return w.jpg();
 }
+
+/** the proof views of docs/WEATHER.md "Snow round 2" (same camera with and without the round's switches) */
+export async function proofView(name) {
+  const near = (arr, stride, x, z, off = 0) => {
+    let best = null, bd = 1e18;
+    for (let o = 0; o < arr.length; o += stride) { const d = (arr[o + off] - x) ** 2 + (arr[o + off + 2] - z) ** 2; if (d < bd) { bd = d; best = o; } }
+    return best;
+  };
+  if (name === "walk") return look(1166.5, 545.8, 1.6, 1158, 543.4, 0);
+  if (name === "drive") return look(1172, 538.5, 1.2, 1165, 541.5, 0);
+  if (name === "carClose") return look(1236.9, 594.4, 1.9, 1233.4, 591.9, 0.8);
+  if (name === "car20") return look(1250, 603, 3.0, 1233.4, 591.9, 0.8);
+  if (name === "shelter") { const yaw = -1.2506, fx = Math.sin(yaw), fz = Math.cos(yaw), x = 1217.15, z = 612.97; return look(x + fx * 5 + Math.cos(yaw) * 3, z + fz * 5 - Math.sin(yaw) * 3, 3.2, x, z, 2.0); }
+  if (name === "wall") return look(1213.5, 633.5, 1.7, 1209, 629.3, 0.6);
+  if (name === "bench") {
+    const { cityFurniture } = await import("/viewer/furniture2/cityFurniture.js");
+    let best = null, bd = 1e18;
+    for (const t of cityFurniture.tiles.values()) for (const p of ["bench_street", "bench_park", "bench_backless"]) { const A = t.inst?.[p]; if (!A) continue; for (let o = 0; o < A.length; o += 8) { const d = (A[o] - 1180) ** 2 + (A[o + 2] - 545) ** 2; if (d < bd) { bd = d; best = [A[o], A[o + 2], A[o + 3]]; } } }
+    if (!best) return null;
+    const [x, z, yaw] = best, fx = Math.sin(yaw), fz = Math.cos(yaw);
+    await look(x + fx * 2.2 + Math.cos(yaw) * 1.2, z + fz * 2.2 - Math.sin(yaw) * 1.2, 1.5, x, z, 0.4);
+    return best;
+  }
+  if (name === "trees") return look(1185, 538, 1.7, 1150, 556, 9);
+  return null;
+}

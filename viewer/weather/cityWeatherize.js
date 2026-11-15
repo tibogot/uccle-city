@@ -197,7 +197,10 @@ function graph(I, o, wantNormal) {
       const Lc = dot(I.col, vec3(0.2126, 0.7152, 0.0722));
       ground = mix(smoothstep(float(o.ground.lum[1]), float(o.ground.lum[0]), Lc), float(0.5), smoothstep(0.01, 0.06, fw));
     }
-    let smN = snowMask(P, up, exposed.mul(float(1).sub(shelter.mul(0.6))), wx.uSnowCover, ...(o.snowUp ?? [0.42, 0.78]), ground);
+    // (snow round 2: a crown takes a share of the DEPTH, not of the cover: under trees 15 cm on the open lawn is still
+    // ~6 cm, a full white cover; the old exposure x (1 - 0.6 shelter) left half the Heros lawn green at 15 cm)
+    const coverHere = min(wx.uSnowCover, wx.uSnowDepth.mul(float(1).sub(shelter.mul(0.6))).div(0.025));
+    let smN = snowMask(P, up, exposed, coverHere, ...(o.snowUp ?? [0.42, 0.78]), ground);
     if (o.plaster) {
       const wn = wx.uWind.length();
       const windward = smoothstep(0.25, 0.75, dot(normalize(Nw.xz.add(vec2(1e-4, 0))), wx.uWind.div(max(wn, 0.01)).negate()));
