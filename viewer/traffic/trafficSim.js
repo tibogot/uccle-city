@@ -54,7 +54,8 @@ export class TrafficSim {
       alive: U(), path: I(1, -1), prev: I(1, -1), d: new Float64Array(cap), v: F(), acc: F(), route: I(ROUTE, -1),
       type: U(), half: F(), wb: F(), wr: F(), paint: F(3), aMax: F(), Tg: F(), v0f: F(),
       state: U(), hold: U(), holdT: F(), stopDone: I(1, -1), committed: I(1, -1), waitT: F(), bits: U(),
-      nxt: I(1, -1),                                 // next car on the same path (ascending d)
+      nxt: I(1, -1),
+      keep: U(),                                     // 1 = held by the game kit (a mission target): populate() never removes it                                 // next car on the same path (ascending d)
       x: F(), z: F(), y: F(), yaw: F(), pitch: F(), px: F(), pz: F(), py: F(), pyaw: F(), ppitch: F(),
       spin: F(), pspin: F(), steer: F(), offX: F(), offZ: F(), age: F(), seen: U(),
       manPts: F(MAN * 2), manCum: F(MAN), manLen: F(), manT: F(), manDir: new Int8Array(cap), slot: new Array(cap).fill(null),
@@ -144,7 +145,7 @@ export class TrafficSim {
     this.aMax[i] = IDM.a * (0.8 + this.rand() * 0.4) * (T.accel ?? 1); this.Tg[i] = IDM.T * (0.8 + this.rand() * 0.5); this.v0f[i] = (0.9 + this.rand() * 0.18) * (T.speed ?? 1);
     this.state[i] = ST.drive; this.hold[i] = 0; this.holdT[i] = 0; this.stopDone[i] = -1; this.committed[i] = -1; this.waitT[i] = 0; this.bits[i] = 0;
     this.spin[i] = this.rand() * 6.28; this.steer[i] = 0; this.offX[i] = 0; this.offZ[i] = 0; this.age[i] = 0; this.seen[i] = 0;
-    this.slot[i] = null; this.onPath[i] = -1; this.gen[i]++; this.handoff[i] = 0;
+    this.slot[i] = null; this.onPath[i] = -1; this.gen[i]++; this.handoff[i] = 0; this.keep[i] = 0;
     this.pose(i); this.copyPrev(i);
     this.count++;
     return i;
@@ -564,6 +565,7 @@ export class TrafficSim {
       const vis = ctx.visible(this.x[i], this.y[i], this.z[i], 3.5);
       this.seen[i] = vis ? 1 : 0;
       const stuck = this.holdT[i] > 60 || (this.v[i] < 0.01 && this.route[i * ROUTE] < 0);
+      if (this.keep[i]) continue;               // a game kit target (viewer/game/entities.js): never culled
       if (!vis && (d2 > (R + 25) * (R + 25) || stuck || (this.count > want + 6 && d2 > 60 * 60 && this.rand() < 0.2))) { this.kill(i); this.stats.removed++; }
     }
     // spawn: a few per call, on lanes weighted by length x class density, where nobody can see

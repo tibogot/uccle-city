@@ -1728,14 +1728,14 @@ async function main() {
   };
   // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target
   // drives the streaming), then start the same mode there, facing along the street (the side nearest the old heading)
-  const teleport = async ({ x, z, yaw: dirAng, exact = false }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading
+  const teleport = async ({ x, z, yaw: dirAng, exact = false, mode: wantMode = null }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading; mode: start that mode there (the game kit)
     const t0 = performance.now();
     const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
     if (!entry) throw new Error("outside the built tiles");
     const before = getPlayer();
     let b = Math.atan2(Math.cos(dirAng), -Math.sin(dirAng));       // the street's bearing
     if (!exact && Math.abs(Math.atan2(Math.sin(b - before.heading), Math.cos(b - before.heading))) > Math.PI / 2) b += Math.PI;
-    const m = before.mode;
+    const m = wantMode || before.mode;
     if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true;
     const loaded = world.tiles.some((t) => t.name === entry.name);
     const [, hmax] = entry.counts?.terrainMinMax || [60, 100];
@@ -1752,7 +1752,7 @@ async function main() {
     const tTile = performance.now() - t0;
     if (m === "walk") walker.start(x, z, -b);
     else if (m === "fly") { controls.enabled = false; flyer.start(x, z, -b, world.surface(x, z) + 45); }
-    else if (RIDE.has(m)) { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
+    else if (RIDE.has(m)) { controls.enabled = false; await driver.start(x, z, Math.PI - b, wantMode ? (m === "drive" ? "car" : m) : null); }
     else if (m === "third") {
       controls.enabled = false;
       third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
@@ -1781,6 +1781,14 @@ async function main() {
     import("./map/cityMap.js").then((mm) => mm.startCityMap({ getPlayer, teleport, getTrams: () => tramLine?.positions() ?? null, log })).then((h) => { mapHook = h; window.__map = h; })
       .catch((e) => log(`map: ${e.message}`));
   }
+  // ---- GAME KIT (viewer/game/, docs/GAMEKIT.md): the start menu, missions, the player HUD; ?game=0 = free roam as before
+  if (params.get("game") !== "0") {
+    import("./game/cityGame.js").then((g) => g.startGameKit({ scene, camera, renderer, controls, world, manifest, params, log, getPlayer, teleport, setView, walk, fly, drive,
+      thirdPerson, driver, walker, flyer, getThird: () => third, getMap: () => mapHook, getTraffic: () => window.__traffic ?? null,
+      pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop), updaters }))
+      .then((k) => { window.__game = k; }).catch((e) => log(`game kit: ${e.message}`));
+  }
+  // ---- /GAME KIT
   // stateAt(pos, focus, half, dt): the smoothness harness (docs/SMOOTH_LOD.md): every LOD, fade and the shadow box
   // as if the camera were at `pos` (looking at `focus`), while the view camera stays where it is; freeze(true)
   // keeps the animation loop from resetting it. Frames rendered that way show only what the LOD state changes.

@@ -55,7 +55,7 @@ const CSS = `
 .ukeys kbd { font: 11px ui-monospace, Consolas, monospace; border: 1px solid rgba(127,127,127,.45); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; margin-right: 2px; }
 `;
 const KEYS = [
-  ["Everywhere", [["H", "photo mode: hide all the UI (the data credits stay)"], ["`", "show / hide the dev panel"], ["/", "search the dev panel"], ["?", "this help"], ["M", "the full map (the minimap's teleport)"], ["Esc", "leave walk / fly / drive / third person; close this help"]]],
+  ["Everywhere", [["H", "photo mode: hide all the UI (the data credits stay)"], ["`", "show / hide the dev panel"], ["/", "search the dev panel"], ["?", "this help"], ["M", "the full map (the minimap's teleport)"], ["P", "the game menu: start a game / pause it (viewer/game/, docs/GAMEKIT.md)"], ["Esc", "leave walk / fly / drive / third person; close this help"]]],
   ["Orbit", [["drag · right-drag · wheel", "turn · pan · zoom"]]],
   ["Walk", [["W A S D / arrows", "move"], ["drag", "look"], ["Shift", "run"]]],
   ["Drive", [["W A S D / arrows", "throttle, brake, steer"], ["R", "reset the car"], ["C", "camera"], ["G", "the car colliders"]]],

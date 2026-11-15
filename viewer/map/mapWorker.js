@@ -7,7 +7,9 @@
 //   full { cx, cz, s, w, h, dpr, lang, hl }        -> full { bitmap, view, ms }
 //   search { q, lang }                             -> search { results }
 //   snap { x, z, lang }                            -> snap { x, z, yaw, name, cross, d }
+//   route { x0, z0, x1, z1, car }                  -> route { pts: Float32Array [x, z, ...], len, ms }  (game kit GPS, mapRoute.js)
 import { loadMap } from './mapData.js';
+import { routeOn } from './mapRoute.js';
 import { MapView, TextWidths, overlaps, addLine } from '../../vendor/slop-map/mapCore.js';
 import { PAL, FONT, drawGround, drawGlyph } from './mapStyle.js';
 
@@ -25,7 +27,7 @@ self.onmessage = async (e) => {
     if (m.type === 'init') {
       M = await loadMap(m.base);
       post({ type: 'ready', id: m.id, landmarks: M.landmarks, stops: M.stops, extent: M.extent, boundary: M.boundary, counts: M.counts,
-        roads: M.roads.length, names: M.names.length, ms: M.ms });
+        roads: M.roads.length, names: M.names.length, ms: M.ms, areas: M.areas });
     } else if (!M) {
       post({ type: m.type, id: m.id, error: 'not ready' });
     } else if (m.type === 'mini') miniCache(m);
@@ -34,6 +36,11 @@ self.onmessage = async (e) => {
     else if (m.type === 'full') full(m);
     else if (m.type === 'search') post({ type: 'search', id: m.id, results: M.search(m.q).map((it) => ({ ...it, roads: undefined, label: m.lang === 'nl' ? it.nl : it.fr, sub: m.lang === 'nl' ? it.fr : it.nl })) });
     else if (m.type === 'snap') snap(m);
+    else if (m.type === 'route') {
+      const t0 = performance.now(), r = routeOn(M, m.x0, m.z0, m.x1, m.z1, m.car !== false);
+      const pts = r ? new Float32Array(r.pts) : null;
+      post({ type: 'route', id: m.id, pts, len: r ? Math.round(r.len) : null, ms: +(performance.now() - t0).toFixed(2) }, pts ? [pts.buffer] : []);
+    }
     else if (m.type === 'spritesReset') { sent.clear(); spriteMeta.clear(); }
   } catch (err) {
     post({ type: m.type, id: m.id, error: String(err?.stack || err) });

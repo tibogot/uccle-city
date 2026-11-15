@@ -61,6 +61,9 @@ export const FEATURES = [
   num("birdscale", "modes", "bird scale", "The flyer model's scale.", 0.42, 0.05, 3, 0.01, { sub: "Falcon flight" }),
   sel("birdskin", "modes", "bird skin", "The juvenile player skin (default) or the adult one.", [[null, "juvenile"], ["adult", "adult"]], { sub: "Falcon flight" }),
   opt("birdlayers", "modes", "bird rig layers", "Calibrate the bird rig's fold / brake layers (debug).", { sub: "Falcon flight" }),
+  on("game", "modes", "game kit + start menu", "The game kit (viewer/game/, docs/GAMEKIT.md): the start menu (Free roam / Kit demo / Police / Falcon), missions, dispatch, the player HUD; P opens the menu. ?game=0 = pure free roam as before; ?game=<id> (demo) starts that game after the boot, with ?gmode=missions | free.", { sub: "Games" }),
+  on("gamemenu", "modes", "start menu at boot", "Open the game start menu when the boot cover lifts (?gamemenu=0: not; the Play button / P still open it; a boot link with ?view= skips it too).", { sub: "Games" }),
+  txt("gmode", "modes", "game mode", "With ?game=<id>: missions (default) or free (free play).", "missions", { sub: "Games" }),
   sel("maplang", "modes", "map language", "The minimap / full map's street names.", [[null, "French"], ["nl", "Dutch"]], { sub: "Map" }),
 
   // ---------------------------------------------------------------- time & sun

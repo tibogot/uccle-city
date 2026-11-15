@@ -200,6 +200,8 @@ export class FullMap {
       ctx.fillStyle = '#5fd0ff'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = PAL.label.halo; ctx.stroke();
       ctx.beginPath(); ctx.arc(X, Y - 14, 2.6, 0, Math.PI * 2); ctx.fillStyle = PAL.label.halo; ctx.fill();
     }
+    // the game kit's overlay (viewer/game/mapMarkers.js: route + waypoints), map-view coordinates
+    if (this.overlay) { ctx.save(); this.overlay(ctx, v, w, h); ctx.restore(); }
     // live trams 92
     const tr = this.opts.getTrams?.();
     if (tr) for (let i = 0; i < tr.length; i += 2) {
