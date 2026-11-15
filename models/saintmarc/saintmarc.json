@@ -1,0 +1,196 @@
+{
+ "asset": "Eglise Saint-Marc (Sint-Markuskerk), Avenue De Fre (tools/blender/saintmarc.py)",
+ "triangles": {
+  "lod0": 8308,
+  "lod1": 1884,
+  "lod2": 694
+ },
+ "triangles_per_slot": {
+  "lod0": {
+   "brick_dark": 128,
+   "stone_blue": 12,
+   "zinc_roof": 6242,
+   "concrete_white": 508,
+   "wood_oak": 234,
+   "glass_window": 154,
+   "cast_iron_green": 1030
+  },
+  "lod1": {
+   "brick_dark": 128,
+   "stone_blue": 12,
+   "zinc_roof": 838,
+   "concrete_white": 348,
+   "wood_oak": 78,
+   "glass_window": 86,
+   "cast_iron_green": 394
+  },
+  "lod2": {
+   "brick_dark": 126,
+   "stone_blue": 12,
+   "zinc_roof": 238,
+   "concrete_white": 236,
+   "wood_oak": 18,
+   "glass_window": 54,
+   "cast_iron_green": 10
+  }
+ },
+ "levels": {
+  "LOD0": "SaintMarc",
+  "LOD1": "SaintMarc_far (scripted far variant)",
+  "LOD2": "SaintMarc_xfar (scripted very-far variant, flat shaded)"
+ },
+ "slots": [
+  "brick_dark",
+  "stone_blue",
+  "zinc_roof",
+  "concrete_white",
+  "wood_oak",
+  "glass_window",
+  "cast_iron_green"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "coping",
+   "surround",
+   "cornice",
+   "plinth",
+   "band",
+   "sill",
+   "sculpture",
+   "ridge",
+   "louvre",
+   "gutter",
+   "gilt",
+   "door",
+   "mosaic",
+   "frame",
+   "lead"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": [
+   0.74,
+   0.9
+  ],
+  "px_per_m": [
+   24.1,
+   10.0,
+   9.4
+  ],
+  "bake_device": "OPTIX"
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   454.185,
+   50.0,
+   -619.655
+  ],
+  "rotation_y_rad": 1.529083,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/548515"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1719656"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   436.0,
+   470.4
+  ],
+  "z": [
+   -646.0,
+   -613.4
+  ],
+  "y": [
+   66.9,
+   85.4
+  ]
+ },
+ "new_slot_names": {
+  "wood_oak": "door leaves (temporary material)",
+  "concrete_white": "the band, columns, soffit, copings (temporary material; vanbuuren / police use the name)"
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    454.185,
+    -619.655
+   ],
+   "rotation_rad": -1.529083,
+   "rotation_deg": -87.61,
+   "axes": "u = (cos r, sin r) in city (x, z): from the entrance front to the back; w = (-sin r, cos r)"
+  },
+  "footprint_osm": [
+   [
+    -0.031,
+    -12.989
+   ],
+   [
+    5.17,
+    -12.972
+   ],
+   [
+    5.132,
+    -17.648
+   ],
+   [
+    25.306,
+    -17.626
+   ],
+   [
+    25.308,
+    12.167
+   ],
+   [
+    5.269,
+    12.464
+   ],
+   [
+    5.329,
+    16.849
+   ],
+   [
+    2.928,
+    16.915
+   ],
+   [
+    2.859,
+    12.875
+   ],
+   [
+    0.026,
+    12.985
+   ]
+  ],
+  "solid_top": {
+   "h": 86.1,
+   "uw": [
+    5.02,
+    -2.49
+   ]
+  }
+ },
+ "levels_taw": {
+  "floor": 68.45,
+  "rim": 76.05,
+  "coping": 76.25,
+  "soffit": 70.55,
+  "band_top": 71.25,
+  "front_surfaces_top": 80.4,
+  "apex": 85.4,
+  "annex": 75.0
+ },
+ "roof": "h = rim + (top - rim) * (1 - t), t = superellipse (p 1.6) of the distances from the apex line to the rim (rear) / from the glass wall to the front",
+ "estimated": "the side, back and annex openings (none visible from the street), the columns' spacing, the entrance screen's division and doors, the cross's size (+-0.3 m), the floor level; the ivy on the front's east half is not modelled"
+}

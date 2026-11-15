@@ -1,0 +1,313 @@
+{
+ "asset": "Eglise du Sacre-Coeur (Heilig Hartkerk), Rue Vanderkindere (tools/blender/sacrecoeur.py)",
+ "triangles": {
+  "lod0": 17266,
+  "lod1": 8410,
+  "lod2": 2965
+ },
+ "triangles_per_slot": {
+  "lod0": {
+   "rubble_stone": 1975,
+   "stone_white": 11186,
+   "slate": 313,
+   "zinc_roof": 711,
+   "wood_oak": 961,
+   "glass_window": 1146,
+   "cast_iron_green": 974
+  },
+  "lod1": {
+   "rubble_stone": 1353,
+   "stone_white": 5892,
+   "slate": 313,
+   "zinc_roof": 89,
+   "wood_oak": 121,
+   "glass_window": 618,
+   "cast_iron_green": 24
+  },
+  "lod2": {
+   "rubble_stone": 1045,
+   "stone_white": 1220,
+   "slate": 252,
+   "zinc_roof": 13,
+   "wood_oak": 61,
+   "glass_window": 350,
+   "cast_iron_green": 24
+  }
+ },
+ "levels": {
+  "LOD0": "SacreCoeur",
+  "LOD1": "SacreCoeur_far (scripted far variant)",
+  "LOD2": "SacreCoeur_xfar (scripted very-far variant, flat shaded)"
+ },
+ "slots": [
+  "rubble_stone",
+  "stone_white",
+  "slate",
+  "zinc_roof",
+  "wood_oak",
+  "glass_window",
+  "cast_iron_green"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "names": [
+   "plain",
+   "coping",
+   "surround",
+   "cornice",
+   "plinth",
+   "band",
+   "sill",
+   "sculpture",
+   "ridge",
+   "louvre",
+   "gutter",
+   "gilt",
+   "door",
+   "mosaic",
+   "frame",
+   "lead"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres, per face",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": [
+   0.74,
+   0.9
+  ],
+  "px_per_m": [
+   16.8,
+   8.0,
+   6.9
+  ],
+  "bake_device": "OPTIX"
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -263.725,
+   50.0,
+   -1630.705
+  ],
+  "rotation_y_rad": -1.521927,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/729884"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1712839"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   -274.6,
+   -250.6
+  ],
+  "z": [
+   -1635.5,
+   -1570.7
+  ],
+  "y": [
+   101.2,
+   130.1
+  ]
+ },
+ "dressings": "stone_white (the photo's pale grey-beige window surrounds, portal arches, copings, crucifix and steps; slot index BLUE in the kit)",
+ "new_slot_names": {
+  "wood_oak": "the portals' oak doors (light brown boards; not in the shared library: temporary material)",
+  "rubble_stone": "coursed rubble sandstone (Rosaire's slot; temporary material)"
+ },
+ "measured": {
+  "frame": {
+   "city": "city local: x = L72 E - 148643, z = 165394 - N; heights m TAW",
+   "origin_city": [
+    -263.725,
+    -1630.705
+   ],
+   "rotation_rad": 1.521927,
+   "rotation_deg": 87.2,
+   "axes": "u = (cos r, sin r) in city (x, z): from the entrance front to the back; w = (-sin r, cos r)"
+  },
+  "footprint_osm": [
+   [
+    -3.424,
+    10.211
+   ],
+   [
+    -3.523,
+    6.106
+   ],
+   [
+    0.054,
+    6.071
+   ],
+   [
+    0.025,
+    3.035
+   ],
+   [
+    -0.004,
+    -0.007
+   ],
+   [
+    -0.032,
+    -3.043
+   ],
+   [
+    -0.061,
+    -6.078
+   ],
+   [
+    -3.82,
+    -5.974
+   ],
+   [
+    -3.855,
+    -9.772
+   ],
+   [
+    5.07,
+    -9.869
+   ],
+   [
+    17.375,
+    -9.828
+   ],
+   [
+    59.523,
+    -9.68
+   ],
+   [
+    59.142,
+    4.159
+   ],
+   [
+    56.419,
+    4.293
+   ],
+   [
+    56.395,
+    4.998
+   ],
+   [
+    55.521,
+    4.884
+   ],
+   [
+    54.684,
+    5.372
+   ],
+   [
+    53.883,
+    5.791
+   ],
+   [
+    52.933,
+    5.886
+   ],
+   [
+    52.11,
+    5.839
+   ],
+   [
+    51.507,
+    5.653
+   ],
+   [
+    50.885,
+    5.397
+   ],
+   [
+    50.4,
+    5.055
+   ],
+   [
+    49.424,
+    4.979
+   ],
+   [
+    49.462,
+    2.173
+   ],
+   [
+    48.973,
+    2.163
+   ],
+   [
+    46.698,
+    4.259
+   ],
+   [
+    46.822,
+    10.327
+   ],
+   [
+    32.841,
+    10.182
+   ],
+   [
+    26.67,
+    10.189
+   ],
+   [
+    18.228,
+    10.19
+   ],
+   [
+    9.918,
+    10.219
+   ],
+   [
+    5.317,
+    10.239
+   ],
+   [
+    2.342,
+    10.269
+   ]
+  ],
+  "solid_top": {
+   "h": 130.05,
+   "uw": [
+    38.43,
+    5.47
+   ]
+  }
+ },
+ "levels_taw": {
+  "street": 101.9,
+  "floor": 102.8,
+  "nave": {
+   "ridge": 121.6,
+   "eaves_front_walls": 113.2,
+   "eaves_low": 111.64
+  },
+  "aisles": [
+   108.0,
+   106.31
+  ],
+  "crossing": {
+   "eaves": 113.3,
+   "apex": 123.0
+  },
+  "choir": {
+   "eaves": 110.2,
+   "ridge": 117.0
+  },
+  "tower": {
+   "top": 119.0,
+   "spire": 129.3,
+   "cross": 130.1
+  },
+  "west_block_ridge": 112.6,
+  "south_block": {
+   "flat": 106.8,
+   "gable": 109.8
+  }
+ },
+ "estimated": "every opening of the side, crossing, choir, tower and back walls (not visible from public streets), the buttresses' rhythm, the dormers' sizes, the door panelling, the wall thicknesses; the front's openings are from the Street View front (calibrated on the floor and the ridge, +-0.3 m)"
+}

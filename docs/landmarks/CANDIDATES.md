@@ -12,9 +12,9 @@ station, the police station.
 |---|---|---|
 | Saint-Augustin, Altitude Cent (FOREST, just over the border) | ~1,470 m² | **built** (branch claude/augustin): docs/landmarks/AUGUSTIN.md, `?augustin=0` = without |
 | Notre-Dame du Rosaire (Q3580420) | ~1,410 m² | DONE 2026-11-13 (branch claude/churches2, `?rosaire=0`; docs/landmarks/CHURCHES2.md) |
-| Sacré-Cœur (Q62570896) | ~1,140 m² | |
+| Sacré-Cœur (Q62570896) | ~1,140 m² | DONE 2026-11-15 (branch claude/landmark5, `?sacrecoeur=0`; docs/landmarks/SACRECOEUR.md) |
 | Saint-Paul (Q3583482) | ~765 m² | |
-| Saint-Marc (Q62570700) | ~745 m² | |
+| Saint-Marc (Q62570700) | ~745 m² | DONE 2026-11-15 (branch claude/landmark5, `?saintmarc=0`; docs/landmarks/SAINTMARC.md) |
 | Saint-Joseph | ~455 m² | |
 | Russian Orthodox church of Saint-Job (Q4505050) | ~200 m² | DONE 2026-11-13 (branch claude/churches2, `?russian=0`; docs/landmarks/CHURCHES2.md) |
 | Chapelle Hauwaert | ~15 m² | wayside chapel (street-furniture scale) |

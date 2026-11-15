@@ -56,6 +56,12 @@ models/russian/audit/*.json
 models/rosaire/*.raw.glb
 models/rosaire/audit/*.json
 !models/rosaire/audit/*.allow.json
+models/sacrecoeur/*.raw.glb
+models/sacrecoeur/audit/**/*.json
+!models/sacrecoeur/audit/*.allow.json
+models/saintmarc/*.raw.glb
+models/saintmarc/audit/**/*.json
+!models/saintmarc/audit/*.allow.json
 textures/shops/_work/
 textures/shops/interiors.png
 models/heros/statue_raw.json

@@ -26,6 +26,10 @@ export const PLACES = [
   { id: "vanbuuren", name: "Van Buuren house", group: "Landmarks", tile: "G2", p: [350, 35, -1180], t: [303, 6, -1230] },
   { id: "rosaire", name: "Notre-Dame du Rosaire", group: "Landmarks", tile: "I2", p: [1340, 45, -1190], t: [1279, 15, -1254] },
   { id: "augustin", name: "Saint-Augustin", group: "Landmarks", tile: "E1", p: [-830, 60, -1890], t: [-896, 20, -1961] },
+  { id: "sacrecoeur", name: "Sacré-Cœur church", group: "Landmarks", tile: "F1", p: [-240, 40, -1680], t: [-263, 12, -1610] },
+  { id: "sacrecoeur-street", name: "Sacré-Cœur, Rue Vanderkindere", group: "Landmarks", tile: "F1", p: [-262, 1.7, -1648], t: [-264, 8, -1630], fov: 60 },
+  { id: "saintmarc", name: "Saint-Marc church", group: "Landmarks", tile: "G3", p: [470, 30, -580], t: [452, 8, -628] },
+  { id: "saintmarc-street", name: "Saint-Marc, Avenue De Fré", group: "Landmarks", tile: "G3", p: [453, 1.7, -600], t: [453, 6, -622], fov: 60 },
   // public art (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md)
   { id: "monolithes", name: "Dix Monolithes", group: "Public art", tile: "B5", p: [-2214, 1.7, 400], t: [-2240, 3, 376], fov: 55 },
   { id: "monolithes-air", name: "Dix Monolithes, from above", group: "Public art", tile: "B5", p: [-2205, 35, 335], t: [-2240, 2, 376] },
