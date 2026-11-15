@@ -16,6 +16,8 @@ import { noiseAt } from "../foliage/noise.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
 import { plantFades } from "./plantMaterial.js";
 import { wxMat } from "../weather/cityWeatherize.js";
+import { vertexLit, foliageLights } from "../foliage/vertexLight.js";
+import { addLampLight } from "../lampLight.js";
 
 // ------------------------------------------------------------------------------------------------ geometry
 /** the bed's unit mound: centre 6.5 cm, rim 3.5 cm, skirt to -18 cm; attribute "edge" 0 centre .. 1 rim, 2 skirt */
@@ -127,6 +129,8 @@ export function bedMaterial() {
   m.roughnessNode = float(0.95);
   m.maskNode = keep(0, true);
   m.name = "plants-bed";
+  vertexLit(m, { lightsOnly: true });                    // perf pass 3: sun + sky only (no pooled lamp point lights)
+  if (foliageLights()) addLampLight(m);
   wxMat(m, { porosity: 0.8, frost: true });
   m.userData.shared = true; m.userData.noFade = true;
   void max; void normalWorld;
@@ -150,6 +154,8 @@ export function windowBoxMaterial(lod) {
   m.maskNode = keep(lod);
   m.maskShadowNode = m.maskNode;
   m.name = `plants-windowbox-lod${lod}`;
+  vertexLit(m, { lightsOnly: true });
+  if (foliageLights()) addLampLight(m);
   wxMat(m, { porosity: 0.3 });
   m.userData.shared = true; m.userData.noFade = true;
   return (boxM[lod] = m);

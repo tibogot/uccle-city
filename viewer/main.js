@@ -66,6 +66,7 @@ import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
+import { freeze } from "./staticFreeze.js";                       // perf4: ?freeze=1 the tile layers' world matrices computed once (opt-in)
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
@@ -962,6 +963,9 @@ async function main() {
   const contourOn = uniform(0);
   const layers = { terrain: new THREE.Group(), buildings: new THREE.Group(), roads: new THREE.Group(), features: new THREE.Group() };
   for (const g of Object.values(layers)) scene.add(g);
+  // --- perf4: ?freeze=1 (opt-in, no measurable gain): the tile layers are static, no per-frame world-matrix walk
+  for (const g of Object.values(layers)) freeze(g);
+  // --- perf4 end
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   if (!NIGHT) updaters.push(lampLightPool(scene));   // the city's lamp lights: ONE fixed pool for the session (light count never changes)
