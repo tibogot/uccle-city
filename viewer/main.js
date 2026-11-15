@@ -42,7 +42,7 @@ import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
-import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
+import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
 import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
@@ -873,6 +873,7 @@ async function main() {
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
   setTreeRenderer(renderer);
+  updaters.push(treeBandSettle());     // the tree hand-over / shadow-fade bands follow the camera speed (no static dither, docs/POLISH.md item 2)
   const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
 
   const contourOn = uniform(0);

@@ -41,6 +41,30 @@ const useImpostors = SMOOTH ? !/[?&]impostors=0/.test(location.search) : /[?&]im
 let renderer = null;
 /** The trees' shadow range (live: dev panel "Smoothness"): shadows fade out over [end - band, end] (m, view camera). */
 export const TREE_SHADOW = { end: uniform(+(new URLSearchParams(location.search).get("treeshadowend") ?? 120)), band: uniform(40) };
+// polish1 (docs/POLISH.md item 2, ?treedither=old = before): SETTLED HAND-OVER BANDS. The mesh -> impostor hand-over
+// (IMP.band, 30-50 m at 400 m) and the trees' shadow fade (TREE_SHADOW.band, 40 m at 120 m) are pixel splits by a
+// static screen dither: every tree standing in a band showed a checker for as long as the camera stood still. Now
+// the bands follow the camera's SPEED: band = speed x 0.8 s (clamped to [1 m, the configured band]), widening in
+// ~0.15 s when the camera moves and narrowing over ~0.6 s when it stops. A tree crossing the hand-over spends
+// ~0.8 s in the dissolve whatever the speed (a timed fade, as the landmarks' ?lodsettle), and standing still the
+// trees settle to one side: whole mesh or whole impostor, no dither. CPU only (two uniforms per frame).
+export function treeBandSettle() {
+  if (!SMOOTH || /[?&](treedither|polish1)=old(&|$)/.test(location.search)) return () => {};
+  const base = { imp: null, sh: TREE_SHADOW.band.value };
+  let last = null, t0 = performance.now(), speed = 0;
+  return (camPos) => {
+    const now = performance.now(), dt = Math.min(0.1, Math.max(1e-3, (now - t0) / 1000)); t0 = now;
+    base.imp ??= IMP.band.value;                  // (after the tree kit set the lab's band)
+    if (!last) { last = camPos.clone(); return; }
+    const v = camPos.distanceTo(last) / dt; last.copy(camPos);
+    // (a teleport is not a speed: Go to / a tile jump)
+    speed = v > 400 ? speed : speed + (v - speed) * (1 - Math.exp(-dt / (v > speed ? 0.05 : 0.25)));
+    for (const [u, b0] of [[IMP.band, base.imp], [TREE_SHADOW.band, base.sh]]) {
+      const goal = Math.min(b0, Math.max(1, speed * 0.8));
+      u.value += (goal - u.value) * (1 - Math.exp(-dt / (goal > u.value ? 0.15 : 0.6)));
+    }
+  };
+}
 /** main.js passes the renderer once (the impostor bake renders on it). */
 export function setTreeRenderer(r) { renderer = r; }
 
