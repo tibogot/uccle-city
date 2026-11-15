@@ -1,6 +1,7 @@
 # Only viewer/, vendor/ and data/ are served. The rest is the data pipeline and docs.
 pipeline/
-tools/
+tools/*
+!tools/asset_hashes.mjs
 debug/
 docs/
 data/raw/
