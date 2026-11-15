@@ -266,7 +266,7 @@ var Heightmap = class _Heightmap {
    * natural ground beyond the ring is kept: a short bank one cell out. Only lowers; skipped where it would drop more than
    * maxDrop (a structure: a road through a tunnel / under an embankment) or skip(x, z). Returns the cells lowered.
    */
-  clampUnder(meshes, { lift = 0.03, rise = 0.1, maxDrop = 1.2, skip = null } = {}) {
+  clampUnder(meshes, { lift = 0.012, rise = 0.1, maxDrop = 1.2, skip = null } = {}) {
     const { x0, z0, cols, rows, step } = this.h, Y = this.y;
     const cap2 = new Float32Array(cols * rows).fill(Infinity), reach2 = (1.5 * step) ** 2;
     const capIn = new Float32Array(cols * rows).fill(Infinity);
@@ -994,9 +994,24 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     }
     return best < STREET_REACH;
   };
-  const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aCel: [] };
   const NW = [];
-  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };
+  const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [], aCel: [] };
+  const cellarOf = (f, base, u0, width, tx, tz) => {
+    if (!opts.ground || opts.cellar === false || width < 1.6) return 0;
+    let dd = 0, nq = 0;
+    for (const { p } of f.tris) for (const q of p) {
+      dd += q[0] * f.nx + q[2] * f.nz;
+      nq++;
+    }
+    dd = dd / nq + 0.35;
+    let hi = -Infinity;
+    for (let u = 0.3; u <= width - 0.3 + 1e-6; u += 0.5) {
+      const g = opts.ground(tx * (u0 + u) + f.nx * dd, tz * (u0 + u) + f.nz * dd);
+      if (Number.isFinite(g) && g > hi) hi = g;
+    }
+    return hi === -Infinity ? 0 : Math.max(0, base - hi);
+  };
   const shops = new Grid(40);
   const fronts = opts.fronts ? new Grid(40) : null;
   if (fronts) for (const q of opts.fronts) fronts.add(q.x, q.z, q.x, q.z, q);
@@ -1322,7 +1337,13 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           stats.doorsOff = (stats.doorsOff || 0) + 1;
         }
       }
+      const cel = !landmark && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
+      if (cel > 1.5) {
+        stats.cellarFaces = (stats.cellarFaces || 0) + 1;
+        if (cel > 2.4) stats.lowerGround = (stats.lowerGround || 0) + 1;
+      }
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
+        T3.aCel.push(cel);
         T3.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth3(src, q) : nn;
         T3.normal.push(sn[0], sn[1], sn[2]);
@@ -1457,6 +1478,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           W.aWall.push(v[0] * tx + v[2] * tz - u0, fw, v[1] - base, -Math.max(eaves, 0.01));
           W.aBld.push(fstyle, 0, 0, rnd);
           W.aFN.push(nx, nz, 0, 0);
+          W.aCel.push(0);
         }
         const top = Math.max(A[1], B[1]) + h, inner = [rc[0] * 0.85, rc[1] * 0.85, rc[2] * 0.85];
         const cope = q.cope < 0.5 ? [0.44, 0.45, 0.46] : q.cope < 0.65 ? [0.38, 0.37, 0.34] : q.cope < 0.8 ? [0.085, 0.09, 0.095] : [0.06, 0.063, 0.068];
@@ -1562,7 +1584,8 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       aWall: f32(W.aWall),
       aBld: f32(W.aBld),
       aFN: f32(W.aFN),
-      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null,
+      aCel: f32(W.aCel),
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit), aCel: f32(WK.aCel) } : null,
       nightWindows: f32(NW)
     },
     // (night round 3) the lit windows (litHash.js NIGHT_WIN_STRIDE)
@@ -8973,6 +8996,46 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     }
   }
   const skirtTris = (C.idx.length - triAtSkirts) / 3;
+  const fill = { len: 0, tris: 0, gapLen: 0 };
+  if (opts.wallRay) {
+    const FILL_GAP = 1.8, STEP2 = 0.5, INTO = 0.15;
+    for (const e of surf.edges) {
+      if (!e.raised) continue;
+      const pts = [];
+      const L0 = e.line;
+      for (let k = 1; k < L0.length; k++) {
+        const [ax, az] = L0[k - 1], [bx, bz] = L0[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP2));
+        for (let q = k === 1 ? 0 : 1; q <= n; q++) pts.push([ax + (bx - ax) * q / n, az + (bz - az) * q / n, k]);
+      }
+      let prev = null;
+      for (let k = 0; k < pts.length; k++) {
+        const [x, z, seg] = pts[k], [ax, az] = L0[seg - 1], [bx, bz] = L0[seg];
+        const dx = bx - ax, dz = bz - az, L2 = Math.hypot(dx, dz) || 1, nx = dz / L2, nz = -dx / L2;
+        let cur = null;
+        if (inTile(x, z)) {
+          const t = opts.wallRay(x, z, nx, nz, FILL_GAP);
+          if (t > 0.05 && t < FILL_GAP && [0.35, 0.65].every((f) => prep.classAt(x + nx * t * f, z + nz * t * f) < 0)) {
+            const q = raisedAt(x - nx * 0.2, z - nz * 0.2), r = q ? riseAt(q.cls, x, z) : KERB, y = H(x, z) + r;
+            const ks = prep.nearKerbUV(x, z), qx = x + nx * (t + INTO), qz = z + nz * (t + INTO), ks2 = prep.nearKerbUV(qx, qz, ks ? ks.li : void 0);
+            const ex = (k2) => ({ aKind: k2 ? KIND3.framed : KIND3.slab, aUv2: [0, 0], aFrameW: 0 });
+            cur = {
+              a: C.vert(x, y, z, UP2, ks ? ks.s : x, ks ? ks.d : z, ex(ks)),
+              b: C.vert(qx, y, qz, UP2, ks2 ? ks2.s : qx, ks2 ? ks2.d : qz, ex(ks2)),
+              t
+            };
+            fill.gapLen += STEP2;
+          }
+        }
+        if (cur && prev) {
+          C.tri(prev.a, cur.a, cur.b, UP2);
+          C.tri(prev.a, cur.b, prev.b, UP2);
+          fill.tris += 2;
+          fill.len += STEP2;
+        }
+        prev = cur;
+      }
+    }
+  }
   const parts = {};
   for (const [name, p] of Object.entries(out)) if (p.count) parts[name] = p.finish(name === "asphalt" ? "aSurf" : null);
   const seq = (n) => Uint32Array.from({ length: n }, (_, i) => i);
@@ -8993,6 +9056,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     droppedEngineTris: droppedTris,
     kerbTris,
     skirtTris,
+    sidewalkFill: fill,
     foldDropped,
     linesCutAtCrossings: linesCut,
     baseHiddenUnderLayer: baseHidden,
@@ -10461,7 +10525,7 @@ function buildRoadData(o) {
         return p ? h + (p[0] - h) * p[1] : h;
       };
     }
-    const S2 = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
+    const S2 = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, { ...priority ? { priority, dropFolds: true, lineCuts } : {}, wallRay: o.wallRay ?? null });
     for (const c of S2.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
     for (const part of Object.values(S2.parts)) welds.push({ position: part.position, index: part.index });
     for (const [name, part] of Object.entries(S2.parts)) {
@@ -13715,6 +13779,35 @@ async function streetlifeFronts(base, name) {
 }
 var overridesP = null;
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
+function wallRayOf(bDoc) {
+  const B = 4, cells = /* @__PURE__ */ new Map(), segs = [];
+  for (const b of bDoc.buildings) for (const ring2 of b.footprint || []) for (let i = 0; i < ring2.length; i++) {
+    const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], k = segs.length;
+    segs.push([ax, az, bx, bz]);
+    for (let gi = Math.floor(Math.min(ax, bx) / B); gi <= Math.floor(Math.max(ax, bx) / B); gi++)
+      for (let gj = Math.floor(Math.min(az, bz) / B); gj <= Math.floor(Math.max(az, bz) / B); gj++) {
+        const key = gi * 65536 + gj;
+        let c = cells.get(key);
+        if (!c) cells.set(key, c = []);
+        c.push(k);
+      }
+  }
+  return (x, z, dx, dz, max) => {
+    let best = Infinity;
+    const seen = /* @__PURE__ */ new Set();
+    for (let gi = Math.floor(Math.min(x, x + dx * max) / B); gi <= Math.floor(Math.max(x, x + dx * max) / B); gi++)
+      for (let gj = Math.floor(Math.min(z, z + dz * max) / B); gj <= Math.floor(Math.max(z, z + dz * max) / B); gj++)
+        for (const k of cells.get(gi * 65536 + gj) || []) {
+          if (seen.has(k)) continue;
+          seen.add(k);
+          const [ax, az, bx, bz] = segs[k], ex = bx - ax, ez = bz - az, den = dx * ez - dz * ex;
+          if (Math.abs(den) < 1e-9) continue;
+          const t = ((ax - x) * ez - (az - z) * ex) / den, u = ((ax - x) * dz - (az - z) * dx) / den;
+          if (t >= 0 && t < best && u >= 0 && u <= 1) best = t;
+        }
+    return best <= max ? best : Infinity;
+  };
+}
 var ROOF_STEP = 2;
 function roofGrid(bDoc, b) {
   const nx = Math.ceil((b.x1 - b.x0) / ROOF_STEP), nz = Math.ceil((b.z1 - b.z0) / ROOF_STEP);
@@ -13924,6 +14017,7 @@ async function buildTileData(entry, base) {
     roughLanes: entry.roughLanes !== false,
     weldNearest: entry.groundWeld !== false,
     clampH: entry.surfH !== false,
+    wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null,
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z)
@@ -14001,7 +14095,7 @@ async function buildTileData(entry, base) {
     const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T2 * 3), fitGround, footprintIndex(bDoc));
   }) : null;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, cellar: entry.cellar !== false }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));

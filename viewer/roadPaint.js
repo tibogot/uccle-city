@@ -239,6 +239,7 @@ function texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) {
  *  sharrows, as one decal mesh PAINT_LIFT above the street. No texture: each mark's (u, v) metres give box-filtered
  *  edges and stripes (tslkit filteredPulse / boxCoverage), so a zebra fades to its 50 % average far away instead of
  *  shimmering. Same paint colour and wear as the lines in the asphalt shader above. */
+const PAINT_WEAR2 = !(typeof location !== "undefined" && /[?&]zebrawear=old/.test(location.search));
 export function paintMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, transparent: true, depthWrite: false,
     polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
@@ -256,7 +257,14 @@ export function paintMaterial() {
   const teeth = smoothstep(fv.negate(), fv, hw.sub(abs(w))).mul(inU).mul(boxCoverage(v, float(0), e.y, fv));
   let cov = solid.mul(band(kind, 0)).add(zebra.mul(band(kind, 1))).add(teeth.mul(band(kind, 2)));
   const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
-  const wear = smoothstep(float(-0.65), float(-0.25), n3(x.mul(1.7), z.mul(1.7), 11.0)).mul(smoothstep(float(-0.8), float(-0.45), speck));
+  let wear = smoothstep(float(-0.65), float(-0.25), n3(x.mul(1.7), z.mul(1.7), 11.0)).mul(smoothstep(float(-0.8), float(-0.45), speck));
+  if (PAINT_WEAR2) {
+    // joins2 (docs/JOINS2.md; ?zebrawear=old = before): the round 0.6 m patches of bare asphalt read as dark SMUDGES on the
+    // zebras (Fort-Jaco). Paint wears in tyre streaks ALONG the traffic (u) and goes thin and grey, not black: streaks
+    // stretched along u, coverage kept over 45 %, the fine speckle kept
+    const streak = smoothstep(float(-0.55), float(0.1), n3(u.mul(0.45).add(x.mul(0.05)), v.mul(5.0).add(z.mul(0.05)), 11.0));
+    wear = mix(float(0.45), float(1), streak).mul(mix(float(0.7), float(1), smoothstep(float(-0.8), float(-0.45), speck)));
+  }
   cov = cov.mul(wear).mul(0.92);
   m.colorNode = vec3(0.62, 0.62, 0.6);
   m.opacityNode = cov;
@@ -271,6 +279,7 @@ export function paintMaterial() {
  *  kerb, metres from it), so the tiles run along the street in one continuous pattern, and the first 15 cm from
  *  the kerb is painted as the blue-stone kerb band. */
 const KERB_STONE = 1.0;            // m: kerbstone length
+const KERB_TONE2 = !(typeof location !== "undefined" && /[?&]kerbtone=old/.test(location.search));
 export function concreteMaterial({ framed = false } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const P = positionWorld, x = P.x, z = P.z;
@@ -309,7 +318,9 @@ export function concreteMaterial({ framed = false } = {}) {
     slab = mix(mix(sA, sB, tiles.tone).mul(blot.mul(0.07).add(1.0)).add(grain.mul(0.012)), vec3(0.1, 0.097, 0.092), tiles.joint);
   }
   // kerbs: Belgian blue stone (petit granit), dark blue-grey with fossil speckle
-  const kerb = vec3(0.075, 0.082, 0.095).add(grain.mul(0.012)).add(n3(x.mul(37.0), P.y.mul(37.0), z.mul(37.0)).mul(0.01));
+  // joins2 (docs/JOINS2.md; ?kerbtone=old = 0.075-0.095): weathered petit granit kerbs bleach to a mid blue-grey (Street
+  // View, Brussels kerbs in sun and shade); at 8 % albedo the 13 cm face read as a near-black band along every kerb in shade
+  const kerb = (KERB_TONE2 ? vec3(0.135, 0.142, 0.152) : vec3(0.075, 0.082, 0.095)).add(grain.mul(0.012)).add(n3(x.mul(37.0), P.y.mul(37.0), z.mul(37.0)).mul(0.01));
   // roundabout apron: red-brown setts
   // (round 4, cost: the measured surfaces have no apron; the engine's roundabout aprons outside UrbIS keep their setts
   // only with the unframed material)

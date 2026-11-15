@@ -153,7 +153,7 @@ export class Heightmap {
    * natural ground beyond the ring is kept: a short bank one cell out. Only lowers; skipped where it would drop more than
    * maxDrop (a structure: a road through a tunnel / under an embankment) or skip(x, z). Returns the cells lowered.
    */
-  clampUnder(meshes, { lift = 0.03, rise = 0.1, maxDrop = 1.2, skip = null } = {}) {
+  clampUnder(meshes, { lift = 0.012, rise = 0.1, maxDrop = 1.2, skip = null } = {}) {
     const { x0, z0, cols, rows, step } = this.h, Y = this.y;
     const cap = new Float32Array(cols * rows).fill(Infinity), reach2 = (1.5 * step) ** 2;
     // a vertex UNDER a surface takes only the triangles over it (a folded street's lower half next to it must not pull

@@ -1609,6 +1609,46 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   }
 
   const skirtTris = (C.idx.length - triAtSkirts) / 3;
+  // ---- SIDEWALK TO THE FAÇADE (joins2, docs/JOINS2.md; opts.wallRay, ?sidewalkfill=0 = none): UrbIS's sidewalk stops
+  // at the property line and the façade often stands 0.2-1.5 m behind it: the bare terrain showed in that sliver (the
+  // pale patch along a wall of Place Saint-Job, 1175, 549). Along every raised outer edge, a ray every 0.5 m outward:
+  // a wall within FILL_GAP with no street surface between -> the paving carries on to the wall (and 15 cm into it), at
+  // the edge's height, same paving frame; the strip ends where the ray finds no wall (the weld banks the terrain up to it)
+  const fill = { len: 0, tris: 0, gapLen: 0 };
+  if (opts.wallRay) {
+    const FILL_GAP = 1.8, STEP = 0.5, INTO = 0.15;
+    for (const e of surf.edges) {
+      if (!e.raised) continue;
+      const pts = [];
+      const L0 = e.line;
+      for (let k = 1; k < L0.length; k++) {
+        const [ax, az] = L0[k - 1], [bx, bz] = L0[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP));
+        for (let q = k === 1 ? 0 : 1; q <= n; q++) pts.push([ax + (bx - ax) * q / n, az + (bz - az) * q / n, k]);
+      }
+      let prev = null;
+      for (let k = 0; k < pts.length; k++) {
+        const [x, z, seg] = pts[k], [ax, az] = L0[seg - 1], [bx, bz] = L0[seg];
+        const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1, nx = dz / L, nz = -dx / L;     // outward (surface on the left)
+        let cur = null;
+        if (inTile(x, z)) {
+          const t = opts.wallRay(x, z, nx, nz, FILL_GAP);
+          // a gap: a wall within reach, no street surface in it (another sidewalk, a road), not already a wall at the edge
+          if (t > 0.05 && t < FILL_GAP && [0.35, 0.65].every((f) => prep.classAt(x + nx * t * f, z + nz * t * f) < 0)) {
+            const q = raisedAt(x - nx * 0.2, z - nz * 0.2), r = q ? riseAt(q.cls, x, z) : KERB, y = H(x, z) + r;
+            const ks = prep.nearKerbUV(x, z), qx = x + nx * (t + INTO), qz = z + nz * (t + INTO), ks2 = prep.nearKerbUV(qx, qz, ks ? ks.li : undefined);
+            const ex = (k2) => ({ aKind: k2 ? KIND.framed : KIND.slab, aUv2: [0, 0], aFrameW: 0 });
+            cur = {
+              a: C.vert(x, y, z, UP, ks ? ks.s : x, ks ? ks.d : z, ex(ks)),
+              b: C.vert(qx, y, qz, UP, ks2 ? ks2.s : qx, ks2 ? ks2.d : qz, ex(ks2)), t,
+            };
+            fill.gapLen += STEP;
+          }
+        }
+        if (cur && prev) { C.tri(prev.a, cur.a, cur.b, UP); C.tri(prev.a, cur.b, prev.b, UP); fill.tris += 2; fill.len += STEP; }
+        prev = cur;
+      }
+    }
+  }
   const parts = {};
   for (const [name, p] of Object.entries(out)) if (p.count) parts[name] = p.finish(name === "asphalt" ? "aSurf" : null);
   const seq = (n) => Uint32Array.from({ length: n }, (_, i) => i);
@@ -1618,7 +1658,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const bollards = (surf.bollards || []).filter(([x, z]) => inTile(x, z)).map(([x, z]) => { const c = prep.classAt(x, z); return [x, H(x, z) + (c >= 0 ? riseAt(c, x, z) : 0), z]; });
   const stats = {
     surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
-    kerbTris, skirtTris, foldDropped, linesCutAtCrossings: linesCut, baseHiddenUnderLayer: baseHidden, skirtsInWalls,
+    kerbTris, skirtTris, sidewalkFill: fill, foldDropped, linesCutAtCrossings: linesCut, baseHiddenUnderLayer: baseHidden, skirtsInWalls,
     liftTiers: lift ? { pieces: lift.size, overlapping: [...lift.values()].filter((t) => t > 0).length, max: Math.max(0, ...lift.values()) } : null,
     keptSideTris: keptSide, kerbLength: Math.round(kerbLen), mappedPieces: mapped.size, unmappedPieces: tally.size - mapped.size,
     unframedSidewalkTris: unframed, cutFallbacks: prep.fallbacks, bollards: bollards.length, treePits: (prep.pits || []).length,

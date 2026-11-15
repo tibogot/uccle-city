@@ -52,6 +52,12 @@ const SNOW_WB = !polishOld("snowwb");
 /** snow caps: the parked cars' batches (their tops cut the layer: the cap meshes carry the snow) */
 const CAR_RE = /^parked-car-batch/;
 const CAPS_CUT = new URLSearchParams(location.search).get("snowcaps") !== "0";
+// joins2 (docs/JOINS2.md; ?snowfurn=old = solids as before): street furniture (benches, bins, bollards, sign poles, lamps,
+// bus / tram shelters, the street kit) is baked as SHELTER, not as solid ground: as a solid its top became the layer's
+// base, the cliff round it cut a hard, blotchy hole in the snow under a bench (a pale outline: the material cover) and a
+// jagged cut round the shelters; now the snow runs on under them, thinner under the seat / roof, and the caps (snowCaps.js) stay on top
+const FURN_RE = /^(furniture2|streetkit|stops|street-furniture|street-lamps|furniture2-|streetkit-|stops-|tram-poles$|tram-shelter)/;
+const SNOW_FURN = new URLSearchParams(location.search).get("snowfurn") !== "old";
 const MOVER_RE = /^(tram2?-|tram$|trains$|traffic-fleet$|car$|moto|player-falcon$|falcons$|pigeons$|air-streaks$)/;
 const lerp = THREE.MathUtils.lerp, sstep = THREE.MathUtils.smoothstep;
 
@@ -272,6 +278,7 @@ export const cityWeather = {
    *  bake's override material), canopy = tree crowns, road = the carriageway material (salted in winter) */
   mark() {
     let n = 0, cars = 0;
+    const furnOf = (o) => { for (let p = o, k = 0; p && k < 4; p = p.parent, k++) if (FURN_RE.test(p.name)) return true; return false; };
     const pools = new Set();
     // snowtracks / snow caps: MOVERS are not ground. Baked at the pose they had at the bake, the layer drew a snow slab
     // floating where the player's car, a tram or a traffic car had been (and a hole in the street under it) until the
@@ -287,6 +294,7 @@ export const cityWeather = {
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
       if (!m) return;
       // crowns: their cards' wind / morph (positionNode) is not in the bake, the instanced crown volume is: shelter only
+      if (SNOW_FURN && furnOf(o)) { o.layers.enable(CANOPY_LAYER); o.layers.disable(SOLID_LAYER); o.layers.disable(CAR_LAYER); return; }
       if (m.userData?.wxCanopy || o.userData?.wxCanopy) {
         // snow round 2: the city-wide tree POOL (perf pass 2, multiDraw.js: indirect draws, the instances' live ranges in
         // its parts) baked as ~98 % "under a crown" (every slot of the buffer drawn: the Heros lawn's blotchy snow);

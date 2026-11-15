@@ -21,6 +21,12 @@ export const VIEWS = {
   // Dix Monolithes island signs
   "monolithes": { x: -2214, z: 400, h: 1.7, tx: -2240, tz: 376, th: 3, fov: 55 },
   "monolithes-air": { x: -2205, z: 335, h: 35, tx: -2240, tz: 376, th: 2, fov: 55 },
+  // basements in tall downhill plinths (facadeGeom.js cellarOf: aCel 5.6 m / 3 m)
+  "cellar-stjob": { x: 1153, z: 606, h: 1.7, tx: 1168.5, tz: 612.6, th: 1, fov: 60 },
+  "cellar-i6s": { x: 1255, z: 1001, h: 1.7, tx: 1261, tz: 986, th: 1, fov: 60 },
+  // snow under a shelter (Place Saint-Job stop) and a bench (B5) (?wx=snow_cover)
+  "snow-stop": { x: 1222, z: 606, h: 1.7, tx: 1212, tz: 620, th: 0, fov: 60 },
+  "snow-bench": { x: -2027, z: 4, h: 1.8, tx: -2031, tz: 0.8, th: 0, fov: 60 },
   // Fort-Jaco zebra crossings, kerb band
   "fortjaco": { x: 1805, z: 1125, h: 1.7, tx: 1830, tz: 1220, th: 3, fov: 60 },
   "fortjaco-air": { x: 1740, z: 1060, h: 90, tx: 1813, tz: 1165, th: 0, fov: 55 },

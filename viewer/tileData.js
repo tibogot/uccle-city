@@ -85,6 +85,34 @@ const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", b
 
 /** ROOF HEIGHTS: every building's top (m TAW) rasterised into a 2 m grid over the tile (0 = no building), for fly
  *  mode's collision (the bird's floor = max(ground, roof)). Scanline fill of each footprint's outer ring. */
+/** joins2 (viewer/surfaces.js "sidewalk to the façade"): (x, z, dx, dz, max) -> the distance along the ray to the first
+ *  footprint edge of any building (Infinity: none within max). A 4 m bucket grid of the footprints' edges. */
+export function wallRayOf(bDoc) {
+  const B = 4, cells = new Map(), segs = [];
+  for (const b of bDoc.buildings) for (const ring of b.footprint || []) for (let i = 0; i < ring.length; i++) {
+    const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], k = segs.length;
+    segs.push([ax, az, bx, bz]);
+    for (let gi = Math.floor(Math.min(ax, bx) / B); gi <= Math.floor(Math.max(ax, bx) / B); gi++)
+      for (let gj = Math.floor(Math.min(az, bz) / B); gj <= Math.floor(Math.max(az, bz) / B); gj++) {
+        const key = gi * 65536 + gj; let c = cells.get(key); if (!c) cells.set(key, (c = [])); c.push(k);
+      }
+  }
+  return (x, z, dx, dz, max) => {
+    let best = Infinity;
+    const seen = new Set();
+    for (let gi = Math.floor(Math.min(x, x + dx * max) / B); gi <= Math.floor(Math.max(x, x + dx * max) / B); gi++)
+      for (let gj = Math.floor(Math.min(z, z + dz * max) / B); gj <= Math.floor(Math.max(z, z + dz * max) / B); gj++)
+        for (const k of cells.get(gi * 65536 + gj) || []) {
+          if (seen.has(k)) continue; seen.add(k);
+          const [ax, az, bx, bz] = segs[k], ex = bx - ax, ez = bz - az, den = dx * ez - dz * ex;
+          if (Math.abs(den) < 1e-9) continue;
+          const t = ((ax - x) * ez - (az - z) * ex) / den, u = ((ax - x) * dz - (az - z) * dx) / den;
+          if (t >= 0 && t < best && u >= 0 && u <= 1) best = t;
+        }
+    return best <= max ? best : Infinity;
+  };
+}
+
 export const ROOF_STEP = 2;
 export function roofGrid(bDoc, b) {
   const nx = Math.ceil((b.x1 - b.x0) / ROOF_STEP), nz = Math.ceil((b.z1 - b.z0) / ROOF_STEP);
@@ -297,7 +325,8 @@ export async function buildTileData(entry, base) {
   // (+ the street level across the hero underpasses, railData.js underpassGround; ?underpasslevel=0: as before)
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, weldNearest: entry.groundWeld !== false, clampH: entry.surfH !== false, levelPins: rail ? roadDeckPins(rail.heroes) : null,
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, weldNearest: entry.groundWeld !== false, clampH: entry.surfH !== false,
+    wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;
@@ -371,7 +400,7 @@ export async function buildTileData(entry, base) {
   // are built from these walls (the drive colliders and the roof grids above already read the solids)
   const feet = fitGround && bBuf ? await step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround, footprintIndex(bDoc)); }) : null;
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, cellar: entry.cellar !== false }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);

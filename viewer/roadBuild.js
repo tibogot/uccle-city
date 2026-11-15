@@ -121,7 +121,7 @@ export function buildRoadData(o) {
       const H0 = prep.H, pin = o.levelPins;
       prep.H = (x, z) => { const h = H0(x, z), p = pin(x, z); return p ? h + (p[0] - h) * p[1] : h; };
     }
-    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, priority ? { priority, dropFolds: true, lineCuts } : {});
+    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, { ...(priority ? { priority, dropFolds: true, lineCuts } : {}), wallRay: o.wallRay ?? null });
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
     // (the weld meets the DRAWN surfaces: a sidewalk is its kerb height above the carve's base)
     for (const part of Object.values(S.parts)) welds.push({ position: part.position, index: part.index });

@@ -32,6 +32,8 @@ export async function buildTile(T, opts = {}) {
   const e = entryOf(T);
   if (!e) throw new Error(`no built tile ${T}`);
   const entry = { ...e, hide: ["https://databrussels.be/id/building/1587133"], ponds: [], surface: true, pits: true, kit: false, streetlife: false, grass: false,
-    rail: true, bridges2: true, railFix: true, driveLegacy: false, driveKeepHidden: false, padRoads: true, ...opts };
+    rail: true, bridges2: true, railFix: true, driveLegacy: false, driveKeepHidden: false, padRoads: true,
+    // JOINS2_OLD=1 (docs/JOINS2.md): the joins2 round's worker changes off (weld / clamp, street height clamp, sidewalk fill, cellar)
+    ...(process.env.JOINS2_OLD ? { groundWeld: false, surfH: false, sidewalkFill: false, cellar: false, groundSdf: false } : {}), ...opts };
   return buildTileData(entry, BASE);
 }
