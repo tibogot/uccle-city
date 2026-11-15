@@ -24,10 +24,13 @@ import { CTRL } from "./trafficGraph.js";
 export const STEP = 1 / 20;
 const IDM = { a: 1.5, b: 2.2, T: 1.25, s0: 2.2 };
 const HOLD = { none: 0, signal: 1, stop: 2, yield: 3, busy: 4, full: 5, park: 6 };
+/** ?bikeroom=old: the traffic makes no room for the filtering motorbike (before collisions round 2) */
+const ROOM_OLD = typeof location !== "undefined" && /[?&]bikeroom=old(&|$)/.test(location.search);
 const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4 };
 const ROUTE = 4;                 // planned paths ahead
 const MAN = 16;                  // maneuver polyline points
 const OBS_MAX = 160, OBS_ENTRIES = 1024;
+const CAR_HALF_W = 0.95;          // m: a traffic car's half width (the box obstacles' lane test)
 // density (cars per km of lane at the busiest hour) per road class rank (0 alley .. 4 boulevard)
 export const DENSITY = [1.5, 10, 18, 24, 26, 26];
 /** share of the peak density at hour h (0..24), Brussels weekday shape */
@@ -57,6 +60,7 @@ export class TrafficSim {
       manPts: F(MAN * 2), manCum: F(MAN), manLen: F(), manT: F(), manDir: new Int8Array(cap), slot: new Array(cap).fill(null),
       onPath: I(1, -1), onD: new Float64Array(cap),
       gen: new Uint32Array(cap), handoff: U(), parkPath: I(1, -1),         // pop checks: a spawn counter per slot; 1 = came from / went to a parked car
+      room: F(),                                     // collisions round 2: the sideways shift (m, + = left) a car makes for a filtering motorbike
       gap: F(), lead: U(),                            // debug: the gap IDM used and what it was to (1 car, 2 obstacle, 3 hold)   // where a maneuvering car sits on its lane (for followers)
     });
     this.free = []; this.freeLater = [];
@@ -64,7 +68,11 @@ export class TrafficSim {
     this.count = 0;
     // obstacles: points with a radius and a velocity; entries = obstacle projected on a path
     this.obs = { n: 0, x: new Float32Array(OBS_MAX), z: new Float32Array(OBS_MAX), r: new Float32Array(OBS_MAX), vx: new Float32Array(OBS_MAX),
-      vz: new Float32Array(OBS_MAX), cross: new Uint8Array(OBS_MAX) };
+      vz: new Float32Array(OBS_MAX), cross: new Uint8Array(OBS_MAX),
+      // an oriented box obstacle (the motorbike): heading, half width across, half length along; bx < 0 = a circle
+      bh: new Float32Array(OBS_MAX), bx: new Float32Array(OBS_MAX), bz: new Float32Array(OBS_MAX) };
+    // the filtering motorbike (cityTraffic.js sets it each step): cars in a queue beside / ahead of it shift aside
+    this.bike = { on: false, x: 0, z: 0, h: 0, v: 0 };
     this.oe = { n: 0, d: new Float32Array(OBS_ENTRIES), r: new Float32Array(OBS_ENTRIES), v: new Float32Array(OBS_ENTRIES), nxt: new Int32Array(OBS_ENTRIES) };
     this.tmp = new Float64Array(4); this.tmp2 = new Float64Array(4); this.tmp3 = new Float64Array(4);
     this.t = 0; this.acc_ = 0; this.steps = 0;
@@ -125,6 +133,7 @@ export class TrafficSim {
     const i = this.free.pop();
     if (typeIdx < 0) { let r = this.rand() * this.typeWeights.reduce((a, b) => a + b, 0); typeIdx = 0; for (let k = 0; k < this.types.length; k++) { if (r < this.typeWeights[k]) { typeIdx = k; break; } r -= this.typeWeights[k]; } }
     const T = this.types[typeIdx];
+    this.room[i] = 0;
     this.alive[i] = 1; this.path[i] = gid; this.prev[i] = -1; this.d[i] = d; this.v[i] = v; this.acc[i] = 0;
     for (let k = 0; k < ROUTE; k++) this.route[i * ROUTE + k] = -1;
     this.fillRoute(i);
@@ -195,7 +204,8 @@ export class TrafficSim {
     }
     const fx = F[0] - R[0], fz = F[1] - R[1];
     const yaw = Math.atan2(fx, fz);
-    const x = (F[0] + R[0]) / 2 + this.offX[i], z = (F[1] + R[1]) / 2 + this.offZ[i];
+    const rm = this.room[i];
+    const x = (F[0] + R[0]) / 2 + this.offX[i] + Math.cos(yaw) * rm, z = (F[1] + R[1]) / 2 + this.offZ[i] - Math.sin(yaw) * rm;
     const yf = this.ground(F[0], F[1]), yr = this.ground(R[0], R[1]);
     this.x[i] = x; this.z[i] = z; this.y[i] = (yf + yr) / 2;
     this.pitch[i] = Math.atan2(yf - yr, 2 * hw);
@@ -236,17 +246,34 @@ export class TrafficSim {
     const O = this.obs;
     if (O.n >= OBS_MAX) return;
     const k = O.n++;
-    O.x[k] = x; O.z[k] = z; O.r[k] = r; O.vx[k] = vx; O.vz[k] = vz; O.cross[k] = crossOnly;
+    O.x[k] = x; O.z[k] = z; O.r[k] = r; O.vx[k] = vx; O.vz[k] = vz; O.cross[k] = crossOnly; O.bx[k] = -1;
+  }
+  /** an oriented box obstacle (collisions round 2: the motorbike, 0.8 x 2.1 m, was two 0.55 m circles): heading h
+   *  (forward = (sin h, cos h)), half width hx, half length hz. A lane is blocked by it when the box, measured across
+   *  that lane, comes within a car's half width (+ a margin) of the lane's line; along the lane it is as long as its
+   *  extent there (a bike crossing a lane blocks 2.1 m of it, one riding along a lane 0.8 m of the width). */
+  addBoxObstacle(x, z, h, hx, hz, vx = 0, vz = 0) {
+    const O = this.obs;
+    if (O.n >= OBS_MAX) return;
+    const k = O.n++;
+    O.x[k] = x; O.z[k] = z; O.r[k] = Math.hypot(hx, hz); O.vx[k] = vx; O.vz[k] = vz; O.cross[k] = 0;
+    O.bh[k] = h; O.bx[k] = hx; O.bz[k] = hz;
   }
   addObsEntry(gid, along, lat, tx, tz) {
     const O = this.obs, k = this._projCtx.k, E = this.oe;
-    if (lat > O.r[k] + 1.15 || E.n >= OBS_ENTRIES) return;
+    let r = O.r[k];
+    if (O.bx[k] >= 0) {
+      const c = Math.abs(tx * Math.sin(O.bh[k]) + tz * Math.cos(O.bh[k])), s = Math.sqrt(Math.max(0, 1 - c * c));
+      const extLat = O.bz[k] * s + O.bx[k] * c;
+      if (lat - extLat > CAR_HALF_W + 0.3 || E.n >= OBS_ENTRIES) return;
+      r = O.bz[k] * c + O.bx[k] * s;
+    } else if (lat > O.r[k] + 1.15 || E.n >= OBS_ENTRIES) return;
     // tram look-ahead points: only lanes that CROSS the track (not the tram's own lane, cars in front would stop)
     const vl = Math.hypot(O.vx[k], O.vz[k]);
     if (O.cross[k] && vl > 0.1 && Math.abs((O.vx[k] * tx + O.vz[k] * tz) / vl) > 0.85) return;
     const g = this.W.slots[gid >>> 16], pi = gid & 0xffff;
     const e = E.n++;
-    E.d[e] = along; E.r[e] = O.r[k]; E.v[e] = O.vx[k] * tx + O.vz[k] * tz; E.nxt[e] = g.ohead[pi]; g.ohead[pi] = e;
+    E.d[e] = along; E.r[e] = r; E.v[e] = O.vx[k] * tx + O.vz[k] * tz; E.nxt[e] = g.ohead[pi]; g.ohead[pi] = e;
   }
   projectObstacles() {
     this.oe.n = 0;
@@ -421,6 +448,7 @@ export class TrafficSim {
       if (st === ST.drive || st === ST.inStop) this.move(i);
       else this.maneuver(i, ctx);
       if (!this.alive[i]) continue;
+      if (this.room[i] || this.bike.on) this.makeRoom(i, st === ST.drive || st === ST.inStop);
       // handover blend: the offset left by a tile-border twin decays
       if (this.offX[i] || this.offZ[i]) { this.offX[i] *= 0.9; this.offZ[i] *= 0.9; if (Math.abs(this.offX[i]) + Math.abs(this.offZ[i]) < 0.005) this.offX[i] = this.offZ[i] = 0; }
       this.pose(i);
@@ -434,6 +462,24 @@ export class TrafficSim {
     this.stats.stepMs = this.stats.stepMs * 0.95 + ms * 0.05;
     this.stats.stepMsMax = Math.max(this.stats.stepMsMax * 0.995, ms);
     this.stats.cars = this.count;
+  }
+
+  /** Collisions round 2 (?bikeroom=old = none): a slow car (a queue, a jam) with the motorbike filtering past it (beside
+   *  it or coming up from behind, 0.9-3.2 m to one side) eases up to 0.45 m away from it, as drivers do, and back
+   *  when it has gone (0.5 m/s: no jump). */
+  makeRoom(i, driving) {
+    const B = this.bike;
+    let want = 0;
+    if (driving && B.on && !ROOM_OLD && this.v[i] < 7) {
+      const yw = this.yaw[i], sy = Math.sin(yw), cy = Math.cos(yw), dx = B.x - this.x[i], dz = B.z - this.z[i];
+      const along = dx * sy + dz * cy, lat = dx * cy - dz * sy, al = Math.abs(lat);
+      const behind = this.half[i] + 12, ahead = this.half[i] + 1.5;
+      if (along > -behind && along < ahead && al > 0.9 && al < 3.2 && (B.v > this.v[i] + 0.5 || along > -this.half[i] - 2)) {
+        want = -Math.sign(lat) * 0.45 * Math.min(1, (3.4 - al) / 1.2);
+      }
+    }
+    const d = want - this.room[i], m = (want ? 0.5 : 0.35) * STEP;
+    this.room[i] += d > m ? m : d < -m ? -m : d;
   }
 
   move(i) {

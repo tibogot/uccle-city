@@ -60,6 +60,7 @@ carFleet.onChange((c) => { if (c.driveBox && !c.hidden) setBox(c.driveBox.col, c
  * benches / bike racks / bus and tram shelters as oriented boxes), the tram poles and the rail masts (posts at their
  * foot). From the features group's instanced meshes, by name (the same ones viewer/character/cityHook.js uses).
  */
+const EDGE_OLD = /[?&]edgecol=old(&|$)/.test(location.search);
 const COLCACHE = new URLSearchParams(location.search).get("colcache") !== "0";
 const localBlocks = new WeakMap();          // geometry -> Map(scale key -> blocker rings in the piece's scaled frame)
 const cPos = new THREE.Vector3(), cQ = new THREE.Quaternion(), cS = new THREE.Vector3();
@@ -83,19 +84,23 @@ export function featureColliders(features, bounds) {
   const polys = [], circles = [], counts = { cars: 0, furniture: 0, poles: 0 };
   const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), o = new THREE.Vector3();
   const inT = (x, z) => x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1;
+  const inT2 = (x, z) => x >= bounds.x0 - 40 && x <= bounds.x1 + 40 && z >= bounds.z0 - 40 && z <= bounds.z1 + 40;
   features.updateMatrixWorld(true);
   features.traverse((m) => {
     if (!m.isInstancedMesh) return;
     const n = m.name || "", p = m.parent?.name || "";
     const kind = n === "parked-cars" ? "car" : /^furniture-(stopPole|signal|sign|platepost)$/.test(n) || n === "tram-poles" || n === "rail-masts" ? "pole"
-      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|fuel|terrace|villo)$/.test(n) || (p === "tram" && !n) ? "box" : null;
+      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|fuel|terrace|villo|streetprop)$/.test(n) || (p === "tram" && !n) ? "box" : null;
     if (!kind) return;
     if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
     const bb = m.geometry.boundingBox;
     for (let i = 0; i < m.count; i++) {
       m.getMatrixAt(i, M); W.multiplyMatrices(m.matrixWorld, M);
       o.set(0, 0, 0).applyMatrix4(W);
-      if (!inT(o.x, o.z)) continue;
+      // (collisions round 2, ?edgecol=old = before: the tile's OWN features group holds the pieces its kits placed for
+      // it, some standing a little over the tile's edge (garden walls along a boundary street); they were dropped here
+      // and no neighbour made them either: drawn, not solid. Each group is one tile's, so nothing is counted twice.)
+      if (EDGE_OLD ? !inT(o.x, o.z) : !inT2(o.x, o.z)) continue;
       if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
       if (kind === "car") {
         // the car as it is NOW (its type may have changed since the box mesh was made: the traffic parks other cars in)

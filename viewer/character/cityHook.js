@@ -33,10 +33,11 @@ const KIND = (m) => {
   if (n === "furniture-gardenpillar") return "post";
   if (n === "parked-cars" || n === "furniture-bikebox" || n === "furniture-glassbank") return "prop";   // (furniture kit 2: viewer/furniture2/)
   if (n === "tram-poles" || n === "rail-masts") return "pole";
-  if (/^furniture-(bench|stopPole|signal|bikes|bin|terrace|sign|platepost|villo)$/.test(n)) return "post";       // (terrace: viewer/shops/ tables, parasols, planters; sign / platepost / villo: viewer/streetkit/)
+  if (/^furniture-(bench|stopPole|signal|bikes|bin|terrace|sign|platepost|villo|streetprop)$/.test(n)) return "post";       // (terrace: viewer/shops/ tables, parasols, planters; sign / platepost / villo: viewer/streetkit/)
   return null;
 };
 
+const EDGE_OLD = /[?&]edgecol=old(&|$)/.test(location.search);
 let shared = null;
 carFleet.onChange((c) => {
   const b = c.walkBox; if (!b) return;
@@ -123,6 +124,7 @@ async function buildCityCollision({ scene, world, log }) {
     const props = { polys: [], circles: [] }, posts = { polys: [], circles: [] };
     const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), o = new THREE.Vector3();
     const inTile = (x, z) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1;
+    const nearTile = (x, z) => x >= t.bounds.x0 - 40 && x <= t.bounds.x1 + 40 && z >= t.bounds.z0 - 40 && z <= t.bounds.z1 + 40;
     const inst = [], carRefs = [];
     feats?.traverse((m) => { const kd = m.isInstancedMesh && KIND(m); if (kd && kd !== "mesh") inst.push(m); });
     for (const m of inst) {
@@ -133,7 +135,7 @@ async function buildCityCollision({ scene, world, log }) {
       for (let i = 0; i < m.count; i++) {
         m.getMatrixAt(i, M); W.multiplyMatrices(m.matrixWorld, M);
         o.set(0, 0, 0).applyMatrix4(W);
-        if (!inTile(o.x, o.z)) continue;
+        if (EDGE_OLD ? !inTile(o.x, o.z) : !nearTile(o.x, o.z)) continue;   // (collisions round 2: the tile's own pieces over its edge too)
         if (kind === "pole") { posts.circles.push({ x: o.x, z: o.z, r: 0.14, base: o.y - 2, top: o.y + 6 }); continue; }
         const ring = [];
         let y0 = Infinity, y1 = -Infinity;

@@ -15,6 +15,8 @@ import { TYPE_MIX, SIZES, PAINTS, FADE_TO } from "../carFleet.js";
 // per type: wheelbase and wheel radius (the faceted GLB's Wheel_* nodes: z = +-wb/2, y = r)
 const WHEELS = { hatch_s: [2.5, 0.3], hatch_c: [2.64, 0.32], estate: [2.7, 0.32], saloon: [2.8, 0.33], suv: [2.64, 0.34], van_c: [2.72, 0.32], van_p: [3.26, 0.34], taxi: [2.7, 0.32] };
 
+/** ?trafficbox=old: the traffic's collider boxes at the sim's newest step (before collisions round 2) */
+const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
 export function createTraffic({ scene, renderer, camera, ground, night, cap = 768, seed = 7 }) {
   const world = new TrafficWorld();
   const mix = new Map(TYPE_MIX);
@@ -74,6 +76,9 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
   };
   /** Oriented boxes of the cars within r of (x, z): out = Float32Array chunks of 7 (x, z, yaw, hw, hl, y, h); -> count. */
   T.boxesNear = (x, z, r, out) => {
+    // (collisions round 2: no boxes before the fleet can draw the cars: while its models load the sim already runs, and
+    // its cars were solid and invisible: the bike's "traffic box where no car was drawn")
+    if (!BOX_OLD && !fleet.ready) return 0;
     let n = 0;
     const max = out.length / 7;
     for (let i = 0; i < sim.cap && n < max; i++) {
@@ -81,7 +86,16 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
       const dx = sim.x[i] - x, dz = sim.z[i] - z;
       if (dx * dx + dz * dz > r * r) continue;
       const ty = types[sim.type[i]], o = n * 7;
-      out[o] = sim.x[i]; out[o + 1] = sim.z[i]; out[o + 2] = sim.yaw[i]; out[o + 3] = ty.w / 2; out[o + 4] = ty.len / 2; out[o + 5] = sim.y[i]; out[o + 6] = ty.h;
+      if (BOX_OLD) { out[o] = sim.x[i]; out[o + 1] = sim.z[i]; out[o + 2] = sim.yaw[i]; }
+      else {
+        // collisions round 2: the box where the fleet DREW the car (its pose interpolated by T.alpha between the last two
+        // sim steps, trafficFleet.js update), not the sim's newest step (up to one step ahead of the drawn car)
+        const a = T.alpha ?? 1, b = 1 - a;
+        let dy = sim.yaw[i] - sim.pyaw[i];
+        if (dy > Math.PI) dy -= 2 * Math.PI; else if (dy < -Math.PI) dy += 2 * Math.PI;
+        out[o] = sim.px[i] * b + sim.x[i] * a; out[o + 1] = sim.pz[i] * b + sim.z[i] * a; out[o + 2] = sim.pyaw[i] + dy * a;
+      }
+      out[o + 3] = ty.w / 2; out[o + 4] = ty.len / 2; out[o + 5] = sim.y[i]; out[o + 6] = ty.h;
       n++;
     }
     return n;

@@ -12,6 +12,7 @@
 //   ENGINE   6 gears, rpm for the sound and the HUD; a shift cuts the drive for 80 ms
 // Heading convention as the car: forward = (sin h, cos h) in x / z; h grows turning left; lean > 0 = leaning left.
 // Pure JS (no three).
+import { hitSlide, HIT_OLD } from "../drive/carPhysics.js";
 
 /** Handling: every field a dev-panel slider candidate. */
 export const MOTO = {
@@ -261,6 +262,9 @@ export function motoHit(c, nx, nz, kind, H = MOTO) {
     crash(c, side >= 0 ? -1 : 1, H);
     c.speed *= 0.35 * (1 - headOn * 0.6); c.vx += nx * vn * 0.3; c.vz += nz * vn * 0.3;
     c.angularVel += side * 3.5;
+  } else if (!HIT_OLD) {
+    // collisions round 2 (?carhit=old = before): the car's collide-and-slide (viewer/drive/carPhysics.js hitSlide)
+    return hitSlide(c, nx, nz, kind, H, MOTO_BODY);
   } else if (headOn > 0.72) {
     c.speed = -c.speed * H.bounce; c.vx *= 0.5; c.vz *= 0.5;
   } else {
