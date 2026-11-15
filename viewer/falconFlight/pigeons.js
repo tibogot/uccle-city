@@ -66,6 +66,9 @@ export function pigeonGeometry() {
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
+  // the palette above is written as sRGB (picked by eye): to linear albedo, as the material expects (in the city at noon
+  // the sRGB values read as near-white birds; viewer/birds/cityBirds.js, 2026-11-15)
+  for (let i = 0; i < C.length; i++) { const c = C[i]; C[i] = c < 0.04045 ? c * 0.0773993808 : Math.pow(c * 0.9478672986 + 0.0521327014, 2.4); }
   g.setAttribute("color", new THREE.Float32BufferAttribute(C, 3));
   g.setAttribute("wing", new THREE.Float32BufferAttribute(Wg, 1));
   return g;
@@ -103,7 +106,7 @@ export function pigeonMaterial() {
 // ------------------------------------------------------------------------------------------------ the flock
 export class Pigeons {
   /** world: { floor(x, z) }, roosts: [{ x, y, z, yaw, kind }], home: { x, z } (the Place), count, scale (draw size) */
-  constructor({ world, roosts, home, count = 150, scale = 1.4 }) {
+  constructor({ world, roosts, home, count = 150, scale = 1.4, jackdaws = 0, ground = 0 }) {
     this.world = world; this.roosts = roosts; this.home = home; this.scale = scale;
     this.max = 200; this.count = Math.min(count, this.max);
     const n = this.max;
@@ -112,6 +115,7 @@ export class Pigeons {
     this.phase = new Float32Array(n); this.alarm = new Float32Array(n); this.glide = new Float32Array(n); this.yaw = new Float32Array(n);
     this.fold = new Float32Array(n).fill(1); this.amp = new Float32Array(n); this.liftV = new Float32Array(n); this.bank = new Float32Array(n);
     this.flock = new Uint8Array(n); this.jink = new Float32Array(n);
+    this.why = new Uint8Array(n);        // 1: the alarm came from a ground threat (a person, a car): a local flush, not the whole roof
     this.owner = new Int32Array(roosts.length).fill(-1);
     this.params = { sep: 1.6, align: 1.0, coh: 0.7, home: 0.5, flee: 40, startle: 32, cruise: 14, maxSpeed: 21, neighbour: 6 };
     this.flockHomes = [
@@ -129,6 +133,9 @@ export class Pigeons {
     const tint = new Float32Array(n * 3);
     const MORPH = [[1, 1, 1], [1, 1, 1], [1, 1, 1], [0.78, 0.76, 0.8], [0.55, 0.52, 0.55], [1.25, 1.22, 1.18], [1.05, 0.95, 0.9], [0.9, 0.92, 1.0]];
     for (let i = 0; i < n; i++) { const t = MORPH[(i * 7 + 3) % MORPH.length]; const j = 0.92 + 0.16 * ((i * 0.618) % 1); tint.set([t[0] * j, t[1] * j, t[2] * j], i * 3); }
+    // jackdaws among them (a share of the birds, every k-th): black-grey (viewer/birds/cityBirds.js; the shape stays the pigeon's)
+    this.jackdaw = new Uint8Array(n);
+    if (jackdaws > 0) for (let i = 0; i < n; i++) if (((i * 0.754877) % 1) < jackdaws) { this.jackdaw[i] = 1; tint.set([0.2, 0.2, 0.22], i * 3); }
     g.setAttribute("iPos", this.aPos); g.setAttribute("iDir", this.aDir); g.setAttribute("iAnim", this.aAnim);
     g.setAttribute("iTint", new THREE.InstancedBufferAttribute(tint, 3));
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(home.x, 100, home.z), 600);
@@ -142,9 +149,12 @@ export class Pigeons {
     this.cellStart = new Int32Array(this.G.n * this.G.n + 1); this.cellOf = new Int32Array(n); this.sorted = new Int32Array(n);
     // everyone on a roost at the start (ground ones too)
     const order = roosts.map((_, i) => i).sort(() => Math.random() - 0.5);
+    // ground: the share that starts feeding on the paving (a city square at midday: a third of its pigeons are down)
+    const low = ground > 0 ? order.filter((k) => roosts[k].kind === "ground") : [], high = ground > 0 ? order.filter((k) => roosts[k].kind !== "ground") : order;
     for (let i = 0; i < n; i++) {
       this.phase[i] = Math.random() * 6.28; this.flock[i] = i % 3 === 0 ? 1 : 0;
-      if (i < this.count && order.length) this.perch(i, order.pop()); else this.state[i] = GONE;
+      const pick = low.length && (i % 10) < ground * 10 ? low : high.length ? high : low;
+      if (i < this.count && pick.length) this.perch(i, pick.pop()); else this.state[i] = GONE;
     }
   }
 
@@ -172,9 +182,11 @@ export class Pigeons {
 
   freeRoost(x, z, R, kind = null) {
     let best = -1, bd = Infinity;
+    const av = this.avoid;
     for (let k = 0; k < this.roosts.length; k++) {
       if (this.owner[k] >= 0) continue;
       const q = this.roosts[k]; if (kind && q.kind !== kind) continue;
+      if (av && av.length && this.nearThreat(q.x, q.y, q.z, 2.5)) continue;     // not next to the walker / a car
       const d = Math.hypot(q.x - x, q.z - z) + Math.random() * 25;
       if (d < bd && d < R) { bd = d; best = k; }
     }
@@ -194,8 +206,17 @@ export class Pigeons {
     this._burst = (this._burst || 0) + 1; this._bx = this.p[o]; this._by = this.p[o + 1]; this._bz = this.p[o + 2];
   }
 
-  /** falcon: { x, y, z, vx, vy, vz, speed } (world) */
-  update(dt, t, falcon) {
+  /** is (x, y, z) within k x the startle radius of a ground threat (this.avoid) */
+  nearThreat(x, y, z, k = 1) {
+    for (const g of this.avoid) { const dx = x - g.x, dy = y - g.y, dz = z - g.z, r = g.r * k; if (dx * dx + dy * dy * 4 + dz * dz < r * r) return g; }
+    return null;
+  }
+
+  /** falcon: { x, y, z, vx, vy, vz, speed } (world); others: ground threats [{ x, y, z, r }] (the walker, the
+   *  third-person character, the player's car, the traffic: viewer/birds/cityBirds.js), r = the flight initiation
+   *  distance; quiet: night (no spontaneous flights, no newcomers) */
+  update(dt, t, falcon, others = null, quiet = false) {
+    this.avoid = others;
     const t0 = performance.now();
     dt = Math.min(dt, 0.05);
     const P = this.params, n = this.max, p = this.p, v = this.v;
@@ -207,7 +228,7 @@ export class Pigeons {
     for (let i = 0; i < n; i++) {
       const s = this.state[i];
       if (s === GONE) {
-        if (i < this.count && (this.timer[i] -= dt) < 0) {      // a new bird arrives at a free roost out of the falcon's way
+        if (i < this.count && !quiet && (this.timer[i] -= dt) < 0) {      // a new bird arrives at a free roost out of the falcon's way
           const r = this.freeRoost(this.home.x, this.home.z, 400);
           if (r >= 0 && Math.hypot(this.roosts[r].x - fx, this.roosts[r].z - fz) > 80) this.perch(i, r); else this.timer[i] = 5;
         }
@@ -216,7 +237,11 @@ export class Pigeons {
       if (s !== PERCH) { flying++; continue; }
       const o = i * 3, d = Math.hypot(p[o] - fx, p[o + 1] - fy, p[o + 2] - fz);
       if (d < startle) this.alarm[i] = Math.max(this.alarm[i], 0.05 + Math.random() * 0.25 * (d / startle));
-      if (this.alarm[i] > 0) { this.alarm[i] -= dt; if (this.alarm[i] <= 0) { this.takeoff(i, fx, fy, fz); this.spread(i); } }
+      // a person / a car walking or driving at it: up at its flight initiation distance (the neighbours follow: spread)
+      const g = others && others.length ? this.nearThreat(p[o], p[o + 1], p[o + 2]) : null;
+      if (g && this.alarm[i] <= 0) { this.alarm[i] = 0.02 + Math.random() * 0.12; this.why[i] = 1; this._gx = g.x; this._gy = g.y; this._gz = g.z; }
+      if (this.alarm[i] > 0) { this.alarm[i] -= dt; if (this.alarm[i] <= 0) { const gg = others && others.length ? this.nearThreat(p[o], p[o + 1], p[o + 2], 2) : null; if (gg) { this.takeoff(i, gg.x, gg.y - 2, gg.z); this.spread(i, 3.5, 0.6); } else if (this.why[i]) { this.takeoff(i, p[o] + rand(-3, 3), p[o + 1] - 2, p[o + 2] + rand(-3, 3)); this.spread(i, 3.5, 0.6); } else { this.takeoff(i, fx, fy, fz); this.spread(i); } this.why[i] = 0; } }
+      else if (quiet) continue;
       else if ((this.timer[i] -= dt) < 0) { this.takeoff(i, p[o] + rand(-5, 5), p[o + 1] - 3, p[o + 2] + rand(-5, 5)); this.timer[i] = rand(60, 260); }
     }
     if (this._burst > 0) this.events.push({ kind: "burst", x: this._bx, y: this._by, z: this._bz, n: this._burst });
@@ -288,6 +313,7 @@ export class Pigeons {
         const want = clamp(hl * 0.7, 1.2, P.cruise);
         ax += (hx / hl * want - v[o]) * 2.2; ay += (hy / hl * want - v[o + 1]) * 2.2; az += (hz / hl * want - v[o + 2]) * 2.2;
         if (hl < 0.6) { this.perch(i, this.roost[i]); continue; }
+        if (others && others.length && hl < 12 && this.nearThreat(R.x, R.y, R.z, 2)) { this.owner[this.roost[i]] = -1; this.roost[i] = -1; this.state[i] = FLY; this.timer[i] = rand(8, 20); continue; }   // someone there: go round again
         if (df < P.flee * 0.6) { this.owner[this.roost[i]] = -1; this.roost[i] = -1; this.state[i] = FLY; this.timer[i] = rand(15, 30); this.alarm[i] = 1; }
       }
       // the floor: keep 3 m off roofs and the ground (looking ahead 1 s)
@@ -371,12 +397,12 @@ export class Pigeons {
   vel(i, out) { out.x = this.v[i * 3]; out.y = this.v[i * 3 + 1]; out.z = this.v[i * 3 + 2]; return out; }
   flying(i) { return this.state[i] === FLY || this.state[i] === LAND; }
   /** a startle from a point (the falcon passing low): every perched bird within r goes (with the spread delay) */
-  spread(i) {
+  spread(i, R = 7, p = 1) {
     const o = i * 3;
     for (let j = 0; j < this.max; j++) {
       if (this.state[j] !== PERCH || this.alarm[j] > 0) continue;
       const d = Math.hypot(this.p[j * 3] - this.p[o], this.p[j * 3 + 1] - this.p[o + 1], this.p[j * 3 + 2] - this.p[o + 2]);
-      if (d < 7) this.alarm[j] = 0.08 + d * 0.04 + Math.random() * 0.15;
+      if (d < R && (p >= 1 || Math.random() < p)) { this.alarm[j] = 0.08 + d * 0.04 + Math.random() * 0.15; this.why[j] = R < 7 ? 1 : 0; }
     }
   }
 }

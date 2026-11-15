@@ -63,6 +63,7 @@ import { cityGardens } from "./gardens/cityGardens.js";
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
+import { cityBirds } from "./birds/cityBirds.js";
 import { liteShown } from "./liteShown.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
@@ -933,6 +934,7 @@ async function main() {
   };
   worldRef = world;
   await cityGrass.start({ scene, renderer, updaters, world, lighting, log });   // ?grass=1 (default off): our grass, docs/GRASS.md
+  cityBirds.start({ scene, renderer, updaters, world, lighting, log });   // ?birds=0: none. The sky flocks (GPU) + the perched pigeons' threats, docs/BIRDS.md
   const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 6000);
   // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines). Set up before the first
   // tile (pipeReady, below) so the shaders can be built while the tile worker works; ?early=0: after it, as before
@@ -1268,6 +1270,7 @@ async function main() {
     },
   };
   let third = null;                       // the third-person character (?view=third), see below
+  cityBirds.hook({ walker, driver, getThird: () => third, flyer, getTraffic: () => cityTraffic, camera });   // the birds' threats (docs/BIRDS.md)
   const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); lighting.snapNext = true; };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
