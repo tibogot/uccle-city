@@ -39,6 +39,11 @@ const step01 = (threshold, h) => { const hh = float(h); return smoothstep(hh.sub
 let MAP = null;
 export function setWeatherMap(map) { MAP = map; }
 export const weatherMap = () => MAP;
+/** snowtracks: the camera-centred trail texture (snowTrails.js); the ground families (o.map) read it: compacted, greyer
+ *  snow where trodden, pressed through to the wet ground in thin snow, darker wet tyre lines in the slush of a salted
+ *  road. One more sampled texture on those materials only. ?snowtracks=0: none */
+let TRAILS = null;
+export function setWeatherTrails(t) { TRAILS = t; }
 
 /** surface-gradient bump on SNAPSHOT normals (tslkit.bumpNormal reads the global normalView: not in the branch) */
 function bumpOn(h, nV, pV) {
@@ -199,19 +204,33 @@ function graph(I, o, wantNormal) {
       const pl = windward.mul(smoothstep(2.0, 8.0, wn)).mul(wx.uSnowCover).mul(vert);
       smN = max(smN, smoothstep(0.35, 0.6, pl.mul(1.3).sub(noise2D(vec2(P.y.mul(3.0), dot(P.xz, vec2(7.0, 5.0)))).mul(0.5))));
     }
-    const sm = smN.mul(roadKeep).mul(I.snowMask ?? float(1)).toVar();
+    // ---- snowtracks: the packed amount here (0 outside the trail window / when nothing was trodden)
+    const trod = (o.map && TRAILS ? select(TRAILS.uOn.greaterThan(0.5), TRAILS.sampleAt(P.xz, false), float(0)) : float(0)).toVar();
+    const thinS = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
+    const sm = smN.mul(roadKeep).mul(I.snowMask ?? float(1)).mul(float(1).sub(trod.mul(thinS).mul(0.85))).toVar();
+    // ---- /snowtracks
     // sparkle: only where its 1.8 cm facets are over ~1.6 px (per-pixel branch, no derivatives in it)
     const gl = vec4(0, 1, 0, 0).toVar();
     If(fw.lessThan(0.0115), () => { gl.assign(glint(P, fw)); });
     if (!wantNormal) {
-      const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85));
-      const sRough = mix(mix(float(0.72), float(0.12), gl.w), float(0.22), slush);
+      const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85)).mul(float(1).sub(trod.mul(0.2)));   // (snowtracks: trodden = greyer)
+      const sRough = mix(mix(mix(float(0.72), float(0.12), gl.w), float(0.5), trod), float(0.22), slush);
       col.assign(mix(col, sCol, sm));
       rough.assign(mix(rough, sRough, sm));
       metal.assign(mix(metal, mix(float(0), float(0.25), slush), sm));
+      if (o.road) {          // snowtracks: the tyres squeeze the slush aside: darker, wetter lines
+        const sl = wx.uSalt.mul(I.saltMask ?? float(1)).mul(trod);
+        col.assign(col.mul(float(1).sub(sl.mul(0.35))));
+        rough.assign(mix(rough, float(0.12), sl.mul(0.7)));
+      }
     } else {
       const bumpH = noise2D(P.xz.mul(9.0)).mul(0.006).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).toVar();
-      const sN = normalize(mix(bumpOn(bumpH, I.nG, I.pV), toView(gl.xyz), gl.w));
+      let sN = normalize(mix(bumpOn(bumpH, I.nG, I.pV), toView(gl.xyz), gl.w));
+      if (o.map && TRAILS) {   // snowtracks: the groove's wall slope (central differences over 2 texels: smooth)
+        const e = TRAILS.texel, tap = (dx, dz) => TRAILS.sampleAt(P.xz.add(vec2(dx, dz)), false);
+        const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e).mul(min(wx.uSnowDepth, 0.2).mul(0.45)).mul(float(1).sub(smoothstep(0.03, 0.09, fw)));
+        sN = select(trod.greaterThan(0.002), normalize(sN.add(toView(vec3(g.x, 0, g.y)))), sN);
+      }
       nView.assign(normalize(mix(nView, sN, sm)));
     }
   });

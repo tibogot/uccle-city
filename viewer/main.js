@@ -1353,6 +1353,7 @@ async function main() {
   await (pipeReady ?? setupPipe());                   // the sky, the post pipeline and compileFor (set up before the first tile: see above)
   // ---- WEATHER (viewer/weather/cityWeather.js): one Weather + its systems; clear on load = the city as before
   cityWeather.start({ scene, renderer, camera, lighting, updaters, world, pipe, log }).catch((e) => log(`weather: ${e.message}`));
+  cityWeather.movers = { driver, walker, third: () => third, traffic: () => window.__traffic };   // snowtracks: who stamps the snow
   // ---- /WEATHER
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
   let mapHook = null;                      // ?map=1: the minimap + full map (viewer/map/cityMap.js), set below

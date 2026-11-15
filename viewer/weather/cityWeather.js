@@ -11,10 +11,12 @@
 // ?wx=<preset> (clear, overcast, drizzle, rain, storm, snowfall, snow cover, fog, live) starts with a weather.
 import * as THREE from "three/webgpu";
 import { Weather, WEATHER_PRESETS, wx } from "./weatherState.js";
-import { WX_ON, setWeatherMap } from "./cityWeatherize.js";
+import { WX_ON, setWeatherMap, setWeatherTrails } from "./cityWeatherize.js";
 import { createOverheadMap, SOLID_LAYER, CANOPY_LAYER, ROAD_LAYER } from "./overheadMap.js";
 import { createPrecipitation } from "./precipitation.js";
 import { createSnowLayer } from "./snowLayer.js";
+import { createSnowTrails, TRAILS_ON } from "./snowTrails.js";      // snowtracks: footprints / tyre tracks (?snowtracks=0)
+import { createSnowMovers } from "./snowMovers.js";
 import { wxLook } from "./surfaceWeather.js";
 import { season, setDay } from "../seasons/season.js";
 import { fetchLive, mapLive } from "./liveWeather.js";
@@ -39,6 +41,10 @@ const MIST = { fog: 0.02 };
 const MAP_SIZE = Math.max(32, Math.min(128, +(qp.get("wxmap") ?? 64)));
 const map = WX_ON ? createOverheadMap({ renderer: null, size: MAP_SIZE, res: 512, depth: 260, height: 160 }) : null;
 if (map) setWeatherMap(map);      // before any material is built: the ground families read its exposure
+// snowtracks: the camera-centred trail texture (same window as the map) the movers stamp into; the ground families
+// read it too (compacted / darker where trodden), so it exists before any material is built
+const trails = map && TRAILS_ON ? createSnowTrails({ size: MAP_SIZE }) : null;
+if (trails) setWeatherTrails(trails);
 
 const SNOW_WB = !polishOld("snowwb");
 const lerp = THREE.MathUtils.lerp, sstep = THREE.MathUtils.smoothstep;
@@ -57,12 +63,14 @@ export const cityWeather = {
     const rain = createPrecipitation({ renderer, kind: "rain", map });
     const snow = createPrecipitation({ renderer, kind: "snow", map });
     const leaves = createPrecipitation({ renderer, kind: "leaves", map, trees: Array.from({ length: 8 }, () => ({ x: 0, z: 0, r: 4, y: -1e4 })) });
-    const layer = createSnowLayer({ renderer, map, edgeFade: true });
+    trails?.setRenderer(renderer);
+    const movers = trails ? createSnowMovers({ ground: world?.tiles ? (x, z) => world.surface(x, z) : null, getMovers: () => this.movers }) : null;
+    const layer = createSnowLayer({ renderer, map, edgeFade: true, trail: trails });
     const group = new THREE.Group(); group.name = "weather";
     group.add(rain.mesh, rain.splashes, snow.mesh, leaves.mesh, layer.mesh);
     group.traverse((o) => { o.userData.wxSkip = true; });
     scene.add(group);
-    Object.assign(this, { scene, renderer, camera, lighting, world, pipe, rain, snow, leaves, layer, group, log });
+    Object.assign(this, { scene, renderer, camera, lighting, world, pipe, rain, snow, leaves, layer, group, log, trails, snowMovers: movers });
     // the start weather: ?wx=, else clear (the city as before)
     const want = (qp.get("wx") || "clear").replace(/_/g, " ");
     if (want === "live") this.goLive(); else this.setPreset(CITY_PRESETS.includes(want) || WEATHER_PRESETS[want] ? want : "clear", 0);
@@ -71,6 +79,7 @@ export const cityWeather = {
     // compile now (boot), not on the first rain: the compute passes and the draws, shown once in a hidden-count state
     for (const p of [rain, snow, leaves]) p.warm();
     layer.warm();
+    trails?.warm();
     // the draws for the post chain's scene pass (its MRT target: compileAsync on the canvas built other pipelines)
     try {
       const { precompile } = await import("../warmup.js");
@@ -136,6 +145,14 @@ export const cityWeather = {
     foliageSeason.uWet.value = wx.uWet.value;
     // ---- the snow layer
     this.layer.update(dt, this.stamps?.() ?? []);
+    // ---- snowtracks: the movers stamp the trail texture while there is snow; snowfall fills the grooves back
+    if (this.trails) {
+      const snowOn = wx.uSnowDepth.value > 0.003 && wx.uSnowCover.value > 0.05;
+      const cmh = W.input.snow > 0 && W.input.temp <= 1 ? W.input.snow : 0;
+      // packed amount decays as fresh snow covers the groove: ~4 cm of new snow fills a track (per real second)
+      const refill = (cmh / 100 / 3600) * W.timeScale / 0.04;
+      this.trails.update(camPos, dt, { snow: snowOn, refill, stamps: snowOn ? this.snowMovers.gather(camPos, dt) : [] });
+    }
     this.layer.mesh.visible = map.ready && wx.uSnowDepth.value > 0.003;
     // particle colours: drops lens the sky behind them; flakes are white grains lit by the whole sky
     const fc = L.uFogColor?.value ?? { x: 0.5, y: 0.55, z: 0.6 }, night = this.night();

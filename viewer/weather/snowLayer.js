@@ -13,7 +13,7 @@
 // facets), plus a footprint-faded micro bump and the same anti-aliased sparkle as the materials.
 import * as THREE from "three/webgpu";
 import { Fn, If, Discard, float, int, vec2, vec3, vec4, uniform, instancedArray, instanceIndex, varying, positionGeometry, positionWorld,
-  mix, smoothstep, clamp, max, min, normalize, length, select, fwidth, cameraViewMatrix, uint } from "three/tsl";
+  mix, smoothstep, clamp, max, min, normalize, length, select, fwidth, cameraViewMatrix, uint, abs, fract } from "three/tsl";
 import { wx } from "./weatherState.js";
 import { season } from "../seasons/season.js";
 import { SHAPE } from "./overheadMap.js";
@@ -41,7 +41,7 @@ export function trackSampler(field, map) {
   };
 }
 
-export function createSnowLayer({ renderer, map, track: sharedTrack = null, edgeFade = false }) {
+export function createSnowLayer({ renderer, map, track: sharedTrack = null, edgeFade = false, trail = null }) {
   const N = map.res, cell = map.cell;
   // the grid is built in the map's LOCAL frame (0 .. size) and the group follows the map's origin: the city's map
   // slides with the camera (overheadMap.bake(scene, at)), the lab's stays put
@@ -100,7 +100,12 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   const depthAt = (i, j) => {
     const s = map.load(i.clamp(0, N - 1), j.clamp(0, N - 1));
     const idx = j.clamp(0, N - 1).mul(N).add(i.clamp(0, N - 1));
-    const tr = track.element(idx);
+    let tr = track.element(idx);
+    // ---- snowtracks (claude/snowtracks, docs/WEATHER.md "Snow round 2"): the city's camera-centred trail texture
+    // (snowTrails.js) replaces the lab's storage-buffer track: one bilinear tap at the cell centre = the 2 x 2 texels
+    // of a 6.25 cm trail under the 12.5 cm cell (a box prefilter: no aliasing of the boot prints in the geometry)
+    if (trail) tr = select(trail.uOn.greaterThan(0.5), trail.sampleAt(vec2(float(i).add(0.5), float(j).add(0.5)).mul(uCell).add(uOrigin)), float(0));
+    // ---- /snowtracks
     // A = cliff + 2 x road: a salted carriageway keeps only a little (it is slush on the material below)
     const road = s.w.greaterThan(1.5).select(float(1), float(0));
     const d = wx.uSnowDepth.mul(rim).mul(s.z).mul(float(1).sub(shelterK.mul(s.y))).mul(float(1).sub(road.mul(wx.uSalt)));     // (unevenness is baked in the shape)
@@ -133,7 +138,29 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   const P = positionWorld;
   const fw = fwidth(P.x).add(fwidth(P.z)).mul(0.5).add(0.0002);
   const gl = glint(P, fw);
-  const packed = smoothstep(0.15, 0.7, vTrack);
+  let packed = smoothstep(0.15, 0.7, vTrack);
+  // ---- snowtracks: the shading reads the trail per pixel (6.25 cm, finer than the 12.5 cm groove of the geometry): the
+  // packed colour follows the boot / tyre outline, a detail normal from its slope (central differences over 2 texels:
+  // smooth, no texel facets), and the tread (tyre bars across the travel direction, boot lugs) as a bump
+  let trailN = null, tread = float(0);
+  if (trail) {
+    const T = trail.texelAt(P.xz), e = trail.texel;
+    const on = trail.uOn.greaterThan(0.5);
+    const fine = select(on, trail.sampleAt(P.xz, false), float(0));
+    packed = smoothstep(0.12, 0.6, fine);
+    const tap = (dx, dz) => trail.sampleAt(P.xz.add(vec2(dx, dz)), false);
+    const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e);
+    // the groove is (0.72 x depth) deep: its wall slope; the vertex normal already has the 25 cm-blurred part of it
+    const amp = vDepth.mul(0.72).mul(0.9).mul(float(1).sub(smoothstep(0.03, 0.09, fwidth(P.x).add(fwidth(P.z)))));
+    trailN = select(on, vec3(g.x.mul(amp), 0, g.y.mul(amp)), vec3(0));
+    const dir = T.xy.mul(2).sub(1), along = P.xz.dot(normalize(dir.add(vec2(1e-4, 0))));
+    const fwT = fwidth(P.x).add(fwidth(P.z)).mul(0.5);
+    const bars = abs(fract(along.div(0.034)).sub(0.5)).mul(2).smoothstep(0.35, 0.65).mul(0.0035);
+    // boot sole: lug bars across the sole (2 cm pitch), broken up along their length
+    const lugs = abs(fract(along.div(0.022)).sub(0.5)).mul(2).smoothstep(0.3, 0.7).mul(noise2D(P.xz.mul(18.0)).mul(0.5).add(0.5)).mul(0.002);
+    tread = select(on, mix(lugs, bars, T.z.smoothstep(0.3, 0.7)).mul(smoothstep(0.2, 0.6, fine)).mul(float(1).sub(smoothstep(0.003, 0.009, fwT))), float(0));
+  }
+  // ---- /snowtracks
   mat.colorNode = Fn(() => {
     If(vHide.greaterThan(cutAt), () => { Discard(); });
     if (SOFT_EDGE) {
@@ -162,9 +189,9 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     return c;
   })();
   mat.roughnessNode = mix(mix(mix(float(0.74), float(0.12), gl.w), float(0.5), packed), float(0.22), wx.uSlush);
-  const bump = noise2D(P.xz.mul(7.0)).mul(0.008).add(noise2D(P.xz.mul(23.0)).mul(0.002)).mul(float(1).sub(smoothstep(0.004, 0.02, fw)));
+  const bump = noise2D(P.xz.mul(7.0)).mul(0.008).add(noise2D(P.xz.mul(23.0)).mul(0.002)).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).mul(float(1).sub(packed.mul(0.7))).add(tread);
   const toView = (n) => normalize(cameraViewMatrix.mul(vec4(n, 0)).xyz);
-  const base = toView(normalize(vN));
+  const base = toView(trailN ? normalize(normalize(vN).add(trailN)) : normalize(vN));      // (snowtracks: + the trail's detail slope)
   // the macro normal from the field; micro bump as a small tilt of it; the glint facet on top
   mat.normalNode = normalize(mix(normalize(base.add(bumpNormal(bump).sub(toView(vec3(0, 1, 0))))), toView(gl.xyz), gl.w.mul(float(1).sub(packed))));
   // 8 x 8 chunks of 64^2 cells, each its own draw with a bounding box: the frustum culls what is off screen
