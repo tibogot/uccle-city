@@ -22,10 +22,10 @@ import { season } from "./seasons.js";
 import { wind, windAt } from "./wind.js";
 import { leafCard } from "./cards.js";
 import { noiseAt } from "./noise.js";
+import { growIvyData } from "./ivyGrow.js";
 
 export const ivyU = { cardNear: uniform(12), cardFar: uniform(22) };
 
-function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s ^ (s >>> 15), 2246822507) + 0x9e3779b9) >>> 0; return s / 4294967296; }; }
 
 /**
  * Grow ivy on a wall. wall = { origin: Vector3 (bottom-left), right: Vector3 (unit, along the wall), up: Vector3 (unit),
@@ -34,81 +34,8 @@ function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s ^ 
  * Returns { group, stats }.
  */
 export function growIvy(wall, { roots = [0.5], maxHeight = wall.height * 0.8, avoid = [], seed = 1, reach = 2.6 } = {}) {
-  const R = rng(seed * 7919 + 13);
-  const STEP = 0.04;
-  // ---- polish 2026-11-11: grown like real ivy, not in columns. A few roots; the colony is a MOUND over each root
-  // (envelope: highest above the root, lower to the sides, ragged top); stems climb, branch often and spread sideways
-  // away from what is already covered (a density grid), DEFLECT round window frames (hug the frame, go over the
-  // lintel / under the sill) instead of dying there; leaves thin out towards the envelope's edge; a few stems trail
-  // down from the top edge and over the window heads.
-  const inAvoid = (u, v, m = 0.02) => avoid.some(([a, b, c, d]) => u > a - m && u < c + m && v > b - m && v < d + m);
-  const CELL = 0.06, GW = Math.ceil(wall.width / CELL) + 1, GH = Math.ceil(wall.height / CELL) + 1;
-  const dens = new Float32Array(GW * GH);
-  const dAt = (u, v) => { const i = Math.floor(u / CELL), j = Math.floor(v / CELL); return i < 0 || j < 0 || i >= GW || j >= GH ? 9 : dens[j * GW + i]; };
-  const mark = (u, v) => { const i0 = Math.floor(u / CELL), j0 = Math.floor(v / CELL); for (let j = j0 - 1; j <= j0 + 1; j++) for (let i = i0 - 1; i <= i0 + 1; i++) if (i >= 0 && j >= 0 && i < GW && j < GH) dens[j * GW + i] += i === i0 && j === j0 ? 1 : 0.35; };
-  // envelope: a mound per root (height, lateral spread), a ragged top (two sines of random phase)
-  const mounds = roots.map((r) => ({ r, h: maxHeight * (0.72 + 0.28 * R()), s: reach * (0.42 + 0.22 * R()) }));
-  const ph1 = R() * 6.28, ph2 = R() * 6.28;
-  const env = (u) => {
-    let h = 0; for (const m of mounds) h = Math.max(h, m.h * Math.exp(-(((u - m.r) / m.s) ** 2)));
-    return Math.min(maxHeight, h + 0.22 * Math.sin(u * 3.1 + ph1) + 0.14 * Math.sin(u * 7.3 + ph2));
-  };
-  const branches = [];
-  const alive = roots.map((u) => ({ u, v: 0.02, du: (R() - 0.5) * 0.4, dv: 1, len: 0, max: maxHeight * 1.6, pts: [[u, 0.02]], w: 0.014, main: true }));
-  const blocked = (u, v) => u < 0.04 || u > wall.width - 0.04 || v < 0.01 || v > env(u) || inAvoid(u, v);
-  let guard = 0, nb = alive.length;
-  while (alive.length && guard++ < 60000) {
-    const b = alive[alive.length - 1];
-    // keep going + pull up (stronger on the main stems) + wander + spread away from the covered side
-    const side = dAt(b.u - 0.18, b.v) - dAt(b.u + 0.18, b.v);
-    let du = b.du * 0.55 + (R() - 0.5) * 0.9 + Math.max(-0.6, Math.min(0.6, side * 0.12));
-    let dv = b.dv * 0.5 + (b.main ? 0.3 : 0.12) + (R() - 0.5) * 0.5;
-    const l = Math.hypot(du, dv) || 1; du /= l; dv /= l;
-    let nu = b.u + du * STEP, nv = b.v + dv * STEP;
-    if (blocked(nu, nv)) {
-      // deflect: turn by 40 / 75 / 110 degrees, the emptier side first (round a frame, along the envelope)
-      const order = dAt(b.u - 0.12, b.v) < dAt(b.u + 0.12, b.v) ? [1, -1] : [-1, 1];
-      let ok = false;
-      for (const a of [0.7, 1.3, 1.9]) for (const sg of order) {
-        if (ok) break;
-        const c = Math.cos(a * sg), s2 = Math.sin(a * sg), tu = du * c - dv * s2, tv = du * s2 + dv * c;
-        if (!blocked(b.u + tu * STEP, b.v + tv * STEP)) { du = tu; dv = tv; nu = b.u + tu * STEP; nv = b.v + tv * STEP; ok = true; }
-      }
-      if (!ok) { branches.push(alive.pop()); continue; }
-    }
-    // long enough, or the wall here is full: stop
-    if (b.len > b.max || (b.len > 0.4 && dAt(nu, nv) > 6.5)) { branches.push(alive.pop()); continue; }
-    b.u = nu; b.v = nv; b.du = du; b.dv = dv; b.len += STEP; b.pts.push([nu, nv]); mark(nu, nv);
-    if (R() < (b.main ? 0.075 : 0.05) && nb < 320 && b.len > 0.12) {
-      const sd = R() < 0.5 ? -1 : 1;
-      alive.unshift({ u: nu, v: nv, du: sd * (0.75 + 0.4 * R()), dv: 0.05 + 0.45 * R(), len: 0, max: reach * (0.25 + 0.55 * R()), pts: [[nu, nv]], w: Math.max(0.005, b.w * 0.72), main: R() < 0.18 });
-      nb++;
-    }
-  }
-  // trailing stems: hang from the colony's top edge and from the ivy above a window head, a little off the wall
-  const trailing = [];
-  const heads = avoid.map(([a, , c, d]) => [a, c, d]);
-  for (const b of branches) for (let k = 4; k < b.pts.length; k += 6) {
-    const [u, v] = b.pts[k];
-    const top = env(u) - v < 0.25;
-    const head = heads.find(([a, c, d]) => u > a + 0.05 && u < c - 0.05 && v > d + 0.02 && v < d + 0.3);
-    if (!(top && R() < 0.22) && !(head && R() < 0.3)) continue;
-    const L = head ? 0.08 + 0.14 * R() : 0.3 + 0.7 * R();
-    const pts = [[u, v]]; let cu = u, cv = v, cd = (R() - 0.5) * 0.3;
-    for (let t = 0; t < L; t += STEP) { cd = cd * 0.7 + (R() - 0.5) * 0.25; cu += cd * STEP; cv -= STEP; if (cv < 0.3) break; pts.push([cu, cv]); }
-    if (pts.length > 3 && trailing.length < 40) trailing.push({ pts, w: 0.005, trail: true });
-  }
-  branches.push(...trailing);
-  const edgeAt = (u, v) => Math.min(1, Math.max(0, (env(u) - v) / 0.9));      // 0 at the envelope's top / sides, 1 inside
-  // patchy density: a smooth value noise (~0.8 m cells, two octaves) so the mass has thin places where brick shows
-  const lat = new Float32Array(64 * 64).map(() => R());
-  const vn = (x, y) => {
-    const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
-    const g = (i, j) => lat[((j & 63) << 6) | (i & 63)];
-    return (g(ix, iy) * (1 - sx) + g(ix + 1, iy) * sx) * (1 - sy) + (g(ix, iy + 1) * (1 - sx) + g(ix + 1, iy + 1) * sx) * sy;
-  };
-  const patch = (u, v) => Math.min(1, Math.max(0, (vn(u / 0.8, v / 0.8) * 0.7 + vn(u / 0.3 + 17, v / 0.3) * 0.3 - 0.22) * 1.9));
-  const onGlass = (u, v) => inAvoid(u, v, -0.06);                               // > 6 cm inside an opening
+  // the growth (pure JS, shared with the city's ivy build): viewer/foliage/ivyGrow.js
+  const { branches, leaves } = growIvyData(wall, { roots, maxHeight, avoid, seed, reach });
   const W = (u, v, out = 0) => wall.origin.clone().addScaledVector(wall.right, u).addScaledVector(wall.up, v).addScaledVector(wall.normal, out);
   // ---- stems: ribbons
   const sp = [], si = [];
@@ -130,26 +57,17 @@ export function growIvy(wall, { roots = [0.5], maxHeight = wall.height * 0.8, av
   const stemN = vec3(wall.normal.x, wall.normal.y, wall.normal.z);
   stemM.normalNode = normalize(cameraViewMatrix.mul(vec4(stemN, 0)).xyz);
   const stems = new THREE.Mesh(stemG, stemM);
-  // ---- leaves: a spray every ~7 cm along each branch (except the bare lowest 15 cm of the roots)
+  // ---- leaves (placed by growIvyData): cards + the mantle's coverage
   const cp = [], cn = [], cr = [];
   const PX = 48, cw = Math.ceil(wall.width * PX), ch = Math.ceil(wall.height * PX);
   const cov = new OffscreenCanvas(cw, ch), g = cov.getContext("2d");
   g.fillStyle = "#000"; g.fillRect(0, 0, cw, ch);
   g.fillStyle = "#fff";
-  const perCell = new Uint8Array(GW * GH);
-  for (const b of branches) for (let k = 1; k < b.pts.length; k += 1) {
-    const [u, v] = b.pts[k];
-    // fewer leaves near the envelope's edge (a thin, ragged margin), none on the bare lowest stems, at most two sprays
-    // per 6 cm cell (no clumped double layers); trailing stems carry a leaf every other step or so
-    const e = b.trail ? 0.55 : edgeAt(u, v) * patch(u, v);
-    if (v < 0.12 || R() > 0.08 + 0.62 * e || (!b.trail && onGlass(u, v))) continue;
-    const ci = Math.min(GW - 1, Math.max(0, Math.floor(u / CELL))) + Math.min(GH - 1, Math.max(0, Math.floor(v / CELL))) * GW;
-    if (perCell[ci] >= 2) continue;
-    perCell[ci]++;
-    const p = W(u + (R() - 0.5) * 0.06, v + (R() - 0.5) * 0.06, (b.trail ? 0.03 + 0.05 * k / b.pts.length : 0.04) + R() * 0.05);
-    cp.push(p.x, p.y, p.z); cn.push(wall.normal.x, wall.normal.y, wall.normal.z); cr.push(R(), R(), R(), R());
-    if (b.trail) continue;                                                      // hanging sprays: cards only
-    g.globalAlpha = 0.85; g.beginPath(); g.arc(u * PX, (wall.height - v) * PX, 0.08 * PX * (0.8 + 0.4 * R()), 0, Math.PI * 2); g.fill();
+  for (const L of leaves) {
+    const p = W(L.u, L.v, L.out);
+    cp.push(p.x, p.y, p.z); cn.push(wall.normal.x, wall.normal.y, wall.normal.z); cr.push(...L.r);
+    if (L.trail) continue;
+    g.globalAlpha = 0.85; g.beginPath(); g.arc(L.u * PX, (wall.height - L.v) * PX, 0.08 * PX * L.disc, 0, Math.PI * 2); g.fill();
   }
   // the mantle never covers the glass: the openings (3 cm in from their edge) are cleared from the coverage
   g.globalAlpha = 1; g.fillStyle = "#000";

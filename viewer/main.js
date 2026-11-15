@@ -61,6 +61,8 @@ import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityGardens } from "./gardens/cityGardens.js";
+import { cityPlants } from "./plants/cityPlants.js";
+import { cityIvy } from "./plants/cityIvy.js";
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
 import { cityGrass } from "./grass/cityGrass.js";
@@ -714,6 +716,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   const skP = cityStreetKit.fetchTile(entry.name);      // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
+  const ivyP = cityIvy.fetchTile(entry.name);           // ivy on walls, climbers on railings (viewer/plants/cityIvy.js), ?ivy=0 off
+  const plantsP = cityPlants.fetchTile(entry.name);     // shrubs, bed plants, beds, window boxes (viewer/plants/), on by default, ?plants=0 off
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
   const d = await tileData(entry);
@@ -755,7 +759,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
-  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: R.meshes, buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes }); await frame("grass field"); }
+  const plantDoc = await plantsP;
+  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: R.meshes, buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc)].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
   // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
@@ -799,6 +804,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
+  const plantCounts = cityPlants.addTile(entry.name, plantDoc, own.features, (x, z) => hm.surface(x, z), B.kit);   // (window boxes on the façade kit's sills)
+  ivyP.then((doc) => cityIvy.addTile(entry.name, doc, own.features)).then((c) => { if (c) say(`ivy: ${c.walls} walls, ${c.leaves} leaf sprays, ${c.stems} stem pieces (worker ${c.workerMs} ms)`); });
+  if (plantCounts) say(`plants: ${Object.entries(plantCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/plants, viewer/plants)`);
   if (furnCounts) say(`furniture2: ${Object.entries(furnCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/furniture, viewer/furniture2)`);
   if (stopCounts) say(`stops: ${stopCounts.pole} STIB poles, ${stopCounts.shelter} shelters (incl. tram platforms), ${stopCounts.adpanel} ad panels (data/stops, viewer/stops)`);
   await frame("tram");
@@ -834,6 +842,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
     cityStreetKit.removeTile(entry.name);           // its instances leave the street kit pools
     cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)
+    cityPlants.removeTile(entry.name);              // its plants, beds, window boxes leave the plant pools
+    cityIvy.removeTile(entry.name);                 // and its ivy
     cityFuel.removeTile(entry.name);                // its instances leave the fuel pools (its slabs / stand-ins go with the groups below)
     cityStops.removeTile(entry.name);               // its instances leave the stop pools (its stand-ins go with the groups below)
     cityStreetLife.removeTile(entry.name);          // its atlas pages and pooled props (its meshes go with the groups below)
@@ -1053,6 +1063,8 @@ async function main() {
     () => cityFurniture.start({ scene, updaters, log }),             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
     () => cityStreetKit.start({ scene, updaters, log }),             // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
     () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
+    () => cityPlants.start({ scene, updaters, log }),                // shrubs, bed plants, beds, window boxes (viewer/plants/), ?plants=0 off
+    () => cityIvy.start({ scene, updaters, log }),                   // ivy on walls, climbers on railings (viewer/plants/cityIvy.js), ?ivy=0 off
     () => cityStops.start({ scene, updaters, log }),                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
     () => cityFuel.start({ scene, updaters, renderer, log }),        // the petrol stations (viewer/fuel/), ?fuel=old off
     () => cityRoofs.start({ scene, updaters, log }),                 // the roof tops: stacks, parapets, roof windows, solar, roof furniture (viewer/roofs/), ?roofs=old off

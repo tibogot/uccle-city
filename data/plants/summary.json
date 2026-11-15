@@ -1,0 +1,2546 @@
+{
+ "contract": "plants-0.1",
+ "tiles": {
+  "D1": {
+   "plants": 509,
+   "beds": 0,
+   "byType": {
+    "box_ball": 115,
+    "laurel": 86,
+    "rhododendron": 89,
+    "hydrangea": 110,
+    "rose": 62,
+    "lavender": 47,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 509,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "E1": {
+   "plants": 601,
+   "beds": 64,
+   "byType": {
+    "box_ball": 165,
+    "laurel": 58,
+    "rhododendron": 56,
+    "hydrangea": 104,
+    "rose": 89,
+    "lavender": 99,
+    "bulbs": 30,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 322,
+    "park": 6,
+    "square": 224,
+    "island": 49,
+    "scrub": 0
+   }
+  },
+  "F1": {
+   "plants": 208,
+   "beds": 16,
+   "byType": {
+    "box_ball": 35,
+    "laurel": 40,
+    "rhododendron": 49,
+    "hydrangea": 33,
+    "rose": 29,
+    "lavender": 18,
+    "bulbs": 4,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 198,
+    "park": 0,
+    "square": 0,
+    "island": 10,
+    "scrub": 0
+   }
+  },
+  "G1": {
+   "plants": 166,
+   "beds": 23,
+   "byType": {
+    "box_ball": 18,
+    "laurel": 35,
+    "rhododendron": 45,
+    "hydrangea": 33,
+    "rose": 20,
+    "lavender": 11,
+    "bulbs": 4,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 158,
+    "park": 0,
+    "square": 0,
+    "island": 8,
+    "scrub": 0
+   }
+  },
+  "H1": {
+   "plants": 341,
+   "beds": 37,
+   "byType": {
+    "box_ball": 56,
+    "laurel": 59,
+    "rhododendron": 71,
+    "hydrangea": 73,
+    "rose": 47,
+    "lavender": 29,
+    "bulbs": 6,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 309,
+    "park": 0,
+    "square": 32,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "I1": {
+   "plants": 156,
+   "beds": 22,
+   "byType": {
+    "box_ball": 24,
+    "laurel": 26,
+    "rhododendron": 35,
+    "hydrangea": 27,
+    "rose": 24,
+    "lavender": 7,
+    "bulbs": 13,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 156,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "D2": {
+   "plants": 718,
+   "beds": 0,
+   "byType": {
+    "box_ball": 125,
+    "laurel": 171,
+    "rhododendron": 166,
+    "hydrangea": 138,
+    "rose": 74,
+    "lavender": 44,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 713,
+    "park": 5,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "E2": {
+   "plants": 833,
+   "beds": 84,
+   "byType": {
+    "box_ball": 118,
+    "laurel": 171,
+    "rhododendron": 198,
+    "hydrangea": 133,
+    "rose": 95,
+    "lavender": 87,
+    "bulbs": 31,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 672,
+    "park": 161,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "F2": {
+   "plants": 684,
+   "beds": 53,
+   "byType": {
+    "box_ball": 90,
+    "laurel": 143,
+    "rhododendron": 189,
+    "hydrangea": 107,
+    "rose": 85,
+    "lavender": 53,
+    "bulbs": 17,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 532,
+    "park": 152,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "G2": {
+   "plants": 637,
+   "beds": 45,
+   "byType": {
+    "box_ball": 92,
+    "laurel": 122,
+    "rhododendron": 139,
+    "hydrangea": 104,
+    "rose": 72,
+    "lavender": 94,
+    "bulbs": 14,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 297,
+    "park": 243,
+    "square": 0,
+    "island": 97,
+    "scrub": 0
+   }
+  },
+  "H2": {
+   "plants": 540,
+   "beds": 51,
+   "byType": {
+    "box_ball": 88,
+    "laurel": 118,
+    "rhododendron": 120,
+    "hydrangea": 82,
+    "rose": 63,
+    "lavender": 50,
+    "bulbs": 19,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 450,
+    "park": 66,
+    "square": 0,
+    "island": 24,
+    "scrub": 0
+   }
+  },
+  "I2": {
+   "plants": 446,
+   "beds": 48,
+   "byType": {
+    "box_ball": 64,
+    "laurel": 78,
+    "rhododendron": 82,
+    "hydrangea": 100,
+    "rose": 60,
+    "lavender": 51,
+    "bulbs": 11,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 412,
+    "park": 0,
+    "square": 0,
+    "island": 34,
+    "scrub": 0
+   }
+  },
+  "J2": {
+   "plants": 74,
+   "beds": 1,
+   "byType": {
+    "box_ball": 15,
+    "laurel": 17,
+    "rhododendron": 22,
+    "hydrangea": 11,
+    "rose": 7,
+    "lavender": 2,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 74,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "C3": {
+   "plants": 1484,
+   "beds": 47,
+   "byType": {
+    "box_ball": 266,
+    "laurel": 332,
+    "rhododendron": 286,
+    "hydrangea": 281,
+    "rose": 161,
+    "lavender": 119,
+    "bulbs": 39,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1484,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "D3": {
+   "plants": 726,
+   "beds": 69,
+   "byType": {
+    "box_ball": 123,
+    "laurel": 128,
+    "rhododendron": 124,
+    "hydrangea": 158,
+    "rose": 87,
+    "lavender": 78,
+    "bulbs": 28,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 701,
+    "park": 0,
+    "square": 25,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "E3": {
+   "plants": 736,
+   "beds": 76,
+   "byType": {
+    "box_ball": 91,
+    "laurel": 148,
+    "rhododendron": 162,
+    "hydrangea": 161,
+    "rose": 89,
+    "lavender": 65,
+    "bulbs": 20,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 682,
+    "park": 35,
+    "square": 19,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "F3": {
+   "plants": 1087,
+   "beds": 81,
+   "byType": {
+    "box_ball": 190,
+    "laurel": 226,
+    "rhododendron": 185,
+    "hydrangea": 177,
+    "rose": 171,
+    "lavender": 113,
+    "bulbs": 25,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 997,
+    "park": 66,
+    "square": 0,
+    "island": 24,
+    "scrub": 0
+   }
+  },
+  "G3": {
+   "plants": 600,
+   "beds": 35,
+   "byType": {
+    "box_ball": 83,
+    "laurel": 117,
+    "rhododendron": 158,
+    "hydrangea": 109,
+    "rose": 71,
+    "lavender": 53,
+    "bulbs": 9,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 419,
+    "park": 181,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "H3": {
+   "plants": 1256,
+   "beds": 93,
+   "byType": {
+    "box_ball": 176,
+    "laurel": 296,
+    "rhododendron": 289,
+    "hydrangea": 196,
+    "rose": 157,
+    "lavender": 115,
+    "bulbs": 27,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1180,
+    "park": 73,
+    "square": 0,
+    "island": 3,
+    "scrub": 0
+   }
+  },
+  "I3": {
+   "plants": 713,
+   "beds": 61,
+   "byType": {
+    "box_ball": 99,
+    "laurel": 137,
+    "rhododendron": 154,
+    "hydrangea": 165,
+    "rose": 90,
+    "lavender": 60,
+    "bulbs": 8,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 644,
+    "park": 69,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "J3": {
+   "plants": 260,
+   "beds": 6,
+   "byType": {
+    "box_ball": 43,
+    "laurel": 65,
+    "rhododendron": 58,
+    "hydrangea": 53,
+    "rose": 19,
+    "lavender": 22,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 260,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "B4": {
+   "plants": 1118,
+   "beds": 20,
+   "byType": {
+    "box_ball": 223,
+    "laurel": 220,
+    "rhododendron": 224,
+    "hydrangea": 204,
+    "rose": 117,
+    "lavender": 110,
+    "bulbs": 20,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1038,
+    "park": 0,
+    "square": 23,
+    "island": 57,
+    "scrub": 0
+   }
+  },
+  "C4": {
+   "plants": 1055,
+   "beds": 71,
+   "byType": {
+    "box_ball": 181,
+    "laurel": 246,
+    "rhododendron": 233,
+    "hydrangea": 181,
+    "rose": 130,
+    "lavender": 68,
+    "bulbs": 16,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1029,
+    "park": 11,
+    "square": 0,
+    "island": 15,
+    "scrub": 0
+   }
+  },
+  "D4": {
+   "plants": 1123,
+   "beds": 94,
+   "byType": {
+    "box_ball": 175,
+    "laurel": 223,
+    "rhododendron": 221,
+    "hydrangea": 218,
+    "rose": 128,
+    "lavender": 117,
+    "bulbs": 41,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 998,
+    "park": 78,
+    "square": 24,
+    "island": 23,
+    "scrub": 0
+   }
+  },
+  "E4": {
+   "plants": 684,
+   "beds": 78,
+   "byType": {
+    "box_ball": 118,
+    "laurel": 103,
+    "rhododendron": 113,
+    "hydrangea": 118,
+    "rose": 104,
+    "lavender": 101,
+    "bulbs": 27,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 463,
+    "park": 5,
+    "square": 85,
+    "island": 131,
+    "scrub": 0
+   }
+  },
+  "F4": {
+   "plants": 1061,
+   "beds": 63,
+   "byType": {
+    "box_ball": 165,
+    "laurel": 270,
+    "rhododendron": 235,
+    "hydrangea": 163,
+    "rose": 135,
+    "lavender": 72,
+    "bulbs": 21,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 938,
+    "park": 123,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "G4": {
+   "plants": 1003,
+   "beds": 51,
+   "byType": {
+    "box_ball": 145,
+    "laurel": 239,
+    "rhododendron": 226,
+    "hydrangea": 164,
+    "rose": 123,
+    "lavender": 82,
+    "bulbs": 24,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 923,
+    "park": 10,
+    "square": 0,
+    "island": 13,
+    "scrub": 57
+   }
+  },
+  "H4": {
+   "plants": 767,
+   "beds": 44,
+   "byType": {
+    "box_ball": 114,
+    "laurel": 187,
+    "rhododendron": 180,
+    "hydrangea": 125,
+    "rose": 81,
+    "lavender": 59,
+    "bulbs": 21,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 650,
+    "park": 62,
+    "square": 42,
+    "island": 13,
+    "scrub": 0
+   }
+  },
+  "I4": {
+   "plants": 591,
+   "beds": 35,
+   "byType": {
+    "box_ball": 84,
+    "laurel": 155,
+    "rhododendron": 142,
+    "hydrangea": 82,
+    "rose": 71,
+    "lavender": 30,
+    "bulbs": 27,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 527,
+    "park": 2,
+    "square": 59,
+    "island": 3,
+    "scrub": 0
+   }
+  },
+  "J4": {
+   "plants": 909,
+   "beds": 44,
+   "byType": {
+    "box_ball": 130,
+    "laurel": 187,
+    "rhododendron": 207,
+    "hydrangea": 183,
+    "rose": 115,
+    "lavender": 62,
+    "bulbs": 25,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 903,
+    "park": 6,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K4": {
+   "plants": 113,
+   "beds": 2,
+   "byType": {
+    "box_ball": 19,
+    "laurel": 35,
+    "rhododendron": 27,
+    "hydrangea": 16,
+    "rose": 8,
+    "lavender": 5,
+    "bulbs": 3,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 102,
+    "park": 0,
+    "square": 0,
+    "island": 11,
+    "scrub": 0
+   }
+  },
+  "A5": {
+   "plants": 377,
+   "beds": 3,
+   "byType": {
+    "box_ball": 89,
+    "laurel": 65,
+    "rhododendron": 60,
+    "hydrangea": 77,
+    "rose": 48,
+    "lavender": 36,
+    "bulbs": 2,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 329,
+    "park": 48,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "B5": {
+   "plants": 1013,
+   "beds": 66,
+   "byType": {
+    "box_ball": 207,
+    "laurel": 182,
+    "rhododendron": 208,
+    "hydrangea": 170,
+    "rose": 112,
+    "lavender": 103,
+    "bulbs": 31,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 776,
+    "park": 16,
+    "square": 0,
+    "island": 105,
+    "scrub": 116
+   }
+  },
+  "C5": {
+   "plants": 1372,
+   "beds": 123,
+   "byType": {
+    "box_ball": 274,
+    "laurel": 208,
+    "rhododendron": 204,
+    "hydrangea": 275,
+    "rose": 223,
+    "lavender": 160,
+    "bulbs": 28,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1371,
+    "park": 0,
+    "square": 0,
+    "island": 1,
+    "scrub": 0
+   }
+  },
+  "D5": {
+   "plants": 1193,
+   "beds": 89,
+   "byType": {
+    "box_ball": 224,
+    "laurel": 242,
+    "rhododendron": 220,
+    "hydrangea": 228,
+    "rose": 143,
+    "lavender": 118,
+    "bulbs": 18,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1125,
+    "park": 28,
+    "square": 0,
+    "island": 40,
+    "scrub": 0
+   }
+  },
+  "E5": {
+   "plants": 797,
+   "beds": 61,
+   "byType": {
+    "box_ball": 126,
+    "laurel": 166,
+    "rhododendron": 188,
+    "hydrangea": 122,
+    "rose": 106,
+    "lavender": 66,
+    "bulbs": 23,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 797,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "F5": {
+   "plants": 1907,
+   "beds": 59,
+   "byType": {
+    "box_ball": 286,
+    "laurel": 449,
+    "rhododendron": 405,
+    "hydrangea": 398,
+    "rose": 169,
+    "lavender": 190,
+    "bulbs": 10,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 919,
+    "park": 987,
+    "square": 0,
+    "island": 1,
+    "scrub": 0
+   }
+  },
+  "G5": {
+   "plants": 1400,
+   "beds": 71,
+   "byType": {
+    "box_ball": 186,
+    "laurel": 298,
+    "rhododendron": 342,
+    "hydrangea": 261,
+    "rose": 138,
+    "lavender": 141,
+    "bulbs": 34,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 804,
+    "park": 593,
+    "square": 0,
+    "island": 3,
+    "scrub": 0
+   }
+  },
+  "H5": {
+   "plants": 1130,
+   "beds": 63,
+   "byType": {
+    "box_ball": 154,
+    "laurel": 266,
+    "rhododendron": 263,
+    "hydrangea": 202,
+    "rose": 109,
+    "lavender": 122,
+    "bulbs": 14,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 692,
+    "park": 431,
+    "square": 0,
+    "island": 7,
+    "scrub": 0
+   }
+  },
+  "I5": {
+   "plants": 1294,
+   "beds": 92,
+   "byType": {
+    "box_ball": 213,
+    "laurel": 271,
+    "rhododendron": 265,
+    "hydrangea": 273,
+    "rose": 142,
+    "lavender": 108,
+    "bulbs": 22,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1280,
+    "park": 0,
+    "square": 2,
+    "island": 0,
+    "scrub": 12
+   }
+  },
+  "J5": {
+   "plants": 809,
+   "beds": 66,
+   "byType": {
+    "box_ball": 131,
+    "laurel": 171,
+    "rhododendron": 167,
+    "hydrangea": 151,
+    "rose": 98,
+    "lavender": 65,
+    "bulbs": 26,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 809,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K5": {
+   "plants": 239,
+   "beds": 16,
+   "byType": {
+    "box_ball": 32,
+    "laurel": 64,
+    "rhododendron": 39,
+    "hydrangea": 49,
+    "rose": 30,
+    "lavender": 20,
+    "bulbs": 5,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 239,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L5": {
+   "plants": 81,
+   "beds": 0,
+   "byType": {
+    "box_ball": 8,
+    "laurel": 29,
+    "rhododendron": 22,
+    "hydrangea": 12,
+    "rose": 6,
+    "lavender": 4,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 81,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M5": {
+   "plants": 521,
+   "beds": 12,
+   "byType": {
+    "box_ball": 90,
+    "laurel": 107,
+    "rhododendron": 103,
+    "hydrangea": 95,
+    "rose": 72,
+    "lavender": 52,
+    "bulbs": 2,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 457,
+    "park": 31,
+    "square": 0,
+    "island": 33,
+    "scrub": 0
+   }
+  },
+  "N5": {
+   "plants": 653,
+   "beds": 0,
+   "byType": {
+    "box_ball": 124,
+    "laurel": 160,
+    "rhododendron": 146,
+    "hydrangea": 104,
+    "rose": 72,
+    "lavender": 47,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 606,
+    "park": 43,
+    "square": 2,
+    "island": 2,
+    "scrub": 0
+   }
+  },
+  "B6": {
+   "plants": 868,
+   "beds": 61,
+   "byType": {
+    "box_ball": 140,
+    "laurel": 172,
+    "rhododendron": 161,
+    "hydrangea": 170,
+    "rose": 126,
+    "lavender": 75,
+    "bulbs": 24,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 868,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "C6": {
+   "plants": 1522,
+   "beds": 134,
+   "byType": {
+    "box_ball": 231,
+    "laurel": 270,
+    "rhododendron": 320,
+    "hydrangea": 306,
+    "rose": 209,
+    "lavender": 144,
+    "bulbs": 42,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1513,
+    "park": 0,
+    "square": 0,
+    "island": 9,
+    "scrub": 0
+   }
+  },
+  "D6": {
+   "plants": 1079,
+   "beds": 68,
+   "byType": {
+    "box_ball": 197,
+    "laurel": 250,
+    "rhododendron": 231,
+    "hydrangea": 175,
+    "rose": 111,
+    "lavender": 96,
+    "bulbs": 19,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 911,
+    "park": 0,
+    "square": 0,
+    "island": 54,
+    "scrub": 114
+   }
+  },
+  "E6": {
+   "plants": 1576,
+   "beds": 132,
+   "byType": {
+    "box_ball": 258,
+    "laurel": 298,
+    "rhododendron": 322,
+    "hydrangea": 271,
+    "rose": 206,
+    "lavender": 186,
+    "bulbs": 35,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1575,
+    "park": 0,
+    "square": 0,
+    "island": 1,
+    "scrub": 0
+   }
+  },
+  "F6": {
+   "plants": 1518,
+   "beds": 102,
+   "byType": {
+    "box_ball": 216,
+    "laurel": 346,
+    "rhododendron": 325,
+    "hydrangea": 282,
+    "rose": 187,
+    "lavender": 127,
+    "bulbs": 35,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1221,
+    "park": 250,
+    "square": 0,
+    "island": 47,
+    "scrub": 0
+   }
+  },
+  "G6": {
+   "plants": 1257,
+   "beds": 97,
+   "byType": {
+    "box_ball": 189,
+    "laurel": 235,
+    "rhododendron": 293,
+    "hydrangea": 239,
+    "rose": 151,
+    "lavender": 130,
+    "bulbs": 20,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1223,
+    "park": 4,
+    "square": 0,
+    "island": 30,
+    "scrub": 0
+   }
+  },
+  "H6": {
+   "plants": 977,
+   "beds": 58,
+   "byType": {
+    "box_ball": 168,
+    "laurel": 223,
+    "rhododendron": 198,
+    "hydrangea": 179,
+    "rose": 105,
+    "lavender": 84,
+    "bulbs": 20,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 931,
+    "park": 0,
+    "square": 0,
+    "island": 46,
+    "scrub": 0
+   }
+  },
+  "I6": {
+   "plants": 1417,
+   "beds": 135,
+   "byType": {
+    "box_ball": 193,
+    "laurel": 293,
+    "rhododendron": 275,
+    "hydrangea": 284,
+    "rose": 183,
+    "lavender": 140,
+    "bulbs": 49,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1396,
+    "park": 0,
+    "square": 20,
+    "island": 1,
+    "scrub": 0
+   }
+  },
+  "J6": {
+   "plants": 853,
+   "beds": 70,
+   "byType": {
+    "box_ball": 102,
+    "laurel": 155,
+    "rhododendron": 184,
+    "hydrangea": 171,
+    "rose": 120,
+    "lavender": 93,
+    "bulbs": 28,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 853,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K6": {
+   "plants": 657,
+   "beds": 17,
+   "byType": {
+    "box_ball": 97,
+    "laurel": 134,
+    "rhododendron": 139,
+    "hydrangea": 148,
+    "rose": 63,
+    "lavender": 74,
+    "bulbs": 2,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 365,
+    "park": 292,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L6": {
+   "plants": 73,
+   "beds": 0,
+   "byType": {
+    "box_ball": 13,
+    "laurel": 19,
+    "rhododendron": 16,
+    "hydrangea": 10,
+    "rose": 13,
+    "lavender": 2,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 70,
+    "park": 3,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M6": {
+   "plants": 19,
+   "beds": 0,
+   "byType": {
+    "box_ball": 1,
+    "laurel": 9,
+    "rhododendron": 5,
+    "hydrangea": 1,
+    "rose": 2,
+    "lavender": 1,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 19,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "N6": {
+   "plants": 475,
+   "beds": 1,
+   "byType": {
+    "box_ball": 67,
+    "laurel": 126,
+    "rhododendron": 132,
+    "hydrangea": 85,
+    "rose": 38,
+    "lavender": 27,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 449,
+    "park": 26,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "B7": {
+   "plants": 814,
+   "beds": 62,
+   "byType": {
+    "box_ball": 133,
+    "laurel": 145,
+    "rhododendron": 147,
+    "hydrangea": 166,
+    "rose": 106,
+    "lavender": 93,
+    "bulbs": 24,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 814,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "C7": {
+   "plants": 1886,
+   "beds": 173,
+   "byType": {
+    "box_ball": 314,
+    "laurel": 328,
+    "rhododendron": 328,
+    "hydrangea": 401,
+    "rose": 246,
+    "lavender": 211,
+    "bulbs": 58,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1864,
+    "park": 22,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "D7": {
+   "plants": 1497,
+   "beds": 61,
+   "byType": {
+    "box_ball": 218,
+    "laurel": 332,
+    "rhododendron": 308,
+    "hydrangea": 299,
+    "rose": 151,
+    "lavender": 170,
+    "bulbs": 19,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 707,
+    "park": 593,
+    "square": 0,
+    "island": 15,
+    "scrub": 182
+   }
+  },
+  "E7": {
+   "plants": 932,
+   "beds": 43,
+   "byType": {
+    "box_ball": 154,
+    "laurel": 225,
+    "rhododendron": 186,
+    "hydrangea": 177,
+    "rose": 97,
+    "lavender": 74,
+    "bulbs": 19,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 932,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "F7": {
+   "plants": 1402,
+   "beds": 20,
+   "byType": {
+    "box_ball": 176,
+    "laurel": 410,
+    "rhododendron": 342,
+    "hydrangea": 260,
+    "rose": 99,
+    "lavender": 109,
+    "bulbs": 6,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 452,
+    "park": 583,
+    "square": 0,
+    "island": 7,
+    "scrub": 360
+   }
+  },
+  "G7": {
+   "plants": 633,
+   "beds": 13,
+   "byType": {
+    "box_ball": 111,
+    "laurel": 132,
+    "rhododendron": 118,
+    "hydrangea": 151,
+    "rose": 58,
+    "lavender": 59,
+    "bulbs": 4,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 246,
+    "park": 367,
+    "square": 0,
+    "island": 0,
+    "scrub": 20
+   }
+  },
+  "H7": {
+   "plants": 1243,
+   "beds": 90,
+   "byType": {
+    "box_ball": 232,
+    "laurel": 227,
+    "rhododendron": 227,
+    "hydrangea": 243,
+    "rose": 169,
+    "lavender": 116,
+    "bulbs": 29,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1230,
+    "park": 3,
+    "square": 0,
+    "island": 10,
+    "scrub": 0
+   }
+  },
+  "I7": {
+   "plants": 1508,
+   "beds": 55,
+   "byType": {
+    "box_ball": 189,
+    "laurel": 383,
+    "rhododendron": 399,
+    "hydrangea": 277,
+    "rose": 126,
+    "lavender": 120,
+    "bulbs": 14,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 702,
+    "park": 806,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "J7": {
+   "plants": 1632,
+   "beds": 139,
+   "byType": {
+    "box_ball": 237,
+    "laurel": 345,
+    "rhododendron": 353,
+    "hydrangea": 309,
+    "rose": 205,
+    "lavender": 122,
+    "bulbs": 61,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1632,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K7": {
+   "plants": 817,
+   "beds": 26,
+   "byType": {
+    "box_ball": 112,
+    "laurel": 216,
+    "rhododendron": 203,
+    "hydrangea": 132,
+    "rose": 68,
+    "lavender": 72,
+    "bulbs": 14,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 662,
+    "park": 155,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L7": {
+   "plants": 141,
+   "beds": 0,
+   "byType": {
+    "box_ball": 25,
+    "laurel": 30,
+    "rhododendron": 42,
+    "hydrangea": 20,
+    "rose": 12,
+    "lavender": 12,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 132,
+    "park": 9,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M7": {
+   "plants": 45,
+   "beds": 0,
+   "byType": {
+    "box_ball": 5,
+    "laurel": 12,
+    "rhododendron": 6,
+    "hydrangea": 9,
+    "rose": 7,
+    "lavender": 6,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 45,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "N7": {
+   "plants": 250,
+   "beds": 0,
+   "byType": {
+    "box_ball": 79,
+    "laurel": 25,
+    "rhododendron": 30,
+    "hydrangea": 49,
+    "rose": 39,
+    "lavender": 28,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 250,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "B8": {
+   "plants": 41,
+   "beds": 1,
+   "byType": {
+    "box_ball": 2,
+    "laurel": 8,
+    "rhododendron": 16,
+    "hydrangea": 9,
+    "rose": 2,
+    "lavender": 2,
+    "bulbs": 2,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 41,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "C8": {
+   "plants": 1415,
+   "beds": 72,
+   "byType": {
+    "box_ball": 225,
+    "laurel": 280,
+    "rhododendron": 304,
+    "hydrangea": 276,
+    "rose": 143,
+    "lavender": 168,
+    "bulbs": 19,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 864,
+    "park": 551,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "D8": {
+   "plants": 2977,
+   "beds": 118,
+   "byType": {
+    "box_ball": 456,
+    "laurel": 647,
+    "rhododendron": 635,
+    "hydrangea": 606,
+    "rose": 283,
+    "lavender": 295,
+    "bulbs": 55,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1546,
+    "park": 1156,
+    "square": 0,
+    "island": 24,
+    "scrub": 251
+   }
+  },
+  "E8": {
+   "plants": 1711,
+   "beds": 113,
+   "byType": {
+    "box_ball": 284,
+    "laurel": 347,
+    "rhododendron": 335,
+    "hydrangea": 340,
+    "rose": 188,
+    "lavender": 177,
+    "bulbs": 40,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1592,
+    "park": 0,
+    "square": 0,
+    "island": 27,
+    "scrub": 92
+   }
+  },
+  "F8": {
+   "plants": 1140,
+   "beds": 83,
+   "byType": {
+    "box_ball": 210,
+    "laurel": 175,
+    "rhododendron": 209,
+    "hydrangea": 218,
+    "rose": 170,
+    "lavender": 115,
+    "bulbs": 43,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 976,
+    "park": 95,
+    "square": 17,
+    "island": 52,
+    "scrub": 0
+   }
+  },
+  "G8": {
+   "plants": 944,
+   "beds": 24,
+   "byType": {
+    "box_ball": 184,
+    "laurel": 154,
+    "rhododendron": 191,
+    "hydrangea": 201,
+    "rose": 113,
+    "lavender": 95,
+    "bulbs": 6,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 546,
+    "park": 398,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "H8": {
+   "plants": 1281,
+   "beds": 76,
+   "byType": {
+    "box_ball": 192,
+    "laurel": 286,
+    "rhododendron": 263,
+    "hydrangea": 246,
+    "rose": 152,
+    "lavender": 112,
+    "bulbs": 30,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1281,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "I8": {
+   "plants": 1094,
+   "beds": 62,
+   "byType": {
+    "box_ball": 156,
+    "laurel": 262,
+    "rhododendron": 253,
+    "hydrangea": 187,
+    "rose": 118,
+    "lavender": 91,
+    "bulbs": 27,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1079,
+    "park": 0,
+    "square": 0,
+    "island": 15,
+    "scrub": 0
+   }
+  },
+  "J8": {
+   "plants": 1264,
+   "beds": 46,
+   "byType": {
+    "box_ball": 187,
+    "laurel": 295,
+    "rhododendron": 279,
+    "hydrangea": 218,
+    "rose": 163,
+    "lavender": 115,
+    "bulbs": 7,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1264,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K8": {
+   "plants": 853,
+   "beds": 54,
+   "byType": {
+    "box_ball": 146,
+    "laurel": 189,
+    "rhododendron": 173,
+    "hydrangea": 146,
+    "rose": 107,
+    "lavender": 68,
+    "bulbs": 24,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 845,
+    "park": 8,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L8": {
+   "plants": 181,
+   "beds": 2,
+   "byType": {
+    "box_ball": 40,
+    "laurel": 29,
+    "rhododendron": 20,
+    "hydrangea": 44,
+    "rose": 14,
+    "lavender": 31,
+    "bulbs": 3,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 64,
+    "park": 117,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M8": {
+   "plants": 27,
+   "beds": 0,
+   "byType": {
+    "box_ball": 6,
+    "laurel": 4,
+    "rhododendron": 7,
+    "hydrangea": 4,
+    "rose": 4,
+    "lavender": 2,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 27,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "N8": {
+   "plants": 93,
+   "beds": 0,
+   "byType": {
+    "box_ball": 15,
+    "laurel": 12,
+    "rhododendron": 11,
+    "hydrangea": 24,
+    "rose": 20,
+    "lavender": 11,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 93,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "C9": {
+   "plants": 392,
+   "beds": 18,
+   "byType": {
+    "box_ball": 85,
+    "laurel": 80,
+    "rhododendron": 62,
+    "hydrangea": 78,
+    "rose": 35,
+    "lavender": 45,
+    "bulbs": 7,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 215,
+    "park": 140,
+    "square": 0,
+    "island": 37,
+    "scrub": 0
+   }
+  },
+  "D9": {
+   "plants": 1787,
+   "beds": 37,
+   "byType": {
+    "box_ball": 243,
+    "laurel": 448,
+    "rhododendron": 386,
+    "hydrangea": 347,
+    "rose": 162,
+    "lavender": 191,
+    "bulbs": 10,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 792,
+    "park": 666,
+    "square": 0,
+    "island": 0,
+    "scrub": 329
+   }
+  },
+  "E9": {
+   "plants": 1703,
+   "beds": 157,
+   "byType": {
+    "box_ball": 251,
+    "laurel": 320,
+    "rhododendron": 368,
+    "hydrangea": 298,
+    "rose": 200,
+    "lavender": 212,
+    "bulbs": 54,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1620,
+    "park": 0,
+    "square": 0,
+    "island": 24,
+    "scrub": 59
+   }
+  },
+  "F9": {
+   "plants": 3126,
+   "beds": 267,
+   "byType": {
+    "box_ball": 500,
+    "laurel": 525,
+    "rhododendron": 539,
+    "hydrangea": 638,
+    "rose": 455,
+    "lavender": 355,
+    "bulbs": 114,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 2459,
+    "park": 430,
+    "square": 175,
+    "island": 62,
+    "scrub": 0
+   }
+  },
+  "G9": {
+   "plants": 1682,
+   "beds": 55,
+   "byType": {
+    "box_ball": 321,
+    "laurel": 289,
+    "rhododendron": 308,
+    "hydrangea": 343,
+    "rose": 183,
+    "lavender": 223,
+    "bulbs": 15,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 722,
+    "park": 960,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "H9": {
+   "plants": 463,
+   "beds": 21,
+   "byType": {
+    "box_ball": 86,
+    "laurel": 107,
+    "rhododendron": 89,
+    "hydrangea": 80,
+    "rose": 60,
+    "lavender": 25,
+    "bulbs": 16,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 463,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "I9": {
+   "plants": 913,
+   "beds": 56,
+   "byType": {
+    "box_ball": 164,
+    "laurel": 202,
+    "rhododendron": 188,
+    "hydrangea": 154,
+    "rose": 106,
+    "lavender": 91,
+    "bulbs": 8,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 908,
+    "park": 1,
+    "square": 0,
+    "island": 4,
+    "scrub": 0
+   }
+  },
+  "J9": {
+   "plants": 730,
+   "beds": 36,
+   "byType": {
+    "box_ball": 109,
+    "laurel": 188,
+    "rhododendron": 163,
+    "hydrangea": 122,
+    "rose": 66,
+    "lavender": 60,
+    "bulbs": 22,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 730,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K9": {
+   "plants": 743,
+   "beds": 27,
+   "byType": {
+    "box_ball": 116,
+    "laurel": 173,
+    "rhododendron": 193,
+    "hydrangea": 117,
+    "rose": 87,
+    "lavender": 51,
+    "bulbs": 6,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 743,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L9": {
+   "plants": 56,
+   "beds": 1,
+   "byType": {
+    "box_ball": 8,
+    "laurel": 11,
+    "rhododendron": 15,
+    "hydrangea": 14,
+    "rose": 5,
+    "lavender": 3,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 56,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M9": {
+   "plants": 15,
+   "beds": 0,
+   "byType": {
+    "box_ball": 2,
+    "laurel": 3,
+    "rhododendron": 0,
+    "hydrangea": 5,
+    "rose": 4,
+    "lavender": 1,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 15,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "N9": {
+   "plants": 123,
+   "beds": 0,
+   "byType": {
+    "box_ball": 33,
+    "laurel": 21,
+    "rhododendron": 13,
+    "hydrangea": 25,
+    "rose": 21,
+    "lavender": 10,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 123,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "O9": {
+   "plants": 326,
+   "beds": 0,
+   "byType": {
+    "box_ball": 75,
+    "laurel": 62,
+    "rhododendron": 58,
+    "hydrangea": 64,
+    "rose": 33,
+    "lavender": 34,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 326,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "D10": {
+   "plants": 604,
+   "beds": 40,
+   "byType": {
+    "box_ball": 93,
+    "laurel": 115,
+    "rhododendron": 157,
+    "hydrangea": 95,
+    "rose": 74,
+    "lavender": 54,
+    "bulbs": 16,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 604,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "E10": {
+   "plants": 1010,
+   "beds": 71,
+   "byType": {
+    "box_ball": 180,
+    "laurel": 188,
+    "rhododendron": 211,
+    "hydrangea": 172,
+    "rose": 150,
+    "lavender": 85,
+    "bulbs": 24,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 999,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 11
+   }
+  },
+  "F10": {
+   "plants": 226,
+   "beds": 11,
+   "byType": {
+    "box_ball": 37,
+    "laurel": 50,
+    "rhododendron": 40,
+    "hydrangea": 37,
+    "rose": 37,
+    "lavender": 16,
+    "bulbs": 9,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 226,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "G10": {
+   "plants": 827,
+   "beds": 37,
+   "byType": {
+    "box_ball": 126,
+    "laurel": 176,
+    "rhododendron": 179,
+    "hydrangea": 158,
+    "rose": 97,
+    "lavender": 77,
+    "bulbs": 14,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 827,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "H10": {
+   "plants": 711,
+   "beds": 29,
+   "byType": {
+    "box_ball": 118,
+    "laurel": 157,
+    "rhododendron": 146,
+    "hydrangea": 149,
+    "rose": 73,
+    "lavender": 52,
+    "bulbs": 16,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 711,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "I10": {
+   "plants": 1689,
+   "beds": 93,
+   "byType": {
+    "box_ball": 256,
+    "laurel": 417,
+    "rhododendron": 339,
+    "hydrangea": 312,
+    "rose": 197,
+    "lavender": 151,
+    "bulbs": 17,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 1689,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "J10": {
+   "plants": 959,
+   "beds": 51,
+   "byType": {
+    "box_ball": 134,
+    "laurel": 214,
+    "rhododendron": 233,
+    "hydrangea": 162,
+    "rose": 124,
+    "lavender": 61,
+    "bulbs": 31,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 959,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K10": {
+   "plants": 321,
+   "beds": 21,
+   "byType": {
+    "box_ball": 52,
+    "laurel": 72,
+    "rhododendron": 59,
+    "hydrangea": 67,
+    "rose": 50,
+    "lavender": 16,
+    "bulbs": 5,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 321,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L10": {
+   "plants": 69,
+   "beds": 0,
+   "byType": {
+    "box_ball": 8,
+    "laurel": 20,
+    "rhododendron": 17,
+    "hydrangea": 21,
+    "rose": 3,
+    "lavender": 0,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 69,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M10": {
+   "plants": 217,
+   "beds": 0,
+   "byType": {
+    "box_ball": 37,
+    "laurel": 43,
+    "rhododendron": 44,
+    "hydrangea": 44,
+    "rose": 36,
+    "lavender": 13,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 217,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "N10": {
+   "plants": 27,
+   "beds": 0,
+   "byType": {
+    "box_ball": 9,
+    "laurel": 6,
+    "rhododendron": 4,
+    "hydrangea": 3,
+    "rose": 4,
+    "lavender": 1,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 27,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "O10": {
+   "plants": 137,
+   "beds": 0,
+   "byType": {
+    "box_ball": 45,
+    "laurel": 20,
+    "rhododendron": 14,
+    "hydrangea": 24,
+    "rose": 15,
+    "lavender": 19,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 137,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "H11": {
+   "plants": 0,
+   "beds": 0,
+   "byType": {
+    "box_ball": 0,
+    "laurel": 0,
+    "rhododendron": 0,
+    "hydrangea": 0,
+    "rose": 0,
+    "lavender": 0,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 0,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "I11": {
+   "plants": 33,
+   "beds": 0,
+   "byType": {
+    "box_ball": 4,
+    "laurel": 13,
+    "rhododendron": 9,
+    "hydrangea": 5,
+    "rose": 0,
+    "lavender": 2,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 33,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "J11": {
+   "plants": 164,
+   "beds": 2,
+   "byType": {
+    "box_ball": 22,
+    "laurel": 45,
+    "rhododendron": 38,
+    "hydrangea": 28,
+    "rose": 18,
+    "lavender": 13,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 164,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K11": {
+   "plants": 678,
+   "beds": 12,
+   "byType": {
+    "box_ball": 103,
+    "laurel": 170,
+    "rhododendron": 153,
+    "hydrangea": 104,
+    "rose": 85,
+    "lavender": 59,
+    "bulbs": 4,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 678,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L11": {
+   "plants": 42,
+   "beds": 1,
+   "byType": {
+    "box_ball": 13,
+    "laurel": 7,
+    "rhododendron": 3,
+    "hydrangea": 10,
+    "rose": 7,
+    "lavender": 2,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 42,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M11": {
+   "plants": 254,
+   "beds": 0,
+   "byType": {
+    "box_ball": 86,
+    "laurel": 13,
+    "rhododendron": 26,
+    "hydrangea": 61,
+    "rose": 36,
+    "lavender": 32,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 254,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "N11": {
+   "plants": 69,
+   "beds": 0,
+   "byType": {
+    "box_ball": 16,
+    "laurel": 16,
+    "rhododendron": 9,
+    "hydrangea": 13,
+    "rose": 13,
+    "lavender": 2,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 69,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "O11": {
+   "plants": 10,
+   "beds": 0,
+   "byType": {
+    "box_ball": 4,
+    "laurel": 2,
+    "rhododendron": 0,
+    "hydrangea": 2,
+    "rose": 0,
+    "lavender": 2,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 10,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "K12": {
+   "plants": 386,
+   "beds": 0,
+   "byType": {
+    "box_ball": 67,
+    "laurel": 102,
+    "rhododendron": 95,
+    "hydrangea": 68,
+    "rose": 31,
+    "lavender": 23,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 386,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "L12": {
+   "plants": 659,
+   "beds": 0,
+   "byType": {
+    "box_ball": 199,
+    "laurel": 85,
+    "rhododendron": 72,
+    "hydrangea": 126,
+    "rose": 94,
+    "lavender": 83,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 659,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  },
+  "M12": {
+   "plants": 125,
+   "beds": 0,
+   "byType": {
+    "box_ball": 35,
+    "laurel": 16,
+    "rhododendron": 13,
+    "hydrangea": 24,
+    "rose": 24,
+    "lavender": 13,
+    "bulbs": 0,
+    "geranium": 0
+   },
+   "byZone": {
+    "front": 125,
+    "park": 0,
+    "square": 0,
+    "island": 0,
+    "scrub": 0
+   }
+  }
+ },
+ "total": {
+  "plants": 93373,
+  "beds": 5386,
+  "byType": {
+   "box_ball": 15171,
+   "laurel": 19520,
+   "rhododendron": 19346,
+   "hydrangea": 17529,
+   "rose": 11011,
+   "lavender": 8885,
+   "bulbs": 1911,
+   "geranium": 0
+  },
+  "byZone": {
+   "front": 78683,
+   "park": 11166,
+   "square": 749,
+   "island": 1172,
+   "scrub": 1603
+  }
+ }
+}

@@ -3,6 +3,7 @@
 //               the player's car (its type from the fleet when it is a faceted pack car)
 //   furniture2  benches, bike boxes, bins, glass banks          stops   the shelters (roof glass included), ad panels
 //   gardens     coping stones, pillar caps (stretched pieces: directional edge distance), hedge tops (lumpy)
+//   plants      the shrubs' far shells (box balls, laurels, rhododendrons, hydrangeas: lumpy, viewer/plants/)
 // Baked lazily when snow first lies (one model per frame), drawn only while there is snow; the static families are
 // re-gathered every 0.4 s / 3 m of camera travel, the moving cars every frame.
 import * as THREE from "three/webgpu";
@@ -20,6 +21,7 @@ const FAMILY = {
 const FURN = ["bench_street", "bench_park", "bench_backless", "bikebox", "bin_round", "bin_column", "glassbank"];
 const STOPS = ["shelter", "adpanel"];
 const GARDEN = { cap: "wall", pcap: "wall", hedge: "hedge" };
+const PLANT_CAPS = ["box_ball", "laurel", "rhododendron", "hydrangea"], R_PLANT = 40;     // (the small bed plants: their own white crown is enough)
 
 export function createCityCaps({ group, getMovers, kits = {} }) {
   if (!CAPS_ON) return null;
@@ -107,6 +109,22 @@ export function createCityCaps({ group, getMovers, kits = {} }) {
           const s = setFor(key);
           if (!s) { if (!sets.has(key)) want(key, fam, [GA.kit.pieces[p].lods[0]]); break; }
           s.push(a, o);
+        }
+      }
+    }
+    // plants (viewer/plants/cityPlants.js): the shrubs' far shells carry a lumpy cap (x y z yaw scale rnd end, stride 7)
+    const PL = kits.plants?.();
+    if (PL?.lib && PL.tiles) {
+      for (const t of PL.tiles.values()) for (const p of PLANT_CAPS) {
+        const a = t.per?.[p]; if (!a) continue;
+        const key = `plant:${p}`;
+        for (let o = 0; o < a.length; o += 7) {
+          if (!near(a[o], a[o + 2], R_PLANT)) continue;
+          const s = setFor(key);
+          if (!s) { if (!sets.has(key)) want(key, "hedge", [PL.lib.types[p].lods[2]]); break; }
+          const c = Math.cos(a[o + 3]), sn = Math.sin(a[o + 3]), k = a[o + 4];
+          M.set([c * k, 0, -sn * k, 0, 0, k, 0, 0, sn * k, 0, c * k, 0, a[o], a[o + 1], a[o + 2], 1]);
+          s.push(M);
         }
       }
     }
