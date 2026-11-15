@@ -262,14 +262,14 @@ export function wallMaterial(opts = {}) {
   const pulseY = (a, b, w) => clamp(min(yl.add(w.mul(0.5)), b).sub(max(yl.sub(w.mul(0.5)), a)), 0.0, 1e3).div(max(w, 0.0001));
   const winTopAbs = mix(yb.mul(G), G.add(fl.sub(1).add(yb).mul(S)), up);
   const isLM = band(style, 6).toVar();                                          // landmark (church, chapel...)
+  const cel = CELLAR ? attribute("aCel", "float") : null;
   const ok = float(1).sub(party).mul(float(1).sub(isLM)).mul(float(1).sub(par)).mul(step(float(1.6), fw)).mul(step(float(2.8), eh))
     .mul(step(winTopAbs.add(0.35), eh))                                          // the whole window fits under the eaves
-    .mul(step(0.0, gx)).mul(step(gx, nb)).toVar();
-  // joins2 (CELLAR): the grid ran on UNDER the ground-floor line on a downhill wall: windows of storey -1 / -2 cut by the
-  // ground or half buried in the plinth. A row under the line now stands only if its window clears the ground at its
-  // highest point along the face (aCel) by 0.3 m: a real lower-ground floor; else the soupiraux below take over
-  const cel = CELLAR ? attribute("aCel", "float") : null;
-  if (CELLAR) ok.assign(ok.mul(select(fl.lessThan(0.0), step(cel.negate().add(0.3), fl.add(ya).mul(G)), float(1))));
+    .mul(step(0.0, gx)).mul(step(gx, nb))
+    // joins2 (CELLAR): the grid ran on UNDER the ground-floor line on a downhill wall: windows of storey -1 / -2 cut by the
+    // ground or half buried in the plinth. A row under the line now stands only if its window clears the ground at its
+    // highest point along the face (aCel) by 0.3 m: a real lower-ground floor; else the soupiraux below take over
+    .mul(CELLAR ? select(fl.lessThan(0.0), step(cel.negate().add(0.3), fl.add(ya).mul(G)), float(1)) : float(1)).toVar();
   // the front door replaces one ground-floor window on a street face
   const doorBay = floor(rnd.mul(nb));
   // the kit's faces (aKit): z = 1 no door on this face (the house's door is on its widest street face: a window here),
