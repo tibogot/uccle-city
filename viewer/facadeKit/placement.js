@@ -29,6 +29,12 @@
 //   overlaps the next run (docs/CITY_MESH_AUDIT.md: the city's own box cornices flicker exactly there). A free end stops
 //   2 mm short. The old cornice corner piece (cornCorner, 4 mm overlaps on both runs) is no longer placed.
 import { faceOpenings, storeyFit } from "../interior/facadeWindows.js";
+// BUILDING TYPES (viewer/buildingTypes.js, docs/STYLES.md): f.type 1 (maison de maître) and 5 (villa) and 0 (generic)
+// take the kit, with their own odds (balconies / oriels / string courses on the maisons de maître, shutters / dormers /
+// the sectional GARAGE door on the villas); the interwar, post-war and block fronts (2-4) stay painted: the kit's
+// pieces are 19th-century joinery and stone. The maison de maître's door stands 0.51 m up (TYPE_GRID raise): its steps
+// start there. aKitF.w + 1024 = the maison de maître's window grid (kitMaterials.js glass).
+import { TYPE, TYPE_GRID } from "../buildingTypes.js";
 
 export const STRIDE = 14;
 export const FRENCH_SILL = 0.06;               // a French window's opening starts this far over its storey floor
@@ -80,9 +86,10 @@ export function kitCollector(opts = {}) {
   };
   const styleOf = new Map();
 
-  function buildingStyle(key, wallStyle, rq) {
+  function buildingStyle(key, wallStyle, rq, type = 0) {
     let s = styleOf.get(key);
     if (s) return s;
+    const maitre = type === TYPE.MAITRE, villa = type === TYPE.VILLA;
     const brick = wallStyle <= 2.5;
     const r = h01(key + "|kit"), r2 = h01(key + "|kit2"), r3 = h01(key + "|kit3");
     const win = brick && r < 0.55 ? "winB" : "winA";
@@ -93,18 +100,20 @@ export function kitCollector(opts = {}) {
     // (round 3) the door by period / front: brick fronts mostly 1890-1914 (A, B, Art Nouveau), yellow brick and render
     // more Art Deco and 1960s
     const yellow = Math.abs(wallStyle - 2) < 0.5, render = !brick;
-    const doors = render ? [["doorB", 0.28], ["doorDeco", 0.26], ["doorModern", 0.24], ["doorA", 0.12], ["doorNouveau", 0.1]]
+    const doors = maitre ? [["doorA", 0.42], ["doorNouveau", 0.24], ["doorB", 0.22], ["doorDeco", 0.12]]
+      : villa ? [["doorB", 0.3], ["doorModern", 0.25], ["doorA", 0.2], ["doorDeco", 0.15], ["doorNouveau", 0.1]]
+      : render ? [["doorB", 0.28], ["doorDeco", 0.26], ["doorModern", 0.24], ["doorA", 0.12], ["doorNouveau", 0.1]]
       : yellow ? [["doorDeco", 0.34], ["doorA", 0.24], ["doorB", 0.18], ["doorModern", 0.14], ["doorNouveau", 0.1]]
       : [["doorA", 0.4], ["doorB", 0.2], ["doorNouveau", 0.16], ["doorDeco", 0.14], ["doorModern", 0.1]];
     let acc = 0, door = doors[0][0];
     for (const [d, p] of doors) { acc += p; if (r3 < acc) { door = d; break; } }
-    const balcony = h01(key + "|bal") < 0.35;
-    s = { win, variant, door, soup: h01(key + "|soup") < 0.6, balcony,
-      bay: balcony && h01(key + "|bay") < 0.4,                         // a bay window (oriel) instead of the French window
+    const balcony = h01(key + "|bal") < (maitre ? 0.6 : villa ? 0.15 : 0.35);
+    s = { win, variant, door, soup: h01(key + "|soup") < (maitre ? 0.85 : villa ? 0.3 : 0.6), balcony,
+      bay: balcony && h01(key + "|bay") < (maitre ? 0.45 : 0.4),       // a bay window (oriel) instead of the French window
       stained: win === "winA" && h01(key + "|stain") < 0.4,            // window C (leaded transom) on the ground floor
-      shutters: render && h01(key + "|shut") < 0.35,                   // villas / rendered houses
-      band: h01(key + "|band") < 0.5, dormer: h01(key + "|dorm") < 0.5,
-      modillions: h01(key + "|mod") < 0.6, seed: h01(key + "|seed") };
+      shutters: render && h01(key + "|shut") < (villa ? 0.6 : 0.35),   // villas / rendered houses
+      band: h01(key + "|band") < (maitre ? 0.85 : villa ? 0.3 : 0.5), dormer: h01(key + "|dorm") < (villa ? 0.8 : 0.5),
+      modillions: h01(key + "|mod") < (maitre ? 0.85 : villa ? 0.3 : 0.6), seed: h01(key + "|seed") };
     styleOf.set(key, s);
     return s;
   }
@@ -117,6 +126,8 @@ export function kitCollector(opts = {}) {
   function face(f) {
     const off = { on: 0, rise: 0, doorless: 0, french: 0 };
     if (!f.street || f.landmark || f.partyH >= 999 || f.wallStyle > 4.5 || f.building.height > MAX_H) return off;
+    const type = f.type | 0;
+    if (type === TYPE.DECO || type === TYPE.BELETAGE || type === TYPE.BLOCK) return off;
     if (exclude.has(f.key) || (only && !only.has(f.key))) return off;
     if (f.width < 2.2 || f.eaves < 2.8) return off;
     const fr = Math.fround;
@@ -124,10 +135,11 @@ export function kitCollector(opts = {}) {
     // one front door per house: on its widest street face; the others get a window in that bay (the kit walls paint
     // a window there too: aKit.z)
     const doorStreet = f.street && f.doorFace !== false ? 1 : 0;
-    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: doorStreet, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU), fit });
+    const ops = faceOpenings({ width: fr(f.width), eaves: fr(f.eaves), partyH: fr(f.partyH), street: doorStreet, rnd, landmark: false, shop: fr(f.shopW), shopU: fr(f.shopU), fit, type, garage: f.garage });
     // the face's storeys (docs/STOREYS.md: fitted to its height): the first floor line, and k for the kit glass (aKitF.y)
-    const sf = storeyFit(fr(f.eaves), fit), bandY = BAND_Y * sf.k;
-    const S = buildingStyle(f.key, f.wallStyle, Math.floor(rnd * 4096 + 0.5) / 4096);
+    const sf = storeyFit(fr(f.eaves), fit, type), bandY = BAND_Y * sf.k;
+    const S = buildingStyle(f.key, f.wallStyle, Math.floor(rnd * 4096 + 0.5) / 4096, type);
+    const raise = fr(TYPE_GRID[type][6]);
     const rise = S.win === "winB" ? WINDOW_RISE : 0;
     // the French window: the first floor's middle window of a building with a balcony; its opening runs down to the
     // storey's floor (+ FRENCH_SILL)
@@ -153,7 +165,7 @@ export function kitCollector(opts = {}) {
     for (const o of ops) {
       const top = o.h1 + (o.kind === "window" ? rise : 0) + (o.kind === "bay" ? 0.62 : 0);
       const pts = [[o.u0 + 0.01, o.h0 + 0.01], [o.u1 - 0.01, o.h0 + 0.01], [o.u0 + 0.01, top - 0.01], [o.u1 - 0.01, top - 0.01], [(o.u0 + o.u1) / 2, (o.h0 + top) / 2]];
-      if (o.kind === "door") { pts[0][1] = 0.05; pts[1][1] = 0.05; }
+      if (o.kind === "door" || o.kind === "garage") { pts[0][1] = 0.05; pts[1][1] = 0.05; }
       if (o.kind === "bay") { pts[0][0] -= 0.6; pts[2][0] -= 0.6; pts[1][0] += 0.6; pts[3][0] += 0.6; pts[0][1] -= 0.65; pts[1][1] -= 0.65; }   // the bay's whole wall footprint
       // an opening wholly OFF the face's triangles (a stepped wall, an annex, a gable above) is painted nowhere: ignore
       // it; one PARTLY on the face (the shader paints a part of it) keeps the whole face painted
@@ -169,7 +181,7 @@ export function kitCollector(opts = {}) {
     }
     stats.faces++;
     // aKitF.y = width + 256 x (128 k - 100): the storey scale k (a multiple of 1/128, 0.87-1.2) for the glass's grid
-    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rnd + 2 * doorStreet + 4 * frCode];
+    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rnd + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S.seed;
     const gaps = [];                                                  // plinth gaps along u
@@ -181,6 +193,12 @@ export function kitCollector(opts = {}) {
       const uc = (o.u0 + o.u1) / 2, w = o.u1 - o.u0, h = o.h1 - o.h0;
       const [x, z] = W(uc, d);
       const y = f.base + o.h0;
+      if (o.kind === "garage") {
+        // (styles) the sectional garage door (fixes1's piece) in the villa's garage opening; the plinth stops at it
+        put("garage", x, y, z, f.nx, f.nz, w, h, 0, seed);
+        gaps.push([uc - w / 2 - 0.25, uc + w / 2 + 0.25]);
+        continue;
+      }
       if (o.kind === "door") {
         put(S.door, x, y, z, f.nx, f.nz, w, h, S.variant, seed);
         const sur = { doorA: 0.24, doorNouveau: 0.29, doorDeco: 0.18, doorModern: 0.1 }[S.door] ?? 0.17;
@@ -196,12 +214,15 @@ export function kitCollector(opts = {}) {
         // step never floats over a falling pavement
         if (opts.ground) {
           const g = opts.ground(x + f.nx * 0.6, z + f.nz * 0.6);
-          const n = Math.max(0, Math.min(3, Math.round((f.base - g) / 0.17)));
+          const n = Math.max(0, Math.min(3 + Math.round(raise / 0.17), Math.round((f.base + raise - g) / 0.17)));
           for (let k = 1; k <= n; k++) {
-            const top = f.base - 0.17 * (k - 1) - 0.06;
+            const top = f.base + raise - 0.17 * (k - 1) - 0.06;
             const gk = Math.max(opts.ground(x + f.nx * (0.3 * k + 0.15) - f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) + f.nx * 0.5), opts.ground(x + f.nx * (0.3 * k + 0.15) + f.nz * 0.5, z + f.nz * (0.3 * k + 0.15) - f.nx * 0.5));
             if (top < gk + 0.04) { stats.stepsDropped = (stats.stepsDropped || 0) + n - k + 1; break; }
-            put("step", x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed);
+            // (a step is packed as a RUN (kit.json kind "run"): kitField reads its end mitres from the spare and F[0], which
+            // held the face's u0 (hundreds of m): its end rings sheared into a long band across Place Saint-Job once the
+            // raised doors put steps everywhere. Its mitres are 0: square ends)
+            (out.step ??= []).push(x + f.nx * 0.3 * k, top, z + f.nz * 0.3 * k, f.nx, f.nz, 1.5, 0.17, 0, seed, 0, 0, 0, 0, 0);
           }
         }
         continue;

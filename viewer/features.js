@@ -175,6 +175,7 @@ export const FEATURES = [
   old("groundweld", "ab", "terrain weld", "Terrain beside streets / paths raised to the highest edge within reach, as before (terrain drew over climbing park paths in a saw-tooth); default: the nearest edge, docs/JOINS2.md.", { sub: "Places & assets" }),
   old("groundsdf", "ab", "ground cover edges", "Land-cover edges (paths, woods, sand, water) from the 1 m coverage mask as before (stair-stepped); default: distance fields, docs/JOINS2.md.", { sub: "Places & assets" }),
   old("groundfit", "ab", "ground fit", "Façades' ground-floor line before (docs/GROUND_FIT.md).", { sub: "Places & assets" }),
+  old("styles", "ab", "building types", "Façades before the building types (maison de maître, art deco, bel-étage, blocks, villas): one generic façade for every house (docs/STYLES.md).", { sub: "Places & assets" }),
   old("storeys", "ab", "fitted storeys", "Façade storeys before: fixed 3.4 / 3.0 m, a storey dropped when it missed the eaves (docs/STOREYS.md).", { sub: "Places & assets" }),
   old("sky", "ab", "old sky", "The sky before Firmament.", { sub: "Look" }),
   old("skyground", "ab", "sky ground albedo", "Firmament's ground albedo before.", { sub: "Look" }),

@@ -226,10 +226,12 @@ export function kitGlassMaterial(lod, opts = {}) {
   const P = positionWorld;
   const u = P.x.mul(J.y.negate()).add(P.z.mul(J.x)).sub(F.x);   // t = (-nz, nx): facadeGeom.js
   const h = P.y.sub(F.z);
-  const fr = floor(F.w.div(4)), rest = F.w.sub(fr.mul(4)), street = floor(rest.div(2)), rnd = rest.sub(street.mul(2));
+  // (styles) aKitF.w + 1024: the maison de maître's window grid (placement.js; buildingTypes.js TYPE_GRID row 1)
+  const maitre = step(1023.5, F.w), Fw = F.w.sub(maitre.mul(1024));
+  const fr = floor(Fw.div(4)), rest = Fw.sub(fr.mul(4)), street = floor(rest.div(2)), rnd = rest.sub(street.mul(2));
   // aKitF.y = width + 256 x (128 k - 100): the face's storey scale k (placement.js; docs/STOREYS.md)
   const kq = floor(F.y.div(256)), fw = F.y.sub(kq.mul(256));
-  const g = paintedGlass({ u, h, fw, street, rnd, frCode: fr, k: STOREYS_OLD ? float(1) : kq.add(100).div(128) });
+  const g = paintedGlass({ u, h, fw, street, rnd, frCode: fr, k: STOREYS_OLD ? float(1) : kq.add(100).div(128), type: maitre });
   // (roomGlass 0: the plain dark glass of round 1, for A/B)
   const dark = LOOKS.glass_window(uv());
   m.colorNode = mix(dark.col, g.col, kitLook.roomGlass);

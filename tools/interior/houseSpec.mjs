@@ -31,7 +31,7 @@ for (let i = 0; i < nV; i++) {
   if (W.aBld[i * 4 + 3] !== rnd) continue;
   const nx = W.aFN[i * 4], nz = W.aFN[i * 4 + 1], width = W.aWall[i * 4 + 1];
   const k = `${nx.toFixed(4)}|${nz.toFixed(4)}|${width.toFixed(3)}`;
-  if (!faces.has(k)) faces.set(k, { nx, nz, width, eaves: W.aWall[i * 4 + 3], style: W.aBld[i * 4], partyH: W.aBld[i * 4 + 1], street: W.aBld[i * 4 + 2], shopU: W.aFN[i * 4 + 2], shop: W.aFN[i * 4 + 3], o: [0, 0], n: 0, top: -1e9, d: 0 });
+  if (!faces.has(k)) faces.set(k, { nx, nz, width, eaves: W.aWall[i * 4 + 3], style: W.aBld[i * 4], partyH: W.aBld[i * 4 + 1], street: Math.round(W.aBld[i * 4 + 2]) % 2, shopU: W.aFN[i * 4 + 2], shop: W.aFN[i * 4 + 3], o: [0, 0], n: 0, top: -1e9, d: 0 });
   const f = faces.get(k), u = W.aWall[i * 4];
   const tx = -nz, tz = nx, x = W.position[i * 3], z = W.position[i * 3 + 2];
   f.o[0] += x - tx * u; f.o[1] += z - tz * u; f.n++; f.top = Math.max(f.top, W.position[i * 3 + 1]);
