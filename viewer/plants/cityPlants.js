@@ -28,8 +28,8 @@ const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/plants/", import.meta.url);
 /** LOD bands (m): [LOD0 -> 1, LOD1 -> 2, end]; the shrubs' end grows with their size (per instance) */
 const BANDS = {
-  box_ball: [4.5, 13, 55], laurel: [4.5, 15, 75], rhododendron: [4.5, 15, 75], hydrangea: [4.5, 14, 60], rose: [4.5, 13, 55],
-  lavender: [4.5, 10, 45], bulbs: [4.5, 9, 24], geranium: [4.5, 10, 42],
+  box_ball: [4, 10, 55], laurel: [4, 11, 75], rhododendron: [4, 11, 75], hydrangea: [4, 11, 60], rose: [4, 10, 55],
+  lavender: [4, 9, 45], bulbs: [4, 8, 24], geranium: [4, 9, 42],
 };
 const END_MAX = 95;
 const BOX_BAND = [22, 22, 130];
@@ -119,7 +119,7 @@ export const cityPlants = {
       const L = this.lib.types[t]; if (!L) continue;
       const [s1, s2] = BANDS[t];
       const live = [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, END_MAX]];
-      this.pools.push(makePool(t, [L.lods[0], L.lods[2] !== L.lods[1] ? (L.thin35 ||= thinLeaves(L.lods[0], 0.35)) : L.lods[1], L.lods[2]].map((g, k) => packPlant(g, k === 1 && L.lods[2] !== L.lods[1] ? L.lods[2] : null)), mats, live, plantAttrs, this.group, Math.max(1, L.height * 1.2)));
+      this.pools.push(makePool(t, [L.lods[0], L.lods[2] !== L.lods[1] ? (L.thin30 ||= thinLeaves(L.lods[0], 0.3)) : L.lods[1], L.lods[2]].map((g, k) => packPlant(g, k === 1 && L.lods[2] !== L.lods[1] ? L.lods[2] : null)), mats, live, plantAttrs, this.group, Math.max(1, L.height * 1.2)));
     }
     const kitAttrs = [["instanceMatrix", "instanceMatrix", 16], ["iKit", "iKit", 4], ["iBand", "iBand", 4]];
     this.pools.push(makePool("bed", [bedGeometry()], [bedMaterial()], [[0, BED_END]], kitAttrs, this.group, 2.5));
@@ -151,7 +151,7 @@ export const cityPlants = {
       // drawn (its plants stay, and the grass)
       if (lift - low > 0.14) continue;
       // columns: x = the bed's length axis (with its slope), y up, z = its width axis (with its slope)
-      beds.push([c * L, gu, s * L, 0, 0, 1, 0, 0, -s * W, gv, c * W, 0, cx, y0 + lift - 0.012, cz, 1], h01(cx, cz, 3));
+      beds.push([c * L, gu, s * L, 0, 0, 1, 0, 0, -s * W, gv, c * W, 0, cx, y0 + lift - 0.03, cz, 1], h01(cx, cz, 3));
     }
     if (cache) doc.__beds = beds;
     return beds;

@@ -9,8 +9,8 @@ self.onmessage = (e) => {
   const t0 = performance.now();
   const L = [], S = [];
   for (const w of walls) {
-    // the city: one spray per 11 cm cell, 36 cm sprays (the lab: 2 per 6 cm, 24 cm: ~6x the overdraw on a covered wall)
-    const g = growIvyData({ width: w.w, height: w.h }, { ...w.g, leafCell: 0.11, perCellMax: 1 });
+    // the city: one spray per 13 cm cell, 40 cm sprays (the lab: 2 per 6 cm, 24 cm: ~6x the overdraw on a covered wall)
+    const g = growIvyData({ width: w.w, height: w.h }, { ...w.g, leafCell: 0.13, perCellMax: 1 });
     const [ox, oy, oz] = w.o, [tx, tz] = w.t, [nx, nz] = w.n, out0 = w.out || 0, fence = w.f === 2 ? 1 : 0;
     const P = (u, v, out) => [ox + tx * u + nx * out, oy + v, oz + tz * u + nz * out];
     for (const l of g.leaves) {

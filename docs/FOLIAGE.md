@@ -213,3 +213,101 @@ Weak (polish): where the ivy is sparse at its edge the mantle shows as flat dark
 adventitious rootlets; the ivy on the façade is still one plane (no wrap onto the reveal / round the corner); hedge
 tops at grazing angles still sparkle (leaf noise, unchanged); no mesh audit for the ivy (procedural ribbons + cards).
 
+
+## 10. City (branch `claude/plants`, 2026-11-15): plants, beds, window boxes, ivy ON by default
+
+Switches: `?plants=0` (all of it), `?ivy=0`, `?windowboxes=0`, `?hedgemip=old` (the garden hedges' old leaf grain);
+rows in `viewer/features.js` (dev panel, section World / City).
+
+### What is in the city and where it comes from
+
+| kind | count (120 tiles) | placement data | rules (seeded by world position) |
+|---|---|---|---|
+| shrubs (box ball, laurel, rhododendron, hydrangea, rose, lavender) | 89,225 plants in all | the LiDAR canopy height model (UrbIS DSM - DTM 2021, 0.5 m): 0.35-3.2 m over the orthophoto's green = a real shrub mass, outside tree crowns (features.json trees), filled blob by blob at ~its own size | species by measured height and zone; scale = measured height / model height (rose / lavender <= 1.15) |
+| bed plants (hydrangea, rose, lavender, box, spring bulbs, rhododendron) | (in the 89 k) | front-garden ground within 1.6 m of a façade, green, low CHM; squares / islands where green and low | 45 % of fronts get a façade bed; squares 50 % / islands 30 % of green blobs |
+| mulch beds | 5,638 | the bed blobs above (PCA strips <= 4 m), plus one under every shrub blob on a square / island | a plant on a paved square or island stands in a bed or not at all; no bed without plants |
+| shrub rows behind railings | (in the 89 k) | the front-garden kit's railings (data/gardens) | 30 % of the runs, 0.55 m behind the bars |
+| window boxes + geraniums | 393 boxes / 1,419 geraniums on the 7 tiles round I6 | the façade kit's own sills (B.kit `sill`: the windows the city draws) | maisons de maître 30 % of houses, other kit fronts 9 %; floors 0-2; 60 % / 85 % of the house's windows |
+| ivy | 6,166 walls (792 blind, 4,089 side / back, 1,285 fronts) incl. 1,891 garden-wall pieces; 2,328 railing climbers | the façade analysis (analyseBuildings + faceOpenings: the painted / kit windows are cut out), the gardens kit's brick walls >= 0.7 m and railings | blind wall 15 %, side 4.5 %, street front 2.5 % (old types 5 %), garden wall runs 25 %, railings 10 % |
+
+Zones (`tools/plants/build_plants.py`): front (private land within 16 m of a UrbIS street surface), park (OSM park /
+garden / cemetery), square (UrbIS class 4, green), island (class 6, green), scrub (OSM natural=scrub). Railway land
+(OSM rail +- 8 m), the gardens kit's walls / hedges / pillars, tree trunks and footprints are kept clear. Split:
+front 75,851, park 10,623, island 991, square 638, scrub 1,122. Data: `data/plants/<T>.json` (3 MB) +
+`<T>.ivy.json` (wall descriptors only, 2.8 MB: the ivy is GROWN in a worker at load, `viewer/plants/ivyWorker.js` ->
+`viewer/foliage/ivyGrow.js`, the lab's growth extracted to pure JS; the lab's `ivy.js` now uses it too).
+Build: `venv python tools/plants/build_plants.py --all --raw <main checkout>/data/raw` (~2 min), `node
+tools/plants/build_ivy.mjs --all` (~1 min).
+
+### How it is drawn (`viewer/plants/`)
+
+- `cityPlants.js`: one StreamPool per plant type x 3 LODs (viewer/instanceStream.js: 50 m cells, time-sliced gathers,
+  static buffers + update ranges, never DynamicDrawUsage, count-0 meshes hidden), ONE material per LOD for all 8
+  types (`plantMaterial.js`, per-type constants in uniform arrays) so `mergeStreamPools` makes ONE multi-draw object
+  per LOD; beds 1 draw, window boxes 2. LOD0 the Blender model to 4 m; LOD1 = leaf thinning to 30 % (the lab's
+  `thinLeaves`, exported) PLUS a dark inner crown (the far shell shrunk 24 %: the thinned crown shows foliage through
+  its gaps, not the street) to 9-11 m; LOD2 the far shell with lumps (radial noise displacement: no egg outline) and a
+  fragment leaf grain, to 45-90 m by size; per-pixel dithered hand-overs and tile fade. No shadow casting.
+- Vertex buffers: the GLB's uv1 / uv2 / uv3 / slot repacked into `pdat` + `pbase` (WebGPU allows 8 vertex buffers
+  with the instance columns; the first city run failed pipeline validation with 9).
+- `cityIvy.js`: two pools (leaf cards with the lab's ivy coverage-mip texture + alpha to coverage; stem ribbons to
+  12 m). City density: one 40 cm spray per 13 cm cell (the lab: two 24 cm per 6 cm, ~6x the overdraw). Far: density
+  by distance (kept while r < p(d), p 1 -> 0.3 between 14 and 45 m, survivors grown 1/sqrt(p)), dithered out 60-75 m.
+- `plantKit.js`: the mulch bed is a unit SUPERELLIPSE mound (48 outline points, smooth at any length / width: no
+  saw-tooth) with an 18 cm skirt; the grass bake takes the same outlines as solids (`cityGrass.addTile extraSolids`),
+  so the grass stops at the bed's own smooth edge. Window box: procedural planter (lip, soil, brackets), 6 paints.
+- Ground: plants and beds on the DRAWN ground (main.js `treeGround`: the measured squares / medians' lift); a plant
+  sinks 4 cm; a bed is a plane fit raised over the ground's bumps, dropped where the ground bends > 14 cm.
+  JOINS (`__plants.contact(tile, ground)`): 0 floating plants, 0 floating beds on I6 H5 I5 J5 H6.
+- Season: the city's day (`viewer/seasons/season.js`) now drives the foliage season month (plants AND the gardens'
+  hedges: beech brown in winter, hydrangea heads, bulbs in spring, geraniums cut back in winter; rhododendron and
+  laurel bloom tables of their own). Snow: up-facing crown whitening (season.uSnow) + snow caps on box / laurel /
+  rhododendron / hydrangea shells (`cityCaps.js`, family "hedge"); wet: `wxMat` on every plant / bed / box / ivy material.
+
+### Lab weak spots
+
+- **Dotty hedges up close** (fixed): the gardens hedge's leaf noise used `bias(1.5)` also when MAGNIFIED, so 1-2 m from
+  a hedge the leaves were the coarse mip's texels sharpened into square dots. Now the level = the footprint's own +
+  1.5, clamped at 0 (`?hedgemip=old` = before).
+- **Ivy columns** (fixed): the city ivy is grown with the lab's mound / spread / deflection rules
+  (`plants/after_ivy_wall_july.jpg`).
+- **Saw-tooth beds** (fixed): superellipse beds + the same outline in the grass bake.
+- **Lawn tips 10-20 m**: NOT addressed (the city grass is `viewer/grass/`, another system).
+
+### Cost (GPU p50 deltas, A/B alternated in one page: plants + ivy hidden / shown, 1600 x 828)
+
+Preflight RED for most of the session (another agent's city on the same GPU; 1.6 GB free): those runs swung +-4 ms
+and are discarded. One YELLOW run (CPU 16 %, 4.9 GB free, tab in front), 5 rounds:
+
+| view | off | on | delta (min .. max) |
+|---|---|---|---|
+| street level, Avenue Alphonse XIII | 12.03 | 12.53 | +0.50 (-1.18 .. +1.18) |
+| front garden close (1452, 716) | 10.49 | 11.42 | +0.93 (+0.06 .. +1.44) |
+| ivy wall at 12 m (7.4 k cards) | 8.54 | 9.51 | +0.97 (+0.33 .. +1.25) |
+| from the sky (160 m) | 7.69 | 7.72 | +0.03 |
+
+After it the LOD bands were tightened (LOD0 4 m, LOD1 9-11 m at 30 %) and the ivy thinned (13 cm cells, stems to 12 m):
+front-close plant triangles 292 k -> 234 k, ivy-wall cards 7.4 k -> 6.1 k; not re-measured (the tab could not stay in
+front: another Chrome user). **The <= 0.3 ms street-level target is NOT shown met: re-measure on GREEN.**
+Draws: plants 1-3 merged objects + beds 1 + boxes 2 + ivy 2. Streaming: max slice 0.6 ms (plants), 1.0 ms (ivy,
+on teleports). CPU per frame: the streamers' update + a season check every 60 frames.
+
+### Images (`docs/plants/`; before = `?plants=0`, same cameras, midday)
+
+`before_` / `after_` villa_front_july, villa_street_july, terrace_boxes_july, park_july (Observatory grounds),
+island_july (Chaussée de Saint-Job), square_july (Place Saint-Job), ivy_wall_july; seasons `after_villa_front_october`
+/ `_snow`, `after_island_october` / `_snow`, `after_ivy_wall_snow`; `after_sky_july` (nothing drawn from 160 m).
+
+Street View (look only, 56 Avenue Alphonse XIII, 04/2019): a 1.2 m clipped hedge on the line, then a CONTINUOUS
+2-3 m shrub mass behind it, ivy up a tree trunk. The city draws the hedge and separate shrubs on the lawn: villa
+gardens read too open ("ball garden"; the CHM is capped at 3.2 m, taller masses count as trees).
+
+### Weak spots
+
+- villa gardens: isolated round shrubs instead of continuous 2-4 m masses; far shells still blob-like at 15-30 m;
+  LOD1 + inner crown a little dark; the rose LOD0 is lanky close up; visible dither at the 4 m hand-over
+- squares: a mulch strip on cobbles is not a real planter (no kerb / raised edge); snow: a bed's rim reads as a slab
+- ivy: one plane per face (no wrap round corners); behind an annex it emerges at the roof line; 285 k stem pieces on 7
+  tiles (~18 MB of instance data); nothing beyond 75 m
+- window boxes only where the façade kit draws (none with `?kit=0` or on painted fronts)
+- GPU cost not measured on GREEN; no flicker test on the city views

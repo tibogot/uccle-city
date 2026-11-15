@@ -24,7 +24,7 @@ import { wxMat } from "../weather/cityWeatherize.js";
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/plants/", import.meta.url);
 export const ivyFades = new FadeSlots();
-export const IVY_END = 75, STEM_END = 16, THIN0 = 14, THIN1 = 45, KEEP_FAR = 0.3;
+export const IVY_END = 75, STEM_END = 12, THIN0 = 14, THIN1 = 45, KEEP_FAR = 0.3;
 
 function tileKeep(slot, n) {
   const f = ivyFades.fade(slot);
@@ -70,7 +70,7 @@ function cardMaterial() {
   const tilt = K.z.mul(0.6).add(0.25);
   const cardN = normalize(cn.mul(cos(tilt)).add(ay.mul(sin(tilt))));
   const cardY = normalize(cross(cardN, ax));
-  const size = float(0.36).mul(K.z.mul(0.5).add(0.75)).mul(grow).mul(select(fence, float(0.85), float(1)));
+  const size = float(0.4).mul(K.z.mul(0.5).add(0.75)).mul(grow).mul(select(fence, float(0.85), float(1)));
   const w = windAt(anchor.xz);
   const flick = sin(wind.uTime.mul(5.5).add(K.w.mul(40))).mul(w.z.mul(0.015).add(0.003));
   // (a dropped card collapses to its anchor: no fragment at all)
