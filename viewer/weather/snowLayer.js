@@ -12,7 +12,7 @@
 // cover (surfaceWeather.js) sits underneath and fills the cut. Normals from the neighbours' heights (smooth, no
 // facets), plus a footprint-faded micro bump and the same anti-aliased sparkle as the materials.
 import * as THREE from "three/webgpu";
-import { Fn, If, Discard, float, int, vec2, vec3, vec4, uniform, instancedArray, instanceIndex, varying, positionGeometry, positionWorld,
+import { attribute, Fn, If, Discard, float, int, vec2, vec3, vec4, uniform, instancedArray, instanceIndex, varying, positionGeometry, positionWorld,
   mix, smoothstep, clamp, max, min, normalize, length, select, fwidth, cameraViewMatrix, uint } from "three/tsl";
 import { wx } from "./weatherState.js";
 import { season } from "../seasons/season.js";
@@ -29,6 +29,13 @@ import { polishOld } from "../polish.js";
 const SOFT_EDGE = !polishOld("snowedge");
 
 const NSTAMP = 6;
+// perf pass 2 (docs/perf/AUDIT.md step 12, ?snowlod=old = every chunk at full resolution): the layer is 8 x 8 chunks of
+// 64^2 cells (262 k vertices, each reading 5 map texels + 5 track cells); the outer 48 chunks (past ~16 m of the
+// window's centre, which follows the camera) take every OTHER grid node (25 cm in the city: -56 % vertices). The
+// shader is the same (it finds a vertex's cell from its position). Seams: a full chunk's border vertex at an odd
+// node next to a coarse chunk is put on its two even neighbours' mean (snowStitch 1: along x, 2: along z), the line
+// the coarse edge draws, so no crack opens.
+const SNOW_LOD = !/[?&]snowlod=old(&|$)/.test(location.search);
 
 /** The track field (footprints / tyre tracks), one float per overhead cell. Create it BEFORE the materials when they
  *  should show tracks in thin snow too (weatherize({ track: trackSampler(field, map) })). */
@@ -117,16 +124,20 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   const nW = normalize(vec3(hL.sub(hR), uCell.mul(2), hU.sub(hD)));
   const hideOf = (X) => select(isCliff(X).or(X.d.lessThan(0.004)).or(X.s.x.lessThan(-1000)), float(1), float(0));
   const hide = hideOf(C);
+  // the seam stitch (SNOW_LOD): the mean of the two neighbours along the coarse chunk's edge, as their own vertices put them
+  const st = attribute("snowStitch", "float");
+  const yOf = (X) => (SOFT_EDGE ? X.s.x.add(hOf(X, float(0)).sub(X.s.x).mul(float(1).sub(hideOf(X)))) : hOf(X, float(0)));
+  const stitchY = (y) => (SNOW_LOD ? select(st.greaterThan(1.5), yOf(U).add(yOf(D)).mul(0.5), select(st.greaterThan(0.5), yOf(L).add(yOf(R)).mul(0.5), y)) : y);
   let vHide, cutAt;
   if (SOFT_EDGE) {
     // soft flag: 1 on a hidden vertex, (its hidden 4-neighbours) / 6 next to one; thickness x (1 - flag)^2 so the
     // surface meets the materials' own cover at the cut instead of ending in a 1-cell step
     const soft = max(hide, hide.mul(2).add(hideOf(L)).add(hideOf(R)).add(hideOf(U)).add(hideOf(D)).div(6));
     const keepT = float(1).sub(soft).pow(2);
-    mat.positionNode = vec3(positionGeometry.x, C.s.x.add(hC.sub(C.s.x).mul(keepT)).add(0.003), positionGeometry.z);
+    mat.positionNode = vec3(positionGeometry.x, stitchY(C.s.x.add(hC.sub(C.s.x).mul(keepT))).add(0.003), positionGeometry.z);
     vHide = varying(soft); cutAt = 0.42;
   } else {
-    mat.positionNode = vec3(positionGeometry.x, hC.add(0.003), positionGeometry.z);
+    mat.positionNode = vec3(positionGeometry.x, stitchY(hC).add(0.003), positionGeometry.z);
     vHide = varying(hide); cutAt = 0.001;
   }
   const vN = varying(nW), vTrack = varying(C.tr), vDepth = varying(C.d);
@@ -173,11 +184,27 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   let hMin = Infinity, hMax = -Infinity;
   for (let k = 0; k < N * N; k++) { const h = map.H[k]; if (h > -1000) { hMin = Math.min(hMin, h); hMax = Math.max(hMax, h); } }
   if (!(hMin < hMax)) { hMin = -100; hMax = 400; }
+  const coarse = (ci, cj) => SNOW_LOD && ci >= 0 && cj >= 0 && ci < CH && cj < CH && !(ci >= 2 && ci <= 5 && cj >= 2 && cj <= 5);
+  let verts = 0;
   for (let cj = 0; cj < CH; cj++) for (let ci = 0; ci < CH; ci++) {
     const n = Math.min(M + 1, N - ci * M), m = Math.min(M + 1, N - cj * M);
-    const g = new THREE.PlaneGeometry((n - 1) * cell, (m - 1) * cell, n - 1, m - 1).rotateX(-Math.PI / 2)
-      .translate(x0 + (ci * M + 0.5) * cell + (n - 1) * cell / 2, 0, z0 + (cj * M + 0.5) * cell + (m - 1) * cell / 2);
+    const st = coarse(ci, cj) ? 2 : 1;                       // node stride (the last chunk's odd last cell: under the rim's 0)
+    const sx = Math.floor((n - 1) / st), sz = Math.floor((m - 1) / st);
+    const g = new THREE.PlaneGeometry(sx * st * cell, sz * st * cell, sx, sz).rotateX(-Math.PI / 2)
+      .translate(x0 + (ci * M + 0.5) * cell + sx * st * cell / 2, 0, z0 + (cj * M + 0.5) * cell + sz * st * cell / 2);
     g.deleteAttribute("uv");
+    // the stitch flags of a full chunk's borders that meet a coarse chunk (odd global nodes only)
+    const S = new Float32Array(g.attributes.position.count);
+    if (st === 1) {
+      const pos = g.attributes.position;
+      for (let k = 0; k < pos.count; k++) {
+        const i = Math.round((pos.getX(k) - x0) / cell - 0.5), j = Math.round((pos.getZ(k) - z0) / cell - 0.5), li = i - ci * M, lj = j - cj * M;
+        if ((li === 0 && coarse(ci - 1, cj)) || (li === n - 1 && coarse(ci + 1, cj))) { if (j % 2) S[k] = 2; }
+        else if ((lj === 0 && coarse(ci, cj - 1)) || (lj === m - 1 && coarse(ci, cj + 1))) { if (i % 2) S[k] = 1; }
+      }
+    }
+    g.setAttribute("snowStitch", new THREE.BufferAttribute(S, 1));
+    verts += g.attributes.position.count;
     g.boundingBox = new THREE.Box3(new THREE.Vector3(x0 + ci * M * cell, hMin, z0 + cj * M * cell), new THREE.Vector3(x0 + (ci * M + n) * cell, hMax + 1.0, z0 + (cj * M + m) * cell));
     g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
     const c = new THREE.Mesh(g, mat);
@@ -185,6 +212,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     mesh.add(c);
   }
   geo.dispose();
+  mesh.userData.vertices = verts;
   mesh.position.set(map.uOrigin.value.x, 0, map.uOrigin.value.y);
   /** after a re-bake (the city): the boxes' height range per chunk from the new heights (frustum culling) */
   function refit() {
