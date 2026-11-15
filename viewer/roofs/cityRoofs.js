@@ -35,7 +35,7 @@ export const cityRoofs = {
     // perf pass 2 (docs/perf/AUDIT.md step 12): the 45 piece x LOD meshes as 4 multi-draw meshes (?roofmerge=old = before)
     this.merged = qs.get("roofmerge") !== "old" && multiDrawOK();
     if (this.merged) { this.multi = new RoofMulti(this.kit, this.group); PIECES.forEach((p, k) => this.pools.push(this.multi.pool(this.kit.pieces[p], k, ROOF_MARGIN))); }
-    else for (const p of PIECES) this.pools.push(new RoofPool(this.kit.pieces[p], this.kit.mats, this.group, ROOF_MARGIN));
+    else for (const p of PIECES) { const rp = new RoofPool(this.kit.pieces[p], this.kit.mats, this.group, ROOF_MARGIN); rp.stream.__mergeSeen = true; this.pools.push(rp); }   // (the old 45 meshes: not merged by the kits' merge either)
     this.streamer = new Streamer({ name: "roofs", pools: this.pools.map((p) => p.stream), fades: roofFades, budget: 0.3, margin: ROOF_MARGIN, trigger: ROOF_TRIGGER });
     updaters.push((eye, cam) => this.update(cam));
     for (const [name, t] of this.pending || []) this.addTile(name, t.kit, t.parent);

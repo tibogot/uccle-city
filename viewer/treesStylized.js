@@ -676,7 +676,7 @@ function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
   }
   /** every tile's update calls this; the first call of a frame does the work */
   function tick(p) {
-    const frame = renderer?.info.render.frame ?? -2;
+    const frame = renderer?.info.frame ?? -2;
     if (frame === lastFrame && frame !== -2) return;
     lastFrame = frame;
     if (!group.parent) for (const f of fields.values()) { let o = f.holder; while (o.parent) o = o.parent; if (o.isScene) { o.add(group); break; } }

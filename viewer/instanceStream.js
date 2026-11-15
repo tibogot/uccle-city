@@ -237,6 +237,9 @@ export class Streamer {
     frameBudget.spend(performance.now() - t0);
   }
   start(c) {
+    // perf pass 2 (docs/perf/AUDIT.md step 12): pools not seen yet have their meshes merged into multi-draw sets
+    // (viewer/multiDraw.js mergeStreamPools registers itself here; ?kitmerge=old / ?multidraw=0: not)
+    Streamer.merge?.(this.pools);
     this.dirty = false; this.seq++;
     this.jobCenter.copy(c);
     const seq = this.seq, list = [...this.tiles.values()];

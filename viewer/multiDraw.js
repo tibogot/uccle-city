@@ -15,7 +15,7 @@
 // Notes: renderer.info.render.drawCalls / triangles do not count indirect draws (r187 counts only direct ones): the
 // perf helpers count render objects (debug/drawBreakdown.js) and MultiDrawSet.stats() gives the GPU draw commands.
 import * as THREE from "three/webgpu";
-import { StreamPool } from "./instanceStream.js";
+import { StreamPool, Streamer } from "./instanceStream.js";
 
 const qs = new URLSearchParams(location.search);
 /** ?multidraw=0: every caller keeps its old one-mesh-per-piece pools (A/B) */
@@ -44,7 +44,7 @@ function mergeGeoms(geoms) {
     let v = 0;
     for (const [g] of live) {
       const src = g.attributes[a];
-      if (!src) { v += g.attributes.position.count; continue; }          // (a part without it: zeros, e.g. the stack's uv)
+      if (!src) { v += g.attributes.position.count; (out.userData.zeroFilled ||= new Set()).add(a); continue; }   // (a part without it: zeros, e.g. the stack's uv)
       if (src.itemSize !== w) throw new Error(`multiDraw: attribute ${a} missing / different in a part`);
       if (src.isInterleavedBufferAttribute) { for (let i = 0; i < src.count; i++) for (let c = 0; c < w; c++) arr[(v + i) * w + c] = src.getComponent(i, c); }
       else arr.set(src.array.subarray(0, src.count * w), v * w);
@@ -107,7 +107,7 @@ export class MultiDrawSet {
     mesh.userData.multiDraw = this;
     const v = { mesh, geo, ranges, indirect, shared: !!shareOf };
     // the pass's camera picks the records (ranges: this view's parts; a part not in the view has no records)
-    mesh.onBeforeRender = (renderer, scene, camera, geometry) => { geometry.indirectOffset = this.cull(camera, renderer.info.render.frame, v); };
+    mesh.onBeforeRender = (renderer, scene, camera, geometry) => { geometry.indirectOffset = this.cull(camera, renderer.info.frame, v); };
     this.views.push(v);
     return v;
   }
@@ -237,3 +237,69 @@ export class MultiStreamPool extends StreamPool {
     for (const m of this.meshes) { m.mesh.count = m.n; m.mesh.visible = m.n > 0; m.set.write(m.part, m.n, m.back, m.box, m.runs); }
   }
 }
+
+// ------------------------------------------------------------------------------------------------ any kit's pools
+/** ?kitmerge=old: the street kits (gardens, street kit, furniture, street life + shops, stops) keep one mesh per piece
+ *  and LOD */
+const KIT_MERGE = qs.get("kitmerge") !== "old";
+const defaultOnBeforeRender = THREE.Object3D.prototype.onBeforeRender;
+/**
+ * Merge the meshes of existing StreamPools (a kit's pools: one InstancedMesh per piece and LOD, sharing a material per
+ * LOD) into multi-draw sets: one per (material, shadow flags, render order, instance columns), when at least two meshes
+ * share it. Left alone: transparent materials (sorted per object), meshes with instance colours, morphs, their own
+ * onBeforeRender, or geometries that do not merge. The original meshes leave the scene but stay the pools' (and the
+ * kits' stats') mesh objects: count / visible keep being written. Called by Streamer.start (viewer/instanceStream.js)
+ * on pools it has not seen.
+ */
+export function mergeStreamPools(pools) {
+  if (!KIT_MERGE || !multiDrawOK()) return 0;
+  const groups = new Map();
+  for (const p of pools) {
+    if (p.__mergeSeen || p instanceof MultiStreamPool) continue;
+    p.__mergeSeen = true;
+    for (const m of p.meshes) {
+      const o = m.mesh;
+      if (!o?.isInstancedMesh || !o.parent || Array.isArray(o.material) || o.material.transparent || o.instanceColor || Object.keys(o.geometry.morphAttributes).length || o.onBeforeRender !== defaultOnBeforeRender) continue;
+      const key = [o.material.uuid, o.castShadow, o.receiveShadow, o.renderOrder, o.layers.mask, m.attrs.map(([a, , w]) => `${a}:${w}`).join(",")].join("|");
+      let g = groups.get(key); if (!g) groups.set(key, (g = []));
+      g.push({ p, m });
+    }
+  }
+  let merged = 0;
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const o0 = list[0].m.mesh;
+    let set, view;
+    try {
+      set = new MultiDrawSet({ name: `${o0.name}:merged`, parts: list.length, attrs: list[0].m.attrs.map(([a, , w]) => [a, w]), cap0: 64 });
+      view = set.addView({ geoms: list.map((e) => e.m.mesh.geometry), material: o0.material, castShadow: o0.castShadow, receiveShadow: o0.receiveShadow, renderOrder: o0.renderOrder, name: `${o0.name.replace(/-lod\d$/, "")}:merged(${list.length})` });
+    } catch (e) { console.warn(`multiDraw: ${o0.name} not merged (${e.message})`); continue; }
+    set.pad = Math.max(...list.map((e) => e.p.r)) + 1;
+    view.mesh.layers.mask = o0.layers.mask;
+    o0.parent.add(view.mesh);
+    list.forEach((e, k) => {
+      Object.assign(e.m, { set, part: k, runs: [], merged: true });
+      e.m.mesh.removeFromParent();
+      patchPool(e.p);
+    });
+    merged += list.length;
+  }
+  return merged;
+}
+function patchPool(p) {
+  if (p.__mergedPatch) return;
+  p.__mergedPatch = true;
+  const growAttr = p.growAttr, boxAdd = p.boxAdd, gather = p.gather, commitOne = StreamPool.prototype.commit;
+  p.growAttr = function (m, n) { if (!m.merged) growAttr.call(this, m, n); };
+  p.boxAdd = function (m, b) { boxAdd.call(this, m, b); if (m.runs) m.runs.push([m.n, b]); };
+  p.gather = function* (srcs, c, over) { for (const m of this.meshes) if (m.runs) m.runs.length = 0; yield* gather.call(this, srcs, c, over); };
+  p.commit = function (c) {
+    // the merged entries into their sets; the others as StreamPool.commit does (on a view of this pool with only them)
+    const rest = this.meshes.filter((m) => !m.merged);
+    for (const m of this.meshes) if (m.merged) { m.mesh.count = m.n; m.mesh.visible = m.n > 0; m.set.write(m.part, m.n, m.back, m.box, m.runs); }
+    if (rest.length) { const all = this.meshes; this.meshes = rest; try { commitOne.call(this, c); } finally { this.meshes = all; } }
+    else { this.at.copy(c); this.commitT = performance.now(); }
+  };
+}
+
+Streamer.merge = mergeStreamPools;
