@@ -614,3 +614,85 @@ unchanged), long tasks after the cover **16 / 6 tasks, 1.65 / 0.97 s** (was 20 /
    that the impostors match the trees, or a per-instance timed fade (instance state in the gather). Not done.
 6. **Startup**: unchanged (node builds); fewer unique materials (one terrain / road material for all tiles).
 7. A GREEN re-run of every absolute number above (the deltas are interleaved; the absolutes are YELLOW).
+
+## Step 12: perf pass 2, draw calls (2026-11-15, branch claude/perf3)
+
+**Machine.** `tools/perf/preflight.ps1`: **YELLOW** at the start (4.9 GB free), **RED** later (CPU 52 % busy, 1.7 GB free,
+Chrome 7 GB, GPU 73 C with power cap / SW thermal): two other agents had city tabs open and RENDERING (night3 at night
+with traffic and `nightShadowCost`, then a snow lab on :8891), and kept taking the front tab, which throttles ours
+(rAF fell to 1.5 Hz while `visibilityState` still said "visible"). Page check (`debug/preflight.js`): CPU bench 83.8 ms,
+GPU 10.3 ms / 352 draws (no baseline file). **GPU deltas below ~1 ms could not be measured** (live A/B spread +-2.5..4 ms,
+even as the median of 12 paired rounds); every GPU number here needs a GREEN re-run. What is solid: render-object counts
+(`debug/drawBreakdown.js`: they do not depend on load), vertex counts, the CPU render loop measured with our tab brought
+to the front right before each run (checked: focus + visible), and before / after screenshots.
+
+Note: `renderer.info.render.drawCalls` (the HUD's "draw calls", featureAB's `draws`) does NOT count indirect draws
+(r187 counts direct draws only): compare render objects (drawBreakdown) or `MultiDrawSet.stats()` instead.
+
+### 12.1 What changed (each behind a switch; rows in `viewer/features.js`, section A/B, sub "Perf")
+
+| change | switch (before) | what |
+|---|---|---|
+| **Multi-draw sets** (`viewer/multiDraw.js`) | `?multidraw=0` (all of them) | many instanced pieces sharing a material in ONE render object: their vertices back to back in one geometry, one `drawIndexedIndirect` per piece and chunk (`geometry.setIndirect` with an offset list; WebGPU feature `indirect-first-instance`, else the old pools). Each part's instances in its own region of shared instance buffers (static, update ranges; regions re-laid in place while they fit). **Culling per pass**: instances arrive cell by cell from the StreamPool gather; consecutive cells form chunks (<= 160 m, <= 48 a part), one indirect record each; the mesh's `onBeforeRender` picks the records whose box meets THAT pass's camera (view, sun shadow, lamp shadows, weather bake): no upload per pass, one cull per set, camera and frame |
+| **City tree pool** (`treesStylized.js makeTreePool`) | `?treepool=old` | the street trees of every loaded tile in one pool: per LOD a set of the 6 variants, drawn by 3 meshes (leaves, their depth pre-pass twin, bark) = **9 render objects (4 in the shadow pass) instead of 54 a tile** (108 scene + 54 shadow at the Place). Tiles are streaming sources (instanceStream.js, time-sliced gather in the city budget); a tree's LOD = the vendor's rule (distance from the gather centre to its foot; lodDist / farDist / impostor start + lodSlack, live from the dev panel); the tile fade is a FadeSlots slot read by the pool's copies of the shared materials (`cloneMaterial`, dithered as lodFade) |
+| **Roof kit 45 -> 4 meshes** (`roofKit.js RoofMulti`) | `?roofmerge=old` | per LOD one mesh for the 15 pieces (LOD1 in two: the small pieces still cast no shadow there); same materials, bands, sources |
+| **Street kits merged** (`multiDraw.js mergeStreamPools`, called by `Streamer.start`) | `?kitmerge=old` | gardens, street kit, furniture, street life + shops, stops: a kit's StreamPool meshes sharing material / shadow flags / layers / instance columns become one multi-draw mesh (24 merged meshes at the Place); left alone: transparent materials, instance colours, own onBeforeRender |
+| **Roofs: one look per pixel** (`facades.js roofMaterial(kind)`, `splitRoofs`) | `?roofsplit=old` | every roof pixel shaded BOTH the pitched tiles and the flat-roof membrane (~20 noise lookups + fwidths) and mixed them by the flat flag; now two meshes a tile (pitched, flat), each with its own look only (same nodes, the flag folded in). +1 render object a tile |
+| **Snow layer chunk LOD** (`weather/snowLayer.js`) | `?snowlod=old` | the outer 48 of the 64 chunks (past ~16 m of the window centre, which follows the camera) take every other grid node (25 cm); a full chunk's border vertex at an odd node next to a coarse chunk sits on its two neighbours' mean (`snowStitch`): no crack. **269 k -> 119 k vertices** (each reads 5 map texels + 5 track cells) |
+| **Public art fade copies** (`parkKit.js fadeCopy`) | `?fadeclone=old` | `mat.clone()` deep-copied userData through JSON (the weather's dry nodes, textures: `serializeImage`): a **923 ms long task** when the public art landed during the Saint-Job drive (traced). Now lodFade's `cloneMaterial` |
+
+### 12.2 Render objects and CPU (Place Saint-Job; page loads alternated, our tab in front)
+
+| view | before (`?multidraw=0`): scene + shadow | after | change | render loop CPU p50 before -> after |
+|---|---|---|---|---|
+| street (`stjob-street`) | 424-437 + 200-208 | 179-249 + 81-101 | **-44 .. -59 %** | 10.4 -> 8.8 ms (one valid pair; later pairs contaminated: 25-49 ms) |
+| 45 m (`stjob`) | 369 + 127 | 209-214 + 81-86 | **-39 %** | 8.9 -> 7.0 ms |
+
+Per change at the street view: roof kit 430 + 206 -> 396 + 186; trees 108 + 54 -> 9 + 4 render objects (plus ~80-230
+cheap indirect commands); live hide of the trees: the per-tile trees cost **3.1 ms CPU** at the street view (1.0 ms at
+45 m), the pool **0.25-0.4 ms**. Kits: the rest (gardens 39, streetkit 28, streetlife 31, stops 15 render objects -> 24
+merged meshes). Scene objects: 1,927 after (the per-tile tree meshes are gone).
+
+Traces (scratchpad, not committed): `trace_still_before/after.json.gz`, `trace_stjob_after.json.gz`. In the after trace
+at the street view the main thread waited in `createCommandEncoder` (the GPU process busy with the other tabs): with the
+draws gone, this machine's frame is GPU / GPU-process bound under that load.
+
+### 12.3 Moving paths (`debug/perfRun.js`, 1 round each, RED machine, other agents rendering)
+
+| path | frames > 33 ms before / after | worst frames before / after (ms) | long tasks before / after | sync pipelines |
+|---|---|---|---|---|
+| flight | 122 / **97** | 350, 50 / 400, 167 | 2 (352 ms) / 5 (404 ms) | 0 / 0 |
+| stjob | 70 / **40** | 150, 117 / 317, 83 | 1 (96) / 2 (87) | 0 / 0 |
+| alsemberg | 934 (contaminated) / 106 | 2,417 / 500, 117 | 80 / 2 | 0 / 0 |
+| turn | invalid (throttled) / 9 | - / 67, 67 | 11 / 2 | 0 / 0 |
+
+Later after-runs (another agent's snow tab rendering) gave 353-384 frames > 33 ms on stjob and GPU p95 21-22 ms:
+contaminated, not counted. The traced one found the 923 ms parkKit clone (fixed above) and a 294 ms synchronous
+pond-water shader build (wolvendaelCity.js / pondWater.js, left). The multi-draw regions grew 31 times on a Saint-Job +
+Alsemberg drive (each a new GPU buffer + whole upload); now they are re-laid in place while they fit and the kits' parts
+start at 192 instances. **A GREEN re-run of this suite is needed** before these deltas can be trusted.
+
+### 12.4 Visual checks
+
+Same view, before vs after (1280 x 720, mean |RGB diff| of 765): trees + roof kit at 45 m 0.54 (a first try showed the
+solar panels / roof windows without their cell lines: the merged geometry had dropped `uv` because the procedural stack
+had none; fixed: the attributes are the union, zero-filled); street view 1.46 (dither noise, the far impostor band).
+Roofs split vs one material, same page: 0.28 (TAA / AO noise only). Snow layer old vs new at the Place: 0.73, the cut
+edge along kerbs 16-25 m away a little coarser, no seam line. Night (`?night=1&time=night`): the pooled trees and merged
+kits are in the lamp-shadow layer (tagCasters' sweep) and each lamp camera draws only the chunks in its frustum
+(night3's per-tile proxies do not apply to them: they belong to no tile; the fallback is the chunk cull: more instances
+than a proxy, never a missing shadow). Not verified by eye: LOD / shadow transitions while moving (the screenshot capture
+returned blank frames while another agent held the front tab).
+
+### 12.5 Left / next
+
+1. **GREEN re-run** of every number above (GPU especially: roofs split, snow LOD, the pools' chunk culling vs the old
+   per-tile culling; LOD2 tree chunks are up to 160 m).
+2. Facade kit (52 scene + 14 shadow render objects, `facadeKit/kitField.js`) and the parked-car fleet (26 + 11): not
+   StreamPools; the same multi-draw set applies.
+3. `matrixWorldAutoUpdate`: one full `updateMatrixWorld` is 0.225 ms (1,927 objects); the tile groups are static.
+4. Sun shadow: unchanged apart from the pooled casters' chunk culling (shadow render objects about -50 %); next: the
+   details mesh (420 k shadow triangles at 45 m, DoubleSide shadow) and the roof kit's LOD2 band (480 m).
+5. Night lamp maps: a per-chunk proxy of the tree pool (instances within REACH) if the lamp maps' triangles matter.
+6. The pond water shader built synchronously on first sight (294 ms); other `material.clone()` calls on weatherized
+   materials (the JSON userData copy).
