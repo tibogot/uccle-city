@@ -50,6 +50,11 @@ change (amber row, count on the section, footer "n switches staged · Revert · 
 (the defaults removed, so URLs stay short) and reloads ON THE SAME VIEW (tile, mode, target and camera put into
 `?tile ?view ?at ?cam`). The panel never changes what a switch does.
 
+Polish round 1 (docs/POLISH.md) added `?polish1=old` (all its look changes at once), `?snowedge ?snowwb ?treedither
+?bark ?plinth ?carlights ?herosnow` (`=old`, "A/B: old versions" > Look) and `?tilewatchdog=s` (Streaming > Boot &
+loading). The look switches are read with `/[?&](key|polish1)=old/` (viewer/polish.js `polishOld`), which the grep
+above does not list: they are in the table by hand.
+
 **Add a feature switch**: read it where it acts as before (`params.get("x")`), then add one row to `FEATURES` with the
 section's group. Nothing else.
 

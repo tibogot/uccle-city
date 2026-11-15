@@ -35,3 +35,12 @@ export function sample(points) {
     const n = d.length / 4; return [Math.round(r / n), Math.round(gg / n), Math.round(b / n)];
   });
 }
+/** GPU ms (p50 / avg) over `ms` at a fixed view, after `settle` ms (bring the tab to front first: background tabs throttle) */
+export async function gpu({ pos, target, settle = 6000, ms = 8000 } = {}) {
+  if (pos) view({ pos, target });
+  await new Promise((r) => setTimeout(r, settle));
+  window.viewer.resetGpu();
+  await new Promise((r) => setTimeout(r, ms));
+  const g = window.viewer.gpuStats();
+  return { p50: g.p50, avg: g.avg != null ? +(+g.avg).toFixed(2) : null, n: g.n };
+}
