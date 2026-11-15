@@ -27,7 +27,7 @@ const txt = (key, group, label, desc, placeholder = "", x = {}) => ({ key, group
 /** section ids (devPanel.js) -> what the switches there are about */
 export const SECTIONS = {
   nav: "Go to & share", modes: "Modes & camera", time: "Time & sun", weather: "Weather", night: "Night", transit: "Traffic, trams & trains",
-  lighting: "Lighting & post", world: "World layers", ab: "A/B: old versions", streaming: "Streaming & boot", perf: "Performance", debug: "Debug & audits",
+  lighting: "Lighting & post", world: "World layers", birds: "Birds", ab: "A/B: old versions", streaming: "Streaming & boot", perf: "Performance", debug: "Debug & audits",
 };
 
 export const FEATURES = [
@@ -135,8 +135,8 @@ export const FEATURES = [
   on("streetlife", "world", "street life", "Shopfronts, names, house numbers.", { sub: "City" }),
   on("gardens", "world", "front gardens", "Front gardens' instance pools.", { sub: "City" }),
   on("gardenhedges", "world", "garden hedges", "Hedges behind garden railings.", { sub: "City" }),
-  opt("grass", "world", "city grass", "The grass field (owner's look pending; ~0 ms measured).", { sub: "City" }),
-  sel("grasspreset", "world", "grass preset", "Grass density preset (with ?grass=1).", [[null, "high"], ["medium", "medium"], ["low", "low"]], { sub: "City" }),
+  on("grass", "world", "city grass", "The grass blades on the city's lawns, parks, verges and meadows (viewer/grass/, docs/GRASS.md; on by default since 2026-11-15, ?grass=0 = the textured ground alone).", { sub: "City" }),
+  sel("grasspreset", "world", "grass preset", "Grass density preset.", [[null, "high"], ["medium", "medium"], ["low", "low"]], { sub: "City" }),
   opt("grasscov", "world", "grass coverage view", "Grass: the coverage debug colours.", { sub: "City" }),
   opt("grasslambert", "world", "grass Lambert", "Grass: the cheap Lambert shading (always on low / medium).", { sub: "City" }),
   on("pits", "world", "tree pits", "Tree pits in the sidewalks.", { sub: "City" }),
@@ -155,6 +155,9 @@ export const FEATURES = [
   on("groundtex", "world", "ground textures", "Textured ground (off: procedural).", { sub: "Materials" }),
   on("shopsktx", "world", "shop KTX2", "Shop window textures as KTX2 (off: the plain images).", { sub: "Materials" }),
   sel("setts", "world", "plaza setts", "Plaza setts: procedural (default) or the CC0 scan (A/B).", [[null, "procedural"], ["tex", "scan"]], { sub: "Materials" }),
+
+  // ---------------------------------------------------------------- birds (docs/BIRDS.md)
+  on("birds", "birds", "birds", "The city's birds (viewer/birds/): the sky flocks in one GPU compute pass (a starling murmuration over a park at dusk, jackdaws round the church towers, gulls high up, ring-necked parakeets, a starling feeding party) + the perched pigeons flushing from the walker / the car / the traffic and landing again; ?birds=0 = none (the falcon flight's pigeons as before)."),
 
   // ---------------------------------------------------------------- A/B: the versions before (each ?x=old / ?x=0 kept for comparisons)
   old("heros", "ab", "Square des Héros", "The square before: one raised setts plaza, no memorial.", { sub: "Places & assets" }),

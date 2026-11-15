@@ -17,6 +17,7 @@ The owner's and the coordinator's panel (not a player UI): `viewer/devPanel.js` 
 | Traffic, trams & trains | timetable clock / speed | `transit` |
 | Lighting & post | lamp pools, haze, AO, SSR, bloom, sun shadows | `lighting` |
 | World layers | layers, contours, parked cars | `world` (landmarks, city systems, trees, materials) |
+| Birds | sky flocks drawn (A/B), murmuration now (toggle); read-outs: flocks, drawn (near / far), perched pigeons, director CPU (docs/BIRDS.md) | `birds` |
 | A/B: old versions | – | `ab` (every ?x=old / ?x=0 "before") |
 | Streaming & boot | tiles now | `streaming` (rings, LOD, workers, boot) |
 | Smoothness (LOD tunables) | `viewer/smoothPanel.js` | – |

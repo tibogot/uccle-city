@@ -2,7 +2,7 @@
 
 Branch `claude/grass` (from claude/foundation 743c9f2), 2026-11-13. Lab: `labs/grass-lab.html` (`?scene=garden|park|verge`,
 `?time=golden|midday|night|...`, `?preset=low|medium|high|ultra`, `?day=1..365`, `?grass=0`, `?cam=x,y,z,tx,ty,tz`).
-In the city: **`?grass=1` (default OFF**, the owner decides), `?grasspreset=`.
+In the city: **ON by default since 2026-11-15 (claude/birds, review below; `?grass=0` = the textured ground alone)**, `?grasspreset=`.
 
 ## 1. What it is
 
@@ -374,3 +374,31 @@ Images: `fieldlab_meadow_backlit_golden.jpeg`, `fieldlab_park_meadow_patch_midda
 Cost in the field lab (1280x720, DPR 1.5, golden, eye level, preset high, 6 alternating grass on / off pairs; preflight
 **YELLOW**, another agent sharing the machine): a whole meadow field **+1.25 ms** GPU (pairs 1.11-1.31; 18.9k / 47.8k /
 35.7k blades), the same as standing in the G7 meadow (§8.3); lawn with a meadow patch 22 m ahead +1.05 ms (0.98-1.11).
+
+## 11. City review and default ON (2026-11-15, claude/birds)
+
+Looked at in the city (midday, July) at the Square des Héros, the Parc de Wolvendael, front gardens round Saint-Job and the
+verges, against what the real places look like (the Héros: a sloped, mown, green lawn round the memorial with a dolomite
+path to the steps; Wolvendael: mown park lawns crossed by gravel paths). Two things looked wrong, both fixed in
+`viewer/grass/grassTypes.js` (worker bundle rebuilt):
+
+- **The Héros lawns read as a long, straw-coloured verge.** They are OSM `landuse=grass` polygons, which the table typed as
+  rough public green (length 0.42, dry 0.25, flowers). New rule from the data: a `landuse=grass` polygon whose centroid is
+  inside a mapped `leisure=park` is the park service's MOWN lawn (`parkLawn`: length 0.12, dry 0.03, flowers 0.02).
+  Before / after: `docs/birds/grass_heros_before.jpg`, `docs/birds/grass_heros_after.jpg`.
+- **Blades grew on the paths across the lawns** (the Héros' compacted path from the pavement to the steps). The OSM
+  footways / paths / tracks / steps / cycleways of the tile are now stroked as "no grass" at their mapped `width` or a
+  typical one (footway 1.8 m, path 1.3, track 2.8, steps 2.2, cycleway 2).
+
+No saw-tooth / blocky edges seen along kerbs, paths or the memorial's dolomite circle at street level; the far hand-over
+into the textured ground is invisible from the overview (no blades above `rmax`, 48 m).
+
+**Cost (machine RED: another agent's WebGPU tab rendering, GPU 98 % busy before start; in-page interleaved A/B, tab in
+front):** from the overview / any view higher than 48 m over the ground: 0 blades, no compute, **0 ms**; standing on the
+Wolvendael lawn: +0.98 ms (pairs -0.86..+3.34, noisy), the same order as §7-8 (+0.47-0.8 ms on a quiet machine). Not
+free on a lawn, but within the grass budget (~1 ms at street level) and zero everywhere else, so it is ON by default;
+`?grass=0` (features.js row) turns it off. `viewer/gardens/cityGardens.js` now steps the shared wind itself whenever the
+grass is not running (`globalThis.grass`), instead of testing `?grass=1`.
+
+Left: landmark models are still not solids in the field (blades can show at a model's outer foot); the night pools'
+shadows on blades (§9).

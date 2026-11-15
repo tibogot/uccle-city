@@ -371,7 +371,7 @@ export class CityFalconWorld {
    *  within R (a point at the top of each, the crowns the falcon can perch on too), its paving / lawn (the city's
    *  walking surface, off the roofs and the crowns' footprints) */
   squareRoosts(sq, ridges, R = 120) {
-    const out = [...ridges];
+    const out = [...ridges, ...this.lampRoosts(sq, R)];
     for (const q of this.treePerches(sq.x, sq.z, R)) for (let k = 0; k < 3; k++) {
       const a = k * 2.1 + q.pos.x * 0.37;
       out.push({ x: q.pos.x + Math.cos(a) * 1.2, y: q.pos.y + 0.2, z: q.pos.z + Math.sin(a) * 1.2, yaw: a * 2.3, kind: "tree" });
@@ -383,11 +383,44 @@ export class CityFalconWorld {
       const y = this.city.walkY ? this.city.walkY(x, z) : this.ground(x, z);
       out.push({ x, y: y + 0.01, z, yaw: a * 3.1, kind: "ground" });
     }
+    out.push(...this.feedClusters(sq, sq.r ?? 18));
+    return out;
+  }
+  /** the street lamps' lantern tops within R of `at` (the loaded tiles' drawn lamps; lampTop: the lantern cap in the lamp's
+   *  frame, set by viewer/birds/cityBirds.js from the lamp model): one or two birds a lamp */
+  lampRoosts(at, R) {
+    const out = [], L = this.lampTop;
+    if (!L) return out;
+    for (const t of this.city.tiles) for (const s of t.drawn?.lamps || []) {
+      if (Math.hypot(s.x - at.x, s.z - at.z) > R || s.y == null) continue;
+      const c = Math.cos(s.yaw || 0), sn = Math.sin(s.yaw || 0);
+      for (let k = 0; k < L.n; k++) {
+        const lx = L.x + (k - (L.n - 1) / 2) * 0.09, lz = L.z;
+        out.push({ x: s.x + lx * c + lz * sn, y: s.y + L.y, z: s.z - lx * sn + lz * c, yaw: (s.yaw || 0) + (k ? Math.PI : 0) + Math.PI / 2, kind: "lamp" });
+      }
+    }
+    return out;
+  }
+  /** feeding groups on a square's paving (viewer/birds/cityBirds.js): pigeons feed in tight groups (bread, a bin, a
+   *  bench), 4 spots of 16 points within ~2 m, ground kind; off the roofs, the church, the trees' trunks */
+  feedClusters(at, R) {
+    const out = [];
+    for (let c = 0; c < 4; c++) {
+      const a0 = c * 1.9 + at.x * 0.013, r0 = 5 + ((c * 0.618) % 1) * Math.max(2, R - 6);
+      const cx = at.x + Math.cos(a0) * r0, cz = at.z + Math.sin(a0) * r0;
+      for (let i = 0; i < 16; i++) {
+        const a = i * 2.399963, r = 0.35 + Math.sqrt(i / 16) * 2.1;
+        const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+        if (this.roof(x, z) > 0 || this.churchFloor(x, z) > -1e8 || this.column(x, z, 1e4, true).floor > this.ground(x, z) + 1.5) continue;
+        const y = this.city.walkY ? this.city.walkY(x, z) : this.ground(x, z);
+        out.push({ x, y: y + 0.01, z, yaw: a * 1.7 + c, kind: "ground" });
+      }
+    }
     return out;
   }
   /** all roosts (needs the church and the Place's tile): ridges + the church's wing ridges / drum cornice + the setts */
   buildRoosts() {
-    const out = [...(this.ridges || [])];
+    const out = [...(this.ridges || []), ...this.lampRoosts(PLACE, 170)];
     const ch = this.church;
     if (ch) {
       const ends = [25.5, 19.0, 18.4, 19.1, 25.2, 15.6, 15.3, 14.5];   // stjob.json wing_ends_from_centre N NE E SE S SW W NW
@@ -409,6 +442,7 @@ export class CityFalconWorld {
       const y = this.city.walkY ? this.city.walkY(x, z) : this.ground(x, z);
       out.push({ x, y: y + 0.01, z, yaw: a * 3.1, kind: "ground" });
     }
+    out.push(...this.feedClusters(PLACE, 18));
     this.roosts = out;
     return out;
   }

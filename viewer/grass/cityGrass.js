@@ -1,4 +1,4 @@
-// THE CITY'S GRASS (?grass=1, default OFF: the owner decides when it goes on). docs/GRASS.md "City".
+// THE CITY'S GRASS (on by default since 2026-11-15; ?grass=0 = the textured ground alone). docs/GRASS.md "City".
 // One Grass (viewer/grass/grass.js) for the session; every full tile hands its terrain, road meshes and buildings to the
 // grass field (grassField.js) when it loads and takes them back when it unloads. One updater: the field re-bake when
 // needed + the compute pass, before the frame renders. Needs the WebGPU backend (WebGL2: the textured ground alone).
@@ -9,7 +9,7 @@ import { wind } from "../foliage/wind.js";
 const params = new URLSearchParams(location.search);
 
 export const cityGrass = {
-  on: params.get("grass") === "1",
+  on: params.get("grass") !== "0",
   grass: null,
   kinds: null,
   /** before the first tile (so the first frames, under the boot cover, build its shaders) */

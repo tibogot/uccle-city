@@ -27,6 +27,10 @@ export const KIND = {
   garden: [1, 0.04, 0, 0],
   park: [1, 0.28, 0.05, 0.04],
   grass: [1, 0.42, 0.25, 0.08],               // landuse=grass in Uccle: public greens, roundabouts, embankments
+  // landuse=grass INSIDE a mapped park / square (the Square des Héros' slopes, Wolvendael's lawns): the park service's
+  // mown lawns (cut every 2-3 weeks: 6-12 cm, green; 2026-11-15 review against photos of the Héros lawns, which read
+  // as a long straw-coloured verge with the plain `grass` values)
+  parkLawn: [1, 0.12, 0.03, 0.02],
   village_green: [1, 0.3, 0.05, 0.15],
   cemetery: [0.85, 0.14, 0.1, 0],
   scrub: [0.6, 0.8, 0.4, 0.05],
@@ -38,7 +42,7 @@ export const KIND = {
   pitchGrass: [1, 0.0, 0, 0],
   none: [0, 0, 0, 0],
 };
-const ORDER = ["cemetery", "garden", "park", "village_green", "grass", "dog_park", "scrub", "orchard", "heath", "grassland", "meadow", "pitchGrass", "none"];
+const ORDER = ["cemetery", "garden", "park", "village_green", "grass", "parkLawn", "dog_park", "scrub", "orchard", "heath", "grassland", "meadow", "pitchGrass", "none"];
 const GRASS_SPORTS = /^(soccer|football|rugby|rugby_union|gaelic_games|cricket|)$/;
 
 /** the kind used for one feature area: its OSM kind refined by osm_grass.json */
@@ -103,9 +107,13 @@ export function grassTypeData(feats, bounds, { kinds = null, surfaces = null } =
   }
   // OSM areas, weakest first
   const byKind = new Map();
+  const parks = (feats.areas || []).filter((a) => a.kind === "park" && a.rings?.[0]?.length > 2);
+  const inside = (x, z, ring) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  const inPark = (a) => { const r = a.rings?.[0]; if (!r?.length) return false; let x = 0, z = 0; for (const [px_, pz_] of r) { x += px_; z += pz_; } x /= r.length; z /= r.length; return parks.some((p) => inside(x, z, p.rings[0])); };
   for (const a of feats.areas || []) {
-    const k = kindOf(a, kinds);
+    let k = kindOf(a, kinds);
     if (!k) continue;
+    if (k === "grass" && parks.length && inPark(a)) k = "parkLawn";
     if (!byKind.has(k)) byKind.set(k, []);
     byKind.get(k).push(a);
   }
@@ -116,6 +124,20 @@ export function grassTypeData(feats, bounds, { kinds = null, surfaces = null } =
     for (const a of list) { path(a.rings || []); g.fill("evenodd"); }
     stats.areas[k] = list.length;
   }
+  // the OSM paths across the lawns (footway / path / track / steps / cycleway: a park's gravel and compacted paths, the
+  // Héros' path to the steps): no grass, at their mapped width or a typical one (2026-11-15: blades grew on them)
+  const PATH_W = { footway: 1.8, path: 1.3, track: 2.8, steps: 2.2, cycleway: 2, bridleway: 2, pedestrian: 3 };
+  g.strokeStyle = KIND.none; g.lineJoin = "round";
+  let nPaths = 0;
+  for (const l of feats.lines || []) {
+    const hw = l.tags?.highway, w0 = PATH_W[l.kind] ?? PATH_W[hw];
+    if (!w0 || !l.line?.length || l.tags?.area === "yes") continue;
+    const w = Math.min(6, +l.tags?.width || w0);
+    g.lineWidth = w;
+    for (const c of [g1, g2]) { c.beginPath(); l.line.forEach(([x, z], i) => (i ? c.lineTo(px(x), pz(z)) : c.moveTo(px(x), pz(z)))); }
+    g.stroke(); nPaths++;
+  }
+  stats.paths = nPaths;
   const img = g1.getImageData(0, 0, W, H).data, img2 = g2.getImageData(0, 0, W, H).data;
   // tree crowns: thinner grass, fewer flowers, a little longer (unmown round the trunk) in parks and meadows
   const shade = new Float32Array(W * H);

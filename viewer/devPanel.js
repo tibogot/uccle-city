@@ -374,6 +374,25 @@ export function createDevPanel(ctx) {
   fWo.add(S, "parked").name("parked cars").onChange((v) => scene.traverse((o) => { if ((o.name === "parked-cars" || o.name === "parked-cars-fleet") && o.isGroup) o.visible = v; }));   // box cars (?cars=box) or the faceted fleet (carFleet.js)
   switches(fWo, "world");
 
+  // ---------------------------------------------------------------- Birds (viewer/birds/, docs/BIRDS.md)
+  const fBi = section("birds", "Birds");
+  const BI = window.__birds;
+  if (BI?.sky) {
+    // read-outs through getters (the panel's 10 Hz listen while open); the GPU lists' counts read back at most 1 Hz
+    let tRead = 0;
+    const BS = {
+      sky: true,
+      get flocks() { return BI.stats.flocks; },
+      get drawn() { if (performance.now() - tRead > 1000) { tRead = performance.now(); BI.readCounts().catch(() => {}); } return `${BI.stats.near} near (mesh) + ${BI.stats.far} far (chevrons)`; },
+      get perched() { const F = ctx.flyer?.flocks || []; let p = 0, f = 0; for (const P of F) if (P.mesh.visible) { p += P.stats.perched; f += P.stats.flying; } return `${p} perched, ${f} flying (${F.filter((P) => P.mesh.visible).length} squares)`; },
+      get cpu() { return `${BI.stats.cpuMs.toFixed(2)} ms director + floor`; },
+    };
+    fBi.add(BS, "sky").name("sky flocks drawn").onChange((v) => { BI.sky.visible = v; }).hint("off: no compute, no draw (A/B)");
+    fBi.buttons([["murmuration now (toggle)", () => { BI.force.murmuration = !BI.force.murmuration; }, "the starlings' dusk murmuration over the nearest roost, whatever the hour"]], 1);
+    for (const k of ["flocks", "drawn", "perched", "cpu"]) fBi.add(BS, k).name(k).listen();
+  } else fBi.note("Birds off (?birds=0) or no WebGPU.");
+  switches(fBi, "birds");
+
   // ---------------------------------------------------------------- A/B: the versions before
   const fAB = section("ab", "A/B: old versions");
   fAB.note("Each switch brings back the version before a change, for comparisons (?x=old / ?x=0). Default = the current city.");

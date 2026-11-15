@@ -40,6 +40,10 @@ const SQUARES = [
   { name: "Place Jean Vander Elst", x: -1125, z: -505, r: 22 },     // the town hall's square
   { name: "Parvis Saint-Pierre", x: -701, z: -498, r: 14 },          // before the Saint-Pierre church
   { name: "Parc de Wolvendael", x: -402, z: -91, r: 30 },            // the park's lawns
+  // (viewer/birds/cityBirds.js, 2026-11-15) the Square des Héros (places.js), the Vanderkindere crossing (Rue Vanderkindere x
+  // Avenue Brugmann, map.json street lines: the tram stop, the shops' pavements)
+  { name: "Square des Héros", x: -533, z: -487, r: 26 },
+  { name: "Vanderkindere", x: -123, z: -1632, r: 18 },
 ];
 const LIFE = 1.0;                      // the juvenile's span at life size (m): viewer/falcons.js FALCON_SIZES.juvenile
 
@@ -148,7 +152,8 @@ export class CityFlyer {
       for (let i = 0; i < 600 && !w.tileAt(PLACE.x, PLACE.z); i++) await new Promise((r) => setTimeout(r, 200));
       const roosts = w.buildRoosts();
       const n = +(this.params.get("pigeons") ?? 150);
-      this.pigeons = new Pigeons({ world: w, roosts, home: PLACE, count: n, scale: 1.4 });
+      const city = this.params.get("birds") !== "0";       // (viewer/birds/cityBirds.js: jackdaws among them, a third on the ground)
+      this.pigeons = new Pigeons({ world: w, roosts, home: PLACE, count: n, scale: 1.4, jackdaws: city ? 0.1 : 0, ground: city ? 0.4 : 0 });
       this.pigeons.square = { name: "Place de Saint-Job", x: PLACE.x, z: PLACE.z };
       this.flocks.push(this.pigeons);
       this.pigeons.mesh.visible = false;
@@ -321,7 +326,7 @@ export class CityFlyer {
         const roosts = w.squareRoosts(sq, ridges);
         const n = Math.min(+(this.params.get("pigeons2") ?? 75), Math.floor(roosts.length * 0.6));
         if (n < 10) { sq.state = "none"; this.log(`falcon flight: ${sq.name}: ${roosts.length} roosts only, no flock`); return; }
-        const P = new Pigeons({ world: w, roosts, home: sq, count: n, scale: 1.4 });
+        const P = new Pigeons({ world: w, roosts, home: sq, count: n, scale: 1.4, jackdaws: this.params.get("birds") === "0" ? 0 : 0.12, ground: this.params.get("birds") === "0" ? 0 : 0.4 });
         P.square = sq;
         P.flockHomes = [{ x: sq.x, z: sq.z, r: 45, h: 28, w: 0.12 }, { x: sq.x + 25, z: sq.z - 30, r: 38, h: 40, w: -0.14 }];
         P.mesh.visible = false;
@@ -359,7 +364,11 @@ export class CityFlyer {
     // the threat: the falcon (in fly mode), else none (far away)
     this.tAmb = (this.tAmb ?? 0) + dt;
     for (const P of act) {
-      P.update(dt * this.game.timeScale, this.tAmb, flying ? { x: f.pos.x, y: f.pos.y, z: f.pos.z, speed: f.V, stoop: f.fold > 0.7 } : { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false });
+      // life size on foot / in a car, 1.4 x in the falcon flight (readable from the falcon's chase camera)
+      if (this.params.get("birds") !== "0") P.scale = flying ? 1.4 : 1.0;
+      // (not flying: the ground threats, the walker / the car / the traffic, viewer/birds/cityBirds.js; quiet at night)
+      P.update(dt * this.game.timeScale, this.tAmb, flying ? { x: f.pos.x, y: f.pos.y, z: f.pos.z, speed: f.V, stoop: f.fold > 0.7 } : this._noFalcon ??= { x: 1e6, y: 0, z: 1e6, speed: 0, stoop: false },
+        flying ? null : this.groundThreats?.() ?? null, !flying && (this.birdsQuiet?.() ?? false));
       for (const e of P.events.splice(0)) if (e.kind === "burst" && this.on && this.audio) this.audio.pigeonBurst(e.x, e.y, e.z, e.n);
     }
     this.cpu.last.pigeons = performance.now() - t0;
