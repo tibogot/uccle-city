@@ -51,8 +51,9 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
   T.setObstacleSource((s) => {
     if (driver?.on && driver.state) {
       const c = driver.state, fx = Math.sin(c.heading), fz = Math.cos(c.heading), vx = fx * c.speed + (c.vx || 0), vz = fz * c.speed + (c.vz || 0);
-      s.addObstacle(c.x + fx * 1.2, c.z + fz * 1.2, 1.15, vx, vz);
-      s.addObstacle(c.x - fx * 1.2, c.z - fz * 1.2, 1.15, vx, vz);
+      const bike = driver.vehicle === "moto", r = bike ? 0.55 : 1.15, o = bike ? 0.55 : 1.2;   // (the motorbike: narrow, it filters)
+      s.addObstacle(c.x + fx * o, c.z + fz * o, r, vx, vz);
+      s.addObstacle(c.x - fx * o, c.z - fz * o, r, vx, vz);
     }
     const th = getThird?.();
     if (th?.on && th.tp) { const p = th.tp.ctl.pos, v = th.tp.ctl.vel; s.addObstacle(p[0], p[2], 0.9, v[0], v[2]); }

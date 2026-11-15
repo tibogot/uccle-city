@@ -13,9 +13,11 @@ export const CAMERA = { mode: "chase", distance: 6.4, height: 2.1, lookHeight: 1
 const MODES = ["chase", "far", "bumper", "orbit"];
 
 export class ChaseCamera {
-  constructor(camera, dom) {
-    Object.assign(this, { camera, dom });
+  /** cfg: the view's numbers (default CAMERA: the car's; the motorbike passes its own, viewer/moto/motoCamera.js) */
+  constructor(camera, dom, cfg = CAMERA) {
+    Object.assign(this, { camera, dom, cfg });
     this.pos = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.look = new THREE.Vector3();
+    this._t = new THREE.Vector3(); this._w = new THREE.Vector3(); this._a = new THREE.Vector3();   // (no per-frame allocations)
     this.yaw = 0;                 // boom azimuth (follows the travel direction)
     this.drag = { yaw: 0, pitch: 0, held: false };
     this.first = true;
@@ -28,20 +30,20 @@ export class ChaseCamera {
       this.drag.pitch = Math.max(-0.35, Math.min(1.1, this.drag.pitch + (e.clientY - last[1]) * 0.004));
       last = [e.clientX, e.clientY];
     });
-    dom.addEventListener("wheel", (e) => { if (!this.active) return; CAMERA.distance = Math.max(3.5, Math.min(25, CAMERA.distance * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: true });
+    dom.addEventListener("wheel", (e) => { if (!this.active) return; this.cfg.distance = Math.max(3.5, Math.min(25, this.cfg.distance * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: true });
   }
-  get mode() { return CAMERA.mode; }
-  next() { CAMERA.mode = MODES[(MODES.indexOf(CAMERA.mode) + 1) % MODES.length]; this.first = true; return CAMERA.mode; }
+  get mode() { return this.cfg.mode; }
+  next() { this.cfg.mode = MODES[(MODES.indexOf(this.cfg.mode) + 1) % MODES.length]; this.first = true; return this.cfg.mode; }
   reset() { this.first = true; this.drag.yaw = 0; this.drag.pitch = 0; }
 
   /** c: carPhysics state; ground(x, z); insideWall(x, z) optional */
   update(c, dt, ground, insideWall = null) {
     const cam = this.camera;
-    if (cam.fov !== CAMERA.fov) { cam.fov = CAMERA.fov; cam.updateProjectionMatrix(); }
+    if (cam.fov !== this.cfg.fov) { cam.fov = this.cfg.fov; cam.updateProjectionMatrix(); }
     const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
     const vx = sinH * c.speed + c.vx, vz = cosH * c.speed + c.vz, v = Math.hypot(vx, vz);
-    if (!this.drag.held && CAMERA.mode !== "orbit") { this.drag.yaw *= Math.exp(-2.5 * dt); this.drag.pitch *= Math.exp(-2.5 * dt); }
-    if (CAMERA.mode === "bumper") {
+    if (!this.drag.held && this.cfg.mode !== "orbit") { this.drag.yaw *= Math.exp(-2.5 * dt); this.drag.pitch *= Math.exp(-2.5 * dt); }
+    if (this.cfg.mode === "bumper") {
       const y = c.y + 0.55;
       cam.position.set(c.x + sinH * 2.25, y, c.z + cosH * 2.25);
       this.look.set(c.x + sinH * 20, y - 0.4 + Math.sin(c.slopePitch) * 18, c.z + cosH * 20);
@@ -54,13 +56,13 @@ export class ChaseCamera {
     const travel = v > 3 && c.speed > 0 ? Math.atan2(vx, vz) : c.heading;
     if (this.first) this.yaw = c.heading;
     let d = travel - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
-    this.yaw += d * (1 - Math.exp(-(CAMERA.mode === "orbit" ? 0 : 4.5) * dt));
-    const far = CAMERA.mode === "far";
-    const dist = CAMERA.distance * (far ? 1.6 : 1) + Math.min(2.5, v * 0.04), h = CAMERA.height * (far ? 1.8 : 1);
+    this.yaw += d * (1 - Math.exp(-(this.cfg.mode === "orbit" ? 0 : 4.5) * dt));
+    const far = this.cfg.mode === "far";
+    const dist = this.cfg.distance * (far ? 1.6 : 1) + Math.min(2.5, v * 0.04), h = this.cfg.height * (far ? 1.8 : 1);
     const az = this.yaw + this.drag.yaw, el = Math.atan2(h, dist) + this.drag.pitch;
     const R = Math.hypot(h, dist);
-    const target = new THREE.Vector3(c.x, c.y + CAMERA.lookHeight, c.z);
-    const want = new THREE.Vector3(c.x - Math.sin(az) * Math.cos(el) * R, c.y + CAMERA.lookHeight + Math.sin(el) * R - CAMERA.lookHeight * 0.5, c.z - Math.cos(az) * Math.cos(el) * R);
+    const target = this._t.set(c.x, c.y + this.cfg.lookHeight, c.z);
+    const want = this._w.set(c.x - Math.sin(az) * Math.cos(el) * R, c.y + this.cfg.lookHeight + Math.sin(el) * R - this.cfg.lookHeight * 0.5, c.z - Math.cos(az) * Math.cos(el) * R);
     // keep out of buildings: pull the boom in until the point is clear
     if (insideWall) {
       for (let k = 0; k < 6 && insideWall(want.x, want.z); k++) want.lerp(target, 0.3);
@@ -68,14 +70,14 @@ export class ChaseCamera {
     want.y = Math.max(want.y, ground(want.x, want.z) + 0.6);
     if (this.first) { this.pos.copy(want); this.vel.set(0, 0, 0); this.first = false; }
     // critically damped spring toward the wanted point
-    const w = CAMERA.stiffness, a = new THREE.Vector3().subVectors(want, this.pos).multiplyScalar(w * w).addScaledVector(this.vel, -2 * w);
+    const w = this.cfg.stiffness, a = this._a.subVectors(want, this.pos).multiplyScalar(w * w).addScaledVector(this.vel, -2 * w);
     this.vel.addScaledVector(a, dt);
     this.pos.addScaledVector(this.vel, dt);
     // never fall behind by more than the boom (a teleport, a big hit)
     if (this.pos.distanceTo(want) > R * 1.5) this.pos.copy(want);
     this.pos.y = Math.max(this.pos.y, ground(this.pos.x, this.pos.z) + 0.5);
     cam.position.copy(this.pos);
-    this.look.set(c.x + vx * CAMERA.lookAhead * 0.3, c.y + CAMERA.lookHeight, c.z + vz * CAMERA.lookAhead * 0.3);
+    this.look.set(c.x + vx * this.cfg.lookAhead * 0.3, c.y + this.cfg.lookHeight, c.z + vz * this.cfg.lookAhead * 0.3);
     cam.up.set(0, 1, 0);
     cam.lookAt(this.look);
   }

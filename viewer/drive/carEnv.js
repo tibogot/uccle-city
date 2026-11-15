@@ -27,13 +27,15 @@ const LEDGE_PTS = [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], 
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
  * ground(x, z) -> drivable height
  */
-export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true }) {
+export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit }) {
+  // dims: the vehicle's half width / half length (carPhysics BODY; the motorbike's narrow box, viewer/moto/motoPhysics.js);
+  // onHit(c, nx, nz, kind, handling): the impact response (carPhysics hit, or the motorbike's: it may crash)
   const near = [];
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
-  const body = { hx: BODY.hx, hz: BODY.hz, cos: 1, sin: 0 };
+  const body = { hx: dims.hx, hz: dims.hz, cos: 1, sin: 0 };
   const push = (c, nx, nz, depth, kind) => {
     c.x += nx * depth; c.z += nz * depth;
-    hit(c, nx, nz, kind, handling);
+    onHit(c, nx, nz, kind, handling);
     env.contacts++;
   };
   const env = {
@@ -44,7 +46,7 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
     tested: 0,            // candidate items in the last frame
     prepare(c, travel) {
       near.length = 0;
-      const r = Math.hypot(BODY.hx, BODY.hz) + travel;
+      const r = Math.hypot(dims.hx, dims.hz) + travel;
       for (const col of sets(c.x, c.z, r)) gather(col, c.x, c.z, r, near);
       env.tested = near.length / 2;
       env.contacts = 0;
@@ -59,21 +61,21 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
         if (d > 0.05) { const k = Math.exp(-step * 9 * Math.min(1, d / 0.5) ** 2); c.speed *= k; c.vx *= k; c.vz *= k; env.wading = d; }
       }
       body.cos = Math.cos(c.heading); body.sin = Math.sin(c.heading);
-      body.hx = BODY.hx; body.hz = BODY.hz;                 // carModel.js fitBody may resize it to the model
+      body.hx = dims.hx; body.hz = dims.hz;                 // carModel.js fitBody may resize it to the model
       for (let pass = 0; pass < 2; pass++) {      // a second pass settles a push from one wall into another
         let any = false;
         for (let k = 0; k < near.length; k += 2) {
           if (heightClear(near[k], near[k + 1], c.y)) continue;                  // a platform / fence / parapet over or under the car
           if (!itemContact(near[k], near[k + 1], c.x, c.z, body, contact)) continue;
           c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
-          hit(c, contact.nx, contact.nz, contact.kind, handling);
+          onHit(c, contact.nx, contact.nz, contact.kind, handling);
           env.contacts++; any = true;
         }
         if (!any) break;
       }
       if (ledges && Number.isFinite(c.y) && ledgeContact(c, body, ground, contact)) {
         c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
-        hit(c, contact.nx, contact.nz, contact.kind, handling);
+        onHit(c, contact.nx, contact.nz, contact.kind, handling);
         env.contacts++;
       }
       // moving things (the traffic, viewer/traffic/cityTraffic.js): env.dynamic(c, body, push) calls push per contact

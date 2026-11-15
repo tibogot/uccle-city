@@ -79,7 +79,8 @@ export async function readGlb(file) {
           }
         }
         const mat = p.material != null ? json.materials[p.material]?.name ?? `material${p.material}` : "";
-        parts.push({ name, node: nd.name, slot: mat, positions: Pw, normals: Nw, index: I, prim: pi });
+        const U1 = p.attributes.TEXCOORD_1 != null ? Float32Array.from(readAccessor(p.attributes.TEXCOORD_1)) : null;   // (the lightmap: LOD tools weld on it)
+        parts.push({ name, node: nd.name, slot: mat, positions: Pw, normals: Nw, index: I, prim: pi, uv1: U1 });
       });
     }
     for (const c of nd.children || []) visit(c, M, rootName ?? nd.name);

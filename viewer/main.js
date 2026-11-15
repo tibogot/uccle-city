@@ -1217,7 +1217,7 @@ async function main() {
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
     window.__pendingStatics = [];
   }
-  const drive = () => {
+  const drive = (vehicle = "car") => {      // (vehicle "moto": the motorbike, viewer/moto/, docs/MOTO.md)
     // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
     const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;
     const T = here && world.tiles.find((t) => here[0] >= t.bounds.x0 && here[0] <= t.bounds.x1 && here[1] >= t.bounds.z0 && here[1] <= t.bounds.z1);
@@ -1227,8 +1227,10 @@ async function main() {
     if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false;
     let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
     if (TILE === "I6" && !atP && !T && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
-    driver.start(s.x - Math.cos(h) * 1.6, s.z + Math.sin(h) * 1.6, h);   // keep right
+    const keep = vehicle === "moto" ? 1.2 : 1.6;
+    return driver.start(s.x - Math.cos(h) * keep, s.z + Math.sin(h) * keep, h, vehicle);   // keep right
   };
+  const moto = () => drive("moto");
   driver.onExit = () => setView("stjob");
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
@@ -1251,9 +1253,16 @@ async function main() {
   $("btnStJob").onclick = () => setView("stjob");
   $("btnWalk").onclick = walk;
   $("btnFly").onclick = fly;
-  $("btnDrive").onclick = drive;
+  $("btnDrive").onclick = () => drive();
+  if ($("btnMoto")) $("btnMoto").onclick = moto;
+  // B: the motorbike, from any mode (orbit: on the nearest road of the view)
+  addEventListener("keydown", (e) => {
+    if (e.code !== "KeyB" || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target?.closest?.("input,select,textarea")) return;
+    if (driver.on && driver.vehicle === "moto") return;
+    moto();
+  });
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
-  if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "moto") { setView("overview"); moto(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
   // third person: a character on foot (viewer/character/cityHook.js, Capsule Lab); the button, ?view=third, the dev panel
   let thirdBoot = null;                   // one start only, however many callers (button, ?view=third, a shared link)
   const thirdPerson = async () => {
@@ -1563,7 +1572,7 @@ async function main() {
     return Object.entries(agg).sort((a, b) => b[1] - a[1]).map(([k, ms]) => [k, +ms.toFixed(3)]);
   };
   // the player and the teleport (the minimap's click-to-teleport, the dev panel's Go to): streams the target tile in
-  const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? "drive" : walker.on ? "walk" : "orbit");
+  const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? (driver.vehicle === "moto" ? "moto" : "drive") : walker.on ? "walk" : "orbit");
   const dir = new THREE.Vector3();
   const getPlayer = () => {
     const m = mode();
@@ -1572,7 +1581,7 @@ async function main() {
     let x, z, heading, y;
     if (m === "third") { x = third.tp.x; z = third.tp.z; y = third.tp.y; heading = Math.PI - third.tp.ctl.yaw; }
     else if (m === "fly") { x = flyer.x; z = flyer.z; y = flyer.pos.y; heading = -flyer.yaw; }
-    else if (m === "drive") { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
+    else if (m === "drive" || m === "moto") { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
     else if (m === "walk") { x = walker.x; z = walker.z; y = camera.position.y; heading = -walker.yaw; }
     else { x = controls.target.x; z = controls.target.z; y = camera.position.y; heading = bear; }
     const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
@@ -1604,7 +1613,7 @@ async function main() {
     const tTile = performance.now() - t0;
     if (m === "walk") walker.start(x, z, -b);
     else if (m === "fly") { controls.enabled = false; flyer.start(x, z, -b, world.surface(x, z) + 45); }
-    else if (m === "drive") { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
+    else if (m === "drive" || m === "moto") { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
     else if (m === "third") {
       controls.enabled = false;
       third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
@@ -1622,7 +1631,7 @@ async function main() {
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)

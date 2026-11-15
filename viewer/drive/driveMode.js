@@ -18,6 +18,9 @@ import { DriveKeys } from "./input.js";
 import { lampSites } from "../lamps.js";
 import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
+import { MOTO, MOTO_BODY, createMotoState, stepMoto, motoHit } from "../moto/motoPhysics.js";
+import { MotoCamera } from "../moto/motoCamera.js";
+import { MotoAudio } from "../moto/motoAudio.js";
 
 /** Main thread, once per loaded tile: the worker's drive data + the tile's lamp posts and bollards, from the lists the
  *  city DRAWS (drawn = { lamps: lamps.js placedLampSites, bollards: [{x, z}] }: the lamps moved onto the measured
@@ -155,8 +158,14 @@ export class Driver {
     this.chase = new ChaseCamera(camera, dom);
     this.debug = new ColliderDebug(scene);
     this.debug.visible = /[?&]drivedebug=1/.test(location.search);
+    // the motorbike (viewer/moto/, docs/MOTO.md): the same driver, colliders, ground and traffic; its own physics,
+    // model, camera and sound. setVehicle("moto" | "car"); ?view=moto starts on it.
+    this.vehicle = "car";
+    this.motoChase = new MotoCamera(camera, dom);
+    this.audio = new MotoAudio();
     this.keys = new DriveKeys({ active: () => this.on, onKey: (k) => {
-      if (k === "KeyR") this.reset(); else if (k === "KeyC") this.chase.next();
+      if (k === "KeyR") this.reset(); else if (k === "KeyC") (this.vehicle === "moto" ? this.motoChase : this.chase).next();
+      else if (k === "KeyN") { if (this.vehicle === "moto") this.audio.toggleMute(); }
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
     this.ground = (x, z) => {
@@ -196,6 +205,10 @@ export class Driver {
     this.extra = [];   // collider sets no tile carries (hero models: the Saint-Job front steps)
     this.ledges = !/[?&]colfix=0/.test(location.search);       // ?colfix=0: the car climbs any step (as before the audit)
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges });
+    // the bike's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the traffic's
+    // moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
+    this.motoEnv = createCarEnv({ sets: this.sets, ground: this.ground, handling: MOTO, waters: () => this.world.waters, ledges: this.ledges, dims: MOTO_BODY, onHit: motoHit });
+    Object.defineProperty(this.motoEnv, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     this.camNear = [];
     this.insideWall = (x, z) => pointInBuilding(this.camNear, x, z);
     this.hud = document.createElement("div");
@@ -228,7 +241,44 @@ export class Driver {
     if (this.state) this.car.update(this.state);
   }
 
-  async start(x, z, heading) {
+  /** "car" | "moto": which vehicle start() uses (the motorbike loads on first use) */
+  async setVehicle(v) {
+    const was = this.vehicle;
+    this.vehicle = v === "moto" ? "moto" : "car";
+    if (this.vehicle === "moto" && !this.moto) {
+      const { loadMotoModel, createMoto, motoLights } = await import("../moto/motoModel.js");
+      this.motoLights = motoLights;
+      this.motoModel = await loadMotoModel();
+      this.moto = createMoto(this.motoModel);
+      this.moto.root.visible = false;
+      this.scene.add(this.moto.root);
+    }
+    if (this.vehicle === "car" && !this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "faceted:hatch_c").catch(() => this.setCar("scripted"));
+    if (this.on && was !== this.vehicle) {
+      const s = this.state;
+      this.startPose = { x: s.x, z: s.z, heading: s.heading };
+      if (this.car) this.car.root.visible = this.vehicle === "car";
+      this.moto && (this.moto.root.visible = this.vehicle === "moto");
+      this.reset();
+    }
+  }
+  /** what the night lights (nightLights/cityNight.js) follow: the vehicle's frame and its lamps */
+  get lampRoot() { return this.vehicle === "moto" ? this.moto?.lampRoot : this.car?.root; }
+  get lampModel() { return this.vehicle === "moto" ? this.motoModel : this.model; }
+
+  async start(x, z, heading, vehicle = null) {
+    if (vehicle) await this.setVehicle(vehicle);
+    if (this.vehicle === "moto") {
+      if (!this.moto) await this.setVehicle("moto");
+      this.startPose = { x, z, heading };
+      this.on = true;
+      this.moto.root.visible = true;
+      if (this.car) this.car.root.visible = false;
+      this.audio.active = true;
+      this.hud.style.display = "";
+      this.reset();
+      return;
+    }
     if (!this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "faceted:hatch_c").catch(() => this.setCar("scripted"));   // our faceted family is the default (owner, 2026-11-05)
     this.startPose = { x, z, heading };
     this.on = true;
@@ -238,7 +288,9 @@ export class Driver {
   }
   reset() {
     const s = this.startPose;
-    this.state = createCarState(s.x, s.z, s.heading);
+    this.state = this.vehicle === "moto" ? createMotoState(s.x, s.z, s.heading) : createCarState(s.x, s.z, s.heading);
+    this.moto?.reattach();
+    this.motoChase.reset();
     this.state.y = NaN;                                   // (no layer hint yet: the top surface)
     this.state.y = this.ground(s.x, s.z);
     this.chase.reset();
@@ -246,6 +298,8 @@ export class Driver {
   stop() {
     this.on = false; this.chase.active = false;
     if (this.car) this.car.root.visible = false;
+    if (this.moto) { this.moto.root.visible = false; this.moto.reattach(); }
+    this.audio.stop(); this.motoChase.active = false;
     this.debug.visible = false;
     this.hud.style.display = "none";
   }
@@ -254,6 +308,7 @@ export class Driver {
 
   update(dt) {
     if (!this.on || !this.state) return;
+    if (this.vehicle === "moto") return this.updateMoto(dt);
     this.chase.active = true;
     const t0 = performance.now();
     const c = this.state;
@@ -269,6 +324,40 @@ export class Driver {
     if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0)
       this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h${c.speed < -0.2 ? " R" : ""} · C camera · G colliders · R reset</small>`;
   }
+  updateMoto(dt) {
+    this.motoChase.active = true; this.chase.active = false;
+    const t0 = performance.now();
+    const c = this.state;
+    stepMoto(c, this.keys.readMoto(), dt, this.motoEnv, MOTO);
+    const night = lightEnv.uNight?.value > 0.5 ? 1 : 0;
+    const ML = this.motoLights;
+    ML.head.value = ML.tail.value = night; ML.brake.value = c.braking ? 1 : 0;
+    this.moto.update(c, dt, this.ground);
+    // LOD by the camera's distance (the player's bike: LOD0 in every riding view; the far LODs for the orbit / far views)
+    const cp = this.camera.position, d = Math.hypot(cp.x - c.x, cp.y - c.y, cp.z - c.z), LD = this.motoModel.lodDist;
+    const k = this.moto.lod, want = d < LD[0] * (k > 0 ? 0.9 : 1) ? 0 : d < LD[1] * (k > 1 ? 0.9 : 1) ? 1 : 2;
+    this.moto.setLod(want);
+    this.camNear.length = 0;
+    for (const col of this.sets(c.x, c.z, 14)) gather(col, c.x, c.z, 14, this.camNear);
+    this.motoChase.update(c, dt, this.ground, this.insideWall, this.headAt);
+    this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, MOTO_BODY);
+    this.audio.update(c, dt);
+    this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
+    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0) {
+      const rpm = Math.round(c.rpm / 100) * 100, bar = Math.round(Math.min(1, c.rpm / 11800) * 10);
+      this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h · ${c.crashed ? "CRASH" : `gear ${c.gear}`} ` +
+        `<span style="letter-spacing:-1px;color:${bar > 8 ? "#ff6a4a" : "#9fe08a"}">${"▮".repeat(bar)}</span><span style="letter-spacing:-1px;color:#4a525c">${"▮".repeat(10 - bar)}</span> ${rpm} rpm` +
+        ` · Shift wheelie · Space rear · C camera · N sound ${this.audio.muted ? "off" : "on"}</small>`;
+    }
+  }
+  /** the rider's eyes in world space (the helmet view) */
+  headAt = () => {
+    const c = this.state, s = Math.sin(c.heading), k = Math.cos(c.heading), up = 1.53 + (c.tuck || 0) * -0.06;
+    const side = Math.sin(c.lean) * up, h = Math.cos(c.lean) * up;
+    const out = this._head ||= [0, 0, 0];
+    out[0] = c.x + k * side + s * (0.05 + Math.max(0, c.wheelie) * -0.5); out[1] = c.y + h + Math.max(0, c.wheelie) * 0.4; out[2] = c.z - s * side + k * (0.05 + Math.max(0, c.wheelie) * -0.5);
+    return out;
+  };
   info() {
     const c = this.state;
     return c ? { x: +c.x.toFixed(1), z: +c.z.toFixed(1), y: +c.y.toFixed(2), kmh: +(c.speed * 3.6).toFixed(1), hits: c.hits, near: this.env.tested, ms: +this.ms.toFixed(3), cam: this.chase.mode } : null;

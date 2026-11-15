@@ -33,8 +33,8 @@ export const SECTIONS = {
 export const FEATURES = [
   // ---------------------------------------------------------------- navigation (written by Go to / the share link)
   txt("tile", "nav", "start tile", "The tile the city boots on (I6 = Saint-Job). NB: ?tile=H6 at boot crashes (known bug, TODO.md).", "I6", { ui: false }),
-  sel("view", "nav", "start view", "The first view / mode: overview, stjob (close-up / ?at / ?cam), walk, fly, drive, third.",
-    [[null, "overview"], ["stjob", "close-up"], ["walk", "walk"], ["fly", "fly"], ["drive", "drive"], ["third", "third person"]], { ui: false }),
+  sel("view", "nav", "start view", "The first view / mode: overview, stjob (close-up / ?at / ?cam), walk, fly, drive, moto (the motorbike, docs/MOTO.md), third.",
+    [[null, "overview"], ["stjob", "close-up"], ["walk", "walk"], ["fly", "fly"], ["drive", "drive"], ["moto", "motorbike"], ["third", "third person"]], { ui: false }),
   txt("at", "nav", "at x,z", "Close-up target / walk / drive start, city metres (x east, z south).", "1153,540", { ui: false }),
   txt("cam", "nav", "camera x,z,h", "Close-up camera position: x, z and height above the ground (m).", "1223,650,45", { ui: false }),
   num("yaw", "nav", "walk facing (°)", "Walk mode's facing at the start: 0 = -z (north-ish), 90 = -x.", 0, 0, 360, 1, { ui: false }),
@@ -44,6 +44,7 @@ export const FEATURES = [
   // ---------------------------------------------------------------- modes & camera (live ones are the section's own controls)
   txt("car", "modes", "car (drive)", "The drive mode's car: scripted or faceted:<id>.", "faceted:hatch_c", { live: "car (drive)" }),
   txt("char", "modes", "character", "Third person character: hoodie, casual, capsule.", "hoodie", { live: "character (3rd person)" }),
+  opt("motosound", "modes", "motorbike sound", "The motorbike's procedural engine / wind / tyre sound (OFF by default; N toggles it while riding). docs/MOTO.md.", { live: "motorbike sound" }),
   opt("drivedebug", "modes", "car colliders", "Draw the drive colliders (key G in drive mode).", { live: "car colliders (G)" }),
   opt("chardebug", "modes", "character colliders", "Draw the third-person collision world (key G).", { live: "character colliders (G)" }),
   opt("invert", "modes", "invert falcon pitch", "Falcon flight: inverted pitch on the mouse / keys.", { sub: "Falcon flight" }),

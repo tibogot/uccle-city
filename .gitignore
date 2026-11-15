@@ -63,3 +63,4 @@ models/heros/*.raw.glb
 models/heros/audit/*/*.json
 models/heros/statue_work/
 asset_hashes.json
+models/moto/.aocache/
