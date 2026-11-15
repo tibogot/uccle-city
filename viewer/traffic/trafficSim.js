@@ -61,6 +61,11 @@ export class TrafficSim {
       manPts: F(MAN * 2), manCum: F(MAN), manLen: F(), manT: F(), manDir: new Int8Array(cap), slot: new Array(cap).fill(null),
       onPath: I(1, -1), onD: new Float64Array(cap),
       gen: new Uint32Array(cap), handoff: U(), parkPath: I(1, -1),         // pop checks: a spawn counter per slot; 1 = came from / went to a parked car
+      // POLICE GAME (docs/POLICE_GAME.md): ctl 0 normal, 1 FLEE (a stolen car: faster, overtakes, runs lights, turns
+      // away from the police), 2 PULL OVER (slows to a stop on the right), 3 STOPPED (stands on the right);
+      // speedF a speed factor (a speeder); yr the sideways room a car wants (m, + left: yielding pulls right);
+      // overT an overtaking flee car's timer (s)
+      ctl: U(), speedF: F(), yr: F(), overT: F(),
       room: F(),                                     // collisions round 2: the sideways shift (m, + = left) a car makes for a filtering motorbike
       gap: F(), lead: U(),                            // debug: the gap IDM used and what it was to (1 car, 2 obstacle, 3 hold)   // where a maneuvering car sits on its lane (for followers)
     });
@@ -74,11 +79,18 @@ export class TrafficSim {
       bh: new Float32Array(OBS_MAX), bx: new Float32Array(OBS_MAX), bz: new Float32Array(OBS_MAX) };
     // the filtering motorbike (cityTraffic.js sets it each step): cars in a queue beside / ahead of it shift aside
     this.bike = { on: false, x: 0, z: 0, h: 0, v: 0 };
+    // POLICE GAME: the emergency car (lights + siren on: the police game sets it each step): the traffic ahead pulls
+    // right and stops, oncoming cars slow, cars at junctions wait; flee cars turn away from `chaser`
+    this.emerg = { on: false, x: 0, z: 0, h: 0, v: 0 };
+    this.chaser = { x: 0, z: 0 };
+    this.extraObs = [];                              // static obstacles a game adds ({ x, z, r }): an accident, cones
+    this._fi = -1;                                   // (fillRoute's car, for the flee route choice)
+    this.tmp4 = new Float64Array(4);
     this.oe = { n: 0, d: new Float32Array(OBS_ENTRIES), r: new Float32Array(OBS_ENTRIES), v: new Float32Array(OBS_ENTRIES), nxt: new Int32Array(OBS_ENTRIES) };
     this.tmp = new Float64Array(4); this.tmp2 = new Float64Array(4); this.tmp3 = new Float64Array(4);
     this.t = 0; this.acc_ = 0; this.steps = 0;
     this.params = { density: 1, speed: 1, hour: 9, radius: 470, minSpawnDist: 45, parkRate: 1, signals: true, maxCars: cap };
-    this.stats = { cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0 };
+    this.stats = { yielding: 0, cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0 };
     this.freeSlots = [];         // parking slots vacated by pull-outs (viewer/carFleet.js car objects)
     this._projCtx = { k: 0 };
     this._proj = (gid, along, lat, tx, tz) => this.addObsEntry(gid, along, lat, tx, tz);
@@ -96,9 +108,9 @@ export class TrafficSim {
     const i = gid & 0xffff, a = g.nextOff[i], b = g.nextOff[i + 1];
     if (a === b) return -1;
     let tot = 0;
-    for (let k = a; k < b; k++) tot += this.nextWeight(g, g.nextIdx[k]);
+    for (let k = a; k < b; k++) tot += this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]);
     let r = this.rand() * tot, j = g.nextIdx[a];
-    for (let k = a; k < b; k++) { const w = this.nextWeight(g, g.nextIdx[k]); if (r < w) { j = g.nextIdx[k]; break; } r -= w; }
+    for (let k = a; k < b; k++) { const w = this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]); if (r < w) { j = g.nextIdx[k]; break; } r -= w; }
     const gj = (g.slot << 16) | j;
     return g.core[j] || g.twin[j] < 0 ? gj : g.twin[j];
   }
@@ -111,7 +123,21 @@ export class TrafficSim {
     if (rk === 0) w *= 0.12;
     return w;
   }
+  /** POLICE GAME: a fleeing car prefers the junction exit that leads away from the chaser (x 12 straight away,
+   *  x 0.08 towards it); 1 for everybody else */
+  fleeWeight(g, j) {
+    const i = this._fi;
+    if (i < 0 || this.ctl[i] !== 1 || !g.kind[j]) return 1;
+    const T = this.tmp4, gid = (g.slot << 16) | j;
+    this.W.point(gid, 0, T); const x0 = T[0], z0 = T[1];
+    this.W.point(gid, g.len[j], T);
+    const dx = T[0] - x0, dz = T[1] - z0, l = Math.hypot(dx, dz) || 1;
+    let ax = x0 - this.chaser.x, az = z0 - this.chaser.z; const al = Math.hypot(ax, az) || 1; ax /= al; az /= al;
+    const ex = l > 2 ? dx / l : T[2], ez = l > 2 ? dz / l : T[3];
+    return Math.exp(2.5 * (ex * ax + ez * az));
+  }
   fillRoute(i) {
+    this._fi = i;
     const R = this.route, o = i * ROUTE;
     let last = this.path[i];
     for (let k = 0; k < ROUTE; k++) {
@@ -119,6 +145,7 @@ export class TrafficSim {
       last = R[o + k];
       if (last < 0) { for (let m = k + 1; m < ROUTE; m++) R[o + m] = -1; break; }
     }
+    this._fi = -1;
   }
   shiftRoute(i) {
     const R = this.route, o = i * ROUTE;
@@ -146,6 +173,7 @@ export class TrafficSim {
     this.state[i] = ST.drive; this.hold[i] = 0; this.holdT[i] = 0; this.stopDone[i] = -1; this.committed[i] = -1; this.waitT[i] = 0; this.bits[i] = 0;
     this.spin[i] = this.rand() * 6.28; this.steer[i] = 0; this.offX[i] = 0; this.offZ[i] = 0; this.age[i] = 0; this.seen[i] = 0;
     this.slot[i] = null; this.onPath[i] = -1; this.gen[i]++; this.handoff[i] = 0; this.keep[i] = 0;
+    this.ctl[i] = 0; this.speedF[i] = 1; this.yr[i] = 0; this.overT[i] = 0;
     this.pose(i); this.copyPrev(i);
     this.count++;
     return i;
@@ -299,7 +327,10 @@ export class TrafficSim {
   /** Should car i wait at the hold point of lane `L` (gid) before connector `C` (gid, may be -1)? -> HOLD.* */
   decide(i, L, C, X, dStop) {
     const g = this.W.slots[L >>> 16], li = L & 0xffff, c = g.ctrl[li], v = this.v[i];
-    if (c === CTRL.signal && this.params.signals) {
+    // POLICE GAME: a fleeing car runs about 2 lights / stop signs / give-ways in 3 (decided per car x lane: stable)
+    const runs = this.ctl[i] === 1 && (((L * 2654435761) ^ (i * 40503)) >>> 0) % 100 < 65;
+    if (runs) { if (C < 0) return 0; }
+    else if (c === CTRL.signal && this.params.signals) {
       const s = signalState(g.phase[li], this.t);
       if (s === RED) return dStop > -0.3 ? HOLD.signal : 0;
       if (s === AMBER && dStop > (v * v) / (2 * 3.2) + 0.8) return HOLD.signal;
@@ -312,7 +343,7 @@ export class TrafficSim {
     if (!gc) return 0;
     const ci = C & 0xffff;
     if (gc.kind[ci]) {
-      const courtesy = this.holdT[i] > 3.5 + (i % 5) * 0.8;
+      const courtesy = this.holdT[i] > 3.5 + (i % 5) * 0.8 || runs;
       for (let k = gc.cfOff[ci]; k < gc.cfOff[ci + 1]; k++) {
         const O = (gc.slot << 16) | gc.cfOther[k], atO = gc.cfOtherAt[k], yl = gc.cfYield[k];
         // (a) somebody on the other connector who has not cleared the conflict point: never go
@@ -368,12 +399,39 @@ export class TrafficSim {
     const W = this.W, R = this.route, o = i * ROUTE, half = this.half[i];
     const p = this.path[i], d = this.d[i], v = this.v[i];
     const g = W.slots[p >>> 16], pi = p & 0xffff;
-    let v0 = g.speed[pi] * this.v0f[i] * this.params.speed;
+    let v0 = g.speed[pi] * this.v0f[i] * this.params.speed * this.speedF[i];
     let gap = Infinity, vL = 0, lead = 0;
     const tmp = this.tmp;
-    // the car ahead on this path, an obstacle on it
+    // POLICE GAME: control (flee / pull over / stopped) and yielding to the emergency car
+    const ctl = this.ctl[i];
+    let yieldCap = Infinity, yieldHold = false;
+    this.yr[i] = 0;
+    if (ctl === 1) { v0 = Math.max(v0 * 1.75, 15); if (this.overT[i] > 0) { this.overT[i] -= STEP; this.yr[i] = 2.7; } }
+    else if (ctl === 2) { v0 = Math.max(0.05, v * 0.78); this.yr[i] = -0.9; if (v < 0.4) { this.ctl[i] = 3; this.v[i] = 0; } }
+    else if (ctl === 3) { this.yr[i] = -0.9; this.acc[i] = -8; this.hold[i] = 0; this.gap[i] = 0; return; }
+    else if (this.emerg.on) {
+      const E = this.emerg, dx = this.x[i] - E.x, dz = this.z[i] - E.z;
+      if (dx * dx + dz * dz < 95 * 95) {
+        const ex = Math.sin(E.h), ez = Math.cos(E.h), along = dx * ex + dz * ez, lat = Math.abs(dx * ez - dz * ex);
+        const dir = Math.sin(this.yaw[i]) * ex + Math.cos(this.yaw[i]) * ez;
+        if (dir > 0.6 && along > 2 && along < 80 && lat < 7) {                 // ahead, same way: pull right, stop
+          this.yr[i] = -0.8;                                                   // (as far right as parked cars allow)
+          yieldCap = along < 45 ? Math.max(0.05, v * 0.8) : 4;
+          this.stats.yielding++;
+        } else if (dir < -0.6 && along > 0 && along < 70 && lat < 12) {       // oncoming: slow, keep right
+          this.yr[i] = -0.5; yieldCap = 3.5; this.stats.yielding++;
+        } else if (dir <= 0.6 && dir >= -0.6 && along > -25 && along < 75) yieldHold = true;   // across: wait at the line
+      }
+    }
+    if (yieldCap < v0) v0 = yieldCap;
+    // the car ahead on this path, an obstacle on it (an overtaking flee car ignores the cars)
     const j = this.nxt[i];
-    if (j >= 0) { gap = this.posOn(j) - d - this.half[j] - half; vL = this.v[j]; lead = 1; }
+    const over = ctl === 1 && this.overT[i] > 0;
+    if (j >= 0 && !over) { gap = this.posOn(j) - d - this.half[j] - half; vL = this.v[j]; lead = 1; }
+    if (ctl === 1 && j >= 0 && this.overT[i] <= 0) {
+      const gj = this.posOn(j) - d - this.half[j] - half;
+      if (gj < 22 && this.v[j] < v0 * 0.7 && this.v[i] > 3) this.overT[i] = 3.2;    // a slow car ahead: out and past it
+    }
     if (this.obsAhead(p, d + half, tmp) < gap) { gap = tmp[0]; vL = tmp[1]; lead = 2; }
     // along the route: speed limits ahead (braked for), the last car / obstacle on each next path
     v0 = this.curveLimit(g, pi, d + half, 0, d + half + 45, v0);
@@ -384,6 +442,7 @@ export class TrafficSim {
       const dStop = g.holdAt[pi] - (d + half);
       if (dStop > -0.6) {
         hold = this.decide(i, p, R[o], R[o + 1], dStop);
+        if (!hold && yieldHold && dStop > 1.5) hold = HOLD.yield;                 // (police game: the emergency car)
         if (!hold && dStop < (v * v) / (2 * 3.5) + 1) this.committed[i] = p;     // decided and close: go
         if (hold && dStop < gap) { gap = Math.max(0.05, dStop); vL = 0; lead = 3; }
       }
@@ -401,7 +460,7 @@ export class TrafficSim {
       const allowed = Math.sqrt(vq * vq + 2 * 1.4 * room);
       if (allowed < v0) v0 = allowed;
       if (!gq.kind[qi] && room < 45) v0 = this.curveLimit(gq, qi, 0, room, 45 - room, v0);
-      if (gap === Infinity) {
+      if (gap === Infinity && !over) {
         const h = gq.head[qi];
         if (h >= 0 && h !== i) { gap = dist + this.posOn(h) - this.half[h] - half; vL = this.v[h]; lead = 1; }
       }
@@ -412,10 +471,12 @@ export class TrafficSim {
       if (!hold && gq.holdAt[qi] >= 0 && !gq.kind[qi] && this.committed[i] !== q && dist + gq.holdAt[qi] - half < 70) {
         const dStop = dist + gq.holdAt[qi] - half;
         hold = this.decide(i, q, k + 1 < ROUTE ? R[o + k + 1] : -1, k + 2 < ROUTE ? R[o + k + 2] : -1, dStop);
+        if (!hold && yieldHold && dStop > 1.5 && dStop < 35) hold = HOLD.yield;
         if (hold && dStop < gap) { gap = Math.max(0.05, dStop); vL = 0; lead = 3; }
       }
       dist += gq.len[qi];
     }
+    if (ctl === 1) v0 = Math.max(v0, Math.min(15, v0 * 1.4));                // (police game: a fleeing car takes the bends faster)
     this.hold[i] = hold; this.gap[i] = gap; this.lead[i] = gap < Infinity ? lead : 0;
     if (hold && v < 0.15) this.holdT[i] += STEP; else if (!hold) this.holdT[i] = 0;
     // IDM
@@ -437,6 +498,8 @@ export class TrafficSim {
     this.t = signalClock.now();
     while (this.freeLater.length) this.free.push(this.freeLater.pop());
     this.buildLists();
+    for (let k = 0; k < this.extraObs.length; k++) { const o = this.extraObs[k]; this.addObstacle(o.x, o.z, o.r); }
+    this.stats.yielding = 0;
     this.projectObstacles();
     for (let i = 0; i < this.cap; i++) {
       if (!this.alive[i]) continue;
@@ -450,7 +513,7 @@ export class TrafficSim {
       if (st === ST.drive || st === ST.inStop) this.move(i);
       else this.maneuver(i, ctx);
       if (!this.alive[i]) continue;
-      if (this.room[i] || this.bike.on) this.makeRoom(i, st === ST.drive || st === ST.inStop);
+      if (this.room[i] || this.bike.on || this.yr[i]) this.makeRoom(i, st === ST.drive || st === ST.inStop);
       // handover blend: the offset left by a tile-border twin decays
       if (this.offX[i] || this.offZ[i]) { this.offX[i] *= 0.9; this.offZ[i] *= 0.9; if (Math.abs(this.offX[i]) + Math.abs(this.offZ[i]) < 0.005) this.offX[i] = this.offZ[i] = 0; }
       this.pose(i);
@@ -480,7 +543,8 @@ export class TrafficSim {
         want = -Math.sign(lat) * 0.45 * Math.min(1, (3.4 - al) / 1.2);
       }
     }
-    const d = want - this.room[i], m = (want ? 0.5 : 0.35) * STEP;
+    if (!want && this.yr[i]) want = this.yr[i];                           // (police game: yielding / overtaking)
+    const d = want - this.room[i], m = (want ? (this.ctl[i] === 1 ? 1.6 : 0.6) : 0.35) * STEP;
     this.room[i] += d > m ? m : d < -m ? -m : d;
   }
 
@@ -662,7 +726,7 @@ export class TrafficSim {
       for (let e = -1; e < g.prevOff[pi + 1] - g.prevOff[pi]; e++) {
         const lane2 = e < 0 ? pi : g.prevIdx[g.prevOff[pi] + e], base = e < 0 ? 0 : g.len[lane2];
         for (let j = g.head[lane2]; j >= 0; j = this.nxt[j]) {
-          if (this.state[j] !== ST.drive || this.hold[j]) continue;
+          if (this.state[j] !== ST.drive || this.hold[j] || this.keep[j] || this.ctl[j]) continue;
           if (e >= 0 && this.route[j * ROUTE] !== gid) continue;
           const ahead = along + base - this.d[j];
           if (ahead < 25 || ahead > 80) continue;
@@ -705,6 +769,24 @@ export class TrafficSim {
     c.hidden = true; c.busy = true;
     this.onPark?.(c, true);
     this.stats.pullOuts++; this.handoff[i] = 1;
+  }
+  /** POLICE GAME: a car standing at (x, z, heading) off the lanes (a car parked on the tram rails) joins the traffic:
+   *  the pull-out maneuver without a parked-fleet slot. Returns its index or -1. */
+  joinFrom(x, z, heading, typeIdx, rgb) {
+    const hx = Math.sin(heading), hz = Math.cos(heading);
+    const lane = this.laneAt(x, z, hx, hz, 7);
+    if (!lane) return -1;
+    const { gid, along } = lane, L = this.plen(gid);
+    const at = Math.min(L - 1, along + Math.min(12, Math.max(4, L - along - 2)));
+    const i = this.spawnAt(gid, at, 0, typeIdx, rgb);
+    if (i < 0) return -1;
+    this.W.point(gid, at, this.tmp);
+    this.bezier(i, x, z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], 3, 3.5);
+    this.state[i] = ST.out; this.manT[i] = 0; this.manDir[i] = 1; this.slot[i] = null;
+    this.onPath[i] = gid; this.onD[i] = along; this.v[i] = 0.5; this.offX[i] = this.offZ[i] = 0;
+    this.pose(i); this.copyPrev(i);
+    this.insertInList(i);
+    return i;
   }
   bezier(i, x0, z0, h0x, h0z, x3, z3, h3x, h3z, k0, k3) {
     const P = this.manPts, C = this.manCum, o = i * MAN;

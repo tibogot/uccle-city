@@ -793,6 +793,12 @@ falcon, labs (Bird, Lamp), the dev panel.
 - [ ] Modes: walk, bike, drive, drone / photo mode; minimap with real street names.
 - [ ] Missions or uses: deliveries, taxi, "find this place", time slider (historic maps).
 - [ ] Multiplayer (later).
+- [ ] POLICE GAME round 1 (branch claude/police1, docs/POLICE_GAME.md): unmarked estate + magnetic beacon / grille / visor
+      flashers / wig-wag (L), Belgian two-tone siren (J; sound behind the game's option, off by default), the beacon light
+      in ONE reserved night-pool slot (a tall fan, cut at the first wall), traffic yields to lights + siren, shift from
+      the Rue Rouge yard with HQ end-of-shift summary, 4 jobs (tram line, speed check, accident, stolen-car chase with a
+      flee AI), free patrol with calls. Next: GPU A/B on GREEN, a human playtest of the chase (scripted tests only),
+      voices FR / NL, more job types (shoplifting, noise, lost child), other police cars on calls, a smarter flee AI.
 
 ## 8b. Dev panel (owner, 2026-11-04: "a better dev panel, well organized")
 Replace the left HUD with a collapsible, tabbed panel (lil-gui folders, state in the URL so a view can be shared):
