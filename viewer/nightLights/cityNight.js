@@ -428,8 +428,8 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
       pick.end();
       // the player's car first (always offered), then the nearest traffic
       const c = driver?.on ? driver.state : null;
-      if (c && driver.car) {
-        const root = driver.car.root;
+      const root = c ? (driver.lampRoot ?? driver.car?.root) : null;      // (the car, or the motorbike's leaning frame)
+      if (c && root) {
         root.updateMatrixWorld();
         const e = root.matrixWorld.elements, L = playerLamps();
         const put = (v, ahead, k) => {
@@ -565,11 +565,12 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   // the player's lamps: from its model's vertex kinds when it has them (a faceted pack car), else its size
   let pLamps = null, pModel = null;
   const playerLamps = () => {
-    const m = driver.model;
+    const m = driver.lampModel ?? driver.model;
     if (pLamps && pModel === m) return pLamps;
     pModel = m;
     const [w, h, l] = m?.size ?? [1.8, 1.45, 4.1];
     pLamps = { head: [0, Math.min(0.75, h * 0.48), l / 2 - 0.15], tail: [0, Math.min(0.9, h * 0.55), -l / 2 + 0.1] };
+    if (m?.lamps) { pLamps = { head: m.lamps.head, tail: m.lamps.tail }; return pLamps; }   // (the motorbike: its lamps from moto.json)
     const g = m?.lods?.[0]?.body?.[0]?.geo, K = g?.attributes?._kind, P = g?.attributes?.position;
     if (K && P) {
       const acc = { 2: [0, 0, 0, 0], 3: [0, 0, 0, 0] };

@@ -60,10 +60,12 @@ export const cityGrass = {
     if (c) {
       const s = Math.sin(c.heading), co = Math.cos(c.heading);       // forward (sin h, cos h), right (cos h, -sin h)
       let i = 0;
-      for (const f of [1.3, -1.25]) for (const r of [0.78, -0.78]) {
+      const bike = P.driver.vehicle === "moto";            // (the motorbike: two wheels on the centre line)
+      for (const f of bike ? [0.725, -0.725] : [1.3, -1.25]) for (const r of bike ? [0] : [0.78, -0.78]) {
         const x = c.x + s * f + co * r, z = c.z + co * f - s * r, gy = ground(x, z);
-        g.push.set(i++, { x, y: gy, z, radius: 0.4, strength: 1, vx: c.vx, vz: c.vz, ground: gy });
+        g.push.set(i++, { x, y: gy, z, radius: bike ? 0.25 : 0.4, strength: 1, vx: c.vx, vz: c.vz, ground: gy });
       }
+      for (; i < 4; i++) g.push.clear(i);
       this._car = true;
     } else if (this._car) { for (let i = 0; i < 4; i++) g.push.clear(i); this._car = false; }
     const w = P.walker?.on ? P.walker : null;
