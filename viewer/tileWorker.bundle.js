@@ -520,6 +520,53 @@ function faceBays(f) {
   return { nb, bw: usable / nb, doorBay: Math.floor(Math.floor(f.rnd * 4096 + 0.5) / 4096 * nb) };
 }
 
+// viewer/nightLights/litHash.js
+var LIT_PROB = Math.fround(0.55 * 0.62);
+function h3(a, b, c) {
+  let h = (Math.imul(a | 0, 2376512323) ^ Math.imul(b | 0, 3625334849) ^ Math.imul(c | 0, 3407524639)) >>> 0;
+  h = Math.imul(h ^ h >>> 16, 2146121005) >>> 0;
+  h = Math.imul(h ^ h >>> 15, 2221713035) >>> 0;
+  h = (h ^ h >>> 16) >>> 0;
+  return (h >>> 8) / 16777216;
+}
+var seedOf = (rnd) => Math.floor(Math.fround(rnd) * 4096 + 0.5);
+function roomOf(k, fl2, seed) {
+  const fh1 = h3(fl2, seed, 11), fh2 = h3(fl2, seed, 12);
+  const bays = fh1 >= 0.5 ? 2 : 1;
+  const rx = Math.floor((k + 0.5 + Math.floor(fh2 * bays)) / bays);
+  const s1 = h3(rx, fl2, seed * 4 + 1), s2 = h3(rx, fl2, seed * 4 + 2), s3 = h3(rx, fl2, seed * 4 + 3);
+  return { lit: s3 >= 1 - LIT_PROB, s1, s2 };
+}
+var lin = (c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+var hex = (h) => [lin((h >> 16 & 255) / 255), lin((h >> 8 & 255) / 255), lin((h & 255) / 255)];
+var COOL0 = hex(14674175);
+var COOL1 = hex(10467071);
+var WARM0 = hex(16758853);
+var WARM1 = hex(16770204);
+var mix3 = (a, b, t, o) => {
+  o[0] = a[0] + (b[0] - a[0]) * t;
+  o[1] = a[1] + (b[1] - a[1]) * t;
+  o[2] = a[2] + (b[2] - a[2]) * t;
+  return o;
+};
+var col = [0, 0, 0];
+function litWindows(f, out) {
+  const ops = faceOpenings(f);
+  if (!ops.length) return 0;
+  const seed = seedOf(f.rnd);
+  let n = 0;
+  for (const o of ops) {
+    if (o.kind !== "window") continue;
+    const r = roomOf(o.bay, o.floor, seed);
+    if (!r.lit) continue;
+    const c = r.s2 >= 0.3 ? mix3(WARM0, WARM1, r.s1, col) : mix3(COOL0, COOL1, r.s2, col);
+    const u = (o.u0 + o.u1) / 2 + f.u0, h = (o.h0 + o.h1) / 2;
+    out.push(f.tx * u + f.nx * f.dd, f.base + h, f.tz * u + f.nz * f.dd, f.nx, f.nz, (o.u1 - o.u0) / 2 - o.frame, (o.h1 - o.h0) / 2 - o.frame, c[0], c[1], c[2]);
+    n++;
+  }
+  return n;
+}
+
 // viewer/facadeGeom.js
 var PARTY_PROBE = 0.35;
 var STREET_REACH = 30;
@@ -598,17 +645,17 @@ function triOf(P, I, t) {
   const L2 = Math.hypot(nx, ny, nz);
   return L2 < 1e-9 ? null : { p, n: [nx / L2, ny / L2, nz / L2], area: L2 / 2 };
 }
-function pushQuad(D, p0, p1, p2, p3, n, col) {
+function pushQuad(D, p0, p1, p2, p3, n, col2) {
   const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p2[0] - p0[0], vy = p2[1] - p0[1], vz = p2[2] - p0[2];
   const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
   const order = cx * n[0] + cy * n[1] + cz * n[2] >= 0 ? [p0, p1, p2, p0, p2, p3] : [p0, p2, p1, p0, p3, p2];
   for (const q of order) {
     D.position.push(q[0], q[1], q[2]);
     D.normal.push(n[0], n[1], n[2]);
-    D.color.push(col[0], col[1], col[2]);
+    D.color.push(col2[0], col2[1], col2[2]);
   }
 }
-function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
+function box(D, A, B, yTop, height, depth, nx, nz, col2, closed = false) {
   if (height <= 0.01) return;
   const y0 = yTop - height, y1 = yTop;
   const ax = A[0], az = A[2], bx = B[0], bz = B[2];
@@ -617,7 +664,7 @@ function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
   const tl = Math.hypot(tx, tz) || 1;
   tx /= tl;
   tz /= tl;
-  const quad = (p0, p1, p2, p3, n) => pushQuad(D, p0, p1, p2, p3, n, col);
+  const quad = (p0, p1, p2, p3, n) => pushQuad(D, p0, p1, p2, p3, n, col2);
   const a0 = [ax, y0, az], b0 = [bx, y0, bz], a1 = [ax, y1, az], b1 = [bx, y1, bz];
   const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
   quad(A0, B0, B1, A1, [nx, 0, nz]);
@@ -628,13 +675,13 @@ function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
   if (closed) quad(a0, b0, b1, a1, [-nx, 0, -nz]);
 }
 var STRIP_SETBACK = { eb: 2e-3, cu: 4e-3, cl: 6e-3, gu: 8e-3, xx: 4e-3, pi: 0.012, cp: 0.016 };
-function addStrip(S2, kind, A, B, yTop, h, depth, nx, nz, col, off = 0) {
+function addStrip(S2, kind, A, B, yTop, h, depth, nx, nz, col2, off = 0) {
   if (h <= 0.01) return {};
   const tx = -nz, tz = nx;
   let ax = A[0], az = A[2], bx = B[0], bz = B[2];
   if ((bx - ax) * tx + (bz - az) * tz < 0) [ax, az, bx, bz] = [bx, bz, ax, az];
   if (Math.hypot(bx - ax, bz - az) < 0.05) return {};
-  const s = { kind, ax, az, bx, bz, y: yTop, h, d: depth, off, nx, nz, col };
+  const s = { kind, ax, az, bx, bz, y: yTop, h, d: depth, off, nx, nz, col: col2 };
   S2.push(s);
   return s;
 }
@@ -742,7 +789,7 @@ function emitStrips(D, S2, stats) {
     stats.stripJoins++;
   }
   for (const s of merged) {
-    const tx = -s.nz, tz = s.nx, y0 = s.y - s.h, y1 = s.y, n = [s.nx, 0, s.nz], col = s.col;
+    const tx = -s.nz, tz = s.nx, y0 = s.y - s.h, y1 = s.y, n = [s.nx, 0, s.nz], col2 = s.col;
     const sb = STRIP_SETBACK[s.kind] ?? 4e-3;
     const corner = (e) => {
       const m = s["m" + e];
@@ -753,17 +800,17 @@ function emitStrips(D, S2, stats) {
     const [bA, fA] = corner("A"), [bB, fB] = corner("B");
     const P = (q, y) => [q[0], y, q[1]];
     const mk = s.mask, has = (c) => mk ? mk.includes(c) : c !== "b" || s.off > 0;
-    if (has("f")) pushQuad(D, P(fA, y0), P(fB, y0), P(fB, y1), P(fA, y1), n, col);
-    if (has("t")) pushQuad(D, P(bA, y1), P(fA, y1), P(fB, y1), P(bB, y1), [0, 1, 0], col);
-    if (has("s")) pushQuad(D, P(bA, y0), P(bB, y0), P(fB, y0), P(fA, y0), [0, -1, 0], col);
-    if (has("b")) pushQuad(D, P(bA, y0), P(bA, y1), P(bB, y1), P(bB, y0), [-s.nx, 0, -s.nz], col);
-    if (!s.mA) pushQuad(D, P(bA, y0), P(fA, y0), P(fA, y1), P(bA, y1), [-tx, 0, -tz], col);
-    if (!s.mB) pushQuad(D, P(bB, y0), P(bB, y1), P(fB, y1), P(fB, y0), [tx, 0, tz], col);
+    if (has("f")) pushQuad(D, P(fA, y0), P(fB, y0), P(fB, y1), P(fA, y1), n, col2);
+    if (has("t")) pushQuad(D, P(bA, y1), P(fA, y1), P(fB, y1), P(bB, y1), [0, 1, 0], col2);
+    if (has("s")) pushQuad(D, P(bA, y0), P(bB, y0), P(fB, y0), P(fA, y0), [0, -1, 0], col2);
+    if (has("b")) pushQuad(D, P(bA, y0), P(bA, y1), P(bB, y1), P(bB, y0), [-s.nx, 0, -s.nz], col2);
+    if (!s.mA) pushQuad(D, P(bA, y0), P(fA, y0), P(fA, y1), P(bA, y1), [-tx, 0, -tz], col2);
+    if (!s.mB) pushQuad(D, P(bB, y0), P(bB, y1), P(fB, y1), P(fB, y0), [tx, 0, tz], col2);
   }
   stats.strips = merged.length;
   _dbg.strips = merged;
 }
-function beam(D, P0, P1, w, h, col, end0 = "cap", end1 = "cap") {
+function beam(D, P0, P1, w, h, col2, end0 = "cap", end1 = "cap") {
   let dx = P1[0] - P0[0], dy = P1[1] - P0[1], dz = P1[2] - P0[2];
   const L2 = Math.hypot(dx, dy, dz);
   if (L2 < 0.3) return;
@@ -793,7 +840,7 @@ function beam(D, P0, P1, w, h, col, end0 = "cap", end1 = "cap") {
       ny = -ny;
       nz = -nz;
     }
-    pushQuad(D, p0, p1, p2, p3, [nx, ny, nz], col);
+    pushQuad(D, p0, p1, p2, p3, [nx, ny, nz], col2);
   };
   const s1 = [ux * 0.6 + sx * 0.8, uy * 0.6, uz * 0.6 + sz * 0.8], s2 = [ux * 0.6 - sx * 0.8, uy * 0.6, uz * 0.6 - sz * 0.8];
   flat(at2(Q0, -hw * 0.6, hi), at2(Q1, -hw * 0.6, hi), at2(Q1, hw * 0.6, hi), at2(Q0, hw * 0.6, hi), [ux, uy, uz]);
@@ -805,10 +852,10 @@ function beam(D, P0, P1, w, h, col, end0 = "cap", end1 = "cap") {
     flat(at2(Q, -hw, lo), at2(Q, hw, lo), at2(Q, hw * 0.6, hi), at2(Q, -hw * 0.6, hi), o);
   }
 }
-function apexBlock(D, P, w, h, dirX, dirZ, col) {
+function apexBlock(D, P, w, h, dirX, dirZ, col2) {
   const hw = w * 0.62, l = Math.hypot(dirX, dirZ) || 1, ax = dirX / l, az = dirZ / l;
   const A = [P[0] - ax * hw - az * hw, 0, P[2] - az * hw + ax * hw], B = [P[0] + ax * hw - az * hw, 0, P[2] + az * hw + ax * hw];
-  box(D, A, B, P[1] + h * 0.65 + 0.015, h + 0.015, 2 * hw, az, -ax, col, true);
+  box(D, A, B, P[1] + h * 0.65 + 0.015, h + 0.015, 2 * hw, az, -ax, col2, true);
 }
 function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const kit = opts.kit || null;
@@ -886,6 +933,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     return best < STREET_REACH;
   };
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const NW = [];
   const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };
   const shops = new Grid(40);
   const fronts = opts.fronts ? new Grid(40) : null;
@@ -1099,9 +1147,9 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           const key2 = [A[0], A[2], B[0], B[2]].map((v) => Math.round(v * 20)).sort().join();
           if (L2 < 0.6 || seen.has(key2)) continue;
           seen.add(key2);
-          const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
-          addStrip(SD, "cu", A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col);
-          addStrip(SD, "cl", A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col.map((c) => c * 0.93));
+          const col2 = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
+          addStrip(SD, "cu", A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col2);
+          addStrip(SD, "cl", A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col2.map((c) => c * 0.93));
           stats.cornices++;
         }
       }
@@ -1220,6 +1268,32 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         T3.aBld.push(style, partyH, streetA, rnd);
         T3.aFN.push(f.nx, f.nz, shopU, shopW);
         if (T3 === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
+      }
+      if (!landmark && partyH < 999) {
+        let dd = 0, nq = 0;
+        for (const { p } of f.tris) for (const q of p) {
+          dd += q[0] * f.nx + q[2] * f.nz;
+          nq++;
+        }
+        const fr = Math.fround;
+        litWindows({
+          width: fr(width),
+          eaves: fr(faceEaves),
+          partyH: fr(partyH),
+          street: T3 === WK ? streetA && !k.doorless ? 1 : 0 : streetA,
+          rnd: fr(rnd),
+          landmark: false,
+          shop: fr(shopW),
+          shopU: fr(shopU),
+          fit: opts.storeys !== false,
+          u0,
+          tx,
+          tz,
+          nx: f.nx,
+          nz: f.nz,
+          dd: dd / nq,
+          base
+        }, NW);
       }
     }
     if (roofs && !landmark) {
@@ -1426,8 +1500,10 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       aWall: f32(W.aWall),
       aBld: f32(W.aBld),
       aFN: f32(W.aFN),
-      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null,
+      nightWindows: f32(NW)
     },
+    // (night round 3) the lit windows (litHash.js NIGHT_WIN_STRIDE)
     kit: kit ? kit.finish() : null,
     roofKit: roofs ? roofs.finish() : null,
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },
@@ -2128,12 +2204,12 @@ function buildColliders(polys, circles, bounds) {
     circ[i * 3 + 2] = q.r;
     ckind[i] = q.kind ?? KIND2.post;
   });
-  const col = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind, pref };
-  indexCells(col);
-  return col;
+  const col2 = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind, pref };
+  indexCells(col2);
+  return col2;
 }
-function indexCells(col) {
-  const { bounds: b, pbox, circ } = col;
+function indexCells(col2) {
+  const { bounds: b, pbox, circ } = col2;
   const nx = Math.max(1, Math.ceil((b.x1 - b.x0) / CELL)), nz = Math.max(1, Math.ceil((b.z1 - b.z0) / CELL));
   const P = pbox.length / 4, C = circ.length / 3;
   const ci = (x) => Math.min(nx - 1, Math.max(0, Math.floor((x - b.x0) / CELL)));
@@ -2153,10 +2229,10 @@ function indexCells(col) {
     if (!keep(s)) continue;
     for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) items[fill[j * nx + i]++] = k;
   }
-  Object.assign(col, { nx, nz, cellStart: count, cellItems: items, P, C });
-  col.seen = new Uint32Array(P + C);
-  col.stamp = 0;
-  return col;
+  Object.assign(col2, { nx, nz, cellStart: count, cellItems: items, P, C });
+  col2.seen = new Uint32Array(P + C);
+  col2.stamp = 0;
+  return col2;
 }
 var CAR_CLEAR = 2.2;
 var RAISED = 20;
@@ -2270,8 +2346,8 @@ function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf
     if (t.x < bounds.x0 || t.x > bounds.x1 || t.z < bounds.z0 || t.z > bounds.z1) continue;
     circles.push({ x: t.x, z: t.z, r: Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))), kind: KIND2.tree });
   }
-  const col = buildColliders(polys, circles, bounds);
-  return { col, medians, ground, legacy, counts: { buildings: fromWalls ? fromWalls.polys.length : bDoc.buildings.length - overhead, overhead, buildingRegions: fromWalls?.regions, islands, islandsHidden, medianIslands, trees: circles.length } };
+  const col2 = buildColliders(polys, circles, bounds);
+  return { col: col2, medians, ground, legacy, counts: { buildings: fromWalls ? fromWalls.polys.length : bDoc.buildings.length - overhead, overhead, buildingRegions: fromWalls?.regions, islands, islandsHidden, medianIslands, trees: circles.length } };
 }
 function buildingBlocks(bDoc, bBuf, height, bounds, { margin = 30, cell = 0.25, step = 0.12, band = [0.3, 1.3], tol = 0.15 } = {}) {
   const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
@@ -4009,8 +4085,8 @@ function turnClass(ain, aout) {
   if (d < -0.6) return "left";
   return "straight";
 }
-function connectorCurve(p0, h0, p3, h3) {
-  const d0 = [Math.cos(h0), Math.sin(h0)], d3 = [Math.cos(h3), Math.sin(h3)];
+function connectorCurve(p0, h0, p3, h32) {
+  const d0 = [Math.cos(h0), Math.sin(h0)], d3 = [Math.cos(h32), Math.sin(h32)];
   const hit = lineIntersect(p0[0], p0[1], d0[0], d0[1], p3[0], p3[1], -d3[0], -d3[1]);
   const D = Math.hypot(p3[0] - p0[0], p3[1] - p0[1]);
   let u = D / 3, v = D / 3;
@@ -13732,7 +13808,7 @@ async function buildLiteData(entry, base) {
   for (const b of bDoc.buildings) n += b.walls.count + b.roof.count;
   const bp = new Float32Array(n * 9), bn = new Float32Array(n * 9), bc = new Float32Array(n * 9);
   let q = 0;
-  const tri = (t, col) => {
+  const tri = (t, col2) => {
     const ia = I[t * 3] * 3, ib = I[t * 3 + 1] * 3, ic = I[t * 3 + 2] * 3;
     const ux = P[ib] - P[ia], uy = P[ib + 1] - P[ia + 1], uz = P[ib + 2] - P[ia + 2];
     const vx = P[ic] - P[ia], vy = P[ic + 1] - P[ia + 1], vz = P[ic + 2] - P[ia + 2];
@@ -13748,9 +13824,9 @@ async function buildLiteData(entry, base) {
       bn[q] = nx;
       bn[q + 1] = ny;
       bn[q + 2] = nz;
-      bc[q] = col[0];
-      bc[q + 1] = col[1];
-      bc[q + 2] = col[2];
+      bc[q] = col2[0];
+      bc[q + 1] = col2[1];
+      bc[q + 2] = col2[2];
       q += 3;
     }
   };

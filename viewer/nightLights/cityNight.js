@@ -28,9 +28,16 @@ import { NearestN, StaticSources, smooth01 } from "./lightSelect.js";
 import { NightSources, CAR, nightParams } from "./nightSources.js";
 import { GroundLight } from "./groundLight.js";
 import { createGlare } from "./glare.js";
-import { nightGround, DYN } from "./nightMode.js";
+import { nightGround, DYN, nightMap } from "./nightMode.js";
+import { MAP } from "./nightMap.js";
+import { NIGHT_WIN_STRIDE } from "./litHash.js";
+import { createCones, coneLook } from "./lightCones.js";
+import { nightLook } from "./nightLighting.js";
 import { env } from "../lighting.js";
 import { carFleet } from "../carFleet.js";
+import { wx } from "../weather/weatherState.js";
+import { cityWeather } from "../weather/cityWeather.js";
+import { cityStops } from "../stops/cityStops.js";
 
 const qp = new URLSearchParams(location.search);
 export const pool = new LightPool(256);
@@ -56,7 +63,7 @@ const LAMP_SHADOW_LAYER = 6;
 // switch creates none (it made 66-182 ms long tasks: 377 render objects, the first two lamp passes ~45 ms)
 const WARM_LAYER = 7;
 const DEBUG = qp.get("nightdebug") === "1";       // the pop metrics (per lamp / per car weight jumps): off by default (CPU)
-const SHADOW_MODE = qp.get("nightshadow") || "smart";   // "smart" (re-render on change, round 2) | "full" (every frame, round 1)
+const SHADOW_MODE = qp.get("nightshadow") || "alt";    // "alt" (round 3 default: on a busy street both maps had movers every frame, +0.8-1.8 ms; alt renders at most one of them a frame then) | "smart" (re-render on change, round 2) | "full" (every frame, round 1)
 const BUILDING = /^(buildings-|kit |facade|roof|terrain|ground|bridge|tunnel)/i;
 function tagCasters(root, warm, tileCasters = null) {
   let n = 0;
@@ -79,6 +86,13 @@ function tagCasters(root, warm, tileCasters = null) {
 // tree meshes + lamps + bollards ...: ~135 draws, ~0.5 M triangles a map). A tile's sets now stay in the lamp layer
 // only while a shadowed lamp is within REACH of that tile's square (the lamp's 26 m range + a crown). ?lampreach=0: off.
 const TILE_REACH = qp.get("lampreach") !== "0", REACH = 26 + 12;
+// round 3: a tile's instanced set (trees, bollards, chairs, parked cars...) is no longer drawn whole into a lamp map: a
+// PROXY per (set, lamp) holds only its instances within REACH of that lamp (refilled each time the map renders; the
+// set's own geometry + material: the same shadow pipeline, its per-instance attributes copied), on that lamp's own layer
+// (PROXY_LAYER + k: the main camera never sees it). Round 2 drew 72 tree draws / 318 k triangles per 2 maps at Place
+// Saint-Job. ?lampproxy=0: the tile gate above (whole sets).
+const EMPTY_WARM = /^(traffic-car-batch|parked-car-batch|train-)/;      // (round 3) empty by day, filled at night: warmed with one zero-size instance
+const PROXY = TILE_REACH && qp.get("lampproxy") !== "0", PROXY_LAYER = 8, PROXY_CAP = 128;
 
 /** step 0: before renderer.init() */
 export async function installNightLighting(renderer) {
@@ -102,8 +116,14 @@ export async function installNightLighting(renderer) {
 
 // ------------------------------------------------------------------------------------------------ lamp registry
 class LampRegistry {
-  constructor(cap = 16384) {
+  constructor(cap = 16384, recStride = 0) {
     this.cap = cap;
+    // round 3: a kind with many sources (lit windows: ~5-10k a tile) keeps its records in one typed array (recStride
+    // floats per id: nx nz hw hh r g b) instead of an object per source; inMap[id] = 1 once its tile's ground map has
+    // it (nightMap.js): the ground then skips it in the loop (flag "baked"), never before (no light lost meanwhile)
+    this.recStride = recStride;
+    this.rec = recStride ? new Float32Array(cap * recStride) : null;
+    this.inMap = new Uint8Array(cap);
     this.x = new Float32Array(cap).fill(1e9); this.y = new Float32Array(cap); this.z = new Float32Array(cap).fill(1e9);
     this.fade = new Float32Array(cap);
     this.free = new Int32Array(cap); this.nFree = cap;
@@ -113,17 +133,23 @@ class LampRegistry {
     this.onRelease = null;
     this.count = 0;
   }
-  addTile(name, heads, now, items = null) {
-    if (this.tiles.has(name) || !heads?.length) return;
-    const n = Math.min(heads.length, this.nFree);
-    if (n < heads.length) console.warn(`[night] lamp registry full: ${heads.length - n} lamps of ${name} left out`);
+  /** heads: [{ x, y, z }], or (flat) a Float32Array of records `stride` floats each, x y z first, the rest -> rec */
+  addTile(name, heads, now, items = null, stride = 0) {
+    const N = stride ? Math.floor((heads?.length ?? 0) / stride) : heads?.length ?? 0;
+    if (this.tiles.has(name) || !N) return;
+    const n = Math.min(N, this.nFree);
+    if (n < N) console.warn(`[night] registry full: ${N - n} sources of ${name} left out`);
     const ids = new Int32Array(n), lx = new Float32Array(n), ly = new Float32Array(n), lz = new Float32Array(n);
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    const RS = this.recStride;
     for (let k = 0; k < n; k++) {
-      const h = heads[k], id = this.free[--this.nFree];
+      const id = this.free[--this.nFree];
+      let x, y, z;
+      if (stride) { const o = k * stride; x = heads[o]; y = heads[o + 1]; z = heads[o + 2]; for (let j = 0; j < RS; j++) this.rec[id * RS + j] = heads[o + 3 + j]; }
+      else { const h = heads[k]; x = h.x; y = h.y; z = h.z; }
       if (items) this.list[id] = items[k];
-      ids[k] = id; this.x[id] = lx[k] = h.x; this.y[id] = ly[k] = h.y; this.z[id] = lz[k] = h.z; this.fade[id] = 0;
-      x0 = Math.min(x0, h.x); x1 = Math.max(x1, h.x); z0 = Math.min(z0, h.z); z1 = Math.max(z1, h.z);
+      ids[k] = id; this.x[id] = lx[k] = x; this.y[id] = ly[k] = y; this.z[id] = lz[k] = z; this.fade[id] = 0; this.inMap[id] = 0;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
     }
     // the tile's grid offers its LOCAL index: the adapter turns it into the registry id (made once, no per-frame closure)
     // a lamp fading in is offered FARTHER by (1 - fade) x FADE_FAR: it enters the nearest set through the cut-off's own
@@ -139,12 +165,14 @@ class LampRegistry {
     if (!rec) return;
     this.tiles.delete(name); this.tileList.splice(this.tileList.indexOf(rec), 1);
     for (const id of rec.ids) {
-      this.x[id] = this.z[id] = 1e9; this.fade[id] = 0; this.list[id] = null;
+      this.x[id] = this.z[id] = 1e9; this.fade[id] = 0; this.list[id] = null; this.inMap[id] = 0;
       this.onRelease?.(id);
       this.free[this.nFree++] = id;
     }
     this.count -= rec.ids.length;
   }
+  /** (round 3) the tile's sources are in the ground map now (or no longer) */
+  setInMap(name, on) { const r = this.tiles.get(name); if (r) for (const id of r.ids) this.inMap[id] = on ? 1 : 0; }
   /** the tiles' fade-in, by frame time capped at 1/30 s (a long task while a tile streams in must not jump it) */
   step(dt) {
     const k = Math.min(dt, 1 / 30) / FADE_IN;
@@ -182,11 +210,15 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   for (let k = 0; k < 2; k++) {
     // (wider than the lab's 1.22 / 0.65: three's spot profile is flat to ~54 deg from the nadir, so the near walls keep
     // their light; the shadowed share is 0.65 - the lantern's up light and the rest stay pool light, nightParams.shadowShare)
-    const L = new THREE.SpotLight(0xffc785, 0, 24, 1.35, 0.3, 2);
+    const L = new THREE.SpotLight(0xffffff, 0, 24, 1.35, 0.3, 2);
+    // (round 3) the pool lamp's own colour, LINEAR (0xffc785 as hex is sRGB: (1, 0.57, 0.24) linear, redder than the
+    // pool's (1, 0.78, 0.52); the ground's subtract slot below takes exactly this light back out of the map)
+    L.color.setRGB(1.0, 0.78, 0.52);
     L.name = `night-shadow-lamp-${k}`; L.userData.nightShadowLamp = true;
     L.castShadow = true; L.shadow.mapSize.set(512, 512); L.shadow.bias = -0.0006; L.shadow.normalBias = 0.03; L.shadow.radius = 3;
     L.shadow.camera.near = 0.3; L.shadow.camera.far = 26;
     L.shadow.camera.layers.set(LAMP_SHADOW_LAYER);                 // only the street-scale casters (tagCasters below)
+    L.shadow.camera.layers.enable(PROXY_LAYER + k);                 // (round 3) + its own proxies of the tile-wide sets
     L.position.set(0, -500, 0); L.target.position.set(0, -510, 0);
     scene.add(L, L.target); shadowLights.push(L);
   }
@@ -232,11 +264,146 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   // registries like the lamps' (a tile's lights fade in, ids stable); none of them is in the ground map (the city's map
   // holds the lamps only): they light the ground through the loop
   const shopReg = new LampRegistry(4096), signReg = new LampRegistry(4096);
-  const street = { sources: { lamps, windows: EMPTY(), shops: shopReg, signs: signReg } };
+  // round 3, step 6: the LIT WINDOWS of every loaded tile (the tile worker's records, litHash.js: the facade shader's
+  // own hash, so the windows that glow are the ones that light): the 16 nearest are real APERTURE pool lights (the
+  // patch on the pavement, the front garden, the opposite wall), faded out at 40-60 m; all of them light the ground
+  // through the tile's ground map (step 7)
+  const winReg = new LampRegistry(1 << 17, NIGHT_WIN_STRIDE - 3);
+  const street = { sources: { lamps, windows: winReg, shops: shopReg, signs: signReg } };
   nightParams.shadowShare = 0.65;
   nightParams.shopI = 32;              // (the lab's tuned shop value; its default 24 left the sidewalk spill barely visible)
-  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, sizes: { windows: 0, shops: 8, signs: 6 }, ground, baked: { shops: false, signs: false } });
+  // step 8: the light cones in damp air (lightCones.js): only when the street is wet or the air is foggy
+  const cones = createCones(48);
+  cones.mesh.visible = false;
+  scene.add(cones.mesh);
+  // (the ground skips a static light in the loop only once its tile's map has it: registry inMap, per source)
+  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, cones, sizes: { windows: 16, shops: 8, signs: 8, heads: 6, rear: 6 }, ground });   // (round 3: 6 + 6 real car lights, was 12 + 12: the low beams were most of the night GPU at street level, +0.5-1.1 ms; the others light the road through the dynamic layer)
+  // round 3: the ground's SUBTRACT slots, one per shadowed lamp (nightLighting.js groundOnly): the ground map has every
+  // lamp in full, the shadowed lamp's SpotLight adds its share again WITH its shadow: minus the same spot unshadowed,
+  // plus the spot shadowed = the map where nothing shades it (rounds 1-2 lit the ground under the 2 nearest lamps twice)
+  const antiBase = pool.reserve(2);
   lamps.onRelease = (id) => night.shadow.release(id);
+  // ---- round 3, step 7: the GROUND LIGHT MAP per tile (nightMap.js), baked in nightBakeWorker.js once the tile's
+  // static lights are all known (its lamps + lit windows at addTile, its shops / signs / stop posters at addShops, or
+  // 20 s later without them); the layer fades in with the tile
+  const bake = { worker: null, jobs: new Map(), tiles: new Map(), free: [], ms: 0, n: 0, uploads: 0, fading: false };
+  for (let i = nightMap.slots - 1; i >= 0; i--) bake.free.push(i);
+  let bakeId = 0;
+  const bakeWorker = () => bake.worker ??= (() => {
+    const w = new Worker(new URL("./nightBakeWorker.js", import.meta.url), { type: "module" });
+    w.onmessage = (ev) => bakeDone(ev.data);
+    w.onerror = (e) => console.warn("[night] bake worker:", e.message);
+    return w;
+  })();
+  const cellOf = (b) => ({ i: Math.round((b.x0 - MAP.X0) / MAP.TILE), j: Math.round((b.z0 - MAP.Z0) / MAP.TILE) });
+  const groundGrid = (b, groundAt) => {
+    const step = 8, g0x = b.x0 - MAP.MARGIN - step, g0z = b.z0 - MAP.MARGIN - step, n = Math.ceil((MAP.SPAN + 2 * step) / step) + 1;
+    const y = new Float32Array(n * n);
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const v = groundAt(g0x + i * step, g0z + j * step); y[j * n + i] = Number.isFinite(v) ? v : 0; }
+    return { g0x, g0z, step, n, y };
+  };
+  const bakeTile = (name) => {
+    const T = bake.tiles.get(name);
+    if (!T || T.sent) return;
+    clearTimeout(T.timer);
+    T.sent = true;
+    const id = ++bakeId;
+    bake.jobs.set(id, name);
+    const p = nightParams;
+    bakeWorker().postMessage({ id, x0: T.b.x0, z0: T.b.z0, res: MAP.RES, span: MAP.SPAN, margin: MAP.MARGIN, emax: MAP.EMAX, ground: T.ground,
+      lamps: T.lamps, windows: T.windows, shops: T.shops ?? new Float32Array(0),
+      p: { lampI: p.lampI, lampRange: p.lampRange, lampUp: p.lampUp, lampBatwing: p.lampBatwing, windowI: p.windowI, windowRange: p.windowRange, shopI: p.shopI, shopRange: p.shopRange, signI: p.signI, signRange: p.signRange } });
+  };
+  const bakeDone = ({ id, data, ms }) => {
+    const name = bake.jobs.get(id);
+    bake.jobs.delete(id);
+    const T = name && bake.tiles.get(name);
+    if (!T) return;                                           // (the tile left meanwhile)
+    if (T.slot < 0) {
+      if (!bake.free.length) { console.warn(`[night] ground map: no free layer for ${name} (its static lights light the ground through the pool)`); return; }
+      T.slot = bake.free.pop();
+    }
+    const A = nightMap.arr, L = MAP.RES * MAP.RES * 4;
+    A.image.data.set(data, T.slot * L);
+    A.addLayerUpdate(T.slot); A.needsUpdate = true;
+    bake.ms += ms; bake.n++; bake.uploads += data.byteLength;
+    const c = T.cell, o = (c.j * MAP.NX + c.i) * 4;
+    if (c.i >= 0 && c.i < MAP.NX && c.j >= 0 && c.j < MAP.NZ) { nightMap.table[o] = T.slot; nightMap.table[o + 1] = 0; nightMap.slotTex.needsUpdate = true; }
+    T.t = 0; T.ready = true; bake.fading = true;
+    // its static lights are in the map now: the ground skips them in the loop
+    lamps.setInMap(name, true); winReg.setInMap(name, true); shopReg.setInMap(name, true); signReg.setInMap(name, true); signReg.setInMap(name + "#stops", true);
+  };
+  /** the map layers' fade-in (the slot table's g), by frame time capped like the lamps' */
+  const stepBake = (dt) => {
+    if (!bake.fading) return;
+    bake.fading = false;
+    const k = Math.min(dt, 1 / 30) / FADE_IN;
+    for (const T of bake.tiles.values()) {
+      if (!T.ready || T.t >= 1) continue;
+      T.t = Math.min(1, T.t + k); bake.fading = true;
+      const c = T.cell, o = (c.j * MAP.NX + c.i) * 4;
+      if (c.i >= 0 && c.i < MAP.NX && c.j >= 0 && c.j < MAP.NZ) nightMap.table[o + 1] = Math.round(smooth01(T.t) * 255);
+    }
+    nightMap.slotTex.needsUpdate = true;
+  };
+  const dropBake = (name) => {
+    const T = bake.tiles.get(name);
+    if (!T) return;
+    clearTimeout(T.timer);
+    bake.tiles.delete(name);
+    if (T.slot >= 0) {
+      const c = T.cell, o = (c.j * MAP.NX + c.i) * 4;
+      if (c.i >= 0 && c.i < MAP.NX && c.j >= 0 && c.j < MAP.NZ && nightMap.table[o] === T.slot) { nightMap.table[o] = 255; nightMap.table[o + 1] = 0; nightMap.slotTex.needsUpdate = true; }
+      bake.free.push(T.slot);
+    }
+  };
+  // the STIB stop posters (backlit cases of the shelters, free-standing ad panels: viewer/stops/): sign lights, one
+  // per lit poster face, from the kit's poster geometry (its faces grouped by their outward normal, in the piece's frame)
+  let posterFaces = null;
+  const posterFacesOf = () => {
+    if (posterFaces) return posterFaces;
+    const kit = cityStops.kit;
+    if (!kit) return null;
+    posterFaces = {};
+    for (const k of ["shelter", "adpanel"]) {
+      const g = kit.pieces[k]?.poster, P = g?.attributes.position, Nn = g?.attributes.normal;
+      if (!P || !Nn) continue;
+      const groups = [];
+      for (let i = 0; i < P.count; i++) {
+        const nx = Nn.getX(i), nz = Nn.getZ(i), l = Math.hypot(nx, nz);
+        if (l < 0.7) continue;
+        let G = groups.find((q) => q.nx * nx / l + q.nz * nz / l > 0.9);
+        if (!G) groups.push(G = { nx: nx / l, nz: nz / l, x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity, z0: Infinity, z1: -Infinity });
+        const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
+        G.x0 = Math.min(G.x0, x); G.x1 = Math.max(G.x1, x); G.y0 = Math.min(G.y0, y); G.y1 = Math.max(G.y1, y); G.z0 = Math.min(G.z0, z); G.z1 = Math.max(G.z1, z);
+      }
+      // (a face's centre, outward normal, half width along it, half height)
+      posterFaces[k] = groups.map((G) => ({ x: (G.x0 + G.x1) / 2, y: (G.y0 + G.y1) / 2, z: (G.z0 + G.z1) / 2, nx: G.nx, nz: G.nz,
+        hw: Math.max(Math.abs(G.nx) < 0.5 ? G.x1 - G.x0 : G.z1 - G.z0, 0.2) / 2, hh: (G.y1 - G.y0) / 2 }));
+    }
+    return posterFaces;
+  };
+  const POSTER_RGB = [0.92, 0.96, 1.0];               // cool white LED light boxes
+  const stopSigns = (name) => {
+    const t = cityStops.tiles?.get(name), PF = posterFacesOf();
+    if (!t || !PF) return null;
+    const heads = [], items = [], flat = [];
+    for (const k of ["shelter", "adpanel"]) {
+      const a = t.inst[k], F = PF[k];
+      if (!a || !F?.length) continue;
+      for (let o = 0; o < a.length; o += 8) {
+        const yaw = a[o + 3], c = Math.cos(yaw), sn = Math.sin(yaw);
+        for (const f of F) {
+          // (rotation Y by yaw: local (x, z) -> (c x + s z, -s x + c z))
+          const nx = c * f.nx + sn * f.nz, nz = -sn * f.nx + c * f.nz, out = 0.35;
+          const x = a[o] + c * f.x + sn * f.z + nx * out, z = a[o + 2] - sn * f.x + c * f.z + nz * out, y = a[o + 1] + f.y;
+          heads.push({ x, y, z }); items.push({ nx, nz, hw: f.hw, hh: f.hh, col: POSTER_RGB, b: 1 });
+          flat.push(1, x, y, z, nx, nz, f.hw, f.hh, POSTER_RGB[0], POSTER_RGB[1], POSTER_RGB[2]);
+        }
+      }
+    }
+    return { heads, items, flat };
+  };
   if (!DEBUG) for (const t of Object.values(night.track)) t.on = false;     // (the pop metric: ?nightdebug=1)
   night.tram.on = false;
 
@@ -323,8 +490,12 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   let warming = 0;
   const warmShadows = (camPos) => {
     if (warming === 1) {                                              // (the warm render happened last frame: restore)
-      for (const L of shadowLights) { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; }
-      for (let i = 0; i < warmNow.length; i++) warmNow[i].layers.disable(WARM_LAYER);
+      shadowLights.forEach((L, k) => { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.layers.enable(PROXY_LAYER + k); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; });
+      for (let i = 0; i < warmNow.length; i++) {
+        const o = warmNow[i]; o.layers.disable(WARM_LAYER);
+        if (o.userData.proxyOf) { o.count = 0; o.visible = false; }
+        if (o.userData.__warmEmpty) { const M = o.instanceMatrix.array; if (o.count === 1 && M[0] === 0 && M[5] === 0 && M[10] === 0) { o.count = 0; if (o.userData.__warmEmpty === 2) o.visible = false; } delete o.userData.__warmEmpty; }
+      }
       stats.warmed += warmNow.length; warmNow.length = 0; warming = 0;
       return;
     }
@@ -339,6 +510,27 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
       if (!o.parent) continue;                                         // (its tile is gone)
       // drawn as the night will draw it: shown (a streamed tile stays hidden while its shaders compile), not fading
       // (lodFade's material copies), not an empty instanced bucket; else again later (8 tries, then left out)
+      // (a lamp-shadow proxy: drawn with one zero-size instance - only its render object is wanted - when its set is
+      // shown and not fading; it is never on a layer the main camera draws)
+      const src = o.userData.proxyOf;
+      if (src) {
+        let ok = !src.userData.fadeOrig;
+        for (let q = src; ok && q; q = q.parent) if (!q.visible && q !== src) ok = false;
+        if (ok && src.parent) { o.material = src.material; o.instanceMatrix.array.fill(0, 0, 16); o.count = 1; o.visible = true; o.layers.enable(WARM_LAYER); warmNow.push(o); }
+        else if (src.parent && (o.userData.__nightWarmTries = (o.userData.__nightWarmTries || 0) + 1) < 8) retry.push(o);
+        continue;
+      }
+      // (round 3) an EMPTY instanced batch whose cars only come at night (traffic-car-batch: round 2's 8 render objects
+      // at the switch): drawn once with one zero-size instance (its instance 0 is unused while its count is 0)
+      if (o.isInstancedMesh && o.count === 0 && EMPTY_WARM.test(o.name || "") && !o.userData.fadeOrig && (o.userData.__nightWarmTries || 0) >= 2) {
+        let ok = true;
+        for (let q = o.parent; ok && q; q = q.parent) if (!q.visible) ok = false;
+        if (ok) {
+          o.instanceMatrix.array.fill(0, 0, 16); o.instanceMatrix.clearUpdateRanges(); o.instanceMatrix.addUpdateRange(0, 16); o.instanceMatrix.needsUpdate = true;
+          o.userData.__warmEmpty = o.visible ? 1 : 2; o.count = 1; o.visible = true; o.layers.enable(WARM_LAYER); warmNow.push(o);
+          continue;
+        }
+      }
       let shown = !o.userData.fadeOrig && !(o.isInstancedMesh && o.count === 0);
       for (let q = o; shown && q; q = q.parent) if (!q.visible) shown = false;
       if (shown) { o.layers.enable(WARM_LAYER); warmNow.push(o); }
@@ -367,7 +559,16 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     const t0 = performance.now(), dt = Math.min(0.1, (t0 - tLast) / 1000);
     tLast = t0; frames++;
     const n = env.uNight.value, scale = POOL_ON ? smooth01((n - 0.15) / 0.5) * api.master : 0;
-    lamps.step(dt); shopReg.step(dt); signReg.step(dt);
+    lamps.step(dt); shopReg.step(dt); signReg.step(dt); winReg.step(dt); stepBake(dt);
+    // round 3: the ground map's light follows the night (0 by day: the ground materials read nothing); step 8: the
+    // weather's wet film drives the loop's wet path (a baked light's SPECULAR on the wet ground: the lamps' and
+    // windows' streaks), the cones show in damp / foggy air only
+    nightMap.uScale.value = scale;
+    const wet = wx.uWet.value, vis = cityWeather.weather?.input?.vis ?? 30000;
+    nightLook.uWet.value = scale > 0 ? wet : 0;
+    const fog = 1 - smooth01((vis - 800) / 2200);                     // 1 under 800 m of visibility, 0 over 3 km
+    const wetNow = scale > 0 && (wet > 0.2 || fog > 0.05);
+    coneLook.uDensity.value = nightParams.coneDensity * (1 + 1.5 * Math.min(1, wet / 0.6) + 3 * fog);
     // the dynamic layer fades out with the height above the ground (120 -> 200 m: its 320 m square's edge would show)
     const hAbove = groundAt ? camPos.y - groundAt(camPos.x, camPos.z) : 0;
     const dynFade = 1 - smooth01((hAbove - 120) / 80);
@@ -457,11 +658,44 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
       const TD = tram?.drawn;
       if (TD) for (let k = 0; k < TD.n; k++) { const x = TD.xz[k * 2], z = TD.xz[k * 2 + 1]; if (near2(x, z, S0, TRAM_R)) mover[0] = 1; if (near2(x, z, S1, TRAM_R)) mover[1] = 1; }
       if (camPos.distanceToSquared(lastCam) > 1e-4) { if (near2(camPos.x, camPos.z, S0, MOVER_R)) mover[0] = 1; if (near2(camPos.x, camPos.z, S1, MOVER_R)) mover[1] = 1; }
+      // (round 3) the other movers: SNCB trains (points along each train near the camera, refreshed every 12 frames:
+      // +8 m for the motion in between), skinned meshes (the falcons, characters) and anything tagged
+      // userData.nightMover (the flags), each at its world position when shown
+      if ((frames % 12) === 0) trainPoints(camPos);
+      for (let k = 0; k < trainPts.n; k++) { const x = trainPts.xz[k * 2], z = trainPts.xz[k * 2 + 1]; if (near2(x, z, S0, MOVER_R + 8)) mover[0] = 1; if (near2(x, z, S1, MOVER_R + 8)) mover[1] = 1; }
+      for (let k = 0; k < moverObjs.length; k++) {
+        const o = moverObjs[k];
+        if (!o.visible || !o.parent?.visible) continue;
+        const e = o.matrixWorld.elements, r = MOVER_R + (o.userData.nightMover > 1 ? o.userData.nightMover : 2);
+        if (near2(e[12], e[14], S0, r)) mover[0] = 1;
+        if (near2(e[12], e[14], S1, r)) mover[1] = 1;
+      }
     }
     lastCam.copy(camPos);
     night.carCount = nc;
     // ---- the pool (lamps, cars), the shadowed lamps, the far cars' ground pools (by day: once at 0, then nothing)
-    if (scale > 0 || lastScale > 0 || frames < 4) night.update(camPos, dt, scale, false);
+    // step 8: the nearest drawn tram's lights (lead cab low beam, rear, saloon: nightSources' 5 tram slots)
+    const TD = tram?.drawn, TT = night.tram;
+    TT.on = false;
+    if (scale > 0 && TD?.n && TD.rear) {
+      let best = -1, bd = 250 * 250;
+      for (let k = 0; k < TD.n; k++) { const dx = TD.xz[k * 2] - camPos.x, dz = TD.xz[k * 2 + 1] - camPos.z, d2 = dx * dx + dz * dz; if (d2 < bd) { bd = d2; best = k; } }
+      if (best >= 0) {
+        const hx = TD.xz[best * 2], hz = TD.xz[best * 2 + 1], rx = TD.rear[best * 3], rz = TD.rear[best * 3 + 1], l = Math.hypot(hx - rx, hz - rz) || 1;
+        TT.on = true; TT.hx = hx; TT.hz = hz; TT.rx = rx; TT.rz = rz; TT.fx = (hx - rx) / l; TT.fz = (hz - rz) / l; TT.gy = TD.rear[best * 3 + 2];
+      }
+    }
+    if (scale > 0 || lastScale > 0 || frames < 4) night.update(camPos, dt, scale, wetNow);
+    // the ground's subtract slots: each shadowed lamp's spot, unshadowed, ground only (see antiBase)
+    for (let k = 0; k < 2; k++) {
+      const L = shadowLights[k], id = night.shadow.lamp[k];
+      if (scale > 0 && L.intensity > 0 && id >= 0 && lamps.inMap[id] === 1) {
+        const I = L.intensity / scale;
+        pool.set(antiBase + k, L.position.x, L.position.y, L.position.z, L.distance, L.color.r * I, L.color.g * I, L.color.b * I, 1, 0);
+        pool.spot(antiBase + k, 0, -1, 0, L.angle, L.angle * (1 - L.penumbra));
+        pool.profile(antiBase + k, 0); pool.diffuseOnly(antiBase + k, true); pool.groundOnly(antiBase + k, true);
+      } else pool.weight(antiBase + k, 0);
+    }
     lastScale = scale;
     if (dbg && scale > 0) popMetric(nc, D, dt, camPos);
     // ---- step 4: the far glare cards
@@ -499,7 +733,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     if (scale > 0 && warming) warmShadows(camPos);                    // (night fell during a warm-up frame: restore first)
     if (scale > 0) {
       let refreshed = false;
-      if (TILE_REACH) gateTiles();
+      if (TILE_REACH && !PROXY) gateTiles();
       for (let k = 0; k < 2; k++) {
         const L = shadowLights[k], id = night.shadow.lamp[k];
         L.shadow.autoUpdate = false;
@@ -510,7 +744,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         if (go && api.shadowMode === "alt" && id === sLamp[k] && (refreshed || (refreshTurn & 1) !== k) && mover[1 - k] === 1) go = false;
         // (the camera-moved refresh: one map per frame, alternating)
         if (!go && !refreshed && (refreshTurn & 1) === k && camPos.distanceToSquared(sCam[k]) > MOVE_REFRESH * MOVE_REFRESH) { go = true; refreshed = true; }
-        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; if (api.shadowMode === "alt") refreshed = true; } else stats.shadowSkips++;
+        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; if (api.shadowMode === "alt") refreshed = true; if (PROXY) fillProxies(k, L.position); } else stats.shadowSkips++;
       }
       refreshTurn++;
     } else if (lastScale <= 0 && frames >= 4) {
@@ -524,12 +758,13 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     // moved far (a jump); the layer's origin follows the camera only when it is drawn, so the texture and the origin the
     // ground materials read always match
     const jump = Math.abs(camPos.x - (ground.x0 + half)) > 40 || Math.abs(camPos.z - (ground.z0 + half)) > 40;
-    if (dynReady && (q > 0 || dynLast !== 0) && ((frames & 1) === 0 || jump || q === 0)) {   // (nothing to draw twice in a row: skip)
+    if (dynReady && (q > 0 || dynLast !== 0) && (frames % 3 === 0 || jump || q === 0)) {   // (nothing to draw twice in a row: skip; round 3: 20 Hz, the far pools step < 1 m)
       ground.recentre(camPos.x - half, camPos.z - half);
       dynMesh.visible = q > 0;
       ground.renderDynamic(renderer, q);
       dynLast = q;
     }
+    stats.windows = winReg.count; stats.mapLayers = nightMap.slots - bake.free.length; stats.bakeMs = +(bake.n ? bake.ms / bake.n : 0).toFixed(1); stats.cones = cones.mesh.count;
     stats.casters = tagged; stats.lamps = lamps.count; stats.tiles = lamps.tileList.length; stats.cars = nc; stats.real = pool.active; stats.dyn = q; stats.dynFade = +dynFade.toFixed(2); stats.ghostSteal = ghostSteal;
     stats.ms = performance.now() - t0; stats.msAvg = stats.msAvg * 0.95 + stats.ms * 0.05;
   };
@@ -579,12 +814,103 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     }
     return pLamps;
   };
+  // (round 3) the trains' points for the movers' check (positions() allocates: every 12 frames only)
+  const trainPts = { n: 0, xz: new Float32Array(512) };
+  const trainPoints = (camPos) => {
+    trainPts.n = 0;
+    const T = window.__trains;
+    if (!T?.positions || !T.routes) return;
+    for (const t of T.positions()) {
+      if (Math.hypot(t.x - camPos.x, t.z - camPos.z) > 600) continue;
+      const R = T.routes[t.route], len = 80 * (t.units || 1);
+      for (let q = -len; q <= len && trainPts.n < 256; q += 20)   // (either way along the route: its direction of travel is not kept here)
+        { const a = R.at(t.d - q); trainPts.xz[trainPts.n * 2] = a[0]; trainPts.xz[trainPts.n * 2 + 1] = a[2]; trainPts.n++; }
+    }
+  };
+  const moverObjs = [];
   updaters.push(update);
   // tag the lamp-shadow casters as things arrive (tiles, fleets, landmarks): a sweep every 2 s, each mesh once
   let tagged = 0;
   const tileCasters = [];
+  // ---- (round 3) the lamp-shadow proxies of the tile-wide instanced sets (see PROXY)
+  const proxyGroup = new THREE.Group();
+  proxyGroup.name = "night-lamp-shadow-proxies";
+  scene.add(proxyGroup);
+  const proxies = new Map();                    // source InstancedMesh -> { p: [proxy lamp 0, proxy lamp 1], tile, attrs }
+  const proxyStats = { sets: 0, inst: 0, ms: 0 };
+  const makeProxy = (src, k) => {
+    const G = src.geometry, g = new THREE.BufferGeometry();
+    for (const [n, a] of Object.entries(G.attributes)) g.setAttribute(n, a.isInstancedBufferAttribute ? new THREE.InstancedBufferAttribute(new a.array.constructor(PROXY_CAP * a.itemSize), a.itemSize, a.normalized) : a);
+    g.setIndex(G.index); g.boundingSphere = G.boundingSphere; g.groups = G.groups; g.drawRange = G.drawRange;
+    g.userData.shared = true;
+    const p = new THREE.InstancedMesh(g, src.userData.fadeOrig || src.material, PROXY_CAP);
+    p.count = 0; p.visible = false; p.frustumCulled = false; p.castShadow = true; p.receiveShadow = false;
+    p.layers.set(PROXY_LAYER + k); p.matrixAutoUpdate = false; p.matrixWorldAutoUpdate = false;
+    p.name = `night-lamp-proxy-${k}`; p.userData.proxyOf = src;
+    proxyGroup.add(p);
+    warmList.push(p, performance.now());
+    return p;
+  };
+  const addProxy = (src, tile) => {
+    if (proxies.has(src)) return;
+    src.layers.disable(LAMP_SHADOW_LAYER);
+    const attrs = Object.entries(src.geometry.attributes).filter(([, a]) => a.isInstancedBufferAttribute).map(([n, a]) => [n, a.itemSize]);
+    proxies.set(src, { p: [makeProxy(src, 0), makeProxy(src, 1)], tile, attrs });
+  };
+  const dropProxy = (src) => {
+    const e = proxies.get(src);
+    if (!e) return;
+    for (const p of e.p) proxyGroup.remove(p);
+    proxies.delete(src);
+  };
+  const proxyNear = new Set();
+  /** lamp k's proxies: the instances of every set (of a tile within reach) within REACH of the lamp */
+  const fillProxies = (k, P) => {
+    const t0 = performance.now(), R2 = REACH * REACH, tiles = window.viewer?.world?.tiles;
+    proxyNear.clear();
+    if (tiles) for (const t of tiles) {
+      const b = t.bounds, dx = Math.max(b.x0 - P.x, 0, P.x - b.x1), dz = Math.max(b.z0 - P.z, 0, P.z - b.z1);
+      if (dx * dx + dz * dz < R2) proxyNear.add(t.name);
+    }
+    let sets = 0, inst = 0;
+    for (const [src, e] of proxies) {
+      const p = e.p[k];
+      let n = 0;
+      if ((e.tile === null || proxyNear.has(e.tile)) && src.parent && src.count > 0 && !src.userData.fadeOrig) {
+        let shown = true;
+        for (let q = src.parent; shown && q; q = q.parent) if (!q.visible) shown = false;
+        if (shown) {
+          src.updateMatrixWorld();
+          const W = src.matrixWorld.elements, M = src.instanceMatrix.array, D = p.instanceMatrix.array;
+          for (let i = 0, c = src.count; i < c && n < PROXY_CAP; i++) {
+            const o = i * 16, x = M[o + 12] + W[12], z = M[o + 14] + W[14], dx = x - P.x, dz = z - P.z;
+            if (dx * dx + dz * dz > R2) continue;
+            for (let j = 0; j < 16; j++) D[n * 16 + j] = M[o + j];
+            for (const [name, sz] of e.attrs) { const A = src.geometry.attributes[name].array, B = p.geometry.attributes[name].array; for (let j = 0; j < sz; j++) B[n * sz + j] = A[i * sz + j]; }
+            n++;
+          }
+          if (n) { p.material = src.material; p.matrix.copy(src.matrixWorld); p.matrixWorld.copy(src.matrixWorld); }
+        }
+      }
+      if (n > 0) {
+        p.instanceMatrix.clearUpdateRanges(); p.instanceMatrix.addUpdateRange(0, n * 16); p.instanceMatrix.needsUpdate = true;
+        for (const [name, sz] of e.attrs) { const a = p.geometry.attributes[name]; a.clearUpdateRanges(); a.addUpdateRange(0, n * sz); a.needsUpdate = true; }
+        sets++; inst += n;
+      }
+      p.count = n; p.visible = n > 0;
+    }
+    proxyStats.sets = sets; proxyStats.inst = inst; proxyStats.ms = performance.now() - t0;
+  };
   const sweep = () => {
     tagged += tagCasters(scene, warmList, TILE_REACH ? tileCasters : null);
+    if (PROXY) {
+      for (const { o, tile } of tileCasters) addProxy(o, tile);
+      // (the city-wide pools - parked cars, street life, gardens, furniture - were tried as proxies too: their instances
+      // near the camera are within the lamps' reach anyway: 517 -> 502 k triangles for 2 maps, more draws and fill CPU)
+      for (const src of proxies.keys()) if (!src.parent) dropProxy(src);
+    }
+    moverObjs.length = 0;
+    scene.traverse((o) => { if (o.isSkinnedMesh || o.userData.nightMover) moverObjs.push(o); });
     for (let i = tileCasters.length - 1; i >= 0; i--) if (!tileCasters[i].o.parent) { tileCasters[i] = tileCasters[tileCasters.length - 1]; tileCasters.pop(); }   // (tile gone)
   };
   /** keep a tile's instanced sets in the lamp layer only near a shadowed lamp (both lamps: their union) */
@@ -607,20 +933,42 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   const api = {
     master: 1,                          // (A/B in one page: 0 = every night light off, the lighting model kept)
     shadowMode: SHADOW_MODE,            // (A/B in one page: "smart" / "full")
-    pool, night, lamps, ground, shadowLights, stats, nightParams, glare,
-    addTile: (name, heads) => lamps.addTile(name, heads, performance.now()),
-    removeTile: (name) => { lamps.removeTile(name); shopReg.removeTile(name); signReg.removeTile(name); },
-    /** step 5: a tile's shop / sign lights (Float32Array records of NIGHT_LIGHT_STRIDE, shopLayout.js) */
+    pool, night, lamps, ground, shadowLights, stats, nightParams, glare, proxyStats, proxies,
+    /** a tile's lamp heads; (round 3) extra = { windows: its lit windows (litHash.js records, the tile worker),
+     *  bounds: { x0, z0, ... }, ground(x, z): the surface height } for its ground map */
+    addTile: (name, heads, extra = null) => {
+      const now = performance.now();
+      lamps.addTile(name, heads, now);
+      if (extra?.windows?.length) winReg.addTile(name, extra.windows, now, null, NIGHT_WIN_STRIDE);
+      if (extra?.bounds && extra.ground && !bake.tiles.has(name)) {
+        const L = new Float32Array((heads?.length ?? 0) * 3);
+        heads?.forEach((h, k) => { L[k * 3] = h.x; L[k * 3 + 1] = h.y; L[k * 3 + 2] = h.z; });
+        const T = { name, b: extra.bounds, cell: cellOf(extra.bounds), ground: groundGrid(extra.bounds, extra.ground), lamps: L, windows: extra.windows ?? new Float32Array(0), shops: null, slot: -1, t: 0, ready: false, sent: false };
+        T.timer = setTimeout(() => bakeTile(name), 20000);       // (no addShops: street life off or slow)
+        bake.tiles.set(name, T);
+      }
+    },
+    removeTile: (name) => { lamps.removeTile(name); winReg.removeTile(name); shopReg.removeTile(name); signReg.removeTile(name); signReg.removeTile(name + "#stops"); dropBake(name); },
+    /** step 5: a tile's shop / sign lights (Float32Array records of NIGHT_LIGHT_STRIDE, shopLayout.js); round 3: the
+     *  stop posters as signs, then the tile's ground map is baked (called once per tile, records or not) */
     addShops: (name, rec) => {
-      if (!rec?.length) return;
+      const now = performance.now();
       const shops = [], shopItems = [], signs = [], signItems = [];
-      for (let o = 0; o + NIGHT_LIGHT_STRIDE <= rec.length; o += NIGHT_LIGHT_STRIDE) {
+      if (rec?.length) for (let o = 0; o + NIGHT_LIGHT_STRIDE <= rec.length; o += NIGHT_LIGHT_STRIDE) {
         const at = { x: rec[o + 1], y: rec[o + 2], z: rec[o + 3] }, it = { nx: rec[o + 4], nz: rec[o + 5], hw: rec[o + 6], hh: rec[o + 7], col: [rec[o + 8], rec[o + 9], rec[o + 10]], b: 1 };
         if (rec[o] === 0) { shops.push(at); shopItems.push(it); } else { signs.push(at); signItems.push(it); }
       }
-      const now = performance.now();
       shopReg.addTile(name, shops, now, shopItems); signReg.addTile(name, signs, now, signItems);
+      const st = stopSigns(name);
+      if (st?.heads.length) signReg.addTile(name + "#stops", st.heads, now, st.items);
+      const T = bake.tiles.get(name);
+      if (T && !T.sent) {
+        const a = rec?.length ? rec : new Float32Array(0), b = st?.flat.length ? new Float32Array(st.flat) : new Float32Array(0);
+        T.shops = new Float32Array(a.length + b.length); T.shops.set(a, 0); T.shops.set(b, a.length);
+        bakeTile(name);
+      }
     },
+    windows: winReg, bake,
     shops: shopReg, signs: signReg,
     setTraffic: (t) => { traffic = t; },
     setDriver: (d) => { driver = d; },

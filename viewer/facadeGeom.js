@@ -1,5 +1,6 @@
 import { fitBase } from "./groundFit.js";
 import { faceBays } from "./interior/facadeWindows.js";
+import { litWindows } from "./nightLights/litHash.js";   // ?night=1 round 3: the lit windows as night light sources
 // Façade analysis, pure JS (no three.js), so it can run in the tile worker (viewer/tileWorker.js).
 // Groups UrbIS wall triangles into faces with façade coordinates, party walls, street faces, shopfronts,
 // and builds the detail geometry (cornices, ridge caps, buttresses, chimneys, eaves, shop fascias).
@@ -380,6 +381,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   };
 
   const W = { position: [], normal: [], aWall: [], aBld: [], aFN: [] };
+  const NW = [];                       // (night round 3) the LIT windows: litHash.js NIGHT_WIN_STRIDE records
   const WK = { position: [], normal: [], aWall: [], aBld: [], aFN: [], aKit: [] };   // the kit's faces
   // OSM shops (features.json points kind "shop") -> a shopfront on the nearest street face
   const shops = new Grid(40);
@@ -664,6 +666,15 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
         if (T === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
+      // (night round 3, docs/NIGHT_HOOKUP.md step 6) this face's LIT windows, the shader's own hash (litHash.js): the
+      // night pool's window lights and the ground light map's window spill
+      if (!landmark && partyH < 999) {
+        let dd = 0, nq = 0;
+        for (const { p } of f.tris) for (const q of p) { dd += q[0] * f.nx + q[2] * f.nz; nq++; }
+        const fr = Math.fround;
+        litWindows({ width: fr(width), eaves: fr(faceEaves), partyH: fr(partyH), street: T === WK ? (streetA && !k.doorless ? 1 : 0) : streetA, rnd: fr(rnd), landmark: false,
+          shop: fr(shopW), shopU: fr(shopU), fit: opts.storeys !== false, u0, tx, tz, nx: f.nx, nz: f.nz, dd: dd / nq, base }, NW);
+      }
     }
     // --- the roof kit (docs/assets/ROOFS.md): the building's roofs -> parapets, chimneys, solar, roof windows, furniture
     if (roofs && !landmark) {
@@ -844,7 +855,8 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const f32 = (a) => new Float32Array(a);
   return {
     walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN),
-      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null },
+      kit: kit ? { position: f32(WK.position), normal: f32(WK.normal), aWall: f32(WK.aWall), aBld: f32(WK.aBld), aFN: f32(WK.aFN), aKit: f32(WK.aKit) } : null,
+      nightWindows: f32(NW) },        // (night round 3) the lit windows (litHash.js NIGHT_WIN_STRIDE)
     kit: kit ? kit.finish() : null,
     roofKit: roofs ? roofs.finish() : null,
     details: { position: f32(D.position), normal: f32(D.normal), aCol: f32(D.color) },

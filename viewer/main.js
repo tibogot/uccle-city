@@ -229,6 +229,7 @@ function railMaterial() {
   m.colorNode = col;
   m.metalnessNode = mix(head.mul(0.85).add(lip.mul(0.5)), float(0.3), far);
   m.roughnessNode = mix(float(0.9).sub(head.mul(0.62)).sub(lip.mul(0.3)), float(0.6), far);
+  m.userData.nightLightScale = 0.35;     // ?night=1 round 3: the night pool's lights x 0.35 here (the low beams' rail glint read white)
   return m;
 }
 
@@ -734,7 +735,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   ups.push(lamps.update);
   await frame("lamps");
   addLamps(entry.name, lamps.heads);                 // every lamp lights the street (viewer/lampLight.js)
-  cityNight?.addTile(entry.name, lamps.heads);       // ?night=1: its lamps join the night pool (fading in)
+  cityNight?.addTile(entry.name, lamps.heads, { windows: d.buildings?.walls?.nightWindows, bounds, ground: (x, z) => hm.surface(x, z) });   // ?night=1: its lamps + lit windows join the night pool (fading in); round 3: its ground light map
   await frame("lamp light map");
   // (the street-life layer draws the STIB stops from the Brussels Mobility data: not the OSM bus-stop poles too)
   // (and with the stops kit on, viewer/stops/ draws them: furniture.js keeps its placeholder poles for ?stops=old)
