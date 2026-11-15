@@ -16,6 +16,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { env } from "./lighting.js";
 import { filteredPulse } from "./tslkit.js";
+import { withAOKtx2 } from "./aoTexture.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // LOD targets (triangles for the whole church) and the distances (m, camera to the octagon) they are used up to
@@ -137,7 +138,9 @@ function simplifyWelded(g, want, prune) {
 }
 
 /** The AO lightmap as ONE channel (R8 + mips: 2048 px = 5.6 MB instead of 22 MB as RGBA). */
-async function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+async function loadAOPng(url) {
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
   const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
   const cx = c.getContext("2d", { willReadFrequently: true }); cx.drawImage(img, 0, 0);

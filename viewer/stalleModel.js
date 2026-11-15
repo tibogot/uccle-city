@@ -27,6 +27,7 @@ import { env } from "./lighting.js";
 import { bumpNormal } from "./tslkit.js";
 import { libSource } from "./materials/libSwitch.js";
 
+import { withAOKtx2 } from "./aoTexture.js";
 /** the slots the GLB uses (one primitive = one draw call each per LOD) */
 export const ST_SLOTS = ["sandstone_rubble", "stone_white", "stone_blue", "brick_red_brussels", "slate", "zinc_roof", "wood_frame_dark",
   "painted_wood_red", "glass_window", "cast_iron_green", "cobbles"];
@@ -161,7 +162,9 @@ function wrapAO(src, aoTex, slot) {
 }
 
 /** The AO map decoded OFF the main thread (worker: fetch, createImageBitmap, red channel), uploaded as R8 + mips. */
-export function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+export function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+function loadAOPng(url) {
   const src = `self.onmessage = async (e) => {
     const bmp = await createImageBitmap(await (await fetch(e.data)).blob());
     const c = new OffscreenCanvas(bmp.width, bmp.height), x = c.getContext("2d", { willReadFrequently: true });

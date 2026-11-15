@@ -324,6 +324,11 @@ class NightLightsNode extends ClusteredLightsNode {
     const tex = this._lightsTexture, extra = this._extra;
     const ground = builder.material?.userData?.groundLight === true;        // reads groundLight.js' map
     const lscale = builder.material?.userData?.nightLightScale ?? 1;
+    // fix3 (docs/FIX3.md; ?nightfoliage=old = the full loop): FOLIAGE (the tree crowns' leaf cards, userData.nightFoliage)
+    // takes only the first FOLIAGE_LIGHTS lights of its cluster (the list is sorted by view depth: the nearest) and
+    // their diffuse only (a leaf card's GGX highlight from a lamp is not seen): the crowns lit from below by the lanterns
+    // stay, the loop's cost over every crown pixel drops
+    const foliage = FOLIAGE_CHEAP && builder.material?.userData?.nightFoliage === true;
     Fn(() => {
       const upV = normalize(cameraViewMatrix.mul(vec4(0, 1, 0, 0)).xyz).toVar();
       // the cluster's list is ivec4 chunks: one storage load per 4 lights (three's loop reloads the chunk per light)
@@ -336,7 +341,7 @@ class NightLightsNode extends ClusteredLightsNode {
       // (city round 3) no pool light this frame (by day): the whole loop is skipped on a uniform branch - before, every
       // lit fragment still loaded its cluster chunk + 4 light rows to find the list empty
       If(this._lightsCount.greaterThan(int(0)), () => {
-      Loop(this.maxLightsPerCluster, ({ i }) => {
+      Loop(foliage ? Math.min(FOLIAGE_LIGHTS, this.maxLightsPerCluster) : this.maxLightsPerCluster, ({ i }) => {
         const ii = int(i), j = ii.mod(4);
         If(j.equal(0), () => {
           chunk.assign(this._lightIndexes.element(base.add(ii.div(4))));
@@ -404,6 +409,7 @@ class NightLightsNode extends ClusteredLightsNode {
             const irr = max(dot(normalView, L), 0).mul(lc);
             const bakedHere = ground ? baked : null;
             const shade = () => {
+              if (foliage) { reflected.directDiffuse.addAssign(irr.mul(BRDF_Lambert({ diffuseColor: diffuseContribution }))); return; }
               If(E1.z.mod(2).greaterThan(0.5).or(nightLook.uDiffuseOnly.greaterThan(0.5)), () => {
                 reflected.directDiffuse.addAssign(irr.mul(BRDF_Lambert({ diffuseColor: diffuseContribution })));
               }).Else(() => {
@@ -428,6 +434,9 @@ class NightLightsNode extends ClusteredLightsNode {
 
   dispose() { this._extra.dispose(); this._planes.dispose(); super.dispose(); }
 }
+
+const FOLIAGE_CHEAP = typeof location === "undefined" || new URLSearchParams(location.search).get("nightfoliage") !== "old";
+const FOLIAGE_LIGHTS = 8;
 
 /** renderer.lighting = new NightLighting(pool): ClusteredLighting whose clustered lights come from the pool. */
 export class NightLighting extends ClusteredLighting {

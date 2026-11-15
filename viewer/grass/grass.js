@@ -61,6 +61,10 @@ export const grassU = {
   tipFade: uniform(0.55),                // ?grasscov=1: coverage taken off the last ~12 % of a blade (a soft tip, not a cut end)
   covBias: uniform(1.25),                // ?grasscov=1: coverage of a floored row x this (a little fuller far field than the exact share)
   lod0: uniform(7), lod1: uniform(18),
+  // fix3 (docs/FIX3.md; ?grasslod=old = 0): the blade LOD also by its SCREEN HEIGHT: a 6 cm lawn blade is ~15 px tall at
+  // 4 m and ~6 px at 10 m, where 5 / 3 segments drew a curve nobody can see. A blade takes the fewer segments of the two
+  // rules (never more than before): 5 segments over lodPx0 px, 3 over lodPx1 px, else 1. Long grass keeps its segments.
+  lodPx: uniform(/[?&]grasslod=old/.test(typeof location === "undefined" ? "" : location.search) ? 0 : 1), lodPx0: uniform(24), lodPx1: uniform(9),
   height: uniform(1),                    // global height (season growth)
   dry: uniform(0),                       // season: summer drought 0..1 on top of the types' own dryness
   frost: uniform(0),                     // season: hoar frost on the tips 0..1
@@ -259,7 +263,10 @@ export class Grass {
                   const flower = select(hf.lessThan(f.flowers.mul(U.flowerShare)), float(2),
                     select(hf.greaterThan(float(1).sub(smoothstep(0.5, 0.9, len).mul(U.seedHeads))), float(4), float(0)));
                   const dl = d.mul(hash(seed.add(10)).mul(0.3).add(0.85));          // dithered hand-over: no line where the LOD changes
-                  const lodSel = select(dl.lessThan(U.lod0), int(0), select(dl.lessThan(U.lod1), int(1), int(2)));
+                  const lodD = select(dl.lessThan(U.lod0), int(0), select(dl.lessThan(U.lod1), int(1), int(2)));
+                  const px = H.mul(U.pixelScale).div(dl);                          // the blade's height on screen (px)
+                  const lodP = select(px.greaterThan(U.lodPx0), int(0), select(px.greaterThan(U.lodPx1), int(1), int(2)));
+                  const lodSel = select(U.lodPx.greaterThan(0.5), max(lodD, lodP), lodD);
                   const seedF = float(seed.bitAnd(uint(0xffffff)));
                   for (const L of lods) {
                     If(lodSel.equal(L.l), () => {

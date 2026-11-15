@@ -7,7 +7,7 @@
 //           ?nightpool=0 keeps the lighting model with an EMPTY pool (the loop's fixed cost, for A/B).
 //   step 1  STREET LAMPS: a registry of every loaded tile's lamp heads (addTile / removeTile from main.js loadTile and
 //           its dispose); stable ids in fixed arrays (no allocation per frame), a 32 m grid per tile; each tile's
-//           lamps fade in over FADE_IN s after it loads (a streamed tile never pops its lights in). The 24 nearest
+//           lamps fade in over FADE_IN s after it loads (a streamed tile never pops its lights in). The 16 (fix3; was 24) nearest
 //           lamps are real pool lights (LANTERN profile), faded out between 40 and 60 m from the camera; beyond, and on
 //           the ground everywhere, the city's lamp light map (lampLight.js) lights: ground materials skip the pool's
 //           lamps (flag "baked"), walls take the map only beyond the same 40-60 m band (nightMode.js farBand). The
@@ -52,6 +52,9 @@ const CAR_R = 250;                    // m
 // GLARE_CARS nearest cars (front + rear: 2 cards each). Near the camera (< 30-90 m) the emissive glass + bloom carry
 // the glow (the card's own fade). ?nightglare=0: none.
 const GLARE_ON = qp.get("nightglare") !== "0";
+// fix3 (docs/FIX3.md): 16 real pool lamps (was 24; ?nightlamps=24 = before): every lamp is in the ground light map
+// anyway, the pool ones only add the walls / crowns / specular near the camera (faded 40-60 m)
+const REAL_LAMPS = Math.max(4, Math.min(48, +(new URLSearchParams(location.search).get("nightlamps") || 16)));
 const GLARE_LAMPS = 192, GLARE_CARS = 32, GLARE_R = 600;
 // the lamp shadows' casters: a layer of their own. A shadowed lamp's frustum (155 deg, 24 m) otherwise takes in whole
 // building chunks (detail / wall / kit meshes: ~1.1 M triangles, ~96 draws per lamp, measured on Place Saint-Job) that
@@ -277,7 +280,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   cones.mesh.visible = false;
   scene.add(cones.mesh);
   // (the ground skips a static light in the loop only once its tile's map has it: registry inMap, per source)
-  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, cones, sizes: { windows: 16, shops: 8, signs: 8, heads: 6, rear: 6 }, ground });   // (round 3: 6 + 6 real car lights, was 12 + 12: the low beams were most of the night GPU at street level, +0.5-1.1 ms; the others light the road through the dynamic layer)
+  const night = new NightSources(pool, street, { cars: CAR_CAP, shadowLights, cones, sizes: { lamps: REAL_LAMPS, windows: 16, shops: 8, signs: 8, heads: 6, rear: 6 }, ground });   // (round 3: 6 + 6 real car lights, was 12 + 12: the low beams were most of the night GPU at street level, +0.5-1.1 ms; the others light the road through the dynamic layer)
   // round 3: the ground's SUBTRACT slots, one per shadowed lamp (nightLighting.js groundOnly): the ground map has every
   // lamp in full, the shadowed lamp's SpotLight adds its share again WITH its shadow: minus the same spot unshadowed,
   // plus the spot shadowed = the map where nothing shades it (rounds 1-2 lit the ground under the 2 nearest lamps twice)

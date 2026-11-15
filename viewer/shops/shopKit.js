@@ -29,6 +29,7 @@ import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { StreamPool, buildSource } from "../instanceStream.js";
 import { PIECES, W0, SHOP_STRIDE } from "./shopPieces.js";
+import { withAOKtx2 } from "../aoTexture.js";
 export { PIECES, W0, SHOP_STRIDE };
 
 /** slot palette (linear rgb, roughness, metalness, tintable, emissive) by the Blender material NAME */
@@ -88,7 +89,9 @@ export function loadShopKit(fades, base = new URL("../../", import.meta.url)) {
   })());
 }
 
-function loadAO(url) {
+/** fix3 (docs/FIX3.md): the BC4 KTX2 beside the PNG when there is one (viewer/aoTexture.js; ?aoktx2=0 = the PNG) */
+function loadAO(url) { return withAOKtx2(url, loadAOPng); }
+function loadAOPng(url) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => {
