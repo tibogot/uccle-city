@@ -205,8 +205,12 @@ export const FEATURES = [
   on("bootlite", "streaming", "boot far ring", "The start tile's ring as far tiles under the cover (off: before).", { sub: "Boot & loading" }),
   opt("earlyshow", "streaming", "early show", "Far tiles after the cover lifts (sooner reveal, stutters; not kept).", { sub: "Boot & loading" }),
   sel("bootprefetch", "streaming", "boot prefetch", "Boot ring prefetch: default, 0 = off, 1 = the extra prefetch (no gain measured).", [[null, "default"], ["0", "off"], ["1", "extra"]], { sub: "Boot & loading" }),
-  on("loader", "streaming", "loading scene", "The aerial loading flight (worker canvas).", { sub: "Boot & loading" }),
-  num("loaderhold", "streaming", "loader hold (s)", "Keep the loading scene this much longer (hand-over checks).", 0, 0, 10, 0.5, { sub: "Boot & loading" }),
+  sel("loader", "streaming", "loading screen", "The loading screen: the city's stills with a CSS zoom + one progress bar (default), the old aerial flight in a worker canvas (it jumped), or the plain cover (A/B).",
+    [[null, "stills"], ["flight", "aerial flight (old)"], ["0", "plain cover"]], { sub: "Boot & loading" }),
+  on("bootdefer", "streaming", "far models after the cover", "Landmarks and hero rail bridges outside the boot's ring start loading after the cover lifts (viewer/bootGate.js; off: during the boot, as before).", { sub: "Boot & loading" }),
+  num("pipepace", "streaming", "pipeline pacing", "At most N async render pipelines handed to the GPU process at a time, one per task (0 = all at once, as before; docs/BOOT.md).", 0, 0, 16, 1, { sub: "Boot & loading" }),
+  on("sw", "streaming", "service worker cache", "Return visits read the city's data from Cache Storage (/sw.js, keyed by content hash; off: unregistered + cleared).", { sub: "Boot & loading" }),
+  num("loaderhold", "streaming", "loader hold (s)", "Keep the loading screen's layer this much longer after the fade (hand-over checks).", 0, 0, 10, 0.5, { sub: "Boot & loading" }),
 
   // ---------------------------------------------------------------- performance
   on("gpu", "perf", "GPU timing", "GPU ms per frame (timestamp queries)."),

@@ -20,6 +20,7 @@ import { Heightmap } from "./heightmap.js";
 import { pondBedGrid } from "./water/pondBed.js";
 import { createPond, POND_LAYER, REFL_MRT, buildReflectionTrees } from "./water/pondWater.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
 
 /** the pond's measured description (site.json "pond"): the same object goes to the tiles (the carve) and the water */
 export function wolvendaelPond(site) {
@@ -75,7 +76,7 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     return createPond({ pond: pondDesc, bed, renderer });
   })();
 
-  Promise.all([loadWolvendael(), pondReady]).then(async ([m, pond]) => {
+  Promise.all([whenNeeded("wolvendael").then(() => loadWolvendael()), pondReady]).then(async ([m, pond]) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "wolvendael";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

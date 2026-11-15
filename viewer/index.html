@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Uccle 3D</title>
+<link rel="preload" as="image" href="./loader/stills/stjob.avif" type="image/avif" fetchpriority="high">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <style>
   html, body { margin: 0; height: 100%; background: #b9c9d6; overflow: hidden; font: 13px/1.4 system-ui, sans-serif; }
@@ -44,18 +45,53 @@
   /* .99, not 1: a fully opaque layer over the WebGPU canvas lets Chrome stop compositing it, and taking it away
      cost a 200-500 ms frame right after the reveal (Windows, measured 2026-11-06; .99 -> 0: no stall) */
   #cover.gone { opacity: 0; pointer-events: none; transition: opacity 1.1s ease-in-out; }
-  /* the loading scene (viewer/loader/): the aerial flight in a worker's canvas, the readout over it */
-  #loaderUi { position: absolute; inset: 0; }
+  /* THE LOADING SCREEN (viewer/loader/loader.js, docs/BOOT.md): three stills of the city cross-fading with a slow zoom,
+     one progress bar. ONLY transform / opacity move (CSS animations / transitions: the compositor runs them while the
+     main thread and the GPU are busy with the boot). Slide k: shown S = 9 s, cross-fade F = 2.5 s, period P = 3 S = 27 s;
+     each slide's own timeline starts when it begins to fade in (delays -F, S - F, 2 S - F) and it is visible for S + F
+     (42.6 % of P), zooming all that time; the bottom slide never fades (no dip to the background in a cross-fade), the
+     middle one drops out only once the top one covers it, the top one fades out over the bottom one; each zoom resets
+     while its slide is hidden (never a visible jump). */
+  #cover { background: #6f7d72 linear-gradient(#e9d3b4 0%, #c9c4b0 34%, #6c7a52 64%, #3d4934 100%); }
+  #loaderUi { position: absolute; inset: 0; overflow: hidden; }
   body.loading #hud { visibility: hidden; }   /* the dev HUD returns with the city (main.js removes .loading) */
-  #loaderCanvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .8s; }
-  #loaderUi.live #loaderCanvas { opacity: 1; }
-  #loaderUi .lbox { position: absolute; left: 32px; bottom: 36px; width: min(360px, calc(100vw - 64px)); color: #2a3440; }
-  #loaderUi.live .lbox { color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .55); }
+  #loaderUi .lslides, #loaderUi .ls, #loaderUi .ls img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #loaderUi .ls img { object-fit: cover; display: block; }
+  #loaderUi .ls { will-change: transform, opacity; backface-visibility: hidden; animation-duration: 27s, 27s; animation-iteration-count: infinite, infinite;
+                  animation-timing-function: linear, ease-in-out; animation-fill-mode: both, both; }
+  #loaderUi .ls0 { animation-name: lsZoom, lsKeep; animation-delay: -2.5s, -2.5s; transform-origin: 60% 42%; }
+  #loaderUi .ls1 { animation-name: lsZoom, lsMid; animation-delay: 6.5s, 6.5s; transform-origin: 56% 55%; opacity: 0; }
+  #loaderUi .ls2 { animation-name: lsZoom, lsTop; animation-delay: 15.5s, 15.5s; transform-origin: 48% 50%; opacity: 0; }
+  @keyframes lsZoom { 0% { transform: scale(1.0) } 42.6% { transform: scale(1.085) } 42.7%, 100% { transform: scale(1.0) } }
+  @keyframes lsKeep { 0%, 100% { opacity: 1 } }
+  @keyframes lsMid { 0% { opacity: 0 } 9.26%, 42.6% { opacity: 1 } 42.7%, 100% { opacity: 0 } }
+  @keyframes lsTop { 0% { opacity: 0 } 9.26%, 33.3% { opacity: 1 } 42.6%, 100% { opacity: 0 } }
+  /* the place's name, faded with its slide */
+  #loaderUi .lcap { position: absolute; right: 28px; bottom: 26px; color: #fff; font: 12px/1.3 system-ui, sans-serif; letter-spacing: .06em;
+                    text-shadow: 0 1px 3px rgba(0, 0, 0, .7); opacity: 0; will-change: opacity; animation: 27s ease-in-out infinite both; }
+  #loaderUi .lcap0 { animation-name: lsCap; animation-delay: -2.5s; }
+  #loaderUi .lcap1 { animation-name: lsCap; animation-delay: 6.5s; }
+  #loaderUi .lcap2 { animation-name: lsCap; animation-delay: 15.5s; }
+  @keyframes lsCap { 0% { opacity: 0 } 9.26%, 33.3% { opacity: .9 } 42.6%, 100% { opacity: 0 } }
+  @media (prefers-reduced-motion: reduce) {
+    #loaderUi .ls { animation-name: none, lsKeep !important; transform: none; }
+    #loaderUi .ls1 { animation-name: none, lsMid !important; } #loaderUi .ls2 { animation-name: none, lsTop !important; }
+  }
+  /* a soft shade under the readout, for legibility on any image */
+  #loaderUi .lshade { position: absolute; inset: auto 0 0 0; height: 46%; background: linear-gradient(transparent, rgba(12, 16, 22, .55)); pointer-events: none; }
+  #loaderUi .lbox { position: absolute; left: 32px; bottom: 36px; width: min(360px, calc(100vw - 64px)); color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .55); }
+  #loaderUi[data-mode=plain] .lbox { color: #2a3440; text-shadow: none; }
+  #loaderUi[data-mode=plain] .lshade, #loaderUi[data-mode=plain] .lcap { display: none; }
+  #loaderUi[data-mode=plain] { background: #b9c9d6; }
   #loaderUi .ltitle { font: 300 34px/1.1 system-ui, sans-serif; letter-spacing: .04em; margin-bottom: 6px; }
   #loaderUi .lstage { font-size: 14px; min-height: 1.4em; }
   #loaderUi .lbar { height: 3px; margin: 8px 0 6px; background: rgba(255, 255, 255, .28); border-radius: 2px; overflow: hidden; }
-  #loaderUi .lbar i { display: block; height: 100%; background: currentColor; transform-origin: 0 50%; transform: scaleX(0); transition: transform .5s ease-out; }
+  #loaderUi .lbar i { display: block; height: 100%; background: currentColor; transform-origin: 0 50%; transform: scaleX(0); will-change: transform; }
   #loaderUi .lsub { font: 12px/1.3 ui-monospace, monospace; opacity: .8; min-height: 1.3em; }
+  /* ?loader=flight: the old aerial flight (viewer/loader/flight.js) in a worker's canvas behind the readout */
+  #loaderCanvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .8s; }
+  #loaderUi.live #loaderCanvas { opacity: 1; }
+  #loaderUi[data-mode=flight]:not(.live) .lbox { color: #2a3440; text-shadow: none; }
   /* with the dev panel the HUD keeps only the title, the stats and the log (the controls moved to the panel) */
   body.devpanel #hud label, body.devpanel #hud button:not(.hbtn), body.devpanel #hud a, body.devpanel #help { display: none; }
   /* the data credits, always on screen (OSM's ODbL requires "© OpenStreetMap contributors" where its data shows) */
@@ -78,7 +114,16 @@
 </script>
 </head>
 <body class="loading">
-<div id="cover">Loading Uccle…</div>
+<div id="cover"><div id="loaderUi">
+  <div class="lslides" aria-hidden="true">
+    <div class="ls ls0"><picture><source srcset="./loader/stills/stjob.avif" type="image/avif"><img src="./loader/stills/stjob.jpg" alt="" decoding="async" fetchpriority="high"></picture></div>
+    <div class="ls ls1"><picture><source srcset="./loader/stills/observatory.avif" type="image/avif"><img src="./loader/stills/observatory.jpg" alt="" decoding="async"></picture></div>
+    <div class="ls ls2"><picture><source srcset="./loader/stills/townhall.avif" type="image/avif"><img src="./loader/stills/townhall.jpg" alt="" decoding="async"></picture></div>
+    <div class="lcap lcap0">Place Saint-Job</div><div class="lcap lcap1">Royal Observatory</div><div class="lcap lcap2">Town hall, Place Vander Elst</div>
+  </div>
+  <div class="lshade"></div>
+  <div class="lbox"><div class="ltitle">Uccle</div><div class="lstage">Loading…</div><div class="lbar"><i></i></div><div class="lsub"></div></div>
+</div></div>
 <div id="hud">
   <div class="hhead"><h1>Uccle 3D <select id="tileSel" title="boot on this tile (reloads)"></select></h1><button class="hbtn" id="hudFold" title="fold the HUD (stats + log)">▾</button></div>
   <label><input type="checkbox" data-layer="terrain" checked> terrain</label>

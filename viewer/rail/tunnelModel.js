@@ -11,6 +11,7 @@ import { color, float } from "three/tsl";
 import { loadBridge, placeBridge, warmBridge } from "./bridgeModel.js";
 import { TUNNELS } from "./tunnels.js";
 import { liteShown } from "../liteShown.js";
+import { whenNeeded } from "../bootGate.js";
 
 /** the lamps' lens: a warm (sodium, Kleindalstraat) or white (LED, Brasserie) glow, constant day and night */
 function lampMaterial(rgb) {
@@ -28,6 +29,7 @@ export function addTunnels(ctx) {
   const { scene, world, manifest, updaters, renderer, log = () => {}, smooth = true, openParallel = null } = ctx;
   return Promise.all(TUNNELS.map(async (name) => {
     try {
+      await whenNeeded(`tunnel_${name}`);            // boot2: far from the start: after the cover (viewer/bootGate.js)
       const b = await loadBridge(`tunnel_${name}`);
       if (b.materials.lamp_glow && !b.materials.lamp_glow.userData.tunnelLamp) {
         b.materials.lamp_glow = lampMaterial(LAMP_RGB[name] || [1, 0.8, 0.5]);

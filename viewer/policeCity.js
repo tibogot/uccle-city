@@ -17,6 +17,7 @@ import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
 
 /** The SHADOW pass is not in compileAsync: warm its pipelines (every mesh of every level and every fading copy drawn a
  *  frame far under the city, pipelines created async) before the model shows (the villa's / Wolvendael's) */
@@ -66,7 +67,7 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     return yard;
   })();
 
-  Promise.all([loadPolice(), yardReady]).then(async ([m, yard]) => {
+  Promise.all([whenNeeded("police").then(() => loadPolice()), yardReady]).then(async ([m, yard]) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "police";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

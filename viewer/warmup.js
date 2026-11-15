@@ -17,7 +17,23 @@ export function openBootPipelines(renderer, scene) {
   const dev = renderer.backend?.device, f = dev?.createRenderPipelineAsync;
   const prog = { started: 0, done: 0 };
   if (f) {
-    dev.createRenderPipelineAsync = function (d) { prog.started++; const p = f.call(this, d); p.then(() => prog.done++, () => prog.done++); return p; };   // (kept: two counters)
+    // boot2 ?pipepace=N (docs/BOOT.md): at most N async pipelines handed to the GPU process at a time, each from its own
+    // task (its own command flush), so the GPU process' main thread, which also draws the page's compositor frames
+    // (the loading screen), gets a turn between them. 0 / absent: all at once, as before.
+    const PACE = Math.max(0, +(new URLSearchParams(location.search).get("pipepace") || 0));
+    const queue = []; let inFlight = 0;
+    const pump = () => {
+      while (inFlight < PACE && queue.length) {
+        const [d, res, rej] = queue.shift();
+        inFlight++;
+        let p;
+        try { p = f.call(dev, d); } catch (e) { inFlight--; rej(e); continue; }
+        p.then(res, rej).finally(() => { inFlight--; setTimeout(pump, 0); });
+        if (queue.length) { setTimeout(pump, 0); break; }      // the next one from a new task
+      }
+    };
+    const create = PACE > 0 ? (d) => new Promise((res, rej) => { queue.push([d, res, rej]); setTimeout(pump, 0); }) : (d) => f.call(dev, d);
+    dev.createRenderPipelineAsync = function (d) { prog.started++; const p = create(d); p.then(() => prog.done++, () => prog.done++); return p; };   // (kept: two counters)
   }
   win.progress = prog;
   return win;

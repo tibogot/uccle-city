@@ -12,13 +12,14 @@ import * as THREE from "three/webgpu";
 import { loadTownHall, TH_LODS, setLodFades } from "./townhallModel.js";
 import { SMOOTH, fadeProxies, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
 
 export async function addTownHall({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
   const notes = await fetch(new URL("../models/townhall/townhall.json", import.meta.url)).then((r) => r.json()).catch(() => null);
   if (!notes) { log("Town hall: models/townhall/townhall.json missing, the UrbIS solid stays"); return; }
   hide.push(...notes.placement.hides_bu_ids);
-  loadTownHall().then(async (m) => {
+  whenNeeded("townhall").then(() => loadTownHall()).then(async (m) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "townhall";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

@@ -66,6 +66,7 @@ import { liteShown } from "./liteShown.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
+import { setBootStart, coverLifted, whenNeeded } from "./bootGate.js";   // boot2: far landmarks / bridges after the cover (?bootdefer=0: before)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -840,6 +841,7 @@ async function main() {
     prefetchTiles(near);
   }
 
+  bootStage("renderer");                            // (boot2: the loading bar's stage)
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
   const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -995,6 +997,7 @@ async function main() {
     () => cityRoofs.start({ scene, updaters, log }),                 // the roof tops: stacks, parapets, roof windows, solar, roof furniture (viewer/roofs/), ?roofs=old off
   ]);
   bootStage("landmarks");
+  setBootStart(bounds, Math.max(0, Math.min(2, +(params.get("ring") ?? 1))));   // boot2: the ring the boot loads (bootGate.js)
   const heroes = [];
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
   if (params.get("stalle") !== "0") heroes.push(() => addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third }));
@@ -1071,7 +1074,7 @@ async function main() {
       const BRIDGES = (await import("./rail/railData.js")).heroBridgeNames(BRIDGES2);
       const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
       for (const name of BRIDGES) {
-        loadBridge(name).then(async (b) => {
+        whenNeeded(name === "stjob" || name === "calevoet" ? `rail:${name}` : name).then(() => loadBridge(name)).then(async (b) => {   // boot2: far ones after the cover
           const pb = placeBridge(b, { smooth: SMOOTH });
           // a road bridge: its deck carries walk / drive heights, its parapets block the car
           if (b.info.kind === "road_over_rail") {
@@ -1523,10 +1526,17 @@ async function main() {
   // the hand-over: the loading flight is on the city's first camera (at most 3 s more): the cover (that view) cross-fades
   // into the city's frames from the same camera (index.html #cover.gone, 1.1 s), then the loader's worker stops
   if (landing) await Promise.race([landing, new Promise((r) => setTimeout(r, 3000))]);
+  // ---- boot2 (docs/BOOT.md): the cover stays up until the GPU has finished a real frame of the city (Mr.doob: no
+  // flash of a half-built frame), then fades (index.html #cover.gone, 1.1 s) while the bar completes
+  bootStage("gpu");
+  await new Promise((r) => requestAnimationFrame(() => r()));
+  try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
+  // ---- /boot2
   bootStage("ready");
   $("cover").classList.add("gone");
   document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
+  coverLifted();                                    // boot2: the far landmarks / bridges start now (bootGate.js)
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
