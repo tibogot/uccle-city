@@ -297,12 +297,12 @@ export async function buildTileData(entry, base) {
   // (+ the street level across the hero underpasses, railData.js underpassGround; ?underpasslevel=0: as before)
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, levelPins: rail ? roadDeckPins(rail.heroes) : null,
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, weldNearest: entry.groundWeld !== false, clampH: entry.surfH !== false, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;
   netInfo.deckAbutments = abutCells;
-  const road = { parts: rd.parts, atlas: rd.atlas, carvedCells: rd.carvedCells, triangles: rd.triangles, surfaceStats: rd.surfaceStats,
+  const road = { parts: rd.parts, atlas: rd.atlas, carvedCells: rd.carvedCells, clampedCells: rd.clampedCells, triangles: rd.triangles, surfaceStats: rd.surfaceStats,
     surfaceData: rd.surfaceData, inventory: rd.inventory ?? null };
   const net = rd.net;              // the live engine network (stays in the worker: drive colliders)
   // park ponds (entry.ponds, viewer/water/pondBed.js): the bed carved under the water before the terrain mesh is built
@@ -375,7 +375,7 @@ export async function buildTileData(entry, base) {
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
-  const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds));   // (Square des Heros: its paths are the hero ground's)
+  const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));   // joins2: distance-field edges, ?groundsdf=old the coverage mask   // (Square des Heros: its paths are the hero ground's)
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, traffic, times, rail: railOut, grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d) })),   // OSM road bridges: heights for walk / car + their drawn deck

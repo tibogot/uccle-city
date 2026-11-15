@@ -58,6 +58,7 @@ const CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
  *  2026-11-05: the raised square is old setts, the roads round it asphalt), parking pavers */
 const BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
 export const CELL = 6;             // m: height-field grid
+const H_MARGIN = 0.6;              // m: a fitted corner within this of its street samples' heights (opts.clampH)
 // corner smoothing passes: 0. Tried 1-3 (plane-preserving, 4-neighbour): the street moves away from the DTM
 // (I6 median |H - DTM| 3.6 -> 6-10 cm), so folds are handled by the wide-stencil normals instead
 const SMOOTH_PASSES = 0;
@@ -493,7 +494,7 @@ export function rampKerbPoints(surf) {
   return surf._rampPts;
 }
 
-export function prepareSurfaces(surf, ground, bounds, trees = null) {
+export function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
   const t0 = (globalThis.performance ?? Date).now();
   const tapered = taperSteps(surf);
   const curved = smoothCurves(surf);
@@ -596,18 +597,23 @@ export function prepareSurfaces(surf, ground, bounds, trees = null) {
   // it (1 m lattice within one CELL, tent weights), evaluated at the corner. Then two smoothing passes over the
   // corners of the street (each corner halfway to the mean of its street neighbours), so the planes do not fold.
   const fitCorner = (cx, cz) => {
-    let sw = 0, sx = 0, sz = 0, sxx = 0, sxz = 0, szz = 0, sy = 0, sxy = 0, szy = 0, n = 0;
+    let sw = 0, sx = 0, sz = 0, sxx = 0, sxz = 0, szz = 0, sy = 0, sxy = 0, szy = 0, n = 0, lo = Infinity, hi = -Infinity;
     for (let dx = -CELL + 0.5; dx < CELL; dx += 1) for (let dz = -CELL + 0.5; dz < CELL; dz += 1) {
       const x = cx + dx, z = cz + dz;
       if (classAt(x, z) < 0) continue;                         // only the street's own ground
       const w = (1 - Math.abs(dx) / CELL) * (1 - Math.abs(dz) / CELL), y = G(x, z);
       sw += w; sx += w * dx; sz += w * dz; sxx += w * dx * dx; sxz += w * dx * dz; szz += w * dz * dz; sy += w * y; sxy += w * dx * y; szy += w * dz * y; n++;
+      if (y < lo) lo = y; if (y > hi) hi = y;
     }
     if (n === (2 * CELL) ** 2 || n < 6) return G(cx, cz);       // all street (G is right) / too little street
     const det3 = (a, b, c, d, e, f, g, h, k) => a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g);
     const D = det3(sw, sx, sz, sx, sxx, sxz, sz, sxz, szz);
     if (Math.abs(D) < 1e-9) return sy / sw;
-    return det3(sy, sx, sz, sxy, sxx, sxz, szy, sxz, szz) / D;
+    const v = det3(sy, sx, sz, sxy, sxx, sxz, szy, sxz, szz) / D;
+    // joins2 (docs/JOINS2.md; ?surfh=old = unclamped): a narrow path's points are a thin strip, its plane's cross slope
+    // ill-conditioned: extrapolated 6 m to the corner it stood a park path up to 3 m over the ground (Kauwberg, D7
+    // -1462, 1148: a spike). The corner stays within H_MARGIN of the street ground it was fitted to.
+    return opts.clampH ? Math.min(hi + H_MARGIN, Math.max(lo - H_MARGIN, v)) : v;
   };
   const inside = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
   const corner = new Map();

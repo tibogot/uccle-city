@@ -20,7 +20,7 @@
 // near a hex centre, up to 12 in the blend zones between hex tiles and covers, none past the orthophoto hand-over.
 import * as THREE from "three/webgpu";
 import { Fn, If, float, int, vec2, vec3, vec4, color, mix, smoothstep, positionWorld, normalWorld, normalView, texture, uv, clamp, max, uniform, uniformArray,
-  cameraPosition, cameraViewMatrix, length, floor, fract, dot, pow, cos, sin, select, normalize } from "three/tsl";
+  cameraPosition, cameraViewMatrix, length, floor, fract, dot, pow, cos, sin, select, normalize, fwidth } from "three/tsl";
 import { hash22 } from "./materials/antitile.js";
 import { addLampLight } from "./lampLight.js";
 import { noise2D, bumpNormal } from "./tslkit.js";
@@ -36,7 +36,23 @@ export function landCoverTexture(feats, bounds, pre) {
   tex.magFilter = tex.minFilter = THREE.LinearFilter;
   tex.generateMipmaps = false;
   tex.needsUpdate = true;
-  return { tex, areas, paths };
+  return { tex, areas, paths, sdf: (pre || {}).sdf || null };
+}
+
+/** THE COVER WEIGHTS from one mask sample `s` (vec4). The coverage mask (?groundsdf=old) as it is (bilinear 1 m
+ *  coverage: stair-stepped diagonals). The distance-field mask (joins2, viewer/landcover.js coverSDF): metres to each
+ *  edge, an edge band per cover shifted by noise (nA ~3 m cells, nB ~11 m: the wood edge wanders, paths wobble a
+ *  little), anti-aliased by fwidth (never sharper than a pixel), then the textured ground's height blend breaks the
+ *  band up. Returns { mk: vec4 weights (r wood, g path, b sand, a water), litter: the full leaf-litter share }. */
+export function coverWeights(cover, s, nA, nB) {
+  if (!cover.sdf) return { mk: s, litter: smoothstep(0.9, 0.99, s.r) };
+  const d = s.sub(0.5).mul(cover.sdf.range * 2);                                  // metres, + inside
+  const aa = fwidth(d).mul(0.75);
+  const off = vec4(nA.sub(0.5).mul(1.1).add(nB.sub(0.5).mul(0.9)), nA.sub(0.5).mul(0.22), nA.sub(0.5).mul(0.3), float(0));
+  const hw = max(vec4(1.1, 0.28, 0.35, 0.22), aa);                                    // half edge band (m)
+  const e = d.add(off);
+  const mk = vec4(smoothstep(hw.x.negate(), hw.x, e.x), smoothstep(hw.y.negate(), hw.y, e.y), smoothstep(hw.z.negate(), hw.z, e.z), smoothstep(hw.w.negate(), hw.w, e.w));
+  return { mk, litter: smoothstep(0.9, 2.6, e.x) };
 }
 
 /** The terrain material: grass by default, the mask's covers where OSM has them. Textured (CC0 scans per cover,
@@ -53,8 +69,9 @@ export function proceduralGround(cover, bounds, contour) {
   const uOrigin = uniform(new THREE.Vector2(bounds.x0, bounds.z0));
   const uInvSize = uniform(new THREE.Vector2(1 / (bounds.x1 - bounds.x0), 1 / (bounds.z1 - bounds.z0)));
   const muv = vec2(P.x, P.z).sub(uOrigin).mul(uInvSize);
-  const mk = texture(cover.tex, muv);
   const xz = vec2(P.x, P.z);
+  const nzE = texture(noiseTex, xz.div(51).add(0.71)), nzF = texture(noiseTex, xz.div(176).add(0.37));
+  const mk = coverWeights(cover, texture(cover.tex, muv), nzE.g, nzF.a).mk;
   const n1 = noise2D(xz.mul(0.035)), n2 = noise2D(xz.mul(0.21).add(17.3)), n3 = noise2D(xz.mul(1.7).add(5.1));
   const fine = noise2D(xz.mul(9.0));
   // grass: lush to dry, darker clover patches, a little earth showing where worn
@@ -153,10 +170,14 @@ function texturedGround(cover, bounds, contour) {
   const one = float(1);
   const dist = length(cameraPosition.sub(P));
   // outputs of the textured part (only computed nearer than the orthophoto hand-over)
-  const mkV = vec4(0).toVar("gMask"), farV = float(0).toVar("gFar"), colV = vec3(0.2).toVar("gCol"), nrmV = vec2(0).toVar("gNrm"), raV = vec2(0.8, 1).toVar("gRA");
+  const litV = float(0).toVar("gLitter"), mkV = vec4(0).toVar("gMask"), farV = float(0).toVar("gFar"), colV = vec3(0.2).toVar("gCol"), nrmV = vec2(0).toVar("gNrm"), raV = vec2(0.8, 1).toVar("gRA");
   const ground = Fn(() => {
     // everything with implicit derivatives FIRST, in uniform control flow (WGSL): the mask, the uv gradients
-    mkV.assign(texture(cover.tex, muv));
+    const nzA = vec4(0).toVar(), nzB = vec4(0).toVar(), nzC = vec4(0).toVar();
+    const xz0 = vec2(P.x, P.z);
+    nzA.assign(texture(noiseTex, xz0.div(640))); nzB.assign(texture(noiseTex, xz0.div(176).add(0.37))); nzC.assign(texture(noiseTex, xz0.div(51).add(0.71)));
+    const cw = coverWeights(cover, texture(cover.tex, muv), nzC.g, nzB.a);
+    mkV.assign(cw.mk); litV.assign(cw.litter);
     colV.assign(vec3(0.2)); nrmV.assign(vec2(0)); raV.assign(vec2(0.8, 1));     // declared HERE, not inside the If
     // (a node used in two blocks must be assigned BEFORE the blocks: TSL emits its assignment in the first block that
     // uses it, so the other block would read it unassigned)
@@ -165,8 +186,6 @@ function texturedGround(cover, bounds, contour) {
     st.assign(vec2(P.x, P.z.negate()));                      // the texture frame (x, -z): the OpenGL normal's +y = north
     dx.assign(st.dFdx()); dy.assign(st.dFdy());
     // noise at ~40 m (R n1, G macro), ~11 m (R n2, G worn, B macro), ~3 m (R n3): periods 640 / 176 / 51 m
-    const nzA = vec4(0).toVar(), nzB = vec4(0).toVar(), nzC = vec4(0).toVar();
-    nzA.assign(texture(noiseTex, xz.div(640))); nzB.assign(texture(noiseTex, xz.div(176).add(0.37))); nzC.assign(texture(noiseTex, xz.div(51).add(0.71)));
     const mk = mkV;
     // ---- far: the tile's orthophoto (the far-LOD tiles' colour), no relief
     const orthoTex = texture(cover.ortho || placeholder, vec2(muv.x, one.sub(muv.y)));
@@ -186,7 +205,7 @@ function texturedGround(cover, bounds, contour) {
       const flat = one.sub(slope);
       // the mask's partial woodland (scrub 0.67, the railway's verges 0.88, the soft edge of a wood) is rough grass under
       // the litter: brambles and long grass at wood edges and on the cuttings, full litter only inside a real wood
-      const litter = smoothstep(0.9, 0.99, wood);
+      const litter = litV;
       const woodW = wood.mul(one.sub(sand)).mul(one.sub(path)).mul(flat);
       const w = [];
       w[I.lawn] = grassW.mul(one.sub(rough)).mul(one.sub(dry)).mul(one.sub(worn)).mul(flat);
