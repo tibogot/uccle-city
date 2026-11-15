@@ -42,6 +42,7 @@ import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEAT
 export { analyseBuildings };
 
 const C = (r, g, b) => vec3(r, g, b);
+const PLINTH_OLD = /[?&](plinth|polish1)=old(&|$)/.test(location.search);   // polish1 item 4
 
 // FITTED STOREYS (docs/STOREYS.md; owner 2026-11-14: "very empty at the first or second floor"). The fixed storeys
 // (ground 3.4 m, then 3.0 m) dropped every storey whose window missed the eaves by a few cm: a 6 m house showed its
@@ -360,7 +361,10 @@ export function wallMaterial(opts = {}) {
   height = height.sub(openingR.mul(0.12));                                       // reveal: the opening sits 12 cm back
   const aaH = fwidth(h).add(0.002), aaHR = fwidth(h).mul(RELIEF_PX).add(0.002);
   const plinth = float(1).sub(smoothstep(float(0.5).sub(aaH), float(0.5).add(aaH), h)).toVar();
-  col = mix(col, C(0.075, 0.08, 0.09).add(grain.mul(0.01)), plinth);
+  // polish1 (docs/POLISH.md item 4, ?plinth=old = before): the blue-stone plinth was albedo 0.075-0.09 (sRGB ~78): in
+  // shade, with the AO at the wall foot, it went black (Fort-Jaco, Av. Alphonse XIII). Weathered petit granit reads
+  // mid-dark grey in photos (sRGB ~100-115): albedo 0.125-0.14, a little washed paler, the grain a touch stronger
+  col = mix(col, PLINTH_OLD ? C(0.075, 0.08, 0.09).add(grain.mul(0.01)) : C(0.125, 0.13, 0.137).add(grain.mul(0.018)), plinth);
   height = height.add(float(1).sub(smoothstep(float(0.5).sub(aaHR), float(0.5).add(aaHR), h)).mul(0.03));
   const band2 = (lo, hi, a) => smoothstep(lo.sub(a), lo.add(a), h).mul(float(1).sub(smoothstep(hi.sub(a), hi.add(a), h)));
   const cornOn = step(float(4.5), eh).mul(float(1).sub(party)).mul(float(1).sub(par));
@@ -449,7 +453,7 @@ export function wallMaterial(opts = {}) {
   lmCol = mix(lmCol, C(0.2, 0.19, 0.17), ash.joint);
   let lmH = float(1).sub(ash.joint).mul(0.006);
   const lmPlinth = float(1).sub(smoothstep(float(0.8).sub(aaH), float(0.8).add(aaH), h));
-  lmCol = mix(lmCol, C(0.11, 0.115, 0.12), lmPlinth);
+  lmCol = mix(lmCol, PLINTH_OLD ? C(0.11, 0.115, 0.12) : C(0.13, 0.135, 0.14), lmPlinth);
   lmH = lmH.add(lmPlinth.mul(0.05));
   const sc = max(smoothstep(float(0.14).add(aaH), float(0.14).sub(aaH), abs(h.sub(3.0))),
     smoothstep(float(0.14).add(aaH), float(0.14).sub(aaH), abs(fract(h.sub(3.0).div(7.0)).sub(0.5).mul(7.0).abs().sub(3.5)))).mul(step(float(3.5), eh));
