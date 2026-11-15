@@ -623,10 +623,12 @@ export function wallMaterial(opts = {}) {
       col = mix(col, C(0.47, 0.46, 0.43).add(grain.mul(0.015)), slab);
       height = height.add(max(pulseY(float(0.0), float(0.2).div(storeyH), fwyR), pulseY(float(1).sub(float(0.05).div(storeyH)), float(1.0), fwyR)).mul(up).mul(wallT).mul(step(h, eh.sub(0.3))).mul(isK).mul(0.03));
     }
-    // VILLA (cottage, 35 % of the rendered ones): half-timbering on the upper floor and the gable: posts every 0.9 m, a
-    // sill plate on the first-floor line, a rail at the window heads, braces in one panel in three
+    // VILLA (cottage, 35 % of the villas): half-timbering on the upper floor and the gable: posts every 0.9 m, a sill plate
+    // on the first-floor line, a rail at the window heads, braces in one panel in three; on a brick villa the upper floor
+    // is rendered between the timbers (the Uccle "cottage": brick ground floor, timbered gable; Avenue De Fré)
     {
-      const ht = isV.mul(float(1).sub(isBrick)).mul(step(th3, 0.35)).mul(float(1).sub(party)).mul(float(1).sub(par)).mul(step(G.add(0.02), h)).mul(step(4.0, fw)).toVar();
+      const ht = isV.mul(step(th3, 0.35)).mul(float(1).sub(party)).mul(float(1).sub(par)).mul(step(G.add(0.02), h)).mul(step(4.0, fw)).toVar();
+      col = mix(col, C(0.7, 0.67, 0.6).add(grain.mul(0.012)), ht.mul(isBrick));
       const pu = u.div(0.9), fu = fwidth(pu).add(1e-4);
       const post = filteredPulse(pu, float(0.0), float(0.15), fu);
       const plate = boxBand(h, G, G.add(0.2), aaH);

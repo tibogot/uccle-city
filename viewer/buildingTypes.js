@@ -171,9 +171,9 @@ export function classify(doc, P, I, legacyStyle) {
     const rs = h01(key + "s");
     const style = type === TYPE.GENERIC ? null : pick(rs, {
       [TYPE.MAITRE]: [[0, 0.4], [1, 0.1], [3, 0.35], [4, 0.15]],
-      [TYPE.DECO]: [[3, 0.42], [4, 0.23], [2, 0.35]],
+      [TYPE.DECO]: [[3, 0.3], [4, 0.17], [2, 0.23], [0, 0.22], [1, 0.08]],   // (Street View: Rue Vanderkindere's 1930s fronts are red brick with stone bands)
       [TYPE.BELETAGE]: [[2, 0.35], [1, 0.3], [0, 0.25], [3, 0.1]],
-      [TYPE.BLOCK]: [[5, 0.35], [3, 0.25], [2, 0.2], [1, 0.2]],
+      [TYPE.BLOCK]: [[5, 0.25], [3, 0.2], [2, 0.2], [1, 0.13], [0, 0.22]],     // (Avenue Coghen / Churchill: red-brick blocks with long balconies)
       [TYPE.VILLA]: [[3, 0.45], [4, 0.15], [0, 0.35], [2, 0.05]],
     }[type]);
     // a garage door in the street front's ground floor: every bel-étage, 45 % of the villas
