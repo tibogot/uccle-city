@@ -19,6 +19,7 @@ import { wind, windAt, windPrev } from "./wind.js";
 import { setMotionDelta } from "../upscale.js";   // --- instmotion (the wind at last frame's time)
 import { noiseAt } from "./noise.js";
 import { leafCard } from "./cards.js";
+import { nightLeaf } from "./nightLeaf.js";
 import { bumpNormal } from "../tslkit.js";
 
 // species colours (sRGB): summer leaf, winter leaf, card size (m), card density (per m²), lumpiness (m)
@@ -170,7 +171,7 @@ function speciesMaterials(name) {
   // the season: evergreen species barely change; beech / hornbeam: copper in autumn, brown (held) in winter
   const S = season.u;
   const winterAmt = holds ? S.beechHold.mul(holds).add(S.autumn.mul(0.6).mul(holds)).clamp(0, 1) : float(1).sub(S.leaf).mul(0.5);
-  const leafC = mix(vec3(cS), vec3(cW), winterAmt);
+  const leafC = nightLeaf(mix(vec3(cS), vec3(cW), winterAmt));   // (fix4: an olive green under the lamps at night)
   // BODY
   const body = new THREE.MeshStandardNodeMaterial({ roughness: sp.gloss, metalness: 0 });
   const u = uv();                                                  // metres
