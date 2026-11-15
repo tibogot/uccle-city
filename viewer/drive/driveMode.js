@@ -18,9 +18,13 @@ import { DriveKeys } from "./input.js";
 import { lampSites } from "../lamps.js";
 import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
-import { MOTO, MOTO_BODY, createMotoState, stepMoto, motoHit } from "../moto/motoPhysics.js";
+import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit } from "../moto/motoPhysics.js";
 import { MotoCamera } from "../moto/motoCamera.js";
-import { MotoAudio } from "../moto/motoAudio.js";
+import { MotoAudio, BikeAudio, VOICES } from "../moto/motoAudio.js";
+
+/** the two-wheelers (viewer/moto/, docs/MOTO.md): the motorbike (round 1), the scooter and the Villo bike (round 2) */
+export const TWO_WHEEL = ["moto", "scooter", "villo"];
+const HUD_NAME = { moto: "motorbike", scooter: "scooter", villo: "Villo" };
 
 /** Main thread, once per loaded tile: the worker's drive data + the tile's lamp posts and bollards, from the lists the
  *  city DRAWS (drawn = { lamps: lamps.js placedLampSites, bollards: [{x, z}] }: the lamps moved onto the measured
@@ -90,11 +94,13 @@ export function featureColliders(features, bounds) {
     if (!m.isInstancedMesh) return;
     const n = m.name || "", p = m.parent?.name || "";
     const kind = n === "parked-cars" ? "car" : /^furniture-(stopPole|signal|sign|platepost)$/.test(n) || n === "tram-poles" || n === "rail-masts" ? "pole"
-      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|fuel|terrace|villo|streetprop)$/.test(n) || (p === "tram" && !n) ? "box" : null;
+      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|fuel|terrace|villo|streetprop|twowheel)$/.test(n) || (p === "tram" && !n) ? "box" : null;
     if (!kind) return;
     if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
     const bb = m.geometry.boundingBox;
+    const refs = m.userData.refs || null;     // (motorbike round 2: the street kit's Villo bikes: off once the player took one)
     for (let i = 0; i < m.count; i++) {
+      const ref = refs?.[i] || undefined;
       m.getMatrixAt(i, M); W.multiplyMatrices(m.matrixWorld, M);
       o.set(0, 0, 0).applyMatrix4(W);
       // (collisions round 2, ?edgecol=old = before: the tile's OWN features group holds the pieces its kits placed for
@@ -123,7 +129,7 @@ export function featureColliders(features, bounds) {
           const cx = (bb.min.x + bb.max.x) / 2, cz = (bb.min.z + bb.max.z) / 2;
           const hx = Math.max((bb.max.x - bb.min.x) / 2, MIN_HALF / sx), hz = Math.max((bb.max.z - bb.min.z) / 2, MIN_HALF / sz);
           v.set(cx, bb.min.y, cz).applyMatrix4(W); const base = v.y; v.set(cx, bb.max.y, cz).applyMatrix4(W); const top = v.y;
-          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: KIND.furniture, base, top });
+          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: KIND.furniture, base, top, ref });
           counts.furniture++;
           continue;
         }
@@ -142,7 +148,7 @@ export function featureColliders(features, bounds) {
             per.set(key, rects);
           }
           const base = cPos.y + bb.min.y * cS.y, top = cPos.y + bb.max.y * cS.y;
-          for (const ring of rects) polys.push({ rings: [ring.map(([x, z]) => { v.set(x, 0, z).applyQuaternion(cQ).add(cPos); return [v.x, v.z]; })], kind: KIND.furniture, base, top });
+          for (const ring of rects) polys.push({ rings: [ring.map(([x, z]) => { v.set(x, 0, z).applyQuaternion(cQ).add(cPos); return [v.x, v.z]; })], kind: KIND.furniture, base, top, ref });
           counts.furniture++;
           continue;
         }
@@ -153,7 +159,7 @@ export function featureColliders(features, bounds) {
       const base = v.y;
       v.set(0, bb.max.y, 0).applyMatrix4(W);
       const top = v.y;
-      for (const pq of carBlockersSync(T, () => base, { kind: KIND.furniture })) polys.push(Object.assign(pq, { base: Math.min(base, top), top: Math.max(base, top) }));
+      for (const pq of carBlockersSync(T, () => base, { kind: KIND.furniture })) polys.push(Object.assign(pq, { base: Math.min(base, top), top: Math.max(base, top), ref }));
       counts.furniture++;
     }
   });
@@ -167,14 +173,18 @@ export class Driver {
     this.chase = new ChaseCamera(camera, dom);
     this.debug = new ColliderDebug(scene);
     this.debug.visible = /[?&]drivedebug=1/.test(location.search);
-    // the motorbike (viewer/moto/, docs/MOTO.md): the same driver, colliders, ground and traffic; its own physics,
-    // model, camera and sound. setVehicle("moto" | "car"); ?view=moto starts on it.
+    // the two-wheelers (viewer/moto/, docs/MOTO.md): the same driver, colliders, ground and traffic; their own physics
+    // numbers, models, camera numbers and sound. setVehicle("car" | "moto" | "scooter" | "villo"); ?view=moto / scooter /
+    // villo starts on one. Each loads on first use (dynamic import).
     this.vehicle = "car";
+    this.twos = {};                                   // kind -> { model, rig, env }
     this.motoChase = new MotoCamera(camera, dom);
-    this.audio = new MotoAudio();
+    this.audios = { moto: new MotoAudio(VOICES.four), scooter: new MotoAudio(VOICES.single), villo: new BikeAudio() };
     this.keys = new DriveKeys({ active: () => this.on, onKey: (k) => {
-      if (k === "KeyR") this.reset(); else if (k === "KeyC") (this.vehicle === "moto" ? this.motoChase : this.chase).next();
-      else if (k === "KeyN") { if (this.vehicle === "moto") this.audio.toggleMute(); }
+      if (k === "KeyR") this.reset(); else if (k === "KeyC") (this.twoWheel ? this.motoChase : this.chase).next();
+      else if (k === "KeyN") { if (this.twoWheel) this.setSound(this.audio.muted); }
+      else if (k === "KeyQ") { if (this.vehicle === "villo" && this.state) { this.state.bell = 0; this.state.bells++; this.audio.bell?.(); } }
+      else if (k === "KeyE") this.onUse?.();
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
     this.ground = (x, z) => {
@@ -214,10 +224,13 @@ export class Driver {
     this.extra = [];   // collider sets no tile carries (hero models: the Saint-Job front steps)
     this.ledges = !/[?&]colfix=0/.test(location.search);       // ?colfix=0: the car climbs any step (as before the audit)
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges });
-    // the bike's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the traffic's
-    // moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
-    this.motoEnv = createCarEnv({ sets: this.sets, ground: this.ground, handling: MOTO, waters: () => this.world.waters, ledges: this.ledges, dims: MOTO_BODY, onHit: motoHit });
-    Object.defineProperty(this.motoEnv, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
+    // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
+    // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
+    this.envs = {};
+    for (const k of TWO_WHEEL) {
+      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit });
+      Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
+    }
     this.camNear = [];
     this.insideWall = (x, z) => pointInBuilding(this.camNear, x, z);
     this.hud = document.createElement("div");
@@ -250,39 +263,60 @@ export class Driver {
     if (this.state) this.car.update(this.state);
   }
 
-  /** "car" | "moto": which vehicle start() uses (the motorbike loads on first use) */
+  /** riding a two-wheeler (not the car) */
+  get twoWheel() { return this.vehicle !== "car"; }
+  /** the current two-wheeler's rig / model / env / sound / box (null in the car) */
+  get moto() { return this.twos[this.vehicle]?.rig ?? null; }
+  get motoModel() { return this.twos[this.vehicle]?.model ?? null; }
+  get motoEnv() { return this.envs[this.vehicle] ?? this.envs.moto; }
+  get audio() { return this.audios[this.vehicle] ?? this.audios.moto; }
+  get body() { return BODIES[this.vehicle] ?? null; }
+  /** the two-wheelers' sound, all at once (OFF by default: ?motosound=1, the dev panel, N) */
+  setSound(on) { for (const a of Object.values(this.audios)) a.setMuted(!on); return on; }
+
+  /** "car" | "moto" | "scooter" | "villo": which vehicle start() uses (a two-wheeler loads on first use) */
   async setVehicle(v) {
     const was = this.vehicle;
-    this.vehicle = v === "moto" ? "moto" : "car";
-    if (this.vehicle === "moto" && !this.moto) {
+    this.vehicle = TWO_WHEEL.includes(v) ? v : "car";
+    if (this.twoWheel && !this.twos[this.vehicle]) {
+      const kind = this.vehicle;
       const { loadMotoModel, createMoto, motoLights } = await import("../moto/motoModel.js");
       this.motoLights = motoLights;
-      this.motoModel = await loadMotoModel();
-      this.moto = createMoto(this.motoModel);
-      this.moto.root.visible = false;
-      this.scene.add(this.moto.root);
+      const model = await loadMotoModel(kind);
+      const rig = createMoto(model);
+      rig.root.visible = false;
+      this.scene.add(rig.root);
+      this.twos[kind] = { model, rig };
     }
     if (this.vehicle === "car" && !this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "faceted:hatch_c").catch(() => this.setCar("scripted"));
     if (this.on && was !== this.vehicle) {
       const s = this.state;
       this.startPose = { x: s.x, z: s.z, heading: s.heading };
-      if (this.car) this.car.root.visible = this.vehicle === "car";
-      this.moto && (this.moto.root.visible = this.vehicle === "moto");
+      this.showOnly();
+      this.audios[was]?.stop?.();
+      if (this.twoWheel) this.audio.active = true;
       this.reset();
     }
   }
+  /** only the current vehicle shown (a docked Villo stays at its station) */
+  showOnly() {
+    if (this.car) this.car.root.visible = this.on && this.vehicle === "car";
+    for (const [k, t] of Object.entries(this.twos)) t.rig.root.visible = (this.on && k === this.vehicle) || (k === "villo" && !!this.dockedVillo);
+  }
   /** what the night lights (nightLights/cityNight.js) follow: the vehicle's frame and its lamps */
-  get lampRoot() { return this.vehicle === "moto" ? this.moto?.lampRoot : this.car?.root; }
-  get lampModel() { return this.vehicle === "moto" ? this.motoModel : this.model; }
+  get lampRoot() { return this.twoWheel ? this.moto?.lampRoot : this.car?.root; }
+  get lampModel() { return this.twoWheel ? this.motoModel : this.model; }
 
   async start(x, z, heading, vehicle = null) {
     if (vehicle) await this.setVehicle(vehicle);
-    if (this.vehicle === "moto") {
-      if (!this.moto) await this.setVehicle("moto");
+    if (this.twoWheel) {
+      if (!this.moto) await this.setVehicle(this.vehicle);
       this.startPose = { x, z, heading };
       this.on = true;
-      this.moto.root.visible = true;
-      if (this.car) this.car.root.visible = false;
+      if (this.vehicle === "villo") { this.dockedVillo = null; this.moto.setRider?.(true); }
+      this.showOnly();
+      this.motoChase.setKind(this.vehicle);
+      for (const a of Object.values(this.audios)) a.active = false;
       this.audio.active = true;
       this.hud.style.display = "";
       this.reset();
@@ -297,7 +331,7 @@ export class Driver {
   }
   reset() {
     const s = this.startPose;
-    this.state = this.vehicle === "moto" ? createMotoState(s.x, s.z, s.heading) : createCarState(s.x, s.z, s.heading);
+    this.state = this.twoWheel ? createMotoState(s.x, s.z, s.heading) : createCarState(s.x, s.z, s.heading);
     this.moto?.reattach();
     this.motoChase.reset();
     this.state.y = NaN;                                   // (no layer hint yet: the top surface)
@@ -306,9 +340,9 @@ export class Driver {
   }
   stop() {
     this.on = false; this.chase.active = false;
-    if (this.car) this.car.root.visible = false;
-    if (this.moto) { this.moto.root.visible = false; this.moto.reattach(); }
-    this.audio.stop(); this.motoChase.active = false;
+    for (const t of Object.values(this.twos)) t.rig.reattach();
+    this.showOnly();
+    for (const a of Object.values(this.audios)) a.stop(); this.motoChase.active = false;
     this.debug.visible = false;
     this.hud.style.display = "none";
   }
@@ -317,7 +351,7 @@ export class Driver {
 
   update(dt) {
     if (!this.on || !this.state) return;
-    if (this.vehicle === "moto") return this.updateMoto(dt);
+    if (this.twoWheel) return this.moto ? this.updateMoto(dt) : undefined;   // (a two-wheeler still loading)
     this.chase.active = true;
     const t0 = performance.now();
     const c = this.state;
@@ -333,11 +367,25 @@ export class Driver {
     if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0)
       this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h${c.speed < -0.2 ? " R" : ""} · C camera · G colliders · R reset</small>`;
   }
+  /** the Villo: get off at a station's free dock (x, z = the bike's front contact, yaw = the docked bike's) -> the
+   *  bike stays there, riderless; the caller puts the player on foot */
+  dockVillo(x, y, z, yaw) {
+    if (this.vehicle !== "villo" || !this.moto) return false;
+    const rig = this.moto;
+    this.dockedVillo = { x: x + Math.sin(yaw) * 0.56, z: z + Math.cos(yaw) * 0.56, heading: yaw + Math.PI };
+    const c = createMotoState(this.dockedVillo.x, this.dockedVillo.z, this.dockedVillo.heading);
+    c.y = y; c.slopePitch = 0; c.footDown = 0;
+    rig.setRider?.(false);
+    rig.update(c, 0, this.ground);
+    rig.setLod(0);
+    this.stop();
+    return true;
+  }
   updateMoto(dt) {
     this.motoChase.active = true; this.chase.active = false;
     const t0 = performance.now();
-    const c = this.state;
-    stepMoto(c, this.keys.readMoto(), dt, this.motoEnv, MOTO);
+    const c = this.state, kind = this.vehicle, H = TWO_WHEELERS[kind];
+    stepMoto(c, this.keys.readMoto(), dt, this.motoEnv, H);
     const night = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     const ML = this.motoLights;
     ML.head.value = ML.tail.value = night; ML.brake.value = c.braking ? 1 : 0;
@@ -349,22 +397,31 @@ export class Driver {
     this.camNear.length = 0;
     for (const col of this.sets(c.x, c.z, 14)) gather(col, c.x, c.z, 14, this.camNear);
     this.motoChase.update(c, dt, this.ground, this.insideWall, this.headAt);
-    this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, MOTO_BODY);
+    this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, BODIES[kind]);
     this.audio.update(c, dt);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
     if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0) {
-      const rpm = Math.round(c.rpm / 100) * 100, bar = Math.round(Math.min(1, c.rpm / 11800) * 10);
-      this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h · ${c.crashed ? "CRASH" : `gear ${c.gear}`} ` +
-        `<span style="letter-spacing:-1px;color:${bar > 8 ? "#ff6a4a" : "#9fe08a"}">${"▮".repeat(bar)}</span><span style="letter-spacing:-1px;color:#4a525c">${"▮".repeat(10 - bar)}</span> ${rpm} rpm` +
-        ` · Shift wheelie · Space rear · C camera · N sound ${this.audio.muted ? "off" : "on"}</small>`;
+      const small = (t) => `<small style="font-size:12px;color:#b8c2cc;font-weight:400">${t}</small>`;
+      const kmh = (Math.abs(c.speed) * 3.6).toFixed(0), snd = `N sound ${this.audio.muted ? "off" : "on"}`;
+      if (kind === "villo") {
+        const what = c.crashed ? "CRASH" : c.pushing ? "pushing it up the hill" : `gear ${c.gear} · ${Math.round(c.rpm)} rpm`;
+        this.hud.innerHTML = `${kmh} ${small(`km/h · ${what} · ${this.prompt || "Shift stand on the pedals · Space rear · Q bell · C camera"} · ${snd}`)}`;
+      } else {
+        const red = H.rpm.red, rpm = Math.round(c.rpm / 100) * 100, bar = Math.round(Math.min(1, c.rpm / red) * 10);
+        this.hud.innerHTML = `${kmh} ${small(`km/h · ${c.crashed ? "CRASH" : kind === "scooter" ? "CVT" : `gear ${c.gear}`} ` +
+          `<span style="letter-spacing:-1px;color:${bar > 8 ? "#ff6a4a" : "#9fe08a"}">${"▮".repeat(bar)}</span><span style="letter-spacing:-1px;color:#4a525c">${"▮".repeat(10 - bar)}</span> ${rpm} rpm` +
+          ` · ${kind === "moto" ? "Shift wheelie · " : ""}Space rear · C camera · ${snd}`)}`;
+      }
     }
   }
   /** the rider's eyes in world space (the helmet view) */
   headAt = () => {
-    const c = this.state, s = Math.sin(c.heading), k = Math.cos(c.heading), up = 1.53 + (c.tuck || 0) * -0.06;
+    const c = this.state, s = Math.sin(c.heading), k = Math.cos(c.heading), eye = this.moto?.eye;
+    const up = (eye?.y ?? 1.53) + (this.vehicle === "moto" ? (c.tuck || 0) * -0.06 : 0) - (c.pushing ? 0.2 : 0);
     const side = Math.sin(c.lean) * up, h = Math.cos(c.lean) * up;
     const out = this._head ||= [0, 0, 0];
-    out[0] = c.x + k * side + s * (0.05 + Math.max(0, c.wheelie) * -0.5); out[1] = c.y + h + Math.max(0, c.wheelie) * 0.4; out[2] = c.z - s * side + k * (0.05 + Math.max(0, c.wheelie) * -0.5);
+    const fz = (eye?.z ?? 0.05) + Math.max(0, c.wheelie) * -0.5;
+    out[0] = c.x + k * side + s * fz; out[1] = c.y + h + Math.max(0, c.wheelie) * 0.4; out[2] = c.z - s * side + k * fz;
     return out;
   };
   info() {

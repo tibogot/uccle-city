@@ -140,7 +140,8 @@ export class TrafficSim {
     this.type[i] = typeIdx; this.half[i] = T.len / 2; this.wb[i] = T.wb; this.wr[i] = T.wheelR;
     const p = paintRGB || this.paints[Math.floor(this.rand() * this.paints.length)];
     this.paint[i * 3] = p[0]; this.paint[i * 3 + 1] = p[1]; this.paint[i * 3 + 2] = p[2];
-    this.aMax[i] = IDM.a * (0.8 + this.rand() * 0.4); this.Tg[i] = IDM.T * (0.8 + this.rand() * 0.5); this.v0f[i] = 0.9 + this.rand() * 0.18;
+    // (motorbike round 2: a two-wheeler type pulls away quicker / rides a little faster or slower: T.accel, T.speed)
+    this.aMax[i] = IDM.a * (0.8 + this.rand() * 0.4) * (T.accel ?? 1); this.Tg[i] = IDM.T * (0.8 + this.rand() * 0.5); this.v0f[i] = (0.9 + this.rand() * 0.18) * (T.speed ?? 1);
     this.state[i] = ST.drive; this.hold[i] = 0; this.holdT[i] = 0; this.stopDone[i] = -1; this.committed[i] = -1; this.waitT[i] = 0; this.bits[i] = 0;
     this.spin[i] = this.rand() * 6.28; this.steer[i] = 0; this.offX[i] = 0; this.offZ[i] = 0; this.age[i] = 0; this.seen[i] = 0;
     this.slot[i] = null; this.onPath[i] = -1; this.gen[i]++; this.handoff[i] = 0;
@@ -663,7 +664,7 @@ export class TrafficSim {
           if (e >= 0 && this.route[j * ROUTE] !== gid) continue;
           const ahead = along + base - this.d[j];
           if (ahead < 25 || ahead > 80) continue;
-          if (this.types[this.type[j]].len + 0.5 > (slot.room ?? 6)) continue;
+          if (this.types[this.type[j]].len + 0.5 > (slot.room ?? 6) || this.types[this.type[j]].two) continue;   // (two-wheelers never park into car slots)
           this.state[j] = ST.inStop; this.slot[j] = slot; this.onD[j] = along + 9; this.parkPath[j] = gid;
           this.freeSlots.splice(k, 1);
           return;

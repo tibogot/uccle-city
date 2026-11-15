@@ -8,7 +8,7 @@ export class DriveKeys {
     addEventListener("keydown", (e) => {
       if (!active() || e.target?.closest?.("input,select,textarea")) return;
       if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
-      if (!e.repeat && this.onKey && ["KeyR", "KeyC", "KeyG", "KeyN", "Escape"].includes(e.code)) this.onKey(e.code);
+      if (!e.repeat && this.onKey && ["KeyR", "KeyC", "KeyG", "KeyN", "KeyQ", "KeyE", "Escape"].includes(e.code)) this.onKey(e.code);
       this.down.add(e.code);
     });
     addEventListener("keyup", (e) => this.down.delete(e.code));

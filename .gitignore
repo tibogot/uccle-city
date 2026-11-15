@@ -70,6 +70,8 @@ models/heros/audit/*/*.json
 models/heros/statue_work/
 asset_hashes.json
 models/moto/.aocache/
+models/scooter/.aocache/
+models/villo/.aocache/
 
 # public art kit (tools/blender/publicart.py): the build cache, the raw export, the audit json
 models/publicart/work/

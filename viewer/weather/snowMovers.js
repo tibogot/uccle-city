@@ -57,8 +57,8 @@ export function createSnowMovers({ ground = null, getMovers }) {
       // ---- the player's car / motorbike
       const D = M.driver;
       if (D?.on && D.state) {
-        const c = D.state, bike = D.vehicle === "moto";
-        wheels("car", c, bike ? [[0.725, 0], [-0.725, 0]] : [[1.3, 0.78], [1.3, -0.78], [-1.25, 0.78], [-1.25, -0.78]], bike ? 0.06 : 0.105, null, c.y ?? 0);
+        const c = D.state, bike = !!D.twoWheel, hw = bike ? (D.motoModel?.info?.wheelbase ?? 1.45) / 2 : 0;
+        wheels("car", c, bike ? [[hw, 0], [-hw, 0]] : [[1.3, 0.78], [1.3, -0.78], [-1.25, 0.78], [-1.25, -0.78]], bike ? 0.06 : 0.105, null, c.y ?? 0);
       } else st.car = null;
       // ---- on foot: first person
       const W = M.walker;

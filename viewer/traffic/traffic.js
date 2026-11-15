@@ -11,16 +11,23 @@ import { TrafficWorld } from "./trafficWorld.js";
 import { TrafficSim, STEP } from "./trafficSim.js";
 import { TrafficFleet, TYPE_NAMES } from "./trafficFleet.js";
 import { TYPE_MIX, SIZES, PAINTS, FADE_TO } from "../carFleet.js";
+import { TRAFFIC_TYPES } from "../moto/cityTwoWheelers.js";
+
+/** motorbike round 2 (docs/MOTO.md): motorbikes and scooters in the city's traffic (createTraffic twoWheelers: the city;
+ *  ?twowheelers=0: cars only). They are sim types after the cars' (drawn by viewer/moto/cityTwoWheelers.js
+ *  TwoWheelTraffic through T.onDraw; the car fleet skips them) */
+const TWO_TRAFFIC = typeof location === "undefined" || new URLSearchParams(location.search).get("twowheelers") !== "0";
 
 // per type: wheelbase and wheel radius (the faceted GLB's Wheel_* nodes: z = +-wb/2, y = r)
 const WHEELS = { hatch_s: [2.5, 0.3], hatch_c: [2.64, 0.32], estate: [2.7, 0.32], saloon: [2.8, 0.33], suv: [2.64, 0.34], van_c: [2.72, 0.32], van_p: [3.26, 0.34], taxi: [2.7, 0.32] };
 
 /** ?trafficbox=old: the traffic's collider boxes at the sim's newest step (before collisions round 2) */
 const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
-export function createTraffic({ scene, renderer, camera, ground, night, cap = 768, seed = 7 }) {
+export function createTraffic({ scene, renderer, camera, ground, night, cap = 768, seed = 7, twoWheelers = false }) {
   const world = new TrafficWorld();
   const mix = new Map(TYPE_MIX);
   const types = TYPE_NAMES.map((name) => ({ name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: mix.get(name) }));
+  if (TWO_TRAFFIC && twoWheelers) for (const t of TRAFFIC_TYPES) types.push({ ...t });
   const c = new THREE.Color();
   const paints = PAINTS.map((h) => { c.setHex(h); return [c.r, c.g, c.b]; });
   const sim = new TrafficSim(world, { cap, types, paints, ground, seed });
@@ -68,6 +75,7 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
     const t1 = performance.now();
     T.alpha = Math.min(1, acc / STEP);            // (the draw's interpolation factor: the night lights follow the drawn cars)
     fleet.update(sim, T.alpha, cam.position, cam);
+    T.onDraw?.(sim, types, T.alpha, cam);
     T.debug?.update(sim, Math.min(1, acc / STEP));
     const t2 = performance.now();
     const k = 0.05;

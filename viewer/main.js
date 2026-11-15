@@ -60,6 +60,7 @@ import { cityStops } from "./stops/cityStops.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
+import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
 import { cityRoofs } from "./roofs/cityRoofs.js";
 import { deckHeight } from "./streets/bridgeDecks.js";
@@ -680,6 +681,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const stopsP = cityStops.fetchTile(entry.name);       // the STIB stops and ad panels (viewer/stops/cityStops.js), ?stops=old off
   const furnP = cityFurniture.fetchTile(entry.name);    // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
   const skP = cityStreetKit.fetchTile(entry.name);      // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
+  const twP = cityTwoWheelers.fetchTile(entry.name);    // (motorbike round 2: the shops the parked two-wheelers gather near)
   const gardensP = cityGardens.fetchTile(entry.name);   // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
@@ -772,7 +774,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc) });
+  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP) });
+  const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, (x, z) => hm.surface(x, z) + CARVE);
+  if (twCounts) say(`two-wheelers: ${twCounts.bikes} parked in ${twCounts.slots} slots (viewer/moto/cityTwoWheelers.js)`);
   await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
   if (bollards) own.features.add(bollards);
@@ -800,6 +804,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
     cityStreetKit.removeTile(entry.name);           // its instances leave the street kit pools
+    cityTwoWheelers.removeTile(entry.name);
     cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)
     cityFuel.removeTile(entry.name);                // its instances leave the fuel pools (its slabs / stand-ins go with the groups below)
     cityStops.removeTile(entry.name);               // its instances leave the stop pools (its stand-ins go with the groups below)
@@ -1018,6 +1023,7 @@ async function main() {
     () => cityStreetLife.start({ scene, updaters, log, renderer }),            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
     () => cityFurniture.start({ scene, updaters, log }),             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
     () => cityStreetKit.start({ scene, updaters, log }),             // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
+    () => cityTwoWheelers.start({ scene, updaters, log }),           // parked / traffic two-wheelers (models load ~6 s later), ?twowheelers=0 off
     () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
     () => cityStops.start({ scene, updaters, log }),                 // the STIB shelters / poles and the ad panels (viewer/stops/), ?stops=old off
     () => cityFuel.start({ scene, updaters, renderer, log }),        // the petrol stations (viewer/fuel/), ?fuel=old off
@@ -1252,20 +1258,32 @@ async function main() {
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
     window.__pendingStatics = [];
   }
-  const drive = (vehicle = "car") => {      // (vehicle "moto": the motorbike, viewer/moto/, docs/MOTO.md)
+  // ---- motorbike round 2 (docs/MOTO.md): the scooter / Villo modes, ?at= honoured for every vehicle (round 1: an ?at
+  // outside the boot tile spawned at Saint-Job: the nearest road was searched in the BOOT tile only)
+  let driveAt = null, pendingDriveAt = null;
+  const drive = (vehicle = "car") => {      // (vehicle "moto" / "scooter" / "villo": viewer/moto/, docs/MOTO.md)
     // from where the player is (walk / third person / fly): the nearest road of the tile there; else ?at=x,z or Saint-Job
     const here = third?.on ? [third.tp.x, third.tp.z] : walker.on ? [walker.x, walker.z] : flyer.on ? [flyer.x, flyer.z] : null;
-    const T = here && world.tiles.find((t) => here[0] >= t.bounds.x0 && here[0] <= t.bounds.x1 && here[1] >= t.bounds.z0 && here[1] <= t.bounds.z1);
-    const [px, pz] = T ? here : atP?.length === 2 ? atP : [1201.6, 549.3];
+    const tileOf = (p) => p && world.tiles.find((t) => p[0] >= t.bounds.x0 && p[0] <= t.bounds.x1 && p[1] >= t.bounds.z0 && p[1] <= t.bounds.z1);
+    let T = tileOf(here);
+    if (!T && !here && atP?.length === 2) {
+      T = tileOf(atP);
+      if (!T) { if (driveAt) return driveAt(vehicle); pendingDriveAt = vehicle; return; }   // (stream the ?at tile in first)
+    }
+    const [px, pz] = T ? (here && tileOf(here) ? here : atP) : atP?.length === 2 ? atP : [1201.6, 549.3];
     const s = (T ? roadStart(T.roads, px, pz, T.bounds) : roadStart(roads, px, pz, bounds)) || start;
     if (!s) return;
     if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false;
     let h = s.yaw + Math.PI;                                       // walk yaw -> car heading (forward = sin h, cos h)
     if (TILE === "I6" && !atP && !T && Math.sin(h) * (1153 - s.x) + Math.cos(h) * (540 - s.z) < 0) h += Math.PI;   // face the church
-    const keep = vehicle === "moto" ? 1.2 : 1.6;
+    const keep = vehicle === "car" ? 1.6 : vehicle === "villo" ? 1.0 : 1.2;
     return driver.start(s.x - Math.cos(h) * keep, s.z + Math.sin(h) * keep, h, vehicle);   // keep right
   };
   const moto = () => drive("moto");
+  const rides = (await import("./moto/cityRide.js")).hookRides({ driver, walker, getThird: () => third, drive, updaters, log,
+    leaveFoot: () => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); controls.enabled = false; }, focus: () => controls.target,
+    onFoot: (m, x, z, h) => { if (m === "third" && third) { third.last = [x, world.walkY(x, z) + 0.6, z, h]; third.resume(); } else walker.start(x, z, h + Math.PI); } });
+  const scooter = rides.scooter, villo = rides.villo;
   driver.onExit = () => setView("stjob");
   const views = {
     overview: () => { camera.position.set(cx - 330, cy + 300, cz + 400); controls.target.set(cx, cy, cz); },
@@ -1298,7 +1316,7 @@ async function main() {
     moto();
   });
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
-  if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "moto") { setView("overview"); moto(); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "moto" || v0 === "scooter" || v0 === "villo") { setView("overview"); drive(v0); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
   // third person: a character on foot (viewer/character/cityHook.js, Capsule Lab); the button, ?view=third, the dev panel
   let thirdBoot = null;                   // one start only, however many callers (button, ?view=third, a shared link)
   const thirdPerson = async () => {
@@ -1609,7 +1627,8 @@ async function main() {
     return Object.entries(agg).sort((a, b) => b[1] - a[1]).map(([k, ms]) => [k, +ms.toFixed(3)]);
   };
   // the player and the teleport (the minimap's click-to-teleport, the dev panel's Go to): streams the target tile in
-  const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? (driver.vehicle === "moto" ? "moto" : "drive") : walker.on ? "walk" : "orbit");
+  const mode = () => (third?.on ? "third" : flyer.on ? "fly" : driver.on ? (driver.twoWheel ? driver.vehicle : "drive") : walker.on ? "walk" : "orbit");
+  const RIDE = new Set(["drive", "moto", "scooter", "villo"]);
   const dir = new THREE.Vector3();
   const getPlayer = () => {
     const m = mode();
@@ -1618,7 +1637,7 @@ async function main() {
     let x, z, heading, y;
     if (m === "third") { x = third.tp.x; z = third.tp.z; y = third.tp.y; heading = Math.PI - third.tp.ctl.yaw; }
     else if (m === "fly") { x = flyer.x; z = flyer.z; y = flyer.pos.y; heading = -flyer.yaw; }
-    else if (m === "drive" || m === "moto") { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
+    else if (RIDE.has(m)) { x = driver.x; z = driver.z; y = driver.state?.y ?? 0; heading = Math.PI - (driver.state?.heading ?? 0); }
     else if (m === "walk") { x = walker.x; z = walker.z; y = camera.position.y; heading = -walker.yaw; }
     else { x = controls.target.x; z = controls.target.z; y = camera.position.y; heading = bear; }
     const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
@@ -1650,7 +1669,7 @@ async function main() {
     const tTile = performance.now() - t0;
     if (m === "walk") walker.start(x, z, -b);
     else if (m === "fly") { controls.enabled = false; flyer.start(x, z, -b, world.surface(x, z) + 45); }
-    else if (m === "drive" || m === "moto") { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
+    else if (RIDE.has(m)) { controls.enabled = false; await driver.start(x, z, Math.PI - b); }
     else if (m === "third") {
       controls.enabled = false;
       third.last = [x, world.walkY(x, z) + 0.6, z, Math.PI - b];
@@ -1664,11 +1683,14 @@ async function main() {
     lighting.snapNext = true;
     return { ms: performance.now() - t0, tileMs: +tTile.toFixed(0), tile: entry.name, loaded: !loaded, mode: m };
   };
+  // (motorbike round 2: a ?view=moto|scooter|villo|drive&at= outside the boot tile: stream it in, then start there)
+  driveAt = async (vehicle) => { await teleport({ x: atP[0], z: atP[1], yaw: 0 }); controls.enabled = false; return drive(vehicle); };
+  if (pendingDriveAt) { const v = pendingDriveAt; pendingDriveAt = null; driveAt(v).catch((e) => log(`?at start: ${e.message}`)); }
   // the dev panel (viewer/devPanel.js; ?panel=0: the old HUD only)
   if (params.get("panel") !== "0") {
     try {
       const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)

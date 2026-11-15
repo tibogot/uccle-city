@@ -115,7 +115,7 @@ export class TrafficFleet {
     const a = alpha, b1 = 1 - alpha;
     const P = sim;
     for (let i = 0; i < sim.cap; i++) {
-      if (!P.alive[i]) { this.shown[i] = -1; continue; }
+      if (!P.alive[i] || P.type[i] >= this.types.length) { this.shown[i] = -1; continue; }   // (two-wheelers: viewer/moto/cityTwoWheelers.js)
       const fresh = P.gen[i] !== this.genLast[i];
       this.genLast[i] = P.gen[i]; this.drawnLast[i] = 0;
       const x = P.px[i] * b1 + P.x[i] * a, y = P.py[i] * b1 + P.y[i] * a, z = P.pz[i] * b1 + P.z[i] * a;

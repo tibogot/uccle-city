@@ -1,0 +1,273 @@
+{
+ "note": "tools/blender/villo_ride.py: glTF frame (x left, y up, z forward), metres, origin = the ground midway between the axles; the street kit's villo_bike split for riding",
+ "kind": "villo",
+ "forward": "+Z",
+ "kitFront": [
+  0,
+  0,
+  0.56
+ ],
+ "wheelbase": 1.12,
+ "wheels": {
+  "F": {
+   "pos": [
+    0,
+    0.33,
+    0.56
+   ],
+   "r": 0.33,
+   "crown": 0.022
+  },
+  "R": {
+   "pos": [
+    0,
+    0.33,
+    -0.56
+   ],
+   "r": 0.33,
+   "crown": 0.022
+  }
+ },
+ "steer": {
+  "pivot": [
+   0,
+   0.98,
+   0.25
+  ],
+  "axis": [
+   0,
+   0.97014,
+   -0.24254
+  ],
+  "rake": 14.04
+ },
+ "bb": [
+  0,
+  0.28,
+  -0.14
+ ],
+ "crank": 0.17,
+ "pedalX": 0.18,
+ "crankRest_deg": {
+  "R": 34.38,
+  "L": 214.38,
+  "note": "the Cranks node as built: the right arm at this angle from forward (+Z) toward up (+Y); the cranks turn about local x; forward pedalling DEcreases... see 'pedalSense'"
+ },
+ "pedalSense": "pedalling forward the right pedal goes forward -> down -> back -> up: the angle (from +Z toward +Y) decreases",
+ "rider": {
+  "hip": [
+   0,
+   1.075,
+   -0.355
+  ],
+  "hipJoint": {
+   "L": [
+    0.092,
+    1.055,
+    -0.355
+   ],
+   "R": [
+    -0.092,
+    1.055,
+    -0.355
+   ]
+  },
+  "thigh": 0.45,
+  "shin": 0.45,
+  "foot": [
+   0.0099,
+   0.15973,
+   -0.0204
+  ],
+  "footBike": [
+   0,
+   -0.102,
+   0.125
+  ],
+  "restCrank_deg": 0,
+  "shoulder": {
+   "L": [
+    0.18,
+    1.51684,
+    -0.16745
+   ],
+   "R": [
+    -0.18,
+    1.51684,
+    -0.16745
+   ]
+  },
+  "grip": {
+   "L": [
+    0.262,
+    1.012,
+    0.153
+   ],
+   "R": [
+    -0.262,
+    1.012,
+    0.153
+   ]
+  },
+  "upper": 0.3,
+  "fore": 0.34,
+  "elbowOut": 0.3,
+  "eye": [
+   0,
+   1.75629,
+   0.03812
+  ]
+ },
+ "lamps": {
+  "head": [
+   0,
+   0.72,
+   0.385
+  ],
+  "tail": [
+   0,
+   0.52,
+   -0.932
+  ]
+ },
+ "size": [
+  0.62,
+  1.95,
+  0.26
+ ],
+ "slots": [
+  "Boot",
+  "Helmet",
+  "Jacket",
+  "Plastic",
+  "Rubber",
+  "Skin",
+  "Trousers",
+  "bike_black",
+  "bike_chrome",
+  "bike_frame",
+  "reflector",
+  "villo_ochre"
+ ],
+ "tris": {
+  "Body": 2500,
+  "Steer": 3656,
+  "Wheel_F": 1388,
+  "Wheel_R": 1388,
+  "Cranks": 40,
+  "Pedal_L": 136,
+  "Pedal_R": 136,
+  "RiderTorso": 4972,
+  "Thigh_L": 316,
+  "Thigh_R": 316,
+  "Shin_L": 1552,
+  "Shin_R": 1552,
+  "ArmU_L": 276,
+  "ArmU_R": 276,
+  "ArmF_L": 1608,
+  "ArmF_R": 1608,
+  "Wheel_F_far": 320,
+  "Wheel_R_far": 320
+ },
+ "ao": "vertex (COLOR_0.r)",
+ "pack": {
+  "file": "villo.glb",
+  "bytes": 540764,
+  "city": null,
+  "cityBytes": 0,
+  "rigLodErrors": [
+   0,
+   0.0025,
+   0.011
+  ],
+  "cityLodErrors": [
+   0.0025,
+   0.011,
+   0.03
+  ],
+  "wheelLod1": 0.0015,
+  "tris": {
+   "Body": [
+    2500,
+    626,
+    178
+   ],
+   "Steer": [
+    3656,
+    694,
+    130
+   ],
+   "Wheel_F": [
+    1388,
+    1260,
+    320
+   ],
+   "Wheel_R": [
+    1388,
+    1260,
+    320
+   ],
+   "Cranks": [
+    40,
+    40,
+    16
+   ],
+   "Pedal_L": [
+    136,
+    24,
+    12
+   ],
+   "Pedal_R": [
+    136,
+    24,
+    12
+   ],
+   "RiderTorso": [
+    4972,
+    2776,
+    520
+   ],
+   "Thigh_L": [
+    316,
+    250,
+    66
+   ],
+   "Thigh_R": [
+    316,
+    250,
+    66
+   ],
+   "Shin_L": [
+    1552,
+    238,
+    62
+   ],
+   "Shin_R": [
+    1552,
+    248,
+    62
+   ],
+   "ArmU_L": [
+    276,
+    220,
+    52
+   ],
+   "ArmU_R": [
+    276,
+    220,
+    50
+   ],
+   "ArmF_L": [
+    1608,
+    862,
+    144
+   ],
+   "ArmF_R": [
+    1608,
+    862,
+    134
+   ]
+  },
+  "note": "tools/moto/pack.mjs: <Node>_lod0..2 (rig), parked_lod1..3 / ridden_lod1..3 (city); attribute _SLOT = slot index + 0.01 + 0.97 AO (viewer/moto/twoWheelSlots.js)"
+ }
+}

@@ -145,12 +145,16 @@ function buildBoxCars(sites, ground) {
 
 const CARS_MODE = new URLSearchParams(location.search).get("cars");
 /** One tile's parked cars: { group, count }. The group holds the collider boxes; the fleet draws the cars. */
-export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
-  const sites = carSites(roads, feats, bounds, place);
-  if (CARS_MODE === "box") return buildBoxCars(sites, ground);
+export function buildCars(roads, feats, ground, bounds, { place = null, twoWheel = null } = {}) {
+  let sites = carSites(roads, feats, bounds, place);
+  // (motorbike round 2: some slots go to parked motorbikes / scooters, viewer/moto/cityTwoWheelers.js: twoWheel(sites)
+  // -> the indices it takes; their sites come back in twoSites)
+  let twoSites = [];
+  if (twoWheel && sites.length) { const take = twoWheel(sites); if (take?.size) { twoSites = sites.filter((s, i) => take.has(i)); sites = sites.filter((s, i) => !take.has(i)); } }
+  if (CARS_MODE === "box") return { ...buildBoxCars(sites, ground), twoSites };
   const group = new THREE.Group();
   group.name = "parked-cars-tile";
-  if (!sites.length) return { group, count: 0 };
+  if (!sites.length) return { group, count: 0, twoSites };
   // slot length: the distance to the nearest parked neighbour on the same kerb, ahead or behind (9 m when none)
   const room = sites.map((s, i) => {
     const ax = Math.cos(s.yaw), az = -Math.sin(s.yaw);      // along the car (box cars: local +x = the bonnet)
@@ -190,7 +194,7 @@ export function buildCars(roads, feats, ground, bounds, { place = null } = {}) {
     b.traverse((o) => { if (o.isInstancedMesh) { o.name = "parked-cars-box"; boxMeshes.add(o); o.visible = abMode === "box"; } });
     group.add(b);
   }
-  return { group, count: cars.length };
+  return { group, count: cars.length, twoSites };
 }
 const boxMeshes = new Set();
 let abMode = "faceted";
