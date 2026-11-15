@@ -528,7 +528,8 @@ function tileData(entry, lite = false) {
     surfH: params.get("surfh") !== "old",                                                           // street heights fitted within 0.6 m of their own ground (viewer/surfaces.js fitCorner, docs/JOINS2.md), ?surfh=old = unclamped (path spikes)
     groundWeld: params.get("groundweld") !== "old",                                                 // the terrain beside a street / path banks on its NEAREST edge (viewer/heightmap.js weld, docs/JOINS2.md), ?groundweld=old = the highest edge within reach (saw-tooth over climbing paths)
     groundSdf: params.get("groundsdf") !== "old",                                                   // land-cover edges as distance fields (viewer/landcover.js coverSDF, docs/JOINS2.md), ?groundsdf=old = the 1 m coverage mask
-    storeys: params.get("storeys") !== "old",                                                       // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
+    storeys: params.get("storeys") !== "old", styles: params.get("styles") !== "old",              // styles: building types (viewer/buildingTypes.js, docs/STYLES.md), ?styles=old = one generic façade
+                                                          // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off

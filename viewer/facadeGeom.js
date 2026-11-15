@@ -1,6 +1,7 @@
 import { fitBase } from "./groundFit.js";
-import { faceBays } from "./interior/facadeWindows.js";
-import { litWindows } from "./nightLights/litHash.js";   // ?night=1 round 3: the lit windows as night light sources
+import { faceBays, storeyFit } from "./interior/facadeWindows.js";
+import { litWindows } from "./nightLights/litHash.js";
+import { classify, TYPE } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
 // Façade analysis, pure JS (no three.js), so it can run in the tile worker (viewer/tileWorker.js).
 // Groups UrbIS wall triangles into faces with façade coordinates, party walls, street faces, shopfronts,
 // and builds the detail geometry (cornices, ridge caps, buttresses, chimneys, eaves, shop fascias).
@@ -413,6 +414,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const chimneysAt = [], buttressAt = [], apexAt = [];                                        // one stack per party wall, one buttress per spot
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
   const fitOut = opts.ground ? new Float32Array(doc.buildings.length).fill(NaN) : null;
+  // BUILDING TYPES (viewer/buildingTypes.js, docs/STYLES.md): the type, wall material and garage per building from its
+  // form (footprint, height, party walls, flat roof) and the commune's real period shares; aBld.z = street + 2 type +
+  // 16 garage (facades.js decodes it). opts.styles === false: the generic façade for all (?styles=old)
+  const cls = opts.styles === false ? null : classify(doc, P, I, (b, key) => wallStyle(hash01(key + "s"), b.height));
   const stats = { fit: {}, faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0, strips: 0, stripMerged: 0, stripJoins: 0, chimneysShared: 0 };
   doc.buildings.forEach((b, bi) => {
     let base = b.base, eaves = (b.eaves ?? b.top) - base;
@@ -425,7 +430,9 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const xs = b.footprint[0].map((q) => q[0]), zs = b.footprint[0].map((q) => q[1]);
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
-    const style = landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : wallStyle(hash01(key + "s"), b.height);
+    const style = landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
+    const btype = cls && !landmark ? cls.type[bi] : 0, bgar = cls && !landmark ? cls.garage[bi] : 0;
+    if (cls) { stats.types = stats.types || [0, 0, 0, 0, 0, 0]; stats.types[btype]++; }
     const roofStyle = hash01(key + "r");
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash
     const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
@@ -527,6 +534,55 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       if (fitOut) fitOut[bi] = base;
       stats.fit[fit.how] = (stats.fit[fit.how] || 0) + 1;
     }
+    /** (styles, docs/STYLES.md) the type's own geometry on one face, in the tile's detail mesh (no new draw call):
+     *  a maison de maître's entrance steps (where the kit, which places its own, is off), the entrance canopy of the
+     *  interwar / post-war fronts, the apartment blocks' balconies */
+    function typeDetails(f, q) {
+      const { btype, street, kitOn, width, faceEaves, base, u0, tx, tz, rnd: rq, key: kk, shopW: sw } = q;
+      let dd = 0, nq = 0;
+      for (const { p } of f.tris) for (const v of p) { dd += v[0] * f.nx + v[2] * f.nz; nq++; }
+      dd /= nq;
+      const at = (u, d = 0) => [tx * (u0 + u) + f.nx * (dd + d), 0, tz * (u0 + u) + f.nz * (dd + d)];
+      const { bw, doorBay, nb } = faceBays({ width, rnd: Math.fround(rq) });
+      const du = 0.55 + bw * (doorBay + 0.5);
+      const doorHere = street && width >= 1.6 && faceEaves >= 2.8 && !(sw > 0.5);
+      if (btype === TYPE.MAITRE && doorHere && !kitOn) {
+        // three 17 cm steps up to the raised door (TYPE_GRID raise 0.51 m): a landing and two treads, each lower one 2 cm
+        // wider a side (no coplanar end caps), run 0.3 m into the ground
+        const g = opts.ground ? opts.ground(tx * (u0 + du) + f.nx * (dd + 0.6), tz * (u0 + du) + f.nz * (dd + 0.6)) : base;
+        const foot = Math.min(base, Number.isFinite(g) ? g : base) - 0.3;
+        for (const [y, d, hw] of [[0.51, 0.35, 0.75], [0.34, 0.65, 0.77], [0.17, 0.95, 0.79]])
+          box(D, at(du - hw), at(du + hw), base + y, base + y - foot, d, f.nx, f.nz, [0.15, 0.155, 0.16]);
+        stats.typeSteps = (stats.typeSteps || 0) + 1;
+      }
+      if ((btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) && doorHere) {
+        // a flat concrete canopy over the entrance (interwar / post-war): door width + 0.5 m, 0.7 m deep, 10 cm thick
+        const sk = storeyFit(Math.fround(faceEaves), opts.storeys !== false, btype);
+        const y = base + 0.72 * sk.G + 0.22, hw = btype === TYPE.BLOCK ? 1.4 : 0.85;
+        if (faceEaves > 0.72 * sk.G + 1.2) { box(D, at(du - hw), at(du + hw), y, 0.1, btype === TYPE.BLOCK ? 1.1 : 0.7, f.nx, f.nz, [0.5, 0.49, 0.47]); stats.canopies = (stats.canopies || 0) + 1; }
+      }
+      if (btype === TYPE.BLOCK && width >= 5 && hash01(kk + "|balc") < 0.65) {
+        // BALCONIES on every upper storey: a 16 cm slab 1.25 m deep and a 1.0 m parapet on its front edge (concrete,
+        // white enamelled panels, frosted glass or dark metal per building), continuous along the face (60 %) or one
+        // per window pair; the slab stops behind the parapet (no coplanar faces), the ends stop 0.35 m from the corners
+        const sk = storeyFit(Math.fround(faceEaves), opts.storeys !== false, TYPE.BLOCK);
+        const pc = [[0.42, 0.41, 0.39], [0.62, 0.62, 0.6], [0.3, 0.36, 0.37], [0.06, 0.062, 0.066]][Math.floor(hash01(kk + "|par") * 4)];
+        const cont = hash01(kk + "|cont") < 0.6;
+        const spans = cont ? [[0.35, width - 0.35]] : [];
+        if (!cont) for (let i = 0; i < nb; i += 2) spans.push([0.55 + bw * i + 0.15, Math.min(0.55 + bw * Math.min(i + 2, nb) - 0.15, width - 0.35)]);
+        const D0 = 1.25, PT = 0.06;
+        for (let fl = 1; fl < 40; fl++) {
+          const y = sk.G + (fl - 1) * sk.S;                     // the storey's floor over the ground-floor line
+          if (y + 2.2 > faceEaves) break;
+          for (const [a, c] of spans) {
+            if (c - a < 1.2) continue;
+            box(D, at(a), at(c), base + y, 0.16, D0 - PT, f.nx, f.nz, [0.4, 0.39, 0.37]);                       // slab
+            box(D, at(a, D0 - PT), at(c, D0 - PT), base + y + 1.0, 1.16, PT, f.nx, f.nz, pc, true);               // parapet
+            stats.balconies = (stats.balconies || 0) + 1;
+          }
+        }
+      }
+    }
     for (const f of live) {
       const { tx, tz, u0, u1, cx, cz, top, width, partyH, street, topMin } = f.pre;
       // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces);
@@ -590,9 +646,20 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (L < 0.6 || seen.has(key)) continue;
           seen.add(key);
           const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
+          if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
+            // (styles) interwar / post-war fronts: no classical cornice, a plain projecting coping band (a concrete
+            // edge on the blocks)
+            const cc = btype === TYPE.BLOCK ? [0.44, 0.43, 0.41] : btype === TYPE.DECO ? [0.62, 0.6, 0.56] : [0.5, 0.49, 0.47];
+            addStrip(SD, "cu", A, B, top - 0.02, btype === TYPE.BLOCK ? 0.3 : 0.18, btype === TYPE.DECO ? 0.1 : 0.06, f.nx, f.nz, cc);
+          } else if (btype === TYPE.MAITRE) {
+            // (styles) the maison de maître's heavy cornice: a deep corona over a frieze course
+            addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.34, f.nx, f.nz, col);
+            addStrip(SD, "cl", A, B, top - 0.22, 0.14, 0.16, f.nx, f.nz, col.map((c) => c * 0.93));
+          } else {
           // two-step moulding: a deep top course and a shallower one under it
           addStrip(SD, "cu", A, B, top - 0.02, 0.16, landmark ? 0.32 : 0.22, f.nx, f.nz, col);
           addStrip(SD, "cl", A, B, top - 0.18, 0.12, landmark ? 0.18 : 0.12, f.nx, f.nz, col.map((c) => c * 0.93));
+          }
           stats.cornices++;
         }
       }
@@ -658,7 +725,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
       }
       // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
-      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, landmark: !!landmark, rnd, width, eaves: faceEaves, eavesBld: landmark ? top - base : eaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
+      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, type: btype, garage: bgar, landmark: !!landmark, rnd, width, eaves: faceEaves, eavesBld: landmark ? top - base : eaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
         shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
       const T = k?.on ? WK : W;
       // (ground fit) the painted façade has a door on EVERY street face: one whose door bay stands off the ground (a
@@ -674,13 +741,14 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
       const cel = !landmark && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
       if (cel > 1.5) { stats.cellarFaces = (stats.cellarFaces || 0) + 1; if (cel > 2.4) stats.lowerGround = (stats.lowerGround || 0) + 1; }
+      if (cls && btype && partyH < 999) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
         T.aCel.push(cel);
         T.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
         T.normal.push(sn[0], sn[1], sn[2]);
         T.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
-        T.aBld.push(style, partyH, streetA, rnd);
+        T.aBld.push(style, partyH, cls ? streetA + 2 * btype + 16 * bgar : streetA, rnd);
         T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
         if (T === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
@@ -690,7 +758,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         let dd = 0, nq = 0;
         for (const { p } of f.tris) for (const q of p) { dd += q[0] * f.nx + q[2] * f.nz; nq++; }
         const fr = Math.fround;
-        litWindows({ width: fr(width), eaves: fr(faceEaves), partyH: fr(partyH), street: T === WK ? (streetA && !k.doorless ? 1 : 0) : streetA, rnd: fr(rnd), landmark: false,
+        litWindows({ width: fr(width), eaves: fr(faceEaves), partyH: fr(partyH), street: T === WK ? (streetA && !k.doorless ? 1 : 0) : streetA, rnd: fr(rnd), landmark: false, type: btype, garage: bgar,
           shop: fr(shopW), shopU: fr(shopU), fit: opts.storeys !== false, u0, tx, tz, nx: f.nx, nz: f.nz, dd: dd / nq, base }, NW);
       }
     }

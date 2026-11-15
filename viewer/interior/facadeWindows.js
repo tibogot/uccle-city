@@ -14,6 +14,10 @@
 //       frame: 0.07, mullion (bool), transom (h of the glazing bar, windows; the door's fanlight bottom),
 //       sill: { u0, u1, h0, h1 } (the blue-stone sill under a window) }]
 export const G = 3.4, S = 3.0, PIER = 0.55, FRAME = 0.07;
+// BUILDING TYPES (docs/STYLES.md): f.type picks the window grid's row in TYPE_GRID (buildingTypes.js; 0 = the generic
+// grid of before), f.garage a garage door in the street front's ground floor (kind "garage"). KEEP IN SYNC with
+// facades.js typeParams.
+import { TYPE_GRID, garageBay, GARAGE_H } from "../buildingTypes.js";
 
 // FITTED STOREYS (docs/STOREYS.md; ?storeys=old = the fixed 3.4 / 3.0 m storeys, a storey dropped when its window
 // missed the eaves by a few cm). The storeys fill the face's height: span = eaves - STOREY_TOP (the top storey's
@@ -23,38 +27,48 @@ export const G = 3.4, S = 3.0, PIER = 0.55, FRAME = 0.07;
 // KEEP IN SYNC with facades.js storeyFit().
 export const STOREY_TOP = 0.3, STOREY_STEP = 3.25, K_MIN = 0.87, K_MAX = 1.2;
 /** eaves (m above the ground-floor line) -> { n, k, G, S } (fit === false: the fixed storeys, k = 1) */
-export function storeyFit(eaves, fit = true) {
+export function storeyFit(eaves, fit = true, type = 0) {
   if (!fit) return { n: Infinity, k: 1, G, S };
+  const T = TYPE_GRID[type] || TYPE_GRID[0], step = Math.fround(T[7]), kMin = Math.fround(T[8]), kMax = Math.fround(T[9]);
   const span = Math.fround(eaves - STOREY_TOP);
-  let n = Math.max(1, Math.floor(span / STOREY_STEP + 0.5));
-  if (n > 1 && span / (G + S * (n - 1)) < K_MIN) n--;
-  let k = Math.min(Math.max(span / (G + S * (n - 1)), K_MIN), K_MAX);
+  let n = Math.max(1, Math.floor(span / step + 0.5));
+  if (n > 1 && span / (G + S * (n - 1)) < kMin) n--;
+  let k = Math.min(Math.max(span / (G + S * (n - 1)), kMin), kMax);
   k = Math.floor(k * 128 + 0.5) / 128;
   return { n, k, G: G * k, S: S * k };
 }
 
 export function faceOpenings(f) {
   const out = [];
-  const { G, S } = storeyFit(f.eaves, f.fit !== false);
+  const type = f.type | 0, TG = TYPE_GRID[type] || TYPE_GRID[0], fr = Math.fround;
+  const { G, S } = storeyFit(f.eaves, f.fit !== false, type);
   if (f.landmark || f.partyH >= 999 || f.width < 1.6 || f.eaves < 2.8) return out;
   const usable = Math.max(f.width - PIER * 2, 0.001);
   const nb = Math.max(Math.floor(usable / 2.6 + 0.5), 1);
   const bw = usable / nb;
-  const ww = Math.min(1.2, bw * 0.52);
+  const ww = Math.min(fr(TG[0]), bw * fr(TG[1]));
   const rq = Math.floor(f.rnd * 4096 + 0.5) / 4096;        // the shader quantises rnd (facades.js)
   const doorBay = Math.floor(rq * nb);
+  const raise = fr(TG[6]);
+  const garBay = f.garage && f.street ? garageBay(nb, doorBay) : -1;
   for (let fl = 0; ; fl++) {
     const up = fl > 0, sh = up ? S : G;
     const y0 = up ? G + (fl - 1) * S : 0;                  // storey bottom above base
-    const ya = up ? 0.29 : 0.27, yb = up ? 0.79 : 0.77;
+    const ya = fr(up ? TG[4] : TG[2]), yb = fr(up ? TG[5] : TG[3]);
     const winTop = y0 + yb * sh;
     if (y0 > f.eaves) break;
     if (f.eaves < winTop + 0.35) break;                    // the whole window fits under the eaves
     for (let k = 0; k < nb; k++) {
       const door = !!f.street && !up && k === doorBay;
-      const half = door ? 0.55 : ww / 2;
       const uc = PIER + bw * (k + 0.5);
-      const h0 = door ? 0 : y0 + ya * sh, h1 = door ? 0.72 * G : winTop;
+      if (!up && k === garBay) {
+        // the garage door: min(2.5, bay - 0.25) wide, GARAGE_H tall from the ground-floor line (facades.js isGar)
+        const gh = Math.min(2.5, bw - 0.25) / 2;
+        if (!(f.partyH > 0 && 0 < f.partyH + 0.3)) out.push({ kind: "garage", bay: k, floor: 0, u0: uc - gh, u1: uc + gh, h0: 0, h1: GARAGE_H, frame: FRAME });
+        continue;
+      }
+      const half = door ? (type === 4 ? Math.min(1.0, bw * 0.4) : 0.55) : ww / 2;   // (styles) the blocks' wide glazed entrance
+      const h0 = door ? raise : y0 + ya * sh, h1 = door ? 0.72 * G + 0.5 * raise : winTop;
       // a party wall below the neighbour's top (+ 0.3 m) is blank: the opening shows only where it is above
       if (f.partyH > 0 && h0 < f.partyH + 0.3) continue;
       // a shopfront (OSM shop) replaces the ground floor where it is (3 m high)
@@ -63,7 +77,7 @@ export function faceOpenings(f) {
         if (Math.abs(uc - su) < shopW / 2 + half) continue;
       }
       const o = { kind: door ? "door" : "window", bay: k, floor: fl, u0: uc - half, u1: uc + half, h0, h1, frame: FRAME,
-        mullion: !door && ww >= 0.95, transom: door ? FRAME + 0.78 * (0.72 * G - 2 * FRAME) : y0 + (ya + FRAME / sh + 0.7 * (yb - ya - 2 * FRAME / sh)) * sh };
+        mullion: !door && ww >= 0.95, transom: door ? h0 + FRAME + 0.78 * (h1 - h0 - 2 * FRAME) : y0 + (ya + FRAME / sh + 0.7 * (yb - ya - 2 * FRAME / sh)) * sh };
       if (!door) o.sill = { u0: o.u0 - 0.06, u1: o.u1 + 0.06, h0: h0 - 0.08, h1: h0 };
       out.push(o);
     }

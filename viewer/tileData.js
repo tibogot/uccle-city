@@ -6,6 +6,7 @@
 import { carvePonds } from "./water/pondBed.js";
 import { Heightmap } from "./heightmap.js";
 import { analyseBuildings, hash01, wallStyle } from "./facadeGeom.js";
+import { classify, TYPE } from "./buildingTypes.js";
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
@@ -400,7 +401,7 @@ export async function buildTileData(entry, base) {
   // are built from these walls (the drive colliders and the roof grids above already read the solids)
   const feet = fitGround && bBuf ? await step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround, footprintIndex(bDoc)); }) : null;
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, cellar: entry.cellar !== false }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
@@ -463,13 +464,16 @@ export async function buildLiteData(entry, base) {
       q += 3;
     }
   };
-  for (const b of bDoc.buildings) {
+  // (styles) the far tiles' wall colour from the same building types as the full tile (viewer/buildingTypes.js)
+  const cls = entry.styles !== false ? classify(bDoc, P, I, (b, key) => wallStyle(hash01(key + "s"), b.height)) : null;
+  bDoc.buildings.forEach((b, bi) => {
     const key = String(b.attrs?.BU_ID ?? b.id);
-    const wall = b.attrs?._landmark ? [0.42, 0.4, 0.36] : WALL[wallStyle(hash01(key + "s"), b.height)].map((v) => v * 0.85 + 0.02);
+    const wall = b.attrs?._landmark ? [0.42, 0.4, 0.36] : WALL[cls ? Math.round(cls.style[bi]) : wallStyle(hash01(key + "s"), b.height)].map((v) => v * 0.85 + 0.02);
+    if (cls && cls.type[bi] === TYPE.DECO && cls.style[bi] >= 2.5) for (let c = 0; c < 3; c++) wall[c] = wall[c] * 0.5 + 0.34;   // the light deco renders (facades.js)
     const roof = b.roofColor || [0.12, 0.08, 0.07];
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) tri(t, wall);
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) tri(t, roof);
-  }
+  });
   return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: { position: bp, normal: bn, color: bc }, buildingCount: bDoc.count };
 }
 

@@ -40,6 +40,7 @@ import { G as G0, S as S0, STOREY_TOP, STOREY_STEP, K_MIN, K_MAX } from "./inter
 import { facadeLibOn, facadeWallLook, facadeRoofLook } from "./facadeLib.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 export { analyseBuildings };
+import { TYPE_GRID, GARAGE_H } from "./buildingTypes.js";
 
 const C = (r, g, b) => vec3(r, g, b);
 const PLINTH_OLD = /[?&](plinth|polish1)=old(&|$)/.test(location.search);   // polish1 item 4
@@ -52,15 +53,31 @@ export const CELLAR = !(typeof location !== "undefined" && /[?&]cellar=0(&|$)/.t
 // Now the storeys fill the face: n = round((eaves - 0.3) / 3.25), all scaled by one k (= facadeWindows.js storeyFit,
 // KEEP IN SYNC), per vertex (one varying; the face's eaves is a per-face constant). ?storeys=old: k = 1.
 export const STOREYS_OLD = typeof location !== "undefined" && /[?&]storeys=old(&|$)/.test(location.search);
-export function storeyK(eh) {
+// tq (styles): vec3(storey step, k min, k max) of the building's type (buildingTypes.js TYPE_GRID, vertex stage); null = generic
+export function storeyK(eh, tq = null) {
   if (STOREYS_OLD) return float(1);
+  const stepV = tq ? tq.x : float(STOREY_STEP), kMin = tq ? tq.y : float(K_MIN), kMax = tq ? tq.z : float(K_MAX);
   const span = eh.sub(STOREY_TOP);
-  const n0 = max(floor(span.div(STOREY_STEP).add(0.5)), 1.0);
+  const n0 = max(floor(span.div(stepV).add(0.5)), 1.0);
   const k0 = span.div(n0.sub(1).mul(S0).add(G0));
-  const n = select(n0.greaterThan(1.5).and(k0.lessThan(K_MIN)), n0.sub(1), n0);
-  const k = clamp(span.div(n.sub(1).mul(S0).add(G0)), K_MIN, K_MAX);
+  const n = select(n0.greaterThan(1.5).and(k0.lessThan(kMin)), n0.sub(1), n0);
+  const k = clamp(span.div(n.sub(1).mul(S0).add(G0)), kMin, kMax);
   return varying(floor(k.mul(128).add(0.5)).div(128), "v_storeyK");
 }
+
+// BUILDING TYPES (docs/STYLES.md; viewer/buildingTypes.js): aBld.z = street + 2 type + 16 garage (facadeGeom.js). Per
+// type the window grid (TYPE_GRID: width, sill / head, the door's raise, the storeys), the frames and glazing bars, a
+// garage door, and the type's dress: the maison de maître's stone lintels + keystones, string course, rusticated ground
+// floor and high blue-stone plinth; the art deco front's light render, continuous bands and grooved lines; the post-war
+// bel-étage's concrete window surrounds and clad ground floor; the block's floor-slab bands and guard rails; the villa's
+// half-timbered upper floor (cottage). ?styles=old: the generic façade (the worker sends the plain street flag).
+export const STYLES_OLD = (typeof globalThis !== "undefined" && !!globalThis.__stylesOldForce) || (typeof location !== "undefined" && /[?&]styles=old(&|$)/.test(location.search));   // (__stylesOldForce: debug/stylesAB.js builds the old wall shader beside the new one)
+/** column i of TYPE_GRID for the type t (an exact integer float, vertex stage) */
+const tsel = (t, i) => {
+  let v = float(TYPE_GRID[0][i]);
+  for (let k = 1; k < TYPE_GRID.length; k++) if (TYPE_GRID[k][i] !== TYPE_GRID[0][i]) v = select(t.equal(float(k)), float(TYPE_GRID[k][i]), v);
+  return v;
+};
 
 /**
  * Room behind a window, raycast in metres (interior mapping). Adapted from evaluateApartmentInterior in
@@ -164,7 +181,9 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
  * k: the face's storey scale (storeyK; the kit packs it in aKitF.y).
  * -> { col, emissive, rough }  (KEEP IN SYNC with wallMaterial below)
  */
-export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode, k = float(1) }) {
+export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode, k = float(1), type = float(0) }) {
+  // type: 1 = the maison de maître's grid (TYPE_GRID row 1), 0 the generic one (the kit's only two grids; aKitF.w + 1024)
+  const T0 = TYPE_GRID[0], T1 = TYPE_GRID[1], tg = (i) => (STYLES_OLD ? float(T0[i]) : mix(float(T0[i]), float(T1[i]), type));
   const P = positionWorld;
   const rnd = floor(rndIn.mul(4096.0).add(0.5)).div(4096.0).toVar();
   const pier = float(0.55);
@@ -177,16 +196,17 @@ export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode, k = float(1
   const gy = mix(h.div(G), h.sub(G).div(S).add(1.0), up).toVar();
   const storeyH = mix(G, S, up);
   const fwx = fwidth(gx).toVar(), fwy = fwidth(gy).toVar();
-  const ww = min(float(1.2), bw.mul(0.52));
+  const ww = min(tg(0), bw.mul(tg(1)));
   const xa = float(0.5).sub(ww.div(bw).mul(0.5)).toVar(), xb = float(1).sub(xa).toVar();
-  const ya = mix(float(0.27), float(0.29), up).toVar(), yb = mix(float(0.77), float(0.79), up).toVar();
+  const ya = mix(tg(2), tg(4), up).toVar(), yb = mix(tg(3), tg(5), up).toVar();
+  const raise = tg(6);
   const fl = floor(gy);
   const doorBay = floor(rnd.mul(nb));
   const isDoor = street.mul(step(abs(floor(gx).sub(doorBay)), 0.5)).mul(float(1).sub(up)).toVar();
   const isFr = step(0.5, frCode).mul(step(abs(floor(gx).sub(mod(frCode.sub(1), 16.0))), 0.5)).mul(step(abs(fl.sub(floor(frCode.sub(1).div(16.0)))), 0.5));
   const dxa = float(0.5).sub(float(0.55).div(bw)), dxb = float(1).sub(dxa);
   const wxa = mix(xa, dxa, isDoor), wxb = mix(xb, dxb, isDoor);
-  const wya = mix(mix(ya, float(FRENCH_SILL).div(storeyH), isFr), float(0.0), isDoor), wyb = mix(yb, float(0.72), isDoor);
+  const wya = mix(mix(ya, float(FRENCH_SILL).div(storeyH), isFr), raise.div(storeyH), isDoor), wyb = mix(yb, float(0.72).add(raise.mul(0.5).div(G)), isDoor);
   const fX = float(0.07).div(bw), fY = float(0.07).div(storeyH);
   const gxa = wxa.add(fX), gxb = wxb.sub(fX), gya = wya.add(fY), gyb = wyb.sub(fY);
   const wu = clamp(fract(gx).sub(gxa).div(gxb.sub(gxa)), 0.0, 1.0).toVar();
@@ -222,6 +242,7 @@ function bldMaterial() {
   return m;
 }
 
+const isBrick0 = (style) => float(1).sub(step(float(2.5), style));
 export function wallMaterial(opts = {}) {
   const m = bldMaterial();
   const P = positionWorld;
@@ -232,7 +253,16 @@ export function wallMaterial(opts = {}) {
   // rnd quantised: it is a per-building constant, but as an interpolated vertex attribute it arrives with
   // last-bit differences per pixel, and the room / curtain hashes (sin x 43758) turned those into random
   // white dots in every window (2026-11-04; same bug as the trees' tint)
-  const style = bld.x, street = bld.z, rnd = floor(bld.w.mul(4096.0).add(0.5)).div(4096.0).toVar();
+  const zq = floor(bld.z.add(0.5));
+  const style = bld.x, street = STYLES_OLD ? bld.z : mod(zq, 2.0).toVar(), rnd = floor(bld.w.mul(4096.0).add(0.5)).div(4096.0).toVar();
+  // (styles) the building type and its garage door; the type's grid row as two varyings (vertex stage: exact per face)
+  const bt = STYLES_OLD ? float(0) : floor(mod(zq, 16.0).div(2.0)).toVar(), garOn = STYLES_OLD ? float(0) : step(15.5, zq);
+  const tV = floor(mod(floor(bld.z.add(0.5)), 16.0).div(2.0));
+  const tg0 = STYLES_OLD ? null : varying(vec4(tsel(tV, 0), tsel(tV, 1), tsel(tV, 2), tsel(tV, 3)), "v_tg0");
+  const tg1 = STYLES_OLD ? null : varying(vec4(tsel(tV, 4), tsel(tV, 5), tsel(tV, 6), 0), "v_tg1");
+  const isM = band(bt, 1), isD = band(bt, 2), isBE = band(bt, 3), isK = band(bt, 4), isV = band(bt, 5);
+  const typed = isD.add(isBE).add(isK).toVar();                                  // the types with their own joinery (no kit)
+  const th1 = fract(rnd.mul(113.0)), th2 = fract(rnd.mul(271.0)), th3 = fract(rnd.mul(53.0));
   const party = step(h, bld.y.add(0.3)).mul(step(0.001, bld.y)).toVar();      // below the neighbour's top (aBld.y, m above base)
   const camDist = length(P.sub(cameraPosition)).toVar();
   const near = float(1).sub(smoothstep(16.0, 150.0, camDist)).toVar();       // relief and fine detail fade with distance
@@ -244,15 +274,16 @@ export function wallMaterial(opts = {}) {
   const nb = max(floor(usable.div(2.6).add(0.5)), float(1)).toVar();
   const bw = usable.div(nb).toVar();
   const gx = u.sub(pier).div(bw).toVar();                                       // bay coordinate
-  const sk = storeyK(eh);
+  const sk = storeyK(eh, STYLES_OLD ? null : vec3(tsel(tV, 7), tsel(tV, 8), tsel(tV, 9)));
   const G = sk.mul(G0).toVar(), S = sk.mul(S0).toVar();
   const up = step(G, h);
   const gy = mix(h.div(G), h.sub(G).div(S).add(1.0), up).toVar();              // storey coordinate
   const storeyH = mix(G, S, up);
   const fwx = fwidth(gx).toVar(), fwy = fwidth(gy).toVar();
-  const ww = min(float(1.2), bw.mul(0.52));
+  const ww = STYLES_OLD ? min(float(1.2), bw.mul(0.52)) : min(tg0.x, bw.mul(tg0.y)).toVar();
   const xa = float(0.5).sub(ww.div(bw).mul(0.5)).toVar(), xb = float(1).sub(xa).toVar();
-  const ya = mix(float(0.27), float(0.29), up).toVar(), yb = mix(float(0.77), float(0.79), up).toVar();
+  const ya = (STYLES_OLD ? mix(float(0.27), float(0.29), up) : mix(tg0.z, tg1.x, up)).toVar(), yb = (STYLES_OLD ? mix(float(0.77), float(0.79), up) : mix(tg0.w, tg1.y, up)).toVar();
+  const raise = STYLES_OLD ? float(0) : tg1.z;
   const fl = floor(gy);
   // THE STOREY'S OWN openings, box-filtered over the pixel: filteredPulse is PERIODIC, and a door (its pulse starts at
   // the storey floor, 0) leaked the NEXT storey's door into the top pixel rows of this one: a 1-3 px row at every
@@ -277,9 +308,17 @@ export function wallMaterial(opts = {}) {
   const kitA = opts.kit ? attribute("aKit", "vec4") : null;
   const isDoor = street.mul(step(abs(floor(gx).sub(doorBay)), 0.5)).mul(float(1).sub(up)).mul(ok).mul(kitA ? float(1).sub(kitA.z) : float(1)).toVar();
   const isFr = kitA ? step(0.5, kitA.w).mul(step(abs(floor(gx).sub(mod(kitA.w.sub(1), 16.0))), 0.5)).mul(step(abs(fl.sub(floor(kitA.w.sub(1).div(16.0)))), 0.5)).mul(ok).toVar() : float(0);
-  const dxa = float(0.5).sub(float(0.55).div(bw)), dxb = float(1).sub(dxa);
-  const wxa = mix(xa, dxa, isDoor), wxb = mix(xb, dxb, isDoor);
-  const wya = mix(mix(ya, float(FRENCH_SILL).div(storeyH), isFr), float(0.0), isDoor), wyb = mix(yb, float(0.72), isDoor);
+  // (styles) the garage door: the bay after the door's (facadeWindows.js faceOpenings kind "garage"), from the ground-floor
+  // line, GARAGE_H tall, min(2.5, bay - 0.25) wide; the kit's faces cut it for the kit's sectional door
+  const garBay = mod(doorBay.add(1), nb);
+  const garCol = garOn.mul(street).mul(step(1.5, nb)).mul(step(abs(floor(gx).sub(garBay)), 0.5)).mul(kitA ? float(1).sub(kitA.z) : float(1)).toVar();
+  const isGar = garCol.mul(float(1).sub(up)).mul(ok).toVar();
+  const doorHalf = mix(float(0.55), min(float(1.0), bw.mul(0.4)), isK);          // (styles) the blocks' wide glazed entrance
+  const dxa = float(0.5).sub(doorHalf.div(bw)), dxb = float(1).sub(dxa);
+  const gxa0 = float(0.5).sub(min(float(2.5), bw.sub(0.25)).mul(0.5).div(bw));
+  const wxa = mix(mix(xa, dxa, isDoor), gxa0, isGar), wxb = mix(mix(xb, dxb, isDoor), float(1).sub(gxa0), isGar);
+  const wya = mix(mix(mix(ya, float(FRENCH_SILL).div(storeyH), isFr), raise.div(storeyH), isDoor), float(0), isGar);
+  const wyb = mix(mix(yb, float(0.72).add(raise.mul(0.5).div(G)), isDoor), float(GARAGE_H).div(G), isGar);
   const cx = filteredPulse(gx, wxa, wxb, fwx), cy = pulseY(wya, wyb, fwy);
   const opening = cx.mul(cy).mul(ok).toVar();                                    // whole opening (frame + glass)
   // frame 7 cm, glass inside; a mullion and a transom
@@ -288,9 +327,22 @@ export function wallMaterial(opts = {}) {
   const glassBox = filteredPulse(gx, gxa, gxb, fwx).mul(pulseY(gya, gyb, fwy)).mul(ok).toVar();
   const wu = clamp(fract(gx).sub(gxa).div(gxb.sub(gxa)), 0.0, 1.0).toVar();      // 0..1 inside the glass
   const wv = clamp(fract(gy).sub(gya).div(gyb.sub(gya)), 0.0, 1.0).toVar();
-  const barX = smoothstep(float(0.035).div(ww), float(0.0), abs(wu.sub(0.5))).mul(step(float(0.95), ww));
-  const barY = smoothstep(float(0.035).div(storeyH.mul(0.5)), float(0.0), abs(wv.sub(0.7)));
-  const bars = max(barX, barY).mul(float(1).sub(isDoor)).mul(near.mul(0.7).add(0.3));
+  let barX = smoothstep(float(0.035).div(ww), float(0.0), abs(wu.sub(0.5))).mul(step(float(0.95), ww));
+  let barY = smoothstep(float(0.035).div(storeyH.mul(0.5)), float(0.0), abs(wv.sub(0.7)));
+  if (!STYLES_OLD) {
+    // (styles) the typed fronts' glazing: art deco steel windows in lights of ~0.55 m with two horizontal bars; the
+    // post-war / block windows in lights of ~1.2 m with a top light (bel-étage) or the guard rail 1 m over the floor (blocks)
+    const nl = max(floor(ww.div(mix(float(1.2), float(0.55), isD)).add(0.5)), float(1));
+    const dl = abs(fract(wu.mul(nl).add(0.5)).sub(0.5)).div(nl);
+    const bxT = smoothstep(float(0.028).div(ww), float(0.0), dl).mul(step(1.5, nl));
+    const wvH = gyb.sub(gya).mul(storeyH);                                        // the glass's height, m
+    const lineAt = (v, hw) => smoothstep(float(hw).div(wvH), float(0.0), abs(wv.sub(v)));
+    const railV = float(1.0).div(storeyH).sub(gya).div(gyb.sub(gya));            // 1 m over the floor, in the glass's v
+    const byT = max(max(lineAt(float(0.34), 0.016), lineAt(float(0.68), 0.016)).mul(isD), lineAt(float(0.8), 0.02).mul(isBE))
+      .add(lineAt(railV, 0.025).mul(isK).mul(up)).min(1.0);
+    barX = mix(barX, bxT, typed); barY = mix(barY, byT, typed);
+  }
+  const bars = max(barX, barY).mul(float(1).sub(isDoor)).mul(float(1).sub(isGar)).mul(near.mul(0.7).add(0.3));
   const glass = glassBox.mul(float(1).sub(bars)).toVar();
   const frame = opening.sub(glassBox).add(glassBox.mul(bars)).max(0).toVar();
   // RELIEF OVER A WIDER FOOTPRINT (owner 2026-11-13: stair-stepped bright outlines round the painted windows at grazing
@@ -318,11 +370,18 @@ export function wallMaterial(opts = {}) {
   col = mix(col, renderOf(C(0.62, 0.6, 0.55)), band(style, 3));
   col = mix(col, renderOf(C(0.56, 0.47, 0.32)), band(style, 4));
   col = mix(col, renderOf(C(0.3, 0.29, 0.27)), band(style, 5));
-  const isBrick = float(1).sub(step(float(2.5), style)).toVar();
+  const isBrick = isBrick0(style).toVar();
   // (2026-11-13) the wall surface from the material library's shipped sets (viewer/facadeLib.js; ?libmat=-facades: off)
   const wl = facadeLibOn() ? facadeWallLook(u, h, style, [[0.29, 0.085, 0.05], [0.17, 0.075, 0.045], [0.4, 0.27, 0.14],
     [0.62, 0.6, 0.55], [0.56, 0.47, 0.32], [0.3, 0.29, 0.27]]) : null;
   if (wl) col = wl.col;
+  if (!STYLES_OLD) {
+    // (styles) the art deco / modernist renders in their light colours (cream, off-white, pale ochre, pale grey) over the
+    // style's own render (a tint: the library texture's detail stays)
+    const pal = mix(mix(C(0.74, 0.7, 0.6), C(0.79, 0.78, 0.74), step(0.3, th1)), mix(C(0.7, 0.61, 0.46), C(0.67, 0.68, 0.67), step(0.85, th1)), step(0.6, th1));
+    const baseR = mix(C(0.62, 0.6, 0.55), C(0.56, 0.47, 0.32), band(style, 4));
+    col = mix(col, col.mul(pal.div(baseR)), isD.mul(float(1).sub(isBrick0(style))));
+  }
   // ---- BLIND PARTY WALLS (owner playtest 2026-11-14: "they look empty"). A Brussels gable left bare above a lower
   // neighbour is never a clean sheet: it keeps the GHOST of an older, taller neighbour (the pitched outline of its roof
   // with the black bitumen flashing along it, the old room plaster inside it, half fallen off, a soot-dark flue strip),
@@ -381,13 +440,14 @@ export function wallMaterial(opts = {}) {
   let height = wl ? float(0) : isBrick.mul(float(1).sub(brick.joint)).mul(0.0045);
   height = height.sub(openingR.mul(0.12));                                       // reveal: the opening sits 12 cm back
   const aaH = fwidth(h).add(0.002), aaHR = fwidth(h).mul(RELIEF_PX).add(0.002);
-  const plinth = float(1).sub(smoothstep(float(0.5).sub(aaH), float(0.5).add(aaH), h)).toVar();
+  const plinthTop = STYLES_OLD ? float(0.5) : mix(float(0.5), float(0.9), isM).toVar();   // (styles) the maison de maître's high blue-stone plinth
+  const plinth = float(1).sub(smoothstep(plinthTop.sub(aaH), plinthTop.add(aaH), h)).toVar();
   // polish1 (docs/POLISH.md item 4, ?plinth=old = before): the blue-stone plinth was albedo 0.075-0.09 (sRGB ~78): in
   // shade, with the AO at the wall foot, it went black (Fort-Jaco, Av. Alphonse XIII). Weathered petit granit reads
   // mid-dark grey in photos (sRGB ~100-115): albedo 0.125-0.14, a little washed paler, the grain a touch stronger
   const wallCol = col;
   col = mix(col, PLINTH_OLD ? C(0.075, 0.08, 0.09).add(grain.mul(0.01)) : C(0.125, 0.13, 0.137).add(grain.mul(0.018)), plinth);
-  height = height.add(float(1).sub(smoothstep(float(0.5).sub(aaHR), float(0.5).add(aaHR), h)).mul(0.03));
+  height = height.add(float(1).sub(smoothstep(plinthTop.sub(aaHR), plinthTop.add(aaHR), h)).mul(0.03));
   if (CELLAR) {
     // THE BASEMENT (joins2): aCel = the wall exposed under the ground-floor line where the ground is highest along the
     // face (facadeGeom.js cellarOf). > 1.5 m: a soupirail (low barred cellar light, blue-stone surround) under each
@@ -401,7 +461,7 @@ export function wallMaterial(opts = {}) {
     col = mix(col, wallCol, lg.mul(float(1).sub(smoothstep(float(-0.35).sub(aaH), float(-0.35).add(aaH), h))));
     // else, 1.5 m+ of plinth: a soupirail under each window bay (not under the door)
     const doorCol = street.mul(step(abs(floor(gx).sub(floor(rnd.mul(nb)))), 0.5));
-    const cOn = step(1.5, cel).mul(float(1).sub(lg)).mul(wallOk).mul(step(0.0, gx)).mul(step(gx, nb)).mul(float(1).sub(doorCol)).toVar();
+    const cOn = step(1.5, cel).mul(float(1).sub(lg)).mul(wallOk).mul(step(0.0, gx)).mul(step(gx, nb)).mul(float(1).sub(doorCol)).mul(float(1).sub(garCol)).toVar();
     const cTop = float(-0.45), cBot = max(cel.negate().add(0.35), cTop.sub(0.62));
     const hw = min(float(0.42), bw.mul(0.3)).div(bw);
     const cx2 = filteredPulse(gx, float(0.5).sub(hw), float(0.5).add(hw), fwx);
@@ -428,12 +488,12 @@ export function wallMaterial(opts = {}) {
   // sills (blue stone) under every window, a shadow beneath them, lit top
   const sillX = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwx);
   const sillY = pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwy);
-  const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).toVar();
-  const underSill = sillX.mul(pulseY(wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
+  const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar)).toVar();
+  const underSill = sillX.mul(pulseY(wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar));
   col = mix(col, C(0.16, 0.165, 0.17).add(env.uSunColor.mul(0.04)), sill);
   col = col.mul(float(1).sub(underSill.mul(0.25)));
   const sillR = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwxR)
-    .mul(pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwyR)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr));
+    .mul(pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwyR)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar));
   height = height.add(sillR.mul(0.04));
   // reveal shadows on the wall just inside the opening: lintel (top) and jambs
   const revealTop = smoothstep(gyb.sub(float(0.12).div(storeyH)), gyb, fract(gy)).mul(glassBox);
@@ -449,7 +509,7 @@ export function wallMaterial(opts = {}) {
   const room = Fn(() => {
     const fwv = vec2(fwx, fwy).toVar(), drapeFw = float(drapeFootprint).toVar();
     const r = vec4(0).toVar();
-    If(glass.greaterThan(0.0), () => {                                           // rooms only where there is glass
+    If(glass.mul(float(1).sub(isGar)).greaterThan(0.0), () => {                  // rooms only where there is glass
       r.assign(interiorRoom(gx, gy, vec2(wu, wv), cellId, bw, storeyH, rnd.mul(100.0), litProb, fwv, drapeFw));
     });
     return r;
@@ -465,11 +525,18 @@ export function wallMaterial(opts = {}) {
   doorCol = mix(doorCol, C(0.16, 0.03, 0.03), band(di, 1));
   doorCol = mix(doorCol, C(0.03, 0.05, 0.11), band(di, 2));
   doorCol = mix(doorCol, C(0.12, 0.06, 0.025), band(di, 3));
-  const fan = step(0.78, wv);
+  const fan = max(step(0.78, wv), isK);                                          // (styles) the blocks' entrance: all glass
   const panel = step(abs(wu.sub(0.5)), 0.36).mul(max(step(abs(wv.sub(0.25)), 0.17), step(abs(wv.sub(0.58)), 0.14)));
   doorCol = mix(doorCol.mul(0.7), doorCol, panel);
   const doorGlass = isDoor.mul(fan);
-  const frameCol = mix(C(0.6, 0.6, 0.58), C(0.07, 0.065, 0.06), step(float(0.8), fract(rnd.mul(7.0))));
+  let frameCol = mix(C(0.6, 0.6, 0.58), C(0.07, 0.065, 0.06), step(float(0.8), fract(rnd.mul(7.0))));
+  if (!STYLES_OLD) {
+    // (styles) art deco steel frames (dark green, black, dark grey; 30 % white), post-war / block frames white, brown or
+    // anodised aluminium
+    const decoF = mix(mix(C(0.035, 0.06, 0.045), C(0.03, 0.03, 0.032), step(0.4, th2)), mix(C(0.11, 0.11, 0.115), C(0.6, 0.6, 0.58), step(0.85, th2)), step(0.6, th2));
+    const modF = mix(mix(C(0.6, 0.6, 0.58), C(0.09, 0.055, 0.035), step(0.4, th2)), C(0.36, 0.37, 0.38), step(0.75, th2));
+    frameCol = mix(mix(frameCol, decoF, isD), modF, isBE.add(isK));
+  }
 
   // ---- shopfront (OSM shop on this face): painted timber frame, stall riser, big display glass, a glazed door
   const fnA = attribute("aFN", "vec4");
@@ -493,11 +560,97 @@ export function wallMaterial(opts = {}) {
   const shopCol = mix(paint.mul(mix(float(1), float(0.7), step(h, 0.45))), shopGlassCol, shopGlass);
   const notShop = float(1).sub(isShop);
 
+  if (!STYLES_OLD) {
+    // ---- (styles) THE TYPE'S DRESS on the wall (the openings are painted over it below). Edges box-filtered (filteredPulse /
+    // pulseY / boxBand), the relief over RELIEF_PX pixels (no new aliased lines)
+    const wallT = float(1).sub(party).mul(float(1).sub(isLM)).mul(float(1).sub(par)).mul(step(float(1.6), fw)).mul(notShop).toVar();
+    const rowOk = wallT.mul(step(float(2.8), eh)).mul(step(winTopAbs.add(0.35), eh)).mul(step(0.0, fl)).toVar();   // a storey with windows
+    const winX = (pad) => filteredPulse(gx, wxa.sub(float(pad).div(bw)), wxb.add(float(pad).div(bw)), fwx);
+    const winXR = (pad) => filteredPulse(gx, wxa.sub(float(pad).div(bw)), wxb.add(float(pad).div(bw)), fwxR);
+    const plainWin = ok.mul(float(1).sub(isDoor)).mul(float(1).sub(isGar)).mul(float(1).sub(isFr)).toVar();
+    const stoneW = C(0.53, 0.51, 0.47).add(grain.mul(0.012)), stoneB = C(0.16, 0.165, 0.17).add(grain.mul(0.015));
+    const kitless = opts.kit ? float(0) : float(1);                             // the kit's faces carry these in stone
+    // MAISON DE MAITRE: a stone lintel over each window (blue or white stone on brick, a moulded render band on render)
+    // with a keystone; a string course on the first-floor line; the rendered ground floor rusticated
+    {
+      const lin = winX(0.08).mul(pulseY(wyb, wyb.add(float(0.2).div(storeyH)), fwy)).mul(plainWin);
+      const key = filteredPulse(gx, float(0.5).sub(float(0.09).div(bw)), float(0.5).add(float(0.09).div(bw)), fwx).mul(pulseY(wyb, wyb.add(float(0.28).div(storeyH)), fwy)).mul(plainWin);
+      const mL = max(lin, key).mul(isM).mul(kitless).toVar();
+      const linCol = mix(mix(stoneB, stoneW, step(0.5, th1)), wallCol.mul(1.12), float(1).sub(isBrick));
+      col = mix(col, linCol, mL);
+      height = height.add(max(winXR(0.08).mul(pulseY(wyb, wyb.add(float(0.2).div(storeyH)), fwyR)), key).mul(plainWin).mul(isM).mul(kitless).mul(0.025));
+      const sc = boxBand(h, G.sub(0.04), G.add(0.16), aaH).mul(isM).mul(kitless).mul(wallT).mul(step(G.add(2.4), eh)).toVar();
+      col = mix(col, mix(stoneW, wallCol.mul(1.1), float(1).sub(isBrick)), sc);
+      height = height.add(boxBand(h, G.sub(0.04), G.add(0.16), aaHR).mul(isM).mul(kitless).mul(wallT).mul(step(G.add(2.4), eh)).mul(0.04));
+      // rustication: V-grooves every 34 cm from the plinth to the first-floor line (render only)
+      const rq = h.sub(plinthTop).div(0.34), rfw = fwidth(rq);
+      const groove = filteredPulse(rq, float(0.0), float(0.07), rfw).mul(step(plinthTop, h)).mul(step(h, G.sub(0.1))).mul(isM).mul(float(1).sub(isBrick)).mul(wallT).toVar();
+      col = col.mul(float(1).sub(groove.mul(0.28)));
+      height = height.sub(filteredPulse(rq, float(0.0), float(0.07), rfw.mul(RELIEF_PX)).mul(step(plinthTop, h)).mul(step(h, G.sub(0.1))).mul(isM).mul(float(1).sub(isBrick)).mul(wallT).mul(0.008));
+    }
+    // ART DECO: brick fronts get continuous white render bands at the window heads and sills across the face (the
+    // horizontal lines of the 1930s); rendered fronts three grooved lines over the heads and a smooth band at the sills
+    {
+      const headB = pulseY(wyb, wyb.add(float(0.22).div(storeyH)), fwy), sillB = pulseY(wya.sub(float(0.16).div(storeyH)), wya, fwy);
+      const brickB = max(headB, sillB).mul(rowOk).mul(isD).mul(isBrick).toVar();
+      col = mix(col, C(0.66, 0.65, 0.61).add(grain.mul(0.012)), brickB);
+      height = height.add(max(pulseY(wyb, wyb.add(float(0.22).div(storeyH)), fwyR), pulseY(wya.sub(float(0.16).div(storeyH)), wya, fwyR)).mul(rowOk).mul(isD).mul(isBrick).mul(0.02));
+      const dm = yl.sub(wyb).mul(storeyH).sub(0.09).div(0.075), dfw = fwidth(dm);   // 7.5 cm pitch over the head
+      const gr = filteredPulse(dm, float(0.0), float(0.3), dfw).mul(step(0.0, dm)).mul(step(dm, 2.9)).mul(rowOk).mul(isD).mul(float(1).sub(isBrick)).toVar();
+      col = col.mul(float(1).sub(gr.mul(0.3)));
+      height = height.sub(gr.mul(0.006));
+      const sB = sillB.mul(rowOk).mul(isD).mul(float(1).sub(isBrick));
+      col = mix(col, wallCol.mul(0.9), sB.mul(0.8));
+    }
+    // POST-WAR BEL-ETAGE: a white concrete surround round the upper windows; half of them clad in stone panels on the
+    // ground floor
+    {
+      const sur = winX(0.12).mul(pulseY(wya.sub(float(0.12).div(storeyH)), wyb.add(float(0.12).div(storeyH)), fwy)).mul(up).mul(plainWin).mul(isBE).toVar();
+      col = mix(col, C(0.6, 0.59, 0.56).add(grain.mul(0.012)), sur);
+      height = height.add(winXR(0.12).mul(pulseY(wya.sub(float(0.12).div(storeyH)), wyb.add(float(0.12).div(storeyH)), fwyR)).mul(up).mul(plainWin).mul(isBE).mul(0.04));
+      const clad = isBE.mul(step(0.5, th3)).mul(wallT).mul(step(plinthTop, h)).mul(boxBand(h, plinthTop, G.sub(0.02), aaH)).toVar();
+      const pu = u.div(0.6), pv = h.div(0.4);
+      const pj = max(filteredPulse(pu, float(0.0), float(0.02), fwidth(pu)), filteredPulse(pv, float(0.0), float(0.03), fwidth(pv)));
+      const pt = hash2D(vec2(floor(pu), floor(pv)).add(rnd.mul(37.0))).sub(0.5).mul(0.12).add(1.0);
+      col = mix(col, mix(C(0.27, 0.27, 0.26).mul(pt), C(0.12, 0.12, 0.12), pj), clad);
+    }
+    // BLOCK: the concrete floor slabs' edges at every storey line
+    {
+      const slab = max(pulseY(float(0.0), float(0.2).div(storeyH), fwy), pulseY(float(1).sub(float(0.05).div(storeyH)), float(1.0), fwy)).mul(up).mul(wallT).mul(step(h, eh.sub(0.3))).mul(isK).toVar();
+      col = mix(col, C(0.47, 0.46, 0.43).add(grain.mul(0.015)), slab);
+      height = height.add(max(pulseY(float(0.0), float(0.2).div(storeyH), fwyR), pulseY(float(1).sub(float(0.05).div(storeyH)), float(1.0), fwyR)).mul(up).mul(wallT).mul(step(h, eh.sub(0.3))).mul(isK).mul(0.03));
+    }
+    // VILLA (cottage, 35 % of the rendered ones): half-timbering on the upper floor and the gable: posts every 0.9 m, a
+    // sill plate on the first-floor line, a rail at the window heads, braces in one panel in three
+    {
+      const ht = isV.mul(float(1).sub(isBrick)).mul(step(th3, 0.35)).mul(float(1).sub(party)).mul(float(1).sub(par)).mul(step(G.add(0.02), h)).mul(step(4.0, fw)).toVar();
+      const pu = u.div(0.9), fu = fwidth(pu).add(1e-4);
+      const post = filteredPulse(pu, float(0.0), float(0.15), fu);
+      const plate = boxBand(h, G, G.add(0.2), aaH);
+      const hr = boxBand(yl, wyb, wyb.add(float(0.16).div(storeyH)), fwy).mul(up);
+      const cu = fract(pu), cv = fract(h.sub(G).div(0.9)), dg = abs(cu.sub(cv)), dfw = fwidth(dg).add(1e-4);
+      const brace = float(1).sub(smoothstep(float(0.08), float(0.08).add(dfw), dg)).mul(step(0.66, hash2D(vec2(floor(pu), floor(h.sub(G).div(0.9))).add(rnd.mul(11.0)))));
+      const timber = max(max(post, plate), max(hr, brace)).mul(ht).toVar();
+      col = mix(col, C(0.06, 0.04, 0.028).mul(grain.mul(0.1).add(1.0)), timber);
+      height = height.add(timber.mul(0.012));
+    }
+  }
   col = mix(col, frameCol, frame.mul(notShop));
-  const glassPart = glass.mul(mix(float(1), doorGlass, isDoor)).mul(notShop).toVar();
+  const glassPart = glass.mul(mix(float(1), doorGlass, isDoor)).mul(float(1).sub(isGar)).mul(notShop).toVar();
   const doorPart = glass.mul(isDoor).mul(float(1).sub(fan)).mul(notShop);
   col = mix(col, glassCol, glassPart);
   col = mix(col, doorCol, doorPart);
+  if (!STYLES_OLD) {
+    // (styles) the garage door: a sectional steel door (white, anthracite, green) in 4 sections with ribs, or vertical
+    // timber boards (brown); a shadow line under its head
+    const gc = mix(mix(C(0.62, 0.62, 0.6), C(0.07, 0.075, 0.08), step(0.4, th1)), mix(C(0.16, 0.08, 0.035), C(0.05, 0.11, 0.07), step(0.9, th1)), step(0.65, th1));
+    const timber = step(0.65, th1).mul(step(th1, 0.9));
+    const gq = h.div(0.5), gqf = fwidth(gq);
+    const rib = mix(filteredPulse(gq, float(0.0), float(0.06), gqf), filteredPulse(u.div(0.12), float(0.0), float(0.12), fwidth(u.div(0.12))), timber);
+    const gCol = gc.mul(float(1).sub(rib.mul(0.35))).mul(float(1).sub(smoothstep(0.9, 1.0, wv).mul(0.3)));
+    col = mix(col, gCol, glass.mul(isGar).mul(notShop));
+    height = height.sub(glass.mul(isGar).mul(0.06));
+  }
   col = mix(col, shopCol, isShop);
   height = height.add(frameR.mul(0.03).mul(notShop)).sub(shopGlass.mul(0.08).mul(near));
 
