@@ -329,3 +329,152 @@ on / off, facade normals, per-source fade on shops / signs, `baked` per kind), `
 trams' fronts, preallocated), `viewer/shops/shopLayout.js` + `viewer/streetlife/layout.js` + `streetlifeWorker.js`
 (`night.lights` records), `viewer/panelUI.js` (light theme opaque). New: `debug/nightSwitch.js`,
 `debug/nightShadowCost.js`.
+
+# ROUND 3 (branch claude/night3, 2026-11-15): steps 6-8, round 2's leftovers, step 9 measured - still behind `?night=1`
+
+**Default NOT flipped** (step 9): the night GPU cost at street level is still over the 1 ms bar (see Numbers). Everything
+below stays behind `?night=1`; without the flag the city is as before except the facade's lit-room hash (step 6, all
+modes) and the tram rail material's `userData.nightLightScale` (read only by the night loop).
+
+**Measuring conditions: preflight RED the whole session** (another agent's tab rendering and loading pages: CPU 76 %
+busy at rest, GPU 41-58 % busy, once 83 C / power cap). All GPU numbers are INTERLEAVED in-page A/B (debug/gpuAB.js
+`alternate`, 8-12 rounds, tab in front) and read as +-1 ms per round; the medians are given.
+
+## Step 6: lit windows as night sources (from the tile worker)
+
+- **The lit hash is now exact on the CPU** (`viewer/nightLights/litHash.js`): the facade shader decided lit rooms,
+  room grouping (1-2 bays) and the room light's colour from `sin x 43758` hashes - float32 `sin` on the GPU differs from
+  a CPU's in the last bits, so no CPU copy could match. Now an integer hash (u32 multiply / xor / shift, wrapping),
+  bit-exact in WGSL (`facades.js` interiorRoom, `h3`: a small delimited hunk) and JS (`Math.imul`), on integer inputs
+  only (storey, room index, building hash x 4096 as the shader already quantised it). Same statistics (lit share 0.35
+  for 0.34 wanted); which rooms are lit changed. `?litwin=old` = the sin hashes (features.js row).
+- **The worker writes the lit windows** (`facadeGeom.js`, one hunk after each face's vertices): `faceOpenings()` (the
+  same window grid as the shader, already shared with the kit) + `roomOf()` -> per lit window its centre on the wall,
+  outward normal, half size, light colour (warm amber..pale yellow, or cool TV / LED blue as the shader): `walls.
+  nightWindows` (10 floats each; ~3,000 a tile, 28,378 for the 9 tiles round Saint-Job). Kit faces use their own
+  door rule (`doorless`). Proof (by projection, not saved as an image): every projected record of a face-on facade at
+  Place Saint-Job sat on a glowing window and none on a dark one (the unmarked bright ones were shop windows).
+- **cityNight.js**: a window registry (131,072 ids, records in one typed array, tile fade-in); the **16 nearest**
+  are real APERTURE pool lights (nightSources' aperture now reads typed records), faded at 40-60 m; every lit window
+  lights the ground through the tile's ground map (step 7).
+
+## Step 7: the ground light map per tile, baked in a worker
+
+- `nightLights/nightMap.js` + `nightBakeWorker.js`: one layer of a DataArrayTexture per loaded full-detail tile
+  (RGBA16F, 416 x 416 over the tile + 22 m each side: 1.31 m texels, 1.4 MB; (2 ring + 1)^2 + 3 layers: 12 at ring 1),
+  holding the horizontal irradiance of THAT tile's static lights - lamps (lantern), lit windows and shop fronts
+  (aperture), signs, stop posters - with the cluster loop's own formulas at the ground height (an 8 m grid of the
+  tile's surface). Only the changed layer is uploaded (`addLayerUpdate`). A fragment reads its tile's layer and,
+  within 22 m of an edge, the neighbours' (their lights cross the seam), each times its tile's fade (a 15 x 12 slot
+  table: layer + fade): no re-bake when a neighbour arrives, nothing pops in (4 s fade like the lamps). Bake: 34-69 ms
+  a tile in the worker; posted when the tile's street life (shops / signs) is in, or 20 s after the tile.
+- Replaces `lampLight.js`'s R8 map under the flag (not even allocated: -22 MB RAM, -11 MB texture; `addLamps` a no-op):
+  ground = albedo / pi x map (+ the far cars' layer); walls / anything through `lampLight(h)` = the map at their foot
+  0.3 m out along the normal, fading up to 6 m, x 0.6, beyond the 40-60 m near band (`nightMode.js mapSpill`, the
+  lab's addSpill). Hedges (gardens) do not call lampLight: not spilled (leftover).
+- **Lamps baked, no double lighting**: a source is flagged baked (the ground skips it in the loop) only once its tile's
+  map holds it (registry `inMap`, per source). And the 2 SHADOWED lamps lit the ground twice in rounds 1-2 (the map
+  had them in full, their SpotLights added 65 % again): now two ground-only SUBTRACT slots (`LightPool.groundOnly`,
+  +4 flag; the loop subtracts their diffuse on ground materials, skips them elsewhere) take each shadowed spot back
+  out unshadowed, so the ground = the map, darkened where the spot's shadow falls. The spots' colour is now the pool
+  lamp's linear (1, 0.78, 0.52) (0xffc785 as sRGB hex was (1, 0.57, 0.24)). Measured (lower 45 % of the Saint-Job
+  street view, mean grey): with the subtract 43.4, shadowed share 0 (map only) 40.8, without the subtract 57.9:
+  `round3/ground_no_double_light.jpg` vs `round3/ground_double_light_before.jpg`.
+- By day the map is not read at all (uniform branch); the far-car layer neither (it was a texture read per ground
+  fragment by day through a `select`).
+
+## Step 8: wet streets, cones, trams, stop posters
+
+- **Wet**: `nightLook.uWet` = the weather's wet film (`wx.uWet`): on a wet ground the baked lights (lamps, windows,
+  shops) are looped again for their SPECULAR only (the streaks), cars always. Proof `round3/stjob_street_wet.jpg`
+  (preset rain: the lamp's streak on the cobbles).
+- **Cones** (lightCones.js, 48): only when wet (> 0.2) or foggy (visibility < 3 km), density x (1 + 1.5 wet + 3 fog);
+  their buffers uploaded by range, the mesh hidden when empty.
+- **Trams**: the nearest drawn tram (tramline.js `drawn.rear`: rear x z + rail y, a 2-line hunk) fills nightSources'
+  5 tram slots (lead cab low beam, rear, 3 saloon lights) at the rail height (the lab's y was absolute).
+- **Stop posters as signs**: every lit poster face of the STIB shelters and ad panels (from the kit's poster geometry,
+  faces grouped by normal) is a cool-white sign source (pool when near, the ground map always). Read from
+  `cityStops.tiles` at addShops: no main.js hunk.
+
+## Round 2's leftovers
+
+- **Lamp shadows on busy streets**: (a) PROXIES: a tile's instanced sets (trees, bollards, lamps...) are no longer
+  drawn whole into a lamp map; per (set, lamp) a proxy InstancedMesh (same geometry buffers + material: same pipeline,
+  per-instance attributes copied, 128 instances) holds only the instances within the lamp's reach, refilled each time
+  that map renders, on a layer of its own (8 + k: the main camera never draws it; warmed by day with one zero-size
+  instance). Saint-Job street, 2 maps: 207 draws / 838 k triangles -> 183 / 517 k (trees 318 k -> in the proxies'
+  149 k). Fill 0.09-0.13 ms per map rendered. Proxying the city-wide pools (parked cars, street life, gardens) too
+  was tried: 517 -> 502 k, more draws: dropped. `?lampproxy=0` = the tile gate. (b) **The schedule default is now
+  `alt`**: with traffic + a tram both lamps had movers every frame (smart: 2 maps / frame, 206 draws, 606 k tris; alt:
+  1, 101 draws, 291 k); GPU smart - alt = +0.82 ms (median, 8 rounds; mean +1.83). A lamp with a mover while the other
+  has none still renders every frame (the 30 Hz alternation only applies when both have movers). `?nightshadow=smart`.
+- **Movers**: SNCB trains (points every 20 m along each train near the camera, both ways, refreshed every 12 frames),
+  skinned meshes (falcons, characters) and anything tagged `userData.nightMover` (the town hall flags: flagsCity.js,
+  2 tags).
+- **Render objects at the switch**: empty traffic / parked-car batches (and trains when instanced) are warmed by day
+  with one zero-size instance. Golden -> night at Saint-Job street: **0 pipelines, 6 new lamp-shadow render objects
+  (the trains' 3 LOD meshes x 2 lamps; before: 20 incl. 14 parked-car batches), no slow frame, no long task after the
+  switch**.
+- **Rail glint**: the tram rails' material takes the pool lights x 0.35 (`userData.nightLightScale`, read by the loop).
+
+## Numbers (RTX 4050 laptop, 1600 x 828, preflight RED)
+
+| | value |
+|---|---|
+| night GPU, Saint-Job street view, `master` 0 / 1 (10-12 rounds) | **+1.0 .. +1.6 ms** (medians of 4 sessions: +0.96, +1.38, +1.61, +1.61) |
+| of which (in-page A/B, medians): windows + shops + signs | ~+0.2 (+0.17) |
+| ground map read (forced off) | ~0 (-0.75) |
+| glare cards | ~+0.4 (noise) |
+| lamp shadows (share 0 / 0.65) | ~0 (-0.33) |
+| car lights 12 + 12 real (now 6 + 6) | +0.5 (mean +1.1) |
+| busy street (tram + traffic), smart schedule | +2.4 (median) -> alt default: smart - alt = 0.8 |
+| day: `?night=1` vs none, golden, 2 load pairs | inconclusive (15.2 / 14.3 ms, then 15.3 / 24.6: other agent's load); by construction now ~0: the loop and both ground reads are skipped by uniform branches while the pool is empty |
+| night CPU (`stats.msAvg`) | 0.26-0.34 ms (dyn layer 0.15 -> now 20 Hz, sources 0.07, lamp queries 0.04) |
+| uploads at night | light textures ~40 KB + dyn 3-6 KB at 20 Hz + glare ranges; a map layer 1.4 MB per tile load |
+| Alsemberg drive at night (122 s, perfRun) | **0 sync / 0 async pipelines**, 17 long tasks 56-69 ms (machine background), one 4 s hitch at the route's end (not traced), GPU p50 15.4 ms |
+| bake | 34-69 ms a tile (worker) |
+
+## Step 9 decision: not on by default - what is missing
+
+The 1 ms night budget at street level is not met with confidence: +1.0-1.6 ms (RED, +-1 ms rounds). The parts
+measured one by one are each small; what is left is the cluster loop's per-fragment cost with 50-70 lights in view
+(and the overdraw of tree cards / alpha foliage running it). Levers, in order: (1) skip the pool loop on foliage
+cards (a lit-crown term from the nearest lamps only), (2) fewer real lamps (24 -> 16: the map has them all on the
+ground), (3) re-measure on GREEN - round 1's view measured +1.05 with less content. Day cost is ~0 by construction.
+CPU is within 0.3 ms. When GREEN numbers are under 1 ms: flip `nightMode.js` `NIGHT` to `!/[?&]night=0/`, the
+features.js row `night` to `on`, and keep `?night=0` = the old 6 PointLights + R8 map (the duplicate old paths stay).
+
+## Images (docs/night/round3/) and real views
+
+`stjob_street_night.jpg` (Place Saint-Job street: lamp pool and pole shadow on the cobbles, a car's low beam on the
+road, lit windows), `alsemberg_night.jpg` (Chaussee d'Alsemberg: shop windows, lit storeys, pools along both
+sidewalks), `defre_night.jpg` (Avenue De Fre: tree crowns lit from below by the lantern's up light, lit windows of the
+blocks), `montagne_residential_night.jpg` (Montagne de Saint-Job from above: pools along a narrow residential street),
+`stjob_street_wet.jpg` (rain), `ground_no_double_light.jpg` / `ground_double_light_before.jpg`.
+Against real Uccle at night (looked at only; Street View has no night imagery, so night photos and the commune's own
+records): Place Saint-Job's Belgica posts are being moved to LED by Sibelga (warm-white, not the orange sodium of the
+old map); the streets show separate pools on the pavement, facades lit near the lamps and dark above the first floor,
+a minority of lit windows - what this gives. The round 1-2 map read warmer / more orange and brighter on the ground
+(albedo x 1.5 x orange vs now albedo / pi x the pool's own irradiance, the same as the near lights: consistent, a
+little darker; `nightMap.uGain` tunes it).
+
+## Defect eye / leftovers
+
+- A near-black band along the kerb face at road edges (Saint-Job, Alsemberg), also in round 1's images: not the map
+  (it stays with the shadowed share at 0); the kerb's vertical face gets no ground light. Joins / roads round.
+- Shop interiors (e.g. "Celio", Alsemberg) blow out to white at night (street life's emissive, not the pool).
+- Hedges (gardens) take no map spill; trains' 3 LOD meshes still make 6 lamp-shadow render objects at the switch.
+- The lit-window hash change alters which rooms are lit everywhere (statistics kept).
+- The 4 s hitch at the end of the Alsemberg drive and the 2.5 GB heap (+666 MB during the drive) are not traced.
+- Not measured on GREEN; the 4 views of perf step 8 not run (RED).
+
+## Files touched (round 3)
+
+New: `viewer/nightLights/litHash.js`, `nightMap.js`, `nightBakeWorker.js`. Night modules: `cityNight.js`,
+`nightSources.js` (typed records, inMap baked flag, tram y), `nightLighting.js` (groundOnly flag, nightLightScale,
+loop skipped when the pool is empty), `nightMode.js` (map + spill, dyn read skipped by day), `lightCones.js` (ranges,
+hidden when empty). Shared, small hunks: `viewer/facades.js` (interiorRoom integer hash, `?litwin=old`),
+`viewer/facadeGeom.js` (lit window records) + `viewer/tileWorker.bundle.js` (rebuilt), `viewer/lampLight.js` (night
+path), `viewer/main.js` (2 hunks: addTile extras; rail `nightLightScale`), `viewer/tramline.js` (`drawn.rear`),
+`viewer/flagsCity.js` (2 mover tags), `viewer/features.js` (rows `litwin`, `lampproxy`, `nightshadow` default).
+No shadow code outside viewer/nightLights/ was changed.

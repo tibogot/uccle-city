@@ -37,6 +37,7 @@ export async function addFlags({ scene, updaters, renderer, compiler, log, param
     const set = await BakedFlags.create({ cloth, map, capacity: 1, speed: wind.speed });
     set.add(top.x, top.y, top.z, { yaw: 0, phase: Math.random() });
     set.mesh.visible = false;
+    set.mesh.userData.nightMover = 2;           // ?night=1: a waving flag near a shadowed lamp re-renders its shadow map (cityNight.js)
     scene.add(set.mesh);
     flags.push({ name: p.name, design, top, axis, planes, cloth, map, set, live: null, state: "baked" });
   }
@@ -53,6 +54,7 @@ export async function addFlags({ scene, updaters, renderer, compiler, log, param
     Object.assign(f.live.cloth.wind, { speed: wind.speed, dir: dirOf(wind.deg) });
     f.live.startFrom(f.set.stateAt(0, t), 0);
     f.live.mesh.position.copy(f.top);
+    f.live.mesh.userData.nightMover = 2;
     f.live.mesh.material.dispose(); f.live.mesh.material = f.liveMat;            // the precompiled one
     scene.add(f.live.mesh);
     f.set.setVisible(0, false); f.state = "live";
