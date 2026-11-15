@@ -20,6 +20,7 @@
 export const G = 9.81, RHO = 1.2;
 /** ?falconhit=old: the falcon's contact response before collisions round 2 (normal against the motion on every wall,
  *  fixed tangential factors, touch-down under 13 m/s) */
+const TRIM_OLD = typeof location !== "undefined" && /[?&]falcontrim=old(&|$)/.test(location.search);
 const FALCON_HIT_OLD = typeof location !== "undefined" && /[?&]falconhit=old(&|$)/.test(location.search);
 
 /** Peregrine numbers (a ~1 kg female juvenile; see docs/FALCON_FLIGHT.md for where they come from). */
@@ -152,6 +153,16 @@ export class FalconFlight {
     const vTrim = lerp(P.trim[0], P.trim[1], clamp(this.fold / 0.5, 0, 1)) * (this.fold > 0.75 ? 0 : 1);
     if (V < vTrim) nCmd -= P.trimGain * (vTrim - V) / vTrim * (1 - Math.abs(u)) * cg;
     else if (this.fold < 0.25 && C.flap < 0.05) nCmd += 0.5 * Math.min(1, (V - vTrim) / vTrim) * (1 - Math.abs(u)) * cg * (1 - this.fold / 0.25);   // spread: back toward trim
+    // PATH TRIM (collisions round 2, ?falcontrim=old = the pure path hold): hands off, the held path angle relaxes to
+    // the configuration's glide angle (spread ~ -4 deg at L/D 14.5, half folded ~ -7.5 deg), time constant ~1 s, as a
+    // statically stable glider / a bird that is not being steered does. Before, neutral held ANY angle forever: the
+    // nest launch at -11 deg went on into the roofs hands-off ("hit the ground at 11 m/s: stunned" seconds after the
+    // intro), a dive released at -40 deg stayed a -40 deg dive. The tuck keeps its dive (no trim, as before); a turn
+    // keeps its bank (only the path's climb / dive angle is trimmed).
+    if (!TRIM_OLD && this.fold < 0.75 && C.flap < 0.05 && !stunned) {
+      const gTrim = -Math.atan(1 / lerp(14.5, 7.6, clamp(this.fold / 0.5, 0, 1)));
+      nCmd += 1.2 * clamp(gTrim - this.gamma, -0.6, 0.6) * (1 - Math.abs(u)) * (1 - this.fold / 0.75);
+    }
     // ---- what the wings can give at this airspeed: CL = n W / (q S), up to the stall
     const q = 0.5 * RHO * V * V, qS = q * w.S;
     const pol0 = polar(0, w, this.brake, P);

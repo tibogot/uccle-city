@@ -122,7 +122,8 @@ export function featureColliders(features, bounds) {
           const sx = cS.setFromMatrixColumn(W, 0).length() || 1, sz = cS.setFromMatrixColumn(W, 2).length() || 1;
           const cx = (bb.min.x + bb.max.x) / 2, cz = (bb.min.z + bb.max.z) / 2;
           const hx = Math.max((bb.max.x - bb.min.x) / 2, MIN_HALF / sx), hz = Math.max((bb.max.z - bb.min.z) / 2, MIN_HALF / sz);
-          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: KIND.furniture });
+          v.set(cx, bb.min.y, cz).applyMatrix4(W); const base = v.y; v.set(cx, bb.max.y, cz).applyMatrix4(W); const top = v.y;
+          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: KIND.furniture, base, top });
           counts.furniture++;
           continue;
         }
@@ -140,7 +141,8 @@ export function featureColliders(features, bounds) {
             rects = carBlockersSync(T, () => base, { kind: KIND.furniture }).map((pq) => pq.rings[0]);
             per.set(key, rects);
           }
-          for (const ring of rects) polys.push({ rings: [ring.map(([x, z]) => { v.set(x, 0, z).applyQuaternion(cQ).add(cPos); return [v.x, v.z]; })], kind: KIND.furniture });
+          const base = cPos.y + bb.min.y * cS.y, top = cPos.y + bb.max.y * cS.y;
+          for (const ring of rects) polys.push({ rings: [ring.map(([x, z]) => { v.set(x, 0, z).applyQuaternion(cQ).add(cPos); return [v.x, v.z]; })], kind: KIND.furniture, base, top });
           counts.furniture++;
           continue;
         }
@@ -149,7 +151,9 @@ export function featureColliders(features, bounds) {
       for (let q = 0; q < cnt; q++) { v.fromBufferAttribute(P, I ? I.getX(q) : q).applyMatrix4(W); T[q * 3] = v.x; T[q * 3 + 1] = v.y; T[q * 3 + 2] = v.z; }
       v.set(0, bb.min.y, 0).applyMatrix4(W);
       const base = v.y;
-      for (const pq of carBlockersSync(T, () => base, { kind: KIND.furniture })) polys.push(pq);
+      v.set(0, bb.max.y, 0).applyMatrix4(W);
+      const top = v.y;
+      for (const pq of carBlockersSync(T, () => base, { kind: KIND.furniture })) polys.push(Object.assign(pq, { base: Math.min(base, top), top: Math.max(base, top) }));
       counts.furniture++;
     }
   });

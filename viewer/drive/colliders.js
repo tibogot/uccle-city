@@ -275,8 +275,14 @@ export const CAR_H = 1.6;
  *  2D wall: the platforms of Moensberg and Linkebeek stations stopped cars on the road bridges over them (Rue du
  *  Bourdon, Avenue des Hospices: docs/collisions/DRIVE_FIX.md). Items with no extent (1e4 / -1e4) always collide. */
 export function heightClear(col, id, y) {
-  return id < col.P && col.pkind[id] === KIND.wall && Number.isFinite(y) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
+  // (collisions round 2, ?furnheight=old = walls only: the street furniture / garden pieces carry their drawn height
+  // too: a garden wall on a bank 3 m over the street, a bench on a bridge deck over a road, no longer stop the car
+  // under / beside them as an infinitely tall invisible wall)
+  if (id >= col.P || !Number.isFinite(y)) return false;
+  const k = col.pkind[id];
+  return (k === KIND.wall || (k === KIND.furniture && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
 }
+const FURN_HEIGHT_OLD = typeof location !== "undefined" && /[?&]furnheight=old(&|$)/.test(location.search);
 
 /** Contact of the car body with item `id` of `col`. body = { hx, hz, cos, sin }. */
 export function itemContact(col, id, x, z, body, contact) {
