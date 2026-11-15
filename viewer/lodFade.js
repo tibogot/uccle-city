@@ -7,7 +7,8 @@
 //    (in the shadow pass: on the shadow map's texels). Two copies of an object cross-fade by splitting the
 //    pixels: the outgoing keeps n >= t, the incoming n < t, with the SAME noise, so every pixel is drawn by
 //    exactly one of them (no holes, no double layer; Unity's LOD Group "cross-fade", Unreal's dithered LOD
-//    transition). Static (no TAA here): during a fade a fine pattern, never a flicker.
+//    transition). Static without the temporal upscaler: during a fade a fine pattern, never a flicker; with it (the
+//    default since 2026-11-15) the phase moves each frame (ditherFrame) and the TAA history blends it smooth.
 //  - keepBand(lo, hi): keep the pixel when lo <= n < hi; a distance-driven cross-fade gives the outgoing copy
 //    [0, 1 - t) and the incoming one [1 - t, 1), from the same t.
 //  - objectFade(): a per-OBJECT fade (object.userData.fade) for time-based fades of whole objects (streamed
@@ -24,9 +25,13 @@ export const SMOOTH = qs.get("smooth") !== "0";
 /** The view camera's position (world), set by main.js every frame before rendering. */
 export const lodEye = uniform(new THREE.Vector3());
 
+/** The noise's phase per frame (pixels): (0, 0) = a static pattern; the temporal upscaler (viewer/upscale.js) moves
+ *  it every frame (Jimenez's 5.588238 px step), so its history resolves a dithered fade into a smooth blend. */
+export const ditherFrame = uniform(new THREE.Vector2());
+
 /** Interleaved gradient noise on the pixel grid: [0, 1), well spread, cheap (one dot + fract). */
 export function ditherNoise() {
-  const p = screenCoordinate.xy.floor();
+  const p = screenCoordinate.xy.floor().add(ditherFrame);
   return fract(float(52.9829189).mul(fract(dot(p, vec2(0.06711056, 0.00583715)))));
 }
 

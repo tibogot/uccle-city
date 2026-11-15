@@ -126,6 +126,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     // tinted glass the interior shows through, still ONE opaque draw: alpha-to-coverage on the MSAA target
     // (the lab / city render with antialias: true), no sorting, no transparent pass
     m.alphaToCoverage = true;
+    m.userData.seeThrough = true;   // (upscaled, no MSAA: stochastic see-through, viewer/upscale.js)
     m.opacityNode = select(isGlass, packLook.glassOpacity, float(1));
     // glass casts a light shadow: only one shadow-map texel in three under glass is written (PCF blends it)
     glassShadow = isGlass.not().or(screenCoordinate.x.floor().add(screenCoordinate.y.floor()).mod(3).equal(0));
