@@ -59,7 +59,7 @@ export function makeMissions(S) {
     brief: "Three eyases and they are always hungry. Bring three prey to the eyrie before one of them goes without for too long.",
     steps: [
       { type: "custom", text: "Feed the eyases: three prey to the eyrie", target: eyrieTarget(S), radius: 25, route: false,
-        entity: { id: "hunger", make: () => S.hungerEntity([0.72, 0.6, 0.66]) },
+        entity: { id: "hunger", make: () => S.hungerEntity([0.92, 0.84, 0.88]) },
         onStart: (c) => { c.vars.d0 = S.game().score.delivered; c.vars.warn = false; },
         check: (c, dt) => {
           const H = S.hunt.hunger, fed = S.game().score.delivered - c.vars.d0;

@@ -55,15 +55,28 @@ body.fg-on .fg { display: block; } body.photo .fg { visibility: hidden; }
 .fg .fg-tgt span { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; color: rgba(255,255,255,.85); text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 .fg .fg-tgt b { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); display: none; min-width: 20px; height: 20px; border-radius: 5px; background: #6fe08a; color: #0b1a0f; font: 800 12px/20px system-ui; text-align: center; }
 .fg .fg-tgt.strike b { display: block; }
-.fg .fg-flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.75), rgba(255,255,255,.15) 45%, rgba(255,255,255,0) 70%); opacity: 0; }
+.fg .fg-flash { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 18%, rgba(255,255,255,.55) 55%, rgba(255,255,255,.2) 80%, rgba(255,255,255,0) 100%); opacity: 0; }
 .fg .fg-flash.go { animation: fgflash .45s ease-out; }
 @keyframes fgflash { 0% { opacity: 1; } 100% { opacity: 0; } }
 .fg .fg-g { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, rgba(10,0,0,.85) 100%); opacity: 0; }
-.fg .fg-banner { position: absolute; left: 50%; top: 24%; transform: translateX(-50%); text-align: center; display: none; text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+.fg .fg-banner { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; display: none; padding: 12px 26px 13px; border-radius: 14px;
+  background: rgba(10,13,18,.72); border: 1px solid rgba(255,204,51,.45); box-shadow: 0 8px 30px rgba(0,0,0,.45); }
 .fg .fg-banner.on { display: block; animation: fgban 1.8s ease-out forwards; }
 .fg .fg-banner h2 { margin: 0; font: 900 34px/1 system-ui, sans-serif; letter-spacing: .08em; color: #fff; }
 .fg .fg-banner p { margin: 6px 0 0; font-size: 16px; font-weight: 700; color: #ffcc33; }
 @keyframes fgban { 0% { opacity: 0; transform: translateX(-50%) scale(1.25); } 12% { opacity: 1; transform: translateX(-50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; } }
+/* the kit's light theme (viewer/game/hud.js): the OS's, or the dev panel's */
+:root[data-ui-theme=light] .fg .fg-card { background: rgba(250,249,246,.9); border-color: rgba(0,0,0,.1); color: #161a20; box-shadow: 0 6px 22px rgba(0,0,0,.18); }
+:root[data-ui-theme=light] .fg .fg-row, :root[data-ui-theme=light] .fg .fg-eyas { color: #4f5966; }
+:root[data-ui-theme=light] .fg .fg-gauge small, :root[data-ui-theme=light] .fg .fg-row i { color: #4f5966; }
+:root[data-ui-theme=light] .fg .fg-sta, :root[data-ui-theme=light] .fg .fg-eyas div { background: rgba(0,0,0,.1); }
+:root[data-ui-theme=light] .fg .fg-hunger h4 { color: #b07f00; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-ui-theme=dark]) .fg .fg-card { background: rgba(250,249,246,.9); border-color: rgba(0,0,0,.1); color: #161a20; box-shadow: 0 6px 22px rgba(0,0,0,.18); }
+  :root:not([data-ui-theme=dark]) .fg .fg-row, :root:not([data-ui-theme=dark]) .fg .fg-eyas, :root:not([data-ui-theme=dark]) .fg .fg-gauge small, :root:not([data-ui-theme=dark]) .fg .fg-row i { color: #4f5966; }
+  :root:not([data-ui-theme=dark]) .fg .fg-sta, :root:not([data-ui-theme=dark]) .fg .fg-eyas div { background: rgba(0,0,0,.1); }
+  :root:not([data-ui-theme=dark]) .fg .fg-hunger h4 { color: #b07f00; }
+}
 @media (max-width: 640px) { .fg .fg-hunger { top: auto; bottom: 140px; } .fg .fg-gauge b { font-size: 26px; } }
 `;
 
@@ -258,7 +271,7 @@ export class FalconHunt {
     const f = g.f, V = g.mode === "fly" && !fl.intro ? f.V : 0;
     this.set("spd", E.speed, String(Math.round(V * 3.6)));
     this.set("alt", E.alt, `${Math.round(alt ?? g.agl ?? 0)} m`);
-    this.set("n", E.n, `${(g.mode === "fly" ? f.n : 1).toFixed(1)} g`);
+    this.set("n", E.n, `${Math.max(0, g.mode === "fly" ? f.n : 1).toFixed(1)} g`);
     this.set("sta", E.staU, `${(clamp(f.stamina, 0, 1) * 100).toFixed(0)}%`, "width");
     this.cls("sta", E.sta, "low", f.stamina < 0.15);
     const chip = fl.intro ? "" : g.mode === "perch" ? "PERCHED · E / Space take off" : g.mode === "land" ? "LANDING" : fl.bird.prey ? "PREY IN THE TALONS" : f.fold > 0.7 && f.V > 30 ? "STOOP" : "";

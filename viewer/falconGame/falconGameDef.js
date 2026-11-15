@@ -30,7 +30,7 @@ const S = {
   /** the eyases' hunger as a mission entity (drains in tick(), refilled on delivery); released = off */
   hungerEntity(h0) {
     S.hunt.hunger = h0.slice();
-    S.drain = [1 / 150, 1 / 165, 1 / 140];
+    S.drain = [1 / 270, 1 / 300, 1 / 250];              // (full to empty in 4-5 min: a delivery every ~80 s keeps them going)
     return { alive: true, x: S.eyrie.x, z: S.eyrie.z, y: 0, label: "the eyases", update() {}, release() { S.hunt.hunger = null; this.alive = false; } };
   },
   /** dusk + the murmuration forced on, restored at the end */
@@ -198,7 +198,7 @@ export const FALCON_GAME = {
       fl.game.pigeons = fl.pigeons ?? null; fl.game.target = -1; fl.game.timeScale = 1;
       if (fl.audio && S.prev?.sound != null) fl.audio.on = S.prev.sound;
       if (S.prev?.P) fl.game.f.P = S.prev.P;
-      if (S.perch0) fl.game.perchInReach = S.perch0;
+      if (Object.prototype.hasOwnProperty.call(fl.game, "perchInReach")) delete fl.game.perchInReach;
       tiercel(fl, false);
     }
   },
