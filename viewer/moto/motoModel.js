@@ -14,6 +14,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { MOTO_LODS, weld, lodPart } from "./motoLod.js";
 import { leanLift } from "./motoPhysics.js";
+import { packLook } from "../drive/carPacks.js";
 
 const BASE = new URL("../../models/moto/", import.meta.url);
 const NODES = ["Body", "Steer", "Wheel_F", "Wheel_R", "RiderLegs", "RiderTorso", "ArmU_L", "ArmU_R", "ArmF_L", "ArmF_R"];
@@ -113,7 +114,7 @@ function materials() {
     Disc: { color: 0x8b8d90, metalness: 1, roughness: 0.38 },
     Glass: { color: 0x07090b, metalness: 0.2, roughness: 0.05 },
     HeadLight: { color: 0xc7ccd2, metalness: 0.9, roughness: 0.12, emissive: (m) => color(0xeef3ff).mul(motoLights.head.mul(7).add(0.6)) },   // (the LED DRL always on)
-    TailLight: { color: 0x3a0405, metalness: 0, roughness: 0.2, emissive: (m) => color(0xff1408).mul(motoLights.tail.mul(1.4).add(motoLights.brake.mul(5))) },
+    TailLight: { color: 0x3a0405, metalness: 0, roughness: 0.2, emissive: (m) => (/[?&](carlights|polish1)=old(&|$)/.test(location.search) ? color(0xff1408).mul(motoLights.tail.mul(1.4).add(motoLights.brake.mul(5))) : color(0xff1408).mul(motoLights.tail.mul(packLook.tailNight).add(motoLights.brake.mul(packLook.brake)))) },   // (polish1 item 6: the traffic's lamp levels)
     Plate: { color: 0xe8e8e4, metalness: 0, roughness: 0.5 },
     Suit: { color: 0x17181c, metalness: 0.05, roughness: 0.62 },
     Helmet: { phys: true, color: 0xe9e9e6, metalness: 0.1, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.08 },
