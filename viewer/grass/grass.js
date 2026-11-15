@@ -38,6 +38,7 @@ import { env } from "../lighting.js";
 import { season } from "../seasons/season.js";
 import { GrassField } from "./grassField.js";
 import { GrassPush } from "./grassPush.js";
+import { vertexLit } from "../foliage/vertexLight.js";
 
 const CELL = 0.045;                       // m: the finest candidate grid
 const TOP = 3;                           // levels 0..3
@@ -357,6 +358,9 @@ export class Grass {
     nf = nf.mul(sign(dot(nf, env.uSunDir)).add(0.001));
     const nW = normalize(mix(normalize(nf.add(sideV.mul(side.mul(1.2)))), vec3(0, 1, 0), grassU.flat));
     mat.normalNode = normalize(cameraViewMatrix.mul(vec4(varying(nW, "v_grN"), 0)).xyz);
+    // perf pass 3 (docs/perf/AUDIT.md step 13): ?grassvl=1 = the sun's BRDF per vertex (as plants / ivy). OPT-IN: a
+    // blade is 1-2 px wide, so it has about as many vertices as fragments: measured SLOWER (1.72 -> 2.36 ms, grassBench)
+    if (!this.lambert && /[?&]grassvl=1/.test(location.search)) vertexLit(mat, { normal: nW, roughness: 0.82 });
     // colour: the ground's mean colour, darker at the root (the thatch), brighter / yellower at the tip, per blade
     const r1 = rnd(12), r2 = rnd(13);
     const grad = mix(grassU.root.mul(mix(float(1), float(0.8), len)), grassU.tip, pow(max(h, 0.001), float(0.85)));

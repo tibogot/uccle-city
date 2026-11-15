@@ -19,6 +19,11 @@ import { kitOpaqueMaterial, kitGlassMaterial, loadKitMaterialSource } from "./ki
 import { kitRanges, kitFades } from "./kitFade.js";
 import { STRIDE } from "./placement.js";
 import { frameBudget } from "../instanceStream.js";
+import { MultiDrawSet, multiDrawOK } from "../multiDraw.js";
+
+/** ?kitfield=old: one InstancedMesh per piece x LOD x kind (52 scene + 14 shadow render objects in a street) instead of
+ *  one multi-draw mesh per material (opaque / glass x 2 LODs: 4 + 1 shadow; docs/perf/AUDIT.md step 13) */
+const KIT_MULTI = typeof location === "undefined" || new URLSearchParams(location.search).get("kitfield") !== "old";
 
 const MOVE = 2.5, MARGIN = 5, BUDGET = 0.25;      // m, m, ms a frame (docs/perf/AUDIT.md, instance pools)
 const TURN = (8 * Math.PI) / 180, CONE_MARGIN = (25 * Math.PI) / 180;
@@ -83,6 +88,27 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     const e = makeMesh(name, lod, kind, 256);
     meshes.set(`${name}|${lod}|${kind}`, e);
     group.add(e.mesh);
+  }
+  // MULTI-DRAW (perf pass 3): the pieces of one material (kind x LOD) as parts of ONE multi-draw set (viewer/multiDraw.js:
+  // their vertices back to back, one indirect draw per piece). The per-piece meshes stay as the bucket's targets (n,
+  // stats) but leave the scene; the commit writes their back arrays into the set. The two Uint8 x 4 vertex attributes
+  // share one interleaved buffer (the glass view would need 9 vertex buffers, WebGPU allows 8).
+  const sets = [];
+  if (KIT_MULTI && multiDrawOK()) {
+    for (let lod = 0; lod < json.lods; lod++) for (const kind of KINDS) {
+      const list = [...meshes.values()].filter((e) => e.lod === lod && e.kind === kind);
+      if (list.length < 2) continue;
+      const attrs = [["instanceMatrix", 16], ...INST_ATTRS[kind].map((a) => [a, 4])];
+      try {
+        const set = new MultiDrawSet({ name: `kit-${kind}-lod${lod}`, parts: list.length, attrs, cap0: 256 });
+        set.pad = 3;
+        const v = set.addView({ geoms: list.map((e) => e.mesh.geometry), material: matFor(kind, lod), castShadow: lod === 0 && kind === "opaque", receiveShadow: true, name: `kit ${kind} lod${lod}:merged(${list.length})` });
+        interleaveKitV(v.geo);
+        list.forEach((e, k) => { e.set = set; e.part = k; group.remove(e.mesh); });
+        group.add(v.mesh);
+        sets.push(set);
+      } catch (err) { console.warn(`facade kit: ${kind} lod${lod} not merged (${err.message})`); }
+    }
   }
   function grow(e, need) {
     let cap = e.cap; while (cap < need) cap *= 2;
@@ -218,6 +244,17 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
     let drawn = 0, used = 0, tris = 0;
     for (const e of meshes.values()) {
       const n = e.bn;
+      if (e.set) {
+        // the part's instances into its set; its box from the instances' feet (+ the piece's reach)
+        const B = _box6; B[0] = B[1] = B[2] = Infinity; B[3] = B[4] = B[5] = -Infinity;
+        const M = e.bM;
+        for (let k = 0; k < n; k++) { const m = k * 16; for (let c = 0; c < 3; c++) { const x = M[m + 12 + c]; if (x < B[c]) B[c] = x; if (x > B[c + 3]) B[c + 3] = x; } }
+        B[4] += 5;
+        e.set.write(e.part, n, { instanceMatrix: e.bM, aKitI: e.bI, aKitJ: e.bJ, aKitF: e.bF }, B);
+        e.n = n; e.mesh.count = n; e.mesh.visible = n > 0;
+        if (n) { used++; drawn += n; tris += n * geo[e.piece][e.lod][e.kind].tris; }
+        continue;
+      }
       if (n > e.cap) grow(e, n);
       const g = e.mesh.geometry;
       e.mesh.visible = n > 0;                       // (an empty instanced mesh still costs a draw per pass)
@@ -330,5 +367,17 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
   }
   /** triangles per piece and LOD (the report) */
   const pieceTris = Object.fromEntries(Object.entries(json.pieces).map(([k, p]) => [k, p.tris]));
-  return { group, meshes, update, addTile, removeTile, stats, json, geo, mats, matFor, pieceInfo, pieceTris, rebucket, forceRebucket: () => { dirty = true; } };
+  return { group, meshes, sets, update, addTile, removeTile, stats, json, geo, mats, matFor, pieceInfo, pieceTris, rebucket, forceRebucket: () => { dirty = true; } };
+}
+
+const _box6 = new Float64Array(6);
+/** aKitV + aKitW (two Uint8 x 4, normalized) into ONE interleaved vertex buffer */
+function interleaveKitV(g) {
+  const V = g.attributes.aKitV, W = g.attributes.aKitW;
+  if (!V || !W) return;
+  const n = V.count, a = new Uint8Array(n * 8), sv = V.array, sw = W.array;
+  for (let i = 0; i < n; i++) { for (let c = 0; c < 4; c++) { a[i * 8 + c] = sv[i * 4 + c]; a[i * 8 + 4 + c] = sw[i * 4 + c]; } }
+  const ib = new THREE.InterleavedBuffer(a, 8);
+  g.setAttribute("aKitV", new THREE.InterleavedBufferAttribute(ib, 4, 0, true));
+  g.setAttribute("aKitW", new THREE.InterleavedBufferAttribute(ib, 4, 4, true));
 }
