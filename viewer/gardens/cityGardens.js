@@ -80,7 +80,7 @@ export const cityGardens = {
   },
   update(camera) {
     if (!this.on || !this.kit) return;
-    if (this.hedges && qs.get("grass") !== "1") {          // the leaf cards' flutter (?grass=1: the grass field steps the shared wind)
+    if (this.hedges && !globalThis.grass) {          // the leaf cards' flutter (with the grass on, viewer/grass/cityGrass.js steps the shared wind)
       const now = performance.now(); wind.update(Math.min(0.1, (now - (this.tWind || now)) / 1000)); this.tWind = now;
     }
     this.streamer.update(camera);
