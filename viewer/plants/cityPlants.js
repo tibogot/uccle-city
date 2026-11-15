@@ -79,7 +79,7 @@ function withInnerShell(g, shell) {
   const P = out.attributes.position.array, U1 = out.attributes.uv1.array, S = out.attributes.slot.array, U3 = out.attributes.uv3.array;
   for (let i = n0; i < n0 + n1; i++) {
     P[i * 3] *= 0.76; P[i * 3 + 1] = cy + (P[i * 3 + 1] - cy) * 0.76; P[i * 3 + 2] *= 0.76;
-    U1[i * 2] *= 0.35; S[i] = 1; U3[i * 2 + 1] = 4;                // (kind 4: the inner crown, no bloom patches)
+    U1[i * 2] *= 0.5; S[i] = 1; U3[i * 2 + 1] = 4;                // (kind 4: the inner crown, no bloom patches)
   }
   const I0 = g.index.array, I1 = shell.index.array, I = new Uint32Array(I0.length + I1.length);
   I.set(I0); for (let k = 0; k < I1.length; k++) I[I0.length + k] = I1[k] + n0;
@@ -135,18 +135,36 @@ export const cityPlants = {
     if (!this.on) return Promise.resolve(null);
     return fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   },
+  /** a tile's beds on the drawn ground: [matrix (column major), rnd, ...]; a plane through the ground at the ends /
+   *  sides, raised so the ground never pokes through the mulch; cached on the doc (the grass bake and the pools share it) */
+  bedList(doc, groundAt, cache = true) {
+    if (!doc?.beds) return [];
+    if (cache && doc.__beds) return doc.__beds;
+    const B = doc.beds, beds = [];
+    for (let o = 0; o < B.length; o += 6) {
+      const cx = B[o], cz = B[o + 1], a = B[o + 2] / 1000, L = B[o + 3] / 100, W = B[o + 4] / 100, c = Math.cos(a), s = Math.sin(a);
+      const at = (u, v) => groundAt(cx + c * u * L - s * v * W, cz + s * u * L + c * v * W);
+      const y0 = at(0, 0), gu = (at(0.45, 0) - at(-0.45, 0)) / 0.9, gv = (at(0, 0.45) - at(0, -0.45)) / 0.9;
+      let lift = 0, low = 0;
+      for (const [u, v] of [[0.5, 0], [-0.5, 0], [0, 0.5], [0, -0.5], [0.4, 0.4], [-0.4, 0.4], [0.4, -0.4], [-0.4, -0.4], [0.25, 0], [-0.25, 0]]) { const r = at(u, v) - (y0 + gu * u + gv * v); lift = Math.max(lift, r); low = Math.min(low, r); }
+      // JOINS: the skirt reaches 18 cm under the rim; a bed on ground that bends more than that (a bank, a step) is not
+      // drawn (its plants stay, and the grass)
+      if (lift - low > 0.14) continue;
+      // columns: x = the bed's length axis (with its slope), y up, z = its width axis (with its slope)
+      beds.push([c * L, gu, s * L, 0, 0, 1, 0, 0, -s * W, gv, c * W, 0, cx, y0 + lift - 0.012, cz, 1], h01(cx, cz, 3));
+    }
+    if (cache) doc.__beds = beds;
+    return beds;
+  },
   /** the beds' outlines as an instanced mesh for the grass field's solid pass (no grass in a bed: the same smooth
    *  outline the mulch draws). Not in the scene. */
-  bedSolid(doc) {
-    if (!this.on || !doc?.beds?.length) return null;
-    const B = doc.beds, n = B.length / 6, g = (this._bedGeo ||= bedGeometry(32));
-    const m = new THREE.InstancedMesh(g, new THREE.MeshBasicNodeMaterial(), n);
+  bedSolid(doc, groundAt) {
+    if (!this.on) return null;
+    const beds = this.bedList(doc, groundAt, false), n = beds.length / 2;     // (the solid pass ignores heights)
+    if (!n) return null;
+    const m = new THREE.InstancedMesh((this._bedGeo ||= bedGeometry(32)), new THREE.MeshBasicNodeMaterial(), n);
     const M = new THREE.Matrix4();
-    for (let i = 0; i < n; i++) {
-      const o = i * 6, a = B[o + 2] / 1000, L = B[o + 3] / 100, W = B[o + 4] / 100, c = Math.cos(a), s = Math.sin(a);
-      M.set(c * L, 0, -s * W, B[o], 0, 1, 0, 0, s * L, 0, c * W, B[o + 1], 0, 0, 0, 1);
-      m.setMatrixAt(i, M);
-    }
+    for (let i = 0; i < n; i++) { M.fromArray(beds[i * 2]); m.setMatrixAt(i, M); }
     m.instanceMatrix.needsUpdate = true; m.computeBoundingSphere();
     m.name = "plants-bed-solid";
     return m;
@@ -172,21 +190,8 @@ export const cityPlants = {
         per[t].push(x, ground(x, z, r) - 0.04, z, yaw, sc, h01(x, z, 9), end);
       }
     }
-    // beds: a plane through the ground at the ends / sides, raised so the ground never pokes through the mulch
-    const beds = [];
-    if (doc?.beds) {
-      const B = doc.beds;
-      for (let o = 0; o < B.length; o += 6) {
-        const cx = B[o], cz = B[o + 1], a = B[o + 2] / 1000, L = B[o + 3] / 100, W = B[o + 4] / 100, c = Math.cos(a), s = Math.sin(a);
-        const at = (u, v) => groundAt(cx + c * u * L - s * v * W, cz + s * u * L + c * v * W);
-        const y0 = at(0, 0), gu = (at(0.45, 0) - at(-0.45, 0)) / 0.9, gv = (at(0, 0.45) - at(0, -0.45)) / 0.9;
-        let lift = 0;
-        for (const [u, v] of [[0.4, 0], [-0.4, 0], [0, 0.4], [0, -0.4], [0.3, 0.3], [-0.3, 0.3], [0.3, -0.3], [-0.3, -0.3]]) lift = Math.max(lift, at(u, v) - (y0 + gu * u + gv * v));
-        // columns: x = the bed's length axis (with its slope), y up, z = its width axis (with its slope)
-        beds.push([c * L, gu, s * L, 0, 0, 1, 0, 0, -s * W, gv, c * W, 0, cx, y0 + lift - 0.012, cz, 1], h01(cx, cz, 3));
-      }
-      counts.beds = beds.length / 2;
-    }
+    const beds = this.bedList(doc, groundAt);
+    counts.beds = beds.length / 2;
     // window boxes on the façade kit's sills, geraniums in them
     const boxes = [];
     const S = kit?.pieces?.sill;
@@ -202,11 +207,11 @@ export const cityPlants = {
         if (hb > (maitre ? 0.3 : 0.09) || floor > 2) continue;
         if (h01(x, z, 62) > (floor === 0 ? 0.6 : 0.85)) continue;                 // not every window of the house
         const bw = Math.max(0.5, w - 0.06), tx = nz, tz = -nx;                      // along the wall (the box's +x: a right-handed frame, +z out of the wall)
-        boxes.push([tx * bw, 0, tz * bw, 0, 0, 1, 0, 0, nx, 0, nz, 0, x + nx * 0.01, y + 0.002, z + nz * 0.01, 1], Math.floor(h01(seed * 1000, 1.5, 63) * BOX_VARIANTS) % BOX_VARIANTS);
-        const n = Math.max(2, Math.round(bw / 0.24));
+        boxes.push([tx * bw, 0, tz * bw, 0, 0, 1, 0, 0, nx, 0, nz, 0, x + nx * 0.05, y + 0.002, z + nz * 0.05, 1], Math.floor(h01(seed * 1000, 1.5, 63) * BOX_VARIANTS) % BOX_VARIANTS);
+        const n = Math.max(2, Math.round(bw / 0.3));
         for (let k = 0; k < n; k++) {
-          const f = (k + 0.5) / n - 0.5, px = x + tx * f * (bw - 0.1) + nx * 0.1, pz = z + tz * f * (bw - 0.1) + nz * 0.1;
-          per.geranium.push(px, y + 0.002 + 0.165, pz, h01(px, pz, 64) * 6.283, 0.75 + 0.3 * h01(px, pz, 65), h01(px, pz, 66), BANDS.geranium[2]);
+          const f = (k + 0.5) / n - 0.5, px = x + tx * f * (bw - 0.1) + nx * 0.15, pz = z + tz * f * (bw - 0.1) + nz * 0.15;
+          per.geranium.push(px, y + 0.002 + 0.165, pz, h01(px, pz, 64) * 6.283, 1.05 + 0.35 * h01(px, pz, 65), h01(px, pz, 66), BANDS.geranium[2]);
           counts.geraniums++;
         }
       }
@@ -296,7 +301,7 @@ export const cityPlants = {
     for (const tp of PLANT_TYPES) {
       const a = t.per[tp];
       for (let o = 0; o < a.length; o += 7) {
-        if (tp === "geranium" && a[o + 6] === BANDS.geranium[2] && a[o + 1] > groundAt(a[o], a[o + 2]) + 1) continue;   // (window boxes)
+        if (tp === "geranium") continue;                                         // (the window boxes' geraniums)
         out.plants++;
         const f = a[o + 1] - groundAt(a[o], a[o + 2]);
         if (f > 0.005) { out.floating++; out.maxFloat = Math.max(out.maxFloat, f); }

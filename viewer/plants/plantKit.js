@@ -118,11 +118,12 @@ export function bedMaterial() {
   const chips = noiseAt(xz, 1 / 0.09).a, mid = noiseAt(xz, 1 / 0.6).b, lit = noiseAt(xz.add(7.3), 1 / 0.25).g;
   const fine = smoothstep(0.004, 0.02, length(fwidth(xz)));
   const grain = mix(chips, float(0.5), fine);
-  let c = mix(vec3(0.045, 0.028, 0.017), vec3(0.11, 0.07, 0.042), grain.mul(0.7).add(mid.mul(0.3)));
+  let c = mix(vec3(0.03, 0.019, 0.012), vec3(0.085, 0.052, 0.03), grain.mul(0.7).add(mid.mul(0.3)));
   // a little soil / moss toward the rim; fallen leaves in autumn
   c = mix(c, vec3(0.05, 0.05, 0.025), smoothstep(0.7, 1.0, e).mul(0.4));
   c = mix(c, vec3(0.22, 0.1, 0.03), smoothstep(0.55, 0.8, lit).mul(season.u.litter).mul(0.8));
-  m.colorNode = select(e.greaterThan(1.5), vec3(0.05, 0.035, 0.022), c);
+  // (the skirt: the mound's soil side, the mulch's own dark brown: a sliver of it shows where the ground dips)
+  m.colorNode = select(e.greaterThan(1.5), mix(vec3(0.028, 0.02, 0.014), c, 0.5), c);
   m.roughnessNode = float(0.95);
   m.maskNode = keep(0, true);
   m.name = "plants-bed";

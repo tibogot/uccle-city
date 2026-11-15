@@ -79,7 +79,7 @@ SHRUB_MIX = {
     "front": [(0.9, [("box_ball", 0.4), ("lavender", 0.18), ("rose", 0.2), ("hydrangea", 0.22)]),
               (1.7, [("hydrangea", 0.32), ("rhododendron", 0.28), ("laurel", 0.22), ("rose", 0.1), ("box_ball", 0.08)]),
               (9.0, [("laurel", 0.55), ("rhododendron", 0.45)])],
-    "park": [(0.9, [("box_ball", 0.3), ("hydrangea", 0.3), ("rose", 0.15), ("lavender", 0.25)]),
+    "park": [(0.9, [("box_ball", 0.35), ("hydrangea", 0.35), ("lavender", 0.3)]),
              (1.7, [("rhododendron", 0.4), ("laurel", 0.35), ("hydrangea", 0.25)]),
              (9.0, [("laurel", 0.5), ("rhododendron", 0.5)])],
     "square": [(0.9, [("lavender", 0.35), ("box_ball", 0.3), ("rose", 0.2), ("hydrangea", 0.15)]),
@@ -226,6 +226,15 @@ def build(tile, raw: Path, debug: Path | None = None):
         r = 0.6 / RES; cx, cz = (tr["x"] - G.gx0) / RES, (tr["z"] - G.gz0) / RES
         dbk.ellipse([cx - r, cz - r, cx + r, cz + r], fill=255)
     blockA = np.asarray(block) > 0
+    # tree crowns (the LiDAR trees of features.json): their CHM edges (1-3 m) over green are canopy, not shrubs, and the
+    # orthophoto's green under them is leaves, not a planted bed
+    canopy = G.img(); dcn = ImageDraw.Draw(canopy)
+    for t in neighbours(tile):
+        fd = feats if t == tile else load(TILES / t / "features.json")
+        for tr in (fd or {}).get("trees", []):
+            r = max(1.0, 0.95 * tr.get("crown", 2.5)) / RES; cx, cz = (tr["x"] - G.gx0) / RES, (tr["z"] - G.gz0) / RES
+            dcn.ellipse([cx - r, cz - r, cx + r, cz + r], fill=255)
+    canopyA = np.asarray(canopy) > 0
     # distances (m)
     dBld = ndimage.distance_transform_edt(~bldA) * RES
     dStreet = ndimage.distance_transform_edt(~streetA) * RES
@@ -235,8 +244,8 @@ def build(tile, raw: Path, debug: Path | None = None):
     zone[front] = ZI["front"]
     zone[parkA & private] = ZI["park"]
     zone[scrubA & private] = ZI["scrub"]
-    zone[sqA & (green > 0.3)] = ZI["square"]
-    zone[islA & (green > 0.3)] = ZI["island"]
+    zone[sqA & (green > 0.3) & ~canopyA] = ZI["square"]
+    zone[islA & (green > 0.3) & ~canopyA] = ZI["island"]
     inside = np.zeros((N, N), bool)
     m0 = int(MARGIN / RES); inside[m0:N - m0, m0:N - m0] = True
     ok = inside & ~blockA & (dBld >= 0.45) & (zone >= 0)
@@ -260,7 +269,7 @@ def build(tile, raw: Path, debug: Path | None = None):
         return True
 
     # ---- 1. shrubs: the LiDAR's low vegetation over green, blob by blob
-    shrubM = ok & (chm >= SHRUB_LO) & (chm <= SHRUB_HI) & (green > 0.2)
+    shrubM = ok & (chm >= SHRUB_LO) & (chm <= SHRUB_HI) & (green > 0.2) & ~canopyA
     shrubM = ndimage.binary_opening(shrubM, iterations=1)
     lab, nl = ndimage.label(shrubM)
     objs = ndimage.find_objects(lab)
@@ -287,7 +296,10 @@ def build(tile, raw: Path, debug: Path | None = None):
             mix = next(mx for lim, mx in SHRUB_MIX[zname] if hv <= lim)
             typ = pick(mix, h01(x, z, 6))
             sc = max(0.6, min(2.3 if zname in ("park", "scrub") else 1.8, hv / H_MODEL[typ] * (0.85 + 0.2 * h01(x, z, 7))))
+            if typ in ("rose", "lavender"): sc = min(sc, 1.15)          # (a bush rose / lavender clump does not grow 2 m tall)
             put(x, z, typ, sc, zn, 0.35 * sc * H_MODEL[typ] + 0.2)
+        if zname in ("square", "island"):                    # shrubs on a paved square / an island: in a mulch bed
+            add_beds(xs, zs_, zname, zn, beds, put, None, G, plant=False)
     # ---- 2. beds along the façades in front gardens (where the ground in front of the wall is green and low)
     bedZoneF = ok & (zone == ZI["front"]) & (dBld <= 1.6) & (green > 0.18) & (chm < SHRUB_LO + 0.3)
     bdA, nb = ndimage.label(bedZoneF, structure=np.ones((3, 3)))
@@ -329,6 +341,25 @@ def build(tile, raw: Path, debug: Path | None = None):
             f = (i + 0.5) / n
             x, z = x0 + (x1 - x0) * f + nx * 0.55, z0 + (z1 - z0) * f + nz * 0.55
             put(x, z, typ, 0.75 + 0.35 * h01(x, z, 43), ZI["front"], 0.3)
+    # a plant on a paved square or a traffic island stands in a bed, or not at all (no shrub growing out of cobbles)
+    def in_bed(p):
+        for b in beds:
+            if b[5] != p[5]: continue
+            a = b[2] / 1000; dx, dz = p[0] - b[0], p[1] - b[1]
+            u, v = dx * math.cos(a) + dz * math.sin(a), -dx * math.sin(a) + dz * math.cos(a)
+            if abs(u) <= b[3] / 200 + 0.25 and abs(v) <= b[4] / 200 + 0.25: return True
+        return False
+    plants = [p for p in plants if p[5] not in (ZI["square"], ZI["island"]) or in_bed(p)]
+    # and no bed without plants in it
+    def has_plant(b):
+        a = b[2] / 1000
+        for p in plants:
+            dx, dz = p[0] - b[0], p[1] - b[1]
+            if abs(dx) > 4 or abs(dz) > 4: continue
+            u, v = dx * math.cos(a) + dz * math.sin(a), -dx * math.sin(a) + dz * math.cos(a)
+            if abs(u) <= b[3] / 200 + 0.1 and abs(v) <= b[4] / 200 + 0.1: return True
+        return False
+    beds = [b for b in beds if has_plant(b)]
     counts = {"plants": len(plants), "beds": len(beds), "byType": {t: 0 for t in TYPES}, "byZone": {z: 0 for z in ZONES}}
     for p in plants: counts["byType"][TYPES[p[2]]] += 1; counts["byZone"][ZONES[p[5]]] += 1
     doc = {"contract": CONTRACT, "tile": tile, "types": TYPES, "zones": ZONES,
@@ -340,7 +371,7 @@ def build(tile, raw: Path, debug: Path | None = None):
     return counts, time.time() - t0
 
 
-def add_beds(xs, zs, zname, zn, beds, put, dBld, G):
+def add_beds(xs, zs, zname, zn, beds, put, dBld, G, plant=True):
     """a bed blob -> rounded strips along its main axis (PCA), filled with bed plants every ~0.55 m"""
     P = np.stack([xs, zs], 1)
     c = P.mean(0)
@@ -376,7 +407,9 @@ def add_beds(xs, zs, zname, zn, beds, put, dBld, G):
                 z = czv + d[1] * t * (seg - 0.3) + d[0] * off
                 typ = main if h01(x, z, 53) < 0.65 else second
                 sc = 0.75 + 0.35 * h01(x, z, 54)
+                if not plant: placed += 1; continue
                 if put(x, z, typ, sc, zn, 0.22): placed += 1
+        if any(b[5] == zn and math.hypot(b[0] - cxv, b[1] - czv) < 1.2 for b in beds): continue     # (one bed per spot: no z-fighting twins)
         if placed: beds.append([round(cxv, 2), round(czv, 2), int(round(ang * 1000)), int(round(seg * 100)), int(round(width * 100)), zn])
 
 
