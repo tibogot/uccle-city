@@ -13,6 +13,7 @@ import * as THREE from "three/webgpu";
 import { loadStalle, ST_LODS, ST_SLATES, slateFade, ST_SLOTS } from "./stalleModel.js";
 import { withObjectFade, SMOOTH, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 const FETCH_AT = 120, SHOW_AT = 40, HIDE_AT = 60;
 
@@ -22,7 +23,7 @@ export async function addStalle({ scene, updaters, hide, world, manifest, log, c
   if (!notes) { log("Stalle: models/stalle/stalle.json missing, the UrbIS solids stay"); return; }
   hide.push(...notes.placement.hides_bu_ids);
   const waitCompiler = async () => { let c = compiler(); while (!c) { await new Promise((r) => setTimeout(r, 250)); c = compiler(); } return c; };
-  loadStalle().then(async (m) => {
+  whenNeeded("stalle").then(() => loadStalle()).then(async (m) => {
     const tLoad = performance.now() - t0;
     for (const s of ST_SLOTS) if (SMOOTH) withObjectFade(m.materials[s]);
     const root = new THREE.Group(); root.name = "stalle";

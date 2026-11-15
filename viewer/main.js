@@ -43,7 +43,7 @@ import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -66,6 +66,7 @@ import { liteShown } from "./liteShown.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
+import { setBootStart, coverLifted, whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -514,7 +515,7 @@ function tileData(entry, lite = false) {
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
     roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
-    cache: params.get("tilecache") === "1" };                                                        // ?tilecache=1: built tiles kept in IndexedDB (viewer/tileCache.js); opt-in until measured on a quiet machine
+    cache: params.get("tilecache") !== "0" };                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
   const key = `${entry.name}|${lite ? 1 : 0}`;
   const pre = tilePrefetch.get(key);
   if (pre) { tilePrefetch.delete(key); pumpBoot(); return pre; }
@@ -840,6 +841,7 @@ async function main() {
     prefetchTiles(near);
   }
 
+  bootStage("renderer");                            // (boot2: the loading bar's stage)
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
   const renderer = new THREE.WebGPURenderer({ antialias: true, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -995,6 +997,7 @@ async function main() {
     () => cityRoofs.start({ scene, updaters, log }),                 // the roof tops: stacks, parapets, roof windows, solar, roof furniture (viewer/roofs/), ?roofs=old off
   ]);
   bootStage("landmarks");
+  setBootStart(bounds, Math.max(0, Math.min(2, +(params.get("ring") ?? 1))));   // boot2: the ring the boot loads (bootGate.js)
   const heroes = [];
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
   if (params.get("stalle") !== "0") heroes.push(() => addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third }));
@@ -1040,11 +1043,15 @@ async function main() {
   // tiles: its node builds run now (the main thread idled here) and its pipelines compile in parallel meanwhile; the
   // boot warm-up's forced frames then find them built. (Not compileAsync: it keeps at most 16 pipelines in flight, 8.5 s
   // for the same scene, and the compile queue waited behind it.)
-  if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(() => {
+  if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(async () => {
     if (!bootPipes) return;
     bootStage("shaders");
-    const w = warmNow(scene, () => (pipe ? pipe.render(null) : renderer.render(scene, camera)));
-    log(`early warm-up: ${w.drawables} drawables built in ${w.ms} ms (their pipelines compile in parallel while the first tile builds)`);
+    const draw = () => (pipe ? pipe.render(null) : renderer.render(scene, camera));
+    // boot2: in chunks with the GPU drained between them (the loading screen keeps moving), ?warmchunk=0: one frame
+    const chunk = params.get("warmchunk") === "0" ? 0 : Math.max(1, +(params.get("warmchunk") || 40));
+    draw.device = renderer.backend?.device;
+    const w = chunk ? await warmNowChunked(scene, draw, { chunk }) : warmNow(scene, draw);
+    log(`early warm-up: ${w.drawables} drawables built in ${w.ms} ms${w.frames ? ` (${w.frames} chunks)` : ""} (their pipelines compile in parallel while the first tile builds)`);
   });
   if (trackP) trackProf = await (trackEarly ?? trackP());
   // the ground's cover textures (viewer/materials/groundTex.js; ?groundtex=0: the procedural ground), before the first tile
@@ -1071,7 +1078,7 @@ async function main() {
       const BRIDGES = (await import("./rail/railData.js")).heroBridgeNames(BRIDGES2);
       const { openParallelPipelines } = await import("../vendor/engine/parallelPipelines.js");
       for (const name of BRIDGES) {
-        loadBridge(name).then(async (b) => {
+        whenNeeded(name === "stjob" || name === "calevoet" ? `rail:${name}` : name).then(() => loadBridge(name)).then(async (b) => {   // boot2: far ones after the cover
           const pb = placeBridge(b, { smooth: SMOOTH });
           // a road bridge: its deck carries walk / drive heights, its parapets block the car
           if (b.info.kind === "road_over_rail") {
@@ -1523,10 +1530,17 @@ async function main() {
   // the hand-over: the loading flight is on the city's first camera (at most 3 s more): the cover (that view) cross-fades
   // into the city's frames from the same camera (index.html #cover.gone, 1.1 s), then the loader's worker stops
   if (landing) await Promise.race([landing, new Promise((r) => setTimeout(r, 3000))]);
+  // ---- boot2 (docs/BOOT.md): the cover stays up until the GPU has finished a real frame of the city (Mr.doob: no
+  // flash of a half-built frame), then fades (index.html #cover.gone, 1.1 s) while the bar completes
+  bootStage("gpu");
+  await new Promise((r) => requestAnimationFrame(() => r()));
+  try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
+  // ---- /boot2
   bootStage("ready");
   $("cover").classList.add("gone");
   document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
+  coverLifted();                                    // boot2: the far landmarks / bridges start now (bootGate.js)
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,

@@ -1,111 +1,129 @@
-// THE LOADING SCENE (perf audit step 10; owner: "a real warm-up loading scene"). Runs before main.js has even loaded
-// three.js: a slow aerial flight over the real Uccle (the horizon ring's 20 m terrain + the city orthophoto, 2.7 MB,
-// data/horizon/) drawn by viewer/loader/loaderWorker.js on an OffscreenCanvas in a worker with its own small WebGPU
-// device, so the boot's main-thread work (node builds, tiles landing) never freezes it; over it, an honest readout:
-// what the boot is doing now (main.js bootStage), the megabytes downloaded so far, a progress bar.
-// Hand-over: main.js asks land(pose) with the city's first camera; the flight eases onto it; the page then cross-fades
-// the cover (this view) into the city's first frames from the same camera, then finish() stops the worker.
-// ?loader=0: the plain cover (A/B: its cost). No WebGPU in workers / no OffscreenCanvas: the plain cover.
-
+// THE LOADING SCREEN (owner 2026-11-15: "nothing more annoying than jumps"; docs/BOOT.md). Three stills of the city
+// itself (rendered by debug/loaderShots.js at golden hour, tools/loader_stills.py: AVIF + JPG, ~260-300 KB each,
+// viewer/loader/stills/) cross-fade with a slow zoom, and ONE progress bar fills through every stage of the boot.
+// Everything that moves is a CSS animation / transition of transform or opacity (index.html #loaderUi): the compositor
+// runs it, so it keeps moving smoothly while the main thread builds shaders and the GPU compiles pipelines (the old
+// aerial flight, ?loader=flight, drew on the GPU the boot was busy with, and jumped).
+//
+// The bar (Mr.doob's slop-newyork js/main.js:30-75, 751-766): each stage owns a share of the bar sized by its
+// MEASURED duration (STAGE_MS: the boot timeline of 2026-11-15, debug/bootTimeline.js); when a stage begins, the fill
+// glides to the stage's end as a linear CSS transition lasting the stage's typical time, scaled by how fast the earlier
+// stages ran on this machine (pace), so it moves while the main thread is blocked and does not stall on a slow machine.
+// Stages that know their progress (the warm-up's pipelines) only ever move it FORWARD (no jump back, ever). The cover
+// stays up until the GPU finished the first real frame (main.js: "gpu" then "ready"), then fades (1.1 s).
+//
+// Switches: ?loader=flight (the old aerial flight in a worker), ?loader=0 (no images: the plain cover, for A/B);
+// prefers-reduced-motion: no zoom, the cross-fades only (index.html).
 const params = new URLSearchParams(location.search);
+const mode = params.get("loader") === "0" ? "plain" : params.get("loader") === "flight" ? "flight" : "stills";
+const T0 = 0;                                         // (performance.now() counts from the navigation)
 const cover = document.getElementById("cover");
-
-// the city's lighting presets (viewer/lighting.js PRESETS: the values the loader needs; the loader runs before three.js
-// and that module are loaded, so they are repeated here: keep in step)
-const dir = (x, y, z) => { const l = Math.hypot(x, y, z); return [x / l, y / l, z / l]; };
-const LOOKS = {
-  golden: { sunDir: dir(-0.62, 0.42, 0.66), sunColor: 0xffc890, sunIntensity: 5.6, hemiSky: 0x9abbe6, hemiGround: 0xb27a56, hemiIntensity: 1.4, skyTop: 0x2c568c, skyHorizon: 0xebd1b5, fogDensity: 0.00035 },
-  misty: { sunDir: dir(0.6, 0.22, 0.75), sunColor: 0xffd9b0, sunIntensity: 3.0, hemiSky: 0xb8c4d0, hemiGround: 0x8a8070, hemiIntensity: 1.6, skyTop: 0x7f93ab, skyHorizon: 0xd8d4cc, fogDensity: 0.0006 },
-  midday: { sunDir: dir(-0.25, 0.85, 0.46), sunColor: 0xfff5e8, sunIntensity: 6.4, hemiSky: 0xaad2ff, hemiGround: 0xa08a72, hemiIntensity: 1.55, skyTop: 0x225ea8, skyHorizon: 0xc8dff5, fogDensity: 0.00025 },
-  overcast: { sunDir: dir(-0.3, 0.7, 0.5), sunColor: 0xe6ecf2, sunIntensity: 1.6, hemiSky: 0xc4ccd6, hemiGround: 0x7a746c, hemiIntensity: 2.1, skyTop: 0x8e98a6, skyHorizon: 0xc9cdd2, fogDensity: 0.0007 },
-  twilight: { sunDir: dir(-0.7, 0.12, 0.7), sunColor: 0xff9466, sunIntensity: 2.6, hemiSky: 0x4c6ca8, hemiGround: 0x6e5048, hemiIntensity: 0.85, skyTop: 0x102248, skyHorizon: 0xb86b6c, fogDensity: 0.0005 },
-  night: { sunDir: dir(0.42, 0.68, -0.6), sunColor: 0x8cb0e8, sunIntensity: 1.2, hemiSky: 0x263a62, hemiGround: 0x382e36, hemiIntensity: 0.6, skyTop: 0x060c1a, skyHorizon: 0x182640, fogDensity: 0.0006 },
-};
-
-// what the boot is doing: main.js bootStage(name, detail) -> the line shown, and where the bar is (a share of a
-// typical boot, measured; the bar never goes back)
-const STAGES = {
-  start: ["Starting the renderer", 0.04],
-  materials: ["Loading materials and textures", 0.1],
-  landmarks: ["Placing the landmarks", 0.2],
-  tiles: ["Building the streets", 0.28],
-  shaders: ["Compiling shaders", 0.36],
-  tile: ["Laying out the first streets", 0.5],
-  neighbours: ["Loading the neighbourhood", 0.62],
-  warmup: ["Compiling shaders", 0.74],
-  ready: ["Ready", 1],
-};
-
-const ui = document.createElement("div");
-ui.id = "loaderUi";
-ui.innerHTML = `<canvas id="loaderCanvas"></canvas><div class="lbox"><div class="ltitle">Uccle</div><div class="lstage">Loading…</div>
-<div class="lbar"><i></i></div><div class="lsub"></div></div>`;
-cover.textContent = "";
-cover.appendChild(ui);
+const ui = document.getElementById("loaderUi");
 const $stage = ui.querySelector(".lstage"), $bar = ui.querySelector(".lbar i"), $sub = ui.querySelector(".lsub");
-const canvas = ui.querySelector("#loaderCanvas");
+ui.dataset.mode = mode;
+if (mode !== "stills") ui.querySelector(".lslides")?.remove();     // (the images were asked for by the HTML: tiny cost)
 
-let frac = 0, mb = 0, worker = null, landed = null, landedResolve = null, ready = false;
-const setBar = (f) => { frac = Math.max(frac, Math.min(1, f)); $bar.style.transform = `scaleX(${frac.toFixed(3)})`; };
-const sub = () => { $sub.textContent = mb > 0.05 ? `${mb.toFixed(1)} MB downloaded` : ""; };
+// stage -> [label, typical ms] in boot order: the medians of 9 cold boots on 2026-11-15 (debug/bootSummary.js
+// "stages", the RTX 4050 laptop, YELLOW / RED machine, cover 26-32 s); pace() rescales them on a faster / slower machine.
+// "data": the page, three.js and main.js's modules, the manifest; "tiles": the tile worker builds the start tile (the
+// longest stage: its roads, colliders and facades; a return visit reads it from the tile cache); "gpu": the first
+// real frame on the GPU.
+const STAGES = {
+  data: ["Loading the city", 1500],
+  renderer: ["Starting the renderer", 200],
+  materials: ["Loading materials and textures", 3000],
+  landmarks: ["Placing the landmarks", 120],
+  tiles: ["Building the streets", 10000],
+  tile: ["Laying out the first streets", 1800],
+  neighbours: ["Loading the neighbourhood", 4500],
+  warmup: ["Compiling shaders", 5500],
+  gpu: ["Drawing the first frame", 100],
+};
+// label-only stages (they run alongside another one: the bar keeps its course)
+const LABELS = { shaders: "Compiling shaders" };
+const NAMES = Object.keys(STAGES);
+const TOTAL = NAMES.reduce((s, n) => s + STAGES[n][1], 0);
+const startOf = (n) => NAMES.slice(0, NAMES.indexOf(n)).reduce((s, k) => s + STAGES[k][1], 0) / TOTAL;
+const endOf = (n) => startOf(n) + STAGES[n][1] / TOTAL;
+
+let cur = -1, glide = { p0: 0, p1: 0, t0: 0, ms: 0 }, stageT0 = T0;
+const times = [];                                     // [stage, ms since the page started]: STAGE_MS calibration
+const at = () => { const g = glide; return g.ms > 0 ? g.p0 + (g.p1 - g.p0) * Math.min(1, (performance.now() - g.t0) / g.ms) : g.p1; };
+/** the fill glides from where it is now to p over ms (linear: a compositor transition; interrupting one starts from
+ *  its current value, so a retarget never jumps) */
+const glideTo = (p, ms) => {
+  const from = at();
+  if (p <= from + 1e-4) return;
+  glide = { p0: from, p1: p, t0: performance.now(), ms: Math.max(0, ms) };
+  $bar.style.transition = ms > 0 ? `transform ${(ms / 1000).toFixed(2)}s ${ms > 400 ? "linear" : "ease-out"}` : "none";
+  $bar.style.transform = `scaleX(${p.toFixed(4)})`;
+};
+// how fast this machine runs the stages so far vs the table (Mr.doob's pace, clamped 0.5-4)
+const pace = (name) => {
+  const ranMs = startOf(name) * TOTAL;
+  return ranMs >= 1000 ? Math.min(4, Math.max(0.5, (performance.now() - T0) / ranMs)) : 1;
+};
+const begin = (name) => {
+  const i = NAMES.indexOf(name);
+  if (i <= cur) return false;                        // never back (a late call of an earlier stage)
+  cur = i; stageT0 = performance.now();
+  times.push([name, Math.round(stageT0)]);
+  $stage.textContent = STAGES[name][0];
+  glideTo(endOf(name), STAGES[name][1] * pace(name));
+  return true;
+};
+
 // downloads so far (resource timing; transferSize is 0 for a cache hit: then the body size)
+let mb = 0;
 try {
   new PerformanceObserver((l) => {
     for (const e of l.getEntries()) mb += (e.transferSize || e.encodedBodySize || 0) / 1048576;
-    sub();
+    $sub.textContent = mb > 0.05 ? `${mb.toFixed(1)} MB loaded` : "";
   }).observe({ type: "resource", buffered: true });
 } catch { /* no resource timing */ }
 
-const size = () => {
-  const dpr = Math.min(devicePixelRatio || 1, 1.5);
-  return [Math.max(1, Math.round(innerWidth * dpr)), Math.max(1, Math.round(innerHeight * dpr))];
-};
-if (params.get("loader") !== "0" && "gpu" in navigator && canvas.transferControlToOffscreen && typeof Worker !== "undefined") {
-  try {
-    const off = canvas.transferControlToOffscreen();
-    const [w, h] = size();
-    worker = new Worker(new URL("./loaderWorker.js", import.meta.url), { type: "module" });
-    const time = LOOKS[params.get("time")] ? params.get("time") : "golden";
-    worker.postMessage({ type: "init", canvas: off, w, h, base: new URL("../../data/", import.meta.url).href, tile: (params.get("tile") || "I6").toUpperCase(), look: LOOKS[time], fov: 55 }, [off]);
-    worker.onmessage = (e) => {
-      const m = e.data;
-      if (m.type === "ready") { ready = true; ui.classList.add("live"); window.__loaderStats = { readyMs: Math.round(performance.now()), buildMs: m.ms, tris: m.tris }; }
-      else if (m.type === "landed") landedResolve?.();
-      else if (m.type === "fps") (window.__loaderStats ||= {}).fps = m.fps;
-      else if (m.type === "fail") { console.warn("[loader]", m.error); worker?.terminate(); worker = null; landedResolve?.(); ui.classList.remove("live"); }
-    };
-    worker.onerror = (e) => { console.warn("[loader]", e.message); worker = null; landedResolve?.(); };
-    addEventListener("resize", () => { const [w2, h2] = size(); worker?.postMessage({ type: "resize", w: w2, h: h2 }); });
-  } catch (e) { console.warn("[loader]", e.message); worker = null; }
-}
+let flight = null;
+const flightP = mode === "flight" ? import("./flight.js").then((m) => (flight = m.startFlight(ui, params))).catch(() => null) : null;
 
 window.__loader = {
   /** the boot's stage (main.js bootStage): its line, the bar; detail: { done, total } (warm-up pipelines) or text */
   stage(name, detail) {
-    const s = STAGES[name];
-    if (!s) return;
-    let text = s[0], f = s[1];
+    if (name === "ready") return this.done();
+    if (LABELS[name]) { if (cur <= NAMES.indexOf("tiles")) $stage.textContent = LABELS[name]; return; }
+    if (!STAGES[name]) return;
+    begin(name);
+    if (NAMES[cur] !== name) return;
     if (detail && typeof detail === "object" && detail.total) {
-      const next = Object.values(STAGES).find(([, v]) => v > f)?.[1] ?? 1;
-      f += (next - f) * Math.min(1, detail.done / detail.total);
-      text += ` (${detail.done} / ${detail.total})`;
-    } else if (typeof detail === "string") text += ` ${detail}`;
-    $stage.textContent = text;
-    setBar(f);
+      const f = Math.min(1, detail.done / detail.total);
+      $stage.textContent = `${STAGES[name][0]} (${detail.done} / ${detail.total})`;
+      // forward only: when the counted progress is ahead of the glide, catch up over the stage's remaining time
+      const p = startOf(name) + (endOf(name) - startOf(name)) * f;
+      if (p > at() + 0.002) glideTo(endOf(name), Math.max(400, STAGES[name][1] * pace(name) * (1 - f)));
+    } else if (typeof detail === "string") $stage.textContent = `${STAGES[name][0]} ${detail}`;
   },
-  /** fly the loading camera onto the city's first camera: resolves when it is there (at once without the 3D view) */
-  land(pose) {
-    if (!worker || !ready) return Promise.resolve(false);
-    landed ??= new Promise((r) => { landedResolve = r; });
-    worker.postMessage({ type: "land", pose });
-    return landed;
+  /** the city's first frame is on the GPU: the bar completes (the cover's fade, index.html, runs alongside) */
+  done() {
+    times.push(["ready", Math.round(performance.now())]);
+    $stage.textContent = "Ready";
+    glideTo(1, 350);
   },
-  /** the cover has faded out: stop drawing, free the device */
-  finish() {
-    worker?.postMessage({ type: "stop" });
-    worker = null;
-    ui.remove();
-  },
-  get active() { return !!worker && ready; },
+  /** fly the loading camera onto the city's first camera (?loader=flight only; else at once) */
+  async land(pose) { await flightP; return flight ? flight.land(pose) : false; },
+  /** the cover has faded out: stop the flight, drop the images (their decoded memory) */
+  finish() { flight?.finish(); flight = null; ui.remove(); },
+  get active() { return !!flight?.active; },
+  get mode() { return mode; },
+  /** [[stage, ms since navigation]]: where the boot spent its time (calibrates STAGES) */
+  get times() { return times.slice(); },
 };
-window.__loader.stage("start");
+begin("data");
+
+// RETURN VISITS: the service worker (/sw.js) keeps the city's data in Cache Storage, keyed by content hash (safe across
+// deploys). ?sw=0: unregistered and its cache cleared (the plain network, A/B).
+if ("serviceWorker" in navigator) {
+  const swURL = new URL("../../sw.js", import.meta.url);
+  if (params.get("sw") === "0") {
+    navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+    caches?.keys().then((ks) => ks.filter((k) => k.startsWith("uccle-")).forEach((k) => caches.delete(k))).catch(() => {});
+  } else navigator.serviceWorker.register(swURL, { scope: new URL("../../", import.meta.url).pathname }).catch((e) => console.warn("[sw]", e.message));
+}

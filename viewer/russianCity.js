@@ -8,6 +8,7 @@ import * as THREE from "three/webgpu";
 import { loadRussian, RU_LODS, setLodFades } from "./russianModel.js";
 import { SMOOTH, fadeProxies, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 export async function addRussian({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -18,7 +19,7 @@ export async function addRussian({ scene, updaters, hide, world, manifest, log, 
   const longTasks = [];
   let loading = true;
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (loading) longTasks.push(Math.round(e.duration)); }).observe({ type: "longtask" }); } catch { /* no longtask API */ }
-  loadRussian().then(async (m) => {
+  whenNeeded("russian").then(() => loadRussian()).then(async (m) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "russian";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

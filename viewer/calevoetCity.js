@@ -12,6 +12,7 @@ import { loadCalevoet, CV_LODS, setLodFades, cvLodState } from "./calevoetModel.
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow built its shadow pipelines on the
  *  frame (the villa's 117 ms first hand-over). Warm them before the model shows: every mesh of every level and every
@@ -44,7 +45,7 @@ export async function addCalevoet({ scene, updaters, hide, world, manifest, log,
   if (!notes) { log("Calevoet: models/calevoet_station/ missing, the UrbIS solid stays"); return; }
   hide.push(...notes.placement.hides_bu_ids, ...notes.placement.hides_solids);
 
-  loadCalevoet().then(async (m) => {
+  whenNeeded("calevoet").then(() => loadCalevoet()).then(async (m) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "calevoet";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

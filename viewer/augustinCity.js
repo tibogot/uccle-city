@@ -11,6 +11,7 @@ import * as THREE from "three/webgpu";
 import { loadAugustin, AU_LODS, setLodFades } from "./augustinModel.js";
 import { SMOOTH, fadeProxies, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 export async function addAugustin({ scene, updaters, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -18,7 +19,7 @@ export async function addAugustin({ scene, updaters, world, manifest, log, compi
   const longTasks = [];
   let loading = true;
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (loading) longTasks.push(Math.round(e.duration)); }).observe({ type: "longtask" }); } catch { /* no longtask API */ }
-  loadAugustin().then(async (m) => {
+  whenNeeded("augustin").then(() => loadAugustin()).then(async (m) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "augustin";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

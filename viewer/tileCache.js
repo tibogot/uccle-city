@@ -10,7 +10,7 @@
 //     bridges' notes, osm_grass.json, street life...): their ETag / Last-Modified are stored with the tile and
 //     re-checked (HEAD, no-cache) on a hit. A file that gives neither header makes the tile uncacheable.
 // Size: at most LIMIT bytes, oldest used first out. Any IndexedDB failure (quota, private mode) = no cache, never an
-// error. Opt-in: ?tilecache=1 in the page (entry.cache === true); off otherwise.
+// error. On by default since boot2 (2026-11-15, docs/BOOT.md: return visits' cover 30-31 s -> 20-25 s); ?tilecache=0 in the page: off.
 
 const DB = "uccle-tiles", STORE = "tiles", META = "meta", VERSION = 1;   // tiles: key -> { key, r }; meta: key -> { key, at, bytes, deps, name }
 const LIMIT = 600 * 1048576;            // ~16 full tiles

@@ -14,6 +14,7 @@ import { loadVanBuuren, VB_LODS, setLodFades, vbLodState } from "./vanbuurenMode
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow (its first hand-over: the flight's
  *  117 ms frame at 64 m) built its shadow shaders and pipelines on the frame. Warm them before the model shows: every
@@ -56,7 +57,7 @@ export async function addVanBuuren({ scene, updaters, hide, world, manifest, log
   const notes = await fetch(new URL("../models/vanbuuren/vanbuuren.json", import.meta.url)).then((r) => r.json()).catch(() => null);
   if (!notes) { log("Villa van Buuren: models/vanbuuren/vanbuuren.json missing, the UrbIS solid stays"); return; }
   hide.push(...notes.placement.hides_bu_ids);
-  loadVanBuuren().then(async (m) => {
+  whenNeeded("vanbuuren").then(() => loadVanBuuren()).then(async (m) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "vanbuuren";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

@@ -8,6 +8,7 @@ import * as THREE from "three/webgpu";
 import { loadRosaire, RO_LODS, setLodFades } from "./rosaireModel.js";
 import { SMOOTH, fadeProxies, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 export async function addRosaire({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -18,7 +19,7 @@ export async function addRosaire({ scene, updaters, hide, world, manifest, log, 
   const longTasks = [];
   let loading = true;
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (loading) longTasks.push(Math.round(e.duration)); }).observe({ type: "longtask" }); } catch { /* no longtask API */ }
-  loadRosaire().then(async (m) => {
+  whenNeeded("rosaire").then(() => loadRosaire()).then(async (m) => {
     const tLoad = performance.now() - t0;
     const root = new THREE.Group(); root.name = "rosaire";
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;

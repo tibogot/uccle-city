@@ -10,13 +10,14 @@ import * as THREE from "three/webgpu";
 import { loadObservatory, OBS_LODS, OBS_SLOTS } from "./observatoryModel.js";
 import { withObjectFade, SMOOTH, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 export async function addObservatory({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
   const notes = await fetch(new URL("../models/observatory/observatory.json", import.meta.url)).then((r) => r.json()).catch(() => null);
   if (!notes) { log("Observatory: models/observatory/observatory.json missing, the UrbIS solids stay"); return; }
   hide.push(...notes.placement.hides_solids);
-  loadObservatory().then(async (m) => {
+  whenNeeded("observatory").then(() => loadObservatory()).then(async (m) => {
     const tLoad = performance.now() - t0;
     for (const s of OBS_SLOTS) if (SMOOTH) withObjectFade(m.materials[s]);
     const root = new THREE.Group(); root.name = "observatory";
