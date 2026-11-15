@@ -12,7 +12,7 @@ import { loadCalevoet, CV_LODS, setLodFades, cvLodState } from "./calevoetModel.
 import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { liteShown } from "./liteShown.js";
-import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow built its shadow pipelines on the
  *  frame (the villa's 117 ms first hand-over). Warm them before the model shows: every mesh of every level and every

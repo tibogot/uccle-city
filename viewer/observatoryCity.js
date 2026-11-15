@@ -10,7 +10,7 @@ import * as THREE from "three/webgpu";
 import { loadObservatory, OBS_LODS, OBS_SLOTS } from "./observatoryModel.js";
 import { withObjectFade, SMOOTH, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
-import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 export async function addObservatory({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();

@@ -13,7 +13,7 @@ import * as THREE from "three/webgpu";
 import { loadStalle, ST_LODS, ST_SLATES, slateFade, ST_SLOTS } from "./stalleModel.js";
 import { withObjectFade, SMOOTH, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
-import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 const FETCH_AT = 120, SHOW_AT = 40, HIDE_AT = 60;
 

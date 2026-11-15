@@ -198,3 +198,33 @@ export function warmNow(scene, render, { frames = 1 } = {}) {
   finally { for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; } }
   return { drawables: n, ms: Math.round(performance.now() - t0) };
 }
+
+// boot2 (docs/BOOT.md): warmNow in CHUNKS of drawables, one frame each, waiting for the GPU between them. The page's
+// compositor frames (the loading screen) are drawn on the GPU process' main thread, which one big forced frame kept
+// busy for ~2 s with its texture / buffer uploads and shader modules (measured in a trace: the loading screen froze);
+// with the work split, the GPU process gets a turn between chunks. Same total work, same pipelines. ?warmchunk=0: one
+// frame as before; ?warmchunk=N: N drawables per chunk (default 40).
+export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
+  const t0 = performance.now();
+  const list = [];
+  scene.traverse((o) => { if (o.isMesh || o.isPoints || o.isSprite) list.push(o); });
+  const device = render.device ?? null;
+  let frames = 0;
+  for (let i = 0; i < list.length; i += chunk) {
+    const saved = [];
+    const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
+    for (const o of list.slice(i, i + chunk)) {
+      set(o, "visible", true);
+      for (let p = o.parent; p; p = p.parent) set(p, "visible", true);
+      set(o, "frustumCulled", false);
+      if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
+      if (o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
+    }
+    try { render(); frames++; }
+    finally { for (let k = saved.length - 1; k >= 0; k--) { const [o, key, v] = saved[k]; o[key] = v; } }
+    // let the GPU process drain this chunk (and draw a compositor frame) before the next one
+    try { await device?.queue.onSubmittedWorkDone(); } catch { /* lost device */ }
+    await new Promise((r) => setTimeout(r, 16));
+  }
+  return { drawables: list.length, ms: Math.round(performance.now() - t0), frames };
+}

@@ -23,18 +23,21 @@ const $stage = ui.querySelector(".lstage"), $bar = ui.querySelector(".lbar i"), 
 ui.dataset.mode = mode;
 if (mode !== "stills") ui.querySelector(".lslides")?.remove();     // (the images were asked for by the HTML: tiny cost)
 
-// stage -> [label, typical ms] in boot order (2026-11-15, the RTX 4050 laptop, cold, YELLOW machine: cover ~23 s).
-// "data": the page, three.js and main.js's modules, the manifest; "gpu": the first real frame on the GPU.
+// stage -> [label, typical ms] in boot order: the medians of 9 cold boots on 2026-11-15 (debug/bootSummary.js
+// "stages", the RTX 4050 laptop, YELLOW / RED machine, cover 26-32 s); pace() rescales them on a faster / slower machine.
+// "data": the page, three.js and main.js's modules, the manifest; "tiles": the tile worker builds the start tile (the
+// longest stage: its roads, colliders and facades; a return visit reads it from the tile cache); "gpu": the first
+// real frame on the GPU.
 const STAGES = {
-  data: ["Loading the city", 1700],
-  renderer: ["Starting the renderer", 250],
-  materials: ["Loading materials and textures", 2100],
-  landmarks: ["Placing the landmarks", 500],
-  tiles: ["Building the streets", 6600],
-  tile: ["Laying out the first streets", 2600],
-  neighbours: ["Loading the neighbourhood", 3800],
-  warmup: ["Compiling shaders", 6300],
-  gpu: ["Drawing the first frame", 300],
+  data: ["Loading the city", 1500],
+  renderer: ["Starting the renderer", 200],
+  materials: ["Loading materials and textures", 3000],
+  landmarks: ["Placing the landmarks", 120],
+  tiles: ["Building the streets", 10000],
+  tile: ["Laying out the first streets", 1800],
+  neighbours: ["Loading the neighbourhood", 4500],
+  warmup: ["Compiling shaders", 5500],
+  gpu: ["Drawing the first frame", 100],
 };
 // label-only stages (they run alongside another one: the bar keeps its course)
 const LABELS = { shaders: "Compiling shaders" };
@@ -75,7 +78,7 @@ let mb = 0;
 try {
   new PerformanceObserver((l) => {
     for (const e of l.getEntries()) mb += (e.transferSize || e.encodedBodySize || 0) / 1048576;
-    $sub.textContent = mb > 0.05 ? `${mb.toFixed(1)} MB` : "";
+    $sub.textContent = mb > 0.05 ? `${mb.toFixed(1)} MB loaded` : "";
   }).observe({ type: "resource", buffered: true });
 } catch { /* no resource timing */ }
 

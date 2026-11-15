@@ -20,7 +20,7 @@ import { Heightmap } from "./heightmap.js";
 import { pondBedGrid } from "./water/pondBed.js";
 import { createPond, POND_LAYER, REFL_MRT, buildReflectionTrees } from "./water/pondWater.js";
 import { liteShown } from "./liteShown.js";
-import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 /** the pond's measured description (site.json "pond"): the same object goes to the tiles (the carve) and the water */
 export function wolvendaelPond(site) {

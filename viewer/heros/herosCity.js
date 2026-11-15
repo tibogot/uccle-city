@@ -16,7 +16,7 @@ import { statueLodState } from "./herosStatue.js";
 import { dolomiteGeometry, dolomiteMaterial, lawnGeometry, lawnMaterial, terrainTrianglesIn } from "./herosGround.js";
 import { SMOOTH, fadeProxies, settleRamp } from "../lodFade.js";
 import { liteShown } from "../liteShown.js";
-import { whenNeeded } from "../bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
+import { whenNeeded } from "../bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 export async function addHeros({ scene, updaters, hide, tile, world, manifest, log, compiler, renderer }) {
   const t0 = performance.now();

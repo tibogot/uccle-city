@@ -43,7 +43,7 @@ import { createPipeline } from "./post.js";
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -66,7 +66,7 @@ import { liteShown } from "./liteShown.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
-import { setBootStart, coverLifted, whenNeeded } from "./bootGate.js";   // boot2: far landmarks / bridges after the cover (?bootdefer=0: before)
+import { setBootStart, coverLifted, whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -515,7 +515,7 @@ function tileData(entry, lite = false) {
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
     roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
-    cache: params.get("tilecache") === "1" };                                                        // ?tilecache=1: built tiles kept in IndexedDB (viewer/tileCache.js); opt-in until measured on a quiet machine
+    cache: params.get("tilecache") !== "0" };                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
   const key = `${entry.name}|${lite ? 1 : 0}`;
   const pre = tilePrefetch.get(key);
   if (pre) { tilePrefetch.delete(key); pumpBoot(); return pre; }
@@ -1043,11 +1043,15 @@ async function main() {
   // tiles: its node builds run now (the main thread idled here) and its pipelines compile in parallel meanwhile; the
   // boot warm-up's forced frames then find them built. (Not compileAsync: it keeps at most 16 pipelines in flight, 8.5 s
   // for the same scene, and the compile queue waited behind it.)
-  if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(() => {
+  if (!OLD_ORDER && params.get("early") !== "0") pipeReady = setupPipe().then(async () => {
     if (!bootPipes) return;
     bootStage("shaders");
-    const w = warmNow(scene, () => (pipe ? pipe.render(null) : renderer.render(scene, camera)));
-    log(`early warm-up: ${w.drawables} drawables built in ${w.ms} ms (their pipelines compile in parallel while the first tile builds)`);
+    const draw = () => (pipe ? pipe.render(null) : renderer.render(scene, camera));
+    // boot2: in chunks with the GPU drained between them (the loading screen keeps moving), ?warmchunk=0: one frame
+    const chunk = params.get("warmchunk") === "0" ? 0 : Math.max(1, +(params.get("warmchunk") || 40));
+    draw.device = renderer.backend?.device;
+    const w = chunk ? await warmNowChunked(scene, draw, { chunk }) : warmNow(scene, draw);
+    log(`early warm-up: ${w.drawables} drawables built in ${w.ms} ms${w.frames ? ` (${w.frames} chunks)` : ""} (their pipelines compile in parallel while the first tile builds)`);
   });
   if (trackP) trackProf = await (trackEarly ?? trackP());
   // the ground's cover textures (viewer/materials/groundTex.js; ?groundtex=0: the procedural ground), before the first tile

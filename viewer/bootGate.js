@@ -4,9 +4,11 @@
 // ring is all the boot loads, as far tiles; the rest of the far LOD streams in after). The far ones now start after the
 // reveal, one every STAGGER ms (their shaders still compile in the background through the precompile queue, before
 // they are shown: nothing appears half-built, nothing builds on a frame).
-//   ?bootdefer=0: everything starts during the boot, as before (A/B).
+//   ?bootdefer=1: on. OFF BY DEFAULT (measured 2026-11-15, docs/BOOT.md): 37 MB less before the cover and ~130 fewer
+//   pipelines, but the cover time did not move beyond the machine's noise, and the deferred models' processing landed
+//   in the first seconds after the reveal (long tasks after the cover 0.6-0.7 s -> 3.0-3.8 s, one 2.2 s): worse to play.
 const params = new URLSearchParams(location.search);
-export const BOOT_DEFER = params.get("bootdefer") !== "0";
+export const BOOT_DEFER = params.get("bootdefer") === "1";
 const STAGGER = 600;
 
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)

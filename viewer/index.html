@@ -51,7 +51,9 @@
      each slide's own timeline starts when it begins to fade in (delays -F, S - F, 2 S - F) and it is visible for S + F
      (42.6 % of P), zooming all that time; the bottom slide never fades (no dip to the background in a cross-fade), the
      middle one drops out only once the top one covers it, the top one fades out over the bottom one; each zoom resets
-     while its slide is hidden (never a visible jump). */
+     while its slide is hidden (never a visible jump). The zoom is slow on purpose (5 % in 11.5 s): the page's compositor
+     frames are drawn on the GPU process' main thread, which the boot's texture / buffer uploads can keep busy for up to
+     ~0.5-2 s (measured, docs/BOOT.md): a stall then moves the picture by a few pixels, not a visible jump. */
   #cover { background: #6f7d72 linear-gradient(#e9d3b4 0%, #c9c4b0 34%, #6c7a52 64%, #3d4934 100%); }
   #loaderUi { position: absolute; inset: 0; overflow: hidden; }
   body.loading #hud { visibility: hidden; }   /* the dev HUD returns with the city (main.js removes .loading) */
@@ -59,11 +61,10 @@
   #loaderUi .ls img { object-fit: cover; display: block; }
   #loaderUi .ls { will-change: transform, opacity; backface-visibility: hidden; animation-duration: 27s, 27s; animation-iteration-count: infinite, infinite;
                   animation-timing-function: linear, ease-in-out; animation-fill-mode: both, both; }
-  #loaderUi .ls0 { animation-name: lsZoom, lsKeep; animation-delay: -2.5s, -2.5s; transform-origin: 60% 42%; }
+  #loaderUi .ls0 { animation-name: lsZoom, none; animation-delay: -2.5s, -2.5s; transform-origin: 60% 42%; }   /* (opacity 1 throughout: no animation) */
   #loaderUi .ls1 { animation-name: lsZoom, lsMid; animation-delay: 6.5s, 6.5s; transform-origin: 56% 55%; opacity: 0; }
   #loaderUi .ls2 { animation-name: lsZoom, lsTop; animation-delay: 15.5s, 15.5s; transform-origin: 48% 50%; opacity: 0; }
-  @keyframes lsZoom { 0% { transform: scale(1.0) } 42.6% { transform: scale(1.085) } 42.7%, 100% { transform: scale(1.0) } }
-  @keyframes lsKeep { 0%, 100% { opacity: 1 } }
+  @keyframes lsZoom { 0% { transform: scale(1.0) } 42.6% { transform: scale(1.05) } 42.7%, 100% { transform: scale(1.0) } }
   @keyframes lsMid { 0% { opacity: 0 } 9.26%, 42.6% { opacity: 1 } 42.7%, 100% { opacity: 0 } }
   @keyframes lsTop { 0% { opacity: 0 } 9.26%, 33.3% { opacity: 1 } 42.6%, 100% { opacity: 0 } }
   /* the place's name, faded with its slide */
@@ -74,7 +75,7 @@
   #loaderUi .lcap2 { animation-name: lsCap; animation-delay: 15.5s; }
   @keyframes lsCap { 0% { opacity: 0 } 9.26%, 33.3% { opacity: .9 } 42.6%, 100% { opacity: 0 } }
   @media (prefers-reduced-motion: reduce) {
-    #loaderUi .ls { animation-name: none, lsKeep !important; transform: none; }
+    #loaderUi .ls { animation-name: none, none !important; transform: none; }
     #loaderUi .ls1 { animation-name: none, lsMid !important; } #loaderUi .ls2 { animation-name: none, lsTop !important; }
   }
   /* a soft shade under the readout, for legibility on any image */

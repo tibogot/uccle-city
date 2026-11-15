@@ -11,7 +11,7 @@ import * as THREE from "three/webgpu";
 import { loadAugustin, AU_LODS, setLodFades } from "./augustinModel.js";
 import { SMOOTH, fadeProxies, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
-import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 export async function addAugustin({ scene, updaters, world, manifest, log, compiler }) {
   const t0 = performance.now();

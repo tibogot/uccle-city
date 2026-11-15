@@ -17,7 +17,7 @@ import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
 import { liteShown } from "./liteShown.js";
-import { whenNeeded } from "./bootGate.js";   // boot2: far models load after the cover (?bootdefer=0: during the boot)
+import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
 
 /** The SHADOW pass is not in compileAsync: warm its pipelines (every mesh of every level and every fading copy drawn a
  *  frame far under the city, pipelines created async) before the model shows (the villa's / Wolvendael's) */
