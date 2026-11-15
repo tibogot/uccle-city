@@ -15,6 +15,8 @@ export async function startGameKit(host) {
   for (const g of COMING) kit.register(g);
   // the police game (viewer/police/, docs/POLICE_GAME.md) replaces its "coming soon" entry (same id, registered after)
   try { const { POLICE_GAME } = await import("../police/policeGame.js"); kit.register(POLICE_GAME); } catch (e) { host.log(`police game: ${e.message}`); console.error(e); }
+  // the falcon game (viewer/falconGame/, docs/FALCON_GAME.md) replaces its "coming soon" entry the same way
+  try { const { FALCON_GAME } = await import("../falconGame/falconGameDef.js"); kit.register(FALCON_GAME); } catch (e) { host.log(`falcon game: ${e.message}`); console.error(e); }
   // places: the baked shops now, the map's landmarks / parks / tram stops when its worker is ready
   kit.places.loadShops().then((n) => host.log(`game kit: ${n} places`)).catch(() => {});
   (async () => {

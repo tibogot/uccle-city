@@ -154,3 +154,11 @@ allocation in the per-frame path (decisions 4 Hz).
 - Cost measured on a RED machine: re-measure the frame A/B on GREEN (the compute and draws alone are well under the
   0.2 ms budget).
 - Flushed pigeons do not refill the feeding groups preferentially (they land on any free roost, 25 % on the ground).
+
+## Falcon game: the dead flag (claude/falcongame1, docs/FALCON_GAME.md)
+
+A bird caught by the falcon game is marked dead on the GPU by `SkyFlocks.kill(i)`, a 1-thread compute that sets its
+epoch to epoch + 0.5. In steer, a dead bird is not respawned. In move, it is still integrated (it flies on with its
+flock, so lattice neighbours are not torn), but it is never appended to the near / far lists, so it is never drawn.
+It respawns only with the slot's next epoch. The game reads the bird buffer back through one reusable
+`ReadbackBuffer`, and only while a prey flock is within 450 m of the falcon (`viewer/falconGame/gpuPrey.js`).

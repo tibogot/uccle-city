@@ -118,7 +118,9 @@ export class SkyFlocks {
       const s = int(B3.x);
       const seed = uint(i).mul(uint(2654435761)).toVar();
       If(B1.w.greaterThan(0.5).and(local.lessThan(count)), () => {
-        If(x.w.notEqual(B2.w), () => {
+        // (FALCON GAME dead flag, claude/falcongame1: epoch + 0.5 = caught by the falcon: it flies on with its flock, never
+        // drawn, never respawned until the slot's next epoch; see kill() below)
+        If(x.w.notEqual(B2.w).and(x.w.notEqual(B2.w.add(0.5))), () => {
           // ---- (re)spawn: a lattice for the murmuration (the neighbours' rest spacing), a ball for the others
           const nx = int(B4.x), ny = int(B4.y), rest = B4.z;
           const lx = local.mod(nx), ly = local.div(nx).mod(ny), lz = local.div(nx.mul(ny));
@@ -268,9 +270,10 @@ export class SkyFlocks {
       const slot = int(p.w), sb = slot.mul(SB);
       const B1 = S.element(sb.add(1)), B2 = S.element(sb.add(2)), B3 = S.element(sb.add(3)), B5 = S.element(sb.add(5));
       const local = i.sub(int(B3.z));
-      If(B1.w.greaterThan(0.5).and(local.lessThan(int(B3.y))).and(x.w.equal(B2.w)), () => {
+      If(B1.w.greaterThan(0.5).and(local.lessThan(int(B3.y))).and(x.w.equal(B2.w).or(x.w.equal(B2.w.add(0.5)))), () => {
         const np = p.xyz.add(v.xyz.mul(U.dt)).toVar();
         D.element(o).assign(vec4(np, p.w));
+        If(x.w.equal(B2.w), () => {                     // (FALCON GAME dead flag: a caught bird is not listed / drawn)
         // on screen? (a rough clip test with a margin), the size in pixels -> near / far list
         const c = U.vp.mul(vec4(np, 1));
         const inView = c.w.greaterThan(0.3).and(abs(c.x).lessThan(c.w.mul(1.06).add(2))).and(abs(c.y).lessThan(c.w.mul(1.06).add(2)));
@@ -290,8 +293,21 @@ export class SkyFlocks {
             lists.element(f.add(uint(NEAR_CAP))).assign(uint(i));
           });
         });
+        });
       });
     })().compute(TOTAL, [64]).setName("birds move");
+    // ---- FALCON GAME (claude/falcongame1, viewer/falconGame/gpuPrey.js): the DEAD FLAG. kill(i) marks bird i caught: its
+    // epoch + 0.5 (steer: no respawn; move: still integrated with its flock, never listed so never drawn). One thread,
+    // dispatched only on a catch (compiled once at start with i = -1).
+    this.killU = uniform(-1, "int");
+    this.killNode = Fn(() => {
+      const i = this.killU;
+      If(i.greaterThanEqual(0), () => {
+        const o = i.mul(3), p = D.element(o), x = D.element(o.add(2));
+        const ep = S.element(int(p.w).mul(SB).add(2)).w;
+        If(x.w.equal(ep), () => { D.element(o.add(2)).assign(vec4(x.xyz, ep.add(0.5))); });
+      });
+    })().compute(1).setName("birds kill");
     this.clamp = Fn(() => {
       const n = this.counter.element(1);
       // (the overflow went to the far list: the near count is capped)
@@ -420,6 +436,9 @@ export class SkyFlocks {
     this.renderer.compute(this.nodes);
     return true;
   }
+
+  /** FALCON GAME (claude/falcongame1): bird i caught by the falcon (the dead flag above); i < 0: a no-op dispatch (compile) */
+  kill(i) { this.killU.value = i; this.renderer.compute(this.killNode); }
 
   /** the GPU's lists (async read-back, debug): { near, far } */
   async readCounts() {

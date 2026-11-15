@@ -355,7 +355,8 @@ export class CityFlyer {
     if (act.length > PIGEON_FLOCKS) act.length = PIGEON_FLOCKS;
     for (const P of this.flocks) P.mesh.visible = show && act.includes(P);
     // the falcon hunts the flock nearest to it (a new flock: a new target)
-    if (flying && act.length) {
+    // (preySource: the falcon game, viewer/falconGame/hunt.js, hunts through its own prey source: pigeons + sky flocks)
+    if (flying && act.length && !this.preySource) {
       // (lockFlock: a scripted run pins the flock it hunts, debug/falconCityFlight.js)
       let best = act.includes(this.lockFlock) ? this.lockFlock : act[0], bd = best === this.lockFlock ? -1 : Infinity;
       if (bd > 0) for (const P of act) { const d = Math.hypot(f.pos.x - P.square.x, f.pos.z - P.square.z); if (d < bd) { bd = d; best = P; } }

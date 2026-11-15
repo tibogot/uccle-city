@@ -276,9 +276,18 @@ export class FalconFlight {
       // stopping the bird dead (and stunning it above 6 m/s, whatever the angle)
       if (!FALCON_HIT_OLD && wall) {
         const w = this._wallN(x0, y0, z0, dx, dz, world);
-        if (w) { nx = w[0]; nz = w[1]; ny = 0; }
+        // (falcon game round 1, 2026-11-15: only when that normal opposes the velocity; else the bird, held at the last
+        // free point every substep with no normal speed to reflect, stayed PINNED there flying at 10+ m/s: seen
+        // squeezed between the setts and a low crown on the Place, and against thin walls by the church)
+        if (w && this.vel.x * w[0] + this.vel.z * w[1] < -0.3) { nx = w[0]; nz = w[1]; ny = 0; }
       }
       const vn = this.vel.x * nx + this.vel.y * ny + this.vel.z * nz;
+      // (falcon game round 1: already moving OUT of a wall contact (an edge the bird sits a few cm inside, a roof's
+      // rim): set on top of the solid here, so the next substep is free; before it was held at the same point forever)
+      if (!FALCON_HIT_OLD && wall && vn > -0.05) {
+        const fh = C ? C.column(this.pos.x, this.pos.z, this.pos.y).floor : world.floor(this.pos.x, this.pos.z);
+        if (this.pos.y < fh + R + 0.02) this.pos.y = fh + R + 0.02;
+      }
       const speed = Math.hypot(this.vel.x, this.vel.y, this.vel.z);
       if (!FALCON_HIT_OLD) { this._respond(nx, ny, nz, vn, speed, wall, under, hitTree); return; }
       const land = !wall && !under && ny > 0.85 && -vn < 4.5 && speed < 13;
