@@ -140,3 +140,70 @@ parallel with the start tile, or overlap queue jobs on their pipeline wait (need
 or LOD2-only first; (2) the fixed ~7-8 ms per frame: profile the post chain and the shadow pass (half-rate static
 shadow cache), three's per-object refresh; (3) heap: drop the CPU copies of static geometry after upload where no
 collider / raycast reads them; (4) the per-tile street lamps into one city pool (6 meshes per tile).
+
+## Round 3 (code first, 2026-11-16) — per-frame cost analysis (trace of the 40 s police drive, round-2 build)
+
+Main thread ms per second of trace (tracing inflates call-heavy code ~1.5-2x; read the proportions):
+| what | ms/s | note |
+|---|---|---|
+| three render submission, scene pass objects (`_renderObjects`) | ~430 | ~390 render objects a frame (main ~240 + shadow ~150): ~10-12 us each untraced; per object: bindings update (~120), node updates (~40), draw (~70), geometry attribute version checks (~40) |
+| of which the sun shadow pass (`renderShadow`) | ~106 | ~150 objects; casters only in the light frustum since round 2 |
+| `updateMatrixWorld` (the whole scene graph, every frame) | ~45 | compose ~16: objects with matrixAutoUpdate; `?freeze=1` (static tile layers) measured within noise |
+| instance pools (gardens, stops, furniture, street life: `instanceStream` gather) | ~40 | time-sliced at 0.3 ms a frame; re-gathers every few m while driving |
+| frustum culling (`project`, `intersectsObject`) | ~40 | |
+| sky + haze + god rays (firmament update, hazeHook) | ~25 | |
+| SSR + bloom + GTAO + TAAU passes (CPU side) | ~25 | |
+| per-object node updates by type: lodFade / object fades, upscale motion matrix (2.4), kit fades | ~20 | |
+| trees tick, roofs, plants, grass, falcons, flyer, minimap, map, traffic, car fleet | ~5-10 each | |
+| an open `parallelPipelines` window (isReady wrapper on every draw) | ~4.6 | a landmark / flyer window never closed: close it |
+
+So the "fixed" ~7-8 ms is mostly per-object submission (~390 objects), not post or updaters. Ideas, by gain:
+1. Fewer render objects in the SHADOW pass: static casters into a cached shadow map re-rendered only when the box moves
+   a texel / the sun moves (dynamic casters every frame into the same map: a second depth pass merged by min), or the
+   shadow map at half rate while the camera is still: -1..-2 ms.
+2. Per tile: merge the layer meshes that share a material across the 9 ring tiles (terrain, roads, walls, roofs are one
+   material per layer: 1 draw per layer for the ring instead of 9) with multi-draw (viewer/multiDraw.js exists): -1..-2 ms.
+3. Street lamps: one city pool (6 meshes per tile now) through instanceStream: -0.3 ms.
+4. Close the stray parallel-pipelines window; landmark LOD2 in one draw (vertex colours, far only): -0.3..-0.5 ms.
+5. matrixAutoUpdate = false on static objects under the tile and landmark roots (no compose per frame): -0.2..-0.4 ms.
+
+Round 3 changes so far (code only, not measured): `?readysweep=old` (idea 4: the stale window wrapper dropped), `?compilepar=` (default 3 compile jobs in flight, 1 = before),
+`?landmarksearly=old` (far landmarks load during the boot when the loader will hold), `debug/heapAudit.js` (what
+holds the heap, by root / path, without a snapshot).
+
+## Round 3 results (2026-11-16, browser; preflight RED at start (a transient 23 % GPU load), then quiet; 1 run each)
+
+| run | round 2 (merged) | round 3 |
+|---|---|---|
+| police time to play | 52.9 s | **49.6 s** (49.7-54.6 over 3 loads), first 15 s 1 % low 53 fps, worst 33 ms |
+| police at the spawn: CPU (cache vs `?sunshadowcache=old`, same build) | 9.8-10.2 ms | **7.7-8.8 ms** |
+| police 40 s drive: CPU / 1 % low | 11.4 ms / 20.6 (cache off, same build) | **9.3-9.8 ms / 25-26** |
+| falcon time to play | 55.6 s | **48.4 s** (`landmarksearly` off); 56.5 s with it on |
+| free roam: page -> smooth city | 56.8 s | **48.9 s**, first 15 s 60 fps, CPU 7.1 ms |
+| compile queue 1 -> 3 in flight + landmarks early (police) | 59.1 s to play | 40-42 s, but the first 15 s stuttered (ring still streaming): fixed by settling on the whole ring |
+
+The sun shadow cache (`?sunshadowcache=old` = before): a frame that lays back the cache costs 0.33 ms of shadow pass, a
+full static redraw 1.91 ms; ~11 % of frames redraw (box moved ~2 m, tile fades every 3rd frame, refresh every 30): the
+shadow pass -1.5 ms, the frame -2 ms (spawn and drive). Checks: the shifted frame equals a full redraw at the same view
+(pixel diff 0.19 % > 20, the TAA noise; with the shift's sign flipped 1.6 %: the test sees an error; images
+`docs/perfgame/sunshadow_*.jpg`); no console / validation error; standing still, two frames 0.3 s apart differ by the
+same TAA noise in the old path (no visible leaf-shadow motion to freeze). Stale-after-unload / LOD switch: covered by
+the redraw triggers (tile fade, dispose, ~2 m of motion, 30 frames), not caught on screen.
+
+Switches added in round 3: `sunshadowcache`, `sunshadowrefresh`, `compilepar` (3), `landmarksearly` (OFF: measured
+worse), `settlering`, `holdparallel`, `readysweep`; tile cache read deadline 8 -> 2.5 s and connections closed on
+versionchange (the IndexedDB never answered in this session, in every worker: still to find out why; a working cache
+would cut the cover's start-tile build, 19 s for E4).
+
+Findings for next jobs:
+- **Time to play < 35 s is not reached** (48-50 s): the cover is 20-31 s (start tile built in the worker: the tile
+  cache never answers here), then ~20 s of loader for the ring's 8 full tiles (2-11 s each, 3 at once now).
+- **Material sharing**: 705 pipelines, 639 distinct programs, 878 materials in use; the landmarks clone each library
+  slot per model (`wrapAO`: their AO texture + per-model look uniforms) -> 264 hero materials (stone_blue x14,
+  glass_window x14, ...), each its own program. Sharing needs one wrapAO factory with the AO texture as a material
+  parameter for all landmarks (a refactor across ~15 model loaders).
+- **Heap 2.3-2.5 GB**: typed arrays reachable from the page = 781 MB (`debug/heapAudit.js`): three's render-object
+  cache 425 MB of geometry (incl. 274 MB in 342 geometries no longer in the scene: warm-up / precompile stand-ins and
+  bake proxies keep their render objects, and those keep the pipelines alive: dispatching 'dispose' on them would drop
+  precompiled pipelines too), street life 74 MB, instance pools 64 MB, tree kit atlases 48 MB. The other ~1.6 GB is
+  plain JS objects: needs a heap snapshot (2.5 GB: do it on a fresh machine).

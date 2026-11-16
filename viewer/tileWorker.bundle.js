@@ -15520,6 +15520,10 @@ function db() {
       };
       q.onsuccess = () => {
         const d = q.result;
+        d.onversionchange = () => {
+          d.close();
+          dbP = null;
+        };
         if ([STORE, META].every((s) => d.objectStoreNames.contains(s))) return res(d);
         const next = d.version + 1;
         d.close();
@@ -15618,6 +15622,7 @@ function say(entry, lite, msg, key = "") {
   if (DEBUG) console.log(`[tilecache] ${entry.name}${lite ? " (far)" : ""}: ${msg} ${key}`);
 }
 var dead = false;
+var READ_MS = 2500;
 var deadline = (p, ms, what) => Promise.race([p, new Promise((res) => setTimeout(() => {
   if (!dead) console.warn(`[tilecache] ${what}: no answer in ${ms} ms, cache off for this session`);
   dead = true;
@@ -15625,7 +15630,7 @@ var deadline = (p, ms, what) => Promise.race([p, new Promise((res) => setTimeout
 }, ms))]);
 async function cached(entry, lite, base, build) {
   if (dead) entry = { ...entry, cache: false };
-  const hit = await deadline(cacheGet(entry, lite, base), 8e3, `read ${entry.name}`);
+  const hit = await deadline(cacheGet(entry, lite, base), READ_MS, `read ${entry.name}`);
   if (hit) {
     hit.times = { ...hit.times || {}, cache: true };
     return hit;
