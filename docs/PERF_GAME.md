@@ -96,3 +96,47 @@ render submission (all passes) ~10-11 (scene ~8, sun shadow ~2, post ~0.5) · up
 3. Loader time: tiles take 3-15 s in the worker; throttle the frames behind the loader so the compile queue gets more
    time; the tile cache (first visit to E4 uncached = 19 s).
 4. Measure again on a GREEN machine (RAM was the limit today).
+
+## Round 2 (2026-11-16, after the citydefects merge; preflight GREEN, 1 run each unless noted)
+
+"Before" = round 1 as merged = this build with the round-2 switches off:
+`&carmerge=old&patrolmerge=old&lampcull=old&shadowfar=old&unloadgap=old&gamefast=old&boothold=old&compileboost=old&holdthrottle=old`.
+
+| run | before | after |
+|---|---|---|
+| police, standing at the spawn (after the hold, 15 s): CPU ms / draws main+shadow / 1 % low | 11.0 / 300 + 190 / 30 fps | **8.9 / 238 + 151 / 59 fps** |
+| police drive 40 s: CPU ms / draws / 1 % low / worst | 10.7 / 310 / 26.5 / 67 ms | 10.2-10.6 / 240 / 24-26 / 50-67 ms |
+| police time to play (page load -> control) | 58.8-60.7 s | 52.9 s (settle all, default); 40.8 s with `?settlejobs=loads` (first 20 s: 1 % low 12.5 fps) |
+| falcon time to play / flight CPU / draws / 1 % low | 59.0 s / 10.7 / 286 / 28.6 | 55.6 s / 10.2 / 239 / 27.4 (50 s with `?settlejobs=loads`, first 15 s 1 % low 12) |
+| free-roam boot: page -> smooth city | cover 17-18 s, then ~30 s of stutter (1 % low 8-9 fps) | 56.8 s behind the loader, then 60 fps (1 % low 55-59); 29.9 s with `?settlejobs=loads` (first 20 s 1 % low 10) |
+| full tiles after a 2 km drive / JS heap | 15 / 2.17 GB | 7 / 2.14 GB |
+
+Reading it:
+- **CPU -2.1 ms where the draws were** (the station: the police car kit 16 -> 5, the patrol cars 30 -> 2 per level, the
+  lamps culled, the shadow depth trimmed: 490 -> 389 render objects). Away from the station the drive is -0.1..-0.5 ms:
+  the remaining ~10 ms is ~7-8 ms of fixed per-frame cost (post chain, updaters, the shadow pass's own overhead, three's
+  per-object refresh) + ~12-15 us per render object. The -2..-4 ms target is met at the spawn only.
+- **Heap**: full tiles now unload by distance (15 -> 7 loaded) but the heap barely moves: it is NOT dominated by tiles
+  (landmark GLB data, colliders, CPU copies of geometry kept after upload: next item).
+- **Time to play**: the spawn's tiles now build during the boot (2 extra workers); what the loader waits on longest
+  after that is the precompile queue of the ~25 far landmarks + bridges (194 jobs, ~37 s serial after the cover;
+  compileboost / holdthrottle did not shorten it: the jobs wait on GPU pipeline compiles, one job at a time). Two
+  defaults are possible: wait for them (smooth from the first frame, default) or not (`?settlejobs=loads`: ~10-20 s
+  sooner, a stuttering first 20 s). The < 35 s target is not met without the stutter.
+- Free-roam hold (`?boothold=old` to switch off): the default viewer now waits ~57 s instead of revealing at ~17 s.
+  The owner should choose: this is the "no stutter" rule applied to the boot.
+
+New switches (rows in viewer/features.js): `carmerge`, `patrolmerge`, `lampcull`, `shadowfar`, `unloadgap` + `unloadmargin`
+(60 m), `gamefast`, `boothold` (`=ring`: the near ring in full too), `compileboost`, `holdthrottle`, `settlejobs`.
+
+Checks: no console error on the police / falcon / free-roam starts; the merged kit looks the same with L on
+(`docs/perfgame/kit_old.jpg` vs `kit_merged.jpg`: beacon, visor flash, grille heads, wig-wag); lamps culled by the
+sphere of the lamps each LOD mesh draws (conservative; the shadow pass culls with the sun's frustum, same sphere).
+NOT visually checked: the distance unload while driving out and back (it hands over to the far tile with the same
+fade as before, > 560 m behind the player).
+
+Next (ranked): (1) the far landmarks' compile queue (37 s serial): compile them during the BOOT under the cover in
+parallel with the start tile, or overlap queue jobs on their pipeline wait (needs a safe split of r187's compileAsync),
+or LOD2-only first; (2) the fixed ~7-8 ms per frame: profile the post chain and the shadow pass (half-rate static
+shadow cache), three's per-object refresh; (3) heap: drop the CPU copies of static geometry after upload where no
+collider / raycast reads them; (4) the per-tile street lamps into one city pool (6 meshes per tile).

@@ -26,6 +26,7 @@ import { fitPoliceKit } from "../policeCar/fitCar.js";
 import { lampState } from "../policeCar/pattern.js";
 import { Siren } from "../policeCar/siren.js";
 import { env as lightEnv } from "../lighting.js";
+import { mergeKit, unmergeKit } from "./kitMerge.js";   // perfgame round 2: the kit's static parts in 2 draws (?carmerge=old)
 
 /** the car: type and paint (Belgian unmarked cars: dark estates, VW Passat / Skoda Octavia class) */
 export const POLICE_CAR = { type: "estate", paint: 0x1c232c, mode: "rotating" };
@@ -122,9 +123,10 @@ export class PoliceCar {
     const roofKit = new THREE.Group(); roofKit.name = "police-roof-kit"; roofKit.add(beacon.group, cable);
     const front = new THREE.Group(); front.name = "police-front-kit"; front.add(...flashers); if (visor) front.add(visor);
     car.chassis.add(roofKit, front);
-    this.parts = { car, beacon, roofKit, front, flashers };
+    const merged = mergeKit(car.chassis, [roofKit, front]);
+    this.parts = { car, beacon, roofKit, front, flashers, merged };
   }
-  detach() { if (this.parts) { this.parts.roofKit.removeFromParent(); this.parts.front.removeFromParent(); this.parts = null; } }
+  detach() { if (this.parts) { unmergeKit(this.parts.merged); this.parts.roofKit.removeFromParent(); this.parts.front.removeFromParent(); this.parts = null; } }
   async uninstall() {
     this.setLights(false); this.setSiren(false);
     this.lightOff();

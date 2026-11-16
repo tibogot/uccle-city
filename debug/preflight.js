@@ -6,7 +6,7 @@
 // Bracketing: run check() before AND after a measurement block; if the two differ beyond the green band, the block
 // in between does not count.
 
-export const REF_URL = "/viewer/index.html?ring=1&far=1&time=golden&traffic=0";
+export const REF_URL = "/viewer/index.html?ring=1&far=1&time=golden&traffic=0&boothold=old";   // (perfgame: the baseline was recorded without the boot hold)
 const BANDS = { cpu: [0.05, 0.15], gpu: [0.07, 0.2], boot: [0.1, 0.25], frame: [0.05, 0.15] };   // green / yellow limits
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
