@@ -1484,4 +1484,4 @@ if PREVIEWS:
     # grazing light on the tower's front: the sun skimming it (relief of quoins, bands, voussoirs)
     scn.world.node_tree.nodes["Background"].inputs[1].default_value = 0.15; sun.energy = 7.0
     look("grazing_tower", P(-6.6, 10.5, 52.0), P(-1.2, 2.9, 60.0), lens=28, sun_rot=(83, 0, 92))
-    look("grazing_house", P(5.0, 2.6, 50.6), P(-7.0, 1.5, 56.0), lens=24, sun_rot=(84, 0, 268))
+    look("grazing_house", P(5.2, 7.0, 51.6), P(-7.5, 1.5, 55.5), lens=30, sun_rot=(80, 0, 92))
