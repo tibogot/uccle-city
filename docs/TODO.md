@@ -47,6 +47,13 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
 8e. **Police car model looks crude from behind** (coordinator 2026-11-16, chase view now frames it large): blocky tail
    lights, flat cream band, low-poly body. Premium Blender police estate (Belgian federal/local police livery: white +
    blue/yellow Battenburg, real proportions, bevels, tail-light clusters, plate recess), LODs, same kit slots.
+8f. **Owner wishes 2026-11-16 (after the current jobs)**: (a) CHARACTER: Quaternius UAL1+UAL2 rig + the robot's
+   locomotion code from claude/character2 as default (?char=hoodie old). (b) CAR SHAPES: traffic/parked car bodies,
+   the FRONT looks weird; compare with Mr.doob slop-newyork cars, propose better cars (Blender, premium, LODs,
+   instanced, shared atlas) at the same or lower cost. (c) LYCEE FRANCAIS / CHEMIN DE CORTENBOSCH area (owner lives
+   there): detail pass with references (school, the chemin's cobbles/hedges/walls, local details). (d) GELEYTSBEEK
+   CASTLE (Kasteel / Chateau de Geleytsbeek): hero model if not done (references online, look only). (e) LA BRANCHE
+   D'OLIVIER restaurant (in streetlife E7): make it recognisable like Le Relais.
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
