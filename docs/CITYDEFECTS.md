@@ -226,6 +226,23 @@ unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
   showed papered windows).
 - Le Bistroquet, Deneubourg: no photo found online (no website, few listings): Street View on the browser turn.
 
+## BROWSER CHECK 2 (2026-11-16 night)
+- Walls (?wallfix): Carsoel 13's front now a whole wall with the kit's door and windows (E_carsoel13_wallfix_after.jpg);
+  no flicker seen strafing. Deck look (?decklook): street asphalt continues onto the deck, slabs / kerbs / concrete read
+  as the streets' (A_deck_look_after.jpg, A_deck_look_station_after.jpg). Flat roofs at 18:30 sun (?roofflat): no bands
+  in either version on the I6 roof checked (E_flatroof_before / _after.jpg): image 59's spot still to find.
+- Sound: muted at load (nothing stored), a new context stays suspended even when a module calls resume(), unmute ->
+  running, mute -> suspended. The button sat on the police / falcon speedometer bottom-right: moved to the top centre,
+  right of Play, checked over both HUDs (sound_button_falcon_hud.jpg).
+- Le Relais Saint-Job vs Street View (Oct 2020, newest there; looked at, not kept): three taupe awnings with the script
+  "RELAIS saint-job" on the slope and TRAITEUR & VINS / BRASSERIE / RESTAURANT on the valance, white render, red clay
+  tiles, small awnings over the corner's first-floor windows, barrels and A-board, rattan bistro chairs. Fixed: the white
+  render and red tiles (new per-building looks: data/overrides.json buildingLooks, facadeGeom; ?looks=old), the kit's
+  black fascia band -> white (the real frames are black: kit limit), the name on the valance (the kit's awning pitch is
+  ~19 deg: text on its slope is not seen from the street; the real ones are steeper). F_relais_first_try.jpg ->
+  F_relais_after.jpg. LEFT: a steeper awning piece with the script on its slope, the first-floor window awnings, barrels.
+- Maison Dandoy, Proxy, Bistroquet, Deneubourg, White Night: not compared yet (time): next turn.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).

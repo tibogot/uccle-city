@@ -433,12 +433,15 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const xs = b.footprint[0].map((q) => q[0]), zs = b.footprint[0].map((q) => q[1]);
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
-    const style = landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
+    // (a curated LOOK, data/overrides.json buildingLooks by UrbIS solid id: the wall style / roof colour a local knows,
+    // checked on Street View: Le Relais Saint-Job's white render and red tiles; ?looks=old: none)
+    const look = opts.looks?.[b.id.split("/").pop()];
+    const style = look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
     const btype = cls && !landmark ? cls.type[bi] : 0, bgar = cls && !landmark ? cls.garage[bi] : 0;
     if (cls) { stats.types = stats.types || [0, 0, 0, 0, 0, 0]; stats.types[btype]++; }
     const roofStyle = hash01(key + "r");
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash
-    const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const rc = look?.roofColor || b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;                              // (the roof kit) a gable / party-wall stack was placed for this building
     let all = [];
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }

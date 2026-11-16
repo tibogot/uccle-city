@@ -100,16 +100,15 @@
    }
   },
   "extra:relais-traiteur": {
-   "_name": "Le Relais Saint-Job, traiteur & vins (Place de Saint-Job 3): checked on a photo of the front (privateaser.com/lieu/57030, looked at, not kept): white painted walls, black window / door frames, one continuous taupe retractable awning along the whole front with RELAIS saint-job in a white script on its slope and the section's name in capitals on the valance; small awnings over the two first-floor windows (traiteur / vins); bistro tables with rattan chairs under the awning at the north end; green bollards; chalk A-boards",
+   "_name": "Le Relais Saint-Job, traiteur & vins (Place de Saint-Job 3): checked on a photo of the front (privateaser.com/lieu/57030, looked at, not kept): white painted walls, black window / door frames, one continuous taupe retractable awning along the whole front with RELAIS saint-job in a white script on its slope and the section's name in capitals on the valance; small awnings over the two first-floor windows (traiteur / vins); bistro tables with rattan chairs under the awning at the north end; green bollards; chalk A-boards BROWSER CHECK 2026-11-16: the kit's front has a fascia band in the frame colour; white (paint 3) so it reads as the white wall above the awning (the real frames are black: a kit limit); the script name on the awning slope cannot be seen from the street at the kit's awning pitch: the name is on the valance.",
    "none": true,
    "front": {
-    "family": "classic",
+    "family": "modern",
     "paint": 3,
     "awning": true,
     "canvas": 7,
     "stripes": false,
     "fascia": false,
-    "awningText": "RELAIS saint-job",
     "valanceFont": "shopSerif",
     "valance": "TRAITEUR & VINS"
    }
@@ -118,15 +117,14 @@
    "_name": "Le Relais Saint-Job, brasserie (n. 1)",
    "none": true,
    "front": {
-    "family": "classic",
+    "family": "modern",
     "paint": 3,
     "awning": true,
     "canvas": 7,
     "stripes": false,
     "fascia": false,
-    "awningText": "RELAIS saint-job",
     "valanceFont": "shopSerif",
-    "valance": "BRASSERIE"
+    "valance": "RELAIS SAINT-JOB"
    }
   },
   "extra:relais-restaurant": {
@@ -134,15 +132,14 @@
    "depth": 2.0,
    "parasols": false,
    "front": {
-    "family": "classic",
+    "family": "modern",
     "paint": 3,
     "awning": true,
     "canvas": 7,
     "stripes": false,
     "fascia": false,
-    "awningText": "RELAIS saint-job",
     "valanceFont": "shopSerif",
-    "valance": "RESTAURANT"
+    "valance": "RELAIS SAINT-JOB"
    }
   },
   "osm:n9204588938": {

@@ -1368,14 +1368,15 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const xs = b.footprint[0].map((q) => q[0]), zs = b.footprint[0].map((q) => q[1]);
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
-    const style = landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
+    const look = opts.looks?.[b.id.split("/").pop()];
+    const style = look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
     const btype = cls && !landmark ? cls.type[bi] : 0, bgar = cls && !landmark ? cls.garage[bi] : 0;
     if (cls) {
       stats.types = stats.types || [0, 0, 0, 0, 0, 0];
       stats.types[btype]++;
     }
     const roofStyle = hash01(key + "r");
-    const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const rc = look?.roofColor || b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;
     let all = [];
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
@@ -15345,7 +15346,7 @@ async function buildTileData(entry, base) {
     const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T2 * 3), fitGround, footprintIndex(bDoc));
   }) : null;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : ov.buildingLooks }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));

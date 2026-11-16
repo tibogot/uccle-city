@@ -816,5 +816,21 @@
       },
       "_ring": "Both ends overlap the UrbIS street polygons by ~1.5 m (the deck top tucks 10 cm under the drawn street there) of Avenue Carsoel exactly (west: tram road be/id/streetsurface/17109 and sidewalks 134927 / 132971, which already have the new layout; east: 28868, 132776, 132777), so the measured street continues the deck without overlap; the north edge at the east end (railed) is the sidewalk's back edge over the opened cutting (the 1928 bridge's site)."
     }
+  },
+  "buildingLooks": {
+    "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none.",
+    "544703": {
+      "_name": "Le Relais Saint-Job, the low house (brasserie / restaurant, Place de Saint-Job 1): white render, red clay tiles (Street View Oct 2020)",
+      "style": 3,
+      "roofColor": [
+        0.3,
+        0.09,
+        0.05
+      ]
+    },
+    "559047": {
+      "_name": "Le Relais Saint-Job, the 2-storey corner (traiteur & vins, n. 3): white render (Street View Oct 2020)",
+      "style": 3
+    }
   }
 }
