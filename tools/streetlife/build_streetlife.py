@@ -284,8 +284,11 @@ class Tile:
                 best = (d, ln, rr)
         return best
 
-    def edges_of(self, si):
-        """street-facing, non-party footprint edges of solid si: (ax, az, bx, bz, nx, nz, length)"""
+    def edges_of(self, si, any_side=False):
+        """street-facing, non-party footprint edges of solid si: (ax, az, bx, bz, nx, nz, length); any_side: every non-party
+        edge (a shop facing a yard / forecourt, not the street: White Night behind its lot, extra_pois.json _anySide)"""
+        if any_side:
+            return self._edges_any(si)
         if si in self._edges:
             return self._edges[si]
         s = self.solids[si]
@@ -332,6 +335,28 @@ class Tile:
         self._edges[si] = out
         return out
 
+    def _edges_any(self, si):
+        s = self.solids[si]
+        ring = s["ring"][:-1] if s["ring"][0] == s["ring"][-1] else s["ring"]
+        out = []
+        for k in range(len(ring)):
+            (ax, az), (bx, bz) = ring[k], ring[(k + 1) % len(ring)]
+            L = math.hypot(bx - ax, bz - az)
+            if L < 1.2:
+                continue
+            tx, tz = (bx - ax) / L, (bz - az) / L
+            nx, nz = tz, -tx
+            mx, mz = (ax + bx) / 2, (az + bz) / 2
+            if s["poly"].contains(Point(mx + nx * 0.3, mz + nz * 0.3)):
+                nx, nz = -nx, -nz
+            party = sum(1 for f in (0.2, 0.5, 0.8) if any(j != si and self.solids[j]["poly"].contains(Point(ax + (bx - ax) * f + nx * 0.4, az + (bz - az) * f + nz * 0.4))
+                                                         for j in self.tree.query(Point(ax + (bx - ax) * f + nx * 0.4, az + (bz - az) * f + nz * 0.4))))
+            if party >= 2:
+                continue
+            nr = self.nearest_road(mx + nx * 0.5, mz + nz * 0.5, 60.0, named=True)
+            out.append((ax, az, bx, bz, nx, nz, L, nr[0] if nr else 60.0, nr[2] if nr else {"name": None, "half": 3.0}))
+        return out
+
 
 # ------------------------------------------------------------------------------------------------ attach to a façade
 
@@ -340,7 +365,7 @@ class Facades:
         self.T = T
         self.used = {}           # (si, edge index) -> [(u0, u1)]
 
-    def candidates(self, x, z, bu=None, reach=20.0, street=None):
+    def candidates(self, x, z, bu=None, reach=20.0, street=None, any_side=False):
         T = self.T
         p = Point(x, z)
         out = []
@@ -349,7 +374,7 @@ class Facades:
             if s["landmark"] or (bu and s["bu"] != bu):
                 continue
             inside = s["poly"].contains(p)
-            for ei, e in enumerate(T.edges_of(si)):
+            for ei, e in enumerate(T.edges_of(si, any_side)):
                 ax, az, bx, bz, nx, nz, L, rd, rr = e
                 d = LineString([(ax, az), (bx, bz)]).distance(p)
                 if d > reach:
@@ -359,8 +384,8 @@ class Facades:
         out.sort(key=lambda c: (c[0], c[1], c[2]))
         return out
 
-    def attach(self, x, z, want_w, bu=None, reach=20.0, occupy=True, street=None):
-        for score, si, ei, e in self.candidates(x, z, bu, reach, street):
+    def attach(self, x, z, want_w, bu=None, reach=20.0, occupy=True, street=None, any_side=False):
+        for score, si, ei, e in self.candidates(x, z, bu, reach, street, any_side):
             ax, az, bx, bz, nx, nz, L, rd, rr = e
             tx, tz = (bx - ax) / L, (bz - az) / L
             u = (x - ax) * tx + (z - az) * tz
@@ -370,7 +395,7 @@ class Facades:
             w = max(w, 0.3)
             u = min(max(u, w / 2 + 0.3), L - w / 2 - 0.3) if L > w + 0.6 else L / 2
             if occupy:
-                taken = self.used.setdefault((si, ei), [])
+                taken = self.used.setdefault((si, ei, any_side), [])
                 u, w = self._fit(u, w, L, taken)
                 if w < SHOP_MIN_W:
                     continue
@@ -504,6 +529,14 @@ def load_raw(raw: Path):
     ex = Path(__file__).resolve().parent / "extra_pois.json"
     if ex.exists() and src["osm"] is not None:
         for e in json.loads(ex.read_text(encoding="utf-8"))["elements"]:
+            if e.get("_moves"):                            # an OSM point on the wrong house: moved to the UrbIS address point
+                mv = int(str(e["_moves"]).lstrip("n"))
+                for o in src["osm"]["elements"]:
+                    if o.get("type") == "node" and o.get("id") == mv:
+                        o["lon"], o["lat"] = e["lon"], e["lat"]
+                continue
+            if e.get("_anySide"):
+                src.setdefault("any_side", set()).add("x" + str(e["id"]))
             src["osm"].setdefault("elements", []).append({k: v for k, v in e.items() if not k.startswith("_")} | {"type": "xtra"})
             if e.get("_replaces"):                         # an OSM point that no longer exists (the shop changed): dropped
                 drop = int(str(e["_replaces"]).lstrip("n"))
@@ -676,6 +709,12 @@ def build_tile(name: str, src) -> dict:
             out["pois"].append(rec)
             continue
         want = SHOP_MAX_W if kind in ("supermarket", "restaurant", "bank") else 5.5
+        if pid in src.get("any_side", ()):                 # (shops2) a front on a yard / forecourt: the nearest wall, street or not
+            fa = F.attach(x, z, want, reach=6.0, any_side=True)
+            if fa:
+                rec["face"] = fa
+                out["pois"].append(rec)
+                continue
         fa = F.attach(x, z, want, street=t.get("addr:street"))      # the POI's own street (OSM addr:street) wins
         # (citydefects) a tight row of shops (Place de Saint-Job): a narrower front before giving up, within 10 m
         fa = fa or F.attach(x, z, 3.2, reach=10.0, street=t.get("addr:street"))
@@ -846,6 +885,9 @@ def main():
     ap.add_argument("tiles", nargs="*")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--raw", type=Path, default=None)
+    # (shops2) rewrite only the shops (pois + their counts) of the existing tile files: the rest (numbers, plates, stops) moves
+    # by centimetres on a rebuild since the tiles' terrain / buildings changed; a full rebuild is a city-wide job of its own
+    ap.add_argument("--pois-only", action="store_true")
     a = ap.parse_args()
     raw = (a.raw or default_raw()) / "streetlife"
     src = load_raw(raw)
@@ -859,6 +901,15 @@ def main():
             continue
         d = build_tile(t, src)
         ms = d.pop("buildMs")
+        if a.pois_only and (OUT / f"{t}.json").exists():
+            old = json.loads((OUT / f"{t}.json").read_text(encoding="utf-8"))
+            kinds = {p["kind"] for p in old["pois"]} | {p["kind"] for p in d["pois"]}
+            old["pois"] = d["pois"]
+            old["counts"] = {**{k: v for k, v in old["counts"].items() if k not in kinds and k != "named"}, **{k: v for k, v in d["counts"].items() if k in kinds}}
+            old["counts"]["named"] = sum(1 for p in old["pois"] if p.get("name")) + sum(1 for p in old["fuel"] if p.get("name"))
+            old["counts"] = dict(sorted(old["counts"].items()))
+            old["skipped"] = {k: v for k, v in old["skipped"].items() if k.startswith(("number", "villo", "postbox"))} | {k: v for k, v in d["skipped"].items() if not k.startswith(("number", "villo", "postbox"))}
+            d = old
         d["sources"] = {"osm": "OpenStreetMap (c) OpenStreetMap contributors, ODbL; extract " + str((meta["osm"] or {}).get("osm_base")),
                         "stib": "Brussels Mobility WFS bm_public_transport:stib_stops", "villo": "Brussels Mobility WFS bm_bike:villo",
                         "post": "Brussels Mobility WFS bm_other:pointpostal (bpost letter boxes)", "addresses": "UrbIS AddressNumbers (CC0)",
@@ -867,7 +918,8 @@ def main():
         for k, v in d["counts"].items():
             total[k] = total.get(k, 0) + v
         print(f"{t}: {ms} ms {d['counts']} skipped {d['skipped']}", file=sys.stderr)
-    (OUT / "summary.json").write_text(json.dumps({"tiles": len(tiles), "counts": dict(sorted(total.items()))}, indent=1), encoding="utf-8")
+    if not a.pois_only:
+        (OUT / "summary.json").write_text(json.dumps({"tiles": len(tiles), "counts": dict(sorted(total.items()))}, indent=1), encoding="utf-8")
     print("total", dict(sorted(total.items())), file=sys.stderr)
 
 

@@ -986,8 +986,8 @@ function litWindows(f, out) {
     const r = roomOf(o.bay, o.floor, seed);
     if (!r.lit) continue;
     const c = r.s2 >= 0.3 ? mix3(WARM0, WARM1, r.s1, col) : mix3(COOL0, COOL1, r.s2, col);
-    const u = (o.u0 + o.u1) / 2 + f.u0, h = (o.h0 + o.h1) / 2;
-    out.push(f.tx * u + f.nx * f.dd, f.base + h, f.tz * u + f.nz * f.dd, f.nx, f.nz, (o.u1 - o.u0) / 2 - o.frame, (o.h1 - o.h0) / 2 - o.frame, c[0], c[1], c[2]);
+    const us = f.us || 1, u = (o.u0 + o.u1) / 2 / us + f.u0, h = (o.h0 + o.h1) / 2;
+    out.push(f.tx * u + f.nx * f.dd, f.base + h, f.tz * u + f.nz * f.dd, f.nx, f.nz, ((o.u1 - o.u0) / 2 - o.frame) / us, (o.h1 - o.h0) / 2 - o.frame, c[0], c[1], c[2]);
     n++;
   }
   return n;
@@ -1752,7 +1752,8 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           }
         }
       }
-      const k = kit ? kit.face({
+      const bsl = look?.bayScale, bs = bsl && f.nx * bsl[1] + f.nz * bsl[2] > 0.85 ? bsl[0] : 1;
+      const k = kit && bs === 1 ? kit.face({
         key,
         building: b,
         doorFace: f === doorFace,
@@ -1781,7 +1782,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const T4 = k?.on ? WK : W;
       let streetA = street;
       if (opts.ground && street && !k?.on && !landmark) {
-        const { bw, doorBay } = faceBays({ width, rnd: Math.fround(rnd) }), du = 0.55 + bw * (doorBay + 0.5);
+        const { bw, doorBay } = faceBays({ width: width * bs, rnd: Math.fround(rnd) }), du = (0.55 + bw * (doorBay + 0.5)) / bs;
         let dd = 0, nq = 0;
         for (const { p } of f.tris) for (const q of p) {
           dd += q[0] * f.nx + q[2] * f.nz;
@@ -1799,15 +1800,15 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         stats.cellarFaces = (stats.cellarFaces || 0) + 1;
         if (cel > 2.4) stats.lowerGround = (stats.lowerGround || 0) + 1;
       }
-      if (cls && btype && partyH < 999) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
+      if (cls && btype && partyH < 999 && bs === 1) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
         T4.aCel.push(cel);
         T4.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth3(src, q) : nn;
         T4.normal.push(sn[0], sn[1], sn[2]);
-        T4.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
+        T4.aWall.push((q[0] * tx + q[2] * tz - u0) * bs, width * bs, q[1] - base, faceEaves);
         T4.aBld.push(style, partyH, cls ? streetA + 2 * btype + 16 * bgar : streetA, rnd);
-        T4.aFN.push(f.nx, f.nz, shopU, shopW);
+        T4.aFN.push(f.nx, f.nz, shopU * bs, bs === 1 ? shopW : shopW % 10 * bs + 10 * Math.floor(shopW / 10));
         if (T4 === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
       if (!landmark && partyH < 999) {
@@ -1818,7 +1819,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         }
         const fr = Math.fround;
         litWindows({
-          width: fr(width),
+          width: fr(width * bs),
           eaves: fr(faceEaves),
           partyH: fr(partyH),
           street: T4 === WK ? streetA && !k.doorless ? 1 : 0 : streetA,
@@ -1826,8 +1827,8 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           landmark: false,
           type: btype,
           garage: bgar,
-          shop: fr(shopW),
-          shopU: fr(shopU),
+          shop: fr(bs === 1 ? shopW : shopW % 10 * bs + 10 * Math.floor(shopW / 10)),
+          shopU: fr(shopU * bs),
           fit: opts.storeys !== false,
           u0,
           tx,
@@ -1835,7 +1836,8 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           nx: f.nx,
           nz: f.nz,
           dd: dd / nq,
-          base
+          base,
+          us: bs
         }, NW);
       }
     }
@@ -16118,4 +16120,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "d95ace070264538d";
+self.__TILE_CODE_HASH = "d0f07ae6e1636014";

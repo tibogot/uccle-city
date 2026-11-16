@@ -29,7 +29,14 @@ export const STYLES = {
   shopSerif: { font: "700 {px}px Georgia, 'Times New Roman', serif", px: 40, track: 0.01 },
   shopItalic: { font: "italic 700 {px}px Georgia, 'Times New Roman', serif", px: 40, track: 0 },
   shopHumanist: { font: "700 {px}px 'Trebuchet MS', Verdana, sans-serif", px: 40, track: 0.02 },
-  brand: { font: "800 {px}px Arial, Helvetica, sans-serif", px: 42, track: 0.03 },
+  // (shops2, curated fronts) a brush script (Alain Dantine's, Le P'tit Rêve's), spaced serif capitals (Maison Dandoy's
+  // valance), flared capitals (Bois Savanes'), a heavy italic serif (Lefevre's Funérailles board); system fonts with
+  // fallbacks (Windows / macOS both have one of each)
+  shopScript: { font: "italic 400 {px}px 'Segoe Script', 'Brush Script MT', 'Snell Roundhand', cursive", px: 38, track: 0 },
+  shopCaps: { font: "400 {px}px Georgia, 'Times New Roman', serif", px: 40, track: 0.22 },
+  shopFlare: { font: "600 {px}px Optima, Candara, 'Gill Sans', 'Segoe UI', sans-serif", px: 40, track: 0.1 },
+  shopHeavyItalic: { font: "italic 900 {px}px Georgia, 'Times New Roman', serif", px: 40, track: 0 },
+  brand: { font:"800 {px}px Arial, Helvetica, sans-serif", px: 42, track: 0.03 },
   board: { font: "700 {px}px Arial, Helvetica, sans-serif", px: 36, track: 0.02 },
 };
 export const SHOP_STYLES = ["shopSans", "shopSerif", "shopHumanist", "shopItalic"];
