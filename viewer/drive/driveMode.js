@@ -258,7 +258,21 @@ export class Driver {
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
     this.camNear = [];
-    this.insideWall = (x, z) => pointInBuilding(this.camNear, x, z);
+    // (police feel: the camera keeps out of trunks / lamp posts too: 0.35 m round them)
+    this.insideWall = (x, z) => {
+      if (pointInBuilding(this.camNear, x, z)) return true;
+      if (CARFEEL_OLD) return false;
+      const L = this.camNear;
+      for (let k = 0; k < L.length; k += 2) {
+        const col = L[k], id = L[k + 1];
+        if (id < col.P) continue;
+        const q = (id - col.P) * 3, kd = col.ckind[id - col.P];
+        if (kd !== KIND.tree && kd !== KIND.lamp) continue;
+        const r = col.circ[q + 2] + 0.35, dx = x - col.circ[q], dz = z - col.circ[q + 1];
+        if (dx * dx + dz * dz < r * r) return true;
+      }
+      return false;
+    };
     this.hud = document.createElement("div");
     Object.assign(this.hud.style, { position: "fixed", left: "50%", bottom: "14px", transform: "translateX(-50%)", padding: "6px 14px",
       borderRadius: "8px", background: "rgba(20,24,30,.7)", color: "#fff", font: "600 22px/1 ui-monospace, monospace", display: "none", zIndex: 2 });
