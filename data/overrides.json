@@ -862,11 +862,30 @@
       "type": 2,
       "garage": false
     },
+    "infill:stjob22": {
+      "_name": "Place de Saint-Job 22 (Maison Dandoy; infillBuildings.stjob22): white-painted brick (Street View Jul 2024)",
+      "style": 3
+    },
     "531854": {
       "_name": "Police / school (the west wing: adjoins 528531, likely the school too): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
       "style": 2,
       "type": 2,
       "garage": false
+    }
+  },
+  "infillBuildings": {
+    "_doc": "Houses UrbIS 3D has no geometry for (null shapes in the BuildingSolids SHP: 631 of 41,231 solids on the Uccle sheets), rebuilt as a gable solid from measured data by tools/infill/infill_buildings.py (appended to data/tiles/<T>/buildings.json + .bin; CHM 'trees' under the roof dropped). Footprint: the party walls on the neighbours' footprint edges, the front on the street line; heights from the UrbIS DSM 2021 (profile across the house), base from the DTM.",
+    "stjob22": {
+      "_name": "Place de Saint-Job 22 (Maison Dandoy): UrbIS BU 1584080, solid 553980 is a null shape; the white-painted brick house between n. 23 (543225) and n. 21 (510406)",
+      "_source": "UrbIS DSM 2021 profile (front eaves ~81.1, ridge 84.1-84.2 at 5-5.5 m deep, back eaves ~80, garden from 10.5 m), DTM 70.9; roof colour from the 2024 orthophoto (warm brown); Street View Jul 2024 (look only): white-painted brick, a wrought-iron first-floor balcony, black frames",
+      "tile": "I5",
+      "bu": 1584080,
+      "footprint": [[1198.21, 480.74], [1204.4, 478.7], [1201.3, 469.3], [1195.29, 471.18]],
+      "ridgeAlong": [0, 1],
+      "base": 70.85,
+      "eaves": 81.1,
+      "ridge": 84.1,
+      "roofColor": [0.2, 0.14, 0.11]
     }
   },
   "plantsClear": {
