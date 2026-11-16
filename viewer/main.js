@@ -921,6 +921,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
+  // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
+  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring);
+  const inClear = (x, z) => clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });
+  if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
+  if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   const plantCounts = cityPlants.addTile(entry.name, plantDoc, own.features, treeGround || ((x, z) => hm.surface(x, z)), B.kit);   // (on the DRAWN ground: the measured squares / medians' lift, as the trees; window boxes on the façade kit's sills)
   ivyP.then((doc) => cityIvy.addTile(entry.name, doc, own.features)).then((c) => { if (c) say(`ivy: ${c.walls} walls, ${c.leaves} leaf sprays, ${c.stems} stem pieces (worker ${c.workerMs} ms)`); });
   if (plantCounts) say(`plants: ${Object.entries(plantCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/plants, viewer/plants)`);

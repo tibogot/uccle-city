@@ -868,5 +868,90 @@
       "type": 2,
       "garage": false
     }
+  },
+  "plantsClear": {
+    "_doc": "Polygons (city x, z) where no generated plant / garden piece stands (viewer/plants/cityPlants.js, viewer/gardens/cityGardens.js): yards, gate mouths. ?plantsclear=old: none.",
+    "police_yard": {
+      "_why": "the police station's yard and its north gate's mouth (a shrub stood in the open gate, browser check 2026-11-16); the hedge along the wall is the hero's own",
+      "ring": [
+        [
+          -524.22,
+          -355.68
+        ],
+        [
+          -502.22,
+          -370.28
+        ],
+        [
+          -482.76,
+          -340.95
+        ],
+        [
+          -509.0,
+          -323.53
+        ],
+        [
+          -511.21,
+          -326.86
+        ],
+        [
+          -502.78,
+          -332.46
+        ],
+        [
+          -509.46,
+          -342.52
+        ],
+        [
+          -501.74,
+          -347.65
+        ],
+        [
+          -509.77,
+          -359.75
+        ],
+        [
+          -521.67,
+          -351.84
+        ]
+      ]
+    },
+    "police_courtyard": {
+      "_why": "the former school courtyard, paved as the station's parking (viewer/policeYard.js COURTYARD)",
+      "ring": [
+        [
+          -511.21,
+          -326.86
+        ],
+        [
+          -540.12,
+          -308.03
+        ],
+        [
+          -549.58,
+          -322.28
+        ],
+        [
+          -561.83,
+          -314.15
+        ],
+        [
+          -548.11,
+          -293.49
+        ],
+        [
+          -535.36,
+          -292.35
+        ],
+        [
+          -502.7,
+          -314.03
+        ],
+        [
+          -509.0,
+          -323.53
+        ]
+      ]
+    }
   }
 }
