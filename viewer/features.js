@@ -297,7 +297,7 @@ export const FEATURES = [
   num("workers", "streaming", "tile workers", "Worker pool size (capped at cores - 2).", 1, 1, 6, 1, { sub: "Boot & loading" }),
   on("liteworker", "streaming", "far tiles in worker", "Far tiles built in the worker.", { sub: "Boot & loading" }),
   num("tilewatchdog", "streaming", "tile watchdog (s)", "A tile request with no answer from the worker after this long is reported (console.error + the loader's red line); 0 = off (polish 1 item 0).", 45, 0, 300, 5, { sub: "Boot & loading" }),
-  on("tilecache", "streaming", "tile cache", "Built tiles kept in IndexedDB: a return visit reads the start tile back instead of building it (~10 s of worker; on since boot2, docs/BOOT.md).", { sub: "Boot & loading" }),
+  sel("tilecache", "streaming", "tile cache", "Built tiles kept by the browser: a return visit reads them back instead of building them (3-19 s of worker each). Default (perfgame round 4): the Cache API (one packed blob per tile, viewer/tilePack.js; no transactions to queue behind); idb = IndexedDB as before (it hung in every worker on 2026-11-16); 0 = off.", [[null, "Cache API"], ["idb", "IndexedDB (old)"], ["0", "off"]], { sub: "Boot & loading" }),
   on("warmup", "streaming", "boot warm-up", "Every pipeline compiled under the cover (off: old boot, A/B).", { sub: "Boot & loading" }),
   on("precompile", "streaming", "precompile", "Streamed objects' shaders compiled before they show (A/B).", { sub: "Boot & loading" }),
   on("early", "streaming", "early pipeline", "The render pipeline set up before the first tile.", { sub: "Boot & loading" }),
