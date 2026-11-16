@@ -28,6 +28,7 @@ const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t
 
 export const ASSIST = {
   cruise: 14,              // m/s: the speed the auto-flapping keeps (spread wings' best glide is ~13)
+  chase: 21,               // m/s: the same with a prey in the strike window ahead (hunt.js / falconGame.js window)
   vMin: 9.5,               // m/s: under this the nose goes down and the wings beat
   turnRate: 1.0,           // rad/s: A / D full
   aimGain: 2.2,            // 1/s: heading error -> turn rate (mouse aim)
@@ -55,6 +56,7 @@ export class FlightAssist {
     this.pull = false;      // a stoop's pull-out in progress
     this.guard = false;     // the ground guard pulled a dive out (latched while Shift is held)
     this.override = null;   // { psi, gamma } this frame: another assist steers (the hunt's aim assist)
+    this.chase = false;     // a prey ahead: the pursuit speed (falconGame.js)
     this.cost = 0;
   }
 
@@ -190,7 +192,10 @@ export class FlightAssist {
     else if (C.fold < 0.75) {
       const tired = clamp(f.stamina / f.P.stamina.low, 0, 1);
       const avail = f.P.thrust * clamp(1 - V / f.P.vFlap, 0, 1) * (0.25 + 0.75 * tired);
-      const need = Math.sin(gd) + 1 / 12 + 0.12 * (P.cruise * (1 - 0.4 * I.brake) - V) / P.cruise * 4;
+      // (a prey ahead in the strike window: the pursuit speed, harder beats; browser check: at the 14 m/s cruise a
+      // pigeon flying away was never closed on)
+      const vc = (this.chase ? P.chase : P.cruise) * (1 - 0.4 * I.brake);
+      const need = Math.sin(gd) + 1 / 12 + 0.12 * (vc - V) / P.cruise * 4;
       C.flap = gd < -0.1 && V > P.vMin ? 0 : clamp(need / Math.max(avail, 0.04), 0, 1);
       if (V < P.vMin) C.flap = 1;
       // tired: lighter beats (they still let the stamina come back; the bird sinks a little instead)

@@ -196,6 +196,7 @@ export class FalconGame {
         const ov = this.t - this.steerT < 0.1 ? this._ov : null;
         if (ov) { ov.psi = f.heading; ov.gamma = f.gamma; }
         this.assist.override = ov;
+        const W = this.window; this.assist.chase = !!(W && W.i >= 0 && W.d < 90 && W.angle < 0.6 && !this.bird.prey);
         this.assist.apply(dt, f, inp.intent, C, this.world);
       }
       if (this.takeoffT > 0) { this.takeoffT -= dt; C.flap = 1; C.pitch = Math.max(C.pitch, 0.3); C.fold = 0; }
