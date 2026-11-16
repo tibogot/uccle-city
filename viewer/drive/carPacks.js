@@ -132,12 +132,59 @@ const CARGLASS_OLD = typeof location !== "undefined" && /[?&]carglass=old(&|$)/.
 const UPSCALED = typeof location !== "undefined" && !/[?&](upscale|fx)=0(&|$)/.test(location.search);
 export const playerSeeThrough = (rich) => !!rich && (CARGLASS_OLD || !UPSCALED);
 
+/** THE FLEETS' CAR GLASS (carglass2, TODO 8g, docs/CARGLASS.md): under the TAAU the parked + traffic cars' see-through
+ *  glass was the same per-frame stochastic discard: a fine dot / hatch pattern up close, crawling as the car or the
+ *  camera moved (the history's residual noise is ~10 % of the glass-vs-interior contrast even when still; motion
+ *  raises the current frame's weight). Now SPLIT: the near material (LOD 0-1) drops its glass fragments in the scene
+ *  pass and the glass is drawn again as real alpha-blended glass (transparent pass, no depth write) from a compact
+ *  glass-only geometry sharing the batch's instance buffers: smooth, stable, the interior and the street seen through
+ *  it, the motion vectors those of what lies behind (depth) / the car (motion target). Glass-over-glass order inside a
+ *  car does not matter (same tint). The glass shadow stays on the opaque material (maskShadowNode).
+ *  ?carglass2=old: the stochastic glass as before. Native (?upscale=0, MSAA): alpha-to-coverage, untouched. */
+const CARGLASS2_OLD = typeof location !== "undefined" && /[?&]carglass2=old(&|$)/.test(location.search);
+export const GLASS_PASS = UPSCALED && !CARGLASS2_OLD;
+/** the few one-off standing cars (police game props, the police yard's five): solid tinted glass under the TAAU like
+ *  the player's car (no glass pass for single meshes); ?carglass2=old: stochastic as before */
+export const standingSeeThrough = (rich) => !!rich && !GLASS_PASS;
+const GLASS = 4;
+/** the glass-only part of a car geometry: every triangle with a glass vertex (the material's per-fragment kind test
+ *  splits the mixed ones exactly like the opaque material's), its vertices compacted; null when the car has none.
+ *  Instanced attributes are not copied (the caller shares its batch's). */
+export function glassGeometry(geo) {
+  const K = geo.attributes._kind?.array, I = geo.index?.array;
+  if (!K || !I) return null;
+  const isG = (v) => Math.round(K[v]) === GLASS;
+  const map = new Int32Array(geo.attributes.position.count).fill(-1), tri = [];
+  let nv = 0;
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t], b = I[t + 1], c = I[t + 2];
+    if (!(isG(a) || isG(b) || isG(c))) continue;
+    for (const v of [a, b, c]) { if (map[v] < 0) map[v] = nv++; tri.push(map[v]); }
+  }
+  if (!tri.length) return null;
+  const out = new THREE.BufferGeometry();
+  for (const [n, at] of Object.entries(geo.attributes)) {
+    if (at.isInstancedBufferAttribute) continue;
+    const w = at.itemSize, src = at.array, arr = new (src.constructor)(nv * w);
+    for (let v = 0; v < map.length; v++) { const j = map[v]; if (j >= 0) for (let c = 0; c < w; c++) arr[j * w + c] = src[v * w + c]; }
+    out.setAttribute(n, new THREE.BufferAttribute(arr, w, at.normalized));
+  }
+  out.setIndex(new THREE.BufferAttribute(nv > 65535 ? Uint32Array.from(tri) : Uint16Array.from(tri), 1));
+  if (geo.boundingSphere) out.boundingSphere = geo.boundingSphere.clone(); else out.computeBoundingSphere();
+  out.userData.shared = true;
+  return out;
+}
+
 /**
  * The pack material. paint: a THREE.Color (one car: a uniform) or "instance" (parked cars: geometry attribute "paint",
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
  */
 export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null, rich = false, crossFade = false,
-  clearcoat = rich, seeThrough = rich, motion = null } = {}) {
+  clearcoat = rich, seeThrough = rich, motion = null, glass = null } = {}) {
+  // glass (GLASS_PASS only): "split" = the opaque material of a fleet that also draws a "pass" glass mesh: its glass
+  // fragments are dropped; "pass" = the blended glass material (glass fragments only)
+  const split = GLASS_PASS && glass === "split" && seeThrough, pass = GLASS_PASS && glass === "pass";
+  if (pass) { clearcoat = false; seeThrough = false; }
   // rich (our faceted family): vertex-colour lamps; clearcoat: a physical material for a light clear coat on the paint
   // mask only; seeThrough: alpha-to-coverage glass + a light glass shadow. The city's far LODs switch both off (cost).
   const m = clearcoat ? new THREE.MeshPhysicalNodeMaterial({ roughness: 0.6, metalness: 0 }) : new THREE.MeshStandardNodeMaterial({ roughness: 0.6, metalness: 0 });
@@ -156,7 +203,16 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     m.clearcoatRoughnessNode = float(0.05);
   }
   let glassShadow = null;
-  if (seeThrough) {
+  if (split) {
+    // the glass is the glass pass's; the light glass shadow stays here (one shadow-map texel in three under glass)
+    m.userData.glassSplit = true;
+    glassShadow = isGlass.not().or(screenCoordinate.x.floor().add(screenCoordinate.y.floor()).mod(3).equal(0));
+    m.maskShadowNode = glassShadow;
+  } else if (pass) {
+    m.transparent = true; m.depthWrite = false;
+    m.opacityNode = packLook.glassOpacity;
+    m.userData.glassPass = true;
+  } else if (seeThrough) {
     // tinted glass the interior shows through, still ONE opaque draw: alpha-to-coverage on the MSAA target
     // (the lab / city render with antialias: true), no sorting, no transparent pass
     m.alphaToCoverage = true;
@@ -219,6 +275,12 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     m.maskNode = select(v.greaterThan(1), h.lessThan(v.sub(1)), h.greaterThanEqual(v));
     // the shadow fades with it (in the shadow pass screenCoordinate is the shadow-map texel): no shadow pop either
     m.maskShadowNode = glassShadow ? m.maskNode.and(glassShadow) : m.maskNode;
+  }
+  // the split (after the cross-fade mask, which the shadow keeps): fragments of the other half dropped in every pass
+  // but the shadow (maskShadowNode set above / by the cross-fade)
+  if (split || pass) {
+    const keep = pass ? isGlass : isGlass.not();
+    m.maskNode = m.maskNode ? m.maskNode.and(keep) : keep;
   }
   // no mrtNode: the post chain's MRT (viewer/post.js) reads this roughness / metalness itself (SSR on paint and glass),
   // and an mrtNode breaks the shader where no MRT is set (labs, ?fx=0: "structures must have at least one member")
