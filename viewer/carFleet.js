@@ -1,4 +1,5 @@
 // THE PARKED-CAR FLEET of the city: every loaded tile's parked cars (viewer/cars.js registers them) drawn as the
+// cars2 family (tools/blender/cars2.py -> models/cars/cars2.glb, authored LODs; docs/CARS2.md) or, ?cars=old, the
 // faceted family (tools/blender/carFaceted.py -> models/cars/faceted.glb, LODs made at load by viewer/drive/carPacks.js).
 //   - one InstancedMesh per (type, LOD), shared by all tiles: ~one draw per type and LOD whatever the tile count
 //   - per-instance paint from a Brussels palette (lots of black, grey, silver, white, dark blue; some red, green)
@@ -15,7 +16,7 @@
 //     thread only wraps the arrays (one car type per frame) and precompiles the four materials with compileAsync
 //     (setRenderer) before the first car is drawn, so no pipeline is built in a frame either
 import * as THREE from "three/webgpu";
-import { PACK_SOURCES, packMaterial } from "./drive/carPacks.js";
+import { PACK_SOURCES, packMaterial, FLEET_SOURCE, CARS_OLD } from "./drive/carPacks.js";
 import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
 
 /** ?carmerge=old: one InstancedMesh per (type, LOD, plain / fade): 26 scene + 11 shadow render objects in a street,
@@ -27,8 +28,11 @@ const _carBox = new Float64Array(6);
 // panel vans, an occasional taxi
 export const TYPE_MIX = [["hatch_s", 0.20], ["hatch_c", 0.22], ["estate", 0.16], ["saloon", 0.13], ["suv", 0.13], ["van_c", 0.09], ["van_p", 0.035], ["taxi", 0.015]];
 // body sizes [w, h, l] (m), as tools/blender/carFaceted.py prints them (the colliders need them before the pack loads)
-export const SIZES = { hatch_s: [1.74, 1.50, 4.01], hatch_c: [1.80, 1.50, 4.31], estate: [1.80, 1.51, 4.63], saloon: [1.82, 1.49, 4.73],
-  suv: [1.82, 1.64, 4.41], van_c: [1.84, 1.82, 4.50], van_p: [2.02, 2.28, 5.05], taxi: [1.80, 1.61, 4.67] };
+// (cars2: as tools/blender/cars2.py prints them; ?cars=old: the faceted family's)
+export const SIZES = CARS_OLD ? { hatch_s: [1.74, 1.50, 4.01], hatch_c: [1.80, 1.50, 4.31], estate: [1.80, 1.51, 4.63], saloon: [1.82, 1.49, 4.73],
+  suv: [1.82, 1.64, 4.41], van_c: [1.84, 1.82, 4.50], van_p: [2.02, 2.28, 5.05], taxi: [1.80, 1.61, 4.67] }
+  : { hatch_s: [1.77, 1.45, 4.10], hatch_c: [1.81, 1.46, 4.33], estate: [1.84, 1.47, 4.73], saloon: [1.84, 1.44, 4.75],
+    suv: [1.84, 1.57, 4.34], van_c: [1.88, 1.84, 4.53], van_p: [1.95, 1.98, 5.03], taxi: [1.84, 1.59, 4.75], police: [1.84, 1.47, 4.73] };
 // paints (sRGB): Brussels car parks are mostly black, greys, silver and white
 export const PAINTS = [0x0d0e10, 0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x34383d, 0x4a4e53, 0x5a5e63, 0x8f959c, 0x9ea4ab, 0x9ea4ab, 0xb8bcc0,
   0xe8e8e4, 0xe8e8e4, 0xdcdcd6, 0x1d3f6e, 0x1d2c4a, 0x2e5a8a, 0x8a1414, 0x5a1010, 0x24483a, 0x6b5a48, 0x3a3226];
@@ -109,12 +113,12 @@ class CarFleet {
     const frame = () => new Promise((r) => requestAnimationFrame(r));
     try {
       const t = performance.now();
-      const S = PACK_SOURCES.faceted;
+      const S = PACK_SOURCES[FLEET_SOURCE];
       const worker = new Worker(new URL("./carLodWorker.js", import.meta.url), { type: "module" });
       const data = await new Promise((resolve, reject) => {
         worker.onmessage = (e) => (e.data.error ? reject(new Error(e.data.error)) : resolve(e.data));
         worker.onerror = (e) => reject(new Error(e.message || "car LOD worker failed"));
-        worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, smooth: S.smooth, lods: S.lods } });
+        worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, smooth: S.smooth, authored: S.authored, lods: S.lods } });
       });
       worker.terminate();
       this.lodDist = S.lods.map((l) => l.until);
@@ -125,6 +129,7 @@ class CarFleet {
       const types = {};
       let slice = 0;
       for (const c of data.cars) {            // a few hundred microseconds per type: one type per frame anyway
+        if (!TYPE_MIX.some(([t]) => t === c.id)) continue;   // (cars2: the police estate is the yard / game's, not the street mix)
         await frame();
         const s0 = performance.now();
         const lods = c.lods.map((m, k) => {
@@ -161,8 +166,8 @@ class CarFleet {
       this.pendingTypes = Object.keys(types);
       for (const T of Object.values(types)) T.t0 = Infinity;
       this.ready = true; this.dirty = true;
-      console.log(`[cars] faceted fleet ready in ${(now - t).toFixed(0)} ms (LODs in a worker: ${data.ms.toFixed(0)} ms; main thread: longest slice ${slice.toFixed(1)} ms; materials compiled async): ${data.cars.length} types x ${this.lodDist.length} LODs`);
-    } catch (e) { this.failed = e; console.warn("[cars] faceted fleet failed:", e); }
+      console.log(`[cars] ${FLEET_SOURCE} fleet ready in ${(now - t).toFixed(0)} ms (LODs in a worker: ${data.ms.toFixed(0)} ms; main thread: longest slice ${slice.toFixed(1)} ms; materials compiled async): ${data.cars.length} types x ${this.lodDist.length} LODs`);
+    } catch (e) { this.failed = e; console.warn(`[cars] ${FLEET_SOURCE} fleet failed:`, e); }
   }
   /** perf pass 3: the batches of one (material, shadow) as the parts of ONE multi-draw set (viewer/multiDraw.js); the
    *  batch meshes stay as the per-part CPU buffers (not in the scene). The cars are culled per car on the CPU already, so

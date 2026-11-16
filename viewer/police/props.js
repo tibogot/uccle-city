@@ -9,7 +9,7 @@
 // first accident does not stall a frame.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, normalLocal, attribute, float, vec3, smoothstep, sin, color, max } from "three/tsl";
-import { loadPack, packMaterial } from "../drive/carPacks.js";
+import { loadPack, packMaterial, FLEET_SOURCE } from "../drive/carPacks.js";
 import { KIND } from "../drive/colliders.js";
 
 export const hazard = uniform(0);                   // the damaged cars' hazard lights 0 / 1 (blinks, set by the game)
@@ -45,7 +45,7 @@ export class Props {
   }
   async ready() {
     if (this.pack) return this.pack;
-    this.pack = await loadPack("faceted");
+    this.pack = await loadPack(FLEET_SOURCE);
     if (!this.cones) this.cones = this.makeCones();
     return this.pack;
   }

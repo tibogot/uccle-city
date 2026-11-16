@@ -123,8 +123,19 @@ export function lodMesh(m, { error, welded = false, prune = false, free = false,
 
 /** The LOD error / flags of part `name` at LOD level `L` of a pack source spec S (carPacks.js PACK_SOURCES). */
 export function lodOpts(S, L, name) {
-  const body = name === "Body", e = body ? L.error : L.wheel ?? L.error * 0.6;
+  const body = partBase(name) === "Body", e = body ? L.error : L.wheel ?? L.error * 0.6;
   return { error: e, welded: !!S.welded, prune: !!S.prune, free: !body && L.wheel != null, loose: !!L.loose, smooth: !!S.smooth };
+}
+
+/** AUTHORED LODs (tools/blender/cars2.py): part "Body_L1" = LOD 1 of "Body"; plain names are LOD 0. */
+export const partLevel = (name) => { const m = /_L(\d)$/.exec(name); return m ? +m[1] : 0; };
+export const partBase = (name) => name.replace(/_L\d$/, "");
+/** The parts a LOD level draws: all of them (packs simplified at load), or the authored LOD `L.src` renamed to the
+ *  LOD 0 names (so the wheel tags Wheel_F* / Wheel_R* and lodOpts work unchanged). */
+export function levelParts(S, parts, L) {
+  if (!S.authored) return parts;
+  const k = L.src || 0;
+  return parts.filter((p) => partLevel(p.name) === k).map((p) => ({ ...p, name: partBase(p.name) }));
 }
 
 // ---------------------------------------------------------------------------------------------- GLB (our contract)

@@ -42,7 +42,7 @@ export const FEATURES = [
   on("panel", "nav", "dev panel", "?panel=0: no dev panel, the old HUD only.", { ui: false }),
 
   // ---------------------------------------------------------------- modes & camera (live ones are the section's own controls)
-  txt("car", "modes", "car (drive)", "The drive mode's car: scripted or faceted:<id>.", "faceted:hatch_c", { live: "car (drive)" }),
+  txt("car", "modes", "car (drive)", "The drive mode's car: scripted, cars2:<id> (default family) or faceted:<id> (the old family).", "cars2:hatch_c", { live: "car (drive)" }),
   txt("char", "modes", "character", "Third person character: hoodie, casual, capsule.", "hoodie", { live: "character (3rd person)" }),
   opt("motosound", "modes", "two-wheeler sound", "The motorbike's / scooter's procedural engine, the Villo's freewheel / tyres / bell, wind, tyres (OFF by default; N toggles it while riding). docs/MOTO.md.", { live: "two-wheeler sound" }),
   on("twowheelers", "world", "two-wheelers", "Parked motorbikes / scooters near shops (groups in parking-lane slots) and motorbikes / scooters in the traffic (viewer/moto/cityTwoWheelers.js, docs/MOTO.md)."),
@@ -99,7 +99,8 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- traffic, trams & trains
   on("traffic", "transit", "moving traffic", "Cars driving on the lane graph."),
-  sel("cars", "transit", "parked cars", "Parked cars: the faceted fleet (default) or the old boxes.", [[null, "faceted fleet"], ["box", "boxes (old)"]]),
+  sel("cars", "transit", "car models", "Every car (parked, traffic, police yard / game, the drive car's default): the cars2 family (default: tools/blender/cars2.py, smooth lofted bodies at real proportions, authored LODs; docs/CARS2.md), ?cars=old the faceted family as before, ?cars=box the old parked boxes.", [[null, "cars2 (lofted)"], ["old", "faceted (old)"], ["box", "boxes (old)"]]),
+  opt("policecar", "transit", "police car: marked", "?policecar=marked: the player's police car is the Belgian police estate in its livery (cars2: white, blue + yellow Battenburg, POLICE) instead of the unmarked dark estate.", { on: "marked" }),
   on("trams", "transit", "trams", "STIB line 92 on its timetable.", { sub: "Trams & trains" }),
   sel("tram", "transit", "tram model", "The tram look.", [[null, "T3000 v2"], ["v1", "T3000 v1"], ["box", "boxes"]], { sub: "Trams & trains" }),
   on("trackprofile", "transit", "track profile", "The tram tracks' smooth rail-top profile (rails, wire, deck, trams).", { sub: "Trams & trains" }),

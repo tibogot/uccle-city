@@ -57,7 +57,7 @@ PAL = [
     ("glass", 4, (0.020, 0.024, 0.028)),
     ("glass_dark", 4, (0.006, 0.007, 0.008)),      # privacy glass (estates, SUVs, vans: rear)
     ("chrome", 5, (0.60, 0.61, 0.62)),
-    ("gloss", 5, (0.025, 0.025, 0.027)),           # gloss black: B pillars, grilles, lamp housings
+    ("gloss", 0, (0.012, 0.012, 0.013)),           # piano black: B pillars, grilles, lamp housings (kind 0: no mirror look)
     ("head", 2, (0.86, 0.87, 0.90)),               # head lamp lens / DRL
     ("head_in", 2, (0.26, 0.27, 0.29)),            # inside the lens: the reflector (smoked)
     ("tail", 3, (0.33, 0.012, 0.010)),
@@ -150,9 +150,8 @@ HATCH_C = S(
                rail=[0.64, 0.60], inset=0.035, bulge=0.012, roofEdge=0.05, roofCrown=0.03, roofRound=4.0, sail=0.15,
                pillars=[(-0.27, -0.18, "gloss")], glassEnd=-1.36, backGlass="glass_dark", sideRearGlass="glass"),
     back="hatch", doors=[0.995, -0.225, -1.10], handles=[-0.06, -0.92], handleY=0.905,
-    front=[("chin", "trim", (0.0, 0.29), (0, 1), 4, None),
-           ("intake", "gloss", (0.29, 0.43), (0, 0.60), 0, "intake"),
-           ("fog", "gloss", (0.29, 0.43), (0.72, 0.90), 0, "fog"),
+    front=[("chin", "trim", (0.0, 0.26), (0, 1), 4, None),
+           ("intake", "gloss", (0.31, 0.44), (0, 0.66), 0, "intake"),
            ("bumper", "paint_seam", (0.552, 0.558), (0, 1), 4, None),
            ("grille", "gloss", (0.605, 0.70), (0, 0.46), 0, "grille"),
            ("head", "gloss", (0.605, 0.70), (0.50, 1), 0.22, "head"),
@@ -211,8 +210,8 @@ HATCH_S = remap(HATCH_C, zmap=[(-2.10, -1.95), (-1.32, -1.28), (1.32, 1.28), (2.
                 label="small hatchback", paint=(0.42, 0.03, 0.03), wheelR=0.30, rimR=0.19, tyreW=0.185, wheelX=0.752)
 HATCH_S["nose"]["halfWidth"] = [0.36, 0.64, 2.4]
 HATCH_S["cabin"]["roofRear"] = -1.58; HATCH_S["cabin"]["deck"] = -1.88
-HATCH_S["front"] = [("chin", "trim", (0.0, 0.26), (0, 1), 0.3, None),
-                    ("intake", "gloss", (0.28, 0.45), (0, 0.66), 0, "intake"),
+HATCH_S["front"] = [("chin", "trim", (0.0, 0.25), (0, 1), 4, None),
+                    ("intake", "gloss", (0.30, 0.45), (0, 0.66), 0, "intake"),
                     ("bumper", "paint_seam", (0.535, 0.541), (0, 1), 0.36, None),
                     ("grille", "gloss", (0.57, 0.67), (0, 0.42), 0, "grille"),
                     ("head", "gloss", (0.585, 0.69), (0.46, 1), 0.26, "head"),
@@ -322,7 +321,7 @@ VAN_P["doors"] = [1.47, 0.32, -0.62]; VAN_P["handles"] = [0.48, -0.50]
 TAXI = json.loads(json.dumps(SALOON)); TAXI.update(label="Brussels taxi", type="taxi", paint=(0.010, 0.010, 0.011), keepPaint=True, taxi=True)
 # Belgian police estate (federal / local police): white, a blue + fluorescent yellow Battenburg band along the sides
 # and across the tailgate, POLICE lettering; keeps its livery
-POLICE = json.loads(json.dumps(ESTATE)); POLICE.update(label="police estate", type="police", paint=(0.80, 0.80, 0.79), keepPaint=True, police=True, rails=False)
+POLICE = json.loads(json.dumps(ESTATE)); POLICE.update(label="police estate", type="police", paint=(0.80, 0.80, 0.79), keepPaint=True, police=True, rails=False, plateR=0.50)
 
 TYPES = {"hatch_s": HATCH_S, "hatch_c": HATCH_C, "estate": ESTATE, "saloon": SALOON, "suv": SUV, "van_c": VAN_C,
          "van_p": VAN_P, "taxi": TAXI, "police": POLICE}
@@ -546,9 +545,9 @@ def build_car(cid, sp, detail):
     # car: the region edges of the fascia and of the tail are rows (the nose's lamp top can be the tail's bumper line);
     # ANCHOR rows hold one value all along (the top edge, the cabin floor, cladding, liveries, the character line)
     if detail == 0:
-        base = [0, 0.5, 1.0, 1.5, 1.8, 2.0, 2.4, 2.75, 3.0]; tol = 0.08
+        base = [0, 0.5, 1.0, 1.5, 1.8, 1.93, 2.0, 2.5, 3.0]; tol = 0.12
     elif detail == 1:
-        base = [0, 1.0, 1.6, 2.0, 2.5, 3.0]; tol = 0.15
+        base = [0, 1.0, 1.6, 1.9, 2.0, 2.5, 3.0]; tol = 0.15
     else:
         base = [0, 1.0, 1.6, 2.0, 3.0]; tol = 9
     regions = {"front": [], "rear": []}
@@ -565,7 +564,7 @@ def build_car(cid, sp, detail):
     if s_clad: anchors.add(s_clad)
     s_bands = []
     if police and detail < 2:
-        s_bands = [round(s_of_y(mid, y), 4) for y in ([0.56, 0.69, 0.82] if detail == 0 else [0.56, 0.82])]
+        s_bands = [round(s_of_y(mid, y), 4) for y in ([0.47, 0.61, 0.75] if detail == 0 else [0.47, 0.75])]
         anchors.update(s_bands)
     s_taxi = []
     if taxi and detail < 2:
@@ -637,7 +636,7 @@ def build_car(cid, sp, detail):
     for z in zs:
         if not st or st[-1] - z > eps: st.append(z)
     st[0], st[-1] = zF, zR
-    gap_of = lambda m: (0.75 if detail == 0 else 1.1 if detail == 1 else 2.0) if cab["cowl"] - 0.1 > m > cab["deck"] + 0.1 else (0.36 if detail == 0 else 0.6 if detail == 1 else 1.2)
+    gap_of = lambda m: (0.85 if detail == 0 else 1.1 if detail == 1 else 2.0) if cab["cowl"] - 0.1 > m > cab["deck"] + 0.1 else (0.45 if detail == 0 else 0.6 if detail == 1 else 1.2)
     Z = [st[0]]
     for a, b in zip(st, st[1:]):
         n = math.ceil((a - b) / gap_of((a + b) / 2) - 0.15)
@@ -666,6 +665,8 @@ def build_car(cid, sp, detail):
             (sa, ka), (sb, kb) = ring_idx[j], ring_idx[j + 1]
             f = mb.quad([V[i][j], V[i][j + 1], V[i + 1][j + 1], V[i + 1][j]], M["paint"])
             if f: faces.append((f, dict(part="tube", k=min(ka, kb), side=sa if sa == sb else 0, z=(Z[i + 1], Z[i]))))
+        # underbody strip (not across the wheel arches with liners: it would lie on the liner drums, a z-fight)
+        if detail < 2 and any(abs((Z[i] + Z[i + 1]) / 2 - a) < archR for a in (WZ, -WZ)): continue
         mb.quad([V[i][NR - 1], V[i][0], V[i + 1][0], V[i + 1][NR - 1]], M["under"])
     # ---- caps (the end's rows, columns at fractions of each row's half width)
     F0 = [0, 0.5, 1.0] if detail == 0 else [0, 1.0]
@@ -700,16 +701,18 @@ def build_car(cid, sp, detail):
     for a in (WZ, -WZ):
         if not nseg: break
         for side in (1, -1):
-            b = body(a)
-            x_out = b["xB"] - 0.004; x_in = sp["wheelX"] - sp["tyreW"] / 2 - 0.06
-            yc = sp["wheelR"]; r = archR - 0.004
-            pts = [(a + r * math.cos(math.pi * (-0.06 + 1.12 * q / nseg)), yc + r * math.sin(math.pi * (-0.06 + 1.12 * q / nseg))) for q in range(nseg + 1)]
+            # the liner follows the arch's own lower edge (the tube's bottom row) 3 mm inside it, from the sill to the sill
+            x_in = sp["wheelX"] - sp["tyreW"] / 2 - 0.06; yc = sp["wheelR"]
+            pts = []
+            for q in range(nseg + 1):
+                z = a + archR * math.cos(math.pi * q / nseg); x0, y0 = prof_pt(body(z), 0.0)
+                pts.append((z, y0, x0))
             for q in range(nseg):
-                (z0, y0), (z1, y1) = pts[q], pts[q + 1]
-                lm.face([(side * x_out, y0, z0), (side * x_out, y1, z1), (side * x_in, y1, z1), (side * x_in, y0, z0)], M["liner"],
+                (z0, y0, xa), (z1, y1, xb) = pts[q], pts[q + 1]
+                lm.face([(side * xa, y0, z0), (side * xb, y1, z1), (side * x_in, y1, z1), (side * x_in, y0, z0)], M["liner"],
                         out=("to", (0, yc, a)))
             if detail == 0:
-                lm.face([(side * x_in, y, z) for z, y in pts], M["liner"], out=("dir", (side, 0, 0)))
+                lm.face([(side * x_in, y, z) for z, y, _ in pts], M["liner"], out=("dir", (side, 0, 0)))
 
     # ---- region materials (by row index: the same rows at the nose and the tail)
     tags = {}
@@ -755,7 +758,7 @@ def build_car(cid, sp, detail):
                 if kin(k, r) and fin(info["f"], r): setm(f, info, r["mat"], r["tag"])
     # police: the Battenburg across the tailgate between the lamps (two rows, blocks of 0.17 of the half width)
     if police and detail < 2:
-        lo, md, hi = kidx(rowsR, s_of_y(bR, 0.585)), kidx(rowsR, s_of_y(bR, 0.69)), kidx(rowsR, s_of_y(bR, 0.79))
+        lo, md, hi = kidx(rowsR, s_of_y(bR, 0.581)), kidx(rowsR, s_of_y(bR, 0.69)), kidx(rowsR, s_of_y(bR, 0.80))
         for f, info in faces:
             if info["part"] != "rear" or f.material_index != M["paint"]: continue
             k = info["k"]
@@ -817,7 +820,8 @@ def build_car(cid, sp, detail):
     rFx, rFy = cab["rail"][0], roofY(cab["roofFront"]) - H
     rRx, rRy = cab["rail"][1], roofY(cab["roofRear"]) - H
     def crown_y(z): b = body(z); return b["yT"]
-    hC = max(0.006, crown_y(cab["cowl"]) - bcy - 0.008); hD = max(0.006, crown_y(cab["deck"]) - bdy - 0.008)
+    # the glass rises from the cowl / deck 3 mm above the crown (a cowl gap, not a sliver crossing the bonnet)
+    hC = max(0.006, crown_y(cab["cowl"]) - bcy + 0.003); hD = max(0.006, crown_y(cab["deck"]) - bdy + 0.003)
     def cabin(z):
         bx, by = belt(z)
         if z >= cab["roofFront"]:
@@ -837,7 +841,6 @@ def build_car(cid, sp, detail):
         th = (u - 1) * math.pi / 2
         return c["rx"] * max(math.cos(th), 0) ** (2 / n_roof), c["ry"] + c["h"] * math.sin(th) ** (2 / n_roof)
     U = ([0, 0.5, 0.9, 1.0, 1.12, 1.4, 1.7, 2.0] if detail == 0 else [0, 0.9, 1.12, 1.6, 2.0] if detail == 1 else [0, 1.0, 2.0])
-    if sp.get("cargo") or sp["back"] == "box": U = sorted(set(U) | ({1.96} if detail == 0 else set()))
     NU = len(U)
     u_side1, u_roof0 = (0.9, 1.12) if detail < 2 else (1.0, 1.0)
     zc = [cab["cowl"], cab["roofFront"], cab["roofRear"], cab["deck"]]
@@ -846,10 +849,12 @@ def build_car(cid, sp, detail):
     for t in ([0.75, 0.45, 0.18] if detail == 0 else [0.5] if detail == 1 else []): zc.append(lerp(cab["deck"], cab["roofRear"], t))
     z_sail = cab["cowl"] - cab["sail"]
     pills = [tuple(p) for p in cab["pillars"]]
+    zc += [z_sail, cab["glassEnd"]]
     if detail < 2:
-        zc += [z_sail, cab["glassEnd"]]
         for a, b, m in pills: zc += [a, b]
     if police and detail < 2: zc += [b for b in blocks if cab["cowl"] > b > cab["deck"]]
+    if sp.get("cargo") and detail == 0:
+        for zq in sp["doors"][1:]: zc += [zq + 0.003, zq - 0.003]
     ZC = sorted({round(z, 4) for z in zc if cab["deck"] - 1e-4 <= z <= cab["cowl"] + 1e-4}, reverse=True)
     ZC2 = []
     for z in ZC:
@@ -888,8 +893,8 @@ def build_car(cid, sp, detail):
                 mat, tag = ("glass" if zmid > (pills[0][0] if pills else -9) else side_rear), "side"
                 for a, b, m in pills:
                     if min(a, b) - 1e-4 <= zmid <= max(a, b) + 1e-4: mat, tag = m, None
-        if (sp.get("cargo") or sp["back"] == "box") and top and detail == 0 and u0 >= 1.96 - 1e-4 and z1 <= cab["roofRear"] + 1e-4:
-            mat = "paint_seam" if cargo else mat                    # rear barn doors: the centre line
+        if cargo and side and detail == 0 and any(z0 >= zq - 0.0031 and z1 <= zq + 0.0031 for zq in sp["doors"][1:]):
+            mat = "paint_seam"                                         # the cargo side's door shut lines, up to the roof
         if police and detail < 2 and side and blocks and False: pass
         f.material_index = M[mat]
         if tag: gtags.setdefault(tag, []).append(f)
@@ -928,10 +933,17 @@ def build_car(cid, sp, detail):
                 for zh in sp["handles"]:
                     b = body(zh); s = s_of_y(b, sp["handleY"]); x, y = prof_pt(b, s)
                     rbox(dt, (sd * (x - 0.004), y, zh), (0.03, 0.028, 0.17), M["paint"], taper=(0.6, 0.8))
-                    rbox(dt, (sd * (x - 0.012), y - 0.018, zh), (0.03, 0.01, 0.15), M["liner"])
             # plates
             plate(dt, (0, sp["plateF"], rake(0, sp["plateF"], zF) + 0.006), 0.05, 1, rng, 0)
             plate(dt, (0, sp["plateR"], rake(0, sp["plateR"], zR) - 0.004), -0.08, -1, rng, 0)
+            # grille bars: two thin horizontal bars across the recessed grille
+            for r in [r for r in sp["front"] if r[0] == "grille"]:
+                y0, y1 = r[2]; f1 = r[3][1]
+                for t in (0.36, 0.68):
+                    yy = lerp(y0, y1, t); b = body(zF); xr = prof_pt(b, s_of_y(b, yy))[0] * f1 - 0.03
+                    zz = rake(xr * 0.5, yy, zF) - 0.014
+                    rbox(dt, (0, yy, zz), (2 * xr, 0.008, 0.012), M["chrome"] if sp["type"] in ("sedan", "estate") else M["gloss"],
+                         rot=lambda p, yy=yy: (p[0], p[1], p[2] - 0.06 * p[0] * p[0]))
             # wipers
             for sd in (0.32, -0.12):
                 zw = cab["cowl"] - 0.03; c = cabin(zw)
@@ -942,7 +954,7 @@ def build_car(cid, sp, detail):
             bx, by = belt(zd1)
             rbox(dt, (0, by - 0.03, (zd0 + zd1) / 2), (2 * bx * 0.92, 0.16, zd0 - zd1), M["interior"])
             rows = [cab["pillars"][0][1] + 0.05 if cab["pillars"] else cab["roofFront"] - 0.65]
-            if not sp.get("cargo") and cab["glassEnd"] < rows[0] - 0.7: rows.append(rows[0] - 0.85)
+            if not sp.get("cargo") and cab["glassEnd"] < rows[0] - 0.7: rows.append(max(rows[0] - 0.85, cab["roofRear"] + 0.12))
             for ri, zs_ in enumerate(rows):
                 bx, by = belt(zs_)
                 for sd in ((1, -1) if ri == 0 else (1, 0, -1) if bx > 0.7 else (1, -1)):
@@ -1001,13 +1013,13 @@ def build_car(cid, sp, detail):
             return (sd * (x + 0.0025), y, z)
         zc_ = (sp["doors"][0] + sp["doors"][1]) / 2 + 0.05
         for sd in (1, -1):
-            for (u0, v0, u1, v1) in text_rects("POLICE", 0.085, 0.2):
-                yy = 0.90
+            for (u0, v0, u1, v1) in text_rects("POLICE", 0.075, 0.22):
+                yy = 0.795
                 # the text reads front-to-back on the left (+x) side, back-to-front on the right
                 za, zb = zc_ - sd * u0, zc_ - sd * u1
                 pts = [side_pt(za, yy + v0, sd), side_pt(zb, yy + v0, sd), side_pt(zb, yy + v1, sd), side_pt(za, yy + v1, sd)]
                 dt.face(pts, M["pol_blue"], out=("dir", (sd, 0, 0)))
-        for (u0, v0, u1, v1) in text_rects("POLICE", 0.07, 0.2):
+        for (u0, v0, u1, v1) in text_rects("POLICE", 0.07, 0.22):
             y0, y1 = 0.88 + v0, 0.88 + v1
             # on the tailgate glass base: just under the backlight, centred
             zz = rake(0, 0.88, zR) - 0.003
@@ -1028,17 +1040,17 @@ def build_wheel(sp, detail):
         lathe(w, [(RW * 0.97, h), (RW * 0.97, -h)], 6, lambda k, s: M["tyre"])
         w.quad([w.v((h, RW * 0.97 * math.cos(2 * math.pi * s / 6), RW * 0.97 * math.sin(2 * math.pi * s / 6))) for s in range(6)][::-1], M["rim_dark"])
         return w.obj("wheel2", weld=True)
-    N = 15 if detail == 0 else 8
+    N = 18 if detail == 0 else 8
     if detail == 0:
-        prof = [(RR + 0.004, h * 0.80), (RR + 0.03, h * 0.97), (lerp(RR, RW, 0.62), h * 1.02), (RW - 0.02, h * 0.90),
-                (RW, h * 0.5), (RW, -h * 0.55), (RW - 0.025, -h * 0.95), (RR, -h * 0.8)]
+        prof = [(RR + 0.004, h * 0.80), (lerp(RR, RW, 0.45), h * 1.0), (RW - 0.02, h * 0.92),
+                (RW, h * 0.5), (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
     else:
-        prof = [(RR, h * 0.85), (lerp(RR, RW, 0.6), h * 1.0), (RW, h * 0.5), (RW, -h * 0.6), (RR, -h * 0.85)]
-    side_bands = (0, 1, 2) if detail == 0 else (0, 1)
+        prof = [(RR, h * 0.85), (RW, h * 0.75), (RW, -h * 0.75), (RR, -h * 0.85)]
+    side_bands = (0, 1) if detail == 0 else (0,)
     lathe(w, prof, N, lambda k, s: M["tyre_side"] if k in side_bands else M["tyre"])
     # rim: lip ring (proud), then the face
     xf = h * 0.62
-    lip = [(RR + 0.004, h * 0.80), (RR - 0.006, h * 0.84), (RR - 0.018, xf)]
+    lip = [(RR + 0.004, h * 0.80), (RR - 0.018, xf)] if detail == 0 else [(RR, h * 0.85), (RR - 0.01, xf)]
     rings = lathe(w, lip, N, lambda k, s: M["rim"], phase=0)
     if detail == 0:
         # face: hub ring .. spoke ring; 5 spokes (1 of 3 segments), the openings (2 of 3) set back 4 cm with walls
@@ -1252,7 +1264,7 @@ for cid, sp in TYPES.items():
         bpy.context.view_layer.update()
         if os.environ.get("CARS2_DEBUG"):
             for o in objs:
-                cs = np.array([v.co[:] for v in o.data.vertices] or [(0, 0, 0)]); print("  [dbg]", o.name, len(o.data.polygons), cs.min(0).round(2), cs.max(0).round(2))
+                o.data.calc_loop_triangles(); cs = np.array([v.co[:] for v in o.data.vertices] or [(0, 0, 0)]); print("  [dbg]", o.name, len(o.data.loop_triangles), cs.min(0).round(2), cs.max(0).round(2))
         bake_ao(objs)
         bake_ao([wheel])
         body = tri_soup(objs)

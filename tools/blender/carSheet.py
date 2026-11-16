@@ -20,6 +20,7 @@ ONLY = set(arg("--only").split(",")) if arg("--only") else None
 LOD = int(arg("--lod", "0"))
 SAMPLES = int(arg("--samples", "32"))
 NIGHT = "--night" in ARGS
+CLOSE = "--close" in ARGS
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -184,6 +185,13 @@ for car in cars:
         ("side", lambda: look((-12, -zc, Hc * 0.5), (0, -zc, Hc * 0.5), ortho=Lc * 1.12)),
         ("top", lambda: look((0, -zc, 15), (0, -zc + 0.0001, 0), ortho=Lc * 1.12)),
     ]
+    if CLOSE:   # close-ups: front face, rear face, the side glass, the wheel
+        views = [
+            ("cfront", lambda: look((-1.3, -(hi[2] + 2.6), 1.0), (0, -(hi[2] - 0.2), 0.62), lens=50)),
+            ("crear", lambda: look((1.2, -(lo[2] - 2.6), 1.15), (0, -(lo[2] + 0.2), 0.75), lens=50)),
+            ("cside", lambda: look((-3.6, -(zc + 1.2), 1.3), (-0.6, -zc, 1.05), lens=40)),
+            ("cwheel", lambda: look((-2.0, -(hi[2] - 0.2), 0.7), (-0.8, -(hi[2] - 0.9), 0.35), lens=50)),
+        ]
     files = []
     for vn, f in views:
         f()
