@@ -89,14 +89,26 @@ so the audit runs it in node.
   Image 56's spot was not located yet (needs the browser or the owner's position).
 
 ## D. Cars
-- Parked cars (`viewer/streets/parkPlace.js parkingClear`, `?parkclear=old`): a slot is dropped when the car would
-  stand within 1.95 m of a traffic lane's centre line, or leave less than 3 m of carriageway to the far kerb (with a car
-  kept opposite). City: 16,545 -> 5,468 parked cars (sample of 5 tiles: 877 -> 304). This is a BIG visual change:
-  most residential streets lose their parked cars, because the width fit drops the parking lane where a driving lane +
-  parking do not fit and the traffic then drives that width. Owner decision needed. The alternative (keep the cars, give
-  narrow two-way streets one shared lane in the traffic graph) is a traffic-engine change. OSM no-parking sides: 0 cars on them (the pipeline already respects parking=no).
+- FIRST TRY (superseded): dropping every slot on a traffic lane or leaving < 3 m kept 5,468 of 16,545 cars: an empty,
+  fake city (coordinator's call). The parkingClear filter stays in parkPlace.js for the audit only.
+- NOW (`viewer/streets/parkPlace.js widthParking`, built in the TILE WORKER, `?parkclear=old` = the old slots): per OSM way,
+  every 5.6 m, the measured kerb-to-kerb width (UrbIS roadway / tram road / parking; the OSM line or up to 4 m beside it
+  on a chord) decides: >= 8.0 m both kerbs, 5.6-8.0 m ONE kerb (the OSM parking side when the tags give one, else the side
+  with fewer driveways / crossings / stops along the whole way, one choice per way), < 5.6 m none. No car on a driveway
+  (UrbIS ramp behind the kerb under the car; the slot slides up to 1.4 m first), within 12 m of a road end (junction
+  corners), 5 m of a crossing, 10 m of a signal, 15 m of a bus stop, 2.6 m of a tram track; a side the OSM tags leave
+  without parking gets none (a custom lane stack without parking on a side whose type parks by default). Occupancy 80 %.
+  Each car against the measured kerb (fitCore placeCar), then off the furniture kits' pieces (main.js).
+- Traffic around them (`viewer/traffic/trafficGraph.js`): the lane fit (fitToSurface) now also keeps every lane point
+  1.95 m from a parked car's body (search up to 4 m sideways inside the carriageway; failing that, the road-only fit).
+  Where a street's two directions then come closer than 2.3 m (past 6 m from the junction mouths, runs >= 4 m), a NARROW
+  STRETCH (nOff / nS0 / nS1 / nOpp / nO0 / nO1, CSR per path). `trafficSim.js accel`: a car stops before its stretch
+  while a car is in the opposing stretch, or is about to enter it (within 6 m, moving, lower index = the turn); counted
+  in sim.stats.narrowWaits; `?narrow=0` off. E4: 16 stretches with parking, 8 without (genuinely narrow streets).
+  UNTESTED in the running sim (no browser): watch for standoffs at a narrow stretch and for cars brushing parked cars.
 - Sunk on slopes (`viewer/cars.js wheelFit`, `?carfit=old`): parked cars pitched / rolled onto their four wheels'
   ground and lifted until no wheel is below it (was: level at the centre's height). Moving traffic already pitched.
+- Counts: see "Parking (width rule)" in the audit section.
 
 ## E. Defects
 - Gate pier with no cap / L-shaped cap (52-53): FIXED. `viewer/gardens/gardenGeom.js`: the pier cap's top (margin
@@ -104,16 +116,20 @@ so the audit runs it in node.
   wall coping (extrudeX) was wound INWARD. A node winding check of all boxy garden pieces: 0 faces inward now (was:
   every coping face, the pier cap tops).
 
-## E (rest), F — NOT STARTED (need the browser to locate / check)
-- E: window / door surround z-fight (51, 55, 56),
-  banded flat roofs (59). Hero "library has no X: temporary material": cause found — `viewer/materials/shipped.js`
-  returns null on purpose for names without a SHIPPED baked set (only 12: brick x3, stone x2, slate, cobbles, asphalt,
-  paving, copper_patina, render_white, roof_tiles_red); zinc_roof, glass_window, cast_iron_green, painted_metal_white,
-  wood_frame_white, gravel_path, lawn_edge have CC0 candidates in viewer/materials/candidates.json (zinc 2, painted
-  metal 3, cast iron 2, wood 2) but none promoted (tools/texturefactory/promote.py / tools/textures/*). Fix = promote
-  sets for those names (fetch + process + encode KTX2), or at least make the warning say "own look" (it is the
-  documented choice, docs/TEXTURE_FACTORY.md "City switch").
-- F: the white night shop on Place Saint-Job.
+- Hero "library has no X: temporary material" warnings: now ONE info line per hero listing its own-look slots
+  (`viewer/materials/shipped.js ownLook`). Promoting the CC0 candidates (zinc 2, painted metal 3, cast iron 2, white wood
+  2 in candidates.json) needs their source maps, which are not in either checkout (viewer/materials/textures/cand/ is
+  git-ignored and absent): `tools/textures/fetch_textures.py` + `process_textures.py` + `encode_ktx2.mjs`, then a look in
+  the Material Lab (browser) before `tools/texturefactory/promote.py`. Not done.
+
+## E (rest), F — need the browser
+- F: the white night shop on Place Saint-Job: no OSM / streetlife point for it (OSM shops round the Place: Barat,
+  Deneubourg, Le Bouquet Varié, Uccle Flore, Alain Dantine, Le P'tit Rêve, Maison Dandoy, Botanea, St-Job butcher,
+  Espace photo; nothing tagged convenience / night shop there). Placing it needs its building (owner, or a Street View look
+  in the browser turn); then a streetlife POI (cat convenience) + the shop kit's white front. No invented position.
+- E: window / door surround z-fight (51, 55, 56) and banded flat roofs (59): need the spots seen moving (the kit's
+  frames / surrounds vs the wall's cut openings; the flat roof bands look like a roof material's tiling or the roof
+  grid's shading). To check in the browser turn.
 
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL

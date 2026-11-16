@@ -13763,6 +13763,8 @@ function nearestOnLane(list, p, back, r) {
 }
 var CARRIAGE5 = [true, true, false, true, false, false, false, false, false, false];
 var NARROW = 2.3;
+var END_SKIP = 6;
+var MIN_RUN = 4;
 function narrowStretches(src, P) {
   const pts = [], grid = /* @__PURE__ */ new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
   const cums = src.map((p) => p.cum || cumulative(p.pts));
@@ -13783,6 +13785,7 @@ function narrowStretches(src, P) {
     const i0 = Math.floor(e.x / 4), j0 = Math.floor(e.z / 4);
     for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const f of grid.get(key(i0 + di, j0 + dj)) || []) {
       if (f.i === e.i || e.tx * f.tx + e.tz * f.tz > -0.6) continue;
+      if (e.s < END_SKIP || e.s > src[e.i].len - END_SKIP || f.s < END_SKIP || f.s > src[f.i].len - END_SKIP) continue;
       if (Math.hypot(f.x - e.x, f.z - e.z) > NARROW) continue;
       const h = `${e.i},${f.i}`;
       if (!hits.has(h)) hits.set(h, { i: e.i, j: f.i, s: [], o: [] });
@@ -13801,7 +13804,7 @@ function narrowStretches(src, P) {
         return;
       }
       const s0 = run[0][0], s1 = run[run.length - 1][0], os = run.map((r) => r[1]);
-      if (s1 - s0 >= 1) per[H.i].push([s0, s1, H.j, Math.min(...os), Math.max(...os)]);
+      if (s1 - s0 >= MIN_RUN) per[H.i].push([s0, s1, H.j, Math.min(...os), Math.max(...os)]);
       run = [];
     };
     for (let k = 1; k < ord.length; k++) {
