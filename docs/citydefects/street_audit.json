@@ -146,6 +146,22 @@
    "leavesUnder3m": 4162,
    "onTrafficLane": 10973,
    "keptAfter": 5468
+  },
+  "width": {
+   "cars": 12084,
+   "onTrafficLane": 1202,
+   "leavesUnder3m": 355,
+   "narrowStretches": 8052,
+   "parkBlocked": 198440,
+   "slots": 69719,
+   "both": 8261,
+   "one": 13135,
+   "none": 3765,
+   "noWidth": 44558,
+   "dropped": 1331,
+   "driveway": 4797,
+   "taggedNo": 2594,
+   "empty": 4489
   }
  },
  "tiles": [
@@ -384,7 +400,23 @@
      "z": -1937.2
     }
    ],
-   "ms": 2009
+   "width": {
+    "cars": 223,
+    "onTrafficLane": 10,
+    "leavesUnder3m": 2,
+    "narrowStretches": 58,
+    "parkBlocked": 650,
+    "slots": 1018,
+    "both": 256,
+    "one": 26,
+    "none": 19,
+    "noWidth": 717,
+    "dropped": 0,
+    "empty": 71,
+    "taggedNo": 32,
+    "driveway": 132
+   },
+   "ms": 2800
   },
   {
    "tile": "E1",
@@ -881,7 +913,23 @@
      "z": -1519.3
     }
    ],
-   "ms": 3112
+   "width": {
+    "cars": 398,
+    "onTrafficLane": 29,
+    "leavesUnder3m": 9,
+    "narrowStretches": 74,
+    "parkBlocked": 270,
+    "slots": 1322,
+    "both": 438,
+    "one": 88,
+    "none": 37,
+    "noWidth": 759,
+    "dropped": 43,
+    "taggedNo": 50,
+    "empty": 142,
+    "driveway": 197
+   },
+   "ms": 4256
   },
   {
    "tile": "F1",
@@ -1242,7 +1290,23 @@
      "z": -1776.1
     }
    ],
-   "ms": 2699
+   "width": {
+    "cars": 275,
+    "onTrafficLane": 21,
+    "leavesUnder3m": 19,
+    "narrowStretches": 76,
+    "parkBlocked": 1525,
+    "slots": 1071,
+    "both": 279,
+    "one": 90,
+    "none": 35,
+    "noWidth": 667,
+    "dropped": 23,
+    "driveway": 121,
+    "empty": 101,
+    "taggedNo": 41
+   },
+   "ms": 3342
   },
   {
    "tile": "G1",
@@ -1517,7 +1581,23 @@
      "z": -1845.3
     }
    ],
-   "ms": 2549
+   "width": {
+    "cars": 348,
+    "onTrafficLane": 21,
+    "leavesUnder3m": 3,
+    "narrowStretches": 83,
+    "parkBlocked": 8,
+    "slots": 1244,
+    "both": 361,
+    "one": 148,
+    "none": 20,
+    "noWidth": 715,
+    "dropped": 10,
+    "empty": 138,
+    "driveway": 174,
+    "taggedNo": 47
+   },
+   "ms": 2431
   },
   {
    "tile": "H1",
@@ -1722,7 +1802,23 @@
      "z": -1694.1
     }
    ],
-   "ms": 2834
+   "width": {
+    "cars": 412,
+    "onTrafficLane": 11,
+    "leavesUnder3m": 6,
+    "narrowStretches": 44,
+    "parkBlocked": 133,
+    "slots": 1328,
+    "both": 550,
+    "one": 49,
+    "none": 8,
+    "noWidth": 721,
+    "dropped": 5,
+    "driveway": 262,
+    "empty": 146,
+    "taggedNo": 146
+   },
+   "ms": 2934
   },
   {
    "tile": "I1",
@@ -2083,7 +2179,22 @@
      "z": -1908.6
     }
    ],
-   "ms": 3013
+   "width": {
+    "cars": 314,
+    "onTrafficLane": 15,
+    "leavesUnder3m": 3,
+    "narrowStretches": 45,
+    "parkBlocked": 486,
+    "slots": 1055,
+    "both": 298,
+    "one": 76,
+    "none": 8,
+    "noWidth": 673,
+    "dropped": 10,
+    "driveway": 123,
+    "empty": 108
+   },
+   "ms": 2212
   },
   {
    "tile": "D2",
@@ -2538,7 +2649,23 @@
      "z": -1160.6
     }
    ],
-   "ms": 4573
+   "width": {
+    "cars": 196,
+    "onTrafficLane": 11,
+    "leavesUnder3m": 10,
+    "narrowStretches": 84,
+    "parkBlocked": 3779,
+    "slots": 1030,
+    "both": 320,
+    "one": 39,
+    "none": 47,
+    "noWidth": 624,
+    "dropped": 0,
+    "empty": 75,
+    "driveway": 121,
+    "taggedNo": 203
+   },
+   "ms": 2683
   },
   {
    "tile": "E2",
@@ -2945,7 +3072,22 @@
      "z": -1063.2
     }
    ],
-   "ms": 4001
+   "width": {
+    "cars": 210,
+    "onTrafficLane": 3,
+    "leavesUnder3m": 0,
+    "narrowStretches": 30,
+    "parkBlocked": 202,
+    "slots": 1114,
+    "both": 315,
+    "one": 52,
+    "none": 66,
+    "noWidth": 681,
+    "dropped": 63,
+    "empty": 91,
+    "driveway": 253
+   },
+   "ms": 1918
   },
   {
    "tile": "F2",
@@ -3416,7 +3558,23 @@
      "z": -1367.5
     }
    ],
-   "ms": 4680
+   "width": {
+    "cars": 308,
+    "onTrafficLane": 14,
+    "leavesUnder3m": 1,
+    "narrowStretches": 69,
+    "parkBlocked": 2452,
+    "slots": 947,
+    "both": 220,
+    "one": 199,
+    "none": 18,
+    "noWidth": 510,
+    "dropped": 11,
+    "driveway": 77,
+    "empty": 107,
+    "taggedNo": 46
+   },
+   "ms": 2216
   },
   {
    "tile": "G2",
@@ -3815,7 +3973,23 @@
      "z": -1439.6
     }
    ],
-   "ms": 2164
+   "width": {
+    "cars": 115,
+    "onTrafficLane": 6,
+    "leavesUnder3m": 1,
+    "narrowStretches": 61,
+    "parkBlocked": 942,
+    "slots": 897,
+    "both": 88,
+    "one": 146,
+    "none": 56,
+    "noWidth": 607,
+    "dropped": 6,
+    "empty": 31,
+    "driveway": 30,
+    "taggedNo": 102
+   },
+   "ms": 1239
   },
   {
    "tile": "H2",
@@ -4094,7 +4268,23 @@
      "z": -1133.4
     }
    ],
-   "ms": 2189
+   "width": {
+    "cars": 195,
+    "onTrafficLane": 12,
+    "leavesUnder3m": 1,
+    "narrowStretches": 46,
+    "parkBlocked": 2277,
+    "slots": 909,
+    "both": 233,
+    "one": 100,
+    "none": 33,
+    "noWidth": 543,
+    "dropped": 50,
+    "driveway": 124,
+    "empty": 80,
+    "taggedNo": 51
+   },
+   "ms": 1720
   },
   {
    "tile": "I2",
@@ -4381,7 +4571,23 @@
      "z": -1429.7
     }
    ],
-   "ms": 2008
+   "width": {
+    "cars": 220,
+    "onTrafficLane": 9,
+    "leavesUnder3m": 6,
+    "narrowStretches": 47,
+    "parkBlocked": 395,
+    "slots": 765,
+    "both": 165,
+    "one": 109,
+    "none": 29,
+    "noWidth": 462,
+    "dropped": 29,
+    "empty": 83,
+    "driveway": 52,
+    "taggedNo": 2
+   },
+   "ms": 1590
   },
   {
    "tile": "J2",
@@ -4482,7 +4688,21 @@
      "z": -1466.7
     }
    ],
-   "ms": 993
+   "width": {
+    "cars": 85,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 16,
+    "parkBlocked": 0,
+    "slots": 390,
+    "both": 63,
+    "one": 3,
+    "none": 9,
+    "noWidth": 315,
+    "dropped": 0,
+    "empty": 21
+   },
+   "ms": 793
   },
   {
    "tile": "C3",
@@ -4979,7 +5199,23 @@
      "z": -962.1
     }
    ],
-   "ms": 3572
+   "width": {
+    "cars": 330,
+    "onTrafficLane": 28,
+    "leavesUnder3m": 6,
+    "narrowStretches": 119,
+    "parkBlocked": 1739,
+    "slots": 1079,
+    "both": 167,
+    "one": 326,
+    "none": 65,
+    "noWidth": 521,
+    "dropped": 13,
+    "empty": 141,
+    "driveway": 43,
+    "taggedNo": 28
+   },
+   "ms": 2152
   },
   {
    "tile": "D3",
@@ -5392,7 +5628,23 @@
      "z": -941.2
     }
    ],
-   "ms": 2215
+   "width": {
+    "cars": 237,
+    "onTrafficLane": 5,
+    "leavesUnder3m": 5,
+    "narrowStretches": 132,
+    "parkBlocked": 259,
+    "slots": 966,
+    "both": 176,
+    "one": 245,
+    "none": 14,
+    "noWidth": 531,
+    "dropped": 13,
+    "driveway": 164,
+    "empty": 80,
+    "taggedNo": 17
+   },
+   "ms": 1580
   },
   {
    "tile": "E3",
@@ -5899,7 +6151,23 @@
      "z": -677.6
     }
    ],
-   "ms": 2355
+   "width": {
+    "cars": 77,
+    "onTrafficLane": 7,
+    "leavesUnder3m": 0,
+    "narrowStretches": 32,
+    "parkBlocked": 1147,
+    "slots": 791,
+    "both": 157,
+    "one": 58,
+    "none": 21,
+    "noWidth": 555,
+    "dropped": 54,
+    "empty": 54,
+    "driveway": 45,
+    "taggedNo": 111
+   },
+   "ms": 1606
   },
   {
    "tile": "F3",
@@ -6416,7 +6684,23 @@
      "z": -702.5
     }
    ],
-   "ms": 2939
+   "width": {
+    "cars": 215,
+    "onTrafficLane": 25,
+    "leavesUnder3m": 8,
+    "narrowStretches": 76,
+    "parkBlocked": 1281,
+    "slots": 831,
+    "both": 186,
+    "one": 141,
+    "none": 25,
+    "noWidth": 479,
+    "dropped": 22,
+    "driveway": 79,
+    "empty": 86,
+    "taggedNo": 40
+   },
+   "ms": 2051
   },
   {
    "tile": "G3",
@@ -6593,7 +6877,23 @@
      "z": -696.6
     }
    ],
-   "ms": 1540
+   "width": {
+    "cars": 147,
+    "onTrafficLane": 7,
+    "leavesUnder3m": 0,
+    "narrowStretches": 102,
+    "parkBlocked": 4953,
+    "slots": 637,
+    "both": 85,
+    "one": 91,
+    "none": 5,
+    "noWidth": 456,
+    "dropped": 7,
+    "driveway": 32,
+    "empty": 39,
+    "taggedNo": 3
+   },
+   "ms": 1326
   },
   {
    "tile": "H3",
@@ -7110,7 +7410,23 @@
      "z": -982.5
     }
    ],
-   "ms": 2691
+   "width": {
+    "cars": 163,
+    "onTrafficLane": 20,
+    "leavesUnder3m": 2,
+    "narrowStretches": 84,
+    "parkBlocked": 707,
+    "slots": 795,
+    "both": 170,
+    "one": 188,
+    "none": 38,
+    "noWidth": 399,
+    "dropped": 71,
+    "empty": 78,
+    "driveway": 133,
+    "taggedNo": 32
+   },
+   "ms": 1654
   },
   {
    "tile": "I3",
@@ -7449,7 +7765,23 @@
      "z": -935.6
     }
    ],
-   "ms": 2054
+   "width": {
+    "cars": 162,
+    "onTrafficLane": 22,
+    "leavesUnder3m": 6,
+    "narrowStretches": 93,
+    "parkBlocked": 3399,
+    "slots": 774,
+    "both": 138,
+    "one": 187,
+    "none": 11,
+    "noWidth": 438,
+    "dropped": 16,
+    "driveway": 66,
+    "empty": 64,
+    "taggedNo": 77
+   },
+   "ms": 1538
   },
   {
    "tile": "J3",
@@ -7752,7 +8084,23 @@
      "z": -504
     }
    ],
-   "ms": 1634
+   "width": {
+    "cars": 143,
+    "onTrafficLane": 25,
+    "leavesUnder3m": 6,
+    "narrowStretches": 40,
+    "parkBlocked": 1273,
+    "slots": 510,
+    "both": 102,
+    "one": 31,
+    "none": 86,
+    "noWidth": 291,
+    "dropped": 7,
+    "empty": 41,
+    "driveway": 8,
+    "taggedNo": 3
+   },
+   "ms": 1106
   },
   {
    "tile": "B4",
@@ -8205,7 +8553,23 @@
      "z": -438.2
     }
    ],
-   "ms": 2422
+   "width": {
+    "cars": 180,
+    "onTrafficLane": 12,
+    "leavesUnder3m": 2,
+    "narrowStretches": 150,
+    "parkBlocked": 2176,
+    "slots": 668,
+    "both": 125,
+    "one": 114,
+    "none": 40,
+    "noWidth": 389,
+    "dropped": 9,
+    "driveway": 34,
+    "empty": 55,
+    "taggedNo": 22
+   },
+   "ms": 1959
   },
   {
    "tile": "C4",
@@ -8600,7 +8964,23 @@
      "z": -278.4
     }
    ],
-   "ms": 2755
+   "width": {
+    "cars": 93,
+    "onTrafficLane": 10,
+    "leavesUnder3m": 5,
+    "narrowStretches": 121,
+    "parkBlocked": 2098,
+    "slots": 855,
+    "both": 112,
+    "one": 146,
+    "none": 32,
+    "noWidth": 565,
+    "dropped": 8,
+    "empty": 36,
+    "driveway": 61,
+    "taggedNo": 123
+   },
+   "ms": 1653
   },
   {
    "tile": "D4",
@@ -8925,7 +9305,23 @@
      "z": -249.5
     }
    ],
-   "ms": 2918
+   "width": {
+    "cars": 157,
+    "onTrafficLane": 5,
+    "leavesUnder3m": 7,
+    "narrowStretches": 84,
+    "parkBlocked": 2628,
+    "slots": 1016,
+    "both": 115,
+    "one": 212,
+    "none": 48,
+    "noWidth": 641,
+    "dropped": 2,
+    "driveway": 60,
+    "empty": 53,
+    "taggedNo": 116
+   },
+   "ms": 2170
   },
   {
    "tile": "E4",
@@ -9432,7 +9828,23 @@
      "z": -305.5
     }
    ],
-   "ms": 3931
+   "width": {
+    "cars": 198,
+    "onTrafficLane": 18,
+    "leavesUnder3m": 3,
+    "narrowStretches": 44,
+    "parkBlocked": 1468,
+    "slots": 1039,
+    "both": 203,
+    "one": 164,
+    "none": 104,
+    "noWidth": 568,
+    "dropped": 81,
+    "driveway": 131,
+    "empty": 100,
+    "taggedNo": 2
+   },
+   "ms": 2865
   },
   {
    "tile": "F4",
@@ -9849,7 +10261,23 @@
      "z": -460.9
     }
    ],
-   "ms": 2216
+   "width": {
+    "cars": 132,
+    "onTrafficLane": 12,
+    "leavesUnder3m": 13,
+    "narrowStretches": 73,
+    "parkBlocked": 1842,
+    "slots": 786,
+    "both": 76,
+    "one": 120,
+    "none": 39,
+    "noWidth": 551,
+    "dropped": 9,
+    "empty": 36,
+    "driveway": 33,
+    "taggedNo": 19
+   },
+   "ms": 1646
   },
   {
    "tile": "G4",
@@ -10074,7 +10502,23 @@
      "z": -459.3
     }
    ],
-   "ms": 1892
+   "width": {
+    "cars": 93,
+    "onTrafficLane": 10,
+    "leavesUnder3m": 0,
+    "narrowStretches": 130,
+    "parkBlocked": 3882,
+    "slots": 598,
+    "both": 24,
+    "one": 148,
+    "none": 45,
+    "noWidth": 381,
+    "dropped": 0,
+    "empty": 24,
+    "driveway": 42,
+    "taggedNo": 9
+   },
+   "ms": 2042
   },
   {
    "tile": "H4",
@@ -10581,7 +11025,22 @@
      "z": -179.2
     }
    ],
-   "ms": 1968
+   "width": {
+    "cars": 164,
+    "onTrafficLane": 26,
+    "leavesUnder3m": 3,
+    "narrowStretches": 133,
+    "parkBlocked": 2098,
+    "slots": 780,
+    "both": 88,
+    "one": 208,
+    "none": 89,
+    "noWidth": 395,
+    "dropped": 12,
+    "empty": 59,
+    "driveway": 93
+   },
+   "ms": 1915
   },
   {
    "tile": "I4",
@@ -11026,7 +11485,23 @@
      "z": -97.4
     }
    ],
-   "ms": 1573
+   "width": {
+    "cars": 46,
+    "onTrafficLane": 7,
+    "leavesUnder3m": 4,
+    "narrowStretches": 66,
+    "parkBlocked": 4643,
+    "slots": 660,
+    "both": 11,
+    "one": 139,
+    "none": 43,
+    "noWidth": 467,
+    "dropped": 1,
+    "empty": 15,
+    "driveway": 7,
+    "taggedNo": 66
+   },
+   "ms": 1497
   },
   {
    "tile": "J4",
@@ -11441,7 +11916,23 @@
      "z": -374.3
     }
    ],
-   "ms": 1862
+   "width": {
+    "cars": 41,
+    "onTrafficLane": 13,
+    "leavesUnder3m": 3,
+    "narrowStretches": 72,
+    "parkBlocked": 4088,
+    "slots": 513,
+    "both": 40,
+    "one": 67,
+    "none": 66,
+    "noWidth": 340,
+    "dropped": 5,
+    "empty": 19,
+    "driveway": 13,
+    "taggedNo": 55
+   },
+   "ms": 1775
   },
   {
    "tile": "K4",
@@ -11810,7 +12301,22 @@
      "z": -2.9
     }
    ],
-   "ms": 919
+   "width": {
+    "cars": 83,
+    "onTrafficLane": 8,
+    "leavesUnder3m": 3,
+    "narrowStretches": 19,
+    "parkBlocked": 129,
+    "slots": 301,
+    "both": 57,
+    "one": 19,
+    "none": 44,
+    "noWidth": 181,
+    "dropped": 0,
+    "driveway": 3,
+    "empty": 24
+   },
+   "ms": 1132
   },
   {
    "tile": "A5",
@@ -12041,7 +12547,22 @@
      "z": 118.2
     }
    ],
-   "ms": 1424
+   "width": {
+    "cars": 47,
+    "onTrafficLane": 1,
+    "leavesUnder3m": 4,
+    "narrowStretches": 87,
+    "parkBlocked": 7731,
+    "slots": 364,
+    "both": 32,
+    "one": 11,
+    "none": 11,
+    "noWidth": 310,
+    "dropped": 0,
+    "empty": 11,
+    "driveway": 8
+   },
+   "ms": 1994
   },
   {
    "tile": "B5",
@@ -12380,7 +12901,23 @@
      "z": 358.3
     }
    ],
-   "ms": 1730
+   "width": {
+    "cars": 61,
+    "onTrafficLane": 8,
+    "leavesUnder3m": 5,
+    "narrowStretches": 118,
+    "parkBlocked": 6046,
+    "slots": 731,
+    "both": 76,
+    "one": 73,
+    "none": 8,
+    "noWidth": 574,
+    "dropped": 25,
+    "empty": 25,
+    "driveway": 18,
+    "taggedNo": 58
+   },
+   "ms": 2136
   },
   {
    "tile": "C5",
@@ -12749,7 +13286,23 @@
      "z": 322.3
     }
    ],
-   "ms": 2294
+   "width": {
+    "cars": 108,
+    "onTrafficLane": 8,
+    "leavesUnder3m": 2,
+    "narrowStretches": 96,
+    "parkBlocked": 3774,
+    "slots": 875,
+    "both": 57,
+    "one": 236,
+    "none": 32,
+    "noWidth": 550,
+    "dropped": 28,
+    "empty": 58,
+    "driveway": 91,
+    "taggedNo": 22
+   },
+   "ms": 2283
   },
   {
    "tile": "D5",
@@ -13236,7 +13789,23 @@
      "z": 10.1
     }
    ],
-   "ms": 1962
+   "width": {
+    "cars": 118,
+    "onTrafficLane": 1,
+    "leavesUnder3m": 2,
+    "narrowStretches": 116,
+    "parkBlocked": 2445,
+    "slots": 824,
+    "both": 60,
+    "one": 186,
+    "none": 36,
+    "noWidth": 542,
+    "dropped": 18,
+    "empty": 43,
+    "driveway": 63,
+    "taggedNo": 27
+   },
+   "ms": 2419
   },
   {
    "tile": "E5",
@@ -13675,7 +14244,23 @@
      "z": 103.1
     }
    ],
-   "ms": 1762
+   "width": {
+    "cars": 221,
+    "onTrafficLane": 11,
+    "leavesUnder3m": 1,
+    "narrowStretches": 56,
+    "parkBlocked": 125,
+    "slots": 991,
+    "both": 66,
+    "one": 347,
+    "none": 45,
+    "noWidth": 533,
+    "dropped": 18,
+    "empty": 83,
+    "driveway": 79,
+    "taggedNo": 16
+   },
+   "ms": 2019
   },
   {
    "tile": "F5",
@@ -14162,7 +14747,22 @@
      "z": 131.5
     }
    ],
-   "ms": 1511
+   "width": {
+    "cars": 108,
+    "onTrafficLane": 9,
+    "leavesUnder3m": 12,
+    "narrowStretches": 93,
+    "parkBlocked": 263,
+    "slots": 578,
+    "both": 110,
+    "one": 145,
+    "none": 3,
+    "noWidth": 320,
+    "dropped": 66,
+    "empty": 59,
+    "driveway": 88
+   },
+   "ms": 2166
   },
   {
    "tile": "G5",
@@ -14383,7 +14983,23 @@
      "z": 312.3
     }
    ],
-   "ms": 1602
+   "width": {
+    "cars": 88,
+    "onTrafficLane": 5,
+    "leavesUnder3m": 1,
+    "narrowStretches": 140,
+    "parkBlocked": 4057,
+    "slots": 577,
+    "both": 86,
+    "one": 163,
+    "none": 5,
+    "noWidth": 323,
+    "dropped": 55,
+    "driveway": 52,
+    "empty": 37,
+    "taggedNo": 59
+   },
+   "ms": 2536
   },
   {
    "tile": "H5",
@@ -14780,7 +15396,22 @@
      "z": 329
     }
    ],
-   "ms": 1757
+   "width": {
+    "cars": 186,
+    "onTrafficLane": 11,
+    "leavesUnder3m": 2,
+    "narrowStretches": 114,
+    "parkBlocked": 4325,
+    "slots": 899,
+    "both": 89,
+    "one": 232,
+    "none": 16,
+    "noWidth": 562,
+    "dropped": 19,
+    "empty": 58,
+    "driveway": 81
+   },
+   "ms": 2256
   },
   {
    "tile": "I5",
@@ -15129,7 +15760,22 @@
      "z": 341.6
     }
    ],
-   "ms": 1376
+   "width": {
+    "cars": 162,
+    "onTrafficLane": 21,
+    "leavesUnder3m": 3,
+    "narrowStretches": 80,
+    "parkBlocked": 1921,
+    "slots": 831,
+    "both": 6,
+    "one": 284,
+    "none": 36,
+    "noWidth": 505,
+    "dropped": 8,
+    "empty": 43,
+    "driveway": 34
+   },
+   "ms": 1821
   },
   {
    "tile": "J5",
@@ -15536,7 +16182,23 @@
      "z": 471.8
     }
    ],
-   "ms": 1635
+   "width": {
+    "cars": 120,
+    "onTrafficLane": 19,
+    "leavesUnder3m": 3,
+    "narrowStretches": 89,
+    "parkBlocked": 651,
+    "slots": 497,
+    "both": 32,
+    "one": 253,
+    "none": 7,
+    "noWidth": 205,
+    "dropped": 9,
+    "driveway": 80,
+    "empty": 63,
+    "taggedNo": 10
+   },
+   "ms": 3368
   },
   {
    "tile": "K5",
@@ -15993,7 +16655,23 @@
      "z": 25
     }
    ],
-   "ms": 600
+   "width": {
+    "cars": 18,
+    "onTrafficLane": 3,
+    "leavesUnder3m": 1,
+    "narrowStretches": 21,
+    "parkBlocked": 86,
+    "slots": 416,
+    "both": 65,
+    "one": 50,
+    "none": 2,
+    "noWidth": 299,
+    "dropped": 0,
+    "taggedNo": 137,
+    "driveway": 9,
+    "empty": 6
+   },
+   "ms": 1079
   },
   {
    "tile": "L5",
@@ -16198,7 +16876,22 @@
      "z": 115.6
     }
    ],
-   "ms": 625
+   "width": {
+    "cars": 26,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 26,
+    "parkBlocked": 105,
+    "slots": 232,
+    "both": 0,
+    "one": 35,
+    "none": 2,
+    "noWidth": 195,
+    "dropped": 0,
+    "empty": 3,
+    "driveway": 1
+   },
+   "ms": 933
   },
   {
    "tile": "M5",
@@ -16491,7 +17184,22 @@
      "z": 171
     }
    ],
-   "ms": 1863
+   "width": {
+    "cars": 73,
+    "onTrafficLane": 9,
+    "leavesUnder3m": 4,
+    "narrowStretches": 47,
+    "parkBlocked": 2714,
+    "slots": 382,
+    "both": 45,
+    "one": 38,
+    "none": 4,
+    "noWidth": 295,
+    "dropped": 0,
+    "empty": 22,
+    "driveway": 6
+   },
+   "ms": 2881
   },
   {
    "tile": "N5",
@@ -16968,7 +17676,22 @@
      "z": 13.2
     }
    ],
-   "ms": 2191
+   "width": {
+    "cars": 66,
+    "onTrafficLane": 11,
+    "leavesUnder3m": 3,
+    "narrowStretches": 61,
+    "parkBlocked": 3945,
+    "slots": 676,
+    "both": 29,
+    "one": 89,
+    "none": 153,
+    "noWidth": 405,
+    "dropped": 0,
+    "driveway": 32,
+    "empty": 17
+   },
+   "ms": 3730
   },
   {
    "tile": "B6",
@@ -17347,7 +18070,22 @@
      "z": 866.9
     }
    ],
-   "ms": 2398
+   "width": {
+    "cars": 73,
+    "onTrafficLane": 9,
+    "leavesUnder3m": 10,
+    "narrowStretches": 123,
+    "parkBlocked": 9725,
+    "slots": 864,
+    "both": 47,
+    "one": 96,
+    "none": 9,
+    "noWidth": 712,
+    "dropped": 39,
+    "empty": 34,
+    "driveway": 24
+   },
+   "ms": 2688
   },
   {
    "tile": "C6",
@@ -17778,7 +18516,23 @@
      "z": 931.1
     }
    ],
-   "ms": 2003
+   "width": {
+    "cars": 63,
+    "onTrafficLane": 7,
+    "leavesUnder3m": 1,
+    "narrowStretches": 127,
+    "parkBlocked": 2499,
+    "slots": 727,
+    "both": 23,
+    "one": 164,
+    "none": 47,
+    "noWidth": 493,
+    "dropped": 3,
+    "driveway": 34,
+    "empty": 18,
+    "taggedNo": 68
+   },
+   "ms": 2432
   },
   {
    "tile": "D6",
@@ -18197,7 +18951,22 @@
      "z": 511.7
     }
    ],
-   "ms": 2371
+   "width": {
+    "cars": 189,
+    "onTrafficLane": 24,
+    "leavesUnder3m": 6,
+    "narrowStretches": 138,
+    "parkBlocked": 4499,
+    "slots": 754,
+    "both": 166,
+    "one": 131,
+    "none": 29,
+    "noWidth": 428,
+    "dropped": 70,
+    "empty": 80,
+    "driveway": 38
+   },
+   "ms": 2750
   },
   {
    "tile": "E6",
@@ -18560,7 +19329,22 @@
      "z": 530.5
     }
    ],
-   "ms": 2282
+   "width": {
+    "cars": 129,
+    "onTrafficLane": 16,
+    "leavesUnder3m": 7,
+    "narrowStretches": 91,
+    "parkBlocked": 1704,
+    "slots": 883,
+    "both": 13,
+    "one": 273,
+    "none": 47,
+    "noWidth": 550,
+    "dropped": 1,
+    "driveway": 63,
+    "empty": 57
+   },
+   "ms": 2111
   },
   {
    "tile": "F6",
@@ -18875,7 +19659,23 @@
      "z": 736.2
     }
    ],
-   "ms": 2123
+   "width": {
+    "cars": 87,
+    "onTrafficLane": 15,
+    "leavesUnder3m": 1,
+    "narrowStretches": 111,
+    "parkBlocked": 2785,
+    "slots": 582,
+    "both": 95,
+    "one": 102,
+    "none": 18,
+    "noWidth": 367,
+    "dropped": 21,
+    "driveway": 46,
+    "empty": 41,
+    "taggedNo": 40
+   },
+   "ms": 1856
   },
   {
    "tile": "G6",
@@ -19164,7 +19964,23 @@
      "z": 720.5
     }
    ],
-   "ms": 1730
+   "width": {
+    "cars": 106,
+    "onTrafficLane": 7,
+    "leavesUnder3m": 2,
+    "narrowStretches": 133,
+    "parkBlocked": 2465,
+    "slots": 590,
+    "both": 138,
+    "one": 93,
+    "none": 43,
+    "noWidth": 316,
+    "dropped": 11,
+    "driveway": 111,
+    "empty": 56,
+    "taggedNo": 39
+   },
+   "ms": 2294
   },
   {
    "tile": "H6",
@@ -19497,7 +20313,23 @@
      "z": 512.4
     }
    ],
-   "ms": 1201
+   "width": {
+    "cars": 115,
+    "onTrafficLane": 11,
+    "leavesUnder3m": 1,
+    "narrowStretches": 78,
+    "parkBlocked": 1037,
+    "slots": 715,
+    "both": 93,
+    "one": 172,
+    "none": 11,
+    "noWidth": 439,
+    "dropped": 20,
+    "empty": 51,
+    "driveway": 88,
+    "taggedNo": 37
+   },
+   "ms": 1990
   },
   {
    "tile": "I6",
@@ -19994,7 +20826,23 @@
      "z": 897.5
     }
    ],
-   "ms": 2095
+   "width": {
+    "cars": 131,
+    "onTrafficLane": 19,
+    "leavesUnder3m": 2,
+    "narrowStretches": 141,
+    "parkBlocked": 94,
+    "slots": 823,
+    "both": 108,
+    "one": 256,
+    "none": 11,
+    "noWidth": 448,
+    "dropped": 83,
+    "taggedNo": 32,
+    "driveway": 108,
+    "empty": 68
+   },
+   "ms": 3050
   },
   {
    "tile": "J6",
@@ -20481,7 +21329,22 @@
      "z": 549.8
     }
    ],
-   "ms": 1395
+   "width": {
+    "cars": 54,
+    "onTrafficLane": 7,
+    "leavesUnder3m": 1,
+    "narrowStretches": 66,
+    "parkBlocked": 2545,
+    "slots": 688,
+    "both": 14,
+    "one": 106,
+    "none": 46,
+    "noWidth": 522,
+    "dropped": 6,
+    "driveway": 27,
+    "empty": 25
+   },
+   "ms": 1663
   },
   {
    "tile": "K6",
@@ -20890,7 +21753,22 @@
      "z": 629
     }
    ],
-   "ms": 793
+   "width": {
+    "cars": 53,
+    "onTrafficLane": 2,
+    "leavesUnder3m": 0,
+    "narrowStretches": 84,
+    "parkBlocked": 1350,
+    "slots": 450,
+    "both": 3,
+    "one": 103,
+    "none": 83,
+    "noWidth": 261,
+    "dropped": 0,
+    "empty": 29,
+    "driveway": 3
+   },
+   "ms": 1279
   },
   {
    "tile": "L6",
@@ -20966,7 +21844,21 @@
     }
    },
    "worst": [],
-   "ms": 178
+   "width": {
+    "cars": 15,
+    "onTrafficLane": 3,
+    "leavesUnder3m": 0,
+    "narrowStretches": 28,
+    "parkBlocked": 1,
+    "slots": 158,
+    "both": 1,
+    "one": 20,
+    "none": 4,
+    "noWidth": 133,
+    "dropped": 0,
+    "empty": 3
+   },
+   "ms": 379
   },
   {
    "tile": "M6",
@@ -21055,7 +21947,20 @@
      "z": 693.4
     }
    ],
-   "ms": 127
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 16,
+    "parkBlocked": 0,
+    "slots": 32,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 32,
+    "dropped": 0
+   },
+   "ms": 99
   },
   {
    "tile": "N6",
@@ -21212,7 +22117,22 @@
      "z": 535
     }
    ],
-   "ms": 562
+   "width": {
+    "cars": 41,
+    "onTrafficLane": 8,
+    "leavesUnder3m": 1,
+    "narrowStretches": 54,
+    "parkBlocked": 62,
+    "slots": 161,
+    "both": 2,
+    "one": 62,
+    "none": 8,
+    "noWidth": 89,
+    "dropped": 0,
+    "driveway": 3,
+    "empty": 14
+   },
+   "ms": 714
   },
   {
    "tile": "B7",
@@ -21459,7 +22379,23 @@
      "z": 1082.4
     }
    ],
-   "ms": 1475
+   "width": {
+    "cars": 33,
+    "onTrafficLane": 5,
+    "leavesUnder3m": 2,
+    "narrowStretches": 97,
+    "parkBlocked": 7276,
+    "slots": 629,
+    "both": 25,
+    "one": 41,
+    "none": 30,
+    "noWidth": 533,
+    "dropped": 0,
+    "driveway": 9,
+    "empty": 12,
+    "taggedNo": 18
+   },
+   "ms": 2274
   },
   {
    "tile": "C7",
@@ -21926,7 +22862,23 @@
      "z": 1164.8
     }
    ],
-   "ms": 1873
+   "width": {
+    "cars": 236,
+    "onTrafficLane": 22,
+    "leavesUnder3m": 16,
+    "narrowStretches": 122,
+    "parkBlocked": 2005,
+    "slots": 827,
+    "both": 190,
+    "one": 147,
+    "none": 62,
+    "noWidth": 428,
+    "dropped": 19,
+    "driveway": 49,
+    "empty": 83,
+    "taggedNo": 25
+   },
+   "ms": 2469
   },
   {
    "tile": "D7",
@@ -22403,7 +23355,23 @@
      "z": 1201.8
     }
    ],
-   "ms": 1508
+   "width": {
+    "cars": 135,
+    "onTrafficLane": 17,
+    "leavesUnder3m": 1,
+    "narrowStretches": 97,
+    "parkBlocked": 2670,
+    "slots": 626,
+    "both": 114,
+    "one": 96,
+    "none": 39,
+    "noWidth": 377,
+    "dropped": 59,
+    "driveway": 27,
+    "empty": 50,
+    "taggedNo": 5
+   },
+   "ms": 2653
   },
   {
    "tile": "E7",
@@ -22846,7 +23814,23 @@
      "z": 1027.2
     }
    ],
-   "ms": 1407
+   "width": {
+    "cars": 103,
+    "onTrafficLane": 17,
+    "leavesUnder3m": 5,
+    "narrowStretches": 103,
+    "parkBlocked": 1199,
+    "slots": 645,
+    "both": 27,
+    "one": 176,
+    "none": 93,
+    "noWidth": 349,
+    "dropped": 2,
+    "empty": 32,
+    "driveway": 22,
+    "taggedNo": 50
+   },
+   "ms": 2167
   },
   {
    "tile": "F7",
@@ -23183,7 +24167,23 @@
      "z": 1306.5
     }
    ],
-   "ms": 933
+   "width": {
+    "cars": 36,
+    "onTrafficLane": 10,
+    "leavesUnder3m": 1,
+    "narrowStretches": 134,
+    "parkBlocked": 2466,
+    "slots": 356,
+    "both": 20,
+    "one": 64,
+    "none": 18,
+    "noWidth": 254,
+    "dropped": 0,
+    "empty": 19,
+    "taggedNo": 16,
+    "driveway": 9
+   },
+   "ms": 1626
   },
   {
    "tile": "G7",
@@ -23360,7 +24360,21 @@
      "z": 1495.8
     }
    ],
-   "ms": 1114
+   "width": {
+    "cars": 35,
+    "onTrafficLane": 4,
+    "leavesUnder3m": 1,
+    "narrowStretches": 86,
+    "parkBlocked": 174,
+    "slots": 219,
+    "both": 26,
+    "one": 14,
+    "none": 15,
+    "noWidth": 164,
+    "dropped": 0,
+    "empty": 14
+   },
+   "ms": 782
   },
   {
    "tile": "H7",
@@ -23753,7 +24767,22 @@
      "z": 1098
     }
    ],
-   "ms": 1115
+   "width": {
+    "cars": 134,
+    "onTrafficLane": 12,
+    "leavesUnder3m": 8,
+    "narrowStretches": 56,
+    "parkBlocked": 3,
+    "slots": 474,
+    "both": 51,
+    "one": 195,
+    "none": 9,
+    "noWidth": 219,
+    "dropped": 8,
+    "driveway": 62,
+    "empty": 54
+   },
+   "ms": 1465
   },
   {
    "tile": "I7",
@@ -24174,7 +25203,22 @@
      "z": 1189.4
     }
    ],
-   "ms": 1082
+   "width": {
+    "cars": 68,
+    "onTrafficLane": 12,
+    "leavesUnder3m": 4,
+    "narrowStretches": 52,
+    "parkBlocked": 2418,
+    "slots": 674,
+    "both": 5,
+    "one": 133,
+    "none": 8,
+    "noWidth": 528,
+    "dropped": 0,
+    "empty": 31,
+    "driveway": 21
+   },
+   "ms": 1531
   },
   {
    "tile": "J7",
@@ -24651,7 +25695,22 @@
      "z": 1327.6
     }
    ],
-   "ms": 1764
+   "width": {
+    "cars": 196,
+    "onTrafficLane": 25,
+    "leavesUnder3m": 6,
+    "narrowStretches": 125,
+    "parkBlocked": 65,
+    "slots": 785,
+    "both": 68,
+    "one": 315,
+    "none": 42,
+    "noWidth": 360,
+    "dropped": 16,
+    "driveway": 107,
+    "empty": 65
+   },
+   "ms": 2039
   },
   {
    "tile": "K7",
@@ -25088,7 +26147,22 @@
      "z": 1415.7
     }
    ],
-   "ms": 772
+   "width": {
+    "cars": 32,
+    "onTrafficLane": 5,
+    "leavesUnder3m": 0,
+    "narrowStretches": 62,
+    "parkBlocked": 2238,
+    "slots": 469,
+    "both": 3,
+    "one": 61,
+    "none": 5,
+    "noWidth": 400,
+    "dropped": 0,
+    "empty": 7,
+    "driveway": 8
+   },
+   "ms": 914
   },
   {
    "tile": "L7",
@@ -25371,7 +26445,22 @@
      "z": 1313.8
     }
    ],
-   "ms": 446
+   "width": {
+    "cars": 52,
+    "onTrafficLane": 3,
+    "leavesUnder3m": 0,
+    "narrowStretches": 63,
+    "parkBlocked": 96,
+    "slots": 181,
+    "both": 17,
+    "one": 79,
+    "none": 0,
+    "noWidth": 85,
+    "dropped": 7,
+    "empty": 25,
+    "driveway": 4
+   },
+   "ms": 925
   },
   {
    "tile": "M7",
@@ -25460,7 +26549,20 @@
      "z": 1272.5
     }
    ],
-   "ms": 95
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 109
   },
   {
    "tile": "N7",
@@ -25516,7 +26618,20 @@
     }
    },
    "worst": [],
-   "ms": 108
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 90
   },
   {
    "tile": "B8",
@@ -25665,7 +26780,20 @@
      "z": 1915.6
     }
    ],
-   "ms": 1103
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 56,
+    "parkBlocked": 0,
+    "slots": 658,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 658,
+    "dropped": 0
+   },
+   "ms": 1262
   },
   {
    "tile": "C8",
@@ -25954,7 +27082,22 @@
      "z": 1671.3
     }
    ],
-   "ms": 2100
+   "width": {
+    "cars": 80,
+    "onTrafficLane": 9,
+    "leavesUnder3m": 0,
+    "narrowStretches": 138,
+    "parkBlocked": 4965,
+    "slots": 735,
+    "both": 88,
+    "one": 98,
+    "none": 23,
+    "noWidth": 526,
+    "dropped": 48,
+    "driveway": 80,
+    "empty": 38
+   },
+   "ms": 1965
   },
   {
    "tile": "D8",
@@ -26441,7 +27584,23 @@
      "z": 1535.5
     }
    ],
-   "ms": 1573
+   "width": {
+    "cars": 125,
+    "onTrafficLane": 11,
+    "leavesUnder3m": 0,
+    "narrowStretches": 132,
+    "parkBlocked": 1151,
+    "slots": 640,
+    "both": 61,
+    "one": 216,
+    "none": 21,
+    "noWidth": 342,
+    "dropped": 4,
+    "empty": 37,
+    "driveway": 58,
+    "taggedNo": 80
+   },
+   "ms": 1880
   },
   {
    "tile": "E8",
@@ -26908,7 +28067,23 @@
      "z": 1712.5
     }
    ],
-   "ms": 1694
+   "width": {
+    "cars": 118,
+    "onTrafficLane": 21,
+    "leavesUnder3m": 8,
+    "narrowStretches": 100,
+    "parkBlocked": 1220,
+    "slots": 696,
+    "both": 32,
+    "one": 186,
+    "none": 68,
+    "noWidth": 410,
+    "dropped": 8,
+    "empty": 51,
+    "driveway": 29,
+    "taggedNo": 13
+   },
+   "ms": 1640
   },
   {
    "tile": "F8",
@@ -27133,7 +28308,23 @@
      "z": 1915.1
     }
    ],
-   "ms": 1455
+   "width": {
+    "cars": 27,
+    "onTrafficLane": 4,
+    "leavesUnder3m": 4,
+    "narrowStretches": 118,
+    "parkBlocked": 1379,
+    "slots": 442,
+    "both": 56,
+    "one": 30,
+    "none": 73,
+    "noWidth": 283,
+    "dropped": 0,
+    "empty": 21,
+    "taggedNo": 56,
+    "driveway": 6
+   },
+   "ms": 1713
   },
   {
    "tile": "G8",
@@ -27440,7 +28631,22 @@
      "z": 1758.8
     }
    ],
-   "ms": 969
+   "width": {
+    "cars": 4,
+    "onTrafficLane": 1,
+    "leavesUnder3m": 2,
+    "narrowStretches": 98,
+    "parkBlocked": 3032,
+    "slots": 336,
+    "both": 0,
+    "one": 8,
+    "none": 59,
+    "noWidth": 269,
+    "dropped": 0,
+    "empty": 2,
+    "driveway": 1
+   },
+   "ms": 1300
   },
   {
    "tile": "H8",
@@ -27907,7 +29113,23 @@
      "z": 1588
     }
    ],
-   "ms": 1133
+   "width": {
+    "cars": 155,
+    "onTrafficLane": 32,
+    "leavesUnder3m": 26,
+    "narrowStretches": 88,
+    "parkBlocked": 251,
+    "slots": 636,
+    "both": 13,
+    "one": 287,
+    "none": 38,
+    "noWidth": 298,
+    "dropped": 5,
+    "empty": 42,
+    "driveway": 32,
+    "taggedNo": 38
+   },
+   "ms": 1529
   },
   {
    "tile": "I8",
@@ -28344,7 +29566,23 @@
      "z": 1617.2
     }
    ],
-   "ms": 1144
+   "width": {
+    "cars": 160,
+    "onTrafficLane": 33,
+    "leavesUnder3m": 15,
+    "narrowStretches": 113,
+    "parkBlocked": 134,
+    "slots": 836,
+    "both": 3,
+    "one": 284,
+    "none": 7,
+    "noWidth": 542,
+    "dropped": 0,
+    "driveway": 23,
+    "empty": 46,
+    "taggedNo": 16
+   },
+   "ms": 1540
   },
   {
    "tile": "J8",
@@ -28791,7 +30029,22 @@
      "z": 1923.6
     }
    ],
-   "ms": 934
+   "width": {
+    "cars": 176,
+    "onTrafficLane": 28,
+    "leavesUnder3m": 2,
+    "narrowStretches": 96,
+    "parkBlocked": 13,
+    "slots": 743,
+    "both": 0,
+    "one": 325,
+    "none": 16,
+    "noWidth": 402,
+    "dropped": 2,
+    "driveway": 38,
+    "empty": 58
+   },
+   "ms": 1122
   },
   {
    "tile": "K8",
@@ -29130,7 +30383,22 @@
      "z": 1504.7
     }
    ],
-   "ms": 1076
+   "width": {
+    "cars": 60,
+    "onTrafficLane": 19,
+    "leavesUnder3m": 0,
+    "narrowStretches": 32,
+    "parkBlocked": 1281,
+    "slots": 330,
+    "both": 52,
+    "one": 49,
+    "none": 4,
+    "noWidth": 225,
+    "dropped": 5,
+    "empty": 20,
+    "driveway": 22
+   },
+   "ms": 1233
   },
   {
    "tile": "L8",
@@ -29485,7 +30753,22 @@
      "z": 1509.3
     }
    ],
-   "ms": 399
+   "width": {
+    "cars": 54,
+    "onTrafficLane": 1,
+    "leavesUnder3m": 1,
+    "narrowStretches": 55,
+    "parkBlocked": 1953,
+    "slots": 167,
+    "both": 4,
+    "one": 74,
+    "none": 0,
+    "noWidth": 89,
+    "dropped": 1,
+    "driveway": 4,
+    "empty": 11
+   },
+   "ms": 479
   },
   {
    "tile": "M8",
@@ -29541,7 +30824,20 @@
     }
    },
    "worst": [],
-   "ms": 44
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 78
   },
   {
    "tile": "N8",
@@ -29630,7 +30926,20 @@
      "z": 1600.7
     }
    ],
-   "ms": 66
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 111
   },
   {
    "tile": "C9",
@@ -29911,7 +31220,22 @@
      "z": 2123.9
     }
    ],
-   "ms": 902
+   "width": {
+    "cars": 12,
+    "onTrafficLane": 2,
+    "leavesUnder3m": 0,
+    "narrowStretches": 51,
+    "parkBlocked": 8698,
+    "slots": 691,
+    "both": 18,
+    "one": 2,
+    "none": 36,
+    "noWidth": 635,
+    "dropped": 7,
+    "driveway": 4,
+    "empty": 6
+   },
+   "ms": 1753
   },
   {
    "tile": "D9",
@@ -30388,7 +31712,23 @@
      "z": 2059.5
     }
    ],
-   "ms": 781
+   "width": {
+    "cars": 59,
+    "onTrafficLane": 10,
+    "leavesUnder3m": 1,
+    "narrowStretches": 72,
+    "parkBlocked": 1991,
+    "slots": 554,
+    "both": 32,
+    "one": 82,
+    "none": 48,
+    "noWidth": 392,
+    "dropped": 0,
+    "empty": 32,
+    "driveway": 7,
+    "taggedNo": 29
+   },
+   "ms": 1330
   },
   {
    "tile": "E9",
@@ -30855,7 +32195,23 @@
      "z": 2324
     }
    ],
-   "ms": 1174
+   "width": {
+    "cars": 61,
+    "onTrafficLane": 5,
+    "leavesUnder3m": 8,
+    "narrowStretches": 64,
+    "parkBlocked": 905,
+    "slots": 758,
+    "both": 25,
+    "one": 136,
+    "none": 131,
+    "noWidth": 466,
+    "dropped": 8,
+    "taggedNo": 80,
+    "driveway": 5,
+    "empty": 15
+   },
+   "ms": 2058
   },
   {
    "tile": "F9",
@@ -31332,7 +32688,23 @@
      "z": 2432.1
     }
    ],
-   "ms": 1860
+   "width": {
+    "cars": 151,
+    "onTrafficLane": 13,
+    "leavesUnder3m": 8,
+    "narrowStretches": 169,
+    "parkBlocked": 2059,
+    "slots": 876,
+    "both": 74,
+    "one": 146,
+    "none": 278,
+    "noWidth": 378,
+    "dropped": 1,
+    "empty": 59,
+    "taggedNo": 24,
+    "driveway": 11
+   },
+   "ms": 3651
   },
   {
    "tile": "G9",
@@ -31549,7 +32921,23 @@
      "z": 2496.2
     }
    ],
-   "ms": 1003
+   "width": {
+    "cars": 57,
+    "onTrafficLane": 5,
+    "leavesUnder3m": 0,
+    "narrowStretches": 94,
+    "parkBlocked": 3807,
+    "slots": 419,
+    "both": 47,
+    "one": 117,
+    "none": 8,
+    "noWidth": 247,
+    "dropped": 11,
+    "taggedNo": 97,
+    "empty": 26,
+    "driveway": 5
+   },
+   "ms": 3181
   },
   {
    "tile": "H9",
@@ -31986,7 +33374,23 @@
      "z": 2237.7
     }
    ],
-   "ms": 528
+   "width": {
+    "cars": 101,
+    "onTrafficLane": 20,
+    "leavesUnder3m": 0,
+    "narrowStretches": 61,
+    "parkBlocked": 0,
+    "slots": 491,
+    "both": 25,
+    "one": 176,
+    "none": 4,
+    "noWidth": 286,
+    "dropped": 0,
+    "driveway": 14,
+    "empty": 22,
+    "taggedNo": 59
+   },
+   "ms": 1057
   },
   {
    "tile": "I9",
@@ -32443,7 +33847,22 @@
      "z": 2129.7
     }
    ],
-   "ms": 714
+   "width": {
+    "cars": 195,
+    "onTrafficLane": 36,
+    "leavesUnder3m": 0,
+    "narrowStretches": 59,
+    "parkBlocked": 0,
+    "slots": 779,
+    "both": 13,
+    "one": 320,
+    "none": 9,
+    "noWidth": 437,
+    "dropped": 10,
+    "empty": 51,
+    "driveway": 31
+   },
+   "ms": 2504
   },
   {
    "tile": "J9",
@@ -32900,7 +34319,22 @@
      "z": 2493.7
     }
    ],
-   "ms": 556
+   "width": {
+    "cars": 136,
+    "onTrafficLane": 25,
+    "leavesUnder3m": 0,
+    "narrowStretches": 94,
+    "parkBlocked": 0,
+    "slots": 636,
+    "both": 1,
+    "one": 247,
+    "none": 6,
+    "noWidth": 382,
+    "dropped": 5,
+    "driveway": 25,
+    "empty": 47
+   },
+   "ms": 1403
   },
   {
    "tile": "K9",
@@ -33361,7 +34795,22 @@
      "z": 2496.1
     }
    ],
-   "ms": 566
+   "width": {
+    "cars": 72,
+    "onTrafficLane": 22,
+    "leavesUnder3m": 0,
+    "narrowStretches": 47,
+    "parkBlocked": 0,
+    "slots": 401,
+    "both": 1,
+    "one": 184,
+    "none": 8,
+    "noWidth": 208,
+    "dropped": 7,
+    "driveway": 37,
+    "empty": 27
+   },
+   "ms": 1298
   },
   {
    "tile": "L9",
@@ -33462,7 +34911,22 @@
      "z": 2035.6
     }
    ],
-   "ms": 199
+   "width": {
+    "cars": 59,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 43,
+    "parkBlocked": 0,
+    "slots": 156,
+    "both": 2,
+    "one": 89,
+    "none": 1,
+    "noWidth": 64,
+    "dropped": 1,
+    "empty": 17,
+    "driveway": 2
+   },
+   "ms": 371
   },
   {
    "tile": "M9",
@@ -33518,7 +34982,20 @@
     }
    },
    "worst": [],
-   "ms": 36
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 30,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 30,
+    "dropped": 0
+   },
+   "ms": 55
   },
   {
    "tile": "N9",
@@ -33594,7 +35071,20 @@
     }
    },
    "worst": [],
-   "ms": 38
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 57
   },
   {
    "tile": "O9",
@@ -33670,7 +35160,20 @@
     }
    },
    "worst": [],
-   "ms": 90
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 121
   },
   {
    "tile": "D10",
@@ -33993,7 +35496,22 @@
      "z": 2569.2
     }
    ],
-   "ms": 1028
+   "width": {
+    "cars": 15,
+    "onTrafficLane": 1,
+    "leavesUnder3m": 0,
+    "narrowStretches": 50,
+    "parkBlocked": 6648,
+    "slots": 881,
+    "both": 9,
+    "one": 20,
+    "none": 48,
+    "noWidth": 804,
+    "dropped": 7,
+    "empty": 4,
+    "driveway": 5
+   },
+   "ms": 1931
   },
   {
    "tile": "E10",
@@ -34354,7 +35872,22 @@
      "z": 2733.7
     }
    ],
-   "ms": 1239
+   "width": {
+    "cars": 88,
+    "onTrafficLane": 4,
+    "leavesUnder3m": 4,
+    "narrowStretches": 45,
+    "parkBlocked": 4273,
+    "slots": 967,
+    "both": 11,
+    "one": 131,
+    "none": 65,
+    "noWidth": 760,
+    "dropped": 2,
+    "empty": 33,
+    "driveway": 9
+   },
+   "ms": 1802
   },
   {
    "tile": "F10",
@@ -34493,7 +36026,22 @@
      "z": 2925.4
     }
    ],
-   "ms": 589
+   "width": {
+    "cars": 57,
+    "onTrafficLane": 4,
+    "leavesUnder3m": 0,
+    "narrowStretches": 30,
+    "parkBlocked": 1847,
+    "slots": 598,
+    "both": 32,
+    "one": 31,
+    "none": 16,
+    "noWidth": 519,
+    "dropped": 1,
+    "driveway": 7,
+    "empty": 20
+   },
+   "ms": 690
   },
   {
    "tile": "G10",
@@ -34790,7 +36338,22 @@
      "z": 2749.3
     }
    ],
-   "ms": 748
+   "width": {
+    "cars": 19,
+    "onTrafficLane": 2,
+    "leavesUnder3m": 1,
+    "narrowStretches": 30,
+    "parkBlocked": 2265,
+    "slots": 316,
+    "both": 3,
+    "one": 24,
+    "none": 63,
+    "noWidth": 226,
+    "dropped": 0,
+    "empty": 5,
+    "driveway": 4
+   },
+   "ms": 1062
   },
   {
    "tile": "H10",
@@ -34951,7 +36514,22 @@
      "z": 2730.2
     }
    ],
-   "ms": 723
+   "width": {
+    "cars": 9,
+    "onTrafficLane": 3,
+    "leavesUnder3m": 0,
+    "narrowStretches": 39,
+    "parkBlocked": 1014,
+    "slots": 326,
+    "both": 0,
+    "one": 24,
+    "none": 1,
+    "noWidth": 301,
+    "dropped": 0,
+    "empty": 4,
+    "driveway": 3
+   },
+   "ms": 838
   },
   {
    "tile": "I10",
@@ -35388,7 +36966,22 @@
      "z": 2824
     }
    ],
-   "ms": 1117
+   "width": {
+    "cars": 180,
+    "onTrafficLane": 28,
+    "leavesUnder3m": 6,
+    "narrowStretches": 126,
+    "parkBlocked": 483,
+    "slots": 794,
+    "both": 6,
+    "one": 316,
+    "none": 58,
+    "noWidth": 414,
+    "dropped": 0,
+    "empty": 47,
+    "driveway": 51
+   },
+   "ms": 1242
   },
   {
    "tile": "J10",
@@ -35815,7 +37408,22 @@
      "z": 2625.8
     }
    ],
-   "ms": 728
+   "width": {
+    "cars": 97,
+    "onTrafficLane": 28,
+    "leavesUnder3m": 9,
+    "narrowStretches": 71,
+    "parkBlocked": 91,
+    "slots": 728,
+    "both": 0,
+    "one": 198,
+    "none": 92,
+    "noWidth": 438,
+    "dropped": 0,
+    "empty": 34,
+    "driveway": 39
+   },
+   "ms": 892
   },
   {
    "tile": "K10",
@@ -36262,7 +37870,22 @@
      "z": 2707.6
     }
    ],
-   "ms": 684
+   "width": {
+    "cars": 55,
+    "onTrafficLane": 10,
+    "leavesUnder3m": 1,
+    "narrowStretches": 39,
+    "parkBlocked": 600,
+    "slots": 442,
+    "both": 4,
+    "one": 98,
+    "none": 92,
+    "noWidth": 248,
+    "dropped": 1,
+    "empty": 23,
+    "driveway": 11
+   },
+   "ms": 852
   },
   {
    "tile": "L10",
@@ -36441,7 +38064,22 @@
      "z": 2599.2
     }
    ],
-   "ms": 285
+   "width": {
+    "cars": 25,
+    "onTrafficLane": 2,
+    "leavesUnder3m": 0,
+    "narrowStretches": 14,
+    "parkBlocked": 0,
+    "slots": 268,
+    "both": 11,
+    "one": 118,
+    "none": 7,
+    "noWidth": 132,
+    "dropped": 2,
+    "empty": 27,
+    "driveway": 1
+   },
+   "ms": 305
   },
   {
    "tile": "M10",
@@ -36536,7 +38174,21 @@
      "z": 2770.9
     }
    ],
-   "ms": 226
+   "width": {
+    "cars": 66,
+    "onTrafficLane": 4,
+    "leavesUnder3m": 0,
+    "narrowStretches": 22,
+    "parkBlocked": 0,
+    "slots": 275,
+    "both": 0,
+    "one": 108,
+    "none": 27,
+    "noWidth": 140,
+    "dropped": 0,
+    "empty": 19
+   },
+   "ms": 222
   },
   {
    "tile": "N10",
@@ -36592,7 +38244,21 @@
     }
    },
    "worst": [],
-   "ms": 44
+   "width": {
+    "cars": 15,
+    "onTrafficLane": 1,
+    "leavesUnder3m": 0,
+    "narrowStretches": 8,
+    "parkBlocked": 0,
+    "slots": 108,
+    "both": 0,
+    "one": 23,
+    "none": 2,
+    "noWidth": 83,
+    "dropped": 0,
+    "empty": 4
+   },
+   "ms": 63
   },
   {
    "tile": "O10",
@@ -36648,7 +38314,20 @@
     }
    },
    "worst": [],
-   "ms": 37
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 17,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 17,
+    "dropped": 0
+   },
+   "ms": 111
   },
   {
    "tile": "H11",
@@ -36704,7 +38383,20 @@
     }
    },
    "worst": [],
-   "ms": 109
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 8,
+    "parkBlocked": 0,
+    "slots": 206,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 206,
+    "dropped": 0
+   },
+   "ms": 265
   },
   {
    "tile": "I11",
@@ -36877,7 +38569,20 @@
      "z": 3005.6
     }
    ],
-   "ms": 491
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 16,
+    "parkBlocked": 0,
+    "slots": 629,
+    "both": 0,
+    "one": 0,
+    "none": 23,
+    "noWidth": 606,
+    "dropped": 0
+   },
+   "ms": 970
   },
   {
    "tile": "J11",
@@ -37298,7 +39003,22 @@
      "z": 3054.9
     }
    ],
-   "ms": 548
+   "width": {
+    "cars": 29,
+    "onTrafficLane": 6,
+    "leavesUnder3m": 0,
+    "narrowStretches": 26,
+    "parkBlocked": 4738,
+    "slots": 823,
+    "both": 0,
+    "one": 40,
+    "none": 101,
+    "noWidth": 682,
+    "dropped": 0,
+    "empty": 6,
+    "driveway": 3
+   },
+   "ms": 970
   },
   {
    "tile": "K11",
@@ -37665,7 +39385,22 @@
      "z": 3192.5
     }
    ],
-   "ms": 741
+   "width": {
+    "cars": 44,
+    "onTrafficLane": 9,
+    "leavesUnder3m": 3,
+    "narrowStretches": 56,
+    "parkBlocked": 3033,
+    "slots": 519,
+    "both": 18,
+    "one": 47,
+    "none": 92,
+    "noWidth": 362,
+    "dropped": 4,
+    "driveway": 12,
+    "empty": 14
+   },
+   "ms": 1678
   },
   {
    "tile": "L11",
@@ -37721,7 +39456,21 @@
     }
    },
    "worst": [],
-   "ms": 121
+   "width": {
+    "cars": 3,
+    "onTrafficLane": 1,
+    "leavesUnder3m": 0,
+    "narrowStretches": 8,
+    "parkBlocked": 0,
+    "slots": 150,
+    "both": 0,
+    "one": 61,
+    "none": 2,
+    "noWidth": 87,
+    "dropped": 0,
+    "empty": 11
+   },
+   "ms": 208
   },
   {
    "tile": "M11",
@@ -37810,7 +39559,20 @@
      "z": 3487.1
     }
    ],
-   "ms": 84
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 101,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 101,
+    "dropped": 0
+   },
+   "ms": 129
   },
   {
    "tile": "N11",
@@ -37886,7 +39648,21 @@
     }
    },
    "worst": [],
-   "ms": 111
+   "width": {
+    "cars": 42,
+    "onTrafficLane": 3,
+    "leavesUnder3m": 0,
+    "narrowStretches": 18,
+    "parkBlocked": 116,
+    "slots": 152,
+    "both": 0,
+    "one": 70,
+    "none": 1,
+    "noWidth": 81,
+    "dropped": 0,
+    "empty": 16
+   },
+   "ms": 266
   },
   {
    "tile": "O11",
@@ -37942,7 +39718,20 @@
     }
    },
    "worst": [],
-   "ms": 96
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 2,
+    "parkBlocked": 0,
+    "slots": 133,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 133,
+    "dropped": 0
+   },
+   "ms": 169
   },
   {
    "tile": "K12",
@@ -38073,7 +39862,20 @@
      "z": 3955.7
     }
    ],
-   "ms": 432
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 30,
+    "parkBlocked": 0,
+    "slots": 402,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 402,
+    "dropped": 0
+   },
+   "ms": 768
   },
   {
    "tile": "L12",
@@ -38129,7 +39931,20 @@
     }
    },
    "worst": [],
-   "ms": 49
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 114
   },
   {
    "tile": "M12",
@@ -38185,7 +40000,20 @@
     }
    },
    "worst": [],
-   "ms": 21
+   "width": {
+    "cars": 0,
+    "onTrafficLane": 0,
+    "leavesUnder3m": 0,
+    "narrowStretches": 0,
+    "parkBlocked": 0,
+    "slots": 0,
+    "both": 0,
+    "one": 0,
+    "none": 0,
+    "noWidth": 0,
+    "dropped": 0
+   },
+   "ms": 45
   }
  ]
 }

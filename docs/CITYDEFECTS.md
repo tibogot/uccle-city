@@ -108,7 +108,14 @@ so the audit runs it in node.
   UNTESTED in the running sim (no browser): watch for standoffs at a narrow stretch and for cars brushing parked cars.
 - Sunk on slopes (`viewer/cars.js wheelFit`, `?carfit=old`): parked cars pitched / rolled onto their four wheels'
   ground and lifted until no wheel is below it (was: level at the centre's height). Moving traffic already pitched.
-- Counts: see "Parking (width rule)" in the audit section.
+- Counts, all 120 tiles (tools/audit/streetAudit.mjs, docs/citydefects/street_audit.json "width"):
+  | | old slots | drop filter (first try) | width rule (default now) |
+  |---|---|---|---|
+  | parked cars | 16,545 | 5,468 | 12,084 |
+  | within 1.95 m of a traffic lane (the lanes as the worker now builds them) | 10,973 | 0 | 1,202 |
+  | leaving < 3 m of street | 4,162 | 0 | 355 |
+  Width samples: 8,261 both kerbs, 13,135 one kerb, 3,765 none; slots lost to driveways 4,797, to tags 2,594.
+  Narrow stretches with the final code, sample I6 / E4 / J5 / G5 / H6: 69 / 16 / 30 / 48 / 30.
 
 ## E. Defects
 - Gate pier with no cap / L-shaped cap (52-53): FIXED. `viewer/gardens/gardenGeom.js`: the pier cap's top (margin
