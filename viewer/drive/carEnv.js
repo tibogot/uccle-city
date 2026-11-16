@@ -45,9 +45,9 @@ export function stepContact(c, body, ground, contact) {
 }
 /** hedges: the car goes through, slowed: speed x exp(-HEDGE_DRAG dt) while its box overlaps one (a tall one: more) */
 const HEDGE_DRAG = 1.6;
-/** thin posts (signs, stop poles, bollards: radius <= POST_R): a hit off the car's centre line slides the car round
+/** thin posts (signs, stop poles, bollards: radius <= POST_R, or a polygon <= POST_BOX both ways): a hit off the car's centre line slides the car round
  *  the post (the push turned sideways) instead of stopping it dead; dead centre it still stops */
-const POST_R = 0.12, POST_SIDE = 0.3;
+const POST_R = 0.12, POST_SIDE = 0.3, POST_BOX = 0.6;   // (POST_BOX: a polygon this small both ways counts too: the landmarks' bollard slices)
 
 /**
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
@@ -107,9 +107,14 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
             }
             continue;
           }
-          if (feel && id >= col.P && col.circ[(id - col.P) * 3 + 2] <= POST_R) {
+          let px = NaN, pz = 0;
+          if (feel) {
+            if (id >= col.P) { const q = (id - col.P) * 3; if (col.circ[q + 2] <= POST_R) { px = col.circ[q]; pz = col.circ[q + 1]; } }
+            else { const q = id * 4, B = col.pbox; if (B[q + 2] - B[q] <= POST_BOX && B[q + 3] - B[q + 1] <= POST_BOX) { px = (B[q] + B[q + 2]) / 2; pz = (B[q + 1] + B[q + 3]) / 2; } }
+          }
+          if (px === px) {
             // where the post is across the car: off the centre line, push the car aside (round it)
-            const q = (id - col.P) * 3, lat = (col.circ[q] - c.x) * body.cos - (col.circ[q + 1] - c.z) * body.sin;
+            const lat = (px - c.x) * body.cos - (pz - c.z) * body.sin;
             if (Math.abs(lat) > POST_SIDE) {
               const s = lat > 0 ? -1 : 1, ex = s * body.cos, ez = -s * body.sin;     // away from the post, across the car
               const nx = contact.nx + ex * 0.9, nz = contact.nz + ez * 0.9, L = Math.hypot(nx, nz) || 1;

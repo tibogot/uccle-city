@@ -42,8 +42,8 @@ export const FEEL = {
   steerRate: 3.2, steerReturn: 6,  // rad/s toward the input, rad/s back to centre
   counterSteer: 0.85, counterFrom: 0.08,   // auto counter-steer share of the body slip past counterFrom rad
   stability: 6, stableSlip: 0.5,         // yaw assist (1/s²) per rad of body slip past stableSlip (no handbrake)
-  yawCap: 1.08, yawCapHb: 1.9, yawCapRate: 9,   // the yaw rate is held under yawCap * grip / speed (x yawCapHb with the handbrake)
-  handbrakeGrip: 0.38, handbrakeDecel: 6,
+  yawCap: 1.08, yawCapHb: 2.3, yawCapRate: 9,   // the yaw rate is held under yawCap * grip / speed (x yawCapHb with the handbrake)
+  handbrakeGrip: 0.33, handbrakeDecel: 6,
   // suspension (per unit mass): k per wheel (1/s²), damper (1/s), travel up to the bump stop, pitch / roll inertia
   springK: 21, springC: 2.6, bump: 0.1, maxRise: 2.2, maxGroundV: 6, pitchI: 1.55, rollI: 0.6,
   airGravity: 1.7,     // x gravity while no wheel touches and the ground is near (a crest at speed: a hop, never a launch)
