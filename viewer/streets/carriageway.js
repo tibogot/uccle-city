@@ -14,6 +14,7 @@ import { ROAD_TYPES } from "../../vendor/roads/roadCrossSection.js";
 
 const NOT_DRIVEN = new Set(["footway", "path", "cycleway", "steps", "pedestrian", "bridleway", "track", "service", "corridor", "platform"]);
 const CARRIAGE = new Set([0, 1, 3]);      // viewer/surfaces.js SURF_CLASS: roadway, tramRoad, parking
+const LANES = new Set([0, 1]);            // lanesOnly: the driven lanes (a bike box or a sign in a parking bay is fine)
 const CELL = 16;
 
 /** a road's carriageway half width per side: [left, right] (m from the centre line to the kerb) */
@@ -28,7 +29,8 @@ export function carriageHalf(r) {
   return [c + sum(t.left), c + sum(t.right)];
 }
 
-export function carriageway(roads, { classAt = null, onDeck = null } = {}) {
+export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false } = {}) {
+  const CLS = lanesOnly ? LANES : CARRIAGE;
   const N = new Map((roads?.nodes || []).map((n) => [n.id, n]));
   const segs = [], grid = new Map(), key = (i, j) => `${i},${j}`;
   for (const r of roads?.roads || []) {
@@ -64,10 +66,10 @@ export function carriageway(roads, { classAt = null, onDeck = null } = {}) {
     if (classAt) {
       const c = classAt(x, z);
       if (c >= 0 && !onDeck?.(x, z)) {
-        if (!CARRIAGE.has(c)) return false;
+        if (!CLS.has(c)) return false;
         if (margin <= 0) return true;
         // margin: every point of a small cross round it is carriageway too
-        return [[margin, 0], [-margin, 0], [0, margin], [0, -margin]].every(([dx, dz]) => CARRIAGE.has(classAt(x + dx, z + dz)));
+        return [[margin, 0], [-margin, 0], [0, margin], [0, -margin]].every(([dx, dz]) => CLS.has(classAt(x + dx, z + dz)));
       }
     }
     // OSM band: ends of a road's line are round (a junction's corner: the cross street's own band decides)

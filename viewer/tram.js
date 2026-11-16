@@ -12,8 +12,9 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
 import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.js";
 import { thinWire, wireHalfPx } from "./upscale.js";   // (the wire under the TAAU: blended, >= 0.6 internal px half-width)
+import { densify, tramPoleSites, POLE_OFF } from "./streets/tramPoles.js";
 
-const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4, WIRE_R = 0.012;
+const WIRE_H = 5.8, WIRE_R = 0.012;
 let wireMat = null;
 const OLD_WIRE = typeof location !== "undefined" && /[?&]aawire=0/.test(location.search);
 // joins2 (docs/JOINS2.md; ?wire2=0 = the 2.4 cm flat-lit ribbon before): the true 12 mm contact wire (r 6 mm), lit as a
@@ -43,15 +44,6 @@ function wireMaterial() {
   return (wireMat = m);
 }
 
-function densify(line, step) {
-  const out = [];
-  for (let k = 1; k < line.length; k++) {
-    const [ax, az] = line[k - 1], [bx, bz] = line[k];
-    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / step));
-    for (let s = k === 1 ? 0 : 1; s <= n; s++) out.push([ax + (bx - ax) * s / n, az + (bz - az) * s / n]);
-  }
-  return out;
-}
 
 // ---- the tram BRIDGE decks (OSM tram ways with bridge=yes; the only one in Uccle: over the L26 cutting next to
 // Saint-Job station). The DTM is bare earth, so before 2026-11-13 the tram dived 8 m into the railway cutting there.
@@ -156,32 +148,6 @@ function buildDecks(tram, prof, surface, inB, onRoadDeck = null) {
 
 /** surface(x, z): the road top; prof (viewer/trackProfile.js, optional): the tracks' smooth rail-top profile (the wire
  *  hangs WIRE_H over it, the bridge deck carries it) */
-// TRAM POLES OFF THE CARRIAGEWAY (citydefects 2026-11-16, owner playtest: "tram/catenary poles in the road"). A pole
-// stood POLE_OFF m beside its track whatever was there: in a street with the tracks in the carriageway that is the other
-// lane or the parking lane. Now (opts.driven, viewer/streets/carriageway.js) a pole that would stand in a carriageway
-// moves to the nearest measured kerb on either side (0.5 m onto the sidewalk; a median or tram reserve is fine as is),
-// its arm reaching back over the track (any length up to ARM_MAX); none within reach: no pole (the wire hangs on). ?tramPoles=old.
-const POLES_OLD = typeof location !== "undefined" && /[?&]trampoles=old/.test(location.search);
-const ARM_MAX = 9;
-function poleSite(tx, tz, nx, nz, opts) {
-  const px = tx + nx * POLE_OFF, pz = tz + nz * POLE_OFF;
-  if (POLES_OLD || !opts.driven || !opts.driven.inside(px, pz, 0.15)) return { x: px, z: pz, nx, nz, arm: POLE_OFF };
-  let best = null;
-  for (const sg of [1, -1]) {
-    const k = opts.fit?.nearKerb?.(tx + nx * sg * POLE_OFF, tz + nz * sg * POLE_OFF, 6);
-    if (!k) continue;
-    for (const back of [0.5, 0.35, 0.8]) {
-      const x = k.x + k.lx * back, z = k.z + k.lz * back;
-      if (!(opts.fit.lift(x, z) > 0) || opts.driven.inside(x, z, 0.1)) continue;
-      const dx = x - tx, dz = z - tz, d = Math.hypot(dx, dz);
-      if (d < 1.6 || d > ARM_MAX) continue;
-      if (!best || d < best.arm) best = { x, z, nx: dx / d, nz: dz / d, arm: d };
-      break;
-    }
-  }
-  return best;
-}
-
 /** opts.shelterSites: the platform shelters are NOT drawn here but returned as sites ({x, y, z, yaw}, +z toward the
  *  track) for the STIB stops kit (viewer/stops/cityStops.js); false: the placeholder shelter mesh (?stops=old) */
 export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null, opts = {}) {
@@ -197,24 +163,14 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   // ---- contact wire: thin instanced cylinders, one per 4 m segment
   const segs = [], poles = [];
   for (const l of tram) {
-    const onBridge = l.tags?.bridge === "yes";                      // no poles on the bridge deck (they stand at its ends)
     const d = densify(l.line, 4);
-    let acc = 0;
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i];
-      const L = Math.hypot(bx - ax, bz - az);
       if (inB((ax + bx) / 2, (az + bz) / 2)) segs.push([ax, trackY(ax, az) + WIRE_H, az, bx, trackY(bx, bz) + WIRE_H, bz]);
-      acc += L;
-      if (acc >= POLE_STEP) {
-        acc = 0;
-        const nx = -(bz - az) / L, nz = (bx - ax) / L;
-        const site = poleSite(bx, bz, nx, nz, opts);
-        if (!site) continue;
-        const { x: px, z: pz } = site;
-        if (!onBridge && inB(px, pz) && !poles.some((p) => (p.x - px) ** 2 + (p.z - pz) ** 2 < 64)) poles.push({ x: px, z: pz, yaw: Math.atan2(site.nx, site.nz), arm: site.arm });
-      }
     }
   }
+  // the poles: off the carriageway (viewer/streets/tramPoles.js; ?trampoles=old)
+  poles.push(...tramPoleSites(tram, inB, opts));
   const up = new THREE.Vector3(0, 1, 0), M = new THREE.Matrix4(), q = new THREE.Quaternion();
   if (segs.length && OLD_WIRE) {                                    // ?aawire=0: the old cylinders (A/B)
     const wire = new THREE.InstancedMesh(new THREE.CylinderGeometry(WIRE_R, WIRE_R, 1, 4), steel, segs.length);
