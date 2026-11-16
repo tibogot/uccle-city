@@ -27,7 +27,7 @@ export const AO_KTX2 = {
  "models/sacrecoeur/sacrecoeur_ao.png": "6c73b7a52b",
  "models/saintmarc/saintmarc_ao.png": "b4e48f57ce",
  "models/stalle/stalle_ao.png": "521864b68f",
- "models/stjob/stjob_ao.png": "9b850eb965",
+ "models/stjob/stjob_ao.png": "5faa594184",
  "models/stpierre/stpierre_ao.png": "40f2a4dba7",
  "models/townhall/townhall_ao.png": "933a80b6ed",
  "models/tram2/t3000_ao.png": "2f5816c0e2",
