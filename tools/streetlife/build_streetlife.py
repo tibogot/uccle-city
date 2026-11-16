@@ -674,6 +674,8 @@ def build_tile(name: str, src) -> dict:
             continue
         want = SHOP_MAX_W if kind in ("supermarket", "restaurant", "bank") else 5.5
         fa = F.attach(x, z, want, street=t.get("addr:street"))      # the POI's own street (OSM addr:street) wins
+        # (citydefects) a tight row of shops (Place de Saint-Job): a narrower front before giving up, within 10 m
+        fa = fa or F.attach(x, z, 3.2, reach=10.0, street=t.get("addr:street"))
         if not fa:
             skipped(f"{kind}: no free street façade within 20 m")
             continue
