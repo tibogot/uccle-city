@@ -1065,7 +1065,7 @@ async function main() {
   // ready" behind the play loader)
   if (GAME_START && params.get("gamepreload") !== "old") {
     import("./game/cityGame.js").catch(() => {});
-    if (GAME_ID === "police") { import("./police/policeGame.js").catch(() => {}); import("./drive/carPacks.js").then((m) => m.loadPack("faceted")).catch(() => {}); }
+    if (GAME_ID === "police") { import("./police/policeGame.js").catch(() => {}); import("./drive/carPacks.js").then((m) => m.loadPack(m.FLEET_SOURCE)).catch(() => {}); }
     if (GAME_ID === "falcon") import("./falconGame/falconGameDef.js").catch(() => {});
   }
   // perfgame round 5: the player's position for the staged landmark compiles (stagedCompile.js); before the modes exist,

@@ -7,6 +7,7 @@
 // The car only looks at the cells round it (carEnv.js). Ground = the drivable surface grid (road deck, sidewalks).
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
+import { FLEET_SOURCE } from "./carPacks.js";
 import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
 import { createFeelState, stepFeel } from "./carFeel.js";
 /** ?carfeel=old: the car's handling before the police-feel round (docs/POLICE_FEEL.md): carPhysics.js stepCar, kerb
@@ -328,7 +329,7 @@ export class Driver {
       this.scene.add(rig.root);
       this.twos[kind] = { model, rig };
     }
-    if (this.vehicle === "car" && !this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "faceted:hatch_c").catch(() => this.setCar("scripted"));
+    if (this.vehicle === "car" && !this.car) await this.setCar(new URLSearchParams(location.search).get("car") || `${FLEET_SOURCE}:hatch_c`).catch(() => this.setCar("scripted"));
     if (this.on && was !== this.vehicle) {
       const s = this.state;
       this.startPose = { x: s.x, z: s.z, heading: s.heading };
@@ -362,7 +363,7 @@ export class Driver {
       this.reset();
       return;
     }
-    if (!this.car) await this.setCar(new URLSearchParams(location.search).get("car") || "faceted:hatch_c").catch(() => this.setCar("scripted"));   // our faceted family is the default (owner, 2026-11-05)
+    if (!this.car) await this.setCar(new URLSearchParams(location.search).get("car") || `${FLEET_SOURCE}:hatch_c`).catch(() => this.setCar("scripted"));   // our own family is the default (owner, 2026-11-05; cars2 since 2026-11-16, ?cars=old the faceted one)
     this.startPose = { x, z, heading };
     this.on = true;
     this.car.root.visible = true;

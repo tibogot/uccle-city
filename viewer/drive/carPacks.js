@@ -11,7 +11,7 @@ import * as THREE from "three/webgpu";
 import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, cos, sin, positionLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { lodMesh, lodOpts } from "./carLod.js";
+import { lodMesh, lodOpts, partLevel } from "./carLod.js";
 import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // ?vfix2=old: the traffic's light bits decoded as before round 2 of the visual fixes (A/B)
@@ -30,7 +30,17 @@ export const PACK_SOURCES = {
     // body error per LOD; wheels have their own (colour borders locked up to LOD1, free beyond: seen whole, far away)
     lods: [{ error: 0, wheel: 0, until: 22 }, { error: 0.008, wheel: 0.018, until: 55 }, { error: 0.032, wheel: 0.05, until: 130 },
       { error: 0.11, wheel: 0.10, loose: true, until: 600 }] },     // LOD3: position-only weld, colour as an attribute
+  // ours, round 2 (docs/CARS2.md): tools/blender/cars2.py, smooth lofted bodies at real proportions, Cycles AO, AUTHORED
+  // LODs in the GLB (Body / Wheel_* = LOD0 ~7.5-9k tris, *_L1 = LOD1 ~1.5-2.1k, *_L2 = LOD2 ~350). The fleets keep their
+  // four levels (levels 0-1 the near material, 2-3 the far one, level 3 casts no shadow); `src` = the authored LOD drawn
+  cars2: { label: "Cars 2 (cars2.py)", url: new URL("../../models/cars/cars2.glb", import.meta.url).href, credit: "uccle-city, scripted",
+    rich: true, authored: true,
+    lods: [{ src: 0, until: 30 }, { src: 1, until: 60 }, { src: 1, until: 130 }, { src: 2, until: 600 }] },
 };
+/** THE CITY'S CAR FAMILY: "cars2" (default) or, with ?cars=old, the faceted family as before. Every fleet (parked,
+ *  traffic, the police yard and game, the drive car's default) loads FLEET_SOURCE. */
+export const CARS_OLD = typeof location !== "undefined" && /[?&]cars=old(&|$)/.test(location.search);
+export const FLEET_SOURCE = CARS_OLD ? "faceted" : "cars2";
 export const PACK_LODS = [
   { error: 0, until: 25 },         // LOD0: the pack's mesh
   { error: 0.012, until: 70 },     // LOD1: 1.2 cm
@@ -60,9 +70,14 @@ export function loadPack(source) {
         parts[name.replace(/_\d+$/, "")] = { geo, pos: o.position.toArray() };   // GLTFLoader makes names unique: Body_3
       });
       const done = new Map();       // the left / right wheels share a geometry: simplify it once
+      // authored LODs (cars2): `parts` keeps LOD0 (Body, Wheel_*); a level draws its `src` LOD's parts (Body_L1 ...)
+      const all = { ...parts };
+      if (S.authored) for (const k of Object.keys(parts)) if (partLevel(k)) delete parts[k];
       const lods = (S.lods || PACK_LODS).map((L) => {
         const out = { tris: 0 };
-        for (const [k, p] of Object.entries(parts)) {
+        for (const k of Object.keys(parts)) {
+          const p = S.authored && L.src ? all[`${k}_L${L.src}`] : all[k];
+          if (!p) continue;
           const o = lodOpts(S, L, k), key = `${p.geo.uuid}|${o.error}`;
           const g = done.get(key) || (o.error ? lodGeometry(p.geo, o) : p.geo);
           done.set(key, g);

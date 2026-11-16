@@ -17,7 +17,7 @@
 // default); with it off J still switches the siren "on" for the traffic (it yields) and the HUD shows it.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, float } from "three/tsl";
-import { loadPack, packMaterial, playerSeeThrough } from "../drive/carPacks.js";
+import { loadPack, packMaterial, playerSeeThrough, FLEET_SOURCE, CARS_OLD } from "../drive/carPacks.js";
 import { createCar, carLights, fitBody } from "../drive/carModel.js";
 import { gather, pointInBuilding } from "../drive/colliders.js";
 import { NIGHT } from "../nightLights/nightMode.js";
@@ -30,6 +30,9 @@ import { mergeKit, unmergeKit } from "./kitMerge.js";   // perfgame round 2: the
 
 /** the car: type and paint (Belgian unmarked cars: dark estates, VW Passat / Skoda Octavia class) */
 export const POLICE_CAR = { type: "estate", paint: 0x1c232c, mode: "rotating" };
+/** ?policecar=marked (cars2 only): the Belgian police estate in its livery (white, blue + yellow Battenburg, POLICE)
+ *  instead of the unmarked dark estate (docs/CARS2.md) */
+const MARKED = !CARS_OLD && typeof location !== "undefined" && /[?&]policecar=marked(&|$)/.test(location.search);
 export const LIGHT = {
   beam: 1500,           // the rotating beam (pool units: colour x intensity, falloff 1 / (d^2 + size^2))
   fanW: 0.15, fanH: 0.55,   // the beam's fan: half width / half height at 1 m (~ +-8.5 deg x +-29 deg)
@@ -51,9 +54,9 @@ let models = null, poolSlot = -1, poolRef = null;
 /** the police model: the faceted pack's estate with its OWN material (its paint, the wig-wag head lamps) */
 async function policeModel() {
   if (models) return models;
-  const pack = await loadPack("faceted");
-  const car = pack.cars.find((c) => c.id === POLICE_CAR.type) || pack.cars[0];
-  const paint = new THREE.Color(POLICE_CAR.paint);
+  const pack = await loadPack(FLEET_SOURCE);
+  const car = pack.cars.find((c) => c.id === (MARKED ? "police" : POLICE_CAR.type)) || pack.cars[0];
+  const paint = MARKED ? car.paint.clone() : new THREE.Color(POLICE_CAR.paint);
   // head lamps: the city's head switch, or (wig-wag) the side's flash: + x = the car's left
   const head = carLights.head.mul(float(1).sub(wig.on)).add(wig.on.mul(select(positionLocal.x.greaterThan(0), wig.L, wig.R)).mul(1.6));
   const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich) });
@@ -66,7 +69,7 @@ async function policeModel() {
     tris: L.tris,
   }));
   models = { spec: `police:${car.id}`, label: "unmarked police car", lods, wheelPos, size: car.size, mats: { Pack: mat }, lodDist: pack.lods.map((l) => l.until),
-    setPaint: (hex) => paint.setHex(hex ?? POLICE_CAR.paint) };
+    setPaint: (hex) => { if (!MARKED) paint.setHex(hex ?? POLICE_CAR.paint); } };
   return models;
 }
 

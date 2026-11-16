@@ -9,7 +9,7 @@
 //   const cars = await buildPoliceCars({ site, groundAt, lift });  scene.add(cars.group);  cars.update(cameraPos)
 import * as THREE from "three/webgpu";
 import { attribute, select, positionLocal, normalLocal, abs, floor, mod, mix, smoothstep, step, vec3 } from "three/tsl";
-import { loadPack, packMaterial } from "./drive/carPacks.js";
+import { loadPack, packMaterial, FLEET_SOURCE } from "./drive/carPacks.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 // perfgame round 2 (docs/PERF_GAME.md, ?patrolmerge=old = one mesh per part): the 5 parked cars are static: each level
@@ -71,8 +71,12 @@ function lightBarMaterial() {
 }
 
 export async function buildPoliceCars({ site, groundAt, lift = 0.06 }) {
-  const pack = await loadPack("faceted");
+  const pack = await loadPack(FLEET_SOURCE);
   const byId = Object.fromEntries(pack.cars.map((c) => [c.id, c]));
+  // ?policecar=marked (cars2): the estates are the police estate with its livery modelled (white, Battenburg, POLICE:
+  // tools/blender/cars2.py) in a plain pack material (+1 draw per level); default: every car in the livery material
+  const marked = byId.police && /[?&]policecar=marked(&|$)/.test(location.search) ? packMaterial({ paint: byId.police.paint.clone(), rich: true }) : null;
+  if (marked) marked.name = "police estate (cars2)";
   const F = site.frame, ca = Math.cos(F.rotation_rad), sa = Math.sin(F.rotation_rad);
   const toCity = (u, w) => [F.origin_city[0] + u * ca - w * sa, F.origin_city[1] + u * sa + w * ca];
   const mat = liveryMaterial(), barMat = lightBarMaterial();
@@ -81,7 +85,8 @@ export async function buildPoliceCars({ site, groundAt, lift = 0.06 }) {
   levels.forEach((g, k) => { g.name = `police-cars-lod${k}`; group.add(g); });
   let tris = [0, 0];
   for (const P of POLICE_CAR_PLACES) {
-    const car = byId[P.type] ?? pack.cars[0];
+    const car = (marked && P.type === "estate" ? byId.police : byId[P.type]) ?? pack.cars[0];
+    const cm = marked && car === byId.police ? marked : mat;
     const [x, z] = toCity(P.u, P.w);
     // nose direction in city (x, z): the frame's u or w axis
     const dir = P.nose[0] === "u" ? [ca, sa] : [-sa, ca];
@@ -89,12 +94,13 @@ export async function buildPoliceCars({ site, groundAt, lift = 0.06 }) {
     const heading = Math.atan2(dir[0] * sg, dir[1] * sg);       // local +z (the nose) -> (sin h, cos h)
     const y = groundAt(x, z) + lift;
     LODS.forEach((L, k) => {
-      const lod = car.lods[Math.min(L.pack, car.lods.length - 1)];
+      // (cars2: the near level draws LOD0: its authored LOD1 is a 30-130 m model, crude at the yard's 5 m; 5 cars)
+      const lod = car.lods[Math.min(k === 0 && FLEET_SOURCE === "cars2" ? 0 : L.pack, car.lods.length - 1)];
       const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = heading;
       for (const [name, part] of Object.entries(car.parts)) {
         const geo = lod[name]; if (!geo) continue;
-        const mm = new THREE.Mesh(geo, mat); mm.position.fromArray(part.pos);
-        mm.castShadow = true; mm.receiveShadow = true; mm.userData.base = mat;
+        const mm = new THREE.Mesh(geo, cm); mm.position.fromArray(part.pos);
+        mm.castShadow = true; mm.receiveShadow = true; mm.userData.base = cm;
         g.add(mm); tris[k] += geo.index.count / 3;
       }
       // the light bar (a box on the roof, 1.1 x 0.07 x 0.24 m)
@@ -129,5 +135,5 @@ export async function buildPoliceCars({ site, groundAt, lift = 0.06 }) {
       prevT = t;
     });
   };
-  return { group, levels, update, state, tris, materials: [mat, barMat], places: POLICE_CAR_PLACES };
+  return { group, levels, update, state, tris, materials: marked ? [mat, barMat, marked] : [mat, barMat], places: POLICE_CAR_PLACES };
 }

@@ -22,7 +22,8 @@ import { cityWeather } from "./weather/cityWeather.js";
 
 const TIMES = ["golden", "midday", "overcast", "twilight", "night", "misty"];
 const CHARS = ["hoodie", "casual", "capsule"];
-const FACETED = ["hatch_s", "hatch_c", "estate", "saloon", "suv", "van_c", "van_p", "taxi"];   // models/cars/faceted.glb
+const FACETED = ["hatch_s", "hatch_c", "estate", "saloon", "suv", "van_c", "van_p", "taxi"];   // models/cars/cars2.glb (+ police) / faceted.glb
+const CAR_SRC = /[?&]cars=old(&|$)/.test(location.search) ? "faceted" : "cars2";              // viewer/drive/carPacks.js FLEET_SOURCE
 const NAV = new Set(FEATURES.filter((f) => f.group === "nav").map((f) => f.key));
 
 const CSS = `
@@ -204,7 +205,7 @@ export function createDevPanel(ctx) {
     vfog: !!lighting.vfogOn, fogDensity: lighting.vfogParams?.density ?? 0.014, fogTop: lighting.vfogParams?.top ?? 82, fogFalloff: lighting.vfogParams?.falloff ?? 18,
     lampPower: uLampPower.value, ao: pipe?.uniforms.ao.value ?? 0.6, ssr: pipe?.uniforms.ssr.value ?? 1, bloom: pipe?.bloomPass?.strength.value ?? 0.24,
     skyHaze: dev.haze, shadows: lighting.sun.castShadow, fov: camera.fov,
-    car: params.get("car") || "faceted:hatch_c", char: params.get("char") || "hoodie", parked: true,
+    car: params.get("car") || `${CAR_SRC}:hatch_c`, char: params.get("char") || "hoodie", parked: true,
   };
 
   // ---------------------------------------------------------------- Go to & share
@@ -272,10 +273,10 @@ export function createDevPanel(ctx) {
     const { loadMotoModel, SCOOTER_PAINTS } = await import("./moto/motoModel.js");
     (await loadMotoModel("scooter")).setPaint(SCOOTER_PAINTS[v]);
   });
-  const cars = ["scripted", ...FACETED.map((id) => `faceted:${id}`)];
+  const cars = ["scripted", ...FACETED.map((id) => `${CAR_SRC}:${id}`), ...(CAR_SRC === "cars2" ? ["cars2:police"] : [])];
   if (!cars.includes(S.car)) cars.push(S.car);
   fC.add(S, "car", cars).name("car (drive)").onChange(async (v) => {
-    setParam("car", v, "faceted:hatch_c");
+    setParam("car", v, `${CAR_SRC}:hatch_c`);
     try { await driver.setCar(v); log(`drive: car ${v}`); } catch (e) { log(`drive: car ${v} failed (${e.message})`); }
   });
   fC.add({ on: /[?&]drivedebug=1/.test(location.search) }, "on").name("car colliders (G)").onChange((v) => { driver.debug.visible = v; driver.debugWanted = v; setParam("drivedebug", v ? "1" : null); });

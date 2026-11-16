@@ -55,10 +55,13 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
 8e. **Police car model looks crude from behind** (coordinator 2026-11-16, chase view now frames it large): blocky tail
    lights, flat cream band, low-poly body. Premium Blender police estate (Belgian federal/local police livery: white +
    blue/yellow Battenburg, real proportions, bevels, tail-light clusters, plate recess), LODs, same kit slots.
+   -> claude/cars2 (2026-11-16): the cars2 police estate (`?policecar=marked`; the game's unmarked estate is on the new
+   body by default), docs/CARS2.md. Browser check pending.
 8f. **Owner wishes 2026-11-16 (after the current jobs)**: (a) CHARACTER: Quaternius UAL1+UAL2 rig + the robot's
    locomotion code from claude/character2 as default (?char=hoodie old). (b) CAR SHAPES: traffic/parked car bodies,
    the FRONT looks weird; compare with Mr.doob slop-newyork cars, propose better cars (Blender, premium, LODs,
-   instanced, shared atlas) at the same or lower cost. (c) LYCEE FRANCAIS / CHEMIN DE CORTENBOSCH area (owner lives
+   instanced, shared atlas) at the same or lower cost. -> claude/cars2: DONE offline (docs/CARS2.md: diagnosis, slop comparison, 9 lofted
+   cars with authored LODs, same draws, -70 % tris at 22-55 m, ?cars=old); browser comparison pending. (c) LYCEE FRANCAIS / CHEMIN DE CORTENBOSCH area (owner lives
    there): detail pass with references (school, the chemin's cobbles/hedges/walls, local details). (d) GELEYTSBEEK
    CASTLE (Kasteel / Chateau de Geleytsbeek): hero model if not done (references online, look only). (e) LA BRANCHE
    D'OLIVIER restaurant (in streetlife E7): make it recognisable like Le Relais.

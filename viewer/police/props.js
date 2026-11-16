@@ -9,7 +9,7 @@
 // first accident does not stall a frame.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, normalLocal, attribute, float, vec3, smoothstep, sin, color, max } from "three/tsl";
-import { loadPack, packMaterial } from "../drive/carPacks.js";
+import { loadPack, packMaterial, FLEET_SOURCE } from "../drive/carPacks.js";
 import { KIND } from "../drive/colliders.js";
 
 export const hazard = uniform(0);                   // the damaged cars' hazard lights 0 / 1 (blinks, set by the game)
@@ -45,7 +45,7 @@ export class Props {
   }
   async ready() {
     if (this.pack) return this.pack;
-    this.pack = await loadPack("faceted");
+    this.pack = await loadPack(FLEET_SOURCE);
     if (!this.cones) this.cones = this.makeCones();
     return this.pack;
   }
@@ -101,7 +101,7 @@ export class Props {
     const car = this.pack.cars.find((c) => c.id === type) || this.pack.cars[0];
     const col = new THREE.Color(paint);
     const mat = damage ? damagedMaterial(col, this.pack.rich, damage) : packMaterial({ paint: col, rich: this.pack.rich, clearcoat: true, seeThrough: true });
-    const L = car.lods[Math.min(1, car.lods.length - 1)];
+    const L = car.lods[Math.min(FLEET_SOURCE === "cars2" ? 0 : 1, car.lods.length - 1)];   // (cars2: LOD1 is a 30 m+ model)
     const g = new THREE.Group(); g.name = `police-prop-${type}`;
     const body = new THREE.Mesh(L.Body, mat); body.castShadow = true; body.receiveShadow = true; g.add(body);
     for (const k of ["FL", "FR", "RL", "RR"]) {
