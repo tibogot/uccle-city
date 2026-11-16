@@ -64,7 +64,7 @@ export async function addVanBuuren({ scene, updaters, hide, world, manifest, log
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = VB_LODS.map((_, k) => m.make(k));
     root.add(...levels);
-    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "vanbuuren" }).then((r) => r && log?.(`vanbuuren: far LOD ${r.before} -> ${r.after} draws`)).catch(() => {});   // perfgame round 7 (?farlodlm=1)
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "vanbuuren" }).then((r) => r && log?.(`vanbuuren: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=1)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);

@@ -2071,11 +2071,14 @@ async function main() {
   // (motorbike round 2: a ?view=moto|scooter|villo|drive&at= outside the boot tile: stream it in, then start there)
   driveAt = async (vehicle) => { await teleport({ x: atP[0], z: atP[1], yaw: 0 }); controls.enabled = false; return drive(vehicle); };
   if (pendingDriveAt) { const v = pendingDriveAt; pendingDriveAt = null; driveAt(v).catch((e) => log(`?at start: ${e.message}`)); }
+  (globalThis.__gameTimes ||= []).push(["cover->panel", Math.round(performance.now() - (window.__coverAt || 0))]);
   // the dev panel (viewer/devPanel.js; ?panel=0: the old HUD only)
   if (params.get("panel") !== "0") {
     try {
-      const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      // perfgame round 7 (?panelwait=old: awaited): the panel's code loads beside the game kit, not before it (0.6 s)
+      const mkPanel = ({ createDevPanel }) => createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      if (params.get("panelwait") === "old") mkPanel(await import("./devPanel.js"));
+      else import("./devPanel.js").then(mkPanel).catch((e) => log(`dev panel: ${e.message}`));
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
@@ -2085,6 +2088,7 @@ async function main() {
   }
   // ---- GAME KIT (viewer/game/, docs/GAMEKIT.md): the start menu, missions, the player HUD; ?game=0 = free roam as before
   if (params.get("game") !== "0") {
+    (globalThis.__gameTimes ||= []).push(["cover->kit call", Math.round(performance.now() - (window.__coverAt || 0))]);
     import("./game/cityGame.js").then((g) => g.startGameKit({ scene, camera, renderer, controls, world, manifest, params, log, getPlayer, teleport, setView, walk, fly, drive,
       thirdPerson, driver, walker, flyer, getThird: () => third, getMap: () => mapHook, getTraffic: () => window.__traffic ?? null,
       pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop), updaters, areaReady }))

@@ -26,7 +26,7 @@ export async function addAugustin({ scene, updaters, world, manifest, log, compi
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = AU_LODS.map((_, k) => m.make(k));
     root.add(...levels);
-    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "augustin" }).then((r) => r && log?.(`augustin: far LOD ${r.before} -> ${r.after} draws`)).catch(() => {});   // perfgame round 7 (?farlodlm=1)
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "augustin" }).then((r) => r && log?.(`augustin: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=1)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);
