@@ -69,7 +69,8 @@ import { carriageway, docOffLanes } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
 import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";
-import { stagedCompiler, setStagedFocus, STAGED } from "./stagedCompile.js";   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
+import { stagedCompiler, setStagedFocus, STAGED } from "./stagedCompile.js";
+import { FAR_MERGE, mergeFarLevel } from "./farMerge.js";   // perfgame round 6: a far LOD in one draw (?farlodmerge=1)   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
 import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";   // perfgame: the play loader (?playloader=old: none)
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
@@ -1330,6 +1331,8 @@ async function main() {
           // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
           const tw = performance.now();
           for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
+          // perfgame round 6 (?farlodmerge=1, off by default): the far level in one draw (viewer/farMerge.js)
+          if (FAR_MERGE) await mergeFarLevel(pb.levels[pb.levels.length - 1], { renderer, aoTex: b.aoTex, name: `bridge ${name}` }).then((r) => r && log(`bridge ${name}: far LOD ${r.before} -> ${r.after} draws (${r.slots} slots, means baked)`)).catch((e) => log(`bridge ${name} far merge: ${e.message}`));
           const warm = await warmBridge(pb, { compile: heroCompiler() ?? compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
           scene.add(pb.group);
           window.__bridges ??= {}; window.__bridges[name] = { b, pb, warm };
