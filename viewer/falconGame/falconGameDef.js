@@ -171,6 +171,9 @@ export const FALCON_GAME = {
         }
       };
       host.updaters.push(S.frameFn);
+      // perfgame (docs/PERF_GAME.md): the area round the eyrie built BEFORE the intro starts (the play loader holds;
+      // the bird would otherwise fly its intro behind the screen and the area would move with it)
+      if (S.eyrie && host.areaReady && window.__playLoader?.active) await host.areaReady({ x: S.eyrie.x, z: S.eyrie.z, label: "Falcon", near: 550 });
       // the nest start (the intro: the scrape, the hop to the ledge, the launch; Space skips)
       await host.fly();
       S.prev = { sound: fl.audio?.on ?? null, P: fl.game.f.P };

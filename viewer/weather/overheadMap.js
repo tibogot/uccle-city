@@ -32,6 +32,7 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
   const rt = new THREE.RenderTarget(res, res, { type: THREE.FloatType, format: THREE.RGBAFormat, minFilter: THREE.NearestFilter,
     magFilter: THREE.NearestFilter, generateMipmaps: false, depthBuffer: true });
   rt.texture.colorSpace = THREE.NoColorSpace;
+  rt.syncPipes = true;                    // (perfgame asyncPipes.js: a bake, every draw must land: three's sync pipelines)
   const cam = new THREE.OrthographicCamera(-size / 2, size / 2, size / 2, -size / 2, 0.1, depth);
   const mat = new THREE.MeshBasicNodeMaterial();
   // all three POSITIVE (r187 clamps negative colour output on this path: x < 0 read back as 0), decoded in toGrid()
