@@ -159,13 +159,16 @@ def fill2d(fr, loops, w, mat, sub=0, band=0, flip=False):
         if (cr < 0) != flip: b, c = c, b
         B.face([fr.p(a[0], a[1], w), fr.p(b[0], b[1], w), fr.p(c[0], c[1], w)], mat, sub, band)
 
-def strip2d(fr, loop, w0, w1, mat, sub=0, band=0, inward=True):
-    """Side walls of a 2D loop between depths w0 (front) and w1: facing into the loop (a hole's reveal) or out of it."""
+def strip2d(fr, loop, w0, w1, mat, sub=0, band=0, inward=True, floor=None):
+    """Side walls of a 2D loop between depths w0 (front) and w1: facing into the loop (a hole's reveal) or out of it.
+    floor = (y, w): the horizontal edge at height y (a reveal's floor) starts at depth w instead of w0 (falconfix: where a
+    sill ledge's top already covers the front of it; the two were coplanar over the surround's projection: z-fighting)"""
     loop = ccw(loop)
     n = len(loop)
     for i in range(n):
         a, b = loop[i], loop[(i + 1) % n]
-        A0, B0, B1, A1 = fr.p(a[0], a[1], w0), fr.p(b[0], b[1], w0), fr.p(b[0], b[1], w1), fr.p(a[0], a[1], w1)
+        f0 = floor[1] if floor and abs(a[1] - floor[0]) < 1e-6 and abs(b[1] - floor[0]) < 1e-6 else w0
+        A0, B0, B1, A1 = fr.p(a[0], a[1], f0), fr.p(b[0], b[1], f0), fr.p(b[0], b[1], w1), fr.p(a[0], a[1], w1)
         if inward: quad(A0, B0, B1, A1, mat, sub, band)
         else: quad(A0, A1, B1, B0, mat, sub, band)
 
@@ -229,7 +232,10 @@ class Arch:
         inner, outer = self.inner(), self.hole()
         fill2d(fr, [outer, inner], self.proud, MASONRY, STONE)
         strip2d(fr, outer, self.proud, 0.0, MASONRY, STONE, 0, inward=False)
-        strip2d(fr, inner, self.proud, -self.depth, MASONRY, BRICK_PLAIN if self.kind != "door" else STONE)
+        # (the reveal's floor starts at the wall plane when a sill ledge is built: the ledge's top (sill, depth 0 .. 0.14)
+        # is the floor in front of it; before, both covered depth 0 .. proud at the same height: z-fighting, seen on the
+        # falcons' arch from the nest start's walk to the ledge)
+        strip2d(fr, inner, self.proud, -self.depth, MASONRY, BRICK_PLAIN if self.kind != "door" else STONE, floor=(self.sill, 0.0) if self.ledge else None)
         if self.kind == "glass":
             fill2d(fr, [inner], -self.depth, GLASS, 0)
             # a stone mullion + transom for wide windows (reads at street distance)

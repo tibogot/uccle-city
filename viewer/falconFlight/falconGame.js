@@ -15,6 +15,11 @@
 // the air's vertical speed / mode, for the lab's graph and the verification records.
 import * as THREE from "three/webgpu";
 import { FalconFlight, FlightControls, G } from "./flightModel.js";
+import { FlightAssist } from "./flightAssist.js";
+import { CTL_OLD } from "./falconInput.js";
+/** ?falconcol=old also keeps round 1's take-off (a drop forward from the perch's own height: from the ground or a flat
+ *  roof it touched down again at once) */
+const COL_OLD = typeof location !== "undefined" && /[?&]falcon(col|hit)=old(&|$)/.test(location.search);
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -24,6 +29,10 @@ export class FalconGame {
   constructor({ world, air, bird, pigeons, fam, audio = null, input }) {
     Object.assign(this, { world, air, bird, pigeons, fam, audio, input });
     this.f = new FalconFlight();
+    // the flight assist (falconfix: the player says where, the assist flies; ?falconctl=old = the raw controls)
+    this.assist = CTL_OLD ? null : new FlightAssist();
+    if (this.assist && typeof location !== "undefined" && /[?&]falconavoid=0(&|$)/.test(location.search)) this.assist.avoid = false;
+    this.steerT = -1; this._ov = { psi: 0, gamma: 0 };
     this.mode = "fly";                         // fly | perch | land
     this.size = { readable: 2.0, life: 1.0 };
     this.span = 2.0;
@@ -59,6 +68,7 @@ export class FalconGame {
     this.f.launch(x, y, z, heading, speed, gamma, this.air);
     this.mode = "fly"; this.perch = null; this.landing = null;
     this.input.syncAim(heading, gamma);
+    this.assist?.reset();
   }
   perchOn(p) {
     this.mode = "perch"; this.perch = p; this.landing = null;
@@ -93,7 +103,23 @@ export class FalconGame {
     // the tops of the trees' crowns (the city: cityStream.js treePerches), facing the way the bird comes in
     if (this.world.treePerches) for (const q of this.world.treePerches(p.x, p.z, 28)) test(q);
     if (best?.tree) best.yaw = f.heading;
+    if (!best && this.assist && !COL_OLD) best = this.spotAhead();
     return best;
+  }
+  /** (falconfix) no perch in reach: E lands on the roof / ground ahead (8-20 m on, level within 0.4 m over 1.6 m, 0.5-25 m
+   *  under the bird), one reused spot */
+  spotAhead() {
+    const f = this.f, w = this.world, d = clamp(f.V * 1.2, 8, 20);
+    const x = f.pos.x - Math.sin(f.heading) * d, z = f.pos.z - Math.cos(f.heading) * d;
+    const fl = (a, b) => (w.column ? w.column(a, b, f.pos.y).floor : w.floor(a, b));
+    const h = fl(x, z), drop = f.pos.y - h;
+    if (drop < 0.5 || drop > 25) return null;
+    const e = 0.8;
+    if (Math.abs(fl(x + e, z) - h) > 0.4 || Math.abs(fl(x - e, z) - h) > 0.4 || Math.abs(fl(x, z + e) - h) > 0.4 || Math.abs(fl(x, z - e) - h) > 0.4) return null;
+    const S = (this._spot ??= { name: "spot", pos: new THREE.Vector3(), yaw: 0, spot: true });
+    const g = w.ground ? w.ground(x, z) : h;
+    S.pos.set(x, h, z); S.yaw = f.heading; S.roof = h > g + 1.5;
+    return S;
   }
 
   beginLanding(q) {
@@ -106,14 +132,23 @@ export class FalconGame {
     const v1 = face.clone().multiplyScalar(0.8).add(new THREE.Vector3(0, -0.6, 0));
     this.landing = { q, p0, v0, v1, T, t: 0, yaw0: f.heading };
     this.mode = "land";
-    this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : q.tree ? "a tree's crown" : "a roof ridge"}: the flare`);
+    this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : q.tree ? "a tree's crown" : q.spot ? (q.roof ? "the roof" : "the ground") : "a roof ridge"}: the flare`);
+    if (q.spot) this.landing.q = { name: q.roof ? "roof" : "ground", pos: q.pos.clone(), yaw: q.yaw, roof: q.roof };
   }
 
   takeoff() {
     const p = this.perch; if (!p) return;
     const h = p.yaw;
-    this.f.launch(p.pos.x - Math.sin(h) * 0.4, p.pos.y + 0.3, p.pos.z - Math.cos(h) * 0.4, h, 6, -0.25, this.air);
+    if (COL_OLD) this.f.launch(p.pos.x - Math.sin(h) * 0.4, p.pos.y + 0.3, p.pos.z - Math.cos(h) * 0.4, h, 6, -0.25, this.air);
+    else {
+      // (falconfix) a jump UP and forward, clear of the surface it stands on (the feet are at p.pos: the body's centre
+      // 0.35 m over them), no touch-down for 0.6 s; the assist climbs it 8 m before it holds the height
+      this.f.launch(p.pos.x - Math.sin(h) * 0.4, p.pos.y + 0.6, p.pos.z - Math.cos(h) * 0.4, h, 7, 0.3, this.air);
+      this.f.noLand = 0.6;
+    }
     this.f.stamina = Math.max(this.f.stamina, 0.3);
+    this.input.syncAim(h, 0);
+    if (this.assist) { this.assist.reset(); this.assist.hT = p.pos.y + 8; }
     this.mode = "fly"; this.perch = null; this.takeoffT = 0.9;
     this.say("take-off: a drop and three wingbeats");
   }
@@ -154,21 +189,32 @@ export class FalconGame {
       if (s >= 1) this.perchOn(L.q);
     } else {
       // ---- free flight
+      // the assist (not under a verification script: those fly the raw controls); the hunt's aim assist steering this
+      // frame (hunt.js sets steerT): the assist follows the path it gives instead of pulling back to the aim
+      f.assisted = !!this.assist && !inp.script;
+      if (f.assisted) {
+        const ov = this.t - this.steerT < 0.1 ? this._ov : null;
+        if (ov) { ov.psi = f.heading; ov.gamma = f.gamma; }
+        this.assist.override = ov;
+        const W = this.window; this.assist.chase = !!(W && W.i >= 0 && W.d < 90 && W.angle < 0.6 && !this.bird.prey);
+        this.assist.apply(dt, f, inp.intent, C, this.world);
+      }
       if (this.takeoffT > 0) { this.takeoffT -= dt; C.flap = 1; C.pitch = Math.max(C.pitch, 0.3); C.fold = 0; }
       const t1 = performance.now();
       f.step(dt, C, this.air, this.world);
       this.cpu.flight = this.cpu.flight * 0.95 + (performance.now() - t1) * 0.05;
       const c = f.contact;
       if (c) {
-        if (c.land || (c.speed < 4 && c.ny > 0.7)) {
+        if (c.land || (c.speed < 4 && c.ny > 0.7 && f.noLand <= 0)) {
           const yaw = f.heading, tree = c.tree != null;
           this.perchOn({ name: tree ? "tree" : "roof", pos: new THREE.Vector3(c.x, c.y - 0.35, c.z), yaw, roof: !tree, tree });
           this.say(tree ? "touched down on a tree's crown" : "touched down");
-        } else if (c.hard) { this.say(`hit ${c.tree != null ? "a tree" : c.under ? "the underside" : c.wall ? "a wall" : "the ground"} at ${c.vn.toFixed(0)} m/s: stunned`); this.audio?.thud(true); }
-        else this.audio?.thud(false);
+        } else if (c.hard) { this.say(`hit ${c.tree != null ? "a tree" : c.under ? "the underside" : c.wall ? "a wall" : "the ground"} at ${c.vn.toFixed(0)} m/s: ${this.assist ? "tumbling, the wings open" : "stunned"}`); this.audio?.thud(true); }
+        else if (c.vn > 1.5 || !this.assist) this.audio?.thud(false);
+        if (this.assist && !c.land) this.assist.hT = null;
         f.contact = null;
       }
-      if (inp.take("land")) { const q = this.perchInReach(); if (q) this.beginLanding(q); else this.say("no perch in reach (ahead, < 28 m, under 24 m/s)"); }
+      if (inp.take("land")) { const q = this.perchInReach(); if (q) this.beginLanding(q); else this.say(this.assist ? "nowhere to land ahead (slower than 24 m/s, over a roof or the ground)" : "no perch in reach (ahead, < 28 m, under 24 m/s)"); }
       // brushing through leaves (the city's trees): said once per crown
       if (f.brush > 0.05 && (!this._brushT || this.t - this._brushT > 1.5)) { this.say("through the leaves"); this.audio?.leaves?.(); }
       if (f.brush > 0.05) this._brushT = this.t;

@@ -103,20 +103,27 @@ export class FalconCamera {
   }
 
   /**
-   * b: { pos (Vector3), va {x,y,z} (air velocity), V, phi, heading, gamma, lift, span, stun }; o: { aim (Vector3 dir) |
-   * null, look {yaw, pitch}, zoom, perched, perchYaw }
+   * b: { pos (Vector3), va {x,y,z} (air velocity), V, phi, heading, gamma, lift, span, stun, fold }; o: { aim (Vector3
+   * dir) | null, steady (the assisted flight: along the heading), look {yaw, pitch}, zoom, perched, perchYaw }
    */
   update(dt, b, o = {}) {
     const P = this.params, cam = this.camera, V = b.V;
     // the direction to look along: the path (or the mouse aim), smoothed; perched: the way the bird faces
     if (o.perched) _e.set(-Math.sin(o.perchYaw), -0.25, -Math.cos(o.perchYaw)).normalize();
     else if (o.aim) _e.copy(o.aim);
+    else if (o.steady) {
+      // (falconfix, the assisted flight) along the HEADING, the path's climb / dive angle damped (a stoop looks down the
+      // dive): the view does not follow every bump, a bounce off a wall or a slow bird's wobbling velocity
+      const pt = clamp(b.gamma * (b.fold > 0.7 ? 0.8 : 0.55), -1.2, 0.35) - 0.05, cp = Math.cos(pt);
+      _e.set(-Math.sin(b.heading) * cp, Math.sin(pt), -Math.cos(b.heading) * cp);
+    }
     else _e.set(b.va.x, b.va.y, b.va.z).normalize();
     if (o.look && (o.look.yaw || o.look.pitch)) {
       _e.applyAxisAngle(_Y, o.look.yaw);
       _w.crossVectors(_e, _Y).normalize(); _e.applyAxisAngle(_w, o.look.pitch);
     }
-    const stiff = 3.5 + V * 0.09;                    // faster = stiffer
+    // faster = stiffer; steady (the assisted flight): softer, and slow in a tumble (no swing round after a crash)
+    const stiff = o.steady ? (b.stun > 0 ? 0.5 : 2.4 + V * 0.06) : 3.5 + V * 0.09;
     if (!this.inited) { this.dir.copy(_e); }
     this.dir.lerp(_e, 1 - Math.exp(-stiff * dt)).normalize();
     const D = this.dir;
@@ -157,7 +164,7 @@ export class FalconCamera {
       this.raised = (this.raised ?? 0) + (raised - (this.raised ?? 0)) * (1 - Math.exp(-6 * dt));
       this.look.copy(b.pos).addScaledVector(D, 4 * span / (1 + this.raised * 0.5)).addScaledVector(_u, 0.12 * span);
       this.look.y -= this.raised * 0.6;
-      this.roll += ((o.perched ? 0 : b.phi * 0.33) - this.roll) * (1 - Math.exp(-4 * dt));
+      this.roll += ((o.perched ? 0 : b.phi * (o.steady ? 0.2 : 0.33)) - this.roll) * (1 - Math.exp(-4 * dt));
     }
     this.inited = true;
     // FOV with airspeed

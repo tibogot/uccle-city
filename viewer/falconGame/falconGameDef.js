@@ -17,6 +17,7 @@ import { Mobbers } from "./mobbers.js";
 import { makeMissions } from "./falconMissions.js";
 import { warm } from "../police/warm.js";
 import { PLACE } from "../falconFlight/church.js";
+import { CTL_OLD } from "../falconFlight/falconInput.js";
 
 const DEG = Math.PI / 180;
 const S = {
@@ -109,9 +110,10 @@ export const FALCON_GAME = {
   id: "falcon", title: "Falcon", icon: "falcon",
   tagline: "The Saint-Job peregrines: you are the tiercel. Stoop on pigeons and starlings, feed the three eyases, drive the crows off the eyrie.",
   modes: [{ id: "missions", label: "Missions", desc: "hunt, feed the eyases, defend the eyrie", primary: true }, { id: "free", label: "Free flight", desc: "fly over Uccle, hunt when you like" }],
-  options: [{ id: "assist", label: "Aim assist in the strike", default: true }, { id: "sound", label: "Sound: the wind, wingbeats, the falcon's call", default: false }],
+  options: [{ id: "assist", label: "Aim assist in the strike", default: true }, { id: "avoid", label: "Flight assist: steer clear of roofs, trees and the ground", default: true }, { id: "sound", label: "Sound: the wind, wingbeats, the falcon's call", default: false }],
   idleText: { missions: "Rest on a perch or circle the tower: the falcon will call.", free: "Free flight. Hunt anytime: pigeons on the squares, starlings and parakeets over the parks." },
-  keys: { default: "<kbd>W S A D</kbd> fly · <kbd>Space</kbd> flap · <kbd>Shift</kbd> stoop · <kbd>F</kbd> talons · <kbd>E</kbd> land · <kbd>V</kbd> camera · click: mouse aim · <kbd>Esc</kbd> pause" },
+  keys: { default: CTL_OLD ? "<kbd>W S A D</kbd> fly · <kbd>Space</kbd> flap · <kbd>Shift</kbd> stoop · <kbd>F</kbd> talons · <kbd>E</kbd> land · <kbd>V</kbd> camera · click: mouse aim · <kbd>Esc</kbd> pause"
+    : "click + mouse or <kbd>A D</kbd> steer · <kbd>W S</kbd> down / up · <kbd>Space</kbd> climb · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>F</kbd> talons · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause" },
 
   async start(kit, { mode, options }) {
     S.kit = kit;
@@ -136,6 +138,8 @@ export const FALCON_GAME = {
         S.out = { x: o.x * Math.cos(a) + o.z * Math.sin(a), z: -o.x * Math.sin(a) + o.z * Math.cos(a) };
       }
       S.hunt.assist = options.assist ? 1 : 0;
+      if (fl.game.assist) fl.game.assist.avoid = options.avoid !== false && !/[?&]falconavoid=0(&|$)/.test(location.search);
+      S.startCheck = !/[?&]falconstart=old(&|$)/.test(location.search);
       S.hunt.last = { catches: fl.game.score.catches, delivered: fl.game.score.delivered };
       S.freeCatches = 0; S.offerAt = 0;
       fl.preySource = S.hunt.mux;
@@ -158,6 +162,18 @@ export const FALCON_GAME = {
       S.frameFn = () => {
         const now = performance.now(), dt = Math.min(0.1, (now - S.lastT) / 1000); S.lastT = now;
         if (kit.paused || !fl.on) return;
+        // (falconfix) the first frame after the play loader: the tiercel must be at the eyrie (the intro playing, or on
+        // its ledge). A start that lost it (the family not loaded in time: the old fly start; a glide behind the loader)
+        // starts again from the nest, or in the air off the eyrie
+        if (S.startCheck && !window.__playLoader?.active) {
+          S.startCheck = false;
+          const f = fl.game.f, d = Math.hypot(f.pos.x - S.eyrie.x, f.pos.z - S.eyrie.z);
+          if (!fl.intro && d > 80) {
+            host.log(`falcon game: the tiercel was ${d.toFixed(0)} m from the eyrie at the start: back to the nest`);
+            if (fl.nest) fl.startFromNest(fl.nest);
+            else { const o = S.out || { x: 0, z: -1 }; fl.start(S.eyrie.x + o.x * 6, S.eyrie.z + o.z * 6, Math.atan2(-o.x, -o.z), S.eyrie.y + 2, 13, 0); }
+          }
+        }
         S.hunt.frame(dt);
         const g = fl.game;
         if ((S.hudT = (S.hudT || 0) + dt) >= 0.25) { S.hudT = 0; S.hunt.hud(); }
