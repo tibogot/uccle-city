@@ -40,7 +40,7 @@ import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
-import { Lighting, PRESETS } from "./lighting.js";
+import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
 import { createPipeline } from "./post.js";
 import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- upscale (docs/UPSCALE.md): TAAU + dynamic resolution
 import { buildTrees } from "./trees.js";
@@ -1618,12 +1618,14 @@ async function main() {
   const BOOT_LITE_RING = params.get("bootlite") !== "0";          // ?bootlite=0: the boot's tiles as before (A/B)
   let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
+  sunCache.fader = fader;                // (perfgame round 3: the sun shadow cache is redrawn while a tile fades)
   const retire = async (groups, dispose) => {
-    if (!TILE_FADE) { dispose(); return; }
+    markSunShadowDirty();
+    if (!TILE_FADE) { dispose(); markSunShadowDirty(); return; }
     const px = groups.map(fadeProxies).filter(Boolean);     // fading copies it has none of yet: built first
     if (px.length && compileFor) await compileFor(px, { first: true });
     let n = groups.length;
-    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) dispose(); });
+    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) { dispose(); markSunShadowDirty(); } });
   };
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
@@ -1679,6 +1681,7 @@ async function main() {
       const t0 = performance.now();
       try {
         world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));   // (fades in by itself)
+        markSunShadowDirty();
         const old = lite.get(t.name);
         lite.delete(t.name);
         if (old) retire([old.group], old.dispose);

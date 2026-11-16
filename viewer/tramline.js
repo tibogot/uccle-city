@@ -214,7 +214,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   } else {
     cabs = new THREE.InstancedMesh(moduleGeometry(true, lc), mat, MAX_TRAMS * 2);
     mids = new THREE.InstancedMesh(moduleGeometry(false, lc), mat, MAX_TRAMS * (MODS - 2));
-    for (const m of [cabs, mids]) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; scene.add(m); }
+    for (const m of [cabs, mids]) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.userData.sunMover = true; scene.add(m); }   // (sunMover: the sun shadow cache draws it every frame)
   }
   // rail top: the track's smooth vertical profile (vertical curves, bridge decks; the rails are drawn on it too), else
   // the road surface under the point
