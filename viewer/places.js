@@ -23,6 +23,7 @@ export const PLACES = [
   { id: "police", name: "Police station", group: "Landmarks", tile: "E4", p: [-472, 6, -368], t: [-507, 4, -345] },
   { id: "stalle", name: "Stalle chapel", group: "Landmarks", tile: "D5", p: [-1100, 30, 110], t: [-1150, 6, 56] },
   { id: "calevoet", name: "Calevoet station", group: "Landmarks", tile: "D6", p: [-1225, 2, 831], t: [-1224, 4, 792] },
+  { id: "papenkasteel", name: "Papenkasteel (château de Stalle)", group: "Landmarks", tile: "E7", p: [-602, 25, 1192], t: [-635, 18, 1160] },
   { id: "vanbuuren", name: "Van Buuren house", group: "Landmarks", tile: "G2", p: [350, 35, -1180], t: [303, 6, -1230] },
   { id: "rosaire", name: "Notre-Dame du Rosaire", group: "Landmarks", tile: "I2", p: [1340, 45, -1190], t: [1279, 15, -1254] },
   { id: "augustin", name: "Saint-Augustin", group: "Landmarks", tile: "E1", p: [-830, 60, -1890], t: [-896, 20, -1961] },

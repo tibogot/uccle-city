@@ -22,7 +22,7 @@ const EARLY = params.get("landmarksearly") === "1";   // (round 3 measured: the 
 
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)
 export const GATED = {
-  augustin: [-896, -1961], calevoet: [-1225, 790], heros: [-533, -484], observatory: [654, 60], police: [-514, -340],
+  augustin: [-896, -1961], calevoet: [-1225, 790], papenkasteel: [-637, 1154], heros: [-533, -484], observatory: [654, 60], police: [-514, -340],
   rosaire: [1279, -1254], sacrecoeur: [-264, -1631], saintmarc: [454, -620], latourdefrein: [112, 2310], russian: [-354, -468], stalle: [-1150, 57], stpierre: [-709, -493], townhall: [-1148, -506],
   vanbuuren: [303, -1230], wolvendael: [-469, -366],
   // the hero rail bridges / road tunnels (models/rail/<name>.json)

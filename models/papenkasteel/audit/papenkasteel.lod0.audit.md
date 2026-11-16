@@ -1,21 +1,21 @@
 # Mesh audit (before pack): papenkasteel.lod0
 
-46,848 triangles, 32,010 welded vertices, 16,565 open edges, 1,300,002 rays, 7365 ms.
+51,060 triangles, 34,445 welded vertices, 17,111 open edges, 1,310,686 rays, 8504 ms.
 
-**0 blocking**, 7464 warnings. Clean (no blocking item).
+**0 blocking**, 7526 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 4711 |
+| sliver | warn | 4699 |
 | nonmanifold | warn | 1041 |
-| tjunction | warn | 1712 |
-| seam | info | 7161 |
+| tjunction | warn | 1786 |
+| seam | info | 7576 |
 | opening | info | 1605 |
 | backtoback | info | 3889 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 4711)
+## sliver (warn, 4699)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,7 +60,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 3.89, 51.48, 1.51 | Papenkasteel/render_white | 189 | 2.84 |
 | 3.89, 52.42, 1.50 | Papenkasteel/render_white | 189 | 2.84 |
 
-(4671 more in the JSON)
+(4659 more in the JSON)
 
 ## nonmanifold (warn, 1041)
 
@@ -109,7 +109,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (1001 more in the JSON)
 
-## tjunction (warn, 1712)
+## tjunction (warn, 1786)
 
 | at | part | edge_m |
 |---|---|---|
@@ -154,9 +154,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 7.81, 54.95, 1.50 | Papenkasteel/render_white | 2.44 |
 | 9.15, 50.55, -9.20 | Papenkasteel/render_white | 3.45 |
 
-(1672 more in the JSON)
+(1746 more in the JSON)
 
-## seam (info, 7161)
+## seam (info, 7576)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -197,11 +197,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -10.86, 53.50, 21.08 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 96 | 90 |
 | 7.99, 49.05, 21.50 | Papenkasteel/render_white + Papenkasteel/stone_blue | 38.73 | 84 | 90 |
 | 7.79, 54.40, 21.50 | Papenkasteel/render_white + Papenkasteel/render_white | 21.6 | 81 | 90 |
-| -1.97, 56.96, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.57 | 76 | 90 |
-| -1.97, 60.21, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.57 | 76 | 90 |
-| -1.97, 63.41, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.57 | 76 | 90 |
+| -1.94, 57.02, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.58 | 74 | 90 |
+| -1.94, 60.27, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.58 | 74 | 90 |
+| -1.94, 63.47, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.58 | 74 | 90 |
 
-(7121 more in the JSON)
+(7536 more in the JSON)
 
 ## opening (info, 1605)
 

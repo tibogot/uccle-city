@@ -1,28 +1,27 @@
 # Mesh audit (packed): papenkasteel.lod2
 
-4,790 triangles, 3,965 welded vertices, 1,598 open edges, 708,312 rays, 1908 ms.
+4,721 triangles, 3,928 welded vertices, 1,699 open edges, 728,658 rays, 3212 ms.
 
-**27 blocking**, 134 warnings. NOT CLEAN.
+**27 blocking**, 124 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
-| coplanar | block | 9 |
+| coplanar | block | 8 |
 | depth | block | 8 |
-| leak | block | 10 |
-| sliver | warn | 48 |
-| nonmanifold | warn | 72 |
-| tjunction | warn | 14 |
-| seam | info | 596 |
-| opening | info | 415 |
-| backtoback | info | 440 |
+| leak | block | 11 |
+| sliver | warn | 86 |
+| nonmanifold | warn | 1 |
+| tjunction | warn | 37 |
+| seam | info | 611 |
+| opening | info | 458 |
+| backtoback | info | 276 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## coplanar (block, 9)
+## coplanar (block, 8)
 
 | at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
 |---|---|---|---|---|---|---|---|---|
-| -11.41, 50.27, 15.53 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/wood_frame_white | 0 | 116.5 | 1.8 | 2000 | 15.52 | false | 0 + 0 + -1 |
 | 4.53, 51.30, 1.31 | Papenkasteel_lod2/wood_frame_white + Papenkasteel_lod2/glass_window | 0 | 685.2 | 1 | 2000 | 15.52 | false | 0 + -0.02 + 1 |
 | 8.96, 55.45, -3.86 | Papenkasteel_lod2/wood_frame_white + Papenkasteel_lod2/glass_window | 0 | 633.5 | 1.1 | 2000 | 15.52 | false | 1 + -0.02 + 0 |
 | 5.99, 51.06, 3.61 | Papenkasteel_lod2/wood_frame_white + Papenkasteel_lod2/glass_window | 0 | 445.2 | 1.6 | 2000 | 15.52 | false | -1 + -0.03 + 0 |
@@ -45,7 +44,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -11.42, 50.91, 18.59 | Papenkasteel_lod2/wood_frame_white + Papenkasteel_lod2/glass_window | 0.65 | 386.7 | 1.8 | 2000 | 15.52 | false | 1 + 0.03 + 0 |
 | -11.42, 50.88, 18.63 | Papenkasteel_lod2/wood_frame_white + Papenkasteel_lod2/glass_window | 2.44 | 115.8 | 1.8 | 2000 | 15.52 | false | 1 + 0.03 + 0 |
 
-## leak (block, 10)
+## leak (block, 11)
 
 | at | part | slit_mm | facing | edge_m |
 |---|---|---|---|---|
@@ -58,9 +57,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 6.07, 57.09, 22.40 | Papenkasteel_lod2/render_white | 4 | 0 + 0 + -1 | 0.281 |
 | 5.50, 57.53, 22.40 | Papenkasteel_lod2/render_white | 4 | 0 + 0 + -1 | 0.5 |
 | 4.37, 57.21, 27.95 | Papenkasteel_lod2/render_white | 12 | 0 + 0 + 1 | 0.404 |
-| 7.37, 57.21, 27.95 | Papenkasteel_lod2/render_white | 12 | 0 + 0 + 1 | 0.404 |
+| -1.74, 52.49, 2.75 | Papenkasteel_lod2/wood_frame_white | 4 | 0.22 + -0.01 + 0.98 | 0.627 |
+| -1.24, 72.76, -0.02 | Papenkasteel_lod2/cast_iron_dark | 12 | 0 + 0 + 1 | 0.031 |
 
-## sliver (warn, 48)
+## sliver (warn, 86)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -100,61 +100,20 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.55, 54.45, 28.88 | Papenkasteel_lod2/render_white | 86 | 30.642 |
 | -11.25, 52.12, 17.57 | Papenkasteel_lod2/render_white | 64 | 3.58 |
 | -11.25, 53.22, 15.51 | Papenkasteel_lod2/render_white | 130 | 2.2 |
-| -0.69, 54.77, 2.93 | Papenkasteel_lod2/brick_red_brussels | 100 | 4.351 |
-| -16.30, 54.42, 28.80 | Papenkasteel_lod2/brick_red_brussels | 116 | 7.28 |
-| -13.63, 54.42, 28.80 | Papenkasteel_lod2/brick_red_brussels | 45 | 14.565 |
-| -10.97, 52.28, 28.80 | Papenkasteel_lod2/brick_red_brussels | 138 | 15.448 |
+| -2.17, 66.46, 2.93 | Papenkasteel_lod2/brick_red_brussels | 63 | 3.324 |
+| 1.56, 66.46, -1.02 | Papenkasteel_lod2/brick_red_brussels | 91 | 3.329 |
+| -4.04, 66.46, 0.95 | Papenkasteel_lod2/brick_red_brussels | 91 | 3.329 |
+| -2.17, 66.46, -3.00 | Papenkasteel_lod2/brick_red_brussels | 69 | 3.254 |
 
-(8 more in the JSON)
+(46 more in the JSON)
 
-## nonmanifold (warn, 72)
+## nonmanifold (warn, 1)
 
 | at | part | uses |
 |---|---|---|
 | -1.93, 70.89, -0.89 | Papenkasteel_lod2/stone_white | 4 |
-| 8.97, 54.83, -6.46 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -9.52, 50.63, 9.02 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 5.99, 52.29, 5.97 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 8.62, 50.63, 4.57 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -0.06, 52.24, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 3.63, 50.53, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 2.77, 50.53, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 6.43, 50.53, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 5.57, 50.53, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -18.96, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -19.64, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -5.07, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -5.74, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -2.27, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -2.94, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 3.54, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 2.87, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 6.33, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 5.67, 53.38, 21.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 2.29, 53.19, 28.62 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 6.21, 53.19, 28.62 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -20.72, 51.48, 24.77 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -20.72, 51.48, 25.54 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 9.29, 51.48, 25.54 | Papenkasteel_lod2/wood_frame_white | 4 |
-| 9.29, 51.48, 24.77 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -14.09, 50.53, 13.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -14.96, 50.53, 13.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -14.09, 54.38, 13.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -14.09, 53.71, 13.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -14.09, 53.03, 13.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -14.96, 53.03, 13.68 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 51.98, 15.06 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 51.26, 15.06 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 50.53, 15.06 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 50.53, 15.94 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 54.38, 15.06 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 53.71, 15.06 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 53.03, 15.06 | Papenkasteel_lod2/wood_frame_white | 4 |
-| -17.62, 53.03, 15.94 | Papenkasteel_lod2/wood_frame_white | 4 |
 
-(32 more in the JSON)
-
-## tjunction (warn, 14)
+## tjunction (warn, 37)
 
 | at | part | edge_m |
 |---|---|---|
@@ -170,57 +129,80 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 9.47, 50.64, 28.80 | Papenkasteel_lod2/render_white | 4.543 |
 | -17.80, 54.85, 21.50 | Papenkasteel_lod2/render_white | 2 |
 | -11.25, 54.85, 21.50 | Papenkasteel_lod2/render_white | 2 |
+| -4.04, 58.05, 2.93 | Papenkasteel_lod2/brick_red_brussels | 1.32 |
+| 1.56, 58.05, 2.93 | Papenkasteel_lod2/brick_red_brussels | 1.32 |
+| -1.94, 50.62, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.45 |
+| -0.54, 50.62, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.45 |
+| -1.76, 55.10, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.2 |
+| -0.72, 54.97, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.2 |
+| -1.76, 59.32, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.2 |
+| -0.72, 59.32, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.2 |
+| -1.76, 62.22, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.2 |
+| -0.72, 62.22, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2.2 |
+| -1.76, 65.12, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| -0.72, 65.12, 2.93 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| 1.56, 57.87, 2.93 | Papenkasteel_lod2/brick_red_brussels | 1.5 |
 | 1.56, 58.05, 1.45 | Papenkasteel_lod2/brick_red_brussels | 5.93 |
+| 1.56, 62.90, -3.00 | Papenkasteel_lod2/brick_red_brussels | 1.32 |
+| 1.56, 65.12, 0.33 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| 1.56, 65.12, -0.40 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| -4.04, 57.87, 2.93 | Papenkasteel_lod2/brick_red_brussels | 1.5 |
 | -4.04, 58.05, 1.45 | Papenkasteel_lod2/brick_red_brussels | 5.93 |
+| -4.04, 62.90, -3.00 | Papenkasteel_lod2/brick_red_brussels | 1.32 |
+| -4.04, 65.12, -0.40 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| -4.04, 65.12, 0.33 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| -0.79, 65.12, -3.00 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| -1.69, 65.12, -3.00 | Papenkasteel_lod2/brick_red_brussels | 2 |
+| -1.76, 58.00, 2.93 | Papenkasteel_lod2/stone_white | 5.6 |
 
-## seam (info, 596)
+## seam (info, 611)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | -11.71, 57.80, 1.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_white | 58.34 | 57 | 46.4 |
+| -0.64, 70.70, -0.37 | Papenkasteel_lod2/slate + Papenkasteel_lod2/zinc_roof | 4.3 | 36 | 30.9 |
 | 9.20, 54.41, 21.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/render_white | 24.47 | 30 | 67 |
-| -1.03, 72.05, -0.49 | Papenkasteel_lod2/zinc_roof + Papenkasteel_lod2/zinc_roof | 3.13 | 30 | 57.9 |
 | -11.17, 54.77, 21.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/render_white | 23.12 | 28 | 67 |
-| 1.42, 58.05, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 25 | 90 |
-| -4.04, 58.05, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 23 | 90 |
-| -3.98, 58.35, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 23 | 90 |
-| 1.18, 58.35, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 23 | 90 |
+| -1.64, 70.63, 0.54 | Papenkasteel_lod2/zinc_roof + Papenkasteel_lod2/zinc_roof | 4.46 | 26 | 70.9 |
 | 5.96, 52.59, 8.10 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/render_white | 16.26 | 20 | 67.1 |
 | 12.13, 52.59, -2.54 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/render_white | 12.79 | 20 | 67.1 |
-| 1.56, 58.64, 1.07 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/slate | 20.29 | 20 | 39 |
-| -3.93, 58.66, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 19 | 90 |
-| 1.30, 58.66, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 19 | 90 |
-| -3.81, 68.57, 0.21 | Papenkasteel_lod2/stone_white + Papenkasteel_lod2/slate | 2.86 | 19 | 33.6 |
+| -4.04, 63.80, -2.99 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 19 | 90 |
 | -11.88, 52.59, 9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/render_white | 19.7 | 18 | 67.1 |
-| -1.79, 54.74, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2.27 | 18 | 74.6 |
-| -1.57, 68.70, -2.72 | Papenkasteel_lod2/slate + Papenkasteel_lod2/slate | 1.28 | 18 | 67.3 |
-| 1.28, 68.70, -0.36 | Papenkasteel_lod2/slate + Papenkasteel_lod2/slate | 1.28 | 18 | 67.4 |
-| -1.59, 68.58, 2.70 | Papenkasteel_lod2/slate + Papenkasteel_lod2/slate | 1.27 | 18 | 68.5 |
+| -1.39, 68.52, -2.79 | Papenkasteel_lod2/stone_white + Papenkasteel_lod2/slate | 2.49 | 18 | 36.2 |
+| -3.83, 68.52, 0.12 | Papenkasteel_lod2/stone_white + Papenkasteel_lod2/slate | 2.49 | 18 | 36.3 |
+| -1.57, 68.70, -2.72 | Papenkasteel_lod2/slate + Papenkasteel_lod2/slate | 1.27 | 18 | 68.9 |
+| 1.29, 68.68, -0.36 | Papenkasteel_lod2/slate + Papenkasteel_lod2/slate | 1.28 | 18 | 69 |
+| -1.59, 68.58, 2.71 | Papenkasteel_lod2/slate + Papenkasteel_lod2/slate | 1.28 | 18 | 69 |
 | -3.81, 68.58, -0.38 | Papenkasteel_lod2/slate + Papenkasteel_lod2/slate | 1.27 | 18 | 69 |
-| -1.53, 70.63, 0.46 | Papenkasteel_lod2/zinc_roof + Papenkasteel_lod2/zinc_roof | 3.69 | 18 | 71.9 |
-| -2.04, 52.25, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 1.52 | 17 | 16.1 |
-| -3.75, 49.95, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 17 | 90 |
-| 1.33, 49.95, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 17 | 90 |
-| 1.17, 50.55, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 17 | 90 |
-| -1.48, 68.57, -2.77 | Papenkasteel_lod2/stone_white + Papenkasteel_lod2/slate | 2.86 | 17 | 28.9 |
-| -4.04, 58.29, 1.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/brick_red_brussels | 18.36 | 16 | 90 |
+| -3.78, 60.45, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 17 | 90 |
+| 1.56, 63.80, -2.79 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 17 | 90 |
 | -5.69, 54.74, 1.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.23 | 16 | 74.6 |
 | -9.24, 54.74, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 16 | 74.6 |
 | 3.63, 53.29, 21.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 1.8 | 16 | 74.6 |
 | -5.64, 53.26, 21.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 1.8 | 16 | 74.6 |
 | -14.01, 52.94, 13.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.19 | 16 | 74.6 |
-| -1.76, 57.99, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2.27 | 16 | 74.6 |
-| -1.76, 61.19, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2.27 | 16 | 74.6 |
-| -0.65, 52.96, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 1.39 | 16 | 9 |
-| -9.76, 52.55, 21.65 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/wood_frame_dark | 2.66 | 15 | 16 |
-| 5.95, 56.10, 22.40 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/zinc_roof | 1.71 | 15 | 74.6 |
-| -3.88, 58.95, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 15 | 90 |
-| -3.61, 50.55, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 15 | 90 |
-| -3.62, 57.76, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 15 | 90 |
+| 1.29, 60.66, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 15 | 90 |
+| -3.78, 65.25, 2.93 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 15 | 90 |
+| 1.56, 65.31, -2.81 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 15 | 90 |
+| -4.04, 65.31, -2.80 | Papenkasteel_lod2/brick_red_brussels + Papenkasteel_lod2/stone_white | 2 | 15 | 90 |
+| -7.51, 54.74, 1.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.23 | 14 | 74.6 |
+| 2.19, 54.74, 1.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.23 | 14 | 74.6 |
+| 4.01, 54.74, 1.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.23 | 14 | 74.6 |
+| 5.80, 50.91, 1.50 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/render_white | 7.26 | 14 | 90 |
+| 7.85, 54.74, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| 9.13, 52.76, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/slate | 8.4 | 14 | 57.4 |
+| 5.01, 54.74, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| 2.16, 54.74, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| -0.69, 54.74, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| -3.54, 54.74, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| -6.39, 54.74, -9.20 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| -12.10, 54.74, -7.80 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| -12.10, 54.74, -4.41 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
+| -12.10, 54.74, -1.01 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/stone_blue | 2.38 | 14 | 74.6 |
 
-(556 more in the JSON)
+(571 more in the JSON)
 
-## opening (info, 415)
+## opening (info, 458)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -265,9 +247,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -5.71, 59.55, -8.00 | Papenkasteel_lod2/render_white | -1 + 0 + 0 | 0.989 |
 | -6.39, 60.34, -8.00 | Papenkasteel_lod2/render_white | 1 + 0 + 0 | 0.989 |
 
-(375 more in the JSON)
+(418 more in the JSON)
 
-## backtoback (info, 440)
+## backtoback (info, 276)
 
 | at | parts | area |
 |---|---|---|
@@ -312,7 +294,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -3.34, 57.56, 23.07 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/slate | 0.36942 |
 | -3.02, 57.20, 22.48 | Papenkasteel_lod2/render_white + Papenkasteel_lod2/slate | 0.3909 |
 
-(400 more in the JSON)
+(236 more in the JSON)
 
 
-Nodes: Papenkasteel_lod2. Distances: {"Papenkasteel":95,"Papenkasteel_far":385,"Papenkasteel_lod2":2000}. Quantum 0.261 mm. Offset 0,40,0.
+Nodes: Papenkasteel_lod2. Distances: {"Papenkasteel":95,"Papenkasteel_far":385,"Papenkasteel_lod2":2000}. Quantum 0.260 mm. Offset 0,40,0.

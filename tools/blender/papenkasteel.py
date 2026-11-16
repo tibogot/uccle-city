@@ -182,7 +182,40 @@ def wall_grid(fr, s0, s1, hb, ht, openings, mat=RENDER, code=C_PLAIN, top_line=N
             q = [(sa, ha), (sb, hb_), (sb, o.h1), (sa, o.h1)]
             if o.h1 - hb_ < 1e-5: q = [q[0], q[1], q[3]]
             elif o.h1 - ha < 1e-5: q = [q[0], q[1], q[2]]
-            face_dir([fr.p(x, y) for x, y in q], fr.N, mat, code, [(x, hz(y)) for x, y in q])
+            q = clip2d(q, hb, ht)
+            if len(q) >= 3: face_dir([fr.p(x, y) for x, y in q], fr.N, mat, code, [(x, hz(y)) for x, y in q])
+
+def clip2d(q, lo, hi):
+    """a 2D polygon [(s, h)] clipped to lo <= h <= hi"""
+    for (lim, keep_ge) in ((lo, True), (hi, False)):
+        out = []
+        for k in range(len(q)):
+            a, b = q[k], q[(k + 1) % len(q)]
+            ia = (a[1] >= lim - 1e-9) if keep_ge else (a[1] <= lim + 1e-9)
+            ib = (b[1] >= lim - 1e-9) if keep_ge else (b[1] <= lim + 1e-9)
+            if ia: out.append(a)
+            if ia != ib:
+                t = (lim - a[1]) / (b[1] - a[1]); out.append((a[0] + (b[0] - a[0]) * t, lim))
+        q = [p for i, p in enumerate(out) if i == 0 or abs(p[0] - out[i - 1][0]) + abs(p[1] - out[i - 1][1]) > 1e-6]
+        if len(q) > 2 and abs(q[0][0] - q[-1][0]) + abs(q[0][1] - q[-1][1]) < 1e-6: q.pop()
+        if len(q) < 3: return []
+    return q
+
+BAND_PITCH, BAND_H, BAND_START = 1.45, 0.13, 50.62     # the tower's stone bands (the 1972 photo: one course every ~1.45 m)
+def banded_wall(fr, s0, s1, hb, ht, ops):
+    """a brick wall with the Brabant-Spanish white stone bands ("briques en bandeau", the heritage text and the 1972
+    photo): the wall split into rows, brick and stone in turn, each row its own grid round the same openings"""
+    cuts = [hb]
+    h = BAND_START
+    while h < ht - 0.25:
+        if h > hb + 0.05: cuts += [h, h + BAND_H]
+        h += BAND_PITCH
+    cuts.append(ht)
+    for i in range(len(cuts) - 1):
+        a, b = cuts[i], cuts[i + 1]
+        if b - a < 1e-4: continue
+        stone = (i % 2 == 1)
+        wall_grid(fr, s0, s1, a, b, ops, STONE if stone else BRICK, code=C_BAND if stone else C_PLAIN)
 
 # ------------------------------------------------------------------------------------------------ joinery
 def frame_box(fr, s0, s1, h0, h1, d0, d1, mat=FRAMEW, code=C_FRAME, skip=()):
@@ -361,7 +394,7 @@ def stone_surround(fr, o, far, pr=0.025, ch=0.012):
     dh = (hi - o.h0) / n
     for k in range(n):
         h0, h1 = o.h0 + k * dh + 0.006, o.h0 + (k + 1) * dh - 0.006
-        wlen = 0.27 if k % 2 == 0 else 0.17
+        wlen = 0.21 if k % 2 == 0 else 0.12
         if far:
             fbox(fr, o.s0 - wlen, o.s0 - 0.004, h0, h1, -0.01, pr, STONE, C_BLOCK, skip=("back",))
             fbox(fr, o.s1 + 0.004, o.s1 + wlen, h0, h1, -0.01, pr, STONE, C_BLOCK, skip=("back",))
@@ -369,9 +402,9 @@ def stone_surround(fr, o, far, pr=0.025, ch=0.012):
             KT.cblock(fr, o.s0 - wlen, o.s0 - 0.004, h0, h1, -0.01, pr, ch, STONE, C_BLOCK, chamfer_sides="ltb")
             KT.cblock(fr, o.s1 + 0.004, o.s1 + wlen, h0, h1, -0.01, pr, ch, STONE, C_BLOCK, chamfer_sides="rtb")
     if not o.spring:
-        lt = 0.27
-        if far: fbox(fr, o.s0 - 0.24, o.s1 + 0.24, o.h1 + 0.006, o.h1 + lt, -0.01, pr, STONE, C_BLOCK, skip=("back",))
-        else: KT.cblock(fr, o.s0 - 0.24, o.s1 + 0.24, o.h1 + 0.006, o.h1 + lt, -0.01, pr + 0.01, ch, STONE, C_KEY)
+        lt = 0.20
+        if far: fbox(fr, o.s0 - 0.18, o.s1 + 0.18, o.h1 + 0.006, o.h1 + lt, -0.01, pr, STONE, C_BLOCK, skip=("back",))
+        else: KT.cblock(fr, o.s0 - 0.18, o.s1 + 0.18, o.h1 + 0.006, o.h1 + lt, -0.01, pr + 0.01, ch, STONE, C_KEY)
     else:
         # voussoirs: 9 wedge blocks round the arch, the keystone proud
         cs, ch_, R, a0 = arc_geom(o)
@@ -411,11 +444,27 @@ def plinth(fr, s0, s1, hb, ht, e0="out", e1="out", pr=0.03, mat=BLUE):
     else:
         pass                             # (far: the box above runs up to the top)
 
-def anchor(fr, s, h, size=0.34):
-    """a wrought-iron wall anchor (the Brabant S / bar: the inventory's 'gevelankers'): a vertical bar with a cross bar"""
+def anchor(fr, s, h, size=0.34, vertical=False):
+    """a wrought-iron wall anchor (the inventory's 'gevelankers'): the house's a bar with a cross bar; the tower's
+    (vertical=True, the 1972 photo) a long vertical rod with a small plate at its middle"""
     if K.FAR: return
+    if vertical:
+        fbox(fr, s - 0.016, s + 0.016, h - 0.30, h + 0.30, -0.01, 0.022, IRON, C_KEY, skip=("back",))
+        fbox(fr, s - 0.035, s + 0.035, h - 0.035, h + 0.035, -0.01, 0.016, IRON, C_KEY, skip=("back",))
+        return
     fbox(fr, s - 0.018, s + 0.018, h - size / 2, h + size / 2, -0.01, 0.022, IRON, C_KEY, skip=("back",))
     fbox(fr, s - 0.10, s + 0.10, h - 0.02, h + 0.02, -0.01, 0.018, IRON, C_KEY, skip=("back",))
+
+def putlogs(fr, L, top):
+    """the small square holes in stone frames just under the tower's cornice (the 1972 photo: three per face)"""
+    if K.FAR: return
+    for c in (L / 2 - 1.95, L / 2, L / 2 + 1.95):
+        h0, h1 = top - 0.36, top - 0.08
+        fbox(fr, c - 0.15, c - 0.055, h0, h1, -0.01, 0.022, STONE, C_BLOCK, skip=("back",))
+        fbox(fr, c + 0.055, c + 0.15, h0, h1, -0.01, 0.022, STONE, C_BLOCK, skip=("back",))
+        fbox(fr, c - 0.051, c + 0.051, h0, h0 + 0.09, -0.01, 0.022, STONE, C_BLOCK, skip=("back", "left", "right"))
+        fbox(fr, c - 0.051, c + 0.051, h1 - 0.085, h1, -0.01, 0.022, STONE, C_BLOCK, skip=("back", "left", "right"))
+        face_dir([fr.p(c - 0.051, h0 + 0.09, -0.006), fr.p(c + 0.051, h0 + 0.09, -0.006), fr.p(c + 0.051, h1 - 0.085, -0.006), fr.p(c - 0.051, h1 - 0.085, -0.006)], fr.N, IRON, C_REVEAL)
 
 # ------------------------------------------------------------------------------------------------ roofs
 def prof_h(profile, d):
@@ -803,26 +852,30 @@ def tower(far):
     fr, L, s = side_frame(t, "+w")
     door_op = op(s, TU, 1.40, FLOOR, 52.95, "door", "round", surround="stone")
     ops = [door_op] + [op(s, TU, 1.04, a, b, "win", None, surround="stone") for (a, b) in T_LEVELS]
-    wall_grid(fr, 0.0, L, base, top, ops, BRICK)
+    banded_wall(fr, 0.0, L, base, top, ops)
     for o in ops: opening_parts(fr, o, far, wall=BRICK, sill_mat=STONE)
     plinth(fr, 0.0, L, base, FLOOR + 0.20, e0="out", e1="out", pr=0.035)
     for (a, b) in T_LEVELS:
-        for c in (TU - 1.55, TU + 1.55): anchor(fr, s(c), (a + b) / 2 + 0.3)
+        for c in (TU - 1.55, TU + 1.55): anchor(fr, s(c), (a + b) / 2 + 0.3, vertical=True)
+    fr_front = fr
+    putlogs(fr, L, top)
     # the sides: below the roof only the part in front of the house (w > 1.45); above it the whole depth
     roof_lo = 58.05
     for side in ("+u", "-u"):
         fr, L, s = side_frame(t, side)
         sa, sb = sorted((s(HOUSE["w1"] - 0.05), s(t["w1"])))
-        wall_grid(fr, sa, sb, base, roof_lo, [], BRICK)
+        banded_wall(fr, sa, sb, base, roof_lo, [])
         plinth(fr, sa, sb, base, FLOOR + 0.20, e0="cut" if side == "-u" else "in", e1="in" if side == "-u" else "cut", pr=0.035)
         win = op(s, TW, 0.72, T_LEVELS[3][0], T_LEVELS[3][1], "small", None, surround="stone")
-        wall_grid(fr, 0.0, L, roof_lo, top, [win], BRICK)
+        banded_wall(fr, 0.0, L, roof_lo, top, [win])
         opening_parts(fr, win, far, wall=BRICK, sill_mat=STONE)
+        putlogs(fr, L, top)
     # the back: above the roof (63.6 at the tower's back)
     fr, L, s = side_frame(t, "-w")
     win = op(s, TU, 0.90, T_LEVELS[3][0], T_LEVELS[3][1], "win", None, surround="stone")
-    wall_grid(fr, 0.0, L, 62.90, top, [win], BRICK)
+    banded_wall(fr, 0.0, L, 62.90, top, [win])
     opening_parts(fr, win, far, wall=BRICK, sill_mat=STONE)
+    putlogs(fr, L, top)
     # quoins: the two front corners from the plinth up, the back corners above the roof
     for (uc, du) in ((t["u0"], 1), (t["u1"], -1)):
         quoins(uc, t["w1"], du, -1, FLOOR + 0.20, top - 0.02, start=0)
@@ -933,46 +986,34 @@ def oeil(t, side, bell, far):
         K.B.smooth = sv
 
 def lantern(c, hb, far):
-    """the lantern on the bell (Bing 2014; the 1972 photo shows only the spike): an octagonal drum r 0.55, small arched
-    openings (dark), a cornice, an ogee lead cap, a ball, an iron spike (DSM top 72.9 = the cap, UrbIS top 74.4)"""
+    """the cupola on the bell (the heritage aerial, Bing 2014; the 1972 photo, after the 1967 roof works, shows only the
+    spike): a slate bulb with zinc ribs on a zinc collar, a ball, the iron spike and a vane (DSM top 72.9 = the bulb,
+    UrbIS top 74.4)"""
     segs = 8
     ctr = P(c.x, c.y, hb)
     ref = Vector((math.cos(math.pi / 8), math.sin(math.pi / 8), 0))
-    lathe(ctr, [(0.62, -0.05), (0.62, 0.10), (0.56, 0.12)], segs, ZINC, C_PLAIN, smooth=False, ref=ref)          # the plinth
-    lathe(ctr, [(0.55, 0.10), (0.55, 1.22)], segs, SLATE, C_HUNG, smooth=False, ref=ref)                       # the drum (slate-hung)
-    if not far:
-        # an arched dark opening on each of the 8 faces (glass slot: dark louvres read as openings)
-        for k in range(segs):
-            a = 2 * math.pi * k / segs + math.pi / 8 + math.pi / segs
-            nrm = Vector((math.cos(a), math.sin(a), 0)); tng = Vector((-nrm.y, nrm.x, 0))
-            apo = 0.55 * math.cos(math.pi / segs)
-            o = ctr + nrm * (apo + 0.004)
-            w2 = 0.12; h0_, h1_ = 0.35, 0.95
-            pts = [o + tng * -w2 + Z * h0_, o + tng * w2 + Z * h0_] + [o + tng * (w2 * math.cos(math.pi * j / 6)) + Z * (h1_ + w2 * math.sin(math.pi * j / 6)) for j in range(0, 7)][::-1][1:-1] + []
-            pts = [o + tng * -w2 + Z * h0_, o + tng * w2 + Z * h0_, o + tng * w2 + Z * h1_] + \
-                  [o + tng * (w2 * math.cos(math.pi * j / 6)) + Z * (h1_ + w2 * math.sin(math.pi * j / 6)) for j in range(1, 6)] + [o + tng * -w2 + Z * h1_]
-            # as strips: the rectangle + the arch's top as a fan-free strip set
-            face_dir([pts[0], pts[1], pts[2], pts[-1]], nrm, IRON, C_LOUVRE)
-            arc = pts[2:-1] + [pts[-1]]
-            for j in range(len(arc) // 2):
-                q = [arc[j], arc[j + 1], arc[-2 - j], arc[-1 - j]] if j + 1 < len(arc) - 1 - j else [arc[j], arc[j + 1], arc[-1 - j]]
-                q = [v for i, v in enumerate(q) if all((v - u_).length > 1e-6 for u_ in q[:i])]
-                if len(q) >= 3: face_dir(q, nrm, IRON, C_LOUVRE)
-    lathe(ctr, [(0.55, 1.22), (0.62, 1.26), (0.66, 1.34), (0.66, 1.40), (0.50, 1.42)], segs, ZINC, C_CORNICE, smooth=False, ref=ref)   # cornice
-    # the ogee cap (lead / zinc): flares in, swells, narrows to the neck
-    cap = [(0.52, 1.40), (0.50, 1.50), (0.44, 1.62), (0.38, 1.74), (0.30, 1.86), (0.20, 1.96), (0.12, 2.04), (0.07, 2.10), (0.06, 2.16), (0.0, 2.165)]
-    lathe(ctr, cap, 16 if not far else 8, ZINC, C_PLAIN, smooth=True, ref=ref)
-    # the ball and the spike (iron)
-    rb = 0.12
-    ball = [(rb * math.sin(math.pi * i / 6), 2.16 + rb - rb * math.cos(math.pi * i / 6)) for i in range(7)]
-    lathe(ctr, ball, 12 if not far else 6, ZINC, C_KEY, smooth=True)
-    lathe(ctr, [(0.025, 2.16 + 2 * rb - 0.02), (0.025, 3.30), (0.0, 3.55)], 8, IRON, C_KEY, smooth=False)
-    if not far:
-        # a small weather vane: a flag plate on the spike
-        o = P(c.x, c.y, hb + 3.05)
-        face_dir([o + Vector((0.02, 0, 0)), o + Vector((0.42, 0, 0)), o + Vector((0.42, 0, 0.22)), o + Vector((0.02, 0, 0.22))], Vector((0, 1, 0)), IRON, C_KEY)
-        face_dir([o + Vector((0.02, -0.004, 0)), o + Vector((0.02, -0.004, 0.22)), o + Vector((0.42, -0.004, 0.22)), o + Vector((0.42, -0.004, 0))], Vector((0, -1, 0)), IRON, C_KEY)
-    LANDMARKS["spike_top"] = round(hb + 3.55, 2)
+    if True:          # (the bulb)
+        # the bulb (the heritage aerial, Bing 2014: a slate dome swelling over the bell, a zinc collar, a ball, the spike)
+        n = 12 if far else 24
+        lathe(ctr, [(0.74, -0.06), (0.74, 0.06), (0.69, 0.08)], n, ZINC, C_PLAIN, smooth=True)                  # the collar
+        bulb = [(0.69, 0.06), (0.77, 0.30), (0.79, 0.52), (0.74, 0.76), (0.62, 1.00), (0.45, 1.24), (0.28, 1.46), (0.15, 1.66),
+                (0.09, 1.82), (0.06, 1.95), (0.0, 1.96)]
+        lathe(ctr, bulb, n, SLATE, C_HUNG, smooth=True)
+        if not far:
+            for k in range(8):                                                                                  # zinc ribs
+                a = 2 * math.pi * k / 8
+                dv = Vector((math.cos(a), math.sin(a), 0))
+                roll_line([ctr + dv * (r + 0.012) + Z * h for (r, h) in bulb[:-2]], r=0.022, segs=8)
+        rb = 0.10
+        ball = [(rb * math.sin(math.pi * i / 6), 1.95 + rb - rb * math.cos(math.pi * i / 6)) for i in range(7)]
+        lathe(ctr, ball, 12 if not far else 6, ZINC, C_KEY, smooth=True)
+        lathe(ctr, [(0.022, 1.95 + 2 * rb - 0.02), (0.022, 3.20), (0.0, 3.45)], 8, IRON, C_KEY, smooth=False)
+        if not far:
+            o = P(c.x, c.y, hb + 2.95)
+            face_dir([o + Vector((0.02, 0, 0)), o + Vector((0.42, 0, 0)), o + Vector((0.42, 0, 0.22)), o + Vector((0.02, 0, 0.22))], Vector((0, 1, 0)), IRON, C_KEY)
+            face_dir([o + Vector((0.02, -0.004, 0)), o + Vector((0.02, -0.004, 0.22)), o + Vector((0.42, -0.004, 0.22)), o + Vector((0.42, -0.004, 0))], Vector((0, -1, 0)), IRON, C_KEY)
+        LANDMARKS["spike_top"] = round(hb + 3.45, 2)
+        return
 
 def annex(r, sides, far, extend, clip=None):
     """a one-storey white wing with a hipped slate roof (32 deg), plinth, eaves; extend: the roof's plan pushed into the

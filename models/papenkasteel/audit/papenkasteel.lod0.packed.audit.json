@@ -1,22 +1,22 @@
 {
  "summary": {
-  "triangles": 46848,
-  "vertices_welded": 32010,
-  "open_edges": 16565,
-  "rays": 1300380,
+  "triangles": 51060,
+  "vertices_welded": 34445,
+  "open_edges": 17111,
+  "rays": 1311748,
   "blocking": 5,
-  "warnings": 7464,
+  "warnings": 7526,
   "counts": {
-   "sliver": 4711,
+   "sliver": 4699,
    "bentflat": 2,
    "nonmanifold": 1041,
    "backtoback": 3889,
    "crossing": 3,
-   "seam": 7163,
-   "tjunction": 1712,
+   "seam": 7579,
+   "tjunction": 1786,
    "opening": 1610
   },
-  "ms": 7310
+  "ms": 8550
  },
  "options": {
   "weld": 0.0001,
@@ -26,7 +26,7 @@
   "minOverlapArea": 0.00004,
   "depthEps": 1.1920928955078125e-7,
   "depthSafety": 64,
-  "quantum": 0.000260770320892334,
+  "quantum": 0.00026001036167144775,
   "defaultMaxDistance": 120,
   "shallowCrossDeg": 12,
   "sliverAspect": 40,
@@ -67,13 +67,13 @@
   {
    "name": "Papenkasteel",
    "slot": "brick_red_brussels",
-   "triangles": 642,
+   "triangles": 998,
    "maxDistance": 95
   },
   {
    "name": "Papenkasteel",
    "slot": "stone_white",
-   "triangles": 9872,
+   "triangles": 10648,
    "maxDistance": 95
   },
   {
@@ -85,13 +85,13 @@
   {
    "name": "Papenkasteel",
    "slot": "slate",
-   "triangles": 872,
+   "triangles": 1312,
    "maxDistance": 95
   },
   {
    "name": "Papenkasteel",
    "slot": "zinc_roof",
-   "triangles": 14092,
+   "triangles": 16764,
    "maxDistance": 95
   },
   {
@@ -109,7 +109,7 @@
   {
    "name": "Papenkasteel",
    "slot": "cast_iron_dark",
-   "triangles": 484,
+   "triangles": 452,
    "maxDistance": 95
   },
   {
@@ -15598,40 +15598,40 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.97,
-     56.956,
+     -1.94,
+     57.024,
      2.93
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
      "Papenkasteel/stone_white"
     ],
-    "length_m": 3.57,
-    "pieces": 76,
+    "length_m": 3.58,
+    "pieces": 74,
     "min_angle_deg": 90
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.97,
-     60.206,
+     -1.94,
+     60.274,
      2.93
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
      "Papenkasteel/stone_white"
     ],
-    "length_m": 3.57,
-    "pieces": 76,
+    "length_m": 3.58,
+    "pieces": 74,
     "min_angle_deg": 90
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.97,
-     63.406,
+     -1.94,
+     63.474,
      2.93
     ],
     "parts": [
@@ -15639,24 +15639,24 @@
      "Papenkasteel/stone_white"
     ],
     "length_m": 3.57,
-    "pieces": 76,
+    "pieces": 74,
     "min_angle_deg": 90
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.97,
-     66.406,
-     2.93
+     -0.566,
+     70.708,
+     -0.204
     ],
     "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
     ],
-    "length_m": 3.57,
-    "pieces": 76,
-    "min_angle_deg": 90
+    "length_m": 4.36,
+    "pieces": 72,
+    "min_angle_deg": 86.8
    },
    {
     "check": "seam",
@@ -15694,7 +15694,135 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.974,
+     -0.548,
+     70.702,
+     -0.051
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 72.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.737,
+     70.714,
+     -0.515
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 71
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.224,
+     70.711,
+     -0.73
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 72.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.718,
+     70.705,
+     -0.536
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 70.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.935,
+     70.711,
+     -0.051
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 72.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.743,
+     70.714,
+     0.445
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 70.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.256,
+     70.711,
+     0.66
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 72.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.762,
+     70.705,
+     0.466
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 3.92,
+    "pieces": 62,
+    "min_angle_deg": 71
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.008,
      66.98,
      2.93
     ],
@@ -16670,6 +16798,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -1.649,
+     70.63,
+     0.576
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 4.64,
+    "pieces": 50,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -3.429,
      57.689,
      22.304
@@ -16830,38 +16974,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.955,
-     49.63,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 2.33,
-    "pieces": 49,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.986,
-     72.047,
-     -0.475
-    ],
-    "parts": [
-     "Papenkasteel/zinc_roof",
-     "Papenkasteel/zinc_roof"
-    ],
-    "length_m": 3.23,
-    "pieces": 46,
-    "min_angle_deg": 70.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      7.288,
      53.802,
      6.621
@@ -16894,6 +17006,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -1.955,
+     49.63,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.77,
+    "pieces": 45,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -14.509,
      56.426,
      16.759
@@ -16905,6 +17033,38 @@
     "length_m": 0.18,
     "pieces": 45,
     "min_angle_deg": 15.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.749,
+     70.704,
+     -0.554
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 44,
+    "min_angle_deg": 31.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.754,
+     70.716,
+     0.451
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 44,
+    "min_angle_deg": 31.7
    },
    {
     "check": "seam",
@@ -16974,15 +17134,79 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.789,
-     54.67,
+     -0.75,
+     70.707,
+     -0.554
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 42,
+    "min_angle_deg": 31.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.33,
+     72.441,
+     -0.127
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 42,
+    "min_angle_deg": 33.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.743,
+     70.713,
+     0.445
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 42,
+    "min_angle_deg": 31.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.176,
+     72.424,
+     0.026
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 42,
+    "min_angle_deg": 33.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.94,
+     66.474,
      2.93
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
      "Papenkasteel/stone_white"
     ],
-    "length_m": 2.01,
+    "length_m": 2.06,
     "pieces": 41,
     "min_angle_deg": 90
    },
@@ -16990,49 +17214,33 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.79,
-     57.92,
-     2.93
+     -1.178,
+     72.432,
+     -0.127
     ],
     "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
     ],
-    "length_m": 2.01,
-    "pieces": 41,
-    "min_angle_deg": 90
+    "length_m": 0.14,
+    "pieces": 40,
+    "min_angle_deg": 33.6
    },
    {
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.791,
-     61.12,
-     2.93
+     -1.332,
+     72.432,
+     0.027
     ],
     "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
     ],
-    "length_m": 2.01,
-    "pieces": 41,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.791,
-     64.32,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 2.01,
-    "pieces": 41,
-    "min_angle_deg": 90
+    "length_m": 0.14,
+    "pieces": 40,
+    "min_angle_deg": 33.7
    },
    {
     "check": "seam",
@@ -17070,6 +17278,134 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -0.536,
+     70.71,
+     -0.055
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 31.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.145,
+     72.427,
+     -0.051
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 28.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.253,
+     70.705,
+     -0.759
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 31.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.255,
+     72.438,
+     -0.158
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 28.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.961,
+     70.704,
+     -0.051
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 31.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.362,
+     72.438,
+     -0.051
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 28.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.254,
+     70.714,
+     0.658
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 31.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.255,
+     72.426,
+     0.059
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 39,
+    "min_angle_deg": 28.4
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -11.076,
      54.727,
      21.5
@@ -17086,6 +17422,70 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -1.161,
+     72.445,
+     -0.08
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 38,
+    "min_angle_deg": 54.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.285,
+     72.445,
+     -0.114
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 38,
+    "min_angle_deg": 54.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.319,
+     72.445,
+     0.01
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 38,
+    "min_angle_deg": 54.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.195,
+     72.445,
+     0.044
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 38,
+    "min_angle_deg": 54.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -17.28,
      59.208,
      25.149
@@ -17097,6 +17497,134 @@
     "length_m": 0.18,
     "pieces": 38,
     "min_angle_deg": 20.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.79,
+     54.67,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.45,
+    "pieces": 37,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.798,
+     61.12,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.45,
+    "pieces": 37,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.793,
+     64.32,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.45,
+    "pieces": 37,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.94,
+     66.585,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/stone_white",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.52,
+    "pieces": 37,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.147,
+     72.434,
+     -0.057
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 37,
+    "min_angle_deg": 55.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.216,
+     72.443,
+     -0.124
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 37,
+    "min_angle_deg": 55.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.329,
+     72.443,
+     -0.059
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 37,
+    "min_angle_deg": 55.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.264,
+     72.443,
+     0.054
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.17,
+    "pieces": 37,
+    "min_angle_deg": 55.7
    },
    {
     "check": "seam",
@@ -17278,6 +17806,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     1.36,
+     68.642,
+     -0.224
+    ],
+    "parts": [
+     "Papenkasteel/stone_white",
+     "Papenkasteel/glass_window"
+    ],
+    "length_m": 1.35,
+    "pieces": 34,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -6.722,
      64.578,
      -3.872
@@ -17385,22 +17929,6 @@
     "length_m": 1,
     "pieces": 33,
     "min_angle_deg": 7.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.84,
-     68.642,
-     0.154
-    ],
-    "parts": [
-     "Papenkasteel/stone_white",
-     "Papenkasteel/glass_window"
-    ],
-    "length_m": 1.35,
-    "pieces": 33,
-    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -17646,6 +18174,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -3.84,
+     68.642,
+     0.154
+    ],
+    "parts": [
+     "Papenkasteel/stone_white",
+     "Papenkasteel/glass_window"
+    ],
+    "length_m": 1.22,
+    "pieces": 31,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      9.131,
      54.422,
      21.12
@@ -17662,15 +18206,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -2.29,
-     49.219,
+     -1.804,
+     57.92,
      2.93
     ],
     "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_blue"
+     "Papenkasteel/stone_white",
+     "Papenkasteel/stone_white"
     ],
-    "length_m": 4.04,
+    "length_m": 1.32,
     "pieces": 30,
     "min_angle_deg": 90
    },
@@ -17838,6 +18382,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -2.29,
+     49.219,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_blue"
+    ],
+    "length_m": 3.94,
+    "pieces": 28,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -0.622,
      52.387,
      2.695
@@ -17918,38 +18478,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.974,
-     49.121,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 9.84,
-    "pieces": 27,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.36,
-     68.642,
-     -0.224
-    ],
-    "parts": [
-     "Papenkasteel/stone_white",
-     "Papenkasteel/glass_window"
-    ],
-    "length_m": 1.05,
-    "pieces": 27,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -10.908,
      52.573,
      9.2
@@ -17998,6 +18526,38 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -1.218,
+     72.586,
+     -0.038
+    ],
+    "parts": [
+     "Papenkasteel/slate",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.14,
+    "pieces": 26,
+    "min_angle_deg": 24.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.974,
+     49.121,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_blue"
+    ],
+    "length_m": 9.8,
+    "pieces": 24,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -1.83,
      70.63,
      -0.927
@@ -18030,33 +18590,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.227,
-     72.793,
-     -0.042
-    ],
-    "parts": [
-     "Papenkasteel/zinc_roof",
-     "Papenkasteel/zinc_roof"
-    ],
-    "length_m": 0.09,
-    "pieces": 24,
-    "min_angle_deg": 22.3
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.217,
-     73.023,
-     -0.041
+     -1.22,
+     72.774,
+     -0.04
     ],
     "parts": [
      "Papenkasteel/zinc_roof",
      "Papenkasteel/cast_iron_dark"
     ],
-    "length_m": 0.15,
+    "length_m": 0.13,
     "pieces": 24,
-    "min_angle_deg": 75
+    "min_angle_deg": 76.5
    },
    {
     "check": "seam",
@@ -18142,54 +18686,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.854,
-     63.455,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 23,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     64.355,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 23,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     66.155,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 23,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -1.093,
      53.066,
      2.93
@@ -18206,7 +18702,71 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.513,
+     -0.704,
+     58.006,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     59.892,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.704,
+     61.206,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     63.092,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.822,
      64.355,
      2.93
     ],
@@ -18222,7 +18782,71 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.431,
+     -0.704,
+     64.406,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.69,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.481,
+     64.355,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.97,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     66.12,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.69,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.822,
+     66.155,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.97,
+    "pieces": 23,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.357,
      66.155,
      2.93
     ],
@@ -18239,24 +18863,8 @@
     "severity": "info",
     "at": [
      1.56,
-     58.644,
-     1.066
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/slate"
-    ],
-    "length_m": 20.31,
-    "pieces": 23,
-    "min_angle_deg": 39
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.56,
      66.205,
-     -2.869
+     -2.782
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
@@ -18350,262 +18958,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.985,
-     54.756,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     55.385,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     56.013,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     56.642,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     58.006,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     58.635,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     59.263,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     59.892,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     61.206,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     61.835,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     62.463,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     63.092,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     64.406,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     64.978,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     65.549,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.985,
-     66.12,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -1.699,
      53.052,
      2.93
@@ -18622,262 +18974,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.704,
-     54.756,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.702,
-     55.385,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.699,
-     56.013,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.695,
-     56.642,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.704,
-     58.006,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.702,
-     58.635,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.699,
-     59.263,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.695,
-     59.892,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.704,
-     61.206,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.702,
-     61.835,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.699,
-     62.463,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.695,
-     63.092,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.83,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.704,
-     64.406,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.702,
-     64.978,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.699,
-     65.549,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.695,
-     66.12,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.81,
-    "pieces": 22,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -0.471,
      52.534,
      2.93
@@ -18889,6 +18985,262 @@
     "length_m": 0.97,
     "pieces": 22,
     "min_angle_deg": 10.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     55.385,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.703,
+     55.385,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.697,
+     56.013,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.703,
+     56.642,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     58.006,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     58.635,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.7,
+     58.635,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.698,
+     59.892,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     61.206,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.698,
+     61.835,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     62.463,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.697,
+     63.092,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     64.406,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.69,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     65.549,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.69,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.703,
+     65.549,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.69,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.696,
+     66.12,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.69,
+    "pieces": 22,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -18953,6 +19305,134 @@
     "length_m": 0.19,
     "pieces": 22,
     "min_angle_deg": 63.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.512,
+     70.695,
+     -0.044
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 51.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.718,
+     70.695,
+     -0.541
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.216,
+     70.7,
+     -0.748
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 51.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.746,
+     70.695,
+     -0.557
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.942,
+     70.704,
+     -0.061
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 52
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.758,
+     70.702,
+     0.447
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 46.8
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.266,
+     70.704,
+     0.667
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 51.9
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.758,
+     70.702,
+     0.483
+    ],
+    "parts": [
+     "Papenkasteel/zinc_roof",
+     "Papenkasteel/zinc_roof"
+    ],
+    "length_m": 0.13,
+    "pieces": 22,
+    "min_angle_deg": 46.8
    },
    {
     "check": "seam",
@@ -19118,40 +19598,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.885,
-     58.055,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.656,
-     58.355,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     60.155,
+     -3.827,
+     50.855,
      2.93
     ],
     "parts": [
@@ -19167,23 +19615,7 @@
     "severity": "info",
     "at": [
      -3.911,
-     61.055,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.752,
-     61.355,
+     51.455,
      2.93
     ],
     "parts": [
@@ -19199,7 +19631,7 @@
     "severity": "info",
     "at": [
      -3.822,
-     63.155,
+     51.755,
      2.93
     ],
     "parts": [
@@ -19214,8 +19646,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.822,
-     63.755,
+     1.12,
+     51.787,
      2.93
     ],
     "parts": [
@@ -19230,40 +19662,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.911,
-     64.055,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     65.855,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.815,
-     66.455,
+     1.29,
+     51.004,
      2.93
     ],
     "parts": [
@@ -19294,8 +19694,40 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.12,
-     58.506,
+     -3.623,
+     55.355,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.97,
+    "pieces": 21,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.955,
+     56.013,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 0.71,
+    "pieces": 21,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.822,
+     55.955,
      2.93
     ],
     "parts": [
@@ -19311,7 +19743,7 @@
     "severity": "info",
     "at": [
      1.12,
-     59.66,
+     56.061,
      2.93
     ],
     "parts": [
@@ -19326,15 +19758,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.539,
-     60.155,
+     -1.955,
+     56.642,
      2.93
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
      "Papenkasteel/stone_white"
     ],
-    "length_m": 1.97,
+    "length_m": 0.71,
     "pieces": 21,
     "min_angle_deg": 90
    },
@@ -19342,15 +19774,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.29,
-     58.204,
+     -1.955,
+     61.835,
      2.93
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
      "Papenkasteel/stone_white"
     ],
-    "length_m": 1.97,
+    "length_m": 0.71,
     "pieces": 21,
     "min_angle_deg": 90
    },
@@ -19358,15 +19790,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.29,
-     58.804,
+     -0.704,
+     62.463,
      2.93
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
      "Papenkasteel/stone_white"
     ],
-    "length_m": 1.97,
+    "length_m": 0.71,
     "pieces": 21,
     "min_angle_deg": 90
    },
@@ -19374,24 +19806,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.29,
-     59.896,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.12,
-     60.885,
+     -3.911,
+     64.055,
      2.93
     ],
     "parts": [
@@ -19407,7 +19823,7 @@
     "severity": "info",
     "at": [
      1.29,
-     61.069,
+     64.199,
      2.93
     ],
     "parts": [
@@ -19422,24 +19838,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.443,
-     63.155,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.29,
-     62.996,
+     -3.907,
+     65.255,
      2.93
     ],
     "parts": [
@@ -19455,72 +19855,8 @@
     "severity": "info",
     "at": [
      1.29,
-     64.173,
+     65.404,
      2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.29,
-     64.804,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.29,
-     66.604,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.56,
-     63.205,
-     -2.782
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 21,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.56,
-     63.505,
-     -2.871
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
@@ -19536,7 +19872,7 @@
     "at": [
      1.56,
      63.805,
-     -2.874
+     -2.782
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
@@ -19552,7 +19888,7 @@
     "at": [
      1.56,
      64.105,
-     -2.94
+     -2.871
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
@@ -19583,7 +19919,7 @@
     "severity": "info",
     "at": [
      1.56,
-     64.705,
+     65.305,
      -2.871
     ],
     "parts": [
@@ -19598,9 +19934,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.56,
-     66.505,
-     -2.871
+     -4.04,
+     63.805,
+     -2.583
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
@@ -19633,6 +19969,38 @@
      -4.04,
      64.405,
      -2.583
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.97,
+    "pieces": 21,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -4.04,
+     64.705,
+     -2.746
+    ],
+    "parts": [
+     "Papenkasteel/brick_red_brussels",
+     "Papenkasteel/stone_white"
+    ],
+    "length_m": 1.97,
+    "pieces": 21,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -4.04,
+     65.305,
+     -2.746
     ],
     "parts": [
      "Papenkasteel/brick_red_brussels",
@@ -19769,22 +20137,6 @@
     "length_m": 0.23,
     "pieces": 21,
     "min_angle_deg": 50.7
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.925,
-     65.835,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 0.61,
-    "pieces": 20,
-    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -21047,358 +21399,6 @@
      "Papenkasteel/brick_red_brussels"
     ],
     "length_m": 30.37,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -13.995,
-     50.37,
-     13.5
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -13.995,
-     52.87,
-     13.5
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.8,
-     50.37,
-     14.97
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.8,
-     52.87,
-     14.97
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.8,
-     50.37,
-     18.47
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.96,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.8,
-     52.87,
-     18.47
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.96,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -11.25,
-     50.37,
-     19.13
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -11.25,
-     52.87,
-     19.13
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -11.25,
-     49.53,
-     15.54
-    ],
-    "parts": [
-     "Papenkasteel/render_white",
-     "Papenkasteel/stone_blue"
-    ],
-    "length_m": 1.42,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     58.655,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     58.955,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     59.255,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     59.555,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     59.855,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     60.455,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     60.755,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     61.655,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     61.955,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     62.255,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.822,
-     62.555,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     62.855,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
-    "pieces": 19,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.911,
-     64.655,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel/brick_red_brussels",
-     "Papenkasteel/stone_white"
-    ],
-    "length_m": 1.97,
     "pieces": 19,
     "min_angle_deg": 90
    }
@@ -24405,7 +24405,7 @@
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 2.2
+    "edge_m": 1.32
    },
    {
     "check": "tjunction",
@@ -24416,7 +24416,29 @@
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 2.2
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -1.94,
+     50.62,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.5
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.54,
+     50.62,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.5
    },
    {
     "check": "tjunction",
@@ -24444,12 +24466,56 @@
     "check": "tjunction",
     "severity": "warn",
     "at": [
+     -1.76,
+     54.97,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.72,
+     54.97,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
      -1.676,
      56.95,
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
     "edge_m": 1.04
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -1.76,
+     59.32,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.72,
+     59.32,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.2
    },
    {
     "check": "tjunction",
@@ -24466,12 +24532,56 @@
     "check": "tjunction",
     "severity": "warn",
     "at": [
+     -1.76,
+     62.22,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.72,
+     62.22,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2.2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
      -1.676,
      63.4,
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
     "edge_m": 1.04
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -1.76,
+     65.12,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.72,
+     65.12,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
    },
    {
     "check": "tjunction",
@@ -24493,7 +24603,40 @@
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 8.929
+    "edge_m": 1.499
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     1.56,
+     52.25,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     1.56,
+     54.75,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     1.56,
+     56.95,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.5
    },
    {
     "check": "tjunction",
@@ -24515,7 +24658,29 @@
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 6.351
+    "edge_m": 1.319
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     1.56,
+     61.2,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.319
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     1.56,
+     63.4,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.32
    },
    {
     "check": "tjunction",
@@ -24526,7 +24691,29 @@
      -3
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 6.351
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     1.56,
+     65.12,
+     0.325
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     1.56,
+     65.12,
+     -0.395
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
    },
    {
     "check": "tjunction",
@@ -24537,18 +24724,40 @@
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 8.929
+    "edge_m": 1.499
    },
    {
     "check": "tjunction",
     "severity": "warn",
     "at": [
      -4.04,
-     62.9,
-     -3
+     52.25,
+     2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 6.351
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     54.75,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     56.95,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.5
    },
    {
     "check": "tjunction",
@@ -24570,7 +24779,84 @@
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
-    "edge_m": 6.351
+    "edge_m": 1.319
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     61.2,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.319
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     62.9,
+     -3
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     63.4,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 1.32
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     65.12,
+     -0.395
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     65.12,
+     0.325
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -0.79,
+     65.12,
+     -3
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
+   },
+   {
+    "check": "tjunction",
+    "severity": "warn",
+    "at": [
+     -1.69,
+     65.12,
+     -3
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "edge_m": 2
    },
    {
     "check": "tjunction",
@@ -25513,292 +25799,6 @@
     "at": [
      -0.716,
      56.327,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     56.34,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.303
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     56.63,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     56.944,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     56.653,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.303
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     56.642,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     56.642,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     56.653,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.303
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     56.944,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.309,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.018,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.303
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.006,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.006,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.018,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.303
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.309,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.623,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.332,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.303
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.32,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.32,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.332,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.303
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.623,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.937,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.646,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.302
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -1.764,
-     58.635,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.635,
-     2.943
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.035
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.646,
-     2.955
-    ],
-    "part": "Papenkasteel/stone_white",
-    "edge_m": 0.302
-   },
-   {
-    "check": "tjunction",
-    "severity": "warn",
-    "at": [
-     -0.716,
-     58.937,
      2.943
     ],
     "part": "Papenkasteel/stone_white",
@@ -31234,54 +31234,6 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -4.04,
-     60.45,
-     2.93
-    ],
-    "part": "Papenkasteel/brick_red_brussels",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 1
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -4.04,
-     61.35,
-     2.93
-    ],
-    "part": "Papenkasteel/brick_red_brussels",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 2.2
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -4.04,
-     63.45,
-     2.93
-    ],
-    "part": "Papenkasteel/brick_red_brussels",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 1
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
      -1.931,
      49.121,
      2.93
@@ -31554,8 +31506,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     1.56,
-     60.45,
+     -4.04,
+     60.153,
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
@@ -31564,14 +31516,14 @@
      0,
      1
     ],
-    "edge_m": 1
+    "edge_m": 0.75
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
      1.56,
-     61.35,
+     60.153,
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
@@ -31580,14 +31532,46 @@
      0,
      1
     ],
-    "edge_m": 2.2
+    "edge_m": 0.75
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -4.04,
+     61.05,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.3
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -4.04,
+     61.353,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 1.02
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
      1.56,
-     63.45,
+     61.05,
      2.93
     ],
     "part": "Papenkasteel/brick_red_brussels",
@@ -31596,7 +31580,23 @@
      0,
      1
     ],
-    "edge_m": 1
+    "edge_m": 0.3
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     1.56,
+     61.353,
+     2.93
+    ],
+    "part": "Papenkasteel/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 1.02
    },
    {
     "check": "opening",
