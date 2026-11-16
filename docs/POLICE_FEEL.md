@@ -12,7 +12,7 @@ and many places, if not we feel blocked and that's not a good feeling". The poli
 | 15 cm kerb across a 15 % street, from rest (estate body, 4.63 m) | **stopped at the kerb** (the ledge rule: anything 0.5 m over the car's centre is a wall; the front corner is already 0.35 m up the hill) | over it, 70 km/h after 5 s |
 | lawn bank 30 % | **blocked** (same rule) | climbs it, 67 km/h |
 | raised kerb island (roundabout centre, splitter) | **wall** | ridden up (it is in the drive surface, 20 cm) |
-| low front-garden hedge | **wall** | through it, slowed (x exp(-1.6 dt) while overlapping) |
+| low front-garden hedge | **wall** | through it, slowed (x exp(-1.2 dt) while overlapping) |
 | sign post 0.5 m off the centre line at 36 km/h | **stopped dead** | slides round it, 44 km/h on |
 | 0.6 m retaining wall | wall | still a wall (as it should) |
 | wall scrape at 25 deg, 72 km/h | slides (collisions round 2) | slides, same |
@@ -92,3 +92,26 @@ Screenshots: `docs/policefeel/` (01 gate exit, 02 Square Coghen ~15 % / Avenue d
 - Measured: Square Coghen hill 40 km/h after 2.2 s (old 26), stop / hold / restart OK; gate exit OK (old and new); wall scrape in the yard slides on at 24-28 km/h; Wolvendael park 30 % grass rise: OLD stops at an invisible ledge (kind wall, 2 km/h), NEW climbs it (then stops at a real trunk); handbrake on the lawn at 35 km/h: 77 deg, recovers. Driver update ~0.06-0.1 ms (old 0.08-0.1).
 - Half done: courtyard entry from both gates / the north gate not driven; old vs new screenshots only partly; traffic / parked-car shove not checked in the city; pavements are drawn but not in the drive surface (no kerb bump; the car follows the terrain under them).
 - Next: FIRST the owner's report: bad lines (aliasing?) on the back of the police car while moving in the default chase view; then the gates / courtyard, parked-car shove with traffic on, camera lean / fov feel, hedge drag.
+
+## Browser check 2 (2026-11-17)
+
+1. OWNER "bad lines at the back of the car when moving" = the TAAU's stochastic see-through glass (viewer/upscale.js:
+   a per-frame discard the history averages) on the player's car: big, close and moving with the camera, the clamp never
+   settled it: a band of crawling speckles on the rear window (glass vs the bright boot behind it; also visible at rest).
+   Confirmed live (packLook.glassOpacity = 1 -> clean). Fix: solid tinted glass on the player's car under the TAAU
+   (carPacks.js playerSeeThrough; `?carglass=old`). Crops: 10_rear_glass_before_moving / _still / _after_moving.
+2. OWNER "the car goes too far from the camera, almost in the centre": the round-1 boom was a world-space spring
+   trailing 2v/w (4.3 m at 54 km/h) and aimed at the car's centre. Now (chaseCamera.js CAR_CAM): rigid boom 6.0 m / 2.0 m
+   (far 8.6 / 2.9), eased swing (7/s) and height only, aim 5.5 m ahead at 1.15 m (car in the lower third), pull-back
+   <= 0.8 m, fov +7 deg max, aim led into turns by the yaw rate, kept out of walls and trunks / lamp posts; C cycles
+   chase / far / bonnet / bumper; wheel = zoom 0.75-3x. 11_camera_before_chase / _after_chase.
+3. Station gates: the vehicle (south) gate was BLOCKED by a front-gardens wall + pillar + hedge drawn across its mouth
+   (12_south_gate_garden_pieces_before): plantsClear now applies to the gardens (main.js) + a south-gate ring
+   (data/overrides.json). Rue Rouge -> south gate -> school courtyard: 0 hits; north gate -> courtyard: done; out
+   through the north gate along its passage (13): done (the gate is 3.1 m: from the north yard's bays a car must line up
+   in the passage first: a 90 deg turn straight into it scrapes the gate leaves / the tree inside).
+4. With traffic on: parked cars shoved 0.34-0.35 m / 2-3 deg by 10-12 km/h hits, no jump; rear-ending a traffic car at
+   50 km/h = a hard bounce (the traffic car does not take momentum; it stops: sim obstacle), no explosion. Hedges: through
+   one at 32 km/h, held to ~8-10 km/h while inside -> drag 1.6 -> 1.2 (15_hedge_through).
+Left: traffic cars could take a shove; pavements not in the drive surface; the camera can end up behind a hedge (only
+walls / trunks pull it in); bonnet view sits on the body's pitch only (no roll).

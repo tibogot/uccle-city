@@ -44,7 +44,7 @@ export function stepContact(c, body, ground, contact) {
   return true;
 }
 /** hedges: the car goes through, slowed: speed x exp(-HEDGE_DRAG dt) while its box overlaps one (a tall one: more) */
-const HEDGE_DRAG = 1.6;
+const HEDGE_DRAG = 1.2;   // (browser check 2: 1.6 held a car on full throttle to ~14 km/h inside a hedge; 1.2: ~19)
 /** thin posts (signs, stop poles, bollards: radius <= POST_R, or a polygon <= POST_BOX both ways): a hit off the car's centre line slides the car round
  *  the post (the push turned sideways) instead of stopping it dead; dead centre it still stops */
 const POST_R = 0.12, POST_SIDE = 0.3, POST_BOX = 0.6;   // (POST_BOX: a polygon this small both ways counts too: the landmarks' bollard slices)
