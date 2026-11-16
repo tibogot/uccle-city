@@ -21,7 +21,7 @@ export const SHOP_PIECES = Object.keys(PIECES);
 // oak (La Meute), sage
 const CLASSIC = [[0.012, 0.04, 0.025], [0.07, 0.012, 0.013], [0.01, 0.017, 0.045], [0.01, 0.01, 0.011], [0.6, 0.56, 0.45], [0.11, 0.14, 0.16], [0.13, 0.065, 0.025], [0.19, 0.24, 0.17]];
 // powder-coat colours of the aluminium fronts: anthracite (most), black, white, silver, bronze
-const MODERN = [[0.03, 0.032, 0.035], [0.03, 0.032, 0.035], [0.012, 0.012, 0.013], [0.68, 0.68, 0.66], [0.33, 0.34, 0.35], [0.07, 0.05, 0.035]];
+const MODERN = [[0.03, 0.032, 0.035], [0.03, 0.032, 0.035], [0.012, 0.012, 0.013], [0.68, 0.68, 0.66], [0.33, 0.34, 0.35], [0.07, 0.05, 0.035], [0.48, 0.02, 0.02]];   // + 6 signal red (curated: Press Shop)
 // awning / parasol canvas: bordeaux, bottle green, navy, black, ecru, terracotta, grey, taupe, light taupe
 const CANVAS = [[0.3, 0.025, 0.03], [0.02, 0.1, 0.045], [0.02, 0.035, 0.12], [0.03, 0.03, 0.03], [0.58, 0.53, 0.4], [0.38, 0.09, 0.03], [0.22, 0.22, 0.21], [0.2, 0.17, 0.14], [0.36, 0.3, 0.24]];   // + 7 taupe, 8 light taupe (Le Relais Saint-Job: the canvas in daylight)
 const INK_ON_DARK = [[0.95, 0.92, 0.82], [0.97, 0.97, 0.95], [0.78, 0.6, 0.25]];

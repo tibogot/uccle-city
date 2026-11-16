@@ -53,16 +53,6 @@
    "parasols": true,
    "parasol": 0
   },
-  "osm:n4361797887": {
-   "_name": "Barat (bakery, Place de Saint-Job 36): on Street View 2024 a black fascia board with three gooseneck spotlights over a roller-shutter front (the shop now trades as another bakery)",
-   "front": {
-    "family": "modern",
-    "paint": 2,
-    "awning": false,
-    "spots": true,
-    "lightbox": false
-   }
-  },
   "osm:n5520234527": {
    "_name": "Le Bouquet Varie (florist): a grey retractable awning over the front, plants on the pavement",
    "front": {
@@ -216,6 +206,51 @@
      0.62,
      0.015,
      0.02
+    ]
+   }
+  },
+  "osm:n5520234526": {
+   "_name": "Deneubourg (boulangerie, Place de Saint-Job 36; Street View Jul 2024): black fascia with 'boulangerie' in red script over DENEUBOURG in white capitals, three gooseneck spotlights, a white roller shutter (the bakery that replaced Barat)",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "awning": false,
+    "spots": true,
+    "lightbox": false,
+    "ink": [
+     0.92,
+     0.92,
+     0.9
+    ]
+   }
+  },
+  "osm:n2340327827": {
+   "_name": "La Meute (restaurant; OSM still says Le Bistroquet; Street View Jul 2024): a warm oak front with glazed doors, a white folding awning with LA MEUTE on the valance, wall lanterns, climbing plants",
+   "none": true,
+   "front": {
+    "family": "classic",
+    "paint": 6,
+    "awning": true,
+    "canvas": 4,
+    "stripes": false,
+    "fascia": false,
+    "valance": "LA MEUTE",
+    "valanceFont": "shopSans"
+   }
+  },
+  "extra:press-shop": {
+   "_name": "Press Shop (newsagent; Street View Jul 2024): red fascia with 'Press Shop' in white script, Lotto flags",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 6,
+    "awning": false,
+    "lightbox": false,
+    "ink": [
+     0.92,
+     0.92,
+     0.9
     ]
    }
   }

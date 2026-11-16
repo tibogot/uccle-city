@@ -275,6 +275,26 @@ unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
   six closed iron hoops; LOD1 built natively at 16 segments; audit 0 blocking both LODs), placed by curated shops
   (`barrels: [[u, out]]`): Le Relais' traiteur gets two either side of its door.
 
+## BROWSER CHECK 3 (2026-11-16, after perfgame round 3)
+- Police: Street View Apr 2024 confirms the station's buff brick and white frames, the vehicle gate (south) open with its
+  fenced lane; the school blocks behind cannot be seen from the street (no panorama inside), so their buff brick + window
+  bands stay an assumption from the ortho's light walls. City: the blocks read as one complex with the station
+  (police_complex_after.jpg), the courtyard paved. A generated shrub stood in the open north gate
+  (police_northgate_shrub_before.jpg): plants now keep clear of yards / gate mouths (data/overrides.json plantsClear,
+  ?plantsclear=old) (police_northgate_after.jpg). viewer.collisionTest("E4") static: no invisible / missing collider within
+  50 m of the station (the open leaves collide where drawn, the openings are clear). The game drive itself was not run.
+- Carsoel 13: the diagonal seam is gone (E_carsoel13_wallfix_before / _after.jpg).
+- Le Relais: the steep awning's slope box was a LEFT-handed frame: its text face wound inward, culled (no script:
+  F_relais_steep_text_culled.jpg); fixed, white script on the taupe canvas; now RELAIS saint-job on each awning, the
+  section on the valance, barrels, A-board, black frames, white render, red tiles, as on Street View Oct 2020
+  (F_relais_after.jpg). The first-floor awnings: one reads over the corner's window, the façade generator shows one
+  window there (the real house has two).
+- Shops (Street View Jul 2024): n. 36 is the bakery DENEUBOURG (black fascia, red 'boulangerie' script, white capitals,
+  3 spots, white shutter): curated; OSM's Barat is gone, its front is the Press Shop newsagent (red fascia, white script,
+  Lotto): Barat replaced by an extra POI (tools/streetlife/extra_pois.json _replaces); OSM's Le Bistroquet is now LA MEUTE
+  (oak front, white awning, LA MEUTE on the valance): curated. n. 24 is Bois Savanes (Thai), with Alain D. (hairdresser)
+  and Lefevre funeral services beside it: not curated yet. Maison Dandoy (n. 22), Proxy, White Night: not reached.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).
