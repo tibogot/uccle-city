@@ -530,6 +530,89 @@ function footprintIndex(bDoc) {
   };
 }
 
+// viewer/wallRepair.js
+var PLANE = 0.2;
+var MIN_COVER = 0.85;
+var MIN_HOLE = 1;
+var STEP = 0.25;
+var MIN_EDGE = 1;
+function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
+  const used = /* @__PURE__ */ new Set(), out = [], edges = [];
+  const n = ring2.length - (ring2.length > 1 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1] ? 1 : 0);
+  for (let i = 0; i < n; i++) {
+    const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % n], L2 = Math.hypot(bx - ax, bz - az);
+    if (L2 < MIN_EDGE) continue;
+    const tx = (bx - ax) / L2, tz = (bz - az) / L2, nx = -tz, nz = tx;
+    const on = [];
+    tris.forEach((t, k) => {
+      if (used.has(k) || Math.abs(t.n[1]) > 0.3) return;
+      let ok = true;
+      for (const q of t.p) {
+        const dx = q[0] - ax, dz = q[2] - az, d = dx * nx + dz * nz, u = dx * tx + dz * tz;
+        if (Math.abs(d) > PLANE || u < -PLANE || u > L2 + PLANE) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) on.push({ k, q: t.p.map((q) => [(q[0] - ax) * tx + (q[2] - az) * tz, q[1]]) });
+    });
+    if (!on.length) continue;
+    const topAt = (u) => {
+      let hi = -Infinity;
+      for (const { q } of on) for (let e = 0; e < 3; e++) {
+        const A = q[e], B = q[(e + 1) % 3];
+        if ((A[0] - u) * (B[0] - u) > 0) continue;
+        const y = Math.abs(B[0] - A[0]) < 1e-6 ? Math.max(A[1], B[1]) : A[1] + (B[1] - A[1]) * (u - A[0]) / (B[0] - A[0]);
+        if (y > hi) hi = y;
+      }
+      return hi;
+    };
+    const inTri2 = (u, y, q) => {
+      const [A, B, C] = q, d = (B[1] - C[1]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[1] - C[1]);
+      if (Math.abs(d) < 1e-9) return false;
+      const l1 = ((B[1] - C[1]) * (u - C[0]) + (C[0] - B[0]) * (y - C[1])) / d, l2 = ((C[1] - A[1]) * (u - C[0]) + (A[0] - C[0]) * (y - C[1])) / d;
+      return l1 >= -1e-4 && l2 >= -1e-4 && 1 - l1 - l2 >= -1e-4;
+    };
+    let tot = 0, cov = 0, partyN = 0;
+    for (let u = STEP / 2; u < L2; u += STEP) {
+      const top = topAt(u);
+      if (!(top > base + 0.3)) continue;
+      const px = ax + tx * u, pz = az + tz * u;
+      if (party && (party(px + nx * 0.4, pz + nz * 0.4) || party(px - nx * 0.4, pz - nz * 0.4))) {
+        partyN++;
+        continue;
+      }
+      for (let y = base + STEP / 2; y < top; y += STEP) {
+        tot++;
+        if (on.some(({ q }) => inTri2(u, y, q))) cov++;
+      }
+    }
+    if (partyN && tot === 0) continue;
+    const cover = tot ? cov / tot : 1, hole = (tot - cov) * STEP * STEP;
+    const bad = cover < MIN_COVER && hole >= MIN_HOLE && partyN === 0;
+    edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, rebuilt: bad && fix });
+    if (!bad || !fix) continue;
+    for (const { k } of on) used.add(k);
+    const steps = Math.max(1, Math.ceil(L2)), pts = [];
+    for (let s = 0; s <= steps; s++) {
+      const u = Math.min(L2, L2 * s / steps), top = topAt(Math.min(L2 - 1e-3, Math.max(1e-3, u)));
+      pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
+    }
+    const sideN = [nx, 0, nz];
+    for (let s = 0; s < steps; s++) {
+      const [x0, z0, y0] = pts[s], [x1, z1, y1] = pts[s + 1], mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
+      if (party && (party(mx + nx * 0.4, mz + nz * 0.4) || party(mx - nx * 0.4, mz - nz * 0.4))) continue;
+      const a = [x0, base, z0], b = [x1, base, z1], c = [x1, y1, z1], d = [x0, y0, z0];
+      out.push({ p: [a, b, c], n: sideN, area: 0.5 * Math.abs((y1 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+      out.push({ p: [a, c, d], n: sideN, area: 0.5 * Math.abs((y0 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+    }
+  }
+  tris.forEach((t, k) => {
+    if (!used.has(k)) out.push(t);
+  });
+  return { tris: out, edges };
+}
+
 // viewer/buildingTypes.js
 var TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5 };
 function h01(str) {
@@ -942,6 +1025,7 @@ function smoother(tris) {
     return [x / L2, y / L2, z / L2];
   };
 }
+var base0 = (b) => b.base;
 function triOf(P, I, t) {
   const p = [0, 1, 2].map((q) => {
     const i = I[t * 3 + q];
@@ -1293,10 +1377,18 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     const roofStyle = hash01(key + "r");
     const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;
-    const all = [];
+    let all = [];
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
       const o = triOf(P, I, t);
       if (o) all.push(o);
+    }
+    if (opts.wallFix !== false && all.length) {
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0 });
+      const n = r.edges.filter((e) => e.rebuilt).length;
+      if (n) {
+        all = r.tris;
+        stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n;
+      }
     }
     const wallTris = all.length;
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
@@ -4097,10 +4189,10 @@ function sectionEventStations(stack, L2) {
 }
 
 // vendor/roads/roadProfile.js
-var STEP = 4;
+var STEP2 = 4;
 function buildProfile(road, L2, ends, groundAt, maxGrade) {
   const mode = road.profile?.mode || "terrain";
-  const N = Math.max(2, Math.ceil(L2 / STEP) + 1);
+  const N = Math.max(2, Math.ceil(L2 / STEP2) + 1);
   const s = new Float64Array(N);
   const y = new Float64Array(N);
   const g = new Float64Array(N);
@@ -9374,13 +9466,13 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   const skirtTris = (C.idx.length - triAtSkirts) / 3;
   const fill = { len: 0, tris: 0, gapLen: 0 };
   if (opts.wallRay) {
-    const FILL_GAP = 1.8, STEP3 = 0.5, INTO = 0.15;
+    const FILL_GAP = 1.8, STEP4 = 0.5, INTO = 0.15;
     for (const e of surf.edges) {
       if (!e.raised) continue;
       const pts = [];
       const L0 = e.line;
       for (let k = 1; k < L0.length; k++) {
-        const [ax, az] = L0[k - 1], [bx, bz] = L0[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP3));
+        const [ax, az] = L0[k - 1], [bx, bz] = L0[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP4));
         for (let q = k === 1 ? 0 : 1; q <= n; q++) pts.push([ax + (bx - ax) * q / n, az + (bz - az) * q / n, k]);
       }
       let prev = null;
@@ -9399,14 +9491,14 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
               b: C.vert(qx, y, qz, UP2, ks2 ? ks2.s : qx, ks2 ? ks2.d : qz, ex(ks2)),
               t
             };
-            fill.gapLen += STEP3;
+            fill.gapLen += STEP4;
           }
         }
         if (cur && prev) {
           C.tri(prev.a, cur.a, cur.b, UP2);
           C.tri(prev.a, cur.b, prev.b, UP2);
           fill.tris += 2;
-          fill.len += STEP3;
+          fill.len += STEP4;
         }
         prev = cur;
       }
@@ -10801,7 +10893,7 @@ function dropLifts(net, ground, noData, fixedRoad, st) {
 }
 
 // viewer/streets/recentre.js
-var STEP2 = 3;
+var STEP3 = 3;
 var MAX_SHIFT = 4;
 var MIN_SHIFT = 0.8;
 var TAPER2 = 12;
@@ -10828,7 +10920,7 @@ function recentreRoads(roads, prep) {
       total += L2;
     }
     if (total < 2 * TAPER2) continue;
-    const n = Math.max(2, Math.round(total / STEP2)), S2 = [];
+    const n = Math.max(2, Math.round(total / STEP3)), S2 = [];
     let seg = 0, acc = 0;
     for (let k = 0; k <= n; k++) {
       const s = total * k / n;
@@ -15232,7 +15324,7 @@ async function buildTileData(entry, base) {
     const dv = new DataView(bBuf), V = dv.getUint32(0, true), T2 = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T2 * 3), fitGround, footprintIndex(bDoc));
   }) : null;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));

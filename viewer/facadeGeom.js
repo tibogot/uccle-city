@@ -1,4 +1,5 @@
 import { fitBase } from "./groundFit.js";
+import { repairWalls } from "./wallRepair.js";   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
 import { faceBays, storeyFit } from "./interior/facadeWindows.js";
 import { litWindows } from "./nightLights/litHash.js";
 import { classify, TYPE } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
@@ -73,6 +74,8 @@ function smoother(tris) {
     return [x / L, y / L, z / L];
   };
 }
+
+const base0 = (b) => b.base;
 
 function triOf(P, I, t) {
   const p = [0, 1, 2].map((q) => { const i = I[t * 3 + q]; return [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]]; });
@@ -437,8 +440,15 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash
     const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;                              // (the roof kit) a gable / party-wall stack was placed for this building
-    const all = [];
+    let all = [];
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }
+    // citydefects: a footprint edge the UrbIS wall mesh covers only in part (Av. Carsoel 13: a lone diagonal triangle across
+    // the door) rebuilt as one wall from the base to its own top (viewer/wallRepair.js; opts.wallFix false = ?wallfix=old)
+    if (opts.wallFix !== false && all.length) {
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0 });
+      const n = r.edges.filter((e) => e.rebuilt).length;
+      if (n) { all = r.tris; stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n; }
+    }
     const wallTris = all.length;
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }
     const smooth = smoother(all);
