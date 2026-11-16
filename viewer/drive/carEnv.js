@@ -23,11 +23,39 @@ export function ledgeContact(c, body, ground, contact) {
 }
 const LEDGE_PTS = [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]];
 
+// ---------------------------------------------------------------- police feel (docs/POLICE_FEEL.md; ?carfeel=old = off)
+/** A STEP, not a slope: the drive surface under a perimeter point rises more than STEP_RISE over the STEP_RUN metres
+ *  before it (toward the car's centre), or more than BANK over the car's own height. The old rule (anything MAX_STEP
+ *  over the car's centre) turned a 15 cm kerb on a 15 % street into a wall (the front corner is already ~0.36 m up
+ *  the hill), and every lawn bank steeper than ~20 %. The drive grid is bilinear over 1 m: a kerb of H rises ~0.7 H
+ *  over 0.7 m, so kerbs and garden edges up to ~0.4 m are ridden up, a wall / retaining wall is not. */
+export const STEP_RUN = 0.7, STEP_RISE = 0.3, BANK = 1.3;
+export function stepContact(c, body, ground, contact) {
+  let sx = 0, sz = 0, n = 0;
+  for (const [u, w] of LEDGE_PTS) {
+    const ox = u * body.hx * body.cos + w * body.hz * body.sin, oz = -u * body.hx * body.sin + w * body.hz * body.cos;
+    const x = c.x + ox, z = c.z + oz, L = Math.hypot(ox, oz) || 1;
+    const g = ground(x, z);
+    if (g - ground(x - ox / L * STEP_RUN, z - oz / L * STEP_RUN) > STEP_RISE || g - c.y > BANK) { sx -= ox; sz -= oz; n++; }
+  }
+  if (!n) return false;
+  const L = Math.hypot(sx, sz) || 1;
+  contact.nx = sx / L; contact.nz = sz / L; contact.depth = 0.04; contact.kind = KIND.wall;
+  return true;
+}
+/** hedges: the car goes through, slowed: speed x exp(-HEDGE_DRAG dt) while its box overlaps one (a tall one: more) */
+const HEDGE_DRAG = 1.6;
+/** thin posts (signs, stop poles, bollards: radius <= POST_R): a hit off the car's centre line slides the car round
+ *  the post (the push turned sideways) instead of stopping it dead; dead centre it still stops */
+const POST_R = 0.12, POST_SIDE = 0.3;
+
 /**
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
  * ground(x, z) -> drivable height
  */
-export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit }) {
+export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null }) {
+  // feel (police feel, the car only): the step rule above, kerb islands climbed (they are in the drive surface), hedges
+  // soft, thin posts slide the car round, parked cars nudged (nudge(ref, dx, dz, dyaw)); surface(x, z): 0 paved / 1 terrain
   // dims: the vehicle's half width / half length (carPhysics BODY; the motorbike's narrow box, viewer/moto/motoPhysics.js);
   // onHit(c, nx, nz, kind, handling): the impact response (carPhysics hit, or the motorbike's: it may crash)
   const near = [];
@@ -49,8 +77,10 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
       const r = Math.hypot(dims.hx, dims.hz) + travel;
       for (const col of sets(c.x, c.z, r)) gather(col, c.x, c.z, r, near);
       env.tested = near.length / 2;
-      env.contacts = 0;
+      env.contacts = 0; env.hedge = 0;
     },
+    surface,
+    hedge: 0,             // (feel) a hedge overlapped in the last substep
     collide(c, step = 1 / 120) {
       // a pond (wolvendaelCity.js world.waters): no wall at the shore and no driving on the bed as on dry land: the
       // water drags the car in proportion to its depth (half a metre stops it; it can back out)
@@ -65,15 +95,40 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
       for (let pass = 0; pass < 2; pass++) {      // a second pass settles a push from one wall into another
         let any = false;
         for (let k = 0; k < near.length; k += 2) {
-          if (heightClear(near[k], near[k + 1], c.y)) continue;                  // a platform / fence / parapet over or under the car
-          if (!itemContact(near[k], near[k + 1], c.x, c.z, body, contact)) continue;
+          const col = near[k], id = near[k + 1];
+          if (feel && id < col.P && col.pkind[id] === KIND.island) continue;     // (feel: a kerb island is ridden up)
+          if (heightClear(col, id, c.y)) continue;                               // a platform / fence / parapet over or under the car
+          if (!itemContact(col, id, c.x, c.z, body, contact)) continue;
+          if (feel && contact.kind === KIND.hedge) {
+            if (pass === 0) {
+              const tall = col.ptop[id] - col.pbase[id] > 1.7 ? 2 : 1;
+              const kk = Math.exp(-HEDGE_DRAG * tall * step);
+              c.speed *= kk; c.vx *= kk; c.vz *= kk; env.hedge = 1;
+            }
+            continue;
+          }
+          if (feel && id >= col.P && col.circ[(id - col.P) * 3 + 2] <= POST_R) {
+            // where the post is across the car: off the centre line, push the car aside (round it)
+            const q = (id - col.P) * 3, lat = (col.circ[q] - c.x) * body.cos - (col.circ[q + 1] - c.z) * body.sin;
+            if (Math.abs(lat) > POST_SIDE) {
+              const s = lat > 0 ? -1 : 1, ex = s * body.cos, ez = -s * body.sin;     // away from the post, across the car
+              const nx = contact.nx + ex * 0.9, nz = contact.nz + ez * 0.9, L = Math.hypot(nx, nz) || 1;
+              contact.nx = nx / L; contact.nz = nz / L;
+            }
+          }
           c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
-          onHit(c, contact.nx, contact.nz, contact.kind, handling);
+          const vn = onHit(c, contact.nx, contact.nz, contact.kind, handling);
+          if (feel && nudge && contact.kind === KIND.car && vn > 0.02 && col.pref?.[id]) {
+            // a parked car takes part of the hit: shoved along the push, turned by where it was hit
+            const ref = col.pref[id], d = Math.min(0.25, vn * 0.03);
+            const rx = c.x - ref.x, rz = c.z - ref.z, tq = (rx * -contact.nz - rz * -contact.nx);
+            nudge(ref, -contact.nx * d, -contact.nz * d, Math.max(-0.06, Math.min(0.06, tq * 0.01 * vn)));
+          }
           env.contacts++; any = true;
         }
         if (!any) break;
       }
-      if (ledges && Number.isFinite(c.y) && ledgeContact(c, body, ground, contact)) {
+      if (ledges && Number.isFinite(c.y) && (feel ? stepContact(c, body, ground, contact) : ledgeContact(c, body, ground, contact))) {
         c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
         onHit(c, contact.nx, contact.nz, contact.kind, handling);
         env.contacts++;

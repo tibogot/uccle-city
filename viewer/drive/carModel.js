@@ -188,14 +188,20 @@ export function createCar(model, { lod = 0, shadows = true } = {}) {
     }
   };
   setLod(lod);
+  // (police feel: c.wy = each wheel's suspension travel, carFeel.js: the wheel rides up into its arch over a kerb and
+  // hangs down over a dip; no array per frame)
+  const WL = ["FL", "FR", "RL", "RR"].map((k) => wheels[k]), restY = WL.map((w) => w.pivot.position.y);
   const update = (c) => {
     root.position.set(c.x, c.y, c.z);
     root.rotation.set(-c.slopePitch, c.heading, c.slopeRoll);
     chassis.position.y = c.heave;
     chassis.rotation.set(c.pitch, 0, c.roll);
-    for (const [k, w] of Object.entries(wheels)) {
+    const wy = c.wy;
+    for (let i = 0; i < 4; i++) {
+      const w = WL[i];
       w.spin.rotation.x = c.wheelSpin;
-      if (k[0] === "F") w.pivot.rotation.y = c.steerAngle;
+      if (i < 2) w.pivot.rotation.y = c.steerAngle;
+      w.pivot.position.y = restY[i] + (wy ? wy[i] : 0);
     }
   };
   return { root, chassis, wheels, setLod, update, get lod() { return cur; } };

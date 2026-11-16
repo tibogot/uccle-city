@@ -9,6 +9,10 @@
 // horizon level, place the boom separately.
 import * as THREE from "three/webgpu";
 
+/** ?carfeel=old: the camera before the police-feel round; now (FEEL_CAM) the view widens with speed (fov), the boom
+ *  stretches on the throttle / shortens under braking, and the horizon leans a little with the cornering */
+const FEEL_OLD = typeof location !== "undefined" && /[?&]carfeel=old(&|$)/.test(location.search);
+export const FEEL_CAM = { fovPerMs: 0.32, fovFrom: 8, fovMax: 11, stretch: 0.07, stretchMax: 0.6, lean: 0.0032, leanMax: 0.055, ease: 3 };
 export const CAMERA = { mode: "chase", distance: 6.4, height: 2.1, lookHeight: 1.0, fov: 60, stiffness: 7, lookAhead: 0.25 };
 const MODES = ["chase", "far", "bumper", "orbit"];
 
@@ -39,9 +43,17 @@ export class ChaseCamera {
   /** c: carPhysics state; ground(x, z); insideWall(x, z) optional */
   update(c, dt, ground, insideWall = null) {
     const cam = this.camera;
-    if (cam.fov !== this.cfg.fov) { cam.fov = this.cfg.fov; cam.updateProjectionMatrix(); }
     const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
     const vx = sinH * c.speed + c.vx, vz = cosH * c.speed + c.vz, v = Math.hypot(vx, vz);
+    // (police feel) speed in the view: fov, boom stretch, lean, all eased
+    const F = FEEL_CAM, fe = FEEL_OLD || this.cfg !== CAMERA ? 0 : 1,   // (the car only: the two-wheelers have their own camera numbers)
+      ke = 1 - Math.exp(-F.ease * dt);
+    if (this.first) { this.fovX = 0; this.stretch = 0; this.lean = 0; }
+    this.fovX += (fe * Math.min(F.fovMax, Math.max(0, v - F.fovFrom) * F.fovPerMs) - this.fovX) * ke;
+    this.stretch += (fe * Math.max(-F.stretchMax, Math.min(F.stretchMax, (c.accel || 0) * F.stretch)) - this.stretch) * ke;
+    this.lean += (fe * Math.max(-F.leanMax, Math.min(F.leanMax, -(c.angularVel || 0) * v * F.lean)) - this.lean) * ke;
+    const fov = this.cfg.fov + (this.cfg.mode === "bumper" ? this.fovX * 0.5 : this.fovX);
+    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
     if (!this.drag.held && this.cfg.mode !== "orbit") { this.drag.yaw *= Math.exp(-2.5 * dt); this.drag.pitch *= Math.exp(-2.5 * dt); }
     if (this.cfg.mode === "bumper") {
       const y = c.y + 0.55;
@@ -58,7 +70,7 @@ export class ChaseCamera {
     let d = travel - this.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
     this.yaw += d * (1 - Math.exp(-(this.cfg.mode === "orbit" ? 0 : 4.5) * dt));
     const far = this.cfg.mode === "far";
-    const dist = this.cfg.distance * (far ? 1.6 : 1) + Math.min(2.5, v * 0.04), h = this.cfg.height * (far ? 1.8 : 1);
+    const dist = this.cfg.distance * (far ? 1.6 : 1) + Math.min(2.5, v * 0.04) + this.stretch, h = this.cfg.height * (far ? 1.8 : 1);
     const az = this.yaw + this.drag.yaw, el = Math.atan2(h, dist) + this.drag.pitch;
     const R = Math.hypot(h, dist);
     const target = this._t.set(c.x, c.y + this.cfg.lookHeight, c.z);
@@ -80,5 +92,6 @@ export class ChaseCamera {
     this.look.set(c.x + vx * this.cfg.lookAhead * 0.3, c.y + this.cfg.lookHeight, c.z + vz * this.cfg.lookAhead * 0.3);
     cam.up.set(0, 1, 0);
     cam.lookAt(this.look);
+    if (this.lean) cam.rotateZ(this.lean);
   }
 }

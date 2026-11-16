@@ -22,6 +22,10 @@ import { wind } from "../foliage/wind.js";
 
 const qs = new URLSearchParams(location.search);
 const GARDEN_ROAD_OLD = qs.get("gardenroad") === "old";
+/** ?hedgecol=old: the hedge modules' collision boxes in furniture-gardenwall (solid for the car, as a brick wall); now
+ *  their own stand-in mesh furniture-gardenhedge: the car drives through a hedge, slowed (viewer/drive/carEnv.js, police
+ *  feel), the walker still stops at it (viewer/character/cityHook.js) */
+const HEDGE_COL_OLD = qs.get("hedgecol") === "old";
 
 /** the doc without the pieces standing on a carriageway (blocked(x, z) -> true): segments by their ends and middle,
  *  pillars / gates by their base, hedges split round the blocked points. { doc, segs, pillars, gates, hedgePts } */
@@ -77,9 +81,11 @@ export const cityGardens = {
     const g = gardenInstances(doc, groundAt, { hedgeFronts: this.hedges, hedges: this.hedges });
     const grp = new THREE.Group(); grp.name = `gardens-${name}`;
     const M = new THREE.Matrix4();
-    for (const [k, nm] of [["wall", "furniture-gardenwall"], ["pillar", "furniture-gardenpillar"], ["gate", "furniture-gardengate"]]) {
-      const a = g.stand[k]; if (!a.length) continue;
-      const m = new THREE.InstancedMesh(this.stand[k], this.kit.mats.standin, a.length / 16);
+    const hf = HEDGE_COL_OLD ? g.stand.wall.length : g.stand.hedgeFrom;
+    const stand = { wall: g.stand.wall.slice(0, hf), hedge: g.stand.wall.slice(hf), pillar: g.stand.pillar, gate: g.stand.gate };
+    for (const [k, nm] of [["wall", "furniture-gardenwall"], ["hedge", "furniture-gardenhedge"], ["pillar", "furniture-gardenpillar"], ["gate", "furniture-gardengate"]]) {
+      const a = stand[k]; if (!a.length) continue;
+      const m = new THREE.InstancedMesh(this.stand[k === "hedge" ? "wall" : k], this.kit.mats.standin, a.length / 16);
       for (let i = 0; i < a.length / 16; i++) { M.fromArray(a, i * 16); m.setMatrixAt(i, M); }
       m.instanceMatrix.needsUpdate = true;
       m.computeBoundingSphere();
