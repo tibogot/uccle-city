@@ -1,0 +1,12 @@
+{
+ "Papenkasteel_lod2": {
+  "from": "Papenkasteel_far",
+  "sourceTris": 13902,
+  "tris": 4877,
+  "crossIslandTris": 2007,
+  "aoBakedOnLevel": false,
+  "addedVertices": 10644
+ },
+ "glbBytes": 1972816,
+ "rawBytes": 6027456
+}

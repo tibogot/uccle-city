@@ -21,6 +21,7 @@ import { addVanBuuren } from "./vanbuurenCity.js";
 import { addWolvendael } from "./wolvendaelCity.js";
 import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
+import { addPapenkasteel } from "./papenkasteelCity.js";
 import { addStPierre } from "./stpierreCity.js";
 import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
@@ -1274,6 +1275,9 @@ async function main() {
   // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
   // solid 534568, behind ?calevoet=1 for now
   if (params.get("calevoet") !== "0") heroes.push(() => addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
+  // The Papenkasteel / Chateau de Stalle, the castle on the Geleytsbeek (tools/blender/papenkasteel.py, viewer/papenkasteelCity.js)
+  // in place of UrbIS solids 528339 + 528019; ?papenkasteel=0 (alias ?geleytsbeek=0) = the UrbIS solids
+  if (params.get("papenkasteel") !== "0" && params.get("geleytsbeek") !== "0") heroes.push(() => addPapenkasteel({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // the Eglise Saint-Pierre (tools/blender/stpierre.py, viewer/stpierreCity.js) behind ?stpierre=1
   if (params.get("stpierre") !== "0") heroes.push(() => addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // the Russian Orthodox church of Saint-Job (tools/blender/russian.py, viewer/russianCity.js); ?russian=0 = the UrbIS solid

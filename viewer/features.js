@@ -149,6 +149,8 @@ export const FEATURES = [
   on("stalle", "world", "Stalle chapel", "Chapelle de Stalle (+ interior).", { sub: "Landmarks" }),
   on("vanbuuren", "world", "van Buuren house", "Musée van Buuren.", { sub: "Landmarks" }),
   on("calevoet", "world", "Calevoet station", "Uccle-Calevoet station.", { sub: "Landmarks" }),
+  on("papenkasteel", "world", "Papenkasteel", "Papenkasteel / château de Stalle (Rue Papenkasteel 99), the castle on the Geleytsbeek; off: the UrbIS blocks.", { sub: "Landmarks" }),
+  on("geleytsbeek", "world", "Geleytsbeek castle (alias)", "Same switch as ?papenkasteel (the castle on the Geleytsbeek).", { sub: "Landmarks", ui: false }),
   on("falcons", "world", "falcons", "The Saint-Job peregrine family (+ the flight start from the nest).", { sub: "Landmarks" }),
   sel("herostatue", "world", "Héros statue", "The statue slot: the dropped-in model (default) or our scripted bronze.", [[null, "slot model"], ["ours", "ours (scripted)"]], { sub: "Landmarks" }),
   sel("heroslawn", "world", "Héros lawn", "The square's lighter lawn (default) or the city's lawn.", [[null, "square lawn"], ["city", "city lawn"]], { sub: "Landmarks" }),
