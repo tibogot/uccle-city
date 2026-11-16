@@ -18,6 +18,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
 
 const POOL = 6;
+const LAMP_CULL = typeof location === "undefined" || new URLSearchParams(location.search).get("lampcull") !== "old";   // perfgame round 2
 
 function kerbOffset(type) {
   const t = ROAD_TYPES[type] || ROAD_TYPES.local;
@@ -151,7 +152,9 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
     // dithers out over its last FAR_BAND metres instead of vanishing at 450 m
     const lastK = MODEL.lods.length - 1;
     const lodMeshes = MODEL.lods.map((l, k) => {
-      const mk2 = (geo, mat, shadow) => { const m = new THREE.InstancedMesh(geo, mat, cap); m.count = 0; m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; group.add(m); return m; };
+      // (perfgame round 2, ?lampcull=old: never culled) each LOD mesh gets the bounding sphere of the lamps it draws now
+      // (set at every re-bucketing): a tile's lamps behind the camera / out of the shadow box cost no draw
+      const mk2 = (geo, mat, shadow) => { const m = new THREE.InstancedMesh(geo, mat, cap); m.count = 0; m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = LAMP_CULL; if (LAMP_CULL) m.boundingSphere = new THREE.Sphere(); group.add(m); return m; };
       const far = SMOOTH && k === lastK ? farLampMats() : MODEL;
       return { iron: mk2(l.iron, far.iron, SMOOTH || k === 0), glass: mk2(l.glass, far.glass, false) };
     });
@@ -159,7 +162,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
     relod = (cam) => {
       if (cam.distanceToSquared(last) < 25) return;
       last.copy(cam);
-      for (const m of lodMeshes) m.iron.count = m.glass.count = 0;
+      for (const m of lodMeshes) { m.iron.count = m.glass.count = 0; m.box = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]; }
       for (let i = 0; i < sites.length; i++) {
         const s = sites[i], d = Math.hypot(s.x - cam.x, s.y - cam.y, s.z - cam.z);
         let k = LAMP_LODS.findIndex((l) => d < l.until);
@@ -168,6 +171,13 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
         const m = lodMeshes[k], n = m.iron.count++;
         m.glass.count++;
         m.iron.setMatrixAt(n, mats[i]); m.glass.setMatrixAt(n, mats[i]);
+        const B = m.box; B[0] = Math.min(B[0], s.x); B[1] = Math.min(B[1], s.y); B[2] = Math.min(B[2], s.z); B[3] = Math.max(B[3], s.x); B[4] = Math.max(B[4], s.y); B[5] = Math.max(B[5], s.z);
+      }
+      if (LAMP_CULL) for (const m of lodMeshes) if (m.iron.count) {
+        const B = m.box, cx = (B[0] + B[3]) / 2, cy = (B[1] + B[4]) / 2 + 3, cz = (B[2] + B[5]) / 2;
+        const r = Math.hypot(B[3] - B[0], B[4] - B[1], B[5] - B[2]) / 2 + 7;     // (+ a lamp's own size: 6 m post, 1 m arm)
+        m.iron.boundingSphere.center.set(cx, cy, cz); m.iron.boundingSphere.radius = r;
+        m.glass.boundingSphere.center.set(cx, cy, cz); m.glass.boundingSphere.radius = r;
       }
       for (const m of lodMeshes) for (const im of [m.iron, m.glass]) {      // only the instances in use
         im.visible = im.count > 0;                                          // (an empty instanced mesh still costs a draw per pass)
