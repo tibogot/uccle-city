@@ -1,6 +1,6 @@
 # Mesh audit: cross lod0
 
-220 triangles, 120 welded vertices, 0 open edges, 0 rays, 5 ms.
+220 triangles, 120 welded vertices, 0 open edges, 0 rays, 6 ms.
 
 **0 blocking**, 0 warnings. Clean (no blocking item).
 

@@ -184,3 +184,16 @@ box (its frame): LOD0 < 90 m (+-15), LOD1 < 400 m (+-40); the cars 60 (+-10) and
   lane (seen) is NOT modelled; the bins and the bike rack are not modelled.
 - The sliding gate's parked place is a guess (south, partly over the neighbour's garden line).
 - Packed LOD2: 13 audit items (> 440 m).
+
+## 2026-11-16 (citydefects): the north gate open; "too small" (owner)
+- THE NORTH GATE is now drawn OPEN (owner: "the real gate is open"; the police game starts in the north yard at (u 18,
+  w -6)): both leaves swung 90 deg into the yard about their piers, lying along u against the wall's inside (u 24.5 ..
+  26.06, at w -18.4 / -15.4): the 3.1 m opening is clear for the car; the drive colliders come from the drawn mesh
+  (viewer/heroColliders.js), so the leaves block where they stand, the opening does not. The vehicle gate (south) was
+  already open. Rebuilt with Blender (CPU), packed, audits as before (LOD0 / far 0 blocking).
+- "TOO SMALL": the model is the UrbIS solids it replaces (528055 + 528772 = BU 1674458, 352 + 20 m2, top 58.9 m) to the
+  centimetre: no scale error. The police occupy a FORMER SCHOOL "including a listed gym" (La Libre / BX1 2025): the
+  school's other blocks right behind (528469 BU 1715364: 290 m2, top 61.6; 528468 BU 1715365: 305 m2, top 57.3;
+  528531 BU 1718819: 610 m2, top 62.0; the stair block 531654) are probably part of the station and stay generic UrbIS
+  houses today. TO DO on the browser turn: Street View / ortho of Rue Rouge 17 and the courtyard: which blocks are the
+  station, then extend the hero (or give those blocks the station's look: buildingLooks) instead of scaling.

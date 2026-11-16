@@ -267,6 +267,14 @@ unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
 | Proxy Delhaize (I6) | 1054.1, 562.7 | 50.794020, 4.364400 | 155 | white box + red lettering: confirm |
 | Le Relais Saint-Job (I6) | 1094, 543 | 50.794190, 4.365210 | 239 | the new steep awnings, upper awnings' positions |
 
+## POLICE STATION + BARREL (code-only)
+- North gate OPEN (models/police_rouge/NOTES.md, 2026-11-16 section). "Too small": the model matches the UrbIS solids
+  exactly; the station is a former school whose other blocks behind it are likely police too (listed there): to check
+  on Street View, then extend.
+- Barrel kit piece (viewer/streetlife/kits.js `barrel`: a 225 l bordelaise, one closed lathe body with recessed heads,
+  six closed iron hoops; LOD1 built natively at 16 segments; audit 0 blocking both LODs), placed by curated shops
+  (`barrels: [[u, out]]`): Le Relais' traiteur gets two either side of its door.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).

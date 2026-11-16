@@ -209,6 +209,8 @@ export function layoutShop(p, f, frame, lit, env) {
     box(at(ax, 1.3, 0.11), X, Y, Z, 0.6, 0.9, 0.06, { board: [0.05, 0.055, 0.06], rough: 0.35, metal: 0.6 });
     box(at(ax, 1.42, 0.142), X, Y, Z, 0.34, 0.24, 0.01, { board: [0.06, 0.16, 0.2], boardGlow: 1.2, rough: 0.15 });
   }
+  // (curated) wine barrels on the pavement (Le Relais Saint-Job's traiteur): [[u, m out], ...]
+  for (const [u, z] of cf.barrels || []) { const o = at(u, 0, z); prop("barrel", o[0], o[1], o[2], yaw + u); }
   // (curated) a chalk A-board on the pavement: [u along the front, m out from the wall]
   if (cf.aboard) {
     const [u, z] = cf.aboard, o = at(u, 0, z), tilt = 0.17;
