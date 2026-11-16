@@ -216,6 +216,9 @@ export class FalconHunt {
   steer(g, dt) {
     const w = g.window, f = g.f;
     if (!this.assist || !w || w.i < 0 || w.d > 70 || w.angle > 0.8 || w.closing < 4 || g.hitStop > 0) return;
+    // (falconfix) not while the flight assist steers clear of a roof / crown: the lead point does not pull the bird
+    // into the trees (browser check: a low street pass was turned into the crowns by a pigeon 55 m off)
+    if (g.assist && g.assist.avoiding > 0.3) return;
     const T = this.mux.pos(w.i, this._p), U = this.mux.vel(w.i, this._w);
     const tti = clamp(w.d / Math.max(w.closing, 1), 0, 2);
     let ax = T.x + U.x * tti - f.pos.x, ay = T.y + U.y * tti - f.pos.y, az = T.z + U.z * tti - f.pos.z;
