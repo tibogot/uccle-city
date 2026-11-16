@@ -1,5 +1,5 @@
 // Keyboard + mouse for the third-person character: WASD / arrows move (camera-relative), Shift runs (or toggles
-// with CapsLock-style `runToggle`), Space jumps, mouse drag (or pointer lock: click the canvas) orbits the camera,
+// with CapsLock-style `runToggle`), Space jumps, C toggles crouch (a locomotion character), mouse drag (or pointer lock: click the canvas) orbits the camera,
 // the wheel zooms. Only listens while active().
 export class CharacterInput {
   constructor(dom, { active = () => true, pointerLock = false, sensitivity = 0.0042 } = {}) {
@@ -12,6 +12,7 @@ export class CharacterInput {
       if (e.target?.closest?.("input,select,textarea")) return;
       this.keys.add(e.code);
       if (e.code === "Space") { if (!e.repeat) this.jumpQueued = true; e.preventDefault(); }
+      if (e.code === "KeyC" && !e.repeat) this.crouch = !this.crouch;
       this.onKey?.(e.code, e);
     };
     this._ku = (e) => this.keys.delete(e.code);
@@ -56,6 +57,7 @@ export class CharacterInput {
     const inp = ctl.input;
     inp.x = x; inp.z = z;
     inp.run = this.has("ShiftLeft") || this.has("ShiftRight");
+    inp.crouch = !!this.crouch;
     if (this.jumpQueued) { inp.jump = true; this.jumpQueued = false; }
   }
 }

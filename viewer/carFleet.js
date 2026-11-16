@@ -16,7 +16,7 @@
 //     thread only wraps the arrays (one car type per frame) and precompiles the four materials with compileAsync
 //     (setRenderer) before the first car is drawn, so no pipeline is built in a frame either
 import * as THREE from "three/webgpu";
-import { PACK_SOURCES, packMaterial, FLEET_SOURCE, CARS_OLD } from "./drive/carPacks.js";
+import { PACK_SOURCES, packMaterial, FLEET_SOURCE, CARS_OLD, GLASS_PASS, glassGeometry } from "./drive/carPacks.js";
 import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
 
 /** ?carmerge=old: one InstancedMesh per (type, LOD, plain / fade): 26 scene + 11 shadow render objects in a street,
@@ -122,9 +122,12 @@ class CarFleet {
       });
       worker.terminate();
       this.lodDist = S.lods.map((l) => l.until);
-      const near = packMaterial({ paint: "instance", rich: true });
+      // (carglass2: the near material's glass is drawn by the blended glass pass; carPacks.js GLASS_PASS)
+      const near = packMaterial({ paint: "instance", rich: true, glass: "split" });
       const far = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false });
-      const nearFade = packMaterial({ paint: "instance", rich: true, crossFade: true });
+      const nearFade = packMaterial({ paint: "instance", rich: true, crossFade: true, glass: "split" });
+      this.glassMats = GLASS_PASS ? new Map([[near, packMaterial({ paint: "instance", rich: true, glass: "pass" })],
+        [nearFade, packMaterial({ paint: "instance", rich: true, crossFade: true, glass: "pass" })]]) : null;
       const farFade = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false, crossFade: true });
       const types = {};
       let slice = 0;
@@ -139,6 +142,7 @@ class CarFleet {
           geo.setIndex(new THREE.BufferAttribute(m.I, 1));
           geo.computeBoundingSphere();
           const isNear = k <= 1;
+          if (isNear && GLASS_PASS) geo.userData.glass = glassGeometry(geo);   // (shared with the traffic's batches)
           // geo + W (wheel centres) kept for the moving traffic's own batches (viewer/traffic/trafficFleet.js)
           return { tris: m.I.length / 3, geo, W: m.W, plain: this.batch(geo, isNear ? near : far, k < 3, false), fade: this.batch(geo, isNear ? nearFade : farFade, k < 3, true) };
         });
@@ -154,7 +158,7 @@ class CarFleet {
         const probes = [];
         const T = Object.values(types)[0];
         if (views.length) for (const v of views) { v.mesh.visible = true; probes.push(v.mesh); }
-        else for (const b of [T.lods[0].plain, T.lods[0].fade, T.lods[2].plain, T.lods[2].fade]) { b.mesh.count = 1; b.mesh.visible = true; probes.push(b.mesh); }
+        else for (const b of [T.lods[0].plain, T.lods[0].fade, T.lods[2].plain, T.lods[2].fade]) { b.mesh.count = 1; b.mesh.visible = true; probes.push(b.mesh); if (b.glass) { b.glass.count = 1; b.glass.visible = true; probes.push(b.glass); } }
         const keep = this.group.children.filter((o) => !probes.includes(o) && o.visible);
         for (const o of keep) o.visible = false;
         try { await this.renderer.compileAsync(this.group, this.camera, this.scene); } catch (e) { console.warn("[cars] compileAsync:", e); }
@@ -187,9 +191,12 @@ class CarFleet {
         const set = new MultiDrawSet({ name: "parked-cars", parts: list.length, attrs: [["instanceMatrix", 16], ["paint", 3], ...(b0.fade ? [["lodFade", 1]] : [])], cap0: 64 });
         set.pad = 3;
         const v = set.addView({ geoms: list.map((b) => b.geo), material: b0.mat, castShadow: b0.cast, receiveShadow: true, name: `parked-cars:merged(${list.length})` });
-        list.forEach((b, k) => { b.set = set; b.part = k; this.group.remove(b.mesh); });
+        // carglass2: the near parts' blended glass, one more view of the same set (same instances, glass-only geometry)
+        const gm = this.glassMats?.get(b0.mat), gv = gm && list.some((b) => b.glassGeo) ? set.addView({ geoms: list.map((b) => b.glassGeo || null), material: gm, castShadow: false, receiveShadow: true, name: `parked-cars:glass(${list.length})` }) : null;
+        list.forEach((b, k) => { b.set = set; b.part = k; this.group.remove(b.mesh); if (b.glass) this.group.remove(b.glass); });
         this.group.add(v.mesh);
         views.push(v);
+        if (gv) { this.group.add(gv.mesh); views.push(gv); }
       } catch (e) { console.warn(`[cars] batches not merged (${e.message})`); }
     }
     this.merged = views.length > 0;
@@ -199,7 +206,10 @@ class CarFleet {
     const g = new THREE.BufferGeometry();
     for (const [n, a] of Object.entries(geo.attributes)) g.setAttribute(n, a);
     g.setIndex(geo.index); g.userData.shared = true;
-    const b = { geo: g, mat, cast, fade, mesh: null, cap: 0 };
+    const b = { geo: g, mat, cast, fade, mesh: null, cap: 0, glass: null, glassGeo: null };
+    // carglass2: the glass-only geometry, drawn by the glass material on the batch's own instance buffers
+    const gg = this.glassMats?.get(mat) && geo.userData.glass;
+    if (gg) { b.glassGeo = new THREE.BufferGeometry(); for (const [n, a] of Object.entries(gg.attributes)) b.glassGeo.setAttribute(n, a); b.glassGeo.setIndex(gg.index); b.glassGeo.userData.shared = true; b.glassMat = this.glassMats.get(mat); }
     this.grow(b, cap);
     return b;
   }
@@ -215,6 +225,15 @@ class CarFleet {
     m.name = "parked-car-batch";
     if (!b.set) this.group.add(m);
     b.mesh = m;
+    if (b.glassGeo) {
+      if (b.glass) { this.group.remove(b.glass); b.glass.dispose(); }
+      for (const n of ["paint", "lodFade"]) if (b.geo.attributes[n]) b.glassGeo.setAttribute(n, b.geo.attributes[n]);
+      const gm = new THREE.InstancedMesh(b.glassGeo, b.glassMat, cap);
+      gm.instanceMatrix = m.instanceMatrix; gm.count = 0; gm.frustumCulled = false; gm.castShadow = false; gm.receiveShadow = true; gm.visible = false;
+      gm.name = "parked-car-glass";
+      if (!b.set) this.group.add(gm);
+      b.glass = gm;
+    }
   }
   update(camPos, camera) {
     if (camera) this.camera ||= camera;
@@ -305,8 +324,9 @@ class CarFleet {
         continue;
       }
       m.visible = m.count > 0;
+      if (b.glass) { b.glass.count = m.count; b.glass.visible = m.visible; }
       if (!m.visible) continue;
-      st.draws++;
+      st.draws += b.glass ? 2 : 1;
       m.instanceMatrix.clearUpdateRanges(); m.instanceMatrix.addUpdateRange(0, m.count * 16); m.instanceMatrix.needsUpdate = true;
       const p = b.geo.attributes.paint; p.clearUpdateRanges(); p.addUpdateRange(0, m.count * 3); p.needsUpdate = true;
       if (b.fade) { const a = b.geo.attributes.lodFade; a.clearUpdateRanges(); a.addUpdateRange(0, m.count); a.needsUpdate = true; }

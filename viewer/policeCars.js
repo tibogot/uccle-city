@@ -9,7 +9,7 @@
 //   const cars = await buildPoliceCars({ site, groundAt, lift });  scene.add(cars.group);  cars.update(cameraPos)
 import * as THREE from "three/webgpu";
 import { attribute, select, positionLocal, normalLocal, abs, floor, mod, mix, smoothstep, step, vec3 } from "three/tsl";
-import { loadPack, packMaterial, FLEET_SOURCE } from "./drive/carPacks.js";
+import { loadPack, packMaterial, FLEET_SOURCE, standingSeeThrough } from "./drive/carPacks.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 // perfgame round 2 (docs/PERF_GAME.md, ?patrolmerge=old = one mesh per part): the 5 parked cars are static: each level
@@ -45,7 +45,7 @@ const lin = (hex) => { const c = new THREE.Color(hex); return vec3(c.r, c.g, c.b
 
 /** the livery on the faceted pack material: paint (kind 1) -> white + Battenburg blocks on the sides */
 function liveryMaterial() {
-  const m = packMaterial({ paint: new THREE.Color(1, 1, 1), rich: true });
+  const m = packMaterial({ paint: new THREE.Color(1, 1, 1), rich: true, seeThrough: standingSeeThrough(true) });
   const kind = attribute("_kind", "float").add(0.5).floor(), vc = attribute("color", "vec3");
   const isPaint = kind.equal(1);
   const p = positionLocal, n = normalLocal;
@@ -75,7 +75,7 @@ export async function buildPoliceCars({ site, groundAt, lift = 0.06 }) {
   const byId = Object.fromEntries(pack.cars.map((c) => [c.id, c]));
   // ?policecar=marked (cars2): the estates are the police estate with its livery modelled (white, Battenburg, POLICE:
   // tools/blender/cars2.py) in a plain pack material (+1 draw per level); default: every car in the livery material
-  const marked = byId.police && /[?&]policecar=marked(&|$)/.test(location.search) ? packMaterial({ paint: byId.police.paint.clone(), rich: true }) : null;
+  const marked = byId.police && /[?&]policecar=marked(&|$)/.test(location.search) ? packMaterial({ paint: byId.police.paint.clone(), rich: true, seeThrough: standingSeeThrough(true) }) : null;
   if (marked) marked.name = "police estate (cars2)";
   const F = site.frame, ca = Math.cos(F.rotation_rad), sa = Math.sin(F.rotation_rad);
   const toCity = (u, w) => [F.origin_city[0] + u * ca - w * sa, F.origin_city[1] + u * sa + w * ca];

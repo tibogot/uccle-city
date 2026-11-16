@@ -9,7 +9,7 @@
 import * as THREE from "three/webgpu";
 import { uniform } from "three/tsl";
 import { carFleet, TYPE_MIX, FADE_FROM, FADE_TO, BANDS } from "../carFleet.js";
-import { packMaterial } from "../drive/carPacks.js";
+import { packMaterial, GLASS_PASS, glassGeometry } from "../drive/carPacks.js";
 import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-car motion vectors for the TAAU (docs/UPSCALE.md)
 
 export const TYPE_NAMES = TYPE_MIX.map(([t]) => t);
@@ -46,11 +46,14 @@ export class TrafficFleet {
       if (S.failed) throw S.failed;
       this.lodDist = S.lodDist;
       const motion = { night: this.night, time: trafficTime };
-      const near = packMaterial({ paint: "instance", rich: true, motion });
+      // (carglass2: the near materials' glass drawn by blended glass meshes on the same instances; carPacks.js GLASS_PASS)
+      const near = packMaterial({ paint: "instance", rich: true, motion, glass: "split" });
       const far = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false, motion });
-      const nearFade = packMaterial({ paint: "instance", rich: true, crossFade: true, motion });
+      const nearFade = packMaterial({ paint: "instance", rich: true, crossFade: true, motion, glass: "split" });
       const farFade = packMaterial({ paint: "instance", rich: true, clearcoat: false, seeThrough: false, crossFade: true, motion });
-      for (const m of [near, far, nearFade, farFade]) this.prev.hook(m);   // --- instmotion
+      const glass = GLASS_PASS ? packMaterial({ paint: "instance", rich: true, motion, glass: "pass" }) : null;
+      const glassFade = GLASS_PASS ? packMaterial({ paint: "instance", rich: true, crossFade: true, motion, glass: "pass" }) : null;
+      for (const m of [near, far, nearFade, farFade, glass, glassFade]) if (m) this.prev.hook(m);   // --- instmotion
       this.types = [];
       for (const name of TYPE_NAMES) {
         await frame();
@@ -62,30 +65,34 @@ export class TrafficFleet {
           g.setIndex(l.geo.index);
           g.boundingSphere = l.geo.boundingSphere;
           const isNear = k <= 1;
-          return { tris: l.tris, plain: this.batch(g, isNear ? near : far, k < 3, false), fade: this.batch(g, isNear ? nearFade : farFade, k < 3, true) };
+          const gg = isNear && glass ? glassGeometry(g) : null;      // (with the wheel attribute: the motion shader reads it)
+          return { tris: l.tris, plain: this.batch(g, isNear ? near : far, k < 3, false, 32, gg && { geo: gg, mat: glass }),
+            fade: this.batch(g, isNear ? nearFade : farFade, k < 3, true, 32, gg && { geo: gg, mat: glassFade }) };
         });
         this.types.push({ name, lods, keepPaint: src.keepPaint, paint: src.paint });
       }
       for (const T of this.types) for (const l of T.lods) this.all.push(l.plain, l.fade);
       if (renderer?.compileAsync && camera) {
         const T = this.types[0], probes = [T.lods[0].plain, T.lods[0].fade, T.lods[2].plain, T.lods[2].fade];
-        for (const b of probes) { b.mesh.count = 1; b.mesh.visible = true; }
+        const pm = probes.flatMap((b) => (b.glass ? [b.mesh, b.glass] : [b.mesh]));
+        for (const m of pm) { m.count = 1; m.visible = true; }
         try { await renderer.compileAsync(this.group, camera, scene); } catch (e) { console.warn("[traffic] compileAsync:", e); }
-        for (const b of probes) { b.mesh.count = 0; b.mesh.visible = false; }
+        for (const m of pm) { m.count = 0; m.visible = false; }
       }
       this.ready = true;
       // (fix4 item 5, ?trafficwarm=old = the probes only) then EVERY batch through the page's precompile queue, one job
       // each, in the background (the scene pass's target + MRT): the probes warm type 0 only, and each other batch (its
       // own render object: the per-object motion hooks) builds its node graph the frame it first gets a car (~15-22 ms
       // each). Not awaited: the queue runs behind the landmarks' compiles, the traffic shows as before
-      if (compile && !COMPILE_OLD) (async () => { this.warmed = 0; for (const b of this.all) { if (b.mesh.count === 0) await compile([b.mesh]); this.warmed++; await frame(); } })().catch(() => {});
+      if (compile && !COMPILE_OLD) (async () => { this.warmed = 0; for (const b of this.all) { if (b.mesh.count === 0) await compile(b.glass ? [b.mesh, b.glass] : [b.mesh]); this.warmed++; await frame(); } })().catch(() => {});
     } catch (e) { this.failed = e; console.warn("[traffic] fleet failed:", e); }
   }
-  batch(geo, mat, cast, fade, cap = 32) {
+  batch(geo, mat, cast, fade, cap = 32, glass = null) {
     const g = new THREE.BufferGeometry();
     for (const [n, a] of Object.entries(geo.attributes)) g.setAttribute(n, a);
     g.setIndex(geo.index); g.userData.shared = true; g.boundingSphere = geo.boundingSphere;
-    const b = { geo: g, mat, cast, fade, mesh: null, cap: 0, n: 0 };
+    const b = { geo: g, mat, cast, fade, mesh: null, cap: 0, n: 0, glass: null, glassGeo: null, glassMat: glass?.mat };
+    if (glass) { const gg = (b.glassGeo = new THREE.BufferGeometry()); for (const [n, a] of Object.entries(glass.geo.attributes)) gg.setAttribute(n, a); gg.setIndex(glass.geo.index); gg.userData.shared = true; gg.boundingSphere = glass.geo.boundingSphere; }
     this.grow(b, cap);
     return b;
   }
@@ -100,6 +107,17 @@ export class TrafficFleet {
     m.name = "traffic-car-batch";
     this.group.add(m);
     b.mesh = m;
+    if (b.glassGeo) {
+      // carglass2: the blended glass on the same instance buffers; userData shared (instMotion's per-mesh row base)
+      if (b.glass) { this.group.remove(b.glass); b.glass.dispose(); }
+      for (const [n] of ATTRS) if (b.geo.attributes[n]) b.glassGeo.setAttribute(n, b.geo.attributes[n]);
+      const gm = new THREE.InstancedMesh(b.glassGeo, b.glassMat, cap);
+      gm.instanceMatrix = m.instanceMatrix; gm.userData = m.userData;
+      gm.count = 0; gm.frustumCulled = false; gm.castShadow = false; gm.receiveShadow = true; gm.visible = false;
+      gm.name = "traffic-car-glass";
+      this.group.add(gm);
+      b.glass = gm;
+    }
   }
 
   /** Draw the sim's cars at interpolation factor alpha (0 = last step's pose, 1 = this step's). */
@@ -154,7 +172,7 @@ export class TrafficFleet {
     for (let q = 0; q < all.length; q++) all[q].n = 0;
     for (let q = 0; q < nj; q++) all[this.jb[q]].n++;
     for (let q = 0; q < all.length; q++) if (all[q].n > all[q].cap) this.grow(all[q], Math.ceil(all[q].n * 1.5 / 32) * 32);
-    for (let q = 0; q < all.length; q++) all[q].mesh.count = 0;
+    for (let q = 0; q < all.length; q++) { all[q].mesh.count = 0; if (all[q].glass) all[q].glass.count = 0; }
     this.prev.begin(camPos);                                                       // --- instmotion
     for (let q = 0; q < all.length; q++) if (all[q].n) this.prev.alloc(all[q].mesh, all[q].n);
     for (let q = 0; q < nj; q++) {
@@ -182,8 +200,9 @@ export class TrafficFleet {
     for (let q = 0; q < all.length; q++) {
       const bt = all[q], m = bt.mesh;
       m.visible = m.count > 0;
+      if (bt.glass) { bt.glass.count = m.count; bt.glass.visible = m.visible; }
       if (!m.visible) continue;
-      st.draws++;
+      st.draws += bt.glass ? 2 : 1;
       m.instanceMatrix.clearUpdateRanges(); m.instanceMatrix.addUpdateRange(0, m.count * 16); m.instanceMatrix.needsUpdate = true;
       for (const [nm, sz] of ATTRS) { const at = bt.geo.attributes[nm]; if (!at) continue; at.clearUpdateRanges(); at.addUpdateRange(0, m.count * sz); at.needsUpdate = true; }
     }
