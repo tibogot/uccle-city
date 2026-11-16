@@ -100,9 +100,12 @@ const pump = () => {
   // ring) go before the others (the far landmarks queued first had the in-ring ones wait 15-17 s). ?bootquiet=all: FIFO
   if (i < 0 && !bootJobsClosed && !BOOT_QUIET_ALL) i = jobs.findIndex((j) => j.names && neededAtReveal(j.names));
   const j = jobs.splice(i >= 0 ? i : 0, 1)[0];
-  running = true;
+  running = true; runningJob = j;
   Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { running = false; pump(); });
 };
+/** perfgame (the play loader, viewer/loader/playLoader.js): the precompile queue's jobs left (0 = idle) */
+export const compileJobsLeft = (near = null) => jobs.filter((j) => !near || j.first || near(j.names || [])).length + (running && (!near || !runningJob || runningJob.first || near(runningJob.names || [])) ? 1 : 0);
+let runningJob = null;
 const enqueue = (job, first = false, names = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, resolve, reject }); pump(); });
 export function installCompileQueue(renderer) {
   if (rawCompile) return;

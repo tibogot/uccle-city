@@ -218,15 +218,18 @@ export function createDevPanel(ctx) {
     try {
       // the target tile streams in (the map's teleport); orbit: the camera at p looking at t; a mode: started at p facing t
       const at = m === "orbit" ? [tx, tz] : [px, pz];
-      const r = await teleport({ x: at[0], z: at[1], yaw: Math.atan2(tz - pz, tx - px), exact: true });
-      if (m === "orbit") {
+      // (perfgame: the orbit camera is placed by `after`, inside the teleport, so the play loader holds until THIS view is built)
+      const place = () => {
+        if (m !== "orbit") return;
         const g = (x, z) => world.ground?.(x, z) ?? world.surface(x, z);
         camera.position.set(px, g(px, pz) + ph, pz);
         // (the orbit keeps the camera above its target: a street-level target no higher than the eye)
         controls.target.set(tx, Math.min(g(tx, tz) + th, camera.position.y - 0.05), tz);
         if (pl.fov) { camera.fov = S.fov = pl.fov; camera.updateProjectionMatrix(); }
         controls.update(); lighting.snapNext = true;
-      }
+      };
+      const r = await teleport({ x: at[0], z: at[1], yaw: Math.atan2(tz - pz, tx - px), exact: true, label: pl.name, after: place });
+      place();
       log(`go to: ${pl.name} (tile ${r.tile}, ${r.ms.toFixed(0)} ms, ${m})`);
     } catch (e) { log(`go to ${pl.name}: ${e.message}`); }
   }

@@ -13,6 +13,7 @@ import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
 import { createFirmamentSky } from "../vendor/firmament/firmamentSky.js";
+const RAYS_WARM = typeof location === "undefined" || new URLSearchParams(location.search).get("rayswarm") !== "old";   // perfgame
 import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
 import { createVolumetricFog } from "../vendor/volumetric-fog/volumetricFog.js";
 
@@ -249,6 +250,18 @@ export class Lighting {
   hazeHook(rt, depthTex, size) {
     if (!this.firmament || !this.sky) return;
     const shadowDepth = this.shadowNode?.shadowMap?.depthTexture ?? null;
+    // perfgame (docs/PERF_GAME.md, ?rayswarm=old): the god-ray passes (mask + 3 blurs, vendor/firmament/firmamentHaze.js)
+    // are only drawn while the sun is on screen and low: their 4 pipelines were built SYNCHRONOUSLY the first time the
+    // player faced the sun (~17 s into every police drive, a 100-120 ms frame). Drawn once here, on the first call
+    // (under the boot cover), with the key light put low in front of the camera; the next frame overwrites it all.
+    if (!this._raysWarm && RAYS_WARM) {
+      this._raysWarm = true;
+      const L = this.sky.light().keyDir, cam = this.camera, saved = L.clone(), q = cam.quaternion.clone();
+      L.set(0.85, 0.18, 0.3).normalize();
+      cam.lookAt(cam.position.x + L.x, cam.position.y + L.y, cam.position.z + L.z); cam.updateMatrixWorld();
+      try { this.sky.postProcess(rt, { depthTex, light: this.sun, shadowDepth, size, seaLevel: 40 }); } catch (e) { console.warn("[rays warm]", e); }
+      L.copy(saved); cam.quaternion.copy(q); cam.updateMatrixWorld();
+    }
     this.sky.postProcess(rt, { depthTex, light: this.sun, shadowDepth, size, seaLevel: 40 });
     // the volumetric fog over the haze, before the meter (game-engine-v1 worldEnvironment order)
     if (this.vfogOn) {
