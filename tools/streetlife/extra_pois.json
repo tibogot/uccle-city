@@ -51,6 +51,19 @@
     "addr:street": "Place de Saint-Job - Sint-Jobsplein"
    },
    "_source": "Le Relais Saint-Job, restaurant + the terrace (n. 1, north end): reference photo of the front (privateaser.com/lieu/57030, looked at, not kept) + UrbIS footprints 544703 / 559047; Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr"
+  },
+  {
+   "type": "node",
+   "id": "press-shop",
+   "lon": 4.3655934,
+   "lat": 50.7945185,
+   "tags": {
+    "shop": "newsagent",
+    "name": "Press Shop",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
+   },
+   "_source": "Street View Jul 2024 (looked at): the newsagent (red fascia, white script, Lotto) right of the Deneubourg bakery at n. 36, where OSM still has Barat (closed: the bakery at 36 is Deneubourg). Drop OSM n4361797887 (Barat) in the builder: _replaces",
+   "_replaces": "n4361797887"
   }
  ]
 }

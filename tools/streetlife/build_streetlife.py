@@ -505,6 +505,9 @@ def load_raw(raw: Path):
     if ex.exists() and src["osm"] is not None:
         for e in json.loads(ex.read_text(encoding="utf-8"))["elements"]:
             src["osm"].setdefault("elements", []).append({k: v for k, v in e.items() if not k.startswith("_")} | {"type": "xtra"})
+            if e.get("_replaces"):                         # an OSM point that no longer exists (the shop changed): dropped
+                drop = int(str(e["_replaces"]).lstrip("n"))
+                src["osm"]["elements"] = [o for o in src["osm"]["elements"] if not (o.get("type") == "node" and o.get("id") == drop)]
     for k, n in (("stib", "stib_stops.json"), ("villo", "villo.json"), ("post", "pointpostal.json")):
         f = raw / n
         src[k] = json.loads(f.read_text(encoding="utf-8")) if f.exists() else None

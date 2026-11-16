@@ -206,6 +206,26 @@ function spot() {
   return g;
 }
 
+/** a wine barrel standing on end (225 l bordelaise: 0.95 m tall, 0.70 m at the bilge, 0.56 m at the heads): an oak body
+ *  (a bulged lathe, chamfered chimes), the recessed heads, six iron hoops (two at each chime, two at the quarters) */
+function barrel(lod = 0) {
+  const g = new Geo(), seg = lod ? 16 : 28;
+  const H = 0.95, Rb = 0.35, Rh = 0.28, c = 0.035, rec = 0.012;
+  const r = (y) => Rh + (Rb - Rh) * Math.sin(Math.PI * (y / H));        // the bulge
+  // ONE closed profile: the bottom head (recessed), the chime, the bulged staves, the top chime, the top head
+  const prof = [[0, rec], [Rh - c, rec], [Rh - c, 0], [Rh, 0.025]];
+  for (let k = 1; k < 12; k++) { const y = 0.025 + (H - 0.05) * k / 12; prof.push([r(y), y]); }
+  prof.push([Rh, H - 0.025], [Rh - c, H], [Rh - c, H - rec], [0, H - rec]);
+  const n = prof.length;
+  g.lathe(0, 0, 0, prof, S.wood, seg, [1, 2, 3, n - 4, n - 3, n - 2]);
+  for (const y of [0.06, 0.13, 0.3, H - 0.3, H - 0.13, H - 0.06]) {
+    // a closed iron band (its inner face inside the staves): no open edge
+    const a = r(y - 0.022) - 0.003, b = r(y + 0.022) - 0.003, A = a + 0.007, B = b + 0.007;
+    g.lathe(0, y - 0.022, 0, [[a, 0], [A, 0], [B, 0.044], [b, 0.044], [a, 0]], S.steel_dark, seg, [1, 2, 3]);
+  }
+  return g;
+}
+
 /** the kit: kind -> { build, lod: [switch m, end m] } (LOD1 = meshoptimizer simplify of LOD0, made by the caller) */
 export const KITS = {
   pump: { build: pump, lod: [45, 260], shadow: true },
@@ -221,4 +241,5 @@ export const KITS = {
   post: { build: post, lod: [40, 220], shadow: true },
   dock: { build: dock, lod: [30, 150], shadow: true },
   spot: { build: spot, lod: [25, 140], shadow: false },
+  barrel: { build: barrel, lod: [22, 120], shadow: true },
 };

@@ -7,7 +7,7 @@
 // building's base to the edge's own top, the highest wall point above each sample). Coverage under MIN_COVER with at least
 // MIN_HOLE m2 uncovered: the edge's wall is rebuilt as one quad strip following that top line (ground to top), its own
 // triangles dropped. Pure (no three.js): viewer/facadeGeom.js uses it (?wallfix=old: off), tools/audit/wallAudit.mjs counts.
-const PLANE = 0.2, MIN_COVER = 0.85, MIN_HOLE = 1.0, STEP = 0.25, MIN_EDGE = 1.0;
+const PLANE = 0.2, MIN_COVER = 0.85, MIN_HOLE = 1.0, STEP = 0.25, MIN_EDGE = 0.25, SHORT = 1.0, SHORT_HOLE = 0.3;   // (short edges: the returns of a stepped front, Carsoel 13's 33 cm sides)
 
 /** tris: [{ p: [[x, y, z] x3], n, area }] (the building's wall triangles); ring: [[x, z], ...] its outer footprint;
  *  base: the building's base height. Returns { tris (the repaired list), edges: [{ a, b, cover, hole, rebuilt }] } */
@@ -22,12 +22,17 @@ export function repairWalls(tris, ring, base, { fix = true, party = null } = {})
     const on = [];
     tris.forEach((t, k) => {
       if (used.has(k) || Math.abs(t.n[1]) > 0.3) return;
-      let ok = true;
+      // in the edge's plane (all corners within PLANE of its line); overlapping its span. A triangle that also runs past
+      // the span's ends (a wall running on along a collinear neighbour edge: Carsoel 13's ground floor, whose diagonal
+      // triangle reached from the rebuilt edge to the next corner) is "over": its part outside the span is kept, clipped
+      let ok = true, u0 = Infinity, u1 = -Infinity, dSum = 0;
       for (const q of t.p) {
         const dx = q[0] - ax, dz = q[2] - az, d = dx * nx + dz * nz, u = dx * tx + dz * tz;
-        if (Math.abs(d) > PLANE || u < -PLANE || u > L + PLANE) { ok = false; break; }
+        if (Math.abs(d) > PLANE) { ok = false; break; }
+        u0 = Math.min(u0, u); u1 = Math.max(u1, u); dSum += d;
       }
-      if (ok) on.push({ k, q: t.p.map((q) => [(q[0] - ax) * tx + (q[2] - az) * tz, q[1]]) });
+      if (!ok || u1 < 0.05 || u0 > L - 0.05) return;
+      on.push({ k, q: t.p.map((q) => [(q[0] - ax) * tx + (q[2] - az) * tz, q[1]]), over: u0 < -PLANE || u1 > L + PLANE, d: dSum / 3, n: t.n });
     });
     if (!on.length) continue;
     // the edge's top line: the highest wall point over each u (from the triangles' edges)
@@ -50,7 +55,7 @@ export function repairWalls(tris, ring, base, { fix = true, party = null } = {})
     // (a stretch with another building against it, party(x, z) true just outside the edge on either side: a party wall
     // its neighbour's own wall closes: not a hole, and a wall rebuilt there would z-fight with the neighbour's)
     let tot = 0, cov = 0, partyN = 0;
-    for (let u = STEP / 2; u < L; u += STEP) {
+    for (let u = Math.min(STEP / 2, L / 2); u < L; u += Math.min(STEP, L / 2)) {
       const top = topAt(u);
       if (!(top > base + 0.3)) continue;
       const px = ax + tx * u, pz = az + tz * u;
@@ -60,11 +65,22 @@ export function repairWalls(tris, ring, base, { fix = true, party = null } = {})
     if (partyN && tot === 0) continue;
     const cover = tot ? cov / tot : 1, hole = (tot - cov) * STEP * STEP;
     // (an edge with a party stretch is left as it is: dropping its triangles would open the wall above the neighbour)
-    const bad = cover < MIN_COVER && hole >= MIN_HOLE && partyN === 0;
+    const bad = cover < MIN_COVER && hole >= (L < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0;
     edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, rebuilt: bad && fix });
     if (!bad || !fix) continue;
     // rebuild: a strip of quads every <= 1 m along, from the base to the top line, on the edge's line, facing out
-    for (const { k } of on) used.add(k);
+    for (const o of on) {
+      used.add(o.k);
+      if (!o.over) continue;
+      // keep the triangle's parts outside [0, L] (u <= 0 and u >= L), fanned, back in world space on its own plane
+      for (const [sg, c] of [[1, 0], [-1, L]]) {          // keep u <= 0: sg = 1 (u - 0 <= 0); keep u >= L: sg = -1
+        const poly = clipU(o.q, sg, c);
+        if (poly.length < 3) continue;
+        const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
+        for (let k2 = 1; k2 + 1 < W.length; k2++) { const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
+          out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true }); }
+      }
+    }
     const steps = Math.max(1, Math.ceil(L)), pts = [];
     for (let s = 0; s <= steps; s++) {
       const u = Math.min(L, (L * s) / steps), top = topAt(Math.min(L - 1e-3, Math.max(1e-3, u)));
@@ -82,4 +98,15 @@ export function repairWalls(tris, ring, base, { fix = true, party = null } = {})
   }
   tris.forEach((t, k) => { if (!used.has(k)) out.push(t); });
   return { tris: out, edges };
+}
+
+/** a polygon in (u, y) clipped to sg * (u - c) <= 0 */
+function clipU(poly, sg, c) {
+  const out = [], f = (p) => sg * (p[0] - c);
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[(i + poly.length - 1) % poly.length], b = poly[i], fa = f(a), fb = f(b);
+    if (fb <= 0) { if (fa > 0) { const t = fa / (fa - fb); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); } out.push(b); }
+    else if (fa <= 0) { const t = fa / (fa - fb); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+  }
+  return out;
 }

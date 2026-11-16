@@ -1,6 +1,6 @@
 # Mesh audit (before pack): police.lod0
 
-19,716 triangles, 16,719 welded vertices, 13,204 open edges, 1,139,586 rays, 4457 ms.
+19,716 triangles, 16,719 welded vertices, 13,204 open edges, 1,139,586 rays, 5939 ms.
 
 **0 blocking**, 7408 warnings. Clean (no blocking item).
 
@@ -9,7 +9,7 @@
 | sliver | warn | 6668 |
 | nonmanifold | warn | 12 |
 | tjunction | warn | 728 |
-| seam | info | 1750 |
+| seam | info | 1748 |
 | opening | info | 1139 |
 | backtoback | info | 677 |
 
@@ -70,14 +70,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 25.80, 47.50, 14.70 | Police/galvanised_steel | 3 |
 | 25.80, 49.25, 20.10 | Police/galvanised_steel | 3 |
 | 25.80, 49.25, 14.70 | Police/galvanised_steel | 3 |
-| 26.32, 47.03, -18.41 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -18.41 | Police/cast_iron_green | 4 |
-| 26.32, 47.03, -16.97 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -16.97 | Police/cast_iron_green | 4 |
-| 26.32, 47.03, -16.83 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -16.83 | Police/cast_iron_green | 4 |
-| 26.32, 47.03, -15.39 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -15.39 | Police/cast_iron_green | 4 |
+| 26.00, 48.73, -18.42 | Police/cast_iron_green | 4 |
+| 26.00, 47.03, -18.42 | Police/cast_iron_green | 4 |
+| 24.56, 48.73, -18.42 | Police/cast_iron_green | 4 |
+| 24.56, 47.03, -18.42 | Police/cast_iron_green | 4 |
+| 26.00, 48.73, -15.38 | Police/cast_iron_green | 4 |
+| 26.00, 47.03, -15.38 | Police/cast_iron_green | 4 |
+| 24.56, 48.73, -15.38 | Police/cast_iron_green | 4 |
+| 24.56, 47.03, -15.38 | Police/cast_iron_green | 4 |
 
 ## tjunction (warn, 728)
 
@@ -126,7 +126,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (688 more in the JSON)
 
-## seam (info, 1750)
+## seam (info, 1748)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -171,7 +171,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 3.22, 59.34, -1.26 | Police/painted_metal_white + Police/alu_anthracite | 1.88 | 22 | 90 |
 | 5.63, 51.68, 0.52 | Police/brick_yellow + Police/concrete_white | 1.5 | 21 | 79.8 |
 
-(1710 more in the JSON)
+(1708 more in the JSON)
 
 ## opening (info, 1139)
 

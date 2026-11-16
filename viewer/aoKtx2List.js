@@ -9,7 +9,7 @@ export const AO_KTX2 = {
  "models/parkkit/playgroundkit_ao.png": "e7a1129b08",
  "models/parkkit/rockkit_ao.png": "dfbbbd2a2f",
  "models/parkkit/sauvagere_cliff_ao.png": "9aa357efe2",
- "models/police_rouge/police_ao.png": "00a97ee56b",
+ "models/police_rouge/police_ao.png": "0f122c2333",
  "models/publicart/publicart_ao.png": "45a63a0ec1",
  "models/rail/bigarreaux_ao.png": "b21375a3e7",
  "models/rail/calevoet_ao.png": "2c508004c8",

@@ -243,6 +243,58 @@ unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
   F_relais_after.jpg. LEFT: a steeper awning piece with the script on its slope, the first-floor window awnings, barrels.
 - Maison Dandoy, Proxy, Bistroquet, Deneubourg, White Night: not compared yet (time): next turn.
 
+## CODE-ONLY ROUND (after browser check 2)
+- Carsoel 13 again: the diagonal was NOT the step-out: the ground floor's wall triangles run on along the collinear edge
+  next to the rebuilt proud front ((1023.04, 71.73) to (1033.73, 74.32)); the first wall-fix version rebuilt that
+  neighbour edge as well and doubled its wall (z-fight seam on the diagonal). Now the repair takes collinear triangles that
+  run past an edge into account (coverage) and, when it rebuilds, keeps their parts outside the edge clipped; the proud
+  front's two 33 cm returns (open below the slab) are rebuilt too (short edges: >= 0.3 m2 of hole). The "flat slab" is
+  UrbIS's own: a 33 cm deep projecting ground floor with a flat roof at 74.3 / 74.8 m. Wall audit: 1,796 edges /
+  21,535 m2 -> 1. To see in the browser.
+- Le Relais Saint-Job kit: a steep (33 deg) awning built from the layout's boxes (no aluminium cassette), "RELAIS
+  saint-job" script on the slope, the section on the valance, lighter taupe (canvas 8), black door / risers / mullions
+  in the white front (curated `frame`), two small first-floor awnings over the corner (curated `upperAwnings`: their
+  positions guessed (u +-0.9 m, 3.95 m up): align on the façade's painted windows in the browser), a chalk A-board.
+  Barrels: no prop in the kit (left).
+- STREET VIEW LIST for the next browser turn (camera 9 m out from the shop's façade, facing it; newest date; both ways):
+
+| shop | façade (x, z) | Street View lat, lon | heading | to check / curate |
+|---|---|---|---|---|
+| Le Bistroquet (bar, I5) | 1120.4, 506.5 | 50.794376, 4.365436 | 342 | fascia colour, lettering, awning?, terrace |
+| Deneubourg (bakery, I5) | 1125.1, 504.9 | 50.794390, 4.365502 | 342 | front family / colour, sign |
+| Maison Dandoy (I5) | 1195.4, 481.6 | 50.794599, 4.366500 | 342 | the brand photo's black front / awning: confirm |
+| White Night (I6) | 1055.8, 542.7 | 50.794058, 4.364549 | 327 | still open? which house (brick corner vs white render) |
+| Proxy Delhaize (I6) | 1054.1, 562.7 | 50.794020, 4.364400 | 155 | white box + red lettering: confirm |
+| Le Relais Saint-Job (I6) | 1094, 543 | 50.794190, 4.365210 | 239 | the new steep awnings, upper awnings' positions |
+
+## POLICE STATION + BARREL (code-only)
+- North gate OPEN (models/police_rouge/NOTES.md, 2026-11-16 section). "Too small": the model matches the UrbIS solids
+  exactly; the station is a former school whose other blocks behind it are likely police too (listed there): to check
+  on Street View, then extend.
+- Barrel kit piece (viewer/streetlife/kits.js `barrel`: a 225 l bordelaise, one closed lathe body with recessed heads,
+  six closed iron hoops; LOD1 built natively at 16 segments; audit 0 blocking both LODs), placed by curated shops
+  (`barrels: [[u, out]]`): Le Relais' traiteur gets two either side of its door.
+
+## BROWSER CHECK 3 (2026-11-16, after perfgame round 3)
+- Police: Street View Apr 2024 confirms the station's buff brick and white frames, the vehicle gate (south) open with its
+  fenced lane; the school blocks behind cannot be seen from the street (no panorama inside), so their buff brick + window
+  bands stay an assumption from the ortho's light walls. City: the blocks read as one complex with the station
+  (police_complex_after.jpg), the courtyard paved. A generated shrub stood in the open north gate
+  (police_northgate_shrub_before.jpg): plants now keep clear of yards / gate mouths (data/overrides.json plantsClear,
+  ?plantsclear=old) (police_northgate_after.jpg). viewer.collisionTest("E4") static: no invisible / missing collider within
+  50 m of the station (the open leaves collide where drawn, the openings are clear). The game drive itself was not run.
+- Carsoel 13: the diagonal seam is gone (E_carsoel13_wallfix_before / _after.jpg).
+- Le Relais: the steep awning's slope box was a LEFT-handed frame: its text face wound inward, culled (no script:
+  F_relais_steep_text_culled.jpg); fixed, white script on the taupe canvas; now RELAIS saint-job on each awning, the
+  section on the valance, barrels, A-board, black frames, white render, red tiles, as on Street View Oct 2020
+  (F_relais_after.jpg). The first-floor awnings: one reads over the corner's window, the façade generator shows one
+  window there (the real house has two).
+- Shops (Street View Jul 2024): n. 36 is the bakery DENEUBOURG (black fascia, red 'boulangerie' script, white capitals,
+  3 spots, white shutter): curated; OSM's Barat is gone, its front is the Press Shop newsagent (red fascia, white script,
+  Lotto): Barat replaced by an extra POI (tools/streetlife/extra_pois.json _replaces); OSM's Le Bistroquet is now LA MEUTE
+  (oak front, white awning, LA MEUTE on the valance): curated. n. 24 is Bois Savanes (Thai), with Alain D. (hairdresser)
+  and Lefevre funeral services beside it: not curated yet. Maison Dandoy (n. 22), Proxy, White Night: not reached.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).
