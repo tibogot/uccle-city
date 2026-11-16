@@ -750,7 +750,10 @@ falcon, labs (Bird, Lamp), the dev panel.
       (first tile ~265 ms, it builds the shared assets).
 - [x] Road marking atlas R8 at half resolution (8x less GPU memory, e.g. 20 MB -> 2.5 MB).
 - [ ] Unload by distance with hysteresis; cap GPU memory; a loading indicator.
-- [ ] One shared terrain / ground material for all tiles (bounds as uniforms), fewer shader variants.
+- [x] One shared terrain / ground material for all tiles (bounds as uniforms), fewer shader variants. NOT WORTH MORE
+      (perfgame round 6, docs/PERF_GAME.md): the bounds are uniforms and the scans shared, every tile's ground already
+      builds the same WGSL (one program); a texture-array + batched merge would save ~0.2 ms for a refactor of the
+      tile fades, cell culling and lamp light maps.
 - [ ] Profile and cap point lights / shadow casters at night.
 
 ## 3. Assets from Blender (see `docs/BLENDER.md`)

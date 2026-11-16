@@ -144,7 +144,7 @@ export function installCompileQueue(renderer) {
 
 /** Compile `roots` (Object3Ds, in the scene or about to be) for `camera` in `scene`, into `target`/`mrt`
  *  (the scene pass), without drawing them. Resolves when their shaders and pipelines are ready. */
-export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false } = {}) {
+export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false, names = null } = {}) {
   if (!renderer.backend?.isWebGPUBackend) return Promise.resolve();
   installCompileQueue(renderer);
   const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
@@ -179,8 +179,8 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
     } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
-  }, first, [].concat(roots).map((r) => r?.name || ""));
-  if (!bootJobsClosed) { const j = { names: [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
+  }, first, names ?? [].concat(roots).map((r) => r?.name || ""));   // (perfgame round 5: a staged landmark job carries its model's name)
+  if (!bootJobsClosed) { const j = { names: names ?? [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
   return job;
 }
 let bootJobsClosed = false;
@@ -286,8 +286,13 @@ export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
       if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
       if (o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
     }
+    const tc = performance.now();
     try { render(); frames++; }
     finally { for (let k = saved.length - 1; k >= 0; k--) { const [o, key, v] = saved[k]; o[key] = v; } }
+    // (perfgame round 5, debug: where the early warm-up's time goes: ms per chunk + its top-level groups)
+    const tops = new Map();
+    for (const o of list.slice(i, i + chunk)) { let t = o; while (t.parent && !t.parent.isScene) t = t.parent; const k = t.name || t.type; tops.set(k, (tops.get(k) || 0) + 1); }
+    (globalThis.__earlyChunks ||= []).push({ ms: Math.round(performance.now() - tc), tops: [...tops].sort((a, b) => b[1] - a[1]).slice(0, 6) });
     // let the GPU process drain this chunk (and draw a compositor frame) before the next one
     try { await device?.queue.onSubmittedWorkDone(); } catch { /* lost device */ }
     await new Promise((r) => setTimeout(r, 16));
