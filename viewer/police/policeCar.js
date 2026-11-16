@@ -17,7 +17,7 @@
 // default); with it off J still switches the siren "on" for the traffic (it yields) and the HUD shows it.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, float } from "three/tsl";
-import { loadPack, packMaterial } from "../drive/carPacks.js";
+import { loadPack, packMaterial, playerSeeThrough } from "../drive/carPacks.js";
 import { createCar, carLights, fitBody } from "../drive/carModel.js";
 import { gather, pointInBuilding } from "../drive/colliders.js";
 import { NIGHT } from "../nightLights/nightMode.js";
@@ -56,7 +56,7 @@ async function policeModel() {
   const paint = new THREE.Color(POLICE_CAR.paint);
   // head lamps: the city's head switch, or (wig-wag) the side's flash: + x = the car's left
   const head = carLights.head.mul(float(1).sub(wig.on)).add(wig.on.mul(select(positionLocal.x.greaterThan(0), wig.L, wig.R)).mul(1.6));
-  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich });
+  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich) });
   mat.name = "police unmarked";
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];

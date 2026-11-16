@@ -2861,7 +2861,7 @@ var MeshoptSimplifier = (function() {
 
 // viewer/drive/colliders.js
 var CELL = 48;
-var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7 };
+var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7, hedge: 8 };
 function buildColliders(polys, circles, bounds) {
   let nv = 0, nr = 0;
   for (const p of polys) for (const r2 of p.rings) {
@@ -15937,4 +15937,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "3baaffe4eaa02c2c";
+self.__TILE_CODE_HASH = "8c36ca5424a1348b";

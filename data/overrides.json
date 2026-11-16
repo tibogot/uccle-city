@@ -916,7 +916,7 @@
         ]
       ]
     },
-    "police_courtyard": {
+    "police_south_gate": {"_why": "the station's vehicle gate mouth (frame u 22.5..32, w 9.2..15.6): the front-gardens kit drew a garden wall, a pillar and a hedge across it (policefeel browser check 2026-11-17: the car could not drive in)", "ring": [[-490.35, -344.79], [-482.43, -350.05], [-478.89, -344.72], [-486.81, -339.46]]}, "police_courtyard": {
       "_why": "the former school courtyard, paved as the station's parking (viewer/policeYard.js COURTYARD)",
       "ring": [
         [
