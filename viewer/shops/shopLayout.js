@@ -61,9 +61,12 @@ function steepAwning(env, at, X, Y, Z, w, y, out, deg, canvas, text, font, valan
   const Ys = [(Z[0] * out) / L, -drop / L, (Z[2] * out) / L];
   let Zo = [X[1] * Ys[2] - X[2] * Ys[1], X[2] * Ys[0] - X[0] * Ys[2], X[0] * Ys[1] - X[1] * Ys[0]];
   if (Zo[1] < 0) Zo = Zo.map((v) => -v);
-  const ink = lumOf(canvas) > 0.25 ? [0.03, 0.03, 0.03] : [0.95, 0.94, 0.9];
+  const ink = lumOf(canvas) > 0.5 ? [0.03, 0.03, 0.03] : [0.95, 0.94, 0.9];   // (white letters on a taupe canvas, as the real ones)
   const mid = env.add(at(u, y, 0), Ys, L / 2, Zo, 0.006, X, 0);
-  box(mid, X, Ys, Zo, w, L, 0.012, { board: canvas, ink, lab: text ? label(twoLines(text, 22), font) : null, pad: 0.16, rough: 0.9 });
+  // (a right-handed frame: X x up-the-slope = the face's outward normal; with the down-slope axis it was left-handed:
+  // the text face wound inward and culled, browser check 2026-11-16)
+  const Yup = Ys.map((v) => -v);
+  box(mid, X, Yup, Zo, w, L, 0.012, { board: canvas, ink, lab: text ? label(twoLines(text, 22), font) : null, pad: 0.16, rough: 0.9 });
   const front = at(u, y - drop, out);
   box(env.add(front, Y, -0.015, Z, 0.012, X, 0), X, Y, Z, w + 0.02, 0.03, 0.03, { board: [0.03, 0.03, 0.032], rough: 0.4, metal: 0.5 });
   const vh = out > 0.8 ? 0.24 : 0.14;
@@ -216,8 +219,8 @@ export function layoutShop(p, f, frame, lit, env) {
     const [u, z] = cf.aboard, o = at(u, 0, z), tilt = 0.17;
     for (const sd of [1, -1]) {
       const Yb = [Z[0] * sd * Math.sin(tilt), Math.cos(tilt), Z[2] * sd * Math.sin(tilt)];
-      let Zb = [X[1] * Yb[2] - X[2] * Yb[1], X[2] * Yb[0] - X[0] * Yb[2], X[0] * Yb[1] - X[1] * Yb[0]];
-      if ((Zb[0] * Z[0] + Zb[2] * Z[2]) * sd < 0) Zb = Zb.map((v) => -v);
+      const Zb = [X[1] * Yb[2] - X[2] * Yb[1], X[2] * Yb[0] - X[0] * Yb[2], X[0] * Yb[1] - X[1] * Yb[0]];
+      // (Zb = X x Yb: a right-handed frame, whichever way the board leans)
       box(add(o, Yb, 0.45, Zb, 0.02, X, 0), X, Yb, Zb, 0.55, 0.9, 0.025, { board: [0.025, 0.03, 0.026], border: 0.03, rough: 0.9 });
     }
   }
