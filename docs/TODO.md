@@ -8,6 +8,8 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 ## OWNER PLAYTEST 2026-11-16 (day, default viewer + both games) — TOP PRIORITY, in this order
 
+**Status 2026-11-16 evening:** perfgame MERGED (hitches gone: police worst frame 350-950 -> 67-83 ms, falcon 300-967 -> 50-100 ms; play loader, no fill-in; steady CPU 11-13 ms unchanged -> follow-up job running: police car merge, patrol instancing, shadow casters, tile unload by distance, time-to-play 63-70 s -> < 35 s). citydefects: bridge deck, signals/poles (lights in lanes 122 -> 5, wrong heading 410 -> 0), parking by width (16,545 -> 12,084 cars, give-way on narrow streets), car slope fit, pier caps, done in code; browser check running. Night shop location unknown (not in OSM): ask the owner / Street View.
+
 Owner (lives in Uccle): "most important thing is performance ... any technique: merging, sharing textures, anything".
 1. **PERFORMANCE / GAME LAG**: the police game was "very laggy" with nothing else open. Profile the game path
    (police car + traffic + chase + HUD + route), CPU and GPU; merge geometry, share textures/atlases, fewer
