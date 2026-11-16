@@ -122,6 +122,16 @@ const pump = () => {
 };
 const pumpOne = () => {
   if (!jobs.length) return;
+  if (FLUSH && flushWith && !inFlight.size && flushWith.active()) {
+    const take = jobs.filter((j) => j.roots);
+    if (take.length > 1) {
+      for (const j of take) jobs.splice(jobs.indexOf(j), 1);
+      const fj = { job: () => flushJobs(take), first: false, names: ["perf8-flush"], resolve: () => {}, reject: () => {} };
+      inFlight.add(fj); running = true;
+      Promise.resolve().then(fj.job).finally(() => { inFlight.delete(fj); running = inFlight.size > 0; pump(); });
+      return;
+    }
+  }
   let i = jobs.findIndex((j) => j.first);
   // boot3: until the cover lifts, the jobs the first view needs (bootGate.js neededAtReveal: the models in the boot's
   // ring) go before the others (the far landmarks queued first had the in-ring ones wait 15-17 s). ?bootquiet=all: FIFO
@@ -137,7 +147,60 @@ const pumpOne = () => {
 /** perfgame (the play loader, viewer/loader/playLoader.js): the precompile queue's jobs left (0 = idle) */
 export const compileJobsLeft = (near = null) => [...jobs, ...inFlight].filter((j) => !near || j.first || near(j.names || [])).length;
 let runningJob = null;
-const enqueue = (job, first = false, names = null, last = false) => new Promise((resolve, reject) => { jobs.push({ job, first, names, last, resolve, reject }); pump(); });
+const enqueue = (job, first = false, names = null, last = false, roots = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, last, roots, resolve, reject }); pump(); });
+
+// perf8 (?compileflush=old = one compileAsync job after the other, as before): WHILE THE PLAY LOADER COVERS THE SCREEN the
+// queued precompile jobs are done together, the boot warm-up's way: their roots drawn in ONE forced frame (every node graph
+// built synchronously, no frame to keep smooth) with a parallel-pipeline window open (every pipeline handed to the GPU
+// process at once), then the jobs resolve when those pipelines are ready. Measured before: the loader's last ~16 s were
+// the serial queue (198 jobs, 38 s of job time after the cover: the town hall 9 s, the public art 1.7 s ...), each
+// compileAsync job yielding to frames and keeping at most 16 pipelines in flight.
+const FLUSH = typeof location !== "undefined" && !/[?&]compileflush=old(&|$)/.test(location.search);
+let flushWith = null;
+/** main.js: { active() (the play loader holds), render() (one frame of the city's pass), renderer, scene } */
+export function setCompileFlush(o) { flushWith = o; }
+async function flushJobs(take) {
+  const { renderer, scene, render } = flushWith;
+  const t0 = performance.now();
+  const holder = new THREE.Group(); holder.name = "perf8-flush";
+  const saved = [], tops = [];
+  const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
+  let n = 0;
+  try {
+    for (const j of take) for (const r of [].concat(j.roots)) {
+      if (!r) continue;
+      let top = r; while (top.parent) top = top.parent;
+      if (top !== scene && !top.isScene && !tops.includes(top)) { tops.push(top); holder.add(top); }
+      for (let p = r.parent; p; p = p.parent) set(p, "visible", true);
+      r.traverse((o) => {
+        set(o, "visible", true);
+        if (o.isMesh || o.isPoints || o.isLine || o.isSprite) {
+          n++;
+          set(o, "frustumCulled", false);
+          if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
+          if (o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
+        }
+      });
+    }
+    scene.add(holder);
+    const win = openParallelPipelines(renderer, scene);
+    try { render(); } finally {
+      for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; }
+      saved.length = 0;
+      for (const t of tops) holder.remove(t);
+      scene.remove(holder);
+    }
+    await win.end();
+    for (const j of take) j.resolve();
+  } catch (e) {
+    for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; }
+    for (const t of tops) if (t.parent === holder) holder.remove(t);
+    scene.remove(holder);
+    console.warn("[compile flush]", e);
+    for (const j of take) j.resolve();                 // (their pipelines then build async at first draw)
+  }
+  (globalThis.__flushes ||= []).push({ jobs: take.length, drawables: n, ms: Math.round(performance.now() - t0) });
+}
 const FADE_LAST = typeof location === "undefined" || !/[?&]fadelast=old(&|$)/.test(location.search);
 export function installCompileQueue(renderer) {
   if (rawCompile) return;
@@ -200,7 +263,7 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
     } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
-  }, first, names ?? [].concat(roots).map((r) => r?.name || ""), last && !first);   // (perfgame round 5: a staged landmark job carries its model's name)
+  }, first, names ?? [].concat(roots).map((r) => r?.name || ""), last && !first, roots);   // (perfgame round 5: a staged landmark job carries its model's name)
   if (!bootJobsClosed) { const j = { names: names ?? [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
   return job;
 }

@@ -51,7 +51,7 @@ import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- up
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
+import { setCompileFlush, openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { buildGrounds } from "./grounds.js";
 import { lyceeFront } from "./lyceeFront.js";
@@ -1940,6 +1940,8 @@ async function main() {
   // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
   if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
   if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
+  // perf8 (?compileflush=old): under the play loader the queued compile jobs are done together in one forced frame (warmup.js)
+  setCompileFlush({ active: () => playLoader.active, render: () => (pipe ? pipe.render(null) : renderer.render(scene, camera)), renderer, scene });
   // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
   // Pipelines.isReady (called on EVERY draw) and restore what they saw at their open: windows that overlap out of order
   // leave a closed window's wrapper in place for good (~0.1 ms a frame, measured in the drive trace). isReady is only
@@ -2064,6 +2066,9 @@ async function main() {
       const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000);
       const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
+      // (perf8 debug: when each condition first held, ms after the start of the hold: window.__areaTrace)
+      { const tr = ((window.__areaTrace ||= {})[label || "?"] ||= {}), now = Math.round(performance.now() - t0); if (tilesOk) tr.tiles ??= now; if (st.jobs === 0) tr.nearJobs ??= now; if (st.pipes === 0) tr.pipes ??= now; if (gatesPending() === 0) tr.gates ??= now; if (settled) tr.settled ??= now;
+        if (!tilesOk) delete tr.tiles; if (st.jobs) delete tr.nearJobs; if (st.pipes) delete tr.pipes; if (!settled) delete tr.settled; tr.st = { ...st }; }
       holdThrottle = HOLD_THROTTLE && !(tilesOk && gpuOk);
       // the bar: tiles 70 %, shaders 25 %, the quiet frames the rest
       const f = 0.7 * ((st.full + 0.25 * st.lite) / Math.max(1, needFull.length + 0.25 * needLite.length)) + 0.25 * (tilesOk ? 1 - (st.jobs + st.pipes) / (maxJobs + maxPipes) : 0) + 0.05 * (q / quiet);
