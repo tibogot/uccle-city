@@ -50,14 +50,17 @@ function hash(s) {
 
 let codeP = null;
 /** this worker's own code, hashed once (the bundle the browser loaded) */
-const codeHash = () => (codeP ||= fetch(self.location.href, { cache: "no-cache" }).then((r) => r.text()).then(hash).catch(() => null));
+// (perfgame round 4: the hash tools/build_worker.mjs writes into the bundle, at once; the fetch only for an old bundle)
+const codeHash = () => (codeP ||= self.__TILE_CODE_HASH ? Promise.resolve(self.__TILE_CODE_HASH) : fetch(self.location.href, { cache: "no-cache" }).then((r) => r.text()).then(hash).catch(() => null));
 
 export function cacheKey(entry, lite, base, code) {
   const { cache, cacheStore, ...e } = entry;
   return hash(JSON.stringify({ e, lite: !!lite, base, code }));
 }
 
-const tagOf = (r) => r.headers.get("etag") || r.headers.get("last-modified") || null;
+// (perfgame round 4: a missing optional file (404) is a stable state too: "status:404", re-checked like a tag; before,
+// one optional file a tile looks for and does not find made the whole tile uncacheable)
+const tagOf = (r) => (!r.ok ? `status:${r.status}` : r.headers.get("etag") || r.headers.get("last-modified") || null);
 const stamped = (url) => /[?&]v=/.test(url);
 
 // fetches made while a build runs (every build the worker runs at once records them: a superset, never a miss), and
@@ -116,10 +119,12 @@ const deadline = (p, ms, what) => Promise.race([p, new Promise((res) => setTimeo
 // (its dependencies' ETags); the dependencies are checked IN PARALLEL and each URL once per worker session; the write
 // happens after the tile went back to the page (packed first, then put in the background).
 import { packTile, unpackTile } from "./tilePack.js";
-const CNAME = "tilecache-v1", MAX_TILES = 18;
+if (typeof caches !== "undefined") caches.delete("tilecache-v1").catch(() => {});   // (v1: the packer without shared references)
+const CNAME = "tilecache-v2", CAP_BYTES = 800 * 1048576;   // (~16 full tiles + the far ring)
+let warnedNull = false;
 const urlOf = (key, what) => `${self.location.origin}/__tilecache/${key}/${what}`;
 const tagMemo = new Map();          // url -> Promise<tag> (one HEAD per url per worker session)
-const tagNow = (url) => { if (!tagMemo.has(url)) tagMemo.set(url, realFetch(url, { method: "HEAD", cache: "no-cache" }).then((r) => (r.ok ? tagOf(r) : null)).catch(() => null)); return tagMemo.get(url); };
+const tagNow = (url) => { if (!tagMemo.has(url)) tagMemo.set(url, realFetch(url, { method: "HEAD", cache: "no-cache" }).then((r) => tagOf(r)).catch(() => null)); return tagMemo.get(url); };
 async function capiGet(entry, lite, base) {
   if (entry.cache !== true || typeof caches === "undefined") return null;
   const code = await codeHash(); if (!code) return null;
@@ -137,7 +142,10 @@ async function capiGet(entry, lite, base) {
 }
 function capiPut(entry, lite, base, r, deps) {
   if (entry.cache !== true || typeof caches === "undefined") return;
-  if ([...deps.values()].some((t) => t == null)) return;                  // a dependency we cannot re-check: not cached
+  if ([...deps.values()].some((t) => t == null)) {                         // a dependency we cannot re-check: not cached
+    if (!warnedNull) { warnedNull = true; console.warn(`[tilecache] ${entry.name}${lite ? " (far)" : ""} not stored: no ETag / Last-Modified on ${[...deps].filter(([, t]) => t == null).map(([u]) => u).slice(0, 4).join(", ")}`); }
+    return;
+  }
   let blob;
   try { blob = packTile(r); } catch (e) { say(entry, lite, "not stored: " + e.message); return; }   // (packed now: the caller transfers r's buffers)
   (async () => {
@@ -145,21 +153,26 @@ function capiPut(entry, lite, base, r, deps) {
     const key = cacheKey(entry, lite, base, code), c = await caches.open(CNAME);
     await c.put(urlOf(key, "tile"), new Response(blob, { headers: { "content-type": "application/octet-stream" } }));
     await c.put(urlOf(key, "meta"), new Response(JSON.stringify({ name: entry.name, lite: !!lite, at: Date.now(), bytes: blob.byteLength, deps: [...deps.entries()] }), { headers: { "content-type": "application/json" } }));
-    // over MAX_TILES: the least recently used go
+    // over CAP_BYTES: the least recently used go (bytes, not a count: a far tile is ~2-4 MB, a full one ~40 MB; a count
+    // cap let the far ring push out the full tiles)
     const metas = (await c.keys()).filter((q) => q.url.endsWith("/meta"));
-    if (metas.length > MAX_TILES) {
-      const ages = await Promise.all(metas.map(async (q) => [q.url, (await (await c.match(q)).json()).at || 0]));
-      ages.sort((a, b) => a[1] - b[1]);
-      for (const [u] of ages.slice(0, metas.length - MAX_TILES)) { c.delete(u); c.delete(u.replace(/\/meta$/, "/tile")); }
+    const info = await Promise.all(metas.map(async (q) => { const m = await (await c.match(q)).json(); return [q.url, m.at || 0, m.bytes || 0]; }));
+    let total = info.reduce((n, x) => n + x[2], 0);
+    if (total > CAP_BYTES) {
+      info.sort((a, b) => a[1] - b[1]);
+      for (const [u, , b] of info) { if (total <= CAP_BYTES) break; c.delete(u); c.delete(u.replace(/\/meta$/, "/tile")); total -= b; }
     }
-  })().catch((e) => say(entry, lite, "put failed: " + (e?.message || e)));
+  })().catch((e) => console.warn(`[tilecache] ${entry.name}${lite ? " (far)" : ""} not stored: ${e?.message || e}`));
 }
 
 /** Build through the cache: returns the result (the caller then transfers its buffers). */
 export async function cached(entry, lite, base, build) {
   if (entry.cacheStore !== "idb") {
     // (the deadline stays as a safety net: a store that does not answer is a miss, not a stuck tile)
-    const hit = await deadline(capiGet(entry, lite, base).catch(() => null), READ_MS * 2, `read ${entry.name}`);
+    // (round 4: no "cache off" on a slow read any more: the read's wall time includes OTHER tiles' builds on this worker
+    // (a build runs for seconds without yielding; this worker holds several requests), which is what fired the 2.5-8 s
+    // deadlines on 2026-11-16, with an empty cache too. A read past 30 s is a miss for that tile only)
+    const hit = await Promise.race([capiGet(entry, lite, base).catch(() => null), new Promise((res) => setTimeout(() => res(null), 30000))]);
     if (hit) { hit.times = { ...(hit.times || {}), cache: true }; return hit; }
     const deps = new Map();
     recording.add(deps);
