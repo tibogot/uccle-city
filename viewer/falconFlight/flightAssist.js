@@ -119,9 +119,10 @@ export class FlightAssist {
         const T = P.probes[k], s = Math.max(T, (5 + 4 * k) / vh);          // at least 5 / 9 / 13 m ahead when slow
         const px = f.pos.x + vx * s, pz = f.pos.z + vz * s, py = y + vy * s;
         const fl = floorAt(world, px, pz, Math.max(py, y));
-        const need = fl + P.clear - py;
+        const clr = ov ? 1 : P.clear;                                      // (a strike may go lower)
+        const need = fl + clr - py;
         if (need <= 0) continue;
-        const g = Math.atan2(fl + P.clear - y, vh * s);
+        const g = Math.atan2(fl + clr - y, vh * s);
         if (g > gNeed) gNeed = g;
         if (g > 0.55) tall = true;
       }
