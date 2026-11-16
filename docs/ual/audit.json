@@ -20,7 +20,7 @@
     "idle": 0.05,
     "move": 3.97
    },
-   "animMs": 0.044
+   "animMs": 0.054
   },
   {
    "run": "run",
@@ -40,7 +40,7 @@
     "idle": 0.05,
     "move": 2.97
    },
-   "animMs": 0.039
+   "animMs": 0.076
   },
   {
    "run": "sprint",
@@ -60,7 +60,7 @@
     "idle": 0.05,
     "move": 3.97
    },
-   "animMs": 0.031
+   "animMs": 0.029
   },
   {
    "run": "startStop",
@@ -80,7 +80,7 @@
     "idle": 2.17,
     "move": 1.85
    },
-   "animMs": 0.027
+   "animMs": 0.028
   },
   {
    "run": "turn",
@@ -101,7 +101,7 @@
     "stepTurn": 0.38,
     "move": 2.12
    },
-   "animMs": 0.034
+   "animMs": 0.04
   },
   {
    "run": "stairsUp",
@@ -121,7 +121,7 @@
     "idle": 0.05,
     "move": 6.97
    },
-   "animMs": 0.048
+   "animMs": 0.049
   },
   {
    "run": "stairsDown",
@@ -141,7 +141,7 @@
     "idle": 0.05,
     "move": 5.97
    },
-   "animMs": 0.064
+   "animMs": 0.052
   },
   {
    "run": "stairsUpRun",
@@ -161,7 +161,7 @@
     "idle": 0.05,
     "move": 3.97
    },
-   "animMs": 0.051
+   "animMs": 0.052
   },
   {
    "run": "cityStairs",
@@ -181,7 +181,7 @@
     "idle": 0.05,
     "move": 5.97
    },
-   "animMs": 0.034
+   "animMs": 0.037
   },
   {
    "run": "kerb",
@@ -201,7 +201,7 @@
     "idle": 0.05,
     "move": 5.97
    },
-   "animMs": 0.025
+   "animMs": 0.026
   },
   {
    "run": "steepUp",
@@ -221,7 +221,7 @@
     "idle": 0.05,
     "move": 6.97
    },
-   "animMs": 0.043
+   "animMs": 0.047
   },
   {
    "run": "steepDown",
@@ -241,7 +241,7 @@
     "idle": 0.05,
     "move": 6.97
    },
-   "animMs": 0.045
+   "animMs": 0.043
   },
   {
    "run": "jump",
@@ -263,7 +263,7 @@
     "jump": 0.57,
     "land": 0.27
    },
-   "animMs": 0.029
+   "animMs": 0.038
   },
   {
    "run": "jumpRun",
@@ -305,7 +305,7 @@
     "jump": 0.57,
     "land": 0.53
    },
-   "animMs": 0.028
+   "animMs": 0.045
   },
   {
    "run": "dropLedge",
@@ -327,7 +327,7 @@
     "fall": 0.2,
     "land": 0.3
    },
-   "animMs": 0.03
+   "animMs": 0.041
   },
   {
    "run": "crouch",
@@ -347,7 +347,7 @@
     "idle": 1.22,
     "move": 2.8
    },
-   "animMs": 0.032
+   "animMs": 0.024
   },
   {
    "run": "idle",
@@ -366,7 +366,7 @@
    "modes": {
     "idle": 22.02
    },
-   "animMs": 0.022
+   "animMs": 0.019
   }
  ]
 }

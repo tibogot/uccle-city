@@ -91,6 +91,20 @@ const _q = new THREE.Quaternion(), _qf = new THREE.Quaternion(), _qp = new THREE
 const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const smooth01 = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
+/** (stairs grid) the cell around x in a sorted array: P = [i0, i1, fraction] */
+function gridPick(P, arr, x) {
+  if (x <= arr[0]) { P[0] = P[1] = 0; P[2] = 0; return; }
+  if (x >= arr[arr.length - 1]) { P[0] = P[1] = arr.length - 1; P[2] = 0; return; }
+  let i = 0; while (arr[i + 1] < x) i++;
+  P[0] = i; P[1] = i + 1; P[2] = (x - arr[i]) / (arr[i + 1] - arr[i]);
+}
+/** (stairs grid) add weight w of clip c to the flat [clip, weight, ...] list M of n pairs; returns the new n. */
+function mixAdd(M, n, c, w) {
+  if (!c || w <= 1e-3) return n;
+  for (let i = 0; i < n; i++) if (M[i * 2] === c) { M[i * 2 + 1] += w; return n; }
+  M[n * 2] = c; M[n * 2 + 1] = w; return n + 1;
+}
+
 /** One clip: its action, its metadata, its foot markers -> phase map. */
 class Clip {
   constructor(mixer, clip, meta) {
@@ -443,7 +457,7 @@ export class Locomotion {
     if (this.p.stairClips && sc && sc.k > 0.01 && sc.dir) {
       const role = sc.dir > 0 ? (st.run && C.stairsUpRun ? "stairsUpRun" : "stairsUp") : (st.run && C.stairsDownRun ? "stairsDownRun" : "stairsDown");
       sMix = this._stairMix(role, sc.riser, sc.tread);
-      sClip = sMix ? sMix[0][0] : C[role];
+      sClip = sMix ? this._mix[0] : C[role];
     }
     if (sClip && sClip.meta.stairs) {
       const m = sClip.meta.stairs, cycLen = 2 * sc.tread;
@@ -483,7 +497,7 @@ export class Locomotion {
       sClip.t = sClip.uOf(this.phase) * sClip.dur;
       S.k = sc.k;
       sClip.target = sc.k;
-      if (sMix) for (const [c, w] of sMix) { c.t = sClip.t; c.target = sc.k * w; }
+      if (sMix) for (let i = 0; i < this._mixN; i++) { const c = this._mix[i * 2]; c.t = sClip.t; c.target = sc.k * this._mix[i * 2 + 1]; }
     } else {
       S.k += (0 - S.k) * (1 - Math.exp(-dt / 0.1));
       this.phase += rate * dt; this.phase -= Math.floor(this.phase);
@@ -503,18 +517,30 @@ export class Locomotion {
     }
   }
 
-  /** The baked stair variants around (riser, tread): [[clip, weight], ...] (bilinear on the grid), best first. */
+  /**
+   * The baked stair variants around (riser, tread), bilinear on the grid: this._mix = [clip, weight, ...] (best first),
+   * this._mixN pairs; returns false without variants. No allocation: the grid is sorted once per role.
+   */
   _stairMix(role, riser, tread) {
     const set = this.stairSets[role];
-    if (!set || !set.length) return null;
-    const Rs = [...new Set(set.map((c) => c.meta.stairs.riser))].sort((a, b) => a - b), Ts = [...new Set(set.map((c) => c.meta.stairs.tread))].sort((a, b) => a - b);
-    const pick = (arr, x) => { if (x <= arr[0]) return [0, 0, 0]; if (x >= arr[arr.length - 1]) return [arr.length - 1, arr.length - 1, 0]; let i = 0; while (arr[i + 1] < x) i++; return [i, i + 1, (x - arr[i]) / (arr[i + 1] - arr[i])]; };
-    const [r0, r1, ur] = pick(Rs, riser), [t0, t1, ut] = pick(Ts, tread);
-    const get = (ri, ti) => set.find((c) => c.meta.stairs.riser === Rs[ri] && c.meta.stairs.tread === Ts[ti]);
-    const m = new Map();
-    const add = (c, w) => { if (c && w > 1e-3) m.set(c, (m.get(c) || 0) + w); };
-    add(get(r0, t0), (1 - ur) * (1 - ut)); add(get(r1, t0), ur * (1 - ut)); add(get(r0, t1), (1 - ur) * ut); add(get(r1, t1), ur * ut);
-    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    if (!set || !set.length) return false;
+    let G = (this._grids ||= {})[role];
+    if (!G) {
+      const Rs = [...new Set(set.map((c) => c.meta.stairs.riser))].sort((x, y) => x - y), Ts = [...new Set(set.map((c) => c.meta.stairs.tread))].sort((x, y) => x - y);
+      G = this._grids[role] = { Rs, Ts, at: Rs.map((r) => Ts.map((t) => set.find((c) => c.meta.stairs.riser === r && c.meta.stairs.tread === t) || null)) };
+      this._mix ||= new Array(8).fill(null); this._pick = new Float64Array(3);
+    }
+    const P = this._pick;
+    gridPick(P, G.Rs, riser); const r0 = P[0], r1 = P[1], ur = P[2];
+    gridPick(P, G.Ts, tread); const t0 = P[0], t1 = P[1], ut = P[2];
+    const M = this._mix; let n = 0;
+    n = mixAdd(M, n, G.at[r0][t0], (1 - ur) * (1 - ut)); n = mixAdd(M, n, G.at[r1][t0], ur * (1 - ut)); n = mixAdd(M, n, G.at[r0][t1], (1 - ur) * ut); n = mixAdd(M, n, G.at[r1][t1], ur * ut);
+    // (best first: a tiny insertion sort of up to 4 pairs)
+    for (let i = 1; i < n; i++) for (let j = i; j > 0 && M[j * 2 + 1] > M[j * 2 - 1]; j--) {
+      const c = M[j * 2], w = M[j * 2 + 1]; M[j * 2] = M[j * 2 - 2]; M[j * 2 + 1] = M[j * 2 - 1]; M[j * 2 - 2] = c; M[j * 2 - 1] = w;
+    }
+    this._mixN = n;
+    return n > 0;
   }
 
   /**
