@@ -43,7 +43,8 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- modes & camera (live ones are the section's own controls)
   txt("car", "modes", "car (drive)", "The drive mode's car: scripted, cars2:<id> (default family) or faceted:<id> (the old family).", "cars2:hatch_c", { live: "car (drive)" }),
-  txt("char", "modes", "character", "Third person character: hoodie, casual, capsule.", "hoodie", { live: "character (3rd person)" }),
+  sel("char", "modes", "character", "Third person character: ual = the Quaternius Universal Animation Library mannequin (CC0) with the locomotion graph (walk / run / sprint, turn on the spot, stairs, slopes, jump / fall / land, crouch on C, idle variants: viewer/character/locomotion.js); hoodie = the old character (Quaternius modular man, foot IK); casual; capsule.",
+    [[null, "ual (default)"], ["hoodie", "hoodie (old)"], ["casual", "casual"], ["capsule", "capsule"]], { live: "character (3rd person)" }),
   opt("motosound", "modes", "two-wheeler sound", "The motorbike's / scooter's procedural engine, the Villo's freewheel / tyres / bell, wind, tyres (OFF by default; N toggles it while riding). docs/MOTO.md.", { live: "two-wheeler sound" }),
   on("twowheelers", "world", "two-wheelers", "Parked motorbikes / scooters near shops (groups in parking-lane slots) and motorbikes / scooters in the traffic (viewer/moto/cityTwoWheelers.js, docs/MOTO.md)."),
   opt("drivedebug", "modes", "car colliders", "Draw the drive colliders (key G in drive mode).", { live: "car colliders (G)" }),

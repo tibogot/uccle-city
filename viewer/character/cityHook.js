@@ -13,7 +13,8 @@
 // The BVH build, the buildings.json parse and the prism hashing run in viewer/character/colliderWorker.js (a module
 // worker of its own); the main thread only gathers the triangle positions and the instance boxes (a few ms), so
 // streaming a tile in does not hitch. Tiles streamed in / out are picked up once a second.
-// Keys: Esc back to the orbit view, G debug draw. ?char=hoodie|casual|capsule (default hoodie), ?chardebug=1.
+// Keys: Esc back to the orbit view, G debug draw. ?char=ual|hoodie|casual|capsule (default ual: the UAL
+// mannequin with the locomotion graph; hoodie = the old character), ?chardebug=1. Key C: crouch (ual).
 import * as THREE from "three/webgpu";
 import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet } from "./index.js";
 import { lampSites } from "../lamps.js";
@@ -270,8 +271,8 @@ export async function startThirdPerson({ scene, camera, renderer, controls, worl
   tp.debug.visible = qp.get("chardebug") === "1";
   api.resume();
   // the character (compiled before it replaces the capsule)
-  const want = qp.get("char") || "hoodie";
-  if (want !== "capsule") tp.useCharacter(want, renderer).then((info) => { api.character = want; log(`third person: ${info.label}, ${info.tris} triangles, one material; clips ${JSON.stringify(info.clips)}; authored walk ${info.walk} / run ${info.run} m/s; foot IK on`); })
+  const want = qp.get("char") || "ual";
+  if (want !== "capsule") tp.useCharacter(want, renderer).then((info) => { api.character = want; log(`third person: ${info.label}, ${info.tris} triangles, one material; clips ${JSON.stringify(info.clips)}; authored walk ${info.walk} / run ${info.run} m/s${info.gaits ? `; gaits ${JSON.stringify(info.gaits)}` : "; foot IK on"}`); })
     .catch((e) => log(`third person: character ${want} failed (${e.message}), the capsule stays`));
   window.__third = api;
   return api;

@@ -17,6 +17,13 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 // measurement below (strideSpeed) reads ~7 % low on the run (its touch-down / lift-off frames), it is the fallback
 const MODULAR_MEN_STRIDE = { walk: 1.44, run: 3.29 };
 export const CHARACTERS = {
+  // Quaternius Universal Animation Library 1 + 2 (CC0): the mannequin (placeholder body) on the universal rig with the
+  // UAL clips + metadata (tools/characters/ualBuild.mjs -> models/characters/ual.glb + ual.json), the locomotion graph
+  // (locomotion.js). The default third-person character; a nicer body goes on the same rig later.
+  ual: { file: "ual.glb", meta: "ual.json", label: "UAL mannequin (Quaternius, CC0)", system: "loco",
+    // the controller's gait speeds (m/s): walk 1.35 = the UAL walk (0.98 m/s authored) at 1.38x, a realistic cadence;
+    // run / sprint a little under the clips' authored 5.36 / 8.25 (played at ~0.93 / 0.85); crouch 0.9 (0.75 authored)
+    move: { walk: 1.35, run: 5.0, sprint: 7.0, crouch: 0.9, accel: 12, decel: 14 } },
   hoodie: { file: "hoodie.glb", label: "Hoodie (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
   casual: { file: "casual.glb", label: "Casual (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
 };
@@ -25,8 +32,33 @@ const CLIPS = { idle: "Idle_Neutral", walk: "Walk", run: "Run", jump: { clip: "R
 // (node names as GLTFLoader leaves them: PropertyBinding.sanitizeNodeName drops the dots, "UpperLeg.L" -> "UpperLegL")
 const LEG = (s) => ({ upper: `UpperLeg${s}`, lower: `LowerLeg${s}`, end: `LowerLeg${s}_end`, foot: `Foot${s}` });
 
+/**
+ * A locomotion character (system "loco"): one GLB with the skinned body (one primitive, vertex colours) and its
+ * in-place clips, and the clips' metadata (contacts, touch-downs, speeds, stairs). Bone names as GLTFLoader keeps them.
+ */
+async function loadLoco(name, def) {
+  const base = new URL("../../models/characters/", import.meta.url).href;
+  const [gltf, meta] = await Promise.all([new GLTFLoader().loadAsync(base + def.file), fetch(base + def.meta).then((r) => { if (!r.ok) throw new Error(`${def.meta} ${r.status}`); return r.json(); })]);
+  let tris = 0, mesh = null;
+  gltf.scene.traverse((o) => { if (o.isSkinnedMesh && !mesh) mesh = o; });
+  if (mesh) {
+    const g = mesh.geometry;
+    tris = g.index ? g.index.count / 3 : g.attributes.position.count / 3;
+    // (a node material: the body's camera fade sets opacityNode on its clone)
+    mesh.material = new THREE.MeshStandardNodeMaterial({ vertexColors: !!g.attributes.color, roughness: mesh.material.roughness ?? 0.6, metalness: 0 });
+    mesh.name = "character";
+  }
+  const leg = (s) => ({ upper: `thigh_${s}`, lower: `calf_${s}`, foot: `foot_${s}`, toe: `ball_${s}`, tip: `ball_leaf_${s}` });
+  return {
+    gltf,
+    opts: { system: "loco", meta, forward: "+z", move: def.move, rig: { left: leg("l"), right: leg("r"), hips: "pelvis", spine: ["spine_01", "spine_02", "spine_03"] } },
+    info: { name, label: def.label, tris, clips: Object.keys(meta.clips).length },
+  };
+}
+
 export async function loadCharacter(name = "hoodie", { height = 1.76 } = {}) {
   const def = CHARACTERS[name] || CHARACTERS.hoodie;
+  if (def.system === "loco") return loadLoco(name, def);
   const gltf = await new GLTFLoader().loadAsync(new URL(`../../models/characters/${def.file}`, import.meta.url).href);
   const t0 = performance.now();
   const tris = mergeSkinned(gltf.scene);
