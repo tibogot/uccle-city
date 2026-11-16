@@ -818,7 +818,7 @@
     }
   },
   "buildingLooks": {
-    "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none. type (viewer/buildingTypes.js TYPE: 0 generic, 1 maison de maitre, 2 art deco / modernist, 3 bel-etage, 4 block, 5 villa), garage false (no garage door).",
+    "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles), bayScale [s, nx, nz] (the face facing (nx, nz) lays its painted window grid out in u x s: a narrow front with more windows than the 2.6 m bays give; facadeGeom.js) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none. type (viewer/buildingTypes.js TYPE: 0 generic, 1 maison de maitre, 2 art deco / modernist, 3 bel-etage, 4 block, 5 villa), garage false (no garage door).",
     "544703": {
       "_name": "Le Relais Saint-Job, the low house (brasserie / restaurant, Place de Saint-Job 1): white render, red clay tiles (Street View Oct 2020)",
       "style": 3,
@@ -829,8 +829,9 @@
       ]
     },
     "559047": {
-      "_name": "Le Relais Saint-Job, the 2-storey corner (traiteur & vins, n. 3): white render (Street View Oct 2020)",
-      "style": 3
+      "_name": "Le Relais Saint-Job, the 2-storey corner (traiteur & vins, n. 3): white render (Street View Oct 2020); TWO first-floor windows on the Place front (bayScale: the painted grid laid out x1.22 on the face facing (0.84, -0.54): 4.2 m -> 2 bays)",
+      "style": 3,
+      "bayScale": [1.22, 0.84, -0.54]
     },
     "528469": {
       "_name": "Police / school: the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
@@ -866,6 +867,46 @@
       "_name": "Place de Saint-Job 22 (Maison Dandoy; infillBuildings.stjob22): white-painted brick (Street View Jul 2024)",
       "style": 3
     },
+    "543432": {
+      "_name": "Place de Saint-Job 24 (Bois Savanes): red brick, white bay windows (Street View Jul 2024)",
+      "style": 0
+    },
+    "543225": {
+      "_name": "Place de Saint-Job 23 (Lefevre): red brick, white bay windows (Street View Jul 2024)",
+      "style": 0
+    },
+    "544287": {
+      "_name": "Place de Saint-Job 25 (Alain Dantine): pale render, white frames (Street View Jul 2024)",
+      "style": 3
+    },
+    "547922": {
+      "_name": "Place de Saint-Job 26 (Canon): orange-red brick, iron balcony (Street View Jul 2024)",
+      "style": 0
+    },
+    "549469": {
+      "_name": "Place de Saint-Job 27 (Le Palais de la Truffe): white-painted brick (Street View Jul 2024)",
+      "style": 3
+    },
+    "544601": {
+      "_name": "Place de Saint-Job 28 (Uccle Flore): buff brick, flower boxes (Street View Jul 2024)",
+      "style": 2
+    },
+    "510406": {
+      "_name": "Place de Saint-Job 21 (Le P'tit Rêve): grey render, dark red frames (Street View Jul 2024)",
+      "style": 5
+    },
+    "557684": {
+      "_name": "Proxy Delhaize block, Ch. de Saint-Job: red brick, dark frames (Street View Jul 2024)",
+      "style": 0
+    },
+    "541080": {
+      "_name": "Ch. de Saint-Job 662 (Bioffice; White Night in its low wing): cream-painted brick (Street View Jul 2024)",
+      "style": 4
+    },
+    "698850": {
+      "_name": "La Branche d'Olivier, Rue Engeland 172-176: cream render, brown tiles (Street View Apr 2024)",
+      "style": 4
+    },
     "531854": {
       "_name": "Police / school (the west wing: adjoins 528531, likely the school too): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
       "style": 2,
@@ -890,6 +931,10 @@
   },
   "plantsClear": {
     "_doc": "Polygons (city x, z) where no generated plant / garden piece stands (viewer/plants/cityPlants.js, viewer/gardens/cityGardens.js): yards, gate mouths. ?plantsclear=old: none.",
+    "white_night_lot": {
+      "_why": "shops2: the paved forecourt in front of White Night (Ch. de Saint-Job 662's low wing; Street View Jul 2024: asphalt with grass strips, no beds); a generated garden bed stood in front of the shop",
+      "ring": [[1060.5, 528.0], [1071.5, 522.0], [1077.5, 533.5], [1066.5, 540.5], [1062.3, 535.6]]
+    },
     "police_yard": {
       "_why": "the police station's yard and its north gate's mouth (a shrub stood in the open gate, browser check 2026-11-16); the hedge along the wall is the hero's own",
       "ring": [

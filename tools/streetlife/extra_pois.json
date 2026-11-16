@@ -4,16 +4,17 @@
   {
    "type": "node",
    "id": "white-night",
-   "lon": 4.3644912,
-   "lat": 50.794131,
+   "lon": 4.3645517,
+   "lat": 50.794229,
    "tags": {
     "shop": "convenience",
     "name": "White Night",
     "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
     "addr:housenumber": "662"
    },
-   "_source": "Owner (lives in Uccle): 'the white night shop on Place Saint-Job'; name and number 662 from its public listing (Google Maps, looked at 2026-11-16, not copied beyond name / number); position = UrbIS address 662 (https://databrussels.be/id/address/1228753)",
-   "_status": "TO CONFIRM: the owner says it may have closed (2026-11-16)"
+   "_source": "Owner (lives in Uccle): 'the white night shop on Place Saint-Job'; name, number 662 and photos of the front on its Google listing (looked at 2026-11-16, not kept; a review two weeks old: OPEN). Street View Jul 2024: the shop is the LOW one-storey wing of n. 662 (UrbIS solid 541080, eaves 3.5 m), set back from the street behind trees, its front facing the paved lot to the east (a EuroMillions feather flag); the 662 house itself has Bioffice. Position: a point 1 m out from that wing's lot-side wall (DSM: the 3.5-3.9 m block), local (1060.9, 531.3)",
+   "_status": "CONFIRMED open (Google listing, review Nov 2026)",
+   "_anySide": true
   },
   {
    "type": "node",
@@ -64,6 +65,82 @@
    },
    "_source": "Street View Jul 2024 (looked at): the newsagent (red fascia, white script, Lotto) right of the Deneubourg bakery at n. 36, where OSM still has Barat (closed: the bakery at 36 is Deneubourg). Drop OSM n4361797887 (Barat) in the builder: _replaces",
    "_replaces": "n4361797887"
+  },
+  {
+   "type": "node",
+   "id": "bois-savanes",
+   "lon": 4.3663481,
+   "lat": 50.7947238,
+   "tags": {
+    "amenity": "restaurant",
+    "cuisine": "thai",
+    "name": "Bois Savanes",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein",
+    "addr:housenumber": "24"
+   },
+   "_source": "Street View Jul 2024 (looked at, not kept): Bois Savanes, restaurant thaï traiteur, Place de Saint-Job 24; position = UrbIS address 24"
+  },
+  {
+   "type": "node",
+   "id": "lefevre",
+   "lon": 4.3664268,
+   "lat": 50.7947399,
+   "tags": {
+    "shop": "funeral_directors",
+    "name": "Lefevre",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein",
+    "addr:housenumber": "23"
+   },
+   "_source": "Street View Jul 2024 (looked at, not kept): Funérailles - Begrafenissen Lefevre, Place de Saint-Job 23; position = UrbIS address 23"
+  },
+  {
+   "type": "node",
+   "id": "bioffice",
+   "lon": 4.3645555,
+   "lat": 50.7941526,
+   "tags": {
+    "craft": "cleaning",
+    "name": "Bioffice Cleaning & Facilities",
+    "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+    "addr:housenumber": "662"
+   },
+   "_source": "Street View Jul 2024 (looked at, not kept): the ground floor of n. 662 (navy fascia, white lettering); vrac&compagnie there is permanently closed (Google listing 2026-11-16): OSM n10282874852 dropped; position = the old vrac&compagnie point (OSM n10282874852, on the 662 front)",
+   "_replaces": "n10282874852"
+  },
+  {
+   "type": "node",
+   "id": "palais-truffe",
+   "lon": 4.3661279,
+   "lat": 50.7946787,
+   "tags": {
+    "shop": "deli",
+    "name": "Le Palais de la Truffe",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein",
+    "addr:housenumber": "27"
+   },
+   "_source": "Street View Jul 2024 (papered window 'Le Palais de la Truffe, ouverture prochaine'); open now (Google listing, 83 reviews, 2026-11-16); position = UrbIS address 27"
+  },
+  {
+   "type": "node",
+   "id": "canon",
+   "lon": 4.3661963,
+   "lat": 50.7946927,
+   "tags": {
+    "amenity": "bar",
+    "name": "Canon",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein",
+    "addr:housenumber": "26"
+   },
+   "_source": "Street View Jul 2024 (looked at, not kept): CANON (bières locales) on a black fascia, Place de Saint-Job 26; position = UrbIS address 26. TO CONFIRM it is a bar (the sign says local beers)"
+  },
+  {
+   "type": "node",
+   "id": "strebelle-move",
+   "lon": 4.3651375,
+   "lat": 50.7940286,
+   "tags": {},
+   "_moves": "n1769486879",
+   "_source": "Street View Oct 2020 (newest there; looked at, not kept): the vet's CABINET VÉTÉRINAIRE panel is on the red-brick house LEFT of Le Relais' corner, facing the Place (as Le Relais); OSM's point put it on the building's side facing the lawn. Moved 1 m out from that front (local 1102.2, 553.6)"
   }
  ]
 }

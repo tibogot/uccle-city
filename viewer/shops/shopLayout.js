@@ -55,13 +55,14 @@ export function interiorType(p) {
  */
 /** a steep awning from the layout's boxes: top at (u, y) on the wall, `out` m out at `deg` down, canvas slab, front bar,
  *  valance; text on the slope / valance */
-function steepAwning(env, at, X, Y, Z, w, y, out, deg, canvas, text, font, valance, vfont, u = 0) {
+function steepAwning(env, at, X, Y, Z, w, y, out, deg, canvas, text, font, valance, vfont, u = 0, inkIn = null) {
   const { box, label, twoLines } = env;
   const drop = out * Math.tan((deg * Math.PI) / 180), L = Math.hypot(out, drop);
   const Ys = [(Z[0] * out) / L, -drop / L, (Z[2] * out) / L];
   let Zo = [X[1] * Ys[2] - X[2] * Ys[1], X[2] * Ys[0] - X[0] * Ys[2], X[0] * Ys[1] - X[1] * Ys[0]];
   if (Zo[1] < 0) Zo = Zo.map((v) => -v);
-  const ink = lumOf(canvas) > 0.5 ? [0.03, 0.03, 0.03] : [0.95, 0.94, 0.9];   // (white letters on a taupe canvas, as the real ones)
+  // (white letters on a taupe canvas, as the real ones; curated awningInk: Maison Dandoy's beige on black)
+  const ink = inkIn ?? (lumOf(canvas) > 0.5 ? [0.03, 0.03, 0.03] : [0.95, 0.94, 0.9]);
   const mid = env.add(at(u, y, 0), Ys, L / 2, Zo, 0.006, X, 0);
   // (a right-handed frame: X x up-the-slope = the face's outward normal; with the down-slope axis it was left-handed:
   // the text face wound inward and culled, browser check 2026-11-16)
@@ -69,7 +70,7 @@ function steepAwning(env, at, X, Y, Z, w, y, out, deg, canvas, text, font, valan
   box(mid, X, Yup, Zo, w, L, 0.012, { board: canvas, ink, lab: text ? label(twoLines(text, 22), font) : null, pad: 0.16, rough: 0.9 });
   const front = at(u, y - drop, out);
   box(env.add(front, Y, -0.015, Z, 0.012, X, 0), X, Y, Z, w + 0.02, 0.03, 0.03, { board: [0.03, 0.03, 0.032], rough: 0.4, metal: 0.5 });
-  const vh = out > 0.8 ? 0.24 : 0.14;
+  const vh = env.cur?.front?.valanceH && out > 0.8 ? env.cur.front.valanceH : out > 0.8 ? 0.24 : 0.14;
   box(env.add(front, Y, -vh / 2 - 0.02, Z, 0.02, X, 0), X, Y, Z, w, vh, 0.006, { board: canvas, ink, lab: valance ? label([valance], vfont) : null, pad: 0.05, rough: 0.9 });
 }
 const lumOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -80,11 +81,13 @@ export function layoutShop(p, f, frame, lit, env) {
   const base = [f.x, f.y, f.z], id = p.id;
   const W = Math.max(2.0, Math.min(f.w, 9.9));
   const yaw = yawTo(f.nx, f.nz);
-  const lowFloor = f.eaves - f.y < 4.0;
-  const fasciaY = lowFloor ? 2.55 : 3.0, dH = fasciaY - 2.55;
-  const cat = p.cat || p.kind;
   // curated (data/shops/terraces.json "front": checked on Street View): family, paint / canvas (palette index), awning
   const cf = env.cur?.front || {};
+  // (UrbIS eaves = the solid's LOWEST roof point: a rear annex makes a 4-storey house "low"; curated tall: the real
+  // ground floor's height, Street View)
+  const lowFloor = cf.tall ? false : f.eaves - f.y < 4.0;
+  const fasciaY = lowFloor ? 2.55 : 3.0, dH = fasciaY - 2.55;
+  const cat = p.cat || p.kind;
   const classic = cf.family ? cf.family === "classic" : MODERN_CATS.has(cat) || p.kind === "bank" || p.kind === "supermarket" || p.kind === "pharmacy" || p.kind === "fastfood" ? false
     : CLASSIC_CATS.has(cat) || ["cafe", "bar", "bakery"].includes(p.kind) ? true
     : p.kind === "restaurant" ? hash01(id + "fam") < 0.7 : hash01(id + "fam") < 0.5;
@@ -114,13 +117,13 @@ export function layoutShop(p, f, frame, lit, env) {
   const bays = Math.max(1, Math.round(run / (classic ? 1.6 : 2.4)));
   for (let k = 1; k < bays; k++) put("mullion", b0 + run * k / bays, 0, 0, dH, framePaint);
   // ---- the glass: the whole opening between the pilasters (the door's open glass shows the shop too)
+  const gx0 = -W / 2 + inner, gx1 = W / 2 - inner, gb = classic ? 0.53 : 0.235, gt = (classic ? 2.29 : 2.47) + dH;
   {
-    const gx0 = -W / 2 + inner, gx1 = W / 2 - inner, gb = classic ? 0.53 : 0.235, gt = (classic ? 2.29 : 2.47) + dH;
     const wW = gx1 - gx0, wH = gt - gb, o = at((gx0 + gx1) / 2, gb + wH / 2, 0.075);
     const m = new Float32Array(WIN_STRIDE);
     m.set([X[0] * wW, X[1] * wW, X[2] * wW, 0, 0, wH, 0, 0, Z[0], 0, Z[2], 0, o[0], o[1], o[2], 1]);
     m.set([wW, wH, hash01(id + "w"), lit], 16);
-    m.set([interiorType(p), gb, hash01(id + "m") < 0.5 ? 1 : 0, 0], 20);
+    m.set([cf.interior ?? interiorType(p), gb, hash01(id + "m") < 0.5 ? 1 : 0, 0], 20);   // (curated interior: Lefevre's office)
     windows.push(m);
     night.shops.push(o[0] + Z[0] * 0.6, f.y + 1.6, o[2] + Z[2] * 0.6);
     // ?night=1 (viewer/nightLights/cityNight.js): the lit window as a light through its opening, in the facade's own
@@ -129,9 +132,11 @@ export function layoutShop(p, f, frame, lit, env) {
   }
   // ---- the name on the fascia (the street life's SDF box on the fascia's sign panel)
   const style = pick(["shopSans", "shopSerif", "shopHumanist", "shopItalic"], id, "f");
-  const lab = p.name ? label([p.name], classic && style === "shopSans" ? "shopSerif" : style) : null;
+  // (curated) the fascia's own text (sign: a line or lines; "" = a plain board), font and board colour (Street View)
+  const signLines = cf.sign != null ? [].concat(cf.sign) : p.name ? [p.name] : [];
+  const lab = signLines.some((l) => l) ? label(signLines, cf.font ?? (classic && style === "shopSans" ? "shopSerif" : style)) : null;
   if (p.name) used.names.push(p.name);
-  const board = lightbox ? [0.86, 0.86, 0.84] : paint;
+  const board = cf.board ?? (lightbox ? [0.86, 0.86, 0.84] : paint);
   const ink = cf.ink ?? (lum(board) > 0.18 ? pick(INK_ON_LIGHT, id, "i") : (classic ? pick(INK_ON_DARK, id, "i") : [0.97, 0.97, 0.95]));   // (curated: a brand colour, linear rgb)
   const sign = cf.spots || (classic && hash01(id + "s") < 0.55) ? "spots" : classic ? "paint" : lightbox ? "lightbox" : "backlit";
   const inkGlow = sign === "backlit" ? 1.6 * lit : sign === "spots" ? 0.35 * lit : 0, boardGlow = sign === "lightbox" ? 1.1 * lit : sign === "spots" ? 0.3 * lit : 0;
@@ -140,9 +145,23 @@ export function layoutShop(p, f, frame, lit, env) {
   } else if (classic) {
     // the panel inside the moulded frame, between the consoles (shopfronts.py: |x| < W/2 - 0.2, 0.04 .. 0.71 up)
     const pw = W - 0.48, ph = 0.6;
-    box(at(0, fasciaY + 0.375, 0.221), X, Y, Z, pw, ph, 0.006, { board, ink, inkGlow, boardGlow, lab, fill: 1.0, padX: 0.12, rough: 0.42, kind: 2 });
+    box(at(0, fasciaY + 0.375, 0.221), X, Y, Z, pw, ph, 0.006, { board, ink, inkGlow, boardGlow, lab, fill: cf.signFill ?? 1.0, padX: 0.12, rough: 0.42, kind: 2 });
   } else {
-    box(at(0, fasciaY + 0.325, 0.273), X, Y, Z, W + 0.08, 0.6, 0.006, { board, ink, inkGlow, boardGlow, lab, fill: 1.05, padX: 0.2, rough: lightbox ? 0.3 : 0.4, kind: 2 });
+    box(at(0, fasciaY + 0.325, 0.273), X, Y, Z, W + 0.08, 0.6, 0.006, { board, ink, inkGlow, boardGlow, lab, fill: cf.signFill ?? 1.05, padX: 0.2, rough: lightbox ? 0.3 : 0.4, kind: 2 });
+  }
+  // (curated) plaques on the fascia: [{ u, w, h, dy, text, board, ink, font }] (White Night's WHITE | NIGHT halves, Proxy's
+  // white panel on the black band): thin boxes 1 cm proud of the fascia face
+  for (const pl of cf.plaques || []) {
+    const zf = cf.fascia === false ? 0.02 : classic ? 0.221 + 0.009 : 0.273 + 0.009, yc = (classic ? fasciaY + 0.375 : fasciaY + 0.325) + (pl.dy ?? 0);
+    const plab = pl.text ? label([].concat(pl.text), pl.font ?? "shopSans") : null;
+    box(at(pl.u ?? 0, yc, zf), X, Y, Z, pl.w, pl.h ?? 0.46, 0.008, { board: pl.board ?? [0.86, 0.86, 0.84], ink: pl.ink ?? [0.02, 0.02, 0.02], lab: plab, fill: pl.fill ?? 0, pad: 0.1, rough: 0.4, kind: 2,
+      inkGlow: (pl.glow ?? 0) * lit, boardGlow: 0 });
+  }
+  // (curated) a band across the head of the glass: [text, board, ink, font, h] (Bois Savanes' RESTAURANT THAÏ TRAITEUR,
+  // Lefevre's name plate)
+  if (cf.subSign) {
+    const [st, sb, si, sf, sh] = cf.subSign, hh = sh ?? 0.24;
+    box(at((gx0 + gx1) / 2, gt - hh / 2 - 0.02, 0.095), X, Y, Z, gx1 - gx0, hh, 0.01, { board: sb ?? [0.02, 0.02, 0.022], ink: si ?? [0.78, 0.62, 0.3], lab: st ? label([st], sf ?? "shopSerif") : null, pad: 0.12, rough: 0.45, kind: 2 });
   }
   if (sign === "spots" && !lowFloor) {
     const k = W > 4.5 ? 3 : 2;
@@ -165,10 +184,10 @@ export function layoutShop(p, f, frame, lit, env) {
     // (curated) a STEEP traditional awning (Le Relais Saint-Job, ~33 deg): built from the layout's boxes, no cassette;
     // the script name on its slope (seen from the street), the section's name on the valance
     const canvas = cf.canvas != null ? CANVAS[cf.canvas] : pick(CANVAS, id, "c");
-    steepAwning(env, at, X, Y, Z, W - 0.1, fasciaY + (cf.fascia === false ? 0.55 : 0), 1.25, 33, canvas, cf.awningText, cf.awningFont ?? "shopItalic", cf.valance ?? p.name, cf.valanceFont ?? "shopSerif");
+    steepAwning(env, at, X, Y, Z, W - 0.1, fasciaY + (cf.fascia === false ? 0.55 : 0), cf.awningOut ?? 1.25, cf.awningDeg ?? 33, canvas, cf.awningText, cf.awningFont ?? "shopItalic", cf.valance ?? p.name, cf.valanceFont ?? "shopSerif", 0, cf.awningInk ?? null);
     for (const ua of cf.upperAwnings || []) {
       // small awnings over first-floor windows: [u (m along the front), y (m over the shop floor), width, text, valance]
-      steepAwning(env, at, X, Y, Z, ua[2], ua[1], 0.55, 38, canvas, ua[3] ?? null, cf.awningFont ?? "shopItalic", ua[4] ?? null, cf.valanceFont ?? "shopSerif", ua[0]);
+      steepAwning(env, at, X, Y, Z, ua[2], ua[1], 0.55, 38, canvas, ua[3] ?? null, cf.awningFont ?? "shopItalic", ua[4] ?? null, cf.valanceFont ?? "shopSerif", ua[0], cf.awningInk ?? null);
     }
   } else if (awn) {
     const canvas = cf.canvas != null ? CANVAS[cf.canvas] : pick(CANVAS, id, "c"), stripes = cf.stripes ?? (hash01(id + "st") < 0.3) ? 0.24 : 0;
@@ -198,6 +217,19 @@ export function layoutShop(p, f, frame, lit, env) {
     prop("cross", o[0], o[1], o[2], yaw);
     night.signs.push(o[0] + Z[0] * 0.8, o[1], o[2] + Z[2] * 0.8);
     night.lights?.push(1, o[0] + Z[0] * 0.8, o[1], o[2] + Z[2] * 0.8, Z[0], Z[2], 0.3, 0.3, 0.12, 1.0, 0.3);   // (the green cross: lit all night)
+  } else if (cf.blade === false) {
+    // (curated) no projecting sign (Street View shows none)
+  } else if (cf.blade) {
+    // (curated) a projecting sign of the shop's own shape and colours: { text, board, ink, font, w, h, y (centre, m over
+    // the shop floor), vertical (the text reads upward: Proxy's tall red sign) }
+    const bl = cf.blade, bw = bl.w ?? 0.66, bh = bl.h ?? 0.62, by = bl.y ?? fasciaY + 0.56;
+    put("blade", px, by + bh / 2 + 0.01, 0, 0, [0, 0, 0], 0);
+    const Xs = [-Z[0], 0, -Z[2]], Zs = X;
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const Xt = bl.vertical ? Y : Xs, Yt = bl.vertical ? cross(Zs, Y) : Y;
+    const blab = bl.text ? label([].concat(bl.text), bl.font ?? "shopSans") : null;
+    box(at(px, by, 0.55), Xt, Yt, Zs, bl.vertical ? bh : bw, bl.vertical ? bw : bh, 0.045, { board: bl.board ?? [0.86, 0.86, 0.84], ink: bl.ink ?? [0.02, 0.02, 0.025], inkGlow: 1.2 * lit, lab: blab, pad: 0.1, sides: 1, border: 0.018, rough: 0.45, kind: 3 });
+    night.signs.push(...at(px, by, 0.55));
   } else if (PROJECT_KINDS.has(p.kind) && p.name && !lowFloor) {
     put("blade", px, fasciaY + 0.95, 0, 0, [0, 0, 0], 0);
     const plab = label(twoLines(p.name, 11), pick(["shopSans", "shopSerif", "shopHumanist"], id, "j"));
