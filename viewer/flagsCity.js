@@ -15,25 +15,34 @@ import { flagTexture } from "./flags/flagDesigns.js";
 const LIVE_RADIUS = 45, HIDE_DIST = 700, DESIGN = { south: "eu", centre: "belgium", north: "uccle" };
 
 export async function addFlags({ scene, updaters, renderer, compiler, log, params }) {
-  const t0 = performance.now();
   for (let i = 0; i < 240 && !window.townhall?.root; i++) await new Promise((r) => setTimeout(r, 250));
   const th = window.townhall;
   if (!th?.root) { log("flags: no town hall (?townhall=1) - nothing to fly them from"); return; }
   const notes = th.model.notes, poles = notes?.flag_poles ?? [];
   if (!poles.length) { log("flags: models/townhall/townhall.json has no flag_poles"); return; }
+  // the LOD0 group of the town hall, for the wall raycasts
+  th.root.updateMatrixWorld(true);
+  const r = await flyFlags({ scene, updaters, renderer, compiler, params, wall: th.levels[0], shown: () => th.root.visible,
+    poles: poles.map((p) => ({ name: p.name, base: p.base_city_xyz, tip: p.tip_city_xyz, design: DESIGN[p.name] ?? "belgium" })) });
+  window.flags = r;
+  log(`flags: ${r.flags.length} on the town hall balcony (${r.flags.map((f) => f.design).join(" / ")}), loops recorded in a worker, ready in ${r.ms} ms (?wind=m/s,deg)`);
+}
+
+/** flags on free poles or on a model's poles: poles [{ name, base [x, y, z], tip [x, y, z], design (flagDesigns.js key),
+ *  width?, height? }], wall = the object the cloth must stay clear of (raycast; null: none), shown() = the owner is drawn.
+ *  Baked loops (a worker) far, a live Verlet cloth within LIVE_RADIUS, hidden beyond HIDE_DIST. -> { flags, wind, setWind, simMs, ms } */
+export async function flyFlags({ scene, updaters, renderer, compiler, params, poles, wall = null, shown = () => true }) {
+  const t0 = performance.now();
   const [ws, wd] = (params.get("wind") ?? "5,70").split(",").map(Number);
   const wind = { speed: Number.isFinite(ws) ? ws : 5, deg: Number.isFinite(wd) ? wd : 70 };
   const dirOf = (deg) => { const a = THREE.MathUtils.degToRad(deg); return [Math.cos(a), 0, -Math.sin(a)]; };
-  // the LOD0 group of the town hall, for the wall raycasts
-  th.root.updateMatrixWorld(true);
-  const lod0 = th.levels[0];
   const flags = [];
   for (const p of poles) {
-    const base = new THREE.Vector3(...p.base_city_xyz), tip = new THREE.Vector3(...p.tip_city_xyz);
+    const base = new THREE.Vector3(...p.base), tip = new THREE.Vector3(...p.tip);
     const axis = tip.clone().sub(base).normalize(), top = tip.clone().addScaledVector(axis, -0.12);
-    const planes = wallPlanesFrom(lod0, top);
-    const cloth = { width: 1.5, height: 1.0, axis: [axis.x, axis.y, axis.z], out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes };
-    const design = DESIGN[p.name] ?? "belgium", map = flagTexture(design, renderer);
+    const planes = wall ? wallPlanesFrom(wall, top) : [];
+    const cloth = { width: p.width ?? 1.5, height: p.height ?? 1.0, axis: [axis.x, axis.y, axis.z], out: dirOf(wind.deg), windDir: dirOf(wind.deg), fabric: FABRIC.polyester, planes };
+    const design = p.design ?? "belgium", map = flagTexture(design, renderer);
     const set = await BakedFlags.create({ cloth, map, capacity: 1, speed: wind.speed });
     set.add(top.x, top.y, top.z, { yaw: 0, phase: Math.random() });
     set.mesh.visible = false;
@@ -62,10 +71,10 @@ export async function addFlags({ scene, updaters, renderer, compiler, log, param
   const drop = (f) => { scene.remove(f.live.mesh); f.live.mesh.geometry.dispose(); f.live = null; f.set.setVisible(0, true); f.state = "baked"; };
   updaters.push((camPos) => {
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.1); last = now; t += dt;
-    const shown = th.root.visible;
+    const isShown = shown();
     let sim = 0;
     for (const f of flags) {
-      const d = camPos.distanceTo(f.top), on = shown && d < HIDE_DIST;
+      const d = camPos.distanceTo(f.top), on = isShown && d < HIDE_DIST;
       f.set.mesh.visible = on;
       if (!on) { if (f.live) drop(f); continue; }
       f.set.setWind(wind.speed); f.set.update(t, dt);
@@ -90,6 +99,5 @@ export async function addFlags({ scene, updaters, renderer, compiler, log, param
       f.set.retarget(speed, f.cloth);
     }
   };
-  window.flags = { flags, wind, setWind, get simMs() { return simMs; } };
-  log(`flags: ${flags.length} on the town hall balcony (${flags.map((f) => f.design).join(" / ")}), loops recorded in a worker, ready in ${(performance.now() - t0).toFixed(0)} ms (?wind=m/s,deg)`);
+  return { flags, wind, setWind, get simMs() { return simMs; }, ms: Math.round(performance.now() - t0) };
 }

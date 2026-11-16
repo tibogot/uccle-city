@@ -44,6 +44,52 @@ function clearRoads(doc, blocked) {
   const total = n.segs + n.pillars + n.gates + n.hedgePts;
   return total ? { doc: out, ...n } : 0;
 }
+/** (cortenbosch) data/overrides.json gardenRestyle: inside each polygon the walls / railings become clipped hedges of the
+ *  polygon's species (consecutive segments chained into one run, set back half the hedge's width + 5 cm from the street:
+ *  the side where blocked(x, z) answers, else the run's left), the pillars and gates go (the driveways stay open), the
+ *  kit's own hedges there take the species. -> { doc, segs, hedges } | 0 */
+function restyleHedges(doc, restyle, blocked) {
+  const polys = Object.entries(restyle || {}).filter(([k, v]) => !k.startsWith("_") && v?.ring?.length >= 3).map(([, v]) => v);
+  if (!polys.length) return 0;
+  const inR = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  const polyAt = (x, z) => polys.find((p) => inR(p.ring, x, z));
+  const out = { ...doc, segs: [], pillars: [], gates: [], hedges: [] };
+  let nSeg = 0, nHedge = 0;
+  // chains of consecutive segments in one polygon (end of one = start of the next within 2 cm)
+  const chains = [];
+  let cur = null;
+  for (const g of doc.segs || []) {
+    const P = polyAt((g[0] + g[3]) / 2, (g[2] + g[5]) / 2);
+    if (!P) { out.segs.push(g); cur = null; continue; }
+    nSeg++;
+    if (cur && cur.P === P && Math.hypot(cur.pts[cur.pts.length - 1][0] - g[0], cur.pts[cur.pts.length - 1][1] - g[2]) < 0.02) cur.pts.push([g[3], g[5]]);
+    else { cur = { P, pts: [[g[0], g[2]], [g[3], g[5]]] }; chains.push(cur); }
+  }
+  for (const { P, pts } of chains) {
+    const w = P.width ?? 0.6, off = w / 2 + 0.05;
+    // the street side: probe 0.8 m both ways from the chain's middle segment
+    const m = Math.floor((pts.length - 1) / 2), a = pts[m], b = pts[m + 1];
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
+    const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+    const left = blocked?.(mx + nx * 0.8, mz + nz * 0.8), right = blocked?.(mx - nx * 0.8, mz - nz * 0.8);
+    const s = left && !right ? -1 : 1;                                   // away from the street
+    // offset the polyline (per-vertex normal: the average of its segments')
+    const q = pts.map((p, i) => {
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[Math.min(pts.length - 1, i + 1)];
+      const l = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
+      return [p[0] - ((p1[1] - p0[1]) / l) * off * s, p[1] + ((p1[0] - p0[0]) / l) * off * s];
+    });
+    out.hedges.push({ points: q, species: P.hedge || "beech", height: P.height ?? 1.4, width: w });
+    nHedge++;
+  }
+  for (const p of doc.pillars || []) if (!polyAt(p[0], p[2])) out.pillars.push(p);
+  for (const g of doc.gates || []) if (!polyAt(g[0], g[2])) out.gates.push(g);
+  for (const h of doc.hedges || []) {
+    const c = h.points[Math.floor(h.points.length / 2)], P = c && polyAt(c[0], c[1]);
+    out.hedges.push(P ? { ...h, species: P.hedge || h.species } : h);
+  }
+  return { doc: out, segs: nSeg, hedges: nHedge };
+}
 const DATA = new URL("../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
@@ -71,9 +117,12 @@ export const cityGardens = {
   },
   /** a tile: its instances join the pools; stand-ins (and hedges) go into `parent` (the tile's features group);
    *  groundAt(x, z) = the drawn ground the hedges stand on */
-  addTile(name, doc, parent, groundAt, blocked = null) {
+  addTile(name, doc, parent, groundAt, blocked = null, restyle = null) {
     if (!this.on || !this.kit || !doc) return null;
     const t0 = performance.now();
+    // (cortenbosch) the plots a local knows closed by clipped hedges, not walls (data/overrides.json gardenRestyle)
+    const rs = restyle ? restyleHedges(doc, restyle, blocked) : 0;
+    if (rs) doc = rs.doc;
     // citydefects 2026-11-16: no garden piece on a carriageway (a brick-pier + railing run crossed Avenue Carsoel at the
     // Saint-Job station deck: the UrbIS street surfaces the build read predate the 2025 deck); ?gardenroad=old: as before
     const dropped = blocked && !GARDEN_ROAD_OLD ? clearRoads(doc, blocked) : 0;
