@@ -65,6 +65,14 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    there): detail pass with references (school, the chemin's cobbles/hedges/walls, local details). (d) GELEYTSBEEK
    CASTLE (Kasteel / Chateau de Geleytsbeek): hero model if not done (references online, look only). (e) LA BRANCHE
    D'OLIVIER restaurant (in streetlife E7): make it recognisable like Le Relais.
+8g. **Car glass dither on parked/traffic cars** (coordinator 2026-11-16): under TAAU the see-through glass of
+   parked and traffic cars shows a fine dot/hatch pattern up close (same cause as the player car's rear window, fixed
+   only for the player car with ?carglass=old). Fix for all cars without losing see-through interiors: stable
+   (non-jittered) dither per instance + resolve weighting, or opaque tinted glass beyond ~8 m with a fake interior,
+   or sorted blended glass for the nearest N cars.
+8h. **Cars2 leftovers**: watch the 30 m LOD fade in motion; compress cars2.glb (4.5 MB); more varied hatch fronts;
+   shops2 leftovers (White Night lot asphalt, ivy over Uccle Flore window, Pasta Commedia coral render, 630 UrbIS
+   buildings without geometry: infill tool tools/infill/infill_buildings.py, Place Saint-Job 38 next).
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
