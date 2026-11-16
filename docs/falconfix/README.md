@@ -5,7 +5,7 @@ collision, it goes up after falling down, it's like it's very buggy; the falcon 
 way better, not more complicated but better, more UX friendly". The coordinator also saw free flight
 (`?game=falcon&gmode=free`) start perched on the ground in a wood instead of on the eyrie.
 
-Branch `claude/falconfix`. Offline checks: `node tools/falconAssistTest.mjs` (25 checks, all pass) and the older
+Branch `claude/falconfix`. Offline checks: `node tools/falconAssistTest.mjs` (26 checks, all pass) and the older
 `node tools/falconFlightTest.mjs` (the model's numbers, unchanged).
 
 ## 1. Why it "went up after falling down"
@@ -98,11 +98,40 @@ air off the eyrie when the family is not loaded. And hands off, the assisted bir
 | exhausted, hands off 30 s | height held, the stamina back over 0.1 |
 | cost (assist + model + collisions) | ~0.01-0.02 ms a frame in node; ~20 column queries a frame at most; no allocation per frame (one reused contact record) |
 
-## 6. Browser check
+## 6. Browser check (2026-11-16 evening, `?game=falcon&gmode=free`, port 8814, one tab)
 
-Pending (another agent was measuring performance in Chrome): take off from the eyrie, fly low through streets, scrape
-a wall, hit a roof edge, land on a roof and on the ground, dive into a tree, a hunt run; before (`?falconctl=old&falconcol=old&falconstart=old`)
-and after, screenshots here.
+No console errors (new and old). Inputs were driven through the flight's own input (keys / actions / the mouse aim's
+yaw-pitch set from script); numbers from the game's own state.
+
+| test | old (`?falconctl=old&falconcol=old&falconstart=old`) | new |
+|---|---|---|
+| free-flight start | the intro started under the loader; hands off it touched down on a roof 6 s after the launch (`before_old_handsoff_touched_down.jpg`) | the intro waits for the loader, the bird leaves the eyrie in view and holds its height. FIRST version: held 96 m TAW into the wooded hill NW of Saint-Job and ended in the trees (`before_tuning_handsoff_into_wood.jpg`) -> **fixed: the hold follows rising ground** (30 s hands off, 0 contacts, climbed 93 -> 115 m TAW with the hill: `after_handsoff_hill.jpg`) |
+| A 3 s / let go / W 4 s | - | 55° bank, ~1 rad/s, wings level at once on release, height held; W a 20° descent then hold |
+| low pass down Avenue du Prince de Ligne at 6 m | - | holds 6-7 m over the street. FIRST version: the strike's aim assist turned it toward a pigeon 55 m off into the street trees' crowns (`after_street_pass_into_crowns_before_hunt_fix.jpg`) -> **fixed: the aim assist pauses while the avoid acts; the avoid stays under crowns' undersides and levels off instead of climbing into them** |
+| 12° scrape along a façade (avoid off) | - | one wall contact, slid along it (heading -68 -> -101°), 11.5 -> 9.9 m/s, no tumble, no rise |
+| level into a roof edge at 18 m/s (avoid off) | stunned, vy +0.8 m/s after it, then a ground hit with a bounce (+1.2) | tumble, vy -1 (no rise); in that 8 m street it then reached the opposite façade low and landed on the street |
+| stoop into the roofs of a row of houses (avoid off, 3 runs) | max upward speed after the first hit **5.7**, 1.5, -0.6 m/s | **1.2**, 0, 0 m/s; tumbles end in a touch-down |
+| E landing | - | on a roof ridge near the Place (perch), on a street tree's crown, and with no perch in reach **on the street** (new: E lands on the level roof / ground 8-20 m ahead: `after_E_ground_landing.jpg`); Space takes off cleanly from each (no re-touch-down) |
+| dive at a street tree (avoid on / off) | - | on: pulled out over the street, 0 contacts; off: ground contact, tumble, touch-down, no rise |
+| hunt at the Place | - | FIRST version: stoops went into façades (the avoid asked for a climb the TUCKED wing cannot give) -> **fixed: the avoid opens the wings**; chasing at the 14 m/s cruise never closed on a pigeon -> **pursuit speed 21 m/s with a prey in the window**. Then: a catch at 94 km/h, 0 contacts (`after_hunt_catch.jpg`) |
+| cost | - | game part (flight + collisions + assist) p50 0.1 ms, p99 0.3 ms, max 0.8; the whole flyer p50 0.4 ms (pigeons, air, camera included) |
+
+### The eyrie's z-fighting (owner, while watching)
+
+On the walk from the scrape to the ledge, the sill of the falcons' arch flickered: every arch's reveal FLOOR (brick)
+and its stone sill LEDGE both covered depth 0 .. `proud` (5 cm) at exactly the sill height (`tools/blender/stjob.py`,
+`Arch.build`). Fixed at the source: the reveal floor starts at the wall plane where a ledge is built (`strip2d(...,
+floor=)`); the church rebuilt (same triangle count), the AO re-baked and its KTX2 rewritten. Two frames 1 s apart at the
+same pose: 4031 changed pixels on the sill before, 1 after (`eyrie_sill_before*.jpg`, `eyrie_sill_after*.jpg`, the
+diff mask `eyrie_sill_before_framediff.png`). This fixes it on every ledged arch of the church, not only the eyrie's.
+
+### Left
+
+- Tuning by a human at the keys (the browser runs were scripted): cruise 14 / pursuit 21 m/s, turn rate 1 rad/s,
+  avoid clearance 2.5 m, camera stiffness.
+- Low over a canopy the chase camera can sit in the leaves (it was so before: the camera's own clearance).
+- Hunting needs height and a stoop (as in round 1); the assist makes it reachable but a level chase rarely catches.
+- Mobile / gamepad not tested in the browser (the intent mapping is tested in node).
 
 ## Switches (viewer/features.js)
 

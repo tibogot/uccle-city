@@ -56,7 +56,7 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    tumble without pull-up, out of solids / pins), the flight assist (mouse aim or A / D turns, wings level and altitude
    hold hands off, auto-flapping, Shift stoop with a pull-out, ground / obstacle avoid), steady camera, HUD climb rate +
    assist state, free flight starts on the eyrie. docs/falconfix/README.md; `?falconctl=old`, `?falconcol=old`,
-   `?falconavoid=0`, `?falconstart=old`. Offline checks pass (tools/falconAssistTest.mjs); browser check pending.
+   `?falconavoid=0`, `?falconstart=old`. Offline checks pass (tools/falconAssistTest.mjs); browser check done (tuned: hold follows rising ground, avoid under crowns + opens the wings, pursuit speed, E lands on roof / ground ahead); the eyrie sill z-fight fixed in stjob.py. Hand tuning by the owner left.
 11. **Police game**: car physics not fun; it must climb slopes, kerbs and go "many places" without feeling
    blocked; poles in the road and narrow roads block it (3-5). Police station wrong: real gate open, building
    too small vs reality. (later agent)
