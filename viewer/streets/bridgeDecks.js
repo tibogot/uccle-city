@@ -383,6 +383,19 @@ export function deckUnderCut(decks, grids, hdr) {
   const { x0, z0, cols, rows, step } = hdr;
   let moved = 0;
   for (const d of decks || []) {
+    if (!d.plan) continue;
+    // (browser check 2026-11-16: at the ring's ends the bank's DTM stood up to 10 cm OVER the deck top tucked under the
+    // street: green terrain strips through the asphalt) the ground inside the ring kept under the deck's top
+    {
+      const c0 = Math.max(0, Math.floor((d.box[0] - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((d.box[2] - x0) / step));
+      const r0 = Math.max(0, Math.floor((d.box[1] - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((d.box[3] - z0) / step));
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const x = x0 + c * step, z = z0 + r * step;
+        if (!inRing(d.plan.ring, x, z)) continue;
+        const top = profY(d, alongLine(d, x, z)) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
+        for (const G of grids) if (G[k] > top) { G[k] = top; moved++; }
+      }
+    }
     const U = d.plan?.under;
     if (!U) continue;
     const [cx, cz] = U.c, [ux, uz] = U.u, vx = -uz, vz = ux;

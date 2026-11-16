@@ -340,6 +340,8 @@ export async function buildTileData(entry, base) {
   netInfo.deckAbutments = abutCells; netInfo.deckUnder = underCells;
   const road = { parts: rd.parts, atlas: rd.atlas, carvedCells: rd.carvedCells, clampedCells: rd.clampedCells, triangles: rd.triangles, surfaceStats: rd.surfaceStats,
     surfaceData: rd.surfaceData, inventory: rd.inventory ?? null };
+  // (again after the road stage: its terrain weld brought the bank back up over a plan deck's tucked ends)
+  netInfo.deckUnder2 = deckUnderCut(osmBridges.decks, [hm.y, hm.orig], tHdr);
   const net = rd.net;              // the live engine network (stays in the worker: drive colliders)
   // (x, z) -> true where a measured street surface is drawn (a plan deck's top tucks under it: bridgeDecks.js)
   const sg = rd.surfaceData?.grid;

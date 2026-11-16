@@ -11443,6 +11443,20 @@ function deckUnderCut(decks, grids, hdr) {
   const { x0, z0, cols, rows, step } = hdr;
   let moved = 0;
   for (const d of decks || []) {
+    if (!d.plan) continue;
+    {
+      const c02 = Math.max(0, Math.floor((d.box[0] - x0) / step)), c12 = Math.min(cols - 1, Math.ceil((d.box[2] - x0) / step));
+      const r02 = Math.max(0, Math.floor((d.box[1] - z0) / step)), r12 = Math.min(rows - 1, Math.ceil((d.box[3] - z0) / step));
+      for (let r = r02; r <= r12; r++) for (let c = c02; c <= c12; c++) {
+        const x = x0 + c * step, z = z0 + r * step;
+        if (!inRing(d.plan.ring, x, z)) continue;
+        const top = profY(d, alongLine(d, x, z)) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
+        for (const G2 of grids) if (G2[k] > top) {
+          G2[k] = top;
+          moved++;
+        }
+      }
+    }
     const U = d.plan?.under;
     if (!U) continue;
     const [cx, cz] = U.c, [ux, uz] = U.u, vx = -uz, vz = ux;
@@ -15145,6 +15159,7 @@ async function buildTileData(entry, base) {
     surfaceData: rd.surfaceData,
     inventory: rd.inventory ?? null
   };
+  netInfo.deckUnder2 = deckUnderCut(osmBridges.decks, [hm.y, hm.orig], tHdr);
   const net = rd.net;
   const sg = rd.surfaceData?.grid;
   const measuredAt = sg ? (x, z) => {
