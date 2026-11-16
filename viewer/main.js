@@ -804,11 +804,6 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const F = entry.files;
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
-  // perfgame round 5: the player's position for the staged landmark compiles (stagedCompile.js); before the modes exist,
-  // the spawn / the start tile's centre
-  setStagedFocus(() => { try { return flyer.on ? [flyer.x, flyer.z] : driver.on ? [driver.x, driver.z] : walker.on ? [walker.x, walker.z] : [controls.target.x, controls.target.z]; } catch { return SPAWN ?? [(x0 + x1) / 2, (z0 + z1) / 2]; } });
-  let stagedFor = null;
-  const heroCompiler = () => (compileFor ? (STAGED ? (stagedFor ||= stagedCompiler(compileFor)) : compileFor) : null);
   const say = verbose ? log : () => {};
   // per-tile groups inside the shared layers, so the tile can be unloaded
   const own = {};
@@ -1043,6 +1038,11 @@ async function main() {
   const F = entry.files;
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
+  // perfgame round 5: the player's position for the staged landmark compiles (stagedCompile.js); before the modes exist,
+  // the spawn / the start tile's centre
+  setStagedFocus(() => { try { return flyer.on ? [flyer.x, flyer.z] : driver.on ? [driver.x, driver.z] : walker.on ? [walker.x, walker.z] : [controls.target.x, controls.target.z]; } catch { return SPAWN ?? [(x0 + x1) / 2, (z0 + z1) / 2]; } });
+  let stagedFor = null;
+  const heroCompiler = () => (compileFor ? (STAGED ? (stagedFor ||= stagedCompiler(compileFor)) : compileFor) : null);
   // the worker pool starts on the start tile and its ring NOW, in parallel with the landmarks loading below (their
   // builds were one after another, after everything else, before: perf audit 2026-11-13)
   if (workers.length > 1 && params.get("bootprefetch") === "1") {   // ?bootprefetch=1: on (A/B: no clear gain measured, likely CPU contention with the landmarks loading; test on a fresh machine)
