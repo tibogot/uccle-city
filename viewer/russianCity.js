@@ -9,6 +9,7 @@ import { loadRussian, RU_LODS, setLodFades } from "./russianModel.js";
 import { SMOOTH, fadeProxies, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
+import { FAR_MERGE_LM, mergeFarLevel } from "./farMerge.js";
 
 export async function addRussian({ scene, updaters, hide, world, manifest, log, compiler }) {
   const t0 = performance.now();
@@ -25,6 +26,7 @@ export async function addRussian({ scene, updaters, hide, world, manifest, log, 
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = RU_LODS.map((_, k) => m.make(k));
     root.add(...levels);
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "russian" }).then((r) => r && log?.(`russian: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=old: off)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);

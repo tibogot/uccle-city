@@ -100,7 +100,9 @@ export class GameKit {
       PLo.tip(def.tagline || "");
     }
     try {
+      const tS = performance.now();
       try { await def.start?.(this, { mode, options: opts }); } catch (e) { this.host.log(`game ${id}: ${e.message}`); console.error(e); }
+      (globalThis.__gameTimes ||= []).push(["start", Math.round(performance.now() - tS)]);
       if (PLo && this.host.areaReady) { const P = this.readPlayer(0); await this.host.areaReady({ x: P.x, z: P.z, label: def.title, near: P.mode === "fly" ? 550 : 300 }); }
     } finally { if (PLo) await PLo.close(); }
     this.last = performance.now();

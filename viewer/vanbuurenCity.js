@@ -63,6 +63,7 @@ export async function addVanBuuren({ scene, updaters, hide, world, manifest, log
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = VB_LODS.map((_, k) => m.make(k));
     root.add(...levels);
+    // (perfgame round 7: no far merge here: its last level shows from 55 m, where the merged means read as flat)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);

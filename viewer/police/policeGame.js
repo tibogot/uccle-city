@@ -94,9 +94,11 @@ export const POLICE_GAME = {
     if (!G.props) G.props = new Props({ scene: host.scene, driver, getTraffic: () => G.traffic(), renderer: host.renderer, camera: host.camera });
     if (!G.chip) G.chip = makeChip();
     G.car.setSound(!!options.siren);
-    await loadSpots();
+    const T = (globalThis.__gameTimes ||= []); let tt = performance.now();
+    const mark = (k) => { const n = performance.now(); T.push([`police ${k}`, Math.round(n - tt)]); tt = n; };
+    await loadSpots(); mark("spots");
     // the car first (the drive mode then starts with it), its pipelines and the props' under the spawn card
-    await G.car.install();
+    await G.car.install(); mark("car install");
     kit.hud.toast({ title: "Police station, Rue Rouge", text: "Getting the car ready…" }, 0);
     try {
       await G.props.ready();
@@ -104,7 +106,9 @@ export const POLICE_GAME = {
       await warm([driver.car.root, G.props.group], host.camera, 8);
       G.props.unwarm(tmp);
     } catch (e) { host.log(`police compile: ${e.message}`); }
+    mark("props + warm");
     await kit.spawnPlayer({ at: [YARD.x, YARD.z, "Police station, Rue Rouge"], mode: "drive", road: false });
+    mark("spawn (teleport + area)");
     if (driver.on && driver.vehicle === "car") { driver.startPose = { ...YARD }; driver.reset(); }
     // keys
     G.keyFn = (e) => {

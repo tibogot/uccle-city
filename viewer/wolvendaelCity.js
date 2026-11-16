@@ -21,6 +21,7 @@ import { pondBedGrid } from "./water/pondBed.js";
 import { createPond, POND_LAYER, REFL_MRT, buildReflectionTrees } from "./water/pondWater.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
+import { FAR_MERGE_LM, mergeFarLevel } from "./farMerge.js";
 
 /** the pond's measured description (site.json "pond"): the same object goes to the tiles (the carve) and the water */
 export function wolvendaelPond(site) {
@@ -82,6 +83,7 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = WV_LODS.map((_, k) => m.make(k));
     root.add(...levels);
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "wolvendael" }).then((r) => r && log?.(`wolvendael: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=old: off)
     root.visible = false; pond.group.visible = false;
     const pc0 = pond.water.geometry.boundingSphere.center.clone();
     scene.add(root, pond.group);
