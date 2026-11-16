@@ -13,6 +13,7 @@ import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
+import { FAR_MERGE_LM, mergeFarLevel } from "./farMerge.js";
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow built its shadow pipelines on the
  *  frame (the villa's 117 ms first hand-over). Warm them before the model shows: every mesh of every level and every
@@ -51,6 +52,7 @@ export async function addCalevoet({ scene, updaters, hide, world, manifest, log,
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = CV_LODS.map((_, k) => m.make(k));
     root.add(...levels);
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "calevoet" }).then((r) => r && log?.(`calevoet: far LOD ${r.before} -> ${r.after} draws`)).catch(() => {});   // perfgame round 7 (?farlodlm=1)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);

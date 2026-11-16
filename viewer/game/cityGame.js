@@ -34,10 +34,15 @@ export async function startGameKit(host) {
   document.body.append(btn);
   // after the cover: compile the marker's pipelines, then the menu (or a ?game= start)
   for (let i = 0; i < 1200 && document.body.classList.contains("loading"); i++) await new Promise((r) => setTimeout(r, 100));
+  const T = (globalThis.__gameTimes ||= []), t0 = performance.now();
+  T.push(["cover->kit", Math.round(t0 - (window.__coverAt || t0))]);
   await kit.waypoint.compile(host.camera);
+  T.push(["waypoint", Math.round(performance.now() - t0)]);
   const p = host.params, g = p.get("game");
   if (g && g !== "1" && kit.games.has(g)) {
+    const tm = performance.now();
     for (let i = 0; i < 100 && !host.getMap(); i++) await new Promise((r) => setTimeout(r, 100));
+    T.push(["map wait", Math.round(performance.now() - tm)]);
     kit.startGame(g, p.get("gmode") || "missions");
   } else if (p.get("gamemenu") !== "0" && !p.get("view") && !p.get("dev")) kit.startMenu();
   host.log("game kit: ready (P = games menu; docs/GAMEKIT.md)");

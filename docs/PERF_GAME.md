@@ -302,3 +302,10 @@ the queue the whole time), the landmarks' settle 5-9 s. Not under 35 s. Next: th
 fading copies compiled later, after the reveal, like the start tile's: `warmLater`), the game kit's 5 s, and the
 landmarks' far-LOD AO-free bake for the landmark far merge (their wrapAO bakes the AO map into the colour).
 Not checked: night lamp shadows with the pool (the pool's near bucket joins the lamp shadow layer by itself).
+
+## Round 7 (code, 2026-11-16; not measured yet)
+1. **Tiles under the loader at once** (`?holdfast=old`): while the play loader covers the screen, a landing tile is shown at once (no fade): its materials get built in the hidden frames, its fading copies (`fadeProxies`) are compiled in the background through the precompile queue, so they are ready before the first fade after the reveal (no first-draw builds).
+2. **Game code during the boot** (`?gamepreload=old`): a `?game=` start imports the game kit (cityGame.js), the game (policeGame.js / falconGameDef.js) and the faceted police car pack during the boot instead of after the cover. Timing marks now land in `globalThis.__gameTimes` (start, cover->kit, waypoint, map wait, spots, car install, props + warm, spawn) to see what of the 5 s still blocks.
+3. **Landmarks' far LOD in one draw** (`?farlodlm=1`, OFF until pixel-diffed): the 12 landmarks' wrapAO now keeps the AO-free colour graph (`material.userData.farBase`) and its AO setup (`userData.farAO = { aoTex, look }`). farMerge.js bakes slot means from farBase and re-applies AO the wrapAO way (AO map x vertex AO `COLOR_0.g`, aoStrength into aoNode, aoDirect into the colour). The renderer comes from `setFarMergeRenderer` (main.js). heros (statue wrapper) left out.
+
+Browser checks to do: time to play police / falcon with and without `holdfast` + `gamepreload` (alternate), `__gameTimes` breakdown, no pipeline builds on first draw after the reveal (pipelineAudit), `?farlodlm=1` pixel diff of each landmark at its far distance + draw counts.

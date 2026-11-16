@@ -12,6 +12,13 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 // (ON by default since 2026-11-16: the Saint-Job rail bridge's far level merged vs as before, 540 m, magnified x10:
 // 0.8 % of the crop's pixels differ by > 20 / 255 (TAA and tree noise), the bridge's colours match; ?farlodmerge=old = off)
 export const FAR_MERGE = typeof location !== "undefined" && new URLSearchParams(location.search).get("farlodmerge") !== "old";
+// round 7: the landmarks too (?farlodlm=1, OFF until checked): their wrapAO folds the AO map into the colour, so the
+// bake reads the AO-free colour the wrapper keeps (material.userData.farBase) and the merged material re-applies the
+// model's AO the same way (userData.farAO: its AO map x the vertex AO, aoStrength into the AO, aoDirect into the colour)
+export const FAR_MERGE_LM = typeof location !== "undefined" && new URLSearchParams(location.search).get("farlodlm") === "1";
+let defaultRenderer = null;
+/** main.js: the renderer the bakes use when a caller (a landmark's city loader) has none */
+export function setFarMergeRenderer(r) { defaultRenderer = r; }
 const bakeCache = new Map();          // material -> Promise<{ col: [r, g, b], rough }>
 let bake = null;
 
@@ -49,7 +56,7 @@ async function meanOf(renderer, node) {
 /** a slot material's mean albedo (linear) and roughness */
 function slotMeans(renderer, mat) {
   if (!bakeCache.has(mat)) bakeCache.set(mat, (async () => {
-    const colNode = mat.colorNode ?? (mat.map ? texture(mat.map, uv()).rgb.mul(vec3(mat.color.r, mat.color.g, mat.color.b)) : vec3(mat.color.r, mat.color.g, mat.color.b));
+    const colNode = mat.userData?.farBase ?? mat.colorNode ?? (mat.map ? texture(mat.map, uv()).rgb.mul(vec3(mat.color.r, mat.color.g, mat.color.b)) : vec3(mat.color.r, mat.color.g, mat.color.b));
     const col = await meanOf(renderer, colNode);
     const rough = mat.roughnessNode ? (await meanOf(renderer, vec3(mat.roughnessNode)))[0] : mat.roughness ?? 0.9;
     return { col, rough: Math.min(1, Math.max(0.04, rough)), metal: mat.metalness ?? 0 };
@@ -58,11 +65,15 @@ function slotMeans(renderer, mat) {
 }
 
 /** merge `level`'s opaque meshes into one; returns { before, after } draw counts (null: nothing done) */
-export async function mergeFarLevel(level, { renderer, aoTex = null, aoMix = 0.95, name = "" } = {}) {
-  if (!FAR_MERGE || !renderer?.backend?.isWebGPUBackend) return null;
+export async function mergeFarLevel(level, { renderer = defaultRenderer, aoTex = null, aoMix = 0.95, name = "", landmark = false } = {}) {
+  if (!(landmark ? FAR_MERGE_LM : FAR_MERGE) || !renderer?.backend?.isWebGPUBackend) return null;
   const meshes = level.children.filter((o) => o.isMesh && !o.isInstancedMesh && !o.material.transparent && o.geometry.attributes.position && o.geometry.attributes.normal);
   if (meshes.length < 2) return null;
   const mats = [...new Set(meshes.map((o) => o.userData.base ?? o.material))];
+  // the vertex AO (COLOR_0.g) is kept when every mesh has the same colour layout
+  const cs = meshes.map((o) => o.geometry.attributes.color?.itemSize ?? 0);
+  const keepColor = cs[0] > 0 && cs.every((c) => c === cs[0]);
+  const farAO = mats.map((m) => m.userData?.farAO).find(Boolean) ?? null;
   const means = await Promise.all(mats.map((m) => slotMeans(renderer, m)));
   const geos = meshes.map((o) => {
     const src = o.geometry, g = new THREE.BufferGeometry();
@@ -70,6 +81,7 @@ export async function mergeFarLevel(level, { renderer, aoTex = null, aoMix = 0.9
     g.setAttribute("uv1", src.attributes.uv1 ?? new THREE.BufferAttribute(new Float32Array(src.attributes.position.count * 2), 2));
     const id = mats.indexOf(o.userData.base ?? o.material);
     g.setAttribute("slotId", new THREE.BufferAttribute(new Float32Array(src.attributes.position.count).fill(id), 1));
+    if (keepColor) g.setAttribute("color", src.attributes.color);
     if (src.index) g.setIndex(src.index);
     const out = src.index ? g : g.toNonIndexed();
     out.applyMatrix4(o.matrix);
@@ -84,10 +96,18 @@ export async function mergeFarLevel(level, { renderer, aoTex = null, aoMix = 0.9
   const R = uniformArray(means.map((m) => m.rough)), Mt = uniformArray(means.map((m) => m.metal));
   const fm = new THREE.MeshStandardNodeMaterial();
   const id = int(attribute("slotId", "float").add(0.5));
-  fm.colorNode = C.element(id);
   fm.roughnessNode = R.element(id);
   fm.metalnessNode = Mt.element(id);
-  if (aoTex) fm.aoNode = mix(float(1), texture(aoTex, uv(1)).r, aoMix);
+  if (farAO) {
+    // a landmark: its wrapAO's AO, the same way (AO map x vertex AO, aoStrength; aoDirect darkens the colour)
+    const vAO = keepColor ? attribute("color", cs[0] === 4 ? "vec4" : "vec3").g : float(1);
+    const aoK = mix(float(1), texture(farAO.aoTex, uv(1)).r.mul(vAO), farAO.look.aoStrength);
+    fm.aoNode = aoK;
+    fm.colorNode = C.element(id).mul(mix(float(1), aoK, farAO.look.aoDirect ?? float(0)));
+  } else {
+    fm.colorNode = C.element(id);
+    if (aoTex) fm.aoNode = mix(float(1), texture(aoTex, uv(1)).r, aoMix);
+  }
   fm.name = `${name || level.name} far (merged)`;
   const mesh = new THREE.Mesh(merged, fm);
   mesh.name = `${level.name}-merged`;
