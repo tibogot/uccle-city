@@ -549,12 +549,13 @@ def build_car(cid, sp, detail):
     elif detail == 1:
         base = [0, 1.0, 1.6, 1.9, 2.0, 2.5, 3.0]; tol = 0.15
     else:
-        base = [0, 1.0, 1.6, 2.0, 3.0]; tol = 9
+        base = [0, 1.0, 2.0, 3.0]; tol = 9
     regions = {"front": [], "rear": []}
     for end, b in (("front", bF), ("rear", bR)):
         for (name, mat, (y0, y1), (f0, f1), wrap, tag) in sp[end]:
             if detail == 2 and name not in ("head", "tail"): continue
             if detail == 1 and (mat == "paint_seam" or name in ("fog", "refl", "intake")): continue
+            if detail == 2: f0 = 0.5                       # (LOD2: one lamp column for the head and the tail lamps)
             regions[end].append(dict(name=name, mat=mat, s=(round(s_of_y(b, y0), 4), round(s_of_y(b, y1), 4)), f=(f0, f1), wrap=wrap, tag=tag))
     anchors = {0.0, 2.0, 3.0}
     f_in = 1 - cab["inset"] / mid["xE"] - 0.004
@@ -616,7 +617,7 @@ def build_car(cid, sp, detail):
     k_arch = 8 if detail == 0 else 4 if detail == 1 else 2
     for a in (WZ, -WZ):
         for i in range(k_arch + 1): zs.append(a + archR * math.cos(i / k_arch * math.pi))
-    zs += [cab["cowl"], cab["deck"]]
+    if detail < 2: zs += [cab["cowl"], cab["deck"]]
     seams = []
     if detail == 0:
         for z in sp["doors"]: zs += [z + 0.003, z - 0.003]; seams.append(z)
@@ -849,8 +850,8 @@ def build_car(cid, sp, detail):
     for t in ([0.75, 0.45, 0.18] if detail == 0 else [0.5] if detail == 1 else []): zc.append(lerp(cab["deck"], cab["roofRear"], t))
     z_sail = cab["cowl"] - cab["sail"]
     pills = [tuple(p) for p in cab["pillars"]]
-    zc += [z_sail, cab["glassEnd"]]
     if detail < 2:
+        zc += [z_sail, cab["glassEnd"]]
         for a, b, m in pills: zc += [a, b]
     if police and detail < 2: zc += [b for b in blocks if cab["cowl"] > b > cab["deck"]]
     if sp.get("cargo") and detail == 0:
@@ -888,6 +889,8 @@ def build_car(cid, sp, detail):
         elif z1 <= cab["roofRear"] + 1e-4:                   # backlight stations
             if top: (mat, tag) = ("paint", None) if cargo else (back_glass, "bl")
             elif side and z0 >= cab["glassEnd"] - 1e-4 and not cargo: mat, tag = side_rear, "side"
+        elif detail == 2:
+            if side and not cargo: mat, tag = "glass", "side"           # (the stand-in: one window band)
         else:
             if side and z0 >= cab["glassEnd"] - 1e-4 and z1 <= z_sail + 1e-4:
                 mat, tag = ("glass" if zmid > (pills[0][0] if pills else -9) else side_rear), "side"
@@ -1037,8 +1040,8 @@ def build_wheel(sp, detail):
     RW, TW, RR = sp["wheelR"], sp["tyreW"], sp["rimR"]
     h = TW / 2
     if detail == 2:
-        lathe(w, [(RW * 0.97, h), (RW * 0.97, -h)], 6, lambda k, s: M["tyre"])
-        w.quad([w.v((h, RW * 0.97 * math.cos(2 * math.pi * s / 6), RW * 0.97 * math.sin(2 * math.pi * s / 6))) for s in range(6)][::-1], M["rim_dark"])
+        lathe(w, [(RW * 0.97, h), (RW * 0.97, -h)], 5, lambda k, s: M["tyre"])
+        w.quad([w.v((h, RW * 0.97 * math.cos(2 * math.pi * s / 5), RW * 0.97 * math.sin(2 * math.pi * s / 5))) for s in range(5)][::-1], M["rim_dark"])
         return w.obj("wheel2", weld=True)
     N = 18 if detail == 0 else 8
     if detail == 0:
