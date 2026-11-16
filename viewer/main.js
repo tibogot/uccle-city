@@ -130,6 +130,9 @@ const EARLY_PACE_OLD = params.get("earlypace") === "old";
 // perf8: when the play loader takes over from the boot cover (a ?game= start, the free-roam hold), the cover lifts once the
 // node graphs are built: the pipelines' compiles, the first view's compile jobs, the loading flight's landing and the
 // GPU check run under the play loader beside the ring's tiles (warmup.js warmBoot lift; ?coverlift=old: as before)
+// perf8: the play loader also waits for the lamp shadows' by-day warm-up of the casters the area brought (cityNight.js), run at
+// once under the loader (?nighthold=old: 4 s after each was tagged, whenever that is: one ~150 ms frame ~8 s into play)
+const NIGHT_HOLD = params.get("nighthold") !== "old";
 const COVER_LIFT = params.get("coverlift") !== "old" && PLAY_LOADER && params.get("warmup") !== "0" && (GAME_START || BOOT_HOLD);
 // perf8: a ?game= boot no longer loads the start tile's ring as FAR tiles under the cover: the play loader then waits for
 // that whole ring in FULL anyway (settlering), so the far versions were built, drawn once and thrown away (the cover's
@@ -1163,7 +1166,7 @@ async function main() {
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   if (!NIGHT) updaters.push(lampLightPool(scene));   // the city's lamp lights: ONE fixed pool for the session (light count never changes)
-  else cityNight = nightMod.startCityNight({ scene, renderer, updaters, groundAt: (x, z) => world.surface(x, z), log });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
+  else cityNight = nightMod.startCityNight({ scene, renderer, updaters, groundAt: (x, z) => world.surface(x, z), log, holding: NIGHT_HOLD ? () => playLoader.active : null });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
   updaters.push(updateSignals);           // the signal heads' cycle (viewer/traffic/signals.js), shared with the traffic
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
@@ -2063,7 +2066,7 @@ async function main() {
       // and no long frame for 1.5 s: their GLB parse / build / compile would otherwise land in the first minute of play
       // (perfgame round 2, ?settlejobs=loads: the far landmarks' COMPILE jobs are not waited for: 25-37 s
       // of serial compile queue after the cover; once loaded they compile in slices and show when done, the pipelines async)
-      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000);
+      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000 && !(NIGHT_HOLD && cityNight?.warmPending?.()));   // (perf8 ?nighthold=old: the lamp-shadow warm-up of what the area brought done too)
       const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
       // (perf8 debug: when each condition first held, ms after the start of the hold: window.__areaTrace)

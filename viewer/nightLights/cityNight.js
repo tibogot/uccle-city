@@ -263,7 +263,7 @@ const EMPTY = () => ({ x: new Float32Array(0), y: new Float32Array(0), z: new Fl
  * Steps 1-3. scene: the city scene; updaters: main.js' per-frame list (the night update runs after the traffic's);
  * returns { addTile, removeTile, setTraffic, setDriver, stats, ... }.
  */
-export function startCityNight({ scene, renderer, updaters, groundAt = null, log = console.log }) {
+export function startCityNight({ scene, renderer, updaters, groundAt = null, log = console.log, holding = null }) {
   const lamps = new LampRegistry();
   // step 2: the K shadowed lamps - created now, before the warm-up, never removed
   const shadowLights = [];
@@ -563,7 +563,9 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     }
     if (!warmList.length || frames < 4) return;
     // the due ones (tagged WARM_DELAY ago) join WARM_LAYER; the list is in tag order (objects and times interleaved)
-    const due = performance.now() - WARM_DELAY;
+    // (perf8: while the play loader covers the screen no tile fades in (main.js holdfast): warmed at once, so the play
+    // loader can wait for it: the traffic batches' ~50 lamp-shadow node builds landed ~8 s after the reveal, one 150 ms frame)
+    const due = performance.now() - (holding?.() ? 0 : WARM_DELAY);
     let k = 0;
     const retry = [];
     while (k < warmList.length && warmList[k + 1] <= due) {
@@ -1064,6 +1066,8 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     setTram: (t) => { tram = t; },
     debug: dbg,                        // (?nightdebug=1: the pop metric, its worst events)
     /** (checks) queue every lamp-shadow caster for the next by-day warm-up */
+    /** perf8: casters queued for the lamp-shadow warm-up (first tries only) + a warm render in progress: main.js areaReady waits for 0 */
+    warmPending: () => { let n = warming ? 1 : 0; for (let i = 0; i < warmList.length; i += 2) if (!warmList[i].userData.__nightWarmTries) n++; return n; },
     rewarm: () => { const t = performance.now() - WARM_DELAY; scene.traverse((o) => { if (o.isMesh && o.layers.isEnabled(LAMP_SHADOW_LAYER)) warmList.push(o, t); }); return warmList.length / 2; },
     /** the car-lamp offsets in use (check: forward z > 0 for the head, < 0 for the tail) */
     lampOffsets: () => [...lampsOf.entries()].map(([k, v]) => ({ type: traffic?.T?.types?.[k]?.name, ...v })),
