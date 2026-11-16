@@ -25,6 +25,7 @@ function town({ block = true, roof = true, tree = true } = {}) {
   };
   return {
     floor: base,
+    ground: () => 0,
     column(x, z, y) {
       o.ceil = Infinity; o.brush = 0; o.tree = null; o.ceilTree = null;
       let h = base(x, z);
@@ -180,6 +181,13 @@ for (const [name, M, assisted] of [["round 3", NEW, true], ["round 2 (old)", OLD
 {
   const r = run(NEW, { start: [0, 100, 0, 0, 14, 0], T: 30, world: open, script: (t, I, b) => { if (t === 0) b.stamina = 0; } });
   check("hold when exhausted", r.b.stamina > 0.1 && r.b.pos.y > 85 && r.b.V > 9, `after 30 s: stamina ${f1(r.b.stamina, 2)}, y ${f1(r.b.pos.y)}, V ${f1(r.b.V)}`);
+}
+// 16c. hands off toward a rising hill (+10 %): the height over the ground is kept
+{
+  const hill = { floor: (x, z) => Math.max(0, -z - 100) * 0.1 };
+  const r = run(NEW, { start: [0, 20, 0, 0, 14, 0], T: 40, world: hill });
+  const agl = r.b.pos.y - hill.floor(r.b.pos.x, r.b.pos.z);
+  check("hold follows rising ground", r.contacts === 0 && agl > 15, `after 40 s: ${f1(-r.b.pos.z, 0)} m on, ground ${f1(hill.floor(r.b.pos.x, r.b.pos.z))} m, height over it ${f1(agl)} m`);
 }
 // 17. cost
 {

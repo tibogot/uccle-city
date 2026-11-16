@@ -8,7 +8,8 @@
 //   steer     mouse aim (pointer lock): the heading toward the aim; A / D (stick x): a turn at up to ~1 rad/s; the bank
 //             is chosen for that turn (coordinated, at most 60 deg); hands off = wings level
 //   height    hands off = ALTITUDE HOLD (the height when you let go, captured with a little lead; rising air lifts it:
-//             circle in a thermal and the bird climbs with it); W / S (stick y): a
+//             circle in a thermal and the bird climbs with it; rising ground lifts it: the height over the terrain is
+//             kept up hills, never lowered); W / S (stick y): a
 //             gentle descent / climb (20 deg); the mouse aim's pitch (past 4 deg) the same; Space: a flapping climb
 //   speed     auto-flapping toward a cruise of ~14 m/s (light beats: they cost little stamina, see flightModel.js
 //             `assisted`), no flapping in a descent; Space = full beats (the stamina gauge)
@@ -39,6 +40,7 @@ export const ASSIST = {
   pathRate: 1.6,           // rad/s: at most
   hold: 0.9,               // 1/s: height error -> vertical speed (at most +-3.5 m/s)
   clear: 2.5,              // m: the avoid assist's clearance over a roof / crown / the ground
+  minAgl: 3,               // m: the least height over the terrain the hold keeps (terrain following, up only)
   probes: [0.6, 1.2, 2.0], // s ahead
 };
 
@@ -98,9 +100,17 @@ export class FlightAssist {
       if (gam < -0.12 && V > 20) { holding = false; gd = 0; mode = "pullout"; } else this.pull = false;
     }
     if (holding) {
-      if (this.hT == null) this.hT = y + clamp(f.vel.y * 0.6, -4, 4);
+      if (this.hT == null) { this.hT = y + clamp(f.vel.y * 0.6, -4, 4); this.agl0 = Math.max(this.hT - groundAt(world, f.pos.x, f.pos.z), P.minAgl); }
       // rising air (a thermal, a façade's updraft) lifts the held height with it: soaring stays free
       if (f.lift > 0.3 && y > this.hT) this.hT = y;
+      // rising GROUND lifts it too (browser check: hands off from the eyrie, the bird held 96 m TAW into the wooded hill
+      // to the north-west, 400 m on, and ended in the trees): the height over the terrain when let go is kept over the
+      // terrain here and 1.5 / 3 s ahead, never lowered (a low pass down a street stays low; roofs and crowns: avoid)
+      if (world) {
+        const vx = f.vel.x, vz = f.vel.z;
+        const g = Math.max(groundAt(world, f.pos.x, f.pos.z), groundAt(world, f.pos.x + vx * 1.5, f.pos.z + vz * 1.5), groundAt(world, f.pos.x + vx * 3, f.pos.z + vz * 3));
+        if (g + this.agl0 > this.hT) this.hT = g + this.agl0;
+      }
       const vz = clamp(P.hold * (this.hT - y), -3.5, 3.5);
       gd = Math.asin(clamp(vz / Math.max(V, 4), -0.5, 0.5));
       if (mode === "level") mode = "hold";
@@ -114,14 +124,19 @@ export class FlightAssist {
     let avoid = 0;
     if (this.avoid && world) {
       const vx = f.vel.x, vy = f.vel.y, vz = f.vel.z, vh = Math.max(Math.hypot(vx, vz), 1);
-      let gNeed = -Infinity, tall = false;
+      let gNeed = -Infinity, gMax = Infinity, tall = false;
+      const clr = ov ? 1 : P.clear;                                        // (a strike may go lower)
       for (let k = 0; k < P.probes.length; k++) {
         const T = P.probes[k], s = Math.max(T, (5 + 4 * k) / vh);          // at least 5 / 9 / 13 m ahead when slow
         const px = f.pos.x + vx * s, pz = f.pos.z + vz * s, py = y + vy * s;
-        const fl = floorAt(world, px, pz, Math.max(py, y));
-        const clr = ov ? 1 : P.clear;                                      // (a strike may go lower)
-        const need = fl + clr - py;
-        if (need <= 0) continue;
+        let fl, ce;
+        if (world.column) { const c = world.column(px, pz, Math.max(py, y)); fl = c.floor; ce = c.ceil; } else { fl = world.floor(px, pz); ce = Infinity; }
+        // a ceiling ahead (a crown's underside, an arch): stay under it (browser check: the climb over a low obstacle
+        // took the bird up into the crowns over the Place)
+        if (ce < py + 1.2) { const g = Math.atan2(ce - 1.5 - y, vh * s); if (g < gMax) gMax = g; }
+        if (fl + clr <= py) continue;
+        // blocked on the path's slope but free at the present height: just level off
+        if (vy < -0.5 && world.column) { const c = world.column(px, pz, y); if (y >= c.floor + clr && y <= c.ceil - 1.2) { if (gNeed < 0) gNeed = 0; continue; } }
         const g = Math.atan2(fl + clr - y, vh * s);
         if (g > gNeed) gNeed = g;
         if (g > 0.55) tall = true;
@@ -139,6 +154,7 @@ export class FlightAssist {
         C.fold = Math.min(C.fold, 0.5); this.pull = true; gNeed = Math.max(gNeed, 0); mode = "pullout";
         if (!I.stoop && gam > -0.05) this.guard = false;
       }
+      if (gMax < gd && gMax >= gNeed) { gd = gMax; avoid = 1; mode = "avoid"; if (holding) this.hT = null; }
       if (gNeed > -Infinity && gNeed > gd) {
         gd = Math.min(gNeed, 0.6); avoid = 1; mode = "avoid";
         if (holding) this.hT = null;
@@ -184,4 +200,5 @@ export class FlightAssist {
 }
 
 /** the solid under height y at (x, z): the city's column (crowns, arches), else the floor */
+function groundAt(world, x, z) { return world.ground ? world.ground(x, z) : world.floor(x, z); }
 function floorAt(world, x, z, y) { return world.column ? world.column(x, z, y).floor : world.floor(x, z); }
