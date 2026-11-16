@@ -46,7 +46,7 @@ import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- up
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft, compileJobNames } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -79,7 +79,7 @@ import { setAORenderer } from "./aoTexture.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
-import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
+import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
@@ -1601,7 +1601,7 @@ async function main() {
     // (perfgame: among tiles of the same ring step, the one nearest the PLAYER first: the street ahead before the far
     // corner of the ring; ?streamorder=old: the manifest's order)
     const gapP = (t) => Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1], t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
-    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b) || (STREAM_ORDER ? gapP(a) - gapP(b) : 0));
+    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => (STREAM_ORDER ? Math.round(dist(a)) - Math.round(dist(b)) || gapP(a) - gapP(b) : dist(a) - dist(b)));
     // the worker pool builds the next wanted tiles in parallel (one per worker); builds of tiles no longer wanted go
     for (const key of [...tilePrefetch.keys()]) if (key.endsWith("|0") && !want.some((t) => `${t.name}|0` === key)) tilePrefetch.delete(key);
     if (bootRing) bootRing = bootRing.filter(([e, isLite]) => isLite || want.includes(e));   // the boot prefetch: only tiles still wanted
@@ -1782,7 +1782,10 @@ async function main() {
   // pipeline compiling (asyncPipes.js), and `quiet` consecutive frames rendered so (the frames behind the play loader
   // are the warm-up: whatever the first view draws builds its shader there). Reports progress to the play loader.
   // At most maxMs (a slow machine still gets to play). Returns what it waited for.
-  const areaReady = async ({ x, z, near = 300, liteNear = 600, nearModels = 900, quiet = 8, maxMs = 45000, label = "" } = {}) => {
+  let liteHold = 0, bootSettled = false, lastLongFrame = 0;
+  try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.duration > 200) lastLongFrame = performance.now(); }).observe({ type: "long-animation-frame" }); } catch { /* no LoAF: settle on the queue only */ }
+  const areaReady = async ({ x, z, near = 300, liteNear = 600, nearModels = 900, quiet = 8, maxMs = 45000, label = "", settle = !bootSettled } = {}) => {
+    if (settle) maxMs += 25000;
     const t0 = performance.now();
     openHoldWorkers(2);
     const built = manifest.tiles.filter((t) => t.status !== "missing");
@@ -1793,28 +1796,45 @@ async function main() {
     // the far tiles the first views can reach (within liteNear of the point; the rest of the far ring fades in later, km away)
     const needLite = built.filter((t) => { const [tx, tz] = ctr(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T <= far + 0.01 && gap(t) <= liteNear; }).map((t) => t.name);
     const has = (n) => world.tiles.some((t) => t.name === n);
+    const needSet = new Set(needFull);
     let q = 0, frames = 0, maxPipes = 1, maxJobs = 1;
     const st = { full: 0, lite: 0, jobs: 0, pipes: 0 };
     while (performance.now() - t0 < maxMs) {
       if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
+      // the far tiles the area needs, 4 at a time beside the stream (it adds them 2 per full tile step: ~25 s for a ring)
+      for (const n of needLite) {
+        if (liteHold >= 4) break;
+        if (has(n) || lite.has(n) || pending.has(n)) continue;
+        const t = built.find((e) => e.name === n);
+        pending.add(n); liteHold++;
+        loadLiteTile(t, liteGroup).then((l) => { if (has(n)) l.dispose(); else { lite.set(n, l); fader.fade(l.group, +1); } }, (e) => log(`far tile ${n} failed: ${e.message}`))
+          .finally(() => { pending.delete(n); liteHold--; });
+      }
       await new Promise((r) => requestAnimationFrame(() => r()));
       frames++;
       st.full = needFull.filter(has).length;
+      st.missing = needFull.filter((n) => !has(n)).concat(needLite.filter((n) => !has(n) && !lite.has(n)).map((n) => `${n}(far)`)).join(" ");
       st.lite = needLite.filter((n) => has(n) || lite.has(n)).length;
       st.jobs = compileJobsLeft((names) => nearModel(names, x, z, nearModels)); st.pipes = window.__asyncPipes?.pending ?? 0;
       maxJobs = Math.max(maxJobs, st.jobs); maxPipes = Math.max(maxPipes, st.pipes);
-      const tilesOk = st.full === needFull.length && st.lite === needLite.length && !fader.busy;
-      const gpuOk = st.jobs === 0 && st.pipes === 0;
+      // (only the needed tiles' fades: the rest of the ring keeps streaming in behind, far from the spawn)
+      const fading = fader.list.some((f) => needSet.has(String(f.obj.name).split("-")[0]));
+      const tilesOk = st.full === needFull.length && st.lite === needLite.length && !fading;
+      // settle (a game right after the boot): the far landmarks' staggered loads after the cover (bootGate.js) done too,
+      // and no long frame for 1.5 s: their GLB parse / build / compile would otherwise land in the first minute of play
+      const settled = !settle || (gatesPending() === 0 && compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0 && performance.now() - lastLongFrame > 1500);
+      const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
       // the bar: tiles 70 %, shaders 25 %, the quiet frames the rest
       const f = 0.7 * ((st.full + 0.25 * st.lite) / Math.max(1, needFull.length + 0.25 * needLite.length)) + 0.25 * (tilesOk ? 1 - (st.jobs + st.pipes) / (maxJobs + maxPipes) : 0) + 0.05 * (q / quiet);
-      const line = st.full < needFull.length ? `Building the streets (${st.full} / ${needFull.length})` : st.lite < needLite.length ? "Loading the neighbourhood" : !gpuOk ? `Compiling shaders${st.jobs + st.pipes ? ` (${st.jobs + st.pipes} left)` : ""}` : "Drawing the first frames";
+      const line = st.full < needFull.length ? `Building the streets (${st.full} / ${needFull.length})` : st.lite < needLite.length ? "Loading the neighbourhood" : st.jobs + st.pipes ? `Compiling shaders (${st.jobs + st.pipes} left)` : !settled ? "Placing the landmarks" : "Drawing the first frames";
       playLoader.progress(f, line);
       if (q >= quiet) break;
     }
     closeHoldWorkers();
+    if (q >= quiet) bootSettled = true;
     const r = { ms: Math.round(performance.now() - t0), frames, full: needFull.length, lite: needLite.length, ok: q >= quiet, ...st };
-    log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : " (time limit)"}`);
+    log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : ` (time limit; missing: ${st.missing || "-"}, fading ${fader.busy ? fader.list.map((f) => `${f.obj.name}${f.obj.userData.compiling ? "*" : ""}`).slice(0, 6).join(",") : 0}, jobs ${st.jobs} [${compileJobNames().slice(0, 14).join(",")}], pipelines ${st.pipes})`}`);
     window.__areaReady = r;
     return r;
   };

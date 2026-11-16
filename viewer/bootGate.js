@@ -26,7 +26,9 @@ export const GATED = {
   tunnel_brasserie: [-1474, 2403], tunnel_kleindal: [-662, 2867],
 };
 
-let start = null, lifted = false, liftResolve = null, queued = 0;
+let start = null, lifted = false, liftResolve = null, queued = 0, released = 0;
+/** perfgame (main.js areaReady, a game boot): far models still waiting for their staggered start after the cover */
+export const gatesPending = () => queued - released;
 const liftP = new Promise((r) => { liftResolve = r; });
 
 /** main.js, before the landmarks start: the start tile's bounds (city metres) and the ring the boot loads (tiles) */
@@ -46,7 +48,7 @@ export function whenNeeded(id) {
   const margin = 150;                       // a model straddling the ring's edge counts as inside
   if (p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin) return Promise.resolve();
   const k = queued++;
-  return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER)));
+  return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER))).finally(() => { released++; });
 }
 
 // boot3 (docs/BOOT.md section 5): which precompile jobs the FIRST VIEW needs (warmup.js warmBoot / bootQuiet): a job whose
@@ -75,14 +77,14 @@ export function neededAtReveal(names) {
   });
 }
 
-/** perfgame (the play loader, main.js areaReady): does a precompile job with these root names belong to a model within
- *  r m of (x, z)? Unknown names (tiles' groups, generic roots) count as near (true): only the far landmarks are left out */
+/** perfgame (the play loader, main.js areaReady): does a precompile job with these root names belong to a landmark /
+ *  hero bridge within r m of (x, z)? (other jobs: the tiles' own, checked through their groups, or roots that are not
+ *  on screen until compiled) */
 export function nearModel(names, x, z, r = 900) {
   return names.some((n) => {
-    let k = ROOT_KEY(String(n || ""));
+    let k = ROOT_KEY(String(n || "").replace(/-(fade|warm)$/, ""));
     if ((k === "stjob" || k === "calevoet") && String(n).startsWith("bridge-")) k = `rail:${k}`;
     const p = GATED[k];
-    if (!p) return true;
-    return Math.hypot(p[0] - x, p[1] - z) < r;
+    return !!p && Math.hypot(p[0] - x, p[1] - z) < r;
   });
 }
