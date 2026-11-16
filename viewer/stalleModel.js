@@ -139,7 +139,7 @@ export function sourceMaterial(name, lib, opts = {}) {
   if (lib && !NEW_NAMES.includes(name)) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[stalle] library failed on "${name}":`, e.message); }
-    if (!m) console.warn(`[stalle] library has no "${name}": temporary material`);
+    if (!m) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("stalle", name);   // (shipped.js: a slot with no shipped set keeps its own look)
   }
   return m ?? (TEMP[name] ?? TEMP.stone_white)(opts);
 }

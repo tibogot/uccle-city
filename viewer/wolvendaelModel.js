@@ -146,7 +146,7 @@ function sourceMaterial(name, lib) {
   if (lib) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[wolvendael] library failed on "${name}":`, e.message); }
-    if (!m) console.warn(`[wolvendael] library has no "${name}": temporary material`);
+    if (!m) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("wolvendael", name);   // (shipped.js: a slot with no shipped set keeps its own look)
   }
   return m ?? (TEMP[name] ?? TEMP.render_white_lime)();
 }

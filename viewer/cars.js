@@ -10,7 +10,7 @@
 import * as THREE from "three/webgpu";
 import { carFleet, assignTypes } from "./carFleet.js";
 import { attribute, instancedBufferAttribute, mix, vec3, float } from "three/tsl";
-import { ROAD_TYPES, resolveStack, layoutAt } from "../vendor/roads/roadCrossSection.js";
+import { carSites } from "./streets/parkPlace.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const PALETTE = [
@@ -60,59 +60,25 @@ function carGeometry() {
   return mergeGeometries(parts);
 }
 
-/** The parking slots: [{ x, z, yaw, c }] (yaw: local +x = the bonnet along the traffic). `place(x, z, yaw)`
- *  (?roads=surface, viewer/streetFit.js): moves a parked car against the measured kerb, or drops it (null) when it would
- *  not stand wholly on the carriageway. */
-function carSites(roads, feats, bounds, place) {
-  const N = new Map(roads.nodes.map((n) => [n.id, n]));
-  const avoid = (feats.points || []).filter((p) => p.kind === "crossing" || p.kind === "bus_stop" || p.kind === "traffic_signals")
-    .map((p) => [p.x, p.z, p.kind === "bus_stop" ? 15 : 10]);
-  // never on a tram reservation: drop slots within 3 m of an OSM tram track or platform
-  const rails = [];
-  for (const l of feats.lines || []) if (l.kind === "tram" || l.kind === "platform") for (let i = 1; i < l.line.length; i++) rails.push([...l.line[i - 1], ...l.line[i]]);
-  const onRails = (x, z) => rails.some(([ax, az, bx, bz]) => {
-    const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
-    return (ax + dx * t - x) ** 2 + (az + dz * t - z) ** 2 < 9;
-  });
-  const sites = [];
-  for (const r of roads.roads) {
-    if (!ROAD_TYPES[r.type] || r.meta?.highway === "service") continue;
-    let stack;
-    try { stack = resolveStack(r); } catch { continue; }
-    if (![...stack.sides.left, ...stack.sides.right].some((l) => l.type === "parking")) continue;
-    const pts = [N.get(r.a), ...r.pts, N.get(r.b)].filter(Boolean);
-    let total = 0;
-    const segL = [];
-    for (let i = 1; i < pts.length; i++) { const L = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); segL.push(L); total += L; }
-    let s = 12, seg = 0, acc = 0, k = 0;
-    while (s < total - 12) {
-      while (seg < segL.length - 1 && acc + segL[seg] < s) acc += segL[seg++];
-      const a = pts[seg], b = pts[seg + 1], L = segL[seg] || 1, tt = (s - acc) / L;
-      const dx = (b.x - a.x) / L, dz = (b.z - a.z) / L, lx = dz, lz = -dx;      // the road engine's left normal
-      const lay = layoutAt(stack, s, total);
-      for (const side of ["left", "right"]) {
-        const lane = lay[side].find((l) => l.type === "parking" && l.w > 1.6);
-        if (!lane) continue;
-        const off = (lane.tIn + lane.tOut) / 2;                                     // signed, left positive
-        let x = a.x + (b.x - a.x) * tt + lx * off, z = a.z + (b.z - a.z) * tt + lz * off;
-        const hv = hash(x * 0.37, z * 0.53 + k);
-        // right-hand traffic: cars face the direction of their side's traffic
-        let fwd = side === "right" ? Math.atan2(-dz, dx) : Math.atan2(dz, -dx);
-        if (place) {
-          const p = place(x, z, fwd);
-          if (!p || sites.some((q) => (q.x - p.x) ** 2 + (q.z - p.z) ** 2 < 25)) { k++; continue; }
-          x = p.x; z = p.z; fwd = p.yaw;
-        }
-        const ok = hv < 0.65 && x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1
-          && !avoid.some(([ax, az, rr]) => (ax - x) ** 2 + (az - z) ** 2 < rr * rr) && !onRails(x, z);
-        if (ok) sites.push(place ? { x, z, yaw: fwd + (hv - 0.3) * 0.02, c: Math.floor(hash(z, x) * PALETTE.length) }
-          : { x: x + dx * (hv - 0.3) * 0.6, z: z + dz * (hv - 0.3) * 0.6, yaw: fwd + (hv - 0.3) * 0.04, c: Math.floor(hash(z, x) * PALETTE.length) });
-        k++;
-      }
-      s += 5.6;
-    }
-  }
-  return sites;
+// WHEELS ON THE GROUND (citydefects 2026-11-16, owner playtest: "cars sunk into the road on slopes"). A parked car stood
+// level at its centre's height: on Uccle's slopes (8-12 %) one axle was 20-30 cm in the road and the other in the air.
+// Now its four wheels' contact points are sampled, the car pitched and rolled to their plane (front / rear, left / right
+// means) and lifted until no wheel is under the ground. ?carfit=old: level, as before.
+const CARFIT_OLD = typeof location !== "undefined" && /[?&]carfit=old/.test(location.search);
+function wheelFit(c, ground) {
+  const [w, , l] = carFleet.sizeOf(c.type);
+  const hb = l * 0.31, ht = Math.max(0.6, w / 2 - 0.12);           // half wheelbase, half track (m)
+  const fx = Math.sin(c.heading), fz = Math.cos(c.heading), rx = fz, rz = -fx;   // bonnet (+z model) and its side
+  const at = (a, b) => ground(c.x + fx * a + rx * b, c.z + fz * a + rz * b);
+  const fl = at(hb, ht), fr = at(hb, -ht), bl = at(-hb, ht), br = at(-hb, -ht);
+  const front = (fl + fr) / 2, back = (bl + br) / 2, left = (fl + bl) / 2, right = (fr + br) / 2;
+  c.pitch = -Math.atan2(front - back, 2 * hb);                     // nose up: a negative turn about the car's X
+  c.roll = Math.atan2(left - right, 2 * ht);
+  // the plane through the means, then up by the worst wheel still under it (a twisted patch of road)
+  const mid = (front + back) / 2, sp = (front - back) / (2 * hb), sr = (left - right) / (2 * ht);
+  let lift = 0;
+  for (const [a, b, g] of [[hb, ht, fl], [hb, -ht, fr], [-hb, ht, bl], [-hb, -ht, br]]) lift = Math.max(lift, g - (mid + sp * a + sr * b));
+  c.y = mid + lift + 0.005;
 }
 
 /** The old box cars (?cars=box): one InstancedMesh per tile. */
@@ -145,8 +111,9 @@ function buildBoxCars(sites, ground) {
 
 const CARS_MODE = new URLSearchParams(location.search).get("cars");
 /** One tile's parked cars: { group, count }. The group holds the collider boxes; the fleet draws the cars. */
-export function buildCars(roads, feats, ground, bounds, { place = null, twoWheel = null } = {}) {
-  let sites = carSites(roads, feats, bounds, place);
+export function buildCars(roads, feats, ground, bounds, { place = null, twoWheel = null, filter = null } = {}) {
+  let sites = carSites(roads, feats, bounds, place, PALETTE.length);
+  if (filter) sites = filter(sites);                 // (main.js: off the traffic lanes, the street left open: streets/parkPlace.js parkingClear)
   // (motorbike round 2: some slots go to parked motorbikes / scooters, viewer/moto/cityTwoWheelers.js: twoWheel(sites)
   // -> the indices it takes; their sites come back in twoSites)
   let twoSites = [];
@@ -172,6 +139,7 @@ export function buildCars(roads, feats, ground, bounds, { place = null, twoWheel
     heading: s.yaw + Math.PI / 2,                      // the model's +z (its bonnet) along the box car's +x
     type: types[i], pv: hash(s.z * 0.31, s.x * 0.97), room: room[i],
   }));
+  if (!CARFIT_OLD) for (const c of cars) wheelFit(c, ground);
   // collider boxes: a unit box (x, z in -0.5..0.5, y 0..1) scaled per car to its type's size, oriented like the car
   const col = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), new THREE.MeshBasicNodeMaterial(), cars.length);
   col.name = "parked-cars";

@@ -28,3 +28,13 @@ export function getMaterial(name) {
 export const DEFS = new Proxy(LIB_DEFS, { get: (t, k) => (typeof k === "string" && shipped(k) ? t[k] : undefined), has: (t, k) => typeof k === "string" && shipped(k) });
 
 export { scanLook, MATERIAL_NAMES, weatherOpts, meanColour, SCANS };
+
+// THE "OWN LOOK" NOTE (citydefects 2026-11-16, owner: the heroes log "library has no zinc_roof: temporary material" at
+// load). That is the documented choice above, not a fault: a slot without a SHIPPED set keeps the consumer's own
+// material (zinc, glass, painted / cast iron, painted wood, gravel, lawn: CC0 candidates exist in candidates.json, none
+// promoted yet: docs/CITYDEFECTS.md). One info line per consumer, listing its slots, instead of a warning per slot.
+const own = new Map();
+export function ownLook(consumer, name) {
+  if (!own.has(consumer)) { own.set(consumer, new Set()); queueMicrotask(() => console.info(`[${consumer}] own materials for ${[...own.get(consumer)].join(", ")} (no shipped library set yet: viewer/materials/shipped.js)`)); }
+  own.get(consumer).add(name);
+}

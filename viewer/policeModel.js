@@ -162,7 +162,7 @@ function sourceMaterial(name, lib) {
   if (lib) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[police] library failed on "${name}":`, e.message); }
-    if (!m) console.warn(`[police] library has no "${name}": temporary material`);
+    if (!m) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("police", name);   // (shipped.js: a slot with no shipped set keeps its own look)
   }
   return m ?? (TEMP[name] ?? TEMP.brick_yellow)();
 }

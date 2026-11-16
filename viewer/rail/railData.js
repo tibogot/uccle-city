@@ -243,7 +243,7 @@ export function underpassCut(heroes, grids, hdr) {
 }
 
 /** In place on Y (cols x rows heights). Returns { moved, dirty: Int32Array of changed cells }. */
-export function carveGrid(doc, Y, hdr, bounds, heroes = []) {
+export function carveGrid(doc, Y, hdr, bounds, heroes = [], opts = {}) {
   const { x0, z0, cols, rows, step } = hdr;
   let moved = 0;
   const mask = new Uint8Array(cols * rows), dirty = [];
@@ -285,6 +285,24 @@ export function carveGrid(doc, Y, hdr, bounds, heroes = []) {
         const ca = Math.max(c0, Math.ceil((xs[q] - x0) / step)), cb = Math.min(c1, Math.floor((xs[q + 1] - x0) / step));
         for (let c = ca; c <= cb; c++) { const k = rr * cols + c; if (Y[k] > pf.top - 0.1) set(k, pf.top - 0.1); }
       }
+    }
+    // citydefects 2026-11-16 (?platformedge=old: none): the cells just OUTSIDE the ring too, rising back at 1:1 from
+    // 0.5 m out. The LiDAR DTM has the platform surface in it (Saint-Job: 72.1 m beside a 72.03 m top), so the terrain's
+    // 1 m triangles crossed the platform's plane along its outer edge: a stair-stepped, flickering paving outline
+    if (opts.platformEdge === false) continue;
+    const R = 1.6;
+    for (let rr = Math.max(0, r0 - 2); rr <= Math.min(rows - 1, r1 + 2); rr++) for (let c = Math.max(0, c0 - 2); c <= Math.min(cols - 1, c1 + 2); c++) {
+      const px = x0 + c * step, pz = z0 + rr * step;
+      let inside = false, best = Infinity;
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+        const [xi, zi] = r[i], [xj, zj] = r[j];
+        if ((zi > pz) !== (zj > pz) && px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi) inside = !inside;
+        const dx = xi - xj, dz = zi - zj, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((px - xj) * dx + (pz - zj) * dz) / l2));
+        best = Math.min(best, Math.hypot(xj + dx * t - px, zj + dz * t - pz));
+      }
+      if (inside || best > R) continue;
+      const target = pf.top - 0.1 + Math.max(0, best - 0.5), k = rr * cols + c;
+      if (Y[k] > target) set(k, target);
     }
   }
   // 3. the hero bridges' openings: the ground inside each arch at its floor (the 1 m DTM interpolates a slope under the

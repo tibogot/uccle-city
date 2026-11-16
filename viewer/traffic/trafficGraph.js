@@ -148,11 +148,14 @@ function roundKinks(paths) {
  * net: buildRoadNetwork result; roads: roads.json (OSM meta); feats: features.json (signal / stop / give_way points);
  * bounds: the tile's core square.
  */
-export function buildTrafficGraph(net, roads, feats, bounds, grid = null) {
+export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const t0 = performance.now();
   const raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
   const fitStats = { points: 0, moved: 0, maxShift: 0 };
-  const fitted = grid ? fitToSurface(raw, grid, fitStats) : raw;
+  // citydefects: the parked cars (viewer/streets/parkPlace.js widthParking, built in the worker too) are kept clear of:
+  // each lane slides sideways to pass them by PARK_CLEAR where the measured carriageway lets it
+  const parked = opts.parked?.length ? parkedGrid(opts.parked) : null;
+  const fitted = grid ? fitToSurface(raw, grid, fitStats, parked) : raw;
   // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
   if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
   const src = roundKinks(fitted);
@@ -320,6 +323,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null) {
     paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, nextOff, nextIdx, prevOff, prevIdx,
     holdAt, ctrl, phase, jnode, nodeOf, cfOff, cfOther, cfAt, cfOtherAt, cfYield,
     jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })),
+    ...narrowStretches(src, P),
     bounds, stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) },
   };
 }
@@ -371,14 +375,90 @@ function nearestOnLane(list, p, back, r) {
 // their entry lane at their start and of their exit lane at their end, blended along their length. The graph's
 // geometry only: the drawn markings stay the engine's.
 const CARRIAGE = [true, true, false, true, false, false, false, false, false, false];
-function fitToSurface(paths, G, st) {
+
+// NARROW STRETCHES (citydefects 2026-11-16): where the two directions of a street come closer than NARROW m (a street
+// whose free width beside its parked cars is under ~5.5 m: the lanes, kept clear of the cars, overlap), the sim lets ONE
+// direction through at a time (trafficSim.js accel: a car waits before its stretch while an oncoming car is in the
+// opposing one). CSR per path: nOff; per stretch nS0 / nS1 (m along this path), nOpp (the opposing path's index), nO0 /
+// nO1 (m along it).
+const NARROW = 2.3, END_SKIP = 6, MIN_RUN = 4, MERGE = 15;
+function narrowStretches(src, P) {
+  const pts = [], grid = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
+  const cums = src.map((p) => p.cum || cumulative(p.pts));
+  src.forEach((p, i) => {
+    if (p.kind === "connector") return;
+    const q = p.pts;
+    for (let k = 0; k < q.length; k++) {
+      const a = q[Math.max(0, k - 1)], b = q[Math.min(q.length - 1, k + 1)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      const e = { i, s: cums[i][k], x: q[k][0], z: q[k][1], tx: (b[0] - a[0]) / L, tz: (b[1] - a[1]) / L };
+      pts.push(e);
+      const kk = key(Math.floor(e.x / 4), Math.floor(e.z / 4));
+      if (!grid.has(kk)) grid.set(kk, []); grid.get(kk).push(e);
+    }
+  });
+  const hits = new Map();                         // "i,j" -> { s: [], o: [] }
+  for (const e of pts) {
+    const i0 = Math.floor(e.x / 4), j0 = Math.floor(e.z / 4);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const f of grid.get(key(i0 + di, j0 + dj)) || []) {
+      if (f.i === e.i || e.tx * f.tx + e.tz * f.tz > -0.6) continue;     // another path, the other way
+      if (e.s < END_SKIP || e.s > src[e.i].len - END_SKIP || f.s < END_SKIP || f.s > src[f.i].len - END_SKIP) continue;   // (junction mouths: the junction logic's)
+      if (Math.hypot(f.x - e.x, f.z - e.z) > NARROW) continue;
+      const h = `${e.i},${f.i}`;
+      if (!hits.has(h)) hits.set(h, { i: e.i, j: f.i, s: [], o: [] });
+      const H = hits.get(h); H.s.push(e.s); H.o.push(f.s);
+    }
+  }
+  const per = Array.from({ length: P }, () => []);
+  for (const H of hits.values()) {
+    // contiguous runs along this path; the opposing interval = the run's partners' span
+    const ord = H.s.map((v, k) => [v, H.o[k]]).sort((a, b) => a[0] - b[0]);
+    let run = [ord[0]];
+    const flush = () => {
+      if (run.length < 2 && run[0]) { run = []; return; }
+      const s0 = run[0][0], s1 = run[run.length - 1][0], os = run.map((r) => r[1]);
+      if (s1 - s0 >= MIN_RUN) per[H.i].push([s0, s1, H.j, Math.min(...os), Math.max(...os)]);
+      run = [];
+    };
+    // (gaps under MERGE m between parked cars merge: a car does not squeeze into a 10 m hole between two narrow bits,
+    // and one stretch per row of cars is one wait, not a stop-and-go per car; browser check on Avenue Alphonse XIII)
+    for (let k = 1; k < ord.length; k++) { if (ord[k][0] - ord[k - 1][0] > MERGE) { flush(); } run.push(ord[k]); }
+    flush();
+  }
+  const nOff = new Uint32Array(P + 1), list = [];
+  for (let i = 0; i < P; i++) { nOff[i] = list.length; list.push(...per[i]); }
+  nOff[P] = list.length;
+  return { nOff, nS0: Float32Array.from(list, (r) => r[0]), nS1: Float32Array.from(list, (r) => r[1]), nOpp: Int32Array.from(list, (r) => r[2]),
+    nO0: Float32Array.from(list, (r) => r[3]), nO1: Float32Array.from(list, (r) => r[4]) };
+}
+
+const PARK_CLEAR = 1.95;          // m: lane centre to a parked car's centre (two half widths + 0.15)
+function parkedGrid(sites) {
+  const g = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
+  for (const c of sites) { const k = key(Math.floor(c.x / 4), Math.floor(c.z / 4)); if (!g.has(k)) g.set(k, []); g.get(k).push(c); }
+  return {
+    clear(x, z) {
+      const i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of g.get(key(i0 + di, j0 + dj)) || []) {
+        // the car is a 4.5 x 1.8 box: along its length the clearance reaches 2.2 m further
+        const dx = x - c.x, dz = z - c.z, ax = Math.cos(c.yaw), az = -Math.sin(c.yaw);
+        const along = Math.abs(dx * ax + dz * az), across = Math.abs(dx * az - dz * ax);
+        if (along < 2.3 + 0.9 && across < PARK_CLEAR) return false;
+      }
+      return true;
+    },
+  };
+}
+
+function fitToSurface(paths, G, st, parked = null) {
   const ok = (x, z) => {
     const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step);
     if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true;          // off the raster: leave it
     const c = G.data[j * G.nx + i] - 1;
     return c >= 0 && CARRIAGE[c];
   };
-  const fits = (x, z, nx, nz, s) => ok(x + nx * s, z + nz * s) && ok(x + nx * (s + 1), z + nz * (s + 1)) && ok(x + nx * (s - 1), z + nz * (s - 1));
+  const fitsRoad = (x, z, nx, nz, s) => ok(x + nx * s, z + nz * s) && ok(x + nx * (s + 1), z + nz * (s + 1)) && ok(x + nx * (s - 1), z + nz * (s - 1));
+  // (with parked cars: also clear of them; a point no shift clears keeps the road-only fit: a narrow stretch, given way on)
+  let fits = fitsRoad;
   const shift = new Map();
   const out = new Map();
   const tangent = (q, k) => {
@@ -386,16 +466,23 @@ function fitToSurface(paths, G, st) {
     const tx = b[0] - a[0], tz = b[1] - a[1], L = Math.hypot(tx, tz) || 1;
     return [tx / L, tz / L];
   };
+  const fitsPark = (x, z, nx, nz, s) => fitsRoad(x, z, nx, nz, s) && parked.clear(x + nx * s, z + nz * s);
   for (const p of paths) {
     if (p.kind === "connector") continue;
     const q = p.pts, n = q.length, off = new Float32Array(n);
     for (let k = 0; k < n; k++) {
       const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
       st.points++;
-      if (fits(x, z, nx, nz, 0)) continue;
-      for (let s = 0.25; s <= 9; s += 0.25) {
-        if (fits(x, z, nx, nz, s)) { off[k] = s; break; }
-        if (fits(x, z, nx, nz, -s)) { off[k] = -s; break; }
+      let done = false;
+      for (const f of parked ? [fitsPark, fitsRoad] : [fitsRoad]) {
+        fits = f;
+        if (fits(x, z, nx, nz, 0)) { done = true; break; }
+        for (let s = 0.25; s <= (f === fitsPark ? 4 : 9) && !done; s += 0.25) {
+          if (fits(x, z, nx, nz, s)) { off[k] = s; done = true; }
+          else if (fits(x, z, nx, nz, -s)) { off[k] = -s; done = true; }
+        }
+        if (done) break;
+        if (f === fitsPark) st.parkBlocked = (st.parkBlocked || 0) + 1;
       }
     }
     // smooth: a wide moving average (points are ~1-2 m apart), so a lane bends gently around a misfit

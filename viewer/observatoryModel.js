@@ -108,7 +108,7 @@ export function loadObservatory(set = "observatory") {
 function sourceMaterial(slot, lib) {
   const m = lib && (lib.getMaterial?.(slot) ?? lib.materials?.[slot] ?? lib.default?.[slot]);
   if (m) return m;
-  if (lib) console.warn(`[observatory] library has no "${slot}": temporary material`);
+  if (lib) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("observatory", slot);   // (shipped.js: own look)
   return TEMP[slot]();
 }
 

@@ -63,6 +63,7 @@ import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
+import { carriageway, docOffLanes } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
 import { keepPipelinesAsync } from "./asyncPipes.js";   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
@@ -349,6 +350,11 @@ let trackProf = null, worldRef = null;
 // OSM road-bridge decks (viewer/streets/bridgeDecks.js) for walk / third person / the car: world.decks, one per bridge
 // (a bridge is in every tile whose roads.json buffer reaches it: counted, removed with its last tile)
 const bridgeDeckRefs = new Map();     // road id -> { fn, n }
+const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
+const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
+const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
+const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
+window.__carriage = carriageRefs;
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
@@ -617,7 +623,7 @@ function tileData(entry, lite = false, viaBoot = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", parkWidth: params.get("parkclear") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     cache: params.get("tilecache") !== "0" };                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
@@ -797,6 +803,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (ss) say(`road surfaces: MEASURED (UrbIS Land cover): ${ss.surfaces} polygons -> ${ss.baseTris} triangles, ${ss.kerbLength} m of kerb; engine markings clipped to them: ${ss.overlayTris} triangles; ${ss.mappedPieces} engine roads/pads on measured ground, ${ss.unmappedPieces} kept as built (${ss.keptEngineTris} + ${ss.keptSideTris} triangles); ${ss.ms} ms`);
   const R = roadMeshes(d.road);
   own.roads.add(...R.meshes);
+  // the OSM road bridges' decks this tile carries (viewer/streets/bridgeDecks.js): drawn here, walked / driven via world.decks
+  // (before the grass: a deck is a solid for it, no blades through the Carsoel deck's slab; citydefects 2026-11-16)
+  const deckMeshes = (d.bridgeDecks || []).map(bridgeDeckMesh);
+  if (deckMeshes.length) own.roads.add(...deckMeshes);
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await orthoP);
   own.terrain.add(terr);
@@ -819,7 +829,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
   const plantDoc = await plantsP;
-  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: R.meshes, buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z))].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
+  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z))].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
   // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
@@ -847,21 +857,32 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (with furniture kit 2 on, viewer/furniture2/ draws the benches and bike parkings: furniture.js keeps them for ?furniture=old)
   const dropKinds = new Set([...((cityStreetLife.on && cityStreetLife.layer) || cityStops.on ? ["bus_stop"] : []), ...(cityFurniture.on && cityFurniture.kit ? ["bench", "bicycle_parking"] : [])]);
   const furnFeats = dropKinds.size ? { ...feats, points: (feats.points || []).filter((p) => !dropKinds.has(p.kind)) } : feats;
-  const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds);
+  const onRoadDeck = (x, z) => { for (const e of bridgeDeckRefs.values()) if (e.fn(x, z) != null) return true; return false; };
+  // where cars drive (viewer/streets/carriageway.js): no garden piece, signal post or tram pole stands there
+  const drivenAt = carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck });
+  carriageRefs.set(entry.name, { test: drivenAt, bounds });   // (debug/furnitureAudit.js: window.__carriage)
+  const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds, { fit, driven: drivenAt });
   own.features.add(furn.group);
   await frame("furniture");
-  // the OSM road bridges' decks this tile carries (viewer/streets/bridgeDecks.js): drawn here, walked / driven via world.decks
-  for (const bd of d.bridgeDecks || []) own.roads.add(bridgeDeckMesh(bd));
-  const onRoadDeck = (x, z) => { for (const e of bridgeDeckRefs.values()) if (e.fn(x, z) != null) return true; return false; };
-  const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on });
+  // (the tram platforms / shelters on an OSM road deck stand on the deck, not on the cutting under it: the Saint-Job
+  // station stop on the Carsoel deck, citydefects 2026-11-16; ?bridgeplan=old as before)
+  const deckAt = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
+  const tramSurface = BRIDGE_PLAN ? (x, z) => deckAt(x, z) ?? hm.surface(x, z) + CARVE : (x, z) => hm.surface(x, z) + CARVE;
+  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt });
   own.features.add(tram.group);
-  const stopCounts = cityStops.addTile(entry.name, stopsDoc, own.features, { shelters: tram.shelterSites });
-  const furnCounts = cityFurniture.addTile(entry.name, furnDoc, own.features);
-  const skCounts = cityStreetKit.addTile(entry.name, skDoc, own.features);
+  // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
+  // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
+  const lanesAt = FURN_SNAP && fit ? carriageway(roads, { classAt: fit.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
+  const snap = (doc, paths) => { if (!lanesAt) return doc; const r = docOffLanes(doc, paths, lanesAt, fit); snapMoved += r.moved; return r.doc; };
+  let snapMoved = 0;
+  const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]]), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
+  const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]), own.features);
+  const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, [["signs"], ["posts"]]), own.features);
+  if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
   if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
-  const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z));
+  const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
   const plantCounts = cityPlants.addTile(entry.name, plantDoc, own.features, treeGround || ((x, z) => hm.surface(x, z)), B.kit);   // (on the DRAWN ground: the measured squares / medians' lift, as the trees; window boxes on the façade kit's sills)
   ivyP.then((doc) => cityIvy.addTile(entry.name, doc, own.features)).then((c) => { if (c) say(`ivy: ${c.walls} walls, ${c.leaves} leaf sprays, ${c.stems} stem pieces (worker ${c.workerMs} ms)`); });
@@ -871,14 +892,20 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("tram");
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
+  let parkDropped = 0;
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP) });
+  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP),
+    // citydefects: the slots by the measured width, built in the worker with the traffic lanes kept clear of them
+    // (d.parked: viewer/streets/parkPlace.js widthParking; ?parkclear=old: the old slots above), still kept off the
+    // furniture kits' pieces
+    filter: PARK_CLEAR && d.parked ? () => { const keep = cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear((x, z, yaw) => ({ x, z, yaw }), furnDoc), skDoc);
+      const out = d.parked.sites.filter((c) => keep(c.x, c.z, c.yaw)); parkDropped = d.parked.sites.length - out.length; return out; } : null });
   const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, (x, z) => hm.surface(x, z) + CARVE);
   if (twCounts) say(`two-wheelers: ${twCounts.bikes} parked in ${twCounts.slots} slots (viewer/moto/cityTwoWheelers.js)`);
   await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
   if (bollards) own.features.add(bollards);
-  if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs, ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);
+  if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs (${d.parked ? `by the measured width: ${JSON.stringify(d.parked.stats)}, ${parkDropped} off for furniture` : "the old slots"}), ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);
   own.features.add(cars.group);
   say(`parked cars: ${cars.count} (placed procedurally in the parking lanes)`);
   say(`tram (OSM): ${tram.counts.wireSegments} wire segments, ${tram.counts.poles} poles, ${tram.counts.platforms} platforms, ${tram.counts.shelters} shelters`);
@@ -901,6 +928,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
+    carriageRefs.delete(entry.name);
     cityStreetKit.removeTile(entry.name);           // its instances leave the street kit pools
     cityTwoWheelers.removeTile(entry.name);
     cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)

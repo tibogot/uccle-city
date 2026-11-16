@@ -28,11 +28,14 @@ const STANDIN_NAME = { shelter: "furniture-shelter", pole: "furniture-stopPole",
 /** a tile's instance arrays (x y z yaw posterA posterB 0 0) from its data/stops doc + extra shelters (tram platforms) */
 export function stopInstances(doc, extra = {}) {
   const L = { shelter: [], pole: [], adpanel: [] };
+  // extra.deckAt(x, z): the height of an OSM road deck there, or null (the build baked the bare-earth DTM: the stops on
+  // the Carsoel deck over Saint-Job station stood 6 m down in the cutting; citydefects 2026-11-16)
+  const Y = (p) => extra.deckAt?.(p.x, p.z) ?? p.y;
   for (const s of doc?.stops || []) {
-    L.pole.push(s.pole.x, s.pole.y, s.pole.z, s.pole.yaw, 0, 0, 0, 0);
-    if (s.shelter) L.shelter.push(s.shelter.x, s.shelter.y, s.shelter.z, s.shelter.yaw, s.shelter.posters[0], s.shelter.posters[1], 0, 0);
+    L.pole.push(s.pole.x, Y(s.pole), s.pole.z, s.pole.yaw, 0, 0, 0, 0);
+    if (s.shelter) L.shelter.push(s.shelter.x, Y(s.shelter), s.shelter.z, s.shelter.yaw, s.shelter.posters[0], s.shelter.posters[1], 0, 0);
   }
-  for (const p of doc?.panels || []) L.adpanel.push(p.x, p.y, p.z, p.yaw, p.posters[0], p.posters[1], 0, 0);
+  for (const p of doc?.panels || []) L.adpanel.push(p.x, Y(p), p.z, p.yaw, p.posters[0], p.posters[1], 0, 0);
   for (const s of extra.shelters || []) L.shelter.push(s.x, s.y, s.z, s.yaw, s.posters?.[0] ?? 3, s.posters?.[1] ?? 6, 0, 0);
   const out = {};
   for (const k of PIECES) if (L[k].length) out[k] = new Float32Array(L[k]);

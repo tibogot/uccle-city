@@ -91,9 +91,11 @@ class CarFleet {
   drawn(car) { return !car.hidden; }
   /** A tile's cars: [{ x, y, z, heading, type, pv }]; `group` = the tile's car group (dropped when it leaves the scene). */
   add(group, cars) {
-    const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
+    const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3(), eu = new THREE.Euler();
     for (const c of cars) {
-      c.m = new THREE.Matrix4().compose(v.set(c.x, c.y, c.z), q.setFromAxisAngle(up, c.heading), one);
+      // (pitch / roll: the parked car on its four wheels' ground, viewer/cars.js wheelFit; rotation order Y X Z)
+      if (c.pitch || c.roll) q.setFromEuler(eu.set(c.pitch || 0, c.heading, c.roll || 0, "YXZ")); else q.setFromAxisAngle(up, c.heading);
+      c.m = new THREE.Matrix4().compose(v.set(c.x, c.y, c.z), q, one);
       c.col = new THREE.Color().setHex(PAINTS[Math.floor(c.pv * PAINTS.length * 0.9999)]);
     }
     this.regs.push({ group, cars, t0: performance.now() });
