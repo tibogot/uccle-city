@@ -106,11 +106,35 @@
     "family": "modern",
     "paint": 3,
     "awning": true,
-    "canvas": 7,
+    "canvas": 8,
     "stripes": false,
     "fascia": false,
     "valanceFont": "shopSerif",
-    "valance": "TRAITEUR & VINS"
+    "valance": "TRAITEUR & VINS",
+    "frame": 2,
+    "awningStyle": "steep",
+    "awningText": "RELAIS saint-job",
+    "awningFont": "shopItalic",
+    "upperAwnings": [
+     [
+      -0.9,
+      3.95,
+      1.0,
+      "RELAIS saint-job",
+      "TRAITEUR"
+     ],
+     [
+      0.9,
+      3.95,
+      1.0,
+      "RELAIS saint-job",
+      "VINS"
+     ]
+    ],
+    "aboard": [
+     1.3,
+     1.0
+    ]
    }
   },
   "extra:relais-brasserie": {
@@ -120,11 +144,15 @@
     "family": "modern",
     "paint": 3,
     "awning": true,
-    "canvas": 7,
+    "canvas": 8,
     "stripes": false,
     "fascia": false,
     "valanceFont": "shopSerif",
-    "valance": "RELAIS SAINT-JOB"
+    "valance": "BRASSERIE",
+    "frame": 2,
+    "awningStyle": "steep",
+    "awningText": "RELAIS saint-job",
+    "awningFont": "shopItalic"
    }
   },
   "extra:relais-restaurant": {
@@ -135,11 +163,15 @@
     "family": "modern",
     "paint": 3,
     "awning": true,
-    "canvas": 7,
+    "canvas": 8,
     "stripes": false,
     "fascia": false,
     "valanceFont": "shopSerif",
-    "valance": "RELAIS SAINT-JOB"
+    "valance": "RESTAURANT",
+    "frame": 2,
+    "awningStyle": "steep",
+    "awningText": "RELAIS saint-job",
+    "awningFont": "shopItalic"
    }
   },
   "osm:n9204588938": {
