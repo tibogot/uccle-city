@@ -18,7 +18,7 @@ export const BOOT_DEFER = params.get("bootdefer") !== "0";
 const HELD = params.get("playloader") !== "old" && params.get("gamefast") !== "old" &&
   ((params.get("game") && !["0", "1"].includes(params.get("game"))) || params.get("boothold") !== "old");
 const STAGGER = HELD ? 100 : 600;
-const EARLY = params.get("landmarksearly") !== "old";
+const EARLY = params.get("landmarksearly") === "1";   // (round 3 measured: the boot cover +9-12 s for -1..-3 s of loader: OFF by default, ?landmarksearly=1 = on)
 
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)
 export const GATED = {

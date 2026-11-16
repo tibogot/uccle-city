@@ -170,3 +170,40 @@ So the "fixed" ~7-8 ms is mostly per-object submission (~390 objects), not post 
 Round 3 changes so far (code only, not measured): `?readysweep=old` (idea 4: the stale window wrapper dropped), `?compilepar=` (default 3 compile jobs in flight, 1 = before),
 `?landmarksearly=old` (far landmarks load during the boot when the loader will hold), `debug/heapAudit.js` (what
 holds the heap, by root / path, without a snapshot).
+
+## Round 3 results (2026-11-16, browser; preflight RED at start (a transient 23 % GPU load), then quiet; 1 run each)
+
+| run | round 2 (merged) | round 3 |
+|---|---|---|
+| police time to play | 52.9 s | **49.6 s** (49.7-54.6 over 3 loads), first 15 s 1 % low 53 fps, worst 33 ms |
+| police at the spawn: CPU (cache vs `?sunshadowcache=old`, same build) | 9.8-10.2 ms | **7.7-8.8 ms** |
+| police 40 s drive: CPU / 1 % low | 11.4 ms / 20.6 (cache off, same build) | **9.3-9.8 ms / 25-26** |
+| falcon time to play | 55.6 s | **48.4 s** (`landmarksearly` off); 56.5 s with it on |
+| free roam: page -> smooth city | 56.8 s | **48.9 s**, first 15 s 60 fps, CPU 7.1 ms |
+| compile queue 1 -> 3 in flight + landmarks early (police) | 59.1 s to play | 40-42 s, but the first 15 s stuttered (ring still streaming): fixed by settling on the whole ring |
+
+The sun shadow cache (`?sunshadowcache=old` = before): a frame that lays back the cache costs 0.33 ms of shadow pass, a
+full static redraw 1.91 ms; ~11 % of frames redraw (box moved ~2 m, tile fades every 3rd frame, refresh every 30): the
+shadow pass -1.5 ms, the frame -2 ms (spawn and drive). Checks: the shifted frame equals a full redraw at the same view
+(pixel diff 0.19 % > 20, the TAA noise; with the shift's sign flipped 1.6 %: the test sees an error; images
+`docs/perfgame/sunshadow_*.jpg`); no console / validation error; standing still, two frames 0.3 s apart differ by the
+same TAA noise in the old path (no visible leaf-shadow motion to freeze). Stale-after-unload / LOD switch: covered by
+the redraw triggers (tile fade, dispose, ~2 m of motion, 30 frames), not caught on screen.
+
+Switches added in round 3: `sunshadowcache`, `sunshadowrefresh`, `compilepar` (3), `landmarksearly` (OFF: measured
+worse), `settlering`, `holdparallel`, `readysweep`; tile cache read deadline 8 -> 2.5 s and connections closed on
+versionchange (the IndexedDB never answered in this session, in every worker: still to find out why; a working cache
+would cut the cover's start-tile build, 19 s for E4).
+
+Findings for next jobs:
+- **Time to play < 35 s is not reached** (48-50 s): the cover is 20-31 s (start tile built in the worker: the tile
+  cache never answers here), then ~20 s of loader for the ring's 8 full tiles (2-11 s each, 3 at once now).
+- **Material sharing**: 705 pipelines, 639 distinct programs, 878 materials in use; the landmarks clone each library
+  slot per model (`wrapAO`: their AO texture + per-model look uniforms) -> 264 hero materials (stone_blue x14,
+  glass_window x14, ...), each its own program. Sharing needs one wrapAO factory with the AO texture as a material
+  parameter for all landmarks (a refactor across ~15 model loaders).
+- **Heap 2.3-2.5 GB**: typed arrays reachable from the page = 781 MB (`debug/heapAudit.js`): three's render-object
+  cache 425 MB of geometry (incl. 274 MB in 342 geometries no longer in the scene: warm-up / precompile stand-ins and
+  bake proxies keep their render objects, and those keep the pipelines alive: dispatching 'dispose' on them would drop
+  precompiled pipelines too), street life 74 MB, instance pools 64 MB, tree kit atlases 48 MB. The other ~1.6 GB is
+  plain JS objects: needs a heap snapshot (2.5 GB: do it on a fresh machine).
