@@ -144,7 +144,7 @@ export function installCompileQueue(renderer) {
 
 /** Compile `roots` (Object3Ds, in the scene or about to be) for `camera` in `scene`, into `target`/`mrt`
  *  (the scene pass), without drawing them. Resolves when their shaders and pipelines are ready. */
-export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false } = {}) {
+export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false, names = null } = {}) {
   if (!renderer.backend?.isWebGPUBackend) return Promise.resolve();
   installCompileQueue(renderer);
   const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
@@ -179,8 +179,8 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
     } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
-  }, first, [].concat(roots).map((r) => r?.name || ""));
-  if (!bootJobsClosed) { const j = { names: [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
+  }, first, names ?? [].concat(roots).map((r) => r?.name || ""));   // (perfgame round 5: a staged landmark job carries its model's name)
+  if (!bootJobsClosed) { const j = { names: names ?? [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
   return job;
 }
 let bootJobsClosed = false;
