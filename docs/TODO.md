@@ -70,6 +70,9 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    only for the player car with ?carglass=old). Fix for all cars without losing see-through interiors: stable
    (non-jittered) dither per instance + resolve weighting, or opaque tinted glass beyond ~8 m with a fake interior,
    or sorted blended glass for the nearest N cars.
+   **carglass2 (2026-11-16, branch claude/carglass, not merged):** near-LOD (0-60 m) parked + traffic glass is real
+   alpha-blended glass (glass-only geometry on the batches' instance buffers, +1-2 parked / +1 per traffic near batch
+   render objects, ~+0.1 ms GPU at a 2.5 m close-up); police props / yard solid tinted; ?carglass2=old; docs/CARGLASS.md.
 8h. **Cars2 leftovers**: watch the 30 m LOD fade in motion; compress cars2.glb (4.5 MB); more varied hatch fronts;
    shops2 leftovers (White Night lot asphalt, ivy over Uccle Flore window, Pasta Commedia coral render, 630 UrbIS
    buildings without geometry: infill tool tools/infill/infill_buildings.py, Place Saint-Job 38 next).
