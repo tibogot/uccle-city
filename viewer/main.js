@@ -10,7 +10,7 @@ import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { buildLamps, setLampModel, lampLightPool } from "./lamps.js";
+import { buildLamps, setLampModel, lampLightPool, setLampPool } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { addStalle } from "./stalleCity.js";
@@ -68,7 +68,9 @@ import { cityGardens } from "./gardens/cityGardens.js";
 import { carriageway, docOffLanes } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
-import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
+import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";
+import { stagedCompiler, setStagedFocus, STAGED } from "./stagedCompile.js";
+import { FAR_MERGE, mergeFarLevel } from "./farMerge.js";   // perfgame round 6: a far LOD in one draw (?farlodmerge=1)   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
 import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";   // perfgame: the play loader (?playloader=old: none)
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
@@ -1036,6 +1038,11 @@ async function main() {
   const F = entry.files;
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
+  // perfgame round 5: the player's position for the staged landmark compiles (stagedCompile.js); before the modes exist,
+  // the spawn / the start tile's centre
+  setStagedFocus(() => { try { return flyer.on ? [flyer.x, flyer.z] : driver.on ? [driver.x, driver.z] : walker.on ? [walker.x, walker.z] : [controls.target.x, controls.target.z]; } catch { return SPAWN ?? [(x0 + x1) / 2, (z0 + z1) / 2]; } });
+  let stagedFor = null;
+  const heroCompiler = () => (compileFor ? (STAGED ? (stagedFor ||= stagedCompiler(compileFor)) : compileFor) : null);
   // the worker pool starts on the start tile and its ring NOW, in parallel with the landmarks loading below (their
   // builds were one after another, after everything else, before: perf audit 2026-11-13)
   if (workers.length > 1 && params.get("bootprefetch") === "1") {   // ?bootprefetch=1: on (A/B: no clear gain measured, likely CPU contention with the landmarks loading; test on a fresh machine)
@@ -1140,10 +1147,11 @@ async function main() {
     pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0", upscale: UPSCALE ? createUpscaler(renderer, camera) : null }) : null;   // ?ao=0 ?ssr=0: A/B
     cityQuality._pipe = pipe; if (params.get("quality")) cityQuality.set(params.get("quality"));   // --- upscale: the settings menu's quality presets
     if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
-    if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first });   // ?precompile=0: A/B
+    if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first, names: o?.names ?? null });   // ?precompile=0: A/B
     else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   };
 
+  setLampPool(scene, updaters);                       // perfgame round 6: one city-wide lamp pool (?lamppool=old: per tile)
   if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
   // The Saint-Job church (tools/blender/stjob.py, viewer/stjobModel.js) in place of its UrbIS solid (HIDE_BU_IDS);
   // ?stjob=0: the UrbIS solid. One model, three LODs by distance to the octagon; shown while its tile is loaded
@@ -1219,51 +1227,51 @@ async function main() {
   setBootStart(bounds, Math.max(0, Math.min(2, +(params.get("ring") ?? 1))));   // boot2: the ring the boot loads (bootGate.js)
   const heroes = [];
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
-  if (params.get("stalle") !== "0") heroes.push(() => addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third }));
+  if (params.get("stalle") !== "0") heroes.push(() => addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, getView: () => ({ camera, lighting }), getThird: () => third }));
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
   // ?townhall=1 for now (its BU_ID joins HIDE_BU_IDS before the first tile is built)
-  if (params.get("townhall") !== "0") heroes.push(() => addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("townhall") !== "0") heroes.push(() => addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
   // behind ?vanbuuren=1 for now
-  if (params.get("vanbuuren") !== "0") heroes.push(() => addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (params.get("vanbuuren") !== "0") heroes.push(() => addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
   // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
-  if (params.get("wolvendael") !== "0") heroes.push(() => addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting }));
+  if (params.get("wolvendael") !== "0") heroes.push(() => addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: heroCompiler, renderer, lighting }));
   // The police station, Rue Rouge 17 (tools/blender/police_rouge.py, viewer/policeCity.js) in place of UrbIS solids 528055 +
   // 528772 (BU 1674458), with its yard, behind ?police=1 for now
-  if (params.get("police") !== "0") heroes.push(() => addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (params.get("police") !== "0") heroes.push(() => addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
   // solid 534568, behind ?calevoet=1 for now
-  if (params.get("calevoet") !== "0") heroes.push(() => addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (params.get("calevoet") !== "0") heroes.push(() => addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // the Eglise Saint-Pierre (tools/blender/stpierre.py, viewer/stpierreCity.js) behind ?stpierre=1
-  if (params.get("stpierre") !== "0") heroes.push(() => addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("stpierre") !== "0") heroes.push(() => addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // the Russian Orthodox church of Saint-Job (tools/blender/russian.py, viewer/russianCity.js); ?russian=0 = the UrbIS solid
-  if (params.get("russian") !== "0") heroes.push(() => addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("russian") !== "0") heroes.push(() => addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // Square des Heros as a hero place (viewer/heros/, docs/landmarks/HEROS.md): the war memorial + steps (tools/blender/heros.py),
   // the dolomite ground, the park cut out of the UrbIS square surface; ?heros=old = the setts plaza as before
-  if (HEROS) heroes.push(() => addHeros({ scene, updaters, hide: HIDE_BU_IDS, tile: HEROS_TILE, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (HEROS) heroes.push(() => addHeros({ scene, updaters, hide: HIDE_BU_IDS, tile: HEROS_TILE, world, manifest, log, compiler: heroCompiler, renderer }));
   // the Eglise Notre-Dame du Rosaire (tools/blender/rosaire.py, viewer/rosaireCity.js); ?rosaire=0 = the UrbIS solid
-  if (params.get("rosaire") !== "0") heroes.push(() => addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("rosaire") !== "0") heroes.push(() => addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
   // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
-  if (params.get("observatory") !== "0") heroes.push(() => addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("observatory") !== "0") heroes.push(() => addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // The Eglise Saint-Augustin at Altitude Cent (Forest, just north of Uccle: tools/blender/augustin.py,
   // viewer/augustinCity.js), the skyline landmark; its UrbIS solid is not in the tiles (outside Uccle), nothing hidden
-  if (params.get("augustin") !== "0") heroes.push(() => addAugustin({ scene, updaters, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("augustin") !== "0") heroes.push(() => addAugustin({ scene, updaters, world, manifest, log, compiler: heroCompiler }));
   // landmark5 (viewer/landmark5City.js): the Eglise du Sacre-Coeur, Rue Vanderkindere (tools/blender/sacrecoeur.py);
   // ?sacrecoeur=0 = the UrbIS solid
-  if (params.get("sacrecoeur") !== "0") heroes.push(() => addLandmark5("sacrecoeur", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("sacrecoeur") !== "0") heroes.push(() => addLandmark5("sacrecoeur", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // ... and the Eglise Saint-Marc, Avenue De Fre (tools/blender/saintmarc.py); ?saintmarc=0 = the UrbIS solid
-  if (params.get("saintmarc") !== "0") heroes.push(() => addLandmark5("saintmarc", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("saintmarc") !== "0") heroes.push(() => addLandmark5("saintmarc", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // castle1 >>> the Chateau Latour de Frein, Rue Engeland 555 (tools/blender/latourdefrein.py, same loader); ?latourdefrein=0 = the UrbIS solid
-  if (params.get("latourdefrein") !== "0") heroes.push(() => addLandmark5("latourdefrein", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("latourdefrein") !== "0") heroes.push(() => addLandmark5("latourdefrein", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // <<< castle1
   // the public art kit (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md): the Dix Monolithes, La Victoire, the Gobert
   // memorial, the milestones and the Charles V stones; ?art=old = the city without them (the monoliths' UrbIS boxes back)
-  if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
-  if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
+  if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: heroCompiler, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
   // the tile worker starts on the start tile and its ring NOW (the hide list and the ponds are complete): it builds them
   // one after another while the main thread does the rest of the boot (it waited idle for the warm-up before)
@@ -1325,7 +1333,9 @@ async function main() {
           // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
           const tw = performance.now();
           for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
-          const warm = await warmBridge(pb, { compile: compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
+          // perfgame round 6 (?farlodmerge=1, off by default): the far level in one draw (viewer/farMerge.js)
+          if (FAR_MERGE) await mergeFarLevel(pb.levels[pb.levels.length - 1], { renderer, aoTex: b.aoTex, name: `bridge ${name}` }).then((r) => r && log(`bridge ${name}: far LOD ${r.before} -> ${r.after} draws (${r.slots} slots, means baked)`)).catch((e) => log(`bridge ${name} far merge: ${e.message}`));
+          const warm = await warmBridge(pb, { compile: heroCompiler() ?? compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
           scene.add(pb.group);
           window.__bridges ??= {}; window.__bridges[name] = { b, pb, warm };
           const p = b.placement.position;
@@ -1378,7 +1388,7 @@ async function main() {
   const OLD_FLIGHT = params.get("falcon") === "old";
   let openParallelFly = null;
   const flyer = OLD_FLIGHT ? new Flyer(camera, renderer.domElement, scene, world)
-    : new CityFlyer(camera, renderer.domElement, scene, world, { manifest, base: DATA, hide: HIDE_BU_IDS, log, params, lighting, renderer, compiler: () => compileFor,
+    : new CityFlyer(camera, renderer.domElement, scene, world, { manifest, base: DATA, hide: HIDE_BU_IDS, log, params, lighting, renderer, compiler: heroCompiler,
       openParallel: renderer.backend?.isWebGPUBackend ? (...a) => (openParallelFly ? openParallelFly(...a) : null) : null });
   if (!OLD_FLIGHT) { import("../vendor/engine/parallelPipelines.js").then((m) => { openParallelFly = m.openParallelPipelines; }); updaters.push((camPos) => flyer.tick(camPos)); }
   window.__flyer = flyer;

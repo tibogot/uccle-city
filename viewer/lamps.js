@@ -54,6 +54,73 @@ function farLampMats() {
   return (FAR = { iron: fade(MODEL.iron), glass: fade(MODEL.glass) });
 }
 
+// ---------------------------------------------------------------- THE CITY-WIDE LAMP POOL (perfgame round 6)
+// ?lamppool=old: each tile draws its own 6 instanced meshes (iron + glass per LOD), re-bucketed per tile. Here ONE set
+// of LOD meshes for the whole city (same geometries, same shared materials, the same distance buckets and far dither),
+// filled from every loaded tile's lamp sites when the camera has moved 5 m: 6 meshes in all instead of 6 per tile
+// (each culled by the bounding sphere of the lamps it draws, as round 2). The tiles keep their sites, heads (the night
+// light pool), colliders. (No per-tile fade is lost: a tile fades in / out beyond ~500 m, past the lamps' 450 m end.)
+const LAMP_POOL = typeof location === "undefined" || new URLSearchParams(location.search).get("lamppool") !== "old";
+const POOL_CAP = 8192;                               // (>= 1025: r187 binds the matrices as a vertex buffer, one shader)
+const poolTiles = new Map();                         // key -> { sites, mats }
+let LP = null;                                     // { group, lods: [{ iron, glass, box }], last, dirty }
+/** main.js, before the first tile: the scene the pool lives in, and the updater list */
+export function setLampPool(scene, updaters) {
+  if (!LAMP_POOL || LP) return;
+  const group = new THREE.Group(); group.name = "street-lamps-pool";
+  scene.add(group);
+  LP = { group, lods: null, last: new THREE.Vector3(Infinity, 0, 0), dirty: true };
+  updaters.push((camPos) => relodPool(camPos));
+}
+function poolMeshes() {
+  if (LP.lods || !MODEL) return LP.lods;
+  const lastK = MODEL.lods.length - 1;
+  LP.lods = MODEL.lods.map((l, k) => {
+    const far = SMOOTH && k === lastK ? farLampMats() : MODEL;
+    const mk = (geo, mat, shadow) => {
+      const m = new THREE.InstancedMesh(geo, mat, POOL_CAP); m.count = 0; m.visible = false;
+      m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = LAMP_CULL; m.boundingSphere = new THREE.Sphere();
+      m.name = `street-lamps-lod${k}`;
+      LP.group.add(m); return m;
+    };
+    return { iron: mk(l.iron, far.iron, SMOOTH || k === 0), glass: mk(l.glass, far.glass, false), box: [0, 0, 0, 0, 0, 0] };
+  });
+  return LP.lods;
+}
+function relodPool(cam) {
+  if (!LP || !MODEL) return;
+  if (!LP.dirty && cam.distanceToSquared(LP.last) < 25) return;
+  const lods = poolMeshes(); if (!lods) return;
+  LP.dirty = false; LP.last.copy(cam);
+  const lastK = lods.length - 1;
+  for (const L of lods) { L.iron.count = L.glass.count = 0; L.box = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]; }
+  for (const T of poolTiles.values()) {
+    const { sites, mats } = T;
+    for (let i = 0; i < sites.length; i++) {
+      const s = sites[i], d = Math.hypot(s.x - cam.x, s.y - cam.y, s.z - cam.z);
+      let k = LAMP_LODS.findIndex((l) => d < l.until);
+      if (k < 0 && SMOOTH && d < LAMP_LODS[lastK].until + 6) k = lastK;
+      if (k < 0) continue;
+      const L = lods[k], n = L.iron.count;
+      if (n >= POOL_CAP) continue;
+      L.iron.count++; L.glass.count++;
+      L.iron.setMatrixAt(n, mats[i]); L.glass.setMatrixAt(n, mats[i]);
+      const B = L.box; B[0] = Math.min(B[0], s.x); B[1] = Math.min(B[1], s.y); B[2] = Math.min(B[2], s.z); B[3] = Math.max(B[3], s.x); B[4] = Math.max(B[4], s.y); B[5] = Math.max(B[5], s.z);
+    }
+  }
+  for (const L of lods) {
+    const B = L.box, cx = (B[0] + B[3]) / 2, cy = (B[1] + B[4]) / 2 + 3, cz = (B[2] + B[5]) / 2, r = Math.hypot(B[3] - B[0], B[4] - B[1], B[5] - B[2]) / 2 + 7;
+    for (const im of [L.iron, L.glass]) {
+      im.visible = im.count > 0;                              // (an empty instanced mesh still costs a draw per pass)
+      if (!im.count) continue;
+      im.boundingSphere.center.set(cx, cy, cz); im.boundingSphere.radius = r;
+      im.instanceMatrix.clearUpdateRanges(); im.instanceMatrix.addUpdateRange(0, im.count * 16); im.instanceMatrix.needsUpdate = true;
+    }
+  }
+}
+/** (debug) the pool buckets */
+export const lampPoolStats = () => LP?.lods?.map((L) => L.iron.count) ?? null;
+
 export function buildLamps(roads, ground, bounds, { lights: withLights = true, place = null, lift = null } = {}) {
   const sites = placedLampSites(roads, bounds, place);
   const group = new THREE.Group();
@@ -92,7 +159,13 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   // the Blender lamp: replaces the cylinders, one instanced iron + glass mesh per LOD, each lamp in its LOD
   // by distance (re-bucketed when the camera has moved 5 m); capacity >= 1025 so every tile shares the shaders
   let relod = null;
-  if (MODEL) {
+  const poolKey = {};
+  if (MODEL && LP) {
+    // (round 6) the city-wide pool draws them: this tile hands over its sites + matrices
+    post.visible = glass.visible = false;
+    const mats = sites.map((s) => { q.setFromAxisAngle(up, s.yaw); return new THREE.Matrix4().compose(new THREE.Vector3(s.x, s.y, s.z), q, one); });
+    poolTiles.set(poolKey, { sites, mats }); LP.dirty = true;
+  } else if (MODEL) {
     post.visible = glass.visible = false;
     const cap = Math.max(sites.length, 1025);
     const mats = sites.map((s) => { q.setFromAxisAngle(up, s.yaw); return new THREE.Matrix4().compose(new THREE.Vector3(s.x, s.y, s.z), q, one); });
@@ -147,7 +220,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   const key = {};
   if (withLights) HEADS.set(key, lamp);
   const update = (camPos) => { relod?.(camPos); };
-  const release = () => HEADS.delete(key);
+  const release = () => { HEADS.delete(key); if (poolTiles.delete(poolKey) && LP) LP.dirty = true; };
   return { group, count: sites.length, update, release, heads: lamp.map((p) => ({ x: p.x, y: p.y, z: p.z })), sites };   // heads: the lantern globes (y: their centre, m TAW)
 }
 
