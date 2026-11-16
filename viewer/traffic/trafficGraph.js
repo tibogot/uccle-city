@@ -381,7 +381,7 @@ const CARRIAGE = [true, true, false, true, false, false, false, false, false, fa
 // direction through at a time (trafficSim.js accel: a car waits before its stretch while an oncoming car is in the
 // opposing one). CSR per path: nOff; per stretch nS0 / nS1 (m along this path), nOpp (the opposing path's index), nO0 /
 // nO1 (m along it).
-const NARROW = 2.3, END_SKIP = 6, MIN_RUN = 4;
+const NARROW = 2.3, END_SKIP = 6, MIN_RUN = 4, MERGE = 15;
 function narrowStretches(src, P) {
   const pts = [], grid = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
   const cums = src.map((p) => p.cum || cumulative(p.pts));
@@ -410,7 +410,7 @@ function narrowStretches(src, P) {
   }
   const per = Array.from({ length: P }, () => []);
   for (const H of hits.values()) {
-    // contiguous runs along this path (gaps under 5 m merge); the opposing interval = the run's partners' span
+    // contiguous runs along this path; the opposing interval = the run's partners' span
     const ord = H.s.map((v, k) => [v, H.o[k]]).sort((a, b) => a[0] - b[0]);
     let run = [ord[0]];
     const flush = () => {
@@ -419,7 +419,9 @@ function narrowStretches(src, P) {
       if (s1 - s0 >= MIN_RUN) per[H.i].push([s0, s1, H.j, Math.min(...os), Math.max(...os)]);
       run = [];
     };
-    for (let k = 1; k < ord.length; k++) { if (ord[k][0] - ord[k - 1][0] > 5) { flush(); } run.push(ord[k]); }
+    // (gaps under MERGE m between parked cars merge: a car does not squeeze into a 10 m hole between two narrow bits,
+    // and one stretch per row of cars is one wait, not a stop-and-go per car; browser check on Avenue Alphonse XIII)
+    for (let k = 1; k < ord.length; k++) { if (ord[k][0] - ord[k - 1][0] > MERGE) { flush(); } run.push(ord[k]); }
     flush();
   }
   const nOff = new Uint32Array(P + 1), list = [];

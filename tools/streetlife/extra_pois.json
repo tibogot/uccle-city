@@ -1,0 +1,18 @@
+{
+ "_doc": "POIs OSM does not have yet, merged into the OSM extract by build_streetlife.py (load_raw). Each needs a source; positions from the UrbIS address point (CC0), never traced from imagery. Add them to OSM when confirmed and drop them here.",
+ "elements": [
+  {
+   "type": "node",
+   "id": "white-night",
+   "lon": 4.3644912,
+   "lat": 50.794131,
+   "tags": {
+    "shop": "convenience",
+    "name": "White Night",
+    "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+    "addr:housenumber": "662"
+   },
+   "_source": "Owner (lives in Uccle): 'the white night shop on Place Saint-Job'; name and number 662 from its public listing (Google Maps, looked at 2026-11-16, not copied beyond name / number); position = UrbIS address 662 (https://databrussels.be/id/address/1228753)"
+  }
+ ]
+}

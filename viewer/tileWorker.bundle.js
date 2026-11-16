@@ -13779,6 +13779,7 @@ var CARRIAGE5 = [true, true, false, true, false, false, false, false, false, fal
 var NARROW = 2.3;
 var END_SKIP = 6;
 var MIN_RUN = 4;
+var MERGE = 15;
 function narrowStretches(src, P) {
   const pts = [], grid = /* @__PURE__ */ new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
   const cums = src.map((p) => p.cum || cumulative(p.pts));
@@ -13822,7 +13823,7 @@ function narrowStretches(src, P) {
       run = [];
     };
     for (let k = 1; k < ord.length; k++) {
-      if (ord[k][0] - ord[k - 1][0] > 5) {
+      if (ord[k][0] - ord[k - 1][0] > MERGE) {
         flush();
       }
       run.push(ord[k]);
