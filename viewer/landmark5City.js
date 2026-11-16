@@ -28,7 +28,7 @@ export async function addLandmark5(key, { scene, updaters, hide, world, manifest
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = C.names.map((_, k) => m.make(k));
     root.add(...levels);
-    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: key }).then((r) => r && log?.(`${key}: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=1)
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: key }).then((r) => r && log?.(`${key}: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=old: off)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);

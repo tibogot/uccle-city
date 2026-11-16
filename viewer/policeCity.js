@@ -74,7 +74,7 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = PO_LODS.map((_, k) => m.make(k));
     root.add(...levels);
-    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "police" }).then((r) => r && log?.(`police: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=1)
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "police" }).then((r) => r && log?.(`police: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=old: off)
     root.visible = false; yard.mesh.visible = false;
     scene.add(root, yard.mesh);
     const cars = yard.cars;

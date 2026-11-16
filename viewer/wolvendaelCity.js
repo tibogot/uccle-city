@@ -83,7 +83,7 @@ export async function addWolvendael({ scene, updaters, hide, ponds, world, manif
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = WV_LODS.map((_, k) => m.make(k));
     root.add(...levels);
-    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "wolvendael" }).then((r) => r && log?.(`wolvendael: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=1)
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "wolvendael" }).then((r) => r && log?.(`wolvendael: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=old: off)
     root.visible = false; pond.group.visible = false;
     const pc0 = pond.water.geometry.boundingSphere.center.clone();
     scene.add(root, pond.group);

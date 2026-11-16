@@ -1072,7 +1072,7 @@ async function main() {
   bootStage("renderer");                            // (boot2: the loading bar's stage)
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
   const renderer = new THREE.WebGPURenderer({ antialias: !UPSCALE /* --- upscale: TAA instead of MSAA */, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
-  setFarMergeRenderer(renderer);   // perfgame round 7: landmark far merges bake with it (?farlodlm=1)
+  setFarMergeRenderer(renderer);   // perfgame round 7: landmark far merges bake with it (?farlodlm=old: off)
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;

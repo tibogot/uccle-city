@@ -15,7 +15,6 @@ import { SMOOTH, fadeProxies } from "./lodFade.js";
 import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
-import { FAR_MERGE_LM, mergeFarLevel } from "./farMerge.js";
 
 /** The SHADOW pass is not in compileAsync: the first frame a level casts a shadow (its first hand-over: the flight's
  *  117 ms frame at 64 m) built its shadow shaders and pipelines on the frame. Warm them before the model shows: every
@@ -64,7 +63,7 @@ export async function addVanBuuren({ scene, updaters, hide, world, manifest, log
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = VB_LODS.map((_, k) => m.make(k));
     root.add(...levels);
-    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "vanbuuren" }).then((r) => r && log?.(`vanbuuren: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=1)
+    // (perfgame round 7: no far merge here: its last level shows from 55 m, where the merged means read as flat)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);
