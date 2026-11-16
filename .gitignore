@@ -82,3 +82,7 @@ models/publicart/previews/
 models/latourdefrein/*.raw.glb
 models/latourdefrein/audit/**/*.json
 !models/latourdefrein/audit/*.allow.json
+models/papenkasteel/*.raw.glb
+models/papenkasteel/papenkasteel_lod1_bake.bin
+docs/geleytsbeek/side_*
+docs/geleytsbeek/*.png

@@ -1,0 +1,204 @@
+{
+ "asset": "Papenkasteel / Chateau de Stalle, Rue Papenkasteel 99, Uccle: the castle on the Geleytsbeek (tools/blender/papenkasteel.py)",
+ "triangles_lod0": 46848,
+ "triangles_far": 13150,
+ "triangles_per_slot_lod0": {
+  "render_white": 3992,
+  "brick_red_brussels": 642,
+  "stone_white": 9872,
+  "stone_blue": 1110,
+  "slate": 872,
+  "zinc_roof": 14092,
+  "wood_frame_white": 15172,
+  "wood_frame_dark": 152,
+  "cast_iron_dark": 484,
+  "glass_window": 460
+ },
+ "triangles_per_slot_far": {
+  "render_white": 2102,
+  "brick_red_brussels": 458,
+  "stone_white": 3812,
+  "stone_blue": 1000,
+  "slate": 680,
+  "zinc_roof": 448,
+  "wood_frame_white": 4316,
+  "wood_frame_dark": 68,
+  "cast_iron_dark": 24,
+  "glass_window": 242
+ },
+ "slots": [
+  "render_white",
+  "brick_red_brussels",
+  "stone_white",
+  "stone_blue",
+  "slate",
+  "zinc_roof",
+  "wood_frame_white",
+  "wood_frame_dark",
+  "cast_iron_dark",
+  "glass_window"
+ ],
+ "codes": {
+  "COLOR_0.r": "code / 16 + 1/32",
+  "COLOR_0.g": "per-vertex AO of the thin faces (1 elsewhere)",
+  "COLOR_0.b": "sqrt(width of the flat region / 4 m)",
+  "names": [
+   "plain",
+   "block",
+   "joint",
+   "reveal",
+   "sill",
+   "surround",
+   "band",
+   "cornice",
+   "plinth",
+   "keystone",
+   "frame",
+   "bar",
+   "pane",
+   "louvre",
+   "hung",
+   "ridge"
+  ]
+ },
+ "uv": {
+  "TEXCOORD_0": "world metres per face: walls (along, m TAW - 40), roofs (along the eave, up the slope)",
+  "TEXCOORD_1": "AO lightmap (thin faces: u > 0.994, AO 1)"
+ },
+ "lightmap": {
+  "px": 2048,
+  "split_v": 0.8,
+  "lod0_px_per_m": 19.2,
+  "far_px_per_m": 11.2,
+  "thin_faces_vertex_ao": [
+   18503,
+   1290
+  ],
+  "device": "OPTIX"
+ },
+ "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, rotation.y = -rotation",
+ "placement": {
+  "city_local_position": [
+   -636.999,
+   40.0,
+   1153.75
+  ],
+  "rotation_y_rad": 0.578433,
+  "hides_solids": [
+   "https://databrussels.be/id/buildingsolid/528339",
+   "https://databrussels.be/id/buildingsolid/528019"
+  ],
+  "hides_bu_ids": [
+   "https://databrussels.be/id/building/1726277"
+  ]
+ },
+ "bounds_city": {
+  "x": [
+   -660.1,
+   -610.6
+  ],
+  "z": [
+   1138.8,
+   1189.8
+  ],
+  "y": [
+   48.6,
+   74.2
+  ]
+ },
+ "measured": {
+  "house": {
+   "u0": -12.1,
+   "u1": 9.15,
+   "w0": -9.2,
+   "w1": 1.5,
+   "top": 58.3
+  },
+  "house_roof_profile": [
+   [
+    0.4,
+    58.16
+   ],
+   [
+    -0.6,
+    58.74
+   ],
+   [
+    -5.338,
+    64.59094272766308
+   ]
+  ],
+  "tower": {
+   "u0": -4.04,
+   "u1": 1.56,
+   "w0": -3.0,
+   "w1": 2.93,
+   "top": 67.0
+  },
+  "tower_levels": [
+   [
+    54.75,
+    56.95
+   ],
+   [
+    58.0,
+    60.2
+   ],
+   [
+    61.2,
+    63.4
+   ],
+   [
+    64.4,
+    66.4
+   ]
+  ],
+  "west_annex": {
+   "u0": -12.1,
+   "u1": -7.8,
+   "w0": 1.5,
+   "w1": 9.2,
+   "top": 52.85,
+   "pitch": 32.0
+  },
+  "east_annex": {
+   "u0": 5.8,
+   "u1": 8.8,
+   "w0": 1.45,
+   "w1": 8.1,
+   "top": 52.85,
+   "pitch": 32.0
+  },
+  "ne_extension": {
+   "u0": 9.1,
+   "u1": 12.13,
+   "w0": -8.98,
+   "w1": -2.21,
+   "top": 52.85,
+   "pitch": 32.0
+  },
+  "range": {
+   "u0": -20.9,
+   "u1": 9.47,
+   "w0": 21.5,
+   "w1": 28.8,
+   "top": 54.85,
+   "pitch": 50.0
+  },
+  "range_wing": {
+   "u0": -17.8,
+   "u1": -11.25,
+   "w0": 13.5,
+   "w1": 21.5,
+   "top": 54.95,
+   "pitch": 24.0
+  },
+  "floor": 49.75
+ },
+ "estimated": "the garden (north-west) front's bays, the east end and the north-east extension (under the plane tree), the outbuildings' courtyard openings, the annexes' side openings, the back slope dormers, the mouldings' profiles, the joinery's sections, the lantern's details (Bing 2014 at ~0.3 m/px)",
+ "landmarks": {
+  "house_ridge": 64.59,
+  "bell_top": 70.63,
+  "spike_top": 74.18
+ }
+}
