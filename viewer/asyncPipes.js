@@ -27,3 +27,21 @@ export function keepPipelinesAsync(renderer, scene) {
   P.__asyncPipes = stats;
   return stats;
 }
+
+// COMPILE BOOST UNDER THE PLAY LOADER (perfgame round 2, ?compileboost=old). three r187's compileAsync (the precompile
+// queue: tiles, landmarks, fading copies) builds node graphs in slices and yields to the NEXT FRAME every 8 ms of work
+// (CompileScheduler: _compileYieldInterval): ~8 ms of compiling a frame, so the ~35 s of serial jobs after the cover
+// (measured: 194 jobs, 37 s) kept the play loader up that long. While `active()` (the loader covers the screen, nothing
+// to keep smooth) the yields are let through only every `slice` ms: a frame carries ~40 ms of compiling.
+export function boostCompile(renderer, active, slice = 40) {
+  const N = renderer._nodes;
+  if (!N || N.__boost || typeof N.getForRenderAsync !== "function") return;
+  const orig = N.getForRenderAsync;
+  let last = performance.now();
+  N.getForRenderAsync = function (renderObject, yieldFn) {
+    if (!yieldFn || !active()) return orig.call(this, renderObject, yieldFn);
+    const y = async () => { if (performance.now() - last < slice) return; await yieldFn(); last = performance.now(); };
+    return orig.call(this, renderObject, y);
+  };
+  N.__boost = true;
+}

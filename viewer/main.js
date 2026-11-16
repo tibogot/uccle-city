@@ -66,7 +66,7 @@ import { cityGardens } from "./gardens/cityGardens.js";
 import { carriageway, docOffLanes } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
-import { keepPipelinesAsync } from "./asyncPipes.js";   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
+import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
 import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";   // perfgame: the play loader (?playloader=old: none)
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
@@ -95,6 +95,9 @@ const GAME_BOOT = { police: { tile: "E4", at: "-502,-355", cam: "-470,-392,38" }
 const GAME_ID = params.get("game");
 const GAME_START = !!GAME_ID && GAME_ID !== "0" && GAME_ID !== "1";
 const BOOT_HOLD = params.get("playloader") !== "old" && params.get("boothold") !== "old" && !GAME_START;
+// (the free-roam hold waits for the far landmarks' loads, not for the whole ring in full: 0 m = the tile under the view;
+// the ring's full tiles cross-fade in over their far tiles as before; ?boothold=ring: the ring within 300 m too)
+const BOOT_HOLD_NEAR = params.get("boothold") === "ring" ? 300 : 0;
 const FAST_START = params.get("playloader") !== "old" && params.get("gamefast") !== "old" && (GAME_START || BOOT_HOLD);
 const SPAWN = params.get("at")?.split(",").map(Number).filter(Number.isFinite).length === 2 ? params.get("at").split(",").map(Number)
   : GAME_ID === "falcon" || (params.get("tile") || "I6").toUpperCase() === "I6" ? [1153, 540] : null;
@@ -107,7 +110,7 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // tiles' shaders), ?smooth=0: every smooth-LOD change off.
 const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
 const STREAM_ORDER = params.get("streamorder") !== "old";   // perfgame: stream the wanted tile nearest the player first
-const UNLOAD_GAP = params.get("unloadgap") !== "old", UNLOAD_MARGIN = +(params.get("unloadmargin") ?? 150);   // perfgame round 2: full tiles unload by distance
+const UNLOAD_GAP = params.get("unloadgap") !== "old", UNLOAD_MARGIN = +(params.get("unloadmargin") ?? 60);   // perfgame round 2: full tiles unload by distance
 const fader = new Fader();
 /** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
  *  render pipeline exists). Not under the boot cover: the warm-up draws those itself. */
@@ -1576,7 +1579,11 @@ async function main() {
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
     }
   };
-  const mainLoop = () => stepLoop();
+  // perfgame round 2 (?holdthrottle=old): while the play loader holds and the area is still building (tiles, compiles,
+  // the far landmarks), only one frame in three is drawn behind it: the compile queue's time slices and the tiles'
+  // main-thread steps get the rest of the main thread (the last quiet frames are drawn at full rate: the warm-up)
+  let holdSkip = 0, holdThrottle = false;
+  const mainLoop = () => { if (holdThrottle && playLoader.active && (holdSkip++ % 3)) return; stepLoop(); };
   renderer.setAnimationLoop(mainLoop);
   // Streaming: full-detail tiles within `ring` of the tile under the player (?ring=, default 1),
   // far-LOD tiles out to `far` (?far=, default 3, 0 = none). Hysteresis of one tile for unloading.
@@ -1793,6 +1800,7 @@ async function main() {
   // perfgame (docs/PERF_GAME.md): from here on a pipeline the precompiles missed is built async (the object shows a few
   // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
   if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
+  if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
   closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
   if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
@@ -1839,8 +1847,9 @@ async function main() {
   // pipeline compiling (asyncPipes.js), and `quiet` consecutive frames rendered so (the frames behind the play loader
   // are the warm-up: whatever the first view draws builds its shader there). Reports progress to the play loader.
   // At most maxMs (a slow machine still gets to play). Returns what it waited for.
-  let liteHold = 0, bootSettled = false, lastLongFrame = 0;   // (bootHoldPending: declared before the cover lifts)
-  try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.duration > 200) lastLongFrame = performance.now(); }).observe({ type: "long-animation-frame" }); } catch { /* no LoAF: settle on the queue only */ }
+  let liteHold = 0, bootSettled = false, lastLongFrame = 0;
+  const HOLD_THROTTLE = params.get("holdthrottle") !== "old", SETTLE_ALL = params.get("settlejobs") !== "loads";   // (bootHoldPending: declared before the cover lifts)
+  try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.duration > 250) lastLongFrame = performance.now(); }).observe({ type: "long-animation-frame" }); } catch { /* no LoAF: settle on the queue only */ }
   const areaReady = async ({ x, z, near = 300, liteNear = 600, nearModels = 900, quiet = 8, maxMs = 45000, label = "", settle = !bootSettled } = {}) => {
     if (settle) maxMs += 25000;
     const t0 = performance.now();
@@ -1880,9 +1889,12 @@ async function main() {
       const tilesOk = st.full === needFull.length && st.lite === needLite.length && !fading;
       // settle (a game right after the boot): the far landmarks' staggered loads after the cover (bootGate.js) done too,
       // and no long frame for 1.5 s: their GLB parse / build / compile would otherwise land in the first minute of play
-      const settled = !settle || (gatesPending() === 0 && compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0 && performance.now() - lastLongFrame > 1500);
+      // (perfgame round 2, ?settlejobs=loads: the far landmarks' COMPILE jobs are not waited for: 25-37 s
+      // of serial compile queue after the cover; once loaded they compile in slices and show when done, the pipelines async)
+      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000);
       const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
+      holdThrottle = HOLD_THROTTLE && !(tilesOk && gpuOk);
       // the bar: tiles 70 %, shaders 25 %, the quiet frames the rest
       const f = 0.7 * ((st.full + 0.25 * st.lite) / Math.max(1, needFull.length + 0.25 * needLite.length)) + 0.25 * (tilesOk ? 1 - (st.jobs + st.pipes) / (maxJobs + maxPipes) : 0) + 0.05 * (q / quiet);
       const line = st.full < needFull.length ? `Building the streets (${st.full} / ${needFull.length})` : st.lite < needLite.length ? "Loading the neighbourhood" : st.jobs + st.pipes ? `Compiling shaders (${st.jobs + st.pipes} left)` : !settled ? "Placing the landmarks" : "Drawing the first frames";
@@ -1890,6 +1902,7 @@ async function main() {
       if (q >= quiet) break;
     }
     closeHoldWorkers();
+    holdThrottle = false;
     if (q >= quiet) bootSettled = true;
     const r = { ms: Math.round(performance.now() - t0), frames, full: needFull.length, lite: needLite.length, ok: q >= quiet, ...st };
     log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : " (time limit)"}`);
@@ -1901,7 +1914,7 @@ async function main() {
   if (bootHoldPending) {
     bootHoldPending = false;
     const P0 = getPlayer();
-    areaReady({ x: P0.x, z: P0.z, label: "boot", near: 300 }).catch((e) => log(`boot hold: ${e.message}`)).finally(() => playLoader.close());
+    areaReady({ x: P0.x, z: P0.z, label: "boot", near: BOOT_HOLD_NEAR }).catch((e) => log(`boot hold: ${e.message}`)).finally(() => playLoader.close());
   }
   const teleport = async (o) => {
     // perfgame (docs/PERF_GAME.md): the play loader covers the jump and holds until the area is built (areaReady);
