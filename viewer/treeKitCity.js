@@ -23,6 +23,13 @@ import { IMP } from "./impostors.js";
 const qs = new URLSearchParams(location.search);
 export const useTreeKit = qs.get("impkit") !== "0";      // default ON since 2026-11-13 (owner: "no more dots, use it"); ?impkit=0 = the old impostors
 const SOLO = 32;                      // ikData.w: no full tile (material.js `solo`)
+// farcity (docs/FARCITY.md; ?treehandover=old = before): a tile's far trees stay SOLO while its far-LOD tile is still
+// registered. The full tile registered "full" while it was still being built (hidden, then 0.9 s of fade): the far
+// tile's solo impostors dropped to the 400 m hand-over at once and the tile stood treeless for the build + the fade
+// (seen at 45 m over Saint-Job: the whole of I7 bare at fade 0.5). Now they stay until the far tile is disposed, at the
+// end of the full tile's fade-in (main.js retire); the other way the far tile registers first, so they are solo before
+// the full tile starts fading out.
+const SOLO_WHILE_LITE = qs.get("treehandover") !== "old";
 const APPEAR_S = +(qs.get("tilefade") ?? 0.9);
 
 let kit = null;
@@ -85,7 +92,7 @@ export function startTreeKit(renderer, shared, leafMask, variants) {
     const list = [...entries.values()].sort((a, b) => ((a.cx - eye.x) ** 2 + (a.cz - eye.z) ** 2) - ((b.cx - eye.x) ** 2 + (b.cz - eye.z) ** 2));
     let k = 0;
     for (const e of list) {
-      const solo = e.refs.has("full") ? 0 : SOLO;
+      const solo = e.refs.has("full") && !(SOLO_WHILE_LITE && e.refs.has("lite")) ? 0 : SOLO;
       for (const p of e.placements) {
         P.array[k * 3] = p.x; P.array[k * 3 + 1] = p.y; P.array[k * 3 + 2] = p.z;
         D.array[k * 4] = p.yaw; D.array[k * 4 + 1] = p.scale; D.array[k * 4 + 2] = p.variant; D.array[k * 4 + 3] = solo;
@@ -118,7 +125,7 @@ export function startTreeKit(renderer, shared, leafMask, variants) {
     }
     const had = e.refs.has("full");
     e.refs.add(role);
-    if (e.refs.size === 1 || had !== e.refs.has("full")) dirty = true;
+    if (e.refs.size === 1 || had !== e.refs.has("full") || SOLO_WHILE_LITE) dirty = true;
     return () => {
       e.refs.delete(role);
       if (!e.refs.size) entries.delete(key);

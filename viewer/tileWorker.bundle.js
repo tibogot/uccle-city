@@ -513,7 +513,7 @@ function footprintIndex(bDoc) {
       l.push(b);
     }
   }
-  const pip4 = (x, z, r) => {
+  const pip5 = (x, z, r) => {
     let k = false;
     for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
       const [xi, zi] = r[i], [xj, zj] = r[j];
@@ -524,7 +524,7 @@ function footprintIndex(bDoc) {
   return (x, z, self2) => {
     const l = cells.get(Math.floor(x / B) * 100003 + Math.floor(z / B));
     if (l) {
-      for (const b of l) if (b !== self2 && pip4(x, z, b.footprint[0])) return true;
+      for (const b of l) if (b !== self2 && pip5(x, z, b.footprint[0])) return true;
     }
     return false;
   };
@@ -2057,6 +2057,183 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     fit: fitOut
     // the ground-floor line per building (NaN: kept), opts.ground only
   };
+}
+
+// viewer/farLookData.js
+var PROBE = 0.35;
+function pip3(x, z, ring2) {
+  let inside3 = false;
+  for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+    const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside3 = !inside3;
+  }
+  return inside3;
+}
+function farBuildings(doc, P, I2, opts = {}) {
+  const B = doc.buildings;
+  const cls = opts.styles !== false ? classify(doc, P, I2, (b, key) => wallStyle(hash01(key + "s"), b.height)) : null;
+  const cell = 25, grid = /* @__PURE__ */ new Map();
+  const box2 = B.map((b) => {
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+    for (const [x, z] of b.footprint[0]) {
+      x0 = Math.min(x0, x);
+      z0 = Math.min(z0, z);
+      x1 = Math.max(x1, x);
+      z1 = Math.max(z1, z);
+    }
+    return [x0, z0, x1, z1];
+  });
+  box2.forEach(([x0, z0, x1, z1], bi) => {
+    for (let i = Math.floor(x0 / cell); i <= Math.floor(x1 / cell); i++) for (let j = Math.floor(z0 / cell); j <= Math.floor(z1 / cell); j++) {
+      const k = i * 100003 + j;
+      let a = grid.get(k);
+      if (!a) grid.set(k, a = []);
+      a.push(bi);
+    }
+  });
+  const otherAt = (x, z, bi) => {
+    let best = -1;
+    for (const o of grid.get(Math.floor(x / cell) * 100003 + Math.floor(z / cell)) || []) {
+      if (o === bi) continue;
+      const [x0, z0, x1, z1] = box2[o];
+      if (x >= x0 && x <= x1 && z >= z0 && z <= z1 && pip3(x, z, B[o].footprint[0]) && (best < 0 || B[o].top > B[best].top)) best = o;
+    }
+    return best;
+  };
+  let n = 0;
+  for (const b of B) n += b.walls.count + b.roof.count;
+  const pos = new Float32Array(n * 9), nrm = new Float32Array(n * 9), fa = new Float32Array(n * 12), fb = new Float32Array(n * 12);
+  let q = 0;
+  const emit = (p, nn, A, Bv) => {
+    for (let k = 0; k < 3; k++) {
+      pos.set(p[k], q * 3);
+      nrm.set(nn, q * 3);
+      fa.set(A(p[k]), q * 4);
+      fb.set(Bv, q * 4);
+      q++;
+    }
+  };
+  const tri = (t) => {
+    const p = [0, 1, 2].map((k) => {
+      const i = I2[t * 3 + k] * 3;
+      return [P[i], P[i + 1], P[i + 2]];
+    });
+    const ux = p[1][0] - p[0][0], uy = p[1][1] - p[0][1], uz = p[1][2] - p[0][2], wx = p[2][0] - p[0][0], wy = p[2][1] - p[0][1], wz = p[2][2] - p[0][2];
+    const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx, L2 = Math.hypot(nx, ny, nz) || 1;
+    return { p, n: [nx / L2, ny / L2, nz / L2] };
+  };
+  const stats = { faces: 0, party: 0, walls: 0, roofs: 0, types: [0, 0, 0, 0, 0, 0] };
+  B.forEach((b, bi) => {
+    const key = String(b.attrs?.BU_ID ?? b.id), landmark = !!b.attrs?._landmark;
+    const base = b.base, eaves = (b.eaves ?? b.top) - base;
+    const rnd = hash01(key);
+    let ext = 0;
+    if (landmark) {
+      const xs = b.footprint[0].map((v) => v[0]), zs = b.footprint[0].map((v) => v[1]);
+      ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
+    }
+    const style = landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
+    const btype = cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
+    stats.types[btype]++;
+    const faces = /* @__PURE__ */ new Map();
+    for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
+      const tr = tri(t), [nx, , nz] = tr.n, h = Math.hypot(nx, nz);
+      if (h < 1e-6) continue;
+      const d = (tr.p[0][0] * nx + tr.p[0][2] * nz) / h;
+      const k = `${Math.round(Math.atan2(nz, nx) * 20)}|${Math.round(d * 4)}`;
+      let f = faces.get(k);
+      if (!f) faces.set(k, f = { tris: [], nx: nx / h, nz: nz / h });
+      f.tris.push(tr);
+    }
+    const fl2 = [...faces.values()];
+    for (const f of fl2) {
+      const tx = -f.nz, tz = f.nx;
+      let u0 = Infinity, u1 = -Infinity, dd = 0, k = 0;
+      for (const { p } of f.tris) for (const v of p) {
+        const uu = v[0] * tx + v[2] * tz;
+        u0 = Math.min(u0, uu);
+        u1 = Math.max(u1, uu);
+        dd += v[0] * f.nx + v[2] * f.nz;
+        k++;
+      }
+      f.u0 = u0;
+      f.u1 = u1;
+      f.d = dd / k;
+    }
+    for (let i = 0; i < fl2.length; i++) {
+      const a = fl2[i];
+      if (a.dead) continue;
+      for (let j = i + 1; j < fl2.length; j++) {
+        const c = fl2[j];
+        if (c.dead) continue;
+        if (a.nx * c.nx + a.nz * c.nz < 0.9985 || Math.abs(a.d - c.d) > 0.3) continue;
+        if (c.u0 > a.u1 + 0.15 || a.u0 > c.u1 + 0.15) continue;
+        a.tris.push(...c.tris);
+        a.u0 = Math.min(a.u0, c.u0);
+        a.u1 = Math.max(a.u1, c.u1);
+        c.dead = true;
+        j = i;
+      }
+    }
+    const ring2 = b.footprint[0];
+    for (const f of fl2) {
+      if (f.dead) continue;
+      let mx = 0, mz = 0, k = 0;
+      for (const { p } of f.tris) for (const v of p) {
+        mx += v[0];
+        mz += v[2];
+        k++;
+      }
+      mx /= k;
+      mz /= k;
+      if (pip3(mx + f.nx * 0.5, mz + f.nz * 0.5, ring2) && !pip3(mx - f.nx * 0.5, mz - f.nz * 0.5, ring2)) {
+        f.nx = -f.nx;
+        f.nz = -f.nz;
+      }
+      const tx = -f.nz, tz = f.nx;
+      let u0 = Infinity, u1 = -Infinity, top = -Infinity;
+      for (const { p } of f.tris) for (const v of p) {
+        const uu = v[0] * tx + v[2] * tz;
+        u0 = Math.min(u0, uu);
+        u1 = Math.max(u1, uu);
+        top = Math.max(top, v[1]);
+      }
+      const width = u1 - u0;
+      let topMin = Infinity;
+      if (!landmark && top > (b.eaves ?? b.top) + 0.05 && opts.storeys !== false) {
+        const T22 = f.tris.map(({ p }) => p.map((v) => [v[0] * tx + v[2] * tz, v[1]]));
+        for (let uu = u0 + 0.2; uu <= u1 - 0.2 + 1e-6; uu += 0.4) {
+          let hi = -Infinity;
+          for (const t of T22) for (let e = 0; e < 3; e++) {
+            const A = t[e], C = t[(e + 1) % 3];
+            if ((A[0] - uu) * (C[0] - uu) > 0) continue;
+            const y = Math.abs(C[0] - A[0]) < 1e-6 ? Math.max(A[1], C[1]) : A[1] + (C[1] - A[1]) * (uu - A[0]) / (C[0] - A[0]);
+            if (y > hi) hi = y;
+          }
+          if (hi > -Infinity && hi < topMin) topMin = hi;
+        }
+      }
+      const faceEaves = landmark ? top - base : Number.isFinite(topMin) ? Math.max(eaves, topMin - base) : eaves;
+      const ob = width > 0.3 ? otherAt(mx + f.nx * PROBE, mz + f.nz * PROBE, bi) : -1;
+      const same2 = ob >= 0 && b.attrs?.BU_ID && B[ob].attrs?.BU_ID === b.attrs.BU_ID;
+      const partyH = ob < 0 ? 0 : same2 || landmark ? Math.max(0.01, B[ob].top - base) : 999;
+      stats.faces++;
+      if (partyH) stats.party++;
+      const gable = top - base > faceEaves + 0.3 ? 1 : 0;
+      const fbv = [style, partyH, btype + 8 * gable, rnd];
+      for (const { p, n: nn } of f.tris) emit(p, nn, (v) => [v[0] * tx + v[2] * tz - u0, width, v[1] - base, faceEaves], fbv);
+      stats.walls += f.tris.length;
+    }
+    const rc = b.roofColor || (hash01(key + "r") < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const rb = [style, -1, 0, rnd];
+    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+      const tr = tri(t), flat = Math.abs(tr.n[1]) > 0.97 ? 1 : 0;
+      emit(tr.p, tr.n, () => [rc[0], rc[1], rc[2], flat], rb);
+      stats.roofs++;
+    }
+  });
+  const cut = (a, w) => q * w === a.length ? a : a.slice(0, q * w);
+  return { position: cut(pos, 3), normal: cut(nrm, 3), aFA: cut(fa, 4), aFB: cut(fb, 4), stats };
 }
 
 // viewer/landcover.js
@@ -9612,7 +9789,7 @@ var TOOTH = { base: 0.5, gap: 0.25, tall: 0.7 };
 var SHARROW_STEP = 40;
 var PARKING_CODE = lineCode(markingStyle("parking", "eu", 1));
 var clone = (o) => JSON.parse(JSON.stringify(o));
-var pip3 = (x, z, ring2) => {
+var pip4 = (x, z, ring2) => {
   let ins = false;
   for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
     const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
@@ -9763,7 +9940,7 @@ function afterNetworkV2(net, ctx, surf) {
   const margin = 30;
   const near = (x, z) => x >= bounds.x0 - margin && x < bounds.x1 + margin && z >= bounds.z0 - margin && z < bounds.z1 + margin;
   const junctionPolys = (surf?.surfaces || []).filter((s) => s.type === "I" || s.type === "IC").map((s) => s.rings[0]);
-  const inJunction = (x, z) => junctionPolys.some((r) => pip3(x, z, r));
+  const inJunction = (x, z) => junctionPolys.some((r) => pip4(x, z, r));
   const junctions = [];
   for (const n of net.nodes) {
     if (!ctx.mappedNodes.has(n.id)) {
@@ -9815,7 +9992,7 @@ function afterNetworkV2(net, ctx, surf) {
   const keptMeasured = (markings?.crossings || []).filter((c) => c.poly && near(c.c[0], c.c[1]) && !photoNo(c));
   const measuredPolys = keptMeasured.map((c) => hull(c.poly));
   const ringD = (x, z, ring2) => {
-    if (pip3(x, z, ring2)) return 0;
+    if (pip4(x, z, ring2)) return 0;
     let d = Infinity;
     for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) d = Math.min(d, segD(x, z, ring2[j][0], ring2[j][1], ring2[i][0], ring2[i][1]));
     return d;
@@ -15453,6 +15630,10 @@ async function buildLiteData(entry, base) {
   hideBuildings(bDoc, entry.hide);
   const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V2 * 3), I2 = new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3);
+  if (entry.farLook !== false) {
+    const fbd = farBuildings(bDoc, P, I2, { styles: entry.styles !== false, storeys: entry.storeys !== false });
+    return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: fbd, buildingCount: bDoc.count };
+  }
   let n = 0;
   for (const b of bDoc.buildings) n += b.walls.count + b.roof.count;
   const bp = new Float32Array(n * 9), bn = new Float32Array(n * 9), bc = new Float32Array(n * 9);
@@ -15937,4 +16118,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "8c36ca5424a1348b";
+self.__TILE_CODE_HASH = "d95ace070264538d";
