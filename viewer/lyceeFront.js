@@ -22,8 +22,9 @@ const GATE = { c: [-315.95, 1153.65], dir: [-0.707, -0.707], w: 5.6, h: 2.0 };
 // Street View bearings; from the avenue (north-east) left to right = Belgium, the EU, France (Apr 2024)
 const POLES = [[-323.4, 1162.4, "belgium"], [-325.8, 1163.0, "eu"], [-328.0, 1163.5, "france"]];
 const POLE_H = 8.0;
-// the lettering: on the north-east end of 533155 (N corner -> the tower), outward normal (0.65, -0.759)
-const SIGN = { a: [-335.34, 1192.86], b: [-324.87, 1201.83], at: 0.6, n: [0.65, -0.759], y: 80.7, w: 7.6, h: 2.1, lines: ["Lycée Français", "Jean Monnet"] };
+// the lettering: on the north-east end of 533155 (N corner -> the tower), outward normal (0.65, -0.759), in the band
+// between the top floor's windows and the next row of the painted grid (5 storeys of 3.1 m from 68.1)
+const SIGN = { a: [-335.34, 1192.86], b: [-324.87, 1201.83], at: 0.6, n: [0.65, -0.759], y: 80.62, w: 5.25, h: 1.45, lines: ["Lycée Français", "Jean Monnet"] };
 
 const WHITE = [0.74, 0.74, 0.72], CONCRETE = [0.4, 0.39, 0.37], BLACK = [0.018, 0.018, 0.02], POLE = [0.62, 0.63, 0.64];
 

@@ -4,7 +4,7 @@
 // (docs/CORTENBOSCH.md). OSM maps them as landuse=recreation_ground (a lawn here) and leisure=pitch (no surface).
 //
 // Per tile, ONE mesh and ONE material for all of them (one draw):
-//   - each ground's ring is clipped to the tile, triangulated, subdivided to <= 0.8 m and draped on the drawn terrain
+//   - each ground's ring is clipped to the tile, triangulated, subdivided to <= 1.2 m and draped on the drawn terrain
 //     (hm.surface) LIFT above it, with a skirt SKIRT down round its free edges (JOINS: no floating rim, no gap);
 //   - the paint is one small canvas atlas (built once): each painted ground has a rectangle of it in its own frame
 //     (origin, u / v axes, metres): R = white paint, G = court green, B = court red; a vertex carries (u, v) in that
@@ -16,7 +16,7 @@ import * as THREE from "three/webgpu";
 import { uv, attribute, texture, vec2, vec3, float, floor, fract, mix, smoothstep, length, fwidth, Fn, dot, positionWorld, mrt, roughness, select } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
 
-const LIFT = 0.04, SKIRT = 0.22, MAX_EDGE = 0.8, PX = 1 / 0.06;      // atlas: 6 cm per pixel
+const LIFT = 0.04, SKIRT = 0.22, MAX_EDGE = 1.2, PX = 1 / 0.06;      // atlas: 6 cm per pixel
 
 /** Sutherland-Hodgman: the ring clipped to the rectangle (as plazas.js). */
 function clipRing(ring, b) {
@@ -149,7 +149,7 @@ const lin = (hex) => { const c = new THREE.Color(hex); return vec3(c.r, c.g, c.b
 let MAT = null;
 function groundMaterial(tex) {
   if (MAT) return MAT;
-  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, roughness: 0.92 });
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });   // (as plazas.js: the lift + an offset, no fight with the terrain far away)
   const rect = attribute("aRect", "vec4");
   const st = uv();
   const inR = st.x.greaterThanEqual(rect.x).and(st.x.lessThanEqual(rect.z)).and(st.y.greaterThanEqual(rect.y)).and(st.y.lessThanEqual(rect.w));
