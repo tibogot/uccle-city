@@ -103,7 +103,23 @@ export class FalconGame {
     // the tops of the trees' crowns (the city: cityStream.js treePerches), facing the way the bird comes in
     if (this.world.treePerches) for (const q of this.world.treePerches(p.x, p.z, 28)) test(q);
     if (best?.tree) best.yaw = f.heading;
+    if (!best && this.assist && !COL_OLD) best = this.spotAhead();
     return best;
+  }
+  /** (falconfix) no perch in reach: E lands on the roof / ground ahead (8-20 m on, level within 0.4 m over 1.6 m, 0.5-25 m
+   *  under the bird), one reused spot */
+  spotAhead() {
+    const f = this.f, w = this.world, d = clamp(f.V * 1.2, 8, 20);
+    const x = f.pos.x - Math.sin(f.heading) * d, z = f.pos.z - Math.cos(f.heading) * d;
+    const fl = (a, b) => (w.column ? w.column(a, b, f.pos.y).floor : w.floor(a, b));
+    const h = fl(x, z), drop = f.pos.y - h;
+    if (drop < 0.5 || drop > 25) return null;
+    const e = 0.8;
+    if (Math.abs(fl(x + e, z) - h) > 0.4 || Math.abs(fl(x - e, z) - h) > 0.4 || Math.abs(fl(x, z + e) - h) > 0.4 || Math.abs(fl(x, z - e) - h) > 0.4) return null;
+    const S = (this._spot ??= { name: "spot", pos: new THREE.Vector3(), yaw: 0, spot: true });
+    const g = w.ground ? w.ground(x, z) : h;
+    S.pos.set(x, h, z); S.yaw = f.heading; S.roof = h > g + 1.5;
+    return S;
   }
 
   beginLanding(q) {
@@ -116,7 +132,8 @@ export class FalconGame {
     const v1 = face.clone().multiplyScalar(0.8).add(new THREE.Vector3(0, -0.6, 0));
     this.landing = { q, p0, v0, v1, T, t: 0, yaw0: f.heading };
     this.mode = "land";
-    this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : q.tree ? "a tree's crown" : "a roof ridge"}: the flare`);
+    this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : q.tree ? "a tree's crown" : q.spot ? (q.roof ? "the roof" : "the ground") : "a roof ridge"}: the flare`);
+    if (q.spot) this.landing.q = { name: q.roof ? "roof" : "ground", pos: q.pos.clone(), yaw: q.yaw, roof: q.roof };
   }
 
   takeoff() {
@@ -196,7 +213,7 @@ export class FalconGame {
         if (this.assist && !c.land) this.assist.hT = null;
         f.contact = null;
       }
-      if (inp.take("land")) { const q = this.perchInReach(); if (q) this.beginLanding(q); else this.say("no perch in reach (ahead, < 28 m, under 24 m/s)"); }
+      if (inp.take("land")) { const q = this.perchInReach(); if (q) this.beginLanding(q); else this.say(this.assist ? "nowhere to land ahead (slower than 24 m/s, over a roof or the ground)" : "no perch in reach (ahead, < 28 m, under 24 m/s)"); }
       // brushing through leaves (the city's trees): said once per crown
       if (f.brush > 0.05 && (!this._brushT || this.t - this._brushT > 1.5)) { this.say("through the leaves"); this.audio?.leaves?.(); }
       if (f.brush > 0.05) this._brushT = this.t;
