@@ -10,7 +10,7 @@ import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { buildLamps, setLampModel, lampLightPool } from "./lamps.js";
+import { buildLamps, setLampModel, lampLightPool, setLampPool } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { addStalle } from "./stalleCity.js";
@@ -1148,6 +1148,7 @@ async function main() {
     else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   };
 
+  setLampPool(scene, updaters);                       // perfgame round 6: one city-wide lamp pool (?lamppool=old: per tile)
   if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
   // The Saint-Job church (tools/blender/stjob.py, viewer/stjobModel.js) in place of its UrbIS solid (HIDE_BU_IDS);
   // ?stjob=0: the UrbIS solid. One model, three LODs by distance to the octagon; shown while its tile is loaded
