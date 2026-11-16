@@ -201,7 +201,9 @@ async function flushJobs(take) {
   }
   (globalThis.__flushes ||= []).push({ jobs: take.length, drawables: n, ms: Math.round(performance.now() - t0) });
 }
-const FADE_LAST = typeof location === "undefined" || !/[?&]fadelast=old(&|$)/.test(location.search);
+// (perf8, OFF by default: ?fadelast=1. Measured: the falcon start then had 1.2-1.4 s GPU stalls in its first 15 s of play,
+// the fading copies' compiles moved after the reveal; with the compile flush the queue's order matters little anyway)
+const FADE_LAST = typeof location !== "undefined" && /[?&]fadelast=1(&|$)/.test(location.search);
 export function installCompileQueue(renderer) {
   if (rawCompile) return;
   rawCompile = renderer.compileAsync.bind(renderer);
