@@ -12,7 +12,7 @@
 //   its average colour as it shrinks under a pixel (mip-friendly, no shimmer under TAAU).
 // Data: viewer/farLookData.js (worker): aFA / aFB per vertex.
 import * as THREE from "three/webgpu";
-import { attribute, positionWorld, normalWorld, cameraPosition, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max, clamp, fwidth, dot, normalize, pow, length, select } from "three/tsl";
+import { uniform, attribute, positionWorld, normalWorld, cameraPosition, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max, clamp, fwidth, dot, normalize, pow, length, select } from "three/tsl";
 import { filteredPulse, hash2D } from "./tslkit.js";
 import { env } from "./lighting.js";
 import { band } from "./roadPaint.js";
@@ -35,6 +35,9 @@ const STYLE_COL = [[0.29, 0.085, 0.05], [0.17, 0.075, 0.045], [0.4, 0.27, 0.14],
 const LIB_BRICK = ["brick_red_brussels", "brick_dark", "brick_yellow"];
 
 let MAT = null;
+// night: the share of lit windows and their glow, matched to the full tiles' (facades.js interiorRoom: rooms lit 0.55 x
+// 0.62, a lit room's colour behind drapes / lace) on the same buildings seen full and far (docs/FARCITY.md round 2)
+export const FAR_NIGHT = { share: uniform(0.26), gain: uniform(0.26) };   // (round 1: 0.38 / 0.9: 2.1x the full tiles' light, 3.8x the bright pixels)
 /** the far buildings' material (one, shared by every far tile) */
 export function farBuildingMaterial() {
   if (MAT) return MAT;
@@ -138,9 +141,9 @@ export function farBuildingMaterial() {
   m.roughnessNode = mix(mix(float(0.88), float(0.25), glassBox), mix(mix(float(0.7), float(0.8), clayK), float(0.9), flat), isRoof);
   m.aoNode = mix(wallAO, float(1.0), isRoof);
   // night: some rooms lit (the near windows' interior glow, uInteriorGlow x uNight); the per-window draw melts into the
-  // mean share once a window is under a few pixels
-  const lit = mix(step(0.62, cellK), float(0.38), small);
-  m.emissiveNode = C(1.0, 0.72, 0.42).mul(glassBox).mul(lit).mul(float(1).sub(isRoof)).mul(env.uInteriorGlow).mul(env.uNight).mul(0.9);
+  // mean share once a window is under a few pixels (FAR_NIGHT above)
+  const lit = mix(step(float(1).sub(FAR_NIGHT.share), cellK), FAR_NIGHT.share, small);
+  m.emissiveNode = C(1.0, 0.68, 0.36).mul(glassBox).mul(lit).mul(float(1).sub(isRoof)).mul(env.uInteriorGlow).mul(env.uNight).mul(FAR_NIGHT.gain);
   m.userData.shared = true;
   MAT = m;
   return m;
