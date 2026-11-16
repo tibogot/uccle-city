@@ -94,7 +94,8 @@ export async function buildPoliceCars({ site, groundAt, lift = 0.06 }) {
     const heading = Math.atan2(dir[0] * sg, dir[1] * sg);       // local +z (the nose) -> (sin h, cos h)
     const y = groundAt(x, z) + lift;
     LODS.forEach((L, k) => {
-      const lod = car.lods[Math.min(L.pack, car.lods.length - 1)];
+      // (cars2: the near level draws LOD0: its authored LOD1 is a 30-130 m model, crude at the yard's 5 m; 5 cars)
+      const lod = car.lods[Math.min(k === 0 && FLEET_SOURCE === "cars2" ? 0 : L.pack, car.lods.length - 1)];
       const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = heading;
       for (const [name, part] of Object.entries(car.parts)) {
         const geo = lod[name]; if (!geo) continue;

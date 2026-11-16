@@ -1071,7 +1071,7 @@ def build_wheel(sp, detail):
         return w.obj("wheel2", weld=True)
     style = sp.get("rim", "6")
     # LOD0: 32-40 segments (a round tyre / rim silhouette; spokes 2 segments wide), LOD1: 8
-    N = {"5": 40, "6": 36, "multi": 40, "cover": 32}[style] if detail == 0 else 8
+    N = {"5": 40, "6": 36, "multi": 40, "cover": 32}[style] if detail == 0 else 12   # (LOD1 from 30 m: 12, not an octagon)
     if detail == 0:
         # bead, bulged sidewall, rounded shoulder (two points), tread, inner shoulder, inner bead
         prof = [(RR + 0.004, h * 0.80), (lerp(RR, RW, 0.45), h * 1.02), (RW - 0.022, h * 0.93), (RW - 0.006, h * 0.75),

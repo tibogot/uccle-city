@@ -185,12 +185,34 @@ panel is a plane); `crossing` 9-34 at LOD0 are the plate holders / grille bars /
 - Unchanged: the instancing, per-instance paint, motion vectors (viewer/instMotion.js), LOD cross-fades, shadows,
   light bits, weather hooks.
 
-## 8. Browser check (NOT done yet: waiting for the coordinator's "YOUR BROWSER TURN")
-`python tools/serve_nocache.py 8817`, one tab. Compare `?cars=old` vs default in: a parked street (Rue Rouge / Saint-Job),
-traffic at a junction, the police chase view (rear of the player's estate), night (lamps, indicators, reversing).
-Measure draws / GPU ms both ways after the preflight is GREEN; screenshots to docs/cars2/. Watch for: LOD 0 -> 1 fade
-at 30 m (the lamp insets turn into flat lenses), the glass at LOD1 (inset frame), the interior through the glass, the
-police kit's beacon / cable fit on the new estate roof (`viewer/policeCar/fitCar.js` is ray-based and should adapt).
+## 8. Browser check (2026-11-16, one tab, port 8817; system preflight GREEN, page preflight YELLOW = no baseline file)
+Tool: `debug/cars2AB.js` (`run()` fixed places, `runDense()` the densest parked street within 260 m of Saint-Job, the
+camera beside a parked car at 1.7 m; `closeCar()`, `hideUI()` for screenshots). Page loads alternated old / new.
+
+| view | variant | GPU p50 / p95 ms | CPU p50 ms | draws | scene tris | parked LOD 0/1/2/3 | parked tris |
+|---|---|---|---|---|---|---|---|
+| dense street (load 1) | old | 11.34 / 14.1 | 8.0 | 228 | 2.93 M | 3/3/5/107 | 83k |
+| dense street (load 1) | cars2 | 11.34 / 13.0 | 8.0 | 233 | 3.01 M | 6/1/3/106 | 105k |
+| dense street (load 2) | old | 11.53 / 12.2 | 8.2 | 232 | 3.03 M | 4/3/2/104 | 80k |
+| dense street (load 2) | cars2 | 11.57 / 14.3 | 8.0 | 232 | 3.04 M | 5/1/2/106 | 98k |
+| stjob-street | old / cars2 | 11.6 / 11.4 | 7.9 / 8.2 | 218 / 233 | 3.06 / 3.09 M | | 45k / 37k |
+| stjob (45 m up) | old / cars2 | 11.86 / 11.93 | 8.4 / 8.5 | 258 / 252 | 3.41 / 3.36 M | | 42k / 40k |
+
+(steady rounds; the first round after a camera jump is excluded. Draw differences follow the traffic, 30-36 moving cars.)
+- **GPU, CPU, draws: no measurable difference.** The parked triangles are ~25 % higher in the dense street (LOD0 now
+  reaches 30 m instead of 22 m and carries the round wheels) and lower everywhere else; ~1 % of the scene's 3 M.
+  The shared instanced wheel mesh is therefore NOT needed now (it would change the batching for no measurable gain).
+- No car errors in the console (the tile cache's "not stored" warnings are not ours).
+- Screenshots (`docs/cars2/city_*.jpg`): a parked street close up new / old (`city_close_cars2` / `_old`), traffic at
+  the Saint-Job junction (`city_traffic_cars2`), the police chase view new / old (`city_police_chase_cars2` / `_old`),
+  the marked police estate (`city_police_marked`, `?policecar=marked`), night (`city_police_night_cars2`: the wrap-round
+  tail lamps lit). The game kit's beacon sits on the new estate roof (ray fit works), the light bar on the yard cars too.
+- Found and fixed in the browser: the police yard and the game's prop cars drew LOD index 1 up close (designed for the
+  faceted family, whose LOD1 was a 0.8 cm simplification); with cars2 that is the 30 m+ model: they now draw LOD0
+  (5 yard cars + a few props). (`city_police_chase_cars2.jpg` was taken BEFORE that fix; `city_police_marked.jpg` after.)
+  LOD1 wheels 8 -> 12 sides (an octagon showed at 30-40 m).
+- Not checked closely: the LOD0 -> LOD1 cross-fade at 30 m while moving (the dithered fade is the same machinery as
+  before; the lamp insets turn into flat lenses there).
 
 ## 9. Left / next
 - Browser comparison and perf numbers (above); fix what it shows.

@@ -101,7 +101,7 @@ export class Props {
     const car = this.pack.cars.find((c) => c.id === type) || this.pack.cars[0];
     const col = new THREE.Color(paint);
     const mat = damage ? damagedMaterial(col, this.pack.rich, damage) : packMaterial({ paint: col, rich: this.pack.rich, clearcoat: true, seeThrough: true });
-    const L = car.lods[Math.min(1, car.lods.length - 1)];
+    const L = car.lods[Math.min(FLEET_SOURCE === "cars2" ? 0 : 1, car.lods.length - 1)];   // (cars2: LOD1 is a 30 m+ model)
     const g = new THREE.Group(); g.name = `police-prop-${type}`;
     const body = new THREE.Mesh(L.Body, mat); body.castShadow = true; body.receiveShadow = true; g.add(body);
     for (const k of ["FL", "FR", "RL", "RR"]) {
