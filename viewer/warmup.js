@@ -93,18 +93,29 @@ let rawCompile = null, passFor = null, running = false;
 // boot3: every precompile job's root names + its promise, for warmBoot (bootQuiet: the jobs the first view needs)
 const bootJobs = [];
 const jobs = [];
+// perfgame round 3 (?compilepar=1 = one at a time, as before): up to COMPILE_PAR jobs in flight. r187's compileAsync
+// keeps its precompile state per item (begin / finish round every synchronous step, restored across its yields), and a
+// job's synchronous part (the render list, our pass target / MRT) runs whole: jobs only interleave at their awaits. Most
+// of a job's time is the wait for its pipelines (compiled in parallel in the GPU process) and three's frame yields: one
+// at a time, ~194 jobs took ~37 s after the cover (measured); several in flight overlap those waits.
+const COMPILE_PAR = Math.max(1, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("compilepar") ?? 3 : 3));
+const inFlight = new Set();
 const pump = () => {
-  if (running || !jobs.length) return;
+  while (inFlight.size < COMPILE_PAR && jobs.length) pumpOne();
+  running = inFlight.size > 0;
+};
+const pumpOne = () => {
+  if (!jobs.length) return;
   let i = jobs.findIndex((j) => j.first);
   // boot3: until the cover lifts, the jobs the first view needs (bootGate.js neededAtReveal: the models in the boot's
   // ring) go before the others (the far landmarks queued first had the in-ring ones wait 15-17 s). ?bootquiet=all: FIFO
   if (i < 0 && !bootJobsClosed && !BOOT_QUIET_ALL) i = jobs.findIndex((j) => j.names && neededAtReveal(j.names));
   const j = jobs.splice(i >= 0 ? i : 0, 1)[0];
-  running = true; runningJob = j;
-  Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { running = false; pump(); });
+  inFlight.add(j); running = true; runningJob = j;
+  Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { inFlight.delete(j); running = inFlight.size > 0; pump(); });
 };
 /** perfgame (the play loader, viewer/loader/playLoader.js): the precompile queue's jobs left (0 = idle) */
-export const compileJobsLeft = (near = null) => jobs.filter((j) => !near || j.first || near(j.names || [])).length + (running && (!near || !runningJob || runningJob.first || near(runningJob.names || [])) ? 1 : 0);
+export const compileJobsLeft = (near = null) => [...jobs, ...inFlight].filter((j) => !near || j.first || near(j.names || [])).length;
 let runningJob = null;
 const enqueue = (job, first = false, names = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, resolve, reject }); pump(); });
 export function installCompileQueue(renderer) {

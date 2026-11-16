@@ -140,3 +140,33 @@ parallel with the start tile, or overlap queue jobs on their pipeline wait (need
 or LOD2-only first; (2) the fixed ~7-8 ms per frame: profile the post chain and the shadow pass (half-rate static
 shadow cache), three's per-object refresh; (3) heap: drop the CPU copies of static geometry after upload where no
 collider / raycast reads them; (4) the per-tile street lamps into one city pool (6 meshes per tile).
+
+## Round 3 (code first, 2026-11-16) — per-frame cost analysis (trace of the 40 s police drive, round-2 build)
+
+Main thread ms per second of trace (tracing inflates call-heavy code ~1.5-2x; read the proportions):
+| what | ms/s | note |
+|---|---|---|
+| three render submission, scene pass objects (`_renderObjects`) | ~430 | ~390 render objects a frame (main ~240 + shadow ~150): ~10-12 us each untraced; per object: bindings update (~120), node updates (~40), draw (~70), geometry attribute version checks (~40) |
+| of which the sun shadow pass (`renderShadow`) | ~106 | ~150 objects; casters only in the light frustum since round 2 |
+| `updateMatrixWorld` (the whole scene graph, every frame) | ~45 | compose ~16: objects with matrixAutoUpdate; `?freeze=1` (static tile layers) measured within noise |
+| instance pools (gardens, stops, furniture, street life: `instanceStream` gather) | ~40 | time-sliced at 0.3 ms a frame; re-gathers every few m while driving |
+| frustum culling (`project`, `intersectsObject`) | ~40 | |
+| sky + haze + god rays (firmament update, hazeHook) | ~25 | |
+| SSR + bloom + GTAO + TAAU passes (CPU side) | ~25 | |
+| per-object node updates by type: lodFade / object fades, upscale motion matrix (2.4), kit fades | ~20 | |
+| trees tick, roofs, plants, grass, falcons, flyer, minimap, map, traffic, car fleet | ~5-10 each | |
+| an open `parallelPipelines` window (isReady wrapper on every draw) | ~4.6 | a landmark / flyer window never closed: close it |
+
+So the "fixed" ~7-8 ms is mostly per-object submission (~390 objects), not post or updaters. Ideas, by gain:
+1. Fewer render objects in the SHADOW pass: static casters into a cached shadow map re-rendered only when the box moves
+   a texel / the sun moves (dynamic casters every frame into the same map: a second depth pass merged by min), or the
+   shadow map at half rate while the camera is still: -1..-2 ms.
+2. Per tile: merge the layer meshes that share a material across the 9 ring tiles (terrain, roads, walls, roofs are one
+   material per layer: 1 draw per layer for the ring instead of 9) with multi-draw (viewer/multiDraw.js exists): -1..-2 ms.
+3. Street lamps: one city pool (6 meshes per tile now) through instanceStream: -0.3 ms.
+4. Close the stray parallel-pipelines window; landmark LOD2 in one draw (vertex colours, far only): -0.3..-0.5 ms.
+5. matrixAutoUpdate = false on static objects under the tile and landmark roots (no compose per frame): -0.2..-0.4 ms.
+
+Round 3 changes so far (code only, not measured): `?compilepar=` (default 3 compile jobs in flight, 1 = before),
+`?landmarksearly=old` (far landmarks load during the boot when the loader will hold), `debug/heapAudit.js` (what
+holds the heap, by root / path, without a snapshot).

@@ -18,6 +18,7 @@ export const BOOT_DEFER = params.get("bootdefer") !== "0";
 const HELD = params.get("playloader") !== "old" && params.get("gamefast") !== "old" &&
   ((params.get("game") && !["0", "1"].includes(params.get("game"))) || params.get("boothold") !== "old");
 const STAGGER = HELD ? 100 : 600;
+const EARLY = params.get("landmarksearly") !== "old";
 
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)
 export const GATED = {
@@ -49,6 +50,9 @@ export const afterCover = () => liftP;
 export function whenNeeded(id) {
   const p = GATED[id];
   if (!BOOT_DEFER || !start || lifted || !p) return Promise.resolve();
+  // perfgame round 3 (?landmarksearly=old): when the play loader holds after the cover anyway, the far models start NOW,
+  // during the boot (their downloads, parses and compiles overlap the start tile's build and the warm-up), not after it
+  if (HELD && EARLY) return Promise.resolve();
   const margin = 150;                       // a model straddling the ring's edge counts as inside
   if (p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin) return Promise.resolve();
   const k = queued++;
