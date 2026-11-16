@@ -89,7 +89,8 @@ export class TrafficSim {
     this.oe = { n: 0, d: new Float32Array(OBS_ENTRIES), r: new Float32Array(OBS_ENTRIES), v: new Float32Array(OBS_ENTRIES), nxt: new Int32Array(OBS_ENTRIES) };
     this.tmp = new Float64Array(4); this.tmp2 = new Float64Array(4); this.tmp3 = new Float64Array(4);
     this.t = 0; this.acc_ = 0; this.steps = 0;
-    this.params = { density: 1, speed: 1, hour: 9, radius: 470, minSpawnDist: 45, parkRate: 1, signals: true, maxCars: cap };
+    this.params = { density: 1, speed: 1, hour: 9, radius: 470, minSpawnDist: 45, parkRate: 1, signals: true, maxCars: cap,
+      narrow: !(typeof location !== "undefined" && /[?&]narrow=0/.test(location.search)) };   // one way at a time on narrow stretches
     this.stats = { yielding: 0, cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0 };
     this.freeSlots = [];         // parking slots vacated by pull-outs (viewer/carFleet.js car objects)
     this._projCtx = { k: 0 };
@@ -445,6 +446,23 @@ export class TrafficSim {
         if (!hold && yieldHold && dStop > 1.5) hold = HOLD.yield;                 // (police game: the emergency car)
         if (!hold && dStop < (v * v) / (2 * 3.5) + 1) this.committed[i] = p;     // decided and close: go
         if (hold && dStop < gap) { gap = Math.max(0.05, dStop); vL = 0; lead = 3; }
+      }
+    }
+    // NARROW STRETCH (citydefects 2026-11-16; trafficGraph.js narrowStretches): the street's two directions overlap
+    // beside its parked cars: wait before the stretch while an oncoming car is in (or just entering) the opposing one;
+    // two cars arriving together: the lower index goes first (no standoff). ?narrow=0: off.
+    if (!hold && g.nOff && this.params.narrow !== false) {
+      for (let k = g.nOff[pi]; k < g.nOff[pi + 1]; k++) {
+        const dStop = g.nS0[k] - (d + half);
+        if (dStop < 0.3 || dStop > 45 || dStop >= gap) continue;
+        const op = g.nOpp[k], o0 = g.nO0[k], o1 = g.nO1[k];
+        let blocked = false;
+        for (let jj = g.head[op]; jj >= 0 && !blocked; jj = this.nxt[jj]) {
+          const pj = this.posOn(jj), hj = this.half[jj];
+          if (pj + hj > o0 && pj - hj < o1) blocked = true;                                   // inside it
+          else if (pj + hj <= o0 && o0 - (pj + hj) < 6 && this.v[jj] > 0.5 && jj < i) blocked = true;   // entering, has the turn
+        }
+        if (blocked) { gap = Math.max(0.05, dStop - 0.5); vL = 0; lead = 3; hold = HOLD.yield; this.stats.narrowWaits = (this.stats.narrowWaits || 0) + 1; break; }
       }
     }
     for (let k = 0; k < ROUTE && dist < 90; k++) {

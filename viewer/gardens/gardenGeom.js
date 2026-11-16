@@ -37,11 +37,13 @@ class Builder {
     const n = profile.length;
     for (let k = 0; k < n; k++) {
       const [z0, y0] = profile[k], [z1, y1] = profile[(k + 1) % n];
-      this.poly([[x0, y0, z0], [x0, y1, z1], [x1, y1, z1], [x1, y0, z0]], slot, ao);
+      // (citydefects 2026-11-16: wound outward; the profiles are CCW in (z, y), which seen from +x is clockwise: every
+      // coping face pointed INTO the piece, culled from outside, the copings drawn by their far inner faces)
+      this.poly([[x1, y0, z0], [x1, y1, z1], [x0, y1, z1], [x0, y0, z0]], slot, ao);
     }
     if (caps) {
-      this.poly(profile.map(([z, y]) => [x1, y, z]), slot, ao);
-      this.poly(profile.slice().reverse().map(([z, y]) => [x0, y, z]), slot, ao);
+      this.poly(profile.slice().reverse().map(([z, y]) => [x1, y, z]), slot, ao);
+      this.poly(profile.map(([z, y]) => [x0, y, z]), slot, ao);
     }
   }
   /** an axis box split by horizontal rings at `ys` (the AO lives on the ring vertices); no bottom face */
@@ -120,12 +122,14 @@ function pcap(lod) {
     // the pyramid on the slab: from a 0.4 square at T to the apex
     const RP = ring(T, p), apex = [0, top, 0];
     // the plate's top margin outside the pyramid (a flat ring: 4 trapezoids)
-    for (let k = 0; k < 4; k++) B.poly([R2[k], RP[k], RP[(k + 1) % 4], R2[(k + 1) % 4]].reverse(), SLOT.stone, 1);
-    for (let k = 0; k < 4; k++) B.poly([RP[k], apex, RP[(k + 1) % 4]].reverse(), SLOT.stone, 1);
+    // (citydefects 2026-11-16: these were wound facing DOWN, so the top of every pier cap was culled from above: an
+    // L-shaped rim and a see-through, hollow pier, owner playtest images 52-53)
+    for (let k = 0; k < 4; k++) B.poly([R2[k], RP[k], RP[(k + 1) % 4], R2[(k + 1) % 4]], SLOT.stone, 1);
+    for (let k = 0; k < 4; k++) B.poly([RP[k], apex, RP[(k + 1) % 4]], SLOT.stone, 1);
   } else {
     B.box(-w, w, 0, T, -w, w, SLOT.stone, 1, [], true);
     const RP = [[p, T, p], [-p, T, p], [-p, T, -p], [p, T, -p]], apex = [0, top, 0];
-    for (let k = 0; k < 4; k++) B.poly([RP[k], apex, RP[(k + 1) % 4]].reverse(), SLOT.stone, 1);
+    for (let k = 0; k < 4; k++) B.poly([RP[k], apex, RP[(k + 1) % 4]], SLOT.stone, 1);
   }
   return B.geometry();
 }

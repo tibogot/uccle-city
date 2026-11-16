@@ -90,6 +90,14 @@
     "canvas": 6,
     "stripes": false
    }
+  },
+  "extra:white-night": {
+   "_name": "White Night, Ch. de Saint-Job 662 (night shop; tools/streetlife/extra_pois.json): the owner's 'white night shop' in the white rendered house; white aluminium front, lit sign box",
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "lightbox": true
+   }
   }
  }
 }

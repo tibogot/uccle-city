@@ -711,5 +711,110 @@
         }
       ]
     }
-  ]
+  ],
+  "bridgePlans": {
+    "_doc": "OSM way id of a road tagged bridge=yes -> its deck's measured outline (viewer/streets/bridgeDecks.js plan decks; ?bridgeplan=old = the road band). ring: [x, z] outline; free: indices of ring edges that span the cutting (fascia, no wall); walls: the cutting walls under the deck; under: the station floor between them (terrain cut to level).",
+    "1342926162": {
+      "_why": "The NEW Carsoel deck over Saint-Job station (old 1928 S-curve bridge demolished Jan 2025, new straight deck open to trams 2 June 2025): ~45 m along the railway (29 precast 15 m beams), the road diagonally across it, the tram 92 stop 'Gare de Saint-Job' and bus platforms on it, widened sidewalks with small green beds. The road band of bridgeDecks.js left the platforms, shelters and sidewalks hanging over the cutting (owner playtest 2026-11-16).",
+      "source": "Outline from OSM 2025 (bridge=yes ways 1342926162, 1411905486/88, 1411869726/27/57/58, 1411916284/87/88, stairs 1412205415/17 to the train platforms), the UrbIS orthophoto (construction slab, H6) and the DTM 2021 cutting; L'Avenir 2024-07-15 / Bx1 2025-06 (45 m wide deck, 15 m beams, road diagonal, tram stop on the deck). Axis frame: c = between the two L26 tracks at x 899.6, u along the line.",
+      "ring": [
+        [
+          883.8,
+          514.3
+        ],
+        [
+          881.5,
+          519.3
+        ],
+        [
+          880.0,
+          525.6
+        ],
+        [
+          877.8,
+          533.0
+        ],
+        [
+          893.51,
+          543.78
+        ],
+        [
+          894.93,
+          546.42
+        ],
+        [
+          918.32,
+          536.09
+        ],
+        [
+          926.92,
+          539.41
+        ],
+        [
+          931.4,
+          534.7
+        ],
+        [
+          932.8,
+          534.6
+        ],
+        [
+          943.0,
+          528.3
+        ],
+        [
+          943.8,
+          523.0
+        ],
+        [
+          932.56,
+          524.6
+        ],
+        [
+          917.33,
+          496.32
+        ]
+      ],
+      "free": [
+        3,
+        4,
+        12
+      ],
+      "walls": [
+        [
+          [
+            877.58,
+            531.92
+          ],
+          [
+            923.26,
+            507.32
+          ]
+        ],
+        [
+          [
+            894.25,
+            544.52
+          ],
+          [
+            932.26,
+            524.04
+          ]
+        ]
+      ],
+      "under": {
+        "c": [
+          899.6,
+          530.85
+        ],
+        "u": [
+          0.88,
+          -0.474
+        ],
+        "half": 9.3,
+        "level": 71.9
+      },
+      "_ring": "Both ends overlap the UrbIS street polygons by ~1.5 m (the deck top tucks 10 cm under the drawn street there) of Avenue Carsoel exactly (west: tram road be/id/streetsurface/17109 and sidewalks 134927 / 132971, which already have the new layout; east: 28868, 132776, 132777), so the measured street continues the deck without overlap; the north edge at the east end (railed) is the sidewalk's back edge over the opened cutting (the 1928 bridge's site)."
+    }
+  }
 }

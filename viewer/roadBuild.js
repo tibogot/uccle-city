@@ -16,6 +16,7 @@ import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js
 import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2 } from "./streets/measuredPaint.js";
 import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 import { relevelRoads } from "./streets/roadLevels.js";
+import { recentreRoads } from "./streets/recentre.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -74,6 +75,10 @@ export function buildRoadData(o) {
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
   const ground = o.ground ?? hm.ground;   // o.ground: e.g. the hero road bridges' decks over the cutting (rail/railData.js roadDeckGround)
   const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true }) : null;
+  // citydefects (OPT-IN, o.recentre true = ?recentre=1): each OSM centre line moved onto the middle of its measured
+  // carriageway (viewer/streets/recentre.js). Road checker on I6 / E4 / J5: "leaves the measured street" 57 -> 48, C4
+  // paint off the street 36 -> 29, but folds 14 -> 23 and coplanar overlaps 134 -> 225: not default until those are 0
+  const recentre = prep && o.recentre === true ? recentreRoads(roads, prep) : null;
   // paint v2 needs the measured street; a tile without surfaces keeps the engine's rules
   const v2 = o.paint === "v2" && !!prep;
   const ctx = v2 ? preparePaintV2(roads, prep, o.markings ?? null, bounds) : null;     // edits the engine's inputs
@@ -129,7 +134,7 @@ export function buildRoadData(o) {
       parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
       triangles += part.index.length / 3;
     }
-    surfaceStats = { ...S.stats, widthFit };
+    surfaceStats = { ...S.stats, widthFit, recentre };
     surfaceData = { grid: S.grid, kerbs: S.kerbs, bollards: S.bollards };
   }
   for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {

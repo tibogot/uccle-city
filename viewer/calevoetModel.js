@@ -146,7 +146,7 @@ function sourceMaterial(name, lib) {
   if (lib) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[calevoet] library failed on "${name}":`, e.message); }
-    if (!m) console.warn(`[calevoet] library has no "${name}": temporary material`);
+    if (!m) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("calevoet", name);   // (shipped.js: a slot with no shipped set keeps its own look)
   }
   return m ?? (TEMP[name] ?? TEMP.brick_painted_white)();
 }

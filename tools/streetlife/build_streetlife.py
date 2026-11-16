@@ -500,6 +500,11 @@ def load_raw(raw: Path):
     src = {}
     f = raw / "osm_pois.json"
     src["osm"] = json.loads(f.read_text(encoding="utf-8")) if f.exists() else None
+    # POIs OSM does not have yet (tools/streetlife/extra_pois.json, each with its source): merged as OSM-like nodes, id "x<id>"
+    ex = Path(__file__).resolve().parent / "extra_pois.json"
+    if ex.exists() and src["osm"] is not None:
+        for e in json.loads(ex.read_text(encoding="utf-8"))["elements"]:
+            src["osm"].setdefault("elements", []).append({k: v for k, v in e.items() if not k.startswith("_")} | {"type": "xtra"})
     for k, n in (("stib", "stib_stops.json"), ("villo", "villo.json"), ("post", "pointpostal.json")):
         f = raw / n
         src[k] = json.loads(f.read_text(encoding="utf-8")) if f.exists() else None
@@ -554,7 +559,7 @@ def build_tile(name: str, src) -> dict:
         kind = classify(t)
         if not kind:
             continue
-        if e["type"] == "node":
+        if e["type"] in ("node", "xtra"):
             lon, lat = e["lon"], e["lat"]
         elif "center" in e:
             lon, lat = e["center"]["lon"], e["center"]["lat"]
@@ -571,7 +576,7 @@ def build_tile(name: str, src) -> dict:
 
     for _, pid, x, z, kind, t in pois:
         pname = t.get("name") or t.get("brand")
-        rec = {"id": "osm:" + pid, "kind": kind, "cat": t.get("shop") or t.get("amenity") or t.get("craft") or t.get("tourism"),
+        rec = {"id": ("extra:" + pid[1:]) if pid[0] == "x" else "osm:" + pid, "kind": kind, "cat": t.get("shop") or t.get("amenity") or t.get("craft") or t.get("tourism"),
                "x": r2(x), "z": r2(z)}
         if pname:
             rec["name"] = pname

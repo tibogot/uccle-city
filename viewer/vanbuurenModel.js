@@ -148,7 +148,7 @@ function sourceMaterial(name, lib) {
   if (lib) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[vanbuuren] library failed on "${name}":`, e.message); }
-    if (!m) console.warn(`[vanbuuren] library has no "${name}": temporary material`);
+    if (!m) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("vanbuuren", name);   // (shipped.js: a slot with no shipped set keeps its own look)
   }
   return m ?? (TEMP[name] ?? TEMP.concrete_white)();
 }
