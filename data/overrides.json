@@ -711,5 +711,247 @@
         }
       ]
     }
-  ]
+  ],
+  "bridgePlans": {
+    "_doc": "OSM way id of a road tagged bridge=yes -> its deck's measured outline (viewer/streets/bridgeDecks.js plan decks; ?bridgeplan=old = the road band). ring: [x, z] outline; free: indices of ring edges that span the cutting (fascia, no wall); walls: the cutting walls under the deck; under: the station floor between them (terrain cut to level).",
+    "1342926162": {
+      "_why": "The NEW Carsoel deck over Saint-Job station (old 1928 S-curve bridge demolished Jan 2025, new straight deck open to trams 2 June 2025): ~45 m along the railway (29 precast 15 m beams), the road diagonally across it, the tram 92 stop 'Gare de Saint-Job' and bus platforms on it, widened sidewalks with small green beds. The road band of bridgeDecks.js left the platforms, shelters and sidewalks hanging over the cutting (owner playtest 2026-11-16).",
+      "source": "Outline from OSM 2025 (bridge=yes ways 1342926162, 1411905486/88, 1411869726/27/57/58, 1411916284/87/88, stairs 1412205415/17 to the train platforms), the UrbIS orthophoto (construction slab, H6) and the DTM 2021 cutting; L'Avenir 2024-07-15 / Bx1 2025-06 (45 m wide deck, 15 m beams, road diagonal, tram stop on the deck). Axis frame: c = between the two L26 tracks at x 899.6, u along the line.",
+      "ring": [
+        [
+          883.8,
+          514.3
+        ],
+        [
+          881.5,
+          519.3
+        ],
+        [
+          880.0,
+          525.6
+        ],
+        [
+          877.8,
+          533.0
+        ],
+        [
+          893.51,
+          543.78
+        ],
+        [
+          894.93,
+          546.42
+        ],
+        [
+          918.32,
+          536.09
+        ],
+        [
+          926.92,
+          539.41
+        ],
+        [
+          931.4,
+          534.7
+        ],
+        [
+          932.8,
+          534.6
+        ],
+        [
+          943.0,
+          528.3
+        ],
+        [
+          943.8,
+          523.0
+        ],
+        [
+          932.56,
+          524.6
+        ],
+        [
+          917.33,
+          496.32
+        ]
+      ],
+      "free": [
+        3,
+        4,
+        12
+      ],
+      "walls": [
+        [
+          [
+            877.58,
+            531.92
+          ],
+          [
+            923.26,
+            507.32
+          ]
+        ],
+        [
+          [
+            894.25,
+            544.52
+          ],
+          [
+            932.26,
+            524.04
+          ]
+        ]
+      ],
+      "under": {
+        "c": [
+          899.6,
+          530.85
+        ],
+        "u": [
+          0.88,
+          -0.474
+        ],
+        "half": 9.3,
+        "level": 71.9
+      },
+      "_ring": "Both ends overlap the UrbIS street polygons by ~1.5 m (the deck top tucks 10 cm under the drawn street there) of Avenue Carsoel exactly (west: tram road be/id/streetsurface/17109 and sidewalks 134927 / 132971, which already have the new layout; east: 28868, 132776, 132777), so the measured street continues the deck without overlap; the north edge at the east end (railed) is the sidewalk's back edge over the opened cutting (the 1928 bridge's site)."
+    }
+  },
+  "buildingLooks": {
+    "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none. type (viewer/buildingTypes.js TYPE: 0 generic, 1 maison de maitre, 2 art deco / modernist, 3 bel-etage, 4 block, 5 villa), garage false (no garage door).",
+    "544703": {
+      "_name": "Le Relais Saint-Job, the low house (brasserie / restaurant, Place de Saint-Job 1): white render, red clay tiles (Street View Oct 2020)",
+      "style": 3,
+      "roofColor": [
+        0.3,
+        0.09,
+        0.05
+      ]
+    },
+    "559047": {
+      "_name": "Le Relais Saint-Job, the 2-storey corner (traiteur & vins, n. 3): white render (Street View Oct 2020)",
+      "style": 3
+    },
+    "528469": {
+      "_name": "Police / school: the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "528468": {
+      "_name": "Police / school: the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "528531": {
+      "_name": "Police / school: the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "531654": {
+      "_name": "Police / school (the stair block): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "529515": {
+      "_name": "Police / school (the low north wing): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "531854": {
+      "_name": "Police / school (the west wing: adjoins 528531, likely the school too): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    }
+  },
+  "plantsClear": {
+    "_doc": "Polygons (city x, z) where no generated plant / garden piece stands (viewer/plants/cityPlants.js, viewer/gardens/cityGardens.js): yards, gate mouths. ?plantsclear=old: none.",
+    "police_yard": {
+      "_why": "the police station's yard and its north gate's mouth (a shrub stood in the open gate, browser check 2026-11-16); the hedge along the wall is the hero's own",
+      "ring": [
+        [
+          -524.22,
+          -355.68
+        ],
+        [
+          -502.22,
+          -370.28
+        ],
+        [
+          -482.76,
+          -340.95
+        ],
+        [
+          -509.0,
+          -323.53
+        ],
+        [
+          -511.21,
+          -326.86
+        ],
+        [
+          -502.78,
+          -332.46
+        ],
+        [
+          -509.46,
+          -342.52
+        ],
+        [
+          -501.74,
+          -347.65
+        ],
+        [
+          -509.77,
+          -359.75
+        ],
+        [
+          -521.67,
+          -351.84
+        ]
+      ]
+    },
+    "police_south_gate": {"_why": "the station's vehicle gate mouth (frame u 22.5..32, w 9.2..15.6): the front-gardens kit drew a garden wall, a pillar and a hedge across it (policefeel browser check 2026-11-17: the car could not drive in)", "ring": [[-490.35, -344.79], [-482.43, -350.05], [-478.89, -344.72], [-486.81, -339.46]]}, "police_courtyard": {
+      "_why": "the former school courtyard, paved as the station's parking (viewer/policeYard.js COURTYARD)",
+      "ring": [
+        [
+          -511.21,
+          -326.86
+        ],
+        [
+          -540.12,
+          -308.03
+        ],
+        [
+          -549.58,
+          -322.28
+        ],
+        [
+          -561.83,
+          -314.15
+        ],
+        [
+          -548.11,
+          -293.49
+        ],
+        [
+          -535.36,
+          -292.35
+        ],
+        [
+          -502.7,
+          -314.03
+        ],
+        [
+          -509.0,
+          -323.53
+        ]
+      ]
+    }
+  }
 }

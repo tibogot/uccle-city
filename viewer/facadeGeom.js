@@ -1,4 +1,5 @@
 import { fitBase } from "./groundFit.js";
+import { repairWalls } from "./wallRepair.js";   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
 import { faceBays, storeyFit } from "./interior/facadeWindows.js";
 import { litWindows } from "./nightLights/litHash.js";
 import { classify, TYPE } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
@@ -73,6 +74,8 @@ function smoother(tris) {
     return [x / L, y / L, z / L];
   };
 }
+
+const base0 = (b) => b.base;
 
 function triOf(P, I, t) {
   const p = [0, 1, 2].map((q) => { const i = I[t * 3 + q]; return [P[i * 3], P[i * 3 + 1], P[i * 3 + 2]]; });
@@ -430,15 +433,25 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const xs = b.footprint[0].map((q) => q[0]), zs = b.footprint[0].map((q) => q[1]);
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
-    const style = landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = cls && !landmark ? cls.type[bi] : 0, bgar = cls && !landmark ? cls.garage[bi] : 0;
+    // (a curated LOOK, data/overrides.json buildingLooks by UrbIS solid id: the wall style / roof colour a local knows,
+    // checked on Street View: Le Relais Saint-Job's white render and red tiles; ?looks=old: none)
+    const look = opts.looks?.[b.id.split("/").pop()];
+    const style = look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
+    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : cls && !landmark ? cls.garage[bi] : 0;   // (a curated look's type: the police school's blocks as the station's 1960s fronts)
     if (cls) { stats.types = stats.types || [0, 0, 0, 0, 0, 0]; stats.types[btype]++; }
     const roofStyle = hash01(key + "r");
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash
-    const rc = b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const rc = look?.roofColor || b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;                              // (the roof kit) a gable / party-wall stack was placed for this building
-    const all = [];
+    let all = [];
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }
+    // citydefects: a footprint edge the UrbIS wall mesh covers only in part (Av. Carsoel 13: a lone diagonal triangle across
+    // the door) rebuilt as one wall from the base to its own top (viewer/wallRepair.js; opts.wallFix false = ?wallfix=old)
+    if (opts.wallFix !== false && all.length) {
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0 });
+      const n = r.edges.filter((e) => e.rebuilt).length;
+      if (n) { all = r.tris; stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n; }
+    }
     const wallTris = all.length;
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }
     const smooth = smoother(all);
@@ -948,7 +961,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const h = Math.hypot(nx, nz) || 1, dx = nx / h, dz = nz / h;   // downhill, horizontal
       for (const q of p) {
         R.position.push(q[0], q[1], q[2]);
-        const sn = smooth(tri, q);
+        // citydefects (owner image 59, ?roofflat=old): a flat roof's triangles keep their FACE normal; the 32 deg crease
+        // smoothing averaged them with a slightly pitched neighbour (a parapet cap, a gutter strip): 16 % of I6's flat-roof
+        // triangles carried normals 1-30 deg off the plane, broad light / dark bands across the roof under a low sun
+        const sn = flat && opts.roofFlat !== false ? tri.n : smooth(tri, q);
         R.normal.push(sn[0], sn[1], sn[2]);
         R.aRoofCol.push(rc[0], rc[1], rc[2]);
         if (flat) R.aRoof.push(q[0] * fc + q[2] * fs, -q[0] * fs + q[2] * fc, 1, roofStyle);

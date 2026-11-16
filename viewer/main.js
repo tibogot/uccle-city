@@ -4,12 +4,13 @@
 // Scene units are CONTRACT local metres: +x east, +z south, +y up (absolute m TAW).
 // Everything is built on the main thread at load (about 1 s for G4).
 
+import { soundGate } from "./audio/soundGate.js";   // FIRST: every AudioContext after it is gated (all sound off by default; ?sound=1)
 import * as THREE from "three/webgpu";
 import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { buildLamps, setLampModel, lampLightPool } from "./lamps.js";
+import { buildLamps, setLampModel, lampLightPool, setLampPool } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
 import { addStalle } from "./stalleCity.js";
@@ -39,14 +40,15 @@ import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
+import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
-import { Lighting, PRESETS } from "./lighting.js";
+import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
 import { createPipeline } from "./post.js";
 import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- upscale (docs/UPSCALE.md): TAAU + dynamic resolution
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -63,8 +65,13 @@ import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
+import { carriageway, docOffLanes } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
+import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";
+import { stagedCompiler, setStagedFocus, STAGED } from "./stagedCompile.js";
+import { FAR_MERGE, mergeFarLevel, setFarMergeRenderer } from "./farMerge.js";   // perfgame round 6: a far LOD in one draw (?farlodmerge=1)   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
+import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";   // perfgame: the play loader (?playloader=old: none)
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
 import { freeze } from "./staticFreeze.js";                       // perf4: ?freeze=1 the tile layers' world matrices computed once (opt-in)
@@ -78,11 +85,27 @@ import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
 import { farBuildingMaterial } from "./farLook.js";   // farcity: the far tiles' façades (docs/FARCITY.md)
-import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
+import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
 setupHud(params);           // dev log: closed by default (it covered the view), ?log=1 opens it; the HUD folds (viewer/devHud.js)
+// perfgame (docs/PERF_GAME.md): a game link boots AT the game's spawn (the police station: tile E4) instead of booting
+// Saint-Job and then streaming the station's tiles in front of the player; ?gameboot=old: as before
+const GAME_BOOT = { police: { tile: "E4", at: "-502,-355", cam: "-470,-392,38" } };
+{ const gb = params.get("gameboot") !== "old" && !params.get("tile") && !params.get("at") && !params.get("view") && GAME_BOOT[params.get("game")];
+  if (gb) { params.set("tile", gb.tile); params.set("at", gb.at); params.set("cam", gb.cam); } }
+// perfgame round 2: does the play loader hold after the cover (a ?game= start, or the free-roam boot hold ?boothold=old
+// = off), and where will the player be (the spawn: the early tile prefetch, bootPrefetch)
+const GAME_ID = params.get("game");
+const GAME_START = !!GAME_ID && GAME_ID !== "0" && GAME_ID !== "1";
+const BOOT_HOLD = params.get("playloader") !== "old" && params.get("boothold") !== "old" && !GAME_START;
+// (the free-roam hold waits for the far landmarks' loads, not for the whole ring in full: 0 m = the tile under the view;
+// the ring's full tiles cross-fade in over their far tiles as before; ?boothold=ring: the ring within 300 m too)
+const BOOT_HOLD_NEAR = params.get("boothold") === "ring" ? 300 : 0;
+const FAST_START = params.get("playloader") !== "old" && params.get("gamefast") !== "old" && (GAME_START || BOOT_HOLD);
+const SPAWN = params.get("at")?.split(",").map(Number).filter(Number.isFinite).length === 2 ? params.get("at").split(",").map(Number)
+  : GAME_ID === "falcon" || (params.get("tile") || "I6").toUpperCase() === "I6" ? [1153, 540] : null;
 const TILE = (params.get("tile") || "I6").toUpperCase();    // I6 = Saint-Job (it was G4 before the grid grew to all of Uccle)
 const EYE = 1.7;            // walk-mode eye height (m)
 const CARVE = 0.12;         // terrain is pushed this far under any road surface
@@ -91,6 +114,9 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // same way, far tiles fade in and out at the ring's edge. ?tilefade=0: instant swaps (and no fade term in the
 // tiles' shaders), ?smooth=0: every smooth-LOD change off.
 const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
+const STREAM_ORDER = params.get("streamorder") !== "old";
+const HOLD_FAST = params.get("holdfast") !== "old";   // perfgame round 7: tiles under the play loader: no fade-in, no awaited compiles   // perfgame: stream the wanted tile nearest the player first
+const UNLOAD_GAP = params.get("unloadgap") !== "old", UNLOAD_MARGIN = +(params.get("unloadmargin") ?? 60);   // perfgame round 2: full tiles unload by distance
 const fader = new Fader();
 /** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
  *  render pipeline exists). Not under the boot cover: the warm-up draws those itself. */
@@ -333,6 +359,11 @@ let trackProf = null, worldRef = null;
 // OSM road-bridge decks (viewer/streets/bridgeDecks.js) for walk / third person / the car: world.decks, one per bridge
 // (a bridge is in every tile whose roads.json buffer reaches it: counted, removed with its last tile)
 const bridgeDeckRefs = new Map();     // road id -> { fn, n }
+const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
+const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
+const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
+const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
+window.__carriage = carriageRefs;
 function addBridgeDecks(decks, hm) {
   for (const d of decks || []) {
     let e = bridgeDeckRefs.get(d.id);
@@ -342,11 +373,40 @@ function addBridgeDecks(decks, hm) {
   }
 }
 let bridgeDeckMat = null;
+// the plan decks' look (citydefects 2026-11-16; ?decklook=old: vertex colours): the streets' own asphalt and sidewalk /
+// kerb materials (roadPaint.js: the same tone and texture as the street the deck carries), the library's cast concrete
+// on the fascia, walls, upstands and soffit, dark steel rails; one draw per slot (streets/bridgeDecks.js PLAN_SLOTS)
+const DECK_LOOK = params.get("decklook") !== "old";
+let deckLookMats = null;
+function deckMaterials() {
+  if (deckLookMats) return deckLookMats;
+  const conc = libMaterial("concrete_white", { mapping: "world" });
+  const steel = new THREE.MeshStandardNodeMaterial({ color: 0x1c1f22, roughness: 0.45, metalness: 0.6 });
+  deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel];
+  deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel"][i]}`; });
+  return deckLookMats;
+}
 function bridgeDeckMesh(bd) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(bd.mesh.position, 3));
   g.setAttribute("normal", new THREE.BufferAttribute(bd.mesh.normal, 3));
   g.setAttribute("color", new THREE.BufferAttribute(bd.mesh.color, 3));
+  if (DECK_LOOK && bd.mesh.groups) {
+    const n = bd.mesh.position.length / 3, slotOfV = new Float32Array(n);
+    for (const gr of bd.mesh.groups) { g.addGroup(gr.start, gr.count, gr.slot); slotOfV.fill(gr.slot, gr.start, gr.start + gr.count); }
+    g.setAttribute("uv", new THREE.BufferAttribute(bd.mesh.uv, 2));
+    // the street shaders' inputs: plain asphalt (no lane lines, no junction marks, surface 0), slabs / kerb stones (aKind)
+    g.setAttribute("aLateral", new THREE.BufferAttribute(new Float32Array(n), 1));
+    g.setAttribute("aPiece", new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+    g.setAttribute("aEdges", new THREE.BufferAttribute(new Float32Array(n * 4), 4));
+    g.setAttribute("aMark", new THREE.BufferAttribute(new Float32Array(n * 4), 4));
+    g.setAttribute("aSurf", new THREE.BufferAttribute(new Float32Array(n), 1));
+    g.setAttribute("aKind", new THREE.BufferAttribute(Float32Array.from(slotOfV, (v) => (v === 2 ? 1 : 0)), 1));
+    g.computeBoundingSphere();
+    const m = new THREE.Mesh(g, deckMaterials());
+    m.name = `road-bridge-deck ${bd.name}`; m.castShadow = m.receiveShadow = true;
+    return m;
+  }
   g.computeBoundingSphere();
   bridgeDeckMat ??= Object.assign(new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.88, metalness: 0, side: THREE.DoubleSide }), { name: "road-bridge-deck" });
   bridgeDeckMat.userData.shared = true;
@@ -535,6 +595,31 @@ function closeBootWorker() {
   bootWorker.terminate(); bootWorker = null;
 }
 // ---- /boot3
+// ---- perfgame (docs/PERF_GAME.md): EXTRA FULL-TILE WORKERS WHILE THE PLAY LOADER HOLDS. The area round a spawn needs
+// its near full tiles (3-5 s of worker each, one after another behind the single streaming worker); under the loader
+// no frame is seen, so tiles landing together cost nothing visible (the pool's 7.5 s freeze was while flying): up to
+// two more workers build them side by side (stream() prefetches into every worker of the pool), closed when idle once
+// the loader has faded. ?holdworkers=0: the single worker, as before.
+const holdWorkers = [];
+function openHoldWorkers(n = 2) {
+  if (params.get("holdworkers") === "0" || !workers.length || params.get("worker") === "0") return;
+  n = Math.min(n, Math.max(0, (navigator.hardwareConcurrency || 4) - 4));
+  while (holdWorkers.length < n) {
+    try {
+      const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
+      w.busy = 0; w.onmessage = onWorkerMessage(w);
+      w.onerror = (e) => { log(`hold tile worker failed (${e.message || "error"})`); const i = workers.indexOf(w); if (i >= 0) workers.splice(i, 1); holdWorkers.splice(holdWorkers.indexOf(w), 1); for (const [id, p] of pendingReq) if (p.w === w) { pendingReq.delete(id); p.retry(); } };
+      workers.push(w); holdWorkers.push(w);
+    } catch { break; }
+  }
+}
+function closeHoldWorkers() {
+  for (const w of [...holdWorkers]) {
+    const i = workers.indexOf(w); if (i >= 0) workers.splice(i, 1);          // (no new request for it)
+    const end = () => { if (w.busy > 0) { setTimeout(end, 1000); return; } w.terminate(); holdWorkers.splice(holdWorkers.indexOf(w), 1); };
+    end();
+  }
+}
 /** worker builds started ahead of loadTile (key "name|lite"): stream() prefetches the next wanted tiles */
 const tilePrefetch = new Map();
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
@@ -556,7 +641,7 @@ const HEROS = params.get("heros") !== "old";
 const HEROS_TILE = { carves: [], paths: [] };
 const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
-function tileData(entry, lite = false, viaBoot = false) {
+function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     heros: HEROS ? HEROS_TILE : null,                                                                // Square des Heros: the park cut out of the UrbIS square surface, its steps' carves (viewer/heros/herosSurface.js)
@@ -577,16 +662,17 @@ function tileData(entry, lite = false, viaBoot = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
-    cache: params.get("tilecache") !== "0" };                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
+    cache: params.get("tilecache") !== "0",
+    cacheStore: params.get("tilecache") === "idb" ? "idb" : "capi" };                               // perfgame round 4: the Cache API store (viewer/tileCache.js), ?tilecache=idb = IndexedDB as before                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
   const key = `${entry.name}|${lite ? 1 : 0}`;
   const pre = tilePrefetch.get(key);
   if (pre) { tilePrefetch.delete(key); pumpBoot(); return pre; }
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!workers.length) return local();
-  const w = lite && liteWorker ? liteWorker : viaBoot && bootWorker ? bootWorker : workers.reduce((a, b) => (b.busy < a.busy ? b : a));   // (boot3: the boot worker)
+  const w = lite && liteWorker ? liteWorker : viaBoot && bootWorker ? bootWorker : viaHold && holdWorkers.length ? holdWorkers.reduce((a, b) => (b.busy < a.busy ? b : a)) : workers.reduce((a, b) => (b.busy < a.busy ? b : a));   // (boot3: the boot worker; perfgame: the hold workers, the start tile's worker left alone)
   return new Promise((resolve, reject) => {
     const id = ++reqId;
     w.busy++;
@@ -596,11 +682,11 @@ function tileData(entry, lite = false, viaBoot = false) {
   });
 }
 /** start the worker builds of these manifest tiles now (their loadTile takes the result) */
-function prefetchTiles(entries, lite = false, viaBoot = false) {
+function prefetchTiles(entries, lite = false, viaBoot = false, viaHold = false) {
   for (const e of entries) {
     const key = `${e.name}|${lite ? 1 : 0}`;
     if (tilePrefetch.has(key)) continue;
-    const p = tileData(e, lite, viaBoot);
+    const p = tileData(e, lite, viaBoot, viaHold);
     p.catch(() => tilePrefetch.delete(key));
     tilePrefetch.set(key, p);
   }
@@ -629,6 +715,18 @@ function bootPrefetch(manifest, entry) {
     bootRing = [...full.slice(0, 2).map((e) => [e, false]), ...lite.map((e) => [e, true]), ...full.slice(2).map((e) => [e, false])];
   }
   pumpBoot();
+  // perfgame round 2 (?gamefast=old): when the play loader will hold after the cover (a game, or the free-roam boot
+  // hold), the full tiles round the spawn that it will wait for are built NOW, in two more workers, beside the start
+  // tile (they waited for the cover, then for the single streaming worker one after another: 3-15 s each)
+  if (FAST_START) {
+    const [sx, sz] = SPAWN ?? c(entry);
+    const gap = (t) => Math.max(t.bounds.x[0] - sx, 0, sx - t.bounds.x[1], t.bounds.z[0] - sz, 0, sz - t.bounds.z[1]);
+    // (round 3: the whole ring when the loader will wait for it after a boot, ?settlering=old: the near ones; two per
+    // hold worker, never on the start tile's worker: four builds landing together on one worker all finished late)
+    const ringAll = params.get("settlering") !== "old" && params.get("settlejobs") !== "loads";
+    const near = full.filter((t) => t !== entry && (ringAll || gap(t) <= 300)).sort((a, b) => gap(a) - gap(b)).slice(0, 4);
+    if (near.length) { openHoldWorkers(2); prefetchTiles(near, false, false, true); }
+  }
 }
 // ONE build at a time per worker: a worker runs every request it holds at once (its handler awaits fetches), so four
 // tiles sent together all finished late (the start tile took 11.7 s instead of 3 s, measured): the next goes when one
@@ -723,7 +821,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const own = {};
   for (const k of Object.keys(layers)) { own[k] = new THREE.Group(); own[k].name = `${entry.name}-${k}`; layers[k].add(own[k]); }
   // a streamed tile is built over several frames: hidden until it is whole, then faded in (smooth LOD)
-  const fadeIn = TILE_FADE && !verbose;
+  // perfgame round 7 (?holdfast=old): a tile landing while the play loader covers the screen does not fade in (nobody
+  // sees it) and does not wait for its compiles: its own materials build in the hidden frames (async pipelines), its
+  // fading copies (needed only when it leaves) and shadow pass compile in the background afterwards
+  const holdFast = HOLD_FAST && playLoader.active && !verbose;
+  const fadeIn = TILE_FADE && !verbose && !holdFast;
   if (fadeIn) for (const g of Object.values(own)) g.visible = false;
   const ups = [];
   const t0 = performance.now();
@@ -757,6 +859,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (ss) say(`road surfaces: MEASURED (UrbIS Land cover): ${ss.surfaces} polygons -> ${ss.baseTris} triangles, ${ss.kerbLength} m of kerb; engine markings clipped to them: ${ss.overlayTris} triangles; ${ss.mappedPieces} engine roads/pads on measured ground, ${ss.unmappedPieces} kept as built (${ss.keptEngineTris} + ${ss.keptSideTris} triangles); ${ss.ms} ms`);
   const R = roadMeshes(d.road);
   own.roads.add(...R.meshes);
+  // the OSM road bridges' decks this tile carries (viewer/streets/bridgeDecks.js): drawn here, walked / driven via world.decks
+  // (before the grass: a deck is a solid for it, no blades through the Carsoel deck's slab; citydefects 2026-11-16)
+  const deckMeshes = (d.bridgeDecks || []).map(bridgeDeckMesh);
+  if (deckMeshes.length) own.roads.add(...deckMeshes);
   await frame("roads");
   const terr = terrainMesh(d.terrain, contourOn, feats, bounds, d.cover, await orthoP);
   own.terrain.add(terr);
@@ -779,7 +885,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
   const plantDoc = await plantsP;
-  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: R.meshes, buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z))].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
+  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z))].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
   // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
@@ -807,22 +913,40 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (with furniture kit 2 on, viewer/furniture2/ draws the benches and bike parkings: furniture.js keeps them for ?furniture=old)
   const dropKinds = new Set([...((cityStreetLife.on && cityStreetLife.layer) || cityStops.on ? ["bus_stop"] : []), ...(cityFurniture.on && cityFurniture.kit ? ["bench", "bicycle_parking"] : [])]);
   const furnFeats = dropKinds.size ? { ...feats, points: (feats.points || []).filter((p) => !dropKinds.has(p.kind)) } : feats;
-  const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds);
+  const onRoadDeck = (x, z) => { for (const e of bridgeDeckRefs.values()) if (e.fn(x, z) != null) return true; return false; };
+  // where cars drive (viewer/streets/carriageway.js): no garden piece, signal post or tram pole stands there
+  const drivenAt = carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck });
+  carriageRefs.set(entry.name, { test: drivenAt, bounds });   // (debug/furnitureAudit.js: window.__carriage)
+  const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds, { fit, driven: drivenAt });
   own.features.add(furn.group);
   await frame("furniture");
-  // the OSM road bridges' decks this tile carries (viewer/streets/bridgeDecks.js): drawn here, walked / driven via world.decks
-  for (const bd of d.bridgeDecks || []) own.roads.add(bridgeDeckMesh(bd));
-  const onRoadDeck = (x, z) => { for (const e of bridgeDeckRefs.values()) if (e.fn(x, z) != null) return true; return false; };
-  const tram = buildTram(feats, (x, z) => hm.surface(x, z) + CARVE, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on });
+  // (the tram platforms / shelters on an OSM road deck stand on the deck, not on the cutting under it: the Saint-Job
+  // station stop on the Carsoel deck, citydefects 2026-11-16; ?bridgeplan=old as before)
+  const deckAt = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
+  const tramSurface = BRIDGE_PLAN ? (x, z) => deckAt(x, z) ?? hm.surface(x, z) + CARVE : (x, z) => hm.surface(x, z) + CARVE;
+  const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt });
   own.features.add(tram.group);
-  const stopCounts = cityStops.addTile(entry.name, stopsDoc, own.features, { shelters: tram.shelterSites });
-  const furnCounts = cityFurniture.addTile(entry.name, furnDoc, own.features);
-  const skCounts = cityStreetKit.addTile(entry.name, skDoc, own.features);
+  // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
+  // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
+  const lanesAt = FURN_SNAP && fit ? carriageway(roads, { classAt: fit.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
+  const snap = (doc, paths) => { if (!lanesAt) return doc; const r = docOffLanes(doc, paths, lanesAt, fit); snapMoved += r.moved; return r.doc; };
+  let snapMoved = 0;
+  const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]]), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
+  const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]), own.features);
+  const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, [["signs"], ["posts"]]), own.features);
+  if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
   if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
-  const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z));
+  // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
+  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring);
+  const inClear = (x, z) => clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });
+  // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
+  // the police station's vehicle gate)
+  const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z));
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
+  if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
+  if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   const plantCounts = cityPlants.addTile(entry.name, plantDoc, own.features, treeGround || ((x, z) => hm.surface(x, z)), B.kit);   // (on the DRAWN ground: the measured squares / medians' lift, as the trees; window boxes on the façade kit's sills)
   ivyP.then((doc) => cityIvy.addTile(entry.name, doc, own.features)).then((c) => { if (c) say(`ivy: ${c.walls} walls, ${c.leaves} leaf sprays, ${c.stems} stem pieces (worker ${c.workerMs} ms)`); });
   if (plantCounts) say(`plants: ${Object.entries(plantCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/plants, viewer/plants)`);
@@ -831,14 +955,20 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("tram");
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
+  let parkDropped = 0;
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP) });
+  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP),
+    // citydefects: the slots by the measured width, built in the worker with the traffic lanes kept clear of them
+    // (d.parked: viewer/streets/parkPlace.js widthParking; ?parkclear=old: the old slots above), still kept off the
+    // furniture kits' pieces
+    filter: PARK_CLEAR && d.parked ? () => { const keep = cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear((x, z, yaw) => ({ x, z, yaw }), furnDoc), skDoc);
+      const out = d.parked.sites.filter((c) => keep(c.x, c.z, c.yaw)); parkDropped = d.parked.sites.length - out.length; return out; } : null });
   const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, (x, z) => hm.surface(x, z) + CARVE);
   if (twCounts) say(`two-wheelers: ${twCounts.bikes} parked in ${twCounts.slots} slots (viewer/moto/cityTwoWheelers.js)`);
   await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
   if (bollards) own.features.add(bollards);
-  if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs, ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);
+  if (fit) say(`street on the measured surfaces: ${lamps.count} lamps on the sidewalks, ${cars.count} parked cars against the kerbs (${d.parked ? `by the measured width: ${JSON.stringify(d.parked.stats)}, ${parkDropped} off for furniture` : "the old slots"}), ${bollards?.count ?? 0} bollards (UrbIS Topo CR5702P / CR57L)`);
   own.features.add(cars.group);
   say(`parked cars: ${cars.count} (placed procedurally in the parking lanes)`);
   say(`tram (OSM): ${tram.counts.wireSegments} wire segments, ${tram.counts.poles} poles, ${tram.counts.platforms} platforms, ${tram.counts.shelters} shelters`);
@@ -851,6 +981,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   cityNight?.addShops(entry.name, cityStreetLife.layer?.tiles.get(entry.name)?.night?.lights);   // ?night=1: its shop windows + signs join the night pool (fading in)
   if (sl) say(`street life: ${sl.boxes} boxes, ${sl.windows} windows, ${Object.values(sl.props).reduce((a, b) => a + b, 0)} props, ${sl.labels} labels (${sl.labelPages} atlas page(s)); worker ${sl.worker.total} ms, main thread ${sl.mainMs} ms`);
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
+  if (holdFast && compileFor && TILE_FADE) {
+    const fp = Object.values(own).map(fadeProxies).filter(Boolean);
+    if (fp.length) compileFor(fp).catch(() => {});                  // (background, not awaited: the queue's normal order)
+  }
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
@@ -861,6 +995,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
+    carriageRefs.delete(entry.name);
     cityStreetKit.removeTile(entry.name);           // its instances leave the street kit pools
     cityTwoWheelers.removeTile(entry.name);
     cityGardens.removeTile(entry.name);             // its instances leave the garden pools (stand-ins and hedges go with the groups)
@@ -909,6 +1044,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
 // ------------------------------------------------------------------ main
 
 async function main() {
+  soundGate.mountButton();                          // the mute / unmute button (all sound off by default; ?sound=1 on)
   const manifest = await getJSON("manifest.json");
   const sel = $("tileSel");
   for (const t of manifest.tiles) {
@@ -922,6 +1058,19 @@ async function main() {
   const F = entry.files;
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
+  // perfgame round 7 (?gamepreload=old): a ?game= start loads its code and car models DURING the boot (the game kit,
+  // the police game + its car pack, the falcon game) instead of after the cover (they were part of the ~5 s "Getting
+  // ready" behind the play loader)
+  if (GAME_START && params.get("gamepreload") !== "old") {
+    import("./game/cityGame.js").catch(() => {});
+    if (GAME_ID === "police") { import("./police/policeGame.js").catch(() => {}); import("./drive/carPacks.js").then((m) => m.loadPack("faceted")).catch(() => {}); }
+    if (GAME_ID === "falcon") import("./falconGame/falconGameDef.js").catch(() => {});
+  }
+  // perfgame round 5: the player's position for the staged landmark compiles (stagedCompile.js); before the modes exist,
+  // the spawn / the start tile's centre
+  setStagedFocus(() => { try { return flyer.on ? [flyer.x, flyer.z] : driver.on ? [driver.x, driver.z] : walker.on ? [walker.x, walker.z] : [controls.target.x, controls.target.z]; } catch { return SPAWN ?? [(x0 + x1) / 2, (z0 + z1) / 2]; } });
+  let stagedFor = null;
+  const heroCompiler = () => (compileFor ? (STAGED ? (stagedFor ||= stagedCompiler(compileFor)) : compileFor) : null);
   // the worker pool starts on the start tile and its ring NOW, in parallel with the landmarks loading below (their
   // builds were one after another, after everything else, before: perf audit 2026-11-13)
   if (workers.length > 1 && params.get("bootprefetch") === "1") {   // ?bootprefetch=1: on (A/B: no clear gain measured, likely CPU contention with the landmarks loading; test on a fresh machine)
@@ -934,6 +1083,7 @@ async function main() {
   bootStage("renderer");                            // (boot2: the loading bar's stage)
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
   const renderer = new THREE.WebGPURenderer({ antialias: !UPSCALE /* --- upscale: TAA instead of MSAA */, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
+  setFarMergeRenderer(renderer);   // perfgame round 7: landmark far merges bake with it (?farlodlm=old: off)
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
@@ -1026,10 +1176,11 @@ async function main() {
     pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0", upscale: UPSCALE ? createUpscaler(renderer, camera) : null }) : null;   // ?ao=0 ?ssr=0: A/B
     cityQuality._pipe = pipe; if (params.get("quality")) cityQuality.set(params.get("quality"));   // --- upscale: the settings menu's quality presets
     if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
-    if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first });   // ?precompile=0: A/B
+    if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first, names: o?.names ?? null });   // ?precompile=0: A/B
     else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   };
 
+  setLampPool(scene, updaters);                       // perfgame round 6: one city-wide lamp pool (?lamppool=old: per tile)
   if (params.get("lampmodel") !== "0") setLampModel(await loadLampModel());   // the Blender lamp (?lampmodel=0: the old cylinders)
   // The Saint-Job church (tools/blender/stjob.py, viewer/stjobModel.js) in place of its UrbIS solid (HIDE_BU_IDS);
   // ?stjob=0: the UrbIS solid. One model, three LODs by distance to the octagon; shown while its tile is loaded
@@ -1105,51 +1256,51 @@ async function main() {
   setBootStart(bounds, Math.max(0, Math.min(2, +(params.get("ring") ?? 1))));   // boot2: the ring the boot loads (bootGate.js)
   const heroes = [];
   // the Chapelle de Stalle + its interior cell (tools/blender/stalle*.py, viewer/stalleCity.js) behind ?stalle=1
-  if (params.get("stalle") !== "0") heroes.push(() => addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, getView: () => ({ camera, lighting }), getThird: () => third }));
+  if (params.get("stalle") !== "0") heroes.push(() => addStalle({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, getView: () => ({ camera, lighting }), getThird: () => third }));
   // The Uccle town hall (tools/blender/townhall.py, viewer/townhallCity.js) in place of its UrbIS solid, behind
   // ?townhall=1 for now (its BU_ID joins HIDE_BU_IDS before the first tile is built)
-  if (params.get("townhall") !== "0") heroes.push(() => addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("townhall") !== "0") heroes.push(() => addTownHall({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
   // behind ?vanbuuren=1 for now
-  if (params.get("vanbuuren") !== "0") heroes.push(() => addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (params.get("vanbuuren") !== "0") heroes.push(() => addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
   // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
-  if (params.get("wolvendael") !== "0") heroes.push(() => addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: () => compileFor, renderer, lighting }));
+  if (params.get("wolvendael") !== "0") heroes.push(() => addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: heroCompiler, renderer, lighting }));
   // The police station, Rue Rouge 17 (tools/blender/police_rouge.py, viewer/policeCity.js) in place of UrbIS solids 528055 +
   // 528772 (BU 1674458), with its yard, behind ?police=1 for now
-  if (params.get("police") !== "0") heroes.push(() => addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (params.get("police") !== "0") heroes.push(() => addPolice({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // The Uccle-Calevoet station building (tools/blender/calevoet_station.py, viewer/calevoetCity.js) in place of UrbIS
   // solid 534568, behind ?calevoet=1 for now
-  if (params.get("calevoet") !== "0") heroes.push(() => addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (params.get("calevoet") !== "0") heroes.push(() => addCalevoet({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
   // the Eglise Saint-Pierre (tools/blender/stpierre.py, viewer/stpierreCity.js) behind ?stpierre=1
-  if (params.get("stpierre") !== "0") heroes.push(() => addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("stpierre") !== "0") heroes.push(() => addStPierre({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // the Russian Orthodox church of Saint-Job (tools/blender/russian.py, viewer/russianCity.js); ?russian=0 = the UrbIS solid
-  if (params.get("russian") !== "0") heroes.push(() => addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("russian") !== "0") heroes.push(() => addRussian({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // Square des Heros as a hero place (viewer/heros/, docs/landmarks/HEROS.md): the war memorial + steps (tools/blender/heros.py),
   // the dolomite ground, the park cut out of the UrbIS square surface; ?heros=old = the setts plaza as before
-  if (HEROS) heroes.push(() => addHeros({ scene, updaters, hide: HIDE_BU_IDS, tile: HEROS_TILE, world, manifest, log, compiler: () => compileFor, renderer }));
+  if (HEROS) heroes.push(() => addHeros({ scene, updaters, hide: HIDE_BU_IDS, tile: HEROS_TILE, world, manifest, log, compiler: heroCompiler, renderer }));
   // the Eglise Notre-Dame du Rosaire (tools/blender/rosaire.py, viewer/rosaireCity.js); ?rosaire=0 = the UrbIS solid
-  if (params.get("rosaire") !== "0") heroes.push(() => addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("rosaire") !== "0") heroes.push(() => addRosaire({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // The Royal Observatory (tools/blender/observatory.py, viewer/observatoryCity.js) in place of its UrbIS solids,
   // behind ?observatory=1 for now (its solids join HIDE_BU_IDS before the first tile is built)
-  if (params.get("observatory") !== "0") heroes.push(() => addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("observatory") !== "0") heroes.push(() => addObservatory({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // The Eglise Saint-Augustin at Altitude Cent (Forest, just north of Uccle: tools/blender/augustin.py,
   // viewer/augustinCity.js), the skyline landmark; its UrbIS solid is not in the tiles (outside Uccle), nothing hidden
-  if (params.get("augustin") !== "0") heroes.push(() => addAugustin({ scene, updaters, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("augustin") !== "0") heroes.push(() => addAugustin({ scene, updaters, world, manifest, log, compiler: heroCompiler }));
   // landmark5 (viewer/landmark5City.js): the Eglise du Sacre-Coeur, Rue Vanderkindere (tools/blender/sacrecoeur.py);
   // ?sacrecoeur=0 = the UrbIS solid
-  if (params.get("sacrecoeur") !== "0") heroes.push(() => addLandmark5("sacrecoeur", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("sacrecoeur") !== "0") heroes.push(() => addLandmark5("sacrecoeur", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // ... and the Eglise Saint-Marc, Avenue De Fre (tools/blender/saintmarc.py); ?saintmarc=0 = the UrbIS solid
-  if (params.get("saintmarc") !== "0") heroes.push(() => addLandmark5("saintmarc", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("saintmarc") !== "0") heroes.push(() => addLandmark5("saintmarc", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // castle1 >>> the Chateau Latour de Frein, Rue Engeland 555 (tools/blender/latourdefrein.py, same loader); ?latourdefrein=0 = the UrbIS solid
-  if (params.get("latourdefrein") !== "0") heroes.push(() => addLandmark5("latourdefrein", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("latourdefrein") !== "0") heroes.push(() => addLandmark5("latourdefrein", { scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   // <<< castle1
   // the public art kit (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md): the Dix Monolithes, La Victoire, the Gobert
   // memorial, the milestones and the Charles V stones; ?art=old = the city without them (the monoliths' UrbIS boxes back)
-  if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: () => compileFor }));
+  if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
-  if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: () => compileFor, log, params }).catch((e) => log(`flags failed: ${e.message}`));
+  if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: heroCompiler, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
   // the tile worker starts on the start tile and its ring NOW (the hide list and the ponds are complete): it builds them
   // one after another while the main thread does the rest of the boot (it waited idle for the warm-up before)
@@ -1211,7 +1362,9 @@ async function main() {
           // shaders (+ fading copies) and the shadow pass built before it shows (nothing compiled on a frame)
           const tw = performance.now();
           for (let i = 0; i < 200 && !compileFor && params.get("precompile") !== "0"; i++) await new Promise((r) => setTimeout(r, 100));
-          const warm = await warmBridge(pb, { compile: compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
+          // perfgame round 6 (?farlodmerge=1, off by default): the far level in one draw (viewer/farMerge.js)
+          if (FAR_MERGE) await mergeFarLevel(pb.levels[pb.levels.length - 1], { renderer, aoTex: b.aoTex, name: `bridge ${name}` }).then((r) => r && log(`bridge ${name}: far LOD ${r.before} -> ${r.after} draws (${r.slots} slots, means baked)`)).catch((e) => log(`bridge ${name} far merge: ${e.message}`));
+          const warm = await warmBridge(pb, { compile: heroCompiler() ?? compileFor, renderer, scene, openParallel: renderer.backend?.isWebGPUBackend ? openParallelPipelines : null }).catch((e) => ({ ms: performance.now() - tw, err: e.message }));
           scene.add(pb.group);
           window.__bridges ??= {}; window.__bridges[name] = { b, pb, warm };
           const p = b.placement.position;
@@ -1264,7 +1417,7 @@ async function main() {
   const OLD_FLIGHT = params.get("falcon") === "old";
   let openParallelFly = null;
   const flyer = OLD_FLIGHT ? new Flyer(camera, renderer.domElement, scene, world)
-    : new CityFlyer(camera, renderer.domElement, scene, world, { manifest, base: DATA, hide: HIDE_BU_IDS, log, params, lighting, renderer, compiler: () => compileFor,
+    : new CityFlyer(camera, renderer.domElement, scene, world, { manifest, base: DATA, hide: HIDE_BU_IDS, log, params, lighting, renderer, compiler: heroCompiler,
       openParallel: renderer.backend?.isWebGPUBackend ? (...a) => (openParallelFly ? openParallelFly(...a) : null) : null });
   if (!OLD_FLIGHT) { import("../vendor/engine/parallelPipelines.js").then((m) => { openParallelFly = m.openParallelPipelines; }); updaters.push((camPos) => flyer.tick(camPos)); }
   window.__flyer = flyer;
@@ -1425,7 +1578,7 @@ async function main() {
         return fpos;
       };
       cityTraffic = createCityTraffic({ scene, renderer, camera, ground: (x, z) => world.surface(x, z) + CARVE, night: env.uNight, focus: focusOf,
-        driver, getThird: () => third, getTram: () => tramLine, log });
+        driver, getThird: () => third, getTram: () => tramLine, log, compile: compileFor });   // (fix4: its batches compiled one by one)
       for (const [n, g] of trafficTiles) cityTraffic.addTile(n, g);
       cityNight?.setTraffic(cityTraffic);               // ?night=1: its cars' head / tail lights
       const ci = updaters.indexOf(carFleet.update);
@@ -1508,7 +1661,11 @@ async function main() {
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
     }
   };
-  const mainLoop = () => stepLoop();
+  // perfgame round 2 (?holdthrottle=old): while the play loader holds and the area is still building (tiles, compiles,
+  // the far landmarks), only one frame in three is drawn behind it: the compile queue's time slices and the tiles'
+  // main-thread steps get the rest of the main thread (the last quiet frames are drawn at full rate: the warm-up)
+  let holdSkip = 0, holdThrottle = false;
+  const mainLoop = () => { if (holdThrottle && playLoader.active && (holdSkip++ % 3)) return; stepLoop(); };
   renderer.setAnimationLoop(mainLoop);
   // Streaming: full-detail tiles within `ring` of the tile under the player (?ring=, default 1),
   // far-LOD tiles out to `far` (?far=, default 3, 0 = none). Hysteresis of one tile for unloading.
@@ -1543,12 +1700,14 @@ async function main() {
   const BOOT_LITE_RING = params.get("bootlite") !== "0";          // ?bootlite=0: the boot's tiles as before (A/B)
   let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
+  sunCache.fader = fader;                // (perfgame round 3: the sun shadow cache is redrawn while a tile fades)
   const retire = async (groups, dispose) => {
-    if (!TILE_FADE) { dispose(); return; }
+    markSunShadowDirty();
+    if (!TILE_FADE) { dispose(); markSunShadowDirty(); return; }
     const px = groups.map(fadeProxies).filter(Boolean);     // fading copies it has none of yet: built first
     if (px.length && compileFor) await compileFor(px, { first: true });
     let n = groups.length;
-    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) dispose(); });
+    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) { dispose(); markSunShadowDirty(); } });
   };
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
@@ -1562,8 +1721,13 @@ async function main() {
     const here = world.tiles.find((t) => t.name === cell.name);
     const dist = (t) => { const [tx, tz] = centre(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T; };
     const byName = (n) => built.find((m) => m.name === n);
+    // perfgame round 2 (?unloadgap=old: unload only 3 tiles away, as before): a full tile goes when the player is more than
+    // the ring + UNLOAD_MARGIN m from its edge (the ring's tiles are wanted while within ~T m; 150 m of hysteresis), not
+    // 2 tiles beyond the ring: up to 25 full tiles stayed loaded (JS heap 1.9 GB), their draws, shadows and updaters
+    const edgeGap = (t) => { const b = byName(t.name)?.bounds; return b ? Math.max(b.x[0] - px, 0, px - b.x[1], b.z[0] - pz, 0, pz - b.z[1]) : 0; };
+    const leaving = (t) => (UNLOAD_GAP ? edgeGap(t) > ring * T + UNLOAD_MARGIN && dist(byName(t.name)) > ring + 0.01 : dist(byName(t.name)) > ring + 1.01);
     for (const t of [...world.tiles]) {
-      if (t !== here && dist(byName(t.name)) > ring + 1.01 && world.tiles.length > 1) {
+      if (t !== here && leaving(t) && world.tiles.length > 1) {
         world.tiles.splice(world.tiles.indexOf(t), 1);
         // smooth LOD: its far tile first, then the full one fades out over it (no hole, no pop)
         if (TILE_FADE && !streamJump && far > ring && dist(byName(t.name)) <= far + 0.01 && !lite.has(t.name) && !pending.has(t.name)) {
@@ -1576,7 +1740,10 @@ async function main() {
       }
     }
     for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { lite.delete(n); retire([l.group], l.dispose); }
-    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
+    // (perfgame: among tiles of the same ring step, the one nearest the PLAYER first: the street ahead before the far
+    // corner of the ring; ?streamorder=old: the manifest's order)
+    const gapP = (t) => Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1], t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
+    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => (STREAM_ORDER ? Math.round(dist(a)) - Math.round(dist(b)) || gapP(a) - gapP(b) : dist(a) - dist(b)));
     // the worker pool builds the next wanted tiles in parallel (one per worker); builds of tiles no longer wanted go
     for (const key of [...tilePrefetch.keys()]) if (key.endsWith("|0") && !want.some((t) => `${t.name}|0` === key)) tilePrefetch.delete(key);
     if (bootRing) bootRing = bootRing.filter(([e, isLite]) => isLite || want.includes(e));   // the boot prefetch: only tiles still wanted
@@ -1596,6 +1763,7 @@ async function main() {
       const t0 = performance.now();
       try {
         world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));   // (fades in by itself)
+        markSunShadowDirty();
         const old = lite.get(t.name);
         lite.delete(t.name);
         if (old) retire([old.group], old.dispose);
@@ -1632,7 +1800,7 @@ async function main() {
   // One neighbour tile and the first far tiles load under the cover too: the first material built
   // emits its shared TSL functions in a different order than all later ones (same code, other WGSL
   // text, so one more compile), and far tiles have their own shaders.
-  let landing = null, lateWarm = null;
+  let landing = null, lateWarm = null, bootHoldPending = false;
   if (bootPipes) {
     // the tiles streamed under the cover hold their fade (smooth LOD): the warm-up then compiles their fading
     // copies too (lodFade.js fadeVariant); the first far tile does not fade, so its own materials compile
@@ -1696,10 +1864,33 @@ async function main() {
   try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
   // ---- /boot2
   bootStage("ready");
+  // perfgame: a ?game= boot hands the cover over to the play loader (shown first, under nothing): the game kit starts the
+  // game behind it and fades it out once the spawn's area is built (game/kit.js startGame); never the city filling in
+  { const g = params.get("game");
+    if (PLAY_LOADER && g && g !== "0" && g !== "1") {
+      playLoader.open({ title: { police: "Police", falcon: "Falcon" }[g] || "Loading the game", kicker: "Starting the game" });
+      window.__playLoaderBoot = true;
+      setTimeout(() => { if (window.__playLoaderBoot) { window.__playLoaderBoot = false; playLoader.close(); } }, 120000);   // (a game that never starts)
+    } else if (BOOT_HOLD) {
+      // perfgame round 2 (?boothold=old): the free-roam boot too: the cover hands over to the play loader, which holds
+      // until the view's near tiles and the far landmarks' loads are done (areaReady settle), so the first seconds of the
+      // city do not stutter on them (overview 1 % low 8 fps measured before)
+      playLoader.open({ title: "Uccle", kicker: "Getting the city ready" });
+      bootHoldPending = true;
+    } }
   $("cover").classList.add("gone");
   document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
   coverLifted();                                    // boot2: the far landmarks / bridges start now (bootGate.js)
+  // perfgame (docs/PERF_GAME.md): from here on a pipeline the precompiles missed is built async (the object shows a few
+  // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
+  if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
+  if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
+  // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
+  // Pipelines.isReady (called on EVERY draw) and restore what they saw at their open: windows that overlap out of order
+  // leave a closed window's wrapper in place for good (~0.1 ms a frame, measured in the drive trace). isReady is only
+  // a counter there: the instance override is dropped every 3 s (an open window just stops counting its skipped draws)
+  if (params.get("readysweep") !== "old") setInterval(() => { const P = renderer._pipelines; if (P && Object.prototype.hasOwnProperty.call(P, "isReady")) delete P.isReady; }, 3000);
   closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
   if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
@@ -1740,9 +1931,117 @@ async function main() {
     const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
     return { x, z, heading, bear, mode: m, alt: y - world.surface(x, z), fov };
   };
+  // ---- perfgame: AREA READY (docs/PERF_GAME.md). Resolves when the area round (x, z) is built for play: every full tile
+  // within `near` m of the point (the rest of the ring is past the far tiles' hand-over distance: it cross-fades in, the
+  // smooth-LOD way), the far ring, no tile fading in, the precompile queue empty (tiles, landmarks, fading copies), no
+  // pipeline compiling (asyncPipes.js), and `quiet` consecutive frames rendered so (the frames behind the play loader
+  // are the warm-up: whatever the first view draws builds its shader there). Reports progress to the play loader.
+  // At most maxMs (a slow machine still gets to play). Returns what it waited for.
+  let liteHold = 0, fullHold = 0, bootSettled = false, lastLongFrame = 0;
+  const HOLD_PARALLEL = params.get("holdparallel") !== "old";
+  const SETTLE_RING = params.get("settlering") !== "old";
+  const HOLD_THROTTLE = params.get("holdthrottle") !== "old", SETTLE_ALL = params.get("settlejobs") !== "loads";   // (bootHoldPending: declared before the cover lifts)
+  try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.duration > 250) lastLongFrame = performance.now(); }).observe({ type: "long-animation-frame" }); } catch { /* no LoAF: settle on the queue only */ }
+  const areaReady = async ({ x, z, near = 300, liteNear = 600, nearModels = 900, quiet = 8, maxMs = 45000, label = "", settle = !bootSettled } = {}) => {
+    if (settle) maxMs += 25000;
+    const t0 = performance.now();
+    openHoldWorkers(2);
+    const built = manifest.tiles.filter((t) => t.status !== "missing");
+    const gap = (t) => Math.max(t.bounds.x[0] - x, 0, x - t.bounds.x[1], t.bounds.z[0] - z, 0, z - t.bounds.z[1]);
+    const ctr = (t) => [(t.bounds.x[0] + t.bounds.x[1]) / 2, (t.bounds.z[0] + t.bounds.z[1]) / 2];
+    const home = built.find((t) => gap(t) === 0) || built[0], [hx, hz] = ctr(home);
+    const ringOf = (t) => { const [tx, tz] = ctr(t); return Math.round(Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T); };
+    // (only tiles the streaming will load in full: the player's tile's ring)
+    // (perfgame round 3, ?settlering=old: not): right after a boot (settle) the WHOLE ring in full: what is left of it
+    // would otherwise stream in during the first seconds of play (main-thread slices + compiles: 1 % low 12 fps measured)
+    const needFull = built.filter((t) => (gap(t) <= near || (settle && SETTLE_RING)) && ringOf(t) <= ring).map((t) => t.name);
+    // the far tiles the first views can reach (within liteNear of the point; the rest of the far ring fades in later, km away)
+    const needLite = built.filter((t) => { const [tx, tz] = ctr(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T <= far + 0.01 && gap(t) <= liteNear; }).map((t) => t.name);
+    const has = (n) => world.tiles.some((t) => t.name === n);
+    const needSet = new Set(needFull);
+    let q = 0, frames = 0, maxPipes = 1, maxJobs = 1;
+    const st = { full: 0, lite: 0, jobs: 0, pipes: 0 };
+    while (performance.now() - t0 < maxMs) {
+      if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
+      // (perfgame round 3, ?holdparallel=old: one full tile at a time) the FULL tiles the area needs, up to 3 at a time
+      // beside the stream (which adds one per step, each waiting on its compiles and its main-thread slices: ~2-5 s a
+      // tile one after another under the loader, measured)
+      if (HOLD_PARALLEL) for (const n of needFull) {
+        if (fullHold >= 3) break;
+        if (has(n) || pending.has(n)) continue;
+        const t = built.find((e) => e.name === n);
+        pending.add(n); fullHold++;
+        const t0 = performance.now();
+        loadTile(t, { layers, contourOn, verbose: false }).then((tile) => {
+          world.tiles.push(tile); markSunShadowDirty();
+          const old = lite.get(n); lite.delete(n);
+          if (old) retire([old.group], old.dispose);
+          log(`+ tile ${n} (${(performance.now() - t0).toFixed(0)} ms, under the loader)`);
+        }, (e) => log(`tile ${n} failed: ${e.message}`)).finally(() => { pending.delete(n); fullHold--; });
+      }
+      // the far tiles the area needs, 4 at a time beside the stream (it adds them 2 per full tile step: ~25 s for a ring)
+      for (const n of needLite) {
+        if (liteHold >= 4) break;
+        if (has(n) || lite.has(n) || pending.has(n)) continue;
+        const t = built.find((e) => e.name === n);
+        pending.add(n); liteHold++;
+        loadLiteTile(t, liteGroup).then((l) => { if (has(n)) l.dispose(); else { lite.set(n, l); fader.fade(l.group, +1); } }, (e) => log(`far tile ${n} failed: ${e.message}`))
+          .finally(() => { pending.delete(n); liteHold--; });
+      }
+      await new Promise((r) => requestAnimationFrame(() => r()));
+      frames++;
+      st.full = needFull.filter(has).length;
+      st.lite = needLite.filter((n) => has(n) || lite.has(n)).length;
+      st.jobs = compileJobsLeft((names) => nearModel(names, x, z, nearModels)); st.pipes = window.__asyncPipes?.pending ?? 0;
+      maxJobs = Math.max(maxJobs, st.jobs); maxPipes = Math.max(maxPipes, st.pipes);
+      // (only the needed tiles' fades: the rest of the ring keeps streaming in behind, far from the spawn)
+      const fading = fader.list.some((f) => needSet.has(String(f.obj.name).split("-")[0]));
+      const tilesOk = st.full === needFull.length && st.lite === needLite.length && !fading;
+      // settle (a game right after the boot): the far landmarks' staggered loads after the cover (bootGate.js) done too,
+      // and no long frame for 1.5 s: their GLB parse / build / compile would otherwise land in the first minute of play
+      // (perfgame round 2, ?settlejobs=loads: the far landmarks' COMPILE jobs are not waited for: 25-37 s
+      // of serial compile queue after the cover; once loaded they compile in slices and show when done, the pipelines async)
+      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000);
+      const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
+      q = tilesOk && gpuOk ? q + 1 : 0;
+      holdThrottle = HOLD_THROTTLE && !(tilesOk && gpuOk);
+      // the bar: tiles 70 %, shaders 25 %, the quiet frames the rest
+      const f = 0.7 * ((st.full + 0.25 * st.lite) / Math.max(1, needFull.length + 0.25 * needLite.length)) + 0.25 * (tilesOk ? 1 - (st.jobs + st.pipes) / (maxJobs + maxPipes) : 0) + 0.05 * (q / quiet);
+      const line = st.full < needFull.length ? `Building the streets (${st.full} / ${needFull.length})` : st.lite < needLite.length ? "Loading the neighbourhood" : st.jobs + st.pipes ? `Compiling shaders (${st.jobs + st.pipes} left)` : !settled ? "Placing the landmarks" : "Drawing the first frames";
+      playLoader.progress(f, line);
+      if (q >= quiet) break;
+    }
+    closeHoldWorkers();
+    holdThrottle = false;
+    if (q >= quiet) bootSettled = true;
+    const r = { ms: Math.round(performance.now() - t0), frames, full: needFull.length, lite: needLite.length, ok: q >= quiet, ...st };
+    log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : " (time limit)"}`);
+    window.__areaReady = r;
+    return r;
+  };
   // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target
   // drives the streaming), then start the same mode there, facing along the street (the side nearest the old heading)
-  const teleport = async ({ x, z, yaw: dirAng, exact = false, mode: wantMode = null }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading; mode: start that mode there (the game kit)
+  if (bootHoldPending) {
+    bootHoldPending = false;
+    const P0 = getPlayer();
+    areaReady({ x: P0.x, z: P0.z, label: "boot", near: BOOT_HOLD_NEAR }).catch((e) => log(`boot hold: ${e.message}`)).finally(() => playLoader.close());
+  }
+  const teleport = async (o) => {
+    // perfgame (docs/PERF_GAME.md): the play loader covers the jump and holds until the area is built (areaReady);
+    // ?playloader=old or { hold: false }: the jump as before (the scene fills in in front of the player)
+    if (!PLAY_LOADER || o.hold === false) return teleportNow(o);
+    const label = o.label ?? o.name;
+    playLoader.open(playLoader.active ? {} : { title: label || "On the way", kicker: "Travelling" });
+    try {
+      const r = await teleportNow(o);
+      await o.after?.(r);                                  // (the dev panel's Go to: its camera, set before the area check)
+      const P = getPlayer();
+      // (an orbit / aerial view sees past the street: the ring's full tiles within 550 m, not 300)
+      r.ready = await areaReady({ x: P.x, z: P.z, label, near: P.mode === "orbit" || P.mode === "fly" ? 550 : 300 });
+      return r;
+    } finally { await playLoader.close(); }
+  };
+  const teleportNow = async ({ x, z, yaw: dirAng, exact = false, mode: wantMode = null }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading; mode: start that mode there (the game kit)
     const t0 = performance.now();
     const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
     if (!entry) throw new Error("outside the built tiles");
@@ -1783,11 +2082,14 @@ async function main() {
   // (motorbike round 2: a ?view=moto|scooter|villo|drive&at= outside the boot tile: stream it in, then start there)
   driveAt = async (vehicle) => { await teleport({ x: atP[0], z: atP[1], yaw: 0 }); controls.enabled = false; return drive(vehicle); };
   if (pendingDriveAt) { const v = pendingDriveAt; pendingDriveAt = null; driveAt(v).catch((e) => log(`?at start: ${e.message}`)); }
+  (globalThis.__gameTimes ||= []).push(["cover->panel", Math.round(performance.now() - (window.__coverAt || 0))]);
   // the dev panel (viewer/devPanel.js; ?panel=0: the old HUD only)
   if (params.get("panel") !== "0") {
     try {
-      const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      // perfgame round 7 (?panelwait=old: awaited): the panel's code loads beside the game kit, not before it (0.6 s)
+      const mkPanel = ({ createDevPanel }) => createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      if (params.get("panelwait") === "old") mkPanel(await import("./devPanel.js"));
+      else import("./devPanel.js").then(mkPanel).catch((e) => log(`dev panel: ${e.message}`));
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
@@ -1797,9 +2099,10 @@ async function main() {
   }
   // ---- GAME KIT (viewer/game/, docs/GAMEKIT.md): the start menu, missions, the player HUD; ?game=0 = free roam as before
   if (params.get("game") !== "0") {
+    (globalThis.__gameTimes ||= []).push(["cover->kit call", Math.round(performance.now() - (window.__coverAt || 0))]);
     import("./game/cityGame.js").then((g) => g.startGameKit({ scene, camera, renderer, controls, world, manifest, params, log, getPlayer, teleport, setView, walk, fly, drive,
       thirdPerson, driver, walker, flyer, getThird: () => third, getMap: () => mapHook, getTraffic: () => window.__traffic ?? null,
-      pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop), updaters }))
+      pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop), updaters, areaReady }))
       .then((k) => { window.__game = k; }).catch((e) => log(`game kit: ${e.message}`));
   }
   // ---- /GAME KIT
@@ -1838,7 +2141,7 @@ async function main() {
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };
   window.viewer = { updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, fader, stateAt, groundLook,
+    world, fader, stateAt, groundLook, areaReady, teleport,
     // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
     groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };

@@ -13,7 +13,12 @@ const params = new URLSearchParams(location.search);
 // is 13.0-13.3 s vs 20-22 s (docs/BOOT.md section 5); the deferred models' processing after the reveal: ~1.2 s of long
 // tasks in the first 20 s, the longest 0.55-0.68 s (the first model's GLB parse + build: fix in the landmark loaders).
 export const BOOT_DEFER = params.get("bootdefer") !== "0";
-const STAGGER = 600;
+// perfgame round 2: when the play loader holds after the cover (a ?game= start, or the free-roam boot hold), the far
+// models are loaded under it: 100 ms apart instead of 600 (no frame of play to protect; the loader waits for them)
+const HELD = params.get("playloader") !== "old" && params.get("gamefast") !== "old" &&
+  ((params.get("game") && !["0", "1"].includes(params.get("game"))) || params.get("boothold") !== "old");
+const STAGGER = HELD ? 100 : 600;
+const EARLY = params.get("landmarksearly") === "1";   // (round 3 measured: the boot cover +9-12 s for -1..-3 s of loader: OFF by default, ?landmarksearly=1 = on)
 
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)
 export const GATED = {
@@ -26,7 +31,9 @@ export const GATED = {
   tunnel_brasserie: [-1474, 2403], tunnel_kleindal: [-662, 2867],
 };
 
-let start = null, lifted = false, liftResolve = null, queued = 0;
+let start = null, lifted = false, liftResolve = null, queued = 0, released = 0;
+/** perfgame (main.js areaReady, a game boot): far models still waiting for their staggered start after the cover */
+export const gatesPending = () => queued - released;
 const liftP = new Promise((r) => { liftResolve = r; });
 
 /** main.js, before the landmarks start: the start tile's bounds (city metres) and the ring the boot loads (tiles) */
@@ -43,10 +50,13 @@ export const afterCover = () => liftP;
 export function whenNeeded(id) {
   const p = GATED[id];
   if (!BOOT_DEFER || !start || lifted || !p) return Promise.resolve();
+  // perfgame round 3 (?landmarksearly=old): when the play loader holds after the cover anyway, the far models start NOW,
+  // during the boot (their downloads, parses and compiles overlap the start tile's build and the warm-up), not after it
+  if (HELD && EARLY) return Promise.resolve();
   const margin = 150;                       // a model straddling the ring's edge counts as inside
   if (p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin) return Promise.resolve();
   const k = queued++;
-  return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER)));
+  return liftP.then(() => new Promise((r) => setTimeout(r, 400 + k * STAGGER))).finally(() => { released++; });
 }
 
 // boot3 (docs/BOOT.md section 5): which precompile jobs the FIRST VIEW needs (warmup.js warmBoot / bootQuiet): a job whose
@@ -72,5 +82,17 @@ export function neededAtReveal(names) {
     if (!p) return false;
     const margin = 150;
     return p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin;
+  });
+}
+
+/** perfgame (the play loader, main.js areaReady): does a precompile job with these root names belong to a landmark /
+ *  hero bridge within r m of (x, z)? (other jobs: the tiles' own, checked through their groups, or roots that are not
+ *  on screen until compiled) */
+export function nearModel(names, x, z, r = 900) {
+  return names.some((n) => {
+    let k = ROOT_KEY(String(n || "").replace(/-(fade|warm)$/, ""));
+    if ((k === "stjob" || k === "calevoet") && String(n).startsWith("bridge-")) k = `rail:${k}`;
+    const p = GATED[k];
+    return !!p && Math.hypot(p[0] - x, p[1] - z) < r;
   });
 }

@@ -8,6 +8,10 @@
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
 import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
+import { createFeelState, stepFeel } from "./carFeel.js";
+/** ?carfeel=old: the car's handling before the police-feel round (docs/POLICE_FEEL.md): carPhysics.js stepCar, kerb
+ *  islands / any rise over 0.5 m as walls, hedges solid, posts stop the car, parked cars immovable, the old camera */
+export const CARFEEL_OLD = /[?&]carfeel=old(&|$)/.test(location.search);
 import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
 import { carFleet } from "../carFleet.js";
 import { createCarEnv } from "./carEnv.js";
@@ -15,6 +19,7 @@ import { ChaseCamera } from "./chaseCamera.js";
 import { ColliderDebug } from "./debugDraw.js";
 import { auditTile } from "./colliderAudit.js";
 import { DriveKeys } from "./input.js";
+const HUD_SKIP = new URLSearchParams(location.search).get("hudskip") !== "old";
 import { lampSites } from "../lamps.js";
 import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
@@ -94,7 +99,8 @@ export function featureColliders(features, bounds) {
     if (!m.isInstancedMesh) return;
     const n = m.name || "", p = m.parent?.name || "";
     const kind = n === "parked-cars" ? "car" : /^furniture-(stopPole|signal|sign|platepost)$/.test(n) || n === "tram-poles" || n === "rail-masts" ? "pole"
-      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|fuel|terrace|villo|streetprop|twowheel)$/.test(n) || (p === "tram" && !n) ? "box" : null;
+      : /^furniture-(bench|bikes|shelter|adpanel|bikebox|bin|glassbank|gardenwall|gardenpillar|gardengate|gardenhedge|fuel|terrace|villo|streetprop|twowheel)$/.test(n) || (p === "tram" && !n) ? "box" : null;
+    const fkind = n === "furniture-gardenhedge" ? KIND.hedge : KIND.furniture;
     if (!kind) return;
     if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
     const bb = m.geometry.boundingBox;
@@ -129,7 +135,7 @@ export function featureColliders(features, bounds) {
           const cx = (bb.min.x + bb.max.x) / 2, cz = (bb.min.z + bb.max.z) / 2;
           const hx = Math.max((bb.max.x - bb.min.x) / 2, MIN_HALF / sx), hz = Math.max((bb.max.z - bb.min.z) / 2, MIN_HALF / sz);
           v.set(cx, bb.min.y, cz).applyMatrix4(W); const base = v.y; v.set(cx, bb.max.y, cz).applyMatrix4(W); const top = v.y;
-          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: KIND.furniture, base, top, ref });
+          polys.push({ rings: [[[cx - hx, cz - hz], [cx + hx, cz - hz], [cx + hx, cz + hz], [cx - hx, cz + hz]].map(([x, z]) => { v.set(x, bb.min.y, z).applyMatrix4(W); return [v.x, v.z]; })], kind: fkind, base, top, ref });
           counts.furniture++;
           continue;
         }
@@ -223,7 +229,27 @@ export class Driver {
     };
     this.extra = [];   // collider sets no tile carries (hero models: the Saint-Job front steps)
     this.ledges = !/[?&]colfix=0/.test(location.search);       // ?colfix=0: the car climbs any step (as before the audit)
-    this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges });
+    // (police feel) the surface under the car: 0 paved (a road / pavement / deck in the drive grid), 1 bare terrain
+    this.surface = (x, z) => {
+      for (const f of this.world.decks || []) if (f(x, z) != null) return 0;
+      const t = this.world.at(x, z), D = t?.drive?.ground?.delta, h = t?.hm?.h;
+      if (!D || !h) return 0;
+      const k = Math.round((z - h.z0) / h.step) * h.cols + Math.round((x - h.x0) / h.step);
+      return D[k] === 0 ? 1 : 0;
+    };
+    // (police feel) parked cars shoved by the player: moved now, their boxes / the fleet once per frame (flushNudges)
+    this.nudged = new Set();
+    this.nudge = (car, dx, dz, dyaw) => {
+      const home = (car.home ||= { x: car.x, z: car.z, heading: car.heading });
+      let x = car.x + dx, z = car.z + dz;
+      const ox = x - home.x, oz = z - home.z, o = Math.hypot(ox, oz);
+      if (o > 1.0) { x = home.x + ox / o; z = home.z + oz / o; }
+      car.x = x; car.z = z;
+      car.heading = home.heading + Math.max(-0.35, Math.min(0.35, car.heading + dyaw - home.heading));
+      this.nudged.add(car);
+    };
+    this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges,
+      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge });
     // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
     // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
     this.envs = {};
@@ -232,7 +258,21 @@ export class Driver {
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
     this.camNear = [];
-    this.insideWall = (x, z) => pointInBuilding(this.camNear, x, z);
+    // (police feel: the camera keeps out of trunks / lamp posts too: 0.35 m round them)
+    this.insideWall = (x, z) => {
+      if (pointInBuilding(this.camNear, x, z)) return true;
+      if (CARFEEL_OLD) return false;
+      const L = this.camNear;
+      for (let k = 0; k < L.length; k += 2) {
+        const col = L[k], id = L[k + 1];
+        if (id < col.P) continue;
+        const q = (id - col.P) * 3, kd = col.ckind[id - col.P];
+        if (kd !== KIND.tree && kd !== KIND.lamp) continue;
+        const r = col.circ[q + 2] + 0.35, dx = x - col.circ[q], dz = z - col.circ[q + 1];
+        if (dx * dx + dz * dz < r * r) return true;
+      }
+      return false;
+    };
     this.hud = document.createElement("div");
     Object.assign(this.hud.style, { position: "fixed", left: "50%", bottom: "14px", transform: "translateX(-50%)", padding: "6px 14px",
       borderRadius: "8px", background: "rgba(20,24,30,.7)", color: "#fff", font: "600 22px/1 ui-monospace, monospace", display: "none", zIndex: 2 });
@@ -331,7 +371,7 @@ export class Driver {
   }
   reset() {
     const s = this.startPose;
-    this.state = this.twoWheel ? createMotoState(s.x, s.z, s.heading) : createCarState(s.x, s.z, s.heading);
+    this.state = this.twoWheel ? createMotoState(s.x, s.z, s.heading) : CARFEEL_OLD ? createCarState(s.x, s.z, s.heading) : createFeelState(s.x, s.z, s.heading);
     this.moto?.reattach();
     this.motoChase.reset();
     this.state.y = NaN;                                   // (no layer hint yet: the top surface)
@@ -355,7 +395,10 @@ export class Driver {
     this.chase.active = true;
     const t0 = performance.now();
     const c = this.state;
-    stepCar(c, this.keys.read(), dt, this.env, HANDLING);
+    // (autoInput: a scripted { throttle, steer, handbrake } for route tests, docs/policefeel/; null = the keyboard)
+    const inp = this.autoInput || this.keys.read();
+    if (CARFEEL_OLD) stepCar(c, inp, dt, this.env, HANDLING);
+    else { stepFeel(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
     carLights.brake.value = c.braking ? 1 : 0;
     carLights.head.value = carLights.tail.value = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     this.car.update(c);
@@ -364,8 +407,19 @@ export class Driver {
     this.chase.update(c, dt, this.ground, this.insideWall);
     this.debug.update(this.sets, this.ground, c, this.env.contacts > 0, 40, this.flagsOf);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
-    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0)
+    // (perfgame: not while a game hides this line: body.game-on .g-drivehud = display none; the innerHTML + its layout every
+    // 6th frame was ~0.1 ms of main thread for nothing; ?hudskip=old = always)
+    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0 && !(HUD_SKIP && document.body.classList.contains("game-on") && this.hud.classList.contains("g-drivehud")))
       this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h${c.speed < -0.2 ? " R" : ""} · C camera · G colliders · R reset</small>`;
+  }
+  /** the parked cars the player shoved this frame: their matrix (fleet), their collider box (carFleet onChange) */
+  flushNudges() {
+    const q = this._nq ||= new THREE.Quaternion(), e = this._ne ||= new THREE.Euler(), p = this._np ||= new THREE.Vector3(), one = this._n1 ||= new THREE.Vector3(1, 1, 1);
+    for (const car of this.nudged) {
+      if (car.m) car.m.compose(p.set(car.x, car.y, car.z), q.setFromEuler(e.set(car.pitch || 0, car.heading, car.roll || 0, "YXZ")), one);
+      carFleet.touch(car);
+    }
+    this.nudged.clear();
   }
   /** the Villo: get off at a station's free dock (x, z = the bike's front contact, yaw = the docked bike's) -> the
    *  bike stays there, riderless; the caller puts the player on foot */
@@ -400,7 +454,7 @@ export class Driver {
     this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, BODIES[kind]);
     this.audio.update(c, dt);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
-    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0) {
+    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0 && !(HUD_SKIP && document.body.classList.contains("game-on") && this.hud.classList.contains("g-drivehud"))) {
       const small = (t) => `<small style="font-size:12px;color:#b8c2cc;font-weight:400">${t}</small>`;
       const kmh = (Math.abs(c.speed) * 3.6).toFixed(0), snd = `N sound ${this.audio.muted ? "off" : "on"}`;
       if (kind === "villo") {

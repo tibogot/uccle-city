@@ -17,8 +17,8 @@ const CAR_KIND = 6;
 const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
 const BIKE_OLD = /[?&]bikeroom=old(&|$)/.test(location.search);   // drive colliders: a car (hit() treats any kind the same)
 
-export function createCityTraffic({ scene, renderer, camera, ground, night, focus, driver, getThird, getTram, log = console.log }) {
-  const T = createTraffic({ scene, renderer, camera, ground, night, twoWheelers: cityTwoWheelers.on });
+export function createCityTraffic({ scene, renderer, camera, ground, night, focus, driver, getThird, getTram, log = console.log, compile = null }) {
+  const T = createTraffic({ scene, renderer, camera, ground, night, twoWheelers: cityTwoWheelers.on, compile });
   T.onDraw = (sim, types, alpha, cam) => cityTwoWheelers.traffic?.update(sim, types, alpha, cam);   // (motorbikes / scooters, docs/MOTO.md)
   const sim = T.sim;
   sim.setParking(function* () { for (const r of carFleet.regs) if (r.live) yield* r.cars; }, (name) => T.types.findIndex((t) => t.name === name));

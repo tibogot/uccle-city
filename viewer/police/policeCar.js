@@ -17,7 +17,7 @@
 // default); with it off J still switches the siren "on" for the traffic (it yields) and the HUD shows it.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, float } from "three/tsl";
-import { loadPack, packMaterial } from "../drive/carPacks.js";
+import { loadPack, packMaterial, playerSeeThrough } from "../drive/carPacks.js";
 import { createCar, carLights, fitBody } from "../drive/carModel.js";
 import { gather, pointInBuilding } from "../drive/colliders.js";
 import { NIGHT } from "../nightLights/nightMode.js";
@@ -26,6 +26,7 @@ import { fitPoliceKit } from "../policeCar/fitCar.js";
 import { lampState } from "../policeCar/pattern.js";
 import { Siren } from "../policeCar/siren.js";
 import { env as lightEnv } from "../lighting.js";
+import { mergeKit, unmergeKit } from "./kitMerge.js";   // perfgame round 2: the kit's static parts in 2 draws (?carmerge=old)
 
 /** the car: type and paint (Belgian unmarked cars: dark estates, VW Passat / Skoda Octavia class) */
 export const POLICE_CAR = { type: "estate", paint: 0x1c232c, mode: "rotating" };
@@ -33,6 +34,9 @@ export const LIGHT = {
   beam: 1500,           // the rotating beam (pool units: colour x intensity, falloff 1 / (d^2 + size^2))
   fanW: 0.15, fanH: 0.55,   // the beam's fan: half width / half height at 1 m (~ +-8.5 deg x +-29 deg)
   beamRange: 30,        // m (cut at the first wall)
+  // (fix4 item 2, live; ?beam=old = 0) the fan's edges spread over +-beamSoft x its half sizes (the pool's APERTURE
+  // profile, a negative mullion value): the road footprint was a hard-edged blue rectangle
+  beamSoft: /[?&]beam=old(&|$)/.test(location.search) ? 0 : 0.8,
   grille: 260,          // the grille / visor flash cone (forward, LED slots)
   grilleAngle: 0.6,
   grilleRange: 16,
@@ -52,7 +56,7 @@ async function policeModel() {
   const paint = new THREE.Color(POLICE_CAR.paint);
   // head lamps: the city's head switch, or (wig-wag) the side's flash: + x = the car's left
   const head = carLights.head.mul(float(1).sub(wig.on)).add(wig.on.mul(select(positionLocal.x.greaterThan(0), wig.L, wig.R)).mul(1.6));
-  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich });
+  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich) });
   mat.name = "police unmarked";
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];
@@ -119,9 +123,10 @@ export class PoliceCar {
     const roofKit = new THREE.Group(); roofKit.name = "police-roof-kit"; roofKit.add(beacon.group, cable);
     const front = new THREE.Group(); front.name = "police-front-kit"; front.add(...flashers); if (visor) front.add(visor);
     car.chassis.add(roofKit, front);
-    this.parts = { car, beacon, roofKit, front, flashers };
+    const merged = mergeKit(car.chassis, [roofKit, front]);
+    this.parts = { car, beacon, roofKit, front, flashers, merged };
   }
-  detach() { if (this.parts) { this.parts.roofKit.removeFromParent(); this.parts.front.removeFromParent(); this.parts = null; } }
+  detach() { if (this.parts) { unmergeKit(this.parts.merged); this.parts.roofKit.removeFromParent(); this.parts.front.removeFromParent(); this.parts = null; } }
   async uninstall() {
     this.setLights(false); this.setSiren(false);
     this.lightOff();
@@ -212,8 +217,11 @@ export class PoliceCar {
         poolRef.set(poolSlot, _bp.x, _bp.y, _bp.z, R, BLUE.r * I, BLUE.g * I, BLUE.b * I, 1, 0.4);
         // a TALL NARROW FAN, not a round cone (the dome's flutes spread a real reflector's beam vertically): the pool's
         // APERTURE profile (a light behind a rectangular opening) with a narrow, tall opening 1 m out
-        poolRef.spot(poolSlot, _d.x, _d.y, _d.z, 0.95, 0.85);
-        poolRef.profile(poolSlot, 3, LIGHT.fanW, LIGHT.fanH, 1, 0);
+        // (fix4) the soft fan also needs a soft cone: 0.95 / 0.85 rad cut the fan's lower edge (the footprint's near
+        // edge on the road) over 5 deg; 1.25 / 0.55 lets the profile shape it (the bounding sphere is the same 30 m)
+        if (LIGHT.beamSoft > 0) poolRef.spot(poolSlot, _d.x, _d.y, _d.z, 1.25, 0.55);
+        else poolRef.spot(poolSlot, _d.x, _d.y, _d.z, 0.95, 0.85);
+        poolRef.profile(poolSlot, 3, LIGHT.fanW, LIGHT.fanH, 1, LIGHT.beamSoft > 0 ? -LIGHT.beamSoft : 0);
       } else {
         const g = Math.max(s.beacon, s.grilleL, s.grilleR, s.visor * 0.6);
         const fy = P.flashers.length ? P.flashers[0].position.y : 0.6;

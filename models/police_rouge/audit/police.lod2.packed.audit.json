@@ -1,7 +1,7 @@
 {
  "summary": {
   "triangles": 3351,
-  "vertices_welded": 3710,
+  "vertices_welded": 3712,
   "open_edges": 2951,
   "rays": 838134,
   "blocking": 13,
@@ -11,13 +11,13 @@
    "nonmanifold": 12,
    "depth": 2,
    "crossing": 3,
-   "backtoback": 198,
-   "seam": 200,
+   "backtoback": 192,
+   "seam": 193,
    "tjunction": 164,
    "opening": 921,
    "leak": 8
   },
-  "ms": 2789
+  "ms": 2893
  },
  "options": {
   "weld": 0.0001,
@@ -2803,8 +2803,8 @@
     "severity": "warn",
     "at": [
      26.321,
-     48.907,
-     -1.247
+     48.894,
+     -2.033
     ],
     "part": "Police_lod2/cast_iron_green",
     "aspect": 70,
@@ -2827,8 +2827,8 @@
     "severity": "warn",
     "at": [
      26.321,
-     48.894,
-     -2.033
+     48.907,
+     -1.247
     ],
     "part": "Police_lod2/cast_iron_green",
     "aspect": 70,
@@ -2995,8 +2995,8 @@
     "severity": "warn",
     "at": [
      26.321,
-     48.929,
-     2.807
+     48.953,
+     3.593
     ],
     "part": "Police_lod2/cast_iron_green",
     "aspect": 70,
@@ -3019,32 +3019,8 @@
     "severity": "warn",
     "at": [
      26.321,
-     48.953,
-     3.593
-    ],
-    "part": "Police_lod2/cast_iron_green",
-    "aspect": 70,
-    "longest": 2.36
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     26.329,
-     47.957,
-     6.013
-    ],
-    "part": "Police_lod2/cast_iron_green",
-    "aspect": 70,
-    "longest": 2.36
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     26.321,
-     47.965,
-     6.013
+     48.929,
+     2.807
     ],
     "part": "Police_lod2/cast_iron_green",
     "aspect": 70,
@@ -3069,6 +3045,30 @@
      26.321,
      47.955,
      5.227
+    ],
+    "part": "Police_lod2/cast_iron_green",
+    "aspect": 70,
+    "longest": 2.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.321,
+     47.965,
+     6.013
+    ],
+    "part": "Police_lod2/cast_iron_green",
+    "aspect": 70,
+    "longest": 2.36
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.329,
+     47.957,
+     6.013
     ],
     "part": "Police_lod2/cast_iron_green",
     "aspect": 70,
@@ -3127,11 +3127,11 @@
     "severity": "warn",
     "at": [
      26.329,
-     47.978,
-     7.647
+     47.98,
+     8.434
     ],
     "part": "Police_lod2/cast_iron_green",
-    "aspect": 70,
+    "aspect": 71,
     "longest": 2.361
    },
    {
@@ -3150,6 +3150,18 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
+     26.329,
+     47.978,
+     7.647
+    ],
+    "part": "Police_lod2/cast_iron_green",
+    "aspect": 70,
+    "longest": 2.361
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
      26.321,
      47.988,
      8.434
@@ -3157,18 +3169,6 @@
     "part": "Police_lod2/cast_iron_green",
     "aspect": 71,
     "longest": 2.36
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     26.329,
-     47.98,
-     8.434
-    ],
-    "part": "Police_lod2/cast_iron_green",
-    "aspect": 71,
-    "longest": 2.361
    },
    {
     "check": "sliver",
@@ -3283,11 +3283,11 @@
     "severity": "warn",
     "at": [
      26.321,
-     49.105,
-     15.849
+     49.118,
+     16.417
     ],
     "part": "Police_lod2/cast_iron_green",
-    "aspect": 50,
+    "aspect": 51,
     "longest": 1.707
    },
    {
@@ -3307,11 +3307,11 @@
     "severity": "warn",
     "at": [
      26.321,
-     49.118,
-     16.417
+     49.105,
+     15.849
     ],
     "part": "Police_lod2/cast_iron_green",
-    "aspect": 51,
+    "aspect": 50,
     "longest": 1.707
    },
    {
@@ -3367,8 +3367,8 @@
     "severity": "warn",
     "at": [
      26.329,
-     49.159,
-     18.184
+     49.146,
+     17.616
     ],
     "part": "Police_lod2/cast_iron_green",
     "aspect": 51,
@@ -3390,18 +3390,6 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     26.329,
-     49.146,
-     17.616
-    ],
-    "part": "Police_lod2/cast_iron_green",
-    "aspect": 51,
-    "longest": 1.708
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
      26.321,
      49.167,
      18.184
@@ -3415,7 +3403,19 @@
     "severity": "warn",
     "at": [
      26.329,
-     48.2,
+     49.159,
+     18.184
+    ],
+    "part": "Police_lod2/cast_iron_green",
+    "aspect": 51,
+    "longest": 1.708
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     26.321,
+     48.208,
      19.951
     ],
     "part": "Police_lod2/cast_iron_green",
@@ -3439,23 +3439,23 @@
     "severity": "warn",
     "at": [
      26.329,
-     48.194,
-     19.382
+     48.2,
+     19.951
     ],
     "part": "Police_lod2/cast_iron_green",
-    "aspect": 50,
+    "aspect": 51,
     "longest": 1.707
    },
    {
     "check": "sliver",
     "severity": "warn",
     "at": [
-     26.321,
-     48.208,
-     19.951
+     26.329,
+     48.194,
+     19.382
     ],
     "part": "Police_lod2/cast_iron_green",
-    "aspect": 51,
+    "aspect": 50,
     "longest": 1.707
    },
    {
@@ -3604,9 +3604,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     47.086,
-     -18.41
+     26.03,
+     47.056,
+     -18.42
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -3615,9 +3615,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     48.667,
-     -18.41
+     26.03,
+     48.696,
+     -18.42
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -3626,9 +3626,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     47.086,
-     -16.97
+     24.53,
+     47.056,
+     -18.42
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -3637,9 +3637,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     48.667,
-     -16.97
+     24.53,
+     48.696,
+     -18.42
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -3648,9 +3648,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     47.086,
-     -16.83
+     26.03,
+     47.056,
+     -15.38
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -3659,9 +3659,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     48.667,
-     -16.83
+     26.03,
+     48.696,
+     -15.38
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -3670,9 +3670,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     47.086,
-     -15.39
+     24.53,
+     47.056,
+     -15.38
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -3681,9 +3681,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     48.667,
-     -15.39
+     24.53,
+     48.696,
+     -15.38
     ],
     "part": "Police_lod2/cast_iron_green",
     "uses": 4
@@ -4617,6 +4617,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     26.337,
+     48.854,
+     -18.862
+    ],
+    "parts": [
+     "Police_lod2/cast_iron_green",
+     "Police_lod2/cast_iron_green"
+    ],
+    "area": 0.00263
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      26.331,
      47.731,
      -19.231
@@ -4869,29 +4883,57 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.325,
-     48.092,
-     2.005
+     26.333,
+     47.941,
+     1.983
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.05193
+    "area": 0.02622
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.325,
-     48.713,
-     2.005
+     26.302,
+     48.556,
+     2.013
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.05193
+    "area": 0.02622
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     26.348,
+     48.556,
+     1.968
+    ],
+    "parts": [
+     "Police_lod2/cast_iron_green",
+     "Police_lod2/cast_iron_green"
+    ],
+    "area": 0.02622
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     26.318,
+     48.864,
+     1.998
+    ],
+    "parts": [
+     "Police_lod2/cast_iron_green",
+     "Police_lod2/cast_iron_green"
+    ],
+    "area": 0.02622
    },
    {
     "check": "backtoback",
@@ -5331,8 +5373,8 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
-     48.896,
+     26.319,
+     48.897,
      -2.242
     ],
     "parts": [
@@ -5443,7 +5485,7 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.319,
+     26.331,
      48.928,
      2.592
     ],
@@ -5458,8 +5500,8 @@
     "severity": "info",
     "at": [
      26.331,
-     47.961,
-     6.222
+     47.959,
+     5.018
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -5471,9 +5513,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
-     47.959,
-     5.018
+     26.319,
+     47.961,
+     6.222
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -5514,21 +5556,7 @@
     "severity": "info",
     "at": [
      26.331,
-     47.972,
-     7.441
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.03893
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.319,
-     47.986,
+     47.987,
      8.639
     ],
     "parts": [
@@ -5536,6 +5564,20 @@
      "Police_lod2/cast_iron_green"
     ],
     "area": 0.03872
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     26.319,
+     47.972,
+     7.441
+    ],
+    "parts": [
+     "Police_lod2/cast_iron_green",
+     "Police_lod2/cast_iron_green"
+    ],
+    "area": 0.03892
    },
    {
     "check": "backtoback",
@@ -5597,57 +5639,29 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
-     48.143,
-     17.009
+     26.335,
+     48.399,
+     17.007
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.02633
+    "area": 0.05256
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.302,
-     48.758,
-     17.039
+     26.335,
+     48.811,
+     17.027
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.02633
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.348,
-     48.758,
-     16.994
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.02633
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.318,
-     49.066,
-     17.024
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.02633
+    "area": 0.05256
    },
    {
     "check": "backtoback",
@@ -5765,6 +5779,20 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
+     26.337,
+     49.341,
+     20.562
+    ],
+    "parts": [
+     "Police_lod2/cast_iron_green",
+     "Police_lod2/cast_iron_green"
+    ],
+    "area": 0.00266
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
      26.331,
      48.106,
      16.568
@@ -5807,15 +5835,15 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.319,
-     49.108,
+     26.331,
+     49.107,
      15.694
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.02802
+    "area": 0.02803
    },
    {
     "check": "backtoback",
@@ -5850,8 +5878,8 @@
     "severity": "info",
     "at": [
      26.331,
-     49.169,
-     18.335
+     49.136,
+     17.465
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -5864,8 +5892,8 @@
     "severity": "info",
     "at": [
      26.319,
-     49.136,
-     17.465
+     49.169,
+     18.335
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -5877,15 +5905,15 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
-     48.208,
+     26.319,
+     48.207,
      20.106
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.02773
+    "area": 0.02772
    },
    {
     "check": "backtoback",
@@ -5933,121 +5961,65 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.348,
-     48.667,
-     -17.87
+     26.039,
+     47.592,
+     -18.43
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.0683
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.318,
-     48.667,
-     -17.15
+     26.039,
+     48.16,
+     -18.41
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.06829
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
-     48.667,
-     -18.23
+     24.545,
+     47.46,
+     -18.42
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.06724
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.302,
-     48.667,
-     -17.51
+     24.545,
+     48.293,
+     -18.42
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.06725
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.348,
-     47.086,
-     -17.87
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.318,
-     47.086,
-     -17.15
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.333,
-     47.086,
-     -18.23
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.302,
-     47.086,
-     -17.51
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.331,
+     25.1,
      47.284,
-     -17.51
+     -18.414
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -6059,9 +6031,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
+     25.82,
      48.074,
-     -18.23
+     -18.414
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -6073,9 +6045,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
+     24.74,
      47.679,
-     -17.15
+     -18.414
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -6087,9 +6059,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
+     25.46,
      48.469,
-     -17.87
+     -18.414
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
@@ -6101,169 +6073,113 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.348,
-     48.667,
-     -16.29
+     26.039,
+     47.592,
+     -15.39
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.06801
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.318,
-     48.667,
-     -15.57
+     26.039,
+     48.16,
+     -15.37
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.068
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
-     48.667,
-     -16.65
+     24.545,
+     47.463,
+     -15.38
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.06749
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.302,
-     48.667,
-     -15.93
+     24.545,
+     48.29,
+     -15.38
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.0218
+    "area": 0.0675
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.348,
-     47.086,
-     -16.29
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.318,
-     47.086,
-     -15.57
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.333,
-     47.086,
-     -16.65
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.302,
-     47.086,
-     -15.93
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "area": 0.0218
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.331,
+     25.1,
      47.284,
-     -15.93
+     -15.374
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.56897
+    "area": 0.56917
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
+     25.82,
      48.074,
-     -16.65
+     -15.374
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.56892
+    "area": 0.56912
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
+     24.74,
      47.679,
-     -15.57
+     -15.374
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.56892
+    "area": 0.56912
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.331,
+     25.46,
      48.469,
-     -16.29
+     -15.374
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "area": 0.56897
+    "area": 0.56917
    },
    {
     "check": "backtoback",
@@ -7493,22 +7409,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.338,
-     47.96,
-     -18.46
-    ],
-    "parts": [
-     "Police_lod2/stone_blue",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 0.21,
-    "pieces": 8,
-    "min_angle_deg": 45.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      26.335,
      48.02,
      -18.84
@@ -7520,22 +7420,6 @@
     "length_m": 0.34,
     "pieces": 8,
     "min_angle_deg": 88
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.329,
-     48.027,
-     -15.34
-    ],
-    "parts": [
-     "Police_lod2/stone_blue",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 0.21,
-    "pieces": 8,
-    "min_angle_deg": 45.8
    },
    {
     "check": "seam",
@@ -7664,70 +7548,6 @@
     "length_m": 0.36,
     "pieces": 8,
     "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.319,
-     48.667,
-     -17.33
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 5.76,
-    "pieces": 8,
-    "min_angle_deg": 89.2
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.331,
-     47.086,
-     -17.33
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 5.76,
-    "pieces": 8,
-    "min_angle_deg": 89.2
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.319,
-     48.667,
-     -15.75
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 5.76,
-    "pieces": 8,
-    "min_angle_deg": 89.2
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.331,
-     47.086,
-     -15.75
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 5.76,
-    "pieces": 8,
-    "min_angle_deg": 89.2
    },
    {
     "check": "seam",
@@ -8373,7 +8193,7 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.327,
+     26.323,
      47.87,
      1.992
     ],
@@ -8383,7 +8203,7 @@
     ],
     "length_m": 0.17,
     "pieces": 4,
-    "min_angle_deg": 87.5
+    "min_angle_deg": 89.5
    },
    {
     "check": "seam",
@@ -8437,9 +8257,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.323,
+     26.327,
      48.066,
-     17.018
+     17.015
     ],
     "parts": [
      "Police_lod2/stone_blue",
@@ -8447,7 +8267,7 @@
     ],
     "length_m": 0.17,
     "pieces": 4,
-    "min_angle_deg": 89.1
+    "min_angle_deg": 87.1
    },
    {
     "check": "seam",
@@ -8517,8 +8337,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.336,
-     48.002,
+     26.326,
+     47.99,
      9.04
     ],
     "parts": [
@@ -8549,22 +8369,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
-     49.328,
-     20.55
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 0.34,
-    "pieces": 4,
-    "min_angle_deg": 66.1
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      26.336,
      48.085,
      15.46
@@ -8581,15 +8385,47 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.319,
-     47.481,
-     -18.41
+     25.64,
+     48.667,
+     -18.414
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "length_m": 3.16,
+    "length_m": 2.88,
+    "pieces": 4,
+    "min_angle_deg": 89.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     25.64,
+     47.086,
+     -18.426
+    ],
+    "parts": [
+     "Police_lod2/cast_iron_green",
+     "Police_lod2/cast_iron_green"
+    ],
+    "length_m": 2.88,
+    "pieces": 4,
+    "min_angle_deg": 89.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     25.64,
+     48.667,
+     -15.374
+    ],
+    "parts": [
+     "Police_lod2/cast_iron_green",
+     "Police_lod2/cast_iron_green"
+    ],
+    "length_m": 2.88,
     "pieces": 4,
     "min_angle_deg": 89.1
    },
@@ -8597,47 +8433,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.331,
-     47.481,
-     -16.97
+     25.64,
+     47.086,
+     -15.386
     ],
     "parts": [
      "Police_lod2/cast_iron_green",
      "Police_lod2/cast_iron_green"
     ],
-    "length_m": 3.16,
-    "pieces": 4,
-    "min_angle_deg": 89.1
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.319,
-     47.481,
-     -16.83
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 3.16,
-    "pieces": 4,
-    "min_angle_deg": 89.1
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.331,
-     47.481,
-     -15.39
-    ],
-    "parts": [
-     "Police_lod2/cast_iron_green",
-     "Police_lod2/cast_iron_green"
-    ],
-    "length_m": 3.16,
+    "length_m": 2.88,
     "pieces": 4,
     "min_angle_deg": 89.1
    },

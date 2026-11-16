@@ -1,6 +1,6 @@
 # Mesh audit (packed): police.lod1
 
-6,348 triangles, 6,127 welded vertices, 4,848 open edges, 655,362 rays, 1508 ms.
+6,348 triangles, 6,127 welded vertices, 4,848 open edges, 655,362 rays, 1582 ms.
 
 **0 blocking**, 1372 warnings. Clean (no blocking item).
 
@@ -9,7 +9,7 @@
 | sliver | warn | 764 |
 | nonmanifold | warn | 12 |
 | tjunction | warn | 596 |
-| seam | info | 353 |
+| seam | info | 351 |
 | opening | info | 841 |
 | backtoback | info | 145 |
 
@@ -70,14 +70,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 25.80, 47.50, 14.70 | Police_far/galvanised_steel | 3 |
 | 25.80, 49.25, 20.10 | Police_far/galvanised_steel | 3 |
 | 25.80, 49.25, 14.70 | Police_far/galvanised_steel | 3 |
-| 26.32, 47.03, -18.41 | Police_far/cast_iron_green | 4 |
-| 26.32, 48.73, -18.41 | Police_far/cast_iron_green | 4 |
-| 26.32, 47.03, -16.97 | Police_far/cast_iron_green | 4 |
-| 26.32, 48.73, -16.97 | Police_far/cast_iron_green | 4 |
-| 26.32, 47.03, -16.83 | Police_far/cast_iron_green | 4 |
-| 26.32, 48.73, -16.83 | Police_far/cast_iron_green | 4 |
-| 26.32, 47.03, -15.39 | Police_far/cast_iron_green | 4 |
-| 26.32, 48.73, -15.39 | Police_far/cast_iron_green | 4 |
+| 26.00, 48.73, -18.42 | Police_far/cast_iron_green | 4 |
+| 26.00, 47.03, -18.42 | Police_far/cast_iron_green | 4 |
+| 24.56, 48.73, -18.42 | Police_far/cast_iron_green | 4 |
+| 24.56, 47.03, -18.42 | Police_far/cast_iron_green | 4 |
+| 26.00, 48.73, -15.38 | Police_far/cast_iron_green | 4 |
+| 26.00, 47.03, -15.38 | Police_far/cast_iron_green | 4 |
+| 24.56, 48.73, -15.38 | Police_far/cast_iron_green | 4 |
+| 24.56, 47.03, -15.38 | Police_far/cast_iron_green | 4 |
 
 ## tjunction (warn, 596)
 
@@ -126,7 +126,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (556 more in the JSON)
 
-## seam (info, 353)
+## seam (info, 351)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -171,7 +171,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -4.80, 50.98, -0.01 | Police_far/brick_yellow + Police_far/concrete_white | 8.45 | 21 | 90 |
 | -4.80, 52.08, 1.03 | Police_far/brick_yellow + Police_far/concrete_white | 2.46 | 21 | 81.4 |
 
-(313 more in the JSON)
+(311 more in the JSON)
 
 ## opening (info, 841)
 

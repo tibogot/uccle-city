@@ -1,0 +1,1273 @@
+{
+ "summary": {
+  "buildings": 25458,
+  "edges": 150670,
+  "partial": 1796,
+  "partialArea": 21535,
+  "after": 1,
+  "worst": [
+   {
+    "tile": "B5",
+    "id": "561065",
+    "a": [
+     -2590.29,
+     68.77
+    ],
+    "b": [
+     -2371.35,
+     -33.86
+    ],
+    "cover": 0.73,
+    "hole": 577.5
+   },
+   {
+    "tile": "D5",
+    "id": "507248",
+    "a": [
+     -1214.8,
+     128.87
+    ],
+    "b": [
+     -1192.63,
+     104.66
+    ],
+    "cover": 0.31,
+    "hole": 302.9
+   },
+   {
+    "tile": "K11",
+    "id": "659419",
+    "a": [
+     2298.55,
+     3279.56
+    ],
+    "b": [
+     2244.59,
+     3285.27
+    ],
+    "cover": 0.73,
+    "hole": 176.3
+   },
+   {
+    "tile": "H10",
+    "id": "536617",
+    "a": [
+     625.55,
+     2867.45
+    ],
+    "b": [
+     611.38,
+     2880.74
+    ],
+    "cover": 0.07,
+    "hole": 121.9
+   },
+   {
+    "tile": "D3",
+    "id": "750156",
+    "a": [
+     -1071.09,
+     -644.36
+    ],
+    "b": [
+     -1055.11,
+     -643.94
+    ],
+    "cover": 0.45,
+    "hole": 116
+   },
+   {
+    "tile": "D4",
+    "id": "523269",
+    "a": [
+     -1053.73,
+     -156.44
+    ],
+    "b": [
+     -1051.28,
+     -207.09
+    ],
+    "cover": 0.41,
+    "hole": 114.2
+   },
+   {
+    "tile": "D3",
+    "id": "544877",
+    "a": [
+     -1468.68,
+     -895.79
+    ],
+    "b": [
+     -1467.8,
+     -914.25
+    ],
+    "cover": 0.73,
+    "hole": 111
+   },
+   {
+    "tile": "K5",
+    "id": "698796",
+    "a": [
+     2093.35,
+     139.83
+    ],
+    "b": [
+     2095.17,
+     151.87
+    ],
+    "cover": 0.31,
+    "hole": 107.1
+   },
+   {
+    "tile": "H10",
+    "id": "536617",
+    "a": [
+     613.37,
+     2862.63
+    ],
+    "b": [
+     625.37,
+     2851.37
+    ],
+    "cover": 0.07,
+    "hole": 103.1
+   },
+   {
+    "tile": "F3",
+    "id": "729300",
+    "a": [
+     -401.94,
+     -524.72
+    ],
+    "b": [
+     -426.91,
+     -527.77
+    ],
+    "cover": 0.25,
+    "hole": 94.7
+   },
+   {
+    "tile": "D4",
+    "id": "523269",
+    "a": [
+     -1046.56,
+     -197.54
+    ],
+    "b": [
+     -1048.75,
+     -156.4
+    ],
+    "cover": 0.39,
+    "hole": 92.8
+   },
+   {
+    "tile": "F7",
+    "id": "507288",
+    "a": [
+     -370.68,
+     1306.39
+    ],
+    "b": [
+     -347.54,
+     1315.51
+    ],
+    "cover": 0.71,
+    "hole": 92.8
+   },
+   {
+    "tile": "I8",
+    "id": "757790",
+    "a": [
+     1335.02,
+     1892.63
+    ],
+    "b": [
+     1345.88,
+     1887.02
+    ],
+    "cover": 0.2,
+    "hole": 91.7
+   },
+   {
+    "tile": "H10",
+    "id": "536617",
+    "a": [
+     611.38,
+     2880.74
+    ],
+    "b": [
+     601.6,
+     2870.31
+    ],
+    "cover": 0.07,
+    "hole": 89.1
+   },
+   {
+    "tile": "F7",
+    "id": "759638",
+    "a": [
+     -366.98,
+     1357.24
+    ],
+    "b": [
+     -388.63,
+     1348.87
+    ],
+    "cover": 0.64,
+    "hole": 87.2
+   },
+   {
+    "tile": "E3",
+    "id": "729443",
+    "a": [
+     -1010.94,
+     -826.96
+    ],
+    "b": [
+     -973.37,
+     -825.62
+    ],
+    "cover": 0.68,
+    "hole": 84.4
+   },
+   {
+    "tile": "D5",
+    "id": "544411",
+    "a": [
+     -1479.55,
+     381.71
+    ],
+    "b": [
+     -1497.32,
+     383.26
+    ],
+    "cover": 0.65,
+    "hole": 84.3
+   },
+   {
+    "tile": "H10",
+    "id": "536617",
+    "a": [
+     625.37,
+     2851.37
+    ],
+    "b": [
+     634.32,
+     2860.92
+    ],
+    "cover": 0.07,
+    "hole": 81.3
+   },
+   {
+    "tile": "D5",
+    "id": "544411",
+    "a": [
+     -1505.2,
+     321.01
+    ],
+    "b": [
+     -1488.99,
+     352.83
+    ],
+    "cover": 0.82,
+    "hole": 78.4
+   },
+   {
+    "tile": "D5",
+    "id": "544411",
+    "a": [
+     -1499.53,
+     365.59
+    ],
+    "b": [
+     -1510.47,
+     346.12
+    ],
+    "cover": 0.75,
+    "hole": 77.2
+   },
+   {
+    "tile": "F6",
+    "id": "524671",
+    "a": [
+     -480.02,
+     743.56
+    ],
+    "b": [
+     -473.54,
+     756.45
+    ],
+    "cover": 0.45,
+    "hole": 76.1
+   },
+   {
+    "tile": "F3",
+    "id": "538418",
+    "a": [
+     -121.71,
+     -778.38
+    ],
+    "b": [
+     -104.79,
+     -773.93
+    ],
+    "cover": 0.84,
+    "hole": 74.4
+   },
+   {
+    "tile": "F3",
+    "id": "538418",
+    "a": [
+     -93.22,
+     -751.31
+    ],
+    "b": [
+     -110.17,
+     -755.81
+    ],
+    "cover": 0.84,
+    "hole": 74.4
+   },
+   {
+    "tile": "F3",
+    "id": "538418",
+    "a": [
+     -88.93,
+     -767.81
+    ],
+    "b": [
+     -93.22,
+     -751.31
+    ],
+    "cover": 0.84,
+    "hole": 72.3
+   },
+   {
+    "tile": "F3",
+    "id": "538418",
+    "a": [
+     -126.04,
+     -761.87
+    ],
+    "b": [
+     -121.71,
+     -778.38
+    ],
+    "cover": 0.84,
+    "hole": 72.3
+   },
+   {
+    "tile": "F1",
+    "id": "531435",
+    "a": [
+     -294.89,
+     -1637.02
+    ],
+    "b": [
+     -289.1,
+     -1637.36
+    ],
+    "cover": 0.02,
+    "hole": 71.9
+   },
+   {
+    "tile": "K7",
+    "id": "633563",
+    "a": [
+     2486.65,
+     1264.8
+    ],
+    "b": [
+     2481.01,
+     1253.98
+    ],
+    "cover": 0.21,
+    "hole": 71.5
+   },
+   {
+    "tile": "F3",
+    "id": "538418",
+    "a": [
+     -105.23,
+     -772.12
+    ],
+    "b": [
+     -88.93,
+     -767.81
+    ],
+    "cover": 0.84,
+    "hole": 71.2
+   },
+   {
+    "tile": "F3",
+    "id": "538418",
+    "a": [
+     -109.73,
+     -757.58
+    ],
+    "b": [
+     -126.04,
+     -761.87
+    ],
+    "cover": 0.84,
+    "hole": 71.2
+   },
+   {
+    "tile": "G3",
+    "id": "548515",
+    "a": [
+     467.1,
+     -613.85
+    ],
+    "b": [
+     435.63,
+     -615.11
+    ],
+    "cover": 0.74,
+    "hole": 70.9
+   }
+  ]
+ },
+ "tiles": {
+  "A5": {
+   "buildings": 3,
+   "edges": 21,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "B4": {
+   "buildings": 14,
+   "edges": 148,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "B5": {
+   "buildings": 180,
+   "edges": 902,
+   "partial": 23,
+   "holeM2": 1264,
+   "after": 0
+  },
+  "B6": {
+   "buildings": 236,
+   "edges": 1190,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "B7": {
+   "buildings": 138,
+   "edges": 743,
+   "partial": 21,
+   "holeM2": 383,
+   "after": 0
+  },
+  "B8": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "C3": {
+   "buildings": 116,
+   "edges": 430,
+   "partial": 4,
+   "holeM2": 33,
+   "after": 0
+  },
+  "C4": {
+   "buildings": 326,
+   "edges": 1880,
+   "partial": 27,
+   "holeM2": 241,
+   "after": 0
+  },
+  "C5": {
+   "buildings": 637,
+   "edges": 3085,
+   "partial": 14,
+   "holeM2": 170,
+   "after": 0
+  },
+  "C6": {
+   "buildings": 451,
+   "edges": 2231,
+   "partial": 12,
+   "holeM2": 182,
+   "after": 0
+  },
+  "C7": {
+   "buildings": 527,
+   "edges": 2354,
+   "partial": 4,
+   "holeM2": 21,
+   "after": 0
+  },
+  "C8": {
+   "buildings": 410,
+   "edges": 1916,
+   "partial": 21,
+   "holeM2": 224,
+   "after": 0
+  },
+  "C9": {
+   "buildings": 81,
+   "edges": 377,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "D1": {
+   "buildings": 2,
+   "edges": 14,
+   "partial": 5,
+   "holeM2": 132,
+   "after": 0
+  },
+  "D10": {
+   "buildings": 110,
+   "edges": 691,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "D2": {
+   "buildings": 3,
+   "edges": 12,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "D3": {
+   "buildings": 591,
+   "edges": 2900,
+   "partial": 44,
+   "holeM2": 766,
+   "after": 0
+  },
+  "D4": {
+   "buildings": 432,
+   "edges": 2266,
+   "partial": 21,
+   "holeM2": 389,
+   "after": 0
+  },
+  "D5": {
+   "buildings": 456,
+   "edges": 2347,
+   "partial": 59,
+   "holeM2": 1279,
+   "after": 0
+  },
+  "D6": {
+   "buildings": 371,
+   "edges": 2077,
+   "partial": 41,
+   "holeM2": 482,
+   "after": 0
+  },
+  "D7": {
+   "buildings": 373,
+   "edges": 1723,
+   "partial": 4,
+   "holeM2": 128,
+   "after": 0
+  },
+  "D8": {
+   "buildings": 455,
+   "edges": 2246,
+   "partial": 10,
+   "holeM2": 158,
+   "after": 0
+  },
+  "D9": {
+   "buildings": 171,
+   "edges": 897,
+   "partial": 3,
+   "holeM2": 33,
+   "after": 0
+  },
+  "E1": {
+   "buildings": 443,
+   "edges": 2074,
+   "partial": 36,
+   "holeM2": 208,
+   "after": 0
+  },
+  "E10": {
+   "buildings": 186,
+   "edges": 1059,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "E2": {
+   "buildings": 774,
+   "edges": 3389,
+   "partial": 53,
+   "holeM2": 296,
+   "after": 0
+  },
+  "E3": {
+   "buildings": 616,
+   "edges": 3241,
+   "partial": 32,
+   "holeM2": 441,
+   "after": 0
+  },
+  "E4": {
+   "buildings": 779,
+   "edges": 3832,
+   "partial": 41,
+   "holeM2": 326,
+   "after": 0
+  },
+  "E5": {
+   "buildings": 666,
+   "edges": 3502,
+   "partial": 45,
+   "holeM2": 221,
+   "after": 0
+  },
+  "E6": {
+   "buildings": 481,
+   "edges": 3278,
+   "partial": 32,
+   "holeM2": 449,
+   "after": 0
+  },
+  "E7": {
+   "buildings": 294,
+   "edges": 1490,
+   "partial": 16,
+   "holeM2": 121,
+   "after": 0
+  },
+  "E8": {
+   "buildings": 337,
+   "edges": 1692,
+   "partial": 44,
+   "holeM2": 392,
+   "after": 0
+  },
+  "E9": {
+   "buildings": 422,
+   "edges": 2278,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "F1": {
+   "buildings": 351,
+   "edges": 1602,
+   "partial": 23,
+   "holeM2": 295,
+   "after": 0
+  },
+  "F10": {
+   "buildings": 37,
+   "edges": 201,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "F2": {
+   "buildings": 519,
+   "edges": 2611,
+   "partial": 29,
+   "holeM2": 136,
+   "after": 0
+  },
+  "F3": {
+   "buildings": 212,
+   "edges": 1789,
+   "partial": 32,
+   "holeM2": 869,
+   "after": 0
+  },
+  "F4": {
+   "buildings": 178,
+   "edges": 1585,
+   "partial": 3,
+   "holeM2": 14,
+   "after": 0
+  },
+  "F5": {
+   "buildings": 303,
+   "edges": 2100,
+   "partial": 38,
+   "holeM2": 388,
+   "after": 0
+  },
+  "F6": {
+   "buildings": 508,
+   "edges": 2882,
+   "partial": 23,
+   "holeM2": 289,
+   "after": 0
+  },
+  "F7": {
+   "buildings": 114,
+   "edges": 680,
+   "partial": 10,
+   "holeM2": 325,
+   "after": 0
+  },
+  "F8": {
+   "buildings": 197,
+   "edges": 966,
+   "partial": 39,
+   "holeM2": 457,
+   "after": 0
+  },
+  "F9": {
+   "buildings": 496,
+   "edges": 1959,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "G1": {
+   "buildings": 377,
+   "edges": 1798,
+   "partial": 15,
+   "holeM2": 140,
+   "after": 0
+  },
+  "G10": {
+   "buildings": 161,
+   "edges": 1032,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "G2": {
+   "buildings": 223,
+   "edges": 1619,
+   "partial": 1,
+   "holeM2": 11,
+   "after": 0
+  },
+  "G3": {
+   "buildings": 172,
+   "edges": 1457,
+   "partial": 7,
+   "holeM2": 107,
+   "after": 0
+  },
+  "G4": {
+   "buildings": 224,
+   "edges": 1840,
+   "partial": 40,
+   "holeM2": 436,
+   "after": 0
+  },
+  "G5": {
+   "buildings": 246,
+   "edges": 2112,
+   "partial": 2,
+   "holeM2": 24,
+   "after": 0
+  },
+  "G6": {
+   "buildings": 425,
+   "edges": 2235,
+   "partial": 22,
+   "holeM2": 116,
+   "after": 0
+  },
+  "G7": {
+   "buildings": 45,
+   "edges": 270,
+   "partial": 3,
+   "holeM2": 17,
+   "after": 0
+  },
+  "G8": {
+   "buildings": 80,
+   "edges": 622,
+   "partial": 26,
+   "holeM2": 247,
+   "after": 0
+  },
+  "G9": {
+   "buildings": 164,
+   "edges": 1065,
+   "partial": 25,
+   "holeM2": 335,
+   "after": 0
+  },
+  "H1": {
+   "buildings": 609,
+   "edges": 3085,
+   "partial": 23,
+   "holeM2": 100,
+   "after": 0
+  },
+  "H10": {
+   "buildings": 85,
+   "edges": 658,
+   "partial": 58,
+   "holeM2": 1239,
+   "after": 0
+  },
+  "H11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "H2": {
+   "buildings": 354,
+   "edges": 2263,
+   "partial": 30,
+   "holeM2": 339,
+   "after": 0
+  },
+  "H3": {
+   "buildings": 386,
+   "edges": 2562,
+   "partial": 25,
+   "holeM2": 296,
+   "after": 0
+  },
+  "H4": {
+   "buildings": 259,
+   "edges": 2118,
+   "partial": 37,
+   "holeM2": 571,
+   "after": 0
+  },
+  "H5": {
+   "buildings": 265,
+   "edges": 1867,
+   "partial": 15,
+   "holeM2": 131,
+   "after": 0
+  },
+  "H6": {
+   "buildings": 535,
+   "edges": 2525,
+   "partial": 18,
+   "holeM2": 190,
+   "after": 0
+  },
+  "H7": {
+   "buildings": 333,
+   "edges": 1458,
+   "partial": 12,
+   "holeM2": 126,
+   "after": 0
+  },
+  "H8": {
+   "buildings": 163,
+   "edges": 1316,
+   "partial": 10,
+   "holeM2": 47,
+   "after": 0
+  },
+  "H9": {
+   "buildings": 98,
+   "edges": 1003,
+   "partial": 2,
+   "holeM2": 7,
+   "after": 0
+  },
+  "I1": {
+   "buildings": 351,
+   "edges": 1641,
+   "partial": 9,
+   "holeM2": 67,
+   "after": 0
+  },
+  "I10": {
+   "buildings": 208,
+   "edges": 1673,
+   "partial": 52,
+   "holeM2": 427,
+   "after": 0
+  },
+  "I11": {
+   "buildings": 4,
+   "edges": 27,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "I2": {
+   "buildings": 410,
+   "edges": 2537,
+   "partial": 16,
+   "holeM2": 98,
+   "after": 0
+  },
+  "I3": {
+   "buildings": 406,
+   "edges": 2567,
+   "partial": 4,
+   "holeM2": 42,
+   "after": 0
+  },
+  "I4": {
+   "buildings": 144,
+   "edges": 1589,
+   "partial": 11,
+   "holeM2": 39,
+   "after": 0
+  },
+  "I5": {
+   "buildings": 349,
+   "edges": 2410,
+   "partial": 73,
+   "holeM2": 733,
+   "after": 0
+  },
+  "I6": {
+   "buildings": 729,
+   "edges": 4024,
+   "partial": 62,
+   "holeM2": 434,
+   "after": 0
+  },
+  "I7": {
+   "buildings": 262,
+   "edges": 1660,
+   "partial": 20,
+   "holeM2": 177,
+   "after": 0
+  },
+  "I8": {
+   "buildings": 163,
+   "edges": 1348,
+   "partial": 24,
+   "holeM2": 520,
+   "after": 0
+  },
+  "I9": {
+   "buildings": 173,
+   "edges": 1636,
+   "partial": 26,
+   "holeM2": 427,
+   "after": 0
+  },
+  "J10": {
+   "buildings": 215,
+   "edges": 1761,
+   "partial": 57,
+   "holeM2": 569,
+   "after": 0
+  },
+  "J11": {
+   "buildings": 36,
+   "edges": 316,
+   "partial": 3,
+   "holeM2": 26,
+   "after": 0
+  },
+  "J2": {
+   "buildings": 5,
+   "edges": 34,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "J3": {
+   "buildings": 54,
+   "edges": 471,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "J4": {
+   "buildings": 247,
+   "edges": 1844,
+   "partial": 21,
+   "holeM2": 216,
+   "after": 0
+  },
+  "J5": {
+   "buildings": 419,
+   "edges": 2753,
+   "partial": 46,
+   "holeM2": 226,
+   "after": 0
+  },
+  "J6": {
+   "buildings": 306,
+   "edges": 2149,
+   "partial": 10,
+   "holeM2": 51,
+   "after": 1
+  },
+  "J7": {
+   "buildings": 383,
+   "edges": 2788,
+   "partial": 26,
+   "holeM2": 294,
+   "after": 0
+  },
+  "J8": {
+   "buildings": 188,
+   "edges": 1905,
+   "partial": 49,
+   "holeM2": 449,
+   "after": 0
+  },
+  "J9": {
+   "buildings": 181,
+   "edges": 1663,
+   "partial": 10,
+   "holeM2": 40,
+   "after": 0
+  },
+  "K10": {
+   "buildings": 92,
+   "edges": 859,
+   "partial": 19,
+   "holeM2": 143,
+   "after": 0
+  },
+  "K11": {
+   "buildings": 83,
+   "edges": 645,
+   "partial": 5,
+   "holeM2": 198,
+   "after": 0
+  },
+  "K12": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "K4": {
+   "buildings": 7,
+   "edges": 47,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "K5": {
+   "buildings": 65,
+   "edges": 551,
+   "partial": 34,
+   "holeM2": 345,
+   "after": 0
+  },
+  "K6": {
+   "buildings": 96,
+   "edges": 774,
+   "partial": 8,
+   "holeM2": 98,
+   "after": 0
+  },
+  "K7": {
+   "buildings": 160,
+   "edges": 1450,
+   "partial": 14,
+   "holeM2": 186,
+   "after": 0
+  },
+  "K8": {
+   "buildings": 286,
+   "edges": 1875,
+   "partial": 14,
+   "holeM2": 130,
+   "after": 0
+  },
+  "K9": {
+   "buildings": 166,
+   "edges": 1547,
+   "partial": 3,
+   "holeM2": 14,
+   "after": 0
+  },
+  "L10": {
+   "buildings": 1,
+   "edges": 4,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "L11": {
+   "buildings": 2,
+   "edges": 28,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "L12": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "L5": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "L6": {
+   "buildings": 15,
+   "edges": 78,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "L7": {
+   "buildings": 5,
+   "edges": 41,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "L8": {
+   "buildings": 13,
+   "edges": 117,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "L9": {
+   "buildings": 1,
+   "edges": 4,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M10": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M12": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M5": {
+   "buildings": 28,
+   "edges": 240,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M6": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M7": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M8": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "M9": {
+   "buildings": 1,
+   "edges": 4,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "N10": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "N11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "N5": {
+   "buildings": 1,
+   "edges": 7,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "N6": {
+   "buildings": 3,
+   "edges": 38,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "N7": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "N8": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "N9": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "O10": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "O11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  },
+  "O9": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "after": 0
+  }
+ }
+}

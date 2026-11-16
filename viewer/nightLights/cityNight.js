@@ -68,6 +68,62 @@ const WARM_LAYER = 7;
 const DEBUG = qp.get("nightdebug") === "1";       // the pop metrics (per lamp / per car weight jumps): off by default (CPU)
 const SHADOW_MODE = qp.get("nightshadow") || "alt";    // "alt" (round 3 default: on a busy street both maps had movers every frame, +0.8-1.8 ms; alt renders at most one of them a frame then) | "smart" (re-render on change, round 2) | "full" (every frame, round 1)
 const BUILDING = /^(buildings-|kit |facade|roof|terrain|ground|bridge|tunnel)/i;
+// fix4 item 3 (docs/FIX4.md): THE LAMP MAPS' STATIC CACHE. A passing car re-rendered the whole lamp map (~37 draws at
+// Place Saint-Job: parked cars, sign poles, garden walls, benches, pumps, shop fronts, tree proxies...) every frame it
+// was within reach: +0.8 ms CPU, GPU in the noise on a busy street. Now the MOVERS (traffic, two-wheelers, trams,
+// trains, the player's vehicle, skinned meshes, userData.nightMover / lampMover) cast on a layer of their own; a lamp
+// map's STATIC casters are drawn only when the lamp changes or the camera moved (as before), and copied aside (a
+// depth32float copy, 1 MB); a frame where only movers changed copies the static depth back and draws the movers on top
+// (1-3 draws). ?lampcache=0: off (every re-render draws everything, the round 3 schedule).
+const LAMP_CACHE = qp.get("lampcache") !== "0";
+const MOVER_LAYER = 11;
+const MOVER_NAME = /^(traffic-|twowheel-traffic|tram\d+-|train-)/;   // (tram\d+: not "tram-poles")
+function isLampMover(o) {
+  if (o.isSkinnedMesh || o.userData.nightMover || o.userData.lampMover) return true;
+  for (let q = o; q; q = q.parent) if (MOVER_NAME.test(q.name || "") || q.userData.lampMover) return true;
+  return false;
+}
+const moverTops = new Set();                               // the scene's top-level objects holding a mover-layer mesh (sweep)
+class LampShadowNode extends THREE.ShadowNode {
+  constructor(light, shadow) { super(light, shadow); this.on = true; this.hid = []; this.plan = "full"; this.cache = null; this.cacheOk = false; this.counts = { full: 0, movers: 0, plain: 0 }; }
+  setupRenderTarget(shadow, builder) {
+    const r = super.setupRenderTarget(shadow, builder);
+    r.depthTexture.type = THREE.FloatType;                 // depth32float: copyable (depth24plus is not)
+    this.cache = new THREE.DepthTexture(shadow.mapSize.width, shadow.mapSize.height, THREE.FloatType);
+    this.cache.name = "LampShadowStaticCache";
+    return r;
+  }
+  renderShadow(frame) {
+    const cam = this.shadow.camera, mask = cam.layers.mask, M = 1 << MOVER_LAYER;
+    // (the by-day warm-up draws WARM_LAYER from 350 m up: three's own path, and the cache is stale after it)
+    if (!this.on || !this.cache || !(mask & M)) { this.cacheOk = false; this.counts.plain++; return super.renderShadow(frame); }
+    const { renderer, scene } = frame, map = this.shadowMap;
+    this.shadow.updateMatrices(this.light);
+    map.setSize(this.shadow.mapSize.width, this.shadow.mapSize.height, map.depth);
+    const name = scene.name;
+    scene.name = `Shadow Map [ ${this.light.name} ]`;
+    if (this.plan === "full" || !this.cacheOk) {
+      cam.layers.mask = mask & ~M;
+      renderer.render(scene, cam);
+      renderer.copyTextureToTexture(map.depthTexture, this.cache);
+      this.cacheOk = true; this.counts.full++;
+    } else {
+      renderer.copyTextureToTexture(this.cache, map.depthTexture);
+      this.counts.movers++;
+    }
+    cam.layers.mask = M;
+    const ac = renderer.autoClear;
+    renderer.autoClear = false;                              // (on the static depth just drawn / copied back)
+    // (the movers' pass walks only the scene's top-level groups that hold a mover: the rest hidden for the call)
+    const tops = moverTops, hid = this.hid; hid.length = 0;
+    if (tops.size) for (const c of scene.children) if (c.visible && !tops.has(c) && !c.isLight) { c.visible = false; hid.push(c); }
+    renderer.render(scene, cam);
+    for (const c of hid) c.visible = true;
+    renderer.autoClear = ac;
+    cam.layers.mask = mask;
+    scene.name = name;
+  }
+}
 function tagCasters(root, warm, tileCasters = null) {
   let n = 0;
   root.traverse((o) => {
@@ -77,7 +133,8 @@ function tagCasters(root, warm, tileCasters = null) {
     let small = o.isInstancedMesh || o.isSkinnedMesh;
     if (!small) { const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); small = (g.boundingSphere?.radius ?? 1e9) * o.matrixWorld.getMaxScaleOnAxis() < 12; }
     if (small) {
-      o.layers.enable(LAMP_SHADOW_LAYER); warm.push(o, performance.now()); n++;
+      if (LAMP_CACHE && isLampMover(o)) o.layers.enable(MOVER_LAYER); else o.layers.enable(LAMP_SHADOW_LAYER);
+      warm.push(o, performance.now()); n++;
       // a TILE's instanced set (its trees, lamps, bollards...: one mesh for the whole 500 m tile, a bounding sphere the
       // lamp's 24 m frustum always meets): remembered with its tile, gated by reach below (TILE_REACH)
       if (tileCasters && o.isInstancedMesh) { let t = o; while (t && !/^[A-Z]\d+-/.test(t.name || "")) t = t.parent; if (t) tileCasters.push({ o, tile: t.name.split("-")[0] }); }
@@ -95,7 +152,7 @@ const TILE_REACH = qp.get("lampreach") !== "0", REACH = 26 + 12;
 // (PROXY_LAYER + k: the main camera never sees it). Round 2 drew 72 tree draws / 318 k triangles per 2 maps at Place
 // Saint-Job. ?lampproxy=0: the tile gate above (whole sets).
 const EMPTY_WARM = /^(traffic-car-batch|parked-car-batch|train-)/;      // (round 3) empty by day, filled at night: warmed with one zero-size instance
-const PROXY = TILE_REACH && qp.get("lampproxy") !== "0", PROXY_LAYER = 8, PROXY_CAP = 128;
+const PROXY = TILE_REACH && qp.get("lampproxy") !== "0", PROXY_LAYER = 12, PROXY_CAP = 128;   // (fix4: was 8, so lamp 1 drew on 9 = the pond reflection's POND_LAYER)
 
 /** step 0: before renderer.init() */
 export async function installNightLighting(renderer) {
@@ -222,6 +279,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     L.shadow.camera.near = 0.3; L.shadow.camera.far = 26;
     L.shadow.camera.layers.set(LAMP_SHADOW_LAYER);                 // only the street-scale casters (tagCasters below)
     L.shadow.camera.layers.enable(PROXY_LAYER + k);                 // (round 3) + its own proxies of the tile-wide sets
+    if (LAMP_CACHE) { L.shadow.camera.layers.enable(MOVER_LAYER); L.shadow.shadowNode = new LampShadowNode(L, L.shadow); }   // (fix4) the movers' layer + the static cache
     L.position.set(0, -500, 0); L.target.position.set(0, -510, 0);
     scene.add(L, L.target); shadowLights.push(L);
   }
@@ -474,7 +532,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   };
 
   let tLast = performance.now(), frames = 0, lastScale = 0;
-  const stats = { lamps: 0, tiles: 0, cars: 0, real: 0, dyn: 0, ms: 0, msAvg: 0, shadowRenders: 0, shadowSkips: 0, warmed: 0, ghostSteal: 0, dynFade: 1 };
+  const stats = { lamps: 0, tiles: 0, cars: 0, real: 0, dyn: 0, ms: 0, msAvg: 0, shadowRenders: 0, shadowFull: 0, shadowSkips: 0, warmed: 0, ghostSteal: 0, dynFade: 1 };
   // ---- the lamp shadows' schedule (round 2): a shadowed lamp stands still, so its map only changes when something in
   // it moves. Re-rendered (a) the frame its lamp changes, (b) every frame a MOVER is within its reach (a traffic car,
   // the player's car, a tram, the camera itself - the walker / third-person character - moving near it), (c) when the
@@ -493,10 +551,11 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   let warming = 0;
   const warmShadows = (camPos) => {
     if (warming === 1) {                                              // (the warm render happened last frame: restore)
-      shadowLights.forEach((L, k) => { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.layers.enable(PROXY_LAYER + k); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; });
+      shadowLights.forEach((L, k) => { L.shadow.camera.layers.set(LAMP_SHADOW_LAYER); L.shadow.camera.layers.enable(PROXY_LAYER + k); if (LAMP_CACHE) L.shadow.camera.layers.enable(MOVER_LAYER); L.shadow.camera.far = 26; L.shadow.camera.updateProjectionMatrix(); L.distance = nightParams.lampRange; L.shadow.needsUpdate = false; });
       for (let i = 0; i < warmNow.length; i++) {
         const o = warmNow[i]; o.layers.disable(WARM_LAYER);
         if (o.userData.proxyOf) { o.count = 0; o.visible = false; }
+        if (o.userData.__warmHid0) { o.layers.enable(0); delete o.userData.__warmHid0; }
         if (o.userData.__warmEmpty) { const M = o.instanceMatrix.array; if (o.count === 1 && M[0] === 0 && M[5] === 0 && M[10] === 0) { o.count = 0; if (o.userData.__warmEmpty === 2) o.visible = false; } delete o.userData.__warmEmpty; }
       }
       stats.warmed += warmNow.length; warmNow.length = 0; warming = 0;
@@ -531,6 +590,10 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         if (ok) {
           o.instanceMatrix.array.fill(0, 0, 16); o.instanceMatrix.clearUpdateRanges(); o.instanceMatrix.addUpdateRange(0, 16); o.instanceMatrix.needsUpdate = true;
           o.userData.__warmEmpty = o.visible ? 1 : 2; o.count = 1; o.visible = true; o.layers.enable(WARM_LAYER); warmNow.push(o);
+          // (fix4 item 5) off the MAIN camera's layer for this warm frame: shown with count 1 it was drawn by the main pass
+          // too, and the traffic's 64 batches built their main node graphs in that ONE frame (a 0.8-0.9 s long task
+          // ~10 s after the reveal); their main pass is precompiled one batch at a time (trafficFleet.js)
+          if (o.layers.isEnabled(0)) { o.layers.disable(0); o.userData.__warmHid0 = true; }
           continue;
         }
       }
@@ -743,13 +806,20 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
         const L = shadowLights[k], id = night.shadow.lamp[k];
         L.shadow.autoUpdate = false;
         if (!(L.intensity > 0)) { sLamp[k] = -2; continue; }
-        let go = api.shadowMode === "full" || id !== sLamp[k] || mover[k] === 1;
+        let full = api.shadowMode === "full" || id !== sLamp[k];
+        let go = full || (mover[k] === 1 && api.shadowMode !== "calm");   // ("calm": movers ignored, a measurement mode)
+        const cached = api.lampCache && !!L.shadow.shadowNode?.cacheOk;
         // ("alt", perf audit 2026-11-14: at most ONE lamp map a frame while things move, the two lamps alternating: a
-        // moving car's lamp shadow at 30 Hz; a lamp change still renders at once)
-        if (go && api.shadowMode === "alt" && id === sLamp[k] && (refreshed || (refreshTurn & 1) !== k) && mover[1 - k] === 1) go = false;
-        // (the camera-moved refresh: one map per frame, alternating)
-        if (!go && !refreshed && (refreshTurn & 1) === k && camPos.distanceToSquared(sCam[k]) > MOVE_REFRESH * MOVE_REFRESH) { go = true; refreshed = true; }
-        if (go) { L.shadow.needsUpdate = true; sLamp[k] = id; sCam[k].copy(camPos); stats.shadowRenders++; if (api.shadowMode === "alt") refreshed = true; if (PROXY) fillProxies(k, L.position); } else stats.shadowSkips++;
+        // moving car's lamp shadow at 30 Hz; a lamp change still renders at once). (fix4) With the static cache a
+        // movers-only update is a copy + 1-3 draws: both maps every frame (60 Hz car shadows); a FULL one stays one a frame
+        if (go && !full && !cached && api.shadowMode === "alt" && (refreshed || (refreshTurn & 1) !== k) && mover[1 - k] === 1) go = false;
+        // (the camera-moved refresh: one map per frame, alternating; a FULL render: the static casters re-bucket)
+        if (!full && !refreshed && (refreshTurn & 1) === k && camPos.distanceToSquared(sCam[k]) > MOVE_REFRESH * MOVE_REFRESH) { go = true; full = true; refreshed = true; }
+        if (go) {
+          L.shadow.needsUpdate = true; sLamp[k] = id; stats.shadowRenders++;
+          if (full || !cached) { sCam[k].copy(camPos); if (api.shadowMode === "alt") refreshed = true; if (PROXY) fillProxies(k, L.position); stats.shadowFull++; }
+          if (L.shadow.shadowNode) { L.shadow.shadowNode.on = api.lampCache; L.shadow.shadowNode.plan = api.lampCache && !full ? "movers" : "full"; }
+        } else stats.shadowSkips++;
       }
       refreshTurn++;
     } else if (lastScale <= 0 && frames >= 4) {
@@ -907,6 +977,15 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     proxyStats.sets = sets; proxyStats.inst = inst; proxyStats.ms = performance.now() - t0;
   };
   const sweep = () => {
+    // (fix4) the player's vehicles (car, motorbike, scooter, Villo) are movers: their root marked, meshes already on the
+    // static layer moved over
+    if (LAMP_CACHE && driver) {
+      const roots = [driver.car?.root, driver.lampRoot, ...Object.values(driver.twos || {}).map((t) => t.rig?.root)];
+      for (const r of roots) if (r && !r.userData.lampMover) {
+        r.userData.lampMover = true;
+        r.traverse((o) => { if (o.isMesh && o.layers.isEnabled(LAMP_SHADOW_LAYER)) { o.layers.disable(LAMP_SHADOW_LAYER); o.layers.enable(MOVER_LAYER); } });
+      }
+    }
     tagged += tagCasters(scene, warmList, TILE_REACH ? tileCasters : null);
     if (PROXY) {
       for (const { o, tile } of tileCasters) addProxy(o, tile);
@@ -915,7 +994,11 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
       for (const src of proxies.keys()) if (!src.parent) dropProxy(src);
     }
     moverObjs.length = 0;
-    scene.traverse((o) => { if (o.isSkinnedMesh || o.userData.nightMover) moverObjs.push(o); });
+    if (LAMP_CACHE) moverTops.clear();
+    scene.traverse((o) => {
+      if (o.isSkinnedMesh || o.userData.nightMover) moverObjs.push(o);
+      if (LAMP_CACHE && o.isMesh && o.layers.isEnabled(MOVER_LAYER)) { let t = o; while (t.parent && t.parent !== scene) t = t.parent; if (t.parent === scene) moverTops.add(t); }
+    });
     for (let i = tileCasters.length - 1; i >= 0; i--) if (!tileCasters[i].o.parent) { tileCasters[i] = tileCasters[tileCasters.length - 1]; tileCasters.pop(); }   // (tile gone)
   };
   /** keep a tile's instanced sets in the lamp layer only near a shadowed lamp (both lamps: their union) */
@@ -938,6 +1021,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
   const api = {
     master: 1,                          // (A/B in one page: 0 = every night light off, the lighting model kept)
     shadowMode: SHADOW_MODE,            // (A/B in one page: "smart" / "full")
+    lampCache: LAMP_CACHE,              // (fix4, A/B in one page: false = every lamp-map render draws everything)
     pool, night, lamps, ground, shadowLights, stats, nightParams, glare, proxyStats, proxies,
     /** a tile's lamp heads; (round 3) extra = { windows: its lit windows (litHash.js records, the tile worker),
      *  bounds: { x0, z0, ... }, ground(x, z): the surface height } for its ground map */

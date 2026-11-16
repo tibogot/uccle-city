@@ -89,17 +89,17 @@
   "lod0_px_per_m": 20.2,
   "far_px_per_m": 10.4,
   "thin_faces_vertex_ao": [
-   7407,
-   1121
+   7405,
+   1119
   ],
   "lightmapped_faces_with_texels": {
    "lod0": [
-    2647,
-    2647
+    2649,
+    2649
    ],
    "far": [
-    2117,
-    2117
+    2119,
+    2119
    ]
   }
  },

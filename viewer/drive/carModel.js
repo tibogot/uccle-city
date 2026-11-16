@@ -13,7 +13,7 @@ import * as THREE from "three/webgpu";
 import { color, uniform } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { loadPack, packMaterial, packLook, PACK_LODS, PACK_SOURCES } from "./carPacks.js";
+import { loadPack, packMaterial, packLook, PACK_LODS, PACK_SOURCES, playerSeeThrough } from "./carPacks.js";
 import { BODY, HANDLING } from "./carPhysics.js";
 
 export const CAR_LODS = [
@@ -51,7 +51,7 @@ async function loadPackCar(spec) {
   const pack = await loadPack(src);
   const car = pack.cars.find((c) => c.id === id) || pack.cars[0];
   const paint = car.paint.clone();
-  const mat = packMaterial({ paint, lights: carLights, rich: pack.rich });
+  const mat = packMaterial({ paint, lights: carLights, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich) });
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];
   const lods = car.lods.map((L) => ({
@@ -188,14 +188,20 @@ export function createCar(model, { lod = 0, shadows = true } = {}) {
     }
   };
   setLod(lod);
+  // (police feel: c.wy = each wheel's suspension travel, carFeel.js: the wheel rides up into its arch over a kerb and
+  // hangs down over a dip; no array per frame)
+  const WL = ["FL", "FR", "RL", "RR"].map((k) => wheels[k]), restY = WL.map((w) => w.pivot.position.y);
   const update = (c) => {
     root.position.set(c.x, c.y, c.z);
     root.rotation.set(-c.slopePitch, c.heading, c.slopeRoll);
     chassis.position.y = c.heave;
     chassis.rotation.set(c.pitch, 0, c.roll);
-    for (const [k, w] of Object.entries(wheels)) {
+    const wy = c.wy;
+    for (let i = 0; i < 4; i++) {
+      const w = WL[i];
       w.spin.rotation.x = c.wheelSpin;
-      if (k[0] === "F") w.pivot.rotation.y = c.steerAngle;
+      if (i < 2) w.pivot.rotation.y = c.steerAngle;
+      w.pivot.position.y = restY[i] + (wy ? wy[i] : 0);
     }
   };
   return { root, chassis, wheels, setLod, update, get lod() { return cur; } };

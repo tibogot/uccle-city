@@ -647,19 +647,24 @@ def sliding_gate(far):
     hbox(uu + 0.06, uu + 0.18, GATE_S[1] + 0.05, GATE_S[1] + 0.17, g - 0.2, h1 + 0.1, GALV, C_FRAME)
 
 def north_gate(far):
-    """the two-leaf dark green steel gate at the north end (closed): frames + sheet infill"""
+    """the two-leaf dark green steel gate at the north end, OPEN (citydefects 2026-11-16, owner: "the real gate is open";
+    the police game starts in the north yard): each leaf swung 90 deg into the yard about its hinge pier, lying along u
+    against the wall's inside; frames + sheet infill. ?: the closed version is the previous commit's."""
     K.B.new_group()
     uu = (WALL_U0 + WALL_U1) / 2
     w0, w1 = GATE_N[0] + 0.03, GATE_N[1] - 0.03
     g = max(ground(uu, w0), ground(uu, w1))
     h0, h1 = g + 0.05, g + 1.75
-    wm = (w0 + w1) / 2
-    for (a, b) in ((w0, wm - 0.01), (wm + 0.01, w1)):
-        hbox(uu - 0.03, uu + 0.03, a, a + 0.06, h0, h1, GREEN, C_FRAME)
-        hbox(uu - 0.03, uu + 0.03, b - 0.06, b, h0, h1, GREEN, C_FRAME)
-        hbox(uu - 0.03, uu + 0.03, a + 0.06, b - 0.06, h1 - 0.06, h1, GREEN, C_FRAME)
-        hbox(uu - 0.03, uu + 0.03, a + 0.06, b - 0.06, h0, h0 + 0.06, GREEN, C_FRAME)
-        hbox(uu - 0.012, uu + 0.012, a + 0.06, b - 0.06, h0 + 0.06, h1 - 0.06, GREEN, C_PANEL)
+    L = (w1 - w0) / 2 - 0.01                       # one leaf's length
+    ue = WALL_U0 - 0.04                            # the hinge line, just inside the wall
+    for wh, sg in ((w0, 1), (w1, -1)):             # hinge at w0 (leaf on its +w side), at w1 (on its -w side)
+        a, b = sorted((wh + sg * 0.02, wh + sg * 0.08))   # the leaf's 6 cm thickness, against the pier
+        hbox(ue - 0.06, ue, a, b, h0, h1, GREEN, C_FRAME)                     # hinge stile
+        hbox(ue - L, ue - L + 0.06, a, b, h0, h1, GREEN, C_FRAME)             # free stile
+        hbox(ue - L + 0.06, ue - 0.06, a, b, h1 - 0.06, h1, GREEN, C_FRAME)   # top rail
+        hbox(ue - L + 0.06, ue - 0.06, a, b, h0, h0 + 0.06, GREEN, C_FRAME)   # bottom rail
+        c, d = (a + b) / 2 - 0.012, (a + b) / 2 + 0.012
+        hbox(ue - L + 0.06, ue - 0.06, c, d, h0 + 0.06, h1 - 0.06, GREEN, C_PANEL)
 
 def street_signs(far):
     """the 'no entry except service vehicles' sign on the vehicle gate's north pier: a red-rimmed white disc (C3) and a

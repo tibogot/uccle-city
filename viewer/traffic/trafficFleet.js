@@ -15,6 +15,8 @@ import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-car mo
 export const TYPE_NAMES = TYPE_MIX.map(([t]) => t);
 export const trafficTime = uniform(0);
 
+const COMPILE_OLD = typeof location !== "undefined" && /[?&]trafficwarm=old(&|$)/.test(location.search);
+
 export class TrafficFleet {
   /** night: the city's night uniform (lighting.js env.uNight) or the lab's own */
   constructor({ night, source = carFleet, maxCars = 1024 } = {}) {
@@ -35,7 +37,7 @@ export class TrafficFleet {
     this.prev = new InstancePrev(J, "trafficPrev");   // --- instmotion (one row per drawn instance this frame)
   }
   /** Wait for the parked fleet's geometries, build the batches + materials, compile them off the frame. */
-  async load(renderer, scene, camera) {
+  async load(renderer, scene, camera, compile = null) {
     const frame = () => new Promise((r) => requestAnimationFrame(r));
     try {
       const S = this.source;
@@ -72,6 +74,11 @@ export class TrafficFleet {
         for (const b of probes) { b.mesh.count = 0; b.mesh.visible = false; }
       }
       this.ready = true;
+      // (fix4 item 5, ?trafficwarm=old = the probes only) then EVERY batch through the page's precompile queue, one job
+      // each, in the background (the scene pass's target + MRT): the probes warm type 0 only, and each other batch (its
+      // own render object: the per-object motion hooks) builds its node graph the frame it first gets a car (~15-22 ms
+      // each). Not awaited: the queue runs behind the landmarks' compiles, the traffic shows as before
+      if (compile && !COMPILE_OLD) (async () => { this.warmed = 0; for (const b of this.all) { if (b.mesh.count === 0) await compile([b.mesh]); this.warmed++; await frame(); } })().catch(() => {});
     } catch (e) { this.failed = e; console.warn("[traffic] fleet failed:", e); }
   }
   batch(geo, mat, cast, fade, cap = 32) {

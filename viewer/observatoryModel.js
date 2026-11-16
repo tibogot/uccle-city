@@ -108,7 +108,7 @@ export function loadObservatory(set = "observatory") {
 function sourceMaterial(slot, lib) {
   const m = lib && (lib.getMaterial?.(slot) ?? lib.materials?.[slot] ?? lib.default?.[slot]);
   if (m) return m;
-  if (lib) console.warn(`[observatory] library has no "${slot}": temporary material`);
+  if (lib) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("observatory", slot);   // (shipped.js: own look)
   return TEMP[slot]();
 }
 
@@ -123,10 +123,12 @@ function wrapAO(src, aoTex, slot, vtx = true) {
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
   if (slot !== "glass_window") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
+    m.userData.farBase = base;                          // (perfgame round 7: farMerge.js bakes the AO-free colour)
     m.colorNode = base.mul(mix(float(1), aoK, obsLook.aoDirect));
   }
   m.userData.shared = true;
   m.userData.slot = slot;
+  m.userData.farAO = { aoTex, look: obsLook };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
   return m;
 }
 

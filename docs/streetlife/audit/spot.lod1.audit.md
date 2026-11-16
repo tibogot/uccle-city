@@ -1,6 +1,6 @@
 # Mesh audit: spot lod1
 
-214 triangles, 113 welded vertices, 0 open edges, 0 rays, 6 ms.
+214 triangles, 113 welded vertices, 0 open edges, 0 rays, 3 ms.
 
 **0 blocking**, 1 warnings. Clean (no blocking item).
 

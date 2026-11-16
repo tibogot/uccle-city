@@ -18,6 +18,7 @@ import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { Heightmap } from "./heightmap.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
+import { FAR_MERGE_LM, mergeFarLevel } from "./farMerge.js";
 
 /** The SHADOW pass is not in compileAsync: warm its pipelines (every mesh of every level and every fading copy drawn a
  *  frame far under the city, pipelines created async) before the model shows (the villa's / Wolvendael's) */
@@ -73,6 +74,7 @@ export async function addPolice({ scene, updaters, hide, world, manifest, log, c
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = PO_LODS.map((_, k) => m.make(k));
     root.add(...levels);
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "police" }).then((r) => r && log?.(`police: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=old: off)
     root.visible = false; yard.mesh.visible = false;
     scene.add(root, yard.mesh);
     const cars = yard.cars;

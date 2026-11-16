@@ -1,0 +1,69 @@
+{
+ "_doc": "POIs OSM does not have yet, merged into the OSM extract by build_streetlife.py (load_raw). Each needs a source; positions from the UrbIS address point (CC0), never traced from imagery. Add them to OSM when confirmed and drop them here.",
+ "elements": [
+  {
+   "type": "node",
+   "id": "white-night",
+   "lon": 4.3644912,
+   "lat": 50.794131,
+   "tags": {
+    "shop": "convenience",
+    "name": "White Night",
+    "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+    "addr:housenumber": "662"
+   },
+   "_source": "Owner (lives in Uccle): 'the white night shop on Place Saint-Job'; name and number 662 from its public listing (Google Maps, looked at 2026-11-16, not copied beyond name / number); position = UrbIS address 662 (https://databrussels.be/id/address/1228753)",
+   "_status": "TO CONFIRM: the owner says it may have closed (2026-11-16)"
+  },
+  {
+   "type": "node",
+   "id": "relais-traiteur",
+   "lon": 4.3650966,
+   "lat": 50.79407,
+   "tags": {
+    "shop": "deli",
+    "name": "Relais Saint-Job",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
+   },
+   "_source": "Le Relais Saint-Job, traiteur & vins (2-storey white corner, Place de Saint-Job 3): reference photo of the front (privateaser.com/lieu/57030, looked at, not kept) + UrbIS footprints 544703 / 559047; Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr"
+  },
+  {
+   "type": "node",
+   "id": "relais-brasserie",
+   "lon": 4.365046,
+   "lat": 50.7941197,
+   "tags": {
+    "amenity": "restaurant",
+    "name": "Relais Saint-Job",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
+   },
+   "_source": "Le Relais Saint-Job, brasserie (the low white house with the tiled roof, n. 1): reference photo of the front (privateaser.com/lieu/57030, looked at, not kept) + UrbIS footprints 544703 / 559047; Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr"
+  },
+  {
+   "type": "node",
+   "id": "relais-restaurant",
+   "lon": 4.3650006,
+   "lat": 50.7941654,
+   "tags": {
+    "amenity": "restaurant",
+    "outdoor_seating": "yes",
+    "name": "Relais Saint-Job",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
+   },
+   "_source": "Le Relais Saint-Job, restaurant + the terrace (n. 1, north end): reference photo of the front (privateaser.com/lieu/57030, looked at, not kept) + UrbIS footprints 544703 / 559047; Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr"
+  },
+  {
+   "type": "node",
+   "id": "press-shop",
+   "lon": 4.3655934,
+   "lat": 50.7945185,
+   "tags": {
+    "shop": "newsagent",
+    "name": "Press Shop",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
+   },
+   "_source": "Street View Jul 2024 (looked at): the newsagent (red fascia, white script, Lotto) right of the Deneubourg bakery at n. 36, where OSM still has Barat (closed: the bakery at 36 is Deneubourg). Drop OSM n4361797887 (Barat) in the builder: _replaces",
+   "_replaces": "n4361797887"
+  }
+ ]
+}

@@ -23,7 +23,7 @@ const WHEELS = { hatch_s: [2.5, 0.3], hatch_c: [2.64, 0.32], estate: [2.7, 0.32]
 
 /** ?trafficbox=old: the traffic's collider boxes at the sim's newest step (before collisions round 2) */
 const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
-export function createTraffic({ scene, renderer, camera, ground, night, cap = 768, seed = 7, twoWheelers = false }) {
+export function createTraffic({ scene, renderer, camera, ground, night, cap = 768, seed = 7, twoWheelers = false, compile = null }) {
   const world = new TrafficWorld();
   const mix = new Map(TYPE_MIX);
   const types = TYPE_NAMES.map((name) => ({ name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: mix.get(name) }));
@@ -33,7 +33,7 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
   const sim = new TrafficSim(world, { cap, types, paints, ground, seed });
   const fleet = new TrafficFleet({ night, maxCars: cap });
   scene.add(fleet.group);
-  fleet.load(renderer, scene, camera);
+  fleet.load(renderer, scene, camera, compile);
   const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sphere = new THREE.Sphere(new THREE.Vector3(), 4);
   const camPos = new THREE.Vector3();
   // visible = in the camera's frustum and nearer than the fleet's fade end

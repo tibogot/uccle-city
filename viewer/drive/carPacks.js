@@ -8,7 +8,7 @@
 // Paint comes from a uniform (one car) or a per-instance attribute "paint" (parked cars). LODs are made here at load by
 // meshoptimizer (absolute error in metres; colour seams are open borders, so the simplifier keeps them as borders).
 import * as THREE from "three/webgpu";
-import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, cos, sin, positionLocal, smoothstep, mod } from "three/tsl";
+import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, cos, sin, positionLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts } from "./carLod.js";
@@ -96,7 +96,26 @@ function lodGeometry(g, o) {
 export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearcoat: uniform(0.7),
   // the traffic's lamp strengths (packMaterial motion path; docs/VISUAL_FIXES.md round 2): brake, night tail, reversing,
   // indicators (?vfix2=old: 5 / 1.2 / 4 / 6)
-  brake: uniform(0.35), tailNight: uniform(0.4), reversing: uniform(1.8), indicator: uniform(0.5) };
+  brake: uniform(0.35), tailNight: uniform(0.4), reversing: uniform(1.8), indicator: uniform(0.5),
+  // (fix4 item 1, live; ?rearpool=old = 0) the tail lens lit by the view angle: a real lamp's reflector + prism lens
+  // throw the light backwards, so the lens seen head-on is the bright part and the wrap-round facets fall off. At night
+  // the brake + tail (0.75) clipped the red channel on every facet alike: the whole wrap-round lamp one flat red block
+  lensShade: uniform(/[?&]rearpool=old(&|$)/.test(typeof location !== "undefined" ? location.search : "") ? 0 : 1) };
+/** the tail lens's view-angle factor (1 when lensShade = 0): ~1.1 head-on, ~0.35 edge-on */
+const lensK = () => {
+  const nv = dot(normalView, normalize(positionView.negate())).clamp(0, 1);
+  return mix(float(1), nv.mul(nv).mul(0.8).add(0.3), packLook.lensShade);
+};
+
+/** THE PLAYER'S CAR GLASS (policefeel, owner 2026-11-17: "bad lines at the back of the car when moving"): under the
+ *  TAAU the see-through glass is a stochastic per-frame discard (viewer/upscale.js) the history averages; on the
+ *  player's car, big and close in the chase view and moving with the camera, the clamp never settles it: the rear window
+ *  showed a band of crawling speckles (glass vs the bright boot / parcel shelf behind it). The player's car now has
+ *  solid tinted glass under the TAAU (as the far LODs: dark, reflective; estates have privacy-tinted rear glass).
+ *  ?carglass=old: the stochastic see-through as before. Native (?upscale=0, MSAA) keeps alpha-to-coverage. */
+const CARGLASS_OLD = typeof location !== "undefined" && /[?&]carglass=old(&|$)/.test(location.search);
+const UPSCALED = typeof location !== "undefined" && !/[?&](upscale|fx)=0(&|$)/.test(location.search);
+export const playerSeeThrough = (rich) => !!rich && (CARGLASS_OLD || !UPSCALED);
 
 /**
  * The pack material. paint: a THREE.Color (one car: a uniform) or "instance" (parked cars: geometry attribute "paint",
@@ -137,7 +156,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     // (polish1 item 6, ?carlights=old: x1.2 tail / x5 brake): the player's car on the traffic's measured levels (packLook:
     // brake 0.35, night tail 0.4), the brake lens a lit red like every other car's, not a cream-salmon blob
     const kT = CARLIGHTS_OLD ? 1.2 : packLook.tailNight, kBr = CARLIGHTS_OLD ? 5 : packLook.brake;
-    const tail = select(isTail, lights.tail.mul(kT).add(lights.brake ? lights.brake.mul(kBr) : float(0)), float(0));
+    const tail = select(isTail, lights.tail.mul(kT).add(lights.brake ? lights.brake.mul(kBr) : float(0)).mul(lensK()), float(0));
     // rich: the lamp's own vertex colour glows (white lamps, amber taxi sign); packs: a fixed warm white
     m.emissiveNode = (rich ? vc.mul(1.15) : color(0xfff1dc)).mul(head).add(color(0xff1408).mul(tail));
   }
@@ -172,7 +191,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     // levels instead: by day brake 0.35 = a lit RED; at night the tail 0.4 = deep red glow (227 0 11) and the brake on
     // top (255 ~65 35) still reads a step brighter; amber indicators 0.5 (255 151 45), reversing white 1.8.
     const kB = VFIX2_OLD ? 5 : packLook.brake, kN = VFIX2_OLD ? 1.2 : packLook.tailNight, kR = VFIX2_OLD ? 4 : packLook.reversing, kI = VFIX2_OLD ? 6 : packLook.indicator;
-    const tail = select(isTail, night.mul(kN).add(bit(1).mul(kB)), float(0));
+    const tail = select(isTail, night.mul(kN).add(bit(1).mul(kB)).mul(lensK()), float(0));
     const rev = select(isTail.and(outer.not()), bit(16).mul(kR), float(0));
     m.emissiveNode = vc.mul(1.15).mul(head).add(color(0xff1408).mul(tail)).add(color(0xffffff).mul(rev)).add(color(0xff8a00).mul(ind.mul(kI)));
   }

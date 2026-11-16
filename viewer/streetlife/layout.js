@@ -40,7 +40,7 @@ const AWNING_KINDS = new Set(["cafe", "bar", "restaurant", "bakery", "fastfood"]
 const AWNING_CATS = new Set(["greengrocer", "butcher", "florist", "deli", "cheese", "pastry", "chocolate", "ice_cream", "seafood", "wine", "coffee"]);
 const PROJECT_KINDS = new Set(["cafe", "bar", "restaurant", "hotel", "bakery", "bank", "fastfood"]);
 const TERRACE_KINDS = new Set(["cafe", "bar", "restaurant"]);
-const KIT_KINDS = ["pump", "column", "table", "chair", "parasol", "cross", "postbox", "bubble", "chute", "pole", "post", "dock", "spot"];
+const KIT_KINDS = ["pump", "column", "table", "chair", "parasol", "cross", "postbox", "bubble", "chute", "pole", "post", "dock", "spot", "barrel"];
 
 /** lit at night? From the opening hours when they parse (open after 19:00 on some day), else yes */
 function litAtNight(p) {

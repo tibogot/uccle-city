@@ -162,7 +162,7 @@ function sourceMaterial(name, lib) {
   if (lib) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[police] library failed on "${name}":`, e.message); }
-    if (!m) console.warn(`[police] library has no "${name}": temporary material`);
+    if (!m) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("police", name);   // (shipped.js: a slot with no shipped set keeps its own look)
   }
   return m ?? (TEMP[name] ?? TEMP.brick_yellow)();
 }
@@ -185,11 +185,13 @@ function wrapAO(src, aoTex, slot) {
   const cover = mix(float(1), clamp(width.mul(2.0).div(foot), slot === "painted_metal_white" ? 0.75 : 0.35, 1.0), k);
   if (slot !== "glass_window" && slot !== "solar_panel") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
+    m.userData.farBase = base;                          // (perfgame round 7: farMerge.js bakes the AO-free colour)
     m.colorNode = base.mul(mix(float(1), aoK, poLook.aoDirect)).mul(cover);
   }
   m.normalNode = mix(src.normalNode ?? normalView, vec3(0, 0, 1), k).normalize();
   m.userData.shared = true;
   m.userData.slot = slot;
+  m.userData.farAO = { aoTex, look: poLook };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
   return m;
 }
 

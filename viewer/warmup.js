@@ -93,16 +93,30 @@ let rawCompile = null, passFor = null, running = false;
 // boot3: every precompile job's root names + its promise, for warmBoot (bootQuiet: the jobs the first view needs)
 const bootJobs = [];
 const jobs = [];
+// perfgame round 3 (?compilepar=1 = one at a time, as before): up to COMPILE_PAR jobs in flight. r187's compileAsync
+// keeps its precompile state per item (begin / finish round every synchronous step, restored across its yields), and a
+// job's synchronous part (the render list, our pass target / MRT) runs whole: jobs only interleave at their awaits. Most
+// of a job's time is the wait for its pipelines (compiled in parallel in the GPU process) and three's frame yields: one
+// at a time, ~194 jobs took ~37 s after the cover (measured); several in flight overlap those waits.
+const COMPILE_PAR = Math.max(1, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("compilepar") ?? 1 : 1));   // (round 4: 1 by default again: jobs in flight together sometimes found three's precompile state null (a job lost: "Cannot destructure ... _precompilationState"))
+const inFlight = new Set();
 const pump = () => {
-  if (running || !jobs.length) return;
+  while (inFlight.size < COMPILE_PAR && jobs.length) pumpOne();
+  running = inFlight.size > 0;
+};
+const pumpOne = () => {
+  if (!jobs.length) return;
   let i = jobs.findIndex((j) => j.first);
   // boot3: until the cover lifts, the jobs the first view needs (bootGate.js neededAtReveal: the models in the boot's
   // ring) go before the others (the far landmarks queued first had the in-ring ones wait 15-17 s). ?bootquiet=all: FIFO
   if (i < 0 && !bootJobsClosed && !BOOT_QUIET_ALL) i = jobs.findIndex((j) => j.names && neededAtReveal(j.names));
   const j = jobs.splice(i >= 0 ? i : 0, 1)[0];
-  running = true;
-  Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { running = false; pump(); });
+  inFlight.add(j); running = true; runningJob = j;
+  Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { inFlight.delete(j); running = inFlight.size > 0; pump(); });
 };
+/** perfgame (the play loader, viewer/loader/playLoader.js): the precompile queue's jobs left (0 = idle) */
+export const compileJobsLeft = (near = null) => [...jobs, ...inFlight].filter((j) => !near || j.first || near(j.names || [])).length;
+let runningJob = null;
 const enqueue = (job, first = false, names = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, resolve, reject }); pump(); });
 export function installCompileQueue(renderer) {
   if (rawCompile) return;
@@ -130,7 +144,7 @@ export function installCompileQueue(renderer) {
 
 /** Compile `roots` (Object3Ds, in the scene or about to be) for `camera` in `scene`, into `target`/`mrt`
  *  (the scene pass), without drawing them. Resolves when their shaders and pipelines are ready. */
-export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false } = {}) {
+export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false, names = null } = {}) {
   if (!renderer.backend?.isWebGPUBackend) return Promise.resolve();
   installCompileQueue(renderer);
   const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
@@ -165,8 +179,8 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
     } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
-  }, first, [].concat(roots).map((r) => r?.name || ""));
-  if (!bootJobsClosed) { const j = { names: [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
+  }, first, names ?? [].concat(roots).map((r) => r?.name || ""));   // (perfgame round 5: a staged landmark job carries its model's name)
+  if (!bootJobsClosed) { const j = { names: names ?? [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
   return job;
 }
 let bootJobsClosed = false;
@@ -272,8 +286,13 @@ export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
       if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
       if (o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
     }
+    const tc = performance.now();
     try { render(); frames++; }
     finally { for (let k = saved.length - 1; k >= 0; k--) { const [o, key, v] = saved[k]; o[key] = v; } }
+    // (perfgame round 5, debug: where the early warm-up's time goes: ms per chunk + its top-level groups)
+    const tops = new Map();
+    for (const o of list.slice(i, i + chunk)) { let t = o; while (t.parent && !t.parent.isScene) t = t.parent; const k = t.name || t.type; tops.set(k, (tops.get(k) || 0) + 1); }
+    (globalThis.__earlyChunks ||= []).push({ ms: Math.round(performance.now() - tc), tops: [...tops].sort((a, b) => b[1] - a[1]).slice(0, 6) });
     // let the GPU process drain this chunk (and draw a compositor frame) before the next one
     try { await device?.queue.onSubmittedWorkDone(); } catch { /* lost device */ }
     await new Promise((r) => setTimeout(r, 16));

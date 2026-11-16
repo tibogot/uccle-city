@@ -13,51 +13,14 @@ import { float, vec3, uv, length, smoothstep, mix, color, uniform, positionWorld
 import { SMOOTH, lodEye, keepBand, rampTo } from "./lodFade.js";
 import { lampPoolsOn } from "./lampLight.js";
 import { LAMP_LODS } from "./lampModel.js";
-import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
 
 const POOL = 6;
+const LAMP_CULL = typeof location === "undefined" || new URLSearchParams(location.search).get("lampcull") !== "old";   // perfgame round 2
 
-function kerbOffset(type) {
-  const t = ROAD_TYPES[type] || ROAD_TYPES.local;
-  const side = (lanes) => {
-    let w = 0;
-    for (const l of lanes) { if (l.type === "sidewalk") return w + 0.5; w += l.width; }
-    return w + 0.5;
-  };
-  return { left: (t.center?.width || 0) / 2 + side(t.left), right: (t.center?.width || 0) / 2 + side(t.right), spacing: t.lampSpacing || 0 };
-}
-
-/** Lamp sites {x, z, yaw (arm points to the road)} from roads.json. */
-export function lampSites(roads, bounds) {
-  const N = new Map(roads.nodes.map((n) => [n.id, n]));
-  const out = [];
-  for (const r of roads.roads) {
-    if (r.meta?.highway === "service" || r.meta?.highway === "footway") continue;
-    const k = kerbOffset(r.type);
-    if (!k.spacing) continue;
-    const pts = [N.get(r.a), ...r.pts, N.get(r.b)].filter(Boolean);
-    let total = 0;
-    const segL = [];
-    for (let i = 1; i < pts.length; i++) { const L = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); segL.push(L); total += L; }
-    if (total < 24) continue;
-    let s = 10 + (k.spacing * 0.5) % 7, side = 1, seg = 0, acc = 0;
-    while (s < total - 10) {
-      while (seg < segL.length - 1 && acc + segL[seg] < s) acc += segL[seg++];
-      const a = pts[seg], b = pts[seg + 1], t = (s - acc) / (segL[seg] || 1);
-      const dx = (b.x - a.x) / (segL[seg] || 1), dz = (b.z - a.z) / (segL[seg] || 1);
-      const nx = -dz * side, nz = dx * side, off = side > 0 ? k.left : k.right;
-      const x = a.x + (b.x - a.x) * t + nx * off, z = a.z + (b.z - a.z) * t + nz * off;
-      if (x >= bounds.x0 && x <= bounds.x1 && z >= bounds.z0 && z <= bounds.z1) out.push({ x, z, yaw: Math.atan2(nx, nz) });   // local -z (the arm) -> toward the road
-      s += k.spacing; side = -side;
-    }
-  }
-  // two roads sharing a kerb: drop lamps closer than 6 m to one already kept
-  const kept = [];
-  for (const p of out) if (!kept.some((q) => (q.x - p.x) ** 2 + (q.z - p.z) ** 2 < 36)) kept.push(p);
-  return kept;
-}
+export { lampSites, placedLampSites } from "./streets/lampPlace.js";
+import { placedLampSites } from "./streets/lampPlace.js";
 
 function postGeometry() {
   const parts = [];
@@ -91,19 +54,73 @@ function farLampMats() {
   return (FAR = { iron: fade(MODEL.iron), glass: fade(MODEL.glass) });
 }
 
-/** `place(site)` (?roads=surface, viewer/streetFit.js): moves a site onto the measured sidewalk or drops it (null);
- *  `lift(x, z)`: the measured surface height above the road there. */
-/** The lamps the city draws: lampSites, each moved by `place` (or dropped), closer than 6 m to a kept one dropped.
- *  The drive colliders (viewer/drive/driveMode.js tileDrive) use the same list. */
-export function placedLampSites(roads, bounds, place = null) {
-  let sites = lampSites(roads, bounds);
-  if (place) {
-    const kept = [];
-    for (const s of sites.map(place)) if (s && !kept.some((q) => (q.x - s.x) ** 2 + (q.z - s.z) ** 2 < 36)) kept.push(s);
-    sites = kept;
-  }
-  return sites;
+// ---------------------------------------------------------------- THE CITY-WIDE LAMP POOL (perfgame round 6)
+// ?lamppool=old: each tile draws its own 6 instanced meshes (iron + glass per LOD), re-bucketed per tile. Here ONE set
+// of LOD meshes for the whole city (same geometries, same shared materials, the same distance buckets and far dither),
+// filled from every loaded tile's lamp sites when the camera has moved 5 m: 6 meshes in all instead of 6 per tile
+// (each culled by the bounding sphere of the lamps it draws, as round 2). The tiles keep their sites, heads (the night
+// light pool), colliders. (No per-tile fade is lost: a tile fades in / out beyond ~500 m, past the lamps' 450 m end.)
+const LAMP_POOL = typeof location === "undefined" || new URLSearchParams(location.search).get("lamppool") !== "old";
+const POOL_CAP = 8192;                               // (>= 1025: r187 binds the matrices as a vertex buffer, one shader)
+const poolTiles = new Map();                         // key -> { sites, mats }
+let LP = null;                                     // { group, lods: [{ iron, glass, box }], last, dirty }
+/** main.js, before the first tile: the scene the pool lives in, and the updater list */
+export function setLampPool(scene, updaters) {
+  if (!LAMP_POOL || LP) return;
+  const group = new THREE.Group(); group.name = "street-lamps-pool";
+  scene.add(group);
+  LP = { group, lods: null, last: new THREE.Vector3(Infinity, 0, 0), dirty: true };
+  updaters.push((camPos) => relodPool(camPos));
 }
+function poolMeshes() {
+  if (LP.lods || !MODEL) return LP.lods;
+  const lastK = MODEL.lods.length - 1;
+  LP.lods = MODEL.lods.map((l, k) => {
+    const far = SMOOTH && k === lastK ? farLampMats() : MODEL;
+    const mk = (geo, mat, shadow) => {
+      const m = new THREE.InstancedMesh(geo, mat, POOL_CAP); m.count = 0; m.visible = false;
+      m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = LAMP_CULL; m.boundingSphere = new THREE.Sphere();
+      m.name = `street-lamps-lod${k}`;
+      LP.group.add(m); return m;
+    };
+    return { iron: mk(l.iron, far.iron, SMOOTH || k === 0), glass: mk(l.glass, far.glass, false), box: [0, 0, 0, 0, 0, 0] };
+  });
+  return LP.lods;
+}
+function relodPool(cam) {
+  if (!LP || !MODEL) return;
+  if (!LP.dirty && cam.distanceToSquared(LP.last) < 25) return;
+  const lods = poolMeshes(); if (!lods) return;
+  LP.dirty = false; LP.last.copy(cam);
+  const lastK = lods.length - 1;
+  for (const L of lods) { L.iron.count = L.glass.count = 0; L.box = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]; }
+  for (const T of poolTiles.values()) {
+    const { sites, mats } = T;
+    for (let i = 0; i < sites.length; i++) {
+      const s = sites[i], d = Math.hypot(s.x - cam.x, s.y - cam.y, s.z - cam.z);
+      let k = LAMP_LODS.findIndex((l) => d < l.until);
+      if (k < 0 && SMOOTH && d < LAMP_LODS[lastK].until + 6) k = lastK;
+      if (k < 0) continue;
+      const L = lods[k], n = L.iron.count;
+      if (n >= POOL_CAP) continue;
+      L.iron.count++; L.glass.count++;
+      L.iron.setMatrixAt(n, mats[i]); L.glass.setMatrixAt(n, mats[i]);
+      const B = L.box; B[0] = Math.min(B[0], s.x); B[1] = Math.min(B[1], s.y); B[2] = Math.min(B[2], s.z); B[3] = Math.max(B[3], s.x); B[4] = Math.max(B[4], s.y); B[5] = Math.max(B[5], s.z);
+    }
+  }
+  for (const L of lods) {
+    const B = L.box, cx = (B[0] + B[3]) / 2, cy = (B[1] + B[4]) / 2 + 3, cz = (B[2] + B[5]) / 2, r = Math.hypot(B[3] - B[0], B[4] - B[1], B[5] - B[2]) / 2 + 7;
+    for (const im of [L.iron, L.glass]) {
+      im.visible = im.count > 0;                              // (an empty instanced mesh still costs a draw per pass)
+      if (!im.count) continue;
+      im.boundingSphere.center.set(cx, cy, cz); im.boundingSphere.radius = r;
+      im.instanceMatrix.clearUpdateRanges(); im.instanceMatrix.addUpdateRange(0, im.count * 16); im.instanceMatrix.needsUpdate = true;
+    }
+  }
+}
+/** (debug) the pool buckets */
+export const lampPoolStats = () => LP?.lods?.map((L) => L.iron.count) ?? null;
+
 export function buildLamps(roads, ground, bounds, { lights: withLights = true, place = null, lift = null } = {}) {
   const sites = placedLampSites(roads, bounds, place);
   const group = new THREE.Group();
@@ -142,7 +159,13 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   // the Blender lamp: replaces the cylinders, one instanced iron + glass mesh per LOD, each lamp in its LOD
   // by distance (re-bucketed when the camera has moved 5 m); capacity >= 1025 so every tile shares the shaders
   let relod = null;
-  if (MODEL) {
+  const poolKey = {};
+  if (MODEL && LP) {
+    // (round 6) the city-wide pool draws them: this tile hands over its sites + matrices
+    post.visible = glass.visible = false;
+    const mats = sites.map((s) => { q.setFromAxisAngle(up, s.yaw); return new THREE.Matrix4().compose(new THREE.Vector3(s.x, s.y, s.z), q, one); });
+    poolTiles.set(poolKey, { sites, mats }); LP.dirty = true;
+  } else if (MODEL) {
     post.visible = glass.visible = false;
     const cap = Math.max(sites.length, 1025);
     const mats = sites.map((s) => { q.setFromAxisAngle(up, s.yaw); return new THREE.Matrix4().compose(new THREE.Vector3(s.x, s.y, s.z), q, one); });
@@ -151,7 +174,9 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
     // dithers out over its last FAR_BAND metres instead of vanishing at 450 m
     const lastK = MODEL.lods.length - 1;
     const lodMeshes = MODEL.lods.map((l, k) => {
-      const mk2 = (geo, mat, shadow) => { const m = new THREE.InstancedMesh(geo, mat, cap); m.count = 0; m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; group.add(m); return m; };
+      // (perfgame round 2, ?lampcull=old: never culled) each LOD mesh gets the bounding sphere of the lamps it draws now
+      // (set at every re-bucketing): a tile's lamps behind the camera / out of the shadow box cost no draw
+      const mk2 = (geo, mat, shadow) => { const m = new THREE.InstancedMesh(geo, mat, cap); m.count = 0; m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = LAMP_CULL; if (LAMP_CULL) m.boundingSphere = new THREE.Sphere(); group.add(m); return m; };
       const far = SMOOTH && k === lastK ? farLampMats() : MODEL;
       return { iron: mk2(l.iron, far.iron, SMOOTH || k === 0), glass: mk2(l.glass, far.glass, false) };
     });
@@ -159,7 +184,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
     relod = (cam) => {
       if (cam.distanceToSquared(last) < 25) return;
       last.copy(cam);
-      for (const m of lodMeshes) m.iron.count = m.glass.count = 0;
+      for (const m of lodMeshes) { m.iron.count = m.glass.count = 0; m.box = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]; }
       for (let i = 0; i < sites.length; i++) {
         const s = sites[i], d = Math.hypot(s.x - cam.x, s.y - cam.y, s.z - cam.z);
         let k = LAMP_LODS.findIndex((l) => d < l.until);
@@ -168,6 +193,13 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
         const m = lodMeshes[k], n = m.iron.count++;
         m.glass.count++;
         m.iron.setMatrixAt(n, mats[i]); m.glass.setMatrixAt(n, mats[i]);
+        const B = m.box; B[0] = Math.min(B[0], s.x); B[1] = Math.min(B[1], s.y); B[2] = Math.min(B[2], s.z); B[3] = Math.max(B[3], s.x); B[4] = Math.max(B[4], s.y); B[5] = Math.max(B[5], s.z);
+      }
+      if (LAMP_CULL) for (const m of lodMeshes) if (m.iron.count) {
+        const B = m.box, cx = (B[0] + B[3]) / 2, cy = (B[1] + B[4]) / 2 + 3, cz = (B[2] + B[5]) / 2;
+        const r = Math.hypot(B[3] - B[0], B[4] - B[1], B[5] - B[2]) / 2 + 7;     // (+ a lamp's own size: 6 m post, 1 m arm)
+        m.iron.boundingSphere.center.set(cx, cy, cz); m.iron.boundingSphere.radius = r;
+        m.glass.boundingSphere.center.set(cx, cy, cz); m.glass.boundingSphere.radius = r;
       }
       for (const m of lodMeshes) for (const im of [m.iron, m.glass]) {      // only the instances in use
         im.visible = im.count > 0;                                          // (an empty instanced mesh still costs a draw per pass)
@@ -188,7 +220,7 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   const key = {};
   if (withLights) HEADS.set(key, lamp);
   const update = (camPos) => { relod?.(camPos); };
-  const release = () => HEADS.delete(key);
+  const release = () => { HEADS.delete(key); if (poolTiles.delete(poolKey) && LP) LP.dirty = true; };
   return { group, count: sites.length, update, release, heads: lamp.map((p) => ({ x: p.x, y: p.y, z: p.z })), sites };   // heads: the lantern globes (y: their centre, m TAW)
 }
 

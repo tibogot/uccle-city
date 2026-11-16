@@ -24,6 +24,9 @@ function db() {
       q.onupgradeneeded = () => { for (const s of [STORE, META]) if (!q.result.objectStoreNames.contains(s)) q.result.createObjectStore(s, { keyPath: "key" }); };
       q.onsuccess = () => {
         const d = q.result;
+        // (perfgame round 3) another worker's upgrade waits for every open connection to close: close ours (the next
+        // request reopens), else its open hung until the 8 s deadline and the cache went off for the session
+        d.onversionchange = () => { d.close(); dbP = null; };
         if ([STORE, META].every((s) => d.objectStoreNames.contains(s))) return res(d);
         const next = d.version + 1; d.close(); open(next).then(res);
       };
@@ -47,14 +50,17 @@ function hash(s) {
 
 let codeP = null;
 /** this worker's own code, hashed once (the bundle the browser loaded) */
-const codeHash = () => (codeP ||= fetch(self.location.href, { cache: "no-cache" }).then((r) => r.text()).then(hash).catch(() => null));
+// (perfgame round 4: the hash tools/build_worker.mjs writes into the bundle, at once; the fetch only for an old bundle)
+const codeHash = () => (codeP ||= self.__TILE_CODE_HASH ? Promise.resolve(self.__TILE_CODE_HASH) : fetch(self.location.href, { cache: "no-cache" }).then((r) => r.text()).then(hash).catch(() => null));
 
 export function cacheKey(entry, lite, base, code) {
-  const { cache, ...e } = entry;
+  const { cache, cacheStore, ...e } = entry;
   return hash(JSON.stringify({ e, lite: !!lite, base, code }));
 }
 
-const tagOf = (r) => r.headers.get("etag") || r.headers.get("last-modified") || null;
+// (perfgame round 4: a missing optional file (404) is a stable state too: "status:404", re-checked like a tag; before,
+// one optional file a tile looks for and does not find made the whole tile uncacheable)
+const tagOf = (r) => (!r.ok ? `status:${r.status}` : r.headers.get("etag") || r.headers.get("last-modified") || null);
 const stamped = (url) => /[?&]v=/.test(url);
 
 // fetches made while a build runs (every build the worker runs at once records them: a superset, never a miss), and
@@ -100,12 +106,85 @@ function say(entry, lite, msg, key = "") { if (DEBUG) console.log(`[tilecache] $
 // all) held the start tile forever, the boot stuck on "Compiling shaders" (stage "tiles"). Every cache step now has a
 // deadline: past it the tile is a miss and is built (the cache is skipped for the rest of the session).
 let dead = false;
+const READ_MS = 2500;
 const deadline = (p, ms, what) => Promise.race([p, new Promise((res) => setTimeout(() => { if (!dead) console.warn(`[tilecache] ${what}: no answer in ${ms} ms, cache off for this session`); dead = true; res(null); }, ms))]);
+
+// ------------------------------------------------------------------------------------------------ the Cache API store
+// perfgame round 4 (?tilecache=idb: the IndexedDB store above, as before). The IndexedDB store never answered in the
+// play sessions of 2026-11-16 (every read past its deadline, in every worker: the cache was off, the start tile built
+// again on every visit, 19 s for E4). Its weak points: up to 4 workers opening / upgrading the same database, ~37 MB
+// readwrite transactions (a full tile) that every read queues behind, and the dependency check's HEAD requests one
+// after another inside the read. The Cache API has no transactions, no versions, no blocking between workers: a tile
+// is ONE Response body (viewer/tilePack.js: its typed arrays back to back + a JSON skeleton) and a small meta entry
+// (its dependencies' ETags); the dependencies are checked IN PARALLEL and each URL once per worker session; the write
+// happens after the tile went back to the page (packed first, then put in the background).
+import { packTile, unpackTile } from "./tilePack.js";
+if (typeof caches !== "undefined") caches.delete("tilecache-v1").catch(() => {});   // (v1: the packer without shared references)
+const CNAME = "tilecache-v2", CAP_BYTES = 800 * 1048576;   // (~16 full tiles + the far ring)
+let warnedNull = false;
+const urlOf = (key, what) => `${self.location.origin}/__tilecache/${key}/${what}`;
+const tagMemo = new Map();          // url -> Promise<tag> (one HEAD per url per worker session)
+const tagNow = (url) => { if (!tagMemo.has(url)) tagMemo.set(url, realFetch(url, { method: "HEAD", cache: "no-cache" }).then((r) => tagOf(r)).catch(() => null)); return tagMemo.get(url); };
+async function capiGet(entry, lite, base) {
+  if (entry.cache !== true || typeof caches === "undefined") return null;
+  const code = await codeHash(); if (!code) return null;
+  const key = cacheKey(entry, lite, base, code), c = await caches.open(CNAME);
+  const metaR = await c.match(urlOf(key, "meta"));
+  if (!metaR) { say(entry, lite, "miss (not cached)", key); return null; }
+  const meta = await metaR.json();
+  const tags = await Promise.all(meta.deps.map(([u]) => tagNow(u)));
+  if (meta.deps.some(([, t], i) => tags[i] !== t)) { say(entry, lite, "miss (a dependency changed)"); c.delete(urlOf(key, "meta")); c.delete(urlOf(key, "tile")); return null; }
+  const res = await c.match(urlOf(key, "tile"));
+  if (!res) return null;
+  const r = unpackTile(await res.arrayBuffer());
+  c.put(urlOf(key, "meta"), new Response(JSON.stringify({ ...meta, at: Date.now() }), { headers: { "content-type": "application/json" } })).catch(() => {});   // (recently used)
+  return r;
+}
+function capiPut(entry, lite, base, r, deps) {
+  if (entry.cache !== true || typeof caches === "undefined") return;
+  if ([...deps.values()].some((t) => t == null)) {                         // a dependency we cannot re-check: not cached
+    if (!warnedNull) { warnedNull = true; console.warn(`[tilecache] ${entry.name}${lite ? " (far)" : ""} not stored: no ETag / Last-Modified on ${[...deps].filter(([, t]) => t == null).map(([u]) => u).slice(0, 4).join(", ")}`); }
+    return;
+  }
+  let blob;
+  try { blob = packTile(r); } catch (e) { say(entry, lite, "not stored: " + e.message); return; }   // (packed now: the caller transfers r's buffers)
+  (async () => {
+    const code = await codeHash(); if (!code) return;
+    const key = cacheKey(entry, lite, base, code), c = await caches.open(CNAME);
+    await c.put(urlOf(key, "tile"), new Response(blob, { headers: { "content-type": "application/octet-stream" } }));
+    await c.put(urlOf(key, "meta"), new Response(JSON.stringify({ name: entry.name, lite: !!lite, at: Date.now(), bytes: blob.byteLength, deps: [...deps.entries()] }), { headers: { "content-type": "application/json" } }));
+    // over CAP_BYTES: the least recently used go (bytes, not a count: a far tile is ~2-4 MB, a full one ~40 MB; a count
+    // cap let the far ring push out the full tiles)
+    const metas = (await c.keys()).filter((q) => q.url.endsWith("/meta"));
+    const info = await Promise.all(metas.map(async (q) => { const m = await (await c.match(q)).json(); return [q.url, m.at || 0, m.bytes || 0]; }));
+    let total = info.reduce((n, x) => n + x[2], 0);
+    if (total > CAP_BYTES) {
+      info.sort((a, b) => a[1] - b[1]);
+      for (const [u, , b] of info) { if (total <= CAP_BYTES) break; c.delete(u); c.delete(u.replace(/\/meta$/, "/tile")); total -= b; }
+    }
+  })().catch((e) => console.warn(`[tilecache] ${entry.name}${lite ? " (far)" : ""} not stored: ${e?.message || e}`));
+}
 
 /** Build through the cache: returns the result (the caller then transfers its buffers). */
 export async function cached(entry, lite, base, build) {
+  if (entry.cacheStore !== "idb") {
+    // (the deadline stays as a safety net: a store that does not answer is a miss, not a stuck tile)
+    // (round 4: no "cache off" on a slow read any more: the read's wall time includes OTHER tiles' builds on this worker
+    // (a build runs for seconds without yielding; this worker holds several requests), which is what fired the 2.5-8 s
+    // deadlines on 2026-11-16, with an empty cache too. A read past 30 s is a miss for that tile only)
+    const hit = await Promise.race([capiGet(entry, lite, base).catch(() => null), new Promise((res) => setTimeout(() => res(null), 30000))]);
+    if (hit) { hit.times = { ...(hit.times || {}), cache: true }; return hit; }
+    const deps = new Map();
+    recording.add(deps);
+    let r;
+    try { r = await build(); } finally { recording.delete(deps); }
+    for (const [u, tg] of everFetched) if (!deps.has(u)) deps.set(u, tg);
+    if (!dead) capiPut(entry, lite, base, r, deps);
+    return r;
+  }
   if (dead) entry = { ...entry, cache: false };
-  const hit = await deadline(cacheGet(entry, lite, base), 8000, `read ${entry.name}`);
+  // (perfgame round 3: 2.5 s, was 8: a hit answers in ~40-300 ms; an IndexedDB that hangs held the start tile 8 s)
+  const hit = await deadline(cacheGet(entry, lite, base), READ_MS, `read ${entry.name}`);
   if (hit) { hit.times = { ...(hit.times || {}), cache: true }; return hit; }
   const deps = new Map();
   recording.add(deps);

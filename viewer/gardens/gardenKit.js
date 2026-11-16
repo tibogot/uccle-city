@@ -294,6 +294,8 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
     hedgeInstances(doc.hedges, groundAt, shearW, L.hedge);
     L.hedgecard = L.hedge;
     // collision stand-ins: each module as a wall box (the unit stand-in is 30 cm thick: scaled to the hedge's width)
+    // (police feel: the hedge boxes come last in SW, from hedgeFrom: cityGardens.js gives them their own stand-in mesh)
+    SW.hedgeFrom = SW.length;
     for (let o = 0; o < L.hedge.length; o += STRIDE) {
       const q = L.hedge.slice(o, o + 16);
       q[8] /= 0.3; q[10] /= 0.3;                               // (the module's z column has the hedge's width as length)
@@ -302,7 +304,7 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
   }
   const inst = {};
   for (const k of PIECES) if (L[k].length) inst[k] = k === "hedgecard" && inst.hedge ? inst.hedge : new Float32Array(L[k]);
-  return { inst, settled: { styles, segs, pillars }, stand: { wall: SW, pillar: SP, gate: SG }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
+  return { inst, settled: { styles, segs, pillars }, stand: { wall: SW, pillar: SP, gate: SG, hedgeFrom: SW.hedgeFrom ?? SW.length }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
 }
 
 /**

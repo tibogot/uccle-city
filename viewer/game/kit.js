@@ -19,6 +19,7 @@ import { Waypoint } from "./waypoint.js";
 import { Dispatch } from "./dispatch.js";
 import { MissionRunner } from "./missions.js";
 import { takeTrafficCar } from "./entities.js";
+import { PLAY_LOADER } from "../loader/playLoader.js";
 
 const RIDE = new Set(["drive", "moto", "scooter", "villo"]);
 const ROAD = new Set(["drive", "moto", "scooter"]);
@@ -88,7 +89,23 @@ export class GameKit {
     this.save.game(id).played++; this.save.touch();
     this.hud.keys(def.keys?.[mode] || def.keys?.default || "<kbd>Esc</kbd> pause · <kbd>M</kbd> map");
     this.emit("game:start", this.current);
-    try { await def.start?.(this, { mode, options: opts }); } catch (e) { this.host.log(`game ${id}: ${e.message}`); console.error(e); }
+    // perfgame (docs/PERF_GAME.md): the play loader covers the whole start (the car / bird, its shaders, the spawn's
+    // tiles and landmarks) and fades out once the area is built (main.js areaReady): the player never sees it fill in.
+    // A ?game= boot already shows it (handed over from the boot cover). ?playloader=old: as before
+    const PLo = PLAY_LOADER ? window.__playLoader : null;
+    if (PLo) {
+      if (window.__playLoaderBoot) window.__playLoaderBoot = false;
+      else PLo.open({ title: def.title, kicker: "Starting the game" });
+      PLo.progress(0.03, "Getting ready…", def.modes?.find((m) => m.id === mode)?.label || "");
+      PLo.tip(def.tagline || "");
+    }
+    try {
+      const tS = performance.now();
+      try { await def.start?.(this, { mode, options: opts }); } catch (e) { this.host.log(`game ${id}: ${e.message}`); console.error(e); }
+      (globalThis.__gameTimes ||= []).push(["start", Math.round(performance.now() - tS)]);
+      if (PLo && this.host.areaReady) { const P = this.readPlayer(0); await this.host.areaReady({ x: P.x, z: P.z, label: def.title, near: P.mode === "fly" ? 550 : 300 }); }
+    } finally { if (PLo) await PLo.close(); }
+    this.last = performance.now();
     return true;
   }
   quitGame() {

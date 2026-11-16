@@ -139,7 +139,7 @@ export function sourceMaterial(name, lib, opts = {}) {
   if (lib && !NEW_NAMES.includes(name)) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? lib.getMaterial?.(name) ?? lib.materials?.[name] ?? lib.default?.[name] ?? null; }
     catch (e) { console.warn(`[stalle] library failed on "${name}":`, e.message); }
-    if (!m) console.warn(`[stalle] library has no "${name}": temporary material`);
+    if (!m) (lib.ownLook ?? ((c, n) => console.warn(`[${c}] library has no "${n}": temporary material`)))("stalle", name);   // (shipped.js: a slot with no shipped set keeps its own look)
   }
   return m ?? (TEMP[name] ?? TEMP.stone_white)(opts);
 }
@@ -154,10 +154,12 @@ function wrapAO(src, aoTex, slot) {
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
   if (slot !== "glass_window") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
+    m.userData.farBase = base;                          // (perfgame round 7: farMerge.js bakes the AO-free colour)
     m.colorNode = base.mul(mix(float(1), aoK, stLook.aoDirect));
   }
   m.userData.shared = true;
   m.userData.slot = slot;
+  m.userData.farAO = { aoTex, look: stLook };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
   return m;
 }
 

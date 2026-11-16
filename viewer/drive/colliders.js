@@ -15,7 +15,7 @@
 // Sidewalk kerbs are NOT walls: the road engine says "kerbs to sidewalks are climbed"; they are in the ground grid.
 
 export const CELL = 48;
-export const KIND = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7 };
+export const KIND = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7, hedge: 8 };   // (hedge: police feel, a front-garden hedge module: soft for the car, solid on foot)
 
 /**
  * Build a collider set from plain lists.
@@ -280,7 +280,7 @@ export function heightClear(col, id, y) {
   // under / beside them as an infinitely tall invisible wall)
   if (id >= col.P || !Number.isFinite(y)) return false;
   const k = col.pkind[id];
-  return (k === KIND.wall || (k === KIND.furniture && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
+  return (k === KIND.wall || ((k === KIND.furniture || k === KIND.hedge) && !FURN_HEIGHT_OLD)) && (y >= col.ptop[id] - 0.05 || y + CAR_H < col.pbase[id]);
 }
 const FURN_HEIGHT_OLD = typeof location !== "undefined" && /[?&]furnheight=old(&|$)/.test(location.search);
 

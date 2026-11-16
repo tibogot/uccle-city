@@ -6,6 +6,65 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 `docs/PLAN.md` has the history and details of what is done. Rule of thumb for every item:
 **look better without costing frame time** (instancing, shared materials, LOD, compressed assets).
 
+## OWNER PLAYTEST 2026-11-16 (day, default viewer + both games) — TOP PRIORITY, in this order
+
+**Status 2026-11-16 evening:** perfgame MERGED (hitches gone: police worst frame 350-950 -> 67-83 ms, falcon 300-967 -> 50-100 ms; play loader, no fill-in; steady CPU 11-13 ms unchanged -> follow-up job running: police car merge, patrol instancing, shadow casters, tile unload by distance, time-to-play 63-70 s -> < 35 s). citydefects: bridge deck, signals/poles (lights in lanes 122 -> 5, wrong heading 410 -> 0), parking by width (16,545 -> 12,084 cars, give-way on narrow streets), car slope fit, pier caps, done in code; browser check running. Night shop location unknown (not in OSM): ask the owner / Street View.
+
+**Status update (later 2026-11-16):** citydefects rounds 2-3 MERGED (walls 1,796 -> 1 partial, deck look, flat-roof normals, sound off + mute button, per-building looks, police station = whole school complex + open north gate, Relais Saint-Job / Deneubourg / Press Shop (ex-Barat) / La Meute (ex-Bistroquet) curated, barrel piece). perfgame round 3 MERGED (sun shadow cache -2 ms, police drive CPU 9.5 ms, time to play ~50 s). Leftovers: police-game drive through both gates into the courtyard (collision check passed, not driven); Street View for Maison Dandoy, Proxy, White Night; curate Bois Savanes, Alain D., Lefevre; Relais corner house has 1 painted first-floor window (real: 2); image-59 banded roof spot not found; school blocks' look is an assumption (not visible from public Street View).
+
+Owner (lives in Uccle): "most important thing is performance ... any technique: merging, sharing textures, anything".
+1. **PERFORMANCE / GAME LAG**: the police game was "very laggy" with nothing else open. Profile the game path
+   (police car + traffic + chase + HUD + route), CPU and GPU; merge geometry, share textures/atlases, fewer
+   materials, fewer passes, cheaper shadows; budget table per feature. (agent perfgame)
+2. **FULL LOADER BEFORE PLAY**: starting at the police station the scene was still filling in. A game start must
+   wait (loader) until the tiles, kits and shaders around the spawn are ready. No pop-in in front of a player. (perfgame)
+3. **Saint-Job station bridge (Montagne de Saint-Job over the railway)**: a railing + brick-pier fence blocks
+   the road on the bridge, grass and tram rails run off it, and under the bridge is a mess (z-fighting, a platform
+   block across the tracks, shelters in the wrong place). Rebuild from the real layout. (agent citydefects)
+4. **Street furniture on the carriageway**: traffic lights in the road and wrongly rotated, tram/catenary poles
+   in the road. Real ones stand on the kerb/footway, facing traffic. (citydefects)
+5. **Road widths too narrow** vs reality (owner's eye); lane lines that don't follow the curve and run into a
+   wall. (citydefects)
+6. **Cars**: traffic driving through parked cars, cars sunk into the road, parked cars on streets where
+   parking is not allowed / that become blocked. (citydefects)
+7. **Defects**: z-fighting on some windows (door-surround / frame flicker), gate brick pier without cap
+   (see-through top), bad shading on flat roofs (stripes/bands), odd buildings (hero buildings log "library has no
+   X: temporary material" for zinc_roof / glass_window / ... at load: fix the slot mapping). (citydefects)
+8. **Night shop on Place Saint-Job** missing (the white "night shop"). (citydefects)
+8b. **Recognisable shops on Place Saint-Job (owner 2026-11-16)**: the shopfronts must be recognisable to a local.
+   Start with **Le Relais Saint-Job** (famous restaurant, already in the city but generic), then every commerce on the
+   Place and Chaussée de Saint-Job: real façade colour, awning, terrace, signage text/colour/font style, window layout,
+   checked against recent photos / Street View (look only). White Night (Chée de Saint-Job 662) may have closed:
+   owner is finding photos; keep or remove after that.
+8c. **Police car rear: bad lines while moving (owner 2026-11-16, default chase view)**: looks like aliasing / shimmer
+   on the back of the car (TAAU + motion vectors on the player car? thin rear lights / plate edges? kit merge?). Check
+   FIRST next session, with ?carmerge=old, ?instmotion=0, ?upscale=0 to isolate.
+8d. **Chase camera too far (owner 2026-11-16)**: when driving, the car drifts far from the camera, almost to the screen
+   centre: hard to drive, not like a real car game. Target: close chase (~5.5-6.5 m behind, ~1.8-2.2 m up), car in the
+   lower third, stiff follow with little lag, speed pull-back max ~+0.8 m and FOV +5-8 deg (not more), look-ahead
+   into turns, no clipping into walls; camera views on a key (chase near / chase far / bonnet / bumper). Tune the
+   new carFeel camera (claude/policefeel) with the owner.
+8e. **Police car model looks crude from behind** (coordinator 2026-11-16, chase view now frames it large): blocky tail
+   lights, flat cream band, low-poly body. Premium Blender police estate (Belgian federal/local police livery: white +
+   blue/yellow Battenburg, real proportions, bevels, tail-light clusters, plate recess), LODs, same kit slots.
+9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
+   three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
+   into buildings, smooth damping, terrain follow. (later agent)
+10. **Falcon game**: collision bugs (falls, then shoots back up), controls hard. Simpler and friendlier
+   (assisted flight, auto level, clear feedback), not more complex. (later agent)
+   **falconfix (2026-11-16, branch claude/falconfix, not merged):** collisions round 3 (no launch upward, no pops, a
+   tumble without pull-up, out of solids / pins), the flight assist (mouse aim or A / D turns, wings level and altitude
+   hold hands off, auto-flapping, Shift stoop with a pull-out, ground / obstacle avoid), steady camera, HUD climb rate +
+   assist state, free flight starts on the eyrie. docs/falconfix/README.md; `?falconctl=old`, `?falconcol=old`,
+   `?falconavoid=0`, `?falconstart=old`. Offline checks pass (tools/falconAssistTest.mjs); browser check done (tuned: hold follows rising ground, avoid under crowns + opens the wings, pursuit speed, E lands on roof / ground ahead); the eyrie sill z-fight fixed in stjob.py. Hand tuning by the owner left.
+11. **Police game**: car physics not fun; it must climb slopes, kerbs and go "many places" without feeling
+   blocked; poles in the road and narrow roads block it (3-5). Police station wrong: real gate open, building
+   too small vs reality. (later agent)
+   **policefeel (2026-11-16, branch claude/policefeel, not merged):** new handling in code (`viewer/drive/carFeel.js`,
+   docs/POLICE_FEEL.md, `?carfeel=old` / `?hedgecol=old`): suspension, tyres, counter-steer, handbrake, camera; kerbs on
+   steep streets / lawn banks / kerb islands ridden (the old 0.5 m-over-centre ledge rule blocked a 15 cm kerb on a 15 %
+   street), hedges soft, posts deflect, parked cars shoved. Offline checks done; browser route check pending.
+
 ## CURRENT STATE (2026-11-13) — read this first
 
 **In the city by default** (claude/foundation, NOT pushed to Vercel; `?x=0` turns one off): measured roads v2
@@ -696,7 +755,10 @@ falcon, labs (Bird, Lamp), the dev panel.
       (first tile ~265 ms, it builds the shared assets).
 - [x] Road marking atlas R8 at half resolution (8x less GPU memory, e.g. 20 MB -> 2.5 MB).
 - [ ] Unload by distance with hysteresis; cap GPU memory; a loading indicator.
-- [ ] One shared terrain / ground material for all tiles (bounds as uniforms), fewer shader variants.
+- [x] One shared terrain / ground material for all tiles (bounds as uniforms), fewer shader variants. NOT WORTH MORE
+      (perfgame round 6, docs/PERF_GAME.md): the bounds are uniforms and the scans shared, every tile's ground already
+      builds the same WGSL (one program); a texture-array + batched merge would save ~0.2 ms for a refactor of the
+      tile fades, cell culling and lamp light maps.
 - [ ] Profile and cap point lights / shadow casters at night.
 
 ## 3. Assets from Blender (see `docs/BLENDER.md`)

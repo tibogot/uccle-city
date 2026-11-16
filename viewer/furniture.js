@@ -15,6 +15,7 @@ import { nearestRoad, phaseOfDir, signalClock, signalState } from "./traffic/sig
 import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
+import { signalSites, SIGNALS_OLD } from "./streets/signalPlace.js";
 
 const C = {
   iron: [0.03, 0.035, 0.035], steel: [0.32, 0.33, 0.34], red: [0.5, 0.03, 0.02], white: [0.8, 0.8, 0.78],
@@ -78,7 +79,7 @@ function kerb(type, side) {
   return w;
 }
 
-export function buildFurniture(feats, roads, ground, bounds) {
+export function buildFurniture(feats, roads, ground, bounds, opts = {}) {
   const group = new THREE.Group();
   group.name = "street-furniture";
   const N = new Map(roads.nodes.map((n) => [n.id, n]));
@@ -98,15 +99,15 @@ export function buildFurniture(feats, roads, ground, bounds) {
       inst.stopPole.push(s);
       if (t.shelter === "yes") inst.shelter.push(atKerb(nr, nr.side, 3.0, 1.6));
     } else if (p.kind === "traffic_signals") {
-      // one post each side, before the stop line; phase B on roads running more north-south (signals.js phaseOfDir)
-      const phase = phaseOfDir(nr.ux, nr.uz);
-      for (const sd of [1, -1]) inst.signal.push({ ...atKerb(nr, sd, sd * 4, 0.4), phase });
+      continue;                                        // (viewer/streets/signalPlace.js, below)
     } else if (p.kind === "bicycle_parking") {
       inst.bikes.push(atKerb(nr, nr.side, 0, 0.9));
     } else if (p.kind === "bench") {
       inst.bench.push({ x: p.x, z: p.z, yaw: atKerb(nr, nr.side).yaw });
     }
   }
+  // signal posts: one per approach on its right kerb, facing the traffic (viewer/streets/signalPlace.js; ?signals=old)
+  inst.signal.push(...signalSites(feats.points, roads, { ...opts, old: SIGNALS_OLD }));
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.55, metalness: 0.2 });
   const col = attribute("aCol", "vec3"), em = attribute("aEm", "float");
   mat.colorNode = col;

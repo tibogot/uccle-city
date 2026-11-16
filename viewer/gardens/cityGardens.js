@@ -21,6 +21,29 @@ import { Streamer, MARGIN } from "../instanceStream.js";
 import { wind } from "../foliage/wind.js";
 
 const qs = new URLSearchParams(location.search);
+const GARDEN_ROAD_OLD = qs.get("gardenroad") === "old";
+/** ?hedgecol=old: the hedge modules' collision boxes in furniture-gardenwall (solid for the car, as a brick wall); now
+ *  their own stand-in mesh furniture-gardenhedge: the car drives through a hedge, slowed (viewer/drive/carEnv.js, police
+ *  feel), the walker still stops at it (viewer/character/cityHook.js) */
+const HEDGE_COL_OLD = qs.get("hedgecol") === "old";
+
+/** the doc without the pieces standing on a carriageway (blocked(x, z) -> true): segments by their ends and middle,
+ *  pillars / gates by their base, hedges split round the blocked points. { doc, segs, pillars, gates, hedgePts } */
+function clearRoads(doc, blocked) {
+  const out = { ...doc }, n = { segs: 0, pillars: 0, gates: 0, hedgePts: 0 };
+  out.segs = (doc.segs || []).filter((g) => { const bad = blocked(g[0], g[2]) || blocked(g[3], g[5]) || blocked((g[0] + g[3]) / 2, (g[2] + g[5]) / 2); if (bad) n.segs++; return !bad; });
+  out.pillars = (doc.pillars || []).filter((p) => { const bad = blocked(p[0], p[2]); if (bad) n.pillars++; return !bad; });
+  out.gates = (doc.gates || []).filter((g) => { const bad = blocked(g[0], g[2]); if (bad) n.gates++; return !bad; });
+  out.hedges = [];
+  for (const h of doc.hedges || []) {
+    let run = [];
+    const flush = () => { if (run.length >= 2) out.hedges.push({ ...h, points: run }); run = []; };
+    for (const q of h.points) { if (blocked(q[0], q[1])) { n.hedgePts++; flush(); } else run.push(q); }
+    flush();
+  }
+  const total = n.segs + n.pillars + n.gates + n.hedgePts;
+  return total ? { doc: out, ...n } : 0;
+}
 const DATA = new URL("../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
@@ -48,15 +71,21 @@ export const cityGardens = {
   },
   /** a tile: its instances join the pools; stand-ins (and hedges) go into `parent` (the tile's features group);
    *  groundAt(x, z) = the drawn ground the hedges stand on */
-  addTile(name, doc, parent, groundAt) {
+  addTile(name, doc, parent, groundAt, blocked = null) {
     if (!this.on || !this.kit || !doc) return null;
     const t0 = performance.now();
+    // citydefects 2026-11-16: no garden piece on a carriageway (a brick-pier + railing run crossed Avenue Carsoel at the
+    // Saint-Job station deck: the UrbIS street surfaces the build read predate the 2025 deck); ?gardenroad=old: as before
+    const dropped = blocked && !GARDEN_ROAD_OLD ? clearRoads(doc, blocked) : 0;
+    if (dropped) doc = dropped.doc;
     const g = gardenInstances(doc, groundAt, { hedgeFronts: this.hedges, hedges: this.hedges });
     const grp = new THREE.Group(); grp.name = `gardens-${name}`;
     const M = new THREE.Matrix4();
-    for (const [k, nm] of [["wall", "furniture-gardenwall"], ["pillar", "furniture-gardenpillar"], ["gate", "furniture-gardengate"]]) {
-      const a = g.stand[k]; if (!a.length) continue;
-      const m = new THREE.InstancedMesh(this.stand[k], this.kit.mats.standin, a.length / 16);
+    const hf = HEDGE_COL_OLD ? g.stand.wall.length : g.stand.hedgeFrom;
+    const stand = { wall: g.stand.wall.slice(0, hf), hedge: g.stand.wall.slice(hf), pillar: g.stand.pillar, gate: g.stand.gate };
+    for (const [k, nm] of [["wall", "furniture-gardenwall"], ["hedge", "furniture-gardenhedge"], ["pillar", "furniture-gardenpillar"], ["gate", "furniture-gardengate"]]) {
+      const a = stand[k]; if (!a.length) continue;
+      const m = new THREE.InstancedMesh(this.stand[k === "hedge" ? "wall" : k], this.kit.mats.standin, a.length / 16);
       for (let i = 0; i < a.length / 16; i++) { M.fromArray(a, i * 16); m.setMatrixAt(i, M); }
       m.instanceMatrix.needsUpdate = true;
       m.computeBoundingSphere();
@@ -69,7 +98,7 @@ export const cityGardens = {
     this.streamer.addTile(name, grp, (slot) => (srcs = gardenSources(g.inst, slot)));
     // (inst: the snow caps read the copings / hedges, viewer/weather/cityCaps.js)
     this.tiles.set(name, { name, inst: g.inst, raw: g.settled, hedgeRuns: doc.hedges || [], groundAt, srcs, group: grp, counts: g.counts, doc: { segs: doc.segs.length, pillars: doc.pillars.length, gates: doc.gates.length, hedges: doc.hedges.length } });
-    return { ...g.counts, ms: Math.round(performance.now() - t0) };
+    return { ...g.counts, offRoad: dropped ? dropped.segs + dropped.pillars + dropped.gates : 0, offRoadHedgePts: dropped ? dropped.hedgePts : 0, ms: Math.round(performance.now() - t0) };
   },
   removeTile(name) {
     const t = this.tiles.get(name);

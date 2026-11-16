@@ -12,8 +12,9 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { MODELS } from "./furniture.js";
 import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.js";
 import { thinWire, wireHalfPx } from "./upscale.js";   // (the wire under the TAAU: blended, >= 0.6 internal px half-width)
+import { densify, tramPoleSites, POLE_OFF } from "./streets/tramPoles.js";
 
-const WIRE_H = 5.8, POLE_STEP = 32, POLE_OFF = 3.4, WIRE_R = 0.012;
+const WIRE_H = 5.8, WIRE_R = 0.012;
 let wireMat = null;
 const OLD_WIRE = typeof location !== "undefined" && /[?&]aawire=0/.test(location.search);
 // joins2 (docs/JOINS2.md; ?wire2=0 = the 2.4 cm flat-lit ribbon before): the true 12 mm contact wire (r 6 mm), lit as a
@@ -43,15 +44,6 @@ function wireMaterial() {
   return (wireMat = m);
 }
 
-function densify(line, step) {
-  const out = [];
-  for (let k = 1; k < line.length; k++) {
-    const [ax, az] = line[k - 1], [bx, bz] = line[k];
-    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / step));
-    for (let s = k === 1 ? 0 : 1; s <= n; s++) out.push([ax + (bx - ax) * s / n, az + (bz - az) * s / n]);
-  }
-  return out;
-}
 
 // ---- the tram BRIDGE decks (OSM tram ways with bridge=yes; the only one in Uccle: over the L26 cutting next to
 // Saint-Job station). The DTM is bare earth, so before 2026-11-13 the tram dived 8 m into the railway cutting there.
@@ -171,22 +163,14 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   // ---- contact wire: thin instanced cylinders, one per 4 m segment
   const segs = [], poles = [];
   for (const l of tram) {
-    const onBridge = l.tags?.bridge === "yes";                      // no poles on the bridge deck (they stand at its ends)
     const d = densify(l.line, 4);
-    let acc = 0;
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i];
-      const L = Math.hypot(bx - ax, bz - az);
       if (inB((ax + bx) / 2, (az + bz) / 2)) segs.push([ax, trackY(ax, az) + WIRE_H, az, bx, trackY(bx, bz) + WIRE_H, bz]);
-      acc += L;
-      if (acc >= POLE_STEP) {
-        acc = 0;
-        const nx = -(bz - az) / L, nz = (bx - ax) / L;
-        const px = bx + nx * POLE_OFF, pz = bz + nz * POLE_OFF;
-        if (!onBridge && inB(px, pz) && !poles.some((p) => (p.x - px) ** 2 + (p.z - pz) ** 2 < 64)) poles.push({ x: px, z: pz, yaw: Math.atan2(nx, nz) });
-      }
     }
   }
+  // the poles: off the carriageway (viewer/streets/tramPoles.js; ?trampoles=old)
+  poles.push(...tramPoleSites(tram, inB, opts));
   const up = new THREE.Vector3(0, 1, 0), M = new THREE.Matrix4(), q = new THREE.Quaternion();
   if (segs.length && OLD_WIRE) {                                    // ?aawire=0: the old cylinders (A/B)
     const wire = new THREE.InstancedMesh(new THREE.CylinderGeometry(WIRE_R, WIRE_R, 1, 4), steel, segs.length);
@@ -223,24 +207,35 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   }
   if (poles.length) {
     // pole + cantilever arm reaching back over the track (local -z points to the track)
-    const parts = [
+    const geo = (list) => mergeGeometries(list.map((g) => { const n = g.toNonIndexed(); n.deleteAttribute("uv"); return n; }));
+    const poleParts = [
       new THREE.CylinderGeometry(0.11, 0.14, 7.0, 8).translate(0, 3.5, 0),
+      new THREE.CylinderGeometry(0.16, 0.16, 0.12, 8).translate(0, 7.0, 0),
+    ];
+    // the cantilever (arm, stay, dropper) for a POLE_OFF reach; scaled along local z to each pole's own reach
+    const armParts = [
       new THREE.CylinderGeometry(0.035, 0.035, POLE_OFF + 0.4, 6).rotateX(Math.PI / 2).translate(0, WIRE_H + 0.35, -(POLE_OFF + 0.4) / 2),
       new THREE.CylinderGeometry(0.02, 0.02, Math.hypot(POLE_OFF, 0.9), 5).rotateX(Math.PI / 2 - Math.atan2(0.9, POLE_OFF)).translate(0, WIRE_H + 0.8, -POLE_OFF / 2),   // stay
       new THREE.CylinderGeometry(0.015, 0.015, 0.4, 4).translate(0, WIRE_H + 0.15, -POLE_OFF),                                            // dropper
-      new THREE.CylinderGeometry(0.16, 0.16, 0.12, 8).translate(0, 7.0, 0),
-    ].map((g) => { const n = g.toNonIndexed(); n.deleteAttribute("uv"); return n; });
-    const pm = new THREE.InstancedMesh(mergeGeometries(parts), steel, poles.length);
+    ];
+    const same = poles.every((p) => Math.abs(p.arm - POLE_OFF) < 1e-3);
+    const pm = new THREE.InstancedMesh(geo(same ? [...poleParts, ...armParts] : poleParts), steel, poles.length);
+    const am = same ? null : new THREE.InstancedMesh(geo(armParts), steel, poles.length);
+    const one = new THREE.Vector3(1, 1, 1), sc = new THREE.Vector3();
     poles.forEach((p, i) => {
       // turn the arm toward the track: yaw makes local -z point along (-nx, -nz)
       q.setFromAxisAngle(up, p.yaw);
-      M.compose(new THREE.Vector3(p.x, surface(p.x, p.z), p.z), q, new THREE.Vector3(1, 1, 1));
-      pm.setMatrixAt(i, M);
+      const at = new THREE.Vector3(p.x, surface(p.x, p.z), p.z);
+      M.compose(at, q, one); pm.setMatrixAt(i, M);
+      if (am) { M.compose(at, q, sc.set(1, 1, p.arm / POLE_OFF)); am.setMatrixAt(i, M); }
     });
-    pm.castShadow = true;
-    pm.computeBoundingSphere();
-    pm.name = "tram-poles";
-    group.add(pm);
+    for (const [m, nm] of [[pm, "tram-poles"], [am, "tram-pole-arms"]]) {
+      if (!m) continue;
+      m.castShadow = true;
+      m.computeBoundingSphere();
+      m.name = nm;
+      group.add(m);
+    }
   }
 
   // ---- platforms

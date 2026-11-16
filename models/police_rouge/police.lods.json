@@ -3,10 +3,10 @@
   "from": "Police_far",
   "sourceTris": 6348,
   "tris": 3351,
-  "crossIslandTris": 1170,
+  "crossIslandTris": 1312,
   "aoBakedOnLevel": false,
-  "addedVertices": 7256
+  "addedVertices": 7276
  },
- "glbBytes": 874200,
- "rawBytes": 2489684
+ "glbBytes": 875020,
+ "rawBytes": 2490760
 }
