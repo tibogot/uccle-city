@@ -188,8 +188,10 @@ export class ThirdPerson {
     const vl = Math.hypot(c.vel[0], c.vel[2]);
     if (vl > 0.2) { dx = c.vel[0] / vl; dz = c.vel[2] / vl; }
     const x0 = c.pos[0], y0 = c.pos[1], z0 = c.pos[2];
+    // (running: the rays spread up to 2.25 m ahead, 10 cm apart, so the body slows before the first step)
+    const sp = 0.05 * Math.min(2, Math.max(1, vl / 2.5));
     for (let i = 0; i < 26; i++) {
-      const s = -0.25 + 0.05 * i;
+      const s = -0.25 + sp * i;
       R[0] = x0 + dx * s; R[1] = y0 + 0.9; R[2] = z0 + dz * s; R[3] = 0; R[4] = -1; R[5] = 0; H[0] = 2; H[4] = -1;
       W.raycast();
       h[i] = H[4] >= 0 && H[2] > 0.7 ? y0 + 0.9 - H[0] : NaN;
@@ -203,7 +205,7 @@ export class ThirdPerson {
       if (sgn && g !== sgn) { n = 0; nr = 0; nt = 0; last = -1e9; }
       sgn = g; n++; rs[nr++] = Math.abs(d);
       // the riser's place between the two samples: bisected (3 more rays: ~6 mm)
-      let a = -0.25 + 0.05 * i, b = a + 0.05;
+      let a = -0.25 + sp * i, b = a + sp;
       for (let it = 0; it < 3; it++) {
         const m = (a + b) * 0.5;
         R[0] = x0 + dx * m; R[1] = y0 + 0.9; R[2] = z0 + dz * m; R[3] = 0; R[4] = -1; R[5] = 0; H[0] = 2; H[4] = -1;
@@ -239,7 +241,7 @@ export class ThirdPerson {
     }
     S.ahead = ahead;
     // (the stair gait starts with the step that reaches the next riser, not a metre before)
-    const near = ahead > 8 ? 1 : 1 - Math.min(1, Math.max(0, (ahead - 0.25) / 0.5));
+    const near = ahead > 8 ? 1 : 1 - Math.min(1, Math.max(0, (ahead - 0.25) / Math.max(0.5, vl * 0.35)));
     const want = ok ? near * near * (3 - 2 * near) : 0;
     S.k += (want - S.k) * (1 - Math.exp(-(want > S.k ? 10 : 8) * dt));
     if (S.k < 0.01 && !ok) { S.dir = 0; S.ahead = 9; }
@@ -278,11 +280,14 @@ export class ThirdPerson {
       if (n) target = sum / n;
       target = Math.min(py + 0.3, Math.max(py - 0.3, target));       // (never more than a step from the capsule's feet)
     }
-    if (!B.init) { B.y = target; B.v = 0; B.init = true; }
+    // (a touch-down from the air: onto the ground at once; the spring trails a falling body by ~v / om, which left the
+    // landing feet floating for a few frames)
+    if (!B.init || (c.grounded && !B.air0 && B.wasAir && B.y > target)) { B.y = target; B.v = 0; B.init = true; }
     else if (dt > 0) {
       const om = c.grounded ? 20 : 45, e = B.y - target, ex = Math.exp(-om * dt), tmp = (B.v + om * e) * dt;
       B.v = (B.v - om * tmp) * ex; B.y = target + (e + tmp) * ex;
     }
+    B.wasAir = !c.grounded;
     return B.y;
   }
   /** Where the character is (feet, interpolated). */

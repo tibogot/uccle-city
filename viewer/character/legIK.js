@@ -65,7 +65,9 @@ export class LegIK {
 
   /** Leg lengths and the ankle / ball heights over the sole, in the current (standing) pose. */
   _measure() {
-    this.model.updateMatrixWorld(true);
+    // (the parents' world matrices too: in the city the slot already stands 70 m up when the model is set, and a stale
+    // parent matrix put the box's floor at 0 while the bones were at 70: every leg "lifted" 30 cm)
+    this.model.updateWorldMatrix(true, true);
     const box = new THREE.Box3().setFromObject(this.model);
     const floor = box.min.y;
     for (const L of this.legs) {

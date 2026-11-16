@@ -292,6 +292,7 @@ export class Locomotion {
   _land(fallV, st) {
     const C = this.role;
     // a hard landing at speed: the roll (in place: the body keeps the controller's speed)
+    this._landW = 1;
     if (C.roll && fallV > this.p.rollFall && st.speed > 2.5) { this.cur = C.roll; C.roll.t = C.roll.meta.touchdown ? Math.max(0, C.roll.meta.touchdown - 0.55) : 0; this._landHold = Math.max(0.3, C.roll.dur - C.roll.t - 0.25); this._go("land", 0.08); return; }
     // running on: straight back into the run (the IK's landing absorb dips the pelvis), no crouching land
     if (st.speed > 0.6 * this.runSpeed && fallV < 7) { this.cur = null; this.phase = 0.25; this._go("move", 0.22); return; }
@@ -299,7 +300,9 @@ export class Locomotion {
       // the jump clip's own landing
       this.cur = C.jump; C.jump.t = C.jump.meta.touchdown ?? C.jump.t; this._landHold = 0.45; this._go("land", 0.06);
     } else if (C.land && fallV > 3.5) {
+      // (the UAL landing is a deep crouch: mixed with the standing pose by the fall speed, a hop's landing is a dip)
       this.cur = C.land; C.land.t = C.land.meta.touchdown ?? 0; this._landHold = Math.min(0.7, 0.25 + fallV * 0.05); this._go("land", 0.06);
+      this._landW = Math.min(1, Math.max(0.35, 0.35 + (fallV - 4) / 6));
     } else { this.cur = null; this._go(st.speed > 0.3 ? "move" : "idle", 0.1); }
   }
 
@@ -388,7 +391,10 @@ export class Locomotion {
       }
       case "fall": { const c = C.fall; if (c) { c.t = (c.t + dt) % c.dur; c.target = 1; } else if (C.idle) C.idle.target = 1; break; }
       case "land": {
-        const c = this.cur; c.t = Math.min(c.dur, c.t + dt * (speed > 1 ? 1.4 : 1)); c.target = 1;
+        const c = this.cur; c.t = Math.min(c.dur, c.t + dt * (speed > 1 ? 1.4 : 1));
+        const lw = c === C.land ? this._landW ?? 1 : 1, id = this._idleClip(st);
+        c.target = lw;
+        if (lw < 1 && id) { id.t = (id.t + dt) % id.dur; id.target = 1 - lw; }
         this._landHold -= dt * (wantMove ? 2 : 1);
         if (this._landHold <= 0) { this.cur = null; if (speed > 0.3 || wantMove) { this.phase = 0.25; this._go("move", 0.25); } else this._go("idle", 0.35); }
         break;
@@ -668,7 +674,7 @@ export class Locomotion {
       const L = ik.legs[i];
       const want = L.need === null ? 0 : Math.max(0, Math.min(0.3, L.need - this.fit));
       const cur = L.lift || 0;
-      L.lift = cur + (want - cur) * (1 - Math.exp(-dt / (want > cur || L.planted ? 0.02 : 0.08)));
+      L.lift = cur + (want - cur) * (1 - Math.exp(-dt / (L.planted && want < cur ? 0.008 : want > cur || L.planted ? 0.02 : 0.08)));
       // (the edge slide: on while planted, eased; a swinging foot carries none)
       L.sw = (L.sw || 0) + ((L.planted && (L.slx || L.slz) ? 1 : 0) - (L.sw || 0)) * (1 - Math.exp(-dt / 0.04));
       if (L.lift < 2e-3 && L.sw < 2e-3) continue;

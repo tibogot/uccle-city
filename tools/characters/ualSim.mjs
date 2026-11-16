@@ -20,6 +20,7 @@ const ONLY = arg("--only", "") ? new Set(arg("--only").split(",")) : null;
 const OBJ = arg("--obj", "");
 const NFR = +arg("--frames", 8);
 const CHAR = arg("--char", "ual");
+const TRACE = arg("--trace", "");          // run:t0:t1 -> per-frame foot / body-fit numbers
 
 // ------------------------------------------------------------------------------------------------ the course
 const course = [];
@@ -143,7 +144,8 @@ for (const R of RUNS) {
         if (-sole > A.pen) { A.pen = -sole; A.penAt = st.t; }
         // (floating: above the HIGHER ground under heel / ball: a sole half over a kerb's edge is not floating)
         const over = Math.min(v1.y - L.ankleH, v2.y - L.ballH) - Math.max(gA, gB);
-        if (L.planted && over > A.float) { A.float = over; A.floatAt = st.t; }
+        if (L.planted && L.contact > 0.6 && over > A.float) { A.float = over; A.floatAt = st.t; }
+        if (TRACE) { const [tr, t0, t1] = TRACE.split(":"); if (tr === R.name && st.t >= +t0 && st.t <= +t1) console.log(`  t ${st.t.toFixed(3)} ${s ? "R" : "L"} ${L.planted ? "P" : "-"} c ${L.contact?.toFixed(2)} over ${(over * 100).toFixed(1)} need ${L.need === null ? "-" : (L.need * 100).toFixed(1)} fit ${(lo.fit * 100).toFixed(1)} lift ${((L.lift || 0) * 100).toFixed(1)} g ${gA.toFixed(2)}/${gB.toFixed(2)} gPlant ${L.gPlant?.toFixed(2)} y ${tp.body.root.position.y.toFixed(3)} mode ${lo.mode} k ${tp._stairs.k.toFixed(2)} x ${tp.ctl.pos[0].toFixed(2)}`); }
         if (L.planted && prevBall[s]) {
           const d = Math.hypot(v2.x - prevBall[s][0], v2.z - prevBall[s][1]) / DT;
           A.slide += d * DT; A.slideT += DT; A.slideMax = Math.max(A.slideMax, d);

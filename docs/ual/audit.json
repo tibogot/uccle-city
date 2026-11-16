@@ -11,8 +11,8 @@
    ],
    "penCm": 0.4,
    "penAt": 2.82,
-   "floatCm": 1.9,
-   "floatAt": 0.88,
+   "floatCm": 1.4,
+   "floatAt": 3.77,
    "slideMs": 0.148,
    "slideMaxMs": 1.14,
    "reachCm": 0,
@@ -20,7 +20,7 @@
     "idle": 0.05,
     "move": 3.97
    },
-   "animMs": 0.054
+   "animMs": 0.062
   },
   {
    "run": "run",
@@ -40,7 +40,7 @@
     "idle": 0.05,
     "move": 2.97
    },
-   "animMs": 0.076
+   "animMs": 0.051
   },
   {
    "run": "sprint",
@@ -49,7 +49,7 @@
     0,
     0
    ],
-   "penCm": 1,
+   "penCm": 1.1,
    "penAt": 3.4,
    "floatCm": 4.7,
    "floatAt": 0.82,
@@ -60,7 +60,7 @@
     "idle": 0.05,
     "move": 3.97
    },
-   "animMs": 0.029
+   "animMs": 0.038
   },
   {
    "run": "startStop",
@@ -70,9 +70,9 @@
     -6
    ],
    "penCm": 0.7,
-   "penAt": 0.43,
-   "floatCm": 3.7,
-   "floatAt": 0.5,
+   "penAt": 2.28,
+   "floatCm": 1.4,
+   "floatAt": 1.25,
    "slideMs": 0.174,
    "slideMaxMs": 4.2,
    "reachCm": 0,
@@ -80,7 +80,7 @@
     "idle": 2.17,
     "move": 1.85
    },
-   "animMs": 0.028
+   "animMs": 0.033
   },
   {
    "run": "turn",
@@ -91,8 +91,8 @@
    ],
    "penCm": 1.6,
    "penAt": 0.67,
-   "floatCm": 2.7,
-   "floatAt": 0.75,
+   "floatCm": 0.9,
+   "floatAt": 2.93,
    "slideMs": 1.193,
    "slideMaxMs": 12.28,
    "reachCm": 0,
@@ -101,7 +101,7 @@
     "stepTurn": 0.38,
     "move": 2.12
    },
-   "animMs": 0.04
+   "animMs": 0.05
   },
   {
    "run": "stairsUp",
@@ -112,16 +112,16 @@
    ],
    "penCm": 1.3,
    "penAt": 1.1,
-   "floatCm": 9.2,
-   "floatAt": 1.03,
-   "slideMs": 0.324,
-   "slideMaxMs": 2.4,
+   "floatCm": 6.9,
+   "floatAt": 1.05,
+   "slideMs": 0.325,
+   "slideMaxMs": 2.39,
    "reachCm": 0,
    "modes": {
     "idle": 0.05,
     "move": 6.97
    },
-   "animMs": 0.049
+   "animMs": 0.063
   },
   {
    "run": "stairsDown",
@@ -132,7 +132,7 @@
    ],
    "penCm": 2.4,
    "penAt": 1.05,
-   "floatCm": 9,
+   "floatCm": 2.6,
    "floatAt": 4.78,
    "slideMs": 0.181,
    "slideMaxMs": 1.62,
@@ -141,21 +141,21 @@
     "idle": 0.05,
     "move": 5.97
    },
-   "animMs": 0.052
+   "animMs": 0.056
   },
   {
    "run": "stairsUpRun",
    "pos": [
-    8.05,
-    1.7,
+    7.31,
+    1.53,
     10
    ],
-   "penCm": 8.3,
-   "penAt": 0.67,
-   "floatCm": 18.5,
-   "floatAt": 0.87,
-   "slideMs": 0.592,
-   "slideMaxMs": 8.58,
+   "penCm": 0.7,
+   "penAt": 0.32,
+   "floatCm": 3,
+   "floatAt": 3.75,
+   "slideMs": 0.499,
+   "slideMaxMs": 10.57,
    "reachCm": 0,
    "modes": {
     "idle": 0.05,
@@ -166,22 +166,22 @@
   {
    "run": "cityStairs",
    "pos": [
-    8.18,
+    8.17,
     1.2,
     16
    ],
-   "penCm": 0.7,
-   "penAt": 5.2,
-   "floatCm": 7.4,
-   "floatAt": 1.98,
-   "slideMs": 0.246,
-   "slideMaxMs": 1.51,
+   "penCm": 0.9,
+   "penAt": 1.07,
+   "floatCm": 5.8,
+   "floatAt": 5.3,
+   "slideMs": 0.297,
+   "slideMaxMs": 3.03,
    "reachCm": 0,
    "modes": {
     "idle": 0.05,
     "move": 5.97
    },
-   "animMs": 0.037
+   "animMs": 0.048
   },
   {
    "run": "kerb",
@@ -201,7 +201,7 @@
     "idle": 0.05,
     "move": 5.97
    },
-   "animMs": 0.026
+   "animMs": 0.035
   },
   {
    "run": "steepUp",
@@ -210,8 +210,8 @@
     1.57,
     26
    ],
-   "penCm": 0.8,
-   "penAt": 5.25,
+   "penCm": 1,
+   "penAt": 5.23,
    "floatCm": 4,
    "floatAt": 1.83,
    "slideMs": 0.146,
@@ -221,7 +221,7 @@
     "idle": 0.05,
     "move": 6.97
    },
-   "animMs": 0.047
+   "animMs": 0.051
   },
   {
    "run": "steepDown",
@@ -230,9 +230,9 @@
     0.25,
     26
    ],
-   "penCm": 1,
+   "penCm": 1.1,
    "penAt": 1.77,
-   "floatCm": 2.1,
+   "floatCm": 1.8,
    "floatAt": 2.32,
    "slideMs": 0.175,
    "slideMaxMs": 1.14,
@@ -241,7 +241,7 @@
     "idle": 0.05,
     "move": 6.97
    },
-   "animMs": 0.043
+   "animMs": 0.053
   },
   {
    "run": "jump",
@@ -263,7 +263,7 @@
     "jump": 0.57,
     "land": 0.27
    },
-   "animMs": 0.038
+   "animMs": 0.033
   },
   {
    "run": "jumpRun",
@@ -284,7 +284,7 @@
     "move": 2.4,
     "jump": 0.57
    },
-   "animMs": 0.027
+   "animMs": 0.033
   },
   {
    "run": "jumpStand",
@@ -305,7 +305,7 @@
     "jump": 0.57,
     "land": 0.53
    },
-   "animMs": 0.045
+   "animMs": 0.031
   },
   {
    "run": "dropLedge",
@@ -316,7 +316,7 @@
    ],
    "penCm": 1.7,
    "penAt": 1.2,
-   "floatCm": 159.1,
+   "floatCm": 159,
    "floatAt": 0.37,
    "slideMs": 0.759,
    "slideMaxMs": 24.87,
@@ -327,7 +327,7 @@
     "fall": 0.2,
     "land": 0.3
    },
-   "animMs": 0.041
+   "animMs": 0.036
   },
   {
    "run": "crouch",
@@ -347,7 +347,7 @@
     "idle": 1.22,
     "move": 2.8
    },
-   "animMs": 0.024
+   "animMs": 0.028
   },
   {
    "run": "idle",
@@ -357,7 +357,7 @@
     -42
    ],
    "penCm": 0.2,
-   "penAt": 9,
+   "penAt": 14.12,
    "floatCm": 0.2,
    "floatAt": 0.32,
    "slideMs": 0.003,
@@ -366,7 +366,7 @@
    "modes": {
     "idle": 22.02
    },
-   "animMs": 0.019
+   "animMs": 0.021
   }
  ]
 }
