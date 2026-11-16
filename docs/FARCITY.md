@@ -57,8 +57,7 @@ pack / unpack (checked in node: lengths, values, sub-views).
 - **Memory**: 56 bytes / vertex instead of 36 (pos + normal + 2 x vec4 vs pos + normal + rgb): +0.7 to +1.2 MB per far
   tile (I7 1.24 -> 1.93 MB, H6 2.17 -> 3.38 MB), GPU and tile cache.
 - **GPU**: the fragment shader is heavier than a flat colour (about 20 filtered pulses, a TYPE_GRID select chain, a
-  fresnel). Not yet measured on GREEN: `debug/farcityAB.js` swaps the far material for a flat one in one page at a
-  parked camera and times both with timestamp queries (round 2 browser turn).
+  fresnel): **+0.12 to +0.16 ms** a frame (round 2, see below).
 - **Compile**: one more pipeline (+ its fade copy), compiled with the far tile (`preCompile(g, TILE_FADE)`).
 
 ### Tools
@@ -75,9 +74,59 @@ pack / unpack (checked in node: lengths, values, sub-views).
 - hand-over, mid fade: `farcity/r1_handover_live_mid.jpg` (bare tile) -> `farcity/r1_handover_live_mid_fix.jpg`,
   `farcity/r1_handover_live_after_fix.jpg`
 
-### Left / not done
+### Left / not done (round 1)
 
-- GPU / CPU numbers vs `?farlook=old` on GREEN, a long drive through far -> full hand-overs (colour jump, popping),
-  night shots, defect pass (aliasing, z-fighting, black faces).
+See round 2.
 - Far buildings are not weatherized (snow / wet), like the rest of the far tile.
 - No ground fit on the far tiles (the base is UrbIS's), no doors / shops / kit detail (fine from 150 m+).
+
+## Round 2 (browser check, 2026-11-16; preflight YELLOW: Chrome memory + free RAM warnings)
+
+### Numbers (1600 x 828, golden, traffic off, 9 full + 37 far tiles)
+
+| | old (`?farlook=old&treehandover=old`) | far look |
+| --- | --- | --- |
+| overview 420 m: GPU / renderFrame CPU / draws / tris | 11.93 ms / 5.6 ms / 243-245 / 3.61 M | 11.47 ms / 5.8-6.0 ms / 249 / 3.63 M |
+| falcon 90 m: GPU / CPU / draws / tris | 8.65-8.72 ms / 3.4 ms / 79-83 / 1.80 M | 8.32 ms / 3.7 ms / 85 / 1.82 M |
+
+Two pages, so these are noisy (the far look page came out faster on GPU). The reliable number is the in-page A/B
+(`debug/farcityAB.js`: the same frames with the far material and a flat one, alternated): **+0.13 ms at the overview,
++0.12 ms at falcon height, +0.16 ms with only the far buildings drawn** (3.56 -> 3.72 ms). Draws: the same, 1 a far tile
+(the +2..6 in the table is other streaming, not far tiles). Main-thread CPU: no change from the far look (renderFrame
++0.2-0.3 ms between pages is within page-to-page noise; the far look adds no per-frame JS).
+
+### Defect eye, fixes
+
+- **FIXED: night light jump at the hand-over.** The far tiles' lit windows were 0.38 of the windows at 0.9 glow: the
+  same buildings (`handover2`, I7 full vs `?ring=0` far) had 2.1x the light and 3.8x the bright pixels when far
+  (mean luminance 6.05 far vs 2.84 full); the far ring outshone the near city. Now `FAR_NIGHT` (viewer/farLook.js):
+  share 0.26, glow 0.26, a warmer glow colour: 2.39 far vs 2.55 full, the mid band equal (2.65 / 2.63).
+  Images: `farcity/r2_ho2_night_full_fix.jpg` vs `r2_ho2_night_far.jpg` (before) / `r2_ho2_night_far_fix.jpg`;
+  falcon at night `r2_night_falcon_before.jpg` (old: dark boxes) -> `r2_night_falcon_after.jpg` (round 1, too bright)
+  -> `r2_night_falcon_fix.jpg`.
+- Day hand-over (`handover`, I7 full vs far): buildings within 5-10 % (terrace 76.8 / 72.9, block 75.6 / 66.8 mean
+  red); `r2_ho_day_full.jpg` / `r2_ho_day_far.jpg`. Whole-band means of the overview old vs new within 1 / 255.
+- Far roofs read less orange than before from the overview: their roughness now matches the near roofs' (0.62-0.78,
+  facades.js) where the old flat material had 0.85; the old look was the outlier, kept.
+- Long drive (`debug/farcityDrive.js`, 20 m/s south from Saint-Job to row 12, camera 70 m up looking 260 m ahead, 3052
+  frames): every far tile in front was disposed only with its full tile there (no bare tile), 46 frames over 50 ms, none
+  over 100 ms, no visible seam / pop in the shots during fades (`r2_drive_5/6/7.jpg`). The "far gone, no full" entries
+  were tiles leaving behind the ring (rows 4-5), as intended.
+- No aliasing, z-fighting or black faces seen at falcon / overview (`r2_falcon_crop_before/after.png`, 3x crops):
+  windows and plinths melt to their mean colour at distance.
+- Console: no errors from the far look. 9 x 404 during the drive to rows 10-12 (tile side data that does not exist
+  there; before this branch too).
+
+### Images (round 2)
+
+falcon `r2_falcon_before.jpg` -> `r2_falcon_after.jpg`; falcon 60 m `r2_falcon2_after.jpg`; overview
+`r2_overview_before.jpg` -> `r2_overview_after.jpg`; night and hand-over as above.
+
+### Left
+
+- The far terrain (orthophoto) reads darker than the full tile's ground in parks (lawn mean 62 far vs 75 full): a ground
+  colour jump at the hand-over, not the buildings (terrain / ortho, separate job).
+- Far tiles have no street-lamp pools at night (the full tiles do): the far city's streets are black.
+- GPU +0.12-0.16 ms: could drop by branching walls / roofs (both shaded for every pixel now) or by skipping the grid
+  where windows are sub-pixel.
+- Far buildings not weatherized (snow / wet).
