@@ -1397,7 +1397,9 @@ async function main() {
   const ORBITCAM_OLD = params.get("orbitcam") === "old";
   const controls = ORBITCAM_OLD ? new OrbitControls(camera, renderer.domElement)
     : new InspectControls(camera, renderer.domElement, { field: cityField(world), target: new THREE.Vector3(),
-      heroes: params.get("orbitheroes") === "0" ? () => [] : ((m) => () => m.values())(heroBVHs(log)) });
+      blocked: () => !!(window.__game?.hud?.menuOpen || window.__map?.full?.open),          // (a menu / the full map has the keys)
+      // (the landmark BVHs start building on the camera's first pick / move, not at boot: ~0.2 s of worker time then)
+      heroes: params.get("orbitheroes") === "0" ? () => [] : ((m) => () => (m ??= heroBVHs(log)).values())(null) });
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
   window.__orbitcam = controls;

@@ -71,9 +71,9 @@ export class InspectControls {
    * field: { ready(), terrain(x, z), roof(x, z) } (cityField); heroes: () => iterable of TriBVH (raycast(R, H));
    * target: a Vector3 (THREE's in the viewer).
    */
-  constructor(camera, dom, { field, heroes = () => [], target = V(), keys = globalThis } = {}) {
+  constructor(camera, dom, { field, heroes = () => [], target = V(), keys = globalThis, blocked = () => false } = {}) {
     this.object = camera; this.domElement = dom;
-    this.field = field; this.heroes = heroes;
+    this.field = field; this.heroes = heroes; this.blocked = blocked;   // blocked(): a menu / the full map is open: keys off
     this.target = target;
     this.enableDamping = true;
     this.maxPolarAngle = Math.PI;           // (OrbitControls' field; this camera has its own pitch limits)
@@ -268,7 +268,7 @@ export class InspectControls {
     const typing = (e) => e.target?.closest?.("input,select,textarea");
     const FLY = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE", "ShiftLeft", "ShiftRight"]);
     on(keys, "keydown", (e) => {
-      if (!this._on || typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!this._on || typing(e) || e.ctrlKey || e.metaKey || e.altKey || this.blocked()) return;
       if (this._drag?.rmb && FLY.has(e.code)) {
         // RMB held: these keys fly (and no other mode / the bike prompt sees them)
         this._keys.add(e.code);
@@ -286,7 +286,7 @@ export class InspectControls {
   _down(e) {
     if (!this._on) return;
     this._touched();
-    this.domElement.setPointerCapture?.(e.pointerId);
+    try { this.domElement.setPointerCapture?.(e.pointerId); } catch {}
     if (e.pointerType === "touch") return this._touchDown(e);
     if (this._drag) return;
     const [nx, ny] = this.ndc(e.clientX, e.clientY);
@@ -313,7 +313,7 @@ export class InspectControls {
     this._touched();
   }
   _up(e) {
-    this.domElement.releasePointerCapture?.(e.pointerId);
+    try { this.domElement.releasePointerCapture?.(e.pointerId); } catch {}
     if (e.pointerType === "touch") return this._touchUp(e);
     if (this._drag?.id === e.pointerId) {
       if (this._drag.rmb) { this._fly = false; this._keys.clear(); }
@@ -464,9 +464,28 @@ export class InspectControls {
     if (l < 1e-6) return;
     let nl = Math.min(l * Math.exp(k), Math.max(l, 6000));     // (out to the whole commune, not past it)
     if (k < 0 && nl < MIN_DIST) { nl = Math.min(l, MIN_DIST); d.k = 0; }
-    const next = V(d.p.x + (v.x / l) * nl, d.p.y + (v.y / l) * nl, d.p.z + (v.z / l) * nl);
+    const u = V(v.x / l, v.y / l, v.z / l);
+    let tilt = 0;
+    if (k > 0) {
+      // zooming OUT also tilts the view down round the point (Google Earth): from a street-level view, backing out
+      // ends over the city looking down at it (50 m: >= 10 deg over the point, 2 km: >= 60 deg), the point stays put
+      const el = Math.asin(clamp(u.y, -1, 1));
+      const want = (10 + 50 * clamp(Math.log(nl / 50) / Math.log(40), 0, 1)) * DEG;
+      if (el < want) {
+        tilt = Math.min(want - el, Math.max(0.002, k * 0.9));
+        tilt = Math.min(tilt, this.pitch - PITCH_MIN);
+        rot(u, Math.cos(this.yaw), 0, -Math.sin(this.yaw), -tilt);
+      }
+    }
+    // (the ceiling: shorten the step to reach it exactly, then stop; no sliding along it)
+    if (u.y > 1e-3 && d.p.y + u.y * nl > MAX_Y) {
+      if (tilt) { u.x = v.x / l; u.y = v.y / l; u.z = v.z / l; tilt = 0; }
+      nl = u.y > 1e-3 ? Math.max(l, (MAX_Y - d.p.y) / u.y) : l; d.k = 0;
+    }
+    const next = V(d.p.x + u.x * nl, d.p.y + u.y * nl, d.p.z + u.z * nl);
     if (this.resolve(this.pos, next)) d.k = 0;
     cp(this.pos, next);
+    this.pitch -= tilt;
   }
   _applyPan(f) {
     const p = this._pan, next = V(this.pos.x + p.x * f, this.pos.y + p.y * f, this.pos.z + p.z * f);
@@ -480,7 +499,7 @@ export class InspectControls {
   _applyFly(dt) {
     const K = this._keys, ax = (K.has("KeyD") ? 1 : 0) - (K.has("KeyA") ? 1 : 0), az = (K.has("KeyW") ? 1 : 0) - (K.has("KeyS") ? 1 : 0), ay = (K.has("KeyE") ? 1 : 0) - (K.has("KeyQ") ? 1 : 0);
     const agl = this.pos.y - this.field.terrain(this.pos.x, this.pos.z);
-    const speed = clamp(agl * 0.9, 6, 320) * this.flySpeed * (K.has("ShiftLeft") || K.has("ShiftRight") ? 3 : 1);
+    const speed = clamp(agl * 1.0, 10, 320) * this.flySpeed * (K.has("ShiftLeft") || K.has("ShiftRight") ? 3 : 1);
     const F = this.fwd(), cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
     const w = V(F.x * az + cy * ax, F.y * az + ay, F.z * az - sy * ax), wl = len(w);
     if (wl > 1e-6) { w.x *= speed / wl; w.y *= speed / wl; w.z *= speed / wl; }
@@ -528,6 +547,7 @@ export class InspectControls {
       const s = Math.min(1, A.t / A.dur), e = ease(s);
       const x = A.from.x + (A.to.x - A.from.x) * e, z = A.from.z + (A.to.z - A.from.z) * e;
       let y = A.from.y + (A.to.y - A.from.y) * e + A.lift * Math.sin(Math.PI * s);
+      y = Math.min(y, Math.max(MAX_Y, A.from.y, A.to.y));
       if (this.field?.ready()) y = Math.max(y, this.field.terrain(x, z) + CLEAR);
       this.pos.x = x; this.pos.y = y; this.pos.z = z;
       const tx = A.fromT.x + (A.toT.x - A.fromT.x) * e, ty = A.fromT.y + (A.toT.y - A.fromT.y) * e, tz = A.fromT.z + (A.toT.z - A.fromT.z) * e;

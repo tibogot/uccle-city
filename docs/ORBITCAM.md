@@ -26,7 +26,7 @@ before), `?orbitheroes=0` (pick / collide with the height fields only). Offline 
 | Unreal editor | Alt+LMB around the pivot; F frames; LMB drag = move/turn on the ground plane | wheel = forward | MMB | RMB + WASD/QE (speed slider + wheel) | none |
 | Godot 3D editor | MMB orbit; "orbit around the cursor point" option; F focus | wheel toward the cursor (option "zoom to cursor") | Shift+MMB | RMB + WASD freelook (Shift fast) | none |
 | Blender | MMB orbit; "Orbit around selection", "Auto depth" picks the depth under the mouse; Numpad . frames | "Zoom to mouse position" | Shift+MMB at the picked depth | Shift+` walk / fly | none |
-| Google Earth / Cesium | the pivot is the GLOBE POINT under the cursor (tilt around it, never a point in the sky) | toward the cursor, speed scales with the height | the grabbed ground point stays under the cursor | — | terrain collision (`enableCollisionDetection`, a minimum height over terrain) |
+| Google Earth / Cesium | the pivot is the GLOBE POINT under the cursor (tilt around it, never a point in the sky) | toward the cursor, speed scales with the height, zoom-out tilts to top-down | the grabbed ground point stays under the cursor | — | terrain collision (`enableCollisionDetection`, a minimum height over terrain) |
 | yomotsu camera-controls (MIT, v3.1.2, three >= 0.126) | around `target`; `setOrbitPoint` moves it without moving the view | `dollyToCursor`, `infinityDolly`; smoothDamp | `truck` (screen plane) | `forward` / `truck` methods | `colliderMeshes` = a three Raycaster against those meshes EVERY update; `fitToBox`, `fitToSphere` |
 | three MapControls | OrbitControls with screen-space panning off (pan on the ground plane) | toward the target (or `zoomToCursor` since r153) | ground plane | — | none |
 
@@ -56,12 +56,15 @@ So `viewer/orbitCam.js` (~570 lines, three-free math) keeps the OrbitControls su
   distance, and each step is capped at twice the height above the plane (no 3 km jumps from a grazing ray).
 - **Zoom to the cursor, by a share of the distance** (camera-controls' dollyToCursor, Cesium): the camera moves along
   the cursor ray toward the picked point by `exp(-0.25)` a notch, so it is fast from 2 km up and fine at a doorway; it
-  stops 1 m short of the surface, and zooming out is capped at 6 km from the point (the whole commune).
+  stops 1 m short of the surface, and zooming out is capped at 6 km from the point (the whole commune). Zooming OUT
+  also tilts the view down round the point (Google Earth): at least 10 deg over it at 50 m, 60 deg at 2 km, so backing
+  out of a street ends above the city looking down; it stops at the 3200 m ceiling.
 - **Frame** (Unity / Unreal F, Blender Numpad .): double-click, double tap or F flies to 0.35 x the distance from the
   point (6-250 m), looking at it from the same side, at least 12 deg down.
 - **Fly** (Unity / Unreal / Godot): hold the right button and press WASD (QE down / up): the mouse turns the view, the
   speed follows the height over the ground (6-320 m/s), Shift x3, the wheel scales it. The keys are swallowed while the
-  right button is held (no bike prompt on E, no other mode sees them).
+  right button is held (no bike prompt on E, no other mode sees them); all camera keys are off while the game menu
+  or the full map is open.
 - **Smooth**: every motion is damped (exponential, rate 16/s for orbit and pan, 11/s for zoom; `enableDamping=false`
   = direct). Fly-to transitions: an ease-in-out flight with a lift of 18 % of the distance (max 350 m), 0.6-2.2 s.
 - **Limits**: pitch -89..+30 deg (the camera may look up from a street; no flip at the zenith); max 3200 m TAW.
@@ -94,10 +97,11 @@ non-2.5D shapes (spires, arches, bridge decks). Trees, cars, lamp posts are not 
 
 ## Memory / boot
 
-`viewer/heroBVH.js` builds each landmark's BVH once, in the character's collider worker, as soon as heroColliders has
-its triangles; the third person now takes the same BVH objects (own flags, shared arrays) instead of building its own,
-so the arrays exist once. Without `?orbitheroes=0` the BVHs are built at boot even if the third person is never used
-(worker time only, no main-thread work).
+`viewer/heroBVH.js` builds each landmark's BVH once, in the character's collider worker; the third person takes the same
+BVH objects (own flags, shared arrays) instead of building its own, so the arrays exist once. The orbit camera starts
+it LAZILY, on its first pick or move (the roof grid keeps the landmarks' envelopes meanwhile): no cost at boot. Measured
+2026-11-16 (eager version): Saint-Job 38,579 triangles 54-64 ms, the Observatory 174,668 triangles 137-160 ms, worker
+time only; boot to "area ready" 45.1 / 54.1 s with it vs 44.0 s with `?orbitheroes=0` (noise of the same size).
 
 ## Weak points / next
 
