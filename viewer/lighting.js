@@ -109,11 +109,11 @@ class CachedSunShadowNode extends FadedShadowNode {
     const off = uniform(new THREE.Vector2(0, 0)), size = uniform(new THREE.Vector2(1, 1));
     const m = new THREE.MeshBasicNodeMaterial({ depthTest: false, depthWrite: true, colorWrite: false });
     const cache = this.cache;
-    m.depthNode = Fn(() => {
+    {
       const c = ivec2(screenCoordinate.xy).add(ivec2(off));
       const inside = c.x.greaterThanEqual(int(0)).and(c.y.greaterThanEqual(int(0))).and(c.x.lessThan(int(size.x))).and(c.y.lessThan(int(size.y)));
-      return select(inside, float(textureLoad(cache, c.clamp(ivec2(0), ivec2(size).sub(1)))), float(1));
-    })();
+      m.depthNode = select(inside, float(textureLoad(cache, c.clamp(ivec2(0), ivec2(size).sub(1)))), float(1));
+    }
     m.name = "sun shadow cache blit";
     this.blit = { quad: new THREE.QuadMesh(m), off, size };
     return this.blit;
@@ -132,7 +132,9 @@ class CachedSunShadowNode extends FadedShadowNode {
     // the strip shifted in must stay inside the fade's fully-lit outer band
     const lim = Math.max(8, Math.floor((1 - shadowFade.uRadius.value) * W / 2) - 4);
     this.age++;
-    const full = sunCache.dirty || key !== this.key || Math.abs(mx) > lim || Math.abs(my) > lim || !!sunCache.fader?.busy || (SUN_REFRESH > 0 && this.age >= SUN_REFRESH);
+    const why = sunCache.dirty ? "dirty" : key !== this.key ? "key" : Math.abs(mx) > lim || Math.abs(my) > lim ? "shift" : sunCache.fader?.busy && this.age >= 3 ? "fade" : SUN_REFRESH > 0 && this.age >= SUN_REFRESH ? "refresh" : null;
+    const full = !!why;
+    if (why) sunCache.stats[why] = (sunCache.stats[why] || 0) + 1;
     const name = scene.name;
     scene.name = `Shadow Map [ ${this.light.name || "sun"} ]`;
     const hid = this.hid; hid.length = 0;
@@ -283,7 +285,7 @@ export class Lighting {
     this.sun.shadow.normalBias = 0.05;
     // our own ShadowNode, handed to the light before its first render: r187 keeps the shadow map inside
     // the node (light.shadow.map stays null on WebGPU) and the sky's sun shafts march that map
-    this.shadowNode = SMOOTH_SHADOWS ? new FadedShadowNode(this.sun, this.sun.shadow) : shadow(this.sun);
+    this.shadowNode = SMOOTH_SHADOWS ? (SUN_CACHE ? new CachedSunShadowNode(this.sun, this.sun.shadow) : new FadedShadowNode(this.sun, this.sun.shadow)) : shadow(this.sun);   // (perfgame round 3: the static cache)
     this.sun.shadow.shadowNode = this.shadowNode;
     scene.add(this.sun.target, this.sun);
     this.sunDir = new THREE.Vector3(0, 1, 0);
