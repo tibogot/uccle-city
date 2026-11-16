@@ -17,18 +17,40 @@
   },
   {
    "type": "node",
-   "id": "relais-saint-job",
-   "lon": 4.365015,
-   "lat": 50.7941343,
+   "id": "relais-traiteur",
+   "lon": 4.3650966,
+   "lat": 50.79407,
+   "tags": {
+    "shop": "deli",
+    "name": "Relais Saint-Job",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
+   },
+   "_source": "Le Relais Saint-Job, traiteur & vins (2-storey white corner, Place de Saint-Job 3): reference photo of the front (privateaser.com/lieu/57030, looked at, not kept) + UrbIS footprints 544703 / 559047; Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr"
+  },
+  {
+   "type": "node",
+   "id": "relais-brasserie",
+   "lon": 4.365046,
+   "lat": 50.7941197,
    "tags": {
     "amenity": "restaurant",
-    "name": "Le Relais Saint-Job",
-    "cuisine": "belgian;french",
-    "outdoor_seating": "yes",
-    "addr:street": "Place de Saint-Job - Sint-Jobsplein",
-    "addr:housenumber": "1"
+    "name": "Relais Saint-Job",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
    },
-   "_source": "Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr; text only: 'ancien estaminet bruxellois', terrace March-October, heated roof-top terrace); position = UrbIS address point Place de Saint-Job 1 (CC0). Not in OSM."
+   "_source": "Le Relais Saint-Job, brasserie (the low white house with the tiled roof, n. 1): reference photo of the front (privateaser.com/lieu/57030, looked at, not kept) + UrbIS footprints 544703 / 559047; Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr"
+  },
+  {
+   "type": "node",
+   "id": "relais-restaurant",
+   "lon": 4.3650006,
+   "lat": 50.7941654,
+   "tags": {
+    "amenity": "restaurant",
+    "outdoor_seating": "yes",
+    "name": "Relais Saint-Job",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein"
+   },
+   "_source": "Le Relais Saint-Job, restaurant + the terrace (n. 1, north end): reference photo of the front (privateaser.com/lieu/57030, looked at, not kept) + UrbIS footprints 544703 / 559047; Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr"
   }
  ]
 }

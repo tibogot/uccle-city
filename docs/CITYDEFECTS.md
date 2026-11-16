@@ -201,6 +201,31 @@ POI lists of I5 / I6 were updated (a full rebuild also shifts plates / numbers: 
 Next browser turn: Street View (newest date, both directions) shop by shop, write each front into data/shops/terraces.json
 (family, paint, lightbox, awning / canvas, terrace), Le Relais Saint-Job first; then side-by-side images.
 
+## SOUND OFF BY DEFAULT (owner)
+`viewer/audio/soundGate.js`, imported FIRST in main.js: it wraps window.AudioContext, so every real-time context (city
+sound engine, two-wheelers, falcon flight, game cues, police siren playback) is registered, suspended at birth and kept
+suspended (resume() is a no-op) while muted; un-muting resumes them all. One setting, a speaker button bottom-right
+(over the game HUDs too; no hotkey, M is the map), remembered per browser (localStorage "uccle-sound"); ?sound=1 starts
+unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
+
+## RECOGNISABLE SHOPS (reference photos looked at in a temp folder outside the repo, then deleted; nothing kept)
+- Le Relais Saint-Job (photo of its front on its event-venue listing): a long white front of three sections under ONE
+  taupe retractable awning: "RELAIS saint-job" in a white script on the slope, the section in capitals on the valance:
+  TRAITEUR & VINS (the 2-storey corner, Place de Saint-Job 3, small awnings over its two first-floor windows), BRASSERIE
+  and RESTAURANT (the low house with the tiled roof and dormer, n. 1); black frames, chalk A-boards, bistro tables with
+  rattan chairs under the awning at the north end; a heated roof-top terrace (white timber rails, dark aluminium chairs:
+  not built yet). Built: three street-life POIs on the real façades (tools/streetlife/extra_pois.json), curated fronts
+  (data/shops/terraces.json: classic, black frames, canvas 7 = taupe, no fascia board, the script on the awning, the
+  section on the valance, the terrace on the restaurant section). Kit additions (viewer/shops/shopLayout.js): curated
+  `fascia: false`, `valance` text / `valanceFont`, `awningText` / `awningFont` (a label on the awning's slope), `ink`
+  (a brand colour). LEFT: the walls' white render and the tiled roof are the façade generator's (not curated per
+  building yet); the first-floor window awnings; the roof-top terrace.
+- Maison Dandoy (the brand's photo of its Saint-Job shop): black frames and fascia, MAISON DANDOY in white spaced capitals,
+  black awning with the name. Curated.
+- Proxy Delhaize: the brand's standard white sign box with red lettering, curated as such; CONFIRM on Street View (2019
+  showed papered windows).
+- Le Bistroquet, Deneubourg: no photo found online (no website, few listings): Street View on the browser turn.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).
