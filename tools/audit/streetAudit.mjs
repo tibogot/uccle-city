@@ -26,7 +26,7 @@ const { carriageway, offLane } = await imp("viewer/streets/carriageway.js");
 const { signalSites } = await imp("viewer/streets/signalPlace.js");
 const { tramPoleSites } = await imp("viewer/streets/tramPoles.js");
 const { placedLampSites } = await imp("viewer/streets/lampPlace.js");
-const { carSites, parkingClear } = await imp("viewer/streets/parkPlace.js");
+const { carSites, parkingClear, widthParking } = await imp("viewer/streets/parkPlace.js");
 const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
 
 const argv = process.argv.slice(2);
@@ -126,11 +126,19 @@ for (const T of TILES) {
   const graph = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid);
   const pc = parkingClear(cars, { graph, inside: (x, z) => driven.inside(x, z), nearest: driven.nearest });
   const onLaneBefore = parkingClear(cars, { graph }).onLane;
+  // the width rule (parkPlace.js widthParking, the default since the coordinator's call): its cars vs the traffic lanes
+  // and the free width left
+  const wp = widthParking(roads, feats, bounds, fit);
+  const graphW = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: wp.sites });   // as the worker builds it
+  const wpLane = parkingClear(wp.sites, { graph: graphW }).onLane;
+  const narrowStretches = graphW.nOff ? graphW.nOff[graphW.paths] : 0;
+  const wpNarrow = parkingClear(wp.sites, { inside: (x, z) => driven.inside(x, z), nearest: driven.nearest }).narrow;
+  R.width = { cars: wp.sites.length, onTrafficLane: wpLane, leavesUnder3m: wpNarrow, narrowStretches, parkBlocked: graphW.stats.fit.parkBlocked || 0, ...wp.stats };
   R.parking = { cars: cars.length, onNoParkingSide: noPark, leavesUnder3m: narrow, onTrafficLane: onLaneBefore, after: { cars: pc.kept.length, droppedOnLane: pc.onLane, droppedNarrow: pc.narrow } };
   R.ms = Date.now() - t0;
   results.push(R);
   const f = (o) => Object.entries(o).filter(([, v]) => v.inLane).map(([k, v]) => `${k} ${v.inLane}/${v.n}`).join(", ") || "none";
-  console.log(`${T}: in a lane before: ${f(R.before)} | after: ${f(R.after)} | heads wrong ${R.heading.before} -> ${R.heading.after}/${R.heading.of} | cars ${cars.length}: no-parking side ${noPark}, < ${PASS} m left ${narrow}, on a traffic lane ${R.parking.onTrafficLane} -> kept ${pc.kept.length} (${R.ms} ms)`);
+  console.log(`${T}: in a lane before: ${f(R.before)} | after: ${f(R.after)} | heads wrong ${R.heading.before} -> ${R.heading.after}/${R.heading.of} | cars ${cars.length}: no-parking side ${noPark}, < ${PASS} m left ${narrow}, on a traffic lane ${R.parking.onTrafficLane} -> kept ${pc.kept.length} | width rule: ${R.width.cars} cars, on a lane ${R.width.onTrafficLane}, < 3 m ${R.width.leavesUnder3m}, narrow stretches ${narrowStretches} (${R.ms} ms)`);
 }
 const sum = { tiles: results.length, before: {}, after: {}, heading: { before: 0, after: 0, of: 0 }, parking: { cars: 0, onNoParkingSide: 0, leavesUnder3m: 0, onTrafficLane: 0, keptAfter: 0 } };
 for (const r of results) {
@@ -138,6 +146,8 @@ for (const r of results) {
   for (const k of ["before", "after", "of"]) sum.heading[k] += r.heading[k];
   for (const k of ["cars", "onNoParkingSide", "leavesUnder3m", "onTrafficLane"]) sum.parking[k] += r.parking[k];
   sum.parking.keptAfter += r.parking.after.cars;
+  sum.width ??= { cars: 0, onTrafficLane: 0, leavesUnder3m: 0, narrowStretches: 0, parkBlocked: 0, slots: 0, both: 0, one: 0, none: 0, noWidth: 0, dropped: 0, driveway: 0, taggedNo: 0, empty: 0 };
+  for (const k of Object.keys(sum.width)) sum.width[k] += r.width[k] ?? 0;
 }
 console.log(JSON.stringify(sum, null, 1));
 if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ summary: sum, tiles: results }, null, 1));
