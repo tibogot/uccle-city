@@ -40,7 +40,7 @@ Left on A: walls / fascia are flat vertex colour (no concrete texture); no green
 check the deck/UrbIS joint heights at both ends at eye level; the tram rail profile (data/transit/tram_profile.json)
 vs the deck top was not measured (looked right from the road).
 
-## B. Street furniture on the carriageway — CODE WRITTEN, NOT YET TESTED IN THE BROWSER
+## B. Street furniture on the carriageway — DONE in code and audited in node, NOT YET SEEN IN THE BROWSER
 - `viewer/streets/carriageway.js`: `carriageway(roads, {classAt, onDeck}).inside(x, z, margin)` (UrbIS class where
   measured, else the OSM carriageway band from the lanes). Per tile in `window.__carriage` ({test, bounds}).
 - Signals (`viewer/furniture.js`, `?signals=old`): one post per OSM signal point on the right kerb of the approach toward
@@ -48,15 +48,64 @@ vs the deck top was not measured (looked right from the road).
   traffic (yaw = atan2(tx, tz)); mid-block points: one post per kerb. Never left inside a carriageway (pushed out).
 - Tram poles (`viewer/tram.js`, `?trampoles=old`): a pole that would stand in a carriageway moves to the nearest kerb on
   either side, its cantilever scaled to reach the track (new InstancedMesh "tram-pole-arms"); none within 9 m: no pole.
-NEXT: load I6 / H6 / E4 with `&tilecache=0`, check signals and poles (images 56-58 spots), then write
-`debug/furnitureAudit.js`: for every instance of furniture-signal, tram-poles, street-lamps, furniture-stopPole,
-streetkit poles, test `window.__carriage` (tile whose bounds hold it) `.test.inside(x, z, 0.2)`; report counts per tile.
+Placement code is now three-free (viewer/streets/signalPlace.js, tramPoles.js, lampPlace.js, parkPlace.js, fitCore.js),
+so the audit runs it in node.
 
-## C, D, E, F — NOT STARTED
-- C: lane markings off the curves / into walls (image 56); road widths vs OSM width/lanes + aerial on a street sample.
-- D: traffic through parked cars, cars sunk on slopes (image 54: wheels below the road; check the parked/traffic car Y
-  vs the drawn surface + pitch), parked cars where no parking.
-- E: window / door surround z-fight (51, 55, 56), gate pier with no cap (52-53: the cap is only on two sides),
+## AUDITS without the browser (2026-11-16, after the restart)
+- `node --import ./tools/road_audit/register.mjs tools/audit/streetAudit.mjs [--out FILE] T... | --all`: the road
+  stage per tile, then the city's own placement, "before" (old placement) and "after" (default now). A post is "in a
+  lane" when its centre is in a DRIVEN lane (UrbIS roadway / tram road; else the OSM carriageway band); "deep" = >= 0.6 m
+  in. Results: docs/citydefects/street_audit.json (all 120 tiles, final run after every fix below):
+  | kind | before: in a lane (deep) / n | after: in a lane (deep) / n |
+  |---|---|---|
+  | signal posts | 122 (88) / 410 | 5 (1) / 249 |
+  | signal heads facing the wrong way (> 45 deg off the coming traffic) | 410 / 410 | 0 / 249 |
+  | tram poles | 437 (270) / 790 | 49 (0) / 787 |
+  | lamps | 0 / 6624 | 0 |
+  | signs (data/streetkit) | 258 (181) / 1792 | 104 (93) |
+  | plate posts (data/streetkit) | 361 (307) / 748 | 124 (115) |
+  | STIB stop poles / shelters (data/stops) | 64 (44) / 278, 9 / 85 | 20 (18), 5 |
+  | bike boxes / bins / hoops / benches / glass banks (data/furniture) | 51 / 18 / 15 / 18 / 4 | 0 / 14 / 2 / 18 / 2 |
+  | parked cars | 16,545 slots: 10,973 within 1.95 m of a traffic lane, 4,162 leaving < 3 m, 0 on an OSM no-parking side | 5,468 kept |
+  The data layers' leftovers have no measured kerb within 6 m (roads without UrbIS surfaces, or a square): next step is
+  the snap in their builders with the OSM band. Benches unchanged: they are in parks / squares classed as roadway?
+  to look at in the browser.
+- `debug/furnitureAudit.js` (city page): every drawn pole-like instance vs `window.__carriage`. Needs the browser turn.
+- `tools/audit/road_widths.py` (venv python): OSM width tags vs the measured UrbIS carriageway, 53 ways:
+  median measured - tag = +0.7 m (measured WIDER), 29 within 1 m, 21 wider by > 1 m, 3 narrower by > 1 m.
+  docs/citydefects/road_widths.json.
+
+## C. Road widths, lane markings
+- Widths: NOT a systematic narrowing in the source. The drawn carriageway IS the UrbIS polygon, and UrbIS is not
+  narrower than OSM. What makes streets look and drive narrow: parked cars. Their slots come from the lanes BEFORE the
+  width fit (type-default "guess" parking on both kerbs), while the traffic drives the fitted lanes. Sample of 5 tiles:
+  558 / 877 parked cars stood within 1.95 m of a traffic lane's centre line (traffic through them), 176 left < 3 m of
+  street. Fixed under D.
+- Lane markings: the road checker (tools/road_audit, C8 "road leaves the measured street" = OSM chords on bends, C4
+  lane / centre / edge paint off the carriageway) on I6 / E4 / J5: 57 C8 drifts, 36 C4. Tried: re-centring every OSM
+  centre line on the measured carriageway before the engine (viewer/streets/recentre.js): drifts 57 -> 48, C4 36 -> 29,
+  but folds 14 -> 23 and coplanar overlaps 134 -> 225. Left OPT-IN (`?recentre=1`). Next: only re-centre roads the
+  checker flags as drifting, keep the junction arms fixed longer, re-check C9.
+  Image 56's spot was not located yet (needs the browser or the owner's position).
+
+## D. Cars
+- Parked cars (`viewer/streets/parkPlace.js parkingClear`, `?parkclear=old`): a slot is dropped when the car would
+  stand within 1.95 m of a traffic lane's centre line, or leave less than 3 m of carriageway to the far kerb (with a car
+  kept opposite). City: 16,545 -> 5,468 parked cars (sample of 5 tiles: 877 -> 304). This is a BIG visual change:
+  most residential streets lose their parked cars, because the width fit drops the parking lane where a driving lane +
+  parking do not fit and the traffic then drives that width. Owner decision needed. The alternative (keep the cars, give
+  narrow two-way streets one shared lane in the traffic graph) is a traffic-engine change. OSM no-parking sides: 0 cars on them (the pipeline already respects parking=no).
+- Sunk on slopes (`viewer/cars.js wheelFit`, `?carfit=old`): parked cars pitched / rolled onto their four wheels'
+  ground and lifted until no wheel is below it (was: level at the centre's height). Moving traffic already pitched.
+
+## E. Defects
+- Gate pier with no cap / L-shaped cap (52-53): FIXED. `viewer/gardens/gardenGeom.js`: the pier cap's top (margin
+  ring + pyramid) was wound facing DOWN (FrontSide material: culled from above, the hollow pier seen through), and every
+  wall coping (extrudeX) was wound INWARD. A node winding check of all boxy garden pieces: 0 faces inward now (was:
+  every coping face, the pier cap tops).
+
+## E (rest), F — NOT STARTED (need the browser to locate / check)
+- E: window / door surround z-fight (51, 55, 56),
   banded flat roofs (59). Hero "library has no X: temporary material": cause found — `viewer/materials/shipped.js`
   returns null on purpose for names without a SHIPPED baked set (only 12: brick x3, stone x2, slate, cobbles, asphalt,
   paving, copper_patina, render_white, roof_tiles_red); zinc_roof, glass_window, cast_iron_green, painted_metal_white,

@@ -63,7 +63,7 @@ import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
-import { carriageway } from "./streets/carriageway.js";
+import { carriageway, docOffLanes } from "./streets/carriageway.js";
 import { parkingClear } from "./streets/parkPlace.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
@@ -334,6 +334,7 @@ let trackProf = null, worldRef = null;
 // OSM road-bridge decks (viewer/streets/bridgeDecks.js) for walk / third person / the car: world.decks, one per bridge
 // (a bridge is in every tile whose roads.json buffer reaches it: counted, removed with its last tile)
 const bridgeDeckRefs = new Map();     // road id -> { fn, n }
+const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
 const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars off the traffic lanes, the street left open
 const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
 const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
@@ -819,9 +820,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const tramSurface = BRIDGE_PLAN ? (x, z) => deckAt(x, z) ?? hm.surface(x, z) + CARVE : (x, z) => hm.surface(x, z) + CARVE;
   const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt });
   own.features.add(tram.group);
-  const stopCounts = cityStops.addTile(entry.name, stopsDoc, own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
-  const furnCounts = cityFurniture.addTile(entry.name, furnDoc, own.features);
-  const skCounts = cityStreetKit.addTile(entry.name, skDoc, own.features);
+  // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
+  // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
+  const lanesAt = FURN_SNAP && fit ? carriageway(roads, { classAt: fit.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
+  const snap = (doc, paths) => { if (!lanesAt) return doc; const r = docOffLanes(doc, paths, lanesAt, fit); snapMoved += r.moved; return r.doc; };
+  let snapMoved = 0;
+  const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]]), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
+  const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]), own.features);
+  const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, [["signs"], ["posts"]]), own.features);
+  if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
   if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);

@@ -86,3 +86,35 @@ export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = 
   };
   return { inside, nearest: (x, z) => near(x, z) };
 }
+
+// POINT FURNITURE OUT OF THE LANES (citydefects 2026-11-16): the baked data layers (data/streetkit signs / plate posts,
+// data/stops poles / shelters / panels, data/furniture benches / bins / hoops / bike boxes / glass banks) were placed by
+// their builders against older street edges: 258 signs, 361 plate posts, 64 stop poles, 51 bike boxes stood in a driven
+// lane city-wide (tools/audit/streetAudit.mjs). At load, a point in a lane moves onto the nearest raised surface, 0.5 m
+// behind the measured kerb (as the lamps), keeping its yaw; no kerb within 6 m: it stays.
+/** (x, z) -> { x, z, moved } . lanes: carriageway(..., { lanesOnly: true }); fit: viewer/streets/fitCore.js streetFit */
+export function offLane(x, z, lanes, fit) {
+  if (!lanes?.inside(x, z, 0) || !fit) return { x, z, moved: false };
+  const k = fit.nearKerb(x, z, 6);
+  if (!k) return { x, z, moved: false };
+  for (const back of [0.5, 0.35, 0.8, 1.2]) {
+    const qx = k.x + k.lx * back, qz = k.z + k.lz * back;
+    if (fit.lift(qx, qz) > 0 && !lanes.inside(qx, qz, 0)) return { x: qx, z: qz, moved: true };
+  }
+  return { x, z, moved: false };
+}
+
+/** a data layer doc with every listed point moved out of the lanes (a copy; a baked y gets the kerb's rise: + the
+ *  measured lift there - the lift where it stood). paths: [["stops", "pole"], ["signs"], ...] */
+export function docOffLanes(doc, paths, lanes, fit) {
+  if (!doc) return { doc, moved: 0 };
+  let moved = 0;
+  const fix = (p) => { if (!p || typeof p.x !== "number") return p; const r = offLane(p.x, p.z, lanes, fit); if (!r.moved) return p; moved++;
+    return { ...p, x: r.x, z: r.z, ...(typeof p.y === "number" ? { y: p.y + fit.lift(r.x, r.z) - fit.lift(p.x, p.z) } : {}) }; };
+  const out = { ...doc };
+  for (const [key, sub] of paths) {
+    if (!Array.isArray(doc[key])) continue;
+    out[key] = doc[key].map((it) => (sub ? (it?.[sub] ? { ...it, [sub]: fix(it[sub]) } : it) : fix(it)));
+  }
+  return { doc: out, moved };
+}

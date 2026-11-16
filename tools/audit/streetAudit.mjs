@@ -6,6 +6,7 @@
 //   node --import ./tools/road_audit/register.mjs tools/audit/streetAudit.mjs [--out docs/citydefects/street_audit.json] T... | --all
 //
 // Per tile, "before" (the placement before citydefects) and "after" (the default now):
+//   (data layers: "after" = moved behind the nearest kerb at load, viewer/streets/carriageway.js docOffLanes)
 //   inLane     posts whose centre is inside a driven lane (viewer/streets/carriageway.js lanesOnly: the measured UrbIS
 //              classes roadway / tram road where the tile has them, else the OSM carriageway band; a parking bay is
 //              not a lane: Brussels bike boxes stand in them), by kind:
@@ -21,7 +22,7 @@ import { loadTile, allTiles, ROOT } from "../road_audit/tile.mjs";
 
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
-const { carriageway } = await imp("viewer/streets/carriageway.js");
+const { carriageway, offLane } = await imp("viewer/streets/carriageway.js");
 const { signalSites } = await imp("viewer/streets/signalPlace.js");
 const { tramPoleSites } = await imp("viewer/streets/tramPoles.js");
 const { placedLampSites } = await imp("viewer/streets/lampPlace.js");
@@ -89,7 +90,11 @@ for (const T of TILES) {
     sign: sk?.signs, post: sk?.posts,
     stopPole: (stops?.stops || []).map((s) => s.pole), shelter: (stops?.stops || []).filter((s) => s.shelter).map((s) => s.shelter), adpanel: stops?.panels,
   };
-  for (const [k, list] of Object.entries(layers)) if (list?.length) { inLane(list, k, "before"); R.after[k] = R.before[k]; }
+  // after: main.js moves each point in a driven lane behind the nearest kerb (carriageway.js docOffLanes)
+  for (const [k, list] of Object.entries(layers)) if (list?.length) {
+    inLane(list, k, "before");
+    inLane(list.map((p) => (p && typeof p.x === "number" ? { ...p, ...offLane(p.x, p.z, lanes, fit) } : p)).filter(Boolean), k, "after");
+  }
   // parked cars (as main.js: the lanes before the width fit, each against the measured kerb)
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
   const cars = carSites(carRoads, feats, bounds, fit?.placeCar);
