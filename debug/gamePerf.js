@@ -311,3 +311,26 @@ export async function bench({ start = 20, drive = 40, chase = 30 } = {}) {
   window.__bench = full;
   return out;
 }
+
+/** one frame's render objects per pass (main / shadow / post), by top-level group and by tile: what the draws are */
+export async function draws() {
+  const r = window.viewer.renderer, orig = r._renderObjectDirect, passes = {};
+  let on = false;
+  const top = (o) => { let p = o; while (p && p.parent && !p.parent.isScene) p = p.parent; return p?.name || p?.type || "?"; };
+  const tileOf = (o) => { for (let p = o; p; p = p.parent) { const m = /^([A-O]\d{1,2})-/.exec(p.name || ""); if (m) return m[1]; } return null; };
+  r._renderObjectDirect = function (object, material, scene, camera) {
+    if (on) {
+      const k = camera.isOrthographicCamera ? (scene.isScene ? "shadow" : "post") : "main";
+      const P = (passes[k] ||= { n: 0, top: {}, tile: {}, objs: {} });
+      P.n++; const t = top(object); P.top[t] = (P.top[t] || 0) + 1;
+      const tl = tileOf(object); if (tl) P.tile[tl] = (P.tile[tl] || 0) + 1;
+      let path = object.name || object.type; for (let o = object.parent, d = 0; o && o.parent && d < 2; o = o.parent, d++) path = `${o.name || o.type}/${path}`;
+      P.objs[path] = (P.objs[path] || 0) + 1;
+    }
+    return orig.apply(this, arguments);
+  };
+  await new Promise((res) => requestAnimationFrame(() => { on = true; requestAnimationFrame(() => { on = false; res(); }); }));
+  r._renderObjectDirect = orig;
+  const s = (o, n = 30) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
+  return Object.fromEntries(Object.entries(passes).map(([k, P]) => [k, { n: P.n, top: s(P.top), tile: s(P.tile), objs: s(P.objs, 40) }]));
+}
