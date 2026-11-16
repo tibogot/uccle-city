@@ -21,7 +21,7 @@ import { setHudHidden } from "./devHud.js";
 import { cityWeather } from "./weather/cityWeather.js";
 
 const TIMES = ["golden", "midday", "overcast", "twilight", "night", "misty"];
-const CHARS = ["hoodie", "casual", "capsule"];
+const CHARS = ["ual", "hoodie", "casual", "capsule"];
 const FACETED = ["hatch_s", "hatch_c", "estate", "saloon", "suv", "van_c", "van_p", "taxi"];   // models/cars/cars2.glb (+ police) / faceted.glb
 const CAR_SRC = /[?&]cars=old(&|$)/.test(location.search) ? "faceted" : "cars2";              // viewer/drive/carPacks.js FLEET_SOURCE
 const NAV = new Set(FEATURES.filter((f) => f.group === "nav").map((f) => f.key));
@@ -205,7 +205,7 @@ export function createDevPanel(ctx) {
     vfog: !!lighting.vfogOn, fogDensity: lighting.vfogParams?.density ?? 0.014, fogTop: lighting.vfogParams?.top ?? 82, fogFalloff: lighting.vfogParams?.falloff ?? 18,
     lampPower: uLampPower.value, ao: pipe?.uniforms.ao.value ?? 0.6, ssr: pipe?.uniforms.ssr.value ?? 1, bloom: pipe?.bloomPass?.strength.value ?? 0.24,
     skyHaze: dev.haze, shadows: lighting.sun.castShadow, fov: camera.fov,
-    car: params.get("car") || `${CAR_SRC}:hatch_c`, char: params.get("char") || "hoodie", parked: true,
+    car: params.get("car") || `${CAR_SRC}:hatch_c`, char: params.get("char") || "ual", parked: true,
   };
 
   // ---------------------------------------------------------------- Go to & share
@@ -281,7 +281,7 @@ export function createDevPanel(ctx) {
   });
   fC.add({ on: /[?&]drivedebug=1/.test(location.search) }, "on").name("car colliders (G)").onChange((v) => { driver.debug.visible = v; driver.debugWanted = v; setParam("drivedebug", v ? "1" : null); });
   fC.add(S, "char", CHARS).name("character (3rd person)").onChange(async (v) => {
-    setParam("char", v, "hoodie");
+    setParam("char", v, "ual");
     const t = getThird();
     if (!t) { log("third person: the character applies when the mode starts"); return; }
     try { await t.tp.useCharacter(v, renderer); t.character = v; log(`third person: ${v}`); } catch (e) { log(`third person: ${v} failed (${e.message})`); }

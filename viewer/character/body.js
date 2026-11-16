@@ -10,9 +10,12 @@
 // authored speed so the feet don't skate), jump on take-off, fall when airborne and descending; cross-fades of
 // 0.15-0.25 s. Clip names are matched case-insensitively, also as substrings ("Armature|Run" matches "run").
 // Fading (camera very close): the capsule swaps to a transparent twin material (both compiled at start: no hitch).
+// A character with its own clip set and metadata (opts.system = "loco": the UAL mannequin, ?char=ual) runs the
+// locomotion graph instead (locomotion.js: phase-synced gaits, stairs, jump / fall / land, body fit + leg lift).
 import * as THREE from "three/webgpu";
 import { color, float, mix, positionLocal, normalView, uniform, smoothstep, abs, dot, vec3 } from "three/tsl";
 import { FootIK } from "./footIK.js";
+import { Locomotion } from "./locomotion.js";
 
 const ROLES = ["idle", "walk", "run", "jump", "fall"];
 const TARGET = { idle: 0, walk: 0, run: 0, jump: 0, fall: 0 };
@@ -98,6 +101,15 @@ export class CharacterBody {
     this.model = holder; this.modelInner = inner; this.modelScale = s;
     this.root.add(holder);
     this.capsuleGroup.visible = false;
+    // a character with its own clip set (the UAL rig): the locomotion graph + body fit (locomotion.js)
+    if (opts.system === "loco") {
+      this.loco = new Locomotion(this, model, inner, gltf.animations || [], opts);
+      this.mixer = this.loco.mixer; this.actions = {}; this.hold = {};
+      this.walkSpeed = this.loco.walkSpeed; this.runSpeed = this.loco.runSpeed;
+      this.footIK = null; this.legIK = this.loco.ik;
+      return Object.fromEntries(Object.entries(this.loco.role).map(([r, c]) => [r, c.name]));
+    }
+    this.loco = null; this.legIK = null;
     // clips
     this.mixer = new THREE.AnimationMixer(model);
     const anims = gltf.animations || [];
@@ -125,8 +137,19 @@ export class CharacterBody {
 
   clearModel() {
     if (this.model) { this.root.remove(this.model); this.mixer?.stopAllAction(); }
-    this.model = null; this.mixer = null; this.actions = {}; this.footIK = null; this.capsuleGroup.visible = true;
+    this.model = null; this.mixer = null; this.actions = {}; this.footIK = null; this.loco = null; this.legIK = null; this.capsuleGroup.visible = true;
   }
+
+  /** Back to standing (a teleport): the locomotion graph from idle. */
+  resetPose() { this.loco?.reset(); }
+  /** The stair clip role for a flight (dir +1 up / -1 down), null without one (locomotion characters only). */
+  stairRole(dir) {
+    if (!this.loco || !this.loco.p.stairClips) return null;
+    const R = this.loco.role;
+    return dir > 0 ? (R.stairsUp ? "stairsUp" : null) : (R.stairsDown ? "stairsDown" : null);
+  }
+  /** Steps per second of that stair clip at its own speed (a loop = two steps), 0 without one. */
+  stairCadence(dir) { const r = this.stairRole(dir); return r ? 2 / this.loco.role[r].dur : 0; }
 
   /** Objects + materials to render once so every variant is compiled up front. */
   warmModel() { return (this.modelMats || []).map((m) => [m.mesh, m.fade, m.solid, ...(m.solidV ? [m.fadeV, m.solidV] : [])]); }
@@ -157,6 +180,13 @@ export class CharacterBody {
     }
     const v = this.variantOn;
     for (let i = 0; i < this.modelMats.length; i++) { const m = this.modelMats[i]; m.mesh.material = v && m.solidV ? (fade ? m.fadeV : m.solidV) : fade ? m.fade : m.solid; }
+    if (this.loco) {
+      if (dt <= 0) return;                       // (paused: keep the last pose)
+      this.loco.ikOn = this.ikOn !== false;
+      this.loco.update(dt, x, y, z, yaw, st, world);
+      this.ikMs = this.loco.ikMs;
+      return;
+    }
     // the animation state machine (weights eased toward targets)
     const A = this.actions, w = this._w, target = TARGET;
     for (let i = 0; i < ROLES.length; i++) target[ROLES[i]] = 0;

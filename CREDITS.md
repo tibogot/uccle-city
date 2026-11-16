@@ -213,6 +213,13 @@ material colours baked to vertex colours.
 |---|---|---|---|---|
 | **Hoodie Character** (poly.pizza/m/gKLBoRsyKe) and **Casual Character** (poly.pizza/m/kZ3DmIoGip), from the **Ultimate Modular Men Pack** (Feb 2022), quaternius.com/packs/ultimatemodularcharacters.html (the pack's Google Drive download was over quota) | Quaternius (quaternius.com) | **CC0 1.0** (pack page: "CC0", linked to creativecommons.org/publicdomain/zero/1.0; poly.pizza lists both "Public Domain (CC0)") | the meshes, skeleton and the Idle_Neutral / Walk / Run clips (Run also held as the jump / fall pose) | 2026-11-05, the pack page and both poly.pizza pages |
 
+| **Universal Animation Library 1** (Standard, free tier) and **Universal Animation Library 2** (Standard, free tier), quaternius.com/packs/universalanimationlibrary.html and .../universalanimationlibrary2.html, itch.io/quaternius; raw zips + extracted files in `data/raw/characters/ual1/` and `ual2/` (git-ignored; UAL1 downloaded 2026-11-11, UAL2 2026-11-06) | Quaternius (quaternius.com) | **CC0 1.0** (`License.txt` in both packs: "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication") | **the default third-person character** (`?char=ual`): the UAL1 **mannequin** (placeholder body, its two materials baked to vertex colours) and its universal rig; clips Idle_Loop, Walk_Loop, Jog_Fwd_Loop, Sprint_Loop, Crouch_Idle_Loop, Crouch_Fwd_Loop, Jump_Start, Jump_Loop, Jump_Land, Roll, Idle_Talking_Loop (UAL1) and Idle_FoldArms_Loop, Idle_TalkingPhone_Loop (UAL2); stair clips synthesised from Walk_Loop. Built by `tools/characters/ualBuild.mjs` into `models/characters/ual.glb` + `ual.json` | 2026-11-16, both packs' License.txt |
+
+The free tiers hold 43 clips each (UAL1: locomotion walk / jog / sprint / crouch, jump, roll, swim, sit, pistol, sword,
+spell, emotes; UAL2: farming, combat, parkour climb / slide, zombie, idles) on the same 65-bone rig; no start / stop /
+turn / strafe / stairs clips (those are in the paid tiers): the turn on the spot is stepped with the walk, the stairs
+are synthesised offline (`ualBuild.mjs`). UAL2's female mannequin (`Mannequin_F`) shares the rig; not used yet.
+
 Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 pack above is used), and
 three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).
 
