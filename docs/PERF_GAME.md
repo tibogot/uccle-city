@@ -167,6 +167,6 @@ So the "fixed" ~7-8 ms is mostly per-object submission (~390 objects), not post 
 4. Close the stray parallel-pipelines window; landmark LOD2 in one draw (vertex colours, far only): -0.3..-0.5 ms.
 5. matrixAutoUpdate = false on static objects under the tile and landmark roots (no compose per frame): -0.2..-0.4 ms.
 
-Round 3 changes so far (code only, not measured): `?compilepar=` (default 3 compile jobs in flight, 1 = before),
+Round 3 changes so far (code only, not measured): `?readysweep=old` (idea 4: the stale window wrapper dropped), `?compilepar=` (default 3 compile jobs in flight, 1 = before),
 `?landmarksearly=old` (far landmarks load during the boot when the loader will hold), `debug/heapAudit.js` (what
 holds the heap, by root / path, without a snapshot).

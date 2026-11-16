@@ -1801,6 +1801,11 @@ async function main() {
   // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
   if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
   if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
+  // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
+  // Pipelines.isReady (called on EVERY draw) and restore what they saw at their open: windows that overlap out of order
+  // leave a closed window's wrapper in place for good (~0.1 ms a frame, measured in the drive trace). isReady is only
+  // a counter there: the instance override is dropped every 3 s (an open window just stops counting its skipped draws)
+  if (params.get("readysweep") !== "old") setInterval(() => { const P = renderer._pipelines; if (P && Object.prototype.hasOwnProperty.call(P, "isReady")) delete P.isReady; }, 3000);
   closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
   if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
