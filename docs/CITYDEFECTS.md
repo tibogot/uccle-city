@@ -155,6 +155,23 @@ so the audit runs it in node.
   modern front with a lit sign box (data/shops/terraces.json). F_white_night_after.jpg. UrbIS puts 662 on the brick
   corner building next to vrac&compagnie; the white rendered house beside it may be the real one: owner to confirm.
 
+## AFTER THE BROWSER CHECK (code / data, 2026-11-16 evening)
+- PARTIAL WALLS (`viewer/wallRepair.js`, in facadeGeom.analyseBuildings; `?wallfix=old`): per outer footprint edge, the
+  UrbIS wall triangles lying on it and their coverage of its wall (0.25 m samples from the base to the edge's own top
+  line). Under 85 % with >= 1 m2 uncovered and no party stretch (another footprint 0.4 m out on either side): the edge's
+  wall is rebuilt as one strip from base to top, its own triangles dropped. `node tools/audit/wallAudit.mjs --all`:
+  1,561 of 134,539 edges (22,653 m2 of hole) -> 0 (docs/citydefects/wall_audit.json). Carsoel 13 (buildingsolid/538119):
+  its proud front had 1 wall triangle over the door, now 13 (the kit's openings cut it). To see in the browser.
+- DECK LOOK (`?decklook=old`): the plan deck's triangles carry a material slot; the carriageway (the bridge road's band,
+  diagonal across the deck as the real one) uses the streets' own asphalt material (roadPaint.js asphaltMaterial: the
+  same tone / baked texture as the street it continues), the sidewalk areas the streets' slab material, the kerbs its
+  kerb stone, the fascia / walls / upstands / soffit the library's cast concrete (concrete_white), the rails dark steel.
+  To see in the browser (the tone at both deck ends, the concrete scale under the deck).
+- FLAT-ROOF BANDS: offline, 16 % of I6's flat-roof triangles (516 / 3,283; I5 254 / 2,646) had vertex normals > 1 deg off
+  their plane (7 % > 5 deg): the roof's 32 deg crease smoothing averaged them with a slightly pitched neighbour. Now
+  their face normal (`?roofflat=old`): 0 / 0. The other suspects are left to test live with `debug/roofBands.js`
+  (topology() / at() / bias() / noShadow() / plain()): shadow acne at grazing sun, the roof material's own tone.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).

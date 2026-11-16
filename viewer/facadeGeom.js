@@ -958,7 +958,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const h = Math.hypot(nx, nz) || 1, dx = nx / h, dz = nz / h;   // downhill, horizontal
       for (const q of p) {
         R.position.push(q[0], q[1], q[2]);
-        const sn = smooth(tri, q);
+        // citydefects (owner image 59, ?roofflat=old): a flat roof's triangles keep their FACE normal; the 32 deg crease
+        // smoothing averaged them with a slightly pitched neighbour (a parapet cap, a gutter strip): 16 % of I6's flat-roof
+        // triangles carried normals 1-30 deg off the plane, broad light / dark bands across the roof under a low sun
+        const sn = flat && opts.roofFlat !== false ? tri.n : smooth(tri, q);
         R.normal.push(sn[0], sn[1], sn[2]);
         R.aRoofCol.push(rc[0], rc[1], rc[2]);
         if (flat) R.aRoof.push(q[0] * fc + q[2] * fs, -q[0] * fs + q[2] * fc, 1, roofStyle);
