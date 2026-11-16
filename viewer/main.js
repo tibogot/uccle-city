@@ -1790,9 +1790,11 @@ async function main() {
     openHoldWorkers(2);
     const built = manifest.tiles.filter((t) => t.status !== "missing");
     const gap = (t) => Math.max(t.bounds.x[0] - x, 0, x - t.bounds.x[1], t.bounds.z[0] - z, 0, z - t.bounds.z[1]);
-    const needFull = built.filter((t) => gap(t) <= near).map((t) => t.name);
     const ctr = (t) => [(t.bounds.x[0] + t.bounds.x[1]) / 2, (t.bounds.z[0] + t.bounds.z[1]) / 2];
     const home = built.find((t) => gap(t) === 0) || built[0], [hx, hz] = ctr(home);
+    const ringOf = (t) => { const [tx, tz] = ctr(t); return Math.round(Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T); };
+    // (only tiles the streaming will load in full: the player's tile's ring)
+    const needFull = built.filter((t) => gap(t) <= near && ringOf(t) <= ring).map((t) => t.name);
     // the far tiles the first views can reach (within liteNear of the point; the rest of the far ring fades in later, km away)
     const needLite = built.filter((t) => { const [tx, tz] = ctr(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T <= far + 0.01 && gap(t) <= liteNear; }).map((t) => t.name);
     const has = (n) => world.tiles.some((t) => t.name === n);
@@ -1849,7 +1851,8 @@ async function main() {
       const r = await teleportNow(o);
       await o.after?.(r);                                  // (the dev panel's Go to: its camera, set before the area check)
       const P = getPlayer();
-      r.ready = await areaReady({ x: P.x, z: P.z, label });
+      // (an orbit / aerial view sees past the street: the ring's full tiles within 550 m, not 300)
+      r.ready = await areaReady({ x: P.x, z: P.z, label, near: P.mode === "orbit" || P.mode === "fly" ? 550 : 300 });
       return r;
     } finally { await playLoader.close(); }
   };

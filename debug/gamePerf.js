@@ -291,3 +291,23 @@ export async function idle({ seconds = 20 } = {}) { return measure(seconds, null
 export function brief(r = window.__gamePerfLast) {
   return { label: r.label, fps: r.fps, avg: r.frameMs.avg, p99: r.frameMs.p99, low1: r.frameMs.low1pct, worst: r.frameMs.worst, o33: r.frameMs.over33, o50: r.frameMs.over50, cpu: r.cpuLoopMs.avg, cpu99: r.cpuLoopMs.p99, gpu: r.gpuMs.avg, gpu95: r.gpuMs.p95, draws: r.draws.avg, tris: r.trisK.avg, pipes: r.pipelines.n, gc: r.gc.n, tiles: r.tiles.events.length };
 }
+
+/** the before/after protocol (docs/PERF_GAME.md): after a ?game=police page load, wait until play (loader gone or, with
+ *  ?playloader=old, the car on), then: the first 20 s of play standing (what the spawn looks like), a 40 s drive, a 30 s
+ *  chase. Returns { readyAt, start, drive, chase } briefs + the full reports in window.__bench */
+export async function bench({ start = 20, drive = 40, chase = 30 } = {}) {
+  const t0 = performance.now();
+  for (let i = 0; i < 300; i++) {
+    const el = document.getElementById("playLoader");
+    if (window.__game?.host?.driver?.on && !document.body.classList.contains("loading") && (!el || el.classList.contains("gone"))) break;
+    await sleep(500);
+  }
+  const readyAt = Math.round(performance.now());
+  const out = { readyAt, cover: Math.round(window.__coverAt || 0) };
+  const full = {};
+  if (start) { full.start = await idle({ seconds: start }); out.start = brief(full.start); }
+  if (drive) { full.drive = await police({ seconds: drive, warm: 0.5 }); out.drive = brief(full.drive); }
+  if (chase) { full.chase = await police({ seconds: chase, warm: 0.5, chase: true, to: [-200, 300] }); out.chase = { ...brief(full.chase), mission: full.chase.autopilot?.mission }; }
+  window.__bench = full;
+  return out;
+}
