@@ -136,7 +136,7 @@ export class FlightAssist {
         if (ce < py + 1.2) { const g = Math.atan2(ce - 1.5 - y, vh * s); if (g < gMax) gMax = g; }
         if (fl + clr <= py) continue;
         // blocked on the path's slope but free at the present height: just level off
-        if (vy < -0.5 && world.column) { const c = world.column(px, pz, y); if (y >= c.floor + clr && y <= c.ceil - 1.2) { if (gNeed < 0) gNeed = 0; continue; } }
+        if (vy < -0.5 && !I.stoop && V < 25 && world.column) { const c = world.column(px, pz, y); if (y >= c.floor + clr && y <= c.ceil - 1.2) { if (gNeed < 0) gNeed = 0; continue; } }
         const g = Math.atan2(fl + clr - y, vh * s);
         if (g > gNeed) gNeed = g;
         if (g > 0.55) tall = true;
@@ -148,7 +148,7 @@ export class FlightAssist {
       if (gam < -0.2 && V > 15) {
         const r = V * V / (3 * G), px = f.pos.x + vx / vh * r * 0.5, pz = f.pos.z + vz / vh * r * 0.5;
         const below = y - Math.max(floorAt(world, px, pz, y), floorAt(world, f.pos.x, f.pos.z, y));
-        if (below < r * (1 - Math.cos(gam)) * 1.25 + V * 0.3 * Math.sin(-gam) + 8) this.guard = true;
+        if (below < r * (1 - Math.cos(gam)) * 1.25 + V * 0.3 * Math.sin(-gam) - vy * 0.6 + 8) this.guard = true;
       }
       if (this.guard) {
         C.fold = Math.min(C.fold, 0.5); this.pull = true; gNeed = Math.max(gNeed, 0); mode = "pullout";
@@ -157,6 +157,9 @@ export class FlightAssist {
       if (gMax < gd && gMax >= gNeed) { gd = gMax; avoid = 1; mode = "avoid"; if (holding) this.hT = null; }
       if (gNeed > -Infinity && gNeed > gd) {
         gd = Math.min(gNeed, 0.6); avoid = 1; mode = "avoid";
+        // a tucked bird cannot pull (the tuck's lift is a tenth of the spread wing's): open the wings to clear it
+        // (browser check: stoops on the Place's pigeons went into façades at 20+ m/s with the avoid asking for a climb)
+        if (gNeed > gam + 0.15) C.fold = Math.min(C.fold, 0.3);
         if (holding) this.hT = null;
         if (tall) {
           // too tall to climb in time: also turn toward the freer side (probes 0.9 s ahead, 35 deg each side)
