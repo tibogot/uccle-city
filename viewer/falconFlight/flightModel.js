@@ -22,6 +22,8 @@ export const G = 9.81, RHO = 1.2;
  *  fixed tangential factors, touch-down under 13 m/s) */
 const TRIM_OLD = typeof location !== "undefined" && /[?&]falcontrim=old(&|$)/.test(location.search);
 const FALCON_HIT_OLD = typeof location !== "undefined" && /[?&]falconhit=old(&|$)/.test(location.search);
+/** ?falconcol=old: the contact response of collisions round 2 (falconfix, 2026-11-16, is round 3: see collide()) */
+const COL_OLD = FALCON_HIT_OLD || (typeof location !== "undefined" && /[?&]falconcol=old(&|$)/.test(location.search));
 
 /** Peregrine numbers (a ~1 kg female juvenile; see docs/FALCON_FLIGHT.md for where they come from). */
 export const FALCON = {
@@ -85,6 +87,9 @@ export class FalconFlight {
     this.mass = params.mass; this.extraMass = 0;     // + the prey
     this.air = { x: 0, y: 0, z: 0 }; this.lift = 0;
     this.contact = null; this.stun = 0; this.t = 0;
+    this.assisted = false;         // flown by flightAssist.js: no hands-off trims (the assist holds the path), cheap light beats
+    this.r3 = !COL_OLD;            // collisions round 3 (falconfix)
+    this.noLand = 0;               // s: no touch-down (just took off)
     this.forces = { lift: 0, drag: 0, thrust: 0 };
   }
 
@@ -110,6 +115,7 @@ export class FalconFlight {
     const P = this.P, m = this.mass + this.extraMass, W = m * G;
     this.t += dt;
     if (this.stun > 0) this.stun -= dt;
+    if (this.noLand > 0) this.noLand -= dt;
     const stunned = this.stun > 0;
     // ---- the wings: fold eases (tucking ~0.25 s, opening ~0.35 s); flapping opens them; stunned: spread (recovery)
     const wantFold = stunned ? 0 : C.flap > 0.05 ? Math.min(C.fold, 0.35) : C.fold;
@@ -141,25 +147,29 @@ export class FalconFlight {
     // ---- the load factor asked for: neutral holds the path (also in the turn), pull / push add / take g
     const cg = Math.cos(this.gamma);
     const hold = cg / Math.max(Math.cos(this.phi), 0.25);
-    let u = stunned ? 0.15 : clamp(C.pitch, -1, 1);
+    // (round 3: stunned = no pull: the old 0.15 asked up to +0.9 g at speed, so a bird that hit the ground or a wall
+    // climbed away from it during the "stun": the "falls, then shoots up" of the owner's playtest)
+    let u = stunned ? (this.r3 ? 0 : 0.15) : clamp(C.pitch, -1, 1);
     if (this.stall > 0) u = Math.min(u, 0.6 - 1.6 * this.stall);
     if (u < 0 && this.gamma < -1.2) u *= smooth(this.gamma, -1.45, -1.2);   // no outside loop past the vertical dive
     if (u > 0 && this.gamma > 1.2) u *= smooth(-this.gamma, -1.45, -1.2);    // no loop over the top
     // pulling asks for more g the faster the bird goes (the stoop's pull-out uses up to nMax)
     const pullG = P.pull + (P.nMax - 1 - P.pull) * smooth(V, 25, 60);
     let nCmd = hold + (u > 0 ? u * pullG : u * P.push);
+    if (stunned && this.r3) nCmd = 0.6 * hold;                             // the tumble: a short sink, no lift surge
+    const trims = !this.assisted && !(stunned && this.r3);
     // TRIM: hands off, a bird slower than its configuration's trim speed lowers the nose a little (a trimmed glider
     // settles at its best glide instead of hanging at the stall); faster than trim: the path is held (dives stay dives)
     const vTrim = lerp(P.trim[0], P.trim[1], clamp(this.fold / 0.5, 0, 1)) * (this.fold > 0.75 ? 0 : 1);
-    if (V < vTrim) nCmd -= P.trimGain * (vTrim - V) / vTrim * (1 - Math.abs(u)) * cg;
-    else if (this.fold < 0.25 && C.flap < 0.05) nCmd += 0.5 * Math.min(1, (V - vTrim) / vTrim) * (1 - Math.abs(u)) * cg * (1 - this.fold / 0.25);   // spread: back toward trim
+    if (trims && V < vTrim) nCmd -= P.trimGain * (vTrim - V) / vTrim * (1 - Math.abs(u)) * cg;
+    else if (trims && this.fold < 0.25 && C.flap < 0.05) nCmd += 0.5 * Math.min(1, (V - vTrim) / vTrim) * (1 - Math.abs(u)) * cg * (1 - this.fold / 0.25);   // spread: back toward trim
     // PATH TRIM (collisions round 2, ?falcontrim=old = the pure path hold): hands off, the held path angle relaxes to
     // the configuration's glide angle (spread ~ -4 deg at L/D 14.5, half folded ~ -7.5 deg), time constant ~1 s, as a
     // statically stable glider / a bird that is not being steered does. Before, neutral held ANY angle forever: the
     // nest launch at -11 deg went on into the roofs hands-off ("hit the ground at 11 m/s: stunned" seconds after the
     // intro), a dive released at -40 deg stayed a -40 deg dive. The tuck keeps its dive (no trim, as before); a turn
     // keeps its bank (only the path's climb / dive angle is trimmed).
-    if (!TRIM_OLD && this.fold < 0.75 && C.flap < 0.05 && !stunned) {
+    if (!TRIM_OLD && trims && !stunned && this.fold < 0.75 && C.flap < 0.05) {
       const gTrim = -Math.atan(1 / lerp(14.5, 7.6, clamp(this.fold / 0.5, 0, 1)));
       nCmd += 1.2 * clamp(gTrim - this.gamma, -0.6, 0.6) * (1 - Math.abs(u)) * (1 - this.fold / 0.75);
     }
@@ -190,7 +200,10 @@ export class FalconFlight {
     const T = this.flapLevel * P.thrust * W * clamp(1 - V / P.vFlap, 0, 1) * (0.25 + 0.75 * tired) * (1 - this.fold);
     // flapping at very low airspeed also lifts (a take-off / hover burst), from the same budget
     const Tup = this.flapLevel * W * 0.55 * clamp(1 - V / 9, 0, 1) * tired;
-    this.stamina = clamp(this.stamina + (this.flapLevel > 0.1 ? -st.drain * this.flapLevel * (1 + this.extraMass) : st.regen) * dt, 0, 1);
+    // (assisted: light cruise beats cost little, as a flap-gliding bird's; full beats cost as before: the regain falls
+    // with the beat level, the drain grows with its square)
+    if (this.assisted) this.stamina = clamp(this.stamina + (st.regen * (1 - this.flapLevel) - st.drain * this.flapLevel * this.flapLevel * (1 + this.extraMass)) * dt, 0, 1);
+    else this.stamina = clamp(this.stamina + (this.flapLevel > 0.1 ? -st.drain * this.flapLevel * (1 + this.extraMass) : st.regen) * dt, 0, 1);
     // ---- acceleration
     const ax = (L * lx - D * ex + T * ex) / m;
     const ay = (L * ly - D * ey + T * ey + Tup) / m - G;
@@ -202,7 +215,7 @@ export class FalconFlight {
     this.pos.x += this.vel.x * dt; this.pos.y += this.vel.y * dt; this.pos.z += this.vel.z * dt;
     this.V = V; this.lift = this.air.y;
     this.va.x = vax; this.va.y = vay; this.va.z = vaz;
-    if (world) this.collide(px, py, pz, world);
+    if (world) { if (this.r3) this.collide3(px, py, pz, world, dt); else this.collide(px, py, pz, world); }
     // the leaves: brushing through a crown's soft shell (world.column: the city) slows the bird (a drag that grows with
     // the depth; the dense core is a hit, in collide)
     this.brush = 0;
@@ -304,6 +317,133 @@ export class FalconFlight {
       this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx, ny, nz, vn: -vn, speed, wall, land, hard, under, tree: hitTree };
       return;
     }
+  }
+
+  /**
+   * COLLISIONS ROUND 3 (falconfix, 2026-11-16; ?falconcol=old = round 2 above). The owner: "too many issues with
+   * collision, it goes up after falling down". Found:
+   *   - the stun asked for +0.15 pull (up to +0.9 g at speed): a bird that hit something climbed away during the stun
+   *     (fixed in sub(): no pull, a short sink);
+   *   - a hard wall hit added 1.5 m/s UP, a floor hit bounced with 30 % restitution, and a slope (a pitched roof, a
+   *     crown's shoulder) turned the whole tangential speed upward: a bird skimming into a roof was thrown over it;
+   *   - a contact could set the bird ON TOP of a solid it met from the side when the floor jumped by under 1 m between
+   *     two sweep points (a crown's rim, a dormer), and the "moving out of a wall" fix of round 1 set it on top of
+   *     whatever it was beside: pops of up to several metres;
+   *   - a bird starting a substep inside the solid (a roof tile streamed in under it, a pop) was held at the "last free
+   *     point" inside it, and a bird sliding along a bent facade could stay pinned at the same point.
+   * Now: the same 0.4 m sweep through the solid AT THE BIRD'S HEIGHT (column), but
+   *   - a TOP surface only when it is at most 0.6 m above the last free point (else it is the side of the solid: a wall);
+   *     never lifted more than that;
+   *   - no bounce off a top (restitution 0), 0.15 off a wall + a 0.6 m/s push-out, the tangential speed kept minus a
+   *     Coulomb scrape (slides along facades and roofs), and the vertical speed after any contact at most what it was
+   *     (+1 m/s up a top's slope): a contact never launches the bird upward;
+   *   - landing: a top within 37 deg of level, under 6 m/s into it, slower than 9 m/s (12 flaring); none for 0.6 s after
+   *     a take-off;
+   *   - a crash (into a top > 9 m/s, a wall > 7, a ceiling > 6): a 0.7 s tumble (wings open, no control, a short sink;
+   *     the assist recovers after it);
+   *   - inside the solid at the start of a substep, or 0.3 s on walls without getting free: out to the nearest free
+   *     point (8 directions x 3 distances, then up), the velocity turned that way.
+   */
+  collide3(px, py, pz, world, dt) {
+    const R = 0.35, C = world.column ? world : null;
+    let f0, c0 = Infinity;
+    if (C) { const c = C.column(px, pz, py); f0 = c.floor; c0 = c.ceil; } else f0 = world.floor(px, pz);
+    if (py < f0 + R - 0.05 && py <= c0 - R) {
+      // started inside: a shallow one is stepped up, a deep one is moved out sideways
+      if (f0 + R - py < 0.6) { this.pos.y = Math.max(this.pos.y, f0 + R); if (this.vel.y < 0) this.vel.y = 0; return; }
+      this._getOut(px, py, pz, world);
+      return;
+    }
+    const dx = this.pos.x - px, dy = this.pos.y - py, dz = this.pos.z - pz;
+    const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy, dz) / 0.4));
+    let prevC = c0;
+    for (let s = 1; s <= steps; s++) {
+      const t = s / steps, x = px + dx * t, y = py + dy * t, z = pz + dz * t;
+      let f, ceil = Infinity, tree = null, ceilTree = null;
+      if (C) { const c = C.column(x, z, y); f = c.floor; ceil = c.ceil; tree = c.tree; ceilTree = c.ceilTree ?? null; } else f = world.floor(x, z);
+      if (y >= f + R && y <= ceil - R) { prevC = ceil; continue; }
+      const t0 = (s - 1) / steps, x0 = px + dx * t0, y0 = py + dy * t0, z0 = pz + dz * t0;
+      let nx = 0, ny = 1, nz = 0, kind = "top";
+      if (y >= f + R) {
+        if (ceil < prevC - 1) { kind = "wall"; tree = ceilTree; this.pos.x = x0; this.pos.y = y0; this.pos.z = z0; }
+        else { kind = "under"; ny = -1; tree = ceilTree; this.pos.x = x; this.pos.z = z; this.pos.y = Math.max(f + R, Math.min(y, ceil - R)); }
+      } else if (f + R - y0 > 0.6) {
+        kind = "wall"; this.pos.x = x0; this.pos.y = y0; this.pos.z = z0;
+      } else {
+        const e = 0.8;
+        const gx = (this._fl(world, x + e, z, y) - this._fl(world, x - e, z, y)) / (2 * e);
+        const gz = (this._fl(world, x, z + e, y) - this._fl(world, x, z - e, y)) / (2 * e);
+        const gl = Math.hypot(gx, 1, gz);
+        nx = -gx / gl; ny = 1 / gl; nz = -gz / gl;
+        if (ny < 0.35) { kind = "wall"; this.pos.x = x0; this.pos.y = y0; this.pos.z = z0; }
+        else { this.pos.x = x; this.pos.z = z; this.pos.y = f + R; }
+      }
+      if (kind === "wall") {
+        const hl = Math.hypot(dx, dz) || 1;
+        nx = -dx / hl; ny = 0; nz = -dz / hl;
+        const w = this._wallN(x0, y0, z0, dx, dz, world);
+        if (w && this.vel.x * w[0] + this.vel.z * w[1] < -0.3) { nx = w[0]; nz = w[1]; }
+        // (a tiny step out along the normal: the next sweep starts free)
+        this.pos.x += nx * 0.03; this.pos.z += nz * 0.03;
+      }
+      this.wallT = kind === "top" ? 0 : (this.wallT || 0) + dt;
+      this._respond3(nx, ny, nz, kind, tree);
+      if (this.wallT > 0.3) { this.wallT = 0; this._getOut(this.pos.x, this.pos.y, this.pos.z, world); }
+      return;
+    }
+    this.wallT = 0;
+  }
+  _fl(world, x, z, y) { return world.column ? world.column(x, z, y).floor : world.floor(x, z); }
+  _free(world, x, z, y) {
+    const R = 0.35;
+    if (world.column) { const c = world.column(x, z, y); return y >= c.floor + R + 0.05 && y <= c.ceil - R - 0.05; }
+    return y >= world.floor(x, z) + R + 0.05;
+  }
+  /** out of the solid: the nearest free point round (x, y, z) (8 directions x 0.8 / 1.6 / 2.8 m at the bird's height, then
+   *  1 / 2.5 / 5 m up), the velocity turned along that way (a third of its speed lost) */
+  _getOut(x, y, z, world) {
+    let bx = 0, bz = 0, by = 0, found = false;
+    for (let di = 0; di < 3 && !found; di++) {
+      const d = di === 0 ? 0.8 : di === 1 ? 1.6 : 2.8;
+      for (let k = 0; k < 8; k++) {
+        const a = k * Math.PI / 4, qx = x + Math.cos(a) * d, qz = z + Math.sin(a) * d;
+        if (this._free(world, qx, qz, y)) { bx = qx - x; bz = qz - z; found = true; break; }
+      }
+    }
+    for (let ui = 0; ui < 3 && !found; ui++) { const u = ui === 0 ? 1 : ui === 1 ? 2.5 : 5; if (this._free(world, x, z, y + u)) { by = u; found = true; } }
+    if (!found) { by = Math.max(0, this._fl(world, x, z, y + 60) + 0.4 - y); }
+    this.pos.x = x + bx; this.pos.y = y + by; this.pos.z = z + bz;
+    const v = this.vel, sp = Math.hypot(v.x, v.y, v.z) * 0.66, L = Math.hypot(bx, by, bz);
+    if (L > 1e-3) {
+      const ux = bx / L, uy = by / L, uz = bz / L, vn = v.x * ux + v.y * uy + v.z * uz;
+      // the part of the velocity into the solid removed, then a little speed out
+      if (vn < 0) { v.x -= vn * ux; v.y -= vn * uy; v.z -= vn * uz; }
+      v.x += ux * 1.0; v.z += uz * 1.0;
+      const k = Math.min(1, sp / (Math.hypot(v.x, v.y, v.z) || 1)); v.x *= k; v.y *= k; v.z *= k;
+      if (v.y > 1) v.y = 1;
+    }
+    this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx: 0, ny: 1, nz: 0, vn: 0, speed: sp, wall: true, land: false, hard: false, under: false, tree: null, out: true };
+  }
+  _respond3(nx, ny, nz, kind, tree) {
+    const v = this.vel, vyB = v.y, wall = kind === "wall", under = kind === "under", top = kind === "top";
+    const vn = v.x * nx + v.y * ny + v.z * nz, speed = Math.hypot(v.x, v.y, v.z);
+    const land = top && ny > 0.8 && this.noLand <= 0 && -vn < 6 && (speed < 9 || (this.brake > 0.3 && speed < 12));
+    if (vn < 0) {
+      const rest = top ? 0 : wall ? 0.15 : 0.1, mu = land ? 0.8 : wall ? 0.3 : 0.25;
+      const tx = v.x - vn * nx, ty = v.y - vn * ny, tz = v.z - vn * nz, tl = Math.hypot(tx, ty, tz);
+      const k = land ? 0.5 : tl > 1e-6 ? Math.max(0, tl - mu * -vn) / tl : 0;
+      v.x = tx * k - rest * vn * nx; v.y = ty * k - rest * vn * ny; v.z = tz * k - rest * vn * nz;
+      if (wall) { v.x += nx * 0.6; v.z += nz * 0.6; }
+    }
+    // a contact never launches the bird upward
+    const vyMax = Math.max(vyB, 0) + (top ? 1 : 0);
+    if (v.y > vyMax) v.y = vyMax;
+    const hard = top ? -vn > 9 : wall ? -vn > 7 : -vn > 6;
+    if (hard) { this.stun = 0.7; this.stamina = Math.max(0, this.stamina - 0.1); }
+    // (several substeps a frame: the frame reports its hardest contact, or a landing; the game clears it each frame)
+    const c = this.contact;
+    if (c && c.t > this.t - 0.06 && !land && (c.hard || c.vn > -vn)) return;
+    this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx, ny, nz, vn: -vn, speed, wall, land, hard, under, tree };
   }
 
   /** the horizontal outward normal of the solid round (x, y, z): the directions (8, at 0.7 and 1.5 m) where the bird's
