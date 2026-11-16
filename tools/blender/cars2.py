@@ -1040,8 +1040,10 @@ def build_wheel(sp, detail):
     RW, TW, RR = sp["wheelR"], sp["tyreW"], sp["rimR"]
     h = TW / 2
     if detail == 2:
-        lathe(w, [(RW * 0.97, h), (RW * 0.97, -h)], 5, lambda k, s: M["tyre"])
-        w.quad([w.v((h, RW * 0.97 * math.cos(2 * math.pi * s / 5), RW * 0.97 * math.sin(2 * math.pi * s / 5))) for s in range(5)][::-1], M["rim_dark"])
+        # a 5-sided drum with a corner straight down: it stands on the ground (joins rule), 1 mm in
+        ph = math.pi; r5 = RW + 0.001
+        lathe(w, [(r5, h), (r5, -h)], 5, lambda k, s: M["tyre"], phase=ph)
+        w.quad([w.v((h, r5 * math.cos(ph + 2 * math.pi * s / 5), r5 * math.sin(ph + 2 * math.pi * s / 5))) for s in range(5)][::-1], M["rim_dark"])
         return w.obj("wheel2", weld=True)
     N = 18 if detail == 0 else 8
     if detail == 0:
