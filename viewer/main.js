@@ -119,7 +119,7 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // tiles' shaders), ?smooth=0: every smooth-LOD change off.
 const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
 const STREAM_ORDER = params.get("streamorder") !== "old";
-const HOLD_FAST = params.get("holdfast") !== "old";
+const HOLD_FAST = params.get("holdfast") !== "old";   // perfgame round 7: tiles under the play loader: no fade-in, no awaited compiles
 // perf8 (docs/PERF_GAME.md round 8): a tile landing under the play loader runs its main-thread steps back to back (it waited
 // a rendered frame between each of its ~18 steps: ~18 city frames per tile behind the loader, ?holdslices=old)
 const HOLD_SLICES = params.get("holdslices") !== "old";
@@ -128,7 +128,11 @@ const EARLY_PACE_OLD = params.get("earlypace") === "old";
 // perf8: when the play loader takes over from the boot cover (a ?game= start, the free-roam hold), the cover lifts once the
 // node graphs are built: the pipelines' compiles, the first view's compile jobs, the loading flight's landing and the
 // GPU check run under the play loader beside the ring's tiles (warmup.js warmBoot lift; ?coverlift=old: as before)
-const COVER_LIFT = params.get("coverlift") !== "old" && PLAY_LOADER && params.get("warmup") !== "0" && (GAME_START || BOOT_HOLD);   // perfgame round 7: tiles under the play loader: no fade-in, no awaited compiles   // perfgame: stream the wanted tile nearest the player first
+const COVER_LIFT = params.get("coverlift") !== "old" && PLAY_LOADER && params.get("warmup") !== "0" && (GAME_START || BOOT_HOLD);
+// perf8: a ?game= boot no longer loads the start tile's ring as FAR tiles under the cover: the play loader then waits for
+// that whole ring in FULL anyway (settlering), so the far versions were built, drawn once and thrown away (the cover's
+// "neighbours" stage, ~6 s; the far-tile worker's time beside the full ones). ?gamering=old: as before
+const GAME_RING_FULL = COVER_LIFT && GAME_START && params.get("gamering") !== "old" && params.get("settlering") !== "old" && params.get("settlejobs") !== "loads";
 const UNLOAD_GAP = params.get("unloadgap") !== "old", UNLOAD_MARGIN = +(params.get("unloadmargin") ?? 60);   // perfgame round 2: full tiles unload by distance
 const fader = new Fader();
 /** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
@@ -722,7 +726,8 @@ function bootPrefetch(manifest, entry) {
   // as the boot and stream() take them: the start tile, its ring as far tiles (under the cover), then the ring in full
   // (?bootlite=0: one full ring tile and the two nearest far tiles under the cover, as before)
   const full = built.filter((t) => dist(t) <= ring + 0.01).sort((a, b) => dist(a) - dist(b));
-  if (params.get("bootlite") !== "0" && far > ring) bootRing = [[full[0], false], ...full.slice(1).map((e) => [e, true]), ...full.slice(1).map((e) => [e, false])];
+  if (GAME_RING_FULL) bootRing = full.map((e) => [e, false]);       // (perf8: the ring in full only, no far versions)
+  else if (params.get("bootlite") !== "0" && far > ring) bootRing = [[full[0], false], ...full.slice(1).map((e) => [e, true]), ...full.slice(1).map((e) => [e, false])];
   else {
     const lite = far > ring ? built.filter((t) => dist(t) <= far + 0.01 && dist(t) > ring + 0.01).sort((a, b) => dist(a) - dist(b)).slice(0, 2) : [];
     bootRing = [...full.slice(0, 2).map((e) => [e, false]), ...lite.map((e) => [e, true]), ...full.slice(2).map((e) => [e, false])];
@@ -1847,7 +1852,7 @@ async function main() {
       // and ONE full neighbour (the worker built it right after the start tile): a second full tile emits its shared TSL
       // functions in another order than the first (other WGSL text: new pipelines), so the warm-up must see one, or the
       // first full tile after the cover waited ~4 s on its 15 new pipelines (measured)
-      await streamBootLites();
+      if (!GAME_RING_FULL) await streamBootLites();   // (perf8: a game boot's ring comes in full under the play loader)
       // boot3 (docs/BOOT.md section 5; ?bootfull=1 = before): NO full neighbour under the cover. It was held at fade 0 for
       // the warm-up (the reveal frame showed its far tile anyway) and the cover waited ~4 s for its worker build after the
       // start tile's; now the worker builds it right after the start tile all the same and it streams in after the
