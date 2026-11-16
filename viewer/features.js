@@ -309,6 +309,13 @@ export const FEATURES = [
   num("warmchunk", "streaming", "early warm-up chunk", "Drawables per frame in the early warm-up, the GPU drained between chunks so the loading screen keeps moving (0 = one frame, as before; docs/BOOT.md).", 40, 0, 400, 10, { sub: "Boot & loading" }),
   num("pipepace", "streaming", "pipeline pacing", "At most N async render pipelines handed to the GPU process at a time, one per task (0 = all at once, as before; docs/BOOT.md).", 0, 0, 16, 1, { sub: "Boot & loading" }),
   on("sw", "streaming", "service worker cache", "Return visits read the city's data from Cache Storage (/sw.js, keyed by content hash; off: unregistered + cleared).", { sub: "Boot & loading" }),
+  // ---- perfgame (docs/PERF_GAME.md, 2026-11-16): the game lag + the loader before play
+  old("playloader", "streaming", "no play loader", "perfgame: a game start / Go to / map teleport shows the city filling in, as before; default: the play loader (viewer/loader/playLoader.js) holds until the spawn's full tiles, far ring, nearby landmarks' compiles and the first frames' pipelines are done (main.js areaReady).", { sub: "Boot & loading" }),
+  old("gameboot", "streaming", "game link boots at Saint-Job", "perfgame: ?game=police boots Saint-Job then streams the station's tiles in front of the player, as before; default: the boot starts at the game's spawn (tile E4, the station).", { sub: "Boot & loading" }),
+  on("holdworkers", "streaming", "extra tile workers under the play loader", "perfgame: while the play loader holds, up to two more full-tile workers build the spawn's tiles side by side (closed when idle after); off: the single streaming worker.", { sub: "Boot & loading" }),
+  old("streamorder", "streaming", "stream in manifest order", "perfgame: the ring's tiles stream in the manifest's order, as before; default: the one nearest the player first.", { sub: "Boot & loading" }),
+  old("asyncpipes", "perf", "sync pipelines during play", "perfgame: a pipeline the precompiles missed is created SYNCHRONOUSLY on its first draw (a 150-800 ms frame each in the police drive), as before; default: created async, the object shows a few frames later (viewer/asyncPipes.js)."),
+  old("hudskip", "perf", "hidden drive HUD still written", "perfgame: the drive mode's speed line is rewritten (innerHTML) every 6th frame even while a game hides it, as before."),
   num("loaderhold", "streaming", "loader hold (s)", "Keep the loading screen's layer this much longer after the fade (hand-over checks).", 0, 0, 10, 0.5, { sub: "Boot & loading" }),
 
   // ---------------------------------------------------------------- performance

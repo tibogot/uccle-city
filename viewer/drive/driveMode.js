@@ -15,6 +15,7 @@ import { ChaseCamera } from "./chaseCamera.js";
 import { ColliderDebug } from "./debugDraw.js";
 import { auditTile } from "./colliderAudit.js";
 import { DriveKeys } from "./input.js";
+const HUD_SKIP = new URLSearchParams(location.search).get("hudskip") !== "old";
 import { lampSites } from "../lamps.js";
 import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
@@ -364,7 +365,9 @@ export class Driver {
     this.chase.update(c, dt, this.ground, this.insideWall);
     this.debug.update(this.sets, this.ground, c, this.env.contacts > 0, 40, this.flagsOf);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
-    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0)
+    // (perfgame: not while a game hides this line: body.game-on .g-drivehud = display none; the innerHTML + its layout every
+    // 6th frame was ~0.1 ms of main thread for nothing; ?hudskip=old = always)
+    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0 && !(HUD_SKIP && document.body.classList.contains("game-on") && this.hud.classList.contains("g-drivehud")))
       this.hud.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small style="font-size:12px;color:#b8c2cc;font-weight:400">km/h${c.speed < -0.2 ? " R" : ""} · C camera · G colliders · R reset</small>`;
   }
   /** the Villo: get off at a station's free dock (x, z = the bike's front contact, yaw = the docked bike's) -> the
@@ -400,7 +403,7 @@ export class Driver {
     this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, BODIES[kind]);
     this.audio.update(c, dt);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
-    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0) {
+    if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0 && !(HUD_SKIP && document.body.classList.contains("game-on") && this.hud.classList.contains("g-drivehud"))) {
       const small = (t) => `<small style="font-size:12px;color:#b8c2cc;font-weight:400">${t}</small>`;
       const kmh = (Math.abs(c.speed) * 3.6).toFixed(0), snd = `N sound ${this.audio.muted ? "off" : "on"}`;
       if (kind === "villo") {

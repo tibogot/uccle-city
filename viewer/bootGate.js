@@ -74,3 +74,15 @@ export function neededAtReveal(names) {
     return p[0] > start.x0 - margin && p[0] < start.x1 + margin && p[1] > start.z0 - margin && p[1] < start.z1 + margin;
   });
 }
+
+/** perfgame (the play loader, main.js areaReady): does a precompile job with these root names belong to a model within
+ *  r m of (x, z)? Unknown names (tiles' groups, generic roots) count as near (true): only the far landmarks are left out */
+export function nearModel(names, x, z, r = 900) {
+  return names.some((n) => {
+    let k = ROOT_KEY(String(n || ""));
+    if ((k === "stjob" || k === "calevoet") && String(n).startsWith("bridge-")) k = `rail:${k}`;
+    const p = GATED[k];
+    if (!p) return true;
+    return Math.hypot(p[0] - x, p[1] - z) < r;
+  });
+}

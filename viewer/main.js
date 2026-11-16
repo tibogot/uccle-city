@@ -46,7 +46,7 @@ import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- up
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -65,6 +65,8 @@ import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traff
 import { cityGardens } from "./gardens/cityGardens.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
+import { keepPipelinesAsync } from "./asyncPipes.js";   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
+import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";   // perfgame: the play loader (?playloader=old: none)
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
 import { freeze } from "./staticFreeze.js";                       // perf4: ?freeze=1 the tile layers' world matrices computed once (opt-in)
@@ -77,11 +79,16 @@ import { setAORenderer } from "./aoTexture.js";
 import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered night lights (boot flag, docs/NIGHT_HOOKUP.md)
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
-import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
+import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
 const params = new URLSearchParams(location.search);
 setupHud(params);           // dev log: closed by default (it covered the view), ?log=1 opens it; the HUD folds (viewer/devHud.js)
+// perfgame (docs/PERF_GAME.md): a game link boots AT the game's spawn (the police station: tile E4) instead of booting
+// Saint-Job and then streaming the station's tiles in front of the player; ?gameboot=old: as before
+const GAME_BOOT = { police: { tile: "E4", at: "-502,-355", cam: "-470,-392,38" } };
+{ const gb = params.get("gameboot") !== "old" && !params.get("tile") && !params.get("at") && !params.get("view") && GAME_BOOT[params.get("game")];
+  if (gb) { params.set("tile", gb.tile); params.set("at", gb.at); params.set("cam", gb.cam); } }
 const TILE = (params.get("tile") || "I6").toUpperCase();    // I6 = Saint-Job (it was G4 before the grid grew to all of Uccle)
 const EYE = 1.7;            // walk-mode eye height (m)
 const CARVE = 0.12;         // terrain is pushed this far under any road surface
@@ -90,6 +97,7 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // same way, far tiles fade in and out at the ring's edge. ?tilefade=0: instant swaps (and no fade term in the
 // tiles' shaders), ?smooth=0: every smooth-LOD change off.
 const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
+const STREAM_ORDER = params.get("streamorder") !== "old";   // perfgame: stream the wanted tile nearest the player first
 const fader = new Fader();
 /** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
  *  render pipeline exists). Not under the boot cover: the warm-up draws those itself. */
@@ -534,6 +542,31 @@ function closeBootWorker() {
   bootWorker.terminate(); bootWorker = null;
 }
 // ---- /boot3
+// ---- perfgame (docs/PERF_GAME.md): EXTRA FULL-TILE WORKERS WHILE THE PLAY LOADER HOLDS. The area round a spawn needs
+// its near full tiles (3-5 s of worker each, one after another behind the single streaming worker); under the loader
+// no frame is seen, so tiles landing together cost nothing visible (the pool's 7.5 s freeze was while flying): up to
+// two more workers build them side by side (stream() prefetches into every worker of the pool), closed when idle once
+// the loader has faded. ?holdworkers=0: the single worker, as before.
+const holdWorkers = [];
+function openHoldWorkers(n = 2) {
+  if (params.get("holdworkers") === "0" || !workers.length || params.get("worker") === "0") return;
+  n = Math.min(n, Math.max(0, (navigator.hardwareConcurrency || 4) - 4));
+  while (holdWorkers.length < n) {
+    try {
+      const w = new Worker(new URL("./tileWorker.bundle.js", import.meta.url), { type: "module" });
+      w.busy = 0; w.onmessage = onWorkerMessage(w);
+      w.onerror = (e) => { log(`hold tile worker failed (${e.message || "error"})`); const i = workers.indexOf(w); if (i >= 0) workers.splice(i, 1); holdWorkers.splice(holdWorkers.indexOf(w), 1); for (const [id, p] of pendingReq) if (p.w === w) { pendingReq.delete(id); p.retry(); } };
+      workers.push(w); holdWorkers.push(w);
+    } catch { break; }
+  }
+}
+function closeHoldWorkers() {
+  for (const w of [...holdWorkers]) {
+    const i = workers.indexOf(w); if (i >= 0) workers.splice(i, 1);          // (no new request for it)
+    const end = () => { if (w.busy > 0) { setTimeout(end, 1000); return; } w.terminate(); holdWorkers.splice(holdWorkers.indexOf(w), 1); };
+    end();
+  }
+}
 /** worker builds started ahead of loadTile (key "name|lite"): stream() prefetches the next wanted tiles */
 const tilePrefetch = new Map();
 /** UrbIS solids replaced by a scripted model (the Saint-Job church): not drawn, kept in the roof grid. */
@@ -1565,7 +1598,10 @@ async function main() {
       }
     }
     for (const [n, l] of lite) if (dist(byName(n)) > far + 1.01 || world.tiles.some((w) => w.name === n)) { lite.delete(n); retire([l.group], l.dispose); }
-    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b));
+    // (perfgame: among tiles of the same ring step, the one nearest the PLAYER first: the street ahead before the far
+    // corner of the ring; ?streamorder=old: the manifest's order)
+    const gapP = (t) => Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1], t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
+    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => dist(a) - dist(b) || (STREAM_ORDER ? gapP(a) - gapP(b) : 0));
     // the worker pool builds the next wanted tiles in parallel (one per worker); builds of tiles no longer wanted go
     for (const key of [...tilePrefetch.keys()]) if (key.endsWith("|0") && !want.some((t) => `${t.name}|0` === key)) tilePrefetch.delete(key);
     if (bootRing) bootRing = bootRing.filter(([e, isLite]) => isLite || want.includes(e));   // the boot prefetch: only tiles still wanted
@@ -1685,10 +1721,21 @@ async function main() {
   try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
   // ---- /boot2
   bootStage("ready");
+  // perfgame: a ?game= boot hands the cover over to the play loader (shown first, under nothing): the game kit starts the
+  // game behind it and fades it out once the spawn's area is built (game/kit.js startGame); never the city filling in
+  { const g = params.get("game");
+    if (PLAY_LOADER && g && g !== "0" && g !== "1") {
+      playLoader.open({ title: { police: "Police", falcon: "Falcon" }[g] || "Loading the game", kicker: "Starting the game" });
+      window.__playLoaderBoot = true;
+      setTimeout(() => { if (window.__playLoaderBoot) { window.__playLoaderBoot = false; playLoader.close(); } }, 120000);   // (a game that never starts)
+    } }
   $("cover").classList.add("gone");
   document.body.classList.remove("loading");
   window.__coverAt = performance.now();             // (the boot time, for debug/preflight.js and perf runs)
   coverLifted();                                    // boot2: the far landmarks / bridges start now (bootGate.js)
+  // perfgame (docs/PERF_GAME.md): from here on a pipeline the precompiles missed is built async (the object shows a few
+  // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
+  if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
   closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
   if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
@@ -1729,9 +1776,65 @@ async function main() {
     const fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect);
     return { x, z, heading, bear, mode: m, alt: y - world.surface(x, z), fov };
   };
+  // ---- perfgame: AREA READY (docs/PERF_GAME.md). Resolves when the area round (x, z) is built for play: every full tile
+  // within `near` m of the point (the rest of the ring is past the far tiles' hand-over distance: it cross-fades in, the
+  // smooth-LOD way), the far ring, no tile fading in, the precompile queue empty (tiles, landmarks, fading copies), no
+  // pipeline compiling (asyncPipes.js), and `quiet` consecutive frames rendered so (the frames behind the play loader
+  // are the warm-up: whatever the first view draws builds its shader there). Reports progress to the play loader.
+  // At most maxMs (a slow machine still gets to play). Returns what it waited for.
+  const areaReady = async ({ x, z, near = 300, liteNear = 600, nearModels = 900, quiet = 8, maxMs = 45000, label = "" } = {}) => {
+    const t0 = performance.now();
+    openHoldWorkers(2);
+    const built = manifest.tiles.filter((t) => t.status !== "missing");
+    const gap = (t) => Math.max(t.bounds.x[0] - x, 0, x - t.bounds.x[1], t.bounds.z[0] - z, 0, z - t.bounds.z[1]);
+    const needFull = built.filter((t) => gap(t) <= near).map((t) => t.name);
+    const ctr = (t) => [(t.bounds.x[0] + t.bounds.x[1]) / 2, (t.bounds.z[0] + t.bounds.z[1]) / 2];
+    const home = built.find((t) => gap(t) === 0) || built[0], [hx, hz] = ctr(home);
+    // the far tiles the first views can reach (within liteNear of the point; the rest of the far ring fades in later, km away)
+    const needLite = built.filter((t) => { const [tx, tz] = ctr(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T <= far + 0.01 && gap(t) <= liteNear; }).map((t) => t.name);
+    const has = (n) => world.tiles.some((t) => t.name === n);
+    let q = 0, frames = 0, maxPipes = 1, maxJobs = 1;
+    const st = { full: 0, lite: 0, jobs: 0, pipes: 0 };
+    while (performance.now() - t0 < maxMs) {
+      if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
+      await new Promise((r) => requestAnimationFrame(() => r()));
+      frames++;
+      st.full = needFull.filter(has).length;
+      st.lite = needLite.filter((n) => has(n) || lite.has(n)).length;
+      st.jobs = compileJobsLeft((names) => nearModel(names, x, z, nearModels)); st.pipes = window.__asyncPipes?.pending ?? 0;
+      maxJobs = Math.max(maxJobs, st.jobs); maxPipes = Math.max(maxPipes, st.pipes);
+      const tilesOk = st.full === needFull.length && st.lite === needLite.length && !fader.busy;
+      const gpuOk = st.jobs === 0 && st.pipes === 0;
+      q = tilesOk && gpuOk ? q + 1 : 0;
+      // the bar: tiles 70 %, shaders 25 %, the quiet frames the rest
+      const f = 0.7 * ((st.full + 0.25 * st.lite) / Math.max(1, needFull.length + 0.25 * needLite.length)) + 0.25 * (tilesOk ? 1 - (st.jobs + st.pipes) / (maxJobs + maxPipes) : 0) + 0.05 * (q / quiet);
+      const line = st.full < needFull.length ? `Building the streets (${st.full} / ${needFull.length})` : st.lite < needLite.length ? "Loading the neighbourhood" : !gpuOk ? `Compiling shaders${st.jobs + st.pipes ? ` (${st.jobs + st.pipes} left)` : ""}` : "Drawing the first frames";
+      playLoader.progress(f, line);
+      if (q >= quiet) break;
+    }
+    closeHoldWorkers();
+    const r = { ms: Math.round(performance.now() - t0), frames, full: needFull.length, lite: needLite.length, ok: q >= quiet, ...st };
+    log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : " (time limit)"}`);
+    window.__areaReady = r;
+    return r;
+  };
   // teleport: park the camera over the target (orbit), let the streaming load the tile under it (the orbit target
   // drives the streaming), then start the same mode there, facing along the street (the side nearest the old heading)
-  const teleport = async ({ x, z, yaw: dirAng, exact = false, mode: wantMode = null }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading; mode: start that mode there (the game kit)
+  const teleport = async (o) => {
+    // perfgame (docs/PERF_GAME.md): the play loader covers the jump and holds until the area is built (areaReady);
+    // ?playloader=old or { hold: false }: the jump as before (the scene fills in in front of the player)
+    if (!PLAY_LOADER || o.hold === false) return teleportNow(o);
+    const label = o.label ?? o.name;
+    playLoader.open(playLoader.active ? {} : { title: label || "On the way", kicker: "Travelling" });
+    try {
+      const r = await teleportNow(o);
+      await o.after?.(r);                                  // (the dev panel's Go to: its camera, set before the area check)
+      const P = getPlayer();
+      r.ready = await areaReady({ x: P.x, z: P.z, label });
+      return r;
+    } finally { await playLoader.close(); }
+  };
+  const teleportNow = async ({ x, z, yaw: dirAng, exact = false, mode: wantMode = null }) => {   // exact: face that way (the dev panel's places), not the street side nearest the old heading; mode: start that mode there (the game kit)
     const t0 = performance.now();
     const entry = manifest.tiles.find((t) => t.status !== "missing" && x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1]);
     if (!entry) throw new Error("outside the built tiles");
@@ -1788,7 +1891,7 @@ async function main() {
   if (params.get("game") !== "0") {
     import("./game/cityGame.js").then((g) => g.startGameKit({ scene, camera, renderer, controls, world, manifest, params, log, getPlayer, teleport, setView, walk, fly, drive,
       thirdPerson, driver, walker, flyer, getThird: () => third, getMap: () => mapHook, getTraffic: () => window.__traffic ?? null,
-      pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop), updaters }))
+      pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop), updaters, areaReady }))
       .then((k) => { window.__game = k; }).catch((e) => log(`game kit: ${e.message}`));
   }
   // ---- /GAME KIT
@@ -1827,7 +1930,7 @@ async function main() {
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };
   window.viewer = { updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
-    world, fader, stateAt, groundLook,
+    world, fader, stateAt, groundLook, areaReady, teleport,
     // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
     groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
