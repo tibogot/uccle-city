@@ -10,7 +10,7 @@
 // Every surface is real geometry (no coplanar overlaps: pieces abut, nothing rests exactly on the ground; things that
 // stand on it go 2 cm into it). A 1 m world grid on every material makes the motion easy to judge.
 //
-// URL: ?time=golden|midday|overcast|twilight|night  ?hz=120  ?debug=1  ?st=<station>  ?char=hoodie|casual|capsule
+// URL: ?time=golden|midday|overcast|twilight|night  ?hz=120  ?debug=1  ?st=<station>  ?char=ual|hoodie|casual|capsule (default ual)
 // (the character in the slot, models/characters/, with foot IK; ?ik=0 off)  ?model=<glb url> (any other animated
 // character in the slot; ?clips=idle:Idle,walk:Walk,run:Run,jump:Jump  ?mwalk=1.6&mrun=5 authored speeds)
 import * as THREE from "three/webgpu";
@@ -286,7 +286,7 @@ const S = {
   debug: tp.debug.visible, dContacts: true, dRays: true, dCapsule: true,
   time: preset, hour: lighting.hour, post: qp.get("fx") !== "0",
   perf: "", ctlms: "", bench: "—", tests: "—", state: "", model: "capsule",
-  char: CHARACTERS[qp.get("char")] || qp.get("char") === "capsule" ? qp.get("char") : "hoodie", footIK: qp.get("ik") !== "0", ik: "",
+  char: CHARACTERS[qp.get("char")] || qp.get("char") === "capsule" ? qp.get("char") : "ual", footIK: qp.get("ik") !== "0", ik: "",
 };
 async function setCharacter(name) {
   S.model = "loading…";
