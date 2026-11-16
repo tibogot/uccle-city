@@ -12,7 +12,23 @@
     "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
     "addr:housenumber": "662"
    },
-   "_source": "Owner (lives in Uccle): 'the white night shop on Place Saint-Job'; name and number 662 from its public listing (Google Maps, looked at 2026-11-16, not copied beyond name / number); position = UrbIS address 662 (https://databrussels.be/id/address/1228753)"
+   "_source": "Owner (lives in Uccle): 'the white night shop on Place Saint-Job'; name and number 662 from its public listing (Google Maps, looked at 2026-11-16, not copied beyond name / number); position = UrbIS address 662 (https://databrussels.be/id/address/1228753)",
+   "_status": "TO CONFIRM: the owner says it may have closed (2026-11-16)"
+  },
+  {
+   "type": "node",
+   "id": "relais-saint-job",
+   "lon": 4.365015,
+   "lat": 50.7941343,
+   "tags": {
+    "amenity": "restaurant",
+    "name": "Le Relais Saint-Job",
+    "cuisine": "belgian;french",
+    "outdoor_seating": "yes",
+    "addr:street": "Place de Saint-Job - Sint-Jobsplein",
+    "addr:housenumber": "1"
+   },
+   "_source": "Brasserie at Place de Saint-Job 1 (listings: privateaser.com/lieu/57030, tripaligner, mapstr; text only: 'ancien estaminet bruxellois', terrace March-October, heated roof-top terrace); position = UrbIS address point Place de Saint-Job 1 (CC0). Not in OSM."
   }
  ]
 }
