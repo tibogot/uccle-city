@@ -44,6 +44,9 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    lower third, stiff follow with little lag, speed pull-back max ~+0.8 m and FOV +5-8 deg (not more), look-ahead
    into turns, no clipping into walls; camera views on a key (chase near / chase far / bonnet / bumper). Tune the
    new carFeel camera (claude/policefeel) with the owner.
+8e. **Police car model looks crude from behind** (coordinator 2026-11-16, chase view now frames it large): blocky tail
+   lights, flat cream band, low-poly body. Premium Blender police estate (Belgian federal/local police livery: white +
+   blue/yellow Battenburg, real proportions, bevels, tail-light clusters, plate recess), LODs, same kit slots.
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
