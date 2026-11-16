@@ -82,15 +82,64 @@
    }
   },
   "extra:white-night": {
-   "_name": "White Night, Ch. de Saint-Job 662 (night shop; tools/streetlife/extra_pois.json): the owner's 'white night shop' in the white rendered house; white aluminium front, lit sign box",
+   "_name": "White Night (night shop), Ch. de Saint-Job 662: the low white wing set back behind the lot (Street View Jul 2024 + the photos of its Google listing, looked at, not kept): a long sign band, WHITE in black on white and NIGHT in white on a black panel, black aluminium frames, glazed double door in the middle, Lotto posters; OPEN (listing, a review of Nov 2026)",
+   "none": true,
    "front": {
     "family": "modern",
-    "paint": 3,
-    "lightbox": true
+    "paint": 2,
+    "frame": 2,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.8,
+     0.8,
+     0.78
+    ],
+    "sign": "",
+    "plaques": [
+     {
+      "u": -1.25,
+      "w": 2.5,
+      "h": 0.5,
+      "text": "WHITE",
+      "board": [
+       0.8,
+       0.8,
+       0.78
+      ],
+      "ink": [
+       0.012,
+       0.012,
+       0.013
+      ],
+      "font": "shopFlare",
+      "fill": 0.95,
+      "boardGlow": 0.7
+     },
+     {
+      "u": 1.25,
+      "w": 2.5,
+      "h": 0.5,
+      "text": "NIGHT",
+      "board": [
+       0.012,
+       0.012,
+       0.013
+      ],
+      "ink": [
+       0.95,
+       0.95,
+       0.93
+      ],
+      "font": "shopFlare",
+      "fill": 0.95,
+      "glow": 1.2
+     }
+    ]
    }
   },
   "extra:relais-traiteur": {
-   "_name": "Le Relais Saint-Job, traiteur & vins (Place de Saint-Job 3): checked on a photo of the front (privateaser.com/lieu/57030, looked at, not kept): white painted walls, black window / door frames, one continuous taupe retractable awning along the whole front with RELAIS saint-job in a white script on its slope and the section's name in capitals on the valance; small awnings over the two first-floor windows (traiteur / vins); bistro tables with rattan chairs under the awning at the north end; green bollards; chalk A-boards BROWSER CHECK 2026-11-16: the kit's front has a fascia band in the frame colour; white (paint 3) so it reads as the white wall above the awning (the real frames are black: a kit limit); the script name on the awning slope cannot be seen from the street at the kit's awning pitch: the name is on the valance.",
+   "_name": "Le Relais Saint-Job, traiteur & vins (Place de Saint-Job 3): checked on a photo of the front (privateaser.com/lieu/57030, looked at, not kept): white painted walls, black window / door frames, one continuous taupe retractable awning along the whole front with RELAIS saint-job in a white script on its slope and the section's name in capitals on the valance; small awnings over the two first-floor windows (traiteur / vins); bistro tables with rattan chairs under the awning at the north end; green bollards; chalk A-boards BROWSER CHECK 2026-11-16: the kit's front has a fascia band in the frame colour; white (paint 3) so it reads as the white wall above the awning (the real frames are black: a kit limit); the script name on the awning slope cannot be seen from the street at the kit's awning pitch: the name is on the valance. SHOPS2 2026-11-16: the corner's TWO first-floor windows (data/overrides.json buildingLooks 559047 bayScale), the small awnings over their heads (u -0.82 / +0.83 = the two bays' centres, top 6.52 m over the shop floor = the painted windows' head (measured in the browser) + 6 cm).",
    "none": true,
    "front": {
     "family": "modern",
@@ -107,15 +156,15 @@
     "awningFont": "shopItalic",
     "upperAwnings": [
      [
-      -0.9,
-      3.95,
+      -0.82,
+      6.52,
       1.0,
       "RELAIS saint-job",
       "TRAITEUR"
      ],
      [
-      0.9,
-      3.95,
+      0.83,
+      6.52,
       1.0,
       "RELAIS saint-job",
       "VINS"
@@ -175,38 +224,108 @@
    }
   },
   "osm:n9204588938": {
-   "_name": "Maison Dandoy, Place de Saint-Job 22: black front (frames, fascia) with MAISON DANDOY in white spaced capitals, a black awning with the logo, window lettering (the brand's own photo of this shop, maisondandoy.com/fr/boutiques, looked at, not kept)",
+   "_name": "Maison Dandoy, Place de Saint-Job 22 (Street View Jul 2024 (newest; looked at, not kept); the brand's photo of this shop agrees): the white-painted brick house (rebuilt: data/overrides.json infillBuildings.stjob22); one black retractable awning over the whole front, the round DANDOY stamp in beige on its slope, MAISON DANDOY in beige spaced capitals on the valance; black frames, glass door on the left; a black A-board and a waffle cut-out sign on the pavement ; a tall beige banner hangs from the first floor (a picture on the real one: here the name)",
    "none": true,
    "front": {
     "family": "modern",
     "paint": 2,
+    "frame": 2,
     "lightbox": false,
     "awning": true,
     "canvas": 3,
     "stripes": false,
-    "valance": "",
-    "awningText": "MAISON DANDOY",
+    "fascia": false,
+    "awningStyle": "steep",
+    "awningDeg": 38,
+    "awningText": "Maison Dandoy depuis 1829",
     "awningFont": "shopSerif",
-    "ink": [
-     0.92,
-     0.9,
-     0.86
-    ]
+    "valance": "MAISON DANDOY",
+    "valanceFont": "shopCaps",
+    "awningInk": [
+     0.66,
+     0.52,
+     0.33
+    ],
+    "aboard": [
+     1.9,
+     1.0
+    ],
+    "tall": true,
+    "valanceH": 0.34,
+    "awningOut": 1.15,
+    "blade": {
+     "text": "DANDOY",
+     "board": [
+      0.5,
+      0.38,
+      0.22
+     ],
+     "ink": [
+      0.05,
+      0.03,
+      0.02
+     ],
+     "w": 0.5,
+     "h": 1.3,
+     "y": 4.7,
+     "vertical": true,
+     "font": "shopCaps"
+    }
    }
   },
   "osm:n644895528": {
-   "_name": "Proxy Delhaize, Ch. de Saint-Job: the brand's standard front (white sign box, red PROXY Delhaize lettering); Street View 2019 showed the windows papered red during a change of owner: CONFIRM on Street View",
+   "_name": "Proxy Delhaize, Ch. de Saint-Job (Street View Jul 2024 (newest; looked at, not kept), Apr 2019 for the entrance): the red-brick block, a black band over the recessed entrance with a small white Proxy panel (red lettering), a tall red PROXY blade sign on the corner, the windows covered with Proxy posters",
    "none": true,
    "front": {
     "family": "modern",
-    "paint": 3,
-    "lightbox": true,
+    "paint": 2,
+    "frame": 2,
+    "lightbox": false,
     "awning": false,
-    "ink": [
-     0.62,
-     0.015,
-     0.02
-    ]
+    "board": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "sign": "",
+    "plaques": [
+     {
+      "u": -1.5,
+      "w": 1.5,
+      "h": 0.42,
+      "text": "Proxy",
+      "board": [
+       0.8,
+       0.8,
+       0.78
+      ],
+      "ink": [
+       0.62,
+       0.015,
+       0.02
+      ],
+      "font": "shopSans",
+      "fill": 0.9
+     }
+    ],
+    "blade": {
+     "text": "Proxy",
+     "board": [
+      0.5,
+      0.02,
+      0.02
+     ],
+     "ink": [
+      0.93,
+      0.93,
+      0.9
+     ],
+     "w": 0.55,
+     "h": 1.5,
+     "y": 4.6,
+     "vertical": true,
+     "font": "shopSans"
+    }
    }
   },
   "osm:n5520234526": {
@@ -252,6 +371,374 @@
      0.92,
      0.9
     ]
+   }
+  },
+  "extra:bois-savanes": {
+   "_name": "Bois Savanes (restaurant thai traiteur), Place de Saint-Job 24 (Street View Jul 2024 (newest; looked at, not kept)): black front and canopy, BOIS SAVANES in gold flared capitals over it with two lamps, RESTAURANT THAÏ TRAITEUR in small gold capitals on the black band over the glass, black frames, double glazed door in the middle; no terrace",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "lightbox": false,
+    "awning": false,
+    "spots": true,
+    "board": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "ink": [
+     0.62,
+     0.46,
+     0.18
+    ],
+    "font": "shopFlare",
+    "sign": "BOIS SAVANES",
+    "signFill": 0.95,
+    "subSign": [
+     "RESTAURANT THAÏ TRAITEUR",
+     [
+      0.012,
+      0.012,
+      0.013
+     ],
+     [
+      0.62,
+      0.46,
+      0.18
+     ],
+     "shopSerif",
+     0.26
+    ],
+    "tall": true,
+    "blade": false
+   }
+  },
+  "extra:lefevre": {
+   "_name": "Funérailles - Begrafenissen Lefevre, Place de Saint-Job 23 (Street View Jul 2024 (newest; looked at, not kept)): a white sign board with 'Funérailles - Begrafenissen' in a heavy black italic serif, black frames and cladding, a small black LEFEVRE plate at the head of the window, notices in the window",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.8,
+     0.8,
+     0.78
+    ],
+    "ink": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "font": "shopHeavyItalic",
+    "sign": "Funérailles - Begrafenissen",
+    "subSign": [
+     "LEFEVRE",
+     [
+      0.012,
+      0.012,
+      0.013
+     ],
+     [
+      0.85,
+      0.85,
+      0.82
+     ],
+     "shopSerif",
+     0.2
+    ],
+    "tall": true,
+    "interior": 5
+   }
+  },
+  "osm:n5520234529": {
+   "_name": "Alain Dantine (hairdresser), Place de Saint-Job 25 (Street View Jul 2024 (newest; looked at, not kept)): a white sign board with the name in a large black script, KÉRASTASE small on the right, gooseneck spots, anthracite frames, MASCULIN / FÉMININ on the glass",
+   "front": {
+    "family": "modern",
+    "paint": 0,
+    "lightbox": false,
+    "awning": false,
+    "spots": true,
+    "board": [
+     0.8,
+     0.8,
+     0.78
+    ],
+    "ink": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "font": "shopScript",
+    "sign": "Alain Dantine",
+    "plaques": [
+     {
+      "u": 1.95,
+      "w": 1.0,
+      "h": 0.15,
+      "dy": -0.18,
+      "text": "KÉRASTASE",
+      "board": [
+       0.8,
+       0.8,
+       0.78
+      ],
+      "ink": [
+       0.012,
+       0.012,
+       0.013
+      ],
+      "font": "shopSerif"
+     }
+    ],
+    "tall": true
+   }
+  },
+  "extra:bioffice": {
+   "_name": "Bioffice Cleaning & Facilities, Ch. de Saint-Job 662 (Street View Jul 2024 (newest; looked at, not kept)): a navy sign board with white lettering on the cream corner house, white frames, posters in the windows (vrac&compagnie there closed for good)",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.02,
+     0.03,
+     0.085
+    ],
+    "ink": [
+     0.92,
+     0.92,
+     0.9
+    ],
+    "font": "shopHumanist",
+    "sign": "Bioffice Cleaning & Facilities",
+    "interior": 5
+   }
+  },
+  "extra:canon": {
+   "_name": "Canon (local beers), Place de Saint-Job 26 (Street View Jul 2024 (newest; looked at, not kept)): black fascia with CANON in white display capitals, black frames, posters in the window",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "ink": [
+     0.93,
+     0.93,
+     0.9
+    ],
+    "font": "shopFlare",
+    "sign": "CANON",
+    "tall": true,
+    "blade": false
+   }
+  },
+  "osm:n5520234528": {
+   "_name": "Uccle Flore (florist), Place de Saint-Job 28 (Street View Jul 2024 (newest; looked at, not kept)): a bordeaux awning with UCCLE FLORE in white serif capitals on the valance, blue-stone pilasters, black frames, flowers out front",
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "lightbox": false,
+    "awning": true,
+    "canvas": 0,
+    "stripes": false,
+    "fascia": false,
+    "valance": "UCCLE FLORE",
+    "valanceFont": "shopCaps",
+    "tall": true,
+    "valanceFill": 1.25,
+    "awningInk": [
+     0.9,
+     0.88,
+     0.84
+    ]
+   }
+  },
+  "extra:palais-truffe": {
+   "_name": "Le Palais de la Truffe (delicatessen), Place de Saint-Job 27: grey aluminium frames on Street View Jul 2024 (papered 'ouverture prochaine'); open now (Google listing); its sign not seen yet: TO CONFIRM",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 4,
+    "tall": true,
+    "awning": false
+   }
+  },
+  "osm:n6980028723": {
+   "_name": "Le P'tit Rêve (toys), Place de Saint-Job 21 (Street View Jul 2024 (newest; looked at, not kept)): a painted sky-blue sign board with 'le p'tit rêve' in a white script among painted toys, dark red-brown frames, grey render pilasters",
+   "none": true,
+   "front": {
+    "family": "classic",
+    "paint": 1,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.22,
+     0.42,
+     0.7
+    ],
+    "ink": [
+     0.95,
+     0.95,
+     0.93
+    ],
+    "font": "shopScript",
+    "sign": "le p'tit rêve"
+   }
+  },
+  "osm:n1769486879": {
+   "_name": "Eric Strebelle (vet), Place de Saint-Job 4 (Street View Oct 2020, newest there): the red-brick house left of Le Relais, a blue panel with CABINET VÉTÉRINAIRE in white capitals, a wooden door, white window frames",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.03,
+     0.07,
+     0.3
+    ],
+    "ink": [
+     0.95,
+     0.95,
+     0.93
+    ],
+    "font": "shopSans",
+    "sign": [
+     "CABINET",
+     "VÉTÉRINAIRE"
+    ]
+   }
+  },
+  "osm:n1894743435": {
+   "_name": "La Branche d'Olivier, Rue Engeland 172-176 (Street View Apr 2024, newest; looked at, not kept): a cream-rendered house with brown tiles (data/overrides.json buildingLooks 698850) and a single-storey black glazed veranda in front: 'Bistro Gourmand' in large white serif letters on its black fascia, the name 'La Branche d'Olivier' in a cream script on a black board over it, wooden planter boxes with box hedges along the front, an olive tree in a big wooden planter, a terrace with parasols (577 reviews mention the terrace) BROWSER CHECK: two LiDAR trees stand in the terrace (the olive tree and the corner tree of Street View): no parasols (their canopies cut the crowns).",
+   "depth": 3.0,
+   "hedge": true,
+   "parasols": false,
+   "start": 0.6,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "frame": 2,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "ink": [
+     0.93,
+     0.93,
+     0.9
+    ],
+    "font": "shopSerif",
+    "sign": "Bistro Gourmand",
+    "signFill": 1.15,
+    "plaques": [
+     {
+      "u": -0.6,
+      "w": 2.6,
+      "h": 0.42,
+      "dy": 0.62,
+      "text": "La Branche d'Olivier",
+      "board": [
+       0.012,
+       0.012,
+       0.013
+      ],
+      "ink": [
+       0.85,
+       0.8,
+       0.62
+      ],
+      "font": "shopScript",
+      "fill": 0.95
+     }
+    ]
+   }
+  },
+  "osm:n13968964013": {
+   "_name": "Sushi Sama (Av. Carsoel / Place de Saint-Job corner; Street View Mar 2021, newest there; looked at, not kept): the white-painted house with a slate mansard; a black fascia with SUSHI SAMA in wide white capitals and a sushi logo; white window frames, no shop window (house windows)",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "lightbox": false,
+    "awning": false,
+    "blade": false,
+    "board": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "ink": [
+     0.95,
+     0.95,
+     0.93
+    ],
+    "font": "shopFlare",
+    "sign": "SUSHI SAMA"
+   }
+  },
+  "osm:n11533339716": {
+   "_name": "Pasta Commedia (Street View Mar 2021): the coral-painted house with a round gable window; red awnings with PASTA COMMEDIA in white on the valance; a terrace in front behind a dark timber fence with a low hedge",
+   "depth": 2.2,
+   "hedge": true,
+   "parasols": false,
+   "start": 0.4,
+   "front": {
+    "family": "classic",
+    "paint": 1,
+    "awning": true,
+    "canvas": 0,
+    "stripes": false,
+    "fascia": false,
+    "valance": "PASTA COMMEDIA",
+    "valanceFont": "shopSerif",
+    "valanceFill": 1.2,
+    "awningInk": [
+     0.9,
+     0.88,
+     0.84
+    ]
+   }
+  },
+  "osm:n5985386079": {
+   "_name": "Le Passage (restaurant, Av. Carsoel; Street View Apr 2024): a light red-brick new building, grey aluminium frames, a navy sign board with 'Le Passage' in a white script and a bowl logo over the entrance canopy",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 4,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.02,
+     0.03,
+     0.075
+    ],
+    "ink": [
+     0.95,
+     0.95,
+     0.93
+    ],
+    "font": "shopScript",
+    "sign": "Le Passage"
    }
   }
  }

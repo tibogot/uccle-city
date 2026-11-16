@@ -58,8 +58,9 @@ export function litWindows(f, out) {
     const r = roomOf(o.bay, o.floor, seed);
     if (!r.lit) continue;
     const c = r.s2 >= 0.3 ? mix3(WARM0, WARM1, r.s1, col) : mix3(COOL0, COOL1, r.s2, col);
-    const u = (o.u0 + o.u1) / 2 + f.u0, h = (o.h0 + o.h1) / 2;
-    out.push(f.tx * u + f.nx * f.dd, f.base + h, f.tz * u + f.nz * f.dd, f.nx, f.nz, (o.u1 - o.u0) / 2 - o.frame, (o.h1 - o.h0) / 2 - o.frame, c[0], c[1], c[2]);
+    // (f.us: the face's bay scale, facadeGeom.js look bayScale: the openings are in u x us)
+    const us = f.us || 1, u = (o.u0 + o.u1) / 2 / us + f.u0, h = (o.h0 + o.h1) / 2;
+    out.push(f.tx * u + f.nx * f.dd, f.base + h, f.tz * u + f.nz * f.dd, f.nx, f.nz, ((o.u1 - o.u0) / 2 - o.frame) / us, (o.h1 - o.h0) / 2 - o.frame, c[0], c[1], c[2]);
     n++;
   }
   return n;

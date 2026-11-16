@@ -756,15 +756,20 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           }
         }
       }
+      // (shops2, a curated look's bayScale [s, nx, nz]: the face facing (nx, nz) lays its painted window grid out in u x s,
+      // so a narrow front gets the window count it really has: Le Relais Saint-Job's corner, 4.2 m, has TWO first-floor
+      // windows where the grid's 2.6 m bays give one; the kit and the type's details stay off that face, the shop span
+      // and the lit-window lights follow the scale; ?looks=old: none)
+      const bsl = look?.bayScale, bs = bsl && f.nx * bsl[1] + f.nz * bsl[2] > 0.85 ? bsl[0] : 1;
       // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
-      const k = kit ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, type: btype, garage: bgar, landmark: !!landmark, rnd, width, eaves: faceEaves, eavesBld: landmark ? top - base : eaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
+      const k = kit && bs === 1 ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, type: btype, garage: bgar, landmark: !!landmark, rnd, width, eaves: faceEaves, eavesBld: landmark ? top - base : eaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
         shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
       const T = k?.on ? WK : W;
       // (ground fit) the painted façade has a door on EVERY street face: one whose door bay stands off the ground (a
       // second street face along a slope, a gable over a falling garden) or under it gets the window instead
       let streetA = street;
       if (opts.ground && street && !k?.on && !landmark) {
-        const { bw, doorBay } = faceBays({ width, rnd: Math.fround(rnd) }), du = 0.55 + bw * (doorBay + 0.5);
+        const { bw, doorBay } = faceBays({ width: width * bs, rnd: Math.fround(rnd) }), du = (0.55 + bw * (doorBay + 0.5)) / bs;
         let dd = 0, nq = 0;
         for (const { p } of f.tris) for (const q of p) { dd += q[0] * f.nx + q[2] * f.nz; nq++; }
         dd = dd / nq + 0.35;
@@ -773,15 +778,15 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
       const cel = !landmark && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
       if (cel > 1.5) { stats.cellarFaces = (stats.cellarFaces || 0) + 1; if (cel > 2.4) stats.lowerGround = (stats.lowerGround || 0) + 1; }
-      if (cls && btype && partyH < 999) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
+      if (cls && btype && partyH < 999 && bs === 1) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
         T.aCel.push(cel);
         T.position.push(q[0], q[1], q[2]);
         const sn = src ? smooth(src, q) : nn;
         T.normal.push(sn[0], sn[1], sn[2]);
-        T.aWall.push(q[0] * tx + q[2] * tz - u0, width, q[1] - base, faceEaves);
+        T.aWall.push((q[0] * tx + q[2] * tz - u0) * bs, width * bs, q[1] - base, faceEaves);
         T.aBld.push(style, partyH, cls ? streetA + 2 * btype + 16 * bgar : streetA, rnd);
-        T.aFN.push(f.nx, f.nz, shopU, shopW);                                    // outward normal (xz), shopfront centre / width + 10 * paint
+        T.aFN.push(f.nx, f.nz, shopU * bs, bs === 1 ? shopW : (shopW % 10) * bs + 10 * Math.floor(shopW / 10));   // outward normal (xz), shopfront centre / width + 10 * paint
         if (T === WK) WK.aKit.push(1, k.rise, k.doorless, k.french);
       }
       // (night round 3, docs/NIGHT_HOOKUP.md step 6) this face's LIT windows, the shader's own hash (litHash.js): the
@@ -790,8 +795,8 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         let dd = 0, nq = 0;
         for (const { p } of f.tris) for (const q of p) { dd += q[0] * f.nx + q[2] * f.nz; nq++; }
         const fr = Math.fround;
-        litWindows({ width: fr(width), eaves: fr(faceEaves), partyH: fr(partyH), street: T === WK ? (streetA && !k.doorless ? 1 : 0) : streetA, rnd: fr(rnd), landmark: false, type: btype, garage: bgar,
-          shop: fr(shopW), shopU: fr(shopU), fit: opts.storeys !== false, u0, tx, tz, nx: f.nx, nz: f.nz, dd: dd / nq, base }, NW);
+        litWindows({ width: fr(width * bs), eaves: fr(faceEaves), partyH: fr(partyH), street: T === WK ? (streetA && !k.doorless ? 1 : 0) : streetA, rnd: fr(rnd), landmark: false, type: btype, garage: bgar,
+          shop: fr(bs === 1 ? shopW : (shopW % 10) * bs + 10 * Math.floor(shopW / 10)), shopU: fr(shopU * bs), fit: opts.storeys !== false, u0, tx, tz, nx: f.nx, nz: f.nz, dd: dd / nq, base, us: bs }, NW);
       }
     }
     // --- the roof kit (docs/assets/ROOFS.md): the building's roofs -> parapets, chimneys, solar, roof windows, furniture

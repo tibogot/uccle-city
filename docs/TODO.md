@@ -12,6 +12,8 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 **Status update (later 2026-11-16):** citydefects rounds 2-3 MERGED (walls 1,796 -> 1 partial, deck look, flat-roof normals, sound off + mute button, per-building looks, police station = whole school complex + open north gate, Relais Saint-Job / Deneubourg / Press Shop (ex-Barat) / La Meute (ex-Bistroquet) curated, barrel piece). perfgame round 3 MERGED (sun shadow cache -2 ms, police drive CPU 9.5 ms, time to play ~50 s). Leftovers: police-game drive through both gates into the courtyard (collision check passed, not driven); Street View for Maison Dandoy, Proxy, White Night; curate Bois Savanes, Alain D., Lefevre; Relais corner house has 1 painted first-floor window (real: 2); image-59 banded roof spot not found; school blocks' look is an assumption (not visible from public Street View).
 
+**Status (evening 2026-11-16):** MERGED: policefeel (car handling + chase camera + rear glass), falconfix (collisions, flight assist, eyrie start, church sill z-fight), perfgame rounds 4-7 (tile cache via Cache API, staged landmark compiles, lamp pool, far-LOD merges for bridges + landmarks, game preload; police ~48 s / falcon ~45 s to play, target 35 s), orbitcam (new inspection camera), farcity (far buildings with windows/roofs, night-matched). Running: cars2 (better car bodies + police estate). Left from farcity: far park ground darker than full (colour jump), no lamp pools in far tiles at night, far shader could skip the window grid when sub-pixel, far buildings ignore weather.
+
 Owner (lives in Uccle): "most important thing is performance ... any technique: merging, sharing textures, anything".
 1. **PERFORMANCE / GAME LAG**: the police game was "very laggy" with nothing else open. Profile the game path
    (police car + traffic + chase + HUD + route), CPU and GPU; merge geometry, share textures/atlases, fewer
@@ -36,6 +38,12 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    Place and Chaussée de Saint-Job: real façade colour, awning, terrace, signage text/colour/font style, window layout,
    checked against recent photos / Street View (look only). White Night (Chée de Saint-Job 662) may have closed:
    owner is finding photos; keep or remove after that.
+   **shops2 (2026-11-16, branch claude/shops2, not merged): docs/SHOPS2.md.** White Night is OPEN, in 662's low wing facing
+   its lot (moved there); Place de Saint-Job 22 (Maison Dandoy) was a NULL UrbIS solid (631 city-wide!): rebuilt
+   (tools/infill); Dandoy, Bois Savanes, Lefevre, Alain Dantine, Canon, Palais de la Truffe, Uccle Flore, P'tit Rêve,
+   Proxy, Bioffice, the vet, Sushi Sama, Pasta Commedia, Le Passage curated; Le Relais' corner has its 2 windows +
+   awnings; La Branche d'Olivier (8f e) done. Left: the other null solids, Le Touring, Thai Smile / Botanea / refuge /
+   Miska / Cacao Tree re-check, a traffic crash on long teleports (SHOPS2.md).
 8c. **Police car rear: bad lines while moving (owner 2026-11-16, default chase view)**: looks like aliasing / shimmer
    on the back of the car (TAAU + motion vectors on the player car? thin rear lights / plate edges? kit merge?). Check
    FIRST next session, with ?carmerge=old, ?instmotion=0, ?upscale=0 to isolate.
@@ -60,6 +68,10 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
+   **orbitcam (2026-11-16, branch claude/orbitcam, not merged):** the default orbit is now an inspection camera
+   (`viewer/orbitCam.js`, docs/ORBITCAM.md): orbit round the point under the cursor, ground pan, zoom to the cursor,
+   F / double-click frames, RMB + WASD/QE flies, terrain / roof / landmark collision, touch, smooth fly-to for views and
+   loaded-tile teleports. `?orbitcam=old`, `?orbitheroes=0`. Offline checks `node tools/orbitCamTest.mjs` pass; browser check done (docs/orbitcam/README.md); hand tuning of speeds by the owner left.
 10. **Falcon game**: collision bugs (falls, then shoots back up), controls hard. Simpler and friendlier
    (assisted flight, auto level, clear feedback), not more complex. (later agent)
    **falconfix (2026-11-16, branch claude/falconfix, not merged):** collisions round 3 (no launch upward, no pops, a
@@ -73,7 +85,7 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    **policefeel (2026-11-16, branch claude/policefeel, not merged):** new handling in code (`viewer/drive/carFeel.js`,
    docs/POLICE_FEEL.md, `?carfeel=old` / `?hedgecol=old`): suspension, tyres, counter-steer, handbrake, camera; kerbs on
    steep streets / lawn banks / kerb islands ridden (the old 0.5 m-over-centre ledge rule blocked a 15 cm kerb on a 15 %
-   street), hedges soft, posts deflect, parked cars shoved. Offline checks done; browser route check pending.
+   street), hedges soft, posts deflect, parked cars shoved. Offline checks done; browser route 
 
 ## CURRENT STATE (2026-11-13) — read this first
 

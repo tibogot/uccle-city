@@ -521,6 +521,8 @@ export class TrafficSim {
     this.projectObstacles();
     for (let i = 0; i < this.cap; i++) {
       if (!this.alive[i]) continue;
+      // its road graph was unloaded under it (a long camera jump): retire the car instead of reading a null graph
+      if (!this.W.slots[this.path[i] >>> 16]) { this.kill(i); continue; }
       this.copyPrev(i);
       const st = this.state[i];
       if (st === ST.drive || st === ST.inStop) this.accel(i);
