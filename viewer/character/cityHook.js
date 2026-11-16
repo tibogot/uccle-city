@@ -18,6 +18,7 @@ import * as THREE from "three/webgpu";
 import { ThirdPerson, CollisionWorld, Heightfield, TriBVH, PrismSet } from "./index.js";
 import { lampSites } from "../lamps.js";
 import { carFleet } from "../carFleet.js";
+import { heroBVH } from "../heroBVH.js";
 import { parkedCarRing } from "../drive/driveMode.js";
 
 const DATA = new URL("../../data/tiles/", import.meta.url);
@@ -202,13 +203,12 @@ async function buildCityCollision({ scene, world, log }) {
   const addHero = async (name, tris) => {
     if (heroes.has(name)) return;
     heroes.set(name, null);
-    const id = ++reqId;
-    const r = await new Promise((resolve, reject) => { pending.set(id, { resolve, reject }); worker.postMessage({ id, positions: tris.slice(), only: "bvh" }); })
-      .catch((e) => { log(`collisions: ${name} triangles failed: ${e.message}`); return null; });
-    if (!r) { heroes.delete(name); return; }
-    const bvh = TriBVH.fromData(r.bvh); bvh.tag = 6;
+    // (shared with the orbit camera: viewer/heroBVH.js builds each landmark's BVH once, in the collider worker)
+    const src = await heroBVH(name, tris);
+    if (!src) { log(`collisions: ${name} triangles failed`); heroes.delete(name); return; }
+    const bvh = Object.assign(Object.create(TriBVH.prototype), src, { enabled: true, tag: 6 });   // own flags, shared arrays
     cw.add(bvh); heroes.set(name, bvh);
-    log(`collisions on foot: ${name} by its LOD0, ${r.bvh.count} triangles (worker BVH ${r.ms.bvh} ms)`);
+    log(`collisions on foot: ${name} by its LOD0, ${bvh.count} triangles`);
   };
   for (let i = 0; i < 100 && !window.__heroCols; i++) await new Promise((r) => setTimeout(r, 100));
   window.__heroCols?.onTriangles((name, tris) => addHero(name, tris));
