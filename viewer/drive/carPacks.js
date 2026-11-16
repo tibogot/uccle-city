@@ -107,6 +107,16 @@ const lensK = () => {
   return mix(float(1), nv.mul(nv).mul(0.8).add(0.3), packLook.lensShade);
 };
 
+/** THE PLAYER'S CAR GLASS (policefeel, owner 2026-11-17: "bad lines at the back of the car when moving"): under the
+ *  TAAU the see-through glass is a stochastic per-frame discard (viewer/upscale.js) the history averages; on the
+ *  player's car, big and close in the chase view and moving with the camera, the clamp never settles it: the rear window
+ *  showed a band of crawling speckles (glass vs the bright boot / parcel shelf behind it). The player's car now has
+ *  solid tinted glass under the TAAU (as the far LODs: dark, reflective; estates have privacy-tinted rear glass).
+ *  ?carglass=old: the stochastic see-through as before. Native (?upscale=0, MSAA) keeps alpha-to-coverage. */
+const CARGLASS_OLD = typeof location !== "undefined" && /[?&]carglass=old(&|$)/.test(location.search);
+const UPSCALED = typeof location !== "undefined" && !/[?&](upscale|fx)=0(&|$)/.test(location.search);
+export const playerSeeThrough = (rich) => !!rich && (CARGLASS_OLD || !UPSCALED);
+
 /**
  * The pack material. paint: a THREE.Color (one car: a uniform) or "instance" (parked cars: geometry attribute "paint",
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
