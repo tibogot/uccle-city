@@ -176,6 +176,11 @@ for (const [name, M, assisted] of [["round 3", NEW, true], ["round 2 (old)", OLD
   const w = town({ roof: false, tree: false });
   check("started inside a solid", r.b.pos.y >= w.floor(r.b.pos.x, r.b.pos.z) + 0.3, `end x ${f1(r.b.pos.x)} y ${f1(r.b.pos.y)} z ${f1(r.b.pos.z)}`);
 }
+// 16b. hands off with no stamina left: the beats lighten, the stamina comes back, the bird sinks only slowly
+{
+  const r = run(NEW, { start: [0, 100, 0, 0, 14, 0], T: 30, world: open, script: (t, I, b) => { if (t === 0) b.stamina = 0; } });
+  check("hold when exhausted", r.b.stamina > 0.1 && r.b.pos.y > 85 && r.b.V > 9, `after 30 s: stamina ${f1(r.b.stamina, 2)}, y ${f1(r.b.pos.y)}, V ${f1(r.b.V)}`);
+}
 // 17. cost
 {
   const r = run(NEW, { start: [0, 10, 0, 0, 14, 0], T: 20 });

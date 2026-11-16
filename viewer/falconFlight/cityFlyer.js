@@ -46,6 +46,11 @@ const SQUARES = [
   { name: "Vanderkindere", x: -123, z: -1632, r: 18 },
 ];
 const LIFE = 1.0;                      // the juvenile's span at life size (m): viewer/falcons.js FALCON_SIZES.juvenile
+/** ?falconstart=old: the nest intro starts at once, even behind the play loader (falconfix: it waits for the loader to
+ *  close, else the bird flew its intro and glided off hands-off before the player saw it: "free flight starts on the
+ *  ground in a wood") */
+const START_OLD = /[?&]falconstart=old(&|$)/.test(location.search);
+const ASSIST_NAMES = { level: "level", hold: "holding height", turn: "turning", climb: "climbing", descend: "descending", stoop: "STOOP", pullout: "pulling out", avoid: "AVOIDING", slow: "slow: flapping", tumble: "CRASH: recovering", strike: "strike assist" };
 
 const CSS = `
 .fhud { position: fixed; right: 340px; bottom: 10px; z-index: 3; padding: 9px 12px; border-radius: 8px; min-width: 290px;
@@ -255,6 +260,8 @@ export class CityFlyer {
   updateIntro(dt) {
     const I = this.intro;
     I.t += dt;
+    // (falconfix) the play loader is still up: the bird waits in the scrape (at most 90 s)
+    if (!START_OLD && window.__playLoader?.active && (I.held = (I.held ?? 0) + dt) < 90) I.t = 0;
     if (this.input.keys.has("Space") && I.t < 3.6) I.t = 3.6;                // Space skips to the launch
     const T_HOP = 1.6, T_LEDGE = 2.4, T_GO = 3.8, T_FREE = 5.0;
     let mode = "perch", flap = 0, gamma = 0;
@@ -411,8 +418,8 @@ export class CityFlyer {
     const inp = this.input;
     const aim = inp.mouseAim && inp.mouse.locked && g.mode === "fly" ? (this._aim ??= new THREE.Vector3()).set(-Math.sin(inp.aim.yaw) * Math.cos(inp.aim.pitch), Math.sin(inp.aim.pitch), -Math.cos(inp.aim.yaw) * Math.cos(inp.aim.pitch)) : null;
     this.fovCity ??= this.camera.fov;
-    this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift },
-      { aim, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor) });
+    this.fcam.update(dt, { pos: g.pos, va: f.va, V: g.mode === "fly" ? f.V : Math.max(f.V, 0.1), phi: f.phi, heading: f.heading, gamma: f.gamma, span: g.span, stun: f.stun, liftRate: f.lift, fold: f.fold },
+      { aim, steady: !!g.assist && f.assisted, look: inp.look, zoom: inp.zoom, perched: g.mode === "perch", perchYaw: g.perch?.yaw ?? 0, floor: (x, z) => w.floor(x, z), col: (this._colFn ??= (x, z) => w.column(x, z, this.game.f.pos.y, true)), sight: (this._sightFn ??= (x, z) => w.column(x, z, this.game.f.pos.y).floor) });
     this.audio?.update(dt, { V: g.mode === "fly" ? f.V : 0, phi: f.phi, fold: f.fold, lift: f.lift, downstroke: this.bird.downstroke, flapLevel: f.flapLevel }, this.camera);
     const t6 = performance.now();
     c.game = t3 - t2; c.hints = t5 - t4; c.camera = t6 - t5;
@@ -492,8 +499,10 @@ export class CityFlyer {
 <span class="k">stamina</span> ${bar(f.stamina, f.stamina < 0.15 ? "#e0705a" : "#7fd18b")}
 <span class="k">target </span> ${win ? `${win.d.toFixed(0)} m, closing ${win.closing.toFixed(0)} m/s${win.ok ? "  <b>WINDOW</b>" : ""}${g.talonsOut ? " · talons" : ""}` : "-"}
 <span class="k">score  </span> ${sc.points} · caught ${sc.catches} · delivered ${sc.delivered} · best ${sc.bestStrike} m/s${this.bird.prey ? "\n<b>CARRYING</b>: to the eyrie's ledge (E near it)" : ""}
-<span class="k">W/S A/D fly · Space flap · Shift stoop · C half · Q flare
-F talons · E land · V camera · click: mouse aim · Esc out</span>`;
+${g.assist ? `<span class="k">assist </span> ${ASSIST_NAMES[g.assist.mode] ?? g.assist.mode}${g.assist.hT != null && g.assist.mode === "hold" ? ` (${(g.assist.hT - f.pos.y + (g.agl ?? 0)).toFixed(0)} m)` : ""}${g.assist.avoid ? "" : " · avoid off"}
+<span class="k">mouse / A D steer · W S down / up · Space climb · Shift stoop
+E land · F talons · Q brake · V camera · click: mouse aim · Esc out</span>` : `<span class="k">W/S A/D fly · Space flap · Shift stoop · C half · Q flare
+F talons · E land · V camera · click: mouse aim · Esc out</span>`}`;
     this.msg.innerHTML = g.messages.filter((m) => g.t - m.t < 4).map((m) => m.s).join("<br>");
     const [aimEl, tgtEl, perchEl] = this.rings;
     if (this._aim && inp.mouseAim && inp.mouse.locked && g.mode === "fly") this.ring(aimEl, this.camera.position.clone().addScaledVector(this._aim, 50), true); else aimEl.style.display = "none";
@@ -516,6 +525,7 @@ F talons · E land · V camera · click: mouse aim · Esc out</span>`;
     fe.add(S, "camera", ["chase", "head"]).name("camera (V)").onChange((v) => { this.fcam.mode = v; });
     fe.add(S, "size", 1, 3, 0.05).name("draw size in the air (m)").onChange((v) => { this.size = v; this.game.size.readable = v; });
     fe.add(S, "mouseAim").name("mouse aim (click)").onChange((v) => { this.input.mouseAim = v; });
+    if (this.game.assist) { S.avoid = this.game.assist.avoid; fe.add(S, "avoid").name("assist: steer clear of roofs / trees").onChange((v) => { this.game.assist.avoid = v; }); }
     fe.add(S, "invert").name("invert pitch (stick)").onChange((v) => { this.input.invert = v; });
     const so = ui.addFolder("Sound / life");
     so.add(S, "sound").name("sound").onChange((v) => { if (this.audio) this.audio.on = v; });

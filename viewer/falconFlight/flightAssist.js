@@ -7,11 +7,12 @@
 //
 //   steer     mouse aim (pointer lock): the heading toward the aim; A / D (stick x): a turn at up to ~1 rad/s; the bank
 //             is chosen for that turn (coordinated, at most 60 deg); hands off = wings level
-//   height    hands off = ALTITUDE HOLD (the height when you let go, captured with a little lead); W / S (stick y): a
+//   height    hands off = ALTITUDE HOLD (the height when you let go, captured with a little lead; rising air lifts it:
+//             circle in a thermal and the bird climbs with it); W / S (stick y): a
 //             gentle descent / climb (20 deg); the mouse aim's pitch (past 4 deg) the same; Space: a flapping climb
 //   speed     auto-flapping toward a cruise of ~14 m/s (light beats: they cost little stamina, see flightModel.js
 //             `assisted`), no flapping in a descent; Space = full beats (the stamina gauge)
-//   stoop     Shift: tuck and dive (63 deg, W steeper, S shallower, or the mouse aim's pitch); let go = wings open, pull
+//   stoop     Shift: tuck and dive (63 deg, W steeper, S shallower, or the mouse aim's pitch past 20 deg); let go = wings open, pull
 //             out, hold the height where the pull-out ends (no zoom climb)
 //   protect   below ~9 m/s the nose goes down and the wings beat (no stall); with AVOID on (default; the start menu, or
 //             ?falconavoid=0): three probes along the path (0.6 / 1.2 / 2 s ahead) against the city's solid at the
@@ -85,7 +86,7 @@ export class FlightAssist {
       else omega = this.turnS * P.turnRate;
       if (Math.abs(omega) > 0.15) mode = "turn";
       if (I.stoop) {
-        const want = I.aim && !I.vert ? clamp(I.aim.pitch, -1.45, -0.35) : -P.stoop + 0.4 * I.vert * (I.vert > 0 ? 1.2 : 0.75);
+        const want = I.aim && I.aim.pitch < -0.35 ? Math.max(I.aim.pitch, -1.45) : -P.stoop + 0.4 * I.vert * (I.vert > 0 ? 1.2 : 0.75);
         gd = want; this.hT = null; this.pull = true; mode = "stoop";
       } else if (I.climb) { gd = P.climb; this.hT = null; mode = "climb"; }
       else if (I.vert) { gd = I.vert * P.slope; this.hT = null; mode = I.vert > 0 ? "climb" : "descend"; }
@@ -98,6 +99,8 @@ export class FlightAssist {
     }
     if (holding) {
       if (this.hT == null) this.hT = y + clamp(f.vel.y * 0.6, -4, 4);
+      // rising air (a thermal, a façade's updraft) lifts the held height with it: soaring stays free
+      if (f.lift > 0.3 && y > this.hT) this.hT = y;
       const vz = clamp(P.hold * (this.hT - y), -3.5, 3.5);
       gd = Math.asin(clamp(vz / Math.max(V, 4), -0.5, 0.5));
       if (mode === "level") mode = "hold";
@@ -163,13 +166,15 @@ export class FlightAssist {
     const pullG = f.P.pull + (f.P.nMax - 1 - f.P.pull) * smooth(V, 25, 60);
     C.pitch = clamp(u > 0 ? u / pullG : u / f.P.push, -1, 1);
     // ---------------------------------------------------------------- the wingbeats (auto: hold the cruise speed)
-    if (I.climb) C.flap = 1;
+    if (I.climb && !I.stoop) C.flap = 1;
     else if (C.fold < 0.75) {
       const tired = clamp(f.stamina / f.P.stamina.low, 0, 1);
       const avail = f.P.thrust * clamp(1 - V / f.P.vFlap, 0, 1) * (0.25 + 0.75 * tired);
       const need = Math.sin(gd) + 1 / 12 + 0.12 * (P.cruise * (1 - 0.4 * I.brake) - V) / P.cruise * 4;
       C.flap = gd < -0.1 && V > P.vMin ? 0 : clamp(need / Math.max(avail, 0.04), 0, 1);
       if (V < P.vMin) C.flap = 1;
+      // tired: lighter beats (they still let the stamina come back; the bird sinks a little instead)
+      if (f.stamina < f.P.stamina.low) C.flap = Math.min(C.flap, 0.45);
     }
     this.mode = mode;
     this.cost = performance.now() - t0;

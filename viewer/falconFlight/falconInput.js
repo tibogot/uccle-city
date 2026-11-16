@@ -13,6 +13,9 @@ import { FlightControls } from "./flightModel.js";
 
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+/** ?falconctl=old: the raw stick controls of round 1 (W / S pitch, A / D bank, no assist); else the flight assist
+ *  (flightAssist.js) flies from the INTENT this input also fills (falconfix, 2026-11-16) */
+export const CTL_OLD = typeof location !== "undefined" && /[?&]falconctl=old(&|$)/.test(location.search);
 
 export class FalconInput {
   /** enabled: false = no key / mouse is read (the city: only while flying); skip: key codes left to the page (the city:
@@ -27,6 +30,9 @@ export class FalconInput {
     this.actions = new Set();            // one-shot: "land", "strike", "camera", "reset", "help", "aim"
     this.talons = false; this.device = "keyboard";
     this.pad = null; this.touch = null; this.script = null;   // script: a function (t) -> controls (the verification runs)
+    // the player's intent for the flight assist: turn (+1 = left), vert (+1 = up), climb, stoop, half, brake (0..1), aim
+    // ({ yaw, pitch } while the mouse aims, else null). One object, refilled every frame.
+    this.intent = { turn: 0, vert: 0, climb: 0, stoop: 0, half: 0, brake: 0, aim: null };
     addEventListener("keydown", (e) => {
       if (!this.enabled || this.skip.has(e.code) || e.target?.closest?.(".upanel") || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "")) return;
       this.keys.add(e.code); this.device = "keyboard";
@@ -75,6 +81,8 @@ export class FalconInput {
     let fold = has("ShiftLeft", "ShiftRight") || this.mouse.tuck ? 1 : has("KeyC") ? 0.5 : 0;
     let brake = has("KeyQ") ? 1 : 0;
     this.talons = has("KeyF");
+    const keyRoll = roll, keyPitch = pitch;
+    let sx = 0, sy = 0;                                                // a stick (gamepad / touch), for the intent
     // the mouse aim: bank and pitch toward the aim (keys still override)
     if (this.mouseAim && this.mouse.locked && bird && !pitch && !roll) {
       const dh = wrap(this.aim.yaw - bird.heading), dg = this.aim.pitch - bird.gamma;
@@ -90,8 +98,8 @@ export class FalconInput {
       const bt = (i) => gp.buttons[i]?.value ?? 0, pressed = (i) => !!gp.buttons[i]?.pressed;
       const lx = ax(0), ly = ax(1);
       if (lx || ly || bt(6) > 0.05 || bt(7) > 0.05) this.device = "gamepad";
-      if (lx) roll = lx;
-      if (ly) pitch = this.invert ? -ly : ly;
+      if (lx) roll = sx = lx;
+      if (ly) pitch = sy = this.invert ? -ly : ly;
       flap = Math.max(flap, bt(7)); fold = Math.max(fold, bt(6)); brake = Math.max(brake, bt(1));
       this.look.yaw = -ax(2) * 1.4; this.look.pitch = -ax(3) * 0.7;
       this.talons ||= pressed(2);
@@ -103,11 +111,24 @@ export class FalconInput {
     // touch
     const T = this.touch;
     if (T?.on) {
-      if (T.stick.active) { roll = T.stick.x; pitch = this.invert ? -T.stick.y : T.stick.y; }
+      if (T.stick.active) { roll = sx = T.stick.x; pitch = sy = this.invert ? -T.stick.y : T.stick.y; }
       flap = Math.max(flap, T.flap ? 1 : 0); fold = Math.max(fold, T.dive ? 1 : 0);
       this.talons ||= T.talons;
     }
     C.pitch = pitch; C.roll = roll; C.flap = flap; C.fold = fold; C.brake = brake;
+    // the intent (the assist): the keys and sticks as they are (not the mouse aim's mapping above); the aim on its own
+    const I = this.intent, aiming = this.mouseAim && this.mouse.locked && !!bird;
+    const ir = keyRoll || sx, ip = keyPitch || sy;
+    I.turn = -clamp(ir, -1, 1); I.vert = clamp(ip, -1, 1);
+    I.climb = flap > 0.5 ? 1 : 0; I.stoop = fold > 0.8 ? 1 : 0; I.half = fold > 0.3 && fold <= 0.8 ? 1 : 0; I.brake = brake;
+    I.aim = aiming && !ir && !ip ? this.aim : null;
+    if (aiming && !CTL_OLD) {
+      // keys / stick while the mouse aims: the aim follows the bird (let go: it is where the bird now goes)
+      if (ir) this.aim.yaw = bird.heading;
+      if (ip) this.aim.pitch = 0;
+      this.aim.yaw = bird.heading + clamp(wrap(this.aim.yaw - bird.heading), -1.3, 1.3);
+      this.aim.pitch = clamp(this.aim.pitch, -1.45, 0.6);
+    }
     return C;
   }
 
