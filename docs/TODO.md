@@ -39,6 +39,11 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
 8c. **Police car rear: bad lines while moving (owner 2026-11-16, default chase view)**: looks like aliasing / shimmer
    on the back of the car (TAAU + motion vectors on the player car? thin rear lights / plate edges? kit merge?). Check
    FIRST next session, with ?carmerge=old, ?instmotion=0, ?upscale=0 to isolate.
+8d. **Chase camera too far (owner 2026-11-16)**: when driving, the car drifts far from the camera, almost to the screen
+   centre: hard to drive, not like a real car game. Target: close chase (~5.5-6.5 m behind, ~1.8-2.2 m up), car in the
+   lower third, stiff follow with little lag, speed pull-back max ~+0.8 m and FOV +5-8 deg (not more), look-ahead
+   into turns, no clipping into walls; camera views on a key (chase near / chase far / bonnet / bumper). Tune the
+   new carFeel camera (claude/policefeel) with the owner.
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
