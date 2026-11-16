@@ -149,13 +149,15 @@ export const compileJobsLeft = (near = null) => [...jobs, ...inFlight].filter((j
 let runningJob = null;
 const enqueue = (job, first = false, names = null, last = false, roots = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, last, roots, resolve, reject }); pump(); });
 
-// perf8 (?compileflush=old = one compileAsync job after the other, as before): WHILE THE PLAY LOADER COVERS THE SCREEN the
+// perf8 (?compileflush=1; default: one compileAsync job after the other, as before): WHILE THE PLAY LOADER COVERS THE SCREEN the
 // queued precompile jobs are done together, the boot warm-up's way: their roots drawn in ONE forced frame (every node graph
 // built synchronously, no frame to keep smooth) with a parallel-pipeline window open (every pipeline handed to the GPU
 // process at once), then the jobs resolve when those pipelines are ready. Measured before: the loader's last ~16 s were
 // the serial queue (198 jobs, 38 s of job time after the cover: the town hall 9 s, the public art 1.7 s ...), each
 // compileAsync job yielding to frames and keeping at most 16 pipelines in flight.
-const FLUSH = typeof location !== "undefined" && !/[?&]compileflush=old(&|$)/.test(location.search);
+// (OFF by default, ?compileflush=1: measured round 8, the falcon start had 1.2-1.4 s GPU stalls 4-9 s into play in 2 of 6
+// runs with it, none in 2 without; police / falcon time to play within the noise)
+const FLUSH = typeof location !== "undefined" && /[?&]compileflush=1(&|$)/.test(location.search);
 let flushWith = null;
 /** main.js: { active() (the play loader holds), render() (one frame of the city's pass), renderer, scene } */
 export function setCompileFlush(o) { flushWith = o; }
