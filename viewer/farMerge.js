@@ -1,5 +1,4 @@
-// FAR LOD IN ONE DRAW (perfgame round 6, docs/PERF_GAME.md; ?farlodmerge=1 = on, OFF BY DEFAULT until the hand-over is
-// checked by pixel diff in the browser). A landmark's / hero bridge's far level is a handful of meshes, one per library
+// FAR LOD IN ONE DRAW (perfgame round 6, docs/PERF_GAME.md; ?farlodmerge=old = off). Hero bridges only so far. A landmark's / hero bridge's far level is a handful of meshes, one per library
 // slot (3-16 draws a model, every frame, beyond ~420 m). Here the far level's opaque meshes become ONE mesh: their
 // geometries merged (position, normal, the AO uv), a per-vertex slot id, and ONE material whose colour / roughness /
 // metalness per slot are each slot material's MEANS, baked once on the GPU (the slot's colour graph drawn over an
@@ -10,7 +9,9 @@ import * as THREE from "three/webgpu";
 import { attribute, uniformArray, texture, uv, mix, float, vec3, int } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
-export const FAR_MERGE = typeof location !== "undefined" && new URLSearchParams(location.search).get("farlodmerge") === "1";
+// (ON by default since 2026-11-16: the Saint-Job rail bridge's far level merged vs as before, 540 m, magnified x10:
+// 0.8 % of the crop's pixels differ by > 20 / 255 (TAA and tree noise), the bridge's colours match; ?farlodmerge=old = off)
+export const FAR_MERGE = typeof location !== "undefined" && new URLSearchParams(location.search).get("farlodmerge") !== "old";
 const bakeCache = new Map();          // material -> Promise<{ col: [r, g, b], rough }>
 let bake = null;
 

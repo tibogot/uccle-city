@@ -284,3 +284,21 @@ with seam / filtering risk at every tile border. Not started: the per-frame CPU 
 - the shadow pass's movers (round 3: the player's car, traffic, trams drawn every frame): already small.
 If the owner wants the ground merge anyway, the order above (1 -> 4) is the plan, behind ?groundshare=old, with a
 border-seam check (screenshots across all four borders of a tile at 1 m, 50 m, 300 m) and the A/B pixel diff.
+
+## Rounds 5-6 results (2026-11-16, browser; preflight RED: CPU 29 % / GPU 32 % busy at rest, the owner's session; 1 run each)
+
+| check | before | after |
+|---|---|---|
+| boot crash found + fixed | round 5 code put the staged-compile setup in `loadTile` instead of `main()`: the boot stopped at "Placing the landmarks" (never merged) | fixed (b1931ef3) |
+| police time to play, `?stagedlod=old` vs staged | 51.0 s | 48.8 s (one later run 59.8 s: machine busy) |
+| staged landmarks at a police boot | all 25 compile in full | 16 far ones compile their far LOD only; flying toward the town hall released 8 of them as they came within 1000 m |
+| early cover warm-up (`__earlyChunks`) | 10 chunks, render-call time 3.9 s (the rest of its 14.7 s is the GPU drain between chunks): Saint-Job + falcons 0.5 s, street life 0.55 s, plants / stops / roofs / kit 0.8 s, Stalle / Saint-Pierre 0.5 s, Russian / town hall / Wolvendael 0.4 s | not trimmed: each is on screen at the Saint-Job start or right after it |
+| lamp pool (Place Saint-Job, eye level): lamp draws main / shadow | 12 / 6 | 6 / 0 (pool + sun shadow cache); pixel diff vs per-tile lamps: 0.09 % > 20 |
+| hero bridge far LOD (Saint-Job rail bridge at 540 m) | 3 draws | 1 draw; pixel diff in a x10 zoom of the bridge: 0.8 % > 20 (TAA / trees), same colours (docs/perfgame/farlod_bridge_old_merged_diff.jpg): ON by default |
+
+Where time to play goes now (police, cache warm): cover 24-30 s (tiles 5 s, neighbours 6 s, warm-up 10 s), "Getting
+ready" 5 s (game kit, car), the ring's 8 full tiles 15 s (main-thread tile steps + their compile jobs: 22-30 jobs in
+the queue the whole time), the landmarks' settle 5-9 s. Not under 35 s. Next: the ring tiles' compile jobs (their
+fading copies compiled later, after the reveal, like the start tile's: `warmLater`), the game kit's 5 s, and the
+landmarks' far-LOD AO-free bake for the landmark far merge (their wrapAO bakes the AO map into the colour).
+Not checked: night lamp shadows with the pool (the pool's near bucket joins the lamp shadow layer by itself).
