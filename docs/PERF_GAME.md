@@ -245,3 +245,42 @@ LODs / fading copies when the player comes within ~600 m, or a re-entrant wrappe
 (2) the boot warm-up (~25 s of node builds across cover + early warm-up): cache generated WGSL per material key in
 the Cache API (three would need a hook in NodeBuilder), or fewer distinct materials (the per-model features above);
 (3) heap (round 3 findings).
+
+## Round 6 (plan, code reading 2026-11-16): one shared ground / asphalt material across tiles
+
+What the code does today (viewer/ground.js texturedGround, viewer/main.js terrainMesh, viewer/roadPaint.js asphaltMaterial):
+- Each full tile builds its OWN ground material: its land-cover mask (DataTexture RGBA8 500 x 500, 1 m/px, no mips, or
+  the SDF version), its orthophoto (ortho.jpg, the far colour), its bounds. The bounds are already UNIFORMS (the
+  2026-11 fix: constants in the WGSL made every tile compile its own shader) and the scans are shared arrays (GT), so
+  every tile's ground material builds the SAME WGSL: one program, one pipeline already (confirmed in round 4's audit:
+  `ground:textured` 9 materials -> 3 programs, the 3 = render-pass variants). Same for the asphalt (per tile: its
+  marking atlas texture only).
+- So "one shared material" alone saves no pipeline; the only gain is in the DRAWS: 9 ring tiles = 9 terrain + 9 asphalt
+  render objects in the scene pass (terrain casts no shadow, receives only) -> 2 with a merge. At ~10-12 us a render
+  object: ~0.15-0.2 ms a frame.
+
+What a merge needs (all of it, or no gain):
+1. per-tile data as LAYERS: the masks in a DataArrayTexture (500 x 500 x N, RGBA8, linear, clamp: the same filtering /
+   edges as now, so no new seam), the orthos in a second array (decoded to RGBA8 per tile: createImageBitmap + an
+   OffscreenCanvas read in a worker; all orthos the same size), the marking atlases in a third (R8, equal sizes needed:
+   today they are sized per tile), N fixed slots (ring 9 + hysteresis), one layer uploaded per tile (three r187
+   `addLayerUpdate`), bounds in a uniformArray indexed by slot;
+2. the slot per vertex (an `aTile` attribute written into the terrain / road geometry at load);
+3. ONE draw for the layer: a BatchedMesh (r187: multi-draw in one render object, per-instance culling) holding each
+   tile's terrain geometry as an instance, the asphalt likewise;
+4. and what the per-tile meshes do now must move onto the batch: the tile's dithered fade-in / fade-out (lodFade swaps a
+   FADING COPY of the material per object, Fader drives a per-object fade uniform: per instance in a batch = an
+   instance attribute + a fading variant of the shared material), the per-cell culling of the tile meshes
+   (viewer/cellCull.js onBeforeRender per pass), the interior house cut, the weather wrap, the lamp light map
+   (addLampLight: per-tile ground light texture = a 4th array), the A/B ground (viewer.groundAB), contour lines.
+
+Verdict: ~0.2 ms for a refactor that touches the tile fade, cell culling, lamp light maps and three texture families,
+with seam / filtering risk at every tile border. Not started: the per-frame CPU is better spent on (ranked):
+- the far LOD of each landmark in ONE draw (8-16 draws each today: bridge-verrewinkel lod2 8, observatory 10, police 16
+  at the spawn, ...): merge each far level's meshes by material into vertex-coloured single meshes is a look change;
+  a per-landmark BatchedMesh of its far level keeps the materials only if they are one: needs the per-slot materials
+  unified first (round 4 audit: per-model shader features) -> start with the hero bridges (one material per slot);
+- the street lamps as one city pool (6 instanced meshes per tile today, culled since round 2): -0.1..-0.3 ms;
+- the shadow pass's movers (round 3: the player's car, traffic, trams drawn every frame): already small.
+If the owner wants the ground merge anyway, the order above (1 -> 4) is the plan, behind ?groundshare=old, with a
+border-seam check (screenshots across all four borders of a tile at 1 m, 50 m, 300 m) and the A/B pixel diff.
