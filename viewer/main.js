@@ -53,6 +53,8 @@ import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
 import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
+import { buildGrounds } from "./grounds.js";
+import { lyceeFront } from "./lyceeFront.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
@@ -657,6 +659,10 @@ const HEROS = params.get("heros") !== "old";
  *  the first tile): the terrain carves under its steps, the park's path ways the land cover leaves out */
 const HEROS_TILE = { carves: [], paths: [] };
 const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
+/** the Cortenbosch / Lycée Français detail pass (docs/CORTENBOSCH.md): the lane's real surfaces, its beech hedges, the
+ *  houses' and the school's looks, the school's yards and courts, its front (fence, gate, flags, lettering);
+ *  ?cortenbosch=old: the neighbourhood as before */
+const CORTENBOSCH = params.get("cortenbosch") !== "old";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
@@ -674,6 +680,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     storeys: params.get("storeys") !== "old", styles: params.get("styles") !== "old",              // styles: building types (viewer/buildingTypes.js, docs/STYLES.md), ?styles=old = one generic façade
                                                           // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
+    cortenbosch: CORTENBOSCH,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
@@ -896,6 +903,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // squares OSM leaves out (data/overrides.json); with measured surfaces the UrbIS squares replace them
   const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));
   if (plazas.count) own.roads.add(plazas.group);
+  // (cortenbosch) hard grounds OSM's recreation grounds drew as lawn: the Lycée Français's yards, track and courts
+  // (data/overrides.json grounds, viewer/grounds.js: one mesh, one draw); ?cortenbosch=old: none
+  const grounds = CORTENBOSCH ? buildGrounds((await loadOverrides(DATA)).grounds, bounds, (x, z) => hm.surface(x, z)) : { mesh: null, rings: [] };
+  if (grounds.mesh) { own.roads.add(grounds.mesh); say(`grounds: ${grounds.tris} triangles (data/overrides.json grounds)`); }
   R.textures.push(...terr.userData.textures);
   await frame("terrain");
   const B = facadeMeshes(null, null, null, null, d.buildings);
@@ -903,7 +914,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
   const plantDoc = await plantsP;
-  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z))].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
+  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z)), grounds.mesh].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
   // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
@@ -957,11 +968,14 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
-  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring);
+  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : []);   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
   const inClear = (x, z) => clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });
   // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
   // the police station's vehicle gate)
-  const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z));
+  const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), CORTENBOSCH ? (await loadOverrides(DATA)).gardenRestyle : null);   // (cortenbosch: the lane's beech hedges, gardenRestyle)
+  // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
+  const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
+  if (lycee) say(`lycée front: ${lycee.panels} railing panels, ${lycee.tris} triangles (viewer/lyceeFront.js)`);
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
   if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
   if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
@@ -1321,6 +1335,8 @@ async function main() {
   if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
+  // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)
+  if (CORTENBOSCH && params.get("flags") !== "0") lyceeFront.flags({ scene, updaters, renderer, compiler: heroCompiler, params, log }).catch((e) => log(`lycée flags failed: ${e.message}`));
   if (params.get("flags") !== "0") addFlags({ scene, updaters, renderer, compiler: heroCompiler, log, params }).catch((e) => log(`flags failed: ${e.message}`));
   // the tram tracks' smooth vertical profile, before the first tile's rails (?trackprofile=0: the old per-point ground)
   // the tile worker starts on the start tile and its ring NOW (the hide list and the ponds are complete): it builds them

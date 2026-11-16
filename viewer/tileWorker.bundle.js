@@ -9450,7 +9450,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const th = (s.course ?? 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);
     }
-    const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame2 >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
+    const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: s.surface != null ? SURFACE[s.surface] ?? 0 : nameSurf.get(s.name) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame2 >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
     const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame2}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP2);
   }
@@ -15228,6 +15228,7 @@ async function streetlifeFronts(base, name) {
 }
 var overridesP = null;
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
+var lookSet = (looks, entry) => !looks || entry.cortenbosch !== false ? looks : Object.fromEntries(Object.entries(looks).filter(([, v]) => v?.set !== "cortenbosch"));
 function wallRayOf(bDoc) {
   const B = 4, cells = /* @__PURE__ */ new Map(), segs = [];
   for (const b of bDoc.buildings) for (const ring2 of b.footprint || []) for (let i = 0; i < ring2.length; i++) {
@@ -15413,6 +15414,17 @@ async function buildTileData(entry, base) {
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
+  if (entry.cortenbosch !== false && ov.streetSurfaces) {
+    if (surf) for (const s of surf.surfaces || []) {
+      const o = ov.streetSurfaces[s.id];
+      if (o?.surface) s.surface = o.surface;
+    }
+    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, o.surface])));
+    for (const r of roads.roads) {
+      const sf = byRoad.get(r.id);
+      if (sf) (r.meta ??= {}).surface = sf;
+    }
+  }
   if (tunnels?.length) tunnelRoads(roads, tunnels);
   const hm = new Heightmap(tHdr, tBuf);
   const paint = entry.paint || PAINT;
@@ -15560,7 +15572,7 @@ async function buildTileData(entry, base) {
     const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V2 * 3), new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3), fitGround, footprintIndex(bDoc));
   }) : null;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : ov.buildingLooks }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
@@ -16120,4 +16132,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "d0f07ae6e1636014";
+self.__TILE_CODE_HASH = "5a788a1e750f9e13";

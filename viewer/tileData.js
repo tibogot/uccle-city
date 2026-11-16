@@ -86,6 +86,9 @@ async function streetlifeFronts(base, name) {
 let overridesP = null;
 /** data/overrides.json (hand corrections), fetched once per worker; {} if missing. */
 const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+/** the curated building looks this build uses: an entry of a neighbourhood pass ("set": "cortenbosch") only with its
+ *  switch on (?cortenbosch=old: none of them; ?looks=old drops every look) */
+const lookSet = (looks, entry) => (!looks || entry.cortenbosch !== false ? looks : Object.fromEntries(Object.entries(looks).filter(([, v]) => v?.set !== "cortenbosch")));
 
 /** ROOF HEIGHTS: every building's top (m TAW) rasterised into a 2 m grid over the tile (0 = no building), for fly
  *  mode's collision (the bird's floor = max(ground, roof)). Scanline fill of each footprint's outer ring. */
@@ -282,6 +285,16 @@ export async function buildTileData(entry, base) {
   // Square des Heros (viewer/heros/herosSurface.js; ?heros=old: the setts plaza as before): the UrbIS square surface minus
   // the park, as sidewalk paving; the park is the hero place's own ground
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
+  // (cortenbosch) the surface of single UrbIS street surfaces a local knows (data/overrides.json streetSurfaces: the
+  // Chemin privé 't Cortenbosch, grey concrete pavers on its 1990s part, setts on the old lane; the name vote of
+  // surfaces.js never matches it: UrbIS names are French only, OSM's bilingual), read by surfaces.js as s.surface;
+  // ?cortenbosch=old: none
+  if (entry.cortenbosch !== false && ov.streetSurfaces) {
+    if (surf) for (const s of surf.surfaces || []) { const o = ov.streetSurfaces[s.id]; if (o?.surface) s.surface = o.surface; }
+    // (and the engine carriageway kept over them reads its OSM road's surface: those roads too)
+    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, o.surface])));
+    for (const r of roads.roads) { const sf = byRoad.get(r.id); if (sf) (r.meta ??= {}).surface = sf; }
+  }
   if (tunnels?.length) tunnelRoads(roads, tunnels);                 // the lanes through the bores
   const hm = new Heightmap(tHdr, tBuf);
   // measured markings (pipeline/build_markings.py): crossings, stop lines, lines, OSM crossing / control nodes
@@ -419,7 +432,7 @@ export async function buildTileData(entry, base) {
   // are built from these walls (the drive colliders and the roof grids above already read the solids)
   const feet = fitGround && bBuf ? await step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround, footprintIndex(bDoc)); }) : null;
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : ov.buildingLooks }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);

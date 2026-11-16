@@ -1406,7 +1406,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       const th = ((s.course ?? 0) * Math.PI) / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);    // setts rows along the square
     }
-    const exOfV = (q) => (pname === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: nameSurf.get(s.name) || BASE_SURF[cls] }
+    const exOfV = (q) => (pname === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: s.surface != null ? (SURFACE[s.surface] ?? 0) : nameSurf.get(s.name) || BASE_SURF[cls] }   // (s.surface: a curated surface, tileData.js streetSurfaces)
       : pname === "concrete" ? { aKind: frame >= 0 ? KIND.framed : KIND.slab, aUv2: uv2[q], aFrameW: fw[q] } : null);
     const idx = pts.map((p, q) =>
       part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${fw[0]}|${Math.round(p[0] * 1000)}|${Math.round(p[1] * 1000)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
