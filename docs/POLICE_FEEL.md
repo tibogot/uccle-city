@@ -84,3 +84,11 @@ and many places, if not we feel blocked and that's not a good feeling". The poli
 Sources: Space Dust Racing UE4 vehicle physics tour (via github.com/unitycoder/ArcadeVehiclesPhysics), Toyful Games
 "Making custom car physics in Unity for Very Very Valet", GDSim workshop "Suspending a RigidBody", Game Developer
 "Implementing racing games: an intro to different approaches", game-engine-v1 thunderline arcadeCar.js (read only).
+
+## Browser check 1 (2026-11-16, ?game=police&gmode=free&traffic=0; stopped early: laptop shutdown)
+
+Screenshots: `docs/policefeel/` (01 gate exit, 02 Square Coghen ~15 % / Avenue du Manoir, 03 park lawn new, 03 park bank OLD blocked).
+- Found + fixed: rolled back on a hill with W held = stuck (e01001b0); station gate bollards pinned the car (small polygons now deflect, 546163f6); terrain surface penalty softened (paved yards / pavements are not in the drive grid and read as terrain).
+- Measured: Square Coghen hill 40 km/h after 2.2 s (old 26), stop / hold / restart OK; gate exit OK (old and new); wall scrape in the yard slides on at 24-28 km/h; Wolvendael park 30 % grass rise: OLD stops at an invisible ledge (kind wall, 2 km/h), NEW climbs it (then stops at a real trunk); handbrake on the lawn at 35 km/h: 77 deg, recovers. Driver update ~0.06-0.1 ms (old 0.08-0.1).
+- Half done: courtyard entry from both gates / the north gate not driven; old vs new screenshots only partly; traffic / parked-car shove not checked in the city; pavements are drawn but not in the drive surface (no kerb bump; the car follows the terrain under them).
+- Next: FIRST the owner's report: bad lines (aliasing?) on the back of the police car while moving in the default chase view; then the gates / courtyard, parked-car shove with traffic on, camera lean / fov feel, hedge drag.
