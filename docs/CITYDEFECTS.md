@@ -172,6 +172,35 @@ so the audit runs it in node.
   their face normal (`?roofflat=old`): 0 / 0. The other suspects are left to test live with `debug/roofBands.js`
   (topology() / at() / bias() / noShadow() / plain()): shadow acne at grazing sun, the roof material's own tone.
 
+## SHOPS OF PLACE DE SAINT-JOB (owner: "a local should recognise them"), prepared without the browser
+Sources: OSM (data/raw/streetlife/osm_pois.json), the shop kit's curated fronts (data/shops/terraces.json, each checked
+on Street View by the shops agent), online listings (text only). Street-life fix: a shop now belongs to the tile of its
+NEAREST BUILDING (tools/streetlife/build_streetlife.py owner_tile), so the north side of the Place, whose buildings are
+in I5 while the shop points sit just inside I6, is no longer dropped; a 3.2 m front is tried before giving up. Only the
+POI lists of I5 / I6 were updated (a full rebuild also shifts plates / numbers: run it city-wide on purpose later).
+
+| shop (Place / first ~150 m of Ch. de Saint-Job) | where | in the city | look spec | status |
+|---|---|---|---|---|
+| Le Relais Saint-Job (brasserie) | Place de Saint-Job 1 (UrbIS), not in OSM | NEW (tools/streetlife/extra_pois.json), restaurant + terrace by rule, name on the fascia | listings: "ancien estaminet bruxellois", waxed wood, tiled floor; terrace on the Place March-October; a heated roof-top terrace | FRONT TO CURATE on Street View (fascia colour / lettering, awning, terrace furniture, the roof-top terrace) |
+| Le Bistroquet (bar) | north side | NEW (was dropped) | - | to curate on Street View |
+| Deneubourg (bakery) | north side | NEW (was dropped) | - | to curate on Street View |
+| Barat (bakery, n. 36) | north side | yes | black fascia, 3 gooseneck spots, roller shutter (now another bakery) | curated |
+| Le Bouquet Varié (florist) | north side | yes | grey awning, plants out | curated |
+| Espace photo | north side | yes | grey fascia, red risers | curated |
+| Uccle Flore, Alain Dantine, Le P'tit Rêve, Maison Dandoy | north-east side | yes | - | to curate (Maison Dandoy: the brand's own front) |
+| St-Job (butcher) | Av. du Prince de Ligne | yes | grey fascia, white letters, grey canopy | curated |
+| Pizza Hut | the Place | yes (face as curated) | brick front, arched windows | curated |
+| Chez Clémentine | the Place (pavilion) | yes | glazed pavilion, covered terrace | curated |
+| Miska (ice cream) | Ch. de Saint-Job | yes | raised timber deck, white railing | curated |
+| Botanea (hairdresser), Pasta Commedia, Sushi Sama, Thai Smile, Le Passage | Ch. de Saint-Job north | yes | - | to curate |
+| Madonna | Ch. de Saint-Job | yes | no terrace | curated |
+| Le refuge (ex Au Petit Job) | Ch. de Saint-Job | yes | front-yard terrace behind a hedge, square parasols, blue awning | curated |
+| vrac&compagnie, Eric Strebelle (vet), Proxy Delhaize, The Cacao Tree | south of the Place | yes | - | to curate |
+| White Night (night shop, Ch. de Saint-Job 662) | UrbIS address 662 | yes (extra POI, white front) | white aluminium front, lit sign | TO CONFIRM: the owner says it may have closed |
+
+Next browser turn: Street View (newest date, both directions) shop by shop, write each front into data/shops/terraces.json
+(family, paint, lightbox, awning / canvas, terrace), Le Relais Saint-Job first; then side-by-side images.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).
