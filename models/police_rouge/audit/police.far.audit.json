@@ -10,11 +10,11 @@
    "sliver": 766,
    "nonmanifold": 12,
    "backtoback": 145,
-   "seam": 345,
+   "seam": 343,
    "tjunction": 596,
    "opening": 841
   },
-  "ms": 1323
+  "ms": 1947
  },
  "options": {
   "weld": 0.0001,
@@ -5005,20 +5005,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     47.026,
-     -18.41
-    ],
-    "part": "Police_far/cast_iron_green",
-    "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     26.325,
+     26,
      48.726,
-     -18.41
+     -18.42
     ],
     "part": "Police_far/cast_iron_green",
     "uses": 4
@@ -5027,9 +5016,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     26,
      47.026,
-     -16.97
+     -18.42
     ],
     "part": "Police_far/cast_iron_green",
     "uses": 4
@@ -5038,9 +5027,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     24.56,
      48.726,
-     -16.97
+     -18.42
     ],
     "part": "Police_far/cast_iron_green",
     "uses": 4
@@ -5049,9 +5038,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     24.56,
      47.026,
-     -16.83
+     -18.42
     ],
     "part": "Police_far/cast_iron_green",
     "uses": 4
@@ -5060,9 +5049,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     26,
      48.726,
-     -16.83
+     -15.38
     ],
     "part": "Police_far/cast_iron_green",
     "uses": 4
@@ -5071,9 +5060,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     26,
      47.026,
-     -15.39
+     -15.38
     ],
     "part": "Police_far/cast_iron_green",
     "uses": 4
@@ -5082,9 +5071,20 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     24.56,
      48.726,
-     -15.39
+     -15.38
+    ],
+    "part": "Police_far/cast_iron_green",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     24.56,
+     47.026,
+     -15.38
     ],
     "part": "Police_far/cast_iron_green",
     "uses": 4
@@ -6271,9 +6271,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.311,
+     26,
      47.041,
-     -18.41
+     -18.434
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6285,9 +6285,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.326,
+     26,
      47.071,
-     -18.41
+     -18.419
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6299,9 +6299,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.322,
+     26,
      47.396,
-     -18.41
+     -18.423
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6313,9 +6313,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
+     26,
      47.726,
-     -18.41
+     -18.412
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6327,9 +6327,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.354,
+     26,
      48.697,
-     -18.41
+     -18.391
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6341,9 +6341,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.296,
+     26,
      47.056,
-     -18.41
+     -18.449
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6355,9 +6355,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.317,
+     26,
      48.026,
-     -18.41
+     -18.428
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6369,9 +6369,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.328,
+     26,
      48.356,
-     -18.41
+     -18.417
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6383,9 +6383,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.318,
+     26,
      48.691,
-     -18.41
+     -18.427
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6397,9 +6397,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.339,
+     26,
      48.712,
-     -18.41
+     -18.406
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6411,9 +6411,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.339,
+     24.56,
      47.041,
-     -16.97
+     -18.406
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6425,9 +6425,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.324,
+     24.56,
      47.071,
-     -16.97
+     -18.421
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6439,9 +6439,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.328,
+     24.56,
      47.396,
-     -16.97
+     -18.417
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6453,9 +6453,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.317,
+     24.56,
      47.726,
-     -16.97
+     -18.428
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6467,9 +6467,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.296,
+     24.56,
      48.697,
-     -16.97
+     -18.449
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6481,9 +6481,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.354,
+     24.56,
      47.056,
-     -16.97
+     -18.391
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6495,9 +6495,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
+     24.56,
      48.026,
-     -16.97
+     -18.412
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6509,9 +6509,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.322,
+     24.56,
      48.356,
-     -16.97
+     -18.423
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6523,9 +6523,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.332,
+     24.56,
      48.691,
-     -16.97
+     -18.413
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6537,9 +6537,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.311,
+     24.56,
      48.712,
-     -16.97
+     -18.434
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6551,23 +6551,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
+     25.712,
      48.666,
-     -17.834
-    ],
-    "parts": [
-     "Police_far/cast_iron_green",
-     "Police_far/cast_iron_green"
-    ],
-    "area": 0.00605
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.322,
-     48.666,
-     -18.122
+     -18.417
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6579,23 +6565,23 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.327,
+     25.424,
      48.666,
-     -17.2
+     -18.428
     ],
     "parts": [
      "Police_far/cast_iron_green",
      "Police_far/cast_iron_green"
     ],
-    "area": 0.01123
+    "area": 0.00605
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.316,
+     25.136,
      48.666,
-     -17.402
+     -18.412
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6607,23 +6593,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
-     47.086,
-     -17.546
-    ],
-    "parts": [
-     "Police_far/cast_iron_green",
-     "Police_far/cast_iron_green"
-    ],
-    "area": 0.00605
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.322,
-     47.086,
-     -17.258
+     24.848,
+     48.666,
+     -18.423
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6635,9 +6607,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.327,
+     25.712,
      47.086,
-     -18.18
+     -18.423
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6649,9 +6621,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.316,
+     25.424,
      47.086,
-     -17.978
+     -18.412
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6663,9 +6635,37 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.311,
+     25.136,
+     47.086,
+     -18.428
+    ],
+    "parts": [
+     "Police_far/cast_iron_green",
+     "Police_far/cast_iron_green"
+    ],
+    "area": 0.00605
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     24.848,
+     47.086,
+     -18.417
+    ],
+    "parts": [
+     "Police_far/cast_iron_green",
+     "Police_far/cast_iron_green"
+    ],
+    "area": 0.01123
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     26,
      47.041,
-     -16.83
+     -15.394
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6677,9 +6677,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.326,
+     26,
      47.071,
-     -16.83
+     -15.379
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6691,9 +6691,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.322,
+     26,
      47.396,
-     -16.83
+     -15.383
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6705,9 +6705,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
+     26,
      47.726,
-     -16.83
+     -15.372
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6719,9 +6719,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.354,
+     26,
      48.697,
-     -16.83
+     -15.351
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6733,9 +6733,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.296,
+     26,
      47.056,
-     -16.83
+     -15.409
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6747,9 +6747,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.317,
+     26,
      48.026,
-     -16.83
+     -15.388
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6761,9 +6761,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.328,
+     26,
      48.356,
-     -16.83
+     -15.377
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6775,9 +6775,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.318,
+     26,
      48.691,
-     -16.83
+     -15.387
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6789,9 +6789,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.339,
+     26,
      48.712,
-     -16.83
+     -15.366
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6803,9 +6803,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.339,
+     24.56,
      47.041,
-     -15.39
+     -15.366
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6817,9 +6817,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.324,
+     24.56,
      47.071,
-     -15.39
+     -15.381
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6831,9 +6831,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.328,
+     24.56,
      47.396,
-     -15.39
+     -15.377
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6845,9 +6845,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.317,
+     24.56,
      47.726,
-     -15.39
+     -15.388
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6859,9 +6859,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.296,
+     24.56,
      48.697,
-     -15.39
+     -15.409
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6873,9 +6873,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.354,
+     24.56,
      47.056,
-     -15.39
+     -15.351
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6887,9 +6887,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
+     24.56,
      48.026,
-     -15.39
+     -15.372
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6901,9 +6901,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.322,
+     24.56,
      48.356,
-     -15.39
+     -15.383
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6915,9 +6915,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.332,
+     24.56,
      48.691,
-     -15.39
+     -15.373
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6929,9 +6929,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.311,
+     24.56,
      48.712,
-     -15.39
+     -15.394
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6943,23 +6943,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
+     25.712,
      48.666,
-     -16.254
-    ],
-    "parts": [
-     "Police_far/cast_iron_green",
-     "Police_far/cast_iron_green"
-    ],
-    "area": 0.00605
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.322,
-     48.666,
-     -16.542
+     -15.377
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6971,23 +6957,23 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.327,
+     25.424,
      48.666,
-     -15.62
+     -15.388
     ],
     "parts": [
      "Police_far/cast_iron_green",
      "Police_far/cast_iron_green"
     ],
-    "area": 0.01123
+    "area": 0.00605
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.316,
+     25.136,
      48.666,
-     -15.822
+     -15.372
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -6999,23 +6985,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.333,
-     47.086,
-     -15.966
-    ],
-    "parts": [
-     "Police_far/cast_iron_green",
-     "Police_far/cast_iron_green"
-    ],
-    "area": 0.00605
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     26.322,
-     47.086,
-     -15.678
+     24.848,
+     48.666,
+     -15.383
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -7027,9 +6999,9 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.327,
+     25.712,
      47.086,
-     -16.6
+     -15.383
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -7041,15 +7013,43 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     26.316,
+     25.424,
      47.086,
-     -16.398
+     -15.372
     ],
     "parts": [
      "Police_far/cast_iron_green",
      "Police_far/cast_iron_green"
     ],
     "area": 0.00605
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     25.136,
+     47.086,
+     -15.388
+    ],
+    "parts": [
+     "Police_far/cast_iron_green",
+     "Police_far/cast_iron_green"
+    ],
+    "area": 0.00605
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     24.848,
+     47.086,
+     -15.377
+    ],
+    "parts": [
+     "Police_far/cast_iron_green",
+     "Police_far/cast_iron_green"
+    ],
+    "area": 0.01123
    },
    {
     "check": "backtoback",
@@ -8327,38 +8327,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.355,
-     47.961,
-     -18.46
-    ],
-    "parts": [
-     "Police_far/stone_blue",
-     "Police_far/cast_iron_green"
-    ],
-    "length_m": 0.32,
-    "pieces": 12,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.355,
-     48.025,
-     -15.34
-    ],
-    "parts": [
-     "Police_far/stone_blue",
-     "Police_far/cast_iron_green"
-    ],
-    "length_m": 0.32,
-    "pieces": 12,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -0.65,
      50.73,
      -1.883
@@ -8967,9 +8935,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
+     25.784,
      48.666,
-     -16.97
+     -18.408
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -8983,9 +8951,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
+     25.496,
      47.086,
-     -16.97
+     -18.408
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -8999,9 +8967,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
+     25.784,
      48.666,
-     -15.39
+     -15.368
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -9015,9 +8983,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
+     25.496,
      47.086,
-     -15.39
+     -15.368
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -9255,9 +9223,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
-     47.086,
-     -18.41
+     26,
+     47.651,
+     -18.408
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -9271,9 +9239,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
-     47.086,
-     -16.97
+     24.56,
+     47.311,
+     -18.408
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -9287,9 +9255,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
-     47.086,
-     -16.83
+     26,
+     47.651,
+     -15.368
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -9303,9 +9271,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.325,
-     47.086,
-     -15.39
+     24.56,
+     47.311,
+     -15.368
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11335,9 +11303,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.326,
+     26,
      47.086,
-     -18.41
+     -18.419
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11351,9 +11319,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.354,
+     26,
      48.666,
-     -18.41
+     -18.391
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11367,9 +11335,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.324,
+     24.56,
      47.086,
-     -16.97
+     -18.421
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11383,9 +11351,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.296,
+     24.56,
      48.666,
-     -16.97
+     -18.449
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11399,9 +11367,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.326,
+     26,
      47.086,
-     -16.83
+     -15.379
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11415,9 +11383,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.354,
+     26,
      48.666,
-     -16.83
+     -15.351
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11431,9 +11399,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.324,
+     24.56,
      47.086,
-     -15.39
+     -15.381
     ],
     "parts": [
      "Police_far/cast_iron_green",
@@ -11447,9 +11415,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.296,
+     24.56,
      48.666,
-     -15.39
+     -15.409
     ],
     "parts": [
      "Police_far/cast_iron_green",

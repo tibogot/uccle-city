@@ -1,6 +1,6 @@
 # Mesh audit (packed): police.lod2
 
-3,351 triangles, 3,710 welded vertices, 2,951 open edges, 838,134 rays, 2789 ms.
+3,351 triangles, 3,712 welded vertices, 2,951 open edges, 838,134 rays, 2893 ms.
 
 **13 blocking**, 459 warnings. NOT CLEAN.
 
@@ -12,9 +12,9 @@
 | sliver | warn | 283 |
 | nonmanifold | warn | 12 |
 | tjunction | warn | 164 |
-| seam | info | 200 |
+| seam | info | 193 |
 | opening | info | 921 |
-| backtoback | info | 198 |
+| backtoback | info | 192 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -101,14 +101,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 25.80, 47.50, 14.70 | Police_lod2/galvanised_steel | 3 |
 | 25.80, 49.25, 20.10 | Police_lod2/galvanised_steel | 3 |
 | 25.80, 49.25, 14.70 | Police_lod2/galvanised_steel | 3 |
-| 26.32, 47.09, -18.41 | Police_lod2/cast_iron_green | 4 |
-| 26.32, 48.67, -18.41 | Police_lod2/cast_iron_green | 4 |
-| 26.32, 47.09, -16.97 | Police_lod2/cast_iron_green | 4 |
-| 26.32, 48.67, -16.97 | Police_lod2/cast_iron_green | 4 |
-| 26.32, 47.09, -16.83 | Police_lod2/cast_iron_green | 4 |
-| 26.32, 48.67, -16.83 | Police_lod2/cast_iron_green | 4 |
-| 26.32, 47.09, -15.39 | Police_lod2/cast_iron_green | 4 |
-| 26.32, 48.67, -15.39 | Police_lod2/cast_iron_green | 4 |
+| 26.03, 47.06, -18.42 | Police_lod2/cast_iron_green | 4 |
+| 26.03, 48.70, -18.42 | Police_lod2/cast_iron_green | 4 |
+| 24.53, 47.06, -18.42 | Police_lod2/cast_iron_green | 4 |
+| 24.53, 48.70, -18.42 | Police_lod2/cast_iron_green | 4 |
+| 26.03, 47.06, -15.38 | Police_lod2/cast_iron_green | 4 |
+| 26.03, 48.70, -15.38 | Police_lod2/cast_iron_green | 4 |
+| 24.53, 47.06, -15.38 | Police_lod2/cast_iron_green | 4 |
+| 24.53, 48.70, -15.38 | Police_lod2/cast_iron_green | 4 |
 
 ## tjunction (warn, 164)
 
@@ -157,7 +157,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (124 more in the JSON)
 
-## seam (info, 200)
+## seam (info, 193)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -202,7 +202,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 5.32, 48.48, 3.02 | Police_lod2/brick_red_brussels + Police_lod2/concrete_white | 2.2 | 13 | 81.4 |
 | 2.19, 48.55, 12.60 | Police_lod2/brick_red_brussels + Police_lod2/concrete_white | 1.65 | 13 | 81.4 |
 
-(160 more in the JSON)
+(153 more in the JSON)
 
 ## opening (info, 921)
 
@@ -251,7 +251,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (881 more in the JSON)
 
-## backtoback (info, 198)
+## backtoback (info, 192)
 
 | at | parts | area |
 |---|---|---|
@@ -296,7 +296,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 26.71, 49.02, 9.23 | Police_lod2/galvanised_steel + Police_lod2/signage | 0.01246 |
 | 26.71, 49.18, 9.24 | Police_lod2/galvanised_steel + Police_lod2/signage | 0.00055 |
 
-(158 more in the JSON)
+(152 more in the JSON)
 
 
 Nodes: Police_lod2. Distances: {"Police":105,"Police_far":440,"Police_lod2":2000}. Quantum 0.204 mm. Offset 0,40,0.

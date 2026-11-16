@@ -10,11 +10,11 @@
    "sliver": 6668,
    "nonmanifold": 12,
    "backtoback": 677,
-   "seam": 1750,
+   "seam": 1748,
    "tjunction": 728,
    "opening": 1139
   },
-  "ms": 4457
+  "ms": 5939
  },
  "options": {
   "weld": 0.0001,
@@ -5005,20 +5005,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
-     47.026,
-     -18.41
-    ],
-    "part": "Police/cast_iron_green",
-    "uses": 4
-   },
-   {
-    "check": "nonmanifold",
-    "severity": "warn",
-    "at": [
-     26.325,
+     26,
      48.726,
-     -18.41
+     -18.42
     ],
     "part": "Police/cast_iron_green",
     "uses": 4
@@ -5027,9 +5016,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     26,
      47.026,
-     -16.97
+     -18.42
     ],
     "part": "Police/cast_iron_green",
     "uses": 4
@@ -5038,9 +5027,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     24.56,
      48.726,
-     -16.97
+     -18.42
     ],
     "part": "Police/cast_iron_green",
     "uses": 4
@@ -5049,9 +5038,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     24.56,
      47.026,
-     -16.83
+     -18.42
     ],
     "part": "Police/cast_iron_green",
     "uses": 4
@@ -5060,9 +5049,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     26,
      48.726,
-     -16.83
+     -15.38
     ],
     "part": "Police/cast_iron_green",
     "uses": 4
@@ -5071,9 +5060,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     26,
      47.026,
-     -15.39
+     -15.38
     ],
     "part": "Police/cast_iron_green",
     "uses": 4
@@ -5082,9 +5071,20 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     26.325,
+     24.56,
      48.726,
-     -15.39
+     -15.38
+    ],
+    "part": "Police/cast_iron_green",
+    "uses": 4
+   },
+   {
+    "check": "nonmanifold",
+    "severity": "warn",
+    "at": [
+     24.56,
+     47.026,
+     -15.38
     ],
     "part": "Police/cast_iron_green",
     "uses": 4
@@ -12281,38 +12281,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     26.355,
-     47.961,
-     -18.46
-    ],
-    "parts": [
-     "Police/stone_blue",
-     "Police/cast_iron_green"
-    ],
-    "length_m": 0.32,
-    "pieces": 12,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     26.355,
-     48.025,
-     -15.34
-    ],
-    "parts": [
-     "Police/stone_blue",
-     "Police/cast_iron_green"
-    ],
-    "length_m": 0.32,
-    "pieces": 12,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -0.65,
      50.73,
      -1.883
@@ -17084,6 +17052,38 @@
      1.951,
      58.665,
      6.21
+    ],
+    "parts": [
+     "Police/stone_blue",
+     "Police/galvanised_steel"
+    ],
+    "length_m": 0.28,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.947,
+     58.665,
+     9.24
+    ],
+    "parts": [
+     "Police/stone_blue",
+     "Police/galvanised_steel"
+    ],
+    "length_m": 0.28,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.949,
+     58.665,
+     7.98
     ],
     "parts": [
      "Police/stone_blue",
