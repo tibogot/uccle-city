@@ -109,7 +109,7 @@ Average over the 8 street types, per car, per fleet level:
 
 | level (distance) | material | shadow | faceted (old) | cars2 (new) | change |
 |---|---|---|---|---|---|
-| 0 (< 22 m old, < 30 m new) | near | yes | 8,042 tris | 8,112 (LOD0) | = |
+| 0 (< 22 m old, < 30 m new) | near | yes | 8,042 tris | ~11,000 (LOD0, round wheels: see 4c) | +37 % |
 | 1 (to 55 / 60 m) | near | yes | 5,776 | 1,723 (LOD1) | **-70 %** |
 | 2 (to 130 m) | far | yes | 2,161 | 1,723 (LOD1) | -20 % |
 | 3 (to 600 m, faded 380-420) | far | no | 304 | 327 (LOD2) | +7 % |
@@ -148,6 +148,15 @@ Average over the 8 street types, per car, per fleet level:
 - **Rims**: four designs: 5-spoke (hatch_c, SUV, police), 6-spoke (hatch_s, taxi), 10-spoke multi (estate, saloon),
   plastic wheel covers with 8 slots (vans).
 Budget after the pass: level 0 8.1k, levels 1-2 1.7k, level 3 0.33k (table above), memory unchanged (6.5 MB).
+
+## 4c. Round wheels and arches at LOD0 (defect-eye item, 2026-11-16)
+LOD0 tyres and rims went from 15-20 to 32-40 segments (5-spoke 40, 6-spoke 36, multi-spoke 40, covers 32), the tyre
+profile has a rounded two-point shoulder and one material over sidewall + shoulder (no hard edge), spokes are two
+segments wide with DRAFTED walls (the opening's back is narrower than its mouth) shaded smooth up to 62 deg, so their
+edges read as bevels; a dark centre cap. Arches: 15 stations per arch at LOD0 (was 9), liners 16 segments.
+Cost: ~1,000 tris per LOD0 wheel. Note: in OUR fleets the wheels are merged into each car's geometry per LOD (the
+traffic rolls them in the vertex shader), not a separately instanced shared wheel, so LOD0 grew to ~9.4-12.6k per car
+(police 15k); it is drawn within 30 m only. LOD1 / LOD2 unchanged (8-segment / 5-sided wheels).
 
 ## 5. Mesh audit (`docs/cars2/audit.md`, tools/mesh_audit/audit.js through `tools/cars/auditCars2.mjs`)
 Contacts: every tyre touches the ground (lowest point -0.001 m, all cars, all LODs), the body's lowest point is

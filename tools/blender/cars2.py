@@ -621,7 +621,7 @@ def build_car(cid, sp, detail):
     rs = [0, 0.4, 0.68, 0.86, 0.96] if detail == 0 else [0, 0.6, 0.9] if detail == 1 else [0, 0.75]
     for u in rs:
         zs.append(zF - nose_len * (1 - u)); zs.append(zR + tail_len * (1 - u))
-    k_arch = 8 if detail == 0 else 4 if detail == 1 else 2
+    k_arch = 14 if detail == 0 else 4 if detail == 1 else 2   # (LOD0: a round arch silhouette, defect-eye 2026-11-16)
     for a in (WZ, -WZ):
         for i in range(k_arch + 1): zs.append(a + archR * math.cos(i / k_arch * math.pi))
     if detail < 2: zs += [cab["cowl"], cab["deck"]]
@@ -705,7 +705,7 @@ def build_car(cid, sp, detail):
             if f: faces.append((f, dict(part="front" if front else "rear", k=k, f=(0, 1), side=1 if FL[j] + FL[j + 1] > 0 else -1)))
     # ---- wheel-well liners (half drums inside the arches), their own object (open surfaces: normals set here)
     lm = MB()
-    nseg = 10 if detail == 0 else 5 if detail == 1 else 0
+    nseg = 16 if detail == 0 else 5 if detail == 1 else 0
     for a in (WZ, -WZ):
         if not nseg: break
         for side in (1, -1):
@@ -1070,13 +1070,15 @@ def build_wheel(sp, detail):
         w.quad([w.v((h, r5 * math.cos(ph + 2 * math.pi * s / 5), r5 * math.sin(ph + 2 * math.pi * s / 5))) for s in range(5)][::-1], M["rim_dark"])
         return w.obj("wheel2", weld=True)
     style = sp.get("rim", "6")
-    N = {"5": 20, "6": 18, "multi": 20, "cover": 16}[style] if detail == 0 else 8
+    # LOD0: 32-40 segments (a round tyre / rim silhouette; spokes 2 segments wide), LOD1: 8
+    N = {"5": 40, "6": 36, "multi": 40, "cover": 32}[style] if detail == 0 else 8
     if detail == 0:
-        prof = [(RR + 0.004, h * 0.80), (lerp(RR, RW, 0.45), h * 1.0), (RW - 0.02, h * 0.92),
-                (RW, h * 0.5), (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
+        # bead, bulged sidewall, rounded shoulder (two points), tread, inner shoulder, inner bead
+        prof = [(RR + 0.004, h * 0.80), (lerp(RR, RW, 0.45), h * 1.02), (RW - 0.022, h * 0.93), (RW - 0.006, h * 0.75),
+                (RW, h * 0.45), (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
     else:
         prof = [(RR, h * 0.85), (RW, h * 0.75), (RW, -h * 0.75), (RR, -h * 0.85)]
-    side_bands = (0, 1) if detail == 0 else (0,)
+    side_bands = (0,)                     # (one tyre material over sidewall and shoulder: no hard edge, a smooth roll)
     lathe(w, prof, N, lambda k, s: M["tyre_side"] if k in side_bands else M["tyre"])
     # rim: lip ring (proud), then the face
     xf = h * 0.62
@@ -1092,9 +1094,17 @@ def build_wheel(sp, detail):
         # 5-spoke: 1 of 4 segments a spoke; 6-spoke: 1 of 3; multi-spoke: every other; cover (vans): a plastic wheel
         # cover with 8 shallow slots
         dep = 0.012 if style == "cover" else 0.045
-        bk_mid = [w.v((xf - dep, r_mid * math.cos(ang(q)), r_mid * math.sin(ang(q)))) for q in range(N)]
-        bk_out = [w.v((xf - dep, r_out * math.cos(ang(q)), r_out * math.sin(ang(q)))) for q in range(N)]
-        opening = {"5": lambda q: q % 4 != 0, "6": lambda q: q % 3 != 0, "multi": lambda q: q % 2 == 1, "cover": lambda q: q % 2 == 1}[style]
+        opening = {"5": lambda q: q % 8 > 1, "6": lambda q: q % 6 > 1, "multi": lambda q: q % 4 > 1, "cover": lambda q: q % 4 == 2}[style]
+        # DRAFTED walls (the back of an opening is narrower than its mouth, 40 % of a segment each side, and 1.2 cm in
+        # radially): with the wheel's smooth angle the spoke edges shade as a bevel, not a flat-shaded block
+        def back_ang(q):
+            a, d = ang(q), (0.0 if style == "cover" else 0.4) * 2 * math.pi / N
+            if opening(q) and not opening((q - 1) % N): return a + d
+            if opening((q - 1) % N) and not opening(q): return a - d
+            return a
+        dr = 0.004 if style == "cover" else 0.012
+        bk_mid = [w.v((xf - dep, (r_mid + dr) * math.cos(back_ang(q)), (r_mid + dr) * math.sin(back_ang(q)))) for q in range(N)]
+        bk_out = [w.v((xf - dep, (r_out - dr) * math.cos(back_ang(q)), (r_out - dr) * math.sin(back_ang(q)))) for q in range(N)]
         for q in range(N):
             q1 = (q + 1) % N
             w.quad([ring_hub[q], ring_hub[q1], ring_mid[q1], ring_mid[q]], M["rim"])
@@ -1107,7 +1117,7 @@ def build_wheel(sp, detail):
             else:
                 w.quad([ring_mid[q], ring_mid[q1], outer[q1], outer[q]], M["rim"])
         cap = w.v((xf + 0.018, 0, 0))
-        for q in range(N): w.quad([ring_hub[q], ring_hub[(q + 1) % N], cap], M["rim_dark"] if q % 2 else M["rim"])
+        for q in range(N): w.quad([ring_hub[q], ring_hub[(q + 1) % N], cap], M["rim_dark"])      # a dark centre cap
         # brake disc + caliper behind the face
         dsc = [w.v((xf - 0.07, 0.8 * RR * math.cos(2 * math.pi * q / 10), 0.8 * RR * math.sin(2 * math.pi * q / 10))) for q in range(10)]
         w.quad(dsc, M["disc"])
@@ -1286,7 +1296,7 @@ for cid, sp in TYPES.items():
         objs = [o for o in build_car(cid, sp, detail) if len(o.data.polygons) or bpy.data.objects.remove(o)]
         wheel = build_wheel(sp, detail)
         for o in objs: smooth_shade(o)
-        smooth_shade(wheel, angle=math.radians(50))
+        smooth_shade(wheel, angle=math.radians(62 if detail == 0 else 50))
         W = sp["wheelX"]; RW = sp["wheelR"]
         wpos = {"FL": (W, RW, sp["wheelZ"]), "FR": (-W, RW, sp["wheelZ"]), "RL": (W, RW, -sp["wheelZ"]), "RR": (-W, RW, -sp["wheelZ"])}
         occl = []
