@@ -13,7 +13,7 @@ import * as THREE from "three/webgpu";
 import { color, uniform } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { loadPack, packMaterial, packLook, PACK_LODS, PACK_SOURCES } from "./carPacks.js";
+import { loadPack, packMaterial, packLook, PACK_LODS, PACK_SOURCES, playerSeeThrough } from "./carPacks.js";
 import { BODY, HANDLING } from "./carPhysics.js";
 
 export const CAR_LODS = [
@@ -51,7 +51,7 @@ async function loadPackCar(spec) {
   const pack = await loadPack(src);
   const car = pack.cars.find((c) => c.id === id) || pack.cars[0];
   const paint = car.paint.clone();
-  const mat = packMaterial({ paint, lights: carLights, rich: pack.rich });
+  const mat = packMaterial({ paint, lights: carLights, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich) });
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];
   const lods = car.lods.map((L) => ({
