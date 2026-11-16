@@ -38,6 +38,12 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    Place and Chaussée de Saint-Job: real façade colour, awning, terrace, signage text/colour/font style, window layout,
    checked against recent photos / Street View (look only). White Night (Chée de Saint-Job 662) may have closed:
    owner is finding photos; keep or remove after that.
+   **shops2 (2026-11-16, branch claude/shops2, not merged): docs/SHOPS2.md.** White Night is OPEN, in 662's low wing facing
+   its lot (moved there); Place de Saint-Job 22 (Maison Dandoy) was a NULL UrbIS solid (631 city-wide!): rebuilt
+   (tools/infill); Dandoy, Bois Savanes, Lefevre, Alain Dantine, Canon, Palais de la Truffe, Uccle Flore, P'tit Rêve,
+   Proxy, Bioffice, the vet, Sushi Sama, Pasta Commedia, Le Passage curated; Le Relais' corner has its 2 windows +
+   awnings; La Branche d'Olivier (8f e) done. Left: the other null solids, Le Touring, Thai Smile / Botanea / refuge /
+   Miska / Cacao Tree re-check, a traffic crash on long teleports (SHOPS2.md).
 8c. **Police car rear: bad lines while moving (owner 2026-11-16, default chase view)**: looks like aliasing / shimmer
    on the back of the car (TAAU + motion vectors on the player car? thin rear lights / plate edges? kit merge?). Check
    FIRST next session, with ?carmerge=old, ?instmotion=0, ?upscale=0 to isolate.

@@ -113,7 +113,8 @@
        0.013
       ],
       "font": "shopFlare",
-      "fill": 0.95
+      "fill": 0.95,
+      "boardGlow": 0.7
      },
      {
       "u": 1.25,
@@ -558,7 +559,13 @@
     "fascia": false,
     "valance": "UCCLE FLORE",
     "valanceFont": "shopCaps",
-    "tall": true
+    "tall": true,
+    "valanceFill": 1.25,
+    "awningInk": [
+     0.9,
+     0.88,
+     0.84
+    ]
    }
   },
   "extra:palais-truffe": {
@@ -567,7 +574,8 @@
    "front": {
     "family": "modern",
     "paint": 4,
-    "tall": true
+    "tall": true,
+    "awning": false
    }
   },
   "osm:n6980028723": {
@@ -618,11 +626,10 @@
    }
   },
   "osm:n1894743435": {
-   "_name": "La Branche d'Olivier, Rue Engeland 172-176 (Street View Apr 2024, newest; looked at, not kept): a cream-rendered house with brown tiles (data/overrides.json buildingLooks 698850) and a single-storey black glazed veranda in front: 'Bistro Gourmand' in large white serif letters on its black fascia, the name 'La Branche d'Olivier' in a cream script on a black board over it, wooden planter boxes with box hedges along the front, an olive tree in a big wooden planter, a terrace with parasols (577 reviews mention the terrace)",
+   "_name": "La Branche d'Olivier, Rue Engeland 172-176 (Street View Apr 2024, newest; looked at, not kept): a cream-rendered house with brown tiles (data/overrides.json buildingLooks 698850) and a single-storey black glazed veranda in front: 'Bistro Gourmand' in large white serif letters on its black fascia, the name 'La Branche d'Olivier' in a cream script on a black board over it, wooden planter boxes with box hedges along the front, an olive tree in a big wooden planter, a terrace with parasols (577 reviews mention the terrace) BROWSER CHECK: two LiDAR trees stand in the terrace (the olive tree and the corner tree of Street View): no parasols (their canopies cut the crowns).",
    "depth": 3.0,
    "hedge": true,
-   "parasols": true,
-   "parasol": 6,
+   "parasols": false,
    "start": 0.6,
    "front": {
     "family": "modern",
@@ -664,6 +671,74 @@
       "fill": 0.95
      }
     ]
+   }
+  },
+  "osm:n13968964013": {
+   "_name": "Sushi Sama (Av. Carsoel / Place de Saint-Job corner; Street View Mar 2021, newest there; looked at, not kept): the white-painted house with a slate mansard; a black fascia with SUSHI SAMA in wide white capitals and a sushi logo; white window frames, no shop window (house windows)",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "lightbox": false,
+    "awning": false,
+    "blade": false,
+    "board": [
+     0.012,
+     0.012,
+     0.013
+    ],
+    "ink": [
+     0.95,
+     0.95,
+     0.93
+    ],
+    "font": "shopFlare",
+    "sign": "SUSHI SAMA"
+   }
+  },
+  "osm:n11533339716": {
+   "_name": "Pasta Commedia (Street View Mar 2021): the coral-painted house with a round gable window; red awnings with PASTA COMMEDIA in white on the valance; a terrace in front behind a dark timber fence with a low hedge",
+   "depth": 2.2,
+   "hedge": true,
+   "parasols": false,
+   "start": 0.4,
+   "front": {
+    "family": "classic",
+    "paint": 1,
+    "awning": true,
+    "canvas": 0,
+    "stripes": false,
+    "fascia": false,
+    "valance": "PASTA COMMEDIA",
+    "valanceFont": "shopSerif",
+    "valanceFill": 1.2,
+    "awningInk": [
+     0.9,
+     0.88,
+     0.84
+    ]
+   }
+  },
+  "osm:n5985386079": {
+   "_name": "Le Passage (restaurant, Av. Carsoel; Street View Apr 2024): a light red-brick new building, grey aluminium frames, a navy sign board with 'Le Passage' in a white script and a bowl logo over the entrance canopy",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 4,
+    "lightbox": false,
+    "awning": false,
+    "board": [
+     0.02,
+     0.03,
+     0.075
+    ],
+    "ink": [
+     0.95,
+     0.95,
+     0.93
+    ],
+    "font": "shopScript",
+    "sign": "Le Passage"
    }
   }
  }

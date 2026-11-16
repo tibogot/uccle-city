@@ -155,7 +155,7 @@ export function layoutShop(p, f, frame, lit, env) {
     const zf = cf.fascia === false ? 0.02 : classic ? 0.221 + 0.009 : 0.273 + 0.009, yc = (classic ? fasciaY + 0.375 : fasciaY + 0.325) + (pl.dy ?? 0);
     const plab = pl.text ? label([].concat(pl.text), pl.font ?? "shopSans") : null;
     box(at(pl.u ?? 0, yc, zf), X, Y, Z, pl.w, pl.h ?? 0.46, 0.008, { board: pl.board ?? [0.86, 0.86, 0.84], ink: pl.ink ?? [0.02, 0.02, 0.02], lab: plab, fill: pl.fill ?? 0, pad: 0.1, rough: 0.4, kind: 2,
-      inkGlow: (pl.glow ?? 0) * lit, boardGlow: 0 });
+      inkGlow: (pl.glow ?? 0) * lit, boardGlow: (pl.boardGlow ?? 0) * lit });   // (a lit panel at night: White Night's WHITE half)
   }
   // (curated) a band across the head of the glass: [text, board, ink, font, h] (Bois Savanes' RESTAURANT THAÏ TRAITEUR,
   // Lefevre's name plate)
@@ -207,7 +207,8 @@ export function layoutShop(p, f, frame, lit, env) {
     }
     const vink = lum(canvas) > 0.25 ? [0.03, 0.03, 0.03] : [0.9, 0.87, 0.78];
     // the valance (shopfronts.py: 1.775 m out, 0.595 .. 0.835 m under the fascia bottom)
-    box(at(0, fasciaY - 0.715, 1.779), X, Y, Z, W - 0.1, 0.2, 0.004, { board: stripes ? [0.72, 0.68, 0.58] : canvas, ink: stripes ? [0.03, 0.03, 0.03] : vink, lab: vlab, pad: 0.08, rough: 0.88 });
+    // (curated valanceFill: the letters' row as a share of the valance height, Uccle Flore's big capitals)
+    box(at(0, fasciaY - 0.715, 1.779), X, Y, Z, W - 0.1, 0.2, 0.004, { board: stripes ? [0.72, 0.68, 0.58] : canvas, ink: stripes ? [0.03, 0.03, 0.03] : cf.awningInk ?? vink, lab: vlab, pad: 0.08, fill: cf.valanceFill ?? 0, rough: 0.88 });
   }
   // ---- projecting sign (double-sided) or the pharmacy's green cross, at the shopfront's door end
   const pend = Math.min(f.u + W / 2 + 0.3, f.edgeL - 0.3) - f.u;
