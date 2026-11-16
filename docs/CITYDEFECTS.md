@@ -129,14 +129,31 @@ so the audit runs it in node.
   git-ignored and absent): `tools/textures/fetch_textures.py` + `process_textures.py` + `encode_ktx2.mjs`, then a look in
   the Material Lab (browser) before `tools/texturefactory/promote.py`. Not done.
 
-## E (rest), F — need the browser
-- F: the white night shop on Place Saint-Job: no OSM / streetlife point for it (OSM shops round the Place: Barat,
-  Deneubourg, Le Bouquet Varié, Uccle Flore, Alain Dantine, Le P'tit Rêve, Maison Dandoy, Botanea, St-Job butcher,
-  Espace photo; nothing tagged convenience / night shop there). Placing it needs its building (owner, or a Street View look
-  in the browser turn); then a streetlife POI (cat convenience) + the shop kit's white front. No invented position.
-- E: window / door surround z-fight (51, 55, 56) and banded flat roofs (59): need the spots seen moving (the kit's
-  frames / surrounds vs the wall's cut openings; the flat roof bands look like a roof material's tiling or the roof
-  grid's shading). To check in the browser turn.
+## BROWSER CHECK (2026-11-16, after the perfgame merge)
+- A: deck east end showed green terrain strips through the asphalt (the bank's DTM over the tucked deck top, brought
+  back up by the road stage's terrain weld): the ground inside the ring is now cut under the deck top, also after the
+  weld (`deckUnderCut` runs twice). A_bridge_east_after.jpg is the fixed view. Left: the deck's asphalt is flat vertex
+  colour next to the textured street asphalt (a slight tone change at the ends).
+- B: `debug/furnitureAudit.js` on I6: signals 0 / 6, tram poles 0 / 58, stop poles 0 / 12, signs 0 / 35 in a carriageway
+  (old switches: signals 3 / 8, poles 24 / 58, plate posts 4 / 14). B_saintjob_signals_before / _after.jpg: the image-58
+  spot, the catenary pole and the signals now on the kerb, heads facing their traffic.
+- D: parking by width, Av. Alphonse XIII (D_parking_alphonse_before / _after.jpg): before both kerbs (two cars inside each
+  other), after one kerb lined, the lane free. Traffic 08:10 on I6, 90 s: no car stopped > 60 s (no standoff); traffic
+  cars within 1.6 m of a parked car: 48 of 1,709 samples, 47 of them parking manoeuvres. Narrow stretches came in 4-5 m
+  pieces between parked cars: merged over gaps < 15 m. Slopes: D_slope_ruedu_ham_before / _after.jpg (the front wheel
+  in the road before, on it after).
+- E: pier caps closed (E_pier_caps_after.jpg). Image 55's band across the door of Av. Carsoel 13 (E_carsoel13_wall_band.jpg):
+  NOT a z-fight of the kit: UrbIS 3D solid buildingsolid/538119 has a notched front ((1033.77, 499.27)-(1028.16, 499.94)
+  33 cm proud of (1028.11, 499.61)-(1023.04, 500.22)); its wall mesh has the proud front only as a top strip plus ONE
+  diagonal triangle (1033.77, 74.32)-(1028.16, 74.8)-(1028.16, 71.73) in front of the door: the bright band. Fix (next):
+  in the wall build, drop wall triangles of a footprint edge that leave most of that edge's wall uncovered (or rebuild
+  that edge's wall from the footprint), with a city-wide count of such partial walls first. Flat-roof bands (59): not
+  looked at (likely shadow acne at grazing sun on the flat roofs).
+- F: the "white night shop" = "White Night - St-Job", Ch. de Saint-Job 662 (night shop listing on Google Maps, looked at;
+  Street View 2019 predates it). Placed at the UrbIS address point 662 (tools/streetlife/extra_pois.json, merged by
+  build_streetlife.py; only the new POI injected into data/streetlife/I6.json, the rest of the file as built), white
+  modern front with a lit sign box (data/shops/terraces.json). F_white_night_after.jpg. UrbIS puts 662 on the brick
+  corner building next to vrac&compagnie; the white rendered house beside it may be the real one: owner to confirm.
 
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
