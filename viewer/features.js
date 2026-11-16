@@ -64,6 +64,8 @@ export const FEATURES = [
   on("game", "modes", "game kit + start menu", "The game kit (viewer/game/, docs/GAMEKIT.md): the start menu (Free roam / Kit demo / Police / Falcon), missions, dispatch, the player HUD; P opens the menu. ?game=0 = pure free roam as before; ?game=<id> (demo) starts that game after the boot, with ?gmode=missions | free.", { sub: "Games" }),
   on("gamemenu", "modes", "start menu at boot", "Open the game start menu when the boot cover lifts (?gamemenu=0: not; the Play button / P still open it; a boot link with ?view= skips it too).", { sub: "Games" }),
   txt("gmode", "modes", "game mode", "With ?game=<id>: missions (default) or free (free play).", "missions", { sub: "Games" }),
+  old("orbitcam", "modes", "orbit: OrbitControls as before", "The default orbit view is the inspection camera (viewer/orbitCam.js, docs/ORBITCAM.md): left-drag orbits round the point under the cursor, right / middle-drag pans along the ground, the wheel zooms to the cursor, double-click / F frames a point, RMB + WASD/QE flies (Shift faster), no clipping into the ground or buildings, touch: 1 finger orbit, 2 pan / pinch / twist. ?orbitcam=old = three's OrbitControls as before.", { sub: "Orbit camera" }),
+  on("orbitheroes", "modes", "orbit: landmark picking", "The inspection camera picks and collides with the landmarks' own triangles (their LOD0 BVHs, viewer/heroBVH.js, shared with the third person) besides the terrain + roof height fields. ?orbitheroes=0 = height fields only.", { sub: "Orbit camera" }),
   sel("maplang", "modes", "map language", "The minimap / full map's street names.", [[null, "French"], ["nl", "Dutch"]], { sub: "Map" }),
 
   // ---------------------------------------------------------------- time & sun

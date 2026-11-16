@@ -57,6 +57,10 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
+   **orbitcam (2026-11-16, branch claude/orbitcam, not merged):** the default orbit is now an inspection camera
+   (`viewer/orbitCam.js`, docs/ORBITCAM.md): orbit round the point under the cursor, ground pan, zoom to the cursor,
+   F / double-click frames, RMB + WASD/QE flies, terrain / roof / landmark collision, touch, smooth fly-to for views and
+   loaded-tile teleports. `?orbitcam=old`, `?orbitheroes=0`. Offline checks `node tools/orbitCamTest.mjs` pass; browser check done (docs/orbitcam/README.md); hand tuning of speeds by the owner left.
 10. **Falcon game**: collision bugs (falls, then shoots back up), controls hard. Simpler and friendlier
    (assisted flight, auto level, clear feedback), not more complex. (later agent)
    **falconfix (2026-11-16, branch claude/falconfix, not merged):** collisions round 3 (no launch upward, no pops, a
@@ -70,7 +74,7 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    **policefeel (2026-11-16, branch claude/policefeel, not merged):** new handling in code (`viewer/drive/carFeel.js`,
    docs/POLICE_FEEL.md, `?carfeel=old` / `?hedgecol=old`): suspension, tyres, counter-steer, handbrake, camera; kerbs on
    steep streets / lawn banks / kerb islands ridden (the old 0.5 m-over-centre ledge rule blocked a 15 cm kerb on a 15 %
-   street), hedges soft, posts deflect, parked cars shoved. Offline checks done; browser route check pending.
+   street), hedges soft, posts deflect, parked cars shoved. Offline checks done; browser route 
 
 ## CURRENT STATE (2026-11-13) — read this first
 

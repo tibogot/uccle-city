@@ -10,6 +10,8 @@ import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
 } from "three/tsl";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { InspectControls, cityField } from "./orbitCam.js";
+import { heroBVHs } from "./heroBVH.js";
 import { buildLamps, setLampModel, lampLightPool, setLampPool } from "./lamps.js";
 import { loadLampModel } from "./lampModel.js";
 import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel.js";
@@ -1389,9 +1391,18 @@ async function main() {
   for (const el of document.querySelectorAll("[data-layer]")) el.addEventListener("change", () => { layers[el.dataset.layer].visible = el.checked; });
   $("contours").addEventListener("change", (e) => { contourOn.value = e.target.checked ? 1 : 0; });
 
-  const controls = new OrbitControls(camera, renderer.domElement);
+  // the orbit / inspection camera (viewer/orbitCam.js, docs/ORBITCAM.md): pivot under the cursor, zoom to the cursor,
+  // ground pan, F / double-click frames, RMB + WASD flies, no clipping into the ground or buildings;
+  // ?orbitcam=old: three's OrbitControls as before. ?orbitheroes=0: picks / collides with the height fields only
+  const ORBITCAM_OLD = params.get("orbitcam") === "old";
+  const controls = ORBITCAM_OLD ? new OrbitControls(camera, renderer.domElement)
+    : new InspectControls(camera, renderer.domElement, { field: cityField(world), target: new THREE.Vector3(),
+      blocked: () => !!(window.__game?.hud?.menuOpen || window.__map?.full?.open),          // (a menu / the full map has the keys)
+      // (the landmark BVHs start building on the camera's first pick / move, not at boot: ~0.2 s of worker time then)
+      heroes: params.get("orbitheroes") === "0" ? () => [] : ((m) => () => (m ??= heroBVHs(log)).values())(null) });
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
+  window.__orbitcam = controls;
   const walker = new Walker(camera, renderer.domElement, world);
   walker.scene = scene;
   world.hide = COLFIX ? HIDE_BU_IDS : [];  // the UrbIS solids the landmarks replace (out of the colliders on foot too)
@@ -1525,7 +1536,13 @@ async function main() {
   };
   let third = null;                       // the third-person character (?view=third), see below
   cityBirds.hook({ walker, driver, getThird: () => third, flyer, getTraffic: () => cityTraffic, camera });   // the birds' threats (docs/BIRDS.md)
-  const setView = (v) => { if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true; views[v](); controls.update(); lighting.snapNext = true; };
+  const setView = (v) => {
+    // (the inspection camera, already orbiting: a smooth flight to the view, not a cut)
+    const wasOrbit = controls.enabled && !walker.on && !flyer.on && !driver.on && !third?.on;
+    if (third?.on) third.stop(); walker.on = false; flyer.stop(); driver.stop(); controls.enabled = true;
+    controls.glide = wasOrbit; views[v](); controls.update(); controls.glide = false;
+    lighting.snapNext = true;
+  };
   walker.onExit = () => setView("stjob");
   $("btnOrbit").onclick = () => setView("overview");
   $("btnStJob").onclick = () => setView("stjob");
@@ -2019,6 +2036,11 @@ async function main() {
     // perfgame (docs/PERF_GAME.md): the play loader covers the jump and holds until the area is built (areaReady);
     // ?playloader=old or { hold: false }: the jump as before (the scene fills in in front of the player)
     if (!PLAY_LOADER || o.hold === false) return teleportNow(o);
+    // the inspection camera (orbitCam.js) to a place whose tile is already in: a smooth flight, no loader
+    if (!ORBITCAM_OLD && !o.mode && mode() === "orbit" && world.tiles.some((t) => o.x >= t.bounds.x0 && o.x <= t.bounds.x1 && o.z >= t.bounds.z0 && o.z <= t.bounds.z1)) {
+      controls.glide = true;
+      try { const r = await teleportNow(o); await o.after?.(r); return r; } finally { controls.glide = false; }
+    }
     const label = o.label ?? o.name;
     playLoader.open(playLoader.active ? {} : { title: label || "On the way", kicker: "Travelling" });
     try {
