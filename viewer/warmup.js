@@ -106,8 +106,6 @@ const pump = () => {
 /** perfgame (the play loader, viewer/loader/playLoader.js): the precompile queue's jobs left (0 = idle) */
 export const compileJobsLeft = (near = null) => jobs.filter((j) => !near || j.first || near(j.names || [])).length + (running && (!near || !runningJob || runningJob.first || near(runningJob.names || [])) ? 1 : 0);
 let runningJob = null;
-/** (debug: the play loader's time-limit line) the queued jobs' first root names */
-export const compileJobNames = () => [runningJob && running ? `*${(runningJob.names || [])[0]}` : null, ...jobs.map((j) => (j.names || [])[0])].filter(Boolean);
 const enqueue = (job, first = false, names = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, resolve, reject }); pump(); });
 export function installCompileQueue(renderer) {
   if (rawCompile) return;

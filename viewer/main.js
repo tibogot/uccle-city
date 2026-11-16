@@ -46,7 +46,7 @@ import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- up
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft, compileJobNames } from "./warmup.js";
+import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
@@ -1813,7 +1813,6 @@ async function main() {
       await new Promise((r) => requestAnimationFrame(() => r()));
       frames++;
       st.full = needFull.filter(has).length;
-      st.missing = needFull.filter((n) => !has(n)).concat(needLite.filter((n) => !has(n) && !lite.has(n)).map((n) => `${n}(far)`)).join(" ");
       st.lite = needLite.filter((n) => has(n) || lite.has(n)).length;
       st.jobs = compileJobsLeft((names) => nearModel(names, x, z, nearModels)); st.pipes = window.__asyncPipes?.pending ?? 0;
       maxJobs = Math.max(maxJobs, st.jobs); maxPipes = Math.max(maxPipes, st.pipes);
@@ -1834,7 +1833,7 @@ async function main() {
     closeHoldWorkers();
     if (q >= quiet) bootSettled = true;
     const r = { ms: Math.round(performance.now() - t0), frames, full: needFull.length, lite: needLite.length, ok: q >= quiet, ...st };
-    log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : ` (time limit; missing: ${st.missing || "-"}, fading ${fader.busy ? fader.list.map((f) => `${f.obj.name}${f.obj.userData.compiling ? "*" : ""}`).slice(0, 6).join(",") : 0}, jobs ${st.jobs} [${compileJobNames().slice(0, 14).join(",")}], pipelines ${st.pipes})`}`);
+    log(`area ready${label ? ` (${label})` : ""}: ${r.ms} ms, ${r.full} full + ${r.lite} far tiles, ${frames} frames${r.ok ? "" : " (time limit)"}`);
     window.__areaReady = r;
     return r;
   };

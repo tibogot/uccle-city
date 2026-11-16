@@ -315,6 +315,7 @@ export const FEATURES = [
   on("holdworkers", "streaming", "extra tile workers under the play loader", "perfgame: while the play loader holds, up to two more full-tile workers build the spawn's tiles side by side (closed when idle after); off: the single streaming worker.", { sub: "Boot & loading" }),
   old("streamorder", "streaming", "stream in manifest order", "perfgame: the ring's tiles stream in the manifest's order, as before; default: the one nearest the player first.", { sub: "Boot & loading" }),
   old("asyncpipes", "perf", "sync pipelines during play", "perfgame: a pipeline the precompiles missed is created SYNCHRONOUSLY on its first draw (a 150-800 ms frame each in the police drive), as before; default: created async, the object shows a few frames later (viewer/asyncPipes.js)."),
+  old("rayswarm", "perf", "god-ray passes built on first sight", "perfgame: the haze's god-ray passes (4 pipelines) built synchronously the first time the sun comes on screen (a 100-120 ms frame mid-drive), as before; default: drawn once under the boot cover (lighting.js hazeHook)."),
   old("hudskip", "perf", "hidden drive HUD still written", "perfgame: the drive mode's speed line is rewritten (innerHTML) every 6th frame even while a game hides it, as before."),
   num("loaderhold", "streaming", "loader hold (s)", "Keep the loading screen's layer this much longer after the fade (hand-over checks).", 0, 0, 10, 0.5, { sub: "Boot & loading" }),
 
