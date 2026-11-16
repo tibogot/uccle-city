@@ -15,6 +15,7 @@ import { nearestRoad, phaseOfDir, signalClock, signalState } from "./traffic/sig
 import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
+import { carriageHalf } from "./streets/carriageway.js";
 
 const C = {
   iron: [0.03, 0.035, 0.035], steel: [0.32, 0.33, 0.34], red: [0.5, 0.03, 0.02], white: [0.8, 0.8, 0.78],
@@ -78,10 +79,55 @@ function kerb(type, side) {
   return w;
 }
 
-export function buildFurniture(feats, roads, ground, bounds) {
+// SIGNAL POSTS (citydefects 2026-11-16, owner playtest: "traffic lights standing in the road and wrongly rotated"). Was:
+// two posts per OSM point at the road TYPE's default kerb offset (not the measured street), 4 m either side along the road
+// (at a junction: inside the cross street), heads turned ACROSS the road. Now an OSM signal point is what it is mapped as
+// in Brussels, the signal of ONE approach at its stop line (133 of 206 lie 3-25 m before a junction): one post on that
+// approach's right kerb, 0.5 m behind it on the measured sidewalk, its head facing the cars that come; a point away from
+// junctions (a pedestrian crossing's signals) gets one post per kerb, each facing its own traffic. ?signals=old: as before.
+const SIGNALS_OLD = typeof location !== "undefined" && /[?&]signals=old/.test(location.search);
+
+/** the nearest junction node (degree >= 3) along road r from (px, pz) within reach: { node, ux, uz } with (ux, uz) the
+ *  direction from the point toward it, or null */
+function junctionAhead(r, N, deg, nr, reach = 30) {
+  let best = null;
+  for (const end of [r.a, r.b]) {
+    const n = N.get(end);
+    if (!n || (deg.get(end) || 0) < 3) continue;
+    const d = Math.hypot(n.x - nr.px, n.z - nr.pz);
+    if (d > reach || (best && d >= best.d)) continue;
+    const s = end === r.b ? 1 : -1;                      // the segment's a -> b direction leads to b
+    best = { node: n, d, ux: nr.ux * s, uz: nr.uz * s };
+  }
+  return best;
+}
+
+/** a post for the traffic travelling (tx, tz) past the stop point (px, pz) on road r: on that traffic's right kerb,
+ *  0.5 m behind the measured kerb when there is one, never in a carriageway; head (local -z) toward the coming cars */
+function signalPost(r, px, pz, tx, tz, opts) {
+  const rx = -tz, rz = tx;                              // the right of the travel direction (x east, z south)
+  const [hl, hr] = carriageHalf(r);
+  const forward = r && ((tx * opts.ux + tz * opts.uz) >= 0);  // travelling along the road's a -> b: its right is hr
+  const half = forward ? hr : hl;
+  let x = px + rx * (half + 0.6), z = pz + rz * (half + 0.6);
+  const k = opts.fit?.nearKerb?.(x, z, 5);
+  if (k) {
+    // the kerb's raised side, 0.5 m in (as the lamps: streetFit.placeLamp)
+    for (const back of [0.5, 0.35, 0.8]) {
+      const qx = k.x + k.lx * back, qz = k.z + k.lz * back;
+      if (opts.fit.lift(qx, qz) > 0 && (k.lx * rx + k.lz * rz) > 0) { x = qx; z = qz; break; }
+    }
+  }
+  for (let i = 0; i < 16 && opts.driven?.inside(x, z, 0.1); i++) { x += rx * 0.5; z += rz * 0.5; }
+  return { x, z, yaw: Math.atan2(tx, tz) };
+}
+
+export function buildFurniture(feats, roads, ground, bounds, opts = {}) {
   const group = new THREE.Group();
   group.name = "street-furniture";
   const N = new Map(roads.nodes.map((n) => [n.id, n]));
+  const deg = new Map();
+  for (const r of roads.roads) for (const e of [r.a, r.b]) deg.set(e, (deg.get(e) || 0) + 1);
   const inst = { stopPole: [], shelter: [], signal: [], bikes: [], bench: [] };
   // place at the kerb on side s of the road nearest p: arm/face toward the road
   const atKerb = (nr, s, along = 0, extra = 0.6) => {
@@ -100,7 +146,11 @@ export function buildFurniture(feats, roads, ground, bounds) {
     } else if (p.kind === "traffic_signals") {
       // one post each side, before the stop line; phase B on roads running more north-south (signals.js phaseOfDir)
       const phase = phaseOfDir(nr.ux, nr.uz);
-      for (const sd of [1, -1]) inst.signal.push({ ...atKerb(nr, sd, sd * 4, 0.4), phase });
+      if (SIGNALS_OLD) { for (const sd of [1, -1]) inst.signal.push({ ...atKerb(nr, sd, sd * 4, 0.4), phase }); continue; }
+      const o = { ...opts, ux: nr.ux, uz: nr.uz };
+      const j = junctionAhead(nr.road, N, deg, nr);
+      if (j && j.d > 1.5) inst.signal.push({ ...signalPost(nr.road, nr.px, nr.pz, j.ux, j.uz, o), phase });
+      else for (const sd of [1, -1]) inst.signal.push({ ...signalPost(nr.road, nr.px, nr.pz, nr.ux * sd, nr.uz * sd, o), phase });
     } else if (p.kind === "bicycle_parking") {
       inst.bikes.push(atKerb(nr, nr.side, 0, 0.9));
     } else if (p.kind === "bench") {

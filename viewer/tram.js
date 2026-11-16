@@ -156,6 +156,32 @@ function buildDecks(tram, prof, surface, inB, onRoadDeck = null) {
 
 /** surface(x, z): the road top; prof (viewer/trackProfile.js, optional): the tracks' smooth rail-top profile (the wire
  *  hangs WIRE_H over it, the bridge deck carries it) */
+// TRAM POLES OFF THE CARRIAGEWAY (citydefects 2026-11-16, owner playtest: "tram/catenary poles in the road"). A pole
+// stood POLE_OFF m beside its track whatever was there: in a street with the tracks in the carriageway that is the other
+// lane or the parking lane. Now (opts.driven, viewer/streets/carriageway.js) a pole that would stand in a carriageway
+// moves to the nearest measured kerb on either side (0.5 m onto the sidewalk; a median or tram reserve is fine as is),
+// its arm reaching back over the track (any length up to ARM_MAX); none within reach: no pole (the wire hangs on). ?tramPoles=old.
+const POLES_OLD = typeof location !== "undefined" && /[?&]trampoles=old/.test(location.search);
+const ARM_MAX = 9;
+function poleSite(tx, tz, nx, nz, opts) {
+  const px = tx + nx * POLE_OFF, pz = tz + nz * POLE_OFF;
+  if (POLES_OLD || !opts.driven || !opts.driven.inside(px, pz, 0.15)) return { x: px, z: pz, nx, nz, arm: POLE_OFF };
+  let best = null;
+  for (const sg of [1, -1]) {
+    const k = opts.fit?.nearKerb?.(tx + nx * sg * POLE_OFF, tz + nz * sg * POLE_OFF, 6);
+    if (!k) continue;
+    for (const back of [0.5, 0.35, 0.8]) {
+      const x = k.x + k.lx * back, z = k.z + k.lz * back;
+      if (!(opts.fit.lift(x, z) > 0) || opts.driven.inside(x, z, 0.1)) continue;
+      const dx = x - tx, dz = z - tz, d = Math.hypot(dx, dz);
+      if (d < 1.6 || d > ARM_MAX) continue;
+      if (!best || d < best.arm) best = { x, z, nx: dx / d, nz: dz / d, arm: d };
+      break;
+    }
+  }
+  return best;
+}
+
 /** opts.shelterSites: the platform shelters are NOT drawn here but returned as sites ({x, y, z, yaw}, +z toward the
  *  track) for the STIB stops kit (viewer/stops/cityStops.js); false: the placeholder shelter mesh (?stops=old) */
 export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null, opts = {}) {
@@ -182,8 +208,10 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
       if (acc >= POLE_STEP) {
         acc = 0;
         const nx = -(bz - az) / L, nz = (bx - ax) / L;
-        const px = bx + nx * POLE_OFF, pz = bz + nz * POLE_OFF;
-        if (!onBridge && inB(px, pz) && !poles.some((p) => (p.x - px) ** 2 + (p.z - pz) ** 2 < 64)) poles.push({ x: px, z: pz, yaw: Math.atan2(nx, nz) });
+        const site = poleSite(bx, bz, nx, nz, opts);
+        if (!site) continue;
+        const { x: px, z: pz } = site;
+        if (!onBridge && inB(px, pz) && !poles.some((p) => (p.x - px) ** 2 + (p.z - pz) ** 2 < 64)) poles.push({ x: px, z: pz, yaw: Math.atan2(site.nx, site.nz), arm: site.arm });
       }
     }
   }
@@ -223,24 +251,35 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
   }
   if (poles.length) {
     // pole + cantilever arm reaching back over the track (local -z points to the track)
-    const parts = [
+    const geo = (list) => mergeGeometries(list.map((g) => { const n = g.toNonIndexed(); n.deleteAttribute("uv"); return n; }));
+    const poleParts = [
       new THREE.CylinderGeometry(0.11, 0.14, 7.0, 8).translate(0, 3.5, 0),
+      new THREE.CylinderGeometry(0.16, 0.16, 0.12, 8).translate(0, 7.0, 0),
+    ];
+    // the cantilever (arm, stay, dropper) for a POLE_OFF reach; scaled along local z to each pole's own reach
+    const armParts = [
       new THREE.CylinderGeometry(0.035, 0.035, POLE_OFF + 0.4, 6).rotateX(Math.PI / 2).translate(0, WIRE_H + 0.35, -(POLE_OFF + 0.4) / 2),
       new THREE.CylinderGeometry(0.02, 0.02, Math.hypot(POLE_OFF, 0.9), 5).rotateX(Math.PI / 2 - Math.atan2(0.9, POLE_OFF)).translate(0, WIRE_H + 0.8, -POLE_OFF / 2),   // stay
       new THREE.CylinderGeometry(0.015, 0.015, 0.4, 4).translate(0, WIRE_H + 0.15, -POLE_OFF),                                            // dropper
-      new THREE.CylinderGeometry(0.16, 0.16, 0.12, 8).translate(0, 7.0, 0),
-    ].map((g) => { const n = g.toNonIndexed(); n.deleteAttribute("uv"); return n; });
-    const pm = new THREE.InstancedMesh(mergeGeometries(parts), steel, poles.length);
+    ];
+    const same = poles.every((p) => Math.abs(p.arm - POLE_OFF) < 1e-3);
+    const pm = new THREE.InstancedMesh(geo(same ? [...poleParts, ...armParts] : poleParts), steel, poles.length);
+    const am = same ? null : new THREE.InstancedMesh(geo(armParts), steel, poles.length);
+    const one = new THREE.Vector3(1, 1, 1), sc = new THREE.Vector3();
     poles.forEach((p, i) => {
       // turn the arm toward the track: yaw makes local -z point along (-nx, -nz)
       q.setFromAxisAngle(up, p.yaw);
-      M.compose(new THREE.Vector3(p.x, surface(p.x, p.z), p.z), q, new THREE.Vector3(1, 1, 1));
-      pm.setMatrixAt(i, M);
+      const at = new THREE.Vector3(p.x, surface(p.x, p.z), p.z);
+      M.compose(at, q, one); pm.setMatrixAt(i, M);
+      if (am) { M.compose(at, q, sc.set(1, 1, p.arm / POLE_OFF)); am.setMatrixAt(i, M); }
     });
-    pm.castShadow = true;
-    pm.computeBoundingSphere();
-    pm.name = "tram-poles";
-    group.add(pm);
+    for (const [m, nm] of [[pm, "tram-poles"], [am, "tram-pole-arms"]]) {
+      if (!m) continue;
+      m.castShadow = true;
+      m.computeBoundingSphere();
+      m.name = nm;
+      group.add(m);
+    }
   }
 
   // ---- platforms

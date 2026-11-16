@@ -38,6 +38,12 @@ from shapely.strtree import STRtree
 from common import DATA, RAW, TILES, l72_to_local, round2, wgs_to_local
 
 OUT = DATA / "rail" / "rail.json"
+# UrbIS bridges that no longer stand (the Land cover still has them): their slab was drawn over the new structure.
+GONE_BRIDGES = {
+    # the 1928 Carsoel S-curve bridge over Saint-Job station, demolished January 2025 (L'Avenir 2025-01-11); the new
+    # straight deck (OSM way 1342926162, data/overrides.json bridgePlans) replaced it (owner playtest 2026-11-16)
+    "849",
+}
 RAIL_ABOVE_BED = 0.30            # rail top above the ballast crest (sleeper 0.22 + rail 0.17, sunk ~0.09 in the ballast)
 STEP = 2.0                       # densify tracks to this (m)
 BRIDGE_PAD = 4.0                 # interpolate this far beyond a bridge's ends (abutment slopes in the 1 m DTM)
@@ -384,6 +390,12 @@ def main():
         t = w.get("tags", {})
         if w["type"] != "way" or t.get("railway") != "platform" or not all(n in nodes for n in w["nodes"]):
             continue
+        # a TRAM / bus platform tagged railway=platform too (the STIB stop on the new Carsoel deck over Saint-Job
+        # station, OSM 2025: tram=yes, bridge=yes, layer=1): it is drawn on the street by viewer/tram.js; as a train
+        # platform it became a block across the tracks at rail level (owner playtest 2026-11-16, docs/CITYDEFECTS.md)
+        if t.get("train") != "yes" and (t.get("tram") == "yes" or t.get("bus") == "yes" or t.get("highway") == "platform"
+                                        or t.get("bridge", "no") != "no" or int(t.get("layer", "0") or 0) > 0):
+            continue
         ring = [P(n) for n in w["nodes"]]
         c = Polygon(ring).centroid if len(ring) > 3 else LineString(ring).centroid
         if not terr.inside(c.x, c.y):
@@ -408,6 +420,8 @@ def main():
     railtree = STRtree([g for _, g in rail_lines])
     bridges = []
     for b in urb["Bridges"]:
+        if b["id"] in GONE_BRIDGES:
+            continue
         pg = b["poly"]
         under = sorted({road_lines[k][0].get("name", road_lines[k][0].get("highway", road_lines[k][0].get("waterway")))
                         for k in rtree.query(pg) if road_lines[k][1].intersects(pg)} - {None})
