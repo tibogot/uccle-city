@@ -98,6 +98,84 @@
     "paint": 3,
     "lightbox": true
    }
+  },
+  "extra:relais-traiteur": {
+   "_name": "Le Relais Saint-Job, traiteur & vins (Place de Saint-Job 3): checked on a photo of the front (privateaser.com/lieu/57030, looked at, not kept): white painted walls, black window / door frames, one continuous taupe retractable awning along the whole front with RELAIS saint-job in a white script on its slope and the section's name in capitals on the valance; small awnings over the two first-floor windows (traiteur / vins); bistro tables with rattan chairs under the awning at the north end; green bollards; chalk A-boards BROWSER CHECK 2026-11-16: the kit's front has a fascia band in the frame colour; white (paint 3) so it reads as the white wall above the awning (the real frames are black: a kit limit); the script name on the awning slope cannot be seen from the street at the kit's awning pitch: the name is on the valance.",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "awning": true,
+    "canvas": 7,
+    "stripes": false,
+    "fascia": false,
+    "valanceFont": "shopSerif",
+    "valance": "TRAITEUR & VINS"
+   }
+  },
+  "extra:relais-brasserie": {
+   "_name": "Le Relais Saint-Job, brasserie (n. 1)",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "awning": true,
+    "canvas": 7,
+    "stripes": false,
+    "fascia": false,
+    "valanceFont": "shopSerif",
+    "valance": "RELAIS SAINT-JOB"
+   }
+  },
+  "extra:relais-restaurant": {
+   "_name": "Le Relais Saint-Job, restaurant (n. 1, north end): the terrace of bistro tables under the awning",
+   "depth": 2.0,
+   "parasols": false,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "awning": true,
+    "canvas": 7,
+    "stripes": false,
+    "fascia": false,
+    "valanceFont": "shopSerif",
+    "valance": "RELAIS SAINT-JOB"
+   }
+  },
+  "osm:n9204588938": {
+   "_name": "Maison Dandoy, Place de Saint-Job 22: black front (frames, fascia) with MAISON DANDOY in white spaced capitals, a black awning with the logo, window lettering (the brand's own photo of this shop, maisondandoy.com/fr/boutiques, looked at, not kept)",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 2,
+    "lightbox": false,
+    "awning": true,
+    "canvas": 3,
+    "stripes": false,
+    "valance": "",
+    "awningText": "MAISON DANDOY",
+    "awningFont": "shopSerif",
+    "ink": [
+     0.92,
+     0.9,
+     0.86
+    ]
+   }
+  },
+  "osm:n644895528": {
+   "_name": "Proxy Delhaize, Ch. de Saint-Job: the brand's standard front (white sign box, red PROXY Delhaize lettering); Street View 2019 showed the windows papered red during a change of owner: CONFIRM on Street View",
+   "none": true,
+   "front": {
+    "family": "modern",
+    "paint": 3,
+    "lightbox": true,
+    "awning": false,
+    "ink": [
+     0.62,
+     0.015,
+     0.02
+    ]
+   }
   }
  }
 }

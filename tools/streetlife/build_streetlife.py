@@ -541,6 +541,39 @@ def heading_to_road(T, x, z, named=False):
     return (tx, tz), (nx, nz), d, rr
 
 
+_OWNER = None
+
+
+def owner_tile(x, z, reach=20.0):
+    """the tile whose building footprint is nearest to (x, z) within reach (every tile's buildings.json), or None"""
+    global _OWNER
+    if _OWNER is None:
+        polys, names = [], []
+        for t in all_tiles():
+            f = TILES / t / "buildings.json"
+            if not f.exists():
+                continue
+            for b in json.loads(f.read_text(encoding="utf-8"))["buildings"]:
+                ring = b["footprint"][0]
+                if len(ring) < 3:
+                    continue
+                p = Polygon(ring)
+                if not p.is_valid:
+                    p = p.buffer(0)
+                if p.is_empty:
+                    continue
+                polys.append(p); names.append(t)
+        _OWNER = (STRtree(polys), polys, names)
+    tree, polys, names = _OWNER
+    p = Point(x, z)
+    best, bd = None, reach
+    for i in tree.query(p.buffer(reach)):
+        d = polys[i].distance(p)
+        if d < bd:
+            best, bd = names[i], d
+    return best
+
+
 def build_tile(name: str, src) -> dict:
     t0 = time.time()
     T = Tile(name)
@@ -567,7 +600,11 @@ def build_tile(name: str, src) -> dict:
             continue
         x, z = wgs_to_local(lon, lat)
         x, z = float(x), float(z)
-        if not T.inside(x, z):
+        # (citydefects 2026-11-16) a shop belongs to the tile of its nearest BUILDING, not of its point: the north side of
+        # Place de Saint-Job stands in I5 while its shop points lie a few metres into I6, where they found "no free street
+        # façade" (Le Bistroquet, Deneubourg) or the wrong one 20 m away (Pizza Hut)
+        own = owner_tile(x, z)
+        if (own != name) if own else not T.inside(x, z):
             continue
         pois.append((0 if t.get("name") or t.get("brand") else 1, f"{e['type'][0]}{e['id']}", x, z, kind, t))
     pois.sort(key=lambda p: (p[0], p[1]))
@@ -637,6 +674,8 @@ def build_tile(name: str, src) -> dict:
             continue
         want = SHOP_MAX_W if kind in ("supermarket", "restaurant", "bank") else 5.5
         fa = F.attach(x, z, want, street=t.get("addr:street"))      # the POI's own street (OSM addr:street) wins
+        # (citydefects) a tight row of shops (Place de Saint-Job): a narrower front before giving up, within 10 m
+        fa = fa or F.attach(x, z, 3.2, reach=10.0, street=t.get("addr:street"))
         if not fa:
             skipped(f"{kind}: no free street façade within 20 m")
             continue

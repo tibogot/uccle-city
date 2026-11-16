@@ -155,6 +155,94 @@ so the audit runs it in node.
   modern front with a lit sign box (data/shops/terraces.json). F_white_night_after.jpg. UrbIS puts 662 on the brick
   corner building next to vrac&compagnie; the white rendered house beside it may be the real one: owner to confirm.
 
+## AFTER THE BROWSER CHECK (code / data, 2026-11-16 evening)
+- PARTIAL WALLS (`viewer/wallRepair.js`, in facadeGeom.analyseBuildings; `?wallfix=old`): per outer footprint edge, the
+  UrbIS wall triangles lying on it and their coverage of its wall (0.25 m samples from the base to the edge's own top
+  line). Under 85 % with >= 1 m2 uncovered and no party stretch (another footprint 0.4 m out on either side): the edge's
+  wall is rebuilt as one strip from base to top, its own triangles dropped. `node tools/audit/wallAudit.mjs --all`:
+  1,561 of 134,539 edges (22,653 m2 of hole) -> 0 (docs/citydefects/wall_audit.json). Carsoel 13 (buildingsolid/538119):
+  its proud front had 1 wall triangle over the door, now 13 (the kit's openings cut it). To see in the browser.
+- DECK LOOK (`?decklook=old`): the plan deck's triangles carry a material slot; the carriageway (the bridge road's band,
+  diagonal across the deck as the real one) uses the streets' own asphalt material (roadPaint.js asphaltMaterial: the
+  same tone / baked texture as the street it continues), the sidewalk areas the streets' slab material, the kerbs its
+  kerb stone, the fascia / walls / upstands / soffit the library's cast concrete (concrete_white), the rails dark steel.
+  To see in the browser (the tone at both deck ends, the concrete scale under the deck).
+- FLAT-ROOF BANDS: offline, 16 % of I6's flat-roof triangles (516 / 3,283; I5 254 / 2,646) had vertex normals > 1 deg off
+  their plane (7 % > 5 deg): the roof's 32 deg crease smoothing averaged them with a slightly pitched neighbour. Now
+  their face normal (`?roofflat=old`): 0 / 0. The other suspects are left to test live with `debug/roofBands.js`
+  (topology() / at() / bias() / noShadow() / plain()): shadow acne at grazing sun, the roof material's own tone.
+
+## SHOPS OF PLACE DE SAINT-JOB (owner: "a local should recognise them"), prepared without the browser
+Sources: OSM (data/raw/streetlife/osm_pois.json), the shop kit's curated fronts (data/shops/terraces.json, each checked
+on Street View by the shops agent), online listings (text only). Street-life fix: a shop now belongs to the tile of its
+NEAREST BUILDING (tools/streetlife/build_streetlife.py owner_tile), so the north side of the Place, whose buildings are
+in I5 while the shop points sit just inside I6, is no longer dropped; a 3.2 m front is tried before giving up. Only the
+POI lists of I5 / I6 were updated (a full rebuild also shifts plates / numbers: run it city-wide on purpose later).
+
+| shop (Place / first ~150 m of Ch. de Saint-Job) | where | in the city | look spec | status |
+|---|---|---|---|---|
+| Le Relais Saint-Job (brasserie) | Place de Saint-Job 1 (UrbIS), not in OSM | NEW (tools/streetlife/extra_pois.json), restaurant + terrace by rule, name on the fascia | listings: "ancien estaminet bruxellois", waxed wood, tiled floor; terrace on the Place March-October; a heated roof-top terrace | FRONT TO CURATE on Street View (fascia colour / lettering, awning, terrace furniture, the roof-top terrace) |
+| Le Bistroquet (bar) | north side | NEW (was dropped) | - | to curate on Street View |
+| Deneubourg (bakery) | north side | NEW (was dropped) | - | to curate on Street View |
+| Barat (bakery, n. 36) | north side | yes | black fascia, 3 gooseneck spots, roller shutter (now another bakery) | curated |
+| Le Bouquet Varié (florist) | north side | yes | grey awning, plants out | curated |
+| Espace photo | north side | yes | grey fascia, red risers | curated |
+| Uccle Flore, Alain Dantine, Le P'tit Rêve, Maison Dandoy | north-east side | yes | - | to curate (Maison Dandoy: the brand's own front) |
+| St-Job (butcher) | Av. du Prince de Ligne | yes | grey fascia, white letters, grey canopy | curated |
+| Pizza Hut | the Place | yes (face as curated) | brick front, arched windows | curated |
+| Chez Clémentine | the Place (pavilion) | yes | glazed pavilion, covered terrace | curated |
+| Miska (ice cream) | Ch. de Saint-Job | yes | raised timber deck, white railing | curated |
+| Botanea (hairdresser), Pasta Commedia, Sushi Sama, Thai Smile, Le Passage | Ch. de Saint-Job north | yes | - | to curate |
+| Madonna | Ch. de Saint-Job | yes | no terrace | curated |
+| Le refuge (ex Au Petit Job) | Ch. de Saint-Job | yes | front-yard terrace behind a hedge, square parasols, blue awning | curated |
+| vrac&compagnie, Eric Strebelle (vet), Proxy Delhaize, The Cacao Tree | south of the Place | yes | - | to curate |
+| White Night (night shop, Ch. de Saint-Job 662) | UrbIS address 662 | yes (extra POI, white front) | white aluminium front, lit sign | TO CONFIRM: the owner says it may have closed |
+
+Next browser turn: Street View (newest date, both directions) shop by shop, write each front into data/shops/terraces.json
+(family, paint, lightbox, awning / canvas, terrace), Le Relais Saint-Job first; then side-by-side images.
+
+## SOUND OFF BY DEFAULT (owner)
+`viewer/audio/soundGate.js`, imported FIRST in main.js: it wraps window.AudioContext, so every real-time context (city
+sound engine, two-wheelers, falcon flight, game cues, police siren playback) is registered, suspended at birth and kept
+suspended (resume() is a no-op) while muted; un-muting resumes them all. One setting, a speaker button top centre (right of Play; clear of the police and falcon HUD panels, checked)
+(over the game HUDs too; no hotkey, M is the map), remembered per browser (localStorage "uccle-sound"); ?sound=1 starts
+unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
+
+## RECOGNISABLE SHOPS (reference photos looked at in a temp folder outside the repo, then deleted; nothing kept)
+- Le Relais Saint-Job (photo of its front on its event-venue listing): a long white front of three sections under ONE
+  taupe retractable awning: "RELAIS saint-job" in a white script on the slope, the section in capitals on the valance:
+  TRAITEUR & VINS (the 2-storey corner, Place de Saint-Job 3, small awnings over its two first-floor windows), BRASSERIE
+  and RESTAURANT (the low house with the tiled roof and dormer, n. 1); black frames, chalk A-boards, bistro tables with
+  rattan chairs under the awning at the north end; a heated roof-top terrace (white timber rails, dark aluminium chairs:
+  not built yet). Built: three street-life POIs on the real façades (tools/streetlife/extra_pois.json), curated fronts
+  (data/shops/terraces.json: classic, black frames, canvas 7 = taupe, no fascia board, the script on the awning, the
+  section on the valance, the terrace on the restaurant section). Kit additions (viewer/shops/shopLayout.js): curated
+  `fascia: false`, `valance` text / `valanceFont`, `awningText` / `awningFont` (a label on the awning's slope), `ink`
+  (a brand colour). LEFT: the walls' white render and the tiled roof are the façade generator's (not curated per
+  building yet); the first-floor window awnings; the roof-top terrace.
+- Maison Dandoy (the brand's photo of its Saint-Job shop): black frames and fascia, MAISON DANDOY in white spaced capitals,
+  black awning with the name. Curated.
+- Proxy Delhaize: the brand's standard white sign box with red lettering, curated as such; CONFIRM on Street View (2019
+  showed papered windows).
+- Le Bistroquet, Deneubourg: no photo found online (no website, few listings): Street View on the browser turn.
+
+## BROWSER CHECK 2 (2026-11-16 night)
+- Walls (?wallfix): Carsoel 13's front now a whole wall with the kit's door and windows (E_carsoel13_wallfix_after.jpg);
+  no flicker seen strafing. Deck look (?decklook): street asphalt continues onto the deck, slabs / kerbs / concrete read
+  as the streets' (A_deck_look_after.jpg, A_deck_look_station_after.jpg). Flat roofs at 18:30 sun (?roofflat): no bands
+  in either version on the I6 roof checked (E_flatroof_before / _after.jpg): image 59's spot still to find.
+- Sound: muted at load (nothing stored), a new context stays suspended even when a module calls resume(), unmute ->
+  running, mute -> suspended. The button sat on the police / falcon speedometer bottom-right: moved to the top centre,
+  right of Play, checked over both HUDs (sound_button_falcon_hud.jpg).
+- Le Relais Saint-Job vs Street View (Oct 2020, newest there; looked at, not kept): three taupe awnings with the script
+  "RELAIS saint-job" on the slope and TRAITEUR & VINS / BRASSERIE / RESTAURANT on the valance, white render, red clay
+  tiles, small awnings over the corner's first-floor windows, barrels and A-board, rattan bistro chairs. Fixed: the white
+  render and red tiles (new per-building looks: data/overrides.json buildingLooks, facadeGeom; ?looks=old), the kit's
+  black fascia band -> white (the real frames are black: kit limit), the name on the valance (the kit's awning pitch is
+  ~19 deg: text on its slope is not seen from the street; the real ones are steeper). F_relais_first_try.jpg ->
+  F_relais_after.jpg. LEFT: a steeper awning piece with the script on its slope, the first-floor window awnings, barrels.
+- Maison Dandoy, Proxy, Bistroquet, Deneubourg, White Night: not compared yet (time): next turn.
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).

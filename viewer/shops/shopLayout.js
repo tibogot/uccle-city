@@ -22,8 +22,8 @@ export const SHOP_PIECES = Object.keys(PIECES);
 const CLASSIC = [[0.012, 0.04, 0.025], [0.07, 0.012, 0.013], [0.01, 0.017, 0.045], [0.01, 0.01, 0.011], [0.6, 0.56, 0.45], [0.11, 0.14, 0.16], [0.13, 0.065, 0.025], [0.19, 0.24, 0.17]];
 // powder-coat colours of the aluminium fronts: anthracite (most), black, white, silver, bronze
 const MODERN = [[0.03, 0.032, 0.035], [0.03, 0.032, 0.035], [0.012, 0.012, 0.013], [0.68, 0.68, 0.66], [0.33, 0.34, 0.35], [0.07, 0.05, 0.035]];
-// awning / parasol canvas: bordeaux, bottle green, navy, black, ecru, terracotta, grey
-const CANVAS = [[0.3, 0.025, 0.03], [0.02, 0.1, 0.045], [0.02, 0.035, 0.12], [0.03, 0.03, 0.03], [0.58, 0.53, 0.4], [0.38, 0.09, 0.03], [0.22, 0.22, 0.21]];
+// awning / parasol canvas: bordeaux, bottle green, navy, black, ecru, terracotta, grey, taupe
+const CANVAS = [[0.3, 0.025, 0.03], [0.02, 0.1, 0.045], [0.02, 0.035, 0.12], [0.03, 0.03, 0.03], [0.58, 0.53, 0.4], [0.38, 0.09, 0.03], [0.22, 0.22, 0.21], [0.2, 0.17, 0.14]];   // + 7 taupe (Le Relais Saint-Job)
 const INK_ON_DARK = [[0.95, 0.92, 0.82], [0.97, 0.97, 0.95], [0.78, 0.6, 0.25]];
 const INK_ON_LIGHT = [[0.012, 0.012, 0.014], [0.05, 0.012, 0.01], [0.01, 0.025, 0.07]];
 const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -109,10 +109,12 @@ export function layoutShop(p, f, frame, lit, env) {
   const lab = p.name ? label([p.name], classic && style === "shopSans" ? "shopSerif" : style) : null;
   if (p.name) used.names.push(p.name);
   const board = lightbox ? [0.86, 0.86, 0.84] : paint;
-  const ink = lum(board) > 0.18 ? pick(INK_ON_LIGHT, id, "i") : (classic ? pick(INK_ON_DARK, id, "i") : [0.97, 0.97, 0.95]);
+  const ink = cf.ink ?? (lum(board) > 0.18 ? pick(INK_ON_LIGHT, id, "i") : (classic ? pick(INK_ON_DARK, id, "i") : [0.97, 0.97, 0.95]));   // (curated: a brand colour, linear rgb)
   const sign = cf.spots || (classic && hash01(id + "s") < 0.55) ? "spots" : classic ? "paint" : lightbox ? "lightbox" : "backlit";
   const inkGlow = sign === "backlit" ? 1.6 * lit : sign === "spots" ? 0.35 * lit : 0, boardGlow = sign === "lightbox" ? 1.1 * lit : sign === "spots" ? 0.3 * lit : 0;
-  if (classic) {
+  if (cf.fascia === false) {
+    // (curated: no name board, the awning carries the name: Le Relais Saint-Job)
+  } else if (classic) {
     // the panel inside the moulded frame, between the consoles (shopfronts.py: |x| < W/2 - 0.2, 0.04 .. 0.71 up)
     const pw = W - 0.48, ph = 0.6;
     box(at(0, fasciaY + 0.375, 0.221), X, Y, Z, pw, ph, 0.006, { board, ink, inkGlow, boardGlow, lab, fill: 1.0, padX: 0.12, rough: 0.42, kind: 2 });
@@ -139,7 +141,19 @@ export function layoutShop(p, f, frame, lit, env) {
   if (awn) {
     const canvas = cf.canvas != null ? CANVAS[cf.canvas] : pick(CANVAS, id, "c"), stripes = cf.stripes ?? (hash01(id + "st") < 0.3) ? 0.24 : 0;
     put("awning", 0, fasciaY, W - W0, 0, canvas, 1, stripes);
-    const vlab = p.name ? label([p.name], "shopSans") : null;
+    const vtext = cf.valance ?? p.name;
+    const vlab = vtext ? label([vtext], cf.valanceFont ?? "shopSans") : null;
+    // (curated) the name printed on the awning's slope (Le Relais Saint-Job: "RELAIS saint-job" in a script): a thin
+    // label box laid on the canvas, 1.78 m out / 0.6 m down from the fascia line
+    if (cf.awningText) {
+      const sl = [Z[0] * 1.72, -0.58, Z[2] * 1.72], L = Math.hypot(...sl), Ys = sl.map((v) => v / L);
+      // the canvas's outward normal: X x Ys or its opposite, the one pointing up
+      let Zo = [X[1] * Ys[2] - X[2] * Ys[1], X[2] * Ys[0] - X[0] * Ys[2], X[0] * Ys[1] - X[1] * Ys[0]];
+      if (Zo[1] < 0) Zo = Zo.map((v) => -v);
+      const mid = add(at(0, fasciaY, 0), Ys, L * 0.45, Zo, 0.015, X, 0);
+      const alab = label(twoLines(cf.awningText, 22), cf.awningFont ?? "shopItalic");
+      box(mid, X, Ys, Zo, Math.min(W - 0.6, 3.2), Math.min(0.9, L * 0.55), 0.002, { board: canvas, ink: lum(canvas) > 0.25 ? [0.03, 0.03, 0.03] : [0.93, 0.91, 0.86], lab: alab, pad: 0.06, rough: 0.88 });
+    }
     const vink = lum(canvas) > 0.25 ? [0.03, 0.03, 0.03] : [0.9, 0.87, 0.78];
     // the valance (shopfronts.py: 1.775 m out, 0.595 .. 0.835 m under the fascia bottom)
     box(at(0, fasciaY - 0.715, 1.779), X, Y, Z, W - 0.1, 0.2, 0.004, { board: stripes ? [0.72, 0.68, 0.58] : canvas, ink: stripes ? [0.03, 0.03, 0.03] : vink, lab: vlab, pad: 0.08, rough: 0.88 });
