@@ -204,7 +204,7 @@ Next browser turn: Street View (newest date, both directions) shop by shop, writ
 ## SOUND OFF BY DEFAULT (owner)
 `viewer/audio/soundGate.js`, imported FIRST in main.js: it wraps window.AudioContext, so every real-time context (city
 sound engine, two-wheelers, falcon flight, game cues, police siren playback) is registered, suspended at birth and kept
-suspended (resume() is a no-op) while muted; un-muting resumes them all. One setting, a speaker button bottom-right
+suspended (resume() is a no-op) while muted; un-muting resumes them all. One setting, a speaker button top centre (right of Play; clear of the police and falcon HUD panels, checked)
 (over the game HUDs too; no hotkey, M is the map), remembered per browser (localStorage "uccle-sound"); ?sound=1 starts
 unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
 

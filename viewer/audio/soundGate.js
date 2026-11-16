@@ -6,7 +6,7 @@
 // while muted, and unmuting resumes them all (muting suspends them all). OfflineAudioContext (the renders) is untouched.
 //   default MUTED; ?sound=1 starts unmuted; the viewer's choice is remembered in localStorage "uccle-sound" (try/catch)
 //   soundGate.muted, soundGate.set(muted), soundGate.toggle(), soundGate.onChange(f), soundGate.mountButton()
-// The button: a small speaker icon, bottom-right above the credits line, always on top (also over the game HUDs).
+// The button: a small speaker icon, top centre, right of the Play button (clear of the games. HUD panels, the dev panel and the minimap), always on top (also over the game HUDs).
 // No hotkey (M is the map).
 const KEY = "uccle-sound";
 const qs = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
@@ -50,7 +50,7 @@ export const soundGate = {
     b.type = "button";
     b.id = "sound-toggle";
     Object.assign(b.style, {
-      position: "fixed", right: "12px", bottom: "34px", zIndex: "2147483000", width: "34px", height: "34px", padding: "0",
+      position: "fixed", left: "calc(50% + 58px)", top: "13px", zIndex: "2147483000", width: "34px", height: "34px", padding: "0",
       border: "1px solid rgba(255,255,255,0.25)", borderRadius: "17px", background: "rgba(20,22,26,0.72)", color: "#f2f2ee",
       cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)",
     });
