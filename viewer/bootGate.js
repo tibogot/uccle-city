@@ -13,7 +13,11 @@ const params = new URLSearchParams(location.search);
 // is 13.0-13.3 s vs 20-22 s (docs/BOOT.md section 5); the deferred models' processing after the reveal: ~1.2 s of long
 // tasks in the first 20 s, the longest 0.55-0.68 s (the first model's GLB parse + build: fix in the landmark loaders).
 export const BOOT_DEFER = params.get("bootdefer") !== "0";
-const STAGGER = 600;
+// perfgame round 2: when the play loader holds after the cover (a ?game= start, or the free-roam boot hold), the far
+// models are loaded under it: 100 ms apart instead of 600 (no frame of play to protect; the loader waits for them)
+const HELD = params.get("playloader") !== "old" && params.get("gamefast") !== "old" &&
+  ((params.get("game") && !["0", "1"].includes(params.get("game"))) || params.get("boothold") !== "old");
+const STAGGER = HELD ? 100 : 600;
 
 // where each gated model stands (city metres x, z: models/<name>/<name>.json placement.city_local_position)
 export const GATED = {

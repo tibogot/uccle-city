@@ -13,6 +13,7 @@ import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
 import { createFirmamentSky } from "../vendor/firmament/firmamentSky.js";
+const SHADOW_FAR = typeof location === "undefined" || new URLSearchParams(location.search).get("shadowfar") !== "old";   // perfgame round 2
 const RAYS_WARM = typeof location === "undefined" || new URLSearchParams(location.search).get("rayswarm") !== "old";   // perfgame
 import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
 import { createVolumetricFog } from "../vendor/volumetric-fog/volumetricFog.js";
@@ -423,8 +424,13 @@ export class Lighting {
     else if (fit < box && want < L[Math.max(0, L.indexOf(box) - 1)] * 0.8) box = fit;   // shrink with hysteresis
     this.boxHalf = box;
     F.uRadius.value = Math.min(0.97, this.fadeHalf / box);
-    if (sc.right !== box) {
-      Object.assign(sc, { left: -box, right: box, top: box, bottom: -box });
+    // perfgame round 2 (?shadowfar=old: 2000 m): the depth range ends just past the deepest RECEIVER of the box (a point
+    // within the box across the sun's view and +-110 m in height lies within box x 1.42 + 110 m of the focus along the
+    // light): casters further away from the sun than that shadow nothing drawn, and were drawn in the shadow pass
+    // (far landmarks 300-700 m behind the player: 15-25 of its ~150 objects in the police drive)
+    const farWant = SHADOW_FAR ? 900 + box * 1.42 + 110 : 2000;
+    if (sc.right !== box || sc.far !== farWant) {
+      Object.assign(sc, { left: -box, right: box, top: box, bottom: -box, far: farWant });
       sc.updateProjectionMatrix();
     }
     // snap the box's centre to whole texels ACROSS THE SUN'S VIEW (the shadow camera's x / y axes): the map
