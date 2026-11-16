@@ -4,6 +4,7 @@
 // Scene units are CONTRACT local metres: +x east, +z south, +y up (absolute m TAW).
 // Everything is built on the main thread at load (about 1 s for G4).
 
+import { soundGate } from "./audio/soundGate.js";   // FIRST: every AudioContext after it is gated (all sound off by default; ?sound=1)
 import * as THREE from "three/webgpu";
 import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
@@ -989,6 +990,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
 // ------------------------------------------------------------------ main
 
 async function main() {
+  soundGate.mountButton();                          // the mute / unmute button (all sound off by default; ?sound=1 on)
   const manifest = await getJSON("manifest.json");
   const sel = $("tileSel");
   for (const t of manifest.tiles) {
