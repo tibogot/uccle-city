@@ -197,3 +197,11 @@ box (its frame): LOD0 < 90 m (+-15), LOD1 < 400 m (+-40); the cars 60 (+-10) and
   528531 BU 1718819: 610 m2, top 62.0; the stair block 531654) are probably part of the station and stay generic UrbIS
   houses today. TO DO on the browser turn: Street View / ortho of Rue Rouge 17 and the courtyard: which blocks are the
   station, then extend the hero (or give those blocks the station's look: buildingLooks) instead of scaling.
+- OWNER CONFIRMED (2026-11-16): the station uses the WHOLE former school complex. Done in code: the school blocks 528469,
+  528468, 528531, 531654, 529515 and 531854 (the west wing adjoining 528531, likely) get the station's look through
+  data/overrides.json buildingLooks (buff brick style 2, modernist window bands type 2, no garage doors; roofs keep their
+  ortho colour: red tiles + solar on 528531 / 528469 as seen from above); the courtyard parking behind / south of them is
+  the station's asphalt (viewer/policeYard.js COURTYARD, read on the ortho in the frame; ?policecourt=0). No garden piece,
+  OSM area or street surface crosses it; nothing drawn blocks the way from the gates to it (the yard's strip south of
+  wing B joins it). Signage stays on the real entrance (the hero). TO CONFIRM on Street View: the blocks' wall material
+  and windows (not seen yet), the courtyard's extent.

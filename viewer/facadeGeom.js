@@ -437,7 +437,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     // checked on Street View: Le Relais Saint-Job's white render and red tiles; ?looks=old: none)
     const look = opts.looks?.[b.id.split("/").pop()];
     const style = look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = cls && !landmark ? cls.type[bi] : 0, bgar = cls && !landmark ? cls.garage[bi] : 0;
+    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : cls && !landmark ? cls.garage[bi] : 0;   // (a curated look's type: the police school's blocks as the station's 1960s fronts)
     if (cls) { stats.types = stats.types || [0, 0, 0, 0, 0, 0]; stats.types[btype]++; }
     const roofStyle = hash01(key + "r");
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash

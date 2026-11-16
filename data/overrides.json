@@ -818,7 +818,7 @@
     }
   },
   "buildingLooks": {
-    "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none.",
+    "_doc": "UrbIS solid id -> { style (facades.js wall styles: 0 red brick, 1 brown, 2 yellow, 3 white render, 4 cream, 5 grey), roofColor (linear rgb; red-orange = clay tiles) }: the looks a local recognises, each checked on Street View (look only). ?looks=old: none. type (viewer/buildingTypes.js TYPE: 0 generic, 1 maison de maitre, 2 art deco / modernist, 3 bel-etage, 4 block, 5 villa), garage false (no garage door).",
     "544703": {
       "_name": "Le Relais Saint-Job, the low house (brasserie / restaurant, Place de Saint-Job 1): white render, red clay tiles (Street View Oct 2020)",
       "style": 3,
@@ -831,6 +831,42 @@
     "559047": {
       "_name": "Le Relais Saint-Job, the 2-storey corner (traiteur & vins, n. 3): white render (Street View Oct 2020)",
       "style": 3
+    },
+    "528469": {
+      "_name": "Police / school: the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "528468": {
+      "_name": "Police / school: the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "528531": {
+      "_name": "Police / school: the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "531654": {
+      "_name": "Police / school (the stair block): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "529515": {
+      "_name": "Police / school (the low north wing): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
+    },
+    "531854": {
+      "_name": "Police / school (the west wing: adjoins 528531, likely the school too): the police station's former school complex at Rue Rouge 17 (owner, 2026-11-16: the station uses the WHOLE complex): the station model's buff brick (style 2) and its modernist window bands (type 2), no garage doors; roofs keep their orthophoto colour (red tiles / solar on 528531 / 528469 as on the ortho). TO CONFIRM on Street View (walls not seen yet)",
+      "style": 2,
+      "type": 2,
+      "garage": false
     }
   }
 }

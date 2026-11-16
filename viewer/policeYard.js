@@ -12,6 +12,11 @@ import { uv, texture, vec2, vec3, float, floor, fract, mix, smoothstep, length, 
 // the yard outline in the frame (u, w): the north yard, the strip behind wing A, the south yard, the gate's mouth
 const OUTLINE = [[0.3, -18.4], [26.1, -18.4], [26.1, 9.6], [26.6, 9.6], [26.6, 14.9], [26.1, 14.9], [26.1, 16.6], [-4.8, 16.6],
   [-4.8, 12.6], [5.32, 12.6], [5.32, 0.52], [14.59, 0.52], [14.59, -14.0], [0.3, -14.0]];
+// THE SCHOOL COURTYARD (citydefects 2026-11-16, owner: the station uses the WHOLE former school complex): the asphalt
+// parking behind and south of the school blocks (528469 / 528468 / 528531), read on the 2024 ortho in the frame (5 m grid):
+// south of 528469's south face (w 12.3) to the trees (w 28), and the west lot (u -54 .. -39.3, w -4.8 .. 20). ?policecourt=0
+const COURTYARD = [[-4.8, 12.6], [-39.3, 12.3], [-39.3, -4.8], [-54.0, -4.8], [-54.0, 20.0], [-44.0, 28.0], [-4.8, 28.0], [-4.8, 16.6]];
+const COURT = typeof location === "undefined" || !/[?&]policecourt=0/.test(location.search);
 // markings (frame metres): bay lines, the lane, the hatched box, the walker
 const U0 = -5.0, W0 = -19.0, SPAN_U = 32.0, SPAN_W = 36.0, PX = 32;            // canvas 1024 x 1152 (3.1 cm / px)
 
@@ -76,16 +81,17 @@ export function buildPoliceYard({ site, groundAt, lift = 0.06, step = 0.5 }) {
   const toCity = (u, w) => [F.origin_city[0] + u * ca - w * sa, F.origin_city[1] + u * sa + w * ca];
   // a grid over the outline's box; a cell is kept when its centre is inside; vertices shared
   const us = [], ws = [];
-  for (let u = -5.0; u <= 26.6 + 1e-6; u += step) us.push(+u.toFixed(3));
+  for (let u = COURT ? -54.0 : -5.0; u <= 26.6 + 1e-6; u += step) us.push(+u.toFixed(3));
   if (us[us.length - 1] < 26.6) us.push(26.6);
-  for (let w = -18.5; w <= 16.6 + 1e-6; w += step) ws.push(+w.toFixed(3));
-  if (ws[ws.length - 1] < 16.6) ws.push(16.6);
+  const wMax = COURT ? 28.0 : 16.6;
+  for (let w = -18.5; w <= wMax + 1e-6; w += step) ws.push(+w.toFixed(3));
+  if (ws[ws.length - 1] < wMax) ws.push(wMax);
   const snap = (v, lines) => lines.reduce((b, x) => (Math.abs(x - v) < Math.abs(b - v) ? x : b), v);
-  const edgeU = [0.3, 26.1, 26.6, -4.8, 5.32, 14.59], edgeW = [-18.4, 9.6, 14.9, 16.6, 12.6, 0.52, -14.0];
+  const edgeU = [0.3, 26.1, 26.6, -4.8, 5.32, 14.59, -39.3, -54.0], edgeW = [-18.4, 9.6, 14.9, 16.6, 12.6, 0.52, -14.0, 12.3, -4.8, 28.0];
   const U = us.map((u) => (edgeU.some((e) => Math.abs(e - u) < step * 0.5) ? snap(u, edgeU) : u));
   const W = ws.map((w) => (edgeW.some((e) => Math.abs(e - w) < step * 0.5) ? snap(w, edgeW) : w));
   const nu = U.length, nw = W.length;
-  const keep = (i, j) => U[i + 1] - U[i] > 1e-4 && W[j + 1] - W[j] > 1e-4 && inside((U[i] + U[i + 1]) / 2, (W[j] + W[j + 1]) / 2, OUTLINE);
+  const keep = (i, j) => U[i + 1] - U[i] > 1e-4 && W[j + 1] - W[j] > 1e-4 && (inside((U[i] + U[i + 1]) / 2, (W[j] + W[j + 1]) / 2, OUTLINE) || (COURT && inside((U[i] + U[i + 1]) / 2, (W[j] + W[j + 1]) / 2, COURTYARD)));
   const pos = [], uvs = [], idx = [], vid = new Map();
   const V = (i, j, drop = 0) => {
     const key = `${i},${j},${drop}`;
@@ -132,5 +138,5 @@ export function buildPoliceYard({ site, groundAt, lift = 0.06, step = 0.5 }) {
   m.side = THREE.DoubleSide;           // (the skirts are thin and seen from both sides)
   const mesh = new THREE.Mesh(g, m);
   mesh.name = "police-yard"; mesh.receiveShadow = true; mesh.castShadow = false;
-  return { mesh, outline: OUTLINE, tris: idx.length / 3 };
+  return { mesh, outline: OUTLINE, courtyard: COURT ? COURTYARD : null, tris: idx.length / 3 };
 }
