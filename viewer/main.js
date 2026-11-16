@@ -72,7 +72,7 @@ import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
 import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";
 import { stagedCompiler, setStagedFocus, STAGED } from "./stagedCompile.js";
-import { FAR_MERGE, mergeFarLevel } from "./farMerge.js";   // perfgame round 6: a far LOD in one draw (?farlodmerge=1)   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
+import { FAR_MERGE, mergeFarLevel, setFarMergeRenderer } from "./farMerge.js";   // perfgame round 6: a far LOD in one draw (?farlodmerge=1)   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
 import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";   // perfgame: the play loader (?playloader=old: none)
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
@@ -115,7 +115,8 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // same way, far tiles fade in and out at the ring's edge. ?tilefade=0: instant swaps (and no fade term in the
 // tiles' shaders), ?smooth=0: every smooth-LOD change off.
 const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
-const STREAM_ORDER = params.get("streamorder") !== "old";   // perfgame: stream the wanted tile nearest the player first
+const STREAM_ORDER = params.get("streamorder") !== "old";
+const HOLD_FAST = params.get("holdfast") !== "old";   // perfgame round 7: tiles under the play loader: no fade-in, no awaited compiles   // perfgame: stream the wanted tile nearest the player first
 const UNLOAD_GAP = params.get("unloadgap") !== "old", UNLOAD_MARGIN = +(params.get("unloadmargin") ?? 60);   // perfgame round 2: full tiles unload by distance
 const fader = new Fader();
 /** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
@@ -811,7 +812,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const own = {};
   for (const k of Object.keys(layers)) { own[k] = new THREE.Group(); own[k].name = `${entry.name}-${k}`; layers[k].add(own[k]); }
   // a streamed tile is built over several frames: hidden until it is whole, then faded in (smooth LOD)
-  const fadeIn = TILE_FADE && !verbose;
+  // perfgame round 7 (?holdfast=old): a tile landing while the play loader covers the screen does not fade in (nobody
+  // sees it) and does not wait for its compiles: its own materials build in the hidden frames (async pipelines), its
+  // fading copies (needed only when it leaves) and shadow pass compile in the background afterwards
+  const holdFast = HOLD_FAST && playLoader.active && !verbose;
+  const fadeIn = TILE_FADE && !verbose && !holdFast;
   if (fadeIn) for (const g of Object.values(own)) g.visible = false;
   const ups = [];
   const t0 = performance.now();
@@ -967,6 +972,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   cityNight?.addShops(entry.name, cityStreetLife.layer?.tiles.get(entry.name)?.night?.lights);   // ?night=1: its shop windows + signs join the night pool (fading in)
   if (sl) say(`street life: ${sl.boxes} boxes, ${sl.windows} windows, ${Object.values(sl.props).reduce((a, b) => a + b, 0)} props, ${sl.labels} labels (${sl.labelPages} atlas page(s)); worker ${sl.worker.total} ms, main thread ${sl.mainMs} ms`);
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
+  if (holdFast && compileFor && TILE_FADE) {
+    const fp = Object.values(own).map(fadeProxies).filter(Boolean);
+    if (fp.length) compileFor(fp).catch(() => {});                  // (background, not awaited: the queue's normal order)
+  }
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
@@ -1040,6 +1049,14 @@ async function main() {
   const F = entry.files;
   const [x0, x1] = entry.bounds.x, [z0, z1] = entry.bounds.z;
   const bounds = { x0, x1, z0, z1 };
+  // perfgame round 7 (?gamepreload=old): a ?game= start loads its code and car models DURING the boot (the game kit,
+  // the police game + its car pack, the falcon game) instead of after the cover (they were part of the ~5 s "Getting
+  // ready" behind the play loader)
+  if (GAME_START && params.get("gamepreload") !== "old") {
+    import("./game/cityGame.js").catch(() => {});
+    if (GAME_ID === "police") { import("./police/policeGame.js").catch(() => {}); import("./drive/carPacks.js").then((m) => m.loadPack("faceted")).catch(() => {}); }
+    if (GAME_ID === "falcon") import("./falconGame/falconGameDef.js").catch(() => {});
+  }
   // perfgame round 5: the player's position for the staged landmark compiles (stagedCompile.js); before the modes exist,
   // the spawn / the start tile's centre
   setStagedFocus(() => { try { return flyer.on ? [flyer.x, flyer.z] : driver.on ? [driver.x, driver.z] : walker.on ? [walker.x, walker.z] : [controls.target.x, controls.target.z]; } catch { return SPAWN ?? [(x0 + x1) / 2, (z0 + z1) / 2]; } });
@@ -1057,6 +1074,7 @@ async function main() {
   bootStage("renderer");                            // (boot2: the loading bar's stage)
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
   const renderer = new THREE.WebGPURenderer({ antialias: !UPSCALE /* --- upscale: TAA instead of MSAA */, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
+  setFarMergeRenderer(renderer);   // perfgame round 7: landmark far merges bake with it (?farlodlm=old: off)
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
@@ -2073,11 +2091,14 @@ async function main() {
   // (motorbike round 2: a ?view=moto|scooter|villo|drive&at= outside the boot tile: stream it in, then start there)
   driveAt = async (vehicle) => { await teleport({ x: atP[0], z: atP[1], yaw: 0 }); controls.enabled = false; return drive(vehicle); };
   if (pendingDriveAt) { const v = pendingDriveAt; pendingDriveAt = null; driveAt(v).catch((e) => log(`?at start: ${e.message}`)); }
+  (globalThis.__gameTimes ||= []).push(["cover->panel", Math.round(performance.now() - (window.__coverAt || 0))]);
   // the dev panel (viewer/devPanel.js; ?panel=0: the old HUD only)
   if (params.get("panel") !== "0") {
     try {
-      const { createDevPanel } = await import("./devPanel.js");
-      createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      // perfgame round 7 (?panelwait=old: awaited): the panel's code loads beside the game kit, not before it (0.6 s)
+      const mkPanel = ({ createDevPanel }) => createDevPanel({ teleport, getPlayer, manifest, getLite: () => lite, frames: () => frames, gpuPasses, renderer, scene, camera, controls, lighting, pipe, world, layers, contourOn, setView, walk, fly, drive, moto, scooter, villo, thirdPerson, driver, getThird: () => third, getTram: () => tramLine, flyer, walker, tsel, dev, gpuStats, resetGpu: () => { gpu.samples.length = 0; }, params, log, fader });
+      if (params.get("panelwait") === "old") mkPanel(await import("./devPanel.js"));
+      else import("./devPanel.js").then(mkPanel).catch((e) => log(`dev panel: ${e.message}`));
     } catch (e) { log(`dev panel: ${e.message}`); }
   }
   // ?map=1: the minimap (bottom left) and the full map (M) with click-to-teleport (viewer/map/, docs/MAP.md)
@@ -2087,6 +2108,7 @@ async function main() {
   }
   // ---- GAME KIT (viewer/game/, docs/GAMEKIT.md): the start menu, missions, the player HUD; ?game=0 = free roam as before
   if (params.get("game") !== "0") {
+    (globalThis.__gameTimes ||= []).push(["cover->kit call", Math.round(performance.now() - (window.__coverAt || 0))]);
     import("./game/cityGame.js").then((g) => g.startGameKit({ scene, camera, renderer, controls, world, manifest, params, log, getPlayer, teleport, setView, walk, fly, drive,
       thirdPerson, driver, walker, flyer, getThird: () => third, getMap: () => mapHook, getTraffic: () => window.__traffic ?? null,
       pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop), updaters, areaReady }))

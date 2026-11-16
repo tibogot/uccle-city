@@ -135,9 +135,11 @@ function wrapAO(src, aoTex, slot, key) {
   m.aoNode = src.aoNode ? src.aoNode.mul(aoK) : aoK;
   if (slot !== "glass_window") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
+    m.userData.farBase = base;                          // (perfgame round 7: farMerge.js bakes the AO-free colour)
     m.colorNode = base.mul(mix(float(1), aoK, l5Look.aoDirect));
   }
   m.userData.shared = true; m.userData.slot = slot;
+  m.userData.farAO = { aoTex, look: l5Look };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
   return m;
 }
 

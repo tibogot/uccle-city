@@ -179,11 +179,13 @@ function wrapAO(src, aoTex, slot) {
   const cover = mix(float(1), clamp(width.mul(2.0).div(foot), slot === "wood_frame_dark" ? 0.75 : 0.35, 1.0), k);
   if (slot !== "glass_window") {
     const base = src.colorNode ?? vec3(src.color?.r ?? 1, src.color?.g ?? 1, src.color?.b ?? 1);
+    m.userData.farBase = base;                          // (perfgame round 7: farMerge.js bakes the AO-free colour)
     m.colorNode = base.mul(mix(float(1), aoK, cvLook.aoDirect)).mul(cover);
   }
   m.normalNode = mix(src.normalNode ?? normalView, vec3(0, 0, 1), k).normalize();
   m.userData.shared = true;
   m.userData.slot = slot;
+  m.userData.farAO = { aoTex, look: cvLook };          // (perfgame round 7: the merged far LOD's AO, farMerge.js)
   return m;
 }
 

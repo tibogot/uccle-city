@@ -82,7 +82,7 @@ export function playLoader() {
       const me = (closing = {});
       await new Promise((r) => setTimeout(r, 180));
       if (closing !== me || owners > 0) return;
-      el.classList.add("gone");
+      el.classList.add("gone"); globalThis.__playAt = performance.now();   // (time to play, for debug/gamePerf + the perf docs)
       document.body.classList.remove("play-loading");
       await new Promise((r) => setTimeout(r, 650));
       if (closing === me) closing = null;

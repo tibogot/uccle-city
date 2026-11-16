@@ -14,6 +14,7 @@ import { loadStalle, ST_LODS, ST_SLATES, slateFade, ST_SLOTS } from "./stalleMod
 import { withObjectFade, SMOOTH, settleRamp } from "./lodFade.js";
 import { liteShown } from "./liteShown.js";
 import { whenNeeded } from "./bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
+import { FAR_MERGE_LM, mergeFarLevel } from "./farMerge.js";
 
 const FETCH_AT = 120, SHOW_AT = 40, HIDE_AT = 60;
 
@@ -30,6 +31,7 @@ export async function addStalle({ scene, updaters, hide, world, manifest, log, c
     root.position.copy(m.placement.position); root.rotation.y = m.placement.rotationY;
     const levels = ST_LODS.map((_, k) => m.make(k));
     root.add(...levels);
+    if (FAR_MERGE_LM) await mergeFarLevel(levels[levels.length - 1], { landmark: true, name: "stalle" }).then((r) => r && log?.(`stalle: far LOD ${r.before} -> ${r.after} draws`)).catch((e) => log?.(`far merge: ${e.message}`));   // perfgame round 7 (?farlodlm=old: off)
     root.visible = false;
     scene.add(root);
     root.updateMatrixWorld(true);

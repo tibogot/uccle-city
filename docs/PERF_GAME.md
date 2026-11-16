@@ -302,3 +302,28 @@ the queue the whole time), the landmarks' settle 5-9 s. Not under 35 s. Next: th
 fading copies compiled later, after the reveal, like the start tile's: `warmLater`), the game kit's 5 s, and the
 landmarks' far-LOD AO-free bake for the landmark far merge (their wrapAO bakes the AO map into the colour).
 Not checked: night lamp shadows with the pool (the pool's near bucket joins the lamp shadow layer by itself).
+
+## Round 7 (code, 2026-11-16; not measured yet)
+1. **Tiles under the loader at once** (`?holdfast=old`): while the play loader covers the screen, a landing tile is shown at once (no fade): its materials get built in the hidden frames, its fading copies (`fadeProxies`) are compiled in the background through the precompile queue, so they are ready before the first fade after the reveal (no first-draw builds).
+2. **Game code during the boot** (`?gamepreload=old`): a `?game=` start imports the game kit (cityGame.js), the game (policeGame.js / falconGameDef.js) and the faceted police car pack during the boot instead of after the cover. Timing marks now land in `globalThis.__gameTimes` (start, cover->kit, waypoint, map wait, spots, car install, props + warm, spawn) to see what of the 5 s still blocks.
+3. **Landmarks' far LOD in one draw** (`?farlodlm=1`, OFF until pixel-diffed): the 12 landmarks' wrapAO now keeps the AO-free colour graph (`material.userData.farBase`) and its AO setup (`userData.farAO = { aoTex, look }`). farMerge.js bakes slot means from farBase and re-applies AO the wrapAO way (AO map x vertex AO `COLOR_0.g`, aoStrength into aoNode, aoDirect into the colour). The renderer comes from `setFarMergeRenderer` (main.js). heros (statue wrapper) left out.
+
+Browser checks to do: time to play police / falcon with and without `holdfast` + `gamepreload` (alternate), `__gameTimes` breakdown, no pipeline builds on first draw after the reveal (pipelineAudit), `?farlodlm=1` pixel diff of each landmark at its far distance + draw counts.
+
+## Round 7 results (2026-11-16, browser; preflight RED: CPU 26 % / GPU 27 % busy at rest from another app; alternated, 1-2 runs each)
+
+Time to play now read from `__playAt` (playLoader.js stamps the moment the loader fades out); `__gameTimes` = ms after the cover.
+
+| check | before (`?holdfast=old&gamepreload=old&gamelazy=old&panelwait=old`) | after (default) |
+|---|---|---|
+| police time to play (cover at) | 52.2 s (27.5 s): 24.7 s after the cover | 48.5 s (26.3), 49.3 s (28.6), 48.5 s (28.0), 52.4 s (31.1): 20.5-22.2 s after the cover |
+| falcon time to play (cover at) | 53.2 s (19.6 s): 33.6 s after the cover | 45.2 s (16.2 s): 29.0 s after the cover |
+| cover -> game kit started | 2.6-3.0 s (dev panel 0.35-0.6 s, then the police AND falcon game code, 1.6 s for the falcon's) | 0.3-0.6 s (`gamelazy`, `panelwait` added this round after the marks showed it) |
+| police "spawn" (teleport + area under the loader) | 20.4 s | 14.8-16.7 s (`holdfast`) |
+| sync pipelines during a 25-30 s police drive after the reveal | - | 0 (25-31 shader modules, all async) |
+| landmarks' far LOD draws (`farlodlm`) | 5-16 each, 117 for the 13 landmarks | 1 each (13); Van Buuren left out (its last level shows from 55 m: flat means read as flat there) |
+| `farlodlm` same-page A/B at 800 m, x10-x20 zoom | | same colours (mean RGB within 1-2 levels); pixels > 20: 0.3-4.4 % (texture detail) on 9 landmarks; 10-25 % on police / St-Pierre / Wolvendael / Russian / Latour from trees and tiles streaming in between the two shots (docs/perfgame/r7_farlodlm_*.jpg) |
+
+Found + fixed on the way (farMerge.js): a mesh with its own transform had its SHARED positions moved by `applyMatrix4` (bridges were all identity, landmarks are not): now copied first. A slot bake after the boot drew nothing on the first try (a new pipeline still compiling: target left at its clear alpha 0): now redrawn until alpha is 1 (2 s cap). Load-time bakes checked equal to the A/B ones (town hall brick 0.211 / 0.089 / 0.053).
+
+Remaining: the cover itself (26-31 s on this busy machine) and the area wait under the loader (15 s: the ring's 8 full tiles + landmark settle) are the two big blocks; under 35 s needs the cover cut, not the game setup any more. One police drive had a 306 ms frame with 40 ms of script (GPU / compositor stall with the other app busy), not reproduced.
