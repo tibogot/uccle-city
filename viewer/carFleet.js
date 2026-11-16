@@ -31,8 +31,8 @@ export const TYPE_MIX = [["hatch_s", 0.20], ["hatch_c", 0.22], ["estate", 0.16],
 // (cars2: as tools/blender/cars2.py prints them; ?cars=old: the faceted family's)
 export const SIZES = CARS_OLD ? { hatch_s: [1.74, 1.50, 4.01], hatch_c: [1.80, 1.50, 4.31], estate: [1.80, 1.51, 4.63], saloon: [1.82, 1.49, 4.73],
   suv: [1.82, 1.64, 4.41], van_c: [1.84, 1.82, 4.50], van_p: [2.02, 2.28, 5.05], taxi: [1.80, 1.61, 4.67] }
-  : { hatch_s: [1.77, 1.45, 4.10], hatch_c: [1.81, 1.46, 4.33], estate: [1.84, 1.47, 4.73], saloon: [1.84, 1.44, 4.75],
-    suv: [1.84, 1.57, 4.34], van_c: [1.88, 1.84, 4.53], van_p: [1.95, 1.98, 5.03], taxi: [1.84, 1.59, 4.75], police: [1.84, 1.47, 4.73] };
+  : { hatch_s: [1.77, 1.44, 4.09], hatch_c: [1.81, 1.45, 4.31], estate: [1.85, 1.47, 4.70], saloon: [1.85, 1.44, 4.73],
+    suv: [1.84, 1.56, 4.33], van_c: [1.88, 1.84, 4.53], van_p: [1.95, 1.98, 5.03], taxi: [1.85, 1.59, 4.73], police: [1.85, 1.47, 4.70] };
 // paints (sRGB): Brussels car parks are mostly black, greys, silver and white
 export const PAINTS = [0x0d0e10, 0x0d0e10, 0x0d0e10, 0x1a1c1f, 0x34383d, 0x34383d, 0x4a4e53, 0x5a5e63, 0x8f959c, 0x9ea4ab, 0x9ea4ab, 0xb8bcc0,
   0xe8e8e4, 0xe8e8e4, 0xdcdcd6, 0x1d3f6e, 0x1d2c4a, 0x2e5a8a, 0x8a1414, 0x5a1010, 0x24483a, 0x6b5a48, 0x3a3226];

@@ -22,7 +22,7 @@ const TWO_TRAFFIC = typeof location === "undefined" || new URLSearchParams(locat
 // per type: wheelbase and wheel radius (the faceted GLB's Wheel_* nodes: z = +-wb/2, y = r)
 // [wheelbase, wheel radius] per type: the cars2 family (tools/blender/cars2.py), ?cars=old the faceted one
 const WHEELS = CARS_OLD ? { hatch_s: [2.5, 0.3], hatch_c: [2.64, 0.32], estate: [2.7, 0.32], saloon: [2.8, 0.33], suv: [2.64, 0.34], van_c: [2.72, 0.32], van_p: [3.26, 0.34], taxi: [2.7, 0.32] }
-  : { hatch_s: [2.56, 0.30], hatch_c: [2.64, 0.316], estate: [2.69, 0.316], saloon: [2.85, 0.325], suv: [2.62, 0.345], van_c: [2.72, 0.32], van_p: [3.0, 0.335], taxi: [2.85, 0.325] };
+  : { hatch_s: [2.56, 0.31], hatch_c: [2.66, 0.325], estate: [2.69, 0.325], saloon: [2.85, 0.33], suv: [2.64, 0.35], van_c: [2.72, 0.32], van_p: [3.0, 0.34], taxi: [2.85, 0.33] };
 
 /** ?trafficbox=old: the traffic's collider boxes at the sim's newest step (before collisions round 2) */
 const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);

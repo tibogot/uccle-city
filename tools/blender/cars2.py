@@ -134,22 +134,22 @@ def S(**k): return k
 
 HATCH_C = S(
     label="compact hatchback", type="hatchback", paint=(0.025, 0.07, 0.17),
-    zFront=2.19, zRear=-2.10, wheelZ=1.32, wheelR=0.316, rimR=0.205, tyreW=0.205, wheelX=0.772,
-    archGap=0.042, archFlare=0.014, archPow=2.2, tuck=0.07,
+    zFront=2.19, zRear=-2.10, wheelZ=1.32, wheelR=0.325, rimR=0.216, tyreW=0.225, wheelX=0.79, rim="5",
+    archGap=0.028, archFlare=0.018, archFlareR=0.034, archPow=2.2, tuck=0.07, spoiler=True,
     halfWidth=[[2.19, 0.86], [1.32, 0.892], [0, 0.897], [-1.32, 0.895], [-2.10, 0.875]],
-    sill=[[2.19, 0.27], [1.1, 0.25], [-1.1, 0.25], [-2.10, 0.31]],
-    shoulder=[[2.19, 0.60], [1.6, 0.68], [1.32, 0.70], [0, 0.72], [-1.32, 0.76], [-2.10, 0.78]],
-    edge=[[2.06, 0.79], [1.75, 0.86], [1.35, 0.915], [1.02, 0.955], [0.5, 0.972], [-0.5, 0.99], [-1.3, 1.015], [-1.75, 1.025], [-2.0, 1.02]],
-    crown=[[2.06, 0.032], [1.15, 0.028], [0.98, 0.002], [-2.1, 0.002]],
+    sill=[[2.19, 0.26], [1.1, 0.235], [-1.1, 0.235], [-2.10, 0.30]],
+    shoulder=[[2.19, 0.60], [1.6, 0.69], [1.32, 0.71], [0, 0.73], [-1.32, 0.77], [-2.10, 0.79]],
+    edge=[[2.06, 0.79], [1.75, 0.86], [1.35, 0.92], [0.95, 0.965], [0.5, 0.985], [-0.5, 1.0], [-1.3, 1.03], [-1.75, 1.04], [-2.0, 1.03]],
+    crown=[[2.06, 0.032], [1.05, 0.028], [0.90, 0.002], [-2.1, 0.002]],
     tumble=[[2.19, 0.09], [1.0, 0.085], [-1.3, 0.10], [-2.1, 0.10]],
     nose=dict(halfWidth=[0.34, 0.66, 2.6], edge=[0.13, 0.745, 2.4], crown=[0.13, 0.008, 2], sill=[0.2, 0.22, 2], shoulder=[0.24, 0.55, 2.4]),
     tail=dict(halfWidth=[0.26, 0.72, 2.8], edge=[0.07, 0.985, 3], crown=[0.07, 0.0, 2], sill=[0.18, 0.33, 2], shoulder=[0.2, 0.76, 2.6]),
     noseRake=dict(length=0.56, y=[[0.22, 0.05], [0.32, 0.0], [0.50, 0.0], [0.60, 0.03], [0.70, 0.09], [0.76, 0.15]], plan=0.08),
     tailRake=dict(length=0.40, y=[[0.33, 0.06], [0.46, 0.0], [0.62, 0.0], [0.80, 0.01], [0.98, 0.035]], plan=0.06),
-    cabin=dict(cowl=1.02, roofFront=0.16, roofRear=-1.56, deck=-1.97, roofY=[[0.16, 1.43], [-0.55, 1.456], [-1.56, 1.42]],
-               rail=[0.64, 0.60], inset=0.035, bulge=0.012, roofEdge=0.05, roofCrown=0.03, roofRound=4.0, sail=0.15,
-               pillars=[(-0.27, -0.18, "gloss")], glassEnd=-1.36, backGlass="glass_dark", sideRearGlass="glass"),
-    back="hatch", doors=[0.995, -0.225, -1.10], handles=[-0.06, -0.92], handleY=0.905,
+    cabin=dict(cowl=0.92, roofFront=0.08, roofRear=-1.56, deck=-1.97, roofY=[[0.08, 1.425], [-0.6, 1.45], [-1.56, 1.415]],
+               rail=[0.63, 0.59], inset=0.035, bulge=0.012, roofEdge=0.05, roofCrown=0.03, roofRound=4.0, sail=0.15,
+               pillars=[(-0.30, -0.21, "gloss")], glassEnd=-1.30, backGlass="glass_dark", sideRearGlass="glass"),
+    back="hatch", doors=[0.905, -0.255, -1.10], handles=[-0.10, -0.95], handleY=0.92,
     front=[("chin", "trim", (0.0, 0.26), (0, 1), 4, None),
            ("intake", "gloss", (0.31, 0.44), (0, 0.66), 0, "intake"),
            ("bumper", "paint_seam", (0.552, 0.558), (0, 1), 4, None),
@@ -159,8 +159,8 @@ HATCH_C = S(
     rear=[("diff", "trim", (0.0, 0.38), (0, 1), 4, None),
           ("refl", "tail", (0.43, 0.47), (0.72, 0.90), 0, "refl"),
           ("bumper", "paint_seam", (0.565, 0.571), (0, 1), 4, None),
-          ("gate", "paint_seam", (0.79, 0.796), (0, 0.60), 0, None),
-          ("tail", "gloss", (0.835, 0.965), (0.60, 1), 0.15, "tail")],
+          ("gate", "paint_seam", (0.79, 0.796), (0, 0.50), 0, None),
+          ("tail", "gloss", (0.835, 0.965), (0.50, 1), 0.26, "tail")],
     plateF=0.44, plateR=0.665, rearSeamZ=0.12, rearSeamY=0.79,
 )
 
@@ -204,10 +204,15 @@ def smooth_lin(knots):
             if x <= b: return lerp(A, B, (x - a) / (b - a))
     return f
 
+# (proportions pass 2026-11-16: the base table above is in its own z frame; each type maps it onto its real axles and
+# overhangs, the wheels pushed to the corners: Golf 8 = 2.62-2.64 m wheelbase on 4.28 m)
+BASE = HATCH_C
+# compact hatchback (Golf / 308 class): 4.27 x 1.81 x 1.45, WB 2.66, front overhang 0.82
+HATCH_C = remap(BASE, zmap=[(-2.10, -2.12), (-1.32, -1.33), (1.32, 1.33), (2.19, 2.15)])
 # small hatchback (Polo / 208 / Clio / Yaris class): 4.05 x 1.75 x 1.45, WB 2.56
-HATCH_S = remap(HATCH_C, zmap=[(-2.10, -1.95), (-1.32, -1.28), (1.32, 1.28), (2.19, 2.11)], xs=0.978,
+HATCH_S = remap(BASE, zmap=[(-2.10, -1.98), (-1.32, -1.28), (1.32, 1.28), (2.19, 2.07)], xs=0.978,
                 ymap=[(0, 0), (0.30, 0.29), (1.0, 0.985), (1.456, 1.45)],
-                label="small hatchback", paint=(0.42, 0.03, 0.03), wheelR=0.30, rimR=0.19, tyreW=0.185, wheelX=0.752)
+                label="small hatchback", paint=(0.42, 0.03, 0.03), wheelR=0.31, rimR=0.203, tyreW=0.195, wheelX=0.765, rim="6")
 HATCH_S["nose"]["halfWidth"] = [0.36, 0.64, 2.4]
 HATCH_S["cabin"]["roofRear"] = -1.58; HATCH_S["cabin"]["deck"] = -1.88
 HATCH_S["front"] = [("chin", "trim", (0.0, 0.25), (0, 1), 4, None),
@@ -219,33 +224,34 @@ HATCH_S["front"] = [("chin", "trim", (0.0, 0.25), (0, 1), 4, None),
 HATCH_S["rear"] = [("diff", "trim", (0.0, 0.43), (0, 1), 0.28, None),
                    ("refl", "tail", (0.45, 0.48), (0.76, 0.93), 0, "refl"),
                    ("bumper", "paint_seam", (0.555, 0.561), (0, 1), 0.3, None),
-                   ("tail", "gloss", (0.80, 0.96), (0.70, 1), 0.20, "tail")]
+                   ("tail", "gloss", (0.80, 0.96), (0.56, 1), 0.26, "tail")]
 
 # estate (Octavia Combi / Passat Variant class): 4.69 x 1.83 x 1.47, WB 2.69
-ESTATE = remap(HATCH_C, zmap=[(-2.10, -2.425), (-1.32, -1.345), (1.32, 1.345), (2.19, 2.265)], xs=1.02,
+ESTATE = remap(BASE, zmap=[(-2.10, -2.44), (-1.32, -1.345), (1.32, 1.345), (2.19, 2.225)], xs=1.02,
                ymap=[(0, 0), (1.0, 1.005), (1.456, 1.47)],
-               label="estate", type="estate", paint=(0.30, 0.31, 0.32), rails=True)
-ESTATE["edge"] = [[2.13, 0.80], [1.8, 0.87], [1.38, 0.92], [1.04, 0.955], [0.4, 0.975], [-0.6, 0.99], [-1.6, 1.01], [-2.1, 1.02], [-2.33, 1.02]]
-ESTATE["shoulder"] = [[2.265, 0.60], [1.345, 0.70], [0, 0.72], [-1.345, 0.76], [-2.425, 0.78]]
-ESTATE["crown"] = [[2.13, 0.032], [1.2, 0.028], [1.0, 0.002], [-2.425, 0.002]]
-ESTATE["cabin"].update(cowl=1.03, roofFront=0.17, roofRear=-2.20, deck=-2.36, roofY=[[0.17, 1.44], [-1.0, 1.47], [-2.2, 1.45]],
-                       rail=[0.65, 0.62], pillars=[[-0.30, -0.21, "gloss"], [-1.34, -1.40, "gloss"]], glassEnd=-2.06, sideRearGlass="glass_dark")
-ESTATE["doors"] = [1.01, -0.255, -1.30]; ESTATE["handles"] = [-0.08, -1.10]
+               label="estate", type="estate", paint=(0.30, 0.31, 0.32), rails=True, spoiler=True, wheelX=0.80, rim="multi")
+ESTATE["edge"] = [[2.10, 0.80], [1.78, 0.87], [1.38, 0.925], [0.96, 0.965], [0.4, 0.985], [-0.6, 1.0], [-1.6, 1.025], [-2.1, 1.035], [-2.35, 1.03]]
+ESTATE["shoulder"] = [[2.225, 0.60], [1.345, 0.71], [0, 0.73], [-1.345, 0.77], [-2.44, 0.79]]
+ESTATE["crown"] = [[2.10, 0.032], [1.1, 0.028], [0.93, 0.002], [-2.44, 0.002]]
+ESTATE["cabin"].update(cowl=0.94, roofFront=0.10, roofRear=-2.22, deck=-2.38, roofY=[[0.10, 1.44], [-1.0, 1.465], [-2.22, 1.445]],
+                       rail=[0.65, 0.62], pillars=[[-0.33, -0.24, "gloss"], [-1.36, -1.42, "gloss"]], glassEnd=-2.08, sideRearGlass="glass_dark")
+ESTATE["doors"] = [0.925, -0.285, -1.30]; ESTATE["handles"] = [-0.11, -1.10]
 ESTATE["rear"] = [("diff", "trim", (0.0, 0.46), (0, 1), 0.28, None),
                   ("refl", "tail", (0.48, 0.51), (0.76, 0.93), 0, "refl"),
                   ("bumper", "paint_seam", (0.575, 0.581), (0, 1), 0.3, None),
                   ("gate", "paint_seam", (0.80, 0.806), (0, 0.6), 0, None),
-                  ("tail", "gloss", (0.84, 0.985), (0.60, 1), 0.13, "tail")]
+                  ("tail", "gloss", (0.84, 0.985), (0.60, 1), 0.20, "tail")]
 ESTATE["tail"]["edge"] = [0.07, 1.0, 3]
 ESTATE["rearSeamZ"] = 0.10
 
 # saloon (BMW 3 / Audi A4 / Mercedes C class, notchback): 4.71 x 1.83 x 1.44, WB 2.85
-SALOON = remap(HATCH_C, zmap=[(-2.10, -2.465), (-1.32, -1.425), (1.32, 1.425), (2.19, 2.245)], xs=1.02,
+SALOON = remap(BASE, zmap=[(-2.10, -2.48), (-1.32, -1.425), (1.32, 1.425), (2.19, 2.215)], xs=1.02,
                ymap=[(0, 0), (1.0, 0.995), (1.456, 1.44)],
-               label="saloon", type="sedan", paint=(0.012, 0.013, 0.015), back="notch", wheelR=0.325, rimR=0.215, tyreW=0.225, wheelX=0.785)
-SALOON["edge"] = [[2.12, 0.78], [1.75, 0.855], [1.3, 0.915], [0.9, 0.945], [0.3, 0.965], [-0.6, 0.985], [-1.3, 1.005], [-1.62, 1.01], [-2.2, 1.0], [-2.40, 0.985]]
-SALOON["shoulder"] = [[2.245, 0.60], [1.425, 0.70], [0, 0.72], [-1.425, 0.75], [-2.465, 0.76]]
-SALOON["crown"] = [[2.1, 0.034], [1.0, 0.03], [0.88, 0.002], [-1.58, 0.002], [-1.70, 0.016], [-2.40, 0.012]]
+               label="saloon", type="sedan", paint=(0.012, 0.013, 0.015), back="notch", wheelR=0.33, rimR=0.229, tyreW=0.225, wheelX=0.80,
+               rim="multi", spoiler=False)
+SALOON["edge"] = [[2.09, 0.78], [1.75, 0.855], [1.3, 0.915], [0.9, 0.945], [0.3, 0.965], [-0.6, 0.985], [-1.3, 1.005], [-1.62, 1.01], [-2.2, 1.0], [-2.42, 0.985]]
+SALOON["shoulder"] = [[2.215, 0.60], [1.425, 0.71], [0, 0.73], [-1.425, 0.76], [-2.48, 0.77]]
+SALOON["crown"] = [[2.08, 0.034], [1.0, 0.03], [0.88, 0.002], [-1.58, 0.002], [-1.70, 0.016], [-2.40, 0.012]]
 SALOON["tail"] = dict(halfWidth=[0.30, 0.74, 2.8], edge=[0.09, 0.965, 3], crown=[0.09, 0.0, 2], sill=[0.18, 0.36, 2], shoulder=[0.22, 0.74, 2.6])
 SALOON["tailRake"] = dict(length=0.42, y=[[0.36, 0.06], [0.48, 0.0], [0.66, 0.0], [0.82, 0.012], [0.965, 0.045]], plan=0.07)
 SALOON["cabin"].update(cowl=0.90, roofFront=0.05, roofRear=-0.98, deck=-1.62, roofY=[[0.05, 1.41], [-0.45, 1.44], [-0.98, 1.41]],
@@ -260,10 +266,10 @@ SALOON["plateR"] = 0.66
 SALOON["rearSeamZ"] = 0.0
 
 # small SUV / crossover (Peugeot 2008 / Renault Captur / VW T-Roc class): 4.30 x 1.80 x 1.57, WB 2.62
-SUV = remap(HATCH_C, zmap=[(-2.10, -2.12), (-1.32, -1.31), (1.32, 1.31), (2.19, 2.18)], xs=1.006,
+SUV = remap(BASE, zmap=[(-2.10, -2.13), (-1.32, -1.32), (1.32, 1.32), (2.19, 2.16)], xs=1.006,
             ymap=[(0, 0), (0.22, 0.32), (0.6, 0.73), (1.0, 1.10), (1.456, 1.57)],
-            label="small SUV", type="suv", paint=(0.06, 0.12, 0.10), wheelR=0.345, rimR=0.215, tyreW=0.215, wheelX=0.78,
-            archGap=0.05, archFlare=0.03, clad=0.50, rails=True, skid=True)
+            label="small SUV", type="suv", paint=(0.06, 0.12, 0.10), wheelR=0.35, rimR=0.229, tyreW=0.225, wheelX=0.80,
+            archGap=0.035, archFlare=0.03, archFlareR=0.042, clad=0.50, rails=True, skid=True, rim="5")
 SUV["cabin"].update(sideRearGlass="glass_dark", rail=[0.63, 0.60])
 SUV["front"] = [("chin", "skid", (0.0, 0.40), (0, 0.55), 0, None),
                 ("chin2", "trim", (0.0, 0.40), (0.55, 1), 0.3, None),
@@ -282,8 +288,8 @@ SUV["rear"] = [("diff", "skid", (0.0, 0.50), (0, 0.5), 0, None),
 # compact van (Renault Kangoo / Citroen Berlingo / VW Caddy class): 4.49 x 1.86 x 1.84, WB 2.72
 VAN_C = S(
     label="compact van", type="van", paint=(0.62, 0.62, 0.60), clad=0.42,
-    zFront=2.27, zRear=-2.22, wheelZ=1.36, wheelR=0.32, rimR=0.19, tyreW=0.205, wheelX=0.79,
-    archGap=0.045, archFlare=0.02, archPow=2.2, tuck=0.06,
+    zFront=2.27, zRear=-2.22, wheelZ=1.36, wheelR=0.32, rimR=0.203, tyreW=0.205, wheelX=0.80, rim="cover",
+    archGap=0.035, archFlare=0.02, archPow=2.2, tuck=0.06,
     halfWidth=[[2.27, 0.88], [1.36, 0.92], [0, 0.93], [-1.36, 0.93], [-2.22, 0.92]],
     sill=[[2.27, 0.33], [1.1, 0.30], [-1.1, 0.30], [-2.22, 0.36]],
     shoulder=[[2.27, 0.66], [1.36, 0.76], [0, 0.80], [-1.36, 0.84], [-2.22, 0.86]],
@@ -311,17 +317,17 @@ VAN_C = S(
 # panel van (VW Transporter / Renault Trafic class, H1): 4.99 x 1.92 x 1.98, WB 3.0; cargo body, glass in the cab only
 VAN_P = remap(VAN_C, zmap=[(-2.22, -2.52), (-1.36, -1.50), (1.36, 1.50), (2.27, 2.47)], xs=1.035,
               ymap=[(0, 0), (0.3, 0.31), (1.1, 1.12), (1.84, 1.98)],
-              label="panel van", paint=(0.70, 0.70, 0.68), wheelR=0.335, rimR=0.20, tyreW=0.215, wheelX=0.83, cargo=True)
+              label="panel van", paint=(0.70, 0.70, 0.68), wheelR=0.34, rimR=0.203, tyreW=0.215, wheelX=0.85, cargo=True)
 VAN_P["edge"] = [[2.34, 0.95], [2.05, 1.03], [1.70, 1.09], [1.45, 1.12], [0.5, 1.13], [-1.0, 1.14], [-2.4, 1.14]]
 VAN_P["cabin"].update(cowl=1.48, roofFront=0.88, roofRear=-2.44, deck=-2.50, roofY=[[0.88, 1.93], [0.3, 1.98], [-2.44, 1.98]],
                       rail=[0.86, 0.90], pillars=[], glassEnd=0.30, roofRound=7.0)
 VAN_P["doors"] = [1.47, 0.32, -0.62]; VAN_P["handles"] = [0.48, -0.50]
 
 # Brussels taxi: the saloon in black, yellow chequer line, amber TAXI roof sign; keeps its livery
-TAXI = json.loads(json.dumps(SALOON)); TAXI.update(label="Brussels taxi", type="taxi", paint=(0.010, 0.010, 0.011), keepPaint=True, taxi=True)
+TAXI = json.loads(json.dumps(SALOON)); TAXI.update(label="Brussels taxi", type="taxi", paint=(0.010, 0.010, 0.011), keepPaint=True, taxi=True, rim="6")
 # Belgian police estate (federal / local police): white, a blue + fluorescent yellow Battenburg band along the sides
 # and across the tailgate, POLICE lettering; keeps its livery
-POLICE = json.loads(json.dumps(ESTATE)); POLICE.update(label="police estate", type="police", paint=(0.80, 0.80, 0.79), keepPaint=True, police=True, rails=False, plateR=0.50)
+POLICE = json.loads(json.dumps(ESTATE)); POLICE.update(label="police estate", type="police", paint=(0.80, 0.80, 0.79), keepPaint=True, police=True, rails=False, plateR=0.50, rim="5")
 
 TYPES = {"hatch_s": HATCH_S, "hatch_c": HATCH_C, "estate": ESTATE, "saloon": SALOON, "suv": SUV, "van_c": VAN_C,
          "van_p": VAN_P, "taxi": TAXI, "police": POLICE}
@@ -342,8 +348,9 @@ def body_fn(sp):
         flare = 0.0
         for a in axles:
             d = (z - a) / (archR + 0.4)
-            if abs(d) < 1: flare = max(flare, (1 - d * d) ** 2)
-        W = rounded(z, W0(z) + sp["archFlare"] * flare, "halfWidth")
+            amp = sp["archFlare"] if a > 0 else sp.get("archFlareR", sp["archFlare"])
+            if abs(d) < 1: flare = max(flare, amp * (1 - d * d) ** 2)
+        W = rounded(z, W0(z) + flare, "halfWidth")
         ySill = rounded(z, B0(z), "sill")
         yB = ySill
         p = sp.get("archPow", 2.0)
@@ -674,7 +681,7 @@ def build_car(cid, sp, detail):
     Fs = set(F0)
     for end in ("front", "rear"):
         for r in regions[end]: Fs.update(round(v, 4) for v in r["f"])
-    if police and detail < 2: Fs.update([0.17, 0.34, 0.51])
+    if police and detail < 2: Fs.update([0.17, 0.34, 0.51, 0.68, 0.85])
     Fs = sorted(f for f in Fs if 0 <= f <= 1)
     FL = [f for f in reversed(Fs)] + [-f for f in Fs[1:]]          # +1 .. -1
     for ci, (iz, b) in enumerate(((0, secs[0]), (NZ - 1, secs[-1]))):
@@ -757,6 +764,15 @@ def build_car(cid, sp, detail):
             if k >= k_two: continue                       # the bonnet / boot top: paint
             for r in regions[p]:
                 if kin(k, r) and fin(info["f"], r): setm(f, info, r["mat"], r["tag"])
+    # police: the Battenburg across the front bumper (one row between the intake and the bumper line)
+    if police and detail < 2:
+        lo, hi = kidx(rowsF, s_of_y(bF, 0.44)), kidx(rowsF, s_of_y(bF, 0.552))
+        for f, info in faces:
+            if info["part"] != "front" or f.material_index != M["paint"]: continue
+            k = info["k"]
+            if k >= lo and k + 1 <= hi:
+                col = int(info["f"][0] / 0.17 + 1e-3) + (0 if info["side"] > 0 else 1)
+                f.material_index = M["pol_blue"] if col % 2 == 0 else M["pol_yellow"]
     # police: the Battenburg across the tailgate between the lamps (two rows, blocks of 0.17 of the half width)
     if police and detail < 2:
         lo, md, hi = kidx(rowsR, s_of_y(bR, 0.581)), kidx(rowsR, s_of_y(bR, 0.69)), kidx(rowsR, s_of_y(bR, 0.80))
@@ -1005,10 +1021,13 @@ def build_car(cid, sp, detail):
                 for d_ in (1, -1):
                     zz = zt + d_ * 0.087
                     dt.face([(-0.2, yt + 0.04, zz), (0.2, yt + 0.04, zz), (0.2, yt + 0.11, zz), (-0.2, yt + 0.11, zz)], M["sign"], out=("dir", (0, 0, d_)))
-        # third brake lamp (high level) on hatches / estates / SUVs
-        if detail == 0 and sp["back"] in ("hatch",) or (detail == 0 and sp["type"] in ("estate", "police")):
-            c = cabin(cab["roofRear"] - 0.01)
-            rbox(dt, (0, c["ry"] + c["h"] - 0.012, cab["roofRear"] - 0.03), (0.30, 0.025, 0.04), M["tail"], bevel=0.004)
+        # roof spoiler over the rear window (hatches, estates, SUVs), the third brake lamp under its trailing edge
+        if sp.get("spoiler") or sp["type"] == "police":
+            c = cabin(cab["roofRear"] + 0.02); yt = c["ry"] + c["h"]; wsp = 2 * c["rx"] * 0.93
+            rbox(dt, (0, yt - 0.006, cab["roofRear"] - 0.035), (wsp, 0.024, 0.15), M["paint"], bevel=0.008 if detail == 0 else 0,
+                 rot=lambda p: (p[0], p[1] + p[2] * 0.22 - 0.25 * p[0] * p[0], p[2]), taper=(0.97, 1.0))
+            if detail == 0:
+                rbox(dt, (0, yt - 0.024, cab["roofRear"] - 0.09), (0.34, 0.014, 0.03), M["tail"])
     # police: POLICE lettering on the front doors (both sides) and over the rear band; text in blue, 1.5 mm proud
     if police and detail == 0:
         def side_pt(z, y, sd):
@@ -1022,11 +1041,16 @@ def build_car(cid, sp, detail):
                 za, zb = zc_ - sd * u0, zc_ - sd * u1
                 pts = [side_pt(za, yy + v0, sd), side_pt(zb, yy + v0, sd), side_pt(zb, yy + v1, sd), side_pt(za, yy + v1, sd)]
                 dt.face(pts, M["pol_blue"], out=("dir", (sd, 0, 0)))
-        for (u0, v0, u1, v1) in text_rects("POLICE", 0.07, 0.22):
-            y0, y1 = 0.88 + v0, 0.88 + v1
-            # on the tailgate glass base: just under the backlight, centred
-            zz = rake(0, 0.88, zR) - 0.003
-            dt.face([(-u0, y0, zz), (-u1, y0, zz), (-u1, y1, zz), (-u0, y1, zz)], M["pol_blue"], out=("dir", (0, 0, -1)))
+        rz = lambda x, y: rake(x, y, zR) - 0.004                        # the tailgate's own surface, 4 mm out
+        for (u0, v0, u1, v1) in text_rects("POLICE", 0.075, 0.22):
+            y0, y1 = 0.885 + v0, 0.885 + v1
+            dt.face([(-u0, y0, rz(-u0, y0)), (-u1, y0, rz(-u1, y0)), (-u1, y1, rz(-u1, y1)), (-u0, y1, rz(-u0, y1))], M["pol_blue"], out=("dir", (0, 0, -1)))
+        # on the bonnet, reading from the front (u along +x seen from ahead, v up the bonnet = -z), on the crown, 3 mm up
+        def bon(x, z):
+            b = body(z); f = clamp(abs(x) / b["xE"], 0, 1); return (x, prof_pt(b, 3 - f)[1] + 0.003, z)
+        zb0 = zF - 0.42
+        for (u0, v0, u1, v1) in text_rects("POLICE", 0.10, 0.22):
+            dt.face([bon(u0, zb0 - v0), bon(u1, zb0 - v0), bon(u1, zb0 - v1), bon(u0, zb0 - v1)], M["pol_blue"], out=("dir", (0, 1, 0)))
     details = dt.obj(f"{cid}_det{detail}", weld=False)
     out = [tub, house, details]
     if nseg: out.append(lm.obj(f"{cid}_liner{detail}", weld=False))
@@ -1045,7 +1069,8 @@ def build_wheel(sp, detail):
         lathe(w, [(r5, h), (r5, -h)], 5, lambda k, s: M["tyre"], phase=ph)
         w.quad([w.v((h, r5 * math.cos(ph + 2 * math.pi * s / 5), r5 * math.sin(ph + 2 * math.pi * s / 5))) for s in range(5)][::-1], M["rim_dark"])
         return w.obj("wheel2", weld=True)
-    N = 18 if detail == 0 else 8
+    style = sp.get("rim", "6")
+    N = {"5": 20, "6": 18, "multi": 20, "cover": 16}[style] if detail == 0 else 8
     if detail == 0:
         prof = [(RR + 0.004, h * 0.80), (lerp(RR, RW, 0.45), h * 1.0), (RW - 0.02, h * 0.92),
                 (RW, h * 0.5), (RW, -h * 0.55), (RW - 0.02, -h * 0.95), (RR, -h * 0.8)]
@@ -1064,9 +1089,12 @@ def build_wheel(sp, detail):
         ang = lambda q: 2 * math.pi * q / N
         ring_hub = [w.v((xf + 0.014, r_hub * math.cos(ang(q)), r_hub * math.sin(ang(q)))) for q in range(N)]
         ring_mid = [w.v((xf + 0.008, r_mid * math.cos(ang(q)), r_mid * math.sin(ang(q)))) for q in range(N)]
-        bk_mid = [w.v((xf - 0.045, r_mid * math.cos(ang(q)), r_mid * math.sin(ang(q)))) for q in range(N)]
-        bk_out = [w.v((xf - 0.045, r_out * math.cos(ang(q)), r_out * math.sin(ang(q)))) for q in range(N)]
-        opening = lambda q: q % 3 != 0
+        # 5-spoke: 1 of 4 segments a spoke; 6-spoke: 1 of 3; multi-spoke: every other; cover (vans): a plastic wheel
+        # cover with 8 shallow slots
+        dep = 0.012 if style == "cover" else 0.045
+        bk_mid = [w.v((xf - dep, r_mid * math.cos(ang(q)), r_mid * math.sin(ang(q)))) for q in range(N)]
+        bk_out = [w.v((xf - dep, r_out * math.cos(ang(q)), r_out * math.sin(ang(q)))) for q in range(N)]
+        opening = {"5": lambda q: q % 4 != 0, "6": lambda q: q % 3 != 0, "multi": lambda q: q % 2 == 1, "cover": lambda q: q % 2 == 1}[style]
         for q in range(N):
             q1 = (q + 1) % N
             w.quad([ring_hub[q], ring_hub[q1], ring_mid[q1], ring_mid[q]], M["rim"])

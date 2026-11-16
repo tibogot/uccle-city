@@ -109,10 +109,10 @@ Average over the 8 street types, per car, per fleet level:
 
 | level (distance) | material | shadow | faceted (old) | cars2 (new) | change |
 |---|---|---|---|---|---|
-| 0 (< 22 m old, < 30 m new) | near | yes | 8,042 tris | 8,072 (LOD0) | = |
-| 1 (to 55 / 60 m) | near | yes | 5,776 | 1,732 (LOD1) | **-70 %** |
-| 2 (to 130 m) | far | yes | 2,161 | 1,732 (LOD1) | -20 % |
-| 3 (to 600 m, faded 380-420) | far | no | 304 | 325 (LOD2) | +7 % |
+| 0 (< 22 m old, < 30 m new) | near | yes | 8,042 tris | 8,112 (LOD0) | = |
+| 1 (to 55 / 60 m) | near | yes | 5,776 | 1,723 (LOD1) | **-70 %** |
+| 2 (to 130 m) | far | yes | 2,161 | 1,723 (LOD1) | -20 % |
+| 3 (to 600 m, faded 380-420) | far | no | 304 | 327 (LOD2) | +7 % |
 
 - **Draw calls: unchanged.** The fleets still instance per (type, level, plain / fade): the parked fleet merges them
   into 6 + 4 multi-draws (`?carmerge=old`: 26 + 11 render objects in a street), the traffic one InstancedMesh per
@@ -128,6 +128,26 @@ Average over the 8 street types, per car, per fleet level:
 - LOD0 is ~7.3-9.2k triangles (police 10.9k: the livery and lettering), not the 3-6k of the brief: the smooth body
   needs its rows and the wheels ~450 each. It is only drawn within 30 m (a handful of cars); the triangle load that
   matters (the 22-130 m band, most of a street) is 3x lower.
+
+## 4b. Proportions pass (coordinator review, 2026-11-16)
+"Clearly better, but still ~2000 generic cars": a second pass on the shapes, all in `cars2.py` tables.
+- **Wheels**: 16-18" (tyre diameter 0.62-0.70 m: hatch_s 0.62, hatch_c / estate 0.65, saloon 0.66, SUV 0.70, vans
+  0.64-0.68), wider tyres, arch gap 4.2 -> 2.8 cm (vans / SUV 3.5): the wheels fill the arches.
+- **Overhangs**: the base table is now mapped per type onto its real axles; front overhangs shortened (hatch_c 0.87 ->
+  0.82 m with a 2.66 m wheelbase on 4.31 m, saloon 0.79, estate 0.88, hatch_s 0.79).
+- **Stance**: track +2-5 cm (tyres 1-2 cm inside the body side), sill 1.5 cm lower, a separate, stronger flare over
+  the rear arch (`archFlareR`: the shoulder line over the rear wheel).
+- **Glasshouse**: belt line raised 1-2.5 cm (rising to the rear), roof 0.5 cm lower, A pillar base moved back 0.10 m
+  (hatch_c cowl 0.41 m behind the front axle), windscreen header back, thicker C pillar: a lower, longer daylight
+  opening.
+- **Hatch rear**: tail lamps wrap 0.26 m round the corners and reach further in; a roof spoiler over the rear window
+  (hatches, estates, SUVs, police) with the third brake lamp under its trailing edge.
+- **Police**: the tailgate POLICE now follows the curved tailgate (it was a flat plane half buried: "POL CE"); POLICE
+  on the bonnet; one row of Battenburg blocks across the front bumper. The roof is clear and flat from the header to
+  the spoiler for the game kit's beacon (`viewer/policeCar/fitCar.js` finds it by rays: to confirm in the browser).
+- **Rims**: four designs: 5-spoke (hatch_c, SUV, police), 6-spoke (hatch_s, taxi), 10-spoke multi (estate, saloon),
+  plastic wheel covers with 8 slots (vans).
+Budget after the pass: level 0 8.1k, levels 1-2 1.7k, level 3 0.33k (table above), memory unchanged (6.5 MB).
 
 ## 5. Mesh audit (`docs/cars2/audit.md`, tools/mesh_audit/audit.js through `tools/cars/auditCars2.mjs`)
 Contacts: every tyre touches the ground (lowest point -0.001 m, all cars, all LODs), the body's lowest point is
