@@ -1,6 +1,6 @@
 # Mesh audit (packed): police.lod0
 
-19,716 triangles, 16,719 welded vertices, 13,204 open edges, 1,138,460 rays, 4129 ms.
+19,716 triangles, 16,719 welded vertices, 13,204 open edges, 1,138,460 rays, 5121 ms.
 
 **0 blocking**, 7348 warnings. Clean (no blocking item).
 
@@ -9,7 +9,7 @@
 | sliver | warn | 6608 |
 | nonmanifold | warn | 12 |
 | tjunction | warn | 728 |
-| seam | info | 1758 |
+| seam | info | 1756 |
 | opening | info | 1139 |
 | backtoback | info | 679 |
 
@@ -70,14 +70,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 25.80, 47.50, 14.70 | Police/galvanised_steel | 3 |
 | 25.80, 49.25, 20.10 | Police/galvanised_steel | 3 |
 | 25.80, 49.25, 14.70 | Police/galvanised_steel | 3 |
-| 26.32, 47.03, -18.41 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -18.41 | Police/cast_iron_green | 4 |
-| 26.32, 47.03, -16.97 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -16.97 | Police/cast_iron_green | 4 |
-| 26.32, 47.03, -16.83 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -16.83 | Police/cast_iron_green | 4 |
-| 26.32, 47.03, -15.39 | Police/cast_iron_green | 4 |
-| 26.32, 48.73, -15.39 | Police/cast_iron_green | 4 |
+| 26.00, 48.73, -18.42 | Police/cast_iron_green | 4 |
+| 26.00, 47.03, -18.42 | Police/cast_iron_green | 4 |
+| 24.56, 48.73, -18.42 | Police/cast_iron_green | 4 |
+| 24.56, 47.03, -18.42 | Police/cast_iron_green | 4 |
+| 26.00, 48.73, -15.38 | Police/cast_iron_green | 4 |
+| 26.00, 47.03, -15.38 | Police/cast_iron_green | 4 |
+| 24.56, 48.73, -15.38 | Police/cast_iron_green | 4 |
+| 24.56, 47.03, -15.38 | Police/cast_iron_green | 4 |
 
 ## tjunction (warn, 728)
 
@@ -126,7 +126,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (688 more in the JSON)
 
-## seam (info, 1758)
+## seam (info, 1756)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -171,7 +171,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 2.97, 52.08, -14.00 | Police/brick_yellow + Police/concrete_white | 2.46 | 23 | 81.4 |
 | 2.97, 55.38, -14.00 | Police/brick_yellow + Police/concrete_white | 2.46 | 23 | 81.3 |
 
-(1718 more in the JSON)
+(1716 more in the JSON)
 
 ## opening (info, 1139)
 

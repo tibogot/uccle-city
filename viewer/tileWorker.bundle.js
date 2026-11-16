@@ -535,7 +535,9 @@ var PLANE = 0.2;
 var MIN_COVER = 0.85;
 var MIN_HOLE = 1;
 var STEP = 0.25;
-var MIN_EDGE = 1;
+var MIN_EDGE = 0.25;
+var SHORT = 1;
+var SHORT_HOLE = 0.3;
 function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
   const used = /* @__PURE__ */ new Set(), out = [], edges = [];
   const n = ring2.length - (ring2.length > 1 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1] ? 1 : 0);
@@ -546,15 +548,19 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
     const on = [];
     tris.forEach((t, k) => {
       if (used.has(k) || Math.abs(t.n[1]) > 0.3) return;
-      let ok = true;
+      let ok = true, u0 = Infinity, u1 = -Infinity, dSum = 0;
       for (const q of t.p) {
         const dx = q[0] - ax, dz = q[2] - az, d = dx * nx + dz * nz, u = dx * tx + dz * tz;
-        if (Math.abs(d) > PLANE || u < -PLANE || u > L2 + PLANE) {
+        if (Math.abs(d) > PLANE) {
           ok = false;
           break;
         }
+        u0 = Math.min(u0, u);
+        u1 = Math.max(u1, u);
+        dSum += d;
       }
-      if (ok) on.push({ k, q: t.p.map((q) => [(q[0] - ax) * tx + (q[2] - az) * tz, q[1]]) });
+      if (!ok || u1 < 0.05 || u0 > L2 - 0.05) return;
+      on.push({ k, q: t.p.map((q) => [(q[0] - ax) * tx + (q[2] - az) * tz, q[1]]), over: u0 < -PLANE || u1 > L2 + PLANE, d: dSum / 3, n: t.n });
     });
     if (!on.length) continue;
     const topAt = (u) => {
@@ -574,7 +580,7 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
       return l1 >= -1e-4 && l2 >= -1e-4 && 1 - l1 - l2 >= -1e-4;
     };
     let tot = 0, cov = 0, partyN = 0;
-    for (let u = STEP / 2; u < L2; u += STEP) {
+    for (let u = Math.min(STEP / 2, L2 / 2); u < L2; u += Math.min(STEP, L2 / 2)) {
       const top = topAt(u);
       if (!(top > base + 0.3)) continue;
       const px = ax + tx * u, pz = az + tz * u;
@@ -589,10 +595,22 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
     }
     if (partyN && tot === 0) continue;
     const cover = tot ? cov / tot : 1, hole = (tot - cov) * STEP * STEP;
-    const bad = cover < MIN_COVER && hole >= MIN_HOLE && partyN === 0;
+    const bad = cover < MIN_COVER && hole >= (L2 < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0;
     edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, rebuilt: bad && fix });
     if (!bad || !fix) continue;
-    for (const { k } of on) used.add(k);
+    for (const o of on) {
+      used.add(o.k);
+      if (!o.over) continue;
+      for (const [sg, c] of [[1, 0], [-1, L2]]) {
+        const poly = clipU(o.q, sg, c);
+        if (poly.length < 3) continue;
+        const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
+        for (let k2 = 1; k2 + 1 < W.length; k2++) {
+          const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
+          out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true });
+        }
+      }
+    }
     const steps = Math.max(1, Math.ceil(L2)), pts = [];
     for (let s = 0; s <= steps; s++) {
       const u = Math.min(L2, L2 * s / steps), top = topAt(Math.min(L2 - 1e-3, Math.max(1e-3, u)));
@@ -611,6 +629,23 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
     if (!used.has(k)) out.push(t);
   });
   return { tris: out, edges };
+}
+function clipU(poly, sg, c) {
+  const out = [], f = (p) => sg * (p[0] - c);
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[(i + poly.length - 1) % poly.length], b = poly[i], fa = f(a), fb = f(b);
+    if (fb <= 0) {
+      if (fa > 0) {
+        const t = fa / (fa - fb);
+        out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      }
+      out.push(b);
+    } else if (fa <= 0) {
+      const t = fa / (fa - fb);
+      out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+    }
+  }
+  return out;
 }
 
 // viewer/buildingTypes.js
@@ -1370,7 +1405,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     }
     const look = opts.looks?.[b.id.split("/").pop()];
     const style = look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = cls && !landmark ? cls.type[bi] : 0, bgar = cls && !landmark ? cls.garage[bi] : 0;
+    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : cls && !landmark ? cls.garage[bi] : 0;
     if (cls) {
       stats.types = stats.types || [0, 0, 0, 0, 0, 0];
       stats.types[btype]++;
