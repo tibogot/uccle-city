@@ -243,6 +243,30 @@ unmuted, ?sound=0 muted. OfflineAudioContext renders are untouched.
   F_relais_after.jpg. LEFT: a steeper awning piece with the script on its slope, the first-floor window awnings, barrels.
 - Maison Dandoy, Proxy, Bistroquet, Deneubourg, White Night: not compared yet (time): next turn.
 
+## CODE-ONLY ROUND (after browser check 2)
+- Carsoel 13 again: the diagonal was NOT the step-out: the ground floor's wall triangles run on along the collinear edge
+  next to the rebuilt proud front ((1023.04, 71.73) to (1033.73, 74.32)); the first wall-fix version rebuilt that
+  neighbour edge as well and doubled its wall (z-fight seam on the diagonal). Now the repair takes collinear triangles that
+  run past an edge into account (coverage) and, when it rebuilds, keeps their parts outside the edge clipped; the proud
+  front's two 33 cm returns (open below the slab) are rebuilt too (short edges: >= 0.3 m2 of hole). The "flat slab" is
+  UrbIS's own: a 33 cm deep projecting ground floor with a flat roof at 74.3 / 74.8 m. Wall audit: 1,796 edges /
+  21,535 m2 -> 1. To see in the browser.
+- Le Relais Saint-Job kit: a steep (33 deg) awning built from the layout's boxes (no aluminium cassette), "RELAIS
+  saint-job" script on the slope, the section on the valance, lighter taupe (canvas 8), black door / risers / mullions
+  in the white front (curated `frame`), two small first-floor awnings over the corner (curated `upperAwnings`: their
+  positions guessed (u +-0.9 m, 3.95 m up): align on the façade's painted windows in the browser), a chalk A-board.
+  Barrels: no prop in the kit (left).
+- STREET VIEW LIST for the next browser turn (camera 9 m out from the shop's façade, facing it; newest date; both ways):
+
+| shop | façade (x, z) | Street View lat, lon | heading | to check / curate |
+|---|---|---|---|---|
+| Le Bistroquet (bar, I5) | 1120.4, 506.5 | 50.794376, 4.365436 | 342 | fascia colour, lettering, awning?, terrace |
+| Deneubourg (bakery, I5) | 1125.1, 504.9 | 50.794390, 4.365502 | 342 | front family / colour, sign |
+| Maison Dandoy (I5) | 1195.4, 481.6 | 50.794599, 4.366500 | 342 | the brand photo's black front / awning: confirm |
+| White Night (I6) | 1055.8, 542.7 | 50.794058, 4.364549 | 327 | still open? which house (brick corner vs white render) |
+| Proxy Delhaize (I6) | 1054.1, 562.7 | 50.794020, 4.364400 | 155 | white box + red lettering: confirm |
+| Le Relais Saint-Job (I6) | 1094, 543 | 50.794190, 4.365210 | 239 | the new steep awnings, upper awnings' positions |
+
 ## Commits
 See `git log claude/citydefects`. Server: `python tools/serve_nocache.py 8812`; reload with a changing `&r=N` (a same-URL
 navigate did not reload the page).
