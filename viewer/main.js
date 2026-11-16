@@ -4,6 +4,7 @@
 // Scene units are CONTRACT local metres: +x east, +z south, +y up (absolute m TAW).
 // Everything is built on the main thread at load (about 1 s for G4).
 
+import { soundGate } from "./audio/soundGate.js";   // FIRST: every AudioContext after it is gated (all sound off by default; ?sound=1)
 import * as THREE from "three/webgpu";
 import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
@@ -39,6 +40,7 @@ import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
+import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
@@ -367,11 +369,40 @@ function addBridgeDecks(decks, hm) {
   }
 }
 let bridgeDeckMat = null;
+// the plan decks' look (citydefects 2026-11-16; ?decklook=old: vertex colours): the streets' own asphalt and sidewalk /
+// kerb materials (roadPaint.js: the same tone and texture as the street the deck carries), the library's cast concrete
+// on the fascia, walls, upstands and soffit, dark steel rails; one draw per slot (streets/bridgeDecks.js PLAN_SLOTS)
+const DECK_LOOK = params.get("decklook") !== "old";
+let deckLookMats = null;
+function deckMaterials() {
+  if (deckLookMats) return deckLookMats;
+  const conc = libMaterial("concrete_white", { mapping: "world" });
+  const steel = new THREE.MeshStandardNodeMaterial({ color: 0x1c1f22, roughness: 0.45, metalness: 0.6 });
+  deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel];
+  deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel"][i]}`; });
+  return deckLookMats;
+}
 function bridgeDeckMesh(bd) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(bd.mesh.position, 3));
   g.setAttribute("normal", new THREE.BufferAttribute(bd.mesh.normal, 3));
   g.setAttribute("color", new THREE.BufferAttribute(bd.mesh.color, 3));
+  if (DECK_LOOK && bd.mesh.groups) {
+    const n = bd.mesh.position.length / 3, slotOfV = new Float32Array(n);
+    for (const gr of bd.mesh.groups) { g.addGroup(gr.start, gr.count, gr.slot); slotOfV.fill(gr.slot, gr.start, gr.start + gr.count); }
+    g.setAttribute("uv", new THREE.BufferAttribute(bd.mesh.uv, 2));
+    // the street shaders' inputs: plain asphalt (no lane lines, no junction marks, surface 0), slabs / kerb stones (aKind)
+    g.setAttribute("aLateral", new THREE.BufferAttribute(new Float32Array(n), 1));
+    g.setAttribute("aPiece", new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+    g.setAttribute("aEdges", new THREE.BufferAttribute(new Float32Array(n * 4), 4));
+    g.setAttribute("aMark", new THREE.BufferAttribute(new Float32Array(n * 4), 4));
+    g.setAttribute("aSurf", new THREE.BufferAttribute(new Float32Array(n), 1));
+    g.setAttribute("aKind", new THREE.BufferAttribute(Float32Array.from(slotOfV, (v) => (v === 2 ? 1 : 0)), 1));
+    g.computeBoundingSphere();
+    const m = new THREE.Mesh(g, deckMaterials());
+    m.name = `road-bridge-deck ${bd.name}`; m.castShadow = m.receiveShadow = true;
+    return m;
+  }
   g.computeBoundingSphere();
   bridgeDeckMat ??= Object.assign(new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.88, metalness: 0, side: THREE.DoubleSide }), { name: "road-bridge-deck" });
   bridgeDeckMat.userData.shared = true;
@@ -626,7 +657,7 @@ function tileData(entry, lite = false, viaBoot = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", parkWidth: params.get("parkclear") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     cache: params.get("tilecache") !== "0" };                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
@@ -980,6 +1011,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
 // ------------------------------------------------------------------ main
 
 async function main() {
+  soundGate.mountButton();                          // the mute / unmute button (all sound off by default; ?sound=1 on)
   const manifest = await getJSON("manifest.json");
   const sel = $("tileSel");
   for (const t of manifest.tiles) {
