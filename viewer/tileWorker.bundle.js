@@ -11405,7 +11405,7 @@ var ringSign = (ring2) => {
   return a2 > 0 ? 1 : -1;
 };
 function planDeckMesh(d, ground, covered) {
-  const P = [], N = [], C = [];
+  const P = [], N = [], C = [], S2 = [];
   const tri = (n, c, a, b, cc) => {
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = cc[0] - a[0], wy = cc[1] - a[1], wz = cc[2] - a[2];
     const gx = uy * wz - uz * wy, gy = uz * wx - ux * wz, gz = ux * wy - uy * wx;
@@ -11415,6 +11415,7 @@ function planDeckMesh(d, ground, covered) {
       N.push(n[0], n[1], n[2]);
       C.push(c[0], c[1], c[2]);
     }
+    S2.push(SLOT_OF.get(c) ?? 3);
   };
   const quad = (n, c, a, b, cc, dd) => {
     tri(n, c, a, b, cc);
@@ -11461,15 +11462,15 @@ function planDeckMesh(d, ground, covered) {
     const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], L2 = Math.hypot(bx - ax, bz - az);
     if (L2 < 0.01) continue;
     const tx = (bx - ax) / L2, tz = (bz - az) / L2, nx = tz * outSign, nz = -tx * outSign, n = [nx, 0, nz];
-    const steps = Math.max(1, Math.ceil(L2)), S2 = [];
+    const steps = Math.max(1, Math.ceil(L2)), S3 = [];
     for (let k = 0; k <= steps; k++) {
       const x = ax + (bx - ax) * k / steps, z = az + (bz - az) * k / steps, y = top(x, z);
       const gOut = ground(x + nx * 0.5, z + nz * 0.5);
-      S2.push({ x, z, y, yb: base(x, z), drop: y - gOut, gr: Math.min(ground(x, z), gOut) });
+      S3.push({ x, z, y, yb: base(x, z), drop: y - gOut, gr: Math.min(ground(x, z), gOut) });
     }
     const ix = -nx * PLAN.upW, iz = -nz * PLAN.upW, U = PLAN.upstand, mx = ix * 0.5, mz = iz * 0.5;
     for (let k = 0; k < steps; k++) {
-      const a = S2[k], b = S2[k + 1];
+      const a = S3[k], b = S3[k + 1];
       if (a.drop < -0.05 && b.drop < -0.05) continue;
       const fr = free.has(i);
       const ya = fr ? a.yb - PLAN.depth : Math.min(a.yb - PLAN.depth, a.gr - 0.4), yb = fr ? b.yb - PLAN.depth : Math.min(b.yb - PLAN.depth, b.gr - 0.4);
@@ -11513,7 +11514,27 @@ function planDeckMesh(d, ground, covered) {
       if (k === steps - 1) quad([(bx - ax) / L2, 0, (bz - az) / L2], COLP.wall, [x1 + nx * 0.2, b1, z1 + nz * 0.2], [x1 - nx * 0.2, b1, z1 - nz * 0.2], [x1 - nx * 0.2, y1, z1 - nz * 0.2], [x1 + nx * 0.2, y1, z1 + nz * 0.2]);
     }
   }
-  return { position: new Float32Array(P), normal: new Float32Array(N), color: new Float32Array(C) };
+  return slotted(P, N, C, S2, d._band ?? bandOf(d), d.pts[0]);
+}
+var SLOT_OF = /* @__PURE__ */ new Map([[COLP.asphalt, 0], [COLP.top, 1], [COLP.kerb, 2], [COLP.fascia, 3], [COLP.wall, 3], [COLP.soffit, 3], [COLP.steel, 4]]);
+function slotted(P, N, C, S2, B, p0) {
+  const T2 = S2.length, order = [...Array(T2).keys()].sort((a, b) => S2[a] - S2[b]);
+  const pos = new Float32Array(T2 * 9), nrm = new Float32Array(T2 * 9), col2 = new Float32Array(T2 * 9), uv = new Float32Array(T2 * 6), groups = [];
+  const tx = B.nz, tz = -B.nx;
+  order.forEach((t, k) => {
+    pos.set(P.slice(t * 9, t * 9 + 9), k * 9);
+    nrm.set(N.slice(t * 9, t * 9 + 9), k * 9);
+    col2.set(C.slice(t * 9, t * 9 + 9), k * 9);
+    for (let v = 0; v < 3; v++) {
+      const x = P[t * 9 + v * 3], z = P[t * 9 + v * 3 + 2];
+      uv[k * 6 + v * 2] = (x - p0[0]) * tx + (z - p0[1]) * tz;
+      uv[k * 6 + v * 2 + 1] = B.nx * x + B.nz * z - B.c;
+    }
+    const g = groups[groups.length - 1];
+    if (g && g.slot === S2[t]) g.count += 3;
+    else groups.push({ start: k * 3, count: 3, slot: S2[t] });
+  });
+  return { position: pos, normal: nrm, color: col2, uv, groups };
 }
 function planParapetRings(d, ground) {
   const ring2 = d.plan.ring, out = [], top = (x, z) => planTop(d, x, z) - PLAN.sink, outSign = ringSign(ring2);

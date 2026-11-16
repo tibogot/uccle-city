@@ -39,6 +39,7 @@ import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
+import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS } from "./lighting.js";
 import { createPipeline } from "./post.js";
@@ -355,11 +356,40 @@ function addBridgeDecks(decks, hm) {
   }
 }
 let bridgeDeckMat = null;
+// the plan decks' look (citydefects 2026-11-16; ?decklook=old: vertex colours): the streets' own asphalt and sidewalk /
+// kerb materials (roadPaint.js: the same tone and texture as the street the deck carries), the library's cast concrete
+// on the fascia, walls, upstands and soffit, dark steel rails; one draw per slot (streets/bridgeDecks.js PLAN_SLOTS)
+const DECK_LOOK = params.get("decklook") !== "old";
+let deckLookMats = null;
+function deckMaterials() {
+  if (deckLookMats) return deckLookMats;
+  const conc = libMaterial("concrete_white", { mapping: "world" });
+  const steel = new THREE.MeshStandardNodeMaterial({ color: 0x1c1f22, roughness: 0.45, metalness: 0.6 });
+  deckLookMats = [asphaltMaterial(null), concreteMaterial(), concreteMaterial(), conc, steel];
+  deckLookMats.forEach((m, i) => { m.userData.shared = true; m.name = `road-bridge-deck ${["asphalt", "paving", "kerb", "concrete", "steel"][i]}`; });
+  return deckLookMats;
+}
 function bridgeDeckMesh(bd) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(bd.mesh.position, 3));
   g.setAttribute("normal", new THREE.BufferAttribute(bd.mesh.normal, 3));
   g.setAttribute("color", new THREE.BufferAttribute(bd.mesh.color, 3));
+  if (DECK_LOOK && bd.mesh.groups) {
+    const n = bd.mesh.position.length / 3, slotOfV = new Float32Array(n);
+    for (const gr of bd.mesh.groups) { g.addGroup(gr.start, gr.count, gr.slot); slotOfV.fill(gr.slot, gr.start, gr.start + gr.count); }
+    g.setAttribute("uv", new THREE.BufferAttribute(bd.mesh.uv, 2));
+    // the street shaders' inputs: plain asphalt (no lane lines, no junction marks, surface 0), slabs / kerb stones (aKind)
+    g.setAttribute("aLateral", new THREE.BufferAttribute(new Float32Array(n), 1));
+    g.setAttribute("aPiece", new THREE.BufferAttribute(new Float32Array(n * 2), 2));
+    g.setAttribute("aEdges", new THREE.BufferAttribute(new Float32Array(n * 4), 4));
+    g.setAttribute("aMark", new THREE.BufferAttribute(new Float32Array(n * 4), 4));
+    g.setAttribute("aSurf", new THREE.BufferAttribute(new Float32Array(n), 1));
+    g.setAttribute("aKind", new THREE.BufferAttribute(Float32Array.from(slotOfV, (v) => (v === 2 ? 1 : 0)), 1));
+    g.computeBoundingSphere();
+    const m = new THREE.Mesh(g, deckMaterials());
+    m.name = `road-bridge-deck ${bd.name}`; m.castShadow = m.receiveShadow = true;
+    return m;
+  }
   g.computeBoundingSphere();
   bridgeDeckMat ??= Object.assign(new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.88, metalness: 0, side: THREE.DoubleSide }), { name: "road-bridge-deck" });
   bridgeDeckMat.userData.shared = true;

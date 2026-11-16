@@ -252,12 +252,13 @@ const ringSign = (ring) => {
 
 /** the plan's slab, fascia, railings, abutment and cutting walls (plain arrays, as deckMesh) */
 function planDeckMesh(d, ground, covered) {
-  const P = [], N = [], C = [];
+  const P = [], N = [], C = [], S = [];        // S: the material slot per triangle (PLAN_SLOTS)
   const tri = (n, c, a, b, cc) => {
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = cc[0] - a[0], wy = cc[1] - a[1], wz = cc[2] - a[2];
     const gx = uy * wz - uz * wy, gy = uz * wx - ux * wz, gz = ux * wy - uy * wx;
     const pts = gx * n[0] + gy * n[1] + gz * n[2] < 0 ? [a, cc, b] : [a, b, cc];
     for (const p of pts) { P.push(p[0], p[1], p[2]); N.push(n[0], n[1], n[2]); C.push(c[0], c[1], c[2]); }
+    S.push(SLOT_OF.get(c) ?? 3);
   };
   const quad = (n, c, a, b, cc, dd) => { tri(n, c, a, b, cc); tri(n, c, a, cc, dd); };
   const ring = d.plan.ring, top = (x, z) => planTop(d, x, z) - PLAN.sink, base = (x, z) => profY(d, alongLine(d, x, z)) - PLAN.sink;
@@ -355,7 +356,31 @@ function planDeckMesh(d, ground, covered) {
       if (k === steps - 1) quad([(bx - ax) / L, 0, (bz - az) / L], COLP.wall, [x1 + nx * 0.2, b1, z1 + nz * 0.2], [x1 - nx * 0.2, b1, z1 - nz * 0.2], [x1 - nx * 0.2, y1, z1 - nz * 0.2], [x1 + nx * 0.2, y1, z1 + nz * 0.2]);
     }
   }
-  return { position: new Float32Array(P), normal: new Float32Array(N), color: new Float32Array(C) };
+  return slotted(P, N, C, S, d._band ?? bandOf(d), d.pts[0]);
+}
+
+// the look pass (citydefects 2026-11-16): the plan deck drawn with the STREET's own materials (viewer/roadPaint.js: the
+// asphalt of the measured streets, the sidewalk slabs and kerb stones) and the material library's cast concrete for the
+// fascia, walls, upstands and soffit (main.js bridgeDeckMesh); the vertex colours stay for ?decklook=old
+export const PLAN_SLOTS = ["asphalt", "paving", "kerb", "concrete", "steel"];
+const SLOT_OF = new Map([[COLP.asphalt, 0], [COLP.top, 1], [COLP.kerb, 2], [COLP.fascia, 3], [COLP.wall, 3], [COLP.soffit, 3], [COLP.steel, 4]]);
+/** the triangles sorted by slot, with groups [{ start, count, slot }] (vertex indices) and a road-frame uv (s along the
+ *  road line, t across it: the asphalt shader's coordinates) */
+function slotted(P, N, C, S, B, p0) {
+  const T = S.length, order = [...Array(T).keys()].sort((a, b) => S[a] - S[b]);
+  const pos = new Float32Array(T * 9), nrm = new Float32Array(T * 9), col = new Float32Array(T * 9), uv = new Float32Array(T * 6), groups = [];
+  const tx = B.nz, tz = -B.nx;                                    // along the line (n = (-tz, tx) rotated back)
+  order.forEach((t, k) => {
+    pos.set(P.slice(t * 9, t * 9 + 9), k * 9); nrm.set(N.slice(t * 9, t * 9 + 9), k * 9); col.set(C.slice(t * 9, t * 9 + 9), k * 9);
+    for (let v = 0; v < 3; v++) {
+      const x = P[t * 9 + v * 3], z = P[t * 9 + v * 3 + 2];
+      uv[k * 6 + v * 2] = (x - p0[0]) * tx + (z - p0[1]) * tz;
+      uv[k * 6 + v * 2 + 1] = B.nx * x + B.nz * z - B.c;
+    }
+    const g = groups[groups.length - 1];
+    if (g && g.slot === S[t]) g.count += 3; else groups.push({ start: k * 3, count: 3, slot: S[t] });
+  });
+  return { position: pos, normal: nrm, color: col, uv, groups };
 }
 
 /** the plan deck's car walls: the railed edges as thin rings (as parapetRings) */
