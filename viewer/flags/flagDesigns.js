@@ -13,6 +13,11 @@ export const FLAG_DESIGNS = {
     const c = ["#000000", "#FDDA24", "#EF3340"];
     c.forEach((col, k) => { g.fillStyle = col; g.fillRect(Math.round((k * w) / 3), 0, Math.ceil(w / 3) + 1, h); });
   } },
+  // the French tricolour (the Lycée Français Jean Monnet's poles: Belgium, the EU, France; Street View Apr 2024)
+  france: { name: "France", aspect: 1.5, draw: (g, w, h) => {
+    const c = ["#002395", "#FFFFFF", "#ED2939"];
+    c.forEach((col, k) => { g.fillStyle = col; g.fillRect(Math.round((k * w) / 3), 0, Math.ceil(w / 3) + 1, h); });
+  } },
   belgium_legal: { name: "Belgium (legal 13:15)", aspect: 15 / 13, draw: (g, w, h) => FLAG_DESIGNS.belgium.draw(g, w, h) },
   eu: { name: "European Union", aspect: 1.5, draw: (g, w, h) => {
     g.fillStyle = "#003399"; g.fillRect(0, 0, w, h);
