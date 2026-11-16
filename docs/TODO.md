@@ -6,6 +6,36 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 `docs/PLAN.md` has the history and details of what is done. Rule of thumb for every item:
 **look better without costing frame time** (instancing, shared materials, LOD, compressed assets).
 
+## OWNER PLAYTEST 2026-11-16 (day, default viewer + both games) — TOP PRIORITY, in this order
+
+Owner (lives in Uccle): "most important thing is performance ... any technique: merging, sharing textures, anything".
+1. **PERFORMANCE / GAME LAG**: the police game was "very laggy" with nothing else open. Profile the game path
+   (police car + traffic + chase + HUD + route), CPU and GPU; merge geometry, share textures/atlases, fewer
+   materials, fewer passes, cheaper shadows; budget table per feature. (agent perfgame)
+2. **FULL LOADER BEFORE PLAY**: starting at the police station the scene was still filling in. A game start must
+   wait (loader) until the tiles, kits and shaders around the spawn are ready. No pop-in in front of a player. (perfgame)
+3. **Saint-Job station bridge (Montagne de Saint-Job over the railway)**: a railing + brick-pier fence blocks
+   the road on the bridge, grass and tram rails run off it, and under the bridge is a mess (z-fighting, a platform
+   block across the tracks, shelters in the wrong place). Rebuild from the real layout. (agent citydefects)
+4. **Street furniture on the carriageway**: traffic lights in the road and wrongly rotated, tram/catenary poles
+   in the road. Real ones stand on the kerb/footway, facing traffic. (citydefects)
+5. **Road widths too narrow** vs reality (owner's eye); lane lines that don't follow the curve and run into a
+   wall. (citydefects)
+6. **Cars**: traffic driving through parked cars, cars sunk into the road, parked cars on streets where
+   parking is not allowed / that become blocked. (citydefects)
+7. **Defects**: z-fighting on some windows (door-surround / frame flicker), gate brick pier without cap
+   (see-through top), bad shading on flat roofs (stripes/bands), odd buildings (hero buildings log "library has no
+   X: temporary material" for zinc_roof / glass_window / ... at load: fix the slot mapping). (citydefects)
+8. **Night shop on Place Saint-Job** missing (the white "night shop"). (citydefects)
+9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
+   three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
+   into buildings, smooth damping, terrain follow. (later agent)
+10. **Falcon game**: collision bugs (falls, then shoots back up), controls hard. Simpler and friendlier
+   (assisted flight, auto level, clear feedback), not more complex. (later agent)
+11. **Police game**: car physics not fun; it must climb slopes, kerbs and go "many places" without feeling
+   blocked; poles in the road and narrow roads block it (3-5). Police station wrong: real gate open, building
+   too small vs reality. (later agent)
+
 ## CURRENT STATE (2026-11-13) — read this first
 
 **In the city by default** (claude/foundation, NOT pushed to Vercel; `?x=0` turns one off): measured roads v2
