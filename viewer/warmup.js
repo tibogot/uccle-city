@@ -98,7 +98,7 @@ const jobs = [];
 // job's synchronous part (the render list, our pass target / MRT) runs whole: jobs only interleave at their awaits. Most
 // of a job's time is the wait for its pipelines (compiled in parallel in the GPU process) and three's frame yields: one
 // at a time, ~194 jobs took ~37 s after the cover (measured); several in flight overlap those waits.
-const COMPILE_PAR = Math.max(1, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("compilepar") ?? 3 : 3));
+const COMPILE_PAR = Math.max(1, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("compilepar") ?? 1 : 1));   // (round 4: 1 by default again: jobs in flight together sometimes found three's precompile state null (a job lost: "Cannot destructure ... _precompilationState"))
 const inFlight = new Set();
 const pump = () => {
   while (inFlight.size < COMPILE_PAR && jobs.length) pumpOne();

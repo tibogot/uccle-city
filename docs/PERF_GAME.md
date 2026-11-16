@@ -207,3 +207,41 @@ Findings for next jobs:
   bake proxies keep their render objects, and those keep the pipelines alive: dispatching 'dispose' on them would drop
   precompiled pipelines too), street life 74 MB, instance pools 64 MB, tree kit atlases 48 MB. The other ~1.6 GB is
   plain JS objects: needs a heap snapshot (2.5 GB: do it on a fresh machine).
+
+## Round 4 (2026-11-16, browser; preflight RED: 29 % GPU busy at rest from another app, 1 run each)
+
+**Tile cache.** Why the IndexedDB store "never answered": its deadline measured WALL time, and a tile worker holds
+several requests at once: while one request's build ran (seconds without yielding), another request's cache read could
+not even start -> past the deadline -> "cache off for this session" (it happened with an EMPTY cache too). Plus the
+worker fetched its own 670 KB bundle to hash it, behind the boot's downloads. Fixed (Cache API store, default;
+`?tilecache=idb` = before, `?tilecache=0` off): one packed blob per tile (viewer/tilePack.js keeps shared references,
+buffers and views like a structured clone; checked: a cached I6 equals a fresh build field by field), the code hash
+baked into the bundle by tools/build_worker.mjs, no "cache off" on a slow read (30 s safety net per tile), dependency
+checks in parallel and once per URL, 404 dependencies cached as stable tags (they made tiles uncacheable), a byte cap
+(800 MB) instead of a count (the far tiles pushed the full ones out). Disk: ~720 MB for the police ring + the far ring.
+
+| second visit (cache filled) | before (tile build) | after (Cache API) |
+|---|---|---|
+| police: start tile stage | 12.8 s (worker build) | 5.5 s (read 0.5 s + the tile's main-thread work, waiting on kits) |
+| police: cover / time to play | 29.8 s / 58.4 s (`?tilecache=0`) | 29.9 s / 55.7 s (and 62 s in one noisy run) |
+| falcon: cover / time to play | 17.8 s / 55.4 s (first visit) | **14.6 s** / 51.3 s |
+
+The cache works (a full tile reads back in ~0.5 s instead of 3-19 s), but the second-visit target (< 20 s) is far:
+- the boot cover is now bound by the shader warm-up (early warm-up 436 drawables in 14.7 s, warm-up 11.2 s; it ran
+  hidden behind the tile build before);
+- after the cover the loader waits ~25-37 s for the far landmarks' compile jobs (settle): the serial precompile queue.
+  `?compilepar=3` overlapped them but three r187's compileAsync is not re-entrant (an await inside a job's node build
+  lets another job begin / finish the shared precompile state: "Cannot destructure ... _precompilationState" seen):
+  back to 1 by default.
+
+**Material sharing (debug/pipelineAudit.js).** 706 pipelines, 648 fragment programs, 881 materials. Landmarks that
+build identical code ALREADY share (Saint-Pierre and the Russian church: glass_window, zinc_roof byte-identical,
+one program). The remaining duplicates per slot (glass_window: 15 materials / 13 programs, stone_blue 15 / 10,
+cast_iron_green 12 / 9, zinc_roof 11 / 8 ...) come from per-model shader features (streaks, moss, the thin-part fade,
+AO floors, weather variants): unifying them changes those models' looks; ~100 programs could go at most. Not done.
+
+Next (ranked): (1) the far landmarks' compile wall after the cover: compile their FAR LOD only at boot and the near
+LODs / fading copies when the player comes within ~600 m, or a re-entrant wrapper around three's precompile state;
+(2) the boot warm-up (~25 s of node builds across cover + early warm-up): cache generated WGSL per material key in
+the Cache API (three would need a hook in NodeBuilder), or fewer distinct materials (the per-model features above);
+(3) heap (round 3 findings).
