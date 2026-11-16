@@ -11,6 +11,26 @@ import * as THREE from "three/webgpu";
 import { attribute, select, positionLocal, normalLocal, abs, floor, mod, mix, smoothstep, step, vec3 } from "three/tsl";
 import { loadPack, packMaterial } from "./drive/carPacks.js";
 import { fadeVariant, SMOOTH } from "./lodFade.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+// perfgame round 2 (docs/PERF_GAME.md, ?patrolmerge=old = one mesh per part): the 5 parked cars are static: each level
+// becomes ONE mesh per material (livery, light bar), 30 -> 2 draws per level, in the scene AND the sun's shadow pass
+const PATROL_MERGE = new URLSearchParams(location.search).get("patrolmerge") !== "old";
+function mergeLevel(level) {
+  level.updateMatrixWorld(true);
+  const by = new Map();
+  level.traverse((o) => { if (o.isMesh) { if (!by.has(o.material)) by.set(o.material, []); by.get(o.material).push(o); } });
+  const out = [];
+  for (const [mat, list] of by) {
+    const geos = list.map((o) => { const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); return g; });
+    const g = mergeGeometries(geos, false);
+    if (!g) return false;                                   // (a layout mismatch: keep the level as built)
+    const m = new THREE.Mesh(g, mat);
+    m.castShadow = list.some((o) => o.castShadow); m.receiveShadow = true; m.userData.base = mat; m.name = `${level.name}:${mat.name || "bar"}`;
+    out.push(m);
+  }
+  level.clear(); level.add(...out);
+  return true;
+}
 
 // the frame (u toward Rue Rouge, w south-east along it), heading: "u+" = nose toward the street, "w+" = nose south-east
 export const POLICE_CAR_PLACES = [
@@ -84,6 +104,7 @@ export async function buildPoliceCars({ site, groundAt, lift = 0.06 }) {
       levels[k].add(g);
     });
   }
+  if (PATROL_MERGE) for (const lv of levels) mergeLevel(lv);
   const state = { d: 0, shown: [true, false], fades: [1, 1] };
   /** distance-driven cross-fade (the station's convention: 1 or 2 = whole, 0..1 in, 2..3 out) */
   const update = (camPos, center) => {
