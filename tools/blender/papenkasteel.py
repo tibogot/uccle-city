@@ -374,7 +374,9 @@ def opening_parts(fr, o, far, wall=RENDER, sill_mat=BLUE):
         sa, sb = o.s0 - 0.06, o.s1 + 0.06
         fbox(fr, sa, sb, o.h0 - 0.08, o.h0 + 0.003, -rev - 0.02, 0.06, sill_mat, C_SILL, skip=("back",))
     elif o.kind in ("french", "door", "carriage"):
-        fbox(fr, o.s0 - 0.03, o.s1 + 0.03, o.h0 - 0.12, o.h0 + 0.004, -rev - 0.02, 0.05, sill_mat, C_SILL, skip=("back",))
+        # at ground level the threshold runs down into the ground (a solid step: the joins rule, no slit under it)
+        lo = o.h0 - (1.40 if o.h0 < 51.0 else 0.12)
+        fbox(fr, o.s0 - 0.03, o.s1 + 0.03, lo, o.h0 + 0.004, -rev - 0.02, 0.05, sill_mat, C_SILL, skip=() if o.h0 < 51.0 else ("back",))
     if o.surround == "flat" and not far:
         # a painted flat band round the opening (the house's: 12 cm, 1.5 cm proud), the sill's ends under it
         bw, pr = 0.12, 0.015
@@ -432,17 +434,30 @@ def band(fr, s0, s1, h0, h1, proud, mat=RENDER, code=C_BAND, skip=("back",), e0=
     a, b = ends(s0, s1, proud, e0, e1)
     fbox(fr, a, b, h0, h1, -0.02, proud, mat, code, skip=skip)
 
-def plinth(fr, s0, s1, hb, ht, e0="out", e1="out", pr=0.03, mat=BLUE):
-    """the blue stone plinth at the wall's foot (from under the ground), a chamfered top edge"""
+def plinth(fr, s0, s1, hb, ht, e0="out", e1="out", pr=0.03, mat=BLUE, ops=()):
+    """the blue stone plinth at the wall's foot (from under the ground), a chamfered top edge; broken at the doors and
+    French windows whose floor is under its top (their thresholds run down into the ground there)"""
     a, b = ends(s0, s1, pr, e0, e1)
-    fbox(fr, a, b, hb, ht - (0.0 if K.FAR else 0.03), -0.02, pr, mat, C_PLINTH, skip=("back",))
-    if not K.FAR:
-        face_dir([fr.p(a, ht - 0.03, pr), fr.p(b, ht - 0.03, pr), fr.p(b, ht, 0.0), fr.p(a, ht, 0.0)], fr.N + Z, mat, C_PLINTH)
-        for s_, sg in ((a, -1), (b, 1)):
-            if (sg < 0 and e0 == "out") or (sg > 0 and e1 == "out"): continue
-            face_dir([fr.p(s_, ht - 0.03, -0.02), fr.p(s_, ht, -0.02), fr.p(s_, ht, 0.0), fr.p(s_, ht - 0.03, pr)], fr.U * sg, mat, C_PLINTH)
-    else:
-        pass                             # (far: the box above runs up to the top)
+    gaps = sorted((o.s0 - 0.012, o.s1 + 0.012) for o in ops if o.kind in ("door", "carriage", "french") and o.h0 < ht - 0.005)
+    segs, x = [], a
+    for (g0, g1) in gaps:
+        if g1 <= x or g0 >= b: continue
+        if g0 > x: segs.append((x, g0, x == a, False))
+        x = max(x, g1)
+    if x < b: segs.append((x, b, x == a, True))
+    # a CLOSED prism per segment (the contact check: no open edge, not even inside the wall): front up to the chamfer,
+    # the chamfer up to the wall line (2 cm inside it), a back face, the two end caps (pentagons as quad + triangle)
+    hc = ht - 0.03
+    for (sa, sb, first, last) in segs:
+        K.B.new_group()
+        face_dir([fr.p(sa, hb, pr), fr.p(sb, hb, pr), fr.p(sb, hc, pr), fr.p(sa, hc, pr)], fr.N, mat, C_PLINTH,
+                 [(sa, hz(hb)), (sb, hz(hb)), (sb, hz(hc)), (sa, hz(hc))])
+        face_dir([fr.p(sa, hc, pr), fr.p(sb, hc, pr), fr.p(sb, ht, -0.02), fr.p(sa, ht, -0.02)], fr.N + Z, mat, C_PLINTH)
+        face_dir([fr.p(sa, hb, -0.02), fr.p(sb, hb, -0.02), fr.p(sb, ht, -0.02), fr.p(sa, ht, -0.02)], -fr.N, mat, C_PLINTH)
+        face_dir([fr.p(sa, hb, -0.02), fr.p(sb, hb, -0.02), fr.p(sb, hb, pr), fr.p(sa, hb, pr)], -Z, mat, C_PLINTH)
+        for s_, sg in ((sa, -1), (sb, 1)):
+            face_dir([fr.p(s_, hb, -0.02), fr.p(s_, hb, pr), fr.p(s_, hc, pr), fr.p(s_, hc, -0.02)], fr.U * sg, mat, C_PLINTH)
+            face_dir([fr.p(s_, hc, -0.02), fr.p(s_, hc, pr), fr.p(s_, ht, -0.02)], fr.U * sg, mat, C_PLINTH)
 
 def anchor(fr, s, h, size=0.34, vertical=False):
     """a wrought-iron wall anchor (the inventory's 'gevelankers'): the house's a bar with a cross bar; the tower's
@@ -787,7 +802,7 @@ def rect_walls(r, sides, far, base, top, wall=RENDER, plinth_top=None, sill_mat=
         for o in ops: opening_parts(fr, o, far, wall=wall, sill_mat=sill_mat)
         dflt = "out" if side in ("+w", "-w") else "in"          # (the w faces wrap the corners, the u faces stop short)
         if plinth_top is not None and spec.get("plinth", True):
-            plinth(fr, 0.0, L, hb, plinth_top, e0=spec.get("e0", dflt), e1=spec.get("e1", dflt))
+            plinth(fr, 0.0, L, hb, plinth_top, e0=spec.get("e0", dflt), e1=spec.get("e1", dflt), ops=ops)
         for (c, h) in spec.get("anchors", []): anchor(fr, s(c), h)
         if cornice:
             K.B.new_group()
@@ -854,7 +869,7 @@ def tower(far):
     ops = [door_op] + [op(s, TU, 1.04, a, b, "win", None, surround="stone") for (a, b) in T_LEVELS]
     banded_wall(fr, 0.0, L, base, top, ops)
     for o in ops: opening_parts(fr, o, far, wall=BRICK, sill_mat=STONE)
-    plinth(fr, 0.0, L, base, FLOOR + 0.20, e0="out", e1="out", pr=0.035)
+    plinth(fr, 0.0, L, base, FLOOR + 0.20, e0="out", e1="out", pr=0.035, ops=ops)
     for (a, b) in T_LEVELS:
         for c in (TU - 1.55, TU + 1.55): anchor(fr, s(c), (a + b) / 2 + 0.3, vertical=True)
     fr_front = fr
@@ -1018,9 +1033,8 @@ def lantern(c, hb, far):
 def annex(r, sides, far, extend, clip=None):
     """a one-storey white wing with a hipped slate roof (32 deg), plinth, eaves; extend: the roof's plan pushed into the
     house so its inner hip is hidden there"""
-    base = base_of(r["u0"], r["w1"] + 1, r["u1"], r["w1"] + 1)
-    for sd in ("+u", "-u", "+w", "-w"):
-        if sd not in sides: continue
+    base = min(base_of(r["u0"], r["w1"] + 1, r["u1"], r["w1"] + 1), base_of(r["u0"], r["w0"] - 1, r["u1"], r["w0"] - 1),
+               base_of(r["u0"] - 1, r["w0"], r["u0"] - 1, r["w1"]), base_of(r["u1"] + 1, r["w0"], r["u1"] + 1, r["w1"]))
     rect_walls(r, sides, far, base, r["top"], RENDER, plinth_top=FLOOR + 0.03)
     prof, poly = hip_part(r, r["pitch"], r["top"], extend=extend, clip=clip)
     return prof, poly, base
@@ -1038,8 +1052,8 @@ def outbuildings(far):
                        [(c, 0.80, 53.30, 54.30, "small", None, dict(rows=2)) for c in (-19.30, -5.40, -2.60, 3.20, 6.00)],
                    holes=[(RW["u0"], RW["u1"], base_f, r["top"])], hb=base_f),
         "+w": dict(ops=[(c, 0.70, 53.10, 54.20, "small", None, dict(rows=2)) for c in (-14.0, -6.0, 2.0, 6.5)], hb=base_b),
-        "-u": dict(ops=[(25.15, 0.90, 51.40, 53.20, "win", None)], hb=base_of(r["u0"] - 1, r["w0"], r["u0"] - 1, r["w1"])),
-        "+u": dict(ops=[(25.15, 0.90, 51.40, 53.20, "win", None)], hb=base_of(r["u1"] + 1, r["w0"], r["u1"] + 1, r["w1"])),
+        "-u": dict(ops=[(25.15, 0.90, 52.10, 53.60, "win", None)], hb=base_of(r["u0"] - 1, r["w0"], r["u0"] - 1, r["w1"])),
+        "+u": dict(ops=[(25.15, 0.90, 52.10, 53.60, "win", None)], hb=base_of(r["u1"] + 1, r["w0"], r["u1"] + 1, r["w1"])),
     }
     for side, spec in sides.items():
         fr, L, s = side_frame(r, side)
@@ -1055,11 +1069,11 @@ def outbuildings(far):
                           (r["u0"] - 1, r["w0"], r["u0"] - 1, r["w1"]) if side == "-u" else (r["u1"] + 1, r["w0"], r["u1"] + 1, r["w1"])))
         if side == "-w":
             # the plinth stops at the wing (it stands before the range there); s = u1 - u
-            plinth(fr, 0.0, s(RW["u1"]), hb, 49.95, e0="out", e1="cut")
-            plinth(fr, s(RW["u0"]), L, hb, 49.95, e0="cut", e1="out")
+            plinth(fr, 0.0, s(RW["u1"]), hb, 49.95, e0="out", e1="cut", ops=ops)
+            plinth(fr, s(RW["u0"]), L, hb, 49.95, e0="cut", e1="out", ops=ops)
         else:
             d = "out" if side == "+w" else "in"
-            plinth(fr, 0.0, L, hb, gl + 0.40, e0=d, e1=d)
+            plinth(fr, 0.0, L, hb, gl + 0.40, e0=d, e1=d, ops=ops)
     prof, poly = hip_part(r, r["pitch"], r["top"])
     he = prof[0][1]
     gutter_line((r["u0"] - OVH, r["w0"] - OVH), (r["u1"] + OVH, r["w0"] - OVH), he, (0, -1))

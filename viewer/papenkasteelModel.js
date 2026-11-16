@@ -406,7 +406,8 @@ const TEMP = {
     m.emissiveNode = Fn(() => {
       const r = glassReflection(float(1)).toVar();
       const h = hash2(floor(positionWorld.xz.div(3.3)).add(floor(positionWorld.y.div(4.2))));
-      return r.add(lin(0xffc27a).mul(step(0.4, h)).mul(env.uNight).mul(env.uInteriorGlow).mul(0.9));
+      return r.add(lin(0xffc27a).mul(step(0.68, h))   // (a private house at night: about a third of the rooms lit)
+        .mul(env.uNight).mul(env.uInteriorGlow).mul(0.9));
     })();
     m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(0)) });
     return m;

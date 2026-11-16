@@ -1,15 +1,15 @@
 {
  "asset": "Papenkasteel / Chateau de Stalle, Rue Papenkasteel 99, Uccle: the castle on the Geleytsbeek (tools/blender/papenkasteel.py)",
- "triangles_lod0": 51060,
- "triangles_far": 13702,
+ "triangles_lod0": 51118,
+ "triangles_far": 13902,
  "triangles_per_slot_lod0": {
   "render_white": 3992,
   "brick_red_brussels": 998,
-  "stone_white": 10648,
-  "stone_blue": 1110,
+  "stone_white": 10650,
+  "stone_blue": 1198,
   "slate": 1312,
   "zinc_roof": 16764,
-  "wood_frame_white": 15172,
+  "wood_frame_white": 15140,
   "wood_frame_dark": 152,
   "cast_iron_dark": 452,
   "glass_window": 460
@@ -17,8 +17,8 @@
  "triangles_per_slot_far": {
   "render_white": 2102,
   "brick_red_brussels": 710,
-  "stone_white": 4084,
-  "stone_blue": 1000,
+  "stone_white": 4086,
+  "stone_blue": 1198,
   "slate": 892,
   "zinc_roof": 264,
   "wood_frame_white": 4316,
@@ -68,11 +68,11 @@
  "lightmap": {
   "px": 2048,
   "split_v": 0.8,
-  "lod0_px_per_m": 18.9,
-  "far_px_per_m": 11.1,
+  "lod0_px_per_m": 18.8,
+  "far_px_per_m": 10.9,
   "thin_faces_vertex_ao": [
-   20383,
-   1236
+   20386,
+   1310
   ],
   "device": "OPTIX"
  },
@@ -102,7 +102,7 @@
    1189.8
   ],
   "y": [
-   48.6,
+   48.2,
    74.1
   ]
  },

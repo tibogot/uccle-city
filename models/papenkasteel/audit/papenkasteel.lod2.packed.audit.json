@@ -1,23 +1,23 @@
 {
  "summary": {
-  "triangles": 4721,
-  "vertices_welded": 3928,
-  "open_edges": 1699,
-  "rays": 728658,
+  "triangles": 4877,
+  "vertices_welded": 3972,
+  "open_edges": 1603,
+  "rays": 623104,
   "blocking": 27,
-  "warnings": 124,
+  "warnings": 127,
   "counts": {
-   "sliver": 86,
+   "sliver": 89,
    "nonmanifold": 1,
-   "backtoback": 276,
-   "coplanar": 8,
-   "depth": 8,
-   "seam": 611,
+   "backtoback": 370,
+   "coplanar": 7,
+   "depth": 7,
+   "seam": 599,
    "tjunction": 37,
-   "opening": 458,
-   "leak": 11
+   "opening": 430,
+   "leak": 13
   },
-  "ms": 3212
+  "ms": 2358
  },
  "options": {
   "weld": 0.0001,
@@ -68,37 +68,37 @@
   {
    "name": "Papenkasteel_lod2",
    "slot": "brick_red_brussels",
-   "triangles": 308,
+   "triangles": 310,
    "maxDistance": 2000
   },
   {
    "name": "Papenkasteel_lod2",
    "slot": "stone_white",
-   "triangles": 1924,
+   "triangles": 1932,
    "maxDistance": 2000
   },
   {
    "name": "Papenkasteel_lod2",
    "slot": "stone_blue",
-   "triangles": 364,
+   "triangles": 556,
    "maxDistance": 2000
   },
   {
    "name": "Papenkasteel_lod2",
    "slot": "slate",
-   "triangles": 292,
+   "triangles": 288,
    "maxDistance": 2000
   },
   {
    "name": "Papenkasteel_lod2",
    "slot": "zinc_roof",
-   "triangles": 86,
+   "triangles": 84,
    "maxDistance": 2000
   },
   {
    "name": "Papenkasteel_lod2",
    "slot": "wood_frame_white",
-   "triangles": 367,
+   "triangles": 327,
    "maxDistance": 2000
   },
   {
@@ -379,12 +379,12 @@
     "severity": "warn",
     "at": [
      5.8,
-     49.573,
+     49.547,
      4.75
     ],
     "part": "Papenkasteel_lod2/render_white",
-    "aspect": 56,
-    "longest": 5.476
+    "aspect": 49,
+    "longest": 5.484
    },
    {
     "check": "sliver",
@@ -553,6 +553,18 @@
     "part": "Papenkasteel_lod2/render_white",
     "aspect": 130,
     "longest": 2.2
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.392,
+     52.992,
+     2.93
+    ],
+    "part": "Papenkasteel_lod2/brick_red_brussels",
+    "aspect": 1933,
+    "longest": 3.528
    },
    {
     "check": "sliver",
@@ -775,18 +787,6 @@
     "severity": "warn",
     "at": [
      -2.173,
-     60.857,
-     2.93
-    ],
-    "part": "Papenkasteel_lod2/stone_white",
-    "aspect": 43,
-    "longest": 5.602
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -0.307,
      60.813,
      2.93
     ],
@@ -798,8 +798,8 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -2.173,
-     63.757,
+     -0.307,
+     60.857,
      2.93
     ],
     "part": "Papenkasteel_lod2/stone_white",
@@ -810,7 +810,7 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.307,
+     -2.173,
      63.713,
      2.93
     ],
@@ -822,8 +822,8 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -2.173,
-     66.657,
+     -0.307,
+     63.757,
      2.93
     ],
     "part": "Papenkasteel_lod2/stone_white",
@@ -834,7 +834,7 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     -0.307,
+     -2.173,
      66.614,
      2.93
     ],
@@ -846,13 +846,13 @@
     "check": "sliver",
     "severity": "warn",
     "at": [
-     1.56,
-     59.364,
-     -1.023
+     -0.307,
+     66.657,
+     2.93
     ],
     "part": "Papenkasteel_lod2/stone_white",
-    "aspect": 46,
-    "longest": 5.931
+    "aspect": 43,
+    "longest": 5.602
    },
    {
     "check": "sliver",
@@ -871,6 +871,18 @@
     "severity": "warn",
     "at": [
      1.56,
+     59.364,
+     -1.023
+    ],
+    "part": "Papenkasteel_lod2/stone_white",
+    "aspect": 46,
+    "longest": 5.931
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.56,
      60.813,
      -1.023
     ],
@@ -888,18 +900,6 @@
     ],
     "part": "Papenkasteel_lod2/stone_white",
     "aspect": 45,
-    "longest": 5.931
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     1.56,
-     62.263,
-     -1.023
-    ],
-    "part": "Papenkasteel_lod2/stone_white",
-    "aspect": 46,
     "longest": 5.931
    },
    {
@@ -919,8 +919,20 @@
     "severity": "warn",
     "at": [
      1.56,
+     62.263,
+     -1.023
+    ],
+    "part": "Papenkasteel_lod2/stone_white",
+    "aspect": 46,
+    "longest": 5.931
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     1.56,
      63.713,
-     0.953
+     -1.023
     ],
     "part": "Papenkasteel_lod2/stone_white",
     "aspect": 46,
@@ -932,7 +944,7 @@
     "at": [
      1.56,
      63.757,
-     -1.023
+     0.953
     ],
     "part": "Papenkasteel_lod2/stone_white",
     "aspect": 46,
@@ -957,18 +969,6 @@
      1.56,
      66.657,
      -1.023
-    ],
-    "part": "Papenkasteel_lod2/stone_white",
-    "aspect": 46,
-    "longest": 5.931
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -4.04,
-     59.364,
-     0.953
     ],
     "part": "Papenkasteel_lod2/stone_white",
     "aspect": 46,
@@ -991,11 +991,11 @@
     "severity": "warn",
     "at": [
      -4.04,
-     60.813,
-     -1.023
+     59.364,
+     0.953
     ],
     "part": "Papenkasteel_lod2/stone_white",
-    "aspect": 45,
+    "aspect": 46,
     "longest": 5.931
    },
    {
@@ -1004,6 +1004,18 @@
     "at": [
      -4.04,
      60.857,
+     -1.023
+    ],
+    "part": "Papenkasteel_lod2/stone_white",
+    "aspect": 45,
+    "longest": 5.931
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     60.813,
      0.953
     ],
     "part": "Papenkasteel_lod2/stone_white",
@@ -1015,20 +1027,8 @@
     "severity": "warn",
     "at": [
      -4.04,
-     62.306,
-     -1.023
-    ],
-    "part": "Papenkasteel_lod2/stone_white",
-    "aspect": 46,
-    "longest": 5.931
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -4.04,
      62.263,
-     0.953
+     -1.023
     ],
     "part": "Papenkasteel_lod2/stone_white",
     "aspect": 46,
@@ -1039,8 +1039,8 @@
     "severity": "warn",
     "at": [
      -4.04,
-     63.713,
-     -1.023
+     62.306,
+     0.953
     ],
     "part": "Papenkasteel_lod2/stone_white",
     "aspect": 46,
@@ -1052,18 +1052,6 @@
     "at": [
      -4.04,
      63.757,
-     0.953
-    ],
-    "part": "Papenkasteel_lod2/stone_white",
-    "aspect": 46,
-    "longest": 5.931
-   },
-   {
-    "check": "sliver",
-    "severity": "warn",
-    "at": [
-     -4.04,
-     66.657,
      -1.023
     ],
     "part": "Papenkasteel_lod2/stone_white",
@@ -1075,7 +1063,31 @@
     "severity": "warn",
     "at": [
      -4.04,
+     63.713,
+     0.953
+    ],
+    "part": "Papenkasteel_lod2/stone_white",
+    "aspect": 46,
+    "longest": 5.931
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.04,
      66.614,
+     -1.023
+    ],
+    "part": "Papenkasteel_lod2/stone_white",
+    "aspect": 46,
+    "longest": 5.931
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -4.04,
+     66.657,
      0.953
     ],
     "part": "Papenkasteel_lod2/stone_white",
@@ -1153,6 +1165,30 @@
     "part": "Papenkasteel_lod2/stone_blue",
     "aspect": 43,
     "longest": 30.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -0.643,
+     51.106,
+     28.78
+    ],
+    "part": "Papenkasteel_lod2/stone_blue",
+    "aspect": 43,
+    "longest": 30.438
+   },
+   {
+    "check": "sliver",
+    "severity": "warn",
+    "at": [
+     -10.786,
+     50.873,
+     28.78
+    ],
+    "part": "Papenkasteel_lod2/stone_blue",
+    "aspect": 43,
+    "longest": 30.438
    }
   ],
   "nonmanifold": [
@@ -1160,9 +1196,9 @@
     "check": "nonmanifold",
     "severity": "warn",
     "at": [
-     -1.93,
-     70.89,
-     -0.89
+     -1.909,
+     70.75,
+     -0.929
     ],
     "part": "Papenkasteel_lod2/stone_white",
     "uses": 4
@@ -2195,93 +2231,1059 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -1.893,
-     70.797,
+     -1.89,
+     70.703,
      -0.89
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "area": 0.03352
+    "area": 0.03211
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -1.93,
-     70.963,
-     -0.89
-    ],
-    "parts": [
-     "Papenkasteel_lod2/stone_white",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "area": 0.02649
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -0.555,
+     -1.926,
      70.85,
-     -0.843
+     -0.916
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "area": 0.03286
+    "area": 0.03777
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -0.524,
-     70.83,
-     0.839
+     -0.576,
+     70.777,
+     -0.879
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "area": 0.04174
+    "area": 0.05099
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -9.538,
-     49.623,
-     21.625
+     -0.529,
+     70.714,
+     0.896
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "area": 0.01553
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.529,
+     70.853,
+     0.781
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "area": 0.01694
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.569,
+     70.644,
+     0.856
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "area": 0.01423
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.569,
+     70.783,
+     0.741
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "area": 0.01553
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.927,
+     70.87,
+     0.82
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "area": 0.04214
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.527,
+     49.347,
+     1.48
     ],
     "parts": [
      "Papenkasteel_lod2/stone_blue",
      "Papenkasteel_lod2/stone_blue"
     ],
-    "area": 0.24791
+    "area": 5.99139
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -7.663,
-     49.623,
-     21.566
+     1.219,
+     49.629,
+     1.48
     ],
     "parts": [
      "Papenkasteel_lod2/stone_blue",
      "Papenkasteel_lod2/stone_blue"
     ],
-    "area": 0.24791
+    "area": 5.99139
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -19.721,
-     50.38,
-     21.628
+     -9.395,
+     49.064,
+     1.48
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 5.99139
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -9.431,
+     49.363,
+     -9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 6.25332
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -4.104,
+     49.646,
+     -9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 6.09257
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.551,
+     49.066,
+     -9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 5.93596
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.365,
+     0.124
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 3.06992
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.655,
+     -2.525
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 3.06992
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.076,
+     -7.824
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 3.06992
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.13,
+     49.365,
+     -7.824
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 3.06992
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.13,
+     49.655,
+     -5.175
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 3.06992
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.13,
+     49.076,
+     0.124
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 3.06992
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.217,
+     49.639,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44003
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -3.279,
+     49.225,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44003
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.748,
+     49.847,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44003
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -3.81,
+     49.432,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44003
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.33,
+     49.639,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.268,
+     49.225,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     0.799,
+     49.847,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -0.263,
+     49.432,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.44004
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.54,
+     49.639,
+     1.631
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.54,
+     49.225,
+     2.342
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.54,
+     49.847,
+     1.986
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     1.54,
+     49.432,
+     2.697
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -4.02,
+     49.639,
+     2.697
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -4.02,
+     49.225,
+     1.986
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -4.02,
+     49.847,
+     2.342
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -4.02,
+     49.432,
+     1.631
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29434
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -8.303,
+     49.495,
+     9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.73187
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -10.483,
+     49.152,
+     9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.76364
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -9.393,
+     49.674,
+     9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.76364
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.573,
+     49.33,
+     9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.7968
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.511,
+     8.193
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.153,
+     4.371
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.69,
+     6.282
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.332,
+     2.46
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -7.82,
+     49.511,
+     2.46
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -7.82,
+     49.153,
+     6.282
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -7.82,
+     49.69,
+     4.371
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -7.82,
+     49.332,
+     8.193
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.36809
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     8.448,
+     49.541,
+     8.08
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.48785
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.918,
+     49.222,
+     8.08
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.48785
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     7.683,
+     49.7,
+     8.08
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.48785
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.153,
+     49.381,
+     8.08
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.48785
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     5.82,
+     49.541,
+     5.334
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70688
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     5.82,
+     49.222,
+     3.117
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70688
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     5.82,
+     49.7,
+     4.225
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70688
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     5.82,
+     49.381,
+     2.008
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70688
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     8.78,
+     49.541,
+     2.278
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.05138
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     8.78,
+     49.222,
+     5.576
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.05138
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     8.78,
+     49.7,
+     3.927
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.05138
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     8.78,
+     49.381,
+     7.224
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.05138
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     12.11,
+     49.408,
+     -8.156
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.69492
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     12.11,
+     48.911,
+     -4.741
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.69492
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     12.11,
+     49.656,
+     -6.449
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.69492
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     12.11,
+     49.159,
+     -3.034
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.69492
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.476,
+     49.408,
+     -8.96
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.73833
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     10.963,
+     48.911,
+     -8.96
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.73833
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     10.22,
+     49.656,
+     -8.96
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.73833
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     11.707,
+     49.159,
+     -8.96
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.73833
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     11.702,
+     49.406,
+     -2.23
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.74957
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     10.214,
+     48.909,
+     -2.23
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.72708
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     10.958,
+     49.646,
+     -2.23
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.72708
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.47,
+     49.15,
+     -2.23
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70527
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -5.815,
+     50.432,
+     21.627
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.0903
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -4.98,
+     50.453,
+     21.553
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.08394
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     5.585,
+     50.432,
+     21.627
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.09032
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.42,
+     50.453,
+     21.553
     ],
     "parts": [
      "Papenkasteel_lod2/stone_blue",
@@ -2293,15 +3295,617 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -18.885,
-     50.422,
-     21.554
+     2.007,
+     49.614,
+     21.52
     ],
     "parts": [
      "Papenkasteel_lod2/stone_blue",
      "Papenkasteel_lod2/stone_blue"
     ],
-    "area": 0.09033
+    "area": 1.92019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     6.289,
+     49.165,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.92019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     4.148,
+     49.838,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.92019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     8.43,
+     49.39,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.92019
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -6.394,
+     49.614,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.60358
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -2.819,
+     49.165,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.60358
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -4.606,
+     49.838,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.60358
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.031,
+     49.39,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.60358
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.079,
+     49.614,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29914
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -10.412,
+     49.165,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29914
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -10.746,
+     49.838,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29914
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -10.079,
+     49.39,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.29914
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -20.539,
+     49.614,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70098
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -18.976,
+     49.165,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70098
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -19.757,
+     49.838,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70098
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -18.194,
+     49.39,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.70098
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     5.696,
+     51.077,
+     28.78
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 5.32668
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -9.519,
+     50.727,
+     28.78
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 5.32668
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -1.911,
+     51.252,
+     28.78
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 5.32668
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -17.126,
+     50.902,
+     28.78
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 5.32668
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -20.88,
+     49.813,
+     27.849
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.25917
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -20.88,
+     49.463,
+     24.25
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.25917
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -20.88,
+     49.988,
+     26.05
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.25917
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -20.88,
+     49.638,
+     22.451
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.25917
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.45,
+     50.728,
+     22.431
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.17893
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.45,
+     50.393,
+     26.03
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.2322
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.45,
+     50.903,
+     24.23
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.2322
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     9.45,
+     50.568,
+     27.829
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.28789
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -16.988,
+     49.6,
+     13.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.38586
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -13.683,
+     49.188,
+     13.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.3349
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -15.336,
+     49.798,
+     13.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.3349
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -12.031,
+     49.386,
+     13.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.28581
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -17.78,
+     49.601,
+     20.503
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.63523
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -17.78,
+     49.19,
+     16.53
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.63523
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -17.78,
+     49.807,
+     18.517
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.63523
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -17.78,
+     49.396,
+     14.544
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.63523
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.601,
+     16.282
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.22642
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.19,
+     19.261
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.22642
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.807,
+     17.772
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.22642
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.396,
+     20.751
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 1.22642
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.601,
+     13.665
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.18772
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.19,
+     14.121
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.18772
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.807,
+     13.893
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.18772
+   },
+   {
+    "check": "backtoback",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.396,
+     14.349
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "area": 0.18772
    },
    {
     "check": "backtoback",
@@ -2587,34 +4191,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -10.067,
-     52.706,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03514
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -9.533,
-     52.703,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03514
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -9.795,
      50.377,
      -9.031
@@ -2638,34 +4214,6 @@
      "Papenkasteel_lod2/wood_frame_white"
     ],
     "area": 0.08189
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -7.217,
-     52.706,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -6.683,
-     52.703,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
    },
    {
     "check": "backtoback",
@@ -2699,34 +4247,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -4.367,
-     52.706,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -3.833,
-     52.703,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      -4.095,
      50.376,
      -9.031
@@ -2750,34 +4270,6 @@
      "Papenkasteel_lod2/wood_frame_white"
     ],
     "area": 0.08192
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -1.517,
-     52.706,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -0.983,
-     52.703,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
    },
    {
     "check": "backtoback",
@@ -2811,29 +4303,15 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     1.333,
-     52.706,
-     -9.032
+     1.762,
+     52.715,
+     -9.028
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.03513
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     1.867,
-     52.703,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
+    "area": 0.03911
    },
    {
     "check": "backtoback",
@@ -2867,34 +4345,6 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     4.183,
-     52.706,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03514
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     4.717,
-     52.703,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03514
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
      4.455,
      50.376,
      -9.031
@@ -2918,34 +4368,6 @@
      "Papenkasteel_lod2/wood_frame_white"
     ],
     "area": 0.08192
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     7.033,
-     52.706,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     7.567,
-     52.703,
-     -9.032
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03513
    },
    {
     "check": "backtoback",
@@ -3175,29 +4597,15 @@
     "check": "backtoback",
     "severity": "info",
     "at": [
-     -11.932,
-     52.706,
-     -6.983
+     -11.928,
+     52.715,
+     -7.412
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.03514
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     -11.932,
-     52.703,
-     -7.517
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.03514
+    "area": 0.03912
    },
    {
     "check": "backtoback",
@@ -4422,140 +5830,84 @@
     "severity": "info",
     "at": [
      -20.731,
-     51.777,
+     52.424,
      25.145
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.04838
+    "area": 0.03959
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
      -20.731,
-     52.842,
+     53.296,
      25.155
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.04838
+    "area": 0.03959
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     9.278,
-     51.777,
-     25.155
+     9.284,
+     52.353,
+     25.159
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.04838
+    "area": 0.0279
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     9.278,
-     52.842,
-     25.145
+     9.306,
+     53.029,
+     25.124
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.04838
+    "area": 0.0279
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     1.407,
-     56.278,
-     22.575
+     9.273,
+     52.691,
+     25.176
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.0156
+    "area": 0.0279
    },
    {
     "check": "backtoback",
     "severity": "info",
     "at": [
-     1.391,
-     56.745,
-     22.597
+     9.295,
+     53.366,
+     25.141
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/wood_frame_white"
     ],
-    "area": 0.01121
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     5.609,
-     56.265,
-     22.603
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.01122
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     5.574,
-     56.585,
-     22.603
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.01122
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     5.626,
-     56.425,
-     22.603
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.01122
-   },
-   {
-    "check": "backtoback",
-    "severity": "info",
-    "at": [
-     5.591,
-     56.745,
-     22.603
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "area": 0.01122
+    "area": 0.0279
    },
    {
     "check": "backtoback",
@@ -5159,30 +6511,6 @@
     "check": "coplanar",
     "severity": "block",
     "at": [
-     1.409,
-     56.654,
-     22.591
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "separation_mm": 0,
-    "overlap_cm2": 175.2,
-    "angle_deg": 4,
-    "maxDistance": 2000,
-    "need_mm": 15.52,
-    "sameComponent": false,
-    "normal": [
-     0,
-     0.07,
-     -1
-    ]
-   },
-   {
-    "check": "coplanar",
-    "severity": "block",
-    "at": [
      -11.442,
      51.636,
      18.574
@@ -5353,30 +6681,6 @@
     "check": "depth",
     "severity": "block",
     "at": [
-     1.426,
-     56.335,
-     22.568
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "separation_mm": 2.92,
-    "overlap_cm2": 48.6,
-    "angle_deg": 4,
-    "maxDistance": 2000,
-    "need_mm": 15.52,
-    "sameComponent": false,
-    "normal": [
-     0,
-     0.07,
-     -1
-    ]
-   },
-   {
-    "check": "depth",
-    "severity": "block",
-    "at": [
      -11.42,
      50.912,
      18.591
@@ -5491,6 +6795,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -17.8,
+     49.116,
+     13.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 3.23,
+    "pieces": 26,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -1.643,
      70.63,
      0.543
@@ -5507,6 +6827,54 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     7.88,
+     49.789,
+     -9.2
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.88,
+    "pieces": 25,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.1,
+     49.066,
+     9.18
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.8,
+    "pieces": 24,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     5.03,
+     49.796,
+     -9.2
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.88,
+    "pieces": 22,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      5.965,
      52.586,
      8.1
@@ -5516,7 +6884,7 @@
      "Papenkasteel_lod2/render_white"
     ],
     "length_m": 16.26,
-    "pieces": 20,
+    "pieces": 21,
     "min_angle_deg": 67.1
    },
    {
@@ -5532,8 +6900,56 @@
      "Papenkasteel_lod2/render_white"
     ],
     "length_m": 12.79,
-    "pieces": 20,
+    "pieces": 21,
     "min_angle_deg": 67.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -4.68,
+     49.018,
+     -9.2
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.88,
+    "pieces": 20,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.1,
+     49.011,
+     -4.43
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.88,
+    "pieces": 20,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -7.27,
+     49.646,
+     21.5
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.75,
+    "pieces": 19,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -5549,6 +6965,22 @@
     ],
     "length_m": 2,
     "pieces": 19,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     2.18,
+     49.797,
+     -9.2
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.88,
+    "pieces": 18,
     "min_angle_deg": 90
    },
    {
@@ -5571,17 +7003,49 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.392,
-     68.518,
-     -2.793
+     5.8,
+     49.379,
+     1.48
     ],
     "parts": [
-     "Papenkasteel_lod2/stone_white",
-     "Papenkasteel_lod2/slate"
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
     ],
-    "length_m": 2.49,
+    "length_m": 2.51,
     "pieces": 18,
-    "min_angle_deg": 36.2
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     5.8,
+     49.145,
+     8.08
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.55,
+    "pieces": 18,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -11.25,
+     49.65,
+     15.555
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.7,
+    "pieces": 18,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -5651,9 +7115,9 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.81,
-     68.576,
-     -0.382
+     -3.743,
+     68.743,
+     -0.347
     ],
     "parts": [
      "Papenkasteel_lod2/slate",
@@ -5662,6 +7126,38 @@
     "length_m": 1.27,
     "pieces": 18,
     "min_angle_deg": 69
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.83,
+     49.163,
+     -9.2
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.88,
+    "pieces": 17,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.1,
+     49.794,
+     3.445
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.03,
+    "pieces": 17,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -5731,6 +7227,38 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -12.1,
+     49.102,
+     -7.83
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.88,
+    "pieces": 16,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.1,
+     49.281,
+     6.445
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.03,
+    "pieces": 16,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      3.63,
      53.289,
      21.5
@@ -5742,6 +7270,22 @@
     "length_m": 1.8,
     "pieces": 16,
     "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.155,
+     49.304,
+     21.5
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.75,
+    "pieces": 16,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -5774,6 +7318,54 @@
     "length_m": 2.19,
     "pieces": 16,
     "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     5.8,
+     50.867,
+     1.5
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/render_white"
+    ],
+    "length_m": 7.42,
+    "pieces": 15,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     5.8,
+     49.75,
+     5.87
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.77,
+    "pieces": 15,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.817,
+     52.771,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 1.51,
+    "pieces": 15,
+    "min_angle_deg": 34.1
    },
    {
     "check": "seam",
@@ -5886,22 +7478,6 @@
     "length_m": 2.23,
     "pieces": 14,
     "min_angle_deg": 74.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     5.8,
-     50.905,
-     1.5
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/render_white"
-    ],
-    "length_m": 7.26,
-    "pieces": 14,
-    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -6147,17 +7723,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.986,
-     52.894,
+     -2.117,
+     52.254,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/brick_red_brussels",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 1.51,
+    "length_m": 1.39,
     "pieces": 14,
-    "min_angle_deg": 34.1
+    "min_angle_deg": 63.8
    },
    {
     "check": "seam",
@@ -6174,6 +7750,22 @@
     "length_m": 2.4,
     "pieces": 14,
     "min_angle_deg": 37
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.45,
+     68.628,
+     -2.75
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/slate"
+    ],
+    "length_m": 2.16,
+    "pieces": 14,
+    "min_angle_deg": 20.7
    },
    {
     "check": "seam",
@@ -6196,30 +7788,14 @@
     "severity": "info",
     "at": [
      9.15,
-     49.497,
+     48.92,
      -2.21
     ],
     "parts": [
      "Papenkasteel_lod2/render_white",
      "Papenkasteel_lod2/render_white"
     ],
-    "length_m": 6.91,
-    "pieces": 13,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.8,
-     49.116,
-     13.52
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 1.65,
+    "length_m": 8.13,
     "pieces": 13,
     "min_angle_deg": 90
    },
@@ -6339,17 +7915,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -2.09,
-     52.622,
+     -3.62,
+     52.955,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/brick_red_brussels",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 1.39,
+    "length_m": 2,
     "pieces": 13,
-    "min_angle_deg": 42
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -6707,7 +8283,23 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     11.134,
+     12.13,
+     50.538,
+     -6.656
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.18,
+    "pieces": 12,
+    "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     11.133,
      50.539,
      -8.98
     ],
@@ -6723,7 +8315,7 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     10.066,
+     10.067,
      50.539,
      -2.21
     ],
@@ -6739,8 +8331,40 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     6.53,
+     50.453,
+     21.5
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.33,
+    "pieces": 12,
+    "min_angle_deg": 74.5
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -2.096,
      50.441,
+     21.5
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.19,
+    "pieces": 12,
+    "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -18.767,
+     50.439,
      21.5
     ],
     "parts": [
@@ -6835,6 +8459,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -0.694,
+     52.643,
+     2.759
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/wood_frame_white"
+    ],
+    "length_m": 1.58,
+    "pieces": 12,
+    "min_angle_deg": 46.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -14.599,
      56.419,
      17.64
@@ -6862,6 +8502,22 @@
     "length_m": 67,
     "pieces": 12,
     "min_angle_deg": 73.7
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -0.512,
+     49.75,
+     2.98
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.8,
+    "pieces": 12,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -6899,49 +8555,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     7.874,
-     49.784,
-     -9.2
+     -4.893,
+     50.449,
+     21.5
     ],
     "parts": [
      "Papenkasteel_lod2/render_white",
      "Papenkasteel_lod2/stone_blue"
     ],
-    "length_m": 2.27,
+    "length_m": 2.33,
     "pieces": 11,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -12.1,
-     49.788,
-     -7.78
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 11,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -12.1,
-     49.071,
-     9.18
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 1.42,
-    "pieces": 11,
-    "min_angle_deg": 90
+    "min_angle_deg": 74.5
    },
    {
     "check": "seam",
@@ -7077,22 +8701,6 @@
     "at": [
      -3.778,
      52.655,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 2,
-    "pieces": 11,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.62,
-     52.955,
      2.93
     ],
     "parts": [
@@ -7891,22 +9499,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -4.04,
-     63.795,
-     -2.889
-    ],
-    "parts": [
-     "Papenkasteel_lod2/stone_white",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 0.96,
-    "pieces": 11,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -2.29,
      49.39,
      3.25
@@ -8037,7 +9629,7 @@
     "at": [
      8.8,
      50.538,
-     5.54
+     5.539
     ],
     "parts": [
      "Papenkasteel_lod2/render_white",
@@ -8052,46 +9644,14 @@
     "severity": "info",
     "at": [
      12.13,
-     50.538,
-     -3.465
+     50.539,
+     -3.467
     ],
     "parts": [
      "Papenkasteel_lod2/render_white",
      "Papenkasteel_lod2/stone_blue"
     ],
     "length_m": 2.18,
-    "pieces": 10,
-    "min_angle_deg": 74.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     12.13,
-     50.537,
-     -6.646
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.18,
-    "pieces": 10,
-    "min_angle_deg": 74.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     6.542,
-     50.438,
-     21.5
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.19,
     "pieces": 10,
     "min_angle_deg": 74.6
    },
@@ -8148,7 +9708,7 @@
     "severity": "info",
     "at": [
      -20.9,
-     51.391,
+     52.091,
      24.7
     ],
     "parts": [
@@ -8164,8 +9724,8 @@
     "severity": "info",
     "at": [
      9.47,
-     51.387,
-     25.646
+     52.091,
+     25.6
     ],
     "parts": [
      "Papenkasteel_lod2/render_white",
@@ -8307,38 +9867,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -1.638,
-     53.103,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 1.55,
-    "pieces": 10,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.152,
-     52.92,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 1.71,
-    "pieces": 10,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -0.621,
      52.516,
      2.93
@@ -8387,22 +9915,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.694,
-     52.643,
-     2.759
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/wood_frame_white"
-    ],
-    "length_m": 1.49,
-    "pieces": 10,
-    "min_angle_deg": 28.8
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      1.56,
      66.555,
      -2.73
@@ -8435,6 +9947,70 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -4.04,
+     63.735,
+     -2.73
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 0.96,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     9.13,
+     49.279,
+     -8.96
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 3.97,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.207,
+     4.555
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.86,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -12.08,
+     49.347,
+     7.555
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.86,
+    "pieces": 10,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      5.541,
      52.738,
      1.5
@@ -8445,135 +10021,7 @@
     ],
     "length_m": 4.24,
     "pieces": 9,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     4.49,
-     49.768,
-     -9.2
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.685,
-     49.773,
-     -9.2
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.718,
-     49.788,
-     -9.2
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.563,
-     49.788,
-     -9.2
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -6.407,
-     49.787,
-     -9.2
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -9.248,
-     49.786,
-     -9.2
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -12.1,
-     49.787,
-     -4.392
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -12.1,
-     49.786,
-     -1.003
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.27,
-    "pieces": 9,
-    "min_angle_deg": 67
+    "min_angle_deg": 89.9
    },
    {
     "check": "seam",
@@ -8627,134 +10075,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -12.1,
-     49.718,
-     4.405
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.18,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -12.1,
-     49.787,
-     6.478
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.18,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     5.8,
-     49.429,
-     1.48
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 1.16,
-    "pieces": 9,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     5.8,
-     49.728,
-     6.271
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.09,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     5.8,
-     49.222,
-     8.08
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 1.12,
-    "pieces": 9,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     12.11,
-     49.435,
-     -8.98
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 0.77,
-    "pieces": 9,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -0.09,
-     49.558,
-     21.5
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.18,
-    "pieces": 9,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -9.662,
-     49.564,
-     21.5
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 5.18,
-    "pieces": 9,
-    "min_angle_deg": 66.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -7.3,
      51.521,
      21.688
@@ -8803,17 +10123,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -11.25,
-     49.636,
-     15.522
+     -1.97,
+     49.747,
+     2.93
     ],
     "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 2.18,
+    "length_m": 1.33,
     "pieces": 9,
-    "min_angle_deg": 67
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -8828,6 +10148,22 @@
      "Papenkasteel_lod2/stone_white"
     ],
     "length_m": 1,
+    "pieces": 9,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.62,
+     54.755,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 1.14,
     "pieces": 9,
     "min_angle_deg": 90
    },
@@ -8964,8 +10300,8 @@
     "severity": "info",
     "at": [
      -4.04,
-     65.295,
-     -2.58
+     65.272,
+     -2.56
     ],
     "parts": [
      "Papenkasteel_lod2/brick_red_brussels",
@@ -9027,6 +10363,54 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -3.62,
+     63.755,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 0.8,
+    "pieces": 9,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.29,
+     63.673,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 0.86,
+    "pieces": 9,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.56,
+     63.725,
+     -2.73
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_white",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 0.96,
+    "pieces": 9,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      1.152,
      63.587,
      -3.025
@@ -9043,6 +10427,38 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -0.19,
+     49.218,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.81,
+    "pieces": 9,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     9.15,
+     49.219,
+     1.48
+    ],
+    "parts": [
+     "Papenkasteel_lod2/render_white",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.26,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      -2.56,
      53.282,
      21.5
@@ -9054,54 +10470,6 @@
     "length_m": 1.8,
     "pieces": 8,
     "min_angle_deg": 74.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -4.881,
-     50.44,
-     21.5
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.19,
-    "pieces": 8,
-    "min_angle_deg": 74.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -18.765,
-     50.437,
-     21.5
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.25,
-    "pieces": 8,
-    "min_angle_deg": 74.5
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -7.3,
-     49.715,
-     21.52
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 1.2,
-    "pieces": 8,
-    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -9155,8 +10523,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.36,
-     50.845,
+     1.12,
+     50.785,
      2.93
     ],
     "parts": [
@@ -9171,15 +10539,47 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.62,
-     54.755,
+     1.425,
+     53.255,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/brick_red_brussels",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 1.1,
+    "length_m": 1.24,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.946,
+     52.767,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 1.55,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -1.283,
+     52.92,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 1.71,
     "pieces": 8,
     "min_angle_deg": 90
    },
@@ -9267,8 +10667,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.433,
-     59.545,
+     1.29,
+     59.49,
      2.93
     ],
     "parts": [
@@ -9396,6 +10796,22 @@
     "severity": "info",
     "at": [
      1.56,
+     49.243,
+     1.48
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.6,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.56,
      56.868,
      2.49
     ],
@@ -9412,7 +10828,7 @@
     "severity": "info",
     "at": [
      1.56,
-     58.244,
+     58.067,
      2.49
     ],
     "parts": [
@@ -9444,8 +10860,8 @@
     "severity": "info",
     "at": [
      1.56,
-     65.295,
-     -2.729
+     65.26,
+     -2.56
     ],
     "parts": [
      "Papenkasteel_lod2/brick_red_brussels",
@@ -9523,6 +10939,22 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -6.042,
+     53.082,
+     28.8
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.61,
+    "pieces": 8,
+    "min_angle_deg": 74.6
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      1.929,
      53.085,
      28.8
@@ -9563,7 +10995,7 @@
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 0.78,
+    "length_m": 0.8,
     "pieces": 8,
     "min_angle_deg": 90
    },
@@ -9571,8 +11003,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.36,
-     55.045,
+     1.12,
+     54.995,
      2.93
     ],
     "parts": [
@@ -9603,8 +11035,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.433,
-     56.545,
+     1.29,
+     56.482,
      2.93
     ],
     "parts": [
@@ -9619,47 +11051,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.778,
-     62.255,
+     1.36,
+     62.245,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 0.88,
-    "pieces": 8,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.905,
-     63.745,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/stone_white",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 0.86,
-    "pieces": 8,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.12,
-     63.795,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/stone_white",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 0.8,
+    "length_m": 0.76,
     "pieces": 8,
     "min_angle_deg": 90
    },
@@ -9683,8 +11083,8 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.12,
-     65.183,
+     1.36,
+     65.245,
      2.93
     ],
     "parts": [
@@ -9692,22 +11092,6 @@
      "Papenkasteel_lod2/stone_white"
     ],
     "length_m": 0.93,
-    "pieces": 8,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.56,
-     63.673,
-     -2.73
-    ],
-    "parts": [
-     "Papenkasteel_lod2/stone_white",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 0.96,
     "pieces": 8,
     "min_angle_deg": 90
    },
@@ -9747,15 +11131,63 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -2.29,
-     49.204,
-     2.91
+     1.54,
+     49.242,
+     1.48
     ],
     "parts": [
      "Papenkasteel_lod2/stone_blue",
      "Papenkasteel_lod2/stone_blue"
     ],
-    "length_m": 3.24,
+    "length_m": 2.6,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     5.82,
+     49.144,
+     1.48
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.51,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     8.78,
+     49.445,
+     1.48
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.51,
+    "pieces": 8,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -4.02,
+     49.129,
+     1.48
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 2.6,
     "pieces": 8,
     "min_angle_deg": 90
    },
@@ -9779,15 +11211,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     9.13,
-     49.412,
-     -8.98
+     -20.9,
+     49.384,
+     21.52
     ],
     "parts": [
      "Papenkasteel_lod2/render_white",
      "Papenkasteel_lod2/stone_blue"
     ],
-    "length_m": 0.81,
+    "length_m": 1.15,
     "pieces": 7,
     "min_angle_deg": 90
    },
@@ -9852,38 +11284,6 @@
      "Papenkasteel_lod2/stone_white"
     ],
     "length_m": 0.74,
-    "pieces": 7,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.905,
-     52.345,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 1,
-    "pieces": 7,
-    "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     1.29,
-     53.483,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 1.24,
     "pieces": 7,
     "min_angle_deg": 90
    },
@@ -10084,8 +11484,8 @@
     "severity": "info",
     "at": [
      1.56,
-     66.795,
-     -2.865
+     66.74,
+     -2.73
     ],
     "parts": [
      "Papenkasteel_lod2/brick_red_brussels",
@@ -10147,7 +11547,7 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.36,
+     -3.813,
      62.245,
      2.93
     ],
@@ -10163,15 +11563,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.62,
-     63.755,
+     -3.778,
+     62.255,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 0.8,
+    "length_m": 0.9,
     "pieces": 7,
     "min_angle_deg": 90
    },
@@ -10179,15 +11579,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.433,
-     63.745,
+     1.425,
+     62.255,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 0.86,
+    "length_m": 0.9,
     "pieces": 7,
     "min_angle_deg": 90
    },
@@ -10195,17 +11595,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -0.965,
-     49.711,
-     2.88
+     -1.961,
+     49.754,
+     2.91
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_blue"
     ],
-    "length_m": 3.86,
+    "length_m": 1.3,
     "pieces": 7,
-    "min_angle_deg": 23.6
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -10222,6 +11622,86 @@
     "length_m": 1.11,
     "pieces": 7,
     "min_angle_deg": 39.2
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -2.29,
+     49.204,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.81,
+    "pieces": 7,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     5.82,
+     49.754,
+     5.879
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.26,
+    "pieces": 7,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -7.279,
+     49.654,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.24,
+    "pieces": 7,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     0.946,
+     49.654,
+     21.52
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.24,
+    "pieces": 7,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -11.27,
+     49.654,
+     15.546
+    ],
+    "parts": [
+     "Papenkasteel_lod2/stone_blue",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.17,
+    "pieces": 7,
+    "min_angle_deg": 90
    },
    {
     "check": "seam",
@@ -10291,38 +11771,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -20.9,
-     54.415,
-     21.862
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/render_white"
-    ],
-    "length_m": 7.3,
-    "pieces": 6,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -1.288,
-     49.717,
-     2.93
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/stone_white"
-    ],
-    "length_m": 2.84,
-    "pieces": 6,
-    "min_angle_deg": 66.9
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      1.548,
      52.055,
      2.93
@@ -10332,6 +11780,22 @@
      "Papenkasteel_lod2/stone_white"
     ],
     "length_m": 0.74,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     -3.905,
+     52.345,
+     2.93
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 1,
     "pieces": 6,
     "min_angle_deg": 90
    },
@@ -10467,6 +11931,38 @@
     "check": "seam",
     "severity": "info",
     "at": [
+     -1.94,
+     49.752,
+     2.69
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_white"
+    ],
+    "length_m": 0.49,
+    "pieces": 6,
+    "min_angle_deg": 88.1
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
+     1.56,
+     49.131,
+     2.91
+    ],
+    "parts": [
+     "Papenkasteel_lod2/brick_red_brussels",
+     "Papenkasteel_lod2/stone_blue"
+    ],
+    "length_m": 1.66,
+    "pieces": 6,
+    "min_angle_deg": 90
+   },
+   {
+    "check": "seam",
+    "severity": "info",
+    "at": [
      1.56,
      57.467,
      2.49
@@ -10579,22 +12075,6 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -6.088,
-     53.07,
-     28.8
-    ],
-    "parts": [
-     "Papenkasteel_lod2/brick_red_brussels",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 1.65,
-    "pieces": 6,
-    "min_angle_deg": 74.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
      -3.905,
      53.545,
      2.93
@@ -10635,7 +12115,7 @@
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 0.86,
+    "length_m": 0.83,
     "pieces": 6,
     "min_angle_deg": 90
    },
@@ -10659,15 +12139,15 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     -3.813,
-     62.245,
+     -3.905,
+     63.745,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 0.76,
+    "length_m": 0.86,
     "pieces": 6,
     "min_angle_deg": 90
    },
@@ -10675,49 +12155,17 @@
     "check": "seam",
     "severity": "info",
     "at": [
-     1.425,
-     62.255,
+     1.553,
+     63.755,
      2.93
     ],
     "parts": [
      "Papenkasteel_lod2/stone_white",
      "Papenkasteel_lod2/stone_white"
     ],
-    "length_m": 0.9,
+    "length_m": 0.8,
     "pieces": 6,
     "min_angle_deg": 90
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -9.96,
-     49.755,
-     -9.18
-    ],
-    "parts": [
-     "Papenkasteel_lod2/stone_blue",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.25,
-    "pieces": 6,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     5.82,
-     49.667,
-     6.868
-    ],
-    "parts": [
-     "Papenkasteel_lod2/stone_blue",
-     "Papenkasteel_lod2/stone_blue"
-    ],
-    "length_m": 2.13,
-    "pieces": 6,
-    "min_angle_deg": 67
    },
    {
     "check": "seam",
@@ -11604,14 +13052,14 @@
     "severity": "info",
     "at": [
      -20.717,
-     51.843,
+     52.478,
      25.169
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/glass_window"
     ],
-    "length_m": 3.3,
+    "length_m": 2.7,
     "pieces": 6,
     "min_angle_deg": 33
    },
@@ -11620,32 +13068,16 @@
     "severity": "info",
     "at": [
      9.287,
-     51.933,
-     25.135
+     52.486,
+     25.154
     ],
     "parts": [
      "Papenkasteel_lod2/wood_frame_white",
      "Papenkasteel_lod2/glass_window"
     ],
-    "length_m": 3.3,
+    "length_m": 2.7,
     "pieces": 6,
-    "min_angle_deg": 33
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.42,
-     56.324,
-     22.583
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "length_m": 1.29,
-    "pieces": 6,
-    "min_angle_deg": 32.8
+    "min_angle_deg": 32.9
    },
    {
     "check": "seam",
@@ -11694,134 +13126,6 @@
     "length_m": 2.9,
     "pieces": 6,
     "min_angle_deg": 32.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.617,
-     53.343,
-     15.519
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "length_m": 2.7,
-    "pieces": 6,
-    "min_angle_deg": 32.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.617,
-     50.866,
-     19.019
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "length_m": 2.9,
-    "pieces": 6,
-    "min_angle_deg": 32.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -17.617,
-     53.343,
-     19.019
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "length_m": 2.7,
-    "pieces": 6,
-    "min_angle_deg": 32.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -11.433,
-     53.336,
-     14.981
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "length_m": 2.7,
-    "pieces": 6,
-    "min_angle_deg": 32.6
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -11.433,
-     53.336,
-     18.581
-    ],
-    "parts": [
-     "Papenkasteel_lod2/wood_frame_white",
-     "Papenkasteel_lod2/glass_window"
-    ],
-    "length_m": 2.7,
-    "pieces": 6,
-    "min_angle_deg": 33
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     3.38,
-     60.967,
-     -6.795
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/slate"
-    ],
-    "length_m": 2.29,
-    "pieces": 5,
-    "min_angle_deg": 65.1
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     9.47,
-     54.415,
-     28.438
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/render_white"
-    ],
-    "length_m": 7.3,
-    "pieces": 5,
-    "min_angle_deg": 67
-   },
-   {
-    "check": "seam",
-    "severity": "info",
-    "at": [
-     -3.618,
-     57.374,
-     23.579
-    ],
-    "parts": [
-     "Papenkasteel_lod2/render_white",
-     "Papenkasteel_lod2/slate"
-    ],
-    "length_m": 2.16,
-    "pieces": 5,
-    "min_angle_deg": 64.1
    }
   ],
   "tjunction": [
@@ -11830,7 +13134,7 @@
     "severity": "warn",
     "at": [
      -7.8,
-     49.07,
+     49.064,
      1.5
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -11841,7 +13145,7 @@
     "severity": "warn",
     "at": [
      -12.1,
-     49.07,
+     49.064,
      1.5
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -12006,7 +13310,7 @@
     "severity": "warn",
     "at": [
      -1.76,
-     55.1,
+     54.97,
      2.93
     ],
     "part": "Papenkasteel_lod2/brick_red_brussels",
@@ -12234,6 +13538,38 @@
    }
   ],
   "opening": [
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -4.02,
+     49.886,
+     1.5
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 9.659
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     1.54,
+     49.786,
+     1.5
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 9.659
+   },
    {
     "check": "opening",
     "severity": "info",
@@ -12927,7 +14263,7 @@
     "severity": "info",
     "at": [
      -12.05,
-     49.07,
+     49.064,
      9.2
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -12943,7 +14279,7 @@
     "severity": "info",
     "at": [
      -12.1,
-     49.748,
+     49.747,
      1.5
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -12952,14 +14288,14 @@
      0,
      0
     ],
-    "edge_m": 0.73
+    "edge_m": 0.736
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
      -12.1,
-     49.07,
+     49.064,
      9.15
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -12975,7 +14311,7 @@
     "severity": "info",
     "at": [
      -7.8,
-     49.07,
+     49.064,
      9.15
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13007,7 +14343,7 @@
     "severity": "info",
     "at": [
      5.85,
-     49.219,
+     49.142,
      8.1
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13023,7 +14359,7 @@
     "severity": "info",
     "at": [
      5.8,
-     49.219,
+     49.142,
      8.05
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13039,7 +14375,7 @@
     "severity": "info",
     "at": [
      8.8,
-     49.219,
+     49.142,
      8.05
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13049,22 +14385,6 @@
      0
     ],
     "edge_m": 6.65
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     12.13,
-     49.395,
-     -2.26
-    ],
-    "part": "Papenkasteel_lod2/render_white",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 6.77
    },
    {
     "check": "opening",
@@ -13081,38 +14401,6 @@
      -1
     ],
     "edge_m": 0.25
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     12.079,
-     49.395,
-     -8.98
-    ],
-    "part": "Papenkasteel_lod2/render_white",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 3.03
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     12.079,
-     49.395,
-     -2.21
-    ],
-    "part": "Papenkasteel_lod2/render_white",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 3.03
    },
    {
     "check": "opening",
@@ -13182,22 +14470,6 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -18.85,
-     50.45,
-     21.5
-    ],
-    "part": "Papenkasteel_lod2/render_white",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 1
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
      -20.9,
      52.567,
      21.5
@@ -13230,24 +14502,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -7.3,
-     49.65,
-     21.625
-    ],
-    "part": "Papenkasteel_lod2/render_white",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 0.25
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
      -9.9,
-     50.292,
+     50.589,
      21.75
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13257,6 +14513,22 @@
      0
     ],
     "edge_m": 2.867
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -18.8,
+     50.5,
+     21.75
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 2
    },
    {
     "check": "opening",
@@ -13279,8 +14551,8 @@
     "severity": "info",
     "at": [
      -19.8,
-     50.45,
-     21.708
+     50.9,
+     21.75
     ],
     "part": "Papenkasteel_lod2/render_white",
     "facing": [
@@ -13288,15 +14560,31 @@
      0,
      0
     ],
-    "edge_m": 0.25
+    "edge_m": 2
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     -4.9,
-     50.45,
-     21.708
+     -5.9,
+     50.6,
+     21.75
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 2
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -2.1,
+     50.5,
+     21.75
     ],
     "part": "Papenkasteel_lod2/render_white",
     "facing": [
@@ -13304,7 +14592,7 @@
      0,
      0
     ],
-    "edge_m": 0.25
+    "edge_m": 2
    },
    {
     "check": "opening",
@@ -13326,8 +14614,24 @@
     "check": "opening",
     "severity": "info",
     "at": [
+     -3.1,
+     50.6,
+     21.75
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 2
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
      0.925,
-     50.007,
+     49.701,
      21.75
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13342,24 +14646,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     0.925,
-     49.65,
-     21.625
-    ],
-    "part": "Papenkasteel_lod2/render_white",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 0.25
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
      -0.125,
-     50.21,
+     50.618,
      21.75
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13369,6 +14657,22 @@
      0
     ],
     "edge_m": 2.65
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.7,
+     50.5,
+     21.75
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "facing": [
+     -1,
+     0,
+     0
+    ],
+    "edge_m": 2
    },
    {
     "check": "opening",
@@ -13390,9 +14694,25 @@
     "check": "opening",
     "severity": "info",
     "at": [
+     2.7,
+     50.5,
+     21.75
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "facing": [
+     1,
+     0,
+     0
+    ],
+    "edge_m": 2
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
      6.5,
-     50.45,
-     21.708
+     50.5,
+     21.75
     ],
     "part": "Papenkasteel_lod2/render_white",
     "facing": [
@@ -13400,7 +14720,7 @@
      0,
      0
     ],
-    "edge_m": 0.25
+    "edge_m": 2
    },
    {
     "check": "opening",
@@ -13550,8 +14870,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     7.62,
-     56.934,
+     7.5,
+     57.066,
      27.95
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13727,7 +15047,7 @@
     "severity": "info",
     "at": [
      -11.5,
-     50.4,
+     49.7,
      15.525
     ],
     "part": "Papenkasteel_lod2/render_white",
@@ -13742,17 +15062,17 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -11.375,
-     49.65,
-     15.525
+     -11.5,
+     49.9,
+     14.475
     ],
     "part": "Papenkasteel_lod2/render_white",
     "facing": [
      0,
      0,
-     -1
+     1
     ],
-    "edge_m": 0.25
+    "edge_m": 2.6
    },
    {
     "check": "opening",
@@ -13822,8 +15142,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -1.81,
-     54.755,
+     -1.76,
+     54.805,
      2.93
     ],
     "part": "Papenkasteel_lod2/brick_red_brussels",
@@ -13832,7 +15152,7 @@
      0,
      1
     ],
-    "edge_m": 2.291
+    "edge_m": 0.22
    },
    {
     "check": "opening",
@@ -13854,8 +15174,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -3.693,
-     55.1,
+     -1.76,
+     55.151,
      2.93
     ],
     "part": "Papenkasteel_lod2/brick_red_brussels",
@@ -13864,7 +15184,7 @@
      0,
      1
     ],
-    "edge_m": 2.28
+    "edge_m": 1.32
    },
    {
     "check": "opening",
@@ -13934,22 +15254,6 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -1.81,
-     59.32,
-     2.93
-    ],
-    "part": "Papenkasteel_lod2/brick_red_brussels",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 2.28
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
      -0.571,
      58,
      2.93
@@ -13966,8 +15270,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -0.72,
-     58.051,
+     1.213,
+     59.32,
      2.93
     ],
     "part": "Papenkasteel_lod2/brick_red_brussels",
@@ -13976,7 +15280,23 @@
      0,
      1
     ],
-    "edge_m": 1.32
+    "edge_m": 2.28
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -3.693,
+     59.45,
+     2.93
+    ],
+    "part": "Papenkasteel_lod2/brick_red_brussels",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 2.28
    },
    {
     "check": "opening",
@@ -14030,8 +15350,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     1.114,
-     62.22,
+     -0.72,
+     61.251,
      2.93
     ],
     "part": "Papenkasteel_lod2/brick_red_brussels",
@@ -14040,14 +15360,14 @@
      0,
      1
     ],
-    "edge_m": 2.28
+    "edge_m": 1.02
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     -3.693,
-     62.35,
+     -1.76,
+     62.397,
      2.93
     ],
     "part": "Papenkasteel_lod2/brick_red_brussels",
@@ -14056,7 +15376,7 @@
      0,
      1
     ],
-    "edge_m": 2.28
+    "edge_m": 1.051
    },
    {
     "check": "opening",
@@ -14142,17 +15462,33 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -1.94,
-     49.75,
-     2.805
+     -0.794,
+     52.76,
+     2.68
     ],
     "part": "Papenkasteel_lod2/brick_red_brussels",
     "facing": [
-     1,
-     0,
+     -0.71,
+     -0.71,
      0
     ],
-    "edge_m": 0.25
+    "edge_m": 0.362
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -1.686,
+     52.76,
+     2.68
+    ],
+    "part": "Papenkasteel_lod2/brick_red_brussels",
+    "facing": [
+     0.71,
+     -0.71,
+     0
+    ],
+    "edge_m": 0.362
    },
    {
     "check": "opening",
@@ -14798,22 +16134,6 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -6.3,
-     53.1,
-     28.8
-    ],
-    "part": "Papenkasteel_lod2/brick_red_brussels",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 0.7
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
      -20.85,
      50.639,
      28.8
@@ -14911,7 +16231,7 @@
     "severity": "info",
     "at": [
      -3.594,
-     54.97,
+     54.996,
      2.93
     ],
     "part": "Papenkasteel_lod2/stone_white",
@@ -14920,7 +16240,7 @@
      0,
      1
     ],
-    "edge_m": 2.28
+    "edge_m": 2.284
    },
    {
     "check": "opening",
@@ -14974,7 +16294,23 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -3.693,
+     -1.81,
+     59.323,
+     2.93
+    ],
+    "part": "Papenkasteel_lod2/stone_white",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 2.284
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     1.213,
      59.34,
      2.93
     ],
@@ -14990,39 +16326,7 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -0.72,
-     59.385,
-     2.93
-    ],
-    "part": "Papenkasteel_lod2/stone_white",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 0.13
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -1.81,
-     62.223,
-     2.93
-    ],
-    "part": "Papenkasteel_lod2/stone_white",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 2.284
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     1.114,
+     -3.594,
      62.245,
      2.93
     ],
@@ -15033,6 +16337,22 @@
      1
     ],
     "edge_m": 2.284
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.72,
+     62.285,
+     2.93
+    ],
+    "part": "Papenkasteel_lod2/stone_white",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.13
    },
    {
     "check": "opening",
@@ -15166,70 +16486,6 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -4.025,
-     49.121,
-     2.91
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 5.67
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -4.075,
-     49.173,
-     2.91
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 0.829
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     1.54,
-     49.121,
-     2.823
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 1.42
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -4.02,
-     49.121,
-     1.505
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 1.42
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
      -2.25,
      49.182,
      3.59
@@ -15321,406 +16577,6 @@
      0
     ],
     "edge_m": 0.39
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -12.08,
-     49.07,
-     9.18
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 4.36
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -12.13,
-     49.121,
-     9.18
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 0.71
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -12.08,
-     49.07,
-     1.554
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 7.645
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -7.82,
-     49.07,
-     9.099
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 7.645
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     5.819,
-     49.219,
-     8.08
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 3.06
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     5.77,
-     49.266,
-     8.08
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 0.561
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     5.82,
-     49.219,
-     1.504
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 6.595
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     5.82,
-     49.78,
-     6.9
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 6.595
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     8.78,
-     49.219,
-     7.999
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 6.595
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     12.11,
-     49.395,
-     -2.23
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 6.83
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     12.11,
-     49.443,
-     -2.18
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 0.385
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     12.03,
-     49.395,
-     -8.96
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 2.975
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     9.154,
-     49.395,
-     -2.23
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 2.975
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     9.45,
-     49.053,
-     21.52
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 20.746
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -0.071,
-     49.95,
-     21.52
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 20.746
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -17.854,
-     49.053,
-     21.52
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 3.126
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -20.88,
-     50.639,
-     28.78
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 30.43
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -20.93,
-     50.689,
-     28.78
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     1
-    ],
-    "edge_m": 0.7
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -20.88,
-     49.376,
-     21.601
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 7.198
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     9.45,
-     50.307,
-     28.699
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 7.198
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -11.27,
-     49.087,
-     13.52
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 6.61
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -11.22,
-     49.138,
-     13.52
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     0,
-     0,
-     -1
-    ],
-    "edge_m": 0.823
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -17.78,
-     49.087,
-     13.601
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     -1,
-     0,
-     0
-    ],
-    "edge_m": 7.945
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -11.27,
-     49.087,
-     13.802
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 7.945
-   },
-   {
-    "check": "opening",
-    "severity": "info",
-    "at": [
-     -11.27,
-     49.91,
-     14.506
-    ],
-    "part": "Papenkasteel_lod2/stone_blue",
-    "facing": [
-     1,
-     0,
-     0
-    ],
-    "edge_m": 7.945
    },
    {
     "check": "opening",
@@ -16798,8 +17654,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -10.285,
-     52.78,
+     -9.363,
+     52.735,
      -9.011
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -16808,7 +17664,7 @@
      0,
      -1
     ],
-    "edge_m": 0.45
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -16846,8 +17702,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -9.315,
-     49.934,
+     -10.237,
+     52.675,
      -9.017
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -16856,14 +17712,14 @@
      0,
      -1
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     -7.435,
-     52.78,
+     -6.514,
+     52.735,
      -9.011
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -16872,7 +17728,7 @@
      0,
      -1
     ],
-    "edge_m": 0.45
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -16910,8 +17766,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -6.465,
-     49.934,
+     -7.387,
+     52.675,
      -9.017
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -16920,14 +17776,14 @@
      0,
      -1
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     -4.585,
-     52.78,
+     -3.663,
+     52.735,
      -9.011
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -16936,7 +17792,7 @@
      0,
      -1
     ],
-    "edge_m": 0.45
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -16974,8 +17830,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -3.615,
-     49.934,
+     -4.536,
+     52.675,
      -9.017
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -16984,14 +17840,14 @@
      0,
      -1
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     -1.735,
-     52.78,
+     -0.814,
+     52.735,
      -9.011
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -17000,7 +17856,7 @@
      0,
      -1
     ],
-    "edge_m": 0.45
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -17038,8 +17894,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     -0.765,
-     49.934,
+     -1.686,
+     52.675,
      -9.017
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -17048,7 +17904,7 @@
      0,
      -1
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -17102,8 +17958,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     2.085,
-     49.934,
+     1.163,
+     52.675,
      -9.017
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -17112,14 +17968,14 @@
      0,
      -1
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     3.965,
-     52.78,
+     4.887,
+     52.735,
      -9.011
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -17128,7 +17984,7 @@
      0,
      -1
     ],
-    "edge_m": 0.45
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -17166,8 +18022,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     4.935,
-     49.934,
+     4.013,
+     52.675,
      -9.017
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -17176,14 +18032,14 @@
      0,
      -1
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
     "severity": "info",
     "at": [
-     6.815,
-     52.78,
+     7.736,
+     52.735,
      -9.011
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -17192,7 +18048,7 @@
      0,
      -1
     ],
-    "edge_m": 0.45
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -17230,8 +18086,8 @@
     "check": "opening",
     "severity": "info",
     "at": [
-     7.785,
-     49.934,
+     6.863,
+     52.675,
      -9.017
     ],
     "part": "Papenkasteel_lod2/glass_window",
@@ -17240,7 +18096,7 @@
      0,
      -1
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -17519,8 +18375,8 @@
     "severity": "info",
     "at": [
      -11.917,
-     49.934,
-     -7.735
+     52.675,
+     -6.813
     ],
     "part": "Papenkasteel_lod2/glass_window",
     "facing": [
@@ -17528,7 +18384,7 @@
      0,
      0
     ],
-    "edge_m": 2.791
+    "edge_m": 0.97
    },
    {
     "check": "opening",
@@ -18633,6 +19489,454 @@
      1
     ],
     "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -7.711,
+     52.537,
+     21.695
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 2.47
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -18.914,
+     50.535,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -19.687,
+     52.385,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -5.013,
+     50.535,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -5.787,
+     52.385,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -2.213,
+     50.535,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -2.987,
+     52.385,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.055,
+     51.973,
+     21.7
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.32
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -0.004,
+     52.24,
+     21.7
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.91
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.587,
+     50.535,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.813,
+     52.385,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     6.387,
+     50.535,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     5.613,
+     52.385,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.87
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -19.013,
+     53.384,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -19.587,
+     54.235,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -5.113,
+     53.384,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -5.687,
+     54.235,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -2.313,
+     53.384,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -2.887,
+     54.235,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     3.487,
+     53.384,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     2.913,
+     54.235,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     6.287,
+     53.384,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     5.713,
+     54.235,
+     21.683
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.67
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -14.238,
+     53.185,
+     28.617
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.57
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -13.762,
+     54.135,
+     28.617
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.57
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -6.237,
+     53.185,
+     28.617
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.57
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     -5.763,
+     54.135,
+     28.617
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.57
+   },
+   {
+    "check": "opening",
+    "severity": "info",
+    "at": [
+     1.763,
+     53.185,
+     28.617
+    ],
+    "part": "Papenkasteel_lod2/glass_window",
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.57
    }
   ],
   "leak": [
@@ -18793,6 +20097,23 @@
     "check": "leak",
     "severity": "block",
     "at": [
+     7.369,
+     57.212,
+     27.95
+    ],
+    "part": "Papenkasteel_lod2/render_white",
+    "slit_mm": 12,
+    "facing": [
+     0,
+     0,
+     1
+    ],
+    "edge_m": 0.404
+   },
+   {
+    "check": "leak",
+    "severity": "block",
+    "at": [
      -1.74,
      52.492,
      2.753
@@ -18805,6 +20126,23 @@
      0.98
     ],
     "edge_m": 0.627
+   },
+   {
+    "check": "leak",
+    "severity": "block",
+    "at": [
+     -1.24,
+     72.76,
+     -0.051
+    ],
+    "part": "Papenkasteel_lod2/cast_iron_dark",
+    "slit_mm": 12,
+    "facing": [
+     0,
+     0,
+     -1
+    ],
+    "edge_m": 0.031
    },
    {
     "check": "leak",

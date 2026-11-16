@@ -1,21 +1,21 @@
 # Mesh audit (before pack): papenkasteel.far
 
-13,702 triangles, 9,772 welded vertices, 5,240 open edges, 855,608 rays, 2794 ms.
+13,902 triangles, 9,870 welded vertices, 5,250 open edges, 708,480 rays, 9595 ms.
 
-**0 blocking**, 2138 warnings. Clean (no blocking item).
+**0 blocking**, 2192 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 1186 |
+| sliver | warn | 1182 |
 | nonmanifold | warn | 350 |
-| tjunction | warn | 602 |
-| seam | info | 2473 |
-| opening | info | 635 |
+| tjunction | warn | 660 |
+| seam | info | 2462 |
+| opening | info | 614 |
 | backtoback | info | 67 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 1186)
+## sliver (warn, 1182)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -60,7 +60,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.86, 52.22, 2.93 | Papenkasteel_far/brick_red_brussels | 42 | 2.101 |
 | 0.16, 52.23, 2.93 | Papenkasteel_far/brick_red_brussels | 42 | 2.101 |
 
-(1146 more in the JSON)
+(1142 more in the JSON)
 
 ## nonmanifold (warn, 350)
 
@@ -109,12 +109,12 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (310 more in the JSON)
 
-## tjunction (warn, 602)
+## tjunction (warn, 660)
 
 | at | part | edge_m |
 |---|---|---|
 | -12.10, 52.85, 1.50 | Papenkasteel_far/render_white | 0.7 |
-| -7.80, 49.07, 1.50 | Papenkasteel_far/render_white | 1.909 |
+| -7.80, 49.06, 1.50 | Papenkasteel_far/render_white | 1.909 |
 | -7.80, 52.35, 1.50 | Papenkasteel_far/render_white | 2 |
 | -7.51, 52.55, 1.50 | Papenkasteel_far/render_white | 2.7 |
 | -6.49, 52.55, 1.50 | Papenkasteel_far/render_white | 2.7 |
@@ -133,7 +133,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 4.01, 54.95, 1.50 | Papenkasteel_far/render_white | 2.5 |
 | 5.03, 54.95, 1.50 | Papenkasteel_far/render_white | 2.5 |
 | 9.15, 50.55, -9.20 | Papenkasteel_far/render_white | 3.45 |
-| -12.10, 49.07, 1.50 | Papenkasteel_far/render_white | 1.159 |
+| -12.10, 49.06, 1.50 | Papenkasteel_far/render_white | 1.159 |
 | -12.10, 52.35, 1.50 | Papenkasteel_far/render_white | 3.45 |
 | -12.10, 54.95, 1.50 | Papenkasteel_far/render_white | 2.5 |
 | 9.15, 54.95, 1.50 | Papenkasteel_far/render_white | 2.5 |
@@ -152,16 +152,15 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 3.90, 60.55, -8.25 | Papenkasteel_far/render_white | 0.383 |
 | 3.21, 60.55, -8.25 | Papenkasteel_far/render_white | 0.383 |
 | 3.55, 60.39, -8.25 | Papenkasteel_far/render_white | 0.69 |
-| -12.10, 49.80, 9.20 | Papenkasteel_far/render_white | 1.48 |
+| -12.10, 49.80, 9.20 | Papenkasteel_far/render_white | 1.486 |
 
-(562 more in the JSON)
+(620 more in the JSON)
 
-## seam (info, 2473)
+## seam (info, 2462)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | -10.87, 57.78, 1.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_white | 58.34 | 100 | 90 |
-| 7.99, 49.05, 21.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 38.76 | 76 | 90 |
 | -0.99, 68.76, 2.63 | Papenkasteel_far/stone_white + Papenkasteel_far/slate | 2.88 | 75 | 24.5 |
 | -1.49, 68.76, -2.69 | Papenkasteel_far/stone_white + Papenkasteel_far/slate | 2.88 | 75 | 24.5 |
 | 1.25, 68.76, -0.28 | Papenkasteel_far/stone_white + Papenkasteel_far/slate | 2.88 | 75 | 24.5 |
@@ -171,18 +170,16 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -1.94, 60.23, 2.93 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_white | 3.58 | 42 | 90 |
 | -1.94, 63.43, 2.93 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_white | 3.58 | 42 | 90 |
 | -2.01, 66.98, 2.93 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_white | 23.06 | 42 | 90 |
+| -1.12, 49.05, 21.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 16.07 | 40 | 59 |
 | -11.08, 54.73, 21.50 | Papenkasteel_far/render_white + Papenkasteel_far/render_white | 22.97 | 37 | 90 |
 | -1.58, 68.59, -2.76 | Papenkasteel_far/slate + Papenkasteel_far/slate | 1.27 | 36 | 69 |
 | 1.32, 68.59, -0.38 | Papenkasteel_far/slate + Papenkasteel_far/slate | 1.27 | 36 | 69 |
 | -1.59, 68.58, 2.69 | Papenkasteel_far/slate + Papenkasteel_far/slate | 1.27 | 36 | 69 |
 | -3.81, 68.58, -0.38 | Papenkasteel_far/slate + Papenkasteel_far/slate | 1.27 | 36 | 69 |
 | -0.63, 70.71, -0.36 | Papenkasteel_far/slate + Papenkasteel_far/zinc_roof | 4.32 | 36 | 85.4 |
-| 5.80, 49.22, 2.28 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 13.35 | 29 | 90 |
-| -7.29, 49.53, 21.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 3.45 | 29 | 90 |
-| -1.96, 49.63, 2.93 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_white | 1.77 | 29 | 90 |
-| -17.63, 50.64, 28.80 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_blue | 60.74 | 29 | 90 |
+| 7.99, 49.05, 21.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 17.95 | 34 | 59 |
+| -17.63, 50.64, 28.80 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_blue | 60.74 | 29 | 59 |
 | -11.25, 52.87, 15.54 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 1.89 | 27 | 90 |
-| -11.25, 49.09, 20.30 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 16.49 | 26 | 90 |
 | -1.98, 52.79, 2.93 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_white | 1.34 | 26 | 9 |
 | -0.97, 53.08, 2.93 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_white | 1.34 | 26 | 9 |
 | -1.66, 70.63, 0.56 | Papenkasteel_far/zinc_roof + Papenkasteel_far/zinc_roof | 4.6 | 26 | 90 |
@@ -190,25 +187,29 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 6.52, 52.57, 8.10 | Papenkasteel_far/render_white + Papenkasteel_far/render_white | 16.26 | 25 | 90 |
 | 12.13, 52.57, -2.83 | Papenkasteel_far/render_white + Papenkasteel_far/render_white | 12.79 | 25 | 90 |
 | -1.94, 66.43, 2.93 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/stone_white | 2.06 | 25 | 90 |
+| -12.10, 49.06, 2.49 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 16.7 | 24 | 59 |
+| 6.30, 49.14, 8.10 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 7.36 | 24 | 59 |
+| -13.95, 49.09, 13.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 14.83 | 24 | 59 |
+| -17.80, 49.09, 14.28 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 17.51 | 24 | 59 |
 | 9.13, 52.76, -9.20 | Papenkasteel_far/render_white + Papenkasteel_far/slate | 8.4 | 23 | 58 |
-| 12.13, 49.40, -2.85 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 13.62 | 23 | 90 |
-| -12.10, 49.07, 2.49 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 16.71 | 22 | 90 |
-| -18.30, 49.05, 21.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 7.09 | 22 | 90 |
+| -18.30, 49.05, 21.50 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 7.08 | 23 | 59 |
+| -11.28, 49.06, 9.20 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 10.12 | 22 | 59 |
 | -9.58, 52.71, 21.65 | Papenkasteel_far/render_white + Papenkasteel_far/wood_frame_dark | 2.74 | 22 | 90 |
-| -17.80, 49.09, 14.28 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 17.54 | 22 | 90 |
+| -11.25, 49.09, 19.11 | Papenkasteel_far/render_white + Papenkasteel_far/stone_blue | 13.54 | 22 | 59 |
 | -0.61, 52.53, 2.78 | Papenkasteel_far/brick_red_brussels + Papenkasteel_far/wood_frame_white | 2.17 | 22 | 90 |
 | -6.42, 59.32, 0.55 | Papenkasteel_far/render_white + Papenkasteel_far/zinc_roof | 1.58 | 21 | 90 |
 | 3.18, 59.32, 0.55 | Papenkasteel_far/render_white + Papenkasteel_far/zinc_roof | 1.58 | 21 | 90 |
 | -5.68, 59.32, -8.25 | Papenkasteel_far/render_white + Papenkasteel_far/zinc_roof | 1.58 | 21 | 90 |
 
-(2433 more in the JSON)
+(2422 more in the JSON)
 
-## opening (info, 635)
+## opening (info, 614)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
 | -12.10, 54.80, 1.50 | Papenkasteel_far/render_white | 0 + 0 + 1 | 0.2 |
 | -12.10, 55.00, 1.50 | Papenkasteel_far/render_white | 0 + 0 + 1 | 2.3 |
+| 1.54, 49.90, 1.50 | Papenkasteel_far/render_white | 0 + 0 + 1 | 1.909 |
 | 9.15, 54.80, 1.50 | Papenkasteel_far/render_white | 0 + 0 + 1 | 0.2 |
 | 9.15, 55.00, 1.50 | Papenkasteel_far/render_white | 0 + 0 + 1 | 2.3 |
 | 9.15, 50.60, -9.20 | Papenkasteel_far/render_white | 1 + 0 + 0 | 2 |
@@ -245,10 +246,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 3.21, 60.61, -8.25 | Papenkasteel_far/render_white | 0 + 0 + -1 | 0.223 |
 | 3.02, 59.84, -8.25 | Papenkasteel_far/render_white | 0 + 0 + -1 | 0.99 |
 | 3.02, 60.43, -8.25 | Papenkasteel_far/render_white | 0 + 0 + -1 | 0.16 |
-| -12.05, 49.07, 9.20 | Papenkasteel_far/render_white | 0 + 0 + 1 | 1.65 |
-| -12.10, 50.60, 9.20 | Papenkasteel_far/render_white | 0 + 0 + 1 | 1.8 |
+| -12.05, 49.06, 9.20 | Papenkasteel_far/render_white | 0 + 0 + 1 | 1.65 |
 
-(595 more in the JSON)
+(574 more in the JSON)
 
 ## backtoback (info, 67)
 

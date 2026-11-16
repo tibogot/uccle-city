@@ -1,18 +1,18 @@
 # Mesh audit (packed): papenkasteel.lod0
 
-51,060 triangles, 34,445 welded vertices, 17,111 open edges, 1,311,748 rays, 8550 ms.
+51,118 triangles, 34,432 welded vertices, 16,986 open edges, 1,141,916 rays, 30302 ms.
 
-**5 blocking**, 7526 warnings. NOT CLEAN.
+**5 blocking**, 7479 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
 | crossing | block | 3 |
 | bentflat | block | 2 |
-| sliver | warn | 4699 |
-| nonmanifold | warn | 1041 |
-| tjunction | warn | 1786 |
-| seam | info | 7579 |
-| opening | info | 1610 |
+| sliver | warn | 4651 |
+| nonmanifold | warn | 986 |
+| tjunction | warn | 1842 |
+| seam | info | 7425 |
+| opening | info | 1578 |
 | backtoback | info | 3889 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -32,7 +32,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -9.56, 59.23, 25.18 | Papenkasteel/zinc_roof | 3.1 | 0.1691 | 0.34 |
 | -1.87, 59.23, 25.18 | Papenkasteel/zinc_roof | 3.1 | 0.1691 | 0.34 |
 
-## sliver (warn, 4699)
+## sliver (warn, 4651)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -77,61 +77,61 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 3.89, 51.48, 1.51 | Papenkasteel/render_white | 189 | 2.84 |
 | 3.89, 52.42, 1.50 | Papenkasteel/render_white | 189 | 2.84 |
 
-(4659 more in the JSON)
+(4611 more in the JSON)
 
-## nonmanifold (warn, 1041)
+## nonmanifold (warn, 986)
 
 | at | part | uses |
 |---|---|---|
-| -1.43, 49.77, 1.53 | Papenkasteel/stone_blue | 3 |
-| -12.05, 49.77, 1.50 | Papenkasteel/stone_blue | 3 |
-| -1.48, 49.77, -9.23 | Papenkasteel/stone_blue | 3 |
-| -12.13, 49.77, -3.85 | Papenkasteel/stone_blue | 3 |
-| -12.11, 49.77, 1.45 | Papenkasteel/stone_blue | 3 |
-| -12.11, 49.77, -9.15 | Papenkasteel/stone_blue | 3 |
-| 9.18, 49.77, -3.85 | Papenkasteel/stone_blue | 3 |
-| 9.15, 49.77, -9.15 | Papenkasteel/stone_blue | 3 |
-| 9.15, 49.77, 1.45 | Papenkasteel/stone_blue | 3 |
-| -1.24, 49.92, 2.96 | Papenkasteel/stone_blue | 3 |
-| 1.59, 49.92, 2.16 | Papenkasteel/stone_blue | 3 |
-| 1.57, 49.92, 1.45 | Papenkasteel/stone_blue | 3 |
-| 1.57, 49.92, 2.87 | Papenkasteel/stone_blue | 3 |
-| -4.08, 49.92, 2.16 | Papenkasteel/stone_blue | 3 |
-| -4.05, 49.92, 2.87 | Papenkasteel/stone_blue | 3 |
-| -4.05, 49.92, 1.45 | Papenkasteel/stone_blue | 3 |
-| -9.95, 49.75, 9.23 | Papenkasteel/stone_blue | 3 |
-| -12.13, 49.75, 5.33 | Papenkasteel/stone_blue | 3 |
-| -12.11, 49.75, 9.15 | Papenkasteel/stone_blue | 3 |
-| -12.11, 49.75, 1.50 | Papenkasteel/stone_blue | 3 |
-| -7.77, 49.75, 5.33 | Papenkasteel/stone_blue | 3 |
-| -7.79, 49.75, 1.50 | Papenkasteel/stone_blue | 3 |
-| -7.79, 49.75, 9.15 | Papenkasteel/stone_blue | 3 |
-| 7.30, 49.75, 8.13 | Papenkasteel/stone_blue | 3 |
-| 5.77, 49.75, 4.75 | Papenkasteel/stone_blue | 3 |
-| 5.79, 49.75, 8.05 | Papenkasteel/stone_blue | 3 |
-| 5.79, 49.75, 1.45 | Papenkasteel/stone_blue | 3 |
-| 8.83, 49.75, 4.75 | Papenkasteel/stone_blue | 3 |
-| 8.80, 49.75, 1.45 | Papenkasteel/stone_blue | 3 |
-| 8.80, 49.75, 8.05 | Papenkasteel/stone_blue | 3 |
-| 12.16, 49.75, -5.59 | Papenkasteel/stone_blue | 3 |
-| 10.59, 49.75, -9.01 | Papenkasteel/stone_blue | 3 |
-| 9.10, 49.75, -8.98 | Papenkasteel/stone_blue | 3 |
-| 12.08, 49.75, -8.98 | Papenkasteel/stone_blue | 3 |
-| 10.59, 49.75, -2.18 | Papenkasteel/stone_blue | 3 |
-| 12.08, 49.75, -2.21 | Papenkasteel/stone_blue | 3 |
-| 9.10, 49.75, -2.21 | Papenkasteel/stone_blue | 3 |
-| -0.87, 49.92, 21.47 | Papenkasteel/stone_blue | 3 |
-| -11.25, 49.92, 21.50 | Papenkasteel/stone_blue | 3 |
-| -19.37, 49.92, 21.47 | Papenkasteel/stone_blue | 3 |
+| -7.45, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -7.45, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -6.55, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -6.55, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -7.39, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -7.39, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -7.05, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -7.05, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -6.95, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -6.95, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -6.61, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -6.61, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.63, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.63, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -4.74, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -4.74, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.57, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.57, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.24, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.24, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.13, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -5.13, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -4.79, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| -4.79, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.25, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.25, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 3.15, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 3.15, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.31, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.31, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.65, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.65, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.75, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 2.75, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 3.09, 53.19, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 3.09, 50.63, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 4.08, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 4.08, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 4.96, 53.26, 1.28 | Papenkasteel/wood_frame_white | 3 |
+| 4.96, 50.54, 1.28 | Papenkasteel/wood_frame_white | 3 |
 
-(1001 more in the JSON)
+(946 more in the JSON)
 
-## tjunction (warn, 1786)
+## tjunction (warn, 1842)
 
 | at | part | edge_m |
 |---|---|---|
 | -12.10, 52.85, 1.50 | Papenkasteel/render_white | 0.7 |
-| -7.80, 49.07, 1.50 | Papenkasteel/render_white | 1.909 |
+| -7.80, 49.06, 1.50 | Papenkasteel/render_white | 1.909 |
 | -7.80, 52.35, 1.50 | Papenkasteel/render_white | 2 |
 | -7.51, 52.55, 1.50 | Papenkasteel/render_white | 2.7 |
 | -6.49, 52.55, 1.50 | Papenkasteel/render_white | 2.7 |
@@ -171,9 +171,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 7.81, 54.95, 1.50 | Papenkasteel/render_white | 2.44 |
 | 9.15, 50.55, -9.20 | Papenkasteel/render_white | 3.45 |
 
-(1746 more in the JSON)
+(1802 more in the JSON)
 
-## seam (info, 7579)
+## seam (info, 7425)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -186,46 +186,47 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 1.29, 68.68, -0.32 | Papenkasteel/stone_white + Papenkasteel/slate | 2.92 | 117 | 24.7 |
 | -3.77, 68.68, 0.25 | Papenkasteel/stone_white + Papenkasteel/slate | 2.92 | 117 | 24.7 |
 | -11.81, 49.49, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
-| -11.81, 51.29, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
+| -11.81, 51.24, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | -11.81, 53.09, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | -11.81, 54.89, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
-| -11.81, 56.64, -9.32 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
+| -11.81, 56.69, -9.32 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | 8.94, 49.49, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
-| 8.94, 51.29, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
+| 8.94, 51.24, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | 8.94, 53.09, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | 8.94, 54.89, -9.31 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
-| 8.94, 56.64, -9.32 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
+| 8.94, 56.69, -9.32 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | 1.90, 49.49, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
-| 1.90, 51.29, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
+| 1.90, 51.24, 1.58 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | 1.90, 53.09, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | 1.90, 54.89, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
-| 1.90, 56.64, 1.58 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
+| 1.90, 56.69, 1.58 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 116 | 90 |
 | -4.30, 49.49, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
-| -4.30, 51.29, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
+| -4.30, 51.24, 1.58 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
 | -4.30, 53.09, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
 | -4.30, 54.89, 1.59 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
-| -4.30, 56.64, 1.58 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
-| 9.21, 49.85, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
+| -4.30, 56.69, 1.58 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
+| 9.21, 49.90, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
 | 9.21, 51.70, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
 | 9.21, 53.50, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
-| -10.86, 49.85, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
+| -10.86, 49.90, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
 | -10.86, 51.70, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
 | -10.86, 53.50, 21.09 | Papenkasteel/zinc_roof + Papenkasteel/zinc_roof | 0.56 | 112 | 90 |
 | -10.87, 57.78, 1.50 | Papenkasteel/render_white + Papenkasteel/stone_white | 58.34 | 103 | 90 |
-| 7.99, 49.05, 21.50 | Papenkasteel/render_white + Papenkasteel/stone_blue | 38.73 | 84 | 90 |
 | 7.77, 54.40, 21.50 | Papenkasteel/render_white + Papenkasteel/render_white | 21.6 | 81 | 90 |
 | -1.94, 57.02, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.58 | 74 | 90 |
 | -1.94, 60.27, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.58 | 74 | 90 |
 | -1.94, 63.47, 2.93 | Papenkasteel/brick_red_brussels + Papenkasteel/stone_white | 3.57 | 74 | 90 |
+| -0.57, 70.71, -0.20 | Papenkasteel/slate + Papenkasteel/zinc_roof | 4.36 | 72 | 86.8 |
 
-(7539 more in the JSON)
+(7385 more in the JSON)
 
-## opening (info, 1610)
+## opening (info, 1578)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
 | -12.10, 54.80, 1.50 | Papenkasteel/render_white | 0 + 0 + 1 | 0.2 |
 | -12.10, 55.00, 1.50 | Papenkasteel/render_white | 0 + 0 + 1 | 2.3 |
+| 1.54, 49.90, 1.50 | Papenkasteel/render_white | 0 + 0 + 1 | 1.909 |
 | 9.15, 54.80, 1.50 | Papenkasteel/render_white | 0 + 0 + 1 | 0.2 |
 | 9.15, 55.00, 1.50 | Papenkasteel/render_white | 0 + 0 + 1 | 2.3 |
 | -6.49, 53.37, 1.51 | Papenkasteel/render_white | 0 + 1 + 0 | 0.015 |
@@ -263,9 +264,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -9.30, 53.25, -9.20 | Papenkasteel/render_white | 0 + -1 + 0 | 1.092 |
 | -7.50, 53.37, -9.21 | Papenkasteel/render_white | 0 + 1 + 0 | 0.015 |
 | -6.40, 53.37, -9.21 | Papenkasteel/render_white | 0 + 1 + 0 | 0.015 |
-| -6.45, 53.25, -9.20 | Papenkasteel/render_white | 0 + -1 + 0 | 1.092 |
 
-(1570 more in the JSON)
+(1538 more in the JSON)
 
 ## backtoback (info, 3889)
 

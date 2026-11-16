@@ -98,6 +98,23 @@ Packed (report only): LOD0 5 (quantization at a ridge knob), LOD1 0, LOD2 27 (gl
 features.js (`papenkasteel`, alias `geleytsbeek`), places.js (Go to "Papenkasteel (chateau de Stalle)"), heroColliders.js,
 contactAudit.js, drive/collisionTest.js, falconFlight/cityFlyer.js, bootGate.js, aoKtx2List.js.
 
-## Browser checks still to do (BROWSER TURN)
-Load, draws / GPU A/B (?papenkasteel=0), LOD hand-overs moving, street / park / above / night views,
-`viewer.contactAudit("papenkasteel")` (joins), colliders (walk into the courtyard), Street View look-only for the gate side.
+## Browser verification (2026-11-16, port 8820, one tab; the owner was using the laptop: numbers noisy, A/B interleaved)
+- Load (tile E7): GLB + AO 436 ms, shaders 12.8 s in the background queue, shadow warm 0.53 s, before anything shows. Console:
+  no error, no warning from this model (only the city's usual ones).
+- Draws: +11 with the castle (171 vs 160 at 26 m, LOD0). GPU (debug/papenkasteelFlight.js bench, 6 interleaved cycles,
+  castle on / off; the UrbIS solids stay hidden in both): **+0.19 ms** above the courtyard (26 m, LOD0), **+0.33 ms** at eye
+  height on the drive, **+0.06 ms** at 200 m (LOD1; mostly hidden by the park's trees).
+- LOD hand-overs (city flight 900 m -> 40 m -> orbit -> out, 24 s): coverage 1.000 in every frame (no hole, no double
+  layer), wrong-material frames 0; median 16.7 ms, p99 16.9, worst 33.4 ms (7 single frames > 25 ms, none > 34).
+- Contact check `viewer.contactAudit("papenkasteel")`: first run 17 floating (door / French window thresholds 13-30 cm over
+  the ground, the plinth crossing door sills, the NE extension's foot over its ground, two end windows' sills) -> fixed
+  (thresholds run down into the ground as solid steps, the plinth broken at doors, closed plinth prisms, the annexes' foot
+  at the lowest ground of their four sides, the range's end windows raised): **0 blocking** (28 "opening" info items).
+- Colliders: `viewer.collisionTest("E7")` drive + walk 0 pass-through / 0 invisible hits round the castle (one 0.13 m2
+  "missing hero" cell at the west annex corner); third person walked from the drive into the courtyard: slid along the east
+  annex's end, stopped at the house front (docs/geleytsbeek/city_third_courtyard.jpg).
+- Night: about a third of the windows lit (was ~60 %: a private house; the glass's glow threshold 0.4 -> 0.68).
+- Street View (look-only): no imagery reaches the castle. Rue Papenkasteel at no. 101 (Oct 2020) shows the modern flats beside
+  the property; the Kinsendael side has no coverage; the garden front stays ESTIMATED. Nothing to correct from it.
+- Images: docs/geleytsbeek/city_above_sse.jpg (the Bing-like view), city_drive_east.jpg (eye height on the drive),
+  city_park_nw.jpg (from the lawn, north-west), city_night.jpg, city_far_200m.jpg, city_third_courtyard.jpg.
