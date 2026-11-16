@@ -44,6 +44,10 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
 11. **Police game**: car physics not fun; it must climb slopes, kerbs and go "many places" without feeling
    blocked; poles in the road and narrow roads block it (3-5). Police station wrong: real gate open, building
    too small vs reality. (later agent)
+   **policefeel (2026-11-16, branch claude/policefeel, not merged):** new handling in code (`viewer/drive/carFeel.js`,
+   docs/POLICE_FEEL.md, `?carfeel=old` / `?hedgecol=old`): suspension, tyres, counter-steer, handbrake, camera; kerbs on
+   steep streets / lawn banks / kerb islands ridden (the old 0.5 m-over-centre ledge rule blocked a 15 cm kerb on a 15 %
+   street), hedges soft, posts deflect, parked cars shoved. Offline checks done; browser route check pending.
 
 ## CURRENT STATE (2026-11-13) — read this first
 

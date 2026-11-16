@@ -381,8 +381,10 @@ export class Driver {
     this.chase.active = true;
     const t0 = performance.now();
     const c = this.state;
-    if (CARFEEL_OLD) stepCar(c, this.keys.read(), dt, this.env, HANDLING);
-    else { stepFeel(c, this.keys.read(), dt, this.env); if (this.nudged.size) this.flushNudges(); }
+    // (autoInput: a scripted { throttle, steer, handbrake } for route tests, docs/policefeel/; null = the keyboard)
+    const inp = this.autoInput || this.keys.read();
+    if (CARFEEL_OLD) stepCar(c, inp, dt, this.env, HANDLING);
+    else { stepFeel(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
     carLights.brake.value = c.braking ? 1 : 0;
     carLights.head.value = carLights.tail.value = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     this.car.update(c);
