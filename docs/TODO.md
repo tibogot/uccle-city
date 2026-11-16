@@ -29,6 +29,11 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    (see-through top), bad shading on flat roofs (stripes/bands), odd buildings (hero buildings log "library has no
    X: temporary material" for zinc_roof / glass_window / ... at load: fix the slot mapping). (citydefects)
 8. **Night shop on Place Saint-Job** missing (the white "night shop"). (citydefects)
+8b. **Recognisable shops on Place Saint-Job (owner 2026-11-16)**: the shopfronts must be recognisable to a local.
+   Start with **Le Relais Saint-Job** (famous restaurant, already in the city but generic), then every commerce on the
+   Place and Chaussée de Saint-Job: real façade colour, awning, terrace, signage text/colour/font style, window layout,
+   checked against recent photos / Street View (look only). White Night (Chée de Saint-Job 662) may have closed:
+   owner is finding photos; keep or remove after that.
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
