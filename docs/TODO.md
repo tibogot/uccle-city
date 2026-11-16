@@ -81,6 +81,15 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    asphalt (e.g. Rue Geleytsbeek, Avenue de la Chenaie). Fix behind its own switch, before/after for the owner.
    Cortenbosch leftovers: 1990s house type for the facade system, glass curtain-wall style (553227), herringbone
    pavers, "Private Weg / Cortenbosch" paint, railing/gate colliders, other school blocks' looks.
+8j. **AUTUMN LEAVES (owner idea 2026-11-17, later)**: falling leaves from the real tree species (colour by species +
+   date), leaves lying on the ground (more in gutters, kerbs, against walls, under trees; swept off busy roads) and
+   leaf PILES that react to the character, cars and the falcon. Plan: GPU compute particles (one buffer, one
+   instanced draw, fixed budget ~20-50k near the camera, recycled), wind from wind.js; ground layer = a cheap
+   decal/splat in the ground shader far + instanced leaf cards near; interaction via a small GPU "disturbance" field
+   (movers write position+velocity: player car, traffic near the camera, character feet, falcon wingbeats/stoop),
+   leaves get kicked up, spin, settle; piles = instanced cards with a height field that dents and scatters.
+   References: Ghost of Tsushima leaves/grass talks, RDR2 ground debris, Horizon wind, three.js GPGPU examples.
+   Budget < 0.5 ms GPU, no CPU per leaf, no extra lights; seasonal switch (Oct-Dec default, ?leaves=0/1).
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
