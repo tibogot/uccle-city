@@ -422,7 +422,14 @@ export class FalconFlight {
       const k = Math.min(1, sp / (Math.hypot(v.x, v.y, v.z) || 1)); v.x *= k; v.y *= k; v.z *= k;
       if (v.y > 1) v.y = 1;
     }
-    this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx: 0, ny: 1, nz: 0, vn: 0, speed: sp, wall: true, land: false, hard: false, under: false, tree: null, out: true };
+    this._setContact(0, 1, 0, 0, sp, true, false, false, false, null, true);
+  }
+  /** round 3's contact record: one object reused (a bird sliding on a roof touches it every substep) */
+  _setContact(nx, ny, nz, vn, speed, wall, land, hard, under, tree, out = false) {
+    const c = (this._c ??= {});
+    c.t = this.t; c.x = this.pos.x; c.y = this.pos.y; c.z = this.pos.z; c.nx = nx; c.ny = ny; c.nz = nz; c.vn = vn; c.speed = speed;
+    c.wall = wall; c.land = land; c.hard = hard; c.under = under; c.tree = tree; c.out = out;
+    this.contact = c;
   }
   _respond3(nx, ny, nz, kind, tree) {
     const v = this.vel, vyB = v.y, wall = kind === "wall", under = kind === "under", top = kind === "top";
@@ -443,7 +450,7 @@ export class FalconFlight {
     // (several substeps a frame: the frame reports its hardest contact, or a landing; the game clears it each frame)
     const c = this.contact;
     if (c && c.t > this.t - 0.06 && !land && (c.hard || c.vn > -vn)) return;
-    this.contact = { t: this.t, x: this.pos.x, y: this.pos.y, z: this.pos.z, nx, ny, nz, vn: -vn, speed, wall, land, hard, under, tree };
+    this._setContact(nx, ny, nz, -vn, speed, wall, land, hard, under, tree);
   }
 
   /** the horizontal outward normal of the solid round (x, y, z): the directions (8, at 0.7 and 1.5 m) where the bird's
