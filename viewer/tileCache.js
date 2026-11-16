@@ -24,6 +24,9 @@ function db() {
       q.onupgradeneeded = () => { for (const s of [STORE, META]) if (!q.result.objectStoreNames.contains(s)) q.result.createObjectStore(s, { keyPath: "key" }); };
       q.onsuccess = () => {
         const d = q.result;
+        // (perfgame round 3) another worker's upgrade waits for every open connection to close: close ours (the next
+        // request reopens), else its open hung until the 8 s deadline and the cache went off for the session
+        d.onversionchange = () => { d.close(); dbP = null; };
         if ([STORE, META].every((s) => d.objectStoreNames.contains(s))) return res(d);
         const next = d.version + 1; d.close(); open(next).then(res);
       };
@@ -100,12 +103,14 @@ function say(entry, lite, msg, key = "") { if (DEBUG) console.log(`[tilecache] $
 // all) held the start tile forever, the boot stuck on "Compiling shaders" (stage "tiles"). Every cache step now has a
 // deadline: past it the tile is a miss and is built (the cache is skipped for the rest of the session).
 let dead = false;
+const READ_MS = 2500;
 const deadline = (p, ms, what) => Promise.race([p, new Promise((res) => setTimeout(() => { if (!dead) console.warn(`[tilecache] ${what}: no answer in ${ms} ms, cache off for this session`); dead = true; res(null); }, ms))]);
 
 /** Build through the cache: returns the result (the caller then transfers its buffers). */
 export async function cached(entry, lite, base, build) {
   if (dead) entry = { ...entry, cache: false };
-  const hit = await deadline(cacheGet(entry, lite, base), 8000, `read ${entry.name}`);
+  // (perfgame round 3: 2.5 s, was 8: a hit answers in ~40-300 ms; an IndexedDB that hangs held the start tile 8 s)
+  const hit = await deadline(cacheGet(entry, lite, base), READ_MS, `read ${entry.name}`);
   if (hit) { hit.times = { ...(hit.times || {}), cache: true }; return hit; }
   const deps = new Map();
   recording.add(deps);

@@ -42,7 +42,7 @@ import { loadTrackProfile } from "./trackProfile.js";
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
-import { Lighting, PRESETS } from "./lighting.js";
+import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
 import { createPipeline } from "./post.js";
 import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- upscale (docs/UPSCALE.md): TAAU + dynamic resolution
 import { buildTrees } from "./trees.js";
@@ -637,7 +637,7 @@ const HEROS = params.get("heros") !== "old";
 const HEROS_TILE = { carves: [], paths: [] };
 const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("paint") : undefined;
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
-function tileData(entry, lite = false, viaBoot = false) {
+function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
     surface: ROAD_SURFACES, pits: params.get("pits") !== "0",   // ?pits=0: no tree pits (A/B)
     heros: HEROS ? HEROS_TILE : null,                                                                // Square des Heros: the park cut out of the UrbIS square surface, its steps' carves (viewer/heros/herosSurface.js)
@@ -666,7 +666,7 @@ function tileData(entry, lite = false, viaBoot = false) {
   if (pre) { tilePrefetch.delete(key); pumpBoot(); return pre; }
   const local = () => import("./tileData.js").then((m) => (lite ? m.buildLiteData : m.buildTileData)(entry, DATA.href));
   if (!workers.length) return local();
-  const w = lite && liteWorker ? liteWorker : viaBoot && bootWorker ? bootWorker : workers.reduce((a, b) => (b.busy < a.busy ? b : a));   // (boot3: the boot worker)
+  const w = lite && liteWorker ? liteWorker : viaBoot && bootWorker ? bootWorker : viaHold && holdWorkers.length ? holdWorkers.reduce((a, b) => (b.busy < a.busy ? b : a)) : workers.reduce((a, b) => (b.busy < a.busy ? b : a));   // (boot3: the boot worker; perfgame: the hold workers, the start tile's worker left alone)
   return new Promise((resolve, reject) => {
     const id = ++reqId;
     w.busy++;
@@ -676,11 +676,11 @@ function tileData(entry, lite = false, viaBoot = false) {
   });
 }
 /** start the worker builds of these manifest tiles now (their loadTile takes the result) */
-function prefetchTiles(entries, lite = false, viaBoot = false) {
+function prefetchTiles(entries, lite = false, viaBoot = false, viaHold = false) {
   for (const e of entries) {
     const key = `${e.name}|${lite ? 1 : 0}`;
     if (tilePrefetch.has(key)) continue;
-    const p = tileData(e, lite, viaBoot);
+    const p = tileData(e, lite, viaBoot, viaHold);
     p.catch(() => tilePrefetch.delete(key));
     tilePrefetch.set(key, p);
   }
@@ -715,8 +715,11 @@ function bootPrefetch(manifest, entry) {
   if (FAST_START) {
     const [sx, sz] = SPAWN ?? c(entry);
     const gap = (t) => Math.max(t.bounds.x[0] - sx, 0, sx - t.bounds.x[1], t.bounds.z[0] - sz, 0, sz - t.bounds.z[1]);
-    const near = full.filter((t) => t !== entry && gap(t) <= 300).sort((a, b) => gap(a) - gap(b)).slice(0, 3);
-    if (near.length) { openHoldWorkers(2); prefetchTiles(near); }
+    // (round 3: the whole ring when the loader will wait for it after a boot, ?settlering=old: the near ones; two per
+    // hold worker, never on the start tile's worker: four builds landing together on one worker all finished late)
+    const ringAll = params.get("settlering") !== "old" && params.get("settlejobs") !== "loads";
+    const near = full.filter((t) => t !== entry && (ringAll || gap(t) <= 300)).sort((a, b) => gap(a) - gap(b)).slice(0, 4);
+    if (near.length) { openHoldWorkers(2); prefetchTiles(near, false, false, true); }
   }
 }
 // ONE build at a time per worker: a worker runs every request it holds at once (its handler awaits fetches), so four
@@ -1650,12 +1653,14 @@ async function main() {
   const BOOT_LITE_RING = params.get("bootlite") !== "0";          // ?bootlite=0: the boot's tiles as before (A/B)
   let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
+  sunCache.fader = fader;                // (perfgame round 3: the sun shadow cache is redrawn while a tile fades)
   const retire = async (groups, dispose) => {
-    if (!TILE_FADE) { dispose(); return; }
+    markSunShadowDirty();
+    if (!TILE_FADE) { dispose(); markSunShadowDirty(); return; }
     const px = groups.map(fadeProxies).filter(Boolean);     // fading copies it has none of yet: built first
     if (px.length && compileFor) await compileFor(px, { first: true });
     let n = groups.length;
-    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) dispose(); });
+    for (const g of groups) fader.fade(g, -1, () => { if (--n === 0) { dispose(); markSunShadowDirty(); } });
   };
   const stream = async (liteFirst = false) => {   // liteFirst: skip the full tiles this step (boot warm-up)
     // the manifest tile under (or nearest to) the player / orbit target, loaded or not
@@ -1711,6 +1716,7 @@ async function main() {
       const t0 = performance.now();
       try {
         world.tiles.push(await loadTile(t, { layers, contourOn, verbose: false }));   // (fades in by itself)
+        markSunShadowDirty();
         const old = lite.get(t.name);
         lite.delete(t.name);
         if (old) retire([old.group], old.dispose);
@@ -1833,6 +1839,11 @@ async function main() {
   // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
   if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
   if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
+  // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
+  // Pipelines.isReady (called on EVERY draw) and restore what they saw at their open: windows that overlap out of order
+  // leave a closed window's wrapper in place for good (~0.1 ms a frame, measured in the drive trace). isReady is only
+  // a counter there: the instance override is dropped every 3 s (an open window just stops counting its skipped draws)
+  if (params.get("readysweep") !== "old") setInterval(() => { const P = renderer._pipelines; if (P && Object.prototype.hasOwnProperty.call(P, "isReady")) delete P.isReady; }, 3000);
   closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
   if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
@@ -1879,7 +1890,9 @@ async function main() {
   // pipeline compiling (asyncPipes.js), and `quiet` consecutive frames rendered so (the frames behind the play loader
   // are the warm-up: whatever the first view draws builds its shader there). Reports progress to the play loader.
   // At most maxMs (a slow machine still gets to play). Returns what it waited for.
-  let liteHold = 0, bootSettled = false, lastLongFrame = 0;
+  let liteHold = 0, fullHold = 0, bootSettled = false, lastLongFrame = 0;
+  const HOLD_PARALLEL = params.get("holdparallel") !== "old";
+  const SETTLE_RING = params.get("settlering") !== "old";
   const HOLD_THROTTLE = params.get("holdthrottle") !== "old", SETTLE_ALL = params.get("settlejobs") !== "loads";   // (bootHoldPending: declared before the cover lifts)
   try { new PerformanceObserver((l) => { for (const e of l.getEntries()) if (e.duration > 250) lastLongFrame = performance.now(); }).observe({ type: "long-animation-frame" }); } catch { /* no LoAF: settle on the queue only */ }
   const areaReady = async ({ x, z, near = 300, liteNear = 600, nearModels = 900, quiet = 8, maxMs = 45000, label = "", settle = !bootSettled } = {}) => {
@@ -1892,7 +1905,9 @@ async function main() {
     const home = built.find((t) => gap(t) === 0) || built[0], [hx, hz] = ctr(home);
     const ringOf = (t) => { const [tx, tz] = ctr(t); return Math.round(Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T); };
     // (only tiles the streaming will load in full: the player's tile's ring)
-    const needFull = built.filter((t) => gap(t) <= near && ringOf(t) <= ring).map((t) => t.name);
+    // (perfgame round 3, ?settlering=old: not): right after a boot (settle) the WHOLE ring in full: what is left of it
+    // would otherwise stream in during the first seconds of play (main-thread slices + compiles: 1 % low 12 fps measured)
+    const needFull = built.filter((t) => (gap(t) <= near || (settle && SETTLE_RING)) && ringOf(t) <= ring).map((t) => t.name);
     // the far tiles the first views can reach (within liteNear of the point; the rest of the far ring fades in later, km away)
     const needLite = built.filter((t) => { const [tx, tz] = ctr(t); return Math.max(Math.abs(tx - hx), Math.abs(tz - hz)) / T <= far + 0.01 && gap(t) <= liteNear; }).map((t) => t.name);
     const has = (n) => world.tiles.some((t) => t.name === n);
@@ -1901,6 +1916,22 @@ async function main() {
     const st = { full: 0, lite: 0, jobs: 0, pipes: 0 };
     while (performance.now() - t0 < maxMs) {
       if (!busy) busy = (async () => { while (await stream()); })().finally(() => { busy = null; });
+      // (perfgame round 3, ?holdparallel=old: one full tile at a time) the FULL tiles the area needs, up to 3 at a time
+      // beside the stream (which adds one per step, each waiting on its compiles and its main-thread slices: ~2-5 s a
+      // tile one after another under the loader, measured)
+      if (HOLD_PARALLEL) for (const n of needFull) {
+        if (fullHold >= 3) break;
+        if (has(n) || pending.has(n)) continue;
+        const t = built.find((e) => e.name === n);
+        pending.add(n); fullHold++;
+        const t0 = performance.now();
+        loadTile(t, { layers, contourOn, verbose: false }).then((tile) => {
+          world.tiles.push(tile); markSunShadowDirty();
+          const old = lite.get(n); lite.delete(n);
+          if (old) retire([old.group], old.dispose);
+          log(`+ tile ${n} (${(performance.now() - t0).toFixed(0)} ms, under the loader)`);
+        }, (e) => log(`tile ${n} failed: ${e.message}`)).finally(() => { pending.delete(n); fullHold--; });
+      }
       // the far tiles the area needs, 4 at a time beside the stream (it adds them 2 per full tile step: ~25 s for a ring)
       for (const n of needLite) {
         if (liteHold >= 4) break;
