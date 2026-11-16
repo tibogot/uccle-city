@@ -52,6 +52,11 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    into buildings, smooth damping, terrain follow. (later agent)
 10. **Falcon game**: collision bugs (falls, then shoots back up), controls hard. Simpler and friendlier
    (assisted flight, auto level, clear feedback), not more complex. (later agent)
+   **falconfix (2026-11-16, branch claude/falconfix, not merged):** collisions round 3 (no launch upward, no pops, a
+   tumble without pull-up, out of solids / pins), the flight assist (mouse aim or A / D turns, wings level and altitude
+   hold hands off, auto-flapping, Shift stoop with a pull-out, ground / obstacle avoid), steady camera, HUD climb rate +
+   assist state, free flight starts on the eyrie. docs/falconfix/README.md; `?falconctl=old`, `?falconcol=old`,
+   `?falconavoid=0`, `?falconstart=old`. Offline checks pass (tools/falconAssistTest.mjs); browser check pending.
 11. **Police game**: car physics not fun; it must climb slopes, kerbs and go "many places" without feeling
    blocked; poles in the road and narrow roads block it (3-5). Police station wrong: real gate open, building
    too small vs reality. (later agent)
