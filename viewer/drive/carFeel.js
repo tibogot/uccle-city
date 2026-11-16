@@ -32,8 +32,8 @@ export const FEEL = {
   brake: 11,           // m/s²
   coast: 0.7, rolling: 0.15, drag: 0.0011,
   mu: 1.12,            // tyre grip (g) on a paved surface
-  muTerrain: 0.78,     // on bare terrain (grass, verges, park paths)
-  terrainRoll: 1.1,    // extra rolling drag on terrain (m/s²)
+  muTerrain: 0.92,     // on bare terrain (grass, verges, park paths; also some paved yards drawn as terrain: kept mild)
+  terrainRoll: 0.5,    // extra rolling drag on terrain (m/s²)
   frontGrip: 0.93,     // front / rear grip balance (< 1: a touch of understeer at the limit = stable)
   peakSlip: 0.14,      // rad: the tyre's peak (sin(1.5 atan(B a)) peaks here)
   cgHeight: 0.52, transfer: 0.45,   // load transfer (m; share of the real one kept: arcade)
@@ -159,18 +159,20 @@ export function stepFeel(c, input, dt, env, F = FEEL) {
     const V = Math.hypot(u, v);
     const fwdMove = u > 0.5;
     // pedals: W forward / S brake then reverse (the old driveSpeed rules)
-    let uT = u;
-    const braking = u * throttle < 0;
-    const m = Math.abs(u);
+    // (a crawl against the pedal = at rest: rolled back a little on a hill, W drives up again; browser check 2026-11-16:
+    // without this, gravity re-made the crawl every substep and the car sat on a 10 % street with W held)
+    const u0 = u * throttle < 0 && Math.abs(u) < 0.3 ? 0 : u;
+    let uT = u0;
+    const braking = u0 * throttle < 0;
+    const m = Math.abs(u0);
     const decel = F.rolling + (c.surface ? F.terrainRoll : 0) + (!throttle ? F.coast : braking ? Math.abs(throttle) * F.brake : 0);
     const coasting = Math.max(0, m - decel * h) / (1 + F.drag * m * h);
-    if (!throttle || braking) uT = Math.sign(u) * coasting;
+    if (!throttle || braking) uT = Math.sign(u0) * coasting;
     else {
-      const limit = throttle < 0 ? F.reverseSpeed : F.topSpeed * (c.surface ? 0.7 : 1);
+      const limit = throttle < 0 ? F.reverseSpeed : F.topSpeed * (c.surface ? 0.8 : 1);
       const acc = F.power * F.powerSpeed / Math.max(F.powerSpeed, m);
       uT = Math.sign(throttle) * Math.min(Math.max(limit, coasting), coasting + Math.abs(throttle) * acc * h);
     }
-    if (u * throttle < 0 && Math.abs(u) < 0.05) uT = 0;
     let axP = (uT - u) / h;
     if (hb && Math.abs(u) > 0.05) { const d = Math.min(Math.abs(u) / h, F.handbrakeDecel); axP -= Math.sign(u) * d * 0.5; }
     // traction: the pedals' pull is limited by the grip under the wheels that touch
