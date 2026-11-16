@@ -9,7 +9,7 @@
 // first accident does not stall a frame.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, normalLocal, attribute, float, vec3, smoothstep, sin, color, max } from "three/tsl";
-import { loadPack, packMaterial, FLEET_SOURCE } from "../drive/carPacks.js";
+import { loadPack, packMaterial, FLEET_SOURCE, standingSeeThrough } from "../drive/carPacks.js";
 import { KIND } from "../drive/colliders.js";
 
 export const hazard = uniform(0);                   // the damaged cars' hazard lights 0 / 1 (blinks, set by the game)
@@ -17,7 +17,7 @@ const CONES = 8;
 
 /** a crumple: the corner (sx: +1 left / -1 right, sz: +1 front / -1 back) pushed in by up to `depth` m */
 function damagedMaterial(paint, rich, { sx = 1, sz = 1, depth = 0.16 } = {}) {
-  const m = packMaterial({ paint, rich, clearcoat: true, seeThrough: true });
+  const m = packMaterial({ paint, rich, clearcoat: true, seeThrough: standingSeeThrough(rich) });
   const p = positionLocal, kind = attribute("_kind", "float").add(0.5).floor();
   // weight: near the chosen end and side, falling off over ~0.9 m; a wavy push (sheet metal folds)
   // (sx, sz, depth as uniforms: every damaged car has the same node graph, so one pipeline serves them all)
@@ -100,7 +100,7 @@ export class Props {
   addCar({ x, z, heading, type = "hatch_c", paint = 0x8a1414, damage = null, solid = true, tilt = 0, compileOnly = false }) {
     const car = this.pack.cars.find((c) => c.id === type) || this.pack.cars[0];
     const col = new THREE.Color(paint);
-    const mat = damage ? damagedMaterial(col, this.pack.rich, damage) : packMaterial({ paint: col, rich: this.pack.rich, clearcoat: true, seeThrough: true });
+    const mat = damage ? damagedMaterial(col, this.pack.rich, damage) : packMaterial({ paint: col, rich: this.pack.rich, clearcoat: true, seeThrough: standingSeeThrough(this.pack.rich) });
     const L = car.lods[Math.min(FLEET_SOURCE === "cars2" ? 0 : 1, car.lods.length - 1)];   // (cars2: LOD1 is a 30 m+ model)
     const g = new THREE.Group(); g.name = `police-prop-${type}`;
     const body = new THREE.Mesh(L.Body, mat); body.castShadow = true; body.receiveShadow = true; g.add(body);
