@@ -36,6 +36,7 @@ body.fg-on .fg { display: block; } body.photo .fg { visibility: hidden; }
 .fg .fg-sta u { display: block; height: 100%; background: #7fd18b; width: 100%; transition: width .25s linear; }
 .fg .fg-sta.low u { background: #e0705a; }
 .fg .fg-chip { display: none; margin-top: 7px; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: #1a1406; background: #ffcc33; border-radius: 6px; padding: 3px 7px; text-align: center; }
+.fg .fg-assist { font-size: 11.5px; margin-top: 4px; color: #a9b4c0; } .fg .fg-assist.warn { color: #ffcc33; font-weight: 700; }
 .fg .fg-chip.on { display: block; } .fg .fg-chip.stoop { background: #79b4ff; } .fg .fg-chip.carry { background: #ffcc33; } .fg .fg-chip.perch { background: #6fdc8c; }
 .fg .fg-hunger { position: absolute; left: 16px; top: 168px; width: min(260px, calc(100vw - 32px)); padding: 10px 12px; display: none; }
 .fg .fg-hunger.on { display: block; }
@@ -155,13 +156,13 @@ export class FalconHunt {
       <div class="fg-tgt"><i></i><i></i><i></i><i></i><span></span><b>F</b></div>
       <div class="fg-banner"><h2>CAUGHT</h2><p></p></div>
       <div class="fg-card fg-hunger"><h4>The eyases</h4>${[0, 1, 2].map((i) => `<div class="fg-eyas" data-e="${i}"><span>eyas ${i + 1}</span><div><u></u></div></div>`).join("")}</div>
-      <div class="fg-card fg-gauge"><b>0</b><small>km/h</small><div class="fg-row"><i>height</i><span class="fg-alt">0 m</span></div><div class="fg-row"><i>load</i><span class="fg-n">1.0 g</span></div>
-        <div class="fg-sta"><u></u></div><div class="fg-chip"></div></div>`;
+      <div class="fg-card fg-gauge"><b>0</b><small>km/h</small><div class="fg-row"><i>height</i><span class="fg-alt">0 m</span></div><div class="fg-row"><i>climb</i><span class="fg-vy">0.0 m/s</span></div><div class="fg-row"><i>load</i><span class="fg-n">1.0 g</span></div>
+        <div class="fg-sta"><u></u></div><div class="fg-assist"></div><div class="fg-chip"></div></div>`;
     document.body.append(el);
     const q = (s) => el.querySelector(s);
     this.e = { g: q(".fg-g"), flash: q(".fg-flash"), tgt: q(".fg-tgt"), tgtL: q(".fg-tgt span"), banner: q(".fg-banner"), bannerP: q(".fg-banner p"),
       hunger: q(".fg-hunger"), eyas: [...el.querySelectorAll(".fg-eyas")], eyasU: [...el.querySelectorAll(".fg-eyas u")],
-      speed: q(".fg-gauge b"), alt: q(".fg-alt"), n: q(".fg-n"), sta: q(".fg-sta"), staU: q(".fg-sta u"), chip: q(".fg-chip") };
+      speed: q(".fg-gauge b"), alt: q(".fg-alt"), vy: q(".fg-vy"), assist: q(".fg-assist"), n: q(".fg-n"), sta: q(".fg-sta"), staU: q(".fg-sta u"), chip: q(".fg-chip") };
   }
   show(on) { document.body.classList.toggle("fg-on", on); if (!on) this.e.tgt.classList.remove("on"); }
   set(k, el, v, prop = "textContent") { if (this.cache.get(k) === v) return; this.cache.set(k, v); if (prop === "width") el.style.width = v; else el[prop] = v; }
@@ -215,6 +216,9 @@ export class FalconHunt {
   steer(g, dt) {
     const w = g.window, f = g.f;
     if (!this.assist || !w || w.i < 0 || w.d > 70 || w.angle > 0.8 || w.closing < 4 || g.hitStop > 0) return;
+    // (falconfix) not while the flight assist steers clear of a roof / crown: the lead point does not pull the bird
+    // into the trees (browser check: a low street pass was turned into the crowns by a pigeon 55 m off)
+    if (g.assist && g.assist.avoiding > 0.3) return;
     const T = this.mux.pos(w.i, this._p), U = this.mux.vel(w.i, this._w);
     const tti = clamp(w.d / Math.max(w.closing, 1), 0, 2);
     let ax = T.x + U.x * tti - f.pos.x, ay = T.y + U.y * tti - f.pos.y, az = T.z + U.z * tti - f.pos.z;
@@ -223,6 +227,7 @@ export class FalconHunt {
     const vx = f.vel.x / V, vy = f.vel.y / V, vz = f.vel.z / V;
     const c = clamp(vx * ax + vy * ay + vz * az, -1, 1), ang = Math.acos(c);
     if (ang < 1e-4) return;
+    g.steerT = g.t;                         // (the flight assist follows this path, falconGame.js)
     const k = this.assist * smooth(70 - w.d, 0, 45) * (1 - smooth(w.angle, 0.55, 0.8));
     const turn = Math.min(ang, 0.45 * k * dt);
     // slerp the direction by `turn` toward the lead, keep the speed
@@ -272,6 +277,13 @@ export class FalconHunt {
     this.set("spd", E.speed, String(Math.round(V * 3.6)));
     this.set("alt", E.alt, `${Math.round(alt ?? g.agl ?? 0)} m`);
     this.set("n", E.n, `${Math.max(0, g.mode === "fly" ? f.n : 1).toFixed(1)} g`);
+    // (falconfix) the climb rate (arrows) and what the flight assist is doing
+    const vy = g.mode === "fly" && !fl.intro ? f.vel.y : 0;
+    this.set("vy", E.vy, `${vy > 0.4 ? "▲ " : vy < -0.4 ? "▼ " : ""}${Math.abs(vy).toFixed(1)} m/s`);
+    const A = g.assist, am = A && g.mode === "fly" && !fl.intro ? A.mode : "";
+    const AT = { hold: "holding height", turn: "turning", climb: "climbing", descend: "descending", stoop: "stooping", pullout: "pulling out", avoid: "avoiding an obstacle", slow: "too slow: flapping", tumble: "crashed: recovering", strike: "strike assist", level: "level" };
+    this.set("as", E.assist, am ? `${AT[am] ?? am}${f.stamina < 0.15 ? " · tired" : ""}` : "");
+    this.cls("as", E.assist, "warn", am === "avoid" || am === "tumble" || am === "slow" || am === "pullout");
     this.set("sta", E.staU, `${(clamp(f.stamina, 0, 1) * 100).toFixed(0)}%`, "width");
     this.cls("sta", E.sta, "low", f.stamina < 0.15);
     const chip = fl.intro ? "" : g.mode === "perch" ? "PERCHED · E / Space take off" : g.mode === "land" ? "LANDING" : fl.bird.prey ? "PREY IN THE TALONS" : f.fold > 0.7 && f.V > 30 ? "STOOP" : "";

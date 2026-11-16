@@ -17,25 +17,28 @@ it from the start menu (**P**) or with `?game=falcon` (`&gmode=free` for free fl
 
 ## Controls
 
-These are the falcon flight's own controls (`viewer/falconFlight/falconInput.js`):
+These are the falcon flight's own controls (`viewer/falconFlight/falconInput.js`). Since **falconfix** (2026-11-16,
+`docs/falconfix/README.md`) the **flight assist** (`viewer/falconFlight/flightAssist.js`) flies the bird where the player
+points: the old raw stick controls are `?falconctl=old`.
 
-| key | action |
+| key | action (assisted, the default) |
 |---|---|
-| W / S | nose down / nose up |
-| A / D | bank left / right |
-| Space | flap (costs stamina) |
-| Shift | tuck: the stoop |
-| C | half fold, for a fast glide |
-| Q | flare |
+| click, then the mouse | aim: the falcon turns and climbs / descends toward the aim; the camera looks along it |
+| A / D | turn left / right (the bird banks by itself; let go: wings level) |
+| W / S | a gentle descent / climb (let go: the bird holds that height) |
+| hands off | wings level, the height held (rising air lifts it), light wingbeats keep ~50 km/h |
+| Space | climb: full wingbeats (costs stamina) |
+| Shift | the stoop (W steeper, S shallower); let go: wings open, pull-out, then the height is held |
+| C / Q | half fold (a fast glide) / brake (flare) |
 | F | talons (with aim assist on, they also come out by themselves in the last half second of a good strike) |
 | E | land on the perch in reach. With prey, near the eyrie, this lands on the eyrie's ledge = the delivery |
 | V | chase / head camera |
-| click | mouse aim |
 
 The kit adds: **Esc / P** pause, **Y / X** accept / ignore the falcon's call, **M** map. Losing the pointer lock (Esc in
 mouse aim) pauses too. The intro (the hop from the scrape to the ledge, the launch) can be skipped with **Space**.
 
-Start menu options (remembered per game): **Aim assist in the strike** (on by default) and **Sound: the wind,
+Start menu options (remembered per game): **Aim assist in the strike** (on by default), **Flight assist: steer clear
+of roofs, trees and the ground** (on by default; `?falconavoid=0`) and **Sound: the wind,
 wingbeats, the falcon's call** (OFF by default, as the owner asked; it is the flight's own `falconAudio.js`. The kit's
 radio beeps follow the kit's volume setting).
 
