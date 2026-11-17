@@ -69,8 +69,16 @@ Reports: docs/vivier/bridge_audit_old.json, bridge_audit.json.
   cutting walls under the slab where the DTM beside the deck leaves the floor; the floor between them at the ballast's
   foot, walled (no 1:1 taper: the taper had cut Avenue Latérale 1.8 m down). Only Vivier d'Oie qualifies today; the
   hand plan (Saint-Job) keeps priority.
+- The free edges and the edges over a drop are pushed out to cover what the streets draw there: UrbIS's street
+  surfaces and the road's own lane band (+ its junction arms' first 15 m) reach 1-2.5 m past UrbIS's bridge polygon
+  over the tracks (min 1.2 m, max 4 m). Street vertices > 1 m over the ground beside the deck (40 m round it): 34 -> 5
+  (one skirt vertex of a refined sidewalk polygon, 1.4 m past the east fascia, 0.75 m tall: left).
 - Plan decks: railing on a free edge wherever it drops more than a kerb (0.15 m; abutment edges 0.8 m); the paving
   between the measured street surfaces sits a kerb over the nearest drawn street (tileData.js streetTop).
+- Plan decks carry their DRAWN top on a 1 m grid (`deckTopGrid`: the street drawn there, else the paving): the walker
+  and the car stood on the fitted top, up to 0.45 m over the drawn street (the road stage's 6 m height field). J5,
+  walked top - drawn street p5 / median / p95: before -0.19 / 0.06 / 0.45 m, after -0.03 / -0.03 / 0.07 m. Also on the
+  Carsoel deck (H6).
 - `railData.js`: no UrbIS slab where an OSM deck is drawn over its centroid nor in a cutting; the catenary capped under
   every OSM deck's soffit (`deckSoffitCap`), no mast under a deck.
 - `main.js`: furniture, data-layer points, parked cars and two-wheelers on a deck stand on the deck.
