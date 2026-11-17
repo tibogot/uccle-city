@@ -18,6 +18,9 @@ globalThis.addEventListener = () => {};
 const { createFeelState, stepFeel } = await import("../viewer/drive/carFeel.js");
 const { createCtlState, stepCtl } = await import("../viewer/drive/carCtl.js");
 const { ChaseCamera, CAMERA } = await import("../viewer/drive/chaseCamera.js");
+const { createCarEnv } = await import("../viewer/drive/carEnv.js");
+const { createRailMovers, railMoverSource } = await import("../viewer/drive/movers.js");
+const { HANDLING } = await import("../viewer/drive/carPhysics.js");
 
 const MODELS = {
   old: { make: createFeelState, step: stepFeel },
@@ -330,6 +333,59 @@ function table(title, head, data) {
   check("camera turns", energy(res.turnsnew) < energy(res.turnsold), JSON.stringify([res.turnsold, res.turnsnew]));
   console.log(`
   camera HF energy (pos², new / old): bumpy ${fmt(energy(res.bumpynew) / energy(res.bumpyold) * 100, 0)} %, turns ${fmt(energy(res.turnsnew) / energy(res.turnsold) * 100, 0)} %`);
+}
+// ---------------------------------------------------------------- 10. trams / trains solid (movers.js -> carEnv.js)
+// A fake tram in the tramline.js bodies() format: 32 m along +x (front at fx, back toward -x), 4 m boxes, 2.4 m wide.
+{
+  const tram = { fx: 16, z: 30, y0: 0, v: 0,
+    bodies(x, z, r, out, o = 0) {
+      let n = 0;
+      for (let k = 0; k < 8; k++) {
+        const cx = this.fx - 2 - 4 * k;
+        if ((cx - x) ** 2 + (this.z - z) ** 2 > (r + 3) ** 2) continue;
+        const q = o + n * 7;
+        out[q] = cx; out[q + 1] = this.z; out[q + 2] = Math.PI / 2; out[q + 3] = 1.2; out[q + 4] = (k === 0 || k === 7 ? 1 : -1) * 2.05; out[q + 5] = this.y0 - 0.1; out[q + 6] = 3.4;
+        n++;
+      }
+      return n;
+    } };
+  const movers = createRailMovers([() => tram]);
+  const mk = (x, z, h) => {
+    const c = createCtlState(x, z, h), env = createCarEnv({ sets: () => [], ground: flat, handling: HANDLING, feel: true, movers });
+    c.y = 0; return { c, env, step: (inp) => stepCtl(c, inp, DT, env) };
+  };
+  const inside = (c) => Math.abs(c.z - tram.z) < 1.2 + 0.9 && c.x < tram.fx && c.x > tram.fx - 32;
+  const data = [];
+  // a) 40 km/h head-on into its side
+  { tram.fx = 16; tram.y0 = 0; const k = mk(0, 0, 0); let maxZ = -1e9, nan = false;
+    for (let i = 0; i < 6 / DT; i++) { k.step({ throttle: 1, steer: 0 }); maxZ = Math.max(maxZ, k.c.z); if (!Number.isFinite(k.c.x + k.c.z + k.c.speed)) nan = true; }
+    const gap = tram.z - 1.2 - maxZ;
+    data.push(["40+ km/h into its side", `stopped ${fmt(gap, 2)} m from its centre-side (car half 2.15)`, nan ? "NaN" : `speed then ${fmt(k.c.speed * 3.6, 1)} km/h`]);
+    check("tram head-on", !nan && gap > 1.9, data[data.length - 1].join(" ")); }
+  // b) a car stopped across the track, the tram comes at 8 m/s: pushed out, no explosion
+  { tram.fx = -2; const k = mk(3, 30, 0); let vmax = 0;
+    for (let i = 0; i < 4 / DT; i++) { tram.fx += 8 * DT; k.step({ throttle: 0, steer: 0 }); vmax = Math.max(vmax, Math.hypot(k.c.speed, k.c.vx, k.c.vz)); }
+    data.push(["tram at 29 km/h into a stopped car", inside(k.c) ? "INSIDE the tram" : `pushed to ${fmt(k.c.x, 1)}, ${fmt(k.c.z, 1)}`, `car speed max ${fmt(vmax * 3.6, 1)} km/h`]);
+    check("tram push", !inside(k.c) && vmax < 12, data[data.length - 1].join(" ")); }
+  // c) a 15 deg scrape along its side at 30 km/h: slides on
+  { tram.fx = 40; const k = mk(-20, 25.5, Math.PI / 2 - 0.26); let inS = false;
+    for (let i = 0; i < 3 / DT; i++) { k.step({ throttle: k.c.speed < 8.3 ? 1 : 0.3, steer: 0 }); if (inside(k.c)) inS = true; }
+    data.push(["30 km/h, 15° scrape along its side", inS ? "went INSIDE" : `slid on, x ${fmt(k.c.x, 1)}`, `speed ${fmt(k.c.speed * 3.6, 1)} km/h`]);
+    check("tram scrape", !inS && k.c.x > 0, data[data.length - 1].join(" ")); }
+  // d) a train on a bridge 6 m over the road: the car passes under
+  { tram.fx = 16; tram.y0 = 6; const k = mk(0, 0, 0);
+    for (let i = 0; i < 5 / DT; i++) k.step({ throttle: 1, steer: 0 });
+    data.push(["rail bridge 6 m over the road", k.c.z > 40 ? "passes under" : "BLOCKED", ""]);
+    check("bridge", k.c.z > 40, ""); tram.y0 = 0; }
+  // e) the walker's capsule source
+  { tram.fx = 16; const src = railMoverSource(movers); const D = new Float32Array(90); let ns = 0;
+    const contacts = { d: D, slot: () => (ns < 10 ? (ns++) * 9 : -1) };
+    src.capsule([0, 0.4, 30.5, 0, 1.4, 30.5, 0.3], contacts);
+    data.push(["walker capsule inside the tram", ns ? `pushed (${fmt(D[0], 2)}, ${fmt(D[2], 2)}) ${fmt(D[3], 2)} m` : "NO contact", ""]);
+    check("walker", ns > 0 && D[2] > 0.9, ""); }
+  // cost: the boxes per frame
+  { const k = mk(0, 20, 0), t0 = performance.now(); for (let i = 0; i < 20000; i++) k.step({ throttle: 0, steer: 0 }); data.push(["cost: car step next to a tram", fmt((performance.now() - t0) / 20000 * 1000, 1) + " µs / frame", ""]); }
+  table("10. Trams / trains solid (fake tram in the tramline.js bodies() format)", ["case", "result", ""], data);
 }
 // ---------------------------------------------------------------- 9. cost
 {

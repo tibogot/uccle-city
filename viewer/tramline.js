@@ -359,6 +359,31 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   // tram passes a shadowed lamp): preallocated, no per-frame garbage
   const drawn = { n: 0, xz: new Float32Array(MAX_TRAMS * 2), rear: new Float32Array(MAX_TRAMS * 3) };   // (night round 3: rear x z + rail y, the tram's lights)
   let running = 0;
+  // (car control round: the trams are solid for the player's car / the walker, viewer/drive/movers.js) the running trams
+  // within near.r this frame (trip, d) and bodies(): oriented boxes along each body, front at d, back along the track
+  const nearT = new Array(64), nearD = new Float64Array(64);
+  let nearN = 0, tramLen = 0;
+  const bodies = (x, z, r, out, o = 0) => {
+    if (!tramLen) {
+      const M = fleet && model?.layout?.modules;
+      tramLen = M ? M.reduce((m, q) => Math.max(m, (q.front ?? 0) + q.length), 0) || 32 : MODS * MOD_L + (MODS - 1) * GAP;
+    }
+    const max = out.length / 7, seg = 4, ns = Math.ceil(tramLen / seg);
+    let n = 0;
+    for (let i = 0; i < nearN; i++) {
+      const sh = shapes[nearT[i].shape], d = nearD[i];
+      const f = at(sh, d - tramLen / 2);
+      if ((f[0] - x) ** 2 + (f[1] - z) ** 2 > (r + tramLen / 2 + 2) ** 2) continue;
+      for (let k = 0; k < ns && o / 7 + n < max; k++) {
+        const p = at(sh, d - seg / 2 - k * seg), q = o + n * 7;
+        if ((p[0] - x) ** 2 + (p[1] - z) ** 2 > (r + 3) ** 2) continue;
+        out[q] = p[0]; out[q + 1] = p[1]; out[q + 2] = Math.atan2(Math.cos(p[2]), -Math.sin(p[2]));
+        out[q + 3] = WIDTH / 2 + 0.05; out[q + 4] = (k === 0 || k === ns - 1 ? 1 : -1) * (seg / 2 + 0.05);   // (< 0: an inner box, movers.js) out[q + 5] = railTop(p[0], p[1]) - 0.1; out[q + 6] = H + 0.2;
+        n++;
+      }
+    }
+    return n;
+  };
 
   const placeTrip = (t, s, d, flipCab) => {
     const shape = shapes[t.shape];
@@ -377,7 +402,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
     holdTrips(T);                                                      // (police game: a blocked track)
     near.x = camPos.x; near.z = camPos.z;
     const s = { cab: 0, mid: 0 };
-    drawn.n = 0;
+    drawn.n = 0; nearN = 0;
     fleet?.begin(camera, camPos);
     running = 0;
     for (const t of trips) {
@@ -391,6 +416,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       drawn.xz[drawn.n * 2] = x; drawn.xz[drawn.n * 2 + 1] = z;
       { const r = at(shapes[t.shape], d - MODS * MOD_L - (MODS - 1) * GAP); drawn.rear[drawn.n * 3] = r[0]; drawn.rear[drawn.n * 3 + 1] = r[1]; drawn.rear[drawn.n * 3 + 2] = railTop(x, z); }
       drawn.n++;
+      if (nearN < 64) { nearT[nearN] = t; nearD[nearN++] = d; }
       if (fleet) {
         const shape = shapes[t.shape];
         tramPose(model.layout, (q) => at(shape, q), d, pose, false, prof ? (q) => yAlong(shape, q) : null);
@@ -426,5 +452,5 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   // live clock (the dev panel): set the time of day (seconds) or the speed; both re-anchor, so nothing jumps but the set
   const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };   // null: Brussels now
   const setTimescale = (k) => { startSecs = clock(); t0 = performance.now(); scale = k; };
-  return { update, snapTile, info, doc, fleet, model, positions, drawn, trackAt, railTop, railY, yAlong: (id, q) => { const t = trips.find((r) => (r.id ?? r.head) === id); return t ? yAlong(shapes[t.shape], q) : null; }, prof, setClock, setTimescale, setBlock, trackNear, shapePoint, get blocked() { return !!block; }, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
+  return { update, snapTile, info, doc, fleet, model, positions, drawn, bodies, trackAt, railTop, railY, yAlong: (id, q) => { const t = trips.find((r) => (r.id ?? r.head) === id); return t ? yAlong(shapes[t.shape], q) : null; }, prof, setClock, setTimescale, setBlock, trackNear, shapePoint, get blocked() { return !!block; }, get clockSecs() { return clock() % 86400; }, get timescale() { return scale; } };
 }

@@ -3,6 +3,7 @@
 // it can travel this frame + a margin); the 120 Hz substeps then only test those.
 import { gather, itemContact, heightClear, KIND } from "./colliders.js";
 import { BODY, hit } from "./carPhysics.js";
+import { obbObb } from "./obb.js";
 
 /** The highest step a car climbs (m): a kerb (15-25 cm) is ridden up, a road wall, a retaining wall or a raised
  *  platform's edge over this is a wall (docs/collisions/README.md: until 2026-11-13 the car climbed any height the
@@ -53,7 +54,11 @@ const POST_R = 0.12, POST_SIDE = 0.3, POST_BOX = 0.6;   // (POST_BOX: a polygon 
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
  * ground(x, z) -> drivable height
  */
-export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null }) {
+export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null, movers = null }) {
+  // movers (car control round, movers.js): the trams / trains as oriented boxes, gathered once per frame (prepare), tested
+  // every substep; kinematic (never pushed): the car is pushed out (hitSlide: slide / bounce)
+  const mbox = new Float32Array(48 * 7), mout = { nx: 0, nz: 0, depth: 0 };
+  let mN = 0;
   // feel (police feel, the car only): the step rule above, kerb islands climbed (they are in the drive surface), hedges
   // soft, thin posts slide the car round, parked cars nudged (nudge(ref, dx, dz, dyaw)); surface(x, z): 0 paved / 1 terrain
   // dims: the vehicle's half width / half length (carPhysics BODY; the motorbike's narrow box, viewer/moto/motoPhysics.js);
@@ -78,6 +83,8 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
       for (const col of sets(c.x, c.z, r)) gather(col, c.x, c.z, r, near);
       env.tested = near.length / 2;
       env.contacts = 0; env.hedge = 0;
+      mN = movers ? movers.bodies(c.x, c.z, r + 2, mbox) : 0;
+      env.movers = mN;
     },
     surface,
     hedge: 0,             // (feel) a hedge overlapped in the last substep
@@ -140,6 +147,11 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
       }
       // moving things (the traffic, viewer/traffic/cityTraffic.js): env.dynamic(c, body, push) calls push per contact
       env.dynamic?.(c, body, push);
+      for (let k = 0; k < mN; k++) {
+        const o = k * 7;
+        if (Number.isFinite(c.y) && (mbox[o + 5] > c.y + 1.6 || mbox[o + 5] + mbox[o + 6] < c.y + 0.2)) continue;   // (a bridge over / under)
+        if (obbObb(c.x, c.z, c.heading, body.hx, body.hz, mbox[o], mbox[o + 1], mbox[o + 2], mbox[o + 3], Math.abs(mbox[o + 4]) + (mbox[o + 4] < 0 ? 1.5 : 0), mout)) push(c, mout.nx, mout.nz, Math.min(mout.depth, 0.5), KIND.wall);
+      }
     },
   };
   return env;

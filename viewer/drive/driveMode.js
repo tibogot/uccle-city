@@ -20,6 +20,7 @@ export const CARFEEL_OLD = /[?&]carfeel=old(&|$)/.test(location.search);
 import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
 import { carFleet } from "../carFleet.js";
 import { createCarEnv } from "./carEnv.js";
+import { createRailMovers } from "./movers.js";
 import { ChaseCamera } from "./chaseCamera.js";
 import { ColliderDebug } from "./debugDraw.js";
 import { auditTile } from "./colliderAudit.js";
@@ -253,13 +254,16 @@ export class Driver {
       car.heading = home.heading + Math.max(-0.35, Math.min(0.35, car.heading + dyaw - home.heading));
       this.nudged.add(car);
     };
+    // (car control round: trams / trains solid, movers.js; main.js fills railSources)
+    this.railSources = [];
+    this.movers = /[?&]railsolid=0(&|$)/.test(location.search) ? null : createRailMovers(this.railSources);
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges,
-      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge });
+      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers });
     // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
     // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
     this.envs = {};
     for (const k of TWO_WHEEL) {
-      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit });
+      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers });
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
     this.camNear = [];

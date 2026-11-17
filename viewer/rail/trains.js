@@ -97,8 +97,29 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
   const stats = { running: 0, drawn: 0, appearInView: 0, vanishInView: 0 };
   let prevInView = new Set();
   const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere();
+  // (car control round: the trains are solid for the player's car at level crossings / the walker, viewer/drive/movers.js)
+  const nearR = new Array(64), nearD = new Float64Array(64), nearL = new Float64Array(64);
+  let nearN = 0;
+  const bodies = (x, z, r, out, o = 0) => {
+    const max = out.length / 7, seg = 5;
+    let n = 0;
+    for (let i = 0; i < nearN; i++) {
+      const R = nearR[i], d = nearD[i], len = nearL[i], mid = R.at(d - len / 2);
+      if ((mid[0] - x) ** 2 + (mid[2] - z) ** 2 > (r + len / 2 + 2) ** 2) continue;
+      const ns = Math.ceil(len / seg);
+      for (let k = 0; k < ns && o / 7 + n < max; k++) {
+        const p = R.at(d - seg / 2 - k * seg), q = o + n * 7;
+        if ((p[0] - x) ** 2 + (p[2] - z) ** 2 > (r + 3.5) ** 2) continue;
+        out[q] = p[0]; out[q + 1] = p[2]; out[q + 2] = Math.atan2(Math.cos(p[3]), -Math.sin(p[3]));
+        out[q + 3] = 1.5; out[q + 4] = (k === 0 || k === ns - 1 ? 1 : -1) * (seg / 2 + 0.05);   // (< 0: an inner box, movers.js) out[q + 5] = p[1] - 0.2; out[q + 6] = 4.4;
+        n++;
+      }
+    }
+    return n;
+  };
   const update = (camPos, camera = null) => {
     const T = clockFn() % 86400;
+    nearN = 0;
     fleet.begin(camera, camPos);
     stats.running = 0; stats.drawn = 0;
     if (camera) { pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pm); }
@@ -111,6 +132,7 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
       const len = L * (t.units || 1);
       if (p.d - len > R.len + 50 || p.d < -50) continue;       // wholly beyond the route's ends (outside the tiles)
       stats.running++;
+      { const m = R.at(p.d); if (nearN < 64 && (m[0] - camPos.x) ** 2 + (m[2] - camPos.z) ** 2 < 600 * 600) { nearR[nearN] = R; nearD[nearN] = p.d; nearL[nearN++] = len; } }
       trainPose(model.layout, R.at, p.d, pose, { pool });
       fleet.add(pose, t, 0);                                       // (t, 0 / 1: the motion key, --- instmotion)
       if ((t.units || 1) > 1) { trainPose(model.layout, R.at, p.d - L, pose2, { reversed: true, leadFront: false, pool: pool2 }); fleet.add(pose2, t, 1); }
@@ -147,6 +169,6 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
   const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };
   const setTimescale = (k) => { startSecs = ownClock(); t0 = performance.now(); scale = k; };
   const setSource = (s) => { source = s; };
-  return { update, info, positions, setClock, setTimescale, setSource, fleet, model, group, stats, trips, routes, doc,
+  return { update, info, positions, bodies, setClock, setTimescale, setSource, fleet, model, group, stats, trips, routes, doc,
     get clockSecs() { return clockFn() % 86400; }, get timescale() { return scale; } };
 }
