@@ -123,9 +123,13 @@ export class FalconCamera {
       _w.crossVectors(_e, _Y).normalize(); _e.applyAxisAngle(_w, o.look.pitch);
     }
     // faster = stiffer; steady (the assisted flight): softer, and slow in a tumble (no swing round after a crash)
-    const stiff = o.steady ? (b.stun > 0 ? 0.5 : 2.4 + V * 0.06) : 3.5 + V * 0.09;
+    // perched: a firm settle (~1 s), then at rest
+    const stiff = o.perched ? 5 : o.steady ? (b.stun > 0 ? 0.5 : 2.4 + V * 0.06) : 3.5 + V * 0.09;
     if (!this.inited) { this.dir.copy(_e); }
     this.dir.lerp(_e, 1 - Math.exp(-stiff * dt)).normalize();
+    // (falconfix) perched: settle and STOP (the exponential ease otherwise creeps for ever; under a threshold: at rest)
+    const still = !!o.perched;
+    if (still && this.dir.distanceToSquared(_e) < 4e-6) this.dir.copy(_e);
     const D = this.dir;
     // up: world up made perpendicular to the view (a straight-down view takes the heading as up)
     _u.copy(_Y).addScaledVector(D, -D.y);
@@ -150,6 +154,7 @@ export class FalconCamera {
       if (_t.y > this.ceil) _t.y = Math.max(this.ceil, Math.min(_t.y, b.pos.y + 0.3));
       if (!this.inited) this.pos.copy(_t);
       this.pos.lerp(_t, 1 - Math.exp(-(6 + V * 0.12) * dt));
+      if (still && this.pos.distanceToSquared(_t) < 4e-6) this.pos.copy(_t);
       // the bird is never cut: the lens stays out of its wings (a lifted camera beside the bird closed in on them as it
       // eased), and the line of sight to the bird and its wingtips stays over the solid (else the camera comes in
       // along that line, or over the bird when that would be too close)
@@ -160,20 +165,26 @@ export class FalconCamera {
         // easing off, unless the eased spot would hide the bird (then the clear spot at once)
         _w.copy(this.fix).lerp(want, 1 - Math.exp(-5 * dt));
         if (o.perched || this.sight(b, o, span, _q.copy(this.pos).add(_w)) >= 1) this.fix.copy(_w); else this.fix.copy(want);
+        if (still && this.fix.distanceToSquared(want) < 4e-6) this.fix.copy(want);
       }
       this.raised = (this.raised ?? 0) + (raised - (this.raised ?? 0)) * (1 - Math.exp(-6 * dt));
       this.look.copy(b.pos).addScaledVector(D, 4 * span / (1 + this.raised * 0.5)).addScaledVector(_u, 0.12 * span);
       this.look.y -= this.raised * 0.6;
       this.roll += ((o.perched ? 0 : b.phi * (o.steady ? 0.2 : 0.33)) - this.roll) * (1 - Math.exp(-4 * dt));
+      if (still && Math.abs(this.roll) < 2e-3) this.roll = 0;
+      if (still && Math.abs(this.raised) < 2e-3) this.raised = 0;
     }
     this.inited = true;
     // FOV with airspeed
     const fovT = P.fov0 + (P.fov1 - P.fov0) * smooth(V, 18, 90) + (this.mode === "head" ? 8 : 0);
     this.fov += (fovT - this.fov) * (1 - Math.exp(-3 * dt));
+    if (still && Math.abs(fovT - this.fov) < 0.01) this.fov = fovT;
     if (Math.abs(cam.fov - this.fov) > 0.01) { cam.fov = this.fov; cam.updateProjectionMatrix(); }
     // shake: speed + rough air + a hit
     this.shakeT += dt;
-    const amp = P.shake * (0.004 * smooth(V, 45, 100) + 0.0025 * clamp(Math.abs(b.liftRate ?? 0) / 3, 0, 1) + (b.stun > 0 ? 0.02 * b.stun : 0));
+    // (falconfix) no shake on a perch: the rough-air and stun terms read the flight's state, frozen while perched (a crash
+    // landing left the stun > 0: the view shook for as long as the bird sat)
+    const amp = still ? 0 : P.shake * (0.004 * smooth(V, 45, 100) + 0.0025 * clamp(Math.abs(b.liftRate ?? 0) / 3, 0, 1) + (b.stun > 0 ? 0.02 * b.stun : 0));
     const s = this.shakeT;
     const sx = amp * (Math.sin(s * 37.1) * 0.6 + Math.sin(s * 23.3 + 1.2) * 0.4), sy = amp * (Math.sin(s * 31.7 + 0.5) * 0.6 + Math.sin(s * 19.9 + 2.1) * 0.4);
     cam.position.copy(this.pos);

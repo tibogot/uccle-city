@@ -133,6 +133,23 @@ diff mask `eyrie_sill_before_framediff.png`). This fixes it on every ledged arch
 - Hunting needs height and a stoop (as in round 1); the assist makes it reachable but a level chase rarely catches.
 - Mobile / gamepad not tested in the browser (the intent mapping is tested in node).
 
+## 7. "When it lands everything is shaking" (owner, 2026-11-17)
+
+Found in code: on a perch the flight model does not run, so its live state stayed frozen at its last values. After a
+crash that ended in a touch-down, the stun (> 0) never ran out, and the camera's shake read it (0.02 rad x stun) plus the
+rough-air term (the last air lift): the view shook for as long as the bird sat. In the assisted camera a frozen stun
+also kept the 0.5/s "tumble" stiffness, so the view crept for seconds. And the camera's exponential eases never reach
+their target exactly.
+
+Fix: `perchOn` (and the start of an E landing) clears the stun, the air lift and the load factor; the camera has no
+shake on a perch, settles firmly (5/s) and then snaps to rest under 2 mm / 0.1 deg (position, view direction, the
+clearance offset, roll, FOV). No collision runs while perched (unchanged: `FalconFlight.step` is not called).
+
+`node tools/falconCameraTest.mjs` (the real falconCamera.js on three r187 from tools/worker/node_modules): perched for
+5 s after flying in, with a stun left over and lift 2.5 m/s, both camera modes. Spread over the last 3 s, before ->
+after: steady camera 7.8 mm / 0.40 deg (stun left: 189 mm / 7.9 deg) -> 0 / 0; old camera 1.2 mm / 0.21 deg (stun left:
+1.2 mm / 1.34 deg) -> 0 / 0. Browser check pending.
+
 ## Switches (viewer/features.js)
 
 `?falconctl=old` (raw controls), `?falconcol=old` (round 2 contacts, round 1 take-off), `?falconavoid=0` (no avoid

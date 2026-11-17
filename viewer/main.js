@@ -1554,6 +1554,8 @@ async function main() {
   flyer.onExit = () => setView("stjob");
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
+  // (car control round, viewer/drive/movers.js: the trams and trains are solid for the car, the two-wheelers, the walker)
+  driver.railSources.push(() => tramLine, () => window.__trains);
   cityNight?.setDriver(driver);                         // ?night=1: the player's car's head / tail lights
   window.__driver = driver;
   cityGrass.pushers = { driver, walker };          // ?grass=1: the car's wheels and the walker lay the grass down
@@ -1638,7 +1640,10 @@ async function main() {
   const thirdPerson = async () => {
     walker.on = false; flyer.stop(); driver.stop(); controls.enabled = false;
     try {
-      if (!third) third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log })));
+      if (!third) {
+        third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log })));
+        if (third?.world && driver.movers && !third.world.__rail) { third.world.__rail = true; const { railMoverSource } = await import("./drive/movers.js"); third.world.add(railMoverSource(driver.movers)); }
+      }
       else third.resume();
     } catch (e) { log(`third person: ${e.message}`); controls.enabled = true; }
   };
