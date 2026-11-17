@@ -259,3 +259,13 @@ cost (docs/PERF_GAME.md), and none of these libraries reduces it below what Mult
     `lodFade.js`, `impostorKit/material.js`, `drive/colliders.js`, `drive/carLod.js`;
   - docs: `docs/PERF_GAME.md`, `IMPOSTOR_KIT.md`, `IMPOSTORS_RESEARCH.md`, `RENDER_PLAN.md`, `ORBITCAM.md`,
     `PEDESTRIANS.md`.
+
+## Correction 2026-11-17: InstancedMesh2 now HAS a WebGPU version
+
+The "not for WebGPU" conclusion above is out of date. `@three.ez/instanced-mesh@1.0.0-beta.1` (npm dist-tag `beta`, 2026-11-04; `latest` is still 0.3.16) supports WebGPURenderer (native WebGPU + WebGL2 fallback) with the same API. Read from its build (source not public yet):
+- instance data in read-only TSL storage buffers, range writes / compute scatter, no DynamicDrawUsage; motion vectors (InstanceMatrixHistory);
+- plain instanced draw with a visible-index buffer re-uploaded per pass camera (view, sun, lamps); no indirect draw;
+- CPU cull / sort / LOD (optional BVH), shadow LODs (`addShadowLOD`), hard LOD switches with hysteresis (no dithered fade);
+- per-instance raycast (`instanceId`);
+- patches three's prototypes (NodeMaterial.setup*, ShadowNode.updateShadow, the render-cache key) and builds one node program per mesh (`:instance:<id>`); peer three >=0.186 <0.187; custom node materials not yet supported; no public dispose(). MIT.
+Decision for now: not adopted. Our multiDraw (one render object, indirect, dithered fades, no per-pass upload) is still ahead under our rules. Re-check at a stable 1.0 that supports r187+; first try = a lab on one pickable class (parked cars / furniture), never the city first.

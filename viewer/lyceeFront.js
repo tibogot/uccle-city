@@ -10,7 +10,7 @@
 // One merged vertex-coloured mesh (the railing, gate, poles) + the lettering's quad: 2 draws, in tile F7's features
 // group (it fades and unloads with the tile). ?cortenbosch=old: none.
 //
-// THE BARS, PRE-FILTERED (claude/lycee, rule 25 provisional; ?lyceerail=old = one mesh, modelled bars at every distance,
+// THE BARS, PRE-FILTERED (claude/lycee, rule 26 provisional; ?lyceerail=old = one mesh, modelled bars at every distance,
 // as before). The railing's and the gate's bars are 2.5 cm wide every ~12 cm: from the avenue (8-30 m) a bar is 0.5-2
 // internal pixels under the TAAU, white on the dark campus. Jitter phases whose 3 x 3 neighbourhood misses a bar clip it
 // out of the history: the fence shimmered / crawled while the camera moved (owner 2026-11-17, rule 23's mechanism). Now:

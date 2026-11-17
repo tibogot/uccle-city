@@ -1,6 +1,6 @@
-// GATE: THE LYCÉE FRANÇAIS FRONT + THE CHEMIN PRIVÉ 'T CORTENBOSCH'S OLD LANE (claude/lycee; QUALITY_RULES row 25,
+// GATE: THE LYCÉE FRANÇAIS FRONT + THE CHEMIN PRIVÉ 'T CORTENBOSCH'S OLD LANE (claude/lycee; QUALITY_RULES row 26,
 // provisional number; docs/LYCEE.md).
-// Rule 25: a fixed, high-contrast detail seen from the street (a railing's bars, a gate's) is never thinner than the TAAU
+// Rule 26: a fixed, high-contrast detail seen from the street (a railing's bars, a gate's) is never thinner than the TAAU
 // can hold (~1.5-2 internal px) at the distances it is seen from unless it is pre-filtered (its coverage over the pixel:
 // a filtered card / texture); the modelled detail only where it is >= 2 px; and no two of its faces share a plane over the
 // same area (rule 2), nor with a building wall or a garden piece.
@@ -183,7 +183,7 @@ function coplanar(tris, others = null) {
   const blocked = (x, z) => rings.some((r) => inR(r, x, z));
   let doc = J("data/gardens/F7.json");
   const rs = restyleHedges(doc, ov.gardenRestyle, blocked); if (rs) doc = rs.doc;
-  const cr = clearRoads(doc, blocked); if (cr) doc = cr.doc;
+  const cr = clearRoads(doc, blocked, { old: true }); if (cr) doc = cr.doc;     // (the city default: ?gardenlane=new is opt-in)
   const lines = [];
   { const T = NEW.C; for (let k = 0; k < T.idx.length / 6; k++) { const v = T.idx[k * 6]; lines.push([T.pos[v * 3], T.pos[v * 3 + 2], T.pos[(v + 2) * 3], T.pos[(v + 2) * 3 + 2]]); } }
   const dl = (x, z) => Math.min(...lines.map(([ax, az, bx, bz]) => { const dx = bx - ax, dz = bz - az; let t = ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz); t = Math.max(0, Math.min(1, t)); return Math.hypot(x - ax - t * dx, z - az - t * dz); }));
@@ -250,7 +250,7 @@ function coplanar(tris, others = null) {
     const blocked = (x, z) => driven.inside(x, z, 0.3) || clear.some((r) => inR(r, x, z));
     let doc = J(`data/gardens/${T}.json`);
     const rs = restyleHedges(doc, ov.gardenRestyle, blocked); if (rs) doc = rs.doc;
-    const cr = clearRoads(doc, blocked); if (cr) doc = cr.doc;
+    const cr = clearRoads(doc, blocked, { old: true }); if (cr) doc = cr.doc;     // (the city default: ?gardenlane=new is opt-in)
     for (const g of doc.segs) for (let f = 0; f <= 1; f += 0.25) if (onLane(g[0] + (g[3] - g[0]) * f, g[2] + (g[5] - g[2]) * f)) { stand.push(`${T} wall`); break; }
     for (const p of doc.pillars) if (onLane(p[0], p[2])) stand.push(`${T} pillar`);
     for (const p of doc.gates) if (onLane(p[0], p[2])) stand.push(`${T} gate`);

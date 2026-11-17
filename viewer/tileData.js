@@ -386,7 +386,7 @@ export async function buildTileData(entry, base) {
   const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
     deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)
@@ -449,6 +449,18 @@ export async function buildTileData(entry, base) {
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
   if (fences && tcut) fences.rings = tunnelFenceRings(tunnels, fences);         // no fence collider over a bore (tunnels.js)
+  // the ground AS DRAWN and the walls' feet sunk onto it BEFORE the drive colliders (claude/collisions, rule 25): the
+  // building colliders are traced from these walls at car height (colliders.js buildingBlocks); traced from the solids
+  // before sinkFeet, a solid standing up to 2.8 m over a slope had no wall in the car band where its drawn wall (sunk
+  // to the ground) stands: drawn, driven into (tools/audit/colliderAudit.mjs "missing"). entry.colFeet === false
+  // (?colfeet=old): the feet after the colliders, as before (the same drawn walls)
+  const fitGround0 = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
+  // the walls' feet down to the drawn ground where they stood over it (JOINS; viewer/groundFit.js sinkFeet): the façades
+  // and (now) the drive colliders are built from these walls (the roof grids above read the solids)
+  const sinkWalls = () => (fitGround0 && bBuf ? step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
+    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround0, footprintIndex(bDoc)); }) : null);
+  const feetEarly = entry.colFeet === false ? null : await sinkWalls();
+  const feetLate = () => sinkWalls();
   const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy, clipBand: entry.colBand !== false,   // boot3: ?colband=old every wall sample (colliders.js buildingBlocks)
     // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
     // or the line's fence passes over them
@@ -469,17 +481,14 @@ export async function buildTileData(entry, base) {
   // the ground AS DRAWN (terrain after carve / weld + the street surfaces): the façades' ground-floor line and the kit's
   // door steps stand on it (viewer/groundFit.js, docs/GROUND_FIT.md); entry.groundFit === false (?groundfit=old): the
   // lowest DTM point and the bare DTM, as before
-  const fitGround = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
+  const fitGround = fitGround0;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)), fit: entry.storeys !== false }) : null;
   // entry.streetlife (the street-life layer, viewer/streetlife/, on by default in the city): its shopfronts replace the
   // OSM shop points of the façade analysis (data/streetlife/<T>.json; a tile without one keeps the OSM shops)
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
-  // the walls' feet down to the drawn ground where they stood over it (JOINS; viewer/groundFit.js sinkFeet): the façades
-  // are built from these walls (the drive colliders and the roof grids above already read the solids)
-  const feet = fitGround && bBuf ? await step("wall feet", () => { const dv = new DataView(bBuf), V = dv.getUint32(0, true), T = dv.getUint32(4, true);
-    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround, footprintIndex(bDoc)); }) : null;
+  const feet = entry.colFeet === false ? await feetLate() : feetEarly;   // (the walls' feet: sunk before the drive colliders, above)
   const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;

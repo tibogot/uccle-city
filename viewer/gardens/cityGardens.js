@@ -23,6 +23,11 @@ import { clearRoads, restyleHedges } from "./gardenClear.js";
 
 const qs = new URLSearchParams(location.search);
 const GARDEN_ROAD_OLD = qs.get("gardenroad") === "old";
+/** ?gardenlane=new (opt-in, claude/collisions rule 25): a garden piece cleared off the carriageway by its WHOLE stand-in
+ *  footprint (gardenClear.js clearRoads), not by its segment's ends + middle / its pillar's base. NOT the default: the
+ *  browser turn found the "lanes" it clears are mostly paved footpaths / courts the street data calls roadway (Carre
+ *  Cassimans, F1: the real garden wall along the alley went, a lone gate stayed); the fix belongs to the lane data */
+const GARDEN_LANE_OLD = qs.get("gardenlane") !== "new";
 /** ?hedgecol=old: the hedge modules' collision boxes in furniture-gardenwall (solid for the car, as a brick wall); now
  *  their own stand-in mesh furniture-gardenhedge: the car drives through a hedge, slowed (viewer/drive/carEnv.js, police
  *  feel), the walker still stops at it (viewer/character/cityHook.js) */
@@ -63,7 +68,7 @@ export const cityGardens = {
     if (rs) doc = rs.doc;
     // citydefects 2026-11-16: no garden piece on a carriageway (a brick-pier + railing run crossed Avenue Carsoel at the
     // Saint-Job station deck: the UrbIS street surfaces the build read predate the 2025 deck); ?gardenroad=old: as before
-    const dropped = blocked && !GARDEN_ROAD_OLD ? clearRoads(doc, blocked) : 0;
+    const dropped = blocked && !GARDEN_ROAD_OLD ? clearRoads(doc, blocked, { old: GARDEN_LANE_OLD }) : 0;
     if (dropped) doc = dropped.doc;
     const g = gardenInstances(doc, groundAt, { hedgeFronts: this.hedges, hedges: this.hedges });
     const grp = new THREE.Group(); grp.name = `gardens-${name}`;

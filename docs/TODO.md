@@ -10,7 +10,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** curvedroads (sharp-bend road folds 4,203 -> 0 offline; browser turn; rule 24; worker bundle to rebuild in main at merge).
+**Running:** lycee (browser turn: gate fence A/B, Cortenbosch lane vs Street View; rule 26), falcon2 (falcon stutter round 2: shared shaders, GC, gardens step; offline), carshadow (smooth tree shadows on the moving police car; offline). Merged 2026-11-17: falconstutter, policerear, curvedroads, collisions (colfeet). CHECK: traffic-alsemberg tour view lost a parked car at the left kerb since curvedroads (collisions tour: 0 flags vs the curvedroads run) - find why.
 
 **Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
 
@@ -22,13 +22,23 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 **Owner playtest 2026-11-16 / notes 2026-11-17 (details in the sections below)**
 - [ ] Police car rear: lines shimmer while moving; rear looks crude in the chase view (8c, 8e). Chase camera re-check (8d).
-- [ ] Road widths too narrow in places; some curved roads broken at sharp bends.
+- [ ] Road widths too narrow in places; some curved roads broken at sharp bends. (Bends: claude/curvedroads, browser turn
+  done, docs/roads/BENDS.md: engine strips + sidewalks trimmed at their crossing, folded 4,203 + 5,519 -> 0, sidewalk slabs
+  across unmapped roads gone; rule 24. LEFT: the outer-side fan at R ~ 0 corners draws texture rings / a curled edge line
+  (D1 Pénélope, D4 Paola): a next job. Widths elsewhere: a different cause, open.)
 - [ ] Falcon controls feel hard: ASK THE OWNER what is hard. Police game: owner to replay car control round 3.
-- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?). **claude/lycee (offline turn done, docs/LYCEE.md):** sub-pixel bars (0.5-2 px from the avenue) -> pre-filtered coverage cards + modelled bars within 4-6 m (?lyceerail=old|blend), gate bar tops out of the rail (120 doubled faces); quick mode now keeps the Lycée flags; rule 25 (provisional), gate row lycee; browser turn: debug/lyceeCheck.js ab().
+- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?). **claude/lycee (offline turn done, docs/LYCEE.md):** sub-pixel bars (0.5-2 px from the avenue) -> pre-filtered coverage cards + modelled bars within 4-6 m (?lyceerail=old|blend), gate bar tops out of the rail (120 doubled faces); quick mode now keeps the Lycée flags; rule 26 (provisional), gate row lycee; browser turn: debug/lyceeCheck.js ab().
 - [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing). **claude/lycee offline:** OSM 1235727248 IS built (UrbIS 149914 / 30121 / 27386 in setts, 3-5 m, joined both ends, driven, nothing on it; round 1 shot oldlane_after.jpg); no sidewalks (UrbIS maps none). Browser turn looks; ASK THE OWNER which stretch / what is missing (docs/LYCEE.md 2).
 - [ ] Flags: where else (owner names places; suggestions police station, Observatory, public buildings).
 - [ ] Shops Place Saint-Job: Le Touring; re-check Thai Smile / Botanea / Miska / Cacao Tree; ~630 null UrbIS solids to rebuild.
 - [ ] Owner image 68 (Waterloo by Optalweg): not located; ask for a hint.
+
+**Ideas from the three.js expert repos (research 2026-11-17, docs/AGARGARO.md correction)**
+- [ ] NodeMaterialInstance (in r187, unused): share node builds for the per-tile fade materials (falcon hitches #1 kit-wall fade shadow 31-56 ms, #4 streetlife-box fade 8-9 ms); A/B ?matinst with ?buildaudit=1. Watch three PR #34693 (shared builds, -80 % build time).
+- [ ] Tile eviction like 3DTilesRendererJS's LRU (evict a few % of the excess per pass, min/max bytes) + priority-ordered process queue: against the 450-1170 MB GC drops (?lruslice).
+- [ ] Night lamps as quads drawn into one light map (jeantimex/tokyo performance.md: night 32.9 -> 20.1 ms on WebGL); fits the fixed light count (?lamplightmap).
+- [ ] Lab only: three-mesh-bvh/webgpu BVHComputeData (GPU raycast / closest point) for baked occlusion / AO probes; InstancedMesh2 1.0 beta for per-instance picking once it supports r187+.
+- [ ] r188: GPUTimer (PR #35412) for per-pass timing; PR #35321 compileComputeAsync de-dup.
 
 **Defects found 2026-11-17**
 - [ ] Wire clearance too low under Av. des Tilleuls / Hospices / Carsoel bridges.
@@ -52,7 +62,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Traffic: trams don't stop for cars, no lane changes, no headlight beams, a few lanes hug kerbs.
 - [ ] Pedestrians: feet slide on turns, nobody sits, no children / dogs, walk graph from data.
 - [ ] Minimap: more names, neighbourhood names, route to a searched place, satellite toggle.
-- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile).
+- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile). claude/collisions 2026-11-17: collider audit (tools/audit/colliderAudit.mjs, rule 25 provisional, docs/COLLIDER_AUDIT.md): building colliders from the sunk walls (D4: the car drove 13.7 m into a block); OPEN: deck parapets / railings drawn across streets (Kasteelstraat E10, Carsoel deck H6), traffic lanes through a block / alleys / footpaths (Avenue Albert + Carre Cassimans F1, Kauwberg G6), open collider regions (D6), plants without colliders (owner?).
 
 **Ideas, later**
 - [ ] Autumn leaves (8j). Character + car shapes round. Police car round 2 (branch claude/police-car: beam, siren WAVs).
