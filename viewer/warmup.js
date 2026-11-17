@@ -162,13 +162,59 @@ const FLUSH = typeof location !== "undefined" && !/[?&]compileflush=old(&|$)/.te
 let flushWith = null;
 /** main.js: { active() (the play loader holds), render() (one frame of the city's pass), renderer, scene } */
 export function setCompileFlush(o) { flushWith = o; }
+// perf9 (?flushsplit=old = the whole batch in ONE forced frame, as before: one ~7 s task, the play loader frozen): the batch is
+// drawn in chunks of whole jobs, each in its own task a rendered frame apart (the loader animates between them), each with
+// its own parallel-pipeline window closed right after its draw (its pipelines keep compiling in the GPU process while the
+// next chunk's node builds run). The chunk size adapts: ~FLUSH_TASK_MS of main thread per chunk from the ms per drawable
+// measured on the chunks before (first chunk 60 drawables). The jobs resolve once every chunk's pipelines are ready.
+const FLUSH_SPLIT = typeof location !== "undefined" && !/[?&]flushsplit=old(&|$)/.test(location.search);
+const FLUSH_TASK_MS = Math.max(100, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("flushtask") ?? 900 : 900));
+const drawablesOf = (roots) => { let n = 0; for (const r of [].concat(roots)) r?.traverse((o) => { if (o.isMesh || o.isPoints || o.isLine || o.isSprite) n++; }); return n; };
 async function flushJobs(take) {
-  const { renderer, scene, render } = flushWith;
   const t0 = performance.now();
+  const rec = { jobs: take.length, drawables: 0, ms: 0, chunks: [] };
+  const wins = [];
+  if (!FLUSH_SPLIT) { const r = flushDraw(take); rec.drawables = r.n; if (r.win) wins.push(r.win); }
+  else {
+    let i = 0, perDrawable = 0, budget = 60;
+    while (i < take.length) {
+      const chunk = [];
+      let n = 0;
+      while (i < take.length) {
+        const j = take[i];
+        j.__n ??= drawablesOf(j.roots);
+        if (chunk.length && n + j.__n > budget) break;
+        n += j.__n; chunk.push(j); i++;
+      }
+      const c0 = performance.now();
+      const r = flushDraw(chunk);
+      const ms = performance.now() - c0;
+      if (r.win) wins.push(r.win);
+      rec.drawables += r.n; rec.chunks.push([chunk.length, r.n, Math.round(ms)]);
+      if (r.n > 0) { perDrawable = perDrawable ? 0.5 * perDrawable + 0.5 * ms / r.n : ms / r.n; budget = Math.max(10, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable))); }
+      // a rendered frame, then a new task (the loader's frame is painted before the next chunk's node builds)
+      if (i < take.length) { await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
+    }
+  }
+  for (const w of wins) { try { await w; } catch (e) { console.warn("[compile flush]", e); } }
+  for (const j of take) j.resolve();                 // (on an error: their pipelines then build async at first draw)
+  rec.ms = Math.round(performance.now() - t0);
+  (globalThis.__flushes ||= []).push(rec);
+}
+// one forced draw of `take`'s roots in the city's pass, with a parallel-pipeline window open for it (closed right after:
+// returns its end() promise, resolved when the pipelines started in it are ready)
+function flushDraw(take) {
+  const { renderer, scene, render } = flushWith;
   const holder = new THREE.Group(); holder.name = "perf8-flush";
   const saved = [], tops = [];
   const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
-  let n = 0;
+  let n = 0, win = null;
+  const restore = () => {
+    for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; }
+    saved.length = 0;
+    for (const t of tops) if (t.parent === holder) holder.remove(t);
+    scene.remove(holder);
+  };
   try {
     for (const j of take) for (const r of [].concat(j.roots)) {
       if (!r) continue;
@@ -188,23 +234,13 @@ async function flushJobs(take) {
       });
     }
     scene.add(holder);
-    const win = openParallelPipelines(renderer, scene);
-    try { render(); } finally {
-      for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; }
-      saved.length = 0;
-      for (const t of tops) holder.remove(t);
-      scene.remove(holder);
-    }
-    await win.end();
-    for (const j of take) j.resolve();
+    const w = openParallelPipelines(renderer, scene);
+    try { render(); } finally { restore(); win = w.end(); }
   } catch (e) {
-    for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; }
-    for (const t of tops) if (t.parent === holder) holder.remove(t);
-    scene.remove(holder);
+    restore();
     console.warn("[compile flush]", e);
-    for (const j of take) j.resolve();                 // (their pipelines then build async at first draw)
   }
-  (globalThis.__flushes ||= []).push({ jobs: take.length, drawables: n, ms: Math.round(performance.now() - t0) });
+  return { n, win };
 }
 // (perf8, OFF by default: ?fadelast=1. Measured: the falcon start then had 1.2-1.4 s GPU stalls in its first 15 s of play,
 // the fading copies' compiles moved after the reveal; with the compile flush the queue's order matters little anyway)
