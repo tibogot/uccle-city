@@ -49,6 +49,8 @@ export const SHARP_RECON = !isOld("taarecon");
 export const SHARP_LOCK = !isOld("taalock");
 /** ?taablend=old: under camera motion the clip box at 0.5 sigma and + the whole motion factor on the current frame */
 export const SHARP_BLEND = !isOld("taablend");
+/** ?skinprev=old: a skinned mesh's previous position double-counted its rigid motion (the flying falcon ghosted) */
+export const SKINPREV_OLD = SHARP_OLD || qs.get("skinprev") === "old";
 /** ?taafire=old: the reconstruction taps unweighted (a bright sub-pixel glint sparkles through) */
 export const SHARP_FIRE = !isOld("taafire");
 /** ?rcas=old: the clamped 5-tap unsharp mask instead of RCAS (FSR's robust contrast-adaptive sharpening) */
@@ -242,6 +244,7 @@ class CityTAAU extends TAAUNode {
       const offsetUV = c.xy.div(c.w).sub(p.xy.div(p.w.max(1e-4))).mul(vec2(0.5, -0.5)).add(objUV);
       const historyUV = uvNode.sub(offsetUV);
       const pxMotion = uvNode.sub(historyUV).mul(inputSizeF).length();
+      const trusted = motTap.w.greaterThan(0.75);          // exact own motion (not skinned)
       const motionFactor = pxMotion.div(this.maxVelocityLength).saturate();
       // last frame's depth at the history uv, seen from THIS frame's camera. SHARP (?taadepth=old): + the object's own
       // view-z change this frame (motion.z, metres): a car driving away from the chase camera was 0.2-0.4 m nearer last
@@ -252,7 +255,7 @@ class CityTAAU extends TAAUNode {
         const prevRaw = this._previousDepthNode.sample(historyUV).r;
         const pv = getViewPosition(historyUV, prevRaw, this._previousCameraProjectionMatrixInverse);
         const pw = this._previousCameraWorldMatrix.mul(vec4(pv, 1)).xyz;
-        const vz = this._cameraWorldMatrixInverse.mul(vec4(pw, 1)).z.add(motTap.z);
+        const vz = this._cameraWorldMatrixInverse.mul(vec4(pw, 1)).z.add(motTap.z.mul(trusted.select(1, 0)));
         previousDepth = viewZToPerspectiveDepth(vz, this._cameraNearFar.x, this._cameraNearFar.y);
       } else {
         previousDepth = samplePreviousDepth(this._previousDepthNode, historyUV, this._previousCameraProjectionMatrixInverse, this._previousCameraWorldMatrix, this._cameraWorldMatrixInverse, this._cameraNearFar, this.camera);
@@ -312,7 +315,7 @@ class CityTAAU extends TAAUNode {
       const isDepthChanged = closestDepth.sub(previousDepth).abs().greaterThan(this.depthThreshold);
       // SHARP (?taalock=old: never on own-motion pixels): a pixel of a moving object that stays put ON SCREEN (the
       // followed car, < 1.5 input px of total motion) keeps the thin-feature lock: its plate / panel lines stop flickering
-      const canLock = isValidUV.and(isDepthChanged.not()).and(SHARP_LOCK ? moving.not().or(pxMotion.lessThan(1.5)) : moving.not());
+      const canLock = isValidUV.and(isDepthChanged.not()).and(SHARP_LOCK ? moving.not().or(pxMotion.lessThan(1.5).and(trusted)) : moving.not());
       const lock = max(canLock.select(thinFeature, float(0)), lockNode.r.mul(isDisocclusion.select(0, 0.5))).saturate();
       const history = mix(clipped, historyColor, lock);
       const weight = hasValidHistory.select(this.uWeight.add(motionFactor.mul(SHARP_BLEND ? 0.5 : 1)).add(moving.select(this.uMovingW, 0)).saturate(), float(1));
@@ -412,6 +415,30 @@ export function rcasTap(texNode, amount) {
 /** the resolve's sharpen: RCAS (default) or (?rcas=old) the clamped 5-tap unsharp mask */
 export function sharpenResolved(texNode, amount) { return SHARP_RCAS ? rcasTap(texNode, amount) : sharpenTap(texNode, amount); }
 
+/** per build: 1 = exact motion; 0.5 = approximate (?skinprev=old: the skinned meshes' double-counted motion) */
+class MotionTrust extends THREE.Node {
+  static get type() { return "MotionTrust"; }
+  constructor() { super("float"); }
+  setup(builder) { return float(builder.object?.isSkinnedMesh === true && SKINPREV_OLD ? 0.5 : 1); }
+}
+/**
+ * Per build: last frame's world position of this surface point. SHARP (?skinprev=old): an ATTACHED skinned mesh (the
+ * falcons, the characters) skins with WORLD-space bone matrices and its bindMatrixInverse follows its matrixWorld, so
+ * modelWorld x positionPrevious (last frame's bones) is ALREADY last frame's world position, flight included: the
+ * object's rigid delta on top counted the flight twice (a falcon flown at 14 m/s reprojected its history one frame of
+ * flight off: the trees behind showed through it, a ghost). Detached bind mode keeps the delta (its bones do not follow
+ * the mesh).
+ */
+class PrevWorldFull extends THREE.Node {
+  static get type() { return "PrevWorldFull"; }
+  constructor(D) { super("vec4"); this.D = D; }
+  setup(builder) {
+    const o = builder.object, pw = new PreviousWorld();
+    const attachedSkin = INST_MOTION && !SKINPREV_OLD && o?.isSkinnedMesh === true && !o.isInstancedMesh && o.bindMode !== "detached";
+    return attachedSkin ? pw : this.D.mul(pw);
+  }
+}
+
 /** A 5-tap sharpen of the resolved image, clamped to the cross's min / max (no halo, no ringing). */
 export function sharpenTap(texNode, amount) {
   const t = uv(), px = vec2(1).div(vec2(texNode.size()));
@@ -460,12 +487,15 @@ export function createUpscaler(renderer, camera) {
    *  motion minus without it); exactly 0 for static objects */
   U.motionOutput = () => {
     const D = new ObjectMotionMatrix(), wp = vec4(positionWorld, 1);
-    const prevW = D.mul(new PreviousWorld());
+    const prevW = new PrevWorldFull(D);
     const ps = U.prevVP.mul(wp), po = U.prevVP.mul(prevW);
     // .z (SHARP, ?taadepth=old = 0): the surface point's own view-z change this frame (metres, this frame's camera):
     // the resolve's disocclusion test adds it to last frame's depth (an object moving along the view is no disocclusion)
     const dz = SHARP_DEPTH ? cameraViewMatrix.mul(vec4(positionWorld.sub(prevW.xyz), 0)).z : float(0);
-    return vec4(ps.xy.div(ps.w.max(1e-4)).sub(po.xy.div(po.w.max(1e-4))).mul(vec2(0.5, -0.5)), dz, 1);
+    // .w: 1 = the motion is exact (rigid / instanced rows), 0.5 = approximate (skinned: a falcon's flapping wings; the
+    // previous-bone skinning lags): the resolve keeps three's strict history test and no lock there (a trusted wrong
+    // motion ghosted the falcon into the trees behind it)
+    return vec4(ps.xy.div(ps.w.max(1e-4)).sub(po.xy.div(po.w.max(1e-4))).mul(vec2(0.5, -0.5)), dz, new MotionTrust());
   };
   U.makeTAAU = (beauty, depth, motion) => {
     U.taau = new CityTAAU(beauty, depth, motion, camera, U.curVP, U.prevVP);
