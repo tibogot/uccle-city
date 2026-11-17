@@ -25,7 +25,6 @@ import { season } from "../seasons/season.js";
 import { hash2D, noise2D } from "../tslkit.js";
 import { rippleSlope, glint, snowMask, snowMaskFast, SNOW_ALBEDO, wxLook } from "./surfaceWeather.js";
 import { snowNoise, SNOW_FAST as FAST } from "./snowNoise.js";
-const DBG = new URLSearchParams(location.search).get("snowdbg") ?? "";   // (claude/snow2 cost hunt: glint,trail,mask,normal,exp)
 const LIN_OLD = /[?&]snowlin=old(&|$)/.test(location.search);    // (snowfast without the filtered exposure fetch: A/B)
 const SHARE_OLD = /[?&]snowshare=old(&|$)/.test(location.search);   // (snowfast without the colour -> normal share: A/B)
 
@@ -72,7 +71,7 @@ function graph(I, o, wantNormal) {
   // snowfast SHARE: the normal function reads the colour function's snow results (I.shareRead): it needs the map's
   // exposure only for the puddles' ripples
   const expNeeded = wantNormal && I.shareRead ? (o.puddles ? wx.uPuddle.greaterThan(0.0005) : null) : true;
-  if (o.map && MAP && FAST && expNeeded && !DBG.includes("exp")) {
+  if (o.map && MAP && FAST && expNeeded) {
     // snowfast: the overhead map read only where it can matter: inside its window (64 m round the camera: most of a
     // street view's ground is past it) and on faces that are not walls (|up| < 0.3: the wet reach of a wall is a
     // constant, its snow none), in a per-pixel branch (texel loads only: no derivative inside)
@@ -211,7 +210,6 @@ function graph(I, o, wantNormal) {
   if (o.snow !== false) If(on(wx.uSnowCover), () => {
     const slush = (o.slush ? max(wx.uSlush, o.road ? wx.uSalt.mul(I.saltMask ?? float(1)).mul(0.85) : float(0)) : wx.uSlush.mul(0.35)).toVar();
     const [upLo, upHi] = o.snowUp ?? [0.42, 0.78];
-    if (wantNormal && DBG.includes("normal")) return;
     if (wantNormal && I.shareRead) {
       // snowfast SHARE: the mask, the packed amount and the sparkle as the colour function left them (one evaluation a
       // pixel for both); here only the normal's own detail: the micro bump and the tracks' groove slope, near only
@@ -262,7 +260,7 @@ function graph(I, o, wantNormal) {
       // (snow round 2: a crown takes a share of the DEPTH, not of the cover: under trees 15 cm on the open lawn is still
       // ~6 cm, a full white cover; the old exposure x (1 - 0.6 shelter) left half the Heros lawn green at 15 cm)
       const coverHere = min(wx.uSnowCover, wx.uSnowDepth.mul(float(1).sub(shelter.mul(0.6))).div(0.025));
-      let smN = DBG.includes("mask") ? smoothstep(upLo, upHi, up).mul(exposed).mul(wx.uSnowCover) : FAST ? snowMaskFast(P, up, exposed, coverHere, upLo, upHi, ground, fw, o.snowUp ? null : Nw) : snowMask(P, up, exposed, coverHere, upLo, upHi, ground);
+      let smN = FAST ? snowMaskFast(P, up, exposed, coverHere, upLo, upHi, ground, fw, o.snowUp ? null : Nw) : snowMask(P, up, exposed, coverHere, upLo, upHi, ground);
       if (o.plaster) {
         const wn = wx.uWind.length();
         const windward = smoothstep(0.25, 0.75, dot(normalize(Nw.xz.add(vec2(1e-4, 0))), wx.uWind.div(max(wn, 0.01)).negate()));
@@ -272,13 +270,13 @@ function graph(I, o, wantNormal) {
       }
       // ---- snowtracks: the packed amount here (0 outside the trail window / when nothing was trodden)
       // (snowfast: an explicit level: this may run in a per-pixel branch; the trail target has no mips)
-      const trod = (o.map && TRAILS && !DBG.includes("trail") ? select(TRAILS.uOn.greaterThan(0.5), TRAILS.sampleAt(P.xz, FAST), float(0)) : float(0)).toVar();
+      const trod = (o.map && TRAILS ? select(TRAILS.uOn.greaterThan(0.5), TRAILS.sampleAt(P.xz, FAST), float(0)) : float(0)).toVar();
       const thinS = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
       const sm = smN.mul(roadKeep).mul(I.snowMask ?? float(1)).mul(float(1).sub(trod.mul(thinS).mul(0.85))).toVar();
       // ---- /snowtracks
       // sparkle: only where its 1.8 cm facets are over ~1.6 px (per-pixel branch, no derivatives in it)
       const gl = vec4(0, 1, 0, 0).toVar();
-      if (!DBG.includes("glint")) If(fw.lessThan(0.0115), () => { gl.assign(glint(P, fw)); });
+      If(fw.lessThan(0.0115), () => { gl.assign(glint(P, fw)); });
       if (I.share) { I.share.sm.assign(sm); I.share.trod.assign(trod); I.share.gl.assign(gl); }
       if (!wantNormal) {
         const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85)).mul(float(1).sub(trod.mul(0.2)));   // (snowtracks: trodden = greyer)

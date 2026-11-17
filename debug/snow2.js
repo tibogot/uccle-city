@@ -34,8 +34,9 @@ async function state(k, settle = 3600) {
     // wx.uSnowCover 0, which also empties the layer's fragments), GateOff (wx.uOn 0: no material weather at all), NoCaps, NoFoliage
     const { wx } = await import("/viewer/weather/weatherState.js"), { season: fs } = await import("/viewer/foliage/seasons.js");
     if (!W.__wrapU) { const o = W.update.bind(W); W.update = (a, b) => { o(a, b); window.__post?.(); }; W.__wrapU = 1; }
-    window.__post = k.endsWith("NoMat") ? () => { wx.uSnowCover.value = 0; } : k.endsWith("GateOff") ? () => { wx.uOn.value = 0; } : k.endsWith("NoFoliage") ? () => { fs.uSnow.value = 0; } : null;
-    if (k.endsWith("NoLayer")) show(W.layer?.mesh, false);
+    window.__post = k.includes("NoMat") ? () => { wx.uSnowCover.value = 0; } : k.includes("GateOff") ? () => { wx.uOn.value = 0; } : k.includes("NoFoliage") ? () => { fs.uSnow.value = 0; } : null;
+    if (k.includes("NoLayer")) show(W.layer?.mesh, false);
+    const ro = k.includes("LayerLast") ? 0 : -5; W.layer?.mesh?.traverse((c) => { c.renderOrder = ro; });
     if (k.endsWith("NoCaps")) show(W.group.getObjectByName("snow-caps"), false);
   }
   else {
@@ -108,10 +109,13 @@ export async function matCost(v = "stjob", rounds = 3) {
 export async function pairs(a = "overcastDry", b = "snowfall", n = 8, v = "stjob", sample = 1800) {
   const d = [], A = [], B = [];
   await state(a); view(v);
+  // ABBA order (the second of two back-to-back samples reads ~0.3 ms higher here: the GPU warming): even i = A then
+  // B, odd i = B then A
   for (let i = 0; i < n; i++) {
-    for (const k of [a, b]) {
+    for (const k of i % 2 ? [b, a] : [a, b]) {
       await state(k, 900); view(v); await wait(300); V().resetGpu(); await wait(sample);
-      (k === a ? A : B).push(V().gpuStats().p50);
+      const g = V().gpuStats().p50;
+      if (k === b && b !== a) B.push(g); else if (k === a && (a !== b || A.length <= B.length)) A.push(g); else B.push(g);
     }
     d.push(B[i] - A[i]);
   }
