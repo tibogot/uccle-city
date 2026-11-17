@@ -24,8 +24,8 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Police car rear: lines shimmer while moving; rear looks crude in the chase view (8c, 8e). Chase camera re-check (8d).
 - [ ] Road widths too narrow in places; some curved roads broken at sharp bends.
 - [ ] Falcon controls feel hard: ASK THE OWNER what is hard. Police game: owner to replay car control round 3.
-- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?).
-- [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing).
+- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?). **claude/lycee (offline turn done, docs/LYCEE.md):** sub-pixel bars (0.5-2 px from the avenue) -> pre-filtered coverage cards + modelled bars within 4-6 m (?lyceerail=old|blend), gate bar tops out of the rail (120 doubled faces); quick mode now keeps the Lycée flags; rule 25 (provisional), gate row lycee; browser turn: debug/lyceeCheck.js ab().
+- [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing). **claude/lycee offline:** OSM 1235727248 IS built (UrbIS 149914 / 30121 / 27386 in setts, 3-5 m, joined both ends, driven, nothing on it; round 1 shot oldlane_after.jpg); no sidewalks (UrbIS maps none). Browser turn looks; ASK THE OWNER which stretch / what is missing (docs/LYCEE.md 2).
 - [ ] Flags: where else (owner names places; suggestions police station, Observatory, public buildings).
 - [ ] Shops Place Saint-Job: Le Touring; re-check Thai Smile / Botanea / Miska / Cacao Tree; ~630 null UrbIS solids to rebuild.
 - [ ] Owner image 68 (Waterloo by Optalweg): not located; ask for a hint.
