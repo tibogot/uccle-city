@@ -43,7 +43,7 @@ import { loadGroundTextures } from "./materials/groundTex.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
-import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
+import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial, roadTextMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
@@ -253,6 +253,7 @@ function buildingMeshes(doc, buf) {
 function roadMeshes(road) {
   const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial), pits: sharedMat("tree-pits", pitMaterial),
     paint: sharedMat("road-paint", paintMaterial),         // measured paint, paint v2 (viewer/streets/measuredPaint.js)
+    ...(road.parts.roadtext ? { roadtext: sharedMat(`road-text|${road.parts.roadtext.rows.join("|")}`, () => roadTextMaterial(road.parts.roadtext.rows)) } : {}),   // (cortenbosch2) the lane's painted words
     concrete: road.surfaceStats ? sharedMat("concrete-framed", () => concreteMaterial({ framed: true })) : sharedMat("concrete", concreteMaterial) };
   const meshes = [];
   for (const [name, part] of Object.entries(road.parts)) {
@@ -672,6 +673,9 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
  *  houses' and the school's looks, the school's yards and courts, its front (fence, gate, flags, lettering);
  *  ?cortenbosch=old: the neighbourhood as before */
 const CORTENBOSCH = params.get("cortenbosch") !== "old";
+/** round 2 (docs/CORTENBOSCH2.md): the 1990s house type on the lane, the curtain wall on the Lycée's block D, the school's
+ *  other blocks, the lane's herringbone pavers and painted name, the railing / gate as colliders; ?cortenbosch2=old: round 1 */
+const CORTENBOSCH2 = CORTENBOSCH && params.get("cortenbosch2") !== "old";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
@@ -689,7 +693,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     storeys: params.get("storeys") !== "old", styles: params.get("styles") !== "old",              // styles: building types (viewer/buildingTypes.js, docs/STYLES.md), ?styles=old = one generic façade
                                                           // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
-    cortenbosch: CORTENBOSCH,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
+    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     surfVote: params.get("surfvote") !== "old",                                                    // the street-surface name vote with repaired / normalised names (viewer/streetNames.js, docs/SURFVOTE.md), ?surfvote=old = the raw names (never matched: asphalt)
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
@@ -1570,12 +1574,16 @@ async function main() {
   flyer.onExit = () => setView("stjob");
   // drive mode (viewer/drive/): the hatchback on a street near Saint-Job church (the fly start), ?at=x,z elsewhere
   const driver = new Driver(camera, renderer.domElement, scene, world);
+  // (car control round, viewer/drive/movers.js: the trams and trains are solid for the car, the two-wheelers, the walker)
+  driver.railSources.push(() => tramLine, () => window.__trains);
   cityNight?.setDriver(driver);                         // ?night=1: the player's car's head / tail lights
   window.__driver = driver;
   cityGrass.pushers = { driver, walker };          // ?grass=1: the car's wheels and the walker lay the grass down
   // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
-  if (COLFIX) window.__heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });
+  // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
+  // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
@@ -1652,7 +1660,10 @@ async function main() {
   const thirdPerson = async () => {
     walker.on = false; flyer.stop(); driver.stop(); controls.enabled = false;
     try {
-      if (!third) third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log })));
+      if (!third) {
+        third = await (thirdBoot ||= import("./character/cityHook.js").then((m) => m.startThirdPerson({ scene, camera, renderer, controls, world, start, setView, log })));
+        if (third?.world && driver.movers && !third.world.__rail) { third.world.__rail = true; const { railMoverSource } = await import("./drive/movers.js"); third.world.add(railMoverSource(driver.movers)); }
+      }
       else third.resume();
     } catch (e) { log(`third person: ${e.message}`); controls.enabled = true; }
   };
@@ -1736,6 +1747,7 @@ async function main() {
     const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380)   : walker.on || driver.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
     const now = performance.now(), dt = dtFixed ?? Math.min((now - last) / 1000, 0.1);
     last = now;
+    if (dtFixed === null) pipe?.upscale?.frameSample(dt * 1000);   // --- upscale (claude/sharp): DR lowers the scale only on missed frames
     if (!stateFreeze) lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half, dt);
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
@@ -1750,7 +1762,8 @@ async function main() {
     if (frames % 10 === 1 && hud.statsOn) {         // (not while the HUD is folded / hidden: no DOM write)
       const r = info.render;
       $("stats").textContent =
-        `${backend}  ${fps.toFixed(0)} fps` + (gpu.avg ? `  GPU ${gpu.avg.toFixed(2)} ms (worst ${gpu.worst.toFixed(1)})` : "") + `\n` +
+        `${backend}  ${fps.toFixed(0)} fps` + (gpu.avg ? `  GPU ${gpu.avg.toFixed(2)} ms (worst ${gpu.worst.toFixed(1)})` : "") +
+        (pipe?.upscale ? `  ${pipe.upscale.hudLine()}` : "") + `\n` +      // --- upscale (claude/sharp): the internal scale
         `draw calls ${r.drawCalls ?? r.calls}  triangles ${(r.triangles / 1000).toFixed(0)}k\n` +
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW` +
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
@@ -2258,7 +2271,7 @@ async function main() {
   window.viewer = { updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, groundLook, areaReady, teleport,
     // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
-    groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
+    groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => { renderer._nodes?.nodeFrame?.update(); if (renderer.info.autoReset) renderer.info.reset(); stepLoop(dt); },   /* (claude/sharp) the paused loop skipped three's per-frame update: FRAME nodes (the TAAU resolve!) never ran, every stepped frame showed the same image */ freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
   // ?quick=1 (docs/QUICKTEST.md): window.__quickReady once the spot is built (tiles, landmarks, compiles, quiet frames)
   if (QUICK) quickReady({ world, manifest, scene, camera, controls, fader, loading, lighting, log, frames: () => frames, jobsLeft: () => compileJobsLeft() }).catch((e) => log(`quick ready: ${e.message}`));

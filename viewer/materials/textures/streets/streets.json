@@ -81,6 +81,28 @@
    ],
    "mean_roughness": 0.863,
    "bytes": 1848362
+  },
+  {
+   "layer": 4,
+   "name": "herringbone",
+   "files": "streets/pavers_hb",
+   "source": "texfactory",
+   "id": "tf_pavers_b_1k",
+   "licence": "CC0 (generated)",
+   "url": "tools/texturefactory (materials/ground.py pavers:b, seed 72)",
+   "size_m": 1.8,
+   "lattice": [
+    4,
+    8
+   ],
+   "mean_albedo_linear": [
+    0.2133,
+    0.1986,
+    0.175
+   ],
+   "mean_roughness": 0.846,
+   "bytes": 1846175,
+   "switch": "cortenbosch2"
   }
  ]
 }

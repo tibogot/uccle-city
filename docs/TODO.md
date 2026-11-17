@@ -83,7 +83,8 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    length; 58 -> 3,341 matches, 72 streets / 120,573 m2 change (setts / pavers / gravel), 15 of 16 checked on Street
    View agree, Avenue Legrand overridden to asphalt. Left: junction pads tie -> asphalt, `surveyed` name test in
    surfaces.js, rebuild surfaces.json with the pipeline fix_text (together, own switch).
-   Cortenbosch leftovers: 1990s house type for the facade system, glass curtain-wall style (553227), herringbone
+   Cortenbosch leftovers (round 2 on claude/cortenbosch2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: type 6 1990s house,
+   type 7 curtain wall, herringbone layer 4, painted words, railing / gate colliders; browser checks pending): Cortenbosch leftovers: 1990s house type for the facade system, glass curtain-wall style (553227), herringbone
    pavers, "Private Weg / Cortenbosch" paint, railing/gate colliders, other school blocks' looks.
 8j. **AUTUMN LEAVES (owner idea 2026-11-17, later)**: falling leaves from the real tree species (colour by species +
    date), leaves lying on the ground (more in gutters, kerbs, against walls, under trees; swept off busy roads) and
@@ -94,6 +95,11 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    leaves get kicked up, spin, settle; piles = instanced cards with a height field that dents and scatters.
    References: Ghost of Tsushima leaves/grass talks, RDR2 ground debris, Horizon wind, three.js GPGPU examples.
    Budget < 0.5 ms GPU, no CPU per leaf, no extra lights; seasonal switch (Oct-Dec default, ?leaves=0/1).
+8k. **Evaluate agargaro's libraries (owner 2026-11-17)**: github.com/agargaro: instanced-mesh (InstancedMesh2: per-
+   instance frustum culling, BVH raycasting, sorting, LOD, shadow LOD, skinning; check WebGPU / r187 support),
+   batched-mesh-extensions (WebGPU: BatchedMesh culling, per-instance uniforms, LOD), BVH.js (dynamic BVH),
+   octahedral-impostor (vs our impostorKit), simplify-geometry. Measure against our own instancing (instanceStream,
+   cellCull, multiDraw, lamp pool, far-LOD merge, heroBVH): adopt only where it beats them on CPU/GPU in the city.
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)

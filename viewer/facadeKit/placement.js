@@ -127,7 +127,7 @@ export function kitCollector(opts = {}) {
     const off = { on: 0, rise: 0, doorless: 0, french: 0 };
     if (!f.street || f.landmark || f.partyH >= 999 || f.wallStyle > 4.5 || f.building.height > MAX_H) return off;
     const type = f.type | 0;
-    if (type === TYPE.DECO || type === TYPE.BELETAGE || type === TYPE.BLOCK) return off;
+    if (type === TYPE.DECO || type === TYPE.BELETAGE || type === TYPE.BLOCK || type === TYPE.NINETIES || type === TYPE.CURTAIN) return off;   // (cortenbosch2: the 1990s house and the curtain wall paint their own joinery too)
     if (exclude.has(f.key) || (only && !only.has(f.key))) return off;
     if (f.width < 2.2 || f.eaves < 2.8) return off;
     const fr = Math.fround;
@@ -181,7 +181,11 @@ export function kitCollector(opts = {}) {
     }
     stats.faces++;
     // aKitF.y = width + 256 x (128 k - 100): the storey scale k (a multiple of 1/128, 0.87-1.2) for the glass's grid
-    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rnd + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
+    // (claude/sharp) rnd packed QUANTISED (k / 4096, what the glass shader rounds it to): beside + 1024 (maison de
+    // maitre) + 4 x the French code a float32 keeps only ~1.2e-4 of it, so the glass's rounding fell on the other
+    // 1/4096 step for about half the buildings: another room / curtain than the painted window it hands over to
+    const rndPack = Math.floor(rnd * 4096 + 0.5) / 4096;
+    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rndPack + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S.seed;
     const gaps = [];                                                  // plinth gaps along u

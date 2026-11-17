@@ -531,6 +531,7 @@ function footprintIndex(bDoc) {
 }
 
 // viewer/wallRepair.js
+var RECESS_MIN = 0.45;
 var PLANE = 0.2;
 var MIN_COVER = 0.85;
 var MIN_HOLE = 1;
@@ -538,9 +539,15 @@ var STEP = 0.25;
 var MIN_EDGE = 0.25;
 var SHORT = 1;
 var SHORT_HOLE = 0.3;
-function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
-  const used = /* @__PURE__ */ new Set(), out = [], edges = [];
+function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null } = {}) {
+  const used = /* @__PURE__ */ new Set(), flip = /* @__PURE__ */ new Set(), out = [], edges = [], pend = [];
   const n = ring2.length - (ring2.length > 1 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1] ? 1 : 0);
+  let area23 = 0;
+  for (let i = 0; i < n; i++) {
+    const [x0, z0] = ring2[i], [x1, z1] = ring2[(i + 1) % n];
+    area23 += x0 * z1 - x1 * z0;
+  }
+  const out1 = area23 > 0 ? -1 : 1;
   for (let i = 0; i < n; i++) {
     const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % n], L2 = Math.hypot(bx - ax, bz - az);
     if (L2 < MIN_EDGE) continue;
@@ -565,8 +572,8 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
     if (!on.length) continue;
     const topAt = (u) => {
       let hi = -Infinity;
-      for (const { q } of on) for (let e = 0; e < 3; e++) {
-        const A = q[e], B = q[(e + 1) % 3];
+      for (const { q } of on) for (let e2 = 0; e2 < 3; e2++) {
+        const A = q[e2], B = q[(e2 + 1) % 3];
         if ((A[0] - u) * (B[0] - u) > 0) continue;
         const y = Math.abs(B[0] - A[0]) < 1e-6 ? Math.max(A[1], B[1]) : A[1] + (B[1] - A[1]) * (u - A[0]) / (B[0] - A[0]);
         if (y > hi) hi = y;
@@ -579,7 +586,10 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
       const l1 = ((B[1] - C[1]) * (u - C[0]) + (C[0] - B[0]) * (y - C[1])) / d, l2 = ((C[1] - A[1]) * (u - C[0]) + (A[0] - C[0]) * (y - C[1])) / d;
       return l1 >= -1e-4 && l2 >= -1e-4 && 1 - l1 - l2 >= -1e-4;
     };
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2, inL = pipR(mx + nx * 0.1, mz + nz * 0.1, ring2), inR = pipR(mx - nx * 0.1, mz - nz * 0.1, ring2);
+    const o1 = inL !== inR ? inL ? -1 : 1 : out1, onx = o1 * nx, onz = o1 * nz;
     let tot = 0, cov = 0, partyN = 0;
+    const open = [];
     for (let u = Math.min(STEP / 2, L2 / 2); u < L2; u += Math.min(STEP, L2 / 2)) {
       const top = topAt(u);
       if (!(top > base + 0.3)) continue;
@@ -591,44 +601,126 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
       for (let y = base + STEP / 2; y < top; y += STEP) {
         tot++;
         if (on.some(({ q }) => inTri2(u, y, q))) cov++;
+        else open.push([u, y]);
       }
     }
     if (partyN && tot === 0) continue;
     const cover = tot ? cov / tot : 1, hole = (tot - cov) * STEP * STEP;
-    const bad = cover < MIN_COVER && hole >= (L2 < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0;
-    edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, rebuilt: bad && fix });
-    if (!bad || !fix) continue;
-    for (const o of on) {
-      used.add(o.k);
-      if (!o.over) continue;
-      for (const [sg, c] of [[1, 0], [-1, L2]]) {
-        const poly = clipU(o.q, sg, c);
-        if (poly.length < 3) continue;
-        const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
-        for (let k2 = 1; k2 + 1 < W.length; k2++) {
-          const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
-          out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true });
+    const solid = roofs ? tris.concat(roofs) : tris;
+    const probe = (extra = []) => {
+      let depth2 = Infinity;
+      for (const [u, y] of open) {
+        const px = ax + tx * u, pz = az + tz * u, d = [-onx, 0, -onz];
+        let best = Infinity, face = 0;
+        for (const list of [solid, extra]) for (const t of list) {
+          const h = rayTri(px, y, pz, d, t.p);
+          if (h > 0.05 && h < best) {
+            best = h;
+            face = t.n[0] * d[0] + t.n[2] * d[2] < 0 ? 1 : -1;
+          }
+        }
+        if (face < 0) return { recess: false, depth: depth2 };
+        depth2 = Math.min(depth2, best);
+      }
+      return { recess: true, depth: depth2 };
+    };
+    const { recess, depth } = cover < MIN_COVER && open.length ? probe() : { recess: false, depth: Infinity };
+    const closed = recess && depth >= RECESS_MIN;
+    const bad = cover < MIN_COVER && hole >= (L2 < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0 && !closed;
+    edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, recess: closed, depth: recess ? Math.round(depth * 100) / 100 : null, out: [onx, onz], rebuilt: bad && fix });
+    if (fix && !bad && partyN === 0 && inL !== inR) for (const o of on) {
+      if (o.n[0] * onx + o.n[2] * onz >= -0.5) continue;
+      const p = tris[o.k].p, cx = (p[0][0] + p[1][0] + p[2][0]) / 3, cz = (p[0][2] + p[1][2] + p[2][2]) / 3, h = Math.hypot(o.n[0], o.n[2]);
+      if (pipR(cx + o.n[0] / h * 0.3, cz + o.n[2] / h * 0.3, ring2) && !pipR(cx - o.n[0] / h * 0.3, cz - o.n[2] / h * 0.3, ring2)) flip.add(o.k);
+    }
+    const e = edges[edges.length - 1];
+    pend.push({ i, e, probe, bad: bad && fix, closed, ret: fix && !bad && partyN === 0 && L2 < SHORT && hole >= SHORT_HOLE && cover < MIN_COVER, run: () => {
+      for (const o of on) {
+        used.add(o.k);
+        if (!o.over) continue;
+        for (const [sg, c] of [[1, 0], [-1, L2]]) {
+          const poly = clipU(o.q, sg, c);
+          if (poly.length < 3) continue;
+          const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
+          for (let k2 = 1; k2 + 1 < W.length; k2++) {
+            const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
+            out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true });
+          }
         }
       }
+      const steps = Math.max(1, Math.ceil(L2 / 0.5)), pts = [];
+      for (let s = 0; s <= steps; s++) {
+        const u = Math.min(L2, L2 * s / steps), uu = Math.min(L2 - Math.min(0.05, L2 / 4), Math.max(Math.min(0.05, L2 / 4), u));
+        const top = Math.max(topAt(uu), roofs ? roofY(ax + tx * uu - onx * 0.05, az + tz * uu - onz * 0.05, roofs) : -Infinity);
+        pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
+      }
+      const sideN = [o1 * nx, 0, o1 * nz];
+      for (let s = 0; s < steps; s++) {
+        const [x0, z0, y0] = pts[s], [x1, z1, y1] = pts[s + 1], mx2 = (x0 + x1) / 2, mz2 = (z0 + z1) / 2;
+        if (party && (party(mx2 + nx * 0.4, mz2 + nz * 0.4) || party(mx2 - nx * 0.4, mz2 - nz * 0.4))) continue;
+        const a = [x0, base, z0], b = [x1, base, z1], c = [x1, y1, z1], d = [x0, y0, z0];
+        const t1 = o1 > 0 ? [a, b, c] : [a, c, b], t2 = o1 > 0 ? [a, c, d] : [a, d, c];
+        out.push({ p: t1, n: sideN, area: 0.5 * Math.abs((y1 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+        out.push({ p: t2, n: sideN, area: 0.5 * Math.abs((y0 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+      }
+    } });
+  }
+  const byI = new Map(pend.map((q) => [q.i, q]));
+  for (const q of pend) if (q.ret && (byI.get((q.i + n - 1) % n)?.bad || byI.get((q.i + 1) % n)?.bad)) {
+    q.bad = true;
+    q.e.rebuilt = true;
+    q.e.recess = false;
+  }
+  for (const q of pend) if (q.bad) q.run();
+  for (let pass = 0; pass < 2; pass++) {
+    const extra = out.filter((t) => t.rebuilt);
+    if (!extra.length) break;
+    let more = false;
+    for (const q of pend) if (fix && q.closed && !q.bad && !q.probe(extra).recess) {
+      q.bad = more = true;
+      q.e.rebuilt = true;
+      q.e.recess = false;
+      q.run();
     }
-    const steps = Math.max(1, Math.ceil(L2)), pts = [];
-    for (let s = 0; s <= steps; s++) {
-      const u = Math.min(L2, L2 * s / steps), top = topAt(Math.min(L2 - 1e-3, Math.max(1e-3, u)));
-      pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
-    }
-    const sideN = [nx, 0, nz];
-    for (let s = 0; s < steps; s++) {
-      const [x0, z0, y0] = pts[s], [x1, z1, y1] = pts[s + 1], mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
-      if (party && (party(mx + nx * 0.4, mz + nz * 0.4) || party(mx - nx * 0.4, mz - nz * 0.4))) continue;
-      const a = [x0, base, z0], b = [x1, base, z1], c = [x1, y1, z1], d = [x0, y0, z0];
-      out.push({ p: [a, b, c], n: sideN, area: 0.5 * Math.abs((y1 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
-      out.push({ p: [a, c, d], n: sideN, area: 0.5 * Math.abs((y0 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
-    }
+    if (!more) break;
   }
   tris.forEach((t, k) => {
-    if (!used.has(k)) out.push(t);
+    if (used.has(k)) return;
+    out.push(flip.has(k) ? { ...t, p: [t.p[0], t.p[2], t.p[1]], n: [-t.n[0], -t.n[1], -t.n[2]], flipped: true } : t);
   });
   return { tris: out, edges };
+}
+function rayTri(x, y, z, d, p) {
+  const [A, B, C] = p, e1x = B[0] - A[0], e1y = B[1] - A[1], e1z = B[2] - A[2], e2x = C[0] - A[0], e2y = C[1] - A[1], e2z = C[2] - A[2];
+  const hx = d[1] * e2z - d[2] * e2y, hy = d[2] * e2x - d[0] * e2z, hz = d[0] * e2y - d[1] * e2x;
+  const det = e1x * hx + e1y * hy + e1z * hz;
+  if (Math.abs(det) < 1e-10) return Infinity;
+  const f = 1 / det, sx = x - A[0], sy = y - A[1], sz = z - A[2], u = f * (sx * hx + sy * hy + sz * hz);
+  if (u < -1e-4 || u > 1 + 1e-4) return Infinity;
+  const qx = sy * e1z - sz * e1y, qy = sz * e1x - sx * e1z, qz = sx * e1y - sy * e1x, v = f * (d[0] * qx + d[1] * qy + d[2] * qz);
+  if (v < -1e-4 || u + v > 1 + 1e-4) return Infinity;
+  const t = f * (e2x * qx + e2y * qy + e2z * qz);
+  return t > 0 ? t : Infinity;
+}
+function roofY(x, z, roofs) {
+  let hi = -Infinity;
+  for (const t of roofs) {
+    if (t.n[1] < 0.1) continue;
+    const [A, B, C] = t.p, d = (B[2] - C[2]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[2] - C[2]);
+    if (Math.abs(d) < 1e-9) continue;
+    const l1 = ((B[2] - C[2]) * (x - C[0]) + (C[0] - B[0]) * (z - C[2])) / d, l2 = ((C[2] - A[2]) * (x - C[0]) + (A[0] - C[0]) * (z - C[2])) / d, l3 = 1 - l1 - l2;
+    if (l1 < -1e-3 || l2 < -1e-3 || l3 < -1e-3) continue;
+    hi = Math.max(hi, l1 * A[1] + l2 * B[1] + l3 * C[1]);
+  }
+  return hi;
+}
+function pipR(x, z, r) {
+  let c = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c;
+  }
+  return c;
 }
 function clipU(poly, sg, c) {
   const out = [], f = (p) => sg * (p[0] - c);
@@ -649,7 +741,24 @@ function clipU(poly, sg, c) {
 }
 
 // viewer/buildingTypes.js
-var TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5 };
+var TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5, NINETIES: 6, CURTAIN: 7 };
+var NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown", "ochre", "white"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre", "varnished"] };
+var CURTAIN = { grids: ["burgundy", "anthracite", "silver", "green"], spandrels: ["glass", "metal", "grey"] };
+var idx = (list, v, dflt) => {
+  const i = list.indexOf(v);
+  return i >= 0 ? i : dflt;
+};
+function typedStyle(type, look, key) {
+  if (type === TYPE.NINETIES) {
+    const tone = idx(NINETIES.tones, look?.tone, Math.floor(h01(key + "|t6") * 3));
+    const frame2 = idx(NINETIES.frames, look?.frame, h01(key + "|f6") < 0.6 ? 0 : h01(key + "|f6") < 0.85 ? 1 : 2);
+    const fascia = idx(NINETIES.fascias, look?.fascia, Math.floor(h01(key + "|e6") * 3));
+    return (tone >= 5 ? 4 : 2) + (tone * 12 + frame2 + 3 * fascia) / 200;
+  }
+  if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 200;
+  return null;
+}
+var typedCode = (style) => Math.round((style - Math.floor(style + 1e-4)) * 200);
 function h01(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
@@ -863,8 +972,12 @@ var TYPE_GRID = [
   // 3 bel-étage: small high ground lights, a wide window band above
   [2.6, 0.74, 0.3, 0.8, 0.1, 0.84, 0, 2.9, 0.82, 1.12],
   // 4 block: large glazing, French doors to the balconies
-  [1.2, 0.52, 0.27, 0.77, 0.29, 0.79, 0, 3.25, 0.87, 1.2]
+  [1.2, 0.52, 0.27, 0.77, 0.29, 0.79, 0, 3.25, 0.87, 1.2],
   // 5 villa (as the generic grid: the kit's pieces fit it)
+  [2.1, 0.74, 0.3, 0.78, 0.33, 0.8, 0, 2.95, 0.8, 1.12],
+  // 6 1990s house: wide, low windows; lower storeys (2.7-3.1 m)
+  [9, 1, 0.03, 0.8, 0.06, 0.8, 0, 3.4, 0.85, 1.15]
+  // 7 curtain wall: the glass fills the bay, a spandrel over each slab
 ];
 function garageBay(nb, doorBay) {
   return nb < 2 ? -1 : (doorBay + 1) % nb;
@@ -915,7 +1028,7 @@ function faceOpenings(f) {
         if (!(f.partyH > 0 && 0 < f.partyH + 0.3)) out.push({ kind: "garage", bay: k, floor: 0, u0: uc - gh, u1: uc + gh, h0: 0, h1: GARAGE_H, frame: FRAME });
         continue;
       }
-      const half = door ? type === 4 ? Math.min(1, bw * 0.4) : 0.55 : ww / 2;
+      const half = door ? type === 4 || type === 7 ? Math.min(1, bw * 0.4) : 0.55 : ww / 2;
       const h0 = door ? raise : y0 + ya * sh, h1 = door ? 0.72 * G2 + 0.5 * raise : winTop;
       if (f.partyH > 0 && h0 < f.partyH + 0.3) continue;
       if (f.shop > 0.5 && !up) {
@@ -1404,13 +1517,13 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
     const look = opts.looks?.[b.id.split("/").pop()];
-    const style = look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : cls && !landmark ? cls.garage[bi] : 0;
+    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : look?.garage === true ? 1 : cls && !landmark ? cls.garage[bi] : 0;
+    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
     if (cls) {
-      stats.types = stats.types || [0, 0, 0, 0, 0, 0];
+      stats.types = stats.types || [0, 0, 0, 0, 0, 0, 0, 0];
       stats.types[btype]++;
     }
-    const roofStyle = hash01(key + "r");
+    const roofStyle = hash01(key + "r") + (look?.roofTile === "concrete" ? 2 : 0);
     const rc = look?.roofColor || b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;
     let all = [];
@@ -1419,7 +1532,12 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       if (o) all.push(o);
     }
     if (opts.wallFix !== false && all.length) {
-      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0 });
+      const roofTris = [];
+      for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+        const o = triOf(P, I2, t);
+        if (o) roofTris.push(o);
+      }
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris });
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) {
         all = r.tris;
@@ -1672,7 +1790,13 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (L2 < 0.6 || seen.has(key2)) continue;
           seen.add(key2);
           const col2 = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
-          if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
+          if (btype === TYPE.NINETIES) {
+            const fc2 = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36], [0.2, 0.1, 0.048]][Math.floor(typedCode(style) % 12 / 3)] || [0.62, 0.58, 0.48];
+            addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.36, f.nx, f.nz, fc2);
+          } else if (btype === TYPE.CURTAIN) {
+            const gc = [[0.26, 0.035, 0.05], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][typedCode(style) % 4];
+            addStrip(SD, "cu", A, B, top + 0.01, 0.16, 0.06, f.nx, f.nz, gc);
+          } else if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
             const cc = btype === TYPE.BLOCK ? [0.44, 0.43, 0.41] : btype === TYPE.DECO ? [0.62, 0.6, 0.56] : [0.5, 0.49, 0.47];
             addStrip(SD, "cu", A, B, top - 0.02, btype === TYPE.BLOCK ? 0.3 : 0.18, btype === TYPE.DECO ? 0.1 : 0.06, f.nx, f.nz, cc);
           } else if (btype === TYPE.MAITRE) {
@@ -2124,7 +2248,7 @@ function farBuildings(doc, P, I2, opts = {}) {
     const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx, L2 = Math.hypot(nx, ny, nz) || 1;
     return { p, n: [nx / L2, ny / L2, nz / L2] };
   };
-  const stats = { faces: 0, party: 0, walls: 0, roofs: 0, types: [0, 0, 0, 0, 0, 0] };
+  const stats = { faces: 0, party: 0, walls: 0, roofs: 0, types: [0, 0, 0, 0, 0, 0, 0, 0] };
   B.forEach((b, bi) => {
     const key = String(b.attrs?.BU_ID ?? b.id), landmark = !!b.attrs?._landmark;
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
@@ -2134,8 +2258,9 @@ function farBuildings(doc, P, I2, opts = {}) {
       const xs = b.footprint[0].map((v) => v[0]), zs = b.footprint[0].map((v) => v[1]);
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
-    const style = landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
+    const look = opts.looks?.[b.id.split("/").pop()];
+    const btype = look?.type != null && cls ? look.type : cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
+    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
     stats.types[btype]++;
     const faces = /* @__PURE__ */ new Map();
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
@@ -2226,7 +2351,7 @@ function farBuildings(doc, P, I2, opts = {}) {
       for (const { p, n: nn } of f.tris) emit(p, nn, (v) => [v[0] * tx + v[2] * tz - u0, width, v[1] - base, faceEaves], fbv);
       stats.walls += f.tris.length;
     }
-    const rc = b.roofColor || (hash01(key + "r") < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const rc = look?.roofColor || b.roofColor || (hash01(key + "r") < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     const rb = [style, -1, 0, rnd];
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
       const tr = tri(t), flat = Math.abs(tr.n[1]) > 0.97 ? 1 : 0;
@@ -2480,7 +2605,7 @@ function coverSDF(feats, bounds, cov) {
   return { data, stats: { pathSegments: segs, scrubPx: scrub } };
 }
 
-// ../uccle-city/tools/worker/node_modules/meshoptimizer/meshopt_simplifier.js
+// tools/worker/node_modules/meshoptimizer/meshopt_simplifier.js
 var MeshoptSimplifier = (function() {
   var wasm = "b9H79Tebbbe:6eO9Geueu9Geub9Gbb9Gsuuuuuuuuuuuu99uueu9Gvuuuuub9Gruuuuuuub9Gouuuuuue999Gvuuuuueu9Gzuuuuuuuuuuu99uuuub9Gquuuuuuu99uueu9GPuuuuuuuuuuu99uueu9Gquuuuuuuu99ueu9Gruuuuuu99eu9Gwuuuuuu99ueu9Giuuue999Gluuuueu9Gluuuub9GiuuueuiLQdilvorlwDiqkxmPszbHHbelve9Weiiviebeoweuecj:Gdkr:Bdxo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bbz9TW79O9V9Wt9F79P9T9W29P9M95bw8E9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9OcttV9P9I91tW7bD8A9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9O9v9W9K9HtWbqQ9TW79O9V9Wt9F79P9T9W29P9M959t29V9W9W95bkX9TW79O9V9Wt9F79P9T9W29P9M959qV919UWbxQ9TW79O9V9Wt9F79P9T9W29P9M959q9V9P9Ut7bmX9TW79O9V9Wt9F79P9T9W29P9M959t9J9H2WbPa9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94SWt9J9O9sW9T9H9Wbs59TW79O9V9Wt9F9NW9UWV9HtW9q9V79Pt9P9V9U9sW9T9H9Wbzl79IV9RbHDwebcekdCXq;y;WeQdbk;r:herYue99iuY99Xue9:D998Jjjjjbcj;sb9Rgs8Kjjjjbcbhzasc:Cefcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkdnamcdGTmbalcrfci4cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egecdtfaHBdbasaecefBd;8ecbhlcbhednadTmbabheadhOinaHaeydbci4fcb86bbaeclfheaOcufgOmbkcbhlabheadhOinaHaeydbgAci4fgCaCRbbgCceaAcrGgAtV86bbaCcu7aA4ceGalfhlaeclfheaOcufgOmbkcualcdtalcFFFFi0Ehekaecbyd1:H:cjbHjjjjbbhzasc:Cefasyd;8egecdtfazBdbasaecefBd;8ealcd4alfhOcehHinaHgecethHaeaO6mbkcbhXcuaecdtgOaecFFFFi0Ecbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8eaHcFeaOz:tjjjbhQdnadTmbaecufhLcbhKindndnaQabaKcdtfgYydbgAc:v;t;h;Ev2aLGgOcdtfgCydbgHcuSmbceheinazaHcdtfydbaASmdaOaefhHaecefheaQaHaLGgOcdtfgCydbgHcu9hmbkkazaXcdtfaABdbaCaXBdbaXhHaXcefhXkaYaHBdbaKcefgKad9hmbkkaQcbyd:m:H:cjbH:bjjjbbasasyd;8ecufBd;8ekcbh8AcualcefgecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbhLasc:Cefasyd;8egecdtfaLBdbasaLBdNeasaecefBd;8ecuadcitadcFFFFe0Ecbyd1:H:cjbHjjjjbbhEasc:Cefasyd;8egecdtfaEBdbasaEBd:yeasaecefBd;8eascNefabadalcbz:cjjjbcualcdtgealcFFFFi0Eg3cbyd1:H:cjbHjjjjbbhOasc:Cefasyd;8egHcdtfaOBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhQasc:Cefasyd;8egHcdtfaQBdbasaHcefBd;8eaOaQaialavazasc:Cefz:djjjbalcbyd1:H:cjbHjjjjbbhYasc:Cefasyd;8egHcdtfaYBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8ea3cbyd1:H:cjbHjjjjbbhAasc:Cefasyd;8egCcdtfaABdbasaCcefBd;8eaHcFeaez:tjjjbh5aAcFeaez:tjjjbh8EdnalTmbindnaLa8AgAcefg8AcdtfydbgCaLaAcdtgefydbgHSmbaCaH9Rh8FaEaHcitfhaa8Eaefhha5aefhKcbhCindndnaaaCcitfydbgXaA9hmbaKaABdbahaABdbxekdnaLaXcdtggfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheinaeydbaASmdaecwfheaHcufgHmbkka8EagfgeaAaXaeydbcuSEBdbaKaXaAaKydbcuSEBdbkaCcefgCa8F9hmbkka8Aal9hmbkaOhHaQhAa5hXa8EhCcbheindndnaeaHydbgK9hmbdnaeaAydbgK9hmbaXydbhKdnaCydbg8Fcu9hmbaKcu9hmbaYaefcb86bbxikdna8FcuSmbaKcuSmbaea8FSmbaOa8FcdtfydbaOaKcdtfydb9hmbaYaefcd86bbxikaYaefhadnaea8FSmbaeaKSmbaace86bbxikaacl86bbxdkdnaeaQaKcdtg8Ffydb9hmbdnaCydbgacuSmbaeaaSmbaXydbggcuSmbaeagSmba8Ea8FfydbghcuSmbahaKSmba5a8Ffydbg8FcuSmba8FaKSmbdnaOaacdtfydbgKaOa8Fcdtfydb9hmbaKaOagcdtfydbg8FSmba8FaOahcdtfydb9hmbaYaefcd86bbxlkaYaefcl86bbxikaYaefcl86bbxdkaYaefcl86bbxekaYaefaYaKfRbb86bbkaHclfhHaAclfhAaXclfhXaCclfhCalaecefge9hmbkdnamcaGTmbcbh8JindndnaYa8Jfg8KRbbg8Lc9:fPibebekdndndnaOa8Jcdtfydbgea8J9hmbdnaqmbcbh8FxdkdnazTmbcbh8Fa8JheinaqazaecdtgefydbfRbbce4a8FVceGh8FaQaefydbgea8J9hmbxikkcbh8Fa8JheinaqaefRbbce4a8FVceGh8FaQaecdtfydbgea8J9hmbxdkkaYaefRbbhexeka8JheindnaLaecdtg8AfgeclfydbgHaeydbgeSmbaHae9RhgaEaecitfhhaOa8AfhacbhKinahaKcitfydbgXhednindnaLaecdtgCfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheaaydbhAdninaOaeydbcdtfydbaASmeaecwfheaHcufgHTmdxbkkcbhexdkaQaCfydbgeaX9hmbkceheka8FaeVh8FaKcefgKag9hmbkkaQa8Afydbgea8J9hmbka8Lcia8FceGEheka8Kae86bbka8Jcefg8Jal9hmbkkdnaqTmbdndnazTmbazheaOhHalhAindnaqaeydbfRbbceGTmbaYaHydbfcl86bbkaeclfheaHclfhHaAcufgAmbxdkkaqheaOhHalhAindnaeRbbceGTmbaYaHydbfcl86bbkaecefheaHclfhHaAcufgAmbkkaOhealhAaYhHindnaYaeydbfRbbcl9hmbaHcl86bbkaeclfheaHcefhHaAcufgAmbkkamceGTmbaYhealhHindnaeRbbce9hmbaecl86bbkaecefheaHcufgHmbkkcbh8Mcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh8Nasc:Cefasyd;8egecdtfa8NBdbasaecefBd;8eascbBd:qeas9cb83i1ea8Naialavazasc1efz:ejjjbhydndnaDmbcbh8PcbhCxekcbhCawhecbhHindnaeIdbJbbbb9ETmbasaCcdtfaHBdbaCcefhCkaeclfheaDaHcefgH9hmbkcuaCal2gecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbh8Pasc:Cefasyd;8egecdtfa8PBdbasaecefBd;8ealTmbdnaCmbcbhCxekarcd4hgdnazTmbaCcdthhcbh8Fa8Phainaoaza8Fcdtfydbag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbxdkkaCcdthhcbh8Fa8Phainaoa8Fag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbkkcualc8S2gHalc;D;O;f8U0EgXcbyd1:H:cjbHjjjjbbheasc:Cefasyd;8egAcdtfaeBdbasaAcefBd;8eaecbaHz:tjjjbhIcbh8RcbhgdnaCTmbcbh8MaXcbyd1:H:cjbHjjjjbbhgasc:Cefasyd;8egecdtfagBdbasaecefBd;8eagcbaHz:tjjjb8AcuaCal2gecltgHaecFFFFb0Ecbyd1:H:cjbHjjjjbbh8Rasc:Cefasyd;8egecdtfa8RBdbasaecefBd;8ea8RcbaHz:tjjjb8AamcjjjjdGTmbcualcltgealcFFFFb0Ecbyd1:H:cjbHjjjjbbh8Masc:Cefasyd;8egHcdtfa8MBdbasaHcefBd;8ea8Mcbaez:tjjjb8AkdnadTmbcbhKabhHina8NaHclfydbg8Fcx2fgeIdba8NaHydbgacx2fgAIdbg8S:tgRa8NaHcwfydbghcx2fgXIdlaAIdlg8U:tg8VNaeIdla8U:tg8WaXIdba8S:tg8XN:tg8Ya8YNa8WaXIdwaAIdwg8Z:tg80NaeIdwa8Z:tg8Wa8VN:tg81a81Na8Wa8XNaRa80N:tg80a80NMMg8V:rhBa8Yh8Xa80h8Wa81hRdna8VJbbbb9EgATmba8YaB:vh8Xa80aB:vh8Wa81aB:vhRkaIaOaacdtfydbgXc8S2fgeaRaB:rg8VaRNNg83aeIdbMUdbaea8Wa8Va8WNgUNg85aeIdlMUdlaea8Xa8Va8XNg86Ng87aeIdwMUdwaeaRaUNgUaeIdxMUdxaea86aRNg88aeIdzMUdzaea8Wa86Ng89aeIdCMUdCaeaRa8Va8Xa8ZNaRa8SNa8Ua8WNMM:mg8:Ng86NgRaeIdKMUdKaea8Wa86Ng8WaeId3MUd3aea8Xa86Ng8XaeIdaMUdaaea86a8:Ng86aeId8KMUd8Kaea8VaeIdyMUdyaIaOa8Fcdtfydbg8Fc8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdyaIaOahcdtfydbgac8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdydna8MTmbdnaATmba8YaB:vh8Ya80aB:vh80a81aB:vh81ka8MaXcltfgeaBJbbbZNgRa80Ng8VaeIdlMUdlaeaRa8YNg8WaeIdwMUdwaeaRa81Ng8XaeIdbMUdbaeaRa8S:ma81Na8Ua80N:ta8Za8YN:tNgRaeIdxMUdxa8Ma8Fcltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxa8Maacltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxkaHcxfhHaKcifgKad6mbkkdnalTmbJq;x8J88J;n;m;m89J:v:;;w8ZamczGEamc;abGEh80cbhHaOhXazhKaIhea8NhAindnaHaXydb9hmbaHh8FdnazTmbaKydbh8Fka80hRdnaqTmbJbbjZa80aqa8FfRbbclGEhRkaecxfg8Fa8FIdbJbbbbMUdbaeczfg8Fa8FIdbJbbbbMUdbaecCfg8Fa8FIdbJbbbbMUdbaeaRaecyfg8FIdbg8YNgRaeIdbMUdbaeclfgaaRaaIdbMUdbaecwfgaaRaaIdbMUdbaecKfgaaaIdbaAIdbg8WaRN:tUdbaAcwfIdbh8Vaec3fgaaaIdbaRaAclfIdbg8XN:tUdbaecafgaaaIdbaRa8VN:tUdbaec8KfgaIdbh81a8Fa8YaRMUdbaaa81aRa8Va8VNa8Wa8WNa8Xa8XNMMNMUdbkaXclfhXaKclfhKaec8SfheaAcxfhAalaHcefgH9hmbkkdnadTmbcbh8Aabhainaba8Acdtfh8FcbhHinaYa8FaHc:G:G:cjbfydbcdtfydbgAfRbbhedndnaYaaaHfydbgXfRbbgKc99fcFeGcpe0mbaec99fcFeGc;:e6mekdnaKcufcFeGce0mba5aXcdtfydbaA9hmekdnaecufcFeGce0mba8EaAcdtfydbaX9hmekJbbacJbbacJbbbZaecFeGceSEaKcFeGceSEhUdna8Na8FaHc:K:G:cjbfydbcdtfydbcx2fgeIdwa8NaXcx2fgKIdwg86:tg8Sa8NaAcx2fghIdwa86:tg8Xa8XNahIdbaKIdbg8U:tg80a80NahIdlaKIdlg8Z:tg8Va8VNMMg81Na8Xa8Sa8XNaeIdba8U:tg83a80Na8VaeIdla8Z:tg85NMMg8WN:tg8Ya8YNa83a81Na80a8WN:tgRaRNa85a81Na8Va8WN:tg8Wa8WNMMgBJbbbb9ETmba8YaB:rgB:vh8Ya8WaB:vh8WaRaB:vhRkaUa81:rNgBa8Ya86NaRa8UNa8Za8WNMM:mg81Ng87a81Nh88a80a85Na8Va83N:tg81a81Na8Va8SNa8Xa85N:tg8Va8VNa8Xa83Na80a8SN:tg8Xa8XNMMg83:rh80a8Ya87Nh85a8Wa87Nh89aRa87Nh87a8WaBa8YNg8SNh8:a8SaRNhZaRaBa8WNgnNhca8Ya8SNh8Ya8WanNh8WaRaBaRNNh8Sdna83Jbbbb9ETmba81a80:vh81a8Xa80:vh8Xa8Va80:vh8VkaIaOaXcdtfydbc8S2fgeaeIdba8Sa8VaUa80:rNgRa8VNNMg80MUdbaea8Wa8XaRa8XNg8SNMg83aeIdlMUdlaea8Ya81aRa81Ng8WNMg8YaeIdwMUdwaeaca8Va8SNMg8SaeIdxMUdxaeaZa8Wa8VNMgUaeIdzMUdzaea8:a8Xa8WNMg8WaeIdCMUdCaea87a8VaRa81a86Na8Va8UNa8Za8XNMMg86:mNgRNMg8VaeIdKMUdKaea89a8XaRNMg8XaeId3MUd3aea85a81aRNMg81aeIdaMUdaaea88a86aRN:tgRaeId8KMUd8KaeaBaeIdyMUdyaIaOaAcdtfydbc8S2fgea80aeIdbMUdbaea83aeIdlMUdlaea8YaeIdwMUdwaea8SaeIdxMUdxaeaUaeIdzMUdzaea8WaeIdCMUdCaea8VaeIdKMUdKaea8XaeId3MUd3aea81aeIdaMUdaaeaRaeId8KMUd8KaeaBaeIdyMUdykaHclfgHcx9hmbkaacxfhaa8Acifg8Aad6mbkaCTmbcbhainJbbbbh80a8Nabaacdtfgeclfydbg8Fcx2fgHIdwa8Naeydbghcx2fgAIdwg8Z:tg8Va8VNaHIdbaAIdbg83:tg8Wa8WNaHIdlaAIdlg85:tg8Xa8XNMMg8Sa8Naecwfydbg8Acx2fgeIdwa8Z:tg8YNa8Va8YNa8WaeIdba83:tg81Na8XaeIdla85:tgBNMMgRa8VN:tJbbbbJbbjZa8Sa8Ya8YNa81a81NaBaBNMMg8UNaRaRN:tg86:va86Jbbbb9BEg86Nh88a8Ua8VNaRa8YN:ta86Nh89a8SaBNaRa8XN:ta86Nh8:a8Ua8XNaRaBN:ta86NhZa8Sa81NaRa8WN:ta86Nhna8Ua8WNaRa81N:ta86Nhca8WaBNa8Xa81N:tgRaRNa8Xa8YNa8VaBN:tgRaRNa8Va81Na8Wa8YN:tgRaRNMM:rJbbbZNhRa8PahaC2g8JcdtfhHa8Pa8AaC2gDcdtfhAa8Pa8FaC2g8KcdtfhXa8Z:mh9ca85:mhJa83:mh9eascjdfheaChKJbbbbhBJbbbbh86Jbbbbh8SJbbbbh8UJbbbbh8ZJbbbbh83Jbbbbh85Jbbbbh87JbbbbhUinaecwfaRa89aXIdbaHIdbg8Y:tg8XNa88aAIdba8Y:tg81NMg8VNUdbaeclfaRaZa8XNa8:a81NMg8WNUdbaeaRaca8XNana81NMg8XNUdbaecxfaRa9ca8VNaJa8WNa8Ya9ea8XNMMMg8YNUdbaRa8Va8WNNa8ZMh8ZaRa8Va8XNNa8UMh8UaRa8Wa8XNNa8SMh8SaRa8Ya8YNNaUMhUaRa8Va8YNNa87Mh87aRa8Wa8YNNa85Mh85aRa8Xa8YNNa83Mh83aRa8Va8VNNa86Mh86aRa8Wa8WNNaBMhBaRa8Xa8XNNa80Mh80aHclfhHaXclfhXaAclfhAaeczfheaKcufgKmbkagahc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Fc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Ac8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdya8Ra8Jcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8Ra8Kcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8RaDcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbkaacifgaad6mbkkcbhAdndnamcwGgTmbJbbbbh8ScbhScbh9hcbh9ixekcbhSa3cbyd1:H:cjbHjjjjbbh9iasc:Cefasyd;8egecdtfa9iBdbasaecefBd;8ecua9ialabadaOz:fjjjbgXcltaXcjjjjiGEcbyd1:H:cjbHjjjjbbh9hasc:Cefasyd;8egecdtfa9hBdbasaecefBd;8ea9haXa9ia8Nalz:gjjjbJFFuuh8SaXTmba9hheaXhHinaeIdbgRa8Sa8SaR9EEh8SaeclfheaHcufgHmbkaXhSkdnalTmbaLclfheaLydbhXaYhHalhKcbhAincbaeydbg8FaX9RaHRbbcpeGEaAfhAaHcefhHaeclfhea8FhXaKcufgKmbkaAce4hAkcuadaA9Rcifg6cx2a6c;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh9kasc:Cefasyd;8egecdtfa9kBdbasaecefBd;8ecua6cdta6cFFFFi0Ecbyd1:H:cjbHjjjjbbh0asc:Cefasyd;8egecdtfa0BdbasaecefBd;8ea3cbyd1:H:cjbHjjjjbbh9masc:Cefasyd;8egecdtfa9mBdbasaecefBd;8ealcbyd1:H:cjbHjjjjbbh9nasc:Cefasyd;8egecdtfa9nBdbasaecefBd;8eaxaxNayJbbjZamclGEgZaZN:vh87JbbbbhUdnadak9nmbdna6ci6mbaCclth9oa9kcwfh9pJbbbbh85JbbbbhUinascNefabadalaOz:cjjjbabh8Acbh9qcbh9rinaba9rcdtfhDcbheindnaOa8AaefydbgAcdtghfydbgXaOaDaec:W:G:cjbfydbcdtfydbgHcdtg8JfydbgKSmbaYaHfRbbgacv2aYaAfRbbg8FfRb;a:G:cjbg8La8Fcv2aafg8KRb;a:G:cjbg3VcFeGTmbdnaKaX9nmba8KRb;G:G:cjbcFeGmekdna8FcufcFeGce0mbaaTmba5ahfydbaH9hmekdna8FTmbaacufcFeGce0mba8Ea8JfydbaA9hmeka9ka9qcx2fgXaHaAa3cFeGgKEBdlaXaAaHaKEBdbaXaKa8LGcb9hBdwa9qcefh9qkaeclfgecx9hmbkdna9rcifg9rad9pmba8Acxfh8Aa9qcifa69nmekka9qTmdcbh8KinaIaOa9ka8Kcx2fghydbgKcdtgXfydbg8Ac8S2fgeIdwa8Nahydlg8Fcx2fgHIdwg8WNaeIdzaHIdbg8XNaeIdaMgRaRMMa8WNaeIdlaHIdlg8YNaeIdCa8WNaeId3MgRaRMMa8YNaeIdba8XNaeIdxa8YNaeIdKMgRaRMMa8XNaeId8KMMM:lhRJbbbbJbbjZaeIdyg8V:va8VJbbbb9BEh8VdndnahydwgDmbJFFuuh86xekJbbbbJbbjZaIaOa8Fcdtfydbc8S2fgeIdyg81:va81Jbbbb9BEaeIdwa8NaKcx2fgHIdwg81NaeIdzaHIdbg80NaeIdaMgBaBMMa81NaeIdlaHIdlgBNaeIdCa81NaeId3Mg81a81MMaBNaeIdba80NaeIdxaBNaeIdKMg81a81MMa80NaeId8KMMM:lNh86ka8VaRNhBdnaCTmbagaKc8S2fgAIdwa8WNaAIdza8XNaAIdaMgRaRMMa8WNaAIdla8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8Pa8FaC2gacdtfhHa8RaKaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8Vxekaga8Fc8S2fgAIdwa8NaKcx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8RaacltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86dndndnaYaKfRbbc9:fPddbekaQaXfydbgXaKSmbaOa8Fcdtfydbh8Jindndna5aXcdtgafydbgecuSmbaOaecdtfydba8JSmekdna8EaafydbgecuSmbaOaecdtfydba8JSmeka8FhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkaBaR:lMhBaQaafydbgXaK9hmbkkaYa8FfRbbci9hmeaDTmeaQa8FcdtfydbgXa8FSmeindndna5aXcdtgafydbgecuSmbaOaecdtfydba8ASmekdna8EaafydbgecuSmbaOaecdtfydba8ASmekaKhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbka86aR:lMh86aQaafydbgXa8F9hmbxdkkdna8Ea5a5aXfydba8FSEaQaXfydbgacdtfydbgXcu9hmbaQa8FcdtfydbhXkagaac8S2fgAIdwa8NaXcx2fgeIdwg8WNaAIdzaeIdbg8XNaAIdaMgRaRMMa8WNaAIdlaeIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaXaC2g8AcdtfhHa8RaaaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8VxekagaXc8S2fgAIdwa8Naacx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8Ra8AcltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86kaha86aBa86aB9DgeEUdwahaKa8FaeaDcb9hGgeEBdlaha8FaKaeEBdba8Kcefg8Ka9q9hmbkascjdfcbcj;qbz:tjjjb8Aa9phea9qhHinascjdfaeydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbcefBdbaecxfheaHcufgHmbkcbhecbhHinascjdfaefgAydbhXaAaHBdbaXaHfhHaeclfgecj;qb9hmbkcbhea9phHinascjdfaHydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbgAcefBdba0aAcdtfaeBdbaHcxfhHa9qaecefge9hmbkadak9RgAci9Uh9sdnalTmbcbhea9mhHinaHaeBdbaHclfhHalaecefge9hmbkkcbh9ta9ncbalz:tjjjbh3aAcO9Uh9ua9sce4h9rcbh8Lcbh8Kdnina9ka0a8Kcdtfydbcx2fg8JIdwgRa879Emea8La9s9pmeJFFuuh8Vdna9ra9q9pmba9ka0a9rcdtfydbcx2fIdwJbb;aZNh8VkdnaRa8V9ETmbaRaU9ETmba8La9u0mdkdna3aOa8JydlgDcdtg9vfg8AydbgAfg9wRbba3aOa8Jydbghcdtg9xfydbgefg9yRbbVmbaYahfRbbh9zdndnaLaecdtfgHclfydbgXaHydbgHSmbaXaH9RhXa8NaAcx2fh8Fa8Naecx2fhaaEaHcitfheindna9maeydbcdtfydbgHaASmba9maeclfydbcdtfydbgKaASmbaHaKSmba8NaKcx2fgKIdba8NaHcx2fgHIdbg8W:tgRaaIdlaHIdlg8X:tg80NaKIdla8X:tg8VaaIdba8W:tgBN:tg8YaRa8FIdla8X:tg86Na8Va8FIdba8W:tg8UN:tg8XNa8VaaIdwaHIdwg81:tg8ZNaKIdwa81:tg8Wa80N:tg80a8Va8FIdwa81:tg83Na8Wa86N:tg8VNa8WaBNaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9FmikaecwfheaXcufgXmbkkdndndndna9zc9:fPdebdkahheina8AydbhAdndna5aecdtgHfydbgecuSmbaOaecdtfydbaASmekdna8EaHfydbgecuSmbaOaecdtfydbaASmekaDheka9maHfaeBdbaQaHfydbgeah9hmbxikkdna8Ea5a5a9xfydbaDSEaQa9xfydbghcdtfydbgecu9hmbaQa9vfydbheka9ma9xfaDBdbaehDka9mahcdtfaDBdbka9yce86bba9wce86bba8JIdwgRaUaUaR9DEhUa9tcefh9tcecda9zceSEa8Lfh8Lxeka9rcefh9rka8Kcefg8Ka9q9hmbkka9tTmddnalTmbcbh8Fcbhhindna9mahcdtgefydbgAahSmbaOaAcdtfydbh8AdnahaOaefydb9hg8JmbaIa8Ac8S2fgeaIahc8S2fgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya8MTmba8Ma8Acltfgea8MahcltfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxkaCTmbagaAc8S2fgeagahc8S2gDfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya9oaA2haa8RhHaChXinaHaafgeaHa8FfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8JmbJbbbbJbbjZaIaDfgeIdygR:vaRJbbbb9BEaeIdwa8Na8Acx2fgHIdwgRNaeIdzaHIdbg8VNaeIdaMg8Wa8WMMaRNaeIdlaHIdlg8WNaeIdCaRNaeId3MgRaRMMa8WNaeIdba8VNaeIdxa8WNaeIdKMgRaRMMa8VNaeId8KMMM:lNgRa85a85aR9DEh85ka8Fa9ofh8Fahcefghal9hmbkcbhHa5heindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa5aXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkcbhHa8EheindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa8EaXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkka85aUaCEh85cbhHabhecbhAindnaOa9maeydbcdtfydbg8FcdtfydbgXaOa9maeclfydbcdtfydbgacdtfydbgKSmbaXaOa9maecwfydbcdtfydbg8AcdtfydbghSmbaKahSmbabaHcdtfgXa8FBdbaXcwfa8ABdbaXclfaaBdbaHcifhHkaecxfheaAcifgAad6mbkdndnaTmbaHhdxekdnaHak0mbaHhdxekdna8Sa859FmbaHhdxekJFFuuh8ScbhdabhecbhAindna9ha9iaeydbgXcdtfydbcdtfIdbgRa859ETmbaeclf8Pdbh9AabadcdtfgKaXBdbaKclfa9A83dbaRa8Sa8SaR9EEh8SadcifhdkaecxfheaAcifgAaH6mbkkadak0mbxdkkascNefabadalaOz:cjjjbkdndnadak0mbadhaxekdnaTmbadhaxekdna8Sa879FmbadhaxekcehKina8SJbb;aZNgRa87aRa879DEh8WJbbbbhRdnaSTmba9hheaShHinaeIdbg8VaRa8Va8W9FEaRa8VaR9EEhRaeclfheaHcufgHmbkkJFFuuh8ScbhaabhecbhHindna9ha9iaeydbgAcdtfydbcdtfIdbg8Va8W9ETmbaeclf8Pdbh9AabaacdtfgXaABdbaXclfa9A83dba8Va8Sa8Sa8V9EEh8SaacifhakaecxfheaHcifgHad6mbkdnaKaaad9hVceGmbadhaxdkaRaUaUaR9DEhUaaak9nmecbhKaahda8Sa879FmbkkdnamcjjjjdGTmba9ncbalz:tjjjbh8AdnaaTmbabheaahHina8AaeydbgAfce86bba8AaOaAcdtfydbfce86bbaeclfheaHcufgHmbkkascNefabaaalaOz:cjjjbdndnalTmbcbhXindna8AaXfRbbTmbdnaYaXfRbbgecl0mbceaetcQGmekdnaOaXcdtg8FfydbgeaXSmba8NaXcx2fgHa8Naecx2fgeydwBdwaHae8Pdb83dbxekaIaXc8S2fgKIdygcacJL:3;rUNgRMh87aKIdwg9BaRMh8SaKIdlg9CaRMh8UaKIdbg9DaRMh81aKIdag9EaRa8NaXcx2fg8JIdwg88N:th8ZaKId3g9FaRa8JIdlg89N:th83aKIdKg9Ga8JIdbg8:aRN:th80JbbbbhnaKIdCg9HJbbbbMh85aKIdzg9IJbbbbMhBaKIdxg9JJbbbbMh86dndnaCTmbaXhAinJbbbba87agaAc8S2fgHIdygR:vaRJbbbb9BEhRa8RaAaC2cltfheaHIdaa87Na8ZMh8ZaHId3a87Na83Mh83aHIdKa87Na80Mh80aHIdCa87Na85Mh85aHIdza87NaBMhBaHIdxa87Na86Mh86aHIdwa87Na8SMh8SaHIdla87Na8UMh8UaHIdba87Na81Mh81aChHina8ZaecwfIdbg8VaecxfIdbg8YNaRN:th8Za83aeclfIdbg8Wa8YNaRN:th83a85a8Wa8VNaRN:th85a81aeIdbg8Xa8XNaRN:th81a80a8Xa8YNaRN:th80aBa8Xa8VNaRN:thBa86a8Xa8WNaRN:th86a8Sa8Va8VNaRN:th8Sa8Ua8Wa8WNaRN:th8UaeczfheaHcufgHmbkaQaAcdtfydbgAaX9hmbka8MTmba8MaXcltfgeIdxhxaeIdwh9caeIdlhJaeIdbhRxekJbbbbhxJbbbbh9cJbbbbhJJbbbbhRkaBa81:vg8Wa80Na8Z:ta85aBa86a81:vg8VN:tg8Za8Ua86a8VN:tg8Y:vg8Xa8Va80Na83:tg8UN:th83a9caRa8WN:taJaRa8VN:tg86a8XN:tg85a8SaBa8WN:ta8Za8XN:tgB:vg8S:mh8Za86a8Y:vg9c:mhJdnJbbbbaRaRa81:vg9eN:ta86a9cN:ta85a8SN:tg86:la87J:983:g81NgR9ETmba8Za83NaJa8UNa9ea80Nax:tMMa86:vhnka81:laR9ETmba8Y:laR9ETmbaB:laR9ETmba9e:manNa8W:ma8ZanNa83aB:vMgBNa8V:maJanNa8X:maBNa8Ua8Y:vMMg85Na80:ma81:vMMMh87aLa8FfgeclfydbgHaeydbge9RhhaEaecitfh8FJbbbbhRdnaHaeSgDmbJbbbbhRa8FheahhAina8Naeclfydbcx2fgHIdwa88:tg8Va8VNaHIdba8::tg8Va8VNaHIdla89:tg8Va8VNMMg8Va8Naeydbcx2fgHIdwa88:tg8Wa8WNaHIdba8::tg8Wa8WNaHIdla89:tg8Wa8WNMMg8WaRaRa8W9DEgRaRa8V9DEhRaecwfheaAcufgAmbkaR:rgRaRNhRkaBa88:tg8Va8VNa87a8::tg8Va8VNa85a89:tg8Va8VNMMaR9EmbaKId8KhndnaDmbina8Na8Fclfydbcx2fgeIdba8Na8Fydbcx2fgHIdbg8W:tgRa89aHIdlg8X:tg80NaeIdla8X:tg8Va8:a8W:tg86N:tg8YaRa85a8X:tg8SNa8Va87a8W:tg8UN:tg8XNa8Va88aHIdwg81:tg8ZNaeIdwa81:tg8Wa80N:tg80a8VaBa81:tg83Na8Wa8SN:tg8VNa8Wa86NaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9Fmda8Fcwfh8FahcufghmbkkJbbbbJbbjZac:vacJbbbb9BEgRa9BaBNa9Ia87Na9EMg8Va8VMMaBNa9Ca85Na9HaBNa9FMg8Va8VMMa85Na9Da87Na9Ja85Na9GMg8Va8VMMa87NanMMM:lNaRa9Ba88Na9Ia8:Na9EMg8Va8VMMa88Na9Ca89Na9Ha88Na9FMg8Va8VMMa89Na9Da8:Na9Ja89Na9GMg8Va8VMMa8:NanMMM:lNJbb;aZNJ:983:g81M9Emba8JaBUdwa8Ja85Udla8Ja87UdbkaXcefgXal9hmbkdnaCmbcbhCxdkcbhXindna8AaXfRbbTmbaOaXcdtgefydbaX9hmbaYaXfhhaQaefh8Ja8NaXcx2fhAa8PaXaC2cdtfhDcbhEincuhLdnahRbbci9hmbaXhLa8JydbgeaXSmba8PaEcdtgHfhKaDaHfIdbhRaXhLinaLhHcuhLdnaKaeaC2cdtfIdbaR9CmbaHcuSmbaHhLagaec8S2fIdyagaHc8S2fIdy9ETmbaehLkaQaecdtfydbgeaX9hmbkka8PaEcdtfhKa8RaEcltfh8FaXheinaKaeaC2cdtfJbbbbJbbjZagaeaLaLcuSEgHc8S2fIdygR:vaRJbbbb9BEa8FaHaC2cltfgHIdwaAIdwNaHIdbaAIdbNaHIdlaAIdlNMMaHIdxMNUdbaQaecdtfydbgeaX9hmbkaEcefgEaC9hmbkkaXcefgXal9hmbxdkkaCmbcbhCkaiavaoarawaCala8Na8Pazasayasc1efaYa8Aaqz:hjjjbkdnamcjjjjlGTmbazmbaaTmbabhecbhLinaYaeydbgAfRbbc3thQaecwfgXydbhHcjjjj94hCdna5aAcdtgEfydbaeclfgKydbgOSmbcjjjj94cba8EaOcdtfydbaASEhCkaeaQaCVaAVBdbaYaOfRbbc3th8Fcjjjj94hCcjjjj94hQdna5aOcdtfydbaHSmbcjjjj94cba8EaHcdtfydbaOSEhQkaKa8FaQVaOVBdbaYaHfRbbc3thOdna5aHcdtfydbaASmbcjjjj94cba8EaEfydbaHSEhCkaXaOaCVaHVBdbaecxfheaLcifgLaa6mbkkdnazTmbaaTmbaaheinabazabydbcdtfydbBdbabclfhbaecufgembkkdnaPTmbaPaZaU:rNUdbkdnasyd;8egHTmbaHcdtasc:Ceffc98fheinaeydbcbyd:m:H:cjbH:bjjjbbaec98fheaHcufgHmbkkascj;sbf8Kjjjjbaak;Yieouabydlhvabydbclfcbaicdtz:tjjjbhoadci9UhrdnadTmbdnalTmbaehwadhDinaoalawydbcdtfydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbxdkkaehwadhDinaoawydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbkkdnaiTmbcbhDaohwinawydbhqawaDBdbawclfhwaqaDfhDaicufgimbkkdnadci6mbinaecwfydbhwaeclfydbhDaeydbhidnalTmbalawcdtfydbhwalaDcdtfydbhDalaicdtfydbhikavaoaicdtfgqydbcitfaDBdbavaqydbcitfawBdlaqaqydbcefBdbavaoaDcdtfgqydbcitfawBdbavaqydbcitfaiBdlaqaqydbcefBdbavaoawcdtfgwydbcitfaiBdbavawydbcitfaDBdlawawydbcefBdbaecxfhearcufgrmbkkabydbcbBdbk:todDue99aicd4aifhrcehwinawgDcethwaDar6mbkcuaDcdtgraDcFFFFi0Ecbyd1:H:cjbHjjjjbbhwaoaoyd9GgqcefBd9GaoaqcdtfawBdbawcFearz:tjjjbhkdnaiTmbalcd4hlaDcufhxcbhminamhDdnavTmbavamcdtfydbhDkcbadaDal2cdtfgDydlgwawcjjjj94SEgwcH4aw7c:F:b:DD2cbaDydbgwawcjjjj94SEgwcH4aw7c;D;O:B8J27cbaDydwgDaDcjjjj94SEgDcH4aD7c:3F;N8N27axGhwamcdthPdndndnavTmbakawcdtfgrydbgDcuSmeadavaPfydbal2cdtfgsIdbhzcehqinaqhrdnadavaDcdtfydbal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmlkarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbxdkkakawcdtfgrydbgDcuSmbadamal2cdtfgsIdbhzcehqinaqhrdnadaDal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmikarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbkkaramBdbamhDkabaPfaDBdbamcefgmai9hmbkkakcbyd:m:H:cjbH:bjjjbbaoaoyd9GcufBd9GdnaeTmbaiTmbcbhDaehwinawaDBdbawclfhwaiaDcefgD9hmbkcbhDaehwindnaDabydbgrSmbawaearcdtfgrydbBdbaraDBdbkabclfhbawclfhwaiaDcefgD9hmbkkk;:odvuv998Jjjjjbca9Rgocbyd1:G:cjbBdKaocb8Pdj:G:cjb83izaocbydN:G:cjbBdwaocb8Pd:m:G:cjb83ibdnadTmbaicd4hrdnabmbdnalTmbcbhwinaealawcdtfydbar2cdtfhDcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxikkarcdthwcbhDincbhiinaoczfaifgqaeaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaeawfheaDcefgDad9hmbxdkkdnalTmbcbhwinabawcx2fgiaealawcdtfydbar2cdtfgDIdbUdbaiaDIdlUdlaiaDIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxdkkarcdthlcbhwaehDinabawcx2fgiaeawar2cdtfgqIdbUdbaiaqIdlUdlaiaqIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaDalfhDawcefgwad9hmbkkJbbbbaoIdbaoIdzgx:tgkakJbbbb9DEgkaoIdlaoIdCgm:tgPaPak9DEgkaoIdwaoIdKgP:tgsasak9DEhsdnabTmbadTmbJbbbbJbbjZas:vasJbbbb9BEhkinabakabIdbax:tNUdbabclfgoakaoIdbam:tNUdbabcwfgoakaoIdbaP:tNUdbabcxfhbadcufgdmbkkdnavTmbavaPUdwavamUdlavaxUdbkask:WlewudnaeTmbcbhvabhoinaoavBdbaoclfhoaeavcefgv9hmbkkdnaiTmbcbhrinadarcdtfhwcbhDinalawaDcdtgvyd:G:G:cjbcdtfydbcdtfydbhodnalawavfydbcdtfydbgqabaqcdtfgkydbgvSmbinakabavgqcdtfgxydbgvBdbaxhkaqav9hmbkkdnaoabaocdtfgkydbgvSmbinakabavgocdtfgxydbgvBdbaxhkaoav9hmbkkdnaqaoSmbabaqaoaqao0Ecdtfaqaoaqao6EBdbkaDcefgDci9hmbkarcifgrai6mbkkdnaembcbskcbhxindnalaxcdtgvfydbax9hmbaxhodnaxabavfgDydbgvSmbaDhqinaqabavgocdtfgkydbgvBdbakhqaoav9hmbkkaDaoBdbkaxcefgxae9hmbkcbhkabhvcbhoindndnaoalydbgq9hmbdnaoavydbgq9hmbavakBdbakcefhkxdkavabaqcdtfydbBdbxekavabaqcdtfydbBdbkalclfhlavclfhvaeaocefgo9hmbkakk;jiilud99euabcbaecltz:tjjjbhvdnalTmbadhoaihralhwinarcwfIdbhDarclfIdbhqavaoydbcltfgkarIdbakIdbMUdbakaqakIdlMUdlakaDakIdwMUdwakakIdxJbbjZMUdxaoclfhoarcxfhrawcufgwmbkkdnaeTmbavhkaehrinakcxfgoIdbhDaocbBdbakakIdbJbbbbJbbjZaD:vaDJbbbb9BEgDNUdbakclfgoaDaoIdbNUdbakcwfgoaDaoIdbNUdbakczfhkarcufgrmbkkdnalTmbinavadydbcltfgkaicwfIdbakIdw:tgDaDNaiIdbakIdb:tgDaDNaiclfIdbakIdl:tgDaDNMMgDakIdxgqaqaD9DEUdxadclfhdaicxfhialcufglmbkkdnaeTmbavcxfhkinabakIdbUdbakczfhkabclfhbaecufgembkkk:moerudnaoTmbaecd4hzdnavTmbaicd4hHavcdthOcbhAindnaPaAfRbbTmbaAhednaDTmbaDaAcdtfydbhekdnasTmbasaefRbbceGmekdnamaAfRbbclSmbabaeaz2cdtfgiaraAcx2fgCIdbakNaxIdbMUdbaiaCIdlakNaxIdlMUdlaiaCIdwakNaxIdwMUdwkadaeaH2cdtfhXaqheawhiavhCinaXaeydbcdtgQfaiIdbalaQfIdb:vUdbaeclfheaiclfhiaCcufgCmbkkawaOfhwaAcefgAao9hmbxdkkdnasmbcbheaDhiindnaPaefRbbTmbaehCdnaDTmbaiydbhCkamaefRbbclSmbabaCaz2cdtfgCarIdbakNaxIdbMUdbaCarclfIdbakNaxIdlMUdlaCarcwfIdbakNaxIdwMUdwkaiclfhiarcxfhraoaecefge9hmbxdkkdnaDTmbindnaPRbbTmbasaDydbgefRbbceGmbamRbbclSmbabaeaz2cdtfgearIdbakNaxIdbMUdbaearclfIdbakNaxIdlMUdlaearcwfIdbakNaxIdwMUdwkaPcefhPaDclfhDamcefhmarcxfhraocufgombxdkkazcdthicbheindnaPaefRbbTmbasaefRbbceGmbamaefRbbclSmbabarIdbakNaxIdbMUdbabclfarclfIdbakNaxIdlMUdbabcwfarcwfIdbakNaxIdwMUdbkarcxfhrabaifhbaoaecefge9hmbkkk8MbabaeadaialavcbcbcbcbcbaoarawaDz:bjjjbk8MbabaeadaialavaoarawaDaqakaxamaPz:bjjjbkRbababaeadaialavaoarawaDaqakaxcjjjjdVamz:bjjjbk:g8Koque99due99duq998Jjjjjbc;Wb9Rgq8Kjjjjbcbhkaqcxfcbc;Kbz:tjjjb8Aaqcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgxBdxaqceBd2axaialavcbcbz:ejjjb8AaqcualcdtalcFFFFi0Egmcbyd1:H:cjbHjjjjbbgiBdzaqcdBd2dndnJFF959eJbbjZawJbbjZawJbbjZ9DE:vawJ9VO:d869DEgw:lJbbb9p9DTmbaw:OhPxekcjjjj94hPkadci9Uhsarco9UhzdndnaombaPcd9imekdnalTmbaPcuf:YhwdnaoTmbcbhvaihHaxhOindndnaoavfRbbceGTmbavcjjjjlVhAxekdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHaOcxfhOalavcefgv9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkadTmbcbhkaehvcbhOinakaiavclfydbcdtfydbgHaiavcwfydbcdtfydbgA9haiavydbcdtfydbgXaH9haXaA9hGGfhkavcxfhvaOcifgOad6mbkkarci9UhQdndnaz:Z:rJbbbZMgw:lJbbb9p9DTmbaw:Ohvxekcjjjj94hvkaQ:ZhLcbhKc:bwhzdninakaQ9pmeazaP9Rcd9imeavazcufgOavaO9iEaPcefavaP9kEhYdnalTmbaYcuf:YhwdnaoTmbcbhOaihHaxhvindndnaoaOfRbbceGTmbaOcjjjjlVhAxekdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHavcxfhvalaOcefgO9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkcbhOdnadTmbaehvcbhHinaOaiavclfydbcdtfydbgAaiavcwfydbcdtfydbgX9haiavydbcdtfydbgraA9haraX9hGGfhOavcxfhvaHcifgHad6mbkkdnas:ZgCaL:taY:Ygwaz:Y:tg8ANak:ZgEaO:Zg3:tNaEaL:tawaP:Y:tg5Na3aC:tNMg8EJbbbb9BmbaCaE:ta5a8Aa3aL:tNNNa8E:vawMhwkdndnaOaQ0mbaOhkaYhPxekaOhsaYhzkdndnaKcl0mbdnawJbbbZMgw:lJbbb9p9DTmbaw:Ohvxdkcjjjj94hvxekaPazfcd9ThvkaKcefgKcs9hmbkkdndndnakmbJbbjZhwcbhOcdhvaDmexdkalcd4alfhHcehOinaOgvcethOavaH6mbkcbhOaqcuavcdtgYavcFFFFi0Ecbyd1:H:cjbHjjjjbbgKBdCaqciBd2aqamcbyd1:H:cjbHjjjjbbgzBdKaqclBd2dndndndnalTmbaPcuf:YhwaoTmecbhOaihAaxhHindndnaoaOfRbbceGTmbaOcjjjjlVhXxekdndnaHclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqthXdndnaHcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarVhXdndnaHIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarcCtVhXkaAaXBdbaAclfhAaHcxfhHalaOcefgO9hmbxikkaKcFeaYz:tjjjb8AcbhPcbhvxdkaxhOaihHalhAindndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcCthXdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkarcqtaXVhXdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaHaXarVBdbaOcxfhOaHclfhHaAcufgAmbkkaKcFeaYz:tjjjbhravcufhocbhPcbhYindndndnaraiaYcdtgKfydbgAcm4aA7c:v;t;h;Ev2gvcs4av7aoGgHcdtfgXydbgOcuSmbcehvinaiaOcdtgOfydbaASmdaHavfhOavcefhvaraOaoGgHcdtfgXydbgOcu9hmbkkaXaYBdbaPhvaPcefhPxekazaOfydbhvkazaKfavBdbaYcefgYal9hmbkcuaPc8S2gOaPc;D;O;f8U0EhvkcbhXaqavcbyd1:H:cjbHjjjjbbgvBd3aqcvBd2avcbaOz:tjjjbhOdnadTmbaehiinaxaiclfydbgrcx2fgvIdbaxaiydbgocx2fgHIdbg3:tgCaxaicwfydbgYcx2fgAIdlaHIdlg8A:tgwNavIdla8A:tgEaAIdba3:tg8EN:tgLaLNaEaAIdwaHIdwg5:tg8FNavIdwa5:tgEawN:tgwawNaEa8ENaCa8FN:tgCaCNMMg8E:rhEJbbnnJbbjZazaocdtfydbgvazarcdtfydbgASavazaYcdtfydbgrSGgHEh8Fdna8EJbbbb9ETmbaLaE:vhLaCaE:vhCawaE:vhwkaOavc8S2fgvavIdbawa8FaE:rNgEawNNg8FMUdbavaCaEaCNgaNghavIdlMUdlavaLaEaLNg8ENggavIdwMUdwavawaaNgaavIdxMUdxava8EawNg8JavIdzMUdzavaCa8ENg8EavIdCMUdCavawaEaLa5Nawa3Na8AaCNMM:mg8ANg3NgwavIdKMUdKavaCa3NgCavId3MUd3avaLa3NgLavIdaMUdaava3a8ANg3avId8KMUd8KavaEavIdyMUdydnaHmbaOaAc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdyaOarc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdykaicxfhiaXcifgXad6mbkkcbhAaqcuaPcdtgvaPcFFFFi0Egicbyd1:H:cjbHjjjjbbgHBdaaqcoBd2aqaicbyd1:H:cjbHjjjjbbgiBd8KaqcrBd2aHcFeavz:tjjjbhYdnalTmbazhHinJbbbbJbbjZaOaHydbgXc8S2fgvIdygw:vawJbbbb9BEavIdwaxcwfIdbgwNavIdzaxIdbgCNavIdaMgLaLMMawNavIdlaxclfIdbgLNavIdCawNavId3MgwawMMaLNavIdbaCNavIdxaLNavIdKMgwawMMaCNavId8KMMM:lNhwdndnaYaXcdtgvfgXydbcuSmbaiavfIdbaw9ETmekaXaABdbaiavfawUdbkaHclfhHaxcxfhxalaAcefgA9hmbkkdndnaPmbJbbbbhwxekJbbbbhwinaiIdbgCawawaC9DEhwaiclfhiaPcufgPmbkaw:rhwkakcd4akfhOcehiinaigvcethiavaO6mbkcbhOaqcuavcdtgiavcFFFFi0Ecbyd1:H:cjbHjjjjbbgHBdyaHcFeaiz:tjjjbhXdnadTmbavcufhrcbhPcbhxindnazaeaxcdtfgvydbcdtfydbgiazavclfydbcdtfydbgOSmbaiazavcwfydbcdtfydbgvSmbaOavSmbaYavcdtfydbhAdndnaYaOcdtfydbgvaYaicdtfydbgi9pmbavaA9pmbaAhlaihoavhAxekdnaAai9pmbaAav9pmbaihlavhoxekavhlaAhoaihAkabaPcx2fgvaABdbavcwfaoBdbavclfalBdbdnaXaoc:3F;N8N2alc:F:b:DD27aAc;D;O:B8J27arGgOcdtfgvydbgicuSmbcehHinaHhvdnabaicx2fgiydbaA9hmbaiydlal9hmbaiydwaoSmikavcefhHaXaOavfarGgOcdtfgvydbgicu9hmbkkavaPBdbaPcefhPkaxcifgxad6mbkaPci2hOkcwhvaDTmekaDawUdbkavcdthvaqcxfc98fhiinaiavfydbcbyd:m:H:cjbH:bjjjbbavc98fgvmbkaqc;Wbf8KjjjjbaOk:3ldrue9:8Jjjjjbc;Wb9Rgr8Kjjjjbcbhwarcxfcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkarcualcdtalcFFFFi0EgDcbyd1:H:cjbHjjjjbbgqBdxarceBd2aqcbaialavcbarcxfz:djjjbcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbhkarcxfaryd2gxcdtfakBdbaraxcefgmBd2akaialavcbcbz:ejjjb8AarcxfamcdtfaDcbyd1:H:cjbHjjjjbbgiBdbaraxcdfgvBd2arcxfavcdtfcuaialaeadaqz:fjjjbgecltaecjjjjiGEcbyd1:H:cjbHjjjjbbgqBdbaqaeaiakalz:gjjjbaxcifhkdnadTmbaoaoNhocbhwabhlcbheindnaqaialydbgvcdtfydbcdtfIdbao9ETmbalclf8PdbhPabawcdtfgDavBdbaDclfaP83dbawcifhwkalcxfhlaecifgead6mbkkdnakTmbaxcdtarcxffcwfhlinalydbcbyd:m:H:cjbH:bjjjbbalc98fhlakcufgkmbkkarc;Wbf8Kjjjjbawk:WCoDud99vue99vuv998Jjjjjbc;Wb9Rgw8KjjjjbdndnarmbcbhDxekawcxfcbc;Kbz:tjjjb8Aawcuadcx2adc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgqBdxawceBd2aqaeadaicbcbz:ejjjb8AawcuadcdtadcFFFFi0Egkcbyd1:H:cjbHjjjjbbgxBdzawcdBd2adcd4adfhmceheinaegicetheaiam6mbkcbhPawcuaicdtgsaicFFFFi0Ecbyd1:H:cjbHjjjjbbgzBdCawciBd2dndnar:ZgH:rJbbbZMgO:lJbbb9p9DTmbaO:Ohexekcjjjj94hekaicufhAc:bwhCcbhXadhQcbhLinaeaCcufgiaeai9iEaPcefaeaP9kEhDdndnadTmbaDcuf:YhOaqhiaxheadhmindndnaiIdbaONJbbbZMgK:lJbbb9p9DTmbaK:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbh3cbh5indnaEaxa5cdtfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbaeaYSmbcehiinaEamaifaAGgmcdtfg8AydbgecuSmeaicefhiaeaY9hmbkka8AaYBdba3aecuSfh3a5cefg5ad9hmbxdkkazcFeasz:tjjjb8Acbh3kdnaQ:ZgKaH:taD:YgOaC:Y:tg8ENaX:Zg8Fa3:Zga:tNa8FaH:taOaP:Y:tghNaaaK:tNMggJbbbb9BmbaKa8F:taha8EaaaH:tNNNag:vaOMhOkaPaDa3ar0giEhPaXa3aiEhXdna3arSmbaDaCaiEgCaP9Rcd9imbdndnaLcl0mbdnaOJbbbZMgO:lJbbb9p9DTmbaO:Ohexdkcjjjj94hexekaPaCfcd9Theka3aQaiEhQaLcefgLcs9hmekkdndnaXmbcihicbhDxekcbhiawakcbyd1:H:cjbHjjjjbbg5BdKawclBd2aPcuf:YhKdndnadTmbaqhiaxheadhmindndnaiIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbhDcbh3indndndnaEaxa3cdtgCfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbcehiinaxaecdtgefydbaYSmdamaifheaicefhiaEaeaAGgmcdtfg8Aydbgecu9hmbkka8Aa3BdbaDhiaDcefhDxeka5aefydbhika5aCfaiBdba3cefg3ad9hmbkcuaDc32giaDc;j:KM;jb0EhexekazcFeasz:tjjjb8AcbhDcbhekawaecbyd1:H:cjbHjjjjbbgeBd3awcvBd2aecbaiz:tjjjbh8Aavcd4hxdnadTmbdnalTmbaxcdthEa5hYaqhealhmadhAina8AaYydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiamIdbaiIdxMUdxaiamclfIdbaiIdzMUdzaiamcwfIdbaiIdCMUdCaiaiIdKJbbjZMUdKaYclfhYaecxfheamaEfhmaAcufgAmbxdkka5hmaqheadhYina8Aamydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiaiIdxJbbbbMUdxaiaiIdzJbbbbMUdzaiaiIdCJbbbbMUdCaiaiIdKJbbjZMUdKamclfhmaecxfheaYcufgYmbkkdnaDTmba8AhiaDheinaiaiIdbJbbbbJbbjZaicKfIdbgO:vaOJbbbb9BEgONUdbaiclfgmaOamIdbNUdbaicwfgmaOamIdbNUdbaicxfgmaOamIdbNUdbaiczfgmaOamIdbNUdbaicCfgmaOamIdbNUdbaic3fhiaecufgembkkcbhYawcuaDcdtgCaDcFFFFi0Egicbyd1:H:cjbHjjjjbbgeBdaawcoBd2awaicbyd1:H:cjbHjjjjbbgEBd8KaecFeaCz:tjjjbh3dnadTmbaoJbbjZJbbjZaK:vaPceSENgOaONhKaxcdthxalheinaKaec;8:G:cjbalEgmIdwa8Aa5ydbgAc32fgiIdC:tgOaONamIdbaiIdx:tgOaONamIdlaiIdz:tgOaONMMNaqcwfIdbaiIdw:tgOaONaqIdbaiIdb:tgOaONaqclfIdbaiIdl:tgOaONMMMhOdndna3aAcdtgifgmydbcuSmbaEaifIdbaO9ETmekamaYBdbaEaifaOUdbka5clfh5aqcxfhqaeaxfheadaYcefgY9hmbkkaba3aCzMjjjb8Acrhikaicdthiawcxfc98fheinaeaifydbcbyd:m:H:cjbH:bjjjbbaic98fgimbkkawc;Wbf8KjjjjbaDk:Pdidui99ducbhi8Jjjjjbca9Rglcbyd1:G:cjbBdKalcb8Pdj:G:cjb83izalcbydN:G:cjbBdwalcb8Pd:m:G:cjb83ibdndnaembJbbjFhvJbbjFhoJbbjFhrxekadcd4cdthwincbhdinalczfadfgDabadfIdbgvaDIdbgoaoav9EEUdbaladfgDavaDIdbgoaoav9DEUdbadclfgdcx9hmbkabawfhbaicefgiae9hmbkalIdwalIdK:thralIdlalIdC:thoalIdbalIdz:thvkJbbbbavavJbbbb9DEgvaoaoav9DEgvararav9DEk9DeeuabcFeaicdtz:tjjjbhlcbhbdnadTmbindnalaeydbcdtfgiydbcu9hmbaiabBdbabcefhbkaeclfheadcufgdmbkkabk;Bidqui998Jjjjjbc;Wb9Rgl8Kjjjjbalcxfcbc;Kbz:tjjjb8Aadcd4adfhvcehoinaogrcethoarav6mbkalcuarcdtgoarcFFFFi0Ecbyd1:H:cjbHjjjjbbgvBdxavcFeaoz:tjjjbhwdnadTmbaicd4hDarcufhqcbhkindndnawcbaeakaD2cdtfgrydlgiaicjjjj94SEgocH4ao7c:F:b:DD2cbarydbgxaxcjjjj94SEgocH4ao7c;D;O:B8J27cbarydwgmamcjjjj94SEgrcH4ar7c:3F;N8N27aqGgvcdtfgrydbgocuSmbam::hPai::hsax::hzcehiinaihrdnaeaoaD2cdtfgiIdbaz9CmbaiIdlas9CmbaiIdwaP9BmikarcefhiawavarfaqGgvcdtfgrydbgocu9hmbkkarakBdbakhokabakcdtfaoBdbakcefgkad9hmbkkalydxcbyd:m:H:cjbH:bjjjbbalc;Wbf8Kjjjjbk9teiucbcbyd:q:H:cjbgeabcifc98GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabk9teiucbcbyd:q:H:cjbgeabcrfc94GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaikTeeucbabcbyd:q:H:cjbge9Rcifc98GaefgbBd:q:H:cjbdnabZbcztge9nmbabae9RcFFifcz4nb8Akkk:Kedbcj:Gdk1eFFuuFFuuFFuuFFuFFFuFFFuFbbbbbbbbebbbdbbbbbbbebbbebbbdbbbbbbbbbbbeeeeebebbebbebebbbeebbbbbbbbbbbbeeeeeebebbeeebeebbbbebebbbbbbbbbbbbbbbbbbc1:Hdkxebbbdbbb:G:qbb";
   var wasmpack = new Uint8Array([
@@ -4300,12 +4425,12 @@ function resolveStack(road, types = ROAD_TYPES, scale = 1) {
           mods: [{ sec, width: w }],
           added: true
         };
-        let idx = 0;
+        let idx2 = 0;
         if (op.at === "curb") {
-          idx = list.findIndex((l) => !LANE_TYPES[l.type]?.carriage || l.type === "parking" || l.type === "shoulder");
-          if (idx < 0) idx = list.length;
-        } else if (typeof op.at === "number") idx = clamp(op.at, 0, list.length);
-        list.splice(idx, 0, lane);
+          idx2 = list.findIndex((l) => !LANE_TYPES[l.type]?.carriage || l.type === "parking" || l.type === "shoulder");
+          if (idx2 < 0) idx2 = list.length;
+        } else if (typeof op.at === "number") idx2 = clamp(op.at, 0, list.length);
+        list.splice(idx2, 0, lane);
       } else if (op.op === "width" || op.op === "grow") {
         for (const l of list) {
           const hit = typeof op.match === "number" ? list.indexOf(l) === op.match : l.type === op.match;
@@ -5026,10 +5151,10 @@ function junctionConnectors(node, arms) {
       const dedicated = Q.some((l) => l.turn && l.turn.split("-").includes(tc === "straight" ? "through" : tc));
       if (dedicated && tc !== "straight") return false;
       if (plain.length <= 1) return true;
-      const idx = plain.indexOf(lane);
+      const idx2 = plain.indexOf(lane);
       if (tc === "straight") return true;
-      if (tc === "left") return idx === 0 || !hasStraight && idx < plain.length / 2;
-      return idx === plain.length - 1 || !hasStraight && idx >= plain.length / 2;
+      if (tc === "left") return idx2 === 0 || !hasStraight && idx2 < plain.length / 2;
+      return idx2 === plain.length - 1 || !hasStraight && idx2 >= plain.length / 2;
     };
     const served = new Map(Q.map((l) => [l, moves.filter((m) => allowed(l, m.tc))]));
     const extra = /* @__PURE__ */ new Map();
@@ -6493,7 +6618,7 @@ function pointInPoly(x, z, pts) {
   return inside3;
 }
 
-// ../uccle-city/tools/worker/node_modules/three/src/extras/lib/earcut.js
+// tools/worker/node_modules/three/src/extras/lib/earcut.js
 function earcut(data, holeIndices, dim = 2) {
   const hasHoles = holeIndices && holeIndices.length;
   const outerLen = hasHoles ? holeIndices[0] * dim : data.length;
@@ -7907,7 +8032,8 @@ var SURFACE = {
   fine_gravel: 4,
   compacted: 4,
   unpaved: 4,
-  concrete: 0
+  concrete: 0,
+  paving_herringbone: 5
 };
 function hashPhase2(id) {
   let h = 2166136261;
@@ -8192,7 +8318,7 @@ function surfaceVote(surf, roads, SURFACE2, city = null) {
   };
   return { of, fillUntagged, stats };
 }
-var CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel" };
+var CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel", 5: "paving_herringbone" };
 function oldNameVote(roads, SURFACE2) {
   const votes = /* @__PURE__ */ new Map();
   for (const r of roads.roads) {
@@ -8974,7 +9100,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     rampList.push(R2);
     for (let i = Math.floor((x0 - 0.5) / 8); i <= Math.floor((x1 + 0.5) / 8); i++) for (let j = Math.floor((z0 - 0.5) / 8); j <= Math.floor((z1 + 0.5) / 8); j++) push(rampGrid, cellKey(i, j), R2);
   });
-  const pipR = (x, z, ring2) => {
+  const pipR2 = (x, z, ring2) => {
     let ins = false;
     for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
       const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
@@ -8987,7 +9113,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     for (const R2 of rampGrid.get(cellKey(Math.floor(x / 8), Math.floor(z / 8))) || []) {
       if (si2 >= 0 && R2.si !== si2) continue;
       if (x < R2.x0 - 0.3 || x > R2.x1 + 0.3 || z < R2.z0 - 0.3 || z > R2.z1 + 0.3) continue;
-      if (si2 >= 0 || pipR(x, z, R2.ring)) return R2;
+      if (si2 >= 0 || pipR2(x, z, R2.ring)) return R2;
       near ??= R2;
     }
     return near;
@@ -9247,13 +9373,13 @@ function fitRoadWidths(roads, prep) {
       for (const ty of ["parking", "bike", "driving"]) {
         while (minSum() > target) {
           const drives = carriage.filter((l) => LANE_TYPES[l.type]?.drive).length;
-          let idx = -1;
+          let idx2 = -1;
           for (let q = carriage.length - 1; q >= 0; q--) if (carriage[q].type === ty && (ty !== "driving" || drives > 1)) {
-            idx = q;
+            idx2 = q;
             break;
           }
-          if (idx < 0) break;
-          carriage.splice(idx, 1);
+          if (idx2 < 0) break;
+          carriage.splice(idx2, 1);
           st.lanesDropped++;
         }
       }
@@ -9445,7 +9571,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     return parts2;
   };
   const emit = (poly, vs, P2) => {
-    const idx = [];
+    const idx2 = [];
     for (const q of poly) {
       const we = bary(q, P2[0], P2[1], P2[2]);
       if (!we) return;
@@ -9453,9 +9579,9 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
       const ex = exOfZ(vs, we);
       const key = `o${Math.round(q[0] * 1e3)},${Math.round(q[1] * 1e3)},${Math.round(u * 1e3)},${Math.round(v * 1e3)},${ex.aPiece[0].toFixed(2)},${ex.aEdges.map((e) => e.toFixed(3)).join()},${ex.aMark.map((e) => e.toFixed(4)).join()},${ex.aLateral.toFixed(3)}`;
-      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
+      idx2.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
     }
-    for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP2, true)) overlayTris++;
+    for (let k = 1; k + 1 < idx2.length; k++) if (A.tri(idx2[0], idx2[k], idx2[k + 1], UP2, true)) overlayTris++;
   };
   const eseg = /* @__PURE__ */ new Map();
   for (const e of surf.edges || []) for (let k = 1; k < e.line.length; k++) {
@@ -9491,15 +9617,15 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   };
   const emitPlane = (poly, vs, P2) => {
     const hv = P2.map((q) => H(q[0], q[1]));
-    const idx = [];
+    const idx2 = [];
     for (const q of poly) {
       const we = bary(q, P2[0], P2[1], P2[2]);
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOfZ(vs, we)));
+      idx2.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOfZ(vs, we)));
     }
-    for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP2, true)) overlayTris++;
+    for (let k = 1; k + 1 < idx2.length; k++) if (A.tri(idx2[0], idx2[k], idx2[k + 1], UP2, true)) overlayTris++;
   };
   for (let t = 0; t < EI.length; t += 3) {
     if (folded?.has(t)) {
@@ -9518,8 +9644,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
       const up = lift ? liftOf(vs[0]) - LIFT : 0;
-      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
-      A.idxFirst.push(idx[0], idx[1], idx[2]);
+      const idx2 = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
+      A.idxFirst.push(idx2[0], idx2[1], idx2[2]);
       for (const v of vs) keptEngine.push(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2]);
       keptTris++;
       continue;
@@ -9709,8 +9835,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);
     }
     const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: s.surface != null ? SURFACE[s.surface] ?? 0 : voteOf(s) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame2 >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
-    const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame2}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
-    part.tri(idx[0], idx[1], idx[2], UP2);
+    const idx2 = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame2}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
+    part.tri(idx2[0], idx2[1], idx2[2], UP2);
   }
   const carveTris = new Float32Array(base.length * 9);
   base.forEach((b, k) => {
@@ -9747,7 +9873,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       if (!inTile(cx, cz) || baseAt(cx, cz) || onBuilding(cx, cz)) continue;
       const ph = nearestPhase(cx, cz);
       if (ph === null || mapped.has(ph)) continue;
-      const idx = vs.map((v) => dst.vert(
+      const idx2 = vs.map((v) => dst.vert(
         SP[v * 3],
         SP[v * 3 + 1],
         SP[v * 3 + 2],
@@ -9756,7 +9882,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
         S3.uv[v * 2 + 1],
         name === "concrete" ? { aKind: S3.attributes.aKind.array[v] } : null
       ));
-      dst.idx.push(idx[0], idx[1], idx[2]);
+      dst.idx.push(idx2[0], idx2[1], idx2[2]);
       keptSide++;
     }
   }
@@ -10597,7 +10723,7 @@ function unpaintParking(built, ctx) {
   return n;
 }
 function paintMeshV2(items, prep, bounds) {
-  const pos = [], nrm = [], uv = [], a1 = [], a2 = [], idx = [];
+  const pos = [], nrm = [], uv = [], a1 = [], a2 = [], idx2 = [];
   if (!items.length) return null;
   const grid = /* @__PURE__ */ new Map();
   prep.base.forEach((b, i) => {
@@ -10647,20 +10773,89 @@ function paintMeshV2(items, prep, bounds) {
             a2.push(ext[0], ext[1], 0, 0);
           }
           for (let k = 1; k + 1 < piece.length; k++) {
-            if (ccw) idx.push(v0, v0 + k + 1, v0 + k);
-            else idx.push(v0, v0 + k, v0 + k + 1);
+            if (ccw) idx2.push(v0, v0 + k + 1, v0 + k);
+            else idx2.push(v0, v0 + k, v0 + k + 1);
           }
         }
       }
   }
-  if (!idx.length) return null;
+  if (!idx2.length) return null;
   return {
     position: new Float32Array(pos),
     normal: new Float32Array(nrm),
     uv: new Float32Array(uv),
-    index: new Uint32Array(idx),
+    index: new Uint32Array(idx2),
     attributes: { aPaint: { array: new Float32Array(a1), itemSize: 4 }, aPaint2: { array: new Float32Array(a2), itemSize: 4 } }
   };
+}
+function roadTextRows(texts) {
+  const rows = [];
+  for (const [k, t] of Object.entries(texts || {})) if (!k.startsWith("_") && t?.lines) {
+    for (const l of t.lines) if (!rows.includes(l)) rows.push(l);
+  }
+  return rows;
+}
+function roadTextMesh(texts, prep, bounds) {
+  const rows = roadTextRows(texts), R2 = rows.length;
+  if (!R2) return null;
+  const pos = [], nrm = [], uv = [], idx2 = [];
+  const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
+  for (const [k, t] of Object.entries(texts)) {
+    if (k.startsWith("_") || !t?.lines || !t.at || !t.dir) continue;
+    const L2 = Math.hypot(t.dir[0], t.dir[1]) || 1, fx = t.dir[0] / L2, fz = t.dir[1] / L2, rx = -fz, rz = fx;
+    const w = t.w ?? 3, h = t.h ?? 1.6, gap = t.gap ?? 0.8;
+    if (t.along) {
+      const Lg = t.L ?? 4, n = t.lines.length;
+      t.lines.forEach((line, i) => {
+        const row = rows.indexOf(line), off = (i - (n - 1) / 2) * (h + gap);
+        const cx = t.at[0] + rx * off, cz = t.at[1] + rz * off;
+        const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [cx + fx * a * Lg / 2 + rx * b * h / 2, cz + fz * a * Lg / 2 + rz * b * h / 2]);
+        const poly = clipConvex(corners, tile);
+        if (poly.length < 3) return;
+        const uvOf = (p) => {
+          const dx = p[0] - cx, dz = p[1] - cz;
+          return [(dx * fx + dz * fz) / Lg + 0.5, 1 - (row + 1) / R2 + (0.5 - (dx * rx + dz * rz) / h) / R2];
+        };
+        drape(poly, uvOf);
+      });
+      continue;
+    }
+    t.lines.forEach((line, i) => {
+      const row = rows.indexOf(line), along = i * (h + gap);
+      const ox = t.at[0] + fx * along, oz = t.at[1] + fz * along;
+      const p0 = [ox - rx * w / 2 - fx * h / 2, oz - rz * w / 2 - fz * h / 2];
+      const corners = [p0, [p0[0] + rx * w, p0[1] + rz * w], [p0[0] + rx * w + fx * h, p0[1] + rz * w + fz * h], [p0[0] + fx * h, p0[1] + fz * h]];
+      const poly = clipConvex(corners, tile);
+      if (poly.length < 3) return;
+      const uvOf = (p) => {
+        const dx = p[0] - p0[0], dz = p[1] - p0[1];
+        return [(dx * rx + dz * rz) / w, 1 - (row + 1) / R2 + (dx * fx + dz * fz) / h / R2];
+      };
+      drape(poly, uvOf);
+    });
+  }
+  function drape(poly, uvOf) {
+    for (const b of prep.base) {
+      if (!MARKABLE.has(b.cls)) continue;
+      const piece = clipConvex(poly, [b.a, b.b, b.c]);
+      if (piece.length < 3 || Math.abs(area22(piece)) < 1e-5) continue;
+      const v0 = pos.length / 3;
+      const [pa, pb, pc] = piece;
+      const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
+      for (const p of piece) {
+        pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
+        const nn = prep.nrmAt(p[0], p[1]);
+        nrm.push(nn[0], nn[1], nn[2]);
+        uv.push(...uvOf(p));
+      }
+      for (let q = 1; q + 1 < piece.length; q++) {
+        if (ccw) idx2.push(v0, v0 + q + 1, v0 + q);
+        else idx2.push(v0, v0 + q, v0 + q + 1);
+      }
+    }
+  }
+  if (!idx2.length) return null;
+  return { position: new Float32Array(pos), normal: new Float32Array(nrm), uv: new Float32Array(uv), index: new Uint32Array(idx2), attributes: {}, rows };
 }
 
 // viewer/streets/laneGraph.js
@@ -11627,6 +11822,11 @@ function buildRoadData(o) {
       parts.paint = paintPart;
       triangles += paintPart.index.length / 3;
     }
+    const textPart = o.roadTexts ? roadTextMesh(o.roadTexts, prep, bounds) : null;
+    if (textPart) {
+      parts.roadtext = textPart;
+      triangles += textPart.index.length / 3;
+    }
     lap("paint decal");
   }
   const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
@@ -12277,7 +12477,7 @@ function kitCollector(opts = {}) {
     const off = { on: 0, rise: 0, doorless: 0, french: 0 };
     if (!f.street || f.landmark || f.partyH >= 999 || f.wallStyle > 4.5 || f.building.height > MAX_H) return off;
     const type = f.type | 0;
-    if (type === TYPE.DECO || type === TYPE.BELETAGE || type === TYPE.BLOCK) return off;
+    if (type === TYPE.DECO || type === TYPE.BELETAGE || type === TYPE.BLOCK || type === TYPE.NINETIES || type === TYPE.CURTAIN) return off;
     if (exclude.has(f.key) || only && !only.has(f.key)) return off;
     if (f.width < 2.2 || f.eaves < 2.8) return off;
     const fr = Math.fround;
@@ -12341,7 +12541,8 @@ function kitCollector(opts = {}) {
       placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
     }
     stats.faces++;
-    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rnd + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
+    const rndPack = Math.floor(rnd * 4096 + 0.5) / 4096;
+    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rndPack + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S3.seed;
     const gaps = [];
@@ -12625,11 +12826,11 @@ function roofCollector(opts = {}) {
     const ex = Math.abs(ca) * hx + Math.abs(sa) * hz, ez = Math.abs(sa) * hx + Math.abs(ca) * hz;
     cols.push(x - ex, z - ez, x + ex, z + ez, top);
   };
-  function stack(x, z, tx, tz, w, d, top, roofY, aux, tone, r) {
+  function stack(x, z, tx, tz, w, d, top, roofY2, aux, tone, r) {
     const nx = -tz, nz = tx;
     let lo = Infinity, hi = -Infinity;
     for (const [a, b] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5], [0, 0]]) {
-      const yy = roofY(x + tx * a * w + nx * b * d, z + tz * a * w + nz * b * d);
+      const yy = roofY2(x + tx * a * w + nx * b * d, z + tz * a * w + nz * b * d);
       lo = Math.min(lo, yy);
       hi = Math.max(hi, yy);
     }
@@ -12668,14 +12869,14 @@ function roofCollector(opts = {}) {
     const w = f.party ? 0.8 + r() * 0.7 : 0.55 + r() * 0.35, d = f.party ? 0.5 + r() * 0.15 : 0.45 + r() * 0.15;
     const inset = f.party ? 0 : d / 2 + 0.05;
     const cx = f.x - f.nx * inset, cz = f.z - f.nz * inset;
-    const roofY = (x, z) => {
+    const roofY2 = (x, z) => {
       const a = f.roofAt(x, z), b = f.otherRoof ? f.otherRoof(x, z) : -Infinity;
       const m = Math.max(a, b);
       return m > -1e8 ? m : f.top;
     };
     const top = f.top + 0.7 + r() * 0.6;
-    const g = Math.max(0.2, Math.min(1.6, (f.top - roofY(f.x + f.tx * 1.5, f.z + f.tz * 1.5)) / 1.5));
-    const s = stack(cx, cz, f.tx, f.tz, w, d, top, roofY, [f.top, f.tx * g, f.tz * g, 1], f.tone, r);
+    const g = Math.max(0.2, Math.min(1.6, (f.top - roofY2(f.x + f.tx * 1.5, f.z + f.tz * 1.5)) / 1.5));
+    const s = stack(cx, cz, f.tx, f.tz, w, d, top, roofY2, [f.top, f.tx * g, f.tz * g, 1], f.tone, r);
     if (s) {
       s.party = f.party;
       stacks.push(s);
@@ -13001,12 +13202,12 @@ function roofCollector(opts = {}) {
         const p = F.at(u, v);
         const w = 0.5 + r() * 0.45, d = 0.45 + r() * 0.2;
         const ridgeY = b.roofTop;
-        const roofY = (x, z) => {
+        const roofY2 = (x, z) => {
           const yy = b.roofAt(x, z, false);
           return yy > -1e8 ? yy : p[1];
         };
         const tanP = Math.tan(F.pitch), g = [-F.dx * tanP, -F.dz * tanP];
-        const s = stack(p[0], p[2], F.t[0], F.t[2], w, d, Math.max(ridgeY + 0.5 + r() * 0.5, p[1] + 1), roofY, [p[1], g[0], g[1], 0], b.tone, r);
+        const s = stack(p[0], p[2], F.t[0], F.t[2], w, d, Math.max(ridgeY + 0.5 + r() * 0.5, p[1] + 1), roofY2, [p[1], g[0], g[1], 0], b.tone, r);
         if (s) {
           stacks.push(s);
           stats.stackRidge = (stats.stackRidge || 0) + 1;
@@ -14094,7 +14295,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const fitted = grid ? fitToSurface(raw, grid, fitStats, parked) : raw;
   if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
   const src = roundKinks(fitted);
-  const idx = new Map(src.map((p, i) => [p.id, i]));
+  const idx2 = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
   for (const p of src) nPts += p.pts.length;
@@ -14130,7 +14331,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     src.forEach((p, i) => {
       o2[i] = list2.length;
       for (const id of p[key]) {
-        const j = idx.get(id);
+        const j = idx2.get(id);
         if (j != null) list2.push(j);
       }
     });
@@ -14180,11 +14381,11 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const stats = { junctions: 0, signal: 0, stop: 0, yield: 0, priority: 0, conflicts: 0, pedSignals: 0 };
   const cf = [];
   for (const node of net.nodes) {
-    const cons = (node.connectors || []).map((c) => idx.get(c.id)).filter((i) => i != null);
+    const cons = (node.connectors || []).map((c) => idx2.get(c.id)).filter((i) => i != null);
     const osmSignal = node.src?.control === "signal";
     if (!cons.length && osmSignal && node.arms?.length === 2) {
       for (const a of node.arms) for (const lane of a.approach) {
-        const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx.get(pid);
+        const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx2.get(pid);
         if (i == null) continue;
         const s = nearestSig(sigPts, node.x, node.z, 30);
         holdAt[i] = Math.max(0, len[i] - 4.5);
@@ -14204,7 +14405,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     const entries = /* @__PURE__ */ new Map();
     const lanes = [];
     for (const ci of cons) for (const id of src[ci].prev) {
-      const li = idx.get(id);
+      const li = idx2.get(id);
       if (li != null && !lanes.includes(li)) lanes.push(li);
     }
     const signOf = /* @__PURE__ */ new Map();
@@ -14238,7 +14439,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
       jnode[li] = J;
       stats[c === CTRL.signal ? "signal" : c === CTRL.stop ? "stop" : c === CTRL.yield ? "yield" : "priority"]++;
     }
-    const cIn = (ci) => idx.get(src[ci].prev[0]);
+    const cIn = (ci) => idx2.get(src[ci].prev[0]);
     const head = (ci) => {
       const q = src[ci].pts;
       return [q[1][0] - q[0][0], q[1][1] - q[0][1]];
@@ -15018,7 +15219,7 @@ function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
     terrain.nrm[k * 3 + 1] = 1 / L2;
     terrain.nrm[k * 3 + 2] = -hz / L2;
   }
-  const idx = terrain.idx, out = [], newPos = [], newNrm = [];
+  const idx2 = terrain.idx, out = [], newPos = [], newNrm = [];
   let nv = terrain.pos.length / 3, clipped = 0, dropped = 0;
   const vmap = /* @__PURE__ */ new Map();
   const addV = (key, x, y, z, nk) => {
@@ -15030,8 +15231,8 @@ function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
     newNrm.push(terrain.nrm[nk * 3], terrain.nrm[nk * 3 + 1], terrain.nrm[nk * 3 + 2]);
     return v;
   };
-  for (let t3 = 0; t3 < idx.length; t3 += 3) {
-    const v = [idx[t3], idx[t3 + 1], idx[t3 + 2]];
+  for (let t3 = 0; t3 < idx2.length; t3 += 3) {
+    const v = [idx2[t3], idx2[t3 + 1], idx2[t3 + 2]];
     const c = v.map((k) => cls[k]);
     const hasRoad = c.includes(ROAD), earth = v.filter((k, i) => c[i] === LID || c[i] === KEPT);
     if (!hasRoad || !earth.length || v.some((k, i) => cls[k] && owner[k] !== owner[v.find((q) => cls[q])])) {
@@ -15355,9 +15556,9 @@ function applyParkSquares(surf, ov, bounds) {
   if (!surf?.surfaces || !list?.length) return 0;
   let n = 0;
   for (const ps of list) {
-    const idx = surf.surfaces.findIndex((s) => s.id === ps.id);
-    if (idx < 0) continue;
-    const proto = surf.surfaces[idx];
+    const idx2 = surf.surfaces.findIndex((s) => s.id === ps.id);
+    if (idx2 < 0) continue;
+    const proto = surf.surfaces[idx2];
     surf.surfaces = surf.surfaces.filter((s) => s.id !== ps.id);
     n++;
     for (const piece of ps.pieces) {
@@ -15456,27 +15657,27 @@ function terrainArrays(hm, fitDiagonals = false) {
     nrm[k * 3 + 1] = 1 / L2;
     nrm[k * 3 + 2] = -hz / L2;
   }
-  const idx = new Uint32Array((cols - 1) * (rows - 1) * 6);
+  const idx2 = new Uint32Array((cols - 1) * (rows - 1) * 6);
   let o = 0;
   for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols - 1; c++) {
     const a = r * cols + c, b = a + cols, cc = a + 1, d = b + 1;
     if (fitDiagonals && Math.abs(Y[a] - Y[d]) < Math.abs(Y[b] - Y[cc]) - 0.01) {
-      idx[o++] = a;
-      idx[o++] = b;
-      idx[o++] = d;
-      idx[o++] = a;
-      idx[o++] = d;
-      idx[o++] = cc;
+      idx2[o++] = a;
+      idx2[o++] = b;
+      idx2[o++] = d;
+      idx2[o++] = a;
+      idx2[o++] = d;
+      idx2[o++] = cc;
       continue;
     }
-    idx[o++] = a;
-    idx[o++] = b;
-    idx[o++] = cc;
-    idx[o++] = cc;
-    idx[o++] = b;
-    idx[o++] = d;
+    idx2[o++] = a;
+    idx2[o++] = b;
+    idx2[o++] = cc;
+    idx2[o++] = cc;
+    idx2[o++] = b;
+    idx2[o++] = d;
   }
-  return { pos, nrm, idx };
+  return { pos, nrm, idx: idx2 };
 }
 async function streetlifeFronts(base, name) {
   const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
@@ -15488,7 +15689,20 @@ var overridesP = null;
 var streetVoteP = null;
 var streetVote = (base) => streetVoteP ??= fetch(new URL("../roads/streetVote.json", base)).then((r) => r.ok ? r.json() : { exact: {}, loose: {} }).catch(() => ({ exact: {}, loose: {} }));
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
-var lookSet = (looks, entry) => !looks || entry.cortenbosch !== false ? looks : Object.fromEntries(Object.entries(looks).filter(([, v]) => v?.set !== "cortenbosch"));
+var lookSet = (looks, entry) => {
+  if (!looks) return looks;
+  const out = {};
+  for (const [k, v] of Object.entries(looks)) {
+    if (!v || typeof v !== "object") {
+      out[k] = v;
+      continue;
+    }
+    if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
+    if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
+    out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
+  }
+  return out;
+};
 function wallRayOf(bDoc) {
   const B = 4, cells = /* @__PURE__ */ new Map(), segs = [];
   for (const b of bDoc.buildings) for (const ring2 of b.footprint || []) for (let i = 0; i < ring2.length; i++) {
@@ -15680,11 +15894,12 @@ async function buildTileData(entry, base) {
     }
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
   if (entry.cortenbosch !== false && ov.streetSurfaces) {
+    const sOf = (o) => o.pattern === "herringbone" && o.surface === "paving_stones" && entry.cortenbosch2 !== false ? "paving_herringbone" : o.surface;
     if (surf) for (const s of surf.surfaces || []) {
       const o = ov.streetSurfaces[s.id];
-      if (o?.surface) s.surface = o.surface;
+      if (o?.surface) s.surface = sOf(o);
     }
-    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, o.surface])));
+    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, sOf(o)])));
     for (const r of roads.roads) {
       const sf = byRoad.get(r.id);
       if (sf) (r.meta ??= {}).surface = sf;
@@ -15753,7 +15968,8 @@ async function buildTileData(entry, base) {
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null,
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
-    onBuilding: (x, z) => onRoof(roofs, x, z)
+    onBuilding: (x, z) => onRoof(roofs, x, z),
+    roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null
   }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;
@@ -15796,8 +16012,8 @@ async function buildTileData(entry, base) {
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
-    const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
-    terrain.idx = idx;
+    const [idx2] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
+    terrain.idx = idx2;
   });
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
@@ -15897,24 +16113,24 @@ async function buildLiteData(entry, base) {
     uv[k * 2] = (x - x0) / W;
     uv[k * 2 + 1] = 1 - (z - z0) / H;
   }
-  const idx = new Uint32Array((c2 - 1) * (r2 - 1) * 6);
+  const idx2 = new Uint32Array((c2 - 1) * (r2 - 1) * 6);
   let o = 0;
   for (let r = 0; r < r2 - 1; r++) for (let c = 0; c < c2 - 1; c++) {
     const a = r * c2 + c, b = a + c2;
-    idx[o++] = a;
-    idx[o++] = b;
-    idx[o++] = a + 1;
-    idx[o++] = a + 1;
-    idx[o++] = b;
-    idx[o++] = b + 1;
+    idx2[o++] = a;
+    idx2[o++] = b;
+    idx2[o++] = a + 1;
+    idx2[o++] = a + 1;
+    idx2[o++] = b;
+    idx2[o++] = b + 1;
   }
   await MeshoptSimplifier.ready;
-  const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
+  const [idxS] = MeshoptSimplifier.simplify(idx2, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   hideBuildings(bDoc, entry.hide);
   const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V2 * 3), I2 = new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3);
   if (entry.farLook !== false) {
-    const fbd = farBuildings(bDoc, P, I2, { styles: entry.styles !== false, storeys: entry.storeys !== false });
+    const fbd = farBuildings(bDoc, P, I2, { styles: entry.styles !== false, storeys: entry.storeys !== false, looks: entry.looks === false || entry.cortenbosch2 === false ? null : lookSet((await overrides(base))?.buildingLooks, entry) });
     return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: fbd, buildingCount: bDoc.count };
   }
   let n = 0;
@@ -16403,4 +16619,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "c7fffc953394287c";
+self.__TILE_CODE_HASH = "6008b723e000da4f";

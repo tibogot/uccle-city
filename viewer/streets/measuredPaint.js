@@ -556,3 +556,76 @@ export function paintMeshV2(items, prep, bounds) {
     attributes: { aPaint: { array: new Float32Array(a1), itemSize: 4 }, aPaint2: { array: new Float32Array(a2), itemSize: 4 } },
   };
 }
+
+// ---------------------------------------------------------------- painted words (cortenbosch2)
+
+/** The atlas rows of the painted words (data/overrides.json roadTexts): every line of every entry, in file order. The
+ *  worker writes each line's v into its row; the main thread (viewer/roadPaint.js roadTextMaterial) draws the same rows. */
+export function roadTextRows(texts) {
+  const rows = [];
+  for (const [k, t] of Object.entries(texts || {})) if (!k.startsWith("_") && t?.lines) for (const l of t.lines) if (!rows.includes(l)) rows.push(l);
+  return rows;
+}
+/**
+ * WORDS PAINTED ON THE STREET (data/overrides.json roadTexts; the Chemin privé 't Cortenbosch's "Private Weg" /
+ * "Cortenbosch"): each entry { at: [x, z] the first line's centre, dir: [dx, dz] the reader's way (the words read from
+ * the nearest line on), lines: [...], w: width across (m), h: each line's length along (m), gap (m) }; a box per line,
+ * draped on the measured street's markable triangles PAINT_LIFT up, exactly as the measured paint (one decal mesh, its
+ * own material: a canvas atlas of the rows, viewer/roadPaint.js roadTextMaterial). uv = (across 0..1 left to right,
+ * the atlas v of the line's row).
+ */
+export function roadTextMesh(texts, prep, bounds) {
+  const rows = roadTextRows(texts), R = rows.length;
+  if (!R) return null;
+  const pos = [], nrm = [], uv = [], idx = [];
+  const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
+  for (const [k, t] of Object.entries(texts)) {
+    if (k.startsWith("_") || !t?.lines || !t.at || !t.dir) continue;
+    const L = Math.hypot(t.dir[0], t.dir[1]) || 1, fx = t.dir[0] / L, fz = t.dir[1] / L, rx = -fz, rz = fx;   // forward, right (seen from above, y up)
+    const w = t.w ?? 3, h = t.h ?? 1.6, gap = t.gap ?? 0.8;
+    if (t.along) {
+      // ALONG the street (the Cortenbosch's: Street View): each line's baseline runs with dir, the letters' tops to its
+      // left; the lines side by side across the street, the first one on the left; `at` the pair's centre, L its length
+      const Lg = t.L ?? 4, n = t.lines.length;
+      t.lines.forEach((line, i) => {
+        const row = rows.indexOf(line), off = (i - (n - 1) / 2) * (h + gap);       // + = right
+        const cx = t.at[0] + rx * off, cz = t.at[1] + rz * off;
+        const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [cx + fx * a * Lg / 2 + rx * b * h / 2, cz + fz * a * Lg / 2 + rz * b * h / 2]);
+        const poly = clipConvex(corners, tile);
+        if (poly.length < 3) return;
+        const uvOf = (p) => { const dx = p[0] - cx, dz = p[1] - cz; return [(dx * fx + dz * fz) / Lg + 0.5, 1 - (row + 1) / R + (0.5 - (dx * rx + dz * rz) / h) / R]; };
+        drape(poly, uvOf);
+      });
+      continue;
+    }
+    t.lines.forEach((line, i) => {
+      const row = rows.indexOf(line), along = i * (h + gap);
+      const ox = t.at[0] + fx * along, oz = t.at[1] + fz * along;
+      // the line's box: from its bottom-left corner (nearest the reader, left) along right (w) and forward (h)
+      const p0 = [ox - rx * w / 2 - fx * h / 2, oz - rz * w / 2 - fz * h / 2];
+      const corners = [p0, [p0[0] + rx * w, p0[1] + rz * w], [p0[0] + rx * w + fx * h, p0[1] + rz * w + fz * h], [p0[0] + fx * h, p0[1] + fz * h]];
+      const poly = clipConvex(corners, tile);
+      if (poly.length < 3) return;
+      const uvOf = (p) => { const dx = p[0] - p0[0], dz = p[1] - p0[1]; return [(dx * rx + dz * rz) / w, 1 - (row + 1) / R + ((dx * fx + dz * fz) / h) / R]; };
+      drape(poly, uvOf);
+    });
+  }
+  function drape(poly, uvOf) {
+      for (const b of prep.base) {
+        if (!MARKABLE.has(b.cls)) continue;
+        const piece = clipConvex(poly, [b.a, b.b, b.c]);
+        if (piece.length < 3 || Math.abs(area2(piece)) < 1e-5) continue;
+        const v0 = pos.length / 3;
+        const [pa, pb, pc] = piece;
+        const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
+        for (const p of piece) {
+          pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
+          const nn = prep.nrmAt(p[0], p[1]); nrm.push(nn[0], nn[1], nn[2]);
+          uv.push(...uvOf(p));
+        }
+        for (let q = 1; q + 1 < piece.length; q++) { if (ccw) idx.push(v0, v0 + q + 1, v0 + q); else idx.push(v0, v0 + q, v0 + q + 1); }
+      }
+  }
+  if (!idx.length) return null;
+  return { position: new Float32Array(pos), normal: new Float32Array(nrm), uv: new Float32Array(uv), index: new Uint32Array(idx), attributes: {}, rows };
+}

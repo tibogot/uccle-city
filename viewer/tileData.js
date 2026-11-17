@@ -93,7 +93,20 @@ const streetVote = (base) => (streetVoteP ??= fetch(new URL("../roads/streetVote
 const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 /** the curated building looks this build uses: an entry of a neighbourhood pass ("set": "cortenbosch") only with its
  *  switch on (?cortenbosch=old: none of them; ?looks=old drops every look) */
-const lookSet = (looks, entry) => (!looks || entry.cortenbosch !== false ? looks : Object.fromEntries(Object.entries(looks).filter(([, v]) => v?.set !== "cortenbosch")));
+const lookSet = (looks, entry) => {
+  if (!looks) return looks;
+  // (cortenbosch2, docs/CORTENBOSCH2.md) round 2: an entry's "v2" fields (the 1990s house type, the curtain wall, concrete
+  // tiles) over its round-1 look, and the entries of set "cortenbosch2" (the school's other blocks); ?cortenbosch2=old:
+  // round 1 as it was; ?cortenbosch=old: neither round
+  const out = {};
+  for (const [k, v] of Object.entries(looks)) {
+    if (!v || typeof v !== "object") { out[k] = v; continue; }
+    if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
+    if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
+    out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
+  }
+  return out;
+};
 
 /** ROOF HEIGHTS: every building's top (m TAW) rasterised into a 2 m grid over the tile (0 = no building), for fly
  *  mode's collision (the bird's floor = max(ground, roof)). Scanline fill of each footprint's outer ring. */
@@ -300,9 +313,12 @@ export async function buildTileData(entry, base) {
   // surfaces.js never matches it: UrbIS names are French only, OSM's bilingual), read by surfaces.js as s.surface;
   // ?cortenbosch=old: none
   if (entry.cortenbosch !== false && ov.streetSurfaces) {
-    if (surf) for (const s of surf.surfaces || []) { const o = ov.streetSurfaces[s.id]; if (o?.surface) s.surface = o.surface; }
+    // (cortenbosch2) pattern "herringbone": the pavers' herringbone layer (roadData.js paving_herringbone); ?cortenbosch2=old:
+    // the stretcher-bond pavers of round 1
+    const sOf = (o) => (o.pattern === "herringbone" && o.surface === "paving_stones" && entry.cortenbosch2 !== false ? "paving_herringbone" : o.surface);
+    if (surf) for (const s of surf.surfaces || []) { const o = ov.streetSurfaces[s.id]; if (o?.surface) s.surface = sOf(o); }
     // (and the engine carriageway kept over them reads its OSM road's surface: those roads too)
-    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, o.surface])));
+    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, sOf(o)])));
     for (const r of roads.roads) { const sf = byRoad.get(r.id); if (sf) (r.meta ??= {}).surface = sf; }
   }
   // (surfvote) the vote itself, once the curated surfaces are in: surfaces.js reads it as surf.surfVote.of(s); OSM roads
@@ -365,7 +381,8 @@ export async function buildTileData(entry, base) {
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
-    trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
+    trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
+    roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null }));   // (cortenbosch2: the lane's painted words)
   Object.assign(times, rd.times);
   const { netInfo } = rd;
   netInfo.deckAbutments = abutCells; netInfo.deckUnder = underCells;
@@ -498,7 +515,7 @@ export async function buildLiteData(entry, base) {
   // (farcity, docs/FARCITY.md) the walls' face coordinates + the building type for viewer/farLook.js; entry.farLook ===
   // false (?farlook=old): the flat-coloured solids below
   if (entry.farLook !== false) {
-    const fbd = farBuildings(bDoc, P, I, { styles: entry.styles !== false, storeys: entry.storeys !== false });
+    const fbd = farBuildings(bDoc, P, I, { styles: entry.styles !== false, storeys: entry.storeys !== false, looks: entry.looks === false || entry.cortenbosch2 === false ? null : lookSet((await overrides(base))?.buildingLooks, entry) });
     return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: fbd, buildingCount: bDoc.count };
   }
   let n = 0;
