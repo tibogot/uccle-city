@@ -219,6 +219,50 @@ grainy / blocky. Images: `docs/sharp/`. Every fix has its own `?key=old`; `?shar
    to 1/4096): about half the maisons de maître's kit windows showed another room / curtain than the painted window
    they hand over to. Packed quantised now (exact).
 
+10. **The flying falcon was a ghost** (`?skinprev=old`): an ATTACHED skinned mesh skins with world-space bone matrices
+    and its bindMatrixInverse follows its matrixWorld, so `modelWorld x positionPrevious` (last frame's bones) is
+    already last frame's world position, flight included; the rigid delta (ObjectMotionMatrix) on top counted the flight
+    twice: the history came from one frame of flight away and the trees showed through the bird (pre-existing; old and
+    new both, `docs/sharp/falcon_060_old_new.jpg`). Now the delta is left out for attached skinned meshes (falcons, the
+    third-person character). Wing tips on the downstroke still smear a little (articulation within a frame).
+11. **The dynamic resolution's clock trap** (`?drrule=old`; the coordinator measured the owner's laptop: RTX 4050 at P4,
+    780-900 MHz of 3105, 12-15 W, "SW Power Cap"; Chrome ignores powerPreference on Windows). The driver keeps the clock
+    low while the work looks light; the old rule saw long GPU ms at that clock, lowered the scale, the work got lighter,
+    the clock never rose: the city sat at 0.6. Now the DR decides on MISSED FRAMES only (rAF intervals > 20.8 ms):
+    late windows lower it only after 3 s (the clock ramps when busy), 0.05 a step, the soft floor 0.75 crossed only
+    after 6 s with > 25 % missed; on-time frames for 1.5 s raise it 0.05 (eager), not past the scale that was too heavy
+    for 20 s. The HUD stats line: `render 0.95 auto (missed 0 %)` next to fps and GPU ms.
+12. **Debug harness** (`viewer.step`): the paused loop skipped three's per-frame node update, so FRAME-type nodes (the
+    TAAU resolve) never ran in stepped frames and every stepped frame showed the same image (earlier stepped captures,
+    e.g. `debug/motionShots.js`, were affected). `viewer.step` now updates the node frame.
+
+### Measured (this laptop, browser turn 2026-11-17; `debug/sharpCheck.js`, Place Saint-Job street, no traffic, the main
+loop stepped at 1/60 s, chase view at 10 m/s = 36 km/h)
+
+| | internal 0.75 old | 0.75 new | 0.6 old | 0.6 new |
+|---|---|---|---|---|
+| street sharpness parked (Laplacian var.) | 136 | 155 | 70 | 84 |
+| street sharpness driving | 40 | 75 (x1.9) | 26 | 55 (x2.1) |
+| driving / parked | 0.29 | 0.49 | 0.38 | 0.65 |
+
+- The followed car: `docs/sharp/taadebug_chase_old_rejected.jpg` (`?taadebug=1`, red = history rejected): old, the
+  whole car rejected while driving; new, kept (cyan = own motion, valid). `docs/sharp/plate_chase_075_old_new.jpg`:
+  two consecutive frames x3 + their difference x4: old the plate breaks into blocks and changes every frame, new
+  stable (the remaining difference is the car's real sub-pixel bob on the road). The high-pass frame difference is
+  not a clean shimmer number here (the old car is so soft it has little high-pass to change): the images are the proof.
+- Parked stability (frame-to-frame high-pass luma, x / 255, 40 frames): foliage 0.242 old / 0.255 new, facade 0.335 /
+  0.318, road 0.096 / 0.113. A first RCAS schedule (0.5 at 1.0 -> 1 at 0.65, no denoise) raised it 40 % (foliage
+  0.35): RCAS now has FSR's noise removal and 0.35 at 1.0 -> 0.7 at 0.6.
+- GPU (fixed 0.75, Place Saint-Job street): 11.83 ms new vs 11.79 ms old (p50 11.73 / 11.60): no measurable cost.
+- Dynamic resolution, full city, the boulenger drive path (85 s, auto): old rule 0.8 -> 0.6 in 2 s (during the load,
+  GPU 31 / 18 ms) and 0.60 for the whole drive while frames held 16.7 ms and GPU p50 was 11.5 ms; new rule mean 0.976,
+  min 0.85, 6 changes, frame p50 16.7 ms, GPU p50 12.2 ms at ~1.0.
+- `motionCoverage()` with traffic, trams, birds: PASS (24 instanced movers with motion, the falcon skinned, 5 rigid).
+- Windows (owner images 69 / 70): NOT reproduced. Looked at the same building (Rue Marie Depage, the red-brick block
+  with white bands, ~500, -1612) and Saint-Job facades, still and moving, at 0.6 / 0.75, old and new, quick mode
+  with / without weather + night, wx=rain, and in the full city: panes clean in all. Fixed on the way: the kit glass's
+  room seed (item 9). Next step: the owner's exact URL / state (weather live? night? quality preset?) when it shows.
+
 ### Movers and their motion (rule 1)
 
 Covered: traffic cars + two-wheelers, trams, trains, pigeons (InstancePrev), sky flocks (p - v dt), skinned falcons and
@@ -229,15 +273,18 @@ city).
 
 ### WHY IT HAPPENED + RULE
 
-- **Root cause.** The TAAU (2026-11-15) was judged on still or slowly orbiting views and on a car passing a FIXED
+- **Root cause.** (and the laptop: the DR was tuned on GPU ms at full clocks; on the owner's power-managed RTX 4050
+  the ms read long at 800 MHz and the DR locked itself at 0.6.) The TAAU (2026-11-15) was judged on still or slowly orbiting views and on a car passing a FIXED
   camera; the per-instance motion work (claude/motionvec) fixed the motion vectors but nobody checked the history's
   VALIDITY test, which three's TAAUNode built for objects whose depth only changes with the camera. The chase view (an
   object moving along the view, the main game view) was never measured; neither was "sharpness while moving" against
   "standing still". The bilinear history and the widened kernel were taken over from three / added as "soft instead of
   staircase" without a moving-camera sharpness number. The DR was tuned on a desktop-class GPU at full clocks.
-- **Rules.** (1) Every moving mesh writes motion vectors (its own motion, in x / y AND depth). (2) With upscaling, a
+- **Rules.** (1) Every moving mesh writes motion vectors (its own motion, in x / y AND depth), counted ONCE (a skinned mesh's
+  bones may already carry its flight). (2) With upscaling, a
   sharpen (RCAS) is always on, the history fetch is bicubic, the texture mip bias follows the scale. (3) The auto
-  render scale stays >= 0.75 unless frames are really missed. (4) Every image-quality change is measured MOVING (chase
+  render scale stays >= 0.75 unless frames are really missed; the dynamic resolution decides on missed frames, never on
+  raw GPU ms (a laptop GPU's clock follows the load: lowering on its ms is a trap). (4) Every image-quality change is measured MOVING (chase
   at 50 km/h) against standing still, not only on stills.
 - **Automated checks.** `node tools/audit/mergeGate.mjs` runs `tools/audit/motionAudit.mjs` (static, PASS / FAIL): every
   viewer file that writes instance matrices or deforms geometry over time is a listed MOVER with a motion hook or a
