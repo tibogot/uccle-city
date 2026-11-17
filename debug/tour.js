@@ -49,13 +49,13 @@ async function waitReady(frame, limitMs) {
   const t = performance.now();
   let lastFrames = -1, still = 0;
   while (performance.now() - t < limitMs) {
-    await sleep(1000);
+    await sleep(500);
     const w = frame.contentWindow;
     if (!w) continue;
     if (w.__quickReady) return { why: "ready", ready: clone(w.__quickReady) };
     const f = w.viewer?.frames?.() ?? null;
     if (f != null) { still = f === lastFrames ? still + 1 : 0; lastFrames = f; }
-    if (still >= 30) return { why: "frozen" };
+    if (still >= 60) return { why: "frozen" };
   }
   return { why: "limit" };
 }
@@ -69,22 +69,33 @@ function holdTime(w, value) {
   catch { return false; }
 }
 
+/** the foliage wind's own clock (viewer/foliage/wind.js: grass, hedges, shrubs, ivy, window boxes): frozen at one
+ *  time (its `frozen` switch, made for the labs' measurements). The import runs in the iframe's realm, so it is the
+ *  city's own module instance. */
+async function holdWind(w, value) {
+  try {
+    const { wind } = await w.Function("return import('/viewer/foliage/wind.js')")();
+    wind.frozen = true; wind.uTime.value = value;
+    return true;
+  } catch { return false; }
+}
+
 async function settle(w, S) {
   const v = w.viewer, ts = performance.now();
   for (const d of w.document.querySelectorAll("body > div")) if (!d.querySelector("canvas")) d.style.visibility = "hidden";
-  const held = holdTime(w, S.tslTime ?? 12.5);
+  const held = holdTime(w, S.tslTime ?? 12.5) && (await holdWind(w, S.tslTime ?? 12.5));
   if (v.lighting) v.lighting.snapNext = true;
-  await frames(w, S.minFrames ?? 90);
+  await frames(w, S.minFrames ?? 60);
   // the eye adaptation (Firmament's exposure): converged = value within tol of target for 10 frames in a row
   const st = v.lighting?.sky?.exposureState;
   let calm = 0;
   while (st && performance.now() - ts < (S.maxMs ?? 15000)) {
     const ok = st.target > 0 && Math.abs(st.value / st.target - 1) < (S.exposureTol ?? 0.004);
     calm = ok ? calm + 1 : 0;
-    if (calm >= 10 && performance.now() - ts >= (S.minMs ?? 3000)) break;
+    if (calm >= 10 && performance.now() - ts >= (S.minMs ?? 2000)) break;
     await frames(w, 1);
   }
-  while (performance.now() - ts < (S.minMs ?? 3000)) await frames(w, 1);
+  while (performance.now() - ts < (S.minMs ?? 2000)) await frames(w, 1);
   return { held, settleMs: Math.round(performance.now() - ts), exposure: st ? { value: +st.value.toFixed(4), target: +st.target.toFixed(4) } : null };
 }
 
@@ -142,9 +153,9 @@ async function main() {
     }
     T.results.push(r);
     frame.src = "about:blank";
-    await sleep(300);
+    await sleep(200);
     frame.remove();
-    await sleep(700);
+    await sleep(300);
   }
   T.ms = Math.round(performance.now() - t0);
   const ua = navigator.userAgent, gpu = await navigator.gpu?.requestAdapter?.().then((a) => a?.info ? `${a.info.vendor} ${a.info.architecture} ${a.info.description}` : null).catch(() => null);

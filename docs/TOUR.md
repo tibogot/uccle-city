@@ -28,16 +28,16 @@ unless the view says otherwise, no traffic / birds / weather / trams (quick mode
 | orange-villas | Avenue du Prince d'Orange villas, hedges, gardens, piers (midday) |
 | defre-villas | Avenue De Fré villas behind garden walls / piers |
 | waterloo-fortjaco | Chaussée de Waterloo shops at Fort-Jaco |
-| vivier-bridge | Chaussée de Waterloo over the railway at Vivier d'Oie |
-| stjob-station | Saint-Job station platforms and cutting |
-| stjob-railbridge | the Saint-Job hero rail bridge |
+| vivier-bridge | Chaussée de Waterloo over the railway at Vivier d'Oie, from 30 m |
+| stjob-station | Saint-Job station: the road deck over the platforms, tram stop |
+| stjob-railbridge | the Saint-Job hero rail bridge, from 28 m |
 | stpierre-parvis | Parvis Saint-Pierre setts + the church (landmark, cobbles) |
 | cortenbosch-lane | Cortenbosch herringbone lane, 1990s houses, painted words |
 | lycee-front | Lycée Français front (curtain wall, railings) |
-| police-station | the police station |
+| police-station | the police station from 30 m (the `police` place puts the camera inside a house) |
 | wolvendael-park | Parc de Wolvendael from 70 m |
 | far-300m | from 300 m: far ring tiles (`far=2`), impostors |
-| night-vanderkindere | shopping street at night (`time=night`) |
+| night-vanderkindere | Rue Vanderkindere shops at night (`time=night`) |
 | traffic-alsemberg | Chaussée d'Alsemberg with traffic + parked cars (looser thresholds: moving cars) |
 
 Add a view: one entry `{ id, what, q: { ...URL switches }, tol? }`. Take a new baseline afterwards (below).
