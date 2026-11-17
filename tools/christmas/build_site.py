@@ -198,6 +198,12 @@ def chalets_on_square():
     for t in ("I6", "I5"):
         trees_ += [(q["x"], q["z"]) for q in json.load(open(os.path.join(ROOT, "data", "tiles", t, "features.json"), encoding="utf-8"))["trees"]]
     fir = TREES[0]
+    walls_ = [r for b in bld.values() for r in b["footprint"] if any(math.hypot(px - 1140, pz - 525) < 120 for px, pz in r)]
+    wall_pts = []                                     # (the walls sampled every 0.25 m)
+    for r in walls_:
+        for i in range(len(r)):
+            ax, az = r[i - 1]; bx, bz = r[i]; L = math.hypot(bx - ax, bz - az); n = max(1, int(L / 0.25))
+            wall_pts += [(ax + (bx - ax) * k / n, az + (bz - az) * k / n) for k in range(n)]
     # the long axis (PCA of the ring)
     cx = sum(x for x, _ in sq) / len(sq); cz = sum(z for _, z in sq) / len(sq)
     sxx = sum((x - cx) ** 2 for x, _ in sq); szz = sum((z - cz) ** 2 for _, z in sq); sxz = sum((x - cx) * (z - cz) for x, z in sq)
@@ -223,6 +229,8 @@ def chalets_on_square():
                 ddx = max(abs(lx) - HW, 0); ddy = max(ly - FR, -BK - ly, 0)
                 return math.hypot(ddx, ddy)
             if any(rect_d(tx, tz) < 1.0 for tx, tz in trees_): continue
+            # walls (the square's pavilion, browser turn 2 / tools/audit/xmasCheck.mjs): no corner inside a building, 1 m clear
+            if any(pip(qx, qz, r) for qx, qz in corners + [(x, z)] for r in walls_) or any(rect_d(wx, wz) < 1.0 for wx, wz in wall_pts): continue
             if rect_d(fir["x"], fir["z"]) < 1.4 + 3.0: continue
             if any(rect_d(q["x"], q["z"]) < 4.0 for q in fronts): continue
             picks.append((math.hypot(x - fir["x"], z - fir["z"]), x, z, fx, fz, oo))

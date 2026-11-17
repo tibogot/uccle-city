@@ -34,6 +34,7 @@ const hash01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
 
 // ------------------------------------------------------------------------------------------------ the instanced field
 /** every instance of every piece; per piece and level ONE instance-matrix buffer and ONE band buffer shared by the slots' meshes */
+const SHADOW_SLOTS = new Set(["fir_needles", "fir_bark", "chalet_wood", "chalet_trim", "roof_felt"]);
 export class XmasField {
   constructor(kit, { shadows = {} } = {}) {
     this.kit = kit; this.group = new THREE.Group(); this.group.name = "christmas";
@@ -53,7 +54,9 @@ export class XmasField {
           const im = new THREE.InstancedMesh(geometry, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true }), cap);
           im.instanceMatrix = mat;                      // (static usage: uploaded on needsUpdate, the used range only)
           im.count = 0; im.visible = false; im.boundingSphere = sphere; im.frustumCulled = true;
-          im.castShadow = !!shadows[name]; im.receiveShadow = true;
+          // (shadows: the big parts only: a bulb, bauble, hook or sign adds a shadow draw for a few texels; the chalets'
+          // garland and the fir's planter are inside other shadows; measured 2026-11-17: 27 -> 6 shadow draws)
+          im.castShadow = !!shadows[name] && SHADOW_SLOTS.has(slot); im.receiveShadow = true;
           im.name = `xmas ${name} lod${k} ${slot}`; im.userData.slot = slot;
           this.group.add(im);
           return im;
