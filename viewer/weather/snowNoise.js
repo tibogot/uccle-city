@@ -9,7 +9,8 @@
 //     G  drift        0.7 x N(24 cells) + 0.3 x N(96 cells)       = the old noise2D(0.45) x 0.7 + noise2D(1.9) x 0.3
 //     B  coarse only  N(32 cells)                                  = the old lite path's noise2D(0.6)
 //     A  streaks      N(32 cells), another seed                   (steep roofs: stretched down the fall line)
-//   T2 (256^2 RGBA8, 64 cells across): the micro bump's value (R) and its analytic gradient per cell (G, B: 0.5 + d/3)
+//   the micro bump reads B at its own scale (bump()); ONE texture: a second one put the facade kit's material over
+//   WebGPU's 16 samplers per fragment stage (its pipeline failed: found in the city)
 //
 // Samplers take an explicit mip level from the pixel footprint (fw, metres): they are safe inside per-pixel branches
 // (WGSL forbids implicit-derivative sampling there).
@@ -18,9 +19,8 @@ import { texture, vec2, float, log2, max } from "three/tsl";
 
 export const SNOW_FAST = !/[?&]snowfast=old(&|$)/.test(location.search);
 
-const N1 = 512, N2 = 256;
+const N1 = 512;
 export const T1_PERIOD = 32 / 0.6;           // m: 53.33 (the coarse cover octave at 0.6 / m)
-export const T2_CELLS = 64;
 
 function rng(seed) {                          // mulberry32
   let a = seed >>> 0;
@@ -56,7 +56,7 @@ function makeTex(data, n) {
   return t;
 }
 
-let T1 = null, T2 = null;
+let T1 = null;
 function build() {
   if (T1) return;
   const t0 = performance.now();
@@ -69,9 +69,6 @@ function build() {
     a[o * 4 + 3] = u8(s32[o]);
   }
   T1 = makeTex(a, N1);
-  const b = valueNoise(N2, T2_CELLS, 21, true), d = new Uint8Array(N2 * N2 * 4);
-  for (let o = 0; o < N2 * N2; o++) { d[o * 4] = u8(b.v[o]); d[o * 4 + 1] = u8(0.5 + b.gx[o] / 3); d[o * 4 + 2] = u8(0.5 + b.gz[o] / 3); d[o * 4 + 3] = 255; }
-  T2 = makeTex(d, N2);
   snowNoise.buildMs = +(performance.now() - t0).toFixed(1);
 }
 
@@ -86,11 +83,16 @@ export const snowNoise = {
     const k = scale / T1_PERIOD;
     return texture(T1, vec2(xz).mul(k)).level(lodFor(fw, T1_PERIOD / N1 / scale));
   },
-  /** the micro bump at `freq` cells per metre: vec3(value 0..1, d/dx, d/dz per metre) */
-  bump(xz, fw, freq) {
+  /** the micro bump at `freq` cells per metre: { v: value 0..1, g: vec2 d/dx, d/dz per metre } from the coarse
+   *  channel (B) at that scale, the gradient by two more taps a third of a cell away (no screen derivatives; ONE
+   *  texture / sampler for everything: the facade kit's material sits at WebGPU's 16-samplers-per-stage limit) */
+  bump(xz, fw, freq, grad = true) {
     build();
-    const k = freq / T2_CELLS;
-    const s = texture(T2, vec2(xz).mul(k)).level(lodFor(fw, T2_CELLS / freq / N2));
-    return { v: s.x, g: vec2(s.y.sub(0.5).mul(3 * freq), s.z.sub(0.5).mul(3 * freq)) };
+    const sc = freq / 0.6, lod = lodFor(fw, T1_PERIOD / N1 / sc), k = sc / T1_PERIOD;
+    const at = (p) => texture(T1, vec2(p).mul(k)).level(lod).z;
+    const v = at(xz);
+    if (!grad) return { v, g: vec2(0) };
+    const e = 0.33 / freq;
+    return { v, g: vec2(at(vec2(xz).add(vec2(e, 0))).sub(v), at(vec2(xz).add(vec2(0, e))).sub(v)).div(e) };
   },
 };

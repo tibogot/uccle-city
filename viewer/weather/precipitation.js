@@ -250,10 +250,11 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
       mesh.count = n; mesh.visible = n > 0;
       if (splashes) { splashes.count = n; splashes.visible = n > 0; }
       // (snowfast: the step runs on the drawn flakes only, not the whole MAX population)
-      if (n > 0 && dt > 0) renderer.compute(step, SNOW_FAST ? n : null);
+      if (SNOW_FAST) step.count = Math.max(1, n);       // (the dispatch and the shader's early return follow it)
+      if (n > 0 && dt > 0) renderer.compute(step);
     },
     /** compile both compute passes now (boot), so the first rain does not stall on a pipeline build */
-    warm() { renderer.compute(init); initialised = true; uDt.value = 0; renderer.compute(step); },
+    warm() { renderer.compute(init); initialised = true; uDt.value = 0; step.count = MAX; renderer.compute(step); },
     /** leaves: move the crown centres (the city's sliding overhead map), [{ x, z, r, y }] up to 8 */
     setTrees(list) { for (let i = 0; i < treeU.length; i++) { const t = list[i % Math.max(1, list.length)]; if (t) treeU[i].value.set(t.x, t.z, t.r, t.y); } },
     dispose() { geo.dispose(); mat.dispose(); },

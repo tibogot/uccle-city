@@ -185,7 +185,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     const fwT = fwidth(P.x).add(fwidth(P.z)).mul(0.5);
     const bars = abs(fract(along.div(0.034)).sub(0.5)).mul(2).smoothstep(0.35, 0.65).mul(0.0035);
     // boot sole: lug bars across the sole (2 cm pitch), broken up along their length
-    const lugs = abs(fract(along.div(0.022)).sub(0.5)).mul(2).smoothstep(0.3, 0.7).mul((SNOW_FAST ? snowNoise.bump(P.xz, fw, 18.0).v : noise2D(P.xz.mul(18.0))).mul(0.5).add(0.5)).mul(0.002);
+    const lugs = abs(fract(along.div(0.022)).sub(0.5)).mul(2).smoothstep(0.3, 0.7).mul((SNOW_FAST ? snowNoise.bump(P.xz, fw, 18.0, false).v : noise2D(P.xz.mul(18.0))).mul(0.5).add(0.5)).mul(0.002);
     // the sky a groove's floor sees is narrower: ambient occlusion by its depth (reads in shade, where normals do not)
     trailAO = float(1).sub(smoothstep(0.1, 0.85, fine).mul(min(vDepth.div(0.12), 1)).mul(0.42));
     tread = select(on, mix(lugs, bars, T.z.smoothstep(0.3, 0.7)).mul(smoothstep(0.2, 0.6, fine)).mul(float(1).sub(smoothstep(0.0015, 0.005, fwT))), float(0));
@@ -225,7 +225,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   })();
   if (trailAO) mat.aoNode = trailAO;        // (snowtracks)
   mat.roughnessNode = mix(mix(mix(float(0.74), float(0.12), gl.w), float(0.5), packed), float(0.22), wx.uSlush);
-  const bump = (SNOW_FAST ? snowNoise.bump(P.xz, fw, 7.0).v.mul(0.008).add(snowNoise.bump(P.xz.add(vec2(17.3, 5.1)), fw, 23.0).v.mul(0.002)) : noise2D(P.xz.mul(7.0)).mul(0.008).add(noise2D(P.xz.mul(23.0)).mul(0.002))).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).mul(float(1).sub(packed.mul(0.7))).add(tread);
+  const bump = (SNOW_FAST ? snowNoise.bump(P.xz, fw, 7.0, false).v.mul(0.008).add(snowNoise.bump(P.xz.add(vec2(17.3, 5.1)), fw, 23.0, false).v.mul(0.002)) : noise2D(P.xz.mul(7.0)).mul(0.008).add(noise2D(P.xz.mul(23.0)).mul(0.002))).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).mul(float(1).sub(packed.mul(0.7))).add(tread);
   const toView = (n) => normalize(cameraViewMatrix.mul(vec4(n, 0)).xyz);
   const base = toView(trailN ? normalize(normalize(vN).add(trailN)) : normalize(vN));      // (snowtracks: + the trail's detail slope)
   // the macro normal from the field; micro bump as a small tilt of it; the glint facet on top
