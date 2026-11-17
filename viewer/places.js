@@ -12,8 +12,8 @@ export const PLACES = [
   { id: "stjob", name: "Place Saint-Job", group: "Saint-Job", tile: "I6", p: [1223, 45, 650], t: [1153, 0, 540] },
   { id: "stjob-church", name: "Saint-Job church", group: "Saint-Job", tile: "I6", p: [1172, 30, 640], t: [1216, 18, 561] },
   { id: "stjob-street", name: "Place Saint-Job, street", group: "Saint-Job", tile: "I6", p: [1102, 1.7, 542], t: [1175, 3, 540] },
-  // the falcons' eyrie: the NW belfry arch of the church (models/stjob/stjob.json perches.perch_ledge, ~21.5 m up), from outside
-  { id: "stjob-nest", name: "Saint-Job, the falcon nest", group: "Saint-Job", tile: "I6", p: [1186, 24, 538], t: [1197.2, 21.4, 547.6], fov: 45 },
+  // the falcons' eyrie: the NW belfry arch of the church (models/stjob/stjob.json perches.perch_ledge: 96.9 m TAW, ~25 m over the ground), from outside
+  { id: "stjob-nest", name: "Saint-Job, the falcon nest", group: "Saint-Job", tile: "I6", p: [1188, 28.5, 539.5], t: [1197.2, 25.3, 547.6], fov: 40 },
   // heroes (scripted landmarks)
   { id: "heros", name: "Square des Héros", group: "Landmarks", tile: "E4", p: [-490, 55, -548], t: [-533, 0, -487], fov: 50 },
   { id: "heros-steps", name: "Héros, foot of the steps", group: "Landmarks", tile: "E4", p: [-530, 1.7, -467.2], t: [-533, 6.5, -484], fov: 55 },
@@ -24,7 +24,7 @@ export const PLACES = [
   { id: "russian", name: "Russian church", group: "Landmarks", tile: "F4", p: [-300, 35, -410], t: [-354, 12, -468] },
   { id: "police", name: "Police station", group: "Landmarks", tile: "E4", p: [-472, 6, -368], t: [-507, 4, -345] },
   // the yard (the police game's spawn, viewer/police/policeGame.js YARD: the site frame's u 18, w -6)
-  { id: "police-yard", name: "Police station, the yard", group: "Landmarks", tile: "E4", p: [-478, 20, -385], t: [-503, 1, -352] },
+  { id: "police-yard", name: "Police station, the yard", group: "Landmarks", tile: "E4", p: [-530, 30, -385], t: [-503, 0, -352] },
   { id: "stalle", name: "Stalle chapel", group: "Landmarks", tile: "D5", p: [-1100, 30, 110], t: [-1150, 6, 56] },
   { id: "calevoet", name: "Calevoet station", group: "Landmarks", tile: "D6", p: [-1225, 2, 831], t: [-1224, 4, 792] },
   { id: "papenkasteel", name: "Papenkasteel (château de Stalle)", group: "Landmarks", tile: "E7", p: [-602, 25, 1192], t: [-635, 18, 1160] },

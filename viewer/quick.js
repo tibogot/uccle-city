@@ -60,6 +60,10 @@ function setup() {
   const withSet = new Set((P.get("with") || "").split(",").map((s) => s.trim()).filter(Boolean));
   if (P.get("wx")) withSet.add("weather");                                 // a weather asked for brings its system
   if (["night", "twilight"].includes(P.get("time")) || P.get("hour")) withSet.add("night");   // night lights at night
+  // weather WITHOUT the night system is not a combination the city runs (night is on by default): ?night=0&wx=snow_cover
+  // gives the façade kit's LOD1 material 17 sampled textures (> the 16 WebGPU limit), a validation error, measured
+  // 2026-11-17 in the full city too. So the weather keeps the night system on.
+  if (withSet.has("weather")) withSet.add("night");
   const pts = [[cam[0], cam[2]], [look[0], look[2]]];
   const near = (x, z, m = 0) => pts.some(([px, pz]) => Math.hypot(x - px, z - pz) <= radius + m);
   // the URL the rest of the viewer reads (only switches the URL does not set already)
@@ -75,6 +79,7 @@ function setup() {
   set("ring", "1"); set("far", "0");
   set("boothold", "old");                                                 // no play loader after the cover
   set("gamemenu", "0");
+  if (mode !== "fly") set("pigeons", "0");                               // (the fly mode's 150 pigeons: ~25 s of compiles in the background)
   for (const [sys, [k, v]] of Object.entries(SYSTEMS)) if (!withSet.has(sys)) set(k, v);
   const lmIn = [];
   for (const [k, [x, z]] of Object.entries(LANDMARKS)) { if (near(x, z, MARGIN)) lmIn.push(k); else set(k, OFF_VALUE[k] ?? "0"); }

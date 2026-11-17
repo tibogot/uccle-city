@@ -23,14 +23,14 @@ Without `?quick=1` nothing changes: everything is behind the flag (`viewer/quick
 
 Any other switch works as usual and wins over quick mode's choices (`&traffic=1` keeps the traffic, `&police=0` leaves
 the police station out even inside the radius). `wx=` implies `with=weather`; `time=night|twilight` or `hour=` imply
-`with=night`.
+`with=night`; the weather also keeps the night system on (weather without it: see Limits).
 
 What quick mode does (it rewrites the URL before any module reads it: the expanded switches are in the address bar):
 `tile=` the spot's tile, `view=stjob&cam=..&at=..`, `ring=1&far=0` + the radius filter in the streaming (main.js
 `stream`, `bootPrefetch`), `boothold=old` (no play loader), `game=0` (no game kit, no start menu), `loader` plain
 (no stills), `traffic=0 birds=0 weather=old night=0 trams=0 falcons=0 map=0 panel=0`, no SNCB trains, every landmark
 outside the radius off (`<name>=0`: its UrbIS solid; `heros=old`, `art=old` when no public-art piece is near),
-`flags=0` without the town hall; hero bridges / tunnels outside the radius never load (`bootGate.js whenNeeded`).
+`flags=0` without the town hall, `pigeons=0` (the fly mode's flock, unless `view=fly`); hero bridges / tunnels outside the radius never load (`bootGate.js whenNeeded`).
 The boot cover and its shader warm-up stay (they now cover 1 tile instead of the ring of 9 + the far ring).
 
 ## Ready signal
@@ -92,7 +92,20 @@ saintmarc, latourdefrein, monolithes, evades, gobert, km5, fortjaco, alsemberg, 
 - Night (`night=0`) and weather (`weather=old`) off change the shaders' lighting model a little: for a night or
   weather check, ask for them (`time=night`, `wx=`).
 - Not for perf or memory numbers of the real city.
+- Found while testing (a city bug, not quick mode's): `?night=0&wx=snow_cover` in the FULL city too gives a WebGPU
+  validation error (the façade kit's `kit opaque lod1` material binds 17 sampled textures, the limit is 16). The city runs
+  with night on by default, so quick mode keeps night on with the weather.
 
-## Measured
+## Measured (2026-11-17, RTX 4050 laptop, the owner working on another project: noisy)
 
-See the table at the end (filled in by the browser check).
+Same view (Place Saint-Job street, `stjob-street`), warm HTTP cache, one tab:
+
+| | cover lifts | view built | JS heap | agent Chrome, private memory |
+|---|---|---|---|---|
+| full city (`?at=1175,540&cam=1102,542,1.7&view=stjob`) | 14.9-22.4 s | 39.6-49.6 s (play loader closes: 9 full + 12 far tiles, `__areaReady`) | 1.5-1.7 GB, rising (far landmarks keep loading) | 7.8 GB (GPU process 5.1, renderer 2.5) |
+| quick (`?quick=1&place=stjob-street`) | 13.1-17.4 s | 19.1-23.6 s (`__quickReady`: 4 tiles) | 0.8 GB | 4.8 GB (GPU process 3.1, renderer 1.6) |
+
+A cold first boot (no tile cache) is slower for both (quick: cover 39 s, ready 49 s; the police yard cold: ready 54 s).
+The cover is mostly the start tile's worker build (land cover, roads: ~13 s cold) and the boot warm-up.
+Other checks (warm): observatory ready 27 s, heap 0.83 GB; Saint-Job night 32 s; snow cover 26 s; the falcon nest
+37 s; police yard (5 landmarks in the radius) 54 s cold. No console errors in any of them (after the weather fix above).
