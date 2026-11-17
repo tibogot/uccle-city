@@ -283,7 +283,13 @@ function graph(I, o, wantNormal) {
     // snowfast: the whole cover in a per-pixel branch on the face's slope: below the cover's range (walls, eaves'
     // undersides) the mask is exactly 0 (smoothstep(upLo, ..) = 0 and the ground term stays under the threshold), so
     // nothing is computed there; plastered trunks keep their windward walls
-    if (FAST) If(o.plaster ? up.greaterThan(upLo).or(vert.greaterThan(0.01)) : up.greaterThan(upLo), body); else body();
+    if (FAST) {
+      let reach = o.plaster ? up.greaterThan(upLo).or(vert.greaterThan(0.01)) : up.greaterThan(upLo);
+      // the NORMAL of a material without its own normal map: past the bump / sparkle / groove range the snow normal is
+      // the geometry normal, which is already its normal: nothing to blend, the mask is not needed there
+      if (wantNormal && !I.ownNormal) reach = reach.and(fw.lessThan(o.map && TRAILS ? 0.09 : 0.02));
+      If(reach, body);
+    } else body();
   });
   return { col, rough: clamp(rough, 0.02, 1), metal: clamp(metal, 0, 1), n: nView };
 }
@@ -302,6 +308,7 @@ export function wxMat(m, o = {}) {
   const rough0 = m.roughnessNode ?? float(m.roughness ?? 1);
   const metal0 = m.metalnessNode ?? float(m.metalness ?? 0);
   const n0 = m.normalNode ?? materialNormal;
+  const ownNormal = !!m.normalNode;                 // (snowfast: a material with no normal map of its own)
   m.userData.wxDry = { color: m.colorNode, roughness: m.roughnessNode, metalness: m.metalnessNode, normal: m.normalNode };   // (debug / A/B)
   // vec3 out (other passes reuse a material's colorNode as an albedo: the impostor bake); o.keepAlpha: vec4 with the dry alpha
   const hasAlpha = !!o.keepAlpha;
@@ -332,7 +339,7 @@ export function wxMat(m, o = {}) {
   if (o.puddles || o.glass || o.snow !== false) {
     m.normalNode = Fn(() => {
       const n = vec3(n0).toVar();
-      const I = ins({ n, nG: normalViewGeometry.toVar(), pV: positionView.toVar(), col: o.ground?.lum ? vec3(col0).toVar() : vec3(0.5), rough: float(0), metal: float(0) });
+      const I = ins({ n, nG: normalViewGeometry.toVar(), pV: positionView.toVar(), col: o.ground?.lum ? vec3(col0).toVar() : vec3(0.5), rough: float(0), metal: float(0), ownNormal });
       If(gate(), () => { const tn = vec3(graph(I, o, true).n).toVar(); n.assign(tn); });
       return n;
     })();
