@@ -78,7 +78,7 @@ function run(label, secs, each = null) {
   }
   for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && sim.holdT[i] > 60) stuck++;
   const st = sim.stats;
-  const r = { label, cars: sim.count, samples, overlapSamples: over, parkedHit: hit.size, maxDepth: +maxD.toFixed(2), stuckOver60s: stuck, parkWaits: st.parkWaits || 0, parkPasses: st.parkPasses || 0, parkClamped: st.parkClamped || 0, narrowWaits: st.narrowWaits || 0, stepMs: +st.stepMs.toFixed(3), stepMsMax: +st.stepMsMax.toFixed(2) };
+  const r = { label, cars: sim.count, samples, overlapSamples: over, parkedHit: hit.size, maxDepth: +maxD.toFixed(2), stuckOver60s: stuck, parkWaits: st.parkWaits || 0, parkPasses: st.parkPasses || 0, parkClamped: st.parkClamped || 0, narrowWaits: st.narrowWaits || 0, moved: sim.pk?.moved.size ?? 0, stepMs: +st.stepMs.toFixed(3), stepMsMax: +st.stepMsMax.toFixed(2) };
   console.log(JSON.stringify(r));
   return r;
 }

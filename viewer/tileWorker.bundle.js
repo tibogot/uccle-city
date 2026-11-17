@@ -14688,8 +14688,8 @@ function narrowStretches(src, P) {
   };
 }
 var PARK_CLEAR = 1.95;
-var TP_HALF = 0.9;
-var TP_FIT = 0.2;
+var TP_HALF = 0.98;
+var TP_FIT = 0.15;
 var RAMP = 0.2;
 var TP_BOX_HW = 0.925;
 var TP_BOX_HL = 2.365;
@@ -16809,4 +16809,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "e509335000b897f4";
+self.__TILE_CODE_HASH = "7dee65ede0bd1068";

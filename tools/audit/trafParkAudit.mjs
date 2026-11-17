@@ -3,7 +3,7 @@
 // (viewer/streets/parkPlace.js widthParking) and the traffic graph built around it (viewer/traffic/trafficGraph.js),
 // exactly as viewer/tileData.js builds them. Then every driven path (lane pieces + junction connectors, the polylines
 // the sim drives: graph xy) against every parked car's plan footprint (an oriented box of the widest / longest common
-// type, 1.85 x 4.73 m): the distance from the path's centre line to the box. A traffic car (half width CAR_HALF) touches
+// type, 1.85 x 4.73 m): the distance from the path's centre line to the box. A traffic car (half width CAR_HALF: the widest traffic type, a panel van 1.95 m) touches
 // the parked car when that distance is under CAR_HALF: an OVERLAP. Under CAR_HALF + MARGIN: a TIGHT pass (counted, not
 // failed).
 //
@@ -35,7 +35,7 @@ const OUT = opt("--out", null), MAX = +opt("--max", 0), OLD = flag("--old"), ALL
 const TILES = ALL ? allTiles() : argv.map((t) => t.toUpperCase());
 if (!TILES.length) { console.error("usage: trafParkAudit.mjs [--old] [--out FILE] [--max N] T... | --all"); process.exit(2); }
 
-export const CAR_HALF = 0.9, MARGIN = 0.15, BOX_HW = 0.925, BOX_HL = 2.365, STEP = 0.25, END = 6;
+export const CAR_HALF = 0.98, MARGIN = 0.15, BOX_HW = 0.925, BOX_HL = 2.365, STEP = 0.25, END = 6;
 
 /** distance from point (x, z) to the car's box */
 function boxDist(c, x, z) {

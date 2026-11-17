@@ -485,7 +485,7 @@ const PARK_CLEAR = 1.95;          // m: lane centre to a parked car's centre (tw
 // point is clear when its distance to the box is >= TP_HALF + TP_FIT; the built graph is then checked along every path
 // (lanes AND junction connectors, every 0.25 m) and a car any path still comes within TP_HALF of is not parked
 // (parkedKept). tools/audit/trafParkAudit.mjs measures the same; ?trafpark=old: the point test above, no check.
-export const TP_HALF = 0.9, TP_FIT = 0.2, RAMP = 0.2, TP_BOX_HW = 0.925, TP_BOX_HL = 2.365;
+export const TP_HALF = 0.98, TP_FIT = 0.15, RAMP = 0.2, TP_BOX_HW = 0.925, TP_BOX_HL = 2.365;
 export const TP_WB = 2.8, TP_BODY_HL = 2.37;   // a traffic car's wheelbase and half length (the longest common type)
 /** a traffic body (centre, unit axis ax/az, half length TP_BODY_HL, half width TP_HALF) vs a parked site's box: SAT */
 function boxesOverlap(b, c) {
