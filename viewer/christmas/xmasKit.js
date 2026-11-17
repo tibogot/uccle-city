@@ -13,7 +13,7 @@
 // ribbon take the weather (wxMat: snow on the up-facing needles, wet sheen).
 import * as THREE from "three/webgpu";
 import {
-  attribute, uv, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn,
+  attribute, uv, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn, normalWorld,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -97,6 +97,8 @@ function make(slot, uvs, instanced) {
         col = col.mul(mix(float(0.72), float(1.12), stroke));
         m.roughnessNode = mix(float(0.75), float(0.5), stroke);
       }
+      // the Nordmann's two-tone needles: dark glossy green above, silvery blue-green below (the faces turned down)
+      col = mix(col, lin(0x6d8a80).mul(mix(float(0.55), float(0.9), c.y)), smoothstep(0.1, -0.5, normalWorld.y).mul(0.6));
       m.colorNode = col.mul(ao);
       wxMat(m, { porosity: 0.35 });
       break;

@@ -1,20 +1,20 @@
 # Mesh audit: christmas tree_lod1 (needle-vs-needle overlaps exempt: 1344)
 
-40,982 triangles, 24,056 welded vertices, 24 open edges, 4,608 rays, 1284 ms.
+41,090 triangles, 24,126 welded vertices, 24 open edges, 4,608 rays, 1687 ms.
 
-**0 blocking**, 343 warnings. Clean (no blocking item).
+**0 blocking**, 356 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 232 |
+| sliver | warn | 245 |
 | nonmanifold | warn | 32 |
-| seam | info | 3571 |
+| seam | info | 3561 |
 | opening | info | 16 |
-| backtoback | info | 191 |
+| backtoback | info | 169 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 232)
+## sliver (warn, 245)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -59,7 +59,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.04, 4.00, 0.10 | tree_lod1/fir_bark | 45 | 3.001 |
 | 0.07, 5.00, 0.06 | tree_lod1/fir_bark | 72 | 3.001 |
 
-(192 more in the JSON)
+(205 more in the JSON)
 
 ## nonmanifold (warn, 32)
 
@@ -98,7 +98,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.51, 0.58, 1.23 | tree_lod1/wood_planks | 4 |
 | 1.23, 0.58, 0.51 | tree_lod1/wood_planks | 4 |
 
-## seam (info, 3571)
+## seam (info, 3561)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -143,7 +143,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.30, 0.77, -1.33 | tree_lod1/fir_needles + tree_lod1/fir_needles | 2.48 | 40 | 15.2 |
 | 0.71, 3.02, -0.01 | tree_lod1/fir_needles + tree_lod1/fir_needles | 4.23 | 40 | 14 |
 
-(3531 more in the JSON)
+(3521 more in the JSON)
 
 ## opening (info, 16)
 
@@ -166,7 +166,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.55, 0.48, 1.21 | tree_lod1/wood_planks | 0.71 + 0 + 0.71 | 1.034 |
 | 1.25, 0.48, -0.47 | tree_lod1/wood_planks | 1 + 0 + 0 | 1.034 |
 
-## backtoback (info, 191)
+## backtoback (info, 169)
 
 | at | parts | area |
 |---|---|---|
@@ -211,4 +211,4 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.74, 2.91, 0.81 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.01023 |
 | -0.78, 2.89, 0.96 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.00583 |
 
-(151 more in the JSON)
+(129 more in the JSON)

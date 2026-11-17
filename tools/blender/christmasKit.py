@@ -372,6 +372,8 @@ def frond(M, p0, d, L, W, droop, tip_up, col, seed, nl=8, na=8, side=4, snl=5, s
         for k in range(na):
             a = 2 * math.pi * k / na
             j = 1 + 0.22 * noise.noise(Vector((seed * 0.37 + t * 3.1, k * 0.9, 0.5))) + 0.1 * math.sin(i * 2.4 + k * 1.7 + seed)
+            # needle tufts: the spray's two flat edges zigzag ring to ring (a bristly outline, not a smooth leaf)
+            if 0 < i < nl and nl >= 6: j *= 1 + 0.3 * abs(math.cos(a)) ** 4 * (1 if (i + (k * 2 // na)) % 2 else -1)
             off = wv * math.cos(a) * w * 0.5 * j + nv * (math.sin(a) * th * 0.5 * j + 0.25 * th * math.cos(a) ** 2)
             V.append(pts[i] + off); U.append((s, a / (2 * math.pi) * (w * 1.6 + 0.05)))
     for i in range(nl):
@@ -434,7 +436,7 @@ def build_tree():
             LL = L * rnd.uniform(0.9, 1.06)
             branches.append((p0, d, LL, 0.5 + 0.35 * LL / 2.85, rnd.uniform(0.14, 0.22), rnd.uniform(0.06, 0.12), (rnd.random(), 0.75 + 0.25 * rnd.random(), 1.0), j * 31 + b))
     nfr = len(branches)
-    for Mx, det, cs in ((M, dict(nl=8, na=8, side=4, snl=5, sna=6), 24), (far1, dict(nl=4, na=5, side=2, snl=3, sna=4), 16), (far2, dict(nl=3, na=4, side=0), 10)):
+    for Mx, det, cs in ((M, dict(nl=10, na=8, side=4, snl=6, sna=6), 24), (far1, dict(nl=4, na=5, side=2, snl=3, sna=4), 16), (far2, dict(nl=3, na=4, side=0), 10)):
         inner_cone(Mx, cs)
         for (p0, d, LL, W, dr, tu, col, sd) in branches:
             frond(Mx, p0, d, LL, W, dr, tu, col, seed=sd, **det)

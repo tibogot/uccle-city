@@ -1,16 +1,16 @@
-# Mesh audit: christmas tree_lod0 (needle-vs-needle overlaps exempt: 3594)
+# Mesh audit: christmas tree_lod0 (needle-vs-needle overlaps exempt: 3619)
 
-161,560 triangles, 85,427 welded vertices, 24 open edges, 4,608 rays, 5073 ms.
+183,424 triangles, 96,381 welded vertices, 24 open edges, 4,608 rays, 6884 ms.
 
-**0 blocking**, 857 warnings. Clean (no blocking item).
+**0 blocking**, 876 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
 | sliver | warn | 508 |
 | nonmanifold | warn | 32 |
-| seam | info | 6471 |
+| seam | info | 6863 |
 | opening | info | 16 |
-| backtoback | info | 144 |
+| backtoback | info | 137 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -98,52 +98,52 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.51, 0.58, 1.23 | tree_lod0/wood_planks | 4 |
 | 1.23, 0.58, 0.51 | tree_lod0/wood_planks | 4 |
 
-## seam (info, 6471)
+## seam (info, 6863)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| 0.16, 9.13, -0.24 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.16 | 106 | 16.3 |
-| 0.05, 9.19, -0.44 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.06 | 105 | 20.8 |
-| -0.22, 9.19, -0.15 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.09 | 97 | 15.9 |
-| 0.39, 9.22, 0.17 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.04 | 96 | 13.6 |
-| 0.43, 8.01, 0.48 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.56 | 95 | 12.2 |
-| 0.33, 7.96, -0.58 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.81 | 93 | 12.1 |
-| -0.33, 9.20, -0.16 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.04 | 93 | 19.5 |
-| 0.21, 8.64, 0.52 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.51 | 92 | 12.9 |
-| -0.21, 9.17, 0.18 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.96 | 90 | 15.8 |
-| -0.71, 8.14, -0.17 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.72 | 89 | 12 |
-| 0.16, 8.91, -0.45 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.33 | 88 | 12 |
-| -0.54, 8.16, -0.33 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.57 | 86 | 13 |
-| -0.55, 7.76, 0.51 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.73 | 85 | 12.1 |
-| 0.38, 8.90, 0.27 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.32 | 85 | 13.3 |
-| 0.05, 9.22, 0.29 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.96 | 85 | 12.5 |
-| -0.47, 8.77, 0.03 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.51 | 84 | 13.2 |
-| 0.35, 1.27, 0.17 | tree_lod0/fir_needles + tree_lod0/fir_needles | 5.99 | 83 | 12.3 |
-| 0.11, 1.77, -0.32 | tree_lod0/fir_needles + tree_lod0/fir_needles | 5.08 | 83 | 12.2 |
-| -0.25, 9.18, 0.12 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1 | 83 | 15.8 |
-| -0.73, 7.74, -0.10 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.64 | 82 | 12.4 |
-| 0.39, 7.44, 0.69 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.87 | 81 | 12.5 |
-| 0.35, 9.04, -0.23 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.14 | 81 | 14.7 |
-| -0.08, 3.03, -0.27 | tree_lod0/fir_needles + tree_lod0/fir_needles | 4.64 | 78 | 13.3 |
-| 0.66, 8.38, -0.04 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.47 | 78 | 12 |
-| 0.02, 4.35, 0.29 | tree_lod0/fir_needles + tree_lod0/fir_needles | 3.57 | 77 | 13 |
-| -0.09, 8.78, 0.50 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.3 | 77 | 13.9 |
-| 0.16, 3.08, -0.23 | tree_lod0/fir_needles + tree_lod0/fir_needles | 4.89 | 76 | 13 |
-| -0.28, 8.86, 0.14 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.87 | 76 | 12.2 |
-| -0.20, 8.23, 0.65 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.42 | 75 | 12.9 |
-| 0.12, 9.22, 0.39 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.86 | 75 | 15.9 |
-| -0.10, 1.45, -0.28 | tree_lod0/fir_needles + tree_lod0/fir_needles | 4.67 | 74 | 14.1 |
-| 0.10, 2.53, -0.26 | tree_lod0/fir_needles + tree_lod0/fir_needles | 4.38 | 74 | 17.4 |
-| 0.10, 8.84, -0.00 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.43 | 74 | 12.5 |
-| 0.00, 1.25, 0.34 | tree_lod0/fir_needles + tree_lod0/fir_needles | 5.62 | 73 | 12.5 |
-| 0.01, 1.82, -0.22 | tree_lod0/fir_needles + tree_lod0/fir_needles | 5.35 | 73 | 14.7 |
-| 0.23, 1.74, 0.45 | tree_lod0/fir_needles + tree_lod0/fir_needles | 4.91 | 73 | 9.7 |
-| -0.13, 2.32, 0.14 | tree_lod0/fir_needles + tree_lod0/fir_needles | 5.07 | 73 | 12.7 |
-| 0.29, 3.55, -0.03 | tree_lod0/fir_needles + tree_lod0/fir_needles | 4.13 | 73 | 16.1 |
-| -0.08, 6.37, 0.06 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.79 | 73 | 12.8 |
-| 0.52, 8.47, 0.01 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.14 | 73 | 15.3 |
+| -0.35, 9.17, -0.25 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.56 | 154 | 13.6 |
+| 0.53, 8.86, 0.02 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.9 | 135 | 13.5 |
+| -0.33, 9.15, 0.01 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.57 | 134 | 12.7 |
+| 0.17, 9.14, -0.24 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.75 | 134 | 15.7 |
+| 0.47, 8.57, 0.10 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.13 | 132 | 12.9 |
+| -0.19, 9.16, 0.13 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.6 | 131 | 14 |
+| -0.21, 9.17, 0.20 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.45 | 131 | 16.3 |
+| -0.02, 9.21, 0.39 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.72 | 131 | 14.9 |
+| 0.27, 9.18, 0.26 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.59 | 131 | 12 |
+| 0.04, 7.77, -0.61 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.54 | 128 | 12.9 |
+| -0.17, 8.94, -0.39 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.77 | 126 | 13.6 |
+| 0.41, 8.57, -0.47 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2 | 125 | 12.4 |
+| 0.22, 1.28, -0.25 | tree_lod0/fir_needles + tree_lod0/fir_needles | 8.11 | 124 | 12.3 |
+| 0.67, 8.09, -0.22 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.56 | 124 | 12.7 |
+| 0.17, 3.08, -0.20 | tree_lod0/fir_needles + tree_lod0/fir_needles | 6.24 | 122 | 12.1 |
+| 0.36, 8.00, 0.42 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.37 | 122 | 12.6 |
+| 0.36, 9.21, 0.14 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.19 | 122 | 22.4 |
+| -0.50, 8.59, -0.07 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.95 | 121 | 13.4 |
+| 0.09, 9.21, 0.06 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.11 | 119 | 7.2 |
+| 0.08, 1.78, -0.32 | tree_lod0/fir_needles + tree_lod0/fir_needles | 6.27 | 118 | 12 |
+| -0.14, 9.17, -0.28 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.67 | 118 | 15.4 |
+| 0.44, 8.37, -0.41 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.48 | 117 | 13.1 |
+| -0.17, 8.54, -0.52 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.68 | 116 | 12.9 |
+| -0.20, 8.87, 0.46 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.88 | 114 | 15.7 |
+| -0.81, 7.50, 0.30 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.46 | 113 | 12.3 |
+| 0.59, 8.26, 0.04 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.1 | 113 | 12.3 |
+| 0.38, 9.12, -0.15 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.62 | 112 | 16.1 |
+| -0.12, 1.27, 0.34 | tree_lod0/fir_needles + tree_lod0/fir_needles | 6.84 | 111 | 13 |
+| 0.43, 8.06, -0.54 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.39 | 111 | 14.1 |
+| 0.12, 8.85, 0.06 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.89 | 111 | 13 |
+| 0.06, 9.15, -0.09 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.1 | 110 | 42.8 |
+| 0.93, 7.14, -0.32 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.27 | 109 | 12.5 |
+| 0.67, 7.72, 0.34 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.34 | 109 | 12.6 |
+| -0.13, 8.18, -0.60 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.04 | 109 | 15 |
+| -0.38, 8.54, 0.36 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.04 | 109 | 13.7 |
+| 0.26, 8.83, -0.30 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.6 | 109 | 12.4 |
+| -0.39, 8.86, 0.13 | tree_lod0/fir_needles + tree_lod0/fir_needles | 1.4 | 108 | 18.6 |
+| 0.36, 7.40, 0.76 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.47 | 107 | 12.2 |
+| -0.55, 7.77, 0.54 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.26 | 107 | 12.2 |
+| -0.70, 8.11, -0.28 | tree_lod0/fir_needles + tree_lod0/fir_needles | 2.58 | 107 | 13 |
 
-(6431 more in the JSON)
+(6823 more in the JSON)
 
 ## opening (info, 16)
 
@@ -166,49 +166,49 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.55, 0.48, 1.21 | tree_lod0/wood_planks | 0.71 + 0 + 0.71 | 1.034 |
 | 1.25, 0.48, -0.47 | tree_lod0/wood_planks | 1 + 0 + 0 | 1.034 |
 
-## backtoback (info, 144)
+## backtoback (info, 137)
 
 | at | parts | area |
 |---|---|---|
 | -0.04, 5.73, -0.07 | tree_lod0/fir_bark + tree_lod0/fir_needles | 0.00005 |
-| -0.24, 1.35, -1.03 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01434 |
-| -1.34, 0.97, 0.40 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01989 |
-| -0.30, 1.18, 0.57 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00567 |
-| 0.69, 1.17, 0.34 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01219 |
-| 1.73, 0.94, -0.21 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00517 |
-| 1.42, 0.93, 0.13 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00157 |
-| 1.55, 0.93, -0.04 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00376 |
-| -0.01, 1.08, -1.23 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00027 |
-| -0.46, 1.14, -0.64 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00065 |
-| -0.13, 1.09, 1.72 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00302 |
-| 0.61, 1.06, 0.94 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00121 |
-| 0.65, 1.35, 0.36 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02246 |
-| -0.11, 1.36, -0.83 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01988 |
-| -0.63, 1.35, -0.61 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02422 |
-| -0.52, 1.43, -0.59 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00461 |
-| -0.42, 1.45, -0.53 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00982 |
-| -0.85, 1.34, -0.41 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02128 |
-| -0.73, 1.35, -0.37 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00356 |
-| -2.23, 0.96, 0.20 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00105 |
-| -0.29, 1.24, 1.25 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01817 |
-| 0.62, 1.30, -0.91 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00707 |
-| 0.29, 1.65, -0.67 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00422 |
-| 0.28, 1.66, -0.62 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00084 |
-| -1.64, 1.23, -0.15 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00196 |
-| -1.69, 0.90, 1.45 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00122 |
-| -1.45, 1.36, 0.62 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00075 |
-| 0.57, 1.32, 1.63 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00086 |
-| 0.84, 1.26, 1.07 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01023 |
-| 1.47, 1.40, 0.51 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01033 |
-| 1.93, 1.18, -0.54 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.0009 |
-| -0.83, 1.89, 0.02 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00342 |
-| 1.49, 1.55, 1.09 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00326 |
-| 1.17, 1.43, -1.03 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00334 |
-| 0.09, 2.04, -0.24 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.0104 |
-| -0.06, 1.71, -1.47 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01187 |
-| -0.76, 1.85, -0.15 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00261 |
-| 0.79, 2.05, -1.34 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00304 |
-| 0.52, 2.01, -1.56 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00841 |
-| 0.82, 2.04, -1.40 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00222 |
+| 0.28, 9.16, -0.02 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00113 |
+| 0.14, 1.35, -0.92 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02547 |
+| 0.19, 1.35, -0.82 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02526 |
+| 0.05, 1.35, -0.94 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02359 |
+| 0.23, 1.35, -0.75 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.0051 |
+| 0.38, 1.35, -0.68 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01682 |
+| 0.45, 1.35, -0.74 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02639 |
+| 0.48, 1.35, -0.60 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00198 |
+| -0.80, 1.05, -0.32 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00707 |
+| -1.74, 0.38, -2.19 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00879 |
+| -0.99, 0.95, 0.76 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00571 |
+| 0.92, 1.05, 1.26 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00081 |
+| 0.57, 1.09, 0.84 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.02767 |
+| 1.70, 0.99, -0.47 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00222 |
+| 0.09, 1.17, -0.82 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00206 |
+| 0.28, 1.32, 1.07 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00286 |
+| 0.28, 1.33, 1.04 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00113 |
+| 0.35, 1.30, 1.15 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01041 |
+| 1.30, 1.22, 0.45 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00087 |
+| 1.95, 0.80, 0.16 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00065 |
+| 0.12, 1.35, -0.74 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.0173 |
+| 0.00, 1.07, -1.21 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00925 |
+| -0.88, 1.08, 0.21 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01572 |
+| -1.55, 0.74, 0.88 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00406 |
+| -0.81, 1.01, 0.89 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00393 |
+| -1.61, 0.92, 0.37 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01557 |
+| 0.48, 1.44, -1.44 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00089 |
+| 0.57, 1.40, -1.50 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00373 |
+| 0.56, 1.41, -1.41 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01736 |
+| -1.09, 1.34, -1.63 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00006 |
+| -0.94, 1.55, 0.62 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00054 |
+| 0.73, 1.24, 1.17 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00369 |
+| 0.72, 1.65, 0.42 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.01362 |
+| 1.54, 1.18, 1.59 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00161 |
+| 1.02, 1.62, -0.08 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.0187 |
+| 0.41, 1.42, -0.15 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00889 |
+| -1.19, 1.75, -0.15 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00923 |
+| 1.18, 1.57, 0.96 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00487 |
+| 1.43, 1.67, 0.71 | tree_lod0/fir_needles + tree_lod0/fir_needles | 0.00822 |
 
-(104 more in the JSON)
+(97 more in the JSON)
