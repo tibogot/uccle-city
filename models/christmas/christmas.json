@@ -84,18 +84,18 @@
     3.314,
     3.105
    ],
-   "triangles_lod0": 9608,
+   "triangles_lod0": 9676,
    "slots": [
     "chalet_trim",
-    "chalet_interior",
     "chalet_wood",
     "gold_metal",
+    "chalet_interior",
+    "bulb_warm",
     "metal_frame",
     "sign_board",
     "roof_felt",
     "snow_fake",
-    "fir_needles",
-    "bulb_warm"
+    "fir_needles"
    ]
   }
  },
@@ -432,9 +432,103 @@
     120,
     480
    ]
+  },
+  "chalet": {
+   "lods": [
+    {
+     "node": "chalet_lod0",
+     "triangles": 9676,
+     "draws": 10,
+     "slots": [
+      "chalet_trim",
+      "chalet_wood",
+      "gold_metal",
+      "chalet_interior",
+      "bulb_warm",
+      "metal_frame",
+      "sign_board",
+      "roof_felt",
+      "snow_fake",
+      "fir_needles"
+     ],
+     "slot_triangles": [
+      716,
+      4064,
+      64,
+      792,
+      408,
+      40,
+      44,
+      88,
+      88,
+      3372
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "chalet_lod1",
+     "triangles": 6130,
+     "draws": 9,
+     "slots": [
+      "chalet_trim",
+      "chalet_wood",
+      "chalet_interior",
+      "bulb_warm",
+      "metal_frame",
+      "sign_board",
+      "roof_felt",
+      "snow_fake",
+      "fir_needles"
+     ],
+     "slot_triangles": [
+      646,
+      2794,
+      792,
+      136,
+      40,
+      32,
+      88,
+      88,
+      1514
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "chalet_lod2",
+     "triangles": 3832,
+     "draws": 7,
+     "slots": [
+      "chalet_trim",
+      "chalet_wood",
+      "bulb_warm",
+      "sign_board",
+      "roof_felt",
+      "snow_fake",
+      "fir_needles"
+     ],
+     "slot_triangles": [
+      546,
+      2118,
+      64,
+      20,
+      88,
+      88,
+      908
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    40,
+    130,
+    600
+   ]
   }
  },
- "glb_bytes": 4596188,
+ "glb_bytes": 5126880,
  "lod_ranges_m": {
   "note": "per piece (lods[piece].range): each LOD's band END (camera distance)"
  },
@@ -585,6 +679,39 @@
    "counts": {
     "sliver": 8,
     "backtoback": 4
+   }
+  },
+  "chalet_lod0": {
+   "blocking": 0,
+   "warnings": 1288,
+   "foliage_exempt": 14,
+   "counts": {
+    "sliver": 1280,
+    "nonmanifold": 6,
+    "backtoback": 166,
+    "seam": 175
+   }
+  },
+  "chalet_lod1": {
+   "blocking": 0,
+   "warnings": 1185,
+   "foliage_exempt": 7,
+   "counts": {
+    "sliver": 1179,
+    "nonmanifold": 6,
+    "backtoback": 178,
+    "seam": 142
+   }
+  },
+  "chalet_lod2": {
+   "blocking": 0,
+   "warnings": 962,
+   "foliage_exempt": 2,
+   "counts": {
+    "sliver": 955,
+    "nonmanifold": 7,
+    "backtoback": 98,
+    "seam": 119
    }
   }
  }

@@ -1,6 +1,6 @@
 # Mesh audit: christmas tree_lod0 (needle-vs-needle overlaps exempt: 3594)
 
-161,560 triangles, 85,427 welded vertices, 24 open edges, 4,608 rays, 5416 ms.
+161,560 triangles, 85,427 welded vertices, 24 open edges, 4,608 rays, 5073 ms.
 
 **0 blocking**, 857 warnings. Clean (no blocking item).
 

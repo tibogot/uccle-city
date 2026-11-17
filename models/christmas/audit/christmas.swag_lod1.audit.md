@@ -1,6 +1,6 @@
 # Mesh audit: christmas swag_lod1 (needle-vs-needle overlaps exempt: 3)
 
-3,028 triangles, 1,679 welded vertices, 0 open edges, 0 rays, 167 ms.
+3,028 triangles, 1,679 welded vertices, 0 open edges, 0 rays, 163 ms.
 
 **0 blocking**, 10 warnings. Clean (no blocking item).
 

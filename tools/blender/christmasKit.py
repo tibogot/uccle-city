@@ -713,7 +713,7 @@ def build_chalet():
     # the deck + its skirt
     box(M, (0, 0, B0 / 2), (W + 0.12, D + 0.12, B0), "chalet_trim", bevel=0.008)
     # core walls (the boards' backing; their inner faces are the inside seen through the hatch)
-    inner = "chalet_interior"
+    inner = "chalet_trim"        # (the core's faces show in the boards' shadow gaps: dark stain, never the lit goods)
     box(M, (0, Y1 - T / 2, (B0 + WH) / 2), (W, T, WH - B0), inner, grain=(1, 0, 0))
     for sx in (-1, 1): box(M, (sx * (W / 2 - T / 2), 0, (B0 + WH) / 2), (T, D - 2 * T, WH - B0), inner, grain=(0, 1, 0))
     box(M, (0, Y0 + T / 2, (B0 + HZ0) / 2), (W, T, HZ0 - B0), inner)
@@ -747,7 +747,7 @@ def build_chalet():
                 size = (sb - sa, 0.022, h) if axis_x else (0.022, sb - sa, h)
                 box(M, c, size, "chalet_wood", tone, grain=(1, 0, 0) if axis_x else (0, 1, 0), bevel=0.004)
             z += BH
-    boards(True, Y0, X0 + 0.05, X1 - 0.05, B0, WH, -1, holes=[(HX0 - 0.02, HX1 + 0.02, HZ0 - 0.02, HZ1 + 0.02)])
+    boards(True, Y0, X0 + 0.05, X1 - 0.05, B0, WH, -1, holes=[(HX0 - 0.07, HX1 + 0.07, HZ0 - 0.02, HZ1 + 0.07)])   # (to the frame's outer edge: no board behind the frame)
     boards(True, Y1, X0 + 0.05, X1 - 0.05, B0, WH, 1)
     DOOR = (-0.45, 0.35, B0, B0 + 1.9)
     for sx in (-1, 1):
@@ -756,7 +756,7 @@ def build_chalet():
     # corner posts, the hatch frame, the counter on two brackets, the door with its knob
     for sx in (-1, 1):
         for sy in (-1, 1): box(M, (sx * (W / 2 + 0.005), sy * (D / 2 + 0.005), (B0 - 0.03 + WH + 0.02) / 2), (0.09, 0.09, WH - B0 + 0.05), "chalet_trim", bevel=0.006)   # (ends off the core's planes)
-    for (c, size) in (((0, Y0 - 0.02, HZ1 + 0.035), (HX1 - HX0 + 0.14, 0.05, 0.07)), ((HX0 - 0.035, Y0 - 0.02, (HZ0 + HZ1) / 2), (0.07, 0.05, HZ1 - HZ0)), ((HX1 + 0.035, Y0 - 0.02, (HZ0 + HZ1) / 2), (0.07, 0.05, HZ1 - HZ0))):
+    for (c, size) in (((0, Y0 - 0.02, HZ1 + 0.035), (HX1 - HX0 + 0.14, 0.05, 0.07)), ((HX0 - 0.035, Y0 - 0.02, (HZ0 + HZ1) / 2), (0.06, 0.04, HZ1 - HZ0)), ((HX1 + 0.035, Y0 - 0.02, (HZ0 + HZ1) / 2), (0.06, 0.04, HZ1 - HZ0))):
         box(M, c, size, "chalet_trim", bevel=0.005)
     box(M, (0, Y0 - 0.12, HZ0 - 0.01), (HX1 - HX0 + 0.3, 0.42, 0.04), "chalet_trim", bevel=0.006)
     for sx in (-0.9, 0.9): box(M, (sx, Y0 - 0.16, HZ0 - 0.17), (0.04, 0.04, 0.3), "chalet_trim", rot=Matrix.Rotation(math.radians(-38), 3, "X"))
@@ -769,6 +769,9 @@ def build_chalet():
         for i in range(9):
             x = -1.2 + i * 0.3 + rnd.uniform(-0.04, 0.04); h = rnd.uniform(0.1, 0.24)
             box(M, (x, Y1 - T - 0.14, z + 0.0125 + h / 2), (rnd.uniform(0.1, 0.2), rnd.uniform(0.08, 0.16), h), "chalet_interior", (rnd.random(), 0.3 + 0.7 * rnd.random(), 1.0), bevel=0.004)
+    # the lamp inside: one warm bulb under the ceiling (emissive, no light)
+    bead(M, (0, 0.1, WH - 0.08), 0.03, "bulb_warm", (0.3, 0.0, 1.0), axis=Vector((0, 0, -1)))
+    poly_shape(f1, (0, 0.1, WH - 0.08), 0.035, "bulb_warm", "oct", (0.3, 0.0, 1.0))
     # the shutter: hinged over the hatch, propped 110 degrees up and out (20 degrees over the horizontal), two struts
     hinge = Vector((0, Y0 - 0.045, HZ1 + 0.07)); R = Matrix.Rotation(math.radians(-110), 3, "X")
     sh_len = HZ1 - HZ0 + 0.1

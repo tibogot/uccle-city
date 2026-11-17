@@ -33,7 +33,7 @@ const CFG = {
   swag: { err: [0.014, 0.035], range: [14, 45, 150] },
   lampmotif: { err: [0.004, 0.012], range: [30, 100, 380], drop: { metal_frame: [2] } },
   spanmotif: { err: [0.005, 0.015], range: [35, 120, 480], drop: { metal_frame: [2] } },
-  chalet: { err: [0.01, 0.04], range: [40, 130, 600], drop: { chalet_interior: [2], metal_frame: [2], gold_metal: [1, 2] } },
+  chalet: { err: [0.015, 0.025], range: [40, 130, 600], drop: { chalet_interior: [2], metal_frame: [2], gold_metal: [1, 2] } },
 };
 const CREASE = 50;
 
