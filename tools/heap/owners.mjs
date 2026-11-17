@@ -10,7 +10,7 @@ import fs from "node:fs";
 const args = process.argv.slice(2);
 const file = args[0];
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? +args[i + 1] : d; };
-const MIN = opt("--min", 262144), DEPTH = opt("--depth", 8);
+const MIN = opt("--min", 262144), DEPTH = opt("--depth", 8), MORE = opt("--more", 3);
 const MB = (b) => +(b / 1048576).toFixed(2);
 
 function meta() {
@@ -88,27 +88,45 @@ const ret = new Map();                    // node -> [[from, edgeType, edgeName]
 let frontier = new Set(targets);
 const WEAK = edgeTypes.indexOf("weak");
 for (let d = 0; d < DEPTH && frontier.size; d++) {
-  stream({ edges: (from, et, en, to) => { if (et === WEAK || !frontier.has(to)) return; let r = ret.get(to); if (!r) ret.set(to, (r = [])); if (r.length < 12) r.push([from, et, en]); } });
+  stream({ edges: (from, et, en, to) => { if (et === WEAK || !frontier.has(to)) return; let r = ret.get(to); if (!r) ret.set(to, (r = [])); if (r.length < 40) r.push([from, et, en]); } });
   const next = new Set();
   for (const n of frontier) for (const [f] of ret.get(n) || []) if (machinery(f) && !ret.has(f)) next.add(f);
   console.error(`level ${d + 1}: ${frontier.size} nodes, next ${next.size} (${Date.now() - t0} ms)`);
   frontier = next;
 }
+// the owners' own retainers, MORE levels up (first strong one each)
+const ret2 = new Map();
+{ let fr = new Set();
+  for (const n of targets) for (const [f] of ret.get(n) || []) for (const [g] of ret.get(f) || []) if (!machinery(g)) fr.add(g);
+  for (const n of [...ret.keys()]) for (const [f] of ret.get(n)) if (!machinery(f)) fr.add(f);
+  for (let k = 0; k < MORE && fr.size; k++) {
+    stream({ edges: (from, et, en, to) => { if (et === WEAK || edgeTypes[et] === "shortcut" || !fr.has(to) || ret2.has(to)) return; ret2.set(to, [[from, et, en]]); } });
+    const nx = new Set(); for (const n of fr) { const r = ret2.get(n); if (r) nx.add(r[0][0]); } fr = nx;
+  } }
 const edgeName = (et, en) => (edgeTypes[et] === "element" || edgeTypes[et] === "hidden" ? `[${en}]` : S(en));
-/** the owner path of a buffer: up the first retainers through the machinery, then the first JS owner */
+/** the owner path of a buffer: the SHORTEST way up through the machinery (native wrappers of transferred buffers
+ *  point at each other: the first retainer can be a cycle) to the first JS owner */
 function path(n) {
-  const parts = []; const seen = new Set([n]);
-  let c = n;
-  for (let d = 0; d < DEPTH; d++) {
-    const r = ret.get(c);
-    if (!r?.length) { parts.push("(no retainer)"); break; }
-    const js = r.find(([f]) => !machinery(f));
-    const [f, et, en] = js || r[0];
-    parts.push(`${label(f)}.${edgeName(et, en)}`);
-    if (js || seen.has(f)) break;
-    seen.add(f); c = f;
+  const prev = new Map([[n, null]]);
+  let level = [n];
+  for (let d = 0; d < DEPTH && level.length; d++) {
+    const next = [];
+    for (const c of level) for (const [f, et, en] of ret.get(c) || []) {
+      if (prev.has(f)) continue;
+      prev.set(f, [c, et, en]);
+      if (!machinery(f)) {
+        const parts = []; let x = f;
+        while (prev.get(x)) { const [c2, a, b] = prev.get(x); parts.push(`${label(x)}.${edgeName(a, b)}`); x = c2; }
+        // (+ MORE levels above the owner, first retainers: Object.data <- DataTexture.image ...)
+        let up = f; const more = [];
+        for (let k = 0; k < MORE; k++) { const r = ret2.get(up)?.[0]; if (!r) break; more.push(`${label(r[0])}.${edgeName(r[1], r[2])}`); up = r[0]; }
+        return [...parts.reverse(), ...more].join(" <- ");
+      }
+      next.push(f);
+    }
+    level = next;
   }
-  return parts.join(" <- ");
+  return `(no JS owner within ${DEPTH}: ${(ret.get(n) || []).slice(0, 3).map(([f, a, b]) => `${label(f)}.${edgeName(a, b)}`).join(" | ")})`;
 }
 const byPath = new Map();
 for (const n of targets) { const p = path(n); const e = byPath.get(p) || [0, 0]; e[0]++; e[1] += nSelf[n]; byPath.set(p, e); }
