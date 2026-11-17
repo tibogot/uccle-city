@@ -120,3 +120,45 @@ Checks: HEAP line (5 boots: `?gamemenu=0&orbitcam2=old`, default, `?gamemenu=0&t
 drive, `?game=falcon` + flight): 0 console errors, 0 WebGPU errors, `__heapDrop.tripCounts` {}. Visual tour run
 `falconstutter` vs `foundation`: 21 / 22 ok, `traffic-alsemberg` flagged (a moving car in the baseline frame, not in the
 run: the same 89.5 % cell flag as the mdraw run; no other view changed). Node gate: all pass.
+
+## Round 2 (branch claude/falcon2, 2026-11-17): offline turn
+
+Goal unchanged: 0 frames over 50 ms, p99 <= 25 ms. The round-1 leftovers re-read in the three r187 source
+(tools/worker/node_modules/three/src); two of them had a different cause from the one written above.
+
+| # | leftover | cause found (code) | fix (switch, `=old` = before) |
+|---|---|---|---|
+| 1 | `walls (kit, far):fade` SHADOW build, 31-56 ms | NOT the attribute count: the kit walls are a plain Mesh (7 attributes; three's object-specific flag is set only for InstancedMesh over 8 vertex buffers and morph textures, nodes/accessors/Instance.js, Morph.js). The far material (`MATS.wallKitFar`, swapped in by kitField.js out of the kit's reach) never fades in: its fading copy was first made in `retire`, compiled for the scene pass only (compileAsync builds no shadow pass), and its shadow shader was built by the sun pass on the first fade-out frame. After that it is cached (shared material, shared fade graph): 1-2 per flight = the first time per pass context | `retirewarm`: lodFade.js fadeProxies also makes the copies of a mesh's `userData.cutMat` / `plainMat`, so both copies are compiled AND shadow-warmed (preCompile's warmShadows) when the first kit tile lands; `retire` shadow-warms any new copy before the fade-out starts |
+| 4 | `streetlife-box:fade` sync build 8-9 ms a tile | the box geometry had 4 + 7 per-instance attributes = 11 keys: `Object.keys(geometry.attributes).length + 1 (matrix) + 1 (previous matrix: motion vectors) > 8` (canReferenceInstanceData) sets `builder.objectSpecific`, and NodeManager.getForRender never caches such a build: every tile's box mesh, its fading copy and every warm-up stand-in built its own shader, the real mesh on its first frame (the stand-in's build is not reused) | `boxshare`: the 7 vec4s stay ONE InstancedInterleavedBuffer, read through `referenceAttribute("geometry.boxIB.<k>")` (resolved per render object, the way three reads `instanceMatrix`); the geometry keeps 4 attributes, the build is shared by all tiles (stand-ins share the geometry, so they carry the data); on dispose the columns join `geometry.attributes` so three frees the buffer |
+| 2 | major GC 50-100 ms (450-1170 MB drops) | measured nothing new offline. What a tile allocates on the main thread: the worker result (~37 MB a full tile, transferred: needed), CPU copies dropped after upload (heapDrop, needed), plus avoidable second copies: cellCull.js sliced position + index and then CLONED them again by postMessage (no transfer list), heroBVH.js the same for a landmark's whole triangle soup | `cullcopy`, (`heropoll`): the copies transferred (one copy fewer per big façade mesh per tile, per landmark). A 3DTilesRendererJS-style paced eviction was NOT added: round 1 measured the tile disposes themselves at 16-33 ms (`disposeslice` dropped), and a major GC's pause follows the live heap and the allocation rate, not when the garbage was made. The harness now reports `allocMB` (heap growth, ArrayBuffers included), `allocMBperTile` and `gcMB`, to find the next source on the browser turn |
+| 3 | gardens step 18-40 ms | cityGardens.addTile in one go: clearRoads (3 lane / clear-ring tests per segment, per pillar, gate, hedge point), the ground settle of segments and pillars, the hedge modules (~30 ground samples each) | `gardenslice`: one generator (addTileGen; gardenInstancesGen, settleGen, settlePillarsGen, hedgeInstancesGen, clearRoads) drained by addTile, run in <= 3 ms slices by addTileSliced (viewer/slices.js) |
+| 5 | hero collider poll 37-66 ms | every 2 s: `scene.getObjectByName` per landmark name (~40 whole-scene walks), a Box3 + mesh count of each LOD0 again, then heroTriangles of a LOD0 in one go, the car blockers in 6 ms slices, the BVH copy cloned again | `heropoll`: one scene walk a poll for the roots not found yet (cached while attached), mesh count + tiles cached per LOD0, triangles (viewer/heroTris.js heroTrianglesGen) and blockers in <= 3 ms slices, the BVH copy transferred |
+
+NodeMaterialInstance / three PR #34693: not used. Neither cause above is a per-material rebuild: #1's material is
+already one shared material (its builds are cached after the first), and #4's build was object specific, which no
+material sharing fixes (NodeMaterialInstance keys by the node material's uuid, but an object-specific build is never
+cached at all). The PR (unmerged prototype) keys nodes by type + settings instead of id and maps each render object's
+uniforms to its own material's; our fadeshare (round perf9) already makes the fading copies share node objects, so
+it would add nothing here.
+
+Gate: `stutter2` (tools/audit/stutter2Check.mjs, node, the christmas import hook for meshoptimizer): three's own
+canReferenceInstanceData (taken from the r187 build) passes for a tile's box mesh and failed for the old layout, the
+two tiles' geometry keys equal, the box material reads the 7 vec4s by referenceAttribute: 1 build for 5 tiles + their
+stand-ins (0 per new tile); fadeProxies makes both kit copies once, none for the next tile; retire shadow-warms;
+gardens / clearRoads / heroTriangles drained = sliced, slices <= 3 ms + one piece on a slow ground; the transfers; the
+features rows (sub "Stutter"); no DynamicDrawUsage, no light.
+
+Worker bundle: no worker code changed (viewer/tileWorker.bundle.js untouched).
+
+### Browser turn (to do)
+1. Preflight GREEN, one tab, `?game=falcon`: `F.run({ seconds: 60 })` alternated page loads default /
+   `&retirewarm=old&boxshare=old&gardenslice=old&heropoll=old&cullcopy=old` (3 each, a fresh tab each), the second
+   reversed flight too. Expect: no `walls (kit, far):fade` or `streetlife-box` node build in a long frame, no
+   "gardens" slice over ~4 ms in the tile log line (its counts now carry `slices` / `longest`), no hero-collider task;
+   `summary.allocMB` / `gcMB` / `gc` lower or equal.
+2. `?buildaudit=1` + debug/buildAudit.js: `streetlife-box` builds = 1 (+ its fade copy 1) per page, not per tile;
+   `walls (kit, far):fade` built with the first kit tile (shadow pass in the warm group), never on screen.
+3. Look: street signs / plates / house numbers / shop names on a few tiles (text pages placed, evicted, placed again),
+   a tile fading in / out with kit walls (no hole, no shadow pop), the gardens, a landmark's collisions (drive into
+   Saint-Job church, walk the steps). HEAP 5 boots (0 WebGPU errors: the box buffer layout is new), the visual tour.
+4. If GC frames remain: a DevTools trace of one (V8.GC_MC phases) + `allocMBperTile`, then cut the biggest source.

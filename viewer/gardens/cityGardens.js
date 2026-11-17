@@ -16,7 +16,8 @@
 //     and the collision test read them like the furniture kits' stand-ins. The pedestrian gates are drawn OPEN: the
 //     walker gets in at the door
 import * as THREE from "three/webgpu";
-import { loadGardenKit, GardenPool, PIECES, gardenInstances, gardenSources, gardenFades, standinGeometries } from "./gardenKit.js";
+import { loadGardenKit, GardenPool, PIECES, gardenInstancesGen, gardenSources, gardenFades, standinGeometries } from "./gardenKit.js";
+import { drain, sliced } from "../slices.js";
 import { Streamer, MARGIN } from "../instanceStream.js";
 import { wind } from "../foliage/wind.js";
 
@@ -29,16 +30,22 @@ const HEDGE_COL_OLD = qs.get("hedgecol") === "old";
 
 /** the doc without the pieces standing on a carriageway (blocked(x, z) -> true): segments by their ends and middle,
  *  pillars / gates by their base, hedges split round the blocked points. { doc, segs, pillars, gates, hedgePts } */
-function clearRoads(doc, blocked) {
+// (falcon2: a generator, a yield every 32 tests: the lane / clear-ring tests per piece were most of a tile's 18-40 ms
+// "gardens" slice; viewer/slices.js)
+export function* clearRoads(doc, blocked) {
   const out = { ...doc }, n = { segs: 0, pillars: 0, gates: 0, hedgePts: 0 };
-  out.segs = (doc.segs || []).filter((g) => { const bad = blocked(g[0], g[2]) || blocked(g[3], g[5]) || blocked((g[0] + g[3]) / 2, (g[2] + g[5]) / 2); if (bad) n.segs++; return !bad; });
-  out.pillars = (doc.pillars || []).filter((p) => { const bad = blocked(p[0], p[2]); if (bad) n.pillars++; return !bad; });
-  out.gates = (doc.gates || []).filter((g) => { const bad = blocked(g[0], g[2]); if (bad) n.gates++; return !bad; });
+  let c = 0;
+  out.segs = [];
+  for (const g of doc.segs || []) { if ((++c & 31) === 0) yield; const bad = blocked(g[0], g[2]) || blocked(g[3], g[5]) || blocked((g[0] + g[3]) / 2, (g[2] + g[5]) / 2); if (bad) n.segs++; else out.segs.push(g); }
+  out.pillars = [];
+  for (const p of doc.pillars || []) { if ((++c & 31) === 0) yield; if (blocked(p[0], p[2])) n.pillars++; else out.pillars.push(p); }
+  out.gates = [];
+  for (const g of doc.gates || []) { if ((++c & 31) === 0) yield; if (blocked(g[0], g[2])) n.gates++; else out.gates.push(g); }
   out.hedges = [];
   for (const h of doc.hedges || []) {
     let run = [];
     const flush = () => { if (run.length >= 2) out.hedges.push({ ...h, points: run }); run = []; };
-    for (const q of h.points) { if (blocked(q[0], q[1])) { n.hedgePts++; flush(); } else run.push(q); }
+    for (const q of h.points) { if ((++c & 31) === 0) yield; if (blocked(q[0], q[1])) { n.hedgePts++; flush(); } else run.push(q); }
     flush();
   }
   const total = n.segs + n.pillars + n.gates + n.hedgePts;
@@ -117,7 +124,16 @@ export const cityGardens = {
   },
   /** a tile: its instances join the pools; stand-ins (and hedges) go into `parent` (the tile's features group);
    *  groundAt(x, z) = the drawn ground the hedges stand on */
-  addTile(name, doc, parent, groundAt, blocked = null, restyle = null) {
+  addTile(...a) { return drain(this.addTileGen(...a)); },
+  /** falcon2 (docs/perf/FALCON_STUTTER.md round 2, rule 22; ?gardenslice=old: addTile in one go): the same in slices of
+   *  <= ms of main thread (viewer/slices.js); resolves to addTile's counts (+ slices, longest) */
+  async addTileSliced(name, doc, parent, groundAt, blocked = null, restyle = null, ms = 3) {
+    const st = {};
+    const r = await sliced(this.addTileGen(name, doc, parent, groundAt, blocked, restyle), ms, st);
+    if (r) { r.slices = st.slices; r.longest = +st.longest.toFixed(1); }
+    return r;
+  },
+  *addTileGen(name, doc, parent, groundAt, blocked = null, restyle = null) {
     if (!this.on || !this.kit || !doc) return null;
     const t0 = performance.now();
     // (cortenbosch) the plots a local knows closed by clipped hedges, not walls (data/overrides.json gardenRestyle)
@@ -125,9 +141,11 @@ export const cityGardens = {
     if (rs) doc = rs.doc;
     // citydefects 2026-11-16: no garden piece on a carriageway (a brick-pier + railing run crossed Avenue Carsoel at the
     // Saint-Job station deck: the UrbIS street surfaces the build read predate the 2025 deck); ?gardenroad=old: as before
-    const dropped = blocked && !GARDEN_ROAD_OLD ? clearRoads(doc, blocked) : 0;
+    const dropped = blocked && !GARDEN_ROAD_OLD ? yield* clearRoads(doc, blocked) : 0;
     if (dropped) doc = dropped.doc;
-    const g = gardenInstances(doc, groundAt, { hedgeFronts: this.hedges, hedges: this.hedges });
+    yield;
+    const g = yield* gardenInstancesGen(doc, groundAt, { hedgeFronts: this.hedges, hedges: this.hedges });
+    yield;
     const grp = new THREE.Group(); grp.name = `gardens-${name}`;
     const M = new THREE.Matrix4();
     const hf = HEDGE_COL_OLD ? g.stand.wall.length : g.stand.hedgeFrom;
@@ -141,6 +159,7 @@ export const cityGardens = {
       m.name = nm; m.visible = false; m.castShadow = m.receiveShadow = false;
       m.userData.collisionStandin = true;
       grp.add(m);
+      yield;
     }
     parent.add(grp);
     let srcs = null;

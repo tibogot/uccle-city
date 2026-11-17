@@ -212,6 +212,7 @@ export async function run({ route = "default", y = 165, seconds = 60, speed = nu
       last = now; T.reset();
       const h = performance.memory?.usedJSHeapSize ?? 0;
       if (h < heap - 3e6) fr.gcMB = +((heap - h) / 1e6).toFixed(1);
+      else if (h > heap) fr.al = +((h - heap) / 1e6).toFixed(2);     // (falcon2: heap growth = the allocation rate, ArrayBuffers included)
       heap = h;
       const tn = tilesOf();
       if (tn.length !== tiles.size || tn.some((n) => !tiles.has(n))) { const nt = new Set(tn); fr.tiles = [...tn.filter((n) => !tiles.has(n)).map((n) => "+" + n), ...[...tiles].filter((n) => !nt.has(n)).map((n) => "-" + n)]; tiles = nt; }
@@ -241,7 +242,7 @@ export async function run({ route = "default", y = 165, seconds = 60, speed = nu
     for (const fr of frames) { const end = t0 + fr.t * 1000, start = end - fr.ms; if (end > a && start < b && fr.ms > 33) { (fr.loaf ||= []).push({ dur: Math.round(L.dur), block: Math.round(L.block), scripts: L.scripts.slice(0, 4) }); } }
   }
   const rep = report(frames, { label, seconds, skip, speed: +v.toFixed(1), length: Math.round(rt.length), y, reverse, valid: !hidden, sys: T.sys, gpu: V.gpuStats?.(),
-    switches: { compileslice: window.__fineCompile?.on ?? null } });
+    switches: { compileslice: window.__fineCompile?.on ?? null, ...Object.fromEntries(["retirewarm", "boxshare", "gardenslice", "heropoll", "cullcopy"].map((k) => [k, new URLSearchParams(location.search).get(k) !== "old"])) } });
   try { localStorage.setItem("falconStutter.last", JSON.stringify({ ...rep, frames: undefined })); } catch { /* full */ }
   return (window.__falconStutterLast = rep);
 }
@@ -279,7 +280,7 @@ function report(frames, meta) {
   return {
     label: meta.label, valid: meta.valid, seconds: meta.seconds, speed: meta.speed, length: meta.length, y: meta.y, reverse: meta.reverse, switches: meta.switches,
     summary: { frames: use.length, p50: q(ms, 0.5), p95: q(ms, 0.95), p99: q(ms, 0.99), max: q(ms, 1), over20: ms.filter((x) => x > 20).length, over25: ms.filter((x) => x > 25).length, over33: ms.filter((x) => x > 33.4).length, over50: ms.filter((x) => x > 50).length, over100: ms.filter((x) => x > 100).length,
-      cpuP50: q(cpu, 0.5), cpuP99: q(cpu, 0.99), cpuMax: q(cpu, 1), gpu: meta.gpu, heapMB: Math.round((performance.memory?.usedJSHeapSize ?? 0) / 1e6), gc: use.filter((f) => f.gcMB).length, sunFull: use.reduce((a, f) => a + (f.sunFull || 0), 0) },
+      cpuP50: q(cpu, 0.5), cpuP99: q(cpu, 0.99), cpuMax: q(cpu, 1), gpu: meta.gpu, heapMB: Math.round((performance.memory?.usedJSHeapSize ?? 0) / 1e6), gc: use.filter((f) => f.gcMB).length, gcMB: Math.round(use.reduce((a, f) => a + (f.gcMB || 0), 0)), allocMB: Math.round(use.reduce((a, f) => a + (f.al || 0), 0)), allocMBperTile: +(use.reduce((a, f) => a + (f.al || 0), 0) / Math.max(1, use.filter((f) => f.tiles || f.lite).length)).toFixed(1), sunFull: use.reduce((a, f) => a + (f.sunFull || 0), 0) },
     totals: { pipeSync: sum("pipeSync"), pipeAsync: sum("pipeAsync"), nodeBuilds: sum("nb"), nodeMs: Math.round(sum("nbMs")), roNew: sum("roNew"), roDisp: sum("roDisp"), bufNewMB: +(sum("bufNewB") / 1e6).toFixed(1), bufDelMB: +(sum("bufDelB") / 1e6).toFixed(1), writeMB: +(sum("wbB") / 1e6).toFixed(1), texMB: +(sum("texB") / 1e6).toFixed(1), bindGroups: sum("bg"),
       tileEvents: frames.filter((f) => f.tiles).length, farEvents: frames.filter((f) => f.lite).length },
     causes: tally, systems: sys,
@@ -295,7 +296,7 @@ export function table(r = last(), n = 40) {
 /** a compact line of a report */
 export function brief(r = last()) {
   const s = r.summary;
-  return { label: r.label, valid: r.valid, rev: r.reverse, sw: r.switches, p50: s.p50, p99: s.p99, max: s.max, o20: s.over20, o33: s.over33, o50: s.over50, o100: s.over100, cpu50: s.cpuP50, cpu99: s.cpuP99, gpu: s.gpu?.p50, sun: s.sunFull, ro: r.totals.roNew, nb: r.totals.nodeBuilds, sync: r.totals.pipeSync, causes: r.causes };
+  return { label: r.label, valid: r.valid, rev: r.reverse, sw: r.switches, p50: s.p50, p99: s.p99, max: s.max, o20: s.over20, o33: s.over33, o50: s.over50, o100: s.over100, cpu50: s.cpuP50, cpu99: s.cpuP99, gpu: s.gpu?.p50, sun: s.sunFull, gc: s.gc, gcMB: s.gcMB, allocMB: s.allocMB, ro: r.totals.roNew, nb: r.totals.nodeBuilds, sync: r.totals.pipeSync, causes: r.causes };
 }
 
 /** same-page A/B: `legs` flights out and back (leg i reverses when i is odd), the variants alternated A B B A A B ...;
