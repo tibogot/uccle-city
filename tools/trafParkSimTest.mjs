@@ -22,7 +22,7 @@ const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
 const { TrafficWorld } = await imp("viewer/traffic/trafficWorld.js");
 const { TrafficSim, STEP } = await imp("viewer/traffic/trafficSim.js");
 
-const T = opt("--tile", "I6").toUpperCase(), SECS = +opt("--secs", 240), SHOVE = +opt("--shove", 40);
+const T = opt("--tile", "I6").toUpperCase(), SECS = +opt("--secs", 240), SHOVE = +opt("--shove", 40), SEED = +opt("--seed", 7);
 const { roads, feats, bounds, rd } = loadTile(T);
 const wp = widthParking(roads, feats, bounds, streetFit(rd.surfaceData));
 const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, old: OLD });
@@ -32,7 +32,7 @@ const cars = sites.map((c) => ({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI 
 const W = new TrafficWorld();
 W.add(T, g);
 const types = [{ name: "hatch_c", len: 4.31, w: 1.81, h: 1.45, wb: 2.6, wheelR: 0.31, weight: 1 }, { name: "saloon", len: 4.73, w: 1.85, h: 1.44, wb: 2.8, wheelR: 0.32, weight: 1 }];
-const sim = new TrafficSim(W, { cap: 400, types, paints: [[0.5, 0.5, 0.5]], ground: () => 0, seed: 7 });
+const sim = new TrafficSim(W, { cap: 400, types, paints: [[0.5, 0.5, 0.5]], ground: () => 0, seed: SEED });
 sim.typeWeights ??= types.map((t) => t.weight);
 sim.setParking(() => cars, () => 0);
 sim.params.parkRate = 0;           // (pull-outs / park-ins: their own manoeuvres, not this test's)
@@ -78,7 +78,7 @@ function run(label, secs, each = null) {
   }
   for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && sim.holdT[i] > 60) stuck++;
   const st = sim.stats;
-  const r = { label, cars: sim.count, samples, overlapSamples: over, parkedHit: hit.size, maxDepth: +maxD.toFixed(2), stuckOver60s: stuck, parkWaits: st.parkWaits || 0, parkPasses: st.parkPasses || 0, parkClamped: st.parkClamped || 0, narrowWaits: st.narrowWaits || 0 };
+  const r = { label, cars: sim.count, samples, overlapSamples: over, parkedHit: hit.size, maxDepth: +maxD.toFixed(2), stuckOver60s: stuck, parkWaits: st.parkWaits || 0, parkPasses: st.parkPasses || 0, parkClamped: st.parkClamped || 0, narrowWaits: st.narrowWaits || 0, stepMs: +st.stepMs.toFixed(3), stepMsMax: +st.stepMsMax.toFixed(2) };
   console.log(JSON.stringify(r));
   return r;
 }
