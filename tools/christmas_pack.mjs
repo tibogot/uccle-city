@@ -28,7 +28,8 @@ const NO_AUDIT = process.argv.includes("--no-audit");
 // per piece: LOD1 / LOD2 simplification errors (m) and the LOD bands' ENDS (camera distance, m): LOD0 to [0], LOD1 to [1],
 // LOD2 to [2], nothing beyond (the viewer cross-fades at each switch)
 const CFG = {
-  tree: { err: [0.035, 0.14], range: [45, 150, 1000], drop: { wood_planks: [2], mulch: [2] } },
+  // (the fir: LOD0 = the needle CARDS (alpha-tested, the near level only); LOD1 / LOD2 = the solid frond stand-ins)
+  tree: { err: [0.035, 0.14], range: [45, 150, 1000], drop: { wood_planks: [2], mulch: [2], fir_cards: [1, 2] } },
   wreath: { err: [0.012, 0.03], range: [10, 32, 90] },
   swag: { err: [0.014, 0.035], range: [14, 45, 150] },
   lampmotif: { err: [0.004, 0.012], range: [30, 100, 380], drop: { metal_frame: [2] } },
@@ -241,16 +242,32 @@ function mergeSlots(list) {
 }
 
 const pieces = Object.keys(meshes).filter((n) => !n.includes("__") && CFG[n]);
-/** THE CHECKER with ONE exemption (docs/CHRISTMAS.md "mesh audit"): needle sprays crossing / touching OTHER needle sprays
- *  (fir_needles + fir_needles: a fir's foliage interpenetrates like the real one, one material, one colour; the city's
- *  foliage kit is not audited at all). Every other pair and every other check blocks as usual. */
-const FOLIAGE = "fir_needles", EXEMPT = new Set(["coplanar", "depth", "crossing", "near"]);
+/** THE CHECKER with TWO exemptions (docs/CHRISTMAS.md "mesh audit"):
+ *  1. foliage against foliage: needle sprays crossing / touching OTHER needle sprays (fir_needles, fir_cards: a fir's
+ *     foliage interpenetrates like the real one; the city's foliage kit is not audited at all), and a needle card
+ *     against the twig that carries it (fir_cards + fir_bark: the spray's cut end sits on its twig);
+ *  2. the needle CARDS' own surface checks (fir_cards alone: leak, flipped, streak, bentflat, backtoback, opening,
+ *     seam, sliver, nonmanifold): an alpha-tested card is open, two-sided and shaded by its CANOPY normal (not its
+ *     face's: a card lit by its flat normal reads as a flat leaf); its rules are tools/audit/xmasCheck.mjs's
+ *     "needle cards" lines (canopy normals, alpha test, near level only, triangle budget).
+ *  3. the fir's FAR levels only (tree_lod1 / tree_lod2): a bauble (+ its cap) or an LED sinking into the solid frond that stands in
+ *     for the needle cards it nestles among at the near level (the stand-ins keep the near level's places: moved out of
+ *     the fronds they would jump 0.2-0.45 m at the 45 m switch; at 45 m + a bauble is 2-5 px).
+ *  Every other pair (cards against ornaments, bulbs, planks, the star) and every other check blocks as usual. */
+const FOLIAGE = new Set(["fir_needles", "fir_cards"]), EXEMPT = new Set(["coplanar", "depth", "crossing", "near"]);
+const CARD = "fir_cards", CARD_OWN = new Set(["leak", "flipped", "streak", "bentflat", "backtoback", "opening", "seam", "sliver", "nonmanifold", "winding", "tjunction"]);
+const slotOf = (p) => p.slice(p.lastIndexOf("/") + 1);
 function audit(name, prims, maxDistance) {
   const r = auditParts(prims.map((m) => ({ name, slot: m.slot, positions: m.P, normals: m.N, index: m.I, maxDistance })), { ignoreBelow: -5, maxItemsPerCheck: 1e9 });
   let exempt = 0;
   for (const [chk, list] of Object.entries(r.items)) {
-    if (!EXEMPT.has(chk)) continue;
-    const keep = list.filter((it) => !(it.parts?.length === 2 && it.parts.every((p) => p.endsWith("/" + FOLIAGE))));
+    const keep = list.filter((it) => {
+      const ps = it.parts?.map(slotOf);
+      if (EXEMPT.has(chk) && ps?.length === 2 && (ps.every((p) => FOLIAGE.has(p)) || (ps.includes(CARD) && ps.includes("fir_bark")))) return false;
+      if (EXEMPT.has(chk) && /^tree_lod[12]$/.test(name) && ps?.length === 2 && ps.includes("fir_needles") && (ps.includes("bauble") || ps.includes("gold_metal") || ps.includes("bulb_warm"))) return false;
+      if (CARD_OWN.has(chk) && ((it.part && slotOf(it.part) === CARD) || (ps?.length && ps.every((p) => p === CARD)))) return false;
+      return true;
+    });
     exempt += list.length - keep.length; r.items[chk] = keep; r.summary.counts[chk] = keep.length;
   }
   const SEVB = ["coplanar", "depth", "crossing", "leak", "streak", "bentflat", "flipped"];
@@ -260,6 +277,22 @@ function audit(name, prims, maxDistance) {
 }
 /** the stand-ins' prims for LOD k (slot -> prim), or {} */
 const standIn = (piece, k) => Object.fromEntries((meshes[`${piece}__lod${k}`] ?? []).map((m) => [m.slot, m]));
+/** the fir's needle cards drawn OUTER FIRST (triangles sorted by their distance from the trunk, far out first): seen
+ *  from any side the outer cards are the near ones, so the inner cards behind them fail the depth test instead of
+ *  running the alpha-tested shader (measured in the browser at 8 m: the cards' cost is their overdraw) */
+function outerFirst(m) {
+  if (m.slot !== CARD) return m;
+  const n = m.I.length / 3, r = new Float32Array(n), ord = Array.from({ length: n }, (_, i) => i);
+  for (let t = 0; t < n; t++) {
+    let x = 0, z = 0;
+    for (let q = 0; q < 3; q++) { const v = m.I[t * 3 + q]; x += m.P[v * 3]; z += m.P[v * 3 + 2]; }
+    r[t] = Math.hypot(x, z) / 3;
+  }
+  ord.sort((a, b) => r[b] - r[a]);
+  const I = new Uint32Array(m.I.length);
+  ord.forEach((t, i) => { I[i * 3] = m.I[t * 3]; I[i * 3 + 1] = m.I[t * 3 + 1]; I[i * 3 + 2] = m.I[t * 3 + 2]; });
+  return { ...m, I };
+}
 const out = [];            // { name, prims }
 const table = {};
 for (const piece of pieces) {
@@ -271,7 +304,7 @@ for (const piece of pieces) {
     for (const mul of k === 0 ? [1] : [1, 0.85, 1.15, 0.7, 1.3, 0.6, 1.45, 0.92, 1.07, 1.6]) {
       const err = k === 0 ? 0 : C_.err[k - 1] * mul;
       const SI = k === 0 ? {} : standIn(piece, k);
-      let prims = k === 0 ? main : main.filter((m) => !(C_.drop?.[m.slot] ?? []).includes(k))
+      let prims = k === 0 ? main.map(outerFirst) : main.filter((m) => !(C_.drop?.[m.slot] ?? []).includes(k))
         .map((m) => SI[m.slot] ? { ...SI[m.slot], UV0: null, UV1: null } : renormal(simplifyWelded(m, err * (C_.slotErr?.[m.slot] ?? 1), k === 2), CREASE));
       prims = prims.filter((m) => m.I.length);
       if (!NO_AUDIT && k > 0 && mul !== 1.6) {

@@ -8,6 +8,9 @@
 //   - street garlands hang 7-26 m wall to wall, >= 4.4 m over the street at their lowest (bulbs + the star motif), and
 //     never carry a star over a tram track;
 //   - the kit's mesh audit (models/christmas/christmas.json) has 0 blocking items on every piece and level;
+//   - the fir's NEAR level is alpha-tested needle cards (slot fir_cards; canopy normals, alpha test: tools/christmas/
+//     xmasTest.mjs on the decoded GLB), the far levels none; triangles per level within budget; the needle atlas small;
+//     every ornament clear of the solid foliage and the cards' cores;
 //   - NO LIGHT: no three.js light is constructed or added under viewer/christmas/ (rule 7: emissive only), no
 //     DynamicDrawUsage (rule 8).
 // Exit 1 on any failure.
@@ -91,6 +94,22 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
   const info = J("models/christmas/christmas.json"), A = info.audit ?? {};
   const blk = Object.entries(A).filter(([, v]) => v.blocking);
   out(Object.keys(A).length >= 15 && !blk.length, `kit mesh audit: ${Object.keys(A).length} piece levels, ${blk.length ? blk.map(([k, v]) => `${k} ${v.blocking}`).join(", ") : "0 blocking"}`);
+}
+// the fir's needle cards (rule 19, 2026-11-17: the fir read as flat leaves up close: solid sleeves lit by their own
+// surface). The near level (LOD0) carries alpha-tested needle cards (slot fir_cards, canopy normals: checked on the
+// decoded GLB by tools/christmas/xmasTest.mjs), the far levels none; the triangle budget per level; the atlas small; every
+// ornament clear of the solid foliage and the cards' cores (it may nestle among a card's transparent fringe)
+{
+  const info = J("models/christmas/christmas.json"), L = info.lods?.tree?.lods ?? [], tp = info.pieces?.tree ?? {}, nd = info.needles;
+  const BUDGET = [160000, 45000, 15000];
+  const cards = L.map((l) => l.slots.includes("fir_cards") ? l.slot_triangles[l.slots.indexOf("fir_cards")] : 0);
+  const okBudget = L.length === 3 && L.every((l, k) => l.triangles <= BUDGET[k]);
+  out(okBudget && cards[0] > 20000 && !cards[1] && !cards[2],
+    `fir: ${L.map((l) => l.triangles).join(" / ")} triangles (budget ${BUDGET.join(" / ")}), needle-card triangles ${cards.join(" / ")} (near level only)`);
+  out(!!nd && fs.existsSync(path.join(ROOT, "models/christmas", nd.file ?? "-")) && nd.ktx2_bytes <= 1.5 * 1048576 && nd.gpu_bytes_bc7 <= 4 * 1048576 && nd.levels >= 10,
+    `fir needle atlas: ${nd?.file} ${nd?.px?.join(" x ")} ${((nd?.ktx2_bytes ?? 0) / 1024).toFixed(0)} KB file, ${((nd?.gpu_bytes_bc7 ?? 0) / 1048576).toFixed(1)} MB on the GPU (<= 4), ${nd?.levels} mip levels`);
+  out(tp.ornaments_clear_of_card_cores === (tp.baubles ?? -1) + (tp.bulbs ?? -1),
+    `fir: ${tp.ornaments_clear_of_card_cores} of ${(tp.baubles ?? 0) + (tp.bulbs ?? 0)} ornaments clear of the solid foliage and the needle cards' cores`);
 }
 // no light, no DynamicDrawUsage
 {

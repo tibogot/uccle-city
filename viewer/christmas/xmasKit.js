@@ -11,15 +11,23 @@
 // only (the fixed light count: docs/NIGHT_HOOKUP.md), twinkling in the shader (sin of time + a per-bulb phase, ~14 %
 // flash bulbs), strong at night (env.uNight), faint by day (LEDs are on by day too). The greenery, wood, metal and
 // ribbon take the weather (wxMat: snow on the up-facing needles, wet sheen).
+//
+// THE FIR'S NEAR LEVEL (tree LOD0, slot "fir_cards"): alpha-TESTED needle cards (never blended: no sorting, depth kept)
+// mapping the modelled Nordmann sprays of models/christmas/fir_needles.ktx2 (tools/blender/firNeedles.py: top views in
+// v 0 .. 0.5, the same sprays from below in v 0.5 .. 1: the back face samples there: the silvery undersides), shaded
+// with the CANOPY normals the kit baked into NORMAL for both faces (normalViewGeometry: not flipped on the back face;
+// a card lit by its own plane reads as a flat leaf), the canopy AO in COLOR_0.b. The far levels keep the solid fronds.
 import * as THREE from "three/webgpu";
 import {
-  attribute, uv, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn, normalWorld,
+  attribute, uv, vec2, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn, normalWorld,
+  texture, frontFacing, normalViewGeometry, normalView, positionView,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { keepBand, rampTo, lodEye, ditherNoise } from "../lodFade.js";
 import { wxMat } from "../weather/cityWeatherize.js";
 import { env } from "../lighting.js";
+import { ktxLoader } from "../materials/scans.js";
 
 /** live look controls (dev panel / console: window.xmas.look) */
 export const xmasLook = {
@@ -29,16 +37,32 @@ export const xmasLook = {
   flash: uniform(1.0),          // the flash bulbs' sparkle
   rope: uniform(0.75),          // LED rope (motifs) vs bulbs
   star: uniform(0.7),
+  cards: uniform(0.78),         // the needle cards' albedo gain: 0.78 matches the far fronds' green at the 45 m switch (browser, 2026-11-17)
+  under: uniform(0.55),         // the cards' back faces (the silvery undersides seen from below; 0.55: the switch)
 };
+
+/** the needle atlas: a 1 x 1 opaque stand-in until loaded (node tests: no renderer) */
+const NEEDLES = { tex: new THREE.DataTexture(new Uint8Array([40, 70, 45, 255]), 1, 1), loaded: false };
+NEEDLES.tex.colorSpace = THREE.SRGBColorSpace; NEEDLES.tex.needsUpdate = true;
+async function loadNeedles(renderer, info) {
+  if (!renderer || !info.needles) return;
+  const t = await ktxLoader(renderer).loadAsync(BASE + info.needles.file);
+  t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.anisotropy = 4; t.generateMipmaps = false;
+  t.name = "xmas fir needles";
+  NEEDLES.tex = t; NEEDLES.loaded = true;
+}
 
 const BASE = new URL("../../models/christmas/", import.meta.url).href;
 let promise = null;
-export function loadXmasKit() {
+export function loadXmasKit(renderer = null) {
   return (promise ??= (async () => {
     const t0 = performance.now();
     if (typeof Worker !== "undefined") MeshoptDecoder.useWorkers?.(2);
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const [gltf, info] = await Promise.all([loader.loadAsync(BASE + "christmas.glb"), fetch(BASE + "christmas.json").then((r) => r.json())]);
+    // (the needle atlas before any material is made: the cards' texture node takes it as built)
+    await loadNeedles(renderer, info).catch((e) => console.warn(`[christmas] needle atlas failed (${e.message}): the fir's near cards show flat`));
     const pieces = {};
     gltf.scene.traverse((o) => {
       if (!o.isMesh) return;
@@ -58,7 +82,7 @@ export function loadXmasKit() {
     const mats = {};
     // mask: the dithered band (instances near a level switch); without: solid (no discard, early depth kept)
     const slotMaterial = (slot, { uvs = false, instanced = true, mask = true } = {}) => (mats[`${slot}|${uvs ? "u" : "-"}|${instanced ? "i" : "s"}|${instanced && mask ? "m" : "-"}`] ??= make(slot, uvs, instanced, instanced && mask));
-    return { pieces, info, slotMaterial, mats, loadMs: performance.now() - t0, bytes: info.glb_bytes ?? 0 };
+    return { pieces, info, slotMaterial, mats, needles: NEEDLES, loadMs: performance.now() - t0, bytes: (info.glb_bytes ?? 0) + (NEEDLES.loaded ? info.needles?.ktx2_bytes ?? 0 : 0) };
   })());
 }
 
@@ -104,6 +128,24 @@ function make(slot, uvs, instanced, mask = instanced) {
       wxMat(m, { porosity: 0.35 });
       break;
     }
+    case "fir_cards": {
+      // the needle sprays: the atlas' albedo (front: the top views; back: the bottom views, v + 0.5), the per-card tint
+      // (r), the canopy AO (b); glossy above, matt silvery below; alpha TESTED at 0.5 (coverage-preserving mips)
+      m = new THREE.MeshStandardNodeMaterial({ roughness: 0.5, metalness: 0, side: THREE.DoubleSide });
+      const t = uv();
+      const tx = texture(NEEDLES.tex, select(frontFacing, t, t.add(vec2(0, 0.5))));
+      const tint = mix(float(0.86), float(1.12), c.x).mul(select(frontFacing, float(1), xmasLook.under));
+      m.colorNode = tx.rgb.mul(tint).mul(xmasLook.cards).mul(mix(float(0.3), float(1), c.z));
+      m.roughnessNode = select(frontFacing, float(0.46), float(0.72));
+      m.normalNode = normalViewGeometry;          // (the canopy normal on BOTH faces: DoubleSide would flip the back's)
+      const cut = tx.a.greaterThanEqual(0.5);
+      m.maskNode = mask ? cut.and(bandMask(attribute("xlod", "vec4"))) : cut;
+      m.alphaTest = 0; m.transparent = false;
+      wxMat(m, { porosity: 0.35, snowMask: select(frontFacing, float(1), float(0.2)) });   // (snow on the sprays' tops, hardly under)
+      m.name = `xmas fir_cards${instanced ? (mask ? " (fade)" : "") : " (static)"}`;
+      m.userData.shared = true; m.userData.cards = true;
+      return m;
+    }
     case "fir_bark": std({ roughness: 0.9 }); m.colorNode = lin(0x3a2c22).mul(ao); wxMat(m, { porosity: 0.6 }); break;
     case "wood_planks": {
       std({ roughness: 0.75 });
@@ -141,7 +183,12 @@ function make(slot, uvs, instanced, mask = instanced) {
       const spark = pow(clamp(sin(time.mul(1.9).add(ph.mul(91.0))), 0, 1), float(48)).mul(4.0).mul(xmasLook.flash).mul(smoothstep(0.5, 0.6, c.y));
       const k = slot === "led_rope" ? xmasLook.rope : float(1);
       m.colorNode = lin(0xfff0d8).mul(0.6);
-      m.emissiveNode = warm.mul(shimmer).add(cold.mul(spark)).mul(level()).mul(k);
+      // a bulb (not the rope): brightest where it faces the eye, dimmer toward its rim: the small faceted bead reads as a
+      // ROUND glowing bulb close up (no flat hexagon) and as a point at distance (xmasfir browser turn)
+      const facing = clamp(normalView.dot(positionView.normalize().negate()), 0, 1);
+      const round = slot === "bulb_warm" ? mix(float(0.22), float(1), pow(facing, float(1.6))) : float(1);
+      m.emissiveNode = warm.mul(shimmer).add(cold.mul(spark)).mul(level()).mul(k).mul(round);
+      if (slot === "bulb_warm") m.colorNode = lin(0xfff0d8).mul(mix(float(0.25), float(0.6), facing));
       break;
     }
     case "wire_dark": std({ roughness: 0.5 }); m.colorNode = lin(0x14181a); break;

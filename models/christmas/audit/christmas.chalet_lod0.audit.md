@@ -1,6 +1,6 @@
 # Mesh audit: christmas chalet_lod0 (needle-vs-needle overlaps exempt: 14)
 
-9,676 triangles, 5,224 welded vertices, 0 open edges, 0 rays, 248 ms.
+9,676 triangles, 5,224 welded vertices, 0 open edges, 0 rays, 227 ms.
 
 **0 blocking**, 1288 warnings. Clean (no blocking item).
 
