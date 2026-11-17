@@ -72,20 +72,24 @@ function mergeGeoms(geoms) {
 // that pass's camera: the view, the sun's shadow camera, the overhead weather bake...) only the records of the chunks
 // in that camera's frustum are drawn: the geometry's indirect offset list is chosen per camera (no upload: the records
 // are written at the commit). One cull per set, camera and frame, shared by the set's views.
-// JOB 2 (docs/AGARGARO.md, docs/QUALITY_RULES.md rule 21): 80 m chunks, <= 128 per part. A 160 m chunk that only
-// grazes a frustum (the view's, above all the sun's and the lamps' shadow cameras) drew every instance in it; the
-// 80 m boxes draw the same instances minus those far outside. Too many cells for 128: coarser (x1.5) until it fits,
-// as before. ?mdchunk=160: 160 m / 48 as before (A/B).
-const MD_CHUNK = Math.max(20, Number(qs.get("mdchunk")) || 80);
+// JOB 2 (docs/AGARGARO.md, docs/QUALITY_RULES.md rule 21), OFF by default (browser turn 2026-11-17: view instances
+// -22..-34 %, but GPU -0.26 ms at 1 of 3 views and ~0 at the others, the sun shadow is cached, the lamp shadows' GPU
+// unchanged, and the cull CPU 44-65 us vs 30-42 us): ?mdchunk=80 = 80 m chunks, <= 128 a part (a chunk that only
+// grazes a frustum draws every instance in it; smaller ones draw the same instances minus those far outside). Too
+// many cells for CHMAX: coarser (x1.5) until it fits. Default: 160 m / 48 as before.
+const MD_CHUNK = Math.max(20, Number(qs.get("mdchunk")) || 160);
 export const CHUNK_M = MD_CHUNK, CHUNK_MAX = MD_CHUNK >= 160 ? 48 : 128;
-// JOB 1: the VIEW camera's opaque draws run near to far (the chunks by their padded box's distance from the eye), so
-// early-z rejects the hidden fragments of what is drawn after. Order only: the same records, the same image. Shadow
-// cameras, reflections, bakes keep the part / chunk order (no shading there); blended views too (their order is the
-// picture). ?mdsort=0: the old order (A/B).
-export const MD_SORT = qs.get("mdsort") !== "0";
+// JOB 1, OFF by default (browser turn: GPU -0.08..+0.02 ms at the 3 views, target -0.2): ?mdsort=1 = the VIEW
+// camera's opaque draws run near to far (the chunks by their padded box's distance from the eye), so early-z can
+// reject the hidden fragments of what is drawn after. Order only: the same records, the same image. Shadow cameras,
+// reflections, bakes keep the part / chunk order (no shading there); blended views too (their order is the picture).
+export const MD_SORT = qs.get("mdsort") === "1";
 let VIEW_CAM = null;
 /** the view camera (main.js, right after it is made): only its culls are sorted */
 export function setMultiDrawViewCamera(cam) { VIEW_CAM = cam; }
+let SORT_LIVE = true;
+/** live A/B of the order (debug/gpuAB.js alternate): false = every set draws in the old order (no reload) */
+export function setMultiDrawSort(on) { SORT_LIVE = !!on; }
 const _frustum = new THREE.Frustum(), _m = new THREE.Matrix4(), _pl = new Float64Array(24);
 // the near-to-far order: a counting sort on NB distance buckets, bucket = 2 x the 4th root of the squared distance to
 // the padded box (= 2 sqrt(metres): 1.6 m wide at 10 m, 5 m at 100 m, 16 m at 1 km, the last one past 4 km); stable
@@ -248,7 +252,7 @@ export class MultiDrawSet {
       _frustum.setFromProjectionMatrix(_m, camera.coordinateSystem, camera.reversedDepth);
       for (let i = 0; i < 6; i++) { const p = _frustum.planes[i]; _pl[i * 4] = p.normal.x; _pl[i * 4 + 1] = p.normal.y; _pl[i * 4 + 2] = p.normal.z; _pl[i * 4 + 3] = p.constant; }
       const pad = this.pad, all = e.all, w = camera.matrixWorld.elements, ex = w[12], ey = w[13], ez = w[14];
-      const sort = this.sort && camera === VIEW_CAM;
+      const sort = this.sort && SORT_LIVE && camera === VIEW_CAM;
       let n = 0;
       for (let k = 0; k < this.parts.length; k++) {
         const P = this.parts[k], b = P.chBox, G = P.gBox;

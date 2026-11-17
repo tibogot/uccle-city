@@ -156,8 +156,8 @@ before merging.
   Chunks overflowing CHMAX fall back to coarser chunks (`chunk(..., lim * 1.5)`), which is already handled.
 
 ### Status (claude/mdraw, phase 1 offline, 2026-11-17)
-Both jobs are in `viewer/multiDraw.js`, on by default, each behind its switch (`?mdsort=0`, `?mdchunk=160`, rows in
-`viewer/features.js`). The gate `mdrawcull` (tools/audit/mdrawCull.mjs, rule 21 in docs/QUALITY_RULES.md) runs the
+Both jobs are in `viewer/multiDraw.js`, each behind its switch, with rows in `viewer/features.js`. Since the browser
+turn below both are OFF by default; `?mdsort=1` and `?mdchunk=80` turn them on. The gate `mdrawcull` (tools/audit/mdrawCull.mjs, rule 21 in docs/QUALITY_RULES.md) runs the
 real class on a synthetic city (9 sets, 91 parts, a 2.4 km square, 40 camera places).
 - **Job 1.** Only the camera main.js registers (`setMultiDrawViewCamera`) is sorted, and only its opaque views. The
   sort is a counting sort on 128 distance buckets (2 x sqrt(metres) from the eye to the padded box), stable and O(n),
@@ -177,8 +177,65 @@ real class on a synthetic city (9 sets, 91 parts, a 2.4 km square, 40 camera pla
 - **Found on the way.** One camera that renders twice in a frame with other matrices (three's point-light shadow:
   6 cube faces, one camera) reused the first face's cull. The cache is now keyed on the view-projection too. The
   lamp PointLights cast no shadow today, so nothing visible changed.
-- **Browser turn.** It still has to measure the targets above. If the real city's cull goes over 50 us, try
-  `?mdchunk=120` (synthetic: about the same instance cut, -15 % CPU).
+### Browser turn (2026-11-17): both jobs left OFF (opt-in `?mdsort=1`, `?mdchunk=80`)
+Preflight was GREEN (system) / YELLOW (page, no baseline recorded). The stray `find /` of an earlier agent was
+stopped first. One tab was used.
+- **Views.** Quick boots, `radius=800`, golden hour, native resolution, `dynres=0`, still. Place Saint-Job street
+  (`stjob-street`), Chaussee d'Alsemberg (`alsemberg`) and the police spawn (`police-yard`, camera 30 m up).
+- **Job 2.** Two alternating boot rounds per view (A B / B A).
+- **Job 1.** Live A/B in the same page: `debug/mdrawAB.js sortAB`, 8 rounds.
+- **Cull CPU.** `debug/mdrawAB.js cull`: one frame's culls replayed 200x. The page's `performance.now()` moves in
+  100 us steps, so timing each call reads ~4x too high.
+
+| view | GPU p50 80 m / 160 m (ms) | 80 - 160 | view instances 80 / 160 | cull us 80 / 160 | sort A/B (sorted - old, ms) |
+|---|---|---|---|---|---|
+| stjob-street | 12.32, 12.21 / 12.19, 12.43 | -0.04 | 7,628 / 11,568 (-34 %) | 54-79 / 37-42 | +0.01 (80 m), +0.02 (160 m) |
+| alsemberg | 12.96, 12.87 / 13.00, 12.78 | +0.02 | 7,367 / 9,502 (-22 %) | 51-77 / 35-48 | +0.02 (80 m), +0.17 (160 m, one 1.4 ms spike) |
+| police-yard | 12.50, 12.56 / 12.87, 12.72 | **-0.26** | 5,871 / 8,560 (-31 %) | 43-58 / 30-38 | -0.08 (80 m) |
+
+Other numbers:
+- Render objects were unchanged (drawBreakdown scene / shadow draws equal).
+- Records per frame doubled (1,257 vs 641 at Saint-Job).
+- 120 m at police-yard: GPU 12.50, -23 % instances.
+
+**Night, Saint-Job, lamp shadows in "full" mode (2 maps a frame), `nightShadowCost`.**
+- Lamp-shadow instances: 1,612 (80 m) vs 1,895 (160 m), -15 %. GPU 12.65 vs 12.54, i.e. no gain.
+- In the default "smart" mode a still camera renders no lamp map (skipped 100 %).
+- The sun shadow is cached (`sunshadowcache`): its pass draws ~75 instances a frame, so the shadow passes the plan
+  counted on are almost free already.
+
+**police({ seconds: 45 })**, one run each:
+
+| setting | CPU loop | GPU p50 | fps |
+|---|---|---|---|
+| jobs off | 11.35 ms | 11.73 ms | 54.9 |
+| jobs on | 11.04 ms | 11.67 ms | 54.6 |
+| final defaults | 11.72 ms | 11.34 ms | 54.9 |
+
+All three are within the run-to-run noise.
+
+**Verdict**
+- **Job 1 is dropped** (target -0.2 ms on 2 of 3 views; got -0.08..+0.02). Most of the near geometry is already
+  drawn with a depth pre-pass or covers little.
+- **Job 2 is dropped** (target -0.1..-0.3 ms shadow GPU: the shadow passes are cached or skipped; view GPU -0.26 ms
+  at 1 of 3 views, noise at the others; cull CPU 43-79 us, over the 50 us target).
+- **Kept.** The cull rework is in, at the old 160 m / 48 settings:
+  - the inlined frustum test, chunk groups and reused lists: cull 30-48 us at 160 m;
+  - the indirect records uploaded by range;
+  - the cube-face cull fix.
+- `debug/mdrawAB.js` is in, for a later re-test, e.g. if the depth pre-pass changes.
+
+**Checks at the final defaults**
+- **HEAP, 5 boots** (`?gamemenu=0&orbitcam2=old`, default, `?gamemenu=0&tilecache=0`, `?game=police` + 45 s drive,
+  `?game=falcon`): 0 console errors, `tripCounts {}`.
+- **Tour run `mdraw` vs `foundation`:** 21 / 22 ok. traffic-alsemberg was flagged: the parked van at the left was
+  missing.
+  - This run was taken while the node merge gate ran beside it (trafpark: ~4 min of full CPU).
+  - In the page afterwards, the van is in its set, culled in, and drawn.
+  - The re-run `mdraw-rerun` had the van, but was flagged for a moving traffic car.
+  - `mdraw-rerun2` is ok (pixels 0.06 %, cell 7.5).
+  - Lesson: never run the node gate during a tour.
+- **mergeGate:** all 16 rows pass.
 
 ### (No job 3.)
 Nothing else in the five libraries beats what we have on r187 WebGPU. The CPU wall is still three's per-render-object

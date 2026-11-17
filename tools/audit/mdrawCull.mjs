@@ -5,7 +5,7 @@
 // chunks: the sun's / lamps' shadow cameras drew whole blocks); the order of the draws decides how much early-z
 // rejects. Both are pure CPU logic over a few hundred boxes, so a change there can lose instances (holes) or reorder a
 // shadow / blended pass without anyone seeing it on one spot.
-// Checks (old = 160 m / 48, new = the defaults: 80 m / 128 + near-to-far):
+// Checks (old = 160 m / 48, new = the opt-in ?mdchunk=80&mdsort=1: 80 m / 128 + near-to-far; the defaults are the old ones):
 //   1. chunks: every part's chunks tile [0, n) exactly (no instance lost or doubled), <= CHMAX, boxes hold their cells;
 //      the overflow fallback (too many cells for CHMAX: coarser chunks) taken and still exact
 //   2. records: each drawn offset's indirect record = (the part's index count, the chunk's instances, its first index,
@@ -23,7 +23,9 @@ const { MultiDrawSet, setMultiDrawViewCamera, nearBucket, CHUNK_M, CHUNK_MAX, MD
 const QUIET = process.argv.includes("--quiet");
 let fails = 0;
 const ok = (c, m) => { if (!c) { fails++; console.log("FAIL", m); } else if (!QUIET) console.log("ok  ", m); return c; };
-ok(CHUNK_M === 80 && CHUNK_MAX === 128 && MD_SORT, `defaults: 80 m chunks, 128 a part, sorted (got ${CHUNK_M} / ${CHUNK_MAX} / ${MD_SORT})`);
+// (both jobs are OFF by default since the browser turn (no GPU gain): the defaults stay the old chunks and order;
+// the jobs' logic is still checked here with their opt-in settings, ?mdchunk=80&mdsort=1)
+ok(CHUNK_M === 160 && CHUNK_MAX === 48 && !MD_SORT, `defaults: 160 m chunks, 48 a part, unsorted (got ${CHUNK_M} / ${CHUNK_MAX} / ${MD_SORT})`);
 
 // ------------------------------------------------------------------ a synthetic city: tiles of 8 x 8 cells of 50 m
 let seed = 12345;
@@ -67,7 +69,7 @@ const KINDS = [
   ["roofs-lod0", 15, 0.6, 6, 4, 0, 150], ["roofs-lod1", 15, 0.6, 6, 4, 150, 450], ["roofs-lod2", 15, 0.6, 6, 4, 450, 1100],
   ["kit-a", 8, 0.8, 1.5, 1.5, 0, 200], ["kit-b", 8, 0.8, 1.5, 1.5, 0, 200], ["kit-c", 12, 0.5, 2, 2, 0, 300],
 ];
-const cfgOld = { chunk: 160, chmax: 48, sort: false }, cfgNew = { chunk: CHUNK_M, chmax: CHUNK_MAX, sort: true }, cfgNewU = { ...cfgNew, sort: false };
+const cfgOld = { chunk: 160, chmax: 48, sort: false }, cfgNew = { chunk: 80, chmax: 128, sort: true }, cfgNewU = { ...cfgNew, sort: false };
 // (count the overflow fallback: chunk() calls itself with a coarser limit)
 const chunk0 = MultiDrawSet.prototype.chunk;
 const coarse = new Set();                                   // (a Set, not a field: the parts keep one shape for the JIT)
@@ -208,19 +210,19 @@ ok(blendBad === 0, `blended view under the view camera: the old order (${blendBa
 }
 // the switches: ?mdsort=0&mdchunk=160 = the old order and chunks; both have a features.js row
 {
-  globalThis.location = { search: "?mdsort=0&mdchunk=160" };
+  globalThis.location = { search: "?mdsort=1&mdchunk=80" };
   const O = await import("../../viewer/multiDraw.js?switches");
   globalThis.location = { search: "" };
-  ok(O.MD_SORT === false && O.CHUNK_M === 160 && O.CHUNK_MAX === 48, `?mdsort=0&mdchunk=160: unsorted, 160 m / 48 (got ${O.MD_SORT} / ${O.CHUNK_M} / ${O.CHUNK_MAX})`);
+  ok(O.MD_SORT === true && O.CHUNK_M === 80 && O.CHUNK_MAX === 128, `?mdsort=1&mdchunk=80: sorted, 80 m / 128 (got ${O.MD_SORT} / ${O.CHUNK_M} / ${O.CHUNK_MAX})`);
   const { readFileSync } = await import("node:fs");
   const feats = readFileSync(new URL("../../viewer/features.js", import.meta.url), "utf8");
-  ok(/opt\("mdsort",.*on: "0"/.test(feats) && /old\("mdchunk",.*value: "160"/.test(feats), "features.js rows: mdsort (off = 0), mdchunk (old = 160)");
+  ok(/opt\("mdsort",/.test(feats) && /opt\("mdchunk",.*on: "80"/.test(feats), "features.js rows: mdsort (on = 1), mdchunk (on = 80)");
   const main = readFileSync(new URL("../../viewer/main.js", import.meta.url), "utf8");
   ok(/setMultiDrawViewCamera\(camera\)/.test(main), "main.js registers the view camera (only its culls are sorted)");
 }
 
 // ------------------------------------------------------------------ 5. budget
-const perPart = CHUNK_MAX * 5 * 4;
+const perPart = cfgNew.chmax * 5 * 4;
 ok(perPart <= 2560, `indirect buffer ${perPart} B a part (old ${48 * 20} B); this city ${city.reduce((s, c) => s + c.neu.view.indirect.array.byteLength + c.neu.blended.indirect.array.byteLength, 0)} B over ${city.length} sets x 2 views`);
 {
   const c = city[1], S = c.neu.set, v = c.neu.view, k = 2, P = S.parts[k], g = c.g[k];
