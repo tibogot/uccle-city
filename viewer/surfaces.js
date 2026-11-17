@@ -26,7 +26,7 @@
 // coplanar where they should be. Low surfaces sit on H, raised ones KERB above it; the terrain is carved under all.
 import earcut from "three/src/extras/lib/earcut.js";
 import { hashPhase, SURFACE } from "./roadData.js";
-import { surfaceVote, oldNameVote } from "./streetNames.js";
+import { oldNameVote } from "./streetNames.js";
 import { ROAD_TYPES, LANE_TYPES } from "../vendor/roads/roadCrossSection.js";
 
 /** pipeline/build_surfaces.py CLASS */
@@ -1087,10 +1087,10 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const inTile = prep.inside;
 
   // street name -> the OSM surface of its roads (docs/SURFVOTE.md, viewer/streetNames.js): surf.surfVote (set by the
-  // tile worker, ?surfvote=old: not set) = the city-wide table; the names repaired and normalised, either side of OSM's
+  // tile worker, ?surfvote=old: not set) = the vote; the names repaired and normalised, either side of OSM's
   // bilingual name, the roads inside each surface voting by length. ?surfvote=old: the raw names as they are (UrbIS's
   // French-only, double-encoded names never met OSM's bilingual ones: every measured carriageway drew asphalt)
-  const vote = surf.surfVote ? surfaceVote(surf, roads, SURFACE, surf.surfVote) : null;
+  const vote = surf.surfVote || null;      // (viewer/streetNames.js surfaceVote, built in the tile worker after the overrides)
   const nameSurf = vote ? null : oldNameVote(roads, SURFACE);
   const voteOf = (s) => (vote ? vote.of(s) : nameSurf.get(s.name));
 

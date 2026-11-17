@@ -47,6 +47,17 @@ export function osmSides(name) {
   return [...new Set(String(name).split(/\s+[-–\/]\s+/).map(normName).filter(Boolean))];
 }
 
+/** a surface's outer-ring box [x0, z0, x1, z1], cached on a WeakMap */
+const BOXES = new WeakMap();
+function boxOf(s) {
+  let b = BOXES.get(s);
+  if (!b) {
+    b = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const p of s.rings?.[0] || []) { if (p[0] < b[0]) b[0] = p[0]; if (p[1] < b[1]) b[1] = p[1]; if (p[0] > b[2]) b[2] = p[0]; if (p[1] > b[3]) b[3] = p[1]; }
+    BOXES.set(s, b);
+  }
+  return b;
+}
 /** even-odd point in rings ([[x, z], ...] outer + holes) */
 function inRings(rings, x, z) {
   let inside = false;
@@ -76,7 +87,7 @@ function inRings(rings, x, z) {
 export function surfaceVote(surf, roads, SURFACE, city = null) {
   const N = new Map((roads.nodes || []).map((n) => [n.id, n]));
   // the roads by street key, each with its polyline and its surface code
-  const exact = new Map(), loose = new Map();
+  const exact = new Map(), loose = new Map(), named = [];
   const add = (m, k, v) => { if (!k) return; let a = m.get(k); if (!a) m.set(k, (a = [])); a.push(v); };
   for (const r of roads.roads) {
     const nm = r.meta?.name;
@@ -84,11 +95,12 @@ export function surfaceVote(surf, roads, SURFACE, city = null) {
     const a = N.get(r.a), b = N.get(r.b);
     const pts = [a, ...(r.pts || []), b].filter(Boolean).map((p) => [p.x, p.z]);
     const road = { r, pts, code: SURFACE[r.meta?.surface] ?? 0, street: osmSides(nm).join(" | ") };
+    named.push(road);
     for (const side of osmSides(nm)) { add(exact, side, road); add(loose, looseKey(side), road); }
   }
   for (const [k, list] of loose) if (new Set(list.map((d) => d.street)).size > 1) loose.delete(k);   // ambiguous: no loose match
   const cache = new Map();
-  const stats = { surfaces: 0, named: 0, exact: 0, loose: 0, spatial: 0, city: 0, unmatched: 0 };
+  const stats = { surfaces: 0, named: 0, exact: 0, loose: 0, spatial: 0, city: 0, unmatched: 0, filled: 0 };
   const of = (s) => {
     if (cache.has(s)) return cache.get(s);
     let res = null;
@@ -102,8 +114,7 @@ export function surfaceVote(surf, roads, SURFACE, city = null) {
       if (list) {
         const uniq = [...new Set(list)];
         // length of each road inside the surface (2 m samples), else the street's length in the tile
-        let bb = [Infinity, Infinity, -Infinity, -Infinity];
-        for (const p of s.rings?.[0] || []) bb = [Math.min(bb[0], p[0]), Math.min(bb[1], p[1]), Math.max(bb[2], p[0]), Math.max(bb[3], p[1])];
+        const bb = boxOf(s);
         const inside = new Map(), all = new Map();
         for (const d of uniq) {
           for (let i = 1; i < d.pts.length; i++) {
@@ -112,8 +123,9 @@ export function surfaceVote(surf, roads, SURFACE, city = null) {
             if (Math.max(x0, x1) < bb[0] || Math.min(x0, x1) > bb[2] || Math.max(z0, z1) < bb[1] || Math.min(z0, z1) > bb[3]) continue;
             const k = Math.max(1, Math.ceil(L / 2));
             for (let j = 0; j < k; j++) {
-              const t = (j + 0.5) / k;
-              if (inRings(s.rings, x0 + (x1 - x0) * t, z0 + (z1 - z0) * t)) inside.set(d.code, (inside.get(d.code) || 0) + L / k);
+              const t = (j + 0.5) / k, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t;
+              if (x < bb[0] || x > bb[2] || z < bb[1] || z > bb[3]) continue;
+              if (inRings(s.rings, x, z)) inside.set(d.code, (inside.get(d.code) || 0) + L / k);
             }
           }
         }
@@ -125,8 +137,48 @@ export function surfaceVote(surf, roads, SURFACE, city = null) {
     cache.set(s, res);
     return res;
   };
-  return { of, stats };
+  /** OSM roads of a street with NO surface tag take the vote of the street's measured carriageways they run in (2 m
+   *  samples, at least half their length inside), when that vote is not asphalt: the engine carriageway kept over a
+   *  voted surface then draws the same paving, not a strip of asphalt between setts. Votes are taken from the roads'
+   *  tags as they were (each road's code is read above), so the order of the calls does not matter. */
+  const fillUntagged = () => {
+    const byKey = new Map();
+    for (const s of surf.surfaces) {
+      if (!s.name || s.c > 3) continue;            // carriageway classes only (pipeline/build_surfaces.py CLASS 0-3)
+      const n = normName(s.name);
+      add(byKey, n, s); add(byKey, "~" + looseKey(n), s);
+    }
+    for (const d of named) {
+      if (d.r.meta?.surface) continue;
+      const sides = osmSides(d.r.meta.name);
+      const cands = new Set(sides.flatMap((k) => byKey.get(k) || byKey.get("~" + looseKey(k)) || []));
+      const codeOf = (s) => (s.surface != null ? (SURFACE[s.surface] ?? 0) : of(s));
+      if (![...cands].some((s) => codeOf(s) > 0)) continue;      // the street's measured surfaces are all asphalt here
+      const tally = new Map();
+      let L = 0, inside = 0;
+      for (let i = 1; i < d.pts.length; i++) {
+        const [x0, z0] = d.pts[i - 1], [x1, z1] = d.pts[i], l = Math.hypot(x1 - x0, z1 - z0), k = Math.max(1, Math.ceil(l / 2));
+        L += l;
+        for (let j = 0; j < k; j++) {
+          const x = x0 + ((x1 - x0) * (j + 0.5)) / k, z = z0 + ((z1 - z0) * (j + 0.5)) / k;
+          for (const s of cands) {
+            const b = boxOf(s);
+            if (x < b[0] || x > b[2] || z < b[1] || z > b[3] || !inRings(s.rings, x, z)) continue;
+            const c = codeOf(s);
+            if (c != null) { tally.set(c, (tally.get(c) || 0) + l / k); inside += l / k; }
+            break;
+          }
+        }
+      }
+      const best = [...tally].sort((p, q) => q[1] - p[1] || p[0] - q[0])[0];
+      if (best && best[0] > 0 && inside >= 0.5 * L) { d.r.meta.surface = CODE_NAME[best[0]]; stats.filled++; }
+    }
+    return stats.filled;
+  };
+  return { of, fillUntagged, stats };
 }
+/** roadData.js SURFACE code -> the OSM value written on a filled road */
+const CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel" };
 
 /** The city-wide table (tools/build_street_vote.mjs -> data/roads/streetVote.json): street key -> the OSM surface code
  *  most of its length has, over the whole network; loose keys only where they name one street. */

@@ -8060,6 +8060,21 @@ function osmSides(name) {
   if (!name) return [];
   return [...new Set(String(name).split(/\s+[-–\/]\s+/).map(normName).filter(Boolean))];
 }
+var BOXES = /* @__PURE__ */ new WeakMap();
+function boxOf(s) {
+  let b = BOXES.get(s);
+  if (!b) {
+    b = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const p of s.rings?.[0] || []) {
+      if (p[0] < b[0]) b[0] = p[0];
+      if (p[1] < b[1]) b[1] = p[1];
+      if (p[0] > b[2]) b[2] = p[0];
+      if (p[1] > b[3]) b[3] = p[1];
+    }
+    BOXES.set(s, b);
+  }
+  return b;
+}
 function inRings2(rings, x, z) {
   let inside3 = false;
   for (const ring2 of rings) {
@@ -8072,7 +8087,7 @@ function inRings2(rings, x, z) {
 }
 function surfaceVote(surf, roads, SURFACE2, city = null) {
   const N2 = new Map((roads.nodes || []).map((n) => [n.id, n]));
-  const exact = /* @__PURE__ */ new Map(), loose = /* @__PURE__ */ new Map();
+  const exact = /* @__PURE__ */ new Map(), loose = /* @__PURE__ */ new Map(), named = [];
   const add = (m, k, v) => {
     if (!k) return;
     let a = m.get(k);
@@ -8085,6 +8100,7 @@ function surfaceVote(surf, roads, SURFACE2, city = null) {
     const a = N2.get(r.a), b = N2.get(r.b);
     const pts = [a, ...r.pts || [], b].filter(Boolean).map((p) => [p.x, p.z]);
     const road = { r, pts, code: SURFACE2[r.meta?.surface] ?? 0, street: osmSides(nm).join(" | ") };
+    named.push(road);
     for (const side of osmSides(nm)) {
       add(exact, side, road);
       add(loose, looseKey(side), road);
@@ -8092,7 +8108,7 @@ function surfaceVote(surf, roads, SURFACE2, city = null) {
   }
   for (const [k, list] of loose) if (new Set(list.map((d) => d.street)).size > 1) loose.delete(k);
   const cache = /* @__PURE__ */ new Map();
-  const stats = { surfaces: 0, named: 0, exact: 0, loose: 0, spatial: 0, city: 0, unmatched: 0 };
+  const stats = { surfaces: 0, named: 0, exact: 0, loose: 0, spatial: 0, city: 0, unmatched: 0, filled: 0 };
   const of = (s) => {
     if (cache.has(s)) return cache.get(s);
     let res = null;
@@ -8105,8 +8121,7 @@ function surfaceVote(surf, roads, SURFACE2, city = null) {
       else if (list = loose.get(looseKey(n))) stats.loose++;
       if (list) {
         const uniq = [...new Set(list)];
-        let bb = [Infinity, Infinity, -Infinity, -Infinity];
-        for (const p of s.rings?.[0] || []) bb = [Math.min(bb[0], p[0]), Math.min(bb[1], p[1]), Math.max(bb[2], p[0]), Math.max(bb[3], p[1])];
+        const bb = boxOf(s);
         const inside3 = /* @__PURE__ */ new Map(), all = /* @__PURE__ */ new Map();
         for (const d of uniq) {
           for (let i = 1; i < d.pts.length; i++) {
@@ -8115,8 +8130,9 @@ function surfaceVote(surf, roads, SURFACE2, city = null) {
             if (Math.max(x0, x1) < bb[0] || Math.min(x0, x1) > bb[2] || Math.max(z0, z1) < bb[1] || Math.min(z0, z1) > bb[3]) continue;
             const k = Math.max(1, Math.ceil(L2 / 2));
             for (let j = 0; j < k; j++) {
-              const t = (j + 0.5) / k;
-              if (inRings2(s.rings, x0 + (x1 - x0) * t, z0 + (z1 - z0) * t)) inside3.set(d.code, (inside3.get(d.code) || 0) + L2 / k);
+              const t = (j + 0.5) / k, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t;
+              if (x < bb[0] || x > bb[2] || z < bb[1] || z > bb[3]) continue;
+              if (inRings2(s.rings, x, z)) inside3.set(d.code, (inside3.get(d.code) || 0) + L2 / k);
             }
           }
         }
@@ -8133,8 +8149,50 @@ function surfaceVote(surf, roads, SURFACE2, city = null) {
     cache.set(s, res);
     return res;
   };
-  return { of, stats };
+  const fillUntagged = () => {
+    const byKey = /* @__PURE__ */ new Map();
+    for (const s of surf.surfaces) {
+      if (!s.name || s.c > 3) continue;
+      const n = normName(s.name);
+      add(byKey, n, s);
+      add(byKey, "~" + looseKey(n), s);
+    }
+    for (const d of named) {
+      if (d.r.meta?.surface) continue;
+      const sides = osmSides(d.r.meta.name);
+      const cands = new Set(sides.flatMap((k) => byKey.get(k) || byKey.get("~" + looseKey(k)) || []));
+      const codeOf = (s) => s.surface != null ? SURFACE2[s.surface] ?? 0 : of(s);
+      if (![...cands].some((s) => codeOf(s) > 0)) continue;
+      const tally = /* @__PURE__ */ new Map();
+      let L2 = 0, inside3 = 0;
+      for (let i = 1; i < d.pts.length; i++) {
+        const [x0, z0] = d.pts[i - 1], [x1, z1] = d.pts[i], l = Math.hypot(x1 - x0, z1 - z0), k = Math.max(1, Math.ceil(l / 2));
+        L2 += l;
+        for (let j = 0; j < k; j++) {
+          const x = x0 + (x1 - x0) * (j + 0.5) / k, z = z0 + (z1 - z0) * (j + 0.5) / k;
+          for (const s of cands) {
+            const b = boxOf(s);
+            if (x < b[0] || x > b[2] || z < b[1] || z > b[3] || !inRings2(s.rings, x, z)) continue;
+            const c = codeOf(s);
+            if (c != null) {
+              tally.set(c, (tally.get(c) || 0) + l / k);
+              inside3 += l / k;
+            }
+            break;
+          }
+        }
+      }
+      const best = [...tally].sort((p, q) => q[1] - p[1] || p[0] - q[0])[0];
+      if (best && best[0] > 0 && inside3 >= 0.5 * L2) {
+        d.r.meta.surface = CODE_NAME[best[0]];
+        stats.filled++;
+      }
+    }
+    return stats.filled;
+  };
+  return { of, fillUntagged, stats };
 }
+var CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel" };
 function oldNameVote(roads, SURFACE2) {
   const votes = /* @__PURE__ */ new Map();
   for (const r of roads.roads) {
@@ -9288,7 +9346,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   const { surf, H, nrmAt, base, halves, coverArea, convexCover, baseAt, bounds, riseAt } = prep;
   const UP2 = [0, 1, 0];
   const inTile = prep.inside;
-  const vote = surf.surfVote ? surfaceVote(surf, roads, SURFACE, surf.surfVote) : null;
+  const vote = surf.surfVote || null;
   const nameSurf = vote ? null : oldNameVote(roads, SURFACE);
   const voteOf = (s) => vote ? vote.of(s) : nameSurf.get(s.name);
   const out = {
@@ -15615,13 +15673,11 @@ async function buildTileData(entry, base) {
   const grassTypes = entry.grass ? await step("grass types", async () => grassTypeData(feats, { x0, x1, z0, z1 }, { kinds: await grassKinds(base), surfaces: surfDoc })) : null;
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
-  if (surf && entry.surfVote !== false) {
-    surf.surfVote = await streetVote(base);
+  if (surf && entry.surfVote !== false)
     for (const r of roads.roads) {
       const o = ov.surfvoteRoads?.[r.id];
       if (o?.surface) (r.meta ??= {}).surface = o.surface;
     }
-  }
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
   if (entry.cortenbosch !== false && ov.streetSurfaces) {
     if (surf) for (const s of surf.surfaces || []) {
@@ -15633,6 +15689,10 @@ async function buildTileData(entry, base) {
       const sf = byRoad.get(r.id);
       if (sf) (r.meta ??= {}).surface = sf;
     }
+  }
+  if (surf && entry.surfVote !== false) {
+    surf.surfVote = surfaceVote(surf, roads, SURFACE, await streetVote(base));
+    surf.surfVote.fillUntagged();
   }
   if (tunnels?.length) tunnelRoads(roads, tunnels);
   const hm = new Heightmap(tHdr, tBuf);
@@ -16341,4 +16401,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "7f2659da5a243792";
+self.__TILE_CODE_HASH = "635a0105672bc357";

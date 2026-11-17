@@ -9,7 +9,8 @@
   "newCity": 6,
   "newUnmatched": 1040,
   "changed": 264,
-  "changedArea": 120572.5710500004
+  "changedArea": 120572.5710500004,
+  "filled": 7
  },
  "streets": [
   {

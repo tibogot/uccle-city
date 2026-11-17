@@ -21,7 +21,7 @@ const area = (rings) => rings.reduce((A, r, i) => {
   return A + (i === 0 ? 1 : -1) * Math.abs(a / 2);
 }, 0);
 
-const tot = { surfaces: 0, named: 0, oldMatch: 0, newExact: 0, newLoose: 0, newSpatial: 0, newCity: 0, newUnmatched: 0, changed: 0, changedArea: 0 };
+const tot = { surfaces: 0, named: 0, oldMatch: 0, newExact: 0, newLoose: 0, newSpatial: 0, newCity: 0, newUnmatched: 0, changed: 0, changedArea: 0, filled: 0 };
 const streets = new Map();       // name -> { from -> to -> area, tiles }
 const unmatched = new Map();
 for (const t of fs.readdirSync(TILES).sort()) {
@@ -36,6 +36,7 @@ for (const t of fs.readdirSync(TILES).sort()) {
   for (const s of surf.surfaces) { const o = ov.streetSurfaces?.[s.id]; if (o?.surface) s.surface = o.surface; }
   const old = oldNameVote(roads, SURFACE);
   const nv = surfaceVote(surf, roads, SURFACE, CITY);
+  tot.filled += nv.fillUntagged();
   for (const s of surf.surfaces) {
     if (!ASPHALT_PART(s.c)) continue;
     tot.surfaces++;
@@ -59,6 +60,7 @@ for (const t of fs.readdirSync(TILES).sort()) {
 console.log(`carriageway surfaces (asphalt-shader classes): ${tot.surfaces}, named ${tot.named}`);
 console.log(`old vote: ${tot.oldMatch} matched by name`);
 console.log(`new vote: ${tot.newExact + tot.newLoose} matched (${tot.newExact} exact, ${tot.newLoose} loose key), ${tot.newSpatial} decided by the roads inside them, ${tot.newCity} by the city-wide table (no road of theirs in the tile; not asphalt), ${tot.newUnmatched} unmatched`);
+console.log(`OSM roads with no surface tag filled from the vote of the surface they run in (engine carriageway): ${tot.filled}`);
 console.log(`surfaces whose drawn surface changes: ${tot.changed}, ${Math.round(tot.changedArea)} m2, ${streets.size} streets\n`);
 const rows = [...streets].sort((p, q) => q[1].area - p[1].area);
 for (const [nm, e] of rows) console.log(`${nm.padEnd(44)} ${String(Math.round(e.area)).padStart(6)} m2  ${[...e.moves].map(([k, A]) => `${k} ${Math.round(A)}`).join("; ")}  [${[...e.tiles].join(" ")}]`);
