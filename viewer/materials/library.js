@@ -676,7 +676,9 @@ function finish(def, s, ctx) {
   // material's moss is now a darker, greener shade of its own colour)
   const mossCol = def.darkMoss && !SLATE_MOSS_OLD ? col.mul(mix(vec3(0.78, 0.9, 0.66), vec3(0.86, 0.98, 0.7), m2)) : mix(vec3(0.045, 0.07, 0.022), vec3(0.09, 0.11, 0.035), m2);
   col = mix(col, mossCol, mk.mul(0.85));
-  rough = mix(rough, float(0.95), mk);
+  // (darkMoss: the moss patches kept the slate's own sheen: at 0.95 they went matt while the slate around them took the
+  // sky's grazing reflection, and THAT contrast read as the pale blotches, found in the city in clear weather)
+  rough = def.darkMoss && !SLATE_MOSS_OLD ? mix(rough, rough.mul(1.08).min(1), mk) : mix(rough, float(0.95), mk);
   return { col, rough: rough.clamp(0.02, 1), mk, emissive: s.emissive };
 }
 
