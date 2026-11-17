@@ -172,8 +172,10 @@ async function flushJobs(take) {
   try {
     for (const j of take) for (const r of [].concat(j.roots)) {
       if (!r) continue;
-      let top = r; while (top.parent) top = top.parent;
-      if (top !== scene && !top.isScene && !tops.includes(top)) { tops.push(top); holder.add(top); }
+      // climb to the detached top, but stop at the holder: a second root of a model already moved under it would
+      // otherwise reach the holder itself ("object can't be added as a child of itself")
+      let top = r; while (top.parent && top.parent !== holder) top = top.parent;
+      if (top.parent !== holder && top !== holder && top !== scene && !top.isScene && !tops.includes(top)) { tops.push(top); holder.add(top); }
       for (let p = r.parent; p; p = p.parent) set(p, "visible", true);
       r.traverse((o) => {
         set(o, "visible", true);

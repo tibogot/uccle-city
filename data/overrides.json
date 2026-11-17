@@ -1057,5 +1057,9 @@
     {"id": "lycee_east_yard", "why": "Lycée Français Jean Monnet: the yard between the entrance block, the white block and the courts (asphalt; OSM landuse=recreation_ground, drawn as lawn)", "source": "OSM way 33525411 + UrbIS orthophoto 2024 (CC0)", "switch": "?cortenbosch=old", "ring": [[-319.0, 1186.0], [-305.0, 1179.0], [-290.34, 1192.0], [-272.54, 1169.57], [-267.53, 1173.87], [-261.62, 1167.05], [-267.84, 1161.81], [-263.62, 1157.18], [-244.65, 1171.87], [-271.9, 1206.27], [-290.0, 1205.0], [-310.0, 1203.3], [-320.0, 1196.0]]},
     {"id": "saintmarc_forecourt", "surface": "pavers", "courseDeg": 0, "why": "Eglise Saint-Marc (Avenue De Fré 76): the paved walk from the pavement to the glazed entrance, between two lawns (the land cover drew it all as lawn)", "source": "UrbIS orthophoto 2024 (CC0), read at 25 cm; Street View look only", "switch": "?forecourts=old", "ring": [[445.6, -616.2], [452.5, -616.2], [452.5, -601.9], [445.6, -601.9]]},
     {"id": "saintmarc_drive", "surface": "pavers", "courseDeg": 90, "why": "Eglise Saint-Marc: the paved drive along the east side to the car park behind the church (a van parked on it in the orthophoto; drawn as lawn)", "source": "UrbIS orthophoto 2024 (CC0), read at 25 cm", "switch": "?forecourts=old", "ring": [[466.6, -616.5], [471.8, -616.5], [471.8, -601.9], [466.6, -601.9]]}
-  ]
+  ],
+  "surfvoteRoads": {
+    "_doc": "OSM road id (roads.json) -> { surface, why, source }: OSM surface tags Street View contradicts (newest panorama), for the street-surface name vote (docs/SURFVOTE.md) and the engine carriageway; applied in the tile worker with ?surfvote on only (viewer/tileData.js); re-run node tools/build_street_vote.mjs after a change.",
+    "r399062052_0": {"surface": "asphalt", "why": "Avenue Legrand (I1, n. 45): OSM says sett; the carriageway with the tram rails is asphalt, only the parking strips along the kerbs are setts (UrbIS parking surfaces, drawn as pavers already)", "source": "Google Street View May 2017, the newest there (look only, 2026-11-17)"}
+  }
 }

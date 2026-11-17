@@ -76,9 +76,11 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
 8h. **Cars2 leftovers**: watch the 30 m LOD fade in motion; compress cars2.glb (4.5 MB); more varied hatch fronts;
    shops2 leftovers (White Night lot asphalt, ivy over Uccle Flore window, Pasta Commedia coral render, 630 UrbIS
    buildings without geometry: infill tool tools/infill/infill_buildings.py, Place Saint-Job 38 next).
-8i. **Street-surface name vote bug (cortenbosch agent 2026-11-16)**: viewer/surfaces.js never matches names
-   (UrbIS French-only + double-encoded "LycÃ©e" vs bilingual OSM): 55 streets tagged setts/pavers in OSM draw
-   asphalt (e.g. Rue Geleytsbeek, Avenue de la Chenaie). Fix behind its own switch, before/after for the owner.
+8i. **Street-surface name vote bug (cortenbosch agent 2026-11-16)**: DONE on claude/surfvote (docs/SURFVOTE.md,
+   ?surfvote=old): names repaired + normalised, either side of OSM's bilingual name, roads inside each surface vote by
+   length; 58 -> 3,341 matches, 72 streets / 120,573 m2 change (setts / pavers / gravel), 15 of 16 checked on Street
+   View agree, Avenue Legrand overridden to asphalt. Left: junction pads tie -> asphalt, `surveyed` name test in
+   surfaces.js, rebuild surfaces.json with the pipeline fix_text (together, own switch).
    Cortenbosch leftovers: 1990s house type for the facade system, glass curtain-wall style (553227), herringbone
    pavers, "Private Weg / Cortenbosch" paint, railing/gate colliders, other school blocks' looks.
 8j. **AUTUMN LEAVES (owner idea 2026-11-17, later)**: falling leaves from the real tree species (colour by species +
