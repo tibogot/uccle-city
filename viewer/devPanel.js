@@ -57,7 +57,7 @@ const CSS = `
 `;
 const KEYS = [
   ["Everywhere", [["H", "photo mode: hide all the UI (the data credits stay)"], ["`", "show / hide the dev panel"], ["/", "search the dev panel"], ["?", "this help"], ["M", "the full map (the minimap's teleport)"], ["P", "the game menu: start a game / pause it (viewer/game/, docs/GAMEKIT.md)"], ["Esc", "leave walk / fly / drive / third person; close this help"]]],
-  ["Orbit", [["drag", "orbit round the point under the cursor (Alt: the view centre)"], ["right / middle-drag", "pan along the ground"], ["wheel / pinch", "zoom to the cursor"], ["double-click · F", "frame the point"], ["hold right + WASD / QE", "fly (Shift faster, wheel = speed)"], ["?orbitcam=old", "OrbitControls as before"]]],
+  ["Orbit", [["drag", "orbit round the point under the cursor (Alt: the view centre)"], ["right / middle-drag", "pan along the ground"], ["wheel / pinch", "zoom to the cursor"], ["double-click · F", "frame the point"], ["W A S D / arrows", "move along the view (Shift faster)"], ["E / PgUp · Q / PgDn", "up · down"], ["hold right + WASD / QE", "fly where you look (wheel = speed)"], ["?", "the camera controls card"], ["?orbitcam=old", "OrbitControls as before"]]],
   ["Walk", [["W A S D / arrows", "move"], ["drag", "look"], ["Shift", "run"]]],
   ["Drive", [["W A S D / arrows", "throttle, brake, steer"], ["R", "reset the car"], ["C", "camera"], ["G", "the car colliders"]]],
   ["Scooter / Villo", [["K", "ride the scooter (from any mode)"], ["V", "a Villo bike from the nearest station"], ["E", "on foot: take a docked Villo · riding: dock it at a free dock"], ["W / Shift + W", "pedal / stand on the pedals (Villo)"], ["Q", "the Villo's bell"]]],
