@@ -3885,9 +3885,9 @@ function cleanPolygon(input, eps = 0.02) {
     for (let i = 0; i < n; i++) {
       const a = pts[(i - 1 + n) % n], p = pts[i], b = pts[(i + 1) % n];
       const ux = p[0] - a[0], uz = p[1] - a[1], vx = b[0] - p[0], vz = b[1] - p[1];
-      const cross = ux * vz - uz * vx, dot = ux * vx + uz * vz;
+      const cross2 = ux * vz - uz * vx, dot = ux * vx + uz * vz;
       const lu = Math.hypot(ux, uz), lv = Math.hypot(vx, vz);
-      if (lu > 1e-9 && lv > 1e-9 && Math.abs(cross) < 1e-6 * lu * lv * 50 && dot < 0) continue;
+      if (lu > 1e-9 && lv > 1e-9 && Math.abs(cross2) < 1e-6 * lu * lv * 50 && dot < 0) continue;
       out.push(p);
     }
     if (out.length === pts.length) break;
@@ -6593,7 +6593,7 @@ function locate(result, grid, x, z) {
   if (lat > edges.propL + 0.5 || lat < edges.propR - 0.5) return null;
   if (!lane && Math.abs(lat) <= lay.cw / 2) lane = { type: `median (${rr.stack.center.kind})`, w: lay.cw, id: "C" };
   const p = profileAt(rr.prof, s);
-  const cross = surfaceOffset(surfaceFrame(rr, s, e.th, e.k, lay), lat);
+  const cross2 = surfaceOffset(surfaceFrame(rr, s, e.th, e.k, lay), lat);
   return {
     kind: "road",
     roadId: rr.id,
@@ -6602,7 +6602,7 @@ function locate(result, grid, x, z) {
     L: rr.L,
     t: lat,
     lane,
-    y: p.y + cross,
+    y: p.y + cross2,
     grade: p.g,
     ground: p.ground,
     radius: Math.abs(e.k) > 1e-6 ? 1 / Math.abs(e.k) : Infinity,
@@ -9595,13 +9595,13 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       return w && w[0] >= 0 && w[1] >= 0 && w[2] >= 0;
     };
     if (inT(ax, az) || inT(bx, bz)) return true;
-    const cross = (p, q, r, s2) => {
+    const cross2 = (p, q, r, s2) => {
       const d = (q[0] - p[0]) * (s2[1] - r[1]) - (q[1] - p[1]) * (s2[0] - r[0]);
       if (Math.abs(d) < 1e-12) return false;
       const t = ((r[0] - p[0]) * (s2[1] - r[1]) - (r[1] - p[1]) * (s2[0] - r[0])) / d, u = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d;
       return t >= 0 && t <= 1 && u >= 0 && u <= 1;
     };
-    for (let k = 0; k < 3; k++) if (cross([ax, az], [bx, bz], T4[k], T4[(k + 1) % 3])) return true;
+    for (let k = 0; k < 3; k++) if (cross2([ax, az], [bx, bz], T4[k], T4[(k + 1) % 3])) return true;
     return false;
   };
   const edgesAcross = (T4) => {
@@ -11695,6 +11695,224 @@ function simplify(P, tol) {
   return P.filter((_, k) => keep[k]);
 }
 
+// viewer/streets/roadBends.js
+var MEMBER_TOL = 0.05;
+var SEARCH = 400;
+var WALL_NEAR = 0.15;
+var END_EXT = 3;
+function roadMembers(net, part) {
+  const n = part.position.length / 3, P = part.position, U2 = part.uv, A = part.attributes?.aPiece?.array;
+  const road = new Int32Array(n).fill(-1);
+  if (!U2) return road;
+  const byKey = /* @__PURE__ */ new Map(), cells = /* @__PURE__ */ new Map(), C = 32;
+  net.roads.forEach((rr, ri) => {
+    if (!rr.smp || !rr.al || rr.smp.s.length < 2) return;
+    if (A) {
+      const k = Math.round(hashPhase2(rr.id) * 100);
+      (byKey.get(k) || byKey.set(k, []).get(k)).push(ri);
+      return;
+    }
+    const S3 = rr.smp, r = Math.max(...rr.halfW || [0]) + 3;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let i = 0; i < S3.s.length; i++) {
+      x0 = Math.min(x0, S3.x[i]);
+      x1 = Math.max(x1, S3.x[i]);
+      z0 = Math.min(z0, S3.z[i]);
+      z1 = Math.max(z1, S3.z[i]);
+    }
+    for (let i = Math.floor((x0 - r) / C); i <= Math.floor((x1 + r) / C); i++)
+      for (let j = Math.floor((z0 - r) / C); j <= Math.floor((z1 + r) / C); j++) {
+        const k = i * 65536 + j;
+        (cells.get(k) || cells.set(k, []).get(k)).push(ri);
+      }
+  });
+  for (let v = 0; v < n; v++) {
+    const c = A ? byKey.get(Math.round(A[v * 2] * 100)) : cells.get(Math.floor(P[v * 3] / C) * 65536 + Math.floor(P[v * 3 + 2] / C));
+    if (!c) continue;
+    const s = U2[v * 2], t = U2[v * 2 + 1];
+    for (const ri of c) {
+      const rr = net.roads[ri], S3 = rr.smp;
+      if (s < S3.s[0] - 0.01 || s > S3.s[S3.s.length - 1] + 0.01) continue;
+      const e = evalAlignment(rr.al, s);
+      const dx = e.x + Math.sin(e.th) * t - P[v * 3], dz = e.z - Math.cos(e.th) * t - P[v * 3 + 2];
+      if (dx * dx + dz * dz < MEMBER_TOL * MEMBER_TOL) {
+        road[v] = ri;
+        break;
+      }
+    }
+  }
+  return road;
+}
+var foldsAt = (S3, t) => {
+  for (let i = 0; i < S3.k.length; i++) if (1 + S3.k[i] * t < 0) return true;
+  return false;
+};
+function cross(p0x, p0z, p1x, p1z, q0x, q0z, q1x, q1z) {
+  const rx = p1x - p0x, rz = p1z - p0z, sx = q1x - q0x, sz = q1z - q0z;
+  const d = rx * sz - rz * sx;
+  if (Math.abs(d) < 1e-12) return null;
+  const qx = q0x - p0x, qz = q0z - p0z;
+  const u = (qx * sz - qz * sx) / d, w = (qx * rz - qz * rx) / d;
+  return u >= 0 && u <= 1 && w >= 0 && w <= 1 ? [u, w] : null;
+}
+function trimIntervals(S3, t) {
+  const N0 = S3.s.length, N2 = N0 + 2, ext = Math.max(2, END_EXT * Math.abs(t));
+  const ss = new Float64Array(N2), qx = new Float64Array(N2), qz = new Float64Array(N2), kk = new Float64Array(N2);
+  for (let i = 0; i < N0; i++) {
+    ss[i + 1] = S3.s[i];
+    kk[i + 1] = S3.k[i];
+    qx[i + 1] = S3.x[i] + Math.sin(S3.th[i]) * t;
+    qz[i + 1] = S3.z[i] - Math.cos(S3.th[i]) * t;
+  }
+  ss[0] = S3.s[0] - ext;
+  qx[0] = qx[1] - Math.cos(S3.th[0]) * ext;
+  qz[0] = qz[1] - Math.sin(S3.th[0]) * ext;
+  ss[N2 - 1] = S3.s[N0 - 1] + ext;
+  qx[N2 - 1] = qx[N2 - 2] + Math.cos(S3.th[N0 - 1]) * ext;
+  qz[N2 - 1] = qz[N2 - 2] + Math.sin(S3.th[N0 - 1]) * ext;
+  const runs = [];
+  for (let i = 1; i < N2 - 1; i++) {
+    if (!(1 + kk[i] * t < 0)) continue;
+    let j = i;
+    while (j + 1 < N2 - 1 && 1 + kk[j + 1] * t < 0) j++;
+    runs.push([i, j]);
+    i = j;
+  }
+  const out = [];
+  let unresolved = 0;
+  const solve = (i0, i1) => {
+    let best = null;
+    for (let a = Math.min(i0, N2 - 2); a >= Math.max(0, i0 - SEARCH); a--) {
+      if (best && ss[i0] - ss[a + 1] > best.span) break;
+      for (let b = Math.max(a + 2, i1 - 1); b <= Math.min(N2 - 2, i1 + SEARCH); b++) {
+        if (best && ss[b] - ss[a + 1] > best.span) break;
+        const c = cross(qx[a], qz[a], qx[a + 1], qz[a + 1], qx[b], qz[b], qx[b + 1], qz[b + 1]);
+        if (!c) continue;
+        const sA = ss[a] + c[0] * (ss[a + 1] - ss[a]), sB = ss[b] + c[1] * (ss[b + 1] - ss[b]);
+        if (!best || sB - sA < best.span) best = { sA, sB, span: sB - sA, x: qx[a] + c[0] * (qx[a + 1] - qx[a]), z: qz[a] + c[0] * (qz[a + 1] - qz[a]), i0, i1 };
+        break;
+      }
+    }
+    return best;
+  };
+  for (let r = 0; r < runs.length; r++) {
+    let [i0, i1] = runs[r];
+    let best = solve(i0, i1);
+    while (best && r + 1 < runs.length && ss[runs[r + 1][0]] < best.sB) {
+      i1 = runs[++r][1];
+      best = solve(i0, i1);
+    }
+    if (!best) {
+      unresolved++;
+      continue;
+    }
+    const prev = out[out.length - 1];
+    if (prev && best.sA < prev.sB) {
+      const m = solve(prev.i0, i1);
+      if (m) {
+        out[out.length - 1] = m;
+        continue;
+      }
+    }
+    out.push(best);
+  }
+  return { intervals: out, unresolved };
+}
+function trimBendFolds(net, part) {
+  const t0 = (globalThis.performance ?? Date).now();
+  const road = roadMembers(net, part);
+  const P = part.position, U2 = part.uv, n = P.length / 3;
+  const tOf = /* @__PURE__ */ new Map();
+  for (let v = 0; v < n; v++) {
+    const ri = road[v];
+    if (ri < 0) continue;
+    let m = tOf.get(ri);
+    if (!m) tOf.set(ri, m = /* @__PURE__ */ new Map());
+    const t = U2[v * 2 + 1];
+    (m.get(t) || m.set(t, []).get(t)).push(v);
+  }
+  const pos = new Float32Array(P);
+  const moved = new Uint8Array(n);
+  const stats = { roads: 0, intervals: 0, moved: 0, unresolved: 0, dropped: 0, wallsMoved: 0, ms: 0 };
+  const A = part.attributes?.aPiece?.array ?? null;
+  const near = /* @__PURE__ */ new Map();
+  const nk = (x, z) => Math.floor(x / WALL_NEAR) * 1048576 + Math.floor(z / WALL_NEAR);
+  for (const [ri, m] of tOf) {
+    const S3 = net.roads[ri].smp;
+    let touched = false;
+    for (const [t, vs] of m) {
+      if (!foldsAt(S3, t)) continue;
+      const { intervals, unresolved } = trimIntervals(S3, t);
+      stats.unresolved += unresolved;
+      for (const iv of intervals) {
+        const group = vs.filter((v) => U2[v * 2] > iv.sA && U2[v * 2] < iv.sB);
+        if (!group.length) continue;
+        let y = 0;
+        for (const v of group) y += P[v * 3 + 1];
+        y /= group.length;
+        for (const v of group) {
+          const k = nk(P[v * 3], P[v * 3 + 2]);
+          (near.get(k) || near.set(k, []).get(k)).push([P[v * 3], P[v * 3 + 2], U2[v * 2], A ? Math.round(A[v * 2] * 100) : 0, iv.x - P[v * 3], iv.z - P[v * 3 + 2]]);
+          pos[v * 3] = iv.x;
+          pos[v * 3 + 1] = y;
+          pos[v * 3 + 2] = iv.z;
+          moved[v] = 1;
+        }
+        stats.intervals++;
+        stats.moved += group.length;
+        touched = true;
+      }
+    }
+    if (touched) stats.roads++;
+  }
+  if (!stats.moved) {
+    stats.ms = Math.round((globalThis.performance ?? Date).now() - t0);
+    return { part, stats };
+  }
+  for (let v = 0; v < n; v++) {
+    if (road[v] >= 0) continue;
+    const x = P[v * 3], z = P[v * 3 + 2], i0 = Math.floor(x / WALL_NEAR), j0 = Math.floor(z / WALL_NEAR);
+    let best = null, bd = WALL_NEAR * WALL_NEAR;
+    for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (const q of near.get(i * 1048576 + j) || []) {
+      if (U2[v * 2] !== q[2] || A && Math.round(A[v * 2] * 100) !== q[3]) continue;
+      const d = (q[0] - x) ** 2 + (q[1] - z) ** 2;
+      if (d <= bd) {
+        bd = d;
+        best = q;
+      }
+    }
+    if (!best) continue;
+    pos[v * 3] = x + best[4];
+    pos[v * 3 + 2] = z + best[5];
+    moved[v] = 1;
+    stats.wallsMoved++;
+  }
+  const I2 = part.index, keep = [];
+  for (let k = 0; k < I2.length; k += 3) {
+    const a = I2[k], b = I2[k + 1], c = I2[k + 2];
+    if (moved[a] || moved[b] || moved[c]) {
+      const ux = pos[b * 3] - pos[a * 3], uy = pos[b * 3 + 1] - pos[a * 3 + 1], uz = pos[b * 3 + 2] - pos[a * 3 + 2];
+      const wx = pos[c * 3] - pos[a * 3], wy = pos[c * 3 + 1] - pos[a * 3 + 1], wz = pos[c * 3 + 2] - pos[a * 3 + 2];
+      const cx = uy * wz - uz * wy, cy = uz * wx - ux * wz, cz = ux * wy - uy * wx;
+      if (cx * cx + cy * cy + cz * cz < 1e-12) {
+        stats.dropped++;
+        continue;
+      }
+      if (road[a] >= 0 && road[a] === road[b] && road[a] === road[c]) {
+        const au = (U2[b * 2] - U2[a * 2]) * (U2[c * 2 + 1] - U2[a * 2 + 1]) - (U2[b * 2 + 1] - U2[a * 2 + 1]) * (U2[c * 2] - U2[a * 2]);
+        if (Math.abs(cy) < 1e-6 || cy * au < 0) {
+          stats.dropped++;
+          continue;
+        }
+      }
+    }
+    keep.push(a, b, c);
+  }
+  const index = I2 instanceof Uint16Array ? Uint16Array.from(keep) : Uint32Array.from(keep);
+  stats.ms = Math.round((globalThis.performance ?? Date).now() - t0);
+  return { part: { ...part, position: pos, index, triangleCount: keep.length / 3 }, stats };
+}
+
 // viewer/roadBuild.js
 var CARVE = 0.12;
 var now3 = () => (globalThis.performance ?? Date).now();
@@ -11778,6 +11996,17 @@ function buildRoadData(o) {
   const netInfo = { levels, roads: net.roads.length, nodes: net.nodes.length, errors: errors.length, byCode, warnings: net.issues.length - errors.length };
   const built = buildLaneRoadMesh(net, { markings: true });
   if (v2) pv.inventory.stats.parkingVerticesUnpainted = unpaintParking(built, ctx);
+  let bend = null;
+  if (o.roadBend !== false) {
+    bend = {};
+    for (const name of ["asphalt", "concrete", "grass"]) {
+      const r = trimBendFolds(net, built[name]);
+      built[name] = r.part;
+      bend[name] = r.stats;
+    }
+  }
+  lap("road bends");
+  if (o.engineOnly) return { net, built, prep, roadBend: bend, times };
   let priority = null;
   if (v2) {
     const pr = /* @__PURE__ */ new Map();
@@ -11845,7 +12074,7 @@ function buildRoadData(o) {
     }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }
@@ -14569,9 +14798,9 @@ function minRadius(pts) {
   for (let i = 1; i + 1 < pts.length; i++) {
     const [ax, az] = pts[i - 1], [bx, bz] = pts[i], [cx, cz] = pts[i + 1];
     const a = Math.hypot(bx - ax, bz - az), b = Math.hypot(cx - bx, cz - bz), c = Math.hypot(cx - ax, cz - az);
-    const cross = Math.abs((bx - ax) * (cz - az) - (bz - az) * (cx - ax));
-    if (cross < 1e-6 || a < 0.05 || b < 0.05) continue;
-    R2 = Math.min(R2, a * b * c / (2 * cross));
+    const cross2 = Math.abs((bx - ax) * (cz - az) - (bz - az) * (cx - ax));
+    if (cross2 < 1e-6 || a < 0.05 || b < 0.05) continue;
+    R2 = Math.min(R2, a * b * c / (2 * cross2));
   }
   return R2;
 }
@@ -16570,6 +16799,7 @@ async function buildTileData(entry, base) {
     noData: pad?.noData,
     roughLanes: entry.roughLanes !== false,
     recentre: entry.recentre === true,
+    roadBend: entry.roadBend !== false,
     weldNearest: entry.groundWeld !== false,
     clampTop: entry.clampTop !== false,
     clampH: entry.surfH !== false,
@@ -17259,4 +17489,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "55a821bdeff224d6";
+self.__TILE_CODE_HASH = "8e91d3927f03d7ff";
