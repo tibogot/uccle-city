@@ -86,7 +86,9 @@ Browser rules: ONE Chrome tab (reuse it), nothing else heavy on the GPU. Server 
 | cell | worst cell of a 16 x 9 grid (80 x 80 px): % of its pixels changed: catches LOCAL changes (one hollow front) | > 8 % |
 | ssim | mean SSIM of luma over 8 x 8 blocks | < 0.985 |
 
-traffic-alsemberg: pixels 6 %, cell 40 %, ssim 0.93 (cars move). Noise floor measured (two foundation runs): see below.
+Per-view: traffic-alsemberg pixels 6 %, cell 40 %, ssim 0.93 (moving cars; measured noise was low, the view rarely
+has a car moving at the capture); lycee-front cell 30 % (a surface behind the gate railing is lit in one run and dark in
+the next: 16-20 % of ONE cell, source not found). The global thresholds are ~3x the measured noise (below).
 
 ## Updating the baseline after an intended change
 
@@ -94,6 +96,30 @@ After the merge of a branch whose flagged views were checked and meant: take a n
 (step 1, `run=foundation`, overwrites the folder), or keep dated ones (`run=foundation-<commit>`) and compare against
 the right one. Never "fix" a flagged view by loosening a threshold without saying why in the merge message.
 
-## Measured
+## Measured (2026-11-17, RTX 4050 laptop, one Chrome tab, devicePixelRatio 1, warm caches)
 
-(filled in after the determinism runs)
+Code: claude/tour at 76c4b064 + the tour commits (= claude/foundation with sharp + carctl merged, plus the tour).
+
+| | |
+|---|---|
+| whole tour, 22 views | **578 s and 576 s** (9.6 min); views 17-33 s each, far-300m 47 s (the far ring) |
+| first run after a worker-bundle change | ~24 min (every tile rebuilt once: views up to 100-150 s); a second run is warm |
+| errors | 0 console errors, 22/22 ready, in both baseline runs |
+| page memory | 0.4-1.1 GB JS heap, falls back after each view |
+| noise between two runs (same code) | pixels 0.01-0.14 %, worst cell 0.2-3.6 % (lycee-front 16.2 %), SSIM 0.9956-0.9992 |
+
+**Baseline**: `.tour/foundation/` and `.tour/foundation-2/` in the claude/tour worktree (C:/Users/tibog/Downloads/uccle-tour);
+`node tools/tour/compare.mjs foundation foundation-2` flags 0 of 22. To compare a branch against it, run the server with
+`--out C:/Users/tibog/Downloads/uccle-tour/.tour` (or copy the folder): then `node tools/tour/compare.mjs foundation <run>`.
+`claude/holes` (the hollow-building fix) should flag stjob-shops and f3-loggia-blocks against it.
+
+Found while building it (fixed in the tour):
+- **Determinism**: without `still=1` the clouds drift by the boot's length; without freezing the foliage wind
+  (`viewer/foliage/wind.js` `frozen` + `uTime`, done in the settle step) the grass gave 17 % of a cell between runs
+  (Cortenbosch); TSL `time` held too. With all three: the table above.
+- **Memory**: keeping ANY object of a view's iframe (even the array in `__quickReady.tiles`) kept the whole removed
+  iframe alive: 14 GB of JS heap after 22 views, then "Array buffer allocation failed". Everything read from the
+  iframe is now copied through JSON. The tour page is never put in the back-forward cache (`no-store` + an unload
+  handler): a finished tour in the bfcache held its renderer (15 GB) for 10 minutes after navigating away.
+- **Cameras**: the `police` place puts the camera inside a house (the view through its culled walls); the tour's police
+  view is from 30 m.
