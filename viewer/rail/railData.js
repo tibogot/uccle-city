@@ -585,15 +585,17 @@ const idxArray = (I, nV) => (nV > 65535 ? Uint32Array.from(I) : Uint16Array.from
 function ringArea(r) { let a = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
 
 /** Everything drawn for one tile, as typed arrays (transferable). */
-export function railTileData(doc, bounds, heroes = []) {
+export function railTileData(doc, bounds, heroes = [], { deckCap = null, skipDeck = null } = {}) {
   const ts = tracksIn(doc, bounds, 1);
   const hs = (heroes || []).map(heroFrame);
   const roadHeroes = hs.filter((h) => h.kind === "road_over_rail");
   const inHero = (x, z, m = 0) => hs.some((h) => { const [X, Y] = h.toLocal(x, z); const hb = ringBox(h.ring); return x > hb.x0 - m && x < hb.x1 + m && z > hb.z0 - m && z < hb.z1 + m && inRing(h.ring, x, z); });
   /** the highest the catenary may run at (x, z): under a road bridge's arch, 0.3 m under its intrados, sloping back up
    *  at 1:12 away from the faces (Infinity elsewhere) */
+  // (vivier 2026-11-17) + the OSM road decks' soffits (viewer/streets/bridgeDecks.js deckSoffitCap: the deck drawn by
+  // the streets, not a hero model): the wires ran through the Chaussee de Waterloo's slab at Vivier d'Oie
   const wireCap = (x, z) => {
-    let cap = Infinity;
+    let cap = deckCap ? deckCap(x, z) : Infinity;
     for (const h of roadHeroes) {
       const [X, Y] = h.toLocal(x, z);
       const out = Math.max(0, Math.abs(Y) - h.deck.width / 2);
@@ -640,7 +642,9 @@ export function railTileData(doc, bounds, heroes = []) {
     if (t.electrified) {
       for (let s0 = Math.ceil(sA / MAST_STEP) * MAST_STEP; s0 < sB; s0 += MAST_STEP) {
         let s = s0;
-        for (let k = 0; k < 8 && inHero(sample(F, s).x, sample(F, s).z, 3); k++) s += 4;     // no mast under / in a hero bridge
+        // no mast under / in a hero bridge, nor under an OSM road deck (its soffit within 8 m of the rail)
+        const blocked = (q) => inHero(q.x, q.z, 3) || (deckCap && deckCap(q.x, q.z) < q.y + 8);
+        for (let k = 0; k < 8 && blocked(sample(F, s)); k++) s += 4;
         if (s >= sB) continue;
         const f = sample(F, s), side = outerSide(nearTracks, t, f);
         let off = MAST_OFF;
@@ -653,7 +657,7 @@ export function railTileData(doc, bounds, heroes = []) {
         const f = sample(F, Math.min(s, sB));
         const ph = (f.s / MAST_STEP) % 2, zig = (ph < 1 ? ph : 2 - ph) * 0.4 - 0.2;
         const m = (f.s / MAST_STEP) % 1, sag = 4 * m * (1 - m) * 0.75;
-        const cap = roadHeroes.length ? wireCap(f.x, f.z) : Infinity;
+        const cap = roadHeroes.length || deckCap ? wireCap(f.x, f.z) : Infinity;
         const yc = Math.min(f.y + WIRE_H, cap - 0.3), ym = Math.max(yc + 0.15, Math.min(f.y + MESSENGER_H - sag, cap));
         contact.push([f.x + f.nx * zig, yc, f.z + f.nz * zig]);
         mess.push([f.x, ym, f.z]);
@@ -737,7 +741,11 @@ export function railTileData(doc, bounds, heroes = []) {
     if (shelters.length) { const M = new Float32Array(shelters.length * 16); shelters.forEach(([x, y, z, a], k) => yawMatrix(M, k, a, x, y, z)); out.shelters = M; }
   }
   // decks over the line: the UrbIS polygon extruded 0.9 m down from the DTM (flat-shaded)
-  const decks = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1]));
+  // (vivier 2026-11-17) not where the streets draw the deck (skipDeck: an OSM road deck over it, bridgeDecks.js), and
+  // never IN the cutting: the 2021 DTM is bare earth, its value at a deck's centroid is the cutting under it (all nine
+  // UrbIS slabs stood between 2.3 m under and 0.7 m over the rails: Vivier d'Oie's crossed the trains' path)
+  const decks = doc.decks.filter((b) => inside(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1])
+    && !(skipDeck && skipDeck(b)) && !(skipDeck && b.railTop != null && b.ground - 0.92 - b.railTop < 4.8));
   if (decks.length) {
     const P = [];
     for (const b of decks) {

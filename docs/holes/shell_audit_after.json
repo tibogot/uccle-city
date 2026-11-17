@@ -1,0 +1,1791 @@
+{
+ "summary": {
+  "buildings": 25459,
+  "edges": 150671,
+  "partial": 240,
+  "recess": 1656,
+  "roofOnly": 1,
+  "after": 3,
+  "inwardUrbis": 69,
+  "inwardRepair": 0,
+  "inwardM2": 15
+ },
+ "rows": [
+  {
+   "check": "inwardRepair",
+   "value": 0,
+   "limit": 0,
+   "ok": true
+  },
+  {
+   "check": "after",
+   "value": 3,
+   "limit": 5,
+   "ok": true
+  },
+  {
+   "check": "inwardM2",
+   "value": 15,
+   "limit": 25,
+   "ok": true
+  }
+ ],
+ "afterList": [
+  {
+   "tile": "G4",
+   "id": "511407",
+   "a": [
+    84.98,
+    -271.52
+   ],
+   "b": [
+    87.86,
+    -274.84
+   ],
+   "cover": 0.84,
+   "hole": 7.9
+  },
+  {
+   "tile": "J10",
+   "id": "728743",
+   "a": [
+    1557.69,
+    2651.1
+   ],
+   "b": [
+    1554.96,
+    2653.19
+   ],
+   "cover": 0.76,
+   "hole": 4.4
+  },
+  {
+   "tile": "J6",
+   "id": "518303",
+   "a": [
+    1666.26,
+    506.62
+   ],
+   "b": [
+    1676.34,
+    505.31
+   ],
+   "cover": 0.82,
+   "hole": 4.1
+  }
+ ],
+ "worstInward": [
+  {
+   "tile": "J6",
+   "id": "723257",
+   "tris": 2,
+   "m2": 4.8
+  },
+  {
+   "tile": "J7",
+   "id": "723856",
+   "tris": 2,
+   "m2": 2.1
+  },
+  {
+   "tile": "E3",
+   "id": "546128",
+   "tris": 3,
+   "m2": 1.1
+  },
+  {
+   "tile": "I4",
+   "id": "560022",
+   "tris": 2,
+   "m2": 1
+  },
+  {
+   "tile": "E6",
+   "id": "530590",
+   "tris": 1,
+   "m2": 0.9
+  },
+  {
+   "tile": "D5",
+   "id": "525540",
+   "tris": 2,
+   "m2": 0.7
+  },
+  {
+   "tile": "C5",
+   "id": "518275",
+   "tris": 1,
+   "m2": 0.7
+  },
+  {
+   "tile": "F6",
+   "id": "533052",
+   "tris": 1,
+   "m2": 0.5
+  },
+  {
+   "tile": "G7",
+   "id": "539142",
+   "tris": 1,
+   "m2": 0.4
+  },
+  {
+   "tile": "J10",
+   "id": "725911",
+   "tris": 2,
+   "m2": 0.4
+  },
+  {
+   "tile": "D3",
+   "id": "523527",
+   "tris": 1,
+   "m2": 0.4
+  },
+  {
+   "tile": "F2",
+   "id": "542090",
+   "tris": 2,
+   "m2": 0.4
+  },
+  {
+   "tile": "C9",
+   "id": "525846",
+   "tris": 1,
+   "m2": 0.3
+  },
+  {
+   "tile": "E4",
+   "id": "533024",
+   "tris": 2,
+   "m2": 0.3
+  },
+  {
+   "tile": "D3",
+   "id": "526788",
+   "tris": 1,
+   "m2": 0.3
+  },
+  {
+   "tile": "F8",
+   "id": "531048",
+   "tris": 1,
+   "m2": 0.3
+  },
+  {
+   "tile": "E7",
+   "id": "533886",
+   "tris": 3,
+   "m2": 0.3
+  },
+  {
+   "tile": "J4",
+   "id": "692488",
+   "tris": 1,
+   "m2": 0.3
+  },
+  {
+   "tile": "H3",
+   "id": "542603",
+   "tris": 3,
+   "m2": 0.3
+  },
+  {
+   "tile": "F6",
+   "id": "533586",
+   "tris": 1,
+   "m2": 0.2
+  },
+  {
+   "tile": "H2",
+   "id": "546630",
+   "tris": 2,
+   "m2": 0.2
+  },
+  {
+   "tile": "I3",
+   "id": "536723",
+   "tris": 1,
+   "m2": 0.2
+  },
+  {
+   "tile": "H3",
+   "id": "542742",
+   "tris": 2,
+   "m2": 0.2
+  },
+  {
+   "tile": "G3",
+   "id": "542320",
+   "tris": 3,
+   "m2": 0.2
+  },
+  {
+   "tile": "E2",
+   "id": "531666",
+   "tris": 1,
+   "m2": 0.1
+  },
+  {
+   "tile": "F4",
+   "id": "509799",
+   "tris": 2,
+   "m2": 0.1
+  },
+  {
+   "tile": "I9",
+   "id": "540545",
+   "tris": 1,
+   "m2": 0.1
+  },
+  {
+   "tile": "E4",
+   "id": "523162",
+   "tris": 1,
+   "m2": 0.1
+  },
+  {
+   "tile": "G8",
+   "id": "535579",
+   "tris": 2,
+   "m2": 0.1
+  },
+  {
+   "tile": "D4",
+   "id": "553715",
+   "tris": 1,
+   "m2": 0.1
+  },
+  {
+   "tile": "E8",
+   "id": "535980",
+   "tris": 2,
+   "m2": 0.1
+  },
+  {
+   "tile": "C5",
+   "id": "738374",
+   "tris": 2,
+   "m2": 0.1
+  },
+  {
+   "tile": "C8",
+   "id": "519669",
+   "tris": 1,
+   "m2": 0.1
+  },
+  {
+   "tile": "F2",
+   "id": "531984",
+   "tris": 1,
+   "m2": 0.1
+  },
+  {
+   "tile": "F2",
+   "id": "530976",
+   "tris": 1,
+   "m2": 0.1
+  },
+  {
+   "tile": "F2",
+   "id": "534230",
+   "tris": 3,
+   "m2": 0.1
+  },
+  {
+   "tile": "B5",
+   "id": "738666",
+   "tris": 1,
+   "m2": 0
+  },
+  {
+   "tile": "G7",
+   "id": "534256",
+   "tris": 1,
+   "m2": 0
+  },
+  {
+   "tile": "K5",
+   "id": "719116",
+   "tris": 1,
+   "m2": 0
+  },
+  {
+   "tile": "E7",
+   "id": "579662",
+   "tris": 1,
+   "m2": 0
+  },
+  {
+   "tile": "K7",
+   "id": "509856",
+   "tris": 1,
+   "m2": 0
+  },
+  {
+   "tile": "K7",
+   "id": "721746",
+   "tris": 1,
+   "m2": 0
+  },
+  {
+   "tile": "K7",
+   "id": "652103",
+   "tris": 1,
+   "m2": 0
+  },
+  {
+   "tile": "J6",
+   "id": "718040",
+   "tris": 2,
+   "m2": 0
+  },
+  {
+   "tile": "K9",
+   "id": "607464",
+   "tris": 1,
+   "m2": 0
+  }
+ ],
+ "tiles": {
+  "A5": {
+   "buildings": 3,
+   "edges": 21,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "C9": {
+   "buildings": 81,
+   "edges": 377,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E10": {
+   "buildings": 186,
+   "edges": 1059,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F3": {
+   "buildings": 212,
+   "edges": 1789,
+   "partial": 8,
+   "holeM2": 30,
+   "recess": 27,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G5": {
+   "buildings": 246,
+   "edges": 2112,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 2,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H6": {
+   "buildings": 535,
+   "edges": 2525,
+   "partial": 1,
+   "holeM2": 30,
+   "recess": 20,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I7": {
+   "buildings": 262,
+   "edges": 1660,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 22,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J9": {
+   "buildings": 181,
+   "edges": 1663,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 10,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "L12": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M8": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "B4": {
+   "buildings": 14,
+   "edges": 148,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D1": {
+   "buildings": 2,
+   "edges": 14,
+   "partial": 4,
+   "holeM2": 81,
+   "recess": 1,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E2": {
+   "buildings": 774,
+   "edges": 3389,
+   "partial": 16,
+   "holeM2": 43,
+   "recess": 40,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F4": {
+   "buildings": 178,
+   "edges": 1585,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 3,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G6": {
+   "buildings": 425,
+   "edges": 2235,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 27,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H7": {
+   "buildings": 333,
+   "edges": 1458,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 14,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I8": {
+   "buildings": 163,
+   "edges": 1348,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 24,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K10": {
+   "buildings": 92,
+   "edges": 859,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 19,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "L5": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M9": {
+   "buildings": 1,
+   "edges": 4,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "B5": {
+   "buildings": 180,
+   "edges": 902,
+   "partial": 1,
+   "holeM2": 38,
+   "recess": 25,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D10": {
+   "buildings": 110,
+   "edges": 691,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E3": {
+   "buildings": 616,
+   "edges": 3241,
+   "partial": 11,
+   "holeM2": 33,
+   "recess": 22,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 3,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "F5": {
+   "buildings": 303,
+   "edges": 2100,
+   "partial": 12,
+   "holeM2": 42,
+   "recess": 28,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G7": {
+   "buildings": 45,
+   "edges": 270,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 4,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H8": {
+   "buildings": 163,
+   "edges": 1316,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 10,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I9": {
+   "buildings": 173,
+   "edges": 1636,
+   "partial": 2,
+   "holeM2": 38,
+   "recess": 24,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K11": {
+   "buildings": 83,
+   "edges": 645,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 5,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "L6": {
+   "buildings": 15,
+   "edges": 78,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "N10": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "B6": {
+   "buildings": 236,
+   "edges": 1190,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 2,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D2": {
+   "buildings": 3,
+   "edges": 12,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E4": {
+   "buildings": 779,
+   "edges": 3832,
+   "partial": 11,
+   "holeM2": 21,
+   "recess": 40,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 3,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F6": {
+   "buildings": 508,
+   "edges": 2882,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 26,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "G8": {
+   "buildings": 80,
+   "edges": 622,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 26,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H9": {
+   "buildings": 98,
+   "edges": 1003,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 2,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J10": {
+   "buildings": 215,
+   "edges": 1761,
+   "partial": 10,
+   "holeM2": 136,
+   "recess": 48,
+   "roofOnly": 0,
+   "after": 1,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K12": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "L7": {
+   "buildings": 5,
+   "edges": 41,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "N11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "B7": {
+   "buildings": 138,
+   "edges": 743,
+   "partial": 8,
+   "holeM2": 259,
+   "recess": 13,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D3": {
+   "buildings": 591,
+   "edges": 2900,
+   "partial": 6,
+   "holeM2": 14,
+   "recess": 43,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "E5": {
+   "buildings": 666,
+   "edges": 3502,
+   "partial": 11,
+   "holeM2": 39,
+   "recess": 35,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F7": {
+   "buildings": 114,
+   "edges": 680,
+   "partial": 6,
+   "holeM2": 186,
+   "recess": 4,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G9": {
+   "buildings": 164,
+   "edges": 1065,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 26,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I1": {
+   "buildings": 351,
+   "edges": 1641,
+   "partial": 4,
+   "holeM2": 50,
+   "recess": 5,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J11": {
+   "buildings": 36,
+   "edges": 316,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 3,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K4": {
+   "buildings": 7,
+   "edges": 47,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "L8": {
+   "buildings": 13,
+   "edges": 117,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "N5": {
+   "buildings": 1,
+   "edges": 7,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "B8": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D4": {
+   "buildings": 432,
+   "edges": 2266,
+   "partial": 2,
+   "holeM2": 11,
+   "recess": 19,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E6": {
+   "buildings": 481,
+   "edges": 3278,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 33,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "F8": {
+   "buildings": 197,
+   "edges": 966,
+   "partial": 2,
+   "holeM2": 8,
+   "recess": 40,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H1": {
+   "buildings": 609,
+   "edges": 3085,
+   "partial": 6,
+   "holeM2": 24,
+   "recess": 18,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I10": {
+   "buildings": 208,
+   "edges": 1673,
+   "partial": 3,
+   "holeM2": 41,
+   "recess": 53,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J2": {
+   "buildings": 5,
+   "edges": 34,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K5": {
+   "buildings": 65,
+   "edges": 551,
+   "partial": 2,
+   "holeM2": 114,
+   "recess": 32,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "L9": {
+   "buildings": 1,
+   "edges": 4,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "N6": {
+   "buildings": 3,
+   "edges": 38,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "C3": {
+   "buildings": 116,
+   "edges": 430,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 4,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D5": {
+   "buildings": 456,
+   "edges": 2347,
+   "partial": 6,
+   "holeM2": 164,
+   "recess": 56,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "E7": {
+   "buildings": 294,
+   "edges": 1490,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 16,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 4,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F9": {
+   "buildings": 496,
+   "edges": 1959,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H10": {
+   "buildings": 85,
+   "edges": 658,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 58,
+   "roofOnly": 1,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I11": {
+   "buildings": 4,
+   "edges": 27,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J3": {
+   "buildings": 54,
+   "edges": 471,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K6": {
+   "buildings": 96,
+   "edges": 774,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 8,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M10": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "N7": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "C4": {
+   "buildings": 326,
+   "edges": 1880,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 28,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D6": {
+   "buildings": 371,
+   "edges": 2077,
+   "partial": 2,
+   "holeM2": 11,
+   "recess": 41,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E8": {
+   "buildings": 337,
+   "edges": 1692,
+   "partial": 2,
+   "holeM2": 7,
+   "recess": 42,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G1": {
+   "buildings": 377,
+   "edges": 1798,
+   "partial": 6,
+   "holeM2": 13,
+   "recess": 11,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I2": {
+   "buildings": 410,
+   "edges": 2537,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 16,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J4": {
+   "buildings": 247,
+   "edges": 1844,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 21,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K7": {
+   "buildings": 160,
+   "edges": 1450,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 14,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 3,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "N8": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "C5": {
+   "buildings": 637,
+   "edges": 3085,
+   "partial": 1,
+   "holeM2": 18,
+   "recess": 13,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 3,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "D7": {
+   "buildings": 373,
+   "edges": 1723,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 7,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E9": {
+   "buildings": 422,
+   "edges": 2278,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G10": {
+   "buildings": 161,
+   "edges": 1032,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H2": {
+   "buildings": 354,
+   "edges": 2263,
+   "partial": 2,
+   "holeM2": 8,
+   "recess": 28,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I3": {
+   "buildings": 406,
+   "edges": 2567,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 5,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J5": {
+   "buildings": 419,
+   "edges": 2753,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 49,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "K8": {
+   "buildings": 286,
+   "edges": 1875,
+   "partial": 7,
+   "holeM2": 43,
+   "recess": 7,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M12": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "N9": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "C6": {
+   "buildings": 451,
+   "edges": 2231,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 13,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D8": {
+   "buildings": 455,
+   "edges": 2246,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 10,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F1": {
+   "buildings": 351,
+   "edges": 1602,
+   "partial": 4,
+   "holeM2": 87,
+   "recess": 24,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G2": {
+   "buildings": 223,
+   "edges": 1619,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 1,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H3": {
+   "buildings": 386,
+   "edges": 2562,
+   "partial": 4,
+   "holeM2": 43,
+   "recess": 24,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 5,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I4": {
+   "buildings": 144,
+   "edges": 1589,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 12,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "J6": {
+   "buildings": 306,
+   "edges": 2149,
+   "partial": 2,
+   "holeM2": 9,
+   "recess": 9,
+   "roofOnly": 0,
+   "after": 1,
+   "inwardUrbis": 4,
+   "inwardRepair": 0,
+   "inwardM2": 5
+  },
+  "K9": {
+   "buildings": 166,
+   "edges": 1547,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 3,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M5": {
+   "buildings": 28,
+   "edges": 240,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "O10": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "C7": {
+   "buildings": 527,
+   "edges": 2354,
+   "partial": 4,
+   "holeM2": 21,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "D9": {
+   "buildings": 171,
+   "edges": 897,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 3,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F10": {
+   "buildings": 37,
+   "edges": 201,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "G3": {
+   "buildings": 172,
+   "edges": 1457,
+   "partial": 4,
+   "holeM2": 16,
+   "recess": 4,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 3,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H4": {
+   "buildings": 259,
+   "edges": 2118,
+   "partial": 1,
+   "holeM2": 6,
+   "recess": 36,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I5": {
+   "buildings": 350,
+   "edges": 2411,
+   "partial": 15,
+   "holeM2": 155,
+   "recess": 63,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J7": {
+   "buildings": 383,
+   "edges": 2788,
+   "partial": 1,
+   "holeM2": 11,
+   "recess": 27,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 2,
+   "inwardRepair": 0,
+   "inwardM2": 2
+  },
+  "L10": {
+   "buildings": 1,
+   "edges": 4,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M6": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "O11": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "C8": {
+   "buildings": 410,
+   "edges": 1916,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 21,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 1,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "E1": {
+   "buildings": 443,
+   "edges": 2074,
+   "partial": 22,
+   "holeM2": 128,
+   "recess": 15,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "F2": {
+   "buildings": 519,
+   "edges": 2611,
+   "partial": 16,
+   "holeM2": 41,
+   "recess": 14,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 7,
+   "inwardRepair": 0,
+   "inwardM2": 1
+  },
+  "G4": {
+   "buildings": 224,
+   "edges": 1840,
+   "partial": 3,
+   "holeM2": 125,
+   "recess": 38,
+   "roofOnly": 0,
+   "after": 1,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "H5": {
+   "buildings": 265,
+   "edges": 1867,
+   "partial": 6,
+   "holeM2": 54,
+   "recess": 10,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "I6": {
+   "buildings": 729,
+   "edges": 4024,
+   "partial": 6,
+   "holeM2": 68,
+   "recess": 61,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "J8": {
+   "buildings": 188,
+   "edges": 1905,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 49,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "L11": {
+   "buildings": 2,
+   "edges": 28,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "M7": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  },
+  "O9": {
+   "buildings": 0,
+   "edges": 0,
+   "partial": 0,
+   "holeM2": 0,
+   "recess": 0,
+   "roofOnly": 0,
+   "after": 0,
+   "inwardUrbis": 0,
+   "inwardRepair": 0,
+   "inwardM2": 0
+  }
+ }
+}

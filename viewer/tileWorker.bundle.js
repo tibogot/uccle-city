@@ -531,6 +531,7 @@ function footprintIndex(bDoc) {
 }
 
 // viewer/wallRepair.js
+var RECESS_MIN = 0.45;
 var PLANE = 0.2;
 var MIN_COVER = 0.85;
 var MIN_HOLE = 1;
@@ -538,9 +539,15 @@ var STEP = 0.25;
 var MIN_EDGE = 0.25;
 var SHORT = 1;
 var SHORT_HOLE = 0.3;
-function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
-  const used = /* @__PURE__ */ new Set(), out = [], edges = [];
+function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null } = {}) {
+  const used = /* @__PURE__ */ new Set(), flip = /* @__PURE__ */ new Set(), out = [], edges = [], pend = [];
   const n = ring2.length - (ring2.length > 1 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1] ? 1 : 0);
+  let area23 = 0;
+  for (let i = 0; i < n; i++) {
+    const [x0, z0] = ring2[i], [x1, z1] = ring2[(i + 1) % n];
+    area23 += x0 * z1 - x1 * z0;
+  }
+  const out1 = area23 > 0 ? -1 : 1;
   for (let i = 0; i < n; i++) {
     const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % n], L2 = Math.hypot(bx - ax, bz - az);
     if (L2 < MIN_EDGE) continue;
@@ -565,8 +572,8 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
     if (!on.length) continue;
     const topAt = (u) => {
       let hi = -Infinity;
-      for (const { q } of on) for (let e = 0; e < 3; e++) {
-        const A = q[e], B = q[(e + 1) % 3];
+      for (const { q } of on) for (let e2 = 0; e2 < 3; e2++) {
+        const A = q[e2], B = q[(e2 + 1) % 3];
         if ((A[0] - u) * (B[0] - u) > 0) continue;
         const y = Math.abs(B[0] - A[0]) < 1e-6 ? Math.max(A[1], B[1]) : A[1] + (B[1] - A[1]) * (u - A[0]) / (B[0] - A[0]);
         if (y > hi) hi = y;
@@ -579,7 +586,10 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
       const l1 = ((B[1] - C[1]) * (u - C[0]) + (C[0] - B[0]) * (y - C[1])) / d, l2 = ((C[1] - A[1]) * (u - C[0]) + (A[0] - C[0]) * (y - C[1])) / d;
       return l1 >= -1e-4 && l2 >= -1e-4 && 1 - l1 - l2 >= -1e-4;
     };
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2, inL = pipR(mx + nx * 0.1, mz + nz * 0.1, ring2), inR = pipR(mx - nx * 0.1, mz - nz * 0.1, ring2);
+    const o1 = inL !== inR ? inL ? -1 : 1 : out1, onx = o1 * nx, onz = o1 * nz;
     let tot = 0, cov = 0, partyN = 0;
+    const open = [];
     for (let u = Math.min(STEP / 2, L2 / 2); u < L2; u += Math.min(STEP, L2 / 2)) {
       const top = topAt(u);
       if (!(top > base + 0.3)) continue;
@@ -591,44 +601,126 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
       for (let y = base + STEP / 2; y < top; y += STEP) {
         tot++;
         if (on.some(({ q }) => inTri2(u, y, q))) cov++;
+        else open.push([u, y]);
       }
     }
     if (partyN && tot === 0) continue;
     const cover = tot ? cov / tot : 1, hole = (tot - cov) * STEP * STEP;
-    const bad = cover < MIN_COVER && hole >= (L2 < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0;
-    edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, rebuilt: bad && fix });
-    if (!bad || !fix) continue;
-    for (const o of on) {
-      used.add(o.k);
-      if (!o.over) continue;
-      for (const [sg, c] of [[1, 0], [-1, L2]]) {
-        const poly = clipU(o.q, sg, c);
-        if (poly.length < 3) continue;
-        const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
-        for (let k2 = 1; k2 + 1 < W.length; k2++) {
-          const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
-          out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true });
+    const solid = roofs ? tris.concat(roofs) : tris;
+    const probe = (extra = []) => {
+      let depth2 = Infinity;
+      for (const [u, y] of open) {
+        const px = ax + tx * u, pz = az + tz * u, d = [-onx, 0, -onz];
+        let best = Infinity, face = 0;
+        for (const list of [solid, extra]) for (const t of list) {
+          const h = rayTri(px, y, pz, d, t.p);
+          if (h > 0.05 && h < best) {
+            best = h;
+            face = t.n[0] * d[0] + t.n[2] * d[2] < 0 ? 1 : -1;
+          }
+        }
+        if (face < 0) return { recess: false, depth: depth2 };
+        depth2 = Math.min(depth2, best);
+      }
+      return { recess: true, depth: depth2 };
+    };
+    const { recess, depth } = cover < MIN_COVER && open.length ? probe() : { recess: false, depth: Infinity };
+    const closed = recess && depth >= RECESS_MIN;
+    const bad = cover < MIN_COVER && hole >= (L2 < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0 && !closed;
+    edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, recess: closed, depth: recess ? Math.round(depth * 100) / 100 : null, out: [onx, onz], rebuilt: bad && fix });
+    if (fix && !bad && partyN === 0 && inL !== inR) for (const o of on) {
+      if (o.n[0] * onx + o.n[2] * onz >= -0.5) continue;
+      const p = tris[o.k].p, cx = (p[0][0] + p[1][0] + p[2][0]) / 3, cz = (p[0][2] + p[1][2] + p[2][2]) / 3, h = Math.hypot(o.n[0], o.n[2]);
+      if (pipR(cx + o.n[0] / h * 0.3, cz + o.n[2] / h * 0.3, ring2) && !pipR(cx - o.n[0] / h * 0.3, cz - o.n[2] / h * 0.3, ring2)) flip.add(o.k);
+    }
+    const e = edges[edges.length - 1];
+    pend.push({ i, e, probe, bad: bad && fix, closed, ret: fix && !bad && partyN === 0 && L2 < SHORT && hole >= SHORT_HOLE && cover < MIN_COVER, run: () => {
+      for (const o of on) {
+        used.add(o.k);
+        if (!o.over) continue;
+        for (const [sg, c] of [[1, 0], [-1, L2]]) {
+          const poly = clipU(o.q, sg, c);
+          if (poly.length < 3) continue;
+          const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
+          for (let k2 = 1; k2 + 1 < W.length; k2++) {
+            const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
+            out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true });
+          }
         }
       }
+      const steps = Math.max(1, Math.ceil(L2 / 0.5)), pts = [];
+      for (let s = 0; s <= steps; s++) {
+        const u = Math.min(L2, L2 * s / steps), uu = Math.min(L2 - Math.min(0.05, L2 / 4), Math.max(Math.min(0.05, L2 / 4), u));
+        const top = Math.max(topAt(uu), roofs ? roofY(ax + tx * uu - onx * 0.05, az + tz * uu - onz * 0.05, roofs) : -Infinity);
+        pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
+      }
+      const sideN = [o1 * nx, 0, o1 * nz];
+      for (let s = 0; s < steps; s++) {
+        const [x0, z0, y0] = pts[s], [x1, z1, y1] = pts[s + 1], mx2 = (x0 + x1) / 2, mz2 = (z0 + z1) / 2;
+        if (party && (party(mx2 + nx * 0.4, mz2 + nz * 0.4) || party(mx2 - nx * 0.4, mz2 - nz * 0.4))) continue;
+        const a = [x0, base, z0], b = [x1, base, z1], c = [x1, y1, z1], d = [x0, y0, z0];
+        const t1 = o1 > 0 ? [a, b, c] : [a, c, b], t2 = o1 > 0 ? [a, c, d] : [a, d, c];
+        out.push({ p: t1, n: sideN, area: 0.5 * Math.abs((y1 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+        out.push({ p: t2, n: sideN, area: 0.5 * Math.abs((y0 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+      }
+    } });
+  }
+  const byI = new Map(pend.map((q) => [q.i, q]));
+  for (const q of pend) if (q.ret && (byI.get((q.i + n - 1) % n)?.bad || byI.get((q.i + 1) % n)?.bad)) {
+    q.bad = true;
+    q.e.rebuilt = true;
+    q.e.recess = false;
+  }
+  for (const q of pend) if (q.bad) q.run();
+  for (let pass = 0; pass < 2; pass++) {
+    const extra = out.filter((t) => t.rebuilt);
+    if (!extra.length) break;
+    let more = false;
+    for (const q of pend) if (fix && q.closed && !q.bad && !q.probe(extra).recess) {
+      q.bad = more = true;
+      q.e.rebuilt = true;
+      q.e.recess = false;
+      q.run();
     }
-    const steps = Math.max(1, Math.ceil(L2)), pts = [];
-    for (let s = 0; s <= steps; s++) {
-      const u = Math.min(L2, L2 * s / steps), top = topAt(Math.min(L2 - 1e-3, Math.max(1e-3, u)));
-      pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
-    }
-    const sideN = [nx, 0, nz];
-    for (let s = 0; s < steps; s++) {
-      const [x0, z0, y0] = pts[s], [x1, z1, y1] = pts[s + 1], mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
-      if (party && (party(mx + nx * 0.4, mz + nz * 0.4) || party(mx - nx * 0.4, mz - nz * 0.4))) continue;
-      const a = [x0, base, z0], b = [x1, base, z1], c = [x1, y1, z1], d = [x0, y0, z0];
-      out.push({ p: [a, b, c], n: sideN, area: 0.5 * Math.abs((y1 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
-      out.push({ p: [a, c, d], n: sideN, area: 0.5 * Math.abs((y0 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
-    }
+    if (!more) break;
   }
   tris.forEach((t, k) => {
-    if (!used.has(k)) out.push(t);
+    if (used.has(k)) return;
+    out.push(flip.has(k) ? { ...t, p: [t.p[0], t.p[2], t.p[1]], n: [-t.n[0], -t.n[1], -t.n[2]], flipped: true } : t);
   });
   return { tris: out, edges };
+}
+function rayTri(x, y, z, d, p) {
+  const [A, B, C] = p, e1x = B[0] - A[0], e1y = B[1] - A[1], e1z = B[2] - A[2], e2x = C[0] - A[0], e2y = C[1] - A[1], e2z = C[2] - A[2];
+  const hx = d[1] * e2z - d[2] * e2y, hy = d[2] * e2x - d[0] * e2z, hz = d[0] * e2y - d[1] * e2x;
+  const det = e1x * hx + e1y * hy + e1z * hz;
+  if (Math.abs(det) < 1e-10) return Infinity;
+  const f = 1 / det, sx = x - A[0], sy = y - A[1], sz = z - A[2], u = f * (sx * hx + sy * hy + sz * hz);
+  if (u < -1e-4 || u > 1 + 1e-4) return Infinity;
+  const qx = sy * e1z - sz * e1y, qy = sz * e1x - sx * e1z, qz = sx * e1y - sy * e1x, v = f * (d[0] * qx + d[1] * qy + d[2] * qz);
+  if (v < -1e-4 || u + v > 1 + 1e-4) return Infinity;
+  const t = f * (e2x * qx + e2y * qy + e2z * qz);
+  return t > 0 ? t : Infinity;
+}
+function roofY(x, z, roofs) {
+  let hi = -Infinity;
+  for (const t of roofs) {
+    if (t.n[1] < 0.1) continue;
+    const [A, B, C] = t.p, d = (B[2] - C[2]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[2] - C[2]);
+    if (Math.abs(d) < 1e-9) continue;
+    const l1 = ((B[2] - C[2]) * (x - C[0]) + (C[0] - B[0]) * (z - C[2])) / d, l2 = ((C[2] - A[2]) * (x - C[0]) + (A[0] - C[0]) * (z - C[2])) / d, l3 = 1 - l1 - l2;
+    if (l1 < -1e-3 || l2 < -1e-3 || l3 < -1e-3) continue;
+    hi = Math.max(hi, l1 * A[1] + l2 * B[1] + l3 * C[1]);
+  }
+  return hi;
+}
+function pipR(x, z, r) {
+  let c = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c;
+  }
+  return c;
 }
 function clipU(poly, sg, c) {
   const out = [], f = (p) => sg * (p[0] - c);
@@ -1440,7 +1532,12 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       if (o) all.push(o);
     }
     if (opts.wallFix !== false && all.length) {
-      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0 });
+      const roofTris = [];
+      for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+        const o = triOf(P, I2, t);
+        if (o) roofTris.push(o);
+      }
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris });
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) {
         all = r.tris;
@@ -2508,7 +2605,7 @@ function coverSDF(feats, bounds, cov) {
   return { data, stats: { pathSegments: segs, scrubPx: scrub } };
 }
 
-// ../uccle-city/tools/worker/node_modules/meshoptimizer/meshopt_simplifier.js
+// tools/worker/node_modules/meshoptimizer/meshopt_simplifier.js
 var MeshoptSimplifier = (function() {
   var wasm = "b9H79Tebbbe:6eO9Geueu9Geub9Gbb9Gsuuuuuuuuuuuu99uueu9Gvuuuuub9Gruuuuuuub9Gouuuuuue999Gvuuuuueu9Gzuuuuuuuuuuu99uuuub9Gquuuuuuu99uueu9GPuuuuuuuuuuu99uueu9Gquuuuuuuu99ueu9Gruuuuuu99eu9Gwuuuuuu99ueu9Giuuue999Gluuuueu9Gluuuub9GiuuueuiLQdilvorlwDiqkxmPszbHHbelve9Weiiviebeoweuecj:Gdkr:Bdxo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bbz9TW79O9V9Wt9F79P9T9W29P9M95bw8E9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9OcttV9P9I91tW7bD8A9TW79O9V9Wt9F79P9T9W29P9M959x9Pt9O9v9W9K9HtWbqQ9TW79O9V9Wt9F79P9T9W29P9M959t29V9W9W95bkX9TW79O9V9Wt9F79P9T9W29P9M959qV919UWbxQ9TW79O9V9Wt9F79P9T9W29P9M959q9V9P9Ut7bmX9TW79O9V9Wt9F79P9T9W29P9M959t9J9H2WbPa9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94SWt9J9O9sW9T9H9Wbs59TW79O9V9Wt9F9NW9UWV9HtW9q9V79Pt9P9V9U9sW9T9H9Wbzl79IV9RbHDwebcekdCXq;y;WeQdbk;r:herYue99iuY99Xue9:D998Jjjjjbcj;sb9Rgs8Kjjjjbcbhzasc:Cefcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkdnamcdGTmbalcrfci4cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egecdtfaHBdbasaecefBd;8ecbhlcbhednadTmbabheadhOinaHaeydbci4fcb86bbaeclfheaOcufgOmbkcbhlabheadhOinaHaeydbgAci4fgCaCRbbgCceaAcrGgAtV86bbaCcu7aA4ceGalfhlaeclfheaOcufgOmbkcualcdtalcFFFFi0Ehekaecbyd1:H:cjbHjjjjbbhzasc:Cefasyd;8egecdtfazBdbasaecefBd;8ealcd4alfhOcehHinaHgecethHaeaO6mbkcbhXcuaecdtgOaecFFFFi0Ecbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8eaHcFeaOz:tjjjbhQdnadTmbaecufhLcbhKindndnaQabaKcdtfgYydbgAc:v;t;h;Ev2aLGgOcdtfgCydbgHcuSmbceheinazaHcdtfydbaASmdaOaefhHaecefheaQaHaLGgOcdtfgCydbgHcu9hmbkkazaXcdtfaABdbaCaXBdbaXhHaXcefhXkaYaHBdbaKcefgKad9hmbkkaQcbyd:m:H:cjbH:bjjjbbasasyd;8ecufBd;8ekcbh8AcualcefgecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbhLasc:Cefasyd;8egecdtfaLBdbasaLBdNeasaecefBd;8ecuadcitadcFFFFe0Ecbyd1:H:cjbHjjjjbbhEasc:Cefasyd;8egecdtfaEBdbasaEBd:yeasaecefBd;8eascNefabadalcbz:cjjjbcualcdtgealcFFFFi0Eg3cbyd1:H:cjbHjjjjbbhOasc:Cefasyd;8egHcdtfaOBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhQasc:Cefasyd;8egHcdtfaQBdbasaHcefBd;8eaOaQaialavazasc:Cefz:djjjbalcbyd1:H:cjbHjjjjbbhYasc:Cefasyd;8egHcdtfaYBdbasaHcefBd;8ea3cbyd1:H:cjbHjjjjbbhHasc:Cefasyd;8egAcdtfaHBdbasaAcefBd;8ea3cbyd1:H:cjbHjjjjbbhAasc:Cefasyd;8egCcdtfaABdbasaCcefBd;8eaHcFeaez:tjjjbh5aAcFeaez:tjjjbh8EdnalTmbindnaLa8AgAcefg8AcdtfydbgCaLaAcdtgefydbgHSmbaCaH9Rh8FaEaHcitfhaa8Eaefhha5aefhKcbhCindndnaaaCcitfydbgXaA9hmbaKaABdbahaABdbxekdnaLaXcdtggfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheinaeydbaASmdaecwfheaHcufgHmbkka8EagfgeaAaXaeydbcuSEBdbaKaXaAaKydbcuSEBdbkaCcefgCa8F9hmbkka8Aal9hmbkaOhHaQhAa5hXa8EhCcbheindndnaeaHydbgK9hmbdnaeaAydbgK9hmbaXydbhKdnaCydbg8Fcu9hmbaKcu9hmbaYaefcb86bbxikdna8FcuSmbaKcuSmbaea8FSmbaOa8FcdtfydbaOaKcdtfydb9hmbaYaefcd86bbxikaYaefhadnaea8FSmbaeaKSmbaace86bbxikaacl86bbxdkdnaeaQaKcdtg8Ffydb9hmbdnaCydbgacuSmbaeaaSmbaXydbggcuSmbaeagSmba8Ea8FfydbghcuSmbahaKSmba5a8Ffydbg8FcuSmba8FaKSmbdnaOaacdtfydbgKaOa8Fcdtfydb9hmbaKaOagcdtfydbg8FSmba8FaOahcdtfydb9hmbaYaefcd86bbxlkaYaefcl86bbxikaYaefcl86bbxdkaYaefcl86bbxekaYaefaYaKfRbb86bbkaHclfhHaAclfhAaXclfhXaCclfhCalaecefge9hmbkdnamcaGTmbcbh8JindndnaYa8Jfg8KRbbg8Lc9:fPibebekdndndnaOa8Jcdtfydbgea8J9hmbdnaqmbcbh8FxdkdnazTmbcbh8Fa8JheinaqazaecdtgefydbfRbbce4a8FVceGh8FaQaefydbgea8J9hmbxikkcbh8Fa8JheinaqaefRbbce4a8FVceGh8FaQaecdtfydbgea8J9hmbxdkkaYaefRbbhexeka8JheindnaLaecdtg8AfgeclfydbgHaeydbgeSmbaHae9RhgaEaecitfhhaOa8AfhacbhKinahaKcitfydbgXhednindnaLaecdtgCfgeclfydbgHaeydbgeSmbaHae9RhHaEaecitfheaaydbhAdninaOaeydbcdtfydbaASmeaecwfheaHcufgHTmdxbkkcbhexdkaQaCfydbgeaX9hmbkceheka8FaeVh8FaKcefgKag9hmbkkaQa8Afydbgea8J9hmbka8Lcia8FceGEheka8Kae86bbka8Jcefg8Jal9hmbkkdnaqTmbdndnazTmbazheaOhHalhAindnaqaeydbfRbbceGTmbaYaHydbfcl86bbkaeclfheaHclfhHaAcufgAmbxdkkaqheaOhHalhAindnaeRbbceGTmbaYaHydbfcl86bbkaecefheaHclfhHaAcufgAmbkkaOhealhAaYhHindnaYaeydbfRbbcl9hmbaHcl86bbkaeclfheaHcefhHaAcufgAmbkkamceGTmbaYhealhHindnaeRbbce9hmbaecl86bbkaecefheaHcufgHmbkkcbh8Mcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh8Nasc:Cefasyd;8egecdtfa8NBdbasaecefBd;8eascbBd:qeas9cb83i1ea8Naialavazasc1efz:ejjjbhydndnaDmbcbh8PcbhCxekcbhCawhecbhHindnaeIdbJbbbb9ETmbasaCcdtfaHBdbaCcefhCkaeclfheaDaHcefgH9hmbkcuaCal2gecdtaecFFFFi0Ecbyd1:H:cjbHjjjjbbh8Pasc:Cefasyd;8egecdtfa8PBdbasaecefBd;8ealTmbdnaCmbcbhCxekarcd4hgdnazTmbaCcdthhcbh8Fa8Phainaoaza8Fcdtfydbag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbxdkkaCcdthhcbh8Fa8Phainaoa8Fag2cdtfhKasheaahHaChAinaHaKaeydbcdtgXfIdbawaXfIdbNUdbaeclfheaHclfhHaAcufgAmbkaaahfhaa8Fcefg8Fal9hmbkkcualc8S2gHalc;D;O;f8U0EgXcbyd1:H:cjbHjjjjbbheasc:Cefasyd;8egAcdtfaeBdbasaAcefBd;8eaecbaHz:tjjjbhIcbh8RcbhgdnaCTmbcbh8MaXcbyd1:H:cjbHjjjjbbhgasc:Cefasyd;8egecdtfagBdbasaecefBd;8eagcbaHz:tjjjb8AcuaCal2gecltgHaecFFFFb0Ecbyd1:H:cjbHjjjjbbh8Rasc:Cefasyd;8egecdtfa8RBdbasaecefBd;8ea8RcbaHz:tjjjb8AamcjjjjdGTmbcualcltgealcFFFFb0Ecbyd1:H:cjbHjjjjbbh8Masc:Cefasyd;8egHcdtfa8MBdbasaHcefBd;8ea8Mcbaez:tjjjb8AkdnadTmbcbhKabhHina8NaHclfydbg8Fcx2fgeIdba8NaHydbgacx2fgAIdbg8S:tgRa8NaHcwfydbghcx2fgXIdlaAIdlg8U:tg8VNaeIdla8U:tg8WaXIdba8S:tg8XN:tg8Ya8YNa8WaXIdwaAIdwg8Z:tg80NaeIdwa8Z:tg8Wa8VN:tg81a81Na8Wa8XNaRa80N:tg80a80NMMg8V:rhBa8Yh8Xa80h8Wa81hRdna8VJbbbb9EgATmba8YaB:vh8Xa80aB:vh8Wa81aB:vhRkaIaOaacdtfydbgXc8S2fgeaRaB:rg8VaRNNg83aeIdbMUdbaea8Wa8Va8WNgUNg85aeIdlMUdlaea8Xa8Va8XNg86Ng87aeIdwMUdwaeaRaUNgUaeIdxMUdxaea86aRNg88aeIdzMUdzaea8Wa86Ng89aeIdCMUdCaeaRa8Va8Xa8ZNaRa8SNa8Ua8WNMM:mg8:Ng86NgRaeIdKMUdKaea8Wa86Ng8WaeId3MUd3aea8Xa86Ng8XaeIdaMUdaaea86a8:Ng86aeId8KMUd8Kaea8VaeIdyMUdyaIaOa8Fcdtfydbg8Fc8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdyaIaOahcdtfydbgac8S2fgea83aeIdbMUdbaea85aeIdlMUdlaea87aeIdwMUdwaeaUaeIdxMUdxaea88aeIdzMUdzaea89aeIdCMUdCaeaRaeIdKMUdKaea8WaeId3MUd3aea8XaeIdaMUdaaea86aeId8KMUd8Kaea8VaeIdyMUdydna8MTmbdnaATmba8YaB:vh8Ya80aB:vh80a81aB:vh81ka8MaXcltfgeaBJbbbZNgRa80Ng8VaeIdlMUdlaeaRa8YNg8WaeIdwMUdwaeaRa81Ng8XaeIdbMUdbaeaRa8S:ma81Na8Ua80N:ta8Za8YN:tNgRaeIdxMUdxa8Ma8Fcltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxa8Maacltfgea8VaeIdlMUdlaea8WaeIdwMUdwaea8XaeIdbMUdbaeaRaeIdxMUdxkaHcxfhHaKcifgKad6mbkkdnalTmbJq;x8J88J;n;m;m89J:v:;;w8ZamczGEamc;abGEh80cbhHaOhXazhKaIhea8NhAindnaHaXydb9hmbaHh8FdnazTmbaKydbh8Fka80hRdnaqTmbJbbjZa80aqa8FfRbbclGEhRkaecxfg8Fa8FIdbJbbbbMUdbaeczfg8Fa8FIdbJbbbbMUdbaecCfg8Fa8FIdbJbbbbMUdbaeaRaecyfg8FIdbg8YNgRaeIdbMUdbaeclfgaaRaaIdbMUdbaecwfgaaRaaIdbMUdbaecKfgaaaIdbaAIdbg8WaRN:tUdbaAcwfIdbh8Vaec3fgaaaIdbaRaAclfIdbg8XN:tUdbaecafgaaaIdbaRa8VN:tUdbaec8KfgaIdbh81a8Fa8YaRMUdbaaa81aRa8Va8VNa8Wa8WNa8Xa8XNMMNMUdbkaXclfhXaKclfhKaec8SfheaAcxfhAalaHcefgH9hmbkkdnadTmbcbh8Aabhainaba8Acdtfh8FcbhHinaYa8FaHc:G:G:cjbfydbcdtfydbgAfRbbhedndnaYaaaHfydbgXfRbbgKc99fcFeGcpe0mbaec99fcFeGc;:e6mekdnaKcufcFeGce0mba5aXcdtfydbaA9hmekdnaecufcFeGce0mba8EaAcdtfydbaX9hmekJbbacJbbacJbbbZaecFeGceSEaKcFeGceSEhUdna8Na8FaHc:K:G:cjbfydbcdtfydbcx2fgeIdwa8NaXcx2fgKIdwg86:tg8Sa8NaAcx2fghIdwa86:tg8Xa8XNahIdbaKIdbg8U:tg80a80NahIdlaKIdlg8Z:tg8Va8VNMMg81Na8Xa8Sa8XNaeIdba8U:tg83a80Na8VaeIdla8Z:tg85NMMg8WN:tg8Ya8YNa83a81Na80a8WN:tgRaRNa85a81Na8Va8WN:tg8Wa8WNMMgBJbbbb9ETmba8YaB:rgB:vh8Ya8WaB:vh8WaRaB:vhRkaUa81:rNgBa8Ya86NaRa8UNa8Za8WNMM:mg81Ng87a81Nh88a80a85Na8Va83N:tg81a81Na8Va8SNa8Xa85N:tg8Va8VNa8Xa83Na80a8SN:tg8Xa8XNMMg83:rh80a8Ya87Nh85a8Wa87Nh89aRa87Nh87a8WaBa8YNg8SNh8:a8SaRNhZaRaBa8WNgnNhca8Ya8SNh8Ya8WanNh8WaRaBaRNNh8Sdna83Jbbbb9ETmba81a80:vh81a8Xa80:vh8Xa8Va80:vh8VkaIaOaXcdtfydbc8S2fgeaeIdba8Sa8VaUa80:rNgRa8VNNMg80MUdbaea8Wa8XaRa8XNg8SNMg83aeIdlMUdlaea8Ya81aRa81Ng8WNMg8YaeIdwMUdwaeaca8Va8SNMg8SaeIdxMUdxaeaZa8Wa8VNMgUaeIdzMUdzaea8:a8Xa8WNMg8WaeIdCMUdCaea87a8VaRa81a86Na8Va8UNa8Za8XNMMg86:mNgRNMg8VaeIdKMUdKaea89a8XaRNMg8XaeId3MUd3aea85a81aRNMg81aeIdaMUdaaea88a86aRN:tgRaeId8KMUd8KaeaBaeIdyMUdyaIaOaAcdtfydbc8S2fgea80aeIdbMUdbaea83aeIdlMUdlaea8YaeIdwMUdwaea8SaeIdxMUdxaeaUaeIdzMUdzaea8WaeIdCMUdCaea8VaeIdKMUdKaea8XaeId3MUd3aea81aeIdaMUdaaeaRaeId8KMUd8KaeaBaeIdyMUdykaHclfgHcx9hmbkaacxfhaa8Acifg8Aad6mbkaCTmbcbhainJbbbbh80a8Nabaacdtfgeclfydbg8Fcx2fgHIdwa8Naeydbghcx2fgAIdwg8Z:tg8Va8VNaHIdbaAIdbg83:tg8Wa8WNaHIdlaAIdlg85:tg8Xa8XNMMg8Sa8Naecwfydbg8Acx2fgeIdwa8Z:tg8YNa8Va8YNa8WaeIdba83:tg81Na8XaeIdla85:tgBNMMgRa8VN:tJbbbbJbbjZa8Sa8Ya8YNa81a81NaBaBNMMg8UNaRaRN:tg86:va86Jbbbb9BEg86Nh88a8Ua8VNaRa8YN:ta86Nh89a8SaBNaRa8XN:ta86Nh8:a8Ua8XNaRaBN:ta86NhZa8Sa81NaRa8WN:ta86Nhna8Ua8WNaRa81N:ta86Nhca8WaBNa8Xa81N:tgRaRNa8Xa8YNa8VaBN:tgRaRNa8Va81Na8Wa8YN:tgRaRNMM:rJbbbZNhRa8PahaC2g8JcdtfhHa8Pa8AaC2gDcdtfhAa8Pa8FaC2g8KcdtfhXa8Z:mh9ca85:mhJa83:mh9eascjdfheaChKJbbbbhBJbbbbh86Jbbbbh8SJbbbbh8UJbbbbh8ZJbbbbh83Jbbbbh85Jbbbbh87JbbbbhUinaecwfaRa89aXIdbaHIdbg8Y:tg8XNa88aAIdba8Y:tg81NMg8VNUdbaeclfaRaZa8XNa8:a81NMg8WNUdbaeaRaca8XNana81NMg8XNUdbaecxfaRa9ca8VNaJa8WNa8Ya9ea8XNMMMg8YNUdbaRa8Va8WNNa8ZMh8ZaRa8Va8XNNa8UMh8UaRa8Wa8XNNa8SMh8SaRa8Ya8YNNaUMhUaRa8Va8YNNa87Mh87aRa8Wa8YNNa85Mh85aRa8Xa8YNNa83Mh83aRa8Va8VNNa86Mh86aRa8Wa8WNNaBMhBaRa8Xa8XNNa80Mh80aHclfhHaXclfhXaAclfhAaeczfheaKcufgKmbkagahc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Fc8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdyaga8Ac8S2fgea80aeIdbMUdbaeaBaeIdlMUdlaea86aeIdwMUdwaea8SaeIdxMUdxaea8UaeIdzMUdzaea8ZaeIdCMUdCaea83aeIdKMUdKaea85aeId3MUd3aea87aeIdaMUdaaeaUaeId8KMUd8KaeaRaeIdyMUdya8Ra8Jcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8Ra8Kcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8RaDcltfh8FcbhHaChXina8FaHfgeascjdfaHfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbkaacifgaad6mbkkcbhAdndnamcwGgTmbJbbbbh8ScbhScbh9hcbh9ixekcbhSa3cbyd1:H:cjbHjjjjbbh9iasc:Cefasyd;8egecdtfa9iBdbasaecefBd;8ecua9ialabadaOz:fjjjbgXcltaXcjjjjiGEcbyd1:H:cjbHjjjjbbh9hasc:Cefasyd;8egecdtfa9hBdbasaecefBd;8ea9haXa9ia8Nalz:gjjjbJFFuuh8SaXTmba9hheaXhHinaeIdbgRa8Sa8SaR9EEh8SaeclfheaHcufgHmbkaXhSkdnalTmbaLclfheaLydbhXaYhHalhKcbhAincbaeydbg8FaX9RaHRbbcpeGEaAfhAaHcefhHaeclfhea8FhXaKcufgKmbkaAce4hAkcuadaA9Rcifg6cx2a6c;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbh9kasc:Cefasyd;8egecdtfa9kBdbasaecefBd;8ecua6cdta6cFFFFi0Ecbyd1:H:cjbHjjjjbbh0asc:Cefasyd;8egecdtfa0BdbasaecefBd;8ea3cbyd1:H:cjbHjjjjbbh9masc:Cefasyd;8egecdtfa9mBdbasaecefBd;8ealcbyd1:H:cjbHjjjjbbh9nasc:Cefasyd;8egecdtfa9nBdbasaecefBd;8eaxaxNayJbbjZamclGEgZaZN:vh87JbbbbhUdnadak9nmbdna6ci6mbaCclth9oa9kcwfh9pJbbbbh85JbbbbhUinascNefabadalaOz:cjjjbabh8Acbh9qcbh9rinaba9rcdtfhDcbheindnaOa8AaefydbgAcdtghfydbgXaOaDaec:W:G:cjbfydbcdtfydbgHcdtg8JfydbgKSmbaYaHfRbbgacv2aYaAfRbbg8FfRb;a:G:cjbg8La8Fcv2aafg8KRb;a:G:cjbg3VcFeGTmbdnaKaX9nmba8KRb;G:G:cjbcFeGmekdna8FcufcFeGce0mbaaTmba5ahfydbaH9hmekdna8FTmbaacufcFeGce0mba8Ea8JfydbaA9hmeka9ka9qcx2fgXaHaAa3cFeGgKEBdlaXaAaHaKEBdbaXaKa8LGcb9hBdwa9qcefh9qkaeclfgecx9hmbkdna9rcifg9rad9pmba8Acxfh8Aa9qcifa69nmekka9qTmdcbh8KinaIaOa9ka8Kcx2fghydbgKcdtgXfydbg8Ac8S2fgeIdwa8Nahydlg8Fcx2fgHIdwg8WNaeIdzaHIdbg8XNaeIdaMgRaRMMa8WNaeIdlaHIdlg8YNaeIdCa8WNaeId3MgRaRMMa8YNaeIdba8XNaeIdxa8YNaeIdKMgRaRMMa8XNaeId8KMMM:lhRJbbbbJbbjZaeIdyg8V:va8VJbbbb9BEh8VdndnahydwgDmbJFFuuh86xekJbbbbJbbjZaIaOa8Fcdtfydbc8S2fgeIdyg81:va81Jbbbb9BEaeIdwa8NaKcx2fgHIdwg81NaeIdzaHIdbg80NaeIdaMgBaBMMa81NaeIdlaHIdlgBNaeIdCa81NaeId3Mg81a81MMaBNaeIdba80NaeIdxaBNaeIdKMg81a81MMa80NaeId8KMMM:lNh86ka8VaRNhBdnaCTmbagaKc8S2fgAIdwa8WNaAIdza8XNaAIdaMgRaRMMa8WNaAIdla8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8Pa8FaC2gacdtfhHa8RaKaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8Vxekaga8Fc8S2fgAIdwa8NaKcx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8RaacltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86dndndnaYaKfRbbc9:fPddbekaQaXfydbgXaKSmbaOa8Fcdtfydbh8Jindndna5aXcdtgafydbgecuSmbaOaecdtfydba8JSmekdna8EaafydbgecuSmbaOaecdtfydba8JSmeka8FhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkaBaR:lMhBaQaafydbgXaK9hmbkkaYa8FfRbbci9hmeaDTmeaQa8FcdtfydbgXa8FSmeindndna5aXcdtgafydbgecuSmbaOaecdtfydba8ASmekdna8EaafydbgecuSmbaOaecdtfydba8ASmekaKhekagaXc8S2fgAIdwa8Naecx2fgHIdwg8WNaAIdzaHIdbg8XNaAIdaMgRaRMMa8WNaAIdlaHIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaeaC2cdtfhHa8RaXaC2cltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbka86aR:lMh86aQaafydbgXa8F9hmbxdkkdna8Ea5a5aXfydba8FSEaQaXfydbgacdtfydbgXcu9hmbaQa8FcdtfydbhXkagaac8S2fgAIdwa8NaXcx2fgeIdwg8WNaAIdzaeIdbg8XNaAIdaMgRaRMMa8WNaAIdlaeIdlg8YNaAIdCa8WNaAId3MgRaRMMa8YNaAIdba8XNaAIdxa8YNaAIdKMgRaRMMa8XNaAId8KMMMhRa8PaXaC2g8AcdtfhHa8RaaaC2g8JcltfheaAIdyh81aChAinaHIdbg8Va8Va81NaecxfIdba8WaecwfIdbNa8XaeIdbNa8YaeclfIdbNMMMg8Va8VM:tNaRMhRaHclfhHaeczfheaAcufgAmbkdndnaDmbJbbbbh8VxekagaXc8S2fgAIdwa8Naacx2fgeIdwg8XNaAIdzaeIdbg8YNaAIdaMg8Va8VMMa8XNaAIdlaeIdlg81NaAIdCa8XNaAId3Mg8Va8VMMa81NaAIdba8YNaAIdxa81NaAIdKMg8Va8VMMa8YNaAId8KMMMh8Va8Pa8JcdtfhHa8Ra8AcltfheaAIdyh80aChAinaHIdbg8Wa8Wa80NaecxfIdba8XaecwfIdbNa8YaeIdbNa81aeclfIdbNMMMg8Wa8WM:tNa8VMh8VaHclfhHaeczfheaAcufgAmbka8V:lh8VkaBaR:lMhBa86a8VMh86kaha86aBa86aB9DgeEUdwahaKa8FaeaDcb9hGgeEBdlaha8FaKaeEBdba8Kcefg8Ka9q9hmbkascjdfcbcj;qbz:tjjjb8Aa9phea9qhHinascjdfaeydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbcefBdbaecxfheaHcufgHmbkcbhecbhHinascjdfaefgAydbhXaAaHBdbaXaHfhHaeclfgecj;qb9hmbkcbhea9phHinascjdfaHydbcA4cF8FGgAcFAaAcFA6EcdtfgAaAydbgAcefBdba0aAcdtfaeBdbaHcxfhHa9qaecefge9hmbkadak9RgAci9Uh9sdnalTmbcbhea9mhHinaHaeBdbaHclfhHalaecefge9hmbkkcbh9ta9ncbalz:tjjjbh3aAcO9Uh9ua9sce4h9rcbh8Lcbh8Kdnina9ka0a8Kcdtfydbcx2fg8JIdwgRa879Emea8La9s9pmeJFFuuh8Vdna9ra9q9pmba9ka0a9rcdtfydbcx2fIdwJbb;aZNh8VkdnaRa8V9ETmbaRaU9ETmba8La9u0mdkdna3aOa8JydlgDcdtg9vfg8AydbgAfg9wRbba3aOa8Jydbghcdtg9xfydbgefg9yRbbVmbaYahfRbbh9zdndnaLaecdtfgHclfydbgXaHydbgHSmbaXaH9RhXa8NaAcx2fh8Fa8Naecx2fhaaEaHcitfheindna9maeydbcdtfydbgHaASmba9maeclfydbcdtfydbgKaASmbaHaKSmba8NaKcx2fgKIdba8NaHcx2fgHIdbg8W:tgRaaIdlaHIdlg8X:tg80NaKIdla8X:tg8VaaIdba8W:tgBN:tg8YaRa8FIdla8X:tg86Na8Va8FIdba8W:tg8UN:tg8XNa8VaaIdwaHIdwg81:tg8ZNaKIdwa81:tg8Wa80N:tg80a8Va8FIdwa81:tg83Na8Wa86N:tg8VNa8WaBNaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9FmikaecwfheaXcufgXmbkkdndndndna9zc9:fPdebdkahheina8AydbhAdndna5aecdtgHfydbgecuSmbaOaecdtfydbaASmekdna8EaHfydbgecuSmbaOaecdtfydbaASmekaDheka9maHfaeBdbaQaHfydbgeah9hmbxikkdna8Ea5a5a9xfydbaDSEaQa9xfydbghcdtfydbgecu9hmbaQa9vfydbheka9ma9xfaDBdbaehDka9mahcdtfaDBdbka9yce86bba9wce86bba8JIdwgRaUaUaR9DEhUa9tcefh9tcecda9zceSEa8Lfh8Lxeka9rcefh9rka8Kcefg8Ka9q9hmbkka9tTmddnalTmbcbh8Fcbhhindna9mahcdtgefydbgAahSmbaOaAcdtfydbh8AdnahaOaefydb9hg8JmbaIa8Ac8S2fgeaIahc8S2fgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya8MTmba8Ma8Acltfgea8MahcltfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxkaCTmbagaAc8S2fgeagahc8S2gDfgHIdbaeIdbMUdbaeaHIdlaeIdlMUdlaeaHIdwaeIdwMUdwaeaHIdxaeIdxMUdxaeaHIdzaeIdzMUdzaeaHIdCaeIdCMUdCaeaHIdKaeIdKMUdKaeaHId3aeId3MUd3aeaHIdaaeIdaMUdaaeaHId8KaeId8KMUd8KaeaHIdyaeIdyMUdya9oaA2haa8RhHaChXinaHaafgeaHa8FfgAIdbaeIdbMUdbaeclfgKaAclfIdbaKIdbMUdbaecwfgKaAcwfIdbaKIdbMUdbaecxfgeaAcxfIdbaeIdbMUdbaHczfhHaXcufgXmbka8JmbJbbbbJbbjZaIaDfgeIdygR:vaRJbbbb9BEaeIdwa8Na8Acx2fgHIdwgRNaeIdzaHIdbg8VNaeIdaMg8Wa8WMMaRNaeIdlaHIdlg8WNaeIdCaRNaeId3MgRaRMMa8WNaeIdba8VNaeIdxa8WNaeIdKMgRaRMMa8VNaeId8KMMM:lNgRa85a85aR9DEh85ka8Fa9ofh8Fahcefghal9hmbkcbhHa5heindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa5aXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkcbhHa8EheindnaeydbgAcuSmbdnaHa9maAcdtgXfydbgA9hmbcuhAa8EaXfydbgXcuSmba9maXcdtfydbhAkaeaABdbkaeclfhealaHcefgH9hmbkka85aUaCEh85cbhHabhecbhAindnaOa9maeydbcdtfydbg8FcdtfydbgXaOa9maeclfydbcdtfydbgacdtfydbgKSmbaXaOa9maecwfydbcdtfydbg8AcdtfydbghSmbaKahSmbabaHcdtfgXa8FBdbaXcwfa8ABdbaXclfaaBdbaHcifhHkaecxfheaAcifgAad6mbkdndnaTmbaHhdxekdnaHak0mbaHhdxekdna8Sa859FmbaHhdxekJFFuuh8ScbhdabhecbhAindna9ha9iaeydbgXcdtfydbcdtfIdbgRa859ETmbaeclf8Pdbh9AabadcdtfgKaXBdbaKclfa9A83dbaRa8Sa8SaR9EEh8SadcifhdkaecxfheaAcifgAaH6mbkkadak0mbxdkkascNefabadalaOz:cjjjbkdndnadak0mbadhaxekdnaTmbadhaxekdna8Sa879FmbadhaxekcehKina8SJbb;aZNgRa87aRa879DEh8WJbbbbhRdnaSTmba9hheaShHinaeIdbg8VaRa8Va8W9FEaRa8VaR9EEhRaeclfheaHcufgHmbkkJFFuuh8ScbhaabhecbhHindna9ha9iaeydbgAcdtfydbcdtfIdbg8Va8W9ETmbaeclf8Pdbh9AabaacdtfgXaABdbaXclfa9A83dba8Va8Sa8Sa8V9EEh8SaacifhakaecxfheaHcifgHad6mbkdnaKaaad9hVceGmbadhaxdkaRaUaUaR9DEhUaaak9nmecbhKaahda8Sa879FmbkkdnamcjjjjdGTmba9ncbalz:tjjjbh8AdnaaTmbabheaahHina8AaeydbgAfce86bba8AaOaAcdtfydbfce86bbaeclfheaHcufgHmbkkascNefabaaalaOz:cjjjbdndnalTmbcbhXindna8AaXfRbbTmbdnaYaXfRbbgecl0mbceaetcQGmekdnaOaXcdtg8FfydbgeaXSmba8NaXcx2fgHa8Naecx2fgeydwBdwaHae8Pdb83dbxekaIaXc8S2fgKIdygcacJL:3;rUNgRMh87aKIdwg9BaRMh8SaKIdlg9CaRMh8UaKIdbg9DaRMh81aKIdag9EaRa8NaXcx2fg8JIdwg88N:th8ZaKId3g9FaRa8JIdlg89N:th83aKIdKg9Ga8JIdbg8:aRN:th80JbbbbhnaKIdCg9HJbbbbMh85aKIdzg9IJbbbbMhBaKIdxg9JJbbbbMh86dndnaCTmbaXhAinJbbbba87agaAc8S2fgHIdygR:vaRJbbbb9BEhRa8RaAaC2cltfheaHIdaa87Na8ZMh8ZaHId3a87Na83Mh83aHIdKa87Na80Mh80aHIdCa87Na85Mh85aHIdza87NaBMhBaHIdxa87Na86Mh86aHIdwa87Na8SMh8SaHIdla87Na8UMh8UaHIdba87Na81Mh81aChHina8ZaecwfIdbg8VaecxfIdbg8YNaRN:th8Za83aeclfIdbg8Wa8YNaRN:th83a85a8Wa8VNaRN:th85a81aeIdbg8Xa8XNaRN:th81a80a8Xa8YNaRN:th80aBa8Xa8VNaRN:thBa86a8Xa8WNaRN:th86a8Sa8Va8VNaRN:th8Sa8Ua8Wa8WNaRN:th8UaeczfheaHcufgHmbkaQaAcdtfydbgAaX9hmbka8MTmba8MaXcltfgeIdxhxaeIdwh9caeIdlhJaeIdbhRxekJbbbbhxJbbbbh9cJbbbbhJJbbbbhRkaBa81:vg8Wa80Na8Z:ta85aBa86a81:vg8VN:tg8Za8Ua86a8VN:tg8Y:vg8Xa8Va80Na83:tg8UN:th83a9caRa8WN:taJaRa8VN:tg86a8XN:tg85a8SaBa8WN:ta8Za8XN:tgB:vg8S:mh8Za86a8Y:vg9c:mhJdnJbbbbaRaRa81:vg9eN:ta86a9cN:ta85a8SN:tg86:la87J:983:g81NgR9ETmba8Za83NaJa8UNa9ea80Nax:tMMa86:vhnka81:laR9ETmba8Y:laR9ETmbaB:laR9ETmba9e:manNa8W:ma8ZanNa83aB:vMgBNa8V:maJanNa8X:maBNa8Ua8Y:vMMg85Na80:ma81:vMMMh87aLa8FfgeclfydbgHaeydbge9RhhaEaecitfh8FJbbbbhRdnaHaeSgDmbJbbbbhRa8FheahhAina8Naeclfydbcx2fgHIdwa88:tg8Va8VNaHIdba8::tg8Va8VNaHIdla89:tg8Va8VNMMg8Va8Naeydbcx2fgHIdwa88:tg8Wa8WNaHIdba8::tg8Wa8WNaHIdla89:tg8Wa8WNMMg8WaRaRa8W9DEgRaRa8V9DEhRaecwfheaAcufgAmbkaR:rgRaRNhRkaBa88:tg8Va8VNa87a8::tg8Va8VNa85a89:tg8Va8VNMMaR9EmbaKId8KhndnaDmbina8Na8Fclfydbcx2fgeIdba8Na8Fydbcx2fgHIdbg8W:tgRa89aHIdlg8X:tg80NaeIdla8X:tg8Va8:a8W:tg86N:tg8YaRa85a8X:tg8SNa8Va87a8W:tg8UN:tg8XNa8Va88aHIdwg81:tg8ZNaeIdwa81:tg8Wa80N:tg80a8VaBa81:tg83Na8Wa8SN:tg8VNa8Wa86NaRa8ZN:tg81a8Wa8UNaRa83N:tgRNMMa8Ya8YNa80a80Na81a81NMMa8Xa8XNa8Va8VNaRaRNMMN:rJbbj8:N9Fmda8Fcwfh8FahcufghmbkkJbbbbJbbjZac:vacJbbbb9BEgRa9BaBNa9Ia87Na9EMg8Va8VMMaBNa9Ca85Na9HaBNa9FMg8Va8VMMa85Na9Da87Na9Ja85Na9GMg8Va8VMMa87NanMMM:lNaRa9Ba88Na9Ia8:Na9EMg8Va8VMMa88Na9Ca89Na9Ha88Na9FMg8Va8VMMa89Na9Da8:Na9Ja89Na9GMg8Va8VMMa8:NanMMM:lNJbb;aZNJ:983:g81M9Emba8JaBUdwa8Ja85Udla8Ja87UdbkaXcefgXal9hmbkdnaCmbcbhCxdkcbhXindna8AaXfRbbTmbaOaXcdtgefydbaX9hmbaYaXfhhaQaefh8Ja8NaXcx2fhAa8PaXaC2cdtfhDcbhEincuhLdnahRbbci9hmbaXhLa8JydbgeaXSmba8PaEcdtgHfhKaDaHfIdbhRaXhLinaLhHcuhLdnaKaeaC2cdtfIdbaR9CmbaHcuSmbaHhLagaec8S2fIdyagaHc8S2fIdy9ETmbaehLkaQaecdtfydbgeaX9hmbkka8PaEcdtfhKa8RaEcltfh8FaXheinaKaeaC2cdtfJbbbbJbbjZagaeaLaLcuSEgHc8S2fIdygR:vaRJbbbb9BEa8FaHaC2cltfgHIdwaAIdwNaHIdbaAIdbNaHIdlaAIdlNMMaHIdxMNUdbaQaecdtfydbgeaX9hmbkaEcefgEaC9hmbkkaXcefgXal9hmbxdkkaCmbcbhCkaiavaoarawaCala8Na8Pazasayasc1efaYa8Aaqz:hjjjbkdnamcjjjjlGTmbazmbaaTmbabhecbhLinaYaeydbgAfRbbc3thQaecwfgXydbhHcjjjj94hCdna5aAcdtgEfydbaeclfgKydbgOSmbcjjjj94cba8EaOcdtfydbaASEhCkaeaQaCVaAVBdbaYaOfRbbc3th8Fcjjjj94hCcjjjj94hQdna5aOcdtfydbaHSmbcjjjj94cba8EaHcdtfydbaOSEhQkaKa8FaQVaOVBdbaYaHfRbbc3thOdna5aHcdtfydbaASmbcjjjj94cba8EaEfydbaHSEhCkaXaOaCVaHVBdbaecxfheaLcifgLaa6mbkkdnazTmbaaTmbaaheinabazabydbcdtfydbBdbabclfhbaecufgembkkdnaPTmbaPaZaU:rNUdbkdnasyd;8egHTmbaHcdtasc:Ceffc98fheinaeydbcbyd:m:H:cjbH:bjjjbbaec98fheaHcufgHmbkkascj;sbf8Kjjjjbaak;Yieouabydlhvabydbclfcbaicdtz:tjjjbhoadci9UhrdnadTmbdnalTmbaehwadhDinaoalawydbcdtfydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbxdkkaehwadhDinaoawydbcdtfgqaqydbcefBdbawclfhwaDcufgDmbkkdnaiTmbcbhDaohwinawydbhqawaDBdbawclfhwaqaDfhDaicufgimbkkdnadci6mbinaecwfydbhwaeclfydbhDaeydbhidnalTmbalawcdtfydbhwalaDcdtfydbhDalaicdtfydbhikavaoaicdtfgqydbcitfaDBdbavaqydbcitfawBdlaqaqydbcefBdbavaoaDcdtfgqydbcitfawBdbavaqydbcitfaiBdlaqaqydbcefBdbavaoawcdtfgwydbcitfaiBdbavawydbcitfaDBdlawawydbcefBdbaecxfhearcufgrmbkkabydbcbBdbk:todDue99aicd4aifhrcehwinawgDcethwaDar6mbkcuaDcdtgraDcFFFFi0Ecbyd1:H:cjbHjjjjbbhwaoaoyd9GgqcefBd9GaoaqcdtfawBdbawcFearz:tjjjbhkdnaiTmbalcd4hlaDcufhxcbhminamhDdnavTmbavamcdtfydbhDkcbadaDal2cdtfgDydlgwawcjjjj94SEgwcH4aw7c:F:b:DD2cbaDydbgwawcjjjj94SEgwcH4aw7c;D;O:B8J27cbaDydwgDaDcjjjj94SEgDcH4aD7c:3F;N8N27axGhwamcdthPdndndnavTmbakawcdtfgrydbgDcuSmeadavaPfydbal2cdtfgsIdbhzcehqinaqhrdnadavaDcdtfydbal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmlkarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbxdkkakawcdtfgrydbgDcuSmbadamal2cdtfgsIdbhzcehqinaqhrdnadaDal2cdtfgqIdbaz9CmbaqIdlasIdl9CmbaqIdwasIdw9BmikarcefhqakawarfaxGgwcdtfgrydbgDcu9hmbkkaramBdbamhDkabaPfaDBdbamcefgmai9hmbkkakcbyd:m:H:cjbH:bjjjbbaoaoyd9GcufBd9GdnaeTmbaiTmbcbhDaehwinawaDBdbawclfhwaiaDcefgD9hmbkcbhDaehwindnaDabydbgrSmbawaearcdtfgrydbBdbaraDBdbkabclfhbawclfhwaiaDcefgD9hmbkkk;:odvuv998Jjjjjbca9Rgocbyd1:G:cjbBdKaocb8Pdj:G:cjb83izaocbydN:G:cjbBdwaocb8Pd:m:G:cjb83ibdnadTmbaicd4hrdnabmbdnalTmbcbhwinaealawcdtfydbar2cdtfhDcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxikkarcdthwcbhDincbhiinaoczfaifgqaeaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaeawfheaDcefgDad9hmbxdkkdnalTmbcbhwinabawcx2fgiaealawcdtfydbar2cdtfgDIdbUdbaiaDIdlUdlaiaDIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkawcefgwad9hmbxdkkarcdthlcbhwaehDinabawcx2fgiaeawar2cdtfgqIdbUdbaiaqIdlUdlaiaqIdwUdwcbhiinaoczfaifgqaDaifIdbgkaqIdbgxaxak9EEUdbaoaifgqakaqIdbgxaxak9DEUdbaiclfgicx9hmbkaDalfhDawcefgwad9hmbkkJbbbbaoIdbaoIdzgx:tgkakJbbbb9DEgkaoIdlaoIdCgm:tgPaPak9DEgkaoIdwaoIdKgP:tgsasak9DEhsdnabTmbadTmbJbbbbJbbjZas:vasJbbbb9BEhkinabakabIdbax:tNUdbabclfgoakaoIdbam:tNUdbabcwfgoakaoIdbaP:tNUdbabcxfhbadcufgdmbkkdnavTmbavaPUdwavamUdlavaxUdbkask:WlewudnaeTmbcbhvabhoinaoavBdbaoclfhoaeavcefgv9hmbkkdnaiTmbcbhrinadarcdtfhwcbhDinalawaDcdtgvyd:G:G:cjbcdtfydbcdtfydbhodnalawavfydbcdtfydbgqabaqcdtfgkydbgvSmbinakabavgqcdtfgxydbgvBdbaxhkaqav9hmbkkdnaoabaocdtfgkydbgvSmbinakabavgocdtfgxydbgvBdbaxhkaoav9hmbkkdnaqaoSmbabaqaoaqao0Ecdtfaqaoaqao6EBdbkaDcefgDci9hmbkarcifgrai6mbkkdnaembcbskcbhxindnalaxcdtgvfydbax9hmbaxhodnaxabavfgDydbgvSmbaDhqinaqabavgocdtfgkydbgvBdbakhqaoav9hmbkkaDaoBdbkaxcefgxae9hmbkcbhkabhvcbhoindndnaoalydbgq9hmbdnaoavydbgq9hmbavakBdbakcefhkxdkavabaqcdtfydbBdbxekavabaqcdtfydbBdbkalclfhlavclfhvaeaocefgo9hmbkakk;jiilud99euabcbaecltz:tjjjbhvdnalTmbadhoaihralhwinarcwfIdbhDarclfIdbhqavaoydbcltfgkarIdbakIdbMUdbakaqakIdlMUdlakaDakIdwMUdwakakIdxJbbjZMUdxaoclfhoarcxfhrawcufgwmbkkdnaeTmbavhkaehrinakcxfgoIdbhDaocbBdbakakIdbJbbbbJbbjZaD:vaDJbbbb9BEgDNUdbakclfgoaDaoIdbNUdbakcwfgoaDaoIdbNUdbakczfhkarcufgrmbkkdnalTmbinavadydbcltfgkaicwfIdbakIdw:tgDaDNaiIdbakIdb:tgDaDNaiclfIdbakIdl:tgDaDNMMgDakIdxgqaqaD9DEUdxadclfhdaicxfhialcufglmbkkdnaeTmbavcxfhkinabakIdbUdbakczfhkabclfhbaecufgembkkk:moerudnaoTmbaecd4hzdnavTmbaicd4hHavcdthOcbhAindnaPaAfRbbTmbaAhednaDTmbaDaAcdtfydbhekdnasTmbasaefRbbceGmekdnamaAfRbbclSmbabaeaz2cdtfgiaraAcx2fgCIdbakNaxIdbMUdbaiaCIdlakNaxIdlMUdlaiaCIdwakNaxIdwMUdwkadaeaH2cdtfhXaqheawhiavhCinaXaeydbcdtgQfaiIdbalaQfIdb:vUdbaeclfheaiclfhiaCcufgCmbkkawaOfhwaAcefgAao9hmbxdkkdnasmbcbheaDhiindnaPaefRbbTmbaehCdnaDTmbaiydbhCkamaefRbbclSmbabaCaz2cdtfgCarIdbakNaxIdbMUdbaCarclfIdbakNaxIdlMUdlaCarcwfIdbakNaxIdwMUdwkaiclfhiarcxfhraoaecefge9hmbxdkkdnaDTmbindnaPRbbTmbasaDydbgefRbbceGmbamRbbclSmbabaeaz2cdtfgearIdbakNaxIdbMUdbaearclfIdbakNaxIdlMUdlaearcwfIdbakNaxIdwMUdwkaPcefhPaDclfhDamcefhmarcxfhraocufgombxdkkazcdthicbheindnaPaefRbbTmbasaefRbbceGmbamaefRbbclSmbabarIdbakNaxIdbMUdbabclfarclfIdbakNaxIdlMUdbabcwfarcwfIdbakNaxIdwMUdbkarcxfhrabaifhbaoaecefge9hmbkkk8MbabaeadaialavcbcbcbcbcbaoarawaDz:bjjjbk8MbabaeadaialavaoarawaDaqakaxamaPz:bjjjbkRbababaeadaialavaoarawaDaqakaxcjjjjdVamz:bjjjbk:g8Koque99due99duq998Jjjjjbc;Wb9Rgq8Kjjjjbcbhkaqcxfcbc;Kbz:tjjjb8Aaqcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgxBdxaqceBd2axaialavcbcbz:ejjjb8AaqcualcdtalcFFFFi0Egmcbyd1:H:cjbHjjjjbbgiBdzaqcdBd2dndnJFF959eJbbjZawJbbjZawJbbjZ9DE:vawJ9VO:d869DEgw:lJbbb9p9DTmbaw:OhPxekcjjjj94hPkadci9Uhsarco9UhzdndnaombaPcd9imekdnalTmbaPcuf:YhwdnaoTmbcbhvaihHaxhOindndnaoavfRbbceGTmbavcjjjjlVhAxekdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHaOcxfhOalavcefgv9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkadTmbcbhkaehvcbhOinakaiavclfydbcdtfydbgHaiavcwfydbcdtfydbgA9haiavydbcdtfydbgXaH9haXaA9hGGfhkavcxfhvaOcifgOad6mbkkarci9UhQdndnaz:Z:rJbbbZMgw:lJbbb9p9DTmbaw:Ohvxekcjjjj94hvkaQ:ZhLcbhKc:bwhzdninakaQ9pmeazaP9Rcd9imeavazcufgOavaO9iEaPcefavaP9kEhYdnalTmbaYcuf:YhwdnaoTmbcbhOaihHaxhvindndnaoaOfRbbceGTmbaOcjjjjlVhAxekdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcqthAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXVhAdndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaAaXcCtVhAkaHaABdbaHclfhHavcxfhvalaOcefgO9hmbxdkkaxhvaihOalhHindndnavIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhAxekcjjjj94hAkaAcCthAdndnavclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqtaAVhAdndnavcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaOaAaXVBdbavcxfhvaOclfhOaHcufgHmbkkcbhOdnadTmbaehvcbhHinaOaiavclfydbcdtfydbgAaiavcwfydbcdtfydbgX9haiavydbcdtfydbgraA9haraX9hGGfhOavcxfhvaHcifgHad6mbkkdnas:ZgCaL:taY:Ygwaz:Y:tg8ANak:ZgEaO:Zg3:tNaEaL:tawaP:Y:tg5Na3aC:tNMg8EJbbbb9BmbaCaE:ta5a8Aa3aL:tNNNa8E:vawMhwkdndnaOaQ0mbaOhkaYhPxekaOhsaYhzkdndnaKcl0mbdnawJbbbZMgw:lJbbb9p9DTmbaw:Ohvxdkcjjjj94hvxekaPazfcd9ThvkaKcefgKcs9hmbkkdndndnakmbJbbjZhwcbhOcdhvaDmexdkalcd4alfhHcehOinaOgvcethOavaH6mbkcbhOaqcuavcdtgYavcFFFFi0Ecbyd1:H:cjbHjjjjbbgKBdCaqciBd2aqamcbyd1:H:cjbHjjjjbbgzBdKaqclBd2dndndndnalTmbaPcuf:YhwaoTmecbhOaihAaxhHindndnaoaOfRbbceGTmbaOcjjjjlVhXxekdndnaHclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcqthXdndnaHcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarVhXdndnaHIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaXarcCtVhXkaAaXBdbaAclfhAaHcxfhHalaOcefgO9hmbxikkaKcFeaYz:tjjjb8AcbhPcbhvxdkaxhOaihHalhAindndnaOIdbawNJbbbZMgC:lJbbb9p9DTmbaC:OhXxekcjjjj94hXkaXcCthXdndnaOclfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkarcqtaXVhXdndnaOcwfIdbawNJbbbZMgC:lJbbb9p9DTmbaC:Ohrxekcjjjj94hrkaHaXarVBdbaOcxfhOaHclfhHaAcufgAmbkkaKcFeaYz:tjjjbhravcufhocbhPcbhYindndndnaraiaYcdtgKfydbgAcm4aA7c:v;t;h;Ev2gvcs4av7aoGgHcdtfgXydbgOcuSmbcehvinaiaOcdtgOfydbaASmdaHavfhOavcefhvaraOaoGgHcdtfgXydbgOcu9hmbkkaXaYBdbaPhvaPcefhPxekazaOfydbhvkazaKfavBdbaYcefgYal9hmbkcuaPc8S2gOaPc;D;O;f8U0EhvkcbhXaqavcbyd1:H:cjbHjjjjbbgvBd3aqcvBd2avcbaOz:tjjjbhOdnadTmbaehiinaxaiclfydbgrcx2fgvIdbaxaiydbgocx2fgHIdbg3:tgCaxaicwfydbgYcx2fgAIdlaHIdlg8A:tgwNavIdla8A:tgEaAIdba3:tg8EN:tgLaLNaEaAIdwaHIdwg5:tg8FNavIdwa5:tgEawN:tgwawNaEa8ENaCa8FN:tgCaCNMMg8E:rhEJbbnnJbbjZazaocdtfydbgvazarcdtfydbgASavazaYcdtfydbgrSGgHEh8Fdna8EJbbbb9ETmbaLaE:vhLaCaE:vhCawaE:vhwkaOavc8S2fgvavIdbawa8FaE:rNgEawNNg8FMUdbavaCaEaCNgaNghavIdlMUdlavaLaEaLNg8ENggavIdwMUdwavawaaNgaavIdxMUdxava8EawNg8JavIdzMUdzavaCa8ENg8EavIdCMUdCavawaEaLa5Nawa3Na8AaCNMM:mg8ANg3NgwavIdKMUdKavaCa3NgCavId3MUd3avaLa3NgLavIdaMUdaava3a8ANg3avId8KMUd8KavaEavIdyMUdydnaHmbaOaAc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdyaOarc8S2fgva8FavIdbMUdbavahavIdlMUdlavagavIdwMUdwavaaavIdxMUdxava8JavIdzMUdzava8EavIdCMUdCavawavIdKMUdKavaCavId3MUd3avaLavIdaMUdaava3avId8KMUd8KavaEavIdyMUdykaicxfhiaXcifgXad6mbkkcbhAaqcuaPcdtgvaPcFFFFi0Egicbyd1:H:cjbHjjjjbbgHBdaaqcoBd2aqaicbyd1:H:cjbHjjjjbbgiBd8KaqcrBd2aHcFeavz:tjjjbhYdnalTmbazhHinJbbbbJbbjZaOaHydbgXc8S2fgvIdygw:vawJbbbb9BEavIdwaxcwfIdbgwNavIdzaxIdbgCNavIdaMgLaLMMawNavIdlaxclfIdbgLNavIdCawNavId3MgwawMMaLNavIdbaCNavIdxaLNavIdKMgwawMMaCNavId8KMMM:lNhwdndnaYaXcdtgvfgXydbcuSmbaiavfIdbaw9ETmekaXaABdbaiavfawUdbkaHclfhHaxcxfhxalaAcefgA9hmbkkdndnaPmbJbbbbhwxekJbbbbhwinaiIdbgCawawaC9DEhwaiclfhiaPcufgPmbkaw:rhwkakcd4akfhOcehiinaigvcethiavaO6mbkcbhOaqcuavcdtgiavcFFFFi0Ecbyd1:H:cjbHjjjjbbgHBdyaHcFeaiz:tjjjbhXdnadTmbavcufhrcbhPcbhxindnazaeaxcdtfgvydbcdtfydbgiazavclfydbcdtfydbgOSmbaiazavcwfydbcdtfydbgvSmbaOavSmbaYavcdtfydbhAdndnaYaOcdtfydbgvaYaicdtfydbgi9pmbavaA9pmbaAhlaihoavhAxekdnaAai9pmbaAav9pmbaihlavhoxekavhlaAhoaihAkabaPcx2fgvaABdbavcwfaoBdbavclfalBdbdnaXaoc:3F;N8N2alc:F:b:DD27aAc;D;O:B8J27arGgOcdtfgvydbgicuSmbcehHinaHhvdnabaicx2fgiydbaA9hmbaiydlal9hmbaiydwaoSmikavcefhHaXaOavfarGgOcdtfgvydbgicu9hmbkkavaPBdbaPcefhPkaxcifgxad6mbkaPci2hOkcwhvaDTmekaDawUdbkavcdthvaqcxfc98fhiinaiavfydbcbyd:m:H:cjbH:bjjjbbavc98fgvmbkaqc;Wbf8KjjjjbaOk:3ldrue9:8Jjjjjbc;Wb9Rgr8Kjjjjbcbhwarcxfcbc;Kbz:tjjjb8AdnabaeSmbabaeadcdtzMjjjb8AkarcualcdtalcFFFFi0EgDcbyd1:H:cjbHjjjjbbgqBdxarceBd2aqcbaialavcbarcxfz:djjjbcualcx2alc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbhkarcxfaryd2gxcdtfakBdbaraxcefgmBd2akaialavcbcbz:ejjjb8AarcxfamcdtfaDcbyd1:H:cjbHjjjjbbgiBdbaraxcdfgvBd2arcxfavcdtfcuaialaeadaqz:fjjjbgecltaecjjjjiGEcbyd1:H:cjbHjjjjbbgqBdbaqaeaiakalz:gjjjbaxcifhkdnadTmbaoaoNhocbhwabhlcbheindnaqaialydbgvcdtfydbcdtfIdbao9ETmbalclf8PdbhPabawcdtfgDavBdbaDclfaP83dbawcifhwkalcxfhlaecifgead6mbkkdnakTmbaxcdtarcxffcwfhlinalydbcbyd:m:H:cjbH:bjjjbbalc98fhlakcufgkmbkkarc;Wbf8Kjjjjbawk:WCoDud99vue99vuv998Jjjjjbc;Wb9Rgw8KjjjjbdndnarmbcbhDxekawcxfcbc;Kbz:tjjjb8Aawcuadcx2adc;v:Q;v:Qe0Ecbyd1:H:cjbHjjjjbbgqBdxawceBd2aqaeadaicbcbz:ejjjb8AawcuadcdtadcFFFFi0Egkcbyd1:H:cjbHjjjjbbgxBdzawcdBd2adcd4adfhmceheinaegicetheaiam6mbkcbhPawcuaicdtgsaicFFFFi0Ecbyd1:H:cjbHjjjjbbgzBdCawciBd2dndnar:ZgH:rJbbbZMgO:lJbbb9p9DTmbaO:Ohexekcjjjj94hekaicufhAc:bwhCcbhXadhQcbhLinaeaCcufgiaeai9iEaPcefaeaP9kEhDdndnadTmbaDcuf:YhOaqhiaxheadhmindndnaiIdbaONJbbbZMgK:lJbbb9p9DTmbaK:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaONJbbbZMgK:lJbbb9p9DTmbaK:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbh3cbh5indnaEaxa5cdtfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbaeaYSmbcehiinaEamaifaAGgmcdtfg8AydbgecuSmeaicefhiaeaY9hmbkka8AaYBdba3aecuSfh3a5cefg5ad9hmbxdkkazcFeasz:tjjjb8Acbh3kdnaQ:ZgKaH:taD:YgOaC:Y:tg8ENaX:Zg8Fa3:Zga:tNa8FaH:taOaP:Y:tghNaaaK:tNMggJbbbb9BmbaKa8F:taha8EaaaH:tNNNag:vaOMhOkaPaDa3ar0giEhPaXa3aiEhXdna3arSmbaDaCaiEgCaP9Rcd9imbdndnaLcl0mbdnaOJbbbZMgO:lJbbb9p9DTmbaO:Ohexdkcjjjj94hexekaPaCfcd9Theka3aQaiEhQaLcefgLcs9hmekkdndnaXmbcihicbhDxekcbhiawakcbyd1:H:cjbHjjjjbbg5BdKawclBd2aPcuf:YhKdndnadTmbaqhiaxheadhmindndnaiIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:OhYxekcjjjj94hYkaYcCthYdndnaiclfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8Aka8AcqtaYVhYdndnaicwfIdbaKNJbbbZMgO:lJbbb9p9DTmbaO:Oh8Axekcjjjj94h8AkaeaYa8AVBdbaicxfhiaeclfheamcufgmmbkazcFeasz:tjjjbhEcbhDcbh3indndndnaEaxa3cdtgCfydbgYcm4aY7c:v;t;h;Ev2gics4ai7aAGgmcdtfg8AydbgecuSmbcehiinaxaecdtgefydbaYSmdamaifheaicefhiaEaeaAGgmcdtfg8Aydbgecu9hmbkka8Aa3BdbaDhiaDcefhDxeka5aefydbhika5aCfaiBdba3cefg3ad9hmbkcuaDc32giaDc;j:KM;jb0EhexekazcFeasz:tjjjb8AcbhDcbhekawaecbyd1:H:cjbHjjjjbbgeBd3awcvBd2aecbaiz:tjjjbh8Aavcd4hxdnadTmbdnalTmbaxcdthEa5hYaqhealhmadhAina8AaYydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiamIdbaiIdxMUdxaiamclfIdbaiIdzMUdzaiamcwfIdbaiIdCMUdCaiaiIdKJbbjZMUdKaYclfhYaecxfheamaEfhmaAcufgAmbxdkka5hmaqheadhYina8Aamydbc32fgiaeIdbaiIdbMUdbaiaeclfIdbaiIdlMUdlaiaecwfIdbaiIdwMUdwaiaiIdxJbbbbMUdxaiaiIdzJbbbbMUdzaiaiIdCJbbbbMUdCaiaiIdKJbbjZMUdKamclfhmaecxfheaYcufgYmbkkdnaDTmba8AhiaDheinaiaiIdbJbbbbJbbjZaicKfIdbgO:vaOJbbbb9BEgONUdbaiclfgmaOamIdbNUdbaicwfgmaOamIdbNUdbaicxfgmaOamIdbNUdbaiczfgmaOamIdbNUdbaicCfgmaOamIdbNUdbaic3fhiaecufgembkkcbhYawcuaDcdtgCaDcFFFFi0Egicbyd1:H:cjbHjjjjbbgeBdaawcoBd2awaicbyd1:H:cjbHjjjjbbgEBd8KaecFeaCz:tjjjbh3dnadTmbaoJbbjZJbbjZaK:vaPceSENgOaONhKaxcdthxalheinaKaec;8:G:cjbalEgmIdwa8Aa5ydbgAc32fgiIdC:tgOaONamIdbaiIdx:tgOaONamIdlaiIdz:tgOaONMMNaqcwfIdbaiIdw:tgOaONaqIdbaiIdb:tgOaONaqclfIdbaiIdl:tgOaONMMMhOdndna3aAcdtgifgmydbcuSmbaEaifIdbaO9ETmekamaYBdbaEaifaOUdbka5clfh5aqcxfhqaeaxfheadaYcefgY9hmbkkaba3aCzMjjjb8Acrhikaicdthiawcxfc98fheinaeaifydbcbyd:m:H:cjbH:bjjjbbaic98fgimbkkawc;Wbf8KjjjjbaDk:Pdidui99ducbhi8Jjjjjbca9Rglcbyd1:G:cjbBdKalcb8Pdj:G:cjb83izalcbydN:G:cjbBdwalcb8Pd:m:G:cjb83ibdndnaembJbbjFhvJbbjFhoJbbjFhrxekadcd4cdthwincbhdinalczfadfgDabadfIdbgvaDIdbgoaoav9EEUdbaladfgDavaDIdbgoaoav9DEUdbadclfgdcx9hmbkabawfhbaicefgiae9hmbkalIdwalIdK:thralIdlalIdC:thoalIdbalIdz:thvkJbbbbavavJbbbb9DEgvaoaoav9DEgvararav9DEk9DeeuabcFeaicdtz:tjjjbhlcbhbdnadTmbindnalaeydbcdtfgiydbcu9hmbaiabBdbabcefhbkaeclfheadcufgdmbkkabk;Bidqui998Jjjjjbc;Wb9Rgl8Kjjjjbalcxfcbc;Kbz:tjjjb8Aadcd4adfhvcehoinaogrcethoarav6mbkalcuarcdtgoarcFFFFi0Ecbyd1:H:cjbHjjjjbbgvBdxavcFeaoz:tjjjbhwdnadTmbaicd4hDarcufhqcbhkindndnawcbaeakaD2cdtfgrydlgiaicjjjj94SEgocH4ao7c:F:b:DD2cbarydbgxaxcjjjj94SEgocH4ao7c;D;O:B8J27cbarydwgmamcjjjj94SEgrcH4ar7c:3F;N8N27aqGgvcdtfgrydbgocuSmbam::hPai::hsax::hzcehiinaihrdnaeaoaD2cdtfgiIdbaz9CmbaiIdlas9CmbaiIdwaP9BmikarcefhiawavarfaqGgvcdtfgrydbgocu9hmbkkarakBdbakhokabakcdtfaoBdbakcefgkad9hmbkkalydxcbyd:m:H:cjbH:bjjjbbalc;Wbf8Kjjjjbk9teiucbcbyd:q:H:cjbgeabcifc98GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabk9teiucbcbyd:q:H:cjbgeabcrfc94GfgbBd:q:H:cjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaikTeeucbabcbyd:q:H:cjbge9Rcifc98GaefgbBd:q:H:cjbdnabZbcztge9nmbabae9RcFFifcz4nb8Akkk:Kedbcj:Gdk1eFFuuFFuuFFuuFFuFFFuFFFuFbbbbbbbbebbbdbbbbbbbebbbebbbdbbbbbbbbbbbeeeeebebbebbebebbbeebbbbbbbbbbbbeeeeeebebbeeebeebbbbebebbbbbbbbbbbbbbbbbbc1:Hdkxebbbdbbb:G:qbb";
   var wasmpack = new Uint8Array([
@@ -6521,7 +6618,7 @@ function pointInPoly(x, z, pts) {
   return inside3;
 }
 
-// ../uccle-city/tools/worker/node_modules/three/src/extras/lib/earcut.js
+// tools/worker/node_modules/three/src/extras/lib/earcut.js
 function earcut(data, holeIndices, dim = 2) {
   const hasHoles = holeIndices && holeIndices.length;
   const outerLen = hasHoles ? holeIndices[0] * dim : data.length;
@@ -9003,7 +9100,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     rampList.push(R2);
     for (let i = Math.floor((x0 - 0.5) / 8); i <= Math.floor((x1 + 0.5) / 8); i++) for (let j = Math.floor((z0 - 0.5) / 8); j <= Math.floor((z1 + 0.5) / 8); j++) push(rampGrid, cellKey(i, j), R2);
   });
-  const pipR = (x, z, ring2) => {
+  const pipR2 = (x, z, ring2) => {
     let ins = false;
     for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
       const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
@@ -9016,7 +9113,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     for (const R2 of rampGrid.get(cellKey(Math.floor(x / 8), Math.floor(z / 8))) || []) {
       if (si2 >= 0 && R2.si !== si2) continue;
       if (x < R2.x0 - 0.3 || x > R2.x1 + 0.3 || z < R2.z0 - 0.3 || z > R2.z1 + 0.3) continue;
-      if (si2 >= 0 || pipR(x, z, R2.ring)) return R2;
+      if (si2 >= 0 || pipR2(x, z, R2.ring)) return R2;
       near ??= R2;
     }
     return near;
@@ -9791,7 +9888,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   }
   const C = out.concrete;
   const raisedAt = (x, z) => baseAt(x, z, (c) => RAISE[c] > 0);
-  const densify = (line) => {
+  const densify2 = (line) => {
     const pts = [line[0]];
     for (let k = 1; k < line.length; k++) {
       const [ax, az] = line[k - 1], [bx, bz] = line[k], ts = [];
@@ -9815,7 +9912,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   for (let li = 0; li < surf.kerbs.length; li++) {
     const line = surf.kerbs[li];
     const pts = [];
-    for (const p of densify(line)) {
+    for (const p of densify2(line)) {
       const q = pts[pts.length - 1];
       if (q) {
         const L2 = Math.hypot(p[0] - q[0], p[1] - q[1]), mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2, nx = -(p[1] - q[1]) / (L2 || 1), nz = (p[0] - q[0]) / (L2 || 1);
@@ -11345,7 +11442,7 @@ function laneFit(node, ground, noData) {
   y0 = sy / n - gx * mx - gz * mz;
   return { y: y0, gx, gz, rms: Math.sqrt(e / n) };
 }
-function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
+function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null } = {}) {
   const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...globalThis.__levelsDebug ? { debug: true } : {} };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
@@ -11364,6 +11461,22 @@ function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
   const moved = /* @__PURE__ */ new Set();
   for (const node of net.nodes) {
     if (node.src?.y != null || !node.arms?.length) continue;
+    const dl = deckLevel ? deckLevel(node.x, node.z) : null;
+    if (dl != null) {
+      if (Math.abs(node.y - dl) > 0.02) {
+        const d2 = node.y - dl;
+        node.y = dl;
+        node.plane = { gx: 0, gz: 0 };
+        moved.add(node);
+        st.nodes++;
+        st.deckNodes = (st.deckNodes || 0) + 1;
+        if (Math.abs(d2) > st.maxMove) {
+          st.maxMove = Math.abs(d2);
+          st.maxAt = [Math.round(node.x), Math.round(node.z)];
+        }
+      }
+      continue;
+    }
     const fit = fittedY(node, ground, noData);
     if (fit == null) {
       st.skippedNoData = (st.skippedNoData || 0) + 1;
@@ -11650,7 +11763,7 @@ function buildRoadData(o) {
     const h = hm.h;
     return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
   };
-  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false });
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null });
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
@@ -11794,18 +11907,24 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
     };
     const plan = plans?.[String(r.meta?.osm)];
     if (plan?.ring?.length >= 3) {
-      d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null };
+      d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null, ...plan.urbis ? { urbis: plan.urbis } : {} };
       for (const [x, z] of plan.ring) {
         d.box[0] = Math.min(d.box[0], x);
         d.box[1] = Math.min(d.box[1], z);
         d.box[2] = Math.max(d.box[2], x);
         d.box[3] = Math.max(d.box[3], z);
       }
+      if (plan.fit) d.plan.plane = fitPlane(plan.ring, d.plan.free, ground);
     }
     const L2 = cum[cum.length - 1] || 1, n = Math.max(1, Math.ceil(L2 / PROF));
     d.prof = [];
     for (let k = 0; k <= n; k++) {
       const sk = L2 * k / n, line2 = h0 + (h1 - h0) * (sk / L2);
+      if (d.plan?.plane) {
+        const q2 = at(d, sk);
+        d.prof.push(planeY2(d.plan.plane, q2.x, q2.z));
+        continue;
+      }
       if (sk < d.span[0] || sk > d.span[1]) {
         d.prof.push(line2);
         continue;
@@ -11821,7 +11940,7 @@ function deckHeight(d, ground, { drawn = false } = {}) {
   const L2 = d.cum[d.cum.length - 1] || 1;
   if (d.plan) return (x, z) => {
     if (x < d.box[0] || z < d.box[1] || x > d.box[2] || z > d.box[3] || !inRing(d.plan.ring, x, z)) return null;
-    const deck = planTop(d, x, z);
+    const deck = d.plan.tops ? gridTop(d.plan.tops, x, z) ?? planTop(d, x, z) : planTop(d, x, z);
     return deck > ground(x, z) ? deck : null;
   };
   return (x, z) => {
@@ -11841,6 +11960,35 @@ function deckHeight(d, ground, { drawn = false } = {}) {
     const deck = profY(d, s);
     return deck > ground(x, z) ? deck : null;
   };
+}
+function gridTop(G2, x, z) {
+  const fx = x - G2.x0, fz = z - G2.z0, i = Math.floor(fx), j = Math.floor(fz), tx = fx - i, tz = fz - j;
+  const at2 = (a2, b2) => a2 >= 0 && b2 >= 0 && a2 < G2.nx && b2 < G2.nz ? G2.v[b2 * G2.nx + a2] : NaN;
+  const a = at2(i, j), b = at2(i + 1, j), c = at2(i, j + 1), e = at2(i + 1, j + 1);
+  if (a === a && b === b && c === c && e === e) return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + e * tx) * tz;
+  const near = [[a, tx * tx + tz * tz], [b, (1 - tx) ** 2 + tz * tz], [c, tx * tx + (1 - tz) ** 2], [e, (1 - tx) ** 2 + (1 - tz) ** 2]].filter(([v]) => v === v).sort((p, q) => p[1] - q[1]);
+  return near.length ? near[0][0] : null;
+}
+function deckTopGrid(d, covered, streetY) {
+  if (!d.plan) return null;
+  const x0 = Math.floor(d.box[0]), z0 = Math.floor(d.box[1]), nx = Math.ceil(d.box[2]) - x0 + 1, nz = Math.ceil(d.box[3]) - z0 + 1, v = new Array(nx * nz).fill(NaN);
+  let n = 0;
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const x = x0 + i, z = z0 + j;
+    if (!inRing(d.plan.ring, x, z)) continue;
+    const t = pavingTop(d, x, z, covered, streetY);
+    if (t != null) {
+      v[j * nx + i] = +t.toFixed(3);
+      n++;
+    }
+  }
+  return n ? { x0, z0, nx, nz, v } : null;
+}
+function pavingTop(d, x, z, covered, streetY) {
+  const b = planBase(d, x, z) - PLAN.sink, B = d._band ??= bandOf(d), lift = offBand(B, x, z) ? KERB2 : 0;
+  const sy = streetY ? streetY(x, z) : null;
+  if (covered(x, z)) return sy != null && Math.abs(sy - b) < 0.6 ? sy : null;
+  return sy != null && Math.abs(sy - PLAN.sink - b) < 0.6 ? sy - PLAN.sink + lift : b + lift;
 }
 function inRing(ring2, x, z) {
   let c = false;
@@ -11878,8 +12026,8 @@ function at(d, s) {
   const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], seg = d.cum[i] - d.cum[i - 1] || 1, t = Math.max(0, Math.min(1, (s - d.cum[i - 1]) / seg));
   return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, tx: (bx - ax) / seg, tz: (bz - az) / seg, y: profY(d, s) };
 }
-function deckMesh(d, ground = null, covered = null) {
-  if (d.plan) return planDeckMesh(d, ground ?? (() => -Infinity), covered ?? (() => false));
+function deckMesh(d, ground = null, covered = null, streetY = null) {
+  if (d.plan) return planDeckMesh(d, ground ?? (() => -Infinity), covered ?? (() => false), streetY);
   const P = [], N2 = [], C = [];
   const push2 = (n, c, ...pts) => {
     for (const p of pts) {
@@ -11920,6 +12068,7 @@ function deckMesh(d, ground = null, covered = null) {
 }
 var PLAN = { depth: 1.1, cell: 2, upstand: 0.25, upW: 0.3, railH: 1.1, post: 1.5, sink: 0.03 };
 var RAIL_DROP = 0.8;
+var FREE_DROP = 0.15;
 var COLP = { asphalt: [0.115, 0.118, 0.125], kerb: [0.5, 0.49, 0.46], top: [0.4, 0.39, 0.37], fascia: [0.55, 0.54, 0.51], wall: [0.47, 0.46, 0.43], soffit: [0.3, 0.295, 0.28], steel: [0.09, 0.1, 0.105] };
 function clipBox(ring2, x0, z0, x1, z1) {
   let out = ring2;
@@ -11953,7 +12102,66 @@ function bandOf(d) {
 var offBand = (B, x, z) => Math.abs(B.nx * x + B.nz * z - B.c) > B.half;
 function planTop(d, x, z) {
   d._band ??= bandOf(d);
-  return profY(d, alongLine(d, x, z)) + (offBand(d._band, x, z) ? KERB2 : 0);
+  return planBase(d, x, z) + (offBand(d._band, x, z) ? KERB2 : 0);
+}
+var planBase = (d, x, z) => d.plan.plane ? planeY2(d.plan.plane, x, z) : profY(d, alongLine(d, x, z));
+var planeY2 = (P, x, z) => {
+  const y = P.a + P.b * (x - P.x) + P.c * (z - P.z), R2 = P.res;
+  if (!R2?.length) return y;
+  let sw = 0, sr = 0;
+  for (let i = 0; i < R2.length; i += 3) {
+    const d2 = (R2[i] - x) ** 2 + (R2[i + 1] - z) ** 2;
+    if (d2 < 1e-4) return y + R2[i + 2];
+    const w = 1 / (d2 * d2);
+    sw += w;
+    sr += w * R2[i + 2];
+  }
+  return y + sr / sw;
+};
+var RES_LOW = -0.6;
+function fitPlane(ring2, free, ground) {
+  const F = new Set(free), sgn = ringSign(ring2), S3 = [];
+  for (let i = 0; i < ring2.length; i++) {
+    if (F.has(i)) continue;
+    const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], L2 = Math.hypot(bx - ax, bz - az);
+    if (L2 < 0.5) continue;
+    const nx = (bz - az) / L2 * sgn, nz = -(bx - ax) / L2 * sgn;
+    for (let s = 0.5; s < L2; s += 1) {
+      const ex = ax + (bx - ax) * s / L2, ez = az + (bz - az) * s / L2, y = ground(ex + nx * 1, ez + nz * 1);
+      if (Number.isFinite(y)) S3.push([ex + nx * 1, ez + nz * 1, y, ex, ez]);
+    }
+  }
+  if (S3.length < 6) return null;
+  let keep = S3, P = null;
+  for (let it = 0; it < 6; it++) {
+    const n = keep.length, mx = keep.reduce((a, p) => a + p[0], 0) / n, mz = keep.reduce((a, p) => a + p[1], 0) / n, my = keep.reduce((a, p) => a + p[2], 0) / n;
+    let sxx = 0, sxz = 0, szz = 0, sxy = 0, szy = 0;
+    for (const [x, z, y] of keep) {
+      const u = x - mx, v = z - mz, w = y - my;
+      sxx += u * u;
+      sxz += u * v;
+      szz += v * v;
+      sxy += u * w;
+      szy += v * w;
+    }
+    const det = sxx * szz - sxz * sxz;
+    const b = Math.abs(det) > 1e-9 ? (sxy * szz - szy * sxz) / det : 0, c = Math.abs(det) > 1e-9 ? (szy * sxx - sxy * sxz) / det : 0;
+    P = { x: +mx.toFixed(3), z: +mz.toFixed(3), a: +my.toFixed(3), b: +b.toFixed(5), c: +c.toFixed(5) };
+    const next = S3.filter(([x, z, y]) => y - planeY2(P, x, z) > -0.35);
+    if (next.length === keep.length || next.length < 6) break;
+    keep = next;
+  }
+  const r = keep.map(([x, z, y]) => y - planeY2(P, x, z));
+  P.rms = +Math.sqrt(r.reduce((a, v) => a + v * v, 0) / r.length).toFixed(3);
+  P.n = keep.length;
+  P.of = S3.length;
+  const res = [];
+  for (const [x, z, y, ex, ez] of S3) {
+    const v = y - planeY2(P, x, z);
+    if (v > RES_LOW) res.push(+ex.toFixed(2), +ez.toFixed(2), +v.toFixed(3));
+  }
+  P.res = res;
+  return P;
 }
 function clipHalf2(poly, nx, nz, c) {
   const out = [], f = (p) => nx * p[0] + nz * p[1] - c;
@@ -11980,7 +12188,7 @@ var ringSign = (ring2) => {
   }
   return a2 > 0 ? 1 : -1;
 };
-function planDeckMesh(d, ground, covered) {
+function planDeckMesh(d, ground, covered, streetY = null) {
   const P = [], N2 = [], C = [], S3 = [];
   const tri = (n, c, a, b, cc) => {
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = cc[0] - a[0], wy = cc[1] - a[1], wz = cc[2] - a[2];
@@ -11997,7 +12205,7 @@ function planDeckMesh(d, ground, covered) {
     tri(n, c, a, b, cc);
     tri(n, c, a, cc, dd);
   };
-  const ring2 = d.plan.ring, top = (x, z) => planTop(d, x, z) - PLAN.sink, base = (x, z) => profY(d, alongLine(d, x, z)) - PLAN.sink;
+  const ring2 = d.plan.ring, top = (x, z) => planTop(d, x, z) - PLAN.sink, base = (x, z) => planBase(d, x, z) - PLAN.sink;
   const outSign = ringSign(ring2), B = d._band ??= bandOf(d);
   let bx0 = Infinity, bz0 = Infinity, bx1 = -Infinity, bz1 = -Infinity;
   for (const [x, z] of ring2) {
@@ -12017,7 +12225,12 @@ function planDeckMesh(d, ground, covered) {
     ];
     for (const [q, col2, lift] of pieces) {
       if (q.length < 3) continue;
-      const v2 = q.map(([px, pz]) => [px, base(px, pz) + (covered(px, pz) ? -UNDER_STREET : lift), pz]);
+      const v2 = q.map(([px, pz]) => {
+        const b = base(px, pz);
+        if (covered(px, pz)) return [px, b - UNDER_STREET, pz];
+        const sy = streetY ? streetY(px, pz) : null;
+        return [px, sy != null && Math.abs(sy - PLAN.sink - b) < 0.6 ? sy - PLAN.sink + lift : b + lift, pz];
+      });
       for (let k = 1; k + 1 < v2.length; k++) tri([0, 1, 0], col2, v2[0], v2[k], v2[k + 1]);
     }
     const v = pc.map(([px, pz]) => [px, base(px, pz) - PLAN.depth, pz]);
@@ -12051,7 +12264,7 @@ function planDeckMesh(d, ground, covered) {
       const fr = free.has(i);
       const ya = fr ? a.yb - PLAN.depth : Math.min(a.yb - PLAN.depth, a.gr - 0.4), yb = fr ? b.yb - PLAN.depth : Math.min(b.yb - PLAN.depth, b.gr - 0.4);
       quad(n, fr ? COLP.fascia : COLP.wall, [a.x, ya, a.z], [b.x, yb, b.z], [b.x, b.y, b.z], [a.x, a.y, a.z]);
-      if (Math.max(a.drop, b.drop) < RAIL_DROP) continue;
+      if (Math.max(a.drop, b.drop) < (fr ? FREE_DROP : RAIL_DROP)) continue;
       quad(n, COLP.fascia, [a.x, a.y, a.z], [b.x, b.y, b.z], [b.x, b.y + U2, b.z], [a.x, a.y + U2, a.z]);
       quad([-nx, 0, -nz], COLP.fascia, [a.x + ix, a.y, a.z + iz], [b.x + ix, b.y, b.z + iz], [b.x + ix, b.y + U2, b.z + iz], [a.x + ix, a.y + U2, a.z + iz]);
       quad([0, 1, 0], COLP.fascia, [a.x, a.y + U2, a.z], [b.x, b.y + U2, b.z], [b.x + ix, b.y + U2, b.z + iz], [a.x + ix, a.y + U2, a.z + iz]);
@@ -12066,7 +12279,7 @@ function planDeckMesh(d, ground, covered) {
     }
     for (let sAl = PLAN.post / 2; sAl < L2; sAl += PLAN.post) {
       const x = ax + tx * sAl + mx, z = az + tz * sAl + mz, y = top(x, z);
-      if (y - ground(x + nx * 0.65, z + nz * 0.65) < RAIL_DROP) continue;
+      if (y - ground(x + nx * 0.65, z + nz * 0.65) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
       const h = 0.03, y0 = y + PLAN.upstand, y1 = y + PLAN.railH;
       const c = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([p, q]) => [x + tx * p + nx * q, z + tz * p + nz * q]);
       for (let k = 0; k < 4; k++) {
@@ -12113,7 +12326,7 @@ function slotted(P, N2, C, S3, B, p0) {
   return { position: pos, normal: nrm, color: col2, uv, groups };
 }
 function planParapetRings(d, ground) {
-  const ring2 = d.plan.ring, out = [], top = (x, z) => planTop(d, x, z) - PLAN.sink, outSign = ringSign(ring2);
+  const ring2 = d.plan.ring, out = [], top = (x, z) => planTop(d, x, z) - PLAN.sink, outSign = ringSign(ring2), free = new Set(d.plan.free);
   for (let i = 0; i < ring2.length; i++) {
     const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], L2 = Math.hypot(bx - ax, bz - az);
     if (L2 < 0.01) continue;
@@ -12121,7 +12334,7 @@ function planParapetRings(d, ground) {
     for (let k = 0; k < steps; k++) {
       const x0 = ax + (bx - ax) * k / steps, z0 = az + (bz - az) * k / steps, x1 = ax + (bx - ax) * (k + 1) / steps, z1 = az + (bz - az) * (k + 1) / steps;
       const ya = top(x0, z0), yb = top(x1, z1);
-      if (ground && Math.max(ya - ground(x0 + nx * 0.5, z0 + nz * 0.5), yb - ground(x1 + nx * 0.5, z1 + nz * 0.5)) < RAIL_DROP) continue;
+      if (ground && Math.max(ya - ground(x0 + nx * 0.5, z0 + nz * 0.5), yb - ground(x1 + nx * 0.5, z1 + nz * 0.5)) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
       out.push({ ring: [[x0, z0], [x1, z1], [x1 - nx * PLAN.upW, z1 - nz * PLAN.upW], [x0 - nx * PLAN.upW, z0 - nz * PLAN.upW]], top: Math.max(ya, yb) + PLAN.railH, base: Math.min(ya, yb) - PLAN.depth });
     }
   }
@@ -12139,7 +12352,7 @@ function deckUnderCut(decks, grids, hdr) {
       for (let r = r02; r <= r12; r++) for (let c = c02; c <= c12; c++) {
         const x = x0 + c * step, z = z0 + r * step;
         if (!inRing(d.plan.ring, x, z)) continue;
-        const top = profY(d, alongLine(d, x, z)) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
+        const top = planBase(d, x, z) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
         for (const G2 of grids) if (G2[k] > top) {
           G2[k] = top;
           moved++;
@@ -12166,6 +12379,7 @@ function deckUnderCut(decks, grids, hdr) {
       const x = x0 + c * step, z = z0 + r * step;
       const over = Math.max(0, Math.abs((x - cx) * vx + (z - cz) * vz) - U2.half), out = outDist(x, z);
       if (over > T3 || out > T3) continue;
+      if (U2.walled && (over > 1.5 || out > 0)) continue;
       const target = U2.level + over * 1 + out * 1;
       const k = r * cols + c;
       for (const G2 of grids) if (G2[k] > target) {
@@ -12262,6 +12476,302 @@ function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null) {
     return g(x, z);
   } : g;
   return { decks, wrap };
+}
+var FREE_NEAR = 3.5;
+var FREE_PAD = 1.2;
+var PAD_MAX = 4;
+var ARM = 15;
+var WALL_MIN = 3.2;
+var WALL_MAX = 8.5;
+var OVER_MIN = 4;
+var BAND_OK = 0.85;
+var SPREAD_MAX = 12;
+function bandCover(line, half, ring2) {
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity, n = 0, k = 0;
+  for (const [x, z] of ring2) {
+    x0 = Math.min(x0, x);
+    z0 = Math.min(z0, z);
+    x1 = Math.max(x1, x);
+    z1 = Math.max(z1, z);
+  }
+  for (let x = Math.floor(x0) + 0.5; x < x1; x++) for (let z = Math.floor(z0) + 0.5; z < z1; z++) {
+    if (!inRing(ring2, x, z)) continue;
+    n++;
+    for (let i = 1; i < line.length; i++) {
+      const [ax, az] = line[i - 1], [bx, bz] = line[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = ((x - ax) * dx + (z - az) * dz) / l2;
+      if (t >= 0 && t <= 1 && Math.hypot(ax + dx * t - x, az + dz * t - z) <= half) {
+        k++;
+        break;
+      }
+    }
+  }
+  return n ? k / n : 1;
+}
+var segHit = (a, b, c, d) => {
+  const r0 = b[0] - a[0], r1 = b[1] - a[1], s0 = d[0] - c[0], s1 = d[1] - c[1], den = r0 * s1 - r1 * s0;
+  if (Math.abs(den) < 1e-9) return false;
+  const t = ((c[0] - a[0]) * s1 - (c[1] - a[1]) * s0) / den, u = ((c[0] - a[0]) * r1 - (c[1] - a[1]) * r0) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+};
+function ringPlans(hand, roadsDoc, railDoc, ground, surf = null) {
+  const out = { ...hand || {} };
+  if (!railDoc?.decks || !roadsDoc?.roads) return out;
+  const nodes = new Map((roadsDoc.nodes || []).map((n) => [n.id, n]));
+  const robs = railDoc.decks.filter((b) => b.type === "ROB");
+  for (const r of roadsDoc.roads) {
+    const br = r.meta?.bridge, osm = String(r.meta?.osm ?? "");
+    if (!br || br === "no" || !osm || out[osm]) continue;
+    const line = centreLine(r, nodes);
+    if (!line) continue;
+    let best = null, bestN = 0;
+    for (const b of robs) {
+      let n = 0;
+      for (let i = 1; i < line.length; i++) {
+        const [ax, az] = line[i - 1], [bx, bz] = line[i], L2 = Math.hypot(bx - ax, bz - az);
+        for (let s = 0; s <= L2; s += 1) if (inRing(b.ring, ax + (bx - ax) * s / (L2 || 1), az + (bz - az) * s / (L2 || 1))) n++;
+      }
+      if (n > bestN) {
+        bestN = n;
+        best = b;
+      }
+    }
+    if (!best || bestN < 3) continue;
+    if (bandCover(line, widths(r).half, best.ring) >= BAND_OK) continue;
+    const H = widths(r).half - SLAB.parapetW, band = [];
+    const ext = (p, q) => {
+      const dx = p[0] - q[0], dz = p[1] - q[1], L2 = Math.hypot(dx, dz) || 1;
+      return [p[0] + dx / L2 * EXT, p[1] + dz / L2 * EXT];
+    };
+    const bl = [ext(line[0], line[1]), ...line, ext(line[line.length - 1], line[line.length - 2])];
+    for (let i = 1; i < bl.length; i++) {
+      const [ax, az] = bl[i - 1], [bx, bz] = bl[i], L2 = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L2, nz = (bx - ax) / L2;
+      for (let t = 0; t <= L2; t += 1) for (const sg of [-1, 1]) band.push([ax + (bx - ax) * t / L2 + nx * H * sg, az + (bz - az) * t / L2 + nz * H * sg]);
+    }
+    for (const o of roadsDoc.roads) {
+      if (o === r || ![o.a, o.b].some((id) => id === r.a || id === r.b)) continue;
+      let ol = centreLine(o, nodes);
+      if (!ol) continue;
+      if (o.b === r.a || o.b === r.b) ol = ol.slice().reverse();
+      const oh = widths(o).half - SLAB.parapetW;
+      let run = 0;
+      for (let i = 1; i < ol.length && run < ARM; i++) {
+        const [ax, az] = ol[i - 1], [bx, bz] = ol[i], L2 = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L2, nz = (bx - ax) / L2;
+        for (let t = 0; t <= L2 && run + t < ARM; t += 1) for (const sg of [-1, 1]) band.push([ax + (bx - ax) * t / L2 + nx * oh * sg, az + (bz - az) * t / L2 + nz * oh * sg]);
+        run += L2;
+      }
+    }
+    const plan = urbisPlan(best, railDoc, ground, { surfaces: [...surf?.surfaces || [], { rings: [band] }] });
+    if (plan) out[osm] = plan;
+  }
+  return out;
+}
+function urbisPlan(b, railDoc, ground, surf = null) {
+  const ring2 = b.ring.slice();
+  if (ring2.length > 3 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1]) ring2.pop();
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const [x, z] of ring2) {
+    x0 = Math.min(x0, x);
+    z0 = Math.min(z0, z);
+    x1 = Math.max(x1, x);
+    z1 = Math.max(z1, z);
+  }
+  const under = [], segs = [];
+  for (const t of railDoc.tracks) {
+    if (t.tunnel || t.box.x1 < x0 - 10 || t.box.x0 > x1 + 10 || t.box.z1 < z0 - 10 || t.box.z0 > z1 + 10) continue;
+    for (let i = 0; i < t.pts.length; i++) {
+      const p = t.pts[i];
+      if (i) segs.push([[t.pts[i - 1][0], t.pts[i - 1][2]], [p[0], p[2]]]);
+      if (inRing(ring2, p[0], p[2])) under.push({ p, q: t.pts[Math.min(i + 1, t.pts.length - 1)], o: t.pts[Math.max(i - 1, 0)] });
+    }
+  }
+  if (under.length < 2) return null;
+  let ux = 0, uz = 0, cx = 0, cz = 0, ry = Infinity;
+  for (const { p, q, o } of under) {
+    let dx = q[0] - o[0], dz = q[2] - o[2];
+    const L2 = Math.hypot(dx, dz) || 1;
+    dx /= L2;
+    dz /= L2;
+    if (ux * dx + uz * dz < 0) {
+      dx = -dx;
+      dz = -dz;
+    }
+    ux += dx;
+    uz += dz;
+    cx += p[0];
+    cz += p[2];
+    ry = Math.min(ry, p[1]);
+  }
+  const ul = Math.hypot(ux, uz) || 1;
+  ux /= ul;
+  uz /= ul;
+  cx /= under.length;
+  cz /= under.length;
+  const vx = -uz, vz = ux, lat = (x, z) => (x - cx) * vx + (z - cz) * vz, lon = (x, z) => (x - cx) * ux + (z - cz) * uz;
+  let lo = Infinity, hi = -Infinity, rmax = -Infinity;
+  for (const { p } of under) {
+    const o = lat(p[0], p[2]);
+    lo = Math.min(lo, o);
+    hi = Math.max(hi, o);
+    rmax = Math.max(rmax, p[1]);
+  }
+  if (hi - lo > SPREAD_MAX || rmax - ry > 1.5) return null;
+  const gv = ring2.map(([x, z]) => ground(x, z)).filter(Number.isFinite).sort((a, c) => a - c);
+  if (!gv.length || gv[Math.floor(gv.length * 0.75)] - ry < OVER_MIN) return null;
+  const near = (x, z) => segs.some(([a, c]) => {
+    const dx = c[0] - a[0], dz = c[1] - a[1], l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / l2));
+    return Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z) < FREE_NEAR;
+  });
+  const free = [];
+  for (let i = 0; i < ring2.length; i++) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    let f = segs.some(([a, c]) => segHit(A, B, a, c));
+    for (let s = 0; !f && s <= L2; s += 1) f = near(A[0] + (B[0] - A[0]) * s / (L2 || 1), A[1] + (B[1] - A[1]) * s / (L2 || 1));
+    if (f) free.push(i);
+  }
+  const sg0 = ringSign(ring2), lvl = gv[Math.floor(gv.length * 0.75)], pad = new Set(free);
+  for (let i = 0; i < ring2.length; i++) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (L2 < 0.5 || pad.has(i)) continue;
+    const nx = (B[1] - A[1]) / L2 * sg0, nz = -(B[0] - A[0]) / L2 * sg0;
+    let n = 0, low = 0;
+    for (let s = 0.5; s < L2; s += 1) {
+      const g = ground(A[0] + (B[0] - A[0]) * s / L2 + nx * 1.5, A[1] + (B[1] - A[1]) * s / L2 + nz * 1.5);
+      if (Number.isFinite(g)) {
+        n++;
+        if (g < lvl - 1) low++;
+      }
+    }
+    if (n && low / n >= 0.5) pad.add(i);
+  }
+  const padOf = /* @__PURE__ */ new Map();
+  if (pad.size) for (const i of pad) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, tx = (B[0] - A[0]) / L2, tz = (B[1] - A[1]) / L2, nx = tz * sg0, nz = -tx * sg0;
+    let o = FREE_PAD;
+    for (const q of surf?.surfaces || []) for (const r of q.rings) for (const [x, z] of r) {
+      const u = (x - A[0]) * tx + (z - A[1]) * tz, v = (x - A[0]) * nx + (z - A[1]) * nz;
+      if (u < -0.5 || u > L2 + 0.5 || v <= 0 || v > PAD_MAX - 0.3) continue;
+      const g = ground(x, z);
+      if (Number.isFinite(g) && g < lvl - 1) o = Math.max(o, v + 0.3);
+    }
+    padOf.set(i, +o.toFixed(2));
+  }
+  if (pad.size) {
+    const F = pad, n = ring2.length, sg = sg0;
+    const line = (i) => {
+      const A = ring2[i], B = ring2[(i + 1) % n], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nx = (B[1] - A[1]) / L2 * sg, nz = -(B[0] - A[0]) / L2 * sg, o = F.has(i) ? padOf.get(i) : 0;
+      return { p: [A[0] + nx * o, A[1] + nz * o], d: [(B[0] - A[0]) / L2, (B[1] - A[1]) / L2], nx, nz, o };
+    };
+    const moved = ring2.map((P, i) => {
+      const a = line((i + n - 1) % n), b2 = line(i);
+      if (!a.o && !b2.o) return P;
+      const den = a.d[0] * b2.d[1] - a.d[1] * b2.d[0];
+      if (Math.abs(den) < 0.05) return [+(P[0] + (a.nx * a.o + b2.nx * b2.o) / (a.o && b2.o ? 2 : 1)).toFixed(2), +(P[1] + (a.nz * a.o + b2.nz * b2.o) / (a.o && b2.o ? 2 : 1)).toFixed(2)];
+      const t = ((b2.p[0] - a.p[0]) * b2.d[1] - (b2.p[1] - a.p[1]) * b2.d[0]) / den;
+      return [+(a.p[0] + a.d[0] * t).toFixed(2), +(a.p[1] + a.d[1] * t).toFixed(2)];
+    });
+    for (let i = 0; i < n; i++) ring2[i] = moved[i];
+  }
+  let s0 = Infinity, s1 = -Infinity;
+  for (const [x, z] of ring2) {
+    const s = lon(x, z);
+    s0 = Math.min(s0, s);
+    s1 = Math.max(s1, s);
+  }
+  const edgeOut = (side) => {
+    const found = [];
+    for (const s of [s0 - 3, s0 - 6, s1 + 3, s1 + 6]) {
+      for (let o = WALL_MIN; o <= WALL_MAX + 0.01; o += 0.5) {
+        const off = side > 0 ? hi + o : lo - o, g = ground(cx + ux * s + vx * off, cz + uz * s + vz * off);
+        if (Number.isFinite(g) && g > ry + 1.2) {
+          found.push(o);
+          break;
+        }
+      }
+    }
+    found.sort((a, c) => a - c);
+    return found.length ? Math.max(WALL_MIN, found[Math.floor(found.length / 2)] - 0.5) : WALL_MIN + 1;
+  };
+  const wHi = hi + edgeOut(1), wLo = lo - edgeOut(-1);
+  const wallAt = (off) => {
+    let a = Infinity, e = -Infinity;
+    for (let s = s0 - 1; s <= s1 + 1; s += 0.25) {
+      if (inRing(ring2, cx + ux * s + vx * off, cz + uz * s + vz * off)) {
+        a = Math.min(a, s);
+        e = Math.max(e, s);
+      }
+    }
+    if (!(e > a)) return null;
+    const p = (s) => [+(cx + ux * s + vx * off).toFixed(2), +(cz + uz * s + vz * off).toFixed(2)];
+    return [p(a - 0.3), p(e + 0.3)];
+  };
+  const walls = [wallAt(wLo), wallAt(wHi)].filter(Boolean);
+  const mid = (wLo + wHi) / 2;
+  return {
+    urbis: b.id,
+    fit: true,
+    ring: ring2,
+    free,
+    walls,
+    under: { c: [+(cx + vx * mid).toFixed(2), +(cz + vz * mid).toFixed(2)], u: [+ux.toFixed(4), +uz.toFixed(4)], half: +((wHi - wLo) / 2).toFixed(2), level: +(ry - 0.45).toFixed(2), walled: true }
+  };
+}
+function deckSoffitCap(decks) {
+  const list = decks || [];
+  return (x, z) => {
+    let cap2 = Infinity;
+    for (const d of list) {
+      if (x < d.box[0] - 25 || z < d.box[1] - 25 || x > d.box[2] + 25 || z > d.box[3] + 25) continue;
+      let out, soffit;
+      if (d.plan) {
+        out = 0;
+        if (!inRing(d.plan.ring, x, z)) {
+          out = Infinity;
+          const ring2 = d.plan.ring;
+          for (let i = 0; i < ring2.length; i++) {
+            const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+            const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+            out = Math.min(out, Math.hypot(ax + dx * t - x, az + dz * t - z));
+          }
+        }
+        soffit = planBase(d, x, z) - PLAN.sink - PLAN.depth;
+      } else {
+        let best = Infinity, s = 0;
+        for (let i = 1; i < d.pts.length; i++) {
+          const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+          const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist3 = Math.hypot(ax + dx * t - x, az + dz * t - z);
+          if (dist3 < best) {
+            best = dist3;
+            s = d.cum[i - 1] + t * Math.sqrt(l2);
+          }
+        }
+        out = Math.hypot(Math.max(0, best - d.half), Math.max(0, d.span[0] - s, s - d.span[1]));
+        soffit = profY(d, Math.min(Math.max(s, d.span[0]), d.span[1])) - SLAB.sink - SLAB.depth;
+      }
+      if (out > 25) continue;
+      cap2 = Math.min(cap2, soffit - 0.3 + out / 12);
+    }
+    return cap2;
+  };
+}
+function deckFootprint(d) {
+  if (d.plan) return (x, z) => x >= d.box[0] && z >= d.box[1] && x <= d.box[2] && z <= d.box[3] && inRing(d.plan.ring, x, z);
+  return (x, z) => {
+    if (x < d.box[0] || z < d.box[1] || x > d.box[2] || z > d.box[3]) return false;
+    let best = Infinity, s = 0;
+    for (let i = 1; i < d.pts.length; i++) {
+      const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist3 = Math.hypot(ax + dx * t - x, az + dz * t - z);
+      if (dist3 < best) {
+        best = dist3;
+        s = d.cum[i - 1] + t * Math.sqrt(l2);
+      }
+    }
+    return best <= d.half && s >= d.span[0] - 0.01 && s <= d.span[1] + 0.01;
+  };
+}
+function onCarriageway(d, x, z) {
+  d._band ??= bandOf(d);
+  return !offBand(d._band, x, z);
 }
 
 // viewer/track.js
@@ -12444,7 +12954,8 @@ function kitCollector(opts = {}) {
       placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
     }
     stats.faces++;
-    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rnd + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
+    const rndPack = Math.floor(rnd * 4096 + 0.5) / 4096;
+    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rndPack + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S3.seed;
     const gaps = [];
@@ -12728,11 +13239,11 @@ function roofCollector(opts = {}) {
     const ex = Math.abs(ca) * hx + Math.abs(sa) * hz, ez = Math.abs(sa) * hx + Math.abs(ca) * hz;
     cols.push(x - ex, z - ez, x + ex, z + ez, top);
   };
-  function stack(x, z, tx, tz, w, d, top, roofY, aux, tone, r) {
+  function stack(x, z, tx, tz, w, d, top, roofY2, aux, tone, r) {
     const nx = -tz, nz = tx;
     let lo = Infinity, hi = -Infinity;
     for (const [a, b] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5], [0, 0]]) {
-      const yy = roofY(x + tx * a * w + nx * b * d, z + tz * a * w + nz * b * d);
+      const yy = roofY2(x + tx * a * w + nx * b * d, z + tz * a * w + nz * b * d);
       lo = Math.min(lo, yy);
       hi = Math.max(hi, yy);
     }
@@ -12771,14 +13282,14 @@ function roofCollector(opts = {}) {
     const w = f.party ? 0.8 + r() * 0.7 : 0.55 + r() * 0.35, d = f.party ? 0.5 + r() * 0.15 : 0.45 + r() * 0.15;
     const inset = f.party ? 0 : d / 2 + 0.05;
     const cx = f.x - f.nx * inset, cz = f.z - f.nz * inset;
-    const roofY = (x, z) => {
+    const roofY2 = (x, z) => {
       const a = f.roofAt(x, z), b = f.otherRoof ? f.otherRoof(x, z) : -Infinity;
       const m = Math.max(a, b);
       return m > -1e8 ? m : f.top;
     };
     const top = f.top + 0.7 + r() * 0.6;
-    const g = Math.max(0.2, Math.min(1.6, (f.top - roofY(f.x + f.tx * 1.5, f.z + f.tz * 1.5)) / 1.5));
-    const s = stack(cx, cz, f.tx, f.tz, w, d, top, roofY, [f.top, f.tx * g, f.tz * g, 1], f.tone, r);
+    const g = Math.max(0.2, Math.min(1.6, (f.top - roofY2(f.x + f.tx * 1.5, f.z + f.tz * 1.5)) / 1.5));
+    const s = stack(cx, cz, f.tx, f.tz, w, d, top, roofY2, [f.top, f.tx * g, f.tz * g, 1], f.tone, r);
     if (s) {
       s.party = f.party;
       stacks.push(s);
@@ -13104,12 +13615,12 @@ function roofCollector(opts = {}) {
         const p = F.at(u, v);
         const w = 0.5 + r() * 0.45, d = 0.45 + r() * 0.2;
         const ridgeY = b.roofTop;
-        const roofY = (x, z) => {
+        const roofY2 = (x, z) => {
           const yy = b.roofAt(x, z, false);
           return yy > -1e8 ? yy : p[1];
         };
         const tanP = Math.tan(F.pitch), g = [-F.dx * tanP, -F.dz * tanP];
-        const s = stack(p[0], p[2], F.t[0], F.t[2], w, d, Math.max(ridgeY + 0.5 + r() * 0.5, p[1] + 1), roofY, [p[1], g[0], g[1], 0], b.tone, r);
+        const s = stack(p[0], p[2], F.t[0], F.t[2], w, d, Math.max(ridgeY + 0.5 + r() * 0.5, p[1] + 1), roofY2, [p[1], g[0], g[1], 0], b.tone, r);
         if (s) {
           stacks.push(s);
           stats.stackRidge = (stats.stackRidge || 0) + 1;
@@ -13777,7 +14288,7 @@ function ringArea2(r) {
   }
   return a / 2;
 }
-function railTileData(doc, bounds, heroes = []) {
+function railTileData(doc, bounds, heroes = [], { deckCap = null, skipDeck = null } = {}) {
   const ts = tracksIn(doc, bounds, 1);
   const hs = (heroes || []).map(heroFrame);
   const roadHeroes = hs.filter((h) => h.kind === "road_over_rail");
@@ -13787,7 +14298,7 @@ function railTileData(doc, bounds, heroes = []) {
     return x > hb.x0 - m && x < hb.x1 + m && z > hb.z0 - m && z < hb.z1 + m && inRing3(h.ring, x, z);
   });
   const wireCap = (x, z) => {
-    let cap2 = Infinity;
+    let cap2 = deckCap ? deckCap(x, z) : Infinity;
     for (const h of roadHeroes) {
       const [X, Y] = h.toLocal(x, z);
       const out2 = Math.max(0, Math.abs(Y) - h.deck.width / 2);
@@ -13852,7 +14363,8 @@ function railTileData(doc, bounds, heroes = []) {
     if (t.electrified) {
       for (let s0 = Math.ceil(sA / MAST_STEP) * MAST_STEP; s0 < sB; s0 += MAST_STEP) {
         let s = s0;
-        for (let k = 0; k < 8 && inHero(sample(F, s).x, sample(F, s).z, 3); k++) s += 4;
+        const blocked = (q) => inHero(q.x, q.z, 3) || deckCap && deckCap(q.x, q.z) < q.y + 8;
+        for (let k = 0; k < 8 && blocked(sample(F, s)); k++) s += 4;
         if (s >= sB) continue;
         const f = sample(F, s), side = outerSide(nearTracks, t, f);
         let off = MAST_OFF;
@@ -13865,7 +14377,7 @@ function railTileData(doc, bounds, heroes = []) {
         const f = sample(F, Math.min(s, sB));
         const ph = f.s / MAST_STEP % 2, zig = (ph < 1 ? ph : 2 - ph) * 0.4 - 0.2;
         const m = f.s / MAST_STEP % 1, sag = 4 * m * (1 - m) * 0.75;
-        const cap2 = roadHeroes.length ? wireCap(f.x, f.z) : Infinity;
+        const cap2 = roadHeroes.length || deckCap ? wireCap(f.x, f.z) : Infinity;
         const yc = Math.min(f.y + WIRE_H, cap2 - 0.3), ym = Math.max(yc + 0.15, Math.min(f.y + MESSENGER_H - sag, cap2));
         contact.push([f.x + f.nx * zig, yc, f.z + f.nz * zig]);
         mess.push([f.x, ym, f.z]);
@@ -13986,7 +14498,7 @@ function railTileData(doc, bounds, heroes = []) {
       out.shelters = M2;
     }
   }
-  const decks = doc.decks.filter((b) => inside2(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1]));
+  const decks = doc.decks.filter((b) => inside2(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1]) && !(skipDeck && skipDeck(b)) && !(skipDeck && b.railTop != null && b.ground - 0.92 - b.railTop < 4.8));
   if (decks.length) {
     const P = [];
     for (const b of decks) {
@@ -14086,7 +14598,7 @@ var KINK_DEG = 8;
 var KINK_REACH = 3;
 var KINK_ITER = 30;
 var JOIN_TOL = 0.05;
-function roundKinks(paths) {
+function roundKinks(paths, keep = null) {
   const P = paths.length, base = new Int32Array(P + 1);
   for (let i = 0; i < P; i++) base[i + 1] = base[i] + paths[i].pts.length;
   const N2 = base[P];
@@ -14173,6 +14685,13 @@ function roundKinks(paths) {
       }
       nX[n] = X[n] + 0.5 * (sx / c - X[n]);
       nZ[n] = Z[n] + 0.5 * (sz / c - Z[n]);
+      if (keep && !keep(X[n], Z[n], nX[n], nZ[n])) {
+        let f = 0.5;
+        while (f > 0.1 && !keep(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
+        if (f <= 0.1) f = 0;
+        nX[n] = X[n] + (nX[n] - X[n]) * f;
+        nZ[n] = Z[n] + (nZ[n] - Z[n]) * f;
+      }
     }
     X = nX;
     Z = nZ;
@@ -14193,10 +14712,57 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const t0 = performance.now();
   const raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
   const fitStats = { points: 0, moved: 0, maxShift: 0 };
-  const parked = opts.parked?.length ? parkedGrid(opts.parked) : null;
-  const fitted = grid ? fitToSurface(raw, grid, fitStats, parked) : raw;
+  const TP = !opts.old;
+  const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
+  const raw2 = parked && TP ? densify(raw, 1.5) : raw;
+  const tF = performance.now();
+  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP) : raw2;
+  fitStats.fitMs = Math.round(performance.now() - tF);
+  if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
-  const src = roundKinks(fitted);
+  if (opts.trace) opts.trace.afterJoin = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
+  const keepClear = parked && TP ? (x0, z0, x1, z1) => {
+    const d1 = parked.dist(x1, z1);
+    return d1 >= TP_HALF + TP_FIT * 0.5 || d1 >= parked.dist(x0, z0);
+  } : null;
+  const tK = performance.now();
+  const src = roundKinks(fitted, keepClear);
+  fitStats.kinkMs = Math.round(performance.now() - tK);
+  if (opts.trace) {
+    opts.trace.src = src;
+    opts.trace.raw = raw2;
+  }
+  let parkedKept = opts.parked || null;
+  if (parked && TP) {
+    const tC = performance.now();
+    const drop2 = /* @__PURE__ */ new Set();
+    for (const p of src) {
+      const q = p.pts;
+      let any = false;
+      for (let k = 1; k < q.length; k++) {
+        const a = q[k - 1], b = q[k], L2 = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L2 / 0.25));
+        if (!parked.anyNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, L2 / 2 + 5.5)) continue;
+        any = true;
+        for (let m = 0; m <= n; m++) {
+          const t = m / n;
+          parked.each(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, TP_HALF, (ci) => drop2.add(ci));
+        }
+      }
+      const c = p.cum || cumulative(q), len2 = c[c.length - 1];
+      if (any) for (let sd = 0; sd <= len2; sd += 0.5) {
+        const F = pointAt(q, c, sd + TP_WB / 2), R2 = pointAt(q, c, sd - TP_WB / 2);
+        const hx = F[0] - R2[0], hz = F[1] - R2[1], hl = Math.hypot(hx, hz) || 1;
+        const body = { x: (F[0] + R2[0]) / 2, z: (F[1] + R2[1]) / 2, ax: hx / hl, az: hz / hl };
+        parked.each(body.x, body.z, 2.6, (ci) => {
+          if (!drop2.has(ci) && boxesOverlap(body, parked.sites[ci])) drop2.add(ci);
+        });
+      }
+    }
+    fitStats.parkDropped = drop2.size + (opts.droppedBefore || 0);
+    fitStats.checkMs = Math.round(performance.now() - tC);
+    if (drop2.size) parkedKept = opts.parked.filter((c, ci) => !drop2.has(ci));
+    if (drop2.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop2.size });
+  }
   const idx2 = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
@@ -14412,6 +14978,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     cfOtherAt,
     cfYield,
     jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })),
+    parkedKept,
     ...narrowStretches(src, P),
     bounds,
     stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) }
@@ -14535,26 +15102,97 @@ function narrowStretches(src, P) {
   };
 }
 var PARK_CLEAR = 1.95;
-function parkedGrid(sites) {
+var TP_HALF = 0.98;
+var TP_FIT = 0.15;
+var RAMP = 0.2;
+var TP_BOX_HW = 0.925;
+var TP_BOX_HL = 2.365;
+var TP_WB = 2.8;
+var TP_BODY_HL = 2.37;
+function boxesOverlap(b, c) {
+  const cx = Math.cos(c.yaw), cz = -Math.sin(c.yaw);
+  const A = [[b.ax, b.az, TP_BODY_HL], [-b.az, b.ax, TP_HALF]], B = [[cx, cz, TP_BOX_HL], [-cz, cx, TP_BOX_HW]];
+  const dx = c.x - b.x, dz = c.z - b.z;
+  for (const [ux, uz] of [...A, ...B]) {
+    let r = 0;
+    for (const [vx, vz, h] of A) r += h * Math.abs(vx * ux + vz * uz);
+    for (const [vx, vz, h] of B) r += h * Math.abs(vx * ux + vz * uz);
+    if (Math.abs(dx * ux + dz * uz) >= r) return false;
+  }
+  return true;
+}
+function parkedBoxDist(c, x, z) {
+  const ax = Math.cos(c.yaw), az = -Math.sin(c.yaw), dx = x - c.x, dz = z - c.z;
+  const u = Math.abs(dx * ax + dz * az) - TP_BOX_HL, v = Math.abs(dx * az - dz * ax) - TP_BOX_HW;
+  return Math.hypot(Math.max(u, 0), Math.max(v, 0)) + Math.min(Math.max(u, v), 0);
+}
+function parkedGrid(sites, boxed = false) {
   const g = /* @__PURE__ */ new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
-  for (const c of sites) {
+  sites.forEach((c, ci) => {
     const k = key(Math.floor(c.x / 4), Math.floor(c.z / 4));
     if (!g.has(k)) g.set(k, []);
-    g.get(k).push(c);
-  }
+    g.get(k).push(ci);
+  });
+  const near = (x, z, f) => {
+    const i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) if (f(sites[ci], ci)) return true;
+    return false;
+  };
   return {
+    sites,
+    /** any car centre within r of (x, z)? */
+    anyNear(x, z, r) {
+      const n = Math.ceil(r / 4), i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) {
+        const c = sites[ci];
+        if ((c.x - x) ** 2 + (c.z - z) ** 2 < r * r) return true;
+      }
+      return false;
+    },
+    /** the nearest box distance (<= 4 m reach) */
+    dist(x, z) {
+      let b = Infinity;
+      near(x, z, (c) => {
+        const d = parkedBoxDist(c, x, z);
+        if (d < b) b = d;
+        return false;
+      });
+      return b;
+    },
+    /** every car whose box comes within r of (x, z): f(ci) */
+    each(x, z, r, f) {
+      near(x, z, (c, ci) => {
+        if (parkedBoxDist(c, x, z) < r) f(ci);
+        return false;
+      });
+    },
     clear(x, z) {
-      const i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
-      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of g.get(key(i0 + di, j0 + dj)) || []) {
+      if (boxed) return this.dist(x, z) >= TP_HALF + TP_FIT;
+      return !near(x, z, (c) => {
         const dx = x - c.x, dz = z - c.z, ax = Math.cos(c.yaw), az = -Math.sin(c.yaw);
         const along = Math.abs(dx * ax + dz * az), across = Math.abs(dx * az - dz * ax);
-        if (along < 2.3 + 0.9 && across < PARK_CLEAR) return false;
-      }
-      return true;
+        return along < 2.3 + 0.9 && across < PARK_CLEAR;
+      });
     }
   };
 }
-function fitToSurface(paths, G2, st, parked = null) {
+function densify(paths, step) {
+  return paths.map((p) => {
+    if (p.kind === "connector") return p;
+    const q = p.pts, out = [q[0]];
+    for (let k = 1; k < q.length; k++) {
+      const a = q[k - 1], b = q[k], L2 = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L2 / step);
+      for (let m = 1; m < n; m++) {
+        const t = m / n;
+        out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, ...a.slice(2)]);
+      }
+      out.push(b);
+    }
+    if (out.length === q.length) return p;
+    return { ...p, pts: out, cum: cumulative(out) };
+  });
+}
+function fitToSurface(paths, G2, st, parked = null, trace = null, TP = false) {
   const ok = (x, z) => {
     const i = Math.floor((x - G2.x0) / G2.step), j = Math.floor((z - G2.z0) / G2.step);
     if (i < 0 || j < 0 || i >= G2.nx || j >= G2.nz) return true;
@@ -14574,6 +15212,8 @@ function fitToSurface(paths, G2, st, parked = null) {
   for (const p of paths) {
     if (p.kind === "connector") continue;
     const q = p.pts, n = q.length, off = new Float32Array(n);
+    const how = trace || TP && parked ? new Uint8Array(n) : null;
+    if (trace) (trace.fit ??= /* @__PURE__ */ new Map()).set(p.id, how);
     for (let k = 0; k < n; k++) {
       const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
       st.points++;
@@ -14582,6 +15222,7 @@ function fitToSurface(paths, G2, st, parked = null) {
         fits = f;
         if (fits(x, z, nx, nz, 0)) {
           done2 = true;
+          if (how) how[k] = f === fitsRoad && parked ? 2 : 0;
           break;
         }
         for (let s = 0.25; s <= (f === fitsPark ? 4 : 9) && !done2; s += 0.25) {
@@ -14593,23 +15234,79 @@ function fitToSurface(paths, G2, st, parked = null) {
             done2 = true;
           }
         }
+        if (how) how[k] = done2 ? f === fitsPark ? 1 : 2 : 3;
         if (done2) break;
         if (f === fitsPark) st.parkBlocked = (st.parkBlocked || 0) + 1;
       }
     }
-    const sm = new Float32Array(n);
-    for (let k = 0; k < n; k++) {
-      let a = 0, w = 0;
-      for (let m = Math.max(0, k - 6); m <= Math.min(n - 1, k + 6); m++) {
-        const ww = 7 - Math.abs(m - k);
-        a += off[m] * ww;
-        w += ww;
+    const smooth3 = (hard) => {
+      const sm2 = new Float32Array(n);
+      for (let k = 0; k < n; k++) {
+        let a = 0, w = 0;
+        for (let m = Math.max(0, k - 6); m <= Math.min(n - 1, k + 6); m++) {
+          const ww = 7 - Math.abs(m - k);
+          a += off[m] * ww;
+          w += ww;
+        }
+        sm2[k] = a / w;
       }
-      sm[k] = a / w;
+      if (TP && parked) {
+        const c = p.cum || cumulative(q), pos = new Float32Array(n), neg = new Float32Array(n);
+        for (let m = 0; m < n; m++) {
+          const v = off[m];
+          if (Math.abs(v) <= Math.abs(sm2[m])) continue;
+          if (how[m] !== 1 || !fitsRoad(q[m][0], q[m][1], -tangent(q, m)[1], tangent(q, m)[0], 0)) {
+            sm2[m] = v;
+            continue;
+          }
+          for (let k = m; k < n && Math.abs(v) - RAMP * (c[k] - c[m]) > 0; k++) {
+            const e = Math.abs(v) - RAMP * (c[k] - c[m]);
+            if (v > 0) pos[k] = Math.max(pos[k], e);
+            else neg[k] = Math.max(neg[k], e);
+          }
+          for (let k = m - 1; k >= 0 && Math.abs(v) - RAMP * (c[m] - c[k]) > 0; k--) {
+            const e = Math.abs(v) - RAMP * (c[m] - c[k]);
+            if (v > 0) pos[k] = Math.max(pos[k], e);
+            else neg[k] = Math.max(neg[k], e);
+          }
+        }
+        for (let k = 0; k < n; k++) {
+          const e = pos[k] >= neg[k] ? pos[k] : -neg[k];
+          if (Math.abs(e) > Math.abs(sm2[k])) sm2[k] = e;
+        }
+      } else for (let k = 0; k < n; k++) if (Math.abs(off[k]) > Math.abs(sm2[k])) sm2[k] = off[k];
+      const sm22 = Float32Array.from(sm2);
+      for (let k = 1; k < n - 1; k++) sm2[k] = (sm22[k - 1] + 2 * sm22[k] + sm22[k + 1]) / 4;
+      if (hard) {
+        for (let k = 0; k < n; k++) if (hard[k]) sm2[k] = off[k];
+      }
+      return sm2;
+    };
+    let sm = smooth3(null);
+    if (parked && TP) {
+      const hard = new Uint8Array(n);
+      for (let it = 0; it < 6; it++) {
+        let bad = 0;
+        for (let k = 0; k < n; k++) {
+          const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
+          if (parked.dist(x + nx * sm[k], z + nz * sm[k]) >= TP_HALF + TP_FIT * 0.5) continue;
+          let best = null;
+          for (let s = 0; s <= 4 && best == null; s += 0.25) for (const v of s ? [sm[k] + s, sm[k] - s] : [sm[k]]) {
+            if (Math.abs(v) <= 4 && fitsPark(x, z, nx, nz, v)) {
+              best = v;
+              break;
+            }
+          }
+          if (best == null || hard[k] && best === off[k]) continue;
+          off[k] = best;
+          hard[k] = 1;
+          bad++;
+        }
+        if (!bad) break;
+        st.tpRounds = (st.tpRounds || 0) + 1;
+        sm = smooth3(hard);
+      }
     }
-    for (let k = 0; k < n; k++) if (Math.abs(off[k]) > Math.abs(sm[k])) sm[k] = off[k];
-    const sm2 = Float32Array.from(sm);
-    for (let k = 1; k < n - 1; k++) sm[k] = (sm2[k - 1] + 2 * sm2[k] + sm2[k + 1]) / 4;
     const pts = q.map((pt, k) => {
       const [tx, tz] = tangent(q, k);
       if (Math.abs(sm[k]) > 0.05) st.moved++;
@@ -15825,7 +16522,8 @@ async function buildTileData(entry, base) {
   const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
   const baseGround = pad ? pad.ground : hm.ground;
   const known = pad ? (p) => onGrid(p) || !pad.noData(p[0], p[1]) : onGrid;
-  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), entry.bridgePlan === false ? null : ov.bridgePlans);
+  const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
+  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans);
   osmBridges.decks = osmBridges.decks.filter((d) => {
     const m = d.pts[Math.floor(d.pts.length / 2)];
     return Number.isNaN(heroDeck(m[0], m[1]));
@@ -15851,6 +16549,14 @@ async function buildTileData(entry, base) {
       return y != null && y - hm.ground(t.x, t.z) > 1.5;
     }));
   }
+  const planDecks = osmBridges.decks.filter((d) => d.plan?.urbis), planFns = planDecks.map((d) => deckHeight(d, baseGround));
+  const planLevel = planFns.length ? (x, z) => {
+    for (const f of planFns) {
+      const y = f(x, z);
+      if (y != null) return y;
+    }
+    return null;
+  } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({
@@ -15871,6 +16577,8 @@ async function buildTileData(entry, base) {
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z),
+    deckLevel: entry.vivier !== false ? planLevel : null,
+    // (vivier: junctions on a measured deck at its level)
     roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null
   }));
   Object.assign(times, rd.times);
@@ -15903,13 +16611,19 @@ async function buildTileData(entry, base) {
   let railOut = null;
   if (rail) {
     const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes, { platformEdge: entry.platformEdge !== false }));
-    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
+    const vv = entry.vivier !== false, foots = osmBridges.decks.map(deckFootprint);
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes, vv ? { deckCap: deckSoffitCap(osmBridges.decks), skipDeck: (b) => foots.some((f) => f(b.centre[0], b.centre[1])) } : {}));
     railOut.stats.carved = c.moved;
     railOut.stats.treesDropped = railDropped;
   }
   if (tcut) tcut.recut = tunnelRecut(tcut, hm);
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
-  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites }));
+  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false }));
+  if (parked && traffic.parkedKept) {
+    parked.stats.trafparkDropped = parked.sites.length - traffic.parkedKept.length;
+    parked.sites = traffic.parkedKept;
+  }
+  delete traffic.parkedKept;
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
@@ -15963,6 +16677,27 @@ async function buildTileData(entry, base) {
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
+  const streetTop = (x, z) => {
+    const H = hm.h, dl = drive.ground.delta, c0 = Math.round((x - H.x0) / H.step), r0 = Math.round((z - H.z0) / H.step);
+    let best = Infinity, y = null;
+    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+      const c = c0 + dc, r = r0 + dr;
+      if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) continue;
+      const k = r * H.cols + c, dd = dc * dc + dr * dr;
+      if (dl[k] > 0 && dl[k] !== 65535 && dd < best) {
+        best = dd;
+        y = hm.y[k] + dl[k] / 100;
+      }
+    }
+    return y;
+  };
+  const drawnAt = (x, z) => {
+    if (measuredAt && measuredAt(x, z)) return true;
+    const H = hm.h, c = Math.round((x - H.x0) / H.step), r = Math.round((z - H.z0) / H.step);
+    if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) return false;
+    const v = drive.ground.delta[r * H.cols + c];
+    return v > 0 && v !== 65535 && Math.abs(hm.y[r * H.cols + c] + v / 100 - roadGround(x, z)) < 0.6;
+  };
   return {
     name: entry.name,
     bounds,
@@ -15984,8 +16719,11 @@ async function buildTileData(entry, base) {
     times,
     rail: railOut,
     grassTypes,
-    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d, hm.ground, measuredAt) })),
-    // OSM road bridges: heights for walk / car + their drawn deck
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => {
+      const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || onCarriageway(d, x, z) && drawnAt(x, z) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
+      return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) };
+    }),
+    // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
     ...entry.keepNet ? { net, hm } : {}
   };
 }
@@ -16521,4 +17259,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "051ec908d9cd7982";
+self.__TILE_CODE_HASH = "55a821bdeff224d6";

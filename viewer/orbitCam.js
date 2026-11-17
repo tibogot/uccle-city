@@ -71,7 +71,7 @@ export class InspectControls {
    * field: { ready(), terrain(x, z), roof(x, z) } (cityField); heroes: () => iterable of TriBVH (raycast(R, H));
    * target: a Vector3 (THREE's in the viewer).
    */
-  constructor(camera, dom, { field, heroes = () => [], target = V(), keys = globalThis, blocked = () => false } = {}) {
+  constructor(camera, dom, { field, heroes = () => [], target = V(), keys = globalThis, blocked = () => false, keyMove = true } = {}) {
     this.object = camera; this.domElement = dom;
     this.field = field; this.heroes = heroes; this.blocked = blocked;   // blocked(): a menu / the full map is open: keys off
     this.target = target;
@@ -79,6 +79,10 @@ export class InspectControls {
     this.maxPolarAngle = Math.PI;           // (OrbitControls' field; this camera has its own pitch limits)
     this.glide = false;                     // true: an outside jump (camera + target set, update()) is flown, not cut
     this.flySpeed = 1;                      // the wheel scales it while flying
+    this.keyMove = keyMove;                 // orbitcam2: WASD / QE / PageUp-Down move without the right button
+    this._mkeys = new Set();                // those keys held (no RMB)
+    this._kvel = V();                       // their damped velocity
+    this.onHelp = null;                     // the ? key (viewer/orbitHelp.js)
     this._on = true;
     this.pos = V(); this.yaw = 0; this.pitch = -0.5;
     this.focusDist = 100;
@@ -110,7 +114,8 @@ export class InspectControls {
     v = !!v;
     if (v === this._on) return;
     this._on = v;
-    this._drag = null; this._two = null; this._ptrs.clear(); this._fly = false; this._keys.clear();
+    this._drag = null; this._two = null; this._ptrs.clear(); this._fly = false; this._keys.clear(); this._mkeys.clear();
+    this._kvel.x = this._kvel.y = this._kvel.z = 0;
     if (v) this._resync = true;
   }
 
@@ -267,6 +272,7 @@ export class InspectControls {
     on(dom, "dblclick", (e) => { if (this._on && e.button === 0) this.frame(e.clientX, e.clientY); });
     const typing = (e) => e.target?.closest?.("input,select,textarea");
     const FLY = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE", "ShiftLeft", "ShiftRight"]);
+    const MOVE = new Set([...FLY, "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown"]);
     on(keys, "keydown", (e) => {
       if (!this._on || typing(e) || e.ctrlKey || e.metaKey || e.altKey || this.blocked()) return;
       if (this._drag?.rmb && FLY.has(e.code)) {
@@ -276,12 +282,20 @@ export class InspectControls {
         e.preventDefault(); e.stopImmediatePropagation();
         return;
       }
+      if (this.keyMove && MOVE.has(e.code)) {
+        // orbitcam2: move without the right button (WASD / arrows on the ground, Q / E and PageDown / PageUp down / up);
+        // swallowed here so no other listener (the bike prompt's E) acts in the orbit view
+        this._mkeys.add(e.code);
+        if (e.code !== "ShiftLeft" && e.code !== "ShiftRight") { this._touched(); e.preventDefault(); e.stopImmediatePropagation(); }
+        return;
+      }
       if (e.code === "KeyF" && !e.repeat) {
         if (this._mouse.in) this.frame(this._mouse.x, this._mouse.y); else this.frame();
       }
+      if (e.key === "?" && !e.repeat && this.onHelp) { this.onHelp(); e.stopImmediatePropagation(); }
     }, true);
-    on(keys, "keyup", (e) => { this._keys.delete(e.code); });
-    on(keys, "blur", () => { this._keys.clear(); this._fly = false; this._drag = null; });
+    on(keys, "keyup", (e) => { this._keys.delete(e.code); this._mkeys.delete(e.code); });
+    on(keys, "blur", () => { this._keys.clear(); this._mkeys.clear(); this._fly = false; this._drag = null; });
   }
   _down(e) {
     if (!this._on) return;
@@ -511,6 +525,32 @@ export class InspectControls {
     cp(this.pos, next);
     this._refocusAt = performance.now() + 150;
   }
+  /** orbitcam2: the keys without the right button. WASD / arrows move on the ground plane along the view's heading
+   *  (not into the ground when looking down), Q / E and PageDown / PageUp sink / rise; the speed follows the height over
+   *  the ground (8-400 m/s, Shift x3), damped; collisions as every motion. Returns true while moving. */
+  _applyKeys(dt) {
+    const K = this._mkeys, has = (a, b) => K.has(a) || K.has(b);
+    const az = (has("KeyW", "ArrowUp") ? 1 : 0) - (has("KeyS", "ArrowDown") ? 1 : 0);
+    const ax = (has("KeyD", "ArrowRight") ? 1 : 0) - (has("KeyA", "ArrowLeft") ? 1 : 0);
+    const ay = (has("KeyE", "PageUp") ? 1 : 0) - (has("KeyQ", "PageDown") ? 1 : 0);
+    const agl = Math.max(0, this.pos.y - this.field.terrain(this.pos.x, this.pos.z));
+    const speed = clamp(agl * 0.8, 8, 400) * (has("ShiftLeft", "ShiftRight") ? 3 : 1);
+    const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
+    const w = V(-sy * az + cy * ax, 0, -cy * az - sy * ax), hl = Math.hypot(w.x, w.z);
+    if (hl > 1e-6) { w.x *= speed / hl; w.z *= speed / hl; }
+    w.y = ay * speed * 0.7;
+    const f = 1 - Math.exp(-dt * (this.enableDamping ? 7 : 1e3)), v = this._kvel;
+    v.x += (w.x - v.x) * f; v.y += (w.y - v.y) * f; v.z += (w.z - v.z) * f;
+    if (len(v) < 0.02) { v.x = v.y = v.z = 0; return false; }
+    const next = V(this.pos.x + v.x * dt, this.pos.y + v.y * dt, this.pos.z + v.z * dt);
+    this.resolve(this.pos, next);
+    if (!Number.isFinite(next.x + next.y + next.z)) { v.x = v.y = v.z = 0; return false; }
+    // (blocked: the velocity into the obstacle goes, no pushing against it)
+    if (dt > 0) { v.x = (next.x - this.pos.x) / dt; v.z = (next.z - this.pos.z) / dt; if (Math.abs(next.y - (this.pos.y + v.y * dt)) > 1e-6) v.y = 0; }
+    cp(this.pos, next);
+    this._refocusAt = performance.now() + 150;
+    return true;
+  }
   _adopt() {
     const cam = this.object, T = this.target, P = cam.position;
     const dx = T.x - P.x, dy = T.y - P.y, dz = T.z - P.z, l = Math.hypot(dx, dy, dz);
@@ -562,7 +602,8 @@ export class InspectControls {
       if (Math.abs(this._dolly.k) > 1e-5) this._applyDolly(damp(11));
       if (this._fly) this._applyFly(dt);
       else if (len(this._vel) > 0.01) { this._vel.x = this._vel.y = this._vel.z = 0; }
-      if (this._refocusAt && now >= this._refocusAt && !this._drag && !this._two && !this._fly
+      const keying = !this._fly && this.keyMove && (this._mkeys.size > 0 || len(this._kvel) > 0) && this._applyKeys(dt);
+      if (this._refocusAt && now >= this._refocusAt && !this._drag && !this._two && !this._fly && !keying
         && Math.abs(this._orb.a) + Math.abs(this._orb.b) < 1e-3 && Math.abs(this._dolly.k) < 1e-3 && len(this._pan) < 0.05) {
         this._refocusAt = 0;
         this._refocus();

@@ -73,7 +73,7 @@ function laneFit(node, ground, noData) {
 
 // `noData` (optional, (x, z) -> bool): the DTM has no value there (outside the Brussels region the tile's grid holds
 // its lowest value): the engine sees a "bridge" over that fake pit, which is not a structure to keep.
-export function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
+export function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null } = {}) {
   const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...(globalThis.__levelsDebug ? { debug: true } : {}) };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
@@ -91,6 +91,14 @@ export function relevelRoads(net, ground, noData = null, { roughLanes = true } =
   const moved = new Set();
   for (const node of net.nodes) {
     if (node.src?.y != null || !node.arms?.length) continue;
+    // (vivier 2026-11-17) a junction ON a measured bridge deck (deckLevel: viewer/streets/bridgeDecks.js plan decks) is
+    // at the deck's level: the mean of its 6 m rings took in the cutting beside the Vivier d'Oie deck and sank the
+    // Chaussee's bridge end 0.5 m under the deck (a 0.35 m step at the joint with Avenue Laterale, the car stopped dead)
+    const dl = deckLevel ? deckLevel(node.x, node.z) : null;
+    if (dl != null) {
+      if (Math.abs(node.y - dl) > 0.02) { const d = node.y - dl; node.y = dl; node.plane = { gx: 0, gz: 0 }; moved.add(node); st.nodes++; st.deckNodes = (st.deckNodes || 0) + 1; if (Math.abs(d) > st.maxMove) { st.maxMove = Math.abs(d); st.maxAt = [Math.round(node.x), Math.round(node.z)]; } }
+      continue;
+    }
     const fit = fittedY(node, ground, noData);
     if (fit == null) { st.skippedNoData = (st.skippedNoData || 0) + 1; continue; }     // no DTM under it: nothing to go back to
     // the ground round it is no plane (a cutting, a wall, a bridge's deck over a cutting): its mean is no street level.

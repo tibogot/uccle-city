@@ -29,6 +29,7 @@ import { ledgeContact } from "./carEnv.js";
 import { carFleet } from "../carFleet.js";
 import { TUNNEL_ROOTS } from "../rail/tunnels.js";
 import { ART_ROOTS } from "../publicart/artRoots.js";
+import { needCpu } from "../heapDrop.js";
 const carSizeOf = (t) => carFleet.sizeOf(t);
 
 const CELL = 0.25;
@@ -116,6 +117,7 @@ export function drawnSolids(scene, tile, carGround, walkGround, tiles = [tile]) 
   const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), sc = new THREE.Vector3();
   const mesh = (o, src) => {
     if (!o.isMesh || !o.geometry?.attributes?.position || !solidMesh(o)) return;
+    needCpu(o.geometry, ["position", "index"], "collisionTest");   // (heap: docs/HEAP.md)
     const P = o.geometry.attributes.position, I = o.geometry.index, n = I ? I.count : P.count;
     const mats = [];
     if (o.isInstancedMesh) for (let k = 0; k < o.count; k++) { o.getMatrixAt(k, M); mats.push(W.multiplyMatrices(o.matrixWorld, M).clone()); }
@@ -380,6 +382,7 @@ function drawnGround(scene, tile) {
   };
   for (const root of objs) root.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || !o.geometry?.attributes?.position) return;
+    needCpu(o.geometry, ["position", "index"], "collisionTest");
     const P = o.geometry.attributes.position, I = o.geometry.index, n = I ? I.count : P.count, mw = o.matrixWorld;
     for (let q = 0; q < n; q += 3) {
       for (const [k, T] of [[0, A], [1, B], [2, Cc]]) { v.fromBufferAttribute(P, I ? I.getX(q + k) : q + k).applyMatrix4(mw); T[0] = v.x; T[1] = v.y; T[2] = v.z; }

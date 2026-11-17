@@ -1,0 +1,2943 @@
+{
+ "mode": "default",
+ "urbis": [
+  {
+   "id": "590",
+   "type": "ROB",
+   "roads": [
+    "Avenue Latérale - Zijlaan",
+    "Chaussée de Waterloo - Waterloosesteenweg",
+    "footway"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    1727.12,
+    322.17
+   ],
+   "tile": "J5",
+   "covered": 1,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "751",
+   "type": "PB",
+   "roads": [
+    "footway"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    1642.73,
+    319.45
+   ],
+   "tile": "J5",
+   "covered": 0,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "752",
+   "type": "PB",
+   "roads": [
+    "footway"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    1540.28,
+    345.71
+   ],
+   "tile": "J5",
+   "covered": 0,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "820",
+   "type": "ROB",
+   "roads": [
+    "Rue du Bourdon - Horzelstraat",
+    "footway",
+    "platform"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    -1205.57,
+    2222.64
+   ],
+   "tile": "D9",
+   "covered": 0.9,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "833",
+   "type": "ROB",
+   "roads": [
+    "Rue du Merlo - Merlostraat"
+   ],
+   "lines": [
+    "L124"
+   ],
+   "centre": [
+    -1666.58,
+    -89.23
+   ],
+   "tile": "C4",
+   "covered": 1,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "864",
+   "type": "ROB",
+   "roads": [
+    "Avenue des Tilleuls - Lindenlaan"
+   ],
+   "lines": [
+    "L26",
+    "L26/5"
+   ],
+   "centre": [
+    -1000.37,
+    2141.56
+   ],
+   "tile": "D9",
+   "covered": 0.95,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "879",
+   "type": "ROB",
+   "roads": [
+    "Rue de Verrewinkel - Verrewinkelstraat"
+   ],
+   "lines": [
+    "",
+    "L26"
+   ],
+   "centre": [
+    -268.81,
+    1308.29
+   ],
+   "tile": "F7",
+   "covered": 1,
+   "hero": true,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "899",
+   "type": "ROB",
+   "roads": [
+    "Avenue de la Chênaie - Eikenboslaan"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    35.56,
+    1020.15
+   ],
+   "tile": "G7",
+   "covered": 1,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "923",
+   "type": "ROB",
+   "roads": [
+    "footway",
+    "service"
+   ],
+   "lines": [
+    "L124"
+   ],
+   "centre": [
+    -742.83,
+    2783.38
+   ],
+   "tile": "E10",
+   "covered": 0.92,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "939",
+   "type": "ROB",
+   "roads": [
+    "Avenue des Tilleuls - Lindenlaan"
+   ],
+   "lines": [
+    "L124"
+   ],
+   "centre": [
+    -1141.19,
+    2057.29
+   ],
+   "tile": "D9",
+   "covered": 0.92,
+   "hero": false,
+   "slab": false,
+   "slabClear": null
+  }
+ ],
+ "crossings": [
+  {
+   "road": "r29872629_0",
+   "name": "Rue du Merlo - Merlostraat",
+   "tile": "C4",
+   "at": [
+    -1666.3,
+    -89.3
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    54.7,
+    55.3
+   ],
+   "railTop": 47.05,
+   "deck": "r29872629_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r29872629_0",
+   "name": "Rue du Merlo - Merlostraat",
+   "tile": "C4",
+   "at": [
+    -1669.4,
+    -87.7
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    54.7,
+    55.2
+   ],
+   "railTop": 46.96,
+   "deck": "r29872629_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r40760452d306595455_6",
+   "name": "Rue de Stalle - Stallestraat",
+   "tile": "C5",
+   "at": [
+    -1489.4,
+    279.1
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    31.7,
+    31.9
+   ],
+   "railTop": 49.59,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "686",
+   "ok": true
+  },
+  {
+   "road": "r40760452d306595455_6",
+   "name": "Rue de Stalle - Stallestraat",
+   "tile": "C5",
+   "at": [
+    -1486.2,
+    277.2
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    31.7,
+    31.9
+   ],
+   "railTop": 49.62,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "686",
+   "ok": true
+  },
+  {
+   "road": "r1342926162_0",
+   "name": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "tile": "H5",
+   "at": [
+    909.8,
+    527.4
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    77.6,
+    77.7
+   ],
+   "railTop": 71.69,
+   "deck": "r1342926162_0",
+   "plan": true,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1342926162_0",
+   "name": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "tile": "H5",
+   "at": [
+    904.1,
+    526.5
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    79.7,
+    77.7
+   ],
+   "railTop": 71.66,
+   "deck": "r1342926162_0",
+   "plan": true,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r35036093_0",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "tile": "J5",
+   "at": [
+    1729.9,
+    319.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    83,
+    81.5
+   ],
+   "railTop": 75.02,
+   "deck": "r35036093_0",
+   "plan": true,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r35036093_0",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "tile": "J5",
+   "at": [
+    1732.3,
+    315.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    83.1,
+    81.4
+   ],
+   "railTop": 75.05,
+   "deck": "r35036093_0",
+   "plan": true,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r69922862_0",
+   "name": "Rue du Château d'Or - Gulden Kasteelstraat",
+   "tile": "D6",
+   "at": [
+    -1120.7,
+    1135.7
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    39.1,
+    39.8
+   ],
+   "railTop": 54.77,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r69922862_0",
+   "name": "Rue du Château d'Or - Gulden Kasteelstraat",
+   "tile": "D6",
+   "at": [
+    -1124.2,
+    1136.5
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    39.1,
+    39.8
+   ],
+   "railTop": 54.71,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r69922863_0",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "D6",
+   "at": [
+    -1124.7,
+    1110.2
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    40.3,
+    39
+   ],
+   "railTop": 54.5,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r69922863_0",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "D6",
+   "at": [
+    -1128.5,
+    1110.6
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    40.2,
+    39
+   ],
+   "railTop": 54.45,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r28030785_0",
+   "name": "Avenue de la Chênaie - Eikenboslaan",
+   "tile": "F6",
+   "at": [
+    33.9,
+    1016.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    81.2,
+    77
+   ],
+   "railTop": 71.57,
+   "deck": "r28030785_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r28030785_0",
+   "name": "Avenue de la Chênaie - Eikenboslaan",
+   "tile": "F6",
+   "at": [
+    35.4,
+    1019.4
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    81.5,
+    77.1
+   ],
+   "railTop": 71.55,
+   "deck": "r28030785_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r806451624_4",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "G6",
+   "at": [
+    424.1,
+    789.5
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    59.7,
+    59.9
+   ],
+   "railTop": 69.78,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "692",
+   "ok": true
+  },
+  {
+   "road": "r806451624_4",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "G6",
+   "at": [
+    417.6,
+    788.9
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    59.6,
+    59.8
+   ],
+   "railTop": 69.75,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "692",
+   "ok": true
+  },
+  {
+   "road": "r47247121_0",
+   "name": "Kauwberg",
+   "tile": "G6",
+   "at": [
+    271.9,
+    867.7
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    65.3,
+    63.7
+   ],
+   "railTop": 69.96,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "691",
+   "ok": true
+  },
+  {
+   "road": "r47247121_0",
+   "name": "Kauwberg",
+   "tile": "G6",
+   "at": [
+    273.6,
+    870.8
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    65.4,
+    63.8
+   ],
+   "railTop": 69.91,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "691",
+   "ok": true
+  },
+  {
+   "road": "r640826547_0",
+   "name": "Rue des Bigarreaux - Vleeskersenstraat",
+   "tile": "D7",
+   "at": [
+    -1107.8,
+    1637.7
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    55.3,
+    56.4
+   ],
+   "railTop": 61.79,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "688",
+   "ok": true
+  },
+  {
+   "road": "r640826547_0",
+   "name": "Rue des Bigarreaux - Vleeskersenstraat",
+   "tile": "D7",
+   "at": [
+    -1104.2,
+    1638.4
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    55.3,
+    56.6
+   ],
+   "railTop": 61.86,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "688",
+   "ok": true
+  },
+  {
+   "road": "r28030783_0",
+   "name": "Rue de Verrewinkel - Verrewinkelstraat",
+   "tile": "F7",
+   "at": [
+    -270.8,
+    1306.1
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.8,
+    79.1
+   ],
+   "railTop": 70.61,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r28030783_0",
+   "name": "Rue de Verrewinkel - Verrewinkelstraat",
+   "tile": "F7",
+   "at": [
+    -268.1,
+    1308.6
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.8,
+    79.3
+   ],
+   "railTop": 70.61,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r28030783_0",
+   "name": "Rue de Verrewinkel - Verrewinkelstraat",
+   "tile": "F7",
+   "at": [
+    -269.4,
+    1307.5
+   ],
+   "line": "",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.8,
+    79.2
+   ],
+   "railTop": 70.6,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310974_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1036,
+    2111.3
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.9,
+    78
+   ],
+   "railTop": 64.24,
+   "deck": "r185310974_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310974_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1038.9,
+    2108.8
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    78.8,
+    76.3
+   ],
+   "railTop": 64.33,
+   "deck": "r185310974_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310974_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1002.8,
+    2139.2
+   ],
+   "line": "L26/5",
+   "kind": "level",
+   "bridgeTag": true,
+   "sides": [
+    78.3,
+    82.3
+   ],
+   "railTop": 75.96,
+   "deck": "r185310974_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310976_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1136.3,
+    2056.9
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    75.1,
+    76.6
+   ],
+   "railTop": 67.66,
+   "deck": "r185310976_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310976_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1132.7,
+    2056.6
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    75.2,
+    76.7
+   ],
+   "railTop": 67.65,
+   "deck": "r185310976_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -697,
+    1796.1
+   ],
+   "line": "L26",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    66.7,
+    67.2
+   ],
+   "railTop": 67.42,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "694",
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -694.4,
+    1798.6
+   ],
+   "line": "L26",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    64.9,
+    69.2
+   ],
+   "railTop": 67.37,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "694",
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -690.5,
+    1802.5
+   ],
+   "line": "L26/5",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    62.5,
+    69.2
+   ],
+   "railTop": 67.53,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "694",
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -703.7,
+    1789.3
+   ],
+   "line": "L26/5",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    67.2,
+    60.7
+   ],
+   "railTop": 69.72,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "695",
+   "ok": true
+  },
+  {
+   "road": "r775790690_0",
+   "name": "Brouwerijstraat - Rue de la Brasserie",
+   "tile": "C9",
+   "at": [
+    -1475.5,
+    2401.2
+   ],
+   "line": "L26",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    47.2,
+    60.5
+   ],
+   "railTop": 63.45,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r775790690_0",
+   "name": "Brouwerijstraat - Rue de la Brasserie",
+   "tile": "C9",
+   "at": [
+    -1472.9,
+    2403.8
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    59.6,
+    55.8
+   ],
+   "railTop": 63.49,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r31302810_0",
+   "name": "Rue du Bourdon - Horzelstraat",
+   "tile": "D9",
+   "at": [
+    -1204,
+    2223.8
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    69.6,
+    69.5
+   ],
+   "railTop": 63.15,
+   "deck": "r31302810_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r31302810_0",
+   "name": "Rue du Bourdon - Horzelstraat",
+   "tile": "D9",
+   "at": [
+    -1205.1,
+    2220.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    69.5,
+    69.5
+   ],
+   "railTop": 63.15,
+   "deck": "r31302810_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r430168935_0",
+   "name": "Kleindalstraat - Rue Kleindal",
+   "tile": "E10",
+   "at": [
+    -661.7,
+    2868.8
+   ],
+   "line": "L124",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    78.2,
+    77
+   ],
+   "railTop": 79.95,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r430168935_0",
+   "name": "Kleindalstraat - Rue Kleindal",
+   "tile": "E10",
+   "at": [
+    -659.1,
+    2866.2
+   ],
+   "line": "L124",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    75,
+    79.7
+   ],
+   "railTop": 80.03,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735646_0",
+   "name": "Avenue des Hospices - Godshuizenlaan",
+   "tile": "E10",
+   "at": [
+    -751.3,
+    2775
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.4,
+    85.5
+   ],
+   "railTop": 80.13,
+   "deck": "r1002735646_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735646_0",
+   "name": "Avenue des Hospices - Godshuizenlaan",
+   "tile": "E10",
+   "at": [
+    -753.4,
+    2777.8
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.3,
+    85.6
+   ],
+   "railTop": 78.66,
+   "deck": "r1002735646_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735650_0",
+   "name": "",
+   "tile": "E10",
+   "at": [
+    -745.7,
+    2780.5
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.5,
+    84.5
+   ],
+   "railTop": 79.98,
+   "deck": "r1002735650_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735650_0",
+   "name": "",
+   "tile": "E10",
+   "at": [
+    -748.9,
+    2782.2
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.3,
+    84.5
+   ],
+   "railTop": 78.7,
+   "deck": "r1002735650_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  }
+ ],
+ "wires": [
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1668.2,
+    -93.2
+   ],
+   "line": "L124",
+   "wireOverRail": 6.41
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1667.3,
+    -91.4
+   ],
+   "line": "L124",
+   "wireOverRail": 6.41
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1666.5,
+    -89.6
+   ],
+   "line": "L124",
+   "wireOverRail": 6.41
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1665.6,
+    -87.8
+   ],
+   "line": "L124",
+   "wireOverRail": 6.4
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1664.7,
+    -86
+   ],
+   "line": "L124",
+   "wireOverRail": 6.4
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1663.8,
+    -84.3
+   ],
+   "line": "L124",
+   "wireOverRail": 6.39
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1667.1,
+    -82.9
+   ],
+   "line": "L124",
+   "wireOverRail": 6.43
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1668,
+    -84.7
+   ],
+   "line": "L124",
+   "wireOverRail": 6.44
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1668.9,
+    -86.5
+   ],
+   "line": "L124",
+   "wireOverRail": 6.44
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1669.7,
+    -88.3
+   ],
+   "line": "L124",
+   "wireOverRail": 6.45
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1670.6,
+    -90.1
+   ],
+   "line": "L124",
+   "wireOverRail": 6.46
+  },
+  {
+   "deck": "r29872629_0",
+   "at": [
+    -1671.5,
+    -91.9
+   ],
+   "line": "L124",
+   "wireOverRail": 6.46
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1740,
+    317.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.31
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1738,
+    318.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.31
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1736.1,
+    318.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.3
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1734.1,
+    318.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.3
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1732.1,
+    318.9
+   ],
+   "line": "L26",
+   "wireOverRail": 5.29
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1730.2,
+    319.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.3
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1728.2,
+    319.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.31
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1726.2,
+    319.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.32
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1724.3,
+    319.9
+   ],
+   "line": "L26",
+   "wireOverRail": 5.33
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1722.3,
+    320.2
+   ],
+   "line": "L26",
+   "wireOverRail": 5.34
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1720.3,
+    320.5
+   ],
+   "line": "L26",
+   "wireOverRail": 5.34
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1718.4,
+    320.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.35
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1716.4,
+    321
+   ],
+   "line": "L26",
+   "wireOverRail": 5.35
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1717.9,
+    317.2
+   ],
+   "line": "L26",
+   "wireOverRail": 5.46
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1719.8,
+    316.9
+   ],
+   "line": "L26",
+   "wireOverRail": 5.45
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1721.8,
+    316.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.43
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1723.8,
+    316.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.42
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1725.7,
+    316.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.4
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1727.7,
+    315.9
+   ],
+   "line": "L26",
+   "wireOverRail": 5.39
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1729.7,
+    315.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.39
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1731.6,
+    315.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.39
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1733.6,
+    315.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.4
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1735.5,
+    314.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.41
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1737.5,
+    314.5
+   ],
+   "line": "L26",
+   "wireOverRail": 5.42
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1739.5,
+    314.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.43
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1741.4,
+    314
+   ],
+   "line": "L26",
+   "wireOverRail": 5.43
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1743.4,
+    313.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.42
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    928.5,
+    517.3
+   ],
+   "line": "L26",
+   "wireOverRail": 4.54
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    926.7,
+    518.3
+   ],
+   "line": "L26",
+   "wireOverRail": 4.6
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    925,
+    519.2
+   ],
+   "line": "L26",
+   "wireOverRail": 4.65
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    923.2,
+    520.1
+   ],
+   "line": "L26",
+   "wireOverRail": 4.71
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    921.5,
+    521.1
+   ],
+   "line": "L26",
+   "wireOverRail": 4.77
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    919.7,
+    522
+   ],
+   "line": "L26",
+   "wireOverRail": 4.82
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    918,
+    523
+   ],
+   "line": "L26",
+   "wireOverRail": 4.88
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    916.2,
+    523.9
+   ],
+   "line": "L26",
+   "wireOverRail": 4.93
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    914.5,
+    524.9
+   ],
+   "line": "L26",
+   "wireOverRail": 4.99
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    912.7,
+    525.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.05
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    911,
+    526.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.1
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    909.2,
+    527.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.16
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    907.5,
+    528.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.22
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    905.7,
+    529.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.27
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    904,
+    530.5
+   ],
+   "line": "L26",
+   "wireOverRail": 5.33
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    902.2,
+    531.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.39
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    900.5,
+    532.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.44
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    898.7,
+    533.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.5
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    897,
+    534.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.56
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    895.2,
+    535.2
+   ],
+   "line": "L26",
+   "wireOverRail": 5.61
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    893.5,
+    536.2
+   ],
+   "line": "L26",
+   "wireOverRail": 5.67
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    891.7,
+    537.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.73
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    890,
+    538
+   ],
+   "line": "L26",
+   "wireOverRail": 5.78
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    888.2,
+    539
+   ],
+   "line": "L26",
+   "wireOverRail": 5.84
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    884.8,
+    536.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.99
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    886.5,
+    535.9
+   ],
+   "line": "L26",
+   "wireOverRail": 5.93
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    888.3,
+    535
+   ],
+   "line": "L26",
+   "wireOverRail": 5.87
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    890,
+    534
+   ],
+   "line": "L26",
+   "wireOverRail": 5.82
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    891.8,
+    533.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.76
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    893.5,
+    532.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.7
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    895.3,
+    531.2
+   ],
+   "line": "L26",
+   "wireOverRail": 5.64
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    897,
+    530.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.59
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    898.8,
+    529.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.53
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    900.5,
+    528.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.47
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    902.3,
+    527.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.42
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    904,
+    526.5
+   ],
+   "line": "L26",
+   "wireOverRail": 5.36
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    905.8,
+    525.5
+   ],
+   "line": "L26",
+   "wireOverRail": 5.3
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    907.5,
+    524.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.24
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    909.3,
+    523.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.19
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    911,
+    522.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.13
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    912.8,
+    521.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.07
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    914.5,
+    520.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.01
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    916.3,
+    519.9
+   ],
+   "line": "L26",
+   "wireOverRail": 4.96
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    918,
+    518.9
+   ],
+   "line": "L26",
+   "wireOverRail": 4.9
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    919.8,
+    518
+   ],
+   "line": "L26",
+   "wireOverRail": 4.84
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    921.5,
+    517
+   ],
+   "line": "L26",
+   "wireOverRail": 4.78
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    923.3,
+    516.1
+   ],
+   "line": "L26",
+   "wireOverRail": 4.72
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    925,
+    515.2
+   ],
+   "line": "L26",
+   "wireOverRail": 4.67
+  },
+  {
+   "deck": "r1342926162_0",
+   "at": [
+    926.8,
+    514.2
+   ],
+   "line": "L26",
+   "wireOverRail": 4.61
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    30.3,
+    1019
+   ],
+   "line": "L26",
+   "wireOverRail": 5.57
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    31.9,
+    1017.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.54
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    33.4,
+    1016.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.52
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    35,
+    1015.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.49
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    36.6,
+    1014.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.46
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    38.1,
+    1013.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.44
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    39.8,
+    1016.1
+   ],
+   "line": "L26",
+   "wireOverRail": 5.76
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    38.2,
+    1017.3
+   ],
+   "line": "L26",
+   "wireOverRail": 5.78
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    36.7,
+    1018.4
+   ],
+   "line": "L26",
+   "wireOverRail": 5.8
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    35.1,
+    1019.6
+   ],
+   "line": "L26",
+   "wireOverRail": 5.83
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    33.5,
+    1020.8
+   ],
+   "line": "L26",
+   "wireOverRail": 5.86
+  },
+  {
+   "deck": "r28030785_0",
+   "at": [
+    32,
+    1022
+   ],
+   "line": "L26",
+   "wireOverRail": 5.88
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1199,
+    2220.4
+   ],
+   "line": "L26",
+   "wireOverRail": 4.76
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1200.6,
+    2221.4
+   ],
+   "line": "L26",
+   "wireOverRail": 4.76
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1202.3,
+    2222.6
+   ],
+   "line": "L26",
+   "wireOverRail": 4.76
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1203.9,
+    2223.6
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1205.5,
+    2224.8
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1207.2,
+    2225.9
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1208.8,
+    2226.9
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1209.1,
+    2222.9
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1207.5,
+    2221.8
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1205.8,
+    2220.7
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1204.2,
+    2219.6
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1202.5,
+    2218.5
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r31302810_0",
+   "at": [
+    -1200.9,
+    2217.4
+   ],
+   "line": "L26",
+   "wireOverRail": 4.75
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -960.7,
+    2163.8
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.34
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -961.4,
+    2165.6
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.34
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -962.2,
+    2167.5
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.34
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -962.8,
+    2169.3
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.34
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -963.4,
+    2171.1
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.35
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -964,
+    2172.9
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.35
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -964.6,
+    2174.7
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.36
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -965.2,
+    2176.5
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.36
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -965.8,
+    2178.3
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.37
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -966.3,
+    2180
+   ],
+   "line": "L26/5",
+   "wireOverRail": 10.37
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1028.4,
+    2106.2
+   ],
+   "line": "L26",
+   "wireOverRail": 14.09
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1030.1,
+    2107.3
+   ],
+   "line": "L26",
+   "wireOverRail": 14.09
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1031.7,
+    2108.4
+   ],
+   "line": "L26",
+   "wireOverRail": 14.09
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1033.4,
+    2109.5
+   ],
+   "line": "L26",
+   "wireOverRail": 14.09
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1035,
+    2110.6
+   ],
+   "line": "L26",
+   "wireOverRail": 14.1
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1036.7,
+    2111.7
+   ],
+   "line": "L26",
+   "wireOverRail": 14.1
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1038.3,
+    2112.8
+   ],
+   "line": "L26",
+   "wireOverRail": 14.1
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1040,
+    2113.9
+   ],
+   "line": "L26",
+   "wireOverRail": 14.1
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1041.6,
+    2115
+   ],
+   "line": "L26",
+   "wireOverRail": 14.11
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1043.3,
+    2116.1
+   ],
+   "line": "L26",
+   "wireOverRail": 14.11
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1046.4,
+    2113.9
+   ],
+   "line": "L26",
+   "wireOverRail": 13.93
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1044.8,
+    2112.7
+   ],
+   "line": "L26",
+   "wireOverRail": 13.92
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1043.1,
+    2111.6
+   ],
+   "line": "L26",
+   "wireOverRail": 13.92
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1041.5,
+    2110.5
+   ],
+   "line": "L26",
+   "wireOverRail": 13.92
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1039.8,
+    2109.4
+   ],
+   "line": "L26",
+   "wireOverRail": 13.91
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1038.1,
+    2108.3
+   ],
+   "line": "L26",
+   "wireOverRail": 13.91
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1036.5,
+    2107.2
+   ],
+   "line": "L26",
+   "wireOverRail": 13.91
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1034.8,
+    2106.1
+   ],
+   "line": "L26",
+   "wireOverRail": 13.9
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1033.2,
+    2105
+   ],
+   "line": "L26",
+   "wireOverRail": 13.9
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1031.5,
+    2103.9
+   ],
+   "line": "L26",
+   "wireOverRail": 13.9
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1006.8,
+    2147.4
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.64
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1006,
+    2145.7
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.66
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1005.1,
+    2143.9
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.67
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1004.2,
+    2142.1
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.68
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1003.3,
+    2140.3
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.69
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1002.5,
+    2138.5
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.7
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1001.6,
+    2136.7
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.71
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -1000.7,
+    2134.9
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.72
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -999.8,
+    2133.2
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.73
+  },
+  {
+   "deck": "r185310974_0",
+   "at": [
+    -999,
+    2131.4
+   ],
+   "line": "L26/5",
+   "wireOverRail": 3.75
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1135.9,
+    2062.2
+   ],
+   "line": "L124",
+   "wireOverRail": 6.43
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1136,
+    2060.4
+   ],
+   "line": "L124",
+   "wireOverRail": 6.45
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1136.2,
+    2058.6
+   ],
+   "line": "L124",
+   "wireOverRail": 6.47
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1136.3,
+    2056.8
+   ],
+   "line": "L124",
+   "wireOverRail": 6.49
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1136.5,
+    2054.9
+   ],
+   "line": "L124",
+   "wireOverRail": 6.51
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1136.6,
+    2053.1
+   ],
+   "line": "L124",
+   "wireOverRail": 6.54
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1136.7,
+    2051.3
+   ],
+   "line": "L124",
+   "wireOverRail": 6.56
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1133.3,
+    2051.1
+   ],
+   "line": "L124",
+   "wireOverRail": 6.71
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1133.1,
+    2052.9
+   ],
+   "line": "L124",
+   "wireOverRail": 6.69
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1132.9,
+    2054.7
+   ],
+   "line": "L124",
+   "wireOverRail": 6.66
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1132.7,
+    2056.5
+   ],
+   "line": "L124",
+   "wireOverRail": 6.63
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1132.5,
+    2058.3
+   ],
+   "line": "L124",
+   "wireOverRail": 6.61
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1132.3,
+    2060.1
+   ],
+   "line": "L124",
+   "wireOverRail": 6.58
+  },
+  {
+   "deck": "r185310976_0",
+   "at": [
+    -1132.1,
+    2061.9
+   ],
+   "line": "L124",
+   "wireOverRail": 6.56
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -754.7,
+    2771.6
+   ],
+   "line": "L124",
+   "wireOverRail": 3.2
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -753.3,
+    2773
+   ],
+   "line": "L124",
+   "wireOverRail": 3.05
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -751.8,
+    2774.4
+   ],
+   "line": "L124",
+   "wireOverRail": 2.91
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -750.4,
+    2775.8
+   ],
+   "line": "L124",
+   "wireOverRail": 2.93
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -749,
+    2777.2
+   ],
+   "line": "L124",
+   "wireOverRail": 2.96
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -747.6,
+    2778.6
+   ],
+   "line": "L124",
+   "wireOverRail": 3
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -749.8,
+    2781.3
+   ],
+   "line": "L124",
+   "wireOverRail": 4.35
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -751.2,
+    2780
+   ],
+   "line": "L124",
+   "wireOverRail": 4.36
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -752.6,
+    2778.6
+   ],
+   "line": "L124",
+   "wireOverRail": 4.37
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -754,
+    2777.2
+   ],
+   "line": "L124",
+   "wireOverRail": 4.39
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -755.4,
+    2775.9
+   ],
+   "line": "L124",
+   "wireOverRail": 4.44
+  },
+  {
+   "deck": "r1002735646_0",
+   "at": [
+    -756.8,
+    2774.5
+   ],
+   "line": "L124",
+   "wireOverRail": 4.61
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -750.4,
+    2775.8
+   ],
+   "line": "L124",
+   "wireOverRail": 2.93
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -749,
+    2777.2
+   ],
+   "line": "L124",
+   "wireOverRail": 2.96
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -747.6,
+    2778.6
+   ],
+   "line": "L124",
+   "wireOverRail": 3
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -746.2,
+    2780
+   ],
+   "line": "L124",
+   "wireOverRail": 3.05
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -744.7,
+    2781.4
+   ],
+   "line": "L124",
+   "wireOverRail": 3.1
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -743.3,
+    2782.8
+   ],
+   "line": "L124",
+   "wireOverRail": 3.15
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -741.9,
+    2784.2
+   ],
+   "line": "L124",
+   "wireOverRail": 3.21
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -740.5,
+    2785.6
+   ],
+   "line": "L124",
+   "wireOverRail": 3.27
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -742.8,
+    2788.2
+   ],
+   "line": "L124",
+   "wireOverRail": 4.32
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -744.2,
+    2786.8
+   ],
+   "line": "L124",
+   "wireOverRail": 4.33
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -745.6,
+    2785.4
+   ],
+   "line": "L124",
+   "wireOverRail": 4.33
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -747,
+    2784.1
+   ],
+   "line": "L124",
+   "wireOverRail": 4.33
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -748.4,
+    2782.7
+   ],
+   "line": "L124",
+   "wireOverRail": 4.34
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -749.8,
+    2781.3
+   ],
+   "line": "L124",
+   "wireOverRail": 4.35
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -751.2,
+    2780
+   ],
+   "line": "L124",
+   "wireOverRail": 4.36
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -752.6,
+    2778.6
+   ],
+   "line": "L124",
+   "wireOverRail": 4.37
+  },
+  {
+   "deck": "r1002735650_0",
+   "at": [
+    -754,
+    2777.2
+   ],
+   "line": "L124",
+   "wireOverRail": 4.39
+  }
+ ],
+ "summary": {
+  "urbis": 10,
+  "roadCrossings": 42,
+  "over": 21,
+  "under": 13,
+  "level": 8,
+  "decks": 9,
+  "plans": 2,
+  "fails": 0,
+  "allowed": 2,
+  "warnings": 4
+ },
+ "fails": [],
+ "allowed": [
+  {
+   "check": "U3",
+   "what": "UrbIS PB 751 (footway)",
+   "msg": "foot bridge over L26 not built (0 % under a drawn deck)",
+   "why": "Vivier d'Oie station footbridge (OSM 209187984 + steps 903802538 / 903802541 / 903802544 to the platforms and the streets): not modelled yet, only its old slab in the ballast was removed (vivier 2026-11-17). Needs its own scripted model (deck, stairs to both platforms, piers, mesh railings), docs/VIVIER.md next steps."
+  },
+  {
+   "check": "U3",
+   "what": "UrbIS PB 752 (footway)",
+   "msg": "foot bridge over L26 not built (0 % under a drawn deck)",
+   "why": "Vivier d'Oie station west footbridge (OSM 36870319 + steps 903802530 / 903802533 + ramp 36870320): same as PB 751."
+  }
+ ],
+ "warnings": [
+  {
+   "check": "W",
+   "what": "deck r1342926162_0 \"Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan\"",
+   "msg": "the deck's soffit leaves the contact wire only 4.54 m over the rail top at (928, 517) (deck / rail heights to measure)"
+  },
+  {
+   "check": "W",
+   "what": "deck r185310974_0 \"Avenue des Tilleuls - Lindenlaan\"",
+   "msg": "the deck's soffit leaves the contact wire only 3.64 m over the rail top at (-1007, 2147) (deck / rail heights to measure)"
+  },
+  {
+   "check": "W",
+   "what": "deck r1002735646_0 \"Avenue des Hospices - Godshuizenlaan\"",
+   "msg": "the deck's soffit leaves the contact wire only 3.20 m over the rail top at (-755, 2772) (deck / rail heights to measure)"
+  },
+  {
+   "check": "W",
+   "what": "deck r1002735650_0 \"\"",
+   "msg": "the deck's soffit leaves the contact wire only 2.93 m over the rail top at (-750, 2776) (deck / rail heights to measure)"
+  }
+ ]
+}

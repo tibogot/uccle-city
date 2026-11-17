@@ -88,3 +88,6 @@ docs/geleytsbeek/side_*
 docs/geleytsbeek/*.png
 # christmas kit (tools/blender/christmasKit.py): the raw export
 models/christmas/*.raw.glb
+
+# visual regression tour runs (tools/tour/serve.mjs writes them; docs/TOUR.md): images stay out of git
+.tour/

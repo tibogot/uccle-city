@@ -9,6 +9,7 @@ import { partFromBufferGeometry } from "../tools/mesh_audit/audit.js";
 import { auditContact } from "../tools/mesh_audit/contact.js";
 import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 import { ART_ROOTS } from "./publicart/artRoots.js";
+import { needCpu } from "./heapDrop.js";
 
 export const HEROES = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "papenkasteel", "stpierre", "observatory", "augustin", "russian", "rosaire", "sacrecoeur", "saintmarc", "latourdefrein", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
@@ -21,6 +22,7 @@ const meshParts = (root, name, filter = null) => {
   root.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh || !o.geometry?.attributes?.position) return;
     if (filter && !filter(o)) return;
+    needCpu(o.geometry, ["position", "normal", "index"], "contactAudit");   // (heap: a tile's arrays may be gone: docs/HEAP.md)
     out.push(partFromBufferGeometry(o.geometry, { name, slot: o.material?.name || o.name || "", matrixWorld: o.matrixWorld.elements }));
   });
   return out;
