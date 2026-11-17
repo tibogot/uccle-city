@@ -1,7 +1,7 @@
 # Curved roads broken at sharp bends (claude/curvedroads)
 
 Owner playtest 2026-11-16: "some curved roads are broken at sharp bends". Offline turn (no browser): root cause, fix,
-audit over all 120 tiles. Quality rule 23 (provisional), gate row `roadbends`.
+audit over all 120 tiles. Quality rule 24, gate row `roadbends`.
 
 ## Root cause
 

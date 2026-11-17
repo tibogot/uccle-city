@@ -1,6 +1,6 @@
 // node --import ./tools/road_audit/register.mjs tools/audit/roadBends.mjs [--tiles I6,J5] [--worst 20] [--threads N]
 //      [--quiet] [--json out.json]
-// Road strips at sharp bends (claude/curvedroads, docs/roads/BENDS.md, quality rule 23-provisional), over ALL tiles.
+// Road strips at sharp bends (claude/curvedroads, docs/roads/BENDS.md, quality rule 24), over ALL tiles.
 // Each tile's road stage runs as the worker runs it up to the engine meshes (viewer/roadBuild.js o.engineOnly, with
 // o.roadBend false = as built), then viewer/streets/roadBends.js trimBendFolds; both meshes are measured:
 //   folded   engine road-strip triangles whose plan orientation disagrees with their (station, lateral) uv frame
