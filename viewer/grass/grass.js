@@ -114,6 +114,8 @@ function bladeGeometry(seg) {
   return g;
 }
 
+const BAKE_OLD = typeof location !== "undefined" && /[?&]grassbake=old(&|$)/.test(location.search);
+
 export class Grass {
   /** renderer: WebGPURenderer (WebGPU backend); opts.preset */
   static supported(renderer) { return !!renderer?.backend?.isWebGPUBackend; }
@@ -419,12 +421,16 @@ export class Grass {
   /** CPU per frame: a few uniform writes; returns the compute nodes to run (one renderer.compute call) */
   frame(camera, dt = 1 / 60) {
     const cam = camera.position;
-    this.field.update(cam);
+    if (BAKE_OLD) this.field.update(cam);
     const gy = this.groundAt ? this.groundAt(cam.x, cam.z) : cam.y - 1.6;
     const above = cam.y - gy;
     const on = this.enabled && above < grassU.rmax.value;
     this.group.visible = on;
     if (!on) return [];
+    // (falconstutter, docs/perf/FALCON_STUTTER.md; ?grassbake=old: every frame, as before) the field's re-bake (a render of
+    // every loaded tile's terrain, roads and buildings into its target: 35-45 ms, measured) only while the blades can
+    // show: the falcon high over the city re-baked it at every tile change for nothing
+    if (!BAKE_OLD) this.field.update(cam);
     this.u.cam.value.copy(cam);
     this.u.groundY.value = gy;
     this.u.vp.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);

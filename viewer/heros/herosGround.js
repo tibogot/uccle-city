@@ -32,8 +32,21 @@ function subdivide(tris, maxLen) {
   return out;
 }
 
+// falconstutter (docs/perf/FALCON_STUTTER.md; ?herosslice=old: one task): the dolomite and the lawn are built when the park's
+// tiles are all in, i.e. WHILE the player moves in (the falcon flying over): 300-350 ms of main thread in one task, the
+// biggest hitch of the flight (traced). The builders are generators that yield every few hundred triangles; herosCity.js
+// runs them in slices of a few ms (sliced()), the plain functions below drain them at once (same result).
+const drain = (g) => { let r; while (!(r = g.next()).done); return r.value; };
+/** run a builder generator in slices of <= ms of main thread (a new task between them); resolves its result */
+export async function sliced(g, ms = 4) {
+  let t = performance.now(), r;
+  while (!(r = g.next()).done) if (performance.now() - t > ms) { await new Promise((ok) => setTimeout(ok, 0)); t = performance.now(); }
+  return r.value;
+}
 /** the mesh (positions in city metres), ground(x, z) = the drawn terrain */
-export function dolomiteGeometry(site, ground, pieces = site.dolomite, lift = LIFT) {
+export const dolomiteGeometry = (...a) => drain(dolomiteGen(...a));
+export function* dolomiteGen(site, ground, pieces = site.dolomite, lift = LIFT) {
+  let step = 0;
   const LIFT_ = lift;
   const pos = [], edge = [];
   let tris = 0;
@@ -58,6 +71,7 @@ export function dolomiteGeometry(site, ground, pieces = site.dolomite, lift = LI
       return best;
     };
     for (const t of fine) {
+      if ((++step & 127) === 0) yield;
       // wound so the face points up: (x, z) counter-clockwise seen from above is clockwise in three's frame
       for (const p of [t[0], t[2], t[1]]) { pos.push(p[0], ground(p[0], p[1]) + LIFT_, p[1]); edge.push(Math.min(1, edgeDist(p[0], p[1]) / 0.4)); }
       tris++;
@@ -134,8 +148,10 @@ export function dolomiteMaterial() {
  *  nothing dips under the ground anywhere and it shades as the ground (a free 0.5 m drape needed 77 k triangles and still
  *  cut through on the convex banks; a grid-based one sank under the simplified terrain in polygonal patches).
  *  terrainTris(x0, z0, x1, z1) -> [{ p: [[x, y, z] x 3], n: [[nx, ny, nz] x 3] }] the drawn triangles over that box. */
-export function lawnGeometry(site, terrainTris) {
+export const lawnGeometry = (...a) => drain(lawnGen(...a));
+export function* lawnGen(site, terrainTris) {
   const pos = [], edge = [], nrm = [];
+  let step = 0;
   let tris = 0;
   const LIFT_L = 0.01;
   for (const ring of Object.values(site.grass || {})) {
@@ -151,7 +167,10 @@ export function lawnGeometry(site, terrainTris) {
       }
       return best;
     };
-    for (const { p: tri, n: tn } of terrainTris(x0, z0, x1, z1)) {
+    for (const it of (terrainTris.gen ? terrainTris.gen(x0, z0, x1, z1) : terrainTris(x0, z0, x1, z1))) {
+      if (it === null) { yield; continue; }
+      if ((++step & 31) === 0) yield;
+      const { p: tri, n: tn } = it;
       // the lawn polygon clipped by the (convex) terrain triangle
       let poly = ring.map(([x, z]) => [x, z]);
       for (let e = 0; e < 3 && poly.length; e++) {
@@ -208,24 +227,28 @@ export function lawnGeometry(site, terrainTris) {
 export function terrainTrianglesIn(scene, tileNames) {
   const meshes = [];
   scene.traverse((o) => { if (o.isMesh && o.name === "terrain" && tileNames.some((n) => o.parent?.name === `${n}-terrain`)) meshes.push(o); });
-  return (x0, z0, x1, z1) => {
-    const out = [], v = new THREE.Vector3();
+  // gen(): the same triangles one by one, null every 512 looked at (a point to yield: herosGround lawnGen)
+  function* gen(x0, z0, x1, z1) {
+    const v = new THREE.Vector3();
     for (const m of meshes) {
       m.updateMatrixWorld();
       const P = m.geometry.attributes.position, N = m.geometry.attributes.normal, I = m.geometry.index;
       const nm = new THREE.Matrix3().getNormalMatrix(m.matrixWorld);
       const cnt = I ? I.count : P.count;
       for (let t = 0; t < cnt; t += 3) {
+        if ((t & 1535) === 0) yield null;
         const ids = [0, 1, 2].map((k) => (I ? I.getX(t + k) : t + k));
         const xs = ids.map((i) => P.getX(i)), zs = ids.map((i) => P.getZ(i));
         if (Math.max(...xs) < x0 || Math.min(...xs) > x1 || Math.max(...zs) < z0 || Math.min(...zs) > z1) continue;
         const p = ids.map((i) => v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld).toArray());
         const n = ids.map((i) => (N ? v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize().toArray() : [0, 1, 0]));
-        out.push({ p, n });
+        yield { p, n };
       }
     }
-    return out;
-  };
+  }
+  const all = (x0, z0, x1, z1) => [...gen(x0, z0, x1, z1)].filter(Boolean);
+  all.gen = gen;
+  return all;
 }
 
 export const lawnLook = { tone: uniform(new THREE.Color(1.2, 1.38, 0.88)), rim: uniform(0.25) };

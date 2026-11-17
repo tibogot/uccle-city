@@ -79,7 +79,7 @@ export function installHeapDrop(renderer, { log = null, ktx = heapOn("ktxdrop") 
     const f = THREE.BufferGeometry.prototype[k];
     THREE.BufferGeometry.prototype[k] = function () { if (droppedGeo.has(this)) trip(`${k} on a dropped geometry (reads nothing)`, this.name); return f.apply(this, arguments); };
   }
-  timer = setInterval(tick, 1000);
+  timer = setInterval(() => tick(), 1000);
   if (log) stats.log = log;
   window.__heapDrop = stats;
   return stats;
@@ -131,11 +131,19 @@ export function release(tag) { const n = (holds.get(tag) || 0) - 1; if (n > 0) h
 
 const uploaded = (attr) => { const d = R._attributes.data.get(attr); return d !== undefined && d.version !== undefined && d.version === attr.version && !(attr.updateRanges?.length); };
 const MAX_WAIT = 180000;                   // an attribute no pass ever uploads (not read by any shader) is left after this
-function tick() {
+// falconstutter (docs/perf/FALCON_STUTTER.md; ?dropslice=old = every pending geometry in one task, as before): the check
+// computes the bounds of each newly uploaded geometry before it lets the arrays go: a streamed tile's whole set in one
+// 1 s tick was a 24-58 ms task while the falcon flew (measured). Now <= DROP_SLICE_MS a task; what is left goes on in a
+// task 50 ms later, the entries visited moved to the end of the queue (none waits behind the others for good).
+const DROP_SLICE = qs.get("dropslice") !== "old", DROP_SLICE_MS = 3;
+let more = null;
+function tick(full = false) {
   if (!pending.size) return;
   const now = performance.now();
-  let held = 0;
+  let held = 0, cut = false;
   for (const e of [...pending]) {
+    if (DROP_SLICE && !full && performance.now() - now > DROP_SLICE_MS) { cut = true; break; }
+    if (DROP_SLICE && !full && pending.has(e)) { pending.delete(e); pending.add(e); }
     if (holds.has(e.tag)) { held++; continue; }
     const g = e.geometry, cc = e.mesh.userData?.cellCull;
     if (e.mesh.geometry !== g) { e.off(); continue; }
@@ -163,6 +171,8 @@ function tick() {
     }
     if (!left || now - e.t0 > MAX_WAIT) e.off();
   }
+  if (cut && !more) more = setTimeout(() => { more = null; tick(); }, 50);
+  stats.slices = (stats.slices || 0) + (cut ? 1 : 0);
   stats.pending = pending.size; stats.held = held;
   stats.MB = +(stats.bytes / 1048576).toFixed(1); stats.texMB = +(stats.texBytes / 1048576).toFixed(1);
   stats.tripCounts = Object.fromEntries(trips);
@@ -177,4 +187,4 @@ export function needCpu(g, names = ["position", "index"], who = "this audit") {
     if (a && dropped.has(a)) throw new Error(`${who}: the CPU copy of ${g.userData.heapDropped || "a"} geometry's ${n} was let go after its upload (docs/HEAP.md): reload with ?heapdrop=old to run it`);
   }
 }
-export const heapDropStats = () => (tick(), stats);
+export const heapDropStats = () => (tick(true), stats);

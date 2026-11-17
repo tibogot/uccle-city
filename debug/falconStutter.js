@@ -11,15 +11,15 @@
 //   const F = await import("/debug/falconStutter.js");
 //   const r = await F.run({ seconds: 60 })          one flight; r.summary, r.long (the frames > 33 ms, each with its events)
 //   F.table(r)                                      the long frames as text rows (time, ms, cause, events)
-//   const ab = await F.ab({ legs: 4 })              same-page A/B: out-and-back legs, the live switches alternated ABBA
-//                                                   (A = the defaults, B = ?fadeslice=old + ?disposeslice=old live)
+//   const ab = await F.ab({ legs: 4 })              same-page A/B: out-and-back legs, a live switch alternated ABBA
+//                                                   (default: A = the finer compile slices on, B = off: window.__fineCompile.on)
 //   F.last()                                        the last report (also localStorage "falconStutter.last")
 //
 // Per frame (rAF interval): ms, the main loop's CPU (three's animation loop), render() CPU, the most expensive updater,
 // tiles added / removed (full + far), console.log lines (the viewer's log: "+ tile", landmark / proxy / pigeon lines),
 // pipelines created (sync / async), node builds (count, ms), render objects created / disposed, GPU calls (buffers
 // created / destroyed + MB, writeBuffer MB, texture MB, bind groups, submits), JS heap drops (GC, MB), fades running,
-// staged-reveal / sliced-dispose activity, compile jobs left; long animation frames with their script attribution are
+// sun shadow cache full redraws, compile jobs left; long animation frames with their script attribution are
 // matched to the frames afterwards. Rules: ONE tab in FRONT (rAF throttled = invalid), preflight GREEN or quote it.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
@@ -48,7 +48,7 @@ function hook() {
   wrapP(D, "createTexture", () => c().tex++);
   wrapP(B, "destroy", (a, buf) => { c().bufDel++; c().bufDelB += buf?.size || 0; });
   wrapP(Q, "writeBuffer", ([, , data, dataOffset = 0, size]) => { const el = data?.BYTES_PER_ELEMENT || 1; c().wb++; c().wbB += size != null ? size * el : (data?.byteLength || 0) - dataOffset * el; });
-  wrapP(Q, "writeTexture", ([, data]) => { c().texB += data?.byteLength || 0; });
+  wrapP(Q, "writeTexture", ([, data, layout, size]) => { const h = size?.height ?? size?.[1] ?? 1, d = size?.depthOrArrayLayers ?? size?.[2] ?? 1, rows = layout?.rowsPerImage ?? h; c().texB += layout?.bytesPerRow ? layout.bytesPerRow * (d > 1 ? rows * (d - 1) + h : h) : data?.byteLength || 0; });   // (the bytes copied, not the source buffer: an atlas layer update passes the whole array)
   wrapP(Q, "copyExternalImageToTexture", () => c().img++);
   wrapP(Q, "submit", () => c().submit++);
   try {
@@ -67,9 +67,12 @@ function rendererProbes(R) {
     prev?.(nb, ro);
     if (!P.on) return;
     P.c.nb++;
+    const own = ro?.object?.material, m = ro?.material;
+    const who = `${(Array.isArray(own) ? "multi" : own?.name) || m?.name || m?.type || "?"}${own && m !== own && !Array.isArray(own) ? " [" + (m?.type || "override") + "]" : ""} @${(ro?.object?.name || ro?.object?.type || "?").slice(0, 30)}`;
+    const note = (ms, kind) => { if (ms > 3) { const l = (P.c.nbList ||= []); if (l.length < 6) l.push(`${kind} ${ms.toFixed(0)}ms ${who}`); } };
     const b = nb.build, ba = nb.buildAsync;
-    nb.build = function () { const t0 = performance.now(); try { return b.call(this); } finally { P.c.nbMs += performance.now() - t0; } };
-    if (ba) nb.buildAsync = async function (y) { let t0 = performance.now(); const yy = y ? async () => { P.c.nbMs += performance.now() - t0; await y(); t0 = performance.now(); } : y; try { return await ba.call(this, yy); } finally { P.c.nbMs += performance.now() - t0; } };
+    nb.build = function () { const t0 = performance.now(); try { return b.call(this); } finally { const d = performance.now() - t0; P.c.nbMs += d; note(d, "sync"); } };
+    if (ba) nb.buildAsync = async function (y) { let t0 = performance.now(), tot = 0; const yy = y ? async () => { const d = performance.now() - t0; P.c.nbMs += d; tot += d; await y(); t0 = performance.now(); } : y; try { return await ba.call(this, yy); } finally { const d = performance.now() - t0; P.c.nbMs += d; note(tot + d, "async"); } };
   };
   undo.push(() => { dbg.onNodeBuilderCreated = prev; });
   const RO = R._objects;
@@ -196,8 +199,7 @@ export async function run({ route = "default", y = 165, seconds = 60, speed = nu
   V.resetGpu?.();
   const tilesOf = () => V.world.tiles.map((t) => t.name);
   let tiles = new Set(tilesOf()), lites = new Set(V.lite.keys());
-  const fs0 = { ...(globalThis.__fadeSlice || {}) }, ds0 = { ...(globalThis.__disposeSlice || {}) };
-  let fsPrev = { ...fs0 }, dsPrev = { ...ds0 };
+  let sunPrev = globalThis.__sunCache?.stats?.full ?? 0;
   const frames = [];
   P.loaf.length = 0; P.c = C0(); P.on = true;
   const t0 = performance.now();
@@ -214,11 +216,8 @@ export async function run({ route = "default", y = 165, seconds = 60, speed = nu
       const tn = tilesOf();
       if (tn.length !== tiles.size || tn.some((n) => !tiles.has(n))) { const nt = new Set(tn); fr.tiles = [...tn.filter((n) => !tiles.has(n)).map((n) => "+" + n), ...[...tiles].filter((n) => !nt.has(n)).map((n) => "-" + n)]; tiles = nt; }
       if (V.lite.size !== lites.size || [...V.lite.keys()].some((n) => !lites.has(n))) { const nl = new Set(V.lite.keys()); fr.lite = [...[...nl].filter((n) => !lites.has(n)).map((n) => "+" + n), ...[...lites].filter((n) => !nl.has(n)).map((n) => "-" + n)]; lites = nl; }
-      const fsN = globalThis.__fadeSlice, dsN = globalThis.__disposeSlice;
-      if (fsN && (fsN.stageFrames !== fsPrev.stageFrames || fsN.restoreFrames !== fsPrev.restoreFrames)) fr.slice = 1;
-      if (dsN && dsN.done !== dsPrev.done) fr.disposed = dsN.done - dsPrev.done;
-      fsPrev = { ...fsN }; dsPrev = { ...dsN };
       fr.fades = V.fader?.list?.length ?? 0;
+      const sc = globalThis.__sunCache?.stats; if (sc) { if (sc.full !== sunPrev) fr.sunFull = sc.full - sunPrev; sunPrev = sc.full; }
       fr.jobs = V.jobsLeft?.() ?? null;
       frames.push(fr);
       if (now - t0 >= seconds * 1000 && K.done()) return done();
@@ -242,19 +241,17 @@ export async function run({ route = "default", y = 165, seconds = 60, speed = nu
     for (const fr of frames) { const end = t0 + fr.t * 1000, start = end - fr.ms; if (end > a && start < b && fr.ms > 33) { (fr.loaf ||= []).push({ dur: Math.round(L.dur), block: Math.round(L.block), scripts: L.scripts.slice(0, 4) }); } }
   }
   const rep = report(frames, { label, seconds, skip, speed: +v.toFixed(1), length: Math.round(rt.length), y, reverse, valid: !hidden, sys: T.sys, gpu: V.gpuStats?.(),
-    fadeSlice: diffObj(globalThis.__fadeSlice, fs0), disposeSlice: diffObj(globalThis.__disposeSlice, ds0),
-    switches: { fadeslice: globalThis.__fadeSlice?.on ?? null, disposeslice: globalThis.__disposeSlice?.on ?? null } });
+    switches: { compileslice: window.__fineCompile?.on ?? null } });
   try { localStorage.setItem("falconStutter.last", JSON.stringify({ ...rep, frames: undefined })); } catch { /* full */ }
   return (window.__falconStutterLast = rep);
 }
-const diffObj = (a, b) => (a ? Object.fromEntries(Object.entries(a).filter(([, v]) => typeof v === "number").map(([k, v]) => [k, +(v - (b?.[k] ?? 0)).toFixed(1)])) : null);
 export const last = () => window.__falconStutterLast;
 
 /** what a frame did, as short tags (most likely cause first) */
 export function causes(fr, prev = null) {
   const c = fr.c, out = [];
   if (c.pipeSync) out.push(`sync pipeline x${c.pipeSync}`);
-  if (c.nbMs > 6) out.push(`node builds ${c.nb} (${c.nbMs.toFixed(0)} ms)`);
+  if (c.nbMs > 6) out.push(`node builds ${c.nb} (${c.nbMs.toFixed(0)} ms)${c.nbList ? ": " + c.nbList.slice(0, 2).join("; ") : ""}`);
   if (c.roNew >= 40) out.push(`render objects +${c.roNew}`);
   if (c.roDisp >= 40 || c.bufDel >= 40) out.push(`disposes: ${c.roDisp} render objects, ${c.bufDel} buffers (${(c.bufDelB / 1e6).toFixed(1)} MB)`);
   if (fr.gcMB >= 8) out.push(`GC ${fr.gcMB} MB`);
@@ -281,11 +278,11 @@ function report(frames, meta) {
   for (const f of long) { const k = f.why[0].replace(/[\d.]+/g, "#").slice(0, 40); tally[k] = (tally[k] || 0) + 1; }
   return {
     label: meta.label, valid: meta.valid, seconds: meta.seconds, speed: meta.speed, length: meta.length, y: meta.y, reverse: meta.reverse, switches: meta.switches,
-    summary: { frames: use.length, p50: q(ms, 0.5), p95: q(ms, 0.95), p99: q(ms, 0.99), max: q(ms, 1), over25: ms.filter((x) => x > 25).length, over33: ms.filter((x) => x > 33.4).length, over50: ms.filter((x) => x > 50).length, over100: ms.filter((x) => x > 100).length,
-      cpuP50: q(cpu, 0.5), cpuP99: q(cpu, 0.99), cpuMax: q(cpu, 1), gpu: meta.gpu, heapMB: Math.round((performance.memory?.usedJSHeapSize ?? 0) / 1e6), gc: use.filter((f) => f.gcMB).length },
+    summary: { frames: use.length, p50: q(ms, 0.5), p95: q(ms, 0.95), p99: q(ms, 0.99), max: q(ms, 1), over20: ms.filter((x) => x > 20).length, over25: ms.filter((x) => x > 25).length, over33: ms.filter((x) => x > 33.4).length, over50: ms.filter((x) => x > 50).length, over100: ms.filter((x) => x > 100).length,
+      cpuP50: q(cpu, 0.5), cpuP99: q(cpu, 0.99), cpuMax: q(cpu, 1), gpu: meta.gpu, heapMB: Math.round((performance.memory?.usedJSHeapSize ?? 0) / 1e6), gc: use.filter((f) => f.gcMB).length, sunFull: use.reduce((a, f) => a + (f.sunFull || 0), 0) },
     totals: { pipeSync: sum("pipeSync"), pipeAsync: sum("pipeAsync"), nodeBuilds: sum("nb"), nodeMs: Math.round(sum("nbMs")), roNew: sum("roNew"), roDisp: sum("roDisp"), bufNewMB: +(sum("bufNewB") / 1e6).toFixed(1), bufDelMB: +(sum("bufDelB") / 1e6).toFixed(1), writeMB: +(sum("wbB") / 1e6).toFixed(1), texMB: +(sum("texB") / 1e6).toFixed(1), bindGroups: sum("bg"),
       tileEvents: frames.filter((f) => f.tiles).length, farEvents: frames.filter((f) => f.lite).length },
-    causes: tally, fadeSlice: meta.fadeSlice, disposeSlice: meta.disposeSlice, systems: sys,
+    causes: tally, systems: sys,
     long: long.slice(0, 80).map((f) => ({ t: f.t, ms: f.ms, cpu: f.cpu, render: f.render, s: f.s, why: f.why, c: f.c, top: f.top, topMs: f.topMs, gcMB: f.gcMB, tiles: f.tiles, lite: f.lite, log: f.log, fades: f.fades, jobs: f.jobs, loaf: f.loaf })),
     frames,
   };
@@ -298,16 +295,18 @@ export function table(r = last(), n = 40) {
 /** a compact line of a report */
 export function brief(r = last()) {
   const s = r.summary;
-  return { label: r.label, valid: r.valid, rev: r.reverse, sw: r.switches, p50: s.p50, p99: s.p99, max: s.max, o33: s.over33, o50: s.over50, o100: s.over100, cpu50: s.cpuP50, cpu99: s.cpuP99, gpu: s.gpu?.p50, ro: r.totals.roNew, nb: r.totals.nodeBuilds, sync: r.totals.pipeSync, causes: r.causes };
+  return { label: r.label, valid: r.valid, rev: r.reverse, sw: r.switches, p50: s.p50, p99: s.p99, max: s.max, o20: s.over20, o33: s.over33, o50: s.over50, o100: s.over100, cpu50: s.cpuP50, cpu99: s.cpuP99, gpu: s.gpu?.p50, sun: s.sunFull, ro: r.totals.roNew, nb: r.totals.nodeBuilds, sync: r.totals.pipeSync, causes: r.causes };
 }
 
 /** same-page A/B: `legs` flights out and back (leg i reverses when i is odd), the variants alternated A B B A A B ...;
  *  A = `a` live switches, B = `b`. Returns { legs: [brief], A, B } (A / B = the legs' summaries merged). */
-export async function ab({ legs = 4, seconds = 60, a = { fadeslice: true, disposeslice: true }, b = { fadeslice: false, disposeslice: false }, ...o } = {}) {
-  const set = (v) => { if (globalThis.__fadeSlice) globalThis.__fadeSlice.on = !!v.fadeslice; if (globalThis.__disposeSlice) globalThis.__disposeSlice.on = !!v.disposeslice; };
+// (live switches: compileslice = window.__fineCompile.on (viewer/asyncPipes.js fineCompile))
+const LIVE = { compileslice: (v) => { if (window.__fineCompile) window.__fineCompile.on = v; } };
+export async function ab({ legs = 4, seconds = 60, a = { compileslice: true }, b = { compileslice: false }, ...o } = {}) {
+  const set = (v) => { for (const [k, on] of Object.entries(v)) LIVE[k]?.(!!on); };
   const pattern = (i) => (["A", "B", "B", "A"][i % 4]);
   const out = [], full = { A: [], B: [] };
-  const was = { fadeslice: globalThis.__fadeSlice?.on, disposeslice: globalThis.__disposeSlice?.on };
+  const was = { compileslice: window.__fineCompile?.on ?? true };
   try {
     for (let i = 0; i < legs; i++) {
       const v = pattern(i);
@@ -318,7 +317,7 @@ export async function ab({ legs = 4, seconds = 60, a = { fadeslice: true, dispos
     }
   } finally { set(was); }
   const merge = (rs) => { const ms = rs.flatMap((r) => r.frames.filter((f) => f.t >= 1).map((f) => f.ms)).sort((x, y) => x - y);
-    return { legs: rs.length, frames: ms.length, p50: q(ms, 0.5), p99: q(ms, 0.99), max: q(ms, 1), over33: ms.filter((x) => x > 33.4).length, over50: ms.filter((x) => x > 50).length, over100: ms.filter((x) => x > 100).length }; };
+    return { legs: rs.length, frames: ms.length, p50: q(ms, 0.5), p99: q(ms, 0.99), max: q(ms, 1), over20: ms.filter((x) => x > 20).length, over33: ms.filter((x) => x > 33.4).length, over50: ms.filter((x) => x > 50).length, over100: ms.filter((x) => x > 100).length }; };
   const res = { legs: out, A: merge(full.A), B: merge(full.B) };
   window.__falconStutterAB = { ...res, full };
   return res;
