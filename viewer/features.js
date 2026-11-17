@@ -145,6 +145,7 @@ export const FEATURES = [
   old("taalock", "ab", "TAAU lock on followed objects", "old: no thin-feature lock on any pixel with its own motion (the followed car's plate / panel lines flickered).", { sub: "Upscaling" }),
   old("taafire", "ab", "TAAU glint weighting", "old: reconstruction taps unweighted (new: 1 / (1 + luma), Karis: sub-pixel sun glints through leaves / specular sparks stop sparkling).", { sub: "Upscaling" }),
   old("rcas", "ab", "RCAS sharpen", "old: the clamped 5-tap unsharp mask after the resolve instead of RCAS (FSR's robust contrast-adaptive sharpening).", { sub: "Upscaling" }),
+  old("shadownoise", "ab", "sun PCF noise per frame", "old: three's PCF rotates its 5 taps by a noise fixed to the screen pixel: under the TAAU the penumbra noise stays on the screen while the shadows slide under it (edges crawl while driving). New: the phase moves each frame, the history smooths it.", { sub: "Upscaling" }),
   old("drrule", "ab", "dynamic resolution rule", "old: floor 0.6, steps up to 0.1, GPU time alone (new: soft floor 0.75, steps 0.05 down / 0.025 up, lowers only when frames are missed: a laptop GPU in power-saving clocks reads high but holds 60 fps).", { sub: "Upscaling" }),
   on("haze", "lighting", "sky haze + shafts", "Firmament haze and sun shafts.", { live: "sky haze + sun shafts" }),
   opt("sunlight", "lighting", "cascaded sun", "Cascaded sun light: acts with ?sky=old only (Firmament keeps one shadow map)."),
