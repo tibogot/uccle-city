@@ -25,6 +25,7 @@ export const heapOn = (key) => qs.get("heapdrop") !== "old" && qs.get(key) !== "
 const stats = { geometries: 0, attributes: 0, bytes: 0, textures: 0, texBytes: 0, pending: 0, held: 0, byTag: {}, trips: [], on: false };
 const trips = new Map();                   // kind -> count
 const dropped = new WeakSet();             // attributes whose array went
+const ownerOf = new WeakMap();             // attribute -> "tag mesh-name" (the trips say whose)
 const droppedGeo = new WeakSet();          // geometries with at least one dropped attribute
 const droppedTex = new WeakSet();          // textures whose data went
 const pending = new Set();                 // { mesh, geometry, keep: Set, tag, t0 }
@@ -47,8 +48,8 @@ export function installHeapDrop(renderer, { log = null, ktx = heapOn("ktxdrop") 
   A.update = function (attribute, type) {
     if (dropped.has(attribute)) {
       const d = this.data.get(attribute);
-      if (d === undefined || d.version === undefined) trip("dropped attribute created again (its GPU buffer was released: geometry disposed while still drawn?)", attribute.name);
-      else if (d.version < attribute.version) { trip("dropped attribute marked for update (needsUpdate after the drop): skipped, the GPU copy stays", attribute.name); d.version = attribute.version; return; }
+      if (d === undefined || d.version === undefined) trip("dropped attribute created again (its GPU buffer was released: geometry disposed while still drawn?)", ownerOf.get(attribute) ?? attribute.name);
+      else if (d.version < attribute.version) { trip("dropped attribute marked for update (needsUpdate after the drop): skipped, the GPU copy stays", ownerOf.get(attribute) ?? attribute.name); d.version = attribute.version; return; }
     }
     return origUpdate.call(this, attribute, type);
   };
@@ -155,6 +156,7 @@ function tick() {
       const bytes = a.array.byteLength;
       a.array = new a.array.constructor(0);
       dropped.add(a);
+      ownerOf.set(a, `${e.tag} ${e.mesh.name || "?"}${a === g.index ? " index" : ""}`);
       stats.attributes++; stats.bytes += bytes;
       const t = (stats.byTag[e.tag] ??= { attributes: 0, MB: 0 });
       t.attributes++; t.MB = +(t.MB + bytes / 1048576).toFixed(2);

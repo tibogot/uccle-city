@@ -103,6 +103,33 @@ CHECKS: heapGate.mjs (node): the heapDrop logic (tools/heap/dropCheck.mjs), no u
 loadTile's dispose free of `d.`, the switches' features.js rows. BROWSER line: a police play + gamePerf police 45 s
 with `window.__heapDrop.tripCounts` = {}.
 
+## heapfix (2026-11-17): the compile flush drew disposed far tiles
+Seen by claude/orbitcam2 on `?gamemenu=0&orbitcam2=old` (fresh tab, localStorage cleared): `[heapDrop] dropped attribute
+created again` + two WebGPU "index buffer size (0)" errors, through warmup.js flushDraw. Reproduced at once (the trips
+now name their owner: `far ?` / `far far-buildings` / `far ? index`, 24 attributes).
+
+ROOT CAUSE: a precompile job's roots are taken when it is QUEUED and drawn / compiled when it RUNS. Under the boot cover
+main.js preCompile does not await the far tiles' compiles (fader.hold), so a far tile replaced by its full tile in the
+meantime was disposed (geometry.dispose: GPU buffers released) and then drawn again by the compile flush under the play
+loader. three re-created its buffers from the CPU arrays: before the heap drop a silent GPU leak (buffers for a tile
+already gone + its pipelines compiled for nothing); with the arrays dropped, empty buffers (the validation errors).
+My sweep's boots (police / falcon / quick) had no far tile replaced between queue and flush.
+
+FIX (viewer/warmup.js): `BufferGeometry.prototype.dispose` marks the geometry; the queue (precompile's compileAsync
+call), the compile flush (flushDraw) and warmShadows hide / skip a mesh whose geometry was disposed (restored after the
+draw). `window.__queueSkips` counts them (6-10 per free-roam boot, 0 on police / falcon).
+
+RULE (added): nothing draws or compiles a geometry after its dispose(); a deferred draw (a queue, a later frame) checks
+at RUN time, not at queue time.
+CHECK: tools/heap/queueCheck.mjs (node, stand-in renderer: a job whose mesh is disposed after queuing is not compiled;
+a far tile disposed between queue and flush is not drawn; visibility restored; fails without the fix), run by
+tools/audit/heapGate.mjs ("heap" in mergeGate). BROWSER line: five boots in fresh tabs (`?gamemenu=0&orbitcam2=old`,
+default, `?gamemenu=0&tilecache=0` cold, `?game=police` + gamePerf police 45 s, `?game=falcon`): 0 heapDrop errors,
+0 WebGPU errors, tripCounts {}.
+
+Verified after the fix (fresh tab, localStorage cleared): those five boots: 0 console errors, 0 trips (skips 6 / 10 / 6
+/ 0 / 0); police drive tiles D3..F5 -> E4..F6; falcon 30 s worst 33 ms.
+
 ## Next (not done)
 - GLB bodies held through the GLTF parser's plugins (`GLTFParser.extensions <- GLTF*Extension.parser`): ~4-8 MB.
 - meshoptimizer's main-thread WASM memory (8 MB).
