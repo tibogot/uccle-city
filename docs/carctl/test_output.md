@@ -51,12 +51,12 @@
 ## 6. Kerb 15 cm: over?, airtime, body speeds, heading change
 | case | OLD | NEW |
 |---|---|---|
-| 10 km/h 0° | over, air 0.00 s, vy 0.29 m/s, pitch 0.22 / roll 0.00 rad/s, heading 0.0° | over, air 0.00 s, vy 0.25 m/s, pitch 0.19 / roll 0.00 rad/s, heading 0.0° |
-| 10 km/h 30° | over, air 0.00 s, vy 0.19 m/s, pitch 0.14 / roll 0.19 rad/s, heading 0.0° | over, air 0.00 s, vy 0.20 m/s, pitch 0.15 / roll 0.15 rad/s, heading 0.0° |
-| 20 km/h 0° | over, air 0.00 s, vy 0.51 m/s, pitch 0.42 / roll 0.00 rad/s, heading 0.0° | over, air 0.00 s, vy 0.49 m/s, pitch 0.38 / roll 0.00 rad/s, heading 0.0° |
-| 20 km/h 30° | over, air 0.00 s, vy 0.32 m/s, pitch 0.28 / roll 0.29 rad/s, heading 0.0° | over, air 0.00 s, vy 0.33 m/s, pitch 0.27 / roll 0.29 rad/s, heading 0.0° |
-| 50 km/h 0° | over, air 0.00 s, vy 0.76 m/s, pitch 0.57 / roll 0.00 rad/s, heading 0.0° | over, air 0.00 s, vy 0.95 m/s, pitch 0.80 / roll 0.00 rad/s, heading 0.0° |
-| 50 km/h 30° | over, air 0.00 s, vy 0.57 m/s, pitch 0.45 / roll 0.35 rad/s, heading 0.0° | over, air 0.00 s, vy 0.70 m/s, pitch 0.65 / roll 0.53 rad/s, heading 0.0° |
+| 10 km/h 0° | over, air 0.00 s, vy 0.29 m/s, pitch 0.22 / roll 0.00 rad/s, heading 0.0° | over, air 0.00 s, vy 0.26 m/s, pitch 0.20 / roll 0.00 rad/s, heading 0.0° |
+| 10 km/h 30° | over, air 0.00 s, vy 0.19 m/s, pitch 0.14 / roll 0.19 rad/s, heading 0.0° | over, air 0.00 s, vy 0.20 m/s, pitch 0.15 / roll 0.17 rad/s, heading 0.0° |
+| 20 km/h 0° | over, air 0.00 s, vy 0.51 m/s, pitch 0.42 / roll 0.00 rad/s, heading 0.0° | over, air 0.00 s, vy 0.51 m/s, pitch 0.40 / roll 0.00 rad/s, heading 0.0° |
+| 20 km/h 30° | over, air 0.00 s, vy 0.32 m/s, pitch 0.28 / roll 0.29 rad/s, heading 0.0° | over, air 0.00 s, vy 0.33 m/s, pitch 0.27 / roll 0.30 rad/s, heading 0.0° |
+| 50 km/h 0° | over, air 0.00 s, vy 0.76 m/s, pitch 0.57 / roll 0.00 rad/s, heading 0.0° | over, air 0.00 s, vy 0.88 m/s, pitch 0.76 / roll 0.00 rad/s, heading 0.0° |
+| 50 km/h 30° | over, air 0.00 s, vy 0.57 m/s, pitch 0.45 / roll 0.35 rad/s, heading 0.0° | over, air 0.00 s, vy 0.65 m/s, pitch 0.59 / roll 0.47 rad/s, heading 0.0° |
 
 ## 7. Braking (S held) to a stop
 | from km/h | OLD | NEW |
@@ -98,12 +98,12 @@
 | 30 km/h, 15° scrape along its side | slid on, x 0.5 | speed 40.4 km/h |
 | rail bridge 6 m over the road | passes under |  |
 | walker capsule inside the tram | pushed (0.00, 1.00) 1.00 m |  |
-| cost: car step next to a tram | 3.4 µs / frame |  |
+| cost: car step next to a tram | 3.1 µs / frame |  |
 
 ## 9. Cost per 60 Hz frame (2 substeps, node, synthetic ground)
 |  | step |
 |---|---|
-| old | 2.9 µs |
-| new | 1.4 µs |
+| old | 2.5 µs |
+| new | 1.1 µs |
 
 all NEW checks pass

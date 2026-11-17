@@ -46,7 +46,7 @@ export const CTL = {
   alignFrom: 0.05,
   loose: 0.3, looseResp: 3,          // s after a contact the yaw control is soft (a hit's spin plays out)
   // suspension (per unit mass): ~1.65 Hz heave, zeta ~1 heave / pitch / roll
-  springK: 27, springC: 5.2, bump: 0.1, maxRise: 2.2, maxGroundV: 6, pitchI: 1.55, rollI: 0.6,
+  springK: 27, springC: 4.2, bump: 0.1, maxRise: 2.2, maxGroundV: 6, pitchI: 1.55, rollI: 0.6,
   cgHeight: 0.52, transfer: 0.4,     // load transfer into the plate's pitch / roll (visual): x0.4 of round 2
   airGravity: 1.7, gravity: 9.81,
 };

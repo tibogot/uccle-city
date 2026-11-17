@@ -1,7 +1,13 @@
 // node tools/carctlTest.mjs: the car control round's handling checks without a browser (docs/CARCTL.md).
 // OLD = round 2 (viewer/drive/carFeel.js stepFeel + chaseCamera.js updateCar), NEW = round 3 (carCtl.js stepCtl +
 // carCtlCam.js). Synthetic grounds; inputs are a keyboard's (0 / ±1, shaped by the model) unless noted.
-// Prints a table per check. Exit code 1 if a NEW check fails its bar.
+// Prints a table per check. Exit code 1 if a NEW check fails its bar. THE HANDLING TARGETS (docs/CARCTL.md, the rule):
+//   full-lock radius at a crawl < 5.5 m; body slip < 3 deg at full lock at every speed (no plough, no slide); a steer
+//   key reaches 90 % of its yaw rate in < 0.45 s, no overshoot (< 10 %), straight again < 0.4 s after release, and the
+//   same within x1.6 from 30 to 90 km/h; 90 deg junction at 30 km/h: radius < 9 m, slip < 4 deg; slalom slip < 4 deg;
+//   15 % hill start: no roll-back, 0-30 km/h < 3 s; 15 cm kerb ridden at 10-50 km/h, square and at 30 deg, < 0.15 s
+//   airborne; braking 50-0 < 11 m, 100-0 < 40 m; the camera's > 2.5 Hz energy on a bumpy road < 25 % of round 2's,
+//   no lean; trams / trains solid (head-on, pushed by a moving tram, scrape, rail bridge over the road, walker).
 import { register } from "node:module";
 
 // three/webgpu stub (chaseCamera.js only needs Vector3 + a camera's lookAt / rotateZ for the old camera)
@@ -85,6 +91,7 @@ function table(title, head, data) {
 }
 // ---------------------------------------------------------------- 2. response: key press -> 63 % / 90 % of the steady yaw rate
 {
+  const t90s = [];
   const data = [];
   for (const kmh of [30, 50, 90]) {
     const row = [kmh];
@@ -99,10 +106,11 @@ function table(title, head, data) {
       let back = -1, neg = 0;
       for (let i = 0; i < 3 / DT; i++) { k.step({ throttle: hold(k, kmh * KMH), steer: 0 }); if (back < 0 && Math.abs(k.c.angularVel) < 0.05 * ss) back = i * DT; neg = Math.min(neg, k.c.angularVel); }
       row.push(`${fmt(t63)} / ${fmt(t90)} s, over ${fmt(over * 100, 0)} %, release ${fmt(back)} s (${fmt(-neg * DEG, 1)}°/s back)`);
-      if (m === "new") check(`response ${kmh}`, t90 < 0.45 && over < 0.1 && back < 0.4, row[2]);
+      if (m === "new") { check(`response ${kmh}`, t90 < 0.45 && over < 0.1 && back < 0.4, row[2]); t90s.push(t90); }
     }
     data.push(row);
   }
+  check("response consistent", Math.max(...t90s) / Math.min(...t90s) < 1.6, "t90 " + t90s.join(" / "));
   table("2. Steer key held: time to 63 / 90 % of the steady yaw rate, overshoot; released: back to straight", ["km/h", "OLD", "NEW"], data);
 }
 // ---------------------------------------------------------------- 2b. lane change 3.5 m: (a) a smooth driver on a pad (the car's own response), (b) two equal keyboard taps
@@ -228,6 +236,7 @@ function table(title, head, data) {
       const z0 = k.c.z; let t = 0;
       while (k.c.speed > 0.1 && t < 10) { k.step({ throttle: -1, steer: 0 }); t += DT; }
       row.push(`${fmt(k.c.z - z0, 1)} m (${fmt(t, 2)} s)`);
+      if (m === "new") check(`braking ${kmh}`, k.c.z - z0 < (kmh === 100 ? 40 : 11), row[2]);
     }
     data.push(row);
   }
