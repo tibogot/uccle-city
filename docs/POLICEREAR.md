@@ -44,4 +44,4 @@ the player's car · `?carseam=old` shut lines at full contrast. The three look o
 ## Tools
 - `node tools/cars/rearThin.mjs [--car estate,police] [--H 864] [--plate-texture]`: the offline evidence above.
 - `debug/rearCheck.js`: `police()`, `measure()`, `ab()`, `strip()` (header).
-- Gate `policerear` (tools/audit/policeRear.mjs), QUALITY_RULES row 22.
+- Gate `policerear` (tools/audit/policeRear.mjs), QUALITY_RULES row 23.

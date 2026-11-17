@@ -45,3 +45,36 @@ export function boostCompile(renderer, active, slice = 40) {
   };
   N.__boost = true;
 }
+
+// FINER COMPILE SLICES WHILE PLAYING (falconstutter, docs/perf/FALCON_STUTTER.md; ?compileslice=old = three's 8 ms).
+// three r187's compileAsync works 8 ms before it yields to the next frame (CompileScheduler, not configurable), and a node
+// build's stage can run past it: on top of a ~9-12 ms frame of the city, a compile slice of 8-25 ms made the frame miss
+// vsync (33-50 ms frames while the landmarks' near levels and the streamed tiles compiled during a flight, measured).
+// While `active()` is false (no loader over the screen) the node build also yields between its stages once `ms` have
+// passed since this frame's slice began: the renderer's precompile state is closed around the wait exactly as three's own
+// yield does (_finishPreCompile / _beginPreCompile), the wait is three's (the next frame, then a new task).
+export function fineCompile(renderer, active, ms = 4) {
+  const N = renderer._nodes;
+  if (!N || N.__fine || typeof N.getForRenderAsync !== "function") return null;
+  const orig = N.getForRenderAsync;
+  const stats = { yields: 0, on: true };
+  let sliceT = performance.now(), frameT = 0;
+  const tick = () => { frameT = performance.now(); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  N.getForRenderAsync = function (renderObject, yieldFn) {
+    if (!yieldFn || !stats.on) return orig.call(this, renderObject, yieldFn);
+    const y = async () => {
+      if (active()) return yieldFn();
+      if (sliceT < frameT) sliceT = frameT;                    // (the slice began with this frame's first compile work)
+      if (performance.now() - sliceT < ms) return yieldFn();   // (three's own 8 ms check still applies)
+      const st = renderer._precompilationState;
+      renderer._finishPreCompile();
+      await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+      renderer._beginPreCompile(st);
+      sliceT = performance.now(); stats.yields++;
+    };
+    return orig.call(this, renderObject, y);
+  };
+  N.__fine = stats;
+  return stats;
+}

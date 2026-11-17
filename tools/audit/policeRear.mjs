@@ -1,4 +1,4 @@
-// GATE: THE PLAYER'S CAR REAR IN THE CHASE VIEW (claude/policerear, TODO 8c, docs/POLICEREAR.md; QUALITY_RULES row 22).
+// GATE: THE PLAYER'S CAR REAR IN THE CHASE VIEW (claude/policerear, TODO 8c, docs/POLICEREAR.md; QUALITY_RULES row 23).
 // Rule: a detail of the player's car (big and close in the chase view, moving with the camera) is never a high-contrast
 // feature thinner than the TAAU can hold unless it is pre-filtered (a texture, or its contrast by its pixel footprint);
 // its glossy sub-pixel bevels get specular anti-aliasing; it takes no screen-space reflection.

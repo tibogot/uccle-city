@@ -13,7 +13,8 @@
 import * as THREE from "three/webgpu";
 import { loadHeros, HE_LODS, setLodFades } from "./herosModel.js";
 import { statueLodState } from "./herosStatue.js";
-import { dolomiteGeometry, dolomiteMaterial, lawnGeometry, lawnMaterial, terrainTrianglesIn } from "./herosGround.js";
+import { dolomiteGeometry, dolomiteMaterial, lawnGeometry, lawnMaterial, terrainTrianglesIn, dolomiteGen, lawnGen, sliced } from "./herosGround.js";
+const HEROS_SLICE = new URLSearchParams(location.search).get("herosslice") !== "old";   // (falconstutter: the ground built in slices, herosGround.js)
 import { SMOOTH, fadeProxies, settleRamp } from "../lodFade.js";
 import { liteShown } from "../liteShown.js";
 import { whenNeeded } from "../bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
@@ -46,13 +47,13 @@ export async function addHeros({ scene, updaters, hide, tile, world, manifest, l
   for (const n of parkTiles) hold(`terrain:${n}`);
   let groundBuilt = null;
   const buildGround = async () => {
-    const g = dolomiteGeometry(site, (x, z) => world.ground(x, z));
+    const g = HEROS_SLICE ? await sliced(dolomiteGen(site, (x, z) => world.ground(x, z))) : dolomiteGeometry(site, (x, z) => world.ground(x, z));
     const mesh = new THREE.Mesh(g.geometry, dolomiteMaterial());
     mesh.name = "heros-dolomite"; mesh.receiveShadow = true;
     groundRoot.add(mesh);
     // the lawns, lighter as in the photos (herosGround.js lawnGeometry); ?heroslawn=city keeps the city's lawn
     if (new URLSearchParams(location.search).get("heroslawn") !== "city") {
-      const lg = lawnGeometry(site, terrainTrianglesIn(scene, parkTiles));
+      const lg = HEROS_SLICE ? await sliced(lawnGen(site, terrainTrianglesIn(scene, parkTiles))) : lawnGeometry(site, terrainTrianglesIn(scene, parkTiles));
       const lawn = new THREE.Mesh(lg.geometry, lawnMaterial());
       lawn.name = "heros-lawn"; lawn.receiveShadow = true;
       groundRoot.add(lawn);

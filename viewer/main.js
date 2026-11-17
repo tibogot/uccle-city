@@ -79,8 +79,8 @@ import { cityGardens } from "./gardens/cityGardens.js";
 import { carriageway, docOffLanes } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
-import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";
-import { stagedCompiler, setStagedFocus, STAGED } from "./stagedCompile.js";
+import { keepPipelinesAsync, boostCompile, fineCompile } from "./asyncPipes.js";
+import { stagedCompiler, setStagedFocus, setStagedShadowWarm, STAGED } from "./stagedCompile.js";
 import { FAR_MERGE, mergeFarLevel, setFarMergeRenderer } from "./farMerge.js";   // perfgame round 6: a far LOD in one draw (?farlodmerge=1)   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
 import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";
 import { sweepRenderObjects } from "./roSweep.js";   // perf8: the stand-ins' render objects released (heap)   // perfgame: the play loader (?playloader=old: none)
@@ -169,6 +169,7 @@ const preCompile = async (roots, fading) => {
 };
 let shadowWarm = null;
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
+const SPLIT_SLICES = params.get("slicesplit") !== "old";   // (falconstutter: loadTile's "tram" step split, see there)
 
 const $ = (id) => document.getElementById(id);
 const log = (s) => { hudLog(s); console.log(s); };    // (one text node appended to, not every line re-joined)
@@ -899,6 +900,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     if (verbose || fader.hold || (holdFast && HOLD_SLICES && playLoader.active)) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover (perf8: or the play loader, ?holdslices=old): no frame to keep smooth
     return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
   const { roads, feats } = d;
+  // (falconstutter, ?slicesplit=old: one slice) the "tram" step also placed the stops, furniture, street kit, fuel, gardens and
+  // plants: 25-90 ms in one frame for every streamed tile (measured while flying): a frame between them
+  const split = (label) => (SPLIT_SLICES ? frame(label) : null);
 
   const hm = Heightmap.from(d.hdr, d.y, d.orig);
   addBridgeDecks(d.bridgeDecks, hm);
@@ -987,10 +991,12 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const deckAt = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
   const tramSurface = BRIDGE_PLAN ? (x, z) => deckAt(x, z) ?? hm.surface(x, z) + CARVE : (x, z) => hm.surface(x, z) + CARVE;
   const tram = buildTram(feats, tramSurface, bounds, trackProf, onRoadDeck, { shelterSites: cityStops.on, fit, driven: drivenAt });
+  await split("tram");
   own.features.add(tram.group);
   // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
   // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
   const lanesAt = FURN_SNAP && fit ? carriageway(roads, { classAt: fit.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
+  await split("lanes");
   const snap = (doc, paths) => deckDoc(!lanesAt ? doc : (() => { const r = docOffLanes(doc, paths, lanesAt, fit); snapMoved += r.moved; return r.doc; })(), paths);
   // (vivier) the baked points (y = the DTM at build time) on a road deck: up onto it
   const deckDoc = (doc, paths) => {
@@ -1005,6 +1011,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]]), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
   const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]), own.features);
   const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, [["signs"], ["posts"]]), own.features);
+  await split("stops, furniture, street kit");
   if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
   if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
@@ -1015,6 +1022,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
   // the police station's vehicle gate)
   const gardenCounts = cityGardens.addTile(entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), CORTENBOSCH ? (await loadOverrides(DATA)).gardenRestyle : null);   // (cortenbosch: the lane's beech hedges, gardenRestyle)
+  await split("gardens");
   // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
   if (lycee) say(`lycée front: ${lycee.panels} railing panels, ${lycee.tris} triangles (viewer/lyceeFront.js)`);
@@ -1029,7 +1037,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (plantCounts) say(`plants: ${Object.entries(plantCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/plants, viewer/plants)`);
   if (furnCounts) say(`furniture2: ${Object.entries(furnCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/furniture, viewer/furniture2)`);
   if (stopCounts) say(`stops: ${stopCounts.pole} STIB poles, ${stopCounts.shelter} shelters (incl. tram platforms), ${stopCounts.adpanel} ad panels (data/stops, viewer/stops)`);
-  await frame("tram");
+  await frame(SPLIT_SLICES ? "plants" : "tram");
   // parked cars from the parking lanes as OSM / the type default has them (before the width fit, which drops lanes the
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   let parkDropped = 0;
@@ -1218,6 +1226,7 @@ async function main() {
   const scene = new THREE.Scene();
   const bootPipes = params.get("warmup") !== "0" ? openBootPipelines(renderer, scene) : null;   // ?warmup=0: old boot, for A/B
   if (params.get("tileshadowwarm") !== "0") shadowWarm = (roots) => warmShadows(renderer, scene, roots).catch(() => {});   // boot3 (preCompile)
+  setStagedShadowWarm((roots) => warmShadows(renderer, scene, roots, { perFrame: 1 }).catch(() => {}));   // (falconstutter: a staged landmark's released parts)
   const timeId = PRESETS[params.get("time")] ? params.get("time") : "golden";
   const lighting = new Lighting(scene, renderer, timeId, { sunLight: params.get("sunlight") === "1" });
   setTreeLighting(lighting);
@@ -1851,6 +1860,7 @@ async function main() {
   let streamJump = false;                 // a map teleport: tiles left behind go at once (no far-tile hand-over first)
   /** Fade a tile's groups out, then dispose it (at once with ?tilefade=0). */
   sunCache.fader = fader;                // (perfgame round 3: the sun shadow cache is redrawn while a tile fades)
+  globalThis.__sunCache = sunCache;      // (debug/falconStutter.js: full redraws per frame)
   const retire = async (groups, dispose) => {
     markSunShadowDirty();
     if (!TILE_FADE) { dispose(); markSunShadowDirty(); return; }
@@ -2040,6 +2050,7 @@ async function main() {
   // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
   if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
   if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
+  if (params.get("compileslice") !== "old") window.__fineCompile = fineCompile(renderer, () => playLoader.active, Math.max(1, +(params.get("compileslicems") ?? 4) || 4));   // falconstutter
   // perf8 (?compileflush=old): under the play loader the queued compile jobs are done together in one forced frame (warmup.js)
   setCompileFlush({ active: () => playLoader.active, render: () => (pipe ? pipe.render(null) : renderer.render(scene, camera)), renderer, scene });
   // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
@@ -2310,7 +2321,7 @@ async function main() {
     }
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };
-  window.viewer = { updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  window.viewer = { jobsLeft: () => compileJobsLeft(), updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, groundLook, areaReady, teleport,
     // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
     groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => { renderer._nodes?.nodeFrame?.update(); if (renderer.info.autoReset) renderer.info.reset(); stepLoop(dt); },   /* (claude/sharp) the paused loop skipped three's per-frame update: FRAME nodes (the TAAU resolve!) never ran, every stepped frame showed the same image */ freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
