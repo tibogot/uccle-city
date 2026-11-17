@@ -9,10 +9,16 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 ## OWNER PLAYTEST 2026-11-16 (day, default viewer + both games) — TOP PRIORITY, in this order
 
 **Night 2026-11-17 (owner away):** MERGED sharp (docs/UPSCALE.md), tour (docs/TOUR.md: 22-view city tour, baseline in
-uccle-tour/.tour/foundation), holes (docs/HOLES.md: no hollow buildings; tour: 5 views fixed, 17 unchanged). Rules +
-gates: **docs/QUALITY_RULES.md** (read before every merge). Queue: heap, orbitcam2, trafpark, vivier, skyctl, christmas,
-then falcon stutter, loader stills, clean perf measure, agargaro (8k). Left from holes: owner image 68 (Waterloo by
-Optalweg) not located; the `police` place in viewer/places.js puts the camera inside a house.
+uccle-tour/.tour/foundation), holes (docs/HOLES.md: no hollow buildings; tour: 5 views fixed, 17 unchanged), heap +
+heapfix (docs/HEAP.md: police heap 1.45 GB -> ~975 MB; no draw after dispose), orbitcam2 (game keys with no button, ?
+card), trafpark (docs/TRAFPARK.md: 0 parked cars under traffic, tile borders too), vivier (docs/VIVIER.md: the bridge,
+all 42 road-rail crossings resolved). Rules + gates: **docs/QUALITY_RULES.md** (17 rules; read before every merge).
+Queue: skyctl (browser turn), christmas (Blender GPU rebuild when no browser turn runs), then falcon stutter, loader
+stills, clean perf measure, agargaro (8k).
+Left: owner image 68 (Waterloo by Optalweg) not located; the `police` place in viewer/places.js puts the camera inside a
+house; ~30 % of traffic copy-to-neighbour lane links fail (cars 0.5-1 m off the lane, pre-existing); the two Vivier
+d'Oie station footbridges (UrbIS 751 / 752); low wire clearance under Av. des Tilleuls / Hospices / Carsoel; Saint-Job
+deck sidewalks over the bank; heap leftovers (GLB held by the loader, meshopt wasm, landmark geometry holds).
 
 **SNOW2 (claude/snow2, 2026-11-17, docs/SNOW2.md):** snowfall's GPU cost over an overcast sky (GPU-bound A/B, 3.4 Mpx) +2.49 -> +1.57 ms (~1.0 -> ~0.6 ms at the window's size; ?snowfast=old): baked snow noise, cover only on up-facing faces, colour -> normal share, one filtered exposure fetch, near-only bump / groove, flakes collapsed / stepped on the drawn count. Looks: Sacré-Cœur 54 deg slate streaks instead of blocks (?snowsteep=old), library slate even (moss kept its sheen, ?slatemoss=old), Saint-Marc brick grey-mauve (?marcbrick=old), paved forecourts at Saint-Marc + Sacré-Cœur's east passage (grounds pavers, ?forecourts=old), hard grounds take the weather. Left: ~0.6 ms of the rest is SSR on the salted roads' wet film (content), the layer's own lit fragment (depth-first order tried: bare grey roofs, reverted), the < 0.6 ms target only at window size; GPU ms at window size needs ?quality=native + debug/snow2.js bound() (dynamic res + GPU clock otherwise hold ~11.5 ms).
 
