@@ -60,7 +60,7 @@ export function startTreeKit(renderer, shared, leafMask, variants) {
   kit.ready = (async () => {
     const t0 = performance.now();
     const src = K.stylizedTreeSource(shared, leafMask, { variants, lod: 2, handover: IMP.start.value });
-    const atlas = await K.bakeAtlas(renderer, src, K.TYPES.tree);
+    const atlas = await K.bakeAtlas(renderer, src, { ...K.TYPES.tree, keepPixels: qs.get("atlaskeep") === "old" });   // perf9: no CPU copy of the atlas after upload
     src.dispose?.();
     kit.atlas = atlas;
     kit.stats.bakeMs = performance.now() - t0;
