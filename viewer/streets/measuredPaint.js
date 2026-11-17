@@ -583,6 +583,21 @@ export function roadTextMesh(texts, prep, bounds) {
     if (k.startsWith("_") || !t?.lines || !t.at || !t.dir) continue;
     const L = Math.hypot(t.dir[0], t.dir[1]) || 1, fx = t.dir[0] / L, fz = t.dir[1] / L, rx = -fz, rz = fx;   // forward, right (seen from above, y up)
     const w = t.w ?? 3, h = t.h ?? 1.6, gap = t.gap ?? 0.8;
+    if (t.along) {
+      // ALONG the street (the Cortenbosch's: Street View): each line's baseline runs with dir, the letters' tops to its
+      // left; the lines side by side across the street, the first one on the left; `at` the pair's centre, L its length
+      const Lg = t.L ?? 4, n = t.lines.length;
+      t.lines.forEach((line, i) => {
+        const row = rows.indexOf(line), off = (i - (n - 1) / 2) * (h + gap);       // + = right
+        const cx = t.at[0] + rx * off, cz = t.at[1] + rz * off;
+        const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [cx + fx * a * Lg / 2 + rx * b * h / 2, cz + fz * a * Lg / 2 + rz * b * h / 2]);
+        const poly = clipConvex(corners, tile);
+        if (poly.length < 3) return;
+        const uvOf = (p) => { const dx = p[0] - cx, dz = p[1] - cz; return [(dx * fx + dz * fz) / Lg + 0.5, 1 - (row + 1) / R + (0.5 - (dx * rx + dz * rz) / h) / R]; };
+        drape(poly, uvOf);
+      });
+      continue;
+    }
     t.lines.forEach((line, i) => {
       const row = rows.indexOf(line), along = i * (h + gap);
       const ox = t.at[0] + fx * along, oz = t.at[1] + fz * along;
@@ -592,6 +607,10 @@ export function roadTextMesh(texts, prep, bounds) {
       const poly = clipConvex(corners, tile);
       if (poly.length < 3) return;
       const uvOf = (p) => { const dx = p[0] - p0[0], dz = p[1] - p0[1]; return [(dx * rx + dz * rz) / w, 1 - (row + 1) / R + ((dx * fx + dz * fz) / h) / R]; };
+      drape(poly, uvOf);
+    });
+  }
+  function drape(poly, uvOf) {
       for (const b of prep.base) {
         if (!MARKABLE.has(b.cls)) continue;
         const piece = clipConvex(poly, [b.a, b.b, b.c]);
@@ -606,7 +625,6 @@ export function roadTextMesh(texts, prep, bounds) {
         }
         for (let q = 1; q + 1 < piece.length; q++) { if (ccw) idx.push(v0, v0 + q + 1, v0 + q); else idx.push(v0, v0 + q, v0 + q + 1); }
       }
-    });
   }
   if (!idx.length) return null;
   return { position: new Float32Array(pos), normal: new Float32Array(nrm), uv: new Float32Array(uv), index: new Uint32Array(idx), attributes: {}, rows };

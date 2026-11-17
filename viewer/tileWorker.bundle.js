@@ -650,7 +650,7 @@ function clipU(poly, sg, c) {
 
 // viewer/buildingTypes.js
 var TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5, NINETIES: 6, CURTAIN: 7 };
-var NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre"] };
+var NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown", "ochre", "white"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre", "varnished"] };
 var CURTAIN = { grids: ["burgundy", "anthracite", "silver", "green"], spandrels: ["glass", "metal", "grey"] };
 var idx = (list, v, dflt) => {
   const i = list.indexOf(v);
@@ -661,11 +661,12 @@ function typedStyle(type, look, key) {
     const tone = idx(NINETIES.tones, look?.tone, Math.floor(h01(key + "|t6") * 3));
     const frame2 = idx(NINETIES.frames, look?.frame, h01(key + "|f6") < 0.6 ? 0 : h01(key + "|f6") < 0.85 ? 1 : 2);
     const fascia = idx(NINETIES.fascias, look?.fascia, Math.floor(h01(key + "|e6") * 3));
-    return 2 + (tone * 10 + frame2 + 3 * fascia) / 100;
+    return (tone >= 5 ? 4 : 2) + (tone * 12 + frame2 + 3 * fascia) / 200;
   }
-  if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 100;
+  if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 200;
   return null;
 }
+var typedCode = (style) => Math.round((style - Math.floor(style + 1e-4)) * 200);
 function h01(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
@@ -1693,10 +1694,10 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           seen.add(key2);
           const col2 = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
           if (btype === TYPE.NINETIES) {
-            const fc2 = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36]][Math.floor(Math.round((style - 2) * 100) % 10 / 3)] || [0.62, 0.58, 0.48];
+            const fc2 = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36], [0.2, 0.1, 0.048]][Math.floor(typedCode(style) % 12 / 3)] || [0.62, 0.58, 0.48];
             addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.36, f.nx, f.nz, fc2);
           } else if (btype === TYPE.CURTAIN) {
-            const gc = [[0.2, 0.035, 0.045], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][Math.round((style - 5) * 100) % 4];
+            const gc = [[0.2, 0.035, 0.045], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][typedCode(style) % 4];
             addStrip(SD, "cu", A, B, top + 0.01, 0.16, 0.06, f.nx, f.nz, gc);
           } else if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
             const cc = btype === TYPE.BLOCK ? [0.44, 0.43, 0.41] : btype === TYPE.DECO ? [0.62, 0.6, 0.56] : [0.5, 0.49, 0.47];
@@ -10706,6 +10707,22 @@ function roadTextMesh(texts, prep, bounds) {
     if (k.startsWith("_") || !t?.lines || !t.at || !t.dir) continue;
     const L2 = Math.hypot(t.dir[0], t.dir[1]) || 1, fx = t.dir[0] / L2, fz = t.dir[1] / L2, rx = -fz, rz = fx;
     const w = t.w ?? 3, h = t.h ?? 1.6, gap = t.gap ?? 0.8;
+    if (t.along) {
+      const Lg = t.L ?? 4, n = t.lines.length;
+      t.lines.forEach((line, i) => {
+        const row = rows.indexOf(line), off = (i - (n - 1) / 2) * (h + gap);
+        const cx = t.at[0] + rx * off, cz = t.at[1] + rz * off;
+        const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [cx + fx * a * Lg / 2 + rx * b * h / 2, cz + fz * a * Lg / 2 + rz * b * h / 2]);
+        const poly = clipConvex(corners, tile);
+        if (poly.length < 3) return;
+        const uvOf = (p) => {
+          const dx = p[0] - cx, dz = p[1] - cz;
+          return [(dx * fx + dz * fz) / Lg + 0.5, 1 - (row + 1) / R2 + (0.5 - (dx * rx + dz * rz) / h) / R2];
+        };
+        drape(poly, uvOf);
+      });
+      continue;
+    }
     t.lines.forEach((line, i) => {
       const row = rows.indexOf(line), along = i * (h + gap);
       const ox = t.at[0] + fx * along, oz = t.at[1] + fz * along;
@@ -10717,25 +10734,28 @@ function roadTextMesh(texts, prep, bounds) {
         const dx = p[0] - p0[0], dz = p[1] - p0[1];
         return [(dx * rx + dz * rz) / w, 1 - (row + 1) / R2 + (dx * fx + dz * fz) / h / R2];
       };
-      for (const b of prep.base) {
-        if (!MARKABLE.has(b.cls)) continue;
-        const piece = clipConvex(poly, [b.a, b.b, b.c]);
-        if (piece.length < 3 || Math.abs(area22(piece)) < 1e-5) continue;
-        const v0 = pos.length / 3;
-        const [pa, pb, pc] = piece;
-        const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
-        for (const p of piece) {
-          pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
-          const nn = prep.nrmAt(p[0], p[1]);
-          nrm.push(nn[0], nn[1], nn[2]);
-          uv.push(...uvOf(p));
-        }
-        for (let q = 1; q + 1 < piece.length; q++) {
-          if (ccw) idx2.push(v0, v0 + q + 1, v0 + q);
-          else idx2.push(v0, v0 + q, v0 + q + 1);
-        }
-      }
+      drape(poly, uvOf);
     });
+  }
+  function drape(poly, uvOf) {
+    for (const b of prep.base) {
+      if (!MARKABLE.has(b.cls)) continue;
+      const piece = clipConvex(poly, [b.a, b.b, b.c]);
+      if (piece.length < 3 || Math.abs(area22(piece)) < 1e-5) continue;
+      const v0 = pos.length / 3;
+      const [pa, pb, pc] = piece;
+      const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
+      for (const p of piece) {
+        pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
+        const nn = prep.nrmAt(p[0], p[1]);
+        nrm.push(nn[0], nn[1], nn[2]);
+        uv.push(...uvOf(p));
+      }
+      for (let q = 1; q + 1 < piece.length; q++) {
+        if (ccw) idx2.push(v0, v0 + q + 1, v0 + q);
+        else idx2.push(v0, v0 + q, v0 + q + 1);
+      }
+    }
   }
   if (!idx2.length) return null;
   return { position: new Float32Array(pos), normal: new Float32Array(nrm), uv: new Float32Array(uv), index: new Uint32Array(idx2), attributes: {}, rows };
@@ -16501,4 +16521,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "645cb20ca88db38f";
+self.__TILE_CODE_HASH = "571c4ebfdab92e3b";

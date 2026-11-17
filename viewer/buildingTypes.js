@@ -30,12 +30,13 @@ export const TYPE_NAMES = ["generic", "maison de maître", "art deco / modernist
 //               a metal coping: the Lycée Français's teaching block (553227), reusable for any office / school block
 // Their sub-look rides in the wall style's fraction (the style stays in its band: 2 = brick for 6, 5 = render /
 // concrete for 7, so the material library's set, the far colours and every style test keep working):
-//   6: style = 2 + code / 100, code = tone x 10 + frame + 3 x fascia
-//      tone 0 buff, 1 salmon, 2 cream-white, 3 orange-red, 4 brown-buff (mixed); frame 0 white, 1 brown, 2 anthracite;
-//      fascia 0 cream-painted timber, 1 dark-stained timber, 2 grey fibre-cement
-//   7: style = 5 + code / 100, code = grid + 4 x spandrel; grid 0 burgundy, 1 anthracite, 2 silver, 3 dark green;
+//   6: style = 2 (face brick) or 4 (render) + code / 200 (< 0.42: the style stays in its band), code = tone x 12 + frame + 3 x fascia
+//      tone 0 buff, 1 salmon, 2 cream-white, 3 orange-red, 4 brown-buff (mixed) bricks; 5 ochre, 6 white renders;
+//      frame 0 white, 1 brown, 2 anthracite; fascia 0 cream-painted timber, 1 dark-stained timber, 2 grey fibre-cement,
+//      3 varnished timber (warm brown)
+//   7: style = 5 + code / 200, code = grid + 4 x spandrel; grid 0 burgundy, 1 anthracite, 2 silver, 3 dark green;
 //      spandrel 0 dark enamelled glass, 1 metal in the grid's colour, 2 light grey panel
-export const NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre"] };
+export const NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown", "ochre", "white"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre", "varnished"] };
 export const CURTAIN = { grids: ["burgundy", "anthracite", "silver", "green"], spandrels: ["glass", "metal", "grey"] };
 const idx = (list, v, dflt) => { const i = list.indexOf(v); return i >= 0 ? i : dflt; };
 /** the wall style (with its sub-look code) of a type-6 / -7 building from its look ({ tone, frame, fascia } /
@@ -45,13 +46,13 @@ export function typedStyle(type, look, key) {
     const tone = idx(NINETIES.tones, look?.tone, Math.floor(h01(key + "|t6") * 3));                      // (buff / salmon / cream)
     const frame = idx(NINETIES.frames, look?.frame, h01(key + "|f6") < 0.6 ? 0 : h01(key + "|f6") < 0.85 ? 1 : 2);
     const fascia = idx(NINETIES.fascias, look?.fascia, Math.floor(h01(key + "|e6") * 3));
-    return 2 + (tone * 10 + frame + 3 * fascia) / 100;
+    return (tone >= 5 ? 4 : 2) + (tone * 12 + frame + 3 * fascia) / 200;
   }
-  if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 100;
+  if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 200;
   return null;
 }
-/** the sub-look code of a typed style (inverse of typedStyle: 0-48) */
-export const typedCode = (style) => Math.round((style - Math.floor(style + 1e-4)) * 100);
+/** the sub-look code of a typed style (inverse of typedStyle: 0-83) */
+export const typedCode = (style) => Math.round((style - Math.floor(style + 1e-4)) * 200);
 
 function h01(str) {                           // = facadeGeom.js hash01
   let h = 2166136261;

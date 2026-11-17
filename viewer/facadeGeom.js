@@ -2,7 +2,7 @@ import { fitBase } from "./groundFit.js";
 import { repairWalls } from "./wallRepair.js";   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
 import { faceBays, storeyFit } from "./interior/facadeWindows.js";
 import { litWindows } from "./nightLights/litHash.js";
-import { classify, TYPE, typedStyle } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
+import { classify, TYPE, typedStyle, typedCode } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
 // Façade analysis, pure JS (no three.js), so it can run in the tile worker (viewer/tileWorker.js).
 // Groups UrbIS wall triangles into faces with façade coordinates, party walls, street faces, shopfronts,
 // and builds the detail geometry (cornices, ridge caps, buttresses, chimneys, eaves, shop fascias).
@@ -682,11 +682,11 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (btype === TYPE.NINETIES) {
             // (cortenbosch2) the 1990s house: a fascia board over a 35 cm soffit (cream-painted / dark-stained timber, grey
             // fibre-cement: the style's code, buildingTypes.js typedStyle), no moulding
-            const fc = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36]][Math.floor(Math.round((style - 2) * 100) % 10 / 3)] || [0.62, 0.58, 0.48];
+            const fc = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36], [0.2, 0.1, 0.048]][Math.floor(typedCode(style) % 12 / 3)] || [0.62, 0.58, 0.48];
             addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.36, f.nx, f.nz, fc);
           } else if (btype === TYPE.CURTAIN) {
             // (cortenbosch2) the curtain wall: a thin metal coping in the grid's colour
-            const gc = [[0.2, 0.035, 0.045], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][Math.round((style - 5) * 100) % 4];
+            const gc = [[0.2, 0.035, 0.045], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][typedCode(style) % 4];
             addStrip(SD, "cu", A, B, top + 0.01, 0.16, 0.06, f.nx, f.nz, gc);
           } else if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
             // (styles) interwar / post-war fronts: no classical cornice, a plain projecting coping band (a concrete

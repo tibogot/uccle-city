@@ -265,17 +265,17 @@ export function wallMaterial(opts = {}) {
   const tg1 = STYLES_OLD ? null : varying(vec4(tsel(tV, 4), tsel(tV, 5), tsel(tV, 6), 0), "v_tg1");
   const isM = band(bt, 1), isD = band(bt, 2), isBE = band(bt, 3), isK = band(bt, 4), isV = band(bt, 5);
   // (cortenbosch2, docs/CORTENBOSCH2.md) 6 the 1990s house, 7 the glass curtain wall; their sub-look is the style's
-  // fraction x 100 (buildingTypes.js typedStyle): 6: tone x 10 + frame + 3 x fascia, 7: grid + 4 x spandrel
+  // fraction x 200 (buildingTypes.js typedStyle): 6: tone x 12 + frame + 3 x fascia, 7: grid + 4 x spandrel
   const isN = band(bt, 6).toVar(), isCW = band(bt, 7).toVar();
-  const tcode = floor(style.sub(floor(style.add(1e-4))).mul(100.0).add(0.5)).toVar();
-  const nTone = floor(tcode.div(10.0)).toVar(), nTrim = tcode.sub(nTone.mul(10.0));
+  const tcode = floor(style.sub(floor(style.add(1e-4))).mul(200.0).add(0.5)).toVar();
+  const nTone = floor(tcode.div(12.0)).toVar(), nTrim = tcode.sub(nTone.mul(12.0));
   const nFrame = mod(nTrim, 3.0).toVar(), nFascia = floor(nTrim.div(3.0)).toVar();
   const cwGrid = mod(tcode, 4.0).toVar(), cwSpan = floor(tcode.div(4.0)).toVar();
   const typed = isD.add(isBE).add(isK).add(isN).add(isCW).toVar();               // the types with their own joinery (no kit)
   // their colours: the 1990s frames (white / brown / anthracite PVC-aluminium) and fascia (cream-painted, dark-stained
   // timber, grey fibre-cement); the curtain wall's grid (burgundy, anthracite, silver, dark green)
   const frame6 = mix(mix(C(0.66, 0.66, 0.64), C(0.1, 0.06, 0.04), band(nFrame, 1)), C(0.06, 0.064, 0.07), band(nFrame, 2));
-  const fascia6 = mix(mix(C(0.62, 0.58, 0.48), C(0.075, 0.05, 0.035), band(nFascia, 1)), C(0.36, 0.365, 0.36), band(nFascia, 2));
+  const fascia6 = mix(mix(mix(C(0.62, 0.58, 0.48), C(0.075, 0.05, 0.035), band(nFascia, 1)), C(0.36, 0.365, 0.36), band(nFascia, 2)), C(0.2, 0.1, 0.048), band(nFascia, 3));
   const grid7 = mix(mix(C(0.2, 0.035, 0.045), C(0.07, 0.072, 0.078), band(cwGrid, 1)), mix(C(0.5, 0.51, 0.52), C(0.04, 0.09, 0.06), band(cwGrid, 3)), step(1.5, cwGrid)).toVar();
   const th1 = fract(rnd.mul(113.0)), th2 = fract(rnd.mul(271.0)), th3 = fract(rnd.mul(53.0));
   const party = step(h, bld.y.add(0.3)).mul(step(0.001, bld.y)).toVar();      // below the neighbour's top (aBld.y, m above base)
@@ -404,8 +404,9 @@ export function wallMaterial(opts = {}) {
     // (cortenbosch2) the 1990s face brick over the yellow-brick set (a tint: the set's bond, joints and texture stay):
     // buff, salmon, cream-white, orange-red, brown-buff (linear albedo, from photos of Brussels-periphery lotissements)
     const yb0 = wl ? SCANS.brick_yellow?.meta?.mean_albedo_linear ?? [0.4, 0.27, 0.14] : [0.4, 0.27, 0.14];
-    const tone6 = mix(mix(mix(C(0.47, 0.33, 0.18), C(0.5, 0.24, 0.14), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4));
-    col = mix(col, col.mul(tone6.div(C(...yb0))), isN);
+    // (5 ochre, 6 white: the rendered 1990s houses, over the cream render set)
+    const tone6 = mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6));
+    col = mix(col, col.mul(tone6.div(mix(C(0.56, 0.47, 0.32), C(...yb0), isBrick0(style)))), isN);
   }
   // ---- BLIND PARTY WALLS (owner playtest 2026-11-14: "they look empty"). A Brussels gable left bare above a lower
   // neighbour is never a clean sheet: it keeps the GHOST of an older, taller neighbour (the pitched outline of its roof
