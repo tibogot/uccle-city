@@ -35,7 +35,7 @@ const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a pa
 const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4 };
 const ROUTE = 4;                 // planned paths ahead
 const MAN = 16;                  // maneuver polyline points
-const OBS_MAX = 160, OBS_ENTRIES = 1024;
+const OBS_MAX = 512, OBS_ENTRIES = 8192;          // (trafpark: parked-car obstacles, ~10 entries each over the tiles' copies)
 const CAR_HALF_W = 0.95;          // m: a traffic car's half width (the box obstacles' lane test)
 // density (cars per km of lane at the busiest hour) per road class rank (0 alley .. 4 boulevard)
 export const DENSITY = [1.5, 10, 18, 24, 26, 26];
@@ -393,6 +393,41 @@ export class TrafficSim {
       let l = P.grid.get(k); if (!l) P.grid.set(k, (l = [])); l.push(c);
     }
   }
+  rerouteTwins() {
+    const R = this.route;
+    for (let i = 0; i < this.cap; i++) {
+      if (!this.alive[i] || this.state[i] !== ST.drive) continue;
+      // on such a copy now: onto the twin at the same distance (the lateral difference blended out, as a handover)
+      const cp = this.path[i], cg = this.W.slots[cp >>> 16];
+      if (cg && !cg.core[cp & 0xffff] && cg.twin[cp & 0xffff] >= 0) {
+        const tw = cg.twin[cp & 0xffff], T = this.tmp, T2 = this.tmp2;
+        if (this.d[i] < this.plen(tw)) {
+          this.W.point(cp, this.d[i], T); this.W.point(tw, this.d[i], T2);
+          const ex = T[0] - T2[0], ez = T[1] - T2[1];
+          if (ex * ex + ez * ez < 16) {
+            this.offX[i] += ex; this.offZ[i] += ez; this.path[i] = tw; this.prev[i] = -1;
+            for (let k = 0; k < ROUTE; k++) R[i * ROUTE + k] = -1;
+            this.fillRoute(i); this.committed[i] = -1;
+            this.stats.rerouted = (this.stats.rerouted || 0) + 1;
+            continue;
+          }
+        }
+      }
+      // a planned path on a copy that now has a twin (or on a tile gone): from there on, planned again
+      const o = i * ROUTE;
+      for (let k = 0; k < ROUTE; k++) {
+        const q = R[o + k];
+        if (q < 0) break;
+        const g = this.W.slots[q >>> 16], j = q & 0xffff;
+        if (g && (g.core[j] || g.twin[j] < 0)) continue;
+        if (g) R[o + k++] = g.twin[j];
+        for (; k < ROUTE; k++) R[o + k] = -1;
+        this.fillRoute(i);
+        this.stats.rerouted = (this.stats.rerouted || 0) + 1;
+        break;
+      }
+    }
+  }
   /** does a driven lane (core, or a buffer copy without a twin) of a loaded graph run within a traffic car's half width (- TP_TOUCH) of parked car c's box? */
   laneThrough(c) {
     const [w, l] = this.parkWL(c), hx = w / 2, hz = l / 2, h = c.heading;
@@ -714,9 +749,12 @@ export class TrafficSim {
     const t0 = performance.now();
     this.t = signalClock.now();
     while (this.freeLater.length) this.free.push(this.freeLater.pop());
+    if (!TP_OLD && this._wver !== this.W.version) { this._wver = this.W.version; this.rerouteTwins(); }   // (trafpark, rerouteTwins)
     this.buildLists();
     for (let k = 0; k < this.extraObs.length; k++) { const o = this.extraObs[k]; this.addObstacle(o.x, o.z, o.r); }
     this.stats.yielding = 0;
+    // (trafpark: a tile came in or went: routes chosen before it were planned on the old tiles' buffer copies, never
+    // fitted round the new tile's parked cars: from the next path on they take the new tile's own lanes (twins))
     if (!TP_OLD && this.parked) { this.parkedGrid(); this.addParkedObstacles(ctx.fx, ctx.fz); }
     this.projectObstacles();
     for (let i = 0; i < this.cap; i++) {
