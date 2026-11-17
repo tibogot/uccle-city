@@ -686,7 +686,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
             addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.36, f.nx, f.nz, fc);
           } else if (btype === TYPE.CURTAIN) {
             // (cortenbosch2) the curtain wall: a thin metal coping in the grid's colour
-            const gc = [[0.2, 0.035, 0.045], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][typedCode(style) % 4];
+            const gc = [[0.26, 0.035, 0.05], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][typedCode(style) % 4];
             addStrip(SD, "cu", A, B, top + 0.01, 0.16, 0.06, f.nx, f.nz, gc);
           } else if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
             // (styles) interwar / post-war fronts: no classical cornice, a plain projecting coping band (a concrete

@@ -234,7 +234,8 @@ function texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) {
   const tar = vec3(0.058, 0.057, 0.056).mul(speck.mul(0.12).add(patch.mul(0.1)).add(1));
   sett = mix(sett, tar, cover);
   const grav = vec3(0.24, 0.21, 0.16).add(speck.mul(0.03));
-  let col = select(layer.equal(LAYER.setts), sett, select(isPav, S.col.mul(0.95), asph));
+  // (cortenbosch2: the lane's herringbone pavers are pale, warm grey on Street View: x 1.3)
+  let col = select(layer.equal(LAYER.setts), sett, select(isPav, S.col.mul(hbOn ? select(isHB, float(1.3), float(0.95)) : float(0.95)), asph));
   col = select(sr.equal(4), grav, col);
   let rough = S.rough.mul(1.05).min(0.97);
   rough = select(layer.equal(LAYER.setts), rough.sub(wheel.mul(0.15)).add(float(1).sub(S.ao).mul(-0.1)), select(layer.equal(LAYER.asphalt), rough.sub(wheel.mul(0.1)), rough));

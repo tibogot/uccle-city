@@ -76,19 +76,57 @@ The Lycée's front group (viewer/lyceeFront.js: railing, sliding gate, flag pole
 (viewer/heroColliders.js, from main.js when the switch is on): car blocks from its triangles in the 0.3-1.3 m band,
 its triangles in the walk / third-person BVH.
 
-## 5. Checks done (node, no browser yet)
+## 5. Street View pass (2026-11-17, look only)
+
+What the lane really is (Apr 2024 panoramas at n. 46, 49, 50, 54):
+- **pavers in 45-degree herringbone**, pale warm grey (the layer drawn x 1.3 lighter); the mouth by n. 46 is **setts**
+  with a paver strip (our surface 32128 covers it: still herringbone there, left);
+- **"Private Weg" / "Cortenbosch"** in white mixed-case sans letters, **two columns ALONG the lane** (the letters' tops
+  to the left of the way in), painted at several spots: drawn at four (mouth, n. 49, 50, 54), 5.4 x 1.1 m a line
+  (`roadTexts` `along: true`);
+- the houses: **pale buff brick with dark grey panels** (557473, 557524), **salmon brick with cream boarding under the
+  eaves** (527939 and the row 757489 / 533244), **ochre render with grey bands** (533362), **white render over a cream
+  brick ground floor** (537192, 757490), buff-grey brick with dark-stained timber cladding (533330); all with
+  **anthracite frames**, wide **varnished / stained timber soffits**, grey sectional garage doors, hip roofs. So type 6
+  gained render tones (ochre, white: style 4 + code) and a varnished fascia; the code is now x 200 (tone x 12 + frame +
+  3 x fascia, < 0.42: the style keeps its band); its garage doors are grey (a few white);
+- block D: reflective glass in a **bold burgundy grid of square lights** with a red-brick end: the grid is now 11 cm,
+  a transom halfway up each storey, the spandrel glass reflects more;
+- the school's other blocks (Rue de Verrewinkel + the aerial): 533157 white concrete block with window bands and slab
+  edges (type 4, style 3), 533648 the sports hall in grey cladding (style 5, type 2), 533156 / 533181 (walls not or
+  barely seen, TO CONFIRM): cream / white render with window bands; set "cortenbosch2".
+
+## 6. Before / after (quick mode, golden hour; `?cortenbosch2=old` vs default)
+
+| view | before | after |
+|---|---|---|
+| the lane at n. 49, looking east | ![](cortenbosch2/lane49_before.jpg) | ![](cortenbosch2/lane49_after.jpg) |
+| n. 50's house (557473) | ![](cortenbosch2/house50_before.jpg) | ![](cortenbosch2/house50_after.jpg) |
+| the lane at n. 54 (the salmon row) | ![](cortenbosch2/lane54_before.jpg) | ![](cortenbosch2/lane54_after.jpg) |
+| block D from the avenue | ![](cortenbosch2/blockD_before.jpg) | ![](cortenbosch2/blockD_after.jpg) |
+| the lane from above | ![](cortenbosch2/laneair_before.jpg) | ![](cortenbosch2/laneair_after.jpg) |
+
+Also `lane49_night.jpg` (night, no error), `mouth_after.jpg` (the mouth: herringbone where Street View has setts).
+
+**Checks.** No console error in day, night or old. Colliders: "lycee-front" built (6,536 triangles for walk / third
+person, 153 car blocks); 115 / 115 samples along the railing and the gate inside a car block. GPU, wall shader alone
+(the foundation's facades.js swapped live with this one on the lane's wall meshes, n. 50 view, 4 rounds): -0.14 ms
+p50 (spread -0.72..+0.07): within noise. Machine not preflighted (the owner working): rough only.
+
+**Defect eye.** Seen and fixed: the grid of block D too thin to read (11 cm now), the pavers too dark, green garage
+doors. Still seen: the mouth's words partly off the markable surface (one column clipped) and the mouth drawn in
+herringbone over real setts; a white render house cannot carry its cream brick ground floor (one material per
+building); the soldier courses only read up close; the round-1 railing reads as a white wall at a grazing angle far off.
+
+## 7. Checks done (node)
 
 `tools/cortenbosch2/check.mjs`: F7 / F6 build; the lane houses type 6 with their codes (e.g. 533244 style 2.10 =
 salmon, white, cream), garages, 336 + 48 concrete-tile roof vertices; 553227 type 7; 1,618 asphalt vertices with
 surface 5 on the lane; the road-text decal 20 triangles; `--old`: round 1 exactly (types 0 / 2, surface 2, no decal,
 no concrete tiles).
 
-## 6. Still to do (browser turn)
+## 8. Still to do
 
-- Street View: the lane's houses (tone per house, frames, fascia, garages), the paint's spot and wording, the pavers'
-  angle (45 / 90 degrees), the school's other blocks (gym 533648, 533156, 533157, 533181) from the aerial.
-- Before / after images in docs/cortenbosch2/, the defect eye (soldier-course moiré, the curtain wall's grid at
-  grazing angles, the decal's contact with the pavers, the herringbone at distance), the colliders (walk into the
-  railing, drive at the gate), no console error.
-- Cost: the wall shader grew (types 6 / 7: ~40 ALU per pixel, no texture fetch); one more texture layer (~2.8 MB GPU);
-  +1 draw where the decal is in view.
+- The mouth: split surface 32128 so its first ~10 m are setts (as Street View), then re-place the mouth's words.
+- Two-material 1990s fronts (brick ground floor, render / timber upper floor), the segmental arches of the salmon row.
+- 533156 / 533181 seen from inside the campus; the herringbone's pale tone checked at midday.

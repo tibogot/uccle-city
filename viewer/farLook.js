@@ -73,7 +73,7 @@ export function farBuildingMaterial() {
   const tone6 = mix(mix(mix(mix(mix(C(0.55, 0.43, 0.26), C(0.56, 0.28, 0.16), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4)), C(0.55, 0.4, 0.19), band(nTone, 5)), C(0.68, 0.68, 0.65), band(nTone, 6));
   col = mix(col, tone6.mul(0.92), isN);
   const cwGrid = tcode.sub(floor(tcode.div(4.0)).mul(4.0));
-  const grid7 = mix(mix(C(0.2, 0.035, 0.045), C(0.07, 0.072, 0.078), band(cwGrid, 1)), mix(C(0.5, 0.51, 0.52), C(0.04, 0.09, 0.06), band(cwGrid, 3)), step(1.5, cwGrid));
+  const grid7 = mix(mix(C(0.26, 0.035, 0.05), C(0.07, 0.072, 0.078), band(cwGrid, 1)), mix(C(0.5, 0.51, 0.52), C(0.04, 0.09, 0.06), band(cwGrid, 3)), step(1.5, cwGrid));
   col = mix(col, mix(C(0.03, 0.033, 0.038), grid7, 0.3), isCW);
   // a building's own tone (+-6 %): a row of one style is never one flat colour
   col = col.mul(th2.sub(0.5).mul(0.12).add(1.0));

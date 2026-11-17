@@ -276,7 +276,7 @@ export function wallMaterial(opts = {}) {
   // timber, grey fibre-cement); the curtain wall's grid (burgundy, anthracite, silver, dark green)
   const frame6 = mix(mix(C(0.66, 0.66, 0.64), C(0.1, 0.06, 0.04), band(nFrame, 1)), C(0.06, 0.064, 0.07), band(nFrame, 2));
   const fascia6 = mix(mix(mix(C(0.62, 0.58, 0.48), C(0.075, 0.05, 0.035), band(nFascia, 1)), C(0.36, 0.365, 0.36), band(nFascia, 2)), C(0.2, 0.1, 0.048), band(nFascia, 3));
-  const grid7 = mix(mix(C(0.2, 0.035, 0.045), C(0.07, 0.072, 0.078), band(cwGrid, 1)), mix(C(0.5, 0.51, 0.52), C(0.04, 0.09, 0.06), band(cwGrid, 3)), step(1.5, cwGrid)).toVar();
+  const grid7 = mix(mix(C(0.26, 0.035, 0.05), C(0.07, 0.072, 0.078), band(cwGrid, 1)), mix(C(0.5, 0.51, 0.52), C(0.04, 0.09, 0.06), band(cwGrid, 3)), step(1.5, cwGrid)).toVar();
   const th1 = fract(rnd.mul(113.0)), th2 = fract(rnd.mul(271.0)), th3 = fract(rnd.mul(53.0));
   const party = step(h, bld.y.add(0.3)).mul(step(0.001, bld.y)).toVar();      // below the neighbour's top (aBld.y, m above base)
   const camDist = length(P.sub(cameraPosition)).toVar();
@@ -337,8 +337,8 @@ export function wallMaterial(opts = {}) {
   const cx = filteredPulse(gx, wxa, wxb, fwx), cy = pulseY(wya, wyb, fwy);
   const opening = cx.mul(cy).mul(ok).toVar();                                    // whole opening (frame + glass)
   // frame 7 cm, glass inside; a mullion and a transom (cortenbosch2: the 1990s PVC / aluminium frames 5 cm; the curtain
-  // wall's mullions / transoms 3 cm a side: 6 cm between two bays)
-  const frW = float(0.07).sub(isN.mul(0.02)).sub(isCW.mul(0.04));
+  // wall's mullions / transoms 5.5 cm a side: 11 cm between two bays, as the Lycée's burgundy grid reads on Street View)
+  const frW = float(0.07).sub(isN.mul(0.02)).sub(isCW.mul(0.015));
   const fX = frW.div(bw), fY = frW.div(storeyH);
   const gxa = wxa.add(fX), gxb = wxb.sub(fX), gya = wya.add(fY), gyb = wyb.sub(fY);
   const glassBox = filteredPulse(gx, gxa, gxb, fwx).mul(pulseY(gya, gyb, fwy)).mul(ok).toVar();
@@ -354,12 +354,12 @@ export function wallMaterial(opts = {}) {
     // (cortenbosch2) the 1990s house: casements of ~0.95 m, a top light on half of them; the curtain wall: lights of ~1.35 m
     const nl = max(floor(ww.div(mix(mix(mix(float(1.2), float(0.55), isD), float(0.95), isN), float(1.35), isCW)).add(0.5)), float(1));
     const dl = abs(fract(wu.mul(nl).add(0.5)).sub(0.5)).div(nl);
-    const bxT = smoothstep(float(0.028).div(ww), float(0.0), dl).mul(step(1.5, nl));
+    const bxT = smoothstep(mix(float(0.028), float(0.045), isCW).div(ww), float(0.0), dl).mul(step(1.5, nl));
     const wvH = gyb.sub(gya).mul(storeyH);                                        // the glass's height, m
     const lineAt = (v, hw) => smoothstep(float(hw).div(wvH), float(0.0), abs(wv.sub(v)));
     const railV = float(1.0).div(storeyH).sub(gya).div(gyb.sub(gya));            // 1 m over the floor, in the glass's v
     const byT = max(max(lineAt(float(0.34), 0.016), lineAt(float(0.68), 0.016)).mul(isD), lineAt(float(0.8), 0.02).mul(isBE))
-      .add(lineAt(railV, 0.025).mul(isK).mul(up)).add(lineAt(float(0.78), 0.025).mul(isN).mul(step(0.5, th3))).min(1.0);
+      .add(lineAt(railV, 0.025).mul(isK).mul(up)).add(lineAt(float(0.78), 0.025).mul(isN).mul(step(0.5, th3))).add(lineAt(float(0.5), 0.045).mul(isCW)).min(1.0);   // (the curtain wall: a transom halfway, square lights)
     barX = mix(barX, bxT, typed); barY = mix(barY, byT, typed);
   }
   const bars = max(barX, barY).mul(float(1).sub(isDoor)).mul(float(1).sub(isGar)).mul(near.mul(0.7).add(0.3));
@@ -693,11 +693,11 @@ export function wallMaterial(opts = {}) {
     // edge and every light division, a transom frames each spandrel
     {
       const cwWall = float(1).sub(opening).mul(wallT).mul(isCW).mul(step(plinthTop, h)).toVar();
-      const spG = mix(C(0.022, 0.025, 0.03), sky.mul(0.55), fres);
+      const spG = mix(C(0.03, 0.035, 0.045), sky.mul(0.7), fres.mul(1.3).min(1.0));
       const spCol = mix(mix(spG, grid7.mul(0.92), band(cwSpan, 1)), C(0.42, 0.42, 0.41).add(grain.mul(0.01)), band(cwSpan, 2));
       col = mix(col, spCol, cwWall);
       const gl = gx.mul(nlCW), gfw = fwidth(gl);
-      const dM = float(0.03).div(bw.div(nlCW));
+      const dM = float(0.045).div(bw.div(nlCW));
       const inB = step(0.0, gx).mul(step(gx, nb));
       const mull = max(filteredPulse(gx.add(0.5), float(0.5).sub(fX), float(0.5).add(fX), fwx), filteredPulse(gl.add(0.5), float(0.5).sub(dM), float(0.5).add(dM), gfw)).mul(inB);
       const tran = max(pulseY(wyb, wyb.add(fY), fwy), pulseY(wya.sub(fY), wya, fwy)).mul(inB);
@@ -717,10 +717,11 @@ export function wallMaterial(opts = {}) {
     // (styles) the garage door: a sectional steel door (white, anthracite, green) in 4 sections with ribs, or vertical
     // timber boards (brown); a shadow line under its head
     const gc = mix(mix(C(0.62, 0.62, 0.6), C(0.07, 0.075, 0.08), step(0.4, th1)), mix(C(0.16, 0.08, 0.035), C(0.05, 0.11, 0.07), step(0.9, th1)), step(0.65, th1));
-    const timber = step(0.65, th1).mul(step(th1, 0.9));
+    const timber = step(0.65, th1).mul(step(th1, 0.9)).mul(float(1).sub(isN));
+    const gc6 = mix(gc, mix(C(0.16, 0.17, 0.18), C(0.55, 0.55, 0.53), step(0.75, th1)), isN);   // (cortenbosch2: the 1990s houses' sectional doors grey, a few white: Street View)
     const gq = h.div(0.5), gqf = fwidth(gq);
     const rib = mix(filteredPulse(gq, float(0.0), float(0.06), gqf), filteredPulse(u.div(0.12), float(0.0), float(0.12), fwidth(u.div(0.12))), timber);
-    const gCol = gc.mul(float(1).sub(rib.mul(0.35))).mul(float(1).sub(smoothstep(0.9, 1.0, wv).mul(0.3)));
+    const gCol = gc6.mul(float(1).sub(rib.mul(0.35))).mul(float(1).sub(smoothstep(0.9, 1.0, wv).mul(0.3)));
     col = mix(col, gCol, glass.mul(isGar).mul(notShop));
     height = height.sub(glass.mul(isGar).mul(0.06));
   }
