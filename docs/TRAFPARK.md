@@ -96,13 +96,20 @@ it cannot pass while in view (I6 pull-out run with everything "in view": 18).
   - no sideways move (pull over, emergency yield, the motorbike room, back from a pass) that brings the body within
     5 cm of a parked car; a shifted car looks along its shifted body for parked cars (a leader);
   - pull-out: the first of 4 S-curves whose body sweep clears the neighbours, else no pull-out; reverse-in: the first of
-    4 reverse curves, else it drives on; no spawn into an obstacle.
+    4 reverse curves, else it drives on; the S-curve is checked again when the pull-out goes (a neighbour may have
+    parked back) and given up after 20 s blocked; no pull-out / reverse-in within 14 m of another one; no reverse-in
+    while still eased out; a shoved slot is never parked into; no spawn into an obstacle.
+  - cost (node, I6, 42-57 cars): 0.04 ms a step with nothing moved (as before), 0.2-0.4 ms with 40 shoved cars
+    (old: 0.04), at 20 steps a second. Look-aheads every 4th step, a refused pass asked again after 0.6 s, a pass
+    decided within 30 m.
 - `viewer/traffic/cityTraffic.js`: the parked cars' sizes (`carFleet.sizeOf`) and the shove hook.
 
 ## Limits / next
 
 - A car behind a shoved car it cannot pass (> 1.3 m into the lane, or both sides blocked) waits; in view it waits until
   the player moves the car or goes away (out of sight it is removed after 60 s).
+- Pull-outs from a tight slot (about 1 m to the car ahead) find no clear S-curve and do not happen (I6: 13 of 35):
+  a back-and-forth manoeuvre would bring them back.
 - The box is the widest common type for every parked car (conservative); a panel van (1.95 x 5.03 m) is 5 cm wider.
 - Browser check pending (coordinator's turn): `?quick=1&place=alsemberg&with=traffic` and 2 more busy streets, a few
   minutes each; images in docs/trafpark/.
