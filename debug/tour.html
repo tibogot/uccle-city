@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uccle visual tour</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #101418; color: #dbe4ea; font: 12px/1.4 system-ui, sans-serif; overflow: hidden; }
+  /* the city frame: a fixed CSS size (views.json "size": the same canvas size every run), scaled to fit the window */
+  #frame { position: fixed; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #000; }
+  #status { position: fixed; right: 8px; bottom: 8px; max-width: 46ch; max-height: 45vh; overflow: auto; background: rgba(16,20,24,.88);
+            border: 1px solid #2a3640; border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; font: 11.5px/1.35 ui-monospace, Consolas, monospace; z-index: 2; }
+</style>
+</head>
+<body>
+<div id="status">tour: starting</div>
+<script type="module" src="./tour.js"></script>
+</body>
+</html>
