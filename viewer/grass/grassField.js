@@ -13,6 +13,7 @@
 // Values are packed as integers (a*255 rounded, x 256 + b*255), so the compute does its own bilinear filter
 // (sample() below: 4 textureLoads, unpacked, the height weighted by A so a blade by a kerb never takes its height).
 import * as THREE from "three/webgpu";
+import { dropTextureData, heapOn } from "../heapDrop.js";
 import { Fn, vec2, vec3, vec4, float, int, ivec2, uniform, texture, textureLoad, positionWorld, normalWorld, smoothstep, clamp, floor, max, min, mix } from "three/tsl";
 import { noiseTex, groundLook } from "../ground.js";
 
@@ -122,6 +123,7 @@ export class GrassField {
     if (terrain) {
       const tt = new THREE.DataTexture(types.data, types.W, types.H, THREE.RGBAFormat);
       tt.magFilter = tt.minFilter = THREE.LinearFilter; tt.generateMipmaps = false; tt.needsUpdate = true;
+      if (heapOn("tiledrop")) dropTextureData(tt);            // (heap, docs/HEAP.md: nothing reads its pixels on the CPU after the upload)
       textures.push(tt);
       const tm = terrainMaterial(cover, tt, bounds);
       proxy(terrain, tm, 0);

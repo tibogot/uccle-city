@@ -1,42 +1,43 @@
-// THE MERGE GATE: one script running every automated check a branch must pass before it is merged (owner's rule
-// 2026-11-17: a fix is not done without an automated check that keeps it fixed). Each gate is a node command that exits
-// non-zero on failure; this runs them in order and exits 1 when any failed.
-//
-//   node tools/audit/mergeGate.mjs            every gate (full: all tiles where a gate has a tile list)
-//   node tools/audit/mergeGate.mjs --quick    the quick variant of each gate (a few sample tiles)
-//   node tools/audit/mergeGate.mjs --only trafpark,trafparksim
-//
-// ADDING A GATE: push { id, what, full: [args...], quick: [args...] } to GATES (args after `node`, run from the repo
-// root). Keep the quick variant under ~1 min.
+// node tools/audit/mergeGate.mjs: every gate check before a merge, one table. Each check is a node script that exits
+// non-zero on failure. To add one: one line in CHECKS (name, script, args, what it guards; optional node: [node options]).
+// Browser-side gates (need the viewer running) go in BROWSER: the merger runs them on a browser turn.
+// node tools/audit/mergeGate.mjs [name ...]   (only those)
 import { spawnSync } from "node:child_process";
-import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const REG = ["--import", "./tools/road_audit/register.mjs"];
-const SAMPLE = ["I6", "E4", "J5", "G5", "H6"];
-
-export const GATES = [
-  { id: "trafpark", what: "no parked car's box within a traffic car's half width (0.9 m) of any driven path (lanes + junction connectors, the posed body on bends)",
-    full: [...REG, "tools/audit/trafParkAudit.mjs", "--quiet", "--max", "0", "--all"], quick: [...REG, "tools/audit/trafParkAudit.mjs", "--max", "0", ...SAMPLE] },
-  { id: "trafparksim", what: "the running traffic sim: no traffic car body into a parked car (static, 40 shoved, pull over)",
-    full: [...REG, "tools/trafParkSimTest.mjs", "--tile", "I6", "--secs", "240"], quick: [...REG, "tools/trafParkSimTest.mjs", "--tile", "I6", "--secs", "60"] },
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const CHECKS = [
+  { name: "carctl", script: "tools/carctlTest.mjs", args: [], guards: "car handling targets (radius, response, slip, kerb, hill, braking), camera jitter, trams / trains solid (docs/CARCTL.md)" },
+  { name: "motion", script: "tools/audit/motionAudit.mjs", args: [], guards: "motion vectors on every mover + upscale guarantees (claude/sharp)" },
+  { name: "shell", script: "tools/audit/shellGate.mjs", args: [], guards: "every building's outer shell closed from the street: no wall wound inward, no open edge (claude/holes)" },
+  { name: "gardenzfight", script: "tools/audit/gardenZfight.mjs", args: ["--all", "--max", "40"], guards: "no two garden pieces draw a face in one plane over the same area, <= 40 small known (claude/holes)" },
+  { name: "heap", script: "tools/audit/heapGate.mjs", args: [], guards: "CPU copies dropped after the GPU upload have no unlisted reader; loadTile keeps no build result; heapDrop logic (claude/heap, docs/HEAP.md)" },
+  { name: "trafpark", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/trafParkAudit.mjs", args: ["--quiet", "--max", "0", "--all"], guards: "no parked car overlaps a traffic lane, all tiles (claude/trafpark)" },
+  { name: "trafparksim", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/trafParkSimTest.mjs", args: ["--tile", "I6", "--secs", "240"], guards: "simulated traffic never drives through a parked car (tile I6, 240 s) (claude/trafpark)" },
+];
+const BROWSER = [
+  "HEAP (docs/HEAP.md): ?game=police then debug/gamePerf.js police({ seconds: 45 }) (tiles unload + reload): window.__heapDrop.tripCounts must stay {} (a trip = a reader of a dropped CPU copy) (claude/heap)",
+  "VISUAL TOUR (docs/TOUR.md): debug/tour.html on the branch vs the claude/foundation baseline, node tools/tour/compare.mjs; look at every flagged view (claude/tour)",
+  "debug/sharpCheck.js  motionCoverage(): every mesh that moved over 30 frames has a motion source (claude/sharp)",
+  "debug/sharpCheck.js  stability(): frame-to-frame luma noise + Laplacian sharpness while parked / driving (claude/sharp)",
 ];
 
-const argv = process.argv.slice(2);
-const QUICK = argv.includes("--quick");
-const oi = argv.indexOf("--only"), ONLY = oi >= 0 ? new Set(argv[oi + 1].split(",")) : null;
-const results = [];
-for (const g of GATES) {
-  if (ONLY && !ONLY.has(g.id)) continue;
-  const args = QUICK ? g.quick : g.full, t0 = Date.now();
-  console.log(`\n=== gate ${g.id}: ${g.what}\n    node ${args.join(" ")}`);
-  const r = spawnSync(process.execPath, args, { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", maxBuffer: 1 << 26 });
-  const tail = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").slice(-4).join("\n    ");
-  console.log(`    ${tail}`);
+const only = process.argv.slice(2);
+const rows = [];
+let failed = 0;
+for (const c of CHECKS) {
+  if (only.length && !only.includes(c.name)) continue;
+  const t0 = Date.now();
+  const r = spawnSync(process.execPath, [...(c.node || []), path.join(ROOT, c.script), ...c.args], { cwd: ROOT, encoding: "utf8", timeout: 10 * 60 * 1000 });
   const ok = r.status === 0;
-  results.push({ id: g.id, ok, s: ((Date.now() - t0) / 1000).toFixed(0) });
-  console.log(`    -> ${ok ? "PASS" : "FAIL"} (${results.at(-1).s} s)`);
+  if (!ok) failed++;
+  const out = ((r.stdout || "") + (r.stderr || "")).trim().split("\n");
+  const fails = out.filter((l) => /FAIL/.test(l)).slice(0, 3).map((l) => l.trim().slice(0, 120));
+  rows.push([c.name, ok ? "PASS" : "FAIL", ((Date.now() - t0) / 1000).toFixed(1) + " s", ok ? c.guards : fails.join(" / ") || `exit ${r.status}`]);
 }
-console.log(`\nmerge gate${QUICK ? " (quick)" : ""}: ${results.map((r) => `${r.id} ${r.ok ? "PASS" : "FAIL"}`).join(", ")}`);
-process.exit(results.every((r) => r.ok) ? 0 : 1);
+console.log("| check | result | time | guards / failures |\n|---|---|---|---|");
+for (const r of rows) console.log("| " + r.join(" | ") + " |");
+console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}`);
+console.log(failed ? `\n${failed} gate check(s) FAILED` : "\nall gate checks pass");
+process.exitCode = failed ? 1 : 0;
