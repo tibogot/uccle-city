@@ -1,0 +1,798 @@
+{
+ "tot": {
+  "surfaces": 4394,
+  "named": 4394,
+  "oldMatch": 58,
+  "newExact": 3122,
+  "newLoose": 219,
+  "newSpatial": 2546,
+  "newCity": 6,
+  "newUnmatched": 1040,
+  "changed": 264,
+  "changedArea": 120572.5710500004
+ },
+ "streets": [
+  {
+   "name": "Chaussée d'Alsemberg",
+   "area": 8761,
+   "moves": {
+    "asphalt -> setts": 5155,
+    "asphalt -> pavers": 3606
+   },
+   "tiles": [
+    "E2",
+    "E3",
+    "E4"
+   ]
+  },
+  {
+   "name": "Avenue de la Chênaie",
+   "area": 6930,
+   "moves": {
+    "asphalt -> setts": 6729,
+    "pavers -> setts": 201
+   },
+   "tiles": [
+    "F6",
+    "G6",
+    "G7",
+    "G8",
+    "H8"
+   ]
+  },
+  {
+   "name": "Avenue Vanderaey",
+   "area": 4512,
+   "moves": {
+    "asphalt -> setts": 4512
+   },
+   "tiles": [
+    "E5",
+    "F5"
+   ]
+  },
+  {
+   "name": "Rue Geleytsbeek",
+   "area": 4259,
+   "moves": {
+    "asphalt -> setts": 4259
+   },
+   "tiles": [
+    "E6",
+    "E7",
+    "F6"
+   ]
+  },
+  {
+   "name": "Drève des Gendarmes",
+   "area": 3592,
+   "moves": {
+    "asphalt -> setts": 3592
+   },
+   "tiles": [
+    "K4",
+    "K5",
+    "K6"
+   ]
+  },
+  {
+   "name": "Avenue du Maréchal",
+   "area": 3589,
+   "moves": {
+    "asphalt -> setts": 3589
+   },
+   "tiles": [
+    "J6",
+    "K5",
+    "K6"
+   ]
+  },
+  {
+   "name": "Rue Roberts Jones",
+   "area": 3551,
+   "moves": {
+    "asphalt -> setts": 3551
+   },
+   "tiles": [
+    "G3"
+   ]
+  },
+  {
+   "name": "Drève des Renards",
+   "area": 3411,
+   "moves": {
+    "asphalt -> setts": 3411
+   },
+   "tiles": [
+    "J6",
+    "K6",
+    "L5",
+    "L6"
+   ]
+  },
+  {
+   "name": "Rue Keyenbempt",
+   "area": 3331,
+   "moves": {
+    "asphalt -> setts": 3331
+   },
+   "tiles": [
+    "C6",
+    "C7",
+    "D7"
+   ]
+  },
+  {
+   "name": "Rue Zandbeek",
+   "area": 2901,
+   "moves": {
+    "asphalt -> setts": 2901
+   },
+   "tiles": [
+    "C7",
+    "C8",
+    "D7"
+   ]
+  },
+  {
+   "name": "Avenue Dolez",
+   "area": 2746,
+   "moves": {
+    "asphalt -> setts": 2746
+   },
+   "tiles": [
+    "G10",
+    "G9",
+    "H10"
+   ]
+  },
+  {
+   "name": "Rue Engeland",
+   "area": 2722,
+   "moves": {
+    "asphalt -> setts": 2722
+   },
+   "tiles": [
+    "D7",
+    "E7",
+    "E8"
+   ]
+  },
+  {
+   "name": "Avenue des Chalets",
+   "area": 2665,
+   "moves": {
+    "asphalt -> setts": 2665
+   },
+   "tiles": [
+    "K7",
+    "K8",
+    "L7"
+   ]
+  },
+  {
+   "name": "Rue de Percke",
+   "area": 2653,
+   "moves": {
+    "asphalt -> setts": 2653
+   },
+   "tiles": [
+    "G10",
+    "H10"
+   ]
+  },
+  {
+   "name": "Rue de Verrewinkel",
+   "area": 2568,
+   "moves": {
+    "asphalt -> setts": 2568
+   },
+   "tiles": [
+    "E7",
+    "F7"
+   ]
+  },
+  {
+   "name": "Square Coghen",
+   "area": 2494,
+   "moves": {
+    "asphalt -> setts": 2494
+   },
+   "tiles": [
+    "E3"
+   ]
+  },
+  {
+   "name": "Avenue Buysdelle",
+   "area": 2445,
+   "moves": {
+    "asphalt -> setts": 2445
+   },
+   "tiles": [
+    "G10",
+    "G9"
+   ]
+  },
+  {
+   "name": "Rue Langeveld",
+   "area": 2427,
+   "moves": {
+    "asphalt -> setts": 2427
+   },
+   "tiles": [
+    "I3",
+    "J3"
+   ]
+  },
+  {
+   "name": "Bosveldweg",
+   "area": 2336,
+   "moves": {
+    "asphalt -> setts": 1181,
+    "asphalt -> gravel": 1154
+   },
+   "tiles": [
+    "H3",
+    "I3"
+   ]
+  },
+  {
+   "name": "Chemin du Crabbegat",
+   "area": 2180,
+   "moves": {
+    "asphalt -> setts": 2180
+   },
+   "tiles": [
+    "F4",
+    "G4"
+   ]
+  },
+  {
+   "name": "Chaussée de Saint-Job",
+   "area": 2063,
+   "moves": {
+    "asphalt -> setts": 2063
+   },
+   "tiles": [
+    "D7",
+    "I5",
+    "I6"
+   ]
+  },
+  {
+   "name": "Avenue de la Clairière",
+   "area": 1972,
+   "moves": {
+    "asphalt -> setts": 1972
+   },
+   "tiles": [
+    "J3"
+   ]
+  },
+  {
+   "name": "Rue Jean d'Osta",
+   "area": 1889,
+   "moves": {
+    "asphalt -> setts": 1889
+   },
+   "tiles": [
+    "B4"
+   ]
+  },
+  {
+   "name": "Montagne de Saint-Job",
+   "area": 1834,
+   "moves": {
+    "asphalt -> setts": 559,
+    "asphalt -> pavers": 1275
+   },
+   "tiles": [
+    "I6"
+   ]
+  },
+  {
+   "name": "Avenue Hippolyte Boulenger",
+   "area": 1710,
+   "moves": {
+    "asphalt -> setts": 1710
+   },
+   "tiles": [
+    "I6",
+    "J6"
+   ]
+  },
+  {
+   "name": "Parvis Saint-Pierre",
+   "area": 1682,
+   "moves": {
+    "asphalt -> setts": 1682
+   },
+   "tiles": [
+    "E3",
+    "E4"
+   ]
+  },
+  {
+   "name": "Chaussée de Boitsfort",
+   "area": 1629,
+   "moves": {
+    "asphalt -> setts": 695,
+    "asphalt -> pavers": 934
+   },
+   "tiles": [
+    "N5"
+   ]
+  },
+  {
+   "name": "Avenue Moscicki",
+   "area": 1532,
+   "moves": {
+    "asphalt -> setts": 1532
+   },
+   "tiles": [
+    "H2",
+    "H3"
+   ]
+  },
+  {
+   "name": "Moensberg",
+   "area": 1513,
+   "moves": {
+    "cobbles -> setts": 1513
+   },
+   "tiles": [
+    "D9"
+   ]
+  },
+  {
+   "name": "Avenue Kamerdelle",
+   "area": 1490,
+   "moves": {
+    "asphalt -> setts": 1490
+   },
+   "tiles": [
+    "G4",
+    "G5"
+   ]
+  },
+  {
+   "name": "Rue de Linkebeek",
+   "area": 1416,
+   "moves": {
+    "asphalt -> setts": 1416
+   },
+   "tiles": [
+    "C9",
+    "D9"
+   ]
+  },
+  {
+   "name": "Rue Professeur Hustin",
+   "area": 1412,
+   "moves": {
+    "asphalt -> pavers": 1412
+   },
+   "tiles": [
+    "B6"
+   ]
+  },
+  {
+   "name": "Avenue du Vivier d'Oie",
+   "area": 1393,
+   "moves": {
+    "asphalt -> pavers": 1393
+   },
+   "tiles": [
+    "J3",
+    "J4"
+   ]
+  },
+  {
+   "name": "Drève du Caporal",
+   "area": 1345,
+   "moves": {
+    "asphalt -> setts": 1345
+   },
+   "tiles": [
+    "L6",
+    "L7"
+   ]
+  },
+  {
+   "name": "Rue du Roseau",
+   "area": 1232,
+   "moves": {
+    "asphalt -> setts": 1232
+   },
+   "tiles": [
+    "D7",
+    "E7"
+   ]
+  },
+  {
+   "name": "Drève de Carloo",
+   "area": 1190,
+   "moves": {
+    "asphalt -> setts": 1190
+   },
+   "tiles": [
+    "J7"
+   ]
+  },
+  {
+   "name": "Rue Rittweger",
+   "area": 1188,
+   "moves": {
+    "asphalt -> setts": 1188
+   },
+   "tiles": [
+    "D5",
+    "E5"
+   ]
+  },
+  {
+   "name": "Chemin du Puits",
+   "area": 1098,
+   "moves": {
+    "asphalt -> setts": 1098
+   },
+   "tiles": [
+    "E7",
+    "E8",
+    "F8"
+   ]
+  },
+  {
+   "name": "Avenue du Fort-Jaco",
+   "area": 1093,
+   "moves": {
+    "asphalt -> gravel": 1093
+   },
+   "tiles": [
+    "K6"
+   ]
+  },
+  {
+   "name": "Rue des Archives",
+   "area": 1084,
+   "moves": {
+    "asphalt -> pavers": 1084
+   },
+   "tiles": [
+    "N5"
+   ]
+  },
+  {
+   "name": "Rue du Repos",
+   "area": 1083,
+   "moves": {
+    "asphalt -> setts": 1083
+   },
+   "tiles": [
+    "F5",
+    "F6"
+   ]
+  },
+  {
+   "name": "Avenue du Val Fleuri",
+   "area": 1083,
+   "moves": {
+    "asphalt -> gravel": 1083
+   },
+   "tiles": [
+    "C4"
+   ]
+  },
+  {
+   "name": "Chemin des Oiseleurs",
+   "area": 1040,
+   "moves": {
+    "asphalt -> gravel": 465,
+    "asphalt -> setts": 576
+   },
+   "tiles": [
+    "J4",
+    "K4"
+   ]
+  },
+  {
+   "name": "Chemin de la Forêt",
+   "area": 1035,
+   "moves": {
+    "asphalt -> setts": 1035
+   },
+   "tiles": [
+    "F9",
+    "G9"
+   ]
+  },
+  {
+   "name": "Rue des Trois Rois",
+   "area": 1023,
+   "moves": {
+    "asphalt -> setts": 1023
+   },
+   "tiles": [
+    "B7",
+    "B8",
+    "C8"
+   ]
+  },
+  {
+   "name": "Rue Colonel Chaltin",
+   "area": 1003,
+   "moves": {
+    "asphalt -> setts": 1003
+   },
+   "tiles": [
+    "E4",
+    "E5"
+   ]
+  },
+  {
+   "name": "Avenue du Vossegat",
+   "area": 989,
+   "moves": {
+    "asphalt -> setts": 989
+   },
+   "tiles": [
+    "D4"
+   ]
+  },
+  {
+   "name": "Avenue François Folie",
+   "area": 957,
+   "moves": {
+    "asphalt -> setts": 957
+   },
+   "tiles": [
+    "G5"
+   ]
+  },
+  {
+   "name": "Clos de la Charmeraie",
+   "area": 923,
+   "moves": {
+    "asphalt -> pavers": 923
+   },
+   "tiles": [
+    "G9"
+   ]
+  },
+  {
+   "name": "Clos de la Vigne Kersbeek",
+   "area": 905,
+   "moves": {
+    "asphalt -> setts": 905
+   },
+   "tiles": [
+    "B4",
+    "C4"
+   ]
+  },
+  {
+   "name": "Rue du Château d'Eau",
+   "area": 854,
+   "moves": {
+    "asphalt -> cobbles": 854
+   },
+   "tiles": [
+    "E6"
+   ]
+  },
+  {
+   "name": "Rue Victor Gambier",
+   "area": 825,
+   "moves": {
+    "asphalt -> setts": 825
+   },
+   "tiles": [
+    "D4"
+   ]
+  },
+  {
+   "name": "Parc Jacques Brel",
+   "area": 759,
+   "moves": {
+    "asphalt -> gravel": 759
+   },
+   "tiles": [
+    "C4"
+   ]
+  },
+  {
+   "name": "Rue Xavier De Bue",
+   "area": 741,
+   "moves": {
+    "asphalt -> setts": 741
+   },
+   "tiles": [
+    "E3",
+    "E4"
+   ]
+  },
+  {
+   "name": "Rue Kinsendael",
+   "area": 702,
+   "moves": {
+    "asphalt -> setts": 702
+   },
+   "tiles": [
+    "E7"
+   ]
+  },
+  {
+   "name": "Rue de Lisala",
+   "area": 666,
+   "moves": {
+    "asphalt -> pavers": 666
+   },
+   "tiles": [
+    "B4"
+   ]
+  },
+  {
+   "name": "Avenue Pierre d'Union",
+   "area": 625,
+   "moves": {
+    "asphalt -> setts": 625
+   },
+   "tiles": [
+    "I6"
+   ]
+  },
+  {
+   "name": "Petite Drève du Maréchal",
+   "area": 597,
+   "moves": {
+    "asphalt -> setts": 597
+   },
+   "tiles": [
+    "K5",
+    "K6"
+   ]
+  },
+  {
+   "name": "Champ du Vert Chasseur",
+   "area": 588,
+   "moves": {
+    "asphalt -> setts": 588
+   },
+   "tiles": [
+    "J4"
+   ]
+  },
+  {
+   "name": "Vieille rue du Moulin",
+   "area": 585,
+   "moves": {
+    "asphalt -> setts": 585
+   },
+   "tiles": [
+    "J7"
+   ]
+  },
+  {
+   "name": "Venelle de Saint-Job",
+   "area": 554,
+   "moves": {
+    "asphalt -> setts": 554
+   },
+   "tiles": [
+    "I6"
+   ]
+  },
+  {
+   "name": "Keyenbempt",
+   "area": 465,
+   "moves": {
+    "asphalt -> setts": 465
+   },
+   "tiles": [
+    "C7",
+    "D7"
+   ]
+  },
+  {
+   "name": "Clos des Fuchsias",
+   "area": 457,
+   "moves": {
+    "asphalt -> pavers": 457
+   },
+   "tiles": [
+    "B4"
+   ]
+  },
+  {
+   "name": "Avenue des Courtilières",
+   "area": 421,
+   "moves": {
+    "asphalt -> pavers": 421
+   },
+   "tiles": [
+    "N5"
+   ]
+  },
+  {
+   "name": "Rue de Stalle",
+   "area": 319,
+   "moves": {
+    "asphalt -> setts": 319
+   },
+   "tiles": [
+    "D5"
+   ]
+  },
+  {
+   "name": "Rue Baron Perelman",
+   "area": 311,
+   "moves": {
+    "asphalt -> setts": 311
+   },
+   "tiles": [
+    "H5",
+    "H6"
+   ]
+  },
+  {
+   "name": "Drève du Maréchal",
+   "area": 309,
+   "moves": {
+    "asphalt -> setts": 309
+   },
+   "tiles": [
+    "K5"
+   ]
+  },
+  {
+   "name": "Rue Molensteen",
+   "area": 260,
+   "moves": {
+    "asphalt -> setts": 260
+   },
+   "tiles": [
+    "C8"
+   ]
+  },
+  {
+   "name": "Place Homère Goossens",
+   "area": 221,
+   "moves": {
+    "asphalt -> setts": 221
+   },
+   "tiles": [
+    "E3"
+   ]
+  },
+  {
+   "name": "Avenue Victoria",
+   "area": 182,
+   "moves": {
+    "asphalt -> setts": 182
+   },
+   "tiles": [
+    "J2"
+   ]
+  },
+  {
+   "name": "Chemin du Vossegat",
+   "area": 177,
+   "moves": {
+    "asphalt -> setts": 177
+   },
+   "tiles": [
+    "D4"
+   ]
+  },
+  {
+   "name": "Carré Cassimans",
+   "area": 76,
+   "moves": {
+    "asphalt -> setts": 76
+   },
+   "tiles": [
+    "F1"
+   ]
+  }
+ ]
+}
