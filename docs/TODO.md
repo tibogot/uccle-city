@@ -95,6 +95,11 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    leaves get kicked up, spin, settle; piles = instanced cards with a height field that dents and scatters.
    References: Ghost of Tsushima leaves/grass talks, RDR2 ground debris, Horizon wind, three.js GPGPU examples.
    Budget < 0.5 ms GPU, no CPU per leaf, no extra lights; seasonal switch (Oct-Dec default, ?leaves=0/1).
+8k. **Evaluate agargaro's libraries (owner 2026-11-17)**: github.com/agargaro: instanced-mesh (InstancedMesh2: per-
+   instance frustum culling, BVH raycasting, sorting, LOD, shadow LOD, skinning; check WebGPU / r187 support),
+   batched-mesh-extensions (WebGPU: BatchedMesh culling, per-instance uniforms, LOD), BVH.js (dynamic BVH),
+   octahedral-impostor (vs our impostorKit), simplify-geometry. Measure against our own instancing (instanceStream,
+   cellCull, multiDraw, lamp pool, far-LOD merge, heroBVH): adopt only where it beats them on CPU/GPU in the city.
 9. **Orbit/inspection camera**: the default orbit is bad for a city. Study Godot / Unity / Unreal editor cameras,
    three.js CameraControls (yomotsu), Cesium/Google Earth: pivot on the clicked point, zoom to cursor, no clipping
    into buildings, smooth damping, terrain follow. (later agent)
