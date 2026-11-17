@@ -16867,6 +16867,13 @@ async function buildTileData(entry, base) {
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));
   const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
   if (fences && tcut) fences.rings = tunnelFenceRings(tunnels, fences);
+  const fitGround0 = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
+  const sinkWalls = () => fitGround0 && bBuf ? step("wall feet", () => {
+    const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
+    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V2 * 3), new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3), fitGround0, footprintIndex(bDoc));
+  }) : null;
+  const feetEarly = entry.colFeet === false ? null : await sinkWalls();
+  const feetLate = () => sinkWalls();
   const drive = await step("drive colliders", () => buildDriveData({
     bDoc: keep || bDoc,
     bBuf: keep ? null : bBuf,
@@ -16895,14 +16902,11 @@ async function buildTileData(entry, base) {
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
   if (fences && railOut) railOut.fences = fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));
   drive.counts.hidden = nb - bDoc.buildings.length;
-  const fitGround = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
+  const fitGround = fitGround0;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)), fit: entry.storeys !== false }) : null;
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   const roofKit = entry.roofs !== false ? roofCollector() : null;
-  const feet = fitGround && bBuf ? await step("wall feet", () => {
-    const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
-    return sinkFeet(bDoc, new Float32Array(bBuf, 8, V2 * 3), new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3), fitGround, footprintIndex(bDoc));
-  }) : null;
+  const feet = entry.colFeet === false ? await feetLate() : feetEarly;
   const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
@@ -17489,4 +17493,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "8e91d3927f03d7ff";
+self.__TILE_CODE_HASH = "f85d44f4fbb1928e";
