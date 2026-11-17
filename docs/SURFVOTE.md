@@ -105,9 +105,10 @@ Also `surfvote/junction_after.jpg`: Rue Geleytsbeek at Avenue du Lycée Françai
 follow the polygon edges (smooth, no saw-tooth), no z-fighting, the crossings sit on the junction pad as before.
 (Parked / passing cars differ between shots: the traffic is random.)
 
-**Checks.** No console error in any run (default and old, 9 streets; one `Object3D.add: object can't be added as a
-child of itself` seen once after a scripted camera jump in F6, not reproduced on reload + the same jump + 30 s; the
-change is worker-side data only). Ground: only the shader layer changes, so no new seam, z-fight or floating edge is
+**Checks.** One console error, twice in ~20 loads (F6, default mode; not seen with `?surfvote=old` in fewer runs):
+`THREE.Object3D.add: object can't be added as a child of itself` from `viewer/warmup.js flushJobs` (perf8's compile
+flush under the loader: a root whose top parent is already a flush holder). Not from this change (worker-side data
+only; the flush is main-thread scene code), reported for the perf8 owner. Ground: only the shader layer changes, so no new seam, z-fight or floating edge is
 possible; the borders seen are UrbIS polygon edges. Markings: on asphalt (Avenue Legrand centre line, the Geleytsbeek
 junction crossings) unchanged; rails on setts unchanged (Chaussée d'Alsemberg, tram site). Cost: zero draws, zero
 triangles, zero lights; the worker builds the vote once per tile (node, all 121 tiles: median 3.4 ms, max 12 ms; 2 m samples
