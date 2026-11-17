@@ -34,26 +34,33 @@ async function state(k) {
     if (k === "snowfallNoLayer") show(W.layer?.mesh, false);
     if (k === "snowfallNoFlakes") show(W.snow?.mesh, false);
   }
-  await wait(1200);
+  await wait(3600);                     // (the sky / fog couple ramps over 3 s)
 }
 export async function snow() { await state("snowfall"); }
 export async function clear() { await state("clear"); }
 
+/** GPU-BOUND measuring (claude/snow2): at the window's size the dynamic resolution (?quality=auto) and the laptop
+ *  GPU's clock both settle to "just 60 fps", so the GPU ms hardly moves with the load (every state ~11.5 ms). Load the
+ *  page with ?quality=native and call bound(1.6): ~2560 x 1324, the GPU saturated (~1.9 GHz, fps < 60): ms ~ work */
+export async function bound(pr = 1.6) { V().renderer.setPixelRatio(pr); window.dispatchEvent(new Event("resize")); await wait(3000); return [V().renderer.domElement.width, V().renderer.domElement.height]; }
+
 let ST = null;
 /** GPU p50 per state, `rounds` interleaved rounds at a view (in the background: poll out()) */
 export function split(v = "stjob", rounds = 4, states = ["clear", "overcastDry", "snowCover", "snowfall", "snowfallNoLayer", "snowfallNoFlakes"]) {
-  ST = { done: false, out: null, url: location.search };
+  ST = { done: false, out: null, url: location.search, passes: {} };
   (async () => {
     const acc = {};
     for (let r = 0; r < rounds; r++) for (const k of states) {
       await state(k); view(v); await wait(800);
-      V().resetGpu(); await wait(2500);
+      V().resetGpu(); await wait(3000);
       (acc[k] ??= []).push(V().gpuStats().p50);
+      const ps = V().gpuPasses?.(); if (ps) for (const [n, ms] of ps.slice(0, 8)) ((ST.passes[k] ??= {})[n] ??= []).push(ms);
     }
     await state("clear");
     (await WC.weather()).weather.timeScale = 20;
     const med = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
     ST.out = Object.fromEntries(Object.entries(acc).map(([k, a]) => [k, { median: +med(a).toFixed(3), delta: +(med(a) - med(acc.clear)).toFixed(3), rounds: a.map((x) => +x.toFixed(2)) }]));
+    for (const k of Object.keys(ST.passes)) for (const n of Object.keys(ST.passes[k])) ST.passes[k][n] = +med(ST.passes[k][n]).toFixed(3);
     ST.done = true;
   })().catch((e) => { ST.done = true; ST.out = String(e?.stack ?? e); });
   return "started";

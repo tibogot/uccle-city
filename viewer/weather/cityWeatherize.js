@@ -25,6 +25,7 @@ import { season } from "../seasons/season.js";
 import { hash2D, noise2D } from "../tslkit.js";
 import { rippleSlope, glint, snowMask, snowMaskFast, SNOW_ALBEDO, wxLook } from "./surfaceWeather.js";
 import { snowNoise, SNOW_FAST as FAST } from "./snowNoise.js";
+const SHARE_OLD = /[?&]snowshare=old(&|$)/.test(location.search);   // (snowfast without the colour -> normal share: A/B)
 
 export const WX_ON = !/[?&]weather=old(&|$)/.test(location.search);
 // polish1 (docs/POLISH.md item 1, ?snowedge=old = before): the exposure test bilinear over the 4 nearest overhead cells
@@ -66,12 +67,15 @@ function graph(I, o, wantNormal) {
   const { P, Nw } = I, up = Nw.y;
   const fw = fwidth(P.x).add(fwidth(P.y)).add(fwidth(P.z)).mul(0.5).add(0.0002).toVar();
   let exposed = float(1), shelter = float(0);
-  if (o.map && MAP && FAST) {
+  // snowfast SHARE: the normal function reads the colour function's snow results (I.shareRead): it needs the map's
+  // exposure only for the puddles' ripples
+  const expNeeded = wantNormal && I.shareRead ? (o.puddles ? wx.uPuddle.greaterThan(0.0005) : null) : true;
+  if (o.map && MAP && FAST && expNeeded) {
     // snowfast: the overhead map read only where it can matter: inside its window (64 m round the camera: most of a
     // street view's ground is past it) and on faces that are not walls (|up| < 0.3: the wet reach of a wall is a
     // constant, its snow none), in a per-pixel branch (texel loads only: no derivative inside)
     exposed = float(1).toVar(); shelter = float(0).toVar();
-    If(MAP.inside(P.xz).and(abs(up).greaterThan(0.3)), () => {
+    If(MAP.inside(P.xz).and(abs(up).greaterThan(0.3)).and(expNeeded === true ? float(1).greaterThan(0) : expNeeded), () => {
       const expOf = (h) => max(smoothstep(h.sub(0.6), h.sub(0.25), P.y), smoothstep(1.2, 4.0, h.sub(P.y)).mul(0.65));
       const s = MAP.sample(P.xz);
       if (SMOOTH_EXPOSURE && !o.lite) {
@@ -198,11 +202,36 @@ function graph(I, o, wantNormal) {
   if (o.snow !== false) If(on(wx.uSnowCover), () => {
     const slush = (o.slush ? max(wx.uSlush, o.road ? wx.uSalt.mul(I.saltMask ?? float(1)).mul(0.85) : float(0)) : wx.uSlush.mul(0.35)).toVar();
     const [upLo, upHi] = o.snowUp ?? [0.42, 0.78];
+    if (wantNormal && I.shareRead) {
+      // snowfast SHARE: the mask, the packed amount and the sparkle as the colour function left them (one evaluation a
+      // pixel for both); here only the normal's own detail: the micro bump and the tracks' groove slope, near only
+      const S = I.shareRead;
+      If(S.sm.greaterThan(0.001), () => {
+        if (lite) { nView.assign(normalize(mix(nView, I.nG, S.sm))); return; }
+        const sN = I.nG.toVar();
+        If(fw.lessThan(0.02), () => {
+          const B = snowNoise.bump(P.xz, fw, 9.0);
+          const G3 = vec3(B.g.x, 0, B.g.y).mul(float(0.006).mul(float(1).sub(smoothstep(0.004, 0.02, fw))));
+          sN.assign(toView(normalize(Nw.sub(G3.sub(Nw.mul(dot(Nw, G3)))))));
+        });
+        sN.assign(normalize(mix(sN, toView(S.gl.xyz), S.gl.w)));
+        if (o.map && TRAILS) {
+          If(S.trod.greaterThan(0.002).and(fw.lessThan(0.09)), () => {
+            const e = TRAILS.texel, tap = (dx, dz) => TRAILS.sampleAt(P.xz.add(vec2(dx, dz)), true);
+            const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e).mul(min(wx.uSnowDepth, 0.2).mul(0.45)).mul(float(1).sub(smoothstep(0.03, 0.09, fw)));
+            sN.assign(normalize(sN.add(toView(vec3(g.x, 0, g.y)))));
+          });
+        }
+        nView.assign(normalize(mix(nView, sN, S.sm)));
+      });
+      return;
+    }
     if (lite) {
       const body = () => {
         const cov = smoothstep(0.42, 0.78, up).mul(exposed).mul(wx.uSnowCover);
         const n = FAST ? snowNoise.t1(P.xz, fw).z : noise2D(P.xz.mul(0.6));
         const sm = smoothstep(0.32, 0.5, cov.mul(1.45).sub(n.mul(0.45))).mul(roadKeep).mul(I.snowMask ?? float(1)).toVar();
+        if (I.share) I.share.sm.assign(sm);
         if (!wantNormal) {
           col.assign(mix(col, mix(SNOW_ALBEDO, vec3(0.42, 0.43, 0.44), slush.mul(0.8)), sm));
           rough.assign(mix(rough, float(0.72), sm));
@@ -240,6 +269,7 @@ function graph(I, o, wantNormal) {
       // sparkle: only where its 1.8 cm facets are over ~1.6 px (per-pixel branch, no derivatives in it)
       const gl = vec4(0, 1, 0, 0).toVar();
       If(fw.lessThan(0.0115), () => { gl.assign(glint(P, fw)); });
+      if (I.share) { I.share.sm.assign(sm); I.share.trod.assign(trod); I.share.gl.assign(gl); }
       if (!wantNormal) {
         const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85)).mul(float(1).sub(trod.mul(0.2)));   // (snowtracks: trodden = greyer)
         const sRough = mix(mix(mix(float(0.72), float(0.12), gl.w), float(0.5), trod), float(0.22), slush);
@@ -314,6 +344,11 @@ export function wxMat(m, o = {}) {
   const hasAlpha = !!o.keepAlpha;
   // the outputs live in vars declared at the top of the colour function; roughness / metalness read them after it
   const rV = float(rough0).toVar(), mV = float(metal0).toVar();
+  // snowfast SHARE: the snow results the colour function computes, read back by the normal function (vars declared at
+  // the top of the colour function, as rV / mV). Only when the colour was built first in the SAME build (the normal
+  // sub-build comes after the diffuse colour in three's NodeMaterial.setup; a material whose colour graph reads the
+  // normal would build it first: then the normal computes its own, as before)
+  const SH = FAST && o.snow !== false ? { sm: float(0).toVar(), trod: float(0).toVar(), gl: vec4(0, 1, 0, 0).toVar(), built: new WeakMap() } : null;
   const ins = (top) => {
     const I = { P: positionWorld.toVar(), Nw: normalWorldGeometry.toVar(), porosity: asNode(o.porosity, 0.5).toVar() };
     for (const k of ["edge", "puddleBias", "streakMask", "glassMask", "snowMask", "saltMask"]) if (o[k]) I[k] = float(o[k]).toVar();
@@ -321,11 +356,12 @@ export function wxMat(m, o = {}) {
     Object.assign(I, top);
     return I;
   };
-  m.colorNode = Fn(() => {
+  m.colorNode = Fn((builder) => {
     const c4 = vec4(col0).toVar();
     const c = c4.xyz.toVar();
     rV.toStack(); mV.toStack();
-    const I = ins({ col: c, rough: rV, metal: mV, n: null });
+    if (SH) { SH.sm.toStack(); SH.trod.toStack(); SH.gl.toStack(); SH.built.set(builder, true); }
+    const I = ins({ col: c, rough: rV, metal: mV, n: null, share: SH });
     If(gate(), () => {
       const g = graph(I, o, false);
       const tc = vec3(g.col).toVar(), tr = float(g.rough).toVar(), tm = float(g.metal).toVar();
@@ -337,9 +373,11 @@ export function wxMat(m, o = {}) {
   m.metalnessNode = mV;
   // the normal: only the families whose weather bends it (puddles, snow, glass beads)
   if (o.puddles || o.glass || o.snow !== false) {
-    m.normalNode = Fn(() => {
+    m.normalNode = Fn((builder) => {
       const n = vec3(n0).toVar();
-      const I = ins({ n, nG: normalViewGeometry.toVar(), pV: positionView.toVar(), col: o.ground?.lum ? vec3(col0).toVar() : vec3(0.5), rough: float(0), metal: float(0), ownNormal });
+      const shareRead = SH && !SHARE_OLD && SH.built.get(builder) ? SH : null;
+      if (SH) { SH.built.delete(builder); m.userData.wxShared = !!shareRead; }
+      const I = ins({ n, nG: normalViewGeometry.toVar(), pV: positionView.toVar(), col: o.ground?.lum ? vec3(col0).toVar() : vec3(0.5), rough: float(0), metal: float(0), ownNormal, shareRead });
       If(gate(), () => { const tn = vec3(graph(I, o, true).n).toVar(); n.assign(tn); });
       return n;
     })();
