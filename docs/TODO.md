@@ -10,7 +10,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** curvedroads (sharp-bend road folds 4,203 -> 0 offline; browser turn; rule 24; worker bundle to rebuild in main at merge).
+**Running:** collisions (browser turn; rule 25), lycee (Lycée gate fence jitter + Cortenbosch one-way part; offline, then browser). Merged 2026-11-17: falconstutter, policerear, curvedroads (outer-corner texture rings left: docs/roads/BENDS.md).
 
 **Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
 
