@@ -13,6 +13,7 @@ import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
 import { createFirmamentSky } from "../vendor/firmament/firmamentSky.js";
+import { createSkyExtras } from "./skyExtras.js";
 const SHADOW_FAR = typeof location === "undefined" || new URLSearchParams(location.search).get("shadowfar") !== "old";   // perfgame round 2
 const RAYS_WARM = typeof location === "undefined" || new URLSearchParams(location.search).get("rayswarm") !== "old";   // perfgame
 import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
@@ -30,8 +31,8 @@ export const FIRMAMENT_EXPOSURE = 0.55;
 const BRUSSELS_LAT = 50.8;
 const qp = new URLSearchParams(location.search);
 const DAY = +(qp.get("day") ?? 200);                 // day of the year (200 = mid July: long golden evenings)
-// skyctl: the dev panel's sky look sliders as URL params (?sunbright=2 ...): [URL key, Firmament param]. Absent = the
-// Firmament defaults (the look as before); the panel mirrors a moved slider into its key (viewer/features.js rows)
+// skyctl: the dev panel's sky look sliders as URL params (?sunbright=2 ...): [URL key, sky param (Firmament's own, or
+// viewer/skyExtras.js's)]. Absent = the defaults (the look as before); the panel mirrors a moved slider into its key (viewer/features.js rows)
 export const SKY_URL = [
   ["sunbright", "sunDiscBright"], ["sunpower", "sunScale"], ["sunhalo", "sunHalo"], ["sunhalosize", "sunHaloDeg"],
   ["skytint", "skyTint"], ["moonsize", "moonSizeDeg"], ["moonbright", "moonBright"], ["moonglow", "nightHalo"],
@@ -329,6 +330,9 @@ export class Lighting {
       // city's edge melts into a landscape of its own colour; the sky's ground bounce takes it too. ?skyground=old: before
       ...(/[?&]skyground=old/.test(location.search) ? {} : { groundAlbedo: "#686c67" }), ...skyUrlParams() } });
     await this.sky.ready;
+    // skyctl: the sky look controls Firmament has no param for (sun disc brightness, sun glow, tint, moon brightness,
+    // sunlight strength), composed round the built sky before its first draw (viewer/skyExtras.js)
+    this.skyX = createSkyExtras(this.sky, this.renderer);
     this.scene.add(this.sky.mesh);
     // the key light x the cumulus shadow over the ground (labScene.js)
     this.sun.colorNode = vec3(this.uKey).mul(this.sky.clouds.shadowAt(positionWorld.xz));
@@ -337,6 +341,7 @@ export class Lighting {
     this.sky.params.coverage = this.firm.coverage;
     this.sky.params.cloudType = this.firm.cloudType;
     this.sky.update(0, { sunDir: this.firmSunDir() });
+    this.skyX.afterUpdate();
     this.syncFirmament();
   }
 
@@ -494,6 +499,7 @@ export class Lighting {
       this.sky.params.coverage = this.firm.coverage;
       this.sky.params.cloudType = this.firm.cloudType;
       this.sky.update(dt, { sunDir: this.firmSunDir() });
+      this.skyX?.afterUpdate();
       this.syncFirmament();
     } else if (!this.firmament) {
       this.keyColor.copy(this.sun.color).multiplyScalar(this.sun.intensity);

@@ -26,8 +26,7 @@ import { STAR_REFLECTION } from "./firmamentAtmosphere.js";
 
 const W = 512, H = 256;
 
-export function createSkyEnvironment({ renderer, atmosphere, clouds, cirrus, groundAlbedo = [0.33, 0.29, 0.22], tint = null }) {
-  const uTint = tint ?? uniform(new THREE.Vector3(1, 1, 1));   // UCCLE (skyctl): the sky's tint (firmamentSky's uniform)
+export function createSkyEnvironment({ renderer, atmosphere, clouds, cirrus, groundAlbedo = [0.33, 0.29, 0.22] }) {
   const rt = new THREE.RenderTarget(W, H, { type: THREE.HalfFloatType, depthBuffer: false, generateMipmaps: false });
   rt.texture.mapping = THREE.EquirectangularReflectionMapping;
   rt.texture.colorSpace = THREE.NoColorSpace;
@@ -48,9 +47,9 @@ export function createSkyEnvironment({ renderer, atmosphere, clouds, cirrus, gro
     const c = clOver(clouds.panoSample(dir), cirrus.sample(dir, float(2 * Math.PI / W)));
     // Tidewater skyRadianceWithClouds( dir, withSun = false ): the sky behind the clouds, no sun or moon
     // disc (they arrive as the direct light), only a trace of the stars (as its reflections)
-    const sky = atmosphere.skyBackground(dir, float(STAR_REFLECTION)).mul(uTint).mul(c.a).add(c.rgb);
+    const sky = atmosphere.skyBackground(dir, float(STAR_REFLECTION)).mul(c.a).add(c.rgb);
     // the ground: a lit floor, Lambert (Tidewater's units: sun / PI, sky irradiance already / PI)
-    const E = uSunCol.mul(max(uLight.y, 0.0)).mul(uCloudMean).div(Math.PI).add(atmosphere.irradianceNode.mul(uTint));
+    const E = uSunCol.mul(max(uLight.y, 0.0)).mul(uCloudMean).div(Math.PI).add(atmosphere.irradianceNode);
     const ground = vec3(uGround).mul(E);
     return vec4(mix(ground, sky, smoothstep(-0.02, 0.0, dir.y)), 1.0);
   });

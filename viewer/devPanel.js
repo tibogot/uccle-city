@@ -20,6 +20,7 @@ import { PLACES } from "./places.js";
 import { setHudHidden } from "./devHud.js";
 import { cityWeather } from "./weather/cityWeather.js";
 import { FIRMAMENT_DEFAULTS } from "../vendor/firmament/firmamentSky.js";
+import { SKY_X_DEFAULTS } from "./skyExtras.js";
 import { SKY_URL } from "./lighting.js";
 
 const TIMES = ["golden", "midday", "overcast", "twilight", "night", "misty"];
@@ -205,7 +206,7 @@ export function createDevPanel(ctx) {
     haze: SP?.haze ?? 1.6, aerosols: SP?.aerosols ?? 1, sunSize: SP?.sunSizeDeg ?? 0.6,
     autoExposure: SP?.autoExposure ?? true, ev: 0, nightEV: SP?.nightEV ?? 1.6,
     // skyctl: the sky look (Firmament params by name, read from the live sky so the defaults are the look as it is)
-    ...(SP ? Object.fromEntries(SKY_URL.map(([, k]) => [k, SP[k]])) : {}),
+    ...(SP ? Object.fromEntries(SKY_URL.map(([, k]) => [k, SP[k] ?? SKY_X_DEFAULTS[k] ?? FIRMAMENT_DEFAULTS[k]])) : {}),
     vfog: !!lighting.vfogOn, fogDensity: lighting.vfogParams?.density ?? 0.014, fogTop: lighting.vfogParams?.top ?? 82, fogFalloff: lighting.vfogParams?.falloff ?? 18,
     lampPower: uLampPower.value, ao: pipe?.uniforms.ao.value ?? 0.6, ssr: pipe?.uniforms.ssr.value ?? 1, bloom: pipe?.bloomPass?.strength.value ?? 0.24,
     skyHaze: dev.haze, shadows: lighting.sun.castShadow, fov: camera.fov,
@@ -335,8 +336,8 @@ export function createDevPanel(ctx) {
     fS.add(S, "autoExposure").name("eye adaptation").onChange((v) => { SP.autoExposure = v; });
     fS.add(S, "ev", -3, 3, 0.1).name("exposure bias (EV)").onChange((v) => { if (pipe) pipe.evBias = v; });
     fS.add(S, "nightEV", 0, 4, 0.1).name("night exposure (EV)").onChange((v) => { SP.nightEV = v; });
-    // skyctl: the sun, the sky's colour, the moon and stars, the clouds' light: Firmament params read every frame into
-    // uniforms (no shader rebuild); each mirrored into its URL key (viewer/lighting.js SKY_URL, viewer/features.js)
+    // skyctl: the sun, the sky's colour, the moon and stars, the clouds' light: sky params (Firmament's + viewer/skyExtras.js)
+    // read every frame into uniforms (no shader rebuild); each mirrored into its URL key (viewer/lighting.js SKY_URL, viewer/features.js)
     const SKY_CTL = {
       sunDiscBright: [0, 10, 0.05, "sun disc brightness", "the disc's radiance x (look only)"],
       sunScale: [0, 3, 0.01, "sunlight strength", "the sun's light on the world x (the eye adaptation follows)"],
@@ -354,7 +355,7 @@ export function createDevPanel(ctx) {
     };
     for (const [url, k] of SKY_URL) {
       const [lo, hi, st, label, hint] = SKY_CTL[k];
-      const c = fS.add(S, k, lo, hi, st).name(label).onChange((v) => { SP[k] = v; setParam(url, +v.toFixed(3), +FIRMAMENT_DEFAULTS[k].toFixed(3)); });
+      const c = fS.add(S, k, lo, hi, st).name(label).onChange((v) => { SP[k] = v; setParam(url, +v.toFixed(3), +({ ...FIRMAMENT_DEFAULTS, ...SKY_X_DEFAULTS })[k].toFixed(3)); });
       if (hint) c.hint(hint);
     }
   }
