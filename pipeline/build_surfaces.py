@@ -61,6 +61,17 @@ KERB_TOL = 0.08         # m: a raised edge closer than this to a low surface is 
 MIN_LINE = 0.25         # m: shorter kerb / edge pieces are dropped
 
 
+def fix_text(s):
+    """UrbIS names read as cp1252 when the GPKG holds UTF-8 (checked 2026-11-17 on the 20261002 download: "é" is
+    the bytes C3 A9): "LycÃ©e" -> "Lycée" (docs/SURFVOTE.md). Idempotent: a name that does not decode is kept as it is."""
+    if s is None or not any(c in s for c in "ÃÂÅ"):
+        return s
+    try:
+        return s.encode("cp1252").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return s
+
+
 def gpkg_path() -> Path:
     files = sorted(LANDCOVER.rglob("*.gpkg"))
     if not files:
@@ -320,7 +331,7 @@ def build_tile(tile, no_topo=False):
     e0, n1 = local_to_l72(x0, z0)
     e1, n0 = local_to_l72(x1, z1)
     src = gpkg_path()
-    meta, _, wkb, fields = pyogrio.raw.read(src, layer="StreetSurfaces", bbox=(e0 - 2, n0 - 2, e1 + 2, n1 + 2), encoding="cp1252")   # the GPKG text is cp1252, not the UTF-8 it claims
+    meta, _, wkb, fields = pyogrio.raw.read(src, layer="StreetSurfaces", bbox=(e0 - 2, n0 - 2, e1 + 2, n1 + 2), encoding="cp1252")   # (the names come out double-encoded this way: fix_text below)
     F = {k: fields[i] for i, k in enumerate(meta["fields"])}
     geoms = shapely.from_wkb(wkb)
     other_lvl, unknown, rows = {}, {}, []
@@ -341,7 +352,7 @@ def build_tile(tile, no_topo=False):
             for q in polys_of(p):
                 if q.area >= SLIVER:
                     name = F["STRNAMEFRE"][k]
-                    rows.append({"cls": cls, "type": typ, "name": None if name is None else str(name),
+                    rows.append({"cls": cls, "type": typ, "name": None if name is None else fix_text(str(name)),
                                  "hier": None if F["HIERARCHY"][k] is None else str(F["HIERARCHY"][k]),
                                  "id": str(F["INSPIRE_ID"][k]).rsplit(".", 1)[-1], "geom": q})
     if not rows:

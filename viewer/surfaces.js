@@ -26,6 +26,7 @@
 // coplanar where they should be. Low surfaces sit on H, raised ones KERB above it; the terrain is carved under all.
 import earcut from "three/src/extras/lib/earcut.js";
 import { hashPhase, SURFACE } from "./roadData.js";
+import { oldNameVote } from "./streetNames.js";
 import { ROAD_TYPES, LANE_TYPES } from "../vendor/roads/roadCrossSection.js";
 
 /** pipeline/build_surfaces.py CLASS */
@@ -1085,17 +1086,13 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   const UP = [0, 1, 0];
   const inTile = prep.inside;
 
-  // street name -> the OSM surface most of its roads have
-  const votes = new Map();
-  for (const r of roads.roads) {
-    const nm = r.meta?.name;
-    if (!nm) continue;
-    const code = SURFACE[r.meta?.surface] ?? 0;
-    const v = votes.get(nm) || new Map();
-    v.set(code, (v.get(code) || 0) + 1);
-    votes.set(nm, v);
-  }
-  const nameSurf = new Map([...votes].map(([nm, v]) => [nm, [...v].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]]));
+  // street name -> the OSM surface of its roads (docs/SURFVOTE.md, viewer/streetNames.js): surf.surfVote (set by the
+  // tile worker, ?surfvote=old: not set) = the vote; the names repaired and normalised, either side of OSM's
+  // bilingual name, the roads inside each surface voting by length. ?surfvote=old: the raw names as they are (UrbIS's
+  // French-only, double-encoded names never met OSM's bilingual ones: every measured carriageway drew asphalt)
+  const vote = surf.surfVote || null;      // (viewer/streetNames.js surfaceVote, built in the tile worker after the overrides)
+  const nameSurf = vote ? null : oldNameVote(roads, SURFACE);
+  const voteOf = (s) => (vote ? vote.of(s) : nameSurf.get(s.name));
 
   const out = {
     asphalt: new Part({ aLateral: 1, aPiece: 2, aEdges: 4, aMark: 4, aSurf: 1 }),
@@ -1406,7 +1403,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       const th = ((s.course ?? 0) * Math.PI) / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);    // setts rows along the square
     }
-    const exOfV = (q) => (pname === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: s.surface != null ? (SURFACE[s.surface] ?? 0) : nameSurf.get(s.name) || BASE_SURF[cls] }   // (s.surface: a curated surface, tileData.js streetSurfaces)
+    const exOfV = (q) => (pname === "asphalt" ? { aPiece: [hashPhase(s.id || String(b.si)), 0], aSurf: s.surface != null ? (SURFACE[s.surface] ?? 0) : voteOf(s) || BASE_SURF[cls] }   // (s.surface: a curated surface, tileData.js streetSurfaces)
       : pname === "concrete" ? { aKind: frame >= 0 ? KIND.framed : KIND.slab, aUv2: uv2[q], aFrameW: fw[q] } : null);
     const idx = pts.map((p, q) =>
       part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame}|${fw[0]}|${Math.round(p[0] * 1000)}|${Math.round(p[1] * 1000)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
