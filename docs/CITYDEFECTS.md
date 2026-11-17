@@ -106,6 +106,8 @@ so the audit runs it in node.
   while a car is in the opposing stretch, or is about to enter it (within 6 m, moving, lower index = the turn); counted
   in sim.stats.narrowWaits; `?narrow=0` off. E4: 16 stretches with parking, 8 without (genuinely narrow streets).
   UNTESTED in the running sim (no browser): watch for standoffs at a narrow stretch and for cars brushing parked cars.
+  SUPERSEDED in part by docs/TRAFPARK.md (2026-11-17, `?trafpark=old`): the kink rounding put 4,691 of the 12,084
+  parked cars back under a driven lane; now 0 (gate: tools/audit/trafParkAudit.mjs in tools/audit/mergeGate.mjs).
 - Sunk on slopes (`viewer/cars.js wheelFit`, `?carfit=old`): parked cars pitched / rolled onto their four wheels'
   ground and lifted until no wheel is below it (was: level at the centre's height). Moving traffic already pitched.
 - Counts, all 120 tiles (tools/audit/streetAudit.mjs, docs/citydefects/street_audit.json "width"):

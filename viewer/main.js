@@ -6,6 +6,7 @@
 
 import { QUICK, quickCamera, quickReady } from "./quick.js";   // FIRST of all: ?quick=1 rewrites the URL's switches before any module reads them (docs/QUICKTEST.md)
 import { soundGate } from "./audio/soundGate.js";   // FIRST: every AudioContext after it is gated (all sound off by default; ?sound=1)
+import { laneHits } from "./traffic/borderPark.js";   // trafpark: parked cars under a neighbour tile's lanes
 import * as THREE from "three/webgpu";
 import {
   color, float, uniform, positionWorld, normalWorld, fract, min, fwidth, smoothstep, mix, abs, uv, vec3,
@@ -387,6 +388,7 @@ let trackProf = null, worldRef = null;
 const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
 const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
+const TRAFPARK = params.get("trafpark") !== "old";       // traffic vs parked cars (docs/TRAFPARK.md)
 const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
 const VIVIER = params.get("vivier") !== "old";            // vivier 2026-11-17: UrbIS bridge plans, furniture / cars on the decks (docs/VIVIER.md)
 const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
@@ -701,7 +703,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     cache: params.get("tilecache") !== "0",
@@ -1028,7 +1030,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     // (d.parked: viewer/streets/parkPlace.js widthParking; ?parkclear=old: the old slots above), still kept off the
     // furniture kits' pieces
     filter: PARK_CLEAR && d.parked ? () => { const keep = cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear((x, z, yaw) => ({ x, z, yaw }), furnDoc), skDoc);
-      const out = d.parked.sites.filter((c) => keep(c.x, c.z, c.yaw)); parkDropped = d.parked.sites.length - out.length; return out; } : null });
+      // (trafpark round 2: not under a loaded neighbour's core lane, viewer/traffic/borderPark.js)
+      const border = TRAFPARK && trafficTiles.size ? laneHits(d.parked.sites, trafficTiles, entry.name) : null;
+      if (border?.size) window.__trafparkBorder = (window.__trafparkBorder || 0) + border.size;
+      const out = d.parked.sites.filter((c, i) => keep(c.x, c.z, c.yaw) && !border?.has(i)); parkDropped = d.parked.sites.length - out.length; return out; } : null });
   const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, onDeck((x, z) => hm.surface(x, z) + CARVE));
   if (twCounts) say(`two-wheelers: ${twCounts.bikes} parked in ${twCounts.slots} slots (viewer/moto/cityTwoWheelers.js)`);
   await frame("parked cars");
@@ -1504,12 +1509,20 @@ async function main() {
   const ORBITCAM_OLD = params.get("orbitcam") === "old";
   const controls = ORBITCAM_OLD ? new OrbitControls(camera, renderer.domElement)
     : new InspectControls(camera, renderer.domElement, { field: cityField(world), target: new THREE.Vector3(),
-      blocked: () => !!(window.__game?.hud?.menuOpen || window.__map?.full?.open),          // (a menu / the full map has the keys)
+      blocked: () => !!(window.__game?.hud?.menuOpen || window.__game?.promptOn || window.__map?.full?.open),   // (a menu / a game prompt's E / the full map has the keys)
+      keyMove: params.get("orbitcam2") !== "old",            // orbitcam2: WASD / QE / PgUp-PgDn move without the right button (?orbitcam2=old: RMB only)
       // (the landmark BVHs start building on the camera's first pick / move, not at boot: ~0.2 s of worker time then)
       heroes: params.get("orbitheroes") === "0" ? () => [] : ((m) => () => (m ??= heroBVHs(log)).values())(null) });
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI * 0.495;
   window.__orbitcam = controls;
+  // orbitcam2: the controls card ("?" bottom left, the ? key; once by itself on the first visit; ?orbitcam2=old: none)
+  if (!ORBITCAM_OLD && params.get("orbitcam2") !== "old") import("./orbitHelp.js").then(({ createOrbitHelp }) => {
+    const help = createOrbitHelp({ isOrbit: () => { try { return controls.enabled && !walker.on && !flyer.on && !driver.on && !third?.on; } catch { return false; } },   // (false until the modes exist)
+      blocked: () => !!(playLoader.active || window.__game?.hud?.menuOpen || window.__map?.full?.open) });
+    controls.onHelp = () => help.toggle();
+    window.__orbitHelp = help;
+  }).catch((e) => log(`orbit help: ${e.message}`));
   const walker = new Walker(camera, renderer.domElement, world);
   walker.scene = scene;
   world.hide = COLFIX ? HIDE_BU_IDS : [];  // the UrbIS solids the landmarks replace (out of the colliders on foot too)
