@@ -42,6 +42,13 @@ export async function clear() { await state("clear"); }
 /** GPU-BOUND measuring (claude/snow2): at the window's size the dynamic resolution (?quality=auto) and the laptop
  *  GPU's clock both settle to "just 60 fps", so the GPU ms hardly moves with the load (every state ~11.5 ms). Load the
  *  page with ?quality=native and call bound(1.6): ~2560 x 1324, the GPU saturated (~1.9 GHz, fps < 60): ms ~ work */
+/** close the start menu (the game picker) if it is up */
+export function closeMenu() { const b = [...document.querySelectorAll("button, div, a")].find((e) => e.textContent.trim().startsWith("Explore") && e.offsetParent); b?.click(); return !!b; }
+/** after a page load: wait for the weather's map, close the menu, go GPU-bound, start split() */
+export async function auto(v = "stjob", rounds = 4, states) {
+  for (let i = 0; i < 30; i++) { if (V()?.gpuStats && (await WC.weather()).map?.ready) break; await wait(4000); }
+  await wait(5000); closeMenu(); await bound(1.6); return split(v, rounds, states);
+}
 export async function bound(pr = 1.6) { V().renderer.setPixelRatio(pr); window.dispatchEvent(new Event("resize")); await wait(3000); return [V().renderer.domElement.width, V().renderer.domElement.height]; }
 
 let ST = null;
@@ -69,3 +76,20 @@ export const out = () => ST;
 
 /** pipelines + fragment programs now (the snow must not add any: fixed pipeline count) */
 export const pipelines = WC.pipelines;
+
+/** the materials' snow block alone: snow cover vs the same with wx.uSnowCover forced 0 after the weather's update (the
+ *  layer, the gate, the sky unchanged), GPU-bound (call bound() first). -> { cover, noMat, delta } medians */
+export async function matCost(v = "stjob", rounds = 3) {
+  const W = await WC.weather(), { wx } = await import("/viewer/weather/weatherState.js");
+  if (!W.__wrapU) { const o = W.update.bind(W); W.update = (a, b) => { o(a, b); window.__post?.(); }; W.__wrapU = 1; }
+  const custom = (inp, s) => { W.weather.fade = null; W.preset = "custom"; Object.assign(W.weather.input, inp); Object.assign(W.weather.state, { slush: 0, frost: 0, icicle: 0, ...s }); };
+  const cover = () => custom({ rain: 0, snow: 0, cloud: 1, temp: -3, vis: 15000 }, { wet: 0, puddle: 0, depth: 0.15 });
+  const acc = { cover: [], noMat: [] };
+  for (let r = 0; r < rounds; r++) for (const k of ["cover", "noMat"]) {
+    window.__post = k === "noMat" ? () => { wx.uSnowCover.value = 0; } : null;
+    cover(); await wait(3000); view(v); await wait(800); V().resetGpu(); await wait(3000); acc[k].push(V().gpuStats().p50);
+  }
+  window.__post = null;
+  const med = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+  return { cover: med(acc.cover), noMat: med(acc.noMat), delta: +(med(acc.cover) - med(acc.noMat)).toFixed(2), acc };
+}
