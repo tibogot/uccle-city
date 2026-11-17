@@ -155,5 +155,7 @@ Functional sweep (default, `window.__heapDrop.tripCounts` = {} in every run):
 - Square des Heros: the lawn built after the hold, 4107 vertices / 11955 triangles, same as `?heapdrop=old`;
 - orbit picks (3 screen points, Place Saint-Job, snow cover): identical to the metre with `?heapdrop=old`;
 - snow cover, Saint-Job from 45 m: 0.034 % of pixels over 24 levels vs `?heapdrop=old` (noise);
+- visual tour (docs/TOUR.md, run `heap` vs `foundation`, 22 views, 589 s, 22/22 ok): **0 of 22 flagged** (pixels
+  0-0.11 %, worst cell 0-3.5 %, SSIM 0.9962-0.9996: the noise band);
 - console: the same warnings as `?heapdrop=old` (the "Unable to serialize Texture" x 278 is there in both: Material
   .copy JSON-copies a library material's userData in the models' wrapAO); no error from the drops.
