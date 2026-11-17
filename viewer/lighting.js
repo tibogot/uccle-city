@@ -108,7 +108,13 @@ const MOVER_TOP = /^(car|traffic|trains?|tram|twowheel|falcon|player-falcon|pige
 export const sunCache = { dirty: true, fader: null, stats: { full: 0, shifted: 0, frames: 0 } };
 /** something static changed in the sun's view (a tile, a landmark swap): the cache is redrawn next frame */
 export function markSunShadowDirty() { sunCache.dirty = true; }
-const isMover = (o) => o.userData?.sunMover === true || MOVER_TOP.test(o.name || "");
+// falconstutter (docs/perf/FALCON_STUTTER.md; ?warmmover=old: as before): the SHADOW-pass warm groups ("<name>-warm" of the
+// landmarks / bridges, warmup.js warmShadows' "boot3-late-warm") draw their stand-ins for a frame or two far under the
+// city so the shadow pass builds their shaders off screen; with the cache they were static casters, drawn only when the
+// cache was redrawn (~1 frame in 9): most stand-ins were never drawn in the shadow pass, and the real meshes built those
+// shaders on the frame they first cast (the landmarks' LOD fading copies: 4-5 sync builds, 44-52 ms frames, measured)
+const WARM_MOVER = QS.get("warmmover") !== "old";
+const isMover = (o) => o.userData?.sunMover === true || MOVER_TOP.test(o.name || "") || (WARM_MOVER && /-warm$/.test(o.name || ""));
 class CachedSunShadowNode extends FadedShadowNode {
   constructor(light, sh) { super(light, sh); this.cache = null; this.key = null; this.cx0 = 0; this.cy0 = 0; this.age = 0; this.hid = []; this.blit = null; }
   setupRenderTarget(sh, builder) {

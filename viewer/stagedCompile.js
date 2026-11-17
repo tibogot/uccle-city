@@ -45,9 +45,17 @@ function tick() {
   }
   for (let i = deferred.length - 1; i >= 0; i--) if (deferred[i].done) deferred.splice(i, 1);
 }
+// falconstutter (docs/perf/FALCON_STUTTER.md; ?stagedshadow=old: the scene pass only, as before): the released parts'
+// SHADOW pass too (compileAsync builds the scene pass only): the near levels' fading copies were built in the shadow pass
+// on the frame their LOD band was entered (Saint-Pierre, the town hall, the Russian church, the police station: 4-5 sync
+// builds of 5-18 ms in one frame while flying, measured). warmShadow = main.js: warmup.js warmShadows, one mesh a frame.
+const STAGED_SHADOW = typeof location === "undefined" || !/[?&]stagedshadow=old(&|$)/.test(location.search);
+let warmShadow = null;
+/** main.js: (roots) => Promise, the shadow-pass warm of a released landmark's parts */
+export function setStagedShadowWarm(fn) { warmShadow = fn; }
 function release(d) {
   d.done = true;
-  d.compile(d.roots, { names: [d.name] }).then(() => { d.resolve?.(); }, () => { d.resolve?.(); });
+  d.compile(d.roots, { names: [d.name] }).then(() => (STAGED_SHADOW && warmShadow ? warmShadow(d.roots) : null)).then(() => { d.resolve?.(); }, () => { d.resolve?.(); });
 }
 
 /** wrap a compileFor(roots, o): staged for far landmarks. Returns the same promise shape (the far part). */
