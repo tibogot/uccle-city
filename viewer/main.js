@@ -1722,6 +1722,7 @@ async function main() {
     const half = flyer.on ? THREE.MathUtils.clamp((flyer.pos.y - world.surface(flyer.x, flyer.z)) * 1.6 + 90, 90, 380)   : walker.on || driver.on ? 80 : THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * 0.9, 60, 380);
     const now = performance.now(), dt = dtFixed ?? Math.min((now - last) / 1000, 0.1);
     last = now;
+    if (dtFixed === null) pipe?.upscale?.frameSample(dt * 1000);   // --- upscale (claude/sharp): DR lowers the scale only on missed frames
     if (!stateFreeze) lighting.update(camera.position.y, world.surface(camera.position.x, camera.position.z), focus, half, dt);
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
@@ -1736,7 +1737,8 @@ async function main() {
     if (frames % 10 === 1 && hud.statsOn) {         // (not while the HUD is folded / hidden: no DOM write)
       const r = info.render;
       $("stats").textContent =
-        `${backend}  ${fps.toFixed(0)} fps` + (gpu.avg ? `  GPU ${gpu.avg.toFixed(2)} ms (worst ${gpu.worst.toFixed(1)})` : "") + `\n` +
+        `${backend}  ${fps.toFixed(0)} fps` + (gpu.avg ? `  GPU ${gpu.avg.toFixed(2)} ms (worst ${gpu.worst.toFixed(1)})` : "") +
+        (pipe?.upscale ? `  ${pipe.upscale.hudLine()}` : "") + `\n` +      // --- upscale (claude/sharp): the internal scale
         `draw calls ${r.drawCalls ?? r.calls}  triangles ${(r.triangles / 1000).toFixed(0)}k\n` +
         `cam x ${camera.position.x.toFixed(0)} z ${camera.position.z.toFixed(0)} y ${camera.position.y.toFixed(1)} m TAW` +
         (tramLine ? `\n${tramLine.info().split(". Source")[0]}` : "");
