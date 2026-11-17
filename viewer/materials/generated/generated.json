@@ -1969,6 +1969,66 @@
   "albedo_webp_bytes": 504706,
   "nra_webp_bytes": 7270994
  },
+ "tf_pavers_b_1k": {
+  "material": "pavers",
+  "category": "surface",
+  "source": "texfactory",
+  "id": "tf_pavers_b_1k",
+  "name": "Factory pavers b 1K",
+  "licence": "CC0 (generated)",
+  "kind": "cc0",
+  "variant": "b",
+  "seed": 72,
+  "size_m": 1.8,
+  "lattice": [
+   4,
+   8
+  ],
+  "note": "generated: the same pavers in 90-degree herringbone (cortenbosch2: the private lane)",
+  "url": "tools/texturefactory (materials/ground.py, seed 72)",
+  "mean_albedo_linear": [
+   0.2133,
+   0.1986,
+   0.175
+  ],
+  "mean_roughness": 0.846,
+  "lum_std": 0.249,
+  "px": 1024,
+  "files": "generated/pavers/b/pavers_1k",
+  "albedo_webp_bytes": 149056,
+  "nra_webp_bytes": 2118186,
+  "albedo_ktx2_bytes": 694481,
+  "nra_ktx2_bytes": 1151694
+ },
+ "tf_pavers_b_2k": {
+  "material": "pavers",
+  "category": "surface",
+  "source": "texfactory",
+  "id": "tf_pavers_b_2k",
+  "name": "Factory pavers b 2K",
+  "licence": "CC0 (generated)",
+  "kind": "cc0",
+  "variant": "b",
+  "seed": 72,
+  "size_m": 1.8,
+  "lattice": [
+   4,
+   8
+  ],
+  "note": "generated: the same pavers in 90-degree herringbone (cortenbosch2: the private lane)",
+  "url": "tools/texturefactory (materials/ground.py, seed 72)",
+  "mean_albedo_linear": [
+   0.2133,
+   0.1986,
+   0.175
+  ],
+  "mean_roughness": 0.846,
+  "lum_std": 0.249,
+  "px": 2048,
+  "files": "generated/pavers/b/pavers_2k",
+  "albedo_webp_bytes": 530138,
+  "nra_webp_bytes": 7267686
+ },
  "tf_paving_concrete_a_1k": {
   "material": "paving_concrete",
   "category": "surface",

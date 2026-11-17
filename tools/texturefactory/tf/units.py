@@ -109,3 +109,52 @@ def random_lengths(W, lo, hi):
             out = [W]
         return out
     return f
+
+
+def herringbone(T, n_w, joint=0.005, joint_jit=0.0008, dxy_jit=0.0008, corner_r=0.003):
+    """2:1 HERRINGBONE (90 degrees, "keperverband"): bricks w x 2w, w = T.size / n_w (n_w a multiple of 4 so it tiles),
+    laid in L-shaped steps: a horizontal brick [0, 2w] x [0, w] and a vertical one [0, w] x [w, 3w] per lattice cell
+    (n + 2m, n - 2m) w (a fundamental domain of the tiling, area 4 w^2). Returns what courses() returns (id, n, lx / ly
+    along / across the brick's own long axis, hx, hy, d < 0 inside, kind 0 horizontal / 1 vertical). The tile repeats
+    by (n_w, 0) and (0, n_w) w; a sampler may shift it only by multiples of 4 w on each axis (X = Y mod 4 keeps the
+    lattice): lattice [n_w / 4, n_w / 2] in streets.json."""
+    assert n_w % 4 == 0
+    N, W = T.N, T.size
+    w = W / n_w
+    rng = T.child(77)
+    px = (T.xx / w).astype(np.float64)
+    py = (T.yy / w).astype(np.float64)
+    n0 = np.floor((px + py) / 2)
+    m0 = np.floor((px - py) / 4)
+    ids = np.full((N, N), -1, np.int32)
+    lx = np.zeros((N, N), f32)
+    ly = np.zeros((N, N), f32)
+    kind = np.zeros((N, N), np.int8)
+    for dn in (-1, 0):
+        for dm in (0, 1):
+            n = n0 + dn
+            m = m0 + dm
+            X = n + 2 * m
+            Y = n - 2 * m
+            qx = px - X
+            qy = py - Y
+            inH = (qx >= 0) & (qx < 2) & (qy >= 0) & (qy < 1) & (ids < 0)
+            inV = (qx >= 0) & (qx < 1) & (qy >= 1) & (qy < 3) & (ids < 0) & ~inH
+            key = (np.mod(X, n_w) * n_w + np.mod(Y, n_w)).astype(np.int32) * 2
+            ids = np.where(inH, key, ids)
+            ids = np.where(inV, key + 1, ids)
+            lx = np.where(inH, (qx - 1) * w, np.where(inV, (qy - 2) * w, lx))
+            ly = np.where(inH, (qy - 0.5) * w, np.where(inV, (qx - 0.5) * w, ly))
+            kind = np.where(inV, 1, kind).astype(np.int8)
+    assert (ids >= 0).all(), "herringbone: a texel in no brick"
+    nid = 2 * n_w * n_w
+    ujl = joint / 2 + rng.uniform(-joint_jit, joint_jit, nid)
+    udx = rng.uniform(-dxy_jit, dxy_jit, nid)
+    udy = rng.uniform(-dxy_jit, dxy_jit, nid)
+    lx = (lx - udx[ids]).astype(f32)
+    ly = (ly - udy[ids]).astype(f32)
+    hx = (w - ujl[ids]).astype(f32)
+    hy = (w / 2 - ujl[ids]).astype(f32)
+    d = rounded_box(lx, ly, hx, hy, corner_r)
+    return {"id": ids, "n": nid, "lx": lx, "ly": ly, "hx": hx, "hy": hy, "d": d, "row": np.zeros((N, N), np.int32),
+            "kind": kind, "pitch": w, "info": []}

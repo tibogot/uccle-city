@@ -7934,7 +7934,8 @@ var SURFACE = {
   fine_gravel: 4,
   compacted: 4,
   unpaved: 4,
-  concrete: 0
+  concrete: 0,
+  paving_herringbone: 5
 };
 function hashPhase2(id) {
   let h = 2166136261;
@@ -8219,7 +8220,7 @@ function surfaceVote(surf, roads, SURFACE2, city = null) {
   };
   return { of, fillUntagged, stats };
 }
-var CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel" };
+var CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel", 5: "paving_herringbone" };
 function oldNameVote(roads, SURFACE2) {
   const votes = /* @__PURE__ */ new Map();
   for (const r of roads.roads) {
@@ -10689,6 +10690,56 @@ function paintMeshV2(items, prep, bounds) {
     attributes: { aPaint: { array: new Float32Array(a1), itemSize: 4 }, aPaint2: { array: new Float32Array(a2), itemSize: 4 } }
   };
 }
+function roadTextRows(texts) {
+  const rows = [];
+  for (const [k, t] of Object.entries(texts || {})) if (!k.startsWith("_") && t?.lines) {
+    for (const l of t.lines) if (!rows.includes(l)) rows.push(l);
+  }
+  return rows;
+}
+function roadTextMesh(texts, prep, bounds) {
+  const rows = roadTextRows(texts), R2 = rows.length;
+  if (!R2) return null;
+  const pos = [], nrm = [], uv = [], idx2 = [];
+  const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
+  for (const [k, t] of Object.entries(texts)) {
+    if (k.startsWith("_") || !t?.lines || !t.at || !t.dir) continue;
+    const L2 = Math.hypot(t.dir[0], t.dir[1]) || 1, fx = t.dir[0] / L2, fz = t.dir[1] / L2, rx = -fz, rz = fx;
+    const w = t.w ?? 3, h = t.h ?? 1.6, gap = t.gap ?? 0.8;
+    t.lines.forEach((line, i) => {
+      const row = rows.indexOf(line), along = i * (h + gap);
+      const ox = t.at[0] + fx * along, oz = t.at[1] + fz * along;
+      const p0 = [ox - rx * w / 2 - fx * h / 2, oz - rz * w / 2 - fz * h / 2];
+      const corners = [p0, [p0[0] + rx * w, p0[1] + rz * w], [p0[0] + rx * w + fx * h, p0[1] + rz * w + fz * h], [p0[0] + fx * h, p0[1] + fz * h]];
+      const poly = clipConvex(corners, tile);
+      if (poly.length < 3) return;
+      const uvOf = (p) => {
+        const dx = p[0] - p0[0], dz = p[1] - p0[1];
+        return [(dx * rx + dz * rz) / w, 1 - (row + 1) / R2 + (dx * fx + dz * fz) / h / R2];
+      };
+      for (const b of prep.base) {
+        if (!MARKABLE.has(b.cls)) continue;
+        const piece = clipConvex(poly, [b.a, b.b, b.c]);
+        if (piece.length < 3 || Math.abs(area22(piece)) < 1e-5) continue;
+        const v0 = pos.length / 3;
+        const [pa, pb, pc] = piece;
+        const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
+        for (const p of piece) {
+          pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
+          const nn = prep.nrmAt(p[0], p[1]);
+          nrm.push(nn[0], nn[1], nn[2]);
+          uv.push(...uvOf(p));
+        }
+        for (let q = 1; q + 1 < piece.length; q++) {
+          if (ccw) idx2.push(v0, v0 + q + 1, v0 + q);
+          else idx2.push(v0, v0 + q, v0 + q + 1);
+        }
+      }
+    });
+  }
+  if (!idx2.length) return null;
+  return { position: new Float32Array(pos), normal: new Float32Array(nrm), uv: new Float32Array(uv), index: new Uint32Array(idx2), attributes: {}, rows };
+}
 
 // viewer/streets/laneGraph.js
 var CARRIAGE3 = /* @__PURE__ */ new Set([0, 1, 2, 3]);
@@ -11653,6 +11704,11 @@ function buildRoadData(o) {
     if (paintPart) {
       parts.paint = paintPart;
       triangles += paintPart.index.length / 3;
+    }
+    const textPart = o.roadTexts ? roadTextMesh(o.roadTexts, prep, bounds) : null;
+    if (textPart) {
+      parts.roadtext = textPart;
+      triangles += textPart.index.length / 3;
     }
     lap("paint decal");
   }
@@ -15720,11 +15776,12 @@ async function buildTileData(entry, base) {
     }
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
   if (entry.cortenbosch !== false && ov.streetSurfaces) {
+    const sOf = (o) => o.pattern === "herringbone" && o.surface === "paving_stones" && entry.cortenbosch2 !== false ? "paving_herringbone" : o.surface;
     if (surf) for (const s of surf.surfaces || []) {
       const o = ov.streetSurfaces[s.id];
-      if (o?.surface) s.surface = o.surface;
+      if (o?.surface) s.surface = sOf(o);
     }
-    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, o.surface])));
+    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, sOf(o)])));
     for (const r of roads.roads) {
       const sf = byRoad.get(r.id);
       if (sf) (r.meta ??= {}).surface = sf;
@@ -15793,7 +15850,8 @@ async function buildTileData(entry, base) {
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null,
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
-    onBuilding: (x, z) => onRoof(roofs, x, z)
+    onBuilding: (x, z) => onRoof(roofs, x, z),
+    roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null
   }));
   Object.assign(times, rd.times);
   const { netInfo } = rd;
@@ -16443,4 +16501,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "fad4331ff7898c75";
+self.__TILE_CODE_HASH = "645cb20ca88db38f";

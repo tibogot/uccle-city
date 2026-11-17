@@ -313,9 +313,12 @@ export async function buildTileData(entry, base) {
   // surfaces.js never matches it: UrbIS names are French only, OSM's bilingual), read by surfaces.js as s.surface;
   // ?cortenbosch=old: none
   if (entry.cortenbosch !== false && ov.streetSurfaces) {
-    if (surf) for (const s of surf.surfaces || []) { const o = ov.streetSurfaces[s.id]; if (o?.surface) s.surface = o.surface; }
+    // (cortenbosch2) pattern "herringbone": the pavers' herringbone layer (roadData.js paving_herringbone); ?cortenbosch2=old:
+    // the stretcher-bond pavers of round 1
+    const sOf = (o) => (o.pattern === "herringbone" && o.surface === "paving_stones" && entry.cortenbosch2 !== false ? "paving_herringbone" : o.surface);
+    if (surf) for (const s of surf.surfaces || []) { const o = ov.streetSurfaces[s.id]; if (o?.surface) s.surface = sOf(o); }
     // (and the engine carriageway kept over them reads its OSM road's surface: those roads too)
-    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, o.surface])));
+    const byRoad = new Map(Object.values(ov.streetSurfaces).flatMap((o) => (o?.roads || []).map((id) => [id, sOf(o)])));
     for (const r of roads.roads) { const sf = byRoad.get(r.id); if (sf) (r.meta ??= {}).surface = sf; }
   }
   // (surfvote) the vote itself, once the curated surfaces are in: surfaces.js reads it as surf.surfVote.of(s); OSM roads
@@ -378,7 +381,8 @@ export async function buildTileData(entry, base) {
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
-    trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z) }));
+    trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
+    roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null }));   // (cortenbosch2: the lane's painted words)
   Object.assign(times, rd.times);
   const { netInfo } = rd;
   netInfo.deckAbutments = abutCells; netInfo.deckUnder = underCells;

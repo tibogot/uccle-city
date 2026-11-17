@@ -37,4 +37,6 @@ for (const T of tiles.length ? tiles : ["F7", "F6"]) {
   console.log("   concrete-tile roof vertices", conc);
   const rt = r.road?.parts?.roadtext;
   console.log("   road text decal", rt ? `${rt.index.length / 3} triangles` : "none");
+  const sv = {}; for (const [k, p] of Object.entries(r.road?.parts || {})) if (p.aSurf) for (const c of p.aSurf) sv[`${k}:${c}`] = (sv[`${k}:${c}`] || 0) + 1;
+  console.log("   surface codes (part:code vertices)", JSON.stringify(sv));
 }

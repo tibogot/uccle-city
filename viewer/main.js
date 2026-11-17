@@ -42,7 +42,7 @@ import { loadGroundTextures } from "./materials/groundTex.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
-import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
+import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial, roadTextMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
@@ -250,6 +250,7 @@ function buildingMeshes(doc, buf) {
 function roadMeshes(road) {
   const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial), pits: sharedMat("tree-pits", pitMaterial),
     paint: sharedMat("road-paint", paintMaterial),         // measured paint, paint v2 (viewer/streets/measuredPaint.js)
+    ...(road.parts.roadtext ? { roadtext: sharedMat(`road-text|${road.parts.roadtext.rows.join("|")}`, () => roadTextMaterial(road.parts.roadtext.rows)) } : {}),   // (cortenbosch2) the lane's painted words
     concrete: road.surfaceStats ? sharedMat("concrete-framed", () => concreteMaterial({ framed: true })) : sharedMat("concrete", concreteMaterial) };
   const meshes = [];
   for (const [name, part] of Object.entries(road.parts)) {
@@ -1542,7 +1543,9 @@ async function main() {
   cityGrass.pushers = { driver, walker };          // ?grass=1: the car's wheels and the walker lay the grass down
   // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
-  if (COLFIX) window.__heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });
+  // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
+  // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
