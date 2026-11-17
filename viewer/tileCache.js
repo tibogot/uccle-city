@@ -156,7 +156,11 @@ function capiPut(entry, lite, base, r, deps) {
     // over CAP_BYTES: the least recently used go (bytes, not a count: a far tile is ~2-4 MB, a full one ~40 MB; a count
     // cap let the far ring push out the full tiles)
     const metas = (await c.keys()).filter((q) => q.url.endsWith("/meta"));
-    const info = await Promise.all(metas.map(async (q) => { const m = await (await c.match(q)).json(); return [q.url, m.at || 0, m.bytes || 0]; }));
+    // (another worker's sweep can delete an entry between keys() and match(): skip it instead of failing the sweep)
+    const info = (await Promise.all(metas.map(async (q) => {
+      const res = await c.match(q); if (!res) return null;
+      const m = await res.json().catch(() => null); return m ? [q.url, m.at || 0, m.bytes || 0] : null;
+    }))).filter(Boolean);
     let total = info.reduce((n, x) => n + x[2], 0);
     if (total > CAP_BYTES) {
       info.sort((a, b) => a[1] - b[1]);
