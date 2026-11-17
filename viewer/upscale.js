@@ -316,6 +316,8 @@ class CityTAAU extends TAAUNode {
       const history = mix(clipped, historyColor, lock);
       const weight = hasValidHistory.select(this.uWeight.add(motionFactor.mul(SHARP_BLEND ? 0.5 : 1)).add(moving.select(this.uMovingW, 0)).saturate(), float(1));
       colorOutput.assign(flickerReduction(currentColor, history, weight));
+      // debug (?taadebug=1): red = history rejected, green = own motion, blue = |motion.z| x 10 (m), on the image x 0.3
+      if (qs.get("taadebug") === "1") colorOutput.assign(vec4(colorOutput.rgb.mul(0.3).add(vec3(hasValidHistory.select(0, 1), moving.select(0.6, 0), motTap.z.abs().mul(10).min(1))), 1));
       lockOutput.assign(lock);
       return vec4(0);
     });

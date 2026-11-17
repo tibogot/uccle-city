@@ -47,6 +47,16 @@ function lapVar(Y, w, h) {
   }
   const m = s / n; return s2 / n - m * m;
 }
+/** the high-pass of a crop (Y - its 3 x 3 box blur): shimmer lives there; a shadow sweeping over the car does not */
+function highPass(Y, w, h) {
+  const o = new Float32Array(Y.length);
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    let s = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) s += Y[i + dy * w + dx];
+    o[i] = Y[i] - s / 9;
+  }
+  return o;
+}
 /** mean |Y_t - Y_t-1| */
 const tdiff = (A, B) => { let s = 0; for (let i = 0; i < A.length; i++) s += Math.abs(A[i] - B[i]); return s / A.length; };
 
@@ -56,7 +66,7 @@ const tdiff = (A, B) => { let s = 0; for (let i = 0; i < A.length; i++) s += Mat
  * shimmer (frame-to-frame luma change in a box round it: it stays put on screen), the upper image's noise (foliage /
  * sky; parked only: driving moves it). A sheet: the car crop parked / driving, the street crop parked / driving.
  */
-export async function drive({ speed = 14, frames = 60, settle = 90, label = location.search } = {}) {
+export async function drive({ speed = 14, frames = 60, settle = 90, label = location.search, rear = [0.43, 0.62, 0.14, 0.15] } = {}) {
   const v = V(), d = window.__driver;
   if (!d?.on || !d.car) throw new Error("drive mode off (open with &view=drive or start the police game)");
   const canvas = v.renderer.domElement, W = canvas.width, H = canvas.height;
@@ -74,8 +84,9 @@ export async function drive({ speed = 14, frames = 60, settle = 90, label = loca
         if (target && f > settle && Math.abs(sp - target) < 0.6) break;
         if (f % 4 === 0) await sleep(0);
       }
-      const lv = [], cn = [], un = [];
-      let prevCar = null, prevUp = null;
+      const lv = [], cn = [], un = [], rn = [];
+      let prevCar = null, prevUp = null, prevRear = null;
+      const RX = Math.round(rear[0] * W), RY = Math.round(rear[1] * H), RW = Math.round(rear[2] * W), RH = Math.round(rear[3] * H);
       for (let f = 0; f < frames; f++) {
         const sp = d.state.speed ?? 0;
         d.autoInput = { throttle: target ? (sp < target ? 1 : 0) : 0, steer: 0, handbrake: !target };
@@ -88,6 +99,10 @@ export async function drive({ speed = 14, frames = 60, settle = 90, label = loca
         const car = luma(g.getImageData(bx, by, bw, bh));
         if (prevCar) cn.push(tdiff(car, prevCar));
         prevCar = car;
+        // the car's rear (plate, lamps, panel lines) only: a fixed screen box (the chase camera holds the car still)
+        const rr = highPass(luma(g.getImageData(RX, RY, RW, RH)), RW, RH);
+        if (prevRear) rn.push(tdiff(rr, prevRear));
+        prevRear = rr;
         // the street: lower half, left + right of the car box
         const sy = Math.round(H * 0.5), sh = Math.round(H * 0.45), sw = Math.round(W * 0.3);
         lv.push((lapVar(luma(g.getImageData(0, sy, sw, sh)), sw, sh) + lapVar(luma(g.getImageData(W - sw, sy, sw, sh)), sw, sh)) / 2);
@@ -101,7 +116,7 @@ export async function drive({ speed = 14, frames = 60, settle = 90, label = loca
         if (f % 4 === 0) await sleep(0);
       }
       const med = (a) => (a.length ? +[...a].sort((x, y) => x - y)[Math.floor(a.length / 2)].toFixed(2) : null);
-      res[phase] = { speed: +(d.state.speed ?? 0).toFixed(1), sharp: med(lv), carShimmer: med(cn), upperNoise: med(un) };
+      res[phase] = { speed: +(d.state.speed ?? 0).toFixed(1), sharp: med(lv), carShimmer: med(cn), rearShimmer: med(rn), upperNoise: med(un) };
     }
   } finally { d.autoInput = null; v.pause(false); }
   res.drivingVsParked = +(res.driving.sharp / res.parked.sharp).toFixed(3);
@@ -112,7 +127,7 @@ export async function drive({ speed = 14, frames = 60, settle = 90, label = loca
   const x = S.getContext("2d");
   x.fillStyle = "#16181c"; x.fillRect(0, 0, S.width, S.height);
   x.fillStyle = "#ddd"; x.font = "13px monospace";
-  x.fillText(`${label}  scale ${res.scale}  sharp parked ${res.parked.sharp} driving ${res.driving.sharp} (x${res.drivingVsParked})  car shimmer ${res.parked.carShimmer} / ${res.driving.carShimmer}`, 4, 18);
+  x.fillText(`${label}  scale ${res.scale}  sharp parked ${res.parked.sharp} driving ${res.driving.sharp} (x${res.drivingVsParked})  rear shimmer ${res.parked.rearShimmer} / ${res.driving.rearShimmer}`, 4, 18);
   x.drawImage(crops.car_parked, 0, 26); x.drawImage(crops.car_driving, cw + 8, 26);
   x.drawImage(crops.street_parked, 0, 34 + ch); x.drawImage(crops.street_driving, sw + 8, 34 + ch);
   const b = await S.convertToBlob({ type: "image/jpeg", quality: 0.92 });
