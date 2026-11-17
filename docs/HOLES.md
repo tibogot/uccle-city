@@ -100,7 +100,33 @@ Before: 6,016 coplanar overlaps (2,951 pier + 2,454 pier-cap pairs, 554 coping, 
     node tools/audit/wallAudit.mjs --repair OLD.js --all            # the counts with another wallRepair.js
     node tools/audit/gardenZfight.mjs --all [--old] [--json FILE]   # the garden z-fights
 
-## Browser check
+## Browser check (2026-11-17, server tools/tour/serve.mjs, one tab)
 
-To do on the browser turn: `?quick=1&place=stjob-street` and the I5 front of 557601, the balconied blocks, Waterloo by
-Optalweg, garden piers. Before / after images go in docs/holes/.
+**The owner's house (image 60) is buildingsolid/766098 (I6), not 557601.** Its front is a stepped oriel: 78.2-81.6 m
+on the footprint line, 74.6-78.2 m about 0.2 m back, and the ground floor about 0.65 m back. Recess depth 0.21 m, so
+the front is rebuilt. Two more faults showed up in the browser and are fixed in `2da208de`:
+- the rebuilt wall stopped at the partial wall's own top. That left sky notches under the eaves, and the painted
+  façade took that low line as its eaves, so no window was painted above the ground floor. Now the top line is the
+  higher of the wall's top and the roof just inside the edge;
+- the corner samples were 1 mm in, where the mesh has no triangle (its corners sit a few mm off the footprint's), so
+  each corner dropped to the base and left a diagonal slot. Now they are 5 cm in.
+557601 (the oriel over a recessed ground floor) is kept as a recess.
+
+Images (`docs/holes/shots/`): `tour-*-before-after.jpg` (foundation | holes, the tour's own frames), `766098-after.jpg`,
+`pier-d3-before.jpg` / `pier-d3-after.jpg` (`?gardenpier=old` / now: one pier where two stood).
+
+**Visual tour** (`node tools/tour/compare.mjs foundation holes`, 22 views, 0 console errors, 22/22 built):
+5 flagged, all of them holes the branch closes:
+- stjob-shops: 766098's front, hollow on foundation, closed with windows now;
+- stjob-60m: a hollow front west of the square;
+- vanderkindere-terrace and night-vanderkindere: a buff-brick block on Rue Vanderkindere whose front was missing
+  (foundation showed the grey party wall behind it), now closed with its windows lit at night;
+- waterloo-fortjaco: a buff block whose blank lit panel (the inside of the building) is now its front with windows and
+  balconies.
+
+f3-loggia-blocks is not flagged: on the foundation baseline 538418 already looks whole from that view. Its edges are 84 %
+covered, and the 16 % left is the open ground floor; it stays open now as well.
+
+**Cost:** the whole tour took 578 s (foundation) and 549-561 s (holes); per-view boots are within noise. The Saint-Job
+view draws 88 calls, ~0.9 M triangles, GPU 12.5 ms (the HUD). There are fewer rebuilt walls than before (240 edges
+against 1,796), and nothing new is drawn.
