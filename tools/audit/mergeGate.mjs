@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const GATES = [
   { name: "shell", rule: "every building's outer shell is closed from the street (no wall wound inward, no open edge)", cmd: ["tools/audit/shellGate.mjs"] },
+  { name: "garden z-fight", rule: "no two garden pieces draw a face in one plane over the same area (<= 40 small ones known)", cmd: ["tools/audit/gardenZfight.mjs", "--all", "--max", "40"] },
 ];
 const rows = [];
 for (const g of GATES) {

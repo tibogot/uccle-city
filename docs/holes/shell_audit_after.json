@@ -20,7 +20,7 @@
   {
    "check": "after",
    "value": 4,
-   "limit": 10,
+   "limit": 5,
    "ok": true
   },
   {
