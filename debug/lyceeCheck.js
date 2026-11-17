@@ -10,7 +10,7 @@
 //        shimmer  mean |high-pass(Y_t) - high-pass(Y_t-1)| on the crop (x / 255): bars blinking / crawling
 //        hot      % of crop pixels whose high-pass changed > 8 / 255 in a frame       flicker  mean |Y_t - Y_t-1|
 //        sharp    Laplacian variance of the crop (a fix that only blurs shows here)
-//   await L.ab({ rounds: 2 })              modes old / new / blend x views, alternated per round: a table
+//   await L.ab({ rounds: 2 })              modes old / new (blended card) / cover x views, alternated per round: a table
 //   await L.strip({ view: "rail8" })       8 consecutive fence crops per mode (x3) + their differences (x4): a sheet url
 //   L.show(url) / L.hide()
 import { luma, highPass, lapVar, show, hide } from "./sharpCheck.js";
@@ -119,7 +119,7 @@ export async function measure({ view = "rail8", speed = 1.5, frames = 60, settle
 async function setMode(m) { const lf = await front(); if (lf.mode !== m) { lf.setMode(m); await sleep(2500); } }
 
 /** modes x views, alternated per round; medians over the rounds -> { rows, runs } */
-export async function ab({ modes = ["old", "new", "blend"], views = ["rail3", "rail8", "rail20", "gate3", "gate8", "gate20"], rounds = 2, ...o } = {}) {
+export async function ab({ modes = ["old", "new", "cover"], views = ["rail3", "rail8", "rail20", "gate3", "gate8", "gate20"], rounds = 2, ...o } = {}) {
   const was = (await front()).mode, out = {};
   try {
     for (let r = 0; r < rounds; r++) {

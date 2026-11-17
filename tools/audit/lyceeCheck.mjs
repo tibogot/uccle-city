@@ -11,7 +11,7 @@
 //      b. no face in the plane of a building wall (the gatehouse) over the same area;
 //      c. a coverage card on every panel + the gate, every modelled bar inside its card's stripe (the card's stripe width
 //         = the bar's), the modelled bars only where >= 2 internal px (fov 55, 1080 x 0.6), the cards' material
-//         coverage (alpha-to-coverage or blended), no light / DynamicDrawUsage, the switch a features.js row;
+//         blended at the coverage (default) or alpha-to-coverage (?lyceerail=cover), no light / DynamicDrawUsage, the switch a features.js row;
 //      d. no garden piece, hedge or generated plant left on the railing strip or the gate line (main.js clear rings);
 //      e. ?quick=1 keeps the Lycée's flags when the school is in the radius (the bare poles of 2026-11-17).
 // A guard, not a new rule (the lane was found built: docs/LYCEE.md; rule 9, joins): the lane stays built and joined.
@@ -166,9 +166,9 @@ function coplanar(tris, others = null) {
   const near = +(/BAR_NEAR = ([\d.]+)/.exec(src)?.[1] ?? NaN), band = +(/BAR_BAND = ([\d.]+)/.exec(src)?.[1] ?? NaN);
   const px = (w, d, H = 1080 * 0.6, fov = 55) => (w * H) / (2 * d * Math.tan((fov * Math.PI) / 360));
   check("1c. modelled bars only where >= 2 internal px (1080 x 0.6, fov 55)", px(0.025, near + band) >= 2, `a bar at ${near + band} m = ${px(0.025, near + band).toFixed(2)} px (old: at 20 m ${px(0.025, 20).toFixed(2)} px, at 30 m ${px(0.025, 30).toFixed(2)} px)`);
-  check("1c. the cards' material: coverage (A2C + TAAU stochastic) or blended, analytic filter", /alphaToCoverage = true/.test(src) && /seeThrough = true/.test(src) && /filteredPulse\(/.test(src) && /fwidth\(s\)/.test(src) && /maskShadowNode/.test(src));
+  check("1c. the cards' material: blended at the analytic coverage (default; cover = A2C + TAAU stochastic)", /key = F\.mode === "cover" \? "cov" : "blend"/.test(src) && /m\.transparent = true; m\.depthWrite = false/.test(src) && /alphaToCoverage = true/.test(src) && /seeThrough = true/.test(src) && /filteredPulse\(/.test(src) && /fwidth\(s\)/.test(src) && /maskShadowNode/.test(src));
   const feat = fs.readFileSync(path.join(ROOT, "viewer/features.js"), "utf8");
-  check("1c. switch ?lyceerail=old|blend is a features.js row", /sel\("lyceerail"/.test(feat) && /"blend"/.test(feat.slice(feat.indexOf('sel("lyceerail"'), feat.indexOf('sel("lyceerail"') + 2000)));
+  check("1c. switch ?lyceerail=old|cover is a features.js row", /sel\("lyceerail"/.test(feat) && /"cover"/.test(feat.slice(feat.indexOf('sel("lyceerail"'), feat.indexOf('sel("lyceerail"') + 2000)));
   const bad = [];
   for (const f of ["viewer/lyceeFront.js", "debug/lyceeCheck.js", "viewer/gardens/gardenClear.js"]) {
     const t = fs.readFileSync(path.join(ROOT, f), "utf8");

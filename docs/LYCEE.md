@@ -17,11 +17,12 @@ gatehouse along the roundabout and up the avenue (RAIL, 23 panels of 2.5 m, ~52 
 | (b) coplanar / overlapping faces | the gate's bar tops lay in its top rail's top face: **120 doubled faces** (lyceeCheck 1a, within 1 mm over >= 1 cm2), seen from above only. The railing's plinth and rails overlap in a wedge at the polyline's corners (volume), but the two tops part by > 1 mm off the corner line: no measurable fight. No garden wall / hedge / pillar / plant on the line after main.js's clear rings (the data has a hornbeam hedge and a brick wall on it: both cleared); no building wall in any face's plane (35 wall faces within 4 m, the gate's posts stand 0.28 m off the gatehouse) |
 | (c) anything moving | nothing at that spot: the mesh is static in tile F7's features group (fades only while the tile streams), no LOD switch, no per-frame transform; the flags fly on the right (and were off in quick mode, below); the small trees at the railing's far end sway in the wind as everywhere |
 
-**Fix (default; `?lyceerail=old` = as before, `?lyceerail=blend` = the A/B variant).** viewer/lyceeFront.js:
-- a **coverage card** per panel and for the gate: one quad in the bars' mid plane whose alpha is the bars' box-filtered
+**Fix (default; `?lyceerail=old` = as before, `?lyceerail=cover` = the coverage variant).** viewer/lyceeFront.js:
+- a **filtered card** per panel and for the gate: one quad in the bars' mid plane whose alpha is the bars' box-filtered
   coverage of the pixel (tslkit `filteredPulse` over `fwidth`, the railway fence's method; analytic, so no texture or
-  mipmaps): far, an even 21 % veil; near, the exact bar edges. Alpha-to-coverage (MSAA native; under the TAAU the
-  stochastic coverage of upscale.js `seeThrough`, which the history averages); `blend`: blended at the same coverage;
+  mipmaps): far, an even 21 % veil; near, the exact bar edges. **Blended** at that coverage (transparent, no depth
+  write); the browser A/B (section 4) chose it over alpha-to-coverage (`cover`: the TAAU's per-frame stochastic
+  coverage, which the history did not average well enough: only -5..-15 %);
 - the **modelled bars kept close up** in their own mesh (they hide the card, which lies inside them), dithered out
   between 4 and 6 m (lodFade's dither, no pop); a bar at 6 m is 2.6 px. Their shadow is drawn at every distance
   (`maskShadowNode`): the sun's shadow never changes;
@@ -68,3 +69,56 @@ runs the city's own clear.)
 - **Lane:** `?quick=1&at=-256,936&look=-269,920.6,2` (round 1's oldLane view) and the mouths: `at=-322,834&look=-312,850`
   (Geleytsbeek end), `at=-205,1030&look=-215,1005` (avenue end). Compare with Street View (look only) and ask the owner
   which stretch is missing.
+
+(The modes were renamed after the A/B: the blended card is now the default "new", the coverage card is `cover`.)
+
+## 4. Browser turn results (2026-11-18, RTX 4050 laptop, one tab, 1280 x 720, rscale 0.8 fixed)
+
+Fence / gate crop shimmer (mean |high-pass change| per frame, x/255) and hot pixels (% of the crop changing > 8/255),
+medians over 2 rounds, the camera dollying sideways. old = modelled bars; cover = coverage card (A2C, the offline
+turn's default); blend = blended card (now the default).
+
+| view | old fence / hot | cover fence / hot | blend fence / hot | old gate / hot | cover gate / hot | blend gate / hot |
+|---|---|---|---|---|---|---|
+| 1.5 m/s rail3 | 9.06 / 31.6 | 8.60 / 31.5 | 8.80 / 31.7 | - | - | - |
+| rail8 | 14.15 / 46.9 | 13.31 / 44.5 | **7.42 / 26.8** | - | - | - |
+| rail20 | 7.51 / 32.8 | 6.38 / 28.3 | **3.48 / 11.6** | 1.66 / 3.8 | 1.63 / 3.6 | 1.61 / 3.5 |
+| gate3 | 3.65 / 11.6 | 3.66 / 11.7 | 3.68 / 11.7 | 4.45 / 16.1 | 4.30 / 15.2 | 4.15 / 14.4 |
+| gate8 | 1.75 / 3.5 | 1.77 / 3.6 | 1.78 / 3.6 | 6.31 / 24.2 | 5.67 / 21.7 | **2.53 / 6.1** |
+| gate20 | 6.39 / 18.3 | 5.60 / 16.5 | **3.56 / 12.0** | 4.31 / 14.4 | 3.95 / 13.0 | **2.51 / 7.2** |
+| 8 m/s rail3 | 8.65 / 33.0 | 8.88 / 33.9 | 9.06 / 34.6 | - | - | - |
+| rail8 | 11.75 / 42.9 | 11.44 / 41.6 | **8.04 / 28.3** | - | - | - |
+| rail20 | 6.21 / 27.9 | 5.44 / 22.8 | **4.76 / 17.3** | 3.63 / 12.6 | 3.57 / 12.3 | 3.41 / 11.2 |
+| gate3 | 4.78 / 14.6 | 4.77 / 14.9 | 4.67 / 14.2 | 3.71 / 8.8 | 3.61 / 9.1 | 3.47 / 8.3 |
+| gate8 | 3.91 / 14.2 | 3.63 / 13.1 | **3.26 / 10.9** | 5.25 / 18.2 | 5.09 / 17.1 | **4.04 / 12.7** |
+| gate20 | 5.22 / 16.6 | 4.91 / 15.8 | 4.73 / 15.4 | 7.74 / 28.6 | 7.22 / 26.4 | 6.89 / 26.3 |
+
+rail3 (the modelled bars' zone) re-run 4 rounds each: 8 m/s old 9.56 / blend 9.66 (per-run spread 7.3-9.7), 1.5 m/s
+old 8.79 / blend 8.42: equal within noise. The gate-view "fence" crops (gate3 / gate8) hold almost no railing: equal.
+Re-measured after making blend the default (fresh boot, 2 rounds): rail8 14.10 -> 7.36, rail20 7.47 -> 3.46, gate8 gate
+5.57 -> 2.31, gate20 4.19 -> 2.46. Sharpness of the far fence drops with it (the veil is the bars' true average: the
+lost "sharpness" is the aliasing). Close up (3 m, looking along the railing) the modelled bars hand over to the card in
+the 4-6 m band with no seam or pop visible; the frame-difference strip at rail8 shows the old bars' bright crawling
+pattern gone. Tour: lycee-front flagged as expected (the far railing reads as a soft veil instead of crawling bars, and
+the three flags now fly: the tour's quick view had flags=0).
+
+**Flags:** fly in quick mode (Belgium / EU / France). HEAP boots: 0 heapDrop / WebGPU errors, tripCounts {} in all five
+(one police boot logged "no answer from the tile worker in 45 s" for E3 / E5 on the first boot after the merged worker
+bundle; the tiles came in, a second police boot was clean).
+
+**The lane (OSM 1235727248) against Street View (Apr 2024, look only):** it is in the city and it is the right street;
+what differs from reality:
+- **width:** real: 2.5-3 m of setts, the hedges / walls / house fronts tight against it, a lamp post at the edge; city:
+  the UrbIS surface 3-5 m, grass verges then clipped hedges set back: it reads wider and more open than it is;
+- **paving:** real: grey setts with a narrow flush edge (a row of setts or a kerbless gutter line), and on the middle
+  stretch (n. 15) a parallel strip of red-brown brick pavers 1.5-2 m wide on one side where cars park, plus setts
+  forecourts; city: setts only, no paver strip, no parked cars (the lane has none: parking:both=no);
+- **painted words:** real: "Private Weg" / "Cortenbosch" painted on the setts at the Geleytsbeek end (n. 5), at n. 15 and
+  at the avenue end (n. 42); city: the words only on the 1990s part (round 2), none on this lane;
+- **edges:** real: ivy and privet / beech hedges, a timber fence, house walls right at the edge, green cast-iron lamp
+  posts (lanterns); city: privet hedges, grass banks, small trees; no lamp posts seen on the lane;
+- **slope / ends:** both right: it climbs ~16 m from Rue Geleytsbeek to the avenue; the Geleytsbeek mouth has the one-way
+  and living-street signs, the avenue end the no-entry sign (in the city too);
+- **sidewalks:** none in reality either (a woonerf: shared surface); OSM's sidewalk=both is not what is there.
+So nothing is MISSING in the city; it looks wider, greener and plainer than the real lane. Question for the owner:
+which stretch looked missing, or is it the look (narrow setts, brick parking strip, painted words, lamps)?

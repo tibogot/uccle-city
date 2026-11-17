@@ -16,8 +16,9 @@
 // out of the history: the fence shimmered / crawled while the camera moved (owner 2026-11-17, rule 23's mechanism). Now:
 //   - a COVERAGE CARD per panel in the bars' mid plane: one quad whose alpha is the bars' box-filtered coverage over the
 //     pixel footprint (tslkit filteredPulse, the railway fence's method): far, an even veil of the bars' 21 % share,
-//     near, the bars' exact edges; alpha-to-coverage (MSAA native; under the TAAU the stochastic coverage of upscale.js
-//     seeThrough, which its history averages), no sort; ?lyceerail=blend: blended at the coverage instead (A/B);
+//     near, the bars' exact edges; BLENDED at that coverage (transparent, no depth write: 24 quads, one draw). Browser
+//     A/B (docs/LYCEE.md): fence shimmer -43..-54 % at 8-20 m, gate -42..-60 %, equal (noise) at 3 m; the coverage
+//     variant (?lyceerail=cover: alpha-to-coverage, the TAAU's per-frame stochastic coverage) only -5..-15 %;
 //   - the modelled bars kept close up (they draw over the card, which lies inside them) and dithered out between
 //     BAR_NEAR and BAR_NEAR + BAR_BAND m (viewer/lodFade.js: the same dither as every LOD, no pop); their shadow is the
 //     modelled bars' at every distance (maskShadowNode: the sun's view never fades them);
@@ -30,8 +31,8 @@ import { lodEye, ditherNoise, rampTo, SMOOTH } from "./lodFade.js";
 import { filteredPulse } from "./tslkit.js";
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
-/** ?lyceerail=old (as before) | blend (the card blended, not coverage) | default "new" (the card as coverage) */
-let MODE = ["old", "blend"].includes(qs.get("lyceerail")) ? qs.get("lyceerail") : "new";
+/** ?lyceerail=old (as before) | cover (the card as alpha-to-coverage) | default "new" (the card blended) */
+let MODE = ["old", "cover"].includes(qs.get("lyceerail")) ? qs.get("lyceerail") : "new";
 const BAR_NEAR = 4, BAR_BAND = 2;                 // modelled bars to 4 m from the eye, the card alone from 6 m
 
 const TILE = "F7";
@@ -163,7 +164,7 @@ function mitreAt(P, i) {
 
 /**
  * The front's buffers (pure: no three objects; the offline audit tools/audit/lyceeCheck.mjs builds the same).
- * ground(x, z) = the drawn terrain; mode "old" | "new" | "blend"; tags: record each box (the audit).
+ * ground(x, z) = the drawn terrain; mode "old" | "new" | "cover"; tags: record each box (the audit).
  * -> { B (the merged mesh), BARS (the modelled bars: B itself when old), C (the coverage cards, null when old), poles,
  *      panels }
  */
@@ -270,7 +271,7 @@ export const lyceeFront = {
       BAR_MAT ||= barsMaterial();
       const bars = new THREE.Mesh(geometryOf(F.BARS), BAR_MAT);
       bars.name = "lycee-bars"; bars.castShadow = true; bars.receiveShadow = true;
-      const key = F.mode === "blend" ? "blend" : "cov";
+      const key = F.mode === "cover" ? "cov" : "blend";
       CARD_MAT[key] ||= cardMaterial(key === "blend");
       const cards = new THREE.Mesh(geometryOf(F.C, { aS: F.C.s, aW: F.C.w }), CARD_MAT[key]);
       cards.name = "lycee-barcards"; cards.castShadow = false; cards.receiveShadow = true;
@@ -298,10 +299,10 @@ export const lyceeFront = {
     this.group = grp;
     return { group: grp, panels: F.panels, tris, mode: F.mode };
   },
-  /** debug/lyceeCheck.js A/B in one session: rebuild the railing / gate in another mode ("old" | "new" | "blend") in
+  /** debug/lyceeCheck.js A/B in one session: rebuild the railing / gate in another mode ("old" | "new" | "cover") in
    *  place (the meshes are rebuilt, the materials kept per mode: a first switch compiles once). -> the mode */
   setMode(mode) {
-    if (!["old", "new", "blend"].includes(mode)) throw new Error(`lyceerail mode ${mode}`);
+    if (!["old", "new", "cover"].includes(mode)) throw new Error(`lyceerail mode ${mode}`);
     MODE = mode;
     const g = this.group, a = this.args;
     if (!g?.parent || !a) return mode;                  // (tile F7 not in)
