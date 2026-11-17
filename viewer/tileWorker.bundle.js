@@ -14203,7 +14203,9 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const TP = !opts.old;
   const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
   const raw2 = parked && TP ? densify(raw, 1.5) : raw;
+  const tF = performance.now();
   const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP) : raw2;
+  fitStats.fitMs = Math.round(performance.now() - tF);
   if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
   if (opts.trace) opts.trace.afterJoin = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
@@ -14211,25 +14213,31 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     const d1 = parked.dist(x1, z1);
     return d1 >= TP_HALF + TP_FIT * 0.5 || d1 >= parked.dist(x0, z0);
   } : null;
+  const tK = performance.now();
   const src = roundKinks(fitted, keepClear);
+  fitStats.kinkMs = Math.round(performance.now() - tK);
   if (opts.trace) {
     opts.trace.src = src;
     opts.trace.raw = raw2;
   }
   let parkedKept = opts.parked || null;
   if (parked && TP) {
+    const tC = performance.now();
     const drop2 = /* @__PURE__ */ new Set();
     for (const p of src) {
       const q = p.pts;
+      let any = false;
       for (let k = 1; k < q.length; k++) {
         const a = q[k - 1], b = q[k], L2 = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L2 / 0.25));
+        if (!parked.anyNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, L2 / 2 + 5.5)) continue;
+        any = true;
         for (let m = 0; m <= n; m++) {
           const t = m / n;
           parked.each(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, TP_HALF, (ci) => drop2.add(ci));
         }
       }
       const c = p.cum || cumulative(q), len2 = c[c.length - 1];
-      for (let sd = 0; sd <= len2; sd += 0.5) {
+      if (any) for (let sd = 0; sd <= len2; sd += 0.5) {
         const F = pointAt(q, c, sd + TP_WB / 2), R2 = pointAt(q, c, sd - TP_WB / 2);
         const hx = F[0] - R2[0], hz = F[1] - R2[1], hl = Math.hypot(hx, hz) || 1;
         const body = { x: (F[0] + R2[0]) / 2, z: (F[1] + R2[1]) / 2, ax: hx / hl, az: hz / hl };
@@ -14239,6 +14247,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
       }
     }
     fitStats.parkDropped = drop2.size + (opts.droppedBefore || 0);
+    fitStats.checkMs = Math.round(performance.now() - tC);
     if (drop2.size) parkedKept = opts.parked.filter((c, ci) => !drop2.has(ci));
     if (drop2.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop2.size });
   }
@@ -14619,6 +14628,15 @@ function parkedGrid(sites, boxed = false) {
   };
   return {
     sites,
+    /** any car centre within r of (x, z)? */
+    anyNear(x, z, r) {
+      const n = Math.ceil(r / 4), i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) {
+        const c = sites[ci];
+        if ((c.x - x) ** 2 + (c.z - z) ** 2 < r * r) return true;
+      }
+      return false;
+    },
     /** the nearest box distance (<= 4 m reach) */
     dist(x, z) {
       let b = Infinity;
@@ -16693,4 +16711,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "44f9c5eb600fe444";
+self.__TILE_CODE_HASH = "4ec98475e676bfc5";

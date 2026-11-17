@@ -163,7 +163,9 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const TP = !opts.old;                       // trafpark (?trafpark=old: opts.old)
   const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
   const raw2 = parked && TP ? densify(raw, 1.5) : raw;
+  const tF = performance.now();
   const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP) : raw2;
+  fitStats.fitMs = Math.round(performance.now() - tF);
   if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
   if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
@@ -171,22 +173,28 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   // (trafpark: the rounding pulled 70 of I6's 131 parked cars back under the lanes the fit had moved clear of them:
   // a node does not move closer to a parked car than the fit's clearance)
   const keepClear = parked && TP ? (x0, z0, x1, z1) => { const d1 = parked.dist(x1, z1); return d1 >= TP_HALF + TP_FIT * 0.5 || d1 >= parked.dist(x0, z0); } : null;
+  const tK = performance.now();
   const src = roundKinks(fitted, keepClear);
+  fitStats.kinkMs = Math.round(performance.now() - tK);
   if (opts.trace) { opts.trace.src = src; opts.trace.raw = raw2; }
   // trafpark: the check along every driven path, junction connectors too: a parked car any path still touches goes
   let parkedKept = opts.parked || null;
   if (parked && TP) {
+    const tC = performance.now();
     const drop = new Set();
     for (const p of src) {
       const q = p.pts;
+      let any = false;
       for (let k = 1; k < q.length; k++) {
         const a = q[k - 1], b = q[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.25));
+        if (!parked.anyNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, L / 2 + 5.5)) continue;     // (no car centre near this segment)
+        any = true;
         for (let m = 0; m <= n; m++) { const t = m / n; parked.each(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, TP_HALF, (ci) => drop.add(ci)); }
       }
       // the BODY as the sim poses it (trafficSim.js pose: the axles on the path, the box along them): on a bend or a
       // junction turn its corners leave the centre line's disc (a 10 m radius: ~0.2 m)
       const c = p.cum || cumulative(q), len = c[c.length - 1];
-      for (let sd = 0; sd <= len; sd += 0.5) {
+      if (any) for (let sd = 0; sd <= len; sd += 0.5) {
         const F = pointAt(q, c, sd + TP_WB / 2), R = pointAt(q, c, sd - TP_WB / 2);
         const hx = F[0] - R[0], hz = F[1] - R[1], hl = Math.hypot(hx, hz) || 1;
         const body = { x: (F[0] + R[0]) / 2, z: (F[1] + R[1]) / 2, ax: hx / hl, az: hz / hl };
@@ -194,6 +202,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
       }
     }
     fitStats.parkDropped = drop.size + (opts.droppedBefore || 0);
+    fitStats.checkMs = Math.round(performance.now() - tC);
     if (drop.size) parkedKept = opts.parked.filter((c, ci) => !drop.has(ci));
     // the lanes were bent round cars that are now gone: built once more around the kept ones (then checked again)
     if (drop.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop.size });
@@ -507,6 +516,12 @@ function parkedGrid(sites, boxed = false) {
   };
   return {
     sites,
+    /** any car centre within r of (x, z)? */
+    anyNear(x, z, r) {
+      const n = Math.ceil(r / 4), i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) { const c = sites[ci]; if ((c.x - x) ** 2 + (c.z - z) ** 2 < r * r) return true; }
+      return false;
+    },
     /** the nearest box distance (<= 4 m reach) */
     dist(x, z) { let b = Infinity; near(x, z, (c) => { const d = parkedBoxDist(c, x, z); if (d < b) b = d; return false; }); return b; },
     /** every car whose box comes within r of (x, z): f(ci) */

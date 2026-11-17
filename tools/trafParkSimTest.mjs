@@ -28,7 +28,7 @@ const wp = widthParking(roads, feats, bounds, streetFit(rd.surfaceData));
 const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, old: OLD });
 const sites = g.parkedKept ?? wp.sites;
 const SIZE = [1.85, 1.47, 4.70];
-const cars = sites.map((c) => ({ x: c.x, z: c.z, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false }));
+const cars = sites.map((c) => ({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { r: 0.5, g: 0.5, b: 0.5, setRGB(r, g, b) { this.r = r; this.g = g; this.b = b; } }, room: 6 }));
 const W = new TrafficWorld();
 W.add(T, g);
 const types = [{ name: "hatch_c", len: 4.31, w: 1.81, h: 1.45, wb: 2.6, wheelR: 0.31, weight: 1 }, { name: "saloon", len: 4.73, w: 1.85, h: 1.44, wb: 2.8, wheelR: 0.32, weight: 1 }];
@@ -47,6 +47,7 @@ function depth(i) {
   const yw = sim.yaw[i], fxx = Math.sin(yw), fzz = Math.cos(yw), hw = types[sim.type[i]].w / 2, hl = types[sim.type[i]].len / 2;
   let worst = -Infinity, who = null;
   for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of grid.get(gk(sim.x[i] + di * 8, sim.z[i] + dj * 8)) || []) {
+    if (c.hidden || c === sim.slot[i]) continue;          // (its own slot: pulled out of / parking into it)
     const ax = Math.sin(c.heading), az = Math.cos(c.heading);
     const span = hl - hw, nT = Math.ceil((2 * span) / 0.25);
     for (let m = 0; m <= nT; m++) {
@@ -72,7 +73,7 @@ function run(label, secs, each = null) {
       if (!sim.alive[i]) continue;
       samples++;
       const [d, c] = depth(i);
-      if (d > 0.05) { over++; if (process.env.TPV && !hit.has(c)) console.log("  into", c.x.toFixed(1), c.z.toFixed(1), "depth", d.toFixed(2), "path", sim.path[i] & 0xffff, "kind", g.kind[sim.path[i] & 0xffff], "d", sim.d[i].toFixed(1), "room", sim.room[i].toFixed(2), "ctl", sim.ctl[i], "off", sim.offX[i].toFixed(2), sim.offZ[i].toFixed(2), "pw", sim.pw?.[i].toFixed(2), sim.pwT?.[i].toFixed(2), "moved", sim.pk?.moved.has(c), "v", sim.v[i].toFixed(1), "clear", sim.parkClear?.(i, sim.room[i]).toFixed(2)); hit.add(c); maxD = Math.max(maxD, d); }
+      if (d > 0.05) { over++; if (process.env.TPV && !hit.has(c)) console.log("  into", c.x.toFixed(1), c.z.toFixed(1), "depth", d.toFixed(2), "state", sim.state[i], "slot", !!sim.slot[i], "busy", !!c.busy, "age", sim.age[i].toFixed(1), "handoff", sim.handoff[i], "path", sim.path[i] & 0xffff, "kind", g.kind[sim.path[i] & 0xffff], "d", sim.d[i].toFixed(1), "room", sim.room[i].toFixed(2), "ctl", sim.ctl[i], "off", sim.offX[i].toFixed(2), sim.offZ[i].toFixed(2), "pw", sim.pw?.[i].toFixed(2), sim.pwT?.[i].toFixed(2), "moved", sim.pk?.moved.has(c), "v", sim.v[i].toFixed(1), "clear", sim.parkClear?.(i, sim.room[i]).toFixed(2)); hit.add(c); maxD = Math.max(maxD, d); }
     }
   }
   for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && sim.holdT[i] > 60) stuck++;
@@ -115,6 +116,10 @@ out.push(run(`shoved ${shoved}`, SECS));
 // pulled over: every car (ctl 2) eases right and stops; counted for 20 s, then let go
 out.push(run("pull over", 20, (s) => { if (s === 0) for (let i = 0; i < sim.cap; i++) if (sim.alive[i] && sim.state[i] === 0) sim.ctl[i] = 2; }));
 for (let i = 0; i < sim.cap; i++) sim.ctl[i] = 0;
+// 4. pull-outs and park-ins (the parked fleet's cars joining the traffic and parking back), visible to the focus
+sim.params.parkRate = 4; ctx.visible = () => true;
+out.push(run("pull-outs", SECS));
+console.log(`  pull-outs ${sim.stats.pullOuts} (skipped, no clear S-curve: ${sim.stats.pullOutsSkipped || 0}), park-ins ${sim.stats.parkIns} (skipped: ${sim.stats.parkInsSkipped || 0})`);
 const bad = out.some((r) => r.overlapSamples > 0);
 if (!OLD && bad) { console.error("FAIL trafpark sim: a traffic car stood into a parked car"); process.exit(1); }
 console.log(OLD ? "(old: no gate)" : "PASS trafpark sim: no traffic car into a parked car");

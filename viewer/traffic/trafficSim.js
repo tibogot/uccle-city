@@ -365,7 +365,6 @@ export class TrafficSim {
       const k = (Math.floor(c.x / 8) + 4096) * 8192 + Math.floor(c.z / 8) + 4096;
       let l = P.grid.get(k); if (!l) P.grid.set(k, (l = [])); l.push(c);
     }
-    for (const c of P.moved) if (c.hidden) P.moved.delete(c);
   }
   /** the moved parked cars as box obstacles (only they can stand in a lane: the lanes are built clear of the slots) */
   addParkedObstacles(fx, fz) {
@@ -386,14 +385,19 @@ export class TrafficSim {
       this.routePoint(i, d + hw2, F); this.routePoint(i, d - hw2, R);
       yw = Math.atan2(F[0] - R[0], F[1] - R[1]); bx = (F[0] + R[0]) / 2 + this.offX[i]; bz = (F[1] + R[1]) / 2 + this.offZ[i];
     }
-    const fx = Math.sin(yw), fz = Math.cos(yw), lx = Math.cos(yw), lz = -Math.sin(yw);
-    const x0 = bx + lx * s, z0 = bz + lz * s, hl = this.half[i], hw = Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2);
+    const lx = Math.cos(yw), lz = -Math.sin(yw);
+    return this.bodyClear(bx + lx * s, bz + lz * s, yw, this.half[i], Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2));
+  }
+  /** the least distance from a car body (centre x0 / z0, heading yw, half length hl, half width hw) to a parked car's
+   *  box, `skip` (its own slot) left out */
+  bodyClear(x0, z0, yw, hl, hw, skip = null) {
+    const fx = Math.sin(yw), fz = Math.cos(yw);
     let best = Infinity;
     const i0 = Math.floor(x0 / 8), j0 = Math.floor(z0 / 8);
     for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of this.pk.grid.get((i0 + di + 4096) * 8192 + j0 + dj + 4096) || []) {
-      if (c.hidden) continue;
+      if (c.hidden || c === skip) continue;
       const [w, l] = this.parkWL(c), ax = Math.sin(c.heading), az = Math.cos(c.heading);
-      // the car's axis sampled every 0.5 m, each a disc of its half width, against the parked box
+      // the car's axis sampled every 0.4 m or less, each a disc of its half width, against the parked box
       const span = Math.max(0, hl - hw), nT = Math.max(1, Math.ceil((2 * span) / 0.4));
       for (let m = 0; m <= nT; m++) {
         const t = -span + (2 * span * m) / nT;
@@ -898,7 +902,7 @@ export class TrafficSim {
       for (let e = -1; e < g.prevOff[pi + 1] - g.prevOff[pi]; e++) {
         const lane2 = e < 0 ? pi : g.prevIdx[g.prevOff[pi] + e], base = e < 0 ? 0 : g.len[lane2];
         for (let j = g.head[lane2]; j >= 0; j = this.nxt[j]) {
-          if (this.state[j] !== ST.drive || this.hold[j] || this.keep[j] || this.ctl[j]) continue;
+          if (this.state[j] !== ST.drive || this.hold[j] || this.keep[j] || this.ctl[j] || (!TP_OLD && (this.room[j] || this.pwT[j] > 0))) continue;
           if (e >= 0 && this.route[j * ROUTE] !== gid) continue;
           const ahead = along + base - this.d[j];
           if (ahead < 25 || ahead > 80) continue;
@@ -930,12 +934,22 @@ export class TrafficSim {
     if (ti < 0) return;
     const i = this.spawnAt(gid, along + 10, 0, ti, [c.col.r, c.col.g, c.col.b]);
     if (i < 0) return;
-    // maneuver: an S-curve from the slot to the lane 10 m on (cubic Bezier, sampled)
-    this.W.point(gid, along + 10, this.tmp);
-    this.bezier(i, c.x, c.z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], 3.5, 4.5);
+    // maneuver: an S-curve from the slot to the lane 10 m on (cubic Bezier, sampled); trafpark: the first of a few
+    // S-curves (sharper out of the slot, or longer) whose body sweep clears the cars parked ahead / behind, else none
+    this.manDir[i] = 1;
+    let ok = false;
+    for (const [k0, k3, ahead] of TP_OLD ? [[3.5, 4.5, 10]] : [[3.5, 4.5, 10], [2.2, 4.5, 10], [1.4, 5, 11], [1.0, 6, 12]]) {
+      if (along + ahead + 2 > L) continue;
+      this.W.point(gid, along + ahead, this.tmp);
+      this.bezier(i, c.x, c.z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], k0, k3);
+      this.d[i] = along + ahead;
+      if (this.manClear(i, c)) { ok = true; break; }
+    }
+    if (!ok) { this.kill(i); c.busy = true; this.stats.pullOutsSkipped = (this.stats.pullOutsSkipped || 0) + 1; return; }
+    const dAt = this.d[i];
     this.state[i] = ST.outWait; this.manT[i] = 0; this.manDir[i] = 1; this.slot[i] = c;
     this.onPath[i] = -1; this.onD[i] = along;
-    this.v[i] = 0; this.d[i] = along + 10; this.offX[i] = this.offZ[i] = 0;
+    this.v[i] = 0; this.d[i] = dAt; this.offX[i] = this.offZ[i] = 0;
     this.pose(i); this.copyPrev(i);
     // the parked car is now this traffic car (same pose, type, paint): hide it in the parked fleet, same frame
     c.hidden = true; c.busy = true;
@@ -959,6 +973,19 @@ export class TrafficSim {
     this.pose(i); this.copyPrev(i);
     this.insertInList(i);
     return i;
+  }
+  /** trafpark: car i's manoeuvre polyline (pull-out / reverse-in) as pose() drives it, clear of every parked car but
+   *  `skip` (its own slot)? */
+  manClear(i, skip) {
+    if (TP_OLD || !this.pk.grid.size) return true;
+    const hw = this.wb[i] / 2, F = this.tmp2, R = this.tmp3, L = this.manLen[i], dir = this.manDir[i] || 1;
+    const half = Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2);
+    for (let m = 0; m <= L + 1e-3; m += 0.5) {
+      this.manPoint(i, m + hw * dir, F); this.manPoint(i, m - hw * dir, R);
+      const yaw = Math.atan2(F[0] - R[0], F[1] - R[1]);
+      if (this.bodyClear((F[0] + R[0]) / 2, (F[1] + R[1]) / 2, yaw, this.half[i], half, skip) < 0.03) return false;
+    }
+    return true;
   }
   bezier(i, x0, z0, h0x, h0z, x3, z3, h3x, h3z, k0, k3) {
     const P = this.manPts, C = this.manCum, o = i * MAN;
@@ -1031,14 +1058,21 @@ TrafficSim.prototype.move = function (i) {
     }
     if (p >= 0) {
       const ds = p === this.parkPath[i] ? target - this.d[i] : this.plen(p) - this.d[i] + target;
-      if (p === this.parkPath[i] && ds < 1.8 && this.v[i] < 0.15) {
+      if (p === this.parkPath[i] && ds < 1.8 && this.v[i] < 0.15 && (TP_OLD || Math.abs(this.room[i]) < 0.03)) {   // (trafpark: back on its lane line first)
         // stopped: reverse into the slot
         const c = this.slot[i];
         if (!c) { this.state[i] = ST.drive; return baseMove.call(this, i); }
         const hx = Math.sin(this.yaw[i]), hz = Math.cos(this.yaw[i]);
         const shx = Math.sin(c.heading), shz = Math.cos(c.heading);
         // reverse: the polyline runs from the car's position backwards (tangent -heading) into the slot (tangent -slot heading)
-        this.bezier(i, this.x[i], this.z[i], -hx, -hz, c.x, c.z, -shx, -shz, 3.4, 3.4);
+        // (trafpark: the first reverse curve whose body sweep misses the slot's neighbours, else it drives on)
+        this.manDir[i] = -1;
+        let ok = false;
+        for (const [k0, k3] of TP_OLD ? [[3.4, 3.4]] : [[3.4, 3.4], [2.6, 4.2], [4.2, 2.6], [2.0, 5.0]]) {
+          this.bezier(i, this.x[i], this.z[i], -hx, -hz, c.x, c.z, -shx, -shz, k0, k3);
+          if (this.manClear(i, c)) { ok = true; break; }
+        }
+        if (!ok) { this.slot[i] = null; this.state[i] = ST.drive; c.busy = true; this.stats.parkInsSkipped = (this.stats.parkInsSkipped || 0) + 1; return baseMove.call(this, i); }
         this.state[i] = ST.inRev; this.manT[i] = 0; this.manDir[i] = -1; this.v[i] = 0;
         this.onPath[i] = p; this.onD[i] = this.d[i];
         this.offX[i] = this.offZ[i] = 0;
