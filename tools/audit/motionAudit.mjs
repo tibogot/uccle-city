@@ -102,6 +102,7 @@ check(sf && +sf[1] > 0, `sharpen strength > 0 at scale 1 (${sf?.[1]})`);
 check(/TN\.generateSnippet = function/.test(up) && /uMipBias\.value = Math\.log2\(s\)/.test(up), "texture mip bias log2(scale) on the scene pass");
 const auto = up.match(/auto: \{[^}]*min: ([\d.]+)[^}]*soft: ([\d.]+)/);
 check(auto && +auto[2] >= 0.75, `auto preset soft floor >= 0.75 (${auto?.[2]}; hard floor ${auto?.[1]} only on missed frames)`);
+check(/function frameRule\(now\)/.test(up) && /x > 20.8/.test(up), "the dynamic resolution decides on missed frames (not raw GPU ms: the laptop clock trap)");
 check(/needsPreviousData = function/.test(up) && /isSkinnedMesh === true/.test(up), "skinned meshes skin last frame's bones in the scene pass");
 
 const out = (tag, list) => list.forEach((l) => console.log(`${tag} ${l}`));

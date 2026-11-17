@@ -502,9 +502,13 @@ export function createUpscaler(renderer, camera) {
   /** after the post chain */
   U.end = () => { if (U.taau) camera.clearViewOffset(); };
 
-  /** one frame interval (ms, main.js loop): the dynamic resolution only lowers the scale when frames are MISSED */
+  /** one frame interval (ms, main.js loop): SHARP rule: the dynamic resolution decides on MISSED frames */
   U.frames = [];
-  U.frameSample = (ms) => { if (ms > 0 && ms < 500) { U.frames.push(ms); if (U.frames.length > 240) U.frames.splice(0, 120); } };
+  U.frameSample = (ms) => {
+    if (!(ms > 0) || ms > 50) return;                    // (a hitch: streaming / a compile, not the render's fault)
+    U.frames.push(ms);
+    if (SHARP_DR) frameRule(performance.now()); else if (U.frames.length > 240) U.frames.splice(0, 120);
+  };
   /** one GPU frame time (ms, main.js sampleGpu) -> the dynamic resolution */
   U.gpuSample = (ms) => {
     if (SHARP_DR) return gpuSampleSharp(ms);
@@ -531,41 +535,47 @@ export function createUpscaler(renderer, camera) {
     } else U.calmSince = 0;
     if (U.win.length > 120) U.win.splice(0, U.win.length - 60);
   };
-  // SHARP rule: GPU p75 over the target AND frames late (> 20 ms intervals in > 10 % of the window, or the GPU p75 past
-  // 16 ms itself) -> down at most 0.05 per change, never under the preset's soft floor unless frames are missed there
-  // for 3 s at > 1.25 x the target; up 0.025 after 2 s calm. Changes >= 1 s apart: small steps the TAAU absorbs.
-  function gpuSampleSharp(ms) {
-    if (!(ms > 0) || ms > 200) return;
-    const now = performance.now();
-    U.win.push(ms);
+  // SHARP rule (claude/sharp, docs/UPSCALE.md "the clock trap"): decided on MISSED FRAMES (rAF intervals > 20.8 ms =
+  // 1.25 x 60 Hz), never on raw GPU ms: a laptop GPU under the driver's adaptive power management idles at 780-900 MHz
+  // while the work looks light, its timings read 12-18 ms, and lowering the scale on that kept the work light and the
+  // clock low (the owner's city sat at 0.6, blurry). Per 1 s window:
+  //  - late (> 10 % missed): lowered only after 3 s of late windows in a row (the GPU's clock ramps when it is busy),
+  //    0.05 per step, >= 1 s apart; under the preset's soft floor (auto 0.75) only after 6 s with > 25 % missed;
+  //  - on time (< 3 % missed) for 1.5 s: raised 0.05 (eager), but not past the scale that was too heavy for 20 s.
+  // The GPU ms stays only as information (stats, HUD).
+  function frameRule(now) {
     if (!U.dynres || !U.taau) return;
     const P = U.preset;
     if (P.min >= P.max) return;
-    if (U.win.length < 30 || now - U.lastChange < 1000) return;
-    const s = [...U.win].sort((a, b) => a - b), p75 = s[Math.floor(s.length * 0.75)];
-    const F = U.frames, miss = F.length >= 20 ? F.filter((x) => x > 20).length / F.length : 1;
-    U.lastMiss = miss; U.lastP75 = p75;
-    const T = U.targetMs, soft = Math.max(P.min, P.soft ?? P.min);
-    const late = miss > 0.1 || p75 > 16;
-    if (p75 > T * 1.04 && late && U.scale > P.min + 1e-6) {
-      let floor = soft;
-      if (U.scale <= soft + 1e-6) {
-        if (!(p75 > T * 1.25 && miss > 0.25 && now - U.lastChange > 3000)) return;
-        floor = P.min;
-      }
-      const want = U.scale * Math.sqrt((T * 0.94) / p75);
-      setDyn(clamp(Math.max(want, U.scale - 0.05), floor, P.max), p75, now);
-      U.frames.length = 0;
+    if (!U.winT) U.winT = now;
+    if (now - U.winT < 1000 || U.frames.length < 30) return;
+    const F = U.frames, miss = F.filter((x) => x > 20.8).length / F.length;
+    F.length = 0; U.winT = now; U.lastMiss = +miss.toFixed(3);
+    const soft = Math.max(P.min, P.soft ?? P.min);
+    if (miss > 0.1) {
+      U.calmSince = 0;
+      if (!U.lateSince) U.lateSince = now;
+      const late = now - U.lateSince;
+      if (U.scale <= P.min + 1e-6 || late < 3000 || now - U.lastChange < 1000) return;
+      if (U.scale <= soft + 1e-6 && !(late >= 6000 && miss > 0.25)) return;
+      const floor = U.scale <= soft + 1e-6 ? P.min : soft;
+      U.ceil = U.scale; U.ceilT = now;
+      setDyn(clamp(U.scale - 0.05, floor, P.max), U.lastP75 ?? 0, now);
       return;
     }
-    const calm = p75 < T * 0.8 || (U.scale < soft - 1e-6 && p75 < T * 0.95 && miss < 0.03);
-    if (calm && U.scale < P.max - 1e-6) {
+    U.lateSince = 0;
+    if (miss < 0.03 && U.scale < P.max - 1e-6) {
       if (!U.calmSince) U.calmSince = now;
-      const up = Math.min(P.max, U.scale + 0.025);
-      const predicted = p75 * (up * up) / (U.scale * U.scale);
-      if (now - U.calmSince > 2000 && (predicted < T * 0.92 || U.scale < soft - 1e-6)) { setDyn(up, p75, now); U.frames.length = 0; }
+      const cap = U.ceil && now - U.ceilT < 20000 ? U.ceil - 0.05 : P.max;
+      if (now - U.calmSince >= 1500 && U.scale < cap - 1e-6) { setDyn(Math.min(cap, U.scale + 0.05), U.lastP75 ?? 0, now); U.calmSince = now; }
     } else U.calmSince = 0;
-    if (U.win.length > 180) U.win.splice(0, U.win.length - 90);
+  }
+  function gpuSampleSharp(ms) {
+    if (!(ms > 0) || ms > 200) return;
+    U.win.push(ms);
+    if (U.win.length > 120) U.win.splice(0, 60);
+    const s = [...U.win].sort((a, b) => a - b);
+    U.lastP75 = s[Math.floor(s.length * 0.75)];
   }
   function setDyn(s, p75, now) {
     const before = U.scale;
@@ -592,8 +602,8 @@ export function createUpscaler(renderer, camera) {
     sharpen: +U.uSharp.value.toFixed(3), changes: U.changes, recent: U.history.slice(-8), motion: +U._motion.toFixed(2),
     rule: SHARP_DR ? "sharp" : "old", softFloor: U.preset.soft ?? U.preset.min, missShare: U.lastMiss ?? null, rcas: SHARP_RCAS,
   });
-  /** the HUD stats line: "render 0.80 auto" */
-  U.hudLine = () => `render ${U.scale.toFixed(2)}${U.dynres ? " " + U.quality : " fixed"}`;
+  /** the HUD stats line: "render 0.80 auto (missed 2 %)" */
+  U.hudLine = () => `render ${U.scale.toFixed(2)}${U.dynres ? " " + U.quality : " fixed"}` + (U.dynres && U.lastMiss != null ? ` (missed ${Math.round(U.lastMiss * 100)} %)` : "");
 
   applyScale(fixed ?? U.preset.start);
   U.uSharp.value = sharp0 ?? sharpFor(U.scale);
