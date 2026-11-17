@@ -345,7 +345,7 @@ export function wallMaterial(opts = {}) {
   const wu = clamp(fract(gx).sub(gxa).div(gxb.sub(gxa)), 0.0, 1.0).toVar();      // 0..1 inside the glass
   const wv = clamp(fract(gy).sub(gya).div(gyb.sub(gya)), 0.0, 1.0).toVar();
   const nlCW = max(floor(ww.div(1.35).add(0.5)), float(1));                     // (cortenbosch2) the curtain wall's lights per bay
-  const cwRough = float(0).toVar(), cwMask = float(0).toVar();                   // (its spandrels' roughness / coverage)
+  let cwRough = float(0), cwMask = float(0);                                     // (its spandrels' roughness / coverage: set in the dress below)
   let barX = smoothstep(float(0.035).div(ww), float(0.0), abs(wu.sub(0.5))).mul(step(float(0.95), ww));
   let barY = smoothstep(float(0.035).div(storeyH.mul(0.5)), float(0.0), abs(wv.sub(0.7)));
   if (!STYLES_OLD) {
@@ -703,8 +703,8 @@ export function wallMaterial(opts = {}) {
       const gridK = max(mull, tran).mul(cwWall).toVar();
       col = mix(col, grid7, gridK);
       height = height.add(gridK.mul(0.02));
-      cwRough.assign(mix(mix(float(0.12), float(0.38), band(cwSpan, 1)), float(0.6), band(cwSpan, 2)).mul(cwWall.sub(gridK).max(0)).add(float(0.4).mul(gridK)));
-      cwMask.assign(cwWall);
+      cwRough = mix(mix(float(0.12), float(0.38), band(cwSpan, 1)), float(0.6), band(cwSpan, 2)).mul(cwWall.sub(gridK).max(0)).add(float(0.4).mul(gridK));
+      cwMask = cwWall;
     }
   }
   col = mix(col, frameCol, frame.mul(notShop));
