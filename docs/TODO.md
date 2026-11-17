@@ -12,11 +12,14 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 uccle-tour/.tour/foundation), holes (docs/HOLES.md: no hollow buildings; tour: 5 views fixed, 17 unchanged), heap +
 heapfix (docs/HEAP.md: police heap 1.45 GB -> ~975 MB; no draw after dispose), orbitcam2 (game keys with no button, ?
 card), trafpark (docs/TRAFPARK.md: 0 parked cars under traffic, tile borders too), vivier (docs/VIVIER.md: the bridge,
-all 42 road-rail crossings resolved). Rules + gates: **docs/QUALITY_RULES.md** (17 rules; read before every merge).
-Queue: skyctl (browser turn), christmas (Blender GPU rebuild when no browser turn runs), then falcon stutter, loader
-stills, clean perf measure, agargaro (8k).
-Left: owner image 68 (Waterloo by Optalweg) not located; the `police` place in viewer/places.js puts the camera inside a
-house; ~30 % of traffic copy-to-neighbour lane links fail (cars 0.5-1 m off the lane, pre-existing); the two Vivier
+all 42 road-rail crossings resolved), skyctl (13 sky sliders, uniforms, ?skyctl=old), christmas (docs/CHRISTMAS.md:
+firs Saint-Job + Saint-Pierre, chalet market, garlands; on 1 Dec - 6 Jan, ?xmas=1/0; +0.00 ms), twinlink
+(docs/TWINLINK.md: tile-border car jumps 122-214 -> 0 per street, handover is an S lane change), police place fixed,
+gate works in worktrees, agargaro evaluated (docs/AGARGARO.md: adopt none, 2 multiDraw jobs). Rules + gates:
+**docs/QUALITY_RULES.md** (20 rules; read before every merge). Tour baseline = the twinlink run.
+Running: xmasfir (fir needle sprays, Blender), mdraw (AGARGARO jobs 1-2: near-first chunk order ?mdsort=0, 80 m
+chunks ?mdchunk=160). Queue: falcon stutter, loader stills, clean perf measure.
+Left: owner image 68 (Waterloo by Optalweg) not located; the two Vivier
 d'Oie station footbridges (UrbIS 751 / 752); low wire clearance under Av. des Tilleuls / Hospices / Carsoel; Saint-Job
 deck sidewalks over the bank; heap leftovers (GLB held by the loader, meshopt wasm, landmark geometry holds).
 
