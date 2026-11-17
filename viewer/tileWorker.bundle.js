@@ -531,6 +531,7 @@ function footprintIndex(bDoc) {
 }
 
 // viewer/wallRepair.js
+var RECESS_MIN = 0.45;
 var PLANE = 0.2;
 var MIN_COVER = 0.85;
 var MIN_HOLE = 1;
@@ -538,9 +539,15 @@ var STEP = 0.25;
 var MIN_EDGE = 0.25;
 var SHORT = 1;
 var SHORT_HOLE = 0.3;
-function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
-  const used = /* @__PURE__ */ new Set(), out = [], edges = [];
+function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null } = {}) {
+  const used = /* @__PURE__ */ new Set(), flip = /* @__PURE__ */ new Set(), out = [], edges = [], pend = [];
   const n = ring2.length - (ring2.length > 1 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1] ? 1 : 0);
+  let area23 = 0;
+  for (let i = 0; i < n; i++) {
+    const [x0, z0] = ring2[i], [x1, z1] = ring2[(i + 1) % n];
+    area23 += x0 * z1 - x1 * z0;
+  }
+  const out1 = area23 > 0 ? -1 : 1;
   for (let i = 0; i < n; i++) {
     const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % n], L2 = Math.hypot(bx - ax, bz - az);
     if (L2 < MIN_EDGE) continue;
@@ -565,8 +572,8 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
     if (!on.length) continue;
     const topAt = (u) => {
       let hi = -Infinity;
-      for (const { q } of on) for (let e = 0; e < 3; e++) {
-        const A = q[e], B = q[(e + 1) % 3];
+      for (const { q } of on) for (let e2 = 0; e2 < 3; e2++) {
+        const A = q[e2], B = q[(e2 + 1) % 3];
         if ((A[0] - u) * (B[0] - u) > 0) continue;
         const y = Math.abs(B[0] - A[0]) < 1e-6 ? Math.max(A[1], B[1]) : A[1] + (B[1] - A[1]) * (u - A[0]) / (B[0] - A[0]);
         if (y > hi) hi = y;
@@ -579,7 +586,10 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
       const l1 = ((B[1] - C[1]) * (u - C[0]) + (C[0] - B[0]) * (y - C[1])) / d, l2 = ((C[1] - A[1]) * (u - C[0]) + (A[0] - C[0]) * (y - C[1])) / d;
       return l1 >= -1e-4 && l2 >= -1e-4 && 1 - l1 - l2 >= -1e-4;
     };
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2, inL = pipR(mx + nx * 0.1, mz + nz * 0.1, ring2), inR = pipR(mx - nx * 0.1, mz - nz * 0.1, ring2);
+    const o1 = inL !== inR ? inL ? -1 : 1 : out1, onx = o1 * nx, onz = o1 * nz;
     let tot = 0, cov = 0, partyN = 0;
+    const open = [];
     for (let u = Math.min(STEP / 2, L2 / 2); u < L2; u += Math.min(STEP, L2 / 2)) {
       const top = topAt(u);
       if (!(top > base + 0.3)) continue;
@@ -591,44 +601,113 @@ function repairWalls(tris, ring2, base, { fix = true, party = null } = {}) {
       for (let y = base + STEP / 2; y < top; y += STEP) {
         tot++;
         if (on.some(({ q }) => inTri2(u, y, q))) cov++;
+        else open.push([u, y]);
       }
     }
     if (partyN && tot === 0) continue;
     const cover = tot ? cov / tot : 1, hole = (tot - cov) * STEP * STEP;
-    const bad = cover < MIN_COVER && hole >= (L2 < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0;
-    edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, rebuilt: bad && fix });
-    if (!bad || !fix) continue;
-    for (const o of on) {
-      used.add(o.k);
-      if (!o.over) continue;
-      for (const [sg, c] of [[1, 0], [-1, L2]]) {
-        const poly = clipU(o.q, sg, c);
-        if (poly.length < 3) continue;
-        const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
-        for (let k2 = 1; k2 + 1 < W.length; k2++) {
-          const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
-          out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true });
+    const solid = roofs ? tris.concat(roofs) : tris;
+    const probe = (extra = []) => {
+      let depth2 = Infinity;
+      for (const [u, y] of open) {
+        const px = ax + tx * u, pz = az + tz * u, d = [-onx, 0, -onz];
+        let best = Infinity, face = 0;
+        for (const list of [solid, extra]) for (const t of list) {
+          const h = rayTri(px, y, pz, d, t.p);
+          if (h > 0.05 && h < best) {
+            best = h;
+            face = t.n[0] * d[0] + t.n[2] * d[2] < 0 ? 1 : -1;
+          }
+        }
+        if (face < 0) return { recess: false, depth: depth2 };
+        depth2 = Math.min(depth2, best);
+      }
+      return { recess: true, depth: depth2 };
+    };
+    const { recess, depth } = cover < MIN_COVER && open.length ? probe() : { recess: false, depth: Infinity };
+    const closed = recess && depth >= RECESS_MIN;
+    const bad = cover < MIN_COVER && hole >= (L2 < SHORT ? SHORT_HOLE : MIN_HOLE) && partyN === 0 && !closed;
+    edges.push({ a: [ax, az], b: [bx, bz], cover: Math.round(cover * 100) / 100, hole: Math.round(hole * 10) / 10, party: partyN > 0, recess: closed, depth: recess ? Math.round(depth * 100) / 100 : null, out: [onx, onz], rebuilt: bad && fix });
+    if (fix && !bad && partyN === 0 && inL !== inR) for (const o of on) {
+      if (o.n[0] * onx + o.n[2] * onz >= -0.5) continue;
+      const p = tris[o.k].p, cx = (p[0][0] + p[1][0] + p[2][0]) / 3, cz = (p[0][2] + p[1][2] + p[2][2]) / 3, h = Math.hypot(o.n[0], o.n[2]);
+      if (pipR(cx + o.n[0] / h * 0.3, cz + o.n[2] / h * 0.3, ring2) && !pipR(cx - o.n[0] / h * 0.3, cz - o.n[2] / h * 0.3, ring2)) flip.add(o.k);
+    }
+    const e = edges[edges.length - 1];
+    pend.push({ i, e, probe, bad: bad && fix, closed, ret: fix && !bad && partyN === 0 && L2 < SHORT && hole >= SHORT_HOLE && cover < MIN_COVER, run: () => {
+      for (const o of on) {
+        used.add(o.k);
+        if (!o.over) continue;
+        for (const [sg, c] of [[1, 0], [-1, L2]]) {
+          const poly = clipU(o.q, sg, c);
+          if (poly.length < 3) continue;
+          const W = poly.map(([u, y]) => [ax + tx * u + nx * o.d, y, az + tz * u + nz * o.d]);
+          for (let k2 = 1; k2 + 1 < W.length; k2++) {
+            const A = W[0], B = W[k2], Cc = W[k2 + 1], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
+            out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true });
+          }
         }
       }
+      const steps = Math.max(1, Math.ceil(L2)), pts = [];
+      for (let s = 0; s <= steps; s++) {
+        const u = Math.min(L2, L2 * s / steps), top = topAt(Math.min(L2 - 1e-3, Math.max(1e-3, u)));
+        pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
+      }
+      const sideN = [o1 * nx, 0, o1 * nz];
+      for (let s = 0; s < steps; s++) {
+        const [x0, z0, y0] = pts[s], [x1, z1, y1] = pts[s + 1], mx2 = (x0 + x1) / 2, mz2 = (z0 + z1) / 2;
+        if (party && (party(mx2 + nx * 0.4, mz2 + nz * 0.4) || party(mx2 - nx * 0.4, mz2 - nz * 0.4))) continue;
+        const a = [x0, base, z0], b = [x1, base, z1], c = [x1, y1, z1], d = [x0, y0, z0];
+        const t1 = o1 > 0 ? [a, b, c] : [a, c, b], t2 = o1 > 0 ? [a, c, d] : [a, d, c];
+        out.push({ p: t1, n: sideN, area: 0.5 * Math.abs((y1 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+        out.push({ p: t2, n: sideN, area: 0.5 * Math.abs((y0 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
+      }
+    } });
+  }
+  const byI = new Map(pend.map((q) => [q.i, q]));
+  for (const q of pend) if (q.ret && (byI.get((q.i + n - 1) % n)?.bad || byI.get((q.i + 1) % n)?.bad)) {
+    q.bad = true;
+    q.e.rebuilt = true;
+    q.e.recess = false;
+  }
+  for (const q of pend) if (q.bad) q.run();
+  for (let pass = 0; pass < 2; pass++) {
+    const extra = out.filter((t) => t.rebuilt);
+    if (!extra.length) break;
+    let more = false;
+    for (const q of pend) if (fix && q.closed && !q.bad && !q.probe(extra).recess) {
+      q.bad = more = true;
+      q.e.rebuilt = true;
+      q.e.recess = false;
+      q.run();
     }
-    const steps = Math.max(1, Math.ceil(L2)), pts = [];
-    for (let s = 0; s <= steps; s++) {
-      const u = Math.min(L2, L2 * s / steps), top = topAt(Math.min(L2 - 1e-3, Math.max(1e-3, u)));
-      pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
-    }
-    const sideN = [nx, 0, nz];
-    for (let s = 0; s < steps; s++) {
-      const [x0, z0, y0] = pts[s], [x1, z1, y1] = pts[s + 1], mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
-      if (party && (party(mx + nx * 0.4, mz + nz * 0.4) || party(mx - nx * 0.4, mz - nz * 0.4))) continue;
-      const a = [x0, base, z0], b = [x1, base, z1], c = [x1, y1, z1], d = [x0, y0, z0];
-      out.push({ p: [a, b, c], n: sideN, area: 0.5 * Math.abs((y1 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
-      out.push({ p: [a, c, d], n: sideN, area: 0.5 * Math.abs((y0 - base) * Math.hypot(x1 - x0, z1 - z0)), rebuilt: true });
-    }
+    if (!more) break;
   }
   tris.forEach((t, k) => {
-    if (!used.has(k)) out.push(t);
+    if (used.has(k)) return;
+    out.push(flip.has(k) ? { ...t, p: [t.p[0], t.p[2], t.p[1]], n: [-t.n[0], -t.n[1], -t.n[2]], flipped: true } : t);
   });
   return { tris: out, edges };
+}
+function rayTri(x, y, z, d, p) {
+  const [A, B, C] = p, e1x = B[0] - A[0], e1y = B[1] - A[1], e1z = B[2] - A[2], e2x = C[0] - A[0], e2y = C[1] - A[1], e2z = C[2] - A[2];
+  const hx = d[1] * e2z - d[2] * e2y, hy = d[2] * e2x - d[0] * e2z, hz = d[0] * e2y - d[1] * e2x;
+  const det = e1x * hx + e1y * hy + e1z * hz;
+  if (Math.abs(det) < 1e-10) return Infinity;
+  const f = 1 / det, sx = x - A[0], sy = y - A[1], sz = z - A[2], u = f * (sx * hx + sy * hy + sz * hz);
+  if (u < -1e-4 || u > 1 + 1e-4) return Infinity;
+  const qx = sy * e1z - sz * e1y, qy = sz * e1x - sx * e1z, qz = sx * e1y - sy * e1x, v = f * (d[0] * qx + d[1] * qy + d[2] * qz);
+  if (v < -1e-4 || u + v > 1 + 1e-4) return Infinity;
+  const t = f * (e2x * qx + e2y * qy + e2z * qz);
+  return t > 0 ? t : Infinity;
+}
+function pipR(x, z, r) {
+  let c = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c;
+  }
+  return c;
 }
 function clipU(poly, sg, c) {
   const out = [], f = (p) => sg * (p[0] - c);
@@ -1440,7 +1519,12 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       if (o) all.push(o);
     }
     if (opts.wallFix !== false && all.length) {
-      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0 });
+      const roofTris = [];
+      for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+        const o = triOf(P, I2, t);
+        if (o) roofTris.push(o);
+      }
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris });
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) {
         all = r.tris;
@@ -9003,7 +9087,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     rampList.push(R2);
     for (let i = Math.floor((x0 - 0.5) / 8); i <= Math.floor((x1 + 0.5) / 8); i++) for (let j = Math.floor((z0 - 0.5) / 8); j <= Math.floor((z1 + 0.5) / 8); j++) push(rampGrid, cellKey(i, j), R2);
   });
-  const pipR = (x, z, ring2) => {
+  const pipR2 = (x, z, ring2) => {
     let ins = false;
     for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
       const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
@@ -9016,7 +9100,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     for (const R2 of rampGrid.get(cellKey(Math.floor(x / 8), Math.floor(z / 8))) || []) {
       if (si2 >= 0 && R2.si !== si2) continue;
       if (x < R2.x0 - 0.3 || x > R2.x1 + 0.3 || z < R2.z0 - 0.3 || z > R2.z1 + 0.3) continue;
-      if (si2 >= 0 || pipR(x, z, R2.ring)) return R2;
+      if (si2 >= 0 || pipR2(x, z, R2.ring)) return R2;
       near ??= R2;
     }
     return near;
@@ -16521,4 +16605,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "051ec908d9cd7982";
+self.__TILE_CODE_HASH = "366ff3fb78b9d625";
