@@ -1,5 +1,6 @@
 // node tools/audit/mergeGate.mjs: every gate check before a merge, one table. Each check is a node script that exits
 // non-zero on failure. To add one: one line in CHECKS (name, script, args, what it guards). Keep it simple.
+// Browser-side gates (need the viewer running) go in BROWSER: the merger runs them on a browser turn.
 // node tools/audit/mergeGate.mjs [name ...]   (only those)
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -8,8 +9,18 @@ import path from "node:path";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const CHECKS = [
   { name: "carctl", script: "tools/carctlTest.mjs", args: [], guards: "car handling targets (radius, response, slip, kerb, hill, braking), camera jitter, trams / trains solid (docs/CARCTL.md)" },
+  { name: "motion", script: "tools/audit/motionAudit.mjs", args: [], guards: "motion vectors on every mover + upscale guarantees (claude/sharp)" },
+  { name: "shell", script: "tools/audit/shellGate.mjs", args: [], guards: "every building's outer shell closed from the street: no wall wound inward, no open edge (claude/holes)" },
+  { name: "gardenzfight", script: "tools/audit/gardenZfight.mjs", args: ["--all", "--max", "40"], guards: "no two garden pieces draw a face in one plane over the same area, <= 40 small known (claude/holes)" },
+  { name: "heap", script: "tools/audit/heapGate.mjs", args: [], guards: "CPU copies dropped after the GPU upload have no unlisted reader; loadTile keeps no build result; heapDrop logic (claude/heap, docs/HEAP.md)" },
   { name: "bridges", script: "tools/audit/bridgeAudit.mjs", args: ["--quiet"], guards: "every road-rail crossing resolves to a built structure: road bridges' decks cover their UrbIS polygon, no slab in a cutting, no open cutting under a road, roads under the line under a rail bridge, catenary under the decks (docs/VIVIER.md)" },
   { name: "deckjoins", script: "tools/audit/deckJoins.mjs", args: [], guards: "measured (plan) bridge decks meet the streets / ground on every edge: joined, skirted or railed, no street over the deck at a joint (docs/VIVIER.md)" },
+];
+const BROWSER = [
+  "HEAP (docs/HEAP.md): ?game=police then debug/gamePerf.js police({ seconds: 45 }) (tiles unload + reload): window.__heapDrop.tripCounts must stay {} (a trip = a reader of a dropped CPU copy) (claude/heap)",
+  "VISUAL TOUR (docs/TOUR.md): debug/tour.html on the branch vs the claude/foundation baseline, node tools/tour/compare.mjs; look at every flagged view (claude/tour)",
+  "debug/sharpCheck.js  motionCoverage(): every mesh that moved over 30 frames has a motion source (claude/sharp)",
+  "debug/sharpCheck.js  stability(): frame-to-frame luma noise + Laplacian sharpness while parked / driving (claude/sharp)",
 ];
 
 const only = process.argv.slice(2);
@@ -27,5 +38,6 @@ for (const c of CHECKS) {
 }
 console.log("| check | result | time | guards / failures |\n|---|---|---|---|");
 for (const r of rows) console.log("| " + r.join(" | ") + " |");
+console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}`);
 console.log(failed ? `\n${failed} gate check(s) FAILED` : "\nall gate checks pass");
 process.exitCode = failed ? 1 : 0;

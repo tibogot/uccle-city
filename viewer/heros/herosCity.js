@@ -17,6 +17,7 @@ import { dolomiteGeometry, dolomiteMaterial, lawnGeometry, lawnMaterial, terrain
 import { SMOOTH, fadeProxies, settleRamp } from "../lodFade.js";
 import { liteShown } from "../liteShown.js";
 import { whenNeeded } from "../bootGate.js";   // boot2: ?bootdefer=1: far models load after the cover (viewer/bootGate.js; off by default)
+import { hold, release } from "../heapDrop.js";   // heap: the park tiles' terrain kept on the CPU until the lawn is built (docs/HEAP.md)
 
 export async function addHeros({ scene, updaters, hide, tile, world, manifest, log, compiler, renderer }) {
   const t0 = performance.now();
@@ -40,6 +41,9 @@ export async function addHeros({ scene, updaters, hide, tile, world, manifest, l
   scene.add(groundRoot);
   const parkBox = (() => { let x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9; for (const [x, z] of site.park) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return { x0, x1, z0, z1 }; })();
   const parkTiles = manifest.tiles.filter((t) => t.bounds.x[0] < parkBox.x1 && t.bounds.x[1] > parkBox.x0 && t.bounds.z[0] < parkBox.z1 && t.bounds.z[1] > parkBox.z0).map((t) => t.name);
+  // (heap, docs/HEAP.md: the lawn reads the park tiles' drawn terrain triangles on the CPU, once, whenever they are all
+  // in: their terrain meshes keep their arrays until then)
+  for (const n of parkTiles) hold(`terrain:${n}`);
   let groundBuilt = null;
   const buildGround = async () => {
     const g = dolomiteGeometry(site, (x, z) => world.ground(x, z));
@@ -56,6 +60,7 @@ export async function addHeros({ scene, updaters, hide, tile, world, manifest, l
     }
     await (await waitCompiler())([groundRoot]);
     groundBuilt = { tris: g.tris, mesh };
+    for (const n of parkTiles) release(`terrain:${n}`);
     log(`Square des Heros: dolomite ground ${g.tris} triangles on the tiles ${parkTiles.join(", ")}`);
   };
 

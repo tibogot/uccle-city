@@ -449,7 +449,9 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     // citydefects: a footprint edge the UrbIS wall mesh covers only in part (Av. Carsoel 13: a lone diagonal triangle across
     // the door) rebuilt as one wall from the base to its own top (viewer/wallRepair.js; opts.wallFix false = ?wallfix=old)
     if (opts.wallFix !== false && all.length) {
-      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0 });
+      const roofTris = [];                       // (holes: the recess test sees the soffits / the roof's inside)
+      for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) roofTris.push(o); }
+      const r = repairWalls(all, b.footprint[0], base0(b), { party: (x, z) => otherAt(x, z, bi) >= 0, roofs: roofTris });
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) { all = r.tris; stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n; }
     }
