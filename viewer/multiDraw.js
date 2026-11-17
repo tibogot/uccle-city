@@ -67,19 +67,63 @@ function mergeGeoms(geoms) {
 
 // CULLING: one render object for a whole LOD band of the city would draw every instance round the camera, in front or
 // behind (the per-tile meshes it replaces were culled tile by tile). A part's instances arrive from the gather cell by
-// cell (50 m cells, tile by tile); consecutive cells are grouped into CHUNKS of at most CHUNK m across, each with its
+// cell (50 m cells, tile by tile); consecutive cells are grouped into CHUNKS of at most chunkM (CHUNK_M) m across, each with its
 // box (padded by the pieces' size), and each chunk is one indirect record. Per pass (the mesh's onBeforeRender, with
 // that pass's camera: the view, the sun's shadow camera, the overhead weather bake...) only the records of the chunks
 // in that camera's frustum are drawn: the geometry's indirect offset list is chosen per camera (no upload: the records
 // are written at the commit). One cull per set, camera and frame, shared by the set's views.
-const CHUNK = 160, CHMAX = 48;
-const _frustum = new THREE.Frustum(), _m = new THREE.Matrix4(), _box = new THREE.Box3();
+// JOB 2 (docs/AGARGARO.md, docs/QUALITY_RULES.md rule 21): 80 m chunks, <= 128 per part. A 160 m chunk that only
+// grazes a frustum (the view's, above all the sun's and the lamps' shadow cameras) drew every instance in it; the
+// 80 m boxes draw the same instances minus those far outside. Too many cells for 128: coarser (x1.5) until it fits,
+// as before. ?mdchunk=160: 160 m / 48 as before (A/B).
+const MD_CHUNK = Math.max(20, Number(qs.get("mdchunk")) || 80);
+export const CHUNK_M = MD_CHUNK, CHUNK_MAX = MD_CHUNK >= 160 ? 48 : 128;
+// JOB 1: the VIEW camera's opaque draws run near to far (the chunks by their padded box's distance from the eye), so
+// early-z rejects the hidden fragments of what is drawn after. Order only: the same records, the same image. Shadow
+// cameras, reflections, bakes keep the part / chunk order (no shading there); blended views too (their order is the
+// picture). ?mdsort=0: the old order (A/B).
+export const MD_SORT = qs.get("mdsort") !== "0";
+let VIEW_CAM = null;
+/** the view camera (main.js, right after it is made): only its culls are sorted */
+export function setMultiDrawViewCamera(cam) { VIEW_CAM = cam; }
+const _frustum = new THREE.Frustum(), _m = new THREE.Matrix4(), _pl = new Float64Array(24);
+// the near-to-far order: a counting sort on NB distance buckets, bucket = 2 x the 4th root of the squared distance to
+// the padded box (= 2 sqrt(metres): 1.6 m wide at 10 m, 5 m at 100 m, 16 m at 1 km, the last one past 4 km); stable
+// (the cull order inside a bucket). O(n), no comparator, no allocation.
+const NB = 128;
+let _bk = new Uint8Array(1024);
+const _cnt = new Uint32Array(NB);
+/** a chunk's distance bucket from the eye (the gate checks the order with it) */
+export function nearBucket(d2) { return Math.min(NB - 1, (Math.sqrt(Math.sqrt(d2)) * 2) | 0); }
+const GROUP = 32;
+/** three's Frustum.intersectsBox negated, on the planes copied into _pl: the box's corner furthest along a plane's
+ *  normal is behind it */
+function outside(x0, y0, z0, x1, y1, z1) {
+  for (let i = 0; i < 24; i += 4) {
+    const nx = _pl[i], ny = _pl[i + 1], nz = _pl[i + 2];
+    if (nx * (nx > 0 ? x1 : x0) + ny * (ny > 0 ? y1 : y0) + nz * (nz > 0 ? z1 : z0) + _pl[i + 3] < 0) return true;
+  }
+  return false;
+}
+/** a group's box: 0 out of the frustum, 2 wholly inside every plane (its nearest corner in front of each: every chunk
+ *  in it passes without a test), 1 across */
+function classify(x0, y0, z0, x1, y1, z1) {
+  let r = 2;
+  for (let i = 0; i < 24; i += 4) {
+    const nx = _pl[i], ny = _pl[i + 1], nz = _pl[i + 2], d = _pl[i + 3];
+    if (nx * (nx > 0 ? x1 : x0) + ny * (ny > 0 ? y1 : y0) + nz * (nz > 0 ? z1 : z0) + d < 0) return 0;
+    if (r === 2 && nx * (nx > 0 ? x0 : x1) + ny * (ny > 0 ? y0 : y1) + nz * (nz > 0 ? z0 : z1) + d < 0) r = 1;
+  }
+  return r;
+}
 
 export class MultiDrawSet {
   /** parts: how many pieces; attrs: [[name, width]] the per-instance columns ("instanceMatrix" = the meshes' own) */
-  constructor({ name, parts, attrs, cap0 = 64 }) {
+  constructor({ name, parts, attrs, cap0 = 64, chunk = CHUNK_M, chmax = CHUNK_MAX, sort = MD_SORT }) {
     this.name = name; this.attrs = attrs; this.views = []; this.pad = 2;
-    this.parts = Array.from({ length: parts }, () => ({ off: 0, cap: cap0, n: 0, box: new Float64Array(6), nch: 0, ch: new Int32Array(CHMAX * 2), chBox: new Float32Array(CHMAX * 6) }));
+    this.chunkM = chunk; this.chMax = chmax; this.sort = sort;
+    const CHMAX = chmax;
+    this.parts = Array.from({ length: parts }, () => ({ off: 0, cap: cap0, n: 0, box: new Float64Array(6), nch: 0, ch: new Int32Array(CHMAX * 2), chBox: new Float32Array(CHMAX * 6), gBox: new Float32Array(CHMAX * 6), gEnd: new Int32Array(CHMAX), ng: 0 }));
     this.sphere = new THREE.Sphere();
     this.culls = [];                                        // [{ cam, frame, list }]
     this.layout();
@@ -96,7 +140,7 @@ export class MultiDrawSet {
     if (shareOf) ({ geo, ranges, indirect } = shareOf);
     else {
       ({ geo, ranges } = mergeGeoms(geoms));
-      indirect = new THREE.IndirectStorageBufferAttribute(new Uint32Array(this.parts.length * CHMAX * 5), 5);
+      indirect = new THREE.IndirectStorageBufferAttribute(new Uint32Array(this.parts.length * this.chMax * 5), 5);
       geo.setIndirect(indirect, []);
       for (const [a] of this.attrs) if (a !== "instanceMatrix") geo.setAttribute(a, this.buf[a]);
     }
@@ -125,11 +169,13 @@ export class MultiDrawSet {
     }
     P.n = n; P.box.set(box);
     this.chunk(P, n, box, runs);
+    this.group(P);
     this.records(k);
     this.refresh();
   }
   /** group the runs into chunks of at most `lim` m across (x / z); too many: again with a larger limit */
-  chunk(P, n, box, runs, lim = CHUNK) {
+  chunk(P, n, box, runs, lim = this.chunkM) {
+    const CHMAX = this.chMax;
     P.nch = 0;
     if (!n) return;
     if (!runs || !runs.length) { P.ch[0] = 0; P.ch[1] = n; for (let i = 0; i < 6; i++) P.chBox[i] = box[i]; P.nch = 1; return; }
@@ -154,41 +200,98 @@ export class MultiDrawSet {
     if (cur && !flush(prevEnd)) return this.chunk(P, n, box, runs, lim * 1.5);
     if (prevEnd !== n) { P.nch = 1; P.ch[0] = 0; P.ch[1] = n; for (let i = 0; i < 6; i++) P.chBox[i] = box[i]; }   // (runs did not cover: one chunk)
   }
+  /** groups of consecutive chunks (gather order: neighbours) while their box stays within 3 chunk sizes and GROUP
+   *  chunks: the cull skips a group out of the frustum, and passes every chunk of a group wholly inside, in one test */
+  group(P) {
+    const B = P.chBox, G = P.gBox;
+    let span = 0;
+    for (let c = 0, b = 0; c < P.nch; c++, b += 6) span = Math.max(span, B[b + 3] - B[b], B[b + 5] - B[b + 2]);
+    const lim = Math.max(this.chunkM, span) * 3;            // (chunks made coarser by the CHMAX fallback: groups too)
+    let ng = 0, o = -6;
+    for (let c = 0; c < P.nch; c++) {
+      const b = c * 6;
+      if (ng && c - (ng > 1 ? P.gEnd[ng - 2] : 0) < GROUP && Math.max(G[o + 3], B[b + 3]) - Math.min(G[o], B[b]) <= lim && Math.max(G[o + 5], B[b + 5]) - Math.min(G[o + 2], B[b + 2]) <= lim) {
+        for (let i = 0; i < 3; i++) { G[o + i] = Math.min(G[o + i], B[b + i]); G[o + i + 3] = Math.max(G[o + i + 3], B[b + i + 3]); }
+      } else { o = ng++ * 6; for (let i = 0; i < 6; i++) G[o + i] = B[b + i]; }
+      P.gEnd[ng - 1] = c + 1;
+    }
+    P.ng = ng;
+  }
   /** the part's indirect records in every view (index count, instances, first index, base vertex 0, first instance) */
   records(k) {
-    const P = this.parts[k];
+    const P = this.parts[k], CHMAX = this.chMax;
     for (const v of this.views) {
       if (v.shared || !v.ranges[k]) continue;
       const A = v.indirect.array, [first, count] = v.ranges[k];
       for (let c = 0; c < P.nch; c++) { const o = (k * CHMAX + c) * 5; A[o] = count; A[o + 1] = P.ch[c * 2 + 1]; A[o + 2] = first; A[o + 3] = 0; A[o + 4] = P.off + P.ch[c * 2]; }
-      v.indirect.needsUpdate = true;
+      // only this part's written records go up (the ones past nch are never drawn: a cull lists c < nch only)
+      if (P.nch) { v.indirect.addUpdateRange(k * CHMAX * 5, P.nch * 5); v.indirect.needsUpdate = true; }
     }
     this.culls.length = 0;
   }
-  /** the byte offsets of the records drawn for this camera (cached per camera and frame) */
+  /** the byte offsets of the records drawn for this camera (cached per camera and frame). The test is three's
+   *  Frustum.intersectsBox (the box's corner furthest along each plane's normal; outside a plane = culled), inlined over
+   *  the padded chunk boxes, groups first. The view camera's opaque views get the records near to far (MD_SORT: the
+   *  counting sort above); shadow / other cameras and blended views keep the part / chunk order. */
   cull(camera, frame, v) {
     let e = null;
+    const CHMAX = this.chMax;
     for (const c of this.culls) if (c.cam === camera) { e = c; break; }
-    if (!e) { e = { cam: camera, frame: -1, all: [], lists: new Map() }; this.culls.push(e); if (this.culls.length > 8) this.culls.shift(); }
-    if (e.frame !== frame) {
-      e.frame = frame; e.all.length = 0; e.lists.clear();
-      _frustum.setFromProjectionMatrix(_m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse), camera.coordinateSystem, camera.reversedDepth);
-      const pad = this.pad;
-      this.parts.forEach((P, k) => {
-        for (let c = 0; c < P.nch; c++) {
-          const b = P.chBox, o = c * 6;
-          _box.min.set(b[o] - pad, b[o + 1] - pad, b[o + 2] - pad); _box.max.set(b[o + 3] + pad, b[o + 4] + pad, b[o + 5] + pad);
-          if (_frustum.intersectsBox(_box)) e.all.push(k, c);
+    if (!e) { e = { cam: camera, frame: -1, gen: 0, vp: new Float64Array(16), all: [], near: new Int32Array(64), sorted: false, lists: new Map(), listsB: new Map() }; this.culls.push(e); if (this.culls.length > 8) this.culls.shift(); }
+    // (one camera can render several times a frame with other matrices: a point light's 6 cube faces; a cached cull
+    // is reused only for the same view-projection)
+    _m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    let same = e.frame === frame;
+    if (same) { const M = _m.elements, V = e.vp; for (let i = 0; i < 16; i++) if (M[i] !== V[i]) { same = false; break; } }
+    if (!same) {
+      e.frame = frame; e.gen++; e.vp.set(_m.elements); e.all.length = 0; e.sorted = false;
+      _frustum.setFromProjectionMatrix(_m, camera.coordinateSystem, camera.reversedDepth);
+      for (let i = 0; i < 6; i++) { const p = _frustum.planes[i]; _pl[i * 4] = p.normal.x; _pl[i * 4 + 1] = p.normal.y; _pl[i * 4 + 2] = p.normal.z; _pl[i * 4 + 3] = p.constant; }
+      const pad = this.pad, all = e.all, w = camera.matrixWorld.elements, ex = w[12], ey = w[13], ez = w[14];
+      const sort = this.sort && camera === VIEW_CAM;
+      let n = 0;
+      for (let k = 0; k < this.parts.length; k++) {
+        const P = this.parts[k], b = P.chBox, G = P.gBox;
+        for (let gi = 0, c = 0; gi < P.ng; gi++) {
+          const q = gi * 6, end = P.gEnd[gi];
+          const g = classify(G[q] - pad, G[q + 1] - pad, G[q + 2] - pad, G[q + 3] + pad, G[q + 4] + pad, G[q + 5] + pad);
+          if (g === 0) { c = end; continue; }
+          for (; c < end; c++) {
+            const o = c * 6;
+            const x0 = b[o] - pad, y0 = b[o + 1] - pad, z0 = b[o + 2] - pad, x1 = b[o + 3] + pad, y1 = b[o + 4] + pad, z1 = b[o + 5] + pad;
+            if (g === 1 && outside(x0, y0, z0, x1, y1, z1)) continue;
+            all.push(k, c);
+            if (sort) {
+              if (n >= _bk.length) { const K = new Uint8Array(_bk.length * 2); K.set(_bk); _bk = K; }
+              const dx = Math.max(x0 - ex, ex - x1, 0), dy = Math.max(y0 - ey, ey - y1, 0), dz = Math.max(z0 - ez, ez - z1, 0);
+              const q = Math.min(NB - 1, (Math.sqrt(Math.sqrt(dx * dx + dy * dy + dz * dz)) * 2) | 0);
+              _bk[n++] = q; _cnt[q]++;
+            }
+          }
         }
-      });
+      }
+      if (sort) {
+        if (n > 1) {
+          let near = e.near;
+          if (near.length < n * 2) near = e.near = new Int32Array(n * 4);
+          for (let q = 0, at = 0; q < NB; q++) { const m = _cnt[q]; _cnt[q] = at; at += m; }
+          for (let i = 0; i < n; i++) { const p = _cnt[_bk[i]]++ * 2; near[p] = all[i * 2]; near[p + 1] = all[i * 2 + 1]; }
+          e.sorted = true;
+        }
+        _cnt.fill(0);
+      }
     }
-    let list = e.lists.get(v.ranges);
-    if (!list) {
-      list = [];
-      for (let i = 0; i < e.all.length; i += 2) if (v.ranges[e.all[i]]) list.push((e.all[i] * CHMAX + e.all[i + 1]) * 20);
-      e.lists.set(v.ranges, list);
+    // the view's offset list (one per camera and ranges, its array reused: three reads it in this pass's draw)
+    const blend = !!v.mesh.material.transparent, lists = blend ? e.listsB : e.lists;
+    let L = lists.get(v.ranges);
+    if (!L) lists.set(v.ranges, (L = { gen: -1, list: [] }));
+    if (L.gen !== e.gen) {
+      L.gen = e.gen;
+      const src = e.sorted && !blend ? e.near : e.all, list = L.list, R = v.ranges, nn = e.all.length;
+      list.length = 0;
+      for (let i = 0; i < nn; i += 2) if (R[src[i]]) list.push((src[i] * CHMAX + src[i + 1]) * 20);
     }
-    return list;
+    return L.list;
   }
   /** a part outgrew its region: every region re-laid (x2 for the one that grew), the buffers re-made (uploaded whole) */
   grow(k, n) {

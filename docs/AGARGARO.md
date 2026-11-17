@@ -155,6 +155,31 @@ before merging.
   `drawIndexedIndirect` per offset without per-draw CPU work beyond the loop (it does: `WebGPUBackend.js` ~2189).
   Chunks overflowing CHMAX fall back to coarser chunks (`chunk(..., lim * 1.5)`), which is already handled.
 
+### Status (claude/mdraw, phase 1 offline, 2026-11-17)
+Both jobs are in `viewer/multiDraw.js`, on by default, each behind its switch (`?mdsort=0`, `?mdchunk=160`, rows in
+`viewer/features.js`). The gate `mdrawcull` (tools/audit/mdrawCull.mjs, rule 21 in docs/QUALITY_RULES.md) runs the
+real class on a synthetic city (9 sets, 91 parts, a 2.4 km square, 40 camera places).
+- **Job 1.** Only the camera main.js registers (`setMultiDrawViewCamera`) is sorted, and only its opaque views. The
+  sort is a counting sort on 128 distance buckets (2 x sqrt(metres) from the eye to the padded box), stable and O(n),
+  with no allocation. The first cut used a native typed-array sort: 17-21 us. The counting sort costs 5-10 us a
+  frame for ~900 visible chunks. Shadow and blended lists stay exactly the old order.
+- **Job 2.** The instances drawn vs 160 m / 48: view -9.9 %, sun shadow -28 %, lamp shadow -70 %. None of the
+  instances that meet a frustum is lost, and the instance buffers are byte-identical.
+  - CHMAX matters as much as the chunk size here: the far bands overflowed 48 and fell back to very coarse chunks.
+  - 3,001 chunks instead of 1,475. Cull CPU (view + sun + lamp) 77-96 us vs 48-58 us with 160 m chunks in the same
+    code; the HEAD code was 71 us.
+  - The cull got faster to pay for this:
+    - the frustum test is inlined (three's p-vertex test, the same result);
+    - chunks are tested in groups (consecutive chunks within 3 chunk sizes, <= 32 of them): out = skipped, wholly
+      inside = no per-chunk test;
+    - the offset lists are reused, not allocated each frame.
+  - The indirect records now upload by update range (a part's own records), not the whole buffer.
+- **Found on the way.** One camera that renders twice in a frame with other matrices (three's point-light shadow:
+  6 cube faces, one camera) reused the first face's cull. The cache is now keyed on the view-projection too. The
+  lamp PointLights cast no shadow today, so nothing visible changed.
+- **Browser turn.** It still has to measure the targets above. If the real city's cull goes over 50 us, try
+  `?mdchunk=120` (synthetic: about the same instance cut, -15 % CPU).
+
 ### (No job 3.)
 Nothing else in the five libraries beats what we have on r187 WebGPU. The CPU wall is still three's per-render-object
 cost (docs/PERF_GAME.md), and none of these libraries reduces it below what MultiDrawSet / farMerge already do.
