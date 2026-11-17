@@ -163,9 +163,10 @@ const TARGET_MS = +(qs.get("gputarget") ?? 14);       // the GPU budget the dyna
 const STEP = 0.025;                                      // scale grid (each change resizes the internal targets)
 
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
-/** the sharpen's strength for a scale: RCAS lobe share 0.5 at 1.0 -> 1 (FSR's maximum) at 0.65 and under; the old
+/** the sharpen's strength for a scale: RCAS lobe share 0.35 at 1.0 -> 0.7 at 0.6 and under (+ its noise removal: the
+ *  first schedule, 0.5 -> 1, raised the parked frame-to-frame noise 40 %); the old
  *  unsharp mask 0.2 at 1.0 -> 0.4 at 0.6 */
-const sharpFor = (s) => SHARP_RCAS ? clamp(0.5 + (1 - s) / 0.35 * 0.5, 0.5, 1) : 0.2 + 0.5 * (1 - s);
+const sharpFor = (s) => SHARP_RCAS ? clamp(0.35 + (1 - s) / 0.4 * 0.35, 0.35, 0.7) : 0.2 + 0.5 * (1 - s);
 const quant = (s) => +(Math.round(s / STEP) * STEP).toFixed(3);
 function halton(i, b) { let f = 1, r = 0; while (i > 0) { f /= b; r += f * (i % b); i = Math.floor(i / b); } return r; }
 const JITTER = Array.from({ length: 16 }, (_, i) => [halton(i + 1, 2) - 0.5, halton(i + 1, 3) - 0.5]);
@@ -397,7 +398,13 @@ export function rcasTap(texNode, amount) {
   const hitMin = min(mn4, e).div(mx4.mul(4).add(1e-5));
   const hitMax = vec3(1).sub(max(mx4, e)).div(mn4.mul(4).sub(4).min(-1e-5));
   const lobeRGB = max(hitMin.negate(), hitMax);
-  const lobe = max(float(-0.1875), min(max(lobeRGB.r, max(lobeRGB.g, lobeRGB.b)), 0)).mul(amount);
+  // RCAS's noise removal (FSR 1 FSR_RCAS_DENOISE): less lobe where the centre stands out of its cross like a lone
+  // grain (a jitter / dither sparkle) rather than an edge: sharpening must not amplify the TAAU's residual noise
+  const L = (c) => c.g.mul(0.5).add(c.r.add(c.b).mul(0.25));
+  const bL = L(b), dL = L(d), fL = L(f), hL = L(h), eL = L(e);
+  const nzMax = max(max(max(bL, dL), max(fL, hL)), eL), nzMin = min(min(min(bL, dL), min(fL, hL)), eL);
+  const nz = bL.add(dL).add(fL).add(hL).mul(0.25).sub(eL).abs().div(nzMax.sub(nzMin).max(1e-4)).saturate().mul(-0.5).add(1);
+  const lobe = max(float(-0.1875), min(max(lobeRGB.r, max(lobeRGB.g, lobeRGB.b)), 0)).mul(amount).mul(nz);
   const o = b.add(d).add(f).add(h).mul(lobe).add(e).div(lobe.mul(4).add(1)).toVar();
   return o.div(float(1).sub(max(o.r, max(o.g, o.b))).max(1e-3)).max(vec3(0));
 }

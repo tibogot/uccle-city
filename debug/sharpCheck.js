@@ -144,3 +144,32 @@ export function show(url) {
   document.body.appendChild(im);
 }
 export function hide() { document.getElementById("__sharpSheet")?.remove(); }
+
+/**
+ * Temporal stability while PARKED (nothing moves but the jitter, the wind, the dither phases): per screen box (x, y, w,
+ * h as fractions) the median over `frames` of the mean |high-pass(Y_t) - high-pass(Y_t-1)| (sparkle, shimmer) and
+ * of |Y_t - Y_t-1| (flicker). boxes: { name: [x, y, w, h] }.
+ */
+export async function stability({ frames = 40, warm = 30, boxes = { foliage: [0.27, 0.22, 0.2, 0.2], facade: [0.62, 0.15, 0.3, 0.3], road: [0.3, 0.75, 0.4, 0.2] } } = {}) {
+  const v = V(), d = window.__driver, canvas = v.renderer.domElement, W = canvas.width, H = canvas.height;
+  const g = new OffscreenCanvas(W, H).getContext("2d", { willReadFrequently: true });
+  v.pause(true);
+  const prev = {}, hp = {}, fl = {};
+  try {
+    for (let f = 0; f < warm + frames; f++) {
+      if (d?.on) d.autoInput = { throttle: 0, steer: 0, handbrake: true };
+      v.step(1 / 60);
+      if (f < warm) { if (f % 4 === 0) await sleep(0); continue; }
+      g.drawImage(canvas, 0, 0);
+      for (const [k, [x, y, w, h]] of Object.entries(boxes)) {
+        const X = Math.round(x * W), Y = Math.round(y * H), BW = Math.round(w * W), BH = Math.round(h * H);
+        const Yl = luma(g.getImageData(X, Y, BW, BH)), Hp = highPass(Yl, BW, BH);
+        if (prev[k]) { (hp[k] ||= []).push(tdiff(Hp, prev[k].hp)); (fl[k] ||= []).push(tdiff(Yl, prev[k].y)); }
+        prev[k] = { hp: Hp, y: Yl };
+      }
+      if (f % 4 === 0) await sleep(0);
+    }
+  } finally { if (d) d.autoInput = null; v.pause(false); }
+  const med = (a) => +[...a].sort((x, y) => x - y)[Math.floor(a.length / 2)].toFixed(3);
+  return Object.fromEntries(Object.keys(boxes).map((k) => [k, { sparkle: med(hp[k]), flicker: med(fl[k]) }]));
+}
