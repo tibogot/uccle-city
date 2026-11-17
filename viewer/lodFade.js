@@ -75,11 +75,24 @@ export function objectFadeKeep(n = ditherNoise()) {
 
 /** Add the per-object time fade to a material (once): its maskNode (and the shadow cut) keep the
  *  object's share of pixels. Materials that already have a maskNode get it AND-ed. */
+// perf9 (?fadeshare=old = a new fade graph per material, as before): ONE fade graph (the same node objects) for every
+// fading copy, and one AND-ed mask per source mask node. three r187 keys its node-build cache by node ids: two materials
+// whose graphs are the same node objects (plain library / kit materials that differ only by colour, maps, roughness ...)
+// share one main-thread build, but their fading copies each had a fresh fade graph, so each built again (same WGSL).
+const FADE_SHARE = qs.get("fadeshare") !== "old";
+let sharedKeep = null;
+const andKeep = new WeakMap();
+const withKeep = (mask, keep) => {
+  if (!FADE_SHARE) return mask.and(keep);
+  let a = andKeep.get(mask);
+  if (!a) andKeep.set(mask, (a = mask.and(keep)));
+  return a;
+};
 export function withObjectFade(m) {
   if (!SMOOTH || m.userData.objectFade) return m;
-  const keep = objectFadeKeep();
-  m.maskNode = m.maskNode ? m.maskNode.and(keep) : keep;
-  if (m.maskShadowNode) m.maskShadowNode = m.maskShadowNode.and(keep);
+  const keep = FADE_SHARE ? (sharedKeep ||= objectFadeKeep()) : objectFadeKeep();
+  m.maskNode = m.maskNode ? withKeep(m.maskNode, keep) : keep;
+  if (m.maskShadowNode) m.maskShadowNode = withKeep(m.maskShadowNode, keep);
   m.userData.objectFade = true;
   m.needsUpdate = true;
   return m;

@@ -1132,6 +1132,7 @@ async function main() {
   await renderer.init();
   window.__bootHook?.(renderer, THREE);              // a boot probe's hook (debug/bootTimeline.js), when one is installed
   setAORenderer(renderer);                          // fix3: the AO maps as BC4 KTX2 when the GPU samples BC (viewer/aoTexture.js, ?aoktx2=0 = the PNGs)
+  if (params.get("buildaudit") === "1") (await import("./buildAudit.js")).installBuildAudit(renderer);   // perf9: every node build timed (debug/buildAudit.js)
   if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
   // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade
