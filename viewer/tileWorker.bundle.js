@@ -12444,7 +12444,8 @@ function kitCollector(opts = {}) {
       placed.push({ o, d: depthAt((o.u0 + o.u1) / 2, (o.h0 + o.h1) / 2) });
     }
     stats.faces++;
-    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rnd + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
+    const rndPack = Math.floor(rnd * 4096 + 0.5) / 4096;
+    F = [f.u0, fr(f.width) + 256 * (Math.round(sf.k * 128) - 100), f.base, rndPack + 2 * doorStreet + 4 * frCode + (type === TYPE.MAITRE ? 1024 : 0)];
     const W = (u, d) => [f.tx * (f.u0 + u) + f.nx * d, f.tz * (f.u0 + u) + f.nz * d];
     const seed = S3.seed;
     const gaps = [];
@@ -16521,4 +16522,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "051ec908d9cd7982";
+self.__TILE_CODE_HASH = "7d790170c949d595";

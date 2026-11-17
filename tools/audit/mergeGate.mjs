@@ -1,31 +1,37 @@
-// MERGE GATE (owner rule 2026-11-17): run before every merge. Runs every gate audit (each exits non-zero on a violation
-// of its rule) and prints one table; exit 1 if any gate fails. Then prints the MANUAL browser steps, which a node
-// script cannot do (they need the coordinator's one Chrome tab): they are part of the gate all the same.
-//   node tools/audit/mergeGate.mjs
-// To add a gate: one line in GATES (a name, the rule it enforces, the command). Keep each under ~30 s.
+// node tools/audit/mergeGate.mjs: every gate check before a merge, one table. Each check is a node script that exits
+// non-zero on failure. To add one: one line in CHECKS (name, script, args, what it guards). Keep it simple.
+// Browser-side gates (need the viewer running) go in BROWSER: the merger runs them on a browser turn.
+// node tools/audit/mergeGate.mjs [name ...]   (only those)
 import { spawnSync } from "node:child_process";
-import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const GATES = [
-  // (automatic node gates: one line each)
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const CHECKS = [
+  { name: "carctl", script: "tools/carctlTest.mjs", args: [], guards: "car handling targets (radius, response, slip, kerb, hill, braking), camera jitter, trams / trains solid (docs/CARCTL.md)" },
+  { name: "motion", script: "tools/audit/motionAudit.mjs", args: [], guards: "motion vectors on every mover + upscale guarantees (claude/sharp)" },
 ];
-// MANUAL browser steps (documented, not run here)
-const MANUAL = [
-  { name: "visual tour", rule: "~20 fixed views over Uccle match the foundation baseline (no hollow rows, missing layers, wrong looks)",
-    how: "docs/TOUR.md: node tools/tour/serve.mjs --root <merge result>; open http://localhost:8837/debug/tour.html?run=<branch>; " +
-      "node tools/tour/compare.mjs foundation <branch>; open every FLAG image (expected changes: say why in the merge message, refresh the baseline)" },
+const BROWSER = [
+  "VISUAL TOUR (docs/TOUR.md): debug/tour.html on the branch vs the claude/foundation baseline, node tools/tour/compare.mjs; look at every flagged view (claude/tour)",
+  "debug/sharpCheck.js  motionCoverage(): every mesh that moved over 30 frames has a motion source (claude/sharp)",
+  "debug/sharpCheck.js  stability(): frame-to-frame luma noise + Laplacian sharpness while parked / driving (claude/sharp)",
 ];
+
+const only = process.argv.slice(2);
 const rows = [];
-for (const g of GATES) {
+let failed = 0;
+for (const c of CHECKS) {
+  if (only.length && !only.includes(c.name)) continue;
   const t0 = Date.now();
-  const r = spawnSync(process.execPath, g.cmd.map((c) => (c.endsWith(".mjs") ? join(ROOT, c) : c)), { cwd: ROOT, encoding: "utf8" });
-  process.stdout.write(r.stdout || ""); process.stderr.write(r.stderr || "");
-  rows.push({ gate: g.name, result: r.status === 0 ? "PASS" : "FAIL", seconds: ((Date.now() - t0) / 1000).toFixed(1), rule: g.rule });
+  const r = spawnSync(process.execPath, [path.join(ROOT, c.script), ...c.args], { cwd: ROOT, encoding: "utf8", timeout: 10 * 60 * 1000 });
+  const ok = r.status === 0;
+  if (!ok) failed++;
+  const out = ((r.stdout || "") + (r.stderr || "")).trim().split("\n");
+  const fails = out.filter((l) => /FAIL/.test(l)).slice(0, 3).map((l) => l.trim().slice(0, 120));
+  rows.push([c.name, ok ? "PASS" : "FAIL", ((Date.now() - t0) / 1000).toFixed(1) + " s", ok ? c.guards : fails.join(" / ") || `exit ${r.status}`]);
 }
-console.log("\nMERGE GATE");
-if (rows.length) console.table(rows);
-console.log("\nMANUAL BROWSER STEPS (required before the merge, not run by this script):");
-for (const m of MANUAL) console.log(`- ${m.name}: ${m.rule}\n    ${m.how}`);
-process.exitCode = rows.every((r) => r.result === "PASS") ? 0 : 1;
+console.log("| check | result | time | guards / failures |\n|---|---|---|---|");
+for (const r of rows) console.log("| " + r.join(" | ") + " |");
+console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}`);
+console.log(failed ? `\n${failed} gate check(s) FAILED` : "\nall gate checks pass");
+process.exitCode = failed ? 1 : 0;

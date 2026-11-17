@@ -16,7 +16,7 @@ import { ssr } from "three/addons/tsl/display/SSRNode.js";
 import { ao } from "three/addons/tsl/display/GTAONode.js";
 import { denoise } from "three/addons/tsl/display/DenoiseNode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { sharpenTap, setSceneMRT, enableThinAA } from "./upscale.js";
+import { sharpenResolved, setSceneMRT, enableThinAA } from "./upscale.js";
 
 const LOOKS = {
   misty: { exposure: 1.06, contrast: 1.04, saturation: 0.94, balance: [1.01, 1.0, 0.99], bloom: 0.2, threshold: 1.3 },
@@ -134,7 +134,7 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     const taau = up.makeTAAU(beauty, depth, texture(sceneRT.textures[3]));
     const resolved = taau.getTextureNode();
     hdr = resolved.rgb;
-    hdrSharp = sharpenTap(resolved, up.uSharp);
+    hdrSharp = sharpenResolved(resolved, up.uSharp);   // RCAS (claude/sharp; ?rcas=old = the clamped unsharp mask)
   }
   const exposed = hdr.mul(exposure).mul(balance);
   const peak = max(max(exposed.r, exposed.g), exposed.b);

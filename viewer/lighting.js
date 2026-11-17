@@ -8,7 +8,8 @@
 import * as THREE from "three/webgpu";
 import { shadow, Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select, smoothstep, textureLoad, screenCoordinate, ivec2, int } from "three/tsl";
 import { ShadowNode } from "three/webgpu";
-import { damp } from "./lodFade.js";
+import { damp, ditherNoise } from "./lodFade.js";
+import { texture, reference, vec2, add, vogelDiskSample, renderGroup } from "three/tsl";
 import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
@@ -170,6 +171,19 @@ class CachedSunShadowNode extends FadedShadowNode {
     sunCache.stats.frames++;
   }
 }
+// (claude/sharp, ?shadownoise=old = three's) THE PCF'S ROTATION PER FRAME: three r187's PCF rotates its 5 Vogel taps by
+// interleaved gradient noise of the SCREEN pixel, the same every frame: under the TAAU the penumbra's noise is locked to
+// the screen and the shadows slide under it while driving (edges crawl / "swim"). Same filter, the noise phase moving
+// each frame (lodFade.js ditherNoise: ditherFrame steps under the TAAU, (0, 0) native = three's exact pattern): the
+// history averages the rotations into a smooth, still penumbra.
+const SHADOWNOISE_OLD = QS.get("shadownoise") === "old";
+const temporalPCF = Fn(({ depthTexture, shadowCoord, shadow: sh }) => {
+  const mapSize = reference("mapSize", "vec2", sh).setGroup(renderGroup), radius = reference("radius", "float", sh).setGroup(renderGroup);
+  const rs = radius.mul(vec2(1).div(mapSize));
+  const phi = ditherNoise().mul(6.28318530718);
+  const cmp = (k) => texture(depthTexture, shadowCoord.xy.add(vogelDiskSample(k, 5, phi).mul(rs))).compare(shadowCoord.z);
+  return add(cmp(0), cmp(1), cmp(2), cmp(3), cmp(4)).mul(1 / 5);
+});
 /** (tuning in the browser: the shift's direction per axis, if the cached shadows slide the wrong way) */
 export const SHIFT_SIGN = { x: 1, y: -1 };
 
@@ -260,6 +274,7 @@ export class Lighting {
       Object.assign(this.sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 1, far: 2000 });
       this.sun.shadow.bias = -0.0002;
       if (SMOOTH_SHADOWS) this.sun.shadow.shadowNode = SUN_CACHE ? new CachedSunShadowNode(this.sun, this.sun.shadow) : new FadedShadowNode(this.sun, this.sun.shadow);
+      if (!SHADOWNOISE_OLD) this.sun.shadow.filterNode = temporalPCF;   // (claude/sharp) the PCF rotation moves per frame
       scene.add(this.sun.target);
     }
     this.sun.castShadow = true;
