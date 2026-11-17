@@ -387,7 +387,13 @@ export class TrafficSim {
     const recheck = P.ver !== this.W.version;
     P.ver = this.W.version;
     for (const c of this.parked()) {
-      if (recheck && !c.hidden && this.laneThrough(c)) P.moved.add(c);
+      const lt = recheck && !c.hidden && !c._tpLane ? this.laneThrough(c) : 0;
+      if (lt) {
+        // under a tile's own lane, far from the player (> 250 m): it goes (as the border drop at load does; never seen
+        // leaving); near, or under a twinless copy: an obstacle
+        if (lt === 2 && (c.x - P.fx) ** 2 + (c.z - P.fz) ** 2 > 250 * 250 && !c.busy) { c.hidden = true; c.busy = true; c._tpLane = 1; this.onPark?.(c, true); this.stats.parkBorderHidden = (this.stats.parkBorderHidden || 0) + 1; }
+        else P.moved.add(c);
+      }
       // (hidden ones too: a car that pulled out comes back into its slot between two rebuilds; the queries skip hidden)
       if (!c._tp0) c._tp0 = [c.x, c.z, c.heading];
       else if (Math.abs(c.x - c._tp0[0]) + Math.abs(c.z - c._tp0[1]) > 0.03 || Math.abs(c.heading - c._tp0[2]) > 0.01) P.moved.add(c);
@@ -433,22 +439,23 @@ export class TrafficSim {
   /** does a driven lane (core, or a buffer copy without a twin) of a loaded graph run within a traffic car's half width (- TP_TOUCH) of parked car c's box? */
   laneThrough(c) {
     const [w, l] = this.parkWL(c), hx = w / 2, hz = l / 2, h = c.heading;
-    let yes = false;
+    let yes = 0;
     this.W.project(c.x, c.z, Math.hypot(hx, hz) + 1.15, (gid, along, lat, tx, tz) => {
-      if (yes) return;
+      if (yes === 2) return;
       const g = this.W.slots[gid >>> 16];
-      // (a tile's own lanes, or a buffer copy with no twin: the cars drive it as it is)
+      // (a tile's own lanes (2), or a buffer copy with no twin (1): the cars drive it as it is, now and then)
       if (!g || (!g.core[gid & 0xffff] && g.twin?.[gid & 0xffff] >= 0)) return;
+      const lvl = g.core[gid & 0xffff] ? 2 : 1;
       const cc = Math.abs(tx * Math.sin(h) + tz * Math.cos(h)), ss = Math.sqrt(Math.max(0, 1 - cc * cc));
       // (a junction turn: the body's corners sweep ~0.3 m outside its centre line)
-      if (lat - (hz * ss + hx * cc) < TP_BLOCK + (g.kind[gid & 0xffff] ? 0.3 : 0)) yes = true;
+      if (lat - (hz * ss + hx * cc) < TP_BLOCK + (g.kind[gid & 0xffff] ? 0.3 : 0)) yes = Math.max(yes, lvl);
     });
     return yes;
   }
   /** the moved parked cars as box obstacles (only they can stand in a lane: the lanes are built clear of the slots) */
   addParkedObstacles(fx, fz) {
     for (const c of this.pk.moved) {
-      if (c.hidden || (c.x - fx) ** 2 + (c.z - fz) ** 2 > (this.params.radius + 40) ** 2) continue;
+      if (c.hidden || (c.x - fx) ** 2 + (c.z - fz) ** 2 > 430 * 430) continue;          // (the fleet fades out at 380-420 m)
       const [w, l] = this.parkWL(c);
       const k = this.addBoxObstacle(c.x, c.z, c.heading, w / 2, l / 2);
       if (k != null) { this.obs.park[k] = 1; this.pk.car[k] = c; }
@@ -758,7 +765,7 @@ export class TrafficSim {
     this.stats.yielding = 0;
     // (trafpark: a tile came in or went: routes chosen before it were planned on the old tiles' buffer copies, never
     // fitted round the new tile's parked cars: from the next path on they take the new tile's own lanes (twins))
-    if (!TP_OLD && this.parked) { this.parkedGrid(); this.addParkedObstacles(ctx.fx, ctx.fz); }
+    if (!TP_OLD && this.parked) { this.pk.fx = ctx.fx; this.pk.fz = ctx.fz; this.parkedGrid(); this.addParkedObstacles(ctx.fx, ctx.fz); }
     this.projectObstacles();
     for (let i = 0; i < this.cap; i++) {
       if (!this.alive[i]) continue;
