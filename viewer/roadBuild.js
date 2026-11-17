@@ -111,11 +111,15 @@ export function buildRoadData(o) {
   // junction mouth to ~0) its strips folded over themselves; each inner edge is cut at its own crossing (the trimmed
   // offset curve), everything else bit for bit as built (viewer/streets/roadBends.js, docs/roads/BENDS.md).
   // o.roadBend false (?roadbend=old): as built (then viewer/surfaces.js drops the minority-oriented folds, as before)
-  const bend = o.roadBend !== false ? trimBendFolds(net, built.asphalt) : null;
-  if (bend) built.asphalt = bend.part;
+  // (all three parts: the engine's sidewalks / verges are drawn where UrbIS maps nothing, viewer/surfaces.js)
+  let bend = null;
+  if (o.roadBend !== false) {
+    bend = {};
+    for (const name of ["asphalt", "concrete", "grass"]) { const r = trimBendFolds(net, built[name]); built[name] = r.part; bend[name] = r.stats; }
+  }
   lap("road bends");
   // (o.engineOnly: the engine stage only, for tools/audit/roadBends.mjs)
-  if (o.engineOnly) return { net, built, prep, roadBend: bend?.stats ?? null, times };
+  if (o.engineOnly) return { net, built, prep, roadBend: bend, times };
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
   let priority = null;
   if (v2) {
@@ -178,7 +182,7 @@ export function buildRoadData(o) {
     if (textPart) { parts.roadtext = textPart; triangles += textPart.index.length / 3; }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend?.stats ?? null, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }

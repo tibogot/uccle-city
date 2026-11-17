@@ -32,6 +32,13 @@ by their uv (station, lateral) AND their position (piece phases collide); a road
 (same piece, same station; never a junction pad's corner at the same spot). Triangles left with no plan area, or a mm
 sliver still facing backwards, are dropped. Everything else keeps its Float32 values bit for bit.
 
+Browser turn: the engine's sidewalk / verge strips (concrete, grass parts) ARE drawn where UrbIS maps nothing
+(viewer/surfaces.js keeps them for unmapped roads), and they folded the same way: the visible "broken bend" on those
+roads was a sidewalk slab or kerb wedge lying across the roadway. The trim now runs on all three parts (no aPiece in
+the concrete / grass parts: roads found by their box; a kerb / skirt wall follows its moved edge at the very same
+station within 15 cm). Audit: sidewalks / verges folded 5,519 (420.4 m2) -> 0, overlap 361.1 -> 6.1 m2, narrow
+4,386 -> 25.
+
 Cost: 13-18 ms per tile in the worker's road stage (1.8 s over all 120 tiles in node). viewer/surfaces.js `dropFolds`
 stays as a safety net; on I6 / J4 / D7 it now drops 0 triangles (was 127 / 231 / 106).
 
@@ -107,9 +114,37 @@ over the measured base):
 
 ## Not covered
 
-- Engine sidewalk / verge strips (concrete, grass parts) fold the same way but are drawn only on tiles without
-  surfaces.json (none today); the trim is asphalt only.
 - The lane graph (traffic paths) at these corners is untouched.
 - "Road widths too narrow in places": at bends it was this cause (the inner edge lying over the road, 5,352 -> 0
   vertices); elsewhere the drawn width is the measured UrbIS street or the width fit (fitRoadWidths), a different cause,
   not taken here.
+
+## Browser turn (2026-11-17): what the screens show
+
+Quick boots (`?quick=1&at=..&radius=150&time=midday&xmas=0&still=1`), each place default vs `?roadbend=old`, a 14 m
+oblique and a 2 m grazing camera; pixel diffs first, every changed view looked at. Crops (old | default) in docs/roads/.
+
+| place | result | crop |
+|---|---|---|
+| B7 Brouwerijstraat (-2265, 1296) | FIXED: two sidewalk strips crossing the zebra / roadway gone, the island's inner corner sharp. The junction's other crossing sidewalk bands (node pieces) stay: a different, pre-existing junction defect | bends-b7-brouwerijstraat-top.jpg |
+| B7 unnamed r785989897 (-2431, 1068) | FIXED: a kerbed sidewalk slab across the road (grazing view: a 13 cm wall in the lane) gone | bends-b7-r785989897-top.jpg, -low.jpg |
+| J4 unnamed r219444246 (1595, -50) | FIXED: sidewalk wedge sticking into the road at the island corner gone, no hole | bends-j4-r219444246-top.jpg |
+| K6 unnamed r509181429 (2291, 940) | FIXED: folded sidewalk fan over the roadway gone, inner corner an L, no hole | bends-k6-r509181429-top.jpg |
+| D2 unnamed r335899391 (-1323, -1179) | FIXED: sidewalk piece lying over the zebra gone | bends-d2-r335899391-top.jpg |
+| D7 Rue du Bourdon pad corner (-1342, 1293) | no visible change, no gap (measured base) | bends-d7-bourdon-padcorner-top.jpg |
+| E3 Av. Brugmann, G6 Rue Basse pad corners | no visible change, no gap | - |
+| C7, F6, D4, D1, F3, D2 Roosendael, G4, B4, J5 x2, D5, H2, C3 (mapped / named) | no visible change (the measured base and the old dropFolds hid the asphalt folds) | - |
+| normal bends (Place Saint-Job I6, Saint-Job slope) | no change (and bit-identical by the audit) | - |
+
+STILL VISIBLE (same cause, outer side, NOT fixed here): on the OUTER side of every R ~ 0 corner the engine's rows fan
+round one point, so the strip's (station, lateral) uv collapses there: the asphalt / setts texture (sampled in (t, s),
+viewer/roadPaint.js texturedRoad) draws concentric rings and the edge line curls (D1 Av. Pénélope, D4 Av. de la
+Princesse Paola, Keyenbempt setts, B7, K6): bends-d1-penelope-outer-fan.jpg, bends-d4-paola-outer-fan-low.jpg. Fix
+options for a next job: sample plain asphalt in world space (isotropic; a look change on every road, tour + owner),
+or give the fan's vertices an arc-length u with a blend back over a few metres; or avoid R ~ 0 at the source (an OSM
+vertex inside the junction lead merged into the road end, before the engine).
+
+HEAP line: 5 boots (`?gamemenu=0&orbitcam2=old`, default, `?gamemenu=0&tilecache=0`, `?game=police` + gamePerf police
+45 s, `?game=falcon`): 0 console errors, tripCounts {}, queueSkips flush 0 / 10 / 0 / 0 / 0. Tour `curvedroads` vs
+uccle-tour/.tour/foundation: 21 of 22 ok, traffic-alsemberg flagged by a moving car only (its documented noise source,
+no road change in the view).

@@ -27,22 +27,29 @@ import { hashPhase } from "../roadData.js";
 
 const MEMBER_TOL = 0.05;     // m: a vertex is a strip vertex of road rr when it sits within this of C(u) + N(u) v
 const SEARCH = 400;          // samples searched each way from a fold run for the crossing
+const WALL_NEAR = 0.15;     // m: a wall vertex follows a moved strip vertex this near at its station (kerb bevel 2-5 cm)
 const END_EXT = 3;           // the straight extension past each road end: this many times the offset (>= 2 m)
 
 /** Each vertex's road (index into net.roads) when it is one of that road's swept strip vertices (uv = station,
- *  lateral), else -1. Phases collide (100,000 buckets), so membership is checked on the position too. */
+ *  lateral), else -1. Candidates: the roads of the vertex's aPiece phase (asphalt; phases collide, 100,000 buckets)
+ *  or, in a part with no phase (the engine's sidewalks / verges), the roads whose box holds it; membership is always
+ *  checked on the position too. */
 export function roadMembers(net, part) {
   const n = part.position.length / 3, P = part.position, U = part.uv, A = part.attributes?.aPiece?.array;
   const road = new Int32Array(n).fill(-1);
-  if (!A || !U) return road;
-  const byKey = new Map();
+  if (!U) return road;
+  const byKey = new Map(), cells = new Map(), C = 32;
   net.roads.forEach((rr, ri) => {
     if (!rr.smp || !rr.al || rr.smp.s.length < 2) return;
-    const k = Math.round(hashPhase(rr.id) * 100);
-    (byKey.get(k) || byKey.set(k, []).get(k)).push(ri);
+    if (A) { const k = Math.round(hashPhase(rr.id) * 100); (byKey.get(k) || byKey.set(k, []).get(k)).push(ri); return; }
+    const S = rr.smp, r = Math.max(...(rr.halfW || [0])) + 3;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let i = 0; i < S.s.length; i++) { x0 = Math.min(x0, S.x[i]); x1 = Math.max(x1, S.x[i]); z0 = Math.min(z0, S.z[i]); z1 = Math.max(z1, S.z[i]); }
+    for (let i = Math.floor((x0 - r) / C); i <= Math.floor((x1 + r) / C); i++)
+      for (let j = Math.floor((z0 - r) / C); j <= Math.floor((z1 + r) / C); j++) { const k = i * 65536 + j; (cells.get(k) || cells.set(k, []).get(k)).push(ri); }
   });
   for (let v = 0; v < n; v++) {
-    const c = byKey.get(Math.round(A[v * 2] * 100));
+    const c = A ? byKey.get(Math.round(A[v * 2] * 100)) : cells.get(Math.floor(P[v * 3] / C) * 65536 + Math.floor(P[v * 3 + 2] / C));
     if (!c) continue;
     const s = U[v * 2], t = U[v * 2 + 1];
     for (const ri of c) {
@@ -129,7 +136,7 @@ export function trimIntervals(S, t) {
 }
 
 /**
- * The engine asphalt part with every swallowtail trimmed (see the header). Returns a new part (same layout, the
+ * An engine part (asphalt, concrete, grass) with every swallowtail trimmed (see the header). Returns a new part (same layout, the
  * attributes shared, position / index new) and stats. Vertices outside the trimmed intervals keep their values bit
  * for bit; triangles left with no area are dropped.
  */
@@ -150,10 +157,12 @@ export function trimBendFolds(net, part) {
   const pos = new Float32Array(P);
   const moved = new Uint8Array(n);
   const stats = { roads: 0, intervals: 0, moved: 0, unresolved: 0, dropped: 0, wallsMoved: 0, ms: 0 };
-  // exact old (x, z) of a moved vertex -> new (x, z): its road's skirt wall follows (a wall vertex: same piece, same
-  // station; never a junction pad's corner at the same spot)
-  const oldKey = new Map();
-  const A = part.attributes.aPiece.array;
+  // the old (x, z) of every moved vertex, its station and its move: the road's walls follow it (the skirt / kerb faces:
+  // a vertex at the same station within WALL_NEAR of it, the kerb's bevel inset; same piece where there are pieces,
+  // never a junction pad's corner at the same spot: a pad's uv is world x / z)
+  const A = part.attributes?.aPiece?.array ?? null;
+  const near = new Map();
+  const nk = (x, z) => Math.floor(x / WALL_NEAR) * 1048576 + Math.floor(z / WALL_NEAR);
   for (const [ri, m] of tOf) {
     const S = net.roads[ri].smp;
     let touched = false;
@@ -168,7 +177,8 @@ export function trimBendFolds(net, part) {
         for (const v of group) y += P[v * 3 + 1];
         y /= group.length;
         for (const v of group) {
-          oldKey.set(`${P[v * 3]},${P[v * 3 + 2]}`, [iv.x, iv.z, Math.round(A[v * 2] * 100), U[v * 2]]);
+          const k = nk(P[v * 3], P[v * 3 + 2]);
+          (near.get(k) || near.set(k, []).get(k)).push([P[v * 3], P[v * 3 + 2], U[v * 2], A ? Math.round(A[v * 2] * 100) : 0, iv.x - P[v * 3], iv.z - P[v * 3 + 2]]);
           pos[v * 3] = iv.x; pos[v * 3 + 1] = y; pos[v * 3 + 2] = iv.z;
           moved[v] = 1;
         }
@@ -180,9 +190,15 @@ export function trimBendFolds(net, part) {
   if (!stats.moved) { stats.ms = Math.round((globalThis.performance ?? Date).now() - t0); return { part, stats }; }
   for (let v = 0; v < n; v++) {
     if (road[v] >= 0) continue;
-    const to = oldKey.get(`${P[v * 3]},${P[v * 3 + 2]}`);
-    if (!to || Math.round(A[v * 2] * 100) !== to[2] || Math.abs(U[v * 2] - to[3]) > 1e-3) continue;
-    pos[v * 3] = to[0]; pos[v * 3 + 2] = to[1]; moved[v] = 1; stats.wallsMoved++;
+    const x = P[v * 3], z = P[v * 3 + 2], i0 = Math.floor(x / WALL_NEAR), j0 = Math.floor(z / WALL_NEAR);
+    let best = null, bd = WALL_NEAR * WALL_NEAR;
+    for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (const q of near.get(i * 1048576 + j) || []) {
+      if (U[v * 2] !== q[2] || (A && Math.round(A[v * 2] * 100) !== q[3])) continue;     // (the very same station value: a junction's walls run on their own lengths)
+      const d = (q[0] - x) ** 2 + (q[1] - z) ** 2;
+      if (d <= bd) { bd = d; best = q; }
+    }
+    if (!best) continue;
+    pos[v * 3] = x + best[4]; pos[v * 3 + 2] = z + best[5]; moved[v] = 1; stats.wallsMoved++;
   }
   const I = part.index, keep = [];
   for (let k = 0; k < I.length; k += 3) {

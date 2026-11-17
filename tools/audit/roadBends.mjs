@@ -13,7 +13,8 @@
 //   holes    0.5 m cells with a carriageway sample point (every centre sample, 0.5 m across between the kerbs) no
 //            engine asphalt triangle covers; "exposed" when no measured UrbIS surface lies there either (elsewhere the
 //            measured base is drawn under the engine layer: only its lane paint is missing, "paint" in the places list)
-// and: every vertex the fix changed lies within 15 m of a folding sample (straight roads and the rest bit-identical),
+// The engine's sidewalk / verge parts (concrete, grass: drawn where UrbIS maps nothing) get the same checks but holes.
+// and: every vertex the fix changed lies within max(15 m, 4 x its road's widest offset) of a folding sample (straight roads and the rest bit-identical),
 // the kept triangles are the original ones in order, and the default build path (o.roadBend on) gives the same mesh.
 // Gate: folded after 0, spike 0, gap 0, exposed holes after <= before per tile, 0 vertices changed away from bends.
 import { isMainThread, Worker, parentPort, workerData } from "node:worker_threads";
@@ -23,7 +24,7 @@ import os from "node:os";
 
 const STEP = 0.25, NARROW = 0.10, SPIKE = 0.10, NEAR_BEND = 15;
 
-function defects(net, part, bounds, roadMembers, prep) {
+function defects(net, part, bounds, roadMembers, prep, holes = true) {
   const P = part.position, U = part.uv, I = part.index;
   const inTile = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
   const road = roadMembers(net, part);
@@ -85,6 +86,7 @@ function defects(net, part, bounds, roadMembers, prep) {
     if (d > Math.abs(t) + SPIKE) { R.spike++; R.events.push({ ri, x, z, kind: "spike", m: d - Math.abs(t) }); }
   }
   // ---- holes: carriageway samples no asphalt triangle covers
+  if (!holes) return R;
   const G = 2, grid = new Map();
   for (let k = 0; k < I.length; k += 3) {
     const a = I[k], b = I[k + 1], c = I[k + 2];
@@ -135,6 +137,8 @@ function defects(net, part, bounds, roadMembers, prep) {
 /** the vertices / triangles the fix changed, against the folding samples of their roads */
 function identity(net, before, after, roadMembers) {
   const P0 = before.position, P1 = after.position, road = roadMembers(net, before);
+  const tMax = new Map();          // each road's widest lateral offset in this part (its folding samples: |k| t > 1)
+  for (let v = 0; v < road.length; v++) if (road[v] >= 0) tMax.set(road[v], Math.max(tMax.get(road[v]) ?? 0, Math.abs(before.uv[v * 2 + 1])));
   let changed = 0, farChanged = 0, straightChanged = 0;
   const bendPts = new Map();
   for (let v = 0; v < road.length; v++) {
@@ -150,14 +154,16 @@ function identity(net, before, after, roadMembers) {
       let pts = bendPts.get(ri);
       if (!pts) {
         pts = [];
-        const S = rr.smp, tmax = Math.max(...rr.halfW, 0) + 2;
+        const S = rr.smp, tmax = (tMax.get(ri) ?? Math.max(...rr.halfW, 0)) + 0.5;
         for (let i = 0; i < S.s.length; i++) if (Math.abs(S.k[i]) * tmax > 1) pts.push([S.x[i], S.z[i]]);
+        // (a corner's trimmed stretch reaches |t| tan(deflection / 2) along each leg: 4 |t| covers 150 degrees)
+        pts.reach = Math.max(NEAR_BEND, 4 * tmax);
         bendPts.set(ri, pts);
       }
-      for (const [bx, bz] of pts) near = Math.min(near, Math.hypot(bx - x, bz - z));
+      for (const [bx, bz] of pts) near = Math.min(near, Math.hypot(bx - x, bz - z) - pts.reach);
     }
     if (near === Infinity) straightChanged++;
-    else if (near > NEAR_BEND) farChanged++;
+    else if (near > 0) { farChanged++; if (process.env.BENDS_DEBUG && farChanged < 6) console.log("far", road[v] >= 0 ? net.roads[road[v]].id : "wall", x.toFixed(1), z.toFixed(1), "t", before.uv[v * 2 + 1].toFixed(2), "near", near.toFixed(1), "moved", Math.hypot(P1[v * 3] - x, P1[v * 3 + 2] - z).toFixed(2)); }
   }
   // kept triangles: the original ones, in order
   const I0 = before.index, I1 = after.index;
@@ -181,11 +187,24 @@ async function runTile(T, integrate) {
   const fx = trimBendFolds(net, built.asphalt);
   const after = defects(net, fx.part, L.bounds, roadMembers, L.rd.prep);
   const id = identity(net, built.asphalt, fx.part, roadMembers);
+  // the engine's sidewalks / verges (drawn where UrbIS maps nothing): the same trim, the same checks but holes
+  const side = { before: null, after: null }, sideFix = {}, sideParts = {};
+  for (const name of ["concrete", "grass"]) {
+    const f = trimBendFolds(net, built[name]);
+    sideParts[name] = f.part; sideFix[name] = f.stats;
+    const b = defects(net, built[name], L.bounds, roadMembers, null, false), a = defects(net, f.part, L.bounds, roadMembers, null, false);
+    for (const [k, r] of [["before", b], ["after", a]]) {
+      side[k] ??= { folded: 0, foldArea: 0, overlap: 0, narrow: 0, spike: 0, gap: 0 };
+      for (const m of Object.keys(side[k])) side[k][m] += r[m];
+    }
+    const i2 = identity(net, built[name], f.part, roadMembers);
+    id.changed += i2.changed; id.farChanged += i2.farChanged; id.straightChanged += i2.straightChanged; id.order &&= i2.order;
+  }
   let integration = null;
-  if (integrate) {   // the default build path (o.roadBend on) gives the same mesh
+  if (integrate) {   // the default build path (o.roadBend on) gives the same meshes
     const L2 = loadTile(T, { build: { engineOnly: true } });
-    const a = L2.rd.built.asphalt, b = fx.part;
-    integration = a.position.length === b.position.length && a.index.length === b.index.length && a.position.every((v, i) => v === b.position[i]) && a.index.every((v, i) => v === b.index[i]);
+    const same = (a, b) => a.position.length === b.position.length && a.index.length === b.index.length && a.position.every((v, i) => v === b.position[i]) && a.index.every((v, i) => v === b.index[i]);
+    integration = same(L2.rd.built.asphalt, fx.part) && same(L2.rd.built.concrete, sideParts.concrete) && same(L2.rd.built.grass, sideParts.grass);
   }
   const info = (ri) => {
     const rr = net.roads[ri];
@@ -214,7 +233,7 @@ async function runTile(T, integrate) {
   const isHole = (e) => e.kind === "hole" || e.kind === "paint";
   const hb = new Set(before.events.filter(isHole).map((e) => e.hk));
   const newHoles = after.events.filter((e) => isHole(e) && !hb.has(e.hk)).map((e) => ({ road: net.roads[e.ri].id, exposed: e.kind === "hole", x: e.x, z: e.z, s: +e.s.toFixed(3), t: +e.t.toFixed(2) }));
-  return { T, before: strip(before), after: strip(after), newHoles, fix: fx.stats, id, integration, places: out, ms: Math.round(performance.now() - t0), engineMs: Math.round(tb - t0) };
+  return { T, before: strip(before), after: strip(after), side, sideFix, newHoles, fix: fx.stats, id, integration, places: out, ms: Math.round(performance.now() - t0), engineMs: Math.round(tb - t0) };
 }
 
 if (!isMainThread) {
@@ -267,6 +286,8 @@ if (!isMainThread) {
     }
   }
   const after = places.filter((p) => Object.keys(p.after).some((k) => k !== "hole" && k !== "paint"));
+  const sideSum = (w) => results.reduce((s, r) => { for (const k of Object.keys(s)) s[k] += r.side[w][k]; return s; }, { folded: 0, foldArea: 0, overlap: 0, narrow: 0, spike: 0, gap: 0 });
+  const SB = sideSum("before"), SA = sideSum("after");
   const fixTot = results.reduce((s, r) => ({ moved: s.moved + r.fix.moved, roads: s.roads + r.fix.roads, unresolved: s.unresolved + r.fix.unresolved, dropped: s.dropped + r.fix.dropped, ms: s.ms + r.fix.ms }), { moved: 0, roads: 0, unresolved: 0, dropped: 0, ms: 0 });
   const idTot = results.reduce((s, r) => ({ changed: s.changed + r.id.changed, far: s.far + r.id.farChanged, straight: s.straight + r.id.straightChanged, order: s.order && r.id.order }), { changed: 0, far: 0, straight: 0, order: true });
   const holesUp = results.filter((r) => r.after.exposed > r.before.exposed);
@@ -274,13 +295,17 @@ if (!isMainThread) {
   console.log(`\n${results.length} tiles, ${((Date.now() - t0) / 1000).toFixed(1)} s (${threads} threads)`);
   console.log(`TOTAL before: folded ${B.folded} (${B.foldArea.toFixed(1)} m2), overlap ${B.overlap.toFixed(1)} m2, narrow ${B.narrow}, spike ${B.spike}, gap ${B.gap}, holes ${B.holes} (${B.exposed} with no measured surface either)`);
   console.log(`TOTAL after:  folded ${A.folded} (${A.foldArea.toFixed(1)} m2), overlap ${A.overlap.toFixed(1)} m2, narrow ${A.narrow}, spike ${A.spike}, gap ${A.gap}, holes ${A.holes} (${A.exposed} with no measured surface either)`);
+  console.log(`sidewalks / verges before: folded ${SB.folded} (${SB.foldArea.toFixed(1)} m2), overlap ${SB.overlap.toFixed(1)} m2, narrow ${SB.narrow}, spike ${SB.spike}, gap ${SB.gap}`);
+  console.log(`sidewalks / verges after:  folded ${SA.folded} (${SA.foldArea.toFixed(1)} m2), overlap ${SA.overlap.toFixed(1)} m2, narrow ${SA.narrow}, spike ${SA.spike}, gap ${SA.gap}`);
   console.log(`fix: ${fixTot.roads} road(s) trimmed, ${fixTot.moved} vertices moved, ${fixTot.dropped} triangles dropped, ${fixTot.unresolved} fold run(s) unresolved, ${fixTot.ms} ms in all`);
-  console.log(`identity: ${idTot.changed} vertices changed, ${idTot.far} more than ${NEAR_BEND} m from a folding bend, ${idTot.straight} on roads with no bend; kept triangles in order: ${idTot.order}; default path = audit fix (${integ?.T}): ${integ?.integration}`);
+  console.log(`identity: ${idTot.changed} vertices changed, ${idTot.far} farther from a folding bend than max(${NEAR_BEND} m, 4 x its offset), ${idTot.straight} on roads with no bend; kept triangles in order: ${idTot.order}; default path = audit fix (${integ?.T}): ${integ?.integration}`);
   if (after.length && !quiet) console.log(`places still flagged after: ${after.length}` + after.slice(0, 8).map((p) => `\n  ${p.T} ${p.x}, ${p.z} ${p.name} ${JSON.stringify(p.after)}`).join(""));
   if (arg("--json", null)) writeFileSync(arg("--json"), JSON.stringify({ results, places }, null, 1));
   const fails = [];
   if (errors) fails.push(`${errors} tile(s) failed`);
   if (A.folded) fails.push(`${A.folded} folded triangles after the fix`);
+  if (SA.folded) fails.push(`${SA.folded} folded sidewalk / verge triangles after the fix`);
+  if (SA.spike || SA.gap) fails.push(`sidewalks / verges: ${SA.spike} spikes, ${SA.gap} gaps`);
   if (A.spike) fails.push(`${A.spike} spikes`);
   if (A.gap) fails.push(`${A.gap} gaps`);
   if (holesUp.length) fails.push(`exposed holes up on ${holesUp.map((r) => `${r.T} ${r.before.exposed}->${r.after.exposed}`).join(" ")}`);

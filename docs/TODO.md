@@ -22,9 +22,10 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 **Owner playtest 2026-11-16 / notes 2026-11-17 (details in the sections below)**
 - [ ] Police car rear: lines shimmer while moving; rear looks crude in the chase view (8c, 8e). Chase camera re-check (8d).
-- [ ] Road widths too narrow in places; some curved roads broken at sharp bends. (Bends: claude/curvedroads offline turn done,
-  docs/roads/BENDS.md: engine strips trimmed at their crossing, 4,203 folded triangles -> 0, rule 24; browser
-  check of the worst 20 places + bundle rebuild in main pending. Widths elsewhere: a different cause, open.)
+- [ ] Road widths too narrow in places; some curved roads broken at sharp bends. (Bends: claude/curvedroads, browser turn
+  done, docs/roads/BENDS.md: engine strips + sidewalks trimmed at their crossing, folded 4,203 + 5,519 -> 0, sidewalk slabs
+  across unmapped roads gone; rule 24. LEFT: the outer-side fan at R ~ 0 corners draws texture rings / a curled edge line
+  (D1 Pénélope, D4 Paola): a next job. Widths elsewhere: a different cause, open.)
 - [ ] Falcon controls feel hard: ASK THE OWNER what is hard. Police game: owner to replay car control round 3.
 - [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?).
 - [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing).
