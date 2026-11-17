@@ -60,16 +60,18 @@ export function createSkyExtras(sky, renderer) {
   let envVersion = -1;
 
   /** After every sky.update(): the uniforms, the in-place light tweaks, the environment's tint. */
+  // a param that is not a finite number (a bad URL value, a cleared field) reads as its default: never a NaN uniform
+  const num = (k, d) => (Number.isFinite(P[k]) ? P[k] : d);
   function afterUpdate() {
     const L = sky.light();
-    A.uniforms.sp1.value.x = Math.max(0, P.sunDiscBright);
-    const t = THREE.MathUtils.clamp(P.skyTint, -1, 1);
+    A.uniforms.sp1.value.x = Math.max(0, num("sunDiscBright", 1));
+    const t = THREE.MathUtils.clamp(num("skyTint", 0), -1, 1);
     const r = 1 + 0.3 * t, g = 1 + 0.05 * t, b = 1 - 0.35 * t, l = 0.2126 * r + 0.7152 * g + 0.0722 * b;   // Rec.709 sums to 1
     uTint.value.set(r / l, g / l, b / l);
     const fade = THREE.MathUtils.smoothstep(L.sunDir?.y ?? 1, -0.03, 0.02);
-    uHalo.value.set(Math.max(0, P.sunHalo) * 2 * fade, 180 / (Math.PI * Math.max(0.05, P.sunHaloDeg)));
-    uMoonX.value = Math.max(0, P.moonBright) - 1;
-    const ss = Math.max(0, P.sunScale);
+    uHalo.value.set(Math.max(0, num("sunHalo", 0)) * 2 * fade, 180 / (Math.PI * Math.max(0.05, num("sunHaloDeg", 4))));
+    uMoonX.value = Math.max(0, num("moonBright", 1)) - 1;
+    const ss = Math.max(0, num("sunScale", 1));
     if (ss !== 1) for (let i = 0; i < 3; i++) L.sunColor[i] *= ss;
     const T = uTint.value;
     if (L.skyIrradiance) { L.skyIrradiance[0] *= T.x; L.skyIrradiance[1] *= T.y; L.skyIrradiance[2] *= T.z; }   // a new array every update

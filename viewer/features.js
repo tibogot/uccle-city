@@ -267,6 +267,7 @@ export const FEATURES = [
   old("treehandover", "ab", "far trees drop at the hand-over", "A far tile's tree impostors drop to the 400 m hand-over as soon as its full tile starts building (the tile stood bare for the build + the fade); default: they stay until the far tile is gone (viewer/treeKitCity.js, docs/FARCITY.md).", { sub: "Places & assets" }),
   old("storeys", "ab", "fitted storeys", "Façade storeys before: fixed 3.4 / 3.0 m, a storey dropped when it missed the eaves (docs/STOREYS.md).", { sub: "Places & assets" }),
   old("sky", "ab", "old sky", "The sky before Firmament.", { sub: "Look" }),
+  old("skyctl", "ab", "no sky extras", "The dev panel's extra sky controls (viewer/skyExtras.js: sun disc brightness, sunlight strength, sun glow, sky tint, moon brightness) not built: Firmament's dome and environment as before (A/B for their cost; the defaults draw the same picture).", { sub: "Look" }),
   old("skyground", "ab", "sky ground albedo", "Firmament's ground albedo before.", { sub: "Look" }),
   // polish round 1 (docs/POLISH.md): each look change has its own A/B; ?polish1=old = all of them at once
   old("polish1", "ab", "polish 1: all", "Every look change of the polish batch 1 as before (docs/POLISH.md).", { sub: "Look" }),

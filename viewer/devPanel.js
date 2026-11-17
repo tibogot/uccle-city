@@ -355,7 +355,7 @@ export function createDevPanel(ctx) {
     };
     for (const [url, k] of SKY_URL) {
       const [lo, hi, st, label, hint] = SKY_CTL[k];
-      const c = fS.add(S, k, lo, hi, st).name(label).onChange((v) => { SP[k] = v; setParam(url, +v.toFixed(3), +({ ...FIRMAMENT_DEFAULTS, ...SKY_X_DEFAULTS })[k].toFixed(3)); });
+      const c = fS.add(S, k, lo, hi, st).name(label).onChange((v) => { SP[k] = v; setParam(url, Number.isFinite(v) ? +v.toFixed(3) : null, +({ ...FIRMAMENT_DEFAULTS, ...SKY_X_DEFAULTS })[k].toFixed(3)); });
       if (hint) c.hint(hint);
     }
   }

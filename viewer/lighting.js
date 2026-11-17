@@ -351,7 +351,8 @@ export class Lighting {
     await this.sky.ready;
     // skyctl: the sky look controls Firmament has no param for (sun disc brightness, sun glow, tint, moon brightness,
     // sunlight strength), composed round the built sky before its first draw (viewer/skyExtras.js)
-    this.skyX = createSkyExtras(this.sky, this.renderer);
+    // ?skyctl=old: none of it (the dome and the environment exactly as Firmament draws them; the A/B for the extras' cost)
+    if (!/[?&]skyctl=old/.test(location.search)) this.skyX = createSkyExtras(this.sky, this.renderer);
     this.scene.add(this.sky.mesh);
     // the key light x the cumulus shadow over the ground (labScene.js)
     this.sun.colorNode = vec3(this.uKey).mul(this.sky.clouds.shadowAt(positionWorld.xz));
@@ -361,7 +362,7 @@ export class Lighting {
     this.sky.params.cloudType = this.firm.cloudType;
     if (STILL) this.sky.params.windSpeed = 0;          // ?still=1: the clouds stand still (docs/TOUR.md)
     this.sky.update(0, { sunDir: this.firmSunDir() });
-    this.skyX.afterUpdate();
+    this.skyX?.afterUpdate();
     this.syncFirmament();
   }
 
