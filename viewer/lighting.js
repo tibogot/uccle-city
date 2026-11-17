@@ -1,10 +1,10 @@
 // Sky, image-based lighting, sun with cascaded shadows, aerial fog and time-of-day presets.
 //
-// Adapted from mrdoob/slop-newyork js/lighting.js (MIT, © 2026 Mr.doob): the Preetham SkyMesh with
+// Adapted from mrdoob/slop-newyork js/lighting.js (MIT, Â© 2026 Mr.doob): the Preetham SkyMesh with
 // clouds baked into a PMREM environment map, the two-cascade SunLight, the canyon-bounce hemisphere
 // light and the sky-matched aerial-perspective fog. Changes for Uccle: sun directions in our axes
 // (+x east, +z south), heights are absolute metres TAW (40-130 m) so the haze layer starts at the
-// valley floor, and the shared uniforms (`env`) feed our own façade and road materials.
+// valley floor, and the shared uniforms (`env`) feed our own faÃ§ade and road materials.
 import * as THREE from "three/webgpu";
 import { shadow, Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select, smoothstep, textureLoad, screenCoordinate, ivec2, int } from "three/tsl";
 import { ShadowNode } from "three/webgpu";
@@ -14,6 +14,7 @@ import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
 import { createFirmamentSky } from "../vendor/firmament/firmamentSky.js";
+import { createSkyExtras } from "./skyExtras.js";
 const SHADOW_FAR = typeof location === "undefined" || new URLSearchParams(location.search).get("shadowfar") !== "old";   // perfgame round 2
 const RAYS_WARM = typeof location === "undefined" || new URLSearchParams(location.search).get("rayswarm") !== "old";   // perfgame
 import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
@@ -31,6 +32,14 @@ export const FIRMAMENT_EXPOSURE = 0.55;
 const BRUSSELS_LAT = 50.8;
 const qp = new URLSearchParams(location.search);
 const DAY = +(qp.get("day") ?? 200);                 // day of the year (200 = mid July: long golden evenings)
+// skyctl: the dev panel's sky look sliders as URL params (?sunbright=2 ...): [URL key, sky param (Firmament's own, or
+// viewer/skyExtras.js's)]. Absent = the defaults (the look as before); the panel mirrors a moved slider into its key (viewer/features.js rows)
+export const SKY_URL = [
+  ["sunbright", "sunDiscBright"], ["sunpower", "sunScale"], ["sunhalo", "sunHalo"], ["sunhalosize", "sunHaloDeg"],
+  ["skytint", "skyTint"], ["moonsize", "moonSizeDeg"], ["moonbright", "moonBright"], ["moonglow", "nightHalo"],
+  ["stars", "nightStars"], ["starsize", "nightStarSize"], ["cloudbright", "cloudAlbedo"], ["cloudshade", "cloudAmbient"], ["clouddark", "baseShadow"],
+];
+const skyUrlParams = () => Object.fromEntries(SKY_URL.filter(([k]) => qp.get(k) != null && isFinite(+qp.get(k))).map(([k, p]) => [p, +qp.get(k)]));
 // ?still=1 (docs/TOUR.md, the visual regression tour): the sky held still, so two runs of the same code give the same
 // picture: no cloud / cirrus drift or evolution (Firmament's windSpeed 0 from the first frame: the drift integrates the
 // boot's length otherwise, a different sky and different cloud shadows each run) and no volumetric fog drift.
@@ -210,7 +219,7 @@ export const PRESETS = {
     turbidity: 4.0, rayleigh: 1.5, mie: 0.004, mieG: 0.8, clouds: 0.25, cloudDensity: 0.25, skyExposure: 0.022, night: 0.86 },
 };
 
-/** Uniforms shared with our materials (façades, roads). */
+/** Uniforms shared with our materials (faÃ§ades, roads). */
 export const env = {
   uSunColor: uniform(new THREE.Color(0xffc890)),
   uSunDir: uniform(new THREE.Vector3(0, 1, 0)),
@@ -338,8 +347,12 @@ export class Lighting {
       // the horizon the sky paints a floor in groundAlbedo (its default #54493a, brown), fading into the haze. Uccle's
       // own mean colour from above (all 120 orthophotos averaged in linear light: roofs, roads, gardens, trees) so the
       // city's edge melts into a landscape of its own colour; the sky's ground bounce takes it too. ?skyground=old: before
-      ...(/[?&]skyground=old/.test(location.search) ? {} : { groundAlbedo: "#686c67" }) } });
+      ...(/[?&]skyground=old/.test(location.search) ? {} : { groundAlbedo: "#686c67" }), ...skyUrlParams() } });
     await this.sky.ready;
+    // skyctl: the sky look controls Firmament has no param for (sun disc brightness, sun glow, tint, moon brightness,
+    // sunlight strength), composed round the built sky before its first draw (viewer/skyExtras.js)
+    // ?skyctl=old: none of it (the dome and the environment exactly as Firmament draws them; the A/B for the extras' cost)
+    if (!/[?&]skyctl=old/.test(location.search)) this.skyX = createSkyExtras(this.sky, this.renderer);
     this.scene.add(this.sky.mesh);
     // the key light x the cumulus shadow over the ground (labScene.js)
     this.sun.colorNode = vec3(this.uKey).mul(this.sky.clouds.shadowAt(positionWorld.xz));
@@ -349,6 +362,7 @@ export class Lighting {
     this.sky.params.cloudType = this.firm.cloudType;
     if (STILL) this.sky.params.windSpeed = 0;          // ?still=1: the clouds stand still (docs/TOUR.md)
     this.sky.update(0, { sunDir: this.firmSunDir() });
+    this.skyX?.afterUpdate();
     this.syncFirmament();
   }
 
@@ -506,6 +520,7 @@ export class Lighting {
       this.sky.params.coverage = this.firm.coverage;
       this.sky.params.cloudType = this.firm.cloudType;
       this.sky.update(dt, { sunDir: this.firmSunDir() });
+      this.skyX?.afterUpdate();
       this.syncFirmament();
     } else if (!this.firmament) {
       this.keyColor.copy(this.sun.color).multiplyScalar(this.sun.intensity);
