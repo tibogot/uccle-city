@@ -71,7 +71,7 @@ field.update(new THREE.Vector3(0, 1.7, 0));
 const R = kit.pieces.swag.range;
 const expect = [0, 1, 2].map((k) => { let n = 0; for (let i = 0; i < 50; i++) { const d = Math.hypot(i * 4, 1.7); const lo = k ? R[k - 1] : 0; if (!(d >= R[k] + 5 || (k && d < lo * 0.88 - 5))) n++; } return n; });
 ok(field.stats.drawn.join() === expect.join(), `swags bucketed per level ${field.stats.drawn.join(" / ")} (expected ${expect.join(" / ")}), ${field.stats.draws} draws`);
-const empty = Object.values(field.levels).flatMap((L) => L.flatMap((lv) => lv.meshes)).filter((im) => im.count === 0 && im.visible).length;
+const empty = Object.values(field.levels).flatMap((L) => L.flatMap((lv) => [...lv.solid.meshes, ...lv.fade.meshes])).filter((im) => im.count === 0 && im.visible).length;
 ok(empty === 0, "empty instanced meshes are hidden (no draw)");
 console.log(fails ? `${fails} FAIL` : "all PASS");
 process.exit(fails ? 1 : 0);

@@ -56,7 +56,8 @@ export function loadXmasKit() {
       p.tris = p.lods.map((l) => l.reduce((s, x) => s + x.geometry.index.count / 3, 0));
     }
     const mats = {};
-    const slotMaterial = (slot, { uvs = false, instanced = true } = {}) => (mats[`${slot}|${uvs ? "u" : "-"}|${instanced ? "i" : "s"}`] ??= make(slot, uvs, instanced));
+    // mask: the dithered band (instances near a level switch); without: solid (no discard, early depth kept)
+    const slotMaterial = (slot, { uvs = false, instanced = true, mask = true } = {}) => (mats[`${slot}|${uvs ? "u" : "-"}|${instanced ? "i" : "s"}|${instanced && mask ? "m" : "-"}`] ??= make(slot, uvs, instanced, instanced && mask));
     return { pieces, info, slotMaterial, mats, loadMs: performance.now() - t0, bytes: info.glb_bytes ?? 0 };
   })());
 }
@@ -78,7 +79,7 @@ const level = () => mix(xmasLook.day, xmasLook.night, env.uNight);
 /** a per-element phase in [0, 1): the element's own random (COLOR_0.r) + the instance's id hash */
 const phaseOf = (instanced) => (instanced ? fract(COL().x.add(attribute("xlod", "vec4").z)) : COL().x);
 
-function make(slot, uvs, instanced) {
+function make(slot, uvs, instanced, mask = instanced) {
   const c = COL();
   const ao = mix(float(0.35), float(1), c.z);                  // the baked AO (0.35 floor: AO is not shadow)
   let m;
@@ -168,8 +169,8 @@ function make(slot, uvs, instanced) {
     }
     default: std({ roughness: 0.8 }); m.colorNode = vec3(0.5).mul(ao);
   }
-  if (instanced) m.maskNode = bandMask(attribute("xlod", "vec4"));
-  m.name = `xmas ${slot}${uvs ? "" : " (far)"}${instanced ? "" : " (static)"}`;
+  if (mask) m.maskNode = bandMask(attribute("xlod", "vec4"));
+  m.name = `xmas ${slot}${uvs ? "" : " (far)"}${instanced ? (mask ? " (fade)" : "") : " (static)"}`;
   m.userData.shared = true;
   return m;
 }

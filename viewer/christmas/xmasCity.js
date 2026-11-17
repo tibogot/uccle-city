@@ -44,24 +44,33 @@ export class XmasField {
     this.stats = { instances: 0, drawn: [0, 0, 0], draws: 0, tris: 0 };
     for (const [name, P] of Object.entries(kit.pieces)) {
       this.list[name] = [];
+      // per level TWO sets of meshes: "solid" (no mask: early depth test kept, no discard) for the instances well inside
+      // their band, "fade" (the per-pixel dithered band mask) for those near a switch; the fade set shares the
+      // geometry's buffers (its own band attribute)
       this.levels[name] = P.lods.map((prims, k) => {
         const cap = name === "tree" ? 8 : name === "chalet" ? 32 : 2048;
-        const mat = new THREE.InstancedBufferAttribute(new Float32Array(cap * 16), 16);
-        const band = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4);
-        const sphere = new THREE.Sphere();
-        const meshes = prims.map(({ slot, geometry }) => {
-          geometry.setAttribute("xlod", band);
-          const im = new THREE.InstancedMesh(geometry, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true }), cap);
-          im.instanceMatrix = mat;                      // (static usage: uploaded on needsUpdate, the used range only)
-          im.count = 0; im.visible = false; im.boundingSphere = sphere; im.frustumCulled = true;
-          // (shadows: the big parts only: a bulb, bauble, hook or sign adds a shadow draw for a few texels; the chalets'
-          // garland and the fir's planter are inside other shadows; measured 2026-11-17: 27 -> 6 shadow draws)
-          im.castShadow = !!shadows[name] && SHADOW_SLOTS.has(slot); im.receiveShadow = true;
-          im.name = `xmas ${name} lod${k} ${slot}`; im.userData.slot = slot;
-          this.group.add(im);
-          return im;
-        });
-        return { cap, mat, band, meshes, sphere, n: 0 };
+        const set = (fade) => {
+          const mat = new THREE.InstancedBufferAttribute(new Float32Array(cap * 16), 16);
+          const band = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4);
+          const sphere = new THREE.Sphere();
+          const meshes = prims.map(({ slot, geometry }) => {
+            const g = new THREE.BufferGeometry();
+            for (const [an, at] of Object.entries(geometry.attributes)) if (an !== "xlod") g.setAttribute(an, at);
+            g.setIndex(geometry.index); g.boundingSphere = geometry.boundingSphere; g.userData.shared = true;
+            g.setAttribute("xlod", band);
+            const im = new THREE.InstancedMesh(g, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true, mask: fade }), cap);
+            im.instanceMatrix = mat;                      // (static usage: uploaded on needsUpdate, the used range only)
+            im.count = 0; im.visible = false; im.boundingSphere = sphere; im.frustumCulled = true;
+            // (shadows: the big parts only: a bulb, bauble, hook or sign adds a shadow draw for a few texels; the chalets'
+            // garland and the fir's planter are inside other shadows; measured 2026-11-17: 27 -> 6 shadow draws)
+            im.castShadow = !!shadows[name] && SHADOW_SLOTS.has(slot); im.receiveShadow = true;
+            im.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""}`; im.userData.slot = slot;
+            this.group.add(im);
+            return im;
+          });
+          return { cap, mat, band, meshes, sphere, n: 0, box: null };
+        };
+        return { solid: set(false), fade: set(true) };
       });
     }
   }
@@ -74,8 +83,8 @@ export class XmasField {
     const st = this.stats; st.instances = 0; st.drawn = [0, 0, 0]; st.draws = 0; st.tris = 0;
     for (const [name, list] of Object.entries(this.list)) {
       const R = this.kit.pieces[name].range, L = this.levels[name];
-      const box = L.map(() => [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]);
-      for (const lv of L) lv.n = 0;
+      const sets = L.flatMap((lv) => [lv.solid, lv.fade]);
+      for (const S of sets) { S.n = 0; S.box = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity]; }
       st.instances += list.length;
       for (const it of list) {
         const d = eye.distanceTo(it.p);
@@ -83,26 +92,27 @@ export class XmasField {
           const lo = k ? R[k - 1] : 0, hi = R[k];
           // (5 m of slack: the camera moves up to 4 m between re-buckets; the shader's band decides the pixels)
           if (d >= hi + 5 || (k && d < lo * 0.88 - 5)) continue;
-          const lv = L[k]; if (lv.n >= lv.cap) continue;
-          it.m.toArray(lv.mat.array, lv.n * 16);
-          lv.band.array.set([lo, hi, it.h, it.v ?? 0], lv.n * 4);
-          const b = box[k]; b[0] = Math.min(b[0], it.p.x); b[1] = Math.min(b[1], it.p.y); b[2] = Math.min(b[2], it.p.z); b[3] = Math.max(b[3], it.p.x); b[4] = Math.max(b[4], it.p.y); b[5] = Math.max(b[5], it.p.z);
-          lv.n++; st.drawn[k]++;
+          const solid = d < hi * 0.88 - 5 && (!k || d >= lo + 5);
+          const S = solid ? L[k].solid : L[k].fade; if (S.n >= S.cap) continue;
+          it.m.toArray(S.mat.array, S.n * 16);
+          S.band.array.set([lo, hi, it.h, it.v ?? 0], S.n * 4);
+          const b = S.box; b[0] = Math.min(b[0], it.p.x); b[1] = Math.min(b[1], it.p.y); b[2] = Math.min(b[2], it.p.z); b[3] = Math.max(b[3], it.p.x); b[4] = Math.max(b[4], it.p.y); b[5] = Math.max(b[5], it.p.z);
+          S.n++; st.drawn[k]++;
         }
       }
-      L.forEach((lv, k) => {
-        const b = box[k], rad = name === "tree" ? 8 : 2;
-        if (lv.n) {
-          lv.sphere.center.set((b[0] + b[3]) / 2, (b[1] + b[4]) / 2 + (name === "tree" ? 5 : 0), (b[2] + b[5]) / 2);
-          lv.sphere.radius = Math.hypot(b[3] - b[0], b[4] - b[1], b[5] - b[2]) / 2 + rad;
-          lv.mat.clearUpdateRanges(); lv.mat.addUpdateRange(0, lv.n * 16); lv.mat.needsUpdate = true;
-          lv.band.clearUpdateRanges(); lv.band.addUpdateRange(0, lv.n * 4); lv.band.needsUpdate = true;
+      for (const S of sets) {
+        const b = S.box, rad = name === "tree" ? 8 : name === "chalet" ? 4 : 2;
+        if (S.n) {
+          S.sphere.center.set((b[0] + b[3]) / 2, (b[1] + b[4]) / 2 + (name === "tree" ? 5 : 0), (b[2] + b[5]) / 2);
+          S.sphere.radius = Math.hypot(b[3] - b[0], b[4] - b[1], b[5] - b[2]) / 2 + rad;
+          S.mat.clearUpdateRanges(); S.mat.addUpdateRange(0, S.n * 16); S.mat.needsUpdate = true;
+          S.band.clearUpdateRanges(); S.band.addUpdateRange(0, S.n * 4); S.band.needsUpdate = true;
         }
-        for (const im of lv.meshes) {
-          im.count = lv.n; im.visible = lv.n > 0;        // (an empty instanced mesh still costs a draw per pass)
-          if (lv.n) { st.draws++; st.tris += lv.n * im.geometry.index.count / 3; }
+        for (const im of S.meshes) {
+          im.count = S.n; im.visible = S.n > 0;          // (an empty instanced mesh still costs a draw per pass)
+          if (S.n) { st.draws++; st.tris += S.n * im.geometry.index.count / 3; }
         }
-      });
+      }
     }
   }
 }
@@ -276,9 +286,10 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
 
   // ---- shaders before anything shows (every piece, level and slot once), then the per-frame update
   const tc = performance.now();
-  for (const L of Object.values(field.levels)) for (const lv of L) for (const im of lv.meshes) { im.count = 1; im.visible = true; im.frustumCulled = false; }
+  const allMeshes = Object.values(field.levels).flatMap((L) => L.flatMap((lv) => [...lv.solid.meshes, ...lv.fade.meshes]));
+  for (const im of allMeshes) { im.count = 1; im.visible = true; im.frustumCulled = false; }
   try { let c = compiler?.(); for (let i = 0; !c && i < 40; i++) { await new Promise((r) => setTimeout(r, 250)); c = compiler?.(); } if (c) await c([field.group]); } catch (e) { log(`christmas: shader warm-up skipped (${e.message})`); }
-  for (const L of Object.values(field.levels)) for (const lv of L) for (const im of lv.meshes) { im.count = 0; im.visible = false; im.frustumCulled = true; }
+  for (const im of allMeshes) { im.count = 0; im.visible = false; im.frustumCulled = true; }
   const tComp = performance.now() - tc;
 
   let frame = 0;
