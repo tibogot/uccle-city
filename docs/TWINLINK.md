@@ -26,7 +26,7 @@ two tiles cut the same lane differently:
 Nobody counted it: the failure was noticed in passing (trafpark round 2, "~30 % of the copies") and lived in a Limits
 line. A link rate is a number a gate can hold.
 
-**2. The rule** (docs/QUALITY_RULES.md rule 19). A thing that is built twice (once per tile) is matched by what it IS,
+**2. The rule** (docs/QUALITY_RULES.md rule 20). A thing that is built twice (once per tile) is matched by what it IS,
 its geometry, never by an incidental property of how it was cut; the hand-over between the two copies is continuous;
 the match rate is measured over all tile pairs.
 

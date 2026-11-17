@@ -22,7 +22,8 @@ export const PLACES = [
   { id: "townhall", name: "Town hall", group: "Landmarks", tile: "D3", p: [-1100, 40, -440], t: [-1148, 15, -506] },
   { id: "stpierre", name: "Saint-Pierre church", group: "Landmarks", tile: "E4", p: [-650, 45, -420], t: [-709, 15, -492] },
   { id: "russian", name: "Russian church", group: "Landmarks", tile: "F4", p: [-300, 35, -410], t: [-354, 12, -468] },
-  { id: "police", name: "Police station", group: "Landmarks", tile: "E4", p: [-472, 6, -368], t: [-507, 4, -345] },
+  // from 30 m over Rue Rouge (the tour's police-station view, checked on screen 2026-11-17; p was [-472, 6, -368]: inside a house)
+  { id: "police", name: "Police station", group: "Landmarks", tile: "E4", p: [-470, 30, -380], t: [-510, 4, -342] },
   // the yard (the police game's spawn, viewer/police/policeGame.js YARD: the site frame's u 18, w -6)
   { id: "police-yard", name: "Police station, the yard", group: "Landmarks", tile: "E4", p: [-530, 30, -385], t: [-503, 0, -352] },
   { id: "stalle", name: "Stalle chapel", group: "Landmarks", tile: "D5", p: [-1100, 30, 110], t: [-1150, 6, 56] },

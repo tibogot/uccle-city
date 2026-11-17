@@ -118,6 +118,11 @@ function relodPool(cam) {
     }
   }
 }
+/** every loaded tile's lamp sites ({ x, y, z, yaw } each: the post's foot), for decorations hung on the posts
+ *  (viewer/christmas/xmasCity.js); lampSitesVersion changes when a tile's lamps come or go */
+const SITES = new Map();
+export let lampSitesVersion = 0;
+export const lampSiteSets = () => SITES.values();
 /** (debug) the pool buckets */
 export const lampPoolStats = () => LP?.lods?.map((L) => L.iron.count) ?? null;
 
@@ -219,8 +224,9 @@ export function buildLamps(roads, ground, bounds, { lights: withLights = true, p
   const lamp = sites.map((s) => new THREE.Vector3(s.x - Math.sin(s.yaw) * REACH, s.y + HEADY, s.z - Math.cos(s.yaw) * REACH));
   const key = {};
   if (withLights) HEADS.set(key, lamp);
+  SITES.set(key, sites); lampSitesVersion++;
   const update = (camPos) => { relod?.(camPos); };
-  const release = () => { HEADS.delete(key); if (poolTiles.delete(poolKey) && LP) LP.dirty = true; };
+  const release = () => { HEADS.delete(key); if (SITES.delete(key)) lampSitesVersion++; if (poolTiles.delete(poolKey) && LP) LP.dirty = true; };
   return { group, count: sites.length, update, release, heads: lamp.map((p) => ({ x: p.x, y: p.y, z: p.z })), sites };   // heads: the lantern globes (y: their centre, m TAW)
 }
 

@@ -28,6 +28,7 @@ import { addStPierre } from "./stpierreCity.js";
 import { addRussian } from "./russianCity.js";
 import { addHeros } from "./heros/herosCity.js";
 import { addPublicArt } from "./publicart/artCity.js";
+import { addChristmas, xmasActive } from "./christmas/xmasCity.js";
 import { addRosaire } from "./rosaireCity.js";
 import { addObservatory } from "./observatoryCity.js";
 import { addAugustin } from "./augustinCity.js";
@@ -1406,6 +1407,10 @@ async function main() {
   // the public art kit (viewer/publicart/, docs/publicart/PUBLIC_ART_KIT.md): the Dix Monolithes, La Victoire, the Gobert
   // memorial, the milestones and the Charles V stones; ?art=old = the city without them (the monoliths' UrbIS boxes back)
   if (params.get("art") !== "old") heroes.push(() => addPublicArt({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler }));
+  // the Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): 1 Dec - 6 Jan (the real date or ?day=), ?xmas=1 on, ?xmas=0 off:
+  // the firs on Place de Saint-Job and the Parvis Saint-Pierre, garlands across the shopping streets, shopfront swags,
+  // door wreaths, lamp-post snowflakes; emissive only (no light added). Loads in the background (does not hold the boot)
+  if (xmasActive(params)) heroes.push(() => { addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, params }).catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)); });
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)

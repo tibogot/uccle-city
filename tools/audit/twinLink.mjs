@@ -1,4 +1,4 @@
-// TWIN LINK CHECK (twinlink 2026-11-17, docs/TWINLINK.md, rule 19): every tile's traffic graph carries buffer copies
+// TWIN LINK CHECK (twinlink 2026-11-17, docs/TWINLINK.md, rule 20): every tile's traffic graph carries buffer copies
 // of its neighbours' lanes; when the neighbour is loaded, viewer/traffic/trafficWorld.js `link` gives each copy its
 // TWIN (the neighbour's own lane under it), so cars move onto the lane that was fitted to the street and round the
 // parked cars there. A block of neighbouring tiles is built as the worker builds them (parking by width, traffic graph),
