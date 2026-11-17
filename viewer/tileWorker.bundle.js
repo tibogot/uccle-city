@@ -12769,6 +12769,10 @@ function deckFootprint(d) {
     return best <= d.half && s >= d.span[0] - 0.01 && s <= d.span[1] + 0.01;
   };
 }
+function onCarriageway(d, x, z) {
+  d._band ??= bandOf(d);
+  return !offBand(d._band, x, z);
+}
 
 // viewer/track.js
 function catmull(p0, p1, p2, p3, t) {
@@ -16545,7 +16549,7 @@ async function buildTileData(entry, base) {
       return y != null && y - hm.ground(t.x, t.z) > 1.5;
     }));
   }
-  const planDecks = osmBridges.decks.filter((d) => d.plan), planFns = planDecks.map((d) => deckHeight(d, baseGround));
+  const planDecks = osmBridges.decks.filter((d) => d.plan?.urbis), planFns = planDecks.map((d) => deckHeight(d, baseGround));
   const planLevel = planFns.length ? (x, z) => {
     for (const f of planFns) {
       const y = f(x, z);
@@ -16687,6 +16691,13 @@ async function buildTileData(entry, base) {
     }
     return y;
   };
+  const drawnAt = (x, z) => {
+    if (measuredAt && measuredAt(x, z)) return true;
+    const H = hm.h, c = Math.round((x - H.x0) / H.step), r = Math.round((z - H.z0) / H.step);
+    if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) return false;
+    const v = drive.ground.delta[r * H.cols + c];
+    return v > 0 && v !== 65535 && Math.abs(hm.y[r * H.cols + c] + v / 100 - roadGround(x, z)) < 0.6;
+  };
   return {
     name: entry.name,
     bounds,
@@ -16709,8 +16720,8 @@ async function buildTileData(entry, base) {
     rail: railOut,
     grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => {
-      const v = entry.vivier !== false, tops = v && d.plan && measuredAt ? deckTopGrid(d, measuredAt, streetTop) : null;
-      return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh: deckMesh(d, hm.ground, measuredAt, v ? streetTop : null) };
+      const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || onCarriageway(d, x, z) && drawnAt(x, z) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
+      return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) };
     }),
     // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
     ...entry.keepNet ? { net, hm } : {}
@@ -17248,4 +17259,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "6efd72787d1e5b54";
+self.__TILE_CODE_HASH = "be327201b5ef9c47";

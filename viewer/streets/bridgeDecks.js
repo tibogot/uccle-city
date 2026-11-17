@@ -898,3 +898,6 @@ export function deckFootprint(d) {
     return best <= d.half && s >= d.span[0] - 0.01 && s <= d.span[1] + 0.01;
   };
 }
+
+/** (x, z) on the plan deck's own carriageway band (where the road engine draws the bridge road itself) */
+export function onCarriageway(d, x, z) { d._band ??= bandOf(d); return !offBand(d._band, x, z); }

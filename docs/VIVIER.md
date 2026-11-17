@@ -94,6 +94,46 @@ Reports: docs/vivier/bridge_audit_old.json, bridge_audit.json.
 | Vivier d'Oie station footbridges (PB 751, 752) | none (their slab lay in the ballast) | OPEN: needs a model (deck, stairs to both platforms, piers) |
 | Warnings: low contact-wire room under Av. des Tilleuls (3.6 m), Av. des Hospices (2.9-3.2 m), Carsoel (4.5 m) | | the deck / rail heights there to measure |
 
-## Browser check
-TO DO (coordinator's browser turn): street level from the Chaussée (image 65's spot), from the track below, from above;
-before (`?vivier=old`) / after in docs/vivier/.
+## Browser check (2026-11-17, after foundation was merged in: 10c1d69b)
+Images (quick mode, `?quick=1&with=trains`, `?vivier=old` for before): `street_before/after.jpg` (the Chaussée
+northbound at the image-65 spot), `west_before/after.jpg` (the Avenue Latérale corner on the deck), `track_before/after.jpg`
+(from the L26 under the bridge), `above_before/after.jpg` (30 m).
+- Before: a pale slab across the tracks at rail level (UrbIS ROB 590 at its centroid's DTM), the band deck with a concrete
+  parapet wall standing on the corner, the cutting open under the street's west half, a catenary mast through the slab.
+- After: the deck over the whole UrbIS outline, steel railings on the concrete upstand over the tracks, the cutting
+  walls under it, the floor at the ballast's foot, the wires under the soffit, the corner paved at street level.
+Found and fixed on the turn:
+- Terrain spikes at the cutting walls' foot (the 1 m grid row behind the wall uncut): the floor cut 1.5 m behind them.
+- The car stopped dead entering the deck from Avenue Latérale: the road engine's node at the bridge end sat 0.5 m under
+  the deck (its plane fit took in the cutting), so the drawn street stepped 0.35 m. Junctions on a UrbIS plan deck now
+  take the deck's level (roadLevels.js deckLevel). Car across the deck: 0 hits, 82.97 -> 81.98 -> 80.7 m, smooth.
+- Moving traffic (and the trams) ran on the terrain: a car dipped 7 m into the cutting under the deck (it dipped 3-4 m
+  under every band deck before). They now run on world.decks (main.js movingGround).
+- Box-ball plants grew up through the deck from the bank under it: no generated plant on a deck.
+- A paving strip of the deck over the engine's Chaussée: the deck top tucks under the engine's road on the bridge road's
+  band too (not off it: tram platforms are in the drive raster as well).
+- deckJoins now checks the drawn street's continuity across every deck edge (it had let the 0.35 m step through).
+Checks on the deck: signals 82.29 / 82.22, the C43 sign 82.39 (deck 82.0-82.4); no parked car on the bridge (the width
+rule leaves none there); traffic sampled on the deck at 81.4-82.0 m.
+HEAP browser line, 5 boots, localStorage cleared each: `?gamemenu=0&orbitcam2=old`, default, `?gamemenu=0&tilecache=0`,
+`?game=police` + gamePerf police 45 s (54.5 fps, p95 33 ms), `?game=falcon`: 0 console errors, 0 WebGPU errors,
+tripCounts {} in all five (queueSkips flush 0 / 4 / 6 / 0 / 0).
+Cost: J5 tile build unchanged (4.4-5.7 s both ways, noise); the deck 3,870 triangles (band: 232 + the UrbIS slab 124),
+same draw count (one deck mesh, slot groups); no frame cost measurable.
+
+Visual tour `vivier` vs `foundation` (22 views): 2 flagged.
+- vivier-bridge (48.7 %): intended. `tour_vivier-bridge.jpg` = baseline | this branch with `?vivier=old` | this branch:
+  the view's framing already differs between the baseline and `?vivier=old` on this branch (both before my change: the
+  baseline predates something else in the merge); against `?vivier=old` the change is the bridge itself and the look
+  point's ground (the view looks at a point on the deck: the plan deck's top 0.3-0.5 m over the old band's sag).
+- traffic-alsemberg (cell 84.8 %): a moving car in front of the camera at capture (`tour_traffic-alsemberg_crop.jpg`),
+  the view's known noise; nothing of this branch is there (no deck).
+- stjob-station flagged at first (3.3 %, `tour_stjob-station_crop.jpg`: the Carsoel deck's junction re-levelled, its
+  walk top lowered to the drawn street = the camera 0.15 m lower): the vivier tweaks are now limited to the UrbIS plans,
+  the hand-measured Saint-Job deck keeps its verified levels -> ok on the rerun.
+
+Open (listed, not small): the two Vivier d'Oie station footbridges (PB 751 / 752: deck + stairs to both platforms +
+piers: a model of their own); the low contact-wire room under Tilleuls / Hospices / Carsoel (deck or rail heights to
+measure: bridge audit warnings); Saint-Job's hand plan: UrbIS sidewalks reach past its west / south-west ring over the
+bank (deckJoins allow list, seen in the browser); a measured sidewalk strip with a gap in the asphalt across the
+Chaussée 6 m south of the deck (z ~ 299, UrbIS data, also before).
