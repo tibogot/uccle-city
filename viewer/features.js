@@ -88,6 +88,7 @@ export const FEATURES = [
   opt("vfog", "weather", "volumetric fog", "Volumetric valley fog (opt-in).", { live: "volumetric valley fog" }),
   sel("wx", "weather", "weather", "The weather at start (viewer/weather/cityWeather.js): rain, snow, fog... (clear = the city as before); 'live' = Uccle now (Open-Meteo).",
     [[null, "clear"], ["overcast", "overcast"], ["drizzle", "drizzle"], ["rain", "rain"], ["storm", "storm"], ["snowfall", "snowfall"], ["snow_cover", "snow cover"], ["fog", "fog"], ["live", "live (Open-Meteo)"]], { live: "weather" }),
+  old("texlimit", "weather", "default GPU texture limit", "?texlimit=old: ask the GPU for the WebGPU default of 16 textures/samplers per stage (the facade kit lod1 + snow + ?night=0 binds 17: validation error). Default: up to 32 when the adapter has them."),
   old("weather", "weather", "no weather system", "?weather=old: the city before the weather hookup (no wet / snow layer in the materials, no rain, no overhead bake)."),
   on("snowtracks", "weather", "snow tracks", "Footprints, tyre and motorbike tracks in the snow (viewer/weather/snowTrails.js: a camera-centred trail texture the walker / character / cars stamp; the snow layer and the ground cover read it)."),
   on("snowcaps", "weather", "snow caps", "Snow caps with thickness and rounded rims on car roofs / bonnets (parked, traffic, yours), benches, bins, bike boxes, glass banks, bus shelters, garden copings and hedge tops (viewer/weather/snowCaps.js + cityCaps.js); parked cars' tops then cut the snow layer."),

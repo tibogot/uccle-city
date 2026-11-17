@@ -1121,7 +1121,19 @@ async function main() {
 
   bootStage("renderer");                            // (boot2: the loading bar's stage)
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
-  const renderer = new THREE.WebGPURenderer({ antialias: !UPSCALE /* --- upscale: TAA instead of MSAA */, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
+  // Texture/sampler limits: WebGPU's default is 16 per shader stage, and the facade kit's lod1 material with snow
+  // (+ night off) binds 17 (validation error). Ask the adapter for more when it has them (RTX 4050: 48), capped at 32;
+  // an adapter at 16 keeps the defaults. ?texlimit=old: the defaults.
+  const requiredLimits = {};
+  if (params.get("texlimit") !== "old" && navigator.gpu) {
+    try {
+      const ad = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+      const L = ad?.limits;
+      if (L?.maxSampledTexturesPerShaderStage > 16) requiredLimits.maxSampledTexturesPerShaderStage = Math.min(32, L.maxSampledTexturesPerShaderStage);
+      if (L?.maxSamplersPerShaderStage > 16) requiredLimits.maxSamplersPerShaderStage = Math.min(32, L.maxSamplersPerShaderStage);
+    } catch { /* keep the defaults */ }
+  }
+  const renderer = new THREE.WebGPURenderer({ antialias: !UPSCALE /* --- upscale: TAA instead of MSAA */, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming, requiredLimits });
   setFarMergeRenderer(renderer);   // perfgame round 7: landmark far merges bake with it (?farlodlm=old: off)
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
