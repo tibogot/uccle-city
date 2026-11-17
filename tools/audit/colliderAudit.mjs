@@ -23,9 +23,10 @@
 // instances, consistent by construction: drawnAudit 0 missing / 0 ghost), tram poles and rail masts, traffic boxes.
 // The data layers' points in lanes are tools/audit/streetAudit.mjs's.
 //
-//   node --import ./tools/road_audit/register.mjs tools/audit/colliderAudit.mjs [--all | T ...] [--jobs N] [--old]
+//   node --import ./tools/road_audit/register.mjs tools/audit/colliderAudit.mjs [--all | T ...] [--jobs N] [--gardennew] [--set k=v]
 //        [--out FILE] [--quiet] [--max cat=N,...] [--worst 20]
-//   --old   the switches of this round set to old (?gardenlane=old: garden pieces kept by their ends + middle only)
+//   --gardennew  ?gardenlane=new (opt-in: garden pieces cleared by their whole footprint)
+//   --set k=v    a tile entry override (--set colFeet=false = ?colfeet=old: building colliders from the floating solids)
 //   --max   the gate: exit 1 when a category's count over the tiles run is above N (e.g. lane=0,gate=0)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -38,7 +39,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
-const CHILD = flag("--child"), ALL = flag("--all"), QUIET = flag("--quiet"), OLD = flag("--old");
+// --set key=value (repeatable): a tile entry override, e.g. --set colFeet=false (= ?colfeet=old), JSON values
+const SETS = []; for (let i = argv.indexOf("--set"); i >= 0; i = argv.indexOf("--set")) SETS.push(argv.splice(i, 2)[1]);
+const CHILD = flag("--child"), ALL = flag("--all"), QUIET = flag("--quiet"), GNEW = flag("--gardennew"), OLD = !GNEW;   // (the city default: the old garden test; --gardennew = ?gardenlane=new)
 const OUT = opt("--out", null), JOBS = +opt("--jobs", Math.max(1, Math.min(4, Math.floor(os.totalmem() / 2 ** 30 / 4), os.cpus().length - 1))), WORST = +opt("--worst", 20);
 const MAX = Object.fromEntries((opt("--max", "") || "").split(",").filter(Boolean).map((s) => { const [k, v] = s.split("="); return [k, +v]; }));
 const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
@@ -49,11 +52,11 @@ export const PAVED = 5;          // cm over the carved terrain: the drive grid h
 
 // ---------------------------------------------------------------- the parent: tiles over child processes
 if (!CHILD) {
-  if (!TILES.length) { console.error("usage: colliderAudit.mjs [--all | T ...] [--jobs N] [--old] [--out FILE] [--max cat=N]"); process.exit(2); }
+  if (!TILES.length) { console.error("usage: colliderAudit.mjs [--all | T ...] [--jobs N] [--gardennew] [--set k=v] [--out FILE] [--max cat=N]"); process.exit(2); }
   const t0 = Date.now(), results = [];
   const queue = TILES.slice();
   const run = (T) => new Promise((ok) => {
-    const p = spawn(process.execPath, ["--import", "./tools/road_audit/register.mjs", fileURLToPath(import.meta.url), "--child", T, ...(OLD ? ["--old"] : [])], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn(process.execPath, ["--import", "./tools/road_audit/register.mjs", fileURLToPath(import.meta.url), "--child", T, ...(GNEW ? ["--gardennew"] : []), ...SETS.flatMap((k) => ["--set", k])], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
     let out = "", err = "";
     p.stdout.on("data", (b) => { out += b; }); p.stderr.on("data", (b) => { err += b; });
     p.on("close", (code) => {
@@ -104,7 +107,7 @@ if (!CHILD) {
 }
 
 // ---------------------------------------------------------------- the child: one tile
-globalThis.location ??= { search: OLD ? "?gardenlane=old" : "" };
+globalThis.location ??= { search: GNEW ? "?gardenlane=new" : "" };
 const nodeFetch = globalThis.fetch;
 globalThis.fetch = async (u, o) => {
   const url = new URL(String(u));
@@ -129,6 +132,7 @@ const t0 = Date.now();
 const entries = JSON.parse(readFileSync(join(ROOT, "tools/boot3/entries.json"), "utf8"));
 const m = manifest.tiles.find((t) => t.name === T);
 const entry = { ...entries.find((e) => !e.lite).entry, ...m, cache: false };
+for (const kv of SETS) { const [k, v] = kv.split("="); entry[k] = JSON.parse(v); }
 const overrides = JSON.parse(readFileSync(join(ROOT, "data/overrides.json"), "utf8"));
 const realLog = console.log; console.log = () => {};                 // (the build's own log lines: off)
 const d = await buildTileData(entry, pathToFileURL(join(ROOT, "data/tiles") + "/").href);
@@ -253,6 +257,17 @@ for (let k = 0; k < NZ; k++) for (let i = 0; i < NX; i++) {
   if (!paved[q] || !inTile(gx0 + (i + 0.5) * CELL, gz0 + (k + 0.5) * CELL)) continue;
   if (truth[q] && !anySolid[q] && dCol[q] > OFF_LO) cls[q] = dCol[q] > OFF_HI ? 1 : 3;
   else if (solid[q] && !truth[q] && dTruth[q] > OFF_LO) cls[q] = dTruth[q] > OFF_HI ? 2 : 4;
+}
+// COLDUMP=x,z[,half]: an ASCII map round (x, z) on stderr (0.5 m a char): # drawn + collider, D drawn only,
+// C collider only, o other hard collider, - paved, . nothing (the browser turn's look at one place)
+if (process.env.COLDUMP) {
+  const [qx, qz, hh = 15] = process.env.COLDUMP.split(",").map(Number), lines = [];
+  for (let z = qz - hh; z <= qz + hh; z += 0.5) {
+    let l = "";
+    for (let x = qx - hh; x <= qx + hh; x += 0.5) { const q = cellOf(x, z); if (q < 0) { l += " "; continue; } l += truth[q] && solid[q] ? "#" : truth[q] ? "D" : solid[q] ? "C" : otherSolid[q] ? "o" : paved[q] ? "-" : "."; }
+    lines.push(l);
+  }
+  process.stderr.write(`COLDUMP ${T} (${qx}, ${qz}) +-${hh} m, x right, z down\n${lines.join("\n")}\n`);
 }
 // names: the nearest OSM road
 const RN = [];

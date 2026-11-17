@@ -1,5 +1,5 @@
 {
- "when": "2026-11-17T21:21:35.364Z",
+ "when": "2026-11-17T22:31:12.951Z",
  "old": true,
  "tiles": 120,
  "sum": {
@@ -64,7 +64,7 @@
  "results": [
   {
    "tile": "A5",
-   "ms": 5307,
+   "ms": 4730,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -94,7 +94,7 @@
   },
   {
    "tile": "B4",
-   "ms": 8741,
+   "ms": 5861,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -152,7 +152,7 @@
   },
   {
    "tile": "B5",
-   "ms": 15388,
+   "ms": 8913,
    "counts": {
     "missing": 2,
     "invisible": 19,
@@ -561,7 +561,7 @@
   },
   {
    "tile": "B6",
-   "ms": 7660,
+   "ms": 7232,
    "counts": {
     "missing": 0,
     "invisible": 4,
@@ -738,7 +738,7 @@
   },
   {
    "tile": "B7",
-   "ms": 6026,
+   "ms": 5376,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -782,7 +782,7 @@
   },
   {
    "tile": "B8",
-   "ms": 4170,
+   "ms": 3331,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -809,7 +809,7 @@
   },
   {
    "tile": "C3",
-   "ms": 12056,
+   "ms": 6892,
    "counts": {
     "missing": 9,
     "invisible": 0,
@@ -935,7 +935,7 @@
   },
   {
    "tile": "C4",
-   "ms": 10611,
+   "ms": 7234,
    "counts": {
     "missing": 2,
     "invisible": 0,
@@ -988,7 +988,7 @@
   },
   {
    "tile": "C5",
-   "ms": 19578,
+   "ms": 10662,
    "counts": {
     "missing": 5,
     "invisible": 4,
@@ -1249,7 +1249,7 @@
   },
   {
    "tile": "C6",
-   "ms": 8033,
+   "ms": 7822,
    "counts": {
     "missing": 0,
     "invisible": 4,
@@ -1412,7 +1412,7 @@
   },
   {
    "tile": "C7",
-   "ms": 9666,
+   "ms": 7956,
    "counts": {
     "missing": 2,
     "invisible": 2,
@@ -1540,7 +1540,7 @@
   },
   {
    "tile": "C8",
-   "ms": 14926,
+   "ms": 8283,
    "counts": {
     "missing": 3,
     "invisible": 1,
@@ -1687,7 +1687,7 @@
   },
   {
    "tile": "C9",
-   "ms": 8488,
+   "ms": 5133,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -1716,7 +1716,7 @@
   },
   {
    "tile": "D1",
-   "ms": 8790,
+   "ms": 4451,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -1791,7 +1791,7 @@
   },
   {
    "tile": "D10",
-   "ms": 6265,
+   "ms": 5344,
    "counts": {
     "missing": 0,
     "invisible": 1,
@@ -1840,7 +1840,7 @@
   },
   {
    "tile": "D2",
-   "ms": 5637,
+   "ms": 5429,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -1870,7 +1870,7 @@
   },
   {
    "tile": "D3",
-   "ms": 20338,
+   "ms": 8372,
    "counts": {
     "missing": 3,
     "invisible": 5,
@@ -2056,7 +2056,7 @@
   },
   {
    "tile": "D4",
-   "ms": 11516,
+   "ms": 7837,
    "counts": {
     "missing": 2,
     "invisible": 2,
@@ -2194,7 +2194,7 @@
   },
   {
    "tile": "D5",
-   "ms": 17865,
+   "ms": 9598,
    "counts": {
     "missing": 1,
     "invisible": 3,
@@ -2432,7 +2432,7 @@
   },
   {
    "tile": "D6",
-   "ms": 11344,
+   "ms": 9967,
    "counts": {
     "missing": 5,
     "invisible": 6,
@@ -2724,7 +2724,7 @@
   },
   {
    "tile": "D7",
-   "ms": 9153,
+   "ms": 7680,
    "counts": {
     "missing": 1,
     "invisible": 6,
@@ -2929,7 +2929,7 @@
   },
   {
    "tile": "D8",
-   "ms": 14478,
+   "ms": 7695,
    "counts": {
     "missing": 0,
     "invisible": 10,
@@ -3127,7 +3127,7 @@
   },
   {
    "tile": "D9",
-   "ms": 9744,
+   "ms": 5518,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -3183,7 +3183,7 @@
   },
   {
    "tile": "E1",
-   "ms": 16831,
+   "ms": 9076,
    "counts": {
     "missing": 1,
     "invisible": 0,
@@ -3311,7 +3311,7 @@
   },
   {
    "tile": "E10",
-   "ms": 7469,
+   "ms": 6158,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -3464,7 +3464,7 @@
   },
   {
    "tile": "E2",
-   "ms": 10789,
+   "ms": 10090,
    "counts": {
     "missing": 3,
     "invisible": 8,
@@ -3716,7 +3716,7 @@
   },
   {
    "tile": "E3",
-   "ms": 19297,
+   "ms": 9255,
    "counts": {
     "missing": 1,
     "invisible": 5,
@@ -3938,7 +3938,7 @@
   },
   {
    "tile": "E4",
-   "ms": 13992,
+   "ms": 12730,
    "counts": {
     "missing": 5,
     "invisible": 6,
@@ -4486,7 +4486,7 @@
   },
   {
    "tile": "E5",
-   "ms": 19699,
+   "ms": 9044,
    "counts": {
     "missing": 0,
     "invisible": 4,
@@ -4604,7 +4604,7 @@
   },
   {
    "tile": "E6",
-   "ms": 10475,
+   "ms": 8454,
    "counts": {
     "missing": 3,
     "invisible": 1,
@@ -4832,7 +4832,7 @@
   },
   {
    "tile": "E7",
-   "ms": 7961,
+   "ms": 6068,
    "counts": {
     "missing": 1,
     "invisible": 0,
@@ -4910,7 +4910,7 @@
   },
   {
    "tile": "E8",
-   "ms": 13517,
+   "ms": 7046,
    "counts": {
     "missing": 3,
     "invisible": 2,
@@ -5037,7 +5037,7 @@
   },
   {
    "tile": "E9",
-   "ms": 11213,
+   "ms": 7084,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -5098,7 +5098,7 @@
   },
   {
    "tile": "F1",
-   "ms": 14575,
+   "ms": 7800,
    "counts": {
     "missing": 3,
     "invisible": 1,
@@ -5743,7 +5743,7 @@
   },
   {
    "tile": "F10",
-   "ms": 3946,
+   "ms": 3618,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -5771,7 +5771,7 @@
   },
   {
    "tile": "F2",
-   "ms": 11130,
+   "ms": 10247,
    "counts": {
     "missing": 1,
     "invisible": 4,
@@ -5914,7 +5914,7 @@
   },
   {
    "tile": "F3",
-   "ms": 18543,
+   "ms": 7918,
    "counts": {
     "missing": 1,
     "invisible": 1,
@@ -6009,7 +6009,7 @@
   },
   {
    "tile": "F4",
-   "ms": 7012,
+   "ms": 6548,
    "counts": {
     "missing": 0,
     "invisible": 3,
@@ -6077,7 +6077,7 @@
   },
   {
    "tile": "F5",
-   "ms": 15620,
+   "ms": 6759,
    "counts": {
     "missing": 2,
     "invisible": 2,
@@ -6177,7 +6177,7 @@
   },
   {
    "tile": "F6",
-   "ms": 9857,
+   "ms": 8235,
    "counts": {
     "missing": 1,
     "invisible": 9,
@@ -6518,7 +6518,7 @@
   },
   {
    "tile": "F7",
-   "ms": 7112,
+   "ms": 5357,
    "counts": {
     "missing": 1,
     "invisible": 0,
@@ -6589,7 +6589,7 @@
   },
   {
    "tile": "F8",
-   "ms": 12550,
+   "ms": 6416,
    "counts": {
     "missing": 3,
     "invisible": 0,
@@ -6698,7 +6698,7 @@
   },
   {
    "tile": "F9",
-   "ms": 10216,
+   "ms": 7695,
    "counts": {
     "missing": 8,
     "invisible": 1,
@@ -6907,7 +6907,7 @@
   },
   {
    "tile": "G1",
-   "ms": 12153,
+   "ms": 8810,
    "counts": {
     "missing": 0,
     "invisible": 5,
@@ -7181,7 +7181,7 @@
   },
   {
    "tile": "G10",
-   "ms": 5351,
+   "ms": 5513,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -7286,7 +7286,7 @@
   },
   {
    "tile": "G2",
-   "ms": 7666,
+   "ms": 7685,
    "counts": {
     "missing": 2,
     "invisible": 3,
@@ -7401,7 +7401,7 @@
   },
   {
    "tile": "G3",
-   "ms": 11913,
+   "ms": 6234,
    "counts": {
     "missing": 2,
     "invisible": 3,
@@ -7573,7 +7573,7 @@
   },
   {
    "tile": "G4",
-   "ms": 7644,
+   "ms": 7878,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -7607,7 +7607,7 @@
   },
   {
    "tile": "G5",
-   "ms": 16079,
+   "ms": 7024,
    "counts": {
     "missing": 0,
     "invisible": 1,
@@ -7693,7 +7693,7 @@
   },
   {
    "tile": "G6",
-   "ms": 8895,
+   "ms": 8131,
    "counts": {
     "missing": 2,
     "invisible": 2,
@@ -7976,7 +7976,7 @@
   },
   {
    "tile": "G7",
-   "ms": 3923,
+   "ms": 3287,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -8005,7 +8005,7 @@
   },
   {
    "tile": "G8",
-   "ms": 10301,
+   "ms": 4995,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -8047,7 +8047,7 @@
   },
   {
    "tile": "G9",
-   "ms": 6452,
+   "ms": 5583,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -8090,7 +8090,7 @@
   },
   {
    "tile": "H1",
-   "ms": 12265,
+   "ms": 10072,
    "counts": {
     "missing": 0,
     "invisible": 10,
@@ -8261,7 +8261,7 @@
   },
   {
    "tile": "H10",
-   "ms": 4819,
+   "ms": 5302,
    "counts": {
     "missing": 0,
     "invisible": 1,
@@ -8313,7 +8313,7 @@
   },
   {
    "tile": "H11",
-   "ms": 1721,
+   "ms": 1641,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -8340,7 +8340,7 @@
   },
   {
    "tile": "H2",
-   "ms": 10064,
+   "ms": 8183,
    "counts": {
     "missing": 0,
     "invisible": 3,
@@ -8464,7 +8464,7 @@
   },
   {
    "tile": "H3",
-   "ms": 17348,
+   "ms": 7829,
    "counts": {
     "missing": 3,
     "invisible": 0,
@@ -8554,7 +8554,7 @@
   },
   {
    "tile": "H4",
-   "ms": 7761,
+   "ms": 8279,
    "counts": {
     "missing": 3,
     "invisible": 10,
@@ -8776,7 +8776,7 @@
   },
   {
    "tile": "H5",
-   "ms": 15993,
+   "ms": 7074,
    "counts": {
     "missing": 0,
     "invisible": 2,
@@ -8845,7 +8845,7 @@
   },
   {
    "tile": "H6",
-   "ms": 9234,
+   "ms": 8732,
    "counts": {
     "missing": 3,
     "invisible": 8,
@@ -9167,7 +9167,7 @@
   },
   {
    "tile": "H7",
-   "ms": 7105,
+   "ms": 5096,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -9195,7 +9195,7 @@
   },
   {
    "tile": "H8",
-   "ms": 10412,
+   "ms": 5554,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -9224,7 +9224,7 @@
   },
   {
    "tile": "H9",
-   "ms": 4560,
+   "ms": 4385,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -9252,7 +9252,7 @@
   },
   {
    "tile": "I1",
-   "ms": 9714,
+   "ms": 8707,
    "counts": {
     "missing": 3,
     "invisible": 0,
@@ -9411,7 +9411,7 @@
   },
   {
    "tile": "I10",
-   "ms": 6929,
+   "ms": 6750,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -9440,7 +9440,7 @@
   },
   {
    "tile": "I11",
-   "ms": 3365,
+   "ms": 3062,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -9467,7 +9467,7 @@
   },
   {
    "tile": "I2",
-   "ms": 14159,
+   "ms": 8415,
    "counts": {
     "missing": 1,
     "invisible": 2,
@@ -9578,7 +9578,7 @@
   },
   {
    "tile": "I3",
-   "ms": 15946,
+   "ms": 7714,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -9679,7 +9679,7 @@
   },
   {
    "tile": "I4",
-   "ms": 6464,
+   "ms": 6707,
    "counts": {
     "missing": 3,
     "invisible": 0,
@@ -9773,7 +9773,7 @@
   },
   {
    "tile": "I5",
-   "ms": 16162,
+   "ms": 7374,
    "counts": {
     "missing": 1,
     "invisible": 4,
@@ -9945,7 +9945,7 @@
   },
   {
    "tile": "I6",
-   "ms": 10453,
+   "ms": 9624,
    "counts": {
     "missing": 4,
     "invisible": 5,
@@ -10230,7 +10230,7 @@
   },
   {
    "tile": "I7",
-   "ms": 7342,
+   "ms": 6246,
    "counts": {
     "missing": 4,
     "invisible": 2,
@@ -10438,7 +10438,7 @@
   },
   {
    "tile": "I8",
-   "ms": 8923,
+   "ms": 5552,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -10466,7 +10466,7 @@
   },
   {
    "tile": "I9",
-   "ms": 6289,
+   "ms": 5762,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -10494,7 +10494,7 @@
   },
   {
    "tile": "J10",
-   "ms": 6763,
+   "ms": 5067,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -10522,7 +10522,7 @@
   },
   {
    "tile": "J11",
-   "ms": 5578,
+   "ms": 3936,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -10551,7 +10551,7 @@
   },
   {
    "tile": "J2",
-   "ms": 3929,
+   "ms": 3263,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -10579,7 +10579,7 @@
   },
   {
    "tile": "J3",
-   "ms": 10585,
+   "ms": 4984,
    "counts": {
     "missing": 0,
     "invisible": 5,
@@ -10688,7 +10688,7 @@
   },
   {
    "tile": "J4",
-   "ms": 8459,
+   "ms": 7699,
    "counts": {
     "missing": 9,
     "invisible": 3,
@@ -10911,7 +10911,7 @@
   },
   {
    "tile": "J5",
-   "ms": 16509,
+   "ms": 7651,
    "counts": {
     "missing": 1,
     "invisible": 1,
@@ -10987,7 +10987,7 @@
   },
   {
    "tile": "J6",
-   "ms": 7517,
+   "ms": 6531,
    "counts": {
     "missing": 1,
     "invisible": 4,
@@ -11164,7 +11164,7 @@
   },
   {
    "tile": "J7",
-   "ms": 10403,
+   "ms": 8326,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11194,7 +11194,7 @@
   },
   {
    "tile": "J8",
-   "ms": 9838,
+   "ms": 5592,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11222,7 +11222,7 @@
   },
   {
    "tile": "J9",
-   "ms": 5772,
+   "ms": 5352,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11269,7 +11269,7 @@
   },
   {
    "tile": "K10",
-   "ms": 6042,
+   "ms": 4741,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11298,7 +11298,7 @@
   },
   {
    "tile": "K11",
-   "ms": 6600,
+   "ms": 4683,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11342,7 +11342,7 @@
   },
   {
    "tile": "K12",
-   "ms": 2850,
+   "ms": 2206,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11369,7 +11369,7 @@
   },
   {
    "tile": "K4",
-   "ms": 4158,
+   "ms": 3920,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11397,7 +11397,7 @@
   },
   {
    "tile": "K5",
-   "ms": 5689,
+   "ms": 4073,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11425,7 +11425,7 @@
   },
   {
    "tile": "K6",
-   "ms": 4737,
+   "ms": 4413,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11484,7 +11484,7 @@
   },
   {
    "tile": "K7",
-   "ms": 6730,
+   "ms": 5700,
    "counts": {
     "missing": 0,
     "invisible": 4,
@@ -11577,7 +11577,7 @@
   },
   {
    "tile": "K8",
-   "ms": 11322,
+   "ms": 6645,
    "counts": {
     "missing": 2,
     "invisible": 0,
@@ -11652,7 +11652,7 @@
   },
   {
    "tile": "K9",
-   "ms": 5859,
+   "ms": 5368,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11680,7 +11680,7 @@
   },
   {
    "tile": "L10",
-   "ms": 2806,
+   "ms": 2435,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11719,7 +11719,7 @@
   },
   {
    "tile": "L11",
-   "ms": 3704,
+   "ms": 2539,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11747,7 +11747,7 @@
   },
   {
    "tile": "L12",
-   "ms": 2127,
+   "ms": 1374,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11774,7 +11774,7 @@
   },
   {
    "tile": "L5",
-   "ms": 3328,
+   "ms": 2415,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11802,7 +11802,7 @@
   },
   {
    "tile": "L6",
-   "ms": 2357,
+   "ms": 2343,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11830,7 +11830,7 @@
   },
   {
    "tile": "L7",
-   "ms": 4453,
+   "ms": 3361,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -11859,7 +11859,7 @@
   },
   {
    "tile": "L8",
-   "ms": 5931,
+   "ms": 3417,
    "counts": {
     "missing": 0,
     "invisible": 6,
@@ -11981,7 +11981,7 @@
   },
   {
    "tile": "L9",
-   "ms": 2537,
+   "ms": 2248,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12009,7 +12009,7 @@
   },
   {
    "tile": "M10",
-   "ms": 2021,
+   "ms": 1910,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12037,7 +12037,7 @@
   },
   {
    "tile": "M11",
-   "ms": 1644,
+   "ms": 1569,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12064,7 +12064,7 @@
   },
   {
    "tile": "M12",
-   "ms": 1873,
+   "ms": 1170,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12091,7 +12091,7 @@
   },
   {
    "tile": "M5",
-   "ms": 5587,
+   "ms": 4897,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12126,7 +12126,7 @@
   },
   {
    "tile": "M6",
-   "ms": 1582,
+   "ms": 1533,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12153,7 +12153,7 @@
   },
   {
    "tile": "M7",
-   "ms": 1454,
+   "ms": 1430,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12180,7 +12180,7 @@
   },
   {
    "tile": "M8",
-   "ms": 2252,
+   "ms": 1441,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12207,7 +12207,7 @@
   },
   {
    "tile": "M9",
-   "ms": 1992,
+   "ms": 1738,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12234,7 +12234,7 @@
   },
   {
    "tile": "N10",
-   "ms": 1587,
+   "ms": 1433,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12262,7 +12262,7 @@
   },
   {
    "tile": "N11",
-   "ms": 1807,
+   "ms": 1711,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12290,7 +12290,7 @@
   },
   {
    "tile": "N5",
-   "ms": 5528,
+   "ms": 5218,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12319,7 +12319,7 @@
   },
   {
    "tile": "N6",
-   "ms": 3355,
+   "ms": 3098,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12347,7 +12347,7 @@
   },
   {
    "tile": "N7",
-   "ms": 1454,
+   "ms": 1592,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12374,7 +12374,7 @@
   },
   {
    "tile": "N8",
-   "ms": 2658,
+   "ms": 1535,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12401,7 +12401,7 @@
   },
   {
    "tile": "N9",
-   "ms": 1544,
+   "ms": 1334,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12428,7 +12428,7 @@
   },
   {
    "tile": "O10",
-   "ms": 1486,
+   "ms": 1361,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12455,7 +12455,7 @@
   },
   {
    "tile": "O11",
-   "ms": 1734,
+   "ms": 1559,
    "counts": {
     "missing": 0,
     "invisible": 0,
@@ -12482,7 +12482,7 @@
   },
   {
    "tile": "O9",
-   "ms": 1597,
+   "ms": 1430,
    "counts": {
     "missing": 0,
     "invisible": 0,

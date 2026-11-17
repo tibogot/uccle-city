@@ -1,69 +1,63 @@
-# Collider audit, offline (branch `claude/collisions`, 2026-11-17)
+# Collider audit (branch `claude/collisions`, 2026-11-17)
 
 Rule 25 (provisional) in docs/QUALITY_RULES.md. Earlier rounds: docs/collisions/README.md (round 1, browser
 collision test), docs/COLLISIONS.md (round 2, debug/drawnAudit.js).
 
 ## How collision works (short)
 - **Player car / motorbike** (viewer/drive/): per tile one collider set (viewer/drive/colliders.js, 48 m cells).
-  Tile worker (tileData.js `buildDriveData`): building blocks traced from the UrbIS solids' walls at car height
+  Tile worker (tileData.js `buildDriveData`): building blocks traced from the buildings' walls at car height
   (0.30-1.30 m over the drive surface, `buildingBlocks`), raised kerb islands / medians, rail platforms, OSM deck
   parapets and rail fences as `wall` rings with top / base, tree trunks (circles). Main thread (driveMode.js
-  `tileDrive`): lamps + bollards (circles), then `featureColliders` from the features group's instanced stand-ins:
-  parked cars (boxes, off while hidden), furniture / stops / street kit / street life / fuel / garden walls, pillars,
-  closed gates (`furniture`, with base / top) and hedges (`hedge`: soft, the car is slowed). Landmarks, hero bridges,
-  tunnels, public art and the Lycee Francais front collide by their LOD0 (heroColliders.js, `driver.addStatic`).
-  Kerb islands are ridden up, hedges slow, walls / furniture with a height band pass over or under (`heightClear`).
-  The ground is the two-layer drive grid (`driveGround`); steps > 0.5 m are walls (carEnv.js).
-- **Walker / third person**: the capsule controller in one city collision world (character/cityHook.js): road BVH,
-  footprints, the same stand-ins, hero BVHs.
-- **Falcon**: roof surface grid + church / landmark proxies + tree crowns (falconFlight/), no street furniture.
+  `tileDrive`): lamps + bollards, then `featureColliders` from the features group's instanced stand-ins: parked cars,
+  furniture / stops / street kit / street life / fuel / garden walls, pillars, closed gates (`furniture`, base / top)
+  and hedges (`hedge`: soft). Landmarks, hero bridges, tunnels, public art and the Lycee Francais front collide by
+  their LOD0 (heroColliders.js). Kerb islands are ridden up, hedges slow, height-banded pieces pass over / under
+  (`heightClear`), a step > 0.5 m is a wall (carEnv.js). Plants and ivy have no collider (drawnAudit "missing").
+- **Walker / third person**: the capsule in one city world (character/cityHook.js). **Falcon**: roofs, landmark
+  proxies, tree crowns.
 
-## The audit
-`node --import ./tools/road_audit/register.mjs tools/audit/colliderAudit.mjs --all [--old] [--out F]` (~6 min,
-4 processes). Per tile the worker's own build in node (`buildTileData`, the city's entry), + lamps, bollards, parked
-cars and the garden stand-ins as the main thread makes them. Truth for buildings = the FINAL drawn walls mesh
-(`walls` + the facade kit's `walls.kit`), traced by the same raster as the colliders. Categories: `missing` (drawn
-wall at car height near paved surface, no collider within 0.3 m), `invisible`, `offset` (0.3-1.5 m off), `lane`
-(a hard collider reaching >= 0.3 m into the carriageway where a traffic path runs, the car's half width 0.9 m),
-`tram` (tram half width 1.3 m), `gate` (the police station's south gate mouth). Info only: parked cars by lanes
-(trafpark's), hedges, paths off the carriageway (traffic geometry), solids beside a narrow lane, the police yard ring.
-Gate row `colliders`: 3 tiles (F1 E4 B6), ~15 s, `--old` fails it (27 garden pieces in lanes).
+## The audit (offline)
+`node --import ./tools/road_audit/register.mjs tools/audit/colliderAudit.mjs --all [--set colFeet=false]
+[--gardennew] [--out F]` (~6 min, 4 processes); `COLDUMP=x,z[,half]` with `--child T` prints an ASCII map of drawn vs
+collider round a spot. Per tile the worker's own build in node + lamps, bollards, parked cars, garden stand-ins as
+the main thread makes them. Truth for buildings = the FINAL drawn walls mesh (`walls` + `walls.kit`). Categories:
+`missing` / `invisible` / `offset` (drawn wall vs building collider near paved surface), `lane` (a hard collider
+>= 0.3 m into the carriageway where a traffic path runs, half width 0.9 m), `tram` (1.3 m), `gate` (the police
+station's south gate mouth). Gate row `colliders`: 4 tiles (F1 E4 B6 D4), ~13 s; `?colfeet=old` fails it.
 
-## Before / after (120 tiles)
-| category | before (`?gardenlane=old`) | after |
+## Fix 1 (kept): building colliders from the sunk walls (`?colfeet=old`, tile worker)
+Cause: the colliders were traced from the UrbIS solids BEFORE `sinkFeet` (groundFit.js) moves the walls' feet down
+onto the drawn ground (up to 2.8 m on slopes). A solid floating over a slope had no wall in the car band where its
+drawn wall stands: drawn, driven through. Fix: viewer/tileData.js runs the ground fit + wall feet before the drive
+colliders (the drawn tile is byte-identical: tools/boot3/profile.mjs --hash, only `drive` changes). Browser, D4
+(-1382, -337), a 34 m apartment block: old, the car drove 13.7 m / 11.2 m INTO the block (camera inside its floors);
+new, it stops at the wall (z -332.7 / -330.1, wall -335.6).
+
+## Fix 2 (withdrawn to opt-in): garden pieces by their whole footprint (`?gardenlane=new`)
+Offline: garden walls / pillars / car gates were kept off the carriageway by their ends + middle (a pillar by its
+centre); 62 pieces stood in traffic lanes. The browser turn showed those "lanes" are mostly paved footpaths / courts
+the street data calls roadway: Carre Cassimans (F1) is a 1.5 m cobbled alley, its garden wall is real, and the strict
+test removed it and left a lone gate standing. The fix belongs to the lane / carriageway data (below), not to the
+gardens; the stricter test stays available behind `?gardenlane=new` (2,374 more pieces dropped city-wide).
+
+## Results (120 tiles)
+Raw: docs/collisions3/audit_before.json (`--set colFeet=false`), audit_after.json. Table in the merge message.
+
+## Places checked in the browser (what is really there; collider right / wrong)
+| place | what is there | verdict |
 |---|---|---|
-| lane (hard collider in a driven lane) | 284 | 222 |
-| ... of which garden walls / pillars / car gates | 62 | **0** |
-| tram (on a tram track) | 38 | 34 (garden walls 7 -> 3) |
-| gate (police south gate) | 0 | 0 |
-| missing building (m2) | 116 (863) | 116 (863) |
-| invisible building + islands (m2) | 198 (1243) | 198 (1243) |
-| offset building (m2) | 373 (4208) | 373 (4208) |
-| garden pieces dropped off the road | 3,689 | 6,063 |
+| Avenue Albert F1 (-162, -1636) | the interior of a city block (back yards, roofs): the traffic lane runs through it | colliders right; the lane (OSM band, no measured surface there) is wrong |
+| Carre Cassimans F1 (-476, -1550) | a 1.5-3 m cobbled pedestrian alley between houses, garden strip and wall | colliders right; the alley must not be a driven lane |
+| Kauwberg G6 (230, 793) | a cobbled footpath beside a half-timbered house; the junction connector clips the house | colliders right; the connector / lane is wrong |
+| Ch. de Saint-Job E6 (-524, 926) | no measured surface; the OSM band's lane runs 0.3 m inside a building | collider right; lane geometry (offline profile, not driven) |
+| B5 Ch. de Ruisbroek (-2402, 33) | the Stalle tram depot: depot tracks (refs 1-9, Z) run into the depot hall | colliders right (the hall is drawn); depot tracks are not a tram route |
+| Kasteelstraat E10 (-760, 2780) | two OSM road decks meet at a junction; their concrete parapets are DRAWN across the junction | drawn AND collider wrong: deck parapets on joined edges (bridgeDecks.js); the car stops at a drawn wall in the junction |
+| Avenue Laterale / Carsoel deck H6 (881, 521) | a railing + concrete upstand DRAWN across the tram road at the deck's east edge, the rails pass under it | drawn AND collider wrong: the plan deck's railing rule measures the drop against the bare DTM 0.5 m out, not the drawn street that continues (bridgeDecks.js planDeckMesh / planParapetRings) |
+| Rue du Bourdon D9 (-1201, 2228) | the line's fence ring under the Bourdon road deck; the deck road's lane is ~5 m over it | audit artefact: the offline audit has no OSM deck heights (main thread); not an in-game hit |
+| D4 (-1382, -337) | 34 m block on a slope | WRONG, fixed (fix 1) |
+| D8 Rue de Calevoet, E4 Victor Allard, D6 Venelle du Boson, K8, F9 | building collider vs drawn wall | about half fixed by fix 1 (these 6 tiles: missing 509 -> 239 m2, invisible 342 -> 110, offset 1016 -> 462); the rest (D6): a collider region left OPEN (a gap in the raw walls at car height lets the flood fill reach in) where the drawn walls are closed; cause not certain (not wall repair: wallFix=false changes nothing) |
+| police station gates (E4) | south vehicle gate and north gate | both driven out onto Rue Rouge: south 0 blocking hits (then stopped by the bank across the street), north 2 grazing frames on the gate post |
+| lane bollards (76), trees (30 + 10 on tram), lamps on tram (6) | not driven one by one | left |
 
-Raw: docs/collisions3/audit_before.json, audit_after.json (per tile counts + every item with coordinates).
-
-## Fix: garden pieces by their whole footprint (`?gardenlane=old`)
-Cause: viewer/gardens clearRoads tested a segment at its two ends and middle and a pillar at its centre against the
-carriageway (0.3 m margin); a wall bending into the road between those points, or a pillar / wall face just inside
-the margin, stayed drawn and solid in the lane. Now (viewer/gardens/gardenClear.js, three-free, also used by the
-audit) every 0.2 m along the axis and both faces of the 0.30 m stand-in, the pillar's corners and side middles, the
-closed car gate's leaf. Visible change: 2,374 more pieces leave the road edge (a face > 0.3 m into roadway / tram
-road / parking) -> the browser tour must look at street fronts with gardens.
-
-## Left for the browser turn (uncertain, not changed)
-- lane buildings 97: UrbIS footprints reaching >= 0.3 m into the measured roadway where a lane runs (Avenue Albert F1
-  (-170, -1636): one long row; Carre Cassimans F1 (-476, -1550); Kauwberg G6 (219, 807); Ch. de Saint-Job E6
-  (-524, 926)): street surface vs building data, or the lane too close to the kerb.
-- lane bollards 76 (UrbIS bollards inside the roadway: likely real modal filters the traffic graph drives through).
-- lane trees 30, tram trees 10 (Av. Churchill H2 tram median), lamps on tram tracks 6.
-- lane / tram `wall` 23: rail fences or deck parapet rings across Kasteelstraat E10 (-760, 2780) and Avenue
-  Laterale / Carsoel deck H6 (881, 521); Rue du Bourdon D9 (-1201, 2228).
-- tram building 11: B5 Chaussee de Ruisbroek (-2402, 33): the tram line through buildings (the Stalle depot?).
-- tram garden walls 3: B5 Rue de Stalle (-2185, 380): gardens do not know a tram track off the carriageway.
-- building missing / invisible / offset: biggest D4 (-1382, -337), D8 Rue de Calevoet (-1294, 1753), E4 Rue Victor
-  Allard (-922, -446), D6 Venelle du Boson (-1415, 659), K8 Ch. de Waterloo (2118, 1765). Hypothesis: the
-  colliders are traced from the UrbIS solids BEFORE `sinkFeet` and the facade rebuild, so they differ from the drawn
-  walls; candidate next fix: `buildingBlocks` over the final walls mesh in the worker (needs the bundle rebuilt in main).
-- police yard ring: 5 building cells, 2 trees (-506, -343: the tree in the north passage), 28 hedge pieces.
-- trunk radius vs the drawn trunks, hero / kit colliders: not offline.
+drawnAudit (F1, B6, G6): ghost 0 on all three; "missing" = plants (box balls, laurels, roses...) and ivy stems only
+(+1 open garden gate, +1 street-life box F1): plants have no collider by design so far (owner question).

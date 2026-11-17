@@ -55,7 +55,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Traffic: trams don't stop for cars, no lane changes, no headlight beams, a few lanes hug kerbs.
 - [ ] Pedestrians: feet slide on turns, nobody sits, no children / dogs, walk graph from data.
 - [ ] Minimap: more names, neighbourhood names, route to a searched place, satellite toggle.
-- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile). claude/collisions 2026-11-17: offline collider audit (tools/audit/colliderAudit.mjs, rule 25 provisional, docs/COLLIDER_AUDIT.md): garden pieces in driven lanes 62 -> 0; browser turn + the open list (lane buildings / bollards / trees, walls at E10 / H6, building colliders vs drawn walls) left.
+- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile). claude/collisions 2026-11-17: collider audit (tools/audit/colliderAudit.mjs, rule 25 provisional, docs/COLLIDER_AUDIT.md): building colliders from the sunk walls (D4: the car drove 13.7 m into a block); OPEN: deck parapets / railings drawn across streets (Kasteelstraat E10, Carsoel deck H6), traffic lanes through a block / alleys / footpaths (Avenue Albert + Carre Cassimans F1, Kauwberg G6), open collider regions (D6), plants without colliders (owner?).
 
 **Ideas, later**
 - [ ] Autumn leaves (8j). Character + car shapes round. Police car round 2 (branch claude/police-car: beam, siren WAVs).
