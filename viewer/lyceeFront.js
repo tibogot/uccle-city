@@ -9,7 +9,31 @@
 //   - the "Lycée Français / Jean Monnet" lettering on that end, by the round stair tower.
 // One merged vertex-coloured mesh (the railing, gate, poles) + the lettering's quad: 2 draws, in tile F7's features
 // group (it fades and unloads with the tile). ?cortenbosch=old: none.
+//
+// THE BARS, PRE-FILTERED (claude/lycee, rule 26 provisional; ?lyceerail=old = one mesh, modelled bars at every distance,
+// as before). The railing's and the gate's bars are 2.5 cm wide every ~12 cm: from the avenue (8-30 m) a bar is 0.5-2
+// internal pixels under the TAAU, white on the dark campus. Jitter phases whose 3 x 3 neighbourhood misses a bar clip it
+// out of the history: the fence shimmered / crawled while the camera moved (owner 2026-11-17, rule 23's mechanism). Now:
+//   - a COVERAGE CARD per panel in the bars' mid plane: one quad whose alpha is the bars' box-filtered coverage over the
+//     pixel footprint (tslkit filteredPulse, the railway fence's method): far, an even veil of the bars' 21 % share,
+//     near, the bars' exact edges; BLENDED at that coverage (transparent, no depth write: 24 quads, one draw). Browser
+//     A/B (docs/LYCEE.md): fence shimmer -43..-54 % at 8-20 m, gate -42..-60 %, equal (noise) at 3 m; the coverage
+//     variant (?lyceerail=cover: alpha-to-coverage, the TAAU's per-frame stochastic coverage) only -5..-15 %;
+//   - the modelled bars kept close up (they draw over the card, which lies inside them) and dithered out between
+//     BAR_NEAR and BAR_NEAR + BAR_BAND m (viewer/lodFade.js: the same dither as every LOD, no pop); their shadow is the
+//     modelled bars' at every distance (maskShadowNode: the sun's view never fades them);
+//   - no two faces in one plane over the same area (rule 2): the plinth and rails meet mitred at the railing's corners
+//     (they overlapped in a wedge there, both tops at the same height), the gate's bars stop under its top rail (their
+//     tops lay in the rail's top face). tools/audit/lyceeCheck.mjs counts both.
 import * as THREE from "three/webgpu";
+import { attribute, float, fwidth, clamp, length, positionWorld, select } from "three/tsl";
+import { lodEye, ditherNoise, rampTo, SMOOTH } from "./lodFade.js";
+import { filteredPulse } from "./tslkit.js";
+
+const qs = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
+/** ?lyceerail=old (as before) | cover (the card as alpha-to-coverage) | default "new" (the card blended) */
+let MODE = ["old", "cover"].includes(qs.get("lyceerail")) ? qs.get("lyceerail") : "new";
+const BAR_NEAR = 4, BAR_BAND = 2;                 // modelled bars to 4 m from the eye, the card alone from 6 m
 
 const TILE = "F7";
 // the sidewalk's back edge (UrbIS 135976), from the gatehouse to the avenue's east side (city x, z)
@@ -29,12 +53,15 @@ const SIGN = { a: [-335.34, 1192.86], b: [-324.87, 1201.83], at: 0.6, n: [0.65, 
 const WHITE = [0.74, 0.74, 0.72], CONCRETE = [0.4, 0.39, 0.37], BLACK = [0.018, 0.018, 0.02], POLE = [0.62, 0.63, 0.64];
 
 /** a box between two ground points: (x0, z0) -> (x1, z1) along, thickness t across, from y0 to y1 at each end (sheared
- *  with the ground), 5 faces (no bottom), flat normals */
-function pushBox(B, x0, z0, x1, z1, t, y0a, y1a, y0b, y1b, col) {
+ *  with the ground), 5 faces (no bottom), flat normals. mA / mB: the across vector at each end (a mitre: the bisector of
+ *  the two runs' normals over its cosine), default the run's own normal. B.tags (the audit): [first vertex, kind] */
+function pushBox(B, x0, z0, x1, z1, t, y0a, y1a, y0b, y1b, col, mA = null, mB = null) {
+  B.tags?.push([B.pos.length / 3, B.kind || "box"]);
   const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz) || 1, nx = (-dz / L) * t / 2, nz = (dx / L) * t / 2;
+  const ax = mA ? mA[0] * t / 2 : nx, az = mA ? mA[1] * t / 2 : nz, bx = mB ? mB[0] * t / 2 : nx, bz = mB ? mB[1] * t / 2 : nz;
   const P = [
-    [x0 - nx, y0a, z0 - nz], [x1 - nx, y0b, z1 - nz], [x1 + nx, y0b, z1 + nz], [x0 + nx, y0a, z0 + nz],
-    [x0 - nx, y1a, z0 - nz], [x1 - nx, y1b, z1 - nz], [x1 + nx, y1b, z1 + nz], [x0 + nx, y1a, z0 + nz],
+    [x0 - ax, y0a, z0 - az], [x1 - bx, y0b, z1 - bz], [x1 + bx, y0b, z1 + bz], [x0 + ax, y0a, z0 + az],
+    [x0 - ax, y1a, z0 - az], [x1 - bx, y1b, z1 - bz], [x1 + bx, y1b, z1 + bz], [x0 + ax, y1a, z0 + az],
   ];
   const quad = (a, b, c, d) => {
     const pa = P[a], pb = P[b], pc = P[c];
@@ -50,6 +77,7 @@ function pushBox(B, x0, z0, x1, z1, t, y0a, y1a, y0b, y1b, col) {
 }
 /** a vertical tapered cylinder with smooth normals + a ball on top */
 function pushPole(B, x, y, z, h, r0, r1, col) {
+  B.tags?.push([B.pos.length / 3, "pole"]);
   const S = 14, base = B.pos.length / 3;
   for (let k = 0; k <= S; k++) {
     const a = (k / S) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
@@ -66,23 +94,42 @@ function pushPole(B, x, y, z, h, r0, r1, col) {
   for (let j = 0; j < NV; j++) for (let k = 0; k < NU; k++) { const a = b2 + j * (NU + 1) + k, b = a + NU + 1; B.idx.push(a, a + 1, b + 1, a, b + 1, b); }
 }
 
-/** a railing of vertical bars between two ground points: plinth (concrete) + bottom / top rails + bars; posts at the ends */
-function pushRailPanel(B, ground, x0, z0, x1, z1, { plinth = 0.35, barH = 1.9, railTop = 1.62, gap = 0.12, col = WHITE, post = true, gate = false }) {
+/** a railing of vertical bars between two ground points: plinth (concrete) + bottom / top rails + bars; posts at the ends.
+ *  bars: where the modelled bars go (default B); cards: the coverage card's buffer (null: none, the old way); mA / mB:
+ *  the mitres at the ends (pushBox) */
+function pushRailPanel(B, ground, x0, z0, x1, z1, { plinth = 0.35, barH = 1.9, railTop = 1.62, gap = 0.12, col = WHITE, post = true, gate = false, bars = B, cards = null, mA = null, mB = null }) {
   const g0 = ground(x0, z0), g1 = ground(x1, z1), L = Math.hypot(x1 - x0, z1 - z0);
   const lo = Math.min(g0, g1, ground((x0 + x1) / 2, (z0 + z1) / 2)) - 0.3;                 // (JOINS: the plinth's foot buried)
-  if (plinth > 0) pushBox(B, x0, z0, x1, z1, 0.24, lo, g0 + plinth, lo, g1 + plinth, CONCRETE);
+  B.kind = "plinth";
+  if (plinth > 0) pushBox(B, x0, z0, x1, z1, 0.24, lo, g0 + plinth, lo, g1 + plinth, CONCRETE, mA, mB);
   const t0 = g0 + plinth, t1 = g1 + plinth;
   const at = (f) => [x0 + (x1 - x0) * f, z0 + (z1 - z0) * f, t0 + (t1 - t0) * f];
   // rails: a flat bar near the foot and one under the bars' tops
-  pushBox(B, x0, z0, x1, z1, 0.03, t0 + 0.06, t0 + 0.12, t1 + 0.06, t1 + 0.12, col);
-  pushBox(B, x0, z0, x1, z1, 0.03, t0 + railTop, t0 + railTop + 0.06, t1 + railTop, t1 + railTop + 0.06, col);
+  B.kind = "rail";
+  pushBox(B, x0, z0, x1, z1, 0.03, t0 + 0.06, t0 + 0.12, t1 + 0.06, t1 + 0.12, col, mA, mB);
+  pushBox(B, x0, z0, x1, z1, 0.03, t0 + railTop, t0 + railTop + 0.06, t1 + railTop, t1 + railTop + 0.06, col, mA, mB);
   if (gate) pushBox(B, x0, z0, x1, z1, 0.035, t0 + barH - 0.05, t0 + barH, t1 + barH - 0.05, t1 + barH, col);
   const n = Math.max(1, Math.round(L / gap));
   const ux = (x1 - x0) / L, uz = (z1 - z0) / L, hw = 0.0125;
+  // (new: a gate's bars stop 1 cm into its top rail: their tops lay in the rail's top face, a z-fight seen from above)
+  const barTop = gate && cards ? barH - 0.04 : barH;
+  bars.kind = "bar";
   for (let k = 1; k < n; k++) {
     const [x, z, y] = at(k / n);
-    pushBox(B, x - ux * hw, z - uz * hw, x + ux * hw, z + uz * hw, 0.025, y + 0.06, y + barH, y + 0.06, y + barH, col);
+    pushBox(bars, x - ux * hw, z - uz * hw, x + ux * hw, z + uz * hw, 0.025, y + 0.06, y + barTop, y + 0.06, y + barTop, col);
   }
+  if (cards) {
+    // the card: the panel's bar plane from the bottom rail to the bars' tops; aS = bar units along (bars at 1 .. n - 1;
+    // 0 and n lie inside the posts), aW = the bar's half width in those units
+    const base = cards.pos.length / 3, w = hw / (L / n), nx = -uz, nz = ux;
+    for (const [f, yb, yt] of [[0, t0 + 0.06, t0 + barTop], [1, t1 + 0.06, t1 + barTop]]) {
+      const x = x0 + (x1 - x0) * f, z = z0 + (z1 - z0) * f;
+      cards.pos.push(x, yb, z, x, yt, z); cards.nrm.push(nx, 0, nz, nx, 0, nz); cards.col.push(...col, ...col);
+      cards.s.push(f * n, f * n); cards.w.push(w, w);
+    }
+    cards.idx.push(base, base + 2, base + 3, base, base + 3, base + 1);
+  }
+  B.kind = "post";
   if (post) {
     const pw = 0.03;
     pushBox(B, x0 - ux * pw, z0 - uz * pw, x0 + ux * pw, z0 + uz * pw, 0.06, t0, t0 + barH + 0.05, t0, t0 + barH + 0.05, col);
@@ -102,7 +149,102 @@ function signTexture(lines) {
   return t;
 }
 
-let MAT = null, SIGN_MAT = null;
+let MAT = null, SIGN_MAT = null, BAR_MAT = null;
+const CARD_MAT = {};
+/** the mitre at polyline vertex i (between runs i - 1 and i): the across vector for pushBox (pushBox's normal convention
+ *  (-dz, dx) / L), or null at the ends */
+function mitreAt(P, i) {
+  if (i <= 0 || i >= P.length - 1) return null;
+  const nrm = (p, q) => { const L = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1; return [-(q[1] - p[1]) / L, (q[0] - p[0]) / L]; };
+  const n1 = nrm(P[i - 1], P[i]), n2 = nrm(P[i], P[i + 1]);
+  let mx = n1[0] + n2[0], mz = n1[1] + n2[1]; const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l;
+  const c = Math.max(0.5, mx * n1[0] + mz * n1[1]);
+  return [mx / c, mz / c];
+}
+
+/**
+ * The front's buffers (pure: no three objects; the offline audit tools/audit/lyceeCheck.mjs builds the same).
+ * ground(x, z) = the drawn terrain; mode "old" | "new" | "cover"; tags: record each box (the audit).
+ * -> { B (the merged mesh), BARS (the modelled bars: B itself when old), C (the coverage cards, null when old), poles,
+ *      panels }
+ */
+export function buildFront(ground, { mode = MODE, tags = false } = {}) {
+  const old = mode === "old";
+  const mk = () => ({ pos: [], nrm: [], col: [], idx: [], ...(tags ? { tags: [] } : {}) });
+  const B = mk(), BARS = old ? B : mk(), C = old ? null : { ...mk(), s: [], w: [] };
+  // the railing: 2.5 m panels along the back edge, 0.3 m toward the campus
+  const off = RAIL.map((p, i) => {
+    const a = RAIL[Math.max(0, i - 1)], b = RAIL[Math.min(RAIL.length - 1, i + 1)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    let nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
+    if (nx * (RAIL_IN[0] - p[0]) + nz * (RAIL_IN[1] - p[1]) < 0) { nx = -nx; nz = -nz; }
+    return [p[0] + nx * 0.3, p[1] + nz * 0.3];
+  });
+  let panels = 0;
+  for (let i = 0; i < off.length - 1; i++) {
+    const [ax, az] = off[i], [bx, bz] = off[i + 1], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(L / 2.5));
+    // (new) the plinth and rails mitred at the polyline's corners: one owner per spot, no overlapping wedge
+    const mA = old ? null : mitreAt(off, i), mB = old ? null : mitreAt(off, i + 1);
+    for (let k = 0; k < n; k++) {
+      const f0 = k / n, f1 = (k + 1) / n;
+      pushRailPanel(B, ground, ax + (bx - ax) * f0, az + (bz - az) * f0, ax + (bx - ax) * f1, az + (bz - az) * f1,
+        { bars: BARS, cards: C, mA: k === 0 ? mA : null, mB: k === n - 1 ? mB : null });
+      panels++;
+    }
+  }
+  B.kind = "post";
+  { const [x, z] = off[off.length - 1], y = ground(x, z) + 0.35; pushBox(B, x - 0.03, z, x + 0.03, z, 0.06, y, y + 1.95, y, y + 1.95, WHITE); }
+  // the sliding gate: black bars, a frame, between two dark posts
+  {
+    const { c, dir, w, h } = GATE, x0 = c[0] - dir[0] * w / 2, z0 = c[1] - dir[1] * w / 2, x1 = c[0] + dir[0] * w / 2, z1 = c[1] + dir[1] * w / 2;
+    pushRailPanel(B, ground, x0, z0, x1, z1, { plinth: 0.0, barH: h, railTop: h * 0.5, gap: 0.11, col: BLACK, gate: true, bars: BARS, cards: C });
+    B.kind = "gatepost";
+    for (const [x, z] of [[x0, z0], [x1, z1]]) {
+      const y = ground(x, z);
+      pushBox(B, x - dir[0] * 0.08, z - dir[1] * 0.08, x + dir[0] * 0.08, z + dir[1] * 0.08, 0.16, y - 0.3, y + h + 0.2, y - 0.3, y + h + 0.2, [0.06, 0.06, 0.065]);
+    }
+  }
+  // the flag poles
+  const poles = POLES.map(([x, z, design]) => {
+    const y = ground(x, z);
+    B.kind = "footing";
+    pushBox(B, x - 0.18, z, x + 0.18, z, 0.36, y - 0.3, y + 0.06, y - 0.3, y + 0.06, CONCRETE);        // the footing slab
+    pushPole(B, x, y + 0.06, z, POLE_H, 0.05, 0.035, POLE);
+    return { name: design, design, base: [x, y, z], tip: [x, y + 0.06 + POLE_H, z] };
+  });
+  return { B, BARS, C, poles, panels, mode };
+}
+
+/** the modelled bars' material (new): dithered out from BAR_NEAR to BAR_NEAR + BAR_BAND m from the eye; the shadow
+ *  pass keeps them all */
+function barsMaterial() {
+  const m = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.0 });
+  m.name = "lycee-bars";
+  const d = length(positionWorld.sub(lodEye));
+  const t = SMOOTH ? rampTo(d, float(BAR_NEAR + BAR_BAND), float(BAR_BAND)) : select(d.greaterThan(BAR_NEAR + BAR_BAND / 2), float(1), float(0));
+  m.maskNode = ditherNoise().greaterThanEqual(t);
+  m.maskShadowNode = float(1).greaterThan(float(0));
+  return m;
+}
+/** the coverage card's material: alpha = the bars' box-filtered coverage of the pixel (no mipmaps needed: analytic) */
+function cardMaterial(blend) {
+  const m = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.0, side: THREE.DoubleSide });
+  m.name = blend ? "lycee-barcards-blend" : "lycee-barcards";
+  const s = attribute("aS", "float"), w = attribute("aW", "float");
+  m.opacityNode = clamp(filteredPulse(s.add(0.5), float(0.5).sub(w), float(0.5).add(w), fwidth(s).max(1e-4)), 0, 1);
+  if (blend) { m.transparent = true; m.depthWrite = false; }
+  else { m.alphaToCoverage = true; m.userData.seeThrough = true; }     // (upscale.js: stochastic coverage under the TAAU)
+  return m;
+}
+const geometryOf = (A, extra = {}) => {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(A.pos, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(A.nrm, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(A.col, 3));
+  for (const [k, v] of Object.entries(extra)) g.setAttribute(k, new THREE.Float32BufferAttribute(v, 1));
+  g.setIndex(A.idx); g.computeBoundingSphere();
+  return g;
+};
+
 export const lyceeFront = {
   group: null, poles: null,
   /** the strip along the railing where no generated garden piece / plant stands (main.js plantsClear rings) */
@@ -117,48 +259,26 @@ export const lyceeFront = {
   /** tile `name`'s details (F7 only): a Group for its features group, or null. ground(x, z) = the drawn terrain. */
   tile(name, parent, ground) {
     if (name !== TILE) return null;
-    const B = { pos: [], nrm: [], col: [], idx: [] };
-    // the railing: 2.5 m panels along the back edge, 0.3 m toward the campus
-    const off = RAIL.map((p, i) => {
-      const a = RAIL[Math.max(0, i - 1)], b = RAIL[Math.min(RAIL.length - 1, i + 1)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-      let nx = -(b[1] - a[1]) / L, nz = (b[0] - a[0]) / L;
-      if (nx * (RAIL_IN[0] - p[0]) + nz * (RAIL_IN[1] - p[1]) < 0) { nx = -nx; nz = -nz; }
-      return [p[0] + nx * 0.3, p[1] + nz * 0.3];
-    });
-    let panels = 0;
-    for (let i = 0; i < off.length - 1; i++) {
-      const [ax, az] = off[i], [bx, bz] = off[i + 1], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(L / 2.5));
-      for (let k = 0; k < n; k++) {
-        const f0 = k / n, f1 = (k + 1) / n;
-        pushRailPanel(B, ground, ax + (bx - ax) * f0, az + (bz - az) * f0, ax + (bx - ax) * f1, az + (bz - az) * f1, {});
-        panels++;
-      }
-    }
-    { const [x, z] = off[off.length - 1], y = ground(x, z) + 0.35; pushBox(B, x - 0.03, z, x + 0.03, z, 0.06, y, y + 1.95, y, y + 1.95, WHITE); }
-    // the sliding gate: black bars, a frame, between two dark posts
-    {
-      const { c, dir, w, h } = GATE, x0 = c[0] - dir[0] * w / 2, z0 = c[1] - dir[1] * w / 2, x1 = c[0] + dir[0] * w / 2, z1 = c[1] + dir[1] * w / 2;
-      pushRailPanel(B, ground, x0, z0, x1, z1, { plinth: 0.0, barH: h, railTop: h * 0.5, gap: 0.11, col: BLACK, gate: true });
-      for (const [x, z] of [[x0, z0], [x1, z1]]) {
-        const y = ground(x, z);
-        pushBox(B, x - dir[0] * 0.08, z - dir[1] * 0.08, x + dir[0] * 0.08, z + dir[1] * 0.08, 0.16, y - 0.3, y + h + 0.2, y - 0.3, y + h + 0.2, [0.06, 0.06, 0.065]);
-      }
-    }
-    // the flag poles
-    this.poles = POLES.map(([x, z, design]) => {
-      const y = ground(x, z);
-      pushBox(B, x - 0.18, z, x + 0.18, z, 0.36, y - 0.3, y + 0.06, y - 0.3, y + 0.06, CONCRETE);        // the footing slab
-      pushPole(B, x, y + 0.06, z, POLE_H, 0.05, 0.035, POLE);
-      return { name: design, design, base: [x, y, z], tip: [x, y + 0.06 + POLE_H, z] };
-    });
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(B.pos, 3));
-    g.setAttribute("normal", new THREE.Float32BufferAttribute(B.nrm, 3));
-    g.setAttribute("color", new THREE.Float32BufferAttribute(B.col, 3));
-    g.setIndex(B.idx); g.computeBoundingSphere();
+    this.args = { parent, ground };
+    const F = buildFront(ground);
+    this.poles = F.poles;
     MAT ||= new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.0 });
-    const mesh = new THREE.Mesh(g, MAT);
+    const mesh = new THREE.Mesh(geometryOf(F.B), MAT);
     mesh.name = "lycee-front"; mesh.castShadow = true; mesh.receiveShadow = true;
+    const grp = new THREE.Group(); grp.name = "lycee-front"; grp.add(mesh);
+    let tris = F.B.idx.length / 3 + 2;
+    if (F.C) {
+      BAR_MAT ||= barsMaterial();
+      const bars = new THREE.Mesh(geometryOf(F.BARS), BAR_MAT);
+      bars.name = "lycee-bars"; bars.castShadow = true; bars.receiveShadow = true;
+      const key = F.mode === "cover" ? "cov" : "blend";
+      CARD_MAT[key] ||= cardMaterial(key === "blend");
+      const cards = new THREE.Mesh(geometryOf(F.C, { aS: F.C.s, aW: F.C.w }), CARD_MAT[key]);
+      cards.name = "lycee-barcards"; cards.castShadow = false; cards.receiveShadow = true;
+      cards.userData.noCollide = true;
+      grp.add(bars, cards);
+      tris += (F.BARS.idx.length + F.C.idx.length) / 3;
+    }
     // the lettering
     const { a, b, at, n, y, w, h, lines } = SIGN;
     const cx = a[0] + (b[0] - a[0]) * at + n[0] * 0.05, cz = a[1] + (b[1] - a[1]) * at + n[1] * 0.05;
@@ -174,11 +294,25 @@ export const lyceeFront = {
     SIGN_MAT ||= new THREE.MeshStandardNodeMaterial({ map: signTexture(lines), alphaTest: 0.45, roughness: 0.6, metalness: 0.2 });
     const sign = new THREE.Mesh(sg, SIGN_MAT);
     sign.name = "lycee-lettering"; sign.receiveShadow = true;
-    const grp = new THREE.Group(); grp.name = "lycee-front"; grp.add(mesh, sign);
+    grp.add(sign);
     parent.add(grp);
     this.group = grp;
-    return { group: grp, panels, tris: B.idx.length / 3 + 2 };
+    return { group: grp, panels: F.panels, tris, mode: F.mode };
   },
+  /** debug/lyceeCheck.js A/B in one session: rebuild the railing / gate in another mode ("old" | "new" | "cover") in
+   *  place (the meshes are rebuilt, the materials kept per mode: a first switch compiles once). -> the mode */
+  setMode(mode) {
+    if (!["old", "new", "cover"].includes(mode)) throw new Error(`lyceerail mode ${mode}`);
+    MODE = mode;
+    const g = this.group, a = this.args;
+    if (!g?.parent || !a) return mode;                  // (tile F7 not in)
+    const parent = g.parent;
+    parent.remove(g);
+    for (const o of g.children) o.geometry.dispose();
+    this.tile(TILE, parent, a.ground);
+    return mode;
+  },
+  get mode() { return MODE; },
   /** the flags on the poles (viewer/flagsCity.js flyFlags), once the tile has built them; shown while the tile is */
   async flags({ scene, updaters, renderer, compiler, params, log }) {
     const { flyFlags } = await import("./flagsCity.js");

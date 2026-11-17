@@ -10,7 +10,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** collisions (browser turn; rule 25), lycee (Lycée gate fence jitter + Cortenbosch one-way part; offline, then browser). Merged 2026-11-17: falconstutter, policerear, curvedroads (outer-corner texture rings left: docs/roads/BENDS.md).
+**Running:** lycee (browser turn: gate fence A/B, Cortenbosch lane vs Street View; rule 26), falcon2 (falcon stutter round 2: shared shaders, GC, gardens step; offline), carshadow (smooth tree shadows on the moving police car; offline). Merged 2026-11-17: falconstutter, policerear, curvedroads, collisions (colfeet). CHECK: traffic-alsemberg tour view lost a parked car at the left kerb since curvedroads (collisions tour: 0 flags vs the curvedroads run) - find why.
 
 **Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
 
@@ -27,8 +27,8 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
   across unmapped roads gone; rule 24. LEFT: the outer-side fan at R ~ 0 corners draws texture rings / a curled edge line
   (D1 Pénélope, D4 Paola): a next job. Widths elsewhere: a different cause, open.)
 - [ ] Falcon controls feel hard: ASK THE OWNER what is hard. Police game: owner to replay car control round 3.
-- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?).
-- [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing).
+- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?). **claude/lycee (offline turn done, docs/LYCEE.md):** sub-pixel bars (0.5-2 px from the avenue) -> pre-filtered blended cards + modelled bars within 4-6 m (?lyceerail=old|cover; browser: fence shimmer -43..-54 % at 8-20 m, gate -42..-60 %), gate bar tops out of the rail (120 doubled faces); quick mode now keeps the Lycée flags; rule 26 (provisional), gate row lycee; browser turn done 2026-11-18 (docs/LYCEE.md 4).
+- [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing). **claude/lycee offline:** OSM 1235727248 IS built (UrbIS 149914 / 30121 / 27386 in setts, 3-5 m, joined both ends, driven, nothing on it; round 1 shot oldlane_after.jpg); no sidewalks (UrbIS maps none). Browser 2026-11-18 vs Street View: present but wider (3-5 m vs 2.5-3 m), greener and plainer than reality (no brick parking strip at n. 15, no painted Private Weg / Cortenbosch words, no lantern posts). ASK THE OWNER which stretch / what looked missing (docs/LYCEE.md 4).
 - [ ] Flags: where else (owner names places; suggestions police station, Observatory, public buildings).
 - [ ] Shops Place Saint-Job: Le Touring; re-check Thai Smile / Botanea / Miska / Cacao Tree; ~630 null UrbIS solids to rebuild.
 - [ ] Owner image 68 (Waterloo by Optalweg): not located; ask for a hint.
@@ -39,6 +39,9 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Night lamps as quads drawn into one light map (jeantimex/tokyo performance.md: night 32.9 -> 20.1 ms on WebGL); fits the fixed light count (?lamplightmap).
 - [ ] Lab only: three-mesh-bvh/webgpu BVHComputeData (GPU raycast / closest point) for baked occlusion / AO probes; InstancedMesh2 1.0 beta for per-instance picking once it supports r187+.
 - [ ] r188: GPUTimer (PR #35412) for per-pass timing; PR #35321 compileComputeAsync de-dup.
+
+**Owner idea 2026-11-18: Dieweg cemetery (OSM way 16309623, landuse cemetery)**
+- [ ] Hero treatment like St-Job / Observatory (hero-buildings method: real photos, look only): the remarkable funerary chapels and tombs (neoclassical, Art Nouveau, Egyptian-style), the old Jewish section, overgrown paths, ivy, old trees, walls and gates. Closed since 1958, half wild. Also a key place for the kid game (docs/KIDGAME.md).
 
 **Defects found 2026-11-17**
 - [ ] Wire clearance too low under Av. des Tilleuls / Hospices / Carsoel bridges.
@@ -62,7 +65,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Traffic: trams don't stop for cars, no lane changes, no headlight beams, a few lanes hug kerbs.
 - [ ] Pedestrians: feet slide on turns, nobody sits, no children / dogs, walk graph from data.
 - [ ] Minimap: more names, neighbourhood names, route to a searched place, satellite toggle.
-- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile).
+- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile). claude/collisions 2026-11-17: collider audit (tools/audit/colliderAudit.mjs, rule 25 provisional, docs/COLLIDER_AUDIT.md): building colliders from the sunk walls (D4: the car drove 13.7 m into a block); OPEN: deck parapets / railings drawn across streets (Kasteelstraat E10, Carsoel deck H6), traffic lanes through a block / alleys / footpaths (Avenue Albert + Carre Cassimans F1, Kauwberg G6), open collider regions (D6), plants without colliders (owner?).
 
 **Ideas, later**
 - [ ] Autumn leaves (8j). Character + car shapes round. Police car round 2 (branch claude/police-car: beam, siren WAVs).

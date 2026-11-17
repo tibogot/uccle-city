@@ -133,13 +133,14 @@ const { drain, sliced } = await import("../../viewer/slices.js");
   ok(same && a.stand.wall.length === b.stand.wall.length, `gardenInstances drained = sliced (${Object.keys(a.inst).length} pieces, ${Object.values(a.inst).reduce((s, x) => s + x.length / GK.STRIDE, 0)} instances)`);
   ok(st.slices > 1 && st.longest <= 3 + 2, `gardens on a slow ground (${slow} samples): ${st.slices} slices, longest ${st.longest.toFixed(1)} ms (<= 3 ms + one piece)`);
   const blocked = (x, z) => { busy(0.01); return Math.floor(x) % 11 === 0; };
-  const c1 = drain(CG.clearRoads(doc, blocked));
+  const GC = await import("../../viewer/gardens/gardenClear.js");
+  const c1 = GC.clearRoads(doc, blocked);
   let st2 = null, c2 = null;
-  for (let k = 0; k < 3; k++) { const s1 = {}; const r = await sliced(CG.clearRoads(doc, blocked), 3, s1); if (!st2 || s1.longest < st2.longest) { st2 = s1; c2 = r; } }
+  for (let k = 0; k < 3; k++) { const s1 = {}; const r = await sliced(GC.clearRoadsGen(doc, blocked), 3, s1); if (!st2 || s1.longest < st2.longest) { st2 = s1; c2 = r; } }
   ok(c1 && c2 && c1.segs === c2.segs && c1.doc.segs.length === c2.doc.segs.length && c1.doc.hedges.length === c2.doc.hedges.length && c1.segs > 0, `clearRoads drained = sliced (${c1.segs} segments, ${c1.pillars} pillars, ${c1.gates} gates off the road)`);
   ok(st2.slices > 1 && st2.longest <= 3 + 2, `clearRoads: ${st2.slices} slices, longest ${st2.longest.toFixed(1)} ms`);
   const cg = src("viewer/gardens/cityGardens.js"), main = src("viewer/main.js");
-  ok(cg.includes("addTile(...a) { return drain(this.addTileGen(...a)); },") && cg.includes("yield* clearRoads(doc, blocked)") && cg.includes("yield* gardenInstancesGen(doc, groundAt"), "cityGardens.js: addTile drains the same generator addTileSliced slices");
+  ok(cg.includes("addTile(...a) { return drain(this.addTileGen(...a)); },") && cg.includes("yield* clearRoadsGen(doc, blocked, { old: GARDEN_LANE_OLD })") && cg.includes("yield* gardenInstancesGen(doc, groundAt"), "cityGardens.js: addTile drains the same generator addTileSliced slices");
   ok(main.includes("await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name") && /GARDEN_SLICE = params\.get\("gardenslice"\) !== "old"/.test(main), "main.js loadTile: the gardens through addTileSliced (?gardenslice=old)");
 }
 
