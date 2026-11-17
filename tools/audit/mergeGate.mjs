@@ -13,6 +13,7 @@ const CHECKS = [
   { name: "shell", script: "tools/audit/shellGate.mjs", args: [], guards: "every building's outer shell closed from the street: no wall wound inward, no open edge (claude/holes)" },
   { name: "gardenzfight", script: "tools/audit/gardenZfight.mjs", args: ["--all", "--max", "40"], guards: "no two garden pieces draw a face in one plane over the same area, <= 40 small known (claude/holes)" },
   { name: "heap", script: "tools/audit/heapGate.mjs", args: [], guards: "CPU copies dropped after the GPU upload have no unlisted reader; loadTile keeps no build result; heapDrop logic (claude/heap, docs/HEAP.md)" },
+  { name: "orbitcam", script: "tools/orbitCamTest.mjs", args: [], guards: "orbit camera: picks, orbit / zoom / pan / frame, keyboard moves (no NaN, over the ground, speed by height, walls stop it) (claude/orbitcam2)" },
 ];
 const BROWSER = [
   "HEAP (docs/HEAP.md): ?game=police then debug/gamePerf.js police({ seconds: 45 }) (tiles unload + reload): window.__heapDrop.tripCounts must stay {} (a trip = a reader of a dropped CPU copy) (claude/heap)",
