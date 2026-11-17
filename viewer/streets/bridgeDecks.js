@@ -546,7 +546,7 @@ export function deckUnderCut(decks, grids, hdr) {
       if (over > T || out > T) continue;
       // (vivier) walled: the floor only between the walls and under the slab, no 1:1 taper (the taper of a station floor
       // lowered the Avenue Laterale beside the Vivier d'Oie deck 1.8 m: a walled cutting's banks are the streets)
-      if (U.walled && (over > 0.2 || out > 0)) continue;
+      if (U.walled && (over > 1.5 || out > 0)) continue;     // (1.5: the grid row behind the wall too: its 1 m terrain triangles rose in spikes in front of the wall foot)
       const target = U.level + over * 1.0 + out * 1.0;
       const k = r * cols + c;
       for (const G of grids) if (G[k] > target) { G[k] = target; moved++; }

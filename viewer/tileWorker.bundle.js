@@ -11442,7 +11442,7 @@ function laneFit(node, ground, noData) {
   y0 = sy / n - gx * mx - gz * mz;
   return { y: y0, gx, gz, rms: Math.sqrt(e / n) };
 }
-function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
+function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null } = {}) {
   const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...globalThis.__levelsDebug ? { debug: true } : {} };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
@@ -11461,6 +11461,22 @@ function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
   const moved = /* @__PURE__ */ new Set();
   for (const node of net.nodes) {
     if (node.src?.y != null || !node.arms?.length) continue;
+    const dl = deckLevel ? deckLevel(node.x, node.z) : null;
+    if (dl != null) {
+      if (Math.abs(node.y - dl) > 0.02) {
+        const d2 = node.y - dl;
+        node.y = dl;
+        node.plane = { gx: 0, gz: 0 };
+        moved.add(node);
+        st.nodes++;
+        st.deckNodes = (st.deckNodes || 0) + 1;
+        if (Math.abs(d2) > st.maxMove) {
+          st.maxMove = Math.abs(d2);
+          st.maxAt = [Math.round(node.x), Math.round(node.z)];
+        }
+      }
+      continue;
+    }
     const fit = fittedY(node, ground, noData);
     if (fit == null) {
       st.skippedNoData = (st.skippedNoData || 0) + 1;
@@ -11747,7 +11763,7 @@ function buildRoadData(o) {
     const h = hm.h;
     return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
   };
-  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false });
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null });
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
@@ -12363,7 +12379,7 @@ function deckUnderCut(decks, grids, hdr) {
       const x = x0 + c * step, z = z0 + r * step;
       const over = Math.max(0, Math.abs((x - cx) * vx + (z - cz) * vz) - U2.half), out = outDist(x, z);
       if (over > T3 || out > T3) continue;
-      if (U2.walled && (over > 0.2 || out > 0)) continue;
+      if (U2.walled && (over > 1.5 || out > 0)) continue;
       const target = U2.level + over * 1 + out * 1;
       const k = r * cols + c;
       for (const G2 of grids) if (G2[k] > target) {
@@ -16529,6 +16545,14 @@ async function buildTileData(entry, base) {
       return y != null && y - hm.ground(t.x, t.z) > 1.5;
     }));
   }
+  const planDecks = osmBridges.decks.filter((d) => d.plan), planFns = planDecks.map((d) => deckHeight(d, baseGround));
+  const planLevel = planFns.length ? (x, z) => {
+    for (const f of planFns) {
+      const y = f(x, z);
+      if (y != null) return y;
+    }
+    return null;
+  } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({
@@ -16549,6 +16573,8 @@ async function buildTileData(entry, base) {
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z),
+    deckLevel: entry.vivier !== false ? planLevel : null,
+    // (vivier: junctions on a measured deck at its level)
     roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null
   }));
   Object.assign(times, rd.times);
@@ -17222,4 +17248,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "2c6f72dfe6e335a9";
+self.__TILE_CODE_HASH = "6efd72787d1e5b54";

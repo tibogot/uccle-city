@@ -391,6 +391,10 @@ const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the 
 const TRAFPARK = params.get("trafpark") !== "old";       // traffic vs parked cars (docs/TRAFPARK.md)
 const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
 const VIVIER = params.get("vivier") !== "old";            // vivier 2026-11-17: UrbIS bridge plans, furniture / cars on the decks (docs/VIVIER.md)
+// (vivier) the moving traffic and the trams on a road deck drive ON it (world.decks: the OSM decks + the hero road
+// bridges), not on the terrain under it: on the Vivier d'Oie deck a car dipped 7 m into the cutting, on the band decks
+// before it 3-4 m into the DTM's hump under the slab
+const movingGround = (x, z) => { if (VIVIER && worldRef) { const y = worldRef.deckY(x, z); if (y != null) return y; } return worldRef.surface(x, z) + CARVE; };
 const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
 window.__carriage = carriageRefs;
 function addBridgeDecks(decks, hm) {
@@ -1013,6 +1017,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
   if (lycee) say(`lycée front: ${lycee.panels} railing panels, ${lycee.tris} triangles (viewer/lyceeFront.js)`);
   if (gardenCounts) say(`gardens: ${Object.entries(gardenCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/gardens, viewer/gardens)`);
+  // (vivier) no generated plant on a road deck: the bank under the Vivier d'Oie deck grew box balls up through its slab
+  if (VIVIER && bridgeDeckRefs.size && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (deckY(P[o], P[o + 1]) == null) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
+  if (VIVIER && bridgeDeckRefs.size && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (deckY(B[o], B[o + 1]) == null) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
   if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   const plantCounts = cityPlants.addTile(entry.name, plantDoc, own.features, treeGround || ((x, z) => hm.surface(x, z)), B.kit);   // (on the DRAWN ground: the measured squares / medians' lift, as the trees; window boxes on the façade kit's sills)
@@ -1440,7 +1447,7 @@ async function main() {
   const { hm, roads, net } = T0;
   if (params.get("trams") !== "0") {
     try {
-      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, (x, z) => world.surface(x, z) + CARVE, trackProf, roadOffFor(world.tiles[0].hm, () => false));
+      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, movingGround, trackProf, roadOffFor(world.tiles[0].hm, () => false));
       for (const t of world.tiles) tramLine.snapTile(t.name, t.feats, t.bounds);
       updaters.push(tramLine.update);
       cityNight?.setTram(tramLine);                     // ?night=1: a tram passing a shadowed lamp re-renders its shadow map
@@ -1711,7 +1718,7 @@ async function main() {
         else { fpos.x = controls.target.x; fpos.z = controls.target.z; }
         return fpos;
       };
-      cityTraffic = createCityTraffic({ scene, renderer, camera, ground: (x, z) => world.surface(x, z) + CARVE, night: env.uNight, focus: focusOf,
+      cityTraffic = createCityTraffic({ scene, renderer, camera, ground: movingGround, night: env.uNight, focus: focusOf,
         driver, getThird: () => third, getTram: () => tramLine, log, compile: compileFor });   // (fix4: its batches compiled one by one)
       for (const [n, g] of trafficTiles) cityTraffic.addTile(n, g);
       cityNight?.setTraffic(cityTraffic);               // ?night=1: its cars' head / tail lights

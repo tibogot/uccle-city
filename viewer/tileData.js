@@ -380,11 +380,15 @@ export async function buildTileData(entry, base) {
     feats.trees = feats.trees.filter((t) => !on.some((f) => { const y = f(t.x, t.z); return y != null && y - hm.ground(t.x, t.z) > 1.5; }));
   }
   // (+ the street level across the hero underpasses, railData.js underpassGround; ?underpasslevel=0: as before)
+  // (vivier) the plan decks' road level (no kerb: the junction is on the carriageway)
+  const planDecks = osmBridges.decks.filter((d) => d.plan), planFns = planDecks.map((d) => deckHeight(d, baseGround));
+  const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
+    deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)
     roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null }));   // (cortenbosch2: the lane's painted words)
   Object.assign(times, rd.times);
   const { netInfo } = rd;
