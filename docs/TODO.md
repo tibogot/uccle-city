@@ -10,7 +10,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** collisions (browser turn; rule 25), lycee (Lycée gate fence jitter + Cortenbosch one-way part; offline, then browser). Merged 2026-11-17: falconstutter, policerear, curvedroads (outer-corner texture rings left: docs/roads/BENDS.md).
+**Running:** lycee (browser turn: gate fence A/B, Cortenbosch lane vs Street View; rule 26), falcon2 (falcon stutter round 2: shared shaders, GC, gardens step; offline), carshadow (smooth tree shadows on the moving police car; offline). Merged 2026-11-17: falconstutter, policerear, curvedroads, collisions (colfeet). CHECK: traffic-alsemberg tour view lost a parked car at the left kerb since curvedroads (collisions tour: 0 flags vs the curvedroads run) - find why.
 
 **Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
 
