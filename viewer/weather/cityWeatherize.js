@@ -23,7 +23,8 @@ import { Fn, If, float, vec2, vec3, vec4, mix, smoothstep, clamp, max, min, floo
 import { wx } from "./weatherState.js";
 import { season } from "../seasons/season.js";
 import { hash2D, noise2D } from "../tslkit.js";
-import { rippleSlope, glint, snowMask, SNOW_ALBEDO, wxLook } from "./surfaceWeather.js";
+import { rippleSlope, glint, snowMask, snowMaskFast, SNOW_ALBEDO, wxLook } from "./surfaceWeather.js";
+import { snowNoise, SNOW_FAST as FAST } from "./snowNoise.js";
 
 export const WX_ON = !/[?&]weather=old(&|$)/.test(location.search);
 // polish1 (docs/POLISH.md item 1, ?snowedge=old = before): the exposure test bilinear over the 4 nearest overhead cells
@@ -65,7 +66,22 @@ function graph(I, o, wantNormal) {
   const { P, Nw } = I, up = Nw.y;
   const fw = fwidth(P.x).add(fwidth(P.y)).add(fwidth(P.z)).mul(0.5).add(0.0002).toVar();
   let exposed = float(1), shelter = float(0);
-  if (o.map && MAP) {
+  if (o.map && MAP && FAST) {
+    // snowfast: the overhead map read only where it can matter: inside its window (64 m round the camera: most of a
+    // street view's ground is past it) and on faces that are not walls (|up| < 0.3: the wet reach of a wall is a
+    // constant, its snow none), in a per-pixel branch (texel loads only: no derivative inside)
+    exposed = float(1).toVar(); shelter = float(0).toVar();
+    If(MAP.inside(P.xz).and(abs(up).greaterThan(0.3)), () => {
+      const expOf = (h) => max(smoothstep(h.sub(0.6), h.sub(0.25), P.y), smoothstep(1.2, 4.0, h.sub(P.y)).mul(0.65));
+      const s = MAP.sample(P.xz);
+      if (SMOOTH_EXPOSURE && !o.lite) {
+        const c = P.xz.sub(MAP.uOrigin).div(MAP.cell).sub(0.5), c0 = floor(c), f = fract(c), N1 = MAP.res - 1;
+        const ld = (di, dj) => MAP.load(clamp(c0.x.add(di), 0, N1), clamp(c0.y.add(dj), 0, N1)).x;
+        exposed.assign(mix(mix(expOf(ld(0, 0)), expOf(ld(1, 0)), f.x), mix(expOf(ld(0, 1)), expOf(ld(1, 1)), f.x), f.y));
+      } else exposed.assign(expOf(s.x));
+      shelter.assign(s.y.mul(season.uLeafDensity.mul(0.75).add(0.25)));
+    });
+  } else if (o.map && MAP) {
     const s = MAP.sample(P.xz), inside = MAP.inside(P.xz);
     // (city tolerance 0.25-0.6 m, the lab's 0.06-0.3: the bake's smoothed heights sit a few cm over real lawns / mounds and
     // grass, and a lawn came out half "sheltered": blotchy thin snow at 15 cm depth. A car or an eave is > 1 m over)
@@ -181,61 +197,93 @@ function graph(I, o, wantNormal) {
   // ---- snow cover
   if (o.snow !== false) If(on(wx.uSnowCover), () => {
     const slush = (o.slush ? max(wx.uSlush, o.road ? wx.uSalt.mul(I.saltMask ?? float(1)).mul(0.85) : float(0)) : wx.uSlush.mul(0.35)).toVar();
+    const [upLo, upHi] = o.snowUp ?? [0.42, 0.78];
     if (lite) {
-      const cov = smoothstep(0.42, 0.78, up).mul(exposed).mul(wx.uSnowCover);
-      const sm = smoothstep(0.32, 0.5, cov.mul(1.45).sub(noise2D(P.xz.mul(0.6)).mul(0.45))).mul(roadKeep).mul(I.snowMask ?? float(1)).toVar();
-      if (!wantNormal) {
-        col.assign(mix(col, mix(SNOW_ALBEDO, vec3(0.42, 0.43, 0.44), slush.mul(0.8)), sm));
-        rough.assign(mix(rough, float(0.72), sm));
-        metal.assign(mix(metal, float(0), sm));
-      } else nView.assign(normalize(mix(nView, I.nG, sm)));
+      const body = () => {
+        const cov = smoothstep(0.42, 0.78, up).mul(exposed).mul(wx.uSnowCover);
+        const n = FAST ? snowNoise.t1(P.xz, fw).z : noise2D(P.xz.mul(0.6));
+        const sm = smoothstep(0.32, 0.5, cov.mul(1.45).sub(n.mul(0.45))).mul(roadKeep).mul(I.snowMask ?? float(1)).toVar();
+        if (!wantNormal) {
+          col.assign(mix(col, mix(SNOW_ALBEDO, vec3(0.42, 0.43, 0.44), slush.mul(0.8)), sm));
+          rough.assign(mix(rough, float(0.72), sm));
+          metal.assign(mix(metal, float(0), sm));
+        } else nView.assign(normalize(mix(nView, I.nG, sm)));
+      };
+      // snowfast: nothing to do on a face steeper than the cover's range (walls: most of a street's pixels)
+      if (FAST) If(up.greaterThan(0.42), body); else body();
       return;
     }
-    let ground = null;
-    if (I.ground) ground = I.ground;
-    else if (o.ground?.lum) {
-      const Lc = dot(I.col, vec3(0.2126, 0.7152, 0.0722));
-      ground = mix(smoothstep(float(o.ground.lum[1]), float(o.ground.lum[0]), Lc), float(0.5), smoothstep(0.01, 0.06, fw));
-    }
-    // (snow round 2: a crown takes a share of the DEPTH, not of the cover: under trees 15 cm on the open lawn is still
-    // ~6 cm, a full white cover; the old exposure x (1 - 0.6 shelter) left half the Heros lawn green at 15 cm)
-    const coverHere = min(wx.uSnowCover, wx.uSnowDepth.mul(float(1).sub(shelter.mul(0.6))).div(0.025));
-    let smN = snowMask(P, up, exposed, coverHere, ...(o.snowUp ?? [0.42, 0.78]), ground);
-    if (o.plaster) {
-      const wn = wx.uWind.length();
-      const windward = smoothstep(0.25, 0.75, dot(normalize(Nw.xz.add(vec2(1e-4, 0))), wx.uWind.div(max(wn, 0.01)).negate()));
-      const pl = windward.mul(smoothstep(2.0, 8.0, wn)).mul(wx.uSnowCover).mul(vert);
-      smN = max(smN, smoothstep(0.35, 0.6, pl.mul(1.3).sub(noise2D(vec2(P.y.mul(3.0), dot(P.xz, vec2(7.0, 5.0)))).mul(0.5))));
-    }
-    // ---- snowtracks: the packed amount here (0 outside the trail window / when nothing was trodden)
-    const trod = (o.map && TRAILS ? select(TRAILS.uOn.greaterThan(0.5), TRAILS.sampleAt(P.xz, false), float(0)) : float(0)).toVar();
-    const thinS = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
-    const sm = smN.mul(roadKeep).mul(I.snowMask ?? float(1)).mul(float(1).sub(trod.mul(thinS).mul(0.85))).toVar();
-    // ---- /snowtracks
-    // sparkle: only where its 1.8 cm facets are over ~1.6 px (per-pixel branch, no derivatives in it)
-    const gl = vec4(0, 1, 0, 0).toVar();
-    If(fw.lessThan(0.0115), () => { gl.assign(glint(P, fw)); });
-    if (!wantNormal) {
-      const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85)).mul(float(1).sub(trod.mul(0.2)));   // (snowtracks: trodden = greyer)
-      const sRough = mix(mix(mix(float(0.72), float(0.12), gl.w), float(0.5), trod), float(0.22), slush);
-      col.assign(mix(col, sCol, sm));
-      rough.assign(mix(rough, sRough, sm));
-      metal.assign(mix(metal, mix(float(0), float(0.25), slush), sm));
-      if (o.road) {          // snowtracks: the tyres squeeze the slush aside: darker, wetter lines
-        const sl = wx.uSalt.mul(I.saltMask ?? float(1)).mul(trod);
-        col.assign(col.mul(float(1).sub(sl.mul(0.35))));
-        rough.assign(mix(rough, float(0.12), sl.mul(0.7)));
+    const body = () => {
+      let ground = null;
+      if (I.ground) ground = I.ground;
+      else if (o.ground?.lum) {
+        const Lc = dot(I.col, vec3(0.2126, 0.7152, 0.0722));
+        ground = mix(smoothstep(float(o.ground.lum[1]), float(o.ground.lum[0]), Lc), float(0.5), smoothstep(0.01, 0.06, fw));
       }
-    } else {
-      const bumpH = noise2D(P.xz.mul(9.0)).mul(0.006).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).toVar();
-      let sN = normalize(mix(bumpOn(bumpH, I.nG, I.pV), toView(gl.xyz), gl.w));
-      if (o.map && TRAILS) {   // snowtracks: the groove's wall slope (central differences over 2 texels: smooth)
-        const e = TRAILS.texel, tap = (dx, dz) => TRAILS.sampleAt(P.xz.add(vec2(dx, dz)), false);
-        const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e).mul(min(wx.uSnowDepth, 0.2).mul(0.45)).mul(float(1).sub(smoothstep(0.03, 0.09, fw)));
-        sN = select(trod.greaterThan(0.002), normalize(sN.add(toView(vec3(g.x, 0, g.y)))), sN);
+      // (snow round 2: a crown takes a share of the DEPTH, not of the cover: under trees 15 cm on the open lawn is still
+      // ~6 cm, a full white cover; the old exposure x (1 - 0.6 shelter) left half the Heros lawn green at 15 cm)
+      const coverHere = min(wx.uSnowCover, wx.uSnowDepth.mul(float(1).sub(shelter.mul(0.6))).div(0.025));
+      let smN = FAST ? snowMaskFast(P, up, exposed, coverHere, upLo, upHi, ground, fw, o.snowUp ? null : Nw) : snowMask(P, up, exposed, coverHere, upLo, upHi, ground);
+      if (o.plaster) {
+        const wn = wx.uWind.length();
+        const windward = smoothstep(0.25, 0.75, dot(normalize(Nw.xz.add(vec2(1e-4, 0))), wx.uWind.div(max(wn, 0.01)).negate()));
+        const pl = windward.mul(smoothstep(2.0, 8.0, wn)).mul(wx.uSnowCover).mul(vert);
+        const pn = FAST ? snowNoise.t1(vec2(P.y.mul(3.0), dot(P.xz, vec2(7.0, 5.0))), fw.mul(8.6), 1 / 0.6).z : noise2D(vec2(P.y.mul(3.0), dot(P.xz, vec2(7.0, 5.0))));
+        smN = max(smN, smoothstep(0.35, 0.6, pl.mul(1.3).sub(pn.mul(0.5))));
       }
-      nView.assign(normalize(mix(nView, sN, sm)));
-    }
+      // ---- snowtracks: the packed amount here (0 outside the trail window / when nothing was trodden)
+      // (snowfast: an explicit level: this may run in a per-pixel branch; the trail target has no mips)
+      const trod = (o.map && TRAILS ? select(TRAILS.uOn.greaterThan(0.5), TRAILS.sampleAt(P.xz, FAST), float(0)) : float(0)).toVar();
+      const thinS = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
+      const sm = smN.mul(roadKeep).mul(I.snowMask ?? float(1)).mul(float(1).sub(trod.mul(thinS).mul(0.85))).toVar();
+      // ---- /snowtracks
+      // sparkle: only where its 1.8 cm facets are over ~1.6 px (per-pixel branch, no derivatives in it)
+      const gl = vec4(0, 1, 0, 0).toVar();
+      If(fw.lessThan(0.0115), () => { gl.assign(glint(P, fw)); });
+      if (!wantNormal) {
+        const sCol = mix(SNOW_ALBEDO, vec3(0.36, 0.35, 0.33), slush.mul(0.85)).mul(float(1).sub(trod.mul(0.2)));   // (snowtracks: trodden = greyer)
+        const sRough = mix(mix(mix(float(0.72), float(0.12), gl.w), float(0.5), trod), float(0.22), slush);
+        col.assign(mix(col, sCol, sm));
+        rough.assign(mix(rough, sRough, sm));
+        metal.assign(mix(metal, mix(float(0), float(0.25), slush), sm));
+        if (o.road) {          // snowtracks: the tyres squeeze the slush aside: darker, wetter lines
+          const sl = wx.uSalt.mul(I.saltMask ?? float(1)).mul(trod);
+          col.assign(col.mul(float(1).sub(sl.mul(0.35))));
+          rough.assign(mix(rough, float(0.12), sl.mul(0.7)));
+        }
+      } else if (FAST) {
+        // the micro bump from the baked gradient (no screen derivatives: valid in this per-pixel branch), on the
+        // geometry normal as the old surface-gradient bump; only near (it fades out by 2 cm / px)
+        const sN = I.nG.toVar();
+        If(fw.lessThan(0.02), () => {
+          const B = snowNoise.bump(P.xz, fw, 9.0);
+          const G3 = vec3(B.g.x, 0, B.g.y).mul(float(0.006).mul(float(1).sub(smoothstep(0.004, 0.02, fw))));
+          sN.assign(toView(normalize(Nw.sub(G3.sub(Nw.mul(dot(Nw, G3)))))));
+        });
+        sN.assign(normalize(mix(sN, toView(gl.xyz), gl.w)));
+        if (o.map && TRAILS) {   // snowtracks: the groove's wall slope (central differences over 2 texels), near and trodden only
+          If(trod.greaterThan(0.002).and(fw.lessThan(0.09)), () => {
+            const e = TRAILS.texel, tap = (dx, dz) => TRAILS.sampleAt(P.xz.add(vec2(dx, dz)), true);
+            const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e).mul(min(wx.uSnowDepth, 0.2).mul(0.45)).mul(float(1).sub(smoothstep(0.03, 0.09, fw)));
+            sN.assign(normalize(sN.add(toView(vec3(g.x, 0, g.y)))));
+          });
+        }
+        nView.assign(normalize(mix(nView, sN, sm)));
+      } else {
+        const bumpH = noise2D(P.xz.mul(9.0)).mul(0.006).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).toVar();
+        let sN = normalize(mix(bumpOn(bumpH, I.nG, I.pV), toView(gl.xyz), gl.w));
+        if (o.map && TRAILS) {   // snowtracks: the groove's wall slope (central differences over 2 texels: smooth)
+          const e = TRAILS.texel, tap = (dx, dz) => TRAILS.sampleAt(P.xz.add(vec2(dx, dz)), false);
+          const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e).mul(min(wx.uSnowDepth, 0.2).mul(0.45)).mul(float(1).sub(smoothstep(0.03, 0.09, fw)));
+          sN = select(trod.greaterThan(0.002), normalize(sN.add(toView(vec3(g.x, 0, g.y)))), sN);
+        }
+        nView.assign(normalize(mix(nView, sN, sm)));
+      }
+    };
+    // snowfast: the whole cover in a per-pixel branch on the face's slope: below the cover's range (walls, eaves'
+    // undersides) the mask is exactly 0 (smoothstep(upLo, ..) = 0 and the ground term stays under the threshold), so
+    // nothing is computed there; plastered trunks keep their windward walls
+    if (FAST) If(o.plaster ? up.greaterThan(upLo).or(vert.greaterThan(0.01)) : up.greaterThan(upLo), body); else body();
   });
   return { col, rough: clamp(rough, 0.02, 1), metal: clamp(metal, 0, 1), n: nView };
 }

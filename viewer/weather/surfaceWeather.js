@@ -23,6 +23,10 @@ import { Fn, float, vec2, vec3, vec4, mix, smoothstep, clamp, max, min, floor, f
 import { wx } from "./weatherState.js";
 import { season } from "../seasons/season.js";
 import { hash2D, noise2D, bumpNormal } from "../tslkit.js";
+import { snowNoise } from "./snowNoise.js";
+
+/** claude/snow2 item 2: the steep-roof rule in snowMaskFast (?snowsteep=old: the isotropic blobs as before) */
+export const STEEP = !/[?&]snowsteep=old(&|$)/.test(location.search);
 
 const H2 = (p) => hash2D(fract(p.div(1024)).mul(1024));        // cell hash, safe for big cell numbers
 export const SNOW_ALBEDO = vec3(0.82, 0.85, 0.9);
@@ -83,6 +87,41 @@ export function snowMask(P, up, exposure, cover = wx.uSnowCover, upLo = 0.42, up
   const drift = noise2D(P.xz.mul(0.45)).mul(0.7).add(noise2D(P.xz.mul(1.9)).mul(0.3));    // large, soft drifts only
   const v = cov.mul(mix(float(1.45), float(1.3), thin)).sub(mix(n, drift, thin).mul(0.45)).add(float(ground).sub(0.5).mul(thin).mul(0.55));
   return smoothstep(mix(float(0.32), float(0.38), thin), mix(float(0.5), float(0.44), thin), v);
+}
+
+/**
+ * snowMask with the BAKED noise (snowNoise.js, ?snowfast=old: snowMask above): one filtered fetch, no derivatives (safe
+ * in a per-pixel branch: fw = the pixel footprint in metres, for the mip level). Same arguments as snowMask, plus:
+ *   Nw   the world normal (geometry): turns on the STEEP-ROOF rule (claude/snow2 item 2, ?snowsteep=old = off): where
+ *        a pitch only partly holds the cover (~45-62 deg) the holes are no longer round blobs of the isotropic noise (a
+ *        54 deg slate roof read as blocky patches in a 0.5-1 m pattern) but STREAKS down the fall line where the snow
+ *        slid (narrow across, long along), over a thin veil that greys the slates, as winter photos of steep slate
+ *        show. Flatter roofs (<= ~40 deg) keep the full cover; walls none.
+ */
+export function snowMaskFast(P, up, exposure, cover, upLo, upHi, ground, fw, Nw = null) {
+  const T = snowNoise.t1(P.xz, fw);
+  let n = T.x;
+  const s = smoothstep(upLo, upHi, up);
+  let cov = s.mul(exposure).mul(cover);
+  let veil = null;
+  if (Nw && STEEP) {
+    const w = smoothstep(0.0, 0.12, s).mul(float(1).sub(smoothstep(0.6, 0.9, s))).toVar();     // the partial-hold band
+    const t = normalize(vec2(Nw.z.negate(), Nw.x).add(vec2(1e-4, 0)));                          // across the slope (horizontal)
+    const a = dot(P.xz, t);
+    // streaks: ~3 / m across, ~0.3 / m down the slope (P.y runs down the fall line on a roof)
+    const streak = snowNoise.t1(vec2(a.mul(5.0), P.y.mul(0.5)), float(fw).mul(5.0)).w;
+    n = mix(n, streak, w);
+    cov = mix(cov, min(s.mul(1.25), 1).mul(exposure).mul(cover), w);
+    veil = smoothstep(0.05, 0.3, s).mul(w).mul(exposure).mul(cover).mul(0.55);
+  }
+  let m;
+  if (!ground) m = smoothstep(0.32, 0.5, cov.mul(1.45).sub(n.mul(0.45)));
+  else {
+    const thin = float(1).sub(smoothstep(0.75, 1.0, cover));
+    const v = cov.mul(mix(float(1.45), float(1.3), thin)).sub(mix(n, T.y, thin).mul(0.45)).add(float(ground).sub(0.5).mul(thin).mul(0.55));
+    m = smoothstep(mix(float(0.32), float(0.38), thin), mix(float(0.5), float(0.44), thin), v);
+  }
+  return veil ? max(m, veil) : m;
 }
 
 export function weatherize(m, o = {}) {

@@ -18,7 +18,8 @@ import { wx } from "./weatherState.js";
 import { season } from "../seasons/season.js";
 import { SHAPE } from "./overheadMap.js";
 import { noise2D, bumpNormal } from "../tslkit.js";
-import { glint, SNOW_ALBEDO, wxLook, snowMask } from "./surfaceWeather.js";
+import { glint, SNOW_ALBEDO, wxLook, snowMask, snowMaskFast, STEEP } from "./surfaceWeather.js";
+import { snowNoise, SNOW_FAST } from "./snowNoise.js";
 import { polishOld } from "../polish.js";
 
 // polish1 (docs/POLISH.md item 1, ?snowedge=old = before): the cut used to drop every triangle that touched one hidden
@@ -148,7 +149,9 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   const vN = varying(nW), vTrack = varying(C.tr), vDepth = varying(C.d);
   const P = positionWorld;
   const fw = fwidth(P.x).add(fwidth(P.z)).mul(0.5).add(0.0002);
-  const gl = glint(P, fw);
+  // (snowfast: the sparkle only where its facets are over ~1.6 px: a per-pixel branch, as the materials')
+  let gl = glint(P, fw);
+  if (SNOW_FAST) gl = Fn(() => { const g = vec4(0, 1, 0, 0).toVar(); If(fw.lessThan(0.0115), () => { g.assign(glint(P, fw)); }); return g; })();
   let packed = smoothstep(0.15, 0.7, vTrack);
   // ---- snowtracks: the shading reads the trail per pixel (6.25 cm, finer than the 12.5 cm groove of the geometry): the
   // packed colour follows the boot / tyre outline, a detail normal from its slope (central differences over 2 texels:
@@ -159,16 +162,30 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     const on = trail.uOn.greaterThan(0.5);
     const fine = select(on, trail.sampleAt(P.xz, false), float(0));
     packed = smoothstep(0.12, 0.6, fine);
-    const tap = (dx, dz) => trail.sampleAt(P.xz.add(vec2(dx, dz)), false);
-    const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e);
     // the groove is (0.72 x depth) deep: its wall slope; the vertex normal already has the 25 cm-blurred part of it
-    const amp = vDepth.mul(0.72).mul(0.9).mul(float(1).sub(smoothstep(0.03, 0.09, fwidth(P.x).add(fwidth(P.z)))));
-    trailN = select(on, vec3(g.x.mul(amp), 0, g.y.mul(amp)), vec3(0));
+    const fw2 = fwidth(P.x).add(fwidth(P.z));
+    const amp = vDepth.mul(0.72).mul(0.9).mul(float(1).sub(smoothstep(0.03, 0.09, fw2)));
+    if (SNOW_FAST) {
+      // snowfast: the 4 taps only where they show (trails on, near: the slope fades out by 9 cm / px), explicit level
+      trailN = Fn(() => {
+        const tN = vec3(0).toVar(), ampV = amp.toVar(), fineV = float(fine).toVar();
+        If(on.and(fw2.lessThan(0.09)).and(fineV.greaterThan(0.001)), () => {
+          const tap = (dx, dz) => trail.sampleAt(P.xz.add(vec2(dx, dz)), true);
+          const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e);
+          tN.assign(vec3(g.x.mul(ampV), 0, g.y.mul(ampV)));
+        });
+        return tN;
+      })();
+    } else {
+      const tap = (dx, dz) => trail.sampleAt(P.xz.add(vec2(dx, dz)), false);
+      const g = vec2(tap(e, 0).sub(tap(-e, 0)), tap(0, e).sub(tap(0, -e))).div(2 * e);
+      trailN = select(on, vec3(g.x.mul(amp), 0, g.y.mul(amp)), vec3(0));
+    }
     const dir = T.xy.mul(2).sub(1), along = P.xz.dot(normalize(dir.add(vec2(1e-4, 0))));
     const fwT = fwidth(P.x).add(fwidth(P.z)).mul(0.5);
     const bars = abs(fract(along.div(0.034)).sub(0.5)).mul(2).smoothstep(0.35, 0.65).mul(0.0035);
     // boot sole: lug bars across the sole (2 cm pitch), broken up along their length
-    const lugs = abs(fract(along.div(0.022)).sub(0.5)).mul(2).smoothstep(0.3, 0.7).mul(noise2D(P.xz.mul(18.0)).mul(0.5).add(0.5)).mul(0.002);
+    const lugs = abs(fract(along.div(0.022)).sub(0.5)).mul(2).smoothstep(0.3, 0.7).mul((SNOW_FAST ? snowNoise.bump(P.xz, fw, 18.0).v : noise2D(P.xz.mul(18.0))).mul(0.5).add(0.5)).mul(0.002);
     // the sky a groove's floor sees is narrower: ambient occlusion by its depth (reads in shade, where normals do not)
     trailAO = float(1).sub(smoothstep(0.1, 0.85, fine).mul(min(vDepth.div(0.12), 1)).mul(0.42));
     tread = select(on, mix(lugs, bars, T.z.smoothstep(0.3, 0.7)).mul(smoothstep(0.2, 0.6, fine)).mul(float(1).sub(smoothstep(0.0015, 0.005, fwT))), float(0));
@@ -179,19 +196,24 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     if (SOFT_EDGE) {
       // the triangle's own (flat) normal from the screen derivatives: a sliver standing across a kerb / eave is dropped
       const fn = normalize(P.dFdx().cross(P.dFdy()));
-      If(fn.y.abs().lessThan(0.57), () => { Discard(); });
+      // (claude/snow2 item 2, ?snowsteep=old = the 0.57 flat-normal cut alone: on a 54 deg slate roof the 12.5 cm
+      // heightfield's triangles straddle that 55 deg limit at random, and the kept / dropped ones made a blocky
+      // 0.5-1 m patchwork; now a true sliver (flat normal past ~66 deg) is cut, and the slope itself is judged on the
+      // smooth field normal (past 60 deg: the shed rule leaves under a third of the depth there anyway))
+      if (STEEP) If(fn.y.abs().lessThan(0.4).or(normalize(vN).y.lessThan(0.5)), () => { Discard(); });
+      else If(fn.y.abs().lessThan(0.57), () => { Discard(); });
     }
     // thin snow is patchy: the layer keeps the materials' own cover pattern (same noise) and, while it is thin, opens
     // where wheels and feet packed it down to the ground (the Bosveldweg photo: dark tyre lines in 1 cm of snow)
     const thin = float(1).sub(smoothstep(0.02, 0.06, wx.uSnowDepth));
-    const keep = snowMask(P, float(1), float(1), wx.uSnowCover);
+    const keep = SNOW_FAST ? snowMaskFast(P, float(1), float(1), wx.uSnowCover, 0.42, 0.78, null, fw) : snowMask(P, float(1), float(1), wx.uSnowCover);
     // polish: while the cover is thin (< ~2.5 cm) the layer dissolves (its keep threshold rises to 1) except the packed tracks: the
     // materials' own cover (weatherize o.ground: snow in the sett joints / between grass tufts) shows the pattern, not
     // the layer's blobby noise edge
     const thinC = float(1).sub(smoothstep(0.75, 1.0, wx.uSnowCover));
     If(keep.lessThan(mix(float(0.3), float(1.01), thinC)).and(packed.lessThan(0.15)), () => { Discard(); });
     If(keep.lessThan(0.3), () => { Discard(); });
-    const v = noise2D(P.xz.mul(0.8)).mul(0.04).add(0.98);
+    const v = (SNOW_FAST ? snowNoise.t1(P.xz, fw, 0.8 / 0.6).z : noise2D(P.xz.mul(0.8))).mul(0.04).add(0.98);
     const slushC = vec3(0.4, 0.41, 0.42);
     let c = SNOW_ALBEDO.mul(v);
     c = mix(c, c.mul(0.78).mul(vec3(0.97, 0.97, 0.96)), packed);              // packed snow: greyer, a little dirty
@@ -203,7 +225,7 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   })();
   if (trailAO) mat.aoNode = trailAO;        // (snowtracks)
   mat.roughnessNode = mix(mix(mix(float(0.74), float(0.12), gl.w), float(0.5), packed), float(0.22), wx.uSlush);
-  const bump = noise2D(P.xz.mul(7.0)).mul(0.008).add(noise2D(P.xz.mul(23.0)).mul(0.002)).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).mul(float(1).sub(packed.mul(0.7))).add(tread);
+  const bump = (SNOW_FAST ? snowNoise.bump(P.xz, fw, 7.0).v.mul(0.008).add(snowNoise.bump(P.xz.add(vec2(17.3, 5.1)), fw, 23.0).v.mul(0.002)) : noise2D(P.xz.mul(7.0)).mul(0.008).add(noise2D(P.xz.mul(23.0)).mul(0.002))).mul(float(1).sub(smoothstep(0.004, 0.02, fw))).mul(float(1).sub(packed.mul(0.7))).add(tread);
   const toView = (n) => normalize(cameraViewMatrix.mul(vec4(n, 0)).xyz);
   const base = toView(trailN ? normalize(normalize(vN).add(trailN)) : normalize(vN));      // (snowtracks: + the trail's detail slope)
   // the macro normal from the field; micro bump as a small tilt of it; the glint facet on top

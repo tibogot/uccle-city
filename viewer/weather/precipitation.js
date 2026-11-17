@@ -12,6 +12,7 @@ import { Fn, If, float, vec2, vec3, vec4, uniform, instancedArray, instanceIndex
   normalize, cross, length, mod, select, uv, positionGeometry, cameraPosition, varying, attribute, positionWorld, cameraViewMatrix, sqrt } from "three/tsl";
 import { wx } from "./weatherState.js";
 import { season } from "../seasons/season.js";
+import { SNOW_FAST } from "./snowNoise.js";
 
 const KIND = {
   rain: { max: 24000, box: 44, top: 22, fall: 8.5, size: 0.006, len: 0.55 },
@@ -159,8 +160,13 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
     const vel = vec3(wx.uWind.x.mul(0.9), uFall.negate(), wx.uWind.y.mul(0.9));
     const vdir = normalize(vel), sideF = normalize(cross(vdir, normalize(toCam)));
     const sLen = s.add(length(vel).mul(0.025));
-    mat.positionNode = C.add(sideF.mul(positionGeometry.x.mul(s))).add(vdir.mul(positionGeometry.y.mul(sLen)));
-    const energy = varying(s0.div(s).mul(edge).mul(smoothstep(0.8, 3.0, dist)));   // (city: big cotton flakes right at the lens read wrong: fade them over 0.8-3 m)   // widened -> fainter (linear: a 1.6 px dot keeps its look)
+    const e0 = s0.div(s).mul(edge).mul(smoothstep(0.8, 3.0, dist));
+    // snowfast (?snowfast=old: as before): a flake that cannot show (inside the 0.8 m lens fade, past the window's
+    // round edge) is collapsed to a point in the vertex stage: no fragments. The ones right at the lens were the
+    // biggest quads on screen (tens of px each, alpha 0)
+    const vis = SNOW_FAST ? select(e0.greaterThan(0.002), float(1), float(0)) : float(1);
+    mat.positionNode = C.add(sideF.mul(positionGeometry.x.mul(s).mul(vis))).add(vdir.mul(positionGeometry.y.mul(sLen).mul(vis)));
+    const energy = varying(e0);   // (city: big cotton flakes right at the lens read wrong: fade them over 0.8-3 m)   // widened -> fainter (linear: a 1.6 px dot keeps its look)
     const q = uv().sub(0.5).mul(2);
     const r = length(vec2(q.x, q.y.mul(0.85)));
     mat.colorNode = vec3(uColor);
@@ -243,7 +249,8 @@ export function createPrecipitation({ renderer, kind = "rain", map = null, trees
       const n = Math.round(MAX * Math.min(1, Math.max(0, intensity)));
       mesh.count = n; mesh.visible = n > 0;
       if (splashes) { splashes.count = n; splashes.visible = n > 0; }
-      if (n > 0 && dt > 0) renderer.compute(step);
+      // (snowfast: the step runs on the drawn flakes only, not the whole MAX population)
+      if (n > 0 && dt > 0) renderer.compute(step, SNOW_FAST ? n : null);
     },
     /** compile both compute passes now (boot), so the first rain does not stall on a pipeline build */
     warm() { renderer.compute(init); initialised = true; uDt.value = 0; renderer.compute(step); },
