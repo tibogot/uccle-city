@@ -44,7 +44,7 @@ export const FEATURES = [
   opt("quick", "nav", "quick test mode", "?quick=1: a small piece of the city round one spot (the tiles within &radius=, the landmarks there, optional systems off unless &with=), no start menu / play loader, window.__quickReady when built (docs/QUICKTEST.md).", { ui: false }),
   txt("place", "nav", "quick: place", "?quick=1&place=<viewer/places.js id>: the camera at the place.", "stjob-street", { ui: false }),
   txt("look", "nav", "quick: look at", "?quick=1&at=x,z[,h]&look=x,z[,h]: the camera at `at`, looking at `look` (h over the ground).", "1175,540", { ui: false }),
-  num("radius", "nav", "quick: radius", "?quick=1: the tiles (and landmarks, +150 m) within this many m of the camera / the look point.", 250, 50, 2000, 50, { ui: false }),
+  num("radius", "nav", "quick: radius", "?quick=1: the tiles (and landmarks, +100 m) within this many m of the camera / the look point.", 250, 50, 2000, 50, { ui: false }),
   txt("with", "nav", "quick: systems on", "?quick=1&with=traffic,birds,weather,night,trams,trains,falcons,map,panel,game: optional systems kept.", "traffic,night", { ui: false }),
   txt("quickat", "nav", "quick: camera (kept)", "Written by quick mode: the original &at (the viewer's own ?at is the spot by then).", "", { ui: false }),
   txt("quicklook", "nav", "quick: look (kept)", "Written by quick mode: the original &look.", "", { ui: false }),

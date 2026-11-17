@@ -1,7 +1,7 @@
 // QUICK TEST MODE for the coding agents (docs/QUICKTEST.md, HANDOFF.md "Quick test mode for agents"): ?quick=1 boots a
 // small piece of the city round one spot instead of the whole city: the tiles within &radius= m (default 250) of the
 // camera and of the point it looks at, in full, no far ring (&far=2: a far ring after all); the landmarks / hero
-// bridges / tunnels within the radius (+150 m) only (the others: their UrbIS solids, or nothing); the optional systems
+// bridges / tunnels within the radius (+100 m) only (the others: their UrbIS solids, or nothing); the optional systems
 // off unless asked for (&with=traffic,birds,weather,night,trams,trains,falcons,map,panel,game); no start menu, no play
 // loader; the camera put exactly at the spot. When the view is built: window.__quickReady = { ms, tiles, heapMB, ... }.
 //
@@ -32,7 +32,7 @@ const LANDMARKS = {
 };
 const OFF_VALUE = { heros: "old" };                 // ?heros=old = the setts plaza; the others: ?<name>=0 = the UrbIS solid
 const ART = [[-2240, 376], [-651, -280], [-503, -440], [1376, -1320], [1824, -90], [865, 663], [2577, 1167], [65, 1154]];
-const MARGIN = 150;                                 // a model straddling the radius counts as inside (bootGate.js's margin)
+const MARGIN = 100;                                 // a model straddling the radius counts as inside (its half-size: Heros ~100 m)
 // the optional systems: the switch that turns each off in quick mode and its value
 const SYSTEMS = { traffic: ["traffic", "0"], birds: ["birds", "0"], weather: ["weather", "old"], night: ["night", "0"],
   trams: ["trams", "0"], falcons: ["falcons", "0"], map: ["map", "0"], panel: ["panel", "0"], game: ["game", "0"] };
@@ -99,7 +99,8 @@ function setup() {
       return points.some(([x, z]) => Math.hypot(Math.max(b.x[0] - x, 0, x - b.x[1]), Math.max(b.z[0] - z, 0, z - b.z[1])) <= radius + extra);
     },
     /** bootGate.js: a gated model (bridge, tunnel) loads only within the radius (+ margin) */
-    gate(p) { return near(p[0], p[1], MARGIN); },
+    gate(p, id) { const ok = near(p[0], p[1], MARGIN); if (ok) this.gated.add(id); return ok; },
+    gated: new Set(),                               // the gated ids let through (quickReady waits for their models)
   };
 }
 
@@ -129,17 +130,24 @@ export async function quickReady(host) {
     const want = built.filter((t) => QUICK.wants(t)).map((t) => t.name);
     const roots = [...QUICK.landmarks.filter((k) => P.get(k) !== (OFF_VALUE[k] ?? "0"))];
     if (QUICK.art && P.get("art") !== "old") roots.push("publicart");
-    return { want, roots };
+    const bridges = [];
+    for (const id of QUICK.gated) {
+      if (LANDMARKS[id]) continue;
+      bridges.push(id.replace(/^rail:/, ""));       // (bridges and tunnels: window.__bridges[name], set once placed)
+    }
+    return { want, roots, bridges };
   };
   await host.loading?.catch?.(() => {});
   let q = 0, placed = false, st = {};
+  const found = new Set();
   while (performance.now() - t0 < maxMs) {
     await new Promise((r) => requestAnimationFrame(() => r()));
-    const { want, roots } = expect();
+    const { want, roots, bridges: wantBridges } = expect();
     const tilesIn = want.filter((n) => world.tiles.some((t) => t.name === n));
     if (!placed && tilesIn.length === want.length) { quickCamera(host); host.lighting && (host.lighting.snapNext = true); placed = true; }
-    const missing = roots.filter((n) => !scene.getObjectByName(n));
+    for (const n of roots) if (!found.has(n) && scene.children.some((o) => o.name === n)) found.add(n);   // (the landmarks' roots are scene children)
     const bridges = window.__bridges ? Object.keys(window.__bridges) : [];
+    const missing = roots.filter((n) => !found.has(n)).concat(wantBridges.filter((n) => !bridges.includes(n)).map((n) => `bridge ${n}`));
     st = { tiles: tilesIn.length, want: want.length, fading: fader.list.length, jobs: jobsLeft(), pipes: window.__asyncPipes?.pending ?? 0, missing, bridges };
     const ok = tilesIn.length === want.length && !st.fading && !st.jobs && !st.pipes && !missing.length;
     q = ok ? q + 1 : 0;

@@ -50,7 +50,7 @@ export const afterCover = () => liftP;
  *  `id` is a GATED key (unknown ids are not gated) */
 export function whenNeeded(id) {
   const p = GATED[id];
-  if (QUICK && p) return QUICK.gate(p) ? Promise.resolve() : new Promise(() => {});
+  if (QUICK && p) return QUICK.gate(p, id) ? Promise.resolve() : new Promise(() => {});
   if (!BOOT_DEFER || !start || lifted || !p) return Promise.resolve();
   // perfgame round 3 (?landmarksearly=old): when the play loader holds after the cover anyway, the far models start NOW,
   // during the boot (their downloads, parses and compiles overlap the start tile's build and the warm-up), not after it
