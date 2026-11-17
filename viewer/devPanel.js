@@ -19,6 +19,8 @@ import { FEATURES, readSwitch, writeSwitch, isSet } from "./features.js";
 import { PLACES } from "./places.js";
 import { setHudHidden } from "./devHud.js";
 import { cityWeather } from "./weather/cityWeather.js";
+import { FIRMAMENT_DEFAULTS } from "../vendor/firmament/firmamentSky.js";
+import { SKY_URL } from "./lighting.js";
 
 const TIMES = ["golden", "midday", "overcast", "twilight", "night", "misty"];
 const CHARS = ["ual", "hoodie", "casual", "capsule"];
@@ -202,6 +204,8 @@ export function createDevPanel(ctx) {
     cirrus: SP?.cirrus ?? 0.5, windSpeed: SP?.windSpeed ?? 12, windDeg: SP?.windDeg ?? 70, cloudBase: SP?.cloudBase ?? 4000,
     haze: SP?.haze ?? 1.6, aerosols: SP?.aerosols ?? 1, sunSize: SP?.sunSizeDeg ?? 0.6,
     autoExposure: SP?.autoExposure ?? true, ev: 0, nightEV: SP?.nightEV ?? 1.6,
+    // skyctl: the sky look (Firmament params by name, read from the live sky so the defaults are the look as it is)
+    ...(SP ? Object.fromEntries(SKY_URL.map(([, k]) => [k, SP[k]])) : {}),
     vfog: !!lighting.vfogOn, fogDensity: lighting.vfogParams?.density ?? 0.014, fogTop: lighting.vfogParams?.top ?? 82, fogFalloff: lighting.vfogParams?.falloff ?? 18,
     lampPower: uLampPower.value, ao: pipe?.uniforms.ao.value ?? 0.6, ssr: pipe?.uniforms.ssr.value ?? 1, bloom: pipe?.bloomPass?.strength.value ?? 0.24,
     skyHaze: dev.haze, shadows: lighting.sun.castShadow, fov: camera.fov,
@@ -331,6 +335,28 @@ export function createDevPanel(ctx) {
     fS.add(S, "autoExposure").name("eye adaptation").onChange((v) => { SP.autoExposure = v; });
     fS.add(S, "ev", -3, 3, 0.1).name("exposure bias (EV)").onChange((v) => { if (pipe) pipe.evBias = v; });
     fS.add(S, "nightEV", 0, 4, 0.1).name("night exposure (EV)").onChange((v) => { SP.nightEV = v; });
+    // skyctl: the sun, the sky's colour, the moon and stars, the clouds' light: Firmament params read every frame into
+    // uniforms (no shader rebuild); each mirrored into its URL key (viewer/lighting.js SKY_URL, viewer/features.js)
+    const SKY_CTL = {
+      sunDiscBright: [0, 10, 0.05, "sun disc brightness", "the disc's radiance x (look only)"],
+      sunScale: [0, 3, 0.01, "sunlight strength", "the sun's light on the world x (the eye adaptation follows)"],
+      sunHalo: [0, 5, 0.05, "sun glow (extra)", "a glow round the sun added to the air's own (0 = none)"],
+      sunHaloDeg: [0.5, 30, 0.1, "sun glow size (°)", "how far the extra glow reaches"],
+      skyTint: [-1, 1, 0.01, "sky tint (cool ↔ warm)", "the sky dome, its environment light and the fog colour, same brightness"],
+      moonSizeDeg: [0.2, 5, 0.01, "moon size (°)", ""],
+      moonBright: [0, 5, 0.05, "moon brightness", "the disc only (the moonlight is unchanged)"],
+      nightHalo: [0, 8, 0.05, "moon glow", "the halo round the moon"],
+      nightStars: [0, 6, 0.05, "star brightness", ""],
+      nightStarSize: [0.3, 4, 0.01, "star size", ""],
+      cloudAlbedo: [0.2, 2, 0.01, "cloud brightness", "the clouds' lit side (scattering albedo x)"],
+      cloudAmbient: [0, 2, 0.01, "cloud shade light", "the sky light in the clouds' shaded sides (lower = darker)"],
+      baseShadow: [0, 1, 0.01, "cloud dark base", "how dark the clouds' bases get"],
+    };
+    for (const [url, k] of SKY_URL) {
+      const [lo, hi, st, label, hint] = SKY_CTL[k];
+      const c = fS.add(S, k, lo, hi, st).name(label).onChange((v) => { SP[k] = v; setParam(url, +v.toFixed(3), +FIRMAMENT_DEFAULTS[k].toFixed(3)); });
+      if (hint) c.hint(hint);
+    }
   }
 
   // ---------------------------------------------------------------- Weather

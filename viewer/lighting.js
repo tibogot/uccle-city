@@ -30,6 +30,14 @@ export const FIRMAMENT_EXPOSURE = 0.55;
 const BRUSSELS_LAT = 50.8;
 const qp = new URLSearchParams(location.search);
 const DAY = +(qp.get("day") ?? 200);                 // day of the year (200 = mid July: long golden evenings)
+// skyctl: the dev panel's sky look sliders as URL params (?sunbright=2 ...): [URL key, Firmament param]. Absent = the
+// Firmament defaults (the look as before); the panel mirrors a moved slider into its key (viewer/features.js rows)
+export const SKY_URL = [
+  ["sunbright", "sunDiscBright"], ["sunpower", "sunScale"], ["sunhalo", "sunHalo"], ["sunhalosize", "sunHaloDeg"],
+  ["skytint", "skyTint"], ["moonsize", "moonSizeDeg"], ["moonbright", "moonBright"], ["moonglow", "nightHalo"],
+  ["stars", "nightStars"], ["starsize", "nightStarSize"], ["cloudbright", "cloudAlbedo"], ["cloudshade", "cloudAmbient"], ["clouddark", "baseShadow"],
+];
+const skyUrlParams = () => Object.fromEntries(SKY_URL.filter(([k]) => qp.get(k) != null && isFinite(+qp.get(k))).map(([k, p]) => [p, +qp.get(k)]));
 // local SOLAR time (12 = the sun due south); ?hour= overrides the preset
 const FIRM_TIMES = {
   golden: { hours: 18.7, coverage: 0.42, cloudType: 0.5 },
@@ -319,7 +327,7 @@ export class Lighting {
       // the horizon the sky paints a floor in groundAlbedo (its default #54493a, brown), fading into the haze. Uccle's
       // own mean colour from above (all 120 orthophotos averaged in linear light: roofs, roads, gardens, trees) so the
       // city's edge melts into a landscape of its own colour; the sky's ground bounce takes it too. ?skyground=old: before
-      ...(/[?&]skyground=old/.test(location.search) ? {} : { groundAlbedo: "#686c67" }) } });
+      ...(/[?&]skyground=old/.test(location.search) ? {} : { groundAlbedo: "#686c67" }), ...skyUrlParams() } });
     await this.sky.ready;
     this.scene.add(this.sky.mesh);
     // the key light x the cumulus shadow over the ground (labScene.js)

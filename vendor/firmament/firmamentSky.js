@@ -31,7 +31,7 @@
 //                                    map over the ground, for the sun's colorNode
 
 import * as THREE from "three/webgpu";
-import { Fn, uniform, vec2, vec3, vec4, float, normalize, positionWorld, cameraPosition, max, min, exp, mix, smoothstep, screenUV, texture, uv } from "three/tsl";
+import { Fn, uniform, vec2, vec3, vec4, float, normalize, positionWorld, cameraPosition, max, min, exp, mix, smoothstep, screenUV, texture, uv, acos, clamp, dot } from "three/tsl";
 import { createFirmamentAtmosphere } from "./firmamentAtmosphere.js";
 import { createFirmamentClouds } from "./firmamentClouds.js";
 import { createCirrus, clOver } from "./firmamentCirrus.js";
@@ -56,6 +56,15 @@ export const FIRMAMENT_DEFAULTS = {
   sunSizeDeg: 2 * 0.004675 * 1.15 * 180 / Math.PI,
   /** FIRMAMENT: the moon disc's diameter in degrees (Tidewater 0.55°; the real moon 0.52°) */
   moonSizeDeg: 2 * 0.0048 * 180 / Math.PI,
+  /** UCCLE (skyctl): the sun disc's radiance x (look only; the light is sunScale) */
+  sunDiscBright: 1,
+  /** UCCLE (skyctl): an extra glow round the sun (its aureole, added on top of the air's own Mie glow): strength (0 = none) and size (deg, e-folding) */
+  sunHalo: 0,
+  sunHaloDeg: 4,
+  /** UCCLE (skyctl): the sky's colour, -1 cooler .. 0 as computed .. +1 warmer (dome, environment, sky light, fog colour; luminance kept) */
+  skyTint: 0,
+  /** UCCLE (skyctl): the moon disc's radiance x (look only; the moonlight is unchanged) */
+  moonBright: 1,
 
   // ---- FIRMAMENT: the clock and the place (used when the host does not pass a sunDir to update)
   /** local SOLAR time, hours (12 = the sun at its highest) */
@@ -375,7 +384,8 @@ export function createFirmamentSky({ renderer, camera, params = {} }) {
   const clouds = createFirmamentClouds({ renderer, atmosphere });
   const cirrus = createCirrus({ renderer, atmosphere });
   const ground = new THREE.Color();
-  const env = createSkyEnvironment({ renderer, atmosphere, clouds, cirrus, groundAlbedo: [0.33, 0.29, 0.22] });
+  const uTint = uniform(new THREE.Vector3(1, 1, 1));   // UCCLE (skyctl): the sky tint (see update)
+  const env = createSkyEnvironment({ renderer, atmosphere, clouds, cirrus, groundAlbedo: [0.33, 0.29, 0.22], tint: uTint });
 
   // ---- the dome: Tidewater Sky.js skyViewRadiance, the cirrus behind the cumulus
   const uPxAngle = uniform(0.001);
@@ -385,13 +395,18 @@ export function createFirmamentSky({ renderer, camera, params = {} }) {
   const uFloor = uniform(new THREE.Vector3(0.33, 0.29, 0.22));
   const uCloudMean = uniform(1);
   const uHaze = uniform(1.6);
+  // UCCLE (skyctl): the sky tint (rgb, luminance 1; (1,1,1) = as computed) and the sun's extra glow ( strength x fade, 1 / size rad )
+  const uSunHalo = uniform(new THREE.Vector2(0, 1));
   const material = new THREE.MeshBasicNodeMaterial();
   material.colorNode = Fn(() => {
     const dir = normalize(positionWorld.sub(cameraPosition)).toVar();
     // the sky half is read at or above the horizon: in the blend band just below it, the sky-view
     // LUT's near-black lower half drew a dark blue strip under the horizon
     const skyDir = normalize(vec3(dir.x, max(dir.y, 0.0), dir.z)).toVar();
-    const base = atmosphere.skyBackground(skyDir).add(atmosphere.moon(skyDir));
+    // UCCLE (skyctl): the tint on the sky behind the clouds; the sun's extra glow (0 by default) is sky light too
+    const sAng = acos(clamp(dot(dir, atmosphere.uniforms.ap.xyz), -1.0, 1.0));
+    const halo = atmosphere.transmittanceToSpace(skyDir).mul(uSunHalo.x.mul(exp(sAng.mul(uSunHalo.y).negate()))).mul(smoothstep(-0.02, 0.0, dir.y));
+    const base = atmosphere.skyBackground(skyDir).mul(uTint).add(halo).add(atmosphere.moon(skyDir));
     const sun = atmosphere.sunDisk(dir);
     const c = clouds.viewSample(dir).toVar();
     const all = clOver(c, cirrus.sample(dir, uPxAngle)).toVar();
@@ -405,9 +420,9 @@ export function createFirmamentSky({ renderer, camera, params = {} }) {
      */
     const camY = max(cameraPosition.y, 1.0);
     const t = camY.div(max(dir.y.negate(), 1e-4));
-    const E = uKey.mul(max(uKeyDir.y, 0.0)).mul(uCloudMean).div(Math.PI).add(atmosphere.irradianceNode);
+    const E = uKey.mul(max(uKeyDir.y, 0.0)).mul(uCloudMean).div(Math.PI).add(atmosphere.irradianceNode.mul(uTint));
     const floor = vec3(uFloor).mul(E);
-    const hz = atmosphere.skyLuminance(normalize(vec3(dir.x, 0.02, dir.z)));
+    const hz = atmosphere.skyLuminance(normalize(vec3(dir.x, 0.02, dir.z))).mul(uTint);
     // The air between: the haze pass's own two layers (skyproHaze.js hazeLayerDepth, marine +
     // aerosol) at its density, so the floor fades into the horizon exactly as the terrain does;
     // a 12 km fade underneath for when the haze is off.
@@ -511,16 +526,24 @@ export function createFirmamentSky({ renderer, camera, params = {} }) {
       halo: P.nightHalo, horizon: P.nightHorizon, stars: P.nightStars, starSize: P.nightStarSize,
       starDensity: P.nightStarDensity, milkyWay: P.nightMilkyWay, ring: P.nightRing,
     } : null;
-    atmosphere.update({ dt, cameraY: camera.position.y, sunDir: s, moonDir, starIntensity: night, night, time, sunDiskIntensity: 1, nightLook: nightSky,
+    atmosphere.update({ dt, cameraY: camera.position.y, sunDir: s, moonDir, starIntensity: night, night, time, sunDiskIntensity: Math.max(0, P.sunDiscBright), moonBright: Math.max(0, P.moonBright), nightLook: nightSky,
       sunRadius: Math.max(0.01, P.sunSizeDeg) * Math.PI / 360, moonRadius: Math.max(0.01, P.moonSizeDeg) * Math.PI / 360, moonLightDir: moonLight });
 
     // Tidewater applyAtmosphereReadback: the sun at sea level x its illuminance x a horizon fade
     atmosphere.sunColorAt(0, s.y, T);
     const fade = THREE.MathUtils.smoothstep(s.y, -0.03, 0.02);
-    sunColor[0] = T[0] * fade; sunColor[1] = T[1] * fade; sunColor[2] = T[2] * fade;
+    // UCCLE (skyctl): sunScale = the sunlight's strength x (the world's key, the environment's lit floor, the shafts)
+    const sk = fade * Math.max(0, P.sunScale ?? 1);
+    sunColor[0] = T[0] * sk; sunColor[1] = T[1] * sk; sunColor[2] = T[2] * sk;
+    // UCCLE (skyctl): the sky tint, luminance-neutral (Rec.709 weights sum to 1: tint 0 = exactly (1, 1, 1))
+    const tt = THREE.MathUtils.clamp(P.skyTint ?? 0, -1, 1);
+    const tr = 1 + 0.3 * tt, tg = 1 + 0.05 * tt, tb = 1 - 0.35 * tt, tl = 0.2126 * tr + 0.7152 * tg + 0.0722 * tb;
+    uTint.value.set(tr / tl, tg / tl, tb / tl);
+    uSunHalo.value.set(Math.max(0, P.sunHalo ?? 0) * 2 * fade, 1 / Math.max(0.05, P.sunHaloDeg ?? 4) * 180 / Math.PI);
+    const tv = uTint.value;
     const irr = atmosphere.skyIrradiance || [0, 0, 0];
     const nA = 0.012 * night;
-    const skyIrr = [irr[0] + nA * 0.6, irr[1] + nA * 0.7, irr[2] + nA];
+    const skyIrr = [(irr[0] + nA * 0.6) * tv.x, (irr[1] + nA * 0.7) * tv.y, (irr[2] + nA) * tv.z];
 
     if (o.drawingBufferSize) bufferSize.copy(o.drawingBufferSize);
     else renderer.getDrawingBufferSize(bufferSize);
@@ -563,7 +586,8 @@ export function createFirmamentSky({ renderer, camera, params = {} }) {
 
     out.sunColor[0] = sunColor[0]; out.sunColor[1] = sunColor[1]; out.sunColor[2] = sunColor[2];
     out.skyIrradiance = skyIrr;
-    out.horizon = atmosphere.horizon || [0, 0, 0];
+    const hzA = atmosphere.horizon || [0, 0, 0];
+    out.horizon = [hzA[0] * tv.x, hzA[1] * tv.y, hzA[2] * tv.z];
     out.keyIsMoon = keyIsMoon;
     out.night = night;
     const up = Math.max(lightDir.y, 0) / Math.PI;
@@ -654,6 +678,8 @@ export function createFirmamentSky({ renderer, camera, params = {} }) {
     },
     get environment() { return env.texture; },
     atmosphere, clouds, cirrus, env,
+    /** UCCLE (skyctl): the tint uniform (the environment bake reads it too) */
+    tint: uTint,
   };
 }
 void vec2; void vec3; void float;

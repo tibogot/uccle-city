@@ -192,7 +192,7 @@ fn skyMilkyWayP( dir: vec3f, bx: f32 ) -> f32 {
 // FIRMAMENT: the moon's PHASE — the disc is a sphere lit by the real sun (ap.xyz; the sun is far, so
 // its direction from the moon = from the earth), the night side keeps a faint earthshine. sp3.w = the
 // angular radius (rad; 0 = Tidewater's ${MOON_ANGULAR_RADIUS}).
-fn skyMoonP( dir: vec3f, ap: vec4f, sp0: vec4f, sp3: vec4f ) -> vec3f {
+fn skyMoonP( dir: vec3f, ap: vec4f, sp0: vec4f, sp3: vec4f, gain: f32 ) -> vec3f {
 	let m = sp0.xyz;
 	let R = select( ${f(MOON_ANGULAR_RADIUS)}, sp3.w, sp3.w > 0.0 );
 	let cosA = dot( dir, m );
@@ -204,7 +204,8 @@ fn skyMoonP( dir: vec3f, ap: vec4f, sp0: vec4f, sp3: vec4f ) -> vec3f {
 	let n = normalize( q - m * sqrt( max( 1.0 - dot( q, q ), 0.0 ) ) );
 	let lit = smoothstep( -0.04, 0.12, dot( n, ap.xyz ) );
 	let shade = mix( 0.003, 1.0, lit );   // the night side: a faint earthshine
-	return vec3f( 0.9, 0.92, 1.0 ) * mask * shade * 3.0 * sp0.w * smoothstep( -0.02, 0.02, dir.y );
+	// UCCLE (skyctl): gain = the disc's brightness x (sp4.w through atMoon, 1 = as before)
+	return vec3f( 0.9, 0.92, 1.0 ) * mask * shade * 3.0 * sp0.w * gain * smoothstep( -0.02, 0.02, dir.y );
 }
 fn skyMoonSkyP( dir: vec3f, sp0: vec4f, sp1: vec4f ) -> vec3f {
 	let cosA = dot( dir, sp0.xyz );
@@ -469,7 +470,7 @@ const RADIANCE_FN = /* wgsl */`
 fn skyRadianceP( dir: vec3f, withSun: f32, starK: f32, ap: vec4f, sp0: vec4f, sp1: vec4f, sp2: vec4f, sp3: vec4f,
 	tT: texture_2d<f32>, svT: texture_2d<f32>, smp: sampler ) -> vec3f {
 	var L = skyBackgroundP( dir, starK, ap, sp0, sp1, sp2, sp3, svT, smp );
-	if ( withSun > 0.5 ) { L += skyMoonP( dir, ap, sp0, sp3 ) + skySunDiskP( dir, ap, sp1, tT, smp ); }
+	if ( withSun > 0.5 ) { L += skyMoonP( dir, ap, sp0, sp3, 1.0 ) + skySunDiskP( dir, ap, sp1, tT, smp ); }
 	return L;
 }`;
 
@@ -510,7 +511,7 @@ export function createFirmamentAtmosphere({ renderer }) {
   const uSP2 = uniform(new THREE.Vector4(0, 0, 1, 1));
   const uSP3 = uniform(new THREE.Vector4(1, 1, 0, 0));
   // FIRMAMENT: the direction the moon disc is LIT from (its phase): the sun, or an art override
-  const uSP4 = uniform(new THREE.Vector4(0, 1, 0, 0));
+  const uSP4 = uniform(new THREE.Vector4(0, 1, 0, 1));   // ( moon lit-from dir, moon brightness x )
 
   const code = wgsl(SAMPLE_WGSL);
   const core = wgsl(CORE_WGSL, [code]);
@@ -527,7 +528,7 @@ export function createFirmamentAtmosphere({ renderer }) {
   const radFn = wgslFn(RADIANCE_FN, [code]);
   const lumFn = wgslFn(`fn atSkyLum( dir: vec3f, ap: vec4f, svT: texture_2d<f32>, smp: sampler ) -> vec3f { return atmosphereSkyLuminanceP( normalize( dir ), ap, svT, smp ); }`, [code]);
   const sunFn = wgslFn(`fn atSunDisk( dir: vec3f, ap: vec4f, sp1: vec4f, tT: texture_2d<f32>, smp: sampler ) -> vec3f { return skySunDiskP( normalize( dir ), ap, sp1, tT, smp ); }`, [code]);
-  const moonFn = wgslFn(`fn atMoon( dir: vec3f, ap: vec4f, sp0: vec4f, sp3: vec4f ) -> vec3f { return skyMoonP( normalize( dir ), ap, sp0, sp3 ); }`, [code]);
+  const moonFn = wgslFn(`fn atMoon( dir: vec3f, ap: vec4f, sp0: vec4f, sp3: vec4f ) -> vec3f { return skyMoonP( normalize( dir ), ap, sp0, sp3, ap.w ); }`, [code]);
   const bgFn = wgslFn(`fn atBackground( dir: vec3f, starK: f32, ap: vec4f, sp0: vec4f, sp1: vec4f, sp2: vec4f, sp3: vec4f, svT: texture_2d<f32>, smp: sampler ) -> vec3f { return skyBackgroundP( normalize( dir ), starK, ap, sp0, sp1, sp2, sp3, svT, smp ); }`, [code]);
   const transCpuFn = wgslFn(`fn atTransToSpace( dir: vec3f, ap: vec4f, tT: texture_2d<f32>, smp: sampler ) -> vec3f { return atmosphereSampleTransmittance( ap.w, normalize( dir ).y, tT, smp ); }`, [code]);
 
@@ -645,7 +646,7 @@ export function createFirmamentAtmosphere({ renderer }) {
     uSP2.value.set(nl?.halo ?? 0, nl?.horizon ?? 0, nl?.stars ?? 1, nl?.starSize ?? 1);
     uSP3.value.set(nl?.starDensity ?? 1, nl?.milkyWay ?? 1, nl?.ring ?? 0, o.moonRadius ?? 0);
     const ml = o.moonLightDir ?? o.sunDir;
-    uSP4.value.set(ml.x, ml.y, ml.z, 0);
+    uSP4.value.set(ml.x, ml.y, ml.z, o.moonBright ?? 1);
 
     let dirty = false;
     if (needsStatic) {
