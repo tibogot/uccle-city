@@ -20,7 +20,7 @@ function hashOf(g) {
       const x0 = g.xy[k * 2], z0 = g.xy[k * 2 + 1], x1 = g.xy[k * 2 + 2], z1 = g.xy[k * 2 + 3];
       for (let ci = Math.floor(Math.min(x0, x1) / CELL); ci <= Math.floor(Math.max(x0, x1) / CELL); ci++)
         for (let cj = Math.floor(Math.min(z0, z1) / CELL); cj <= Math.floor(Math.max(z0, z1) / CELL); cj++) {
-          const kk = key(ci, cj); let l = h.get(kk); if (!l) h.set(kk, (l = [])); l.push(k);
+          const kk = key(ci, cj); let l = h.get(kk); if (!l) h.set(kk, (l = [])); l.push(g.kind[p] ? -1 - k : k);   // (-1 - k: a junction turn)
         }
     }
   }
@@ -29,9 +29,11 @@ function hashOf(g) {
 /** does a core lane of graph g pass within TP_HALF of site c's box? */
 function hits(g, c) {
   const h = hashOf(g), i0 = Math.floor(c.x / CELL), j0 = Math.floor(c.z / CELL);
-  for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const k of h.get(key(i0 + di, j0 + dj)) || []) {
+  for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const kk of h.get(key(i0 + di, j0 + dj)) || []) {
+    // (a junction turn: its body's corners sweep ~0.3 m outside the centre line)
+    const k = kk < 0 ? -1 - kk : kk, lim = TP_HALF + (kk < 0 ? 0.3 : 0);
     const x0 = g.xy[k * 2], z0 = g.xy[k * 2 + 1], x1 = g.xy[k * 2 + 2], z1 = g.xy[k * 2 + 3], L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.ceil(L / 0.25));
-    for (let m = 0; m <= n; m++) { const t = m / n; if (parkedBoxDist(c, x0 + (x1 - x0) * t, z0 + (z1 - z0) * t) < TP_HALF) return true; }
+    for (let m = 0; m <= n; m++) { const t = m / n; if (parkedBoxDist(c, x0 + (x1 - x0) * t, z0 + (z1 - z0) * t) < lim) return true; }
   }
   return false;
 }

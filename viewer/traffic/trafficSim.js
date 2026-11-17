@@ -30,7 +30,8 @@ const ROOM_OLD = typeof location !== "undefined" && /[?&]bikeroom=old(&|$)/.test
 // the parked cars at run time (the lanes are built clear of them, viewer/traffic/trafficGraph.js; this guard covers the
 // ones that moved: shoved by the player, a game's prop) and the pull-over / yield shifts not clamped by them
 const TP_OLD = typeof location !== "undefined" && /[?&]trafpark=old(&|$)/.test(location.search);
-const TP_TOUCH = 0.05;          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
+const TP_TOUCH = 0.05;
+const TP_BLOCK = 0.96;          // m: a parked box this close to a lane's line blocks it (the widest traffic type: 0.975 half width; built lanes keep 0.98)          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
 const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
 const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4 };
 const ROUTE = 4;                 // planned paths ahead
@@ -311,14 +312,15 @@ export class TrafficSim {
     if (O.bx[k] >= 0) {
       const c = Math.abs(tx * Math.sin(O.bh[k]) + tz * Math.cos(O.bh[k])), s = Math.sqrt(Math.max(0, 1 - c * c));
       const extLat = O.bz[k] * s + O.bx[k] * c;
-      if (lat - extLat > (O.park[k] ? CAR_HALF_W - TP_TOUCH : CAR_HALF_W + 0.3) || E.n >= OBS_ENTRIES) return;
+      const turnM = O.park[k] && this.W.slots[gid >>> 16]?.kind[gid & 0xffff] ? 0.3 : 0;   // (a junction turn: the body sweeps wider)
+      if (lat - extLat > (O.park[k] ? TP_BLOCK + turnM : CAR_HALF_W + 0.3) || E.n >= OBS_ENTRIES) return;
       r = O.bz[k] * c + O.bx[k] * s;
       if (O.park[k]) {
         // which side of the lane it stands: the shift away from it that clears it by 0.1 m
         const T = this.tmp4;
         this.W.point(gid, along, T);
         const side = (O.x[k] - T[0]) * tz - (O.z[k] - T[1]) * tx;          // + = left of the lane
-        const into = CAR_HALF_W + 0.1 - (lat - extLat);
+        const into = TP_BLOCK + turnM + 0.12 - (lat - extLat);
         this._need = side > 0 ? -into : into;
       }
     } else if (lat > O.r[k] + 1.15 || E.n >= OBS_ENTRIES) return;
@@ -438,7 +440,8 @@ export class TrafficSim {
       // (a tile's own lanes, or a buffer copy with no twin: the cars drive it as it is)
       if (!g || (!g.core[gid & 0xffff] && g.twin?.[gid & 0xffff] >= 0)) return;
       const cc = Math.abs(tx * Math.sin(h) + tz * Math.cos(h)), ss = Math.sqrt(Math.max(0, 1 - cc * cc));
-      if (lat - (hz * ss + hx * cc) < CAR_HALF_W - TP_TOUCH) yes = true;
+      // (a junction turn: the body's corners sweep ~0.3 m outside its centre line)
+      if (lat - (hz * ss + hx * cc) < TP_BLOCK + (g.kind[gid & 0xffff] ? 0.3 : 0)) yes = true;
     });
     return yes;
   }
