@@ -33,13 +33,13 @@ export async function motionCoverage({ frames = 30 } = {}) {
 }
 
 // ---- image metrics on canvas crops
-function luma(img) {
+export function luma(img) {
   const d = img.data, Y = new Float32Array(img.width * img.height);
   for (let i = 0; i < Y.length; i++) Y[i] = 0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2];
   return Y;
 }
 /** variance of the 4-neighbour Laplacian: higher = sharper (a blur lowers it, a hard alias raises it a bit too) */
-function lapVar(Y, w, h) {
+export function lapVar(Y, w, h) {
   let s = 0, s2 = 0, n = 0;
   for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
     const i = y * w + x, l = 4 * Y[i] - Y[i - 1] - Y[i + 1] - Y[i - w] - Y[i + w];
@@ -48,7 +48,7 @@ function lapVar(Y, w, h) {
   const m = s / n; return s2 / n - m * m;
 }
 /** the high-pass of a crop (Y - its 3 x 3 box blur): shimmer lives there; a shadow sweeping over the car does not */
-function highPass(Y, w, h) {
+export function highPass(Y, w, h) {
   const o = new Float32Array(Y.length);
   for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
     const i = y * w + x;
@@ -58,7 +58,7 @@ function highPass(Y, w, h) {
   return o;
 }
 /** mean |Y_t - Y_t-1| */
-const tdiff = (A, B) => { let s = 0; for (let i = 0; i < A.length; i++) s += Math.abs(A[i] - B[i]); return s / A.length; };
+export const tdiff = (A, B) => { let s = 0; for (let i = 0; i < A.length; i++) s += Math.abs(A[i] - B[i]); return s / A.length; };
 
 /**
  * Parked then driving straight at `speed` m/s (the drive mode's own car, autoInput): per phase the median over
