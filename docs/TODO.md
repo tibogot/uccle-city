@@ -8,6 +8,12 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 
 ## OWNER PLAYTEST 2026-11-16 (day, default viewer + both games) — TOP PRIORITY, in this order
 
+**Night 2026-11-17 (owner away):** MERGED sharp (docs/UPSCALE.md), tour (docs/TOUR.md: 22-view city tour, baseline in
+uccle-tour/.tour/foundation), holes (docs/HOLES.md: no hollow buildings; tour: 5 views fixed, 17 unchanged). Rules +
+gates: **docs/QUALITY_RULES.md** (read before every merge). Queue: heap, orbitcam2, trafpark, vivier, skyctl, christmas,
+then falcon stutter, loader stills, clean perf measure, agargaro (8k). Left from holes: owner image 68 (Waterloo by
+Optalweg) not located; the `police` place in viewer/places.js puts the camera inside a house.
+
 **SNOW2 (claude/snow2, 2026-11-17, docs/SNOW2.md):** snowfall's GPU cost over an overcast sky (GPU-bound A/B, 3.4 Mpx) +2.49 -> +1.57 ms (~1.0 -> ~0.6 ms at the window's size; ?snowfast=old): baked snow noise, cover only on up-facing faces, colour -> normal share, one filtered exposure fetch, near-only bump / groove, flakes collapsed / stepped on the drawn count. Looks: Sacré-Cœur 54 deg slate streaks instead of blocks (?snowsteep=old), library slate even (moss kept its sheen, ?slatemoss=old), Saint-Marc brick grey-mauve (?marcbrick=old), paved forecourts at Saint-Marc + Sacré-Cœur's east passage (grounds pavers, ?forecourts=old), hard grounds take the weather. Left: ~0.6 ms of the rest is SSR on the salted roads' wet film (content), the layer's own lit fragment (depth-first order tried: bare grey roofs, reverted), the < 0.6 ms target only at window size; GPU ms at window size needs ?quality=native + debug/snow2.js bound() (dynamic res + GPU clock otherwise hold ~11.5 ms).
 
 **Status 2026-11-16 evening:** perfgame MERGED (hitches gone: police worst frame 350-950 -> 67-83 ms, falcon 300-967 -> 50-100 ms; play loader, no fill-in; steady CPU 11-13 ms unchanged -> follow-up job running: police car merge, patrol instancing, shadow casters, tile unload by distance, time-to-play 63-70 s -> < 35 s). citydefects: bridge deck, signals/poles (lights in lanes 122 -> 5, wrong heading 410 -> 0), parking by width (16,545 -> 12,084 cars, give-way on narrow streets), car slope fit, pier caps, done in code; browser check running. Night shop location unknown (not in OSM): ask the owner / Street View.
