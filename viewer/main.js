@@ -666,6 +666,9 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
  *  houses' and the school's looks, the school's yards and courts, its front (fence, gate, flags, lettering);
  *  ?cortenbosch=old: the neighbourhood as before */
 const CORTENBOSCH = params.get("cortenbosch") !== "old";
+/** round 2 (docs/CORTENBOSCH2.md): the 1990s house type on the lane, the curtain wall on the Lycée's block D, the school's
+ *  other blocks, the lane's herringbone pavers and painted name, the railing / gate as colliders; ?cortenbosch2=old: round 1 */
+const CORTENBOSCH2 = CORTENBOSCH && params.get("cortenbosch2") !== "old";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
@@ -683,7 +686,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     storeys: params.get("storeys") !== "old", styles: params.get("styles") !== "old",              // styles: building types (viewer/buildingTypes.js, docs/STYLES.md), ?styles=old = one generic façade
                                                           // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
-    cortenbosch: CORTENBOSCH,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
+    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     surfVote: params.get("surfvote") !== "old",                                                    // the street-surface name vote with repaired / normalised names (viewer/streetNames.js, docs/SURFVOTE.md), ?surfvote=old = the raw names (never matched: asphalt)
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off

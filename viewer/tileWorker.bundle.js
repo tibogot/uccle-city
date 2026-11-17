@@ -649,7 +649,23 @@ function clipU(poly, sg, c) {
 }
 
 // viewer/buildingTypes.js
-var TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5 };
+var TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5, NINETIES: 6, CURTAIN: 7 };
+var NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre"] };
+var CURTAIN = { grids: ["burgundy", "anthracite", "silver", "green"], spandrels: ["glass", "metal", "grey"] };
+var idx = (list, v, dflt) => {
+  const i = list.indexOf(v);
+  return i >= 0 ? i : dflt;
+};
+function typedStyle(type, look, key) {
+  if (type === TYPE.NINETIES) {
+    const tone = idx(NINETIES.tones, look?.tone, Math.floor(h01(key + "|t6") * 3));
+    const frame2 = idx(NINETIES.frames, look?.frame, h01(key + "|f6") < 0.6 ? 0 : h01(key + "|f6") < 0.85 ? 1 : 2);
+    const fascia = idx(NINETIES.fascias, look?.fascia, Math.floor(h01(key + "|e6") * 3));
+    return 2 + (tone * 10 + frame2 + 3 * fascia) / 100;
+  }
+  if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 100;
+  return null;
+}
 function h01(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
@@ -863,8 +879,12 @@ var TYPE_GRID = [
   // 3 bel-étage: small high ground lights, a wide window band above
   [2.6, 0.74, 0.3, 0.8, 0.1, 0.84, 0, 2.9, 0.82, 1.12],
   // 4 block: large glazing, French doors to the balconies
-  [1.2, 0.52, 0.27, 0.77, 0.29, 0.79, 0, 3.25, 0.87, 1.2]
+  [1.2, 0.52, 0.27, 0.77, 0.29, 0.79, 0, 3.25, 0.87, 1.2],
   // 5 villa (as the generic grid: the kit's pieces fit it)
+  [2.1, 0.74, 0.3, 0.78, 0.33, 0.8, 0, 2.95, 0.8, 1.12],
+  // 6 1990s house: wide, low windows; lower storeys (2.7-3.1 m)
+  [9, 1, 0.03, 0.8, 0.06, 0.8, 0, 3.4, 0.85, 1.15]
+  // 7 curtain wall: the glass fills the bay, a spandrel over each slab
 ];
 function garageBay(nb, doorBay) {
   return nb < 2 ? -1 : (doorBay + 1) % nb;
@@ -915,7 +935,7 @@ function faceOpenings(f) {
         if (!(f.partyH > 0 && 0 < f.partyH + 0.3)) out.push({ kind: "garage", bay: k, floor: 0, u0: uc - gh, u1: uc + gh, h0: 0, h1: GARAGE_H, frame: FRAME });
         continue;
       }
-      const half = door ? type === 4 ? Math.min(1, bw * 0.4) : 0.55 : ww / 2;
+      const half = door ? type === 4 || type === 7 ? Math.min(1, bw * 0.4) : 0.55 : ww / 2;
       const h0 = door ? raise : y0 + ya * sh, h1 = door ? 0.72 * G2 + 0.5 * raise : winTop;
       if (f.partyH > 0 && h0 < f.partyH + 0.3) continue;
       if (f.shop > 0.5 && !up) {
@@ -1404,13 +1424,13 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
     const look = opts.looks?.[b.id.split("/").pop()];
-    const style = look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : cls && !landmark ? cls.garage[bi] : 0;
+    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : look?.garage === true ? 1 : cls && !landmark ? cls.garage[bi] : 0;
+    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
     if (cls) {
-      stats.types = stats.types || [0, 0, 0, 0, 0, 0];
+      stats.types = stats.types || [0, 0, 0, 0, 0, 0, 0, 0];
       stats.types[btype]++;
     }
-    const roofStyle = hash01(key + "r");
+    const roofStyle = hash01(key + "r") + (look?.roofTile === "concrete" ? 2 : 0);
     const rc = look?.roofColor || b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;
     let all = [];
@@ -1672,7 +1692,13 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (L2 < 0.6 || seen.has(key2)) continue;
           seen.add(key2);
           const col2 = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
-          if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
+          if (btype === TYPE.NINETIES) {
+            const fc2 = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36]][Math.floor(Math.round((style - 2) * 100) % 10 / 3)] || [0.62, 0.58, 0.48];
+            addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.36, f.nx, f.nz, fc2);
+          } else if (btype === TYPE.CURTAIN) {
+            const gc = [[0.2, 0.035, 0.045], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][Math.round((style - 5) * 100) % 4];
+            addStrip(SD, "cu", A, B, top + 0.01, 0.16, 0.06, f.nx, f.nz, gc);
+          } else if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
             const cc = btype === TYPE.BLOCK ? [0.44, 0.43, 0.41] : btype === TYPE.DECO ? [0.62, 0.6, 0.56] : [0.5, 0.49, 0.47];
             addStrip(SD, "cu", A, B, top - 0.02, btype === TYPE.BLOCK ? 0.3 : 0.18, btype === TYPE.DECO ? 0.1 : 0.06, f.nx, f.nz, cc);
           } else if (btype === TYPE.MAITRE) {
@@ -2124,7 +2150,7 @@ function farBuildings(doc, P, I2, opts = {}) {
     const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx, L2 = Math.hypot(nx, ny, nz) || 1;
     return { p, n: [nx / L2, ny / L2, nz / L2] };
   };
-  const stats = { faces: 0, party: 0, walls: 0, roofs: 0, types: [0, 0, 0, 0, 0, 0] };
+  const stats = { faces: 0, party: 0, walls: 0, roofs: 0, types: [0, 0, 0, 0, 0, 0, 0, 0] };
   B.forEach((b, bi) => {
     const key = String(b.attrs?.BU_ID ?? b.id), landmark = !!b.attrs?._landmark;
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
@@ -2134,8 +2160,9 @@ function farBuildings(doc, P, I2, opts = {}) {
       const xs = b.footprint[0].map((v) => v[0]), zs = b.footprint[0].map((v) => v[1]);
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
-    const style = landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
+    const look = opts.looks?.[b.id.split("/").pop()];
+    const btype = look?.type != null && cls ? look.type : cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
+    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? ext < 11 && b.height > 16 ? 6.25 : 6 : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
     stats.types[btype]++;
     const faces = /* @__PURE__ */ new Map();
     for (let t = b.walls.first; t < b.walls.first + b.walls.count; t++) {
@@ -2226,7 +2253,7 @@ function farBuildings(doc, P, I2, opts = {}) {
       for (const { p, n: nn } of f.tris) emit(p, nn, (v) => [v[0] * tx + v[2] * tz - u0, width, v[1] - base, faceEaves], fbv);
       stats.walls += f.tris.length;
     }
-    const rc = b.roofColor || (hash01(key + "r") < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const rc = look?.roofColor || b.roofColor || (hash01(key + "r") < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     const rb = [style, -1, 0, rnd];
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
       const tr = tri(t), flat = Math.abs(tr.n[1]) > 0.97 ? 1 : 0;
@@ -4300,12 +4327,12 @@ function resolveStack(road, types = ROAD_TYPES, scale = 1) {
           mods: [{ sec, width: w }],
           added: true
         };
-        let idx = 0;
+        let idx2 = 0;
         if (op.at === "curb") {
-          idx = list.findIndex((l) => !LANE_TYPES[l.type]?.carriage || l.type === "parking" || l.type === "shoulder");
-          if (idx < 0) idx = list.length;
-        } else if (typeof op.at === "number") idx = clamp(op.at, 0, list.length);
-        list.splice(idx, 0, lane);
+          idx2 = list.findIndex((l) => !LANE_TYPES[l.type]?.carriage || l.type === "parking" || l.type === "shoulder");
+          if (idx2 < 0) idx2 = list.length;
+        } else if (typeof op.at === "number") idx2 = clamp(op.at, 0, list.length);
+        list.splice(idx2, 0, lane);
       } else if (op.op === "width" || op.op === "grow") {
         for (const l of list) {
           const hit = typeof op.match === "number" ? list.indexOf(l) === op.match : l.type === op.match;
@@ -5026,10 +5053,10 @@ function junctionConnectors(node, arms) {
       const dedicated = Q.some((l) => l.turn && l.turn.split("-").includes(tc === "straight" ? "through" : tc));
       if (dedicated && tc !== "straight") return false;
       if (plain.length <= 1) return true;
-      const idx = plain.indexOf(lane);
+      const idx2 = plain.indexOf(lane);
       if (tc === "straight") return true;
-      if (tc === "left") return idx === 0 || !hasStraight && idx < plain.length / 2;
-      return idx === plain.length - 1 || !hasStraight && idx >= plain.length / 2;
+      if (tc === "left") return idx2 === 0 || !hasStraight && idx2 < plain.length / 2;
+      return idx2 === plain.length - 1 || !hasStraight && idx2 >= plain.length / 2;
     };
     const served = new Map(Q.map((l) => [l, moves.filter((m) => allowed(l, m.tc))]));
     const extra = /* @__PURE__ */ new Map();
@@ -9247,13 +9274,13 @@ function fitRoadWidths(roads, prep) {
       for (const ty of ["parking", "bike", "driving"]) {
         while (minSum() > target) {
           const drives = carriage.filter((l) => LANE_TYPES[l.type]?.drive).length;
-          let idx = -1;
+          let idx2 = -1;
           for (let q = carriage.length - 1; q >= 0; q--) if (carriage[q].type === ty && (ty !== "driving" || drives > 1)) {
-            idx = q;
+            idx2 = q;
             break;
           }
-          if (idx < 0) break;
-          carriage.splice(idx, 1);
+          if (idx2 < 0) break;
+          carriage.splice(idx2, 1);
           st.lanesDropped++;
         }
       }
@@ -9445,7 +9472,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     return parts2;
   };
   const emit = (poly, vs, P2) => {
-    const idx = [];
+    const idx2 = [];
     for (const q of poly) {
       const we = bary(q, P2[0], P2[1], P2[2]);
       if (!we) return;
@@ -9453,9 +9480,9 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
       const ex = exOfZ(vs, we);
       const key = `o${Math.round(q[0] * 1e3)},${Math.round(q[1] * 1e3)},${Math.round(u * 1e3)},${Math.round(v * 1e3)},${ex.aPiece[0].toFixed(2)},${ex.aEdges.map((e) => e.toFixed(3)).join()},${ex.aMark.map((e) => e.toFixed(4)).join()},${ex.aLateral.toFixed(3)}`;
-      idx.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
+      idx2.push(A.keyed(key, () => A.vert(q[0], H(q[0], q[1]) + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, ex)));
     }
-    for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP2, true)) overlayTris++;
+    for (let k = 1; k + 1 < idx2.length; k++) if (A.tri(idx2[0], idx2[k], idx2[k + 1], UP2, true)) overlayTris++;
   };
   const eseg = /* @__PURE__ */ new Map();
   for (const e of surf.edges || []) for (let k = 1; k < e.line.length; k++) {
@@ -9491,15 +9518,15 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   };
   const emitPlane = (poly, vs, P2) => {
     const hv = P2.map((q) => H(q[0], q[1]));
-    const idx = [];
+    const idx2 = [];
     for (const q of poly) {
       const we = bary(q, P2[0], P2[1], P2[2]);
       if (!we) return;
       const u = we[0] * E.uv[vs[0] * 2] + we[1] * E.uv[vs[1] * 2] + we[2] * E.uv[vs[2] * 2];
       const v = we[0] * E.uv[vs[0] * 2 + 1] + we[1] * E.uv[vs[1] * 2 + 1] + we[2] * E.uv[vs[2] * 2 + 1];
-      idx.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOfZ(vs, we)));
+      idx2.push(A.vert(q[0], we[0] * hv[0] + we[1] * hv[1] + we[2] * hv[2] + liftOf(vs[0]), q[1], nrmAt(q[0], q[1]), u, v, exOfZ(vs, we)));
     }
-    for (let k = 1; k + 1 < idx.length; k++) if (A.tri(idx[0], idx[k], idx[k + 1], UP2, true)) overlayTris++;
+    for (let k = 1; k + 1 < idx2.length; k++) if (A.tri(idx2[0], idx2[k], idx2[k + 1], UP2, true)) overlayTris++;
   };
   for (let t = 0; t < EI.length; t += 3) {
     if (folded?.has(t)) {
@@ -9518,8 +9545,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       }
       const w3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
       const up = lift ? liftOf(vs[0]) - LIFT : 0;
-      const idx = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
-      A.idxFirst.push(idx[0], idx[1], idx[2]);
+      const idx2 = vs.map((v, q) => A.vert(EP[v * 3], EP[v * 3 + 1] + up, EP[v * 3 + 2], nrmAt(EP[v * 3], EP[v * 3 + 2]), E.uv[v * 2], E.uv[v * 2 + 1], exOf(vs, w3[q])));
+      A.idxFirst.push(idx2[0], idx2[1], idx2[2]);
       for (const v of vs) keptEngine.push(EP[v * 3], EP[v * 3 + 1], EP[v * 3 + 2]);
       keptTris++;
       continue;
@@ -9709,8 +9736,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);
     }
     const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: s.surface != null ? SURFACE[s.surface] ?? 0 : voteOf(s) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame2 >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
-    const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame2}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
-    part.tri(idx[0], idx[1], idx[2], UP2);
+    const idx2 = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame2}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
+    part.tri(idx2[0], idx2[1], idx2[2], UP2);
   }
   const carveTris = new Float32Array(base.length * 9);
   base.forEach((b, k) => {
@@ -9747,7 +9774,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       if (!inTile(cx, cz) || baseAt(cx, cz) || onBuilding(cx, cz)) continue;
       const ph = nearestPhase(cx, cz);
       if (ph === null || mapped.has(ph)) continue;
-      const idx = vs.map((v) => dst.vert(
+      const idx2 = vs.map((v) => dst.vert(
         SP[v * 3],
         SP[v * 3 + 1],
         SP[v * 3 + 2],
@@ -9756,7 +9783,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
         S3.uv[v * 2 + 1],
         name === "concrete" ? { aKind: S3.attributes.aKind.array[v] } : null
       ));
-      dst.idx.push(idx[0], idx[1], idx[2]);
+      dst.idx.push(idx2[0], idx2[1], idx2[2]);
       keptSide++;
     }
   }
@@ -10597,7 +10624,7 @@ function unpaintParking(built, ctx) {
   return n;
 }
 function paintMeshV2(items, prep, bounds) {
-  const pos = [], nrm = [], uv = [], a1 = [], a2 = [], idx = [];
+  const pos = [], nrm = [], uv = [], a1 = [], a2 = [], idx2 = [];
   if (!items.length) return null;
   const grid = /* @__PURE__ */ new Map();
   prep.base.forEach((b, i) => {
@@ -10647,18 +10674,18 @@ function paintMeshV2(items, prep, bounds) {
             a2.push(ext[0], ext[1], 0, 0);
           }
           for (let k = 1; k + 1 < piece.length; k++) {
-            if (ccw) idx.push(v0, v0 + k + 1, v0 + k);
-            else idx.push(v0, v0 + k, v0 + k + 1);
+            if (ccw) idx2.push(v0, v0 + k + 1, v0 + k);
+            else idx2.push(v0, v0 + k, v0 + k + 1);
           }
         }
       }
   }
-  if (!idx.length) return null;
+  if (!idx2.length) return null;
   return {
     position: new Float32Array(pos),
     normal: new Float32Array(nrm),
     uv: new Float32Array(uv),
-    index: new Uint32Array(idx),
+    index: new Uint32Array(idx2),
     attributes: { aPaint: { array: new Float32Array(a1), itemSize: 4 }, aPaint2: { array: new Float32Array(a2), itemSize: 4 } }
   };
 }
@@ -12277,7 +12304,7 @@ function kitCollector(opts = {}) {
     const off = { on: 0, rise: 0, doorless: 0, french: 0 };
     if (!f.street || f.landmark || f.partyH >= 999 || f.wallStyle > 4.5 || f.building.height > MAX_H) return off;
     const type = f.type | 0;
-    if (type === TYPE.DECO || type === TYPE.BELETAGE || type === TYPE.BLOCK) return off;
+    if (type === TYPE.DECO || type === TYPE.BELETAGE || type === TYPE.BLOCK || type === TYPE.NINETIES || type === TYPE.CURTAIN) return off;
     if (exclude.has(f.key) || only && !only.has(f.key)) return off;
     if (f.width < 2.2 || f.eaves < 2.8) return off;
     const fr = Math.fround;
@@ -14094,7 +14121,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const fitted = grid ? fitToSurface(raw, grid, fitStats, parked) : raw;
   if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
   const src = roundKinks(fitted);
-  const idx = new Map(src.map((p, i) => [p.id, i]));
+  const idx2 = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
   for (const p of src) nPts += p.pts.length;
@@ -14130,7 +14157,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     src.forEach((p, i) => {
       o2[i] = list2.length;
       for (const id of p[key]) {
-        const j = idx.get(id);
+        const j = idx2.get(id);
         if (j != null) list2.push(j);
       }
     });
@@ -14180,11 +14207,11 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const stats = { junctions: 0, signal: 0, stop: 0, yield: 0, priority: 0, conflicts: 0, pedSignals: 0 };
   const cf = [];
   for (const node of net.nodes) {
-    const cons = (node.connectors || []).map((c) => idx.get(c.id)).filter((i) => i != null);
+    const cons = (node.connectors || []).map((c) => idx2.get(c.id)).filter((i) => i != null);
     const osmSignal = node.src?.control === "signal";
     if (!cons.length && osmSignal && node.arms?.length === 2) {
       for (const a of node.arms) for (const lane of a.approach) {
-        const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx.get(pid);
+        const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx2.get(pid);
         if (i == null) continue;
         const s = nearestSig(sigPts, node.x, node.z, 30);
         holdAt[i] = Math.max(0, len[i] - 4.5);
@@ -14204,7 +14231,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     const entries = /* @__PURE__ */ new Map();
     const lanes = [];
     for (const ci of cons) for (const id of src[ci].prev) {
-      const li = idx.get(id);
+      const li = idx2.get(id);
       if (li != null && !lanes.includes(li)) lanes.push(li);
     }
     const signOf = /* @__PURE__ */ new Map();
@@ -14238,7 +14265,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
       jnode[li] = J;
       stats[c === CTRL.signal ? "signal" : c === CTRL.stop ? "stop" : c === CTRL.yield ? "yield" : "priority"]++;
     }
-    const cIn = (ci) => idx.get(src[ci].prev[0]);
+    const cIn = (ci) => idx2.get(src[ci].prev[0]);
     const head = (ci) => {
       const q = src[ci].pts;
       return [q[1][0] - q[0][0], q[1][1] - q[0][1]];
@@ -15018,7 +15045,7 @@ function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
     terrain.nrm[k * 3 + 1] = 1 / L2;
     terrain.nrm[k * 3 + 2] = -hz / L2;
   }
-  const idx = terrain.idx, out = [], newPos = [], newNrm = [];
+  const idx2 = terrain.idx, out = [], newPos = [], newNrm = [];
   let nv = terrain.pos.length / 3, clipped = 0, dropped = 0;
   const vmap = /* @__PURE__ */ new Map();
   const addV = (key, x, y, z, nk) => {
@@ -15030,8 +15057,8 @@ function tunnelTerrain(cut, terrain, hm, railDoc = null, bounds = null) {
     newNrm.push(terrain.nrm[nk * 3], terrain.nrm[nk * 3 + 1], terrain.nrm[nk * 3 + 2]);
     return v;
   };
-  for (let t3 = 0; t3 < idx.length; t3 += 3) {
-    const v = [idx[t3], idx[t3 + 1], idx[t3 + 2]];
+  for (let t3 = 0; t3 < idx2.length; t3 += 3) {
+    const v = [idx2[t3], idx2[t3 + 1], idx2[t3 + 2]];
     const c = v.map((k) => cls[k]);
     const hasRoad = c.includes(ROAD), earth = v.filter((k, i) => c[i] === LID || c[i] === KEPT);
     if (!hasRoad || !earth.length || v.some((k, i) => cls[k] && owner[k] !== owner[v.find((q) => cls[q])])) {
@@ -15355,9 +15382,9 @@ function applyParkSquares(surf, ov, bounds) {
   if (!surf?.surfaces || !list?.length) return 0;
   let n = 0;
   for (const ps of list) {
-    const idx = surf.surfaces.findIndex((s) => s.id === ps.id);
-    if (idx < 0) continue;
-    const proto = surf.surfaces[idx];
+    const idx2 = surf.surfaces.findIndex((s) => s.id === ps.id);
+    if (idx2 < 0) continue;
+    const proto = surf.surfaces[idx2];
     surf.surfaces = surf.surfaces.filter((s) => s.id !== ps.id);
     n++;
     for (const piece of ps.pieces) {
@@ -15456,27 +15483,27 @@ function terrainArrays(hm, fitDiagonals = false) {
     nrm[k * 3 + 1] = 1 / L2;
     nrm[k * 3 + 2] = -hz / L2;
   }
-  const idx = new Uint32Array((cols - 1) * (rows - 1) * 6);
+  const idx2 = new Uint32Array((cols - 1) * (rows - 1) * 6);
   let o = 0;
   for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols - 1; c++) {
     const a = r * cols + c, b = a + cols, cc = a + 1, d = b + 1;
     if (fitDiagonals && Math.abs(Y[a] - Y[d]) < Math.abs(Y[b] - Y[cc]) - 0.01) {
-      idx[o++] = a;
-      idx[o++] = b;
-      idx[o++] = d;
-      idx[o++] = a;
-      idx[o++] = d;
-      idx[o++] = cc;
+      idx2[o++] = a;
+      idx2[o++] = b;
+      idx2[o++] = d;
+      idx2[o++] = a;
+      idx2[o++] = d;
+      idx2[o++] = cc;
       continue;
     }
-    idx[o++] = a;
-    idx[o++] = b;
-    idx[o++] = cc;
-    idx[o++] = cc;
-    idx[o++] = b;
-    idx[o++] = d;
+    idx2[o++] = a;
+    idx2[o++] = b;
+    idx2[o++] = cc;
+    idx2[o++] = cc;
+    idx2[o++] = b;
+    idx2[o++] = d;
   }
-  return { pos, nrm, idx };
+  return { pos, nrm, idx: idx2 };
 }
 async function streetlifeFronts(base, name) {
   const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
@@ -15488,7 +15515,20 @@ var overridesP = null;
 var streetVoteP = null;
 var streetVote = (base) => streetVoteP ??= fetch(new URL("../roads/streetVote.json", base)).then((r) => r.ok ? r.json() : { exact: {}, loose: {} }).catch(() => ({ exact: {}, loose: {} }));
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
-var lookSet = (looks, entry) => !looks || entry.cortenbosch !== false ? looks : Object.fromEntries(Object.entries(looks).filter(([, v]) => v?.set !== "cortenbosch"));
+var lookSet = (looks, entry) => {
+  if (!looks) return looks;
+  const out = {};
+  for (const [k, v] of Object.entries(looks)) {
+    if (!v || typeof v !== "object") {
+      out[k] = v;
+      continue;
+    }
+    if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
+    if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
+    out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
+  }
+  return out;
+};
 function wallRayOf(bDoc) {
   const B = 4, cells = /* @__PURE__ */ new Map(), segs = [];
   for (const b of bDoc.buildings) for (const ring2 of b.footprint || []) for (let i = 0; i < ring2.length; i++) {
@@ -15796,8 +15836,8 @@ async function buildTileData(entry, base) {
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
     await MeshoptSimplifier.ready;
-    const [idx] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
-    terrain.idx = idx;
+    const [idx2] = MeshoptSimplifier.simplify(terrain.idx, terrain.pos, 3, 0, TERRAIN_ERROR, ["LockBorder", "ErrorAbsolute"]);
+    terrain.idx = idx2;
   });
   const nb = bDoc.buildings.length;
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
@@ -15897,24 +15937,24 @@ async function buildLiteData(entry, base) {
     uv[k * 2] = (x - x0) / W;
     uv[k * 2 + 1] = 1 - (z - z0) / H;
   }
-  const idx = new Uint32Array((c2 - 1) * (r2 - 1) * 6);
+  const idx2 = new Uint32Array((c2 - 1) * (r2 - 1) * 6);
   let o = 0;
   for (let r = 0; r < r2 - 1; r++) for (let c = 0; c < c2 - 1; c++) {
     const a = r * c2 + c, b = a + c2;
-    idx[o++] = a;
-    idx[o++] = b;
-    idx[o++] = a + 1;
-    idx[o++] = a + 1;
-    idx[o++] = b;
-    idx[o++] = b + 1;
+    idx2[o++] = a;
+    idx2[o++] = b;
+    idx2[o++] = a + 1;
+    idx2[o++] = a + 1;
+    idx2[o++] = b;
+    idx2[o++] = b + 1;
   }
   await MeshoptSimplifier.ready;
-  const [idxS] = MeshoptSimplifier.simplify(idx, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
+  const [idxS] = MeshoptSimplifier.simplify(idx2, pos, 3, 0, 0.25, ["LockBorder", "ErrorAbsolute"]);
   hideBuildings(bDoc, entry.hide);
   const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
   const P = new Float32Array(bBuf, 8, V2 * 3), I2 = new Uint32Array(bBuf, 8 + V2 * 12, T3 * 3);
   if (entry.farLook !== false) {
-    const fbd = farBuildings(bDoc, P, I2, { styles: entry.styles !== false, storeys: entry.storeys !== false });
+    const fbd = farBuildings(bDoc, P, I2, { styles: entry.styles !== false, storeys: entry.storeys !== false, looks: entry.looks === false || entry.cortenbosch2 === false ? null : lookSet((await overrides(base))?.buildingLooks, entry) });
     return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: fbd, buildingCount: bDoc.count };
   }
   let n = 0;
@@ -16403,4 +16443,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "c7fffc953394287c";
+self.__TILE_CODE_HASH = "fad4331ff7898c75";

@@ -17,8 +17,41 @@
 //      19th-century house, a 3+ storey narrow front rarer after the war).
 // The form x period -> type table and the weights are in classify() below; the wall material follows the type.
 
-export const TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5 };
-export const TYPE_NAMES = ["generic", "maison de maître", "art deco / modernist", "post-war bel-étage", "apartment block", "villa"];
+export const TYPE = { GENERIC: 0, MAITRE: 1, DECO: 2, BELETAGE: 3, BLOCK: 4, VILLA: 5, NINETIES: 6, CURTAIN: 7 };
+export const TYPE_NAMES = ["generic", "maison de maître", "art deco / modernist", "post-war bel-étage", "apartment block", "villa", "1990s house", "glass curtain wall"];
+// (cortenbosch2, docs/CORTENBOSCH2.md) types 6 and 7 are never drawn by classify(): a curated look gives them
+// (data/overrides.json buildingLooks { type: 6 | 7, ... }), city-wide. aBld.z = street + 2 type + 16 garage holds 0-7.
+//   6 NINETIES  the 1980s-90s Brussels-periphery house (lotissements of Uccle, Linkebeek, Drogenbos, Rhode): buff /
+//               salmon / cream face brick in stretcher bond, wide low windows in thin PVC / aluminium frames (white,
+//               brown, anthracite), NO stone surrounds, a soldier course (bricks on end) over every opening, a timber /
+//               fibre-cement fascia and soffit under the eaves, a garage door, concrete interlocking tiles on a hip roof
+//   7 CURTAIN   a glass curtain wall: a grid of mullions and transoms (burgundy, anthracite, silver, green) over the
+//               glass, opaque spandrel panels over the floor slabs (dark enamelled glass, grid-colour metal, light grey),
+//               a metal coping: the Lycée Français's teaching block (553227), reusable for any office / school block
+// Their sub-look rides in the wall style's fraction (the style stays in its band: 2 = brick for 6, 5 = render /
+// concrete for 7, so the material library's set, the far colours and every style test keep working):
+//   6: style = 2 + code / 100, code = tone x 10 + frame + 3 x fascia
+//      tone 0 buff, 1 salmon, 2 cream-white, 3 orange-red, 4 brown-buff (mixed); frame 0 white, 1 brown, 2 anthracite;
+//      fascia 0 cream-painted timber, 1 dark-stained timber, 2 grey fibre-cement
+//   7: style = 5 + code / 100, code = grid + 4 x spandrel; grid 0 burgundy, 1 anthracite, 2 silver, 3 dark green;
+//      spandrel 0 dark enamelled glass, 1 metal in the grid's colour, 2 light grey panel
+export const NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre"] };
+export const CURTAIN = { grids: ["burgundy", "anthracite", "silver", "green"], spandrels: ["glass", "metal", "grey"] };
+const idx = (list, v, dflt) => { const i = list.indexOf(v); return i >= 0 ? i : dflt; };
+/** the wall style (with its sub-look code) of a type-6 / -7 building from its look ({ tone, frame, fascia } /
+ *  { grid, spandrel }: names as above; missing ones drawn from the building's hash). Other types: null */
+export function typedStyle(type, look, key) {
+  if (type === TYPE.NINETIES) {
+    const tone = idx(NINETIES.tones, look?.tone, Math.floor(h01(key + "|t6") * 3));                      // (buff / salmon / cream)
+    const frame = idx(NINETIES.frames, look?.frame, h01(key + "|f6") < 0.6 ? 0 : h01(key + "|f6") < 0.85 ? 1 : 2);
+    const fascia = idx(NINETIES.fascias, look?.fascia, Math.floor(h01(key + "|e6") * 3));
+    return 2 + (tone * 10 + frame + 3 * fascia) / 100;
+  }
+  if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 100;
+  return null;
+}
+/** the sub-look code of a typed style (inverse of typedStyle: 0-48) */
+export const typedCode = (style) => Math.round((style - Math.floor(style + 1e-4)) * 100);
 
 function h01(str) {                           // = facadeGeom.js hash01
   let h = 2166136261;
@@ -202,6 +235,8 @@ export const TYPE_GRID = [
   [2.4, 0.82, 0.42, 0.78, 0.22, 0.80, 0.0, 3.25, 0.87, 1.2],     // 3 bel-étage: small high ground lights, a wide window band above
   [2.6, 0.74, 0.30, 0.80, 0.10, 0.84, 0.0, 2.9, 0.82, 1.12],     // 4 block: large glazing, French doors to the balconies
   [1.2, 0.52, 0.27, 0.77, 0.29, 0.79, 0.0, 3.25, 0.87, 1.2],     // 5 villa (as the generic grid: the kit's pieces fit it)
+  [2.1, 0.74, 0.30, 0.78, 0.33, 0.80, 0.0, 2.95, 0.8, 1.12],     // 6 1990s house: wide, low windows; lower storeys (2.7-3.1 m)
+  [9.0, 1.0, 0.03, 0.80, 0.06, 0.80, 0.0, 3.4, 0.85, 1.15],      // 7 curtain wall: the glass fills the bay, a spandrel over each slab
 ];
 /** the garage door of a type-3 / -5 street front: which bay (never the door's), its width and height (m) */
 export function garageBay(nb, doorBay) { return nb < 2 ? -1 : (doorBay + 1) % nb; }

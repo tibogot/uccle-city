@@ -17,7 +17,7 @@
 // Left out against the near analysis (cheap at 150 m and more): the ground fit (the base is UrbIS's), the street /
 // door / shop flags, the façade kit, cornice and detail geometry.
 import { hash01, wallStyle } from "./facadeGeom.js";
-import { classify, TYPE } from "./buildingTypes.js";
+import { classify, TYPE, typedStyle } from "./buildingTypes.js";
 
 const PROBE = 0.35;
 
@@ -30,7 +30,8 @@ function pip(x, z, ring) {
   return inside;
 }
 
-/** doc: buildings.json (after hideBuildings), P / I: buildings.bin; opts.styles === false: the generic façade (no types) */
+/** doc: buildings.json (after hideBuildings), P / I: buildings.bin; opts.styles === false: the generic façade (no types);
+ *  opts.looks: the curated looks (data/overrides.json buildingLooks, as the full tile: style, type, roof colour) */
 export function farBuildings(doc, P, I, opts = {}) {
   const B = doc.buildings;
   const cls = opts.styles !== false ? classify(doc, P, I, (b, key) => wallStyle(hash01(key + "s"), b.height)) : null;
@@ -72,7 +73,7 @@ export function farBuildings(doc, P, I, opts = {}) {
     const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx, L = Math.hypot(nx, ny, nz) || 1;
     return { p, n: [nx / L, ny / L, nz / L] };
   };
-  const stats = { faces: 0, party: 0, walls: 0, roofs: 0, types: [0, 0, 0, 0, 0, 0] };
+  const stats = { faces: 0, party: 0, walls: 0, roofs: 0, types: [0, 0, 0, 0, 0, 0, 0, 0] };
   B.forEach((b, bi) => {
     const key = String(b.attrs?.BU_ID ?? b.id), landmark = !!b.attrs?._landmark;
     const base = b.base, eaves = (b.eaves ?? b.top) - base;
@@ -82,8 +83,10 @@ export function farBuildings(doc, P, I, opts = {}) {
       const xs = b.footprint[0].map((v) => v[0]), zs = b.footprint[0].map((v) => v[1]);
       ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
     }
-    const style = landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
+    // (cortenbosch2) the curated looks as the full tile (facadeGeom.js): far, the Cortenbosch houses kept their generated look
+    const look = opts.looks?.[b.id.split("/").pop()];
+    const btype = look?.type != null && cls ? look.type : cls && !landmark ? cls.type[bi] : TYPE.GENERIC;
+    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
     stats.types[btype]++;
     // ---- walls: planar faces (as facadeGeom.js: ~3 degrees, 25 cm, then merged along one plane)
     const faces = new Map();
@@ -150,7 +153,7 @@ export function farBuildings(doc, P, I, opts = {}) {
       stats.walls += f.tris.length;
     }
     // ---- roofs: the real colour (as the near roofs: build_roofcolors.py, else the hash's guess) and the flat flag
-    const rc = b.roofColor || (hash01(key + "r") < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
+    const rc = look?.roofColor || b.roofColor || (hash01(key + "r") < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     const rb = [style, -1, 0, rnd];
     for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
       const tr = tri(t), flat = Math.abs(tr.n[1]) > 0.97 ? 1 : 0;

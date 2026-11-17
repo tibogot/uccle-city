@@ -43,6 +43,7 @@ import { facadeLibOn, facadeWallLook, facadeRoofLook } from "./facadeLib.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 export { analyseBuildings };
 import { TYPE_GRID, GARAGE_H } from "./buildingTypes.js";
+import { SCANS } from "./materials/scans.js";
 
 const C = (r, g, b) => vec3(r, g, b);
 const PLINTH_OLD = /[?&](plinth|polish1)=old(&|$)/.test(location.search);   // polish1 item 4
@@ -263,7 +264,19 @@ export function wallMaterial(opts = {}) {
   const tg0 = STYLES_OLD ? null : varying(vec4(tsel(tV, 0), tsel(tV, 1), tsel(tV, 2), tsel(tV, 3)), "v_tg0");
   const tg1 = STYLES_OLD ? null : varying(vec4(tsel(tV, 4), tsel(tV, 5), tsel(tV, 6), 0), "v_tg1");
   const isM = band(bt, 1), isD = band(bt, 2), isBE = band(bt, 3), isK = band(bt, 4), isV = band(bt, 5);
-  const typed = isD.add(isBE).add(isK).toVar();                                  // the types with their own joinery (no kit)
+  // (cortenbosch2, docs/CORTENBOSCH2.md) 6 the 1990s house, 7 the glass curtain wall; their sub-look is the style's
+  // fraction x 100 (buildingTypes.js typedStyle): 6: tone x 10 + frame + 3 x fascia, 7: grid + 4 x spandrel
+  const isN = band(bt, 6).toVar(), isCW = band(bt, 7).toVar();
+  const tcode = floor(style.sub(floor(style.add(1e-4))).mul(100.0).add(0.5)).toVar();
+  const nTone = floor(tcode.div(10.0)).toVar(), nTrim = tcode.sub(nTone.mul(10.0));
+  const nFrame = mod(nTrim, 3.0).toVar(), nFascia = floor(nTrim.div(3.0)).toVar();
+  const cwGrid = mod(tcode, 4.0).toVar(), cwSpan = floor(tcode.div(4.0)).toVar();
+  const typed = isD.add(isBE).add(isK).add(isN).add(isCW).toVar();               // the types with their own joinery (no kit)
+  // their colours: the 1990s frames (white / brown / anthracite PVC-aluminium) and fascia (cream-painted, dark-stained
+  // timber, grey fibre-cement); the curtain wall's grid (burgundy, anthracite, silver, dark green)
+  const frame6 = mix(mix(C(0.66, 0.66, 0.64), C(0.1, 0.06, 0.04), band(nFrame, 1)), C(0.06, 0.064, 0.07), band(nFrame, 2));
+  const fascia6 = mix(mix(C(0.62, 0.58, 0.48), C(0.075, 0.05, 0.035), band(nFascia, 1)), C(0.36, 0.365, 0.36), band(nFascia, 2));
+  const grid7 = mix(mix(C(0.2, 0.035, 0.045), C(0.07, 0.072, 0.078), band(cwGrid, 1)), mix(C(0.5, 0.51, 0.52), C(0.04, 0.09, 0.06), band(cwGrid, 3)), step(1.5, cwGrid)).toVar();
   const th1 = fract(rnd.mul(113.0)), th2 = fract(rnd.mul(271.0)), th3 = fract(rnd.mul(53.0));
   const party = step(h, bld.y.add(0.3)).mul(step(0.001, bld.y)).toVar();      // below the neighbour's top (aBld.y, m above base)
   const camDist = length(P.sub(cameraPosition)).toVar();
@@ -315,7 +328,7 @@ export function wallMaterial(opts = {}) {
   const garBay = mod(doorBay.add(1), nb);
   const garCol = garOn.mul(street).mul(step(1.5, nb)).mul(step(abs(floor(gx).sub(garBay)), 0.5)).mul(kitA ? float(1).sub(kitA.z) : float(1)).toVar();
   const isGar = garCol.mul(float(1).sub(up)).mul(ok).toVar();
-  const doorHalf = mix(float(0.55), min(float(1.0), bw.mul(0.4)), isK);          // (styles) the blocks' wide glazed entrance
+  const doorHalf = mix(float(0.55), min(float(1.0), bw.mul(0.4)), isK.add(isCW));   // (styles) the blocks' (and curtain walls') wide glazed entrance
   const dxa = float(0.5).sub(doorHalf.div(bw)), dxb = float(1).sub(dxa);
   const gxa0 = float(0.5).sub(min(float(2.5), bw.sub(0.25)).mul(0.5).div(bw));
   const wxa = mix(mix(xa, dxa, isDoor), gxa0, isGar), wxb = mix(mix(xb, dxb, isDoor), float(1).sub(gxa0), isGar);
@@ -323,25 +336,30 @@ export function wallMaterial(opts = {}) {
   const wyb = mix(mix(yb, float(0.72).add(raise.mul(0.5).div(G)), isDoor), float(GARAGE_H).div(G), isGar);
   const cx = filteredPulse(gx, wxa, wxb, fwx), cy = pulseY(wya, wyb, fwy);
   const opening = cx.mul(cy).mul(ok).toVar();                                    // whole opening (frame + glass)
-  // frame 7 cm, glass inside; a mullion and a transom
-  const fX = float(0.07).div(bw), fY = float(0.07).div(storeyH);
+  // frame 7 cm, glass inside; a mullion and a transom (cortenbosch2: the 1990s PVC / aluminium frames 5 cm; the curtain
+  // wall's mullions / transoms 3 cm a side: 6 cm between two bays)
+  const frW = float(0.07).sub(isN.mul(0.02)).sub(isCW.mul(0.04));
+  const fX = frW.div(bw), fY = frW.div(storeyH);
   const gxa = wxa.add(fX), gxb = wxb.sub(fX), gya = wya.add(fY), gyb = wyb.sub(fY);
   const glassBox = filteredPulse(gx, gxa, gxb, fwx).mul(pulseY(gya, gyb, fwy)).mul(ok).toVar();
   const wu = clamp(fract(gx).sub(gxa).div(gxb.sub(gxa)), 0.0, 1.0).toVar();      // 0..1 inside the glass
   const wv = clamp(fract(gy).sub(gya).div(gyb.sub(gya)), 0.0, 1.0).toVar();
+  const nlCW = max(floor(ww.div(1.35).add(0.5)), float(1));                     // (cortenbosch2) the curtain wall's lights per bay
+  const cwRough = float(0).toVar(), cwMask = float(0).toVar();                   // (its spandrels' roughness / coverage)
   let barX = smoothstep(float(0.035).div(ww), float(0.0), abs(wu.sub(0.5))).mul(step(float(0.95), ww));
   let barY = smoothstep(float(0.035).div(storeyH.mul(0.5)), float(0.0), abs(wv.sub(0.7)));
   if (!STYLES_OLD) {
     // (styles) the typed fronts' glazing: art deco steel windows in lights of ~0.55 m with two horizontal bars; the
     // post-war / block windows in lights of ~1.2 m with a top light (bel-étage) or the guard rail 1 m over the floor (blocks)
-    const nl = max(floor(ww.div(mix(float(1.2), float(0.55), isD)).add(0.5)), float(1));
+    // (cortenbosch2) the 1990s house: casements of ~0.95 m, a top light on half of them; the curtain wall: lights of ~1.35 m
+    const nl = max(floor(ww.div(mix(mix(mix(float(1.2), float(0.55), isD), float(0.95), isN), float(1.35), isCW)).add(0.5)), float(1));
     const dl = abs(fract(wu.mul(nl).add(0.5)).sub(0.5)).div(nl);
     const bxT = smoothstep(float(0.028).div(ww), float(0.0), dl).mul(step(1.5, nl));
     const wvH = gyb.sub(gya).mul(storeyH);                                        // the glass's height, m
     const lineAt = (v, hw) => smoothstep(float(hw).div(wvH), float(0.0), abs(wv.sub(v)));
     const railV = float(1.0).div(storeyH).sub(gya).div(gyb.sub(gya));            // 1 m over the floor, in the glass's v
     const byT = max(max(lineAt(float(0.34), 0.016), lineAt(float(0.68), 0.016)).mul(isD), lineAt(float(0.8), 0.02).mul(isBE))
-      .add(lineAt(railV, 0.025).mul(isK).mul(up)).min(1.0);
+      .add(lineAt(railV, 0.025).mul(isK).mul(up)).add(lineAt(float(0.78), 0.025).mul(isN).mul(step(0.5, th3))).min(1.0);
     barX = mix(barX, bxT, typed); barY = mix(barY, byT, typed);
   }
   const bars = max(barX, barY).mul(float(1).sub(isDoor)).mul(float(1).sub(isGar)).mul(near.mul(0.7).add(0.3));
@@ -383,6 +401,11 @@ export function wallMaterial(opts = {}) {
     const pal = mix(mix(C(0.74, 0.7, 0.6), C(0.79, 0.78, 0.74), step(0.3, th1)), mix(C(0.7, 0.61, 0.46), C(0.67, 0.68, 0.67), step(0.85, th1)), step(0.6, th1));
     const baseR = mix(C(0.62, 0.6, 0.55), C(0.56, 0.47, 0.32), band(style, 4));
     col = mix(col, col.mul(pal.div(baseR)), isD.mul(float(1).sub(isBrick0(style))));
+    // (cortenbosch2) the 1990s face brick over the yellow-brick set (a tint: the set's bond, joints and texture stay):
+    // buff, salmon, cream-white, orange-red, brown-buff (linear albedo, from photos of Brussels-periphery lotissements)
+    const yb0 = wl ? SCANS.brick_yellow?.meta?.mean_albedo_linear ?? [0.4, 0.27, 0.14] : [0.4, 0.27, 0.14];
+    const tone6 = mix(mix(mix(C(0.47, 0.33, 0.18), C(0.5, 0.24, 0.14), band(nTone, 1)), mix(C(0.6, 0.55, 0.43), C(0.4, 0.13, 0.06), band(nTone, 3)), step(1.5, nTone)), C(0.33, 0.19, 0.1), band(nTone, 4));
+    col = mix(col, col.mul(tone6.div(C(...yb0))), isN);
   }
   // ---- BLIND PARTY WALLS (owner playtest 2026-11-14: "they look empty"). A Brussels gable left bare above a lower
   // neighbour is never a clean sheet: it keeps the GHOST of an older, taller neighbour (the pitched outline of its roof
@@ -440,9 +463,9 @@ export function wallMaterial(opts = {}) {
   }
   // relief: domed bricks, recessed openings, protruding sills / plinth / cornice (metres)
   let height = wl ? float(0) : isBrick.mul(float(1).sub(brick.joint)).mul(0.0045);
-  height = height.sub(openingR.mul(0.12));                                       // reveal: the opening sits 12 cm back
+  height = height.sub(openingR.mul(mix(float(0.12), float(0.04), isCW)));        // reveal: the opening sits 12 cm back (a curtain wall's glass 4 cm)
   const aaH = fwidth(h).add(0.002), aaHR = fwidth(h).mul(RELIEF_PX).add(0.002);
-  const plinthTop = STYLES_OLD ? float(0.5) : mix(float(0.5), float(0.9), isM).toVar();   // (styles) the maison de maître's high blue-stone plinth
+  const plinthTop = STYLES_OLD ? float(0.5) : mix(mix(float(0.5), float(0.9), isM), float(0.3), isN.add(isCW)).toVar();   // (styles) the maison de maître's high blue-stone plinth (cortenbosch2: 1990s / curtain wall 0.3 m)
   const plinth = float(1).sub(smoothstep(plinthTop.sub(aaH), plinthTop.add(aaH), h)).toVar();
   // polish1 (docs/POLISH.md item 4, ?plinth=old = before): the blue-stone plinth was albedo 0.075-0.09 (sRGB ~78): in
   // shade, with the AO at the wall foot, it went black (Fort-Jaco, Av. Alphonse XIII). Weathered petit granit reads
@@ -484,18 +507,25 @@ export function wallMaterial(opts = {}) {
   }
   const band2 = (lo, hi, a) => smoothstep(lo.sub(a), lo.add(a), h).mul(float(1).sub(smoothstep(hi.sub(a), hi.add(a), h)));
   const cornOn = step(float(4.5), eh).mul(float(1).sub(party)).mul(float(1).sub(par));
-  const corn = band2(eh.sub(0.42), eh.sub(0.12), aaH).mul(cornOn).toVar();
-  col = mix(col, C(0.55, 0.53, 0.49), corn.mul(0.85));
-  height = height.add(band2(eh.sub(0.42), eh.sub(0.12), aaHR).mul(cornOn).mul(0.05));
+  // (cortenbosch2) no stone cornice band on the 1990s house (its fascia board under the eaves, 30 cm) nor on the curtain
+  // wall (a 12 cm metal coping in the grid's colour)
+  const cornT = float(1).sub(isN).sub(isCW);
+  const corn0 = band2(eh.sub(0.42), eh.sub(0.12), aaH).mul(cornOn).mul(cornT);
+  const fasc = band2(eh.sub(0.3), eh.add(0.05), aaH).mul(cornOn).mul(isN), cop = band2(eh.sub(0.12), eh.add(0.05), aaH).mul(cornOn).mul(isCW);
+  const corn = corn0.add(fasc).add(cop).toVar();
+  col = mix(col, C(0.55, 0.53, 0.49), corn0.mul(0.85));
+  col = mix(col, fascia6, fasc); col = mix(col, grid7, cop);
+  height = height.add(band2(eh.sub(0.42), eh.sub(0.12), aaHR).mul(cornOn).mul(cornT).mul(0.05)).add(band2(eh.sub(0.3), eh.add(0.05), aaHR).mul(cornOn).mul(isN).mul(0.03));
   // sills (blue stone) under every window, a shadow beneath them, lit top
   const sillX = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwx);
   const sillY = pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwy);
-  const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar)).toVar();
-  const underSill = sillX.mul(pulseY(wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar));
+  const sillOn = float(1).sub(isCW);                                            // (cortenbosch2) no sills on a curtain wall
+  const sill = sillX.mul(sillY).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar)).mul(sillOn).toVar();
+  const underSill = sillX.mul(pulseY(wya.sub(float(0.3).div(storeyH)), wya.sub(float(0.08).div(storeyH)), fwy)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar)).mul(sillOn);
   col = mix(col, C(0.16, 0.165, 0.17).add(env.uSunColor.mul(0.04)), sill);
   col = col.mul(float(1).sub(underSill.mul(0.25)));
   const sillR = filteredPulse(gx, wxa.sub(float(0.06).div(bw)), wxb.add(float(0.06).div(bw)), fwxR)
-    .mul(pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwyR)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar));
+    .mul(pulseY(wya.sub(float(0.08).div(storeyH)), wya, fwyR)).mul(ok).mul(float(1).sub(isDoor)).mul(float(1).sub(isFr)).mul(float(1).sub(isGar)).mul(sillOn);
   height = height.add(sillR.mul(0.04));
   // reveal shadows on the wall just inside the opening: lintel (top) and jambs
   const revealTop = smoothstep(gyb.sub(float(0.12).div(storeyH)), gyb, fract(gy)).mul(glassBox);
@@ -521,13 +551,15 @@ export function wallMaterial(opts = {}) {
   let glassCol = mix(room.rgb.mul(C(0.71, 0.78, 0.75)), C(0.05, 0.06, 0.065), dirt.mul(0.3));
   glassCol = mix(glassCol, sky.mul(0.7), fres);
   glassCol = glassCol.mul(float(1).sub(revealTop.mul(0.42))).mul(float(1).sub(revealSide.mul(0.3)));
+  // (cortenbosch2) the curtain wall's glass: a solar-control tint (grey-green) and more of the sky in it
+  glassCol = mix(glassCol, glassCol.mul(C(0.62, 0.7, 0.7)).add(sky.mul(0.16)), isCW);
   // door: painted, panelled, glazed fanlight above
   const di = floor(fract(rnd.mul(31.0)).mul(4.0));
   let doorCol = C(0.05, 0.12, 0.07);
   doorCol = mix(doorCol, C(0.16, 0.03, 0.03), band(di, 1));
   doorCol = mix(doorCol, C(0.03, 0.05, 0.11), band(di, 2));
   doorCol = mix(doorCol, C(0.12, 0.06, 0.025), band(di, 3));
-  const fan = max(step(0.78, wv), isK);                                          // (styles) the blocks' entrance: all glass
+  const fan = max(step(0.78, wv), isK.add(isCW));                                // (styles) the blocks' (curtain walls') entrance: all glass
   const panel = step(abs(wu.sub(0.5)), 0.36).mul(max(step(abs(wv.sub(0.25)), 0.17), step(abs(wv.sub(0.58)), 0.14)));
   doorCol = mix(doorCol.mul(0.7), doorCol, panel);
   const doorGlass = isDoor.mul(fan);
@@ -538,6 +570,8 @@ export function wallMaterial(opts = {}) {
     const decoF = mix(mix(C(0.035, 0.06, 0.045), C(0.03, 0.03, 0.032), step(0.4, th2)), mix(C(0.11, 0.11, 0.115), C(0.6, 0.6, 0.58), step(0.85, th2)), step(0.6, th2));
     const modF = mix(mix(C(0.6, 0.6, 0.58), C(0.09, 0.055, 0.035), step(0.4, th2)), C(0.36, 0.37, 0.38), step(0.75, th2));
     frameCol = mix(mix(frameCol, decoF, isD), modF, isBE.add(isK));
+    frameCol = mix(mix(frameCol, frame6, isN), grid7, isCW);                     // (cortenbosch2)
+    doorCol = mix(doorCol, frame6.mul(0.92), isN.mul(step(0.45, th3)));         // (a PVC / aluminium front door in the frames' colour)
   }
 
   // ---- shopfront (OSM shop on this face): painted timber frame, stall riser, big display glass, a glazed door
@@ -640,6 +674,37 @@ export function wallMaterial(opts = {}) {
       const timber = max(max(post, plate), max(hr, brace)).mul(ht).toVar();
       col = mix(col, C(0.06, 0.04, 0.028).mul(grain.mul(0.1).add(1.0)), timber);
       height = height.add(timber.mul(0.012));
+    }
+    // (cortenbosch2) 1990s HOUSE: a soldier course (bricks on end, 21 cm, 6.8 cm wide) over every opening (window, door,
+    // garage), 10 cm past it each side; no stone lintel, no surround. Its vertical joints fade out before they fall under
+    // ~4 px (no moire); the brick is the face brick's tone, a tone per brick
+    {
+      const scB = pulseY(wyb, wyb.add(float(0.21).div(storeyH)), fwy);
+      const sc = winX(0.1).mul(scB).mul(ok).mul(notShop).mul(isN).mul(isBrick).toVar();
+      const su = u.div(0.068), sfw = fwidth(su);
+      const sj = filteredPulse(su, float(0.0), float(0.15), sfw).mul(float(1).sub(smoothstep(0.15, 0.3, sfw)));
+      const sbt = hash2D(vec2(floor(su), floor(gy)).add(rnd.mul(23.0))).sub(0.5).mul(0.16).add(0.86);
+      col = mix(col, mix(wallCol.mul(sbt), C(0.33, 0.32, 0.29), sj.mul(0.85)), sc);
+      height = height.add(winXR(0.1).mul(pulseY(wyb, wyb.add(float(0.21).div(storeyH)), fwyR)).mul(ok).mul(notShop).mul(isN).mul(isBrick).mul(0.008)).sub(sc.mul(sj).mul(0.003));
+    }
+    // (cortenbosch2) CURTAIN WALL: everything that is not an opening is a spandrel / corner panel (dark enamelled glass
+    // with the sky in it, metal in the grid's colour, or a light grey panel), the mullions run on through it at every bay
+    // edge and every light division, a transom frames each spandrel
+    {
+      const cwWall = float(1).sub(opening).mul(wallT).mul(isCW).mul(step(plinthTop, h)).toVar();
+      const spG = mix(C(0.022, 0.025, 0.03), sky.mul(0.55), fres);
+      const spCol = mix(mix(spG, grid7.mul(0.92), band(cwSpan, 1)), C(0.42, 0.42, 0.41).add(grain.mul(0.01)), band(cwSpan, 2));
+      col = mix(col, spCol, cwWall);
+      const gl = gx.mul(nlCW), gfw = fwidth(gl);
+      const dM = float(0.03).div(bw.div(nlCW));
+      const inB = step(0.0, gx).mul(step(gx, nb));
+      const mull = max(filteredPulse(gx.add(0.5), float(0.5).sub(fX), float(0.5).add(fX), fwx), filteredPulse(gl.add(0.5), float(0.5).sub(dM), float(0.5).add(dM), gfw)).mul(inB);
+      const tran = max(pulseY(wyb, wyb.add(fY), fwy), pulseY(wya.sub(fY), wya, fwy)).mul(inB);
+      const gridK = max(mull, tran).mul(cwWall).toVar();
+      col = mix(col, grid7, gridK);
+      height = height.add(gridK.mul(0.02));
+      cwRough.assign(mix(mix(float(0.12), float(0.38), band(cwSpan, 1)), float(0.6), band(cwSpan, 2)).mul(cwWall.sub(gridK).max(0)).add(float(0.4).mul(gridK)));
+      cwMask.assign(cwWall);
     }
   }
   col = mix(col, frameCol, frame.mul(notShop));
@@ -769,11 +834,11 @@ export function wallMaterial(opts = {}) {
   // (white speckle on every window, 2026-11-04)
   let relief = mix(bumpNormal(height.mul(near)), normalView, clamp(glassPart.add(lmGlass).add(shopGlass), 0.0, 1.0));
   // the library set's normal map on the plain wall only (not openings, frames, sills, plinth, cornice, shops, landmarks)
-  const wallOnly = wl ? float(1).sub(opening).mul(float(1).sub(plinth)).mul(float(1).sub(corn)).mul(float(1).sub(sill)).mul(notShop).mul(float(1).sub(isLM)).toVar() : null;
+  const wallOnly = wl ? float(1).sub(opening).mul(float(1).sub(plinth)).mul(float(1).sub(corn)).mul(float(1).sub(sill)).mul(notShop).mul(float(1).sub(isLM)).mul(float(1).sub(isCW)).toVar() : null;
   if (wl) relief = normalize(relief.add(wl.nView.mul(wallOnly)));
   m.normalNode = relief;
   m.colorNode = col;
-  m.roughnessNode = mix(mix(mix(wl ? mix(mix(float(0.85), float(0.93), isBrick), wl.rough, wallOnly) : mix(float(0.85), float(0.93), isBrick), float(0.5), frame), mix(float(0.2), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),   // glass >= 0.18 (game-engine-v1 facade rule: no aliasing over the room)
+  m.roughnessNode = mix(mix(mix(mix(wl ? mix(mix(float(0.85), float(0.93), isBrick), wl.rough, wallOnly) : mix(float(0.85), float(0.93), isBrick), cwRough.max(0.12), cwMask), float(0.5), frame), mix(float(0.2), float(0.4), dirt.sub(0.4).mul(2.5)), glassPart),   // glass >= 0.18 (game-engine-v1 facade rule: no aliasing over the room)
     mix(float(0.8), float(0.15), lmGlass), isLM);
   // no metalness on glass: it made SSR reflect the WALL the glass sits in (the glass is coplanar with it): a
   // brick pattern in every window, like z-fighting (owner, 2026-11-04). The glass's reflection is the
@@ -886,7 +951,9 @@ export function roofMaterial(kind = null) {
   const grain = n3(P.x.mul(6.0), P.y.mul(6.0), P.z.mul(6.0));
   const weather = n3(P.x.mul(0.25), P.y.mul(0.25), P.z.mul(0.25));
   // tile type from the real colour: red-orange -> clay tiles, otherwise slate (Brussels' two roofs)
-  const clayK = smoothstep(1.25, 1.6, base.x.div(max(base.y, 0.001))).toVar();
+  // (cortenbosch2) aRoof.w >= 2: concrete interlocking tiles (a curated look's roofTile "concrete", facadeGeom.js): the
+  // tile's profile (the pantile set / the clay courses) in the roof's own (orthophoto) colour, whatever its hue
+  const clayK = max(smoothstep(1.25, 1.6, base.x.div(max(base.y, 0.001))), step(1.5, style)).toVar();
   const clay = courses(v, u, 0.32, 0.21, float(0.02), style.mul(53.0));
   const slate = courses(v, u, 0.25, 0.3, float(0.012), style.mul(71.0));
   const tone = mix(slate.tone, clay.tone, clayK), joint = mix(slate.joint, clay.joint, clayK);

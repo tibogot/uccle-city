@@ -2,7 +2,7 @@ import { fitBase } from "./groundFit.js";
 import { repairWalls } from "./wallRepair.js";   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
 import { faceBays, storeyFit } from "./interior/facadeWindows.js";
 import { litWindows } from "./nightLights/litHash.js";
-import { classify, TYPE } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
+import { classify, TYPE, typedStyle } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
 // Façade analysis, pure JS (no three.js), so it can run in the tile worker (viewer/tileWorker.js).
 // Groups UrbIS wall triangles into faces with façade coordinates, party walls, street faces, shopfronts,
 // and builds the detail geometry (cornices, ridge caps, buttresses, chimneys, eaves, shop fascias).
@@ -436,10 +436,11 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     // (a curated LOOK, data/overrides.json buildingLooks by UrbIS solid id: the wall style / roof colour a local knows,
     // checked on Street View: Le Relais Saint-Job's white render and red tiles; ?looks=old: none)
     const look = opts.looks?.[b.id.split("/").pop()];
-    const style = look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height);
-    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : cls && !landmark ? cls.garage[bi] : 0;   // (a curated look's type: the police school's blocks as the station's 1960s fronts)
-    if (cls) { stats.types = stats.types || [0, 0, 0, 0, 0, 0]; stats.types[btype]++; }
-    const roofStyle = hash01(key + "r");
+    const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : look?.garage === true ? 1 : cls && !landmark ? cls.garage[bi] : 0;   // (a curated look's type: the police school's blocks as the station's 1960s fronts; garage true: a garage door the classifier did not give)
+    // (cortenbosch2) the 1990s house / the curtain wall carry their sub-look in the style's fraction (buildingTypes.js typedStyle)
+    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
+    if (cls) { stats.types = stats.types || [0, 0, 0, 0, 0, 0, 0, 0]; stats.types[btype]++; }
+    const roofStyle = hash01(key + "r") + (look?.roofTile === "concrete" ? 2 : 0);   // (cortenbosch2) + 2: concrete interlocking tiles (facades.js roofMaterial)
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash
     const rc = look?.roofColor || b.roofColor || (roofStyle < 0.4 ? [0.27, 0.085, 0.05] : [0.06, 0.065, 0.075]);
     let hasStack = false;                              // (the roof kit) a gable / party-wall stack was placed for this building
@@ -678,7 +679,16 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (L < 0.6 || seen.has(key)) continue;
           seen.add(key);
           const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
-          if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
+          if (btype === TYPE.NINETIES) {
+            // (cortenbosch2) the 1990s house: a fascia board over a 35 cm soffit (cream-painted / dark-stained timber, grey
+            // fibre-cement: the style's code, buildingTypes.js typedStyle), no moulding
+            const fc = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36]][Math.floor(Math.round((style - 2) * 100) % 10 / 3)] || [0.62, 0.58, 0.48];
+            addStrip(SD, "cu", A, B, top - 0.02, 0.2, 0.36, f.nx, f.nz, fc);
+          } else if (btype === TYPE.CURTAIN) {
+            // (cortenbosch2) the curtain wall: a thin metal coping in the grid's colour
+            const gc = [[0.2, 0.035, 0.045], [0.07, 0.072, 0.078], [0.5, 0.51, 0.52], [0.04, 0.09, 0.06]][Math.round((style - 5) * 100) % 4];
+            addStrip(SD, "cu", A, B, top + 0.01, 0.16, 0.06, f.nx, f.nz, gc);
+          } else if (btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) {
             // (styles) interwar / post-war fronts: no classical cornice, a plain projecting coping band (a concrete
             // edge on the blocks)
             const cc = btype === TYPE.BLOCK ? [0.44, 0.43, 0.41] : btype === TYPE.DECO ? [0.62, 0.6, 0.56] : [0.5, 0.49, 0.47];

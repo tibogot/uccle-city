@@ -93,7 +93,20 @@ const streetVote = (base) => (streetVoteP ??= fetch(new URL("../roads/streetVote
 const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 /** the curated building looks this build uses: an entry of a neighbourhood pass ("set": "cortenbosch") only with its
  *  switch on (?cortenbosch=old: none of them; ?looks=old drops every look) */
-const lookSet = (looks, entry) => (!looks || entry.cortenbosch !== false ? looks : Object.fromEntries(Object.entries(looks).filter(([, v]) => v?.set !== "cortenbosch")));
+const lookSet = (looks, entry) => {
+  if (!looks) return looks;
+  // (cortenbosch2, docs/CORTENBOSCH2.md) round 2: an entry's "v2" fields (the 1990s house type, the curtain wall, concrete
+  // tiles) over its round-1 look, and the entries of set "cortenbosch2" (the school's other blocks); ?cortenbosch2=old:
+  // round 1 as it was; ?cortenbosch=old: neither round
+  const out = {};
+  for (const [k, v] of Object.entries(looks)) {
+    if (!v || typeof v !== "object") { out[k] = v; continue; }
+    if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
+    if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
+    out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
+  }
+  return out;
+};
 
 /** ROOF HEIGHTS: every building's top (m TAW) rasterised into a 2 m grid over the tile (0 = no building), for fly
  *  mode's collision (the bird's floor = max(ground, roof)). Scanline fill of each footprint's outer ring. */
@@ -498,7 +511,7 @@ export async function buildLiteData(entry, base) {
   // (farcity, docs/FARCITY.md) the walls' face coordinates + the building type for viewer/farLook.js; entry.farLook ===
   // false (?farlook=old): the flat-coloured solids below
   if (entry.farLook !== false) {
-    const fbd = farBuildings(bDoc, P, I, { styles: entry.styles !== false, storeys: entry.storeys !== false });
+    const fbd = farBuildings(bDoc, P, I, { styles: entry.styles !== false, storeys: entry.storeys !== false, looks: entry.looks === false || entry.cortenbosch2 === false ? null : lookSet((await overrides(base))?.buildingLooks, entry) });
     return { name: entry.name, terrain: { pos, nrm, uv, idx: idxS }, buildings: fbd, buildingCount: bDoc.count };
   }
   let n = 0;
