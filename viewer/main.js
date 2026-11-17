@@ -61,6 +61,7 @@ import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
+import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
@@ -652,6 +653,9 @@ const HIDE_BU_IDS = params.get("stjob") !== "0" ? [STJOB_BU_ID] : [];
  *  poles for the car, the UrbIS footprints of the replaced solids + the hand-made Saint-Job steps and bridge parapets
  *  instead of the landmarks' own geometry, walk mode without collision. For A/B and the "before" runs. */
 const COLFIX = params.get("colfix") !== "0";
+/** heap (docs/HEAP.md): a full tile lets its build result go once built and its static meshes' CPU copies once uploaded
+ *  (?tiledrop=old: kept, as before); a far tile its meshes' (?litedrop=old); ?heapdrop=old: every drop off */
+const TILE_DROP = heapOn("tiledrop"), LITE_DROP = heapOn("litedrop");
 /** Park ponds whose bed the tiles carve (viewer/water/pondBed.js; the Wolvendael pond with ?wolvendael=1). */
 const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
@@ -830,6 +834,8 @@ async function loadLiteTile(entry, group) {
   }
   await preCompile(g, TILE_FADE);       // its shaders (and its fading copies') before its first frame
   group.add(g);
+  // heap (docs/HEAP.md, ?litedrop=old): its terrain and solids are read by nothing on the CPU once uploaded
+  if (LITE_DROP) { dropAfterUpload(g, { tag: "far", filter: (o) => o.name !== "far-trees" && o !== trees?.mesh }); }
   return {
     name: entry.name,
     group: g,
@@ -872,7 +878,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const plantsP = cityPlants.fetchTile(entry.name);     // shrubs, bed plants, beds, window boxes (viewer/plants/), on by default, ?plants=0 off
   // the orthophoto for the textured ground's far blend (docs/materials/GROUND.md), fetched alongside the tile data
   const orthoP = groundLook() && F.ortho ? texLoader.loadAsync(new URL(F.ortho, DATA).href).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }).catch(() => null) : null;
-  const d = await tileData(entry);
+  let d = await tileData(entry);                    // (heap: let go at the end, docs/HEAP.md: only what the tile keeps stays)
+  const decks = d.bridgeDecks;
   let busy = 0, longest = 0, mark = performance.now(), worst = "";
   const slices = [];
   const frame = (label = "") => { const dt = performance.now() - mark; busy += dt; if (dt > 4) slices.push(`${label} ${dt.toFixed(0)}`); if (dt > longest) { longest = dt; worst = label; }
@@ -1031,7 +1038,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const roofStats = cityRoofs.addTile(entry.name, B.roofKit, own.buildings);   // its roof pieces join the roof pools, fading with its buildings
   if (roofStats) say(`roofs: ${roofStats.stacks} stacks (${roofStats.pots} pots), ${Math.round(roofStats.parapetM)} m of parapet, ${roofStats.velux} roof windows, ${roofStats.pv} solar modules on ${roofStats.pvRoofs} roofs, ${roofStats.flatItems} flat-roof pieces`);
   const dispose = () => {
-    removeBridgeDecks(d.bridgeDecks);
+    removeBridgeDecks(decks);
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
@@ -1078,6 +1085,18 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     }
     return h;
   };
+  // HEAP (docs/HEAP.md, ?tiledrop=old): the worker's build result is let go (each array the tile still uses is held by
+  // what uses it: its BufferAttribute, the heightmap, the colliders, the traffic), and the CPU copies of the tile's
+  // static meshes go once uploaded: the terrain (held for the Square des Heros' lawn until it is built: herosCity.js),
+  // the façades, roofs and details; the roads / decks / plazas / grounds keep position + index (the third person's
+  // collision world gathers them whenever a tile streams in: character/cityHook.js), the rest of theirs goes
+  if (TILE_DROP) {
+    d = null;
+    dropAfterUpload(own.terrain, { tag: `terrain:${entry.name}`, filter: (o) => o.name === "terrain" });
+    dropAfterUpload(own.buildings, { tag: `buildings:${entry.name}`, filter: (o) => /^buildings-/.test(o.name) });
+    dropAfterUpload(own.roads, { tag: `roads:${entry.name}`, keep: ["position", "index"] });
+    for (const t of R.textures) dropTextureData(t);          // (the land-cover mask, the marking atlas: DataTextures; the orthophoto is an image)
+  }
   return { name: entry.name, hm, roads, net: ni, bounds, feats, dispose, roofAt, roofs: rf, drive, drawn, lift: fit?.lift, groups: Object.values(own) };
 }
 
@@ -1148,6 +1167,7 @@ async function main() {
   setAORenderer(renderer);                          // fix3: the AO maps as BC4 KTX2 when the GPU samples BC (viewer/aoTexture.js, ?aoktx2=0 = the PNGs)
   if (params.get("buildaudit") === "1") (await import("./buildAudit.js")).installBuildAudit(renderer);   // perf9: every node build timed (debug/buildAudit.js)
   if (params.get("wgslintern") !== "old") installWgslIntern(renderer);   // perf9: one copy of each WGSL text on the heap (viewer/wgslIntern.js)
+  if (params.get("heapdrop") !== "old") installHeapDrop(renderer, { log });   // heap: the drops' renderer hooks + guards (viewer/heapDrop.js); window.__heapDrop
   if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
   // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade
