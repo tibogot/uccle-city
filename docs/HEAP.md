@@ -128,7 +128,9 @@ default, `?gamemenu=0&tilecache=0` cold, `?game=police` + gamePerf police 45 s, 
 0 WebGPU errors, tripCounts {}.
 
 Verified after the fix (fresh tab, localStorage cleared): those five boots: 0 console errors, 0 trips (skips 6 / 10 / 6
-/ 0 / 0); police drive tiles D3..F5 -> E4..F6; falcon 30 s worst 33 ms.
+/ 0 / 0); police drive tiles D3..F5 -> E4..F6; falcon 30 s worst 33 ms. Visual tour `heapfix` vs `foundation` (22 views,
+591 s, 22/22 ok): 0 of 22 flagged (lycee-front cell 24.5 %, under its 30 % tolerance: its known lit / dark surface
+behind the gate railing, docs/TOUR.md).
 
 ## Next (not done)
 - GLB bodies held through the GLTF parser's plugins (`GLTFParser.extensions <- GLTF*Extension.parser`): ~4-8 MB.
