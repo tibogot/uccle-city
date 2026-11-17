@@ -31,6 +31,7 @@ import { PLACE, churchTop } from "./church.js";
 const HEAT = { pitch: 0.85, playground: 0.8, grass: 0.7, park: 0.65, meadow: 0.7, garden: 0.55, recreation_ground: 0.75, wood: 0.35, scrub: 0.5, farmland: 0.7 };
 const SLOTS = 12;
 const LIFT = { step: 4, half: 400, rebuild: 140, rad: 3 };
+const PROXY_SLICE = typeof location === "undefined" || !/[?&]proxyslice=old(&|$)/.test(location.search), PROXY_SLICE_MS = 3;
 
 let worker = null, reqId = 0;
 const jobs = new Map();
@@ -237,7 +238,6 @@ export class CityFalconWorld {
   /** a landmark's height proxy from its drawn mesh (root: an Object3D in the scene; mask: its footprint overrides the
    *  roof grid's envelope). Main thread: the world positions of its triangles (timed); the raster in the worker. */
   async addProxy(name, root, { mask = true, under = false } = {}) {
-    const t0 = performance.now();
     root.updateMatrixWorld(true);
     const parts = [];
     let n = 0;
@@ -250,18 +250,25 @@ export class CityFalconWorld {
     const pos = new Float32Array(n * 9);
     let k = 0;
     const e = [];
+    // (falconstutter, ?proxyslice=old: one task) the landmark's triangles in slices of <= PROXY_SLICE_MS (its whole lowest LOD
+    // in one task was up to tens of ms, while the falcon flies: the landmarks load staged, their proxies follow)
+    let sliceT = performance.now(), mainMs = 0;
     for (const { o, P, I, tris } of parts) {
       const mats = o.isInstancedMesh ? Array.from({ length: o.count }, (_, i) => { const m = o.matrixWorld.clone(); const mi = m.clone(); o.getMatrixAt(i, mi); return m.multiply(mi); }) : [o.matrixWorld];
       for (const M of mats) {
         e.length = 0; for (let q = 0; q < 16; q++) e.push(M.elements[q]);
         for (let t = 0; t < tris; t++) for (let c = 0; c < 3; c++) {
+          if (PROXY_SLICE && c === 0 && (t & 1023) === 1023 && performance.now() - sliceT > PROXY_SLICE_MS) {
+            mainMs += performance.now() - sliceT; this.proxySlices = (this.proxySlices || 0) + 1;
+            await new Promise((r) => setTimeout(r, 0)); sliceT = performance.now();
+          }
           const v = I ? I.getX(t * 3 + c) : t * 3 + c, x = P.getX(v), y = P.getY(v), z = P.getZ(v);
           if (k + 3 > pos.length) break;
           pos[k++] = e[0] * x + e[4] * y + e[8] * z + e[12]; pos[k++] = e[1] * x + e[5] * y + e[9] * z + e[13]; pos[k++] = e[2] * x + e[6] * y + e[10] * z + e[14];
         }
       }
     }
-    const mainMs = performance.now() - t0;
+    mainMs += performance.now() - sliceT;
     const r = await work({ kind: "raster", pos: pos.subarray(0, k), step: 1, under }, [pos.buffer]);
     Object.assign(r, { name, mask, bx0: r.x0, bz0: r.z0, bx1: r.x0 + r.nx * r.step, bz1: r.z0 + r.nz * r.step, env: mask ? undefined : 0 });
     if (mask) r.env = undefined;

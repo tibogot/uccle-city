@@ -139,6 +139,7 @@ const swappable = (m) => m?.isNodeMaterial && !m.userData.objectFade && !m.userD
 export class Fader {
   constructor() { this.list = []; this.seconds = +(qs.get("tilefade") ?? 0.9); this.hold = false; }
   fade(obj, dir, done = null, seconds = this.seconds) {
+    ungate(obj);                           // (a staged reveal cut short: every mesh gets its material back first)
     if (!SMOOTH || seconds <= 0) { restore(obj); set(obj, 1); done?.(); return; }
     this.list = this.list.filter((f) => f.obj !== obj);
     swapIn(obj);
@@ -154,6 +155,19 @@ export class Fader {
       // (a fade-in whose own materials are still being compiled (obj.userData.compiling, main.js preCompile) keeps
       // drawing its fading copies, whole, until they are: swapping them in earlier built them in that frame)
       if (f.t >= 1 && f.dir > 0 && f.obj.userData.compiling) continue;
+      // (falconstutter, ?fadeslice=old: all at once) a finished fade-IN gives its meshes their own materials back
+      // FADE_SLICE_N a frame: each swap is a new render object (scene + shadow pass: bindings, uniform buffers, bind
+      // groups) on its next draw, and a whole tile swapped in one frame made hundreds of them at once. At fade 1 the
+      // fading copy draws every pixel, the same picture as the own material: the order of the swaps is invisible.
+      if (f.t >= 1 && f.dir > 0 && sliceStats.on) {
+        if (!f.rest) { f.rest = []; f.obj.traverse((o) => { if (o.userData.fadeOrig) f.rest.push(o); }); }
+        for (let k = 0; k < FADE_SLICE_N && f.rest.length; k++) {
+          const o = f.rest.pop();
+          if (o.userData.fadeOrig) { o.material = o.userData.fadeOrig; delete o.userData.fadeOrig; }
+        }
+        sliceStats.restoreFrames++;
+        if (f.rest.length) continue;
+      }
       if (f.t >= 1) { this.list.splice(this.list.indexOf(f), 1); restore(f.obj); set(f.obj, 1); f.done?.(); }
     }
   }
@@ -217,6 +231,64 @@ function restore(obj) {
     o.material = m;
     delete o.userData.fadeOrig;     // (a tile's own copy stays cached for its fade-out: dropFadeVariant on dispose)
   });
+}
+
+// ------------------------------------------------------------------ falconstutter: a tile's render objects spread over frames
+// WHY (docs/perf/FALCON_STUTTER.md): three r187 keys a render object by (object, material, render context, lights[,
+// source material in the shadow pass]) and makes it on the object's first DRAW in that pass: bindings, a uniform buffer
+// per object group, bind groups, attribute checks. The precompile queue builds the node graphs and pipelines (shared by
+// key), not the real objects' render objects in the frame's own contexts. A streamed tile's fade-in swapped EVERY mesh to
+// its fading copy at once (and back at the end): its first frame drew hundreds of meshes in their new (object, material)
+// pairs in the scene and the sun shadow pass = hundreds of render objects + GPU bind groups in one frame.
+// stageIn(groups): before the fade starts, the tile's meshes (fading copies swapped in, fade 0: they draw nothing) are
+// let into the passes FADE_SLICE_N a frame (a hidden stand-in material keeps the rest out of every pass: three skips an
+// object whose material is not visible), so their render objects are made over several frames, by the real draw path,
+// in the real contexts; the fade then starts with all of them in place. ?fadeslice=old: as before. ?fadeslicen=N.
+export const FADE_SLICE = SMOOTH && qs.get("fadeslice") !== "old";
+export const FADE_SLICE_N = Math.max(1, +(qs.get("fadeslicen") ?? 32) || 32);
+/** (live: sliceStats.on = false / true switches it in a running page, for same-page A/B: debug/falconStutter.js) */
+export const sliceStats = { on: FADE_SLICE, staged: 0, stageFrames: 0, restoreFrames: 0, meshes: 0, lastMs: 0 };
+if (typeof globalThis !== "undefined") globalThis.__fadeSlice = sliceStats;
+const GATE = new THREE.MeshBasicMaterial({ visible: false });
+GATE.name = "fade-gate";
+GATE.userData.shared = true;
+const drawable = (o) => o.isMesh || o.isPoints || o.isLine || o.isSprite;
+/** put back every mesh of obj a staged reveal still holds (the stand-in material out) */
+export function ungate(obj) {
+  obj.traverse((o) => { const m = o.userData.fadeGate; if (m === undefined) return; if (o.material === GATE) o.material = m; delete o.userData.fadeGate; });
+}
+/** a staged reveal (above): groups hidden (visible = false) and not yet fading. Swaps in their fading copies at fade 0,
+ *  shows the groups, lets FADE_SLICE_N meshes a frame into the passes (onSlice() after each: the sun shadow cache marked
+ *  dirty, so the shadow pass draws them too), waits one more frame, resolves. fade(g, +1) then starts as usual. */
+export async function stageIn(groups, { perFrame = FADE_SLICE_N, onSlice = null, frame = () => new Promise((r) => requestAnimationFrame(() => r())) } = {}) {
+  const gs = [].concat(groups).filter(Boolean);
+  if (!sliceStats.on || !gs.length) { for (const g of gs) g.visible = true; return 0; }
+  const t0 = performance.now();
+  const first = [], last = [];
+  for (const g of gs) {
+    swapIn(g); set(g, 0);
+    g.traverse((o) => {
+      if (!drawable(o) || !o.material || o.userData.fadeGate !== undefined) return;
+      // (meshes without a fading copy: fade-safe own materials or none: let in last, right before the fade starts)
+      (o.userData.fadeOrig ? first : last).push(o);
+      o.userData.fadeGate = o.material; o.material = GATE;
+    });
+  }
+  for (const g of gs) g.visible = true;
+  const list = first.concat(last);
+  let frames = 0;
+  for (let i = 0; i < list.length; i += perFrame) {
+    for (const o of list.slice(i, i + perFrame)) {
+      const m = o.userData.fadeGate;
+      if (m === undefined) continue;                       // (ungated meanwhile: fade() / dispose)
+      if (o.material === GATE) o.material = m;             // (something else set a material meanwhile: keep it)
+      delete o.userData.fadeGate;
+    }
+    onSlice?.();
+    await frame(); frames++;
+  }
+  sliceStats.staged++; sliceStats.stageFrames += frames; sliceStats.meshes += list.length; sliceStats.lastMs = Math.round(performance.now() - t0);
+  return frames;
 }
 
 /** A smoothed scalar (exponential approach, time constant tau seconds): for limits that must not jump. */

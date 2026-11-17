@@ -65,7 +65,7 @@ import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
 import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
-import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp } from "./lodFade.js";
+import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp, stageIn, sliceStats } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
@@ -169,6 +169,33 @@ const preCompile = async (roots, fading) => {
 };
 let shadowWarm = null;
 const dropMat = (m) => { if (!m.userData?.shared) { dropFadeVariant(m); m.dispose?.(); } };
+// FALCONSTUTTER (docs/perf/FALCON_STUTTER.md; ?disposeslice=old = the whole tile freed in its fade's last frame, as
+// before): a retired full tile leaves the scene at once (nothing draws it again: rule 15) and its meshes are freed a
+// slice a frame (<= DISPOSE_MS of main thread, at most DISPOSE_N meshes): each geometry / material dispose makes three
+// drop that object's render objects in every pass (bindings, uniform buffers, bind groups) and destroy its GPU buffers;
+// a tile's hundreds of meshes in one frame were one long frame on the main thread and a burst of destroys for the GPU process.
+const DISPOSE_SLICE = params.get("disposeslice") !== "old", DISPOSE_N = 48, DISPOSE_MS = 1.5;
+const disposeQ = [];
+let disposeAt = 0, disposeRun = false;
+const disposeStats = (globalThis.__disposeSlice = { on: DISPOSE_SLICE, queued: 0, done: 0, frames: 0, worstMs: 0 });   // (.on: live, for same-page A/B)
+function disposeOne(o) { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) dropMat(m); o.dispose?.(); }
+function disposeLater(groups) {
+  for (const g of groups) g.traverse((o) => { disposeQ.push(o); disposeStats.queued++; });
+  if (disposeRun) return;
+  disposeRun = true;
+  const step = () => {
+    const t0 = performance.now();
+    for (let k = 0; k < DISPOSE_N && disposeAt < disposeQ.length && (k === 0 || performance.now() - t0 < DISPOSE_MS); k++) {
+      const o = disposeQ[disposeAt]; disposeQ[disposeAt++] = null;
+      try { disposeOne(o); } catch (e) { console.warn("[disposeLater]", e); }
+      disposeStats.done++;
+    }
+    disposeStats.frames++; disposeStats.worstMs = Math.max(disposeStats.worstMs, performance.now() - t0);
+    if (disposeAt < disposeQ.length) { requestAnimationFrame(step); return; }
+    disposeQ.length = 0; disposeAt = 0; disposeRun = false;
+  };
+  requestAnimationFrame(step);
+}
 
 const $ = (id) => document.getElementById(id);
 const log = (s) => { hudLog(s); console.log(s); };    // (one text node appended to, not every line re-joined)
@@ -1066,6 +1093,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     if (fp.length) compileFor(fp, { last: true }).catch(() => {});  // (background, not awaited; perf8: behind every other job, warmup.js FADE_LAST)
   }
   for (const u of ups) updaters.push(u);
+  // (falconstutter, ?fadeslice=old: all in the fade's first frame) the tile's meshes enter the passes a slice a frame
+  // before its fade starts (lodFade.js stageIn: their render objects made over several frames, drawing nothing yet; not
+  // under the boot cover: no frame to keep smooth there)
+  if (fadeIn && sliceStats.on && !fader.hold) { const ts = performance.now(); await stageIn(Object.values(own), { onSlice: markSunShadowDirty }); mark += performance.now() - ts; }
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
   cityKit.addTile(entry.name, B.kit, B.kitWalls, !fadeIn);       // ?kit=1: its kit fades in with it
   const roofStats = cityRoofs.addTile(entry.name, B.roofKit, own.buildings);   // its roof pieces join the roof pools, fading with its buildings
@@ -1088,7 +1119,8 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     lamps.release();                                // its lamp heads leave the light pool (the lights stay)
     cityNight?.removeTile(entry.name);              // ?night=1: and the night pool's registry
     for (const u of ups) { const i = updaters.indexOf(u); if (i >= 0) updaters.splice(i, 1); }
-    for (const g of Object.values(own)) {
+    if (disposeStats.on) { const gs = Object.values(own); for (const g of gs) g.removeFromParent(); disposeLater(gs); }   // (falconstutter: out of the scene now, freed a slice a frame)
+    else for (const g of Object.values(own)) {
       g.traverse((o) => { if (!o.geometry?.userData?.shared) o.geometry?.dispose(); for (const m of [].concat(o.material || [])) dropMat(m); o.dispose?.(); });
       g.removeFromParent();
     }
@@ -2310,7 +2342,7 @@ async function main() {
     }
     return m.collisionTest({ scene, world, driver, makeController }, name, opts);
   };
-  window.viewer = { updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
+  window.viewer = { jobsLeft: () => compileJobsLeft(), updaters, auditColliders, contactAudit, collisionTest, thirdPerson: () => thirdPerson(), getThird: () => third, tram: () => tramLine, loading, lite, controls, scene, camera, renderer, net, hm, frames: () => frames, setView, lighting, gpuStats, gpuPasses, resetGpu: () => { gpu.samples.length = 0; },
     world, fader, stateAt, groundLook, areaReady, teleport,
     // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
     groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => { renderer._nodes?.nodeFrame?.update(); if (renderer.info.autoReset) renderer.info.reset(); stepLoop(dt); },   /* (claude/sharp) the paused loop skipped three's per-frame update: FRAME nodes (the TAAU resolve!) never ran, every stepped frame showed the same image */ freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
