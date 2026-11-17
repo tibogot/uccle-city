@@ -57,6 +57,7 @@ const COMMON = {
   seed: [0.37, 0, 1, 0.01],           // per-material seed when there is no varAttr
   baseY: [0, -10, 200, 0.01],         // ground height (m) for damp / splash when heightNode isn't given
 };
+const SLATE_MOSS_OLD = typeof location !== "undefined" && /[?&]slatemoss=old(&|$)/.test(location.search);
 const SCANP = {
   scanTint: [0.7, 0, 1, 0.01],        // 1: the scan's detail around OUR colour (its mean -> color); 0: the raw scan
   scanScale: [1, 0.5, 2, 0.01],       // scan repeat size multiplier (on top of `scale`)
@@ -90,7 +91,7 @@ export const DEFS = {
     params: { color: "#cfc2a4", color2: "#8f8470", strata: [0.5, 0, 1, 0.01] }, surface: rockwork },
   render_painted: { kind: "render", damp: true, salt: false, streaks: true, label: "Render, painted", unit: 0.02, painted: true,
     params: { color: "#d8c49b", color2: "#bdb8ad", cracks: [0.15, 0, 1, 0.01], peel: [0.06, 0, 1, 0.01] }, surface: render },
-  slate: { kind: "roof", label: "Slate", scan: true, unit: 0.2,
+  slate: { kind: "roof", label: "Slate", scan: true, unit: 0.2, darkMoss: true,
     params: { color: "#3e434a", color2: "#4a4d45", course: [0.16, 0.1, 0.3, 0.005], length: [0.25, 0.15, 0.45, 0.005], joint: [0.004, 0.001, 0.01, 0.0005], lap: [0.012, 0, 0.02, 0.0005] },
     surface: slate },
   roof_tiles_flat_dark: { kind: "roof", label: "Roof tiles, flat dark", unit: 0.25,
@@ -669,7 +670,11 @@ function finish(def, s, ctx) {
   const mN = n2(aW.mul(1.4), bW.mul(1.4)).mul(0.6).add(n2(aW.mul(6.0), bW.mul(6.0).add(5.0)).mul(0.4));
   const favour = up.mul(0.35).add(north.mul(0.2)).add(s.joint.mul(0.35)).add(splash.mul(0.25));
   const mk = smoothstep(0.62, 0.8, mN.add(favour.mul(0.5)).add(moss.mul(0.45)).sub(0.3)).mul(smoothstep(0.0, 0.05, moss));
-  const mossCol = mix(vec3(0.045, 0.07, 0.022), vec3(0.09, 0.11, 0.035), m2);
+  // (claude/snow2 item 2, ?slatemoss=old = as before: on the library's dark slate (albedo ~0.045) the absolute moss
+  // colour (0.045-0.11) came out up to twice as bright as the slate: pale lichen patches over the Latour de Frein /
+  // Sacre-Coeur roofs where the photos show an even dark blue-grey, and in snow they read as thaw holes. A dark
+  // material's moss is now a darker, greener shade of its own colour)
+  const mossCol = def.darkMoss && !SLATE_MOSS_OLD ? col.mul(mix(vec3(0.78, 0.9, 0.66), vec3(0.86, 0.98, 0.7), m2)) : mix(vec3(0.045, 0.07, 0.022), vec3(0.09, 0.11, 0.035), m2);
   col = mix(col, mossCol, mk.mul(0.85));
   rough = mix(rough, float(0.95), mk);
   return { col, rough: rough.clamp(0.02, 1), mk, emissive: s.emissive };
