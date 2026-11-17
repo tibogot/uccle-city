@@ -386,3 +386,40 @@ Tools: `debug/playTime.js` (time to play + first 15 s + heap + roAudit), `debug/
 4. The intermittent 1.2-1.4 s GPU stalls (no script) seen on the RED machine: re-check on GREEN with a trace.
 5. Harness: a fresh tab per run (closing the old one) is needed: on about:blank the old renderer kept 2.2 GB and the GPU
    process 5.2 GB; one start hung under that pressure.
+
+## Round 9 (2026-11-17, branch claude/perf9; code first)
+
+### Changes (switch = before; rows in viewer/features.js)
+| switch | default | what |
+|---|---|---|
+| `policewarm` | on | the police props' warm-up (8 out-of-sight frames, 1.8-11.6 s in round 8) runs BESIDE the spawn's teleport + area wait instead of before it; the car is left out of it (the spawn puts it in front of the camera: the hold's frames build its pipelines, the area wait counts them; the warm-up moving its root would fight the drive mode). `__gameTimes`: "police props warm (beside the spawn)" |
+| `flushsplit` | on | the compile flush under the play loader draws its jobs in chunks (whole jobs, ~0.9 s of main thread each, `?flushtask=ms`; first chunk 60 drawables, then sized from the ms per drawable seen), a rendered frame + a new task apart (the loader animates), each chunk with its own parallel-pipeline window closed right after its draw; the jobs resolve when every chunk's pipelines are ready. `__flushes[i].chunks` = [jobs, drawables, ms] |
+| `fadeshare` | on | ONE per-object fade graph for every fading copy (lodFade.js withObjectFade), one AND-ed mask per source mask node: three keys node builds by node ids, so fading copies of materials that share a build each built again |
+| `wgslintern` | on | each node build's WGSL strings replaced by its program's (same text) once its pipeline is set: builds that generated the same code no longer each keep a copy (viewer/wgslIntern.js; `renderer._pipelines.__intern`) |
+| `atlaskeep` | on | the tree kit's impostor atlas lets its CPU pixels go after the upload (all levels per layer + the level-0 arrays; ~100 MB of ArrayBuffers) |
+| `buildaudit` | OFF (`?buildaudit=1`) | debug: every node build timed with material, pass and WGSL hash (viewer/buildAudit.js); `debug/buildAudit.js` run() -> builds, ms before / after the cover, repeats (same WGSL built again) and their ms, by material |
+
+Tools: `debug/buildAudit.js`, `tools/perf/heapsnap.mjs` (a multi-GB .heapsnapshot streamed into a JSON summary: by node
+type, by class with count + self MB, the first strong retainer of the top classes; `diff a.json b.json`).
+
+### Research: caching node builds across visits (three r187)
+- `NodeManager.getForRender` caches a build per `renderObject.initialCacheKey` = the material's `customProgramCacheKey()`
+  (a hash of its node graph where `Node.customCacheKey()` is the node's **id**) + its non-node properties (numbers
+  reduced to 0/1, textures by mapping / filters) + geometry layout. So materials that share their NODE OBJECTS share one
+  build (plain materials differing in colour / maps / roughness already do); graphs made of new nodes per material
+  build again even when the WGSL is identical (programs and pipelines are then shared by text, the build is not).
+- r187 has `NodeMaterialInstance(nodeMaterial)`: instances share one build, per-instance values through
+  `materialReference(name, type)` (textures too, bound per render object like the built-in `map`). That is the safe
+  route for the per-model wrapAO copies (round 3: 264 hero materials) once the build audit shows their WGSL repeats.
+- Persisting generated WGSL keyed by a graph hash is NOT safe: a `NodeBuilderState` is more than the code: its bindings
+  and uniform groups, update nodes, the material observer and attribute list all point at the LIVE node objects of this
+  page; r187 has no API to rebuild those without running setup / analyze / generate (the generate stage is the cheap
+  part). The GPU side is already cached across visits by Chrome (Dawn's pipeline blob cache per origin). Not done.
+
+### Heap: method
+`performance.memory.usedJSHeapSize` is V8's heap only: ArrayBuffer contents (geometry, textures' CPU copies) are V8
+external memory, not in it (to confirm in the browser: allocate 200 MB of ArrayBuffer, read the number). So the
+1.5-1.9 GB is JS objects + strings, and dropping geometry copies lowers the PROCESS memory (the 16 GB laptop's
+pressure), not that number. Method: snapshot A at the play loader's fade (fresh tab, `?game=police`), snapshot B at
+play + 30 s, each summarized by tools/perf/heapsnap.mjs, then `diff`; the top classes by self MB with their first
+retainers name the holders (NodeBuilderState strings, render objects, tile feature data, colliders ...).
