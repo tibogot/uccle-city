@@ -94,12 +94,66 @@ reads their arrays on the CPU: all dropped once uploaded. The far-tree field (bu
 - Features group meshes (tram, rail, lamps, cars): cityHook / driveMode / collisionTest read them; small.
 - Landmarks / heroes: heroColliders + flags + artCity + farMerge read their geometry at varying times; not done yet.
 
-## Still to find (browser turn): the 193 MB with no JS owner, GLB bodies
-`tools/heap/owners.mjs x.heapsnapshot` lists ALL retainers of every backing store >= 256 KB, walked up through the
-native / system nodes to the first named JS owner (tools/perf/heapsnap.mjs keeps the first retainer only). Suspects:
-meshoptimizer's WASM memory (main-thread MeshoptSimplifier in plants / fuel / furniture / falcons / cars: a WASM memory
-never shrinks), typed views on decoded GLB buffer views (gltfpack groups accessors per buffer view), the GLTF parser
-held by a model module's closure.
+## Gate (tools/audit/mergeGate.mjs "heap" -> tools/audit/heapGate.mjs)
+WHY IT HAPPENED: three r187 keeps every array it was given after the upload, nothing let them go, and loadTile's dispose
+closure read `d.bridgeDecks`, so a tile's whole worker build result (~37 MB a full tile) lived as long as the tile.
+RULE: a module that reads a tile layer's meshes on the CPU after the tile is built is listed in "Readers" above and in
+heapGate.mjs KNOWN (and keeps its arrays: keep list / hold / needCpu); loadTile's dispose keeps no build result.
+CHECKS: heapGate.mjs (node): the heapDrop logic (tools/heap/dropCheck.mjs), no unlisted reader of a tile layer by name,
+loadTile's dispose free of `d.`, the switches' features.js rows. BROWSER line: a police play + gamePerf police 45 s
+with `window.__heapDrop.tripCounts` = {}.
 
-## Results
-(browser turn: heap at police play + 15 s, before `?heapdrop=old` / after, alternated; the functional sweep)
+## Next (not done)
+- GLB bodies held through the GLTF parser's plugins (`GLTFParser.extensions <- GLTF*Extension.parser`): ~4-8 MB.
+- meshoptimizer's main-thread WASM memory (8 MB).
+- Landmark geometry (readers: heroColliders, flags, artCity, farMerge at varying times): a hold per landmark until its
+  colliders / bakes are done would let its LOD arrays go.
+
+## Results (2026-11-17, browser, preflight GREEN, local tools/serve_cached.py, warm tile cache, ONE tab)
+
+Measuring: a FRESH tab per load (closing the old one). Navigating the same tab keeps the previous city in the
+back-forward cache in the same renderer process: the first "after" read 2.4 GB (two cities: every class doubled in the
+snapshot diff). The heap at play + 15 s is read after a forced GC (a heap snapshot): `usedJSHeapSize` before a GC
+swings by 300-700 MB with garbage.
+
+| police play + 15 s (after GC) | `?heapdrop=old` | default |
+|---|---|---|
+| run 1 (heap snapshot total) | 1460.5 MB (ArrayBuffer contents 1232 MB, JS objects 228.6) | **986.1 MB** (ArrayBuffer contents 761, JS objects 225) |
+| run 2 (usedJSHeapSize after GC) | 1440 MB | **965 MB** |
+| time to play (cover / play) | 20.3 / 52.6 s, 18.8 / 42.8 s | 17.3 / 36.7 s, 18.7 / 40.4 s |
+| first 15 s of play | avg 16.7 ms, p99 17, worst 33, 0 over 50 ms (both runs) | same (both runs) |
+
+**-475 MB (-33 %)**, all of it ArrayBuffer contents (JS objects unchanged). What went, by owner, at police play (window.__heapDrop):
+
+| owner | MB |
+|---|---|
+| far tiles' terrain + solids (`litedrop`) | 102.3 |
+| full tiles' façades (walls, kit walls, roofs, details) (`tiledrop`) | 105.3 |
+| full tiles' terrain (`tiledrop`) | 62.1 |
+| full tiles' road / deck / plaza extras (normal, uv, street attributes) (`tiledrop`) | 34.8 |
+| textures: KTX2 mip levels (`ktxdrop`) + the tiles' land-cover / atlas / grass-type pixels (`tiledrop`) | 169 |
+| total | ~474 (snapshot: -471 MB of ArrayBuffer contents) |
+
+What is left (after; tools/heap/owners.mjs, 548 buffers >= 256 KB, 551 MB): the street-life text atlas 32 MB + its
+pages ~45 MB (needed: copied in per tile), the grass storage buffer 21 MB, a Uint16 DataArrayTexture 16 MB (night light
+pool), instance pools / storage buffers (kits, ivy, lamps), the kept road position + index, the heightmaps, the
+landmarks' geometry, meshoptimizer's WASM memory 8 MB, GLB bodies held through a GLTF parser's plugins (~4-8 MB:
+`GLTFBinaryExtension.body <- GLTFParser.extensions <- GLTF*Extension.parser`).
+
+The round-9 "193 MB of ArrayBuffers with no JS owner": they were not ownerless. Buffers that arrive by postMessage
+from a worker show in the snapshot as `native` ArrayBuffer / Uint8Array wrappers that point at each other (a cycle);
+the first-retainer chain of tools/perf/heapsnap.mjs ran round it. owners.mjs takes the shortest way up through them:
+`ArrayBuffer <- native:Uint8Array.buffer <- Object.data <- ...`: the tile worker's results (the build result `d`
+held by loadTile's dispose closure, the far tiles' arrays) and the DataTextures made from them, both dropped here.
+
+Functional sweep (default, `window.__heapDrop.tripCounts` = {} in every run):
+- police: gamePerf police 45 s, tiles unloaded and loaded (D3..F5 -> E4..G5), 2382 frames, no trip;
+- falcon: gamePerf falcon 40 s, 60 fps, worst 33 ms, no trip;
+- free roam: a glide 1750 m east and back: tiles K5..L7 unloaded and loaded again, 0 trips, worst frame 67 ms (one);
+- third person at Place Saint-Job: its collision world identical to `?heapdrop=old` (the same TriBVH triangle counts:
+  97706, 69681, 95360, 72607, 38579, 1386, the same prism sets);
+- Square des Heros: the lawn built after the hold, 4107 vertices / 11955 triangles, same as `?heapdrop=old`;
+- orbit picks (3 screen points, Place Saint-Job, snow cover): identical to the metre with `?heapdrop=old`;
+- snow cover, Saint-Job from 45 m: 0.034 % of pixels over 24 levels vs `?heapdrop=old` (noise);
+- console: the same warnings as `?heapdrop=old` (the "Unable to serialize Texture" x 278 is there in both: Material
+  .copy JSON-copies a library material's userData in the models' wrapAO); no error from the drops.
