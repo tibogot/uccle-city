@@ -1,6 +1,6 @@
 {
   "about": "VISUAL REGRESSION TOUR (docs/TOUR.md): fixed viewpoints over Uccle, each a quick boot (docs/QUICKTEST.md) with deterministic settings. at / look = x, z[, h over the drawn ground] in city metres (x east, z south). Run by debug/tour.html, compared by tools/tour/compare.mjs.",
-  "common": { "quick": "1", "quality": "native", "rscale": "1", "dynres": "0", "still": "1", "time": "golden" },
+  "common": { "quick": "1", "quality": "native", "rscale": "1", "dynres": "0", "still": "1", "xmas": "0", "time": "golden" },
   "size": [1280, 720],
   "settle": { "minFrames": 60, "minMs": 2000, "maxMs": 15000, "exposureTol": 0.004, "tslTime": 12.5 },
   "readyLimitMs": 150000,

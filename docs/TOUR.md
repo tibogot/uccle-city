@@ -44,6 +44,10 @@ Add a view: one entry `{ id, what, q: { ...URL switches }, tol? }`. Take a new b
 
 ## Determinism
 
+- `?xmas=0` in the common switches (claude/christmas): the Christmas layer is date-driven (1 Dec - 6 Jan); without it
+  every view at Saint-Job / Saint-Pierre / the shopping streets would change on 1 December. The layer has its own run:
+  `debug/tour.html?run=<name>&views=/tools/tour/views_xmas.json` (the same views with `?xmas=1`).
+
 - `?still=1` (viewer/lighting.js): the clouds, cirrus and volumetric fog do not drift (Firmament's wind 0 from the
   first frame). Without it the cloud field and its shadows depend on how long the boot took.
 - The tour holds three's TSL clock (`renderer._nodes.nodeFrame.time`) at a fixed value before settling: tree wind,

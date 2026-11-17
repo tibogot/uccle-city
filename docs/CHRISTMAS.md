@@ -1,5 +1,36 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## BROWSER TURN 2 (2026-11-17, after the foundation merge 08395f0d)
+
+- **GPU rebuild** (OptiX AO + previews, `docs/christmas/blender/`), mesh audit 0 blocking over 18 piece levels. Defect eye
+  on the previews: the chalet's board gaps glowed at night (the core walls were in the lit interior slot): the core is
+  now dark trim, the inside lit by one emissive bulb + the goods. The fir's sprays read as smooth leaves close up: the
+  sprays' flat edges now zigzag ring to ring (needle tufts), needles two-tone (silvery undersides, by normal); LOD0
+  161 k -> 183 k triangles.
+- **Positions:** Saint-Job fir to the square's centre (1127, 530) (the first spot was 2.9 m from the square's pavilion);
+  Saint-Pierre fir into the open parvis (-723, -495) (the first put its branches at the side door); two chalets touched
+  the pavilion: found by the new gate check, re-placed 1 m clear. Joins: the planter and the chalets' skirts meet the
+  setts / pavers with no gap (chalets set on their lowest corner: sunk uphill, never floating).
+- **Images:** `stjob_market_day.jpg`, `stjob_chalet_close_day.jpg`, `stjob_market_night_snowfall.jpg`,
+  `stpierre_after_move_day.jpg`, `stpierre_fir_close_day.jpg`, `stpierre_night.jpg` (+ the before shots).
+  Swags now sit on the cornices / fascia boxes (visible on Deneubourg, La fleur du pain).
+- **Cost** (full city, Place Saint-Job street level at night, 21 m from the fir with the market in view, GREEN preflight,
+  in-page alternation `debug/gpuAB.js alternate`, xmas group off / on, 14 rounds): first +0.72 ms (median +0.59).
+  Cause: every instanced material carried the dithered band mask (a discard: no early depth test) and the fir's
+  layered sprays overdraw. Fix: per level a SOLID mesh set (no mask) for the instances inside their band and a FADE set
+  only near a switch; shadows from the big parts only (27 -> 6 shadow draws). After: **+0.00 ms median (mean -0.13)**,
+  draws 272 -> 319 (+47 incl. shadows), +474 k triangles (the fir's LOD0 in view).
+- **HEAP browser line** (5 boots with `&xmas=1`, localStorage cleared: `gamemenu=0&orbitcam2=old`, default menu,
+  `gamemenu=0&tilecache=0`, `game=police` + gamePerf police 45 s, `game=falcon`): 0 console errors, 0 WebGPU errors,
+  `tripCounts {}` in all five (queue skips 6 / 10 / 6 / 0 / 0). Console warnings seen are the city's own (TSL inline
+  return, texture serialize), also without the layer.
+- **Visual tour:** the main tour now runs with `?xmas=0` (tools/tour/views.json common: it must not flip on 1 December);
+  the layer's own run uses `tools/tour/views_xmas.json`. Run "christmas" (xmas on) vs foundation: 3 of 22 flagged, all
+  intended: stjob-shops (the fir, a chalet, a lamp snowflake), stjob-60m (the market's chalet roofs from 60 m),
+  stpierre-parvis (the fir): `docs/christmas/tour_*.jpg`. Run "christmas-off" (xmas off) vs foundation: **0 of 22 flagged** (the shopLayout refactor and the rest change nothing when the layer is off).
+- **Rule 19 + gate:** `tools/audit/xmasCheck.mjs` (row `xmas`) and `tools/christmas/xmasTest.mjs` (row `xmastest`) in
+  tools/audit/mergeGate.mjs; docs/QUALITY_RULES.md row 19.
+
 ## UPDATE 2026-11-17 (owner + browser turn 1, interrupted by the owner's playtest)
 
 - **Owner:** Uccle puts a big fir on Place Saint-Job AND on the Parvis Saint-Pierre (in the squares); there WILL be a
