@@ -178,7 +178,7 @@ export function surfaceVote(surf, roads, SURFACE, city = null) {
   return { of, fillUntagged, stats };
 }
 /** roadData.js SURFACE code -> the OSM value written on a filled road */
-const CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel" };
+const CODE_NAME = { 1: "sett", 2: "paving_stones", 3: "cobblestone", 4: "gravel", 5: "paving_herringbone" };
 
 /** The city-wide table (tools/build_street_vote.mjs -> data/roads/streetVote.json): street key -> the OSM surface code
  *  most of its length has, over the whole network; loose keys only where they name one street. */

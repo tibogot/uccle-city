@@ -83,7 +83,8 @@ Owner (lives in Uccle): "most important thing is performance ... any technique: 
    length; 58 -> 3,341 matches, 72 streets / 120,573 m2 change (setts / pavers / gravel), 15 of 16 checked on Street
    View agree, Avenue Legrand overridden to asphalt. Left: junction pads tie -> asphalt, `surveyed` name test in
    surfaces.js, rebuild surfaces.json with the pipeline fix_text (together, own switch).
-   Cortenbosch leftovers: 1990s house type for the facade system, glass curtain-wall style (553227), herringbone
+   Cortenbosch leftovers (round 2 on claude/cortenbosch2, docs/CORTENBOSCH2.md, ?cortenbosch2=old: type 6 1990s house,
+   type 7 curtain wall, herringbone layer 4, painted words, railing / gate colliders; browser checks pending): Cortenbosch leftovers: 1990s house type for the facade system, glass curtain-wall style (553227), herringbone
    pavers, "Private Weg / Cortenbosch" paint, railing/gate colliders, other school blocks' looks.
 8j. **AUTUMN LEAVES (owner idea 2026-11-17, later)**: falling leaves from the real tree species (colour by species +
    date), leaves lying on the ground (more in gutters, kerbs, against walls, under trees; swept off busy roads) and

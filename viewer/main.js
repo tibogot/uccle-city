@@ -4,6 +4,7 @@
 // Scene units are CONTRACT local metres: +x east, +z south, +y up (absolute m TAW).
 // Everything is built on the main thread at load (about 1 s for G4).
 
+import { QUICK, quickCamera, quickReady } from "./quick.js";   // FIRST of all: ?quick=1 rewrites the URL's switches before any module reads them (docs/QUICKTEST.md)
 import { soundGate } from "./audio/soundGate.js";   // FIRST: every AudioContext after it is gated (all sound off by default; ?sound=1)
 import * as THREE from "three/webgpu";
 import {
@@ -43,7 +44,7 @@ import { loadGroundTextures } from "./materials/groundTex.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
 import { loadTrackProfile } from "./trackProfile.js";
-import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial } from "./roadPaint.js";
+import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial, roadTextMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
 import { Lighting, PRESETS, sunCache, markSunShadowDirty } from "./lighting.js";   // (perfgame round 3: the sun's static shadow cache)
@@ -60,6 +61,7 @@ import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
+import { installWgslIntern } from "./wgslIntern.js";
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
@@ -251,6 +253,7 @@ function buildingMeshes(doc, buf) {
 function roadMeshes(road) {
   const mats = { asphalt: asphaltMaterial(road.atlas), grass: sharedMat("verge", vergeMaterial), square: sharedMat("cobbles", cobbleMaterial), pits: sharedMat("tree-pits", pitMaterial),
     paint: sharedMat("road-paint", paintMaterial),         // measured paint, paint v2 (viewer/streets/measuredPaint.js)
+    ...(road.parts.roadtext ? { roadtext: sharedMat(`road-text|${road.parts.roadtext.rows.join("|")}`, () => roadTextMaterial(road.parts.roadtext.rows)) } : {}),   // (cortenbosch2) the lane's painted words
     concrete: road.surfaceStats ? sharedMat("concrete-framed", () => concreteMaterial({ framed: true })) : sharedMat("concrete", concreteMaterial) };
   const meshes = [];
   for (const [name, part] of Object.entries(road.parts)) {
@@ -667,6 +670,9 @@ const PAINT_PARAM = ["v1", "v2"].includes(params.get("paint")) ? params.get("pai
  *  houses' and the school's looks, the school's yards and courts, its front (fence, gate, flags, lettering);
  *  ?cortenbosch=old: the neighbourhood as before */
 const CORTENBOSCH = params.get("cortenbosch") !== "old";
+/** round 2 (docs/CORTENBOSCH2.md): the 1990s house type on the lane, the curtain wall on the Lycée's block D, the school's
+ *  other blocks, the lane's herringbone pavers and painted name, the railing / gate as colliders; ?cortenbosch2=old: round 1 */
+const CORTENBOSCH2 = CORTENBOSCH && params.get("cortenbosch2") !== "old";
 /** CPU data for a tile: from the worker, or on the main thread (?worker=0, or if the worker fails). */
 function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
   entry = { ...entry, hide: [...new Set(HIDE_BU_IDS)].sort(), ponds: PONDS,   // (sorted: the landmarks push in any order now, and ?tilecache=1 keys on it)
@@ -684,7 +690,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     storeys: params.get("storeys") !== "old", styles: params.get("styles") !== "old",              // styles: building types (viewer/buildingTypes.js, docs/STYLES.md), ?styles=old = one generic façade
                                                           // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
-    cortenbosch: CORTENBOSCH,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
+    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     surfVote: params.get("surfvote") !== "old",                                                    // the street-surface name vote with repaired / normalised names (viewer/streetNames.js, docs/SURFVOTE.md), ?surfvote=old = the raw names (never matched: asphalt)
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
@@ -737,7 +743,7 @@ function bootPrefetch(manifest, entry) {
   const built = manifest.tiles.filter((t) => t.status !== "missing");
   // as the boot and stream() take them: the start tile, its ring as far tiles (under the cover), then the ring in full
   // (?bootlite=0: one full ring tile and the two nearest far tiles under the cover, as before)
-  const full = built.filter((t) => dist(t) <= ring + 0.01).sort((a, b) => dist(a) - dist(b));
+  const full = built.filter((t) => dist(t) <= ring + 0.01 && (!QUICK || QUICK.wants(t))).sort((a, b) => dist(a) - dist(b));   // (?quick=1: the radius's tiles only)
   if (GAME_RING_FULL) bootRing = full.map((e) => [e, false]);       // (perf8: the ring in full only, no far versions)
   else if (params.get("bootlite") !== "0" && far > ring) bootRing = [[full[0], false], ...full.slice(1).map((e) => [e, true]), ...full.slice(1).map((e) => [e, false])];
   else {
@@ -1121,7 +1127,19 @@ async function main() {
 
   bootStage("renderer");                            // (boot2: the loading bar's stage)
   const gpuTiming = params.get("gpu") !== "0";      // GPU ms per frame in the stats (timestamp queries; ?gpu=0 off)
-  const renderer = new THREE.WebGPURenderer({ antialias: !UPSCALE /* --- upscale: TAA instead of MSAA */, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming });
+  // Texture/sampler limits: WebGPU's default is 16 per shader stage, and the facade kit's lod1 material with snow
+  // (+ night off) binds 17 (validation error). Ask the adapter for more when it has them (RTX 4050: 48), capped at 32;
+  // an adapter at 16 keeps the defaults. ?texlimit=old: the defaults.
+  const requiredLimits = {};
+  if (params.get("texlimit") !== "old" && navigator.gpu) {
+    try {
+      const ad = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+      const L = ad?.limits;
+      if (L?.maxSampledTexturesPerShaderStage > 16) requiredLimits.maxSampledTexturesPerShaderStage = Math.min(32, L.maxSampledTexturesPerShaderStage);
+      if (L?.maxSamplersPerShaderStage > 16) requiredLimits.maxSamplersPerShaderStage = Math.min(32, L.maxSamplersPerShaderStage);
+    } catch { /* keep the defaults */ }
+  }
+  const renderer = new THREE.WebGPURenderer({ antialias: !UPSCALE /* --- upscale: TAA instead of MSAA */, powerPreference: "high-performance", reversedDepthBuffer: params.get("rdepth") !== "0", trackTimestamp: gpuTiming, requiredLimits });
   setFarMergeRenderer(renderer);   // perfgame round 7: landmark far merges bake with it (?farlodlm=old: off)
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight);
@@ -1133,6 +1151,8 @@ async function main() {
   await renderer.init();
   window.__bootHook?.(renderer, THREE);              // a boot probe's hook (debug/bootTimeline.js), when one is installed
   setAORenderer(renderer);                          // fix3: the AO maps as BC4 KTX2 when the GPU samples BC (viewer/aoTexture.js, ?aoktx2=0 = the PNGs)
+  if (params.get("buildaudit") === "1") (await import("./buildAudit.js")).installBuildAudit(renderer);   // perf9: every node build timed (debug/buildAudit.js)
+  if (params.get("wgslintern") !== "old") installWgslIntern(renderer);   // perf9: one copy of each WGSL text on the heap (viewer/wgslIntern.js)
   if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
   // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade
@@ -1426,7 +1446,7 @@ async function main() {
           log(`${b.info.kind === "road_over_rail" ? "road bridge" : "railway bridge"} ${name} (${b.info.urbis}, ${b.info.kind === "road_over_rail" ? `${b.info.road} over ${b.info.line}` : `${b.info.line} over ${b.info.road}`}): LODs ${b.lods.map((l) => Math.round(l.tris)).join(" / ")} triangles; warmed in ${Math.round(warm.ms)} ms${warm.err ? ` (${warm.err})` : ""}`);
         }).catch((e) => log(`bridge ${name}: ${e.message}`));
       }
-      try {
+      if (!QUICK || QUICK.with("trains")) try {   // (?quick=1: the trains only with &with=trains)
         const { createTrains } = await import("./rail/trains.js");
         const trains = await createTrains({ rail: rail.doc, parent: scene, clock: tramLine ? () => tramLine.clockSecs : null });
         updaters.push((camPos, cam) => trains.update(camPos, cam));
@@ -1544,7 +1564,9 @@ async function main() {
   cityGrass.pushers = { driver, walker };          // ?grass=1: the car's wheels and the walker lay the grass down
   // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
-  if (COLFIX) window.__heroCols = (await import("./heroColliders.js")).createHeroColliders({ scene, world, manifest, driver, log });
+  // (cortenbosch2) the Lycée Français's railing, sliding gate and flag poles (viewer/lyceeFront.js, tile F7) collide like the
+  // landmarks: car blocks from their triangles in the 0.3-1.3 m band, the triangles for walk / third person
+  if (COLFIX) { const hc = await import("./heroColliders.js"); if (CORTENBOSCH2 && !hc.HERO_ROOTS.includes("lycee-front")) hc.HERO_ROOTS.push("lycee-front"); window.__heroCols = hc.createHeroColliders({ scene, world, manifest, driver, log }); }
   else {
     if (params.get("stjob") !== "0") loadStJob().then((m) => driver.addStatic(stjobColliders(m.placement))).catch(() => {});
     for (const cols of window.__pendingStatics ?? []) driver.addStatic(cols);
@@ -1615,6 +1637,7 @@ async function main() {
   });
   const v0 = params.get("view") || (params.get("at") ? "stjob" : null);   // ?at=x,z&view=walk stands on the nearest road
   if (v0 === "walk") walk(); else if (v0 === "drive") { setView("overview"); drive(); } else if (v0 === "moto" || v0 === "scooter" || v0 === "villo") { setView("overview"); drive(v0); } else if (v0 === "fly") { setView("overview"); fly(); } else setView(v0 === "stjob" ? "stjob" : "overview");
+  quickCamera({ camera, controls, world });   // ?quick=1: the camera exactly at the spot (again once its tiles are in: quickReady)
   // third person: a character on foot (viewer/character/cityHook.js, Capsule Lab); the button, ?view=third, the dev panel
   let thirdBoot = null;                   // one start only, however many callers (button, ?view=third, a shared link)
   const thirdPerson = async () => {
@@ -1788,7 +1811,9 @@ async function main() {
     // the ring + UNLOAD_MARGIN m from its edge (the ring's tiles are wanted while within ~T m; 150 m of hysteresis), not
     // 2 tiles beyond the ring: up to 25 full tiles stayed loaded (JS heap 1.9 GB), their draws, shadows and updaters
     const edgeGap = (t) => { const b = byName(t.name)?.bounds; return b ? Math.max(b.x[0] - px, 0, px - b.x[1], b.z[0] - pz, 0, pz - b.z[1]) : 0; };
-    const leaving = (t) => (UNLOAD_GAP ? edgeGap(t) > ring * T + UNLOAD_MARGIN && dist(byName(t.name)) > ring + 0.01 : dist(byName(t.name)) > ring + 1.01);
+    // ?quick=1 (docs/QUICKTEST.md): full tiles within the quick radius of the player / orbit target or of the camera only
+    const qPts = QUICK ? [[px, pz], [camera.position.x, camera.position.z]] : null;
+    const leaving = (t) => QUICK ? !QUICK.wants(byName(t.name), qPts, UNLOAD_MARGIN + 40) : (UNLOAD_GAP ? edgeGap(t) > ring * T + UNLOAD_MARGIN && dist(byName(t.name)) > ring + 0.01 : dist(byName(t.name)) > ring + 1.01);
     for (const t of [...world.tiles]) {
       if (t !== here && leaving(t) && world.tiles.length > 1) {
         world.tiles.splice(world.tiles.indexOf(t), 1);
@@ -1806,7 +1831,7 @@ async function main() {
     // (perfgame: among tiles of the same ring step, the one nearest the PLAYER first: the street ahead before the far
     // corner of the ring; ?streamorder=old: the manifest's order)
     const gapP = (t) => Math.max(t.bounds.x[0] - px, 0, px - t.bounds.x[1], t.bounds.z[0] - pz, 0, pz - t.bounds.z[1]);
-    const want = built.filter((t) => dist(t) <= ring + 0.01 && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => (STREAM_ORDER ? Math.round(dist(a)) - Math.round(dist(b)) || gapP(a) - gapP(b) : dist(a) - dist(b)));
+    const want = built.filter((t) => (QUICK ? QUICK.wants(t, qPts) : dist(t) <= ring + 0.01) && !world.tiles.some((w) => w.name === t.name)).sort((a, b) => (STREAM_ORDER ? Math.round(dist(a)) - Math.round(dist(b)) || gapP(a) - gapP(b) : dist(a) - dist(b)));
     // the worker pool builds the next wanted tiles in parallel (one per worker); builds of tiles no longer wanted go
     for (const key of [...tilePrefetch.keys()]) if (key.endsWith("|0") && !want.some((t) => `${t.name}|0` === key)) tilePrefetch.delete(key);
     if (bootRing) bootRing = bootRing.filter(([e, isLite]) => isLite || want.includes(e));   // the boot prefetch: only tiles still wanted
@@ -1836,7 +1861,7 @@ async function main() {
       return true;                                // one full tile per step: re-check where the player is
     }
     // far LOD: tiles not loaded in full, within `far`, nearest first (two per step)
-    const wantLite = built.filter((t) => dist(t) <= far + 0.01 && (!liteFirst || dist(t) > ring + 0.01) && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name) && !pending.has(t.name))
+    const wantLite = built.filter((t) => dist(t) <= far + 0.01 && (!QUICK || QUICK.farRing > 1) && (!liteFirst || dist(t) > ring + 0.01) && !lite.has(t.name) && !world.tiles.some((w) => w.name === t.name) && !pending.has(t.name))
       .sort((a, b) => dist(a) - dist(b)).slice(0, 2);
     await Promise.all(wantLite.map(async (t) => {
       pending.add(t.name);
@@ -1919,7 +1944,7 @@ async function main() {
   }
   // the hand-over: the loading flight is on the city's first camera (at most 3 s more): the cover (that view) cross-fades
   // into the city's frames from the same camera (index.html #cover.gone, 1.1 s), then the loader's worker stops
-  if (landing && !COVER_LIFT) await Promise.race([landing, new Promise((r) => setTimeout(r, 3000))]);   // (perf8: not under the play loader)
+  if (landing && !COVER_LIFT && !QUICK) await Promise.race([landing, new Promise((r) => setTimeout(r, 3000))]);   // (perf8: not under the play loader)
   // ---- boot2 (docs/BOOT.md): the cover stays up until the GPU has finished a real frame of the city (Mr.doob: no
   // flash of a half-built frame), then fades (index.html #cover.gone, 1.1 s) while the bar completes
   bootStage("gpu");
@@ -2226,6 +2251,8 @@ async function main() {
     // A/B of the ground: on = textured (default), off = the procedural ground, swapped on every full tile's terrain
     groundAB: (on) => { for (const g of layers.terrain.children) g.traverse((o) => { if (!o.userData.groundAB) return; o.userData.groundTex ??= o.material; o.material = on ? o.userData.groundTex : o.userData.groundAB(); }); }, step: (dt) => stepLoop(dt), freeze: (on) => { stateFreeze = !!on; }, pause: (on) => renderer.setAnimationLoop(on ? null : mainLoop),
     renderFrame: () => { if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); } renderFrame(); } };
+  // ?quick=1 (docs/QUICKTEST.md): window.__quickReady once the spot is built (tiles, landmarks, compiles, quiet frames)
+  if (QUICK) quickReady({ world, manifest, scene, camera, controls, fader, loading, lighting, log, frames: () => frames, jobsLeft: () => compileJobsLeft() }).catch((e) => log(`quick ready: ${e.message}`));
 }
 
 main().catch((e) => { log(`ERROR: ${e.message}`); console.error(e); });

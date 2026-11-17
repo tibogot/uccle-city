@@ -386,3 +386,87 @@ Tools: `debug/playTime.js` (time to play + first 15 s + heap + roAudit), `debug/
 4. The intermittent 1.2-1.4 s GPU stalls (no script) seen on the RED machine: re-check on GREEN with a trace.
 5. Harness: a fresh tab per run (closing the old one) is needed: on about:blank the old renderer kept 2.2 GB and the GPU
    process 5.2 GB; one start hung under that pressure.
+
+## Round 9 (2026-11-17, branch claude/perf9; code first)
+
+### Changes (switch = before; rows in viewer/features.js)
+| switch | default | what |
+|---|---|---|
+| `policewarm` | on | the police props' warm-up (8 out-of-sight frames, 1.8-11.6 s in round 8) runs BESIDE the spawn's teleport + area wait instead of before it; the car is left out of it (the spawn puts it in front of the camera: the hold's frames build its pipelines, the area wait counts them; the warm-up moving its root would fight the drive mode). `__gameTimes`: "police props warm (beside the spawn)" |
+| `flushsplit` | on | the compile flush under the play loader draws its jobs in chunks (whole jobs, ~0.9 s of main thread each, `?flushtask=ms`; first chunk 60 drawables, then sized from the ms per drawable seen), a rendered frame + a new task apart (the loader animates), each chunk with its own parallel-pipeline window closed right after its draw; the jobs resolve when every chunk's pipelines are ready. `__flushes[i].chunks` = [jobs, drawables, ms] |
+| `fadeshare` | on | ONE per-object fade graph for every fading copy (lodFade.js withObjectFade), one AND-ed mask per source mask node: three keys node builds by node ids, so fading copies of materials that share a build each built again |
+| `wgslintern` | on | each node build's WGSL strings replaced by its program's (same text) once its pipeline is set: builds that generated the same code no longer each keep a copy (viewer/wgslIntern.js; `renderer._pipelines.__intern`) |
+| `atlaskeep` | on | the tree kit's impostor atlas lets its CPU pixels go after the upload (all levels per layer + the level-0 arrays; ~100 MB of ArrayBuffers) |
+| `buildaudit` | OFF (`?buildaudit=1`) | debug: every node build timed with material, pass and WGSL hash (viewer/buildAudit.js); `debug/buildAudit.js` run() -> builds, ms before / after the cover, repeats (same WGSL built again) and their ms, by material |
+
+Tools: `debug/buildAudit.js`, `tools/perf/heapsnap.mjs` (a multi-GB .heapsnapshot streamed into a JSON summary: by node
+type, by class with count + self MB, the first strong retainer of the top classes; `diff a.json b.json`).
+
+### Research: caching node builds across visits (three r187)
+- `NodeManager.getForRender` caches a build per `renderObject.initialCacheKey` = the material's `customProgramCacheKey()`
+  (a hash of its node graph where `Node.customCacheKey()` is the node's **id**) + its non-node properties (numbers
+  reduced to 0/1, textures by mapping / filters) + geometry layout. So materials that share their NODE OBJECTS share one
+  build (plain materials differing in colour / maps / roughness already do); graphs made of new nodes per material
+  build again even when the WGSL is identical (programs and pipelines are then shared by text, the build is not).
+- r187 has `NodeMaterialInstance(nodeMaterial)`: instances share one build, per-instance values through
+  `materialReference(name, type)` (textures too, bound per render object like the built-in `map`). That is the safe
+  route for the per-model wrapAO copies (round 3: 264 hero materials) once the build audit shows their WGSL repeats.
+- Persisting generated WGSL keyed by a graph hash is NOT safe: a `NodeBuilderState` is more than the code: its bindings
+  and uniform groups, update nodes, the material observer and attribute list all point at the LIVE node objects of this
+  page; r187 has no API to rebuild those without running setup / analyze / generate (the generate stage is the cheap
+  part). The GPU side is already cached across visits by Chrome (Dawn's pipeline blob cache per origin). Not done.
+
+### Heap: method (measured: the first guess was wrong)
+In this Chrome `performance.memory.usedJSHeapSize` DOES count ArrayBuffer contents (200 MB of ArrayBuffer raised it
+1458 -> 1660 MB). Method: a heap snapshot via the DevTools MCP (`take_heapsnapshot`, a 1.46 GB heap = a 520 MB file, a
+few seconds), `node --max-old-space-size=4000 tools/perf/heapsnap.mjs sum x.heapsnapshot > x.json` (6 s), then
+`diff a.json b.json`; `CHAIN_DEPTH=40` for longer retainer chains. Delete the .heapsnapshot files after (big).
+
+### Results (2026-11-17, browser; preflight YELLOW: 3-5.6 GB free (the owner's Figma / Cursor), one tab, local server)
+Alternated before (`&policewarm=old&flushsplit=old&fadeshare=old&wgslintern=old&atlaskeep=old`) / after, fresh tab each.
+Two of the first loads never started: `tools/serve_cached.py` refused connections (socketserver's listen backlog of 5
+under the boot's request burst): the backlog is now 128, no failure after (the round-8 "harness" failures, same cause).
+
+| run | before | after |
+|---|---|---|
+| police play (cover) | 45.7 (21.0), 50.3 (17.0), 49.2 (21.3) s: mean 48.4 | 47.6 (19.4), 42.0 (16.8), 55.8 (28.9), 50.6 (24.4) s: mean 49.0 (a first cold load, 69.8 s, left out) |
+| police after the cover | 24.7, 33.3, 27.9 s | 28.2, 25.2, 26.9, 26.2 s |
+| police "props + warm" in front of the spawn | 1.0-2.6 s | 0 (beside it: 2.0-3.3 s, done before the spawn's area every time) |
+| police longest main-thread task of the first flush | 4.4-6.6 s (one task) | 0.9 s cap 0.9 s: 1.0-1.6 s (15-16 chunks); cap 1.5 s: 1.06 s (5 chunks) |
+| first flush, total | 4.4-6.6 s | 7.8-9.5 s (0.9 s chunks), 4.4 s (1.5 s chunks): each chunk renders the city pass once more |
+| falcon play (cover) | 39.4 (13.9), 38.9 (13.5) s | 52.5 (20.2) (8 frames > 50 ms), 40.3 (14.8) s |
+| free roam play (cover) | 37.4 (13.5) s | 39.0 (14.6) s |
+| frames > 50 ms in the first 15 s | police 0, falcon 2-3, free 0 | police 0, falcon 4-8, free 0 |
+| heap at play + 15 s | 1.64-1.77 GB | 1.52-1.78 GB |
+
+Reading it: on this noisy machine (cover alone 13.5-28.9 s) no time-to-play change is measurable: the round-9 changes
+are within the spread (police +0.6 s mean, falcon / free roam +1-1.5 s on 1-2 runs). The police props' warm-up had
+already shrunk to 1-2.6 s in front of the spawn (round 8's 1.8-11.6 s was the boot's work in its frames); it now runs
+beside it. The flush split does what it was for (no task over ~1-1.6 s: the loader animates) but each chunk draws the
+city pass once more: with 0.9 s chunks the flush took +1.3..3 s, so the default is now 1.5 s chunks (at most 80
+drawables). `wgslintern`: 1330-1469 builds' strings swapped to the program copies (49-53 M chars looked at; the freed
+share is not separable from the GC noise). Visual: police at play (docs/perfgame/r9_police_play.jpg): the yard, the
+station, the patrol cars, the trees, complete.
+
+**Heap at police play (snapshot, after a GC): 1457 MB, of which 1230 MB (84 %) is ArrayBuffer contents; JS objects
+226 MB** (TSL nodes ~20 MB, strings 17 + 42 MB external, arrays 46 MB). Play + 6 s vs play + 100 s (idle): +0.5 MB: no
+growth. Biggest buffer holders (first retainer chains): 193 MB of ArrayBuffers held only by other native ArrayBuffers
+(no JS owner found within 40 levels: to identify: worker-transferred tile data? WebGPU staging?), geometry attributes
+kept on the CPU after upload (position / normal / uv of tile meshes, instanced matrices: several hundred MB in many
+small groups), the street-life text atlas 32 MB (its CPU copy is needed: layers are copied in per tile), the grass
+storage buffer 21 MB, KTX2 compressed textures' mipmaps kept after upload (~45 MB: CompressedTexture /
+CompressedArrayTexture.mipmaps), a Uint16 DataArrayTexture 16 MB, the night lights' index buffer 9 MB, GLB bodies kept
+by the GLTF parser (6 MB per model seen).
+
+### What is left (ranked)
+1. Heap < 1.5 GB = the CPU copies: (a) the 193 MB of native ArrayBuffers with no JS owner (find who: tile worker
+   results kept in a closure? a fetch cache?); (b) the compressed textures' mipmaps after upload (~45 MB: three reads
+   them again only on a version bump or after a dispose: check every texture dispose path first); (c) static tile
+   geometry's position / normal / uv after upload: readers to check first: raycasts (colliders, picks, ground
+   heights), bounding volumes, farMerge bakes, the house cut, roSweep re-creating render objects (the GPU buffers stay
+   per attribute).
+2. Time to play: measure on a GREEN machine (this session never was; the cover alone spread 13.5-28.9 s). With
+   `?buildaudit=1` list the boot's node builds and their repeats (`debug/buildAudit.js`) before choosing what to share
+   (the per-model wrapAO copies -> NodeMaterialInstance + materialReference).
+3. The flush split's extra city passes: draw only the chunk's holder (not the whole pass) per chunk, in the pass's
+   target + MRT, to make the split free.

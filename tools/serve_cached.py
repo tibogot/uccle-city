@@ -32,4 +32,9 @@ class Cached(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8871
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(Cached, directory=root)).serve_forever()
+    # (perf9: a listen backlog of 128, not socketserver's 5: a boot's burst of module / tile requests got
+    # ERR_CONNECTION_REFUSED now and then and the page never started: the "harness" failures of round 8)
+    class Server(http.server.ThreadingHTTPServer):
+        request_queue_size = 128
+        daemon_threads = True
+    Server(("127.0.0.1", port), functools.partial(Cached, directory=root)).serve_forever()

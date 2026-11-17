@@ -15,7 +15,8 @@
 // Switches: ?loader=flight (the old aerial flight in a worker), ?loader=0 (no images: the plain cover, for A/B);
 // prefers-reduced-motion: no zoom, the cross-fades only (index.html).
 const params = new URLSearchParams(location.search);
-const mode = params.get("loader") === "0" ? "plain" : params.get("loader") === "flight" ? "flight" : "stills";
+const mode = params.get("loader") === "0" || (params.get("quick") === "1" && !params.get("loader")) ? "plain"   // (?quick=1, docs/QUICKTEST.md: the plain cover)
+   : params.get("loader") === "flight" ? "flight" : "stills";
 const T0 = 0;                                         // (performance.now() counts from the navigation)
 const cover = document.getElementById("cover");
 const ui = document.getElementById("loaderUi");

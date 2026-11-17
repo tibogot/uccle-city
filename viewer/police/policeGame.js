@@ -14,6 +14,7 @@ import { PoliceCar, POLICE_CAR } from "./policeCar.js";
 import { Props, hazard } from "./props.js";
 import { JOBS } from "./policeMissions.js";
 import { warm } from "./warm.js";
+const POLICE_WARM_OLD = /[?&]policewarm=old(&|$)/.test(location.search);
 
 // the station's site frame (models/police_rouge/site.json: origin, rotation): the yard, the gate, the HQ marker
 const FRM = { o: [-514.182, -340.015], r: -0.586023 };
@@ -100,15 +101,32 @@ export const POLICE_GAME = {
     // the car first (the drive mode then starts with it), its pipelines and the props' under the spawn card
     await G.car.install(); mark("car install");
     kit.hud.toast({ title: "Police station, Rue Rouge", text: "Getting the car ready…" }, 0);
-    try {
-      await G.props.ready();
-      const tmp = G.props.warmSet();
-      await warm([driver.car.root, G.props.group], host.camera, 8);
-      G.props.unwarm(tmp);
-    } catch (e) { host.log(`police compile: ${e.message}`); }
-    mark("props + warm");
-    await kit.spawnPlayer({ at: [YARD.x, YARD.z, "Police station, Rue Rouge"], mode: "drive", road: false });
-    mark("spawn (teleport + area)");
+    // perf9 (?policewarm=old = the props' + car's warm-up frames first, then the spawn, as before: 1.8-11.6 s in front of the
+    // spawn's area wait, its 8 frames slow with the boot's work): the props' warm-up runs BESIDE the spawn (teleport + area
+    // wait, under the play loader). The car is left out of it: the spawn starts the drive mode with it in front of the
+    // camera, so its pipelines are built by the hold's own frames (the area wait counts their async pipelines), and the
+    // warm-up's moving of its root would fight the drive mode's placing of it.
+    const propsWarm = async (roots) => {
+      try {
+        await G.props.ready();
+        const tmp = G.props.warmSet();
+        await warm(roots(), host.camera, 8);
+        G.props.unwarm(tmp);
+      } catch (e) { host.log(`police compile: ${e.message}`); }
+    };
+    if (POLICE_WARM_OLD) {
+      await propsWarm(() => [driver.car.root, G.props.group]);
+      mark("props + warm");
+      await kit.spawnPlayer({ at: [YARD.x, YARD.z, "Police station, Rue Rouge"], mode: "drive", road: false });
+      mark("spawn (teleport + area)");
+    } else {
+      const t1 = performance.now();
+      const pw = propsWarm(() => [G.props.group]).then(() => T.push(["police props warm (beside the spawn)", Math.round(performance.now() - t1)]));
+      await kit.spawnPlayer({ at: [YARD.x, YARD.z, "Police station, Rue Rouge"], mode: "drive", road: false });
+      mark("spawn (teleport + area)");
+      await pw;
+      mark("props warm left after the spawn");
+    }
     if (driver.on && driver.vehicle === "car") { driver.startPose = { ...YARD }; driver.reset(); }
     // keys
     G.keyFn = (e) => {

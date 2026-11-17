@@ -10,6 +10,8 @@
 //   1 setts     Poly Haven cobblestone_floor_08 (CC0 scan of old worn rounded setts in rows), 2 m, 10 rows
 //   2 pavers    texture factory tf_pavers_a (grey concrete pavers 22 x 11 cm, stretcher bond), 1.8 m, [8, 16]
 //   3 slabs     texture factory tf_paving_concrete_a (Brussels 30 x 30 cm concrete tiles), 1.8 m, [6, 6]
+//   4 herringbone  texture factory tf_pavers_b (the pavers in 90-degree herringbone), 1.8 m, [4, 8] (shifts of 4 bricks:
+//               the herringbone lattice keeps X = Y mod 4); loaded unless its switch is off (?cortenbosch2=old)
 //
 // Sampling: hex-tiled (Mikkelsen 2022, as materials/antitile.js and the textured ground): every hex tile takes its own
 // offset (structured layers: snapped to pairs of courses and whole units, so joints stay on the same lines; asphalt:
@@ -23,7 +25,7 @@ import { hash22 } from "../materials/antitile.js";
 import { ktxLoader } from "../materials/scans.js";
 
 export const pavingOn = !/[?&]paving=old/.test(location.search);
-export const LAYER = { asphalt: 0, setts: 1, pavers: 2, slabs: 3 };
+export const LAYER = { asphalt: 0, setts: 1, pavers: 2, slabs: 3, herringbone: 4 };
 
 const BASE = new URL("../materials/textures/", import.meta.url).href;
 let PT = null, ready = null;
@@ -42,7 +44,8 @@ export function setPavingOff(v) { off = !!v; }
 async function build(renderer) {
   const t0 = performance.now();
   const man = await fetch(BASE + "streets/streets.json").then((r) => { if (!r.ok) throw new Error(`streets.json HTTP ${r.status}`); return r.json(); });
-  const layers = man.layers.slice().sort((a, b) => a.layer - b.layer);
+  // a layer with a "switch" (e.g. "cortenbosch2") is left out under ?<switch>=old (the city as before, no extra texture)
+  const layers = man.layers.filter((l) => !l.switch || !new RegExp(`[?&]${l.switch}=old(&|$)`).test(location.search)).sort((a, b) => a.layer - b.layer);
   const ktx = ktxLoader(renderer);
   const load = (role) => Promise.all(layers.map((l) => ktx.loadAsync(`${BASE}${l.files}_${role}.ktx2`)));
   const [alb, nra] = await Promise.all([load("albedo"), load("nra")]);

@@ -13,7 +13,7 @@ import numpy as np
 from tf.core import smoothstep, lerp, hexcol, f32
 from tf.bake import finish
 from tf.aggregate import stones, palette_pick
-from tf.units import courses, random_lengths, fixed_count_lengths
+from tf.units import courses, random_lengths, fixed_count_lengths, herringbone
 
 
 # ------------------------------------------------------------------------------------------------ asphalt
@@ -207,10 +207,14 @@ def pavers(T, P):
     (a few darker anthracite / warmer pavers), oil and tyre stains, sand and moss in the joints."""
     nrow, nper = P["rows"], P["per_row"]
     pitch = T.size / nrow
-    U = courses(T, nrow, fixed_count_lengths(lambda c: nper, lambda c: T.size / nper, 0.002),
-                lambda rng, c, l: (c % 2) * T.size / nper / 2 + rng.uniform(-0.004, 0.004),
-                k=1, joint=P["joint"], joint_jit=0.0008, unit_h=pitch - P["joint"], h_jit=0.0008, dy_jit=0.0012,
-                tilt_deg=0.5, corner_r=0.003)
+    if P.get("pattern") == "herringbone":
+        # (cortenbosch2) the same pavers laid in 90-degree herringbone (the Chemin prive 't Cortenbosch, Street View)
+        U = herringbone(T, nrow, joint=P["joint"], corner_r=0.003)
+    else:
+        U = courses(T, nrow, fixed_count_lengths(lambda c: nper, lambda c: T.size / nper, 0.002),
+                    lambda rng, c, l: (c % 2) * T.size / nper / 2 + rng.uniform(-0.004, 0.004),
+                    k=1, joint=P["joint"], joint_jit=0.0008, unit_h=pitch - P["joint"], h_jit=0.0008, dy_jit=0.0012,
+                    tilt_deg=0.5, corner_r=0.003)
     ids, n = U["id"], U["n"]
     pu = lambda k, dist="uniform": T.per_unit(ids, n, 100 + k, dist)
     lx, ly = U["lx"], U["ly"]
@@ -280,5 +284,6 @@ MATERIALS = {
     }},
     "pavers": {"size_m": 1.8, "variants": {
         "a": {"seed": 71, "lattice": [8, 16], "note": "Brussels grey concrete pavers 22 x 11 cm, stretcher bond, mixed batches", "build": make_pavers()},
+        "b": {"seed": 72, "lattice": [4, 8], "note": "the same pavers in 90-degree herringbone (cortenbosch2: the private lane)", "build": make_pavers(dict(pattern="herringbone", stains=0.4, moss=0.3))},
     }},
 }

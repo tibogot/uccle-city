@@ -1,6 +1,7 @@
 // Road surface codes per vertex (pure JS, used by the tile worker and roadPaint.js).
 export const SURFACE = { asphalt: 0, sett: 1, paving_stones: 2, unhewn_cobblestone: 3, cobblestone: 3,
-  gravel: 4, fine_gravel: 4, compacted: 4, unpaved: 4, concrete: 0 };
+  gravel: 4, fine_gravel: 4, compacted: 4, unpaved: 4, concrete: 0,
+  paving_herringbone: 5 };   // (cortenbosch2: the pavers in herringbone, data/overrides.json streetSurfaces pattern; the street texture array's layer 4)
 
 /** Same hash as laneRoadMesh.js hashPhase (not exported upstream). */
 /** 0: the asphalt shader's tone is world space only (round 2); the Road Checker's C21 reads it */

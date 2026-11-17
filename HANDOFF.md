@@ -5,6 +5,17 @@
 Read this first when resuming (with Claude or by hand). Rendering and performance plan: `docs/RENDER_PLAN.md`; what we learned from slop-newyork, game-engine-v1 and three r187: `docs/RESEARCH.md`. Details are in `docs/PLAN.md`
 (roadmap and history) and `docs/CONTRACT.md` (data format, v0.7).
 
+## Quick test mode for agents (`?quick=1`, docs/QUICKTEST.md)
+
+To CHECK a change in the city, do not boot the whole city: `?quick=1&place=<viewer/places.js id>` (or
+`&at=x,z[,h]&look=x,z[,h]`, `&radius=` default 250 m) loads only the 2-4 tiles round the spot, the landmarks there,
+no far ring, no play loader, no start menu, the optional systems off unless `&with=traffic,birds,weather,night,trams,trains,falcons,map,panel,game`,
+the camera exactly at the spot; `window.__quickReady = { ms, tiles, heapMB, ... }` when built, `window.__quickErrors`
+the console errors. Helper: `const Q = await import("/debug/quick.js")`: `Q.go(id)`, `await Q.waitReady()` (5 s polls,
+stops on an error / freeze), `Q.beat()` (heartbeat), `Q.shot(name)`. Common checks:
+`?quick=1&place=stjob-street`, `place=observatory`, `place=police-yard`, `place=stjob-nest&with=falcons`,
+`place=stjob&time=night`, `place=stjob-street&wx=snow_cover`. Not for perf numbers (those: the preflight + perfRun).
+
 ## State on 2026-11-13, morning (read this first)
 
 `claude/foundation` (PUSHED 2026-11-13 at 54f3816: Vercel deploys this branch; there is no separate `main`) has, ON by default: every landmark,

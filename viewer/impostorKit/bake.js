@@ -187,7 +187,12 @@ export async function bakeAtlas(renderer, source, spec = {}) {
 
   if (auxHalf && levelCount < 2) throw new Error("impostorKit: auxHalf needs at least 2 mip levels (cell / minCell)");
   const levelsB = auxHalf ? levelCount - 1 : levelCount, WB = auxHalf ? W >> 1 : W;
-  const texA = arrayTexture(renderer, layersA, W, levelCount), texB = arrayTexture(renderer, layersB, WB, levelsB);
+  // perf9: spec.keepPixels === false (the city's tree kit; ?atlaskeep=old keeps them): no CPU copy kept once uploaded:
+  // the level-0 array the texture was made from is let go (three uploads a DataArrayTexture once and reads its data again
+  // only on a version bump: none here) and the per-layer levels (atlas.pixels, the labs' atlas viewer) are dropped
+  const keep = spec.keepPixels !== false;
+  const texA = arrayTexture(renderer, layersA, W, levelCount, keep), texB = arrayTexture(renderer, layersB, WB, levelsB, keep);
+  if (!keep) { layersA.length = 0; layersB.length = 0; }
   const lvlBytes = (w, n) => [...Array(n)].reduce((s, _, i) => s + (w >> i) ** 2 * 4, 0);
   const bytes = L * (lvlBytes(W, levelCount) + lvlBytes(WB, levelsB));
   const atlas = {
@@ -195,7 +200,7 @@ export async function bakeAtlas(renderer, source, spec = {}) {
     spheres, hulls, stats, bytes, ss,
     bakeMs: performance.now() - t0, renderMs: gpuMs, workerMs,
     /** the level-0 pixels of a layer (for the lab's atlas viewer) */
-    pixels: (layerIdx, ch = "A") => (ch === "A" ? layersA : layersB)[layerIdx][0],
+    pixels: (layerIdx, ch = "A") => (ch === "A" ? layersA : layersB)[layerIdx]?.[0] ?? null,   // (null: baked with keepPixels false)
     dispose() { texA.dispose(); texB.dispose(); },
   };
   return atlas;
@@ -212,7 +217,7 @@ function tight(buf, W) {
 }
 
 /** A DataArrayTexture with our own mip chain (levels[layer][level] = Uint8Array RGBA8). */
-function arrayTexture(renderer, levels, W, count) {
+function arrayTexture(renderer, levels, W, count, keep = true) {
   const L = levels.length;
   const join = (lvl) => { const w = W >> lvl, out = new Uint8Array(w * w * 4 * L); for (let i = 0; i < L; i++) out.set(levels[i][lvl], i * w * w * 4); return out; };
   const data0 = join(0);
@@ -232,6 +237,7 @@ function arrayTexture(renderer, levels, W, count) {
       const w = W >> lvl, d = join(lvl);
       device.queue.writeTexture({ texture: gpu, mipLevel: lvl, origin: { x: 0, y: 0, z: 0 } }, d, { offset: 0, bytesPerRow: w * 4, rowsPerImage: w }, { width: w, height: w, depthOrArrayLayers: L });
     }
+    if (!keep) { tex.image.data = null; for (const m of tex.mipmaps) m.data = null; }   // (uploaded: width / height / depth stay)
   }
   return tex;
 }

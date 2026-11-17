@@ -13,7 +13,7 @@ import { buildRoadNetwork } from "../vendor/roads/roadNetwork.js";
 import { buildLaneRoadMesh } from "../vendor/roads/mesh/laneRoadMesh.js";
 import { surfaceAttribute, hashPhase } from "./roadData.js";
 import { prepareSurfaces, fitRoadWidths, buildSurfaceRoads } from "./surfaces.js";
-import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2 } from "./streets/measuredPaint.js";
+import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2, roadTextMesh } from "./streets/measuredPaint.js";
 import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 import { relevelRoads } from "./streets/roadLevels.js";
 import { recentreRoads } from "./streets/recentre.js";
@@ -163,6 +163,9 @@ export function buildRoadData(o) {
     // the measured paint as its own decal mesh (one draw, viewer/roadPaint.js paintMaterial)
     const paintPart = paintMeshV2(pv.items, prep, bounds);
     if (paintPart) { parts.paint = paintPart; triangles += paintPart.index.length / 3; }
+    // (cortenbosch2) words painted on the street (data/overrides.json roadTexts: "Private Weg" / "Cortenbosch")
+    const textPart = o.roadTexts ? roadTextMesh(o.roadTexts, prep, bounds) : null;
+    if (textPart) { parts.roadtext = textPart; triangles += textPart.index.length / 3; }
     lap("paint decal");
   }
   const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
