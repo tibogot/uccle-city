@@ -232,10 +232,9 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
   mat.normalNode = normalize(mix(normalize(base.add(bumpNormal(bump).sub(toView(vec3(0, 1, 0))))), toView(gl.xyz), gl.w.mul(float(1).sub(packed))));
   // 8 x 8 chunks of 64^2 cells, each its own draw with a bounding box: the frustum culls what is off screen
   const mesh = new THREE.Group(); mesh.name = "snow-layer";
-  // snowfast: the layer draws BEFORE the other opaque things (it lies 3 mm+ over the ground): the ground's fragments
-  // under it then fail the depth test early and are never shaded (the street's ground was shaded twice: its own
-  // material, then the layer over it). Where the layer discards (cuts, holes) nothing is written: the ground shades there
-  if (SNOW_FAST) mesh.renderOrder = -5;
+  // (tried in claude/snow2: the layer drawn BEFORE the other opaque things, so the ground under it fails the depth test
+  // early: -0.3 ms GPU-bound, but the roofs the layer lies on came out bare grey (Sacre-Coeur's crossing, flat roofs):
+  // not kept. docs/SNOW2.md)
   const CH = 8, M = N / CH;
   let hMin = Infinity, hMax = -Infinity;
   for (let k = 0; k < N * N; k++) { const h = map.H[k]; if (h > -1000) { hMin = Math.min(hMin, h); hMax = Math.max(hMax, h); } }
@@ -265,7 +264,6 @@ export function createSnowLayer({ renderer, map, track: sharedTrack = null, edge
     g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
     const c = new THREE.Mesh(g, mat);
     c.receiveShadow = true; c.castShadow = false;
-    if (SNOW_FAST) c.renderOrder = -5;
     mesh.add(c);
   }
   geo.dispose();

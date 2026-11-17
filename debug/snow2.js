@@ -36,7 +36,6 @@ async function state(k, settle = 3600) {
     if (!W.__wrapU) { const o = W.update.bind(W); W.update = (a, b) => { o(a, b); window.__post?.(); }; W.__wrapU = 1; }
     window.__post = k.includes("NoMat") ? () => { wx.uSnowCover.value = 0; } : k.includes("GateOff") ? () => { wx.uOn.value = 0; } : k.includes("NoFoliage") ? () => { fs.uSnow.value = 0; } : null;
     if (k.includes("NoLayer")) show(W.layer?.mesh, false);
-    const ro = k.includes("LayerLast") ? 0 : -5; W.layer?.mesh?.traverse((c) => { c.renderOrder = ro; });
     if (k.endsWith("NoCaps")) show(W.group.getObjectByName("snow-caps"), false);
   }
   else {
