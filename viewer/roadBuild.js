@@ -17,6 +17,7 @@ import { preparePaintV2, afterNetworkV2, unpaintParking, paintMeshV2, roadTextMe
 import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 import { relevelRoads } from "./streets/roadLevels.js";
 import { recentreRoads } from "./streets/recentre.js";
+import { trimBendFolds } from "./streets/roadBends.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -106,6 +107,15 @@ export function buildRoadData(o) {
 
   const built = buildLaneRoadMesh(net, { markings: true });
   if (v2) pv.inventory.stats.parkingVerticesUnpainted = unpaintParking(built, ctx);
+  // curvedroads: where a bend is tighter than the road is wide (the engine shrinks the radius at an OSM vertex near a
+  // junction mouth to ~0) its strips folded over themselves; each inner edge is cut at its own crossing (the trimmed
+  // offset curve), everything else bit for bit as built (viewer/streets/roadBends.js, docs/roads/BENDS.md).
+  // o.roadBend false (?roadbend=old): as built (then viewer/surfaces.js drops the minority-oriented folds, as before)
+  const bend = o.roadBend !== false ? trimBendFolds(net, built.asphalt) : null;
+  if (bend) built.asphalt = bend.part;
+  lap("road bends");
+  // (o.engineOnly: the engine stage only, for tools/audit/roadBends.mjs)
+  if (o.engineOnly) return { net, built, prep, roadBend: bend?.stats ?? null, times };
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
   let priority = null;
   if (v2) {
@@ -168,7 +178,7 @@ export function buildRoadData(o) {
     if (textPart) { parts.roadtext = textPart; triangles += textPart.index.length / 3; }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
+  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend?.stats ?? null, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
   if (o.keep) Object.assign(out, { prep, built });
   return out;
 }
