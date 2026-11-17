@@ -121,3 +121,17 @@ export async function pairs(a = "overcastDry", b = "snowfall", n = 8, v = "stjob
   const med = (x) => [...x].sort((p, q) => p - q)[Math.floor(x.length / 2)];
   return { a, b, A: med(A), B: med(B), delta: +med(d).toFixed(2), d: d.map((x) => +x.toFixed(2)) };
 }
+
+/** after a page load: the A/B the docs quote (GPU-bound): overcastDry -> snowfall and its split, in the background */
+export async function autoPairs(v = "stjob", n = 8) {
+  for (let i = 0; i < 30; i++) { if (V()?.gpuStats && (await WC.weather()).map?.ready) break; await wait(4000); }
+  await wait(5000); closeMenu(); await bound(1.6); await wait(2000); closeMenu();
+  window.__ab = { done: false, url: location.search, out: {} };
+  (async () => {
+    for (const [a, b] of [["overcastDry", "snowfall"], ["snowCoverNoMatNoLayer", "snowCoverNoLayer"], ["snowCoverNoLayer", "snowCover"], ["snowCover", "snowfall"]]) {
+      const p = await pairs(a, b, n, v); window.__ab.out[`${a}>${b}`] = { delta: p.delta, A: p.A, B: p.B, d: p.d };
+    }
+    window.__ab.done = true;
+  })();
+  return "started";
+}
