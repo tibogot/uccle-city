@@ -80,10 +80,14 @@ export function createSkyExtras(sky, renderer) {
     // the environment: always drawn on a re-bake (identity at tint 0), so its one pipeline is built at boot
     const rt = sky.env?.target;
     if (rt && rt.texture.pmremVersion !== envVersion) {
-      const prev = renderer.getRenderTarget();
+      // autoClear OFF: the quad MULTIPLIES what Firmament baked; a clear first left the environment black (every shadow
+      // went black: caught by the tour 2026-11-17)
+      const prev = renderer.getRenderTarget(), ac = renderer.autoClear;
+      renderer.autoClear = false;
       renderer.setRenderTarget(rt);
       tintQuad.render(renderer);
       renderer.setRenderTarget(prev);
+      renderer.autoClear = ac;
       envVersion = rt.texture.pmremVersion;
     }
   }

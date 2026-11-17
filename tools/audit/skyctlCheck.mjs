@@ -5,6 +5,7 @@
 //     (vendor/firmament FIRMAMENT_DEFAULTS, or viewer/skyExtras.js SKY_X_DEFAULTS) and inside that range
 //   - every panel control is in SKY_URL; no key twice
 //   - the extras' defaults are the identity (sun disc x1, no extra glow, no tint, moon x1, sunlight x1)
+//   - a multiply pass into the environment draws with autoClear off (a clear first = black shadows everywhere)
 //   - viewer/skyExtras.js adds no light and builds no node / material in its per-frame afterUpdate() (rule 7: fixed
 //     light count; sliders are uniforms only, never a shader rebuild)
 // Exit 1 on any failure.
@@ -66,6 +67,8 @@ if (/new THREE\.\w*Light\b|\.add\(\s*new THREE/.test(extras)) fail("viewer/skyEx
 const au = extras.match(/function afterUpdate\(\) \{([\s\S]*?)\n  \}/);
 if (!au) fail("viewer/skyExtras.js: afterUpdate() not found");
 else if (/needsUpdate|Fn\(|new THREE\.|NodeMaterial|colorNode/.test(au[1])) fail("viewer/skyExtras.js afterUpdate() rebuilds a node / material (sliders must be uniforms only)");
+// a pass that MULTIPLIES into Firmament's environment must not clear it first (the black-shadows bug the tour caught)
+if (au && /\.render\(renderer\)/.test(au[1]) && !/autoClear = false/.test(au[1])) fail("viewer/skyExtras.js afterUpdate() draws into a target with autoClear on (it clears the environment it multiplies)");
 
 if (errs.length) { for (const e of errs) console.log(`FAIL ${e}`); console.log(`skyctl: ${errs.length} failure(s)`); process.exit(1); }
 console.log(`skyctl: OK, ${SKY_URL.length} sky controls: rows, ranges, defaults (= the look as before), no lights, uniforms only`);
