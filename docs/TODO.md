@@ -33,6 +33,13 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Shops Place Saint-Job: Le Touring; re-check Thai Smile / Botanea / Miska / Cacao Tree; ~630 null UrbIS solids to rebuild.
 - [ ] Owner image 68 (Waterloo by Optalweg): not located; ask for a hint.
 
+**Ideas from the three.js expert repos (research 2026-11-17, docs/AGARGARO.md correction)**
+- [ ] NodeMaterialInstance (in r187, unused): share node builds for the per-tile fade materials (falcon hitches #1 kit-wall fade shadow 31-56 ms, #4 streetlife-box fade 8-9 ms); A/B ?matinst with ?buildaudit=1. Watch three PR #34693 (shared builds, -80 % build time).
+- [ ] Tile eviction like 3DTilesRendererJS's LRU (evict a few % of the excess per pass, min/max bytes) + priority-ordered process queue: against the 450-1170 MB GC drops (?lruslice).
+- [ ] Night lamps as quads drawn into one light map (jeantimex/tokyo performance.md: night 32.9 -> 20.1 ms on WebGL); fits the fixed light count (?lamplightmap).
+- [ ] Lab only: three-mesh-bvh/webgpu BVHComputeData (GPU raycast / closest point) for baked occlusion / AO probes; InstancedMesh2 1.0 beta for per-instance picking once it supports r187+.
+- [ ] r188: GPUTimer (PR #35412) for per-pass timing; PR #35321 compileComputeAsync de-dup.
+
 **Defects found 2026-11-17**
 - [ ] Wire clearance too low under Av. des Tilleuls / Hospices / Carsoel bridges.
 - [ ] Vivier d'Oie station footbridges (UrbIS 751 / 752); Saint-Job deck sidewalks over the bank.
