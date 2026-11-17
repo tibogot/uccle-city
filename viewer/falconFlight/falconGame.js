@@ -73,6 +73,10 @@ export class FalconGame {
   perchOn(p) {
     this.mode = "perch"; this.perch = p; this.landing = null;
     this.f.vel.x = this.f.vel.y = this.f.vel.z = 0; this.f.V = 0;
+    // (falconfix, owner: "when it lands everything is shaking") the flight's live state is frozen on a perch (sub() does
+    // not run): a tumble's stun, the air's lift and the load factor would stay at their last values and keep the camera
+    // shaking (stun shake, rough-air shake) for as long as the bird sat there
+    this.f.stun = 0; this.f.lift = 0; this.f.n = 1; this.f.contact = null;
     Object.assign(this.f.pos, { x: p.pos.x, y: p.pos.y, z: p.pos.z });
     if (p.eyrie && this.bird.prey) this.deliver();
   }
@@ -131,6 +135,7 @@ export class FalconGame {
     const face = new THREE.Vector3(-Math.sin(q.yaw), 0, -Math.cos(q.yaw));
     const v1 = face.clone().multiplyScalar(0.8).add(new THREE.Vector3(0, -0.6, 0));
     this.landing = { q, p0, v0, v1, T, t: 0, yaw0: f.heading };
+    f.stun = 0; f.lift = 0;                                   // (falconfix: no tumble / rough-air shake in the flare)
     this.mode = "land";
     this.say(`landing on ${q.church ? `the ${q.name === "ledge" ? "eyrie's ledge" : q.name}` : q.tree ? "a tree's crown" : q.spot ? (q.roof ? "the roof" : "the ground") : "a roof ridge"}: the flare`);
     if (q.spot) this.landing.q = { name: q.roof ? "roof" : "ground", pos: q.pos.clone(), yaw: q.yaw, roof: q.roof };
