@@ -1,0 +1,5 @@
+{
+  "_doc": "Known open items of tools/audit/bridgeAudit.mjs: \"<check> <what>\" -> why it is not fixed yet and what fixes it. Reported as 'allowed', not failed. Remove an entry when it is fixed.",
+  "U3 UrbIS PB 751 (footway)": "Vivier d'Oie station footbridge (OSM 209187984 + steps 903802538 / 903802541 / 903802544 to the platforms and the streets): not modelled yet, only its old slab in the ballast was removed (vivier 2026-11-17). Needs its own scripted model (deck, stairs to both platforms, piers, mesh railings), docs/VIVIER.md next steps.",
+  "U3 UrbIS PB 752 (footway)": "Vivier d'Oie station west footbridge (OSM 36870319 + steps 903802530 / 903802533 + ramp 36870320): same as PB 751."
+}

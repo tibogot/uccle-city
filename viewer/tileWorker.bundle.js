@@ -11442,7 +11442,7 @@ function laneFit(node, ground, noData) {
   y0 = sy / n - gx * mx - gz * mz;
   return { y: y0, gx, gz, rms: Math.sqrt(e / n) };
 }
-function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
+function relevelRoads(net, ground, noData = null, { roughLanes = true, deckLevel = null } = {}) {
   const st = { nodes: 0, maxMove: 0, roads: 0, skippedStructure: 0, ...globalThis.__levelsDebug ? { debug: true } : {} };
   if (!net?.nodes) return st;
   const realSpan = (rr, sp) => {
@@ -11461,6 +11461,22 @@ function relevelRoads(net, ground, noData = null, { roughLanes = true } = {}) {
   const moved = /* @__PURE__ */ new Set();
   for (const node of net.nodes) {
     if (node.src?.y != null || !node.arms?.length) continue;
+    const dl = deckLevel ? deckLevel(node.x, node.z) : null;
+    if (dl != null) {
+      if (Math.abs(node.y - dl) > 0.02) {
+        const d2 = node.y - dl;
+        node.y = dl;
+        node.plane = { gx: 0, gz: 0 };
+        moved.add(node);
+        st.nodes++;
+        st.deckNodes = (st.deckNodes || 0) + 1;
+        if (Math.abs(d2) > st.maxMove) {
+          st.maxMove = Math.abs(d2);
+          st.maxAt = [Math.round(node.x), Math.round(node.z)];
+        }
+      }
+      continue;
+    }
     const fit = fittedY(node, ground, noData);
     if (fit == null) {
       st.skippedNoData = (st.skippedNoData || 0) + 1;
@@ -11747,7 +11763,7 @@ function buildRoadData(o) {
     const h = hm.h;
     return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step;
   };
-  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false });
+  const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null });
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
@@ -11891,18 +11907,24 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
     };
     const plan = plans?.[String(r.meta?.osm)];
     if (plan?.ring?.length >= 3) {
-      d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null };
+      d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null, ...plan.urbis ? { urbis: plan.urbis } : {} };
       for (const [x, z] of plan.ring) {
         d.box[0] = Math.min(d.box[0], x);
         d.box[1] = Math.min(d.box[1], z);
         d.box[2] = Math.max(d.box[2], x);
         d.box[3] = Math.max(d.box[3], z);
       }
+      if (plan.fit) d.plan.plane = fitPlane(plan.ring, d.plan.free, ground);
     }
     const L2 = cum[cum.length - 1] || 1, n = Math.max(1, Math.ceil(L2 / PROF));
     d.prof = [];
     for (let k = 0; k <= n; k++) {
       const sk = L2 * k / n, line2 = h0 + (h1 - h0) * (sk / L2);
+      if (d.plan?.plane) {
+        const q2 = at(d, sk);
+        d.prof.push(planeY2(d.plan.plane, q2.x, q2.z));
+        continue;
+      }
       if (sk < d.span[0] || sk > d.span[1]) {
         d.prof.push(line2);
         continue;
@@ -11918,7 +11940,7 @@ function deckHeight(d, ground, { drawn = false } = {}) {
   const L2 = d.cum[d.cum.length - 1] || 1;
   if (d.plan) return (x, z) => {
     if (x < d.box[0] || z < d.box[1] || x > d.box[2] || z > d.box[3] || !inRing(d.plan.ring, x, z)) return null;
-    const deck = planTop(d, x, z);
+    const deck = d.plan.tops ? gridTop(d.plan.tops, x, z) ?? planTop(d, x, z) : planTop(d, x, z);
     return deck > ground(x, z) ? deck : null;
   };
   return (x, z) => {
@@ -11938,6 +11960,35 @@ function deckHeight(d, ground, { drawn = false } = {}) {
     const deck = profY(d, s);
     return deck > ground(x, z) ? deck : null;
   };
+}
+function gridTop(G2, x, z) {
+  const fx = x - G2.x0, fz = z - G2.z0, i = Math.floor(fx), j = Math.floor(fz), tx = fx - i, tz = fz - j;
+  const at2 = (a2, b2) => a2 >= 0 && b2 >= 0 && a2 < G2.nx && b2 < G2.nz ? G2.v[b2 * G2.nx + a2] : NaN;
+  const a = at2(i, j), b = at2(i + 1, j), c = at2(i, j + 1), e = at2(i + 1, j + 1);
+  if (a === a && b === b && c === c && e === e) return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + e * tx) * tz;
+  const near = [[a, tx * tx + tz * tz], [b, (1 - tx) ** 2 + tz * tz], [c, tx * tx + (1 - tz) ** 2], [e, (1 - tx) ** 2 + (1 - tz) ** 2]].filter(([v]) => v === v).sort((p, q) => p[1] - q[1]);
+  return near.length ? near[0][0] : null;
+}
+function deckTopGrid(d, covered, streetY) {
+  if (!d.plan) return null;
+  const x0 = Math.floor(d.box[0]), z0 = Math.floor(d.box[1]), nx = Math.ceil(d.box[2]) - x0 + 1, nz = Math.ceil(d.box[3]) - z0 + 1, v = new Array(nx * nz).fill(NaN);
+  let n = 0;
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const x = x0 + i, z = z0 + j;
+    if (!inRing(d.plan.ring, x, z)) continue;
+    const t = pavingTop(d, x, z, covered, streetY);
+    if (t != null) {
+      v[j * nx + i] = +t.toFixed(3);
+      n++;
+    }
+  }
+  return n ? { x0, z0, nx, nz, v } : null;
+}
+function pavingTop(d, x, z, covered, streetY) {
+  const b = planBase(d, x, z) - PLAN.sink, B = d._band ??= bandOf(d), lift = offBand(B, x, z) ? KERB2 : 0;
+  const sy = streetY ? streetY(x, z) : null;
+  if (covered(x, z)) return sy != null && Math.abs(sy - b) < 0.6 ? sy : null;
+  return sy != null && Math.abs(sy - PLAN.sink - b) < 0.6 ? sy - PLAN.sink + lift : b + lift;
 }
 function inRing(ring2, x, z) {
   let c = false;
@@ -11975,8 +12026,8 @@ function at(d, s) {
   const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], seg = d.cum[i] - d.cum[i - 1] || 1, t = Math.max(0, Math.min(1, (s - d.cum[i - 1]) / seg));
   return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, tx: (bx - ax) / seg, tz: (bz - az) / seg, y: profY(d, s) };
 }
-function deckMesh(d, ground = null, covered = null) {
-  if (d.plan) return planDeckMesh(d, ground ?? (() => -Infinity), covered ?? (() => false));
+function deckMesh(d, ground = null, covered = null, streetY = null) {
+  if (d.plan) return planDeckMesh(d, ground ?? (() => -Infinity), covered ?? (() => false), streetY);
   const P = [], N2 = [], C = [];
   const push2 = (n, c, ...pts) => {
     for (const p of pts) {
@@ -12017,6 +12068,7 @@ function deckMesh(d, ground = null, covered = null) {
 }
 var PLAN = { depth: 1.1, cell: 2, upstand: 0.25, upW: 0.3, railH: 1.1, post: 1.5, sink: 0.03 };
 var RAIL_DROP = 0.8;
+var FREE_DROP = 0.15;
 var COLP = { asphalt: [0.115, 0.118, 0.125], kerb: [0.5, 0.49, 0.46], top: [0.4, 0.39, 0.37], fascia: [0.55, 0.54, 0.51], wall: [0.47, 0.46, 0.43], soffit: [0.3, 0.295, 0.28], steel: [0.09, 0.1, 0.105] };
 function clipBox(ring2, x0, z0, x1, z1) {
   let out = ring2;
@@ -12050,7 +12102,66 @@ function bandOf(d) {
 var offBand = (B, x, z) => Math.abs(B.nx * x + B.nz * z - B.c) > B.half;
 function planTop(d, x, z) {
   d._band ??= bandOf(d);
-  return profY(d, alongLine(d, x, z)) + (offBand(d._band, x, z) ? KERB2 : 0);
+  return planBase(d, x, z) + (offBand(d._band, x, z) ? KERB2 : 0);
+}
+var planBase = (d, x, z) => d.plan.plane ? planeY2(d.plan.plane, x, z) : profY(d, alongLine(d, x, z));
+var planeY2 = (P, x, z) => {
+  const y = P.a + P.b * (x - P.x) + P.c * (z - P.z), R2 = P.res;
+  if (!R2?.length) return y;
+  let sw = 0, sr = 0;
+  for (let i = 0; i < R2.length; i += 3) {
+    const d2 = (R2[i] - x) ** 2 + (R2[i + 1] - z) ** 2;
+    if (d2 < 1e-4) return y + R2[i + 2];
+    const w = 1 / (d2 * d2);
+    sw += w;
+    sr += w * R2[i + 2];
+  }
+  return y + sr / sw;
+};
+var RES_LOW = -0.6;
+function fitPlane(ring2, free, ground) {
+  const F = new Set(free), sgn = ringSign(ring2), S3 = [];
+  for (let i = 0; i < ring2.length; i++) {
+    if (F.has(i)) continue;
+    const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], L2 = Math.hypot(bx - ax, bz - az);
+    if (L2 < 0.5) continue;
+    const nx = (bz - az) / L2 * sgn, nz = -(bx - ax) / L2 * sgn;
+    for (let s = 0.5; s < L2; s += 1) {
+      const ex = ax + (bx - ax) * s / L2, ez = az + (bz - az) * s / L2, y = ground(ex + nx * 1, ez + nz * 1);
+      if (Number.isFinite(y)) S3.push([ex + nx * 1, ez + nz * 1, y, ex, ez]);
+    }
+  }
+  if (S3.length < 6) return null;
+  let keep = S3, P = null;
+  for (let it = 0; it < 6; it++) {
+    const n = keep.length, mx = keep.reduce((a, p) => a + p[0], 0) / n, mz = keep.reduce((a, p) => a + p[1], 0) / n, my = keep.reduce((a, p) => a + p[2], 0) / n;
+    let sxx = 0, sxz = 0, szz = 0, sxy = 0, szy = 0;
+    for (const [x, z, y] of keep) {
+      const u = x - mx, v = z - mz, w = y - my;
+      sxx += u * u;
+      sxz += u * v;
+      szz += v * v;
+      sxy += u * w;
+      szy += v * w;
+    }
+    const det = sxx * szz - sxz * sxz;
+    const b = Math.abs(det) > 1e-9 ? (sxy * szz - szy * sxz) / det : 0, c = Math.abs(det) > 1e-9 ? (szy * sxx - sxy * sxz) / det : 0;
+    P = { x: +mx.toFixed(3), z: +mz.toFixed(3), a: +my.toFixed(3), b: +b.toFixed(5), c: +c.toFixed(5) };
+    const next = S3.filter(([x, z, y]) => y - planeY2(P, x, z) > -0.35);
+    if (next.length === keep.length || next.length < 6) break;
+    keep = next;
+  }
+  const r = keep.map(([x, z, y]) => y - planeY2(P, x, z));
+  P.rms = +Math.sqrt(r.reduce((a, v) => a + v * v, 0) / r.length).toFixed(3);
+  P.n = keep.length;
+  P.of = S3.length;
+  const res = [];
+  for (const [x, z, y, ex, ez] of S3) {
+    const v = y - planeY2(P, x, z);
+    if (v > RES_LOW) res.push(+ex.toFixed(2), +ez.toFixed(2), +v.toFixed(3));
+  }
+  P.res = res;
+  return P;
 }
 function clipHalf2(poly, nx, nz, c) {
   const out = [], f = (p) => nx * p[0] + nz * p[1] - c;
@@ -12077,7 +12188,7 @@ var ringSign = (ring2) => {
   }
   return a2 > 0 ? 1 : -1;
 };
-function planDeckMesh(d, ground, covered) {
+function planDeckMesh(d, ground, covered, streetY = null) {
   const P = [], N2 = [], C = [], S3 = [];
   const tri = (n, c, a, b, cc) => {
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = cc[0] - a[0], wy = cc[1] - a[1], wz = cc[2] - a[2];
@@ -12094,7 +12205,7 @@ function planDeckMesh(d, ground, covered) {
     tri(n, c, a, b, cc);
     tri(n, c, a, cc, dd);
   };
-  const ring2 = d.plan.ring, top = (x, z) => planTop(d, x, z) - PLAN.sink, base = (x, z) => profY(d, alongLine(d, x, z)) - PLAN.sink;
+  const ring2 = d.plan.ring, top = (x, z) => planTop(d, x, z) - PLAN.sink, base = (x, z) => planBase(d, x, z) - PLAN.sink;
   const outSign = ringSign(ring2), B = d._band ??= bandOf(d);
   let bx0 = Infinity, bz0 = Infinity, bx1 = -Infinity, bz1 = -Infinity;
   for (const [x, z] of ring2) {
@@ -12114,7 +12225,12 @@ function planDeckMesh(d, ground, covered) {
     ];
     for (const [q, col2, lift] of pieces) {
       if (q.length < 3) continue;
-      const v2 = q.map(([px, pz]) => [px, base(px, pz) + (covered(px, pz) ? -UNDER_STREET : lift), pz]);
+      const v2 = q.map(([px, pz]) => {
+        const b = base(px, pz);
+        if (covered(px, pz)) return [px, b - UNDER_STREET, pz];
+        const sy = streetY ? streetY(px, pz) : null;
+        return [px, sy != null && Math.abs(sy - PLAN.sink - b) < 0.6 ? sy - PLAN.sink + lift : b + lift, pz];
+      });
       for (let k = 1; k + 1 < v2.length; k++) tri([0, 1, 0], col2, v2[0], v2[k], v2[k + 1]);
     }
     const v = pc.map(([px, pz]) => [px, base(px, pz) - PLAN.depth, pz]);
@@ -12148,7 +12264,7 @@ function planDeckMesh(d, ground, covered) {
       const fr = free.has(i);
       const ya = fr ? a.yb - PLAN.depth : Math.min(a.yb - PLAN.depth, a.gr - 0.4), yb = fr ? b.yb - PLAN.depth : Math.min(b.yb - PLAN.depth, b.gr - 0.4);
       quad(n, fr ? COLP.fascia : COLP.wall, [a.x, ya, a.z], [b.x, yb, b.z], [b.x, b.y, b.z], [a.x, a.y, a.z]);
-      if (Math.max(a.drop, b.drop) < RAIL_DROP) continue;
+      if (Math.max(a.drop, b.drop) < (fr ? FREE_DROP : RAIL_DROP)) continue;
       quad(n, COLP.fascia, [a.x, a.y, a.z], [b.x, b.y, b.z], [b.x, b.y + U2, b.z], [a.x, a.y + U2, a.z]);
       quad([-nx, 0, -nz], COLP.fascia, [a.x + ix, a.y, a.z + iz], [b.x + ix, b.y, b.z + iz], [b.x + ix, b.y + U2, b.z + iz], [a.x + ix, a.y + U2, a.z + iz]);
       quad([0, 1, 0], COLP.fascia, [a.x, a.y + U2, a.z], [b.x, b.y + U2, b.z], [b.x + ix, b.y + U2, b.z + iz], [a.x + ix, a.y + U2, a.z + iz]);
@@ -12163,7 +12279,7 @@ function planDeckMesh(d, ground, covered) {
     }
     for (let sAl = PLAN.post / 2; sAl < L2; sAl += PLAN.post) {
       const x = ax + tx * sAl + mx, z = az + tz * sAl + mz, y = top(x, z);
-      if (y - ground(x + nx * 0.65, z + nz * 0.65) < RAIL_DROP) continue;
+      if (y - ground(x + nx * 0.65, z + nz * 0.65) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
       const h = 0.03, y0 = y + PLAN.upstand, y1 = y + PLAN.railH;
       const c = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([p, q]) => [x + tx * p + nx * q, z + tz * p + nz * q]);
       for (let k = 0; k < 4; k++) {
@@ -12210,7 +12326,7 @@ function slotted(P, N2, C, S3, B, p0) {
   return { position: pos, normal: nrm, color: col2, uv, groups };
 }
 function planParapetRings(d, ground) {
-  const ring2 = d.plan.ring, out = [], top = (x, z) => planTop(d, x, z) - PLAN.sink, outSign = ringSign(ring2);
+  const ring2 = d.plan.ring, out = [], top = (x, z) => planTop(d, x, z) - PLAN.sink, outSign = ringSign(ring2), free = new Set(d.plan.free);
   for (let i = 0; i < ring2.length; i++) {
     const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], L2 = Math.hypot(bx - ax, bz - az);
     if (L2 < 0.01) continue;
@@ -12218,7 +12334,7 @@ function planParapetRings(d, ground) {
     for (let k = 0; k < steps; k++) {
       const x0 = ax + (bx - ax) * k / steps, z0 = az + (bz - az) * k / steps, x1 = ax + (bx - ax) * (k + 1) / steps, z1 = az + (bz - az) * (k + 1) / steps;
       const ya = top(x0, z0), yb = top(x1, z1);
-      if (ground && Math.max(ya - ground(x0 + nx * 0.5, z0 + nz * 0.5), yb - ground(x1 + nx * 0.5, z1 + nz * 0.5)) < RAIL_DROP) continue;
+      if (ground && Math.max(ya - ground(x0 + nx * 0.5, z0 + nz * 0.5), yb - ground(x1 + nx * 0.5, z1 + nz * 0.5)) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
       out.push({ ring: [[x0, z0], [x1, z1], [x1 - nx * PLAN.upW, z1 - nz * PLAN.upW], [x0 - nx * PLAN.upW, z0 - nz * PLAN.upW]], top: Math.max(ya, yb) + PLAN.railH, base: Math.min(ya, yb) - PLAN.depth });
     }
   }
@@ -12236,7 +12352,7 @@ function deckUnderCut(decks, grids, hdr) {
       for (let r = r02; r <= r12; r++) for (let c = c02; c <= c12; c++) {
         const x = x0 + c * step, z = z0 + r * step;
         if (!inRing(d.plan.ring, x, z)) continue;
-        const top = profY(d, alongLine(d, x, z)) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
+        const top = planBase(d, x, z) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
         for (const G2 of grids) if (G2[k] > top) {
           G2[k] = top;
           moved++;
@@ -12263,6 +12379,7 @@ function deckUnderCut(decks, grids, hdr) {
       const x = x0 + c * step, z = z0 + r * step;
       const over = Math.max(0, Math.abs((x - cx) * vx + (z - cz) * vz) - U2.half), out = outDist(x, z);
       if (over > T3 || out > T3) continue;
+      if (U2.walled && (over > 1.5 || out > 0)) continue;
       const target = U2.level + over * 1 + out * 1;
       const k = r * cols + c;
       for (const G2 of grids) if (G2[k] > target) {
@@ -12359,6 +12476,302 @@ function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null) {
     return g(x, z);
   } : g;
   return { decks, wrap };
+}
+var FREE_NEAR = 3.5;
+var FREE_PAD = 1.2;
+var PAD_MAX = 4;
+var ARM = 15;
+var WALL_MIN = 3.2;
+var WALL_MAX = 8.5;
+var OVER_MIN = 4;
+var BAND_OK = 0.85;
+var SPREAD_MAX = 12;
+function bandCover(line, half, ring2) {
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity, n = 0, k = 0;
+  for (const [x, z] of ring2) {
+    x0 = Math.min(x0, x);
+    z0 = Math.min(z0, z);
+    x1 = Math.max(x1, x);
+    z1 = Math.max(z1, z);
+  }
+  for (let x = Math.floor(x0) + 0.5; x < x1; x++) for (let z = Math.floor(z0) + 0.5; z < z1; z++) {
+    if (!inRing(ring2, x, z)) continue;
+    n++;
+    for (let i = 1; i < line.length; i++) {
+      const [ax, az] = line[i - 1], [bx, bz] = line[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = ((x - ax) * dx + (z - az) * dz) / l2;
+      if (t >= 0 && t <= 1 && Math.hypot(ax + dx * t - x, az + dz * t - z) <= half) {
+        k++;
+        break;
+      }
+    }
+  }
+  return n ? k / n : 1;
+}
+var segHit = (a, b, c, d) => {
+  const r0 = b[0] - a[0], r1 = b[1] - a[1], s0 = d[0] - c[0], s1 = d[1] - c[1], den = r0 * s1 - r1 * s0;
+  if (Math.abs(den) < 1e-9) return false;
+  const t = ((c[0] - a[0]) * s1 - (c[1] - a[1]) * s0) / den, u = ((c[0] - a[0]) * r1 - (c[1] - a[1]) * r0) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+};
+function ringPlans(hand, roadsDoc, railDoc, ground, surf = null) {
+  const out = { ...hand || {} };
+  if (!railDoc?.decks || !roadsDoc?.roads) return out;
+  const nodes = new Map((roadsDoc.nodes || []).map((n) => [n.id, n]));
+  const robs = railDoc.decks.filter((b) => b.type === "ROB");
+  for (const r of roadsDoc.roads) {
+    const br = r.meta?.bridge, osm = String(r.meta?.osm ?? "");
+    if (!br || br === "no" || !osm || out[osm]) continue;
+    const line = centreLine(r, nodes);
+    if (!line) continue;
+    let best = null, bestN = 0;
+    for (const b of robs) {
+      let n = 0;
+      for (let i = 1; i < line.length; i++) {
+        const [ax, az] = line[i - 1], [bx, bz] = line[i], L2 = Math.hypot(bx - ax, bz - az);
+        for (let s = 0; s <= L2; s += 1) if (inRing(b.ring, ax + (bx - ax) * s / (L2 || 1), az + (bz - az) * s / (L2 || 1))) n++;
+      }
+      if (n > bestN) {
+        bestN = n;
+        best = b;
+      }
+    }
+    if (!best || bestN < 3) continue;
+    if (bandCover(line, widths(r).half, best.ring) >= BAND_OK) continue;
+    const H = widths(r).half - SLAB.parapetW, band = [];
+    const ext = (p, q) => {
+      const dx = p[0] - q[0], dz = p[1] - q[1], L2 = Math.hypot(dx, dz) || 1;
+      return [p[0] + dx / L2 * EXT, p[1] + dz / L2 * EXT];
+    };
+    const bl = [ext(line[0], line[1]), ...line, ext(line[line.length - 1], line[line.length - 2])];
+    for (let i = 1; i < bl.length; i++) {
+      const [ax, az] = bl[i - 1], [bx, bz] = bl[i], L2 = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L2, nz = (bx - ax) / L2;
+      for (let t = 0; t <= L2; t += 1) for (const sg of [-1, 1]) band.push([ax + (bx - ax) * t / L2 + nx * H * sg, az + (bz - az) * t / L2 + nz * H * sg]);
+    }
+    for (const o of roadsDoc.roads) {
+      if (o === r || ![o.a, o.b].some((id) => id === r.a || id === r.b)) continue;
+      let ol = centreLine(o, nodes);
+      if (!ol) continue;
+      if (o.b === r.a || o.b === r.b) ol = ol.slice().reverse();
+      const oh = widths(o).half - SLAB.parapetW;
+      let run = 0;
+      for (let i = 1; i < ol.length && run < ARM; i++) {
+        const [ax, az] = ol[i - 1], [bx, bz] = ol[i], L2 = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L2, nz = (bx - ax) / L2;
+        for (let t = 0; t <= L2 && run + t < ARM; t += 1) for (const sg of [-1, 1]) band.push([ax + (bx - ax) * t / L2 + nx * oh * sg, az + (bz - az) * t / L2 + nz * oh * sg]);
+        run += L2;
+      }
+    }
+    const plan = urbisPlan(best, railDoc, ground, { surfaces: [...surf?.surfaces || [], { rings: [band] }] });
+    if (plan) out[osm] = plan;
+  }
+  return out;
+}
+function urbisPlan(b, railDoc, ground, surf = null) {
+  const ring2 = b.ring.slice();
+  if (ring2.length > 3 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1]) ring2.pop();
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const [x, z] of ring2) {
+    x0 = Math.min(x0, x);
+    z0 = Math.min(z0, z);
+    x1 = Math.max(x1, x);
+    z1 = Math.max(z1, z);
+  }
+  const under = [], segs = [];
+  for (const t of railDoc.tracks) {
+    if (t.tunnel || t.box.x1 < x0 - 10 || t.box.x0 > x1 + 10 || t.box.z1 < z0 - 10 || t.box.z0 > z1 + 10) continue;
+    for (let i = 0; i < t.pts.length; i++) {
+      const p = t.pts[i];
+      if (i) segs.push([[t.pts[i - 1][0], t.pts[i - 1][2]], [p[0], p[2]]]);
+      if (inRing(ring2, p[0], p[2])) under.push({ p, q: t.pts[Math.min(i + 1, t.pts.length - 1)], o: t.pts[Math.max(i - 1, 0)] });
+    }
+  }
+  if (under.length < 2) return null;
+  let ux = 0, uz = 0, cx = 0, cz = 0, ry = Infinity;
+  for (const { p, q, o } of under) {
+    let dx = q[0] - o[0], dz = q[2] - o[2];
+    const L2 = Math.hypot(dx, dz) || 1;
+    dx /= L2;
+    dz /= L2;
+    if (ux * dx + uz * dz < 0) {
+      dx = -dx;
+      dz = -dz;
+    }
+    ux += dx;
+    uz += dz;
+    cx += p[0];
+    cz += p[2];
+    ry = Math.min(ry, p[1]);
+  }
+  const ul = Math.hypot(ux, uz) || 1;
+  ux /= ul;
+  uz /= ul;
+  cx /= under.length;
+  cz /= under.length;
+  const vx = -uz, vz = ux, lat = (x, z) => (x - cx) * vx + (z - cz) * vz, lon = (x, z) => (x - cx) * ux + (z - cz) * uz;
+  let lo = Infinity, hi = -Infinity, rmax = -Infinity;
+  for (const { p } of under) {
+    const o = lat(p[0], p[2]);
+    lo = Math.min(lo, o);
+    hi = Math.max(hi, o);
+    rmax = Math.max(rmax, p[1]);
+  }
+  if (hi - lo > SPREAD_MAX || rmax - ry > 1.5) return null;
+  const gv = ring2.map(([x, z]) => ground(x, z)).filter(Number.isFinite).sort((a, c) => a - c);
+  if (!gv.length || gv[Math.floor(gv.length * 0.75)] - ry < OVER_MIN) return null;
+  const near = (x, z) => segs.some(([a, c]) => {
+    const dx = c[0] - a[0], dz = c[1] - a[1], l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / l2));
+    return Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z) < FREE_NEAR;
+  });
+  const free = [];
+  for (let i = 0; i < ring2.length; i++) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    let f = segs.some(([a, c]) => segHit(A, B, a, c));
+    for (let s = 0; !f && s <= L2; s += 1) f = near(A[0] + (B[0] - A[0]) * s / (L2 || 1), A[1] + (B[1] - A[1]) * s / (L2 || 1));
+    if (f) free.push(i);
+  }
+  const sg0 = ringSign(ring2), lvl = gv[Math.floor(gv.length * 0.75)], pad = new Set(free);
+  for (let i = 0; i < ring2.length; i++) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (L2 < 0.5 || pad.has(i)) continue;
+    const nx = (B[1] - A[1]) / L2 * sg0, nz = -(B[0] - A[0]) / L2 * sg0;
+    let n = 0, low = 0;
+    for (let s = 0.5; s < L2; s += 1) {
+      const g = ground(A[0] + (B[0] - A[0]) * s / L2 + nx * 1.5, A[1] + (B[1] - A[1]) * s / L2 + nz * 1.5);
+      if (Number.isFinite(g)) {
+        n++;
+        if (g < lvl - 1) low++;
+      }
+    }
+    if (n && low / n >= 0.5) pad.add(i);
+  }
+  const padOf = /* @__PURE__ */ new Map();
+  if (pad.size) for (const i of pad) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, tx = (B[0] - A[0]) / L2, tz = (B[1] - A[1]) / L2, nx = tz * sg0, nz = -tx * sg0;
+    let o = FREE_PAD;
+    for (const q of surf?.surfaces || []) for (const r of q.rings) for (const [x, z] of r) {
+      const u = (x - A[0]) * tx + (z - A[1]) * tz, v = (x - A[0]) * nx + (z - A[1]) * nz;
+      if (u < -0.5 || u > L2 + 0.5 || v <= 0 || v > PAD_MAX - 0.3) continue;
+      const g = ground(x, z);
+      if (Number.isFinite(g) && g < lvl - 1) o = Math.max(o, v + 0.3);
+    }
+    padOf.set(i, +o.toFixed(2));
+  }
+  if (pad.size) {
+    const F = pad, n = ring2.length, sg = sg0;
+    const line = (i) => {
+      const A = ring2[i], B = ring2[(i + 1) % n], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nx = (B[1] - A[1]) / L2 * sg, nz = -(B[0] - A[0]) / L2 * sg, o = F.has(i) ? padOf.get(i) : 0;
+      return { p: [A[0] + nx * o, A[1] + nz * o], d: [(B[0] - A[0]) / L2, (B[1] - A[1]) / L2], nx, nz, o };
+    };
+    const moved = ring2.map((P, i) => {
+      const a = line((i + n - 1) % n), b2 = line(i);
+      if (!a.o && !b2.o) return P;
+      const den = a.d[0] * b2.d[1] - a.d[1] * b2.d[0];
+      if (Math.abs(den) < 0.05) return [+(P[0] + (a.nx * a.o + b2.nx * b2.o) / (a.o && b2.o ? 2 : 1)).toFixed(2), +(P[1] + (a.nz * a.o + b2.nz * b2.o) / (a.o && b2.o ? 2 : 1)).toFixed(2)];
+      const t = ((b2.p[0] - a.p[0]) * b2.d[1] - (b2.p[1] - a.p[1]) * b2.d[0]) / den;
+      return [+(a.p[0] + a.d[0] * t).toFixed(2), +(a.p[1] + a.d[1] * t).toFixed(2)];
+    });
+    for (let i = 0; i < n; i++) ring2[i] = moved[i];
+  }
+  let s0 = Infinity, s1 = -Infinity;
+  for (const [x, z] of ring2) {
+    const s = lon(x, z);
+    s0 = Math.min(s0, s);
+    s1 = Math.max(s1, s);
+  }
+  const edgeOut = (side) => {
+    const found = [];
+    for (const s of [s0 - 3, s0 - 6, s1 + 3, s1 + 6]) {
+      for (let o = WALL_MIN; o <= WALL_MAX + 0.01; o += 0.5) {
+        const off = side > 0 ? hi + o : lo - o, g = ground(cx + ux * s + vx * off, cz + uz * s + vz * off);
+        if (Number.isFinite(g) && g > ry + 1.2) {
+          found.push(o);
+          break;
+        }
+      }
+    }
+    found.sort((a, c) => a - c);
+    return found.length ? Math.max(WALL_MIN, found[Math.floor(found.length / 2)] - 0.5) : WALL_MIN + 1;
+  };
+  const wHi = hi + edgeOut(1), wLo = lo - edgeOut(-1);
+  const wallAt = (off) => {
+    let a = Infinity, e = -Infinity;
+    for (let s = s0 - 1; s <= s1 + 1; s += 0.25) {
+      if (inRing(ring2, cx + ux * s + vx * off, cz + uz * s + vz * off)) {
+        a = Math.min(a, s);
+        e = Math.max(e, s);
+      }
+    }
+    if (!(e > a)) return null;
+    const p = (s) => [+(cx + ux * s + vx * off).toFixed(2), +(cz + uz * s + vz * off).toFixed(2)];
+    return [p(a - 0.3), p(e + 0.3)];
+  };
+  const walls = [wallAt(wLo), wallAt(wHi)].filter(Boolean);
+  const mid = (wLo + wHi) / 2;
+  return {
+    urbis: b.id,
+    fit: true,
+    ring: ring2,
+    free,
+    walls,
+    under: { c: [+(cx + vx * mid).toFixed(2), +(cz + vz * mid).toFixed(2)], u: [+ux.toFixed(4), +uz.toFixed(4)], half: +((wHi - wLo) / 2).toFixed(2), level: +(ry - 0.45).toFixed(2), walled: true }
+  };
+}
+function deckSoffitCap(decks) {
+  const list = decks || [];
+  return (x, z) => {
+    let cap2 = Infinity;
+    for (const d of list) {
+      if (x < d.box[0] - 25 || z < d.box[1] - 25 || x > d.box[2] + 25 || z > d.box[3] + 25) continue;
+      let out, soffit;
+      if (d.plan) {
+        out = 0;
+        if (!inRing(d.plan.ring, x, z)) {
+          out = Infinity;
+          const ring2 = d.plan.ring;
+          for (let i = 0; i < ring2.length; i++) {
+            const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % ring2.length], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+            const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+            out = Math.min(out, Math.hypot(ax + dx * t - x, az + dz * t - z));
+          }
+        }
+        soffit = planBase(d, x, z) - PLAN.sink - PLAN.depth;
+      } else {
+        let best = Infinity, s = 0;
+        for (let i = 1; i < d.pts.length; i++) {
+          const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+          const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist3 = Math.hypot(ax + dx * t - x, az + dz * t - z);
+          if (dist3 < best) {
+            best = dist3;
+            s = d.cum[i - 1] + t * Math.sqrt(l2);
+          }
+        }
+        out = Math.hypot(Math.max(0, best - d.half), Math.max(0, d.span[0] - s, s - d.span[1]));
+        soffit = profY(d, Math.min(Math.max(s, d.span[0]), d.span[1])) - SLAB.sink - SLAB.depth;
+      }
+      if (out > 25) continue;
+      cap2 = Math.min(cap2, soffit - 0.3 + out / 12);
+    }
+    return cap2;
+  };
+}
+function deckFootprint(d) {
+  if (d.plan) return (x, z) => x >= d.box[0] && z >= d.box[1] && x <= d.box[2] && z <= d.box[3] && inRing(d.plan.ring, x, z);
+  return (x, z) => {
+    if (x < d.box[0] || z < d.box[1] || x > d.box[2] || z > d.box[3]) return false;
+    let best = Infinity, s = 0;
+    for (let i = 1; i < d.pts.length; i++) {
+      const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist3 = Math.hypot(ax + dx * t - x, az + dz * t - z);
+      if (dist3 < best) {
+        best = dist3;
+        s = d.cum[i - 1] + t * Math.sqrt(l2);
+      }
+    }
+    return best <= d.half && s >= d.span[0] - 0.01 && s <= d.span[1] + 0.01;
+  };
+}
+function onCarriageway(d, x, z) {
+  d._band ??= bandOf(d);
+  return !offBand(d._band, x, z);
 }
 
 // viewer/track.js
@@ -13875,7 +14288,7 @@ function ringArea2(r) {
   }
   return a / 2;
 }
-function railTileData(doc, bounds, heroes = []) {
+function railTileData(doc, bounds, heroes = [], { deckCap = null, skipDeck = null } = {}) {
   const ts = tracksIn(doc, bounds, 1);
   const hs = (heroes || []).map(heroFrame);
   const roadHeroes = hs.filter((h) => h.kind === "road_over_rail");
@@ -13885,7 +14298,7 @@ function railTileData(doc, bounds, heroes = []) {
     return x > hb.x0 - m && x < hb.x1 + m && z > hb.z0 - m && z < hb.z1 + m && inRing3(h.ring, x, z);
   });
   const wireCap = (x, z) => {
-    let cap2 = Infinity;
+    let cap2 = deckCap ? deckCap(x, z) : Infinity;
     for (const h of roadHeroes) {
       const [X, Y] = h.toLocal(x, z);
       const out2 = Math.max(0, Math.abs(Y) - h.deck.width / 2);
@@ -13950,7 +14363,8 @@ function railTileData(doc, bounds, heroes = []) {
     if (t.electrified) {
       for (let s0 = Math.ceil(sA / MAST_STEP) * MAST_STEP; s0 < sB; s0 += MAST_STEP) {
         let s = s0;
-        for (let k = 0; k < 8 && inHero(sample(F, s).x, sample(F, s).z, 3); k++) s += 4;
+        const blocked = (q) => inHero(q.x, q.z, 3) || deckCap && deckCap(q.x, q.z) < q.y + 8;
+        for (let k = 0; k < 8 && blocked(sample(F, s)); k++) s += 4;
         if (s >= sB) continue;
         const f = sample(F, s), side = outerSide(nearTracks, t, f);
         let off = MAST_OFF;
@@ -13963,7 +14377,7 @@ function railTileData(doc, bounds, heroes = []) {
         const f = sample(F, Math.min(s, sB));
         const ph = f.s / MAST_STEP % 2, zig = (ph < 1 ? ph : 2 - ph) * 0.4 - 0.2;
         const m = f.s / MAST_STEP % 1, sag = 4 * m * (1 - m) * 0.75;
-        const cap2 = roadHeroes.length ? wireCap(f.x, f.z) : Infinity;
+        const cap2 = roadHeroes.length || deckCap ? wireCap(f.x, f.z) : Infinity;
         const yc = Math.min(f.y + WIRE_H, cap2 - 0.3), ym = Math.max(yc + 0.15, Math.min(f.y + MESSENGER_H - sag, cap2));
         contact.push([f.x + f.nx * zig, yc, f.z + f.nz * zig]);
         mess.push([f.x, ym, f.z]);
@@ -14084,7 +14498,7 @@ function railTileData(doc, bounds, heroes = []) {
       out.shelters = M2;
     }
   }
-  const decks = doc.decks.filter((b) => inside2(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1]));
+  const decks = doc.decks.filter((b) => inside2(bounds, b.centre[0], b.centre[1]) && !inHero(b.centre[0], b.centre[1]) && !(skipDeck && skipDeck(b)) && !(skipDeck && b.railTop != null && b.ground - 0.92 - b.railTop < 4.8));
   if (decks.length) {
     const P = [];
     for (const b of decks) {
@@ -16108,7 +16522,8 @@ async function buildTileData(entry, base) {
   const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
   const baseGround = pad ? pad.ground : hm.ground;
   const known = pad ? (p) => onGrid(p) || !pad.noData(p[0], p[1]) : onGrid;
-  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), entry.bridgePlan === false ? null : ov.bridgePlans);
+  const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
+  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans);
   osmBridges.decks = osmBridges.decks.filter((d) => {
     const m = d.pts[Math.floor(d.pts.length / 2)];
     return Number.isNaN(heroDeck(m[0], m[1]));
@@ -16134,6 +16549,14 @@ async function buildTileData(entry, base) {
       return y != null && y - hm.ground(t.x, t.z) > 1.5;
     }));
   }
+  const planDecks = osmBridges.decks.filter((d) => d.plan?.urbis), planFns = planDecks.map((d) => deckHeight(d, baseGround));
+  const planLevel = planFns.length ? (x, z) => {
+    for (const f of planFns) {
+      const y = f(x, z);
+      if (y != null) return y;
+    }
+    return null;
+  } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({
@@ -16154,6 +16577,8 @@ async function buildTileData(entry, base) {
     levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees,
     onBuilding: (x, z) => onRoof(roofs, x, z),
+    deckLevel: entry.vivier !== false ? planLevel : null,
+    // (vivier: junctions on a measured deck at its level)
     roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null
   }));
   Object.assign(times, rd.times);
@@ -16186,7 +16611,8 @@ async function buildTileData(entry, base) {
   let railOut = null;
   if (rail) {
     const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes, { platformEdge: entry.platformEdge !== false }));
-    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
+    const vv = entry.vivier !== false, foots = osmBridges.decks.map(deckFootprint);
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes, vv ? { deckCap: deckSoffitCap(osmBridges.decks), skipDeck: (b) => foots.some((f) => f(b.centre[0], b.centre[1])) } : {}));
     railOut.stats.carved = c.moved;
     railOut.stats.treesDropped = railDropped;
   }
@@ -16251,6 +16677,27 @@ async function buildTileData(entry, base) {
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
+  const streetTop = (x, z) => {
+    const H = hm.h, dl = drive.ground.delta, c0 = Math.round((x - H.x0) / H.step), r0 = Math.round((z - H.z0) / H.step);
+    let best = Infinity, y = null;
+    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+      const c = c0 + dc, r = r0 + dr;
+      if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) continue;
+      const k = r * H.cols + c, dd = dc * dc + dr * dr;
+      if (dl[k] > 0 && dl[k] !== 65535 && dd < best) {
+        best = dd;
+        y = hm.y[k] + dl[k] / 100;
+      }
+    }
+    return y;
+  };
+  const drawnAt = (x, z) => {
+    if (measuredAt && measuredAt(x, z)) return true;
+    const H = hm.h, c = Math.round((x - H.x0) / H.step), r = Math.round((z - H.z0) / H.step);
+    if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) return false;
+    const v = drive.ground.delta[r * H.cols + c];
+    return v > 0 && v !== 65535 && Math.abs(hm.y[r * H.cols + c] + v / 100 - roadGround(x, z)) < 0.6;
+  };
   return {
     name: entry.name,
     bounds,
@@ -16272,8 +16719,11 @@ async function buildTileData(entry, base) {
     times,
     rail: railOut,
     grassTypes,
-    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d, hm.ground, measuredAt) })),
-    // OSM road bridges: heights for walk / car + their drawn deck
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => {
+      const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || onCarriageway(d, x, z) && drawnAt(x, z) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
+      return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) };
+    }),
+    // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
     ...entry.keepNet ? { net, hm } : {}
   };
 }
@@ -16809,4 +17259,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "8b34c7ebd543ff4c";
+self.__TILE_CODE_HASH = "55a821bdeff224d6";

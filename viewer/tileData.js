@@ -14,7 +14,7 @@ import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
-import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut } from "./streets/bridgeDecks.js";
+import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, onCarriageway } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
@@ -361,7 +361,10 @@ export async function buildTileData(entry, base) {
   const known = pad ? (p) => onGrid(p) || !pad.noData(p[0], p[1]) : onGrid;
   // (a deck with a measured outline in data/overrides.json bridgePlans, the Carsoel deck at Saint-Job station: its
   // whole slab, parapets on its free edges, the cutting walls under it; ?bridgeplan=old: the road band, as before)
-  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), entry.bridgePlan === false ? null : ov.bridgePlans);
+  // (vivier 2026-11-17, ?vivier=old: off) + a plan from the UrbIS polygon for a road bridge its band leaves half open over
+  // the cutting (bridgeDecks.js ringPlans: the Chaussee de Waterloo at Vivier d'Oie)
+  const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
+  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans);
   osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
   const mid = (d) => { const L = d.cum[d.cum.length - 1] / 2; let i = 1; while (i < d.pts.length - 1 && d.cum[i] < L) i++;
     const t = (L - d.cum[i - 1]) / ((d.cum[i] - d.cum[i - 1]) || 1); return [d.pts[i - 1][0] + (d.pts[i][0] - d.pts[i - 1][0]) * t, d.pts[i - 1][1] + (d.pts[i][1] - d.pts[i - 1][1]) * t]; };
@@ -377,11 +380,16 @@ export async function buildTileData(entry, base) {
     feats.trees = feats.trees.filter((t) => !on.some((f) => { const y = f(t.x, t.z); return y != null && y - hm.ground(t.x, t.z) > 1.5; }));
   }
   // (+ the street level across the hero underpasses, railData.js underpassGround; ?underpasslevel=0: as before)
+  // (vivier) the UrbIS plan decks' road level (no kerb: the junction is on the carriageway); the hand-measured Carsoel
+  // deck keeps its own verified levels (tour: its junction re-levelled changed the Saint-Job station view)
+  const planDecks = osmBridges.decks.filter((d) => d.plan?.urbis), planFns = planDecks.map((d) => deckHeight(d, baseGround));
+  const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
+    deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)
     roadTexts: entry.cortenbosch !== false && entry.cortenbosch2 !== false ? ov.roadTexts ?? null : null }));   // (cortenbosch2: the lane's painted words)
   Object.assign(times, rd.times);
   const { netInfo } = rd;
@@ -405,7 +413,9 @@ export async function buildTileData(entry, base) {
   let railOut = null;
   if (rail) {
     const c = await step("rail carve", () => carveGrid(rail.doc, hm.y, tHdr, bounds, rail.heroes, { platformEdge: entry.platformEdge !== false }));
-    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes));
+    // (vivier: the catenary under the OSM decks' soffits, no UrbIS slab where a deck is drawn or in the cutting)
+    const vv = entry.vivier !== false, foots = osmBridges.decks.map(deckFootprint);
+    railOut = await step("rail meshes", () => railTileData(rail.doc, bounds, rail.heroes, vv ? { deckCap: deckSoffitCap(osmBridges.decks), skipDeck: (b) => foots.some((f) => f(b.centre[0], b.centre[1])) } : {}));
     railOut.stats.carved = c.moved; railOut.stats.treesDropped = railDropped;
   }
   if (tcut) tcut.recut = tunnelRecut(tcut, hm);        // the rail's embankment fill does not fill the bores again
@@ -475,9 +485,33 @@ export async function buildTileData(entry, base) {
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));   // joins2: distance-field edges, ?groundsdf=old the coverage mask   // (Square des Heros: its paths are the hero ground's)
+  // (vivier) the drawn street's top near (x, z): the nearest road-surface cell of the drive raster within 2 m (a plan
+  // deck's paving between the UrbIS surfaces sits a kerb over the street beside it, not on its own plane up to 0.35 m off)
+  const streetTop = (x, z) => {
+    const H = hm.h, dl = drive.ground.delta, c0 = Math.round((x - H.x0) / H.step), r0 = Math.round((z - H.z0) / H.step);
+    let best = Infinity, y = null;
+    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+      const c = c0 + dc, r = r0 + dr;
+      if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) continue;
+      const k = r * H.cols + c, dd = dc * dc + dr * dr;
+      if (dl[k] > 0 && dl[k] !== 65535 && dd < best) { best = dd; y = hm.y[k] + dl[k] / 100; }
+    }
+    return y;
+  };
+  // (vivier) a street of any kind drawn at (x, z): the measured surfaces, or the road engine's own pieces (the drive
+  // raster): the plan deck's top tucks under both on the bridge road's own band (its paving drawn over the engine's
+  // Chaussee was a raised strip; off the band the drive raster also holds tram platforms: tour, Saint-Job station)
+  const drawnAt = (x, z) => {
+    if (measuredAt && measuredAt(x, z)) return true;
+    const H = hm.h, c = Math.round((x - H.x0) / H.step), r = Math.round((z - H.z0) / H.step);
+    if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) return false;
+    const v = drive.ground.delta[r * H.cols + c];
+    return v > 0 && v !== 65535 && Math.abs(hm.y[r * H.cols + c] + v / 100 - roadGround(x, z)) < 0.6;    // (not the rail's surface under the deck)
+  };
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, traffic, parked: parked ? { sites: parked.sites, stats: parked.stats } : null, times, rail: railOut, grassTypes,
-    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d, hm.ground, measuredAt) })),   // OSM road bridges: heights for walk / car + their drawn deck
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
+      return { ...d, ...(tops ? { plan: { ...d.plan, tops } } : {}), mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) }; }),   // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
     ...(entry.keepNet ? { net, hm } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
 }
 
