@@ -43,6 +43,12 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
   const tex = new THREE.DataTexture(data, res, res, THREE.RGBAFormat, THREE.FloatType);
   tex.minFilter = tex.magFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.colorSpace = THREE.NoColorSpace;
   tex.needsUpdate = true;
+  // snowfast (claude/snow2): base height + shelter as a FILTERED float texture for the materials' exposure: one bilinear
+  // fetch instead of 4 texel loads + 1 (WebGPU float32-filterable; three falls back to unfilterable without it)
+  const dataLin = new Float32Array(res * res * 2);
+  const texLin = new THREE.DataTexture(dataLin, res, res, THREE.RGFormat, THREE.FloatType);
+  texLin.minFilter = texLin.magFilter = THREE.LinearFilter; texLin.generateMipmaps = false; texLin.colorSpace = THREE.NoColorSpace;
+  texLin.wrapS = texLin.wrapT = THREE.ClampToEdgeWrapping; texLin.needsUpdate = true;
   const cell = size / res;
   const uOrigin = uniform(new THREE.Vector2(centre.x - size / 2, centre.z - size / 2));
   const uSize = uniform(size);
@@ -57,6 +63,9 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
     sample: (xz) => { const c = clamp(xz.sub(uOrigin).div(uSize).mul(res).floor(), 0, res - 1); return textureLoad(tex, ivec2(c)); },
     /** integer texel load (vertex / compute) */
     load: (i, j) => textureLoad(tex, ivec2(i, j)),
+    /** bilinear (base height, shelter) at a world xz: fragment stages, explicit level (fine in per-pixel branches) */
+    sampleLin: (xz) => texture(texLin, xz.sub(uOrigin).div(uSize)).level(0),
+    texLin,
     inside: (xz) => { const u = xz.sub(uOrigin).div(uSize); return u.x.greaterThan(0).and(u.x.lessThan(1)).and(u.y.greaterThan(0)).and(u.y.lessThan(1)); },
     heightAt(x, z) {
       const i = Math.floor((x - uOrigin.value.x) / cell), j = Math.floor((z - uOrigin.value.y) / cell);
@@ -92,6 +101,8 @@ export function createOverheadMap({ renderer, centre = new THREE.Vector3(), size
       H.set(r.H); shelter.set(r.shelter); shape.set(r.shape); cliff.set(r.cliff); map.eaves = r.eaves; map.Hs = r.Hs;
       for (let k = 0; k < res * res; k++) { data[k * 4] = r.Hs[k]; data[k * 4 + 1] = shelter[k]; data[k * 4 + 2] = shape[k]; data[k * 4 + 3] = cliff[k] + 2 * r.road[k]; }
       tex.needsUpdate = true;
+      for (let k = 0; k < res * res; k++) { dataLin[k * 2] = r.Hs[k]; dataLin[k * 2 + 1] = shelter[k]; }
+      texLin.needsUpdate = true;
       map.ready = true;
       map.bakeMs = performance.now() - t0;
       map.gpuMs = t1 - t0; map.shapeMs = r.ms;

@@ -26,6 +26,7 @@ import { hash2D, noise2D } from "../tslkit.js";
 import { rippleSlope, glint, snowMask, snowMaskFast, SNOW_ALBEDO, wxLook } from "./surfaceWeather.js";
 import { snowNoise, SNOW_FAST as FAST } from "./snowNoise.js";
 const DBG = new URLSearchParams(location.search).get("snowdbg") ?? "";   // (claude/snow2 cost hunt: glint,trail,mask,normal,exp)
+const LIN_OLD = /[?&]snowlin=old(&|$)/.test(location.search);    // (snowfast without the filtered exposure fetch: A/B)
 const SHARE_OLD = /[?&]snowshare=old(&|$)/.test(location.search);   // (snowfast without the colour -> normal share: A/B)
 
 export const WX_ON = !/[?&]weather=old(&|$)/.test(location.search);
@@ -78,6 +79,13 @@ function graph(I, o, wantNormal) {
     exposed = float(1).toVar(); shelter = float(0).toVar();
     If(MAP.inside(P.xz).and(abs(up).greaterThan(0.3)).and(expNeeded === true ? float(1).greaterThan(0) : expNeeded), () => {
       const expOf = (h) => max(smoothstep(h.sub(0.6), h.sub(0.25), P.y), smoothstep(1.2, 4.0, h.sub(P.y)).mul(0.65));
+      if (MAP.sampleLin && !LIN_OLD) {
+        // one filtered fetch: the bilinear BASE HEIGHT (and shelter), its exposure after (was: the exposure of each of
+        // the 4 nearest cells, blended): the same smooth edge at eaves / cars, flat ground unchanged
+        const s = MAP.sampleLin(P.xz);
+        exposed.assign(expOf(s.x)); shelter.assign(s.y.mul(season.uLeafDensity.mul(0.75).add(0.25)));
+        return;
+      }
       const s = MAP.sample(P.xz);
       if (SMOOTH_EXPOSURE && !o.lite) {
         const c = P.xz.sub(MAP.uOrigin).div(MAP.cell).sub(0.5), c0 = floor(c), f = fract(c), N1 = MAP.res - 1;

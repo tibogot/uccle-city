@@ -21,20 +21,29 @@ export const VIEWS = {
 export function view(k, fov = null) { WC.go(VIEWS[k] ?? k, fov); }
 
 /** one weather state now (no fade): the costSplit's custom states */
-async function state(k) {
+async function state(k, settle = 3600) {
   const W = await WC.weather();
   const custom = (inp, s) => { W.weather.fade = null; W.preset = "custom"; Object.assign(W.weather.input, inp); Object.assign(W.weather.state, { slush: 0, frost: 0, icicle: 0, ...s }); };
   const show = (o, on) => o?.traverse?.((c) => c.layers.set(on ? 0 : 31));
-  show(W.layer?.mesh, true); show(W.snow?.mesh, true);
+  show(W.layer?.mesh, true); show(W.snow?.mesh, true); show(W.group?.getObjectByName("snow-caps"), true); window.__post = null;
   if (k === "clear") { W.weather.timeScale = 20; await WC.set("clear", { settle: 1200 }); W.weather.timeScale = 0.0001; return; }
   if (k === "overcastDry") custom({ rain: 0, snow: 0, cloud: 1, temp: 10, vis: 15000 }, { wet: 0, puddle: 0, depth: 0 });
-  else if (k === "snowCover") custom({ rain: 0, snow: 0, cloud: 1, temp: -3, vis: 15000 }, { wet: 0, puddle: 0, depth: 0.15 });
+  else if (k.startsWith("snowCover")) {
+    custom({ rain: 0, snow: 0, cloud: 1, temp: -3, vis: 15000 }, { wet: 0, puddle: 0, depth: 0.15 });
+    // cost-hunt variants (applied after the weather's own update each frame): ...NoLayer, NoMat (the materials' snow off:
+    // wx.uSnowCover 0, which also empties the layer's fragments), GateOff (wx.uOn 0: no material weather at all), NoCaps, NoFoliage
+    const { wx } = await import("/viewer/weather/weatherState.js"), { season: fs } = await import("/viewer/foliage/seasons.js");
+    if (!W.__wrapU) { const o = W.update.bind(W); W.update = (a, b) => { o(a, b); window.__post?.(); }; W.__wrapU = 1; }
+    window.__post = k.endsWith("NoMat") ? () => { wx.uSnowCover.value = 0; } : k.endsWith("GateOff") ? () => { wx.uOn.value = 0; } : k.endsWith("NoFoliage") ? () => { fs.uSnow.value = 0; } : null;
+    if (k.endsWith("NoLayer")) show(W.layer?.mesh, false);
+    if (k.endsWith("NoCaps")) show(W.group.getObjectByName("snow-caps"), false);
+  }
   else {
     custom({ rain: 0, snow: 1.5, cloud: 1, temp: -3, vis: 15000 }, { wet: 0, puddle: 0, depth: 0.15 });
     if (k === "snowfallNoLayer") show(W.layer?.mesh, false);
     if (k === "snowfallNoFlakes") show(W.snow?.mesh, false);
   }
-  await wait(3600);                     // (the sky / fog couple ramps over 3 s)
+  await wait(settle);                   // (the sky / fog couple ramps over 3 s)
 }
 export async function snow() { await state("snowfall"); }
 export async function clear() { await state("clear"); }
@@ -92,4 +101,20 @@ export async function matCost(v = "stjob", rounds = 3) {
   window.__post = null;
   const med = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
   return { cover: med(acc.cover), noMat: med(acc.noMat), delta: +(med(acc.cover) - med(acc.noMat)).toFixed(2), acc };
+}
+
+/** quick PAIRS (GPU-bound, clock drift / heat cancel out): A, B, A, B... with a short settle, the median of the
+ *  per-pair differences B - A. Same sky in both (custom states, cloud 1): overcastDry vs snowfall = the snow's cost */
+export async function pairs(a = "overcastDry", b = "snowfall", n = 8, v = "stjob", sample = 1800) {
+  const d = [], A = [], B = [];
+  await state(a); view(v);
+  for (let i = 0; i < n; i++) {
+    for (const k of [a, b]) {
+      await state(k, 900); view(v); await wait(300); V().resetGpu(); await wait(sample);
+      (k === a ? A : B).push(V().gpuStats().p50);
+    }
+    d.push(B[i] - A[i]);
+  }
+  const med = (x) => [...x].sort((p, q) => p - q)[Math.floor(x.length / 2)];
+  return { a, b, A: med(A), B: med(B), delta: +med(d).toFixed(2), d: d.map((x) => +x.toFixed(2)) };
 }
