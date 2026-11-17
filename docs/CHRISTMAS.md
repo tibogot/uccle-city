@@ -1,6 +1,39 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
-## NEEDLE CARDS: the fir's near level (claude/xmasfir, 2026-11-17; offline, NOT yet seen in the browser)
+## NEEDLE CARDS: BROWSER TURN (claude/xmasfir, 2026-11-17, foundation merged incl. mdraw + twinlink)
+
+- **Fixes from the stills review:** the LED bulbs read as flat white hexagons at 3 m: the tree's beads now 8-sided and the
+  `bulb_warm` material glows brightest facing the eye, 0.22 toward the rim (`normalView . view`): round bulbs close up,
+  a point far off (same in the Blender previews: Layer Weight). The lone white dot beside the fir in the stills was the
+  Blender sky texture's SUN DISC (gone with `sun_disc` off in `--stills`), not a bulb. Baubles 16 x 10 (12 x 8 showed
+  facets at 3 m).
+- **Found in game:** (1) the inner cone read as a sunlit striped column up close: smaller (0.22 L) and its AO held at
+  0.18. (2) At the 45 m switch the FAR fronds stood ~25 % wider and darker than the card crown (both levels forced at
+  40 m from the same spot: `xmasfir_40m_lod0_vs_lod1_narrowed.jpg` is after the fix): far fronds now 0.6 x the width,
+  0.93 x the length, far cone 0.4 L; card gain `xmas.look.cards` 0.92 -> 0.78, `.under` 0.7 -> 0.55: the foliage's
+  median colour LOD1 (44, 50, 50) vs LOD0 (48, 52, 51) sRGB at 47 / 38 m. The near level stays see-through where the far
+  one is solid (dithered over 39.6-45 m: `xmasfir_switch_47_42_38m.jpg`): no pop, a softer crown inside 45 m.
+  Far stand-in LEDs may now sink into the narrower far fronds (pack exemption 3 extended to `bulb_warm`).
+- **Cost** (full city, Place Saint-Job at night, preflight YELLOW: 4.5 GB free, Chrome 4.3 GB; in-page alternation,
+  `debug/gpuAB.js alternate`, GPU p50, 7-12 rounds): at the street-level spot 21 m from the fir: the needle cards alone
+  **-0.01 ms** (12 rounds), the whole fir +0.07 ms median (+0.12 mean; an earlier run -0.05 / +0.25); at 8 m (the fir
+  fills the view): cards +0.26 ms median at 85 % crossing cards, measured again at 70 %: +0.26 (mean +0.30), the fir
+  +0.39; the cards' shadow +0.05-0.07. Outer-first card order (`christmas_pack.mjs outerFirst`) did not change it
+  measurably. The whole layer (chalets, swags, spans incl.) +0.33 to +0.59 median in this YELLOW state (was +0.00 on
+  GREEN before this branch; not the fir: the fir alone is the lines above). Within +0.1 ms at the reference spot; over
+  it only when the tree fills the screen.
+- **Crossing cards 70 %** (from 85 %): LOD0 150,368 triangles (cards 76,544 = 16,343 cards; baubles 37,440).
+- **Images** (`docs/christmas/`): `xmasfir_stjob_{3m,8m,30m}_day.jpg`, `xmasfir_stjob_8m_night.jpg`,
+  `xmasfir_stpierre_{3m,8m,30m}_day.jpg`, `xmasfir_stpierre_{3m,8m}_night.jpg`, `xmasfir_switch_47_42_38m.jpg`,
+  `xmasfir_40m_lod0_vs_lod1_narrowed.jpg` (the Saint-Job 3 / 8 m day shots before the 70 % step).
+- **HEAP browser line** (5 boots, `&xmas=1`, localStorage cleared): `gamemenu=0&orbitcam2=old`, default menu,
+  `gamemenu=0&tilecache=0`, `game=police` + gamePerf police 45 s (54.7 fps, gpu 11.7 ms), `game=falcon`: 0 console errors,
+  0 WebGPU errors, `tripCounts {}` in all five (queue skips flush 8 / 14 / 0 / 0 / 0).
+- **Tour:** run `xmasfir` (views.json, xmas off) vs `foundation`: 1 of 22 flagged, traffic-alsemberg (a moving car at
+  another place: traffic, twinlink; not this branch). Run `xmasfir-xmas` (views_xmas.json) vs `christmas`: 3 of 22:
+  stjob-shops and stpierre-parvis (the fir only: the diff is the tree's outline) and traffic-alsemberg (the car).
+
+## NEEDLE CARDS: the fir's near level (claude/xmasfir, 2026-11-17; offline first)
 
 - **Defect:** up close the fir's branches read as flat leaves / cards, not a fir.
 - **Why it happened:** every branch was a CLOSED, lumpy, flattened sleeve (a solid slab 0.5-0.85 m wide) with a needle
@@ -203,7 +236,7 @@ RTX 4050 (OptiX, ~5 s for the whole kit; `--factory-startup` starts on CPU, the 
 
 | piece | LOD0 / LOD1 / LOD2 triangles | LOD band ends (m) | slots |
 |---|---|---|---|
-| tree | 135,192 / 40,616 / 12,622 (2026-11-17 needle cards) | 45 / 150 / 1000 | needle cards (LOD0 only), needles, bark, bauble, gold, LEDs, star, planks, mulch (LOD2 drops planks + mulch) |
+| tree | 150,368 / 40,582 / 12,578 (2026-11-17 needle cards, browser turn) | 45 / 150 / 1000 | needle cards (LOD0 only), needles, bark, bauble, gold, LEDs, star, planks, mulch (LOD2 drops planks + mulch) |
 | wreath | 5,292 / 2,054 / 1,000 | 10 / 32 / 90 | needles, ribbon, bauble, LEDs, gold |
 | swag | 6,036 / 3,028 / 1,048 | 14 / 45 / 150 | needles, LEDs, bauble, gold, ribbon |
 | lampmotif | 1,716 / 1,110 / 318 | 30 / 100 / 380 | LED rope, frame (LOD2: rope only) |

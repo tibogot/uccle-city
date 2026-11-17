@@ -1,16 +1,16 @@
 {
  "pieces": {
   "tree": {
-   "foliage_tris": 92274,
+   "foliage_tris": 87266,
    "fronds": 270,
-   "needle_cards": 17576,
-   "card_tris": 81552,
+   "needle_cards": 16343,
+   "card_tris": 76544,
    "baubles": 130,
-   "bulbs": 617,
-   "ornaments_clear_of_card_cores": 747,
+   "bulbs": 606,
+   "ornaments_clear_of_card_cores": 736,
    "height_m": 10.4,
    "width_m": 5.9,
-   "triangles_lod0": 135192,
+   "triangles_lod0": 150368,
    "slots": [
     "fir_bark",
     "fir_needles",
@@ -23,9 +23,9 @@
     "mulch"
    ],
    "size_m": [
-    5.821,
-    5.763,
-    10.4
+    5.828,
+    5.802,
+    10.421
    ]
   },
   "wreath": {
@@ -115,7 +115,7 @@
    "lods": [
     {
      "node": "tree_lod0",
-     "triangles": 135192,
+     "triangles": 150368,
      "draws": 9,
      "slots": [
       "fir_bark",
@@ -131,10 +131,10 @@
      "slot_triangles": [
       9812,
       910,
-      81552,
-      21840,
+      76544,
+      37440,
       3668,
-      14808,
+      19392,
       20,
       2576,
       6
@@ -144,7 +144,7 @@
     },
     {
      "node": "tree_lod1",
-     "triangles": 40616,
+     "triangles": 40582,
      "draws": 8,
      "slots": [
       "fir_bark",
@@ -160,10 +160,10 @@
       60,
       31418,
       2600,
-      440,
-      4936,
+      454,
+      4848,
       20,
-      1136,
+      1176,
       6
      ],
      "error_m": 0.035,
@@ -171,7 +171,7 @@
     },
     {
      "node": "tree_lod2",
-     "triangles": 12622,
+     "triangles": 12578,
      "draws": 5,
      "slots": [
       "fir_bark",
@@ -184,7 +184,7 @@
       44,
       9050,
       1040,
-      2468,
+      2424,
       20
      ],
      "error_m": 0.14,
@@ -534,42 +534,42 @@
    ]
   }
  },
- "glb_bytes": 5430760,
+ "glb_bytes": 5878524,
  "lod_ranges_m": {
   "note": "per piece (lods[piece].range): each LOD's band END (camera distance)"
  },
  "audit": {
   "tree_lod0": {
    "blocking": 0,
-   "warnings": 6838,
-   "foliage_exempt": 101930,
+   "warnings": 6871,
+   "foliage_exempt": 90144,
    "counts": {
     "sliver": 6180,
     "nonmanifold": 32,
-    "backtoback": 662,
-    "seam": 21548,
-    "opening": 15
+    "backtoback": 655,
+    "seam": 19823,
+    "opening": 16
    }
   },
   "tree_lod1": {
    "blocking": 0,
-   "warnings": 311,
-   "foliage_exempt": 1347,
+   "warnings": 286,
+   "foliage_exempt": 752,
    "counts": {
-    "sliver": 200,
+    "sliver": 220,
     "nonmanifold": 32,
-    "backtoback": 197,
-    "seam": 4294,
+    "backtoback": 193,
+    "seam": 2769,
     "opening": 16
    }
   },
   "tree_lod2": {
    "blocking": 0,
    "warnings": 6,
-   "foliage_exempt": 437,
+   "foliage_exempt": 168,
    "counts": {
     "sliver": 6,
-    "seam": 1842
+    "seam": 1374
    }
   },
   "wreath_lod0": {

@@ -473,7 +473,7 @@ def build_tree():
     far1, far2 = Mesh("tree__lod1"), Mesh("tree__lod2")
     def inner_cone(Mx, nseg):
         cone_z = [Z0 + 0.15 + (9.2 - Z0) * j / 18 for j in range(19)]
-        cone = [ring(L_at(z) * 0.5 + 0.08, z, nseg) for z in cone_z]
+        cone = [ring(L_at(z) * 0.4 + 0.06, z, nseg) for z in cone_z]
         V, F = [], []
         for r_ in cone: V.extend(r_)
         for j in range(len(cone) - 1):
@@ -501,7 +501,9 @@ def build_tree():
     for Mx, det, cs in ((far1, dict(nl=4, na=5, side=2, snl=3, sna=4), 16), (far2, dict(nl=3, na=4, side=0), 10)):
         inner_cone(Mx, cs)
         for (p0, d, LL, W, dr, tu, col, sd) in branches:
-            frond(Mx, p0, d, LL, W, dr, tu, col, seed=sd, **det)
+            # (narrower and a little shorter than the first fronds: the far crown matches the near level's needle-card
+            # crown in the browser (40 m, both levels forced: the old fronds stood ~25 % wider): no swelling at the switch)
+            frond(Mx, p0, d, LL * 0.93, W * 0.6, dr, tu, col, seed=sd, **det)
         frond(Mx, Vector((0, 0, H_TOP - 0.35)), Vector((0.0, 0.05, 1.0)), 0.55, 0.16, 0.0, 0.0, (0.3, 0.9, 1.0), seed=999, nl=3, na=4, side=0)
         tube(Mx, [(0, 0, 0.3), (0, 0, 3.0), (0, 0, 6.0), (0, 0, 9.0)], [0.17, 0.13, 0.08, 0.03], "fir_bark", segs=8 if Mx is far1 else 6, col=(0.5, 0.5, 1.0))
     # the NEAR level (LOD0): every branch a twig (bark) carrying alpha-tested NEEDLE CARDS (the modelled sprays of
@@ -526,7 +528,7 @@ def build_tree():
         sm = max(0.0, min(1.0, (d - 0.25) / 0.7)); sm = sm * sm * (3 - 2 * sm)
         return 0.38 + 0.62 * sm
     crnd = random.Random(2512)
-    cone_k = 0.3
+    cone_k = 0.22
     def inner_cone0(Mx, nseg):
         # (ends under the leader's sprays: its tip never shows as a bare dark spire)
         cone_z = [Z0 + 0.15 + (8.75 - Z0) * j / 18 for j in range(19)]
@@ -568,7 +570,7 @@ def build_tree():
             tt = s / LL
             Ln = max(0.16, min(0.46, (0.19 + 0.27 * (1 - tt) * reach))) * crnd.uniform(0.85, 1.1)
             var = crnd.choice((0, 1)) if tt > 0.55 or LL < 0.7 else crnd.choice((2, 3))
-            for q in range(2 if crnd.random() < 0.85 else 1):
+            for q in range(2 if crnd.random() < 0.7 else 1):   # (70 %: the browser turn, cards +0.2-0.4 ms at 8 m at 85 %)
                 ang = math.radians(crnd.uniform(38, 60) - 10 * tt)
                 Dd = (T * math.cos(ang) + lat * (sg * math.sin(ang)))
                 Dd = (Dd - Z * math.tan(math.radians(crnd.uniform(4, 22) if q == 0 else crnd.uniform(14, 40)))).normalized()
@@ -637,7 +639,7 @@ def build_tree():
         bb.append((c, r))
         g = PAL[len(bb) % 3] if rnd.random() > 0.2 else PAL[0]
         col = (rnd.random(), g, 1.0)
-        sphere(M, c, r, "bauble", segs=12, rings=8, col=col)
+        sphere(M, c, r, "bauble", segs=16, rings=10, col=col)   # (16 x 10: no facets on the silhouette at 3 m)
         tube(M, [c + Z * (r * 0.9), c + Z * (r * 1.08)], r * 0.22, "gold_metal", segs=8, col=col)
         # (the far stand-ins at the SAME place: a far bauble sinks a little into the solid frond that stands in for the
         # needle cards it nestles among at the near level (christmas_pack.mjs: the far levels' one exemption); moved
@@ -661,7 +663,7 @@ def build_tree():
         flash = 1.0 if rnd.random() < 0.14 else 0.0
         col = (rnd.random(), flash, 1.0)
         bulbs.append(c)
-        bead(M, c, 0.022, "bulb_warm", col, axis=nrm)
+        bead(M, c, 0.022, "bulb_warm", col, axis=nrm, segs=8)   # (8 sides + the viewer's facing glow: a round bulb, no hexagon)
         poly_shape(far1, c, 0.026, "bulb_warm", "oct", col); poly_shape(far2, c, 0.04, "bulb_warm", "tet", col)
     # ---------------------------------------------------------------- the star on its rod
     sc = Vector((0, 0, 9.98)); RO, RI, DEP = 0.42, 0.18, 0.11
@@ -1057,6 +1059,11 @@ if BAKE and objs:
                 for li in p.loop_indices:
                     co = me.vertices[me.loops[li].vertex_index].co
                     c[4 * li + 2] = CANOPY["ao"](co) * (0.62 + 0.38 * a[4 * li])
+            # the dark inner core (fir_needles on the near level): deep in the crown, never a sunlit column
+            ni = [i for i, m_ in enumerate(me.materials) if m_.name == "fir_needles"]
+            for p in me.polygons:
+                if not ni or p.material_index != ni[0]: continue
+                for li in p.loop_indices: c[4 * li + 2] = min(c[4 * li + 2], 0.18)
         me.color_attributes["Col"].data.foreach_set("color", c)
         me.color_attributes.remove(me.color_attributes["AO"])
         me.color_attributes.active_color = me.color_attributes["Col"]
@@ -1129,12 +1136,21 @@ if (PREVIEWS or STILLS) and objs:
         if m["emit"]:
             b.inputs["Emission Color"].default_value = (*base, 1)
             m["emit_node"] = True
+            if m.name == "bulb_warm":
+                # (as the viewer: brightest facing the eye, dimmer at the rim: a round bulb)
+                lw = nt.nodes.new("ShaderNodeLayerWeight"); inv = nt.nodes.new("ShaderNodeMath"); inv.operation = "SUBTRACT"; inv.inputs[0].default_value = 1.0
+                nt.links.new(lw.outputs["Facing"], inv.inputs[1])
+                pw = nt.nodes.new("ShaderNodeMath"); pw.operation = "POWER"; nt.links.new(inv.outputs[0], pw.inputs[0]); pw.inputs[1].default_value = 1.6
+                mp = nt.nodes.new("ShaderNodeMapRange"); nt.links.new(pw.outputs[0], mp.inputs["Value"]); mp.inputs["To Min"].default_value = 0.22
+                ec = nt.nodes.new("ShaderNodeVectorMath"); ec.operation = "SCALE"; ec.inputs[0].default_value = base
+                nt.links.new(mp.outputs[0], ec.inputs["Scale"]); nt.links.new(ec.outputs[0], b.inputs["Emission Color"])
     cam_d = bpy.data.cameras.new("Cam"); cam = bpy.data.objects.new("Cam", cam_d); scn.collection.objects.link(cam); scn.camera = cam
     sun = bpy.data.lights.new("Sun", "SUN"); sun.angle = math.radians(1.0); so = bpy.data.objects.new("Sun", sun); scn.collection.objects.link(so)
     so.rotation_euler = (math.radians(60), 0, math.radians(200))
     scn.world.use_nodes = True
     bg = scn.world.node_tree.nodes.get("Background")
     sky = scn.world.node_tree.nodes.new("ShaderNodeTexSky"); scn.world.node_tree.links.new(sky.outputs[0], bg.inputs[0])
+    if STILLS: sky.sun_disc = False                     # (the sky's own sun disc showed as a lone white dot beside the fir)
     gm = bpy.data.materials.new("preview_ground"); gm.use_nodes = True
     gm.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.18, 0.17, 0.16, 1)
     bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 0, -0.003)); bpy.context.active_object.data.materials.append(gm)

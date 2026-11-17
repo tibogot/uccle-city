@@ -20,7 +20,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, vec2, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn, normalWorld,
-  texture, frontFacing, normalViewGeometry,
+  texture, frontFacing, normalViewGeometry, normalView, positionView,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -37,8 +37,8 @@ export const xmasLook = {
   flash: uniform(1.0),          // the flash bulbs' sparkle
   rope: uniform(0.75),          // LED rope (motifs) vs bulbs
   star: uniform(0.7),
-  cards: uniform(0.92),         // the needle cards' albedo gain (the atlas' mean vs the far fronds' green)
-  under: uniform(0.7),          // the cards' back faces (the silvery undersides seen from below)
+  cards: uniform(0.78),         // the needle cards' albedo gain: 0.78 matches the far fronds' green at the 45 m switch (browser, 2026-11-17)
+  under: uniform(0.55),         // the cards' back faces (the silvery undersides seen from below; 0.55: the switch)
 };
 
 /** the needle atlas: a 1 x 1 opaque stand-in until loaded (node tests: no renderer) */
@@ -183,7 +183,12 @@ function make(slot, uvs, instanced, mask = instanced) {
       const spark = pow(clamp(sin(time.mul(1.9).add(ph.mul(91.0))), 0, 1), float(48)).mul(4.0).mul(xmasLook.flash).mul(smoothstep(0.5, 0.6, c.y));
       const k = slot === "led_rope" ? xmasLook.rope : float(1);
       m.colorNode = lin(0xfff0d8).mul(0.6);
-      m.emissiveNode = warm.mul(shimmer).add(cold.mul(spark)).mul(level()).mul(k);
+      // a bulb (not the rope): brightest where it faces the eye, dimmer toward its rim: the small faceted bead reads as a
+      // ROUND glowing bulb close up (no flat hexagon) and as a point at distance (xmasfir browser turn)
+      const facing = clamp(normalView.dot(positionView.normalize().negate()), 0, 1);
+      const round = slot === "bulb_warm" ? mix(float(0.22), float(1), pow(facing, float(1.6))) : float(1);
+      m.emissiveNode = warm.mul(shimmer).add(cold.mul(spark)).mul(level()).mul(k).mul(round);
+      if (slot === "bulb_warm") m.colorNode = lin(0xfff0d8).mul(mix(float(0.25), float(0.6), facing));
       break;
     }
     case "wire_dark": std({ roughness: 0.5 }); m.colorNode = lin(0x14181a); break;
