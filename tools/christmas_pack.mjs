@@ -21,7 +21,9 @@ const KIT = "christmas";
 const DIR = "models/christmas";
 const NAME = "christmas";
 const LOCK = false;
-const SRC = path.join(DIR, `${NAME}.raw.glb`), DST = path.join(DIR, `${NAME}.glb`);
+// --dry DIR: a trial pack (e.g. one piece built alone with --only) written to DIR, the kit's GLB / json / audit untouched
+const DRY = process.argv.includes("--dry") ? process.argv[process.argv.indexOf("--dry") + 1] : null;
+const SRC = path.join(DIR, `${NAME}.raw.glb`), DST = DRY ? path.join(DRY, `${NAME}.glb`) : path.join(DIR, `${NAME}.glb`);
 const NO_AUDIT = process.argv.includes("--no-audit");
 // per piece: LOD1 / LOD2 simplification errors (m) and the LOD bands' ENDS (camera distance, m): LOD0 to [0], LOD1 to [1],
 // LOD2 to [2], nothing beyond (the viewer cross-fades at each switch)
@@ -31,6 +33,7 @@ const CFG = {
   swag: { err: [0.014, 0.035], range: [14, 45, 150] },
   lampmotif: { err: [0.004, 0.012], range: [30, 100, 380], drop: { metal_frame: [2] } },
   spanmotif: { err: [0.005, 0.015], range: [35, 120, 480], drop: { metal_frame: [2] } },
+  chalet: { err: [0.01, 0.04], range: [40, 130, 600], drop: { chalet_interior: [2], metal_frame: [2], gold_metal: [1, 2] } },
 };
 const CREASE = 50;
 
@@ -344,7 +347,8 @@ fs.writeFileSync(DST, Buffer.concat([head, jh, js, bh, binBuf, binPad]));
 console.log(`wrote ${DST} ${(fs.statSync(DST).size / 1024 / 1024).toFixed(2)} MB (uncompressed ${(rawBytes / 1048576).toFixed(2)} MB)`);
 
 // ------------------------------------------------------------------------------------------------ the kit's json: LOD table
-const infoFile = path.join(DIR, `${NAME}.json`);
+const infoFile = DRY ? path.join(DRY, `${NAME}.json`) : path.join(DIR, `${NAME}.json`);
+if (DRY && !fs.existsSync(infoFile)) fs.copyFileSync(path.join(DIR, `${NAME}.json`), infoFile);
 const info = JSON.parse(fs.readFileSync(infoFile));
 info.lods = table;
 info.glb_bytes = fs.statSync(DST).size;
@@ -353,7 +357,7 @@ info.lod_ranges_m = { note: "per piece (lods[piece].range): each LOD's band END 
 // ------------------------------------------------------------------------------------------------ mesh checker (0 blocking per piece and LOD)
 if (!NO_AUDIT) {
   // every piece and LOD as packed (before quantization), reports in models/christmas/audit/
-  const dir = path.join(DIR, "audit"); fs.mkdirSync(dir, { recursive: true });
+  const dir = DRY ? path.join(DRY, "audit") : path.join(DIR, "audit"); fs.mkdirSync(dir, { recursive: true });
   info.audit = {};
   let blk = 0;
   for (const o of out) {

@@ -77,6 +77,26 @@
     0.078,
     1.629
    ]
+  },
+  "chalet": {
+   "size_m": [
+    3.52,
+    3.314,
+    3.105
+   ],
+   "triangles_lod0": 9608,
+   "slots": [
+    "chalet_trim",
+    "chalet_interior",
+    "chalet_wood",
+    "gold_metal",
+    "metal_frame",
+    "sign_board",
+    "roof_felt",
+    "snow_fake",
+    "fir_needles",
+    "bulb_warm"
+   ]
   }
  },
  "asset": "Christmas kit (tools/blender/christmasKit.py): the square's fir, door wreath, shopfront swag, lamp-post snowflake, cross-street star",

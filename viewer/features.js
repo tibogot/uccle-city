@@ -58,6 +58,7 @@ export const FEATURES = [
   opt("motosound", "modes", "two-wheeler sound", "The motorbike's / scooter's procedural engine, the Villo's freewheel / tyres / bell, wind, tyres (OFF by default; N toggles it while riding). docs/MOTO.md.", { live: "two-wheeler sound" }),
   sel("xmas", "world", "Christmas", "The Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): the firs on Place de Saint-Job and the Parvis Saint-Pierre, LED garlands across the shopping streets (Chaussee de Saint-Job, Rue Xavier De Bue, Chaussee d'Alsemberg), shopfront swags, door wreaths, lamp-post snowflakes. By date: 1 December - 6 January (the real date, or ?day=); 1 = always on, 0 = off.",
     [[null, "by date (1 Dec - 6 Jan)"], ["1", "on"], ["0", "off"]]),
+  on("xmaschalets", "world", "Christmas market", "The Christmas market's chalets on Place de Saint-Job (with the Christmas layer; models/christmas/site.json chalets). ?xmaschalets=0: without."),
   on("twowheelers", "world", "two-wheelers", "Parked motorbikes / scooters near shops (groups in parking-lane slots) and motorbikes / scooters in the traffic (viewer/moto/cityTwoWheelers.js, docs/MOTO.md)."),
   opt("drivedebug", "modes", "car colliders", "Draw the drive colliders (key G in drive mode).", { live: "car colliders (G)" }),
   opt("chardebug", "modes", "character colliders", "Draw the third-person collision world (key G).", { live: "character colliders (G)" }),

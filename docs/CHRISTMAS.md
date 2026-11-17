@@ -1,5 +1,33 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## UPDATE 2026-11-17 (owner + browser turn 1, interrupted by the owner's playtest)
+
+- **Owner:** Uccle puts a big fir on Place Saint-Job AND on the Parvis Saint-Pierre (in the squares); there WILL be a
+  small Christmas market with chalets on Place Saint-Job. Garlands / swags / wreaths / snowflakes stay, tunable per street.
+- **Browser turn 1 (quick mode, night, Place Saint-Job):** the layer loads and draws (no console error of ours; 493
+  instances, 33 draws, shaders 7.1 s in the background), the tree, its LEDs and star read well at night
+  (`docs/christmas/stjob_night_square.jpg`, `stjob_night_tree_close.jpg`), lamp snowflakes and swag LEDs visible.
+  **DEFECT found:** the swags hung behind the classic fronts' cornice (only sprig tips showed over it:
+  `docs/christmas/DEFECT_swag_hidden_in_cornice.jpg`). FIX (code, not yet seen): site.json now lists the FRONTS; the city
+  decides each front's family with the shop kit's own rule (`viewer/shops/shopLayout.js frontFamily`, now exported and
+  used by layoutShop too) and hangs the modules from the classic cornice's corona edge (0.94 m over the fascia bottom,
+  0.30 m out) or the modern fascia box's face (0.62 m, 0.22 m out), 0.7 high (a shallower sag).
+  Not yet checked: per-instance cross-fade under motion, cost on GREEN, Saint-Pierre, snow, day.
+- **The market (new piece `chalet`, tools/blender/christmasKit.py build_chalet):** a Brussels market chalet 3.0 x 2.0 m,
+  walls 2.2 m, a 38-degree green felt roof with fake snow, shiplap boards (stained: dark walnut .. natural pine per
+  instance), corner posts, a serving hatch with its shutter propped 20 degrees over the horizontal on two struts, a
+  counter on brackets, a blank cream sign board, shelves of goods inside (lit warm at night), a door in the right gable,
+  a fir garland in three scallops + 16 LEDs under the front eave. 9,608 / 6,772 / 2,666 triangles (LOD band ends 40 /
+  130 / 600 m), mesh audit 0 blocking (dry pack). Placement (`build_site.py chalets_on_square`): 6 chalets in two rows
+  facing a 4 m aisle along the square's long axis beside the fir, each footprint (3.6 x 2.8 m with the shutter) 2.5 m in
+  from the paving's edge (the parked cars), 1 m clear of the drawn trees' trunks, 3 m off the planter, 4 m from shops.
+  City: instanced, shadows, drive colliders, on the lowest corner's ground; `?xmaschalets=0` / `config.chalets` off.
+- **Per-street switches:** `models/christmas/site.json config.streets[<name>] = { spans, swags, wreaths, lamps }`.
+- **QUEUED (needs the GPU: after the owner's playtest):** rebuild the whole kit with the AO bake and previews, then pack
+  (the committed christmas.glb has no chalet yet; the city skips the market until then):
+  `blender --factory-startup -b -P tools/blender/christmasKit.py -- --previews --samples 32` then `node tools/christmas_pack.mjs`.
+
+
 Owner's ask (2026-11-15, deadline before Christmas 2026): a date-driven, switchable Christmas layer: a big decorated tree
 on Place Saint-Job and on Place / Parvis Saint-Pierre, light garlands across the shopping streets, decorations on lamp
 posts, shopfronts and doors; a market chalet only if Uccle really has one; emissive only (fixed light count); works under

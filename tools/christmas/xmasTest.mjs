@@ -19,8 +19,8 @@ ok(xmasActive(P("day=350"), new Date(2026, 6, 1)) === true && xmasActive(P("day=
 // ---- the kit
 const { loadXmasKit } = await import("../../viewer/christmas/xmasKit.js");
 const kit = await loadXmasKit();
-const want = ["tree", "wreath", "swag", "lampmotif", "spanmotif"];
-ok(want.every((p) => kit.pieces[p]?.lods.length === 3), `5 pieces x 3 levels (${Object.keys(kit.pieces).join(", ")})`);
+const want = ["tree", "wreath", "swag", "lampmotif", "spanmotif", "chalet"].filter((p) => kit.pieces[p]);
+ok(want.length >= 5 && want.every((p) => kit.pieces[p]?.lods.length === 3), `${want.length} pieces x 3 levels (${Object.keys(kit.pieces).join(", ")})`);
 for (const p of want) {
   const P_ = kit.pieces[p];
   const colour = P_.lods.every((l) => l.every((x) => x.geometry.attributes.color?.itemSize === 4));
@@ -30,8 +30,9 @@ for (const p of want) {
 }
 const slots = new Set(Object.values(kit.pieces).flatMap((p) => p.lods.flatMap((l) => l.map((x) => x.slot))));
 let built = 0;
-for (const s of [...slots, "wire_dark"]) for (const uvs of [true, false]) for (const instanced of [true, false]) { const m = kit.slotMaterial(s, { uvs, instanced }); if (m?.isNodeMaterial) built++; }
-ok(built === (slots.size + 1) * 4, `${built} materials built for ${slots.size} slots (+ the span wire): ${[...slots].join(", ")}`);
+const EXTRA = ["wire_dark", ...["chalet_wood", "chalet_trim", "roof_felt", "snow_fake", "chalet_interior", "sign_board"].filter((x) => !slots.has(x))];
+for (const s of [...slots, ...EXTRA]) for (const uvs of [true, false]) for (const instanced of [true, false]) { const m = kit.slotMaterial(s, { uvs, instanced }); if (m?.isNodeMaterial) built++; }
+ok(built === (slots.size + EXTRA.length) * 4, `${built} materials built for ${slots.size} slots + ${EXTRA.join(", ")}: ${[...slots].join(", ")}`);
 const emissive = ["bulb_warm", "led_rope", "star_glow"].every((s) => kit.slotMaterial(s, { instanced: true }).emissiveNode);
 ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)");
 
@@ -41,7 +42,16 @@ ok(site.trees.length === 2, `trees: ${site.trees.map((t) => `${t.id} (${t.x}, ${
 const badSpan = site.spans.filter((s) => { const w = Math.hypot(s.b[0] - s.a[0], s.b[2] - s.a[2]); return w < 6.9 || w > 26.1 || Math.abs(s.a[1] - s.b[1]) > 4; });
 ok(site.spans.length > 20 && !badSpan.length, `${site.spans.length} spans 7-26 m wide, both ends within 4 m of height (${badSpan.length} off)`);
 ok(site.spans.every((s) => !s.tram || !s.motif), `no star motif over a tram line (${site.spans.filter((s) => s.tram).length} tram spans at 7.3 m)`);
-ok(site.swags.every((w) => Math.abs(Math.hypot(w.nx, w.nz) - 1) < 0.02 && w.sx > 0.6 && w.sx < 1.45), `${site.swags.length} swag modules: unit normals, scale 0.6-1.45`);
+ok(site.fronts.every((w) => Math.abs(Math.hypot(w.nx, w.nz) - 1) < 0.02 && w.w > 0 && w.eaves > w.y), `${site.fronts.length} shopfronts for swags: unit normals, widths, eaves over the ground`);
+const { frontFamily } = await import("../../viewer/shops/shopLayout.js");
+const { hash01 } = await import("../../viewer/streetlife/layout.js");
+const fams = site.fronts.map((f) => frontFamily({ id: f.id, kind: f.kind, cat: f.cat }, f, null, hash01));
+ok(fams.every((x) => x.fasciaY === 2.55 || x.fasciaY === 3.0), `front families from the shop kit's rule: ${fams.filter((x) => x.classic).length} classic (cornice), ${fams.filter((x) => !x.classic).length} modern (fascia box)`);
+const ch = site.chalets;
+const sep = ch.every((a, i) => ch.every((b, j) => i === j || Math.hypot(a.x - b.x, a.z - b.z) >= 3.0));
+const fir = site.trees.find((t) => t.id === "stjob");
+ok(ch.length >= 4 && ch.length <= 8 && sep && ch.every((c) => Math.hypot(c.x - fir.x, c.z - fir.z) > 4.4), `${ch.length} market chalets on Place de Saint-Job, >= 3 m apart, off the fir's planter`);
+ok(site.config?.streets && Object.values(site.config.streets).every((v) => ["spans", "swags", "wreaths", "lamps"].every((k) => k in v)), `per-street switches for ${Object.keys(site.config.streets).length} streets (+ chalets: ${site.config.chalets})`);
 ok(site.wreaths.length > 20, `${site.wreaths.length} door wreaths`);
 
 // ---- the garlands' geometry

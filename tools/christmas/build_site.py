@@ -10,8 +10,11 @@ From the city's own data only (no invented positions):
             SPACING m, a perpendicular ray each side to the first UrbIS building wall (buildings.json footprints); a span
             hangs between the two walls at HEIGHT m over each wall's ground (the building's base), only when both
             walls are tall enough (eaves) and the street is 7-26 m wide
-  swags     shopfront garlands: the street life's shops / cafes / restaurants (data/streetlife/<tile>.json pois with
-            their facade: x, y, z, normal, width, eaves) on the decorated streets or near the trees
+  fronts    the shopfronts that get garlands: the street life's shops / cafes / restaurants (data/streetlife/<tile>.json
+            pois with their facade: x, y, z, normal, width, eaves) on the decorated streets or near the trees; the city
+            hangs the swag modules on each front's cornice / fascia box (viewer/shops/shopLayout.js frontFamily)
+  chalets   the Christmas market on Place de Saint-Job (owner, 2026-11-17): 4-8 chalets on the open paving round the fir
+  config    per-street switches (spans / swags / wreaths / lamps) and the chalets: tune here, no code
   wreaths   door wreaths on about a third of the houses (data/streetlife address numbers) on the decorated streets
   streets   the decorated streets' centre lines: the city decorates the street lamps along them (lamp motifs)
 """
@@ -151,24 +154,21 @@ for a in AREAS:
                           "sag": round(0.3 + 0.02 * width, 2), "motif": not tram, "tram": tram})
 for q in spans: q.pop("mid")
 
-# ------------------------------------------------------------------------------------------------ shopfront swags
+# ------------------------------------------------------------------------------------------------ shopfronts (the city hangs the swags)
+# per front: the POI fields viewer/shops/shopLayout.js frontFamily() needs (classic cornice or modern fascia box: the
+# garland's height and how far out it hangs are decided in the city, from the same rule the shop kit draws with)
 SHOP_KINDS = {"shop", "cafe", "restaurant", "bakery", "pharmacy", "fastfood", "bar", "supermarket", "bank"}
-swags = []
+fronts = []
 deco_names = {s for a in AREAS for s in a["streets"]}
 for p in pois:
     f = p["face"]
     if p.get("kind") not in SHOP_KINDS: continue
-    on_street = fr(f.get("street")) in deco_names and any(near_area(f["x"], f["z"], a) for a in AREAS)
+    street = fr(f.get("street"))
+    on_street = street in deco_names and any(near_area(f["x"], f["z"], a) for a in AREAS)
     near_tree = any(math.hypot(f["x"] - t["x"], f["z"] - t["z"]) < 160 for t in TREES)
     if not (on_street or near_tree): continue
-    W = max(2.0, min(f["w"], 9.9))
-    low = f["eaves"] - f["y"] < 4.0
-    y = f["y"] + (2.55 if low else 3.0) + (0.68 if low else 0.8) + 0.28     # over the fascia + its cornice (viewer/shops)
-    n = max(1, round(W / 1.6)); sc = W / (n * 1.6)
-    tx, tz = -f["nz"], f["nx"]
-    for k in range(n):
-        u = -W / 2 + (k + 0.5) * W / n
-        swags.append({"x": round(f["x"] + tx * u, 3), "y": round(y, 3), "z": round(f["z"] + tz * u, 3), "nx": f["nx"], "nz": f["nz"], "sx": round(sc, 3), "shop": p.get("name") or p["id"]})
+    fronts.append({"id": p["id"], "kind": p.get("kind"), "cat": p.get("cat"), "name": p.get("name"), "street": street,
+                   "x": round(f["x"], 3), "y": round(f["y"], 3), "z": round(f["z"], 3), "nx": f["nx"], "nz": f["nz"], "w": f["w"], "eaves": f["eaves"]})
 
 # ------------------------------------------------------------------------------------------------ door wreaths
 wreaths = []
@@ -179,14 +179,77 @@ for n_ in numbers:
     if h01(n_["id"] + "wreath") > 0.33: continue
     if any(math.hypot(n_["x"] - x, n_["z"] - z) < 3.0 for x, z in shop_pts): continue
     if any(math.hypot(n_["x"] - w["x"], n_["z"] - w["z"]) < 4.0 for w in wreaths): continue
-    wreaths.append({"x": round(n_["x"], 3), "y": round(n_["y"] + 1.7, 3), "z": round(n_["z"], 3), "nx": n_["nx"], "nz": n_["nz"], "n": n_.get("n")})
+    wreaths.append({"x": round(n_["x"], 3), "y": round(n_["y"] + 1.7, 3), "z": round(n_["z"], 3), "nx": n_["nx"], "nz": n_["nz"], "n": n_.get("n"), "street": n_.get("fr")})
 
+
+# ------------------------------------------------------------------------------------------------ the market chalets (Place de Saint-Job)
+def chalets_on_square():
+    """4-8 chalets on the square's open paving (UrbIS surface "P"), in two rows facing a 4 m aisle along the square's long
+    axis, beside the fir: each footprint (3.6 x 2.8 m: roof overhangs + the propped shutter in front) inside the paving
+    with 2.5 m to spare, 1.0 m clear of every drawn tree's trunk, 3 m off the fir's planter, 1.2 m between chalets,
+    4 m from any shop's front, 2.5 m in from the paving's edge (the parked cars); one aisle; nearest to the fir first"""
+    sq = None
+    for t in ("I6", "I5"):
+        fp = os.path.join(ROOT, "data", "tiles", t, "surfaces.json")
+        for s_ in json.load(open(fp, encoding="utf-8"))["surfaces"]:
+            if s_["c"] == 4 and fr(s_.get("name")) == "Place de Saint-Job" and (sq is None or len(s_["rings"][0]) > len(sq)): sq = s_["rings"][0]
+    trees_ = []
+    for t in ("I6", "I5"):
+        trees_ += [(q["x"], q["z"]) for q in json.load(open(os.path.join(ROOT, "data", "tiles", t, "features.json"), encoding="utf-8"))["trees"]]
+    fir = TREES[0]
+    # the long axis (PCA of the ring)
+    cx = sum(x for x, _ in sq) / len(sq); cz = sum(z for _, z in sq) / len(sq)
+    sxx = sum((x - cx) ** 2 for x, _ in sq); szz = sum((z - cz) ** 2 for _, z in sq); sxz = sum((x - cx) * (z - cz) for x, z in sq)
+    ang = 0.5 * math.atan2(2 * sxz, sxx - szz); ux, uz = math.cos(ang), math.sin(ang); vx, vz = -uz, ux
+    def edist(x, z):
+        d = 1e9
+        for i in range(len(sq)):
+            ax, az = sq[i - 1]; bx, bz = sq[i]; dx, dz = bx - ax, bz - az; L = dx * dx + dz * dz or 1e-9
+            t = max(0, min(1, ((x - ax) * dx + (z - az) * dz) / L)); d = min(d, math.hypot(ax + t * dx - x, az + t * dz - z))
+        return d
+    HW, FR, BK = 1.8, 1.45, 1.35                     # half width, front (shutter) and back reach from the centre
+    picks = []
+    # the aisle: the axis line through the fir's side of the square's centre
+    for s_, oo in [(k * 0.5, o * 0.5) for k in range(-160, 161) for o in range(-6, 7)]:
+        for side in (-1, 1):
+            off = oo + side * (2.0 + FR)              # (the front faces the aisle; the aisle may sit off the centre line)
+            x = cx + ux * s_ + vx * off; z = cz + uz * s_ + vz * off
+            fx, fz = -side * vx, -side * vz           # the front's outward normal: toward the aisle
+            corners = [(x + ux * a * HW + fx * b, z + uz * a * HW + fz * b) for a in (-1, 1) for b in (FR, -BK)]
+            if not all(pip(qx, qz, sq) and edist(qx, qz) >= 2.5 for qx, qz in corners): continue   # (the parking along the edges)
+            def rect_d(px, pz):
+                lx = (px - x) * ux + (pz - z) * uz; ly = (px - x) * fx + (pz - z) * fz
+                ddx = max(abs(lx) - HW, 0); ddy = max(ly - FR, -BK - ly, 0)
+                return math.hypot(ddx, ddy)
+            if any(rect_d(tx, tz) < 1.0 for tx, tz in trees_): continue
+            if rect_d(fir["x"], fir["z"]) < 1.4 + 3.0: continue
+            if any(rect_d(q["x"], q["z"]) < 4.0 for q in fronts): continue
+            picks.append((math.hypot(x - fir["x"], z - fir["z"]), x, z, fx, fz, oo))
+    picks.sort()
+    out = []
+    aisle = None
+    for d, x, z, fx, fz, oo in picks:
+        if len(out) >= 6: break
+        if aisle is not None and abs(oo - aisle) > 0.01: continue
+        aisle = oo
+        if any(math.hypot(x - q["x"], z - q["z"]) < 2 * HW + 1.2 and abs((x - q["x"]) * fx + (z - q["z"]) * fz) < FR + BK for q in out): continue
+        if any(math.hypot(x - q["x"], z - q["z"]) < 3.0 for q in out): continue
+        out.append({"x": round(x, 3), "z": round(z, 3), "yaw": round(math.atan2(fx, fz), 4), "tone": round(h01(f"chalet{len(out)}"), 3)})
+    return out
+
+
+chalets = chalets_on_square()
+
+# per-street switches (tune later without code: the city reads these): a street absent here = everything on
+CONFIG = {"chalets": True,
+          "streets": {name: {"spans": True, "swags": True, "wreaths": True, "lamps": True} for name in sorted(deco_names)}}
 site = {
-    "version": 1, "generated_by": "tools/christmas/build_site.py",
-    "season": {"from": "12-01", "to": "01-06", "note": "date-driven; ?xmas=1 forces it on, ?xmas=0 off"},
+    "version": 2, "generated_by": "tools/christmas/build_site.py",
+    "season": {"from": "12-01", "to": "01-06", "note": "date-driven; ?xmas=1 forces it on, ?xmas=0 off; ?xmaschalets=0 without the market"},
+    "config": CONFIG,
     "trees": [{"id": t["id"], "x": t["x"], "z": t["z"], "scale": t["scale"], "yaw": round(math.atan2(t["face"][0], t["face"][1]), 4)} for t in TREES],
-    "spans": spans, "swags": swags, "wreaths": wreaths, "streets": streets,
-    "counts": {"spans": len(spans), "swags": len(swags), "wreaths": len(wreaths), "streets": len(streets)},
+    "chalets": chalets, "spans": spans, "fronts": fronts, "wreaths": wreaths, "streets": streets,
+    "counts": {"spans": len(spans), "fronts": len(fronts), "wreaths": len(wreaths), "streets": len(streets), "chalets": len(chalets)},
 }
 json.dump(site, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(json.dumps(site["counts"]), {a["id"]: sum(1 for s in spans if s["area"] == a["id"]) for a in AREAS}, f"{os.path.getsize(OUT) // 1024} KB")

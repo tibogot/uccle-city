@@ -65,6 +65,12 @@ SLOTS = {
     "wood_planks": ((0.42, 0.3, 0.18), 0.75, 0.0, 0),         # the planter's pine boards
     "mulch": ((0.12, 0.08, 0.05), 1.0, 0.0, 0),
     "ribbon_red": ((0.45, 0.02, 0.03), 0.45, 0.0, 0),         # velvet ribbon
+    "chalet_wood": ((0.32, 0.2, 0.12), 0.8, 0.0, 0),          # the chalet's stained boards (tone per instance in the city)
+    "chalet_trim": ((0.1, 0.07, 0.05), 0.7, 0.0, 0),          # posts, fascias, frames: dark stain
+    "roof_felt": ((0.12, 0.16, 0.12), 0.9, 0.0, 0),           # bitumen roofing felt, dark green
+    "snow_fake": ((0.9, 0.92, 0.95), 0.85, 0.0, 0),           # the market's fake snow on the roofs
+    "chalet_interior": ((0.55, 0.42, 0.28), 0.8, 0.0, 2),     # the warm-lit inside seen through the hatch
+    "sign_board": ((0.78, 0.72, 0.6), 0.7, 0.0, 0),           # the cream sign board over the hatch
 }
 MATS = {}
 for n, (c, r, m, e) in SLOTS.items():
@@ -693,7 +699,123 @@ def build_spanmotif():
     return M, {1: f1, 2: f2}, {}
 
 
-BUILD = {"tree": build_tree, "wreath": build_wreath, "swag": build_swag, "lampmotif": build_lampmotif, "spanmotif": build_spanmotif}
+def build_chalet():
+    """a Brussels Christmas-market chalet (the Plaisirs d'Hiver type): 3.0 x 2.0 m, walls 2.2 m, a 38-degree felt roof
+    with fake snow, a serving hatch with its shutter propped up as an awning, a counter on brackets, a blank sign board,
+    a fir garland and warm LEDs along the front eave, a door in the right gable, shelves of goods inside.
+    Origin: the floor's centre on the ground; front (the hatch) = -Y (glTF +Z)"""
+    rnd = random.Random(1890)
+    M = Mesh("chalet"); f1 = Mesh("chalet__lod1"); f2 = Mesh("chalet__lod2")
+    W, D, WH, RZ, B0 = 3.0, 2.0, 2.2, 3.0, 0.15           # width, depth, wall top, ridge, deck top
+    T, BH = 0.06, 0.14                                     # core wall thickness, board height
+    X0, X1, Y0, Y1 = -W / 2, W / 2, -D / 2, D / 2
+    HX0, HX1, HZ0, HZ1 = -1.1, 1.1, 1.0, 1.85              # the hatch
+    # the deck + its skirt
+    box(M, (0, 0, B0 / 2), (W + 0.12, D + 0.12, B0), "chalet_trim", bevel=0.008)
+    # core walls (the boards' backing; their inner faces are the inside seen through the hatch)
+    inner = "chalet_interior"
+    box(M, (0, Y1 - T / 2, (B0 + WH) / 2), (W, T, WH - B0), inner, grain=(1, 0, 0))
+    for sx in (-1, 1): box(M, (sx * (W / 2 - T / 2), 0, (B0 + WH) / 2), (T, D - 2 * T, WH - B0), inner, grain=(0, 1, 0))
+    box(M, (0, Y0 + T / 2, (B0 + HZ0) / 2), (W, T, HZ0 - B0), inner)
+    box(M, (0, Y0 + T / 2, (HZ1 + WH) / 2), (W, T, WH - HZ1), inner)
+    for xa, xb in ((X0, HX0), (HX1, X1)): box(M, ((xa + xb) / 2, Y0 + T / 2, (HZ0 + HZ1) / 2), (xb - xa, T, HZ1 - HZ0), inner)
+    box(M, (0, 0, WH - 0.02), (W - 2 * T - 0.004, D - 2 * T - 0.004, 0.04), inner)          # the ceiling, inside the walls
+    # gables (core triangles behind the boards)
+    for sx in (-1, 1):
+        x = sx * (W / 2 - T / 2)
+        V = [Vector((x - T / 2, Y0, WH)), Vector((x - T / 2, Y1, WH)), Vector((x - T / 2, 0, RZ - 0.05)), Vector((x + T / 2, Y0, WH)), Vector((x + T / 2, Y1, WH)), Vector((x + T / 2, 0, RZ - 0.05))]
+        M.add(V, outward(V, [[0, 1, 2], [3, 5, 4], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], Vector((x, 0, WH + 0.3))), "chalet_wood", (0.5, 0.6, 1.0), smooth=False)
+
+    def boards(axis_x, fixed, a0, a1, z0, z1, out, holes=(), gable=False):
+        """shiplap: horizontal boards 2.2 cm thick just off the core (a 6 mm shadow gap between them), split round holes"""
+        z = z0
+        while z < z1 - 0.03:
+            h = min(BH - 0.006, z1 - z)
+            zc = z + h / 2
+            lo, hi = a0, a1
+            if gable:
+                half = (D / 2) * (RZ - 0.05 - (z + h)) / (RZ - 0.05 - WH)
+                lo, hi = -half + 0.02, half - 0.02
+                if hi - lo < 0.1: break
+            segs = [(lo, hi)]
+            for (ha, hb, hz0, hz1) in holes:
+                if hz0 < zc < hz1:
+                    segs = [q for (sa, sb) in segs for q in ((sa, min(sb, ha)), (max(sa, hb), sb)) if q[1] - q[0] > 0.04]
+            tone = (rnd.random(), 0.8 + 0.2 * rnd.random(), 1.0)
+            for sa, sb in segs:
+                c = ((sa + sb) / 2, fixed + out * 0.0135, zc) if axis_x else (fixed + out * 0.0135, (sa + sb) / 2, zc)
+                size = (sb - sa, 0.022, h) if axis_x else (0.022, sb - sa, h)
+                box(M, c, size, "chalet_wood", tone, grain=(1, 0, 0) if axis_x else (0, 1, 0), bevel=0.004)
+            z += BH
+    boards(True, Y0, X0 + 0.05, X1 - 0.05, B0, WH, -1, holes=[(HX0 - 0.02, HX1 + 0.02, HZ0 - 0.02, HZ1 + 0.02)])
+    boards(True, Y1, X0 + 0.05, X1 - 0.05, B0, WH, 1)
+    DOOR = (-0.45, 0.35, B0, B0 + 1.9)
+    for sx in (-1, 1):
+        boards(False, sx * W / 2, Y0 + 0.05, Y1 - 0.05, B0, WH, sx, holes=[DOOR] if sx > 0 else [])
+        boards(False, sx * W / 2, 0, 0, WH, RZ - 0.05, sx, gable=True)
+    # corner posts, the hatch frame, the counter on two brackets, the door with its knob
+    for sx in (-1, 1):
+        for sy in (-1, 1): box(M, (sx * (W / 2 + 0.005), sy * (D / 2 + 0.005), (B0 - 0.03 + WH + 0.02) / 2), (0.09, 0.09, WH - B0 + 0.05), "chalet_trim", bevel=0.006)   # (ends off the core's planes)
+    for (c, size) in (((0, Y0 - 0.02, HZ1 + 0.035), (HX1 - HX0 + 0.14, 0.05, 0.07)), ((HX0 - 0.035, Y0 - 0.02, (HZ0 + HZ1) / 2), (0.07, 0.05, HZ1 - HZ0)), ((HX1 + 0.035, Y0 - 0.02, (HZ0 + HZ1) / 2), (0.07, 0.05, HZ1 - HZ0))):
+        box(M, c, size, "chalet_trim", bevel=0.005)
+    box(M, (0, Y0 - 0.12, HZ0 - 0.01), (HX1 - HX0 + 0.3, 0.42, 0.04), "chalet_trim", bevel=0.006)
+    for sx in (-0.9, 0.9): box(M, (sx, Y0 - 0.16, HZ0 - 0.17), (0.04, 0.04, 0.3), "chalet_trim", rot=Matrix.Rotation(math.radians(-38), 3, "X"))
+    dc = (W / 2 + 0.032, (DOOR[0] + DOOR[1]) / 2, (DOOR[2] + DOOR[3]) / 2)
+    box(M, dc, (0.035, DOOR[1] - DOOR[0], DOOR[3] - DOOR[2]), "chalet_trim", bevel=0.006)
+    sphere(M, (dc[0] + 0.035, DOOR[1] - 0.1, B0 + 1.0), 0.025, "gold_metal", segs=8, rings=5)
+    # inside: two shelves on the back wall with goods (boxes, jars: the interior slot, toned per item)
+    for z in (1.15, 1.6):
+        box(M, (0, Y1 - T - 0.125, z), (W - 2 * T - 0.02, 0.24, 0.025), "chalet_trim")
+        for i in range(9):
+            x = -1.2 + i * 0.3 + rnd.uniform(-0.04, 0.04); h = rnd.uniform(0.1, 0.24)
+            box(M, (x, Y1 - T - 0.14, z + 0.0125 + h / 2), (rnd.uniform(0.1, 0.2), rnd.uniform(0.08, 0.16), h), "chalet_interior", (rnd.random(), 0.3 + 0.7 * rnd.random(), 1.0), bevel=0.004)
+    # the shutter: hinged over the hatch, propped 110 degrees up and out (20 degrees over the horizontal), two struts
+    hinge = Vector((0, Y0 - 0.045, HZ1 + 0.07)); R = Matrix.Rotation(math.radians(-110), 3, "X")
+    sh_len = HZ1 - HZ0 + 0.1
+    c = hinge + R @ Vector((0, 0.025, -sh_len / 2))
+    box(M, c, (HX1 - HX0 + 0.12, 0.04, sh_len), "chalet_wood", (0.6, 0.9, 1.0), rot=R, grain=(1, 0, 0), bevel=0.005)
+    for sx in (-0.95, 0.95):
+        tip = hinge + R @ Vector((0, 0.045, -sh_len + 0.08)); tip.x = sx
+        tube(M, [Vector((sx, Y0 - 0.02, HZ0 + 0.35)), tip], 0.012, "metal_frame", segs=6)
+    # the sign board over the hatch (blank: the city may write on it)
+    box(M, (0, Y0 - 0.03, HZ1 + 0.07 + 0.13), (1.5, 0.02, 0.18), "sign_board", bevel=0.004)
+    # the roof: two felt slabs (overhang 0.35 front / back, 0.25 at the gables), the eaves' fascias, the ridge cap,
+    # fake snow on top (embedded 1.5 cm in the felt: no coplanar faces)
+    OV, OS, TH = 0.35, 0.25, 0.06
+    pitch = math.atan2(RZ - WH, D / 2)
+    for sy in (-1, 1):
+        cut = TH * math.sin(pitch)                       # (the slabs stop short of each other at the ridge: the cap covers)
+        run = (D / 2 + OV) / math.cos(pitch) - cut
+        Rr = Matrix.Rotation(-sy * pitch, 3, "X")
+        ctr = Vector((0, sy * (D / 2 + OV) / 2, RZ - math.tan(pitch) * (D / 2 + OV) / 2 + TH / 2 + 0.01)) + Rr @ Vector((0, sy * cut / 2, 0))
+        box(M, ctr, (W + 2 * OS, run, TH), "roof_felt", rot=Rr, grain=(1, 0, 0), bevel=0.01)
+        box(M, ctr + Rr @ Vector((0, 0, TH / 2 + 0.008)), (W + 2 * OS - 0.1, run - 0.1, 0.045), "snow_fake", rot=Rr, bevel=0.02)
+        box(M, Vector((0, sy * (D / 2 + OV - 0.01), RZ - math.tan(pitch) * (D / 2 + OV) - 0.02)), (W + 2 * OS - 0.03, 0.03, 0.14), "chalet_trim", bevel=0.005)
+    box(M, (0, 0, RZ + 0.075), (W + 2 * OS + 0.02, 0.16, 0.06), "chalet_trim", bevel=0.01)
+    # the fir garland in three scallops under the front fascia (touching it at the hooks), sprigs, 16 LEDs
+    fb = RZ - math.tan(pitch) * (D / 2 + OV) - 0.09                   # the fascia's bottom
+    ey = Y0 - OV + 0.01
+    xs = [X0 - OS + 0.08 + (W + 2 * OS - 0.16) * i / 30 for i in range(31)]
+    gp = [Vector((x, ey, fb - 0.041 - 0.12 * abs(math.sin(math.pi * 3 * i / 30)))) for i, x in enumerate(xs)]
+    tube(M, gp, 0.04, "fir_needles", segs=8, col=(0.4, 0.75, 1.0))
+    for i in range(40):
+        p = gp[int(i * 30 / 40)]; a = rnd.uniform(0, 2 * math.pi)
+        d = Vector((rnd.uniform(-0.6, 0.6), -abs(math.cos(a)) * 0.7 - 0.3, -abs(math.sin(a)) * 0.8)).normalized()
+        frond(M, p + Vector((0, -0.01, -0.01)), d, rnd.uniform(0.11, 0.15), 0.06, 0.0, 0.0, (rnd.random(), 0.8, 1.0), seed=1300 + i, nl=5, na=6, side=0)
+    bvh = BVHTree.FromPolygons([tuple(v) for v in M.V], M.F, all_triangles=False)
+    for i in range(16):
+        p = gp[1 + int(i * 28 / 15)] + Vector((0, -0.07, -0.03))
+        for _ in range(14):
+            loc_, _n, _i, dist = bvh.find_nearest(p)
+            if loc_ is None or dist >= 0.02: break
+            p = p + Vector((0, -0.004, -0.002))
+        col = (rnd.random(), 1.0 if i % 6 == 3 else 0.0, 1.0)
+        bead(M, p, 0.012, "bulb_warm", col, axis=Vector((0, -1, 0)))
+        poly_shape(f1, p, 0.014, "bulb_warm", "oct", col); poly_shape(f2, p, 0.03, "bulb_warm", "tet", col)
+    return M, {1: f1, 2: f2}, {"size_m": [W, D, RZ + 0.1]}
+
+
+BUILD = {"tree": build_tree, "wreath": build_wreath, "swag": build_swag, "lampmotif": build_lampmotif, "spanmotif": build_spanmotif, "chalet": build_chalet}
 objs, fars, INFO = [], {}, {}
 for name, fn in BUILD.items():
     if ONLY and name not in ONLY: continue
@@ -720,7 +842,7 @@ def gpu_setup():
         scn.cycles.device = "CPU"; tick(f"Cycles device: CPU ({e})")
 
 
-AO_DIST = {"tree": 0.9, "wreath": 0.12, "swag": 0.12, "lampmotif": 0.1, "spanmotif": 0.1}
+AO_DIST = {"tree": 0.9, "wreath": 0.12, "swag": 0.12, "lampmotif": 0.1, "spanmotif": 0.1, "chalet": 0.5}
 if BAKE and objs:
     scn.render.engine = "CYCLES"; scn.cycles.samples = SAMPLES
     gpu_setup()
@@ -735,7 +857,7 @@ if BAKE and objs:
         # alone, on a ground plane (the tree) or against a wall (the wall pieces) / in the air (the motifs)
         for q in bake_list: q.hide_render = q is not o
         extra = []
-        if base == "tree":
+        if base in ("tree", "chalet"):
             bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 0, -0.002)); extra.append(bpy.context.active_object)
         elif base in ("wreath", "swag"):
             bpy.ops.mesh.primitive_plane_add(size=4, location=(0, 0.002, 0), rotation=(math.pi / 2, 0, 0)); extra.append(bpy.context.active_object)
@@ -813,9 +935,10 @@ if PREVIEWS and objs:
     bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 0, -0.003)); bpy.context.active_object.data.materials.append(gm)
     for f in [x for v in fars.values() for x in v]: f.hide_render = True
     # the small pieces apart, each shot from its front
-    POS = {"wreath": (2.0, -6.0, 1.6), "swag": (4.5, -6.0, 1.6), "lampmotif": (7.5, -6.0, 1.6), "spanmotif": (10.5, -6.0, 2.6)}
+    POS = {"wreath": (2.0, -6.0, 1.6), "swag": (4.5, -6.0, 1.6), "lampmotif": (7.5, -6.0, 1.6), "spanmotif": (10.5, -6.0, 2.6), "chalet": (-7.0, -4.0, 0.0)}
     VIEW = {"wreath": ((2.0, -7.4, 1.6), (2.0, -6.0, 1.6), 50), "swag": ((4.5, -8.4, 1.45), (4.5, -6.0, 1.45), 50),
-            "lampmotif": ((9.6, -5.26, 1.5), (7.5, -5.26, 1.55), 50), "spanmotif": ((10.5, -9.4, 1.62), (10.5, -6.0, 1.62), 50)}
+            "lampmotif": ((9.6, -5.26, 1.5), (7.5, -5.26, 1.55), 50), "spanmotif": ((10.5, -9.4, 1.62), (10.5, -6.0, 1.62), 50),
+            "chalet": ((-9.6, -10.5, 1.8), (-7.0, -4.0, 1.5), 35)}
     for o in objs:
         if o.name in POS: o.location = POS[o.name]
     def shot(path, pos, tgt, lens, res, night):

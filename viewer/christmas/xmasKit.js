@@ -142,6 +142,28 @@ function make(slot, uvs, instanced) {
       break;
     }
     case "wire_dark": std({ roughness: 0.5 }); m.colorNode = lin(0x14181a); break;
+    // ---- the market chalets: stained boards (the instance's tone in xlod.w: dark walnut .. natural pine; each board its
+    // own shade, COLOR_0.r), dark trim, green felt roof, fake snow, the warm-lit inside, the cream sign board
+    case "chalet_wood": {
+      std({ roughness: 0.78 });
+      const tone = instanced ? attribute("xlod", "vec4").w : float(0.5);
+      const stain = mix(lin(0x3b2416), lin(0x8a6440), tone);
+      m.colorNode = stain.mul(mix(float(0.78), float(1.08), c.x)).mul(ao);
+      wxMat(m, { porosity: 0.5 });
+      break;
+    }
+    case "chalet_trim": std({ roughness: 0.7 }); m.colorNode = lin(0x231610).mul(ao); wxMat(m, { porosity: 0.4 }); break;
+    case "roof_felt": std({ roughness: 0.92 }); m.colorNode = lin(0x1f2a20).mul(ao); wxMat(m, { porosity: 0.3 }); break;
+    case "snow_fake": std({ roughness: 0.85 }); m.colorNode = lin(0xe8ecf0).mul(ao); break;
+    case "sign_board": std({ roughness: 0.65 }); m.colorNode = lin(0xd9cdb0).mul(ao); wxMat(m, { porosity: 0.2 }); break;
+    case "chalet_interior": {
+      // the inside (seen through the hatch): goods in many colours (r: hue pick, g: brightness), lit warm at night
+      std({ roughness: 0.75 });
+      const goods = mix(mix(lin(0x8a3a24), lin(0xc9a24a), c.x), lin(0x5a7a48), smoothstep(0.66, 0.7, c.x)).mul(mix(float(0.6), float(1), c.y));
+      m.colorNode = goods.mul(ao);
+      m.emissiveNode = goods.mul(lin(0xffc58a)).mul(env.uNight.mul(0.9)).mul(ao);
+      break;
+    }
     default: std({ roughness: 0.8 }); m.colorNode = vec3(0.5).mul(ao);
   }
   if (instanced) m.maskNode = bandMask(attribute("xlod", "vec4"));

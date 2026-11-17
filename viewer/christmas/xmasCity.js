@@ -3,6 +3,7 @@
 // (tools/christmas/build_site.py) says where everything goes; the kit (xmasKit.js) holds the models and materials.
 //   - the two squares' firs (Place de Saint-Job, Parvis Saint-Pierre): set on the drawn ground (world.walkY) once their
 //     tile is in; casting shadows; the planter is a drive collider;
+//   - the Christmas market's chalets on Place de Saint-Job (?xmaschalets=0: without), instanced, shadows, colliders;
 //   - garlands ACROSS the shopping streets: procedural (a catenary wire between the two facades + warm LEDs every 33 cm +
 //     a wall plate at each end): ONE merged mesh for all wires, ONE for all bulbs; a hanging star motif at the middle of
 //     the spans that do not cross a tram's contact wire;
@@ -15,6 +16,8 @@ import * as THREE from "three/webgpu";
 import { loadXmasKit, spanMaterial, xmasLook } from "./xmasKit.js";
 import { lampSiteSets, lampSitesVersion } from "../lamps.js";
 import * as lampsMod from "../lamps.js";
+import { frontFamily } from "../shops/shopLayout.js";
+import { hash01 as slHash01 } from "../streetlife/layout.js";
 
 // ------------------------------------------------------------------------------------------------ the season
 /** on from 1 Dec to 6 Jan: ?xmas=1 / ?xmas=0 force it; a simulated ?day= (day of the year) decides when given; else today */
@@ -41,7 +44,7 @@ export class XmasField {
     for (const [name, P] of Object.entries(kit.pieces)) {
       this.list[name] = [];
       this.levels[name] = P.lods.map((prims, k) => {
-        const cap = name === "tree" ? 8 : 2048;
+        const cap = name === "tree" ? 8 : name === "chalet" ? 32 : 2048;
         const mat = new THREE.InstancedBufferAttribute(new Float32Array(cap * 16), 16);
         const band = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4);
         const sphere = new THREE.Sphere();
@@ -60,7 +63,8 @@ export class XmasField {
     }
   }
   set(piece, items) { this.list[piece] = items; this.dirty = true; }
-  add(piece, m, id) { this.list[piece].push({ m: m.clone(), p: new THREE.Vector3().setFromMatrixPosition(m), h: hash01(id) }); this.dirty = true; }
+  /** v: the instance's variant (xlod.w: the chalets' wood tone) */
+  add(piece, m, id, v = 0) { this.list[piece].push({ m: m.clone(), p: new THREE.Vector3().setFromMatrixPosition(m), h: hash01(id), v }); this.dirty = true; }
   update(eye) {
     if (!this.dirty && eye.distanceToSquared(this.last) < 16) return;
     this.dirty = false; this.last.copy(eye);
@@ -78,7 +82,7 @@ export class XmasField {
           if (d >= hi + 5 || (k && d < lo * 0.88 - 5)) continue;
           const lv = L[k]; if (lv.n >= lv.cap) continue;
           it.m.toArray(lv.mat.array, lv.n * 16);
-          lv.band.array.set([lo, hi, it.h, 0], lv.n * 4);
+          lv.band.array.set([lo, hi, it.h, it.v ?? 0], lv.n * 4);
           const b = box[k]; b[0] = Math.min(b[0], it.p.x); b[1] = Math.min(b[1], it.p.y); b[2] = Math.min(b[2], it.p.z); b[3] = Math.max(b[3], it.p.x); b[4] = Math.max(b[4], it.p.y); b[5] = Math.max(b[5], it.p.z);
           lv.n++; st.drawn[k]++;
         }
@@ -170,17 +174,35 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
   const kit = await loadXmasKit().catch((e) => { log(`christmas: the kit failed to load (${e.message})`); return null; });
   if (!kit) return null;
   const tLoad = performance.now() - t0;
-  const field = new XmasField(kit, { shadows: { tree: true } });
+  const field = new XmasField(kit, { shadows: { tree: true, chalet: true } });
   scene.add(field.group);
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), S = new THREE.Vector3();
   const place = (x, y, z, yaw, sx = 1, sy = 1, sz = 1) => M.compose(new THREE.Vector3(x, y, z), Q.setFromAxisAngle(Y, yaw), S.set(sx, sy, sz));
 
-  // ---- shopfront swags + door wreaths (their facade's own ground height, data/streetlife), front +Z = the facade normal
-  for (const w of site.swags) field.add("swag", place(w.x, w.y, w.z, Math.atan2(w.nx, w.nz), w.sx, 1, 1), `swag ${w.x},${w.z}`);
-  for (const w of site.wreaths) field.add("wreath", place(w.x, w.y, w.z, Math.atan2(w.nx, w.nz)), `wreath ${w.x},${w.z}`);
+  // ---- per-street switches (site.json config: tune there, no code); a street absent there = everything on
+  const on = (street, what) => site.config?.streets?.[street]?.[what] ?? true;
+  // ---- shopfront swags: on each front's own top (viewer/shops/shopLayout.js frontFamily, the rule the shop kit draws
+  // with): a classic front's cornice (corona 0.365 m out, its top 0.94 m over the fascia's bottom): the garland hangs
+  // from the corona's edge; a modern front's fascia box (0.27 m out, 0.65 m high): from the box's face under its top.
+  // Modules of 1.6 m (scaled 0.6-1.45 to the front), 0.7 high (a shallower sag over the name board). Door wreaths.
+  const curated = await fetch(new URL("../../data/shops/terraces.json", import.meta.url)).then((r) => (r.ok ? r.json() : {})).then((j) => j.terraces || {}).catch(() => ({}));
+  let nSwag = 0;
+  for (const f of site.fronts ?? []) {
+    if (!on(f.street, "swags")) continue;
+    const fam = frontFamily({ id: f.id, kind: f.kind, cat: f.cat }, f, curated[f.id], slHash01);
+    const W = Math.max(2.0, Math.min(f.w, 9.9)), n = Math.max(1, Math.round(W / 1.6)), sx = W / (n * 1.6);
+    const hook = f.y + fam.fasciaY + (fam.classic ? 0.94 : 0.62), out = fam.classic ? 0.3 : 0.22;
+    const yaw = Math.atan2(f.nx, f.nz), tx = -f.nz, tz = f.nx;
+    for (let k = 0; k < n; k++) {
+      const u = -W / 2 + (k + 0.5) * W / n;
+      field.add("swag", place(f.x + tx * u + f.nx * out, hook, f.z + tz * u + f.nz * out, yaw, sx, 0.7, 1), `swag ${f.id} ${k}`);
+      nSwag++;
+    }
+  }
+  for (const w of site.wreaths) if (on(w.street, "wreaths")) field.add("wreath", place(w.x, w.y, w.z, Math.atan2(w.nx, w.nz)), `wreath ${w.x},${w.z}`);
 
   // ---- the garlands across the streets (+ their star motifs: local X along the span, hook on the wire)
-  const spans = buildSpans(site.spans);
+  const spans = buildSpans(site.spans.filter((s) => on(s.street, "spans")));
   const wireMesh = new THREE.Mesh(spans.wire, spanMaterial("wire_dark", kit));
   const bulbMesh = new THREE.Mesh(spans.bulbs, spanMaterial("bulb_warm", kit));
   for (const m of [wireMesh, bulbMesh]) { m.castShadow = false; m.receiveShadow = false; m.name = `xmas spans ${m === wireMesh ? "wires" : "bulbs"}`; field.group.add(m); }
@@ -189,8 +211,26 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
   // ---- the square trees: on the drawn ground once their tile is in
   const tileOf = (x, z) => manifest.tiles.find((t) => x >= t.bounds.x[0] && x < t.bounds.x[1] && z >= t.bounds.z[0] && z < t.bounds.z[1])?.name;
   const trees = site.trees.map((t) => ({ ...t, tile: tileOf(t.x, t.z), placed: false }));
-  const placeTrees = () => {
+  // ---- the Christmas market on Place de Saint-Job (?xmaschalets=0 / config.chalets = false: without): each chalet on the
+  // drawn ground at its centre once the tile is in, its wood tone per instance, a drive collider (3.1 x 2.1 m)
+  const chalets = (params.get("xmaschalets") === "0" || site.config?.chalets === false || !kit.pieces.chalet ? [] : site.chalets ?? []).map((c) => ({ ...c, tile: tileOf(c.x, c.z), placed: false }));
+  const placeChalets = () => {
     let changed = false;
+    for (const c of chalets) {
+      if (c.placed || !world.tiles.some((T) => T.name === c.tile)) continue;
+      // the lowest of the footprint's corners: the deck's skirt reaches the ground everywhere (JOINS: sunk, never floating)
+      const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), ux = fz, uz = -fx;
+      const corner = (a, b) => [c.x + ux * a * 1.56 + fx * b * 1.06, c.z + uz * a * 1.56 + fz * b * 1.06];
+      const ring = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)];
+      c.y = Math.min(...ring.map(([x, z]) => world.walkY(x, z))) - 0.01; c.placed = true; changed = true;
+      field.add("chalet", place(c.x, c.y, c.z, c.yaw), `chalet ${c.x},${c.z}`, c.tone);
+      const cols = [{ rings: [ring] }];
+      if (window.__driver) window.__driver.addStatic(cols); else (window.__pendingStatics ??= []).push(cols);
+    }
+    return changed;
+  };
+  const placeTrees = () => {
+    let changed = placeChalets();
     for (const t of trees) {
       if (t.placed || !world.tiles.some((T) => T.name === t.tile)) continue;
       t.y = world.walkY(t.x, t.z) - 0.02; t.placed = true; changed = true;
@@ -205,7 +245,7 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
 
   // ---- the lamp-post snowflakes: the lamps within 9 m of a decorated street, two in three
   const segs = [];
-  for (const st of site.streets) for (let i = 1; i < st.pts.length; i++) segs.push([...st.pts[i - 1], ...st.pts[i]]);
+  for (const st of site.streets) if (on(st.name, "lamps")) for (let i = 1; i < st.pts.length; i++) segs.push([...st.pts[i - 1], ...st.pts[i]]);
   const segBox = segs.reduce((b, [x0, z0, x1, z1]) => [Math.min(b[0], x0, x1), Math.min(b[1], z0, z1), Math.max(b[2], x0, x1), Math.max(b[3], z0, z1)], [Infinity, Infinity, -Infinity, -Infinity]);
   const nearStreet = (x, z) => {
     if (x < segBox[0] - 10 || x > segBox[2] + 10 || z < segBox[1] - 10 || z > segBox[3] + 10) return false;
@@ -243,8 +283,8 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
     if (frame++ % 30 === 0) { if (placeTrees()) field.dirty = true; decorateLamps(); }
     field.update(eye);
   });
-  log(`christmas: ${trees.length} trees, ${site.spans.length} street garlands (${spans.counts.bulbs} LEDs, ${spans.mid.length} stars), ${site.swags.length} shopfront swags, ${site.wreaths.length} wreaths, lamp snowflakes along ${site.streets.length} street lines; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (?xmas=0: without)`);
-  const api = { site, kit, field, spans, trees, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
+  log(`christmas: ${trees.length} trees, ${site.spans.length} street garlands (${spans.counts.bulbs} LEDs, ${spans.mid.length} stars), ${chalets.length} market chalets, ${nSwag} shopfront swags, ${site.wreaths.length} wreaths, lamp snowflakes along ${site.streets.length} street lines; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (?xmas=0: without)`);
+  const api = { site, kit, field, spans, trees, chalets, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
   window.xmas = api;
   return api;
 }
