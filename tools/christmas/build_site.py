@@ -32,9 +32,10 @@ AREAS = [
      "streets": ["Rue Xavier De Bue", "Chaussée d'Alsemberg", "Parvis Saint-Pierre"]},
 ]
 TREES = [
-    # Place de Saint-Job: the clearing at the square's west end (1115, 533): 9.8 m from the nearest plane tree's crown
-    # and from the square's edge (tools/christmas/build_site.py clearing()); the star faces the square's long axis (east)
-    {"id": "stjob", "x": 1115.0, "z": 533.0, "scale": 1.0, "face": (1.0, -0.15)},
+    # Place de Saint-Job (owner: "in the square"): the centre of the square's paving (1127, 530): 8.3 m from the nearest
+    # drawn plane tree's crown, 7.8 m from any wall (the first pick, (1115, 533), was 2.9 m from the square's 3 m
+    # pavilion: the branches went into it, browser turn 1), 16 m from the tram; the star faces the square's long axis
+    {"id": "stjob", "x": 1127.0, "z": 530.0, "scale": 1.0, "face": (1.0, -0.15)},
     # Parvis Saint-Pierre: the forecourt before the church's west tower (-718, -491): 8.8 m clear; star toward the parvis
     {"id": "stpierre", "x": -718.5, "z": -491.0, "scale": 0.9, "face": (-1.0, -0.35)},
 ]

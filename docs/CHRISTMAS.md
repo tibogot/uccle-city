@@ -22,6 +22,10 @@
   facing a 4 m aisle along the square's long axis beside the fir, each footprint (3.6 x 2.8 m with the shutter) 2.5 m in
   from the paving's edge (the parked cars), 1 m clear of the drawn trees' trunks, 3 m off the planter, 4 m from shops.
   City: instanced, shadows, drive colliders, on the lowest corner's ground; `?xmaschalets=0` / `config.chalets` off.
+- **The Saint-Job fir moved** from (1115, 533) to the centre of the square's paving (1127, 530): the first spot was
+  2.9 m from the square's 3 m pavilion (UrbIS solid 559426): the branches (2.95 m) went into it. Now 7.8 m from any wall,
+  8.3 m from the drawn plane trees' crowns, 16 m from the tram. The Saint-Pierre fir checks out: 9.1 m from the nearest
+  wall, 8.6 m from the roadway, on the paved forecourt (UrbIS sidewalk "Parvis Saint-Pierre"), 137 m from the tram.
 - **Per-street switches:** `models/christmas/site.json config.streets[<name>] = { spans, swags, wreaths, lamps }`.
 - **QUEUED (needs the GPU: after the owner's playtest):** rebuild the whole kit with the AO bake and previews, then pack
   (the committed christmas.glb has no chalet yet; the city skips the market until then):
