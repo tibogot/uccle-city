@@ -22,7 +22,10 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
   T.onDraw = (sim, types, alpha, cam) => cityTwoWheelers.traffic?.update(sim, types, alpha, cam);   // (motorbikes / scooters, docs/MOTO.md)
   const sim = T.sim;
   sim.setParking(function* () { for (const r of carFleet.regs) if (r.live) yield* r.cars; }, (name) => T.types.findIndex((t) => t.name === name));
-  sim.onPark = (c) => carFleet.touch(c);     // (the slot's colliders follow: off while the car drives, its new type's size when one parks in)
+  sim.onPark = (c) => carFleet.touch(c);
+  // trafpark: the parked cars' sizes, and the ones that move (the player's shove: carFleet.touch) become obstacles at once
+  sim.pk.size = (t) => carFleet.sizeOf(t);
+  carFleet.onChange((c) => { if (c && !c.hidden && c._tp0 && (Math.abs(c.x - c._tp0[0]) + Math.abs(c.z - c._tp0[1]) > 0.03 || Math.abs(c.heading - c._tp0[2]) > 0.01)) sim.noteParked(c); });     // (the slot's colliders follow: off while the car drives, its new type's size when one parks in)
   if (/[?&]trafficdebug=1/.test(location.search)) import("./trafficDebug.js").then(({ TrafficDebug }) => { T.debug = new TrafficDebug(scene, ground, sim.cap); });
 
   // ---- trams: body points + look-ahead, refreshed at 5 Hz (tramline's positions() / trackAt() allocate a little)
