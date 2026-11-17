@@ -60,8 +60,7 @@ async function policeModel() {
   const paint = MARKED ? car.paint.clone() : new THREE.Color(POLICE_CAR.paint);
   // head lamps: the city's head switch, or (wig-wag) the side's flash: + x = the car's left
   const head = carLights.head.mul(float(1).sub(wig.on)).add(wig.on.mul(select(positionLocal.x.greaterThan(0), wig.L, wig.R)).mul(1.6));
-  // (player: claude/policerear's rear fixes: specular AA, no SSR, pre-filtered shut lines; carPacks.js playerLook)
-  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich), player: true });
+  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich) });
   mat.name = "police unmarked";
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];

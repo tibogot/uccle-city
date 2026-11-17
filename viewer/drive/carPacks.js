@@ -8,8 +8,7 @@
 // Paint comes from a uniform (one car) or a per-instance attribute "paint" (parked cars). LODs are made here at load by
 // meshoptimizer (absolute error in metres; colour seams are open borders, so the simplifier keeps them as borders).
 import * as THREE from "three/webgpu";
-import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, cos, sin, positionLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix,
-  dFdx, dFdy, fwidth, positionWorld, mrt, metalness, roughness as roughnessProp, clamp, min } from "three/tsl";
+import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, cos, sin, positionLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts, partLevel } from "./carLod.js";
@@ -147,32 +146,6 @@ export const GLASS_PASS = UPSCALED && !CARGLASS2_OLD;
 /** the few one-off standing cars (police game props, the police yard's five): solid tinted glass under the TAAU like
  *  the player's car (no glass pass for single meshes); ?carglass2=old: stochastic as before */
 export const standingSeeThrough = (rich) => !!rich && !GLASS_PASS;
-
-/** THE PLAYER'S POLICE CAR REAR (claude/policerear, TODO 8c "bad lines on the back of the car while moving", default
- *  chase view). The car is big, close and moving with the camera: every sub-pixel bright / dark line on it is hit by
- *  some jitter phases and missed by others, and the TAAU's clamp drops it from the history in the frames that miss it
- *  (tools/cars/rearThin.mjs: the plate's 4 mm border and 8.6 mm strokes, the 6 mm shut lines, the spoiler's 7 mm bevels
- *  reflecting the sky on the dark paint). The player material (packMaterial({ player: true })) gets, each with its own
- *  switch and a live uniform (one page A/B: playerLook.x.value = 0 / 1, no rebuild):
- *   - specAA (?carspec=old): Kaplanyan-Hoffman / Filament specular anti-aliasing on the paint, glass and clear coat: the
- *     roughness widened by the screen-space variance of the shading normal (three adds only max |dN| per axis), so a
- *     sub-pixel bevel's sky reflection is a dim, wide glint rather than a 1-px line that blinks;
- *   - noSsr (?carssr=old): the car writes no SSR weight (metalRough.r = 0): the half-res, quarter-quality screen-space
- *     reflection of the street streaming over a car that holds still on screen is new every frame (the history follows
- *     the car, the reflection does not); the environment reflection stays;
- *   - seam (?carseam=old): the shut lines (paint kind, 0.16 shade) lose contrast where they are thinner than ~1.5 px
- *     (their 6 mm against the pixel's footprint): a pre-filtered line instead of one drawn whole or not at all.
- *  The plate is a texture (viewer/police/plateDecal.js, ?carplate=old). */
-const pOld = (k) => typeof location !== "undefined" && new RegExp(`[?&]${k}=old(&|$)`).test(location.search);
-export const PLAYER_OLD = { spec: pOld("carspec"), ssr: pOld("carssr"), seam: pOld("carseam") };
-export const playerLook = { specAA: uniform(PLAYER_OLD.spec ? 0 : 1), noSsr: uniform(PLAYER_OLD.ssr ? 0 : 1), seam: uniform(PLAYER_OLD.seam ? 0 : 1) };
-/** Filament's normal-variance filter (specularAntiAliasingVariance 0.25, threshold 0.18) on a perceptual roughness */
-const specAA = (r) => {
-  const du = dFdx(normalView), dv = dFdy(normalView);
-  const kernel = dot(du, du).add(dot(dv, dv)).mul(0.25 * 2).min(0.18);
-  return mix(r, r.mul(r).add(kernel).clamp(0, 1).sqrt(), playerLook.specAA);
-};
-
 const GLASS = 4;
 /** the glass-only part of a car geometry: every triangle with a glass vertex (the material's per-fragment kind test
  *  splits the mixed ones exactly like the opaque material's), its vertices compacted; null when the car has none.
@@ -207,7 +180,7 @@ export function glassGeometry(geo) {
  * an InstancedBufferAttribute). lights: { head, tail, brake } uniforms (carModel.js carLights), optional.
  */
 export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = null, rich = false, crossFade = false,
-  clearcoat = rich, seeThrough = rich, motion = null, glass = null, player = false } = {}) {
+  clearcoat = rich, seeThrough = rich, motion = null, glass = null } = {}) {
   // glass (GLASS_PASS only): "split" = the opaque material of a fleet that also draws a "pass" glass mesh: its glass
   // fragments are dropped; "pass" = the blended glass material (glass fragments only)
   const split = GLASS_PASS && glass === "split" && seeThrough, pass = GLASS_PASS && glass === "pass";
@@ -219,14 +192,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
   const kind = attribute("_kind", "float").add(0.5).floor(), vc = attribute("color", "vec3");
   const isPaint = kind.equal(1), isGlass = kind.equal(4), isHead = kind.equal(2), isTail = kind.equal(3);
   const uPaint = paint === "instance" ? attribute("paint", "vec3") : uniform(paint);
-  // (player, ?carseam=old) the shut lines' contrast follows their width in pixels (6 mm / footprint, 1.5 px = full)
-  let pvc = vc;
-  if (player && !PLAYER_OLD.seam) {
-    const fp = fwidth(positionWorld).length().mul(0.7).max(1e-5);
-    const k = clamp(float(0.006).div(fp).div(1.5), 0.35, 1);
-    pvc = select(vc.r.lessThan(0.2), mix(min(vc.mul(6.25), vec3(1)), vc, mix(float(1), k, playerLook.seam)), vc);
-  }
-  m.colorNode = select(isPaint, pvc.mul(uPaint), select(isGlass, vc.mul(packLook.glass), vc));
+  m.colorNode = select(isPaint, vc.mul(uPaint), select(isGlass, vc.mul(packLook.glass), vc));
   const isChrome = kind.equal(5), isRubber = kind.equal(6), isPlate = kind.equal(7), isInterior = kind.equal(8);
   m.roughnessNode = select(isPaint, float(rich ? 0.34 : 0.32), select(isGlass, float(0.06), select(isChrome, float(0.22),
     select(isRubber, float(0.9), select(isPlate, float(0.45), select(isInterior, float(0.85), float(0.62)))))));
@@ -234,14 +200,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
   if (clearcoat) {
     // clear coat on the paint only: a second, sharp specular lobe (environment + sun) over the base paint
     m.clearcoatNode = select(isPaint, packLook.clearcoat, float(0));
-    m.clearcoatRoughnessNode = player && !PLAYER_OLD.spec ? specAA(float(0.05)) : float(0.05);
-  }
-  if (player && !PLAYER_OLD.spec) m.roughnessNode = specAA(m.roughnessNode);
-  if (player && UPSCALED && !PLAYER_OLD.ssr) {
-    // the scene MRT's metalRough as post.js writes it (SSR weight = metalness under roughness 0.75, faded 180-360 m;
-    // roughness; AO 1), the SSR weight x (1 - noSsr). Upscaled city only (labs and ?fx=0 have no such MRT)
-    const fade = smoothstep(360.0, 180.0, positionView.z.negate());
-    m.mrtNode = mrt({ metalRough: vec3(roughnessProp.lessThan(0.75).select(metalness.mul(fade), 0).mul(float(1).sub(playerLook.noSsr)), roughnessProp, 1) });
+    m.clearcoatRoughnessNode = float(0.05);
   }
   let glassShadow = null;
   if (split) {
@@ -323,7 +282,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const keep = pass ? isGlass : isGlass.not();
     m.maskNode = m.maskNode ? m.maskNode.and(keep) : keep;
   }
-  // no mrtNode (but the player's car, above: upscaled city only): the post chain's MRT (viewer/post.js) reads this roughness / metalness itself (SSR on paint and glass),
+  // no mrtNode: the post chain's MRT (viewer/post.js) reads this roughness / metalness itself (SSR on paint and glass),
   // and an mrtNode breaks the shader where no MRT is set (labs, ?fx=0: "structures must have at least one member")
   m.userData.paint = uPaint;
   m.userData.shared = true;

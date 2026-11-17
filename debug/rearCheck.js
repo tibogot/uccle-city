@@ -9,8 +9,9 @@
 //        shimmer  mean |high-pass(Y_t) - high-pass(Y_t-1)| on the rear crop (x / 255): lines blinking / crawling
 //        hot      % of crop pixels whose high-pass changed > 8 / 255 in a frame (localised line flicker)
 //        flicker  mean |Y_t - Y_t-1| (x / 255)       sharp  Laplacian variance of the crop (a fix that only blurs shows here)
-//   await R.ab({ rounds: 2 })             every knob state (KNOBS: old = every fix off, new = all on, each fix alone on top
-//                                         of old, the isolation states), alternated per round; a table + the sheets
+//   await R.ab({ rounds: 2 })             every knob state (KNOBS: old = the modelled plate, new = the textured plate, the
+//                                         isolation states, combinable "old+no-self-shadow"), alternated per round; a table
+//   (sub: [x, y, w, h] fractions of the rear box: the plate alone is [0.28, 0.62, 0.44, 0.32] in the default chase view)
 //   await R.strip({ knob: "old" })        8 consecutive rear crops (x3) + their differences (x4): a sheet url
 //   R.show(url) / R.hide()                (debug/sharpCheck.js: a sheet full-window, for the DevTools screenshot)
 import { luma, highPass, lapVar, tdiff, show, hide } from "./sharpCheck.js";
@@ -32,35 +33,35 @@ export async function police() {
   return d.spec;
 }
 
-// ---- the knobs (live: uniforms / visibility, no rebuild; the plate's own mesh, the player material's playerLook)
-let PL = null, PK = null;
-const look = async () => { if (!PL) ({ playerLook: PL, packLook: PK } = await import("/viewer/drive/carPacks.js")); return PL; };
+// ---- the knobs (live: visibility / uniforms, no rebuild): old = the modelled plate alone, new = the textured plate
+let PK = null;
+const look = async () => { if (!PK) ({ packLook: PK } = await import("/viewer/drive/carPacks.js")); return PK; };
 const plateMesh = () => { let m = null; D()?.car?.root.traverse((o) => { if (o.name === "player-plate") m = o; }); return m; };
 const carMeshes = () => { const a = []; D()?.car?.root.traverse((o) => { if (o.isMesh) a.push(o); }); return a; };
 const FIX = {
   plate: (on) => { const m = plateMesh(); if (m) m.visible = on; return !!m; },
-  spec: (on) => { PL.specAA.value = on ? 1 : 0; return true; },
-  ssr: (on) => { PL.noSsr.value = on ? 1 : 0; return true; },
-  seam: (on) => { PL.seam.value = on ? 1 : 0; return true; },
+  // (the browser turn measured and dropped the player material's specular AA, no-SSR and shut-line pre-filter:
+  // docs/POLICEREAR.md; the isolation states below cover SSR / clear coat / shadows)
 };
 // isolation states (on top of "new"): what else could make the lines
 const ISO = {
   "ssr-all-off": { set: () => { const u = window.cityQuality?._pipe?.uniforms?.ssr; const v = u?.value; if (u) u.value = 0; return () => { if (u) u.value = v; }; } },
   "clearcoat-off": { set: () => { const v = PK.clearcoat.value; PK.clearcoat.value = 0; return () => { PK.clearcoat.value = v; }; } },
+  // (the car receives no shadow at all: the street's tree / building shadows sweeping over it, and its own)
   "no-self-shadow": { set: () => { const ms = carMeshes(), r = ms.map((m) => m.receiveShadow); ms.forEach((m) => { m.receiveShadow = false; }); return () => ms.forEach((m, i) => { m.receiveShadow = r[i]; }); } },
   "instmotion-off": { set: () => { const im = window.instMotion; const was = im?.on; im?.set?.(false); return () => im?.set?.(was ?? true); } },
 };
-export const KNOBS = ["old", "new", "old+plate", "old+spec", "old+ssr", "old+seam", "new+ssr-all-off", "new+clearcoat-off", "new+no-self-shadow"];
+export const KNOBS = ["old", "new", "new+ssr-all-off", "new+clearcoat-off", "old+no-self-shadow", "new+no-self-shadow"];
+// (knobs combine: "old+plate+no-self-shadow")
 /** set a knob state; returns the undo */
 async function setKnob(k) {
   await look();
-  const [base, extra] = k.split("+");
+  const [base, ...extras] = k.split("+");
   const on = base === "new";
   for (const f of Object.values(FIX)) f(on);
-  let undo = () => {};
-  if (extra && FIX[extra]) FIX[extra](true);
-  else if (extra && ISO[extra]) undo = ISO[extra].set();
-  return () => { undo(); for (const f of Object.values(FIX)) f(true); };
+  const undos = [];
+  for (const e of extras) { if (FIX[e]) FIX[e](true); else if (ISO[e]) undos.push(ISO[e].set()); else throw new Error(`unknown knob ${e}`); }
+  return () => { for (const u of undos.reverse()) u(); for (const f of Object.values(FIX)) f(true); };
 }
 
 /** the car's rear on screen: the body's box rear face (x within 85 %, 0.25 m .. 90 % of its height), inset 8 % */
@@ -88,7 +89,7 @@ let POSE = null;
  * (handbrake, `frames` frames), then accelerate to `speed` and drive straight (`frames`), then steer `steer` for
  * `turnFrames`. Per phase the medians (see the header). keep: the crops of the straight phase (for strip()).
  */
-export async function measure({ label = "", speed = 14, steer = 0.3, frames = 60, turnFrames = 45, settle = 40, keep = 0, pose = null } = {}) {
+export async function measure({ label = "", speed = 14, steer = 0.3, frames = 60, turnFrames = 45, settle = 40, keep = 0, pose = null, sub = null } = {}) {
   const v = V(), d = D();
   if (!d?.on || !d.car) throw new Error("drive mode off");
   POSE = pose || POSE || { x: d.state.x, z: d.state.z, heading: d.state.heading };
@@ -106,7 +107,11 @@ export async function measure({ label = "", speed = 14, steer = 0.3, frames = 60
       for (let f = 0; f < n; f++) {
         d.autoInput = input(f);
         v.step(1 / 60);
-        if (!box) box = rearBox(W, H);
+        if (!box) {
+          box = rearBox(W, H);
+          // sub: [x, y, w, h] as fractions of the rear box (e.g. the plate: [0.3, 0.45, 0.4, 0.3])
+          if (sub) box = [Math.round(box[0] + sub[0] * box[2]), Math.round(box[1] + sub[1] * box[3]), Math.max(8, Math.round(sub[2] * box[2])), Math.max(8, Math.round(sub[3] * box[3]))];
+        }
         g.drawImage(canvas, 0, 0);
         const [bx, by, bw, bh] = box, img = g.getImageData(bx, by, bw, bh), Y = luma(img), hp = highPass(Y, bw, bh);
         lv.push(lapVar(Y, bw, bh));

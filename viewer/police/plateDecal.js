@@ -7,7 +7,7 @@
 // A texture is pre-filtered (mipmaps + anisotropic filtering integrate the pixel's footprint): every frame sees the
 // same area-averaged plate whatever the jitter, characters readable as far as the resolution allows.
 // One quad over the modelled plate (1.7 mm over its characters), a child of the chassis (rigid motion vectors as the
-// body), no shadow; one small canvas texture (512 x 108, mipmapped); +1 draw. Random characters (no real registration).
+// body), no shadow; one small canvas texture (512 x 108, mipmapped); +1 draw. The characters of the modelled estate's plate (cars2.py's random draw for "estate": 2-XDK-032; no real registration).
 //   const plate = addRearPlate(chassis, bodyGeometry)   plate.removeFromParent() (geometry / material kept: shared)
 import * as THREE from "three/webgpu";
 
@@ -52,7 +52,7 @@ export function findRearPlate(geo) {
 const lin2hex = (r, g, b) => "#" + [r, g, b].map((x) => Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055)).toString(16).padStart(2, "0")).join("");
 
 /** a Belgian plate (white, red border and characters, the EU band with its stars and B), the cars2 palette's colours */
-export function plateTexture(text = "1-KZT-482", { W = 512, H = 108 } = {}) {
+export function plateTexture(text = "2-XDK-032", { W = 512, H = 108 } = {}) {
   const cv = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(W, H) : Object.assign(document.createElement("canvas"), { width: W, height: H });
   const g = cv.getContext("2d");
   const white = lin2hex(0.80, 0.80, 0.78), red = lin2hex(0.50, 0.015, 0.02), blue = lin2hex(0.010, 0.035, 0.22);
@@ -69,9 +69,12 @@ export function plateTexture(text = "1-KZT-482", { W = 512, H = 108 } = {}) {
   for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; g.beginPath(); g.arc(bx + Math.cos(a) * R, by + Math.sin(a) * R, 0.0012 * px, 0, Math.PI * 2); g.fill(); }
   g.fillStyle = "#f4f4f4"; g.font = `bold ${Math.round(0.03 * px)}px Arial, Helvetica, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
   g.fillText("B", bx, H * 0.78);
-  // the characters: 6 cm high, red, a narrow bold sans (the Belgian plate's DIN-like face)
-  g.fillStyle = red; g.font = `bold ${Math.round(0.072 * px)}px "Arial Narrow", "Roboto Condensed", Arial, sans-serif`;
-  g.fillText(text, (0.05 * px + W) / 2 + 0.002 * px, H / 2 + 0.002 * px, W - 0.07 * px);
+  // the characters: 6 cm high (cap height), red, spread over the plate as the modelled ones (cars2.py text_rects: one
+  // cell per character, the same span), each squeezed into its cell (Arial Narrow is not on every machine)
+  g.fillStyle = red; g.font = `600 ${Math.round(0.06 / 0.716 * px)}px "Arial Narrow", "Roboto Condensed", Arial, sans-serif`;
+  g.textBaseline = "alphabetic";
+  const x0 = 0.058 * px, x1 = W - 0.014 * px, cell = (x1 - x0) / text.length, base = H / 2 + 0.03 * px;
+  for (let i = 0; i < text.length; i++) g.fillText(text[i], x0 + (i + 0.5) * cell, base, cell * 0.86);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
