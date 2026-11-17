@@ -166,9 +166,10 @@ export function setCompileFlush(o) { flushWith = o; }
 // drawn in chunks of whole jobs, each in its own task a rendered frame apart (the loader animates between them), each with
 // its own parallel-pipeline window closed right after its draw (its pipelines keep compiling in the GPU process while the
 // next chunk's node builds run). The chunk size adapts: ~FLUSH_TASK_MS of main thread per chunk from the ms per drawable
-// measured on the chunks before (first chunk 60 drawables). The jobs resolve once every chunk's pipelines are ready.
+// measured on the chunks before (first chunk 30 drawables, at most 40). The jobs resolve once every chunk's pipelines are ready.
 const FLUSH_SPLIT = typeof location !== "undefined" && !/[?&]flushsplit=old(&|$)/.test(location.search);
 const FLUSH_TASK_MS = Math.max(100, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("flushtask") ?? 900 : 900));
+const FLUSH_MAX = 40;
 const drawablesOf = (roots) => { let n = 0; for (const r of [].concat(roots)) r?.traverse((o) => { if (o.isMesh || o.isPoints || o.isLine || o.isSprite) n++; }); return n; };
 async function flushJobs(take) {
   const t0 = performance.now();
@@ -176,7 +177,7 @@ async function flushJobs(take) {
   const wins = [];
   if (!FLUSH_SPLIT) { const r = flushDraw(take); rec.drawables = r.n; if (r.win) wins.push(r.win); }
   else {
-    let i = 0, perDrawable = 0, budget = 60;
+    let i = 0, perDrawable = 0, budget = 30;
     while (i < take.length) {
       const chunk = [];
       let n = 0;
@@ -191,7 +192,9 @@ async function flushJobs(take) {
       const ms = performance.now() - c0;
       if (r.win) wins.push(r.win);
       rec.drawables += r.n; rec.chunks.push([chunk.length, r.n, Math.round(ms)]);
-      if (r.n > 0) { perDrawable = perDrawable ? 0.5 * perDrawable + 0.5 * ms / r.n : ms / r.n; budget = Math.max(10, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable))); }
+      // (the cost per drawable swings 1-50 ms: a chunk of already-built materials is cheap, new ones are not: the estimate
+      // follows a dearer chunk at once and a cheaper one slowly, and a chunk never takes more than FLUSH_MAX drawables)
+      if (r.n > 0) { const c = ms / r.n; perDrawable = perDrawable ? Math.max(c, 0.8 * perDrawable + 0.2 * c) : c; budget = Math.max(8, Math.min(FLUSH_MAX, Math.round(FLUSH_TASK_MS / Math.max(0.5, perDrawable)))); }
       // a rendered frame, then a new task (the loader's frame is painted before the next chunk's node builds)
       if (i < take.length) { await new Promise((res) => requestAnimationFrame(() => res())); await new Promise((res) => setTimeout(res, 0)); }
     }
