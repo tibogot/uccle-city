@@ -25,6 +25,7 @@ Then: the Kauwberg made for bikes (bumps, roots, sand quarries, ground detail at
 ## Known data (OSM 2026)
 - Kauwberg nature reserve: OSM way 16396691 (landuse forest, leisure nature_reserve); the sand quarries are not tagged (to shape from the DTM + references).
 - Kautergat paths (mtb:scale 0), many dirt sentiers / voetwegen in the south.
+- The owner's remembered dirt bike park (90s): up the cycle path Rue des Pêcheurs (OSM 47246916, from Rue Basse ~n. 53, climbing west), at its end to the left, round some buildings. Candidate: the small wood OSM 438313922 (~50.7932, 4.3495) with two ponds just south (1282087980/1); a park with playground / meadows / boules further south-west (1123840941). To confirm on aerial imagery (look only).
 - Mapped bike park nearby: "Bike Park Interpark" (sport mtb;bmx, Watermael-Boitsfort side); nothing near the Dieweg.
 
 ## Reuse from the city
