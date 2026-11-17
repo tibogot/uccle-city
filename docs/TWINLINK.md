@@ -77,10 +77,15 @@ another lane near). With the final measure (4 m, starts and connector ends): **1
 - **The sim enters a twin part-way:** `rin` per planned path (from `twinAt`), `pin` for the current one; the route
   walks (pose's axles, look-ahead for cars / obstacles / holds / curves, indicators) count from there; `move()` enters at
   `rin`; `rerouteTwins` puts a car on the twin at the same SPOT (projection), not the same distance.
-- **No jump at the handover:** `routePoint` moves the next tile's path by the gap between the two copies (this path's
-  end -> the twin's entry) and, after the handover, the previous path by minus it; the car's offset takes the gap at the
-  handover and blends it out over ~1 s (as before, <= 4 m). Before, the front axle switched copy before the centre
-  did and the full gap was added at the centre's switch: up to 2.5 m jumps.
+- **The handover is a lane change, not a jump or a slide** (browser turn): the gap between the two copies (this path's
+  end -> the twin's entry, < 4 m) fades along the route over 8-30 m of driving (6 m per m of gap + 6 m, smoothstep, on
+  the car's odometer: `bdx / bdz / bS / bL`), applied to the AXLE points in `routePoint` (ahead of the handover on the
+  twin, after it on the current and the same-tile previous path; the previous tile's path keeps the blend it had,
+  `pbdx...`; a blend still running at a second handover is carried into the new gap), so the heading turns with the
+  drift: <= 0.2 m sideways per m driven (~11 deg, ~1.5 m/s at 30 km/h). Before, the front axle switched copy before the
+  centre did and the full gap was added at the centre's switch (up to 2.5 m jumps), then decayed 10 % a step (a
+  sideways slide of up to 6 m/s with no heading change). A 45 m blend was gentler (0.13) but kept the car off the
+  neighbour's lane longer and put one into a parked car at Alsemberg: kept <= 30 m.
 
 ## Numbers
 
@@ -93,7 +98,8 @@ another lane near). With the final measure (4 m, starts and connector ends): **1
 13-tile gate set: 76.5 % / 233 wrong -> 99.87 % / 0 wrong.
 
 Running sim (H5 H6 I5 + I6 after 10 s, 117 cars): position jumps > 0.5 m at handovers 163 (max 2.48 m) -> **0**; car
-time on buffer copies inside a loaded neighbour 10.3 % -> 6.5 % (the rest: copies with no twin there, below).
+time on buffer copies inside a loaded neighbour 10.3 % -> 6.5 % (the rest: copies with no twin there, below). The blend's
+sideways drift: <= 0.193 m per m driven (old: the decaying centre offset, 2.19).
 
 Cost (node, this laptop): link per tile pair warm 0.4 ms mean, 1.4-2.9 ms max (best of 3; the gate's 2.9 ms ran next to
 the full merge gate); the first link of a session runs cold, 8-26 ms (JIT, once). Per tile load in a whole-city world
@@ -117,10 +123,41 @@ skipped now, midpoints cached). Whole city loaded tile by tile: 216 ms in all (o
 These copies are driven as they are, now and then: trafpark round 2 already treats them as driven
 (`trafficSim.js laneThrough`, level 1) and the parked cars they cross as obstacles.
 
-## Browser check (pending: coordinator's turn)
+## Browser (2026-11-17, one tab, server 8837 = tools/tour/serve.mjs on this worktree, preflight YELLOW: CPU 13 % at rest)
 
-- A car crossing a tile border on a long street (e.g. `?quick=1&place=alsemberg&with=traffic`, Saint-Job I6/H6): no
-  jump, no visible sideways slide beyond the ~1 s blend; `?twinlink=old` for the A/B.
-- `debug/trafparkWatch.js watch(150)` on the three streets (into 0): more cars now drive the owner's lanes.
-- The police game after a 45 s drive (tiles stream in: `rerouteTwins` at the same spot), console clean.
-- Traffic update ms (gamePerf "1:update") and the tile-load hitch with many tiles loaded.
+Per street: `?quick=1&place=<p>&with=traffic`, 150 s: `trafparkWatch.watch(150)` + a probe on every sim step (a car's
+position change beyond its own travel > 0.5 m = a jump; the blend's sideways drift per m driven; link ms).
+
+| street | twinlink | parked: into / hit | jumps > 0.5 m (max) | handovers / entered part-way | blend drift, max m per m (p90) | link ms total / max one |
+|---|---|---|---|---|---|---|
+| Alsemberg (E4 D4 E3 D3, 139 cars) | old | 0 / 0 | 211 (2.65 m) | 122 / 0 | | 2.5 / 0.6 |
+| | new | 0 / 0 | **0** | 105 / 10 | 0.199 (0.18) | 29.1 / 8.5 |
+| Saint-Job (I6 I5 H5 H6, 108 cars) | old | 0 / 0 | 214 (2.48 m) | 117 / 0 | | 3.0 / 1.2 |
+| | new | 0 / 0 | **0** | 102 / 45 | 0.193 (0.16) | 29.0 / 11.8 |
+| Fort-Jaco (J7 K7 J6 K6, 80 cars) | old | 0 / 0 | 122 (2.57 m) | 50 / 0 | 2.56 (0.76) | 1.3 / 0.4 |
+| | new | 0 / 0 | **0** | 45 / 14 | 0.185 (0.17) | 16.6 / 5.2 |
+
+First cut (centre offset decaying 10 % a step, as before): 0 jumps but the larger gaps slid cars sideways (handover
+offsets median 1.3 m, p90 2.6 m, up to 6 m/s with no heading change); the S blend replaced it (above). A 45 m version
+put one car 0.39 m into a parked car at Alsemberg (8 samples): the blend is kept <= 30 m; the three streets read 0 since.
+Seen from behind a van crossing the I6/H6 handover (gap 1.6 m): on its lane, no crab. A frame-by-frame sequence was not
+taken: a devtools call takes longer than a blend lasts (3-5 s); the per-step probe above covers every car.
+
+Police game (`?game=police`, after play + 10 s, `gamePerf.police({ seconds: 45 })`, alternating loads):
+
+| | fps | frame avg / p99 / worst | CPU loop | traffic `1:update` avg / max | sim step | tiles in | link ms in the run / max one |
+|---|---|---|---|---|---|---|---|
+| old | 53.2 | 18.81 / 50 / 83 ms | 11.13 ms | 0.352 / 15.8 ms | 0.69 ms | 14 | 5.7 / 1.0 |
+| new | 54.4 | 18.40 / 50 / 133 ms | 10.53 ms | 0.255 / 11.8 ms | 0.43 ms | 12 | 14.1 / 10.1 |
+| new | 53.5 | 18.68 / 50 / 117 ms | 11.45 ms | 0.332 / 8.9 ms | 0.38 ms | 14 | 21.3 / 11.2 |
+
+The traffic's own cost is unchanged (noise); a tile coming in pays ~1-1.5 ms of linking (old ~0.4); the largest single
+link in a session is the first, cold one (8-12 ms in the browser, JIT; warm pairs 0.4-2.9 ms in node). The worst frames
+(83-133 ms) are tile loads / pipelines in both modes (not the link: 11 ms at most).
+
+HEAP line (localStorage cleared each): `?gamemenu=0&orbitcam2=old`, default, `?gamemenu=0&tilecache=0`, `?game=police`
++ a 45 s drive, `?game=falcon`: 0 console errors, 0 WebGPU errors, `__heapDrop.tripCounts` {} in all five (queue skips
+6 / 14 / 0 / 0 / 0). Console otherwise: the usual three.js warnings only.
+
+Visual tour (`run=twinlink` vs `foundation`, 22 views): **0 of 22 flagged** (max: lycee-front 0.23 % pixels / 18.7 %
+cells, under its 30 %; traffic-alsemberg 0.07 % / 4.4 %).
