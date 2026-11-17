@@ -6,7 +6,8 @@
 // RULE: a module that reads a full tile's terrain / roads / buildings meshes, or a far tile's meshes, on the CPU after
 // the tile is built is listed in docs/HEAP.md "Readers" AND in KNOWN below (with what it reads and how it is handled).
 // Checks:
-//   1. viewer/heapDrop.js logic (tools/heap/dropCheck.mjs: drop only after upload, keep lists, holds, guards)
+//   1. viewer/heapDrop.js logic (tools/heap/dropCheck.mjs: drop only after upload, keep lists, holds, guards); 1b. the
+//      precompile queue / compile flush skip a mesh disposed after its job was queued (tools/heap/queueCheck.mjs)
 //   2. every file that reaches a tile layer by name is a KNOWN reader
 //   3. loadTile's dispose closure does not reach the build result `d` (that kept ~25 MB a tile alive)
 //   4. the switches have their features.js rows
@@ -32,6 +33,11 @@ const check = (name, ok, msg) => { rows.push([name, ok ? "PASS" : "FAIL", msg]);
 // 1
 const r = spawnSync(process.execPath, ["--import", "./tools/heap/register.mjs", "tools/heap/dropCheck.mjs"], { cwd: ROOT, encoding: "utf8" });
 check("dropCheck", r.status === 0, r.status === 0 ? "heapDrop.js logic" : (r.stdout + r.stderr).split("\n").filter((l) => /FAIL|Error/.test(l)).slice(0, 3).join(" / "));
+
+// 1b. heapfix: the precompile queue never draws / compiles a mesh disposed after its job was queued (the far tiles replaced
+// under the boot cover were drawn again by the compile flush: "dropped attribute created again", "index buffer size (0)")
+const q = spawnSync(process.execPath, ["--import", "./tools/heap/register.mjs", "tools/heap/queueCheck.mjs"], { cwd: ROOT, encoding: "utf8", timeout: 60000 });
+check("queueCheck", q.status === 0, q.status === 0 ? "warmup.js queue + flush skip disposed geometries" : (q.stdout + q.stderr).split(String.fromCharCode(10)).filter((l) => /FAIL|Error/.test(l)).slice(0, 3).join(" / "));
 
 // 2
 const walk = (d, out = []) => { for (const e of fs.readdirSync(path.join(ROOT, d), { withFileTypes: true })) { const p = `${d}/${e.name}`; if (e.isDirectory()) walk(p, out); else if (p.endsWith(".js") && !p.endsWith("tileWorker.bundle.js")) out.push(p); } return out; };
