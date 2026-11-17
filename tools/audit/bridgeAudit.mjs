@@ -23,6 +23,7 @@
 //      rail top: over (> rail + 3 m both sides) -> the crossing point must be on a drawn deck (else: open cutting under a
 //      road); under (< rail - 3 m both sides) -> under a rail bridge (UrbIS RAB / hero) or a tunnel; else level crossing
 //   W  catenary under every drawn deck: the contact wire 0.3 m under the soffit (railData.js wireCap / deckCap)
+import "../road_audit/register.mjs";        // (the viewer's bare "three" imports; mergeGate.mjs runs plain node)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -71,6 +72,11 @@ for (const t of tiles) {
   const roads = json(`data/tiles/${t.name}/roads.json`);
   for (const d of bridgeDescriptors(roads, ground, plansOf(roads))) {
     if (decks.has(d.id)) continue;
+    // the tile holding the deck's middle draws it (tileData.js ownDeck: a road clipped by another tile's buffer, Avenue
+    // des Tilleuls in D8 / E8, is a shorter copy under the same id)
+    const L = d.cum[d.cum.length - 1] / 2; let k = 1; while (k < d.pts.length - 1 && d.cum[k] < L) k++;
+    const f = (L - d.cum[k - 1]) / ((d.cum[k] - d.cum[k - 1]) || 1), mx = d.pts[k - 1][0] + (d.pts[k][0] - d.pts[k - 1][0]) * f, mz = d.pts[k - 1][1] + (d.pts[k][1] - d.pts[k - 1][1]) * f;
+    if (tileOf(mx, mz) !== t.name) continue;
     const m = d.pts[Math.floor(d.pts.length / 2)];
     if (inHero(m[0], m[1])) continue;                              // the hero bridge's deck wins (tileData.js heroDeck)
     if (d.pts.some((p) => Number.isNaN(ground(p[0], p[1])))) continue;   // an end off the built tiles: not drawn

@@ -12,6 +12,7 @@
 // out from its edge (a wall of street at the joint) - a street on both sides is the street's own continuity (skipped).
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/deckJoins.mjs [T...]     (default: the plan decks' tiles)
+import "../road_audit/register.mjs";        // (the viewer's bare "three" imports; mergeGate.mjs runs plain node)
 import { buildTile } from "../roadfix/tile.mjs";
 import { deckHeight } from "../../viewer/streets/bridgeDecks.js";
 

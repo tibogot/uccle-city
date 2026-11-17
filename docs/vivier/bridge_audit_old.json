@@ -1,0 +1,1208 @@
+{
+ "mode": "old",
+ "urbis": [
+  {
+   "id": "590",
+   "type": "ROB",
+   "roads": [
+    "Avenue Latérale - Zijlaan",
+    "Chaussée de Waterloo - Waterloosesteenweg",
+    "footway"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    1727.12,
+    322.17
+   ],
+   "tile": "J5",
+   "covered": 0.48,
+   "hero": false,
+   "slab": true,
+   "slabClear": 0.72
+  },
+  {
+   "id": "751",
+   "type": "PB",
+   "roads": [
+    "footway"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    1642.73,
+    319.45
+   ],
+   "tile": "J5",
+   "covered": 0,
+   "hero": false,
+   "slab": true,
+   "slabClear": -0.45
+  },
+  {
+   "id": "752",
+   "type": "PB",
+   "roads": [
+    "footway"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    1540.28,
+    345.71
+   ],
+   "tile": "J5",
+   "covered": 0,
+   "hero": false,
+   "slab": true,
+   "slabClear": -1.21
+  },
+  {
+   "id": "820",
+   "type": "ROB",
+   "roads": [
+    "Rue du Bourdon - Horzelstraat",
+    "footway",
+    "platform"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    -1205.57,
+    2222.64
+   ],
+   "tile": "D9",
+   "covered": 0.9,
+   "hero": false,
+   "slab": true,
+   "slabClear": -1.21
+  },
+  {
+   "id": "833",
+   "type": "ROB",
+   "roads": [
+    "Rue du Merlo - Merlostraat"
+   ],
+   "lines": [
+    "L124"
+   ],
+   "centre": [
+    -1666.58,
+    -89.23
+   ],
+   "tile": "C4",
+   "covered": 1,
+   "hero": false,
+   "slab": true,
+   "slabClear": -1.21
+  },
+  {
+   "id": "864",
+   "type": "ROB",
+   "roads": [
+    "Avenue des Tilleuls - Lindenlaan"
+   ],
+   "lines": [
+    "L26",
+    "L26/5"
+   ],
+   "centre": [
+    -1000.37,
+    2141.56
+   ],
+   "tile": "D9",
+   "covered": 0.95,
+   "hero": false,
+   "slab": true,
+   "slabClear": 0.12
+  },
+  {
+   "id": "879",
+   "type": "ROB",
+   "roads": [
+    "Rue de Verrewinkel - Verrewinkelstraat"
+   ],
+   "lines": [
+    "",
+    "L26"
+   ],
+   "centre": [
+    -268.81,
+    1308.29
+   ],
+   "tile": "F7",
+   "covered": 1,
+   "hero": true,
+   "slab": false,
+   "slabClear": null
+  },
+  {
+   "id": "899",
+   "type": "ROB",
+   "roads": [
+    "Avenue de la Chênaie - Eikenboslaan"
+   ],
+   "lines": [
+    "L26"
+   ],
+   "centre": [
+    35.56,
+    1020.15
+   ],
+   "tile": "G7",
+   "covered": 1,
+   "hero": false,
+   "slab": true,
+   "slabClear": -1.25
+  },
+  {
+   "id": "923",
+   "type": "ROB",
+   "roads": [
+    "footway",
+    "service"
+   ],
+   "lines": [
+    "L124"
+   ],
+   "centre": [
+    -742.83,
+    2783.38
+   ],
+   "tile": "E10",
+   "covered": 0.92,
+   "hero": false,
+   "slab": true,
+   "slabClear": -2.33
+  },
+  {
+   "id": "939",
+   "type": "ROB",
+   "roads": [
+    "Avenue des Tilleuls - Lindenlaan"
+   ],
+   "lines": [
+    "L124"
+   ],
+   "centre": [
+    -1141.19,
+    2057.29
+   ],
+   "tile": "D9",
+   "covered": 0.92,
+   "hero": false,
+   "slab": true,
+   "slabClear": -1.21
+  }
+ ],
+ "crossings": [
+  {
+   "road": "r29872629_0",
+   "name": "Rue du Merlo - Merlostraat",
+   "tile": "C4",
+   "at": [
+    -1666.3,
+    -89.3
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    54.7,
+    55.3
+   ],
+   "railTop": 47.05,
+   "deck": "r29872629_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r29872629_0",
+   "name": "Rue du Merlo - Merlostraat",
+   "tile": "C4",
+   "at": [
+    -1669.4,
+    -87.7
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    54.7,
+    55.2
+   ],
+   "railTop": 46.96,
+   "deck": "r29872629_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r40760452d306595455_6",
+   "name": "Rue de Stalle - Stallestraat",
+   "tile": "C5",
+   "at": [
+    -1489.4,
+    279.1
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    31.7,
+    31.9
+   ],
+   "railTop": 49.59,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "686",
+   "ok": true
+  },
+  {
+   "road": "r40760452d306595455_6",
+   "name": "Rue de Stalle - Stallestraat",
+   "tile": "C5",
+   "at": [
+    -1486.2,
+    277.2
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    31.7,
+    31.9
+   ],
+   "railTop": 49.62,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "686",
+   "ok": true
+  },
+  {
+   "road": "r1342926162_0",
+   "name": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "tile": "H5",
+   "at": [
+    909.8,
+    527.4
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    77.6,
+    77.7
+   ],
+   "railTop": 71.69,
+   "deck": "r1342926162_0",
+   "plan": true,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1342926162_0",
+   "name": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "tile": "H5",
+   "at": [
+    904.1,
+    526.5
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    79.7,
+    77.7
+   ],
+   "railTop": 71.66,
+   "deck": "r1342926162_0",
+   "plan": true,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r35036093_0",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "tile": "J5",
+   "at": [
+    1729.9,
+    319.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    83,
+    81.5
+   ],
+   "railTop": 75.02,
+   "deck": "r35036093_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r35036093_0",
+   "name": "Chaussée de Waterloo - Waterloosesteenweg",
+   "tile": "J5",
+   "at": [
+    1732.3,
+    315.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    83.1,
+    81.4
+   ],
+   "railTop": 75.05,
+   "deck": "r35036093_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r69922862_0",
+   "name": "Rue du Château d'Or - Gulden Kasteelstraat",
+   "tile": "D6",
+   "at": [
+    -1120.7,
+    1135.7
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    39.1,
+    39.8
+   ],
+   "railTop": 54.77,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r69922862_0",
+   "name": "Rue du Château d'Or - Gulden Kasteelstraat",
+   "tile": "D6",
+   "at": [
+    -1124.2,
+    1136.5
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    39.1,
+    39.8
+   ],
+   "railTop": 54.71,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r69922863_0",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "D6",
+   "at": [
+    -1124.7,
+    1110.2
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    40.3,
+    39
+   ],
+   "railTop": 54.5,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r69922863_0",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "D6",
+   "at": [
+    -1128.5,
+    1110.6
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    40.2,
+    39
+   ],
+   "railTop": 54.45,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "687",
+   "ok": true
+  },
+  {
+   "road": "r28030785_0",
+   "name": "Avenue de la Chênaie - Eikenboslaan",
+   "tile": "F6",
+   "at": [
+    33.9,
+    1016.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    81.2,
+    77
+   ],
+   "railTop": 71.57,
+   "deck": "r28030785_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r28030785_0",
+   "name": "Avenue de la Chênaie - Eikenboslaan",
+   "tile": "F6",
+   "at": [
+    35.4,
+    1019.4
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    81.5,
+    77.1
+   ],
+   "railTop": 71.55,
+   "deck": "r28030785_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r806451624_4",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "G6",
+   "at": [
+    424.1,
+    789.5
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    59.7,
+    59.9
+   ],
+   "railTop": 69.78,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "692",
+   "ok": true
+  },
+  {
+   "road": "r806451624_4",
+   "name": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "tile": "G6",
+   "at": [
+    417.6,
+    788.9
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    59.6,
+    59.8
+   ],
+   "railTop": 69.75,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "692",
+   "ok": true
+  },
+  {
+   "road": "r47247121_0",
+   "name": "Kauwberg",
+   "tile": "G6",
+   "at": [
+    271.9,
+    867.7
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    65.3,
+    63.7
+   ],
+   "railTop": 69.96,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "691",
+   "ok": true
+  },
+  {
+   "road": "r47247121_0",
+   "name": "Kauwberg",
+   "tile": "G6",
+   "at": [
+    273.6,
+    870.8
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    65.4,
+    63.8
+   ],
+   "railTop": 69.91,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "691",
+   "ok": true
+  },
+  {
+   "road": "r640826547_0",
+   "name": "Rue des Bigarreaux - Vleeskersenstraat",
+   "tile": "D7",
+   "at": [
+    -1107.8,
+    1637.7
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    55.3,
+    56.4
+   ],
+   "railTop": 61.79,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "688",
+   "ok": true
+  },
+  {
+   "road": "r640826547_0",
+   "name": "Rue des Bigarreaux - Vleeskersenstraat",
+   "tile": "D7",
+   "at": [
+    -1104.2,
+    1638.4
+   ],
+   "line": "L124",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    55.3,
+    56.6
+   ],
+   "railTop": 61.86,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "688",
+   "ok": true
+  },
+  {
+   "road": "r28030783_0",
+   "name": "Rue de Verrewinkel - Verrewinkelstraat",
+   "tile": "F7",
+   "at": [
+    -270.8,
+    1306.1
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.8,
+    79.1
+   ],
+   "railTop": 70.61,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r28030783_0",
+   "name": "Rue de Verrewinkel - Verrewinkelstraat",
+   "tile": "F7",
+   "at": [
+    -268.1,
+    1308.6
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.8,
+    79.3
+   ],
+   "railTop": 70.61,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r28030783_0",
+   "name": "Rue de Verrewinkel - Verrewinkelstraat",
+   "tile": "F7",
+   "at": [
+    -269.4,
+    1307.5
+   ],
+   "line": "",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.8,
+    79.2
+   ],
+   "railTop": 70.6,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310974_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1036,
+    2111.3
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    76.9,
+    78
+   ],
+   "railTop": 64.24,
+   "deck": "r185310974_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310974_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1038.9,
+    2108.8
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    78.8,
+    76.3
+   ],
+   "railTop": 64.33,
+   "deck": "r185310974_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310974_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1002.8,
+    2139.2
+   ],
+   "line": "L26/5",
+   "kind": "level",
+   "bridgeTag": true,
+   "sides": [
+    78.3,
+    82.3
+   ],
+   "railTop": 75.96,
+   "deck": "r185310974_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310976_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1136.3,
+    2056.9
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    75.1,
+    76.6
+   ],
+   "railTop": 67.66,
+   "deck": "r185310976_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r185310976_0",
+   "name": "Avenue des Tilleuls - Lindenlaan",
+   "tile": "D8",
+   "at": [
+    -1132.7,
+    2056.6
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    75.2,
+    76.7
+   ],
+   "railTop": 67.65,
+   "deck": "r185310976_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -697,
+    1796.1
+   ],
+   "line": "L26",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    66.7,
+    67.2
+   ],
+   "railTop": 67.42,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "694",
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -694.4,
+    1798.6
+   ],
+   "line": "L26",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    64.9,
+    69.2
+   ],
+   "railTop": 67.37,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "694",
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -690.5,
+    1802.5
+   ],
+   "line": "L26/5",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    62.5,
+    69.2
+   ],
+   "railTop": 67.53,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "694",
+   "ok": true
+  },
+  {
+   "road": "r35049436_2",
+   "name": "Rue Engeland - Engelandstraat",
+   "tile": "E8",
+   "at": [
+    -703.7,
+    1789.3
+   ],
+   "line": "L26/5",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    67.2,
+    60.7
+   ],
+   "railTop": 69.72,
+   "deck": null,
+   "plan": false,
+   "hero": true,
+   "rab": "695",
+   "ok": true
+  },
+  {
+   "road": "r775790690_0",
+   "name": "Brouwerijstraat - Rue de la Brasserie",
+   "tile": "C9",
+   "at": [
+    -1475.5,
+    2401.2
+   ],
+   "line": "L26",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    47.2,
+    60.5
+   ],
+   "railTop": 63.45,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r775790690_0",
+   "name": "Brouwerijstraat - Rue de la Brasserie",
+   "tile": "C9",
+   "at": [
+    -1472.9,
+    2403.8
+   ],
+   "line": "L26",
+   "kind": "under",
+   "bridgeTag": false,
+   "sides": [
+    59.6,
+    55.8
+   ],
+   "railTop": 63.49,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r31302810_0",
+   "name": "Rue du Bourdon - Horzelstraat",
+   "tile": "D9",
+   "at": [
+    -1204,
+    2223.8
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    69.6,
+    69.5
+   ],
+   "railTop": 63.15,
+   "deck": "r31302810_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r31302810_0",
+   "name": "Rue du Bourdon - Horzelstraat",
+   "tile": "D9",
+   "at": [
+    -1205.1,
+    2220.2
+   ],
+   "line": "L26",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    69.5,
+    69.5
+   ],
+   "railTop": 63.15,
+   "deck": "r31302810_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r430168935_0",
+   "name": "Kleindalstraat - Rue Kleindal",
+   "tile": "E10",
+   "at": [
+    -661.7,
+    2868.8
+   ],
+   "line": "L124",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    78.2,
+    77
+   ],
+   "railTop": 79.95,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r430168935_0",
+   "name": "Kleindalstraat - Rue Kleindal",
+   "tile": "E10",
+   "at": [
+    -659.1,
+    2866.2
+   ],
+   "line": "L124",
+   "kind": "level",
+   "bridgeTag": false,
+   "sides": [
+    75,
+    79.7
+   ],
+   "railTop": 80.03,
+   "deck": null,
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735646_0",
+   "name": "Avenue des Hospices - Godshuizenlaan",
+   "tile": "E10",
+   "at": [
+    -751.3,
+    2775
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.4,
+    85.5
+   ],
+   "railTop": 80.13,
+   "deck": "r1002735646_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735646_0",
+   "name": "Avenue des Hospices - Godshuizenlaan",
+   "tile": "E10",
+   "at": [
+    -753.4,
+    2777.8
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.3,
+    85.6
+   ],
+   "railTop": 78.66,
+   "deck": "r1002735646_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735650_0",
+   "name": "",
+   "tile": "E10",
+   "at": [
+    -745.7,
+    2780.5
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.5,
+    84.5
+   ],
+   "railTop": 79.98,
+   "deck": "r1002735650_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  },
+  {
+   "road": "r1002735650_0",
+   "name": "",
+   "tile": "E10",
+   "at": [
+    -748.9,
+    2782.2
+   ],
+   "line": "L124",
+   "kind": "over",
+   "bridgeTag": true,
+   "sides": [
+    85.3,
+    84.5
+   ],
+   "railTop": 78.7,
+   "deck": "r1002735650_0",
+   "plan": false,
+   "hero": false,
+   "rab": null,
+   "ok": true
+  }
+ ],
+ "wires": [],
+ "summary": {
+  "urbis": 10,
+  "roadCrossings": 42,
+  "over": 21,
+  "under": 13,
+  "level": 8,
+  "decks": 9,
+  "plans": 1,
+  "fails": 10,
+  "allowed": 2,
+  "warnings": 0
+ },
+ "fails": [
+  {
+   "check": "U1",
+   "what": "UrbIS ROB 590 (Avenue Latérale - Zijlaan / Chaussée de Waterloo - Waterloosesteenweg / footway)",
+   "msg": "only 48 % of the bridge under a drawn deck: the rest hangs over the cutting"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS ROB 590 (Avenue Latérale - Zijlaan / Chaussée de Waterloo - Waterloosesteenweg / footway)",
+   "msg": "slab drawn 0.7 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS PB 751 (footway)",
+   "msg": "slab drawn -0.5 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS PB 752 (footway)",
+   "msg": "slab drawn -1.2 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS ROB 820 (Rue du Bourdon - Horzelstraat / footway / platform)",
+   "msg": "slab drawn -1.2 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS ROB 833 (Rue du Merlo - Merlostraat)",
+   "msg": "slab drawn -1.2 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS ROB 864 (Avenue des Tilleuls - Lindenlaan)",
+   "msg": "slab drawn 0.1 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS ROB 899 (Avenue de la Chênaie - Eikenboslaan)",
+   "msg": "slab drawn -1.3 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS ROB 923 (footway / service)",
+   "msg": "slab drawn -2.3 m over the rail top (in the cutting; needs >= 4.8)"
+  },
+  {
+   "check": "U2",
+   "what": "UrbIS ROB 939 (Avenue des Tilleuls - Lindenlaan)",
+   "msg": "slab drawn -1.2 m over the rail top (in the cutting; needs >= 4.8)"
+  }
+ ],
+ "allowed": [
+  {
+   "check": "U3",
+   "what": "UrbIS PB 751 (footway)",
+   "msg": "foot bridge over L26 not built (0 % under a drawn deck)",
+   "why": "Vivier d'Oie station footbridge (OSM 209187984 + steps 903802538 / 903802541 / 903802544 to the platforms and the streets): not modelled yet, only its old slab in the ballast was removed (vivier 2026-11-17). Needs its own scripted model (deck, stairs to both platforms, piers, mesh railings), docs/VIVIER.md next steps."
+  },
+  {
+   "check": "U3",
+   "what": "UrbIS PB 752 (footway)",
+   "msg": "foot bridge over L26 not built (0 % under a drawn deck)",
+   "why": "Vivier d'Oie station west footbridge (OSM 36870319 + steps 903802530 / 903802533 + ramp 36870320): same as PB 751."
+  }
+ ],
+ "warnings": []
+}
