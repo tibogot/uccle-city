@@ -111,7 +111,7 @@ four, where a fitting place exists) every 60-110 s (first after 25-40 s); Y take
 - `viewer/tramline.js`: `setBlock()` (a held track), `trackNear()`, `shapePoint()`; trips read `tripD` (their delay).
 - `viewer/game/kit.js`: one line, `def.idleObjective(kit)` (a game's own objective card + prompt when no mission runs).
 - `viewer/game/cityGame.js`: registers the police game (replaces the "coming soon" entry).
-- `docs/TODO.md` (section 8). New: `viewer/police/*`, `viewer/policeCar/{beaconModel,fitCar,pattern,siren}.js`,
+- `docs/TODO_ARCHIVE.md` (section 8). New: `viewer/police/*`, `viewer/policeCar/{beaconModel,fitCar,pattern,siren}.js`,
   `tools/game/build_police_spots.py` -> `data/game/police_spots.json` (31 KB).
 
 ## Weak spots / next

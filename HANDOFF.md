@@ -40,7 +40,7 @@ pedestrians, weather). Old worktrees: 17 merged clean ones removed 2026-11-13; ~
 
 ## State on 2026-11-13
 
-Almost everything below is now MERGED and ON in the city (see `docs/TODO.md` "CURRENT STATE" and `docs/MERGE_PLAN.md`).
+Almost everything below is now MERGED and ON in the city (see `docs/TODO_ARCHIVE.md` "CURRENT STATE" and `docs/MERGE_PLAN.md`).
 New rules: JOINS (no gap where a model meets city ground), a FIXED light count (pools only: changing the number of
 lights recompiles every material = a multi-second freeze), code conflicts resolved by hand. Local server:
 `python %TEMP%/uccle_nocache_server.py <port> <worktree>` (queue 128).
@@ -275,7 +275,7 @@ Pipeline (raw data must be fetched first, see README): `python pipeline/run_tile
 1. Clone `tibogot/uccle-city`, branch `claude/foundation` (all work is there; nothing merged to main).
 2. Serve the repo root: `python3 -m http.server 8765`, open
    `http://localhost:8765/viewer/index.html?tile=I6` in Chrome/Edge (WebGPU). Do the browser check
-   in `docs/TODO.md` section 0 first.
+   in `docs/TODO_ARCHIVE.md` section 0 first.
 3. Python pipeline: `python3 -m venv ../venv && ../venv/bin/pip install -r pipeline/requirements.txt`.
    Raw data (`data/raw/`, git-ignored) is NOT in the repo: re-fetch with `fetch_osm.py`,
    `fetch_urbis.py`, the GTFS curl in `pipeline/build_transit.py`, and `build_roofcolors.py`
