@@ -13,6 +13,18 @@ import { openParallelPipelines } from "../vendor/engine/parallelPipelines.js";
 import { warmGamePipelines, awaitPipelinesQuiet } from "../vendor/engine/pipelineWarmup.js";
 import { neededAtReveal } from "./bootGate.js";
 
+// DISPOSED GEOMETRIES ARE NEVER DRAWN OR COMPILED BY THE QUEUE (heapfix, docs/HEAP.md): a job's roots are taken when it is
+// QUEUED and drawn when it RUNS (the compile flush under the play loader can be seconds later). Under the boot cover the
+// tiles' compiles are not awaited (main.js preCompile, fader.hold), so a far tile replaced by its full tile meanwhile was
+// disposed (geometry.dispose: its GPU buffers released) and then drawn again by the flush: three re-created its buffers
+// from the arrays (a GPU leak before; with the heap drop the arrays are empty: "index buffer size (0)"). A mesh whose
+// geometry was disposed is hidden for the job's draw / compile instead.
+const disposedGeo = new WeakSet();
+{ const d = THREE.BufferGeometry.prototype.dispose; THREE.BufferGeometry.prototype.dispose = function () { disposedGeo.add(this); return d.apply(this, arguments); }; }
+export const geometryDisposed = (g) => !!g && disposedGeo.has(g);
+const skipStats = { flush: 0, compile: 0 };
+if (typeof globalThis !== "undefined") globalThis.__queueSkips = skipStats;
+
 export function openBootPipelines(renderer, scene) {
   const win = openParallelPipelines(renderer, scene);
   // the loading scene's readout: how many of the async pipelines started in the window are done (device-level count)
@@ -229,6 +241,7 @@ function flushDraw(take) {
       if (top.parent !== holder && top !== holder && top !== scene && !top.isScene && !tops.includes(top)) { tops.push(top); holder.add(top); }
       for (let p = r.parent; p; p = p.parent) set(p, "visible", true);
       r.traverse((o) => {
+        if (disposedGeo.has(o.geometry)) { set(o, "visible", false); skipStats.flush++; return; }   // (disposed since it was queued: heapfix)
         set(o, "visible", true);
         if (o.isMesh || o.isPoints || o.isLine || o.isSprite) {
           n++;
@@ -289,6 +302,7 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       const saved = [];
       const set = (o, k, v) => { saved.push([o, k, o[k]]); o[k] = v; };
       root.traverse((o) => {
+        if (disposedGeo.has(o.geometry)) { if (o.visible) set(o, "visible", false); skipStats.compile++; return; }   // (heapfix)
         if (!o.visible) set(o, "visible", true);
         if (o.isMesh || o.isPoints || o.isLine || o.isSprite) {
           if (o.frustumCulled) set(o, "frustumCulled", false);
@@ -459,6 +473,7 @@ export async function warmShadows(renderer, scene, roots, { perFrame = 2 } = {})
     for (let i = 0; i < meshes.length; i += perFrame) {
       g.clear();
       for (const o of meshes.slice(i, i + perFrame)) {
+        if (disposedGeo.has(o.geometry)) { skipStats.flush++; continue; }   // (disposed meanwhile: heapfix)
         const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, o.material, 1) : new THREE.Mesh(o.geometry, o.material);
         if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
         p.castShadow = true; p.receiveShadow = o.receiveShadow; p.frustumCulled = false; p.userData = { ...o.userData, fade: 0.5 };
