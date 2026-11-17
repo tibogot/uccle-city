@@ -51,7 +51,23 @@ export function openBootPipelines(renderer, scene) {
   return win;
 }
 
-export async function warmBoot(renderer, scene, win, needed = () => true) {
+export async function warmBoot(renderer, scene, win, needed = () => true, { lift = false } = {}) {
+  // perf8 (?coverlift=old): `lift` = the play loader takes over from the cover (a ?game= start, the free-roam hold): the
+  // forced frames build every node graph as before, but the cover does not wait for the pipelines to compile nor for the
+  // jobs the first view needs: the play loader waits for them (main.js areaReady: no pipeline in flight, no near job)
+  // while the ring's full tiles land beside them (the GPU process compiles while the main thread builds the tiles)
+  if (lift) {
+    const t0 = performance.now();
+    for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
+    const t1 = performance.now();
+    const warm = await warmGamePipelines({ scene }, new Set(), { frames: 2 });
+    const t2 = performance.now();
+    bootJobsClosed = true;
+    const end = win.end();                                   // (closes the window now; its pipelines finish in the background)
+    win.ended = end;
+    const R = (a, b) => Math.round(b - a);
+    return { ms: Math.round(t2 - t0), warmed: warm.warmed, parallel: win.created ?? 0, late: 0, skipped: [], phases: `settle ${R(t0, t1)}, forced ${R(t1, t2)}, the rest under the play loader` };
+  }
   const t0 = performance.now();
   // Let the per-frame updaters settle first (tree LOD, lamps, cars): the warm-up restores every
   // visible/count it touched to the value it saw BEFORE its frames, and the tree field only re-checks
@@ -106,10 +122,24 @@ const pump = () => {
 };
 const pumpOne = () => {
   if (!jobs.length) return;
+  if (FLUSH && flushWith && !inFlight.size && flushWith.active()) {
+    const take = jobs.filter((j) => j.roots);
+    if (take.length > 1) {
+      for (const j of take) jobs.splice(jobs.indexOf(j), 1);
+      const fj = { job: () => flushJobs(take), first: false, names: ["perf8-flush"], resolve: () => {}, reject: () => {} };
+      inFlight.add(fj); running = true;
+      Promise.resolve().then(fj.job).finally(() => { inFlight.delete(fj); running = inFlight.size > 0; pump(); });
+      return;
+    }
+  }
   let i = jobs.findIndex((j) => j.first);
   // boot3: until the cover lifts, the jobs the first view needs (bootGate.js neededAtReveal: the models in the boot's
   // ring) go before the others (the far landmarks queued first had the in-ring ones wait 15-17 s). ?bootquiet=all: FIFO
   if (i < 0 && !bootJobsClosed && !BOOT_QUIET_ALL) i = jobs.findIndex((j) => j.names && neededAtReveal(j.names));
+  // perf8 (?fadelast=old): a job queued `last` (the fading copies of a tile landing under the play loader or of the start
+  // tile: needed only when that tile fades OUT, minutes later) waits behind every other job: the loader's settle waits for
+  // the landmarks' jobs, which were queued behind 8 tiles' fading copies (FIFO)
+  if (i < 0 && FADE_LAST) { const k = jobs.findIndex((j) => !j.last); if (k > 0) i = k; }
   const j = jobs.splice(i >= 0 ? i : 0, 1)[0];
   inFlight.add(j); running = true; runningJob = j;
   Promise.resolve().then(j.job).then(j.resolve, j.reject).finally(() => { inFlight.delete(j); running = inFlight.size > 0; pump(); });
@@ -117,7 +147,66 @@ const pumpOne = () => {
 /** perfgame (the play loader, viewer/loader/playLoader.js): the precompile queue's jobs left (0 = idle) */
 export const compileJobsLeft = (near = null) => [...jobs, ...inFlight].filter((j) => !near || j.first || near(j.names || [])).length;
 let runningJob = null;
-const enqueue = (job, first = false, names = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, resolve, reject }); pump(); });
+const enqueue = (job, first = false, names = null, last = false, roots = null) => new Promise((resolve, reject) => { jobs.push({ job, first, names, last, roots, resolve, reject }); pump(); });
+
+// perf8 (?compileflush=old = one compileAsync job after the other, as before): WHILE THE PLAY LOADER COVERS THE SCREEN the
+// queued precompile jobs are done together, the boot warm-up's way: their roots drawn in ONE forced frame (every node graph
+// built synchronously, no frame to keep smooth) with a parallel-pipeline window open (every pipeline handed to the GPU
+// process at once), then the jobs resolve when those pipelines are ready. Measured before: the loader's last ~16 s were
+// the serial queue (198 jobs, 38 s of job time after the cover: the town hall 9 s, the public art 1.7 s ...), each
+// compileAsync job yielding to frames and keeping at most 16 pipelines in flight.
+// (round 8: ON by default. On a GREEN machine police 43.0 vs 48.2 s to play, falcon 39.3 vs 52.0 s, free roam 32.1 s, every
+// start clean (no frame > 50 ms in the first 15 s). On the RED (owner busy) machine 2 of 6 falcon starts had 1.2-1.4 s GPU
+// stalls 4-9 s into play with it, but a police start without it had one too: not attributed to it)
+const FLUSH = typeof location !== "undefined" && !/[?&]compileflush=old(&|$)/.test(location.search);
+let flushWith = null;
+/** main.js: { active() (the play loader holds), render() (one frame of the city's pass), renderer, scene } */
+export function setCompileFlush(o) { flushWith = o; }
+async function flushJobs(take) {
+  const { renderer, scene, render } = flushWith;
+  const t0 = performance.now();
+  const holder = new THREE.Group(); holder.name = "perf8-flush";
+  const saved = [], tops = [];
+  const set = (o, k, v) => { if (o[k] !== v) { saved.push([o, k, o[k]]); o[k] = v; } };
+  let n = 0;
+  try {
+    for (const j of take) for (const r of [].concat(j.roots)) {
+      if (!r) continue;
+      let top = r; while (top.parent) top = top.parent;
+      if (top !== scene && !top.isScene && !tops.includes(top)) { tops.push(top); holder.add(top); }
+      for (let p = r.parent; p; p = p.parent) set(p, "visible", true);
+      r.traverse((o) => {
+        set(o, "visible", true);
+        if (o.isMesh || o.isPoints || o.isLine || o.isSprite) {
+          n++;
+          set(o, "frustumCulled", false);
+          if (o.isInstancedMesh && o.count === 0) set(o, "count", 1);
+          if (o.geometry?.isInstancedBufferGeometry && o.geometry.instanceCount === 0) set(o.geometry, "instanceCount", 1);
+        }
+      });
+    }
+    scene.add(holder);
+    const win = openParallelPipelines(renderer, scene);
+    try { render(); } finally {
+      for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; }
+      saved.length = 0;
+      for (const t of tops) holder.remove(t);
+      scene.remove(holder);
+    }
+    await win.end();
+    for (const j of take) j.resolve();
+  } catch (e) {
+    for (let i = saved.length - 1; i >= 0; i--) { const [o, k, v] = saved[i]; o[k] = v; }
+    for (const t of tops) if (t.parent === holder) holder.remove(t);
+    scene.remove(holder);
+    console.warn("[compile flush]", e);
+    for (const j of take) j.resolve();                 // (their pipelines then build async at first draw)
+  }
+  (globalThis.__flushes ||= []).push({ jobs: take.length, drawables: n, ms: Math.round(performance.now() - t0) });
+}
+// (perf8, OFF by default: ?fadelast=1. Measured: the falcon start then had 1.2-1.4 s GPU stalls in its first 15 s of play,
+// the fading copies' compiles moved after the reveal; with the compile flush the queue's order matters little anyway)
+const FADE_LAST = typeof location !== "undefined" && /[?&]fadelast=1(&|$)/.test(location.search);
 export function installCompileQueue(renderer) {
   if (rawCompile) return;
   rawCompile = renderer.compileAsync.bind(renderer);
@@ -144,7 +233,7 @@ export function installCompileQueue(renderer) {
 
 /** Compile `roots` (Object3Ds, in the scene or about to be) for `camera` in `scene`, into `target`/`mrt`
  *  (the scene pass), without drawing them. Resolves when their shaders and pipelines are ready. */
-export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false, names = null } = {}) {
+export function precompile(renderer, roots, camera, scene, { target = null, mrt = null, first = false, names = null, last = false } = {}) {
   if (!renderer.backend?.isWebGPUBackend) return Promise.resolve();
   installCompileQueue(renderer);
   const rec = globalThis.__boot ? { q: Math.round(performance.now()), name: [].concat(roots).map((r) => r?.name || r?.type || "?").join(",").slice(0, 60) } : null;
@@ -179,7 +268,7 @@ export function precompile(renderer, roots, camera, scene, { target = null, mrt 
       try { await p; } catch (e) { console.warn("[precompile]", e); }
     }
     } finally { if (rec) rec.e = Math.round(performance.now()); }   // (a boot probe's queue record: debug/bootTimeline.js)
-  }, first, names ?? [].concat(roots).map((r) => r?.name || ""));   // (perfgame round 5: a staged landmark job carries its model's name)
+  }, first, names ?? [].concat(roots).map((r) => r?.name || ""), last && !first, roots);   // (perfgame round 5: a staged landmark job carries its model's name)
   if (!bootJobsClosed) { const j = { names: names ?? [].concat(roots).map((r) => r?.name || ""), first, done: false }; job.finally(() => { j.done = true; }); bootJobs.push(j); }
   return job;
 }
@@ -270,7 +359,11 @@ export function warmNow(scene, render, { frames = 1 } = {}) {
 // busy for ~2 s with its texture / buffer uploads and shader modules (measured in a trace: the loading screen froze);
 // with the work split, the GPU process gets a turn between chunks. Same total work, same pipelines. ?warmchunk=0: one
 // frame as before; ?warmchunk=N: N drawables per chunk (default 40).
-export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
+// perf8 (?earlypace=old = the drain after every chunk): the drain was ~1 s a chunk (10.8 of the 14.7 s, measured round 5):
+// the GPU process compiling the chunk's async pipelines, which onSubmittedWorkDone waits behind. Now the next chunk's node
+// builds (main thread) run WHILE the GPU process compiles the last chunk's pipelines: a task break between chunks (the
+// tile landings and the loading screen's messages get their turn), the GPU drained only every `drainEvery` chunks.
+export async function warmNowChunked(scene, render, { chunk = 40, drainEvery = 1 } = {}) {
   const t0 = performance.now();
   const list = [];
   scene.traverse((o) => { if (o.isMesh || o.isPoints || o.isSprite) list.push(o); });
@@ -294,8 +387,8 @@ export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
     for (const o of list.slice(i, i + chunk)) { let t = o; while (t.parent && !t.parent.isScene) t = t.parent; const k = t.name || t.type; tops.set(k, (tops.get(k) || 0) + 1); }
     (globalThis.__earlyChunks ||= []).push({ ms: Math.round(performance.now() - tc), tops: [...tops].sort((a, b) => b[1] - a[1]).slice(0, 6) });
     // let the GPU process drain this chunk (and draw a compositor frame) before the next one
-    try { await device?.queue.onSubmittedWorkDone(); } catch { /* lost device */ }
-    await new Promise((r) => setTimeout(r, 16));
+    if (drainEvery > 0 && frames % drainEvery === 0) { try { await device?.queue.onSubmittedWorkDone(); } catch { /* lost device */ } }
+    await new Promise((r) => setTimeout(r, drainEvery > 0 && frames % drainEvery === 0 ? 16 : 0));
   }
   return { drawables: list.length, ms: Math.round(performance.now() - t0), frames };
 }
@@ -305,9 +398,9 @@ export async function warmNowChunked(scene, render, { chunk = 40 } = {}) {
  *  pass through the precompile queue (compileAsync: async node builds, frame-paced), then their SHADOW pass (not in
  *  compileAsync), `perFrame` meshes a frame far under the city with the pipelines created async (as the landmarks'
  *  warmShadowPass): at most a couple of small shadow builds per frame. Resolves when done. */
-export async function warmLater(renderer, scene, roots, compile, { perFrame = 2 } = {}) {
+export async function warmLater(renderer, scene, roots, compile, { perFrame = 2, last = false } = {}) {
   if (!roots.length) return;
-  if (compile) await compile(roots, { first: true });
+  if (compile) await compile(roots, last && FADE_LAST ? { last: true } : { first: true });   // (perf8: `last` = behind every other job)
   await warmShadows(renderer, scene, roots, { perFrame });
 }
 /** the shadow-pass half of warmLater: `perFrame` shadow-casting meshes of `roots` a frame, far under the city */

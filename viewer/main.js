@@ -51,7 +51,7 @@ import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- up
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
-import { openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
+import { setCompileFlush, openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { buildGrounds } from "./grounds.js";
 import { lyceeFront } from "./lyceeFront.js";
@@ -76,7 +76,8 @@ import { cityIvy } from "./plants/cityIvy.js";
 import { keepPipelinesAsync, boostCompile } from "./asyncPipes.js";
 import { stagedCompiler, setStagedFocus, STAGED } from "./stagedCompile.js";
 import { FAR_MERGE, mergeFarLevel, setFarMergeRenderer } from "./farMerge.js";   // perfgame round 6: a far LOD in one draw (?farlodmerge=1)   // perfgame round 5: far landmarks compile their far LOD first (?stagedlod=old)   // perfgame: new pipelines during play async, never a sync stall (?asyncpipes=old)
-import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";   // perfgame: the play loader (?playloader=old: none)
+import { PL as playLoader, PLAY_LOADER } from "./loader/playLoader.js";
+import { sweepRenderObjects } from "./roSweep.js";   // perf8: the stand-ins' render objects released (heap)   // perfgame: the play loader (?playloader=old: none)
 import { setFoliageLights } from "./foliage/vertexLight.js";   // perf4: foliage lit per vertex, sun + sky only (?vlight=old ?foliagelamps=old)
 import { setCellCullSun } from "./cellCull.js";                 // perf4: tile meshes culled per cell and pass (?cellcull=old)
 import { freeze } from "./staticFreeze.js";                       // perf4: ?freeze=1 the tile layers' world matrices computed once (opt-in)
@@ -120,7 +121,23 @@ const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // tiles' shaders), ?smooth=0: every smooth-LOD change off.
 const TILE_FADE = SMOOTH && params.get("tilefade") !== "0";
 const STREAM_ORDER = params.get("streamorder") !== "old";
-const HOLD_FAST = params.get("holdfast") !== "old";   // perfgame round 7: tiles under the play loader: no fade-in, no awaited compiles   // perfgame: stream the wanted tile nearest the player first
+const HOLD_FAST = params.get("holdfast") !== "old";   // perfgame round 7: tiles under the play loader: no fade-in, no awaited compiles
+// perf8 (docs/PERF_GAME.md round 8): a tile landing under the play loader runs its main-thread steps back to back (it waited
+// a rendered frame between each of its ~18 steps: ~18 city frames per tile behind the loader, ?holdslices=old)
+const HOLD_SLICES = params.get("holdslices") !== "old";
+// perf8: the early warm-up hands its chunks to the GPU without waiting for it to drain between them (?earlypace=old)
+const EARLY_PACE_OLD = params.get("earlypace") === "old";
+// perf8: when the play loader takes over from the boot cover (a ?game= start, the free-roam hold), the cover lifts once the
+// node graphs are built: the pipelines' compiles, the first view's compile jobs, the loading flight's landing and the
+// GPU check run under the play loader beside the ring's tiles (warmup.js warmBoot lift; ?coverlift=old: as before)
+// perf8: the play loader also waits for the lamp shadows' by-day warm-up of the casters the area brought (cityNight.js), run at
+// once under the loader (?nighthold=old: 4 s after each was tagged, whenever that is: one ~150 ms frame ~8 s into play)
+const NIGHT_HOLD = params.get("nighthold") !== "old";
+const COVER_LIFT = params.get("coverlift") !== "old" && PLAY_LOADER && params.get("warmup") !== "0" && (GAME_START || BOOT_HOLD);
+// perf8: a ?game= boot no longer loads the start tile's ring as FAR tiles under the cover: the play loader then waits for
+// that whole ring in FULL anyway (settlering), so the far versions were built, drawn once and thrown away (the cover's
+// "neighbours" stage, ~6 s; the far-tile worker's time beside the full ones). ?gamering=old: as before
+const GAME_RING_FULL = COVER_LIFT && GAME_START && params.get("gamering") !== "old" && params.get("settlering") !== "old" && params.get("settlejobs") !== "loads";
 const UNLOAD_GAP = params.get("unloadgap") !== "old", UNLOAD_MARGIN = +(params.get("unloadmargin") ?? 60);   // perfgame round 2: full tiles unload by distance
 const fader = new Fader();
 /** compileFor(roots): build the shaders of streamed objects before they show (warmup.js precompile; set once the
@@ -719,7 +736,8 @@ function bootPrefetch(manifest, entry) {
   // as the boot and stream() take them: the start tile, its ring as far tiles (under the cover), then the ring in full
   // (?bootlite=0: one full ring tile and the two nearest far tiles under the cover, as before)
   const full = built.filter((t) => dist(t) <= ring + 0.01).sort((a, b) => dist(a) - dist(b));
-  if (params.get("bootlite") !== "0" && far > ring) bootRing = [[full[0], false], ...full.slice(1).map((e) => [e, true]), ...full.slice(1).map((e) => [e, false])];
+  if (GAME_RING_FULL) bootRing = full.map((e) => [e, false]);       // (perf8: the ring in full only, no far versions)
+  else if (params.get("bootlite") !== "0" && far > ring) bootRing = [[full[0], false], ...full.slice(1).map((e) => [e, true]), ...full.slice(1).map((e) => [e, false])];
   else {
     const lite = far > ring ? built.filter((t) => dist(t) <= far + 0.01 && dist(t) > ring + 0.01).sort((a, b) => dist(a) - dist(b)).slice(0, 2) : [];
     bootRing = [...full.slice(0, 2).map((e) => [e, false]), ...lite.map((e) => [e, true]), ...full.slice(2).map((e) => [e, false])];
@@ -855,7 +873,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   let busy = 0, longest = 0, mark = performance.now(), worst = "";
   const slices = [];
   const frame = (label = "") => { const dt = performance.now() - mark; busy += dt; if (dt > 4) slices.push(`${label} ${dt.toFixed(0)}`); if (dt > longest) { longest = dt; worst = label; }
-    if (verbose || fader.hold) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover: no frame to keep smooth
+    if (verbose || fader.hold || (holdFast && HOLD_SLICES && playLoader.active)) { mark = performance.now(); return Promise.resolve(); }   // under the boot cover (perf8: or the play loader, ?holdslices=old): no frame to keep smooth
     return new Promise((r) => requestAnimationFrame(() => { mark = performance.now(); r(); })); };   // spread GPU-side work over frames
   const { roads, feats } = d;
 
@@ -1000,7 +1018,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (fadeIn) { const tc = performance.now(); await preCompile(Object.values(own), true); mark += performance.now() - tc; }   // shaders + fading copies built before it shows (not counted as a slice)
   if (holdFast && compileFor && TILE_FADE) {
     const fp = Object.values(own).map(fadeProxies).filter(Boolean);
-    if (fp.length) compileFor(fp).catch(() => {});                  // (background, not awaited: the queue's normal order)
+    if (fp.length) compileFor(fp, { last: true }).catch(() => {});  // (background, not awaited; perf8: behind every other job, warmup.js FADE_LAST)
   }
   for (const u of ups) updaters.push(u);
   for (const g of Object.values(own)) if (fadeIn) { g.visible = true; fader.fade(g, +1); }
@@ -1148,7 +1166,7 @@ async function main() {
   // the parked cars of every tile, as one fleet (viewer/carFleet.js; ?cars=box: the old box cars per tile)
   if (params.get("cars") !== "box") { scene.add(carFleet.group); updaters.push(carFleet.update); carFleet.setRenderer(renderer, scene); }
   if (!NIGHT) updaters.push(lampLightPool(scene));   // the city's lamp lights: ONE fixed pool for the session (light count never changes)
-  else cityNight = nightMod.startCityNight({ scene, renderer, updaters, groundAt: (x, z) => world.surface(x, z), log });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
+  else cityNight = nightMod.startCityNight({ scene, renderer, updaters, groundAt: (x, z) => world.surface(x, z), log, holding: NIGHT_HOLD ? () => playLoader.active : null });   // ?night=1: instead, the night pool + 2 shadowed lamps (fixed, before the warm-up)
   updaters.push(updateSignals);           // the signal heads' cycle (viewer/traffic/signals.js), shared with the traffic
   // the world: the main tile now, its neighbours streamed in after the first frame (?ring=0|1|2)
   const world = {
@@ -1193,7 +1211,7 @@ async function main() {
     pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0", upscale: UPSCALE ? createUpscaler(renderer, camera) : null }) : null;   // ?ao=0 ?ssr=0: A/B
     cityQuality._pipe = pipe; if (params.get("quality")) cityQuality.set(params.get("quality"));   // --- upscale: the settings menu's quality presets
     if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
-    if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first, names: o?.names ?? null });   // ?precompile=0: A/B
+    if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first, names: o?.names ?? null, last: !!o?.last });   // ?precompile=0: A/B
     else { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = lighting.exposureScale; }
   };
 
@@ -1346,7 +1364,7 @@ async function main() {
     // boot2: in chunks with the GPU drained between them (the loading screen keeps moving), ?warmchunk=0: one frame
     const chunk = params.get("warmchunk") === "0" ? 0 : Math.max(1, +(params.get("warmchunk") || 40));
     draw.device = renderer.backend?.device;
-    const w = chunk ? await warmNowChunked(scene, draw, { chunk }) : warmNow(scene, draw);
+    const w = chunk ? await warmNowChunked(scene, draw, { chunk, drainEvery: EARLY_PACE_OLD ? 1 : 0 }) : warmNow(scene, draw);   // (perf8 ?earlypace=old: the GPU drained after every chunk)
     log(`early warm-up: ${w.drawables} drawables built in ${w.ms} ms${w.frames ? ` (${w.frames} chunks)` : ""} (their pipelines compile in parallel while the first tile builds)`);
   };
   if (trackP) trackProf = await (trackEarly ?? trackP());
@@ -1853,7 +1871,7 @@ async function main() {
       // and ONE full neighbour (the worker built it right after the start tile): a second full tile emits its shared TSL
       // functions in another order than the first (other WGSL text: new pipelines), so the warm-up must see one, or the
       // first full tile after the cover waited ~4 s on its 15 new pipelines (measured)
-      await streamBootLites();
+      if (!GAME_RING_FULL) await streamBootLites();   // (perf8: a game boot's ring comes in full under the play loader)
       // boot3 (docs/BOOT.md section 5; ?bootfull=1 = before): NO full neighbour under the cover. It was held at fade 0 for
       // the warm-up (the reveal frame showed its far tile anyway) and the cover waited ~4 s for its worker build after the
       // start tile's; now the worker builds it right after the start tile all the same and it streams in after the
@@ -1885,7 +1903,7 @@ async function main() {
     const fadeWarm = TILE_FADE ? world.tiles.flatMap((t) => t.groups.flatMap((g) => [FADE_DEFER ? null : fadeProxies(g), ownProxies(g)])).filter(Boolean) : [];
     if (TILE_FADE && FADE_DEFER) lateWarm = world.tiles.flatMap((t) => t.groups.map(fadeProxies)).filter(Boolean);
     for (const g of fadeWarm) scene.add(g);
-    const w = await warmBoot(renderer, scene, bootPipes, neededAtReveal).finally(() => clearInterval(tick));   // (boot3: waits only for the jobs the first view needs, bootGate.js neededAtReveal)
+    const w = await warmBoot(renderer, scene, bootPipes, neededAtReveal, { lift: COVER_LIFT }).finally(() => clearInterval(tick));   // (boot3: waits only for the jobs the first view needs, bootGate.js neededAtReveal)
     for (const g of fadeWarm) g.removeFromParent();
     interiorWarm?.removeFromParent();
     fader.hold = false;
@@ -1893,12 +1911,14 @@ async function main() {
   }
   // the hand-over: the loading flight is on the city's first camera (at most 3 s more): the cover (that view) cross-fades
   // into the city's frames from the same camera (index.html #cover.gone, 1.1 s), then the loader's worker stops
-  if (landing) await Promise.race([landing, new Promise((r) => setTimeout(r, 3000))]);
+  if (landing && !COVER_LIFT) await Promise.race([landing, new Promise((r) => setTimeout(r, 3000))]);   // (perf8: not under the play loader)
   // ---- boot2 (docs/BOOT.md): the cover stays up until the GPU has finished a real frame of the city (Mr.doob: no
   // flash of a half-built frame), then fades (index.html #cover.gone, 1.1 s) while the bar completes
   bootStage("gpu");
-  await new Promise((r) => requestAnimationFrame(() => r()));
-  try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
+  if (!COVER_LIFT) {                                 // (perf8: the play loader opens under the cover: no half-built frame is seen)
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    try { await renderer.backend.device?.queue.onSubmittedWorkDone(); } catch { /* WebGL2 / lost device */ }
+  }
   // ---- /boot2
   bootStage("ready");
   // perfgame: a ?game= boot hands the cover over to the play loader (shown first, under nothing): the game kit starts the
@@ -1923,13 +1943,19 @@ async function main() {
   // frames later) instead of stalling the frame on the GPU process (?asyncpipes=old: three's sync path)
   if (params.get("asyncpipes") !== "old") window.__asyncPipes = keepPipelinesAsync(renderer, scene);
   if (params.get("compileboost") !== "old") boostCompile(renderer, () => playLoader.active);   // perfgame round 2
+  // perf8 (?compileflush=old): under the play loader the queued compile jobs are done together in one forced frame (warmup.js)
+  setCompileFlush({ active: () => playLoader.active, render: () => (pipe ? pipe.render(null) : renderer.render(scene, camera)), renderer, scene });
   // perfgame round 3 (?readysweep=old): the landmarks' pipeline windows (vendor/engine/parallelPipelines.js) wrap three's
   // Pipelines.isReady (called on EVERY draw) and restore what they saw at their open: windows that overlap out of order
   // leave a closed window's wrapper in place for good (~0.1 ms a frame, measured in the drive trace). isReady is only
   // a counter there: the instance override is dropped every 3 s (an open window just stops counting its skipped draws)
   if (params.get("readysweep") !== "old") setInterval(() => { const P = renderer._pipelines; if (P && Object.prototype.hasOwnProperty.call(P, "isReady")) delete P.isReady; }, 3000);
   closeBootWorker();                                // boot3: the boot's second tile worker closes once idle
-  if (lateWarm?.length) warmLater(renderer, scene, lateWarm, compileFor).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${lateWarm.length} groups)`)).catch((e) => log(`late warm-up: ${e.message}`));
+  // perf8 (?rosweep=old): the stand-ins' render objects (warm-up / precompile / bake proxies no longer in the scene) released
+  // with their pipelines and node builds pinned (viewer/roSweep.js): ~270 MB of geometry they kept alive (round 3)
+  if (params.get("rosweep") !== "old") window.__roSweep = sweepRenderObjects(renderer, scene, { log });
+  // (perf8: queued `last`, behind the ring tiles and the landmarks the play loader waits for; the stand-ins dropped after: heap)
+  if (lateWarm?.length) { const n = lateWarm.length; warmLater(renderer, scene, lateWarm, compileFor, { last: true }).then(() => log(`boot3: the start tile's fading copies compiled after the cover (${n} groups)`)).catch((e) => log(`late warm-up: ${e.message}`)).finally(() => { lateWarm = null; }); }
   setTimeout(() => window.__loader?.finish(), 1400 + 1000 * +(params.get("loaderhold") || 0));   // ?loaderhold=s: keep it (hand-over checks)
   // ?impkit=1: the far trees' atlas bakes in the background (a grid row per frame; under the boot cover, where the
   // tiles build without frames, it doubled the boot: 12 -> 28 s). When it is ready its shaders compile off the frame,
@@ -2030,6 +2056,8 @@ async function main() {
       st.full = needFull.filter(has).length;
       st.lite = needLite.filter((n) => has(n) || lite.has(n)).length;
       st.jobs = compileJobsLeft((names) => nearModel(names, x, z, nearModels)); st.pipes = window.__asyncPipes?.pending ?? 0;
+      // (perf8 coverlift: every async pipeline of the device still compiling, the boot's included)
+      if (COVER_LIFT && bootPipes?.progress) st.pipes = Math.max(st.pipes, bootPipes.progress.started - bootPipes.progress.done);
       maxJobs = Math.max(maxJobs, st.jobs); maxPipes = Math.max(maxPipes, st.pipes);
       // (only the needed tiles' fades: the rest of the ring keeps streaming in behind, far from the spawn)
       const fading = fader.list.some((f) => needSet.has(String(f.obj.name).split("-")[0]));
@@ -2038,9 +2066,12 @@ async function main() {
       // and no long frame for 1.5 s: their GLB parse / build / compile would otherwise land in the first minute of play
       // (perfgame round 2, ?settlejobs=loads: the far landmarks' COMPILE jobs are not waited for: 25-37 s
       // of serial compile queue after the cover; once loaded they compile in slices and show when done, the pipelines async)
-      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000);
+      const settled = !settle || (gatesPending() === 0 && (!SETTLE_ALL || compileJobsLeft((names) => nearModel(names, x, z, 1e9)) === 0) && performance.now() - lastLongFrame > 1000 && !(NIGHT_HOLD && cityNight?.warmPending?.()));   // (perf8 ?nighthold=old: the lamp-shadow warm-up of what the area brought done too)
       const gpuOk = st.jobs === 0 && st.pipes === 0 && settled;
       q = tilesOk && gpuOk ? q + 1 : 0;
+      // (perf8 debug: when each condition first held, ms after the start of the hold: window.__areaTrace)
+      { const tr = ((window.__areaTrace ||= {})[label || "?"] ||= {}), now = Math.round(performance.now() - t0); if (tilesOk) tr.tiles ??= now; if (st.jobs === 0) tr.nearJobs ??= now; if (st.pipes === 0) tr.pipes ??= now; if (gatesPending() === 0) tr.gates ??= now; if (settled) tr.settled ??= now;
+        if (!tilesOk) delete tr.tiles; if (st.jobs) delete tr.nearJobs; if (st.pipes) delete tr.pipes; if (!settled) delete tr.settled; tr.st = { ...st }; }
       holdThrottle = HOLD_THROTTLE && !(tilesOk && gpuOk);
       // the bar: tiles 70 %, shaders 25 %, the quiet frames the rest
       const f = 0.7 * ((st.full + 0.25 * st.lite) / Math.max(1, needFull.length + 0.25 * needLite.length)) + 0.25 * (tilesOk ? 1 - (st.jobs + st.pipes) / (maxJobs + maxPipes) : 0) + 0.05 * (q / quiet);

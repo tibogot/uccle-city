@@ -327,3 +327,62 @@ Time to play now read from `__playAt` (playLoader.js stamps the moment the loade
 Found + fixed on the way (farMerge.js): a mesh with its own transform had its SHARED positions moved by `applyMatrix4` (bridges were all identity, landmarks are not): now copied first. A slot bake after the boot drew nothing on the first try (a new pipeline still compiling: target left at its clear alpha 0): now redrawn until alpha is 1 (2 s cap). Load-time bakes checked equal to the A/B ones (town hall brick 0.211 / 0.089 / 0.053).
 
 Remaining: the cover itself (26-31 s on this busy machine) and the area wait under the loader (15 s: the ring's 8 full tiles + landmark settle) are the two big blocks; under 35 s needs the cover cut, not the game setup any more. One police drive had a 306 ms frame with 40 ms of script (GPU / compositor stall with the other app busy), not reproduced.
+
+## Round 8 (2026-11-17, branch claude/perf8; browser, local `tools/serve_cached.py`, warm tile cache, one tab)
+
+**Machine**: preflight RED for most of the session (GPU 24-97 % busy at rest, 2 GB free while an old renderer of ours
+lingered: each run now in a FRESH tab, the previous one closed, 6-8 s to settle), GREEN for the last pairs. Two loads
+(of ~35) never started (no canvas, a refused module request from the local server: harness, not the city). Time to play =
+`__playAt` (the play loader fades), ms from navigation; frames = the first 15 s of play (debug/playTime.js). "Before" =
+`&coverlift=old&earlypace=old&gamering=old&holdslices=old&rosweep=old&nighthold=old&compileflush=old`.
+
+### What the loader really waited for (window.__areaTrace, police, cache warm)
+The ring's 8 full tiles were in 2.4-11.5 s into the hold (their main-thread landing is 0.1-1.4 s each now); the rest of
+the 23-28 s hold was the **serial precompile queue** (198 jobs, ~38 s of job time after the cover: town hall 9.1 s,
+police yard 1.8 s, public art 1.7 s, ...: the near models' jobs done at 18 s, the far ones at 22 s, the pipelines at 23 s).
+And after the reveal, one 130-180 ms frame ~8 s into play: the night lamp shadows' by-day warm-up of the traffic batches
+(~50 ShadowMaterial node builds, cityNight.js WARM_DELAY 4 s after tagging), timing-dependent.
+
+### Results
+| run | before | after (round 8 defaults) |
+|---|---|---|
+| police, GREEN: play / cover / frames > 50 ms / heap | 45.0 s / 25.9 s / 7 / 2.07 GB | **43.0 s** / 18.6 s / **0** / 1.79 GB |
+| police, RED (alternated, 3 + 3) | 50.4-56.7 s (60.4 under memory pressure), cover 25.5-31.7 s, 8-12 frames > 50 ms | 44.9-50.3 s, cover 20.3-21.7 s, 1 frame > 50 ms (the lamp-shadow warm, fixed after) |
+| falcon, GREEN | 48.0 s / 18.3 s / 5 | **39.3 s** / 13.7 s / 1 |
+| falcon, RED | 48.1-66.6 s | 36.2-47.3 s; 2 of 6 starts had 1.2-1.4 s GPU stalls (no script) 4-9 s into play: also seen once in a police start without the flush: not attributed |
+| free roam, GREEN | 40.6 s / 14.0 s / 0 | **32.1 s** / 11.8 s / 0 |
+| free roam, RED | 41.1-56.3 s | 33.4-37.3 s (one run hung: 7 frames in 72 s under memory pressure, 2 GB free) |
+| stand-in geometry in three's render-object cache at play + 15 s (roAudit outGeoMB) | 49-115 MB (1300-1800 render objects) | 0-10 MB (1400-1500 render objects released, ~300 pipelines + ~520 node builds pinned) |
+| JS heap at play + 15 s | 1.48-2.07 GB | 1.5-1.87 GB (the sweep's ~100 MB is within the GC noise; < 1.5 GB not reliably met) |
+| sync pipelines after the reveal | | 0 (police 307 async since the cover, 0 pending at play; falcon 13 after play = Saint-Marc's staged near LOD as the bird flies at it) |
+
+Visual: police at play + 15 s (the yard, the station, the trees, parked patrol cars, flags: complete), falcon at play
+(the nest view) and play + 8 s (flying over Saint-Job: complete, no tile or landmark appearing). Screenshots were taken
+in the session (the MCP could not write into the repo).
+
+### Changes (switch = before; rows in viewer/features.js)
+| switch | default | what |
+|---|---|---|
+| `coverlift` | on | a boot handed to the play loader (a game, the free-roam hold) lifts its cover once the forced warm-up frames have built the node graphs; the pipelines' compiles, the first view's jobs, the loading flight's landing (3 s) and the GPU check run under the loader (areaReady also waits for every async pipeline in flight). Cover -5..-8 s |
+| `earlypace` | on | the early warm-up no longer waits for the GPU after each chunk (its node builds overlap the GPU's compiles) |
+| `gamering` | on | a game boot loads the start tile's ring in full only (no far versions under the cover, built and thrown away) |
+| `holdslices` | on | a tile landing under the play loader runs its steps back to back (no rendered frame between them) |
+| `compileflush` | on | under the play loader the queued precompile jobs are drawn together in ONE forced frame with a parallel-pipeline window (warmup.js flushJobs), not one compileAsync after the other: the police spawn hold 23.4 -> 17.0 s |
+| `nighthold` | on | the lamp shadows' by-day warm-up runs at once under the loader and the loader waits for it (the 150 ms frame ~8 s into play gone) |
+| `rosweep` | on | viewer/roSweep.js: render objects unused for 12 s whose object is out of the scene are disposed with their pipeline, programs and node build pinned first (no rebuild for the real objects later) |
+| `fadelast` | OFF (`?fadelast=1`) | fading copies behind every other compile job: the falcon start then had 1.2-1.4 s GPU stalls in play (that work moved after the reveal) |
+Tools: `debug/playTime.js` (time to play + first 15 s + heap + roAudit), `debug/roAudit.js`, `window.__areaTrace`
+(when each area condition last became true), `globalThis.__flushes`.
+
+### What is left (ranked)
+1. **The cover is still 12-21 s**: the early warm-up (5-8 s of node builds) + the boot warm-up's forced frames (2.4-6 s) +
+   its settle frames (1.3-3 s, the first real frames building what the forced frames do not reach) + the start tile
+   (E4's main-thread work ~4-6 s incl. what runs beside it). Fewer distinct materials (round 4: ~640 fragment programs)
+   or cached WGSL is the lever; the GPU process' pipeline compiles are no longer on the cover's path.
+2. **Police after the cover ~25 s**: "props + warm" (police/warm.js, 8 rAF frames, 1.8-11.6 s depending on what the frames
+   carry) runs BEFORE the spawn's areaReady (serial): start the area wait first / in parallel. Then the flush batches:
+   the first one is ~45 jobs, 470 drawables, ~7 s (one task of node builds).
+3. Heap: < 1.5 GB not met; the remaining 1.5-1.9 GB is plain JS objects (needs a heap snapshot on a fresh machine).
+4. The intermittent 1.2-1.4 s GPU stalls (no script) seen on the RED machine: re-check on GREEN with a trace.
+5. Harness: a fresh tab per run (closing the old one) is needed: on about:blank the old renderer kept 2.2 GB and the GPU
+   process 5.2 GB; one start hung under that pressure.
