@@ -11,7 +11,8 @@
 //                both: the car's entry point (twin at twinAt) > 4 m from the copy's start (the sim's handover blends <= 4 m)
 //   leftovers    copies in a loaded neighbour without a twin there, by class
 //   cost         link ms per tile pair (max, warm, best of 3): the browser links when a tile loads
-//   sim          the real TrafficSim on H5 H6 I5 (+ I6 after 10 s), 120 s: 0 position jumps > 0.5 m at the handovers
+//   sim          the real TrafficSim on H5 H6 I5 (+ I6 after 10 s), 120 s: 0 position jumps > 0.5 m at the handovers; the
+//                handover blend (the gap faded along the route as an S) moves a car <= 0.2 m sideways per m driven
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/twinLink.mjs [--old] [--all] [--min 99] [--ms 5] [T ...]
 // default tiles: H5 H6 H7 I5 I6 I7 J5 J6 J7 (Saint-Job, 3 x 3) + D3 D4 E3 E4 (Alsemberg); --all: every tile (~4 min).
@@ -229,14 +230,29 @@ if (!CACHE && ["H5", "H6", "I5", "I6"].every((n) => T.has(n))) {
   const bs = ["H5", "H6", "I5", "I6"].map((n) => T.get(n).bounds);
   const ctx = { visible: () => false, fx: (Math.min(...bs.map((b) => b.x0)) + Math.max(...bs.map((b) => b.x1))) / 2, fz: (Math.min(...bs.map((b) => b.z0)) + Math.max(...bs.map((b) => b.z1))) / 2 };
   const px = new Float32Array(sim.cap), pz = new Float32Array(sim.cap), had = new Uint8Array(sim.cap);
-  let jumps = 0, maxJump = 0, samp = 0, onCopy = 0;
+  let jumps = 0, maxJump = 0, samp = 0, onCopy = 0, crab = 0, maxSide = 0;
   const inB = (b, x, z) => x >= b.x0 && x < b.x1 && z >= b.z0 && z < b.z1;
   for (let s = 0; s < 120 / STEP; s++) {
     if (s === Math.round(10 / STEP)) SW.add("I6", T.get("I6"));
     sim.step(ctx);
     for (let i = 0; i < sim.cap; i++) {
       if (!sim.alive[i]) { had[i] = 0; continue; }
-      if (had[i] && sim.state[i] === 0) { const m = Math.hypot(sim.x[i] - px[i], sim.z[i] - pz[i]) - sim.v[i] * STEP; if (m > 0.5) { jumps++; maxJump = Math.max(maxJump, m); } }
+      if (had[i] && sim.state[i] === 0) {
+        const dx = sim.x[i] - px[i], dz = sim.z[i] - pz[i], m = Math.hypot(dx, dz) - sim.v[i] * STEP;
+        if (m > 0.5) { jumps++; maxJump = Math.max(maxJump, m); }
+        // (the blend's own sideways drift per m driven: |gap| x the S's slope; <= 0.2 m/m = a brisk lane change's ~11 deg.
+        // ?twinlink=old: the centre offset decaying 10 % a step, measured the same way per m driven)
+        const fw = sim.v[i] * STEP;
+        if (fw > 0.05) {
+          let side = 0;
+          if (sim.bL?.[i] > 0 && !OLD) {
+            const F = (t) => (t <= 0 ? 1 : t >= 1 ? 0 : 1 - t * t * (3 - 2 * t)), u = sim.odo[i] - sim.bS[i];
+            side = Math.hypot(sim.bdx[i], sim.bdz[i]) * Math.abs(F((u - fw) / sim.bL[i]) - F(u / sim.bL[i])) / fw;
+          } else if (OLD) side = Math.hypot(sim.offX[i], sim.offZ[i]) * (0.1 / 0.9) / fw;
+          if (side > maxSide) maxSide = side;
+          if (side > 0.2) crab++;
+        }
+      }
       px[i] = sim.x[i]; pz[i] = sim.z[i]; had[i] = 1;
       if (s % 4 || s < 15 / STEP) continue;
       samp++;
@@ -246,7 +262,7 @@ if (!CACHE && ["H5", "H6", "I5", "I6"].every((n) => T.has(n))) {
       if (SW.tiles.some((o) => o !== g && inB(o.bounds, m[0], m[1]))) onCopy++;
     }
   }
-  simRes = { cars: sim.count, handovers: sim.stats.handovers, enteredPartWay: sim.stats.twinEntries || 0, jumpsOver05m: jumps, maxJumpM: +maxJump.toFixed(2), carTimeOnCopiesInALoadedNeighbourPct: +((100 * onCopy) / samp).toFixed(2) };
+  simRes = { cars: sim.count, handovers: sim.stats.handovers, enteredPartWay: sim.stats.twinEntries || 0, jumpsOver05m: jumps, maxJumpM: +maxJump.toFixed(2), blendSlopeOver02: crab, blendMaxSlope: +maxSide.toFixed(3), carTimeOnCopiesInALoadedNeighbourPct: +((100 * onCopy) / samp).toFixed(2) };
 }
 const unlinkedWithTwin = left.get("HAS A TWIN, NOT LINKED") || 0;
 const pct = withTwin ? (100 * (withTwin - unlinkedWithTwin)) / withTwin : 100;
@@ -265,6 +281,7 @@ const bad = [];
 if (pct < MIN) bad.push(`linked ${pct.toFixed(2)} % of the copies with a twin (< ${MIN} %)`);
 if (wrong) bad.push(`${wrong} wrong links`);
 if (simRes && simRes.jumpsOver05m) bad.push(`${simRes.jumpsOver05m} car position jumps at tile handovers (max ${simRes.maxJumpM} m)`);
+if (simRes && simRes.blendSlopeOver02) bad.push(`${simRes.blendSlopeOver02} samples of a handover blend moving a car > 0.2 m sideways per m driven (max ${simRes.blendMaxSlope})`);
 if (pairMax > MAXMS) bad.push(`link ${pairMax.toFixed(1)} ms for ${pairWorst} (> ${MAXMS} ms)`);
 if (bad.length) { console.error("FAIL twinlink: " + bad.join("; ")); process.exit(1); }
 console.log(`PASS twinlink: ${pct.toFixed(2)} % of ${withTwin} copies with a twin linked, 0 wrong, link <= ${pairMax.toFixed(2)} ms per tile pair`);

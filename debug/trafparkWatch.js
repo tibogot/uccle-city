@@ -32,7 +32,7 @@ export async function watch(secs = 45, every = 250) {
       }
       if (worstD > 0.05) {
         into++; maxD = Math.max(maxD, worstD);
-        if (!hit.has(who)) { hit.set(who, 1); if (worst.length < 12) worst.push({ x: +who.x.toFixed(1), z: +who.z.toFixed(1), depth: +worstD.toFixed(2), state: sim.state[i], room: +sim.room[i].toFixed(2), v: +sim.v[i].toFixed(1), off: +Math.hypot(sim.offX[i], sim.offZ[i]).toFixed(2), tile: sim.W.slots[sim.path[i] >>> 16]?.name, path: sim.path[i] & 0xffff, core: sim.W.slots[sim.path[i] >>> 16]?.core[sim.path[i] & 0xffff], d: +sim.d[i].toFixed(1) }); }
+        if (!hit.has(who)) { hit.set(who, 1); if (worst.length < 12) worst.push({ x: +who.x.toFixed(1), z: +who.z.toFixed(1), depth: +worstD.toFixed(2), state: sim.state[i], room: +sim.room[i].toFixed(2), v: +sim.v[i].toFixed(1), off: +Math.hypot(sim.offX[i], sim.offZ[i]).toFixed(2), tile: sim.W.slots[sim.path[i] >>> 16]?.name, path: sim.path[i] & 0xffff, core: sim.W.slots[sim.path[i] >>> 16]?.core[sim.path[i] & 0xffff], d: +sim.d[i].toFixed(1), blend: sim.bL?.[i] > 0 ? { gap: +Math.hypot(sim.bdx[i], sim.bdz[i]).toFixed(2), at: +(sim.odo[i] - sim.bS[i]).toFixed(1), over: +sim.bL[i].toFixed(1) } : null }); }
       }
     }
     maxCars = Math.max(maxCars, alive);
