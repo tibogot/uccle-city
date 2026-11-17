@@ -10,10 +10,10 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** falconstutter (falcon flight hitches; offline, then browser).
+**Running:** policerear (police car rear shimmer; browser turn).
 
 **Performance (owner's #1)**
-- [ ] Falcon flight stutter (claude/falconstutter).
+- [ ] Falcon flight stutter round 2: round 1 merged 2026-11-17 (worst 300 -> 67-83 ms, > 50 ms frames 15 -> 7, p99 ~50 -> ~33; goal 0 over 50 ms, p99 <= 25 not met). Left, ranked (docs/perf/FALCON_STUTTER.md): kit far walls' fade copy shadow build 31-56 ms (too many attributes to cache), major GC 50-100 ms, tile gardens step 18-40 ms, street-life box fade copy 8-9 ms, hero collider poll 37-66 ms.
 - [ ] Clean performance measure of both games with everything merged (preflight GREEN, one tab).
 - [ ] Time to play: police ~43 s, falcon ~39 s -> < 35 s.
 - [ ] Heap leftovers: GLB held by the loader, meshopt wasm, landmark geometry holds (docs/HEAP.md).
