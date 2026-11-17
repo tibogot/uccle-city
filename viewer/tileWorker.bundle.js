@@ -11827,7 +11827,7 @@ function deckHeight(d, ground, { drawn = false } = {}) {
   const L2 = d.cum[d.cum.length - 1] || 1;
   if (d.plan) return (x, z) => {
     if (x < d.box[0] || z < d.box[1] || x > d.box[2] || z > d.box[3] || !inRing(d.plan.ring, x, z)) return null;
-    const deck = planTop(d, x, z);
+    const deck = d.plan.tops ? gridTop(d.plan.tops, x, z) ?? planTop(d, x, z) : planTop(d, x, z);
     return deck > ground(x, z) ? deck : null;
   };
   return (x, z) => {
@@ -11847,6 +11847,35 @@ function deckHeight(d, ground, { drawn = false } = {}) {
     const deck = profY(d, s);
     return deck > ground(x, z) ? deck : null;
   };
+}
+function gridTop(G2, x, z) {
+  const fx = x - G2.x0, fz = z - G2.z0, i = Math.floor(fx), j = Math.floor(fz), tx = fx - i, tz = fz - j;
+  const at2 = (a2, b2) => a2 >= 0 && b2 >= 0 && a2 < G2.nx && b2 < G2.nz ? G2.v[b2 * G2.nx + a2] : NaN;
+  const a = at2(i, j), b = at2(i + 1, j), c = at2(i, j + 1), e = at2(i + 1, j + 1);
+  if (a === a && b === b && c === c && e === e) return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + e * tx) * tz;
+  const near = [[a, tx * tx + tz * tz], [b, (1 - tx) ** 2 + tz * tz], [c, tx * tx + (1 - tz) ** 2], [e, (1 - tx) ** 2 + (1 - tz) ** 2]].filter(([v]) => v === v).sort((p, q) => p[1] - q[1]);
+  return near.length ? near[0][0] : null;
+}
+function deckTopGrid(d, covered, streetY) {
+  if (!d.plan) return null;
+  const x0 = Math.floor(d.box[0]), z0 = Math.floor(d.box[1]), nx = Math.ceil(d.box[2]) - x0 + 1, nz = Math.ceil(d.box[3]) - z0 + 1, v = new Array(nx * nz).fill(NaN);
+  let n = 0;
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const x = x0 + i, z = z0 + j;
+    if (!inRing(d.plan.ring, x, z)) continue;
+    const t = pavingTop(d, x, z, covered, streetY);
+    if (t != null) {
+      v[j * nx + i] = +t.toFixed(3);
+      n++;
+    }
+  }
+  return n ? { x0, z0, nx, nz, v } : null;
+}
+function pavingTop(d, x, z, covered, streetY) {
+  const b = planBase(d, x, z) - PLAN.sink, B = d._band ??= bandOf(d), lift = offBand(B, x, z) ? KERB2 : 0;
+  const sy = streetY ? streetY(x, z) : null;
+  if (covered(x, z)) return sy != null && Math.abs(sy - b) < 0.6 ? sy : null;
+  return sy != null && Math.abs(sy - PLAN.sink - b) < 0.6 ? sy - PLAN.sink + lift : b + lift;
 }
 function inRing(ring2, x, z) {
   let c = false;
@@ -12337,6 +12366,8 @@ function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null) {
 }
 var FREE_NEAR = 3.5;
 var FREE_PAD = 1.2;
+var PAD_MAX = 4;
+var ARM = 15;
 var WALL_MIN = 3.2;
 var WALL_MAX = 8.5;
 var OVER_MIN = 4;
@@ -12369,7 +12400,7 @@ var segHit = (a, b, c, d) => {
   const t = ((c[0] - a[0]) * s1 - (c[1] - a[1]) * s0) / den, u = ((c[0] - a[0]) * r1 - (c[1] - a[1]) * r0) / den;
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 };
-function ringPlans(hand, roadsDoc, railDoc, ground) {
+function ringPlans(hand, roadsDoc, railDoc, ground, surf = null) {
   const out = { ...hand || {} };
   if (!railDoc?.decks || !roadsDoc?.roads) return out;
   const nodes = new Map((roadsDoc.nodes || []).map((n) => [n.id, n]));
@@ -12393,12 +12424,35 @@ function ringPlans(hand, roadsDoc, railDoc, ground) {
     }
     if (!best || bestN < 3) continue;
     if (bandCover(line, widths(r).half, best.ring) >= BAND_OK) continue;
-    const plan = urbisPlan(best, railDoc, ground);
+    const H = widths(r).half - SLAB.parapetW, band = [];
+    const ext = (p, q) => {
+      const dx = p[0] - q[0], dz = p[1] - q[1], L2 = Math.hypot(dx, dz) || 1;
+      return [p[0] + dx / L2 * EXT, p[1] + dz / L2 * EXT];
+    };
+    const bl = [ext(line[0], line[1]), ...line, ext(line[line.length - 1], line[line.length - 2])];
+    for (let i = 1; i < bl.length; i++) {
+      const [ax, az] = bl[i - 1], [bx, bz] = bl[i], L2 = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L2, nz = (bx - ax) / L2;
+      for (let t = 0; t <= L2; t += 1) for (const sg of [-1, 1]) band.push([ax + (bx - ax) * t / L2 + nx * H * sg, az + (bz - az) * t / L2 + nz * H * sg]);
+    }
+    for (const o of roadsDoc.roads) {
+      if (o === r || ![o.a, o.b].some((id) => id === r.a || id === r.b)) continue;
+      let ol = centreLine(o, nodes);
+      if (!ol) continue;
+      if (o.b === r.a || o.b === r.b) ol = ol.slice().reverse();
+      const oh = widths(o).half - SLAB.parapetW;
+      let run = 0;
+      for (let i = 1; i < ol.length && run < ARM; i++) {
+        const [ax, az] = ol[i - 1], [bx, bz] = ol[i], L2 = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L2, nz = (bx - ax) / L2;
+        for (let t = 0; t <= L2 && run + t < ARM; t += 1) for (const sg of [-1, 1]) band.push([ax + (bx - ax) * t / L2 + nx * oh * sg, az + (bz - az) * t / L2 + nz * oh * sg]);
+        run += L2;
+      }
+    }
+    const plan = urbisPlan(best, railDoc, ground, { surfaces: [...surf?.surfaces || [], { rings: [band] }] });
     if (plan) out[osm] = plan;
   }
   return out;
 }
-function urbisPlan(b, railDoc, ground) {
+function urbisPlan(b, railDoc, ground, surf = null) {
   const ring2 = b.ring.slice();
   if (ring2.length > 3 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1]) ring2.pop();
   let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
@@ -12461,10 +12515,37 @@ function urbisPlan(b, railDoc, ground) {
     for (let s = 0; !f && s <= L2; s += 1) f = near(A[0] + (B[0] - A[0]) * s / (L2 || 1), A[1] + (B[1] - A[1]) * s / (L2 || 1));
     if (f) free.push(i);
   }
-  if (free.length) {
-    const F = new Set(free), n = ring2.length, sg = ringSign(ring2);
+  const sg0 = ringSign(ring2), lvl = gv[Math.floor(gv.length * 0.75)], pad = new Set(free);
+  for (let i = 0; i < ring2.length; i++) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (L2 < 0.5 || pad.has(i)) continue;
+    const nx = (B[1] - A[1]) / L2 * sg0, nz = -(B[0] - A[0]) / L2 * sg0;
+    let n = 0, low = 0;
+    for (let s = 0.5; s < L2; s += 1) {
+      const g = ground(A[0] + (B[0] - A[0]) * s / L2 + nx * 1.5, A[1] + (B[1] - A[1]) * s / L2 + nz * 1.5);
+      if (Number.isFinite(g)) {
+        n++;
+        if (g < lvl - 1) low++;
+      }
+    }
+    if (n && low / n >= 0.5) pad.add(i);
+  }
+  const padOf = /* @__PURE__ */ new Map();
+  if (pad.size) for (const i of pad) {
+    const A = ring2[i], B = ring2[(i + 1) % ring2.length], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, tx = (B[0] - A[0]) / L2, tz = (B[1] - A[1]) / L2, nx = tz * sg0, nz = -tx * sg0;
+    let o = FREE_PAD;
+    for (const q of surf?.surfaces || []) for (const r of q.rings) for (const [x, z] of r) {
+      const u = (x - A[0]) * tx + (z - A[1]) * tz, v = (x - A[0]) * nx + (z - A[1]) * nz;
+      if (u < -0.5 || u > L2 + 0.5 || v <= 0 || v > PAD_MAX - 0.3) continue;
+      const g = ground(x, z);
+      if (Number.isFinite(g) && g < lvl - 1) o = Math.max(o, v + 0.3);
+    }
+    padOf.set(i, +o.toFixed(2));
+  }
+  if (pad.size) {
+    const F = pad, n = ring2.length, sg = sg0;
     const line = (i) => {
-      const A = ring2[i], B = ring2[(i + 1) % n], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nx = (B[1] - A[1]) / L2 * sg, nz = -(B[0] - A[0]) / L2 * sg, o = F.has(i) ? FREE_PAD : 0;
+      const A = ring2[i], B = ring2[(i + 1) % n], L2 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nx = (B[1] - A[1]) / L2 * sg, nz = -(B[0] - A[0]) / L2 * sg, o = F.has(i) ? padOf.get(i) : 0;
       return { p: [A[0] + nx * o, A[1] + nz * o], d: [(B[0] - A[0]) / L2, (B[1] - A[1]) / L2], nx, nz, o };
     };
     const moved = ring2.map((P, i) => {
@@ -16138,7 +16219,7 @@ async function buildTileData(entry, base) {
   const pad = entry.padRoads === false ? null : await step("neighbour ground", () => paddedGround(entry, base, hm));
   const baseGround = pad ? pad.ground : hm.ground;
   const known = pad ? (p) => onGrid(p) || !pad.noData(p[0], p[1]) : onGrid;
-  const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround) : ov.bridgePlans;
+  const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
   const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans);
   osmBridges.decks = osmBridges.decks.filter((d) => {
     const m = d.pts[Math.floor(d.pts.length / 2)];
@@ -16313,8 +16394,11 @@ async function buildTileData(entry, base) {
     times,
     rail: railOut,
     grassTypes,
-    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => ({ ...d, mesh: deckMesh(d, hm.ground, measuredAt, entry.vivier !== false ? streetTop : null) })),
-    // OSM road bridges: heights for walk / car + their drawn deck
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => {
+      const v = entry.vivier !== false, tops = v && d.plan && measuredAt ? deckTopGrid(d, measuredAt, streetTop) : null;
+      return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh: deckMesh(d, hm.ground, measuredAt, v ? streetTop : null) };
+    }),
+    // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
     ...entry.keepNet ? { net, hm } : {}
   };
 }
@@ -16850,4 +16934,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "6a4fa4cfac5089c9";
+self.__TILE_CODE_HASH = "20ff79b00b18490f";

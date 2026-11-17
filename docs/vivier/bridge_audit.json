@@ -1241,7 +1241,7 @@
     317.8
    ],
    "line": "L26",
-   "wireOverRail": 5.33
+   "wireOverRail": 5.31
   },
   {
    "deck": "r35036093_0",
@@ -1250,7 +1250,7 @@
     318.1
    ],
    "line": "L26",
-   "wireOverRail": 5.32
+   "wireOverRail": 5.31
   },
   {
    "deck": "r35036093_0",
@@ -1259,7 +1259,7 @@
     318.3
    ],
    "line": "L26",
-   "wireOverRail": 5.32
+   "wireOverRail": 5.3
   },
   {
    "deck": "r35036093_0",
@@ -1268,7 +1268,7 @@
     318.6
    ],
    "line": "L26",
-   "wireOverRail": 5.32
+   "wireOverRail": 5.3
   },
   {
    "deck": "r35036093_0",
@@ -1277,7 +1277,7 @@
     318.9
    ],
    "line": "L26",
-   "wireOverRail": 5.32
+   "wireOverRail": 5.29
   },
   {
    "deck": "r35036093_0",
@@ -1286,7 +1286,7 @@
     319.1
    ],
    "line": "L26",
-   "wireOverRail": 5.32
+   "wireOverRail": 5.3
   },
   {
    "deck": "r35036093_0",
@@ -1295,7 +1295,7 @@
     319.4
    ],
    "line": "L26",
-   "wireOverRail": 5.32
+   "wireOverRail": 5.31
   },
   {
    "deck": "r35036093_0",
@@ -1304,7 +1304,7 @@
     319.7
    ],
    "line": "L26",
-   "wireOverRail": 5.33
+   "wireOverRail": 5.32
   },
   {
    "deck": "r35036093_0",
@@ -1313,7 +1313,7 @@
     319.9
    ],
    "line": "L26",
-   "wireOverRail": 5.34
+   "wireOverRail": 5.33
   },
   {
    "deck": "r35036093_0",
@@ -1331,13 +1331,22 @@
     320.5
    ],
    "line": "L26",
-   "wireOverRail": 5.35
+   "wireOverRail": 5.34
   },
   {
    "deck": "r35036093_0",
    "at": [
     1718.4,
     320.7
+   ],
+   "line": "L26",
+   "wireOverRail": 5.35
+  },
+  {
+   "deck": "r35036093_0",
+   "at": [
+    1716.4,
+    321
    ],
    "line": "L26",
    "wireOverRail": 5.35
@@ -1394,7 +1403,7 @@
     315.9
    ],
    "line": "L26",
-   "wireOverRail": 5.4
+   "wireOverRail": 5.39
   },
   {
    "deck": "r35036093_0",
@@ -1412,7 +1421,7 @@
     315.3
    ],
    "line": "L26",
-   "wireOverRail": 5.4
+   "wireOverRail": 5.39
   },
   {
    "deck": "r35036093_0",
@@ -1439,7 +1448,7 @@
     314.5
    ],
    "line": "L26",
-   "wireOverRail": 5.43
+   "wireOverRail": 5.42
   },
   {
    "deck": "r35036093_0",
@@ -1466,7 +1475,7 @@
     313.7
    ],
    "line": "L26",
-   "wireOverRail": 5.43
+   "wireOverRail": 5.42
   },
   {
    "deck": "r1342926162_0",

@@ -64,13 +64,13 @@ const inHero = (x, z) => heroes.some((h) => inRing(h.ring, x, z));
 const ov = json("data/overrides.json");
 // the plans the tile worker uses (viewer/tileData.js): the hand-measured ones + (vivier) one per UrbIS ROB an OSM bridge
 // road crosses (ringPlans); --old: the hand-measured ones only, as before
-const plansOf = (roads) => (OLD ? ov.bridgePlans : ringPlans(ov.bridgePlans, roads, rail, ground));
+const plansOf = (roads, T) => (OLD ? ov.bridgePlans : ringPlans(ov.bridgePlans, roads, rail, ground, existsSync(join(ROOT, `data/tiles/${T}/surfaces.json`)) ? json(`data/tiles/${T}/surfaces.json`) : null));
 
 // ---- every OSM road deck, once (the tile holding its middle draws it, as tileData.js ownDeck)
 const decks = new Map();
 for (const t of tiles) {
   const roads = json(`data/tiles/${t.name}/roads.json`);
-  for (const d of bridgeDescriptors(roads, ground, plansOf(roads))) {
+  for (const d of bridgeDescriptors(roads, ground, plansOf(roads, t.name))) {
     if (decks.has(d.id)) continue;
     // the tile holding the deck's middle draws it (tileData.js ownDeck: a road clipped by another tile's buffer, Avenue
     // des Tilleuls in D8 / E8, is a shorter copy under the same id)
