@@ -10,7 +10,9 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** policerear (police car rear shimmer; browser turn).
+**Running:** curvedroads (sharp-bend road folds 4,203 -> 0 offline; browser turn; rule 24; worker bundle to rebuild in main at merge).
+
+**Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
 
 **Performance (owner's #1)**
 - [ ] Falcon flight stutter round 2: round 1 merged 2026-11-17 (worst 300 -> 67-83 ms, > 50 ms frames 15 -> 7, p99 ~50 -> ~33; goal 0 over 50 ms, p99 <= 25 not met). Left, ranked (docs/perf/FALCON_STUTTER.md): kit far walls' fade copy shadow build 31-56 ms (too many attributes to cache), major GC 50-100 ms, tile gardens step 18-40 ms, street-life box fade copy 8-9 ms, hero collider poll 37-66 ms.
