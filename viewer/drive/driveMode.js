@@ -10,6 +10,10 @@ import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
 import { FLEET_SOURCE } from "./carPacks.js";
 import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
 import { createFeelState, stepFeel } from "./carFeel.js";
+import { createCtlState, stepCtl } from "./carCtl.js";
+/** ?carctl=old: the police-feel handling + camera (carFeel.js, chaseCamera.js updateCar) instead of car control round 3
+ *  (carCtl.js: steering sets the yaw rate, shaped keyboard input, damped body; carCtlCam.js: the calm camera; docs/CARCTL.md) */
+export const CARCTL_OLD = /[?&]carctl=old(&|$)/.test(location.search);
 /** ?carfeel=old: the car's handling before the police-feel round (docs/POLICE_FEEL.md): carPhysics.js stepCar, kerb
  *  islands / any rise over 0.5 m as walls, hedges solid, posts stop the car, parked cars immovable, the old camera */
 export const CARFEEL_OLD = /[?&]carfeel=old(&|$)/.test(location.search);
@@ -372,7 +376,7 @@ export class Driver {
   }
   reset() {
     const s = this.startPose;
-    this.state = this.twoWheel ? createMotoState(s.x, s.z, s.heading) : CARFEEL_OLD ? createCarState(s.x, s.z, s.heading) : createFeelState(s.x, s.z, s.heading);
+    this.state = this.twoWheel ? createMotoState(s.x, s.z, s.heading) : CARFEEL_OLD ? createCarState(s.x, s.z, s.heading) : CARCTL_OLD ? createFeelState(s.x, s.z, s.heading) : createCtlState(s.x, s.z, s.heading);
     this.moto?.reattach();
     this.motoChase.reset();
     this.state.y = NaN;                                   // (no layer hint yet: the top surface)
@@ -399,7 +403,7 @@ export class Driver {
     // (autoInput: a scripted { throttle, steer, handbrake } for route tests, docs/policefeel/; null = the keyboard)
     const inp = this.autoInput || this.keys.read();
     if (CARFEEL_OLD) stepCar(c, inp, dt, this.env, HANDLING);
-    else { stepFeel(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
+    else { (CARCTL_OLD ? stepFeel : stepCtl)(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
     carLights.brake.value = c.braking ? 1 : 0;
     carLights.head.value = carLights.tail.value = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     this.car.update(c);

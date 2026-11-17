@@ -9,10 +9,13 @@
 // Idea after game-engine-v1 games/modular-road-v3/chaseCamera.js (read-only reference): aim AT the car and keep the
 // horizon level, place the boom separately.
 import * as THREE from "three/webgpu";
+import { createCtlCam, stepCtlCam } from "./carCtlCam.js";
 
 /** ?carfeel=old: the camera before the police-feel round; now (FEEL_CAM) the view widens with speed (fov), the boom
  *  stretches on the throttle / shortens under braking, and the horizon leans a little with the cornering */
 const FEEL_OLD = typeof location !== "undefined" && /[?&]carfeel=old(&|$)/.test(location.search);
+/** ?carctl=old: the police-feel camera (updateCar) instead of the calm one (carCtlCam.js, docs/CARCTL.md) */
+const CTL_OLD = typeof location !== "undefined" && /[?&]carctl=old(&|$)/.test(location.search);
 export const FEEL_CAM = { fovPerMs: 0.32, fovFrom: 8, fovMax: 11, stretch: 0.07, stretchMax: 0.6, lean: 0.0032, leanMax: 0.055, ease: 3 };
 /**
  * THE CAR CAMERA, round 2 (owner 2026-11-17: "the car goes too far from the camera, almost in the centre of the screen,
@@ -47,6 +50,8 @@ export class ChaseCamera {
     this.yaw = 0;                 // boom azimuth (follows the travel direction)
     this.drag = { yaw: 0, pitch: 0, held: false };
     this.first = true;
+    this.ctl = !CTL_OLD && !FEEL_OLD;   // (the car only: the calm camera; tests flip it)
+    this.ctlCam = createCtlCam();
     let last = null;
     dom.addEventListener("pointerdown", (e) => { if (!this.active) return; last = [e.clientX, e.clientY]; this.drag.held = true; });
     addEventListener("pointerup", () => { last = null; this.drag.held = false; });
@@ -67,10 +72,11 @@ export class ChaseCamera {
     const L = !FEEL_OLD && this.cfg === CAMERA ? FEEL_MODES : MODES;
     this.cfg.mode = L[(L.indexOf(this.cfg.mode) + 1) % L.length]; this.first = true; return this.cfg.mode;
   }
-  reset() { this.first = true; this.drag.yaw = 0; this.drag.pitch = 0; }
+  reset() { this.first = true; this.ctlCam.first = true; this.drag.yaw = 0; this.drag.pitch = 0; }
 
   /** c: carPhysics state; ground(x, z); insideWall(x, z) optional */
   update(c, dt, ground, insideWall = null) {
+    if (this.ctl && this.cfg === CAMERA) return this.updateCtl(c, dt, ground, insideWall);
     if (!FEEL_OLD && this.cfg === CAMERA) return this.updateCar(c, dt, ground, insideWall);
     const cam = this.camera;
     const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
@@ -123,6 +129,20 @@ export class ChaseCamera {
     cam.up.set(0, 1, 0);
     cam.lookAt(this.look);
     if (this.lean) cam.rotateZ(this.lean);
+  }
+
+  /** the calm car views (carCtlCam.js): the boom on the road (not the body), heading spring, no lean */
+  updateCtl(c, dt, ground, insideWall) {
+    const cam = this.camera, st = this.ctlCam, mode = this.cfg.mode;
+    if (this.first) { st.first = true; this.zoom ??= 1; this.first = false; }
+    if (!this.drag.held) { this.drag.yaw *= Math.exp(-2.5 * dt); this.drag.pitch *= Math.exp(-2.5 * dt); }
+    stepCtlCam(st, c, dt, mode, ground, insideWall, this.drag, this.zoom ?? 1);
+    if (Math.abs(cam.fov - st.fov) > 0.01) { cam.fov = st.fov; cam.updateProjectionMatrix(); }
+    cam.up.set(0, 1, 0);
+    this.pos.set(st.pos.x, st.pos.y, st.pos.z);
+    cam.position.copy(this.pos);
+    this.look.set(st.look.x, st.look.y, st.look.z);
+    cam.lookAt(this.look);
   }
 
   /** the car views (CAR_CAM): rigid boom, eased swing / height, aim ahead, small speed cues */
