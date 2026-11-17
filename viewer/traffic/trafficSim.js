@@ -20,6 +20,7 @@
 //                car), height + pitch from the ground under the axles, front-wheel steer from the path ahead
 import { signalClock, signalState, untilGreen, RED, AMBER } from "./signals.js";
 import { CTRL } from "./trafficGraph.js";
+import { TWIN_OLD } from "./trafficWorld.js";
 
 export const STEP = 1 / 20;
 const IDM = { a: 1.5, b: 2.2, T: 1.25, s0: 2.2 };
@@ -59,6 +60,8 @@ export class TrafficSim {
     const F = (n = 1) => new Float32Array(cap * n), I = (n = 1, v = 0) => new Int32Array(cap * n).fill(v), U = (n = 1) => new Uint8Array(cap * n);
     Object.assign(this, {
       alive: U(), path: I(1, -1), prev: I(1, -1), d: new Float64Array(cap), v: F(), acc: F(), route: I(ROUTE, -1),
+      rin: F(ROUTE),                                 // twinlink: where each planned path is entered (m along: a twin may begin before its copy)
+      pin: F(),                                      // twinlink: where the current path was entered
       type: U(), half: F(), wb: F(), wr: F(), paint: F(3), aMax: F(), Tg: F(), v0f: F(),
       state: U(), hold: U(), holdT: F(), stopDone: I(1, -1), committed: I(1, -1), waitT: F(), bits: U(),
       nxt: I(1, -1),
@@ -127,7 +130,10 @@ export class TrafficSim {
     let r = this.rand() * tot, j = g.nextIdx[a];
     for (let k = a; k < b; k++) { const w = this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]); if (r < w) { j = g.nextIdx[k]; break; } r -= w; }
     const gj = (g.slot << 16) | j;
-    return g.core[j] || g.twin[j] < 0 ? gj : g.twin[j];
+    this._pickAt = 0;
+    if (g.core[j] || g.twin[j] < 0) return gj;
+    if (!TWIN_OLD) this._pickAt = g.twinAt[j];          // (twinlink: the copy's start, part-way along its twin)
+    return g.twin[j];
   }
   nextWeight(g, j) {
     let w = 1;
@@ -156,7 +162,7 @@ export class TrafficSim {
     const R = this.route, o = i * ROUTE;
     let last = this.path[i];
     for (let k = 0; k < ROUTE; k++) {
-      if (R[o + k] < 0) R[o + k] = last >= 0 ? this.pickNext(last) : -1;
+      if (R[o + k] < 0) { R[o + k] = last >= 0 ? this.pickNext(last) : -1; this.rin[o + k] = R[o + k] >= 0 ? this._pickAt : 0; }
       last = R[o + k];
       if (last < 0) { for (let m = k + 1; m < ROUTE; m++) R[o + m] = -1; break; }
     }
@@ -164,8 +170,8 @@ export class TrafficSim {
   }
   shiftRoute(i) {
     const R = this.route, o = i * ROUTE;
-    for (let k = 0; k < ROUTE - 1; k++) R[o + k] = R[o + k + 1];
-    R[o + ROUTE - 1] = -1;
+    for (let k = 0; k < ROUTE - 1; k++) { R[o + k] = R[o + k + 1]; this.rin[o + k] = this.rin[o + k + 1]; }
+    R[o + ROUTE - 1] = -1; this.rin[o + ROUTE - 1] = 0;
     this.fillRoute(i);
   }
 
@@ -177,7 +183,7 @@ export class TrafficSim {
     if (typeIdx < 0) { let r = this.rand() * this.typeWeights.reduce((a, b) => a + b, 0); typeIdx = 0; for (let k = 0; k < this.types.length; k++) { if (r < this.typeWeights[k]) { typeIdx = k; break; } r -= this.typeWeights[k]; } }
     const T = this.types[typeIdx];
     this.room[i] = 0;
-    this.alive[i] = 1; this.path[i] = gid; this.prev[i] = -1; this.d[i] = d; this.v[i] = v; this.acc[i] = 0;
+    this.alive[i] = 1; this.path[i] = gid; this.prev[i] = -1; this.pin[i] = 0; this.d[i] = d; this.v[i] = v; this.acc[i] = 0;
     for (let k = 0; k < ROUTE; k++) this.route[i * ROUTE + k] = -1;
     this.fillRoute(i);
     this.type[i] = typeIdx; this.half[i] = T.len / 2; this.wb[i] = T.wb; this.wr[i] = T.wheelR;
@@ -202,22 +208,40 @@ export class TrafficSim {
   copyPrev(i) { this.px[i] = this.x[i]; this.pz[i] = this.z[i]; this.py[i] = this.y[i]; this.pyaw[i] = this.yaw[i]; this.ppitch[i] = this.pitch[i]; this.pspin[i] = this.spin[i]; }
 
   /** Point at s metres along car i's route from the start of its current path (s < 0: on the previous path). */
+  // twinlink: across a tile handover the next tile's path is moved by the gap between the two copies (this path's end
+  // -> the twin's entry), and after it the previous path by minus that gap, so the axles never jump: the car's offset
+  // takes the gap at the handover (move()) and blends it out. (?twinlink=old: no shift, the jumps of before.)
   routePoint(i, s, out) {
     let gid = this.path[i];
-    if (s < 0) {
+    const p0 = this.pin[i];
+    if (s < p0) {
       const pv = this.prev[i];
-      if (pv >= 0 && this.W.slots[pv >>> 16]) return this.W.point(pv, this.plen(pv) + s, out);
-      this.W.point(gid, 0, out); out[0] += out[2] * s; out[1] += out[3] * s; return out;
+      if (pv >= 0 && this.W.slots[pv >>> 16]) {
+        this.W.point(pv, this.plen(pv) + s - p0, out);
+        if (!TWIN_OLD && pv >>> 16 !== gid >>> 16 && this.crossGap(pv, gid, p0)) { out[0] -= this.gap2[0]; out[1] -= this.gap2[1]; }
+        return out;
+      }
+      if (s < 0) { this.W.point(gid, 0, out); out[0] += out[2] * s; out[1] += out[3] * s; return out; }
     }
-    let k = 0;
+    let k = 0, cx = 0, cz = 0;
     while (s > this.plen(gid)) {
       const nx = this.route[i * ROUTE + k];
       if (nx < 0 || k >= ROUTE - 1) {                 // past the end of the known route: straight on
-        this.W.point(gid, this.plen(gid), out); const over = s - this.plen(gid); out[0] += out[2] * over; out[1] += out[3] * over; return out;
+        this.W.point(gid, this.plen(gid), out); const over = s - this.plen(gid); out[0] += out[2] * over + cx; out[1] += out[3] * over + cz; return out;
       }
-      s -= this.plen(gid); gid = nx; k++;
+      const at = this.rin[i * ROUTE + k];
+      if (!TWIN_OLD && nx >>> 16 !== gid >>> 16 && this.crossGap(gid, nx, at)) { cx += this.gap2[0]; cz += this.gap2[1]; }
+      s -= this.plen(gid); gid = nx; s += at; k++;
     }
-    return this.W.point(gid, s, out);
+    this.W.point(gid, s, out); out[0] += cx; out[1] += cz;
+    return out;
+  }
+  /** the gap from path a's end to path b at `at` (a tile handover) into this.gap2; false when >= 4 m (not blended) */
+  crossGap(a, b, at) {
+    const A = this.gapA || (this.gapA = new Float64Array(4)), B = this.gapB || (this.gapB = new Float64Array(4)), G = this.gap2 || (this.gap2 = new Float64Array(2));
+    this.W.point(a, this.plen(a), A); this.W.point(b, at, B);
+    G[0] = A[0] - B[0]; G[1] = A[1] - B[1];
+    return G[0] * G[0] + G[1] * G[1] < 16;
   }
   /** Point on car i's maneuver polyline at m metres. */
   manPoint(i, m, out) {
@@ -409,11 +433,14 @@ export class TrafficSim {
       const cp = this.path[i], cg = this.W.slots[cp >>> 16];
       if (cg && !cg.core[cp & 0xffff] && cg.twin[cp & 0xffff] >= 0) {
         const tw = cg.twin[cp & 0xffff], T = this.tmp, T2 = this.tmp2;
-        if (this.d[i] < this.plen(tw)) {
-          this.W.point(cp, this.d[i], T); this.W.point(tw, this.d[i], T2);
+        // (twinlink: the copy may start part-way along its twin: the same spot on the twin, not the same distance)
+        this.W.point(cp, this.d[i], T);
+        const dt = TWIN_OLD ? this.d[i] : this.W.alongNear(tw, T[0], T[1]);
+        if (dt < this.plen(tw)) {
+          this.W.point(tw, dt, T2);
           const ex = T[0] - T2[0], ez = T[1] - T2[1];
           if (ex * ex + ez * ez < 16) {
-            this.offX[i] += ex; this.offZ[i] += ez; this.path[i] = tw; this.prev[i] = -1;
+            this.offX[i] += ex; this.offZ[i] += ez; this.path[i] = tw; this.prev[i] = -1; this.pin[i] = 0; this.d[i] = dt;
             for (let k = 0; k < ROUTE; k++) R[i * ROUTE + k] = -1;
             this.fillRoute(i); this.committed[i] = -1;
             this.stats.rerouted = (this.stats.rerouted || 0) + 1;
@@ -428,7 +455,7 @@ export class TrafficSim {
         if (q < 0) break;
         const g = this.W.slots[q >>> 16], j = q & 0xffff;
         if (g && (g.core[j] || g.twin[j] < 0)) continue;
-        if (g) R[o + k++] = g.twin[j];
+        if (g) { R[o + k] = g.twin[j]; this.rin[o + k] = TWIN_OLD ? 0 : g.twinAt[j]; k++; }
         for (; k < ROUTE; k++) R[o + k] = -1;
         this.fillRoute(i);
         this.stats.rerouted = (this.stats.rerouted || 0) + 1;
@@ -704,25 +731,27 @@ export class TrafficSim {
       }
       const gq = W.slots[q >>> 16], qi = q & 0xffff;
       if (!gq) break;
+      const rin = this.rin[o + k];                // (twinlink: entered part-way along a twin; dist = to that entry)
       const vq = gq.speed[qi] * this.params.speed, room = Math.max(0, dist - half);
       const allowed = Math.sqrt(vq * vq + 2 * 1.4 * room);
       if (allowed < v0) v0 = allowed;
-      if (!gq.kind[qi] && room < 45) v0 = this.curveLimit(gq, qi, 0, room, 45 - room, v0);
+      if (!gq.kind[qi] && room < 45) v0 = this.curveLimit(gq, qi, rin, room, rin + 45 - room, v0);
       if (gap === Infinity && !over) {
-        const h = gq.head[qi];
-        if (h >= 0 && h !== i) { gap = dist + this.posOn(h) - this.half[h] - half; vL = this.v[h]; lead = 1; }
+        let h = gq.head[qi];
+        while (h >= 0 && rin > 0 && this.posOn(h) < rin) h = this.nxt[h];
+        if (h >= 0 && h !== i) { gap = dist + this.posOn(h) - rin - this.half[h] - half; vL = this.v[h]; lead = 1; }
       }
       if (gap === Infinity || dist < gap) {
-        if (this.obsAhead(q, 0, tmp) < Infinity && dist + tmp[0] - half < gap) { gap = dist + tmp[0] - half; vL = tmp[1]; lead = 2; }
+        if (this.obsAhead(q, rin, tmp) < Infinity && dist + tmp[0] - half < gap) { gap = dist + tmp[0] - half; vL = tmp[1]; lead = 2; }
       }
       // the hold point on the next lane (a junction ahead of this lane piece)
-      if (!hold && gq.holdAt[qi] >= 0 && !gq.kind[qi] && this.committed[i] !== q && dist + gq.holdAt[qi] - half < 70) {
-        const dStop = dist + gq.holdAt[qi] - half;
+      if (!hold && gq.holdAt[qi] >= rin && !gq.kind[qi] && this.committed[i] !== q && dist + gq.holdAt[qi] - rin - half < 70) {
+        const dStop = dist + gq.holdAt[qi] - rin - half;
         hold = this.decide(i, q, k + 1 < ROUTE ? R[o + k + 1] : -1, k + 2 < ROUTE ? R[o + k + 2] : -1, dStop);
         if (!hold && yieldHold && dStop > 1.5 && dStop < 35) hold = HOLD.yield;
         if (hold && dStop < gap) { gap = Math.max(0.05, dStop); vL = 0; lead = 3; }
       }
-      dist += gq.len[qi];
+      dist += gq.len[qi] - rin;
     }
     this._oaCar = -1;
     // (trafpark: waiting behind a parked car that stands into the lane counts as a hold: a car stuck there a minute, out
@@ -843,11 +872,16 @@ export class TrafficSim {
       // tile handover: the twin's start may sit a little off the end of this path; carry the difference as an offset
       const T = this.tmp, T2 = this.tmp2;
       if (nx >>> 16 !== this.path[i] >>> 16) {
-        this.W.point(this.path[i], this.plen(this.path[i]), T); this.W.point(nx, 0, T2);
+        this.W.point(this.path[i], this.plen(this.path[i]), T);
+        // (twinlink: a twin may begin before the copy it stands for: the car enters it where the copy began)
+        const at = this.rin[i * ROUTE];
+        if (at > 0.05) { this.d[i] += at; this.stats.twinEntries = (this.stats.twinEntries || 0) + 1; }
+        this.W.point(nx, at, T2);
         const ex = T[0] - T2[0], ez = T[1] - T2[1];
         if (ex * ex + ez * ez < 16) { this.offX[i] += ex; this.offZ[i] += ez; }
         this.stats.handovers++;
-      }
+        this.pin[i] = at;
+      } else this.pin[i] = 0;
       this.prev[i] = this.path[i]; this.path[i] = nx;
       this.shiftRoute(i);
       if (this.committed[i] !== this.prev[i]) this.committed[i] = -1;
@@ -868,7 +902,7 @@ export class TrafficSim {
         const g = this.W.slots[q >>> 16];
         if (!g) break;
         if (g.kind[q & 0xffff]) { const t = g.turn[q & 0xffff]; if (t === 1) b |= 4; else if (t === 2) b |= 8; break; }
-        dist += g.len[q & 0xffff];
+        dist += g.len[q & 0xffff] - this.rin[o + k];
       }
       if (st === ST.inStop) b |= 8;
       // on a connector: keep the indicator while turning
