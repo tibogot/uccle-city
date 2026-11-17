@@ -19,6 +19,10 @@ gate works in worktrees, agargaro evaluated (docs/AGARGARO.md: adopt none, 2 mul
 **docs/QUALITY_RULES.md** (20 rules; read before every merge). Tour baseline = the twinlink run.
 Running: xmasfir (fir needle sprays, Blender), mdraw (AGARGARO jobs 1-2: near-first chunk order ?mdsort=0, 80 m
 chunks ?mdchunk=160). Queue: falcon stutter, loader stills, clean perf measure.
+**FLAGS: WHERE ELSE (owner 2026-11-17, later):** flags fly today at the town hall (EU / Belgium / Uccle) and the Lycée
+Français (Belgium / EU / France), via viewer/flagsCity.js flyFlags (any pole). Check with the owner where else real flags
+are: the owner will name places; my suggestions: police station, Observatory, other public buildings (Belgian flags on
+national days?). Look-check on Street View first.
 Left: owner image 68 (Waterloo by Optalweg) not located; the two Vivier
 d'Oie station footbridges (UrbIS 751 / 752); low wire clearance under Av. des Tilleuls / Hospices / Carsoel; Saint-Job
 deck sidewalks over the bank; heap leftovers (GLB held by the loader, meshopt wasm, landmark geometry holds).
