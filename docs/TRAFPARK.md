@@ -173,9 +173,9 @@ cars, all intended (`docs/trafpark/tour_*_before_after.jpg`, baseline left, traf
 
 ## Limits / next
 
-- Twin linking (`trafficWorld.js link`: start within 3 m, similar length) misses ~30 % of the buffer pieces lying in a
-  loaded neighbour (on `?trafpark=old` too); cars that take such a copy drive a line 0.5-1 m off the neighbour's own
-  lane. Their parked cars are obstacles now; the real fix is a better link (by geometry): its own job.
+- Twin linking (`trafficWorld.js link`: start within 3 m, similar length) missed ~30 % of the buffer pieces lying in a
+  loaded neighbour (on `?trafpark=old` too). Fixed by `claude/twinlink` (docs/TWINLINK.md): by geometry, 99.9 % of the
+  copies that have a twin linked, 0 wrong.
 - Parked car types are dealt over the whole tile by slot room: a slot less changes some types elsewhere (the tour's two
   type changes).
 - Rule 12 (docs/QUALITY_RULES.md): the worker bundle in this branch was rebuilt for the browser checks (the graph code
