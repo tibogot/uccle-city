@@ -648,9 +648,10 @@ function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null
           }
         }
       }
-      const steps = Math.max(1, Math.ceil(L2)), pts = [];
+      const steps = Math.max(1, Math.ceil(L2 / 0.5)), pts = [];
       for (let s = 0; s <= steps; s++) {
-        const u = Math.min(L2, L2 * s / steps), top = topAt(Math.min(L2 - 1e-3, Math.max(1e-3, u)));
+        const u = Math.min(L2, L2 * s / steps), uu = Math.min(L2 - Math.min(0.05, L2 / 4), Math.max(Math.min(0.05, L2 / 4), u));
+        const top = Math.max(topAt(uu), roofs ? roofY(ax + tx * uu - onx * 0.05, az + tz * uu - onz * 0.05, roofs) : -Infinity);
         pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
       }
       const sideN = [o1 * nx, 0, o1 * nz];
@@ -700,6 +701,18 @@ function rayTri(x, y, z, d, p) {
   if (v < -1e-4 || u + v > 1 + 1e-4) return Infinity;
   const t = f * (e2x * qx + e2y * qy + e2z * qz);
   return t > 0 ? t : Infinity;
+}
+function roofY(x, z, roofs) {
+  let hi = -Infinity;
+  for (const t of roofs) {
+    if (t.n[1] < 0.1) continue;
+    const [A, B, C] = t.p, d = (B[2] - C[2]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[2] - C[2]);
+    if (Math.abs(d) < 1e-9) continue;
+    const l1 = ((B[2] - C[2]) * (x - C[0]) + (C[0] - B[0]) * (z - C[2])) / d, l2 = ((C[2] - A[2]) * (x - C[0]) + (A[0] - C[0]) * (z - C[2])) / d, l3 = 1 - l1 - l2;
+    if (l1 < -1e-3 || l2 < -1e-3 || l3 < -1e-3) continue;
+    hi = Math.max(hi, l1 * A[1] + l2 * B[1] + l3 * C[1]);
+  }
+  return hi;
 }
 function pipR(x, z, r) {
   let c = false;
@@ -12813,11 +12826,11 @@ function roofCollector(opts = {}) {
     const ex = Math.abs(ca) * hx + Math.abs(sa) * hz, ez = Math.abs(sa) * hx + Math.abs(ca) * hz;
     cols.push(x - ex, z - ez, x + ex, z + ez, top);
   };
-  function stack(x, z, tx, tz, w, d, top, roofY, aux, tone, r) {
+  function stack(x, z, tx, tz, w, d, top, roofY2, aux, tone, r) {
     const nx = -tz, nz = tx;
     let lo = Infinity, hi = -Infinity;
     for (const [a, b] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5], [0, 0]]) {
-      const yy = roofY(x + tx * a * w + nx * b * d, z + tz * a * w + nz * b * d);
+      const yy = roofY2(x + tx * a * w + nx * b * d, z + tz * a * w + nz * b * d);
       lo = Math.min(lo, yy);
       hi = Math.max(hi, yy);
     }
@@ -12856,14 +12869,14 @@ function roofCollector(opts = {}) {
     const w = f.party ? 0.8 + r() * 0.7 : 0.55 + r() * 0.35, d = f.party ? 0.5 + r() * 0.15 : 0.45 + r() * 0.15;
     const inset = f.party ? 0 : d / 2 + 0.05;
     const cx = f.x - f.nx * inset, cz = f.z - f.nz * inset;
-    const roofY = (x, z) => {
+    const roofY2 = (x, z) => {
       const a = f.roofAt(x, z), b = f.otherRoof ? f.otherRoof(x, z) : -Infinity;
       const m = Math.max(a, b);
       return m > -1e8 ? m : f.top;
     };
     const top = f.top + 0.7 + r() * 0.6;
-    const g = Math.max(0.2, Math.min(1.6, (f.top - roofY(f.x + f.tx * 1.5, f.z + f.tz * 1.5)) / 1.5));
-    const s = stack(cx, cz, f.tx, f.tz, w, d, top, roofY, [f.top, f.tx * g, f.tz * g, 1], f.tone, r);
+    const g = Math.max(0.2, Math.min(1.6, (f.top - roofY2(f.x + f.tx * 1.5, f.z + f.tz * 1.5)) / 1.5));
+    const s = stack(cx, cz, f.tx, f.tz, w, d, top, roofY2, [f.top, f.tx * g, f.tz * g, 1], f.tone, r);
     if (s) {
       s.party = f.party;
       stacks.push(s);
@@ -13189,12 +13202,12 @@ function roofCollector(opts = {}) {
         const p = F.at(u, v);
         const w = 0.5 + r() * 0.45, d = 0.45 + r() * 0.2;
         const ridgeY = b.roofTop;
-        const roofY = (x, z) => {
+        const roofY2 = (x, z) => {
           const yy = b.roofAt(x, z, false);
           return yy > -1e8 ? yy : p[1];
         };
         const tanP = Math.tan(F.pitch), g = [-F.dx * tanP, -F.dz * tanP];
-        const s = stack(p[0], p[2], F.t[0], F.t[2], w, d, Math.max(ridgeY + 0.5 + r() * 0.5, p[1] + 1), roofY, [p[1], g[0], g[1], 0], b.tone, r);
+        const s = stack(p[0], p[2], F.t[0], F.t[2], w, d, Math.max(ridgeY + 0.5 + r() * 0.5, p[1] + 1), roofY2, [p[1], g[0], g[1], 0], b.tone, r);
         if (s) {
           stacks.push(s);
           stats.stackRidge = (stats.stackRidge || 0) + 1;
@@ -16606,4 +16619,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "d93ecd44880b3d5f";
+self.__TILE_CODE_HASH = "658dc86e477e13c9";

@@ -133,9 +133,13 @@ export function repairWalls(tris, ring, base, { fix = true, party = null, roofs 
           out.push({ p: [A, B, Cc], n: o.n, area: 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx), clipped: true }); }
       }
     }
-    const steps = Math.max(1, Math.ceil(L)), pts = [];
+    // the top line: the edge's own wall top or, higher, the building's roof just inside the edge (holes, browser
+    // check: Place Saint-Job 766098's front was rebuilt up to its partial wall's top only: sky notches under the eaves,
+    // and the painted façade read its eaves from that low line: no window over the ground floor)
+    const steps = Math.max(1, Math.ceil(L / 0.5)), pts = [];
     for (let s = 0; s <= steps; s++) {
-      const u = Math.min(L, (L * s) / steps), top = topAt(Math.min(L - 1e-3, Math.max(1e-3, u)));
+      const u = Math.min(L, (L * s) / steps), uu = Math.min(L - Math.min(0.05, L / 4), Math.max(Math.min(0.05, L / 4), u));   // (5 cm in: the mesh's corner vertices sit mm off the footprint's: at 1 mm in, no triangle and the corner dropped to the base)
+      const top = Math.max(topAt(uu), roofs ? roofY(ax + tx * uu - onx * 0.05, az + tz * uu - onz * 0.05, roofs) : -Infinity);
       pts.push([ax + tx * u, az + tz * u, top > base ? top : base]);
     }
     const sideN = [o1 * nx, 0, o1 * nz];          // outward
@@ -183,6 +187,20 @@ function rayTri(x, y, z, d, p) {
   if (v < -1e-4 || u + v > 1 + 1e-4) return Infinity;
   const t = f * (e2x * qx + e2y * qy + e2z * qz);
   return t > 0 ? t : Infinity;
+}
+
+/** the highest upward roof surface over (x, z) (the building's roof triangles), or -Infinity */
+function roofY(x, z, roofs) {
+  let hi = -Infinity;
+  for (const t of roofs) {
+    if (t.n[1] < 0.1) continue;
+    const [A, B, C] = t.p, d = (B[2] - C[2]) * (A[0] - C[0]) + (C[0] - B[0]) * (A[2] - C[2]);
+    if (Math.abs(d) < 1e-9) continue;
+    const l1 = ((B[2] - C[2]) * (x - C[0]) + (C[0] - B[0]) * (z - C[2])) / d, l2 = ((C[2] - A[2]) * (x - C[0]) + (A[0] - C[0]) * (z - C[2])) / d, l3 = 1 - l1 - l2;
+    if (l1 < -1e-3 || l2 < -1e-3 || l3 < -1e-3) continue;
+    hi = Math.max(hi, l1 * A[1] + l2 * B[1] + l3 * C[1]);
+  }
+  return hi;
 }
 
 function pipR(x, z, r) {
