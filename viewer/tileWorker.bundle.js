@@ -7941,6 +7941,213 @@ function surfaceAttribute(net, part) {
   return out;
 }
 
+// viewer/streetNames.js
+function fixMojibake(s) {
+  if (!s || !/[ÃÂÅ]/.test(s)) return s;
+  const bytes = [];
+  for (const ch of s) {
+    const c = ch.charCodeAt(0);
+    const b = c < 256 ? c : CP1252.get(c);
+    if (b == null) return s;
+    bytes.push(b);
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(new Uint8Array(bytes));
+  } catch {
+    return s;
+  }
+}
+var CP1252 = /* @__PURE__ */ new Map([
+  [8364, 128],
+  [8218, 130],
+  [402, 131],
+  [8222, 132],
+  [8230, 133],
+  [8224, 134],
+  [8225, 135],
+  [710, 136],
+  [8240, 137],
+  [352, 138],
+  [8249, 139],
+  [338, 140],
+  [381, 142],
+  [8216, 145],
+  [8217, 146],
+  [8220, 147],
+  [8221, 148],
+  [8226, 149],
+  [8211, 150],
+  [8212, 151],
+  [732, 152],
+  [8482, 153],
+  [353, 154],
+  [8250, 155],
+  [339, 156],
+  [382, 158],
+  [376, 159]
+]);
+var ABBR = {
+  av: "avenue",
+  ave: "avenue",
+  bd: "boulevard",
+  bld: "boulevard",
+  boul: "boulevard",
+  r: "rue",
+  pl: "place",
+  sq: "square",
+  chee: "chaussee",
+  chau: "chaussee",
+  st: "saint",
+  ste: "sainte",
+  dr: "dreve",
+  sent: "sentier",
+  imp: "impasse",
+  all: "allee"
+};
+var TYPE2 = /* @__PURE__ */ new Set([
+  "rue",
+  "avenue",
+  "boulevard",
+  "chaussee",
+  "chemin",
+  "place",
+  "square",
+  "dreve",
+  "clos",
+  "allee",
+  "sentier",
+  "venelle",
+  "impasse",
+  "parvis",
+  "quai",
+  "rond",
+  "point",
+  "cite",
+  "jardin",
+  "jardins",
+  "parc",
+  "promenade",
+  "passage",
+  "petite",
+  "petit",
+  "vieille",
+  "vieux",
+  "grande",
+  "grand",
+  "de",
+  "du",
+  "des",
+  "la",
+  "le",
+  "les",
+  "l",
+  "d",
+  "au",
+  "aux",
+  "et",
+  "a",
+  "en"
+]);
+function normName(s) {
+  if (!s) return "";
+  const t = fixMojibake(String(s)).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/[’‘'`´.,;:()"/-]/g, " ").replace(/\s+/g, " ").trim();
+  return t.split(" ").map((w) => ABBR[w] || w).join(" ");
+}
+function looseKey(norm4) {
+  return norm4.split(" ").filter((w) => w && !TYPE2.has(w)).sort().join(" ");
+}
+function osmSides(name) {
+  if (!name) return [];
+  return [...new Set(String(name).split(/\s+[-–\/]\s+/).map(normName).filter(Boolean))];
+}
+function inRings2(rings, x, z) {
+  let inside3 = false;
+  for (const ring2 of rings) {
+    for (let i = 0, j = ring2.length - 1; i < ring2.length; j = i++) {
+      const [xi, zi] = ring2[i], [xj, zj] = ring2[j];
+      if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside3 = !inside3;
+    }
+  }
+  return inside3;
+}
+function surfaceVote(surf, roads, SURFACE2, city = null) {
+  const N2 = new Map((roads.nodes || []).map((n) => [n.id, n]));
+  const exact = /* @__PURE__ */ new Map(), loose = /* @__PURE__ */ new Map();
+  const add = (m, k, v) => {
+    if (!k) return;
+    let a = m.get(k);
+    if (!a) m.set(k, a = []);
+    a.push(v);
+  };
+  for (const r of roads.roads) {
+    const nm = r.meta?.name;
+    if (!nm) continue;
+    const a = N2.get(r.a), b = N2.get(r.b);
+    const pts = [a, ...r.pts || [], b].filter(Boolean).map((p) => [p.x, p.z]);
+    const road = { r, pts, code: SURFACE2[r.meta?.surface] ?? 0, street: osmSides(nm).join(" | ") };
+    for (const side of osmSides(nm)) {
+      add(exact, side, road);
+      add(loose, looseKey(side), road);
+    }
+  }
+  for (const [k, list] of loose) if (new Set(list.map((d) => d.street)).size > 1) loose.delete(k);
+  const cache = /* @__PURE__ */ new Map();
+  const stats = { surfaces: 0, named: 0, exact: 0, loose: 0, spatial: 0, city: 0, unmatched: 0 };
+  const of = (s) => {
+    if (cache.has(s)) return cache.get(s);
+    let res = null;
+    stats.surfaces++;
+    if (s.name) {
+      stats.named++;
+      const n = normName(s.name);
+      let list = exact.get(n);
+      if (list) stats.exact++;
+      else if (list = loose.get(looseKey(n))) stats.loose++;
+      if (list) {
+        const uniq = [...new Set(list)];
+        let bb = [Infinity, Infinity, -Infinity, -Infinity];
+        for (const p of s.rings?.[0] || []) bb = [Math.min(bb[0], p[0]), Math.min(bb[1], p[1]), Math.max(bb[2], p[0]), Math.max(bb[3], p[1])];
+        const inside3 = /* @__PURE__ */ new Map(), all = /* @__PURE__ */ new Map();
+        for (const d of uniq) {
+          for (let i = 1; i < d.pts.length; i++) {
+            const [x0, z0] = d.pts[i - 1], [x1, z1] = d.pts[i], L2 = Math.hypot(x1 - x0, z1 - z0);
+            all.set(d.code, (all.get(d.code) || 0) + L2);
+            if (Math.max(x0, x1) < bb[0] || Math.min(x0, x1) > bb[2] || Math.max(z0, z1) < bb[1] || Math.min(z0, z1) > bb[3]) continue;
+            const k = Math.max(1, Math.ceil(L2 / 2));
+            for (let j = 0; j < k; j++) {
+              const t = (j + 0.5) / k;
+              if (inRings2(s.rings, x0 + (x1 - x0) * t, z0 + (z1 - z0) * t)) inside3.set(d.code, (inside3.get(d.code) || 0) + L2 / k);
+            }
+          }
+        }
+        const pick2 = (m) => [...m].sort((p, q) => q[1] - p[1] || p[0] - q[0])[0]?.[0] ?? null;
+        if (inside3.size) {
+          stats.spatial++;
+          res = pick2(inside3);
+        } else res = pick2(all);
+      } else if (city && (city.exact[n] ?? city.loose[looseKey(n)]) != null) {
+        stats.city++;
+        res = city.exact[n] ?? city.loose[looseKey(n)];
+      } else stats.unmatched++;
+    }
+    cache.set(s, res);
+    return res;
+  };
+  return { of, stats };
+}
+function oldNameVote(roads, SURFACE2) {
+  const votes = /* @__PURE__ */ new Map();
+  for (const r of roads.roads) {
+    const nm = r.meta?.name;
+    if (!nm) continue;
+    const code = SURFACE2[r.meta?.surface] ?? 0;
+    const v = votes.get(nm) || /* @__PURE__ */ new Map();
+    v.set(code, (v.get(code) || 0) + 1);
+    votes.set(nm, v);
+  }
+  return new Map([...votes].map(([nm, v]) => [nm, [...v].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]]));
+}
+
 // viewer/surfaces.js
 var SURF_CLASS = { roadway: 0, tramRoad: 1, tramSite: 2, parking: 3, square: 4, sidewalk: 5, median: 6, path: 7, ramp: 8, pit: 9 };
 var KERB = 0.13;
@@ -9081,16 +9288,9 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   const { surf, H, nrmAt, base, halves, coverArea, convexCover, baseAt, bounds, riseAt } = prep;
   const UP2 = [0, 1, 0];
   const inTile = prep.inside;
-  const votes = /* @__PURE__ */ new Map();
-  for (const r of roads.roads) {
-    const nm = r.meta?.name;
-    if (!nm) continue;
-    const code = SURFACE[r.meta?.surface] ?? 0;
-    const v = votes.get(nm) || /* @__PURE__ */ new Map();
-    v.set(code, (v.get(code) || 0) + 1);
-    votes.set(nm, v);
-  }
-  const nameSurf = new Map([...votes].map(([nm, v]) => [nm, [...v].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]]));
+  const vote = surf.surfVote ? surfaceVote(surf, roads, SURFACE, surf.surfVote) : null;
+  const nameSurf = vote ? null : oldNameVote(roads, SURFACE);
+  const voteOf = (s) => vote ? vote.of(s) : nameSurf.get(s.name);
   const out = {
     asphalt: new Part2({ aLateral: 1, aPiece: 2, aEdges: 4, aMark: 4, aSurf: 1 }),
     concrete: new Part2({ aKind: 1, aUv2: 2, aFrameW: 1 }),
@@ -9450,7 +9650,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const th = (s.course ?? 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
       uvs = pts.map((p) => [p[0] * c + p[1] * sn, -p[0] * sn + p[1] * c]);
     }
-    const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: s.surface != null ? SURFACE[s.surface] ?? 0 : nameSurf.get(s.name) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame2 >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
+    const exOfV = (q) => pname === "asphalt" ? { aPiece: [hashPhase2(s.id || String(b.si)), 0], aSurf: s.surface != null ? SURFACE[s.surface] ?? 0 : voteOf(s) || BASE_SURF[cls] } : pname === "concrete" ? { aKind: frame2 >= 0 ? KIND3.framed : KIND3.slab, aUv2: uv2[q], aFrameW: fw[q] } : null;
     const idx = pts.map((p, q) => part.keyed(`${paved(cls) ? hostOf(b.si) : b.si}|${frame2}|${fw[0]}|${Math.round(p[0] * 1e3)}|${Math.round(p[1] * 1e3)}`, () => part.vert(p[0], H(p[0], p[1]) + riseAt(cls, p[0], p[1], b.si) - (OVERLAY[cls] ? BASE_DROP : 0), p[1], nrmAt(p[0], p[1]), uvs[q][0], uvs[q][1], exOfV(q))));
     part.tri(idx[0], idx[1], idx[2], UP2);
   }
@@ -15227,6 +15427,8 @@ async function streetlifeFronts(base, name) {
   return (doc.pois || []).filter((p) => p.face && !["atm", "school", "civic"].includes(p.kind)).map(({ face: f }) => ({ x: f.x, z: f.z, nx: f.nx, nz: f.nz, w: f.w }));
 }
 var overridesP = null;
+var streetVoteP = null;
+var streetVote = (base) => streetVoteP ??= fetch(new URL("../roads/streetVote.json", base)).then((r) => r.ok ? r.json() : { exact: {}, loose: {} }).catch(() => ({ exact: {}, loose: {} }));
 var overrides = (base) => overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => r.ok ? r.json() : {}).catch(() => ({}));
 var lookSet = (looks, entry) => !looks || entry.cortenbosch !== false ? looks : Object.fromEntries(Object.entries(looks).filter(([, v]) => v?.set !== "cortenbosch"));
 function wallRayOf(bDoc) {
@@ -15413,6 +15615,13 @@ async function buildTileData(entry, base) {
   const grassTypes = entry.grass ? await step("grass types", async () => grassTypeData(feats, { x0, x1, z0, z1 }, { kinds: await grassKinds(base), surfaces: surfDoc })) : null;
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
+  if (surf && entry.surfVote !== false) {
+    surf.surfVote = await streetVote(base);
+    for (const r of roads.roads) {
+      const o = ov.surfvoteRoads?.[r.id];
+      if (o?.surface) (r.meta ??= {}).surface = o.surface;
+    }
+  }
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
   if (entry.cortenbosch !== false && ov.streetSurfaces) {
     if (surf) for (const s of surf.surfaces || []) {
@@ -16132,4 +16341,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "5a788a1e750f9e13";
+self.__TILE_CODE_HASH = "7f2659da5a243792";

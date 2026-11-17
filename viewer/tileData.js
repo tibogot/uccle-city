@@ -84,6 +84,9 @@ async function streetlifeFronts(base, name) {
 }
 
 let overridesP = null;
+let streetVoteP = null;
+/** data/roads/streetVote.json (tools/build_street_vote.mjs): street key -> its city-wide OSM surface code (not asphalt) */
+const streetVote = (base) => (streetVoteP ??= fetch(new URL("../roads/streetVote.json", base)).then((r) => (r.ok ? r.json() : { exact: {}, loose: {} })).catch(() => ({ exact: {}, loose: {} })));
 /** data/overrides.json (hand corrections), fetched once per worker; {} if missing. */
 const overrides = (base) => (overridesP ??= fetch(new URL("../overrides.json", base)).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 /** the curated building looks this build uses: an entry of a neighbourhood pass ("set": "cortenbosch") only with its
@@ -282,6 +285,13 @@ export async function buildTileData(entry, base) {
   // hand corrections (data/overrides.json): road surfaces OSM gets wrong (Place de Saint-Job is setts)
   const ov = await overrides(base);
   applyRoadOverrides(roads, ov);
+  // surfvote (docs/SURFVOTE.md): the street-surface name vote of surfaces.js with the names repaired and normalised
+  // (viewer/streetNames.js), the city-wide table as its fallback (data/roads/streetVote.json), and the OSM road surfaces
+  // Street View contradicts (data/overrides.json surfvoteRoads); ?surfvote=old: the raw-name vote, which never matched
+  if (surf && entry.surfVote !== false) {
+    surf.surfVote = await streetVote(base);
+    for (const r of roads.roads) { const o = ov.surfvoteRoads?.[r.id]; if (o?.surface) (r.meta ??= {}).surface = o.surface; }
+  }
   // Square des Heros (viewer/heros/herosSurface.js; ?heros=old: the setts plaza as before): the UrbIS square surface minus
   // the park, as sidewalk paving; the park is the hero place's own ground
   if (surf && entry.heros) applyParkSquares(surf, ov, bounds);
