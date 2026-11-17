@@ -7,6 +7,7 @@
 //   ?bootdefer=1: on. OFF BY DEFAULT (measured 2026-11-15, docs/BOOT.md): 37 MB less before the cover and ~130 fewer
 //   pipelines, but the cover time did not move beyond the machine's noise, and the deferred models' processing landed
 //   in the first seconds after the reveal (long tasks after the cover 0.6-0.7 s -> 3.0-3.8 s, one 2.2 s): worse to play.
+import { QUICK } from "./quick.js";   // ?quick=1 (docs/QUICKTEST.md): a gated model loads only within the quick radius, else never
 const params = new URLSearchParams(location.search);
 // boot3 (docs/BOOT.md section 5): ON BY DEFAULT now (?bootdefer=0 = everything under the cover, as before). With the
 // boot warm-up no longer waiting for the far models' compiles (warmup.js bootQuiet) and the other boot3 changes, the cover
@@ -49,6 +50,7 @@ export const afterCover = () => liftP;
  *  `id` is a GATED key (unknown ids are not gated) */
 export function whenNeeded(id) {
   const p = GATED[id];
+  if (QUICK && p) return QUICK.gate(p) ? Promise.resolve() : new Promise(() => {});
   if (!BOOT_DEFER || !start || lifted || !p) return Promise.resolve();
   // perfgame round 3 (?landmarksearly=old): when the play loader holds after the cover anyway, the far models start NOW,
   // during the boot (their downloads, parses and compiles overlap the start tile's build and the warm-up), not after it
