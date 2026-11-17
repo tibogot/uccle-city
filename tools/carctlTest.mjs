@@ -25,7 +25,7 @@ const { createFeelState, stepFeel } = await import("../viewer/drive/carFeel.js")
 const { createCtlState, stepCtl } = await import("../viewer/drive/carCtl.js");
 const { ChaseCamera, CAMERA } = await import("../viewer/drive/chaseCamera.js");
 const { createCarEnv } = await import("../viewer/drive/carEnv.js");
-const { createRailMovers, railMoverSource } = await import("../viewer/drive/movers.js");
+const { createRailMovers, railMoverSource, railBox } = await import("../viewer/drive/movers.js");
 const { HANDLING } = await import("../viewer/drive/carPhysics.js");
 
 const MODELS = {
@@ -344,7 +344,7 @@ function table(title, head, data) {
   camera HF energy (pos², new / old): bumpy ${fmt(energy(res.bumpynew) / energy(res.bumpyold) * 100, 0)} %, turns ${fmt(energy(res.turnsnew) / energy(res.turnsold) * 100, 0)} %`);
 }
 // ---------------------------------------------------------------- 10. trams / trains solid (movers.js -> carEnv.js)
-// A fake tram in the tramline.js bodies() format: 32 m along +x (front at fx, back toward -x), 4 m boxes, 2.4 m wide.
+// A fake tram written with movers.js railBox, the writer tramline.js / trains.js bodies() use: 32 m along +x (front at fx, back toward -x), 4 m boxes, 2.4 m wide.
 {
   const tram = { fx: 16, z: 30, y0: 0, v: 0,
     bodies(x, z, r, out, o = 0) {
@@ -353,7 +353,8 @@ function table(title, head, data) {
         const cx = this.fx - 2 - 4 * k;
         if ((cx - x) ** 2 + (this.z - z) ** 2 > (r + 3) ** 2) continue;
         const q = o + n * 7;
-        out[q] = cx; out[q + 1] = this.z; out[q + 2] = Math.PI / 2; out[q + 3] = 1.2; out[q + 4] = (k === 0 || k === 7 ? 1 : -1) * 2.05; out[q + 5] = this.y0 - 0.1; out[q + 6] = 3.4;
+        // (the real writer tramline.js / trains.js use; h = 0: the track's tangent along +x in their at() convention)
+        railBox(out, q, cx, this.z, 0, 1.2, 2.05, k > 0 && k < 7, this.y0 - 0.1, 3.4);
         n++;
       }
       return n;

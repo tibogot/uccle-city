@@ -5,6 +5,15 @@
 // A rail vehicle is kinematic: it is never pushed; the car is pushed out and slides / bounces (carPhysics.js hitSlide).
 // Pure JS, no allocation per frame (the boxes go into the caller's Float32Array).
 
+/** one body box into out at float offset q: (x, z) its centre, h the track's heading as tramline / trains at() give it
+ *  (tangent = (cos h, -sin h)), hw / hl half width / length, inner (a box inside a body: seams), y0 its base, ht its
+ *  height. The one writer for every rail source (browser check 2026-11-17: a hand-written row lost its height to a
+ *  comment and every tram box was skipped by the height band). */
+export function railBox(out, q, x, z, h, hw, hl, inner, y0, ht) {
+  out[q] = x; out[q + 1] = z; out[q + 2] = Math.atan2(Math.cos(h), -Math.sin(h));
+  out[q + 3] = hw; out[q + 4] = inner ? -hl : hl; out[q + 5] = y0; out[q + 6] = ht;
+}
+
 /** sources: [() => { bodies(x, z, r, out, offset) -> n } | null] */
 export function createRailMovers(sources) {
   return {

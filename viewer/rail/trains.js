@@ -11,6 +11,7 @@
 // The static source says 0 / false. A GTFS-Realtime TripUpdates adapter (SNCB publishes one on the same NAP) would map
 // trip_id / trip_short_name -> delay at the next stop and plug in with setSource(); nothing else changes.
 // Clock: Brussels local time now, ?clock=HH:MM, ?timescale=N (or the city's tram clock when given: one city clock).
+import { railBox } from "../drive/movers.js";
 import * as THREE from "three/webgpu";
 import { loadTrainModel, createTrainFleet, trainPose } from "./trainModel.js";
 
@@ -110,8 +111,7 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
       for (let k = 0; k < ns && o / 7 + n < max; k++) {
         const p = R.at(d - seg / 2 - k * seg), q = o + n * 7;
         if ((p[0] - x) ** 2 + (p[2] - z) ** 2 > (r + 3.5) ** 2) continue;
-        out[q] = p[0]; out[q + 1] = p[2]; out[q + 2] = Math.atan2(Math.cos(p[3]), -Math.sin(p[3]));
-        out[q + 3] = 1.5; out[q + 4] = (k === 0 || k === ns - 1 ? 1 : -1) * (seg / 2 + 0.05);   // (< 0: an inner box, movers.js) out[q + 5] = p[1] - 0.2; out[q + 6] = 4.4;
+        railBox(out, q, p[0], p[2], p[3], 1.5, seg / 2 + 0.05, k > 0 && k < ns - 1, p[1] - 0.2, 4.4);
         n++;
       }
     }

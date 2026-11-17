@@ -98,12 +98,12 @@
 | 30 km/h, 15° scrape along its side | slid on, x 0.5 | speed 40.4 km/h |
 | rail bridge 6 m over the road | passes under |  |
 | walker capsule inside the tram | pushed (0.00, 1.00) 1.00 m |  |
-| cost: car step next to a tram | 3.1 µs / frame |  |
+| cost: car step next to a tram | 2.9 µs / frame |  |
 
 ## 9. Cost per 60 Hz frame (2 substeps, node, synthetic ground)
 |  | step |
 |---|---|
-| old | 2.5 µs |
-| new | 1.1 µs |
+| old | 2.6 µs |
+| new | 1.2 µs |
 
 all NEW checks pass

@@ -19,6 +19,7 @@
 //
 // Clock: Brussels local time now, or ?clock=HH:MM; ?timescale=N runs it N times faster. The day type
 // (weekday / Saturday / Sunday) comes from the date; the timetable is that of the feed's sample day.
+import { railBox } from "./drive/movers.js";
 import * as THREE from "three/webgpu";
 import { attribute, mix, float, vec3, color, uniform } from "three/tsl";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -377,8 +378,7 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
       for (let k = 0; k < ns && o / 7 + n < max; k++) {
         const p = at(sh, d - seg / 2 - k * seg), q = o + n * 7;
         if ((p[0] - x) ** 2 + (p[1] - z) ** 2 > (r + 3) ** 2) continue;
-        out[q] = p[0]; out[q + 1] = p[1]; out[q + 2] = Math.atan2(Math.cos(p[2]), -Math.sin(p[2]));
-        out[q + 3] = WIDTH / 2 + 0.05; out[q + 4] = (k === 0 || k === ns - 1 ? 1 : -1) * (seg / 2 + 0.05);   // (< 0: an inner box, movers.js) out[q + 5] = railTop(p[0], p[1]) - 0.1; out[q + 6] = H + 0.2;
+        railBox(out, q, p[0], p[1], p[2], WIDTH / 2 + 0.05, seg / 2 + 0.05, k > 0 && k < ns - 1, railTop(p[0], p[1]) - 0.1, H + 0.2);
         n++;
       }
     }

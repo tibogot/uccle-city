@@ -131,10 +131,26 @@ Node checks (test 10): 40 km/h into a tram's side = stopped at its side; a tram 
 pushed ahead, no speed explosion; 15 deg scrape = slides on; rail bridge = passes under; walker = pushed out sideways.
 Buses: none in the city yet (the rule applies when they come).
 
-## Left
+## Browser check (2026-11-17, quick mode, port 8832, one tab)
 
-- Browser check (fixed route old vs new: Place Saint-Job junctions, Rue du Ham slope, a tight corner; frame strips
-  in `docs/carctl/`): pending the browser turn.
+- `?quick=1&place=stjob-street&view=drive`: loads, no console errors (only the usual WebGPU / TSL warnings). Driver
+  update 0.07-0.2 ms a frame.
+- Scripted route from the Saint-Job street spot (full throttle, left turn, right turn, brake), new vs `?carctl=old`:
+  max slip 1.2 / 1.3 deg, max yaw rate 35 / 44 deg/s, camera > 2.5 Hz offset 12 / 5 / 27 mm (new) against 16 / 3 / 36
+  mm (old), fov range 0.5 deg against 1.9 deg. Frames `02_OLD_turn_left_38kmh.jpg` (car off-centre, horizon leaning)
+  vs `02_new_turn_left_38kmh.jpg` (car centred in the lower third, level horizon, the car seen turning).
+- Trams (`&with=trams`, the tram clock stopped): driven at a real line-92 tram from 12 m at its side: stopped at 3.37 m
+  from its centre line (1.2 + 2.15 = exactly touching; `03_new_car_stopped_by_tram.jpg`).
+  **Found and fixed during the check**: the first run drove THROUGH the tram. tramline.js / trains.js wrote each box
+  row by hand and a trailing comment swallowed the base height / height: every box had height 0 and the height band
+  skipped it. The node test used its own fake box writer, so it passed. Now there is one writer, `movers.js railBox`,
+  used by tramline.js, trains.js and the node test (rule: test the real producer, not a copy of it).
+- Police game (`&with=game&game=police&gmode=free&police=1`): starts on the new controller (`state.ctl`), drives,
+  turns and brakes (57 km/h, `04_police_free_patrol_new.jpg`), no console errors.
+- Not done (short turn): Rue du Ham slope and a roundabout in the browser (node covers slopes / kerbs), the walker vs
+  a tram in the browser (node only), trains at a level crossing in the browser.
+
+## Left
 - A tram does not brake for the player's car stopped on its track (it pushes the car along); the traffic sim's trams
   could take the player as an obstacle.
 - `collisionTest.js` and the Car Lab still run round 1's `stepCar`.
