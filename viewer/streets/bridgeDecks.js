@@ -60,8 +60,12 @@ export function bridgeDescriptors(roadsDoc, ground, plans = null) {
     // sidewalks and squares on it; the road band left the platforms and shelters hanging over the cutting)
     const plan = plans?.[String(r.meta?.osm)];
     if (plan?.ring?.length >= 3) {
-      d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null };
+      d.plan = { ring: plan.ring, free: plan.free || [], walls: plan.walls || [], under: plan.under || null, ...(plan.urbis ? { urbis: plan.urbis } : {}) };
       for (const [x, z] of plan.ring) { d.box[0] = Math.min(d.box[0], x); d.box[1] = Math.min(d.box[1], z); d.box[2] = Math.max(d.box[2], x); d.box[3] = Math.max(d.box[3], z); }
+      // (vivier 2026-11-17) a plan made from the UrbIS bridge polygon (ringPlans): its top is the PLANE through the
+      // streets round its abutment edges, not the bridge road's profile (Vivier d'Oie: the deck's west corner carries
+      // the Avenue Laterale junction 0.8 m over the Chaussee's profile there)
+      if (plan.fit) d.plan.plane = fitPlane(plan.ring, d.plan.free, ground);
     }
     // the deck's profile, every PROF m: the straight line between the grounds past the ends, but never under the ground
     // on the bridge's centre line (a hump the DTM keeps, e.g. Avenue des Hospices, E10: the straight deck ran up to
@@ -70,6 +74,7 @@ export function bridgeDescriptors(roadsDoc, ground, plans = null) {
     d.prof = [];
     for (let k = 0; k <= n; k++) {
       const sk = (L * k) / n, line = h0 + (h1 - h0) * (sk / L);
+      if (d.plan?.plane) { const q = at(d, sk); d.prof.push(planeY(d.plan.plane, q.x, q.z)); continue; }
       if (sk < d.span[0] || sk > d.span[1]) { d.prof.push(line); continue; }
       const q = at(d, sk);
       d.prof.push(Math.max(line, ground(q.x, q.z)));
@@ -152,8 +157,8 @@ function at(d, s) {
 /** The deck as a drawable: a slab between the bridge's own ends (not the extensions), carriageway and sidewalk bands on
  *  top (SLAB.sink under the deck height, so the street's own surface wins where both are drawn), parapets on both
  *  edges, closed ends and soffit. Plain arrays: { position, normal, color } (non-indexed triangles). */
-export function deckMesh(d, ground = null, covered = null) {
-  if (d.plan) return planDeckMesh(d, ground ?? (() => -Infinity), covered ?? (() => false));
+export function deckMesh(d, ground = null, covered = null, streetY = null) {
+  if (d.plan) return planDeckMesh(d, ground ?? (() => -Infinity), covered ?? (() => false), streetY);
   const P = [], N = [], C = [];
   const push = (n, c, ...pts) => { for (const p of pts) { P.push(p[0], p[1], p[2]); N.push(n[0], n[1], n[2]); C.push(c[0], c[1], c[2]); } };
   // each quad wound so its geometric normal agrees with n (until 2026-11-13 the deck top faced DOWN and the soffit UP:
@@ -198,6 +203,9 @@ export function deckMesh(d, ground = null, covered = null) {
 // and the cutting walls under the deck (plan.walls: lines in x, z; from the soffit down to plan.under.level - 0.4).
 const PLAN = { depth: 1.1, cell: 2, upstand: 0.25, upW: 0.3, railH: 1.1, post: 1.5, sink: 0.03 };
 const RAIL_DROP = 0.8;
+// (vivier) a FREE edge (over the tracks) carries its railing wherever it is over anything lower than a kerb: a bridge's
+// parapet runs on to the bank (Vivier d'Oie's corners: 0.6-0.7 m drops beside the fascia had none, deckJoins.mjs)
+const FREE_DROP = 0.15;
 const COLP = { asphalt: [0.115, 0.118, 0.125], kerb: [0.5, 0.49, 0.46], top: [0.4, 0.39, 0.37], fascia: [0.55, 0.54, 0.51], wall: [0.47, 0.46, 0.43], soffit: [0.3, 0.295, 0.28], steel: [0.09, 0.1, 0.105] };
 
 /** Sutherland-Hodgman: the (possibly concave) ring clipped to an axis-aligned box */
@@ -231,7 +239,60 @@ const offBand = (B, x, z) => Math.abs(B.nx * x + B.nz * z - B.c) > B.half;
 /** a plan deck's drawn / walked top at (x, z): the road profile, + KERB off the carriageway */
 function planTop(d, x, z) {
   d._band ??= bandOf(d);
-  return profY(d, alongLine(d, x, z)) + (offBand(d._band, x, z) ? KERB : 0);
+  return planBase(d, x, z) + (offBand(d._band, x, z) ? KERB : 0);
+}
+/** a plan deck's carriageway level at (x, z): its fitted plane (UrbIS plans), else the road's profile */
+const planBase = (d, x, z) => (d.plan.plane ? planeY(d.plan.plane, x, z) : profY(d, alongLine(d, x, z)));
+/** the fitted top: the plane + the residuals of the streets round the edges, inverse-distance weighted (the deck meets
+ *  each street at its own height: the plane alone left 0.25-0.36 m ledges at Vivier d'Oie's corners, deckJoins.mjs) */
+const planeY = (P, x, z) => {
+  const y = P.a + P.b * (x - P.x) + P.c * (z - P.z), R = P.res;
+  if (!R?.length) return y;
+  let sw = 0, sr = 0;
+  for (let i = 0; i < R.length; i += 3) {
+    const d2 = (R[i] - x) ** 2 + (R[i + 1] - z) ** 2;
+    if (d2 < 1e-4) return y + R[i + 2];
+    const w = 1 / (d2 * d2);                      // power 4: the nearest edge dominates, the middle stays near the plane
+    sw += w; sr += w * R[i + 2];
+  }
+  return y + sr / sw;
+};
+/** the plane through the ground just outside a ring's abutment edges (not the free ones: they span the cutting), the
+ *  samples under it (a cutting slope, a bank falling away) dropped round by round: the streets the deck joins */
+const RES_LOW = -0.6;
+function fitPlane(ring, free, ground) {
+  const F = new Set(free), sgn = ringSign(ring), S = [];
+  for (let i = 0; i < ring.length; i++) {
+    if (F.has(i)) continue;
+    const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], L = Math.hypot(bx - ax, bz - az);
+    if (L < 0.5) continue;
+    const nx = (bz - az) / L * sgn, nz = -(bx - ax) / L * sgn;
+    for (let s = 0.5; s < L; s += 1) {
+      const ex = ax + (bx - ax) * s / L, ez = az + (bz - az) * s / L, y = ground(ex + nx * 1.0, ez + nz * 1.0);
+      if (Number.isFinite(y)) S.push([ex + nx * 1.0, ez + nz * 1.0, y, ex, ez]);
+    }
+  }
+  if (S.length < 6) return null;
+  let keep = S, P = null;
+  for (let it = 0; it < 6; it++) {
+    const n = keep.length, mx = keep.reduce((a, p) => a + p[0], 0) / n, mz = keep.reduce((a, p) => a + p[1], 0) / n, my = keep.reduce((a, p) => a + p[2], 0) / n;
+    let sxx = 0, sxz = 0, szz = 0, sxy = 0, szy = 0;
+    for (const [x, z, y] of keep) { const u = x - mx, v = z - mz, w = y - my; sxx += u * u; sxz += u * v; szz += v * v; sxy += u * w; szy += v * w; }
+    const det = sxx * szz - sxz * sxz;
+    const b = Math.abs(det) > 1e-9 ? (sxy * szz - szy * sxz) / det : 0, c = Math.abs(det) > 1e-9 ? (szy * sxx - sxy * sxz) / det : 0;
+    P = { x: +mx.toFixed(3), z: +mz.toFixed(3), a: +my.toFixed(3), b: +b.toFixed(5), c: +c.toFixed(5) };
+    const next = S.filter(([x, z, y]) => y - planeY(P, x, z) > -0.35);
+    if (next.length === keep.length || next.length < 6) break;
+    keep = next;
+  }
+  const r = keep.map(([x, z, y]) => y - planeY(P, x, z));
+  P.rms = +Math.sqrt(r.reduce((a, v) => a + v * v, 0) / r.length).toFixed(3); P.n = keep.length; P.of = S.length;
+  // the residuals of the street samples (not the cutting slopes: more than RES_LOW under the plane), for planeY's
+  // correction; taken at the edge itself (the sample 1 m out moved back onto the ring)
+  const res = [];
+  for (const [x, z, y, ex, ez] of S) { const v = y - planeY(P, x, z); if (v > RES_LOW) res.push(+ex.toFixed(2), +ez.toFixed(2), +v.toFixed(3)); }
+  P.res = res;
+  return P;
 }
 /** Sutherland-Hodgman against one half plane: keep n . p <= c */
 function clipHalf(poly, nx, nz, c) {
@@ -251,7 +312,7 @@ const ringSign = (ring) => {
 };
 
 /** the plan's slab, fascia, railings, abutment and cutting walls (plain arrays, as deckMesh) */
-function planDeckMesh(d, ground, covered) {
+function planDeckMesh(d, ground, covered, streetY = null) {
   const P = [], N = [], C = [], S = [];        // S: the material slot per triangle (PLAN_SLOTS)
   const tri = (n, c, a, b, cc) => {
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], wx = cc[0] - a[0], wy = cc[1] - a[1], wz = cc[2] - a[2];
@@ -261,7 +322,7 @@ function planDeckMesh(d, ground, covered) {
     S.push(SLOT_OF.get(c) ?? 3);
   };
   const quad = (n, c, a, b, cc, dd) => { tri(n, c, a, b, cc); tri(n, c, a, cc, dd); };
-  const ring = d.plan.ring, top = (x, z) => planTop(d, x, z) - PLAN.sink, base = (x, z) => profY(d, alongLine(d, x, z)) - PLAN.sink;
+  const ring = d.plan.ring, top = (x, z) => planTop(d, x, z) - PLAN.sink, base = (x, z) => planBase(d, x, z) - PLAN.sink;
   const outSign = ringSign(ring), B = (d._band ??= bandOf(d));
   // top and soffit: the ring clipped to a PLAN.cell grid, each piece fanned (a piece is convex except at the ring's few
   // concave corners, where the fan still covers it: the deck is flat there)
@@ -278,7 +339,14 @@ function planDeckMesh(d, ground, covered) {
       if (q.length < 3) continue;
       // (where the measured street is drawn the deck's top tucks UNDER_STREET under it: the ring overlaps the UrbIS
       // polygons by a metre or so at the ends, no terrain seen in between, no z-fight with the street's own surface)
-      const v = q.map(([px, pz]) => [px, base(px, pz) + (covered(px, pz) ? -UNDER_STREET : lift), pz]);
+      // (vivier) off the measured streets, a kerb over the drawn street beside it (its height field is up to 0.35 m off
+      // the deck's plane: a raised / sunk block of paving between two streets otherwise), only near the deck's level
+      const v = q.map(([px, pz]) => {
+        const b = base(px, pz);
+        if (covered(px, pz)) return [px, b - UNDER_STREET, pz];
+        const sy = streetY ? streetY(px, pz) : null;
+        return [px, sy != null && Math.abs(sy - PLAN.sink - b) < 0.6 ? sy - PLAN.sink + lift : b + lift, pz];
+      });
       for (let k = 1; k + 1 < v.length; k++) tri([0, 1, 0], col, v[0], v[k], v[k + 1]);
     }
     const v = pc.map(([px, pz]) => [px, base(px, pz) - PLAN.depth, pz]);
@@ -314,7 +382,7 @@ function planDeckMesh(d, ground, covered) {
       const fr = free.has(i);
       const ya = fr ? a.yb - PLAN.depth : Math.min(a.yb - PLAN.depth, a.gr - 0.4), yb = fr ? b.yb - PLAN.depth : Math.min(b.yb - PLAN.depth, b.gr - 0.4);
       quad(n, fr ? COLP.fascia : COLP.wall, [a.x, ya, a.z], [b.x, yb, b.z], [b.x, b.y, b.z], [a.x, a.y, a.z]);
-      if (Math.max(a.drop, b.drop) < RAIL_DROP) continue;
+      if (Math.max(a.drop, b.drop) < (fr ? FREE_DROP : RAIL_DROP)) continue;
       // a concrete upstand on the slab's edge (outer face, inner face, top), then the steel rails at 1.1 / 0.75 / 0.45 m
       quad(n, COLP.fascia, [a.x, a.y, a.z], [b.x, b.y, b.z], [b.x, b.y + U, b.z], [a.x, a.y + U, a.z]);
       quad([-nx, 0, -nz], COLP.fascia, [a.x + ix, a.y, a.z + iz], [b.x + ix, b.y, b.z + iz], [b.x + ix, b.y + U, b.z + iz], [a.x + ix, a.y + U, a.z + iz]);
@@ -331,7 +399,7 @@ function planDeckMesh(d, ground, covered) {
     // posts every PLAN.post m along the railed stretches (6 cm square)
     for (let sAl = PLAN.post / 2; sAl < L; sAl += PLAN.post) {
       const x = ax + tx * sAl + mx, z = az + tz * sAl + mz, y = top(x, z);
-      if (y - ground(x + nx * 0.65, z + nz * 0.65) < RAIL_DROP) continue;
+      if (y - ground(x + nx * 0.65, z + nz * 0.65) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
       const h = 0.03, y0 = y + PLAN.upstand, y1 = y + PLAN.railH;
       const c = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([p, q]) => [x + tx * p + nx * q, z + tz * p + nz * q]);
       for (let k = 0; k < 4; k++) {
@@ -385,7 +453,7 @@ function slotted(P, N, C, S, B, p0) {
 
 /** the plan deck's car walls: the railed edges as thin rings (as parapetRings) */
 function planParapetRings(d, ground) {
-  const ring = d.plan.ring, out = [], top = (x, z) => planTop(d, x, z) - PLAN.sink, outSign = ringSign(ring);
+  const ring = d.plan.ring, out = [], top = (x, z) => planTop(d, x, z) - PLAN.sink, outSign = ringSign(ring), free = new Set(d.plan.free);
   for (let i = 0; i < ring.length; i++) {
     const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], L = Math.hypot(bx - ax, bz - az);
     if (L < 0.01) continue;
@@ -393,7 +461,7 @@ function planParapetRings(d, ground) {
     for (let k = 0; k < steps; k++) {
       const x0 = ax + (bx - ax) * k / steps, z0 = az + (bz - az) * k / steps, x1 = ax + (bx - ax) * (k + 1) / steps, z1 = az + (bz - az) * (k + 1) / steps;
       const ya = top(x0, z0), yb = top(x1, z1);
-      if (ground && Math.max(ya - ground(x0 + nx * 0.5, z0 + nz * 0.5), yb - ground(x1 + nx * 0.5, z1 + nz * 0.5)) < RAIL_DROP) continue;
+      if (ground && Math.max(ya - ground(x0 + nx * 0.5, z0 + nz * 0.5), yb - ground(x1 + nx * 0.5, z1 + nz * 0.5)) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
       out.push({ ring: [[x0, z0], [x1, z1], [x1 - nx * PLAN.upW, z1 - nz * PLAN.upW], [x0 - nx * PLAN.upW, z0 - nz * PLAN.upW]], top: Math.max(ya, yb) + PLAN.railH, base: Math.min(ya, yb) - PLAN.depth });
     }
   }
@@ -417,7 +485,7 @@ export function deckUnderCut(decks, grids, hdr) {
       for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
         const x = x0 + c * step, z = z0 + r * step;
         if (!inRing(d.plan.ring, x, z)) continue;
-        const top = profY(d, alongLine(d, x, z)) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
+        const top = planBase(d, x, z) - PLAN.sink - UNDER_STREET - 0.12, k = r * cols + c;
         for (const G of grids) if (G[k] > top) { G[k] = top; moved++; }
       }
     }
@@ -443,6 +511,9 @@ export function deckUnderCut(decks, grids, hdr) {
       const x = x0 + c * step, z = z0 + r * step;
       const over = Math.max(0, Math.abs((x - cx) * vx + (z - cz) * vz) - U.half), out = outDist(x, z);
       if (over > T || out > T) continue;
+      // (vivier) walled: the floor only between the walls and under the slab, no 1:1 taper (the taper of a station floor
+      // lowered the Avenue Laterale beside the Vivier d'Oie deck 1.8 m: a walled cutting's banks are the streets)
+      if (U.walled && (over > 0.2 || out > 0)) continue;
       const target = U.level + over * 1.0 + out * 1.0;
       const k = r * cols + c;
       for (const G of grids) if (G[k] > target) { G[k] = target; moved++; }
@@ -538,4 +609,212 @@ export function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null) {
   const fns = decks.map((d) => deckHeight(d, ground));
   const wrap = (g) => (fns.length ? (x, z) => { for (const f of fns) { const y = f(x, z); if (y != null) return y; } return g(x, z); } : g);
   return { decks, wrap };
+}
+
+// ---------------------------------------------------------------------------------------------- PLANS FROM UrbIS (vivier)
+// Owner playtest 2026-11-17: "there is a bridge at Vivier d'Oie, Chaussee de Waterloo, that is missing". The OSM deck
+// was the Chaussee's 18.7 m band; the real bridge (UrbIS Land cover ROB 590, 740 m2) is a skewed slab twice that wide
+// (the Avenue Laterale junction and the east footway on it): half of it hung over the open cutting, and the UrbIS slab
+// railData.js drew for it stood at the DTM of its centroid, the cutting floor (1.6 m over the rails). Rule: a road
+// bridge over the railway is drawn as ITS MEASURED POLYGON. For every OSM bridge road crossing a UrbIS road bridge
+// (ROB) over a track, without a hand-measured plan, a plan is made from the polygon:
+//   ring   the UrbIS outline; free: the edges that cross a track or pass within FREE_NEAR m of one (fascia + railing,
+//          the trains pass under); the others are abutments (wall into the ground) or carry the railing over the slopes
+//   fit    the top is the plane through the streets just outside the abutment edges (fitPlane)
+//   walls  the cutting walls under the slab, parallel to the tracks, where the DTM beside the deck leaves the floor
+//          (WALL_MIN..WALL_MAX m out from the outer tracks); under: the floor between them at the ballast's foot
+// Only for a real over-the-cutting bridge: the streets at least OVER_MIN m over the rail top.
+const FREE_NEAR = 3.5, FREE_PAD = 1.2, WALL_MIN = 3.2, WALL_MAX = 8.5, OVER_MIN = 4.0, BAND_OK = 0.85, SPREAD_MAX = 12;
+/** the share of a ring (1 m samples) within `half` m of the road line (the band deck's 2D footprint) */
+function bandCover(line, half, ring) {
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity, n = 0, k = 0;
+  for (const [x, z] of ring) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
+  for (let x = Math.floor(x0) + 0.5; x < x1; x++) for (let z = Math.floor(z0) + 0.5; z < z1; z++) {
+    if (!inRing(ring, x, z)) continue;
+    n++;
+    for (let i = 1; i < line.length; i++) {
+      const [ax, az] = line[i - 1], [bx, bz] = line[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = ((x - ax) * dx + (z - az) * dz) / l2;
+      if (t >= 0 && t <= 1 && Math.hypot(ax + dx * t - x, az + dz * t - z) <= half) { k++; break; }
+    }
+  }
+  return n ? k / n : 1;
+}
+const segHit = (a, b, c, d) => {
+  const r0 = b[0] - a[0], r1 = b[1] - a[1], s0 = d[0] - c[0], s1 = d[1] - c[1], den = r0 * s1 - r1 * s0;
+  if (Math.abs(den) < 1e-9) return false;
+  const t = ((c[0] - a[0]) * s1 - (c[1] - a[1]) * s0) / den, u = ((c[0] - a[0]) * r1 - (c[1] - a[1]) * r0) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+};
+/** the bridge plans for a tile: the hand-measured ones (data/overrides.json bridgePlans) + one per OSM bridge road of
+ *  roadsDoc over a UrbIS ROB (railDoc: data/rail/rail.json prepared, its .decks / .tracks); ground: the DTM sampler */
+export function ringPlans(hand, roadsDoc, railDoc, ground) {
+  const out = { ...(hand || {}) };
+  if (!railDoc?.decks || !roadsDoc?.roads) return out;
+  const nodes = new Map((roadsDoc.nodes || []).map((n) => [n.id, n]));
+  const robs = railDoc.decks.filter((b) => b.type === "ROB");
+  for (const r of roadsDoc.roads) {
+    const br = r.meta?.bridge, osm = String(r.meta?.osm ?? "");
+    if (!br || br === "no" || !osm || out[osm]) continue;
+    const line = centreLine(r, nodes);
+    if (!line) continue;
+    // the UrbIS polygon holding most of the road's line (1 m samples)
+    let best = null, bestN = 0;
+    for (const b of robs) {
+      let n = 0;
+      for (let i = 1; i < line.length; i++) {
+        const [ax, az] = line[i - 1], [bx, bz] = line[i], L = Math.hypot(bx - ax, bz - az);
+        for (let s = 0; s <= L; s += 1) if (inRing(b.ring, ax + (bx - ax) * s / (L || 1), az + (bz - az) * s / (L || 1))) n++;
+      }
+      if (n > bestN) { bestN = n; best = b; }
+    }
+    if (!best || bestN < 3) continue;
+    // only where the road's band misses the bridge: under BAND_OK of the polygon (1 m samples) inside it (the band decks
+    // that cover their bridge, Merlo / Chenaie / Bourdon, stay as they were)
+    if (bandCover(line, widths(r).half, best.ring) >= BAND_OK) continue;
+    const plan = urbisPlan(best, railDoc, ground);
+    if (plan) out[osm] = plan;
+  }
+  return out;
+}
+/** one UrbIS ROB polygon -> a plan (null when it is not over a cutting) */
+export function urbisPlan(b, railDoc, ground) {
+  const ring = b.ring.slice();
+  if (ring.length > 3 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1]) ring.pop();
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const [x, z] of ring) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
+  // the track points under the slab, and the track segments round it
+  const under = [], segs = [];
+  for (const t of railDoc.tracks) {
+    if (t.tunnel || t.box.x1 < x0 - 10 || t.box.x0 > x1 + 10 || t.box.z1 < z0 - 10 || t.box.z0 > z1 + 10) continue;
+    for (let i = 0; i < t.pts.length; i++) {
+      const p = t.pts[i];
+      if (i) segs.push([[t.pts[i - 1][0], t.pts[i - 1][2]], [p[0], p[2]]]);
+      if (inRing(ring, p[0], p[2])) under.push({ p, q: t.pts[Math.min(i + 1, t.pts.length - 1)], o: t.pts[Math.max(i - 1, 0)] });
+    }
+  }
+  if (under.length < 2) return null;
+  // frame: c the mean track point, u the mean direction (sign-aligned), v across
+  let ux = 0, uz = 0, cx = 0, cz = 0, ry = Infinity;
+  for (const { p, q, o } of under) {
+    let dx = q[0] - o[0], dz = q[2] - o[2]; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+    if (ux * dx + uz * dz < 0) { dx = -dx; dz = -dz; }
+    ux += dx; uz += dz; cx += p[0]; cz += p[2]; ry = Math.min(ry, p[1]);
+  }
+  const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul; cx /= under.length; cz /= under.length;
+  const vx = -uz, vz = ux, lat = (x, z) => (x - cx) * vx + (z - cz) * vz, lon = (x, z) => (x - cx) * ux + (z - cz) * uz;
+  let lo = Infinity, hi = -Infinity, rmax = -Infinity;
+  for (const { p } of under) { const o = lat(p[0], p[2]); lo = Math.min(lo, o); hi = Math.max(hi, o); rmax = Math.max(rmax, p[1]); }
+  // one bundle of tracks at one level (a long deck over diverging lines at several levels, Avenue des Tilleuls over
+  // L26 / L26/5, is not this simple case: left to a hand-measured plan)
+  if (hi - lo > SPREAD_MAX || rmax - ry > 1.5) return null;
+  // over a cutting: the streets round it (the ring's vertices' ground, upper quarter) OVER_MIN m over the rails
+  const gv = ring.map(([x, z]) => ground(x, z)).filter(Number.isFinite).sort((a, c) => a - c);
+  if (!gv.length || gv[Math.floor(gv.length * 0.75)] - ry < OVER_MIN) return null;
+  // free edges: crossing a track, or within FREE_NEAR m of one
+  const near = (x, z) => segs.some(([a, c]) => { const dx = c[0] - a[0], dz = c[1] - a[1], l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / l2)); return Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z) < FREE_NEAR; });
+  const free = [];
+  for (let i = 0; i < ring.length; i++) {
+    const A = ring[i], B = ring[(i + 1) % ring.length], L = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    let f = segs.some(([a, c]) => segHit(A, B, a, c));
+    for (let s = 0; !f && s <= L; s += 1) f = near(A[0] + (B[0] - A[0]) * s / (L || 1), A[1] + (B[1] - A[1]) * s / (L || 1));
+    if (f) free.push(i);
+  }
+  // the free edges pushed FREE_PAD m out: UrbIS's street surfaces reach ~1 m past its bridge polygon there (the
+  // sidewalks drawn at the deck's level hung over the tracks past the fascia, deckJoins.mjs); the parapet stands at
+  // the streets' edge
+  if (free.length) {
+    const F = new Set(free), n = ring.length, sg = ringSign(ring);
+    const line = (i) => { const A = ring[i], B = ring[(i + 1) % n], L = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nx = (B[1] - A[1]) / L * sg, nz = -(B[0] - A[0]) / L * sg, o = F.has(i) ? FREE_PAD : 0;
+      return { p: [A[0] + nx * o, A[1] + nz * o], d: [(B[0] - A[0]) / L, (B[1] - A[1]) / L], nx, nz, o }; };
+    const moved = ring.map((P, i) => {
+      const a = line((i + n - 1) % n), b = line(i);
+      if (!a.o && !b.o) return P;
+      const den = a.d[0] * b.d[1] - a.d[1] * b.d[0];
+      if (Math.abs(den) < 0.05) return [+(P[0] + (a.nx * a.o + b.nx * b.o) / (a.o && b.o ? 2 : 1)).toFixed(2), +(P[1] + (a.nz * a.o + b.nz * b.o) / (a.o && b.o ? 2 : 1)).toFixed(2)];
+      const t = ((b.p[0] - a.p[0]) * b.d[1] - (b.p[1] - a.p[1]) * b.d[0]) / den;
+      return [+(a.p[0] + a.d[0] * t).toFixed(2), +(a.p[1] + a.d[1] * t).toFixed(2)];
+    });
+    for (let i = 0; i < n; i++) ring[i] = moved[i];
+  }
+  // the slab's extent along the tracks, and the cutting's floor edges from the DTM just beyond it (both ends)
+  let s0 = Infinity, s1 = -Infinity;
+  for (const [x, z] of ring) { const s = lon(x, z); s0 = Math.min(s0, s); s1 = Math.max(s1, s); }
+  const edgeOut = (side) => {
+    const found = [];
+    for (const s of [s0 - 3, s0 - 6, s1 + 3, s1 + 6]) {
+      for (let o = WALL_MIN; o <= WALL_MAX + 0.01; o += 0.5) {
+        const off = side > 0 ? hi + o : lo - o, g = ground(cx + ux * s + vx * off, cz + uz * s + vz * off);
+        if (Number.isFinite(g) && g > ry + 1.2) { found.push(o); break; }
+      }
+    }
+    found.sort((a, c) => a - c);
+    return found.length ? Math.max(WALL_MIN, found[Math.floor(found.length / 2)] - 0.5) : WALL_MIN + 1;
+  };
+  const wHi = hi + edgeOut(1), wLo = lo - edgeOut(-1);
+  // each wall: the stretch of its line under the slab (+ 0.3 m into the bank past the free edges)
+  const wallAt = (off) => {
+    let a = Infinity, e = -Infinity;
+    for (let s = s0 - 1; s <= s1 + 1; s += 0.25) { if (inRing(ring, cx + ux * s + vx * off, cz + uz * s + vz * off)) { a = Math.min(a, s); e = Math.max(e, s); } }
+    if (!(e > a)) return null;
+    const p = (s) => [+(cx + ux * s + vx * off).toFixed(2), +(cz + uz * s + vz * off).toFixed(2)];
+    return [p(a - 0.3), p(e + 0.3)];
+  };
+  const walls = [wallAt(wLo), wallAt(wHi)].filter(Boolean);
+  const mid = (wLo + wHi) / 2;
+  return { urbis: b.id, fit: true, ring, free, walls,
+    under: { c: [+(cx + vx * mid).toFixed(2), +(cz + vz * mid).toFixed(2)], u: [+ux.toFixed(4), +uz.toFixed(4)], half: +((wHi - wLo) / 2).toFixed(2), level: +(ry - 0.45).toFixed(2), walled: true } };
+}
+
+/** (x, z) -> the highest the catenary may run at (Infinity away from the decks): 0.3 m under a deck's soffit, sloping
+ *  back up at 1:12 away from its edges (as railData.js wireCap under the hero arches; the contact wire runs 0.3 m under
+ *  that). Plain-data descriptors. */
+export function deckSoffitCap(decks) {
+  const list = decks || [];
+  return (x, z) => {
+    let cap = Infinity;
+    for (const d of list) {
+      if (x < d.box[0] - 25 || z < d.box[1] - 25 || x > d.box[2] + 25 || z > d.box[3] + 25) continue;
+      let out, soffit;
+      if (d.plan) {
+        out = 0;
+        if (!inRing(d.plan.ring, x, z)) {
+          out = Infinity;
+          const ring = d.plan.ring;
+          for (let i = 0; i < ring.length; i++) {
+            const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+            const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+            out = Math.min(out, Math.hypot(ax + dx * t - x, az + dz * t - z));
+          }
+        }
+        soffit = planBase(d, x, z) - PLAN.sink - PLAN.depth;
+      } else {
+        let best = Infinity, s = 0;
+        for (let i = 1; i < d.pts.length; i++) {
+          const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+          const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist = Math.hypot(ax + dx * t - x, az + dz * t - z);
+          if (dist < best) { best = dist; s = d.cum[i - 1] + t * Math.sqrt(l2); }
+        }
+        out = Math.hypot(Math.max(0, best - d.half), Math.max(0, d.span[0] - s, s - d.span[1]));
+        soffit = profY(d, Math.min(Math.max(s, d.span[0]), d.span[1])) - SLAB.sink - SLAB.depth;
+      }
+      if (out > 25) continue;
+      cap = Math.min(cap, soffit - 0.3 + out / 12);
+    }
+    return cap;
+  };
+}
+
+/** (x, z) -> true on a deck's drawn slab in 2D (the band between its own ends, or the plan's ring), whatever the ground */
+export function deckFootprint(d) {
+  if (d.plan) return (x, z) => x >= d.box[0] && z >= d.box[1] && x <= d.box[2] && z <= d.box[3] && inRing(d.plan.ring, x, z);
+  return (x, z) => {
+    if (x < d.box[0] || z < d.box[1] || x > d.box[2] || z > d.box[3]) return false;
+    let best = Infinity, s = 0;
+    for (let i = 1; i < d.pts.length; i++) {
+      const [ax, az] = d.pts[i - 1], [bx, bz] = d.pts[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist = Math.hypot(ax + dx * t - x, az + dz * t - z);
+      if (dist < best) { best = dist; s = d.cum[i - 1] + t * Math.sqrt(l2); }
+    }
+    return best <= d.half && s >= d.span[0] - 0.01 && s <= d.span[1] + 0.01;
+  };
 }
