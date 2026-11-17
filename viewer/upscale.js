@@ -451,7 +451,7 @@ export function createUpscaler(renderer, camera) {
    *  motion minus without it); exactly 0 for static objects */
   U.motionOutput = () => {
     const D = new ObjectMotionMatrix(), wp = vec4(positionWorld, 1);
-    const prevW = D.mul(new PreviousWorld()).toVar();
+    const prevW = D.mul(new PreviousWorld());
     const ps = U.prevVP.mul(wp), po = U.prevVP.mul(prevW);
     // .z (SHARP, ?taadepth=old = 0): the surface point's own view-z change this frame (metres, this frame's camera):
     // the resolve's disocclusion test adds it to last frame's depth (an object moving along the view is no disocclusion)
