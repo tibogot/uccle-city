@@ -54,7 +54,9 @@ function serveFile(req, res, file) {
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) { res.writeHead(404, { "content-type": "text/plain" }); return res.end("not found"); }
     const etag = `"${st.size.toString(36)}-${Math.round(st.mtimeMs).toString(36)}-${(st.ino || 0).toString(36)}"`;
-    const head = { "content-type": MIME[path.extname(file).toLowerCase()] ?? "application/octet-stream", "cache-control": "no-cache",
+    // (the tour page itself: no-store, so Chrome never keeps a finished tour in the back-forward cache: with its
+    // views' memory that was 14 GB held after navigating away)
+    const head = { "content-type": MIME[path.extname(file).toLowerCase()] ?? "application/octet-stream", "cache-control": file.endsWith("tour.html") ? "no-store" : "no-cache",
       etag, "last-modified": st.mtime.toUTCString() };
     if (req.headers["if-none-match"] === etag) { res.writeHead(304, head); return res.end(); }
     res.writeHead(200, { ...head, "content-length": st.size });

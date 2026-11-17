@@ -12,11 +12,15 @@
 // every 5-10 s from chrome-devtools evaluate_script, memory "poll, don't wait blind"); the server prints each view too.
 const P = new URLSearchParams(location.search);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// EVERYTHING read from a view's iframe is copied through JSON: an object of the iframe's realm (even an array) kept by
+// this page keeps the whole removed iframe alive (its city, ~0.7 GB each: measured 14 GB after 22 views)
+const clone = (x) => (x == null ? x : JSON.parse(JSON.stringify(x)));
 const statusEl = document.getElementById("status");
 const stamp = () => new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
 const run = (P.get("run") || `run-${stamp()}`).replace(/[^A-Za-z0-9_.-]/g, "_");
 const T = (window.__tour = { run, state: "starting", i: 0, n: 0, current: null, results: [], ms: 0, errors: [] });
 const t0 = performance.now();
+addEventListener("unload", () => {});   // never in the back-forward cache (a finished tour would keep its memory)
 const lines = [];
 function say(msg) {
   lines.push(msg); if (lines.length > 40) lines.shift();
@@ -48,7 +52,7 @@ async function waitReady(frame, limitMs) {
     await sleep(1000);
     const w = frame.contentWindow;
     if (!w) continue;
-    if (w.__quickReady) return { why: "ready", ready: w.__quickReady };
+    if (w.__quickReady) return { why: "ready", ready: clone(w.__quickReady) };
     const f = w.viewer?.frames?.() ?? null;
     if (f != null) { still = f === lastFrames ? still + 1 : 0; lastFrames = f; }
     if (still >= 30) return { why: "frozen" };
@@ -92,7 +96,7 @@ async function capture(w, W, H) {
   v.renderFrame();
   g.drawImage(c, 0, 0, W, H);
   const blob = await out.convertToBlob({ type: "image/png" });
-  return { blob, canvas: [c.width, c.height] };
+  return { blob, canvas: [+c.width, +c.height] };
 }
 
 async function main() {
@@ -121,12 +125,12 @@ async function main() {
       r.why = rd.why;
       r.bootMs = Math.round(performance.now() - tv);
       r.quick = rd.ready ? { ok: rd.ready.ok, ms: rd.ready.ms, tiles: rd.ready.tiles, landmarks: rd.ready.landmarks, heapMB: rd.ready.heapMB, stuck: rd.ready.stuck } : null;
-      r.errors = (w?.__quickErrors ?? []).map((e) => `${e.kind} @${e.t}: ${e.msg}`).slice(0, 20);
+      r.errors = clone((w?.__quickErrors ?? []).map((e) => `${e.kind} @${e.t}: ${e.msg}`).slice(0, 20));
       if (rd.why !== "ready" || !w?.viewer) throw new Error(`not ready: ${rd.why}`);
       Object.assign(r, await settle(w, cfg.settle ?? {}));
       const shot = await capture(w, W, H);
-      r.canvas = shot.canvas;
-      r.cam = w.viewer.camera.position.toArray().map((x) => +x.toFixed(2));
+      r.canvas = clone(shot.canvas);
+      r.cam = clone(w.viewer.camera.position.toArray().map((x) => +x.toFixed(2)));
       await post(`${view.id}.png`, shot.blob, "image/png");
       r.ok = rd.ready.ok !== false;
       r.ms = Math.round(performance.now() - tv);
