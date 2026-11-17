@@ -16,12 +16,14 @@ const CHECKS = [
   { name: "orbitcam", script: "tools/orbitCamTest.mjs", args: [], guards: "orbit camera: picks, orbit / zoom / pan / frame, keyboard moves (no NaN, over the ground, speed by height, walls stop it) (claude/orbitcam2)" },
   { name: "trafpark", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/trafParkAudit.mjs", args: ["--quiet", "--max", "0", "--all"], guards: "no parked car overlaps a traffic lane, all tiles (claude/trafpark)" },
   { name: "trafparksim", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/trafParkSimTest.mjs", args: ["--tile", "I6", "--secs", "240"], guards: "simulated traffic never drives through a parked car (tile I6, 240 s) (claude/trafpark)" },
+  { name: "trafparkborder", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/trafParkBorder.mjs", args: [], guards: "no parked car under a NEIGHBOUR tile's own lane after the border drop (8 tiles: D3 D4 E3 E4 H5 H6 I5 I6) (claude/trafpark)" },
 ];
 const BROWSER = [
   "HEAP (docs/HEAP.md): fresh tab, localStorage cleared, each boot: ?gamemenu=0&orbitcam2=old, default (menu), ?gamemenu=0&tilecache=0 (cold), ?game=police (+ debug/gamePerf.js police({ seconds: 45 }): tiles unload + reload), ?game=falcon: console 0 [heapDrop] errors, 0 WebGPU errors, window.__heapDrop.tripCounts {} (window.__queueSkips: disposed meshes the queue left out) (claude/heap)",
   "VISUAL TOUR (docs/TOUR.md): debug/tour.html on the branch vs the claude/foundation baseline, node tools/tour/compare.mjs; look at every flagged view (claude/tour)",
   "debug/sharpCheck.js  motionCoverage(): every mesh that moved over 30 frames has a motion source (claude/sharp)",
   "debug/sharpCheck.js  stability(): frame-to-frame luma noise + Laplacian sharpness while parked / driving (claude/sharp)",
+  "TRAFPARK (docs/TRAFPARK.md): ?quick=1&place=alsemberg|stjob-street|fortjaco&with=traffic, then (await import('/debug/trafparkWatch.js')).watch(150): into 0, parkedHit 0 (claude/trafpark)",
 ];
 
 const only = process.argv.slice(2);

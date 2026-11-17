@@ -20,6 +20,13 @@ row, City defects) = everything below off. Branch `claude/trafpark`.
   (up to 1 m into the lane), the police game's pull-over shift (0.9 m to the right, i.e. into the kerb's cars), the
   emergency-yield shift, the motorbike room shift, and the pull-out / reverse-in manoeuvres (an S-curve swept through
   the car parked ahead) all ignored them.
+- *"A tile is a closed world."* (found in the browser, round 2) Each tile's worker fits its lanes round ITS OWN parked
+  cars, but a lane piece the tile owns runs on past the border into the neighbour, among the neighbour's cars (the
+  worker's measured raster stops at the border: it cannot even place them). And where the sim's twin linking (one
+  tile's buffer copy -> the neighbour's own lane) fails (~30 % of the buffer pieces lying in a loaded neighbour, on
+  `?trafpark=old` too) or a car's route was planned before the neighbour loaded, cars drive a copy that was never fitted
+  round anything there. The node audit checked each tile alone, so it said 0 while the browser showed 101 parked cars
+  hit in 45 s on Chaussee d'Alsemberg.
 
 **Why the earlier street audit did not block it.** `tools/audit/streetAudit.mjs` measured the distance from a lane's
 centre line to a parked car's CENTRE (< 1.95 m), not to its footprint (a car's nose is 2.37 m from its centre: a lane
@@ -27,16 +34,19 @@ through the nose passed the test), it printed a count (1,202) but exited 0, nobo
 was marked "UNTESTED in the running sim". A report is not a check.
 
 **2. The rule.** No parked car's footprint (its plan box: the widest / longest common type, 1.85 x 4.73 m) within a
-traffic car's half width (0.9 m) of ANY driven path (lanes and junction connectors, sampled every 0.25 m) nor under a
+traffic car's half width (0.98 m: the widest traffic type, a panel van) of ANY driven path (lanes and junction connectors, sampled every 0.25 m) nor under a
 traffic car's posed body (4.74 x 1.8 m, axles on the path, every 0.5 m). Where the street is too narrow for a lane to
 pass, the car is not parked there (one side stays parked, the give-way narrow stretches stay). At run time a traffic car
-treats a parked car that moved as an obstacle, and no sideways shift or manoeuvre may bring its body into one.
+treats a parked car that moved, or that another tile's lane runs through, as an obstacle, and no sideways shift or
+manoeuvre may bring its body into one. A tile is checked against its LOADED NEIGHBOURS too, never alone.
 
-**3. The automated checks** (both exit non-zero on failure; both registered in `tools/audit/mergeGate.mjs`):
+**3. The automated checks** (each exits non-zero on failure; all registered in `tools/audit/mergeGate.mjs`):
 
 | gate | command | pass |
 |---|---|---|
 | `trafpark` | `node --import ./tools/road_audit/register.mjs tools/audit/trafParkAudit.mjs --max 0 --all` | 0 parked cars overlap a driven path, all tiles |
+| `trafparkborder` | `node --import ./tools/road_audit/register.mjs tools/audit/trafParkBorder.mjs` | 0 parked cars under a NEIGHBOUR tile's own lane after the border drop (D3 D4 E3 E4 H5 H6 I5 I6: 40 found, 40 dropped) |
+| browser | `debug/trafparkWatch.js watch(150)` on 3 streets (mergeGate BROWSER list) | into 0 |
 | `trafparksim` | `node --import ./tools/road_audit/register.mjs tools/trafParkSimTest.mjs --tile I6 --secs 240` | 0 samples of a traffic body > 5 cm into a parked box: static, 40 shoved, pull over, pull-outs / park-ins |
 
 `node tools/audit/mergeGate.mjs` runs every gate (`--quick`: 5 sample tiles / 60 s, ~1 min; `--only trafpark`).
@@ -45,15 +55,19 @@ treats a parked car that moved as an obstacle, and no sideways shift or manoeuvr
 
 | | before (`--old`) | after |
 |---|---|---|
-| parked cars | 12,084 | 11,170 (914 not parked: 7.6 %) |
-| **parked cars overlapping a driven path** | **4,691** (39 %) | **0** |
-| (car, path) pairs | 5,241: kink rounding 4,106, connectors 571, lane ends 396, no room 168; tram lanes 177; under a narrow stretch 3,070 | 0 |
-| lane metres through a car | 21,656 m | 0 |
-| tight passes (body gap 0-15 cm) | 1,119 | 180 |
+(Final, with round 2's 0.98 m half width; round 1's 0.9 m gave 4,691 -> 0 with 914 not parked.)
 
-The 914 cars that go (with the new lanes, before the drop: 834 cars in 1,723 pairs): junction connectors 830 pairs
-(cars at a corner that a turning car sweeps: Belgian law keeps 5 m of a junction free anyway), the fit's leftovers 578,
-lane ends 277, streets too narrow for a lane beside the car 38. Data: `docs/trafpark/audit_old.json`,
+| | before (`--old`) | after |
+|---|---|---|
+| parked cars | 12,084 | 11,016 (1,068 not parked: 8.8 %) |
+| **parked cars overlapping a driven path** | **5,281** (44 %) | **0** |
+| (car, path) pairs | 5,936: kink rounding 4,661, connectors 642, lane ends 463, no room 170; tram lanes 213; under a narrow stretch 3,225 | 0 |
+| lane metres through a car | 31,643 m | 0 |
+| tight passes (body gap 0-15 cm) | 2,058 | 399 |
+
+The 1,068 cars that go (with the new lanes, before the drop: 967 cars in 1,950 pairs): junction connectors 916 pairs
+(cars at a corner that a turning car sweeps: Belgian law keeps 5 m of a junction free anyway), the fit's leftovers 662,
+lane ends 334, streets too narrow for a lane beside the car 38. At run time the tile borders take a few more (below). Data: `docs/trafpark/audit_old.json`,
 `audit_new.json`, `audit_new_before_drop.json`.
 
 The running sim (`tools/trafParkSimTest.mjs`, 240 s per run, samples = car x 0.2 s):
@@ -74,6 +88,59 @@ The running sim (`tools/trafParkSimTest.mjs`, 240 s per run, samples = car x 0.2
 With the fix, of the pull-outs tried 13 / 35 (I6), 4 / 17 (G5), 6 / 16 (H6) found no S-curve clear of the cars parked
 ahead / behind and did not happen; no reverse-in was refused. Every run: no car stuck > 60 s except behind a shoved car
 it cannot pass while in view (I6 pull-out run with everything "in view": 18).
+
+## Browser (round 2, 2026-11-17: one tab, server 8835, preflight GREEN)
+
+`debug/trafparkWatch.js` `watch(secs)`: every 0.25 s every traffic car's body against every drawn parked car's box
+(> 5 cm = into). `?quick=1&place=<p>&with=traffic` unless said:
+
+| street | `?trafpark=old` | round 1 (node fixes only) | final |
+|---|---|---|---|
+| Chaussee d'Alsemberg (E4, 4 tiles, 139 cars) | 768 samples / 101 parked cars hit / 1.85 m deep (45 s) | 123 / 15 / 1.84 m (50 s; all at tile borders) | 0 / 0 (150 s) |
+| Saint-Job (I6, 108 cars) | 2,234 / 187 / 1.91 m (90 s) | 111 / 17 / 1.11 m (120 s; buffer copies) | 0 / 0 (150 s) |
+| Fort-Jaco, Ch. de Waterloo (J7, 78 cars) | | | 0 / 0 (150 s) |
+| full city, default boot (90 cars) | | | 0 / 0 (120 s) |
+| police game, after a 45 s drive (tiles streamed) | | 66 / 7 / 1.47 m (all beyond 300 m) | 0 / 0 (40 s) |
+
+Images: `docs/trafpark/stjob_street_after.jpg`, `old_traffic_inside_parked.jpg` (`?trafpark=old`: the traffic car
+frozen inside the grey parked car).
+
+Round 2 fixes (all behind `?trafpark=old`):
+- `viewer/traffic/borderPark.js` + main.js: a tile's parked cars that a LOADED neighbour's own lane runs through are not
+  drawn (checked before the tile's cars appear: no pop). Alsemberg 21, Saint-Job 4, Fort-Jaco 14, police drive 67.
+- `trafficSim.js parkedGrid`: when the set of graphs changes, every parked car is checked against the tiles' own lanes
+  and the twinless buffer copies (`laneThrough`; junction turns +0.3 m for the body's sweep): under another tile's own
+  lane and > 250 m from the player it is taken away (as at load; police drive: 62), else it is an obstacle (wait, or
+  ease out round it); the obstacles' lane entries are projected once per pose / graph set and copied each step.
+- `rerouteTwins`: when a tile comes in, routes planned on the old buffer copies take the new tile's own lanes (twins),
+  and a car on such a copy moves onto the twin at the same distance (the lateral difference blended out).
+- the graph's checks use the widest traffic type's half width (0.98 m, was 0.9: vans brushed by 5-10 cm).
+
+HEAP browser line (fresh document each): `?gamemenu=0&orbitcam2=old` (localStorage cleared), default,
+`?gamemenu=0&tilecache=0` (cold), `?game=police` + gamePerf police 45 s, `?game=falcon` + gamePerf falcon 30 s: 0 console
+errors, 0 WebGPU errors, `__heapDrop.tripCounts` {} in all five, `__queueSkips` 0 / 0. No new CPU reader of tile meshes
+(the traffic graphs and parking slots are plain arrays / objects, not geometry).
+
+Load and frame cost (police game, gamePerf police 45 s, A/B by page load):
+
+| | `?trafpark=old` | trafpark |
+|---|---|---|
+| boot to the car in the yard | 25 s | 21-32 s (one run 68 s) |
+| fps / frame avg / p95 | 53.8 / 18.57 ms / 33.3 | 52.8-54.6 / 18.3-18.9 ms / 33.3 |
+| main loop CPU avg | 10.04 ms | 10.12-10.56 ms |
+| the traffic's update (gamePerf "1:update") | 0.17 ms a frame | 0.24 ms a frame |
+| sim step | 0.27 ms | 0.30-0.41 ms |
+| worker, per tile | | + ~130 ms of traffic graph (fit + check + one rebuild) |
+
+Visual tour (docs/TOUR.md, `run=trafpark`, 22 views, 663 s, 22/22 ok) vs `foundation`: 3 of 22 flagged, all parked
+cars, all intended (`docs/trafpark/tour_*_before_after.jpg`, baseline left, trafpark right):
+
+| view | pixels / cell / ssim | what changed |
+|---|---|---|
+| coghen-blocks | 3.19 % / 99.7 % / 0.970 | the parked car 4 m in front of the camera (-654, -936) is gone: a lane ran through it; the next car is now a van (types are dealt per tile by slot room: one slot less reshuffles some) |
+| stpierre-parvis | 1.24 % / 49.5 % / 0.983 | same slots, a saloon became a panel van (the per-tile type deal) |
+| traffic-alsemberg | 3.47 % / 89.5 % / 0.958 | the dark van over the kerb at the left in the baseline is not there; no parked slot changed within 30 m: a pulling-out car (pull-outs whose S-curve hits the car ahead no longer happen) |
+| the other 19 | pixels <= 0.22 %, cells <= 18.9 % (lycee-front, under its 30 %) | none |
 
 ## What changed
 
@@ -105,6 +172,14 @@ it cannot pass while in view (I6 pull-out run with everything "in view": 18).
 - `viewer/traffic/cityTraffic.js`: the parked cars' sizes (`carFleet.sizeOf`) and the shove hook.
 
 ## Limits / next
+
+- Twin linking (`trafficWorld.js link`: start within 3 m, similar length) misses ~30 % of the buffer pieces lying in a
+  loaded neighbour (on `?trafpark=old` too); cars that take such a copy drive a line 0.5-1 m off the neighbour's own
+  lane. Their parked cars are obstacles now; the real fix is a better link (by geometry): its own job.
+- Parked car types are dealt over the whole tile by slot room: a slot less changes some types elsewhere (the tour's two
+  type changes).
+- Rule 12 (docs/QUALITY_RULES.md): the worker bundle in this branch was rebuilt for the browser checks (the graph code
+  changed again in round 2); rebuild it in the main repo at the merge.
 
 - A car behind a shoved car it cannot pass (> 1.3 m into the lane, or both sides blocked) waits; in view it waits until
   the player moves the car or goes away (out of sight it is removed after 60 s).

@@ -2,78 +2,36 @@
  "old": false,
  "summary": {
   "tiles": 120,
-  "cars": 11170,
+  "cars": 11016,
   "overlapCars": 0,
-  "tightCars": 180,
+  "tightCars": 399,
   "pairs": 0,
   "overlapM": 0,
   "classes": {},
   "tram": 0,
   "narrowCovered": 0,
-  "removed": 914,
-  "ms": 219487
+  "removed": 1068,
+  "ms": 157435
  },
  "tiles": [
   {
    "tile": "D1",
-   "cars": 207,
-   "removed": 16,
+   "cars": 203,
+   "removed": 20,
    "overlapCars": 0,
-   "tightCars": 3,
+   "tightCars": 7,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2310
+   "ms": 2818
   },
   {
    "tile": "E1",
-   "cars": 363,
-   "removed": 35,
-   "overlapCars": 0,
-   "tightCars": 6,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 3737
-  },
-  {
-   "tile": "F1",
-   "cars": 255,
-   "removed": 20,
-   "overlapCars": 0,
-   "tightCars": 5,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 3453
-  },
-  {
-   "tile": "G1",
-   "cars": 332,
-   "removed": 16,
-   "overlapCars": 0,
-   "tightCars": 2,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 3327
-  },
-  {
-   "tile": "H1",
-   "cars": 388,
-   "removed": 24,
+   "cars": 355,
+   "removed": 43,
    "overlapCars": 0,
    "tightCars": 4,
    "pairs": 0,
@@ -82,26 +40,12 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 5204
+   "ms": 3422
   },
   {
-   "tile": "I1",
-   "cars": 273,
-   "removed": 41,
-   "overlapCars": 0,
-   "tightCars": 3,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 2390
-  },
-  {
-   "tile": "D2",
-   "cars": 181,
-   "removed": 15,
+   "tile": "F1",
+   "cars": 250,
+   "removed": 25,
    "overlapCars": 0,
    "tightCars": 5,
    "pairs": 0,
@@ -110,77 +54,133 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2703
+   "ms": 3201
+  },
+  {
+   "tile": "G1",
+   "cars": 331,
+   "removed": 17,
+   "overlapCars": 0,
+   "tightCars": 6,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2345
+  },
+  {
+   "tile": "H1",
+   "cars": 387,
+   "removed": 25,
+   "overlapCars": 0,
+   "tightCars": 5,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2852
+  },
+  {
+   "tile": "I1",
+   "cars": 269,
+   "removed": 45,
+   "overlapCars": 0,
+   "tightCars": 4,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2548
+  },
+  {
+   "tile": "D2",
+   "cars": 182,
+   "removed": 14,
+   "overlapCars": 0,
+   "tightCars": 5,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2649
   },
   {
    "tile": "E2",
-   "cars": 206,
-   "removed": 4,
+   "cars": 205,
+   "removed": 5,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 3,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2113
+   "ms": 2304
   },
   {
    "tile": "F2",
-   "cars": 296,
-   "removed": 12,
+   "cars": 288,
+   "removed": 20,
    "overlapCars": 0,
-   "tightCars": 8,
+   "tightCars": 10,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2237
+   "ms": 2471
   },
   {
    "tile": "G2",
    "cars": 113,
    "removed": 2,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 2,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1463
+   "ms": 1267
   },
   {
    "tile": "H2",
-   "cars": 191,
-   "removed": 4,
+   "cars": 190,
+   "removed": 5,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 6,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1968
+   "ms": 1510
   },
   {
    "tile": "I2",
-   "cars": 209,
-   "removed": 11,
+   "cars": 208,
+   "removed": 12,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 5,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1758
+   "ms": 1722
   },
   {
    "tile": "J2",
@@ -194,110 +194,96 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 865
+   "ms": 795
   },
   {
    "tile": "C3",
-   "cars": 301,
-   "removed": 29,
+   "cars": 296,
+   "removed": 34,
    "overlapCars": 0,
-   "tightCars": 2,
+   "tightCars": 11,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 4463
+   "ms": 2862
   },
   {
    "tile": "D3",
-   "cars": 231,
-   "removed": 6,
+   "cars": 230,
+   "removed": 7,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 2,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 6170
+   "ms": 3300
   },
   {
    "tile": "E3",
-   "cars": 76,
-   "removed": 1,
+   "cars": 74,
+   "removed": 3,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 2,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 5803
+   "ms": 3523
   },
   {
    "tile": "F3",
-   "cars": 185,
-   "removed": 30,
+   "cars": 182,
+   "removed": 33,
    "overlapCars": 0,
-   "tightCars": 2,
+   "tightCars": 6,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 5225
+   "ms": 2886
   },
   {
    "tile": "G3",
-   "cars": 145,
-   "removed": 2,
+   "cars": 144,
+   "removed": 3,
    "overlapCars": 0,
-   "tightCars": 2,
+   "tightCars": 8,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1323
+   "ms": 3020
   },
   {
    "tile": "H3",
-   "cars": 142,
-   "removed": 21,
+   "cars": 141,
+   "removed": 22,
    "overlapCars": 0,
-   "tightCars": 3,
+   "tightCars": 9,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1870
+   "ms": 2881
   },
   {
    "tile": "I3",
-   "cars": 143,
-   "removed": 19,
-   "overlapCars": 0,
-   "tightCars": 3,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1894
-  },
-  {
-   "tile": "J3",
-   "cars": 115,
-   "removed": 28,
+   "cars": 141,
+   "removed": 21,
    "overlapCars": 0,
    "tightCars": 2,
    "pairs": 0,
@@ -306,40 +292,96 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2310
+   "ms": 2276
   },
   {
-   "tile": "B4",
-   "cars": 162,
-   "removed": 18,
+   "tile": "J3",
+   "cars": 113,
+   "removed": 30,
    "overlapCars": 0,
-   "tightCars": 7,
+   "tightCars": 3,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 4675
+   "ms": 1623
+  },
+  {
+   "tile": "B4",
+   "cars": 154,
+   "removed": 26,
+   "overlapCars": 0,
+   "tightCars": 4,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2542
   },
   {
    "tile": "C4",
    "cars": 89,
    "removed": 4,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 6,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 5715
+   "ms": 1761
   },
   {
    "tile": "D4",
-   "cars": 149,
-   "removed": 8,
+   "cars": 145,
+   "removed": 12,
+   "overlapCars": 0,
+   "tightCars": 4,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1785
+  },
+  {
+   "tile": "E4",
+   "cars": 175,
+   "removed": 23,
+   "overlapCars": 0,
+   "tightCars": 5,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2752
+  },
+  {
+   "tile": "F4",
+   "cars": 115,
+   "removed": 17,
+   "overlapCars": 0,
+   "tightCars": 4,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2261
+  },
+  {
+   "tile": "G4",
+   "cars": 92,
+   "removed": 1,
    "overlapCars": 0,
    "tightCars": 2,
    "pairs": 0,
@@ -348,26 +390,26 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 3980
+   "ms": 3145
   },
   {
-   "tile": "E4",
-   "cars": 176,
-   "removed": 22,
+   "tile": "H4",
+   "cars": 151,
+   "removed": 13,
    "overlapCars": 0,
-   "tightCars": 4,
+   "tightCars": 6,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 8619
+   "ms": 2897
   },
   {
-   "tile": "F4",
-   "cars": 117,
-   "removed": 15,
+   "tile": "I4",
+   "cars": 41,
+   "removed": 5,
    "overlapCars": 0,
    "tightCars": 3,
    "pairs": 0,
@@ -376,49 +418,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 4626
-  },
-  {
-   "tile": "G4",
-   "cars": 91,
-   "removed": 2,
-   "overlapCars": 0,
-   "tightCars": 0,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 2435
-  },
-  {
-   "tile": "H4",
-   "cars": 152,
-   "removed": 12,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 2440
-  },
-  {
-   "tile": "I4",
-   "cars": 45,
-   "removed": 1,
-   "overlapCars": 0,
-   "tightCars": 4,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 3259
+   "ms": 1922
   },
   {
    "tile": "J4",
@@ -432,12 +432,12 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 3152
+   "ms": 3185
   },
   {
    "tile": "K4",
-   "cars": 74,
-   "removed": 9,
+   "cars": 73,
+   "removed": 10,
    "overlapCars": 0,
    "tightCars": 1,
    "pairs": 0,
@@ -446,12 +446,12 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1620
+   "ms": 981
   },
   {
    "tile": "A5",
-   "cars": 46,
-   "removed": 1,
+   "cars": 45,
+   "removed": 2,
    "overlapCars": 0,
    "tightCars": 2,
    "pairs": 0,
@@ -460,12 +460,12 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 3387
+   "ms": 1718
   },
   {
    "tile": "B5",
-   "cars": 55,
-   "removed": 6,
+   "cars": 54,
+   "removed": 7,
    "overlapCars": 0,
    "tightCars": 3,
    "pairs": 0,
@@ -474,82 +474,54 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 4087
+   "ms": 2045
   },
   {
    "tile": "C5",
    "cars": 103,
    "removed": 5,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 2,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2561
+   "ms": 2593
   },
   {
    "tile": "D5",
-   "cars": 115,
-   "removed": 3,
+   "cars": 116,
+   "removed": 2,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 4,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2100
+   "ms": 3774
   },
   {
    "tile": "E5",
-   "cars": 212,
-   "removed": 9,
+   "cars": 211,
+   "removed": 10,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 5,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1620
+   "ms": 2240
   },
   {
    "tile": "F5",
-   "cars": 102,
-   "removed": 6,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1395
-  },
-  {
-   "tile": "G5",
-   "cars": 87,
-   "removed": 1,
-   "overlapCars": 0,
-   "tightCars": 0,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1574
-  },
-  {
-   "tile": "H5",
-   "cars": 172,
-   "removed": 14,
+   "cars": 101,
+   "removed": 7,
    "overlapCars": 0,
    "tightCars": 3,
    "pairs": 0,
@@ -558,49 +530,77 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1740
+   "ms": 1748
+  },
+  {
+   "tile": "G5",
+   "cars": 87,
+   "removed": 1,
+   "overlapCars": 0,
+   "tightCars": 3,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1851
+  },
+  {
+   "tile": "H5",
+   "cars": 170,
+   "removed": 16,
+   "overlapCars": 0,
+   "tightCars": 6,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 2346
   },
   {
    "tile": "I5",
    "cars": 150,
    "removed": 12,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 9,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1498
+   "ms": 1716
   },
   {
    "tile": "J5",
-   "cars": 109,
-   "removed": 11,
+   "cars": 108,
+   "removed": 12,
    "overlapCars": 0,
-   "tightCars": 2,
+   "tightCars": 4,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1732
+   "ms": 1566
   },
   {
    "tile": "K5",
    "cars": 17,
    "removed": 1,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 664
+   "ms": 643
   },
   {
    "tile": "L5",
@@ -614,26 +614,26 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 559
+   "ms": 451
   },
   {
    "tile": "M5",
-   "cars": 65,
-   "removed": 8,
+   "cars": 61,
+   "removed": 12,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 3,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1553
+   "ms": 1116
   },
   {
    "tile": "N5",
-   "cars": 63,
-   "removed": 3,
+   "cars": 60,
+   "removed": 6,
    "overlapCars": 0,
    "tightCars": 1,
    "pairs": 0,
@@ -642,82 +642,82 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1947
+   "ms": 1486
   },
   {
    "tile": "B6",
-   "cars": 67,
-   "removed": 6,
+   "cars": 64,
+   "removed": 9,
    "overlapCars": 0,
-   "tightCars": 3,
+   "tightCars": 5,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1831
+   "ms": 1598
   },
   {
    "tile": "C6",
-   "cars": 58,
-   "removed": 5,
+   "cars": 57,
+   "removed": 6,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 5,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1631
+   "ms": 1357
   },
   {
    "tile": "D6",
-   "cars": 155,
-   "removed": 34,
+   "cars": 148,
+   "removed": 41,
    "overlapCars": 0,
-   "tightCars": 6,
+   "tightCars": 7,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2016
+   "ms": 1906
   },
   {
    "tile": "E6",
-   "cars": 117,
-   "removed": 12,
+   "cars": 112,
+   "removed": 17,
    "overlapCars": 0,
-   "tightCars": 6,
+   "tightCars": 4,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1827
+   "ms": 1742
   },
   {
    "tile": "F6",
-   "cars": 77,
-   "removed": 10,
+   "cars": 74,
+   "removed": 13,
    "overlapCars": 0,
-   "tightCars": 3,
+   "tightCars": 5,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1671
+   "ms": 1380
   },
   {
    "tile": "G6",
-   "cars": 103,
-   "removed": 3,
+   "cars": 100,
+   "removed": 6,
    "overlapCars": 0,
    "tightCars": 2,
    "pairs": 0,
@@ -726,27 +726,55 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1671
+   "ms": 1600
   },
   {
    "tile": "H6",
-   "cars": 106,
-   "removed": 9,
+   "cars": 104,
+   "removed": 11,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 2,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1776
+   "ms": 1268
   },
   {
    "tile": "I6",
    "cars": 114,
    "removed": 17,
    "overlapCars": 0,
+   "tightCars": 10,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1746
+  },
+  {
+   "tile": "J6",
+   "cars": 53,
+   "removed": 1,
+   "overlapCars": 0,
+   "tightCars": 4,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 992
+  },
+  {
+   "tile": "K6",
+   "cars": 52,
+   "removed": 1,
+   "overlapCars": 0,
    "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
@@ -754,35 +782,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2608
-  },
-  {
-   "tile": "J6",
-   "cars": 54,
-   "removed": 0,
-   "overlapCars": 0,
-   "tightCars": 2,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1289
-  },
-  {
-   "tile": "K6",
-   "cars": 52,
-   "removed": 1,
-   "overlapCars": 0,
-   "tightCars": 0,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1343
+   "ms": 554
   },
   {
    "tile": "L6",
@@ -796,7 +796,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 347
+   "ms": 252
   },
   {
    "tile": "M6",
@@ -810,12 +810,12 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 141
+   "ms": 62
   },
   {
    "tile": "N6",
-   "cars": 37,
-   "removed": 4,
+   "cars": 36,
+   "removed": 5,
    "overlapCars": 0,
    "tightCars": 0,
    "pairs": 0,
@@ -824,26 +824,124 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1634
+   "ms": 540
   },
   {
    "tile": "B7",
-   "cars": 27,
-   "removed": 6,
+   "cars": 20,
+   "removed": 13,
    "overlapCars": 0,
-   "tightCars": 6,
+   "tightCars": 0,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 4435
+   "ms": 1235
   },
   {
    "tile": "C7",
-   "cars": 209,
+   "cars": 206,
+   "removed": 30,
+   "overlapCars": 0,
+   "tightCars": 15,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1636
+  },
+  {
+   "tile": "D7",
+   "cars": 108,
    "removed": 27,
+   "overlapCars": 0,
+   "tightCars": 1,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1522
+  },
+  {
+   "tile": "E7",
+   "cars": 94,
+   "removed": 9,
+   "overlapCars": 0,
+   "tightCars": 5,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1263
+  },
+  {
+   "tile": "F7",
+   "cars": 29,
+   "removed": 7,
+   "overlapCars": 0,
+   "tightCars": 1,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1064
+  },
+  {
+   "tile": "G7",
+   "cars": 29,
+   "removed": 6,
+   "overlapCars": 0,
+   "tightCars": 1,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 512
+  },
+  {
+   "tile": "H7",
+   "cars": 123,
+   "removed": 11,
+   "overlapCars": 0,
+   "tightCars": 7,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 778
+  },
+  {
+   "tile": "I7",
+   "cars": 60,
+   "removed": 8,
+   "overlapCars": 0,
+   "tightCars": 2,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1030
+  },
+  {
+   "tile": "J7",
+   "cars": 189,
+   "removed": 7,
    "overlapCars": 0,
    "tightCars": 8,
    "pairs": 0,
@@ -852,105 +950,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 4475
-  },
-  {
-   "tile": "D7",
-   "cars": 109,
-   "removed": 26,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 4624
-  },
-  {
-   "tile": "E7",
-   "cars": 94,
-   "removed": 9,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 4056
-  },
-  {
-   "tile": "F7",
-   "cars": 31,
-   "removed": 5,
-   "overlapCars": 0,
-   "tightCars": 2,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 2324
-  },
-  {
-   "tile": "G7",
-   "cars": 31,
-   "removed": 4,
-   "overlapCars": 0,
-   "tightCars": 3,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 955
-  },
-  {
-   "tile": "H7",
-   "cars": 125,
-   "removed": 9,
-   "overlapCars": 0,
-   "tightCars": 2,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1679
-  },
-  {
-   "tile": "I7",
-   "cars": 60,
-   "removed": 8,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1362
-  },
-  {
-   "tile": "J7",
-   "cars": 189,
-   "removed": 7,
-   "overlapCars": 0,
-   "tightCars": 3,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 3299
+   "ms": 1327
   },
   {
    "tile": "K7",
@@ -964,21 +964,21 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1068
+   "ms": 679
   },
   {
    "tile": "L7",
    "cars": 49,
    "removed": 3,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 4,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1669
+   "ms": 520
   },
   {
    "tile": "M7",
@@ -992,7 +992,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 154
+   "ms": 67
   },
   {
    "tile": "N7",
@@ -1006,7 +1006,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 103
+   "ms": 53
   },
   {
    "tile": "B8",
@@ -1020,53 +1020,11 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2284
+   "ms": 830
   },
   {
    "tile": "C8",
-   "cars": 71,
-   "removed": 9,
-   "overlapCars": 0,
-   "tightCars": 2,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 4279
-  },
-  {
-   "tile": "D8",
-   "cars": 118,
-   "removed": 7,
-   "overlapCars": 0,
-   "tightCars": 2,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 2027
-  },
-  {
-   "tile": "E8",
-   "cars": 106,
-   "removed": 12,
-   "overlapCars": 0,
-   "tightCars": 0,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1374
-  },
-  {
-   "tile": "F8",
-   "cars": 16,
+   "cars": 69,
    "removed": 11,
    "overlapCars": 0,
    "tightCars": 4,
@@ -1076,12 +1034,40 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1570
+   "ms": 1611
   },
   {
-   "tile": "G8",
-   "cars": 3,
-   "removed": 1,
+   "tile": "D8",
+   "cars": 117,
+   "removed": 8,
+   "overlapCars": 0,
+   "tightCars": 8,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1285
+  },
+  {
+   "tile": "E8",
+   "cars": 104,
+   "removed": 14,
+   "overlapCars": 0,
+   "tightCars": 6,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1149
+  },
+  {
+   "tile": "F8",
+   "cars": 12,
+   "removed": 15,
    "overlapCars": 0,
    "tightCars": 0,
    "pairs": 0,
@@ -1090,12 +1076,68 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 942
+   "ms": 1353
+  },
+  {
+   "tile": "G8",
+   "cars": 3,
+   "removed": 1,
+   "overlapCars": 0,
+   "tightCars": 1,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 854
   },
   {
    "tile": "H8",
-   "cars": 141,
-   "removed": 14,
+   "cars": 140,
+   "removed": 15,
+   "overlapCars": 0,
+   "tightCars": 8,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 832
+  },
+  {
+   "tile": "I8",
+   "cars": 147,
+   "removed": 13,
+   "overlapCars": 0,
+   "tightCars": 5,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 913
+  },
+  {
+   "tile": "J8",
+   "cars": 164,
+   "removed": 12,
+   "overlapCars": 0,
+   "tightCars": 11,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 790
+  },
+  {
+   "tile": "K8",
+   "cars": 47,
+   "removed": 13,
    "overlapCars": 0,
    "tightCars": 2,
    "pairs": 0,
@@ -1104,63 +1146,21 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 957
-  },
-  {
-   "tile": "I8",
-   "cars": 147,
-   "removed": 13,
-   "overlapCars": 0,
-   "tightCars": 0,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1044
-  },
-  {
-   "tile": "J8",
-   "cars": 165,
-   "removed": 11,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 916
-  },
-  {
-   "tile": "K8",
-   "cars": 48,
-   "removed": 12,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1257
+   "ms": 952
   },
   {
    "tile": "L8",
-   "cars": 53,
-   "removed": 1,
+   "cars": 52,
+   "removed": 2,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 406
+   "ms": 436
   },
   {
    "tile": "M8",
@@ -1174,7 +1174,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 57
+   "ms": 52
   },
   {
    "tile": "N8",
@@ -1188,7 +1188,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 68
+   "ms": 47
   },
   {
    "tile": "C9",
@@ -1202,133 +1202,133 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1227
+   "ms": 1002
   },
   {
    "tile": "D9",
-   "cars": 55,
-   "removed": 4,
+   "cars": 56,
+   "removed": 3,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 3,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1028
+   "ms": 803
   },
   {
    "tile": "E9",
-   "cars": 55,
-   "removed": 6,
+   "cars": 52,
+   "removed": 9,
    "overlapCars": 0,
-   "tightCars": 2,
+   "tightCars": 3,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1328
+   "ms": 1365
   },
   {
    "tile": "F9",
-   "cars": 140,
-   "removed": 11,
+   "cars": 138,
+   "removed": 13,
    "overlapCars": 0,
-   "tightCars": 2,
+   "tightCars": 7,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 2094
+   "ms": 1977
   },
   {
    "tile": "G9",
    "cars": 56,
    "removed": 1,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1254
+   "ms": 1002
   },
   {
    "tile": "H9",
-   "cars": 94,
-   "removed": 7,
+   "cars": 93,
+   "removed": 8,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 4,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 696
+   "ms": 574
   },
   {
    "tile": "I9",
-   "cars": 190,
-   "removed": 5,
+   "cars": 189,
+   "removed": 6,
    "overlapCars": 0,
-   "tightCars": 1,
+   "tightCars": 6,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1012
+   "ms": 729
   },
   {
    "tile": "J9",
    "cars": 135,
    "removed": 1,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 8,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 821
+   "ms": 607
   },
   {
    "tile": "K9",
    "cars": 71,
    "removed": 1,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 2,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 769
+   "ms": 605
   },
   {
    "tile": "L9",
    "cars": 59,
    "removed": 0,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 218
+   "ms": 237
   },
   {
    "tile": "M9",
@@ -1342,7 +1342,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 37
+   "ms": 41
   },
   {
    "tile": "N9",
@@ -1356,7 +1356,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 38
+   "ms": 35
   },
   {
    "tile": "O9",
@@ -1370,82 +1370,12 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 92
+   "ms": 72
   },
   {
    "tile": "D10",
    "cars": 14,
    "removed": 1,
-   "overlapCars": 0,
-   "tightCars": 0,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1195
-  },
-  {
-   "tile": "E10",
-   "cars": 85,
-   "removed": 3,
-   "overlapCars": 0,
-   "tightCars": 4,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 1259
-  },
-  {
-   "tile": "F10",
-   "cars": 57,
-   "removed": 0,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 505
-  },
-  {
-   "tile": "G10",
-   "cars": 16,
-   "removed": 3,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 938
-  },
-  {
-   "tile": "H10",
-   "cars": 2,
-   "removed": 7,
-   "overlapCars": 0,
-   "tightCars": 1,
-   "pairs": 0,
-   "overlapM": 0,
-   "classes": {},
-   "tram": 0,
-   "narrowCovered": 0,
-   "worst": [],
-   "ms": 869
-  },
-  {
-   "tile": "I10",
-   "cars": 165,
-   "removed": 15,
    "overlapCars": 0,
    "tightCars": 2,
    "pairs": 0,
@@ -1454,12 +1384,12 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1178
+   "ms": 1081
   },
   {
-   "tile": "J10",
-   "cars": 72,
-   "removed": 25,
+   "tile": "E10",
+   "cars": 82,
+   "removed": 6,
    "overlapCars": 0,
    "tightCars": 5,
    "pairs": 0,
@@ -1468,49 +1398,119 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1000
+   "ms": 1163
+  },
+  {
+   "tile": "F10",
+   "cars": 56,
+   "removed": 1,
+   "overlapCars": 0,
+   "tightCars": 1,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 492
+  },
+  {
+   "tile": "G10",
+   "cars": 15,
+   "removed": 4,
+   "overlapCars": 0,
+   "tightCars": 1,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 604
+  },
+  {
+   "tile": "H10",
+   "cars": 1,
+   "removed": 8,
+   "overlapCars": 0,
+   "tightCars": 1,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 591
+  },
+  {
+   "tile": "I10",
+   "cars": 163,
+   "removed": 17,
+   "overlapCars": 0,
+   "tightCars": 12,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 1066
+  },
+  {
+   "tile": "J10",
+   "cars": 71,
+   "removed": 26,
+   "overlapCars": 0,
+   "tightCars": 5,
+   "pairs": 0,
+   "overlapM": 0,
+   "classes": {},
+   "tram": 0,
+   "narrowCovered": 0,
+   "worst": [],
+   "ms": 631
   },
   {
    "tile": "K10",
    "cars": 52,
    "removed": 3,
    "overlapCars": 0,
-   "tightCars": 2,
+   "tightCars": 6,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 969
+   "ms": 634
   },
   {
    "tile": "L10",
    "cars": 25,
    "removed": 0,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 3,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 268
+   "ms": 251
   },
   {
    "tile": "M10",
    "cars": 66,
    "removed": 0,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 269
+   "ms": 194
   },
   {
    "tile": "N10",
@@ -1524,7 +1524,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 76
+   "ms": 46
   },
   {
    "tile": "O10",
@@ -1538,7 +1538,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 51
+   "ms": 31
   },
   {
    "tile": "H11",
@@ -1552,7 +1552,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 127
+   "ms": 132
   },
   {
    "tile": "I11",
@@ -1566,35 +1566,35 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 567
+   "ms": 479
   },
   {
    "tile": "J11",
    "cars": 28,
    "removed": 1,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 720
+   "ms": 667
   },
   {
    "tile": "K11",
    "cars": 37,
    "removed": 7,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 1058
+   "ms": 857
   },
   {
    "tile": "L11",
@@ -1608,7 +1608,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 176
+   "ms": 98
   },
   {
    "tile": "M11",
@@ -1622,21 +1622,21 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 106
+   "ms": 70
   },
   {
    "tile": "N11",
    "cars": 42,
    "removed": 0,
    "overlapCars": 0,
-   "tightCars": 0,
+   "tightCars": 1,
    "pairs": 0,
    "overlapM": 0,
    "classes": {},
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 185
+   "ms": 144
   },
   {
    "tile": "O11",
@@ -1650,7 +1650,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 103
+   "ms": 113
   },
   {
    "tile": "K12",
@@ -1664,7 +1664,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 477
+   "ms": 396
   },
   {
    "tile": "L12",
@@ -1678,7 +1678,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 63
+   "ms": 45
   },
   {
    "tile": "M12",
@@ -1692,7 +1692,7 @@
    "tram": 0,
    "narrowCovered": 0,
    "worst": [],
-   "ms": 21
+   "ms": 15
   }
  ]
 }
