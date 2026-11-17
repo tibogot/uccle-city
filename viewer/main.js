@@ -387,6 +387,7 @@ const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
 const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
 const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
+const VIVIER = params.get("vivier") !== "old";            // vivier 2026-11-17: UrbIS bridge plans, furniture / cars on the decks (docs/VIVIER.md)
 const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
 window.__carriage = carriageRefs;
 function addBridgeDecks(decks, hm) {
@@ -689,7 +690,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     storeys: params.get("storeys") !== "old", styles: params.get("styles") !== "old",              // styles: building types (viewer/buildingTypes.js, docs/STYLES.md), ?styles=old = one generic façade
                                                           // the façade kit's storeys fitted to each face's height (docs/STOREYS.md), ?storeys=old = the fixed 3.4 / 3.0 m storeys
     roofs: cityRoofs.on && !lite,                                                                    // the roof tops (viewer/roofs/, docs/assets/ROOFS.md), ?roofs=old = before
-    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: params.get("vivier") !== "old",                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
+    cortenbosch: CORTENBOSCH, cortenbosch2: CORTENBOSCH2, vivier: VIVIER,                                                                        // the Cortenbosch pass's street surfaces / looks (data/overrides.json), ?cortenbosch=old = none
     surfVote: params.get("surfvote") !== "old",                                                    // the street-surface name vote with repaired / normalised names (viewer/streetNames.js, docs/SURFVOTE.md), ?surfvote=old = the raw names (never matched: asphalt)
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
@@ -958,7 +959,12 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // where cars drive (viewer/streets/carriageway.js): no garden piece, signal post or tram pole stands there
   const drivenAt = carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck });
   carriageRefs.set(entry.name, { test: drivenAt, bounds });   // (debug/furnitureAudit.js: window.__carriage)
-  const furn = buildFurniture(furnFeats, roads, (x, z) => hm.ground(x, z), bounds, { fit, driven: drivenAt });
+  // (vivier 2026-11-17) what stands on a road deck stands on the deck, not on the cut terrain under it (the street lamps,
+  // signals, the data layers' signs / benches, the parked cars on the Chaussee de Waterloo bridge at Vivier d'Oie: the
+  // terrain under a plan deck is the cutting's floor between its walls; a C43 sign stood 1.4 m under the deck)
+  const deckY = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
+  const onDeck = (f) => (VIVIER ? (x, z) => deckY(x, z) ?? f(x, z) : f);
+  const furn = buildFurniture(furnFeats, roads, onDeck((x, z) => hm.ground(x, z)), bounds, { fit, driven: drivenAt });
   own.features.add(furn.group);
   await frame("furniture");
   // (the tram platforms / shelters on an OSM road deck stand on the deck, not on the cutting under it: the Saint-Job
@@ -970,7 +976,16 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
   // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
   const lanesAt = FURN_SNAP && fit ? carriageway(roads, { classAt: fit.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
-  const snap = (doc, paths) => { if (!lanesAt) return doc; const r = docOffLanes(doc, paths, lanesAt, fit); snapMoved += r.moved; return r.doc; };
+  const snap = (doc, paths) => deckDoc(!lanesAt ? doc : (() => { const r = docOffLanes(doc, paths, lanesAt, fit); snapMoved += r.moved; return r.doc; })(), paths);
+  // (vivier) the baked points (y = the DTM at build time) on a road deck: up onto it
+  const deckDoc = (doc, paths) => {
+    if (!VIVIER || !doc || !bridgeDeckRefs.size) return doc;
+    for (const path of paths) {
+      let arr = doc; for (const k of path) arr = arr?.[k];
+      if (Array.isArray(arr)) for (const p of arr) { if (typeof p?.x !== "number") continue; const y = deckY(p.x, p.z); if (y != null && y > p.y) p.y = y; }
+    }
+    return doc;
+  };
   let snapMoved = 0;
   const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]]), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
   const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]), own.features);
@@ -1001,13 +1016,13 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   let parkDropped = 0;
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  const cars = buildCars(carRoads, feats, (x, z) => hm.surface(x, z) + CARVE, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP),
+  const cars = buildCars(carRoads, feats, onDeck((x, z) => hm.surface(x, z) + CARVE), bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP),
     // citydefects: the slots by the measured width, built in the worker with the traffic lanes kept clear of them
     // (d.parked: viewer/streets/parkPlace.js widthParking; ?parkclear=old: the old slots above), still kept off the
     // furniture kits' pieces
     filter: PARK_CLEAR && d.parked ? () => { const keep = cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear((x, z, yaw) => ({ x, z, yaw }), furnDoc), skDoc);
       const out = d.parked.sites.filter((c) => keep(c.x, c.z, c.yaw)); parkDropped = d.parked.sites.length - out.length; return out; } : null });
-  const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, (x, z) => hm.surface(x, z) + CARVE);
+  const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, onDeck((x, z) => hm.surface(x, z) + CARVE));
   if (twCounts) say(`two-wheelers: ${twCounts.bikes} parked in ${twCounts.slots} slots (viewer/moto/cityTwoWheelers.js)`);
   await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
