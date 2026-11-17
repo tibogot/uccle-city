@@ -27,6 +27,7 @@ import { lampState } from "../policeCar/pattern.js";
 import { Siren } from "../policeCar/siren.js";
 import { env as lightEnv } from "../lighting.js";
 import { mergeKit, unmergeKit } from "./kitMerge.js";   // perfgame round 2: the kit's static parts in 2 draws (?carmerge=old)
+import { addRearPlate } from "./plateDecal.js";        // claude/policerear: the rear plate as a pre-filtered texture (?carplate=old)
 
 /** the car: type and paint (Belgian unmarked cars: dark estates, VW Passat / Skoda Octavia class) */
 export const POLICE_CAR = { type: "estate", paint: 0x1c232c, mode: "rotating" };
@@ -59,7 +60,8 @@ async function policeModel() {
   const paint = MARKED ? car.paint.clone() : new THREE.Color(POLICE_CAR.paint);
   // head lamps: the city's head switch, or (wig-wag) the side's flash: + x = the car's left
   const head = carLights.head.mul(float(1).sub(wig.on)).add(wig.on.mul(select(positionLocal.x.greaterThan(0), wig.L, wig.R)).mul(1.6));
-  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich) });
+  // (player: claude/policerear's rear fixes: specular AA, no SSR, pre-filtered shut lines; carPacks.js playerLook)
+  const mat = packMaterial({ paint, lights: { head, tail: carLights.tail, brake: carLights.brake }, rich: pack.rich, seeThrough: playerSeeThrough(pack.rich), player: true });
   mat.name = "police unmarked";
   const wheelPos = {};
   for (const k of ["FL", "FR", "RL", "RR"]) wheelPos[k] = car.parts[`Wheel_${k}`]?.pos || [0, 0.3, 0];
@@ -127,9 +129,10 @@ export class PoliceCar {
     const front = new THREE.Group(); front.name = "police-front-kit"; front.add(...flashers); if (visor) front.add(visor);
     car.chassis.add(roofKit, front);
     const merged = mergeKit(car.chassis, [roofKit, front]);
-    this.parts = { car, beacon, roofKit, front, flashers, merged };
+    const plate = addRearPlate(car.chassis, model.lods[0].body[0].geo);
+    this.parts = { car, beacon, roofKit, front, flashers, merged, plate };
   }
-  detach() { if (this.parts) { unmergeKit(this.parts.merged); this.parts.roofKit.removeFromParent(); this.parts.front.removeFromParent(); this.parts = null; } }
+  detach() { if (this.parts) { unmergeKit(this.parts.merged); this.parts.plate?.removeFromParent(); this.parts.roofKit.removeFromParent(); this.parts.front.removeFromParent(); this.parts = null; } }
   async uninstall() {
     this.setLights(false); this.setSiren(false);
     this.lightOff();
