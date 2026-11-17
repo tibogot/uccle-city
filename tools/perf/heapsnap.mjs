@@ -123,7 +123,29 @@ async function summarize(file, { top = 60, retTop = 8 } = {}) {
     let m = rets.get(k); if (!m) rets.set(k, (m = new Map()));
     m.set(rk, (m.get(rk) || 0) + nSelf[n]);
   }
+  // retainer CHAINS (first strong retainers, up to `depth` levels) for the biggest classes: "ArrayBuffer.backing_store
+  // <- Float32Array.buffer <- BufferAttribute.array <- Object.position <- BufferGeometry.attributes"
+  const depth = +(process.env.CHAIN_DEPTH || 6);
+  const chains = new Map();
+  const wantChains = new Set(topCls.slice(0, 6).map(([k]) => k));
+  for (let n = 0; n < N; n++) {
+    const k = cls(n);
+    if (!wantChains.has(k) || nSelf[n] < 1024) continue;
+    const parts = [];
+    let c = n;
+    for (let d = 0; d < depth; d++) {
+      const f = retFrom[c];
+      if (f < 0) { parts.push("(root)"); break; }
+      const en = retType[c] === ELEM || retType[c] === HIDDEN ? "[]" : S(retName[c]).slice(0, 30);
+      parts.push(`${cls(f).replace(/^object:/, "")}.${en}`);
+      c = f;
+    }
+    const key = parts.join(" <- ");
+    let m = chains.get(k); if (!m) chains.set(k, (m = new Map()));
+    const e = m.get(key) || [0, 0]; e[0]++; e[1] += nSelf[n]; m.set(key, e);
+  }
   return {
+    chains: Object.fromEntries([...chains].map(([k, m]) => [k, [...m].sort((a, b) => b[1][1] - a[1][1]).slice(0, 40).map(([r, [c, s]]) => [r, c, MB(s)])])),
     file, nodes: N, edges: E, totalMB: MB(total), buffersMB: MB(buffers), heapNoBuffersMB: MB(total - buffers),
     byType: [...byType].sort((a, b) => b[1][1] - a[1][1]).map(([k, [c, s]]) => [k, c, MB(s)]),
     byClass: topCls.map(([k, [c, s]]) => [k, c, MB(s)]),

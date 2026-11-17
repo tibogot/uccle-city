@@ -416,10 +416,57 @@ type, by class with count + self MB, the first strong retainer of the top classe
   page; r187 has no API to rebuild those without running setup / analyze / generate (the generate stage is the cheap
   part). The GPU side is already cached across visits by Chrome (Dawn's pipeline blob cache per origin). Not done.
 
-### Heap: method
-`performance.memory.usedJSHeapSize` is V8's heap only: ArrayBuffer contents (geometry, textures' CPU copies) are V8
-external memory, not in it (to confirm in the browser: allocate 200 MB of ArrayBuffer, read the number). So the
-1.5-1.9 GB is JS objects + strings, and dropping geometry copies lowers the PROCESS memory (the 16 GB laptop's
-pressure), not that number. Method: snapshot A at the play loader's fade (fresh tab, `?game=police`), snapshot B at
-play + 30 s, each summarized by tools/perf/heapsnap.mjs, then `diff`; the top classes by self MB with their first
-retainers name the holders (NodeBuilderState strings, render objects, tile feature data, colliders ...).
+### Heap: method (measured: the first guess was wrong)
+In this Chrome `performance.memory.usedJSHeapSize` DOES count ArrayBuffer contents (200 MB of ArrayBuffer raised it
+1458 -> 1660 MB). Method: a heap snapshot via the DevTools MCP (`take_heapsnapshot`, a 1.46 GB heap = a 520 MB file, a
+few seconds), `node --max-old-space-size=4000 tools/perf/heapsnap.mjs sum x.heapsnapshot > x.json` (6 s), then
+`diff a.json b.json`; `CHAIN_DEPTH=40` for longer retainer chains. Delete the .heapsnapshot files after (big).
+
+### Results (2026-11-17, browser; preflight YELLOW: 3-5.6 GB free (the owner's Figma / Cursor), one tab, local server)
+Alternated before (`&policewarm=old&flushsplit=old&fadeshare=old&wgslintern=old&atlaskeep=old`) / after, fresh tab each.
+Two of the first loads never started: `tools/serve_cached.py` refused connections (socketserver's listen backlog of 5
+under the boot's request burst): the backlog is now 128, no failure after (the round-8 "harness" failures, same cause).
+
+| run | before | after |
+|---|---|---|
+| police play (cover) | 45.7 (21.0), 50.3 (17.0), 49.2 (21.3) s: mean 48.4 | 47.6 (19.4), 42.0 (16.8), 55.8 (28.9), 50.6 (24.4) s: mean 49.0 (a first cold load, 69.8 s, left out) |
+| police after the cover | 24.7, 33.3, 27.9 s | 28.2, 25.2, 26.9, 26.2 s |
+| police "props + warm" in front of the spawn | 1.0-2.6 s | 0 (beside it: 2.0-3.3 s, done before the spawn's area every time) |
+| police longest main-thread task of the first flush | 4.4-6.6 s (one task) | 0.9 s cap 0.9 s: 1.0-1.6 s (15-16 chunks); cap 1.5 s: 1.06 s (5 chunks) |
+| first flush, total | 4.4-6.6 s | 7.8-9.5 s (0.9 s chunks), 4.4 s (1.5 s chunks): each chunk renders the city pass once more |
+| falcon play (cover) | 39.4 (13.9), 38.9 (13.5) s | 52.5 (20.2) (8 frames > 50 ms), 40.3 (14.8) s |
+| free roam play (cover) | 37.4 (13.5) s | 39.0 (14.6) s |
+| frames > 50 ms in the first 15 s | police 0, falcon 2-3, free 0 | police 0, falcon 4-8, free 0 |
+| heap at play + 15 s | 1.64-1.77 GB | 1.52-1.78 GB |
+
+Reading it: on this noisy machine (cover alone 13.5-28.9 s) no time-to-play change is measurable: the round-9 changes
+are within the spread (police +0.6 s mean, falcon / free roam +1-1.5 s on 1-2 runs). The police props' warm-up had
+already shrunk to 1-2.6 s in front of the spawn (round 8's 1.8-11.6 s was the boot's work in its frames); it now runs
+beside it. The flush split does what it was for (no task over ~1-1.6 s: the loader animates) but each chunk draws the
+city pass once more: with 0.9 s chunks the flush took +1.3..3 s, so the default is now 1.5 s chunks (at most 80
+drawables). `wgslintern`: 1330-1469 builds' strings swapped to the program copies (49-53 M chars looked at; the freed
+share is not separable from the GC noise). Visual: police at play (docs/perfgame/r9_police_play.jpg): the yard, the
+station, the patrol cars, the trees, complete.
+
+**Heap at police play (snapshot, after a GC): 1457 MB, of which 1230 MB (84 %) is ArrayBuffer contents; JS objects
+226 MB** (TSL nodes ~20 MB, strings 17 + 42 MB external, arrays 46 MB). Play + 6 s vs play + 100 s (idle): +0.5 MB: no
+growth. Biggest buffer holders (first retainer chains): 193 MB of ArrayBuffers held only by other native ArrayBuffers
+(no JS owner found within 40 levels: to identify: worker-transferred tile data? WebGPU staging?), geometry attributes
+kept on the CPU after upload (position / normal / uv of tile meshes, instanced matrices: several hundred MB in many
+small groups), the street-life text atlas 32 MB (its CPU copy is needed: layers are copied in per tile), the grass
+storage buffer 21 MB, KTX2 compressed textures' mipmaps kept after upload (~45 MB: CompressedTexture /
+CompressedArrayTexture.mipmaps), a Uint16 DataArrayTexture 16 MB, the night lights' index buffer 9 MB, GLB bodies kept
+by the GLTF parser (6 MB per model seen).
+
+### What is left (ranked)
+1. Heap < 1.5 GB = the CPU copies: (a) the 193 MB of native ArrayBuffers with no JS owner (find who: tile worker
+   results kept in a closure? a fetch cache?); (b) the compressed textures' mipmaps after upload (~45 MB: three reads
+   them again only on a version bump or after a dispose: check every texture dispose path first); (c) static tile
+   geometry's position / normal / uv after upload: readers to check first: raycasts (colliders, picks, ground
+   heights), bounding volumes, farMerge bakes, the house cut, roSweep re-creating render objects (the GPU buffers stay
+   per attribute).
+2. Time to play: measure on a GREEN machine (this session never was; the cover alone spread 13.5-28.9 s). With
+   `?buildaudit=1` list the boot's node builds and their repeats (`debug/buildAudit.js`) before choosing what to share
+   (the per-model wrapAO copies -> NodeMaterialInstance + materialReference).
+3. The flush split's extra city passes: draw only the chunk's holder (not the whole pass) per chunk, in the pass's
+   target + MRT, to make the split free.
