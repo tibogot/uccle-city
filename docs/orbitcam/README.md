@@ -29,3 +29,35 @@ loaded laptop (the next boot took 58 s with nothing at boot). Made lazy anyway (
 1.2 s after the first drag).
 
 Not tuned by hand (needs the owner's mouse): orbit speed (1.4 pi per screen height), zoom step (x1.28 a notch), damping.
+
+# orbitcam2: browser check 2026-11-17 (branch claude/orbitcam2 after foundation merge 2c8c4b5e)
+
+Server 8815, one tab, default URL (start menu on) with localStorage cleared, then `?gamemenu=0&orbitcam2=old`.
+
+| check | result | image |
+|---|---|---|
+| first visit: the card while the start menu is up | hidden (button too); after Esc closes the menu the card opens by itself once, `uccle.orbithelp.seen` = 1 | 11_help_card.jpg |
+| ? key / Esc | ? toggles the card (the dev panel's key list does not open as well), Esc closes it | |
+| W from ~300 m up, no button | 227 m/s, height unchanged (looking 30 deg down: no dive) | |
+| Q 2 s / PageUp 1 s | -213 m / +86 m | |
+| W at street level (Place Saint-Job, 1.2 m) | 8.0 m/s along the street | |
+| Shift + W into the façades (4 s) | slid along the walls into a real gap between two houses (roof grid 0 there), never inside a building, 1.2 m over the ground | 12_keys_street_wall.jpg |
+| typing W in the dev panel search field | the camera does not move | |
+| third person / police (free) / falcon (free) | W moves the character 2.0 m and the police car 23 m; the falcon's listeners get Q; the orbit camera off, the ? button hidden | |
+| `?orbitcam2=old` | W without a button does nothing, no card / button | |
+| console | clean on the default run; the `?orbitcam2=old` run logged a `[heapDrop] dropped attribute created again` + 2 WebGPU "index buffer size (0)" errors from warmup.js flushDraw at boot (claude/heap's drop, not the camera: orbitcam2 code is off in that run and touches no geometry) | |
+
+Visual tour (docs/TOUR.md, `debug/tour.html?run=orbitcam2` vs `foundation`): **0 of 22 views flagged** (largest: lycee-front
+cell 20.5 % but pixels 0.23 %, ssim 0.996; wolvendael-park ssim 0.9934). Merge gate: all rows PASS (heap row with the
+tools/worker/node_modules junction, removed after).
+
+## Why it happened, the rule, the check
+
+WHY: round 1 copied the editors' cameras (Unity / Unreal / Godot), where moving means HOLDING THE RIGHT BUTTON and then
+pressing WASD / QE, and the only way up was the wheel (zoom out). Nothing on screen said so: the HUD help line was one
+dense sentence and the dev panel's key list sits behind its "?" icon. A player who presses W (as in every game and in
+our walk / drive / falcon modes) got nothing, and had no visible way to rise or sink.
+RULE: every camera / mode keeps the common game keys working with no modifier held (WASD move, E/Q or PageUp/PageDown
+up / down, Shift faster) and shows its controls on screen (a card shown once, the ? key).
+CHECK: tools/orbitCamTest.mjs keyboard section in tools/audit/mergeGate.mjs (row "orbitcam": W moves with no button,
+speed scales with the height, Q / PageDown never under the ground, PageUp rises, walls stop it, no NaN at 10 fps).
