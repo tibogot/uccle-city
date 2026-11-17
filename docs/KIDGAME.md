@@ -4,7 +4,7 @@ Owner's direction (2026-11-18): a FULL game, built on the Uccle 3D city. The pla
 
 ## Pillars
 1. **Bike riding must be on point**: the heart of the game. BMX feel: pedalling, coasting, braking and skids, bunny hops, jumps and landings, manuals, pushing the bike up steep streets, falling off (no gore). Uccle is hilly: descents and forest paths must feel great.
-2. **Real places, made for kids**: the Kauwberg (nature reserve: bumps, roots, branches, the old SAND QUARRIES, dens), the Wolvendael park, the Geleytsbeek valley, Saint-Job, the Observatory, old lanes and footpaths (sentiers / voetwegen), the old railway.
+2. **Real places, made for kids**: the Kauwberg (nature reserve: bumps, roots, branches, the old SAND QUARRIES, dens), the Wolvendael park, the Geleytsbeek valley, Saint-Job, the Observatory, the DIEWEG CEMETERY (closed since 1958, overgrown, remarkable chapels and tombs: a classic dare / mystery place), old lanes and footpaths (sentiers / voetwegen), the old railway.
 3. **A bike park / ramps**: the owner remembers a natural dirt bike park with bumps near the streets toward the Dieweg (not in OSM 2026; may be gone). The game can bring it back as remembered (90s); plus kid-made ramps (planks on bricks) around the neighbourhood and the Kauwberg.
 4. **Friends and calls (90s)**: a home landline and walkie-talkies, no smartphones. Friends call: "meet at the Kauwberg at 4". Each friend has a personality, favourite spots and memory of what you did.
 5. **The day**: wake up, a summer day, be home before dark (or the parents worry). The time limit makes each afternoon count.
