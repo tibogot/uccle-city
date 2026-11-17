@@ -60,6 +60,7 @@ import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
 import { addLamps } from "./lampLight.js";
+import { installWgslIntern } from "./wgslIntern.js";
 import { SMOOTH, lodEye, Fader, withObjectFade, fadeProxies, ownProxies, dropFadeVariant, settleRamp } from "./lodFade.js";
 import { buildFarTreeField } from "./treesStylized.js";
 import { cityKit } from "./facadeKit/cityKit.js";
@@ -1145,6 +1146,8 @@ async function main() {
   await renderer.init();
   window.__bootHook?.(renderer, THREE);              // a boot probe's hook (debug/bootTimeline.js), when one is installed
   setAORenderer(renderer);                          // fix3: the AO maps as BC4 KTX2 when the GPU samples BC (viewer/aoTexture.js, ?aoktx2=0 = the PNGs)
+  if (params.get("buildaudit") === "1") (await import("./buildAudit.js")).installBuildAudit(renderer);   // perf9: every node build timed (debug/buildAudit.js)
+  if (params.get("wgslintern") !== "old") installWgslIntern(renderer);   // perf9: one copy of each WGSL text on the heap (viewer/wgslIntern.js)
   if (params.get("shadowshare") !== "0") shareShadowNodes(renderer);   // one shadow shader per vertex code, not per material (warmup.js; ?shadowshare=0: three's own)
   // the material library's SHIPPED textures (viewer/materials/textures/scans.json: the default look of every library
   // material, docs/TEXTURE_FACTORY.md) load in parallel with the boot; awaited before the first consumer (the façade
