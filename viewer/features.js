@@ -40,6 +40,16 @@ export const FEATURES = [
   num("yaw", "nav", "walk facing (°)", "Walk mode's facing at the start: 0 = -z (north-ish), 90 = -x.", 0, 0, 360, 1, { ui: false }),
   txt("dev", "nav", "dev panel state", "A shared panel state (base64 JSON, 'copy link + panel settings'); dropped from the URL once applied.", "", { ui: false }),
   on("panel", "nav", "dev panel", "?panel=0: no dev panel, the old HUD only.", { ui: false }),
+  // quick test mode for agents (viewer/quick.js, docs/QUICKTEST.md): rewritten into the switches above / below at boot
+  opt("quick", "nav", "quick test mode", "?quick=1: a small piece of the city round one spot (the tiles within &radius=, the landmarks there, optional systems off unless &with=), no start menu / play loader, window.__quickReady when built (docs/QUICKTEST.md).", { ui: false }),
+  txt("place", "nav", "quick: place", "?quick=1&place=<viewer/places.js id>: the camera at the place.", "stjob-street", { ui: false }),
+  txt("look", "nav", "quick: look at", "?quick=1&at=x,z[,h]&look=x,z[,h]: the camera at `at`, looking at `look` (h over the ground).", "1175,540", { ui: false }),
+  num("radius", "nav", "quick: radius", "?quick=1: the tiles (and landmarks, +100 m) within this many m of the camera / the look point.", 250, 50, 2000, 50, { ui: false }),
+  txt("with", "nav", "quick: systems on", "?quick=1&with=traffic,birds,weather,night,trams,trains,falcons,map,panel,game: optional systems kept.", "traffic,night", { ui: false }),
+  txt("quickat", "nav", "quick: camera (kept)", "Written by quick mode: the original &at (the viewer's own ?at is the spot by then).", "", { ui: false }),
+  txt("quicklook", "nav", "quick: look (kept)", "Written by quick mode: the original &look.", "", { ui: false }),
+  num("fov", "nav", "quick: field of view", "?quick=1: the camera's vertical field of view (deg; a place's own fov otherwise).", 55, 20, 100, 1, { ui: false }),
+  num("ready", "nav", "quick: ready limit (ms)", "?quick=1: the ready check's time limit.", 90000, 10000, 600000, 1000, { ui: false }),
 
   // ---------------------------------------------------------------- modes & camera (live ones are the section's own controls)
   txt("car", "modes", "car (drive)", "The drive mode's car: scripted, cars2:<id> (default family) or faceted:<id> (the old family).", "cars2:hatch_c", { live: "car (drive)" }),
@@ -78,6 +88,7 @@ export const FEATURES = [
   opt("vfog", "weather", "volumetric fog", "Volumetric valley fog (opt-in).", { live: "volumetric valley fog" }),
   sel("wx", "weather", "weather", "The weather at start (viewer/weather/cityWeather.js): rain, snow, fog... (clear = the city as before); 'live' = Uccle now (Open-Meteo).",
     [[null, "clear"], ["overcast", "overcast"], ["drizzle", "drizzle"], ["rain", "rain"], ["storm", "storm"], ["snowfall", "snowfall"], ["snow_cover", "snow cover"], ["fog", "fog"], ["live", "live (Open-Meteo)"]], { live: "weather" }),
+  old("texlimit", "weather", "default GPU texture limit", "?texlimit=old: ask the GPU for the WebGPU default of 16 textures/samplers per stage (the facade kit lod1 + snow + ?night=0 binds 17: validation error). Default: up to 32 when the adapter has them."),
   old("weather", "weather", "no weather system", "?weather=old: the city before the weather hookup (no wet / snow layer in the materials, no rain, no overhead bake)."),
   on("snowtracks", "weather", "snow tracks", "Footprints, tyre and motorbike tracks in the snow (viewer/weather/snowTrails.js: a camera-centred trail texture the walker / character / cars stamp; the snow layer and the ground cover read it)."),
   on("snowcaps", "weather", "snow caps", "Snow caps with thickness and rounded rims on car roofs / bonnets (parked, traffic, yours), benches, bins, bike boxes, glass banks, bus shelters, garden copings and hedge tops (viewer/weather/snowCaps.js + cityCaps.js); parked cars' tops then cut the snow layer."),
