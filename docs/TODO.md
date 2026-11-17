@@ -10,7 +10,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** xmasfir (fir needle cards, browser turn), falconstutter (falcon flight hitches; offline, then browser).
+**Running:** falconstutter (falcon flight hitches; offline, then browser).
 
 **Performance (owner's #1)**
 - [ ] Falcon flight stutter (claude/falconstutter).
@@ -35,7 +35,11 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Cobble junction pads.
 
 **Christmas (on 1 Dec - 6 Jan)**
-- [ ] Fir round 2 (claude/xmasfir); owner review of the market + garlands in game; more decorations if the owner asks.
+- [x] Fir round 2 MERGED 2026-11-17 (needle cards, round bulbs; docs/CHRISTMAS.md "NEEDLE CARDS").
+- [ ] Before 1 Dec: fir cards cost +0.26 ms at 8 m (budget 0.1; try the shadow from the middle level, fewer / smaller
+  cards near the trunk); the middle level (45-150 m) still reads as flat tiers next to the needle crown (cards there
+  too, or an impostor); re-measure the whole layer on GREEN (+0.33-0.59 ms on YELLOW vs +0.00 on GREEN before).
+- [ ] Owner review of the market + garlands + fir in game (?xmas=1); more decorations if the owner asks.
 
 **City content (open from the archive)**
 - [ ] Trains: more bridges (Rue de Stalle, Kauwberg, Linkebeek, Engeland, Moensberg), roads over the line as real decks,
