@@ -5,6 +5,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { existsSync, symlinkSync } from "node:fs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const CHECKS = [
@@ -30,6 +31,19 @@ const BROWSER = [
   "debug/sharpCheck.js  stability(): frame-to-frame luma noise + Laplacian sharpness while parked / driving (claude/sharp)",
   "TRAFPARK (docs/TRAFPARK.md): ?quick=1&place=alsemberg|stjob-street|fortjaco&with=traffic, then (await import('/debug/trafparkWatch.js')).watch(150): into 0, parkedHit 0 (claude/trafpark)",
 ];
+
+// A git worktree lacks the main checkout's untracked inputs (node_modules, the raw data): link them in (junctions),
+// so a gate in a worktree tests the code, not the folder. Both paths are git-ignored.
+const LOCAL_ONLY = ["tools/worker/node_modules", "data/raw"];
+try {
+  const main = path.dirname(spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: ROOT, encoding: "utf8" }).stdout.trim());
+  if (main && path.resolve(main) !== path.resolve(ROOT)) {
+    for (const p of LOCAL_ONLY) {
+      const here = path.join(ROOT, p), there = path.join(main, p);
+      if (!existsSync(here) && existsSync(there)) { symlinkSync(there, here, "junction"); console.log(`linked ${p} -> ${there}`); }
+    }
+  }
+} catch (e) { console.log(`(worktree links skipped: ${e.message})`); }
 
 const only = process.argv.slice(2);
 const rows = [];
