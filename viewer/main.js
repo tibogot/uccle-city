@@ -908,8 +908,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const plazas = ss ? { count: 0 } : buildPlazas(await loadOverrides(DATA), bounds, (x, z) => hm.ground(x, z));
   if (plazas.count) own.roads.add(plazas.group);
   // (cortenbosch) hard grounds OSM's recreation grounds drew as lawn: the Lycée Français's yards, track and courts
-  // (data/overrides.json grounds, viewer/grounds.js: one mesh, one draw); ?cortenbosch=old: none
-  const grounds = CORTENBOSCH ? buildGrounds((await loadOverrides(DATA)).grounds, bounds, (x, z) => hm.surface(x, z)) : { mesh: null, rings: [] };
+  // (data/overrides.json grounds, viewer/grounds.js: one mesh, one draw); each entry's own "switch" (?key=old) drops it
+  // (?cortenbosch=old: the Lycée's, ?forecourts=old: the church forecourts of claude/snow2)
+  const groundOn = (g) => { const k = /^\?(\w+)=old$/.exec(g?.switch ?? "")?.[1]; return !k || (k === "cortenbosch" ? CORTENBOSCH : params.get(k) !== "old"); };
+  const grounds = buildGrounds(((await loadOverrides(DATA)).grounds || []).filter(groundOn), bounds, (x, z) => hm.surface(x, z));
   if (grounds.mesh) { own.roads.add(grounds.mesh); say(`grounds: ${grounds.tris} triangles (data/overrides.json grounds)`); }
   R.textures.push(...terr.userData.textures);
   await frame("terrain");

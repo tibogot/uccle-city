@@ -13,8 +13,11 @@
 // The rings are also the "plants clear" rings (no generated shrub / garden piece on a yard) and solids for the grass.
 //   const g = buildGrounds(list, bounds, (x, z) => hm.surface(x, z));  if (g.mesh) group.add(g.mesh)
 import * as THREE from "three/webgpu";
-import { uv, attribute, texture, vec2, vec3, float, floor, fract, mix, smoothstep, length, fwidth, Fn, dot, positionWorld, mrt, roughness, select } from "three/tsl";
+import { uv, attribute, texture, vec2, vec3, float, floor, fract, mix, smoothstep, length, fwidth, Fn, dot, positionWorld, mrt, roughness, select, normalize, normalView, abs, min } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
+import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "./streets/paving.js";
+import { wxMat } from "./weather/cityWeatherize.js";
+import { bumpNormal } from "./tslkit.js";
 
 const LIFT = 0.04, SKIRT = 0.22, MAX_EDGE = 1.2, PX = 1 / 0.06;      // atlas: 6 cm per pixel
 
@@ -155,6 +158,24 @@ function groundMaterial(tex) {
   const inR = st.x.greaterThanEqual(rect.x).and(st.x.lessThanEqual(rect.z)).and(st.y.greaterThanEqual(rect.y)).and(st.y.lessThanEqual(rect.w));
   const T = texture(tex, st);
   const paint = select(inR, T.r, float(0)), green = select(inR, T.g, float(0)), red = select(inR, T.b, float(0));
+  // (claude/snow2: church forecourts) a ground with surface "pavers" (aSurf 1): concrete pavers in rows along its
+  // courseDeg (aCourse = cos, sin), the street texture array's pavers layer as the sidewalks / squares, a procedural
+  // stretcher bond without it (?paving=old)
+  const surf = attribute("aSurf", "float"), dir = attribute("aCourse", "vec2");
+  const isPav = smoothstep(0.4, 0.6, surf);
+  const Pw = positionWorld;
+  const pa = Pw.x.mul(dir.x).add(Pw.z.mul(dir.y)), pb = Pw.z.mul(dir.x).sub(Pw.x.mul(dir.y));
+  let pav;
+  if (pavingTextures()) {
+    const S = pavingSample(pa, pb, float(LAYER.pavers), float(1.8));
+    pav = { col: regrade(S.col, "pavers", [0.2, 0.182, 0.165], 0.55).mul(mix(float(1), S.ao, 0.5)), rough: S.rough, n: pavingNormal(S.n, pa, pb, float(1)) };
+  } else {
+    const row = floor(pb.div(0.11)), u = pa.div(0.22).add(row.mul(0.5)), cell = floor(u);
+    const e = min(min(fract(u), float(1).sub(fract(u))).mul(0.22), min(fract(pb.div(0.11)), float(1).sub(fract(pb.div(0.11)))).mul(0.11));
+    const joint = float(1).sub(smoothstep(0.003, 0.006, e)).mul(float(1).sub(smoothstep(0.004, 0.02, fwidth(pa))));
+    const tone = hash2(vec2(cell, row)).mul(0.12).add(0.94);
+    pav = { col: mix(lin(0x8a8279).mul(tone), lin(0x5f5a54), joint), rough: mix(float(0.85), float(0.95), joint), n: bumpNormal(float(1).sub(joint).mul(0.003)) };
+  }
   m.colorNode = Fn(() => {
     const p = positionWorld.xz.toVar();
     const gr = hash2(floor(p.mul(70.0)));
@@ -167,9 +188,12 @@ function groundMaterial(tex) {
     let col = mix(asph, lin(0x7d9a86).mul(fade), green.clamp(0, 1));
     col = mix(col, lin(0xa4513f).mul(fade), red.mul(float(1).sub(green)).clamp(0, 1));
     const worn = vnoise(p.mul(2.5)).mul(0.3).add(0.7);
-    return mix(col, lin(0xdcdbd4), paint.clamp(0, 1).mul(worn));
+    return mix(mix(col, lin(0xdcdbd4), paint.clamp(0, 1).mul(worn)), pav.col, isPav);
   })();
-  m.roughnessNode = mix(float(0.93), float(0.82), green.max(red).clamp(0, 1));
+  m.roughnessNode = mix(mix(float(0.93), float(0.82), green.max(red).clamp(0, 1)), pav.rough, isPav);
+  m.normalNode = normalize(mix(normalView, pav.n, isPav));
+  // (claude/snow2) the weather on the hard grounds too: they stayed dry asphalt under snow past the layer's window
+  wxMat(m, { porosity: 0.55, puddles: true, slush: true, frost: true, map: true });
   // (no screen-space reflection on the rough ground, as the police yard: it read navy in the shade with it)
   m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(1)) });
   m.side = THREE.DoubleSide;                       // (the skirts are seen from both sides)
@@ -187,12 +211,13 @@ export function buildGrounds(list, bounds, ground) {
   const rings = list.map((p) => p.ring);
   if (!list.length) return { mesh: null, rings, tris: 0 };
   const A = paintAtlas(list);
-  const pos = [], uvs = [], rect = [], idx = [];
+  const pos = [], uvs = [], rect = [], idx = [], surfA = [], courseA = [];
   const NONE = [2, 2, 2, 2];                          // (a rectangle no uv falls in: no paint)
   for (const p of list) {
     const ring = clipRing(p.ring, bounds);
     if (ring.length < 3) continue;
     const F = A.frames.get(p.id), R = A.rects.get(p.id) || NONE;
+    const SURF = p.surface === "pavers" ? 1 : 0, ang = ((p.courseDeg || 0) * Math.PI) / 180, cs = Math.cos(ang), sn = Math.sin(ang);
     const uvOf = (x, z) => {
       if (!F) return [-1, -1];
       const dx = x - F.o[0], dz = z - F.o[1], fu = dx * F.u[0] + dz * F.u[1], fv = dx * F.v[0] + dz * F.v[1];
@@ -209,7 +234,7 @@ export function buildGrounds(list, bounds, ground) {
       if (k === undefined) {
         k = pos.length / 3; vid.set(key, k);
         pos.push(x, ground(x, z) + LIFT - drop, z);
-        uvs.push(...uvOf(x, z)); rect.push(...R);
+        uvs.push(...uvOf(x, z)); rect.push(...R); surfA.push(SURF); courseA.push(cs, sn);
       }
       return k;
     };
@@ -234,6 +259,8 @@ export function buildGrounds(list, bounds, ground) {
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
   g.setAttribute("aRect", new THREE.Float32BufferAttribute(rect, 4));
+  g.setAttribute("aSurf", new THREE.Float32BufferAttribute(surfA, 1));
+  g.setAttribute("aCourse", new THREE.Float32BufferAttribute(courseA, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
   g.computeBoundingSphere();

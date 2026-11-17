@@ -38,6 +38,10 @@ export const CHURCHES = {
     label: "Saint-Marc", names: ["SaintMarc", "SaintMarc_far", "SaintMarc_xfar"],
     slots: ["brick_dark", "stone_blue", "zinc_roof", "concrete_white", "wood_oak", "glass_window", "cast_iron_green"],
     newNames: ["wood_oak", "concrete_white"],
+    // (claude/snow2 item 2, ?marcbrick=old = the library's brick_dark as shipped) the photos' brick is warmer, lighter and
+    // less red: a grey-mauve brown (Street View 2009 / 2023 from Avenue De Fre, look only); the shipped clinker scan
+    // tinted toward it (its detail kept: scanTint 1 = the scan's mean -> this colour)
+    looks: { brick_dark: { color: "#7d6c68", scanTint: 1 } },
     lods: [{ until: 110, band: 18 }, { until: 420, band: 50 }, { until: Infinity }],
   },
   // castle1 (branch claude/castle1): the Chateau Latour de Frein, Rue Engeland 555 (tools/blender/latourdefrein.py);
@@ -120,6 +124,12 @@ function sourceMaterial(name, lib, C, key) {
   if (lib && !C.newNames.includes(name)) {
     try { m = lib.createMaterial?.(name, { mapping: "uv" }) ?? null; }
     catch (e) { console.warn(`[${key}] library failed on "${name}":`, e.message); }
+    // a per-building look on this material's own uniforms (createMaterial gives each call its own look)
+    const look = C.looks?.[name], U = m?.userData?.look;
+    if (look && U && !/[?&]marcbrick=old(&|$)/.test(location.search)) {
+      if (look.color && U.color?.value?.isColor) U.color.value.set(look.color);
+      if (look.scanTint != null && U.scanTint) U.scanTint.value = look.scanTint;
+    }
   }
   if (m) return m;
   const make = TEMP[name] ?? RO_TEMP_MATERIALS[name] ?? RU_TEMP_MATERIALS[name] ?? SP_TEMP_MATERIALS[name] ?? RO_TEMP_MATERIALS.rubble_stone;
