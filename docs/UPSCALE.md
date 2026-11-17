@@ -170,3 +170,78 @@ wind foliage (a storage read + ~12 ALU per vertex for the fleets). A clean GREEN
    a game sharing the GPU, misleading for A/B measurements: measure at fixed scales, `?dynres=0`).
 5. Text on shop signs at 0.6: legible but soft (the sharpen helps); the "auto" floor 0.6 is a choice.
 6. (done 2026-11-15 for the wind.js foliage) Grass (default off) and the flags' cloth are not in the motion.
+
+## Sharp while moving (branch claude/sharp, 2026-11-17)
+
+Owner's playtest: "anything at a distance is blurry and pixelized: the motorbikes, the falcon when it flies"; the player's
+car's plate and thin lines shimmer and break into blocks in the chase view; "the quality is bad as soon as I move with
+the car" (the WHOLE image soft while driving); shadows swim and the light through the foliage sparkles; façade windows
+grainy / blocky. Images: `docs/sharp/`. Every fix has its own `?key=old`; `?sharp=old` = all of the TAAU / DR ones.
+
+### Causes found (code review first, then the browser)
+
+1. **The player's car / a falcon flown from behind kept NO history** (`?taadepth=old`). The resolve's disocclusion test
+   (three's TAAU: `closestDepth - previousDepth > 0.0005`) compares this frame's depth with last frame's depth at the
+   reprojected uv, seen from this frame's camera. For an object that moves on its own ALONG the view, last frame's
+   surface was elsewhere in depth: the car driving away from the chase camera was 0.2-0.4 m nearer last frame, at 6 m
+   with near 0.3 that is 0.002-0.003 in depth, 4-6 x the threshold, so every non-edge pixel of the car was a
+   "disocclusion": weight 1, the current low-res frame only, every frame (from ~4 km/h up). That is the shimmer and the
+   plate "in blocks". Fix: the motion MRT's `.z` carries the surface point's own view-z change this frame (metres,
+   this frame's camera: `viewMatrix x (p - p_prev)`, p_prev from the object's / instance's / skeleton's motion); the
+   resolve adds it to last frame's view z before the test. Zero for static geometry (no change there).
+2. **The whole image soft while driving** (static geometry):
+   - the history fetched BILINEARLY (`?taahist=old`): each frame of camera motion resamples it at a fractional offset;
+     at a current-frame weight of ~0.1 that is ~10 bilinear passes deep: a heavy blur. Now a 5-tap Catmull-Rom
+     (Jimenez 2016: the 4 x 4 bicubic as 5 bilinear fetches; FSR2 / UE do the same);
+   - the reconstruction kernel WIDENED with motion (`exp(-2.29 x 0.45 d^2)` at >= 32 px of motion and on every
+     disocclusion, `?taarecon=old`): a soft blob of the low-res frame. Now the sharp kernel stays, and low-confidence
+     pixels mix toward a Lanczos-2 (FSR2's polynomial) deringed to the 2 x 2 nearest input texels;
+   - under motion the clip box shrank to 0.5 sigma and the current frame got + the whole motion factor; jitter halved
+     while moving (`?taablend=old`). Now >= 0.8 sigma, half the motion weight, full jitter (FSR2 / DLSS always jitter).
+3. **The followed car's plate flickered even with history**: the thin-feature lock was off on every pixel with its own
+   motion. Now it stays on where the total screen motion is < 1.5 input px (`?taalock=old`).
+4. **Sharpening**: a clamped 5-tap unsharp mask 0.2-0.4. Now RCAS (AMD FSR 1's robust contrast-adaptive sharpening,
+   MIT) on a reversible tonemap of the HDR resolve: lobe share 0.5 at scale 1 -> 1 at <= 0.65 (`?rcas=old`).
+5. **Dynamic resolution dropped to 0.6** on the owner's laptop (RTX 4050 in power-saving clocks, 855-1200 MHz): the
+   timestamp GPU time reads high at low clocks while 60 fps still holds, the DR lowered the scale, the load fell, the
+   clocks stayed low. Now (`?drrule=old`): lowers only when the GPU p75 is over the target AND frames are late (> 20 ms
+   intervals in > 10 % of the window, or GPU p75 > 16 ms); a soft floor 0.75 in the auto preset that it crosses only
+   with frames missed for 3 s at > 1.25 x the target (hard floor 0.6); steps 0.05 down / 0.025 up, >= 1 s apart. The
+   HUD stats line shows `render 0.80 auto`.
+6. **Sparkle** (`?taafire=old`): the reconstruction taps weighted 1 / (1 + luma) (Karis 2014): a sub-pixel glint (the
+   low sun through leaves, a specular spark) no longer dominates a pixel for one frame.
+7. **Shadows swim** (`?shadownoise=old`): three r187's PCF rotates its 5 Vogel taps by interleaved gradient noise of the
+   SCREEN pixel, fixed per pixel: under the TAAU the penumbra noise is locked to the screen and the shadows slide under
+   it while driving. Now the noise phase moves each frame (lodFade.js `ditherFrame`), the history averages it.
+8. **Mip bias**: already on (`log2(scale) - 0.3` on the scene pass, upscale.js `TextureNode.generateSnippet`): checked.
+9. **Kit glass room seed** (no switch, worker): the kit glass recovered the building hash from
+   `rnd + 2 door + 4 French + 1024 maison de maître` in one float32 (~1.2e-4 precision past 1024, the shader rounds it
+   to 1/4096): about half the maisons de maître's kit windows showed another room / curtain than the painted window
+   they hand over to. Packed quantised now (exact).
+
+### Movers and their motion (rule 1)
+
+Covered: traffic cars + two-wheelers, trams, trains, pigeons (InstancePrev), sky flocks (p - v dt), skinned falcons and
+characters (last frame's bones), wind foliage (windPrev), everything moved by its matrix (the player's car / motorbike,
+standing police props, the beacon: ObjectMotionMatrix). Known gaps (warned by the audit): pedestrians (GPU pose buffer,
+no previous pose; 2 cm / frame), flags' cloth, wind grass (default off), the falcon lab's thermal hints (hidden in the
+city).
+
+### WHY IT HAPPENED + RULE
+
+- **Root cause.** The TAAU (2026-11-15) was judged on still or slowly orbiting views and on a car passing a FIXED
+  camera; the per-instance motion work (claude/motionvec) fixed the motion vectors but nobody checked the history's
+  VALIDITY test, which three's TAAUNode built for objects whose depth only changes with the camera. The chase view (an
+  object moving along the view, the main game view) was never measured; neither was "sharpness while moving" against
+  "standing still". The bilinear history and the widened kernel were taken over from three / added as "soft instead of
+  staircase" without a moving-camera sharpness number. The DR was tuned on a desktop-class GPU at full clocks.
+- **Rules.** (1) Every moving mesh writes motion vectors (its own motion, in x / y AND depth). (2) With upscaling, a
+  sharpen (RCAS) is always on, the history fetch is bicubic, the texture mip bias follows the scale. (3) The auto
+  render scale stays >= 0.75 unless frames are really missed. (4) Every image-quality change is measured MOVING (chase
+  at 50 km/h) against standing still, not only on stills.
+- **Automated checks.** `node tools/audit/mergeGate.mjs` runs `tools/audit/motionAudit.mjs` (static, PASS / FAIL): every
+  viewer file that writes instance matrices or deforms geometry over time is a listed MOVER with a motion hook or a
+  listed STATIC with the reason (a new one fails until classified), and the upscaler's guarantees (own-motion depth,
+  Catmull-Rom history, RCAS default on, mip bias, soft floor >= 0.75, skinned previous bones). Browser gates
+  (`debug/sharpCheck.js`): `motionCoverage()` (every mesh that moved over 30 frames has a motion source) and
+  `drive()` (sharpness while driving / parked, the followed car's frame-to-frame shimmer, the upper image's noise).
