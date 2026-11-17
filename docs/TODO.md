@@ -19,6 +19,13 @@ gate works in worktrees, agargaro evaluated (docs/AGARGARO.md: adopt none, 2 mul
 **docs/QUALITY_RULES.md** (20 rules; read before every merge). Tour baseline = the twinlink run.
 Running: xmasfir (fir needle sprays, Blender), mdraw (AGARGARO jobs 1-2: near-first chunk order ?mdsort=0, 80 m
 chunks ?mdchunk=160). Queue: falcon stutter, loader stills, clean perf measure.
+**LYCÉE / CORTENBOSCH (owner 2026-11-17 evening, from an agent's screen at the Lycée Français gate):**
+(1) the gate fence on the LEFT of the Lycée gate JITTERS (flicker / shimmer, not visible in a still): check close up and
+while moving (frame strips), find why (z-fight, thin bars under TAAU, LOD) + rule + gate check. (2) the Chemin du
+Cortenbosch has a SECOND part we never built: the paved stretch that runs DOWN to the Geleytsbeek, parallel to the Avenue
+du Lycée Français (one-way, probably why it was missed); find it on the map / Street View (look only), check our street
+data for it, build it like the first part. The owner knows it well: ask for photos if Street View is thin. (3) same view:
+the 3 flag poles on the right showed NO flags (quick mode not building them, or a real miss): check.
 **FLAGS: WHERE ELSE (owner 2026-11-17, later):** flags fly today at the town hall (EU / Belgium / Uccle) and the Lycée
 Français (Belgium / EU / France), via viewer/flagsCity.js flyFlags (any pole). Check with the owner where else real flags
 are: the owner will name places; my suggestions: police station, Observatory, other public buildings (Belgian flags on
