@@ -18,7 +18,7 @@ export const tileEntry = (T) => {
 export const allTiles = () => { tileEntry("I6"); return manifest.tiles.filter((t) => t.status !== "missing").map((t) => t.name); };
 const json = (p) => JSON.parse(readFileSync(p, "utf8"));
 
-/** { entry, bounds, roads, surf, markings, feats, hm, rd } for tile T. opts: { paint, roadsFile (another roads.json) } */
+/** { entry, bounds, roads, surf, markings, feats, hm, rd } for tile T. opts: { paint, roadsFile (another roads.json), build (extra buildRoadData options) } */
 export function loadTile(T, opts = {}) {
   const entry = tileEntry(T);
   if (!entry) throw new Error(`no tile ${T}`);
@@ -38,7 +38,7 @@ export function loadTile(T, opts = {}) {
   const paint = opts.paint || "v2";
   const t0 = performance.now();
   const rd = buildRoadData({ roads, surf, markings: paint === "v2" ? markings : null, hm, bounds, paint, trees: feats.trees, keep: true,
-    onBuilding: (x, z) => onRoof(roofs, x, z) });
+    onBuilding: (x, z) => onRoof(roofs, x, z), ...(opts.build || {}) });
   rd.totalMs = Math.round(performance.now() - t0);
   return { T, entry, bounds, roads, surf, markings, feats, hm, rd, paint };
 }

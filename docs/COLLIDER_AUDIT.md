@@ -1,6 +1,6 @@
 # Collider audit, offline (branch `claude/collisions`, 2026-11-17)
 
-Rule 24 (provisional) in docs/QUALITY_RULES.md. Earlier rounds: docs/collisions/README.md (round 1, browser
+Rule 25 (provisional) in docs/QUALITY_RULES.md. Earlier rounds: docs/collisions/README.md (round 1, browser
 collision test), docs/COLLISIONS.md (round 2, debug/drawnAudit.js).
 
 ## How collision works (short)

@@ -6,7 +6,7 @@
  *  points every SEG_STEP m along their axis and both faces of their 0.30 m stand-in, pillars by their base and their
  *  four corners + side middles, pedestrian gates by their base, hedges
  *  split round the blocked points. { doc, segs, pillars, gates, hedgePts }
- *  (claude/collisions 2026-11-17, rule 24; old = true / ?gardenlane=old: segments by their ends and middle, pillars by
+ *  (claude/collisions 2026-11-17, rule 25; old = true / ?gardenlane=old: segments by their ends and middle, pillars by
  *  their base only: a 6 m wall bending into the road between those three points, or a pillar whose centre sat just
  *  outside the 0.3 m margin with its corner inside, stayed, drawn and solid in the driven lane: 62 pieces city-wide (0 after),
  *  tools/audit/colliderAudit.mjs "lane garden ...") */

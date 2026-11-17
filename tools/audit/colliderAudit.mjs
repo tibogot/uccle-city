@@ -1,4 +1,4 @@
-// COLLIDER AUDIT, OFFLINE (claude/collisions 2026-11-17; QUALITY_RULES rule 24 provisional). Every tile is built by the
+// COLLIDER AUDIT, OFFLINE (claude/collisions 2026-11-17; QUALITY_RULES rule 25 provisional). Every tile is built by the
 // tile worker's own code in node (viewer/tileData.js buildTileData, the entry the city posts: tools/boot3/entries.json),
 // the main thread's collider additions that are pure data are added as the city adds them (viewer/drive/driveMode.js
 // tileDrive: lamps + bollards; the parked cars; the front-garden pieces as viewer/gardens/cityGardens.js keeps them), then:

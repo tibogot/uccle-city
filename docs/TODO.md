@@ -10,7 +10,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
-**Running:** curvedroads (sharp-bend road folds 4,203 -> 0 offline; browser turn; rule 24; worker bundle to rebuild in main at merge).
+**Running:** collisions (browser turn; rule 25), lycee (Lycée gate fence jitter + Cortenbosch one-way part; offline, then browser). Merged 2026-11-17: falconstutter, policerear, curvedroads (outer-corner texture rings left: docs/roads/BENDS.md).
 
 **Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
 
@@ -22,7 +22,10 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 
 **Owner playtest 2026-11-16 / notes 2026-11-17 (details in the sections below)**
 - [ ] Police car rear: lines shimmer while moving; rear looks crude in the chase view (8c, 8e). Chase camera re-check (8d).
-- [ ] Road widths too narrow in places; some curved roads broken at sharp bends.
+- [ ] Road widths too narrow in places; some curved roads broken at sharp bends. (Bends: claude/curvedroads, browser turn
+  done, docs/roads/BENDS.md: engine strips + sidewalks trimmed at their crossing, folded 4,203 + 5,519 -> 0, sidewalk slabs
+  across unmapped roads gone; rule 24. LEFT: the outer-side fan at R ~ 0 corners draws texture rings / a curled edge line
+  (D1 Pénélope, D4 Paola): a next job. Widths elsewhere: a different cause, open.)
 - [ ] Falcon controls feel hard: ASK THE OWNER what is hard. Police game: owner to replay car control round 3.
 - [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?).
 - [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing).
@@ -52,7 +55,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Traffic: trams don't stop for cars, no lane changes, no headlight beams, a few lanes hug kerbs.
 - [ ] Pedestrians: feet slide on turns, nobody sits, no children / dogs, walk graph from data.
 - [ ] Minimap: more names, neighbourhood names, route to a searched place, satellite toggle.
-- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile). claude/collisions 2026-11-17: offline collider audit (tools/audit/colliderAudit.mjs, rule 24 provisional, docs/COLLIDER_AUDIT.md): garden pieces in driven lanes 62 -> 0; browser turn + the open list (lane buildings / bollards / trees, walls at E10 / H6, building colliders vs drawn walls) left.
+- [ ] Collisions + physics audit (drive, walk, third person; scripted route per tile). claude/collisions 2026-11-17: offline collider audit (tools/audit/colliderAudit.mjs, rule 25 provisional, docs/COLLIDER_AUDIT.md): garden pieces in driven lanes 62 -> 0; browser turn + the open list (lane buildings / bollards / trees, walls at E10 / H6, building colliders vs drawn walls) left.
 
 **Ideas, later**
 - [ ] Autumn leaves (8j). Character + car shapes round. Police car round 2 (branch claude/police-car: beam, siren WAVs).

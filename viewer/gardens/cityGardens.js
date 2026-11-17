@@ -24,7 +24,7 @@ import { clearRoads, restyleHedges } from "./gardenClear.js";
 const qs = new URLSearchParams(location.search);
 const GARDEN_ROAD_OLD = qs.get("gardenroad") === "old";
 /** ?gardenlane=old: a garden piece cleared off the carriageway by its segment's ends + middle / its pillar's base only
- *  (gardenClear.js clearRoads; claude/collisions rule 24) */
+ *  (gardenClear.js clearRoads; claude/collisions rule 25) */
 const GARDEN_LANE_OLD = qs.get("gardenlane") === "old";
 /** ?hedgecol=old: the hedge modules' collision boxes in furniture-gardenwall (solid for the car, as a brick wall); now
  *  their own stand-in mesh furniture-gardenhedge: the car drives through a hedge, slowed (viewer/drive/carEnv.js, police
