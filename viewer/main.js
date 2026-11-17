@@ -54,6 +54,7 @@ import { UPSCALE, createUpscaler, cityQuality } from "./upscale.js";   // --- up
 import { buildTrees } from "./trees.js";
 import { buildTreeField } from "./treesSlop.js";
 import { buildStylizedTreeField, setTreeLighting, setTreeRenderer, treeBandSettle } from "./treesStylized.js";
+import { setMultiDrawViewCamera } from "./multiDraw.js";
 import { setCompileFlush, openBootPipelines, warmBoot, precompile, shareShadowNodes, warmNow, warmNowChunked, warmLater, warmShadows, compileJobsLeft } from "./warmup.js";
 import { buildPlazas, loadOverrides } from "./plazas.js";
 import { buildGrounds } from "./grounds.js";
@@ -1273,6 +1274,7 @@ async function main() {
   await cityGrass.start({ scene, renderer, updaters, world, lighting, log });   // ?grass=1 (default off): our grass, docs/GRASS.md
   cityBirds.start({ scene, renderer, updaters, world, lighting, log });   // ?birds=0: none. The sky flocks (GPU) + the perched pigeons' threats, docs/BIRDS.md
   const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 6000);
+  setMultiDrawViewCamera(camera);                       // the multi-draw sets sort only this camera's draws near to far (?mdsort=0: off)
   // Render pipeline: AO + reflections + bloom + grade (?fx=0: plain render, for slow machines). Set up before the first
   // tile (pipeReady, below) so the shaders can be built while the tile worker works; ?early=0: after it, as before
   const fx = params.get("fx") !== "0";

@@ -12,11 +12,18 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 uccle-tour/.tour/foundation), holes (docs/HOLES.md: no hollow buildings; tour: 5 views fixed, 17 unchanged), heap +
 heapfix (docs/HEAP.md: police heap 1.45 GB -> ~975 MB; no draw after dispose), orbitcam2 (game keys with no button, ?
 card), trafpark (docs/TRAFPARK.md: 0 parked cars under traffic, tile borders too), vivier (docs/VIVIER.md: the bridge,
-all 42 road-rail crossings resolved). Rules + gates: **docs/QUALITY_RULES.md** (17 rules; read before every merge).
-Queue: skyctl (browser turn), christmas (Blender GPU rebuild when no browser turn runs), then falcon stutter, loader
-stills, clean perf measure, agargaro (8k).
-Left: owner image 68 (Waterloo by Optalweg) not located; the `police` place in viewer/places.js puts the camera inside a
-house; ~30 % of traffic copy-to-neighbour lane links fail (cars 0.5-1 m off the lane, pre-existing); the two Vivier
+all 42 road-rail crossings resolved), skyctl (13 sky sliders, uniforms, ?skyctl=old), christmas (docs/CHRISTMAS.md:
+firs Saint-Job + Saint-Pierre, chalet market, garlands; on 1 Dec - 6 Jan, ?xmas=1/0; +0.00 ms), twinlink
+(docs/TWINLINK.md: tile-border car jumps 122-214 -> 0 per street, handover is an S lane change), police place fixed,
+gate works in worktrees, agargaro evaluated (docs/AGARGARO.md: adopt none, 2 multiDraw jobs). Rules + gates:
+**docs/QUALITY_RULES.md** (20 rules; read before every merge). Tour baseline = the twinlink run.
+Running: xmasfir (fir needle sprays, Blender), mdraw (AGARGARO jobs 1-2: near-first chunk order ?mdsort=0, 80 m
+chunks ?mdchunk=160). Queue: falcon stutter, loader stills, clean perf measure.
+**FLAGS: WHERE ELSE (owner 2026-11-17, later):** flags fly today at the town hall (EU / Belgium / Uccle) and the Lycée
+Français (Belgium / EU / France), via viewer/flagsCity.js flyFlags (any pole). Check with the owner where else real flags
+are: the owner will name places; my suggestions: police station, Observatory, other public buildings (Belgian flags on
+national days?). Look-check on Street View first.
+Left: owner image 68 (Waterloo by Optalweg) not located; the two Vivier
 d'Oie station footbridges (UrbIS 751 / 752); low wire clearance under Av. des Tilleuls / Hospices / Carsoel; Saint-Job
 deck sidewalks over the bank; heap leftovers (GLB held by the loader, meshopt wasm, landmark geometry holds).
 
@@ -457,7 +464,7 @@ Stairs paused until the owner's Mixamo clips are in `data/raw/animations/mixamo/
 - [ ] Uccle-Calevoet station building (`claude/nekkersgat` branch name, but the hero is the STATION; port 8832: http://localhost:8832/labs/calevoet-lab.html, city http://localhost:8832/viewer/index.html?calevoet=1&tile=D6&at=-1224,792&cam=-1225,831,2): matches photo c04 (5-bay main block, red-tile pavilion, slate roofs, canopy); checker 0; weak: car-park side estimated, no graffiti / signs / clock / catenary, temp materials, LOD2 not clean, flicker test not run.
 - [ ] Moulin du Nekkersgat: NOT modelled (only 1 usable free photo); real location UrbIS solids 518200 + 516481 at ~(-1838, 820) on the Geleytsbeek; OWNER PHOTOS needed (courtyard side, the NE range, the water wheel). Précieux-Sang church: only 1 free photo too.
 - [ ] Car impostors (`claude/impostors`, http://localhost:8824/labs/impostor-lab.html?scene=cars): 300 cars 0.20-0.25 ms, cars to 900 m, steadier than meshes; weak: no window glints, +9-18 % bright far, +27 MB.
-- [ ] Civilian police car (`claude/police-car`, port 8834: http://localhost:8834/labs/police-car-lab.html, ?scene=studio for close-ups; L lights, K siren, B beacon type): any car type, magnetic blue beacon (rotating mirror or LED), grille flashers, one real spot light, Belgian 495/440 Hz siren (WAVs in .claude/worktrees/police-car/docs/police-car/). Weak: the beam reads as a round blob sweeping across the view (should be a tall narrow fan + a subtle rotating glow on walls), light passes through walls (no shadow), city night very dark; LISTEN to the siren WAVs.
+- [ ] Civilian police car (`claude/police-car`, port 8834: http://localhost:8834/labs/police-car-lab.html, ?scene=studio for close-ups; L lights, K siren, B beacon type): any car type, magnetic blue beacon (rotating mirror or LED), grille flashers, one real spot light, Belgian 495/440 Hz siren (WAVs on branch claude/police-car in docs/police-car/; the worktree was removed 2026-11-17 to free disk: `git worktree add <dir> claude/police-car` to resume). Weak: the beam reads as a round blob sweeping across the view (should be a tall narrow fan + a subtle rotating glow on walls), light passes through walls (no shadow), city night very dark; LISTEN to the siren WAVs.
 - [ ] Falcon Flight Lab (`claude/falcon-flight`, port 8833: http://localhost:8833/labs/falcon-flight-lab.html, H for help): real lift / drag flight, stoop to 82+ m/s, 80 deg banks, forgiving stall, thermals + building updrafts, 150 pigeons that flee, catch + carry to the eyrie, landing on perches, keyboard / mouse / gamepad / touch; ~0.28 ms CPU. Weak: old low-poly falcon (new model = next step), ridge lift is approximate, catch generous, pigeons crude up close.
 - [ ] Night Lights Lab ROUND 2 (`claude/nightlights`, port 8829: http://localhost:8829/labs/night-lab.html, docs/NIGHT_LIGHTS.md): budget MET: 0.59-0.66 ms default, 0.72-0.85 ms with 134 real clustered lights (noisy, p10 / median), lighting ~460-500 sources: cluster culling planes (low-beam wedge, window pyramids), ground light map (all lamps / 287 windows incl. upper floors / shops / signs baked; far cars' pools in a dynamic layer), 12 nearest cars real, far glare cards, shop rooms by interior mapping; depth pre-pass measured: no gain. 0 pops (max weight jump 0.037 / frame), flicker 54-81 ppm (car / tram edges). Next: map bake in the tile worker per tile + into the city (replace lamps.js' 6 lights + lampLight.js), brighter lawn spill, glare streaks.
 - [ ] City mesh audit report (docs/CITY_MESH_AUDIT.md): facade details coplanar with walls = likely the building flicker.
