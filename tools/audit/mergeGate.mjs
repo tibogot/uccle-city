@@ -1,5 +1,5 @@
 // node tools/audit/mergeGate.mjs: every gate check before a merge, one table. Each check is a node script that exits
-// non-zero on failure. To add one: one line in CHECKS (name, script, args, what it guards). Keep it simple.
+// non-zero on failure. To add one: one line in CHECKS (name, script, args, what it guards; optional node: [node options]). Keep it simple.
 // Browser-side gates (need the viewer running) go in BROWSER: the merger runs them on a browser turn.
 // node tools/audit/mergeGate.mjs [name ...]   (only those)
 import { spawnSync } from "node:child_process";
@@ -30,7 +30,7 @@ let failed = 0;
 for (const c of CHECKS) {
   if (only.length && !only.includes(c.name)) continue;
   const t0 = Date.now();
-  const r = spawnSync(process.execPath, [path.join(ROOT, c.script), ...c.args], { cwd: ROOT, encoding: "utf8", timeout: 10 * 60 * 1000 });
+  const r = spawnSync(process.execPath, [...(c.node || []), path.join(ROOT, c.script), ...c.args], { cwd: ROOT, encoding: "utf8", timeout: 10 * 60 * 1000 });
   const ok = r.status === 0;
   if (!ok) failed++;
   const out = ((r.stdout || "") + (r.stderr || "")).trim().split("\n");
