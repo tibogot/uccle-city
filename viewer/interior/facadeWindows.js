@@ -67,7 +67,7 @@ export function faceOpenings(f) {
         if (!(f.partyH > 0 && 0 < f.partyH + 0.3)) out.push({ kind: "garage", bay: k, floor: 0, u0: uc - gh, u1: uc + gh, h0: 0, h1: GARAGE_H, frame: FRAME });
         continue;
       }
-      const half = door ? (type === 4 ? Math.min(1.0, bw * 0.4) : 0.55) : ww / 2;   // (styles) the blocks' wide glazed entrance
+      const half = door ? (type === 4 || type === 7 ? Math.min(1.0, bw * 0.4) : 0.55) : ww / 2;   // (styles) the blocks' (and the curtain walls') wide glazed entrance
       const h0 = door ? raise : y0 + ya * sh, h1 = door ? 0.72 * G + 0.5 * raise : winTop;
       // a party wall below the neighbour's top (+ 0.3 m) is blank: the opening shows only where it is above
       if (f.partyH > 0 && h0 < f.partyH + 0.3) continue;

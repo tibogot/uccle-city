@@ -27,6 +27,8 @@ import { hash22 } from "./materials/antitile.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (viewer/weather/, docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
+// (cortenbosch2) the herringbone pavers' angle to the street's axis (degrees; the lane, Street View); ?hbangle=90 to compare
+const HB_DEG = (() => { const v = typeof location !== "undefined" ? Number(new URLSearchParams(location.search).get("hbangle")) : NaN; return Number.isFinite(v) && v !== 0 ? v : 45; })();
 export { SURFACE, hashPhase, surfaceAttribute };
 
 // ---------------------------------------------------------------- shared TSL helpers
@@ -105,7 +107,7 @@ export function asphaltMaterial(atlas) {
     // --- gravel / compacted
     const grav = vec3(0.24, 0.21, 0.16).add(speck.mul(0.03)).add(grain.mul(0.02));
 
-    const k1 = band(surf, 1), k2 = band(surf, 2), k3 = band(surf, 3), k4 = band(surf, 4);
+    const k1 = band(surf, 1), k2 = band(surf, 2).add(band(surf, 5)), k3 = band(surf, 3), k4 = band(surf, 4);   // (5: herringbone, the procedural pavers here)
     base = asphalt;
     base = mix(base, settCol, k1);
     base = mix(base, pavCol, k2);
@@ -209,10 +211,18 @@ function texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) {
   const fS = fwidth(s).mul(0.7).add(0.004), fT = fwidth(t).mul(0.7).add(0.004);
   const patchOn = select(isSett.and(hash22(vec2(cell.add(5), pid.add(311))).x.lessThan(0.22)), float(1), float(0));
   const cover = boxCoverage(s.add(rag), ps, ps.add(pl), fS).mul(boxCoverage(t.add(rag), pt.sub(pw.mul(0.5)), pt.add(pw.mul(0.5)), fT)).mul(patchOn);
-  const layer = select(isSett, float(LAYER.setts), select(sr.equal(2), float(LAYER.pavers), float(LAYER.asphalt)));
+  // (cortenbosch2) aSurf 5: the pavers in herringbone (layer 4, when it is loaded), laid at HB_DEG to the street's axis;
+  // its sample frame turned by that angle and the normal turned back into the street's (t, s) frame
+  const hbOn = (pavingTextures()?.layers.length ?? 0) > LAYER.herringbone;
+  const isHB = hbOn ? sr.equal(5) : null;
+  const isPav = hbOn ? sr.equal(2).or(sr.equal(5)) : sr.equal(2).or(sr.equal(5));
+  const layer = select(isSett, float(LAYER.setts), select(isPav, hbOn ? select(isHB, float(LAYER.herringbone), float(LAYER.pavers)) : float(LAYER.pavers), float(LAYER.asphalt)));
   // metres per texture repeat: the setts scan is 10 rows per repeat (rows 14-18 cm per road, unhewn ~22 cm)
-  const size = select(layer.equal(LAYER.setts), select(unhewn, float(2.2), r1.mul(0.4).add(1.4)), select(layer.equal(LAYER.pavers), float(1.8), float(2.0)));
-  const S = pavingSample(t, s, layer, size);
+  const size = select(layer.equal(LAYER.setts), select(unhewn, float(2.2), r1.mul(0.4).add(1.4)), select(isPav, float(1.8), float(2.0)));
+  const hc0 = Math.cos((HB_DEG * Math.PI) / 180), hs0 = Math.sin((HB_DEG * Math.PI) / 180);
+  const hcs = hbOn ? select(isHB, float(hc0), float(1)) : float(1), hsn = hbOn ? select(isHB, float(hs0), float(0)) : float(0);
+  const S0 = pavingSample(t.mul(hcs).add(s.mul(hsn)), s.mul(hcs).sub(t.mul(hsn)), layer, size);
+  const S = { ...S0, n: vec2(S0.n.x.mul(hcs).sub(S0.n.y.mul(hsn)), S0.n.x.mul(hsn).add(S0.n.y.mul(hcs))) };
   // asphalt: metre-scale patchiness (old repairs), polished wheel paths, fresh trench patches darker
   const asph = S.col.mul(patch.mul(0.18).add(1)).mul(float(1).sub(wheel.mul(0.1)));
   // setts: regraded per road between blue-grey porphyry and brown-grey sandstone (Street View: Geleytsbeekstraat,
@@ -224,12 +234,13 @@ function texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) {
   const tar = vec3(0.058, 0.057, 0.056).mul(speck.mul(0.12).add(patch.mul(0.1)).add(1));
   sett = mix(sett, tar, cover);
   const grav = vec3(0.24, 0.21, 0.16).add(speck.mul(0.03));
-  let col = select(layer.equal(LAYER.setts), sett, select(layer.equal(LAYER.pavers), S.col.mul(0.95), asph));
+  // (cortenbosch2: the lane's herringbone pavers are pale, warm grey on Street View: x 1.3)
+  let col = select(layer.equal(LAYER.setts), sett, select(isPav, S.col.mul(hbOn ? select(isHB, float(1.3), float(0.95)) : float(0.95)), asph));
   col = select(sr.equal(4), grav, col);
   let rough = S.rough.mul(1.05).min(0.97);
   rough = select(layer.equal(LAYER.setts), rough.sub(wheel.mul(0.15)).add(float(1).sub(S.ao).mul(-0.1)), select(layer.equal(LAYER.asphalt), rough.sub(wheel.mul(0.1)), rough));
   rough = mix(select(sr.equal(4), float(0.85), rough), float(0.86), cover);
-  const nK = select(layer.equal(LAYER.setts), float(1.0), select(layer.equal(LAYER.pavers), float(0.8), float(0.55))).mul(select(sr.equal(4), float(0), float(1))).mul(float(1).sub(cover.mul(0.85)));
+  const nK = select(layer.equal(LAYER.setts), float(1.0), select(isPav, float(0.8), float(0.55))).mul(select(sr.equal(4), float(0), float(1))).mul(float(1).sub(cover.mul(0.85)));
   return { col, rough, n: S.n, ao: S.ao, nK };
 }
 
@@ -270,6 +281,38 @@ export function paintMaterial() {
   m.opacityNode = cov;
   m.roughnessNode = float(0.62);
   wxMat(m, { porosity: 0.1, slush: true, road: true, edge: float(0), map: true });   // the weather: paint goes under the snow / slush with the asphalt
+  return addLampLight(m);
+}
+
+/** (cortenbosch2) THE WORDS PAINTED ON THE STREET (viewer/streets/measuredPaint.js roadTextMesh; data/overrides.json
+ *  roadTexts): the rows drawn once in a canvas atlas (bold sans capitals filling the row: the decal stretches them along
+ *  the street, as road lettering is), the measured paint's colour and wear, mipmapped (no shimmer far away). */
+export function roadTextMaterial(rows) {
+  const W = 1024, H = 160;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H * rows.length;
+  const g = cv.getContext("2d");
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle";
+  rows.forEach((t, i) => {
+    let px = 150; g.font = `700 ${px}px Arial, Helvetica, sans-serif`;
+    const tw = g.measureText(t).width, sx = Math.min(1, (W * 0.94) / tw);
+    g.save(); g.translate(W / 2, H * i + H * 0.54); g.scale(sx, 1); g.fillText(t, 0, 0); g.restore();
+  });
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.NoColorSpace; tex.anisotropy = 8; tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, transparent: true, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  m.name = "road text";
+  const P = positionWorld, x = P.x, z = P.z;
+  const a = texture(tex, uv()).a;
+  const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
+  const streak = smoothstep(float(-0.55), float(0.1), n3(x.mul(0.6), z.mul(0.6), 11.0));
+  const wear = mix(float(0.5), float(1), streak).mul(mix(float(0.7), float(1), smoothstep(float(-0.8), float(-0.45), speck)));
+  m.colorNode = vec3(0.62, 0.62, 0.6);
+  m.opacityNode = a.mul(wear).mul(0.9);
+  m.roughnessNode = float(0.62);
+  wxMat(m, { porosity: 0.1, slush: true, road: true, edge: float(0), map: true });
   return addLampLight(m);
 }
 
