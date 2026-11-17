@@ -1,5 +1,6 @@
 // node tools/audit/mergeGate.mjs: every gate check before a merge, one table. Each check is a node script that exits
 // non-zero on failure. To add one: one line in CHECKS (name, script, args, what it guards). Keep it simple.
+// Browser-side gates (need the viewer running) go in BROWSER: the merger runs them on a browser turn.
 // node tools/audit/mergeGate.mjs [name ...]   (only those)
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -8,6 +9,11 @@ import path from "node:path";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const CHECKS = [
   { name: "carctl", script: "tools/carctlTest.mjs", args: [], guards: "car handling targets (radius, response, slip, kerb, hill, braking), camera jitter, trams / trains solid (docs/CARCTL.md)" },
+  { name: "motion", script: "tools/audit/motionAudit.mjs", args: [], guards: "motion vectors on every mover + upscale guarantees (claude/sharp)" },
+];
+const BROWSER = [
+  "debug/sharpCheck.js  motionCoverage(): every mesh that moved over 30 frames has a motion source (claude/sharp)",
+  "debug/sharpCheck.js  stability(): frame-to-frame luma noise + Laplacian sharpness while parked / driving (claude/sharp)",
 ];
 
 const only = process.argv.slice(2);
@@ -25,5 +31,6 @@ for (const c of CHECKS) {
 }
 console.log("| check | result | time | guards / failures |\n|---|---|---|---|");
 for (const r of rows) console.log("| " + r.join(" | ") + " |");
+console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}`);
 console.log(failed ? `\n${failed} gate check(s) FAILED` : "\nall gate checks pass");
 process.exitCode = failed ? 1 : 0;
