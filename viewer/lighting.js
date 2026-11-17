@@ -30,6 +30,10 @@ export const FIRMAMENT_EXPOSURE = 0.55;
 const BRUSSELS_LAT = 50.8;
 const qp = new URLSearchParams(location.search);
 const DAY = +(qp.get("day") ?? 200);                 // day of the year (200 = mid July: long golden evenings)
+// ?still=1 (docs/TOUR.md, the visual regression tour): the sky held still, so two runs of the same code give the same
+// picture: no cloud / cirrus drift or evolution (Firmament's windSpeed 0 from the first frame: the drift integrates the
+// boot's length otherwise, a different sky and different cloud shadows each run) and no volumetric fog drift.
+export const STILL = qp.get("still") === "1";
 // local SOLAR time (12 = the sun due south); ?hour= overrides the preset
 const FIRM_TIMES = {
   golden: { hours: 18.7, coverage: 0.42, cloudType: 0.5 },
@@ -44,7 +48,7 @@ const FIRM_TIMES = {
 // thins above, so it pools in the low streets and the hills stand out of it.
 // (tuned on screen 2026-11-04: top 72 m left Place Saint-Job, 70.8 m, at the very edge of the layer)
 const VFOG = { top: 82, falloff: 18, topBreakup: 9, density: 0.014, noiseFreq: 1 / 160, noiseAmount: 0.7, coverage: 0.7,
-  haze: 0.0006, maxDist: 1500, anisotropy: 0.6, windSpeed: 2 };
+  haze: 0.0006, maxDist: 1500, anisotropy: 0.6, windSpeed: STILL ? 0 : 2 };
 
 // ------------------------------------------------------------------ smooth shadows (docs/SMOOTH_LOD.md)
 // The sun's one shadow map follows the camera. Three things made shadows pop or crawl:
@@ -328,6 +332,7 @@ export class Lighting {
     this.scene.environmentIntensity = 1;
     this.sky.params.coverage = this.firm.coverage;
     this.sky.params.cloudType = this.firm.cloudType;
+    if (STILL) this.sky.params.windSpeed = 0;          // ?still=1: the clouds stand still (docs/TOUR.md)
     this.sky.update(0, { sunDir: this.firmSunDir() });
     this.syncFirmament();
   }
