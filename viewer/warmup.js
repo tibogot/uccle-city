@@ -167,7 +167,9 @@ export function setCompileFlush(o) { flushWith = o; }
 // its own parallel-pipeline window closed right after its draw (its pipelines keep compiling in the GPU process while the
 // next chunk's node builds run). The chunk size adapts: ~FLUSH_TASK_MS (1.5 s) of main thread per chunk from the ms per drawable
 // measured on the chunks before (first chunk 30 drawables, at most 80). The jobs resolve once every chunk's pipelines are ready.
-const FLUSH_SPLIT = typeof location !== "undefined" && !/[?&]flushsplit=old(&|$)/.test(location.search);
+// (coordinator 2026-11-17: OPT-IN, ?flushsplit=1: on a noisy machine it added 1.3-3 s of redraw to the flush and the falcon
+// start showed more > 50 ms frames with it; re-measure on GREEN before making it the default)
+const FLUSH_SPLIT = typeof location !== "undefined" && /[?&]flushsplit=1(&|$)/.test(location.search);
 const FLUSH_TASK_MS = Math.max(100, +(typeof location !== "undefined" ? new URLSearchParams(location.search).get("flushtask") ?? 1500 : 1500));
 const FLUSH_MAX = 80;
 const drawablesOf = (roots) => { let n = 0; for (const r of [].concat(roots)) r?.traverse((o) => { if (o.isMesh || o.isPoints || o.isLine || o.isSprite) n++; }); return n; };
