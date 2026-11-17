@@ -95,6 +95,26 @@ GPU depth read-back: not used. The pipeline's depth lives in the post chain's MR
 late) and a stall risk in WebGPU; the height fields give the same answer synchronously, and the landmark BVHs cover the
 non-2.5D shapes (spires, arches, bridge decks). Trees, cars, lamp posts are not picked (the ground under them is).
 
+## orbitcam2 (2026-11-17): keys without the right button, the controls card
+
+Owner after the first round: "confusing, how to move up, move down...". Approved changes (branch `claude/orbitcam2`,
+`?orbitcam2=old` = the first round's behaviour):
+
+- **WASD / arrows move, E / Q and PageUp / PageDown rise / sink, with no button held** (only in the orbit view: the
+  other modes have the camera disabled; never while typing in a field, a game menu or the full map is open). WASD moves
+  on the ground plane along the view's heading (looking down does not dive), the speed follows the height over the
+  ground (0.8 x height, 8-400 m/s; up / down 0.7 x that), Shift x3, damped (rate 7/s), the same collisions as every
+  motion (walls stop it, the ground lifts it). The keys are swallowed in the orbit view (the bike prompt's E no longer
+  sees them). Holding the right button still flies where you look (mouse look), as before.
+- **Height**: E / PageUp and Q / PageDown; the card also says that zooming out goes higher (and tilts to a view from above).
+- **The controls card** (`viewer/orbitHelp.js`, own UI in the dev panel's palette, light / dark): a "?" button in the
+  bottom-left corner (the dev panel takes the right side) and the ? key (in the orbit view; elsewhere ? is still the dev
+  panel's full key list). Shown once by itself on the first visit (localStorage `uccle.orbithelp.seen`, try/catch),
+  after the boot loader, never over the game menu / full map / play loader; Esc or × closes it; hidden in photo mode.
+- **Merge gate**: `tools/audit/mergeGate.mjs` runs `tools/orbitCamTest.mjs` (25 checks, 0.1 s), with keyboard checks:
+  no NaN (also at 10 fps), W on the ground plane, speed 8 m/s at 2 m vs 160 m/s at 200 m, Q never under the ground,
+  PageUp + Shift, a wall stops it, a slope, a release stops it.
+
 ## Memory / boot
 
 `viewer/heroBVH.js` builds each landmark's BVH once, in the character's collider worker; the third person takes the same

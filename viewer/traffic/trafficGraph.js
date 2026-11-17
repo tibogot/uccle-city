@@ -74,7 +74,7 @@ function crossing(A, cA, B, cB) {
  * gentle curves keep their measured centre line; true ends (dead ends, tile edges) stay put.
  */
 const KINK_DEG = 8, KINK_REACH = 3, KINK_ITER = 30, JOIN_TOL = 0.05;
-function roundKinks(paths) {
+function roundKinks(paths, keep = null) {
   const P = paths.length, base = new Int32Array(P + 1);
   for (let i = 0; i < P; i++) base[i + 1] = base[i] + paths[i].pts.length;
   const N = base[P];
@@ -132,6 +132,12 @@ function roundKinks(paths) {
       for (const m of ins[n]) { sx += X[m]; sz += Z[m]; c++; }
       for (const m of outs[n]) { sx += X[m]; sz += Z[m]; c++; }
       nX[n] = X[n] + 0.5 * (sx / c - X[n]); nZ[n] = Z[n] + 0.5 * (sz / c - Z[n]);
+      if (keep && !keep(X[n], Z[n], nX[n], nZ[n])) {       // (trafpark: never into a parked car: as far as it stays clear)
+        let f = 0.5;
+        while (f > 0.1 && !keep(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
+        if (f <= 0.1) f = 0;
+        nX[n] = X[n] + (nX[n] - X[n]) * f; nZ[n] = Z[n] + (nZ[n] - Z[n]) * f;
+      }
     }
     X = nX; Z = nZ;
   }
@@ -154,11 +160,53 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const fitStats = { points: 0, moved: 0, maxShift: 0 };
   // citydefects: the parked cars (viewer/streets/parkPlace.js widthParking, built in the worker too) are kept clear of:
   // each lane slides sideways to pass them by PARK_CLEAR where the measured carriageway lets it
-  const parked = opts.parked?.length ? parkedGrid(opts.parked) : null;
-  const fitted = grid ? fitToSurface(raw, grid, fitStats, parked) : raw;
+  const TP = !opts.old;                       // trafpark (?trafpark=old: opts.old)
+  const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
+  const raw2 = parked && TP ? densify(raw, 1.5) : raw;
+  const tF = performance.now();
+  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP) : raw2;
+  fitStats.fitMs = Math.round(performance.now() - tF);
+  if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
   if (grid) fitStats.rejoined = joinLaneGraph({ graph: { paths: fitted, byId: new Map(fitted.map((p) => [p.id, p])) } }).gapsBefore;
-  const src = roundKinks(fitted);
+  if (opts.trace) opts.trace.afterJoin = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
+  // (trafpark: the rounding pulled 70 of I6's 131 parked cars back under the lanes the fit had moved clear of them:
+  // a node does not move closer to a parked car than the fit's clearance)
+  const keepClear = parked && TP ? (x0, z0, x1, z1) => { const d1 = parked.dist(x1, z1); return d1 >= TP_HALF + TP_FIT * 0.5 || d1 >= parked.dist(x0, z0); } : null;
+  const tK = performance.now();
+  const src = roundKinks(fitted, keepClear);
+  fitStats.kinkMs = Math.round(performance.now() - tK);
+  if (opts.trace) { opts.trace.src = src; opts.trace.raw = raw2; }
+  // trafpark: the check along every driven path, junction connectors too: a parked car any path still touches goes
+  let parkedKept = opts.parked || null;
+  if (parked && TP) {
+    const tC = performance.now();
+    const drop = new Set();
+    for (const p of src) {
+      const q = p.pts;
+      let any = false;
+      for (let k = 1; k < q.length; k++) {
+        const a = q[k - 1], b = q[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.25));
+        if (!parked.anyNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, L / 2 + 5.5)) continue;     // (no car centre near this segment)
+        any = true;
+        for (let m = 0; m <= n; m++) { const t = m / n; parked.each(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, TP_HALF, (ci) => drop.add(ci)); }
+      }
+      // the BODY as the sim poses it (trafficSim.js pose: the axles on the path, the box along them): on a bend or a
+      // junction turn its corners leave the centre line's disc (a 10 m radius: ~0.2 m)
+      const c = p.cum || cumulative(q), len = c[c.length - 1];
+      if (any) for (let sd = 0; sd <= len; sd += 0.5) {
+        const F = pointAt(q, c, sd + TP_WB / 2), R = pointAt(q, c, sd - TP_WB / 2);
+        const hx = F[0] - R[0], hz = F[1] - R[1], hl = Math.hypot(hx, hz) || 1;
+        const body = { x: (F[0] + R[0]) / 2, z: (F[1] + R[1]) / 2, ax: hx / hl, az: hz / hl };
+        parked.each(body.x, body.z, 2.6, (ci) => { if (!drop.has(ci) && boxesOverlap(body, parked.sites[ci])) drop.add(ci); });
+      }
+    }
+    fitStats.parkDropped = drop.size + (opts.droppedBefore || 0);
+    fitStats.checkMs = Math.round(performance.now() - tC);
+    if (drop.size) parkedKept = opts.parked.filter((c, ci) => !drop.has(ci));
+    // the lanes were bent round cars that are now gone: built once more around the kept ones (then checked again)
+    if (drop.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop.size });
+  }
   const idx = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
   let nPts = 0;
@@ -322,7 +370,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   return {
     paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, nextOff, nextIdx, prevOff, prevIdx,
     holdAt, ctrl, phase, jnode, nodeOf, cfOff, cfOther, cfAt, cfOtherAt, cfYield,
-    jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })),
+    jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })), parkedKept,
     ...narrowStretches(src, P),
     bounds, stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) },
   };
@@ -432,24 +480,80 @@ function narrowStretches(src, P) {
 }
 
 const PARK_CLEAR = 1.95;          // m: lane centre to a parked car's centre (two half widths + 0.15)
-function parkedGrid(sites) {
+// trafpark (2026-11-17, owner: "the traffic cars can go through the parked cars"): the parked car as its plan box (the
+// widest / longest common type, 1.85 x 4.73 m: viewer/carFleet.js SIZES) and the traffic car as its half width: a lane
+// point is clear when its distance to the box is >= TP_HALF + TP_FIT; the built graph is then checked along every path
+// (lanes AND junction connectors, every 0.25 m) and a car any path still comes within TP_HALF of is not parked
+// (parkedKept). tools/audit/trafParkAudit.mjs measures the same; ?trafpark=old: the point test above, no check.
+export const TP_HALF = 0.98, TP_FIT = 0.15, RAMP = 0.2, TP_BOX_HW = 0.925, TP_BOX_HL = 2.365;
+export const TP_WB = 2.8, TP_BODY_HL = 2.37;   // a traffic car's wheelbase and half length (the longest common type)
+/** a traffic body (centre, unit axis ax/az, half length TP_BODY_HL, half width TP_HALF) vs a parked site's box: SAT */
+function boxesOverlap(b, c) {
+  const cx = Math.cos(c.yaw), cz = -Math.sin(c.yaw);
+  const A = [[b.ax, b.az, TP_BODY_HL], [-b.az, b.ax, TP_HALF]], B = [[cx, cz, TP_BOX_HL], [-cz, cx, TP_BOX_HW]];
+  const dx = c.x - b.x, dz = c.z - b.z;
+  for (const [ux, uz] of [...A, ...B]) {
+    let r = 0;
+    for (const [vx, vz, h] of A) r += h * Math.abs(vx * ux + vz * uz);
+    for (const [vx, vz, h] of B) r += h * Math.abs(vx * ux + vz * uz);
+    if (Math.abs(dx * ux + dz * uz) >= r) return false;
+  }
+  return true;
+}
+/** distance from (x, z) to a parked site's box (negative inside) */
+export function parkedBoxDist(c, x, z) {
+  const ax = Math.cos(c.yaw), az = -Math.sin(c.yaw), dx = x - c.x, dz = z - c.z;
+  const u = Math.abs(dx * ax + dz * az) - TP_BOX_HL, v = Math.abs(dx * az - dz * ax) - TP_BOX_HW;
+  return Math.hypot(Math.max(u, 0), Math.max(v, 0)) + Math.min(Math.max(u, v), 0);
+}
+function parkedGrid(sites, boxed = false) {
   const g = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
-  for (const c of sites) { const k = key(Math.floor(c.x / 4), Math.floor(c.z / 4)); if (!g.has(k)) g.set(k, []); g.get(k).push(c); }
+  sites.forEach((c, ci) => { const k = key(Math.floor(c.x / 4), Math.floor(c.z / 4)); if (!g.has(k)) g.set(k, []); g.get(k).push(ci); });
+  const near = (x, z, f) => {
+    const i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) if (f(sites[ci], ci)) return true;
+    return false;
+  };
   return {
+    sites,
+    /** any car centre within r of (x, z)? */
+    anyNear(x, z, r) {
+      const n = Math.ceil(r / 4), i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) { const c = sites[ci]; if ((c.x - x) ** 2 + (c.z - z) ** 2 < r * r) return true; }
+      return false;
+    },
+    /** the nearest box distance (<= 4 m reach) */
+    dist(x, z) { let b = Infinity; near(x, z, (c) => { const d = parkedBoxDist(c, x, z); if (d < b) b = d; return false; }); return b; },
+    /** every car whose box comes within r of (x, z): f(ci) */
+    each(x, z, r, f) { near(x, z, (c, ci) => { if (parkedBoxDist(c, x, z) < r) f(ci); return false; }); },
     clear(x, z) {
-      const i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
-      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of g.get(key(i0 + di, j0 + dj)) || []) {
+      if (boxed) return this.dist(x, z) >= TP_HALF + TP_FIT;
+      return !near(x, z, (c) => {
         // the car is a 4.5 x 1.8 box: along its length the clearance reaches 2.2 m further
         const dx = x - c.x, dz = z - c.z, ax = Math.cos(c.yaw), az = -Math.sin(c.yaw);
         const along = Math.abs(dx * ax + dz * az), across = Math.abs(dx * az - dz * ax);
-        if (along < 2.3 + 0.9 && across < PARK_CLEAR) return false;
-      }
-      return true;
+        return along < 2.3 + 0.9 && across < PARK_CLEAR;
+      });
     },
   };
 }
+/** lane pieces densified to <= `step` m (the clearance is tested at the points: a long straight between two points
+ *  passed a car unseen) */
+function densify(paths, step) {
+  return paths.map((p) => {
+    if (p.kind === "connector") return p;
+    const q = p.pts, out = [q[0]];
+    for (let k = 1; k < q.length; k++) {
+      const a = q[k - 1], b = q[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / step);
+      for (let m = 1; m < n; m++) { const t = m / n; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, ...a.slice(2)]); }
+      out.push(b);
+    }
+    if (out.length === q.length) return p;
+    return { ...p, pts: out, cum: cumulative(out) };
+  });
+}
 
-function fitToSurface(paths, G, st, parked = null) {
+function fitToSurface(paths, G, st, parked = null, trace = null, TP = false) {
   const ok = (x, z) => {
     const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step);
     if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true;          // off the raster: leave it
@@ -470,28 +574,73 @@ function fitToSurface(paths, G, st, parked = null) {
   for (const p of paths) {
     if (p.kind === "connector") continue;
     const q = p.pts, n = q.length, off = new Float32Array(n);
+    const how = trace || (TP && parked) ? new Uint8Array(n) : null;          // (audit: 0 no shift, 1 shifted clear of cars, 2 road-only fit, 3 none)
+    if (trace) (trace.fit ??= new Map()).set(p.id, how);
     for (let k = 0; k < n; k++) {
       const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
       st.points++;
       let done = false;
       for (const f of parked ? [fitsPark, fitsRoad] : [fitsRoad]) {
         fits = f;
-        if (fits(x, z, nx, nz, 0)) { done = true; break; }
+        if (fits(x, z, nx, nz, 0)) { done = true; if (how) how[k] = f === fitsRoad && parked ? 2 : 0; break; }
         for (let s = 0.25; s <= (f === fitsPark ? 4 : 9) && !done; s += 0.25) {
           if (fits(x, z, nx, nz, s)) { off[k] = s; done = true; }
           else if (fits(x, z, nx, nz, -s)) { off[k] = -s; done = true; }
         }
+        if (how) how[k] = done ? (f === fitsPark ? 1 : 2) : 3;
         if (done) break;
         if (f === fitsPark) st.parkBlocked = (st.parkBlocked || 0) + 1;
       }
     }
     // smooth: a wide moving average (points are ~1-2 m apart), so a lane bends gently around a misfit
-    const sm = new Float32Array(n);
-    for (let k = 0; k < n; k++) { let a = 0, w = 0; for (let m = Math.max(0, k - 6); m <= Math.min(n - 1, k + 6); m++) { const ww = 7 - Math.abs(m - k); a += off[m] * ww; w += ww; } sm[k] = a / w; }
-    // never less than the point itself needs (the average pulled lane ends back onto the sidewalk), then a light pass
-    for (let k = 0; k < n; k++) if (Math.abs(off[k]) > Math.abs(sm[k])) sm[k] = off[k];
-    const sm2 = Float32Array.from(sm);
-    for (let k = 1; k < n - 1; k++) sm[k] = (sm2[k - 1] + 2 * sm2[k] + sm2[k + 1]) / 4;
+    const smooth = (hard) => {
+      const sm = new Float32Array(n);
+      for (let k = 0; k < n; k++) { let a = 0, w = 0; for (let m = Math.max(0, k - 6); m <= Math.min(n - 1, k + 6); m++) { const ww = 7 - Math.abs(m - k); a += off[m] * ww; w += ww; } sm[k] = a / w; }
+      // never less than the point itself needs (the average pulled lane ends back onto the sidewalk), then a light pass
+      if (TP && parked) {
+        // (trafpark: as a ramp of at most RAMP m sideways per m along, not a step: the step left 20-30 deg kinks the
+        // kink rounding then smoothed back into the parked cars)
+        const c = p.cum || cumulative(q), pos = new Float32Array(n), neg = new Float32Array(n);
+        for (let m = 0; m < n; m++) {
+          const v = off[m]; if (Math.abs(v) <= Math.abs(sm[m])) continue;
+          if (how[m] !== 1 || !fitsRoad(q[m][0], q[m][1], -tangent(q, m)[1], tangent(q, m)[0], 0)) { sm[m] = v; continue; }   // (a road-fit need: as before)
+          for (let k = m; k < n && Math.abs(v) - RAMP * (c[k] - c[m]) > 0; k++) { const e = Math.abs(v) - RAMP * (c[k] - c[m]); if (v > 0) pos[k] = Math.max(pos[k], e); else neg[k] = Math.max(neg[k], e); }
+          for (let k = m - 1; k >= 0 && Math.abs(v) - RAMP * (c[m] - c[k]) > 0; k--) { const e = Math.abs(v) - RAMP * (c[m] - c[k]); if (v > 0) pos[k] = Math.max(pos[k], e); else neg[k] = Math.max(neg[k], e); }
+        }
+        for (let k = 0; k < n; k++) {
+          const e = pos[k] >= neg[k] ? pos[k] : -neg[k];
+          if (Math.abs(e) > Math.abs(sm[k])) sm[k] = e;
+        }
+      } else for (let k = 0; k < n; k++) if (Math.abs(off[k]) > Math.abs(sm[k])) sm[k] = off[k];
+      const sm2 = Float32Array.from(sm);
+      for (let k = 1; k < n - 1; k++) sm[k] = (sm2[k - 1] + 2 * sm2[k] + sm2[k + 1]) / 4;
+      if (hard) for (let k = 0; k < n; k++) if (hard[k]) sm[k] = off[k];
+      return sm;
+    };
+    let sm = smooth(null);
+    // trafpark: the smoothing (the average, then the light pass) pulled lanes back toward the cars they had been moved
+    // clear of: the smoothed line is checked against the cars, a point that touches one takes the nearest clear offset
+    // as a hard constraint, smoothed again (at most 6 rounds)
+    if (parked && TP) {
+      const hard = new Uint8Array(n);
+      for (let it = 0; it < 6; it++) {
+        let bad = 0;
+        for (let k = 0; k < n; k++) {
+          const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
+          if (parked.dist(x + nx * sm[k], z + nz * sm[k]) >= TP_HALF + TP_FIT * 0.5) continue;
+          // the clear offset nearest the smoothed one (the road fit as well), within 4 m of the original line
+          let best = null;
+          for (let s = 0; s <= 4 && best == null; s += 0.25) for (const v of s ? [sm[k] + s, sm[k] - s] : [sm[k]]) {
+            if (Math.abs(v) <= 4 && fitsPark(x, z, nx, nz, v)) { best = v; break; }
+          }
+          if (best == null || (hard[k] && best === off[k])) continue;
+          off[k] = best; hard[k] = 1; bad++;
+        }
+        if (!bad) break;
+        st.tpRounds = (st.tpRounds || 0) + 1;
+        sm = smooth(hard);
+      }
+    }
     const pts = q.map((pt, k) => {
       const [tx, tz] = tangent(q, k);
       if (Math.abs(sm[k]) > 0.05) st.moved++;

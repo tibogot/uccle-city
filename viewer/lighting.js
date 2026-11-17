@@ -1,14 +1,15 @@
 // Sky, image-based lighting, sun with cascaded shadows, aerial fog and time-of-day presets.
 //
-// Adapted from mrdoob/slop-newyork js/lighting.js (MIT, © 2026 Mr.doob): the Preetham SkyMesh with
+// Adapted from mrdoob/slop-newyork js/lighting.js (MIT, Â© 2026 Mr.doob): the Preetham SkyMesh with
 // clouds baked into a PMREM environment map, the two-cascade SunLight, the canyon-bounce hemisphere
 // light and the sky-matched aerial-perspective fog. Changes for Uccle: sun directions in our axes
 // (+x east, +z south), heights are absolute metres TAW (40-130 m) so the haze layer starts at the
-// valley floor, and the shared uniforms (`env`) feed our own façade and road materials.
+// valley floor, and the shared uniforms (`env`) feed our own faÃ§ade and road materials.
 import * as THREE from "three/webgpu";
 import { shadow, Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select, smoothstep, textureLoad, screenCoordinate, ivec2, int } from "three/tsl";
 import { ShadowNode } from "three/webgpu";
-import { damp } from "./lodFade.js";
+import { damp, ditherNoise } from "./lodFade.js";
+import { texture, reference, vec2, add, vogelDiskSample, renderGroup } from "three/tsl";
 import { SkyMesh } from "three/addons/objects/SkyMesh.js";
 import { SunLight } from "three/addons/lights/SunLight.js";
 import { SunLightNode } from "three/addons/lights/SunLightNode.js";
@@ -39,6 +40,10 @@ export const SKY_URL = [
   ["stars", "nightStars"], ["starsize", "nightStarSize"], ["cloudbright", "cloudAlbedo"], ["cloudshade", "cloudAmbient"], ["clouddark", "baseShadow"],
 ];
 const skyUrlParams = () => Object.fromEntries(SKY_URL.filter(([k]) => qp.get(k) != null && isFinite(+qp.get(k))).map(([k, p]) => [p, +qp.get(k)]));
+// ?still=1 (docs/TOUR.md, the visual regression tour): the sky held still, so two runs of the same code give the same
+// picture: no cloud / cirrus drift or evolution (Firmament's windSpeed 0 from the first frame: the drift integrates the
+// boot's length otherwise, a different sky and different cloud shadows each run) and no volumetric fog drift.
+export const STILL = qp.get("still") === "1";
 // local SOLAR time (12 = the sun due south); ?hour= overrides the preset
 const FIRM_TIMES = {
   golden: { hours: 18.7, coverage: 0.42, cloudType: 0.5 },
@@ -53,7 +58,7 @@ const FIRM_TIMES = {
 // thins above, so it pools in the low streets and the hills stand out of it.
 // (tuned on screen 2026-11-04: top 72 m left Place Saint-Job, 70.8 m, at the very edge of the layer)
 const VFOG = { top: 82, falloff: 18, topBreakup: 9, density: 0.014, noiseFreq: 1 / 160, noiseAmount: 0.7, coverage: 0.7,
-  haze: 0.0006, maxDist: 1500, anisotropy: 0.6, windSpeed: 2 };
+  haze: 0.0006, maxDist: 1500, anisotropy: 0.6, windSpeed: STILL ? 0 : 2 };
 
 // ------------------------------------------------------------------ smooth shadows (docs/SMOOTH_LOD.md)
 // The sun's one shadow map follows the camera. Three things made shadows pop or crawl:
@@ -175,6 +180,19 @@ class CachedSunShadowNode extends FadedShadowNode {
     sunCache.stats.frames++;
   }
 }
+// (claude/sharp, ?shadownoise=old = three's) THE PCF'S ROTATION PER FRAME: three r187's PCF rotates its 5 Vogel taps by
+// interleaved gradient noise of the SCREEN pixel, the same every frame: under the TAAU the penumbra's noise is locked to
+// the screen and the shadows slide under it while driving (edges crawl / "swim"). Same filter, the noise phase moving
+// each frame (lodFade.js ditherNoise: ditherFrame steps under the TAAU, (0, 0) native = three's exact pattern): the
+// history averages the rotations into a smooth, still penumbra.
+const SHADOWNOISE_OLD = QS.get("shadownoise") === "old";
+const temporalPCF = Fn(({ depthTexture, shadowCoord, shadow: sh }) => {
+  const mapSize = reference("mapSize", "vec2", sh).setGroup(renderGroup), radius = reference("radius", "float", sh).setGroup(renderGroup);
+  const rs = radius.mul(vec2(1).div(mapSize));
+  const phi = ditherNoise().mul(6.28318530718);
+  const cmp = (k) => texture(depthTexture, shadowCoord.xy.add(vogelDiskSample(k, 5, phi).mul(rs))).compare(shadowCoord.z);
+  return add(cmp(0), cmp(1), cmp(2), cmp(3), cmp(4)).mul(1 / 5);
+});
 /** (tuning in the browser: the shift's direction per axis, if the cached shadows slide the wrong way) */
 export const SHIFT_SIGN = { x: 1, y: -1 };
 
@@ -201,7 +219,7 @@ export const PRESETS = {
     turbidity: 4.0, rayleigh: 1.5, mie: 0.004, mieG: 0.8, clouds: 0.25, cloudDensity: 0.25, skyExposure: 0.022, night: 0.86 },
 };
 
-/** Uniforms shared with our materials (façades, roads). */
+/** Uniforms shared with our materials (faÃ§ades, roads). */
 export const env = {
   uSunColor: uniform(new THREE.Color(0xffc890)),
   uSunDir: uniform(new THREE.Vector3(0, 1, 0)),
@@ -265,6 +283,7 @@ export class Lighting {
       Object.assign(this.sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 1, far: 2000 });
       this.sun.shadow.bias = -0.0002;
       if (SMOOTH_SHADOWS) this.sun.shadow.shadowNode = SUN_CACHE ? new CachedSunShadowNode(this.sun, this.sun.shadow) : new FadedShadowNode(this.sun, this.sun.shadow);
+      if (!SHADOWNOISE_OLD) this.sun.shadow.filterNode = temporalPCF;   // (claude/sharp) the PCF rotation moves per frame
       scene.add(this.sun.target);
     }
     this.sun.castShadow = true;
@@ -340,6 +359,7 @@ export class Lighting {
     this.scene.environmentIntensity = 1;
     this.sky.params.coverage = this.firm.coverage;
     this.sky.params.cloudType = this.firm.cloudType;
+    if (STILL) this.sky.params.windSpeed = 0;          // ?still=1: the clouds stand still (docs/TOUR.md)
     this.sky.update(0, { sunDir: this.firmSunDir() });
     this.skyX.afterUpdate();
     this.syncFirmament();

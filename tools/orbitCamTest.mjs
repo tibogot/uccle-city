@@ -118,5 +118,39 @@ const ev = (o) => ({ pointerId: 1, pointerType: "mouse", button: 0, preventDefau
   c._up(ev({ button: 2 }));
   check("fly: released with the button", !c._fly && c._keys.size === 0, "");
 }
+// 6. orbitcam2: WASD / QE without the right button (keys fed to the held set as the keydown handler does)
+{
+  const run = (pos, look, keys, frames = 120, dtf = 1 / 60) => {
+    const { c } = rig(pos, look);
+    for (const k of keys) c._mkeys.add(k);
+    let nan = false, minAgl = Infinity, last = { ...c.pos }, sp = 0;
+    for (let i = 0; i < frames; i++) {
+      c.update(dtf);
+      if (![c.pos.x, c.pos.y, c.pos.z, c.yaw, c.pitch, c.target.x, c.target.y, c.target.z].every(Number.isFinite)) nan = true;
+      minAgl = Math.min(minAgl, c.pos.y - ground(c.pos.x, c.pos.z));
+      if (i === frames - 1) sp = Math.hypot(c.pos.x - last.x, c.pos.z - last.z) / dtf;
+      last = { ...c.pos };
+    }
+    c._mkeys.clear(); for (let i = 0; i < 90; i++) c.update(1 / 60);
+    return { c, nan, minAgl, sp };
+  };
+  const low = run([-300, 52, 300], [-300, 52, 200], ["KeyW"]), high = run([-300, 250, 300], [-300, 200, 200], ["KeyW"]);
+  check("keys: W moves forward on the ground plane, no NaN", !low.nan && !high.nan && low.c.pos.z < 300 - 5 && Math.abs(high.c.pos.y - 250) < 0.01,
+    `low z ${f(low.c.pos.z, 1)}, high y ${f(high.c.pos.y)} (looking down 26 deg, no dive)`);
+  check("keys: speed scales with the height", high.sp > low.sp * 4 && low.sp >= 7.9, `${f(low.sp, 1)} m/s at 2 m, ${f(high.sp, 1)} m/s at 200 m`);
+  const down = run([-300, 80, 300], [-300, 60, 200], ["KeyQ"], 600);
+  check("keys: Q / PageDown sinks, never under the ground", !down.nan && down.minAgl >= 1.19 && down.c.pos.y < 52, `lowest ${f(down.minAgl)} m over the ground, end y ${f(down.c.pos.y)}`);
+  const up = run([-300, 60, 300], [-300, 60, 200], ["PageUp", "ShiftLeft"], 120);
+  check("keys: PageUp + Shift rises fast", up.c.pos.y > 100, `y 60 -> ${f(up.c.pos.y, 1)} in 2 s`);
+  const wall = run([10, 53, -20], [10, 53, -100], ["KeyW"], 300);
+  check("keys: a street-level walk into the block stops at the wall", !wall.nan && wall.c.pos.z > -40 + 0.5, `z ${f(wall.c.pos.z)} (wall at -40)`);
+  const slope = run([150, 52, 0], [400, 60, 0], ["KeyW", "ShiftLeft"], 600);
+  check("keys: up the 5 % slope stays over the ground, no NaN", !slope.nan && slope.minAgl >= 1.19, `x ${f(slope.c.pos.x, 0)}, lowest ${f(slope.minAgl)} m`);
+  const stop = run([-300, 52, 300], [-300, 52, 200], ["KeyW"], 60);
+  const z0 = stop.c.pos.z; for (let i = 0; i < 60; i++) stop.c.update(1 / 60);
+  check("keys: released = stops (damped)", Math.abs(stop.c.pos.z - z0) < 0.01, `drift ${f(stop.c.pos.z - z0, 3)} m`);
+  const jitter = run([-300, 52, 300], [-300, 52, 200], ["KeyW"], 120, 0.1);
+  check("keys: a 10 fps frame rate, no NaN", !jitter.nan && jitter.minAgl >= 1.19, `z ${f(jitter.c.pos.z, 1)}`);
+}
 console.log(fails ? `${fails} FAILED` : "all passed");
 process.exitCode = fails ? 1 : 0;

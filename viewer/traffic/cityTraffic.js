@@ -9,6 +9,7 @@
 //              drive env's `dynamic` hook); the walker: a collider source on the character's collision world
 //   parking    the parked fleet's cars (viewer/carFleet.js) can pull out / be parked into
 import { createTraffic } from "./traffic.js";
+import { obbObb } from "../drive/obb.js";
 import { carFleet } from "../carFleet.js";
 import { cityTwoWheelers } from "../moto/cityTwoWheelers.js";
 
@@ -22,7 +23,10 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
   T.onDraw = (sim, types, alpha, cam) => cityTwoWheelers.traffic?.update(sim, types, alpha, cam);   // (motorbikes / scooters, docs/MOTO.md)
   const sim = T.sim;
   sim.setParking(function* () { for (const r of carFleet.regs) if (r.live) yield* r.cars; }, (name) => T.types.findIndex((t) => t.name === name));
-  sim.onPark = (c) => carFleet.touch(c);     // (the slot's colliders follow: off while the car drives, its new type's size when one parks in)
+  sim.onPark = (c) => carFleet.touch(c);
+  // trafpark: the parked cars' sizes, and the ones that move (the player's shove: carFleet.touch) become obstacles at once
+  sim.pk.size = (t) => carFleet.sizeOf(t);
+  carFleet.onChange((c) => { if (c && !c.hidden && c._tp0 && (Math.abs(c.x - c._tp0[0]) + Math.abs(c.z - c._tp0[1]) > 0.03 || Math.abs(c.heading - c._tp0[2]) > 0.01)) sim.noteParked(c); });     // (the slot's colliders follow: off while the car drives, its new type's size when one parks in)
   if (/[?&]trafficdebug=1/.test(location.search)) import("./trafficDebug.js").then(({ TrafficDebug }) => { T.debug = new TrafficDebug(scene, ground, sim.cap); });
 
   // ---- trams: body points + look-ahead, refreshed at 5 Hz (tramline's positions() / trackAt() allocate a little)
@@ -134,20 +138,4 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
 
 /** Separating axes for two oriented boxes in xz (heading: forward = (sin h, cos h); hx across, hz along). On overlap,
  *  out = the push of box A out of box B (unit normal + depth). */
-const A = new Float64Array(4), B = new Float64Array(4);
-function obbObb(ax, az, ah, ahx, ahz, bx, bz, bh, bhx, bhz, out) {
-  A[0] = Math.cos(ah); A[1] = -Math.sin(ah); A[2] = -A[1]; A[3] = A[0];   // A's across axis, along axis
-  B[0] = Math.cos(bh); B[1] = -Math.sin(bh); B[2] = -B[1]; B[3] = B[0];
-  const dx = ax - bx, dz = az - bz;
-  let best = Infinity, nx = 0, nz = 0;
-  for (let k = 0; k < 4; k++) {
-    const L = k < 2 ? A : B, i = (k % 2) * 2, ux = L[i], uz = L[i + 1];
-    const ra = ahx * Math.abs(A[0] * ux + A[1] * uz) + ahz * Math.abs(A[2] * ux + A[3] * uz);
-    const rb = bhx * Math.abs(B[0] * ux + B[1] * uz) + bhz * Math.abs(B[2] * ux + B[3] * uz);
-    const dist = dx * ux + dz * uz, ov = ra + rb - Math.abs(dist);
-    if (ov <= 0) return false;
-    if (ov < best) { best = ov; const s = dist >= 0 ? 1 : -1; nx = ux * s; nz = uz * s; }
-  }
-  out.nx = nx; out.nz = nz; out.depth = best + 1e-4;
-  return true;
-}
+// (obbObb: viewer/drive/obb.js since the car control round: the rail movers use it too)

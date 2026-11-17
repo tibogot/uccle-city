@@ -26,10 +26,17 @@ const IDM = { a: 1.5, b: 2.2, T: 1.25, s0: 2.2 };
 const HOLD = { none: 0, signal: 1, stop: 2, yield: 3, busy: 4, full: 5, park: 6 };
 /** ?bikeroom=old: the traffic makes no room for the filtering motorbike (before collisions round 2) */
 const ROOM_OLD = typeof location !== "undefined" && /[?&]bikeroom=old(&|$)/.test(location.search);
+// trafpark (2026-11-17, owner: "the traffic cars can go through the parked cars"): ?trafpark=old = the traffic blind to
+// the parked cars at run time (the lanes are built clear of them, viewer/traffic/trafficGraph.js; this guard covers the
+// ones that moved: shoved by the player, a game's prop) and the pull-over / yield shifts not clamped by them
+const TP_OLD = typeof location !== "undefined" && /[?&]trafpark=old(&|$)/.test(location.search);
+const TP_TOUCH = 0.05;
+const TP_BLOCK = 0.96;          // m: a parked box this close to a lane's line blocks it (the widest traffic type: 0.975 half width; built lanes keep 0.98)          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
+const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
 const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4 };
 const ROUTE = 4;                 // planned paths ahead
 const MAN = 16;                  // maneuver polyline points
-const OBS_MAX = 160, OBS_ENTRIES = 1024;
+const OBS_MAX = 512, OBS_ENTRIES = 8192;          // (trafpark: parked-car obstacles, ~10 entries each over the tiles' copies)
 const CAR_HALF_W = 0.95;          // m: a traffic car's half width (the box obstacles' lane test)
 // density (cars per km of lane at the busiest hour) per road class rank (0 alley .. 4 boulevard)
 export const DENSITY = [1.5, 10, 18, 24, 26, 26];
@@ -76,7 +83,8 @@ export class TrafficSim {
     this.obs = { n: 0, x: new Float32Array(OBS_MAX), z: new Float32Array(OBS_MAX), r: new Float32Array(OBS_MAX), vx: new Float32Array(OBS_MAX),
       vz: new Float32Array(OBS_MAX), cross: new Uint8Array(OBS_MAX),
       // an oriented box obstacle (the motorbike): heading, half width across, half length along; bx < 0 = a circle
-      bh: new Float32Array(OBS_MAX), bx: new Float32Array(OBS_MAX), bz: new Float32Array(OBS_MAX) };
+      bh: new Float32Array(OBS_MAX), bx: new Float32Array(OBS_MAX), bz: new Float32Array(OBS_MAX),
+      park: new Uint8Array(OBS_MAX) };                // trafpark: 1 = a parked car (blocks only when it really stands into the lane)
     // the filtering motorbike (cityTraffic.js sets it each step): cars in a queue beside / ahead of it shift aside
     this.bike = { on: false, x: 0, z: 0, h: 0, v: 0 };
     // POLICE GAME: the emergency car (lights + siren on: the police game sets it each step): the traffic ahead pulls
@@ -86,7 +94,13 @@ export class TrafficSim {
     this.extraObs = [];                              // static obstacles a game adds ({ x, z, r }): an accident, cones
     this._fi = -1;                                   // (fillRoute's car, for the flee route choice)
     this.tmp4 = new Float64Array(4);
-    this.oe = { n: 0, d: new Float32Array(OBS_ENTRIES), r: new Float32Array(OBS_ENTRIES), v: new Float32Array(OBS_ENTRIES), nxt: new Int32Array(OBS_ENTRIES) };
+    this.oe = { n: 0, d: new Float32Array(OBS_ENTRIES), r: new Float32Array(OBS_ENTRIES), v: new Float32Array(OBS_ENTRIES), nxt: new Int32Array(OBS_ENTRIES),
+      need: new Float32Array(OBS_ENTRIES), k: new Int16Array(OBS_ENTRIES) };          // trafpark: the sideways shift (m, + left) that clears a parked car's entry (0: not a parked car)
+    // trafpark: the parked cars near the traffic (a grid rebuilt every 2 s) and the ones that moved off their slot
+    this.pk = { grid: new Map(), moved: new Set(), at: -1, size: null, car: [] };
+    this.pw = new Float32Array(this.cap); this.pwT = new Float32Array(this.cap);
+    this.pwWait = new Float32Array(this.cap);        // a refused pass is not asked again for 0.6 s (perf)
+    this.tpLA = new Float64Array(this.cap).fill(-1); // the shifted-body look-ahead's hit (m along its route, -1 none), every 4th step   // a car's pass shift round a parked car, its timer
     this.tmp = new Float64Array(4); this.tmp2 = new Float64Array(4); this.tmp3 = new Float64Array(4);
     this.t = 0; this.acc_ = 0; this.steps = 0;
     this.params = { density: 1, speed: 1, hour: 9, radius: 470, minSpawnDist: 45, parkRate: 1, signals: true, maxCars: cap,
@@ -175,6 +189,7 @@ export class TrafficSim {
     this.spin[i] = this.rand() * 6.28; this.steer[i] = 0; this.offX[i] = 0; this.offZ[i] = 0; this.age[i] = 0; this.seen[i] = 0;
     this.slot[i] = null; this.onPath[i] = -1; this.gen[i]++; this.handoff[i] = 0; this.keep[i] = 0;
     this.ctl[i] = 0; this.speedF[i] = 1; this.yr[i] = 0; this.overT[i] = 0;
+    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.tpLA[i] = -1; }
     this.pose(i); this.copyPrev(i);
     this.count++;
     return i;
@@ -277,7 +292,7 @@ export class TrafficSim {
     const O = this.obs;
     if (O.n >= OBS_MAX) return;
     const k = O.n++;
-    O.x[k] = x; O.z[k] = z; O.r[k] = r; O.vx[k] = vx; O.vz[k] = vz; O.cross[k] = crossOnly; O.bx[k] = -1;
+    O.x[k] = x; O.z[k] = z; O.r[k] = r; O.vx[k] = vx; O.vz[k] = vz; O.cross[k] = crossOnly; O.bx[k] = -1; O.park[k] = 0;
   }
   /** an oriented box obstacle (collisions round 2: the motorbike, 0.8 x 2.1 m, was two 0.55 m circles): heading h
    *  (forward = (sin h, cos h)), half width hx, half length hz. A lane is blocked by it when the box, measured across
@@ -288,7 +303,8 @@ export class TrafficSim {
     if (O.n >= OBS_MAX) return;
     const k = O.n++;
     O.x[k] = x; O.z[k] = z; O.r[k] = Math.hypot(hx, hz); O.vx[k] = vx; O.vz[k] = vz; O.cross[k] = 0;
-    O.bh[k] = h; O.bx[k] = hx; O.bz[k] = hz;
+    O.bh[k] = h; O.bx[k] = hx; O.bz[k] = hz; O.park[k] = 0;
+    return k;
   }
   addObsEntry(gid, along, lat, tx, tz) {
     const O = this.obs, k = this._projCtx.k, E = this.oe;
@@ -296,32 +312,244 @@ export class TrafficSim {
     if (O.bx[k] >= 0) {
       const c = Math.abs(tx * Math.sin(O.bh[k]) + tz * Math.cos(O.bh[k])), s = Math.sqrt(Math.max(0, 1 - c * c));
       const extLat = O.bz[k] * s + O.bx[k] * c;
-      if (lat - extLat > CAR_HALF_W + 0.3 || E.n >= OBS_ENTRIES) return;
+      const turnM = O.park[k] && this.W.slots[gid >>> 16]?.kind[gid & 0xffff] ? 0.3 : 0;   // (a junction turn: the body sweeps wider)
+      if (lat - extLat > (O.park[k] ? TP_BLOCK + turnM : CAR_HALF_W + 0.3) || E.n >= OBS_ENTRIES) return;
       r = O.bz[k] * c + O.bx[k] * s;
+      if (O.park[k]) {
+        // which side of the lane it stands: the shift away from it that clears it by 0.1 m
+        const T = this.tmp4;
+        this.W.point(gid, along, T);
+        const side = (O.x[k] - T[0]) * tz - (O.z[k] - T[1]) * tx;          // + = left of the lane
+        const into = TP_BLOCK + turnM + 0.12 - (lat - extLat);
+        this._need = side > 0 ? -into : into;
+      }
     } else if (lat > O.r[k] + 1.15 || E.n >= OBS_ENTRIES) return;
     // tram look-ahead points: only lanes that CROSS the track (not the tram's own lane, cars in front would stop)
     const vl = Math.hypot(O.vx[k], O.vz[k]);
     if (O.cross[k] && vl > 0.1 && Math.abs((O.vx[k] * tx + O.vz[k] * tz) / vl) > 0.85) return;
+    if (this._rec) { this._rec.push(gid, along, r, O.park[k] ? this._need || 1e-3 : 0); return; }   // (a parked car's entries, cached)
     const g = this.W.slots[gid >>> 16], pi = gid & 0xffff;
     const e = E.n++;
     E.d[e] = along; E.r[e] = r; E.v[e] = O.vx[k] * tx + O.vz[k] * tz; E.nxt[e] = g.ohead[pi]; g.ohead[pi] = e;
+    E.need[e] = O.park[k] ? this._need || 1e-3 : 0; E.k[e] = k;
   }
   projectObstacles() {
     this.oe.n = 0;
     const O = this.obs;
-    for (let k = 0; k < O.n; k++) { this._projCtx.k = k; this.W.project(O.x[k], O.z[k], O.r[k] + 1.15, this._proj); }
+    for (let k = 0; k < O.n; k++) {
+      this._projCtx.k = k;
+      if (!O.park[k]) { this.W.project(O.x[k], O.z[k], O.r[k] + 1.15, this._proj); continue; }
+      // (trafpark: a parked car stands still: its entries are projected once per pose / set of graphs, then copied)
+      const c = this.pk.car[k];
+      let C = c._tpE;
+      if (!C || C.x !== c.x || C.z !== c.z || C.h !== c.heading || C.ver !== this.W.version) {
+        this._rec = [];
+        this.W.project(O.x[k], O.z[k], O.r[k] + 1.15, this._proj);
+        C = c._tpE = { x: c.x, z: c.z, h: c.heading, ver: this.W.version, list: this._rec };
+        this._rec = null;
+      }
+      const E = this.oe, L = C.list;
+      for (let q = 0; q < L.length && E.n < OBS_ENTRIES; q += 4) {
+        const g = this.W.slots[L[q] >>> 16];
+        if (!g) continue;
+        const pi = L[q] & 0xffff, e = E.n++;
+        E.d[e] = L[q + 1]; E.r[e] = L[q + 2]; E.v[e] = 0; E.nxt[e] = g.ohead[pi]; g.ohead[pi] = e; E.need[e] = L[q + 3]; E.k[e] = k;
+      }
+    }
   }
   /** Nearest obstacle on path gid ahead of position `from`: gap from `from` to its near edge, into out[0] (gap), out[1] (v). */
   obsAhead(gid, from, out) {
     const g = this.W.slots[gid >>> 16], E = this.oe;
-    let e = g.ohead[gid & 0xffff], best = Infinity, bv = 0;
+    let e = g.ohead[gid & 0xffff], best = Infinity, bv = 0, be = -1;
+    const car = this._oaCar ?? -1;
     while (e >= 0) {
       const edge = E.d[e] - E.r[e];
-      if (E.d[e] + E.r[e] > from && edge - from < best) { best = Math.max(0, edge - from); bv = Math.max(0, E.v[e]); }
+      // (trafpark: a parked car this car is already passing, eased out beside it, is not in its way)
+      if (E.d[e] + E.r[e] > from && edge - from < best && !(car >= 0 && E.need[e] && this.passingEntry(car, g.ohead[gid & 0xffff], e, from))) { best = Math.max(0, edge - from); bv = Math.max(0, E.v[e]); be = e; }
       e = E.nxt[e];
     }
-    out[0] = best; out[1] = bv;
+    out[0] = best; out[1] = bv; out[2] = be;
     return best;
+  }
+
+  // ------------------------------------------------------------------ trafpark: parked cars at run time
+  /** a parked car's plan size [w, l] (cityTraffic.js sets this.pk.size = carFleet.sizeOf) */
+  parkWL(c) { const S = this.pk.size?.(c.type); return S ? [S[0], S[2]] : [1.85, 4.73]; }
+  /** a parked car moved (carFleet onChange: shoved by the player, a game's prop): from now on an obstacle candidate */
+  noteParked(c) { if (!TP_OLD && c) this.pk.moved.add(c); }
+  /** the grid of the parked cars (every 40 steps) + their first-seen poses: a car off its pose is a moved one */
+  parkedGrid() {
+    const P = this.pk;
+    if (!this.parked || (P.at >= 0 && this.steps - P.at < 40)) return;
+    P.at = this.steps; P.grid.clear();
+    // (trafpark round 2: when the loaded lane graphs change, every parked car is checked against the tiles' CORE lanes:
+    // one a lane runs through (a neighbour tile's lane past the border, viewer/traffic/borderPark.js) is an obstacle)
+    const recheck = P.ver !== this.W.version;
+    P.ver = this.W.version;
+    for (const c of this.parked()) {
+      const lt = recheck && !c.hidden && !c._tpLane ? this.laneThrough(c) : 0;
+      if (lt) {
+        // under a tile's own lane, far from the player (> 250 m): it goes (as the border drop at load does; never seen
+        // leaving); near, or under a twinless copy: an obstacle
+        if (lt === 2 && (c.x - P.fx) ** 2 + (c.z - P.fz) ** 2 > 250 * 250 && !c.busy) { c.hidden = true; c.busy = true; c._tpLane = 1; this.onPark?.(c, true); this.stats.parkBorderHidden = (this.stats.parkBorderHidden || 0) + 1; }
+        else P.moved.add(c);
+      }
+      // (hidden ones too: a car that pulled out comes back into its slot between two rebuilds; the queries skip hidden)
+      if (!c._tp0) c._tp0 = [c.x, c.z, c.heading];
+      else if (Math.abs(c.x - c._tp0[0]) + Math.abs(c.z - c._tp0[1]) > 0.03 || Math.abs(c.heading - c._tp0[2]) > 0.01) P.moved.add(c);
+      const k = (Math.floor(c.x / 8) + 4096) * 8192 + Math.floor(c.z / 8) + 4096;
+      let l = P.grid.get(k); if (!l) P.grid.set(k, (l = [])); l.push(c);
+    }
+  }
+  rerouteTwins() {
+    const R = this.route;
+    for (let i = 0; i < this.cap; i++) {
+      if (!this.alive[i] || this.state[i] !== ST.drive) continue;
+      // on such a copy now: onto the twin at the same distance (the lateral difference blended out, as a handover)
+      const cp = this.path[i], cg = this.W.slots[cp >>> 16];
+      if (cg && !cg.core[cp & 0xffff] && cg.twin[cp & 0xffff] >= 0) {
+        const tw = cg.twin[cp & 0xffff], T = this.tmp, T2 = this.tmp2;
+        if (this.d[i] < this.plen(tw)) {
+          this.W.point(cp, this.d[i], T); this.W.point(tw, this.d[i], T2);
+          const ex = T[0] - T2[0], ez = T[1] - T2[1];
+          if (ex * ex + ez * ez < 16) {
+            this.offX[i] += ex; this.offZ[i] += ez; this.path[i] = tw; this.prev[i] = -1;
+            for (let k = 0; k < ROUTE; k++) R[i * ROUTE + k] = -1;
+            this.fillRoute(i); this.committed[i] = -1;
+            this.stats.rerouted = (this.stats.rerouted || 0) + 1;
+            continue;
+          }
+        }
+      }
+      // a planned path on a copy that now has a twin (or on a tile gone): from there on, planned again
+      const o = i * ROUTE;
+      for (let k = 0; k < ROUTE; k++) {
+        const q = R[o + k];
+        if (q < 0) break;
+        const g = this.W.slots[q >>> 16], j = q & 0xffff;
+        if (g && (g.core[j] || g.twin[j] < 0)) continue;
+        if (g) R[o + k++] = g.twin[j];
+        for (; k < ROUTE; k++) R[o + k] = -1;
+        this.fillRoute(i);
+        this.stats.rerouted = (this.stats.rerouted || 0) + 1;
+        break;
+      }
+    }
+  }
+  /** does a driven lane (core, or a buffer copy without a twin) of a loaded graph run within a traffic car's half width (- TP_TOUCH) of parked car c's box? */
+  laneThrough(c) {
+    const [w, l] = this.parkWL(c), hx = w / 2, hz = l / 2, h = c.heading;
+    let yes = 0;
+    this.W.project(c.x, c.z, Math.hypot(hx, hz) + 1.15, (gid, along, lat, tx, tz) => {
+      if (yes === 2) return;
+      const g = this.W.slots[gid >>> 16];
+      // (a tile's own lanes (2), or a buffer copy with no twin (1): the cars drive it as it is, now and then)
+      if (!g || (!g.core[gid & 0xffff] && g.twin?.[gid & 0xffff] >= 0)) return;
+      const lvl = g.core[gid & 0xffff] ? 2 : 1;
+      const cc = Math.abs(tx * Math.sin(h) + tz * Math.cos(h)), ss = Math.sqrt(Math.max(0, 1 - cc * cc));
+      // (a junction turn: the body's corners sweep ~0.3 m outside its centre line)
+      if (lat - (hz * ss + hx * cc) < TP_BLOCK + (g.kind[gid & 0xffff] ? 0.3 : 0)) yes = Math.max(yes, lvl);
+    });
+    return yes;
+  }
+  /** the moved parked cars as box obstacles (only they can stand in a lane: the lanes are built clear of the slots) */
+  addParkedObstacles(fx, fz) {
+    for (const c of this.pk.moved) {
+      if (c.hidden || (c.x - fx) ** 2 + (c.z - fz) ** 2 > 430 * 430) continue;          // (the fleet fades out at 380-420 m)
+      const [w, l] = this.parkWL(c);
+      const k = this.addBoxObstacle(c.x, c.z, c.heading, w / 2, l / 2);
+      if (k != null) { this.obs.park[k] = 1; this.pk.car[k] = c; }
+    }
+  }
+  /** the least distance from car i's body, shifted s m sideways (+ left), to a parked car's box */
+  parkClear(i, s, ahead = 0) {
+    let yw = this.yaw[i], bx = this.x[i] - Math.cos(yw) * this.room[i], bz = this.z[i] + Math.sin(yw) * this.room[i];
+    const st = this.state[i];
+    if (ahead > 0 && (st === ST.drive || st === ST.inStop)) {
+      // ahead along its ROUTE (the lane bends), posed as pose() does: the axles on the path
+      const F = this._pcF ||= new Float64Array(4), R = this._pcR ||= new Float64Array(4), hw2 = this.wb[i] / 2, d = this.d[i] + ahead;
+      this.routePoint(i, d + hw2, F); this.routePoint(i, d - hw2, R);
+      yw = Math.atan2(F[0] - R[0], F[1] - R[1]); bx = (F[0] + R[0]) / 2 + this.offX[i]; bz = (F[1] + R[1]) / 2 + this.offZ[i];
+    }
+    const lx = Math.cos(yw), lz = -Math.sin(yw);
+    return this.bodyClear(bx + lx * s, bz + lz * s, yw, this.half[i], Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2));
+  }
+  /** the least distance from a car body (centre x0 / z0, heading yw, half length hl, half width hw) to a parked car's
+   *  box, `skip` (its own slot) left out */
+  bodyClear(x0, z0, yw, hl, hw, skip = null) {
+    const fx = Math.sin(yw), fz = Math.cos(yw);
+    let best = Infinity;
+    const i0 = Math.floor(x0 / 8), j0 = Math.floor(z0 / 8);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of this.pk.grid.get((i0 + di + 4096) * 8192 + j0 + dj + 4096) || []) {
+      if (c.hidden || c === skip) continue;
+      const [w, l] = this.parkWL(c), reach = hl + hw + l / 2 + 0.6, ddx = c.x - x0, ddz = c.z - z0;
+      if (ddx * ddx + ddz * ddz > reach * reach) continue;                 // (far: no test)
+      const ax = Math.sin(c.heading), az = Math.cos(c.heading);
+      // the car's axis sampled every 0.4 m or less, each a disc of its half width, against the parked box
+      const span = Math.max(0, hl - hw), nT = Math.max(1, Math.ceil((2 * span) / 0.4));
+      for (let m = 0; m <= nT; m++) {
+        const t = -span + (2 * span * m) / nT;
+        const px = x0 + fx * t - c.x, pz = z0 + fz * t - c.z;
+        const u = Math.abs(px * ax + pz * az) - l / 2, v = Math.abs(px * az - pz * ax) - w / 2;
+        const d = Math.hypot(Math.max(u, 0), Math.max(v, 0)) + Math.min(Math.max(u, v), 0) - hw;
+        if (d < best) best = d;
+      }
+    }
+    return best;
+  }
+  /** passing(): the parked car of entry e on this path's entry list (head h) as a whole: its largest need over the
+   *  lane, and how far ahead of `from` it reaches */
+  passingEntry(i, h, e, from) {
+    const E = this.oe, k = E.k[e];
+    let need = 0, far = 0;
+    if (E.d[e] - E.r[e] - from > 30) return false;                      // (far ahead: an obstacle for now, decided nearer)
+    for (let f = h; f >= 0; f = E.nxt[f]) if (E.k[f] === k) { if (Math.abs(E.need[f]) > Math.abs(need)) need = E.need[f]; far = Math.max(far, E.d[f] + E.r[f] - from); }
+    return this.passing(i, need, far);
+  }
+  /** car i passing a parked car standing into its lane by `need` (m, + left: the shift that clears it), `reach` m ahead
+   *  of its nose at most: eased out far enough? It asks to ease out when the shifted corridor is free of other parked
+   *  cars and the other side of the traffic (no oncoming car within 35 m, nobody alongside); else it waits behind it */
+  passing(i, need, reach = 8) {
+    if (TP_OLD || Math.abs(need) > TP_PASS + 0.3) return false;
+    const sg = Math.sign(need), span = reach + 2 * this.half[i];
+    // the corridor at shift s (+ left), from here to past the parked car: its body clear of every parked car by `m`
+    const corridor = (sv, m) => { for (let a = 0; a <= span; a += 1.5) if (this.parkClear(i, sv, a) < m) return false; return true; };
+    if (this.pwT[i] > 0 && Math.sign(this.pw[i]) === sg) {
+      this.pwT[i] = 1.5;                                                   // (committed: held while the car is ahead)
+      if (Math.abs(this.room[i]) < Math.abs(this.pw[i]) - 0.03) return false;        // still easing out: wait behind it
+      // eased out: clear over its stopping distance (3 m/s2) + 3 m? (else a little further out when that is free, and
+      // wait meanwhile)
+      // (every 4th step; between, the last answer)
+      if ((this.steps + i) % 4 && this.pwOk?.[i] !== undefined) { if (this.pwOk[i]) return true; }
+      else {
+        const v = this.v[i], look = Math.min(span, (v * v) / 6 + 4);
+        let ok = true;
+        for (let a2 = 0; a2 <= look && ok; a2 += 1) if (this.parkClear(i, this.room[i], a2) < 0.02) ok = false;
+        (this.pwOk ||= new Uint8Array(this.cap))[i] = ok ? 1 : 0;
+        if (ok) return true;
+        const more = this.pw[i] + sg * 0.2;
+        if (Math.abs(more) <= TP_PASS && corridor(more, 0.05)) this.pw[i] = more;
+      }
+      return false;
+    }
+    if (this.pwWait[i] > 0) return false;
+    const refuse = () => { this.pwWait[i] = 0.6; this.stats.parkWaits = (this.stats.parkWaits || 0) + 1; return false; };
+    // give way: no oncoming car within 35 m on that side, nobody alongside there
+    const yw = this.yaw[i], fx = Math.sin(yw), fz = Math.cos(yw), lx = Math.cos(yw), lz = -Math.sin(yw);
+    for (let j = 0; j < this.cap; j++) {
+      if (!this.alive[j] || j === i) continue;
+      const dx = this.x[j] - this.x[i], dz = this.z[j] - this.z[i], al = dx * fx + dz * fz, lat = (dx * lx + dz * lz) * sg;
+      if (al < -10 || al > 35 || lat < 0.5 || lat > Math.abs(need) + 3) continue;
+      const dot = Math.sin(this.yaw[j]) * fx + Math.cos(this.yaw[j]) * fz;
+      if (dot < -0.3 || (al < 8 && al > -8)) return refuse();
+    }
+    // the least shift whose corridor is clear (measured on the bodies: the entry's need is an estimate)
+    for (let sv = Math.max(0.1, Math.abs(need) - 0.3); sv <= TP_PASS + 1e-3; sv += 0.15) {
+      if (!corridor(sg * sv, 0.08)) continue;
+      this.pw[i] = sg * sv; this.pwT[i] = 1.5; this.stats.parkPasses = (this.stats.parkPasses || 0) + 1;
+      return false;
+    }
+    return refuse();
   }
 
   // ------------------------------------------------------------------ junction decisions
@@ -433,7 +661,9 @@ export class TrafficSim {
       const gj = this.posOn(j) - d - this.half[j] - half;
       if (gj < 22 && this.v[j] < v0 * 0.7 && this.v[i] > 3) this.overT[i] = 3.2;    // a slow car ahead: out and past it
     }
-    if (this.obsAhead(p, d + half, tmp) < gap) { gap = tmp[0]; vL = tmp[1]; lead = 2; }
+    this._oaCar = TP_OLD ? -1 : i;
+    let parkBlk = false;
+    if (this.obsAhead(p, d + half, tmp) < gap) { gap = tmp[0]; vL = tmp[1]; lead = 2; parkBlk = tmp[2] >= 0 && this.oe.need[tmp[2]] !== 0; }
     // along the route: speed limits ahead (braked for), the last car / obstacle on each next path
     v0 = this.curveLimit(g, pi, d + half, 0, d + half + 45, v0);
     let dist = g.len[pi] - d;                  // car centre -> end of this path
@@ -494,6 +724,20 @@ export class TrafficSim {
       }
       dist += gq.len[qi];
     }
+    this._oaCar = -1;
+    // (trafpark: waiting behind a parked car that stands into the lane counts as a hold: a car stuck there a minute, out
+    // of sight, is taken away like any stuck car, populate())
+    if (!hold && parkBlk && lead === 2 && gap < 4) hold = HOLD.park;
+    // (trafpark: a car shifted sideways (pull over, yield, the bike's room, a pass) looks along its shifted body: a
+    // parked car there within its stopping distance + 3 m is a leader)
+    if (!TP_OLD && this.pk.grid.size && Math.abs(this.room[i]) > 0.05) {
+      if ((this.steps + i) % 4 === 0 || this.tpLA[i] < 0 && Math.abs(this.room[i]) < 0.1) {
+        this.tpLA[i] = -1;
+        const look = Math.min(30, (v * v) / 6 + 4);
+        for (let a2 = 1; a2 <= look; a2 += 1) if (this.parkClear(i, this.room[i], a2) < 0.02) { this.tpLA[i] = d + a2; break; }
+      }
+      if (this.tpLA[i] >= 0) { const g2 = this.tpLA[i] - d - 1; if (g2 < gap) { gap = Math.max(0.05, g2); vL = 0; lead = 2; } }
+    } else this.tpLA[i] = -1;
     if (ctl === 1) v0 = Math.max(v0, Math.min(15, v0 * 1.4));                // (police game: a fleeing car takes the bends faster)
     this.hold[i] = hold; this.gap[i] = gap; this.lead[i] = gap < Infinity ? lead : 0;
     if (hold && v < 0.15) this.holdT[i] += STEP; else if (!hold) this.holdT[i] = 0;
@@ -515,9 +759,13 @@ export class TrafficSim {
     const t0 = performance.now();
     this.t = signalClock.now();
     while (this.freeLater.length) this.free.push(this.freeLater.pop());
+    if (!TP_OLD && this._wver !== this.W.version) { this._wver = this.W.version; this.rerouteTwins(); }   // (trafpark, rerouteTwins)
     this.buildLists();
     for (let k = 0; k < this.extraObs.length; k++) { const o = this.extraObs[k]; this.addObstacle(o.x, o.z, o.r); }
     this.stats.yielding = 0;
+    // (trafpark: a tile came in or went: routes chosen before it were planned on the old tiles' buffer copies, never
+    // fitted round the new tile's parked cars: from the next path on they take the new tile's own lanes (twins))
+    if (!TP_OLD && this.parked) { this.pk.fx = ctx.fx; this.pk.fz = ctx.fz; this.parkedGrid(); this.addParkedObstacles(ctx.fx, ctx.fz); }
     this.projectObstacles();
     for (let i = 0; i < this.cap; i++) {
       if (!this.alive[i]) continue;
@@ -525,6 +773,7 @@ export class TrafficSim {
       if (!this.W.slots[this.path[i] >>> 16]) { this.kill(i); continue; }
       this.copyPrev(i);
       const st = this.state[i];
+      if (this.pwWait[i] > 0) this.pwWait[i] -= STEP;
       if (st === ST.drive || st === ST.inStop) this.accel(i);
     }
     for (let i = 0; i < this.cap; i++) {
@@ -533,7 +782,7 @@ export class TrafficSim {
       if (st === ST.drive || st === ST.inStop) this.move(i);
       else this.maneuver(i, ctx);
       if (!this.alive[i]) continue;
-      if (this.room[i] || this.bike.on || this.yr[i]) this.makeRoom(i, st === ST.drive || st === ST.inStop);
+      if (this.room[i] || this.bike.on || this.yr[i] || this.pwT[i] > 0) this.makeRoom(i, st === ST.drive || st === ST.inStop);
       // handover blend: the offset left by a tile-border twin decays
       if (this.offX[i] || this.offZ[i]) { this.offX[i] *= 0.9; this.offZ[i] *= 0.9; if (Math.abs(this.offX[i]) + Math.abs(this.offZ[i]) < 0.005) this.offX[i] = this.offZ[i] = 0; }
       this.pose(i);
@@ -564,8 +813,17 @@ export class TrafficSim {
       }
     }
     if (!want && this.yr[i]) want = this.yr[i];                           // (police game: yielding / overtaking)
+    // trafpark: easing out round a parked car standing into the lane (passing()), held 1.5 s after the last ask
+    if (this.pwT[i] > 0) { this.pwT[i] -= STEP; if (driving) want = this.pw[i]; if (this.pwT[i] <= 0) this.pw[i] = 0; }
     const d = want - this.room[i], m = (want ? (this.ctl[i] === 1 ? 1.6 : 0.6) : 0.35) * STEP;
-    this.room[i] += d > m ? m : d < -m ? -m : d;
+    const next = this.room[i] + (d > m ? m : d < -m ? -m : d);
+    // trafpark: no sideways move (pull over, yield right, the bike's room, back from a pass) into a parked car: a move
+    // that brings the body within TP_TOUCH of one, closer than it is, waits
+    if (!TP_OLD && this.pk.grid.size && next !== this.room[i]) {
+      const dn = this.parkClear(i, next);
+      if (dn < TP_TOUCH && dn < this.parkClear(i, this.room[i])) { this.stats.parkClamped = (this.stats.parkClamped || 0) + 1; return; }
+    }
+    this.room[i] = next;
   }
 
   move(i) {
@@ -673,6 +931,7 @@ export class TrafficSim {
       for (let j = g.head[i]; j >= 0; j = this.nxt[j]) if (Math.abs(this.posOn(j) - d) < 14) { ok = false; break; }
       if (ok) for (let j = 0; j < this.cap; j++) if (this.alive[j] && (this.x[j] - x) ** 2 + (this.z[j] - z) ** 2 < 100) { ok = false; break; }
       if (!ok || (g.holdAt[i] >= 0 && Math.abs(g.holdAt[i] - d) < 10)) continue;
+      if (!TP_OLD && this.obsAhead(gid, d - 8, this.tmp) < 18) continue;       // (trafpark: never spawned into a parked car / obstacle)
       const k = this.spawnAt(gid, d, g.speed[i] * 0.6);
       if (k >= 0) { this.insertInList(k); made++; this.stats.spawned++; }
     }
@@ -737,6 +996,7 @@ export class TrafficSim {
     if (this.freeSlots.length && this.rand() < 0.5 * this.params.parkRate) {
       const k = Math.floor(this.rand() * this.freeSlots.length), slot = this.freeSlots[k];
       if (slot.hidden !== true) { this.freeSlots.splice(k, 1); return; }    // taken back by its owner (tile reloaded)
+      if (!TP_OLD && this.pk.moved.has(slot)) return;                      // (trafpark: a shoved slot stands into the lane: never parked into; its car comes back when the tile reloads)
       const lane = this.laneAt(slot.x, slot.z, Math.sin(slot.heading), Math.cos(slot.heading));
       if (!lane) return;
       const { gid, along } = lane, g = this.W.slots[gid >>> 16];
@@ -746,7 +1006,7 @@ export class TrafficSim {
       for (let e = -1; e < g.prevOff[pi + 1] - g.prevOff[pi]; e++) {
         const lane2 = e < 0 ? pi : g.prevIdx[g.prevOff[pi] + e], base = e < 0 ? 0 : g.len[lane2];
         for (let j = g.head[lane2]; j >= 0; j = this.nxt[j]) {
-          if (this.state[j] !== ST.drive || this.hold[j] || this.keep[j] || this.ctl[j]) continue;
+          if (this.state[j] !== ST.drive || this.hold[j] || this.keep[j] || this.ctl[j] || (!TP_OLD && (this.room[j] || this.pwT[j] > 0))) continue;
           if (e >= 0 && this.route[j * ROUTE] !== gid) continue;
           const ahead = along + base - this.d[j];
           if (ahead < 25 || ahead > 80) continue;
@@ -778,12 +1038,22 @@ export class TrafficSim {
     if (ti < 0) return;
     const i = this.spawnAt(gid, along + 10, 0, ti, [c.col.r, c.col.g, c.col.b]);
     if (i < 0) return;
-    // maneuver: an S-curve from the slot to the lane 10 m on (cubic Bezier, sampled)
-    this.W.point(gid, along + 10, this.tmp);
-    this.bezier(i, c.x, c.z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], 3.5, 4.5);
+    // maneuver: an S-curve from the slot to the lane 10 m on (cubic Bezier, sampled); trafpark: the first of a few
+    // S-curves (sharper out of the slot, or longer) whose body sweep clears the cars parked ahead / behind, else none
+    this.manDir[i] = 1;
+    let ok = false;
+    for (const [k0, k3, ahead] of TP_OLD ? [[3.5, 4.5, 10]] : [[3.5, 4.5, 10], [2.2, 4.5, 10], [1.4, 5, 11], [1.0, 6, 12]]) {
+      if (along + ahead + 2 > L) continue;
+      this.W.point(gid, along + ahead, this.tmp);
+      this.bezier(i, c.x, c.z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], k0, k3);
+      this.d[i] = along + ahead;
+      if (this.manClear(i, c)) { ok = true; break; }
+    }
+    if (!ok) { this.kill(i); c.busy = true; this.stats.pullOutsSkipped = (this.stats.pullOutsSkipped || 0) + 1; return; }
+    const dAt = this.d[i];
     this.state[i] = ST.outWait; this.manT[i] = 0; this.manDir[i] = 1; this.slot[i] = c;
     this.onPath[i] = -1; this.onD[i] = along;
-    this.v[i] = 0; this.d[i] = along + 10; this.offX[i] = this.offZ[i] = 0;
+    this.v[i] = 0; this.d[i] = dAt; this.offX[i] = this.offZ[i] = 0;
     this.pose(i); this.copyPrev(i);
     // the parked car is now this traffic car (same pose, type, paint): hide it in the parked fleet, same frame
     c.hidden = true; c.busy = true;
@@ -807,6 +1077,29 @@ export class TrafficSim {
     this.pose(i); this.copyPrev(i);
     this.insertInList(i);
     return i;
+  }
+  /** trafpark: car i's manoeuvre polyline (pull-out / reverse-in) as pose() drives it, clear of every parked car but
+   *  `skip` (its own slot)? */
+  manClear(i, skip) {
+    if (TP_OLD || !this.pk.grid.size) return true;
+    const hw = this.wb[i] / 2, F = this.tmp2, R = this.tmp3, L = this.manLen[i], dir = this.manDir[i] || 1;
+    const half = Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2);
+    for (let m = 0; m <= L + 1e-3; m += 0.5) {
+      this.manPoint(i, m + hw * dir, F); this.manPoint(i, m - hw * dir, R);
+      const yaw = Math.atan2(F[0] - R[0], F[1] - R[1]);
+      if (this.bodyClear((F[0] + R[0]) / 2, (F[1] + R[1]) / 2, yaw, this.half[i], half, skip) < 0.03) return false;
+    }
+    return true;
+  }
+  /** trafpark: another car pulling out / reversing in within r m of car i? (two manoeuvres side by side cross) */
+  nearManeuver(i, r = 14) {
+    if (TP_OLD) return false;
+    for (let j = 0; j < this.cap; j++) {
+      if (j === i || !this.alive[j]) continue;
+      const st = this.state[j];
+      if ((st === ST.out || st === ST.inRev) && (this.x[j] - this.x[i]) ** 2 + (this.z[j] - this.z[i]) ** 2 < r * r) return true;
+    }
+    return false;
   }
   bezier(i, x0, z0, h0x, h0z, x3, z3, h3x, h3z, k0, k3) {
     const P = this.manPts, C = this.manCum, o = i * MAN;
@@ -832,6 +1125,12 @@ export class TrafficSim {
       // also cars on the lanes leading into this one, within 40 m
       if (clear && at < 40) for (let k = g.prevOff[pi]; k < g.prevOff[pi + 1] && clear; k++) if (g.head[g.prevIdx[k]] >= 0) clear = false;
       if (clear && this.obsAhead(gid, at - 30, this.tmp) < 45) clear = false;
+      // (trafpark: the S-curve checked again when it goes: a neighbour may have parked back meanwhile; blocked 20 s:
+      // it stays parked)
+      if (clear && (this.nearManeuver(i) || !this.manClear(i, this.slot[i]))) {
+        clear = false;
+        if (this.waitT[i] > 20) { const c = this.slot[i]; if (c) { c.hidden = false; c.busy = true; this.onPark?.(c, false); } this.handoff[i] = 1; this.kill(i); this.stats.pullOutsSkipped = (this.stats.pullOutsSkipped || 0) + 1; return; }
+      }
       if (clear) { this.state[i] = ST.out; this.waitT[i] = 0; this.onPath[i] = gid; }
       return;
     }
@@ -879,14 +1178,21 @@ TrafficSim.prototype.move = function (i) {
     }
     if (p >= 0) {
       const ds = p === this.parkPath[i] ? target - this.d[i] : this.plen(p) - this.d[i] + target;
-      if (p === this.parkPath[i] && ds < 1.8 && this.v[i] < 0.15) {
+      if (p === this.parkPath[i] && ds < 1.8 && this.v[i] < 0.15 && (TP_OLD || (Math.abs(this.room[i]) < 0.03 && !this.nearManeuver(i)))) {   // (trafpark: back on its lane line first)
         // stopped: reverse into the slot
         const c = this.slot[i];
         if (!c) { this.state[i] = ST.drive; return baseMove.call(this, i); }
         const hx = Math.sin(this.yaw[i]), hz = Math.cos(this.yaw[i]);
         const shx = Math.sin(c.heading), shz = Math.cos(c.heading);
         // reverse: the polyline runs from the car's position backwards (tangent -heading) into the slot (tangent -slot heading)
-        this.bezier(i, this.x[i], this.z[i], -hx, -hz, c.x, c.z, -shx, -shz, 3.4, 3.4);
+        // (trafpark: the first reverse curve whose body sweep misses the slot's neighbours, else it drives on)
+        this.manDir[i] = -1;
+        let ok = false;
+        for (const [k0, k3] of TP_OLD ? [[3.4, 3.4]] : [[3.4, 3.4], [2.6, 4.2], [4.2, 2.6], [2.0, 5.0]]) {
+          this.bezier(i, this.x[i], this.z[i], -hx, -hz, c.x, c.z, -shx, -shz, k0, k3);
+          if (this.manClear(i, c)) { ok = true; break; }
+        }
+        if (!ok) { this.slot[i] = null; this.state[i] = ST.drive; c.busy = true; this.stats.parkInsSkipped = (this.stats.parkInsSkipped || 0) + 1; return baseMove.call(this, i); }
         this.state[i] = ST.inRev; this.manT[i] = 0; this.manDir[i] = -1; this.v[i] = 0;
         this.onPath[i] = p; this.onD[i] = this.d[i];
         this.offX[i] = this.offZ[i] = 0;

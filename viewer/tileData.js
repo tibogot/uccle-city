@@ -415,7 +415,11 @@ export async function buildTileData(entry, base) {
   // citydefects: the parked cars by the measured width (viewer/streets/parkPlace.js widthParking; entry.parkWidth false =
   // ?parkclear=old: the main thread's old slots), here so the traffic lanes keep clear of them (trafficGraph.js)
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
-  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites }));
+  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false }));
+  // trafpark: the graph checks every driven path (lanes + junction connectors) against the parked cars' boxes and keeps
+  // only the cars no path touches (a car the lanes could not be moved clear of: a junction corner, a street too narrow)
+  if (parked && traffic.parkedKept) { parked.stats.trafparkDropped = parked.sites.length - traffic.parkedKept.length; parked.sites = traffic.parkedKept; }
+  delete traffic.parkedKept;
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));

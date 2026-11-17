@@ -25,6 +25,8 @@ import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
 import { hedgeGeometries, hedgeMaterials, hedgeInstances, gardenFades } from "./gardenHedge.js";
 import { StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
+import { dedupePillars, cleanSegs, capJoins } from "./gardenDedupe.js";
+const PIER_OLD = typeof location !== "undefined" && /[?&]gardenpier=old(&|$)/.test(location.search);   // (?gardenpier=old: the doubled piers, spurs, coplanar copings)
 export { gardenFades };
 
 export const RAILS = ["spear", "flat", "rings"];
@@ -210,22 +212,13 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
   const L = Object.fromEntries(PIECES.map((p) => [p, []]));
   const SW = [], SP = [], SG = [];
   const styles = doc.styles || [];
-  const segs = groundAt ? settle(doc, groundAt) : (doc.segs || []);
-  const pillars = groundAt ? settlePillars(doc, groundAt) : (doc.pillars || []);
+  const segs0 = groundAt ? settle(doc, groundAt) : (doc.segs || []);
+  const segs = PIER_OLD ? segs0 : cleanSegs(segs0);                  // (holes: no spur doubling back over its run)
+  const pillars0 = groundAt ? settlePillars(doc, groundAt) : (doc.pillars || []);
+  const pillars = PIER_OLD ? pillars0 : dedupePillars(pillars0);     // (holes: one pier per spot, gardenDedupe.js)
   const push = (arr, m, v, aux = null) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); if (aux) arr.push(aux[0], aux[1], aux[2], aux[3]); else arr.push(0, 0, 0, 0); };
-  // mitres: consecutive segments of one run that share an end (to 2 cm) and turn < 70 deg overlap by w/2 tan(a/2)
-  const ext = new Float32Array(segs.length * 2);
-  for (let i = 0; i + 1 < segs.length; i++) {
-    const a = segs[i], b = segs[i + 1];
-    if (a[6] !== b[6] || Math.hypot(a[3] - b[0], a[5] - b[2]) > 0.02) continue;
-    const ax = a[3] - a[0], az = a[5] - a[2], bx = b[3] - b[0], bz = b[5] - b[2];
-    const la = Math.hypot(ax, az), lb = Math.hypot(bx, bz);
-    if (la < 1e-3 || lb < 1e-3) continue;
-    const c = Math.max(-1, Math.min(1, (ax * bx + az * bz) / (la * lb))), ang = Math.acos(c);
-    if (ang < 0.005 || ang > 1.22) continue;
-    const e = (CAP_W / 2) * Math.tan(ang / 2);
-    ext[i * 2 + 1] = e; ext[(i + 1) * 2] = e;
-  }
+  // mitres + the copings' lift at mitred corners (gardenDedupe.js capJoins; ?gardenpier=old: no lift)
+  const { ext, extW, lift } = capJoins(segs, CAP_W, !PIER_OLD);
   const m = new Float32Array(16);
   const shear = (x0, y0, z0, dx, dy, dz, sy) => {
     const lh = Math.hypot(dx, dz) || 1e-6;
@@ -245,10 +238,12 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
     if (lh < 0.05) return;
     const v = styleVar(st, rnd01(x0, z0));
     if (h > 0.01) {
-      const e0 = ext[i * 2], e1 = ext[i * 2 + 1], ux = dx / lh, uy = dy / lh, uz = dz / lh;
-      const sx = x0 - ux * e0, sy = y0 - uy * e0, sz = z0 - uz * e0, k = (lh + e0 + e1) / lh;
-      push(L.wall, shear(sx, sy, sz, dx * k, dy * k, dz * k, h), v);
-      push(L.cap, shear(sx, sy + h, sz, dx * k, dy * k, dz * k, 1), v);
+      const ux = dx / lh, uy = dy / lh, uz = dz / lh;
+      for (const [E, piece] of [[extW, "wall"], [ext, "cap"]]) {
+        const e0 = E[i * 2], e1 = E[i * 2 + 1], sx = x0 - ux * e0, sy = y0 - uy * e0, sz = z0 - uz * e0, k = (lh + e0 + e1) / lh;
+        if (piece === "wall") push(L.wall, shear(sx, sy, sz, dx * k, dy * k, dz * k, h), v);
+        else push(L.cap, shear(sx, sy + h + lift[i], sz, dx * k, dy * k, dz * k, 1), v);
+      }
     }
     const railH = st.railH || 0;
     const top = h > 0.01 ? h + CAP_T : 0;
