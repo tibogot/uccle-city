@@ -75,14 +75,10 @@ function steepAwning(env, at, X, Y, Z, w, y, out, deg, canvas, text, font, valan
 }
 const lumOf = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 
-export function layoutShop(p, f, frame, lit, env) {
-  const { box, label, prop, shop, windows, night, used, hash01, pick, add, twoLines, yawTo, WIN_STRIDE } = env;
-  const { X, Y, Z } = frame;
-  const base = [f.x, f.y, f.z], id = p.id;
-  const W = Math.max(2.0, Math.min(f.w, 9.9));
-  const yaw = yawTo(f.nx, f.nz);
-  // curated (data/shops/terraces.json "front": checked on Street View): family, paint / canvas (palette index), awning
-  const cf = env.cur?.front || {};
+/** a front's family and heights (shared with viewer/christmas/xmasCity.js, which hangs garlands on the fronts):
+ *  { classic, lowFloor, fasciaY (fascia bottom over the sidewalk), dH (its rise over the kit's nominal 2.55) } */
+export function frontFamily(p, f, cur, hash01) {
+  const cf = cur?.front || {}, id = p.id;
   // (UrbIS eaves = the solid's LOWEST roof point: a rear annex makes a 4-storey house "low"; curated tall: the real
   // ground floor's height, Street View)
   const lowFloor = cf.tall ? false : f.eaves - f.y < 4.0;
@@ -91,6 +87,18 @@ export function layoutShop(p, f, frame, lit, env) {
   const classic = cf.family ? cf.family === "classic" : MODERN_CATS.has(cat) || p.kind === "bank" || p.kind === "supermarket" || p.kind === "pharmacy" || p.kind === "fastfood" ? false
     : CLASSIC_CATS.has(cat) || ["cafe", "bar", "bakery"].includes(p.kind) ? true
     : p.kind === "restaurant" ? hash01(id + "fam") < 0.7 : hash01(id + "fam") < 0.5;
+  return { classic, lowFloor, fasciaY, dH };
+}
+
+export function layoutShop(p, f, frame, lit, env) {
+  const { box, label, prop, shop, windows, night, used, hash01, pick, add, twoLines, yawTo, WIN_STRIDE } = env;
+  const { X, Y, Z } = frame;
+  const base = [f.x, f.y, f.z], id = p.id;
+  const W = Math.max(2.0, Math.min(f.w, 9.9));
+  const yaw = yawTo(f.nx, f.nz);
+  // curated (data/shops/terraces.json "front": checked on Street View): family, paint / canvas (palette index), awning
+  const cf = env.cur?.front || {};
+  const { lowFloor, fasciaY, dH, classic } = frontFamily(p, f, env.cur, hash01);
   const paint = cf.paint != null ? (classic ? CLASSIC : MODERN)[cf.paint] : classic ? pick(CLASSIC, id, "p") : pick(MODERN, id, "p");
   const lightbox = cf.lightbox ?? (!classic && hash01(id + "lb") < 0.35);
   // (curated) the door, risers and mullions in their own colour (Le Relais Saint-Job: black frames in a white front)

@@ -1,0 +1,718 @@
+{
+ "pieces": {
+  "tree": {
+   "foliage_tris": 139354,
+   "fronds": 270,
+   "baubles": 130,
+   "bulbs": 665,
+   "height_m": 10.4,
+   "width_m": 5.9,
+   "triangles_lod0": 183424,
+   "slots": [
+    "fir_bark",
+    "fir_needles",
+    "bauble",
+    "gold_metal",
+    "bulb_warm",
+    "star_glow",
+    "wood_planks",
+    "mulch"
+   ],
+   "size_m": [
+    6.151,
+    5.936,
+    10.4
+   ]
+  },
+  "wreath": {
+   "triangles_lod0": 5292,
+   "slots": [
+    "fir_needles",
+    "ribbon_red",
+    "bauble",
+    "bulb_warm",
+    "gold_metal"
+   ],
+   "size_m": [
+    0.659,
+    0.187,
+    0.684
+   ]
+  },
+  "swag": {
+   "triangles_lod0": 6036,
+   "slots": [
+    "fir_needles",
+    "bulb_warm",
+    "bauble",
+    "gold_metal",
+    "ribbon_red"
+   ],
+   "size_m": [
+    1.73,
+    0.279,
+    0.407
+   ]
+  },
+  "lampmotif": {
+   "triangles_lod0": 1716,
+   "slots": [
+    "led_rope",
+    "metal_frame"
+   ],
+   "size_m": [
+    0.178,
+    1.329,
+    0.892
+   ]
+  },
+  "spanmotif": {
+   "triangles_lod0": 728,
+   "slots": [
+    "led_rope",
+    "metal_frame"
+   ],
+   "size_m": [
+    1.514,
+    0.078,
+    1.629
+   ]
+  },
+  "chalet": {
+   "size_m": [
+    3.52,
+    3.314,
+    3.105
+   ],
+   "triangles_lod0": 9676,
+   "slots": [
+    "chalet_trim",
+    "chalet_wood",
+    "gold_metal",
+    "chalet_interior",
+    "bulb_warm",
+    "metal_frame",
+    "sign_board",
+    "roof_felt",
+    "snow_fake",
+    "fir_needles"
+   ]
+  }
+ },
+ "asset": "Christmas kit (tools/blender/christmasKit.py): the square's fir, door wreath, shopfront swag, lamp-post snowflake, cross-street star",
+ "colour": {
+  "COLOR_0.r": "random per element (bulb phase / frond tint)",
+  "COLOR_0.g": "variant: bauble 0 red / 0.5 gold / 1 champagne; bulb 1 = flash bulb; needle shade",
+  "COLOR_0.b": "Cycles AO (each piece alone)"
+ },
+ "frame": "glTF Y up, front +Z; tree origin = trunk foot; wall pieces origin = the wall plane; lampmotif = post axis at the clamp; spanmotif = the hook",
+ "lods": {
+  "tree": {
+   "lods": [
+    {
+     "node": "tree_lod0",
+     "triangles": 183424,
+     "draws": 8,
+     "slots": [
+      "fir_bark",
+      "fir_needles",
+      "bauble",
+      "gold_metal",
+      "bulb_warm",
+      "star_glow",
+      "wood_planks",
+      "mulch"
+     ],
+     "slot_triangles": [
+      92,
+      139262,
+      21840,
+      3668,
+      15960,
+      20,
+      2576,
+      6
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "tree_lod1",
+     "triangles": 41090,
+     "draws": 8,
+     "slots": [
+      "fir_bark",
+      "fir_needles",
+      "bauble",
+      "gold_metal",
+      "bulb_warm",
+      "star_glow",
+      "wood_planks",
+      "mulch"
+     ],
+     "slot_triangles": [
+      84,
+      31418,
+      2600,
+      480,
+      5320,
+      20,
+      1162,
+      6
+     ],
+     "error_m": 0.035,
+     "vertex_ao": true
+    },
+    {
+     "node": "tree_lod2",
+     "triangles": 12802,
+     "draws": 5,
+     "slots": [
+      "fir_bark",
+      "fir_needles",
+      "bauble",
+      "bulb_warm",
+      "star_glow"
+     ],
+     "slot_triangles": [
+      32,
+      9050,
+      1040,
+      2660,
+      20
+     ],
+     "error_m": 0.14,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    45,
+    150,
+    1000
+   ]
+  },
+  "wreath": {
+   "lods": [
+    {
+     "node": "wreath_lod0",
+     "triangles": 5292,
+     "draws": 5,
+     "slots": [
+      "fir_needles",
+      "ribbon_red",
+      "bauble",
+      "bulb_warm",
+      "gold_metal"
+     ],
+     "slot_triangles": [
+      3616,
+      636,
+      768,
+      240,
+      32
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "wreath_lod1",
+     "triangles": 2054,
+     "draws": 5,
+     "slots": [
+      "fir_needles",
+      "ribbon_red",
+      "bauble",
+      "bulb_warm",
+      "gold_metal"
+     ],
+     "slot_triangles": [
+      1738,
+      190,
+      36,
+      80,
+      10
+     ],
+     "error_m": 0.015600000000000001,
+     "vertex_ao": true
+    },
+    {
+     "node": "wreath_lod2",
+     "triangles": 1000,
+     "draws": 3,
+     "slots": [
+      "fir_needles",
+      "ribbon_red",
+      "bulb_warm"
+     ],
+     "slot_triangles": [
+      866,
+      94,
+      40
+     ],
+     "error_m": 0.03,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    10,
+    32,
+    90
+   ]
+  },
+  "swag": {
+   "lods": [
+    {
+     "node": "swag_lod0",
+     "triangles": 6036,
+     "draws": 5,
+     "slots": [
+      "fir_needles",
+      "bulb_warm",
+      "bauble",
+      "gold_metal",
+      "ribbon_red"
+     ],
+     "slot_triangles": [
+      5004,
+      288,
+      240,
+      80,
+      424
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "swag_lod1",
+     "triangles": 3028,
+     "draws": 5,
+     "slots": [
+      "fir_needles",
+      "bulb_warm",
+      "bauble",
+      "gold_metal",
+      "ribbon_red"
+     ],
+     "slot_triangles": [
+      2752,
+      96,
+      40,
+      14,
+      126
+     ],
+     "error_m": 0.014,
+     "vertex_ao": true
+    },
+    {
+     "node": "swag_lod2",
+     "triangles": 1048,
+     "draws": 4,
+     "slots": [
+      "fir_needles",
+      "bulb_warm",
+      "bauble",
+      "ribbon_red"
+     ],
+     "slot_triangles": [
+      936,
+      48,
+      16,
+      48
+     ],
+     "error_m": 0.035,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    14,
+    45,
+    150
+   ]
+  },
+  "lampmotif": {
+   "lods": [
+    {
+     "node": "lampmotif_lod0",
+     "triangles": 1716,
+     "draws": 2,
+     "slots": [
+      "led_rope",
+      "metal_frame"
+     ],
+     "slot_triangles": [
+      1048,
+      668
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "lampmotif_lod1",
+     "triangles": 1110,
+     "draws": 2,
+     "slots": [
+      "led_rope",
+      "metal_frame"
+     ],
+     "slot_triangles": [
+      464,
+      646
+     ],
+     "error_m": 0.004,
+     "vertex_ao": true
+    },
+    {
+     "node": "lampmotif_lod2",
+     "triangles": 318,
+     "draws": 1,
+     "slots": [
+      "led_rope"
+     ],
+     "slot_triangles": [
+      318
+     ],
+     "error_m": 0.012,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    30,
+    100,
+    380
+   ]
+  },
+  "spanmotif": {
+   "lods": [
+    {
+     "node": "spanmotif_lod0",
+     "triangles": 728,
+     "draws": 2,
+     "slots": [
+      "led_rope",
+      "metal_frame"
+     ],
+     "slot_triangles": [
+      352,
+      376
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "spanmotif_lod1",
+     "triangles": 484,
+     "draws": 2,
+     "slots": [
+      "led_rope",
+      "metal_frame"
+     ],
+     "slot_triangles": [
+      176,
+      308
+     ],
+     "error_m": 0.005,
+     "vertex_ao": true
+    },
+    {
+     "node": "spanmotif_lod2",
+     "triangles": 132,
+     "draws": 1,
+     "slots": [
+      "led_rope"
+     ],
+     "slot_triangles": [
+      132
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    35,
+    120,
+    480
+   ]
+  },
+  "chalet": {
+   "lods": [
+    {
+     "node": "chalet_lod0",
+     "triangles": 9676,
+     "draws": 10,
+     "slots": [
+      "chalet_trim",
+      "chalet_wood",
+      "gold_metal",
+      "chalet_interior",
+      "bulb_warm",
+      "metal_frame",
+      "sign_board",
+      "roof_felt",
+      "snow_fake",
+      "fir_needles"
+     ],
+     "slot_triangles": [
+      716,
+      4064,
+      64,
+      792,
+      408,
+      40,
+      44,
+      88,
+      88,
+      3372
+     ],
+     "error_m": 0,
+     "vertex_ao": false
+    },
+    {
+     "node": "chalet_lod1",
+     "triangles": 6130,
+     "draws": 9,
+     "slots": [
+      "chalet_trim",
+      "chalet_wood",
+      "chalet_interior",
+      "bulb_warm",
+      "metal_frame",
+      "sign_board",
+      "roof_felt",
+      "snow_fake",
+      "fir_needles"
+     ],
+     "slot_triangles": [
+      646,
+      2794,
+      792,
+      136,
+      40,
+      32,
+      88,
+      88,
+      1514
+     ],
+     "error_m": 0.015,
+     "vertex_ao": true
+    },
+    {
+     "node": "chalet_lod2",
+     "triangles": 3832,
+     "draws": 7,
+     "slots": [
+      "chalet_trim",
+      "chalet_wood",
+      "bulb_warm",
+      "sign_board",
+      "roof_felt",
+      "snow_fake",
+      "fir_needles"
+     ],
+     "slot_triangles": [
+      546,
+      2118,
+      64,
+      20,
+      88,
+      88,
+      908
+     ],
+     "error_m": 0.025,
+     "vertex_ao": true
+    }
+   ],
+   "range": [
+    40,
+    130,
+    600
+   ]
+  }
+ },
+ "glb_bytes": 5878008,
+ "lod_ranges_m": {
+  "note": "per piece (lods[piece].range): each LOD's band END (camera distance)"
+ },
+ "audit": {
+  "tree_lod0": {
+   "blocking": 0,
+   "warnings": 876,
+   "foliage_exempt": 3619,
+   "counts": {
+    "sliver": 508,
+    "nonmanifold": 32,
+    "backtoback": 137,
+    "seam": 6863,
+    "opening": 16
+   }
+  },
+  "tree_lod1": {
+   "blocking": 0,
+   "warnings": 356,
+   "foliage_exempt": 1344,
+   "counts": {
+    "sliver": 245,
+    "nonmanifold": 32,
+    "backtoback": 169,
+    "seam": 3561,
+    "opening": 16
+   }
+  },
+  "tree_lod2": {
+   "blocking": 0,
+   "warnings": 4,
+   "foliage_exempt": 437,
+   "counts": {
+    "sliver": 4,
+    "backtoback": 4,
+    "seam": 1360
+   }
+  },
+  "wreath_lod0": {
+   "blocking": 0,
+   "warnings": 26,
+   "foliage_exempt": 21,
+   "counts": {
+    "nonmanifold": 16,
+    "backtoback": 7,
+    "near": 1,
+    "seam": 131
+   }
+  },
+  "wreath_lod1": {
+   "blocking": 0,
+   "warnings": 11,
+   "foliage_exempt": 14,
+   "counts": {
+    "nonmanifold": 11,
+    "backtoback": 13,
+    "seam": 128
+   }
+  },
+  "wreath_lod2": {
+   "blocking": 0,
+   "warnings": 8,
+   "foliage_exempt": 6,
+   "counts": {
+    "nonmanifold": 8,
+    "backtoback": 5,
+    "seam": 105
+   }
+  },
+  "swag_lod0": {
+   "blocking": 0,
+   "warnings": 19,
+   "foliage_exempt": 12,
+   "counts": {
+    "nonmanifold": 14,
+    "backtoback": 5,
+    "seam": 212
+   }
+  },
+  "swag_lod1": {
+   "blocking": 0,
+   "warnings": 10,
+   "foliage_exempt": 3,
+   "counts": {
+    "nonmanifold": 10,
+    "backtoback": 7,
+    "seam": 194
+   }
+  },
+  "swag_lod2": {
+   "blocking": 0,
+   "warnings": 19,
+   "foliage_exempt": 3,
+   "counts": {
+    "nonmanifold": 19,
+    "backtoback": 15,
+    "seam": 143
+   }
+  },
+  "lampmotif_lod0": {
+   "blocking": 0,
+   "warnings": 84,
+   "foliage_exempt": 0,
+   "counts": {
+    "sliver": 84,
+    "seam": 37
+   }
+  },
+  "lampmotif_lod1": {
+   "blocking": 0,
+   "warnings": 84,
+   "foliage_exempt": 0,
+   "counts": {
+    "sliver": 84,
+    "seam": 13
+   }
+  },
+  "lampmotif_lod2": {
+   "blocking": 0,
+   "warnings": 0,
+   "foliage_exempt": 0,
+   "counts": {
+    "seam": 6
+   }
+  },
+  "spanmotif_lod0": {
+   "blocking": 0,
+   "warnings": 240,
+   "foliage_exempt": 0,
+   "counts": {
+    "sliver": 240,
+    "seam": 6
+   }
+  },
+  "spanmotif_lod1": {
+   "blocking": 0,
+   "warnings": 60,
+   "foliage_exempt": 0,
+   "counts": {
+    "sliver": 60,
+    "seam": 6
+   }
+  },
+  "spanmotif_lod2": {
+   "blocking": 0,
+   "warnings": 8,
+   "foliage_exempt": 0,
+   "counts": {
+    "sliver": 8,
+    "backtoback": 4
+   }
+  },
+  "chalet_lod0": {
+   "blocking": 0,
+   "warnings": 1288,
+   "foliage_exempt": 14,
+   "counts": {
+    "sliver": 1280,
+    "nonmanifold": 6,
+    "backtoback": 166,
+    "seam": 175
+   }
+  },
+  "chalet_lod1": {
+   "blocking": 0,
+   "warnings": 1185,
+   "foliage_exempt": 7,
+   "counts": {
+    "sliver": 1179,
+    "nonmanifold": 6,
+    "backtoback": 178,
+    "seam": 142
+   }
+  },
+  "chalet_lod2": {
+   "blocking": 0,
+   "warnings": 962,
+   "foliage_exempt": 2,
+   "counts": {
+    "sliver": 955,
+    "nonmanifold": 7,
+    "backtoback": 98,
+    "seam": 119
+   }
+  }
+ }
+}
