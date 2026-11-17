@@ -1,65 +1,65 @@
-# Mesh audit: christmas tree_lod1 (needle-vs-needle overlaps exempt: 1344)
+# Mesh audit: christmas tree_lod1 (needle-vs-needle overlaps exempt: 1347)
 
-41,090 triangles, 24,126 welded vertices, 24 open edges, 4,608 rays, 1687 ms.
+40,616 triangles, 23,785 welded vertices, 24 open edges, 4,608 rays, 1377 ms.
 
-**0 blocking**, 356 warnings. Clean (no blocking item).
+**0 blocking**, 311 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 245 |
+| sliver | warn | 200 |
 | nonmanifold | warn | 32 |
-| seam | info | 3561 |
+| seam | info | 4294 |
 | opening | info | 16 |
-| backtoback | info | 169 |
+| backtoback | info | 197 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 245)
+## sliver (warn, 200)
 
 | at | part | aspect | longest |
 |---|---|---|---|
-| -0.01, 5.00, -0.09 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.07, 4.00, -0.08 | tree_lod1/fir_bark | 45 | 3.001 |
-| -0.09, 5.00, -0.04 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.09, 5.00, 0.01 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.08, 4.00, 0.07 | tree_lod1/fir_bark | 45 | 3.001 |
-| -0.04, 5.00, 0.09 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.01, 5.00, 0.09 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.07, 4.00, 0.08 | tree_lod1/fir_bark | 45 | 3.001 |
-| 0.09, 5.00, 0.04 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.09, 5.00, -0.01 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.08, 4.00, -0.07 | tree_lod1/fir_bark | 45 | 3.001 |
-| 0.04, 5.00, -0.09 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.04, 7.00, -0.04 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.06, 7.00, -0.02 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.04, 7.00, 0.04 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.02, 7.00, 0.06 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.04, 7.00, 0.04 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.06, 7.00, 0.02 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.04, 7.00, -0.04 | tree_lod1/fir_bark | 72 | 3.001 |
-| 0.02, 7.00, -0.06 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.05, 2.10, -0.13 | tree_lod1/fir_bark | 40 | 2.701 |
-| -0.11, 2.10, -0.09 | tree_lod1/fir_bark | 40 | 2.701 |
-| -0.14, 2.10, -0.02 | tree_lod1/fir_bark | 40 | 2.701 |
-| -0.13, 2.10, 0.05 | tree_lod1/fir_bark | 40 | 2.701 |
-| -0.09, 2.10, 0.11 | tree_lod1/fir_bark | 40 | 2.701 |
-| -0.02, 2.10, 0.14 | tree_lod1/fir_bark | 40 | 2.701 |
-| 0.05, 2.10, 0.13 | tree_lod1/fir_bark | 40 | 2.701 |
-| 0.11, 2.10, 0.09 | tree_lod1/fir_bark | 40 | 2.701 |
-| 0.14, 2.10, 0.02 | tree_lod1/fir_bark | 40 | 2.701 |
-| 0.13, 2.10, -0.05 | tree_lod1/fir_bark | 40 | 2.701 |
-| 0.09, 2.10, -0.11 | tree_lod1/fir_bark | 40 | 2.701 |
-| 0.02, 2.10, -0.14 | tree_lod1/fir_bark | 40 | 2.701 |
-| -0.04, 4.00, -0.10 | tree_lod1/fir_bark | 45 | 3.001 |
-| -0.07, 5.00, -0.06 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.11, 4.00, -0.02 | tree_lod1/fir_bark | 45 | 3.001 |
-| -0.10, 4.00, 0.04 | tree_lod1/fir_bark | 45 | 3.001 |
-| -0.06, 5.00, 0.07 | tree_lod1/fir_bark | 72 | 3.001 |
-| -0.02, 4.00, 0.11 | tree_lod1/fir_bark | 45 | 3.001 |
-| 0.04, 4.00, 0.10 | tree_lod1/fir_bark | 45 | 3.001 |
-| 0.07, 5.00, 0.06 | tree_lod1/fir_bark | 72 | 3.001 |
+| -0.01, 8.00, -0.04 | tree_lod1/fir_bark | 131 | 3.001 |
+| -0.04, 8.00, -0.03 | tree_lod1/fir_bark | 131 | 3.001 |
+| -0.04, 8.00, 0.01 | tree_lod1/fir_bark | 131 | 3.001 |
+| -0.03, 8.00, 0.04 | tree_lod1/fir_bark | 131 | 3.001 |
+| 0.01, 8.00, 0.04 | tree_lod1/fir_bark | 131 | 3.001 |
+| 0.04, 8.00, 0.03 | tree_lod1/fir_bark | 131 | 3.001 |
+| 0.04, 8.00, -0.01 | tree_lod1/fir_bark | 131 | 3.001 |
+| 0.03, 8.00, -0.04 | tree_lod1/fir_bark | 131 | 3.001 |
+| -0.05, 5.00, -0.08 | tree_lod1/fir_bark | 49 | 3.001 |
+| -0.09, 5.00, -0.02 | tree_lod1/fir_bark | 49 | 3.001 |
+| -0.08, 5.00, 0.05 | tree_lod1/fir_bark | 49 | 3.001 |
+| -0.02, 5.00, 0.09 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.05, 5.00, 0.08 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.09, 5.00, 0.02 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.08, 5.00, -0.05 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.02, 5.00, -0.09 | tree_lod1/fir_bark | 49 | 3.001 |
+| -0.03, 7.00, -0.05 | tree_lod1/fir_bark | 49 | 3.001 |
+| -0.06, 7.00, -0.02 | tree_lod1/fir_bark | 49 | 3.001 |
+| -0.05, 7.00, 0.03 | tree_lod1/fir_bark | 49 | 3.001 |
+| -0.02, 7.00, 0.06 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.03, 7.00, 0.05 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.06, 7.00, 0.02 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.05, 7.00, -0.03 | tree_lod1/fir_bark | 49 | 3.001 |
+| 0.02, 7.00, -0.06 | tree_lod1/fir_bark | 49 | 3.001 |
+| 1.23, 0.19, -0.58 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.91, 0.36, -0.90 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.77, 0.36, -1.00 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.69, 0.36, -1.12 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.66, 0.36, -1.11 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.58, 0.36, -1.23 | tree_lod1/wood_planks | 94 | 0.532 |
+| 1.25, 0.20, -0.47 | tree_lod1/wood_planks | 69 | 0.588 |
+| 1.22, 0.40, -0.56 | tree_lod1/wood_planks | 69 | 0.588 |
+| 1.30, 0.40, -0.59 | tree_lod1/wood_planks | 69 | 0.588 |
+| 1.34, 0.40, -0.50 | tree_lod1/wood_planks | 69 | 0.588 |
+| 0.46, 0.19, -1.28 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.46, 0.36, -1.25 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.32, 0.36, -1.28 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.30, 0.36, -1.25 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.15, 0.19, -1.28 | tree_lod1/wood_planks | 94 | 0.532 |
+| 0.15, 0.36, -1.25 | tree_lod1/wood_planks | 94 | 0.532 |
 
-(205 more in the JSON)
+(160 more in the JSON)
 
 ## nonmanifold (warn, 32)
 
@@ -98,7 +98,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.51, 0.58, 1.23 | tree_lod1/wood_planks | 4 |
 | 1.23, 0.58, 0.51 | tree_lod1/wood_planks | 4 |
 
-## seam (info, 3561)
+## seam (info, 4294)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -143,7 +143,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.30, 0.77, -1.33 | tree_lod1/fir_needles + tree_lod1/fir_needles | 2.48 | 40 | 15.2 |
 | 0.71, 3.02, -0.01 | tree_lod1/fir_needles + tree_lod1/fir_needles | 4.23 | 40 | 14 |
 
-(3521 more in the JSON)
+(4254 more in the JSON)
 
 ## opening (info, 16)
 
@@ -166,11 +166,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 0.55, 0.48, 1.21 | tree_lod1/wood_planks | 0.71 + 0 + 0.71 | 1.034 |
 | 1.25, 0.48, -0.47 | tree_lod1/wood_planks | 1 + 0 + 0 | 1.034 |
 
-## backtoback (info, 169)
+## backtoback (info, 197)
 
 | at | parts | area |
 |---|---|---|
-| 0.07, 5.76, 0.05 | tree_lod1/fir_bark + tree_lod1/fir_needles | 0.00007 |
 | 0.76, 1.16, 0.16 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.00231 |
 | 0.73, 0.85, -1.71 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.00469 |
 | -0.06, 1.16, 0.68 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.0028 |
@@ -200,6 +199,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.26, 1.65, -0.71 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.00353 |
 | 1.11, 2.01, -0.84 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.01175 |
 | 1.25, 1.95, -0.94 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.03936 |
+| 0.58, 2.07, 1.46 | tree_lod1/fir_needles + tree_lod1/bauble | 0.00603 |
 | -1.68, 1.96, -0.04 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.03749 |
 | 0.79, 2.33, -1.28 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.00731 |
 | -1.70, 2.82, -0.72 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.00919 |
@@ -211,4 +211,4 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.74, 2.91, 0.81 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.01023 |
 | -0.78, 2.89, 0.96 | tree_lod1/fir_needles + tree_lod1/fir_needles | 0.00583 |
 
-(129 more in the JSON)
+(157 more in the JSON)

@@ -36,6 +36,41 @@ ok(built === (slots.size + EXTRA.length) * 4, `${built} materials built for ${sl
 const emissive = ["bulb_warm", "led_rope", "star_glow"].every((s) => kit.slotMaterial(s, { instanced: true }).emissiveNode);
 ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)");
 
+// ---- RULE 19 (needle cards): the fir's near level is alpha-tested needle cards with CANOPY normals; the far levels
+// have none. Why: the first fir was solid lumpy sleeves with a stroke pattern: lit by their own surface, they read as
+// flat leaves / cards up close (docs/CHRISTMAS.md "needle cards"). On the decoded GLB (what the viewer gets).
+{
+  const T = kit.pieces.tree, cards = T.lods.map((l) => l.find((x) => x.slot === "fir_cards"));
+  const g = cards[0]?.geometry;
+  ok(!!g && !!g.attributes.uv && !cards[1] && !cards[2], `fir: needle cards on LOD0 only (${cards.map((c) => (c ? c.geometry.index.count / 3 : 0)).join(" / ")} card triangles per level)`);
+  if (g) {
+    const P = g.attributes.position, N = g.attributes.normal, I = g.index.array, n = P.count;
+    // the kit's canopy direction (glTF: Y up): out from the trunk, 35.5 deg up, straight up round the leader
+    let good = 0;
+    for (let i = 0; i < n; i++) {
+      const x = P.getX(i), y = P.getY(i), z = P.getZ(i), rl = Math.hypot(x, z), k = Math.min(1, rl / 0.35);
+      let cx = rl > 1e-5 ? (x / rl) * Math.cos(0.62) * k : 0, cz = rl > 1e-5 ? (z / rl) * Math.cos(0.62) * k : 0, cy = Math.sin(0.62) * k + (1 - k);
+      const l = Math.hypot(cx, cy, cz); cx /= l; cy /= l; cz /= l;
+      if (N.getX(i) * cx + N.getY(i) * cy + N.getZ(i) * cz > 0.8) good++;
+    }
+    // ... and not the card's own flat normal: triangles whose 3 corner normals all sit within 3 deg of the face's (+-)
+    let flat = 0;
+    const v = (i) => [P.getX(i), P.getY(i), P.getZ(i)];
+    for (let t = 0; t < I.length; t += 3) {
+      const [a, b, c] = [v(I[t]), v(I[t + 1]), v(I[t + 2])];
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+      const fn = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]], fl = Math.hypot(...fn) || 1;
+      if ([0, 1, 2].every((q) => Math.abs((N.getX(I[t + q]) * fn[0] + N.getY(I[t + q]) * fn[1] + N.getZ(I[t + q]) * fn[2]) / fl) > Math.cos(3 * Math.PI / 180))) flat++;
+    }
+    const nt = I.length / 3;
+    ok(good / n >= 0.98 && flat / nt < 0.05, `fir cards shade as a volume: ${(100 * good / n).toFixed(1)} % of ${n} vertices within 37 deg of the canopy normal (>= 98 %), ${(100 * flat / nt).toFixed(1)} % of ${nt} triangles flat-shaded (< 5 %)`);
+  }
+  const m = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: true }), s = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false });
+  ok([m, s].every((x) => x.maskNode && !x.transparent && x.side === 2 && x.normalNode && x.depthWrite !== false), "fir cards: alpha TESTED (a mask, never blended), two-sided, own (canopy) normal node, depth written");
+  const nd = kit.info.needles;
+  ok(!!nd && fs.existsSync(new URL(`../../models/christmas/${nd.file}`, import.meta.url)) && nd.levels >= 10, `needle atlas ${nd?.file} ${nd?.px?.join(" x ")}, ${nd?.levels} coverage-preserving mip levels, ${((nd?.ktx2_bytes ?? 0) / 1024).toFixed(0)} KB`);
+}
+
 // ---- the site
 const site = JSON.parse(fs.readFileSync(new URL("../../models/christmas/site.json", import.meta.url)));
 ok(site.trees.length === 2, `trees: ${site.trees.map((t) => `${t.id} (${t.x}, ${t.z})`).join(", ")}`);

@@ -1,6 +1,6 @@
 # Mesh audit: christmas spanmotif_lod0 (needle-vs-needle overlaps exempt: 0)
 
-728 triangles, 378 welded vertices, 0 open edges, 0 rays, 17 ms.
+728 triangles, 378 welded vertices, 0 open edges, 0 rays, 14 ms.
 
 **0 blocking**, 240 warnings. Clean (no blocking item).
 

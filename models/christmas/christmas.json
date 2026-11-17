@@ -1,16 +1,20 @@
 {
  "pieces": {
   "tree": {
-   "foliage_tris": 139354,
+   "foliage_tris": 92274,
    "fronds": 270,
+   "needle_cards": 17576,
+   "card_tris": 81552,
    "baubles": 130,
-   "bulbs": 665,
+   "bulbs": 617,
+   "ornaments_clear_of_card_cores": 747,
    "height_m": 10.4,
    "width_m": 5.9,
-   "triangles_lod0": 183424,
+   "triangles_lod0": 135192,
    "slots": [
     "fir_bark",
     "fir_needles",
+    "fir_cards",
     "bauble",
     "gold_metal",
     "bulb_warm",
@@ -19,8 +23,8 @@
     "mulch"
    ],
    "size_m": [
-    6.151,
-    5.936,
+    5.821,
+    5.763,
     10.4
    ]
   },
@@ -111,11 +115,12 @@
    "lods": [
     {
      "node": "tree_lod0",
-     "triangles": 183424,
-     "draws": 8,
+     "triangles": 135192,
+     "draws": 9,
      "slots": [
       "fir_bark",
       "fir_needles",
+      "fir_cards",
       "bauble",
       "gold_metal",
       "bulb_warm",
@@ -124,11 +129,12 @@
       "mulch"
      ],
      "slot_triangles": [
-      92,
-      139262,
+      9812,
+      910,
+      81552,
       21840,
       3668,
-      15960,
+      14808,
       20,
       2576,
       6
@@ -138,7 +144,7 @@
     },
     {
      "node": "tree_lod1",
-     "triangles": 41090,
+     "triangles": 40616,
      "draws": 8,
      "slots": [
       "fir_bark",
@@ -151,13 +157,13 @@
       "mulch"
      ],
      "slot_triangles": [
-      84,
+      60,
       31418,
       2600,
-      480,
-      5320,
+      440,
+      4936,
       20,
-      1162,
+      1136,
       6
      ],
      "error_m": 0.035,
@@ -165,7 +171,7 @@
     },
     {
      "node": "tree_lod2",
-     "triangles": 12802,
+     "triangles": 12622,
      "draws": 5,
      "slots": [
       "fir_bark",
@@ -175,10 +181,10 @@
       "star_glow"
      ],
      "slot_triangles": [
-      32,
+      44,
       9050,
       1040,
-      2660,
+      2468,
       20
      ],
      "error_m": 0.14,
@@ -528,43 +534,42 @@
    ]
   }
  },
- "glb_bytes": 5878008,
+ "glb_bytes": 5430760,
  "lod_ranges_m": {
   "note": "per piece (lods[piece].range): each LOD's band END (camera distance)"
  },
  "audit": {
   "tree_lod0": {
    "blocking": 0,
-   "warnings": 876,
-   "foliage_exempt": 3619,
+   "warnings": 6838,
+   "foliage_exempt": 101930,
    "counts": {
-    "sliver": 508,
+    "sliver": 6180,
     "nonmanifold": 32,
-    "backtoback": 137,
-    "seam": 6863,
-    "opening": 16
+    "backtoback": 662,
+    "seam": 21548,
+    "opening": 15
    }
   },
   "tree_lod1": {
    "blocking": 0,
-   "warnings": 356,
-   "foliage_exempt": 1344,
+   "warnings": 311,
+   "foliage_exempt": 1347,
    "counts": {
-    "sliver": 245,
+    "sliver": 200,
     "nonmanifold": 32,
-    "backtoback": 169,
-    "seam": 3561,
+    "backtoback": 197,
+    "seam": 4294,
     "opening": 16
    }
   },
   "tree_lod2": {
    "blocking": 0,
-   "warnings": 4,
+   "warnings": 6,
    "foliage_exempt": 437,
    "counts": {
-    "sliver": 4,
-    "backtoback": 4,
-    "seam": 1360
+    "sliver": 6,
+    "seam": 1842
    }
   },
   "wreath_lod0": {
@@ -714,5 +719,32 @@
     "seam": 119
    }
   }
+ },
+ "needles": {
+  "file": "fir_needles.ktx2",
+  "px": [
+   2048,
+   1024
+  ],
+  "cells": 4,
+  "card_m": [
+   0.15,
+   0.3
+  ],
+  "levels": 12,
+  "coverage": 0.2305,
+  "mean_front_linear": [
+   0.0224,
+   0.0618,
+   0.0209
+  ],
+  "mean_back_linear": [
+   0.1101,
+   0.1766,
+   0.1203
+  ],
+  "ktx2_bytes": 760935,
+  "gpu_bytes_bc7": 2796240,
+  "source": "tools/blender/firNeedles.py (modelled needles) + tools/christmas/fir_needles_ktx2.py"
  }
 }

@@ -1,6 +1,6 @@
 # Mesh audit: christmas wreath_lod1 (needle-vs-needle overlaps exempt: 14)
 
-2,054 triangles, 1,157 welded vertices, 0 open edges, 0 rays, 129 ms.
+2,054 triangles, 1,157 welded vertices, 0 open edges, 0 rays, 117 ms.
 
 **0 blocking**, 11 warnings. Clean (no blocking item).
 

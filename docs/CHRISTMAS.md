@@ -1,5 +1,70 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## NEEDLE CARDS: the fir's near level (claude/xmasfir, 2026-11-17; offline, NOT yet seen in the browser)
+
+- **Defect:** up close the fir's branches read as flat leaves / cards, not a fir.
+- **Why it happened:** every branch was a CLOSED, lumpy, flattened sleeve (a solid slab 0.5-0.85 m wide) with a needle
+  stroke pattern in the shader and zigzag edges. Lit by its own smooth surface it shades as one broad leaf; no needle has
+  a silhouette, nothing is seen through, the tiers have no depth. Detail in the colour cannot make a volume of needles.
+- **Fix:** the NEAR level (LOD0, to 45 m) is now built of **alpha-tested needle cards** (new slot `fir_cards`):
+  - `tools/blender/firNeedles.py` MODELS four Nordmann branchlets needle by needle (twig, terminal + side shoots, flat
+    blunt needles parted to the sides and swept forward in a shallow V, a shorter top row over the twig, lighter new growth
+    at the tips, buds; ~13 k faces each), renders them from ABOVE and BELOW (Cycles on OptiX, emission of the albedo x
+    AO between the needles) into one atlas; `tools/christmas/fir_needles_ktx2.py` composes it (bottom views mirrored so a
+    texel is the same needle; the card's back face samples v + 0.5: the silvery undersides), keeps 6 px of empty border
+    per cell, bleeds the colour, builds COVERAGE-PRESERVING alpha mips and writes `models/christmas/fir_needles.ktx2`
+    (2048 x 1024, UASTC + zstd, 743 KB file, 2.7 MB as BC7, 12 levels).
+  - `tools/blender/christmasKit.py build_tree`: each of the 270 branches is a thin twig (bark) carrying side branchlet
+    cards every 5.5 cm (alternating, swept forward 38-60 deg, hanging 4-22 deg) and, crossing 85 % of them, a second card
+    rolled 60-88 deg (hanging / rising shoots: the branch is a bottle-brush from any side, never a flat tier seen edge-on
+    from the street), sprays along the axis, a tip spray + a crossing one, a two-ring leader; outer cards take the
+    light-tipped sprays, inner the older ones; a smaller dark inner cone (gaps show depth). 17.6 k cards.
+  - **Canopy normals** (`CUSTOM_NORMALS`): every card corner takes the crown's normal (out from the trunk, 35 deg up;
+    straight up round the leader) blended 20 % with its face's, on BOTH faces in the viewer (`normalNode =
+    normalViewGeometry`: DoubleSide would flip the back's): the crown lights as a volume. **Canopy AO** in COLOR_0.b
+    (depth into the crown x 38 % of the Cycles bake: the bake sees the cards as opaque quads).
+  - Viewer (`viewer/christmas/xmasKit.js` case `fir_cards`): the KTX2 loaded with the kit (the shared KTX2Loader, before
+    any material), alpha TESTED at 0.5 in the mask (+ the LOD band mask on the fade set; the shadow pass uses the same
+    mask: card-shaped shadows), DoubleSide, glossy top / matt silvery underside (`xmas.look.cards`, `.under`), snow on the
+    sprays' tops. Shadows: `fir_cards` casts. No light, no DynamicDrawUsage, the LOD bands / fade unchanged.
+  - Ornaments: ray cast onto the SOLID foliage (trunk, twigs, cone, the cards' cores = the twig line +- 30 % of the half
+    width), kept clear of it (they nestle among the cards' transparent fringe; 0 crossing with a card in the audit), LED
+    bulbs clear of every card, no ornament out in the air past the branch tips (the crown's reach check). The far
+    stand-ins keep the near places (moved out of the far fronds they would jump 0.2-0.45 m at the 45 m switch).
+  - FAR levels unchanged in kind (solid fronds, no texture) + the trunk as its own stand-in (LOD0's twigs are not
+    simplified into LOD1).
+- **Rule** (docs/QUALITY_RULES.md row 19, extended): foliage seen from the street is needles, not slabs: the near level
+  alpha-TESTED needle cards (never blended) of modelled sprays with CANOPY normals on both faces, the far levels solid and
+  cheap, a triangle budget per level.
+- **Automated checks** (gate rows `xmas` + `xmastest`): `tools/christmas/xmasTest.mjs` on the DECODED GLB: cards on LOD0
+  only, >= 98 % of card vertices within 37 deg of the canopy normal and < 5 % of card triangles flat-shaded (now 100 % /
+  0 %), the material alpha-tested (a mask, not transparent), two-sided, own normal node, depth written, the atlas present
+  with >= 10 mip levels; `tools/audit/xmasCheck.mjs`: the triangle budget per level (160 k / 45 k / 15 k), needle-card
+  triangles on the near level only, the atlas <= 1.5 MB file / 4 MB GPU, every ornament clear of the solid foliage and
+  the card cores. Mesh audit (`tools/christmas_pack.mjs`): 0 blocking over 18 piece levels; exemptions widened (and
+  written down there): foliage vs foliage now includes `fir_cards` (+ a card against the twig carrying it); the cards'
+  own surface checks (open, two-sided, canopy-shaded by design: checked by the lines above instead); on the far levels a
+  bauble sinking into the solid frond that stands in for the cards it nestles among.
+
+| tree level | before (triangles / draws) | after (triangles / draws) | textures |
+|---|---|---|---|
+| LOD0 (0-45 m) | 183,424 / 8 (fir_needles 139,262 solid sleeves) | **135,192 / 9** (fir_cards 81,552 = 17,576 cards; twigs + trunk 9.8 k; cone 910) | before none; after `fir_needles.ktx2` 2048 x 1024 RGBA (743 KB file, 2.7 MB BC7) |
+| LOD1 (45-150 m) | 41,090 / 8 | 40,616 / 8 | none |
+| LOD2 (150-1000 m) | 12,802 / 5 | 12,622 / 5 | none |
+
+**Stills** (Blender, Cycles OptiX, `--stills`, eye height 1.7 m): `docs/christmas/blender/fir_8m_day.jpg`,
+`fir_3m_detail_day.jpg`, `fir_30m_day.jpg`, `fir_12m_night.jpg`, `fir_lod1_30m_day.jpg` (the far level at 30 m for the
+45 m switch). Before: `tree_close.jpg`, `tree_day.jpg`, `tree_night.jpg` (the solid sleeves; left as they were).
+
+**Rebuild:** `blender -b -P tools/blender/firNeedles.py` -> `python -E -P tools/christmas/fir_needles_ktx2.py` ->
+`blender -b -P tools/blender/christmasKit.py -- --stills` -> `node tools/christmas_pack.mjs`
+(the atlas sources live in data/raw/textures/christmas/, not committed; the shipped KTX2 is).
+
+**For the browser turn:** the look at 5-15 m day / night / snow at both squares (cards' colour vs the far fronds at the
+45 m switch: `xmas.look.cards`, `.under`; the dithered switch under motion), `?xmas=0` vs `?xmas=1` cost at night at
+Place Saint-Job (budget +0.1 ms: alpha-tested overdraw + card shadows are the new cost; if over: the crossing cards to
+70 %, the card shadow through LOD1's fronds), the visual tour `tools/tour/views_xmas.json`.
+
 ## BROWSER TURN 2 (2026-11-17, after the foundation merge 08395f0d)
 
 - **GPU rebuild** (OptiX AO + previews, `docs/christmas/blender/`), mesh audit 0 blocking over 18 piece levels. Defect eye
@@ -138,7 +203,7 @@ RTX 4050 (OptiX, ~5 s for the whole kit; `--factory-startup` starts on CPU, the 
 
 | piece | LOD0 / LOD1 / LOD2 triangles | LOD band ends (m) | slots |
 |---|---|---|---|
-| tree | 161,560 / 40,982 / 12,760 | 45 / 150 / 1000 | needles, bark, bauble, gold, LEDs, star, planks, mulch (LOD2 drops planks + mulch) |
+| tree | 135,192 / 40,616 / 12,622 (2026-11-17 needle cards) | 45 / 150 / 1000 | needle cards (LOD0 only), needles, bark, bauble, gold, LEDs, star, planks, mulch (LOD2 drops planks + mulch) |
 | wreath | 5,292 / 2,054 / 1,000 | 10 / 32 / 90 | needles, ribbon, bauble, LEDs, gold |
 | swag | 6,036 / 3,028 / 1,048 | 14 / 45 / 150 | needles, LEDs, bauble, gold, ribbon |
 | lampmotif | 1,716 / 1,110 / 318 | 30 / 100 / 380 | LED rope, frame (LOD2: rope only) |

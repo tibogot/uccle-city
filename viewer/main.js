@@ -1410,7 +1410,7 @@ async function main() {
   // the Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): 1 Dec - 6 Jan (the real date or ?day=), ?xmas=1 on, ?xmas=0 off:
   // the firs on Place de Saint-Job and the Parvis Saint-Pierre, garlands across the shopping streets, shopfront swags,
   // door wreaths, lamp-post snowflakes; emissive only (no light added). Loads in the background (does not hold the boot)
-  if (xmasActive(params)) heroes.push(() => { addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, params }).catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)); });
+  if (xmasActive(params)) heroes.push(() => { addChristmas({ scene, updaters, world, manifest, log, compiler: heroCompiler, renderer, params }).catch((e) => log(`christmas failed (${e.message}): reload with ?xmas=0`)); });
   await together(heroes);                                          // (each awaits only its notes; the models load in the background)
   // flags on the town hall balcony (viewer/flagsCity.js), behind ?flags=1 (needs ?townhall=1); in the background
   // ... and the Lycée Français's three (viewer/lyceeFront.js: once tile F7 has built the poles; ?cortenbosch=old none)

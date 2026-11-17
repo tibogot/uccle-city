@@ -1,12 +1,17 @@
 """THE CHRISTMAS KIT (Uccle, December): the seasonal decorations of docs/CHRISTMAS.md, built entirely in code (no hand
 modelling). Blender 5.0 headless:
 
-    "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/christmasKit.py -- [--no-bake] [--previews] [--only a,b] [--samples 48]
+    "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/christmasKit.py -- [--no-bake] [--previews] [--stills] [--only a,b] [--samples 48]
+    (first the needle atlas: tools/blender/firNeedles.py + tools/christmas/fir_needles_ktx2.py; --only writes a raw GLB
+     with those pieces alone: pack only after a full run)
     node tools/christmas_pack.mjs        (LODs with meshoptimizer + the mesh audit -> models/christmas/christmas.glb)
 
 Pieces (one object each; front = Blender -Y = glTF +Z; origin given per piece):
-  tree       the square's Nordmann fir, 10 m to the leader + the star: a trunk, 22 whorls of drooping needle FRONDS
-             (each a lumpy flattened sleeve with two side fronds), a dark inner cone (no see-through), ~110 baubles
+  tree       the square's Nordmann fir, 10 m to the leader + the star: a trunk, 30 whorls (270 branches); the NEAR level
+             (LOD0) is every branch a twig carrying ~65 alpha-tested NEEDLE CARDS (slot fir_cards: the modelled sprays of
+             tools/blender/firNeedles.py, crossed at two rolls, canopy normals + canopy AO), a small dark inner cone;
+             the FAR stand-ins (LOD1 / LOD2) the solid drooping FRONDS (each a lumpy flattened sleeve with side fronds,
+             a dark inner cone: no see-through); ~110 baubles
              (red / gold / champagne) and ~560 warm-white LED bulbs set ON the foliage by ray casts (a spiral string),
              a faceted gold star on a rod, the octagonal timber planter (corner posts, 6 boards a side, rim, mulch).
              Origin: the trunk's foot on the ground.
@@ -38,6 +43,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 OUT = os.path.join(ROOT, "models", "christmas")
 BAKE = "--no-bake" not in ARGS
 PREVIEWS = "--previews" in ARGS
+STILLS = "--stills" in ARGS                 # the fir's review stills only (8 m / 30 m / night, LOD0 + LOD1 at 30 m)
 ONLY = [s for s in opt("--only", "").split(",") if s]
 SAMPLES = int(opt("--samples", 48))
 T0 = time.time()
@@ -55,6 +61,7 @@ Z = Vector((0, 0, 1))
 # preview colour / roughness / metal / emission: Blender previews only (the viewer maps slots by NAME)
 SLOTS = {
     "fir_needles": ((0.035, 0.085, 0.045), 0.8, 0.0, 0),     # Nordmann fir: dark glossy green, silver undersides
+    "fir_cards": ((0.03, 0.08, 0.035), 0.5, 0.0, 0),          # the fir's NEAR level: alpha-tested needle-spray cards (atlas)
     "fir_bark": ((0.16, 0.11, 0.08), 0.9, 0.0, 0),
     "bauble": ((0.5, 0.05, 0.04), 0.18, 0.6, 0),             # colour per COLOR_0.g (red / gold / champagne)
     "gold_metal": ((0.8, 0.6, 0.25), 0.3, 1.0, 0),            # caps, hooks, the star's rod
@@ -143,6 +150,10 @@ class Mesh:
         return o
 
 
+CANOPY = None                # the fir's canopy (direction, AO) for the bake (set by build_tree)
+CUSTOM_NORMALS = {}          # slot name -> fn(vertex co, face normal) -> shading normal (the fir's needle cards: canopy normals)
+
+
 def fix_normals(o, crease=60.0, planar_area=0.2):
     """(tools/blender/publicart.py) the shading normals every LOD0 ships with: a face inside a PLANAR region (flood-filled
     over edges within 1 deg, larger than 0.2 m2) or marked flat is shaded flat; any other corner averages the area-weighted
@@ -177,9 +188,11 @@ def fix_normals(o, crease=60.0, planar_area=0.2):
         for v in p.vertices: vf[v].append(p.index)
     cc = math.cos(math.radians(crease))
     out = [None] * len(me.loops)
+    custom = [CUSTOM_NORMALS.get(me.materials[p.material_index].name) if me.materials else None for p in P]
     for p in P:
         f = p.index
         for li in p.loop_indices:
+            if custom[f]: out[li] = custom[f](me.vertices[me.loops[li].vertex_index].co, FN[f]); continue
             if flat[f]: out[li] = FN[f]; continue
             v = me.loops[li].vertex_index
             n = Vector((0, 0, 0))
@@ -188,6 +201,7 @@ def fix_normals(o, crease=60.0, planar_area=0.2):
             out[li] = n.normalized() if n.length > 1e-12 else FN[f]
     cs = math.cos(math.radians(25))
     for p in P:
+        if custom[p.index]: continue
         li = list(p.loop_indices)
         vs = [me.vertices[me.loops[l].vertex_index].co for l in li]
         el = [(vs[1] - vs[0]).length, (vs[2] - vs[1]).length, (vs[0] - vs[2]).length]; L = max(el)
@@ -396,6 +410,53 @@ def frond(M, p0, d, L, W, droop, tip_up, col, seed, nl=8, na=8, side=4, snl=5, s
     return pts
 
 
+# ------------------------------------------------------------------------------------------------ the needle card
+# The atlas of tools/blender/firNeedles.py (-> tools/christmas/fir_needles_ktx2.py -> models/christmas/fir_needles.ktx2):
+# 4 cells across, each a 0.15 x 0.30 m spray (base at the cell's bottom, tip at its top); top views in image v 0 .. 0.5,
+# the same sprays seen from below in v 0.5 .. 1 (the back face samples uv + (0, 0.5)). Variants 0, 1 outer tips (light
+# new growth), 2, 3 older inner sprays.
+NEEDLE_CELLS, NEEDLE_ASPECT = 4, 0.5
+NEEDLE_ATLAS = os.path.join(ROOT, "data", "raw", "textures", "christmas", "fir_needles_atlas.png")
+
+
+def needle_card(M, base, T, side, length, roll, droop, variant, col, mirror=False, fold=0.2, core=None):
+    """one alpha-tested needle card: a spray `length` long, half as wide, its base (the twig's cut end) at `base`,
+    pointing along T, its width toward `side` turned by `roll` round T; bent DOWN along its length (droop: the drop of
+    the tip as a share of the length: the spray hangs) and folded into a shallow V along its twig (the needles' V);
+    2 x 1 (cards up to 36 cm) or 2 x 2 quads. UV = the atlas cell (front = the top view, seen from the front face the image is
+    not mirrored: right = +Wd, up = T); mirror: the cell flipped left / right. Returns the twig's line on the card."""
+    T = Vector(T).normalized()
+    Wd = (Vector(side) - T * Vector(side).dot(T)).normalized()
+    Wd = (Matrix.Rotation(roll, 3, T) @ Wd).normalized()
+    Nn = Wd.cross(T).normalized()
+    if Nn.z < 0: Wd = -Wd; Nn = -Nn                       # (the card's front = the spray's top: facing up)
+    w = length * NEEDLE_ASPECT
+    ns = 1 if length < 0.36 else 2
+    u0 = variant / NEEDLE_CELLS; du = 1 / NEEDLE_CELLS
+    V, F, U = [], [], []
+    for j in range(ns + 1):
+        s = j / ns
+        for a in (-1.0, 0.0, 1.0):
+            V.append(base + T * (length * s) + Wd * (w * 0.5 * a) + Nn * (fold * abs(a) * w * 0.5) - Z * (droop * length * s * s))
+            uu = (a if not mirror else -a) * 0.5 + 0.5
+            U.append((u0 + uu * du, 1.0 - 0.5 * (1.0 - s)))   # (Blender v up: image v_img = 0.5 (1 - s) -> 1 - v_img)
+    for j in range(ns):
+        for i in range(2):
+            a0 = j * 3 + i
+            F.append([a0, a0 + 1, a0 + 4, a0 + 3])           # ((v1 - v0) x (v3 - v0) = Wd x T = Nn: the front face up)
+    M.add(V, F, "fir_cards", col, U)
+    if core is not None:
+        # the card's CORE: the twig's line +- 30 % of the half width (where the needles are dense: the ornaments' ray
+        # casts land on it and keep clear of it; the fringe outside it is mostly transparent)
+        o = len(core[0])
+        for j in range(ns + 1):
+            for a in (-0.3, 0.3):
+                q = V[j * 3 + 1]
+                core[0].append(q + Wd * (w * 0.5 * a) + Nn * (fold * abs(a) * w * 0.5))
+        for j in range(ns): core[1].append([o + j * 2, o + j * 2 + 1, o + j * 2 + 3, o + j * 2 + 2])
+    return [V[j * 3 + 1] for j in range(ns + 1)]
+
+
 # ------------------------------------------------------------------------------------------------ pieces
 STATS = {}
 
@@ -436,18 +497,116 @@ def build_tree():
             LL = L * rnd.uniform(0.9, 1.06)
             branches.append((p0, d, LL, 0.5 + 0.35 * LL / 2.85, rnd.uniform(0.14, 0.22), rnd.uniform(0.06, 0.12), (rnd.random(), 0.75 + 0.25 * rnd.random(), 1.0), j * 31 + b))
     nfr = len(branches)
-    for Mx, det, cs in ((M, dict(nl=10, na=8, side=4, snl=6, sna=6), 24), (far1, dict(nl=4, na=5, side=2, snl=3, sna=4), 16), (far2, dict(nl=3, na=4, side=0), 10)):
+    # the FAR levels (LOD1 / LOD2 stand-ins): the solid fronds (opaque, no texture: cheap at 45 m +) + the trunk
+    for Mx, det, cs in ((far1, dict(nl=4, na=5, side=2, snl=3, sna=4), 16), (far2, dict(nl=3, na=4, side=0), 10)):
         inner_cone(Mx, cs)
         for (p0, d, LL, W, dr, tu, col, sd) in branches:
             frond(Mx, p0, d, LL, W, dr, tu, col, seed=sd, **det)
-        frond(Mx, Vector((0, 0, H_TOP - 0.35)), Vector((0.0, 0.05, 1.0)), 0.55, 0.16, 0.0, 0.0, (0.3, 0.9, 1.0), seed=999, nl=6 if Mx is M else 3, na=8 if Mx is M else 4, side=0)
+        frond(Mx, Vector((0, 0, H_TOP - 0.35)), Vector((0.0, 0.05, 1.0)), 0.55, 0.16, 0.0, 0.0, (0.3, 0.9, 1.0), seed=999, nl=3, na=4, side=0)
+        tube(Mx, [(0, 0, 0.3), (0, 0, 3.0), (0, 0, 6.0), (0, 0, 9.0)], [0.17, 0.13, 0.08, 0.03], "fir_bark", segs=8 if Mx is far1 else 6, col=(0.5, 0.5, 1.0))
+    # the NEAR level (LOD0): every branch a twig (bark) carrying alpha-tested NEEDLE CARDS (the modelled sprays of
+    # tools/blender/firNeedles.py): side branchlets alternating left / right in the branch's plane, swept forward and
+    # hanging a little (some rolled steeply: the hanging shoots under a tier), sprays along the axis and a tip spray;
+    # outer cards take the light-tipped sprays, inner ones the older. A smaller dark inner cone (the gaps between the
+    # tiers show depth, not sky). The cards shade with CANOPY normals (the crown's surface, not the card's plane: a
+    # card lit by its own flat normal reads as a flat leaf) and a canopy AO (depth into the crown).
+    # (registered for to_object: the cards' canopy normals; the bake: the canopy AO)
+    def canopy_dir(co):
+        r = Vector((co.x, co.y, 0.0)); rl = r.length
+        rad = r / rl if rl > 1e-5 else Vector((1, 0, 0))
+        k = min(1.0, rl / 0.35)                                     # (round the leader: toward straight up)
+        return (rad * (math.cos(0.62) * k) + Z * (math.sin(0.62) * k + (1 - k))).normalized()
+    def canopy_normal(co, fn):
+        nc = canopy_dir(co)
+        f = fn if fn.dot(nc) >= 0 else -fn
+        return (nc * 0.8 + f * 0.2).normalized()
+    def canopy_ao(co):
+        rl = math.hypot(co.x, co.y); R = L_at(min(H_TOP, co.z + 0.35)) + 0.1
+        d = max(0.0, min(1.0, rl / R))
+        sm = max(0.0, min(1.0, (d - 0.25) / 0.7)); sm = sm * sm * (3 - 2 * sm)
+        return 0.38 + 0.62 * sm
+    crnd = random.Random(2512)
+    cone_k = 0.3
+    def inner_cone0(Mx, nseg):
+        # (ends under the leader's sprays: its tip never shows as a bare dark spire)
+        cone_z = [Z0 + 0.15 + (8.75 - Z0) * j / 18 for j in range(19)]
+        cone = [ring(L_at(z) * cone_k + 0.05, z, nseg) for z in cone_z]
+        V, F = [], []
+        for r_ in cone: V.extend(r_)
+        for j in range(len(cone) - 1):
+            for k in range(nseg): F.append([j * nseg + k, j * nseg + (k + 1) % nseg, (j + 1) * nseg + (k + 1) % nseg, (j + 1) * nseg + k])
+        F.append(list(reversed(range(nseg))))
+        top = len(V); V.append(Vector((0, 0, 9.05)))
+        for k in range(nseg): F.append([(len(cone) - 1) * nseg + k, (len(cone) - 1) * nseg + (k + 1) % nseg, top])
+        Mx.add(V, F, "fir_needles", (0.5, 0.1, 1.0))
+    inner_cone0(M, 24)
+    ncards = 0
+    core = ([], [])
+    def card(base, T, side, length, roll, droop, variant, tint):
+        nonlocal ncards
+        ncards += 1
+        needle_card(M, base, T, side, length, roll, droop, variant, (tint, variant / 3, canopy_ao(base + Vector(T).normalized() * length * 0.5)), mirror=crnd.random() < 0.5, core=core)
+    for (p0, d, LL, W, dr, tu, col, sd) in branches:
+        d = Vector(d).normalized()
+        nl = 6
+        pts = [p0 + d * (LL * t) + Z * (LL * (-dr * t * t + tu * t ** 3)) for t in (i / nl for i in range(nl + 1))]
+        tw = [p0 + d * (LL * 0.94 * t) + Z * (LL * (-dr * (0.94 * t) ** 2 + tu * (0.94 * t) ** 3)) for t in (i / 4 for i in range(5))]
+        tube(M, tw, [0.0025 + 0.0085 * (LL / 2.85) ** 0.7 * (1 - 0.8 * i / 4) for i in range(5)], "fir_bark", segs=4, col=(0.5, 0.5, 1.0))
+        def at(s):
+            t = max(0.0, min(1.0, s / LL)); x = t * nl; i = min(nl - 1, int(x)); f = x - i
+            return pts[i].lerp(pts[i + 1], f), (pts[i + 1] - pts[i]).normalized()
+        tint = col[0]
+        reach = min(1.0, LL / 1.6)
+        # side branchlets: every 5.5 cm, alternating sides, swept forward; each a spray near the branch's plane (rolled
+        # +-35 deg) and, crossing it, a second one rolled steeply (60-88 deg: the hanging / rising shoots): the branch
+        # reads as a bottle-brush from any side, never as a flat tier seen edge-on from the street
+        s, k = 0.08 + crnd.uniform(0, 0.03), 0
+        while s < LL - 0.05:
+            P, T = at(s)
+            lat = Z.cross(T).normalized()
+            sg = 1 if k % 2 else -1
+            tt = s / LL
+            Ln = max(0.16, min(0.46, (0.19 + 0.27 * (1 - tt) * reach))) * crnd.uniform(0.85, 1.1)
+            var = crnd.choice((0, 1)) if tt > 0.55 or LL < 0.7 else crnd.choice((2, 3))
+            for q in range(2 if crnd.random() < 0.85 else 1):
+                ang = math.radians(crnd.uniform(38, 60) - 10 * tt)
+                Dd = (T * math.cos(ang) + lat * (sg * math.sin(ang)))
+                Dd = (Dd - Z * math.tan(math.radians(crnd.uniform(4, 22) if q == 0 else crnd.uniform(14, 40)))).normalized()
+                roll = math.radians(crnd.uniform(-35, 35)) if q == 0 else math.radians(crnd.uniform(60, 88) * crnd.choice((-1, 1)))
+                card(P, Dd, lat * sg, Ln * (1.0 if q == 0 else 0.82), roll, crnd.uniform(0.06, 0.18), var if q == 0 else (var + 1) % 4, tint)
+            s += 0.055 * crnd.uniform(0.85, 1.15); k += 1
+        # sprays along the axis (inner, older; rolled any way) and the tip spray (new growth) + a crossing one
+        s = 0.16
+        while s < LL - 0.36:
+            P, T = at(s)
+            card(P, T, Z.cross(T), 0.32 * crnd.uniform(0.9, 1.1), math.radians(crnd.uniform(-70, 70)), 0.06, crnd.choice((2, 3)), tint)
+            s += 0.22
+        Lt = min(0.38, max(0.18, LL * 0.4))
+        P, T = at(LL - Lt * 0.85)
+        card(P, (T + Z * 0.08).normalized(), Z.cross(T), Lt, math.radians(crnd.uniform(-10, 10)), 0.05, crnd.choice((0, 1)), tint)
+        card(P, (T + Z * 0.04).normalized(), Z.cross(T), Lt * 0.85, math.radians(crnd.uniform(65, 85) * crnd.choice((-1, 1))), 0.08, crnd.choice((0, 1)), tint)
+    # the leader: sprays round it, pointing up (two rings: the top shoot and last year's whorl under it)
+    for q in range(10):
+        a = q * 2 * math.pi / 5 * 1.07 + 0.3
+        z_ = H_TOP - (0.75 if q < 5 else 0.42)
+        card(Vector((0, 0, z_)), Vector((0.22 * math.cos(a), 0.22 * math.sin(a), 1.0)), Vector((math.cos(a + 1.3), math.sin(a + 1.3), 0)), 0.36 if q < 5 else 0.3, 0.0, 0.02, q % 2, 0.5)
+    CUSTOM_NORMALS["fir_cards"] = canopy_normal
+    global CANOPY
+    CANOPY = {"dir": canopy_dir, "ao": canopy_ao}
     foliage_tris = M.tris()
     # ---------------------------------------------------------------- ornaments by ray casts onto the foliage
-    bvh = BVHTree.FromPolygons([tuple(v) for v in M.V], M.F, all_triangles=False)
-    def clear(c, need, nrm):
-        """push an ornament out along nrm until the foliage is `need` m from its centre (None: no room)"""
-        for _ in range(8):
-            loc_, _n, _i, dist = bvh.find_nearest(c)
+    # (onto the SOLID foliage: the trunk, twigs, inner cone and the needle cards' CORES; an ornament keeps clear of
+    # them and may nestle in a card's transparent fringe, like a bauble hung among the needles)
+    ci = M.slots.index("fir_cards")
+    solid = [f for f, si in zip(M.F, M.FS) if si != ci]
+    oc = len(M.V)
+    bvh = BVHTree.FromPolygons([tuple(v) for v in M.V] + [tuple(v) for v in core[0]], solid + [[oc + i for i in f] for f in core[1]], all_triangles=False)
+    # (the LED bulbs sit ON the needles: clear of every card, fringe included)
+    bvh_all = BVHTree.FromPolygons([tuple(v) for v in M.V], M.F, all_triangles=False)
+    def clear(c, need, nrm, tree_=None, steps=24):
+        """push an ornament out along nrm until the solid foliage is `need` m from its centre (None: no room)"""
+        for _ in range(steps):
+            loc_, _n, _i, dist = (tree_ or bvh).find_nearest(c)
             if loc_ is None or dist >= need: return c
             c = c + nrm * 0.012
         return None
@@ -455,14 +614,17 @@ def build_tree():
         R = L_at(z) + 1.5
         o = Vector((R * math.cos(theta), R * math.sin(theta), z + 0.35))
         tgt = Vector((0, 0, z - 0.25))
-        loc, nrm, idx, dist = bvh.ray_cast(o, (tgt - o).normalized(), R + 1)
+        dr_ = (tgt - o).normalized()
+        loc, nrm, idx, dist = bvh.ray_cast(o, dr_, R + 1)
         if loc is None: return None
-        if nrm.dot(o - loc) < 0: nrm = -nrm
-        return loc, nrm
+        return loc, -dr_                     # (pushed back along the ray: out of the crown, not along a rolled card)
     # baubles: stratified over the cone surface, kept apart; caps on top
     bb = []
     PAL = [0.0, 0.5, 1.0]
-    for j in range(1200):
+    def inside(c, r):
+        # (no bauble out in the air past the branch tips: the crown's reach there, the drooping tier above included)
+        return math.hypot(c.x, c.y) <= L_at(c.z + 0.3) * 0.97 + 0.06
+    for j in range(4000):
         if len(bb) >= 130: break
         z = 1.2 + 7.6 * ((j * 0.618034) % 1.0) ** 1.15
         th = rnd.uniform(0, 2 * math.pi)
@@ -471,12 +633,15 @@ def build_tree():
         loc, nrm = h
         r = 0.085 + 0.05 * rnd.random() * (1 - z / 10) + 0.02
         c = clear(loc + nrm * (r + 0.012) - Z * 0.02, r * 1.12 + 0.01, nrm)
-        if c is None or any((c - q).length < r + qr + 0.25 for q, qr in bb): continue
+        if c is None or not inside(c, r) or any((c - q).length < r + qr + 0.25 for q, qr in bb): continue
         bb.append((c, r))
         g = PAL[len(bb) % 3] if rnd.random() > 0.2 else PAL[0]
         col = (rnd.random(), g, 1.0)
         sphere(M, c, r, "bauble", segs=12, rings=8, col=col)
         tube(M, [c + Z * (r * 0.9), c + Z * (r * 1.08)], r * 0.22, "gold_metal", segs=8, col=col)
+        # (the far stand-ins at the SAME place: a far bauble sinks a little into the solid frond that stands in for the
+        # needle cards it nestles among at the near level (christmas_pack.mjs: the far levels' one exemption); moved
+        # out of the fronds it would jump 0.2-0.45 m at the 45 m switch)
         poly_shape(far1, c, r, "bauble", "ico", col); poly_shape(far2, c, r * 1.05, "bauble", "oct", col)
     # LEDs: a spiral string (11 turns, a bulb every ~21 cm along it), each put onto the foliage
     bulbs = []
@@ -491,7 +656,8 @@ def build_tree():
         if not h: continue
         loc, nrm = h
         c = clear(loc + nrm * 0.035, 0.034, nrm)
-        if c is None or any((c - q).length < qr + 0.06 for q, qr in bb) or any((c - q).length < 0.09 for q in bulbs): continue
+        c = clear(c, 0.034, nrm, bvh_all) if c is not None else None
+        if c is None or not inside(c, 0.0) or any((c - q).length < qr + 0.06 for q, qr in bb) or any((c - q).length < 0.09 for q in bulbs): continue
         flash = 1.0 if rnd.random() < 0.14 else 0.0
         col = (rnd.random(), flash, 1.0)
         bulbs.append(c)
@@ -535,7 +701,10 @@ def build_tree():
         lo = [Vector((a0.x * ri, a0.y * ri, HP)), Vector((a1.x * ri, a1.y * ri, HP)), Vector((a1.x * ro, a1.y * ro, HP)), Vector((a0.x * ro, a0.y * ro, HP))]
         hi = [v + Z * 0.035 for v in lo]
         prism(M, lo, hi, "wood_planks", (0.5, 0.7, 1.0), top=True, bottom=True, grain=along)
-    info = {"foliage_tris": foliage_tris, "fronds": nfr, "baubles": len(bb), "bulbs": len(bulbs), "height_m": round(sc.z + RO, 2), "width_m": round(2 * (L_at(Z0) + 0.1), 2)}
+    # (the rule the audit's card-fringe exemption leans on: every ornament clear of the solid foliage and card cores)
+    clear_n = sum(1 for c, r in bb if bvh.find_nearest(c)[3] >= r) + sum(1 for c in bulbs if bvh.find_nearest(c)[3] >= 0.022 * 1.15)
+    info = {"foliage_tris": foliage_tris, "fronds": nfr, "needle_cards": ncards, "card_tris": sum(len(f) - 2 for f, si in zip(M.F, M.FS) if si == ci),
+            "baubles": len(bb), "bulbs": len(bulbs), "ornaments_clear_of_card_cores": clear_n,  "height_m": round(sc.z + RO, 2), "width_m": round(2 * (L_at(Z0) + 0.1), 2)}
     return M, {1: far1, 2: far2}, info
 
 
@@ -879,6 +1048,15 @@ if BAKE and objs:
         a = [0.0] * (4 * n); me.color_attributes["AO"].data.foreach_get("color", a)
         c = [0.0] * (4 * n); me.color_attributes["Col"].data.foreach_get("color", c)
         for li in range(n): c[4 * li + 2] = a[4 * li]
+        # the fir's needle cards: the bake sees each card as an opaque quad (Cycles' AO ignores the alpha): the CANOPY AO
+        # (depth into the crown) carries them, the bake only 38 % (the trunk, the ornaments' contact)
+        ci = [i for i, m_ in enumerate(me.materials) if m_.name == "fir_cards"]
+        if ci and CANOPY:
+            for p in me.polygons:
+                if p.material_index != ci[0]: continue
+                for li in p.loop_indices:
+                    co = me.vertices[me.loops[li].vertex_index].co
+                    c[4 * li + 2] = CANOPY["ao"](co) * (0.62 + 0.38 * a[4 * li])
         me.color_attributes["Col"].data.foreach_set("color", c)
         me.color_attributes.remove(me.color_attributes["AO"])
         me.color_attributes.active_color = me.color_attributes["Col"]
@@ -909,11 +1087,33 @@ prev.update({
 json.dump(prev, open(infof, "w"), indent=1)
 
 # ------------------------------------------------------------------------------------------------ previews (day + night)
-if PREVIEWS and objs:
+if (PREVIEWS or STILLS) and objs:
     PV = os.path.join(ROOT, "docs", "christmas", "blender"); os.makedirs(PV, exist_ok=True)
     scn.render.engine = "CYCLES"; gpu_setup(); scn.cycles.samples = 32; scn.cycles.use_denoising = True
     for m in MATS.values():
         nt = m.node_tree; b = nt.nodes["Principled BSDF"]
+        if m.name == "fir_cards":
+            # the needle atlas (alpha TESTED at 0.5, as the viewer); the back face samples the bottom views (v - 0.5 in
+            # Blender's v-up UV) through a translucent BSDF: Cycles flips a back face's normal, the translucent lobe
+            # takes the light from the canopy side (the viewer shades both faces with the canopy normal)
+            img = bpy.data.images.load(NEEDLE_ATLAS)
+            uvn = nt.nodes.new("ShaderNodeUVMap"); geo = nt.nodes.new("ShaderNodeNewGeometry")
+            off = nt.nodes.new("ShaderNodeVectorMath"); off.operation = "MULTIPLY_ADD"
+            nt.links.new(geo.outputs["Backfacing"], off.inputs[0]); off.inputs[1].default_value = (0, -0.5, 0); nt.links.new(uvn.outputs["UV"], off.inputs[2])
+            tx = nt.nodes.new("ShaderNodeTexImage"); tx.image = img; tx.interpolation = "Linear"; nt.links.new(off.outputs[0], tx.inputs["Vector"])
+            attr = nt.nodes.new("ShaderNodeVertexColor"); attr.layer_name = "Col"
+            sep = nt.nodes.new("ShaderNodeSeparateColor"); nt.links.new(attr.outputs["Color"], sep.inputs[0])
+            ao = nt.nodes.new("ShaderNodeMath"); ao.operation = "MULTIPLY_ADD"; nt.links.new(sep.outputs[2], ao.inputs[0]); ao.inputs[1].default_value = 0.65; ao.inputs[2].default_value = 0.35
+            col = nt.nodes.new("ShaderNodeVectorMath"); col.operation = "SCALE"; nt.links.new(tx.outputs["Color"], col.inputs[0]); nt.links.new(ao.outputs[0], col.inputs["Scale"])
+            nt.links.new(col.outputs[0], b.inputs["Base Color"]); b.inputs["Roughness"].default_value = 0.45
+            tr = nt.nodes.new("ShaderNodeBsdfTranslucent"); nt.links.new(col.outputs[0], tr.inputs["Color"])
+            side = nt.nodes.new("ShaderNodeMixShader"); nt.links.new(geo.outputs["Backfacing"], side.inputs[0])
+            nt.links.new(b.outputs[0], side.inputs[1]); nt.links.new(tr.outputs[0], side.inputs[2])
+            cut = nt.nodes.new("ShaderNodeMath"); cut.operation = "GREATER_THAN"; nt.links.new(tx.outputs["Alpha"], cut.inputs[0]); cut.inputs[1].default_value = 0.5
+            tp = nt.nodes.new("ShaderNodeBsdfTransparent"); mx = nt.nodes.new("ShaderNodeMixShader")
+            nt.links.new(cut.outputs[0], mx.inputs[0]); nt.links.new(tp.outputs[0], mx.inputs[1]); nt.links.new(side.outputs[0], mx.inputs[2])
+            nt.links.new(mx.outputs[0], nt.nodes["Material Output"].inputs["Surface"])
+            continue
         attr = nt.nodes.new("ShaderNodeVertexColor"); attr.layer_name = "Col"
         sep = nt.nodes.new("ShaderNodeSeparateColor"); nt.links.new(attr.outputs["Color"], sep.inputs[0])
         mul = nt.nodes.new("ShaderNodeMix"); mul.data_type = "RGBA"; mul.blend_type = "MULTIPLY"; mul.inputs["Factor"].default_value = 1.0
@@ -946,6 +1146,8 @@ if PREVIEWS and objs:
             "chalet": ((-9.6, -10.5, 1.8), (-7.0, -4.0, 1.5), 35)}
     for o in objs:
         if o.name in POS: o.location = POS[o.name]
+    if STILLS:
+        for o in objs: o.hide_render = o.name != "tree"
     def shot(path, pos, tgt, lens, res, night):
         for m in MATS.values():
             b = m.node_tree.nodes["Principled BSDF"]
@@ -956,11 +1158,25 @@ if PREVIEWS and objs:
         scn.render.resolution_x, scn.render.resolution_y = res
         scn.render.image_settings.file_format = "JPEG"; scn.render.image_settings.quality = 88
         scn.render.filepath = path; t = time.time(); bpy.ops.render.render(write_still=True); tick(f"render {os.path.basename(path)} {time.time() - t:.0f}s")
-    if "tree" in [o.name for o in objs]:
+    if STILLS and "tree" in [o.name for o in objs]:
+        # the fir's review stills (eye height 1.7 m): 8 m and 30 m from the trunk by day, 12 m at night, a 3 m detail;
+        # LOD1 (the solid far fronds) at 30 m beside LOD0 for the switch at 45 m
+        scn.cycles.samples = 64
+        tr_ = [o for o in objs if o.name == "tree"][0]
+        shot(os.path.join(PV, "fir_8m_day.jpg"), (2.2, -7.7, 1.7), (0.4, 0, 3.4), 30, (1200, 900), False)
+        shot(os.path.join(PV, "fir_3m_detail_day.jpg"), (1.2, -4.4, 1.75), (0.3, 0, 2.3), 35, (1200, 900), False)
+        shot(os.path.join(PV, "fir_30m_day.jpg"), (6.0, -29.4, 1.7), (0, 0, 4.9), 75, (900, 1100), False)
+        shot(os.path.join(PV, "fir_12m_night.jpg"), (3.0, -11.6, 1.7), (0, 0, 4.4), 30, (900, 1100), True)
+        tr_.hide_render = True
+        for f in fars.get("tree", []): f.hide_render = not f.name.endswith("lod1")
+        shot(os.path.join(PV, "fir_lod1_30m_day.jpg"), (6.0, -29.4, 1.7), (0, 0, 4.9), 75, (900, 1100), False)
+        for f in fars.get("tree", []): f.hide_render = True
+        tr_.hide_render = False
+    if PREVIEWS and "tree" in [o.name for o in objs]:
         shot(os.path.join(PV, "tree_day.jpg"), (2.0, -17.0, 3.2), (0.6, 0, 4.6), 35, (900, 1100), False)
         shot(os.path.join(PV, "tree_night.jpg"), (2.0, -17.0, 3.2), (0.6, 0, 4.6), 35, (900, 1100), True)
         shot(os.path.join(PV, "tree_close.jpg"), (1.6, -4.2, 2.4), (0.6, 0, 2.6), 35, (1000, 800), False)
-    for o in objs:
+    for o in (objs if PREVIEWS else []):
         if o.name in VIEW:
             pos, tgt, lens = VIEW[o.name]
             for night in (False, True):

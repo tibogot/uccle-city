@@ -34,7 +34,7 @@ const hash01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
 
 // ------------------------------------------------------------------------------------------------ the instanced field
 /** every instance of every piece; per piece and level ONE instance-matrix buffer and ONE band buffer shared by the slots' meshes */
-const SHADOW_SLOTS = new Set(["fir_needles", "fir_bark", "chalet_wood", "chalet_trim", "roof_felt"]);
+const SHADOW_SLOTS = new Set(["fir_needles", "fir_cards", "fir_bark", "chalet_wood", "chalet_trim", "roof_felt"]);
 export class XmasField {
   constructor(kit, { shadows = {} } = {}) {
     this.kit = kit; this.group = new THREE.Group(); this.group.name = "christmas";
@@ -179,12 +179,12 @@ export function buildSpans(spans) {
 }
 
 // ------------------------------------------------------------------------------------------------ the city layer
-export async function addChristmas({ scene, updaters, world, manifest, log, compiler, params = new URLSearchParams(location.search) }) {
+export async function addChristmas({ scene, updaters, world, manifest, log, compiler, renderer = null, params = new URLSearchParams(location.search) }) {
   if (!xmasActive(params)) return null;
   const t0 = performance.now();
   const site = await fetch(new URL("../../models/christmas/site.json", import.meta.url)).then((r) => r.json()).catch(() => null);
   if (!site) { log("christmas: models/christmas/site.json missing, no decorations"); return null; }
-  const kit = await loadXmasKit().catch((e) => { log(`christmas: the kit failed to load (${e.message})`); return null; });
+  const kit = await loadXmasKit(renderer).catch((e) => { log(`christmas: the kit failed to load (${e.message})`); return null; });
   if (!kit) return null;
   const tLoad = performance.now() - t0;
   const field = new XmasField(kit, { shadows: { tree: true, chalet: true } });
