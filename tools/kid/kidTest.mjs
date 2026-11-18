@@ -274,6 +274,37 @@ else {
       const swing = hipAt(1).distanceTo(hipAt(-1));
       check(`rider (${bike}): a sketchy landing's wobble moves the body`, swing > 0.05, `hips swing ${(swing * 100).toFixed(1)} cm between the wobble's two sides`, "> 5 cm");
     }
+    // (feel round 4) the rider's WEIGHT, driven by the physics step by step (dt 1/120): a 1 m drop, a hard front brake, a
+    // turn, pedalling: the limbs move <= ~2 cm a step relative to the pelvis, the hips' spring comes back without a
+    // bounce after the landing, hands / feet stay on (IK error)
+    if (bike === "bmx") {
+      const { stepBike, groundQuery, SURF } = await import("../../viewer/bike/bikePhysics.js");
+      const { createBikeEnv } = await import("../../viewer/bike/bikeEnv.js");
+      const env = createBikeEnv({ ground: groundQuery(() => 0, () => SURF.asphalt) });
+      // (a fresh state starts with a foot down: in the air, feet on the pedals)
+      const b = createBikeState(0, 0, 0, 0); b.y += 1; b.vz = 5; b.air = true; b.airT = 0.5; b.contact[0] = b.contact[1] = false; b.sinceContact = 1; b.footDown = 0;
+      rider._sm = null; rider._t = undefined; rider._w = null;        // (a fresh rider: not easing out of the static test poses)
+      const rel = (bone) => { const p = bone.getWorldPosition(new THREE.Vector3()); return p.sub(rider.b.pelvis.getWorldPosition(new THREE.Vector3())); };
+      const limbs = ["hand_l", "hand_r", "foot_l", "foot_r", "Head"];
+      let prev = null, maxMove = 0, worstLimb = "", ikErr = 0, minY = 0, overY = 0, landed = -1, maxZ = 0, n = 0;
+      const plan = (t) => (t < 1.5 ? {} : t < 2.5 ? { pedal: 1 } : t < 3.2 ? { brakeF: 1 } : t < 5 ? { steer: 1, pedal: 0.6 } : { pedal: 1 });
+      for (let i = 0; i < 720; i++) {
+        stepBike(b, plan(i / 120), env);
+        bikePose(b, 1, pose); bm.update(b, pose, () => 0); rig?.update(b); bm.root.updateMatrixWorld(true);
+        const M = rider.ride(E, b, holder, 0);
+        ikErr = Math.max(ikErr, ...M.legErr, ...M.armErr);
+        const cur = limbs.map((l) => rel(rider.b[l]));
+        if (prev && i > 2) cur.forEach((p, k) => { const d = p.distanceTo(prev[k]); if (d > maxMove) { maxMove = d; worstLimb = `${limbs[k]} at ${(i / 120).toFixed(2)} s`; } });
+        prev = cur;
+        const w = rider._w;
+        if (landed < 0 && b.landings > 0) landed = i;
+        if (landed >= 0 && i < landed + 120) { minY = Math.min(minY, w.oyU); if (minY < -0.005 && w.oyU > overY) overY = w.oyU; }
+        if (i / 120 > 2.5 && i / 120 < 3.2) maxZ = Math.max(maxZ, w.ozU);
+        n++;
+      }
+      check("rider weight: limbs <= 2 cm a step relative to the pelvis, IK on", maxMove <= 0.021 && ikErr < 0.001, `the most a limb moved in one 1/120 s step: ${(maxMove * 100).toFixed(2)} cm (${worstLimb}); IK error ${(ikErr * 1000).toFixed(2)} mm over ${n} steps (a 1 m drop, pedalling, a hard front brake, a turn)`, "<= 2 cm, < 1 mm");
+      check("rider weight: the landing sinks the hips, back with no bounce; braking throws them forward", minY < -0.015 && overY < 0.003 && maxZ > 0.015, `landing: the hips ${(minY * 100).toFixed(1)} cm down, overshoot ${(overY * 1000).toFixed(1)} mm; front brake: ${(maxZ * 100).toFixed(1)} cm forward`, "< -1.5 cm, < 3 mm, > 1.5 cm");
+    }
     check(`rider (${bike}): seated, bars straight: both arms alike, the back not hunched`, asym < 0.05 && spineMax <= 0.80, `arms differ by ${(asym * 100).toFixed(1)} %, spine at most ${(spineMax * 57.3).toFixed(0)} deg`, "< 5 %, <= 46 deg");
   }
   // pushing + the crash poses + the mount blend: finite

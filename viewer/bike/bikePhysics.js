@@ -225,13 +225,29 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
 
 /** A ground query from a height function and a surface function (central differences for the normal). */
 export function groundQuery(height, surface = () => SURF.asphalt, eps = 0.04) {
-  return (x, z, out) => {
-    const h = height(x, z);
-    const gx = (height(x + eps, z) - height(x - eps, z)) / (2 * eps), gz = (height(x, z + eps) - height(x, z - eps)) / (2 * eps);
-    const L = Math.sqrt(1 + gx * gx + gz * gz);
-    out.h = h; out.nx = -gx / L; out.ny = 1 / L; out.nz = -gz / L; out.surf = surface(x, z);
+  // (the five samples from ONE call site in a loop: V8 inlines the height function once, not five times; and when the
+  // height / surface functions carry an OBJECT form (.P(pt): reads pt.x, pt.z, writes pt.h / returns the surface id),
+  // no double ever crosses a call: g.P(pt, out) is what the physics calls (groundAt) - feel round 4, the zero-garbage step)
+  const H5 = new Float64Array(5), DX = [0, eps, -eps, 0, 0], DZ = [0, 0, 0, eps, -eps], HP = { x: 0.5, z: 0.5, h: 0.5 };
+  const hP = height.P || null, sP = surface.P || null;
+  const g = (x, z, out) => {
+    if (hP) for (let k = 0; k < 5; k++) { HP.x = x + DX[k]; HP.z = z + DZ[k]; hP(HP); H5[k] = HP.h; }
+    else for (let k = 0; k < 5; k++) H5[k] = height(x + DX[k], z + DZ[k]);
+    const gx = (H5[1] - H5[2]) / (2 * eps), gz = (H5[3] - H5[4]) / (2 * eps), L = Math.sqrt(1 + gx * gx + gz * gz);
+    out.h = H5[0]; out.nx = -gx / L; out.ny = 1 / L; out.nz = -gz / L;
+    if (sP) { HP.x = x; HP.z = z; out.surf = sP(HP); } else out.surf = surface(x, z);
     return out;
   };
+  g.P = (pt, out) => {
+    const x = pt.x, z = pt.z;
+    if (hP) for (let k = 0; k < 5; k++) { HP.x = x + DX[k]; HP.z = z + DZ[k]; hP(HP); H5[k] = HP.h; }
+    else for (let k = 0; k < 5; k++) H5[k] = height(x + DX[k], z + DZ[k]);
+    const gx = (H5[1] - H5[2]) / (2 * eps), gz = (H5[3] - H5[4]) / (2 * eps), L = Math.sqrt(1 + gx * gx + gz * gz);
+    out.h = H5[0]; out.nx = -gx / L; out.ny = 1 / L; out.nz = -gz / L;
+    if (sP) { HP.x = x; HP.z = z; out.surf = sP(HP); } else out.surf = surface(x, z);
+    return out;
+  };
+  return g;
 }
 
 const Q = [{ h: 0, nx: 0, ny: 1, nz: 0, surf: 0 }, { h: 0, nx: 0, ny: 1, nz: 0, surf: 0 }];
@@ -264,38 +280,53 @@ export function wheelPoints(s, B = BIKE, out = { f: [0, 0, 0, 0, 0, 0], r: [0, 0
 /** the ground's slope along the heading from a normal (rise per metre forward), clamped */
 function slopeOf(q, fx, fz) { return clamp(-(q.nx * fx + q.nz * fz) / Math.max(0.2, q.ny), -1.0, 1.0); }
 
-/** the steepest 2 cm rise of the ground between two points (a face test), and the height at the far point */
-function faceRise(ground, x0, z0, x1, z1, B) {
+/** (feel round 4, the zero-garbage step) the ground at (GP.x, GP.z) into out. The physics never calls env.ground with
+ *  its doubles as arguments: a call V8 does not inline (stepBike calls the ground a dozen ways) boxes each of them; this
+ *  small function is optimised on its own and inlines the ground query and its height function, and is called with
+ *  objects only. Same for the face tests: their inputs in FP, their results in FP / FA. */
+const GP = { x: 0.5, z: 0.5 };
+function groundAt(env, out) { const gp = env.groundP; return gp ? gp(GP, out) : env.ground(GP.x, GP.z, out); }
+const FP = { x: 0.5, z: 0.5, x1: 0.5, z1: 0.5, fx: 0.5, fz: 0.5, maxD: 0.5, r: 0.5 };
+
+/** the steepest 2 cm rise of the ground from (FP.x, FP.z) to (FP.x1, FP.z1) (a face test) -> FP.r */
+function faceRiseP(env, B) {
+  const x0 = FP.x, z0 = FP.z, x1 = FP.x1, z1 = FP.z1;
   const d = hyp(x1 - x0, z1 - z0), n = Math.max(1, Math.ceil(d / 0.02));
-  let prev = ground(x0, z0, QS).h, worst = 0;
+  GP.x = x0; GP.z = z0;
+  let prev = groundAt(env, QS).h, worst = 0;
   for (let k = 1; k <= n; k++) {
-    const t = k / n, h = ground(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, QS).h;
+    const t = k / n;
+    GP.x = x0 + (x1 - x0) * t; GP.z = z0 + (z1 - z0) * t;
+    const h = groundAt(env, QS).h;
     const r = (h - prev) / Math.max(1e-4, d / n);
     if (r > worst) worst = r;
     prev = h;
   }
-  return worst;
+  FP.r = worst;
 }
+
 
 /** the first kerb face ahead along (fx, fz) within maxD of (x, z): a run of 2 cm rises steeper than faceSlope that
  *  climbs more than stepRoll. Fills FA { d: distance to the face's foot, top: its top height }; returns d or -1. */
 const FA = { d: -1, top: 0 };
-function faceAhead(ground, x, z, fx, fz, maxD, B) {
-  const st = 0.02, n = Math.ceil(maxD / st);
-  let prev = ground(x, z, QS).h;
+function faceAheadP(env, B) {
+  const x = FP.x, z = FP.z, fx = FP.fx, fz = FP.fz, st = 0.02, n = Math.ceil(FP.maxD / st);
+  GP.x = x; GP.z = z;
+  let prev = groundAt(env, QS).h;
   FA.d = -1;
   for (let k = 1; k <= n; k++) {
-    const h = ground(x + fx * st * k, z + fz * st * k, QS).h;
+    GP.x = x + fx * st * k; GP.z = z + fz * st * k;
+    const h = groundAt(env, QS).h;
     if ((h - prev) / st > B.faceSlope) {
       // the face: climb it while it stays steep (10 cm at most)
       const base = prev; let top = h;
-      for (let j = k + 1; j <= k + 5; j++) { const hj = ground(x + fx * st * j, z + fz * st * j, QS).h; if ((hj - top) / st > B.faceSlope) top = hj; else break; }
-      if (top - base > B.stepRoll) { FA.d = st * (k - 1); FA.top = top; return FA.d; }
+      for (let j = k + 1; j <= k + 5; j++) { GP.x = x + fx * st * j; GP.z = z + fz * st * j; const hj = groundAt(env, QS).h; if ((hj - top) / st > B.faceSlope) top = hj; else break; }
+      if (top - base > B.stepRoll) { FA.d = st * (k - 1); FA.top = top; return; }
     }
     prev = h;
   }
-  return -1;
 }
+// (call sites: set FP, call faceAheadP(env, B), read FA.d)
 
 /** the slope a landing / balance is judged against: a contact ON a face (a kerb's edge, slope ~1) is judged against
  *  the ground over half a metre (a wheel at a kerb's lip is not "landing on a 45 deg slope") */
@@ -361,7 +392,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   s.t += dt; s.steps++;
   savePrev(s);
   if (!(s._prepX === s._prepX) || Math.abs(s.x - s._prepX) + Math.abs(s.z - s._prepZ) > 1) {
-    env.prepare?.(s, 3 + hyp(s.vx, s.vz) * dt);
+    env.prepare?.(s);              // (its reach from s itself: no double argument to box)
     s._prepX = s.x; s._prepZ = s.z;
   }
   if (s.crashed) { crashStep(s, env, B, S); return s; }
@@ -403,7 +434,8 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
         let wait = 0;
         if (grounded && vF > 0.5 && B.hopBuffer > 0) {
           const ox = s.x + fx * B.wheelbase / 2 * Math.cos(s.pitch), oz = s.z + fz * B.wheelbase / 2 * Math.cos(s.pitch);
-          const d = faceAhead(env.ground, ox, oz, fx, fz, vF * (B.hopLead + B.hopBuffer), B);
+          FP.x = ox; FP.z = oz; FP.fx = fx; FP.fz = fz; FP.maxD = vF * (B.hopLead + B.hopBuffer); faceAheadP(env, B);
+          const d = FA.d;
           if (d >= 0) wait = d / vF - B.hopLead;
         }
         if (wait > dt * 0.5) { s.hopBuf = Math.min(wait, B.hopBuffer); s.hopBufP = s.preload; s.buffered++; }
@@ -422,21 +454,46 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   // ---- trick (placeholder: a tabletop while held in the air)
   if (!grounded && trick) s.trick = Math.min(1, s.trick + dt * 3); else s.trick = Math.max(0, s.trick - dt * 4);
 
+  // (feel round 4, the zero-garbage step: the rest of the step in four functions of their own. V8 inlines a function's
+  // small helpers only up to a budget per optimised function; stepBike in one piece ran out, and every helper call past
+  // it boxed its doubles: ~350 bytes of garbage a step. The step's shared values pass through W, one preallocated
+  // scratch object; the phases are called with objects only)
+  const w = W;
+  w.vF = vF; w.vL = vL; w.fx = fx; w.fz = fz; w.lx = lx; w.lz = lz; w.steer = steer; w.pedal = pedal; w.leanIn = leanIn;
+  w.bF = bF; w.bR = bR; w.sprint = sprint; w.grounded = grounded;
+  if (facePhase(s, w, env, B)) return s;
+  if (contactPhase(s, w, env, B, S)) return s;
+  motionPhase(s, w, B);
+  settlePhase(s, w, env, B, S);
+  return s;
+}
+
+/** the step's shared values (doubles initialised as doubles: V8 keeps them unboxed in place) */
+const W = { vF: 0.5, vL: 0.5, fx: 0.5, fz: 0.5, lx: 0.5, lz: 0.5, aF: 0.5, aY: 0.5, alpha: 0.5, retard: 0.5, drive: 0.5, fnF: 0.5, fnR: 0.5, muF: 0.5, muR: 0.5,
+  v: 0.5, steer: 0.5, pedal: 0.5, leanIn: 0.5, bF: 0.5, bR: 0.5, up: 0.5, contactNow: false, footHold: false, sprint: false, grounded: false, landCheck: false };
+
+/** stepBike, part 1: the ground under the wheels and where they go (the face test: kerbs, the kerb catch, bonks).
+ *  true = the step ended (a crash) */
+function facePhase(s, w, env, B) {
+  const dt = DT, g = B.gravity, fx = w.fx, fz = w.fz;
+  let vF = w.vF, vL = w.vL;
   // ---- the ground under the wheels now, and where they go this step (face test)
   wheelOffsets(s, B);
   const dx = s.vx * dt, dz = s.vz * dt;
   for (let i = 0; i < 2; i++) {
     const wx = s.x + fx * RF[i], wz = s.z + fz * RF[i], wy = s.y + RU[i];
-    env.ground(wx, wz, Q[i]);
+    GP.x = wx; GP.z = wz; groundAt(env, Q[i]);
     s.wheelY[i] = wy;
-    const qn = env.ground(wx + dx, wz + dz, QN[i]);
+    GP.x = wx + dx; GP.z = wz + dz;
+    const qn = groundAt(env, QN[i]);
     const rise = qn.h - Math.max(wy, Q[i].h);       // over the ground the wheel stands on (not its sag)
     const airborne = wy > Q[i].h + 0.003 && B.kerbCatch > 0;
     // KERB CATCH, ahead (feel round 1): an airborne wheel that will arrive a little short of a kerb's top (by up to
     // kerbCatch more than it rolls) gets the lift it lacks spread over the steps left (no snap)
     if (airborne && vF > 0.5 && wy - Q[i].h < 0.6 && !(s._catchT > 0)) {
       const look = Math.max(Math.abs(dx * fx + dz * fz) + 0.02, vF * 0.06);
-      const d = faceAhead(env.ground, wx, wz, fx, fz, look, B);
+      FP.x = wx; FP.z = wz; FP.fx = fx; FP.fz = fz; FP.maxD = look; faceAheadP(env, B);
+      const d = FA.d;
       if (d >= 0 && d / vF > 3 * dt) {
         const tA = d / vF, vW = s.vy + s.pitchVel * RF[i];
         const miss = FA.top - (wy + vW * tA - 0.5 * g * tA * tA);
@@ -448,7 +505,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
         }
       }
     }
-    if (rise > B.stepRoll && (dx * fx + dz * fz) > 0 && faceRise(env.ground, wx, wz, wx + dx, wz + dz, B) > B.faceSlope) {
+    if (rise > B.stepRoll && (dx * fx + dz * fz) > 0 && (FP.x = wx, FP.z = wz, FP.x1 = wx + dx, FP.z1 = wz + dz, faceRiseP(env, B), FP.r > B.faceSlope)) {
       if (airborne && rise <= B.stepRoll + B.kerbCatch) {
         // KERB CATCH, now: the wheel met the face just short of its top: lifted only to where it ROLLS (0.9 x stepRoll
         // under the top: at most ~5 cm at once, no hitch), the tyre spring takes it the rest of the way (a small loss)
@@ -461,7 +518,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
       }
       if (i === 0) {
         // the front wheel into a kerb face: it stops the bike (or the kid goes over the bars)
-        if (vF > B.faceCrash && rise > 0.1) { s.blocked++; crash(s, "front wheel hit the kerb"); s.vx *= 0.3; s.vz *= 0.3; return s; }
+        if (vF > B.faceCrash && rise > 0.1) { s.blocked++; crash(s, "front wheel hit the kerb"); s.vx *= 0.3; s.vz *= 0.3; return true; }
         s.vx -= fx * vF * 1.15; s.vz -= fz * vF * 1.15;       // a small bounce back
         s.pitchVel -= Math.min(3, vF * 0.6);
         s.blocked++;
@@ -485,6 +542,14 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     }
   }
 
+  w.vF = vF; w.vL = vL;
+  return false;
+}
+
+/** stepBike, part 2: the contact forces, pushing / the foot down / the manual, the rider's pitch. true = ended */
+function contactPhase(s, w, env, B, S) {
+  const dt = DT, g = B.gravity, fx = w.fx, fz = w.fz, lx = w.lx, lz = w.lz, pedal = w.pedal, leanIn = w.leanIn, bF = w.bF, bR = w.bR, sprint = w.sprint;
+  let vF = w.vF, vL = w.vL;
   // ---- contact forces (per unit mass): along the ground normal; tangential (drive / brake / rolling) horizontal
   let aF = 0, aY = -g, alpha = 0, retard = 0, drive = 0;
   const legDr = -s.legVel * B.legRange;   // d(b)/dt: the wheel bottoms move down when the legs extend
@@ -505,7 +570,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     if (landCheck) {
       landCheck = false;
       landing(s, i, judgeSlope(env.ground, s.x + fx * RF[i], s.z + fz * RF[i], fx, fz, sl), (penRate) * inv, vL, vF, B);
-      if (s.crashed) return s;
+      if (s.crashed) return true;
       // (the landing's speed loss: the step goes on from the new velocity - before, it was overwritten below)
       vF = s.vx * fx + s.vz * fz; vL = s.vx * lx + s.vz * lz;
     }
@@ -593,13 +658,25 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     // the assist levels the bike toward the ground it will land on (~0.3 s ahead): a down ramp nose down, flat level
     // (over a 1 m base: a kerb's face is not a slope to match)
     const ax = s.x + s.vx * 0.3, az = s.z + s.vz * 0.3;
-    const hA = env.ground(ax + fx * 0.5, az + fz * 0.5, QS).h, hB = env.ground(ax - fx * 0.5, az - fz * 0.5, QS).h;
+    GP.x = ax + fx * 0.5; GP.z = az + fz * 0.5; const hA = groundAt(env, QS).h;
+    GP.x = ax - fx * 0.5; GP.z = az - fz * 0.5; const hB = groundAt(env, QS).h;
     const target = Math.atan(clamp(hA - hB, -0.8, 0.8));
     alpha = leanIn * B.airPitch - B.airPitchDamp * s.pitchVel + B.airLevel * (target - s.pitch) * (leanIn ? 0.3 : 1);
     // a bunny hop: front first, then the kid levels the bike so the rear comes up too (bars forward, feet up)
     if (s.hopT < 0.6 && !leanIn) alpha += -(s.pitch - target) * 30 - s.pitchVel * 7;
   }
 
+  w.vF = vF; w.vL = vL; w.aF = aF; w.aY = aY; w.alpha = alpha; w.retard = retard; w.drive = drive; w.fnF = fnF; w.fnR = fnR;
+  w.muF = muF; w.muR = muR; w.v = v; w.up = up; w.contactNow = contactNow; w.footHold = footHold; w.landCheck = landCheck;
+  return false;
+}
+
+/** stepBike, part 3: forward speed, the wobble, lean and yaw, the tyres' side grip */
+function motionPhase(s, w, B) {
+  const dt = DT, g = B.gravity;
+  let vF = w.vF, vL = w.vL, fx = w.fx, fz = w.fz;
+  const lx = w.lx, lz = w.lz, aF = w.aF, aY = w.aY, alpha = w.alpha, retard = w.retard, drive = w.drive, fnF = w.fnF, fnR = w.fnR, muF = w.muF, muR = w.muR;
+  const v = w.v, steer = w.steer, pedal = w.pedal, up = w.up, contactNow = w.contactNow, footHold = w.footHold;
   // ---- forward speed: contact forces, pedalling, retarding (never reversing the speed), air drag
   vF += (aF + drive) * dt;
   if (s.pushing) {
@@ -640,7 +717,10 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     if (s.skid) yaw += steer * B.skidYaw * smooth(1.5, 6, v);
     if (s.contact[1] && !s.contact[0]) yaw *= 0.6;        // manual: steering by leaning only
     s.yawVel += (yaw - s.yawVel) * (1 - Math.exp(-B.yawResponse * dt));
-    s.steerAngle += (clamp(bar + wLean * Math.atan(B.wheelbase * s.yawVel / Math.max(v, 2)) - 0.12 * (s.leanTarget - s.lean) * wLean + 1.8 * B.wobbleLean * s.wobbleNow, -1, 1) - s.steerAngle) * (1 - Math.exp(-14 * dt));
+    // (the bars as drawn: eased, and never turned faster than a kid turns them, 4 rad/s - feel round 4: a full lock at a
+    // standstill swung them 0.08 rad a step, the hands with them)
+    const dSt = (clamp(bar + wLean * Math.atan(B.wheelbase * s.yawVel / Math.max(v, 2)) - 0.12 * (s.leanTarget - s.lean) * wLean + 1.8 * B.wobbleLean * s.wobbleNow, -1, 1) - s.steerAngle) * (1 - Math.exp(-14 * dt));
+    s.steerAngle += dSt > 4 * dt ? 4 * dt : dSt < -4 * dt ? -4 * dt : dSt;
   } else {
     s.yawVel += (steer * B.airYaw - B.airYawDamp * s.yawVel) * dt;
     s.leanTarget = steer * 0.25;
@@ -671,27 +751,35 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     if (s.skid && Math.abs(s.slipAngle) > 1.15 && v > 4 && !(s.wobbleT > 0)) crash(s, "slid out");
   } else { s.slip = 0; s.slipAngle = 0; }
   s.vx = fx * vF + nlx * vL; s.vz = fz * vF + nlz * vL;
+  w.fx = fx; w.fz = fz;
+}
 
+/** stepBike, part 4: integrate, the snap onto an edge, the bottom-out, the colliders, the crash rules, the telemetry */
+function settlePhase(s, w, env, B, S) {
+  const dt = DT;
+  let fx = w.fx, fz = w.fz;
+  const grounded = w.grounded, landCheck = w.landCheck, contactNow = w.contactNow, pedal = w.pedal, sprint = w.sprint, v = w.v;
   // ---- integrate
   s.x += s.vx * dt; s.z += s.vz * dt; s.y += s.vy * dt;
   s.pitch = clamp(s.pitch + s.pitchVel * dt, -1.45, 1.45);
 
   // ---- SNAP onto an edge (feel round 2): airborne and FALLING, the pegs just over a grindable edge's top, the velocity
   // within snapAngle of it: from here the bike rides the edge (grindStep); the colliders are not met
-  if (!grounded && s.vy < 0 && env.edges && s.grindCD <= 0 && trySnap(s, env, B)) return s;
+  if (!grounded && s.vy < 0 && env.edges && s.grindCD <= 0 && trySnap(s, env, B)) return;
 
   // ---- bottom-out: no wheel deeper than maxComp (the hard constraint; also what climbs a step)
   wheelOffsets(s, B);
   let yLow = Infinity;
   for (let i = 0; i < 2; i++) {
     let wx = s.x + fx * RF[i], wz = s.z + fz * RF[i];
-    let q = env.ground(wx, wz, Q[i]);
+    GP.x = wx; GP.z = wz;
+    let q = groundAt(env, Q[i]);
     let wy = s.y + RU[i];
     let pen = q.h - wy;
     // the general face test: the contact moved (any reason: rolling, turning, sliding, pitching) onto ground that rose
     // like a face since the last step, higher than this wheel takes (the front: a step it rolls; the rear: a bonk)
     const rise = q.h - s.wheelBot[i];
-    const facing = rise > (i === 0 ? B.stepRoll : B.rearClimb) && pen > 0 && faceRise(env.ground, s.wheelPos[i * 2], s.wheelPos[i * 2 + 1], wx, wz, B) > B.faceSlope;
+    const facing = rise > (i === 0 ? B.stepRoll : B.rearClimb) && pen > 0 && (FP.x = s.wheelPos[i * 2], FP.z = s.wheelPos[i * 2 + 1], FP.x1 = wx, FP.z1 = wz, faceRiseP(env, B), FP.r > B.faceSlope);
     if (facing || pen - B.maxComp > B.rearClimb + 0.05) {
       // a wheel swung / slid into a ledge higher than any step it climbs (turning or sliding sideways at a wall
       // of ground, not caught by the face test along the heading): a wall. Back to where the step began, stopped.
@@ -702,7 +790,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
       fx = Math.sin(s.heading); fz = Math.cos(s.heading);
       wheelOffsets(s, B);
       wx = s.x + fx * RF[i]; wz = s.z + fz * RF[i];
-      q = env.ground(wx, wz, Q[i]); wy = s.y + RU[i]; pen = q.h - wy;
+      GP.x = wx; GP.z = wz; q = groundAt(env, Q[i]); wy = s.y + RU[i]; pen = q.h - wy;
       if (pen - B.maxComp > B.rearClimb + 0.05) {
         // still in the ledge (it got there some other way): never lifted onto it; moved off it, 5 cm a step, toward
         // the lower side (a front wheel hanging over a lip: forward; a wheel against a face: back)
@@ -777,7 +865,6 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     s.safe.t += dt;
     if (s.safe.t > 0.5) { s.safe.x = s.x; s.safe.z = s.z; s.safe.heading = s.heading; s.safe.t = 0; }
   }
-  return s;
 }
 
 // ------------------------------------------------------------------------------------------------ GRINDS (feel round 2)
@@ -838,12 +925,12 @@ function trySnap(s, env, B) {
 }
 
 /** place the bike on the edge (blend w from the snap's offsets) */
-function grindPose(s, env, B, w) {
-  const E = env.edges, T = s._g0, k = 1 - w, go = s._go;
+function grindPose(s, env, B, w, wy = w) {
+  const E = env.edges, T = s._g0, k = 1 - w, ky = 1 - wy, go = s._go;
   s.pitch = T[4] + go[4] * k; s.pitchVel = 0;
   wheelOffsets(s, B);
   const hub = (HU[0] + HU[1]) / 2;
-  s.x = T[0] + go[0] * k; s.z = T[2] + go[2] * k; s.y = T[1] + B.pegR - hub + go[1] * k;
+  s.x = T[0] + go[0] * k; s.z = T[2] + go[2] * k; s.y = T[1] + B.pegR - hub + go[1] * ky;
   s.heading = T[3] + go[3] * k;
   const fx = Math.sin(s.heading), fz = Math.cos(s.heading);
   for (let i = 0; i < 2; i++) {
@@ -899,8 +986,10 @@ function grindStep(s, input, env, B) {
   s.crank += (lvl - s.crank) * (1 - Math.exp(-10 * dt));
   // the pose on the edge (blended in over snapTime)
   grindTarget(s, E, seg, s.grindU, s.grindDir, B);
-  const w = smooth(0, B.snapTime, s.grindT);
-  grindPose(s, env, B, w);
+  // (the height settles over twice the plan's blend: the pegs come down onto the edge, not snapped down - feel round 4,
+  // the camera's vertical follow was jerked by it)
+  const w = smooth(0, B.snapTime, s.grindT), wy = smooth(0, 2 * B.snapTime, s.grindT);
+  grindPose(s, env, B, w, wy);
   s.lean = s.grindBal * 0.35; s.leanTarget = s.lean; s.yawVel = 0;
   const fx = Math.sin(s.heading), fz = Math.cos(s.heading), slN = Math.tan(s._g0[4]);
   s.vx = fx * s.grindV; s.vz = fz * s.grindV; s.vy = slN * s.grindV;

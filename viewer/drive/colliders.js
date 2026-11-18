@@ -162,8 +162,12 @@ function polyContains(col, p, x, z) {
   return inside;
 }
 
-/** Does the oriented box (centre x, z; half sizes hx across, hz along; heading cos / sin) overlap polygon p? */
-function polyBoxOverlaps(col, p, x, z, hx, hz, cs, sn) {
+/** Does the oriented box ob = { x, z (centre), hx across, hz along (half sizes), cs, sn (heading cos / sin) } overlap
+ *  polygon p? (The box as ONE object, claude/kid feel round 4: called with six doubles it boxed them, ~64 bytes of
+ *  garbage a call wherever V8 does not inline it - the bike tests it every step near a building. Same arithmetic.) */
+const OB = { x: 0.5, z: 0.5, hx: 0.5, hz: 0.5, cs: 0.5, sn: 0.5 };
+function polyBoxOverlaps(col, p, ob) {
+  const x = ob.x, z = ob.z, hx = ob.hx, hz = ob.hz, cs = ob.cs, sn = ob.sn;
   if (polyContains(col, p, x, z)) return true;
   const { pts, ringStart, polyRing } = col;
   for (let r = polyRing[p]; r < polyRing[p + 1]; r++) {
@@ -191,13 +195,15 @@ function polyBoxOverlaps(col, p, x, z, hx, hz, cs, sn) {
  */
 function polyBoxContact(col, p, x, z, body, contact) {
   const { hx, hz, cos: cs, sin: sn } = body;
-  if (!polyBoxOverlaps(col, p, x, z, hx, hz, cs, sn)) return false;
+  OB.x = x; OB.z = z; OB.hx = hx; OB.hz = hz; OB.cs = cs; OB.sn = sn;
+  if (!polyBoxOverlaps(col, p, OB)) return false;
   const { pts, ringStart, polyRing } = col;
   let best = Infinity, onx = 0, onz = 0;
   const tryDir = (ux, uz, dist) => {
     if (!(dist >= 0) || dist >= best || !Number.isFinite(ux + uz)) return;
     const step = dist + 1e-6;
-    if (polyBoxOverlaps(col, p, x + ux * step, z + uz * step, hx, hz, cs, sn)) return;
+    OB.x = x + ux * step; OB.z = z + uz * step; OB.hx = hx; OB.hz = hz; OB.cs = cs; OB.sn = sn;
+    if (polyBoxOverlaps(col, p, OB)) return;
     best = dist; onx = ux; onz = uz;
   };
   const pushSigned = (ux, uz, s) => { if (s >= -1e-9) tryDir(ux, uz, Math.max(0, s)); if (s <= 1e-9) tryDir(-ux, -uz, Math.max(0, -s)); };

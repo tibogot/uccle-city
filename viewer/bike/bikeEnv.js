@@ -21,12 +21,14 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
   const body = { hx: dims.hx, hz: dims.hz, cos: 1, sin: 0 };
   const wheel = { hx: 0.1, hz: 0.15, cos: 1, sin: 0 };   // the low part of one wheel (for the low pieces)
+  const camNear = [], camBox = { hx: 0.12, hz: 0.12, cos: 1, sin: 0 }, camHit = { nx: 0, nz: 0, depth: 0, kind: 0 };   // (solidAt)
   const env = {
     ground,
+    groundP: ground.P || null,   // (the object form of the ground query: groundQuery's g.P - no doubles across calls)
     edges,             // the edge layer (bikeEdges.js: grinds, stalls; feel round 2) or null
     near,
     tested: 0,
-    prepare(s, reach) {
+    prepare(s, reach = 3 + Math.sqrt(s.vx * s.vx + s.vz * s.vz) / 120) {
       near.length = 0;
       const r = hyp(dims.hx, dims.hz) + reach;
       for (const col of sets(s.x, s.z, r)) gather(col, s.x, s.z, r, near);
@@ -34,11 +36,16 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
     },
     collide(s, B) {
       body.cos = Math.cos(s.heading); body.sin = Math.sin(s.heading);
+      const rb = Math.sqrt(dims.hx * dims.hx + dims.hz * dims.hz) + 0.05;
       for (let pass = 0; pass < 2; pass++) {
         let any = false;
         for (let k = 0; k < near.length; k += 2) {
           const col = near[k], id = near[k + 1];
           if (id < col.P && col.pkind[id] === KIND.island) continue;
+          // (feel round 4: a box / circle reject inline first - the shared item tests take doubles, which V8 boxes
+          // when it cannot inline them: only the items the bike's circle touches are tested, no garbage riding past)
+          if (id < col.P) { const o = id * 4, pb = col.pbox; if (s.x + rb < pb[o] || s.x - rb > pb[o + 2] || s.z + rb < pb[o + 1] || s.z - rb > pb[o + 3]) continue; }
+          else { const c = (id - col.P) * 3, ci = col.circ, dx = s.x - ci[c], dz = s.z - ci[c + 1], rr = rb + ci[c + 2]; if (dx * dx + dz * dz > rr * rr) continue; }
           // a low piece with a top (a log, a low wall, a bench): each WHEEL against it, at its own height (the front
           // clears it first, then the rear); anything else: the whole bike's box
           if (id < col.P && col.ptop[id] < 50) {
@@ -67,6 +74,21 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
         }
         if (!any) break;
       }
+    },
+    /** (feel round 4, the camera) is the point (x, y, z) inside a collider: a building, a wall, a bench, a garden wall,
+     *  a hedge, a tree, a post (kerb islands are ground: the camera's ground test has them)? */
+    solidAt(x, y, z) {
+      camNear.length = 0;
+      for (const col of sets(x, z, 0.5)) gather(col, x, z, 0.3, camNear);
+      for (let k = 0; k < camNear.length; k += 2) {
+        const col = camNear[k], id = camNear[k + 1];
+        if (id < col.P) {
+          if (col.pkind[id] === KIND.island) continue;
+          if (y > col.ptop[id] + 0.05 || y < col.pbase[id] - 0.05) continue;
+        }
+        if (itemContact(col, id, x, z, camBox, camHit)) return true;
+      }
+      return false;
     },
     /** is the bike's box inside a hard collider now (the get-up spot)? */
     insideSolid(s) {

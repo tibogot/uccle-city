@@ -41,6 +41,18 @@ export const RIDE = {
   poseTime: 0.07,                            // s: the stand / crouch / manual weights follow their targets (no snap)
   grindCrouch: 0.55, grindStand: 0.3,        // on a grind / stall (feel round 2): knees bent over the pegs, a little up
   grindHip: 0.07, grindRoll: 0.35,           // the balance: hips out to the low side, the body leaning against the fall
+  // WEIGHT (feel round 4, the research's "physics first, animation as a target"): the pelvis on a critically damped
+  // spring (no bounce) in the bike frame, driven by the frame's own accelerations (the body lags: braking throws the
+  // hips forward, a landing sinks them, a turn swings them out) and the suspension's compression rate (the legs soak
+  // it up); the upper body on a slower spring (pitch / roll lag); the head stabilised, looking where the bike GOES
+  weightHzY: 3.0, weightHzF: 2.5, weightHzL: 2.2,   // the pelvis spring's frequencies (vertical / fore-aft / lateral)
+  weightY: 0.0012, weightF: 0.008, weightL: 0.004,  // m of offset per m/s^2 of the frame's steady acceleration (vertical: UP
+                                                     // accelerations only, low-passed: the hips only ever SINK)
+  weightComp: 0.5,                                   // m of sink per m of compression beyond rest (the legs soaking it up)
+  weightLP: 0.04,                                    // s, the low-pass on the vertical drive (the suspension's ringing)
+  weightMaxY: 0.07, weightMaxF: 0.06, weightMaxL: 0.04,   // m, soft limits
+  torsoHz: 1.6, torsoPitch: 0.03, torsoRoll: 0.02,   // the upper body's spring; rad per m/s^2 (fore-aft / lateral)
+  headTime: 0.12, headLead: 0.35, headRoll: 0.15, headSlope: 0.4,   // s smoothing; s of yaw rate looked ahead; x lean; x the path's dip
 };
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3();
@@ -184,11 +196,12 @@ export class RiderIK {
     const kS = dtS > 0 && dtS < 0.25 && P.poseTime > 0 ? 1 - Math.exp(-dtS / P.poseTime) : 1;
     sm.crouch += (crouchT - sm.crouch) * kS; sm.stand += (standT - sm.stand) * kS; sm.manual += (manualT - sm.manual) * kS;
     const crouch = sm.crouch, stand = sm.stand, manual = sm.manual;
+    const wt = this.weight(s, dtS);
     const seat = F.worldToLocal(E.seat.getWorldPosition(_a));
     const hip = _b.set(
-      P.swayStand * stand * Math.sin(s.crank || 0) + P.wobbleHip * wob + P.grindHip * bal,
-      seat.y + P.hipUp + stand * P.standUp - crouch * P.crouchDown,
-      seat.z - P.hipBack + stand * P.standFwd - crouch * P.crouchBack - manual * P.manualBack);
+      P.swayStand * stand * Math.sin(s.crank || 0) + P.wobbleHip * wob + P.grindHip * bal + wt.ox,
+      seat.y + P.hipUp + stand * P.standUp - crouch * P.crouchDown + wt.oy,
+      seat.z - P.hipBack + stand * P.standFwd - crouch * P.crouchBack - manual * P.manualBack + wt.oz);
     // a foot down: the hips come down off the saddle as far as the left foot needs to reach the ground (world
     // vertical; the horizontal offset of the foot from the hip joint stays)
     if (fdHip > 0 && groundY !== null) {
@@ -227,7 +240,7 @@ export class RiderIK {
     const want = P.reachArm * Math.min(this.arm[0], this.arm[1]);
     const bend = (th) => {
       for (const [n, w] of [["spine_01", 0.3], ["spine_02", 0.35], ["spine_03", 0.35]]) {
-        _q.setFromAxisAngle(_Z, roll * 1.3); _q2.setFromAxisAngle(_X, pitch + th * (n === "spine_01" ? 0.3 : n === "spine_02" ? 0.65 : 1.0));
+        _q.setFromAxisAngle(_Z, roll * 1.3 + wt.tr); _q2.setFromAxisAngle(_X, pitch + wt.tp + th * (n === "spine_01" ? 0.3 : n === "spine_02" ? 0.65 : 1.0));
         // (lite: no descendants' update per trial; getWorldPosition / -Quaternion refresh the chain they read)
         setWorldQuat(b[n], _q3.copy(_qF).multiply(_q).multiply(_q2).multiply(this.mq[n]), false);
       }
@@ -263,8 +276,9 @@ export class RiderIK {
     if (hi > lo) for (let i = 0; i < 8; i++) { const mid = (lo + hi) / 2; if (bend(mid) > 0) lo = mid; else hi = mid; }
     bend(hi); M.spine = hi; b.spine_01.updateMatrixWorld(true);
     // 4. the head: level, looking ahead (the heading's yaw, half the bike's lean)
-    const yaw = Math.atan2(_fwd.x, _fwd.z);
-    _qY.setFromAxisAngle(_Y, yaw); _q.setFromAxisAngle(_Z, (s.lean || 0) * -0.35 + 0); _q2.setFromAxisAngle(_X, P.headDown);
+    // (feel round 4: stabilised - its own smoothed yaw along the bike's path and into the turn (wt.hy), the eyes nearly
+    // level, looking down a descent (wt.hp))
+    _qY.setFromAxisAngle(_Y, wt.hy); _q.setFromAxisAngle(_Z, (s.lean || 0) * P.headRoll); _q2.setFromAxisAngle(_X, P.headDown + wt.hp);
     setWorldQuat(b.Head, _q3.copy(_qY).multiply(_q).multiply(_q2).multiply(this.mq.Head));
     // 5. the arms
     for (let k = 0; k < 2; k++) {
@@ -299,6 +313,57 @@ export class RiderIK {
       setWorldQuat(ft, _q3.copy(_qF).multiply(_q).multiply(k === 0 ? this.mq.foot_l : this.mq.foot_r));
     }
     return M;
+  }
+
+  /** the weight springs (feel round 4), advanced by dt of the bike's own time; dt not usable (a static pose, a reset):
+   *  at rest. Returns { ox, oy, oz (pelvis, m, frame axes), tp, tr (upper body, rad), hy, hp (head yaw / pitch, world) } */
+  weight(s, dt) {
+    const P = this.P, w = this._w || (this._w = { ox: 0, oy: 0, oz: 0, vx: 0, vy: 0, vz: 0, tp: 0, tr: 0, vp: 0, vr: 0, hy: 0, hp: 0, px: 0, py: 0, pz: 0, comp: 0, h: 0, dy: 0, ok: false });
+    const fx = Math.sin(s.heading || 0), fz = Math.cos(s.heading || 0), v = Math.sqrt((s.vx || 0) ** 2 + (s.vz || 0) ** 2);
+    const comp = (s.comp ? s.comp[0] + s.comp[1] : 0);
+    const yawPath = (v > 1 ? Math.atan2(s.vx, s.vz) : s.heading || 0) + Math.max(-0.5, Math.min(0.5, (s.yawVel || 0) * P.headLead));
+    const pitchPath = v > 0.5 ? Math.atan2(-(s.vy || 0), v) * P.headSlope : 0;
+    if (!(dt > 0 && dt < 0.25) || !w.ok) {
+      // at rest (a static pose, the first frame, a reset): no offsets, the head on its path
+      Object.assign(w, { ox: 0, oy: 0, oz: 0, vx: 0, vy: 0, vz: 0, tp: 0, tr: 0, vp: 0, vr: 0, hy: yawPath, hp: pitchPath, dy: 0 });
+      w.px = s.vx || 0; w.py = s.vy || 0; w.pz = s.vz || 0; w.comp = comp; w.h = s.heading || 0; w.ok = dt === 0 ? w.ok : true;
+      if (!(dt > 0 && dt < 0.25)) { w.ok = true; return w; }
+    }
+    // the frame's accelerations (world -> forward / left / up) and the compression rate
+    const ax = ((s.vx || 0) - w.px) / dt, ay = ((s.vy || 0) - w.py) / dt, az = ((s.vz || 0) - w.pz) / dt;
+    const aF = ax * fx + az * fz, aL = ax * fz - az * fx;
+    w.px = s.vx || 0; w.py = s.vy || 0; w.pz = s.vz || 0; w.comp = comp;
+    // the vertical drive: NEVER upward (a critically damped spring's impulse response is >= 0: a drive <= 0 keeps the
+    // hips at or under rest - no bounce above it however the suspension rings): the frame's upward acceleration and the
+    // compression beyond the resting sag, low-passed
+    const restComp = 2 * 9.81 / 2 / 170;                 // (the static sag of both wheels, BIKE springK 170)
+    const dyT = -(Math.max(0, ay) * P.weightY + Math.max(0, comp - restComp) * P.weightComp);
+    w.dy += (dyT - w.dy) * (1 - Math.exp(-dt / P.weightLP));
+    // critically damped springs (semi-implicit, sub-stepped at <= 1/240 s): the body lags the frame
+    const n = Math.max(1, Math.ceil(dt * 240)), h = dt / n;
+    const wy = 2 * Math.PI * P.weightHzY, wf = 2 * Math.PI * P.weightHzF, wl = 2 * Math.PI * P.weightHzL, wtq = 2 * Math.PI * P.torsoHz;
+    const crash = s.crashed ? 0 : 1;
+    const fy = w.dy * wy * wy * crash, ff = -(aF * P.weightF) * wf * wf * crash, fl = -(aL * P.weightL) * wl * wl * crash;
+    const fp = (-aF * P.torsoPitch) * wtq * wtq * crash, frr = (aL * P.torsoRoll) * wtq * wtq * crash;
+    for (let i = 0; i < n; i++) {
+      w.vy += (fy - wy * wy * w.oy - 2 * wy * w.vy) * h; w.oy += w.vy * h;
+      w.vz += (ff - wf * wf * w.oz - 2 * wf * w.vz) * h; w.oz += w.vz * h;
+      w.vx += (fl - wl * wl * w.ox - 2 * wl * w.vx) * h; w.ox += w.vx * h;
+      w.vp += (fp - wtq * wtq * w.tp - 2 * wtq * w.vp) * h; w.tp += w.vp * h;
+      w.vr += (frr - wtq * wtq * w.tr - 2 * wtq * w.vr) * h; w.tr += w.vr * h;
+    }
+    // (soft limits: the offsets as used, the spring state kept)
+    w.oyU = P.weightMaxY * Math.tanh(w.oy / P.weightMaxY); w.ozU = P.weightMaxF * Math.tanh(w.oz / P.weightMaxF); w.oxU = P.weightMaxL * Math.tanh(w.ox / P.weightMaxL);
+    // the head: smoothed toward its path
+    let dy = yawPath - w.hy; dy -= Math.round(dy / (Math.PI * 2)) * Math.PI * 2;
+    const kH = 1 - Math.exp(-dt / P.headTime);
+    w.hy += dy * kH; w.hp += (pitchPath - w.hp) * kH;
+    // (the head never turns more than 0.7 rad from the bike's heading)
+    let rel = w.hy - (s.heading || 0); rel -= Math.round(rel / (Math.PI * 2)) * Math.PI * 2;
+    if (rel > 0.7) w.hy -= rel - 0.7; else if (rel < -0.7) w.hy -= rel + 0.7;
+    const o = this._wo || (this._wo = { ox: 0, oy: 0, oz: 0, tp: 0, tr: 0, hy: 0, hp: 0 });
+    o.ox = w.oxU; o.oy = w.oyU; o.oz = w.ozU; o.tp = w.tp; o.tr = w.tr; o.hy = w.hy; o.hp = w.hp;
+    return o;
   }
 
   /** PUSHING the bike (bikePhysics s.pushing): walking beside it on its left, the walk clip in step, hands on it */

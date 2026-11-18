@@ -321,7 +321,10 @@ const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
     ["standPitch", 0, 0.8, 0.01], ["leanExtra", 0, 0.8, 0.01], ["reachLeg", 0.85, 0.999, 0.001], ["reachArm", 0.7, 0.99, 0.01], ["ankleUp", 0, 0.15, 0.005],
     ["ankleBack", -0.05, 0.15, 0.005], ["wristBack", 0, 0.1, 0.005], ["headDown", -0.3, 0.5, 0.01], ["spineMax", 0.3, 1.5, 0.01],
     ["footReach", 0.8, 0.999, 0.005], ["footOut", 0, 0.3, 0.005], ["footFwd", -0.1, 0.3, 0.005], ["footAnkle", 0.05, 0.15, 0.005],
-    ["wobbleHip", 0, 0.15, 0.005], ["wobbleRoll", 0, 0.8, 0.01], ["wobbleCrouch", 0, 1, 0.05], ["poseTime", 0, 0.3, 0.01]])
+    ["wobbleHip", 0, 0.15, 0.005], ["wobbleRoll", 0, 0.8, 0.01], ["wobbleCrouch", 0, 1, 0.05], ["poseTime", 0, 0.3, 0.01],
+    ["weightHzY", 0.5, 8, 0.1], ["weightHzF", 0.5, 8, 0.1], ["weightHzL", 0.5, 8, 0.1], ["weightY", 0, 0.01, 0.0001], ["weightF", 0, 0.03, 0.0005], ["weightL", 0, 0.02, 0.0005],
+    ["weightComp", 0, 2, 0.05], ["weightLP", 0.005, 0.2, 0.005], ["weightMaxY", 0, 0.15, 0.005], ["weightMaxF", 0, 0.15, 0.005], ["weightMaxL", 0, 0.1, 0.005],
+    ["torsoHz", 0.3, 5, 0.1], ["torsoPitch", 0, 0.1, 0.002], ["torsoRoll", 0, 0.1, 0.002], ["headTime", 0.02, 0.5, 0.01], ["headLead", 0, 1, 0.01], ["headRoll", -0.5, 0.5, 0.01], ["headSlope", 0, 1, 0.05]])
     fk.add(RIDE, k, a, b, st).name(k);
   for (const [k, a, b, st] of [["near", 0.5, 3, 0.05], ["mountTime", 0.1, 1.5, 0.05], ["dismountTime", 0.1, 1.5, 0.05], ["dismountMax", 0.5, 6, 0.1], ["standStill", 0, 2, 0.05]])
     fk.add(MOUNT, k, a, b, st).name(`mount ${k}`);
@@ -351,7 +354,9 @@ for (const sp of SURFACES) {
 }
 const fc = ui.addFolder("Camera", { open: false });
 for (const [k, a, b, st] of [["distance", 1.5, 10, 0.1], ["height", 0.2, 4, 0.05], ["lookHeight", 0, 2, 0.05], ["lookAhead", 0, 4, 0.1], ["yawRate", 0.5, 15, 0.1],
-  ["followXZ", 1, 30, 0.5], ["followY", 0.5, 20, 0.5], ["fov", 40, 90, 1], ["fovKick", 0, 30, 1], ["roll", 0, 0.6, 0.01], ["shake", 0, 3, 0.1], ["minClear", 0.1, 1, 0.05]])
+  ["followXZ", 1, 30, 0.5], ["followY", 0.5, 20, 0.5], ["fov", 40, 90, 1], ["fovKick", 0, 30, 1], ["roll", 0, 0.6, 0.01], ["shake", 0, 3, 0.1], ["minClear", 0.1, 1, 0.05],
+  ["lookTime", 0, 1, 0.01], ["turnLook", 0, 1, 0.01], ["speedLow", 0, 10, 0.5], ["speedHigh", 2, 20, 0.5], ["speedEase", 0.05, 2, 0.05], ["speedDrop", 0, 0.5, 0.01], ["speedIn", 0, 0.3, 0.01],
+  ["dip", 0, 1.5, 0.01], ["dipMax", 0, 6, 0.1], ["dipHz", 0.5, 6, 0.1], ["wallClear", 0, 1, 0.05], ["pullOut", 0.5, 10, 0.1]])
   fc.add(BIKE_CAMERA, k, a, b, st).name(k);
 fc.add(BIKE_CAMERA, "mode", ["chase", "far", "low", "side"]).name("mode").onChange(() => chase.reset());
 const fsd = ui.addFolder("Sound", { id: "bike-sound", open: false });
@@ -436,7 +441,7 @@ renderer.setAnimationLoop(() => {
   }
   kidMs = kidMs * 0.95 + (performance.now() - tk) * 0.05;
   const onFoot = K.on && (mount.state === "foot" || mount.state === "dismounting" || mount.state === "pickUp");
-  if (!onFoot) chase.update(s, pose, dt, groundAt);
+  if (!onFoot) chase.update(s, pose, dt, groundAt, env.solidAt);
   if (camBlend.t < 1) {
     camBlend.t = Math.min(1, camBlend.t + dt / camBlend.dur);
     const w = ease(camBlend.t);

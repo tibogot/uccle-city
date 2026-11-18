@@ -16,13 +16,22 @@ const RAISE = [0, 0, 0, 0, KERB_H, KERB_H, KERB_H, 0, 0.04];     // surfaces.jso
 /** the DTM height (absolute m) from terrain.json + its u16 cm grid */
 export function terrainHeight(tj, u16) {
   const { x0, z0, step, cols, rows } = tj;
-  return (x, z) => {
+  const at = (x, z) => {
     let fx = (x - x0) / step, fz = (z - z0) / step;
     fx = fx < 0 ? 0 : fx > cols - 1.001 ? cols - 1.001 : fx; fz = fz < 0 ? 0 : fz > rows - 1.001 ? rows - 1.001 : fz;
     const i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, k = j * cols + i;
     const a = u16[k], b = u16[k + 1], c = u16[k + cols], d = u16[k + cols + 1];
     return ((a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v) / 100;
   };
+  // the object form (pt.x, pt.z -> pt.h), the same arithmetic (feel round 4: no doubles across calls)
+  at.P = (pt) => {
+    let fx = (pt.x - x0) / step, fz = (pt.z - z0) / step;
+    fx = fx < 0 ? 0 : fx > cols - 1.001 ? cols - 1.001 : fx; fz = fz < 0 ? 0 : fz > rows - 1.001 ? rows - 1.001 : fz;
+    const i = fx | 0, j = fz | 0, u = fx - i, v = fz - j, k = j * cols + i;
+    const a = u16[k], b = u16[k + 1], c = u16[k + cols], d = u16[k + cols + 1];
+    pt.h = ((a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v) / 100;
+  };
+  return at;
 }
 
 /** rasterise the street surfaces' classes (+1; 0 = none) over a window at res m (even-odd scanlines per polygon) */
@@ -66,6 +75,10 @@ export function buildCitySpot(docs, at, { half = 80, res = 0.08, SURF = { asphal
     return i < 0 || j < 0 || i >= R.W || j >= R.H ? 0 : R.grid[j * R.W + i];
   };
   const base = (x, z) => { const c = cls(x, z); return dtm(x, z) + (c ? RAISE[c - 1] || 0 : 0); };
+  // (object forms: pt.x, pt.z in; the raster read inline)
+  const RW = R.W, RH = R.H, gr = R.grid, wx0 = win.x0, wz0 = win.z0, dtmP = dtm.P;
+  const clsP = (pt) => { const i = Math.floor((pt.x - wx0) / res), j = Math.floor((pt.z - wz0) / res); return i < 0 || j < 0 || i >= RW || j >= RH ? 0 : gr[j * RW + i]; };
+  base.P = (pt) => { dtmP(pt); const c = clsP(pt); if (c) pt.h += RAISE[c - 1] || 0; };
   // the edges (kerb / stair heights from the ground just built: the kerb's top on the raised side = the DTM + KERB_H)
   const inWin = (l) => l.pts.some((p) => p[0] > win.x0 && p[0] < win.x1 && p[2] > win.z0 && p[2] < win.z1);
   const lines = [
@@ -77,6 +90,7 @@ export function buildCitySpot(docs, at, { half = 80, res = 0.08, SURF = { asphal
   const edges = buildEdgeLayer(lines, win);
   const height = withStairRamps(base, edges);
   const surface = (x, z) => { const c = cls(x, z); return !c ? SURF.grass : c - 1 === 0 || c - 1 === 1 || c - 1 === 3 ? SURF.asphalt : SURF.setts; };
+  surface.P = (pt) => { const c = clsP(pt); return !c ? SURF.grass : c - 1 === 0 || c - 1 === 1 || c - 1 === 3 ? SURF.asphalt : SURF.setts; };
   // the colliders
   const polys = [], circles = [];
   const near = (ring) => ring.some(([x, z]) => x > win.x0 - 5 && x < win.x1 + 5 && z > win.z0 - 5 && z < win.z1 + 5);

@@ -208,10 +208,7 @@ export function withStairRamps(height, E, { blend = 0.35, round = 0.6 } = {}) {
     const i = Math.floor((x - E.bounds.x0) / E.cell), j = Math.floor((z - E.bounds.z0) / E.cell);
     return i < 0 || j < 0 || i >= E.nx || j >= E.nz ? null : cells[j * E.nx + i];
   };
-  const h = (x, z) => {
-    const base = height(x, z);
-    const list = listAt(x, z);
-    if (!list) return base;
+  const blendRamp = (base, x, z, list) => {
     let best = base, wBest = 0;
     for (const s of list) {
       const half = E.lineW[E.segLine[s]] / 2;
@@ -230,6 +227,16 @@ export function withStairRamps(height, E, { blend = 0.35, round = 0.6 } = {}) {
       if (w > wBest) { wBest = w; best = base + (ramp - base) * w; }
     }
     return best;
+  };
+  const h = (x, z) => { const base = height(x, z), list = listAt(x, z); return list ? blendRamp(base, x, z, list) : base; };
+  // the object form (pt.x, pt.z -> pt.h: no doubles across calls; groundQuery uses it): the base's own object form when
+  // it has one; the stair cells read inline (only near a stair does the blend run)
+  const bP = height.P || null, nx = E.nx, nz = E.nz, x0 = E.bounds.x0, z0 = E.bounds.z0, cs = E.cell;
+  h.P = (pt) => {
+    if (bP) bP(pt); else pt.h = height(pt.x, pt.z);
+    const i = Math.floor((pt.x - x0) / cs), j = Math.floor((pt.z - z0) / cs);
+    const list = i < 0 || j < 0 || i >= nx || j >= nz ? null : cells[j * nx + i];
+    if (list) pt.h = blendRamp(pt.h, pt.x, pt.z, list);
   };
   h.stairAt = (x, z) => {
     const list = listAt(x, z);

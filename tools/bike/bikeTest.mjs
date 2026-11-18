@@ -20,7 +20,10 @@
 // player from the spots); the stairs as a ramp (down < 3 g, up pushed); D6's real spot (its stairs ridden, the cost).
 // FEEL ROUND 3 (section 16): the sound's mapping from the state (ratchet, rolling per surface, chain, skid, scrape by
 // material, events once each), the baked textures, the graph on a stand-in AudioContext, no work / allocation off.
-import { DT, BIKE, SURF, createBikeState, stepBike, groundQuery, bikeSpeed, stateHash, advanceBike, restHeight, wheelPoints, BIKE_RANGES } from "../../viewer/bike/bikePhysics.js";
+// FEEL ROUND 4 (sections 17, 18): the zero-garbage step (tools/bike/zeroGarbage.mjs in a fresh process: flat ground and
+// the D6 spot); the camera (CameraRig): speed sense, looking into turns, the landing dip, never inside a solid / under
+// minClear, smooth down the stairs and onto a grind.
+import { DT, BIKE, SURF, createBikeState, stepBike, groundQuery, bikeSpeed, stateHash, advanceBike, restHeight, wheelPoints, BIKE_RANGES, bikePose } from "../../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
 import { testGround, testHeight, testColliders, SPOTS, KERB, KICKER, TABLE, SLOPE, STEEP, SAND, WALL, LOG, PUMP, BOUNDS } from "../../viewer/bike/bikeGround.js";
 import { buildColliders, KIND } from "../../viewer/drive/colliders.js";
@@ -830,6 +833,92 @@ function clampN(v) { return v < -1 ? -1 : v > 1 ? 1 : v; }
     await tick(); const gOn = gcs; obs.disconnect();
     check("sound off: no context, no work, no allocation; the mapping allocates nothing", off.ctx === null && gOff === 0 && gOn === 0,
       `off: context ${off.ctx}, ${gOff} GC over 1e6 updates; mapping: ${gOn} GC over 1e6 calls, ${f1(ns)} ns a call`, "null, 0, 0");
+  }
+}
+
+// ---------------------------------------------------------------- 17. FEEL ROUND 4: the zero-garbage step
+// stepBike split in phases (V8 inlines each one's helpers), the ground called with objects only (groundAt, g.P), the
+// colliders' box as one object. Measured by tools/bike/zeroGarbage.mjs in a FRESH process (one or two grounds, as in
+// the game: this runner has built dozens, which makes V8's call sites megamorphic and would measure itself)
+{
+  const { execFileSync } = await import("node:child_process");
+  const lines = execFileSync(process.execPath, ["tools/bike/zeroGarbage.mjs", "--json"], { encoding: "utf8" }).trim().split(String.fromCharCode(10));
+  const r = JSON.parse(lines[lines.length - 1]);
+  check("zero-garbage step: young collections over 1e6 steps", r.flat.gc <= 1 && r.city.gc <= 8,
+    `flat ground ${r.flat.gc} (${f2(r.flat.us)} us a step), the D6 spot (its ground, buildings, walls, benches) ${r.city.gc} (${f2(r.city.us)} us); before round 4: ~170 / ~370`, "flat 0 (1: the counter's own noise), city <= 8 (contacts in the shared colliders)");
+}
+
+// ---------------------------------------------------------------- 18. FEEL ROUND 4: the camera (CameraRig, no three)
+{
+  const { CameraRig, BIKE_CAMERA } = await import("../../viewer/bike/bikeCamera.js");
+  const { testGroundRamped, testEdges, testHeightRamped, STAIRS, LAB_FURNITURE } = await import("../../viewer/bike/bikeGround.js");
+  const lab = createBikeEnv({ sets: () => [COL], ground: testGroundRamped, edges: testEdges });
+  const H = (x, z) => testHeightRamped(x, z);
+  const cfg = (o = {}) => ({ ...BIKE_CAMERA, ...o });
+  /** ride input for secs, the camera updated every 2nd step (60 fps); f(rig, s) per frame */
+  const film = (s, env, input, secs, c, f, ground = H, solid = env.solidAt) => {
+    const rig = new CameraRig(c), pose = {};
+    for (let i = 0; i < Math.round(secs / DT); i++) { stepBike(s, input(s, i * DT), env); if (i % 2) { bikePose(s, 1, pose); rig.update(s, pose, 2 * DT, ground, solid); f(rig, s); } }
+    return rig;
+  };
+  // ---- speed sense: the FOV opens with speed, eased (no step), back as it slows
+  {
+    const env = flatEnv(), s = spawn(env, 0, 0, 0); let f0 = NaN, fMax = 0, jump = 0, prev = NaN;
+    film(s, env, (q, t) => ({ pedal: t < 12 ? 1 : 0, sprint: t < 12, brakeR: t > 12 ? 1 : 0 }), 16, cfg(), (r) => { if (!(f0 === f0)) f0 = r.fov; fMax = Math.max(fMax, r.fov); if (prev === prev) jump = Math.max(jump, Math.abs(r.fov - prev)); prev = r.fov; }, () => 0, null);
+    check("camera: speed sense (FOV with speed, eased)", fMax - f0 > 4 && fMax - f0 <= BIKE_CAMERA.fovKick + 0.01 && jump < 0.3 && Math.abs(prev - f0) < 0.5,
+      `FOV ${f1(f0)} -> ${f1(fMax)} deg at 30 km/h -> ${f1(prev)} stopped; the biggest change a frame ${f2(jump)} deg`, "+4..8 deg, < 0.3 deg a frame, back");
+  }
+  // ---- look into turns: in a steady left / right turn the look point lies on the turn's inside
+  {
+    const side = (steer) => { const env = flatEnv(), s = spawn(env, 0, 0, 0); s.vz = 5; let acc = 0, n = 0;
+      // (the look point relative to the BIKE: metres to its left (+) / right (-))
+      film(s, env, () => ({ steer, pedal: 0.5 }), 4, cfg(), (r, q) => { if (q.t > 2) { const lx = Math.cos(q.heading), lz = -Math.sin(q.heading); acc += (r.look.x - q.x) * lx + (r.look.z - q.z) * lz; n++; } }, () => 0, null);
+      return acc / n; };
+    const L = side(1), R = side(-1);
+    check("camera: looks into the turn", L > 0.3 && R < -0.3, `left turn: the look point ${f2(L)} m left of the bike; right turn: ${f2(-R)} m right`, "on the inside both ways");
+  }
+  // ---- the landing dip: 3-8 cm, back without a bounce; none rolling
+  {
+    const dipOf = (h) => { const env = flatEnv(), s = spawn(env, 0, 0, 0); s.y += h; s.vz = 5; s.air = true; s.airT = 0.5; s.contact[0] = s.contact[1] = false; s.sinceContact = 1;
+      let mn = 0, mx = 0, tMin = 0, back = NaN; film(s, env, () => ({ hop: h > 2 }), 2.5, cfg(), (r, q) => { if (r.dipY < mn) { mn = r.dipY; tMin = q.t; } if (mn < 0 && r.dipY > mx) mx = r.dipY; if (mn < -0.01 && !(back === back) && Math.abs(r.dipY) < 0.005 && q.t > tMin) back = q.t - tMin; }, () => 0, null); return [mn, mx, back]; };
+    const [m1, o1, b1] = dipOf(1), [m2, o2, b2] = dipOf(2.6);
+    const roll = (() => { const env = labEnv(), s = spawn(env, -15, 4, 0); s.vz = 4.5; let mn = 0; film(s, env, () => ({}), 6, cfg(), (r) => { mn = Math.min(mn, r.dipY); }); return mn; })();
+    check("camera: the landing dip (no bounce), none rolling", m1 < -0.03 && m2 >= -0.081 && m2 < m1 && o1 < 0.003 && o2 < 0.003 && b1 < 0.4 && roll === 0,
+      `1 m drop: ${(m1 * 100).toFixed(1)} cm, back in ${f2(b1)} s; 2.6 m: ${(m2 * 100).toFixed(1)} cm, back in ${f2(b2)} s; overshoot ${(Math.max(o1, o2) * 1000).toFixed(1)} mm; the pump rollers: ${(roll * 100).toFixed(1)} cm`, "3-8 cm, < 0.4 s, no bounce, 0");
+  }
+  // ---- never inside things: the side camera riding beside the wall (it would sit behind it) and the kerb, the low
+  // camera along the kerb face, the chase camera grinding the bench: never in a solid, never under minClear
+  {
+    let inside = 0, under = 0, frames = 0, pulled = 0;
+    const runs = [
+      ["side", [0, -20.6, Math.PI / 2], 3, (q) => ({ pedal: 0.5 })],           // along the wall (z -21.7), the side camera on its far side
+      ["side", [9.7, 14, 0], 4, () => ({ pedal: 0.4 })],                        // along the kerb's face, on the road
+      ["low", [9.75, 14, 0], 4, () => ({ pedal: 0.4 })],
+      ["chase", [109.45, 38, 0], 4, (q, t) => ({ hop: t > 1.4 && t < 1.75, pedal: 0.3 })],   // a hop onto the bench, a grind
+      ["far", [130, 79, Math.PI], 4, () => ({})],                                // down the stairs
+    ];
+    for (const [mode, [x, z, h], secs, inp] of runs) {
+      const s = createBikeState(x, z, h, H(x, z)); s.vx = Math.sin(h) * 3.5; s.vz = Math.cos(h) * 3.5;
+      film(s, lab, inp, secs, cfg({ mode }), (r) => { frames++; if (lab.solidAt(r.pos.x, r.pos.y, r.pos.z)) inside++; if (r.pos.y < H(r.pos.x, r.pos.z) + BIKE_CAMERA.minClear - 0.02) under++; pulled += r.blocked; });
+    }
+    check("camera: never inside a wall / a kerb / a bench, never under minClear", inside === 0 && under === 0 && pulled > 0,
+      `${frames} frames over 5 runs (side along the wall and the kerb, low along the kerb, chase onto the bench, far down the stairs): inside ${inside}, under ${under}; pulled in by a solid / the ground on ${pulled} frames`, "0, 0 (and the pull-in used)");
+  }
+  // ---- smooth over the stairs and a grind: no jump, small vertical acceleration
+  {
+    const smooth = (x, z, h, v, inp, secs) => {
+      const s = createBikeState(x, z, h, H(x, z)); s.vx = Math.sin(h) * v; s.vz = Math.cos(h) * v;
+      let py = [], jump = 0, acc = 0, p0 = null, grinds = 0;
+      film(s, lab, inp, secs, cfg(), (r, q) => {
+        if (p0) jump = Math.max(jump, Math.hypot(r.pos.x - p0[0], r.pos.y - p0[1], r.pos.z - p0[2]) - Math.hypot(q.vx, q.vz, q.vy) * 2 * DT);
+        p0 = [r.pos.x, r.pos.y, r.pos.z]; py.push(r.pos.y - r.dipY); grinds = q.grinds;     // (the landing dip is wanted: tested above)
+        const n = py.length; if (n > 2) acc = Math.max(acc, Math.abs(py[n - 1] - 2 * py[n - 2] + py[n - 3]) / (2 * DT) ** 2);
+      });
+      return { jump, acc, grinds };
+    };
+    const st = smooth(130, 79, Math.PI, 4, () => ({}), 4), gr = smooth(109.45, 38, 0, 3.5, (q, t) => ({ hop: t > 1.4 && t < 1.75, pedal: 0.3 }), 4);
+    check("camera: smooth down the stairs and onto a grind", st.jump < 0.03 && gr.jump < 0.03 && st.acc < 20 && gr.acc < 20 && gr.grinds > 0,
+      `stairs at 4 m/s: the biggest jump beyond the motion ${(st.jump * 100).toFixed(1)} cm, vertical acceleration <= ${f1(st.acc)} m/s^2; the bench grind (${gr.grinds}): ${(gr.jump * 100).toFixed(1)} cm, ${f1(gr.acc)} m/s^2`, "< 3 cm, < 20 m/s^2 (a hard clamp gave 54-70)");
   }
 }
 

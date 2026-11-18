@@ -105,7 +105,7 @@ dirt (packed) 0.70 / 0.018 / 0 / 8 mm, grass 0.55 / 0.060 / 0.06 / 10 mm, sand 0
 roots 0.50 / 0.045 / 0.03 / 22 mm.
 
 ## Targets = the node checks (`node --import ./tools/heap/register.mjs tools/bike/bikeTest.mjs`, gate row `bike`)
-87 checks, all pass (~6 s; feel rounds 1, 2, 3: 16 + 16 + 8 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
+93 checks, all pass (~8 s; feel rounds 1-4: 16 + 16 + 8 + 6 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
 steps and state); speeds above; never tunnels (kicker / table / kerb / rollers entered at 58 km/h: deepest wheel 0.11 m =
 the bottom-out, 0 steps under; the wall at 58 km/h: never through, a crash; at walking pace: stopped, no crash); the
 15 cm kerb: a timed hop rides onto the pavement, no hop at 2.5 m/s = stopped, at 22 km/h = over the bars; a 6 cm kerb
@@ -321,6 +321,76 @@ functions (each small enough to inline its helpers): a later job.
 
 **Needs the browser** (not done: no browser this round): listening (levels, the ratchet's crossfade, the surface
 textures at speed, the scrape materials), the first switch-on's bake in the page.
+
+**For the owner: what to listen for** (the lab: Ride > "sound (bike)" on; the Sound folder has every level):
+1. Coast after pedalling hard on the plaza: the ratchet should come in as the pedals stop, a fast buzz at speed slowing to
+   single ticks as you roll to a stop. Does the crossfade between the two tick loops (around 30-60 ticks a second, ~1.5 m/s)
+   sound like one sound?
+2. Ride each surface at 10 and 25 km/h (spots: start = asphalt, kerb = setts, pump = dirt, sand, roots, the grass beside
+   the lanes): does each read as its ground, and does the pitch rising with speed sound natural or "sped-up tape"?
+3. Pedal seated, then stand (Shift): the chain and the bottom-bracket knock; too loud / too clicky?
+4. Skid (S held at 20 km/h) on asphalt (a squeal) and on dirt (a rasp).
+5. Grind the bench (wood), the ledge (stone) and, from a drop, the handrail (steel): three different materials?
+6. Land clean, sketchy (nose down a bit) and bail: three different thuds; a kerb knock riding into the kerb slowly.
+7. The overall mix (volume 0.7) against your speakers / headphones; anything that fatigues after a few minutes.
+
+## Feel round 4: the rider's weight, the camera, the zero-garbage step (2026-11-18, FEEL_RESEARCH.md #4 and section 3)
+**1. The rider's weight** (`viewer/kid/riderIK.js` `weight()`, RIDE sliders in the lab's Kid folder). Physics first,
+animation as a target: everything below is driven by continuous physics values, never a clip or a switch.
+- The PELVIS rides a critically damped spring (no bounce) in the bike frame: fore-aft and lateral driven by the frame's
+  own accelerations (the body lags: a hard front brake throws the hips 3.7 cm forward, a turn swings them out); the
+  vertical drive is the frame's UPWARD acceleration and the compression beyond the resting sag, low-passed, and never
+  upward: a critically damped spring's impulse response is never negative, so a drive that only pushes down can only sink
+  the hips (a 1 m drop: 5 cm), never bounce them over rest however the suspension rings (the bike's own springs have a
+  damping ratio of ~0.3). Soft limits 7 / 6 / 4 cm.
+- The UPPER BODY lags on a slower spring (1.6 Hz): pitches forward under braking, rolls in a turn; the hands stay on the
+  grips (the elbows take it).
+- The HEAD is stabilised: its own smoothed yaw along the bike's PATH (the velocity) and into the turn (yaw rate x 0.35 s),
+  the eyes nearly level, looking down a descent; never more than 0.7 rad from the bike's heading.
+- Also: the bars as drawn never turn faster than 4 rad/s (a full lock at a standstill swung them 0.08 rad in a step,
+  the hands with them).
+- kidTest (2 new): driven by the physics step by step through a 1 m drop, pedalling, a hard front brake and a turn: the
+  limbs move at most 1.5 cm a step relative to the pelvis, IK error 0.00 mm; the landing sinks the hips 5 cm with 0 mm of
+  overshoot, the brake moves them 3.7 cm forward.
+
+**2. The camera** (`viewer/bike/bikeCamera.js`: `CameraRig`, plain numbers and no three.js, node-tested; `BikeCamera` applies it).
+- Speed sense: FOV +7 deg and the camera a little lower / closer from 3 to 12 m/s, eased over 0.6 s (64 -> 68.6 deg at
+  30 km/h, at most 0.04 deg a frame).
+- Looks ahead along the velocity (1.2 m + 0.25 s of travel) and INTO the turn (the yaw rate x 0.3 s): in a steady turn the
+  look point is 0.68 m to the inside of the bike, both ways.
+- The landing dip: a kick into a critically damped spring (no bounce): 4 cm for a 1 m drop, 6.7 cm for 2.6 m, back in
+  ~0.25 s; nothing on the pump rollers.
+- Never inside things: the line of sight from the kid's head to the wanted spot is marched against the colliders
+  (`env.solidAt`: buildings, walls, benches, garden walls, posts, trees) and the ground (kerbs): the camera comes in at once,
+  eases back out (3 /s); the ground under it is sampled at 5 points (a kerb's top beside it counts) and joined by a SMOOTH
+  maximum (never under minClear, no kink where it starts holding the camera up). The side camera riding beside the wall
+  (it would sit behind it), the side / low cameras along the kerb face, the chase onto the bench, the far camera down the
+  stairs: 0 frames inside a solid, 0 under minClear (it pulled in on 163 frames).
+- Smooth down the stairs and onto a grind: no jump (< 0.5 cm beyond the motion), vertical acceleration <= 15 m/s^2 (the
+  hard clamp gave 54-70). For the grind, the snap's height now settles over twice the plan's blend (160 ms: the pegs come
+  down onto the edge); the snap's biggest step went from 2.0 to 0.7 cm.
+- bikeTest (5 new): speed sense, looks into the turn, the dip, never inside, smooth.
+
+**3. The zero-garbage step.** Round 3 found ~350 bytes of garbage a physics step. Why: V8 inlines a function's small
+helpers only up to a budget per optimised function; stepBike in one piece ran out, and every call past it boxed its double
+arguments and results. Done:
+- stepBike split into five functions (the legs / hop, the face test, the contact forces, the motion, the settling), their
+  shared values in one preallocated scratch object (its numbers initialised as doubles: stored unboxed);
+- the physics never calls the ground with doubles: `groundAt(env, out)` with the coordinates in a scratch object; ground
+  queries and height functions may carry an OBJECT form (`.P(pt)`: pt.x, pt.z in, pt.h out), which `groundQuery`, the city
+  spot (DTM, raised surfaces, the surface id) and the stair ramps now have; the five height samples come from one call site;
+- the face tests take their inputs in a scratch object; the colliders' prepare takes no double;
+- the bike's collider pass rejects far items inline before the shared tests; the shared `polyBoxOverlaps`
+  (viewer/drive/colliders.js) takes its box as one object (same arithmetic: tools/collide/wallTest.mjs and
+  tools/moto/physicsTest.mjs give identical output).
+Result (`tools/bike/zeroGarbage.mjs`, a fresh process): young collections per million steps: **flat ground 0-1** (the
+counter's own noise; was ~170), **the D6 city spot 4-6** (was ~370; what is left is the shared colliders' closures while
+actually touching a wall). A step now costs **1.3 us** on flat ground and **4.1 us** on the city spot (5.5 / 8.5 before).
+The state hash is unchanged (the same arithmetic, bit for bit). The lab's procedural test ground still allocates (its
+feature closures are called megamorphically: a test ground, not the city's).
+
+**Needs the browser** (on the coordinator's go): the weight on the kid (landings, braking, turns), the head; the camera's
+speed sense, turn look, dip, the pull-in at walls / kerbs (side mode), the stairs.
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:
