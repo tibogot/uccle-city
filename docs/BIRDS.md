@@ -188,6 +188,10 @@ no flock is ever pulled to a fixed point. Check: `tools/audit/birdGate.mjs` (mer
   leader on a swooping path round the roost (45-110 m up). The formation pull is softer (0.32 vs 0.45): the sheet lags,
   stretches and folds on the turns.
 - Splitting / joining slots, the floor, the threats, wings, drawing: unchanged.
+- **Falcon flight / game** (`flyer.on`): the prey flocks keep their sizes from before (`PREY_SIZES`: starlings 110-190,
+  jackdaws 28-60, parakeets 24-52: the hunt's prey density unchanged) with the new rules (gate rows `prey-*`: loose flat
+  flocks at 190 / 60 / 52, c/a median 0.14-0.30, 0 % ball-like); no sky pigeons there (not prey); the prey list
+  (`gpuPrey.js`) untouched.
 
 **The gate** (`node --preserve-symlinks --import ./tools/characters/threeHook.mjs tools/audit/birdGate.mjs`): the CPU mirror
 of the GPU step (`CpuFlock`, the same equations and per-bird hashes) runs every species (3 seeds) and the 3072 / 900

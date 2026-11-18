@@ -57,6 +57,9 @@ export const DAY_PROFILES = {
   parakeets: { n: [10, 30], spacing: 2.5, vmin: 13, vmax: 19, informed: 0.4, radius: 24, floorClear: 10, leader: { R: 220, yLo: 18, yHi: 34, turnMax: 0.45, turnSigma: 0.35 } },
   gulls: { n: [6, 34], spacing: 10, vmin: 7, vmax: 12, informed: 0.5, radius: 60, floorClear: 40, leader: { R: 300, yLo: 90, yHi: 150, turnMax: 0.2, turnSigma: 0.12 } },
 };
+/** the falcon game's prey density (falcon flight on): the group sizes before birds2, flown with the new rules (the
+ *  hunt's prey counts unchanged; the gate checks these sizes are loose flocks too) */
+export const PREY_SIZES = { starlings: [110, 190], jackdaws: [28, 60], parakeets: [24, 52] };
 /** murmuration gains */
 export const MUR = {
   form: 0.32,         // the pull to the bird's place in the formation (x min(dist, 40))

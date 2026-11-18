@@ -22,7 +22,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CpuFlock, LeaderPath, MurmurShape, DAY_PROFILES, principalAxes, nnDistances, screenTerms } from "../../viewer/birds/flockModel.js";
+import { CpuFlock, LeaderPath, MurmurShape, DAY_PROFILES, PREY_SIZES, principalAxes, nnDistances, screenTerms } from "../../viewer/birds/flockModel.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const quiet = process.argv.includes("--quiet");
@@ -138,6 +138,16 @@ for (const key of Object.keys(DAYN)) {
   }
   check(`day-${key}`, allOk, `${n} birds, 3 runs x ${SECS} s: ${ds[0]}${quiet ? "" : "\n      " + ds.slice(1).join("\n      ")}`);
 }
+// the falcon game's prey sizes (PREY_SIZES: the old counts, new rules): loose flocks too, at the largest count
+for (const [key, [, n]] of Object.entries(PREY_SIZES)) {
+  let allOk = true; const ds = [];
+  for (const seed of [1, 2]) {
+    const J = judgeDay(key, simDay(key, n, seed * 104729 + n), false);
+    const ok = Object.values(J.res).every(Boolean);
+    allOk &&= ok; ds.push(`${ok ? "" : "[" + Object.entries(J.res).filter(([, v]) => !v).map(([k]) => k).join(",") + "] "}${J.d}`);
+  }
+  check(`prey-${key}`, allOk, `falcon game size ${n}, 2 runs: ${ds.join(quiet ? " / " : "\n      ")}`);
+}
 for (const [key, n] of [["starlings", 150], ["jackdaws", 44]]) {
   const J = judgeDay(key, simDay(key, n, 11, true), true);
   info(`old-${key}`, `?birds2=old mirror, ${n} birds at a reached waypoint / the tower: ${Object.entries(J.res).filter(([, v]) => !v).map(([k]) => k + " FAIL").join(", ") || "passes"}: ${J.d}`);
@@ -164,8 +174,9 @@ for (const [n, old] of [[3072, false], [900, false], [3072, true]]) {
 // ---- 5. cost / rules
 const rd = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const pairsNew = Object.entries(DAY_PROFILES).reduce((s, [k, p]) => s + p.n[1] ** 2 * (k === "jackdaws" ? 2 : 1), 0);
+const pairsPrey = Object.entries(DAY_PROFILES).filter(([k]) => k !== "pigeons").reduce((s, [k, p]) => s + (PREY_SIZES[k] ?? p.n)[1] ** 2 * (k === "jackdaws" ? 2 : 1), 0);   // (no sky pigeons in the falcon flight)
 const pairsOld = 190 ** 2 + 2 * 60 ** 2 + 34 ** 2 + 52 ** 2;
-check("cost-pairs", pairsNew <= pairsOld, `day flocks' pair tests a frame at the largest counts: ${pairsNew} (old ${pairsOld}); murmuration 6 lattice reads a bird (unchanged)`);
+check("cost-pairs", pairsNew <= pairsOld && pairsPrey <= pairsOld, `day flocks' pair tests a frame at the largest counts: ${pairsNew}, falcon game sizes ${pairsPrey} (old ${pairsOld}; the 7-neighbour insertion ~7 min/max a pair more); murmuration 6 lattice reads a bird (unchanged)`);
 const src = ["viewer/birds/skyFlocks.js", "viewer/birds/cityBirds.js", "viewer/birds/birdMesh.js", "viewer/birds/flockModel.js"].map((p) => [p, rd(p)]);
 check("no-dynamic-draw", src.every(([, s]) => !/DynamicDrawUsage/.test(s)), "no DynamicDrawUsage in viewer/birds");
 check("no-lights", src.every(([, s]) => !/new THREE\.\w*Light\b/.test(s)), "no light created in viewer/birds (fixed light count)");

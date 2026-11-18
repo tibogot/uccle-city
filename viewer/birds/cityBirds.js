@@ -22,7 +22,7 @@ import * as THREE from "three/webgpu";
 import { SkyFlocks, SLOTS, FLOOR } from "./skyFlocks.js";
 // birds2 (?birds2=old = before): every flock flies after a LEADER on a path (no point to hover round: the old flocks
 // collapsed into balls), the murmuration does manoeuvres (flockModel.js says why and what)
-import { LeaderPath, MurmurShape, DAY_PROFILES } from "./flockModel.js";
+import { LeaderPath, MurmurShape, DAY_PROFILES, PREY_SIZES } from "./flockModel.js";
 import { env } from "../lighting.js";
 
 const params = new URLSearchParams(location.search);
@@ -149,7 +149,8 @@ export const cityBirds = {
     W.gulls = S.e > 3 ? { name: "over the city", x, z, drift: true } : null;
     W.parakeets = S.e > -3 ? this.nearest(PARKS.filter((p) => p.r >= 80), x, z, 1500) : null;
     // birds2: a party of feral pigeons flying loops over the nearest square by day
-    W.pigeons = !this.old && S.e > 2 ? this.nearest(SQUARES, x, z, 900) : null;
+    // (not in the falcon flight / game: sky pigeons there would be birds the hunt cannot take: its prey stays as before)
+    W.pigeons = !this.old && !this.hooks?.flyer?.on && S.e > 2 ? this.nearest(SQUARES, x, z, 900) : null;
     return W;
   },
 
@@ -240,7 +241,9 @@ export const cityBirds = {
       // birds2: small parties (flockModel.js DAY_PROFILES), the murmuration as before
       const dk = key.startsWith("jackdaws") ? "jackdaws" : key, D = DAY_PROFILES[dk];
       if (D) {
-        const n = dk === "gulls" ? (S.winter ? rand(20, 34) : rand(6, 14)) : rand(D.n[0], D.n[1]);
+        // the falcon flight / game on: the prey flocks keep their sizes from before birds2 (the hunt unchanged), new rules
+        const R = (this.hooks?.flyer?.on && PREY_SIZES[dk]) || D.n;
+        const n = dk === "gulls" ? (S.winter ? rand(20, 34) : rand(6, 14)) : rand(R[0], R[1]);
         return { count: Math.round(n), radius: D.radius, floorClear: D.floorClear, vmin: D.vmin, vmax: D.vmax, spacing: D.spacing, informed: D.informed, cohesion: 1, align: 1, sep: 1, circle: 0 };
       }
     }
