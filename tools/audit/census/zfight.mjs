@@ -1,5 +1,12 @@
 // CENSUS CLASS G: COPLANAR OVERLAPPING FACES = Z-FIGHTING (claude/census 2026-11-18; owner playtest: shaking windows,
-// Maison Dandoy's right window (87), a brick front on the Chaussée d'Alsemberg (93)). Report only: no gate row yet.
+// Maison Dandoy's right window (87), a brick front on the Chaussée d'Alsemberg (93)). Gate row `zfight` (claude/zfight,
+// rule 34 provisional): --max pairs=N,m2=M,heroNew=K,ivyShop=J (exit 1 above); --old = ?zfight=old (the UrbIS triangles
+// as given, the steps' soffits, the ivy over the shopfronts: must FAIL).
+//   ivyShop  ivy leaves (data/plants/<T>.ivy.json grown as viewer/plants/ivyWorker.js does, 13 cm cells) on a shopfront
+//            of the street-life layer (its rect: width + 0.2 m a side, from the foot to the cornice): the sprays cross
+//            the interior-mapped glass (Maison Dandoy, owner image 87)
+//   heroNew  a landmark's LOD1 coplanar pairs that its LOD0 has not there (a face collapsed into another slot's plane by
+//            the simplifier: tools/lodNoFight.mjs); the pairs LOD0 already has are listed, not gated
 //
 //   pairs   two faces facing the SAME way (normals within 3 deg), in one plane (separation over their overlap <= EPS 2 mm)
 //           and overlapping > MIN 0.01 m2 (convex clip on the plane): they fight at any distance. Tile buildings as the
@@ -12,7 +19,8 @@
 //           one place, shimmering. Test: a ray from 0.5 m in front of the opening's middle meets the painted walls mesh
 //           within 3 cm of the opening's wall plane.
 //
-//   node --import ./tools/road_audit/register.mjs tools/audit/census/zfight.mjs [--heroes] [T... | --all] [--jobs 4] [--out FILE]
+//   node --import ./tools/road_audit/register.mjs tools/audit/census/zfight.mjs [--heroes] [--ivy] [T... | --all] [--jobs 4] [--out FILE]
+//        [--old] [--quiet] [--max pairs=N,m2=M,heroNew=K,ivyShop=J]
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
@@ -23,7 +31,8 @@ const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
 const CHILD = opt("--child", null), OUT = opt("--out", null), JOBS = +opt("--jobs", 4);
-const HEROES = flag("--heroes"), ALL = flag("--all");
+const HEROES = flag("--heroes"), ALL = flag("--all"), OLD = flag("--old"), QUIET = flag("--quiet"), IVY = flag("--ivy");
+const MAX = Object.fromEntries((opt("--max", "") || "").split(",").filter(Boolean).map((kv) => kv.split("=")).map(([k, v]) => [k, +v]));
 const TILES = ALL ? allBuiltTiles() : argv.filter((a) => !a.startsWith("--")).map((t) => t.toUpperCase());
 const EPS = 0.002, MIN = 0.01;
 const OPENING = ["winA", "winB", "winC", "frenchWin", "doorA", "doorB", "doorDeco", "doorNouveau", "doorModern", "garage", "bay"];
@@ -33,7 +42,7 @@ const HERO_LIST = ["augustin/augustin", "calevoet_station/calevoet", "latourdefr
 
 async function tileChild(T) {
   const t0 = Date.now();
-  const { d, bDoc } = await buildTile(T);
+  const { d, bDoc } = await buildTile(T, OLD ? { zfight: false } : {});
   const B = d.buildings;
   const soup = concatSoups([{ name: "walls", pos: B.walls?.position }, { name: "kitWalls", pos: B.walls?.kit?.position }, { name: "details", pos: B.details?.position }, { name: "roofs", pos: B.roofs?.position }]);
   const fp = footprintIndex(bDoc.buildings);
@@ -127,13 +136,17 @@ async function heroes() {
     if (nodes.some((n) => /_lod2$/.test(n))) L[2] = (n) => /_lod2$/.test(n); else if (nodes.some((n) => /_xfar$/.test(n))) L[2] = (n) => /_xfar$/.test(n);
     const pl = JSON.parse(readFileSync(join(ROOT, "models", name + ".json"), "utf8")).placement;
     const [px, , pz] = pl.city_local_position, r = pl.rotation_y_rad, c = Math.cos(r), s = Math.sin(r);
+    let p0 = [];
     for (const [lv, keep] of Object.entries(L)) {
       const pos = soupFromParts(g.parts, keep);
       const pairs = coplanarPairs(pos, { eps: EPS, minArea: MIN });
       const m2 = pairs.reduce((a, p) => a + p.area, 0);
+      if (+lv === 0) p0 = pairs;
+      // (rule 34) the pairs LOD0 does not have there (within 0.5 m): made by the LOD's simplification
+      const fresh = +lv === 0 ? [] : pairs.filter((p) => !p0.some((q) => Math.abs(q.x - p.x) < 0.5 && Math.abs(q.y - p.y) < 0.5 && Math.abs(q.z - p.z) < 0.5));
       const worst = pairs.sort((a, b) => b.area - a.area).slice(0, 5).map((p) => ({ m2: +p.area.toFixed(2), x: +(px + c * p.x + s * p.z).toFixed(1), y: +p.y.toFixed(1), z: +(pz - s * p.x + c * p.z).toFixed(1) }));
-      res.push({ hero: name.split("/")[0], level: +lv, tris: pos.length / 9, pairs: pairs.length, m2: +m2.toFixed(1), worst });
-      console.log(`${name.split("/")[0].padEnd(20)} L${lv} ${String(pos.length / 9).padStart(7)} tris  coplanar pairs ${String(pairs.length).padStart(6)}  ${m2.toFixed(1)} m2`);
+      res.push({ hero: name.split("/")[0], level: +lv, tris: pos.length / 9, pairs: pairs.length, m2: +m2.toFixed(1), newPairs: fresh.length, newM2: +fresh.reduce((a, p) => a + p.area, 0).toFixed(1), worst });
+      if (!QUIET) console.log(`${name.split("/")[0].padEnd(20)} L${lv} ${String(pos.length / 9).padStart(7)} tris  coplanar pairs ${String(pairs.length).padStart(6)}  ${m2.toFixed(1)} m2${+lv ? `  (not in LOD0: ${fresh.length}, ${fresh.reduce((a, p) => a + p.area, 0).toFixed(1)} m2)` : ""}`);
     }
   }
   return res;
@@ -145,12 +158,12 @@ if (HEROES) out.heroes = await heroes();
 if (TILES.length) {
   const queue = TILES.slice(), results = [];
   const run = (T) => new Promise((ok) => {
-    const p = spawn(process.execPath, ["--max-old-space-size=3072", "--import", "./tools/road_audit/register.mjs", fileURLToPath(import.meta.url), "--child", T], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn(process.execPath, ["--max-old-space-size=3072", "--import", "./tools/road_audit/register.mjs", fileURLToPath(import.meta.url), "--child", T, ...(OLD ? ["--old"] : [])], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
     let so = "", se = ""; p.stdout.on("data", (b) => { so += b; }); p.stderr.on("data", (b) => { se += b; });
     p.on("close", (code) => {
       const line = so.trim().split("\n").filter((l) => l.startsWith("{")).pop();
       if (code !== 0 || !line) { console.error(`${T}: child exit ${code}: ${se.trim().split("\n").slice(-3).join(" / ")}`); results.push({ tile: T, error: true }); }
-      else { const r = JSON.parse(line); results.push(r); console.log(`${T}: ${r.pairs} coplanar pairs (${r.m2} m2) in ${r.affected} buildings (${r.affected1} >= 1 m2); kit openings on a painted wall ${r.kitOnPainted}/${r.kitPieces} in ${r.kitBuildings} buildings; ${JSON.stringify(r.bySrc)} (${r.ms} ms)`); }
+      else { const r = JSON.parse(line); results.push(r); if (!QUIET) console.log(`${T}: ${r.pairs} coplanar pairs (${r.m2} m2) in ${r.affected} buildings (${r.affected1} >= 1 m2); kit openings on a painted wall ${r.kitOnPainted}/${r.kitPieces} in ${r.kitBuildings} buildings; ${JSON.stringify(r.bySrc)} (${r.ms} ms)`); }
       ok();
     });
   });
@@ -164,4 +177,38 @@ if (TILES.length) {
   console.log(`tiles ${ok.length}: ${out.tiles.pairs} coplanar pairs, ${out.tiles.m2} m2, ${out.tiles.affected} buildings (${out.tiles.affected1} >= 1 m2); by meshes ${JSON.stringify(bySrc)}; kit openings on a painted wall ${out.tiles.kitOnPainted}/${out.tiles.kitPieces} in ${out.tiles.kitBuildings} buildings`);
   for (const w of worst.slice(0, 10)) console.log(`  ${w.tile} ${String(w.m2).padStart(7)} m2 ${String(w.pairs).padStart(5)} pairs  ?at=${w.x},${w.z}  bu ${w.bu}  ${JSON.stringify(w.src)}  ${w.street || ""}`);
 }
+if (IVY) {
+  const { growIvyData } = await import(pathToFileURL(join(ROOT, "viewer/foliage/ivyGrow.js")).href);
+  let leaves = 0, walls = 0; const at = [];
+  for (const T of allBuiltTiles()) {
+    const fi = join(ROOT, "data/plants", `${T}.ivy.json`), fs2 = join(ROOT, "data/streetlife", `${T}.json`);
+    if (!existsSync(fi) || !existsSync(fs2)) continue;
+    const fronts = (JSON.parse(readFileSync(fs2, "utf8")).pois || []).filter((p) => p.face).map((p) => p.face);
+    for (const w of JSON.parse(readFileSync(fi, "utf8")).walls) {
+      if (w.f) continue;
+      const [ox, oy, oz] = w.o, [tx, tz] = w.t, [nx, nz] = w.n;
+      const rects = [];
+      for (const q of fronts) {
+        if (q.nx * nx + q.nz * nz < 0.9 || Math.abs((q.x - ox) * nx + (q.z - oz) * nz) > 0.5) continue;
+        const u = (q.x - ox) * tx + (q.z - oz) * tz, W = Math.max(2.0, Math.min(q.w, 9.9));
+        rects.push([u - W / 2 - 0.2, q.y - oy - 0.5, u + W / 2 + 0.2, q.y - oy + (q.eaves - q.y < 4.0 ? 2.55 : 3.0) + 1.1, q.x, q.z]);
+      }
+      if (!rects.length) continue;
+      // as viewer/plants/cityIvy.js ivyWalls + ivyWorker.js grow it (?zfight=old: without g.shop)
+      const g = OLD || !w.g.shop ? w.g : { ...w.g, avoid: [...(w.g.avoid || []), ...w.g.shop] };
+      const L = growIvyData({ width: w.w, height: w.h }, { ...g, leafCell: 0.13, perCellMax: 1 }).leaves;
+      const n = L.filter((l) => rects.some(([a, b, c, d]) => l.u > a && l.u < c && l.v > b && l.v < d)).length;
+      if (n) { leaves += n; walls++; if (at.length < 12) at.push({ tile: T, leaves: n, x: rects[0][4], z: rects[0][5] }); }
+    }
+  }
+  out.ivyShop = { leaves, walls, at };
+  console.log(`ivy on a shopfront: ${leaves} leaves on ${walls} walls${at.length ? ": " + at.map((a) => `${a.tile} ${a.leaves} (?at=${a.x.toFixed(1)},${a.z.toFixed(1)})`).join(", ") : ""}`);
+}
 if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify(out, null, 1));
+if (Object.keys(MAX).length) {
+  const got = { pairs: out.tiles?.pairs, m2: out.tiles?.m2, heroNew: out.heroes ? +out.heroes.reduce((a, h) => a + (h.newM2 || 0), 0).toFixed(1) : undefined, ivyShop: out.ivyShop?.leaves, errors: out.tiles?.errors };
+  const bad = Object.entries(MAX).filter(([k, v]) => got[k] === undefined || got[k] > v).map(([k, v]) => `${k} ${got[k]} > ${v}`);
+  if (out.tiles?.errors) bad.push(`${out.tiles.errors} tile errors`);
+  console.log(`${bad.length ? "FAIL" : "PASS"} zfight: ${Object.entries(got).filter(([, v]) => v !== undefined).map(([k, v]) => `${k} ${v}`).join(", ")} (max ${JSON.stringify(MAX)})${bad.length ? ": " + bad.join("; ") : ""}`);
+  process.exit(bad.length ? 1 : 0);
+}
