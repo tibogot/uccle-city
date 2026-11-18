@@ -325,10 +325,12 @@ def place_tile(name, src, stats, villo_rank):
             want("E9a", q.x - h[0] * 2.0, q.y - h[1] * 2.0, h[0], h[1], src_="osm")
 
     # ---- one-way roads: F19 where the flow starts, C1 where it ends (at junctions)
-    # (streetprops 2026-11-18, rule 27: not at the mouth of a one-way PAIR: a piece flowing into the junction beside one
-    # flowing out of it on the same side (a split carriageway round an island / median, OSM's two one-way ways). There
-    # the C1 of the one and the F19 of the other addressed the same traffic and shared a pole (owner image 79,
-    # Papenkasteel / Ch. de Saint-Job); the mouth is a two-way street. --oneway=old: as before)
+    # (streetprops 2026-11-18, rule 27: at the mouth of a one-way PAIR (a piece flowing into the junction beside one
+    # flowing out of it on the same side: a split carriageway round an island / median, a divided avenue) each
+    # carriageway keeps its own sign, as in Belgium: C1 at the inflowing one's exit (on its island-nose side, facing the
+    # wrong-way approach), F19 at the outflowing one's entry (its own kerb). They used to share ONE pole (owner image 79,
+    # Papenkasteel / Ch. de Saint-Job): pair signs never share a pole with the other order, and a C1 / F19 of a pair
+    # that still lands within 4 m of the other order facing the same approach (one kerb for both) is dropped)
     def first_dir(r, n, d=8.0):
         ln = R.from_node(r, n); q = ln.interpolate(min(d, ln.length)); p0 = ln.coords[0]
         L = math.hypot(q.x - p0[0], q.y - p0[1]) or 1
@@ -360,15 +362,11 @@ def place_tile(name, src, stats, villo_rank):
         a = r["a"] if fl.coords[0] == tuple(r["line"][0]) else r["b"]
         b = r["b"] if a == r["a"] else r["a"]
         if R.deg(a) >= 3:
-            if paired(r, a, False): stats["oneway_pair_F19_dropped"] += 1
-            else:
-                q = fl.interpolate(4.0); tx, tz = tangent(fl, 4.0)
-                want("F19", q.x, q.y, tx, tz)
+            q = fl.interpolate(4.0); tx, tz = tangent(fl, 4.0)
+            want("F19", q.x, q.y, tx, tz, src_="pair" if paired(r, a, False) else "rule")
         if R.deg(b) >= 3:
-            if paired(r, b, True): stats["oneway_pair_C1_dropped"] += 1
-            else:
-                q = fl.interpolate(fl.length - 4.0); tx, tz = tangent(fl, fl.length - 4.0)
-                want("C1", q.x, q.y, -tx, -tz)
+            q = fl.interpolate(fl.length - 4.0); tx, tz = tangent(fl, fl.length - 4.0)
+            want("C1", q.x, q.y, -tx, -tz, src_="pair" if paired(r, b, True) else "rule")
 
     # ---- speed transitions at junctions (and living streets)
     for n, rs in sorted(R.at.items()):
@@ -441,9 +439,23 @@ def place_tile(name, src, stats, villo_rank):
     for code, px, pz, fx, fz, measured, s_ in sorted(placed, key=lambda p: PRECEDENCE.index(p[0])):
         host = None
         for pl in poles:
+            if not ONEWAY_OLD and {code, *pl["codes"]} >= {"C1", "F19"}: continue        # (rule 27) never one pole
             if len(pl["codes"]) < 2 and math.hypot(pl["x"] - px, pl["z"] - pz) < 1.5 and pl["fx"] * fx + pl["fz"] * fz > 0.85: host = pl; break
         if host: host["codes"].append(code); stats["plates_shared"] += 1
         else: poles.append({"x": px, "z": pz, "fx": fx, "fz": fz, "codes": [code], "measured": measured, "src": s_})
+    # (rule 27) a pair's C1 / F19 still showing the other order to the same approach (within 4 m, facing within 45 deg):
+    # the two carriageways' signs landed on one kerb; the pair sign goes (a rule C1 / F19 stays)
+    if not ONEWAY_OLD:
+        def clash(a, b):
+            return math.hypot(a["x"] - b["x"], a["z"] - b["z"]) < 4 and a["fx"] * b["fx"] + a["fz"] * b["fz"] > math.cos(math.pi / 4)
+        stats["oneway_pair_signs"] += sum(1 for pl in poles if pl["src"] == "pair")
+        for pl in list(poles):
+            if pl["src"] != "pair" or pl not in poles: continue
+            other = "F19" if "C1" in pl["codes"] else "C1"
+            if any(o is not pl and other in o["codes"] and clash(pl, o) for o in poles):
+                pl["codes"] = [c for c in pl["codes"] if c not in ("C1", "F19")]
+                stats["oneway_pair_dropped"] += 1
+                if not pl["codes"]: poles.remove(pl)
     out_signs = []
     for pl in sorted(poles, key=lambda p: (round(p["x"], 2), round(p["z"], 2))):
         hs = [SHAPES[FACE_SHAPE[c]]["h"] for c in pl["codes"]]

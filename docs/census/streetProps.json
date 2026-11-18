@@ -1,21 +1,23 @@
 {
- "when": "2026-11-18T06:51:35.051Z",
+ "when": "2026-11-18T07:10:30.225Z",
  "old": false,
  "sum": {
   "plates": 750,
   "plateGap": 0,
   "plateNoPost": 0,
-  "signs": 1692,
+  "signs": 1745,
   "signFacing": 8,
-  "signMovedFar": 337,
-  "pieces": 4696,
-  "inRoad": 46,
-  "inLane": 40,
+  "signMovedFar": 342,
+  "pieces": 4749,
+  "inRoad": 47,
+  "inLane": 41,
   "onTram": 11,
-  "onPlatform": 51
+  "onPlatform": 51,
+  "postbox": 0,
+  "villo": 0
  },
  "byKind": {
-  "sign": 7,
+  "sign": 8,
   "plate post": 7,
   "stop pole": 19,
   "sign (tram)": 1,
@@ -311,6 +313,16 @@
     "tram": false,
     "at": "1702.6, -950",
     "street": "Avenue de Diane - Dianalaan"
+   },
+   {
+    "tile": "N5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3615.1, 284.9",
+    "street": "Avenue des Coccinelles - Onze-Lieve-Heersbeestjeslaan",
+    "codes": "C1"
    },
    {
     "tile": "N5",

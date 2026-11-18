@@ -79,10 +79,12 @@ from the data). The rules are in the script's header; in short (all positions fr
   `direction=forward / backward` along the OSM way (151), else toward the node's nearer junction (63).
 - **traffic_sign=BE:*** nodes (B1, B5, C1, C3, D7, C43[n]) the same way; `BE:B22` (cyclists on red) has no face: skipped.
 - **F19 / C1**: one-way roads: F19 4 m into the road at each junction where the flow starts, C1 facing the wrong way
-  4 m before each junction where it ends (segments >= 12 m). Not at the mouth of a one-way PAIR (claude/streetprops,
-  rule 27): a piece flowing in beside one flowing out on the same side (a split carriageway round an island, or a divided
-  avenue's two carriageways meeting a cross street within 15 m): there C1 and F19 addressed the same traffic (owner
-  image 79); 64 + 64 dropped. A measured kerb further than the road's own half width + 2.5 m is another street's (the
+  4 m before each junction where it ends (segments >= 12 m). At the mouth of a one-way PAIR (claude/streetprops,
+  rule 27: a piece flowing in beside one flowing out on the same side: a split carriageway round an island, or a divided
+  avenue's two carriageways meeting a cross street within 15 m) each carriageway keeps its own sign on its own post (C1
+  at the inflowing one's island-nose side, F19 at the outflowing one's kerb); a C1 and an F19 never share a pole, and a
+  pair sign that still lands within 4 m of the other order facing the same approach is dropped (owner image 79: both
+  on one pole). A measured kerb further than the road's own half width + 2.5 m is another street's (the
   pole stood across the side street, facing across it): the OSM width is used instead. The signs of the old rules are
   kept as `signsOld` where they differ (`?streetprops=old`).
 - **Out of the road** (rule 27): after the tiles are written, `tools/streetkit/snapProps.mjs` moves the post plates +

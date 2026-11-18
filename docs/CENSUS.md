@@ -50,9 +50,9 @@ F7 (-277, 1469); E6 Ch. de Saint-Job 253 (-535, 936) 165 m², +2 m; K6 Av. du Ma
 
 
 **Class D fixed (claude/streetprops, rule 27, gate row `streetprops`).** Census (as the city draws it, `--old` =
-`?streetprops=old`) before -> after: post plates off their post 237 -> 0; C1 + F19 to the same traffic 25 -> 0; signs facing
-across every street 53 -> 8; pieces in a driven lane / on a tram track 389 (367 after the false positives below) -> 46: post boxes
-25 -> 0, Villo stations 11 -> 0, signs 108 -> 8, plate posts 131 -> 8, furniture2 39 -> 2, stop poles 70 -> 28 (20 are `platform`
+`?streetprops=old`) before -> after: post plates off their post 237 -> 0; C1 + F19 to the same traffic 25 -> 0 (each carriageway of a one-way pair keeps its own C1 / F19 on its own post: 79 pair poles kept, 24 pair signs dropped where both landed on one kerb); signs facing
+across every street 53 -> 8; pieces in a driven lane / on a tram track 389 (367 after the false positives below) -> 47: post boxes
+25 -> 0, Villo stations 11 -> 0, signs 108 -> 9, plate posts 131 -> 8, furniture2 39 -> 2, stop poles 70 -> 28 (20 are `platform`
 poles of the stops builder with no drawn OSM tram platform under them, 8 bus poles at the kerb within 1.3 m of a track or
 in a lane: the stops keep out of the tram test on purpose (island stops); both need a browser look), shelters 5 -> 0.
 False positives verified: 51 tram stop poles on a drawn OSM tram platform (Globe, Churchill, ...): the stops builder puts
