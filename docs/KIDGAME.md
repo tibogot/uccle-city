@@ -26,7 +26,7 @@ Real places, FICTIONAL people: no real family, house or resident is marked or na
 1. The kid walks and rides a bike: very good feel on streets, hills and forest paths (a bike lab first, own UI, no lil-gui).
 2. One friend calls; you meet at the Kauwberg, race down, find one strange thing.
 3. Get home before dark: the day ends.
-Then: the Kauwberg made for bikes (bumps, roots, sand quarries, ground detail at bike height), the bike park, more friends and days.
+Later (owner 2026-11-18): the kid's ROOM as an interior (the day starts there; 90s posters, landline in the hall, bike in the garden shed). Then: the Kauwberg made for bikes (bumps, roots, sand quarries, ground detail at bike height), the bike park, more friends and days.
 
 ## Known data (OSM 2026)
 - Kauwberg nature reserve: OSM way 16396691 (landuse forest, leisure nature_reserve); the sand quarries are not tagged (to shape from the DTM + references).
