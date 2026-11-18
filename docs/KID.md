@@ -82,10 +82,8 @@ a uniform write), the AO softened to a warm tint, a faint rim (the painted look;
   neighbours, > 2 cm) above the waist (round 2's model has 6 there: the check catches the flake);
 - LOD0 14,854 / 4,999 / 1,595 tris; skin stretch 0.042 % (mannequin 0.038 %), knees 0.02, elbows 0.01, shoulders 0.21,
   hips 0.73 %; IK on the BMX unchanged (legs <= 95.5 %, arms <= 82 %, 0 mm); 24/24.
-- RENDERS: the final build's renders were stopped (the owner's playtest needed the machine): docs/kid/ shows the build
-  just before the last neckline fix (the collar a little high at the back); `round3_vs_round2.jpg` is from that build.
-  Redo: `blender -b --factory-startup -P tools/characters/kid.py -- --renders` (+ `--cap 0 --out/--docs <tmp>` for the
-  no-cap views) and the side-by-side.
+- RENDERS: re-rendered from the final build after the playtest (docs/kid/*.jpg; `round3_vs_round2.jpg`; round 2's
+  views kept in `docs/kid/round2/`).
 
 ## Renders (docs/kid/)
 Round 2: `round2_vs_round1.jpg` (the review's views side by side), `face_cap_back.jpg` / `turn_cap_back_q34.jpg`
