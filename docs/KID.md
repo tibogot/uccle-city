@@ -85,6 +85,16 @@ a uniform write), the AO softened to a warm tint, a faint rim (the painted look;
 - RENDERS: re-rendered from the final build after the playtest (docs/kid/*.jpg; `round3_vs_round2.jpg`; round 2's
   views kept in `docs/kid/round2/`).
 
+## Round 4 (2026-11-18)
+- shorts: the leg opening drawn in to the thigh (roomy mid-thigh, close at the opening), its hem turned 2 cm inward;
+  a rolled CUFF welded to the leg's own border loop (`border_band`: the fabric folds over the edge in a rounded lip and
+  runs 2 cm back up the shorts, 4 mm proud, tucking in at the top; the shorts' own weights): no loose ring, no gap;
+- collar + sleeve cuffs: the same welded bands instead of tubes: a flat teal rib (2.4 mm proud, 12 mm, ribbed) lying on
+  the shirt from its neck opening (the fitted neckline curve) / the sleeve's end (the sleeve drawn in to the arm there);
+- LOD0 14,628; 24/24; renders + `round4_vs_round3.jpg` (round 3's views in `docs/kid/round3/`).
+- Noted, unchanged: the arms read long (upper arm 0.78 + forearm 0.76 of the mannequin's on a 1.46 m kid: the hands
+  reach mid-thigh); one back hair clump hangs down the nape like a tail (a `row` lock ending at z0 + 0.24 Hh).
+
 ## Renders (docs/kid/)
 Round 2: `round2_vs_round1.jpg` (the review's views side by side), `face_cap_back.jpg` / `turn_cap_back_q34.jpg`
 (`--cap back`); round 1's renders are kept in `docs/kid/round1/`.

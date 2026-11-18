@@ -855,35 +855,87 @@ def shirt_off(co, i):
     sl = 0
     for s in "lr":
         if ws.get(f"upperarm_{s}", 0) > 0.3: sl = max(sl, smooth01((along(co, f"upperarm_{s}") - 0.1) / 0.3))
-    return 0.0085 + 0.007 * hem + 0.006 * sl + 0.0015 * noise.noise(co * 18)
+    sle = 0
+    for s in "lr":
+        if ws.get(f"upperarm_{s}", 0) > 0.3: sle = max(sle, smooth01((along(co, f"upperarm_{s}") - (SLEEVE - 0.12)) / 0.10))
+    # (a little looser down the sleeve, then close round the arm at its end: the cuff sits on it with no gap)
+    return 0.0085 + 0.007 * hem + 0.005 * sl * (1 - sle) + 0.0015 * noise.noise(co * 18) * (1 - sle)
 shirt = shell(body, F_shirt, "shirt", "shirt", 0, off_fn=shirt_off, rim_in=0.013, hem_slot="shirt_trim", drape=6)
 smooth_weights(shirt, 4)                                           # (cloth: no fold where the chest meets the shoulder)
-# the collar and the cuffs (+ the sweatshirt's waistband): ribbed bands along the garment's borders
-def bone_band(name, bone, t, r, out, slot, n=24, flat=0.55):
-    """a ribbed band round a limb at `t` along `bone` (the cuffs): a ring on the skin from the bone's axis outward"""
-    bvh_ = BVHTree.FromBMesh(bm_of(body))
-    h, tl = bone_head(bone), bone_tail(bone); ax = (tl - h).normalized(); c0 = h + (tl - h) * t
-    u = ax.cross(Vector((0, 0, 1))); u = (u if u.length > 1e-3 else ax.cross(Vector((0, 1, 0)))).normalized(); w = ax.cross(u)
-    ring = []
-    for i in range(n):
-        d = u * math.cos(2 * math.pi * i / n) + w * math.sin(2 * math.pi * i / n)
-        loc, nn, _, dist = bvh_.ray_cast(c0, d, 0.08)
-        if loc is None or dist > 0.07: loc, nn = c0 + d * 0.03, d
-        ring.append((loc, nn))
-    tick(f"  band {name}: radius {min((q - c0).length for q, _ in ring):.3f}-{max((q - c0).length for q, _ in ring):.3f} m")
-    bm = bmesh.new(); rings = []
-    for i, (q, nn) in enumerate(ring):
-        tt = (ring[(i + 1) % n][0] - ring[i - 1][0]).normalized(); sd = tt.cross(nn).normalized(); cc = q + nn * out
-        rings.append([bm.verts.new(cc + nn * r * flat * math.sin(a) + sd * r * math.cos(a)) for a in [kk * 2 * math.pi / 5 for kk in range(5)]])
-    for i in range(n):
-        r0, r1 = rings[i], rings[(i + 1) % n]
-        for kk in range(5): bm.faces.new([r0[kk], r0[(kk + 1) % 5], r1[(kk + 1) % 5], r1[kk]]).smooth = True
+# THE COLLAR AND THE CUFFS (round 4: the separate tubes read as a choker / wires): a band WELDED to the garment's own
+# border, made from the border loop itself: the fabric folds over the edge (a rounded lip) and runs back up over the
+# garment's surface for `h` (lying on it, `th` proud), tucking into it at the top. Every vertex takes the weights of the
+# skin vertex under the border point it comes from (the garment's own weights: it moves exactly with it).
+def fit_round_axis(pts, ax, harm=3):
+    """a loop round a vertical axis smoothed: its radius and height as low-pass Fourier series of the angle"""
+    th_ = [math.atan2(q.x - ax.x, -(q.y - ax.y)) for q in pts]
+    r_ = [math.hypot(q.x - ax.x, q.y - ax.y) for q in pts]; z_ = [q.z for q in pts]
+    # (weights for the uneven spacing: each point's share of the angle)
+    order = sorted(range(len(pts)), key=lambda k: th_[k]); w_ = [0.0] * len(pts)
+    for a_, k in enumerate(order):
+        prv, nxt = th_[order[a_ - 1]], th_[order[(a_ + 1) % len(order)]]
+        w_[k] = ((nxt - prv) % (2 * math.pi)) / 2
+    tw = sum(w_) or 1
+    def fit(vals):
+        c = [sum(w_[k] * vals[k] * math.cos(h * th_[k]) for k in range(len(pts))) / tw * (1 if h == 0 else 2) for h in range(harm + 1)]
+        s_ = [sum(w_[k] * vals[k] * math.sin(h * th_[k]) for k in range(len(pts))) / tw * 2 for h in range(harm + 1)]
+        return lambda t: c[0] + sum(c[h] * math.cos(h * t) + s_[h] * math.sin(h * t) for h in range(1, harm + 1))
+    fr, fz = fit(r_), fit(z_)
+    return [Vector((ax.x + math.sin(t) * fr(t), ax.y - math.cos(t) * fr(t), fz(t))) for t in th_]
+
+def border_band(name, gar_name, keep, h, th, slot, rib=0.0, round_axis=None, lip=0.0016, loop=None):
+    gar = bpy.data.objects[gar_name]
+    gbvh = BVHTree.FromBMesh(bm_of(gar))
+    bm = bmesh.new(); src = []; nloops = 0
+    _kd = None
+    if loop is not None:
+        from mathutils.kdtree import KDTree
+        _kd = KDTree(len(body.data.vertices))
+        for v in body.data.vertices: _kd.insert(v.co, v.index)
+        _kd.balance()
+    for pts, sidx in ([(loop, [_kd.find(q)[1] for q in loop])] if loop is not None else SHELL_LOOPS[gar_name]):
+        c0 = sum(pts, Vector()) / len(pts)
+        if not keep(c0): continue
+        if len(pts) > 52: pts, sidx = pts[::2], sidx[::2]
+        if round_axis is not None and loop is None: pts = fit_round_axis(pts, round_axis)
+        nloops += 1
+        n_ = len(pts)
+        # which way along the surface is the garment: tested once per loop (both ways from a border point)
+        P0 = pts[0]; t0 = (pts[1] - pts[-1]).normalized(); u0 = NRM[sidx[0]].cross(t0).normalized()
+        sign = 1.0 if gbvh.find_nearest(P0 + u0 * 0.02)[3] < gbvh.find_nearest(P0 - u0 * 0.02)[3] else -1.0
+        rings = []
+        for i_ in range(n_):
+            P = pts[i_]; nn = NRM[sidx[i_]]
+            t_ = (pts[(i_ + 1) % n_] - pts[i_ - 1]).normalized()
+            u = nn.cross(t_).normalized() * sign
+            if round_axis is not None:
+                # (round a neck: "away from the neck" is out and down, in the surface's plane; no snapping onto the shirt,
+                # whose hem turns inward right there)
+                rad = Vector((P.x - round_axis.x, P.y - round_axis.y, 0)).normalized()
+                nn = (nn * 0.5 + rad * 0.5).normalized()
+                v_ = rad * 0.6 + Vector((0, 0, -1)) * 0.8
+                u = (v_ - nn * v_.dot(nn)).normalized()
+            th_i = th + (rib if i_ % 2 else 0.0)
+            prof = [P - nn * 0.0015 - u * (lip * 0.3), P + nn * (th_i * 0.55) - u * lip]
+            for du, dn in ((0.002, th_i), (h - 0.002, th_i), (h, th_i * 0.45), (h + 0.001, -0.0006)):
+                if round_axis is not None:
+                    prof.append(P + u * du + nn * dn); continue
+                loc, gn, _, _ = gbvh.find_nearest(P + u * du)
+                gn = gn if gn is not None and gn.dot(nn) > 0 else nn
+                prof.append((loc if loc is not None else P + u * du) + gn * dn)
+            rings.append([bm.verts.new(q) for q in prof]); src += [sidx[i_]] * len(prof)
+        for i_ in range(n_):
+            r0, r1 = rings[i_], rings[(i_ + 1) % n_]
+            for k_ in range(len(r0) - 1):
+                try: bm.faces.new([r0[k_], r1[k_], r1[k_ + 1], r0[k_ + 1]]).smooth = True
+                except ValueError: pass
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    o = new_obj(name, bm, [slot]); nearest_weights(o, body); return o
+    o = new_obj(name, bm, [slot]); nearest_weights(o, gar)          # (the garment's own weights: it moves with it)
+    tick(f"  band {name}: {nloops} border loop(s), {len(o.data.polygons)} faces")
+    return o
 trims = []
-for s_ in "lr":
-    if OUTFIT["shirt"] == "tee": trims.append(bone_band(f"cuff_{s_}", f"upperarm_{s_}", SLEEVE - 0.004, 0.0065, 0.0150, "shirt_trim"))
-    else: trims.append(bone_band(f"cuff_{s_}", f"lowerarm_{s_}", 0.896, 0.0065, 0.0100, "shirt_trim"))
+_neck_c = lambda c: c.z > WAIST_Z + 0.2 and abs(c.x) < 0.10
+_sleeve_c = lambda c: abs(c.x) > 0.12
 # THE CREW NECK (round 2: the region's border was a sawtooth): a clean ring on the skin round the neck (lower in front),
 # the shirt cut back to it and its border snapped onto it, a ribbed band laid over the seam (no gap, no spikes)
 body_bvh = BVHTree.FromBMesh(bm_of(body))
@@ -931,35 +983,10 @@ tick(f"  neckline fitted: radius {min(r_fit(t) for t in _th):.3f}-{max(r_fit(t) 
 def nth(co): return math.atan2(co.x - NECK_AX.x, -(co.y - NECK_AX.y))
 def nrad(co): return math.hypot(co.x - NECK_AX.x, co.y - NECK_AX.y)
 PLANE_N = Vector((0, -NECK_M, 1)).normalized()
-NR2, SIDES, CR = 48, 6, 0.0078
-bm = bmesh.new(); rings = []
-for i in range(NR2):
-    th = 2 * math.pi * i / NR2
-    q, d = neck_pt(th)
-    q1, _ = neck_pt(th + 0.01); q0, _ = neck_pt(th - 0.01)
-    t = (q1 - q0).normalized()
-    nout = (d - PLANE_N * d.dot(PLANE_N)).normalized()                 # out from the neck, in the neckline's plane
-    up = t.cross(nout).normalized()
-    if up.dot(PLANE_N) < 0: up = -up
-    c = q + nout * (CR * 0.55)
-    rings.append([bm.verts.new(c + nout * CR * 0.55 * math.cos(a) + up * CR * math.sin(a)) for a in [k * 2 * math.pi / SIDES for k in range(SIDES)]])
-for i in range(NR2):
-    r0, r1 = rings[i], rings[(i + 1) % NR2]
-    for kk in range(SIDES): bm.faces.new([r0[kk], r0[(kk + 1) % SIDES], r1[(kk + 1) % SIDES], r1[kk]]).smooth = True
-bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-def collar_weights(o):
-    """the collar's weights by its angle round the neck (no lookup that can pick a wrong vertex): the chest, a little of
-    the neck, the collarbones at the sides"""
-    gs = {n: o.vertex_groups.new(name=n) for n in ("spine_03", "neck_01", "clavicle_l", "clavicle_r")}
-    for v in o.data.vertices:
-        th = nth(v.co); side = math.sin(th)
-        cl = 0.40 * abs(side)
-        w = {"spine_03": 0.75 - cl, "neck_01": 0.25, "clavicle_l" if side > 0 else "clavicle_r": cl}
-        for n, x in w.items():
-            if x > 1e-4: gs[n].add([v.index], x, "REPLACE")
-collar = new_obj("collar", bm, ["shirt_trim"]); collar_weights(collar)   # (the shirt's weights: it moves with the shirt, not the neck)
-trims.append(collar)
-
+# the collar's curve: the fitted neckline ring (round 3: clean and on the cut), its rib lying flat on the shirt
+NECK_LOOP = [neck_pt(2 * math.pi * k / 48)[0] for k in range(48)]
+trims.append(border_band("collar", "shirt", _neck_c, 0.012, 0.0024, "shirt_trim", rib=0.0005, round_axis=NECK_AX, lip=0.003, loop=NECK_LOOP))
+trims.append(border_band("cuffs", "shirt", _sleeve_c, 0.009, 0.0020, "shirt_trim", rib=0.0005))
 covered |= F_shirt
 
 # the shorts (long, baggy: the early 90s) / jeans
@@ -970,10 +997,17 @@ def legs_off(co, i):
     for s in "lr":
         if ws.get(f"thigh_{s}", 0) > 0.2: t = max(t, along(co, f"thigh_{s}"))
         if ws.get(f"calf_{s}", 0) > 0.2: t = max(t, 1 + along(co, f"calf_{s}"))
-    return 0.010 + 0.012 * smooth01(t / SHORTS if OUTFIT["legs"] == "shorts" else t / 1.9) + 0.0012 * noise.noise(co * 16)
-shorts = shell(body, F_legs, "shorts", "shorts", 0, off_fn=legs_off, rim_in=0.016, drape=4)
+    if OUTFIT["legs"] == "shorts":
+        # (roomy down the thigh, then drawn in to the leg at the opening: the rolled cuff closes it, no hole under it)
+        u_ = min(1.0, t / SHORTS)
+        return 0.009 + 0.011 * math.sin(math.pi * min(1.0, u_ * 1.05)) ** 0.8 * (1 - smooth01((u_ - 0.80) / 0.20)) + 0.0010 * noise.noise(co * 16)
+    return 0.010 + 0.012 * smooth01(t / 1.9) + 0.0012 * noise.noise(co * 16)
+shorts = shell(body, F_legs, "shorts", "shorts", 0, off_fn=legs_off, rim_in=0.020, drape=4)
 for s_ in "lr":
-    if OUTFIT["legs"] == "shorts": trims.append(bone_band(f"hem_{s_}", f"thigh_{s_}", SHORTS - 0.004, 0.0060, 0.0225, "shorts"))
+    pass
+if OUTFIT["legs"] == "shorts":
+    # a rolled cuff: thicker, taller, in the shorts' own fabric
+    trims.append(border_band("shorts_cuffs", "shorts", lambda c: c.z < WAIST_Z - 0.1, 0.020, 0.0040, "shorts"))
 covered |= F_legs
 
 # the socks (white tube socks, two red stripes) and the sneakers
