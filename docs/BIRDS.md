@@ -215,6 +215,14 @@ pipelines created while it runs (0 expected).
 | jackdaws 44 (old) | 0.78 | 84 % | 1.5 spans | 25 x 22 px, 100 % |
 | murmuration 3072 (new) | 0.18 | 0 % | 3.5 spans | 52 % merging (dense by nature) |
 
+**Browser turn (2026-11-18, GPU read-back `debug/birdShape.js`):** day at Saint-Job: starlings 53 / jackdaws 16 + 23 /
+gulls 25 / parakeets 12 / pigeons 43, every flock c/a median 0.14-0.44 (gulls), 0 % ball-like, nn 4.6-9.7 spans; dusk
+murmuration 3072: c/a 0.18, b/a 0.33-0.70, 0 % ball-like; falcon game: prey sizes 170 / 49 / 48 / 33, 0 % ball-like,
+`GpuPrey` reads 277 prey (starling / jackdaw / parakeet, as before); 0 compute / render pipelines created while running.
+The flocks' compute (4 nodes, the murmuration + 3 day flocks) <= ~0.02 ms a dispatch (indicative: timestamps, preflight
+not run). Tour vs foundation2: 0 of 22 views flagged. Images: `docs/birds/birds2_pigeons_14m.jpg`, `_40m.jpg`,
+`birds2_starlings_60m_new.jpg` vs `_old.jpg` (the ball, `?birds2=old`), `birds2_murmuration_1.jpg`, `_2.jpg`.
+
 ## Falcon game: the dead flag (claude/falcongame1, docs/FALCON_GAME.md)
 
 A bird caught by the falcon game is marked dead on the GPU by `SkyFlocks.kill(i)`, a 1-thread compute that sets its
