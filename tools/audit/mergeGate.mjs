@@ -9,6 +9,7 @@ import { existsSync, symlinkSync } from "node:fs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const CHECKS = [
+  { name: "carhit", script: "tools/carHitTest.mjs", args: ["--quiet"], guards: "two-way car contact (rule 37, docs/CARHIT.md): head-on / T-bone / rear-corner nudge / tap / van vs small car, never inside a wall, momentum kept, no NaN, solver cost, no allocation in the step" },
   { name: "carctl", script: "tools/carctlTest.mjs", args: [], guards: "car handling targets (radius, response, slip, kerb, hill, braking), camera jitter, trams / trains solid (docs/CARCTL.md)" },
   { name: "motion", script: "tools/audit/motionAudit.mjs", args: [], guards: "motion vectors on every mover + upscale guarantees (claude/sharp)" },
   { name: "shell", script: "tools/audit/shellGate.mjs", args: [], guards: "every building's outer shell closed from the street: no wall wound inward, no open edge (claude/holes)" },

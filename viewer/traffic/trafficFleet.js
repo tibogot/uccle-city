@@ -8,11 +8,13 @@
 // instance buffers from the sim's interpolated poses.
 import * as THREE from "three/webgpu";
 import { uniform } from "three/tsl";
-import { carFleet, TYPE_MIX, FADE_FROM, FADE_TO, BANDS } from "../carFleet.js";
+import { carFleet, TYPE_MIX, FADE_FROM, FADE_TO, BANDS, SIZES } from "../carFleet.js";
 import { packMaterial, GLASS_PASS, glassGeometry } from "../drive/carPacks.js";
 import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-car motion vectors for the TAAU (docs/UPSCALE.md)
 
 export const TYPE_NAMES = TYPE_MIX.map(([t]) => t);
+/** (carhit) each type's half-length code for the crumple shader (carPacks.js: hl = 1.9 + 0.12 code), x 4096 x 64 */
+const LEN_CODE = TYPE_NAMES.map((t) => Math.max(0, Math.min(7, Math.round(((SIZES[t] || SIZES.hatch_c)[2] / 2 - 1.9) / 0.12))) * 4096);
 export const trafficTime = uniform(0);
 
 const COMPILE_OLD = typeof location !== "undefined" && /[?&]trafficwarm=old(&|$)/.test(location.search);
@@ -191,7 +193,7 @@ export class TrafficFleet {
       const T = this.types[P.type[i]], pa = bt.geo.attributes.paint.array, mo = bt.geo.attributes.motion.array;
       if (T.keepPaint) { pa[n * 3] = T.paint.r; pa[n * 3 + 1] = T.paint.g; pa[n * 3 + 2] = T.paint.b; }
       else { pa[n * 3] = P.paint[i * 3]; pa[n * 3 + 1] = P.paint[i * 3 + 1]; pa[n * 3 + 2] = P.paint[i * 3 + 2]; }
-      mo[n * 4] = P.pspin[i] * b1 + P.spin[i] * a; mo[n * 4 + 1] = P.steer[i]; mo[n * 4 + 2] = P.bits[i]; mo[n * 4 + 3] = yaw;
+      mo[n * 4] = P.pspin[i] * b1 + P.spin[i] * a; mo[n * 4 + 1] = P.steer[i]; mo[n * 4 + 2] = P.dmg[i] ? P.bits[i] + 64 * (P.dmg[i] + LEN_CODE[P.type[i]]) : P.bits[i]; mo[n * 4 + 3] = yaw;
       if (bt.fade) bt.geo.attributes.lodFade.array[n] = this.jf[q];
       this.prev.put(m, n, i, P.gen[i], e[o + 12], e[o + 13], e[o + 14], yaw);       // --- instmotion
     }
