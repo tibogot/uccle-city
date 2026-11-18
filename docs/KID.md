@@ -1,6 +1,6 @@
 # The kid (branch `claude/kid`, 2026-11-18)
 
-The main character of the 90s kid game (docs/KIDGAME.md): a kid of ~11-12 (1.44 m), stylised but grounded (a more
+The main character of the 90s kid game (docs/KIDGAME.md): a kid of ~11-12 (1.45 m), stylised but grounded (a more
 realistic Breath of the Wild: believable proportions, a slightly big head and hands, a simple readable face, soft
 painted materials, clear 90s clothes). Scripted, on the Quaternius UAL skeleton so every UAL clip plays on him.
 Offline turn: built, tested in node, hooked into the bike lab; the browser turn checks it moving (checklist at the end).
@@ -22,32 +22,41 @@ blender -b --factory-startup -P tools/characters/kid.py -- [--renders] [--shirt 
 node tools/characters/ualBuild.mjs --kid          # the UAL clips on the kid's joints -> models/characters/kid.glb + kid.json
 node --import ./tools/heap/register.mjs tools/kid/kidTest.mjs      # gate row "kid"
 ```
-`kid.py` (Blender 5.0 headless, Cycles on OPTIX for the AO bake and the renders), in order:
+`kid.py` (Blender 5.0 headless, Cycles on OPTIX for the AO bake and the renders), in order (ROUND 2, after the review
+"it reads as a short adult athlete"):
 1. imports the UAL1 mannequin + rig;
-2. **re-proportions** it: each bone a length and a girth scale (`PROP`: legs 0.79-0.80, torso 0.70-0.74, neck 0.50, head
-   0.90, arms 0.76-0.78, hands 0.86; slim limbs), each vertex moved by the blend of its bones' old -> new rest maps (the
-   same blend the skinning does: the weights stay right), the bones' heads moved, their ORIENTATIONS kept (so a clip's
-   local rotations mean the same on the kid); the pelvis moves by k = 0.799 (the clips' pelvis translation x k);
-3. **one smooth skin**: the mannequin is a segmented doll (plates, rims, grooves) with an egg head: its head is replaced by
-   a sculpted kid head (cranium, face, jaw, chin, nose, ears, neck as ellipsoids), all fused by a voxel remesh (2.5 mm),
-   Laplacian-smoothed (hands masked), decimated to ~7.4k tris, the mannequin's weights transferred back, then SMOOTHED over
-   the mesh (the fusion put neighbours from different segments side by side at the armpits / crotch: x10-50 tears in a walk);
-4. **clothes from the body**: clean hem lines cut into the skin (planes across the bones), each garment = the skin's own
-   faces of a region offset out along the normals (draped: smoothed, kept >= 60 % of its offset off the skin), a turned-in
-   hem (no see-through edge), weights copied (it moves exactly with the skin); the skin under the clothes deleted. A 90s
-   RINGER tee (ribbed collar + cuffs in `shirt_trim`), long baggy shorts with a rolled hem, white tube socks with two
-   stripes, chunky sneakers (thick flat sole, side stripe, laces), a plain 6-panel cap (no logo; `--cap back` = worn
-   backwards, `--cap 0` = a bowl cut with a fringe); options: `--shirt sweat`, `--legs jeans`;
-5. **hair** (clumped shell + 9 fringe locks + sideburns + nape) and **the face** (eye whites, iris, pupil + highlight,
-   arched brows, a small smile): rigid on the head, readable at 3 m (docs/kid/face_3m.jpg);
-6. named **slots** (no baked colour): skin, shirt, shirt_trim, shorts, socks, sock_stripe, shoe, sole, shoe_accent,
-   lace, hair, cap, cap_brim, eye_white, iris, pupil, brow, mouth; **AO** baked per vertex (Cycles) -> COLOR_0;
-7. **LODs** by Decimate: LOD0 14,656 / LOD1 4,997 / LOD2 1,582 tris; exports `kid_src.glb` + `kid_rig.json` (the joints).
+2. **re-proportions** it: each bone a length and a girth scale (`PROP`: legs 0.79-0.80, torso 0.72, neck 0.66 (longer),
+   SHORT clavicles 0.50 (narrow shoulders), thin arms (girth 0.64) and legs (0.66-0.70), hands 0.72 and feet 0.72 (small),
+   head 1.0), each vertex moved by the blend of its bones' old -> new rest maps (the same blend the skinning does: the
+   weights stay right), the bones' heads moved, their ORIENTATIONS kept (a clip's local rotations mean the same on the
+   kid); the pelvis moves by k = 0.791 (the clips' pelvis translation x k);
+3. **no muscles** (`demuscle()`): every limb a smooth tube (each vertex's distance from its bone pulled to the median of
+   its slice, the medians smoothed along the bone: no biceps, calves or knee bulges), the torso a straight soft ellipse
+   per height (no pecs, abs, lats or waist pinch; a flat chest);
+4. **one smooth skin + a BIG kid head**: the doll's whole head out, a sculpted head (chin to crown 0.255 m = 1/5.7 of the
+   height; a round cranium, full cheeks, a small chin and nose, ears from the eyes to the nose, a thin neck) fused by a
+   voxel remesh (2.5 mm), Laplacian-smoothed (hands masked), decimated in TWO passes (the body to 4,150 tris with the head
+   protected, then the head to 2,200: a third of the skin's budget on the face), the high-res skin's NORMALS transferred
+   (smooth shading, no facets), the mannequin's weights transferred back then SMOOTHED (wider at the hips), the head above
+   the jaw joint rigid on the Head bone, the neckline riding on the chest (spine_03);
+5. **clothes from the body**: clean hem lines cut into the skin (planes across the bones + a neckline plane tilted down to
+   the front), each garment = the skin's own faces of a region offset out (draped: smoothed, kept >= 60 % of its offset off
+   the skin), a turned-in hem, weights copied; the skin under them deleted. A 90s RINGER tee (a clean ribbed collar laid on
+   the neckline ring, ribbed cuffs as rings round the arm), long baggy shorts with rolled hems, tube socks with two
+   stripes, chunky sneakers (thick sole, side stripe, laces); options `--shirt sweat`, `--legs jeans`;
+6. **hair**: a 90s "curtains" mop: a thin base shell + soft clump-shaped locks (a fringe parted in the middle down to the
+   brows, a row over the ears' tops and down to the nape, a top row when there is no cap), rays from the head's centre;
+7. **the cap** (`--cap 1` default, `back` = worn backwards, `0` = none): a real 6-panel cap: a crown that follows the head +
+   hair (a 36 x 9 grid of rays, solidified 3 mm), six raised seams, the top button, a curved D-shaped brim 6 mm thick with
+   a ROUNDED edge, the back opening with its strap (worn backwards the opening shows the hair over the forehead);
+8. **the face**: big eyes set low (white, iris, pupil, a highlight), soft arched brows, a small smile: readable at 3 m;
+9. 18 named **slots** (no baked colour); **AO** per vertex -> COLOR_0; **LODs** by Decimate: LOD0 14,910 / LOD1 5,000 /
+   LOD2 1,585 tris; exports `kid_src.glb` + `kid_rig.json`.
 
 `ualBuild.mjs --kid` puts the kid's joint offsets on the UAL nodes (error 0.000 mm), scales the pelvis translation by k,
 drops the other translation channels (adult rest), recomputes the inverse bind matrices, merges each LOD's 18 primitives
 into ONE with a `_SLOT` attribute, and measures everything else (foot contacts, touch-downs, speeds, the synthesised stair
-clips) on the kid's own legs: walk 0.78 / jog 4.28 / sprint 6.59 / crouch 0.60 m/s authored. 33 clips (the 27 of `ual`
+clips) on the kid's own legs: walk 0.77 / jog 4.24 / sprint 6.53 / crouch 0.59 m/s authored. 33 clips (the 27 of `ual`
 + Sit, SitDown, StandUp, Push, PickUp, FallDown). The UAL build without `--kid` is byte-identical to before.
 
 In the viewer: `CHARACTERS.kid` (viewer/character/characterModel.js, gaits walk 1.1 / run 4.0 / sprint 5.6 / crouch 0.72
@@ -56,6 +65,8 @@ a uniform write), the AO softened to a warm tint, a faint rim (the painted look;
 `autoLod(d)` 14 / 40 m with hysteresis.
 
 ## Renders (docs/kid/)
+Round 2: `round2_vs_round1.jpg` (the review's views side by side), `face_cap_back.jpg` / `turn_cap_back_q34.jpg`
+(`--cap back`); round 1's renders are kept in `docs/kid/round1/`.
 `turn_front / q34 / side / back.jpg` (Idle), `pose_walk / run / jump / crouch / sit.jpg` (the UAL clips on the kid),
 `face_front / q34 / 3m.jpg`, `face_nocap_front / q34.jpg`, `turn_nocap_q34.jpg` (`--cap 0`), `ride_ik_bmx.png` (the rider
 IK on the BMX's empties: seated, foot down, standing, crouched, manual, leaning; side + front).
@@ -100,23 +111,23 @@ crouch) while the bike physics slides; when it gets up (BIKE.respawn) the kid bl
 | mouse drag | orbit the camera | - |
 E is free on the bike; a key used in both modes means the same kind of thing (tests check it). The card in the lab shows both.
 
-## Tests (gate row `kid`, 22 checks, ~1.3 s)
-Skeleton = UAL (65 joints, names, order, rest orientations); height 1.44 m; LODs 14,656 / 4,997 / 1,582 (<= 15k / 6k / 2k);
+## Tests (gate row `kid`, 23 checks, ~1.4 s)
+Skeleton = UAL (65 joints, names, order, rest orientations); height 1.46 m; LODs 14,910 / 5,000 / 1,585 (<= 15k / 6k / 2k);
 slots in the palette; **all 86 UAL1 + UAL2 clips bind**; kid.glb clips rotations + pelvis only; bind pose exact; CPU
 skinning through 15 clips (walk, jog, sprint, jump, fall, land, crouch idle / walk, sit, sit down, roll, push, stairs up /
-down, fall down): no NaN, edges >= 4 mm torn > x2.5 or crushed < x0.25: kid 0.115 % vs the UAL mannequin's own 0.038 %
-(limit 3x the mannequin's or 0.4 %); kidModel (3 LODs, palette, LOD switch); **rider on the placeholder AND the BMX**: 840
+down, fall down): no NaN, edges >= 4 mm torn > x2.5 or crushed < x0.25: kid 0.108 % vs the UAL mannequin's own 0.038 %
+(limit 3x the mannequin's or 0.4 %); PER JOINT: knees 0.04 %, elbows 0.04 %, shoulders 0.07 %, hips 0.91 % (each <= 1 % or
+3x the mannequin's); kidModel (3 LODs, palette, LOD switch); **rider on the placeholder AND the BMX**: 840
 poses each (24 crank angles x 5 steer angles x seated / standing / crouched / manual / lean L / lean R / air): legs <= 95-97 %
 of their length, arms <= 82 %, feet and hands 0.0 mm off their targets, no NaN; push / tumble / blend finite; 0.36 ms a
 frame in node; the mount state machine (13 steps); the keys.
 
 ## Known limits (this turn)
-- The fused remesh webs the fingers a little (they move as mittens when the hand opens; fists are fine).
-- The body under the tee is still the mannequin's athletic torso, slimmed; the shoulders read a little broad.
-- The crotch / armpit deform worse than the mannequin's (0.115 % vs 0.038 % of edges): hidden by the shorts and the tee.
-- No collider for the parked bike on foot (the kid walks through it).
-- No hand orientation on the grips beyond the forearm's continuation (the fist from the Idle pose).
-- Dismount at speed: the bike's fall is kinematic (kidMount parkStep), not the bike physics.
+- The hips (pelvis <-> thigh) tear more than the jointed mannequin's in deep folds (sit, crouch): 0.91 % of their edges
+  over x2.5 (the mannequin 0.00 %: its segments are separate pieces); hidden by the shorts, watch it in the browser.
+- The fused remesh still webs the fingers a little (fists are fine).
+- The backwards cap's opening sits on the hairline: the hair seen through it is the base shell (no locks under it).
+- No collider for the parked bike on foot (the kid walks through it); the dismount fall is kinematic.
 
 ## Browser turn: checklist
 1. `debug/bikeLab.html`: the kid loads (panel "Kid" state line), the BMX loads (KTX2 chain + spokes), one tab only.

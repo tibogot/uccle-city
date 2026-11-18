@@ -90,6 +90,14 @@ function deformStats(g) {
     }
     return out;
   };
+  // the joints the review asked about: an edge belongs to a joint region by its first vertex's two strongest bones
+  const REG = { knee: ["thigh", "calf"], elbow: ["upperarm", "lowerarm"], shoulder: ["clavicle", "upperarm"], hip: ["pelvis", "thigh"] };
+  const region = new Array(nv).fill(null), regionN = {}, regionBad = {};
+  for (let i = 0; i < nv; i++) {
+    const js = [0, 1, 2, 3].map((k) => [Wt[i * 4 + k], g.nodes[joints[J[i * 4 + k]]].name.replace(/_[lr]$/, "")]).sort((a, b) => b[0] - a[0]);
+    if (js[1][0] < 0.15) continue;
+    for (const [rn, pair] of Object.entries(REG)) if (pair.includes(js[0][1]) && pair.includes(js[1][1]) && js[0][1] !== js[1][1]) { region[i] = rn; break; }
+  }
   const rest = skinAt(sampleAnim(g, null, 0));
   let bindErr = 0;
   for (let i = 0; i < nv * 3; i++) bindErr = Math.max(bindErr, Math.abs(rest[i] - P[i]));
@@ -100,12 +108,14 @@ function deformStats(g) {
   const edges = [...E].map((k) => [Math.floor(k / 65536), k % 65536]);
   const len = (X, a, b) => Math.hypot(X[a * 3] - X[b * 3], X[a * 3 + 1] - X[b * 3 + 1], X[a * 3 + 2] - X[b * 3 + 2]);
   const L0 = edges.map(([a, b]) => len(rest, a, b));
+  edges.forEach(([a], e) => { if (L0[e] >= 4e-3 && region[a]) regionN[region[a]] = (regionN[region[a]] || 0) + 1; });
   const res = [];
   let worst = { r: 1, clip: "", hi: 0, lo: 1, nan: 0 };
   for (const name of ["Walk", "Jog", "Sprint", "JumpStart", "Fall", "Land", "CrouchIdle", "CrouchWalk", "Sit", "SitDown", "Roll", "Push", "StairsUp", "StairsDown", "FallDown"]) {
     const a = g.anims.find((x) => x.name === name);
     if (!a) continue;
     let hi = 0, lo = 9, nan = 0, over = 0, n = 0;
+    regionN.frames = (regionN.frames || 0) + 9;
     for (let f = 0; f <= 8; f++) {
       const X = skinAt(sampleAnim(g, a, a.duration * f / 8));
       for (let e = 0; e < edges.length; e++) {
@@ -113,7 +123,7 @@ function deformStats(g) {
         const r = len(X, edges[e][0], edges[e][1]) / L0[e];
         if (!(r === r)) { nan++; continue; }
         if (r > hi) hi = r; if (r < lo) lo = r;
-        if (r > 2.5 || r < 0.25) over++;
+        if (r > 2.5 || r < 0.25) { over++; const j = region[edges[e][0]]; if (j) regionBad[j] = (regionBad[j] || 0) + 1; }
         n++;
       }
     }
@@ -122,7 +132,8 @@ function deformStats(g) {
     if (hi > worst.hi) worst.hi = hi; if (lo < worst.lo) worst.lo = lo;
     worst.over = (worst.over || 0) + over / n;
   }
-  return { bindErr, nan: worst.nan, hi: worst.hi, lo: worst.lo, frac: worst.over / Math.max(1, res.length), res };
+  const regionFrac = Object.fromEntries(Object.keys(regionN).filter((k) => k !== "frames").map((k) => [k, (regionBad[k] || 0) / (regionN[k] * regionN.frames)]));
+  return { regionFrac, bindErr, nan: worst.nan, hi: worst.hi, lo: worst.lo, frac: worst.over / Math.max(1, res.length), res };
 }
 
 {
@@ -134,6 +145,10 @@ function deformStats(g) {
   check("deformation (15 clips x 9 frames, CPU skinning): no NaN, edges >= 4 mm torn x2.5 / crushed x0.25 rare", D.nan === 0 && D.frac <= lim,
     `kid ${(D.frac * 100).toFixed(3)} % (max x${D.hi.toFixed(1)}), UAL mannequin ${(U.frac * 100).toFixed(3)} %`, `finite, <= ${(lim * 100).toFixed(2)} %`);
   if (!quiet) console.log("  per clip (max / min edge ratio):", D.res.join(", "));
+  const rf = D.regionFrac, uf = U.regionFrac, lim2 = (k) => Math.max(0.01, 3 * (uf[k] || 0));
+  const rl = (k) => `${k} ${((rf[k] || 0) * 100).toFixed(2)} (UAL ${((uf[k] || 0) * 100).toFixed(2)}) %`;
+  check("deformation at the knees, elbows, shoulders, hips (edges torn / crushed, all 15 clips)", ["knee", "elbow", "shoulder", "hip"].every((k) => (rf[k] || 0) <= lim2(k)),
+    ["knee", "elbow", "shoulder", "hip"].map(rl).join(", "), "each <= 1 % or 3x the mannequin's");
 }
 
 // ------------------------------------------------------------------------------------------------ the rider (three in node)
