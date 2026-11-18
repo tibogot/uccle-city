@@ -1,18 +1,20 @@
 {
- "when": "2026-11-18T09:48:28.413Z",
+ "when": "2026-11-18T10:24:12.155Z",
  "old": false,
  "sum": {
   "plates": 750,
   "plateGap": 0,
   "plateNoPost": 0,
-  "signs": 1746,
+  "signs": 1766,
   "signFacing": 8,
-  "signMovedFar": 342,
-  "pieces": 4750,
+  "signMovedFar": 345,
+  "pieces": 4839,
   "inRoad": 47,
   "inLane": 41,
   "onTram": 11,
   "onPlatform": 51,
+  "villoOffPaving": 0,
+  "villoBent": 0,
   "postbox": 0,
   "villo": 0
  },
@@ -563,6 +565,7 @@
     "street": "Avenue Legrand - Legrandlaan",
     "stop": "Bascule"
    }
-  ]
+  ],
+  "villo": []
  }
 }

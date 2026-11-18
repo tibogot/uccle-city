@@ -73,9 +73,9 @@ F7 (-277, 1469); E6 Ch. de Saint-Job 253 (-535, 936) 165 m², +2 m; K6 Av. du Ma
 
 
 **Class D fixed (claude/streetprops, rule 30, gate row `streetprops`).** Census (as the city draws it, `--old` =
-`?streetprops=old`) before -> after: post plates off their post 237 -> 0; C1 + F19 to the same traffic 25 -> 0 (each carriageway of a one-way pair keeps its own C1 / F19 on its own post, a carriageway between them: 20 C1 + 36 F19 pair signs drawn of 99 + 99 asked; 23 dropped where both landed on one kerb, the rest unplaced as any sign); signs facing
+`?streetprops=old`) before -> after: post plates off their post 237 -> 0; C1 + F19 to the same traffic 25 -> 0 (each carriageway of a one-way pair keeps its own C1 / F19 on its own post, a carriageway between them: C1 47 of 53 asked, F19 29 of 51; where both landed on one kerb the F19 goes, the C1 tries the far kerb); signs facing
 across every street 53 -> 8; pieces in a driven lane / on a tram track 389 (367 after the false positives below) -> 47: post boxes
-25 -> 0, Villo stations 11 -> 0, signs 108 -> 9, plate posts 131 -> 8, furniture2 39 -> 2, stop poles 70 -> 28 (20 are `platform`
+25 -> 0, Villo stations 11 -> 0 (round 2: docks off paving 109 -> 0, bent rows 9 -> 0; 18 rows laid out again, Coghen + Rittweger dropped), signs 108 -> 9, plate posts 131 -> 8, furniture2 39 -> 2, stop poles 70 -> 28 (20 are `platform`
 poles of the stops builder the detector finds no OSM tram platform under (browser 2026-11-18: Messidor's pole IS on a drawn
 platform: likely the platform way lives in the neighbour tile's features, a detector gap), 8 bus poles at the kerb within 1.3 m of a track or
 in a lane: the stops keep out of the tram test on purpose (island stops); both need a browser look), shelters 5 -> 0.

@@ -85,7 +85,13 @@ from the data). The rules are in the script's header; in short (all positions fr
   at the inflowing one's island-nose side, F19 at the outflowing one's kerb); a C1 and an F19 never share a pole, and a
   pair sign that still lands within 4 m of the other order facing the same approach is dropped (owner image 79: both
   on one pole). The one-kerb test is re-run in `snapProps.mjs` on the measured street at the spots main.js draws
-  the signs (20 C1 + 36 F19 pair signs drawn, 23 dropped). A measured kerb further than the road's own half width + 2.5 m is another street's (the
+  the signs; where one of a pair must go, the F19 goes: every carriageway exit keeps its C1 (island nose / median, else
+  the carriageway's far kerb, also after a clash). Pair signs drawn: C1 47 of 53 asked (3 unplaced, 3 dropped), F19 29 of 51.
+- **Villo rows** (rule 30 round 2): `snapProps.mjs` keeps a station as built only when it is ONE straight row on paving
+  (docks + 1.5 m of bike on measured sidewalk / square / parking, clear of lanes and tracks); else it lays the row out
+  again along the nearest measured kerb within 10 m of the WFS point (longest straight row, >= 6 docks + the terminal,
+  shortened from the ends), else drops it with a log line: 18 laid out again, 1 turned, 2 dropped (Coghen, Rittweger:
+  their WFS points are in the Chaussée d'Alsemberg's tram road with only 1-2 m sidewalks within 10 m), 425 docks. A measured kerb further than the road's own half width + 2.5 m is another street's (the
   pole stood across the side street, facing across it): the OSM width is used instead. The signs of the old rules are
   kept as `signsOld` where they differ (`?streetprops=old`).
 - **Out of the road** (rule 30): after the tiles are written, `tools/streetkit/snapProps.mjs` moves the post plates +

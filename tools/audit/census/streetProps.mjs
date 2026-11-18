@@ -29,7 +29,7 @@ const TRAM_HW = 1.3, GAP = 0.15, FACE_TOL = 45, NEAR_ROAD = 12;
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: streetProps.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
   const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET });
-  const sum = {}, items = { plateGap: [], signFacing: [], inRoad: [] };
+  const sum = {}, items = { plateGap: [], signFacing: [], inRoad: [], villo: [] };
   for (const r of res) {
     if (r.error) continue;
     for (const [k, v] of Object.entries(r.counts)) sum[k] = (sum[k] || 0) + v;
@@ -193,4 +193,18 @@ for (const s of stopsS?.stops || []) {
   if (s.pole) test("stop pole", s.pole.x, s.pole.z, { stop: s.fr }); if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); }
 for (const p of stopsS?.panels || []) test("ad panel", p.x, p.z);
 
+// (claude/streetprops, round 2) every Villo station as ONE straight row on paving: docks (or the 1.5 m of bike in front
+// of them) off the measured sidewalk / square / parking, and rows bent (a dock > 0.3 m off the line through its ends)
+counts.villoOffPaving = 0; counts.villoBent = 0; items.villo = [];
+if (fit) for (const v of sk.villo || []) {
+  if (!v.docks.length || !inB(v.docks[0].x, v.docks[0].z)) continue;
+  const d0 = v.docks[0], nx = Math.sin(d0.yaw), nz = Math.cos(d0.yaw), C = (x, z) => fit.classAt(x, z);
+  const PAVE = new Set([3, 4, 5]);
+  const off = v.docks.filter((d) => !PAVE.has(C(d.x, d.z)) || !PAVE.has(C(d.x + nx * 1.5, d.z + nz * 1.5))).length;
+  const tx = nz, tz = -nx, u = (d) => d.x * tx + d.z * tz, row = [...v.docks].sort((a, b) => u(a) - u(b));
+  const a = row[0], b = row[row.length - 1], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+  const bent = row.some((d) => Math.abs(((d.x - a.x) * (b.z - a.z) - (d.z - a.z) * (b.x - a.x)) / L) > 0.3);
+  counts.villoOffPaving += off; if (bent) counts.villoBent++;
+  if (off || bent) items.villo.push({ id: v.id, name: v.name, off, bent, at: at(d0.x, d0.z) });
+}
 console.log(JSON.stringify({ tile: T, counts, items }));

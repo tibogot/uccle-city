@@ -212,9 +212,35 @@ class Placer:
             if rr["hw"] in CAR and ln.distance(p) < rr["half"] + 0.25: return True
         return False
 
-    def spot(self, qx, qz, hx, hz, mode="kerb", slide=(0, -1, 1, -2, 2, -3, 3, -5, 5), why=None):
-        """the pole for a sign at centreline point q addressing traffic heading h: on the right, behind the kerb"""
+    def raised_any(self, x, z):
+        """on any measured raised surface (sidewalk, square, MEDIAN / island), not in a building"""
+        T = self.T
+        if not T.rtree: return False
+        q = Point(x, z)
+        if not any(T.raised[i][0].contains(q) for i in T.rtree.query(q)): return False
+        return not any(T.solids[i]["poly"].contains(q) for i in T.tree.query(q))
+
+    def island(self, qx, qz, hx, hz, slide=(0, -1, 1, -2, 2, -3, 3)):
+        """(rule 30) a one-way pair's C1: on the island nose / median on the right of the wrong-way approach h (a raised
+        surface 0.6-8 m from the centre line, its first 0.4 m in), measured streets only"""
         rx, rz = -hz, hx
+        for a in slide:
+            x0, z0 = qx + hx * a, qz + hz * a
+            s0 = None
+            for i in range(6, 80):
+                d = i * 0.1
+                if self.raised_any(x0 + rx * d, z0 + rz * d): s0 = d; break
+            if s0 is None: continue
+            px, pz = x0 + rx * (s0 + 0.4), z0 + rz * (s0 + 0.4)
+            if not self.raised_any(px, pz) or not self.T.inside(px, pz): continue
+            if not self.S.clear(Point(px, pz).buffer(0.05), [], tree=0.5, door=0.8, drive=1.2, thing=0.4): continue
+            return px, pz, True
+        return None
+
+    def spot(self, qx, qz, hx, hz, mode="kerb", slide=(0, -1, 1, -2, 2, -3, 3, -5, 5), why=None, side=1):
+        """the pole for a sign at centreline point q addressing traffic heading h: on the right, behind the kerb
+        (side -1: on the left: a one-way pair's C1 on its carriageway's far kerb)"""
+        rx, rz = -hz * side, hx * side
         for a in slide:
             x0, z0 = qx + hx * a, qz + hz * a
             if mode == "path":
@@ -424,25 +450,34 @@ def place_tile(name, src, stats, villo_rank):
     placed = []                                        # [code, px, pz, fx, fz, measured, src]
     for code, qx, qz, hx, hz, mode, s_ in req:
         if not (T.x0 - 2 <= qx < T.x1 + 2 and T.z0 - 2 <= qz < T.z1 + 2): continue      # (roads.json runs past the tile: its neighbour places it)
+        if s_ == "pair": stats[f"pair_{code}_asked"] += 1
         sp = P.spot(qx, qz, hx, hz, mode, why=why)
-        if not sp: stats[f"sign_unplaced_{code}"] += 1; continue
+        if not sp and code == "C1" and s_ == "pair" and not ONEWAY_OLD:
+            # (rule 30) a divided avenue's carriageway exit always shows its C1: the island nose / median, else the
+            # carriageway's far kerb (the island too narrow for a pole)
+            sp = P.island(qx, qz, hx, hz)
+            if sp: stats["pair_C1_island"] += 1
+            else:
+                sp = P.spot(qx, qz, hx, hz, mode, side=-1)
+                if sp: stats["pair_C1_far_kerb"] += 1
+        if not sp: stats[f"sign_unplaced_{code}" + ("_pair" if s_ == "pair" else "")] += 1; continue
         px, pz, measured = sp
         fx, fz = -hx, -hz
         if any(c == code and math.hypot(px - x, pz - z) < 25 and fx * a + fz * b > 0.8 for c, x, z, a, b, *_ in placed):
-            stats["sign_repeat_dropped"] += 1; continue
+            stats["sign_repeat_dropped" + ("_pair" if s_ == "pair" else "")] += 1; continue
         if code.startswith("C43_5") or code.startswith("C43_7"):
             if any(c == code and math.hypot(px - x, pz - z) < 150 and fx * a + fz * b > 0.8 for c, x, z, a, b, *_ in placed):
                 stats["sign_speed_repeat_dropped"] += 1; continue
-        placed.append([code, px, pz, fx, fz, measured, s_])
+        placed.append([code, px, pz, fx, fz, measured, s_, (qx, qz, hx, hz, mode)])
     for k, v in why.items(): stats["slide_" + k] += v
     poles = []
-    for code, px, pz, fx, fz, measured, s_ in sorted(placed, key=lambda p: PRECEDENCE.index(p[0])):
+    for code, px, pz, fx, fz, measured, s_, rq in sorted(placed, key=lambda p: PRECEDENCE.index(p[0])):
         host = None
         for pl in poles:
             if not ONEWAY_OLD and {code, *pl["codes"]} >= {"C1", "F19"}: continue        # (rule 30) never one pole
             if len(pl["codes"]) < 2 and math.hypot(pl["x"] - px, pl["z"] - pz) < 1.5 and pl["fx"] * fx + pl["fz"] * fz > 0.85: host = pl; break
         if host: host["codes"].append(code); stats["plates_shared"] += 1
-        else: poles.append({"x": px, "z": pz, "fx": fx, "fz": fz, "codes": [code], "measured": measured, "src": s_})
+        else: poles.append({"x": px, "z": pz, "fx": fx, "fz": fz, "codes": [code], "measured": measured, "src": s_, "req": rq})
     # (rule 30) a pair's C1 / F19 still showing the other order to the same approach (within 4 m, facing within 45 deg):
     # the two carriageways' signs landed on one kerb; the pair sign goes (a rule C1 / F19 stays)
     if not ONEWAY_OLD:
@@ -456,6 +491,16 @@ def place_tile(name, src, stats, villo_rank):
             if pl["src"] != "pair" or pl not in poles: continue
             other = "F19" if "C1" in pl["codes"] else "C1"
             if any(o is not pl and other in o["codes"] and clash(pl, o) for o in poles):
+                # a C1 first tries its carriageway's far kerb (rule 30: every carriageway exit keeps its C1)
+                if pl["codes"] == ["C1"]:
+                    qx, qz, hx, hz, mode = pl["req"]
+                    alt = P.spot(qx, qz, hx, hz, mode, side=-1)
+                    if alt:
+                        old = (pl["x"], pl["z"]); pl["x"], pl["z"], pl["measured"] = alt
+                        if not any(o is not pl and other in o["codes"] and clash(pl, o) for o in poles):
+                            stats["pair_C1_far_kerb_after_clash"] += 1; continue
+                        pl["x"], pl["z"] = old
+                stats["oneway_pair_dropped_" + ("C1" if "C1" in pl["codes"] else "F19")] += 1
                 pl["codes"] = [c for c in pl["codes"] if c not in ("C1", "F19")]
                 stats["oneway_pair_dropped"] += 1
                 if not pl["codes"]: poles.remove(pl)
@@ -619,8 +664,10 @@ def snap_props(docs, stats):
             v = d["villo"][i]
             v.setdefault("was", {"docks": v["docks"], "bikes": v["bikes"], "totem": v.get("totem"), "area": v.get("area"), "mode": v["mode"], "notes": v.get("notes")})
             v.update(docks=st["docks"], bikes=st["bikes"], totem=st["totem"], area=st["area"])
-            if st.get("alt"): v.update(mode=v["alt"]["mode"], notes=v["alt"]["notes"]); stats["villo_turned"] += 1
-            stats["villo_dropped" if not st["docks"] else "villo_slid" if st["slid"] else "villo_trimmed" if st.get("trimmed") else "villo_turned_only"] += 1
+            if st.get("alt"): v.update(mode=v["alt"]["mode"], notes=v["alt"]["notes"])
+            elif st.get("mode"): v["mode"] = st["mode"]
+            stats["villo_dropped" if not st["docks"] else "villo_turned" if st.get("alt") else "villo_relaid" if st.get("relaid") else "villo_kept"] += 1
+        for line in m.get("villoLog", []): print("villo", t, line, file=sys.stderr)
         for v in d["villo"]: v.pop("alt", None)
         if m.get("dropSigns"):
             drop = set(m["dropSigns"]); stats["oneway_pair_dropped_measured"] += len(drop)

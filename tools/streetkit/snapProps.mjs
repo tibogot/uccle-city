@@ -71,53 +71,102 @@ const posts = sk.posts || [];
   out.postboxes.push([i, r2(r.x), r2(b.y + rise(b.x, b.z, r.x, r.z)), r2(r.z), r4(r.nx), r4(r.nz)]);
 });
 
-// ---- Villo stations: slide the row back, else drop the pieces still in the road (all of them: the station). A station
-// whose WFS point had no sidewalk behind it comes with an `alt` (build_streetkit.py place_villo turned to the nearest
-// measured sidewalk): the variant with more docks out of the road wins (the main one on a tie)
-function fixStation(v) {
-  const pieces = [...(v.totem ? [v.totem] : []), ...v.docks, ...v.bikes];
-  if (!v.docks.length) return null;
-  const tally = { docks: 0, bikes: 0, totems: 0 };
-  if (!pieces.some((p) => bad(p.x, p.z))) return { keep: v.docks.length, r: { docks: v.docks, bikes: v.bikes, totem: v.totem || null, area: v.area || null, slid: 0 }, tally, clean: true };
-  const d0 = v.docks[0];
-  const nx = Math.sin(d0.yaw), nz = Math.cos(d0.yaw);       // the docks' yaw: their normal toward the road
-  const mv = (p, s) => ({ ...p, x: r2(p.x - nx * s), z: r2(p.z - nz * s), y: r2(p.y + rise(p.x, p.z, p.x - nx * s, p.z - nz * s)) });
-  let st = null;
-  for (let s = 0.25; s <= 2.001 && !st; s += 0.25) if (pieces.every((p) => !bad(p.x - nx * s, p.z - nz * s))) st = s;
-  if (st) {
-    const area = v.area ? { ...v.area, x: r2(v.area.x - nx * st), z: r2(v.area.z - nz * st) } : null;
-    return { keep: v.docks.length, r: { docks: v.docks.map((d) => mv(d, st)), bikes: v.bikes.map((b) => mv(b, st)), totem: v.totem ? mv(v.totem, st) : null, area, slid: st }, tally };
+// ---- Villo stations (rule 30, round 2): ONE straight row on paving, never bent round a corner, never on a lawn / verge.
+// A station is kept as built (build_streetkit.py place_villo, or its `alt`: turned to the nearest sidewalk) when every
+// dock and its bike stand on paving (measured sidewalk / square, or the parking lane for a "lane" station), clear of the
+// lanes and the tram tracks, in one straight line; else it is laid out again from its WFS point along the nearest
+// measured kerb: the longest straight row that fits within 10 m of the point (shortened from the ends, >= 6 docks + the
+// terminal), the station's own mode first; else it is dropped (logged by build_streetkit.py).
+const PAVE = new Set([3, 4, 5]), SIDE = new Set([4, 5]), LANE = new Set([3]);
+const cls = (x, z) => (fit ? fit.classAt(x, z) : -1);
+const h01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h / 4294967296; };
+const floorY = (x, z) => ground(x, z) + (fit ? fit.lift(x, z) : 0);
+/** the station's row as drawn: { offPaving, bent } (measured tiles only) */
+function villoQuality(v) {
+  if (!fit || !v.docks.length) return { offPaving: 0, bent: false, bad: 0 };
+  const d0 = v.docks[0], nx = Math.sin(d0.yaw), nz = Math.cos(d0.yaw);
+  const ok = v.mode === "lane" ? (c) => PAVE.has(c) : (c) => SIDE.has(c) || c === 3;
+  let offPaving = 0, badN = 0;
+  for (const d of v.docks) {
+    if (!ok(cls(d.x, d.z)) || !PAVE.has(cls(d.x + nx * 1.5, d.z + nz * 1.5))) offPaving++;
+    if (bad(d.x, d.z)) badN++;
   }
-  // a dock and its bike (0.42 m toward the road from it) go together
-  const bikeOf = (d) => v.bikes.find((b) => Math.hypot(b.x - (d.x + nx * 0.42), b.z - (d.z + nz * 0.42)) < 0.1);
-  const docks = v.docks.filter((d) => { const b = bikeOf(d); const ok = !bad(d.x, d.z) && !(b && bad(b.x, b.z)); if (!ok) { tally.docks++; if (b) tally.bikes++; } return ok; });
-  const bikes = v.bikes.filter((b) => docks.some((d) => bikeOf(d) === b) || (!bad(b.x, b.z) && !v.docks.some((d) => bikeOf(d) === b)));
-  let totem = v.totem || null;
-  if (totem && bad(totem.x, totem.z)) {
-    totem = null;
-    // 1 m past an end of the kept row, along it
-    if (docks.length >= 2) {
-      const tx = nz, tz = -nx;
-      const u = (d) => d.x * tx + d.z * tz, row = [...docks].sort((a, b) => u(a) - u(b));
-      for (const [end, sg] of [[row[row.length - 1], 1], [row[0], -1]]) {
-        const px = end.x + tx * sg * 1.0, pz = end.z + tz * sg * 1.0;
-        if (!bad(px, pz)) { totem = { ...v.totem, x: r2(px), z: r2(pz), y: r2(v.totem.y + rise(v.totem.x, v.totem.z, px, pz)) }; break; }
-      }
-    }
-    if (!totem) tally.totems++;
-  }
-  // (nothing of the row left out of the road: the station is not drawn; its `was` keeps it for ?streetprops=old)
-  return { keep: docks.length, r: docks.length ? { docks, bikes, totem, area: v.area || null, slid: 0, trimmed: true } : { docks: [], bikes: [], totem: null, area: null, slid: 0 }, tally };
+  for (const b of v.bikes) if (bad(b.x, b.z)) badN++;
+  if (v.totem && bad(v.totem.x, v.totem.z)) badN++;
+  // straight: every dock within 0.3 m of the line through the row's two ends
+  const tx = nz, tz = -nx, u = (d) => d.x * tx + d.z * tz, row = [...v.docks].sort((a, b) => u(a) - u(b));
+  const a = row[0], b = row[row.length - 1], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+  const bent = row.some((d) => Math.abs(((d.x - a.x) * (b.z - a.z) - (d.z - a.z) * (b.x - a.x)) / L) > 0.3);
+  return { offPaving, bent, bad: badN };
 }
+function layout(v, anchor, totem0) {
+  // every kerb near the point (probed from it and from rings of 3 / 6 / 9 m round it): the longest row wins, then the
+  // one nearest the point
+  const kerbs = [];
+  for (const r of [0, 3, 6, 9]) for (let j = 0; j < (r ? 16 : 1); j++) {
+    const a = (j * Math.PI) / 8, k = fit.nearKerb(anchor.x + Math.cos(a) * r, anchor.z + Math.sin(a) * r, 4);
+    if (k && !kerbs.some((q) => Math.hypot(q.x - k.x, q.z - k.z) < 1 && q.tx * k.tx + q.tz * k.tz > 0.95)) kerbs.push(k);
+  }
+  let best = null;
+  for (const k of kerbs) {
+    const r = layoutOn(v, anchor, totem0, k, best ? best.docks.length : 5);
+    if (r && (!best || r.docks.length > best.docks.length || (r.docks.length === best.docks.length && r.dist < best.dist))) best = r;
+  }
+  if (best) delete best.dist;
+  return best;
+}
+function layoutOn(v, anchor, totem0, k, atLeast) {
+  const nx = -k.lx, nz = -k.lz, yawN = Math.atan2(nx, nz);
+  // the kerb point nearest the anchor along the kerb's line
+  const s0 = (anchor.x - k.x) * k.tx + (anchor.z - k.z) * k.tz, Kx = k.x + k.tx * s0, Kz = k.z + k.tz * s0;
+  const stands = Math.min(40, Math.max(6, +v.stands || 10));
+  const modes = v.mode === "lane" ? [["lane", -0.3, LANE], ["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE]] : [["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE], ["lane", -0.3, LANE]];
+  for (let N = stands; N >= Math.max(6, atLeast); N--) for (let ci = 0; ci <= 40; ci++) {
+    const c = (ci % 2 ? 1 : -1) * Math.ceil(ci / 2) * 0.5;
+    if (Math.hypot(Kx + k.tx * c - anchor.x, Kz + k.tz * c - anchor.z) > 10) continue;
+    for (const [mode, off, set] of modes) {
+      const at = (i) => { const uu = c + (i - (N - 1) / 2) * 0.85; return [Kx + k.tx * uu + k.lx * off, Kz + k.tz * uu + k.lz * off]; };
+      let fine = true;
+      for (let i = 0; i < N && fine; i++) {
+        const [x, z] = at(i);
+        fine = set.has(cls(x, z)) && !bad(x, z) && [0.42, 1.5].every((e) => { const bx = x + nx * e, bz = z + nz * e; return (mode === "lane" ? LANE : SIDE).has(cls(bx, bz)) && !bad(bx, bz); });
+      }
+      if (!fine) continue;
+      // the terminal 1 m past one end, in line
+      let tot = null;
+      for (const [i, sg] of [[N - 1, 1], [0, -1]]) {
+        const [x, z] = at(i), px = x + k.tx * sg, pz = z + k.tz * sg;
+        if (PAVE.has(cls(px, pz)) && !bad(px, pz)) { tot = [px, pz]; break; }
+      }
+      if (!tot) continue;
+      const docks = [], bikes = [];
+      for (let i = 0; i < N; i++) {
+        const [x, z] = at(i);
+        docks.push({ x: r2(x), y: r2(floorY(x, z) - 0.01), z: r2(z), yaw: r4(yawN) });
+        if (h01(`${v.id}:${i}`) < 0.55) { const bx = x + nx * 0.42, bz = z + nz * 0.42; bikes.push({ x: r2(bx), y: r2(Math.max(floorY(bx, bz), floorY(x + nx * 1.5, z + nz * 1.5)) - 0.035), z: r2(bz), yaw: r4(yawN) }); }
+      }
+      const totem = { ...(totem0 || {}), x: r2(tot[0]), y: r2(floorY(tot[0], tot[1]) - 0.01), z: r2(tot[1]), yaw: r4(Math.atan2(-nx, -nz)) };
+      const [mx, mz] = at((N - 1) / 2);
+      const area = { x: r2(mx + nx * 0.95), z: r2(mz + nz * 0.95), yaw: r4(Math.atan2(k.tx, k.tz)), hx: r2(((N - 1) * 0.85) / 2 + 1.6), hz: 1.2 };
+      return { docks, bikes, totem, area, mode, relaid: true, slid: 0, dist: Math.hypot(mx - anchor.x, mz - anchor.z) };
+    }
+  }
+  return null;
+}
+out.villoLog = [];
 (sk.villo || []).forEach((v0, i) => {
-  const v = v0.was ? { ...v0, ...v0.was } : v0;
-  const main = fixStation(v), alt = v0.alt ? fixStation(v0.alt) : null;
-  const win = alt && (!main || alt.keep > main.keep) ? { ...alt, r: { ...alt.r, alt: true } } : main;
-  if (!win || (win === main && win.clean)) return;           // (a clean alt still replaces the main row)
-  for (const k of Object.keys(win.tally)) out.dropped[k] += win.tally[k];
-  if (!win.keep) out.dropped.stations = (out.dropped.stations || 0) + 1;
-  out.villo.push([i, win.r]);
+  const main = v0.was ? { ...v0, ...v0.was } : v0;
+  const good = (v) => { const q = villoQuality(v); return v.docks.length >= 6 && !q.offPaving && !q.bent && !q.bad; };
+  if (good(main)) { if (v0.was) out.villo.push([i, { docks: main.docks, bikes: main.bikes, totem: main.totem || null, area: main.area || null, mode: main.mode, slid: 0 }]); return; }
+  if (v0.alt && good(v0.alt)) { out.villo.push([i, { docks: v0.alt.docks, bikes: v0.alt.bikes, totem: v0.alt.totem || null, area: v0.alt.area || null, mode: v0.alt.mode, alt: true, slid: 0 }]); return; }
+  const wfs = (sl.villo || []).find((w) => w.id === v0.id) || { x: main.docks[0]?.x ?? main.totem.x, z: main.docks[0]?.z ?? main.totem.z };
+  const r = fit ? layout({ ...main, stands: main.stands ?? wfs.stands }, wfs, main.totem) : null;
+  if (r) { out.villo.push([i, r]); out.villoLog.push(`${v0.id} ${v0.name}: laid out again, ${r.docks.length} docks (${r.mode})`); return; }
+  out.dropped.stations = (out.dropped.stations || 0) + 1;
+  out.villo.push([i, { docks: [], bikes: [], totem: null, area: null, slid: 0 }]);
+  out.villoLog.push(`${v0.id} ${v0.name}: DROPPED (no straight row of >= 6 docks on paving within 10 m)`);
 });
+
 // ---- one-way pair signs (build_streetkit.py src "pair"): a C1 / F19 that still shows the other order to the same
 // approach (within 4 m, facing within 45 deg, no carriageway between them by the viewer's own test) goes, with its pole
 // (build_streetkit's own check sees only the OSM bands; this one sees the measured street, as the census does)
@@ -126,7 +175,10 @@ out.dropSigns = [];
   // (where main.js draws them: after its load-time move of the signs, viewer/streets/carriageway.js docOffLanes)
   const L = (sk.signs || []).map((s) => { const r = offLane(s.x, s.z, lanes, fit, OPT); return { ...s, x: r.x, z: r.z }; });
   const has = (s, c) => s.plates.some((p) => p.code === c);
-  L.forEach((a, i) => {
+  // (the pair F19s first: where one of a pair must go, the carriageway exit keeps its C1)
+  const order = L.map((a, i) => i).sort((i, j) => (has(L[j], "F19") ? 1 : 0) - (has(L[i], "F19") ? 1 : 0) || i - j);
+  order.forEach((i) => {
+    const a = L[i];
     if (a.src !== "pair") return;
     const other = has(a, "C1") ? "F19" : has(a, "F19") ? "C1" : null;
     if (!other) return;

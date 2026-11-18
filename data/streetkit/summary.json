@@ -8,7 +8,7 @@
   "face_B1": 188,
   "face_B15": 110,
   "face_B5": 9,
-  "face_C1": 414,
+  "face_C1": 436,
   "face_C3": 4,
   "face_C43_20": 1,
   "face_C43_30": 12,
@@ -19,28 +19,37 @@
   "face_F12a": 96,
   "face_F19": 437,
   "face_F49": 390,
-  "oneway_pair_dropped": 14,
-  "oneway_pair_dropped_measured": 9,
-  "oneway_pair_signs": 79,
+  "oneway_pair_dropped": 3,
+  "oneway_pair_dropped_C1": 3,
+  "oneway_pair_dropped_measured": 11,
+  "oneway_pair_signs": 90,
+  "pair_C1_asked": 53,
+  "pair_C1_far_kerb": 9,
+  "pair_C1_far_kerb_after_clash": 11,
+  "pair_C1_island": 2,
+  "pair_F19_asked": 51,
   "plate_posts": 782,
   "plates_shared": 39,
-  "poles": 1755,
-  "poles_short": 1717,
+  "poles": 1777,
+  "poles_short": 1739,
   "poles_tall": 38,
   "sign_no_road": 2,
-  "sign_repeat_dropped": 110,
+  "sign_repeat_dropped": 108,
+  "sign_repeat_dropped_pair": 2,
   "sign_speed_repeat_dropped": 45,
   "sign_unplaced_B1": 8,
   "sign_unplaced_B15": 4,
   "sign_unplaced_B5": 1,
-  "sign_unplaced_C1": 45,
+  "sign_unplaced_C1": 31,
+  "sign_unplaced_C1_pair": 3,
   "sign_unplaced_C3": 1,
   "sign_unplaced_C43_30": 1,
   "sign_unplaced_C43_50": 7,
   "sign_unplaced_D7": 1,
   "sign_unplaced_E9a": 1,
   "sign_unplaced_F12a": 2,
-  "sign_unplaced_F19": 25,
+  "sign_unplaced_F19": 18,
+  "sign_unplaced_F19_pair": 7,
   "sign_unplaced_F49": 4,
   "slide_building": 3,
   "slide_carriageway": 2134,
@@ -55,20 +64,18 @@
   "snap_stuck_plates": 8,
   "snap_stuck_postboxes": 0,
   "snap_stuck_villoPieces": 0,
-  "snap_villo_dropped_bikes": 25,
-  "snap_villo_dropped_docks": 50,
-  "snap_villo_dropped_stations": 1,
-  "snap_villo_dropped_totems": 1,
+  "snap_villo_dropped_bikes": 0,
+  "snap_villo_dropped_docks": 0,
+  "snap_villo_dropped_stations": 2,
+  "snap_villo_dropped_totems": 0,
   "villo_docks": 470,
   "villo_docks_wanted": 604,
-  "villo_dropped": 1,
+  "villo_dropped": 2,
   "villo_lane": 12,
   "villo_no_stands": 1,
+  "villo_relaid": 18,
   "villo_sidewalk": 15,
-  "villo_slid": 5,
-  "villo_trimmed": 3,
-  "villo_turned": 3,
-  "villo_turned_only": 2
+  "villo_turned": 1
  },
  "perTile": {
   "D1": {
@@ -84,20 +91,20 @@
    "plates": 53,
    "posts": 22,
    "villo": 2,
-   "docks": 22,
-   "bikes": 12
+   "docks": 15,
+   "bikes": 5
   },
   "F1": {
-   "poles": 49,
-   "plates": 50,
+   "poles": 53,
+   "plates": 54,
    "posts": 14,
    "villo": 1,
-   "docks": 2,
-   "bikes": 2
+   "docks": 23,
+   "bikes": 3
   },
   "G1": {
-   "poles": 29,
-   "plates": 29,
+   "poles": 31,
+   "plates": 31,
    "posts": 20,
    "villo": 0,
    "docks": 0,
@@ -124,32 +131,32 @@
    "plates": 3,
    "posts": 14,
    "villo": 2,
-   "docks": 47,
-   "bikes": 24
+   "docks": 48,
+   "bikes": 20
   },
   "E2": {
    "poles": 13,
    "plates": 13,
    "posts": 4,
    "villo": 1,
-   "docks": 18,
-   "bikes": 10
+   "docks": 8,
+   "bikes": 0
   },
   "F2": {
    "poles": 44,
    "plates": 44,
    "posts": 11,
    "villo": 1,
-   "docks": 2,
-   "bikes": 1
+   "docks": 19,
+   "bikes": 9
   },
   "G2": {
-   "poles": 15,
-   "plates": 15,
+   "poles": 16,
+   "plates": 16,
    "posts": 8,
    "villo": 1,
-   "docks": 18,
-   "bikes": 9
+   "docks": 17,
+   "bikes": 7
   },
   "H2": {
    "poles": 15,
@@ -181,15 +188,15 @@
    "posts": 25,
    "villo": 1,
    "docks": 9,
-   "bikes": 6
+   "bikes": 9
   },
   "D3": {
    "poles": 22,
    "plates": 22,
    "posts": 5,
    "villo": 1,
-   "docks": 25,
-   "bikes": 15
+   "docks": 24,
+   "bikes": 8
   },
   "E3": {
    "poles": 39,
@@ -204,8 +211,8 @@
    "plates": 33,
    "posts": 13,
    "villo": 1,
-   "docks": 20,
-   "bikes": 12
+   "docks": 22,
+   "bikes": 10
   },
   "G3": {
    "poles": 7,
@@ -220,7 +227,7 @@
    "plates": 40,
    "posts": 3,
    "villo": 1,
-   "docks": 16,
+   "docks": 7,
    "bikes": 7
   },
   "I3": {
@@ -237,23 +244,23 @@
    "posts": 9,
    "villo": 2,
    "docks": 14,
-   "bikes": 7
+   "bikes": 3
   },
   "B4": {
-   "poles": 45,
-   "plates": 46,
+   "poles": 46,
+   "plates": 47,
    "posts": 33,
    "villo": 1,
    "docks": 23,
-   "bikes": 11
+   "bikes": 12
   },
   "C4": {
    "poles": 16,
    "plates": 16,
    "posts": 2,
    "villo": 1,
-   "docks": 2,
-   "bikes": 1
+   "docks": 20,
+   "bikes": 20
   },
   "D4": {
    "poles": 29,
@@ -264,12 +271,12 @@
    "bikes": 0
   },
   "E4": {
-   "poles": 68,
-   "plates": 69,
+   "poles": 70,
+   "plates": 71,
    "posts": 12,
    "villo": 1,
-   "docks": 18,
-   "bikes": 8
+   "docks": 25,
+   "bikes": 25
   },
   "F4": {
    "poles": 20,
@@ -333,11 +340,11 @@
    "posts": 0,
    "villo": 1,
    "docks": 25,
-   "bikes": 15
+   "bikes": 20
   },
   "C5": {
-   "poles": 39,
-   "plates": 40,
+   "poles": 40,
+   "plates": 41,
    "posts": 5,
    "villo": 0,
    "docks": 0,
@@ -348,16 +355,16 @@
    "plates": 32,
    "posts": 6,
    "villo": 1,
-   "docks": 17,
-   "bikes": 9
+   "docks": 11,
+   "bikes": 11
   },
   "E5": {
    "poles": 32,
    "plates": 32,
    "posts": 2,
    "villo": 1,
-   "docks": 17,
-   "bikes": 6
+   "docks": 0,
+   "bikes": 0
   },
   "F5": {
    "poles": 22,
@@ -396,8 +403,8 @@
    "plates": 23,
    "posts": 0,
    "villo": 2,
-   "docks": 34,
-   "bikes": 20
+   "docks": 44,
+   "bikes": 35
   },
   "K5": {
    "poles": 10,
@@ -416,16 +423,16 @@
    "bikes": 0
   },
   "M5": {
-   "poles": 22,
-   "plates": 23,
+   "poles": 23,
+   "plates": 24,
    "posts": 17,
    "villo": 0,
    "docks": 0,
    "bikes": 0
   },
   "N5": {
-   "poles": 36,
-   "plates": 37,
+   "poles": 38,
+   "plates": 39,
    "posts": 30,
    "villo": 0,
    "docks": 0,
@@ -448,16 +455,16 @@
    "bikes": 0
   },
   "D6": {
-   "poles": 30,
-   "plates": 31,
+   "poles": 31,
+   "plates": 32,
    "posts": 6,
    "villo": 1,
    "docks": 8,
    "bikes": 3
   },
   "E6": {
-   "poles": 28,
-   "plates": 28,
+   "poles": 29,
+   "plates": 29,
    "posts": 3,
    "villo": 0,
    "docks": 0,
@@ -552,16 +559,16 @@
    "bikes": 0
   },
   "D7": {
-   "poles": 44,
-   "plates": 47,
+   "poles": 47,
+   "plates": 50,
    "posts": 11,
    "villo": 0,
    "docks": 0,
    "bikes": 0
   },
   "E7": {
-   "poles": 14,
-   "plates": 14,
+   "poles": 15,
+   "plates": 15,
    "posts": 6,
    "villo": 0,
    "docks": 0,
