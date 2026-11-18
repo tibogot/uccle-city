@@ -46,6 +46,12 @@ scripted far variant), Papenkasteel L2 13.4, Saint-Pierre L2 11.8, Wolvendael L2
 levels are the meshopt far levels of the town hall / police / Papenkasteel / Wolvendael packers (their own
 `*_pack.mjs`, no LockBorder yet: a rebuild of each in Blender + its pack) and are seen from > ~450 m.
 
+## Class J, thin bars: fixed (claude/jitter, 2026-11-18)
+
+Strokes (bars, rails, grilles, glazing bars under 3 cm) drawn as geometry where they project under 1 internal px:
+garden ironwork 421 -> 12 per piece set (1.57 M -> 18.6 k stroke-instances city-wide), façade kit 312 -> 11.
+Detector tools/audit/census/thinBars.mjs (`--old`, `--heroes`), gate row `jitter`, docs/JITTER.md, rule 34.
+
 ## 10 worst per class
 
 **A (tiles):** F7 Rue de Verrewinkel 95D (-368.8, 1378.8) 434 m²; F7 Verrewinkel 95C (-386.5, 1372.7) 391; H1 Rue Dodonée 92
