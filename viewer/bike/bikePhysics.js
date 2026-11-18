@@ -25,6 +25,8 @@
 // Units: m, s, per unit mass (forces are accelerations). Heading as the car: forward = (sin h, cos h) in x / z,
 // left = (cos h, -sin h), h grows turning left; lean > 0 = leaning left; pitch > 0 = nose up.
 
+import { edgeCell, segNearest, EDGE } from "./bikeEdges.js";
+
 export const DT = 1 / 120;
 
 /** surface ids returned by the ground query */
@@ -132,6 +134,26 @@ export const BIKE = {
   footSpeed: 0.6,       // m/s: under this, no pedalling = a foot down
   footLean: 0.08,       // rad: the bike leans toward the foot put down (left) so it reaches the ground
   respawn: 2.2,         // s on the ground after a crash
+  // grinds and stalls on the edge layer (feel round 2: bikeEdges.js; FEEL_RESEARCH.md section 2)
+  snapReach: 0.45,      // m in plan from the bike's middle to the edge
+  snapAbove: 0.30,      // m: the pegs (hubs) at most this far over the edge's top ...
+  snapBelow: 0.05,      // m: ... or this far under it, FALLING (never while rising)
+  snapAngle: 0.70,      // rad (40 deg): the velocity within this of the edge
+  snapTime: 0.08,       // s: the pose blends onto the edge over this (no one-step teleport)
+  pegR: 0.02,           // m, the pegs' radius over the top
+  pegOut: 0.10,         // m, the pegs stick out of the hubs: on a grind the bike rides BESIDE the edge (wheels below its top)
+  grindDecel: 0.9,      // m/s^2 on a ledge / wall / bench (stone, wood)
+  grindDecelRail: 0.5,  // m/s^2 on a rail (steel)
+  grindMinSpeed: 1.0,   // m/s: slower along the edge = a STALL (balanced, still)
+  stallTime: 1.2,       // s a stall holds before the kid drops off (a hop leaves earlier)
+  cornerExit: 0.785,    // rad (45 deg): a bend sharper than this = the grind leaves the edge, straight on
+  cornerPop: 1.0,       // m/s up as the pegs leave a corner (clears the edge's next leg)
+  grindAssist: 0.8,     // 0..1, the balance helper (kid-friendly: high)
+  grindTip: 1.6,        // 1/s, how fast an unbalanced grind tips over (no assist)
+  grindHold: 2.5,       // 1/s, the helper's pull back to balance (x grindAssist)
+  grindSteer: 2.2,      // 1/s of balance per steer (lean against the fall)
+  grindBump: 0.5,       // 1/s, the edge's unevenness pushing the balance (deterministic, along the distance)
+  grindCrash: 7.0,      // m/s: falling off faster than this = a crash
 };
 
 /** the bike's box in plan (half width across the bars, half length) for the colliders */
@@ -160,6 +182,10 @@ export const BIKE_RANGES = {
   wobbleTime: [0, 1.5, 0.05, "landing"], wobbleGrip: [0, 0.9, 0.01, "landing"], wobbleLean: [0, 0.4, 0.01, "landing"], sketchyLoss: [0, 0.5, 0.01, "landing"],
   pushGrade: [0.03, 0.3, 0.005, "push"], pushSpeed: [0.2, 2, 0.05, "push"], pushDelay: [0.1, 3, 0.1, "push"], walk: [0.5, 2.5, 0.05, "push"],
   footSpeed: [0.1, 1.5, 0.05, "push"], footLean: [0, 0.3, 0.01, "push"], respawn: [0.5, 6, 0.1, "push"],
+  snapReach: [0.1, 1, 0.01, "grind"], snapAbove: [0.05, 0.6, 0.01, "grind"], snapBelow: [0, 0.3, 0.01, "grind"], snapAngle: [0.2, 1.2, 0.01, "grind"],
+  snapTime: [0.02, 0.3, 0.01, "grind"], pegR: [0, 0.05, 0.005, "grind"], pegOut: [0, 0.3, 0.01, "grind"], grindDecel: [0, 5, 0.1, "grind"], grindDecelRail: [0, 5, 0.1, "grind"],
+  grindMinSpeed: [0.2, 3, 0.05, "grind"], stallTime: [0.2, 4, 0.1, "grind"], cornerExit: [0.2, 1.5, 0.01, "grind"], cornerPop: [0, 3, 0.05, "grind"], grindAssist: [0, 1, 0.05, "grind"],
+  grindTip: [0, 5, 0.1, "grind"], grindHold: [0, 8, 0.1, "grind"], grindSteer: [0, 6, 0.1, "grind"], grindBump: [0, 2, 0.05, "grind"], grindCrash: [2, 15, 0.1, "grind"],
 };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -181,6 +207,8 @@ export function createBikeState(x, z, heading, groundY = 0, B = BIKE) {
     preload: 0, hopHeld: false, hops: 0, pumps: 0, popT: 0, hopT: 9, sinceContact: 0,
     hopBuf: 0, hopBufD: 0, hopBufP: 0, buffered: 0, catches: 0, popStep: -1,
     wobble: 0, wobbleT: 0, wobbleDur: 0, wobbleNow: 0, wobbleW: 0, sketchy: 0, saveKind: 0, _catchT: 0, _bonkT: 0,
+    grindSeg: -1, grindDir: 1, grindU: 0, grindV: 0, grindT: 0, grindBal: 0, grindStall: 0, grindCD: 0, grinds: 0, stalls: 0,
+    grindType: -1, grindExit: "", grindExits: 0, grindDist: 0, grindSide: 1, _g0: [0, 0, 0, 0, 0], _go: [0, 0, 0, 0, 0],
     air: false, airT: 0, airMax: 0, lastLanding: null, landings: 0,
     skid: false, wheelspin: false, frontLock: false, slip: 0, slipAngle: 0, washT: 0, buzz: 0,
     manual: 0, pushing: false, pushT: 0, footDown: 1, grade: 0, walkPhase: 0, trick: 0,
@@ -335,6 +363,9 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     s._prepX = s.x; s._prepZ = s.z;
   }
   if (s.crashed) { crashStep(s, env, B, S); return s; }
+  // ON AN EDGE (a grind / a stall): its own step (feel round 2)
+  if (s.grindSeg >= 0) { grindStep(s, input, env, B); return s; }
+  s.grindCD -= DT;
 
   const pedal = clamp(input.pedal || 0, 0, 1), steer = clamp(input.steer || 0, -1, 1), leanIn = clamp(input.lean || 0, -1, 1);
   const bF = clamp(input.brakeF || 0, 0, 1), bR = clamp(input.brakeR || 0, 0, 1), pump = clamp(input.pump || 0, 0, 1);
@@ -524,7 +555,10 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   s.grade = up;
   if (contactNow) {
     if (!s.pushing) {
-      if (pedal > 0 && up > B.pushGrade && v < B.pushSpeed && !sprint) { s.pushT += dt; if (s.pushT > B.pushDelay) { s.pushing = true; s.pushT = 0; } }
+      // (crawling up, or already rolling back down it while pedalling: the heading's grade, feel round 2 - a 44 %
+      // stair ramp rolled the kid back down before the push could start)
+      const upH = (Q[0].h - Q[1].h) / B.wheelbase;
+      if (pedal > 0 && upH > B.pushGrade && vF < B.pushSpeed && !sprint) { s.pushT += dt; if (s.pushT > B.pushDelay) { s.pushing = true; s.pushT = 0; } }
       else s.pushT = 0;
     } else if (up < B.pushGrade * 0.5) { s.pushT += dt; if (s.pushT > 0.5) { s.pushing = false; s.pushT = 0; } }
     else s.pushT = 0;
@@ -595,7 +629,8 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     const speedLean = B.maxLean * smooth(B.leanV0, B.leanV1, v);
     const gripLean = Math.atan(muLean) * 0.95;
     s.leanTarget = steerOK ? steer * Math.min(speedLean, gripLean) : 0;
-    s.leanTarget += B.wobbleLean * s.wobbleNow + B.footLean * Math.max(0, s.footDown - 0.3) / 0.7;
+    // (the foot-down lean only while stopping / stopped: pulling away it must not steer the bike)
+    s.leanTarget += B.wobbleLean * s.wobbleNow + (v < B.footSpeed ? B.footLean * Math.max(0, s.footDown - 0.3) / 0.7 : 0);
     s.lean += (s.leanTarget - s.lean) * (1 - Math.exp(-B.leanRate * dt));
     const wLean = smooth(B.barV0, B.barV1, v);
     const bar = steer * B.lowSteer * (1 - wLean);
@@ -638,6 +673,10 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   // ---- integrate
   s.x += s.vx * dt; s.z += s.vz * dt; s.y += s.vy * dt;
   s.pitch = clamp(s.pitch + s.pitchVel * dt, -1.45, 1.45);
+
+  // ---- SNAP onto an edge (feel round 2): airborne and FALLING, the pegs just over a grindable edge's top, the velocity
+  // within snapAngle of it: from here the bike rides the edge (grindStep); the colliders are not met
+  if (!grounded && s.vy < 0 && env.edges && s.grindCD <= 0 && trySnap(s, env, B)) return s;
 
   // ---- bottom-out: no wheel deeper than maxComp (the hard constraint; also what climbs a step)
   wheelOffsets(s, B);
@@ -730,6 +769,152 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     if (s.safe.t > 0.5) { s.safe.x = s.x; s.safe.z = s.z; s.safe.heading = s.heading; s.safe.t = 0; }
   }
   return s;
+}
+
+// ------------------------------------------------------------------------------------------------ GRINDS (feel round 2)
+// A third contact state: the pegs on an edge of the layer (bikeEdges.js). The bike follows the polyline: its speed along
+// it (slope gravity, the material's drag), the pose blended onto it over snapTime, a balance the kid keeps (lean against
+// the fall: steer; a helper, grindAssist), a stall when slow. It leaves at the line's end, at a corner sharper than
+// cornerExit (straight on), by a hop (Space: up + toward the steer) or by losing the balance (to that side).
+const GQ = { u: 0, len: 0, d: 0, tx: 0, tz: 0, y: 0 };
+
+/** the grind's pose targets on segment seg at u (dir: +1 along it): fills s._g0 = [x, y(top), z, heading, pitch] */
+function grindTarget(s, E, seg, u, dir, B) {
+  const o = seg * 6, x0 = E.seg[o], z0 = E.seg[o + 2], dx = E.seg[o + 3] - x0, dz = E.seg[o + 5] - z0, len = Math.hypot(dx, dz) || 1e-6;
+  const tx = dx / len, tz = dz / len, uc = clamp(u, 0, len), y = E.seg[o + 1] + (E.seg[o + 4] - E.seg[o + 1]) * uc / len;
+  const sl = (E.seg[o + 4] - E.seg[o + 1]) / len * dir;
+  // (beside the edge: half its top's width + the pegs, on the side the bike came from; (-tz, tx) = the segment's left)
+  const off = s.grindSide * (E.lineW[E.segLine[seg]] / 2 + B.pegOut);
+  const T = s._g0;
+  T[0] = x0 + tx * uc - tz * off; T[1] = y; T[2] = z0 + tz * uc + tx * off; T[3] = Math.atan2(tx * dir, tz * dir); T[4] = Math.atan(sl);
+  return len;
+}
+const wrapA = (a) => a - Math.round(a / (Math.PI * 2)) * Math.PI * 2;
+
+function trySnap(s, env, B) {
+  const E = env.edges, r = edgeCell(E, s.x, s.z);
+  if (!r) return false;
+  // (never right after a hard hit: a bike knocked into line by a bench's back is not "sucked" onto its seat)
+  if (s.lastHit && s.t - s.lastHit.t < 0.15) return false;
+  const hv = Math.hypot(s.vx, s.vz), cosA = Math.cos(B.snapAngle);
+  wheelOffsets(s, B);
+  const hubY = s.y + (HU[0] + HU[1]) / 2;
+  let best = -1, bestD = Infinity, bestU = 0, bestAlong = 0;
+  for (let k = r[0]; k < r[1]; k++) {
+    const seg = E.cellItems[k];
+    if (!E.lineGrind[E.segLine[seg]]) continue;
+    const d = segNearest(E, seg, s.x, s.z, GQ) - E.lineW[E.segLine[seg]] / 2;
+    if (d > B.snapReach || d >= bestD) continue;
+    if ((GQ.u < 0 && E.segPrev[seg] < 0) || (GQ.u > GQ.len && E.segNext[seg] < 0)) continue;     // past the line's ends
+    const peg = hubY - B.pegR - GQ.y;
+    if (peg > B.snapAbove || peg < -B.snapBelow) continue;
+    const along = s.vx * GQ.tx + s.vz * GQ.tz;
+    if (hv > 0.5 && Math.abs(along) < cosA * hv) continue;                                       // across it, not along
+    best = seg; bestD = d; bestU = clamp(GQ.u, 0, GQ.len); bestAlong = along; s.grindSide = GQ.d >= 0 ? 1 : -1;
+  }
+  if (best < 0) return false;
+  // the grind starts: the offsets from the edge's pose, blended away over snapTime
+  const dir = hv > 0.5 ? (bestAlong >= 0 ? 1 : -1) : (Math.sin(s.heading) * GQ.tx + Math.cos(s.heading) * GQ.tz >= 0 ? 1 : -1);
+  s.grindSeg = best; s.grindDir = dir; s.grindU = bestU; s.grindV = Math.abs(bestAlong); s.grindT = 0; s.grindStall = 0;
+  s.grindType = E.lineType[E.segLine[best]]; s.grinds++; s.grindExit = ""; s.grindDist = 0;
+  grindTarget(s, E, best, bestU, dir, B);
+  const T = s._g0, lxT = Math.cos(T[3]), lzT = -Math.sin(T[3]);
+  // the balance starts from the sideways speed brought onto the edge (a square entry is balanced)
+  s.grindBal = clamp((s.vx * lxT + s.vz * lzT) * 0.35, -0.7, 0.7);
+  const go = s._go; go[0] = s.x - T[0]; go[1] = s.y - (T[1] + B.pegR - (HU[0] + HU[1]) / 2); go[2] = s.z - T[2]; go[3] = wrapA(s.heading - T[3]); go[4] = s.pitch - T[4];
+  s.preload = 0; s.hopHeld = !!s.hopHeld;
+  if (s.grindV < B.grindMinSpeed) s.stalls++;
+  grindPose(s, env, B, 0);
+  return true;
+}
+
+/** place the bike on the edge (blend w from the snap's offsets) */
+function grindPose(s, env, B, w) {
+  const E = env.edges, T = s._g0, k = 1 - w, go = s._go;
+  s.pitch = T[4] + go[4] * k; s.pitchVel = 0;
+  wheelOffsets(s, B);
+  const hub = (HU[0] + HU[1]) / 2;
+  s.x = T[0] + go[0] * k; s.z = T[2] + go[2] * k; s.y = T[1] + B.pegR - hub + go[1] * k;
+  s.heading = T[3] + go[3] * k;
+  const fx = Math.sin(s.heading), fz = Math.cos(s.heading);
+  for (let i = 0; i < 2; i++) {
+    s.wheelPos[i * 2] = s.x + fx * RF[i]; s.wheelPos[i * 2 + 1] = s.z + fz * RF[i];
+    s.wheelY[i] = s.y + RU[i]; s.wheelBot[i] = s.wheelY[i];
+  }
+  s.yLow = Math.min(s.wheelBot[0], s.wheelBot[1]);
+  s.contact[0] = s.contact[1] = false; s.air = false; s.airT = 0; s.sinceContact = 0;
+  void E;
+}
+
+function grindStep(s, input, env, B) {
+  const dt = DT, g = B.gravity, E = env.edges;
+  const steer = clamp(input.steer || 0, -1, 1), hop = !!input.hop;
+  s.grindT += dt;
+  // speed along the edge: its slope, the material's drag; slower than grindMinSpeed it settles into a stall
+  let seg = s.grindSeg;
+  const o = seg * 6, len0 = Math.hypot(E.seg[o + 3] - E.seg[o], E.seg[o + 5] - E.seg[o + 2]) || 1e-6;
+  const sl = (E.seg[o + 4] - E.seg[o + 1]) / len0 * s.grindDir;
+  const decel = s.grindType === EDGE.rail ? B.grindDecelRail : B.grindDecel;
+  s.grindV += -g * sl / Math.sqrt(1 + sl * sl) * dt - decel * dt;
+  if (s.grindV < 0) s.grindV = sl > 0.05 ? s.grindV : 0;          // (an up-slope rolls it back: a stall at worst)
+  if (s.grindV < 0) { s.grindDir = -s.grindDir; s.grindV = -s.grindV; }
+  if (s.grindV < 0.05) s.grindStall += dt; else s.grindStall = 0;
+  // along the polyline: on into the next segment, or off at its end / a sharp corner
+  s.grindU += s.grindDir * s.grindV * dt; s.grindDist += s.grindV * dt;
+  for (let guard = 0; guard < 4; guard++) {
+    const oo = seg * 6, len = Math.hypot(E.seg[oo + 3] - E.seg[oo], E.seg[oo + 5] - E.seg[oo + 2]) || 1e-6;
+    if (s.grindU >= 0 && s.grindU <= len) break;
+    const nxt = s.grindU > len ? E.segNext[seg] : E.segPrev[seg];
+    if (nxt < 0) return grindExit(s, env, B, "end", 0, 0);
+    // the bend between the two segments (in plan)
+    const ax = E.seg[oo + 3] - E.seg[oo], az = E.seg[oo + 5] - E.seg[oo + 2], n6 = nxt * 6;
+    const bx = E.seg[n6 + 3] - E.seg[n6], bz = E.seg[n6 + 5] - E.seg[n6 + 2];
+    const turn = Math.acos(clamp((ax * bx + az * bz) / ((Math.hypot(ax, az) * Math.hypot(bx, bz)) || 1), -1, 1));
+    if (turn > B.cornerExit) return grindExit(s, env, B, "corner", 0, B.cornerPop);     // (the pegs pop off the corner)
+    if (s.grindU > len) { s.grindU -= len; seg = nxt; }
+    else { seg = nxt; s.grindU += Math.hypot(bx, bz); }
+  }
+  s.grindSeg = seg;
+  // the balance: tips over by itself (grindTip), the helper pulls it back, the kid leans against it (steer)
+  const A = B.grindAssist;
+  // (+ the edge's own unevenness: a deterministic wander along the distance ridden, stronger with speed)
+  const bump = B.grindBump * Math.sin(s.grindDist * 2.3 + 0.8 * Math.sin(s.grindDist * 0.9)) * Math.min(1, s.grindV / 3);
+  s.grindBal += (B.grindTip * (1 - A) * s.grindBal - B.grindHold * A * s.grindBal + B.grindSteer * steer + bump) * dt;
+  // the legs: crouched on the pegs (Space: deeper, the preload for the hop out)
+  const legT = hop ? -1 : -0.5;
+  const nl = s.legs + (legT - s.legs) * (1 - Math.exp(-B.legRate * dt));
+  s.legSpeed = (nl - s.legs) / dt; s.legVel = 0; s.legs = nl;
+  if (hop) s.preload = Math.min(1, s.preload + dt / B.preloadTime);
+  // the pedals level (BMX riders grind with the cranks horizontal)
+  const lvl = Math.round((s.crank - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2;
+  s.crank += (lvl - s.crank) * (1 - Math.exp(-10 * dt));
+  // the pose on the edge (blended in over snapTime)
+  grindTarget(s, E, seg, s.grindU, s.grindDir, B);
+  const w = smooth(0, B.snapTime, s.grindT);
+  grindPose(s, env, B, w);
+  s.lean = s.grindBal * 0.35; s.leanTarget = s.lean; s.yawVel = 0;
+  const fx = Math.sin(s.heading), fz = Math.cos(s.heading), slN = Math.tan(s._g0[4]);
+  s.vx = fx * s.grindV; s.vz = fz * s.grindV; s.vy = slN * s.grindV;
+  s.spin[0] = s.spin[0]; s.cadence *= Math.exp(-6 * dt); s.pedalling = 0; s.footDown = 0; s.manual = 0; s.trick = 0;
+  // leaving: a hop (released), the balance lost, a stall held too long
+  if (!hop && s.hopHeld) { const p = s.preload; s.hopHeld = false; return grindExit(s, env, B, "hop", steer * 1.0, B.popVel + B.popPreload * p); }
+  s.hopHeld = hop;
+  if (Math.abs(s.grindBal) >= 1) {
+    if (s.grindV > B.grindCrash) { grindExit(s, env, B, "fell off", sgn(s.grindBal) * 1.2, 0); crash(s, "fell off the edge"); return; }
+    return grindExit(s, env, B, "fell off", sgn(s.grindBal) * 1.2, 0);
+  }
+  if (s.grindStall > B.stallTime) return grindExit(s, env, B, "stall", -0.8 * sgn(s.grindBal || 1), 0);
+}
+
+/** off the edge: ballistic from here (latV: m/s toward the bike's left, upV: m/s up added) */
+function grindExit(s, env, B, why, latV, upV) {
+  const fx = Math.sin(s.heading), fz = Math.cos(s.heading), lx = fz, lz = -fx;
+  s.vx = fx * s.grindV + lx * latV; s.vz = fz * s.grindV + lz * latV; s.vy = Math.tan(s._g0[4]) * s.grindV + upV;
+  if (why === "hop") { s.hops++; s.hopT = 0; s.popStep = s.steps; }
+  s.grindSeg = -1; s.grindExit = why; s.grindExits++; s.grindCD = 0.3;
+  s.preload = 0; s.pitchVel = 0; s.yawVel = 0; s.grindBal = 0;
+  s.air = true; s.airT = 0.13; s.airMax = s.y; s.sinceContact = 1;
+  s.safe.t = 0;
 }
 
 /** touch-down after a jump / drop: THREE BANDS (feel round 1). Each limit has a sketchy and a bail threshold; the

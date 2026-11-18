@@ -220,6 +220,7 @@ else {
   const modes = {
     seated: {}, standing: { sprint: 1 }, crouched: { legs: -0.9, preload: 1 }, manual: { manual: 1, pitch: 0.45 }, leanL: { lean: 0.55 }, leanR: { lean: -0.55 }, air: { air: true, legs: 0.3 },
     wobbleL: { wobbleNow: 1, wobbleW: 1 }, wobbleR: { wobbleNow: -1, wobbleW: 1 },
+    grindL: { grindSeg: 0, grindBal: 0.95, legs: -0.5, lean: 0.33 }, grindR: { grindSeg: 0, grindBal: -0.95, legs: -0.5, lean: -0.33 },
   };
   const s = createBikeState(0, 0, 0.3, 0), pose = {};
   /** the BMX's node tree from its GLB (no meshes: node checks), as the lab mounts it */
@@ -238,7 +239,7 @@ else {
     else { E = findBikeEmpties(bm.root, bm.empties.frame); E.cg = BIKE.cgHeight; }
     let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0, spineMax = 0, asym = 0;
     for (const [mname, mo] of Object.entries(modes)) for (const steer of [-0.9, -0.45, 0, 0.45, 0.9]) for (let c = 0; c < 24; c++) {
-      Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0, wobbleNow: 0, wobbleW: 0 }, mo);
+      Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0, wobbleNow: 0, wobbleW: 0, grindSeg: -1, grindBal: 0 }, mo);
       s.crank = c / 24 * Math.PI * 2; s.steerAngle = steer;
       s.prev.lean = s.lean; s.prev.pitch = s.pitch;
       bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
@@ -260,7 +261,7 @@ else {
       const { RIDE } = await import("../../viewer/kid/riderIK.js");
       let worstR = 0, worstGap = 0;
       for (let c = 0; c < 24; c++) {
-        Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: BIKE.footLean, air: false, footDown: 1, wobbleNow: 0, wobbleW: 0, crank: c / 24 * Math.PI * 2, steerAngle: 0 });
+        Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: BIKE.footLean, air: false, footDown: 1, wobbleNow: 0, wobbleW: 0, grindSeg: -1, grindBal: 0, crank: c / 24 * Math.PI * 2, steerAngle: 0 });
         s.prev.lean = s.lean; s.prev.pitch = 0;
         bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
         const M = rider.ride(E, s, holder, 0);

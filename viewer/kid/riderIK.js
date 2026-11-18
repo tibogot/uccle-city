@@ -39,6 +39,8 @@ export const RIDE = {
   wobbleHip: 0.05, wobbleRoll: 0.30,         // a sketchy landing's wobble (s.wobbleNow): hips sideways, body counter-roll
   wobbleCrouch: 0.45,                        // and the legs soaking it up (crouch at the wobble's start)
   poseTime: 0.07,                            // s: the stand / crouch / manual weights follow their targets (no snap)
+  grindCrouch: 0.55, grindStand: 0.3,        // on a grind / stall (feel round 2): knees bent over the pegs, a little up
+  grindHip: 0.07, grindRoll: 0.35,           // the balance: hips out to the low side, the body leaning against the fall
 };
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3();
@@ -169,9 +171,10 @@ export class RiderIK {
     this.model.updateMatrixWorld(true);
     // 1. the hips, in frame-local coordinates
     const legs = s.legs || 0, wob = s.wobbleNow || 0, wobW = s.wobbleW || 0;
-    const crouchT = Math.min(1, Math.max(0, -legs * 1.4, s.preload ? s.preload * 0.6 : 0, wobW * P.wobbleCrouch));
+    const onEdge = (s.grindSeg ?? -1) >= 0, bal = onEdge ? s.grindBal || 0 : 0;
+    const crouchT = Math.min(1, Math.max(0, -legs * 1.4, s.preload ? s.preload * 0.6 : 0, wobW * P.wobbleCrouch, onEdge ? P.grindCrouch : 0));
     const fdHip = Math.min(1, Math.max(0, ((s.footDown || 0) - 0.3) / 0.7));
-    const standT = Math.min(1, Math.max(s.sprint || 0, s.air ? 0.55 : 0, legs > 0.05 ? legs * 1.5 : 0, s.preload ? s.preload * 0.5 : 0));
+    const standT = Math.min(1, Math.max(s.sprint || 0, s.air ? 0.55 : 0, onEdge ? P.grindStand : 0, legs > 0.05 ? legs * 1.5 : 0, s.preload ? s.preload * 0.5 : 0));
     const manualT = (s.manual || 0) > 0 ? 1 : Math.max(0, Math.min(1, (s.pitch || 0) / 0.35));
     // (feel round 1, browser: these weights switch in one step - touch-down ends "air", a rear-only contact starts
     // "manual" - and the hips jumped 3-6 cm in a frame. Followed over P.poseTime of the bike's own time; a pose asked
@@ -183,7 +186,7 @@ export class RiderIK {
     const crouch = sm.crouch, stand = sm.stand, manual = sm.manual;
     const seat = F.worldToLocal(E.seat.getWorldPosition(_a));
     const hip = _b.set(
-      P.swayStand * stand * Math.sin(s.crank || 0) + P.wobbleHip * wob,
+      P.swayStand * stand * Math.sin(s.crank || 0) + P.wobbleHip * wob + P.grindHip * bal,
       seat.y + P.hipUp + stand * P.standUp - crouch * P.crouchDown,
       seat.z - P.hipBack + stand * P.standFwd - crouch * P.crouchBack - manual * P.manualBack);
     // a foot down: the hips come down off the saddle as far as the left foot needs to reach the ground (world
@@ -213,7 +216,7 @@ export class RiderIK {
     M.fitted = fitted; M.slid = 0;
     // 2. the pelvis: placed + turned with the frame, pitched forward, leaning into the turn
     // (a sketchy landing: the body counter-rolls against the bike's wobble: the save shows)
-    const roll = -(s.lean || 0) * P.leanExtra - wob * P.wobbleRoll;
+    const roll = -(s.lean || 0) * P.leanExtra - wob * P.wobbleRoll - bal * P.grindRoll;
     const pitch = P.pelvisPitch + stand * P.standPitch - manual * 0.15;
     F.localToWorld(_p.copy(hip));
     setWorldPos(b.pelvis, _p);

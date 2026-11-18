@@ -15,6 +15,9 @@
 // input acts in the step it arrives); the hop buffer (the kerb window, a release 0.1 s early held and popped at the
 // edge, no hold without a face); the coyote hop; the kerb catch (+2..6.5 cm of kerb for the same hop); the landing
 // bands (nose / tail / sideways / lean / impact: clean, sketchy = wobble + speed lost + no crash, bail = crash).
+// FEEL ROUND 2 (section 15): the edge layer of tile D6 (counts vs its docs, memory, build time, query time); grinds on
+// the lab's bench / ledge (snap, no snap rising / wide / far / low, the bend, the corner, balance, stall, hop out, as a
+// player from the spots); the stairs as a ramp (down < 3 g, up pushed); D6's real spot (its stairs ridden, the cost).
 import { DT, BIKE, SURF, createBikeState, stepBike, groundQuery, bikeSpeed, stateHash, advanceBike, restHeight, wheelPoints, BIKE_RANGES } from "../../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
 import { testGround, testHeight, testColliders, SPOTS, KERB, KICKER, TABLE, SLOPE, STEEP, SAND, WALL, LOG, PUMP, BOUNDS } from "../../viewer/bike/bikeGround.js";
@@ -551,6 +554,130 @@ function randomInputs(seed, n) {
   const tr = (() => { const env = labEnv(), s = spawn(env, 0, 8, 0); s.vz = 8; ride(s, env, (q) => ({ trick: q.air && q.airT < 0.6 }), 4); return s; })();
   check("landing bands: a trick let go just late = sketchy, not a crash", tr.crashes === 0 && tr.lastLanding?.band === "sketchy", `${tr.lastLanding?.band} (${tr.lastLanding?.why}, air ${f2(tr.lastLanding?.air)} s), crashes ${tr.crashes}`, "sketchy, stays on");
 }
+
+// ---------------------------------------------------------------- 15. FEEL ROUND 2: ride on everything (docs/BIKE.md "Feel round 2")
+{
+  const { testGroundRamped, testEdges, testHeightRamped, testHeight, STAIRS, LAB_FURNITURE, LEDGE } = await import("../../viewer/bike/bikeGround.js");
+  const { EDGE, edgeBytes, edgeCell, segNearest } = await import("../../viewer/bike/bikeEdges.js");
+  const { loadCityDocs, buildCitySpot } = await import("../../viewer/bike/bikeCitySpot.js");
+  const fs = await import("node:fs");
+  const lab = createBikeEnv({ sets: () => [COL], ground: testGroundRamped, edges: testEdges });
+  // ---- 15a. the edge layer of a REAL tile (D6: the most stairs in the city), from its own docs
+  const T = "D6", docs = await loadCityDocs(T, async (p) => fs.readFileSync(p));
+  const { kerbEdges, benchEdges, gardenEdges, stairEdges, buildEdgeLayer, edgeCounts } = await import("../../viewer/bike/bikeEdges.js");
+  const { terrainHeight } = await import("../../viewer/bike/bikeCitySpot.js");
+  const H = terrainHeight(docs.terrainJson, docs.terrain);
+  const t0 = performance.now();
+  const lines = [...kerbEdges(docs.surfaces, H), ...benchEdges(docs.furniture), ...gardenEdges(docs.gardens), ...stairEdges(docs.features, H)];
+  const tb = docs.terrainJson, E6 = buildEdgeLayer(lines, { x0: tb.x0, x1: tb.x0 + 500, z0: tb.z0, z1: tb.z0 + 500 });
+  const msX = performance.now() - t0, cnt = edgeCounts(lines);
+  const nSteps = (docs.features.lines || []).filter((l) => l.kind === "steps" && !l.tags?.tunnel).length;
+  check(`edge layer, tile ${T}: kerbs, benches, walls / rails, stairs found`, cnt.kerb?.lines === docs.surfaces.kerbs.length && cnt.bench?.lines === docs.furniture.benches.length && cnt.stair?.lines === nSteps && (cnt.wall?.grindM || 0) + (cnt.rail?.grindM || 0) > 100,
+    `kerbs ${cnt.kerb?.lines} (${cnt.kerb?.m} m), benches ${cnt.bench?.lines}, walls ${cnt.wall?.lines} (${cnt.wall?.grindM} m grindable), rails ${cnt.rail?.lines} (${cnt.rail?.grindM} m), stairs ${cnt.stair?.lines}`, "every kerb / bench / stair of the docs");
+  check(`edge layer, tile ${T}: memory, build time`, edgeBytes(E6) < 512 * 1024 && msX < 200, `${(edgeBytes(E6) / 1024).toFixed(0)} KB (${E6.n} segments), built in ${f1(msX)} ms`, "< 512 KB, < 200 ms");
+  // the query: one cell's list, the nearest grindable segment (what trySnap does each falling step)
+  {
+    const q = { u: 0, len: 0, d: 0, tx: 0, tz: 0, y: 0 }, r = rng(4), N = 200000;
+    let hits = 0;
+    const tq = process.hrtime.bigint();
+    for (let i = 0; i < N; i++) {
+      const x = tb.x0 + r() * 500, z = tb.z0 + r() * 500, c = edgeCell(E6, x, z);
+      if (c) for (let k = c[0]; k < c[1]; k++) { const sg = E6.cellItems[k]; if (E6.lineGrind[E6.segLine[sg]] && segNearest(E6, sg, x, z, q) < 0.45) hits++; }
+    }
+    const us = Number(process.hrtime.bigint() - tq) / 1000 / N;
+    check("edge layer: the per-step query", us < 2, `${f2(us)} us a query (${N} random points over ${T}, ${hits} near an edge)`, "< 2 us");
+  }
+  // ---- 15b. snaps: onto the lab's bench (falling, along it), and the no-snap cases
+  const drop = (x, z, h, v, top, { above = 0.22, vy = -0.5, ang = 0, input = () => ({}), secs = 3, env = lab } = {}) => {
+    const s = createBikeState(x, z, h, 0);
+    s.y = top + above + (BIKE.cgHeight - BIKE.wheelR) + BIKE.pegR; s.vy = vy;
+    s.vx = Math.sin(h + ang) * v; s.vz = Math.cos(h + ang) * v; s.contact[0] = s.contact[1] = false; s.air = true; s.airT = 0.3; s.sinceContact = 1;
+    let snapT = -1, x0 = 0, maxJump = 0, px = s.x, pz = s.z, py = s.y;
+    for (let i = 0; i < secs * 120; i++) {
+      stepBike(s, input(s, i), env);
+      if (s.grindSeg >= 0 && snapT < 0) { snapT = s.t; x0 = s.x; }
+      if (s.grindSeg >= 0) maxJump = Math.max(maxJump, Math.hypot(s.x - px, s.z - pz, s.y - py) - Math.hypot(s.vx, s.vz) * DT);
+      px = s.x; pz = s.z; py = s.y;
+    }
+    return { s, snapT, maxJump };
+  };
+  // (the seat's front lip at x - 0.27 (its front faces -x); a peg grind rides BESIDE it: the bike's middle ~0.1-0.2 m out)
+  const B1 = LAB_FURNITURE.benches[0], lipX = B1.x - 0.27, seatTop = 0.46, side = lipX - 0.15;
+  const ok = drop(side, B1.z - 0.6, 0, 3, seatTop), rise = drop(side, B1.z - 0.6, 0, 3, seatTop, { vy: 1.0 });
+  const wide = drop(side, B1.z - 0.6, 0, 3, seatTop, { ang: -0.87, secs: 0.4 }), far = drop(lipX - 0.55, B1.z - 0.6, 0, 3, seatTop, { secs: 0.4 }), low = drop(side, B1.z - 0.6, 0, 3, seatTop, { above: -0.15, secs: 0.4 });
+  check("grind: falling onto the bench along it snaps, rides it, leaves at its end", ok.s.grinds === 1 && ok.s.grindExit === "end" && ok.s.crashes === 0 && ok.maxJump < 0.03,
+    `grinds ${ok.s.grinds}, ${f2(ok.s.grindDist)} m on it, left at its "${ok.s.grindExit}", landing ${ok.s.lastLanding?.band}; the snap's biggest step ${(ok.maxJump * 100).toFixed(1)} cm over the motion (blend ${BIKE.snapTime * 1000} ms)`, "snap, ride, off the end, no jump");
+  // (rising at 1 m/s: the apex 0.10 s later; a snap may come after it, falling, never before)
+  const apex = 1.0 / BIKE.gravity;
+  check("grind: no snap while rising / at 50 deg / 0.55 m off / pegs 15 cm under the top", (rise.snapT < 0 || rise.snapT > apex) && !wide.s.grinds && !far.s.grinds && !low.s.grinds,
+    `rising: ${rise.snapT < 0 ? "none" : `snapped ${f2(rise.snapT)} s, after the apex (${f2(apex)} s)`}; in the 0.4 s pass: 50 deg ${wide.s.grinds}, 0.55 m off ${far.s.grinds}, 15 cm under ${low.s.grinds}`, "never rising; 0, 0, 0");
+  // ---- 15c. the ledge: along 10 m, through a 30 deg bend, off at a 90 deg corner (straight on, lands)
+  const led = drop(LEDGE.x - 0.3, LEDGE.z0 + 1, 0, 6, LEDGE.h + 0.08, { secs: 5 });
+  check("grind: a 30 deg bend is followed, a 90 deg corner is left", led.s.grinds === 1 && led.s.grindExit === "corner" && led.s.grindDist > 12.5 && led.s.crashes === 0 && led.s.lastLanding?.band !== "bail",
+    `${f2(led.s.grindDist)} m on the ledge (10 + 4 m to the corner), left at the "${led.s.grindExit}", landing ${led.s.lastLanding?.band}`, "corner after ~14 m, no crash");
+  // ---- 15d. balance, stall, hop out
+  const keep = { ...BIKE };
+  BIKE.grindAssist = 0; const fall = drop(LEDGE.x - 0.3, LEDGE.z0 + 1, 0, 6, LEDGE.h + 0.08);
+  const save = drop(LEDGE.x - 0.3, LEDGE.z0 + 1, 0, 6, LEDGE.h + 0.08, { input: (s) => ({ steer: -clampN(s.grindBal * 2.5) }) });
+  Object.assign(BIKE, keep);
+  const helped = drop(LEDGE.x - 0.3, LEDGE.z0 + 1, 0, 6, LEDGE.h + 0.08);
+  check("grind balance: no helper + no input falls off; leaning against it holds; the helper holds", fall.s.grindExit === "fell off" && save.s.grindExit === "corner" && helped.s.grindExit === "corner",
+    `no helper: "${fall.s.grindExit}" after ${f2(fall.s.grindDist)} m; leaning against: "${save.s.grindExit}"; helper ${keep.grindAssist}: "${helped.s.grindExit}"`, "fell off, corner, corner");
+  const stall = drop(side, B1.z, 0, 0.3, seatTop, { secs: 2.5 }), hopOut = drop(side, B1.z - 0.6, 0, 3, seatTop, { input: (s, i) => ({ hop: i > 10 && i < 40 }) });
+  check("stall (slow onto the bench) holds, then drops off; a hop leaves a grind", stall.s.stalls === 1 && stall.s.grindExit === "stall" && hopOut.s.grindExit === "hop" && hopOut.s.crashes === 0,
+    `stall: ${stall.s.stalls}, left by "${stall.s.grindExit}"; hop: left by "${hopOut.s.grindExit}", landing ${hopOut.s.lastLanding?.band}`, "stall then off; hop out");
+  // ---- 15d'. as a player does it: from the lab's spot beside the bench / the ledge, 3-5 m/s, a full hop released at
+  // 0-0.6 s before the edge's start (the bike's middle): the releases that end on it, never a crash
+  const { SPOTS: SP } = await import("../../viewer/bike/bikeGround.js");
+  const playerHop = (spot, startZ, v, lead, secs = 4) => {
+    const [x, z, h] = SP[spot], s = createBikeState(x, z, h, 0); s.vz = v; let held = false, done = false;
+    for (let i = 0; i < secs * 120; i++) { const tl = (startZ - s.z) / Math.max(0.1, s.vz); if (!done && !held && tl < lead + 0.3) held = true; if (held && tl <= lead) { held = false; done = true; } stepBike(s, { hop: held, pedal: 0.3 }, lab); }
+    return s;
+  };
+  for (const [spot, startZ] of [["bench", B1.z - 0.9], ["ledge", LEDGE.z0]]) {
+    let ok = 0, n = 0, crashes = 0, lo = Infinity, hi = -Infinity;
+    for (const v of [3, 4, 5]) for (let k = 0; k <= 12; k++) { const lead = k * 0.05, s = playerHop(spot, startZ, v, lead, spot === "bench" ? 4 : 5); n++; crashes += s.crashes; if (s.grinds) { ok++; lo = Math.min(lo, lead); hi = Math.max(hi, lead); } }
+    check(`grind as a player: a full hop onto the ${spot} from beside it`, ok >= n * 0.5 && crashes === 0, `${ok} / ${n} hops grind (3, 4, 5 m/s; released ${f2(lo)}-${f2(hi)} s before it), ${crashes} crashes`, ">= half, 0 crashes");
+  }
+  // ---- 15e. stairs: the ramp rides down smoothly (the raw steps do not), up = off and pushing
+  const downStairs = (g, v) => {
+    const env = createBikeEnv({ sets: () => [COL], ground: g, edges: testEdges }), s = createBikeState(130, 76, Math.PI, testHeightRamped(130, 76));
+    s.vz = -v; let maxA = 0, pv = 0;
+    for (let i = 0; i < 900 && s.z > STAIRS.z0 - 3; i++) { stepBike(s, {}, env); if (i) maxA = Math.max(maxA, Math.abs(s.vy - pv) / DT / 9.81); pv = s.vy; }
+    return { s, maxA };
+  };
+  const r2 = downStairs(testGroundRamped, 2), r4 = downStairs(testGroundRamped, 4), raw4 = downStairs(testGround, 4);
+  check("stairs (8 x 15 cm): ridden down on the ramp", r2.s.crashes === 0 && r4.s.crashes === 0 && r2.s.z < STAIRS.z0 - 2 && r4.s.z < STAIRS.z0 - 2 && r4.maxA < 3,
+    `2 m/s: ${r2.s.crashes ? r2.s.crashCause : "ridden"}, peak ${f1(r2.maxA)} g; 4 m/s: ${r4.s.crashes ? r4.s.crashCause : "ridden"}, peak ${f1(r4.maxA)} g (the raw steps at 4 m/s: ${raw4.s.crashes ? `"${raw4.s.crashCause}"` : "ridden"}, peak ${f1(raw4.maxA)} g)`, "ridden, < 3 g");
+  const up = (() => { const s = createBikeState(130, 66, 0, 0); s.vz = 4; let pushed = false; for (let i = 0; i < 1500 && s.z < STAIRS.zl; i++) { stepBike(s, { pedal: 1 }, lab); if (s.pushing) pushed = true; } return { s, pushed }; })();
+  check("stairs: up = off the bike, pushed to the top", up.pushed && up.s.z >= STAIRS.zl - 0.1 && up.s.crashes === 0, `pushed ${up.pushed}, reached the landing ${up.s.z >= STAIRS.zl - 0.1} in ${f1(up.s.t)} s`, "pushed up");
+  // ---- 15f. a real spot of D6 (the lab's ?city=D6): its stairs ridden down, a bench ground, a real kerb face
+  const C = buildCitySpot(docs, [-1287, 721], { SURF, KIND });
+  const CCOL = buildColliders(C.polys, C.circles, C.bounds);
+  const cenv = createBikeEnv({ sets: () => [CCOL], ground: groundQuery(C.height, C.surface, 0.03), edges: C.edges });
+  const st = C.lines.find((l) => l.type === EDGE.stair);
+  let [a, b] = [st.pts[0], st.pts.at(-1)]; if (a[1] < b[1]) [a, b] = [b, a];
+  const L = Math.hypot(b[0] - a[0], b[2] - a[2]), ux = (b[0] - a[0]) / L, uz = (b[2] - a[2]) / L;
+  const cs = createBikeState(a[0] - ux * 2.5, a[2] - uz * 2.5, Math.atan2(ux, uz), C.height(a[0] - ux * 2.5, a[2] - uz * 2.5)); cs.vx = ux * 3; cs.vz = uz * 3;
+  for (let i = 0; i < 600; i++) { stepBike(cs, {}, cenv); if ((cs.x - a[0]) * ux + (cs.z - a[2]) * uz > L + 1) break; }
+  const past = (cs.x - a[0]) * ux + (cs.z - a[2]) * uz - L;
+  const rin = randomInputs(9, 120 * 20);
+  { const w = createBikeState(-1280, 722, 0.5, C.height(-1280, 722)); for (const i of rin) stepBike(w, i, cenv); }      // (warm: the city's code paths jitted)
+  let usC = Infinity;      // (the best of 3: this laptop's timing noise is +-2x)
+  for (let rep = 0; rep < 3; rep++) {
+    const tc = process.hrtime.bigint(), cb = createBikeState(-1280, 722, 0.5, C.height(-1280, 722));
+    for (const i of rin) stepBike(cb, i, cenv);
+    usC = Math.min(usC, Number(process.hrtime.bigint() - tc) / 1000 / rin.length);
+  }
+  check("city spot D6: built, its stairs ridden down, the cost a step", past > 0.9 && cs.crashes === 0 && usC < 20,
+    `built in ${f1(C.ms)} ms (${C.edges.n} segments, ${C.polys.length} colliders, raster ${(C.raster.grid.byteLength / 1e6).toFixed(1)} MB); the ${f1(a[1] - b[1])} m flight: ${cs.crashes ? cs.crashCause : "ridden"}; ${f2(usC)} us a step riding randomly there`, "ridden, < 20 us a step");
+  // the step cost with grinds in it (the lab's ledge, again and again): the edge layer's share
+  const tg = process.hrtime.bigint(); let ng = 0;
+  for (let k = 0; k < 20; k++) { const g = drop(LEDGE.x - 0.3, LEDGE.z0 + 1, 0, 6, LEDGE.h + 0.08, { secs: 1.5 }); ng += g.s.steps; }
+  const usG = Number(process.hrtime.bigint() - tg) / 1000 / ng;
+  check("cost a step with grinds", usG < 20, `${f2(usG)} us (20 ledge grinds, ${ng} steps)`, "< 20 us");
+}
+function clampN(v) { return v < -1 ? -1 : v > 1 ? 1 : v; }
 
 if (!quiet || failed) {
   console.log("| check | result | got | want |\n|---|---|---|---|");

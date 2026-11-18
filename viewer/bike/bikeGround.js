@@ -11,8 +11,14 @@
 //   slope   (x 40-130, z 0) 12 % up 40 m, a 10 m plateau 4.8 m up, 12 % down
 //   steep   (x 40-88, z 25) 20 % up 20 m (pushing), plateau, down
 //   plaza   (z -40..10) asphalt; a wall (z -21.7), a slalom of posts, a log (25 cm) to hop, a parked car
+//   street  (x 100-140, z 30-95, feel round 2) asphalt: a street bench, a ledge (a front-garden wall: a 30 deg bend then a
+//           90 deg corner), a flight of 8 stairs (15 cm risers) up to a landing with a handrail, a ramp back down.
+//           Built as the CITY's docs (furniture benches[], gardens segs[] + styles[], features lines kind "steps"), run
+//           through the same extractors (viewer/bike/bikeEdges.js) -> the edge layer, the stair ramp, the colliders.
 // Elsewhere: grass.
 import { SURF, groundQuery } from "./bikePhysics.js";
+import { benchEdges, gardenEdges, stairEdges, handrailEdges, buildEdgeLayer, withStairRamps, BENCH, benchPieces } from "./bikeEdges.js";
+import { gardenPieces } from "../gardens/gardenClear.js";
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -35,6 +41,11 @@ export const LOG = { x0: -4, x1: -1, z0: -14.15, z1: -13.85, top: 0.25 };
 export const CAR = { x: 7, z: -12, w: 1.8, l: 4.3, top: 1.45 };
 export const POSTS = Array.from({ length: 8 }, (_, k) => ({ x: -18 + (k % 2) * 2.4, z: -6 - k * 3.2, r: 0.1 }));
 export const BOUNDS = { x0: -80, x1: 150, z0: -40, z1: 110 };
+// the street (feel round 2)
+export const STREET = { x0: 100, x1: 140, z0: 30, z1: 95 };
+export const STAIRS = { x0: 128, x1: 132, z0: 70, n: 8, rise: 0.15, run: 0.3, land: 7.6, ramp: 9.6 };
+STAIRS.z1 = STAIRS.z0 + STAIRS.n * STAIRS.run; STAIRS.h = STAIRS.n * STAIRS.rise;
+STAIRS.zl = STAIRS.z1 + STAIRS.land; STAIRS.zr = STAIRS.zl + STAIRS.ramp;
 
 const F = [];
 const feature = (name, x0, x1, z0, z1, surf, h, res = 0.2) => { const f = { name, x0, x1, z0, z1, surf, h, res }; F.push(f); return f; };
@@ -72,12 +83,19 @@ feature("bowl", BOWL.x - BOWL.R - 1, BOWL.x + BOWL.R + 1, BOWL.z - BOWL.R - 1, B
 }, 0.25);
 feature("kerb", KERB.x0, KERB.x1, KERB.z0, KERB.z1, SURF.setts, () => KERB.h, 0.5);
 feature("sand", SAND.x0, SAND.x1, SAND.z0, SAND.z1, SURF.sand, () => 0, 0.5);
+// the stairs: real treads and risers (faces), a landing, a 12.5 % ramp back down; walls on both sides (colliders)
+feature("stairs", STAIRS.x0, STAIRS.x1, STAIRS.z0, STAIRS.zr, SURF.asphalt, (x, z) => {
+  const S = STAIRS;
+  if (z < S.z1) return Math.min(S.n, Math.floor((z - S.z0) / S.run) + 1) * S.rise;
+  if (z < S.zl) return S.h;
+  return S.h * (1 - (z - S.zl) / S.ramp);
+}, 0.05);
 const slopeH = (s, G, run, flat) => G * (sm(s) - sm(s - run) - sm(s - run - flat) + sm(s - 2 * run - flat));
 feature("slope", SLOPE.x0 - 2, SLOPE.x0 + 92, SLOPE.z0, SLOPE.z1, SURF.asphalt, (x) => slopeH(x - SLOPE.x0, SLOPE.grade, 40, 10), 0.5);
 feature("steep", STEEP.x0 - 2, STEEP.x0 + 48, STEEP.z0, STEEP.z1, SURF.asphalt, (x) => slopeH(x - STEEP.x0, STEEP.grade, 20, 6), 0.5);
 
 /** asphalt areas outside the features (the rest is grass) */
-const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50]];
+const ASPHALT = [[-60, 140, -40, 10], [-3, 3, 10, 100], [10, 20, 10, 60], [24, 28, 10, 50], [STREET.x0, STREET.x1, STREET.z0, STREET.z1]];
 const inR = (x, z, a, b, c, d) => x >= a && x < b && z >= c && z < d;
 
 export const FEATURES = F;
@@ -97,6 +115,32 @@ export function testSurface(x, z) {
 }
 /** the ground query for bikePhysics */
 export const testGround = groundQuery(testHeight, testSurface, 0.03);
+
+// ---------------------------------------------------------------- the street's pieces as the city's docs (feel round 2)
+/** data/furniture/<T>.json-like: one street bench, its long axis along z (world x axis = (cos yaw, -sin yaw)) */
+export const LAB_FURNITURE = { benches: [{ id: "lab:bench", piece: "bench_street", x: 110, y: 0, z: 46, yaw: -Math.PI / 2 }] };
+/** data/gardens/<T>.json-like: a 32 cm wall + 8 cm coping (a 40 cm ledge): 10 m along z, a 30 deg bend, 4 m, a 90 deg
+ *  corner, 4 m */
+export const LEDGE = { x: 118, z0: 40, h: 0.32 };
+export const LAB_GARDENS = (() => {
+  const P = [[LEDGE.x, LEDGE.z0]];
+  const go = (dx, dz, L, n) => { for (let k = 0; k < n; k++) { const [x, z] = P.at(-1); P.push([x + dx * L / n, z + dz * L / n]); } };
+  go(0, 1, 10, 5); go(Math.sin(Math.PI / 6), Math.cos(Math.PI / 6), 4, 2); go(Math.cos(Math.PI / 6), -Math.sin(Math.PI / 6), 4, 2);
+  const segs = [];
+  for (let i = 1; i < P.length; i++) segs.push([P[i - 1][0], 0, P[i - 1][1], P[i][0], 0, P[i][1], 0, LEDGE.h]);
+  return { styles: [{ kind: "wall", cap: 1, rail: -1, wallH: LEDGE.h, railH: 0 }], segs, pillars: [], gates: [], hedges: [] };
+})();
+/** data/tiles/<T>/features.json-like: the flight as an OSM highway=steps line, bottom to top */
+export const LAB_FEATURES = { lines: [{ id: "lab:steps", kind: "steps", line: [[(STAIRS.x0 + STAIRS.x1) / 2, STAIRS.z0], [(STAIRS.x0 + STAIRS.x1) / 2, STAIRS.z1]], tags: { highway: "steps", width: String(STAIRS.x1 - STAIRS.x0) } }] };
+/** the edge layer of the lab (the city's extractors), and the stair ramp over the real steps */
+export function testEdgeLines() {
+  const stairs = stairEdges(LAB_FEATURES, testHeight);
+  return [...benchEdges(LAB_FURNITURE), ...gardenEdges(LAB_GARDENS), ...stairs, ...handrailEdges(stairs, { side: -1 })];
+}
+export const testEdges = buildEdgeLayer(testEdgeLines(), BOUNDS);
+export const testHeightRamped = withStairRamps(testHeight, testEdges);
+/** the lab's ground with the stairs as a ramp (what the bike rides; testGround = the raw steps) */
+export const testGroundRamped = groundQuery(testHeightRamped, testSurface, 0.03);
 
 /** the colliders (plain lists for viewer/drive/colliders.js buildColliders) */
 export function testColliders(KIND) {
@@ -119,6 +163,14 @@ export function testColliders(KIND) {
       polys.push(box(x, x + 2, F0.z0 - 0.3, F0.z0, KIND.wall, top), box(x, x + 2, F0.z1, F0.z1 + 0.3, KIND.wall, top));
     }
   }
+  // the street: the bench (a box to its backrest's top, as bikeCitySpot), the ledge (gardenPieces, as the city's), the
+  // stairs' side walls, the handrail (a thin band to its top)
+  for (const b of LAB_FURNITURE.benches) {
+    const d = BENCH[b.piece], c = Math.cos(b.yaw), sn = Math.sin(b.yaw);
+    for (const piece of benchPieces(b)) polys.push({ ...piece, kind: KIND.furniture });
+  }
+  for (const p of gardenPieces(LAB_GARDENS)) polys.push({ rings: p.rings, kind: KIND.furniture, base: p.base, top: p.top });
+  for (const x of [STAIRS.x0 - 0.3, STAIRS.x1]) polys.push(box(x, x + 0.3, STAIRS.z0, STAIRS.zr, KIND.wall, STAIRS.h + 1.0));
   const circles = POSTS.map((p) => ({ x: p.x, z: p.z, r: p.r, kind: KIND.post }));
   return { polys, circles, bounds: BOUNDS };
 }
@@ -126,5 +178,5 @@ export function testColliders(KIND) {
 /** where to start each test run / the lab's teleport buttons: [x, z, heading] */
 export const SPOTS = {
   start: [0, 0, 0], kicker: [0, 8, 0], table: [0, 32, 0], pump: [-15, 2, 0], roots: [-25, 0, 0], bowl: [-36, 55, 0],
-  kerb: [15, 12, 0], sand: [26, 30, 0], slope: [30, 0, Math.PI / 2], steep: [30, 25, Math.PI / 2], wall: [0, -10, Math.PI], log: [-2.5, -6, Math.PI],
+  kerb: [15, 12, 0], sand: [26, 30, 0], bench: [109.45, 38, 0], ledge: [117.6, 32, 0], stairs: [130, 79, Math.PI], slope: [30, 0, Math.PI / 2], steep: [30, 25, Math.PI / 2], wall: [0, -10, Math.PI], log: [-2.5, -6, Math.PI],
 };

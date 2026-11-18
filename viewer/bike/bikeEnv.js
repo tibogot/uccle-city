@@ -14,13 +14,14 @@ import { BIKE_BODY, bikeHit } from "./bikePhysics.js";
  * sets(x, z, r) -> collider sets that may hold items within r of (x, z) (one per tile; the lab: one)
  * ground(x, z, out) -> fills { h, nx, ny, nz, surf } (bikePhysics groundQuery makes one from a height function)
  */
-export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit = bikeHit }) {
+export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit = bikeHit, edges = null }) {
   const near = [];
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
   const body = { hx: dims.hx, hz: dims.hz, cos: 1, sin: 0 };
   const wheel = { hx: 0.1, hz: 0.15, cos: 1, sin: 0 };   // the low part of one wheel (for the low pieces)
   const env = {
     ground,
+    edges,             // the edge layer (bikeEdges.js: grinds, stalls; feel round 2) or null
     near,
     tested: 0,
     prepare(s, reach) {
@@ -39,6 +40,9 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
           // a low piece with a top (a log, a low wall, a bench): each WHEEL against it, at its own height (the front
           // clears it first, then the rear); anything else: the whole bike's box
           if (id < col.P && col.ptop[id] < 50) {
+            // (just off a grind, feel round 2: the wheels hung either side of the edge under its top; the edge's own
+            // low piece is not a wall to them while they leave it)
+            if (s.grindCD > 0) continue;
             let hitW = false;
             for (let w = 0; w < 2 && !hitW; w++) {
               if (heightClear(col, id, s.wheelBot[w])) continue;

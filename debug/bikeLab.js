@@ -9,12 +9,18 @@
 // with E (viewer/kid/kidMount.js); riding, his body is driven by the bike (viewer/kid/riderIK.js: hands on the grips,
 // feet on the pedals, hips on the seat, standing, crouching, leaning, manuals; the crash tumble and the get-up).
 // ?kid=0: the placeholder rider only (phase 1); ?ride=1: start on the bike.
+// FEEL ROUND 2 (docs/BIKE.md): the edge layer (viewer/bike/bikeEdges.js) drawn as coloured lines (panel "Edges"); the
+// street (x 100-140): a bench, a ledge, stairs + a handrail, built as the city's docs; grinds / stalls on them.
+// ?city=D6 (&at=x,z): a REAL spot of a tile instead of the test ground (viewer/bike/bikeCitySpot.js: its DTM, the
+// sidewalks raised as real kerbs, buildings, garden walls / rails, benches, stairs as ramps, the edge layer).
 import * as THREE from "three/webgpu";
 import { attribute, positionWorld, floor, mod, mix, float, fract, smoothstep, min, vec3 } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
-import { BIKE, BIKE_RANGES, SURFACES, DT, createBikeState, advanceBike, bikePose, bikeSpeed, getUp } from "../viewer/bike/bikePhysics.js";
+import { BIKE, BIKE_RANGES, SURFACES, SURF, DT, createBikeState, advanceBike, bikePose, bikeSpeed, getUp, groundQuery } from "../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../viewer/bike/bikeEnv.js";
-import { FEATURES, testHeight, testSurface, testGround, testColliders, SPOTS, BOUNDS } from "../viewer/bike/bikeGround.js";
+import { FEATURES, testHeight, testSurface, testColliders, SPOTS, BOUNDS, testGroundRamped, testHeightRamped, testEdges } from "../viewer/bike/bikeGround.js";
+import { loadCityDocs, buildCitySpot } from "../viewer/bike/bikeCitySpot.js";
+import { EDGE, EDGE_NAMES, BENCH } from "../viewer/bike/bikeEdges.js";
 import { buildColliders, KIND } from "../viewer/drive/colliders.js";
 import { createBikeModel } from "../viewer/bike/bikeModel.js";
 import { BikeCamera, BIKE_CAMERA } from "../viewer/bike/bikeCamera.js";
@@ -48,6 +54,22 @@ sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.
 Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 90 });
 scene.add(hemi, sun, sun.target);
 
+// ---------------------------------------------------------------- the world: the test ground or a real city spot
+const CITY = qs.get("city");
+let W;
+if (CITY) {
+  const at = (qs.get("at") || "-1287,721").split(",").map(Number);
+  const docs = await loadCityDocs(CITY, async (p) => new Uint8Array(await (await fetch(p)).arrayBuffer()), "../");
+  const C = buildCitySpot(docs, at, { SURF, KIND });
+  console.log("[bike lab] city spot", CITY, at, `${C.ms.toFixed(0)} ms`, C.counts);
+  W = { city: true, height: C.height, surface: C.surface, ground: groundQuery(C.height, C.surface, 0.03), polys: C.polys, circles: C.circles, bounds: C.bounds,
+    edges: C.edges, lines: C.lines, spots: { ...C.spots }, drawH: C.height };
+  scene.fog.near = 60; scene.fog.far = 160;
+} else {
+  const CL0 = testColliders(KIND);
+  W = { city: false, height: testHeightRamped, surface: testSurface, ground: testGroundRamped, polys: CL0.polys, circles: CL0.circles, bounds: CL0.bounds,
+    edges: testEdges, spots: SPOTS, drawH: testHeight };
+}
 // ---------------------------------------------------------------- the ground (meshes from the same height function)
 const SURF_COLOR = [0x45474b, 0x8a8378, 0x8c6c4a, 0x5f8540, 0xd9c590, 0x5e4a33].map((c) => new THREE.Color(c));
 const groundMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.93 });
@@ -57,14 +79,14 @@ const groundMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.93 });
   groundMat.colorNode = attribute("color", "vec3").mul(mix(float(0.9), float(1.0), cell)).mul(mix(float(0.7), float(1), line));
 }
 const inside = (f, x, z) => x >= f.x0 && x < f.x1 && z >= f.z0 && z < f.z1;
-function gridMesh(x0, x1, z0, z1, res, keep = null) {
+function gridMesh(x0, x1, z0, z1, res, keep = null, H = testHeight, Sf = testSurface) {
   const nx = Math.max(1, Math.round((x1 - x0) / res)), nz = Math.max(1, Math.round((z1 - z0) / res));
   const pos = new Float32Array((nx + 1) * (nz + 1) * 3), col = new Float32Array((nx + 1) * (nz + 1) * 3), idx = [];
   for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) {
     const x = x0 + (x1 - x0) * i / nx, z = z0 + (z1 - z0) * j / nz, k = (j * (nx + 1) + i) * 3;
     const sx = Math.min(x, x1 - 1e-4), sz = Math.min(z, z1 - 1e-4);        // (sample inside the rectangle)
-    pos[k] = x; pos[k + 1] = testHeight(sx, sz); pos[k + 2] = z;
-    const c = SURF_COLOR[testSurface(sx, sz)] || SURF_COLOR[0]; col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
+    pos[k] = x; pos[k + 1] = H(sx, sz); pos[k + 2] = z;
+    const c = SURF_COLOR[Sf(sx, sz)] || SURF_COLOR[0]; col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
   }
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     if (keep && !keep(x0 + (x1 - x0) * (i + 0.5) / nx, z0 + (z1 - z0) * (j + 0.5) / nz)) continue;
@@ -77,10 +99,13 @@ function gridMesh(x0, x1, z0, z1, res, keep = null) {
   const m = new THREE.Mesh(geo, groundMat); m.receiveShadow = true; scene.add(m);
   return m;
 }
+if (W.city) gridMesh(W.bounds.x0, W.bounds.x1, W.bounds.z0, W.bounds.z1, 0.25, null, W.drawH, W.surface);
+else {
 gridMesh(BOUNDS.x0, BOUNDS.x1, BOUNDS.z0, BOUNDS.z1, 1, (x, z) => !FEATURES.some((f) => inside(f, x, z)));
 for (const f of FEATURES) gridMesh(f.x0, f.x1, f.z0, f.z1, f.res);
+}
 // skirts: a feature's border that stands above the base ground gets a vertical face down to it (the kerb, the slopes)
-{
+if (!W.city) {
   const pos = [], col = [];
   const c = new THREE.Color(0x77736b);
   for (const f of FEATURES) {
@@ -106,33 +131,99 @@ for (const f of FEATURES) gridMesh(f.x0, f.x1, f.z0, f.z1, f.res);
 }
 
 // ---------------------------------------------------------------- colliders (+ what they stand for, drawn)
-const CL = testColliders(KIND);
+const CL = { polys: W.polys, circles: W.circles, bounds: W.bounds };
 const COL = buildColliders(CL.polys, CL.circles, CL.bounds);
 const solidMat = { [KIND.building]: new THREE.MeshStandardNodeMaterial({ color: 0xb9a48a, roughness: 0.9 }), [KIND.car]: new THREE.MeshStandardNodeMaterial({ color: 0x5b6670, roughness: 0.5, metalness: 0.3 }),
   [KIND.furniture]: new THREE.MeshStandardNodeMaterial({ color: 0x6b4a2e, roughness: 0.95 }), [KIND.wall]: new THREE.MeshStandardNodeMaterial({ color: 0x9c958a, roughness: 0.9 }) };
-for (const p of CL.polys) {
-  const r = p.rings[0], xs = r.map((q) => q[0]), zs = r.map((q) => q[1]);
-  const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs), top = p.top ?? (p.kind === KIND.car ? 1.45 : 2.5);
-  const by = testHeight((x0 + x1) / 2, (z0 + z1) / 2);
-  const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, p.kind === KIND.wall ? top - by : top, z1 - z0), solidMat[p.kind] || solidMat[KIND.building]);
-  m.position.set((x0 + x1) / 2, p.kind === KIND.wall ? by + (top - by) / 2 : top / 2, (z0 + z1) / 2);
-  m.castShadow = m.receiveShadow = true; scene.add(m);
+// (feel round 2: every piece as a PRISM of its own ring (a bent ledge, a rotated bench, a building footprint), merged
+// per material: a few draws; a bench drawn as a bench: legs, a seat at its height, a backrest)
+{
+  const acc = new Map();
+  const push = (mat, P) => { (acc.get(mat) || acc.set(mat, []).get(mat)).push(...P); };
+  const prism = (ring, y0, y1) => {
+    const P = [], R = ring.length > 1 && ring[0][0] === ring.at(-1)[0] && ring[0][1] === ring.at(-1)[1] ? ring.slice(0, -1) : ring;
+    // (windings made right one by one: a top triangle faces up, a side faces away from the ring's centre)
+    const tri = THREE.ShapeUtils.triangulateShape(R.map(([x, z]) => new THREE.Vector2(x, z)), []);
+    for (const [a, b, c] of tri) {
+      const A = R[a], Bq = R[b], Cq = R[c], up = (Bq[1] - A[1]) * (Cq[0] - A[0]) - (Bq[0] - A[0]) * (Cq[1] - A[1]);
+      if (up >= 0) P.push(A[0], y1, A[1], Bq[0], y1, Bq[1], Cq[0], y1, Cq[1]); else P.push(A[0], y1, A[1], Cq[0], y1, Cq[1], Bq[0], y1, Bq[1]);
+    }
+    const area = R.reduce((acc, q, i) => { const n = R[(i + 1) % R.length]; return acc + q[0] * n[1] - n[0] * q[1]; }, 0);
+    for (let i = 0; i < R.length; i++) {
+      const A = R[i], Bq = R[(i + 1) % R.length];
+      // the outward normal of edge A->B in plan is (dz, -dx) for a positive-area ring; the quad A0 B0 B1 faces it when
+      // (B-A) x (up) points that way: keep A->B for area > 0, else B->A
+      const q = area > 0 ? [Bq, A] : [A, Bq];
+      P.push(q[0][0], y0, q[0][1], q[1][0], y0, q[1][1], q[1][0], y1, q[1][1], q[0][0], y0, q[0][1], q[1][0], y1, q[1][1], q[0][0], y1, q[0][1]);
+    }
+    return P;
+  };
+  const benchMat = new THREE.MeshStandardNodeMaterial({ color: 0x8a5a33, roughness: 0.8 }), legMat = new THREE.MeshStandardNodeMaterial({ color: 0x3b3f44, roughness: 0.5, metalness: 0.5 });
+  for (const p of CL.polys) {
+    if (p.kind === KIND.island || p.kind === KIND.hedge && W.city) continue;
+    const r = p.rings[0], cx = r.reduce((a, q) => a + q[0], 0) / r.length, cz = r.reduce((a, q) => a + q[1], 0) / r.length, gy = W.drawH(cx, cz);
+    if (p.what === "bench back") continue;          // (drawn with its bench)
+    if (p.what === "bench") {
+      const b = p.bench, d = BENCH[b.piece] || BENCH.bench_street, c = Math.cos(b.yaw), sn = Math.sin(b.yaw), y = b.y || 0;
+      const box = (u0, u1, v0, v1, y0, y1, mat) => push(mat, prism([[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(([u, v]) => [b.x + u * c + v * sn, b.z - u * sn + v * c]), y0, y1));
+      box(-d.hx, d.hx, -d.hz + 0.05, d.hz - 0.02, y + d.seat - 0.05, y + d.seat, benchMat);                       // the seat
+      if (b.piece !== "bench_backless") box(-d.hx, d.hx, -d.hz, -d.hz + 0.05, y + d.seat + 0.05, y + 0.85, benchMat);   // the backrest
+      for (const u of [-d.hx + 0.1, d.hx - 0.15]) box(u, u + 0.05, -d.hz + 0.05, d.hz - 0.05, y, y + d.seat - 0.05, legMat);
+      continue;
+    }
+    const y0 = p.drawBase ?? (p.base > -100 ? p.base : gy - 0.5), y1 = p.drawTop ?? p.top ?? (p.kind === KIND.car ? 1.45 : 2.5);
+    for (const ring of p.rings.slice(0, 1)) push(solidMat[p.kind] || solidMat[KIND.building], prism(ring, y0, y1));
+  }
+  for (const [mat, P] of acc) {
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mat); m.castShadow = m.receiveShadow = true; scene.add(m);
+  }
+  // the lab's handrail (an edge with no collider piece of its own: a steel tube + posts down to the steps)
+  if (!W.city) {
+    const railMat = new THREE.MeshStandardNodeMaterial({ color: 0x9aa3ab, roughness: 0.35, metalness: 0.8 }), E = W.edges;
+    for (let k = 0; k < E.n; k++) {
+      if (E.lineType[E.segLine[k]] !== EDGE.rail) continue;
+      const o = k * 6, a = new THREE.Vector3(E.seg[o], E.seg[o + 1], E.seg[o + 2]), b = new THREE.Vector3(E.seg[o + 3], E.seg[o + 4], E.seg[o + 5]);
+      const L = a.distanceTo(b), m = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, L, 10), railMat);
+      m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()); m.castShadow = true; scene.add(m);
+      for (const t of [0.05, 0.5, 0.95]) {
+        const q = a.clone().lerp(b, t), gy = testHeight(q.x, q.z), ph = q.y - gy;
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, ph, 8), railMat); post.position.set(q.x, gy + ph / 2, q.z); post.castShadow = true; scene.add(post);
+      }
+    }
+  }
 }
+// the EDGE LAYER drawn (panel "Edges": kerb grey, ledge / wall orange, bench brown, rail blue, stairs green; grindable
+// ones bright, the others dim)
+const EDGE_COL = [0x9a9a9a, 0xff9a2e, 0xc77a3a, 0xffb347, 0x4fb3ff, 0x5ad16a];
+const edgeLines = (() => {
+  const E = W.edges, pos = [], col = [], c = new THREE.Color();
+  for (let k = 0; k < E.n; k++) {
+    const o = k * 6, li = E.segLine[k];
+    c.set(EDGE_COL[E.lineType[li]] || 0xffffff).multiplyScalar(E.lineGrind[li] ? 1 : 0.55);
+    pos.push(E.seg[o], E.seg[o + 1] + 0.012, E.seg[o + 2], E.seg[o + 3], E.seg[o + 4] + 0.012, E.seg[o + 5]);
+    col.push(c.r, c.g, c.b, c.r, c.g, c.b);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  const m = new THREE.LineSegments(g, new THREE.LineBasicNodeMaterial({ vertexColors: true, depthTest: false, transparent: true, opacity: 0.85 }));
+  m.renderOrder = 10; scene.add(m);
+  return m;
+})();
 { const pm = new THREE.MeshStandardNodeMaterial({ color: 0xe8452c, roughness: 0.6 });
   for (const c of CL.circles) { const m = new THREE.Mesh(new THREE.CylinderGeometry(c.r, c.r, 1.1, 12), pm); m.position.set(c.x, 0.55, c.z); m.castShadow = true; scene.add(m); } }
 
 // ---------------------------------------------------------------- the bike
-const env = createBikeEnv({ sets: () => [COL], ground: testGround });
+const env = createBikeEnv({ sets: () => [COL], ground: W.ground, edges: W.edges });
 const model = createBikeModel(BIKE, { rider: !USE_KID });
 scene.add(model.root, model.fallen);
-const groundAt = (x, z) => testHeight(x, z);
+const groundAt = (x, z) => W.height(x, z);
 const chase = new BikeCamera(camera, BIKE_CAMERA);
 if (qs.get("cam")) BIKE_CAMERA.mode = qs.get("cam");
 let s;
-const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || "start", info: "", card: true };
+const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true };
 function place(name) {
-  const [x, z, h] = SPOTS[name] || SPOTS.start;
-  s = createBikeState(x, z, h, testHeight(x, z));
+  const [x, z, h] = W.spots[name] || Object.values(W.spots)[0];
+  s = createBikeState(x, z, h, W.height(x, z));
   chase.reset(); P.spot = name;
   if (K.on) { mount.state = "riding"; mount.t = 0; mount.park.mode = "standing"; K.tp.on = false; K.tp.body.root.visible = true; camBlend.t = 1; }
 }
@@ -150,9 +241,9 @@ place(P.spot);
 if (USE_KID) {
   try {
     const world = new CollisionWorld();
-    world.add(new Heightfield(testHeight));
-    const CLp = testColliders(KIND);
-    world.add(new PrismSet(CLp.polys.map((p) => ({ rings: p.rings, base: -2, top: p.kind === KIND.wall ? (p.top ?? 2.5) : (p.top ?? (p.kind === KIND.car ? 1.45 : 2.5)) })),
+    world.add(new Heightfield(W.height));
+    const CLp = CL;
+    world.add(new PrismSet(CLp.polys.map((p) => ({ rings: p.rings, base: -2, top: p.drawTop ?? (p.kind === KIND.wall ? (p.top ?? 2.5) : (p.top ?? (p.kind === KIND.car ? 1.45 : 2.5))) })),
       CLp.circles.map((c) => ({ x: c.x, z: c.z, r: c.r, base: -2, top: 1.1 }))));
     const tp = new ThirdPerson({ scene, camera, dom: renderer.domElement, world, controller: { height: 1.45, radius: 0.24 } });
     const info = await tp.useCharacter("kid", renderer);
@@ -161,7 +252,7 @@ if (USE_KID) {
     K.E = K.bmx ? K.bmx.empties : findBikeEmpties(model.root, model.empties.frame); K.E.cg = BIKE.cgHeight;
     K.on = true;
     const sp = mountSpot(s);
-    if (mount.state === "foot") { tp.start(sp.x + Math.cos(s.heading) * 0.6, testHeight(sp.x, sp.z) + 0.05, sp.z - Math.sin(s.heading) * 0.6, s.heading); }
+    if (mount.state === "foot") { tp.start(sp.x + Math.cos(s.heading) * 0.6, W.height(sp.x, sp.z) + 0.05, sp.z - Math.sin(s.heading) * 0.6, s.heading); }
     else { tp.on = false; tp.body.root.visible = true; }
     console.log("[bike lab] the kid", info.label, info.lods, "tris per LOD");
   } catch (e) { console.warn("[bike lab] the kid failed, placeholder rider:", e); model.root.traverse?.(() => {}); }
@@ -173,7 +264,7 @@ const keys = new BikeKeys({ onKey: (code) => {
   else if (code === "KeyP") P.pause = !P.pause;
   else if (code === "KeyG") { if (s.crashed) getUp(s, env); }
   else if (code === "Slash" || code === "F1") { P.card = !P.card; card.classList.toggle("hidden", !P.card); }
-  else if (/^Digit[1-9]$/.test(code)) { const n = Object.keys(SPOTS)[+code.slice(5) - 1]; if (n) { place(n); banner(n); } }
+  else if (/^Digit[1-9]$/.test(code)) { const n = Object.keys(W.spots)[+code.slice(5) - 1]; if (n) { place(n); banner(n); } }
 } });
 
 // ---------------------------------------------------------------- the controls card (rule 14: shown once + ?)
@@ -234,7 +325,8 @@ const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
 const fr = ui.addFolder("Ride");
 fr.add(P, "pause").name("pause (P)");
 fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
-fr.add(P, "spot", Object.keys(SPOTS)).name("start spot").onChange((v) => place(v));
+fr.add(P, "spot", Object.keys(W.spots)).name("start spot").onChange((v) => place(v));
+fr.add(P, "edges").name("show the edge layer").onChange((v) => { edgeLines.visible = v; });
 fr.buttons([["reset bike (R)", () => place(P.spot)], ["get up (G)", () => s.crashed && getUp(s, env)],
   ["camera (V)", () => banner(`camera: ${chase.next()}`)], ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
   ["copy constants (JSON)", () => navigator.clipboard?.writeText(JSON.stringify({ BIKE: changed(BIKE, DEFAULTS), SURFACES: SURFACES.map((x, i) => changed(x, SURF_DEFAULTS[i])) }, null, 1))]], 2);
@@ -295,7 +387,7 @@ renderer.setAnimationLoop(() => {
       else if (ev === "dismount") {
         K.snap = K.rider.snapshot(root);
         const sp = mountSpot(s);
-        tp.start(sp.x, testHeight(sp.x, sp.z) + 0.03, sp.z, s.heading);
+        tp.start(sp.x, W.height(sp.x, sp.z) + 0.03, sp.z, s.heading);
         tp.autopilot = (inp) => { inp.x = 0; inp.z = 0; inp.run = false; };
         startCamBlend();
       } else if (ev === "foot") { tp.autopilot = null; root.rotation.set(0, root.rotation.y, 0); }
@@ -306,7 +398,7 @@ renderer.setAnimationLoop(() => {
   }
   const riding = !K.on || ridden(mount);
   if (riding) advanceBike(s, !K.on || mount.state === "riding" ? stepInput : NO_INPUT, fdt, env, BIKE, SURFACES);
-  else parkStep(mount, s, fdt, testHeight(s.x, s.z));
+  else parkStep(mount, s, fdt, W.height(s.x, s.z));
   keys.apply(now);           // (the events since the last step: the next frame's first step comes after them)
   if (s.lastLanding && s.lastLanding.t !== landT) { landT = s.lastLanding.t; if (s.lastLanding.band === "sketchy") banner(`sketchy landing (${s.lastLanding.why})`); }
   physMs = physMs * 0.95 + (performance.now() - t0) * 0.05;
@@ -321,14 +413,14 @@ renderer.setAnimationLoop(() => {
       if (fdt > 0) tp.update(fdt);
       if (st === "dismounting" && K.snap) R.blendFrom(K.snap, root, ease(mount.t / MOUNT.dismountTime));
     } else if (st === "crashed") {
-      const r = s.rider, gy = testHeight(r.x, r.z), t = mount.t;
+      const r = s.rider, gy = W.height(r.x, r.z), t = mount.t;
       if (t < 0.75) R.clipPose(root, "Roll", 0.15 + t * 1.6, r.x, gy, r.z, K.crashYaw);
       else if (t < MOUNT.tumble) R.clipPose(root, "FallDown", 2.3, r.x, gy, r.z, K.crashYaw);
       else R.clipPose(root, "CrouchIdle", 0, r.x, gy, r.z, K.crashYaw);
     } else {
       // riding / mounting: the body driven by the bike
-      if (s.pushing) R.push(K.E, s, root, testHeight(pose.x, pose.z), s.walkPhase);
-      else R.ride(K.E, s, root, testHeight(pose.x, pose.z));
+      if (s.pushing) R.push(K.E, s, root, W.height(pose.x, pose.z), s.walkPhase);
+      else R.ride(K.E, s, root, W.height(pose.x, pose.z));
       if (st === "mounting" && K.snap) { const w = ease(mount.t / MOUNT.mountTime); R.blendFrom(K.snap, root, w, Math.sin(Math.PI * w) * 0.12); }
     }
     const M = R.metrics;
@@ -377,9 +469,9 @@ function writeTele() {
   $("ts").textContent = s.slip.toFixed(2); $("ta").textContent = (s.slipAngle * 57.3).toFixed(0);
   const flags = [s.skid && "SKID", s.wheelspin && "wheelspin", s.frontLock && "FRONT LOCK", s.washT > 0.05 && "washing"].filter(Boolean);
   $("tf").innerHTML = flags.length ? `<span class="warn">${flags.join(" ")}</span>` : `<span class="k">grip ok</span>`;
-  const st = s.crashed ? `<span class="warn">CRASH: ${s.crashCause}</span>` : s.air ? `<span class="hot">air ${s.airT.toFixed(2)} s</span>` : s.manual > 0 ? `<span class="hot">manual ${s.manual.toFixed(1)} s</span>`
+  const st = s.crashed ? `<span class="warn">CRASH: ${s.crashCause}</span>` : s.grindSeg >= 0 ? `<span class="hot">${s.grindV < BIKE.grindMinSpeed ? "stall" : "grind"} ${EDGE_NAMES[s.grindType]} ${s.grindDist.toFixed(1)} m · balance ${(s.grindBal * 100).toFixed(0)}</span>` : s.air ? `<span class="hot">air ${s.airT.toFixed(2)} s</span>` : s.manual > 0 ? `<span class="hot">manual ${s.manual.toFixed(1)} s</span>`
     : s.pushing ? "pushing" : s.footDown > 0.5 ? "foot down" : s.preload > 0 ? `preload ${(s.preload * 100).toFixed(0)} %` : `<span class="ok">riding</span>`;
-  $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} crashes ${s.crashes}</span>`;
+  $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} grinds ${s.grinds}${s.grindExit ? ` (off: ${s.grindExit})` : ""} crashes ${s.crashes}</span>`;
   const L = s.lastLanding;
   $("tland").textContent = L ? `last landing: ${L.band}${L.band === "clean" ? "" : ` (${L.why})`} (${L.wheel} first, ${(L.rel * 57.3).toFixed(0)}°, ${L.vn.toFixed(1)} m/s, ${L.air.toFixed(2)} s air)` : "";
   P.info = `${K.on ? mount.state + " · " : ""}${st.replace(/<[^>]+>/g, "")} · phys ${physMs.toFixed(3)} ms · ${keys.pad ? "gamepad" : "keyboard"}`;

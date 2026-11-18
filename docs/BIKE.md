@@ -97,6 +97,7 @@ thing (move = pedal / brake / steer, Shift = run / sprint, Space = jump / hop, C
 | hop | popVel 1.35 m/s, popPreload 1.8 m/s, preloadTime 0.28 s, popPitch 1.2 rad/s, coyote 0.08 s, hopLead 0.22 s, hopBuffer 0.26 s, kerbCatch 0.045 m, kerbCatchLoss 0.04 |
 | steps | stepRoll 0.07 m, faceSlope 1.6, faceCrash 3.2 m/s, rearClimb 0.25 m, rearBonk 0.45 |
 | landing (sketchy / bail) | nose 0.28 / 0.70, tail 0.50 / 1.00, lean 0.33 / 0.77, yaw 0.33 / 0.80 rad, hard 5.0 / 9.8 m/s, trick 0.12 / 0.35; absorb 1.4 m/s, landLoss 0.25, wobbleTime 0.45 s, wobbleGrip 0.35, wobbleLean 0.14 rad, sketchyLoss 0.12, loopOut 0.85, endo 0.62 rad, crashSpeed 4.5 m/s |
+| grind (round 2) | snapReach 0.45 m, snapAbove 0.30 / snapBelow 0.05 m, snapAngle 0.70 rad, snapTime 0.08 s, pegR 0.02 / pegOut 0.10 m, grindDecel 0.9 / rail 0.5 m/s^2, grindMinSpeed 1.0 m/s, stallTime 1.2 s, cornerExit 0.785 rad, cornerPop 1.0 m/s, grindAssist 0.8, grindTip 1.6, grindHold 2.5, grindSteer 2.2, grindBump 0.5, grindCrash 7 m/s |
 | push | pushGrade 0.10, pushSpeed 0.85 m/s, pushDelay 0.8 s, walk 1.3 m/s, footSpeed 0.6 m/s, footLean 0.08 rad, respawn 2.2 s |
 
 Surfaces (grip / rolling x g / sink per m/s / buzz): asphalt 0.95 / 0.010 / 0 / 2 mm, setts 0.72 / 0.024 / 0 / 14 mm,
@@ -104,7 +105,7 @@ dirt (packed) 0.70 / 0.018 / 0 / 8 mm, grass 0.55 / 0.060 / 0.06 / 10 mm, sand 0
 roots 0.50 / 0.045 / 0.03 / 22 mm.
 
 ## Targets = the node checks (`node --import ./tools/heap/register.mjs tools/bike/bikeTest.mjs`, gate row `bike`)
-65 checks, all pass (~3 s; feel round 1's 16 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
+79 checks, all pass (~4 s; feel round 1's 16 and round 2's 16 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
 steps and state); speeds above; never tunnels (kicker / table / kerb / rollers entered at 58 km/h: deepest wheel 0.11 m =
 the bottom-out, 0 steps under; the wall at 58 km/h: never through, a crash; at walking pace: stopped, no crash); the
 15 cm kerb: a timed hop rides onto the pavement, no hop at 2.5 m/s = stopped, at 22 km/h = over the bars; a 6 cm kerb
@@ -199,6 +200,81 @@ as far as the foot needs (`RIDE.footReach` 0.97): the leg at 92-94 %, the ankle 
 hitch?), the wobble's look on the kid and the bike, the bands' fairness, the foot-down lean; the per-step input at real
 frame rates (30 / 60 / 144 fps).
 
+
+## Feel round 2: ride on everything (2026-11-18, FEEL_RESEARCH.md technique 5 + section 2)
+**What.** An EDGE LAYER of the city's kerbs, ledges, benches, low walls, rails and stairs as tagged polylines, and a
+third contact state on it: grinds and stalls. Why: a kid's BMX game lives on the street furniture; the research's rule
+"do not grind against raw collision meshes at runtime": snap to an edge layer extracted from the data, as THPS (nodes)
+and Skater XL (auto-detected edges) do.
+
+**The layer** (`viewer/bike/bikeEdges.js`, pure JS, runs at tile load / in node; nothing hand-placed):
+| source (the city's own data) | edge | top | grind |
+|---|---|---|---|
+| `data/tiles/<T>/surfaces.json` kerbs[] (UrbIS, cut at dropped kerbs) | kerb | ground + 13 cm (viewer/surfaces.js KERB) | no (under the pegs) |
+| `data/furniture/<T>.json` benches[] | bench: the seat's front LIP (piece dims from cityFurniture KEEP) | y + 0.45-0.46 | yes |
+| `data/gardens/<T>.json` segs[] wall styles, chained | wall (top 0.3 m wide) | y + h + coping 8 cm | 0.28-1.3 m: yes |
+| `data/gardens/<T>.json` segs[] rail styles | rail | y + wall + coping + rail | 0.28-1.3 m: yes |
+| `data/tiles/<T>/features.json` OSM highway=steps (no tunnels) | stair: a RAMP for the wheels | the ground beyond each end | no |
+| (no city data: OSM has no handrail tags in Uccle) | handrail along a flight (`handrailEdges`, the lab's) | + 0.9 m | yes |
+Storage: flat typed arrays (segments xyz, line / prev / next per segment, type / height / width / grind per line) and an
+8 m grid listing each segment in every cell its box + 1 m touches (a query = one cell's list). **Tile D6** (the most
+stairs in the city): 29 kerb lines (5.4 km), 11 benches, 116 wall lines (405 m grindable), 198 rail lines (236 m),
+6 stairs: 3,715 segments, **177 KB**, built in 18-50 ms; a query **0.3 us**.
+
+**Stairs** (`withStairRamps`): inside a flight's width the ground is a straight ramp between the grounds just beyond
+its two ends, its ends ROUNDED (C1 fillets over +-0.6 m) and its sides blended over 0.35 m; the drawn steps stay (an
+invisible proxy, as the research says). Down the lab's 8 x 15 cm flight: 1.1 g at 2 m/s, 1.6 g at 4 m/s (the raw steps:
+82 g and over the bars at 4 m/s); up: the kid gets off and pushes (also fixed: on a 44 % ramp the push rule never
+started, the bike rolled back first: it now counts pedalling uphill while stopped or rolling back).
+
+**Grinds and stalls** (`bikePhysics.js` trySnap / grindStep / grindExit):
+- SNAP only airborne and FALLING, the pegs (hubs) between 5 cm under and 30 cm over the top, the bike's middle within
+  0.45 m of the edge (+ half its top's width), the velocity within 40 deg of it, never within 0.15 s of a hard collider
+  hit (no "sucked onto the bench"). The pose blends onto the edge over 80 ms (biggest step 1.5-2 cm over the motion).
+- Pegs stick out of the hubs: the bike rides BESIDE the edge (half the top's width + pegOut 0.10 m, on the side it came
+  from), the wheels hang below the top; a hop only lifts the pegs over it.
+- Along the polyline: slope gravity, drag 0.9 m/s^2 (stone, wood) / 0.5 (steel rails); slower than 1 m/s = a STALL
+  (holds 1.2 s, then drops off); a bend <= 45 deg is followed, a sharper corner is left straight on (with a 1 m/s pop off
+  the corner), the line's end is left.
+- Balance: tips by itself (1.6 /s), a helper pulls it back (grindAssist 0.8, a slider: kid-friendly), the edge's
+  unevenness pushes it (deterministic), the kid leans against it (steer); lost = off to that side (a crash only over
+  7 m/s). A hop (Space) leaves upward, toward the steer. Pedals level, legs crouched.
+- Just off a grind the edge's own low piece (bench, wall) is not a wall for 0.3 s (the wheels hung beside it under its
+  top); the bench collider is now its seat (0.46 m) + a backrest strip (0.85 m), not one 0.85 m block.
+- The rider (riderIK): crouched (0.55), a little up, hips out to the low side, the body leaning against the fall; the
+  pose weights eased (round 1's poseTime) so the snap and the exit don't pop. kidTest checks the grind poses' reach.
+
+**The lab**: a street at x 100-140: a street bench, a 40 cm ledge (10 m, a 30 deg bend, 4 m, a 90 deg corner), 8 stairs
+up to a landing with a handrail and a ramp back down, built as the city's DOCS (`LAB_FURNITURE`, `LAB_GARDENS`,
+`LAB_FEATURES` in bikeGround.js) through the same extractors; spots `bench`, `ledge`, `stairs`; every collider drawn
+as a prism of its ring (bent ledges, rotated benches), benches as benches; the edge layer drawn (panel "show the edge
+layer"); the telemetry shows "grind bench 1.2 m · balance". **`?city=D6&at=x,z`**: a real spot of a tile
+(`bikeCitySpot.js`): its DTM, the sidewalks / medians raised 13 cm as real kerb FACES (rasterised at 8 cm, nearest),
+dropped-kerb ramps +4 cm, buildings, garden walls / rails / hedges, benches, the stairs as ramps, the edge layer, spots
+`stairs` / `bench1-3`; 160 m square, built in 110-330 ms, 4 MB raster.
+
+**Cost** (node, quiet machine): a step 5.5 us on the lab ground, **8.5-9.6 us on the D6 spot** (its colliders: the
+shared colliders.js against 239 buildings / walls / benches, ~28 %; its height 70 ns), **~1 us while grinding**. Budget
+< 20 us. (Timings doubled to 20-28 us while another agent's 8-worker collider audit and a rendering tab shared the CPU:
+the city check takes the best of 3 runs.)
+
+**Checks** (bikeTest section 15, 16 checks): D6's extraction counts = its docs' kerbs / benches / stairs, walls + rails
+> 100 m grindable; memory + build time; the query time; a drop onto the bench snaps, rides, leaves at its end, no jump;
+no snap rising (only after the apex) / at 50 deg / 0.55 m off / pegs 15 cm under; the ledge's 30 deg bend followed, the
+90 deg corner left; balance (no helper falls off after 11 m, leaning against holds, the helper holds); stall then off,
+hop out; AS A PLAYER from the spots: a full hop at 3-5 m/s released 0-0.55 s before: 33 / 39 bench and 36 / 39 ledge
+hops grind, 0 crashes; the stairs down (ramp) and up (pushed); D6's own flight ridden down in the city spot; the costs.
+
+**Also fixed**: round 1's foot-down lean kept steering the bike as it pulled away (a 7 cm drift off the line in 6 m): it
+now applies only below footSpeed.
+
+**Browser**: the lab street checked (a player's hop onto the bench: snap smooth, limbs <= 2.2 cm / step relative to the
+pelvis, IK error 0, a clean landing off its end; screenshots side + chase). NOT yet checked in the browser (stopped: the
+browser went to another agent): the D6 city spot's look (the lab loads it; node rides it), the ledge corner and the
+stairs at real frame rates.
+
+**Next**: per-step stair bumps (sound + a small kick), wallrides, kerbs as ride-along edges (tyre slides), rails along
+the city's stairs from the hero models, the edge layer into the city's tile loader (`viewer/tileData.js`).
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:
