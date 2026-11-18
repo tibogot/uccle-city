@@ -192,3 +192,43 @@ Browser round 2 (docs/sidewalk/shots):
 - Tour vs foundation2: 20 of 22 views flagged (f3-loggia-blocks and far-300m ok), the same set as round 1. Diffs looked at:
   ham-terrace, orange-villas, coghen-blocks (small camera-height shifts, tree and hedge tone, garden plants on the new
   levels). Vs round 1: 14 of 22 flagged; the biggest are ham-terrace and coghen (3 % of pixels), lycee and police (2.5 %).
+
+## Round 3: the wall's look, stepped tops and piers, cost (2026-11-18)
+
+WHY: the H6 face read as a flat grey slab with panel seams every metre (the kerb's blue stone with its 1 m stone
+joints along uv). At E6 a wall began as a tall sloped BLADE: its top followed each vertex's garden level, ramping
+from 0 to ~2 m along a thin wedge. The walls cost ~150 ms a tile.
+
+Fix:
+- Material (viewer/roadPaint.js concreteMaterial, same concrete part and draw): aKind 4 = brick in the garden walls'
+  four tones (gardens/gardenKit.js `BRICK`, `brickPattern`: their stretcher bond in WORLD space, 22 x 6.5 cm, no
+  seams), aKind 5 = coursed stone (~0.5 x 0.24 m staggered stones, per-stone tone). A 0.3 m blue-stone plinth course
+  (uv.y over the foot), blue-stone coping (aKind 1). Evaluated only on wall pixels (an `If`). One look per run, from a
+  stable hash of the run (30 % stone, else brick in one of four tones), as the garden walls pick theirs.
+- Stepped tops: each wall edge's top is flat, the mean garden level of its two ends rounded to 0.35 m, and at least
+  0.4 m over its foot. Where two edges' tops differ there is a vertical step face across the wall's depth.
+- Run ends: a 0.45 m pier, 0.12 m over the wall, stone-capped, closing the wall from the face to the strip's back.
+  Never a knife edge.
+- The garden level is now the middle of three ground samples 1.2 / 1.6 / 2.0 m behind the wall, not the highest
+  point of a fan. The weld no longer raises the garden to a wall's top (edgeField `wallTop`: the field's nearest
+  edge is a wall's coping / lawn), which made lumps. The hold stops where the strip stops.
+- Cost: the sidewalk's outer edges come from its own once-used edges (heightmap.js `onceEdgeList`) tested against
+  the street's class raster, not a coverage pass of every part. The garden index uses 5 m numeric buckets. The private
+  test runs only where a wall could stand.
+- Census: new sub-class `blade` (a wall face's TOP edge sloping more than 20 degrees, groups of more than 1 m of it;
+  kerb and blue-stone faces counted too, so round 2's walls are seen). Gate ceiling 0.
+- Two more fixes found by the census:
+  - Walls are built only on MEASURED sidewalk edges. The concrete part also holds the engine's sidewalks; their outer
+    side is the engine road, which is not in the raster, so walls stood along them.
+  - A tile without islands has no grass part. The lawn went missing there while its hold was applied: a 1-cell trench
+    of up to -2.4 m (G3 Rue Roberts Jones: spikes / holes). The part is now created.
+- Behind a wall, clampUnder no longer cuts the garden (no bank from a wall's top, and no ring). The lawn strip is
+  HOLD + 1.5 = 3.1 m deep, so a grid vertex always falls between the hold and the strip's back: no slit under its edge.
+
+Round 3 counts (all 120 tiles; `?sidewalk=old` with the same detector in brackets): tilt 811 (4,052), roadTilt 395
+(1,462), over 353 / 874 m2 (365 / 2,935 m2), lump 865 (1,232), spike 174 (463), hole 3 (3), gardenVoid 0 (0),
+blade 0 (0). Round 2's walls had 35 blades on H6 + E6 + H7 alone. Gate ceilings: these counts, blade 0.
+
+Round 3 cost (6 tiles F2 E6 I6 G6 H6 D5, worker): retaining walls 150 -> 59 ms a tile (~1,090 m of wall, 63 runs,
+133 piers a tile), edge field 81-87 ms. Road triangles 45,026 (old) -> 45,836 a tile (+1.8 %: the walls' steps and
+piers), in the concrete / grass parts: no new draw call. The brick / stone pattern is evaluated only on wall pixels.

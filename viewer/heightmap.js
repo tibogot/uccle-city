@@ -113,7 +113,9 @@ export class Heightmap {
     // bank's lines were offsets of the grid's stair-steps (a blocky mound beside a sidewalk / strip: owner image 77)
     const FIELD_SHOULDER = 0.75;     // (m from the TRUE edge; the old 1.5 m was from the nearest covered vertex, ~0.5-1 m in)
     if (field) for (let k = 0; k < cols * rows; k++) {
-      if (top[k] !== -Infinity || field.inside[k] || !(field.d[k] <= reach)) continue;
+      // (not from a retaining wall's top: the garden behind a wall keeps its own ground, round 3: raised to the wall's
+      // top it made lumps)
+      if (top[k] !== -Infinity || field.inside[k] || !(field.d[k] <= reach) || field.wallTop?.[k]) continue;
       want[k] = field.y[k] - SHOULDER - slope * Math.max(0, field.d[k] - FIELD_SHOULDER);
     }
     if (!field) for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -239,13 +241,13 @@ export class Heightmap {
         const cb = B.y[k] - lift + (B.inside[k] ? -bank : bank) * B.d[k];
         // (never deeper than maxDrop: where the bank would dig past it the vertex keeps its base cap, as before)
         if (capIn[k] < Infinity) c = Math.min(c, Math.max(cb, Y[k] - BANK_COVER_DROP + 1e-3));
-        else if (!B.inside[k]) {
+        else if (!B.inside[k] && !B.wallTop?.[k]) {   // (not behind a retaining wall: the garden keeps its ground)
           // past maxDrop the cut fades out (none where it would dig >= BANK_NEED_MAX: a structure), continuous in the
           // need: skipping it outright left a 1 m step in the bank where the need crossed maxDrop (a saw-tooth crest)
           const need = Y[k] - cb;
           c = need <= maxDrop ? cb : Y[k] - 0.999 * maxDrop * Math.max(0, (BANK_NEED_MAX - need) / (BANK_NEED_MAX - maxDrop));
           if (Y[k] - c > maxDrop) c = Y[k] - 0.999 * maxDrop;
-        }
+        } else if (!B.inside[k]) c = Infinity;          // (behind a wall's top: no ring either, the garden's own ground)
       }
       if (!(c < Y[k])) continue;
       // (bank mode: under a drawn street surface the terrain may go down to BANK_COVER_DROP, a levelled sidewalk / a
@@ -271,6 +273,39 @@ const BANK_NEED_MAX = 4;
 // m: clampUnder's bank never digs where it would need BANK_NEED_MAX (a tunnel, a structure); under a drawn street surface it
 // may lower the terrain down to BANK_COVER_DROP
 const BANK_COVER_DROP = 4.5;
+
+/**
+ * The once-used edges of a mesh's near-flat triangles (vertices welded by position), each with its outward normal:
+ * [ax, ay, az, bx, by, bz, nx, nz, u, v]. Cheap: one mesh, no coverage pass (viewer/streets/retainWalls.js tests the
+ * outward side against the street's class raster).
+ */
+export function onceEdgeList(P, I, minWidth = 0) {
+  const F = new Uint8Array(I.length / 3);
+  for (let t = 0; t < I.length; t += 3) {
+    const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    if (!(Math.abs(ny) > 1e-9 && ny * ny >= 0.36 * (nx * nx + ny * ny + nz * nz))) continue;
+    if (minWidth > 0) {
+      const L = Math.sqrt(Math.max((P[b] - P[a]) ** 2 + (P[b + 2] - P[a + 2]) ** 2, (P[c] - P[b]) ** 2 + (P[c + 2] - P[b + 2]) ** 2, (P[a] - P[c]) ** 2 + (P[a + 2] - P[c + 2]) ** 2));
+      if (Math.abs(ny) / L < minWidth) continue;
+    }
+    F[t / 3] = 1;
+  }
+  const W = weldVerts(P), { KA, KB, OPP, order, n } = onceEdges(I, F, W), out = [];
+  for (let m = 0; m < n; m++) {
+    const s = order[m], opp = OPP[s];
+    if (opp === -1) continue;
+    const u = KA[s], v = KB[s];
+    const ax = P[u * 3], ay = P[u * 3 + 1], az = P[u * 3 + 2], bx = P[v * 3], by = P[v * 3 + 1], bz = P[v * 3 + 2];
+    const ex = bx - ax, ez = bz - az, L = Math.hypot(ex, ez);
+    if (L < 1e-4) continue;
+    let nx = -ez / L, nz = ex / L;
+    if ((P[opp * 3] - ax) * nx + (P[opp * 3 + 2] - az) * nz > 0) { nx = -nx; nz = -nz; }
+    out.push([ax, ay, az, bx, by, bz, nx, nz, u, v]);
+  }
+  return out;
+}
 
 /** murmur3's 32-bit finaliser: every input bit reaches the low bits (the open-addressing tables mask them) */
 const mix32 = (h) => { h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); return (h ^ (h >>> 16)) >>> 0; };
@@ -313,7 +348,7 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0, collect = null }
   // (collect = { mesh, out }: only the outer edges of meshes[mesh] are pushed to out as [ax, ay, az, bx, by, bz, nx, nz,
   // u, v] (u, v: its vertices welded by position), no field: viewer/streets/retainWalls.js)
   const { x0, z0, cols, rows, step } = h, N = cols * rows;
-  const D = new Float32Array(N).fill(Infinity), Ye = new Float32Array(N), inside = new Uint8Array(N);
+  const D = new Float32Array(N).fill(Infinity), Ye = new Float32Array(N), inside = new Uint8Array(N), wallTop = new Uint8Array(N);
   // (perf, claude/sidewalk: typed arrays throughout, each triangle's flatness once, no Math.hypot, a flat bucket grid,
   // an open-addressing edge table on position-welded vertices, instead of Maps)
   const inTri = (P, a, b, c, x, z) => {
@@ -393,6 +428,7 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0, collect = null }
     // (vertices welded by their exact position first: the parts split a vertex per paving frame / uv, and each seam
     // between two frames was a "boundary" edge to probe: ~8 probes for every real outer edge)
     if (collect && mi !== collect.mesh) return;
+    const isWall = meshes[mi].wall ? 1 : 0;
     const W = weldVerts(P), { KA, KB, OPP, order, n } = onceEdges(I, F, W);
     for (let m = 0; m < n; m++) {
       const s = order[m], opp = OPP[s];
@@ -435,10 +471,10 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0, collect = null }
           if (d2 > R2) continue;
           const d = Math.sqrt(d2), k = r * cols + cc;
           if (d > R || d >= D[k] || (inside[k] && d > Rin)) continue;
-          D[k] = d; Ye[k] = ay + (by - ay) * t;
+          D[k] = d; Ye[k] = ay + (by - ay) * t; wallTop[k] = isWall;
         }
       }
     }
   });
-  return { d: D, y: Ye, inside, edges };
+  return { d: D, y: Ye, inside, wallTop, edges };
 }

@@ -18,7 +18,7 @@ import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 import { relevelRoads } from "./streets/roadLevels.js";
 import { recentreRoads } from "./streets/recentre.js";
 import { trimBendFolds } from "./streets/roadBends.js";
-import { edgeField } from "./heightmap.js";
+import { edgeField, onceEdgeList } from "./heightmap.js";
 import { retainingWalls, appendToPart } from "./streets/retainWalls.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
@@ -138,7 +138,7 @@ export function buildRoadData(o) {
   const parts = {};
   let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
   const welds = [];
-  let wallHold = null, weldsNoWalls = null;                  // the road meshes the terrain is welded to (JOINS, after the carve)
+  let wallHold = null, weldsNoWalls = null, wallTops = null;                  // the road meshes the terrain is welded to (JOINS, after the carve)
   if (surf) {
     // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
     const lineCuts = v2 ? pv.inventory.crossings.filter((c) => c.poly).map((c) => c.poly) : null;
@@ -153,10 +153,16 @@ export function buildRoadData(o) {
     // into the concrete (blue stone, aKind 1) and grass (the lawn strip at the garden level) parts, before the terrain sees them
     if (o.kerbLevel === true && o.gardenNear && S.parts.concrete?.index?.length && hm.weld) {
       // (wallHold: the terrain behind each wall's face held at the sidewalk's height, for clampUnder only)
-      const tw = now(), names = Object.keys(S.parts), out = [];
-      edgeField(names.map((k) => ({ position: S.parts[k].position, index: S.parts[k].index })), hm.h, { reach: 0.1, minWidth: 0.02, collect: { mesh: names.indexOf("concrete"), out } });
+      // (the sidewalk's outer edges: its once-used edges whose outward side 0.3 m out is no measured street (the class
+      // raster): no coverage pass of every part, round 3: 150 -> ~50 ms a tile)
+      const tw = now(), names = Object.keys(S.parts), C = S.parts.concrete, covered = (x, z) => prep.classAt(x, z) >= 0;
+      // (and only the MEASURED sidewalk's: the concrete part also holds the engine's sidewalks along roads UrbIS does not
+      // map, whose outer side is the engine's road, not in the raster: walls stood along them)
+      const SW = new Set([5, 8]), own = (e) => SW.has(prep.classAt((e[0] + e[3]) / 2 - e[6] * 0.3, (e[2] + e[5]) / 2 - e[7] * 0.3));
+      const out = onceEdgeList(C.position, C.index, 0.02).filter((e) => own(e) && !covered((e[0] + e[3]) / 2 + e[6] * 0.3, (e[2] + e[5]) / 2 + e[7] * 0.3));
+      out.covered = covered;
       const W = retainingWalls(out, ground, o.gardenNear, { wallRay: o.wallRay ?? null, publicAt: o.publicAt ?? null, covered: out.covered ?? null, slope: BANK_SLOPE, inTile: (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1 });
-      if (W) { weldsNoWalls = names.map((k) => ({ position: S.parts[k].position, index: S.parts[k].index })); appendToPart(S.parts.concrete, W.stone, { aKind: 1 }); if (S.parts.grass) appendToPart(S.parts.grass, W.lawn); S.stats.retainWalls = { edges: W.edges, metres: W.metres }; wallHold = W.hold; }
+      if (W) { weldsNoWalls = names.map((k) => ({ position: S.parts[k].position, index: S.parts[k].index })); appendToPart(S.parts.concrete, W.stone, { aKind: (i) => W.stone.kind[i], aUv2: (i) => [W.stone.tone[i], 0] }); S.parts.grass ??= { position: new Float32Array(0), normal: new Float32Array(0), uv: new Float32Array(0), attributes: {}, index: new Uint32Array(0), vertexCount: 0, extra: null }; appendToPart(S.parts.grass, W.lawn);   /* (a tile with no island has no grass part: the lawn went missing over its hold, a trench) */ S.stats.retainWalls = { edges: W.edges, runs: W.runs, piers: W.piers, metres: W.metres }; wallHold = W.hold; wallTops = W.tops; }
       times["retaining walls"] = Math.round(now() - tw);
     }
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
@@ -187,7 +193,7 @@ export function buildRoadData(o) {
   const noDTM = hm.h?.min != null ? (x, z) => hm.ground(x, z) <= hm.h.min + 0.02 : () => false;
   const weldSkip = (x, z) => noDTM(x, z) || (ground !== hm.ground && Math.abs(ground(x, z) - hm.ground(x, z)) > 0.3);
   // (claude/sidewalk: both banks on the exact distance to the streets' outer edges, viewer/heightmap.js edgeField)
-  const field = o.kerbLevel === true && hm.weld ? edgeField(welds, hm.h, { reach: 4, minWidth: o.clampTop === true ? 0.02 : 0 }) : null;
+  const field = o.kerbLevel === true && hm.weld ? edgeField(wallTops ? weldsNoWalls.concat([wallTops]) : welds, hm.h, { reach: 4, minWidth: o.clampTop === true ? 0.02 : 0 }) : null;
   lap("edge field");
   const weldedCells = hm.weld ? hm.weld(weldsNoWalls ?? welds, { skip: weldSkip, nearest: o.weldNearest === true, field }) : 0;   // joins2: each cell banks on its nearest edge (heightmap.js weld)
   // joins2: then no terrain over any surface (heightmap.js clampUnder; ?groundweld=old: none)

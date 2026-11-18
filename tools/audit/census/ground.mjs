@@ -26,6 +26,9 @@
 // under its base somewhere across its footprint (over a cut / a step: the floating hedge of H6 Perelman 4). Groups as
 // SURFACES.
 //
+// BLADE (claude/sidewalk round 3): a retaining wall's top sloping over 20 degrees along more than 1 m (a wall that starts
+// as a knife edge; walls step and end at a pier now).
+//
 // OVER (claude/sidewalk): the drawn terrain (the 1 m grid as tileData.js terrainArrays splits it) more than OVER m above
 // the highest drawn street surface, sampled every 0.25 m over the street's near-flat triangles: terrain drawn over a
 // sidewalk / road (the saw-tooth zig-zag along a bank foot, a buried sidewalk). Groups as SURFACES.
@@ -42,7 +45,7 @@ const { CHILD, OUT, JOBS, WORST } = c;
 const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null);
 const TILES = c.ALL ? allBuiltTiles() : c.argv.filter((a) => /^[A-Z]\d+$/i.test(a)).map((t) => t.toUpperCase());
 const LUMP = 0.5, HOLE = 0.5, SPIKE = 0.5, TILT = 0.15, ROAD_TILT = 0.12, OVER = 0.02;
-const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid"];
+const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid", "blade"];
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: ground.mjs [--all | T ...] [--out FILE] [--old] [--max kind=n,...]"); process.exit(2); }
@@ -149,7 +152,7 @@ for (let k = 0; k < flag.length; k++) {
 }
 
 /** flagged points { x, z, area, v } -> groups (within 2 m), counted as `kind` (>= 0.5 m2) */
-const group = (bad, kind) => {
+const group = (bad, kind, minM2 = 0.5) => {
   const g = new Map(), key = (x, z) => `${Math.floor(x / 2)},${Math.floor(z / 2)}`;
   bad.forEach((q, i) => { const k = key(q.x, q.z); if (!g.has(k)) g.set(k, []); g.get(k).push(i); });
   const done = new Uint8Array(bad.length);
@@ -161,7 +164,7 @@ const group = (bad, kind) => {
       const gi = Math.floor(q.x / 2), gj = Math.floor(q.z / 2);
       for (let a2 = gi - 1; a2 <= gi + 1; a2++) for (let b3 = gj - 1; b3 <= gj + 1; b3++) for (const n of g.get(`${a2},${b3}`) || []) if (!done[n] && Math.hypot(bad[n].x - q.x, bad[n].z - q.z) < 2) { done[n] = 1; stack.push(n); }
     }
-    const m2 = mem.reduce((s, q) => s + q.area, 0); if (m2 < 0.5) continue;
+    const m2 = mem.reduce((s, q) => s + q.area, 0); if (m2 < minM2) continue;
     let w = mem[0]; for (const q of mem) if (q.v > w.v) w = q;
     sum[kind]++; sum[kind + "M2"] += m2;
     items.push({ kind, m2: +m2.toFixed(1), worst: +w.v.toFixed(2), score: m2 * w.v, at: at(w.x, w.z), street: streetAt(T, w.x, w.z) });
@@ -272,6 +275,41 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
     }
   }
   group(bad, "gardenVoid");
+}
+// ---------------------------------------------------------------- retaining-wall blade ends (claude/sidewalk round 3)
+// A retaining wall's face (concrete part, aKind 4 brick / 5 stone: viewer/streets/retainWalls.js) whose top edge slopes
+// more than BLADE (20 degrees): the top ramping up a thin wedge where a wall starts. Counted in groups (2 m) of more
+// than 1 m of such top edge (the "area" here is the edge's plan length).
+{
+  const P = d.road.parts?.concrete, K = P?.attributes?.aKind?.array, bad = [], TAN = Math.tan((20 * Math.PI) / 180);
+  if (P && K) {
+    // the boundary edges of the vertical wall faces (used once among them, by position: a quad's diagonal is used twice)
+    // whose third vertex lies under them: the faces' top edges. (aKind 1 too: round 2 drew its faces in blue stone; the
+    // kerb faces' tops follow the street, < 20 degrees)
+    const pos = P.position, I = P.index, key = (q) => `${Math.round(pos[q] * 200)},${Math.round(pos[q + 1] * 200)},${Math.round(pos[q + 2] * 200)}`;
+    const use = new Map();
+    for (let t = 0; t < I.length; t += 3) {
+      const k = K[I[t]]; if (!(k > 0.5 && k < 1.5) && !(k > 3.5 && k < 5.5)) continue;
+      const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+      const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2], vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+      const ny = uz * vx - ux * vz, L = Math.hypot(uy * vz - uz * vy, ny, ux * vy - uy * vx);
+      if (L < 1e-9 || Math.abs(ny) > 0.2 * L) continue;                       // vertical faces only
+      for (const [p, q, r] of [[a, b, c], [b, c, a], [c, a, b]]) {
+        const kk = [key(p), key(q)].sort().join("|"), o = use.get(kk);
+        if (o) o.n++; else use.set(kk, { n: 1, p, q, r });
+      }
+    }
+    for (const { n, p, q, r } of use.values()) {
+      if (n !== 1) continue;
+      const hz = Math.hypot(pos[q] - pos[p], pos[q + 2] - pos[p + 2]); if (hz < 0.05) continue;
+      const t = Math.max(0, Math.min(1, ((pos[r] - pos[p]) * (pos[q] - pos[p]) + (pos[r + 2] - pos[p + 2]) * (pos[q + 2] - pos[p + 2])) / (hz * hz)));
+      const drop = pos[p + 1] + (pos[q + 1] - pos[p + 1]) * t - pos[r + 1];
+      if (drop < 0.35) continue;      // not a top edge, or a kerb / skirt (<= 0.25 m tall: on a steep path its top follows it)
+      const sl = Math.abs(pos[q + 1] - pos[p + 1]) / hz;
+      if (sl > TAN) bad.push({ x: (pos[p] + pos[q]) / 2, z: (pos[p + 2] + pos[q + 2]) / 2, area: hz, v: sl });
+    }
+  }
+  group(bad, "blade", 1.0);
 }
 items.sort((a, c3) => c3.score - a.score);
 const tm = d.times || {};
