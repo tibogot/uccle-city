@@ -19,7 +19,7 @@ so a spot can be opened with `?quick=1&at=x,z`.
 | D1. Street-name plate away from its post | `streetProps.mjs` | 237 of 748 post plates (gap > 0.15 m, up to 6.5 m) | yes (78, Rue Papenkasteel E6: 4.07 m) | `viewer/main.js` loadTile `snap(skDoc, [["signs"], ["posts"]])` (`viewer/streets/carriageway.js docOffLanes`) | The load-time snap moves the street kit's post out of the lane, but the street-life layer (`viewer/streetlife/layout.js`, plates) still draws the plate at the baked spot. They are two layers with one position and only one of them is moved. |
 | D2. Signs facing wrongly | `streetProps.mjs` | 78 of 1,792 poles: 25 show a no-entry C1 and a one-way F19 to the same traffic (one pole, or poles under 4 m apart); 53 face across every street within 12 m | yes (79, E6 -685.1, 999.7: C1 + F19 on one pole at the Papenkasteel / Ch. de Saint-Job junction) | `tools/streetkit/build_streetkit.py` `place_tile` (the one-way rule: F19 at the flow start, C1 at the flow end) + pole sharing | Two one-way pieces meet at one junction: one piece's end (C1) and the next piece's start (F19) land on one corner and are merged onto one pole. Also 78 signs moved > 1.5 m by the load-time snap (onto another kerb). |
 | D3. Furniture in the carriageway / on tram tracks | `streetProps.mjs` | 389 of 4,977 pieces still in a driven lane or within 1.3 m of a tram track after the load-time moves (369 lane, 34 tram): 25 post boxes, 11 Villo stations, 108 signs, 131 plate posts, 70 stop poles, 39 furniture2 pieces, 5 shelters | yes (85 bpost:4405 Ch. d'Alsemberg E5 -986.4, 312.6; 86 Villo Rittweger E5 -939.2, 144.6, 4 of 29 pieces on the tracks) | post boxes / Villo: `tools/streetlife/build_streetlife.py` (WFS point kept as is, only turned to the road) and `tools/streetkit/build_streetkit.py` `place_villo`; the rest: `docOffLanes` gives up (no kerb within 6 m, no measured street in Flanders) | Post boxes and Villo stations are not in main.js's snap list at all. The snap tests lanes only, not the tram tracks. |
-| E. Tram rails into the sidewalk / kerb | `tramRails.mjs` | 48 runs, 421 m of rail on a raised class + 152 m in the kerb line (of 47.4 km of rail) | yes (92, Ch. d'Alsemberg E2 -887.5, -1051.8: 37.5 m) | `viewer/tileData.js` (OSM tram lines -> `viewer/track.js smoothPolyline`) + `viewer/main.js featureObjects` (rail top = max(drawn surface, profile)) | The OSM track lines are never fitted to the measured tram road / kerbs, and smoothing moves them further. Over a raised class the rail climbs onto it. |
+| E. Tram rails into the sidewalk / kerb | `tramRails.mjs` | 48 runs, 421 m of rail on a raised class + 152 m in the kerb line (of 47.4 km of rail); FIXED (claude/tramfit): 7 runs, 26 m + 1 m (arc-length sampler, before 41 / 310 m / 109 m) | yes (92, Ch. d'Alsemberg E2 -887.5, -1051.8: 37.5 m) | `viewer/tileData.js` (OSM tram lines -> `viewer/track.js smoothPolyline`) + `viewer/main.js featureObjects` (rail top = max(drawn surface, profile)) | The OSM track lines are never fitted to the measured tram road / kerbs, and smoothing moves them further. Over a raised class the rail climbs onto it. |
 | F. Road lines off the carriageway / skewed | `markings.mjs` | of 121.8 km of painted strokes (53.7 km on unmeasured streets, not judged): 6.0 km off the measured carriageway, 0.96 km on a kerb line, 0.41 km skewed > 12° to a straight kerb; 401 runs | no owner image to match | the asphalt shader lines (`viewer/roadPaint.js`, aEdges) laid out by `vendor/roads` laneRoadMesh from the OSM centre line + lane stack, fitted by `viewer/roadBuild.js fitRoadWidths`, overlaid by `viewer/surfaces.js buildSurfaceRoads` | The engine's lines follow the OSM centre line, not the measured street, and the overlay keeps engine strips (with their lines) on sidewalks, ramps and pits. The paint decal (v2) is clipped by construction (3 % raster noise). |
 | G. Coplanar z-fighting | `zfight.mjs` (`--heroes`) | tiles: 32,001 pairs, ~33,100 m², in 3,301 buildings; 46 kit openings on an uncut painted wall; heroes: Saint-Pierre 49 / 118 / 59 m² (L0 / L1 / L2), town hall LOD1 134 m² | 87 / 93 NOT flagged (no coplanar pair at Maison Dandoy E3 / I5 or the Calzedonia front E4) | details: `viewer/facadeGeom.js` `box()` strips at corners (24,924 pairs); walls / roofs: UrbIS duplicate solids passed through (`pipeline/build_buildings.py` -> `analyseBuildings`, e.g. Av. Hamoir 8 J5: one solid twice); heroes: `tools/hero_pack.mjs` meshopt LOD1 | The UrbIS duplicates are not deduplicated, facade boxes overlap at corners, and LOD1 simplification collapses parts into each other. The window shimmer in 87 / 93 is not in the static geometry: likely the painted-window / interior shader, ivy cards or TAA (browser). |
 
@@ -118,6 +118,31 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   detail mesh). zfight on H2 / H4 / G3 / D6: 1,544 -> 1,504 coplanar pairs. Detector changes: the U-shaped parapet top
   counts as a parapet (fill < 0.4), a slab is >= 1.15 m deep and filled (the 1.1 m BLOCK entrance canopy was taken for a
   slab under the closed balcony's U top), `--old`, `--max`, the shell self-test.
+
+- **E (claude/tramfit, rule 32 provisional, gate rows `tramrails` + `tramsnap`).** Cause: the OSM tram ways were
+  drawn as they are (`viewer/track.js smoothPolyline` only rounds them, per tile) and nothing held them to the measured
+  UrbIS street; OSM is ~0.3-1.3 m off (Ch. d'Alsemberg E2: a track 0.3 m from the tram road's kerb; Av. Churchill: the
+  two tracks 3.7 m apart on a 4.75 m UrbIS tram site between paved medians), and the rail top = max(drawn surface,
+  profile) climbs onto the paving. Fix: `tools/tramfit/build_tramfit.mjs` -> `data/tramfit/<T>.json` (33 tiles, 400 KB):
+  the OSM ways chained across tile seams (as the tram profile), smoothed once, sampled every 0.5 m; per sample the
+  offsets where both rails are clear of the DRAWN street's raised classes (the runtime class raster of every tile) and
+  >= 0.2 m from every drawn kerb; a lateral offset per sample by projection sweeps from 0 (the smallest smooth move):
+  inside that interval, two parallel tracks >= min(OSM spacing, 2.75 m), |o'| <= 0.05, |o''| <= 1/300 m, switch ends
+  tied to the track they branch off; a track that would have to cross a kerb running > 20 deg to it (a site entrance,
+  the Stalle terminus) is left as OSM draws it. Cut back into tiles (224 seam ends, all matched to 1 cm). The worker
+  (`viewer/tileData.js` -> `track.js tramTracks`) swaps them in when the fit was made from that tile's OSM ways (a
+  signature), so rails, wire + poles, the bridge deck, tram 92's snap, the parking / prop keep-clear all follow;
+  `?tramfit=old` = before. Moves: 2.4 km of track moved, p50 0.17 m, p90 0.9 m, max 2.47 m (Ch. de Ruisbroek B4: the
+  stubs along the Brussels sidewalk moved into the unmeasured Drogenbos side). Census (arc-length sampler; the first
+  per-segment sampler counted dense bends twice: 421 / 152 m, `--persegment`): before 41 runs, 310 m raised + 109 m
+  kerb (`docs/census/tramRails_old.json`), after 7 runs, 26 m + 1 m (`tramRails_fit.json`): the Rue de Stalle terminus
+  crossing (B5, 18.5 m, the tracks cross the sidewalk into the roundabout: legit, left alone), the Saint-Job tram
+  bridge's west end (H6, 9.5 m on the sidewalk polygon at the abutment), F1 1.5 m, H6 1 m ramp. Av. Churchill: UrbIS
+  has the tracks on a tram site ("C") between paved medians (no promenade over the rails): fitted (centres 2.55-3.4 m apart, median 2.76 m, OSM had 2.8-3.7) and
+  clean. Tram 92 (`tools/tramfit/tramSnap.mjs`): unsnapped points 1,920 = before, sideways step p99.9 0.36 -> 0.12 m,
+  yaw rate p99.9 5.3 -> 6.0 deg/m, sub-18 m radii 245 -> 257 (junctions). Found, not fixed (pre-existing, another
+  class): 713 m of rail lie under an OSM tram platform as `tram.js` draws it (a 2.6 m band centred on the OSM line,
+  often the platform EDGE in OSM): 688 m after the fit; the platforms should be cut clear of the fitted tracks.
 
 ## Not detected here (needs the browser, or not located)
 
