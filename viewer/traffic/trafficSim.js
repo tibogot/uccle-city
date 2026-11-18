@@ -1107,11 +1107,11 @@ export class TrafficSim {
     }
   }
   /** The lane piece (drive direction ~ (hx, hz)) nearest (x, z) within 4.5 m: { gid, along } or null. */
-  laneAt(x, z, hx, hz, maxLat = 3.6) {   // a parallel slot sits ~2.5 m beside its lane; farther = a lane across a wide street
+  laneAt(x, z, hx, hz, maxLat = 3.6, minDot = 0.8) {   // (carhit rejoin: minDot 0.45, a car left at up to 63 deg to its lane)   // a parallel slot sits ~2.5 m beside its lane; farther = a lane across a wide street
     let best = null, bl = maxLat;
     this.W.project(x, z, maxLat, (gid, along, lat, tx, tz) => {
       const g = this.W.slots[gid >>> 16];
-      if (g.kind[gid & 0xffff] || !g.core[gid & 0xffff] || tx * hx + tz * hz < 0.8 || lat >= bl) return;
+      if (g.kind[gid & 0xffff] || !g.core[gid & 0xffff] || tx * hx + tz * hz < minDot || lat >= bl) return;
       bl = lat; best = { gid, along };
     });
     return best;
@@ -1172,7 +1172,7 @@ export class TrafficSim {
    *  -1 no lane its way within 7 m (a wreck). */
   rejoin(i) {
     const x = this.x[i], z = this.z[i], hx = Math.sin(this.yaw[i]), hz = Math.cos(this.yaw[i]);
-    const lane = this.laneAt(x, z, hx, hz, 7);
+    const lane = this.laneAt(x, z, hx, hz, 7, 0.45);
     if (!lane) return -1;
     const { gid, along } = lane, L = this.plen(gid);
     if (L - along < 4.5) return 0;

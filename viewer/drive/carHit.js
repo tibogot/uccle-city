@@ -54,7 +54,7 @@ export const HIT = {
   wakeTraffic: 0.5, wakeKnocked: 0.05, wakeParked: 0.08,   // m/s closing speed that wakes a driving / knocked / parked car
   sleepV: 0.05, sleepW: 0.03, sleepT: 0.4,                  // settled: below these for sleepT s
   rejoinT: 3.5, fleeRejoinT: 1.2,      // s standing (hazards on) before it drives on
-  wreckDv: 8.5, wreckDepth: 0.4,       // a hit of this much change of speed, or this much crumple in total: a wreck
+  wreckDv: 7, wreckDepth: 0.4,         // this much change of speed over one wake (summed: a 60 km/h ram ~9), or this much crumple: a wreck
   dentFrom: 1.2, dentK: 0.024, dentHit: 0.14, dentCap: 0.28,  // m of crumple per m/s of change of speed over dentFrom
   clearNear: 70, clearFar: 280,        // a wreck goes when out of sight past clearNear m, or past clearFar
 };
@@ -215,10 +215,10 @@ export class CarHitWorld {
   /** the change of speed of body k's point (px, pz) under a normal impulse jn: the translation + the turn it starts */
   cornerDv(k, px, pz, nx, nz, jn) { const cr = (pz - this.z[k]) * nx - (px - this.x[k]) * nz; return jn * (this.iM[k] + cr * cr * this.iI[k]); }
   /** a hit on body k (not the player): the side grip goes for a moment, the wreck test */
-  shaken(k, dv) {
+  shaken(k, dv, dvLin = 0) {
     if (k >= N) return;
     this.grip[k] = Math.min(this.grip[k], 1 - (1 - HIT.gripMin) * Math.min(1, dv / HIT.gripAt));
-    if (dv > this.hitDv[k]) this.hitDv[k] = dv;
+    if (dvLin > 1.5) this.hitDv[k] += dvLin;                       // (the wreck test: the real hits of this wake, summed; a push is not one)
     this.still[k] = 0;
   }
   /** two awake bodies (i may be P) overlapping: n the push of i out of j, depth */
@@ -237,7 +237,7 @@ export class CarHitWorld {
     this.stats.pairs++;
     const dvi = jn * iMi, dvj = jn * iMj;
     this.dentAt(i, px, pz, dvi); this.dentAt(j, px, pz, dvj);
-    this.shaken(i, this.cornerDv(i, px, pz, nx, nz, jn)); this.shaken(j, this.cornerDv(j, px, pz, nx, nz, jn));
+    this.shaken(i, this.cornerDv(i, px, pz, nx, nz, jn), dvi); this.shaken(j, this.cornerDv(j, px, pz, nx, nz, jn), dvj);
     return jn;
   }
   /** body k pushed out of a static by depth along n: positional + an impulse at its deepest corner */
@@ -245,7 +245,7 @@ export class CarHitWorld {
     this.x[k] += nx * depth; this.z[k] += nz * depth;
     this.deepest(k, -nx, -nz);
     const jn = this.impulse(k, -1, this.cp[0], this.cp[1], nx, nz, HIT.eWall, HIT.muWall);
-    if (jn > 0) { const dv = jn * this.iM[k]; this.dentAt(k, this.cp[0], this.cp[1], dv); if (dv > 2) this.shaken(k, dv * 0.5); }
+    if (jn > 0) { const dv = jn * this.iM[k]; this.dentAt(k, this.cp[0], this.cp[1], dv); if (dv > 2) this.shaken(k, dv * 0.5, dv); }
     this.stats.statics++;
   }
 
@@ -389,6 +389,7 @@ export class CarHitWorld {
     if (S.state[i] === KNOCKED || S.v[i] < 0.5) this.age[k] = HIT.react;   // (standing / settled: the foot on the brake already)
     const code = S.dmg[i];
     for (let q = 0; q < 4; q++) this.dent[k * 4 + q] = ((code >> (q * 3)) & 7) * 0.04;
+    if (S.knock[i] === 3) this.hitDv[k] = HIT.wreckDv;              // (a wreck pushed again stays a wreck)
     this.bodyOf[i] = k;
     S.state[i] = KNOCKED; S.knock[i] = 1; S.kT[i] = 0; S.onPath[i] = -1; S.room[i] = 0; S.offX[i] = S.offZ[i] = 0; S.acc[i] = 0;
     S.x[i] = S.px[i] = B[0]; S.z[i] = S.pz[i] = B[1]; S.yaw[i] = S.pyaw[i] = B[2]; S.py[i] = S.y[i]; S.ppitch[i] = S.pitch[i];
@@ -557,7 +558,7 @@ export class CarHitWorld {
       const vx0 = this.vx[P], vz0 = this.vz[P], w0 = this.w[P];
       const jn = vn > 0 ? this.impulse(P, k, px, pz, nx, nz, this.rest(vn), HIT.muBody) : 0;
       this.vx[P] = vx0; this.vz[P] = vz0; this.w[P] = w0;
-      if (jn > 0) { this.dentAt(k, px, pz, jn * iK); this.shaken(k, this.cornerDv(k, px, pz, nx, nz, jn)); }
+      if (jn > 0) { this.dentAt(k, px, pz, jn * iK); this.shaken(k, this.cornerDv(k, px, pz, nx, nz, jn), jn * iK); }
       push(c, nx, nz, depth * iP / s, KIND.car);
       env.contacts--;                                                // (push counted it; counted once below)
       this.after(c, k, jn, vn, px, pz, nx, nz, false);
@@ -566,7 +567,7 @@ export class CarHitWorld {
       this.store(c);
       if (jn > 0) {
         const dvP = jn * iP, dvK = jn * iK;
-        this.dentAt(k, px, pz, dvK); this.shaken(k, this.cornerDv(k, px, pz, nx, nz, jn));
+        this.dentAt(k, px, pz, dvK); this.shaken(k, this.cornerDv(k, px, pz, nx, nz, jn), dvK);
         if (this.dentAt(P, px, pz, dvP) > 0) this.playerDamaged();
         // the body's kick (carCtl's plate: pitchV / rollV; the older models: pitchVel / rollVel), once per impact
         if (vn > 0.8) {

@@ -56,9 +56,10 @@ traffic cars (they wake too: a chain) and other parked cars (they wake when a sl
 car then stands with **hazards** (both indicators, `bits` 12) and after 3.5 s (a flee car of the police game: 1.2 s;
 never within 4 m of the player) `sim.rejoin(i)` joins it back IN PLACE (same index, gen, type, paint, dents: a game's
 entity on it stays valid): the `joinFrom` pull-out from its pose onto the nearest lane its way (within 7 m), waiting
-for a gap with the indicator (`outWait`; never vanishing after 20 s as a pull-out does). No lane its way (spun round
-past 37 deg of any lane), or a hit of > 8.5 m/s change of speed, or > 0.4 m of crumple in total: a **wreck** (hazards
-on, it stays) until it is out of sight past 70 m or past 280 m (`sim.kill`, never in view). A game's car (`keep`) is
+for a gap with the indicator (`outWait`; never vanishing after 20 s as a pull-out does). No lane its way (more than
+63 deg off every lane within 7 m), or real hits (> 1.5 m/s each) summing > 7 m/s of change of speed in one wake (a
+60 km/h ram ~9; a 30 km/h one ~4.5), or > 0.4 m of crumple in total: a **wreck** (hazards on, it stays; pushed again it
+stays a wreck) until it is out of sight past 70 m or past 280 m (`sim.kill`, never in view). A game's car (`keep`) is
 never cleared. Police game: a car told to pull over (ctl 2) that is knocked counts as stopped (ctl 3) once below
 0.4 m/s.
 
@@ -134,6 +135,29 @@ works unchanged. R (reset) clears the player's damage.
 9. Watch: no traffic car popping when a knocked car rejoins / a parked car is handed back; night: a shoved parked car
    has no lights on; `driver.carHit.stats` (awake, knocked, frameMs) and the traffic `stepMs` while 10 cars are
    knocked.
+
+## Browser turn (2026-11-19, quick mode Chaussée d'Alsemberg, scripted placements + autoInput)
+
+| check | result |
+|---|---|
+| ram 30 km/h (rear) | knocked, dents 4 cm at the rear corners, settles with hazards, rejoins with its indicator (after the fix below) |
+| ram 60 km/h | knocked, spins ~170 deg, 12 cm dent rear right + 8 cm front left, wreck with hazards: `docs/carhit/ram60_dent_hazards.jpg`, `ram60_wreck_across_lane.jpg` |
+| rear-corner nudge on a moving car | 1.35 rad of spin within 1.5 s, still turning |
+| T-bone 30 km/h (standing cars) | shoved sideways, < 0.2 rad turn: hatch_s 2.1 m, van_c 1.5 m, van_p 1.4 m, suv 1.1 m; the van rejoins dented: `van_tbone_rejoined.jpg` |
+| parked chain | a parked hatch pushed at full throttle pushes the van parked ahead of it (0.7 m); the player stalls against two handbraked cars (13 kN > its 8 kN): `parked_chain.jpg` |
+| walls | every knocked car checked against the drive colliders: 0 overlaps (8 cars) |
+| traffic | 10 s with 10 knocked cars: no driving car overlaps a knocked one, 80 queued samples |
+| motorbike | the car it hits is knocked (woken, settles, rejoins); the bike's crash rule as before |
+| police | a flee car (ctl 1, entity alive throughout) rammed at 7.4 m/s: the ram counts (lastHit kind 6), knocked, rejoins in 1.2 s still fleeing; a car told to pull over (ctl 2) and knocked: ctl 3 (stopped) |
+| night | a shoved parked car: no lamps (shader bit 32 + the night pool): `night_shoved_parked_no_lights.jpg` |
+| `?carpush=old` | the old wall bounce (45 -> -12 km/h), the car does not move; no new console warning either way |
+| cost | 12 bodies sliding at once: carHit 0.1-0.33 ms a frame, worst frame 1.1 ms, a wake 0.8 ms at most |
+
+Fixes from the turn: a 60 km/h ram rejoined (the wreck test took the largest single hit, spread over several
+substeps): now the real hits of a wake are summed (wreckDv 7); a 30 km/h ram then was a wreck by the player's pushing
+contacts: only hits > 1.5 m/s count; an undamaged car left at 40-63 deg to its lane stayed a wreck: rejoin takes lanes
+within 63 deg (`laneAt(..., minDot)`); a wreck pushed again rejoined: it stays a wreck; the night pool (cityNight.js)
+lit a shoved parked car's lamps: skipped for `bits & 32`.
 
 ## Weak spots / next
 

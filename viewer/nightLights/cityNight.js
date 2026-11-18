@@ -660,6 +660,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
               if (wasAlive[i] && inR[i] && lf[i] > 0) toGhost(i);
               lf[i] = 0; gen[i] = sim.gen[i]; wasAlive[i] = 1; inR[i] = 0;
             }
+            if (sim.bits[i] & 32) { lf[i] = 0; inR[i] = 0; continue; }     // (carhit: a shoved parked car, nobody in it: no lights)
             lf[i] = Math.min(1, lf[i] + fstep / CAR_IN);
             const x = sim.px[i] * b1 + sim.x[i] * a, z = sim.pz[i] * b1 + sim.z[i] * a;
             const cx = x - camPos.x, cz = z - camPos.z;
