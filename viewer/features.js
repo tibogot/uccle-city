@@ -260,6 +260,7 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- birds (docs/BIRDS.md)
   on("birds", "birds", "birds", "The city's birds (viewer/birds/): the sky flocks in one GPU compute pass (a starling murmuration over a park at dusk, jackdaws round the church towers, gulls high up, ring-necked parakeets, a starling feeding party) + the perched pigeons flushing from the walker / the car / the traffic and landing again; ?birds=0 = none (the falcon flight's pigeons as before)."),
+  old("birds2", "birds", "sky flocks as before (balls)", "?birds2=old: the sky flocks before claude/birds2 (2026-11-18): every flock pulled to one point that stood still 20-60 s, all-to-all cohesion, a 1 m personal space: 110-190 starlings / 28-60 jackdaws orbiting it as a dark ball (owner: 'boids look like a ball'); the murmuration a formation without manoeuvres. New: small parties (starlings 25-60, feral pigeons 15-45, jackdaws 12-40, parakeets 10-30) following a leader on a path with their 7 nearest neighbours a few body lengths off, splitting and regrouping; the murmuration's sheet, ribbon, fold, hourglass, S curve with density and banking waves (viewer/birds/flockModel.js, gate tools/audit/birdGate.mjs)."),
 
   // ---------------------------------------------------------------- A/B: the versions before (each ?x=old / ?x=0 kept for comparisons)
   old("heros", "ab", "Square des Héros", "The square before: one raised setts plaza, no memorial.", { sub: "Places & assets" }),
