@@ -2,13 +2,24 @@
  "StPierre_lod1": {
   "from": "StPierre",
   "sourceTris": 31626,
-  "tris": 12519
+  "tris": 15432,
+  "noFight": {
+   "before": {
+    "pairs": 900,
+    "m2": 40.56879712927999
+   },
+   "after": {
+    "pairs": 0,
+    "m2": 0
+   },
+   "locked": 8271
+  }
  },
  "StPierre_lod2": {
   "from": "StPierre_far",
   "sourceTris": 4256,
   "tris": 2782
  },
- "glbBytes": 1079868,
+ "glbBytes": 1090716,
  "rawBytes": 3192092
 }

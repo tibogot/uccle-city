@@ -39,6 +39,11 @@ const ATLAS = 2048, REG = 512, NREG = (ATLAS / REG) ** 2;
 /** live A/B and tuning: cardEnd x the cards' end (75 / 22 = as before, with far hidden), the mask's gain / grain */
 export const ivyFarU = { cardEnd: uniform(1), gain: uniform(1.4), grain: uniform(0.45), up: uniform(0.3), vary: uniform(0.75) };
 
+// (claude/zfight, rule 34) the shopfronts on an ivy wall (g.shop, tools/plants/build_ivy.mjs): no ivy there (its sprays
+// crossed the shop window's glass: Maison Dandoy); ?zfight=old = over the front as before
+const ZF_OLD = qs.get("zfight") === "old";
+const ivyWalls = (walls) => (ZF_OLD ? walls : walls.map((w) => (w.g?.shop ? { ...w, g: { ...w.g, avoid: [...(w.g.avoid || []), ...w.g.shop] } } : w)));
+
 function tileKeep(slot, n) {
   const f = ivyFades.fade(slot);
   return select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
@@ -234,7 +239,7 @@ export const cityIvy = {
     parent.add(grp);
     this.tiles.set(name, { group: grp, pending: true });
     const id = ++this.seq;
-    const res = await new Promise((r) => { this.jobs.set(id, r); this.worker.postMessage({ id, walls: doc.walls, far: FAR ? { size: REG } : null }); });
+    const res = await new Promise((r) => { this.jobs.set(id, r); this.worker.postMessage({ id, walls: ivyWalls(doc.walls), far: FAR ? { size: REG } : null }); });
     const t = this.tiles.get(name);
     if (!t || t.group !== grp) return null;                        // unloaded meanwhile
     const L = res.leaves, S = res.stems, nl = L.M.length / 16, ns = S.M.length / 16;
