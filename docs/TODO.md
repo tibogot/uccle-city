@@ -15,7 +15,7 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 **Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
 
 **Performance (owner's #1)**
-- [ ] Falcon flight stutter round 2: round 1 merged 2026-11-17 (worst 300 -> 67-83 ms, > 50 ms frames 15 -> 7, p99 ~50 -> ~33; goal 0 over 50 ms, p99 <= 25 not met). Left, ranked (docs/perf/FALCON_STUTTER.md): kit far walls' fade copy shadow build 31-56 ms (too many attributes to cache), major GC 50-100 ms, tile gardens step 18-40 ms, street-life box fade copy 8-9 ms, hero collider poll 37-66 ms.
+- [ ] Falcon flight stutter round 2 (claude/falcon2, browser turn 2026-11-18 on a RED machine: boxshare / retirewarm builds now under the cover, gardens 3-7 ms slices, heropoll kept, cullcopy dropped; NEXT: re-measure on GREEN, the GC = ~3.5 GB/min of per-frame JS objects (allocation sampling) + the exposure meter's readback, docs/perf/FALCON_STUTTER.md "Round 2"): round 1 merged 2026-11-17 (worst 300 -> 67-83 ms, > 50 ms frames 15 -> 7, p99 ~50 -> ~33; goal 0 over 50 ms, p99 <= 25 not met). Left, ranked (docs/perf/FALCON_STUTTER.md): kit far walls' fade copy shadow build 31-56 ms (too many attributes to cache), major GC 50-100 ms, tile gardens step 18-40 ms, street-life box fade copy 8-9 ms, hero collider poll 37-66 ms.
 - [ ] Clean performance measure of both games with everything merged (preflight GREEN, one tab).
 - [ ] Time to play: police ~43 s, falcon ~39 s -> < 35 s.
 - [ ] Heap leftovers: GLB held by the loader, meshopt wasm, landmark geometry holds (docs/HEAP.md).
@@ -27,8 +27,8 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
   across unmapped roads gone; rule 24. LEFT: the outer-side fan at R ~ 0 corners draws texture rings / a curled edge line
   (D1 Pénélope, D4 Paola): a next job. Widths elsewhere: a different cause, open.)
 - [ ] Falcon controls feel hard: ASK THE OWNER what is hard. Police game: owner to replay car control round 3.
-- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?).
-- [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing).
+- [ ] Lycée Français gate: left fence JITTERS (check close + moving); bare flag poles in that view (quick mode?). **claude/lycee (offline turn done, docs/LYCEE.md):** sub-pixel bars (0.5-2 px from the avenue) -> pre-filtered blended cards + modelled bars within 4-6 m (?lyceerail=old|cover; browser: fence shimmer -43..-54 % at 8-20 m, gate -42..-60 %), gate bar tops out of the rail (120 doubled faces); quick mode now keeps the Lycée flags; rule 26 (provisional), gate row lycee; browser turn done 2026-11-18 (docs/LYCEE.md 4).
+- [ ] Chemin du Cortenbosch: the second, paved part down to the Geleytsbeek, parallel to Av. du Lycée Français (missing). **claude/lycee offline:** OSM 1235727248 IS built (UrbIS 149914 / 30121 / 27386 in setts, 3-5 m, joined both ends, driven, nothing on it; round 1 shot oldlane_after.jpg); no sidewalks (UrbIS maps none). Browser 2026-11-18 vs Street View: present but wider (3-5 m vs 2.5-3 m), greener and plainer than reality (no brick parking strip at n. 15, no painted Private Weg / Cortenbosch words, no lantern posts). ASK THE OWNER which stretch / what looked missing (docs/LYCEE.md 4).
 - [ ] Flags: where else (owner names places; suggestions police station, Observatory, public buildings).
 - [ ] Shops Place Saint-Job: Le Touring; re-check Thai Smile / Botanea / Miska / Cacao Tree; ~630 null UrbIS solids to rebuild.
 - [ ] Owner image 68 (Waterloo by Optalweg): not located; ask for a hint.
@@ -39,6 +39,12 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 - [ ] Night lamps as quads drawn into one light map (jeantimex/tokyo performance.md: night 32.9 -> 20.1 ms on WebGL); fits the fixed light count (?lamplightmap).
 - [ ] Lab only: three-mesh-bvh/webgpu BVHComputeData (GPU raycast / closest point) for baked occlusion / AO probes; InstancedMesh2 1.0 beta for per-instance picking once it supports r187+.
 - [ ] r188: GPUTimer (PR #35412) for per-pass timing; PR #35321 compileComputeAsync de-dup.
+
+**Owner idea 2026-11-18: Dieweg cemetery (OSM way 16309623, landuse cemetery)**
+- [ ] Hero treatment like St-Job / Observatory (hero-buildings method: real photos, look only): the remarkable funerary chapels and tombs (neoclassical, Art Nouveau, Egyptian-style), the old Jewish section, overgrown paths, ivy, old trees, walls and gates. Closed since 1958, half wild. Also a key place for the kid game (docs/KIDGAME.md).
+
+**Owner idea 2026-11-18: physics props for all games**
+- [ ] Roadworks kit (cones, Heras fences, barriers, sandbags, skip, signs, temporary lights), street movables (wheelie bins, bags, boxes, trolley, café chairs/tables, ball), fun extras (box piles, pigeons, skateboard, gnome; ramp planks + bricks for the kid game). Perf: sleeping by default (wake only within ~30 m when touched), instanced per kind, primitive colliders, a light physics engine (Rapier) for at most a few dozen active bodies, reset when out of view; placement from data where possible (works permits, OSM cafés). Blender premium for complex pieces, boxy ones procedural. After the bike works in the city.
 
 **Defects found 2026-11-17**
 - [ ] Wire clearance too low under Av. des Tilleuls / Hospices / Carsoel bridges.

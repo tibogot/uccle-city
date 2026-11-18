@@ -9,6 +9,7 @@ const bvhs = new Map();            // name -> TriBVH (built)
 const jobs = new Map();            // name -> Promise<TriBVH | null>
 let worker = null, reqId = 0, listening = false;
 const pending = new Map();
+const TRANSFER = typeof location === "undefined" || !/[?&]heropoll=old(&|$)/.test(location.search);
 
 function post(tris) {
   if (!worker) {
@@ -16,7 +17,10 @@ function post(tris) {
     worker.onmessage = (e) => { const p = pending.get(e.data.id); pending.delete(e.data.id); if (e.data.error) p.reject(new Error(e.data.error)); else p.resolve(e.data); };
   }
   const id = ++reqId;
-  return new Promise((resolve, reject) => { pending.set(id, { resolve, reject }); worker.postMessage({ id, positions: tris.slice(), only: "bvh" }); });
+  // (falcon2, ?heropoll=old: copied twice, as before): the copy is TRANSFERRED (postMessage cloned the slice again: a
+  // second landmark-sized array of garbage on the main thread, round 2's GC leftover)
+  const positions = tris.slice();
+  return new Promise((resolve, reject) => { pending.set(id, { resolve, reject }); worker.postMessage({ id, positions, only: "bvh" }, TRANSFER ? [positions.buffer] : []); });
 }
 
 /** The BVH of a landmark's triangle soup (built once; later callers get the same object). */

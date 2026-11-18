@@ -11,7 +11,11 @@
  *  outside the 0.3 m margin with its corner inside, stayed, drawn and solid in the driven lane: 62 pieces city-wide (0 after),
  *  tools/audit/colliderAudit.mjs "lane garden ...") */
 export const SEG_STEP = 0.2, SEG_HALF = 0.15, PILLAR_HALF = 0.18;
-export function clearRoads(doc, blocked, { old = false } = {}) {
+export function clearRoads(doc, blocked, opts) { const g = clearRoadsGen(doc, blocked, opts); let r; while (!(r = g.next()).done); return r.value; }
+/** the same as a generator (claude/falcon2, rule 22: a yield every 16 pieces, every segment / gate with the whole-footprint test (up to ~75 probes each); cityGardens.addTileSliced runs it in <= 3 ms
+ *  slices, viewer/slices.js) */
+export function* clearRoadsGen(doc, blocked, { old = false } = {}) {
+  let c = 0;
   const out = { ...doc }, n = { segs: 0, pillars: 0, gates: 0, hedgePts: 0 };
   const segBad = old ? (g) => blocked(g[0], g[2]) || blocked(g[3], g[5]) || blocked((g[0] + g[3]) / 2, (g[2] + g[5]) / 2)
     : (g) => lineBad(g[0], g[2], g[3], g[5]);
@@ -24,16 +28,19 @@ export function clearRoads(doc, blocked, { old = false } = {}) {
   const pillarBad = old ? (p) => blocked(p[0], p[2])
     : (p) => { if (blocked(p[0], p[2])) return true; const c = Math.cos(p[3] || 0), s = Math.sin(p[3] || 0), r = PILLAR_HALF;
       return [[-r, -r], [0, -r], [r, -r], [r, 0], [r, r], [0, r], [-r, r], [-r, 0]].some(([u, v]) => blocked(p[0] + u * c + v * s, p[2] - u * s + v * c)); };
-  out.segs = (doc.segs || []).filter((g) => { const bad = segBad(g); if (bad) n.segs++; return !bad; });
-  out.pillars = (doc.pillars || []).filter((p) => { const bad = pillarBad(p); if (bad) n.pillars++; return !bad; });
+  out.segs = [];
+  for (const g of doc.segs || []) { if (!old || (++c & 15) === 0) yield; if (segBad(g)) n.segs++; else out.segs.push(g); }
+  out.pillars = [];
+  for (const p of doc.pillars || []) { if ((++c & 15) === 0) yield; if (pillarBad(p)) n.pillars++; else out.pillars.push(p); }
   // (a closed car gate spans its driveway mouth (w along yaw): the whole leaf, as a wall; an open pedestrian gate by its base)
   const gateBad = (g) => blocked(g[0], g[2]) || (!old && g[5] !== 0 && lineBad(g[0], g[2], g[0] + Math.cos(g[3]) * g[4], g[2] - Math.sin(g[3]) * g[4]));
-  out.gates = (doc.gates || []).filter((g) => { const bad = gateBad(g); if (bad) n.gates++; return !bad; });
+  out.gates = [];
+  for (const g of doc.gates || []) { if (!old || (++c & 15) === 0) yield; if (gateBad(g)) n.gates++; else out.gates.push(g); }
   out.hedges = [];
   for (const h of doc.hedges || []) {
     let run = [];
     const flush = () => { if (run.length >= 2) out.hedges.push({ ...h, points: run }); run = []; };
-    for (const q of h.points) { if (blocked(q[0], q[1])) { n.hedgePts++; flush(); } else run.push(q); }
+    for (const q of h.points) { if ((++c & 31) === 0) yield; if (blocked(q[0], q[1])) { n.hedgePts++; flush(); } else run.push(q); }
     flush();
   }
   const total = n.segs + n.pillars + n.gates + n.hedgePts;
