@@ -105,3 +105,33 @@ waits for its start tile + 8 ring tiles across 3 workers, about 3 tile builds on
 - Weld lumps up to 2 m beside UNMEASURED engine roads laid flat across a cross-slope (E6 Ch. de Saint-Job 253, G6
   Carsoel 126B, K10): the weld bank to their edges is now smooth, but the roads themselves still float / sink; a fix
   is the engine strips' cross-fall (unmapped roads) - next job.
+
+## Browser turn (2026-11-18, after merging foundation dafe786b)
+
+Visual tour (docs/TOUR.md). The new baseline `.tour/foundation2` was taken on foundation dafe786b (main checkout,
+served read-only): 22/22 views ready, 0 errors.
+- `?sidewalk=old` on the branch (a views copy with `sidewalk=old` in the common switches) vs foundation2: **0 of 22
+  flagged**. The switch gives back foundation exactly.
+- The branch default vs foundation2: **20 of 22 flagged** (all but f3-loggia-blocks and far-300m). Looked at:
+  ham-terrace, lycee-front, stjob-station, police-station, churchill-blocks. What changed in them is the street and
+  ground heights. Quick-mode cameras stand 1.7 m over the drawn ground, so a street moved by a few cm shifts the whole
+  picture by a few pixels. Also: the grass bank behind ham-terrace's sidewalk (smooth from the back edge), the
+  parked cars and garden plants on the new levels, and trees whose ground moved. The stjob-station tree to the right
+  of the stop is a different crown in the run: probably a tree seed or LOD pick that depends on its ground height.
+  Not traced: say if it matters.
+
+Spots, A/B with `&sidewalk=old` (docs/sidewalk/shots/*-new.jpg / *-old.jpg):
+- F2 Brugmann 349 (image 91): old, the paving climbs the bank in a triangle. New: level sidewalk, the bank starts at
+  its back edge. The 45 degree cut shows as the steep-slope earth material (brown), not grass.
+- C3 (-1838, -793): old, the paving runs 3 m up a 70 % bank and a parked car tilts on it. New: level sidewalk and
+  car, a cut earth bank behind.
+- H6 Rue Baron Perelman 4: old, a wide paved slope up to the garden gate. New: level paving and a ~1.5 m earth cut
+  under the hedge; the gate piers and hedge stay at the garden level, so the gate is now on top of the cut. Gardens
+  are not re-seated on the cut. The real place is probably steps / a sloped forecourt: needs a look by the owner.
+- B4 (-2296, -468): no change (the "two street levels" rule keeps the paved slope). Before and after alike: a wavy
+  kerb band and a leaning lamp (not this branch).
+- G10 Percke: a paved slope up between houses, camera blocked by a house; the slope is kept (two-level rule).
+- E10 (-895, 2855): an unmeasured engine road 3-4 m under the DTM at the region's edge, grass over it. The same before
+  (`over` sub-class, not fixed here).
+- F3 (-18, -851), a 0.82 m step spot: a forest path whose asphalt edge jogs where the engine strip meets it. Small,
+  not the image 89 slab.
