@@ -1,0 +1,6357 @@
+{
+ "when": "2026-11-18T05:57:39.781Z",
+ "sum": {
+  "plates": 748,
+  "plateGap": 237,
+  "plateNoPost": 0,
+  "signs": 1792,
+  "signFacing": 78,
+  "signMovedFar": 78,
+  "pieces": 4977,
+  "inRoad": 389,
+  "inLane": 369,
+  "onTram": 34,
+  "signConflict": 25
+ },
+ "byKind": {
+  "sign": 102,
+  "plate post": 122,
+  "stop pole": 58,
+  "banks": 2,
+  "postbox": 24,
+  "villo station": 10,
+  "bins": 14,
+  "stop pole (tram)": 12,
+  "postbox (tram)": 1,
+  "villo station (tram)": 1,
+  "sign (tram)": 6,
+  "plate post (tram)": 9,
+  "benches": 18,
+  "hoops": 2,
+  "bins (tram)": 3,
+  "shelter": 5
+ },
+ "items": {
+  "plateGap": [
+   {
+    "tile": "E3",
+    "what": "plate off its post",
+    "gap": 6.49,
+    "at": "-522.9, -591.8",
+    "post": "-518.9, -586.7",
+    "street": "Avenue de l'Échevinage"
+   },
+   {
+    "tile": "K10",
+    "what": "plate off its post",
+    "gap": 6.49,
+    "at": "2201.3, 2789.6",
+    "post": "2195.5, 2786.6",
+    "street": "Avenue de la Petite Espinette"
+   },
+   {
+    "tile": "F5",
+    "what": "plate off its post",
+    "gap": 6.44,
+    "at": "-119.8, 321.2",
+    "post": "-113.4, 320.7",
+    "street": "Dieweg"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 6.35,
+    "at": "3604.8, 283.9",
+    "post": "3604.6, 277.6",
+    "street": "Chaussée de La Hulpe"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 6.32,
+    "at": "-1108.4, -7.3",
+    "post": "-1114.3, -9.6",
+    "street": "Rue Victor Gambier"
+   },
+   {
+    "tile": "M10",
+    "what": "plate off its post",
+    "gap": 6.32,
+    "at": "3183.1, 2770.9",
+    "post": "3186.1, 2765.3",
+    "street": "Drève Saint-Hubert"
+   },
+   {
+    "tile": "F3",
+    "what": "plate off its post",
+    "gap": 6.3,
+    "at": "-76, -538.1",
+    "post": "-75.1, -531.8",
+    "street": "Square De Fré"
+   },
+   {
+    "tile": "E4",
+    "what": "plate off its post",
+    "gap": 6.17,
+    "at": "-539.3, -435.1",
+    "post": "-541.9, -440.7",
+    "street": "Rue Rouge"
+   },
+   {
+    "tile": "E1",
+    "what": "plate off its post",
+    "gap": 6,
+    "at": "-747.8, -1605.9",
+    "post": "-753.7, -1604.7",
+    "street": "Avenue Coghen"
+   },
+   {
+    "tile": "E10",
+    "what": "plate off its post",
+    "gap": 5.97,
+    "at": "-985.7, 2733.6",
+    "post": "-983.2, 2728.2",
+    "street": "Avenue des Mûres"
+   },
+   {
+    "tile": "D3",
+    "what": "plate off its post",
+    "gap": 5.95,
+    "at": "-1482.7, -968.9",
+    "post": "-1485.7, -963.8",
+    "street": "Avenue du Domaine"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 5.91,
+    "at": "-2436.9, -164.7",
+    "post": "-2436.1, -158.9",
+    "street": "Rue des Lutins"
+   },
+   {
+    "tile": "M5",
+    "what": "plate off its post",
+    "gap": 5.87,
+    "at": "3256.3, 207.8",
+    "post": "3258.3, 213.3",
+    "street": "Chaussée de La Hulpe"
+   },
+   {
+    "tile": "D1",
+    "what": "plate off its post",
+    "gap": 5.84,
+    "at": "-1399.5, -1570.6",
+    "post": "-1402.1, -1565.3",
+    "street": "Avenue du Domaine"
+   },
+   {
+    "tile": "I8",
+    "what": "plate off its post",
+    "gap": 5.75,
+    "at": "1230.1, 1991.9",
+    "post": "1226.7, 1987.3",
+    "street": "Avenue Blücher"
+   },
+   {
+    "tile": "C9",
+    "what": "plate off its post",
+    "gap": 5.7,
+    "at": "-1722.4, 2038.1",
+    "post": "-1717.5, 2041",
+    "street": "Grote Baan"
+   },
+   {
+    "tile": "E9",
+    "what": "plate off its post",
+    "gap": 5.65,
+    "at": "-504.6, 2304",
+    "post": "-501.4, 2308.6",
+    "street": "Parvis Chantecler"
+   },
+   {
+    "tile": "M5",
+    "what": "plate off its post",
+    "gap": 5.56,
+    "at": "3340, 221.3",
+    "post": "3341.8, 216.1",
+    "street": "Chaussée de La Hulpe - Terhulpsesteenweg / Chaussée de La Hulpe - Terhulpensesteenweg"
+   },
+   {
+    "tile": "G5",
+    "what": "plate off its post",
+    "gap": 5.51,
+    "at": "448.9, 124",
+    "post": "449.4, 129.5",
+    "street": "Avenue Circulaire"
+   },
+   {
+    "tile": "H2",
+    "what": "plate off its post",
+    "gap": 5.51,
+    "at": "909.6, -1388",
+    "post": "907.7, -1393.1",
+    "street": "Avenue Winston Churchill"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 5.49,
+    "at": "3814, 334.7",
+    "post": "3812.7, 340",
+    "street": "Chaussée de Boitsfort"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 5.48,
+    "at": "-1710.8, 1218.5",
+    "post": "-1705.4, 1218.8",
+    "street": "Rue François Vervloet"
+   },
+   {
+    "tile": "D1",
+    "what": "plate off its post",
+    "gap": 5.43,
+    "at": "-1127.8, -1804.5",
+    "post": "-1122.8, -1806.7",
+    "street": "Avenue Victor Rousseau"
+   },
+   {
+    "tile": "F2",
+    "what": "plate off its post",
+    "gap": 5.39,
+    "at": "-182.1, -1437.3",
+    "post": "-180, -1432.3",
+    "street": "Avenue des Ormeaux"
+   },
+   {
+    "tile": "I3",
+    "what": "plate off its post",
+    "gap": 5.29,
+    "at": "1200.2, -834.1",
+    "post": "1200.9, -828.9",
+    "street": "Avenue René Gobert"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 5.18,
+    "at": "-1518.7, -639.3",
+    "post": "-1520.9, -644",
+    "street": "Avenue du Globe"
+   },
+   {
+    "tile": "D1",
+    "what": "plate off its post",
+    "gap": 5.17,
+    "at": "-1401.2, -1578.4",
+    "post": "-1396.1, -1577.9",
+    "street": "Avenue Victor Rousseau"
+   },
+   {
+    "tile": "I2",
+    "what": "plate off its post",
+    "gap": 5.09,
+    "at": "1332.7, -1448.3",
+    "post": "1328, -1450.2",
+    "street": "Avenue de la Lisière"
+   },
+   {
+    "tile": "K4",
+    "what": "plate off its post",
+    "gap": 5.09,
+    "at": "2339.4, -15",
+    "post": "2340.7, -10.1",
+    "street": "Avenue de Boitsfort"
+   },
+   {
+    "tile": "D7",
+    "what": "plate off its post",
+    "gap": 5.01,
+    "at": "-1035.3, 1113.5",
+    "post": "-1038.1, 1117.6",
+    "street": "Rue Engeland"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 4.98,
+    "at": "-1867.5, -785.2",
+    "post": "-1863.4, -782.4",
+    "street": "Avenue du Jonc"
+   },
+   {
+    "tile": "B7",
+    "what": "plate off its post",
+    "gap": 4.96,
+    "at": "-2014.5, 1020.6",
+    "post": "-2014.6, 1025.6",
+    "street": "Rue du Chamois"
+   },
+   {
+    "tile": "H2",
+    "what": "plate off its post",
+    "gap": 4.91,
+    "at": "558.1, -1396.7",
+    "post": "556.2, -1401.2",
+    "street": "Avenue Winston Churchill"
+   },
+   {
+    "tile": "I10",
+    "what": "plate off its post",
+    "gap": 4.88,
+    "at": "1118.8, 2841.6",
+    "post": "1120.2, 2846.3",
+    "street": "Avenue Blücher"
+   },
+   {
+    "tile": "D7",
+    "what": "plate off its post",
+    "gap": 4.79,
+    "at": "-1359, 1268.7",
+    "post": "-1359.5, 1273.4",
+    "street": "Rue du Bourdon"
+   },
+   {
+    "tile": "K11",
+    "what": "plate off its post",
+    "gap": 4.7,
+    "at": "2022.7, 3231.7",
+    "post": "2023.9, 3227.2",
+    "street": "Avenue Bon Air"
+   },
+   {
+    "tile": "C9",
+    "what": "plate off its post",
+    "gap": 4.68,
+    "at": "-1692.7, 2118",
+    "post": "-1697.3, 2117.2",
+    "street": "Rue Courte Linkebeek"
+   },
+   {
+    "tile": "D1",
+    "what": "plate off its post",
+    "gap": 4.68,
+    "at": "-1110.9, -1816.8",
+    "post": "-1107.8, -1820.3",
+    "street": "Avenue Jupiter"
+   },
+   {
+    "tile": "F2",
+    "what": "plate off its post",
+    "gap": 4.63,
+    "at": "-136.8, -1127.3",
+    "post": "-141.2, -1128.6",
+    "street": "Avenue Maxime Van Praag"
+   },
+   {
+    "tile": "H2",
+    "what": "plate off its post",
+    "gap": 4.6,
+    "at": "562, -1378.5",
+    "post": "560.5, -1374.1",
+    "street": "Rue Edith Cavell"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 4.54,
+    "at": "-1351.2, -405.5",
+    "post": "-1354.9, -408",
+    "street": "Avenue du Vossegat"
+   },
+   {
+    "tile": "H4",
+    "what": "plate off its post",
+    "gap": 4.5,
+    "at": "798.6, -13.6",
+    "post": "795.2, -16.7",
+    "street": "Avenue Circulaire"
+   },
+   {
+    "tile": "D7",
+    "what": "plate off its post",
+    "gap": 4.46,
+    "at": "-1364.5, 1254.5",
+    "post": "-1367.6, 1251.3",
+    "street": "Chaussée d'Alsemberg"
+   },
+   {
+    "tile": "A5",
+    "what": "plate off its post",
+    "gap": 4.4,
+    "at": "-2689.1, 125.4",
+    "post": "-2693.1, 127.1",
+    "street": "Chaussée de Ruisbroek"
+   },
+   {
+    "tile": "F9",
+    "what": "plate off its post",
+    "gap": 4.38,
+    "at": "-312.1, 2329.9",
+    "post": "-311.7, 2334.3",
+    "street": "Avenue des Faons"
+   },
+   {
+    "tile": "I9",
+    "what": "plate off its post",
+    "gap": 4.38,
+    "at": "1007.2, 2193.7",
+    "post": "1004.5, 2190.3",
+    "street": "Place de la Sainte-Alliance"
+   },
+   {
+    "tile": "J3",
+    "what": "plate off its post",
+    "gap": 4.38,
+    "at": "1697.3, -966.2",
+    "post": "1700.8, -968.9",
+    "street": "Avenue de la Belle Alliance"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 4.36,
+    "at": "-2360.1, -161.5",
+    "post": "-2356, -163",
+    "street": "Rue de Lisala"
+   },
+   {
+    "tile": "F1",
+    "what": "plate off its post",
+    "gap": 4.35,
+    "at": "-168.9, -1776",
+    "post": "-164.7, -1777.1",
+    "street": "Avenue Albert"
+   },
+   {
+    "tile": "B7",
+    "what": "plate off its post",
+    "gap": 4.22,
+    "at": "-2008.6, 1011.4",
+    "post": "-2004.4, 1011.1",
+    "street": "Chemin de la Truite"
+   },
+   {
+    "tile": "H6",
+    "what": "plate off its post",
+    "gap": 4.16,
+    "at": "504.3, 624.1",
+    "post": "507.7, 621.8",
+    "street": "Avenue Den Doorn"
+   },
+   {
+    "tile": "F1",
+    "what": "plate off its post",
+    "gap": 4.09,
+    "at": "-36.5, -1805.5",
+    "post": "-32.6, -1804.1",
+    "street": "Avenue Brugmann"
+   },
+   {
+    "tile": "F1",
+    "what": "plate off its post",
+    "gap": 4.09,
+    "at": "-42.1, -1790.3",
+    "post": "-39.3, -1787.3",
+    "street": "Rue Jean-Baptiste Meunier"
+   },
+   {
+    "tile": "D2",
+    "what": "plate off its post",
+    "gap": 4.07,
+    "at": "-1220.4, -1358.6",
+    "post": "-1223.3, -1355.7",
+    "street": "Avenue Minerve"
+   },
+   {
+    "tile": "E6",
+    "what": "plate off its post",
+    "gap": 4.07,
+    "at": "-677, 988.7",
+    "post": "-674.9, 992.2",
+    "street": "Rue Papenkasteel"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 4.06,
+    "at": "-1738.4, -665.8",
+    "post": "-1742.4, -666.5",
+    "street": "Rue du Bambou"
+   },
+   {
+    "tile": "F3",
+    "what": "plate off its post",
+    "gap": 4.04,
+    "at": "-90.8, -525.2",
+    "post": "-87.1, -523.7",
+    "street": "Avenue des Statuaires"
+   },
+   {
+    "tile": "H8",
+    "what": "plate off its post",
+    "gap": 4.04,
+    "at": "537.9, 1802.7",
+    "post": "538.3, 1806.7",
+    "street": "Avenue du Gui"
+   },
+   {
+    "tile": "E3",
+    "what": "plate off its post",
+    "gap": 4.03,
+    "at": "-516, -607.7",
+    "post": "-512.2, -606.6",
+    "street": "Avenue Brugmann"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 4.03,
+    "at": "3889.7, 136.8",
+    "post": "3886.2, 135",
+    "street": "Avenue des Lucanes"
+   },
+   {
+    "tile": "J11",
+    "what": "plate off its post",
+    "gap": 4,
+    "at": "1697.6, 3117.3",
+    "post": "1698.1, 3113.4",
+    "street": "Avenue des Marronniers"
+   },
+   {
+    "tile": "I9",
+    "what": "plate off its post",
+    "gap": 3.96,
+    "at": "1267.2, 2424.3",
+    "post": "1263.8, 2422.3",
+    "street": "Avenue des Myrtilles"
+   },
+   {
+    "tile": "D2",
+    "what": "plate off its post",
+    "gap": 3.93,
+    "at": "-1288.1, -1064.4",
+    "post": "-1290.8, -1061.6",
+    "street": "Rue Roosendael"
+   },
+   {
+    "tile": "M5",
+    "what": "plate off its post",
+    "gap": 3.92,
+    "at": "3351.7, 241.2",
+    "post": "3350.7, 245",
+    "street": "Avenue Franklin Roosevelt"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 3.89,
+    "at": "-1132.1, -60.5",
+    "post": "-1128.2, -61.2",
+    "street": "Avenue de la Princesse Paola"
+   },
+   {
+    "tile": "E4",
+    "what": "plate off its post",
+    "gap": 3.84,
+    "at": "-603.3, -191.9",
+    "post": "-603.9, -188.1",
+    "street": "Avenue Arnold Delvaux"
+   },
+   {
+    "tile": "E3",
+    "what": "plate off its post",
+    "gap": 3.81,
+    "at": "-525.6, -611.9",
+    "post": "-529.3, -611.1",
+    "street": "Avenue Coghen"
+   },
+   {
+    "tile": "I11",
+    "what": "plate off its post",
+    "gap": 3.79,
+    "at": "1494.1, 3043.2",
+    "post": "1497.8, 3043",
+    "street": "Avenue des Sorbiers"
+   },
+   {
+    "tile": "K10",
+    "what": "plate off its post",
+    "gap": 3.76,
+    "at": "2328, 2581.4",
+    "post": "2325.1, 2578.9",
+    "street": "Avenue d'Hougoumont"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 3.75,
+    "at": "-1871.2, -879.1",
+    "post": "-1867.5, -879.7",
+    "street": "Drève du Pressoir"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 3.69,
+    "at": "-1877.1, -783.1",
+    "post": "-1879.3, -780.1",
+    "street": "Avenue de Haveskercke"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 3.68,
+    "at": "-2387.7, -44.7",
+    "post": "-2384.4, -46.3",
+    "street": "Rue des Lutins"
+   },
+   {
+    "tile": "H2",
+    "what": "plate off its post",
+    "gap": 3.66,
+    "at": "774.1, -1366.8",
+    "post": "774.1, -1370.4",
+    "street": "Avenue Winston Churchill"
+   },
+   {
+    "tile": "K11",
+    "what": "plate off its post",
+    "gap": 3.66,
+    "at": "2334.2, 3264.9",
+    "post": "2330.5, 3264.9",
+    "street": "Chaussée de Waterloo"
+   },
+   {
+    "tile": "F1",
+    "what": "plate off its post",
+    "gap": 3.54,
+    "at": "-120.2, -1619.2",
+    "post": "-117.5, -1621.6",
+    "street": "Avenue Winston Churchill"
+   },
+   {
+    "tile": "F4",
+    "what": "plate off its post",
+    "gap": 3.53,
+    "at": "-46.1, -410",
+    "post": "-44.7, -413.2",
+    "street": "Avenue des Statuaires"
+   },
+   {
+    "tile": "E1",
+    "what": "plate off its post",
+    "gap": 3.5,
+    "at": "-653.1, -1970.8",
+    "post": "-649.7, -1969.9",
+    "street": "Avenue Saint-Augustin"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 3.47,
+    "at": "-1137.1, -47.8",
+    "post": "-1138.4, -44.6",
+    "street": "Rue Victor Gambier"
+   },
+   {
+    "tile": "D9",
+    "what": "plate off its post",
+    "gap": 3.44,
+    "at": "-1212.7, 2067.8",
+    "post": "-1210.6, 2070.6",
+    "street": "Avenue des Tilleuls"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 3.43,
+    "at": "-1637.1, -915.9",
+    "post": "-1640.3, -917.1",
+    "street": "Avenue Fontaine Vanderstraeten"
+   },
+   {
+    "tile": "D7",
+    "what": "plate off its post",
+    "gap": 3.41,
+    "at": "-1338.3, 1259",
+    "post": "-1339.4, 1255.8",
+    "street": "Rue du Château d'Or"
+   },
+   {
+    "tile": "C5",
+    "what": "plate off its post",
+    "gap": 3.38,
+    "at": "-1806.8, 496.7",
+    "post": "-1808.3, 499.7",
+    "street": "Rue Molenvelt"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 3.35,
+    "at": "-1790.9, -993.1",
+    "post": "-1789.5, -990.1",
+    "street": "Drève des Futailles"
+   },
+   {
+    "tile": "I1",
+    "what": "plate off its post",
+    "gap": 3.35,
+    "at": "1077.1, -1955.1",
+    "post": "1074.1, -1953.7",
+    "street": "Avenue Molière"
+   },
+   {
+    "tile": "I6",
+    "what": "plate off its post",
+    "gap": 3.34,
+    "at": "1080.6, 513.1",
+    "post": "1078, 515.1",
+    "street": "Avenue Jean et Pierre Carsoel"
+   },
+   {
+    "tile": "B6",
+    "what": "plate off its post",
+    "gap": 3.33,
+    "at": "-2008.8, 566.2",
+    "post": "-2005.8, 567.6",
+    "street": "Rue Keyenbempt"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 3.33,
+    "at": "-1990, -796",
+    "post": "-1987.3, -798",
+    "street": "Avenue Denayer"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 3.31,
+    "at": "3699.5, 109.7",
+    "post": "3701.4, 112.4",
+    "street": "Avenue des Lucanes"
+   },
+   {
+    "tile": "E7",
+    "what": "plate off its post",
+    "gap": 3.29,
+    "at": "-685, 1242.7",
+    "post": "-682, 1241.5",
+    "street": "Rue Kinsendael"
+   },
+   {
+    "tile": "H8",
+    "what": "plate off its post",
+    "gap": 3.27,
+    "at": "546.2, 1804.8",
+    "post": "549.3, 1805.8",
+    "street": "Avenue du Prince d'Orange"
+   },
+   {
+    "tile": "K10",
+    "what": "plate off its post",
+    "gap": 3.25,
+    "at": "2327.9, 2534.1",
+    "post": "2325.6, 2531.8",
+    "street": "Chemin des Pins"
+   },
+   {
+    "tile": "I1",
+    "what": "plate off its post",
+    "gap": 3.23,
+    "at": "1338.5, -1912.3",
+    "post": "1341.3, -1913.9",
+    "street": "Rue de Praetere"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 3.22,
+    "at": "-1630.5, -902.3",
+    "post": "-1632.9, -900.2",
+    "street": "Avenue du Globe"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 3.21,
+    "at": "-1401.6, -205.6",
+    "post": "-1403.7, -203.2",
+    "street": "Avenue de la Princesse Paola"
+   },
+   {
+    "tile": "I4",
+    "what": "plate off its post",
+    "gap": 3.19,
+    "at": "1155.6, -99.8",
+    "post": "1156.9, -96.9",
+    "street": "Avenue du Vert Chasseur"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 3.12,
+    "at": "-1717.2, 1226.4",
+    "post": "-1718.1, 1229.4",
+    "street": "Rue du Melkriek"
+   },
+   {
+    "tile": "D2",
+    "what": "plate off its post",
+    "gap": 3.11,
+    "at": "-1204.7, -1362.6",
+    "post": "-1202.7, -1360.3",
+    "street": "Avenue Ulysse"
+   },
+   {
+    "tile": "E1",
+    "what": "plate off its post",
+    "gap": 3.09,
+    "at": "-991.9, -1598.6",
+    "post": "-990, -1596.1",
+    "street": "Avenue Neptune"
+   },
+   {
+    "tile": "C8",
+    "what": "plate off its post",
+    "gap": 3.07,
+    "at": "-1628.2, 1634.3",
+    "post": "-1630.3, 1636.5",
+    "street": "Rue Molensteen"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 3.05,
+    "at": "-1941.6, 1116.9",
+    "post": "-1944.2, 1118.5",
+    "street": "Rue du Chamois"
+   },
+   {
+    "tile": "I10",
+    "what": "plate off its post",
+    "gap": 3.05,
+    "at": "1215.9, 2941.5",
+    "post": "1218.6, 2943",
+    "street": "Avenue des Aubépines"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 3.05,
+    "at": "3792.1, 125.5",
+    "post": "3794.9, 124.2",
+    "street": "Avenue des Lucanes"
+   },
+   {
+    "tile": "E5",
+    "what": "plate off its post",
+    "gap": 3.04,
+    "at": "-614.6, 90.2",
+    "post": "-615.5, 87.3",
+    "street": "Rue Klipveld"
+   },
+   {
+    "tile": "H2",
+    "what": "plate off its post",
+    "gap": 2.94,
+    "at": "662.8, -1370.6",
+    "post": "663, -1373.5",
+    "street": "Avenue Winston Churchill"
+   },
+   {
+    "tile": "I2",
+    "what": "plate off its post",
+    "gap": 2.93,
+    "at": "1322.4, -1442.6",
+    "post": "1321.2, -1445.3",
+    "street": "Chaussée de Waterloo"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 2.93,
+    "at": "3770.7, 30.1",
+    "post": "3771.1, 33",
+    "street": "Avenue des Courtilières"
+   },
+   {
+    "tile": "G1",
+    "what": "plate off its post",
+    "gap": 2.9,
+    "at": "5, -1898.8",
+    "post": "6.9, -1896.6",
+    "street": "Avenue Molière"
+   },
+   {
+    "tile": "J3",
+    "what": "plate off its post",
+    "gap": 2.89,
+    "at": "1581.3, -705.6",
+    "post": "1580.1, -708.2",
+    "street": "Avenue De Fré"
+   },
+   {
+    "tile": "M5",
+    "what": "plate off its post",
+    "gap": 2.86,
+    "at": "3294.3, 219.1",
+    "post": "3295.5, 216.5",
+    "street": "Avenue Franklin Roosevelt"
+   },
+   {
+    "tile": "J11",
+    "what": "plate off its post",
+    "gap": 2.83,
+    "at": "1712.6, 3117.7",
+    "post": "1715.4, 3117.3",
+    "street": "Avenue de la Petite Espinette"
+   },
+   {
+    "tile": "K8",
+    "what": "plate off its post",
+    "gap": 2.83,
+    "at": "2193.6, 1632.2",
+    "post": "2191, 1633.4",
+    "street": "Avenue Van Bever"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 2.78,
+    "at": "-2309.3, -438.9",
+    "post": "-2312, -439.7",
+    "street": "Square du Bia Bouquet"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 2.78,
+    "at": "-1863.1, 1192.9",
+    "post": "-1860.9, 1191.3",
+    "street": "Rue Georges Ugeux"
+   },
+   {
+    "tile": "B6",
+    "what": "plate off its post",
+    "gap": 2.77,
+    "at": "-2071.4, 673.1",
+    "post": "-2069, 674.6",
+    "street": "Rue du Melkriek"
+   },
+   {
+    "tile": "H2",
+    "what": "plate off its post",
+    "gap": 2.76,
+    "at": "920.6, -1383.4",
+    "post": "922.7, -1385.2",
+    "street": "Rue Dodonée"
+   },
+   {
+    "tile": "H5",
+    "what": "plate off its post",
+    "gap": 2.7,
+    "at": "520.3, 303.5",
+    "post": "518.2, 305.2",
+    "street": "Avenue de Mercure"
+   },
+   {
+    "tile": "D7",
+    "what": "plate off its post",
+    "gap": 2.59,
+    "at": "-1101.2, 1121.6",
+    "post": "-1100.2, 1124",
+    "street": "Rue du Château d'Or"
+   },
+   {
+    "tile": "K4",
+    "what": "plate off its post",
+    "gap": 2.48,
+    "at": "2305.5, -35.1",
+    "post": "2304.2, -37.2",
+    "street": "Avenue de Groenendael"
+   },
+   {
+    "tile": "H8",
+    "what": "plate off its post",
+    "gap": 2.44,
+    "at": "816.6, 1872.5",
+    "post": "819, 1873",
+    "street": "Avenue de Foestraets"
+   },
+   {
+    "tile": "F7",
+    "what": "plate off its post",
+    "gap": 2.42,
+    "at": "-488.8, 1279.8",
+    "post": "-488.2, 1282.2",
+    "street": "Rue de Verrewinkel"
+   },
+   {
+    "tile": "H5",
+    "what": "plate off its post",
+    "gap": 2.42,
+    "at": "528.7, 300.1",
+    "post": "527.2, 298.2",
+    "street": "Avenue Circulaire"
+   },
+   {
+    "tile": "B6",
+    "what": "plate off its post",
+    "gap": 2.41,
+    "at": "-2132.7, 988.1",
+    "post": "-2135, 987.3",
+    "street": "Rue des Trois Rois"
+   },
+   {
+    "tile": "H6",
+    "what": "plate off its post",
+    "gap": 2.36,
+    "at": "874.5, 511.7",
+    "post": "872.7, 510.2",
+    "street": "Avenue Latérale"
+   },
+   {
+    "tile": "K5",
+    "what": "plate off its post",
+    "gap": 2.36,
+    "at": "2003.7, 471.8",
+    "post": "2001.5, 471.1",
+    "street": "Drève du Sénéchal"
+   },
+   {
+    "tile": "D5",
+    "what": "plate off its post",
+    "gap": 2.28,
+    "at": "-1262.6, 173.4",
+    "post": "-1261.7, 175.5",
+    "street": "Rue des Trois Arbres"
+   },
+   {
+    "tile": "F2",
+    "what": "plate off its post",
+    "gap": 2.27,
+    "at": "-254.6, -1023.9",
+    "post": "-252.4, -1023.3",
+    "street": "Avenue Maxime Van Praag"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 2.26,
+    "at": "-2101.2, -409.4",
+    "post": "-2098.9, -409.7",
+    "street": "Avenue Stuart Merrill"
+   },
+   {
+    "tile": "C4",
+    "what": "plate off its post",
+    "gap": 2.26,
+    "at": "-1576.4, -137.5",
+    "post": "-1575.4, -139.6",
+    "street": "Rue Gatti de Gamond"
+   },
+   {
+    "tile": "F9",
+    "what": "plate off its post",
+    "gap": 2.26,
+    "at": "-258.2, 2052.5",
+    "post": "-260.4, 2053.3",
+    "street": "Avenue du Hérisson"
+   },
+   {
+    "tile": "K11",
+    "what": "plate off its post",
+    "gap": 2.23,
+    "at": "2330.9, 3291.8",
+    "post": "2329.3, 3290.2",
+    "street": "Drève Pittoresque"
+   },
+   {
+    "tile": "E6",
+    "what": "plate off its post",
+    "gap": 2.22,
+    "at": "-684.1, 989.4",
+    "post": "-685.2, 987.4",
+    "street": "Chaussée de Saint-Job"
+   },
+   {
+    "tile": "K4",
+    "what": "plate off its post",
+    "gap": 2.18,
+    "at": "2076.7, -38.5",
+    "post": "2078.1, -36.8",
+    "street": "Avenue du Vivier d'Oie"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 2.17,
+    "at": "-1136.4, -91",
+    "post": "-1138.6, -90.8",
+    "street": "Avenue de la Princesse Paola"
+   },
+   {
+    "tile": "G5",
+    "what": "plate off its post",
+    "gap": 2.16,
+    "at": "35.4, 412.8",
+    "post": "36.5, 411",
+    "street": "Avenue Georges Lecointe"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 2.14,
+    "at": "3666.9, 2.3",
+    "post": "3665.8, 4.2",
+    "street": "Avenue des Coccinelles"
+   },
+   {
+    "tile": "J3",
+    "what": "plate off its post",
+    "gap": 2.1,
+    "at": "1601.9, -705.9",
+    "post": "1603.8, -705",
+    "street": "Chaussée de Waterloo"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 2.1,
+    "at": "3817.2, 350.6",
+    "post": "3816.7, 352.6",
+    "street": "Chaussée de La Hulpe"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 2.08,
+    "at": "3764.6, 338.7",
+    "post": "3764.1, 340.7",
+    "street": "Chaussée de La Hulpe"
+   },
+   {
+    "tile": "F7",
+    "what": "plate off its post",
+    "gap": 2.07,
+    "at": "-495.6, 1268.9",
+    "post": "-495.5, 1266.9",
+    "street": "Rue Papenkasteel"
+   },
+   {
+    "tile": "C4",
+    "what": "plate off its post",
+    "gap": 2.06,
+    "at": "-1830.3, -463.7",
+    "post": "-1829.8, -465.7",
+    "street": "Avenue de Haveskercke"
+   },
+   {
+    "tile": "F9",
+    "what": "plate off its post",
+    "gap": 2.06,
+    "at": "-51.5, 2079.6",
+    "post": "-52, 2081.6",
+    "street": "Rue Engeland"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 2.05,
+    "at": "-1616.3, 1332.2",
+    "post": "-1615.3, 1330.3",
+    "street": "Rue du Melkriek"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 2.04,
+    "at": "-1183.4, -32.9",
+    "post": "-1182.2, -31.2",
+    "street": "Avenue Adolphe Wansart"
+   },
+   {
+    "tile": "E4",
+    "what": "plate off its post",
+    "gap": 2.04,
+    "at": "-727.2, -499.9",
+    "post": "-725.3, -499.2",
+    "street": "Parvis Saint-Pierre"
+   },
+   {
+    "tile": "I2",
+    "what": "plate off its post",
+    "gap": 2.02,
+    "at": "1430.8, -1416",
+    "post": "1429.5, -1417.5",
+    "street": "Avenue de la Lisière"
+   },
+   {
+    "tile": "F6",
+    "what": "plate off its post",
+    "gap": 1.98,
+    "at": "-446.7, 802",
+    "post": "-448.4, 800.9",
+    "street": "Chaussée de Saint-Job"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 1.98,
+    "at": "3826.3, 6.7",
+    "post": "3825.6, 8.5",
+    "street": "Square des Cicindèles"
+   },
+   {
+    "tile": "E9",
+    "what": "plate off its post",
+    "gap": 1.93,
+    "at": "-788.5, 2160.9",
+    "post": "-789.1, 2162.7",
+    "street": "Rue du Kriekenput"
+   },
+   {
+    "tile": "H6",
+    "what": "plate off its post",
+    "gap": 1.92,
+    "at": "805.7, 504.5",
+    "post": "806.1, 502.6",
+    "street": "Avenue Jean et Pierre Carsoel"
+   },
+   {
+    "tile": "D7",
+    "what": "plate off its post",
+    "gap": 1.9,
+    "at": "-1088.9, 1135.8",
+    "post": "-1087, 1135.8",
+    "street": "Rue du Roseau"
+   },
+   {
+    "tile": "F3",
+    "what": "plate off its post",
+    "gap": 1.85,
+    "at": "-180.1, -826.1",
+    "post": "-178.4, -825.3",
+    "street": "Avenue Bourgmestre Jean Herinckx"
+   },
+   {
+    "tile": "C5",
+    "what": "plate off its post",
+    "gap": 1.83,
+    "at": "-1871, 299.3",
+    "post": "-1871.5, 297.5",
+    "street": "Rue Edouard Michiels"
+   },
+   {
+    "tile": "L7",
+    "what": "plate off its post",
+    "gap": 1.82,
+    "at": "2604, 1431.1",
+    "post": "2602.7, 1429.9",
+    "street": "Avenue Van Bever"
+   },
+   {
+    "tile": "G6",
+    "what": "plate off its post",
+    "gap": 1.77,
+    "at": "22.9, 778.1",
+    "post": "23.5, 776.4",
+    "street": "Clos Bourgmestre De Keyser"
+   },
+   {
+    "tile": "I2",
+    "what": "plate off its post",
+    "gap": 1.76,
+    "at": "1314.6, -1458.8",
+    "post": "1313.9, -1460.5",
+    "street": "Avenue Winston Churchill"
+   },
+   {
+    "tile": "D2",
+    "what": "plate off its post",
+    "gap": 1.73,
+    "at": "-1297, -1366.9",
+    "post": "-1297.2, -1365.2",
+    "street": "Avenue Ulysse"
+   },
+   {
+    "tile": "D7",
+    "what": "plate off its post",
+    "gap": 1.73,
+    "at": "-1080.8, 1102.4",
+    "post": "-1079.1, 1102.1",
+    "street": "Rue Engeland"
+   },
+   {
+    "tile": "F2",
+    "what": "plate off its post",
+    "gap": 1.71,
+    "at": "-39.6, -1080.3",
+    "post": "-38.1, -1079.4",
+    "street": "Avenue Bourgmestre Jean Herinckx"
+   },
+   {
+    "tile": "K9",
+    "what": "plate off its post",
+    "gap": 1.66,
+    "at": "2298.5, 2168.8",
+    "post": "2297, 2168.1",
+    "street": "Avenue de la Sapinière"
+   },
+   {
+    "tile": "F5",
+    "what": "plate off its post",
+    "gap": 1.65,
+    "at": "-394.5, 156.6",
+    "post": "-396, 155.9",
+    "street": "Rue du Repos"
+   },
+   {
+    "tile": "I9",
+    "what": "plate off its post",
+    "gap": 1.64,
+    "at": "1001.8, 2178.6",
+    "post": "1002.8, 2177.3",
+    "street": "Avenue du Prince d'Orange"
+   },
+   {
+    "tile": "D6",
+    "what": "plate off its post",
+    "gap": 1.63,
+    "at": "-1253.6, 823.4",
+    "post": "-1255, 824.2",
+    "street": "Rue François Vervloet"
+   },
+   {
+    "tile": "E6",
+    "what": "plate off its post",
+    "gap": 1.63,
+    "at": "-522, 869.1",
+    "post": "-523.3, 868.2",
+    "street": "Chaussée de Saint-Job"
+   },
+   {
+    "tile": "F3",
+    "what": "plate off its post",
+    "gap": 1.63,
+    "at": "-194, -831",
+    "post": "-194, -832.6",
+    "street": "Avenue Jean Burgers"
+   },
+   {
+    "tile": "E10",
+    "what": "plate off its post",
+    "gap": 1.62,
+    "at": "-740.1, 2751.4",
+    "post": "-739.7, 2749.8",
+    "street": "Avenue des Sophoras"
+   },
+   {
+    "tile": "D2",
+    "what": "plate off its post",
+    "gap": 1.6,
+    "at": "-1424.9, -1362.1",
+    "post": "-1424.2, -1360.7",
+    "street": "Avenue Ulysse"
+   },
+   {
+    "tile": "J10",
+    "what": "plate off its post",
+    "gap": 1.58,
+    "at": "1587.2, 2568.5",
+    "post": "1587.3, 2566.9",
+    "street": "Avenue de la Pinède"
+   },
+   {
+    "tile": "F9",
+    "what": "plate off its post",
+    "gap": 1.54,
+    "at": "-309.2, 2249.1",
+    "post": "-309, 2247.5",
+    "street": "Avenue Reinaert de Vos"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 1.52,
+    "at": "-1773.2, 1166.3",
+    "post": "-1774.3, 1165.2",
+    "street": "Rue du Chamois"
+   },
+   {
+    "tile": "K11",
+    "what": "plate off its post",
+    "gap": 1.49,
+    "at": "2354, 3257",
+    "post": "2353.4, 3255.6",
+    "street": "Drève Saint-Hubert"
+   },
+   {
+    "tile": "K9",
+    "what": "plate off its post",
+    "gap": 1.46,
+    "at": "2324.6, 2301.5",
+    "post": "2323.4, 2300.6",
+    "street": "Avenue des Aubépines"
+   },
+   {
+    "tile": "H4",
+    "what": "plate off its post",
+    "gap": 1.45,
+    "at": "603.1, -61.9",
+    "post": "603.4, -60.5",
+    "street": "Square Charles Lagrange"
+   },
+   {
+    "tile": "H5",
+    "what": "plate off its post",
+    "gap": 1.44,
+    "at": "628.9, 453.8",
+    "post": "629.3, 452.4",
+    "street": "Avenue de Mercure"
+   },
+   {
+    "tile": "C5",
+    "what": "plate off its post",
+    "gap": 1.43,
+    "at": "-1998.3, 304.3",
+    "post": "-1998.7, 302.9",
+    "street": "Rue des Polders"
+   },
+   {
+    "tile": "H2",
+    "what": "plate off its post",
+    "gap": 1.42,
+    "at": "562.8, -1212.7",
+    "post": "563.3, -1211.4",
+    "street": "Avenue Montjoie"
+   },
+   {
+    "tile": "A5",
+    "what": "plate off its post",
+    "gap": 1.4,
+    "at": "-2691.9, 132.4",
+    "post": "-2693.2, 131.8",
+    "street": "Avenue Paul Gilson"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 1.39,
+    "at": "-1634.5, 1128.8",
+    "post": "-1634, 1127.5",
+    "street": "Rue de l'Antilope"
+   },
+   {
+    "tile": "F4",
+    "what": "plate off its post",
+    "gap": 1.39,
+    "at": "-41, -411.5",
+    "post": "-41.7, -412.7",
+    "street": "Rue Groeselenberg"
+   },
+   {
+    "tile": "E1",
+    "what": "plate off its post",
+    "gap": 1.29,
+    "at": "-650.4, -1951.7",
+    "post": "-649.7, -1952.8",
+    "street": "Rue Edouard Branly"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 1.29,
+    "at": "3612.1, 305",
+    "post": "3611.2, 306",
+    "street": "Drève du Comte"
+   },
+   {
+    "tile": "D1",
+    "what": "plate off its post",
+    "gap": 1.26,
+    "at": "-1144.3, -1596.2",
+    "post": "-1144.4, -1595",
+    "street": "Avenue Pénélope"
+   },
+   {
+    "tile": "G1",
+    "what": "plate off its post",
+    "gap": 1.24,
+    "at": "11.4, -1912",
+    "post": "12.5, -1911.6",
+    "street": "Avenue Brugmann"
+   },
+   {
+    "tile": "E1",
+    "what": "plate off its post",
+    "gap": 1.23,
+    "at": "-687.2, -1823.1",
+    "post": "-686.6, -1822",
+    "street": "Avenue Molière"
+   },
+   {
+    "tile": "K4",
+    "what": "plate off its post",
+    "gap": 1.2,
+    "at": "2169.1, -87.1",
+    "post": "2167.9, -87",
+    "street": "Avenue de Saint-Job"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 1.19,
+    "at": "-1916.1, -844.8",
+    "post": "-1915.1, -845.4",
+    "street": "Drève des Vendanges"
+   },
+   {
+    "tile": "F8",
+    "what": "plate off its post",
+    "gap": 1.19,
+    "at": "-283.1, 1826.6",
+    "post": "-284.3, 1826.8",
+    "street": "Avenue Jacqueline Harpman"
+   },
+   {
+    "tile": "D9",
+    "what": "plate off its post",
+    "gap": 1.18,
+    "at": "-1070.8, 2011.5",
+    "post": "-1070.4, 2010.4",
+    "street": "Rue des Griottes"
+   },
+   {
+    "tile": "I8",
+    "what": "plate off its post",
+    "gap": 1.17,
+    "at": "1242.5, 1987.2",
+    "post": "1243.1, 1988.2",
+    "street": "Avenue des Églantiers"
+   },
+   {
+    "tile": "K11",
+    "what": "plate off its post",
+    "gap": 1.11,
+    "at": "2349.8, 3286.2",
+    "post": "2348.8, 3285.8",
+    "street": "Chaussée de Waterloo"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 1.1,
+    "at": "-2395.6, -41.7",
+    "post": "-2396.6, -41.4",
+    "street": "Chaussée de Ruisbroek"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 1.08,
+    "at": "-2285.4, -383.9",
+    "post": "-2285.8, -382.9",
+    "street": "Clos des Fuchsias"
+   },
+   {
+    "tile": "E5",
+    "what": "plate off its post",
+    "gap": 1.08,
+    "at": "-865.9, 181.2",
+    "post": "-866.7, 180.4",
+    "street": "Avenue Vanderaey"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 1.08,
+    "at": "3654.8, 183.3",
+    "post": "3654, 182.6",
+    "street": "Chaussée de Boitsfort"
+   },
+   {
+    "tile": "E3",
+    "what": "plate off its post",
+    "gap": 1.07,
+    "at": "-887.4, -924.8",
+    "post": "-887.3, -923.8",
+    "street": "Rue du Doyenné"
+   },
+   {
+    "tile": "K4",
+    "what": "plate off its post",
+    "gap": 1.07,
+    "at": "2329, -2.4",
+    "post": "2329.9, -1.9",
+    "street": "Avenue du Réservoir"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 1.05,
+    "at": "-1193.6, -39.3",
+    "post": "-1192.9, -40.1",
+    "street": "Avenue Joseph Jongen"
+   },
+   {
+    "tile": "J7",
+    "what": "plate off its post",
+    "gap": 1.05,
+    "at": "1865.9, 1306.4",
+    "post": "1864.9, 1306.2",
+    "street": "Avenue de Foestraets"
+   },
+   {
+    "tile": "C5",
+    "what": "plate off its post",
+    "gap": 1.02,
+    "at": "-1987.8, 348.2",
+    "post": "-1988.7, 348.6",
+    "street": "Rue de Stalle"
+   },
+   {
+    "tile": "C3",
+    "what": "plate off its post",
+    "gap": 1,
+    "at": "-1749.3, -710.9",
+    "post": "-1748.8, -711.8",
+    "street": "Avenue du Jonc"
+   },
+   {
+    "tile": "L5",
+    "what": "plate off its post",
+    "gap": 1,
+    "at": "2838.2, 124.7",
+    "post": "2839.1, 124.3",
+    "street": "Avenue 's Heren Huys"
+   },
+   {
+    "tile": "M5",
+    "what": "plate off its post",
+    "gap": 0.99,
+    "at": "3251.7, 177",
+    "post": "3252.2, 176.2",
+    "street": "Avenue Franklin Roosevelt"
+   },
+   {
+    "tile": "D2",
+    "what": "plate off its post",
+    "gap": 0.98,
+    "at": "-1106.5, -1155.9",
+    "post": "-1106.9, -1156.8",
+    "street": "Rue Henri Maubel"
+   },
+   {
+    "tile": "E1",
+    "what": "plate off its post",
+    "gap": 0.98,
+    "at": "-694, -1840.5",
+    "post": "-694.3, -1841.4",
+    "street": "Avenue Everard"
+   },
+   {
+    "tile": "G1",
+    "what": "plate off its post",
+    "gap": 0.98,
+    "at": "298.6, -1943.4",
+    "post": "297.7, -1943.3",
+    "street": "Rue Andrée Geulen"
+   },
+   {
+    "tile": "D4",
+    "what": "plate off its post",
+    "gap": 0.97,
+    "at": "-1338.3, -409.9",
+    "post": "-1339.2, -409.5",
+    "street": "Avenue de l'Aulne"
+   },
+   {
+    "tile": "H3",
+    "what": "plate off its post",
+    "gap": 0.93,
+    "at": "967.7, -940.9",
+    "post": "966.9, -940.5",
+    "street": "Avenue Moscicki"
+   },
+   {
+    "tile": "G9",
+    "what": "plate off its post",
+    "gap": 0.92,
+    "at": "17.6, 2103.9",
+    "post": "17.2, 2104.7",
+    "street": "Rue Engeland"
+   },
+   {
+    "tile": "F1",
+    "what": "plate off its post",
+    "gap": 0.9,
+    "at": "-188.7, -1945.1",
+    "post": "-187.8, -1944.9",
+    "street": "Avenue Albert"
+   },
+   {
+    "tile": "H4",
+    "what": "plate off its post",
+    "gap": 0.86,
+    "at": "758.7, -296.8",
+    "post": "758, -296.3",
+    "street": "Rue Copernic"
+   },
+   {
+    "tile": "N5",
+    "what": "plate off its post",
+    "gap": 0.85,
+    "at": "3779.3, 40.4",
+    "post": "3778.5, 40.7",
+    "street": "Avenue des Mantes"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 0.83,
+    "at": "-2043, -380.3",
+    "post": "-2042.2, -380.5",
+    "street": "Rue Jean-Baptiste Baeck"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 0.82,
+    "at": "-2239.4, -159.6",
+    "post": "-2240.2, -159.9",
+    "street": "Chaussée de Ruisbroek"
+   },
+   {
+    "tile": "C8",
+    "what": "plate off its post",
+    "gap": 0.82,
+    "at": "-1952.2, 1665",
+    "post": "-1952.9, 1665.3",
+    "street": "Rue des Trois Rois"
+   },
+   {
+    "tile": "H3",
+    "what": "plate off its post",
+    "gap": 0.8,
+    "at": "918.7, -526.6",
+    "post": "918.3, -525.9",
+    "street": "Avenue Hamoir"
+   },
+   {
+    "tile": "D2",
+    "what": "plate off its post",
+    "gap": 0.79,
+    "at": "-1152.6, -1372",
+    "post": "-1152.8, -1372.7",
+    "street": "Avenue Ulysse"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 0.78,
+    "at": "-2358.7, -149.8",
+    "post": "-2358.8, -149.1",
+    "street": "Rue de Lusambo"
+   },
+   {
+    "tile": "I8",
+    "what": "plate off its post",
+    "gap": 0.76,
+    "at": "1179.7, 1678.9",
+    "post": "1180.4, 1679.3",
+    "street": "Avenue de Foestraets"
+   },
+   {
+    "tile": "N6",
+    "what": "plate off its post",
+    "gap": 0.74,
+    "at": "3889.8, 528.1",
+    "post": "3889.1, 528.4",
+    "street": "Drève des Rhododendrons"
+   },
+   {
+    "tile": "H5",
+    "what": "plate off its post",
+    "gap": 0.72,
+    "at": "685.3, 467.7",
+    "post": "685.8, 467.2",
+    "street": "Avenue Albert Lancaster"
+   },
+   {
+    "tile": "K8",
+    "what": "plate off its post",
+    "gap": 0.71,
+    "at": "2018.4, 1577.2",
+    "post": "2018.6, 1576.5",
+    "street": "Chaussée de Waterloo"
+   },
+   {
+    "tile": "B6",
+    "what": "plate off its post",
+    "gap": 0.7,
+    "at": "-2194.2, 850.1",
+    "post": "-2194.1, 849.5",
+    "street": "Rue Fleurbeek"
+   },
+   {
+    "tile": "K8",
+    "what": "plate off its post",
+    "gap": 0.7,
+    "at": "2129.2, 1664",
+    "post": "2128.6, 1664.3",
+    "street": "Avenue Van Bever"
+   },
+   {
+    "tile": "G1",
+    "what": "plate off its post",
+    "gap": 0.66,
+    "at": "423.3, -1832.6",
+    "post": "422.8, -1833",
+    "street": "Avenue Molière"
+   },
+   {
+    "tile": "K10",
+    "what": "plate off its post",
+    "gap": 0.66,
+    "at": "2046.2, 2904.1",
+    "post": "2046, 2904.8",
+    "street": "Avenue des Paysages"
+   },
+   {
+    "tile": "D1",
+    "what": "plate off its post",
+    "gap": 0.65,
+    "at": "-1197, -1725.5",
+    "post": "-1197.3, -1724.9",
+    "street": "Avenue Maréchal Joffre"
+   },
+   {
+    "tile": "F2",
+    "what": "plate off its post",
+    "gap": 0.65,
+    "at": "-485.5, -1095.8",
+    "post": "-485.8, -1096.5",
+    "street": "Avenue Henri Pirenne"
+   },
+   {
+    "tile": "H4",
+    "what": "plate off its post",
+    "gap": 0.64,
+    "at": "645.5, -428.9",
+    "post": "645.5, -429.5",
+    "street": "Rue Groeselenberg"
+   },
+   {
+    "tile": "K5",
+    "what": "plate off its post",
+    "gap": 0.62,
+    "at": "2328.9, 13.3",
+    "post": "2329.5, 13",
+    "street": "Avenue du Réservoir"
+   },
+   {
+    "tile": "C5",
+    "what": "plate off its post",
+    "gap": 0.6,
+    "at": "-1810.7, 487.5",
+    "post": "-1810.9, 487",
+    "street": "Rue des Myosotis"
+   },
+   {
+    "tile": "J3",
+    "what": "plate off its post",
+    "gap": 0.54,
+    "at": "1586.8, -691.2",
+    "post": "1586.4, -690.9",
+    "street": "Avenue de l'Observatoire"
+   },
+   {
+    "tile": "C7",
+    "what": "plate off its post",
+    "gap": 0.53,
+    "at": "-1908.3, 1009",
+    "post": "-1908.1, 1008.5",
+    "street": "Rue du Melkriek"
+   },
+   {
+    "tile": "K5",
+    "what": "plate off its post",
+    "gap": 0.53,
+    "at": "2137.8, 477.1",
+    "post": "2137.6, 476.6",
+    "street": "Avenue des Chênes"
+   },
+   {
+    "tile": "J8",
+    "what": "plate off its post",
+    "gap": 0.52,
+    "at": "1882.7, 1665.2",
+    "post": "1882.2, 1665.4",
+    "street": "Avenue Fond'Roy"
+   },
+   {
+    "tile": "B4",
+    "what": "plate off its post",
+    "gap": 0.51,
+    "at": "-2215.9, -449.5",
+    "post": "-2216.4, -449.6",
+    "street": "Avenue du Bempt"
+   },
+   {
+    "tile": "K11",
+    "what": "plate off its post",
+    "gap": 0.44,
+    "at": "2149.5, 3043.3",
+    "post": "2149.9, 3043.1",
+    "street": "Avenue des Paysages"
+   },
+   {
+    "tile": "J7",
+    "what": "plate off its post",
+    "gap": 0.4,
+    "at": "1597.5, 1279.5",
+    "post": "1597.4, 1279.9",
+    "street": "Avenue Fond'Roy"
+   },
+   {
+    "tile": "M5",
+    "what": "plate off its post",
+    "gap": 0.33,
+    "at": "3236, 198.2",
+    "post": "3235.7, 198.1",
+    "street": "Chaussée de La Hulpe"
+   }
+  ],
+  "signFacing": [
+   {
+    "tile": "B4",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-2422.2, -14.2",
+    "street": "Chaussée de Ruisbroek - Ruisbroekse Steenweg"
+   },
+   {
+    "tile": "B4",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-2396.7, -42.4",
+    "street": "Rue des Lutins - Kaboutersstraat"
+   },
+   {
+    "tile": "D6",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-1179.8, 862.7",
+    "street": "Rue Engeland - Engelandstraat"
+   },
+   {
+    "tile": "D6",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-1154.4, 898.6",
+    "street": "Rue Engeland - Engelandstraat"
+   },
+   {
+    "tile": "D7",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-1350.6, 1279.3",
+    "street": "Rue du Bourdon - Horzelstraat"
+   },
+   {
+    "tile": "D7",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-1350.3, 1210.3",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg"
+   },
+   {
+    "tile": "D7",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-1334.2, 1290.7",
+    "street": "Rue du Bourdon - Horzelstraat"
+   },
+   {
+    "tile": "E1",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-894.8, -1965.8",
+    "street": "Rue de l'Escrime - Schermstraat"
+   },
+   {
+    "tile": "E4",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-617.9, -240.7",
+    "street": "Avenue Wolvendael - Wolvendaellaan"
+   },
+   {
+    "tile": "E6",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-685.1, 999.7",
+    "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg"
+   },
+   {
+    "tile": "E7",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-683, 1002",
+    "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg"
+   },
+   {
+    "tile": "F1",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-174.7, -1779.7",
+    "street": "Rue Meyerbeer - Meyerbeerstraat"
+   },
+   {
+    "tile": "F1",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-53.1, -1797.3",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "F1",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-32.6, -1800.4",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "F1",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-11.4, -1904.9",
+    "street": "Avenue Molière - Molièrelaan"
+   },
+   {
+    "tile": "F3",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "-261.7, -516.5",
+    "street": "Avenue De Fré - De Frélaan"
+   },
+   {
+    "tile": "G1",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "11.2, -1905.5",
+    "street": "Avenue Molière - Molièrelaan"
+   },
+   {
+    "tile": "G1",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "27.3, -1995.8",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "H4",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "601.4, -60.1",
+    "street": "Avenue Circulaire - Ringlaan"
+   },
+   {
+    "tile": "H4",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "658.7, -85.8",
+    "street": "Avenue Circulaire - Ringlaan"
+   },
+   {
+    "tile": "H4",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "706.5, -69.6",
+    "street": "Square Charles Lagrange - Charles Lagrangesquare"
+   },
+   {
+    "tile": "I1",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "1326.1, -1926.7",
+    "street": "Rue Saint-Georges - Sint-Jorisstraat"
+   },
+   {
+    "tile": "M5",
+    "why": "C1 and F19 face the same traffic",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "3415, 262",
+    "street": "Chaussée de La Hulpe - Terhulpensesteenweg"
+   },
+   {
+    "tile": "N5",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "3660.6, 315.7",
+    "street": "Chaussée de La Hulpe - Terhulpsesteenweg"
+   },
+   {
+    "tile": "N5",
+    "why": "C1 + F19 on one pole",
+    "codes": "C1/F19",
+    "off": 180,
+    "at": "3753, 326.5",
+    "street": "Chaussée de La Hulpe - Terhulpsesteenweg"
+   },
+   {
+    "tile": "F2",
+    "why": "faces across the streets",
+    "codes": "C43_50",
+    "off": 90,
+    "moved": 0,
+    "at": "-33, -1293.5",
+    "street": "Avenue Bourgmestre Jean Herinckx - Burgemeester Jean Herinckxlaan"
+   },
+   {
+    "tile": "I7",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 90,
+    "moved": 0,
+    "at": "1467.3, 1139.2",
+    "street": "Avenue d'Orbaix - d'Orbaixlaan"
+   },
+   {
+    "tile": "B6",
+    "why": "faces across the streets",
+    "codes": "F12a",
+    "off": 89,
+    "moved": 0.5,
+    "at": "-2009.2, 574",
+    "street": "Rue de l'Étoile - Sterstraat"
+   },
+   {
+    "tile": "F5",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 89,
+    "moved": 0,
+    "at": "-280.6, 400.7",
+    "street": "Dieweg"
+   },
+   {
+    "tile": "H3",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 86,
+    "moved": 0.4,
+    "at": "759.1, -730.3",
+    "street": "Avenue de Sumatra - Sumatralaan"
+   },
+   {
+    "tile": "F3",
+    "why": "faces across the streets",
+    "codes": "B1",
+    "off": 85,
+    "moved": 0,
+    "at": "-183.6, -522.2",
+    "street": "Avenue De Fré - De Frélaan"
+   },
+   {
+    "tile": "D4",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 84,
+    "moved": 0,
+    "at": "-1056.8, -488.6",
+    "street": "Rue Beeckman - Beeckmanstraat"
+   },
+   {
+    "tile": "F9",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 84,
+    "moved": 0,
+    "at": "-462.8, 2208.9",
+    "street": "Rue du Kriekenput - Kriekenputstraat"
+   },
+   {
+    "tile": "H3",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 83,
+    "moved": 0,
+    "at": "750.6, -712.6",
+    "street": "Avenue du Hoef - Hoeflaan"
+   },
+   {
+    "tile": "F1",
+    "why": "faces across the streets",
+    "codes": "C43_30+F19",
+    "off": 82,
+    "moved": 3.2,
+    "at": "-106.5, -1631.6",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan"
+   },
+   {
+    "tile": "F1",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 81,
+    "moved": 0,
+    "at": "-12.9, -1906.8",
+    "street": "Avenue Molière - Molièrelaan"
+   },
+   {
+    "tile": "M5",
+    "why": "faces across the streets",
+    "codes": "D7",
+    "off": 81,
+    "moved": 0,
+    "at": "3029.3, 11.2",
+    "street": "Avenue de la Colombie - Colombialaan"
+   },
+   {
+    "tile": "K9",
+    "why": "faces across the streets",
+    "codes": "C43_50",
+    "off": 79,
+    "moved": 0,
+    "at": "2295.3, 2178.2",
+    "street": "Avenue de la Sapinière - Denneboslaan"
+   },
+   {
+    "tile": "E5",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 78,
+    "moved": 0,
+    "at": "-597.5, 96.3",
+    "street": "Rue Klipveld - Klipveldstraat"
+   },
+   {
+    "tile": "J2",
+    "why": "faces across the streets",
+    "codes": "C3",
+    "off": 77,
+    "moved": 0,
+    "at": "1510.7, -1202.8",
+    "street": "Avenue de Diane - Dianalaan"
+   },
+   {
+    "tile": "J7",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 76,
+    "moved": 0,
+    "at": "1804.3, 1156.1",
+    "street": "Chaussée de Waterloo - Waterloosesteenweg"
+   },
+   {
+    "tile": "H7",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 74,
+    "moved": 0,
+    "at": "731.8, 1046.2",
+    "street": "Rue de Wansijn - de Wansijnstraat"
+   },
+   {
+    "tile": "E9",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 73,
+    "moved": 0.4,
+    "at": "-524.2, 2302.4",
+    "street": "Avenue des Biches - Hindenlaan"
+   },
+   {
+    "tile": "K6",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 73,
+    "moved": 0.4,
+    "at": "2225.4, 966.3",
+    "street": "Avenue du Fort-Jaco - Fort-Jacolaan"
+   },
+   {
+    "tile": "D5",
+    "why": "faces across the streets",
+    "codes": "F49",
+    "off": 72,
+    "moved": 0,
+    "at": "-1449.9, 243.3",
+    "street": "Rue Gatti de Gamond - Gatti de Gamondstraat"
+   },
+   {
+    "tile": "I10",
+    "why": "faces across the streets",
+    "codes": "C43_50",
+    "off": 72,
+    "moved": 0,
+    "at": "1294.8, 2975",
+    "street": "Schilderachtige Dreef / Drève Pittoresque - Schilderachtige Dreef"
+   },
+   {
+    "tile": "K6",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 72,
+    "moved": 0,
+    "at": "2175.4, 806.7",
+    "street": "Drève des Renards - Vossendreef"
+   },
+   {
+    "tile": "I1",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 70,
+    "moved": 0,
+    "at": "1236.7, -1872.4",
+    "street": "Chaussée de Waterloo - Waterloosesteenweg"
+   },
+   {
+    "tile": "E5",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 69,
+    "moved": 0,
+    "at": "-858, 175.2",
+    "street": "Rue de la Fauvette - Grasmusstraat"
+   },
+   {
+    "tile": "B6",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 68,
+    "moved": 0.3,
+    "at": "-2168.2, 817.4",
+    "street": "Rue de l'Étoile - Sterstraat"
+   },
+   {
+    "tile": "E1",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 68,
+    "moved": 0.5,
+    "at": "-968.2, -1715.8",
+    "street": "Avenue Maréchal Joffre - Maarschalk Joffrelaan"
+   },
+   {
+    "tile": "E1",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 67,
+    "moved": 0.9,
+    "at": "-941.4, -1713.1",
+    "street": "Avenue Maréchal Joffre - Maarschalk Joffrelaan"
+   },
+   {
+    "tile": "E9",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 67,
+    "moved": 0,
+    "at": "-518.2, 2116.2",
+    "street": "Homborch"
+   },
+   {
+    "tile": "C5",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 66,
+    "moved": 0,
+    "at": "-1532.7, 289",
+    "street": "Rue de Stalle - Stallestraat"
+   },
+   {
+    "tile": "C6",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 65,
+    "moved": 0,
+    "at": "-1597.3, 524",
+    "street": "Rue Égide Van Ophem - Égide Van Ophemstraat"
+   },
+   {
+    "tile": "F1",
+    "why": "faces across the streets",
+    "codes": "C43_50",
+    "off": 65,
+    "moved": 0.3,
+    "at": "-170.4, -1518.7",
+    "street": "Rue des Carmélites - Karmelietenstraat"
+   },
+   {
+    "tile": "C7",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 64,
+    "moved": 0,
+    "at": "-1609.1, 1337.5",
+    "street": "Chaussée de Drogenbos - Drogenbossesteenweg"
+   },
+   {
+    "tile": "D4",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 63,
+    "moved": 0,
+    "at": "-1066, -337.2",
+    "street": "Rue Victor Gambier - Victor Gambierstraat"
+   },
+   {
+    "tile": "E9",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 62,
+    "moved": 0,
+    "at": "-615.4, 2098.2",
+    "street": "Homborch"
+   },
+   {
+    "tile": "F9",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 61,
+    "moved": 0.8,
+    "at": "-185.3, 2012.9",
+    "street": "Avenue Jacqueline Harpman - Jacqueline Harpmanlaan"
+   },
+   {
+    "tile": "F1",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 58,
+    "moved": 0,
+    "at": "-175.2, -1781.3",
+    "street": "Rue Meyerbeer - Meyerbeerstraat"
+   },
+   {
+    "tile": "K11",
+    "why": "faces across the streets",
+    "codes": "B1",
+    "off": 58,
+    "moved": 0,
+    "at": "2374.1, 3259",
+    "street": "r413024240_0"
+   },
+   {
+    "tile": "C3",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 56,
+    "moved": 0,
+    "at": "-1850.3, -851.5",
+    "street": "Drève des Futailles - Fustendreef"
+   },
+   {
+    "tile": "D4",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 55,
+    "moved": 0,
+    "at": "-1055.5, -362.9",
+    "street": "Rue Victor Gambier - Victor Gambierstraat"
+   },
+   {
+    "tile": "F4",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 55,
+    "moved": 0,
+    "at": "-157.8, -390.6",
+    "street": "Avenue Kamerdelle - Kamerdellelaan"
+   },
+   {
+    "tile": "M5",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 54,
+    "moved": 0,
+    "at": "3354.9, 219.8",
+    "street": "Avenue Franklin Roosevelt - Franklin Rooseveltlaan"
+   },
+   {
+    "tile": "F4",
+    "why": "faces across the streets",
+    "codes": "B1",
+    "off": 53,
+    "moved": 0,
+    "at": "-475.3, -457",
+    "street": "Avenue De Fré - De Frélaan"
+   },
+   {
+    "tile": "F3",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 52,
+    "moved": 0.3,
+    "at": "-414.2, -897.1",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "C4",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 51,
+    "moved": 0,
+    "at": "-1585, -138.7",
+    "street": "Rue du Merlo - Merlostraat"
+   },
+   {
+    "tile": "D5",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 51,
+    "moved": 0,
+    "at": "-1126.2, 3",
+    "street": "Rue de Stalle - Stallestraat"
+   },
+   {
+    "tile": "E4",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 51,
+    "moved": 0,
+    "at": "-699.2, -393.6",
+    "street": "Rue de Nieuwenhove - de Nieuwenhovestraat"
+   },
+   {
+    "tile": "F1",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 51,
+    "moved": 0,
+    "at": "-174.7, -1779.7",
+    "street": "Rue Meyerbeer - Meyerbeerstraat"
+   },
+   {
+    "tile": "F2",
+    "why": "faces across the streets",
+    "codes": "C43_50",
+    "off": 51,
+    "moved": 0,
+    "at": "-316.9, -1152.7",
+    "street": "Avenue de Floréal - Floréallaan"
+   },
+   {
+    "tile": "G1",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 51,
+    "moved": 0,
+    "at": "389.2, -1943",
+    "street": "Rue Joseph Stallaert - Joseph Stallaertstraat"
+   },
+   {
+    "tile": "F4",
+    "why": "faces across the streets",
+    "codes": "C43_30",
+    "off": 50,
+    "moved": 0,
+    "at": "-471.6, -476.9",
+    "street": "Square des Héros - Heldensquare"
+   },
+   {
+    "tile": "I1",
+    "why": "faces across the streets",
+    "codes": "F19",
+    "off": 49,
+    "moved": 0,
+    "at": "1401.1, -1991.1",
+    "street": "Rue Général Patton - Generaal Pattonstraat"
+   },
+   {
+    "tile": "M5",
+    "why": "faces across the streets",
+    "codes": "D7",
+    "off": 49,
+    "moved": 0,
+    "at": "3230.8, 156.1",
+    "street": "Avenue de la Forêt - Woudlaan"
+   },
+   {
+    "tile": "J7",
+    "why": "faces across the streets",
+    "codes": "C1",
+    "off": 48,
+    "moved": 0,
+    "at": "1563, 1039.9",
+    "street": "Avenue Fond'Roy - Vronerodelaan"
+   }
+  ],
+  "inRoad": [
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2685.4, 126",
+    "street": "Chaussée de Ruisbroek - Ruisbroekse Steenweg",
+    "codes": "C1"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2504.8, 486.2",
+    "street": "Langestraat - Rue Longue"
+   },
+   {
+    "tile": "B5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2012.3, 220.2",
+    "street": "Chaussée de Neerstalle - Neerstallesteenweg",
+    "codes": "B5"
+   },
+   {
+    "tile": "B5",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2068.1, 338",
+    "street": "Rue de Stalle - Stallestraat",
+    "stop": "Carrefour Stalle"
+   },
+   {
+    "tile": "B5",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2023.3, 341",
+    "street": "Rue de Stalle - Stallestraat",
+    "stop": "Carrefour Stalle"
+   },
+   {
+    "tile": "B6",
+    "kind": "banks",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2494.9, 570.9",
+    "street": "Kuikenstraat - Rue Kuiken"
+   },
+   {
+    "tile": "B6",
+    "kind": "banks",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2495.8, 569.3",
+    "street": "Kuikenstraat - Rue Kuiken"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-2019.2, 1874.9",
+    "street": "Bosstraat - Rue du Bois"
+   },
+   {
+    "tile": "C3",
+    "kind": "postbox",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1513.4, -617.7",
+    "street": "Rue Gatti de Gamond - Gatti de Gamondstraat",
+    "id": "bpost:4305"
+   },
+   {
+    "tile": "C3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1573.9, -914.5",
+    "street": "Avenue Fontaine Vanderstraeten - Fontaine Vanderstraetenlaan"
+   },
+   {
+    "tile": "C4",
+    "kind": "villo station",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1580.2, -139.2",
+    "street": "Rue du Merlo - Merlostraat",
+    "id": "villo:251",
+    "pieces": 27,
+    "of": 31
+   },
+   {
+    "tile": "C5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1994.1, 326.1",
+    "street": "Chaussée de Neerstalle - Neerstallesteenweg",
+    "codes": "C43_50"
+   },
+   {
+    "tile": "C5",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1785.2, 310.1",
+    "street": "Rue de Stalle - Stallestraat",
+    "stop": "Egide Van Ophem"
+   },
+   {
+    "tile": "C5",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1814.8, 297.2",
+    "street": "Rue de Stalle - Stallestraat",
+    "stop": "Egide Van Ophem"
+   },
+   {
+    "tile": "C6",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1599.6, 512.9",
+    "street": "Rue Égide Van Ophem - Égide Van Ophemstraat"
+   },
+   {
+    "tile": "C7",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1712.9, 1219.4",
+    "street": "Rue François Vervloet - François Vervloetstraat",
+    "codes": "C1"
+   },
+   {
+    "tile": "C7",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1636.6, 1136.4",
+    "street": "Rue de l'Antilope - Antilopestraat",
+    "codes": "F19"
+   },
+   {
+    "tile": "C9",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1696.6, 2133",
+    "street": "Alsembergsesteenweg",
+    "codes": "C43_50"
+   },
+   {
+    "tile": "C9",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1687.9, 2131.7",
+    "street": "Rue de Linkebeek - Linkebeekstraat",
+    "codes": "C1"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1689.9, 2196.9",
+    "street": "Alsembergsesteenweg"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1688.7, 2208.1",
+    "street": "Brouwerijstraat - Rue de la Brasserie"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1698.2, 2238.8",
+    "street": "Alsembergsesteenweg - Chaussée d’Alsemberg"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1697.2, 2134.2",
+    "street": "Alsembergsesteenweg"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1680.6, 2437.6",
+    "street": "Hess de Lilezslaan - Avenue Hess de Lilez"
+   },
+   {
+    "tile": "D2",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1205.5, -1373.2",
+    "street": "Avenue Ulysse - Ulysseslaan"
+   },
+   {
+    "tile": "D3",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1120.1, -527.6",
+    "street": "Place Jean Vander Elst - Jean Vander Elstplein",
+    "codes": "C1"
+   },
+   {
+    "tile": "D5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1454.5, 253.8",
+    "street": "Rue Gatti de Gamond - Gatti de Gamondstraat"
+   },
+   {
+    "tile": "D5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1460.7, 267.8",
+    "street": "Rue du Wagon - Wagenstraat"
+   },
+   {
+    "tile": "E1",
+    "kind": "villo station",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-942.7, -1944",
+    "street": "Avenue Victor Rousseau - Victor Rousseaulaan",
+    "id": "villo:228",
+    "pieces": 20,
+    "of": 40
+   },
+   {
+    "tile": "E1",
+    "kind": "villo station",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-740.4, -1604.9",
+    "street": "Avenue Coghen - Coghenlaan",
+    "id": "villo:285",
+    "pieces": 38,
+    "of": 38
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-934.1, 2858.2",
+    "street": "Dapperensquare - Square des Braves"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-768.7, 2792.1",
+    "street": "Stationsstraat - Rue de la Station"
+   },
+   {
+    "tile": "E2",
+    "kind": "bins",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-969.9, -1146.7",
+    "street": "?"
+   },
+   {
+    "tile": "E2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-823.6, -1302.4",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Roosendael"
+   },
+   {
+    "tile": "E4",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-862.3, -177.2",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Globe"
+   },
+   {
+    "tile": "E4",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-873.7, -171.9",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Globe"
+   },
+   {
+    "tile": "E4",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-842.4, -185.3",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Globe"
+   },
+   {
+    "tile": "E5",
+    "kind": "postbox",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-986.4, 312.6",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "id": "bpost:4405"
+   },
+   {
+    "tile": "E5",
+    "kind": "villo station",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-939.2, 144.6",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "id": "villo:292",
+    "pieces": 4,
+    "of": 29
+   },
+   {
+    "tile": "E6",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-548.3, 887.4",
+    "street": "Clos Monique Rifflet - Monique Riffletgaarde",
+    "codes": "F12a"
+   },
+   {
+    "tile": "E8",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-630.5, 1854.7",
+    "street": "Avenue de la Gazelle - Gazellelaan"
+   },
+   {
+    "tile": "E9",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-504.6, 2293.9",
+    "street": "Parvis Chantecler - Canteclaervoorplein",
+    "codes": "F12a+F19"
+   },
+   {
+    "tile": "E9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-787.4, 2143.6",
+    "street": "Avenue d'Homborchveld - Homborchveldlaan"
+   },
+   {
+    "tile": "F1",
+    "kind": "postbox",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-82.5, -1609.7",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "id": "bpost:6274"
+   },
+   {
+    "tile": "F1",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-21.1, -1859.9",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Molière"
+   },
+   {
+    "tile": "F10",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-369.3, 2885",
+    "street": "J. en R. Wijtsmanpad"
+   },
+   {
+    "tile": "F2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-313.1, -1145.1",
+    "street": "Avenue de Floréal - Floréallaan",
+    "codes": "B1"
+   },
+   {
+    "tile": "F2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-253.9, -1271.8",
+    "street": "Avenue de Messidor - Messidorlaan",
+    "codes": "C43_30"
+   },
+   {
+    "tile": "F2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-251.8, -1278.9",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "codes": "B5"
+   },
+   {
+    "tile": "F2",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-313.8, -1145.8",
+    "street": "Avenue de Floréal - Floréallaan"
+   },
+   {
+    "tile": "F2",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-259.1, -1262.3",
+    "street": "Avenue de Messidor - Messidorlaan"
+   },
+   {
+    "tile": "F2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-230.4, -1316.8",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Messidor"
+   },
+   {
+    "tile": "F3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-402.2, -895.5",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "F3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-105.8, -970.2",
+    "street": "Avenue Bourgmestre Jean Herinckx - Burgemeester Jean Herinckxlaan"
+   },
+   {
+    "tile": "F3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-117.9, -955.9",
+    "street": "Avenue Bourgmestre Jean Herinckx - Burgemeester Jean Herinckxlaan"
+   },
+   {
+    "tile": "F3",
+    "kind": "benches",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-35.4, -762",
+    "street": "?"
+   },
+   {
+    "tile": "F3",
+    "kind": "benches",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-30.8, -758.6",
+    "street": "?"
+   },
+   {
+    "tile": "F3",
+    "kind": "bins",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-33.8, -761.6",
+    "street": "?"
+   },
+   {
+    "tile": "F3",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-426.4, -850.4",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Boetendael"
+   },
+   {
+    "tile": "F3",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-378.2, -953.9",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Boetendael"
+   },
+   {
+    "tile": "F4",
+    "kind": "benches",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-453.1, -384.4",
+    "street": "Allée Charles Viane - Charles Vianedreef"
+   },
+   {
+    "tile": "F4",
+    "kind": "bins",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-454.5, -383.5",
+    "street": "Allée Charles Viane - Charles Vianedreef"
+   },
+   {
+    "tile": "F5",
+    "kind": "benches",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-207.9, 375.4",
+    "street": "Dieweg"
+   },
+   {
+    "tile": "F5",
+    "kind": "bins",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-208.7, 373.9",
+    "street": "Dieweg"
+   },
+   {
+    "tile": "F5",
+    "kind": "hoops",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-216.5, 373",
+    "street": "Dieweg"
+   },
+   {
+    "tile": "F5",
+    "kind": "hoops",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-215.6, 372.5",
+    "street": "Dieweg"
+   },
+   {
+    "tile": "F6",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-432, 923.1",
+    "street": "Avenue du Lycée Français - Frans Lyceumlaan"
+   },
+   {
+    "tile": "F9",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-168.9, 2055.3",
+    "street": "Rue Engeland - Engelandstraat",
+    "codes": "C1"
+   },
+   {
+    "tile": "F9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-170.4, 2052.4",
+    "street": "Rue Engeland - Engelandstraat"
+   },
+   {
+    "tile": "G1",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "280.5, -1989.8",
+    "street": "Place Georges Brugmann - Georges Brugmannplein",
+    "codes": "C1"
+   },
+   {
+    "tile": "G1",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "305.9, -1959.5",
+    "street": "Place Georges Brugmann - Georges Brugmannplein",
+    "codes": "C1"
+   },
+   {
+    "tile": "G1",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "21, -1950",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Molière"
+   },
+   {
+    "tile": "G2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "277.2, -1436.7",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "codes": "B15"
+   },
+   {
+    "tile": "G2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "314.1, -1396.6",
+    "street": "Avenue Léo Errera - Léo Erreralaan",
+    "codes": "B1"
+   },
+   {
+    "tile": "G2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "341.5, -1459.7",
+    "street": "Rue Marie Depage - Marie Depagestraat",
+    "codes": "B1"
+   },
+   {
+    "tile": "G2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "348.7, -1433.5",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "codes": "B15"
+   },
+   {
+    "tile": "G2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "350.7, -1433",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "codes": "B1"
+   },
+   {
+    "tile": "G2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "368.3, -1423.9",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Churchill"
+   },
+   {
+    "tile": "G4",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "79.2, -172.6",
+    "street": "Avenue des Archères - Boogschutterinnenlaan",
+    "codes": "F19"
+   },
+   {
+    "tile": "G5",
+    "kind": "postbox",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "433.5, 149.7",
+    "street": "Avenue Circulaire - Ringlaan",
+    "id": "bpost:8769"
+   },
+   {
+    "tile": "G6",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "21.2, 787",
+    "street": "Clos Bourgmestre De Keyser - Burgemeester De Keysergaarde",
+    "codes": "B1"
+   },
+   {
+    "tile": "G9",
+    "kind": "postbox",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "324, 2361.7",
+    "street": "Avenue Dolez - Dolezlaan",
+    "id": "bpost:4320"
+   },
+   {
+    "tile": "H2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "617.3, -1374.8",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "codes": "B15"
+   },
+   {
+    "tile": "H2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "971.1, -1383.7",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Gossart"
+   },
+   {
+    "tile": "H3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "976.4, -942.2",
+    "street": "Avenue Moscicki - Moscickilaan"
+   },
+   {
+    "tile": "I2",
+    "kind": "villo station",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1328.1, -1456.6",
+    "street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "id": "villo:244",
+    "pieces": 36,
+    "of": 36
+   },
+   {
+    "tile": "I2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1333, -1459.3",
+    "street": "Avenue de la Lisière - Boskantlaan",
+    "codes": "C43_30"
+   },
+   {
+    "tile": "I2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1292.9, -1440.8",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Longchamp"
+   },
+   {
+    "tile": "I9",
+    "kind": "postbox",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1013.2, 2195.3",
+    "street": "Place de la Sainte-Alliance - Heilig Verbondplein",
+    "id": "bpost:757"
+   },
+   {
+    "tile": "J3",
+    "kind": "postbox",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1587.9, -699.8",
+    "street": "Avenue De Fré - De Frélaan",
+    "id": "bpost:3139"
+   },
+   {
+    "tile": "J3",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1588.8, -706.1",
+    "street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "codes": "C43_50"
+   },
+   {
+    "tile": "J3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1702.6, -950",
+    "street": "Avenue de Diane - Dianalaan"
+   },
+   {
+    "tile": "K4",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2317.5, -17.7",
+    "street": "Avenue de Boitsfort - Bosvoordselaan"
+   },
+   {
+    "tile": "K5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2320.1, 8",
+    "street": "Chaussée de La Hulpe - Terhulpsesteenweg / Chaussée de La Hulpe - Terhulpensesteenweg",
+    "codes": "C43_30"
+   },
+   {
+    "tile": "K5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2329.2, 22.7",
+    "street": "Drève de Lorraine - Lorrainedreef",
+    "codes": "C43_50"
+   },
+   {
+    "tile": "K5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2317.6, 14.1",
+    "street": "Chaussée de La Hulpe - Terhulpsesteenweg / Chaussée de La Hulpe - Terhulpensesteenweg"
+   },
+   {
+    "tile": "L10",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2932.9, 2925.9",
+    "street": "Drève Saint-Hubert - Sint-Hubertusdreef",
+    "codes": "B15"
+   },
+   {
+    "tile": "L10",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2962.9, 2895.7",
+    "street": "Drève Saint-Hubert - Sint-Hubertusdreef",
+    "codes": "B1"
+   },
+   {
+    "tile": "L10",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2961.9, 2894.7",
+    "street": "Drève de Lorraine - Lorrainedreef"
+   },
+   {
+    "tile": "L10",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "2868, 2599.2",
+    "street": "Drève de Lorraine - Lorrainedreef"
+   },
+   {
+    "tile": "M5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3404.1, 239.6",
+    "street": "Avenue du Pérou - Perulaan"
+   },
+   {
+    "tile": "M5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3299.2, 207.1",
+    "street": "Avenue Franklin Roosevelt - Franklin Rooseveltlaan"
+   },
+   {
+    "tile": "N5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3615.1, 284.9",
+    "street": "Avenue des Coccinelles - Onze-Lieve-Heersbeestjeslaan",
+    "codes": "C1"
+   },
+   {
+    "tile": "N5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3805.8, 331.7",
+    "street": "Chaussée de Boitsfort - Bosvoordsesteenweg",
+    "codes": "C43_50"
+   },
+   {
+    "tile": "N5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3613.7, 285.9",
+    "street": "Avenue des Coccinelles - Onze-Lieve-Heersbeestjeslaan"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-2527.6, 202",
+    "street": "Boomgaardstraat - Rue du Verger"
+   },
+   {
+    "tile": "B7",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-2251.7, 1252.4",
+    "street": "Kerkstraat - Rue de l'Église",
+    "stop": "Grand'Route"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-1686.8, 2132.3",
+    "street": "Rue de Linkebeek - Linkebeekstraat"
+   },
+   {
+    "tile": "C9",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-1664.2, 2089.8",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Van Haelen"
+   },
+   {
+    "tile": "D10",
+    "kind": "postbox",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-1013.9, 2833.2",
+    "street": "Stationsstraat - Rue de la Station",
+    "id": "bpost:5396"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-1201.7, 2696.8",
+    "street": "Stationsstraat - Rue de la Station"
+   },
+   {
+    "tile": "E3",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": true,
+    "at": "-891.1, -916",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Bens"
+   },
+   {
+    "tile": "E3",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-895.9, -942",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Bens"
+   },
+   {
+    "tile": "E4",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": true,
+    "at": "-918.8, -179",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Globe"
+   },
+   {
+    "tile": "F1",
+    "kind": "villo station",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-130.9, -1703.5",
+    "street": "Avenue Albert - Albertlaan",
+    "id": "villo:240",
+    "pieces": 21,
+    "of": 21
+   },
+   {
+    "tile": "F3",
+    "kind": "benches",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-15.5, -753.2",
+    "street": "?"
+   },
+   {
+    "tile": "F3",
+    "kind": "bins",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-13.9, -753.3",
+    "street": "?"
+   },
+   {
+    "tile": "F5",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-432.2, 116.2",
+    "street": "Avenue Wolvendael - Wolvendaellaan",
+    "stop": "Wolvendael"
+   },
+   {
+    "tile": "G2",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "412.6, -1408.3",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Churchill"
+   },
+   {
+    "tile": "G6",
+    "kind": "sign",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "22.4, 788.3",
+    "street": "Clos Bourgmestre De Keyser - Burgemeester De Keysergaarde",
+    "codes": "F12a"
+   },
+   {
+    "tile": "I2",
+    "kind": "postbox",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "1063.3, -1227.6",
+    "street": "Avenue Montjoie - Montjoielaan",
+    "id": "bpost:3629"
+   },
+   {
+    "tile": "K12",
+    "kind": "plate post",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "2160.4, 3966.2",
+    "street": "Jonetlaan - Avenue Jonet"
+   },
+   {
+    "tile": "K12",
+    "kind": "plate post",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "2331.4, 3521.2",
+    "street": "Boesdaallaan - Avenue Boesdaal"
+   },
+   {
+    "tile": "K6",
+    "kind": "sign",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "2166.9, 609.6",
+    "street": "Drève des Gendarmes - Gendarmendreef",
+    "codes": "C1"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2786.5, 225",
+    "street": "Langestraat - Rue Longue",
+    "codes": "B1"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2772.7, 224.4",
+    "street": "Langestraat - Rue Longue",
+    "codes": "B1"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2771.7, 233.1",
+    "street": "Langestraat - Rue Longue",
+    "codes": "F49"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2765.8, 228.5",
+    "street": "Langestraat - Rue Longue",
+    "codes": "F49"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2513.9, 486",
+    "street": "Langestraat - Rue Longue",
+    "codes": "C43_70+F19"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2631.9, 353.4",
+    "street": "Boomgaardstraat - Rue du Verger"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2576.3, 406.2",
+    "street": "Vrijheidstraat - Rue de la Liberté"
+   },
+   {
+    "tile": "B5",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2368.9, 425.5",
+    "street": "Verlengde Stallestraat - Rue Prolongée de Stalle",
+    "stop": "Eggergat"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2485.6, 589.7",
+    "street": "Krekelendries",
+    "codes": "B1"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2434.5, 501.4",
+    "street": "Langestraat - Rue Longue",
+    "codes": "C1"
+   },
+   {
+    "tile": "B6",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2235, 899.9",
+    "street": "Sterstraat - Rue de l'Étoile",
+    "stop": "RODTS"
+   },
+   {
+    "tile": "B8",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2268.8, 1911.5",
+    "street": "Bosstraat - Rue du Bois",
+    "codes": "F19"
+   },
+   {
+    "tile": "B8",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2268.6, 1911.8",
+    "street": "Bosstraat - Rue du Bois",
+    "codes": "B5"
+   },
+   {
+    "tile": "B8",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2107.1, 1695.9",
+    "street": "Elst",
+    "codes": "B1"
+   },
+   {
+    "tile": "C8",
+    "kind": "plate post",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1847.5, 1995.9",
+    "street": "Frankveld"
+   },
+   {
+    "tile": "C9",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1739.8, 2072.6",
+    "street": "Eggergat",
+    "codes": "B1"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1215.6, 2983.9",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "C3"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1102.2, 2909.5",
+    "street": "Arthur Van Dormaelstraat - Rue Arthur Van Dormael",
+    "codes": "C1"
+   },
+   {
+    "tile": "D3",
+    "kind": "postbox",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1130.1, -530.9",
+    "street": "Place Jean Vander Elst - Jean Vander Elstplein",
+    "id": "bpost:5606"
+   },
+   {
+    "tile": "D4",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1121.4, -482.8",
+    "street": "Place Jean Vander Elst - Jean Vander Elstplein",
+    "codes": "C1"
+   },
+   {
+    "tile": "D7",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": true,
+    "at": "-1100.4, 1121.6",
+    "street": "Rue du Château d'Or - Gulden Kasteelstraat",
+    "stop": "Engeland"
+   },
+   {
+    "tile": "D7",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1403.6, 1346.7",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Bourdon"
+   },
+   {
+    "tile": "D9",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1205.2, 2232.1",
+    "street": "Rue du Bourdon - Horzelstraat",
+    "stop": "Moensberg Gare"
+   },
+   {
+    "tile": "D9",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1203.2, 2214.2",
+    "street": "Rue du Bourdon - Horzelstraat",
+    "stop": "Moensberg Gare"
+   },
+   {
+    "tile": "E1",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-767.5, -1546.4",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Coghen"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-767.3, 2804.2",
+    "street": "Kasteelstraat - Rue du Château",
+    "codes": "B5"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-924.3, 2869.5",
+    "street": "Gemeenteplein - Place Communale"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-698.3, 2895.5",
+    "street": "Kasteelstraat - Rue du Château"
+   },
+   {
+    "tile": "E2",
+    "kind": "villo station",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-892.9, -1015",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "id": "villo:286",
+    "pieces": 25,
+    "of": 29
+   },
+   {
+    "tile": "E2",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-861.5, -1183.4",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Roosendael"
+   },
+   {
+    "tile": "E4",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-911.3, -447",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Xavier de Bue"
+   },
+   {
+    "tile": "E5",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-932.7, 91.1",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Rittweger"
+   },
+   {
+    "tile": "F5",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-452.7, 77.5",
+    "street": "Avenue Wolvendael - Wolvendaellaan",
+    "stop": "Wolvendael"
+   },
+   {
+    "tile": "J7",
+    "kind": "postbox",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "1785.8, 1032.6",
+    "street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "id": "bpost:3956"
+   },
+   {
+    "tile": "K12",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "2329.6, 3695.7",
+    "street": "Lequimelaan - Avenue Lequime",
+    "codes": "C43_70"
+   },
+   {
+    "tile": "L10",
+    "kind": "plate post",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "2949.5, 2901.6",
+    "street": "Drève Saint-Hubert - Sint-Hubertusdreef"
+   },
+   {
+    "tile": "N5",
+    "kind": "plate post",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "3627.5, 290.2",
+    "street": "Avenue des Coccinelles - Onze-Lieve-Heersbeestjeslaan"
+   },
+   {
+    "tile": "E4",
+    "kind": "plate post",
+    "deep": 1.19,
+    "lane": false,
+    "tram": true,
+    "at": "-642.3, -323.5",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "G2",
+    "kind": "plate post",
+    "deep": 1.13,
+    "lane": false,
+    "tram": true,
+    "at": "323.4, -1433.2",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan"
+   },
+   {
+    "tile": "E4",
+    "kind": "plate post",
+    "deep": 1.1,
+    "lane": false,
+    "tram": true,
+    "at": "-649.2, -313.6",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2791.9, 232.8",
+    "street": "Paul Gilsonlaan - Avenue Paul Gilson",
+    "codes": "F49"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2788.2, 239.3",
+    "street": "Paul Gilsonlaan - Avenue Paul Gilson",
+    "codes": "F49"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2770.7, 211.6",
+    "street": "Paul Gilsonlaan - Avenue Paul Gilson",
+    "codes": "F49"
+   },
+   {
+    "tile": "A5",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2767, 218.2",
+    "street": "Paul Gilsonlaan - Avenue Paul Gilson",
+    "codes": "F49"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2782.5, 218.3",
+    "street": "Langestraat - Rue Longue"
+   },
+   {
+    "tile": "A5",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2791, 242",
+    "street": "Paul Gilsonlaan - Avenue Paul Gilson",
+    "stop": "Rue Longue"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2491.8, 626.5",
+    "street": "Zennebeemd - Pré de la Senne",
+    "codes": "F19"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2484.9, 811",
+    "street": "Zennebeemd - Pré de la Senne",
+    "codes": "B1"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2329.6, 727.4",
+    "street": "Karreveldstraat - Rue Karreveld",
+    "codes": "F19"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2241.9, 919.5",
+    "street": "Jozef Rodtsstraat - Rue Joseph Rodts",
+    "codes": "C1"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2205.3, 976.8",
+    "street": "Jozef Rodtsstraat - Rue Joseph Rodts",
+    "codes": "F19"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2141.3, 989.8",
+    "street": "Oude Molenstraat - Rue du Vieux Moulin",
+    "codes": "F19"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2296.3, 965.8",
+    "street": "Sterstraat - Rue de l'Étoile"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2330.7, 737.1",
+    "street": "Langestraat - Rue Longue"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2314, 676.1",
+    "street": "Fleurbeekstraat - Rue Fleurbeek"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2324.4, 679.8",
+    "street": "Langestraat - Rue Longue"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2484.5, 532.5",
+    "street": "Langestraat - Rue Longue"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2484.1, 803.2",
+    "street": "Zennebeemd - Pré de la Senne"
+   },
+   {
+    "tile": "B6",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2205.6, 998.2",
+    "street": "Kerkstraat - Rue de l'Église",
+    "stop": "RODTS"
+   },
+   {
+    "tile": "B7",
+    "kind": "postbox",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2312.5, 1284.4",
+    "street": "Grote Baan - Grand'Route",
+    "id": "bpost:4062"
+   },
+   {
+    "tile": "B7",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2212.4, 1038",
+    "street": "Kerkstraat - Rue de l'Église",
+    "codes": "F19"
+   },
+   {
+    "tile": "B7",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2394.6, 1240.8",
+    "street": "'s Herenstraat - Rue Notre Seigneur"
+   },
+   {
+    "tile": "B7",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2217, 1460.7",
+    "street": "Grote Baan - Grand'Route",
+    "stop": "Drogenbos"
+   },
+   {
+    "tile": "B8",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2393.8, 1974.4",
+    "street": "Marie Collartstraat - Rue Marie Collart",
+    "codes": "F19"
+   },
+   {
+    "tile": "B8",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2260.7, 1725.2",
+    "street": "Beukenstraat - Rue des Hêtres",
+    "codes": "C1"
+   },
+   {
+    "tile": "B8",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2210.7, 1863.7",
+    "street": "Beukenstraat - Rue des Hêtres",
+    "codes": "C1"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2202.8, 1861.2",
+    "street": "Beukenstraat - Rue des Hêtres"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2050.5, 1934.6",
+    "street": "Frankveld"
+   },
+   {
+    "tile": "C8",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1514, 1621.5",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Crematorium"
+   },
+   {
+    "tile": "C9",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1754.1, 2035",
+    "street": "Grote Baan - Grand'Route",
+    "codes": "B1"
+   },
+   {
+    "tile": "C9",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1744.9, 2031.6",
+    "street": "Grote Baan - Grand'Route",
+    "codes": "F19"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1833.3, 2300.6",
+    "street": "Edmond Theunissenlaan - Avenue Edmond Theunissen"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1755.4, 2465.2",
+    "street": "Edmond Theunissenlaan - Avenue Edmond Theunissen"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1746.2, 2260",
+    "street": "Hof ten Bleutesquare"
+   },
+   {
+    "tile": "D1",
+    "kind": "postbox",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1025.8, -1594",
+    "street": "Avenue Neptune - Neptunuslaan",
+    "id": "bpost:795"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1326.9, 2611.9",
+    "street": "Molenstraat - Rue du Moulin",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1326.4, 2604.4",
+    "street": "Molenstraat - Rue du Moulin",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1280.6, 2653.5",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1274.6, 2649.1",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1269.5, 2671.7",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1268.6, 2666.3",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "C43_50"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1266, 2655.9",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "C43_30"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1262.6, 2674.7",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1209.9, 2828.5",
+    "street": "Arthur Van Dormaelstraat - Rue Arthur Van Dormael",
+    "codes": "C1"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1201, 2696.1",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "C1"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1021, 2830.3",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1015.4, 2825.4",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "F49"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1002.2, 2798.5",
+    "street": "Dapperensquare - Square des Braves",
+    "codes": "F19"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1256.7, 2894",
+    "street": "Jef Van Lishoutstraat - Rue Jef Van Lishout"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1218.3, 2985.5",
+    "street": "Beukenstraat - Rue des Hêtres"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1224.1, 2831.2",
+    "street": "Jef Van Lishoutstraat - Rue Jef Van Lishout"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1393.8, 2502.3",
+    "street": "Molenhof - Clos du Moulin"
+   },
+   {
+    "tile": "D2",
+    "kind": "villo station",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1437.3, -1280.8",
+    "street": "Avenue du Domaine - Domeinlaan",
+    "id": "osm:n6784605026",
+    "pieces": 26,
+    "of": 37
+   },
+   {
+    "tile": "D6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1121.1, 672.1",
+    "street": "Rue du Coq - Haanstraat"
+   },
+   {
+    "tile": "D6",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1128.3, 683.3",
+    "street": "Rue du Coq - Haanstraat"
+   },
+   {
+    "tile": "D9",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1463.6, 2407.8",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "C43_50"
+   },
+   {
+    "tile": "D9",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1461.7, 2420",
+    "street": "Brouwerijstraat - Rue de la Brasserie",
+    "codes": "C43_30"
+   },
+   {
+    "tile": "D9",
+    "kind": "bins",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1419, 2101",
+    "street": "?"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-983.8, 2849.7",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "F49"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-979.1, 2843.9",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "F49"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-934.7, 2866.2",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "F49"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-929.8, 2858.7",
+    "street": "Dapperensquare - Square des Braves",
+    "codes": "F19"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-927.7, 2860.6",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "F49"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-788.3, 2958.2",
+    "street": "Kasteelstraat - Rue du Château",
+    "codes": "F19"
+   },
+   {
+    "tile": "E10",
+    "kind": "sign",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-691.1, 2904.5",
+    "street": "Bloemhof - Jardin des Fleurs",
+    "codes": "F19"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-977.3, 2867.1",
+    "street": "Gemeenteplein - Place Communale"
+   },
+   {
+    "tile": "E10",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-951.7, 2860.8",
+    "street": "Stationsstraat - Rue de la Station",
+    "stop": "Braves"
+   },
+   {
+    "tile": "E10",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-960.2, 2820.9",
+    "street": "Dapperensquare - Square des Braves",
+    "stop": "Braves"
+   },
+   {
+    "tile": "E2",
+    "kind": "benches",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-970.6, -1148.2",
+    "street": "?"
+   },
+   {
+    "tile": "E3",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-546.5, -527.1",
+    "street": "Avenue Brugmann - Brugmannlaan"
+   },
+   {
+    "tile": "E4",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": false,
+    "tram": true,
+    "at": "-624.5, -276.1",
+    "street": "Avenue Wolvendael - Wolvendaellaan"
+   },
+   {
+    "tile": "F1",
+    "kind": "postbox",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-352.8, -1828.2",
+    "street": "Rue de la Mutualité - Onderlinge Bijstandstraat",
+    "id": "bpost:7246"
+   },
+   {
+    "tile": "F4",
+    "kind": "benches",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-435.3, -31",
+    "street": "?"
+   },
+   {
+    "tile": "H7",
+    "kind": "postbox",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "675.6, 1205.2",
+    "street": "Avenue Dolez - Dolezlaan",
+    "id": "bpost:4555"
+   },
+   {
+    "tile": "I11",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "1150.2, 3077.6",
+    "street": "Goudmerellaan - Avenue du Loriot"
+   },
+   {
+    "tile": "I11",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "1316.8, 3370.8",
+    "street": "Ginstlaan - Avenue des Genêts"
+   },
+   {
+    "tile": "I11",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "1470.2, 3479.2",
+    "street": "Goede Luchtlaan - Avenue Bon Air"
+   },
+   {
+    "tile": "J11",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "1880.4, 3330.3",
+    "street": "Goede Luchtlaan - Avenue Bon Air"
+   },
+   {
+    "tile": "J11",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "1828.4, 3439.9",
+    "street": "Ericalaan - Avenue des Ericas"
+   },
+   {
+    "tile": "K12",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "2169.7, 3955.7",
+    "street": "Jonetlaan - Avenue Jonet"
+   },
+   {
+    "tile": "K12",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "2331.7, 3686.8",
+    "street": "Lequimelaan - Avenue Lequime"
+   },
+   {
+    "tile": "K12",
+    "kind": "plate post",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "2345.4, 3905.4",
+    "street": "Jonetlaan - Avenue Jonet"
+   },
+   {
+    "tile": "N8",
+    "kind": "bins",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "3583.8, 1600.7",
+    "street": "?"
+   },
+   {
+    "tile": "E4",
+    "kind": "plate post",
+    "deep": 0.97,
+    "lane": false,
+    "tram": true,
+    "at": "-634.3, -309.7",
+    "street": "Avenue Wolvendael - Wolvendaellaan"
+   },
+   {
+    "tile": "B5",
+    "kind": "sign",
+    "deep": 0.7,
+    "lane": false,
+    "tram": true,
+    "at": "-2217.1, 356.1",
+    "street": "Rue de Stalle - Stallestraat",
+    "codes": "B1"
+   },
+   {
+    "tile": "H6",
+    "kind": "stop pole",
+    "deep": 0.67,
+    "lane": false,
+    "tram": true,
+    "at": "894, 528.6",
+    "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+    "stop": "Gare de Saint-Job"
+   },
+   {
+    "tile": "E4",
+    "kind": "sign",
+    "deep": 0.62,
+    "lane": false,
+    "tram": true,
+    "at": "-633.3, -313.2",
+    "street": "Avenue Wolvendael - Wolvendaellaan",
+    "codes": "F19"
+   },
+   {
+    "tile": "E2",
+    "kind": "bins",
+    "deep": 0.59,
+    "lane": false,
+    "tram": true,
+    "at": "-840.7, -1260.6",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg"
+   },
+   {
+    "tile": "E2",
+    "kind": "stop pole",
+    "deep": 0.59,
+    "lane": false,
+    "tram": true,
+    "at": "-841.1, -1259",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Roosendael"
+   },
+   {
+    "tile": "A5",
+    "kind": "postbox",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2637, 360.2",
+    "street": "Langestraat - Rue Longue",
+    "id": "bpost:8251"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2771.6, 223.5",
+    "street": "Paul Gilsonlaan - Avenue Paul Gilson"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2543.2, 437.8",
+    "street": "Langestraat - Rue Longue"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2534.3, 443.5",
+    "street": "Weidenstraat - Rue des Prés"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2624.6, 355.9",
+    "street": "Boomgaardstraat - Rue du Verger"
+   },
+   {
+    "tile": "A5",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2569, 408.8",
+    "street": "Vrijheidstraat - Rue de la Liberté"
+   },
+   {
+    "tile": "B4",
+    "kind": "villo station",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2453.6, -496",
+    "street": "Chaussée de Neerstalle - Neerstalse Steenweg",
+    "id": "villo:252",
+    "pieces": 34,
+    "of": 35
+   },
+   {
+    "tile": "B5",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2002.4, 247",
+    "street": "Chaussée de Neerstalle - Neerstallesteenweg",
+    "stop": "Carrefour Stalle"
+   },
+   {
+    "tile": "B5",
+    "kind": "shelter",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2370.6, 427.6",
+    "street": "Verlengde Stallestraat - Rue Prolongée de Stalle",
+    "stop": "Eggergat"
+   },
+   {
+    "tile": "B6",
+    "kind": "sign",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2203.5, 985.9",
+    "street": "Oude Molenstraat - Rue du Vieux Moulin",
+    "codes": "C1"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2475.7, 735.7",
+    "street": "Karreveldstraat - Rue Karreveld"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2483.2, 597.1",
+    "street": "Krekelendries"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2498.4, 527.6",
+    "street": "Bemptstraat - Rue de Bempt"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2233.3, 910.1",
+    "street": "Sterstraat - Rue de l'Étoile"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2492.3, 626.2",
+    "street": "Zennebeemd - Pré de la Senne"
+   },
+   {
+    "tile": "B6",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2142.6, 533.5",
+    "street": "Petite Drève du Maréchal - Maarschalkdreefje",
+    "stop": "Stalle (P)"
+   },
+   {
+    "tile": "B7",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2268.9, 1311.9",
+    "street": "Kerkstraat - Rue de l'Église"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2049.7, 1733",
+    "street": "Grote Baan - Grand'Route"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2268.7, 1726.9",
+    "street": "Beukenstraat - Rue des Hêtres"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2275.6, 1915.6",
+    "street": "Bosstraat - Rue du Bois"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2240.8, 1806.4",
+    "street": "Beukenstraat - Rue des Hêtres"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2247.6, 1797.1",
+    "street": "Kasteelstraat - Rue du Castel"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2102.8, 1702.5",
+    "street": "Elst"
+   },
+   {
+    "tile": "B8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2036.8, 1930.3",
+    "street": "Bosstraat - Rue du Bois"
+   },
+   {
+    "tile": "C8",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1924.3, 1796.6",
+    "street": "IJzerstraat - Rue de l'Yser"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1763.3, 2472.1",
+    "street": "Hess de Lilezslaan - Avenue Hess de Lilez"
+   },
+   {
+    "tile": "C9",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1744.1, 2066.1",
+    "street": "Eggergat"
+   },
+   {
+    "tile": "D1",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1099.6, -1931",
+    "street": "Avenue Jupiter - Jupiterlaan",
+    "stop": "Tournoi"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1162.3, 2736.7",
+    "street": "Stationsstraat - Rue de la Station",
+    "codes": "F19"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1315, 2598.3",
+    "street": "Brouwerijstraat - Rue de la Brasserie"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1322.1, 2602.9",
+    "street": "Molenstraat - Rue du Moulin"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1269.4, 2667.4",
+    "street": "Brouwerijstraat - Rue de la Brasserie"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1264.9, 2904.1",
+    "street": "Brouwerijstraat - Rue de la Brasserie"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1211.7, 2976.7",
+    "street": "Brouwerijstraat - Rue de la Brasserie"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1214.3, 2835.4",
+    "street": "Arthur Van Dormaelstraat - Rue Arthur Van Dormael"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1002.2, 2754.2",
+    "street": "Dapperensquare - Square des Braves"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1211.7, 2686.7",
+    "street": "Stationsstraat - Rue de la Station"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1157.9, 2729.8",
+    "street": "Stationsstraat - Rue de la Station"
+   },
+   {
+    "tile": "D10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1001.8, 2842.5",
+    "street": "Stationsstraat - Rue de la Station"
+   },
+   {
+    "tile": "D3",
+    "kind": "villo station",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1142.7, -531",
+    "street": "Place Jean Vander Elst - Jean Vander Elstplein",
+    "id": "villo:242",
+    "pieces": 41,
+    "of": 41
+   },
+   {
+    "tile": "D4",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1129.4, -0.8",
+    "street": "Rue de Stalle - Stallestraat"
+   },
+   {
+    "tile": "D6",
+    "kind": "postbox",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1233.2, 840.6",
+    "street": "Rue Égide Van Ophem - Égide Van Ophemstraat",
+    "id": "bpost:6508"
+   },
+   {
+    "tile": "D8",
+    "kind": "benches",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1366.9, 1865.9",
+    "street": "?"
+   },
+   {
+    "tile": "D8",
+    "kind": "benches",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1369.1, 1868",
+    "street": "?"
+   },
+   {
+    "tile": "D8",
+    "kind": "bins",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1365.6, 1864.8",
+    "street": "?"
+   },
+   {
+    "tile": "D8",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1489.5, 1577.9",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Crematorium"
+   },
+   {
+    "tile": "D9",
+    "kind": "shelter",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1207.5, 2227.5",
+    "street": "Rue du Bourdon - Horzelstraat",
+    "stop": "Moensberg Gare"
+   },
+   {
+    "tile": "E1",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-670.6, -1919.9",
+    "street": "Chaussée d'Alsemberg - Alsembergse Steenweg",
+    "stop": "Molière-Longchamp"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-931, 2856.7",
+    "street": "Dapperensquare - Square des Braves"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-978.3, 2843.6",
+    "street": "Stationsstraat - Rue de la Station"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-689.9, 2906.4",
+    "street": "Bloemhof - Jardin des Fleurs"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-808.8, 2814.5",
+    "street": "Braambeziënlaan - Avenue des Mûres"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-815.2, 2821.1",
+    "street": "Stationsstraat - Rue de la Station"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-761.2, 2796.7",
+    "street": "Marcel en Robert Maassquare - Square Marcel et Robert Maas"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-788.9, 2958",
+    "street": "Kasteelstraat - Rue du Château"
+   },
+   {
+    "tile": "E10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-783.4, 2948.3",
+    "street": "Zavelstraat - Rue des Sables"
+   },
+   {
+    "tile": "E2",
+    "kind": "benches",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-960.5, -1144.9",
+    "street": "?"
+   },
+   {
+    "tile": "E4",
+    "kind": "sign",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-657.1, -302.1",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "codes": "B1"
+   },
+   {
+    "tile": "F10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-322.7, 2934.7",
+    "street": "Commandant Romain Marissaldreef"
+   },
+   {
+    "tile": "F10",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-311.9, 2925.4",
+    "street": "J. en R. Wijtsmanpad"
+   },
+   {
+    "tile": "F3",
+    "kind": "sign",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-262.4, -500.8",
+    "street": "Avenue Kamerdelle - Kamerdellelaan",
+    "codes": "F49"
+   },
+   {
+    "tile": "F4",
+    "kind": "benches",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-437.4, -37.4",
+    "street": "?"
+   },
+   {
+    "tile": "F5",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-235.3, 249.4",
+    "street": "Avenue Wolvendael - Wolvendaellaan",
+    "stop": "Dieweg"
+   },
+   {
+    "tile": "H2",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "631.9, -1377.9",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Cavell"
+   },
+   {
+    "tile": "H3",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "569.6, -817.8",
+    "street": "Rue Edith Cavell - Edith Cavellstraat",
+    "stop": "Langeveld"
+   },
+   {
+    "tile": "H8",
+    "kind": "postbox",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "886.5, 1726.6",
+    "street": "Avenue de l'Aiglon - Aiglonlaan",
+    "id": "bpost:8454"
+   },
+   {
+    "tile": "I11",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "1331.7, 3371.2",
+    "street": "Kastanjeboomlaan - Avenue des Marronniers"
+   },
+   {
+    "tile": "I2",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "1252.5, -1439.2",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Longchamp"
+   },
+   {
+    "tile": "I7",
+    "kind": "benches",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "1173.8, 1172.2",
+    "street": "?"
+   },
+   {
+    "tile": "I7",
+    "kind": "bins",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "1174.5, 1173.7",
+    "street": "?"
+   },
+   {
+    "tile": "J11",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "1888.6, 3337.7",
+    "street": "Ekselboslaan - Avenue d'Ekselbos"
+   },
+   {
+    "tile": "J5",
+    "kind": "villo station",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "1834.5, 9.8",
+    "street": "Chaussée de Waterloo - Waterloosesteenweg",
+    "id": "villo:245",
+    "pieces": 25,
+    "of": 41
+   },
+   {
+    "tile": "K12",
+    "kind": "plate post",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "2051.7, 3520.9",
+    "street": "Ekselboslaan - Avenue d'Ekselbos"
+   },
+   {
+    "tile": "L10",
+    "kind": "sign",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "2862.3, 2598.6",
+    "street": "Drève de Lorraine - Lorrainedreef",
+    "codes": "D7"
+   },
+   {
+    "tile": "L10",
+    "kind": "sign",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "2866.7, 2615.5",
+    "street": "Drève de Lorraine - Lorrainedreef",
+    "codes": "F49"
+   },
+   {
+    "tile": "L8",
+    "kind": "benches",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "2895.8, 1961.4",
+    "street": "?"
+   },
+   {
+    "tile": "E5",
+    "kind": "bins",
+    "deep": 0.31,
+    "lane": false,
+    "tram": true,
+    "at": "-937, 152.2",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg"
+   },
+   {
+    "tile": "E5",
+    "kind": "stop pole",
+    "deep": 0.28,
+    "lane": false,
+    "tram": true,
+    "at": "-936.7, 150.7",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Rittweger"
+   },
+   {
+    "tile": "E3",
+    "kind": "bins",
+    "deep": 0.26,
+    "lane": false,
+    "tram": true,
+    "at": "-908.7, -540.6",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg"
+   },
+   {
+    "tile": "A5",
+    "kind": "shelter",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-2788.6, 240.8",
+    "street": "Paul Gilsonlaan - Avenue Paul Gilson",
+    "stop": "Rue Longue"
+   },
+   {
+    "tile": "B6",
+    "kind": "plate post",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-2142.4, 989",
+    "street": "Oude Molenstraat - Rue du Vieux Moulin"
+   },
+   {
+    "tile": "C4",
+    "kind": "postbox",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-1542.3, -146",
+    "street": "Rue Victor Allard - Victor Allardstraat",
+    "id": "osm:n1278147346"
+   },
+   {
+    "tile": "C7",
+    "kind": "postbox",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-1868.1, 1183.2",
+    "street": "Rue Georges Ugeux - Georges Ugeuxstraat",
+    "id": "bpost:878"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-1122.1, 2897.7",
+    "street": "Arthur Van Dormaelstraat - Rue Arthur Van Dormael",
+    "codes": "F19"
+   },
+   {
+    "tile": "D5",
+    "kind": "stop pole",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-1421.5, 236.7",
+    "street": "Rue de Stalle - Stallestraat",
+    "stop": "Wagon"
+   },
+   {
+    "tile": "D8",
+    "kind": "benches",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-1374.1, 1877.9",
+    "street": "?"
+   },
+   {
+    "tile": "D9",
+    "kind": "benches",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-1420.7, 2101",
+    "street": "?"
+   },
+   {
+    "tile": "E10",
+    "kind": "shelter",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-954.5, 2861",
+    "street": "Stationsstraat - Rue de la Station",
+    "stop": "Braves"
+   },
+   {
+    "tile": "E10",
+    "kind": "shelter",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-958, 2822.5",
+    "street": "Dapperensquare - Square des Braves",
+    "stop": "Braves"
+   },
+   {
+    "tile": "E2",
+    "kind": "benches",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-968.1, -1138.8",
+    "street": "?"
+   },
+   {
+    "tile": "F5",
+    "kind": "bins",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-335, 19.9",
+    "street": "?"
+   },
+   {
+    "tile": "F7",
+    "kind": "bins",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "-185.1, 1269.4",
+    "street": "?"
+   },
+   {
+    "tile": "G2",
+    "kind": "stop pole",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "252.6, -1448.8",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Churchill"
+   },
+   {
+    "tile": "I2",
+    "kind": "stop pole",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "1257.1, -1450",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Longchamp"
+   },
+   {
+    "tile": "K12",
+    "kind": "plate post",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "2030.7, 3551.3",
+    "street": "Boesdaallaan - Avenue Boesdaal"
+   },
+   {
+    "tile": "K4",
+    "kind": "postbox",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "2062, -37.6",
+    "street": "Chaussée de La Hulpe - Terhulpsesteenweg / Chaussée de La Hulpe - Terhulpensesteenweg",
+    "id": "osm:n1937218509"
+   },
+   {
+    "tile": "M11",
+    "kind": "bins",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "3319.8, 3487.1",
+    "street": "?"
+   },
+   {
+    "tile": "M5",
+    "kind": "plate post",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "3416, 243.8",
+    "street": "Avenue du Pérou - Perulaan"
+   },
+   {
+    "tile": "M6",
+    "kind": "bins",
+    "deep": 0.25,
+    "lane": true,
+    "tram": false,
+    "at": "3342.6, 693.4",
+    "street": "?"
+   },
+   {
+    "tile": "E4",
+    "kind": "sign",
+    "deep": 0.22,
+    "lane": false,
+    "tram": true,
+    "at": "-644, -323.2",
+    "street": "Rue du Postillon - Postiljonstraat",
+    "codes": "C1"
+   },
+   {
+    "tile": "G2",
+    "kind": "plate post",
+    "deep": 0.22,
+    "lane": false,
+    "tram": true,
+    "at": "302.8, -1437",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan"
+   },
+   {
+    "tile": "E4",
+    "kind": "plate post",
+    "deep": 0.21,
+    "lane": false,
+    "tram": true,
+    "at": "-641.5, -304.9",
+    "street": "Avenue Wolvendael - Wolvendaellaan"
+   },
+   {
+    "tile": "E3",
+    "kind": "stop pole",
+    "deep": 0.13,
+    "lane": true,
+    "tram": true,
+    "at": "-902.1, -576.5",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Xavier de Bue"
+   },
+   {
+    "tile": "B5",
+    "kind": "sign",
+    "deep": 0.08,
+    "lane": false,
+    "tram": true,
+    "at": "-2209.6, 354.6",
+    "street": "Rue de Stalle - Stallestraat",
+    "codes": "B15"
+   },
+   {
+    "tile": "G2",
+    "kind": "stop pole",
+    "deep": 0.08,
+    "lane": false,
+    "tram": true,
+    "at": "224.4, -1463.2",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Churchill"
+   },
+   {
+    "tile": "D6",
+    "kind": "stop pole",
+    "deep": 0.06,
+    "lane": false,
+    "tram": true,
+    "at": "-1178.1, 780.2",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Uccle Calevoet"
+   },
+   {
+    "tile": "H2",
+    "kind": "stop pole",
+    "deep": 0.02,
+    "lane": false,
+    "tram": true,
+    "at": "852.7, -1380.1",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Gossart"
+   },
+   {
+    "tile": "B4",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-2120.2, -13.2",
+    "street": "Chaussée de Neerstalle - Neerstallesteenweg",
+    "stop": "MERLO"
+   },
+   {
+    "tile": "B5",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-2054.2, 325.6",
+    "street": "Rue de Stalle - Stallestraat",
+    "stop": "Carrefour Stalle"
+   },
+   {
+    "tile": "C3",
+    "kind": "postbox",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1620.6, -917.3",
+    "street": "Avenue Fontaine Vanderstraeten - Fontaine Vanderstraetenlaan",
+    "id": "bpost:6739"
+   },
+   {
+    "tile": "D10",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1020.3, 2716.5",
+    "street": "Rue du Bourdon - Horzelstraat",
+    "codes": "F19"
+   },
+   {
+    "tile": "D5",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1408.4, 243.7",
+    "street": "Rue de Stalle - Stallestraat",
+    "codes": "B15"
+   },
+   {
+    "tile": "D5",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1420.8, 249.8",
+    "street": "Rue de Stalle - Stallestraat",
+    "stop": "Wagon"
+   },
+   {
+    "tile": "D6",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1068.9, 506.8",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Jeanne Herreman"
+   },
+   {
+    "tile": "D7",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1392.3, 1318.1",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Bourdon"
+   },
+   {
+    "tile": "D8",
+    "kind": "postbox",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1488.9, 1546.8",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "id": "bpost:10726"
+   },
+   {
+    "tile": "F1",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-66.1, -1578.7",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Vanderkindere"
+   },
+   {
+    "tile": "F2",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-479, -1499.9",
+    "street": "Rue des Carmélites - Karmelietenstraat",
+    "codes": "F19"
+   },
+   {
+    "tile": "F5",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-499.9, 187.7",
+    "street": "Rue Colonel Chaltin - Kolonel Chaltinstraat",
+    "codes": "C1"
+   },
+   {
+    "tile": "F5",
+    "kind": "benches",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-226.3, 213.1",
+    "street": "Avenue Wolvendael - Wolvendaellaan"
+   },
+   {
+    "tile": "F5",
+    "kind": "bins",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-317.4, 3.5",
+    "street": "?"
+   },
+   {
+    "tile": "G1",
+    "kind": "postbox",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "484.3, -1672.4",
+    "street": "Rue Edith Cavell - Edith Cavellstraat",
+    "id": "bpost:3820"
+   },
+   {
+    "tile": "G1",
+    "kind": "plate post",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "303.4, -1963.4",
+    "street": "Place Georges Brugmann - Georges Brugmannplein"
+   },
+   {
+    "tile": "G2",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "324, -1414.3",
+    "street": "Avenue Montjoie - Montjoielaan",
+    "stop": "Churchill"
+   },
+   {
+    "tile": "H3",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "866, -533.2",
+    "street": "Avenue De Fré - De Frélaan",
+    "stop": "Floride"
+   },
+   {
+    "tile": "I1",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "1343.1, -1785.2",
+    "street": "Avenue Legrand - Legrandlaan",
+    "stop": "Bascule"
+   },
+   {
+    "tile": "I3",
+    "kind": "postbox",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "1200.2, -839.9",
+    "street": "Avenue René Gobert - René Gobertlaan",
+    "id": "osm:n382373191"
+   },
+   {
+    "tile": "I6",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "1352.7, 880.9",
+    "street": "Rue du Ham - Hamstraat",
+    "stop": "Alphonse XIII"
+   },
+   {
+    "tile": "I9",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "1115, 2209.1",
+    "street": "Place de la Sainte-Alliance - Heilig Verbondplein",
+    "stop": "Sainte-Alliance"
+   },
+   {
+    "tile": "K9",
+    "kind": "plate post",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "2217.2, 2000.2",
+    "street": "Avenue du Prince d'Orange - Prins van Oranjelaan"
+   },
+   {
+    "tile": "L10",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "2874.2, 2615.9",
+    "street": "Drève de Lorraine - Lorrainedreef",
+    "codes": "F49"
+   },
+   {
+    "tile": "L10",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "2876.3, 2625.3",
+    "street": "Drève de Lorraine - Lorrainedreef",
+    "codes": "B15"
+   },
+   {
+    "tile": "L10",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "2947.3, 2867.8",
+    "street": "Drève de Lorraine - Lorrainedreef",
+    "codes": "B15"
+   },
+   {
+    "tile": "M10",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "3188.6, 2776.9",
+    "street": "Drève Saint-Hubert - Sint-Hubertusdreef",
+    "codes": "B1"
+   },
+   {
+    "tile": "M5",
+    "kind": "sign",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "3414.8, 243",
+    "street": "Avenue du Pérou - Perulaan",
+    "codes": "C1+C43_50"
+   },
+   {
+    "tile": "M7",
+    "kind": "benches",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "3386.7, 1272.5",
+    "street": "?"
+   }
+  ]
+ }
+}
