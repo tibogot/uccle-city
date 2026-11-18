@@ -423,7 +423,11 @@ mkdirSync(outDir, { recursive: true });
 for (const f of readdirSync(outDir)) if (/^[A-Z]\d+\.json$/.test(f)) rmSync(join(outDir, f));
 const perTile = new Map();
 ways.forEach((w, wi) => {
-  const P = simplify(wayPts[wi]);
+  // the way's OWN direction (chaining may have reversed it): tramline.js prefers a track running the shape's way, so a
+  // reversed one-direction track loses its trams to the parallel one (a 1 m jump at a crossover, Vanderkindere F1)
+  const W0 = w.pts[0], Q = wayPts[wi];
+  if (Q.length > 1 && Math.hypot(Q[0][0] - W0[0], Q[0][1] - W0[1]) > Math.hypot(Q[Q.length - 1][0] - W0[0], Q[Q.length - 1][1] - W0[1])) Q.reverse();
+  const P = simplify(Q);
   if (P.length < 2) return;
   for (const [name, b] of bounds) {
     if (!rawSig.has(name)) continue;            // only tiles that have tram ways of their own

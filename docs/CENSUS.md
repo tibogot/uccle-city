@@ -151,7 +151,9 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   bridge's west end (H6, 9.5 m on the sidewalk polygon at the abutment), F1 1.5 m, H6 1 m ramp. Av. Churchill: UrbIS
   has the tracks on a tram site ("C") between paved medians (no promenade over the rails): fitted (centres 2.55-3.4 m apart, median 2.76 m, OSM had 2.8-3.7) and
   clean. Tram 92 (`tools/tramfit/tramSnap.mjs`): unsnapped points 1,920 = before, sideways step p99.9 0.36 -> 0.12 m,
-  yaw rate p99.9 5.3 -> 6.0 deg/m, sub-18 m radii 245 -> 257 (junctions). Found, not fixed (pre-existing, another
+  yaw rate p99.9 5.28 -> 5.32 deg/m, sub-18 m radii 245 -> 242 (browser turn: each fitted way keeps its OSM direction;
+  chaining had reversed some, and tramline.js prefers the track running the shape's way, so tram 92 jumped 1 m across
+  the Vanderkindere crossover, 6 deg/m in the browser). Found, not fixed (pre-existing, another
   class): 713 m of rail lie under an OSM tram platform as `tram.js` draws it (a 2.6 m band centred on the OSM line,
   often the platform EDGE in OSM): 688 m after the fit. Round 2 fixed it: `viewer/streets/tramPlatforms.js`
   `fitPlatforms` (tile worker, after the tracks) keeps every tram platform's track-side edge 1.25 m from the track centre
