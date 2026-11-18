@@ -239,15 +239,24 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   street-life fronts (`tools/plants/build_ivy.mjs --shops` patched the data, every other byte unchanged), merged into
   the avoid list by `viewer/plants/cityIvy.js` (?zfight=old: not). `?zfight=old` = all of (1), (2), (4) as before.
   Residual (city): small strip / band ends 3-30 cm2 each, eaves boards over cornice pieces, kit walls on roofs (17).
+  (5) the window shimmer (image 93; the mottled lower half of Maison Dandoy's first-floor French window in 87): NOT
+  geometry. Browser A/B (`debug/zfightCheck.js`, knobs): only "kit off" or "the kit glass's painted room off" killed it.
+  Cause: the façade kit packs integer codes into float vertex attributes (aKitF.w = building hash + 2 street + 4 French
+  code (+ 1024 maître), aKit.w = the French code) and DECODED them in the fragment stage: interpolated, they arrive with
+  last-bit errors at their magnitude (aKitF.w ~1,100: ~1e-4), so the hash's 1/4096 quantisation and the French code's
+  mod / floor (17 = bay 0, floor 1 -> 16.99999) flipped per pixel and per TAAU jitter: gold blotches crawling over the
+  glass (the room / lit-window hashes) and the wall cut under a French window coming and going (brick through the
+  lace). The same bug was fixed for the painted walls' aBld in 2026-11 (rnd quantised, zq rounded) but not for the kit.
+  Fix: `kitMaterials.js kitGlassMaterial` decodes in the VERTEX stage (varyings) and rounds the integers per pixel;
+  `facades.js` rounds the kit walls' French code and paintedGlass's frCode, and the shop paint decode takes an epsilon
+  (30 = paint 3, no shop). Still camera, crop frame-to-frame |dY| (x/255): the house right of Dandoy 3.06 -> 0.27,
+  the French window 3.84 -> 0.62; zfightCheck ab() still-camera hot pixels: dandoyNext 0.64 % -> 0.04 %, dandoyFrench
+  0.69 -> 0.18 %, dandoyShop moving 5.6 -> 4.0 % (the ivy). What remains on the French window moving is its Juliet
+  railing's bars (rule 26's class, not z-fighting). `?zfight=old` = the fragment-stage decode as before.
 
 ## Not detected here (needs the browser, or not located)
 
-- G: 87's leaves were the ivy (fixed above). Still open: the patterned shimmer on the window in 93 (and the mottled lower
-  half of Maison Dandoy's first-floor French window in 87). Not static geometry (no pair, no kit opening on a painted
-  wall, no coplanar faces inside any kit piece at any LOD: checked), not SSR (glass writes metalness 0), not GTAO (glass
-  AO weight 0). Candidates, each a knob in `debug/zfightCheck.js ab()`: the kit glass's painted room / curtains, the
-  façade kit vs the painted window (dither), the kit's LOD0/LOD1 dither band (22-28 m), the wet film's beads (only when
-  the weather is wet), the wind (moving leaf shadows), and by reload ?upscale=0 (the TAAU history).
+- G: found in the browser (claude/zfight browser turn), fixed: see G (5) under Fixed.
 - A: whether the heroes' see-through clusters at ground level are real porches / canopies (Calevoet, town hall, Russian
   church).
 - C: images 77 (blocky grass and gravel bump) and 89 (a raised asphalt slab with an edge line and kerb faces) could not

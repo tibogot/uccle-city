@@ -29,6 +29,8 @@ export const VIEWS = {
   // image 87: the shop's right window (right of the door), and the first-floor French window over it
   dandoyShop: { f: DANDOY, u: 1.2, y: 1.5, hw: 1.6, hh: 1.0, d: 7, h: 1.7 },
   dandoyFrench: { f: DANDOY, u: 1.6, y: 4.9, hw: 0.8, hh: 1.2, d: 9, h: 1.7 },
+  // the grey house right of it: its ground-floor kit window showed the same gold blotches as image 93 (browser turn)
+  dandoyNext: { f: DANDOY, u: 5.3, y: 2.7, hw: 0.5, hh: 0.9, d: 8, h: 1.7 },
   // image 93: the first-floor window of the yellow-brick house right of Calzedonia (seen from the street)
   calzeWin: { f: CALZE, u: 6.5, y: 5.2, hw: 1.3, hh: 0.9, d: 10, h: 1.7 },
 };

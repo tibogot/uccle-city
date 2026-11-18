@@ -205,10 +205,22 @@ if (IVY) {
   console.log(`ivy on a shopfront: ${leaves} leaves on ${walls} walls${at.length ? ": " + at.map((a) => `${a.tile} ${a.leaves} (?at=${a.x.toFixed(1)},${a.z.toFixed(1)})`).join(", ") : ""}`);
 }
 if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify(out, null, 1));
+// (browser turn) the packed attribute codes decoded where they cannot flip per pixel: the kit glass's aKitF in the vertex
+// stage (varyings), the kit walls' French code rounded, paintedGlass's frCode rounded (source checks: the shimmer itself
+// needs the browser, debug/zfightCheck.js)
+const srcBad = [];
+{
+  const km = readFileSync(join(ROOT, "viewer/facadeKit/kitMaterials.js"), "utf8"), fa = readFileSync(join(ROOT, "viewer/facades.js"), "utf8");
+  if (!/varying\(vec4\(m0, fr0, st0, kq0\)/.test(km)) srcBad.push("kitGlassMaterial decodes aKitF in the fragment stage");
+  if (!/floor\(kitA\.w\.add\(0\.5\)\)/.test(fa)) srcBad.push("the kit walls' French code (aKit.w) is not rounded");
+  if (!/floor\(frIn\.add\(0\.5\)\)/.test(fa)) srcBad.push("paintedGlass's frCode is not rounded");
+}
+if (srcBad.length) console.log(`packed codes: ${srcBad.join("; ")}`);
 if (Object.keys(MAX).length) {
   const got = { pairs: out.tiles?.pairs, m2: out.tiles?.m2, heroNew: out.heroes ? +out.heroes.reduce((a, h) => a + (h.newM2 || 0), 0).toFixed(1) : undefined, ivyShop: out.ivyShop?.leaves, errors: out.tiles?.errors };
   const bad = Object.entries(MAX).filter(([k, v]) => got[k] === undefined || got[k] > v).map(([k, v]) => `${k} ${got[k]} > ${v}`);
   if (out.tiles?.errors) bad.push(`${out.tiles.errors} tile errors`);
+  bad.push(...srcBad);
   console.log(`${bad.length ? "FAIL" : "PASS"} zfight: ${Object.entries(got).filter(([, v]) => v !== undefined).map(([k, v]) => `${k} ${v}`).join(", ")} (max ${JSON.stringify(MAX)})${bad.length ? ": " + bad.join("; ") : ""}`);
   process.exit(bad.length ? 1 : 0);
 }
