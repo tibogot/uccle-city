@@ -18,6 +18,7 @@ import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 import { relevelRoads } from "./streets/roadLevels.js";
 import { recentreRoads } from "./streets/recentre.js";
 import { trimBendFolds } from "./streets/roadBends.js";
+import { fitLinesToStreet } from "./streets/lineFit.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -83,6 +84,7 @@ export function buildRoadData(o) {
   // paint v2 needs the measured street; a tile without surfaces keeps the engine's rules
   const v2 = o.paint === "v2" && !!prep;
   const ctx = v2 ? preparePaintV2(roads, prep, o.markings ?? null, bounds) : null;     // edits the engine's inputs
+  if (ctx) ctx.bikeMark = o.bikeMark !== false;       // markings: the Brussels bicycle glyph (viewer/streets/bikeGlyph.js), ?bikemark=old = the bar symbol
   const widthFit = prep ? fitRoadWidths(roads, prep) : null;
   lap("surfaces + width fit");
   const net = buildRoadNetwork(roads, { ground });
@@ -120,6 +122,12 @@ export function buildRoadData(o) {
   lap("road bends");
   // (o.engineOnly: the engine stage only, for tools/audit/roadBends.mjs)
   if (o.engineOnly) return { net, built, prep, roadBend: bend, times };
+  // markings (census F, rule 33): the lane strips (and the lines they carry) moved across their roads onto the MEASURED
+  // carriageway, station by station (viewer/streets/lineFit.js); what still leaves it is clipped in buildSurfaceRoads
+  // (o.roadLines false = ?roadlines=old: the strips where the median width fit put them, their lines kept on sidewalks)
+  const roadLines = o.roadLines !== false;
+  const lineFit = prep && roadLines ? fitLinesToStreet(net, built.asphalt, prep, surf) : null;
+  lap("line fit");
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
   let priority = null;
   if (v2) {
@@ -140,7 +148,7 @@ export function buildRoadData(o) {
       const H0 = prep.H, pin = o.levelPins;
       prep.H = (x, z) => { const h = H0(x, z), p = pin(x, z); return p ? h + (p[0] - h) * p[1] : h; };
     }
-    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, { ...(priority ? { priority, dropFolds: true, lineCuts } : {}), wallRay: o.wallRay ?? null });
+    const S = buildSurfaceRoads(prep, built, surfaceAttribute(net, built.asphalt), roads, onBuilding, { ...(priority ? { priority, dropFolds: true, lineCuts } : {}), lineClip: roadLines, wallRay: o.wallRay ?? null });
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
     // (the weld meets the DRAWN surfaces: a sidewalk is its kerb height above the carve's base)
     for (const part of Object.values(S.parts)) welds.push({ position: part.position, index: part.index });
@@ -148,7 +156,7 @@ export function buildRoadData(o) {
       parts[name] = { position: part.position, normal: part.normal, uv: part.uv, attributes: part.attributes, index: part.index, aSurf: part.extra };
       triangles += part.index.length / 3;
     }
-    surfaceStats = { ...S.stats, widthFit, recentre };
+    surfaceStats = { ...S.stats, widthFit, recentre, lineFit };
     surfaceData = { grid: S.grid, kerbs: S.kerbs, bollards: S.bollards };
   }
   for (const name of surf ? [] : ["asphalt", "concrete", "grass"]) {

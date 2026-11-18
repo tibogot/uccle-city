@@ -130,6 +130,28 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   counts as a parapet (fill < 0.4), a slab is >= 1.15 m deep and filled (the 1.1 m BLOCK entrance canopy was taken for a
   slab under the closed balcony's U top), `--old`, `--max`, the shell self-test.
 
+- **F (claude/markings, rule 33 provisional, gate row `markings`).** WHY: the lines along a road are the engine's lane
+  strips, swept from the OSM centre line with one lane stack per road; `fitRoadWidths` scaled it to the road's MEDIAN
+  kerb-to-kerb width and skipped one-way stacks, and `buildSurfaceRoads` kept the strips (with their lines) wherever the
+  street was raised over them. FIX: `viewer/streets/lineFit.js fitLinesToStreet` (after the bend trim, before the
+  overlay): at every engine sample the carriage interval round the centre line is measured along the normal (class
+  raster, ends refined on the kerb / street-edge lines; junction mouths and samples > 1.5 m off the road's median shift
+  not used), smoothed (30 m median, 12 m mean, slope <= 1:8), and every lane-strip vertex moves across its road so the
+  stack's [curbR, curbL] lands on it (linear across, uv untouched: the lines move with their strips); edge lines sit
+  0.3 m inside the kerb measured at their station (a 6 m median). `buildSurfaceRoads` (opts.lineClip) splits each
+  engine triangle at the kerb lines crossing it and zeroes the line codes of the parts not on roadway / tram roadway /
+  parking. The traffic lanes (net) are not moved. City-wide (120 tiles, `docs/census/markings_fit.json` vs
+  `markings_old.json`): off the street 6,020 -> 511 m, along a kerb 957 -> 406 m, skewed 411 -> 313 m, runs 401 -> 220
+  (of 123.5 km; 53.7 km on unmeasured streets not judged); worker +40-50 ms a tile (`line fit`). The bicycle: the
+  Brussels Mobility survey holds ONE template (P09, 608 in the city: 1.50 x 0.92 m, wheels side by side across the lane,
+  upright for the road user, anamorphic x 3.3) and the chevron (P10, 1.50 x 0.90 m, two at 1.59 / 2.38 m ahead of the
+  bicycle); `viewer/streets/bikeGlyph.js` draws the standard pictogram (round wheels, diamond frame, saddle, bar, crank)
+  to that outline, the paint shader evaluates it (and the chevron polygon) as signed distances box-filtered by their
+  own footprint (decal kind 3, one quad a glyph: decal triangles 123,811 -> 73,585). Surveyed P09s face the way their
+  frame side points (the outline's paint between the wheels); OSM shared lanes get bicycle + 2 chevrons. Switches
+  `?roadlines=old`, `?bikemark=old`. Still flagged: I10 Drève Pittoresque 27 m, I7 Av. d'Andrimont 19 m skew, short
+  roads whose OSM line lies > 6 m off their carriageway (E7 Saint-Job -714, 1003), kerb-raster noise at ramps.
+
 ## Not detected here (needs the browser, or not located)
 
 - G: the window shimmer in 87 / 93 is not static geometry. It needs a browser A/B (window shader, interior glass, ivy

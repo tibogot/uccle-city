@@ -16,18 +16,88 @@
 // to the markable base triangles by construction (road_audit C4 checks it) and is counted as info only.
 // Findings = runs of flagged stroke samples (1 m apart, gaps < 3 m merged), sized in metres.
 //
-//   node --import ./tools/road_audit/register.mjs tools/audit/census/markings.mjs [--all | T ...] [--out FILE]
+// Gate (claude/markings, rule 33 provisional): --max offStreet=N,atKerb=N,skew=N fails above those metres (city-wide
+// ceilings at the after-count); --old = ?roadlines=old (the lines where the median width fit put them, kept on
+// sidewalks); the parent also runs the bicycle glyph's geometry test (viewer/streets/bikeGlyph.js): round wheels (the
+// painted edge a true circle in the sign frame, every 0.5 deg, vs the old decagons), the survey's footprint (1.50 x 0.92
+// m), round seen from a cyclist's eye, the chevron's inside / outside, the shader using the same shapes.
+//
+//   node --import ./tools/road_audit/register.mjs tools/audit/census/markings.mjs [--all | T ...] [--out FILE] [--old]
+//        [--max offStreet=N,atKerb=N,skew=N] [--quiet]
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, at, ROOT, SC, CLASS_NAME } from "./lib_street.mjs";
 
-const { CHILD, TILES, OUT, JOBS, WORST } = cli();
+const { CHILD, TILES, OUT, JOBS, WORST, opt, flag } = cli();
+const OLD = flag("--old"), QUIET = flag("--quiet"), MAX = opt("--max", null);
+const ceil = MAX ? Object.fromEntries(MAX.split(",").map((kv) => kv.split("=")).map(([k, v]) => [k, +v])) : null;
+
+/** the bicycle / chevron glyph geometry test: [{ name, ok, info }] */
+async function glyphTest() {
+  const G = await import("../../../viewer/streets/bikeGlyph.js");
+  const { sharrow } = await import("../../../viewer/streets/measuredPaint.js");
+  const res = [], add = (name, ok, info) => res.push({ name, ok, info });
+  // 1. round wheels: along rays from each hub every 0.5 deg, the painted ring's outer and inner edges (bisection on the
+  // glyph's own signed distance) at R +- w / 2; rays where a frame stroke reaches the ring are skipped
+  const nearStroke = (x, y) => G.BIKE.segs.some((sg) => segDist(x, y, sg.a, sg.b) < sg.w / 2 + 0.06);
+  let worst = 0, rays = 0;
+  for (const g of G.BIKE.rings) for (let k = 0; k < 720; k++) {
+    const a = (k / 720) * Math.PI * 2, cx = Math.cos(a), cy = Math.sin(a);
+    const P = (r) => [g.c[0] + cx * r, g.c[1] + cy * r];
+    if (nearStroke(...P(g.r))) continue;
+    const edge = (rIn, rOut) => { let lo = rIn, hi = rOut; for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (G.bikeSD(...P(m)) < 0) lo = m; else hi = m; } return (lo + hi) / 2; };
+    worst = Math.max(worst, Math.abs(edge(g.r, g.r + g.w) - (g.r + g.w / 2)), Math.abs(g.r - g.w / 2 - edge(g.r, g.r - g.w)));
+    rays++;
+  }
+  add("wheels round", worst < 0.001 && rays > 600, `painted edges within ${(worst * 1000).toFixed(2)} mm of a circle on ${rays} rays`);
+  // the old symbol for comparison (?bikemark=old): its rear wheel = 10 bars round (-0.9, 0), r 0.32, 0.07 wide; rays
+  // toward the frame (+-35 deg of forward) skipped
+  const old = sharrow(0, 0, 0, false), inOld = (x, z) => old.some((it) => pipPoly(x, z, it.poly));
+  let oMin = Infinity, oMax = 0;
+  for (let k = 0; k < 720; k++) {
+    const a = (k / 720) * Math.PI * 2; if (Math.cos(a) > Math.cos((35 * Math.PI) / 180)) continue;
+    let lo = 0.3, hi = 0.45;
+    for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (inOld(-0.9 + Math.cos(a) * m, Math.sin(a) * m)) lo = m; else hi = m; }
+    oMin = Math.min(oMin, lo); oMax = Math.max(oMax, lo);
+  }
+  add("old wheels were faceted", oMax - oMin > 0.005, `?bikemark=old: outer edge radius ${(oMin * 1000).toFixed(0)}-${(oMax * 1000).toFixed(0)} mm (${((oMax - oMin) * 1000).toFixed(0)} mm of facets)`);
+  // 2. the survey's footprint (Brussels Mobility P09: 1.50 m along x 0.92 m across)
+  add("bicycle footprint", Math.abs(G.BIKE_LEN - 1.5) < 0.03 && Math.abs(G.BIKE_WID - 0.92) < 0.03, `${G.BIKE_LEN.toFixed(2)} x ${G.BIKE_WID.toFixed(2)} m, stretch ${G.STRETCH.toFixed(2)}`);
+  // 3. round from the road user's eye: a cyclist's eye 1.5 m up, STRETCH x 1.5 m before the wheel (a pinhole
+  // projection): the projected wheel's height / width within 20 % of 1
+  {
+    const g = G.BIKE.rings[1], h = 1.5, d = G.STRETCH * h;
+    const wu = (g.c[1] - G.Y_MID) * G.STRETCH, wv = g.c[0] - G.X_MID;
+    const L = Math.hypot(d, h), fu = d / L, fy = -h / L;             // view direction (along u, down)
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let k = 0; k < 360; k++) {
+      const a = (k / 360) * Math.PI * 2, x = g.c[0] + Math.cos(a) * g.r, y = g.c[1] + Math.sin(a) * g.r;
+      const pu = (y - G.Y_MID) * G.STRETCH - (wu - d), pv = x - G.X_MID - wv, py = -h;
+      const z = pu * fu + py * fy, up = -pu * fy + py * fu;
+      x1 = Math.max(x1, pv / z); x0 = Math.min(x0, pv / z); y1 = Math.max(y1, up / z); y0 = Math.min(y0, up / z);
+    }
+    const asp = (y1 - y0) / (x1 - x0);
+    add("round from the saddle", asp > 0.8 && asp < 1.25, `wheel height / width ${asp.toFixed(2)} from 1.5 m up, ${d.toFixed(1)} m before it`);
+  }
+  // 4. the chevron: inside at its apex and arm ends, outside in the V
+  add("chevron shape", G.polySD(0.58, 0, G.CHEVRON) < 0 && G.polySD(0, 0, G.CHEVRON) > 0 && G.polySD(-0.7, 0.4, G.CHEVRON) < 0 && G.polySD(-0.6, 0, G.CHEVRON) > 0, "inside at the apex and the arm ends, outside in the V");
+  // 5. the shader draws the same shapes (viewer/roadPaint.js imports them; no copy of the numbers)
+  {
+    const src = (await import("node:fs")).readFileSync(new URL("../../../viewer/roadPaint.js", import.meta.url), "utf8");
+    add("shader uses bikeGlyph.js", src.includes('from "./streets/bikeGlyph.js"') && src.includes("glyphCoverage(u, v, n).mul(band(kind, 3))"), "paintMaterial: glyphCoverage, kind 3");
+  }
+  return res;
+}
+function segDist(px, py, [ax, ay], [bx, by]) { const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L2)) : 0; return Math.hypot(px - ax - dx * t, py - ay - dy * t); }
+function pipPoly(x, z, r) { let ins = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; }
 const MARKABLE = new Set([SC.roadway, SC.tramRoad, SC.parking]);
 const KERB_D = 0.10, SKEW = 12, NEAR_KERB = 4, JUNCTION_R = 15;
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: markings.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS });
+  const gt = await glyphTest();
+  for (const t of gt) console.log(`  glyph ${t.ok ? "ok  " : "FAIL"} ${t.name}: ${t.info}`);
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET });
   const sum = { tiles: 0, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, runs: 0, decalTris: 0, decalOff: 0 }, runs = [];
   for (const r of res) {
     if (r.error) continue;
@@ -39,14 +109,23 @@ if (!CHILD) {
   runs.sort((a, b) => b.len - a.len);
   const byWhy = {}; for (const x of runs) for (const w of x.why.split("/")) byWhy[w] = (byWhy[w] || 0) + 1;
   console.log(`class F: ${JSON.stringify(sum)}\n  runs by why: ${JSON.stringify(byWhy)}`);
-  console.log(`worst ${WORST}:`);
+  if (WORST) console.log(`worst ${WORST}:`);
   for (const x of runs.slice(0, WORST)) console.log(`  ${x.tile} ${JSON.stringify(x)}`);
-  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), sum, byWhy, runs }, null, 1));
-  process.exit(0);
+  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byWhy, runs }, null, 1));
+  let bad = gt.filter((t) => !t.ok).length;
+  const errs = res.filter((r) => r.error).length;
+  if (errs) { console.log(`FAIL ${errs} tile(s) did not build`); bad++; }
+  if (ceil) for (const [k, v] of Object.entries(ceil)) {
+    const got = sum[`${k}M`];
+    if (got == null) { console.log(`FAIL unknown ceiling ${k}`); bad++; continue; }
+    const ok = got <= v; if (!ok) bad++;
+    console.log(`  ${ok ? "ok  " : "FAIL"} ${k} ${got} m (ceiling ${v})`);
+  }
+  process.exit(bad ? 1 : 0);
 }
 
 const T = TILES[0];
-const S = await streetTile(T);
+const S = await streetTile(T, OLD ? { build: { roadLines: false } } : {});
 const { rd, fit, classAt, inB, nameAt, roads } = S;
 const out = { tile: T, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, decalTris: 0, decalOff: 0, runs: [] };
 const A = rd.parts.asphalt;

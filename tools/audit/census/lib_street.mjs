@@ -44,12 +44,12 @@ export function lineIndex(lines, CELL = 8) {
 }
 
 /** everything the street detectors need for tile T */
-export async function streetTile(T) {
+export async function streetTile(T, opts = {}) {
   const { streetFit } = await imp("viewer/streets/fitCore.js");
   const { carriageway } = await imp("viewer/streets/carriageway.js");
   const { smoothPolyline } = await imp("viewer/track.js");
   const realLog = console.log; console.log = () => {};
-  let tile; try { tile = loadTile(T); } finally { console.log = realLog; }
+  let tile; try { tile = loadTile(T, opts); } finally { console.log = realLog; }
   const { roads, feats, bounds, rd } = tile;
   const fit = rd.surfaceData ? streetFit(rd.surfaceData) : null;
   const classAt = fit ? fit.classAt : () => -1;
