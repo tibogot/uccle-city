@@ -20,6 +20,9 @@
 //   night      none (the perched pigeons sit on their ridges).
 import * as THREE from "three/webgpu";
 import { SkyFlocks, SLOTS, FLOOR } from "./skyFlocks.js";
+// birds2 (?birds2=old = before): every flock flies after a LEADER on a path (no point to hover round: the old flocks
+// collapsed into balls), the murmuration does manoeuvres (flockModel.js says why and what)
+import { LeaderPath, MurmurShape, DAY_PROFILES, PREY_SIZES } from "./flockModel.js";
 import { env } from "../lighting.js";
 
 const params = new URLSearchParams(location.search);
@@ -38,6 +41,12 @@ const TOWERS = [
   { name: "town hall", x: -1148, z: -506 }, { name: "Notre-Dame du Rosaire", x: 1279, z: -1254 }, { name: "Saint-Augustin", x: -896, z: -1961 },
   { name: "Russian church", x: -354, z: -468 }, { name: "Stalle chapel", x: -1150, z: 56 },
 ];
+// the feral pigeons' squares (viewer/falconFlight/cityFlyer.js SQUARES + the Place de Saint-Job): by day a party flies
+// loops over the square and the roofs round it (birds2)
+const SQUARES = [
+  { name: "Place de Saint-Job", x: 1153, z: 540 }, { name: "Place Jean Vander Elst", x: -1125, z: -505 }, { name: "Parvis Saint-Pierre", x: -701, z: -498 },
+  { name: "Square des Héros", x: -533, z: -487 }, { name: "Vanderkindere", x: -123, z: -1632 },
+];
 const PARKS = [
   { name: "Parc de Wolvendael", x: -402, z: -91, r: 160 }, { name: "Parc Brugmann", x: 92, z: -1156, r: 110 }, { name: "Parc Montjoie", x: 697, z: -1253, r: 80 },
   { name: "Parc Fond'Roy", x: 1107, z: 1240, r: 110 }, { name: "Parc de la Sauvagère", x: -45, z: 1186, r: 100 }, { name: "Kauwberg", x: 417, z: 1285, r: 250 },
@@ -46,6 +55,7 @@ const PARKS = [
 
 export const cityBirds = {
   on: params.get("birds") !== "0",
+  old: params.get("birds2") === "old",    // ?birds2=old: the flocks before birds2 (point targets: the "ball")
   sky: null,
   frame: 0,
   stats: { flocks: "", near: 0, far: 0, cpuMs: 0, floorBuilds: 0 },
@@ -56,7 +66,7 @@ export const cityBirds = {
   start({ scene, renderer, updaters, world, lighting, log = () => {} }) {
     if (!this.on) return;
     if (!renderer.backend?.isWebGPUBackend) { this.on = false; log("birds: need WebGPU (compute)"); return; }
-    const sky = this.sky = new SkyFlocks(renderer, { lightList: lighting ? [lighting.sun, lighting.hemi].filter(Boolean) : null });
+    const sky = this.sky = new SkyFlocks(renderer, { lightList: lighting ? [lighting.sun, lighting.hemi].filter(Boolean) : null, old: this.old });
     scene.add(sky.group);
     Object.assign(this, { world, lighting, log, renderer });
     this.flocks = SLOTS.map((s, k) => ({ k, key: s.key, state: "off", t: 0, home: null, wp: null, wpT: 0, fade: 1 }));
@@ -108,6 +118,15 @@ export const cityBirds = {
     this.stats.floorBuilds++;
   },
 
+  /** birds2: the falcon flight / game is on (or booting: ?game=falcon): the prey flocks keep their old sizes */
+  preyMode() { return !!(this.hooks?.flyer?.on || params.get("game") === "falcon"); },
+  /** the GPU floor's height at (x, z) (skyFlocks.js floorAt on the CPU: the texture window, else floorBase) */
+  floorAt(x, z) {
+    const sky = this.sky, o = sky.u.floorO.value, n = FLOOR.n, cx = Math.floor((x - o.x) / FLOOR.cell), cz = Math.floor((z - o.y) / FLOOR.cell);
+    if (cx < 0 || cz < 0 || cx >= n || cz >= n) return sky.u.floorBase.value;
+    return sky.floorData[cz * n + cx];
+  },
+
   // ------------------------------------------------------------------------------------------------ the director
   sun() {
     // the real sun (lighting.firmSunDir: the solar hour, the day, Brussels): env.uSunDir is the LIGHT's direction, held
@@ -138,6 +157,9 @@ export const cityBirds = {
     W.jackdaws2 = jd && tw[1] ? tw[1].t : null;
     W.gulls = S.e > 3 ? { name: "over the city", x, z, drift: true } : null;
     W.parakeets = S.e > -3 ? this.nearest(PARKS.filter((p) => p.r >= 80), x, z, 1500) : null;
+    // birds2: a party of feral pigeons flying loops over the nearest square by day
+    // (not in the falcon flight / game: sky pigeons there would be birds the hunt cannot take: its prey stays as before)
+    W.pigeons = !this.old && !this.preyMode() && S.e > 2 ? this.nearest(SQUARES, x, z, 900) : null;
     return W;
   },
 
@@ -159,12 +181,14 @@ export const cityBirds = {
         if (want && decide) this.spawn(F, want, cam, S);
       } else if (F.state === "on") {
         const moved = want && F.home && !F.home.drift && (want.name !== F.home.name);
-        if (decide && (!want || moved || F.end)) this.leave(F, cam);
+        // (birds2: a flock spawned before the falcon flight came on / after it went off leaves: the next one has the right size)
+        const resize = !this.old && decide && PREY_SIZES[F.key.startsWith("jackdaws") ? "jackdaws" : F.key] && F.prey !== this.preyMode();
+        if (decide && (!want || moved || F.end || resize)) this.leave(F, cam);
         else this.steer(F, cam, S, dt);
       } else if (F.state === "leaving") {
         // fly off; gone once far and out of view, or faded after 40 s
         const tg = sky.row(F.k, 0), d = Math.hypot(tg.x - cam.position.x, tg.z - cam.position.z);
-        if (F.drop) this.steer(F, cam, S, dt);
+        if (F.drop || F.lead) this.steer(F, cam, S, dt);
         else this.moveTarget(F, F.away, 20, dt);
         const late = F.t > (F.drop ? 30 : 40);
         if (late) { F.fade = Math.max(0, F.fade - dt / 4); sky.setFade(F.k, F.fade); }
@@ -191,6 +215,16 @@ export const cityBirds = {
     }
     const P = this.profile(F.key, S);
     F.home = { ...home }; F.state = "on"; F.t = 0; F.fade = 1; F.wp = null; F.drop = false; F.end = false;
+    F.lead = null; F.hx = F.hz = undefined; F.prey = this.preyMode();
+    if (!this.old) {
+      // birds2: the leader starts at the spawn point, heading for home, and flies its path from there; the target is it
+      F.lead = this.leader(F, P, best, cam);
+      F.split = { x: 0, y: 0, z: 0, gx: 0, gz: 0, on: 0, t: rand(15, 35) };
+      F.shape = F.key === "murmuration" ? new MurmurShape() : null;
+      sky.setSlot(F.k, { on: true, spawn: best, target: { x: F.lead.x, y: F.lead.y, z: F.lead.z }, ...P });
+      F.spawned = best;
+      return;
+    }
     const tgt = this.homeTarget(F, cam, 0);
     sky.setSlot(F.k, { on: true, spawn: best, target: tgt, ...P });
     F.spawned = best;
@@ -203,10 +237,27 @@ export const cityBirds = {
     const cp = cam.position, h = F.home || { x: cp.x, z: cp.z };
     const ax = h.x - cp.x, az = h.z - cp.z, L = Math.hypot(ax, az) || 1;
     F.away = { x: h.x + (ax / L) * 1600, y: this.ground(h.x, h.z) + 120, z: h.z + (az / L) * 1600 };
+    if (F.lead && !F.drop) { F.lead.goal = F.away; F.lead.turnMax = Math.max(F.lead.turnMax, 0.3); }
+    if (F.lead && F.drop && F.key !== "murmuration") {
+      // birds2: down into the roost trees: the leader circles low over home (the flock follows it down, no point to pile on)
+      F.lead.goal = null; F.lead.home = { x: F.home.x, z: F.home.z }; F.lead.R = 40; F.lead.yLo = F.lead.yHi = 6; F.lead.yTt = 0;
+      this.sky.row(F.k, 1).x = 3;
+      return;
+    }
     if (F.drop) { const tg = this.sky.row(F.k, 0); this.sky.setTarget(F.k, F.home.x, this.ground(F.home.x, F.home.z) + 9, F.home.z, 15); this.sky.row(F.k, 1).x = 3; void tg; }
   },
   /** per-species flight: speeds (m/s), flock rules, clearance over the city's floor */
   profile(key, S) {
+    if (!this.old) {
+      // birds2: small parties (flockModel.js DAY_PROFILES), the murmuration as before
+      const dk = key.startsWith("jackdaws") ? "jackdaws" : key, D = DAY_PROFILES[dk];
+      if (D) {
+        // the falcon flight / game on: the prey flocks keep their sizes from before birds2 (the hunt unchanged), new rules
+        const R = (this.preyMode() && PREY_SIZES[dk]) || D.n;
+        const n = dk === "gulls" ? (S.winter ? rand(20, 34) : rand(6, 14)) : rand(R[0], R[1]);
+        return { count: Math.round(n), radius: D.radius, floorClear: D.floorClear, vmin: D.vmin, vmax: D.vmax, spacing: D.spacing, informed: D.informed, cohesion: 1, align: 1, sep: 1, circle: 0 };
+      }
+    }
     switch (key) {
       case "murmuration": return { count: S.winter ? 3072 : 900, radius: 0, floorClear: 18, vmin: 11, vmax: 19, rest: 2.6, cohesion: 1, align: 1.1, sep: 1, circle: 0 };
       case "starlings": return { count: Math.round(rand(110, 190)), radius: 12, floorClear: 9, vmin: 9, vmax: 17, cohesion: 1, align: 1, sep: 1, circle: 0 };
@@ -216,6 +267,61 @@ export const cityBirds = {
     }
     return {};
   },
+  /** birds2: the flock's virtual leader (flockModel.js LeaderPath) from its spawn point, its area / altitude by species */
+  leader(F, P, at, cam) {
+    const h = F.home, dk = F.key.startsWith("jackdaws") ? "jackdaws" : F.key;
+    const heading = Math.atan2(h.x - at.x, h.z - at.z);
+    if (F.key === "murmuration") {
+      return new LeaderPath({ x: at.x, y: at.y, z: at.z, heading, speed: 14, home: { x: h.x, z: h.z }, R: 140, yLo: 45, yHi: 110, turnMax: 0.4, turnSigma: 0.3 });
+    }
+    const D = DAY_PROFILES[dk], L = D.leader;
+    // jackdaws over their tower's top, the rest over the ground
+    const lift = dk === "jackdaws" ? Math.max(0, this.top(h.x, h.z) - this.ground(h.x, h.z)) : 0;
+    const lp = new LeaderPath({ x: at.x, y: at.y, z: at.z, heading, speed: (D.vmin + D.vmax) / 2, home: { x: h.x, z: h.z }, R: L.R, yLo: L.yLo + lift, yHi: L.yHi + lift, turnMax: L.turnMax, turnSigma: L.turnSigma });
+    if (dk === "starlings") lp.goal = this.nextLawn(F, cam);
+    if (dk === "gulls") lp.home = { x: cam.position.x, z: cam.position.z };
+    return lp;
+  },
+  /** birds2: the starlings' next lawn / park near the camera (they cross between them) */
+  nextLawn(F, cam) {
+    const P = this.nearest(PARKS.filter((p) => p !== F.last), cam.position.x + rand(-500, 500), cam.position.z + rand(-500, 500), 1e9) || F.home;
+    F.last = P;
+    const a = rand(0, Math.PI * 2), r = rand(0, P.r ?? 60);
+    return { x: P.x + Math.cos(a) * r, z: P.z + Math.sin(a) * r };
+  },
+  /** birds2: the leader flies on, the slot's rows follow it (target, its velocity, the split offset, the murmuration's shape) */
+  steerLeader(F, cam, S, dt) {
+    const sky = this.sky, L = F.lead;
+    if (F.key === "gulls" && !L.goal) { L.home.x = cam.position.x; L.home.z = cam.position.z; }
+    if (F.key === "starlings" && F.state === "on" && L.goal && Math.hypot(L.goal.x - L.x, L.goal.z - L.z) < 60) L.goal = this.nextLawn(F, cam);
+    // the leader's altitude band over the ground, but never under the GPU's floor (the floor texture, or outside its 1 km
+    // window the camera's ground + 30 m) + the clearance: else the birds ride flat on the floor (seen: parakeets 500 m off)
+    const clear = sky.row(F.k, 1).x;
+    L.step(dt, (x, z) => Math.max(this.ground(x, z), this.floorAt(x, z) + clear - L.yLo + 4));
+    sky.setTarget(F.k, L.x, L.y, L.z);
+    if (F.key === "murmuration") {
+      // the heading follows the leader's track (eased: the sheet swings round), the manoeuvres; a hawk pass = big waves
+      const k = 1 - Math.exp(-0.8 * dt), sp = Math.hypot(L.vx, L.vz) || 1;
+      F.hx ??= L.vx / sp; F.hz ??= L.vz / sp;
+      F.hx += (L.vx / sp - F.hx) * k; F.hz += (L.vz / sp - F.hz) * k;
+      const o = F.shape.step(dt, this.hawk.on ? 1 : 0);
+      sky.setShape(F.k, F.hx, 0, F.hz, o.bend, o.sx, o.sy, o.sz, o.ripple);
+      sky.setManoeuvre(F.k, o);
+      if (!this.force.murmuration && S.evening && S.e < -6.2) F.end = true;      // the drop into the roost
+      return;
+    }
+    // splits now and then: half the informed birds follow a leader 25-45 m to one side for 6-12 s, then rejoin
+    const Sp = F.split;
+    Sp.t -= dt;
+    if (Sp.t < 0) {
+      if (Sp.on) { Sp.on = 0; Sp.t = rand(20, 45); }
+      else { Sp.on = 1; Sp.t = rand(6, 12); const a = Math.random() < 0.5 ? -1 : 1, m = rand(25, 45); Sp.gx = Math.cos(L.h) * m * a; Sp.gz = -Math.sin(L.h) * m * a; }
+    }
+    const e = Math.min(1, dt / 2);
+    Sp.x += ((Sp.on ? Sp.gx : 0) - Sp.x) * e; Sp.z += ((Sp.on ? Sp.gz : 0) - Sp.z) * e;
+    sky.setLeader(F.k, L.vx, L.vy, L.vz, Sp.x, 0, Sp.z);
+  },
+
   /** the target a flock heads for now (t: its age, s) */
   homeTarget(F, cam, t) {
     const h = F.home;
@@ -240,6 +346,7 @@ export const cityBirds = {
   },
   steer(F, cam, S, dt) {
     const sky = this.sky, h = F.home;
+    if (F.lead && !(F.drop && F.key === "murmuration")) { this.steerLeader(F, cam, S, dt); return; }
     if (F.drop) return;          // (the drop's target is set once, the flock pours down to it)
     switch (F.key) {
       case "murmuration": {
