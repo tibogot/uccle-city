@@ -10,6 +10,10 @@
 //   (one-shot, the lab: R reset, G get up, V camera, P pause, 1-9 spots, ? the card, E get on / off: claude/kid)
 // Gamepad (standard mapping): left stick steer + lean, RT pedal, LT rear brake, LB front brake, A hop, B pump, X trick,
 // RB sprint; Y = camera, Back = reset (onKey).
+// FEEL ROUND 1: no frame-latched input. Key events are queued with their timestamps; the frame driver
+// (bikePhysics advanceBike) asks sample(t, DT) once per fixed 120 Hz step, so each step sees exactly the keys down
+// at ITS time (a release lands in the step it happened in, at 30 fps too) and the keyboard ramps advance per step.
+// A key pressed and released between two steps still counts for one step (a fast tap is never lost).
 export const KEYS = {
   pedal: ["KeyW", "ArrowUp"], brakeR: ["KeyS", "ArrowDown"], left: ["KeyA", "ArrowLeft"], right: ["KeyD", "ArrowRight"],
   brakeF: ["KeyQ"], sprint: ["ShiftLeft", "ShiftRight"], hop: ["Space"], pump: ["KeyC"], trick: ["KeyF"],
@@ -20,19 +24,45 @@ export const ONE_SHOT = ["KeyR", "KeyG", "KeyV", "KeyP", "Slash", "F1", ...Array
 export class BikeKeys {
   constructor({ active = () => true, onKey = null } = {}) {
     this.down = new Set(); this.onKey = onKey;
+    this.queue = []; this.fresh = new Set(); this.lateUp = new Set();
     this.input = { pedal: 0, sprint: false, brakeF: 0, brakeR: 0, steer: 0, lean: 0, hop: false, pump: 0, trick: false };
     this.steerK = 0; this.rearK = 0; this.pad = false; this.prevBtn = [];
     addEventListener("keydown", (e) => {
       if (!active() || e.target?.closest?.("input,select,textarea")) return;
       if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyF"].includes(e.code) || e.code === "Slash") e.preventDefault();
       if (!e.repeat && this.onKey) this.onKey(e.code);
-      this.down.add(e.code);
+      if (!e.repeat) this.press(e.code, e.timeStamp);
     });
-    addEventListener("keyup", (e) => this.down.delete(e.code));
-    addEventListener("blur", () => this.down.clear());
+    addEventListener("keyup", (e) => this.release(e.code, e.timeStamp));
+    addEventListener("blur", () => { this.queue.length = 0; this.down.clear(); this.fresh.clear(); this.lateUp.clear(); });
   }
-  /** the input for this frame (dt: frame seconds, for the keyboard ramps) */
-  read(dt) {
+  /** queue a key event at time t (ms, the performance.now() clock: an event's timeStamp) */
+  press(code, t = performance.now()) { this.queue.push({ t, code, on: true }); }
+  release(code, t = performance.now()) { this.queue.push({ t, code, on: false }); }
+  /** apply the queued events up to time t (ms) to the keys held */
+  apply(t) {
+    const q = this.queue;
+    let k = 0;
+    for (; k < q.length && q[k].t <= t; k++) {
+      const e = q[k];
+      if (e.on) { this.down.add(e.code); this.fresh.add(e.code); }
+      else if (this.fresh.has(e.code)) this.lateUp.add(e.code);     // pressed since the last step: held for one step
+      else this.down.delete(e.code);
+    }
+    if (k) q.splice(0, k);
+  }
+  /** ONE fixed step's input: the events up to t (ms) applied, the ramps advanced by dt (s) */
+  sample(t, dt) {
+    this.apply(t);
+    const i = this.compute(dt);
+    for (const c of this.lateUp) this.down.delete(c);
+    this.lateUp.clear(); this.fresh.clear();
+    return i;
+  }
+  /** every queued event applied, then the input (the old per-frame read; tools and tests) */
+  read(dt) { return this.sample(Infinity, dt); }
+  /** the input from the keys held now (dt: seconds, for the keyboard ramps) */
+  compute(dt) {
     const k = this.down, i = this.input;
     const on = (name) => KEYS[name].some((c) => k.has(c));
     const steerT = (on("left") ? 1 : 0) - (on("right") ? 1 : 0);

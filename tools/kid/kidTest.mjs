@@ -219,6 +219,7 @@ else {
   const { rigBmx } = await import("../../viewer/kid/bmxModel.js");
   const modes = {
     seated: {}, standing: { sprint: 1 }, crouched: { legs: -0.9, preload: 1 }, manual: { manual: 1, pitch: 0.45 }, leanL: { lean: 0.55 }, leanR: { lean: -0.55 }, air: { air: true, legs: 0.3 },
+    wobbleL: { wobbleNow: 1, wobbleW: 1 }, wobbleR: { wobbleNow: -1, wobbleW: 1 },
   };
   const s = createBikeState(0, 0, 0.3, 0), pose = {};
   /** the BMX's node tree from its GLB (no meshes: node checks), as the lab mounts it */
@@ -237,7 +238,7 @@ else {
     else { E = findBikeEmpties(bm.root, bm.empties.frame); E.cg = BIKE.cgHeight; }
     let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0, spineMax = 0, asym = 0;
     for (const [mname, mo] of Object.entries(modes)) for (const steer of [-0.9, -0.45, 0, 0.45, 0.9]) for (let c = 0; c < 24; c++) {
-      Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0 }, mo);
+      Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0, wobbleNow: 0, wobbleW: 0 }, mo);
       s.crank = c / 24 * Math.PI * 2; s.steerAngle = steer;
       s.prev.lean = s.lean; s.prev.pitch = s.pitch;
       bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
@@ -253,6 +254,25 @@ else {
     check(`rider (${bike}): feet on the pedals, hands on the grips`, legErr < 0.01 && armErr < 0.01, `feet ${(legErr * 1000).toFixed(1)} mm, hands ${(armErr * 1000).toFixed(1)} mm`, "< 10 mm");
     check(`rider (${bike}): no NaN in any bone`, nan === 0, `${nan}`, "0");
     // (browser turn: the Idle clip's twisted spine put the arms at 32 / 76 % on a straight road)
+    // (feel round 1) a foot down at a stop REACHES the ground: the bike leans toward it (bikePhysics footLean), the
+    // hips drop off the saddle (RIDE.footHipDown); before: the target asked 102-104 % of the leg, the foot hung 1.5-2 cm up
+    {
+      const { RIDE } = await import("../../viewer/kid/riderIK.js");
+      let worstR = 0, worstGap = 0;
+      for (let c = 0; c < 24; c++) {
+        Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: BIKE.footLean, air: false, footDown: 1, wobbleNow: 0, wobbleW: 0, crank: c / 24 * Math.PI * 2, steerAngle: 0 });
+        s.prev.lean = s.lean; s.prev.pitch = 0;
+        bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
+        const M = rider.ride(E, s, holder, 0);
+        worstR = Math.max(worstR, M.legRatio[0]);
+        worstGap = Math.max(worstGap, Math.abs(rider.b.foot_l.getWorldPosition(new THREE.Vector3()).y - RIDE.footAnkle));
+      }
+      check(`rider (${bike}): a foot down at a stop reaches the ground`, worstR <= 0.99 && worstGap < 0.005, `leg asked ${(worstR * 100).toFixed(1)} %, ankle ${(worstGap * 1000).toFixed(1)} mm off its flat-foot height`, "<= 99 %, < 5 mm");
+      // the wobble shows: the hips move sideways with it (both ways)
+      const hipAt = (w) => { Object.assign(s, { footDown: 0, lean: 0, wobbleNow: w, wobbleW: Math.abs(w), crank: 0 }); s.prev.lean = 0; bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true); rider.ride(E, s, holder, 0); return rider.b.pelvis.getWorldPosition(new THREE.Vector3()); };
+      const swing = hipAt(1).distanceTo(hipAt(-1));
+      check(`rider (${bike}): a sketchy landing's wobble moves the body`, swing > 0.05, `hips swing ${(swing * 100).toFixed(1)} cm between the wobble's two sides`, "> 5 cm");
+    }
     check(`rider (${bike}): seated, bars straight: both arms alike, the back not hunched`, asym < 0.05 && spineMax <= 0.80, `arms differ by ${(asym * 100).toFixed(1)} %, spine at most ${(spineMax * 57.3).toFixed(0)} deg`, "< 5 %, <= 46 deg");
   }
   // pushing + the crash poses + the mount blend: finite

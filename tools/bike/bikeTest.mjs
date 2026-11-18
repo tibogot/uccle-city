@@ -5,12 +5,16 @@
 // 0-20 km/h seated 4-11 s / standing 2.5-6 s); never tunnels (kicker / table / kerb / rollers at 58 km/h: no wheel deeper
 // than the bottom-out + 1 cm; the wall never passed); the 15 cm kerb (a hop clears it; no hop: stopped / over the bars;
 // 6 cm rolls; the drop off it ridden); 12 % pedalled seated at 1-3.5 m/s, 20 % = pushing, no roll-back; sand slows;
-// landings (1 m level / 10 deg nose up ridden, 35 deg nose down = over the bars, 35 deg sideways = crash, 4 m flat = hard,
-// 2.6 m crouched ridden, the kicker / table ridden hands-off, a held trick = crash); brakes (skid 6-11 m, full front
+// landings (1 m level clean / 10 deg nose up ridden, 2.6 m crouched ridden, the kicker / table ridden hands-off, a held
+// trick = crash); brakes (skid 6-11 m, full front
 // < 6 m no endo, + lean forward = endo); the manual (assist holds, none loops out); pumping beats coasting; hop heights;
 // the 25 cm log; turning; 10 minutes of random input (4 seeds): finite, never under the ground; cost; every constant a
 // panel slider; the lab's model + camera with three in node (run with --import ./tools/heap/register.mjs); the keys (the
-// arrows give exactly the W A S D input, the lean on Z / X and I / K, no key with two jobs).
+// arrows give exactly the W A S D input, the lean on Z / X and I / K, no key with two jobs). FEEL ROUND 1 (section 14):
+// the input sampled per 120 Hz step (a release acts in its own step at 30 fps, a 25 ms tap between frames hops, every
+// input acts in the step it arrives); the hop buffer (the kerb window, a release 0.1 s early held and popped at the
+// edge, no hold without a face); the coyote hop; the kerb catch (+2..6.5 cm of kerb for the same hop); the landing
+// bands (nose / tail / sideways / lean / impact: clean, sketchy = wobble + speed lost + no crash, bail = crash).
 import { DT, BIKE, SURF, createBikeState, stepBike, groundQuery, bikeSpeed, stateHash, advanceBike, restHeight, wheelPoints, BIKE_RANGES } from "../../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
 import { testGround, testHeight, testColliders, SPOTS, KERB, KICKER, TABLE, SLOPE, STEEP, SAND, WALL, LOG, PUMP, BOUNDS } from "../../viewer/bike/bikeGround.js";
@@ -208,13 +212,11 @@ function randomInputs(seed, n) {
     ride(s, env, () => ({ hop: !!opt.absorb }), 2.5);
     return s;
   };
-  const a = drop(0), b = drop(0.17), c = drop(-0.61), d = drop(0, { yaw: 0.61 }), e = drop(0, { h: 4 }), e2 = drop(0, { h: 2.6, absorb: true });
-  check("1 m drop, level: ridden", a.crashes === 0 && a.lastLanding, `${a.lastLanding?.cause} vn ${f1(a.lastLanding?.vn)}`, "no crash");
+  const a = drop(0), b = drop(0.17), e2 = drop(0, { h: 2.6, absorb: true });
+  check("1 m drop, level: ridden clean", a.crashes === 0 && a.lastLanding?.band === "clean", `${a.lastLanding?.band} vn ${f1(a.lastLanding?.vn)}`, "clean, no crash");
   check("1 m drop, 10 deg nose up (rear first): ridden", b.crashes === 0 && b.lastLanding?.wheel === "rear", `${b.lastLanding?.cause}, ${b.lastLanding?.wheel} first`, "no crash, rear first");
-  check("1 m drop, 35 deg nose down: over the bars", c.crashes === 1 && /bars/.test(c.crashCause), `"${c.crashCause}"`, "over the bars");
-  check("1 m drop, 35 deg sideways: crash", d.crashes === 1 && /sideways/.test(d.crashCause), `"${d.crashCause}"`, "landed sideways");
-  check("4 m flat drop: hard landing", e.crashes === 1 && /hard/.test(e.crashCause), `"${e.crashCause}" vn ${f1(e.lastLanding?.vn)}`, "hard landing");
   check("2.6 m drop absorbed (crouched): ridden", e2.crashes === 0, `${e2.lastLanding?.cause} vn ${f1(e2.lastLanding?.vn)}`, "no crash");
+  // (feel round 1: the angles / impacts that used to bail at once are now in three bands: section 14)
   // the kicker at 8 m/s, hands off: ridden out (the assist levels it)
   const env = labEnv(), s = spawn(env, 0, 8, 0); s.vz = 8;
   let air = 0;
@@ -411,6 +413,141 @@ function randomInputs(seed, n) {
   for (const [job, codes] of Object.entries(KEYS)) for (const c of codes) { if (owner.has(c)) clash.push(`${c}: ${owner.get(c)} + ${job}`); owner.set(c, job); }
   for (const c of ONE_SHOT) if (owner.has(c)) clash.push(`${c}: ${owner.get(c)} + one-shot`);
   check("keys: no key with two jobs", !clash.length, clash.length ? clash.join(", ") : `${owner.size} riding keys + ${ONE_SHOT.length} one-shot keys, all distinct`, "no clash");
+}
+
+// ---------------------------------------------------------------- 14. FEEL ROUND 1 (docs/BIKE.md "Feel round 1")
+{
+  globalThis.addEventListener ??= () => {};
+  globalThis.navigator ??= {};
+  const { BikeKeys } = await import("../../viewer/bike/bikeInput.js");
+  const flat = flatEnv();
+  // ---- 14a. input: sampled per fixed step at that step's time, acted on in that step
+  // Frames at 30 fps (4 steps a frame); Space held, released at 40 times spread over the frames; the pop must come in the
+  // FIRST step whose time is at or after the release (0 steps late, never early). The frame-latched way (one read a
+  // frame, the same input for every step of it) for comparison.
+  const releaseRun = (perStep, tRel) => {
+    const k = new BikeKeys(), s = spawn(flat, 0, 0, 0); s.vz = 4;
+    const fd = 1 / 30; let T = 1000, ideal = -1;
+    k.press("Space", 600); k.release("Space", tRel);
+    for (let f = 0; f < 30; f++) {
+      T += fd * 1000;
+      if (perStep) {
+        advanceBike(s, (lag) => { const t = T - lag * 1000; if (ideal < 0 && t >= tRel) ideal = s.steps + 1; return k.sample(t, DT); }, fd, flat);
+      } else {
+        // (each step's time known after the fact: the frame's steps end at T - (steps after it) x DT - what is left)
+        const inp = { ...k.sample(T, fd) }, n0 = s.steps;
+        advanceBike(s, inp, fd, flat);
+        const n = s.steps - n0;
+        for (let j = 1; j <= n && ideal < 0; j++) if (T - ((n - j) * DT + s._acc) * 1000 >= tRel) ideal = n0 + j;
+      }
+      k.apply(T);
+    }
+    return s.popStep - ideal;
+  };
+  const late = [], latched = [];
+  for (let j = 0; j < 40; j++) { const tRel = 1120 + j * 2.9; late.push(releaseRun(true, tRel)); latched.push(releaseRun(false, tRel)); }
+  const span = (a) => `${Math.min(...a)}..${Math.max(...a)}`;
+  check("input: a hop release acts in its own 120 Hz step (30 fps frames)", late.every((d) => d === 0), `per step: ${span(late)} steps late (40 releases); frame-latched: ${span(latched)}`, "0 steps, every release");
+  // a short tap that falls between two frames (30 fps: 33 ms apart) is not lost
+  const tapHops = (() => {
+    const k = new BikeKeys(), s = spawn(flat, 0, 0, 0); s.vz = 4;
+    let T = 1000; const fd = 1 / 30;
+    k.press("Space", T + 4); k.release("Space", T + 29);      // 25 ms, inside one frame gap
+    for (let f = 0; f < 30; f++) { T += fd * 1000; advanceBike(s, (lag) => k.sample(T - lag * 1000, DT), fd, flat); k.apply(T); }
+    return s.hops;
+  })();
+  // (the old listeners: down on keydown, removed on keyup, read once a frame: such a tap never reached the bike)
+  check("input: a 25 ms tap between two 30 fps frames still hops", tapHops === 1, `per step: ${tapHops} hop (frame-latched: the key is up again before the frame's read: 0)`, "1 hop");
+  // every input acts in the step it arrives: pedal, brakes, steer, lean, the release (the first step differs)
+  const sameStep = (inp, what) => {
+    const a = spawn(flat, 0, 0, 0), b = spawn(flat, 0, 0, 0); a.vz = b.vz = 4;
+    ride(a, flat, () => ({}), 0.3); ride(b, flat, () => ({}), 0.3);
+    stepBike(a, {}, flat); stepBike(b, inp, flat);
+    return what(a) !== what(b) ? 0 : 1;
+  };
+  const lat = [sameStep({ pedal: 1 }, (q) => q.vz), sameStep({ brakeF: 1 }, (q) => q.vz), sameStep({ brakeR: 1 }, (q) => q.vz), sameStep({ steer: 1 }, (q) => q.leanTarget), sameStep({ lean: 1 }, (q) => q.pitchVel)];
+  const relLate = (() => { const a = spawn(flat, 0, 0, 0); a.vz = 4; ride(a, flat, () => ({ hop: true }), 0.3); const vy = a.vy; stepBike(a, { hop: false }, flat); return a.vy - vy > 1 ? 0 : 1; })();
+  check("input: pedal / brakes / steer / lean / hop release act in the same step", lat.every((x) => x === 0) && relLate === 0, `steps late: pedal ${lat[0]} front ${lat[1]} rear ${lat[2]} steer ${lat[3]} lean ${lat[4]} release ${relLate}`, "0 each");
+
+  // ---- 14b. the hop buffer, the coyote hop, the kerb catch
+  // A TAP hop (0.06 s of preload) at 4.2 m/s onto the lab's 15 cm kerb, released `lead` s before the front axle reaches
+  // the face: the leads that ride onto the pavement, without and with the buffer + catch.
+  const kerbTry = (lead, Bx, hold = 0.06, v = 4.2) => {
+    const env = labEnv(), q = {}; env.ground(15, 12, q); const s = createBikeState(15, 12, 0, q.h, Bx); s.vz = v;
+    let held = false, popped = false, relStep = -1;
+    for (let i = 0; i < 480; i++) {
+      const tl = (KERB.z0 - (s.z + Bx.wheelbase / 2)) / Math.max(0.1, s.vz);
+      if (!popped && tl < lead + hold && tl > lead) held = true;
+      if (held && tl <= lead) { held = false; popped = true; relStep = s.steps + 1; }
+      stepBike(s, { pedal: 0.4, hop: held }, env, Bx);
+    }
+    return { ok: s.z > KERB.z0 + 1 && Math.abs(s.yLow - KERB.h) < 0.06 && !s.crashes && !s.blocked, delay: (s.popStep - relStep) * DT, s };
+  };
+  const windowOf = (Bx) => { let lo = Infinity, hi = -Infinity; for (let k = 0; k <= 30; k++) { const L = k * 0.02; if (kerbTry(L, Bx).ok) { lo = Math.min(lo, L); hi = Math.max(hi, L); } } return [lo, hi]; };
+  const B0 = { ...BIKE, hopBuffer: 0, kerbCatch: 0 }, wOff = windowOf(B0), wOn = windowOf(BIKE);
+  check("hop buffer: the kerb window (tap hop, 15 cm kerb, 15 km/h)", wOn[1] >= wOff[1] + 0.1 && wOn[0] <= wOff[0], `released ${f2(wOn[0])}-${f2(wOn[1])} s before the face (without buffer + catch: ${f2(wOff[0])}-${f2(wOff[1])} s)`, "early edge >= +0.10 s, late edge kept");
+  const early = Math.round((wOff[1] + 0.1) * 50) / 50, eOff = kerbTry(early, B0), eOn = kerbTry(early, BIKE);
+  check("hop buffer: released 0.1 s before the window: held, pops at the edge, clears", !eOff.ok && eOn.ok && Math.abs(eOn.delay - (early - BIKE.hopLead)) < 0.02, `released ${f2(early)} s before: without ${eOff.ok ? "ok" : `"${eOff.s.crashCause}" blocked ${eOff.s.blocked}`}; with: ${eOn.ok ? "ok" : "fail"}, held ${f2(eOn.delay)} s (pops ${BIKE.hopLead} s before the face)`, "fails without, clears with");
+  const far = kerbTry(0.6, BIKE), flatHop = (() => { const s = spawn(flat, 0, 0, 0); s.vz = 4; ride(s, flat, () => ({ hop: true }), 0.2); const n = s.steps + 1; stepBike(s, {}, flat); return s.popStep - n; })();
+  check("hop buffer: no face ahead / far too early = no hold", far.delay === 0 && flatHop === 0, `0.6 s early: held ${f2(far.delay)} s; flat ground: popped ${flatHop} steps after the release`, "0, 0");
+  // the coyote hop: a release just after rolling off a ledge still pops; long after does not
+  const coy = (after) => {
+    const env = createBikeEnv({ ground: groundQuery((x, z) => (z < 6 ? 0.6 : 0), () => SURF.asphalt) }), s = spawn(env, 0, 2, 0); s.vz = 4;
+    let rel = false;
+    ride(s, env, (q) => { if (!rel && q.sinceContact > after) rel = true; return { hop: !rel }; }, 1.5);
+    return s.hops;
+  };
+  const c1 = coy(0.05), c2 = coy(0.16);
+  check("coyote hop: released 0.05 s after leaving the ground pops, 0.16 s does not", c1 === 1 && c2 === 0, `0.05 s: ${c1} hop, 0.16 s: ${c2} hop (coyote ${BIKE.coyote} s)`, "1, 0");
+  // the kerb catch: the same tap hop (released 0.16 s before) on kerbs 10-40 cm: the highest ridden onto, without and
+  // with the catch (it helps a few cm, never more than kerbCatch + 2 cm)
+  const kerbH = (h, Bx) => {
+    const env = createBikeEnv({ ground: groundQuery((x, z) => (z > 10 ? h : 0), () => SURF.asphalt) }), s = createBikeState(0, 4, 0, 0, Bx); s.vz = 4.2;
+    let held = false, popped = false;
+    for (let i = 0; i < 480; i++) {
+      const tl = (10 - (s.z + Bx.wheelbase / 2)) / Math.max(0.1, s.vz);
+      if (!popped && tl < 0.22 && tl > 0.16) held = true;
+      if (held && tl <= 0.16) { held = false; popped = true; }
+      stepBike(s, { pedal: 0.4, hop: held }, env, Bx);
+    }
+    return { ok: s.z > 11 && !s.crashes && !s.blocked && Math.abs(s.yLow - h) < 0.06, catches: s.catches };
+  };
+  const maxH = (Bx) => { let m = 0, c = 0; for (let k = 0; k <= 30; k++) { const h = 0.10 + k * 0.01, r = kerbH(h, Bx); if (r.ok) { m = h; c = r.catches; } } return [m, c]; };
+  const [hOff] = maxH({ ...BIKE, kerbCatch: 0, hopBuffer: 0 }), [hOn, cOn] = maxH({ ...BIKE, hopBuffer: 0 });
+  const gain = hOn - hOff;
+  check("kerb catch: a wheel just short of the top is lifted on", gain >= 0.02 - 1e-9 && gain <= BIKE.kerbCatch + 0.02 && cOn > 0, `a tap hop rides kerbs up to ${(hOn * 100).toFixed(0)} cm (without the catch ${(hOff * 100).toFixed(0)} cm: +${(gain * 100).toFixed(0)} cm, ${cOn} catch)`, `+2..${((BIKE.kerbCatch + 0.02) * 100).toFixed(1)} cm`);
+
+  // ---- 14c. landings in three bands: clean / sketchy (wobble + speed lost, the kid stays on) / bail
+  const D = Math.PI / 180;
+  const drop2 = (opt = {}) => {
+    const s = spawn(flat, 0, 0, 0);
+    s.y += opt.h ?? 1; s.vz = 5; s.pitch = opt.pitch || 0; s.lean = opt.lean || 0; s.vy = 0;
+    s.air = true; s.airT = 0.5; s.contact[0] = s.contact[1] = false; s.sinceContact = 1;
+    if (opt.yaw) s.heading = opt.yaw;
+    let wob = 0, v1 = NaN;
+    ride(s, flat, () => ({}), 2.5, (q) => { wob = Math.max(wob, Math.abs(q.wobbleNow)); if (!(v1 === v1) && q.lastLanding && q.t - q.lastLanding.t > 0.5) v1 = Math.hypot(q.vx, q.vz); });
+    return { s, L: s.lastLanding, wob, v1 };
+  };
+  const bands = [
+    ["nose down", { pitch: -10 * D }, { pitch: -35 * D }, { pitch: -60 * D }, (L) => -L.rel],
+    ["nose up (rear first)", { pitch: 25 * D }, { pitch: 55 * D }, { pitch: 85 * D }, (L) => L.rel],
+    ["sideways", { yaw: 10 * D }, { yaw: 30 * D }, { yaw: 55 * D }, (L) => L.yaw],
+    ["leaning", { lean: 10 * D, h: 0.05 }, { lean: 40 * D, h: 0.05 }, { lean: 75 * D, h: 0.05 }, (L) => Math.abs(L.lean)],
+    ["impact (flat drop 1 / 3 / 5.5 m)", { h: 1 }, { h: 3 }, { h: 5.5 }, null],
+  ];
+  for (const [name, oC, oS, oB, val] of bands) {
+    const c = drop2(oC), k = drop2(oS), b = drop2(oB);
+    const u = (L) => (!L ? "-" : val ? `${(val(L) / D).toFixed(0)} deg` : `${f1(L.vn)} m/s`);
+    const okC = c.L?.band === "clean" && c.s.crashes === 0;
+    const okS = k.L?.band === "sketchy" && k.s.crashes === 0 && k.wob > 0.3 && k.v1 < c.v1 * 0.95;
+    const okB = b.L?.band === "bail" && b.s.crashes === 1;
+    check(`landing bands, ${name}: clean / sketchy / bail`, okC && okS && okB,
+      `${u(c.L)} ${c.L?.band}; ${u(k.L)} ${k.L?.band} (wobble ${f2(k.wob)}, ${f2(k.v1)} vs clean ${f2(c.v1)} m/s, crashes ${k.s.crashes}); ${u(b.L)} ${b.L?.band} "${b.s.crashCause}"`,
+      "clean; sketchy: wobble, -5 % speed, stays on; bail");
+  }
+  // the old binary checks, as bails now: a trick still held at touch-down (section 7) and one let go just late
+  const tr = (() => { const env = labEnv(), s = spawn(env, 0, 8, 0); s.vz = 8; ride(s, env, (q) => ({ trick: q.air && q.airT < 0.6 }), 4); return s; })();
+  check("landing bands: a trick let go just late = sketchy, not a crash", tr.crashes === 0 && tr.lastLanding?.band === "sketchy", `${tr.lastLanding?.band} (${tr.lastLanding?.why}, air ${f2(tr.lastLanding?.air)} s), crashes ${tr.crashes}`, "sketchy, stays on");
 }
 
 if (!quiet || failed) {

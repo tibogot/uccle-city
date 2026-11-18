@@ -31,6 +31,13 @@ export const RIDE = {
   wristBack: 0.045,                          // the wrist behind the grip's centre (the fist round the bar)
   headDown: 0.10,                            // the gaze a little down the road
   spineMax: 0.75,                            // rad of forward bend at most (more reach: the body slides toward the bars)
+  footReach: 0.97,                           // a foot down at a stop: the hips drop off the saddle until the foot's
+                                             // target is within this much of the leg (+ the bike leans toward the foot:
+                                             // bikePhysics footLean); any bike geometry
+  footOut: 0.16, footFwd: 0.12,              // where the foot goes down: out to the side, forward of the hip joint
+  footAnkle: 0.09,                           // the ankle over the ground with the foot flat (the kid's: 7.5 cm + the sole)
+  wobbleHip: 0.05, wobbleRoll: 0.30,         // a sketchy landing's wobble (s.wobbleNow): hips sideways, body counter-roll
+  wobbleCrouch: 0.45,                        // and the legs soaking it up (crouch at the wobble's start)
 };
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3();
@@ -160,14 +167,26 @@ export class RiderIK {
     this.SYM.forEach((o, k) => o.quaternion.copy(this.restQ[k]));          // (symmetric body, the Idle's hands)
     this.model.updateMatrixWorld(true);
     // 1. the hips, in frame-local coordinates
-    const legs = s.legs || 0, crouch = Math.min(1, Math.max(0, -legs * 1.4, s.preload ? s.preload * 0.6 : 0));
+    const legs = s.legs || 0, wob = s.wobbleNow || 0, wobW = s.wobbleW || 0;
+    const crouch = Math.min(1, Math.max(0, -legs * 1.4, s.preload ? s.preload * 0.6 : 0, wobW * P.wobbleCrouch));
+    const fdHip = Math.min(1, Math.max(0, ((s.footDown || 0) - 0.3) / 0.7));
     const stand = Math.min(1, Math.max(s.sprint || 0, s.air ? 0.55 : 0, legs > 0.05 ? legs * 1.5 : 0, s.preload ? s.preload * 0.5 : 0));
     const manual = (s.manual || 0) > 0 ? 1 : Math.max(0, Math.min(1, (s.pitch || 0) / 0.35));
     const seat = F.worldToLocal(E.seat.getWorldPosition(_a));
     const hip = _b.set(
-      P.swayStand * stand * Math.sin(s.crank || 0),
+      P.swayStand * stand * Math.sin(s.crank || 0) + P.wobbleHip * wob,
       seat.y + P.hipUp + stand * P.standUp - crouch * P.crouchDown,
       seat.z - P.hipBack + stand * P.standFwd - crouch * P.crouchBack - manual * P.manualBack);
+    // a foot down: the hips come down off the saddle as far as the left foot needs to reach the ground (world
+    // vertical; the horizontal offset of the foot from the hip joint stays)
+    if (fdHip > 0 && groundY !== null) {
+      const off = this.hipOff[0];
+      const hj = F.localToWorld(_c.set(hip.x + off.x, hip.y + off.y, hip.z + off.z));
+      const tx = P.footOut * _left.x + P.footFwd * _fwd.x, tz = P.footOut * _left.z + P.footFwd * _fwd.z;
+      const dy = hj.y - (groundY + P.footAnkle), hz = Math.hypot(tx, tz) , reach = P.footReach * this.leg[0];
+      const want = Math.sqrt(Math.max(0, reach * reach - hz * hz));
+      if (dy > want) hip.y -= (dy - want) * fdHip / Math.max(0.5, _up.y);
+    }
     // fitted to the legs: the hip joints within reachLeg of the farthest point of the ankles' circle
     const bb = F.worldToLocal(E.bb.getWorldPosition(_c));
     const pl = F.worldToLocal(E.pedal_L.getWorldPosition(_d));
@@ -184,7 +203,8 @@ export class RiderIK {
     }
     M.fitted = fitted; M.slid = 0;
     // 2. the pelvis: placed + turned with the frame, pitched forward, leaning into the turn
-    const roll = -(s.lean || 0) * P.leanExtra;
+    // (a sketchy landing: the body counter-rolls against the bike's wobble: the save shows)
+    const roll = -(s.lean || 0) * P.leanExtra - wob * P.wobbleRoll;
     const pitch = P.pelvisPitch + stand * P.standPitch - manual * 0.15;
     F.localToWorld(_p.copy(hip));
     setWorldPos(b.pelvis, _p);
@@ -253,8 +273,8 @@ export class RiderIK {
       const fd = k === 0 ? Math.min(1, Math.max(0, ((s.footDown || 0) - 0.5) * 2)) : 0;
       if (fd > 0 && groundY !== null) {
         const hipW = th.getWorldPosition(_a);
-        const down = _e.copy(hipW).addScaledVector(_left, 0.16).addScaledVector(_fwd, 0.12);
-        down.y = groundY + 0.09;
+        const down = _e.copy(hipW).addScaledVector(_left, P.footOut).addScaledVector(_fwd, P.footFwd);
+        down.y = groundY + P.footAnkle;
         T.lerp(down, fd);
       }
       const hipW = th.getWorldPosition(new THREE.Vector3());

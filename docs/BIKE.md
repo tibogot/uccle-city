@@ -45,9 +45,9 @@ EMERGE instead of being scripted animations:
   absorb on a face takes part of the climb's loss). Pumped rollers keep / gain speed, coasted ones die.
 - **Air**: ballistic velocity; lean input pitches (`airPitch`), steer spins (`airYaw`), both damped; an assist
   (`airLevel`) levels the bike toward the slope of the ground it will land on (flat: level, a down ramp: nose down).
-- **Landing**: judged at touch-down: nose down vs the ground > 26 deg = over the bars, nose up > 46 deg = looped out,
-  lean > 31 deg, heading vs velocity > 31 deg (sideways), impact > 7 m/s into the ground (+1.4 crouched) = hard landing,
-  the trick still held. A flat landing costs forward speed; landing on the down slope keeps it.
+- **Landing**: judged at touch-down in THREE BANDS (feel round 1, below): clean / sketchy (a wobble, speed lost, the kid
+  stays on) / bail, on the nose down / nose up vs the ground, the lean, heading vs velocity (sideways), the impact into
+  the ground (+1.4 m/s crouched) and the trick still held. A flat landing costs forward speed; the down slope keeps it.
 - **Steps** (a kerb face in the ground): a wheel meeting a face higher than `stepRoll` (7 cm) that it can't roll is
   blocked: the front stops the bike (faster than 3.2 m/s with > 10 cm: over the bars); the rear bonks up to 25 cm
   (speed loss). A general face test on every contact move (turning, sliding, pitching) and a ledge rule keep a wheel
@@ -94,29 +94,94 @@ thing (move = pedal / brake / steer, Shift = run / sprint, Space = jump / hop, C
 | steer | maxLean 0.65 rad, leanRate 7, leanV0 1.2 / leanV1 5 m/s, lowSteer 0.75 rad, barV0 1.5 / barV1 4.5 m/s, yawResponse 12, tyreRate 25, skidYaw 1.6, washSlip 1.6 m/s, washTime 0.3 s |
 | pitch | riderPitch 24 rad/s^2, pitchDamp 1.6, manualAssist 0.8, manualAngle 0.30 rad |
 | air | airPitch 8, airPitchDamp 1.8, airLevel 4, airYaw 9, airYawDamp 2.2 |
-| hop | popVel 1.35 m/s, popPreload 1.8 m/s, preloadTime 0.28 s, popPitch 1.2 rad/s, coyote 0.08 s |
+| hop | popVel 1.35 m/s, popPreload 1.8 m/s, preloadTime 0.28 s, popPitch 1.2 rad/s, coyote 0.08 s, hopLead 0.22 s, hopBuffer 0.26 s, kerbCatch 0.045 m, kerbCatchLoss 0.04 |
 | steps | stepRoll 0.07 m, faceSlope 1.6, faceCrash 3.2 m/s, rearClimb 0.25 m, rearBonk 0.45 |
-| landing | noseTol 0.45, tailTol 0.80, leanTol 0.55, yawTol 0.55 rad, hardLand 7 m/s, absorb 1.4 m/s, landLoss 0.25, loopOut 0.85, endo 0.62 rad, crashSpeed 4.5 m/s, trickRisk 0.35 |
-| push | pushGrade 0.10, pushSpeed 0.85 m/s, pushDelay 0.8 s, walk 1.3 m/s, footSpeed 0.6 m/s, respawn 2.2 s |
+| landing (sketchy / bail) | nose 0.28 / 0.70, tail 0.50 / 1.00, lean 0.33 / 0.77, yaw 0.33 / 0.80 rad, hard 5.0 / 9.8 m/s, trick 0.12 / 0.35; absorb 1.4 m/s, landLoss 0.25, wobbleTime 0.45 s, wobbleGrip 0.35, wobbleLean 0.14 rad, sketchyLoss 0.12, loopOut 0.85, endo 0.62 rad, crashSpeed 4.5 m/s |
+| push | pushGrade 0.10, pushSpeed 0.85 m/s, pushDelay 0.8 s, walk 1.3 m/s, footSpeed 0.6 m/s, footLean 0.08 rad, respawn 2.2 s |
 
 Surfaces (grip / rolling x g / sink per m/s / buzz): asphalt 0.95 / 0.010 / 0 / 2 mm, setts 0.72 / 0.024 / 0 / 14 mm,
 dirt (packed) 0.70 / 0.018 / 0 / 8 mm, grass 0.55 / 0.060 / 0.06 / 10 mm, sand 0.42 / 0.12 / 0.25 / 3 mm,
 roots 0.50 / 0.045 / 0.03 / 22 mm.
 
 ## Targets = the node checks (`node --import ./tools/heap/register.mjs tools/bike/bikeTest.mjs`, gate row `bike`)
-49 checks, all pass (1.3 s): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
+63 checks, all pass (~3 s; feel round 1's 14 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
 steps and state); speeds above; never tunnels (kicker / table / kerb / rollers entered at 58 km/h: deepest wheel 0.11 m =
 the bottom-out, 0 steps under; the wall at 58 km/h: never through, a crash; at walking pace: stopped, no crash); the
 15 cm kerb: a timed hop rides onto the pavement, no hop at 2.5 m/s = stopped, at 22 km/h = over the bars; a 6 cm kerb
 rolls; the drop off it is ridden; hills (12 % seated 1.97-3.18 m/s, 20 % pushed, no roll-back at a stop); sand (coast
-decel 2.5 vs 0.29 m/s^2 asphalt, pedalling < 6 km/h, the lab's patch stops a coasting bike); landings (1 m level / rear
-first ridden, 35 deg nose down = over the bars, 35 deg sideways = crash, 4 m flat = hard landing, 2.6 m crouched =
-ridden, the kicker at 29 km/h hands-off ridden out, the table at 32 km/h, a held trick = crash); brakes (skid 10.8 m,
+decel 2.5 vs 0.29 m/s^2 asphalt, pedalling < 6 km/h, the lab's patch stops a coasting bike); landings (1 m level clean / rear
+first ridden, 2.6 m crouched = ridden, the kicker at 29 km/h hands-off ridden out (sketchy: crouch to land it clean),
+the table at 32 km/h, a held trick = crash; the bands: feel round 1); brakes (skid 10.8 m,
 full front 4.4 m no endo, front + lean forward = endo); manual (assist holds it 2.9 s; no assist = loops out); pumping
 (41 m at 4.9 m/s vs coasting 27 m, stopped); hop heights; the 25 cm log (full hop clears, riding into it stops);
 turning (full lean at 14.5 km/h r 2.7 m, walking U-turn r 1 m, grass full lean + front brake washes out); 10 minutes of
 random input over 4 seeds (finite, never under the ground, sane speed); 7 us a step in node; every constant a slider;
 the lab's model + camera run in node with three (4 camera modes, 4,800 frames, finite, camera over the ground).
+
+## Feel round 1 (2026-11-18, docs/bike/FEEL_RESEARCH.md items 1-3)
+Two items from the research ranking (#1 zero-lag input + #2 forgiveness, #3 graded landings), started from its numbers
+and tuned on the node checks. Why: kids read a missed input or a binary bail as "the game is unfair" (OlliOlli's
+redesign); help nobody sees (Celeste) makes the game feel kind.
+
+**1. Input read per step, acted on in that step.** Before, the lab read the keys once a frame and gave every 120 Hz
+step of that frame the same input: at 30 fps a release reached the bike up to 3 steps (25 ms) off its real time, and a
+tap shorter than a frame gap (key down and up between two reads) never existed. Now `BikeKeys` queues each key event
+with its timestamp; `advanceBike(s, (lag) => input)` asks once PER STEP with that step's time
+(`keys.sample(frameMs - lag * 1000, DT)`): each step sees the keys down at its time, the keyboard ramps advance per
+step, a key pressed and released between two steps counts for one step (`keys.apply(now)` after the steps flushes the
+rest). In the physics every input acts in the step it arrives (pedal, both brakes, steer, lean, the release's pop). The
+gamepad is polled per step too (the browser refreshes its snapshot once a frame). Render interpolation stays one step.
+Checks: 40 releases at 30 fps: 0 steps late every time (frame-latched: -3..0); a 25 ms tap between two 30 fps frames
+hops; pedal / brakes / steer / lean / release: 0 steps.
+
+**2. Forgiveness.**
+- **Coyote hop** kept (0.08 s): a release 0.05 s after rolling off a ledge pops, 0.16 s after does not.
+- **Hop buffer**: on a release with a kerb face ahead (`faceAhead`: a run of 2 cm rises steeper than faceSlope climbing
+  more than stepRoll, scanned out to `v * (hopLead + hopBuffer)`), the pop is HELD (the kid stays crouched) until the
+  front axle is `hopLead` 0.22 s from the face, at most `hopBuffer` 0.26 s; no face = no hold; a release earlier than
+  that = an ordinary pop. On the lab's 15 cm kerb, a TAP hop (0.06 s preload) at 15 km/h: the releases that ride onto
+  the pavement went from 0.10-0.36 s before the face to 0.08-0.48 s (+0.12 s on the early side: the research's number;
+  the late side +0.02 s from the catch). A release 0.46 s before: blocked without, held 0.23 s and cleared with. (The
+  research's "0.12 s early" became hopLead + hopBuffer because a hop's own air time already forgives releases up to
+  ~0.36 s early: the buffer adds its 0.12 s past that edge.)
+- **Kerb catch**: an AIRBORNE wheel (its bottom above the ground under it) that will arrive short of a kerb's top by more
+  than it rolls (stepRoll 7 cm) and by at most `kerbCatch` 4.5 cm more gets the lift it lacks, spread over the steps
+  before the face (at most 1.2 m/s, no snap; 4 % speed lost); met at the face itself it is lifted on at once (half body,
+  half pitch). A wheel rolling on the ground never is (no hop = still blocked). The same tap hop rides kerbs up to 29 cm
+  instead of 25 cm (+4 cm).
+- Found and fixed on the way (they made the kerb window ragged, crashes in the middle of it): the rear bonk threw the
+  whole bike up (front included) and pitched it nose-down into an endo, and bonked twice on one face (63 % of the speed
+  gone): now applied at the rear contact, once per face. A front-only contact with no front brake and no forward lean
+  now levels the bike (the kid brings the rear down onto the ground ahead; a stoppie is still front brake + lean
+  forward). Landings and the endo / loop-out rules with a wheel AT a kerb's lip were judged against the face's slope
+  (~45 deg): now against the ground over 0.5 m (`judgeSlope`).
+
+**3. Three landing bands.** Each old limit split into a sketchy and a bail threshold (the research's 60 % / 140 %,
+tuned on the drops): nose down 16 / 40 deg (was: bail at 26), nose up 29 / 57 deg (46), lean 19 / 44 deg (31), sideways
+19 / 46 deg (31), impact 5.0 / 9.8 m/s (7.0; a flat drop of 1.3 / 4.9 m, crouched 1.7 / 6.0 m), a trick held 0.12 /
+0.35. The worst rule's severity (0 at its sketchy threshold, 1 at its bail one) picks the band.
+- **Sketchy**: a 3.2 Hz wobble fading over 0.45-0.72 s (lean + bar shake 0.14 rad x severity, side grip -35 %, no
+  wash-out while it lasts), speed lost (sketchyLoss 0.12 x 0.4-1.0 on top of landLoss), and the kid's SAVE against what
+  went wrong (nose down: weight back; rear first: weight forward + an assist toward the manual angle; sideways: the bike
+  swings straight; leaning: the lean cut 30 %). While it lasts the endo / loop-out limits are the landing's bail limits.
+- The rider IK shows it (viewer/kid/riderIK.js): `s.wobbleNow` swings the hips 5 cm sideways and counter-rolls the body
+  0.30 rad, `s.wobbleW` crouches the legs (soaking it up). `s.lastLanding` = { band, severity, why, rel, vn, yaw, lean,
+  ... }; the lab's telemetry shows the band, a sketchy landing gets a banner.
+- Checks (each rule clean / sketchy / bail, at touch-down): nose 7 / 26 / 44 deg, tail 18 / 41 / 60 deg, sideways 10 / 30
+  / 55 deg, lean 8 / 33 / 61 deg, impact 4.3 / 7.6 / 10.4 m/s; sketchy = wobble > 0.3, >= 5 % slower than clean, no
+  crash. A trick let go just late = sketchy.
+- Also fixed: the landing speed loss (landLoss) never reached the bike (the step's own velocity overwrote it).
+
+**Nits.** The lab title said "phase 1 (placeholder rider + bike)": now "feel round 1". The foot down at a stop: the IK
+target asked 102-104 % of the leg (the placeholder bike's higher seat: 104 %), so the foot hung 1.5-2.5 cm over the
+ground. Now the bike leans toward it (`footLean` 0.08 rad as the foot goes down) and the hips drop off the saddle exactly
+as far as the foot needs (`RIDE.footReach` 0.97): the leg at 92-94 %, the ankle on its flat-foot height (`footAnkle`
+0.09 m: the kid's 7.5 cm ankle + the sole) on both bikes (kidTest checks it, and that the wobble moves the hips > 5 cm).
+
+**Needs the browser** (not done here): the hop buffer's hold (help or felt as lag?), the catch's lift (smooth or a
+hitch?), the wobble's look on the kid and the bike, the bands' fairness, the foot-down lean; the per-step input at real
+frame rates (30 / 60 / 144 fps).
+
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:
@@ -144,10 +209,11 @@ the lab's model + camera run in node with three (4 camera modes, 4,800 frames, f
 3. **Skid**: hold S at 20 km/h, steer during it (skidYaw); the tail should step out and come back without a spin-out
    unless forced. Front brake (Q) panic stop; Q + Z = endo.
 4. **Kerb hop**: the 15 cm kerb (spot 7) at 10-20 km/h: is the timing readable (preload feel, pop height)? Can a kid
-   do it every time after a few tries? Tune preloadTime, popVel, popPreload, popPitch, coyote. Also riding into it
+   do it every time after a few tries? Tune preloadTime, popVel, popPreload, popPitch, coyote, hopLead, hopBuffer, kerbCatch
+   (feel round 1: does the held early release feel like help or like lag?). Also riding into it
    without a hop at low speed (stop) vs fast (over the bars) - fair or frustrating?
 5. **Kicker + table**: hands-off at 25-30 km/h, then with air pitch (Z / X) and a 180 (A / D or Left / Right in the air). Is the
-   landing judgement fair (noseTol, tailTol, yawTol)? Does airLevel feel like help or like the bike steering itself?
+   landing judgement fair (the sketchy / bail pairs; is the wobble readable, the save visible on the kid)? Does airLevel feel like help or like the bike steering itself?
 6. **Pump rollers** (spot 4): hold Space on the faces, release on the backs (or C on the backs): does it feel like
    pumping (speed you earned) at pumpGain 45? Coasting them should die by the 4th roller.
 7. **Bowl**: ride the walls, carve, pump the transition; check the camera in the bowl (minClear, followY).

@@ -224,7 +224,9 @@ const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
   for (const [k, a, b, st] of [["hipUp", -0.05, 0.2, 0.005], ["hipBack", -0.15, 0.15, 0.005], ["standUp", 0, 0.3, 0.005], ["standFwd", 0, 0.3, 0.005],
     ["crouchDown", 0, 0.3, 0.005], ["crouchBack", 0, 0.2, 0.005], ["manualBack", 0, 0.3, 0.005], ["swayStand", 0, 0.1, 0.005], ["pelvisPitch", -0.3, 0.8, 0.01],
     ["standPitch", 0, 0.8, 0.01], ["leanExtra", 0, 0.8, 0.01], ["reachLeg", 0.85, 0.999, 0.001], ["reachArm", 0.7, 0.99, 0.01], ["ankleUp", 0, 0.15, 0.005],
-    ["ankleBack", -0.05, 0.15, 0.005], ["wristBack", 0, 0.1, 0.005], ["headDown", -0.3, 0.5, 0.01], ["spineMax", 0.3, 1.5, 0.01]])
+    ["ankleBack", -0.05, 0.15, 0.005], ["wristBack", 0, 0.1, 0.005], ["headDown", -0.3, 0.5, 0.01], ["spineMax", 0.3, 1.5, 0.01],
+    ["footReach", 0.8, 0.999, 0.005], ["footOut", 0, 0.3, 0.005], ["footFwd", -0.1, 0.3, 0.005], ["footAnkle", 0.05, 0.15, 0.005],
+    ["wobbleHip", 0, 0.15, 0.005], ["wobbleRoll", 0, 0.8, 0.01], ["wobbleCrouch", 0, 1, 0.05]])
     fk.add(RIDE, k, a, b, st).name(k);
   for (const [k, a, b, st] of [["near", 0.5, 3, 0.05], ["mountTime", 0.1, 1.5, 0.05], ["dismountTime", 0.1, 1.5, 0.05], ["dismountMax", 0.5, 6, 0.1], ["standStill", 0, 2, 0.05]])
     fk.add(MOUNT, k, a, b, st).name(`mount ${k}`);
@@ -275,10 +277,11 @@ window.__bike = { get state() { return s; }, BIKE, SURFACES, env, chase, place, 
 const pose = {};
 const NO_INPUT = { pedal: 0, sprint: false, brakeF: 0, brakeR: 1, steer: 0, lean: 0, hop: false, pump: 0, trick: false };
 const ease = (x) => { const u = Math.min(1, Math.max(0, x)); return u * u * (3 - 2 * u); };
-let last = performance.now(), frames = 0, physMs = 0, histT = 0, kidMs = 0;
+let last = performance.now(), frames = 0, physMs = 0, histT = 0, kidMs = 0, landT = -1;
 renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now;
-  const input = keys.read(dt);
+  // (feel round 1: the keys are sampled per fixed step at that step's time, not once a frame)
+  const stepInput = (lag) => keys.sample(now - lag * 1000 / Math.max(0.05, P.slow), DT);
   const t0 = performance.now();
   const fdt = P.pause ? 0 : dt * P.slow;
   // ON FOOT <-> ON THE BIKE (viewer/kid/kidMount.js)
@@ -302,7 +305,9 @@ renderer.setAnimationLoop(() => {
     }
   }
   const riding = !K.on || ridden(mount);
-  if (riding) advanceBike(s, !K.on || mount.state === "riding" ? input : NO_INPUT, fdt, env, BIKE, SURFACES);
+  if (riding) advanceBike(s, !K.on || mount.state === "riding" ? stepInput : NO_INPUT, fdt, env, BIKE, SURFACES);
+  keys.apply(now);           // (the events since the last step: the next frame's first step comes after them)
+  if (s.lastLanding && s.lastLanding.t !== landT) { landT = s.lastLanding.t; if (s.lastLanding.band === "sketchy") banner(`sketchy landing (${s.lastLanding.why})`); }
   else parkStep(mount, s, fdt, testHeight(s.x, s.z));
   physMs = physMs * 0.95 + (performance.now() - t0) * 0.05;
   bikePose(s, P.pause ? 1 : s.alpha, pose);
@@ -376,7 +381,7 @@ function writeTele() {
     : s.pushing ? "pushing" : s.footDown > 0.5 ? "foot down" : s.preload > 0 ? `preload ${(s.preload * 100).toFixed(0)} %` : `<span class="ok">riding</span>`;
   $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} crashes ${s.crashes}</span>`;
   const L = s.lastLanding;
-  $("tland").textContent = L ? `last landing: ${L.cause} (${L.wheel} first, ${(L.rel * 57.3).toFixed(0)}°, ${L.vn.toFixed(1)} m/s, ${L.air.toFixed(2)} s air)` : "";
+  $("tland").textContent = L ? `last landing: ${L.band}${L.band === "clean" ? "" : ` (${L.why})`} (${L.wheel} first, ${(L.rel * 57.3).toFixed(0)}°, ${L.vn.toFixed(1)} m/s, ${L.air.toFixed(2)} s air)` : "";
   P.info = `${K.on ? mount.state + " · " : ""}${st.replace(/<[^>]+>/g, "")} · phys ${physMs.toFixed(3)} ms · ${keys.pad ? "gamepad" : "keyboard"}`;
 }
 addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
