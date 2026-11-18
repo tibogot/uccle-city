@@ -39,3 +39,29 @@ export function smoothPolyline(line, { bend = 0.5, straight = 4, corner = 50 } =
   }
   return out;
 }
+
+/** a tile's OSM tram ways, as a signature (their count and coordinates): data/tramfit/<T>.json holds the one it was
+ *  fitted from, so a fit made for other OSM data is never used */
+export function trackSig(lines) {
+  let n = 0, s = 0;
+  for (const l of lines || []) if (l.kind === "tram") { n++; for (const [x, z] of l.line) s += x * 0.37 + z * 0.61; }
+  return n ? `${n}:${Math.round(s * 100)}` : null;
+}
+
+/**
+ * The tile's tram tracks, in place in feats.lines (rails, wire + poles, platforms' sides, the bridge deck, the trams
+ * all read them): the OSM ways fitted to the measured street (tools/tramfit/build_tramfit.mjs, data/tramfit/<T>.json:
+ * already smooth, continuous across tile seams) when `fit` is that tile's fit of these very ways; else (no fit, another
+ * OSM download, ?tramfit=old) each OSM way smoothed as it is. Returns "fit" | "smooth" | null (no tram ways).
+ */
+export function tramTracks(feats, fit) {
+  const lines = feats.lines || [];
+  if (!lines.some((l) => l.kind === "tram")) return null;
+  if (fit?.lines?.length && fit.sig === trackSig(lines)) {
+    feats.lines = [...lines.filter((l) => l.kind !== "tram"), ...fit.lines.map((l) => ({ ...l, line: l.line.map((p) => p.slice()) }))];
+    return "fit";
+  }
+  if (fit) console.warn(`tramfit ${fit.tile}: made for other OSM tram ways (${fit.sig} != ${trackSig(lines)}): the OSM ways as they are`);
+  for (const l of lines) if (l.kind === "tram") l.line = smoothPolyline(l.line);
+  return "smooth";
+}

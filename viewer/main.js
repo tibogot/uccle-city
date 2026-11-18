@@ -71,12 +71,13 @@ import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
 import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 import { cityStops } from "./stops/cityStops.js";
+import { platformFollow } from "./streets/tramPlatforms.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
-import { carriageway, docOffLanes } from "./streets/carriageway.js";
+import { carriageway, docOffLanes, trackIndex } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
 import { cityIvy } from "./plants/cityIvy.js";
 import { keepPipelinesAsync, boostCompile, fineCompile } from "./asyncPipes.js";
@@ -391,6 +392,7 @@ let trackProf = null, worldRef = null;
 // (a bridge is in every tile whose roads.json buffer reaches it: counted, removed with its last tile)
 const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
+const STREET_PROPS = params.get("streetprops") !== "old"; // (class D, rule 30) + off the tram tracks, the OSM width without a measured street; plates + posts, boxes, Villo baked
 const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
 const TRAFPARK = params.get("trafpark") !== "old";       // traffic vs parked cars (docs/TRAFPARK.md)
 const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
@@ -721,6 +723,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     deckRail: params.get("deckrail") !== "old",                                                     // claude/deckrail (rule 17): no deck parapet / railing (nor its collider) where the street, another deck or a tram track goes on at the deck's level (bridgeDecks.js markRailCuts), ?deckrail=old = as before
     balcony: params.get("balcony") !== "old",                                                       // claude/balcony (rule 27): the blocks' balconies closed at the sides (facadeGeom.js balcony), ?balcony=old = slab + front parapet only (open ends)
     colFeet: params.get("colfeet") !== "old",                                                       // claude/collisions (rule 25): the walls' feet sunk onto the drawn ground BEFORE the building colliders are traced from them (tileData.js), ?colfeet=old = after (colliders from the floating solids)
+    tramFit: params.get("tramfit") !== "old",                                                       // claude/tramfit (rule 32): the tram tracks fitted to the measured street (data/tramfit, viewer/track.js tramTracks), ?tramfit=old = the OSM ways as they are (rails under the kerb / on the sidewalk)
     cache: params.get("tilecache") !== "0",
     cacheStore: params.get("tilecache") === "idb" ? "idb" : "capi" };                               // perfgame round 4: the Cache API store (viewer/tileCache.js), ?tilecache=idb = IndexedDB as before                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
   const key = `${entry.name}|${lite ? 1 : 0}`;
@@ -970,6 +973,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
   const stopsDoc = await stopsP, furnDoc = await furnP, skDoc = await skP;
+  // claude/tramfit: a STIB pole on a tram platform moves with the platform (viewer/streets/tramPlatforms.js: the
+  // platforms beside their fitted tracks); ?tramfit=old: no platform moved, nothing to follow
+  if (stopsDoc?.stops) { const n = platformFollow(stopsDoc.stops.map((s) => (s.pole?.platform ? s.pole : null)), feats); if (n) say(`tram platforms: ${n} stop pole(s) moved with their platform`); }
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: cityStreetKit.keepLampsClear(cityFurniture.keepLampsClear(cityStops.keepLampsClear(fit?.placeLamp, stopsDoc), furnDoc), skDoc), lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
   own.features.add(lamps.group);
   ups.push(lamps.update);
@@ -1003,9 +1009,15 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(tram.group);
   // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
   // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
-  const lanesAt = FURN_SNAP && fit ? carriageway(roads, { classAt: fit.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
+  // (streetprops, rule 30; ?streetprops=old: as before) also where there is no measured street (Flanders: the OSM width
+  // decides) and off the tram tracks; the plate posts are not moved here any more: they and their plates (drawn by the
+  // street life) were moved together at build time (tools/streetkit/snapProps.mjs), as were the post boxes and Villo
+  const lanesAt = FURN_SNAP && (fit || STREET_PROPS) ? carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
+  // (the tracks as the worker drew them: fitted to the street, claude/tramfit, or smoothed with ?tramfit=old: already smooth)
+  const tracksAt = STREET_PROPS && lanesAt ? trackIndex((feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line)) : null;
+  const propOpt = STREET_PROPS ? { osm: true, tram: tracksAt, ground: (x, z) => hm.ground(x, z) } : {};
   await split("lanes");
-  const snap = (doc, paths) => deckDoc(!lanesAt ? doc : (() => { const r = docOffLanes(doc, paths, lanesAt, fit); snapMoved += r.moved; return r.doc; })(), paths);
+  const snap = (doc, paths, opt = propOpt) => deckDoc(!lanesAt ? doc : (() => { const r = docOffLanes(doc, paths, lanesAt, fit, opt); snapMoved += r.moved; return r.doc; })(), paths);
   // (vivier) the baked points (y = the DTM at build time) on a road deck: up onto it
   const deckDoc = (doc, paths) => {
     if (!VIVIER || !doc || !bridgeDeckRefs.size) return doc;
@@ -1016,9 +1028,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     return doc;
   };
   let snapMoved = 0;
-  const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]]), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
+  // (the STIB stops: not the tram test: a tram-island stop's pole and shelter stand beside the track by design; a pole the
+  // stops builder put on an OSM tram platform (pole.platform: on the slab tram.js draws, UrbIS calls it tram road) stays)
+  const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]], STREET_PROPS ? { ...propOpt, tram: null, keep: (p) => p.platform } : {}), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
   const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]), own.features);
-  const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, [["signs"], ["posts"]]), own.features);
+  const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, STREET_PROPS ? [["signs"]] : [["signs"], ["posts"]]), own.features);
   await split("stops, furniture, street kit");
   if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);
   if (skCounts) say(`streetkit: ${Object.entries(skCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/streetkit, viewer/streetkit)`);

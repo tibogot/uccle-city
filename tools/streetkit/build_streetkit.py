@@ -41,7 +41,7 @@ axis; y = the walking surface under the pole (DTM + measured kerb lift) - 0.02 m
 """
 from __future__ import annotations
 
-import argparse, json, math, re, sys, time
+import argparse, json, math, re, subprocess, sys, time
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -62,6 +62,8 @@ import faceAtlas  # noqa: E402
 CONTRACT = "streetkit-0.1"
 OUT = ROOT / "data" / "streetkit"
 ATLAS = ROOT / "models" / "streetkit" / "streetkit_faces.png"
+ONEWAY_OLD = False           # (streetprops) True: the one-way rule before 2026-11-18 (C1 / F19 at one-way pairs too)
+KERB_OLD = False             # (streetprops) True: any measured kerb within 14 m (also another street's)
 CAR = {"motorway", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential", "living_street", "service",
        "trunk_link", "primary_link", "secondary_link", "tertiary_link", "road"}
 MAIN = {"trunk", "primary", "secondary", "tertiary", "trunk_link", "primary_link", "secondary_link", "tertiary_link"}
@@ -210,15 +212,50 @@ class Placer:
             if rr["hw"] in CAR and ln.distance(p) < rr["half"] + 0.25: return True
         return False
 
-    def spot(self, qx, qz, hx, hz, mode="kerb", slide=(0, -1, 1, -2, 2, -3, 3, -5, 5), why=None):
-        """the pole for a sign at centreline point q addressing traffic heading h: on the right, behind the kerb"""
+    def raised_any(self, x, z):
+        """on any measured raised surface (sidewalk, square, MEDIAN / island), not in a building"""
+        T = self.T
+        if not T.rtree: return False
+        q = Point(x, z)
+        if not any(T.raised[i][0].contains(q) for i in T.rtree.query(q)): return False
+        return not any(T.solids[i]["poly"].contains(q) for i in T.tree.query(q))
+
+    def island(self, qx, qz, hx, hz, slide=(0, -1, 1, -2, 2, -3, 3)):
+        """(rule 30) a one-way pair's C1: on the island nose / median on the right of the wrong-way approach h (a raised
+        surface 0.6-8 m from the centre line, its first 0.4 m in), measured streets only"""
         rx, rz = -hz, hx
+        for a in slide:
+            x0, z0 = qx + hx * a, qz + hz * a
+            s0 = None
+            for i in range(6, 80):
+                d = i * 0.1
+                if self.raised_any(x0 + rx * d, z0 + rz * d): s0 = d; break
+            if s0 is None: continue
+            px, pz = x0 + rx * (s0 + 0.4), z0 + rz * (s0 + 0.4)
+            if not self.raised_any(px, pz) or not self.T.inside(px, pz): continue
+            if not self.S.clear(Point(px, pz).buffer(0.05), [], tree=0.5, door=0.8, drive=1.2, thing=0.4): continue
+            return px, pz, True
+        return None
+
+    def spot(self, qx, qz, hx, hz, mode="kerb", slide=(0, -1, 1, -2, 2, -3, 3, -5, 5), why=None, side=1):
+        """the pole for a sign at centreline point q addressing traffic heading h: on the right, behind the kerb
+        (side -1: on the left: a one-way pair's C1 on its carriageway's far kerb)"""
+        rx, rz = -hz * side, hx * side
         for a in slide:
             x0, z0 = qx + hx * a, qz + hz * a
             if mode == "path":
                 px, pz = x0 + rx * 1.3, z0 + rz * 1.3; measured = False
             else:
                 k = self.S.kerb(x0, z0, -rx, -rz, s0=1.0, s1=14.0)
+                # (streetprops 2026-11-18, rule 30: a kerb further than the road's own half width + 2.5 m is another
+                # street's: at a junction mouth the search crossed the side street and the pole stood on its far kerb,
+                # facing across it; 53 signs city-wide. --kerbreach=old: any kerb within 14 m)
+                if k is not None and not KERB_OLD:
+                    p0 = Point(x0, z0)
+                    own = max([r["half"] for r in self.R.roads if r["ls"].distance(p0) < 0.6] or [3.0])
+                    if k[0] > own + 2.5:
+                        k = None
+                        if why is not None: why["kerb_too_far"] += 1
                 if k is not None:
                     px, pz = x0 + rx * (k[0] + 0.4), z0 + rz * (k[0] + 0.4); measured = True
                 else:
@@ -314,6 +351,37 @@ def place_tile(name, src, stats, villo_rank):
             want("E9a", q.x - h[0] * 2.0, q.y - h[1] * 2.0, h[0], h[1], src_="osm")
 
     # ---- one-way roads: F19 where the flow starts, C1 where it ends (at junctions)
+    # (streetprops 2026-11-18, rule 30: at the mouth of a one-way PAIR (a piece flowing into the junction beside one
+    # flowing out of it on the same side: a split carriageway round an island / median, a divided avenue) each
+    # carriageway keeps its own sign, as in Belgium: C1 at the inflowing one's exit (on its island-nose side, facing the
+    # wrong-way approach), F19 at the outflowing one's entry (its own kerb). They used to share ONE pole (owner image 79,
+    # Papenkasteel / Ch. de Saint-Job): pair signs never share a pole with the other order, and a C1 / F19 of a pair
+    # that still lands within 4 m of the other order facing the same approach (one kerb for both) is dropped)
+    def first_dir(r, n, d=8.0):
+        ln = R.from_node(r, n); q = ln.interpolate(min(d, ln.length)); p0 = ln.coords[0]
+        L = math.hypot(q.x - p0[0], q.y - p0[1]) or 1
+        return (q.x - p0[0]) / L, (q.y - p0[1]) / L
+
+    def paired(r, n, ends_here):
+        """r (one-way) at its junction end n: another one-way piece there flowing the other way (out of n if r flows
+        in, into n if r flows out) leaves n within 45 deg of r"""
+        if ONEWAY_OLD: return False
+        dx, dz = first_dir(r, n)
+        far = r["b"] if r["a"] == n else r["a"]
+        # the junction n, or one a short link (<= 15 m) away: a divided avenue's two carriageways meet a cross street at
+        # two nodes (Av. Brugmann / Rue Berkendael)
+        nodes = [n] + [q["b"] if q["a"] == n else q["a"] for q in R.at.get(n, []) if q is not r and q["ls"].length <= 15]
+        for n2 in nodes:
+            for m in R.at.get(n2, []):
+                fm = R.flow(m)
+                if m is r or fm is None: continue
+                m_starts = (fm.coords[0] == tuple(m["line"][0])) == (m["a"] == n2)
+                if m_starts != ends_here: continue
+                if n2 == n and far in (m["a"], m["b"]): return True          # the same two junctions: a pair round an island
+                ex, ez = first_dir(m, n2)
+                if dx * ex + dz * ez > math.cos(math.radians(45)): return True
+        return False
+
     for r in R.roads:
         fl = R.flow(r)
         if fl is None or fl.length < 12: continue
@@ -321,10 +389,10 @@ def place_tile(name, src, stats, villo_rank):
         b = r["b"] if a == r["a"] else r["a"]
         if R.deg(a) >= 3:
             q = fl.interpolate(4.0); tx, tz = tangent(fl, 4.0)
-            want("F19", q.x, q.y, tx, tz)
+            want("F19", q.x, q.y, tx, tz, src_="pair" if paired(r, a, False) else "rule")
         if R.deg(b) >= 3:
             q = fl.interpolate(fl.length - 4.0); tx, tz = tangent(fl, fl.length - 4.0)
-            want("C1", q.x, q.y, -tx, -tz)
+            want("C1", q.x, q.y, -tx, -tz, src_="pair" if paired(r, b, True) else "rule")
 
     # ---- speed transitions at junctions (and living streets)
     for n, rs in sorted(R.at.items()):
@@ -382,24 +450,60 @@ def place_tile(name, src, stats, villo_rank):
     placed = []                                        # [code, px, pz, fx, fz, measured, src]
     for code, qx, qz, hx, hz, mode, s_ in req:
         if not (T.x0 - 2 <= qx < T.x1 + 2 and T.z0 - 2 <= qz < T.z1 + 2): continue      # (roads.json runs past the tile: its neighbour places it)
+        if s_ == "pair": stats[f"pair_{code}_asked"] += 1
         sp = P.spot(qx, qz, hx, hz, mode, why=why)
-        if not sp: stats[f"sign_unplaced_{code}"] += 1; continue
+        if not sp and code == "C1" and s_ == "pair" and not ONEWAY_OLD:
+            # (rule 30) a divided avenue's carriageway exit always shows its C1: the island nose / median, else the
+            # carriageway's far kerb (the island too narrow for a pole)
+            sp = P.island(qx, qz, hx, hz)
+            if sp: stats["pair_C1_island"] += 1
+            else:
+                sp = P.spot(qx, qz, hx, hz, mode, side=-1)
+                if sp: stats["pair_C1_far_kerb"] += 1
+        if not sp: stats[f"sign_unplaced_{code}" + ("_pair" if s_ == "pair" else "")] += 1; continue
         px, pz, measured = sp
         fx, fz = -hx, -hz
         if any(c == code and math.hypot(px - x, pz - z) < 25 and fx * a + fz * b > 0.8 for c, x, z, a, b, *_ in placed):
-            stats["sign_repeat_dropped"] += 1; continue
+            stats["sign_repeat_dropped" + ("_pair" if s_ == "pair" else "")] += 1; continue
         if code.startswith("C43_5") or code.startswith("C43_7"):
             if any(c == code and math.hypot(px - x, pz - z) < 150 and fx * a + fz * b > 0.8 for c, x, z, a, b, *_ in placed):
                 stats["sign_speed_repeat_dropped"] += 1; continue
-        placed.append([code, px, pz, fx, fz, measured, s_])
+        placed.append([code, px, pz, fx, fz, measured, s_, (qx, qz, hx, hz, mode)])
     for k, v in why.items(): stats["slide_" + k] += v
     poles = []
-    for code, px, pz, fx, fz, measured, s_ in sorted(placed, key=lambda p: PRECEDENCE.index(p[0])):
+    for code, px, pz, fx, fz, measured, s_, rq in sorted(placed, key=lambda p: PRECEDENCE.index(p[0])):
         host = None
         for pl in poles:
+            if not ONEWAY_OLD and {code, *pl["codes"]} >= {"C1", "F19"}: continue        # (rule 30) never one pole
             if len(pl["codes"]) < 2 and math.hypot(pl["x"] - px, pl["z"] - pz) < 1.5 and pl["fx"] * fx + pl["fz"] * fz > 0.85: host = pl; break
         if host: host["codes"].append(code); stats["plates_shared"] += 1
-        else: poles.append({"x": px, "z": pz, "fx": fx, "fz": fz, "codes": [code], "measured": measured, "src": s_})
+        else: poles.append({"x": px, "z": pz, "fx": fx, "fz": fz, "codes": [code], "measured": measured, "src": s_, "req": rq})
+    # (rule 30) a pair's C1 / F19 still showing the other order to the same approach (within 4 m, facing within 45 deg):
+    # the two carriageways' signs landed on one kerb; the pair sign goes (a rule C1 / F19 stays)
+    if not ONEWAY_OLD:
+        def clash(a, b):
+            if not (math.hypot(a["x"] - b["x"], a["z"] - b["z"]) < 4 and a["fx"] * b["fx"] + a["fz"] * b["fz"] > math.cos(math.pi / 4)): return False
+            # a carriageway between them: each stands at its own carriageway (the island nose / the outer kerb), fine
+            if math.hypot(a["x"] - b["x"], a["z"] - b["z"]) < 1.5: return True       # (one spot: both in the road)
+            return not any(P.on_carriageway(a["x"] + (b["x"] - a["x"]) * t, a["z"] + (b["z"] - a["z"]) * t) for t in (0.2, 0.35, 0.5, 0.65, 0.8))
+        stats["oneway_pair_signs"] += sum(1 for pl in poles if pl["src"] == "pair")
+        for pl in list(poles):
+            if pl["src"] != "pair" or pl not in poles: continue
+            other = "F19" if "C1" in pl["codes"] else "C1"
+            if any(o is not pl and other in o["codes"] and clash(pl, o) for o in poles):
+                # a C1 first tries its carriageway's far kerb (rule 30: every carriageway exit keeps its C1)
+                if pl["codes"] == ["C1"]:
+                    qx, qz, hx, hz, mode = pl["req"]
+                    alt = P.spot(qx, qz, hx, hz, mode, side=-1)
+                    if alt:
+                        old = (pl["x"], pl["z"]); pl["x"], pl["z"], pl["measured"] = alt
+                        if not any(o is not pl and other in o["codes"] and clash(pl, o) for o in poles):
+                            stats["pair_C1_far_kerb_after_clash"] += 1; continue
+                        pl["x"], pl["z"] = old
+                stats["oneway_pair_dropped_" + ("C1" if "C1" in pl["codes"] else "F19")] += 1
+                pl["codes"] = [c for c in pl["codes"] if c not in ("C1", "F19")]
+                stats["oneway_pair_dropped"] += 1
+                if not pl["codes"]: poles.remove(pl)
     out_signs = []
     for pl in sorted(poles, key=lambda p: (round(p["x"], 2), round(p["z"], 2))):
         hs = [SHAPES[FACE_SHAPE[c]]["h"] for c in pl["codes"]]
@@ -421,7 +525,8 @@ def place_tile(name, src, stats, villo_rank):
     posts = []
     for p in sl.get("plates", []):
         if p.get("mount") == "wall": continue
-        posts.append({"x": p["x"], "y": p["y"], "z": p["z"], "yaw": r4(math.atan2(p["nx"], p["nz"]))})
+        x, y, z = p.get("was") or (p["x"], p["y"], p["z"])           # (the plate's own spot: snap_props moves both again)
+        posts.append({"x": x, "y": y, "z": z, "yaw": r4(math.atan2(p["nx"], p["nz"]))})
         stats["plate_posts"] += 1
 
     # ---- Villo stations
@@ -432,7 +537,7 @@ def place_tile(name, src, stats, villo_rank):
     return {"contract": CONTRACT, "tile": name, "signs": out_signs, "posts": posts, "villo": villo}
 
 
-def place_villo(T, S, R, v, rank, stats):
+def place_villo(T, S, R, v, rank, stats, reanchor=False):
     """the station: a dock row along the kerb (stands = the WFS / OSM count), the totem at one end, bikes in ~half the
     docks (the live occupancy is not data we hold: a fixed hash per dock stands in for it, documented)"""
     x, z, nx, nz, tx, tz = v["x"], v["z"], v["nx"], v["nz"], v["tx"], v["tz"]
@@ -450,6 +555,23 @@ def place_villo(T, S, R, v, rank, stats):
         return k[0] if k else None
 
     k0 = kerb_at(x, z)
+    no_kerb = k0 is None
+    if k0 is None and reanchor:
+        # (streetprops 2026-11-18, rule 30) no sidewalk behind the point along its normal (the normal of the nearest OSM
+        # centre line can point along the street, or the point lies in a wide tram road): the row went down "in the
+        # lane" at the raw point, on the tram road (Coghen, Altitude Cent, Bois de la Cambre). Turn the station to the
+        # nearest measured sidewalk (16 directions, <= 12 m, >= 1.5 m deep) as an ALTERNATIVE: snap_props keeps the variant
+        # with more of its row out of the road (the turned row can be shorter: Rittweger)
+        best = None
+        for i in range(16):
+            a = 2 * math.pi * i / 16; ux, uz = math.cos(a), math.sin(a)
+            k = S.kerb(x, z, ux, uz, s0=0.0, s1=12.0)
+            if k and k[1] >= 1.5 and (best is None or k[0] < best[0]): best = (k[0], ux, uz)
+        if best:
+            nx, nz = best[1], best[2]
+            tx, tz = (-nz, nx) if (-nz * tx + nx * tz) >= 0 else (nz, -nx)
+            k0 = kerb_at(x, z)
+        else: return None
     depth = None
     if k0 is not None:
         e = k0 + 0.05
@@ -506,7 +628,55 @@ def place_villo(T, S, R, v, rank, stats):
     k = kerb_at(cx, cz) or 0.0
     out["area"] = {"x": r2(cx - nx * (k + off - 0.95)), "z": r2(cz - nz * (k + off - 0.95)), "yaw": r4(math.atan2(tx, tz)), "hx": r2((max(us) - min(us)) / 2 + 1.6), "hz": 1.2}
     out["notes"] = {"sidewalk": r2(depth) if depth is not None else None, "kerbToCentre": r2(c)}
+    if no_kerb and not reanchor and not KERB_OLD:
+        alt = place_villo(T, S, R, v, rank, Counter(), reanchor=True)
+        if alt: out["alt"] = {k: alt[k] for k in ("mode", "docks", "bikes", "totem", "area", "notes")}
     return out
+
+
+def snap_props(docs, stats):
+    """(streetprops 2026-11-18, rule 30) the plates + their posts, the bpost boxes and the Villo stations out of the driven
+    lanes and off the tram tracks: tools/streetkit/snapProps.mjs decides with the viewer's own test
+    (viewer/streets/carriageway.js offLane) on the tiles just written; the moves are applied here, to data/streetkit AND
+    data/streetlife (the plates, the boxes), each moved item keeping its original under `was` (?streetprops=old)"""
+    tiles = sorted(docs)
+    for t in tiles:                                  # the node pass reads the files: write the fresh tiles first
+        (OUT / f"{t}.json").write_text(json.dumps(docs[t], ensure_ascii=False, separators=(",", ":"), sort_keys=True), encoding="utf-8")
+    r = subprocess.run(["node", "--import", "./tools/road_audit/register.mjs", "tools/streetkit/snapProps.mjs", *tiles],
+                       cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    if r.returncode != 0: raise SystemExit(f"snapProps.mjs failed: {r.stderr[-2000:]}")
+    for line in r.stdout.splitlines():
+        if not line.startswith("{"): continue
+        m = json.loads(line); t = m["tile"]; d = docs[t]
+        slf = ROOT / "data" / "streetlife" / f"{t}.json"
+        sl = json.loads(slf.read_text(encoding="utf-8")) if slf.exists() else {}
+        sl0 = json.dumps(sl, sort_keys=True)
+        for it in sl.get("plates", []) + sl.get("postboxes", []):         # an earlier pass's moves: from the originals again
+            w = it.pop("was", None)
+            if w: it.update(x=w[0], y=w[1], z=w[2], **({"nx": w[3], "nz": w[4]} if len(w) > 3 else {}))
+        for i, x, y, z in m["plates"]:
+            p = sl["plates"][i]; p.setdefault("was", [p["x"], p["y"], p["z"]]); p.update(x=x, y=y, z=z)
+        for i, x, y, z, nx, nz in m["postboxes"]:
+            b = sl["postboxes"][i]; b.setdefault("was", [b["x"], b["y"], b["z"], b["nx"], b["nz"]]); b.update(x=x, y=y, z=z, nx=nx, nz=nz)
+        for k, x, y, z, x0, y0, z0 in m["posts"]:
+            q = d["posts"][k]; q["was"] = [x0, y0, z0]; q.update(x=x, y=y, z=z)
+        for i, st in m["villo"]:
+            v = d["villo"][i]
+            v.setdefault("was", {"docks": v["docks"], "bikes": v["bikes"], "totem": v.get("totem"), "area": v.get("area"), "mode": v["mode"], "notes": v.get("notes")})
+            v.update(docks=st["docks"], bikes=st["bikes"], totem=st["totem"], area=st["area"])
+            if st.get("alt"): v.update(mode=v["alt"]["mode"], notes=v["alt"]["notes"])
+            elif st.get("mode"): v["mode"] = st["mode"]
+            stats["villo_dropped" if not st["docks"] else "villo_turned" if st.get("alt") else "villo_relaid" if st.get("relaid") else "villo_kept"] += 1
+        for line in m.get("villoLog", []): print("villo", t, line, file=sys.stderr)
+        for v in d["villo"]: v.pop("alt", None)
+        if m.get("dropSigns"):
+            drop = set(m["dropSigns"]); stats["oneway_pair_dropped_measured"] += len(drop)
+            d["signs"] = [s for k, s in enumerate(d["signs"]) if k not in drop]
+        stats["snap_plates"] += len(m["plates"]); stats["snap_posts"] += len(m["posts"]); stats["snap_postboxes"] += len(m["postboxes"])
+        for k, v in m["stuck"].items(): stats["snap_stuck_" + k] += v
+        for k, v in m["dropped"].items(): stats["snap_villo_dropped_" + k] += v
+        if sl and json.dumps(sl, sort_keys=True) != sl0:
+            slf.write_text(json.dumps(sl, ensure_ascii=False, separators=(",", ":"), sort_keys=True), encoding="utf-8")
 
 
 def main():
@@ -514,6 +684,7 @@ def main():
     ap.add_argument("tiles", nargs="*")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--raw", type=Path, required=True)
+    ap.add_argument("--no-snap", action="store_true", help="skip tools/streetkit/snapProps.mjs (plates + posts, post boxes, Villo out of the road)")
     a = ap.parse_args()
     t0 = time.time()
     src = osm_sources(a.raw)
@@ -529,10 +700,18 @@ def main():
     faceAtlas.build(str(ATLAS), [(re.sub(r"\D", "", v["id"]) if v["id"].startswith("villo:") else "", v.get("name") or "", v.get("nameNl")) for v in order[:64]])
     stats = Counter()
     docs = {}
+    global ONEWAY_OLD, KERB_OLD
     for t in tiles:
         if not (TILES / t / "buildings.json").exists(): continue
         docs[t] = place_tile(t, src, stats, rank)
+        # (streetprops, ?streetprops=old in the viewer) the signs as the rules before 2026-11-18 placed them, kept only
+        # where they differ
+        ONEWAY_OLD = KERB_OLD = True
+        try: old = place_tile(t, src, Counter(), rank)["signs"]
+        finally: ONEWAY_OLD = KERB_OLD = False
+        if old != docs[t]["signs"]: docs[t]["signsOld"] = old
     OUT.mkdir(parents=True, exist_ok=True)
+    if not a.no_snap: snap_props(docs, stats)
     per = {}
     for t, d in docs.items():
         d["counts"] = {"poles": len(d["signs"]), "plates": sum(len(s["plates"]) for s in d["signs"]), "posts": len(d["posts"]),

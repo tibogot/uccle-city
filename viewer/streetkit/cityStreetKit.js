@@ -18,6 +18,17 @@ import { Streamer, MARGIN } from "../instanceStream.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/streetkit/", import.meta.url);
+const PROPS_OLD = qs.get("streetprops") === "old";
+
+/** (streetprops, rule 30) ?streetprops=old: the doc as before the class D fixes: the signs of the old rules (signsOld,
+ *  kept where they differ), the plate posts and Villo stations at their `was` (tools/streetkit/snapProps.mjs) */
+export function streetKitOld(doc) {
+  if (!doc) return doc;
+  if (doc.signsOld) doc.signs = doc.signsOld;
+  for (const p of doc.posts || []) if (p.was) [p.x, p.y, p.z] = p.was;
+  for (const v of doc.villo || []) if (v.was) Object.assign(v, v.was);
+  return doc;
+}
 const STANDIN_NAME = { sign_pole: "furniture-sign", sign_pole_tall: "furniture-sign", plate_post: "furniture-platepost", villo_totem: "furniture-villo", villo_dock: "furniture-villo", villo_bike: "furniture-villo" };
 
 function hash01(s) {
@@ -93,7 +104,7 @@ export const cityStreetKit = {
   },
   fetchTile(name) {
     if (!this.on) return Promise.resolve(null);
-    const doc = fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const doc = fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).then((d) => (PROPS_OLD ? streetKitOld(d) : d)).catch(() => null);
     return ARTSIGNS ? Promise.all([doc, artIslands()]).then(([d, isl]) => (d && isl.length ? signsOffIslands(d, isl) : d)) : doc;
   },
   /** a cars.js `place` (x, z, yaw) -> { x, z, yaw } | null that leaves the Villo stations' parking-lane space free */

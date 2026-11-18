@@ -5,76 +5,103 @@
  "stats": {
   "dir_from_junction": 63,
   "dir_from_osm": 151,
-  "face_B1": 189,
+  "face_B1": 188,
   "face_B15": 110,
   "face_B5": 9,
-  "face_C1": 447,
+  "face_C1": 436,
   "face_C3": 4,
   "face_C43_20": 1,
-  "face_C43_30": 13,
-  "face_C43_50": 110,
+  "face_C43_30": 12,
+  "face_C43_50": 107,
   "face_C43_70": 6,
   "face_D7": 5,
   "face_E9a": 14,
-  "face_F12a": 98,
-  "face_F19": 442,
+  "face_F12a": 96,
+  "face_F19": 437,
   "face_F49": 390,
+  "oneway_pair_dropped": 3,
+  "oneway_pair_dropped_C1": 3,
+  "oneway_pair_dropped_measured": 11,
+  "oneway_pair_signs": 90,
+  "pair_C1_asked": 53,
+  "pair_C1_far_kerb": 9,
+  "pair_C1_far_kerb_after_clash": 11,
+  "pair_C1_island": 2,
+  "pair_F19_asked": 51,
   "plate_posts": 782,
-  "plates_shared": 46,
-  "poles": 1792,
-  "poles_short": 1746,
-  "poles_tall": 46,
+  "plates_shared": 39,
+  "poles": 1777,
+  "poles_short": 1739,
+  "poles_tall": 38,
   "sign_no_road": 2,
-  "sign_repeat_dropped": 114,
-  "sign_speed_repeat_dropped": 46,
-  "sign_unplaced_B1": 6,
+  "sign_repeat_dropped": 108,
+  "sign_repeat_dropped_pair": 2,
+  "sign_speed_repeat_dropped": 45,
+  "sign_unplaced_B1": 8,
   "sign_unplaced_B15": 4,
   "sign_unplaced_B5": 1,
-  "sign_unplaced_C1": 25,
+  "sign_unplaced_C1": 31,
+  "sign_unplaced_C1_pair": 3,
   "sign_unplaced_C3": 1,
-  "sign_unplaced_C43_50": 3,
+  "sign_unplaced_C43_30": 1,
+  "sign_unplaced_C43_50": 7,
   "sign_unplaced_D7": 1,
   "sign_unplaced_E9a": 1,
+  "sign_unplaced_F12a": 2,
   "sign_unplaced_F19": 18,
+  "sign_unplaced_F19_pair": 7,
   "sign_unplaced_F49": 4,
   "slide_building": 3,
-  "slide_carriageway": 1446,
-  "slide_door": 3,
-  "slide_driveway": 25,
-  "slide_tree": 10,
+  "slide_carriageway": 2134,
+  "slide_door": 1,
+  "slide_driveway": 23,
+  "slide_furniture": 1,
+  "slide_kerb_too_far": 701,
+  "slide_tree": 9,
+  "snap_plates": 371,
+  "snap_postboxes": 25,
+  "snap_posts": 371,
+  "snap_stuck_plates": 8,
+  "snap_stuck_postboxes": 0,
+  "snap_stuck_villoPieces": 0,
+  "snap_villo_dropped_bikes": 0,
+  "snap_villo_dropped_docks": 0,
+  "snap_villo_dropped_totems": 0,
   "villo_docks": 470,
   "villo_docks_wanted": 604,
   "villo_lane": 12,
   "villo_no_stands": 1,
-  "villo_sidewalk": 15
+  "villo_relaid": 20,
+  "villo_sidewalk": 15,
+  "villo_turned": 1
  },
  "perTile": {
   "D1": {
-   "poles": 25,
-   "plates": 25,
+   "poles": 24,
+   "plates": 24,
    "posts": 14,
    "villo": 1,
    "docks": 20,
    "bikes": 11
   },
   "E1": {
-   "poles": 53,
-   "plates": 54,
+   "poles": 52,
+   "plates": 53,
    "posts": 22,
    "villo": 2,
-   "docks": 50,
-   "bikes": 26
+   "docks": 21,
+   "bikes": 11
   },
   "F1": {
    "poles": 53,
-   "plates": 55,
+   "plates": 54,
    "posts": 14,
    "villo": 1,
-   "docks": 12,
-   "bikes": 8
+   "docks": 23,
+   "bikes": 3
   },
   "G1": {
-   "poles": 30,
+   "poles": 31,
    "plates": 31,
    "posts": 20,
    "villo": 0,
@@ -90,8 +117,8 @@
    "bikes": 0
   },
   "I1": {
-   "poles": 36,
-   "plates": 36,
+   "poles": 35,
+   "plates": 35,
    "posts": 6,
    "villo": 0,
    "docks": 0,
@@ -102,32 +129,32 @@
    "plates": 3,
    "posts": 14,
    "villo": 2,
-   "docks": 47,
-   "bikes": 24
+   "docks": 48,
+   "bikes": 20
   },
   "E2": {
    "poles": 13,
    "plates": 13,
    "posts": 4,
    "villo": 1,
-   "docks": 18,
-   "bikes": 10
+   "docks": 8,
+   "bikes": 0
   },
   "F2": {
-   "poles": 45,
-   "plates": 45,
+   "poles": 44,
+   "plates": 44,
    "posts": 11,
    "villo": 1,
-   "docks": 2,
-   "bikes": 1
+   "docks": 19,
+   "bikes": 9
   },
   "G2": {
-   "poles": 15,
-   "plates": 15,
+   "poles": 16,
+   "plates": 16,
    "posts": 8,
    "villo": 1,
-   "docks": 18,
-   "bikes": 9
+   "docks": 17,
+   "bikes": 7
   },
   "H2": {
    "poles": 15,
@@ -142,8 +169,8 @@
    "plates": 28,
    "posts": 5,
    "villo": 1,
-   "docks": 20,
-   "bikes": 15
+   "docks": 8,
+   "bikes": 7
   },
   "J2": {
    "poles": 2,
@@ -154,20 +181,20 @@
    "bikes": 0
   },
   "C3": {
-   "poles": 26,
-   "plates": 26,
+   "poles": 24,
+   "plates": 24,
    "posts": 25,
    "villo": 1,
    "docks": 9,
-   "bikes": 6
+   "bikes": 9
   },
   "D3": {
-   "poles": 23,
-   "plates": 23,
+   "poles": 22,
+   "plates": 22,
    "posts": 5,
    "villo": 1,
-   "docks": 25,
-   "bikes": 15
+   "docks": 24,
+   "bikes": 8
   },
   "E3": {
    "poles": 39,
@@ -178,16 +205,16 @@
    "bikes": 0
   },
   "F3": {
-   "poles": 34,
-   "plates": 35,
+   "poles": 32,
+   "plates": 33,
    "posts": 13,
    "villo": 1,
-   "docks": 20,
-   "bikes": 12
+   "docks": 22,
+   "bikes": 10
   },
   "G3": {
-   "poles": 8,
-   "plates": 8,
+   "poles": 7,
+   "plates": 7,
    "posts": 0,
    "villo": 0,
    "docks": 0,
@@ -198,7 +225,7 @@
    "plates": 40,
    "posts": 3,
    "villo": 1,
-   "docks": 16,
+   "docks": 7,
    "bikes": 7
   },
   "I3": {
@@ -211,31 +238,31 @@
   },
   "J3": {
    "poles": 13,
-   "plates": 15,
+   "plates": 14,
    "posts": 9,
    "villo": 2,
    "docks": 14,
-   "bikes": 7
+   "bikes": 3
   },
   "B4": {
    "poles": 46,
-   "plates": 48,
+   "plates": 47,
    "posts": 33,
    "villo": 1,
    "docks": 23,
-   "bikes": 11
+   "bikes": 12
   },
   "C4": {
    "poles": 16,
    "plates": 16,
    "posts": 2,
    "villo": 1,
-   "docks": 19,
-   "bikes": 11
+   "docks": 20,
+   "bikes": 20
   },
   "D4": {
-   "poles": 31,
-   "plates": 31,
+   "poles": 29,
+   "plates": 29,
    "posts": 12,
    "villo": 0,
    "docks": 0,
@@ -243,15 +270,15 @@
   },
   "E4": {
    "poles": 70,
-   "plates": 72,
+   "plates": 71,
    "posts": 12,
    "villo": 1,
-   "docks": 18,
-   "bikes": 8
+   "docks": 25,
+   "bikes": 25
   },
   "F4": {
-   "poles": 22,
-   "plates": 22,
+   "poles": 20,
+   "plates": 20,
    "posts": 5,
    "villo": 0,
    "docks": 0,
@@ -266,8 +293,8 @@
    "bikes": 0
   },
   "H4": {
-   "poles": 21,
-   "plates": 22,
+   "poles": 19,
+   "plates": 19,
    "posts": 9,
    "villo": 0,
    "docks": 0,
@@ -311,34 +338,34 @@
    "posts": 0,
    "villo": 1,
    "docks": 25,
-   "bikes": 15
+   "bikes": 20
   },
   "C5": {
-   "poles": 42,
-   "plates": 43,
+   "poles": 40,
+   "plates": 41,
    "posts": 5,
    "villo": 0,
    "docks": 0,
    "bikes": 0
   },
   "D5": {
-   "poles": 33,
-   "plates": 33,
+   "poles": 32,
+   "plates": 32,
    "posts": 6,
    "villo": 1,
-   "docks": 17,
-   "bikes": 9
+   "docks": 11,
+   "bikes": 11
   },
   "E5": {
    "poles": 32,
    "plates": 32,
    "posts": 2,
    "villo": 1,
-   "docks": 20,
-   "bikes": 8
+   "docks": 7,
+   "bikes": 7
   },
   "F5": {
-   "poles": 23,
+   "poles": 22,
    "plates": 24,
    "posts": 8,
    "villo": 0,
@@ -354,8 +381,8 @@
    "bikes": 0
   },
   "H5": {
-   "poles": 18,
-   "plates": 18,
+   "poles": 16,
+   "plates": 17,
    "posts": 7,
    "villo": 0,
    "docks": 0,
@@ -374,8 +401,8 @@
    "plates": 23,
    "posts": 0,
    "villo": 2,
-   "docks": 34,
-   "bikes": 20
+   "docks": 44,
+   "bikes": 35
   },
   "K5": {
    "poles": 10,
@@ -394,15 +421,15 @@
    "bikes": 0
   },
   "M5": {
-   "poles": 24,
-   "plates": 26,
+   "poles": 23,
+   "plates": 24,
    "posts": 17,
    "villo": 0,
    "docks": 0,
    "bikes": 0
   },
   "N5": {
-   "poles": 36,
+   "poles": 38,
    "plates": 39,
    "posts": 30,
    "villo": 0,
@@ -426,8 +453,8 @@
    "bikes": 0
   },
   "D6": {
-   "poles": 32,
-   "plates": 33,
+   "poles": 31,
+   "plates": 32,
    "posts": 6,
    "villo": 1,
    "docks": 8,
@@ -435,7 +462,7 @@
   },
   "E6": {
    "poles": 29,
-   "plates": 30,
+   "plates": 29,
    "posts": 3,
    "villo": 0,
    "docks": 0,
@@ -530,7 +557,7 @@
    "bikes": 0
   },
   "D7": {
-   "poles": 45,
+   "poles": 47,
    "plates": 50,
    "posts": 11,
    "villo": 0,
@@ -538,16 +565,16 @@
    "bikes": 0
   },
   "E7": {
-   "poles": 16,
-   "plates": 16,
+   "poles": 15,
+   "plates": 15,
    "posts": 6,
    "villo": 0,
    "docks": 0,
    "bikes": 0
   },
   "F7": {
-   "poles": 3,
-   "plates": 3,
+   "poles": 2,
+   "plates": 2,
    "posts": 2,
    "villo": 0,
    "docks": 0,
@@ -666,8 +693,8 @@
    "bikes": 0
   },
   "H8": {
-   "poles": 7,
-   "plates": 7,
+   "poles": 6,
+   "plates": 6,
    "posts": 5,
    "villo": 0,
    "docks": 0,
@@ -690,7 +717,7 @@
    "bikes": 0
   },
   "K8": {
-   "poles": 26,
+   "poles": 25,
    "plates": 26,
    "posts": 4,
    "villo": 0,
@@ -754,8 +781,8 @@
    "bikes": 0
   },
   "G9": {
-   "poles": 13,
-   "plates": 13,
+   "poles": 12,
+   "plates": 12,
    "posts": 4,
    "villo": 0,
    "docks": 0,
@@ -770,8 +797,8 @@
    "bikes": 0
   },
   "I9": {
-   "poles": 9,
-   "plates": 9,
+   "poles": 8,
+   "plates": 8,
    "posts": 9,
    "villo": 0,
    "docks": 0,
@@ -866,7 +893,7 @@
    "bikes": 0
   },
   "I10": {
-   "poles": 6,
+   "poles": 5,
    "plates": 7,
    "posts": 10,
    "villo": 0,
@@ -946,8 +973,8 @@
    "bikes": 0
   },
   "K11": {
-   "poles": 11,
-   "plates": 11,
+   "poles": 10,
+   "plates": 10,
    "posts": 9,
    "villo": 0,
    "docks": 0,
