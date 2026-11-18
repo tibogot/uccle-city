@@ -26,8 +26,10 @@
 //
 //   node --import ./tools/road_audit/register.mjs --import ./tools/heap/register.mjs tools/audit/driveCheck.mjs
 //        [--all | T ...] [--jobs N] [--old [--near Y]] [--out FILE] [--quiet] [--worst N] [--max N] [--maxhero N]
+//   --set k=v  a tile entry override (--set roadTrees=false = ?roadtrees=old: LiDAR trunks on the unmeasured carriageway)
 //   --old    ?heroground=old: the hero band from driveMode.ground, the layer nearest the CAR; the car's height at build
 //            time is --near (default -1000: a car lower than the place, the case the owner met)
+//   --maxsrc k=N,...  the gate per source kind (tree=0: no LiDAR trunk in a carriageway, viewer/streets/roadTrees.js)
 //   --max N  the gate: exit 1 when the places (all sources) are above N; --maxhero N: hero places above N
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -35,15 +37,18 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import os from "node:os";
+import { causeOf, CAUSES } from "./driveCause.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
+const SETS = []; for (let i = argv.indexOf("--set"); i >= 0; i = argv.indexOf("--set")) SETS.push(argv.splice(i, 2)[1]);
 const CHILD = flag("--child"), ALL = flag("--all"), QUIET = flag("--quiet"), OLD = flag("--old");
 const NEAR = +opt("--near", "-1000");
 const OUT = opt("--out", null), JOBS = +opt("--jobs", Math.max(1, Math.min(4, Math.floor(os.totalmem() / 2 ** 30 / 4), os.cpus().length - 1))), WORST = +opt("--worst", 40);
 const MAXP = opt("--max", null), MAXH = opt("--maxhero", null);
+const MAXS = Object.fromEntries((opt("--maxsrc", "") || "").split(",").filter(Boolean).map((q) => { const [k, v] = q.split("="); return [k, +v]; }));   // per source kind: tree=0
 const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
 const TILES = ALL ? manifest.tiles.filter((t) => t.status === "built" || t.status === undefined).map((t) => t.name) : argv.map((t) => t.toUpperCase());
 const CAR_HW = 0.9, STEP = 0.5, PLACE = 6;
@@ -54,7 +59,7 @@ if (!CHILD) {
   const t0 = Date.now(), results = [], queue = TILES.slice();
   const node = ["--import", "./tools/road_audit/register.mjs", "--import", "./tools/heap/register.mjs"];
   const run = (T) => new Promise((ok) => {
-    const p = spawn(process.execPath, [...node, fileURLToPath(import.meta.url), "--child", T, ...(OLD ? ["--old", "--near", String(NEAR)] : [])], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn(process.execPath, [...node, fileURLToPath(import.meta.url), "--child", T, ...(OLD ? ["--old", "--near", String(NEAR)] : []), ...SETS.flatMap((k) => ["--set", k])], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
     let out = "", err = "";
     p.stdout.on("data", (b) => { out += b; }); p.stderr.on("data", (b) => { err += b; });
     p.on("close", (code) => {
@@ -67,10 +72,10 @@ if (!CHILD) {
   await Promise.all(Array.from({ length: Math.min(JOBS, queue.length) }, async () => { while (queue.length) await run(queue.shift()); }));
   results.sort((a, b) => a.tile.localeCompare(b.tile));
   const errors = results.filter((r) => r.error).length, places = [], bySrc = {}, info = {};
-  let metres = 0, heroes = 0;
+  let metres = 0, heroes = 0, tMoved = 0, tDropped = 0;
   for (const r of results) {
     if (r.error) continue;
-    heroes += r.heroes || 0;
+    heroes += r.heroes || 0; tMoved += r.roadTrees?.moved || 0; tDropped += r.roadTrees?.dropped || 0;
     for (const p of r.places) { places.push({ tile: r.tile, ...p }); metres += p.m; const k = p.src.split(" ")[0]; bySrc[k] = (bySrc[k] || 0) + 1; }
     for (const [k, v] of Object.entries(r.info || {})) info[k] = (info[k] || 0) + v;
   }
@@ -82,11 +87,22 @@ if (!CHILD) {
   }
   console.log(`driveCheck${OLD ? ` (--old, car at ${NEAR} m when the hero colliders were built)` : ""}: tiles ${results.length - errors}${errors ? ` (+${errors} FAILED)` : ""}, hero models ${heroes}: `
     + `${places.length} places where a collider blocks the carriageway (${metres.toFixed(1)} m of path), hero ${hero}; by source: ${Object.entries(bySrc).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", ") || "-"} | ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+  // the census by CAUSE (tools/audit/driveCause.mjs)
+  const cause = (p) => causeOf(p, places);
+  const byCause = {};
+  for (const p of places) (byCause[cause(p)] ||= []).push(p);
+  const NAMES = CAUSES;
+  for (const c of Object.keys(byCause).sort()) {
+    const L = byCause[c], src = {}; for (const p of L) { const k = p.src.split(" ")[0]; src[k] = (src[k] || 0) + 1; }
+    console.log(`  ${c} ${NAMES[c] || "?"}: ${L.length} (${Object.entries(src).map(([k, v]) => `${k} ${v}`).join(", ")}); e.g. ${L.slice(0, 3).map((p) => `${p.tile} ${p.street.split(" - ")[0]} ${p.x}, ${p.z} (${p.src})`).join(" | ")}`);
+  }
+  console.log(`  LiDAR trees off the drawn carriageway (roadTrees.js): moved ${tMoved}, dropped ${tDropped}`);
   console.log(`  info (not counted): ${Object.entries(info).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", ") || "-"}`);
-  if (OUT) writeFileSync(OUT, JSON.stringify({ when: new Date().toISOString(), old: OLD, near: OLD ? NEAR : null, tiles: results.length, places: places.length, hero, metres: +metres.toFixed(1), bySrc, info, list: places, results: results.map(({ places: _, ...r }) => r) }, null, 1));
+  if (OUT) writeFileSync(OUT, JSON.stringify({ when: new Date().toISOString(), old: OLD, near: OLD ? NEAR : null, tiles: results.length, places: places.length, hero, metres: +metres.toFixed(1), bySrc, info, byCause: Object.fromEntries(Object.entries(byCause).map(([k, v]) => [k, v.length])), list: places.map((p) => ({ cause: cause(p), ...p })), results: results.map(({ places: _, ...r }) => r) }, null, 1));
   let fail = errors > 0;
   if (MAXP != null) { if (places.length > +MAXP) { console.log(`FAIL places: ${places.length} > ${MAXP}`); fail = true; } else console.log(`  places: ${places.length} <= ${MAXP}`); }
   if (MAXH != null) { if (hero > +MAXH) { console.log(`FAIL hero places: ${hero} > ${MAXH}`); fail = true; } else console.log(`  hero places: ${hero} <= ${MAXH}`); }
+  for (const [k, n] of Object.entries(MAXS)) { const v = bySrc[k] || 0; if (v > n) { console.log(`FAIL ${k} places: ${v} > ${n}`); fail = true; } else console.log(`  ${k} places: ${v} <= ${n}`); }
   console.log(fail ? "driveCheck: FAIL" : "driveCheck: ok");
   process.exit(fail ? 1 : 0);
 }
@@ -121,6 +137,7 @@ const t0 = Date.now();
 const entries = JSON.parse(readFileSync(join(ROOT, "tools/boot3/entries.json"), "utf8"));
 const m = manifest.tiles.find((t) => t.name === T);
 const entry = { ...entries.find((e) => !e.lite).entry, ...m, cache: false };
+for (const kv of SETS) { const [k, v] = kv.split("="); entry[k] = JSON.parse(v); }
 const overrides = JSON.parse(readFileSync(join(ROOT, "data/overrides.json"), "utf8"));
 const realLog = console.log; console.log = () => {};
 const d = await buildTileData(entry, pathToFileURL(join(ROOT, "data/tiles") + "/").href);
@@ -172,6 +189,7 @@ const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
 const lamps = placedLampSites(d.roads, b, fit?.placeLamp).map((p) => ({ x: p.x, z: p.z, r: 0.2, kind: KIND.lamp }));
 const bx = d.road.surfaceData?.bollards || [];
 const posts = Array.from({ length: bx.length / 3 }, (_, i) => ({ x: bx[i * 3], z: bx[i * 3 + 2], r: 0.1, kind: KIND.post }));
+const C0 = col0.C ?? col0.circ.length / 3;
 addCircles(col0, [...lamps, ...posts]);
 const P0 = col0.P, extra = [], src = [];
 for (const c of d.parked?.sites || []) {
@@ -216,7 +234,7 @@ for (const h of heroes) {
   for (const p of polys) { extra.push(p); src.push(`hero ${h.name}`); }
 }
 const col = extendColliders(col0, extra, []);
-const what = (id) => { if (id >= col.P) return `${KN[col.ckind[id - col.P]]} (street)`; if (id >= P0) return src[id - P0]; return `${KN[col.pkind[id]]} (worker)`; };
+const what = (id) => { if (id >= col.P) return `${KN[col.ckind[id - col.P]]} (${id - col.P < C0 ? "worker" : "street"})`; if (id >= P0) return src[id - P0]; return `${KN[col.pkind[id]]} (worker)`; };
 
 // ---- names: the nearest named OSM road
 const RN = [];
@@ -246,12 +264,13 @@ function intrudes(id) {
 const tr = d.traffic;
 // the paths: every driven lane / junction turn of the traffic graph, and every driven street's OSM centre line
 const paths = [];
-if (tr?.xy) for (let p = 0; p + 1 < tr.off.length; p++) { const l = []; for (let i = tr.off[p]; i < tr.off[p + 1]; i++) l.push(tr.xy[i * 2], tr.xy[i * 2 + 1]); paths.push(l); }
+const pkind = [];          // per path: "lane", "turn" (a junction connector), "centre" (an OSM centre line)
+if (tr?.xy) for (let p = 0; p + 1 < tr.off.length; p++) { const l = []; for (let i = tr.off[p]; i < tr.off[p + 1]; i++) l.push(tr.xy[i * 2], tr.xy[i * 2 + 1]); paths.push(l); pkind.push(tr.kind[p] ? "turn" : "lane"); }
 const nLanes = paths.length;
 { const N = new Map(d.roads.nodes.map((n) => [n.id, n]));
-  for (const r of d.roads.roads) { if (NOT_DRIVEN.has(r.meta?.highway)) continue; const l = []; for (const p of [N.get(r.a), ...(r.pts || []), N.get(r.b)]) if (p) l.push(p.x ?? p[0], p.z ?? p[1]); if (l.length >= 4) paths.push(l); } }
+  for (const r of d.roads.roads) { if (NOT_DRIVEN.has(r.meta?.highway)) continue; const l = []; for (const p of [N.get(r.a), ...(r.pts || []), N.get(r.b)]) if (p) l.push(p.x ?? p[0], p.z ?? p[1]); if (l.length >= 4) { paths.push(l); pkind.push("centre"); } } }
 let lanes = 0, laneM = 0;
-for (const P of paths) {
+for (const [pi, P] of paths.entries()) {
   lanes++;
   let yPrev = NaN;
   for (let s = 1; s < P.length / 2; s++) {
@@ -276,19 +295,41 @@ for (const P of paths) {
         const k = id < col.P ? col.pkind[id] : col.ckind[id - col.P];
         if (!HARD.has(k)) { const key = `soft ${what(id)}`; info[key] = (info[key] || 0) + 1; continue; }
         if (!intrudes(id)) { const key = `edge ${what(id)}`; info[key] = (info[key] || 0) + 1; continue; }
-        const h = hits.get(id); if (h) h.n++; else hits.set(id, { n: 1, x, z });
+        const h = hits.get(id); if (h) { h.n++; h.paths.add(pkind[pi]); } else hits.set(id, { n: 1, x, z, paths: new Set([pkind[pi]]) });
       }
     }
   }
+}
+// per collider, for the census by cause (docs/DRIVECHECK.md "Census"): where its footprint meets the carriageway
+// (`meas`: on a MEASURED roadway / tram road (UrbIS street surfaces) or only inside the OSM band where none is measured),
+// how deep (`depth`: the largest of 0.3 / 0.6 / 1 / 1.5 / 2.5 m it reaches in), the measured class under its centre
+// (`cls`: viewer/surfaces.js SURF_CLASS, -1 none) and its size (`r`: circle radius, else the bbox's short side)
+const DEPTHS = [0.3, 0.6, 1, 1.5, 2.5];
+function anatomy(id) {
+  const pts = [];
+  let cx, cz, r;
+  if (id >= col.P) { const q = (id - col.P) * 3; cx = col.circ[q]; cz = col.circ[q + 1]; r = col.circ[q + 2]; for (let a = 0; a < 12; a++) pts.push([cx + Math.cos(a / 12 * 6.283) * r, cz + Math.sin(a / 12 * 6.283) * r]); pts.push([cx, cz]); }
+  else {
+    const q = id * 4; cx = (col.pbox[q] + col.pbox[q + 2]) / 2; cz = (col.pbox[q + 1] + col.pbox[q + 3]) / 2; r = Math.min(col.pbox[q + 2] - col.pbox[q], col.pbox[q + 3] - col.pbox[q + 1]);
+    for (let ri = col.polyRing[id]; ri < col.polyRing[id + 1]; ri++) { const s0 = col.ringStart[ri], s1 = col.ringStart[ri + 1];
+      for (let i = s0; i < s1; i++) { const j = i + 1 < s1 ? i + 1 : s0, ax = col.pts[i * 2], az = col.pts[i * 2 + 1], bx2 = col.pts[j * 2], bz = col.pts[j * 2 + 1], n = Math.max(1, Math.ceil(Math.hypot(bx2 - ax, bz - az) / 0.2));
+        for (let t = 0; t < n; t++) pts.push([ax + (bx2 - ax) * t / n, az + (bz - az) * t / n]); } }
+  }
+  let depth = 0, meas = false;
+  for (const [x, z] of pts) for (const m of DEPTHS) { if (m <= depth || !inCarriage(x, z, m)) continue; depth = m; if (fit?.classAt && fit.classAt(x, z) >= 0) meas = true; }
+  return { cls: fit?.classAt ? fit.classAt(cx, cz) : -1, depth, meas, r: +r.toFixed(2) };
 }
 // places: hits of one source within PLACE m of each other (a hero's 0.25 m rects, a run of garden wall)
 const places = [];
 for (const [id, h] of hits) {
   const s = what(id);
   let p = places.find((q) => q.src === s && Math.hypot(q.x - h.x, q.z - h.z) < PLACE);
-  if (!p) places.push(p = { src: s, x: h.x, z: h.z, n: 0, ids: 0 });
+  if (!p) places.push(p = { src: s, x: h.x, z: h.z, n: 0, ids: 0, paths: new Set(), depth: 0, meas: false, cls: new Set(), r: 0 });
   p.n += h.n; p.ids++;
+  for (const k of h.paths) p.paths.add(k);
+  const a = anatomy(id); p.depth = Math.max(p.depth, a.depth); p.meas ||= a.meas; p.cls.add(a.cls); p.r = Math.max(p.r, a.r);
 }
-console.log(JSON.stringify({ tile: T, ms: Date.now() - t0, heroes: nHero, lanes: nLanes, centrelines: lanes - nLanes, pathM: Math.round(laneM),
-  places: places.map((p) => ({ street: near(p.x, p.z), x: +p.x.toFixed(1), z: +p.z.toFixed(1), src: p.src, m: +(p.n * STEP).toFixed(1), colliders: p.ids })), info }));
+console.log(JSON.stringify({ tile: T, ms: Date.now() - t0, heroes: nHero, roadTrees: d.drive.counts?.roadTrees ?? null, lanes: nLanes, centrelines: lanes - nLanes, pathM: Math.round(laneM),
+  places: places.map((p) => ({ street: near(p.x, p.z), x: +p.x.toFixed(1), z: +p.z.toFixed(1), src: p.src, m: +(p.n * STEP).toFixed(1), colliders: p.ids,
+    paths: [...p.paths].sort(), depth: p.depth, meas: p.meas, cls: [...p.cls].sort(), r: p.r })), info }));
 process.exit(0);

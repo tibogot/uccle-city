@@ -53,3 +53,31 @@ export function roadBridgeColliders(info) {
   }
   return [{ rings, kind: 5 }];
 }
+
+/**
+ * (claude/drivecheck round 2; entry.deckLanes === false / ?decklanes=old: as before) The traffic lanes over a hero road
+ * deck held inside its roadway: the lanes come from the OSM band (Rue de Verrewinkel: two 3 m lanes, +-1.5 m), the
+ * deck between its parapets is 4.2 m, so a car body (0.9 m half width) on either lane stood 0.3-0.5 m in a parapet.
+ * Every traffic point over the deck's span (+3 m past its ends) is pulled to at most parapet_inner - 1.0 m off the axis
+ * (+0.15 m per m past an end: a taper back to the street's lanes). traffic = the tile's graph ({ xy }), changed in place;
+ * returns the points moved.
+ */
+export function squeezeDeckLanes(traffic, heroes) {
+  if (!traffic?.xy) return 0;
+  let n = 0;
+  for (const h of heroes || []) {
+    if (h.kind !== "road_over_rail") continue;
+    const F = roadFrame(h), d = F.d, xy = traffic.xy;
+    for (let i = 0; i < xy.length; i += 2) {
+      const [X, Y] = F.toLocal(xy[i], xy[i + 1]);
+      if (X < d.x0 - 3 || X > d.x1 + 3) continue;
+      const face = F.faceY(X, d.parapet_inner);
+      if (Math.abs(Y) >= face + 0.5) continue;
+      const lim = d.parapet_inner - 1.0 + 0.15 * Math.max(0, Math.abs(X) - d.x1);
+      if (Math.abs(Y) <= lim) continue;
+      const [x, z] = F.toWorld(X, Math.sign(Y) * lim);
+      xy[i] = x; xy[i + 1] = z; n++;
+    }
+  }
+  return n;
+}
