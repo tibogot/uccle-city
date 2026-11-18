@@ -49,7 +49,7 @@ crosses the street's height on the edge), below it the weld's shoulder and 0.7 b
 |---|---|---|---|
 | sidewalk tilt > 15 % across the kerb | 4,052 groups / 29,510 m2 | 804 / 4,691 m2 | -80 % / -84 % |
 | road cross-fall > 12 % | 1,462 / 24,092 m2 | 392 / 6,685 m2 | -73 % / -72 % |
-| terrain drawn over a street (new) | 361 / 2,932 m2 | 298 / 2,610 m2 | -17 % |
+| terrain drawn over a street (new) | 361 / 2,932 m2 | 296 / 2,616 m2 | -18 % |
 | weld lumps > 0.5 m | 1,232 / 15,842 m2 | 867 / 11,988 m2 | -30 % |
 | grid spikes (re-tuned) | 463 / 1,511 m2 | 491 / 1,395 m2 | +6 % groups, -8 % m2 |
 | holes under the street (re-tuned) | 3 / 320 m2 | 45 / 547 m2 | see below |
@@ -66,12 +66,30 @@ surface, sampled every 0.25 m. The 45 holes left: Wolvendael pond bed (F4, inten
 D10 (an OSM road the engine lays 3-4 m under the DTM: the cut fades out at 4 m, terrain still over them, `over` 5.8 m
 D10 -1041, 2947), Dieweg 4 / Alsemberg 1010A (D6), Wansart 2 (D4).
 
-## Performance (6 tiles F2 E6 I6 G6 H6 D5, one job, two runs each)
+## Performance
 
-- road triangles: 71,862 -> 69,902 a tile (-2.7 %: the street's creases densify less on level sidewalks)
-- worker road stage: surfaces + width fit +~70 ms (the levelled samples' kerb lookups, cached), terrain weld 217-253 ->
-  468-565 ms (+~280 ms: edgeField's coverage raster and edge distances, GC); whole road stage within run noise
-  (2.5-3.4 s). Worker only, no runtime / GPU cost; terrain mesh size unchanged (same grid, simplified as before).
+Road triangles: 71,862 -> 69,902 a tile (-2.7 %: the street's creases densify less on level sidewalks). No runtime or
+GPU cost: the terrain mesh is the same grid, simplified as before. Worker only (the tile build; a tile-cache hit
+skips it).
+
+Build ms, paired in one node process (6 tiles F2 E6 I6 G6 H6 D5, each built old / new / new / old, mean of the 12
+pairs' differences; this machine was loaded, so the absolute times swing 2x, the paired difference is what holds):
+
+| | terrain weld + edge field | surfaces + width fit |
+|---|---|---|
+| first cut (commit a34a7e4d) vs `?sidewalk=old` | +183 ms | +68 ms |
+| optimised vs `?sidewalk=old` | **+83 ms** | +20 ms |
+
+What made edgeField cheaper (heightmap.js; census counts unchanged, `over` 298 -> 296): vertices welded by exact
+position before the once-used-edge test (the paving frames split vertices: 43k candidate edges to probe for 6.6k real
+outer edges, 123k edge entries), an open-addressing edge table (typed arrays, first-use order kept) instead of a Map,
+the coverage buckets as a flat CSR grid holding each triangle's plan corners, flatness without Math.hypot, each raster
+row clipped to the capsule's own stretch (a 50 m kerb edge's box is ~7x its capsule), Math.sqrt for the distances.
+The roadBuild lap "edge field" now reports it apart from "terrain weld".
+
+Time to play: on a cold tile cache (a first visit, or once after the worker bundle is rebuilt: rule 12) the spawn
+waits for its start tile + 8 ring tiles across 3 workers, about 3 tile builds on the critical path: ~+0.3 s on police
+~43 s / falcon ~39 s (< 1 %). Warm cache: 0. Far (lite) tiles do not run the road stage.
 
 ## Left / needs a browser look
 

@@ -267,19 +267,48 @@ export class Heightmap {
  */
 const BANK_NEED_MAX = 4;           // m: clampUnder's bank never digs where it would need this much (a tunnel, a structure)
 
+/** murmur3's 32-bit finaliser: every input bit reaches the low bits (the open-addressing tables mask them) */
+const mix32 = (h) => { h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); return (h ^ (h >>> 16)) >>> 0; };
+
+/** each vertex -> the first vertex at exactly its position (open addressing on the float bits) */
+function weldVerts(P) {
+  const nv = P.length / 3, W = new Int32Array(nv);
+  const bits = P instanceof Float32Array ? new Int32Array(P.buffer, P.byteOffset, P.length) : new Int32Array(Float32Array.from(P).buffer);
+  let vc = 16; while (vc < nv * 2) vc *= 2;
+  const slot = new Int32Array(vc).fill(-1);
+  for (let v = 0; v < nv; v++) {
+    const X = bits[v * 3], Yb = bits[v * 3 + 1], Z = bits[v * 3 + 2];
+    let q = mix32(X ^ mix32(Yb ^ mix32(Z))) & (vc - 1);
+    while (slot[q] !== -1) { const w = slot[q]; if (bits[w * 3] === X && bits[w * 3 + 1] === Yb && bits[w * 3 + 2] === Z) break; q = (q + 1) & (vc - 1); }
+    if (slot[q] === -1) slot[q] = v;
+    W[v] = slot[q];
+  }
+  return W;
+}
+/** the edges of the flagged triangles (welded vertices W): slot tables KA / KB (ends), OPP (the opposite vertex, -1 =
+ *  used twice or more), in first-use order */
+function onceEdges(I, F, W) {
+  let cap = 16; while (cap < I.length * 2) cap *= 2;
+  const KA = new Int32Array(cap).fill(-1), KB = new Int32Array(cap), OPP = new Int32Array(cap), order = new Int32Array(I.length);
+  let n = 0;
+  for (let t = 0; t < I.length; t += 3) {
+    if (!F[t / 3]) continue;
+    for (let e = 0; e < 3; e++) {
+      const u0 = W[I[t + e]], v0 = W[I[t + (e + 1) % 3]], lo = u0 < v0 ? u0 : v0, hi = u0 < v0 ? v0 : u0;
+      let s = mix32(lo ^ mix32(hi)) & (cap - 1);
+      while (KA[s] !== -1 && !(KA[s] === lo && KB[s] === hi)) s = (s + 1) & (cap - 1);
+      if (KA[s] === -1) { KA[s] = lo; KB[s] = hi; OPP[s] = I[t + (e + 2) % 3]; order[n++] = s; }
+      else OPP[s] = -1;
+    }
+  }
+  return { KA, KB, OPP, order, n };
+}
+
 export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
   const { x0, z0, cols, rows, step } = h, N = cols * rows;
   const D = new Float32Array(N).fill(Infinity), Ye = new Float32Array(N), inside = new Uint8Array(N);
-  const flat = (P, a, b, c) => {
-    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
-    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-    if (!(Math.abs(ny) > 1e-9 && Math.abs(ny) >= 0.6 * Math.hypot(nx, ny, nz))) return false;
-    if (minWidth > 0) {
-      const L = Math.max(Math.hypot(P[b] - P[a], P[b + 2] - P[a + 2]), Math.hypot(P[c] - P[b], P[c + 2] - P[b + 2]), Math.hypot(P[a] - P[c], P[a + 2] - P[c + 2]));
-      if (Math.abs(ny) / L < minWidth) return false;                 // |ny| = 2 x plan area: / longest edge = the width
-    }
-    return true;
-  };
+  // (perf, claude/sidewalk: typed arrays throughout, each triangle's flatness once, no Math.hypot, a flat bucket grid,
+  // an open-addressing edge table on position-welded vertices, instead of Maps)
   const inTri = (P, a, b, c, x, z) => {
     const ax = P[a], az = P[a + 2], bx = P[b], bz = P[b + 2], cx = P[c], cz = P[c + 2];
     const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
@@ -287,42 +316,79 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
     const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det;
     return l1 >= -1e-6 && l2 >= -1e-6 && 1 - l1 - l2 >= -1e-6;
   };
-  // near-flat triangles: the grid vertices they cover, and a 2 m bucket grid (the coverage test)
-  const BK = 2, buckets = new Map(), tris = [];
-  const bkey = (i, j) => (i + 32768) * 65536 + (j + 32768);
-  meshes.forEach(({ position: P, index: I }, mi) => {
+  // near-flat triangles (each mesh's flag array), their bounds
+  const flags = [], boxes = [];
+  let nFlat = 0, bx0 = Infinity, bz0 = Infinity, bx1 = -Infinity, bz1 = -Infinity;
+  for (const { position: P, index: I } of meshes) {
+    const F = new Uint8Array(I.length / 3), BX = new Float32Array(I.length / 3 * 4);
     for (let t = 0; t < I.length; t += 3) {
       const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
-      if (!flat(P, a, b, c)) continue;
-      const id = tris.length / 2; tris.push(mi, t);
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      if (!(Math.abs(ny) > 1e-9 && ny * ny >= 0.36 * (nx * nx + ny * ny + nz * nz))) continue;
+      if (minWidth > 0) {
+        const L = Math.sqrt(Math.max((P[b] - P[a]) ** 2 + (P[b + 2] - P[a + 2]) ** 2, (P[c] - P[b]) ** 2 + (P[c + 2] - P[b + 2]) ** 2, (P[a] - P[c]) ** 2 + (P[a + 2] - P[c + 2]) ** 2));
+        if (Math.abs(ny) / L < minWidth) continue;                     // |ny| = 2 x plan area: / longest edge = the width
+      }
+      F[t / 3] = 1; nFlat++;
       const xa = Math.min(P[a], P[b], P[c]), xb = Math.max(P[a], P[b], P[c]), za = Math.min(P[a + 2], P[b + 2], P[c + 2]), zb = Math.max(P[a + 2], P[b + 2], P[c + 2]);
-      for (let i = Math.floor(xa / BK); i <= Math.floor(xb / BK); i++) for (let j = Math.floor(za / BK); j <= Math.floor(zb / BK); j++) { const key = bkey(i, j); let L = buckets.get(key); if (!L) buckets.set(key, (L = [])); L.push(id); }
+      if (xa < bx0) bx0 = xa; if (xb > bx1) bx1 = xb; if (za < bz0) bz0 = za; if (zb > bz1) bz1 = zb;
+      const tb = (t / 3) * 4; BX[tb] = xa; BX[tb + 1] = xb; BX[tb + 2] = za; BX[tb + 3] = zb;
+      // the grid vertices it covers
       const c0 = Math.max(0, Math.ceil((xa - x0) / step)), c1 = Math.min(cols - 1, Math.floor((xb - x0) / step));
       const r0 = Math.max(0, Math.ceil((za - z0) / step)), r1 = Math.min(rows - 1, Math.floor((zb - z0) / step));
       for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) { const k = r * cols + cc; if (!inside[k] && inTri(P, a, b, c, x0 + cc * step, z0 + r * step)) inside[k] = 1; }
     }
+    flags.push(F); boxes.push(BX);
+  }
+  if (!nFlat) return { d: D, y: Ye, inside, edges: 0 };
+  // a 2 m bucket grid over them (CSR: counts, then each entry's mesh / triangle)
+  const BK = 2, gi0 = Math.floor(bx0 / BK), gj0 = Math.floor(bz0 / BK), GW = Math.floor(bx1 / BK) - gi0 + 1, GH = Math.floor(bz1 / BK) - gj0 + 1;
+  const start = new Int32Array(GW * GH + 1);
+  const eachBucket = (fn) => meshes.forEach(({ index: I }, mi) => {
+    const F = flags[mi], BX = boxes[mi];
+    for (let t = 0; t < I.length; t += 3) {
+      const tq = t / 3;
+      if (!F[tq]) continue;
+      const i0 = Math.floor(BX[tq * 4] / BK) - gi0, i1 = Math.floor(BX[tq * 4 + 1] / BK) - gi0;
+      const j0 = Math.floor(BX[tq * 4 + 2] / BK) - gj0, j1 = Math.floor(BX[tq * 4 + 3] / BK) - gj0;
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) fn(j * GW + i, mi, t);
+    }
+  });
+  eachBucket((q) => { start[q + 1]++; });
+  for (let q = 0; q < GW * GH; q++) start[q + 1] += start[q];
+  // (each entry's plan corners copied in: the probe reads one array, no mesh lookups)
+  const fill = start.slice(0, GW * GH), TC = new Float32Array(start[GW * GH] * 6);
+  eachBucket((q, mi, t) => {
+    const o = fill[q]++, { position: P, index: I } = meshes[mi], a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    TC[o * 6] = P[a]; TC[o * 6 + 1] = P[a + 2]; TC[o * 6 + 2] = P[b]; TC[o * 6 + 3] = P[b + 2]; TC[o * 6 + 4] = P[c]; TC[o * 6 + 5] = P[c + 2];
   });
   const coveredAt = (x, z) => {
-    const L = buckets.get(bkey(Math.floor(x / BK), Math.floor(z / BK)));
-    if (L) for (const id of L) { const { position: P, index: I } = meshes[tris[id * 2]], t = tris[id * 2 + 1]; if (inTri(P, I[t] * 3, I[t + 1] * 3, I[t + 2] * 3, x, z)) return true; }
+    const i = Math.floor(x / BK) - gi0, j = Math.floor(z / BK) - gj0;
+    if (i < 0 || j < 0 || i >= GW || j >= GH) return false;
+    const q = j * GW + i;
+    for (let o = start[q]; o < start[q + 1]; o++) {
+      const ax = TC[o * 6], az = TC[o * 6 + 1], bx = TC[o * 6 + 2], bz = TC[o * 6 + 3], cx = TC[o * 6 + 4], cz = TC[o * 6 + 5];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-12) continue;
+      const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det;
+      if (l1 >= -1e-6 && l2 >= -1e-6 && 1 - l1 - l2 >= -1e-6) return true;
+    }
     return false;
   };
-  const R = Math.max(reach, 1.5 * step), Rin = 1.5 * step, BIG = 4294967296;
+  const R = Math.max(reach, 1.5 * step), R2 = R * R, Rin = 1.5 * step;
   let edges = 0;
-  for (const { position: P, index: I } of meshes) {
-    // edges of the near-flat triangles used once (by vertex index; a seam of split vertices fails the coverage test)
-    const use = new Map();
-    for (let t = 0; t < I.length; t += 3) {
-      if (!flat(P, I[t] * 3, I[t + 1] * 3, I[t + 2] * 3)) continue;
-      for (let e = 0; e < 3; e++) {
-        const u = I[t + e], v = I[t + (e + 1) % 3], key = u < v ? u * BIG + v : v * BIG + u;
-        const o = use.get(key);
-        if (o === undefined) use.set(key, I[t + (e + 2) % 3]); else if (o !== -1) use.set(key, -1);
-      }
-    }
-    for (const [key, opp] of use) {
+  meshes.forEach(({ position: P, index: I }, mi) => {
+    const F = flags[mi];
+    // edges of the near-flat triangles used once (by vertex index; a seam of split vertices fails the coverage test):
+    // an open-addressing table, walked in first-use order (as a Map would be: ties in distance keep their winner)
+    // (vertices welded by their exact position first: the parts split a vertex per paving frame / uv, and each seam
+    // between two frames was a "boundary" edge to probe: ~8 probes for every real outer edge)
+    const W = weldVerts(P), { KA, KB, OPP, order, n } = onceEdges(I, F, W);
+    for (let m = 0; m < n; m++) {
+      const s = order[m], opp = OPP[s];
       if (opp === -1) continue;
-      const u = Math.floor(key / BIG), v = key - u * BIG;
+      const u = KA[s], v = KB[s];
       const ax = P[u * 3], ay = P[u * 3 + 1], az = P[u * 3 + 2], bx = P[v * 3], by = P[v * 3 + 1], bz = P[v * 3 + 2];
       const ex = bx - ax, ez = bz - az, L2 = ex * ex + ez * ez;
       if (L2 < 1e-8) continue;
@@ -334,14 +400,35 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
       edges++;
       const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - R - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + R - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(az, bz) - R - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + R - z0) / step));
-      for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) {
-        const px = x0 + cc * step, pz = z0 + r * step;
-        const t = Math.min(1, Math.max(0, ((px - ax) * ex + (pz - az) * ez) / L2)), dx = px - ax - t * ex, dz = pz - az - t * ez;
-        const d = Math.hypot(dx, dz), k = r * cols + cc;
-        if (d > R || d >= D[k] || (inside[k] && d > Rin)) continue;
-        D[k] = d; Ye[k] = ay + (by - ay) * t;
+      const ox = nx * R, oz = nz * R;
+      for (let r = r0; r <= r1; r++) {
+        const pz = z0 + r * step;
+        // the row's stretch of the capsule within R of the edge (convex: the hull of where the row meets its two offset
+        // sides and its end discs), not the whole box: a 50 m kerb edge's box is 7 x its capsule
+        let lo = Infinity, hi = -Infinity;
+        for (let sg = -1; sg <= 1; sg += 2) {
+          const sx = ax + sg * ox, sz = az + sg * oz, dzs = ez;
+          if (Math.abs(dzs) < 1e-12) { if (Math.abs(pz - sz) < 1e-9) { lo = Math.min(lo, sx, sx + ex); hi = Math.max(hi, sx, sx + ex); } continue; }
+          const u = (pz - sz) / dzs;
+          if (u >= 0 && u <= 1) { const x = sx + u * ex; if (x < lo) lo = x; if (x > hi) hi = x; }
+        }
+        for (let e2 = 0; e2 < 2; e2++) {
+          const qx = e2 ? bx : ax, q = R2 - (pz - (e2 ? bz : az)) ** 2;
+          if (q >= 0) { const sq = Math.sqrt(q); if (qx - sq < lo) lo = qx - sq; if (qx + sq > hi) hi = qx + sq; }
+        }
+        if (!(lo <= hi)) continue;
+        const ca = Math.max(c0, Math.ceil((lo - 1e-4 - x0) / step)), cb = Math.min(c1, Math.floor((hi + 1e-4 - x0) / step));
+        for (let cc = ca; cc <= cb; cc++) {
+          const px = x0 + cc * step;
+          const t = Math.min(1, Math.max(0, ((px - ax) * ex + (pz - az) * ez) / L2)), dx = px - ax - t * ex, dz = pz - az - t * ez;
+          const d2 = dx * dx + dz * dz;
+          if (d2 > R2) continue;
+          const d = Math.sqrt(d2), k = r * cols + cc;
+          if (d > R || d >= D[k] || (inside[k] && d > Rin)) continue;
+          D[k] = d; Ye[k] = ay + (by - ay) * t;
+        }
       }
     }
-  }
+  });
   return { d: D, y: Ye, inside, edges };
 }

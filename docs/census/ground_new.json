@@ -1,5 +1,5 @@
 {
- "when": "2026-11-18T08:41:29.991Z",
+ "when": "2026-11-18T09:49:11.071Z",
  "old": false,
  "sum": {
   "lump": 867,
@@ -12,13 +12,13 @@
   "tiltM2": 4691,
   "roadTilt": 392,
   "roadTiltM2": 6685,
-  "over": 298,
-  "overM2": 2610
+  "over": 296,
+  "overM2": 2616
  },
  "perf": {
-  "roadMs": 369166,
-  "weldMs": 59041,
-  "surfMs": 62071,
+  "roadMs": 496290,
+  "weldMs": 39117,
+  "surfMs": 90889,
   "roadTris": 5264319
  },
  "tiles": [
@@ -39,9 +39,9 @@
     "overM2": 5.0625
    },
    "perf": {
-    "roadMs": 3305,
-    "weldMs": 490,
-    "surfMs": 262,
+    "roadMs": 3727,
+    "weldMs": 405,
+    "surfMs": 313,
     "roadTris": 32689
    }
   },
@@ -62,9 +62,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 8841,
-    "weldMs": 1390,
-    "surfMs": 924,
+    "roadMs": 6971,
+    "weldMs": 401,
+    "surfMs": 1501,
     "roadTris": 91889
    }
   },
@@ -85,9 +85,9 @@
     "overM2": 1.5625
    },
    "perf": {
-    "roadMs": 4024,
-    "weldMs": 697,
-    "surfMs": 586,
+    "roadMs": 5325,
+    "weldMs": 467,
+    "surfMs": 723,
     "roadTris": 50933
    }
   },
@@ -108,9 +108,9 @@
     "overM2": 3.6875
    },
    "perf": {
-    "roadMs": 5848,
-    "weldMs": 606,
-    "surfMs": 376,
+    "roadMs": 5945,
+    "weldMs": 489,
+    "surfMs": 495,
     "roadTris": 61253
    }
   },
@@ -128,12 +128,12 @@
     "roadTilt": 1,
     "roadTiltM2": 1.019173040986061,
     "over": 7,
-    "overM2": 108.4375
+    "overM2": 109.1875
    },
    "perf": {
-    "roadMs": 3394,
-    "weldMs": 573,
-    "surfMs": 804,
+    "roadMs": 4519,
+    "weldMs": 394,
+    "surfMs": 480,
     "roadTris": 50351
    }
   },
@@ -154,9 +154,9 @@
     "overM2": 43.1875
    },
    "perf": {
-    "roadMs": 2080,
-    "weldMs": 386,
-    "surfMs": 48,
+    "roadMs": 3313,
+    "weldMs": 421,
+    "surfMs": 73,
     "roadTris": 24601
    }
   },
@@ -177,9 +177,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 5840,
-    "weldMs": 999,
-    "surfMs": 1045,
+    "roadMs": 6672,
+    "weldMs": 416,
+    "surfMs": 1360,
     "roadTris": 87571
    }
   },
@@ -197,12 +197,12 @@
     "roadTilt": 4,
     "roadTiltM2": 33.06985699944198,
     "over": 9,
-    "overM2": 60.25
+    "overM2": 60.1875
    },
    "perf": {
-    "roadMs": 6286,
-    "weldMs": 542,
-    "surfMs": 1711,
+    "roadMs": 5442,
+    "weldMs": 347,
+    "surfMs": 1055,
     "roadTris": 54782
    }
   },
@@ -223,9 +223,9 @@
     "overM2": 3.4375
    },
    "perf": {
-    "roadMs": 7150,
-    "weldMs": 797,
-    "surfMs": 941,
+    "roadMs": 13612,
+    "weldMs": 675,
+    "surfMs": 1529,
     "roadTris": 80731
    }
   },
@@ -246,9 +246,9 @@
     "overM2": 1.375
    },
    "perf": {
-    "roadMs": 5522,
-    "weldMs": 520,
-    "surfMs": 704,
+    "roadMs": 4993,
+    "weldMs": 354,
+    "surfMs": 883,
     "roadTris": 51757
    }
   },
@@ -269,9 +269,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 4319,
-    "weldMs": 763,
-    "surfMs": 707,
+    "roadMs": 6552,
+    "weldMs": 413,
+    "surfMs": 1325,
     "roadTris": 78198
    }
   },
@@ -288,13 +288,13 @@
     "tiltM2": 0.6416080147027969,
     "roadTilt": 4,
     "roadTiltM2": 10.124299928545952,
-    "over": 3,
-    "overM2": 2.8125
+    "over": 2,
+    "overM2": 2.3125
    },
    "perf": {
-    "roadMs": 4207,
-    "weldMs": 733,
-    "surfMs": 513,
+    "roadMs": 6074,
+    "weldMs": 471,
+    "surfMs": 785,
     "roadTris": 61243
    }
   },
@@ -315,9 +315,9 @@
     "overM2": 21.3125
    },
    "perf": {
-    "roadMs": 3835,
-    "weldMs": 503,
-    "surfMs": 325,
+    "roadMs": 3847,
+    "weldMs": 444,
+    "surfMs": 255,
     "roadTris": 24822
    }
   },
@@ -338,9 +338,9 @@
     "overM2": 3.125
    },
    "perf": {
-    "roadMs": 5090,
-    "weldMs": 638,
-    "surfMs": 1386,
+    "roadMs": 5608,
+    "weldMs": 433,
+    "surfMs": 1073,
     "roadTris": 72910
    }
   },
@@ -357,13 +357,13 @@
     "tiltM2": 55.97383116185665,
     "roadTilt": 16,
     "roadTiltM2": 314.56745307147503,
-    "over": 32,
-    "overM2": 641.125
+    "over": 33,
+    "overM2": 644.75
    },
    "perf": {
-    "roadMs": 2669,
-    "weldMs": 476,
-    "surfMs": 199,
+    "roadMs": 3091,
+    "weldMs": 358,
+    "surfMs": 253,
     "roadTris": 34389
    }
   },
@@ -384,9 +384,9 @@
     "overM2": 22
    },
    "perf": {
-    "roadMs": 4692,
-    "weldMs": 677,
-    "surfMs": 744,
+    "roadMs": 8327,
+    "weldMs": 518,
+    "surfMs": 1272,
     "roadTris": 76410
    }
   },
@@ -407,9 +407,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 4363,
-    "weldMs": 713,
-    "surfMs": 774,
+    "roadMs": 5351,
+    "weldMs": 401,
+    "surfMs": 1130,
     "roadTris": 60144
    }
   },
@@ -427,12 +427,12 @@
     "roadTilt": 12,
     "roadTiltM2": 67.65279419487342,
     "over": 6,
-    "overM2": 43.5625
+    "overM2": 43.5
    },
    "perf": {
-    "roadMs": 6303,
-    "weldMs": 672,
-    "surfMs": 1200,
+    "roadMs": 6119,
+    "weldMs": 434,
+    "surfMs": 1032,
     "roadTris": 82189
    }
   },
@@ -453,9 +453,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 5205,
-    "weldMs": 782,
-    "surfMs": 839,
+    "roadMs": 10050,
+    "weldMs": 498,
+    "surfMs": 2858,
     "roadTris": 80519
    }
   },
@@ -472,13 +472,13 @@
     "tiltM2": 281.59381004050374,
     "roadTilt": 30,
     "roadTiltM2": 723.7616268470883,
-    "over": 12,
-    "overM2": 74.0625
+    "over": 11,
+    "overM2": 73.375
    },
    "perf": {
-    "roadMs": 6261,
-    "weldMs": 735,
-    "surfMs": 746,
+    "roadMs": 6988,
+    "weldMs": 466,
+    "surfMs": 1080,
     "roadTris": 82592
    }
   },
@@ -499,9 +499,9 @@
     "overM2": 3.75
    },
    "perf": {
-    "roadMs": 5422,
-    "weldMs": 647,
-    "surfMs": 596,
+    "roadMs": 6397,
+    "weldMs": 388,
+    "surfMs": 974,
     "roadTris": 74919
    }
   },
@@ -522,9 +522,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 3629,
-    "weldMs": 709,
-    "surfMs": 686,
+    "roadMs": 5373,
+    "weldMs": 395,
+    "surfMs": 1068,
     "roadTris": 72509
    }
   },
@@ -545,9 +545,9 @@
     "overM2": 1.625
    },
    "perf": {
-    "roadMs": 3102,
-    "weldMs": 539,
-    "surfMs": 647,
+    "roadMs": 4194,
+    "weldMs": 404,
+    "surfMs": 718,
     "roadTris": 34975
    }
   },
@@ -568,9 +568,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 6435,
-    "weldMs": 720,
-    "surfMs": 1654,
+    "roadMs": 7874,
+    "weldMs": 536,
+    "surfMs": 1497,
     "roadTris": 96984
    }
   },
@@ -588,12 +588,12 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 19,
-    "overM2": 639.8125
+    "overM2": 641.625
    },
    "perf": {
-    "roadMs": 2748,
-    "weldMs": 472,
-    "surfMs": 387,
+    "roadMs": 3401,
+    "weldMs": 301,
+    "surfMs": 569,
     "roadTris": 44214
    }
   },
@@ -614,9 +614,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 3818,
-    "weldMs": 625,
-    "surfMs": 620,
+    "roadMs": 7986,
+    "weldMs": 534,
+    "surfMs": 1588,
     "roadTris": 65892
    }
   },
@@ -637,9 +637,9 @@
     "overM2": 1.625
    },
    "perf": {
-    "roadMs": 4620,
-    "weldMs": 665,
-    "surfMs": 735,
+    "roadMs": 5727,
+    "weldMs": 449,
+    "surfMs": 1132,
     "roadTris": 66654
    }
   },
@@ -660,9 +660,9 @@
     "overM2": 3.3125
    },
    "perf": {
-    "roadMs": 5694,
-    "weldMs": 729,
-    "surfMs": 920,
+    "roadMs": 7898,
+    "weldMs": 521,
+    "surfMs": 1605,
     "roadTris": 116582
    }
   },
@@ -683,9 +683,9 @@
     "overM2": 0.875
    },
    "perf": {
-    "roadMs": 4307,
-    "weldMs": 641,
-    "surfMs": 680,
+    "roadMs": 9353,
+    "weldMs": 430,
+    "surfMs": 2790,
     "roadTris": 56484
    }
   },
@@ -706,9 +706,9 @@
     "overM2": 40.9375
    },
    "perf": {
-    "roadMs": 4557,
-    "weldMs": 801,
-    "surfMs": 619,
+    "roadMs": 6258,
+    "weldMs": 495,
+    "surfMs": 1134,
     "roadTris": 59214
    }
   },
@@ -725,13 +725,13 @@
     "tiltM2": 50.71262630261481,
     "roadTilt": 4,
     "roadTiltM2": 157.33331451378763,
-    "over": 2,
-    "overM2": 1.8125
+    "over": 3,
+    "overM2": 2.3125
    },
    "perf": {
-    "roadMs": 4661,
-    "weldMs": 571,
-    "surfMs": 454,
+    "roadMs": 5468,
+    "weldMs": 404,
+    "surfMs": 821,
     "roadTris": 43350
    }
   },
@@ -752,9 +752,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 3381,
-    "weldMs": 603,
-    "surfMs": 624,
+    "roadMs": 5164,
+    "weldMs": 404,
+    "surfMs": 1098,
     "roadTris": 51158
    }
   },
@@ -775,9 +775,9 @@
     "overM2": 3.4375
    },
    "perf": {
-    "roadMs": 3796,
-    "weldMs": 556,
-    "surfMs": 687,
+    "roadMs": 5437,
+    "weldMs": 397,
+    "surfMs": 1147,
     "roadTris": 60904
    }
   },
@@ -798,9 +798,9 @@
     "overM2": 0.9375
    },
    "perf": {
-    "roadMs": 5857,
-    "weldMs": 753,
-    "surfMs": 1574,
+    "roadMs": 6749,
+    "weldMs": 481,
+    "surfMs": 1280,
     "roadTris": 94500
    }
   },
@@ -818,12 +818,12 @@
     "roadTilt": 2,
     "roadTiltM2": 17.90633991797222,
     "over": 8,
-    "overM2": 67.25
+    "overM2": 67.125
    },
    "perf": {
-    "roadMs": 1424,
-    "weldMs": 288,
-    "surfMs": 179,
+    "roadMs": 1642,
+    "weldMs": 270,
+    "surfMs": 221,
     "roadTris": 14457
    }
   },
@@ -844,9 +844,9 @@
     "overM2": 1.875
    },
    "perf": {
-    "roadMs": 4375,
-    "weldMs": 848,
-    "surfMs": 735,
+    "roadMs": 8960,
+    "weldMs": 536,
+    "surfMs": 1962,
     "roadTris": 101136
    }
   },
@@ -864,12 +864,12 @@
     "roadTilt": 6,
     "roadTiltM2": 40.05432846187614,
     "over": 3,
-    "overM2": 4
+    "overM2": 3.8125
    },
    "perf": {
-    "roadMs": 5195,
-    "weldMs": 734,
-    "surfMs": 920,
+    "roadMs": 6300,
+    "weldMs": 472,
+    "surfMs": 1296,
     "roadTris": 86746
    }
   },
@@ -890,9 +890,9 @@
     "overM2": 2.8125
    },
    "perf": {
-    "roadMs": 3149,
-    "weldMs": 585,
-    "surfMs": 554,
+    "roadMs": 5057,
+    "weldMs": 407,
+    "surfMs": 939,
     "roadTris": 63163
    }
   },
@@ -913,9 +913,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 3345,
-    "weldMs": 657,
-    "surfMs": 646,
+    "roadMs": 5510,
+    "weldMs": 370,
+    "surfMs": 1221,
     "roadTris": 63439
    }
   },
@@ -936,9 +936,9 @@
     "overM2": 1.25
    },
    "perf": {
-    "roadMs": 4376,
-    "weldMs": 693,
-    "surfMs": 714,
+    "roadMs": 5942,
+    "weldMs": 420,
+    "surfMs": 998,
     "roadTris": 58241
    }
   },
@@ -959,9 +959,9 @@
     "overM2": 3.625
    },
    "perf": {
-    "roadMs": 2766,
-    "weldMs": 448,
-    "surfMs": 410,
+    "roadMs": 4289,
+    "weldMs": 368,
+    "surfMs": 581,
     "roadTris": 38926
    }
   },
@@ -982,9 +982,9 @@
     "overM2": 2.6875
    },
    "perf": {
-    "roadMs": 3375,
-    "weldMs": 498,
-    "surfMs": 464,
+    "roadMs": 4775,
+    "weldMs": 349,
+    "surfMs": 727,
     "roadTris": 45725
    }
   },
@@ -1005,9 +1005,9 @@
     "overM2": 4.4375
    },
    "perf": {
-    "roadMs": 5978,
-    "weldMs": 1657,
-    "surfMs": 739,
+    "roadMs": 6691,
+    "weldMs": 407,
+    "surfMs": 1154,
     "roadTris": 93861
    }
   },
@@ -1028,9 +1028,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 5133,
-    "weldMs": 631,
-    "surfMs": 1341,
+    "roadMs": 5760,
+    "weldMs": 463,
+    "surfMs": 1025,
     "roadTris": 68006
    }
   },
@@ -1048,12 +1048,12 @@
     "roadTilt": 16,
     "roadTiltM2": 473.01694981381297,
     "over": 5,
-    "overM2": 6.4375
+    "overM2": 6.3125
    },
    "perf": {
-    "roadMs": 1716,
-    "weldMs": 267,
-    "surfMs": 335,
+    "roadMs": 2032,
+    "weldMs": 171,
+    "surfMs": 386,
     "roadTris": 29691
    }
   },
@@ -1074,9 +1074,9 @@
     "overM2": 0.875
    },
    "perf": {
-    "roadMs": 3000,
-    "weldMs": 499,
-    "surfMs": 434,
+    "roadMs": 5888,
+    "weldMs": 472,
+    "surfMs": 1062,
     "roadTris": 53614
    }
   },
@@ -1097,9 +1097,9 @@
     "overM2": 46.6875
    },
    "perf": {
-    "roadMs": 2627,
-    "weldMs": 387,
-    "surfMs": 277,
+    "roadMs": 4407,
+    "weldMs": 318,
+    "surfMs": 500,
     "roadTris": 50360
    }
   },
@@ -1116,13 +1116,13 @@
     "tiltM2": 44.61315160353115,
     "roadTilt": 13,
     "roadTiltM2": 609.265398370791,
-    "over": 1,
-    "overM2": 0.5
+    "over": 0,
+    "overM2": 0
    },
    "perf": {
-    "roadMs": 3072,
-    "weldMs": 513,
-    "surfMs": 310,
+    "roadMs": 4914,
+    "weldMs": 429,
+    "surfMs": 559,
     "roadTris": 46728
    }
   },
@@ -1143,9 +1143,9 @@
     "overM2": 0.5625
    },
    "perf": {
-    "roadMs": 3099,
-    "weldMs": 555,
-    "surfMs": 454,
+    "roadMs": 5358,
+    "weldMs": 397,
+    "surfMs": 1048,
     "roadTris": 63590
    }
   },
@@ -1166,9 +1166,9 @@
     "overM2": 39.875
    },
    "perf": {
-    "roadMs": 4065,
-    "weldMs": 639,
-    "surfMs": 741,
+    "roadMs": 5614,
+    "weldMs": 435,
+    "surfMs": 1085,
     "roadTris": 55050
    }
   },
@@ -1189,9 +1189,9 @@
     "overM2": 0.5625
    },
    "perf": {
-    "roadMs": 1343,
-    "weldMs": 241,
-    "surfMs": 248,
+    "roadMs": 2451,
+    "weldMs": 238,
+    "surfMs": 448,
     "roadTris": 20906
    }
   },
@@ -1212,9 +1212,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2149,
-    "weldMs": 338,
-    "surfMs": 199,
+    "roadMs": 3215,
+    "weldMs": 309,
+    "surfMs": 289,
     "roadTris": 24116
    }
   },
@@ -1232,12 +1232,12 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 9,
-    "overM2": 25.6875
+    "overM2": 26.125
    },
    "perf": {
-    "roadMs": 2610,
-    "weldMs": 481,
-    "surfMs": 346,
+    "roadMs": 4162,
+    "weldMs": 290,
+    "surfMs": 797,
     "roadTris": 40379
    }
   },
@@ -1258,9 +1258,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 6958,
-    "weldMs": 752,
-    "surfMs": 1586,
+    "roadMs": 6660,
+    "weldMs": 537,
+    "surfMs": 1281,
     "roadTris": 86451
    }
   },
@@ -1281,9 +1281,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 1759,
-    "weldMs": 338,
-    "surfMs": 259,
+    "roadMs": 1726,
+    "weldMs": 186,
+    "surfMs": 322,
     "roadTris": 23548
    }
   },
@@ -1304,9 +1304,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 524,
-    "weldMs": 68,
-    "surfMs": 8,
+    "roadMs": 612,
+    "weldMs": 66,
+    "surfMs": 7,
     "roadTris": 112
    }
   },
@@ -1324,12 +1324,12 @@
     "roadTilt": 1,
     "roadTiltM2": 1.9849865436553955,
     "over": 3,
-    "overM2": 5.6875
+    "overM2": 5.3125
    },
    "perf": {
-    "roadMs": 3551,
-    "weldMs": 610,
-    "surfMs": 648,
+    "roadMs": 7174,
+    "weldMs": 485,
+    "surfMs": 1661,
     "roadTris": 76338
    }
   },
@@ -1350,9 +1350,9 @@
     "overM2": 0.5
    },
    "perf": {
-    "roadMs": 3751,
-    "weldMs": 609,
-    "surfMs": 766,
+    "roadMs": 5728,
+    "weldMs": 374,
+    "surfMs": 1208,
     "roadTris": 70415
    }
   },
@@ -1373,9 +1373,9 @@
     "overM2": 0.875
    },
    "perf": {
-    "roadMs": 3735,
-    "weldMs": 727,
-    "surfMs": 673,
+    "roadMs": 5263,
+    "weldMs": 388,
+    "surfMs": 870,
     "roadTris": 55415
    }
   },
@@ -1396,9 +1396,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 3786,
-    "weldMs": 723,
-    "surfMs": 649,
+    "roadMs": 6189,
+    "weldMs": 452,
+    "surfMs": 1061,
     "roadTris": 70413
    }
   },
@@ -1419,9 +1419,9 @@
     "overM2": 0.5
    },
    "perf": {
-    "roadMs": 2936,
-    "weldMs": 410,
-    "surfMs": 680,
+    "roadMs": 5444,
+    "weldMs": 363,
+    "surfMs": 1205,
     "roadTris": 48446
    }
   },
@@ -1442,9 +1442,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2278,
-    "weldMs": 382,
-    "surfMs": 604,
+    "roadMs": 3890,
+    "weldMs": 316,
+    "surfMs": 833,
     "roadTris": 40126
    }
   },
@@ -1465,9 +1465,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2520,
-    "weldMs": 388,
-    "surfMs": 542,
+    "roadMs": 3735,
+    "weldMs": 280,
+    "surfMs": 809,
     "roadTris": 38335
    }
   },
@@ -1488,9 +1488,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 1891,
-    "weldMs": 362,
-    "surfMs": 400,
+    "roadMs": 2170,
+    "weldMs": 226,
+    "surfMs": 581,
     "roadTris": 20370
    }
   },
@@ -1511,9 +1511,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 4286,
-    "weldMs": 723,
-    "surfMs": 605,
+    "roadMs": 7298,
+    "weldMs": 534,
+    "surfMs": 891,
     "roadTris": 70401
    }
   },
@@ -1534,9 +1534,9 @@
     "overM2": 1.5625
    },
    "perf": {
-    "roadMs": 3342,
-    "weldMs": 486,
-    "surfMs": 525,
+    "roadMs": 3070,
+    "weldMs": 300,
+    "surfMs": 739,
     "roadTris": 44156
    }
   },
@@ -1554,12 +1554,12 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 18,
-    "overM2": 231.4375
+    "overM2": 233.625
    },
    "perf": {
-    "roadMs": 1382,
-    "weldMs": 371,
-    "surfMs": 55,
+    "roadMs": 1537,
+    "weldMs": 207,
+    "surfMs": 60,
     "roadTris": 12800
    }
   },
@@ -1580,9 +1580,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 3151,
-    "weldMs": 671,
-    "surfMs": 496,
+    "roadMs": 6937,
+    "weldMs": 383,
+    "surfMs": 1531,
     "roadTris": 65343
    }
   },
@@ -1603,9 +1603,9 @@
     "overM2": 10.375
    },
    "perf": {
-    "roadMs": 3180,
-    "weldMs": 587,
-    "surfMs": 485,
+    "roadMs": 5010,
+    "weldMs": 351,
+    "surfMs": 909,
     "roadTris": 60204
    }
   },
@@ -1626,9 +1626,9 @@
     "overM2": 3
    },
    "perf": {
-    "roadMs": 2630,
-    "weldMs": 359,
-    "surfMs": 457,
+    "roadMs": 4137,
+    "weldMs": 325,
+    "surfMs": 774,
     "roadTris": 43911
    }
   },
@@ -1649,9 +1649,9 @@
     "overM2": 4.4375
    },
    "perf": {
-    "roadMs": 2815,
-    "weldMs": 358,
-    "surfMs": 549,
+    "roadMs": 4907,
+    "weldMs": 365,
+    "surfMs": 798,
     "roadTris": 47970
    }
   },
@@ -1672,9 +1672,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 3608,
-    "weldMs": 572,
-    "surfMs": 629,
+    "roadMs": 6704,
+    "weldMs": 464,
+    "surfMs": 1348,
     "roadTris": 75046
    }
   },
@@ -1695,9 +1695,9 @@
     "overM2": 0.6875
    },
    "perf": {
-    "roadMs": 2649,
-    "weldMs": 435,
-    "surfMs": 550,
+    "roadMs": 4348,
+    "weldMs": 332,
+    "surfMs": 994,
     "roadTris": 39687
    }
   },
@@ -1718,9 +1718,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2594,
-    "weldMs": 349,
-    "surfMs": 520,
+    "roadMs": 4126,
+    "weldMs": 301,
+    "surfMs": 831,
     "roadTris": 43115
    }
   },
@@ -1741,9 +1741,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2213,
-    "weldMs": 330,
-    "surfMs": 404,
+    "roadMs": 1827,
+    "weldMs": 235,
+    "surfMs": 346,
     "roadTris": 29434
    }
   },
@@ -1764,9 +1764,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 1840,
-    "weldMs": 387,
-    "surfMs": 378,
+    "roadMs": 2038,
+    "weldMs": 210,
+    "surfMs": 445,
     "roadTris": 29460
    }
   },
@@ -1787,9 +1787,9 @@
     "overM2": 63.4375
    },
    "perf": {
-    "roadMs": 1819,
-    "weldMs": 337,
-    "surfMs": 170,
+    "roadMs": 1883,
+    "weldMs": 266,
+    "surfMs": 171,
     "roadTris": 14904
    }
   },
@@ -1810,9 +1810,9 @@
     "overM2": 1.0625
    },
    "perf": {
-    "roadMs": 2856,
-    "weldMs": 508,
-    "surfMs": 523,
+    "roadMs": 2769,
+    "weldMs": 325,
+    "surfMs": 625,
     "roadTris": 27878
    }
   },
@@ -1829,13 +1829,13 @@
     "tiltM2": 21.41966262087226,
     "roadTilt": 11,
     "roadTiltM2": 164.58204547688365,
-    "over": 3,
-    "overM2": 1.5
+    "over": 1,
+    "overM2": 0.5
    },
    "perf": {
-    "roadMs": 2498,
-    "weldMs": 300,
-    "surfMs": 467,
+    "roadMs": 4316,
+    "weldMs": 296,
+    "surfMs": 789,
     "roadTris": 51507
    }
   },
@@ -1852,13 +1852,13 @@
     "tiltM2": 3.857841338030994,
     "roadTilt": 3,
     "roadTiltM2": 3.3652112651616335,
-    "over": 2,
-    "overM2": 3.3125
+    "over": 3,
+    "overM2": 3.9375
    },
    "perf": {
-    "roadMs": 4940,
-    "weldMs": 728,
-    "surfMs": 1272,
+    "roadMs": 5169,
+    "weldMs": 374,
+    "surfMs": 920,
     "roadTris": 65882
    }
   },
@@ -1879,9 +1879,9 @@
     "overM2": 4.75
    },
    "perf": {
-    "roadMs": 3370,
-    "weldMs": 660,
-    "surfMs": 647,
+    "roadMs": 5095,
+    "weldMs": 327,
+    "surfMs": 1219,
     "roadTris": 60416
    }
   },
@@ -1898,13 +1898,13 @@
     "tiltM2": 4.293946456164122,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 6,
-    "overM2": 9.75
+    "over": 7,
+    "overM2": 10.375
    },
    "perf": {
-    "roadMs": 2308,
-    "weldMs": 337,
-    "surfMs": 323,
+    "roadMs": 4364,
+    "weldMs": 372,
+    "surfMs": 611,
     "roadTris": 39100
    }
   },
@@ -1925,9 +1925,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 5863,
-    "weldMs": 682,
-    "surfMs": 900,
+    "roadMs": 5893,
+    "weldMs": 392,
+    "surfMs": 1298,
     "roadTris": 73015
    }
   },
@@ -1948,9 +1948,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2134,
-    "weldMs": 287,
-    "surfMs": 506,
+    "roadMs": 3537,
+    "weldMs": 328,
+    "surfMs": 861,
     "roadTris": 33188
    }
   },
@@ -1971,9 +1971,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2207,
-    "weldMs": 387,
-    "surfMs": 386,
+    "roadMs": 1977,
+    "weldMs": 250,
+    "surfMs": 403,
     "roadTris": 30731
    }
   },
@@ -1994,9 +1994,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2263,
-    "weldMs": 249,
-    "surfMs": 420,
+    "roadMs": 2727,
+    "weldMs": 250,
+    "surfMs": 392,
     "roadTris": 31218
    }
   },
@@ -2017,9 +2017,9 @@
     "overM2": 29.8125
    },
    "perf": {
-    "roadMs": 2295,
-    "weldMs": 352,
-    "surfMs": 348,
+    "roadMs": 2399,
+    "weldMs": 215,
+    "surfMs": 374,
     "roadTris": 27740
    }
   },
@@ -2040,9 +2040,9 @@
     "overM2": 57.6875
    },
    "perf": {
-    "roadMs": 1295,
-    "weldMs": 313,
-    "surfMs": 96,
+    "roadMs": 1147,
+    "weldMs": 151,
+    "surfMs": 78,
     "roadTris": 14202
    }
   },
@@ -2063,9 +2063,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2900,
-    "weldMs": 1147,
-    "surfMs": 404,
+    "roadMs": 2954,
+    "weldMs": 317,
+    "surfMs": 535,
     "roadTris": 38518
    }
   },
@@ -2086,9 +2086,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 1937,
-    "weldMs": 393,
-    "surfMs": 550,
+    "roadMs": 3229,
+    "weldMs": 272,
+    "surfMs": 792,
     "roadTris": 27725
    }
   },
@@ -2109,9 +2109,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 1680,
-    "weldMs": 298,
-    "surfMs": 320,
+    "roadMs": 3109,
+    "weldMs": 296,
+    "surfMs": 627,
     "roadTris": 29100
    }
   },
@@ -2132,9 +2132,9 @@
     "overM2": 0.8125
    },
    "perf": {
-    "roadMs": 2873,
-    "weldMs": 657,
-    "surfMs": 253,
+    "roadMs": 3398,
+    "weldMs": 315,
+    "surfMs": 466,
     "roadTris": 22291
    }
   },
@@ -2155,9 +2155,9 @@
     "overM2": 26.375
    },
    "perf": {
-    "roadMs": 3768,
-    "weldMs": 606,
-    "surfMs": 741,
+    "roadMs": 4326,
+    "weldMs": 317,
+    "surfMs": 900,
     "roadTris": 45863
    }
   },
@@ -2178,9 +2178,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2208,
-    "weldMs": 365,
-    "surfMs": 549,
+    "roadMs": 1955,
+    "weldMs": 189,
+    "surfMs": 473,
     "roadTris": 32181
    }
   },
@@ -2201,9 +2201,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 701,
-    "weldMs": 141,
-    "surfMs": 109,
+    "roadMs": 725,
+    "weldMs": 79,
+    "surfMs": 130,
     "roadTris": 8358
    }
   },
@@ -2224,9 +2224,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 640,
-    "weldMs": 152,
-    "surfMs": 73,
+    "roadMs": 607,
+    "weldMs": 75,
+    "surfMs": 66,
     "roadTris": 3044
    }
   },
@@ -2247,9 +2247,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 350,
-    "weldMs": 110,
-    "surfMs": 61,
+    "roadMs": 331,
+    "weldMs": 77,
+    "surfMs": 54,
     "roadTris": 1176
    }
   },
@@ -2270,9 +2270,9 @@
     "overM2": 0.5625
    },
    "perf": {
-    "roadMs": 2942,
-    "weldMs": 478,
-    "surfMs": 332,
+    "roadMs": 2285,
+    "weldMs": 291,
+    "surfMs": 434,
     "roadTris": 18034
    }
   },
@@ -2293,9 +2293,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 754,
-    "weldMs": 176,
-    "surfMs": 173,
+    "roadMs": 1261,
+    "weldMs": 215,
+    "surfMs": 257,
     "roadTris": 8361
    }
   },
@@ -2316,9 +2316,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 1856,
-    "weldMs": 378,
-    "surfMs": 375,
+    "roadMs": 3002,
+    "weldMs": 287,
+    "surfMs": 637,
     "roadTris": 26722
    }
   },
@@ -2339,9 +2339,9 @@
     "overM2": 3.8125
    },
    "perf": {
-    "roadMs": 1561,
-    "weldMs": 421,
-    "surfMs": 248,
+    "roadMs": 2164,
+    "weldMs": 253,
+    "surfMs": 392,
     "roadTris": 21912
    }
   },
@@ -2362,9 +2362,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 718,
-    "weldMs": 202,
-    "surfMs": 219,
+    "roadMs": 793,
+    "weldMs": 149,
+    "surfMs": 209,
     "roadTris": 11872
    }
   },
@@ -2385,9 +2385,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 1037,
-    "weldMs": 268,
-    "surfMs": 134,
+    "roadMs": 987,
+    "weldMs": 116,
+    "surfMs": 179,
     "roadTris": 7051
    }
   },
@@ -2408,9 +2408,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 393,
-    "weldMs": 105,
-    "surfMs": 77,
+    "roadMs": 581,
+    "weldMs": 89,
+    "surfMs": 121,
     "roadTris": 1765
    }
   },
@@ -2431,9 +2431,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 200,
-    "weldMs": 95,
-    "surfMs": 46,
+    "roadMs": 179,
+    "weldMs": 62,
+    "surfMs": 53,
     "roadTris": 744
    }
   },
@@ -2451,12 +2451,12 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 5,
-    "overM2": 7.625
+    "overM2": 7.4375
    },
    "perf": {
-    "roadMs": 4034,
-    "weldMs": 683,
-    "surfMs": 743,
+    "roadMs": 5228,
+    "weldMs": 381,
+    "surfMs": 978,
     "roadTris": 60244
    }
   },
@@ -2477,9 +2477,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 533,
-    "weldMs": 201,
-    "surfMs": 89,
+    "roadMs": 654,
+    "weldMs": 141,
+    "surfMs": 158,
     "roadTris": 2155
    }
   },
@@ -2500,9 +2500,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 482,
-    "weldMs": 170,
-    "surfMs": 203,
+    "roadMs": 734,
+    "weldMs": 166,
+    "surfMs": 291,
     "roadTris": 7308
    }
   },
@@ -2523,9 +2523,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 265,
-    "weldMs": 106,
-    "surfMs": 96,
+    "roadMs": 497,
+    "weldMs": 124,
+    "surfMs": 149,
     "roadTris": 3046
    }
   },
@@ -2546,9 +2546,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 215,
-    "weldMs": 64,
-    "surfMs": 31,
+    "roadMs": 216,
+    "weldMs": 46,
+    "surfMs": 32,
     "roadTris": 554
    }
   },
@@ -2569,9 +2569,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 538,
-    "weldMs": 100,
-    "surfMs": 147,
+    "roadMs": 570,
+    "weldMs": 198,
+    "surfMs": 69,
     "roadTris": 1217
    }
   },
@@ -2592,9 +2592,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 552,
-    "weldMs": 154,
-    "surfMs": 103,
+    "roadMs": 692,
+    "weldMs": 94,
+    "surfMs": 172,
     "roadTris": 4835
    }
   },
@@ -2611,13 +2611,13 @@
     "tiltM2": 50.24187638051808,
     "roadTilt": 17,
     "roadTiltM2": 452.56775442510843,
-    "over": 6,
-    "overM2": 6.8125
+    "over": 5,
+    "overM2": 6.3125
    },
    "perf": {
-    "roadMs": 6356,
-    "weldMs": 650,
-    "surfMs": 749,
+    "roadMs": 6026,
+    "weldMs": 418,
+    "surfMs": 869,
     "roadTris": 80137
    }
   },
@@ -2638,9 +2638,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 2088,
-    "weldMs": 296,
-    "surfMs": 322,
+    "roadMs": 2485,
+    "weldMs": 309,
+    "surfMs": 514,
     "roadTris": 19145
    }
   },
@@ -2661,9 +2661,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 420,
-    "weldMs": 170,
-    "surfMs": 149,
+    "roadMs": 533,
+    "weldMs": 124,
+    "surfMs": 208,
     "roadTris": 5145
    }
   },
@@ -2684,9 +2684,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 408,
-    "weldMs": 145,
-    "surfMs": 142,
+    "roadMs": 478,
+    "weldMs": 117,
+    "surfMs": 186,
     "roadTris": 3904
    }
   },
@@ -2707,9 +2707,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 208,
-    "weldMs": 90,
-    "surfMs": 65,
+    "roadMs": 262,
+    "weldMs": 70,
+    "surfMs": 90,
     "roadTris": 1990
    }
   },
@@ -2730,9 +2730,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 348,
-    "weldMs": 126,
-    "surfMs": 92,
+    "roadMs": 554,
+    "weldMs": 94,
+    "surfMs": 185,
     "roadTris": 2149
    }
   },
@@ -2753,9 +2753,9 @@
     "overM2": 191
    },
    "perf": {
-    "roadMs": 588,
-    "weldMs": 155,
-    "surfMs": 56,
+    "roadMs": 518,
+    "weldMs": 82,
+    "surfMs": 57,
     "roadTris": 3928
    }
   },
@@ -2776,9 +2776,9 @@
     "overM2": 0
    },
    "perf": {
-    "roadMs": 328,
-    "weldMs": 120,
-    "surfMs": 131,
+    "roadMs": 379,
+    "weldMs": 63,
+    "surfMs": 167,
     "roadTris": 6122
    }
   }
@@ -2805,9 +2805,9 @@
   {
    "tile": "E10",
    "kind": "over",
-   "m2": 202.5,
+   "m2": 202.8,
    "worst": 3.6,
-   "score": 728.9671347478925,
+   "score": 730.0920840299109,
    "at": "-894.7, 2855",
    "street": ""
   },
@@ -2841,9 +2841,9 @@
   {
    "tile": "E10",
    "kind": "over",
-   "m2": 94.1,
+   "m2": 94.4,
    "worst": 4.67,
-   "score": 439.8725988612008,
+   "score": 441.3329992558263,
    "at": "-731.2, 2906",
    "street": ""
   },
@@ -2859,9 +2859,9 @@
   {
    "tile": "E10",
    "kind": "over",
-   "m2": 93.1,
+   "m2": 93.8,
    "worst": 4.46,
-   "score": 415.43357516891035,
+   "score": 418.5025941929923,
    "at": "-823.7, 2856.5",
    "street": ""
   },
@@ -2886,9 +2886,9 @@
   {
    "tile": "E10",
    "kind": "over",
-   "m2": 53.3,
+   "m2": 53.5,
    "worst": 6.19,
-   "score": 329.9885892297183,
+   "score": 331.14915871118274,
    "at": "-837.7, 2847.5",
    "street": ""
   },
@@ -2929,21 +2929,21 @@
    "street": "Chaussée de Saint-Job 255"
   },
   {
+   "tile": "I11",
+   "kind": "over",
+   "m2": 95.3,
+   "worst": 2.79,
+   "score": 265.70861593026007,
+   "at": "1260, 3440",
+   "street": ""
+  },
+  {
    "tile": "F7",
    "kind": "lump",
    "m2": 135,
    "worst": 1.96,
    "score": 265.1236152648926,
    "at": "-307, 1467",
-   "street": ""
-  },
-  {
-   "tile": "I11",
-   "kind": "over",
-   "m2": 94.7,
-   "worst": 2.79,
-   "score": 263.96626435038957,
-   "at": "1260, 3440",
    "street": ""
   },
   {
@@ -3012,9 +3012,9 @@
   {
    "tile": "D10",
    "kind": "over",
-   "m2": 53.4,
+   "m2": 53.8,
    "worst": 3.39,
-   "score": 180.90782266448224,
+   "score": 182.17883781200788,
    "at": "-1259, 2877",
    "street": ""
   },
@@ -3199,21 +3199,21 @@
    "street": "Avenue Kersbeek 306"
   },
   {
+   "tile": "B7",
+   "kind": "over",
+   "m2": 45.3,
+   "worst": 2.19,
+   "score": 99.33897758049328,
+   "at": "-2414, 1214",
+   "street": ""
+  },
+  {
    "tile": "F4",
    "kind": "lump",
    "m2": 77,
    "worst": 1.29,
    "score": 99.02165222167969,
    "at": "-300, -140",
-   "street": ""
-  },
-  {
-   "tile": "B7",
-   "kind": "over",
-   "m2": 44.6,
-   "worst": 2.19,
-   "score": 97.69474622743684,
-   "at": "-2414, 1214",
    "street": ""
   },
   {
@@ -3241,6 +3241,15 @@
    "worst": 2.44,
    "score": 94.85914109515984,
    "at": "-1198, 2685",
+   "street": ""
+  },
+  {
+   "tile": "D10",
+   "kind": "over",
+   "m2": 40.9,
+   "worst": 2.26,
+   "score": 92.42151493594213,
+   "at": "-1423.2, 2999.8",
    "street": ""
   },
   {
@@ -3278,15 +3287,6 @@
    "score": 88.77938842773438,
    "at": "-661, 1038",
    "street": "Rue Papenkasteel 89"
-  },
-  {
-   "tile": "D10",
-   "kind": "over",
-   "m2": 39.1,
-   "worst": 2.26,
-   "score": 88.18846845032647,
-   "at": "-1423.2, 2999.8",
-   "street": ""
   },
   {
    "tile": "D2",
@@ -3723,9 +3723,9 @@
   {
    "tile": "D10",
    "kind": "over",
-   "m2": 29.4,
+   "m2": 29.5,
    "worst": 1.9,
-   "score": 55.78588641534113,
+   "score": 55.90432778777286,
    "at": "-1191, 2837",
    "street": ""
   },
@@ -3865,6 +3865,15 @@
    "street": ""
   },
   {
+   "tile": "I11",
+   "kind": "over",
+   "m2": 24.8,
+   "worst": 1.98,
+   "score": 49.058296366563354,
+   "at": "1056, 3109",
+   "street": ""
+  },
+  {
    "tile": "F4",
    "kind": "lump",
    "m2": 28,
@@ -3872,15 +3881,6 @@
    "score": 48.762451171875,
    "at": "-146, -72",
    "street": "Avenue Paul Stroobant 46"
-  },
-  {
-   "tile": "I11",
-   "kind": "over",
-   "m2": 24.4,
-   "worst": 1.98,
-   "score": 48.31686115699313,
-   "at": "1056, 3109",
-   "street": ""
   },
   {
    "tile": "H3",
@@ -3901,15 +3901,6 @@
    "street": ""
   },
   {
-   "tile": "G3",
-   "kind": "over",
-   "m2": 11.3,
-   "worst": 4.17,
-   "score": 47.15677744487059,
-   "at": "369.3, -568.2",
-   "street": "Avenue De Fré 139"
-  },
-  {
    "tile": "D2",
    "kind": "lump",
    "m2": 26,
@@ -3926,6 +3917,15 @@
    "score": 47.011756896972656,
    "at": "2097, 3808",
    "street": ""
+  },
+  {
+   "tile": "G3",
+   "kind": "over",
+   "m2": 11.3,
+   "worst": 4.12,
+   "score": 46.64497381785643,
+   "at": "369.3, -568.2",
+   "street": "Avenue De Fré 139"
   },
   {
    "tile": "O11",
@@ -4308,9 +4308,9 @@
   {
    "tile": "I11",
    "kind": "over",
-   "m2": 20.4,
+   "m2": 20.3,
    "worst": 1.71,
-   "score": 34.75300682230038,
+   "score": 34.539798191488714,
    "at": "1035, 3077",
    "street": ""
   },
@@ -4495,6 +4495,15 @@
    "street": ""
   },
   {
+   "tile": "I11",
+   "kind": "over",
+   "m2": 15,
+   "worst": 1.91,
+   "score": 28.588005406814645,
+   "at": "1077, 3134",
+   "street": ""
+  },
+  {
    "tile": "D5",
    "kind": "lump",
    "m2": 25,
@@ -4547,15 +4556,6 @@
    "score": 27.993412017822266,
    "at": "-1262, 2532",
    "street": "Vieux Chemin 68"
-  },
-  {
-   "tile": "I11",
-   "kind": "over",
-   "m2": 14.6,
-   "worst": 1.91,
-   "score": 27.754188582449217,
-   "at": "1077, 3134",
-   "street": ""
   },
   {
    "tile": "H10",
@@ -4747,15 +4747,6 @@
    "street": "Vieux Chemin 76"
   },
   {
-   "tile": "F10",
-   "kind": "over",
-   "m2": 16.3,
-   "worst": 1.47,
-   "score": 23.891530676563022,
-   "at": "-361, 2896",
-   "street": ""
-  },
-  {
    "tile": "G5",
    "kind": "lump",
    "m2": 19,
@@ -4772,6 +4763,15 @@
    "score": 23.74736785888672,
    "at": "1037, 298",
    "street": "Avenue Albert Lancaster 79A"
+  },
+  {
+   "tile": "F10",
+   "kind": "over",
+   "m2": 16.1,
+   "worst": 1.47,
+   "score": 23.70774967135869,
+   "at": "-361, 2896",
+   "street": ""
   },
   {
    "tile": "I4",
@@ -5143,6 +5143,15 @@
    "street": "Rue Stanley 37"
   },
   {
+   "tile": "G9",
+   "kind": "over",
+   "m2": 7.9,
+   "worst": 2.27,
+   "score": 17.87359286313991,
+   "at": "104, 2100",
+   "street": "Rue Engeland 642"
+  },
+  {
    "tile": "H10",
    "kind": "lump",
    "m2": 9,
@@ -5159,15 +5168,6 @@
    "score": 17.48865509033203,
    "at": "1264, -678",
    "street": ""
-  },
-  {
-   "tile": "G9",
-   "kind": "over",
-   "m2": 7.7,
-   "worst": 2.27,
-   "score": 17.448031128303242,
-   "at": "104, 2100",
-   "street": "Rue Engeland 642"
   },
   {
    "tile": "E6",
@@ -5215,15 +5215,6 @@
    "street": ""
   },
   {
-   "tile": "I11",
-   "kind": "over",
-   "m2": 11.9,
-   "worst": 1.41,
-   "score": 16.827950981194203,
-   "at": "1048, 3123",
-   "street": ""
-  },
-  {
    "tile": "E10",
    "kind": "hole",
    "m2": 14,
@@ -5240,6 +5231,15 @@
    "score": 16.63339957341798,
    "at": "-1295.7, 840.7",
    "street": "Rue François Vervloet 9"
+  },
+  {
+   "tile": "I11",
+   "kind": "over",
+   "m2": 11.8,
+   "worst": 1.41,
+   "score": 16.563637614997436,
+   "at": "1048, 3123",
+   "street": ""
   },
   {
    "tile": "C7",
@@ -5629,6 +5629,15 @@
    "street": ""
   },
   {
+   "tile": "I11",
+   "kind": "over",
+   "m2": 6.9,
+   "worst": 1.86,
+   "score": 12.908083649397522,
+   "at": "1068, 3133",
+   "street": ""
+  },
+  {
    "tile": "D10",
    "kind": "roadTilt",
    "m2": 39.7,
@@ -5735,15 +5744,6 @@
    "score": 12.62750244140625,
    "at": "334, -359",
    "street": "Rue Groeselenberg 57A"
-  },
-  {
-   "tile": "I11",
-   "kind": "over",
-   "m2": 6.7,
-   "worst": 1.86,
-   "score": 12.442927481851665,
-   "at": "1068, 3133",
-   "street": ""
   },
   {
    "tile": "L5",
@@ -6254,7 +6254,7 @@
    "kind": "over",
    "m2": 4.7,
    "worst": 2.13,
-   "score": 10.00440818562569,
+   "score": 9.997783129358906,
    "at": "280, -533.7",
    "street": "Avenue De Fré 133"
   },
@@ -7051,6 +7051,15 @@
    "street": "Avenue du Prince de Ligne 97"
   },
   {
+   "tile": "I11",
+   "kind": "over",
+   "m2": 6.4,
+   "worst": 1.24,
+   "score": 7.912337366350043,
+   "at": "1450, 3492",
+   "street": ""
+  },
+  {
    "tile": "D10",
    "kind": "lump",
    "m2": 11,
@@ -7202,15 +7211,6 @@
    "score": 7.533904755289904,
    "at": "-137.3, 678.2",
    "street": "Chaussée de Saint-Job 334"
-  },
-  {
-   "tile": "I11",
-   "kind": "over",
-   "m2": 6.1,
-   "worst": 1.24,
-   "score": 7.524477691528962,
-   "at": "1450, 3492",
-   "street": ""
   },
   {
    "tile": "D5",
@@ -7942,6 +7942,15 @@
    "street": "Drève de Lorraine 41"
   },
   {
+   "tile": "G9",
+   "kind": "over",
+   "m2": 4.8,
+   "worst": 1.3,
+   "score": 6.233485300346734,
+   "at": "54, 2081.3",
+   "street": "Rue Engeland 642"
+  },
+  {
    "tile": "D9",
    "kind": "spike",
    "m2": 10,
@@ -8165,15 +8174,6 @@
    "score": 5.920867919921875,
    "at": "1130, 577",
    "street": "Place de Saint-Job 11"
-  },
-  {
-   "tile": "G9",
-   "kind": "over",
-   "m2": 4.6,
-   "worst": 1.3,
-   "score": 5.909667882146904,
-   "at": "54, 2081.3",
-   "street": "Rue Engeland 642"
   },
   {
    "tile": "G10",
@@ -9337,6 +9337,15 @@
    "street": "Avenue de Floréal 114"
   },
   {
+   "tile": "I11",
+   "kind": "over",
+   "m2": 3.4,
+   "worst": 1.27,
+   "score": 4.3546693052615915,
+   "at": "1071, 3119",
+   "street": ""
+  },
+  {
    "tile": "C6",
    "kind": "lump",
    "m2": 6,
@@ -9949,6 +9958,15 @@
    "street": ""
   },
   {
+   "tile": "E10",
+   "kind": "over",
+   "m2": 3.4,
+   "worst": 1.13,
+   "score": 3.810735968552425,
+   "at": "-799, 2825.5",
+   "street": ""
+  },
+  {
    "tile": "G10",
    "kind": "roadTilt",
    "m2": 28.5,
@@ -10072,15 +10090,6 @@
    "worst": 0.93,
    "score": 3.7275238037109375,
    "at": "-1199, 2682",
-   "street": ""
-  },
-  {
-   "tile": "I11",
-   "kind": "over",
-   "m2": 2.9,
-   "worst": 1.27,
-   "score": 3.7212628608599054,
-   "at": "1071, 3119",
    "street": ""
   },
   {
@@ -10531,15 +10540,6 @@
    "worst": 0.69,
    "score": 3.4603118896484375,
    "at": "-1792, -954",
-   "street": ""
-  },
-  {
-   "tile": "E10",
-   "kind": "over",
-   "m2": 3.1,
-   "worst": 1.13,
-   "score": 3.4578900455383117,
-   "at": "-799, 2825.5",
    "street": ""
   },
   {
@@ -11290,15 +11290,6 @@
    "street": "Rue Copernic 4"
   },
   {
-   "tile": "D4",
-   "kind": "over",
-   "m2": 2,
-   "worst": 1.48,
-   "score": 2.9507439219089093,
-   "at": "-1243, -2",
-   "street": "Avenue Adolphe Wansart 3"
-  },
-  {
    "tile": "C3",
    "kind": "lump",
    "m2": 5,
@@ -11396,6 +11387,15 @@
    "score": 2.8621292114257812,
    "at": "-1116, 863",
    "street": "Dieweg 3"
+  },
+  {
+   "tile": "D4",
+   "kind": "over",
+   "m2": 1.9,
+   "worst": 1.48,
+   "score": 2.858533174349256,
+   "at": "-1243, -2",
+   "street": "Avenue Adolphe Wansart 3"
   },
   {
    "tile": "D10",
@@ -11657,15 +11657,6 @@
    "score": 2.723609221404548,
    "at": "319.6, 2543.2",
    "street": "Avenue Dolez 534"
-  },
-  {
-   "tile": "H2",
-   "kind": "over",
-   "m2": 3.4,
-   "worst": 0.81,
-   "score": 2.7192863453759415,
-   "at": "865.8, -1233.7",
-   "street": ""
   },
   {
    "tile": "F9",
@@ -13889,6 +13880,15 @@
    "score": 2.026611328125,
    "at": "-1677, -209",
    "street": "Rue Victor Allard 242"
+  },
+  {
+   "tile": "H2",
+   "kind": "over",
+   "m2": 3,
+   "worst": 0.67,
+   "score": 2.0223310031278174,
+   "at": "865.8, -1234",
+   "street": ""
   },
   {
    "tile": "C9",
@@ -19219,15 +19219,6 @@
    "street": "Avenue Fond'Roy 114"
   },
   {
-   "tile": "F3",
-   "kind": "over",
-   "m2": 0.9,
-   "worst": 1.4,
-   "score": 1.228996841576257,
-   "at": "-18, -572",
-   "street": ""
-  },
-  {
    "tile": "C4",
    "kind": "over",
    "m2": 1.1,
@@ -20551,6 +20542,15 @@
    "street": ""
   },
   {
+   "tile": "D6",
+   "kind": "over",
+   "m2": 0.5,
+   "worst": 2.21,
+   "score": 1.1043464313606464,
+   "at": "-1061.5, 859.5",
+   "street": "Dieweg 22"
+  },
+  {
    "tile": "H3",
    "kind": "tilt",
    "m2": 6.6,
@@ -21811,6 +21811,15 @@
    "street": ""
   },
   {
+   "tile": "F3",
+   "kind": "over",
+   "m2": 0.7,
+   "worst": 1.4,
+   "score": 0.965640375524202,
+   "at": "-18, -572",
+   "street": ""
+  },
+  {
    "tile": "J11",
    "kind": "tilt",
    "m2": 5.8,
@@ -21908,15 +21917,6 @@
    "score": 0.9267350566595118,
    "at": "-248.1, 439.7",
    "street": "Rue du Repos 109"
-  },
-  {
-   "tile": "D6",
-   "kind": "over",
-   "m2": 0.5,
-   "worst": 1.85,
-   "score": 0.9263021122078143,
-   "at": "-1061.5, 859.5",
-   "street": "Dieweg 22"
   },
   {
    "tile": "F2",
@@ -23404,15 +23404,6 @@
    "street": "Avenue De Fré 133"
   },
   {
-   "tile": "M5",
-   "kind": "over",
-   "m2": 1.1,
-   "worst": 0.55,
-   "score": 0.5827602654396866,
-   "at": "3419.5, 342",
-   "street": ""
-  },
-  {
    "tile": "D4",
    "kind": "roadTilt",
    "m2": 3.7,
@@ -24049,6 +24040,15 @@
    "worst": 0.26,
    "score": 0.483438725075916,
    "at": "-1806.2, -936.5",
+   "street": ""
+  },
+  {
+   "tile": "M5",
+   "kind": "over",
+   "m2": 0.9,
+   "worst": 0.55,
+   "score": 0.479920218597389,
+   "at": "3419.5, 342",
    "street": ""
   },
   {
@@ -24866,8 +24866,8 @@
    "kind": "over",
    "m2": 2.1,
    "worst": 0.17,
-   "score": 0.35982635625783477,
-   "at": "-2384.2, 1372.8",
+   "score": 0.3598260179219315,
+   "at": "-2384.2, 1373.3",
    "street": ""
   },
   {
@@ -26032,6 +26032,15 @@
    "street": "Rue Gabrielle 38"
   },
   {
+   "tile": "N5",
+   "kind": "over",
+   "m2": 1.1,
+   "worst": 0.21,
+   "score": 0.23735715690653159,
+   "at": "3962, 295.3",
+   "street": ""
+  },
+  {
    "tile": "L5",
    "kind": "tilt",
    "m2": 1.1,
@@ -26200,15 +26209,6 @@
    "worst": 0.16,
    "score": 0.22490017911236387,
    "at": "-1824.7, -792.7",
-   "street": ""
-  },
-  {
-   "tile": "N5",
-   "kind": "over",
-   "m2": 1.1,
-   "worst": 0.21,
-   "score": 0.22417064818950205,
-   "at": "3962, 295.3",
    "street": ""
   },
   {
@@ -26851,6 +26851,15 @@
    "street": ""
   },
   {
+   "tile": "D10",
+   "kind": "over",
+   "m2": 1.3,
+   "worst": 0.13,
+   "score": 0.1739185963312897,
+   "at": "-1108.2, 2903",
+   "street": ""
+  },
+  {
    "tile": "J10",
    "kind": "tilt",
    "m2": 0.8,
@@ -27110,15 +27119,6 @@
    "score": 0.15973227731559977,
    "at": "1410.7, 2862.2",
    "street": "Avenue des Aubépines 152"
-  },
-  {
-   "tile": "N5",
-   "kind": "over",
-   "m2": 0.6,
-   "worst": 0.28,
-   "score": 0.1593739519217987,
-   "at": "3684.3, 330.5",
-   "street": ""
   },
   {
    "tile": "F7",
@@ -27472,15 +27472,6 @@
    "street": "Avenue Coghen 242"
   },
   {
-   "tile": "G4",
-   "kind": "over",
-   "m2": 0.5,
-   "worst": 0.28,
-   "score": 0.14161173495031676,
-   "at": "286.5, -425",
-   "street": "Chemin de la Source 1"
-  },
-  {
    "tile": "F8",
    "kind": "roadTilt",
    "m2": 1,
@@ -27542,15 +27533,6 @@
    "score": 0.13552217733276226,
    "at": "210.6, -1175.8",
    "street": "Avenue Adolphe Dupuich 24"
-  },
-  {
-   "tile": "G10",
-   "kind": "over",
-   "m2": 0.8,
-   "worst": 0.18,
-   "score": 0.13532092282346753,
-   "at": "335.3, 2609.3",
-   "street": "Avenue Dolez 261"
   },
   {
    "tile": "A5",
@@ -28255,6 +28237,15 @@
    "street": "Clos Andrée De Jongh 2"
   },
   {
+   "tile": "G10",
+   "kind": "over",
+   "m2": 0.6,
+   "worst": 0.15,
+   "score": 0.09570381797992411,
+   "at": "335.3, 2609.3",
+   "street": "Avenue Dolez 261"
+  },
+  {
    "tile": "N6",
    "kind": "roadTilt",
    "m2": 0.6,
@@ -28579,15 +28570,6 @@
    "street": ""
   },
   {
-   "tile": "J3",
-   "kind": "over",
-   "m2": 0.5,
-   "worst": 0.15,
-   "score": 0.07735661558301388,
-   "at": "1651.5, -787.2",
-   "street": ""
-  },
-  {
    "tile": "F10",
    "kind": "over",
    "m2": 0.8,
@@ -28624,6 +28606,15 @@
    "street": "Drève du Caporal 40"
   },
   {
+   "tile": "J6",
+   "kind": "over",
+   "m2": 0.6,
+   "worst": 0.12,
+   "score": 0.07190869262753807,
+   "at": "1675.8, 881.8",
+   "street": "Chaussée de Waterloo 1329C"
+  },
+  {
    "tile": "D10",
    "kind": "over",
    "m2": 0.6,
@@ -28639,15 +28630,6 @@
    "worst": 0.13,
    "score": 0.0714336633682251,
    "at": "1836.5, -1367.5",
-   "street": ""
-  },
-  {
-   "tile": "C4",
-   "kind": "over",
-   "m2": 0.7,
-   "worst": 0.09,
-   "score": 0.06477643368242436,
-   "at": "-1799.5, -276.5",
    "street": ""
   },
   {
@@ -28669,13 +28651,22 @@
    "street": ""
   },
   {
-   "tile": "D6",
+   "tile": "J4",
    "kind": "over",
-   "m2": 0.7,
+   "m2": 0.6,
+   "worst": 0.1,
+   "score": 0.06341307071129343,
+   "at": "1685.8, -173",
+   "street": "Chaussée de Waterloo 1131"
+  },
+  {
+   "tile": "C4",
+   "kind": "over",
+   "m2": 0.6,
    "worst": 0.09,
-   "score": 0.05920941054063,
-   "at": "-1381.2, 581",
-   "street": "Rue Egide Van Ophem 3"
+   "score": 0.05888766698402215,
+   "at": "-1799.5, -276.5",
+   "street": ""
   },
   {
    "tile": "F8",
@@ -28768,13 +28759,13 @@
    "street": ""
   },
   {
-   "tile": "J3",
+   "tile": "E7",
    "kind": "over",
    "m2": 0.5,
    "worst": 0.09,
-   "score": 0.04554434014079334,
-   "at": "1548.5, -845.2",
-   "street": "Chaussée de Waterloo 963"
+   "score": 0.045553443217990264,
+   "at": "-570.2, 1301.8",
+   "street": "Rue de Verrewinkel 17"
   },
   {
    "tile": "F6",
@@ -28811,15 +28802,6 @@
    "score": 0.04298554516439168,
    "at": "1751, 872.5",
    "street": "Chaussée de Waterloo 1308"
-  },
-  {
-   "tile": "C8",
-   "kind": "over",
-   "m2": 0.5,
-   "worst": 0.08,
-   "score": 0.038677156460867224,
-   "at": "-1749.7, 1750.3",
-   "street": "Rue Steenvelt 24"
   },
   {
    "tile": "B7",

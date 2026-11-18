@@ -229,5 +229,5 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
 }
 items.sort((a, c3) => c3.score - a.score);
 const tm = d.times || {};
-const perf = { roadMs: tm.roads || 0, weldMs: tm["terrain weld"] || 0, surfMs: tm["surfaces + width fit"] || 0, roadTris: d.road.triangles || 0 };
+const perf = { roadMs: tm.roads || 0, weldMs: (tm["terrain weld"] || 0) + (tm["edge field"] || 0), surfMs: tm["surfaces + width fit"] || 0, roadTris: d.road.triangles || 0 };
 console.log(JSON.stringify({ tile: T, sum, perf, items: items.slice(0, 200) }));
