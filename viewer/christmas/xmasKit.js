@@ -16,11 +16,13 @@
 // mapping the modelled Nordmann sprays of models/christmas/fir_needles.ktx2 (tools/blender/firNeedles.py: top views in
 // v 0 .. 0.5, the same sprays from below in v 0.5 .. 1: the back face samples there: the silvery undersides), shaded
 // with the CANOPY normals the kit baked into NORMAL for both faces (normalViewGeometry: not flipped on the back face;
-// a card lit by its own plane reads as a flat leaf), the canopy AO in COLOR_0.b. The far levels keep the solid fronds.
+// a card lit by its own plane reads as a flat leaf), the canopy AO in COLOR_0.b. FIR ROUND 3: the MIDDLE level (LOD1)
+// is a shell of big cards of the same atlas round a thin dark solid core (the same material: no colour step at 45 m);
+// the FAR level (LOD2) keeps the solid fronds and casts the shadow of all three (FIR.shadow below).
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, vec2, vec3, vec4, float, mix, smoothstep, clamp, max, fract, sin, abs, pow, time, select, positionWorld, uniform, Fn, normalWorld,
-  texture, frontFacing, normalViewGeometry, normalView, positionView,
+  texture, frontFacing, normalViewGeometry, normalView, positionView, context,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
@@ -28,6 +30,20 @@ import { keepBand, rampTo, lodEye, ditherNoise } from "../lodFade.js";
 import { wxMat } from "../weather/cityWeatherize.js";
 import { env } from "../lighting.js";
 import { ktxLoader } from "../materials/scans.js";
+
+// FIR ROUND 3 (docs/CHRISTMAS.md, rule 19): the needle cards' cost at 8 m (+0.26 ms against a 0.1 ms budget) was the lit,
+// alpha-tested shader running on ~7.5 layers of cards per visible pixel (tools/christmas/firCost.mjs) and the cards'
+// alpha-tested shadow. Switches (URL, read once; the browser turn A/Bs them):
+//   ?firprepass=0   the cards in ONE alpha-tested lit pass (before). Default: a depth PRE-PASS twin (the atlas' alpha
+//                   tap + discard, no colour) drawn first, then the lit pass with depth EQUAL and no discard: the lit
+//                   shader once per visible pixel (as the city's leaves and impostors, viewer/treesStylized.js)
+//   ?firshadow=cards  every level casts its own shadow, the cards alpha-tested (before). Default "far": the FAR level's
+//                   solid fronds + trunk cast the shadow of all three levels (shadow-only copies on XMAS_SHADOW_LAYER):
+//                   no alpha-tested cards in the sun's map (noisy, ~3 x the lanes), no shadow change at either switch
+const QS = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
+export const FIR = { prepass: QS.get("firprepass") !== "0", shadow: QS.get("firshadow") === "cards" ? "cards" : "far" };
+/** the sun's shadow camera draws this layer too (viewer/christmas/xmasCity.js): the tree's shadow-only casters */
+export const XMAS_SHADOW_LAYER = 25;
 
 /** live look controls (dev panel / console: window.xmas.look) */
 export const xmasLook = {
@@ -81,7 +97,8 @@ export function loadXmasKit(renderer = null) {
     }
     const mats = {};
     // mask: the dithered band (instances near a level switch); without: solid (no discard, early depth kept)
-    const slotMaterial = (slot, { uvs = false, instanced = true, mask = true } = {}) => (mats[`${slot}|${uvs ? "u" : "-"}|${instanced ? "i" : "s"}|${instanced && mask ? "m" : "-"}`] ??= make(slot, uvs, instanced, instanced && mask));
+    // pass (the needle cards only): "depth" = the pre-pass twin, "colour" = the lit EQUAL-depth pass, null = one pass
+    const slotMaterial = (slot, { uvs = false, instanced = true, mask = true, pass = null } = {}) => (mats[`${slot}|${uvs ? "u" : "-"}|${instanced ? "i" : "s"}|${instanced && mask ? "m" : "-"}|${slot === "fir_cards" && pass ? pass : ""}`] ??= make(slot, uvs, instanced, instanced && mask, slot === "fir_cards" ? pass : null));
     return { pieces, info, slotMaterial, mats, needles: NEEDLES, loadMs: performance.now() - t0, bytes: (info.glb_bytes ?? 0) + (NEEDLES.loaded ? info.needles?.ktx2_bytes ?? 0 : 0) };
   })());
 }
@@ -91,11 +108,12 @@ const lin = (hex) => { const c = new THREE.Color(hex); return vec3(c.r, c.g, c.b
 const COL = () => attribute("color", "vec4");
 /** the per-pixel level-of-detail band: keep when this pixel's distance is inside [start, end) of the instance's level,
  *  dithered over the last 12 % of each end (the next level keeps the complement: no pop, no double draw) */
+export const LOD_FADE = 0.12;      // (the dithered cross-fade: the last 12 % of each band; the fir's 45 m switch over 39.6-45 m)
 function bandMask(xlod) {
   const d = positionWorld.sub(lodEye).length();
   const lo = xlod.x, hi = xlod.y;
-  const fOut = rampTo(d, hi, hi.mul(0.12));                    // 0 -> 1 toward the band's end
-  const fIn = select(lo.greaterThan(0.5), rampTo(d, lo, lo.mul(0.12)), float(1));   // the previous level's fade
+  const fOut = rampTo(d, hi, hi.mul(LOD_FADE));                // 0 -> 1 toward the band's end
+  const fIn = select(lo.greaterThan(0.5), rampTo(d, lo, lo.mul(LOD_FADE)), float(1));   // the previous level's fade
   return keepBand(fOut, fIn, ditherNoise());
 }
 /** the light level: faint by day, strong at night */
@@ -103,7 +121,7 @@ const level = () => mix(xmasLook.day, xmasLook.night, env.uNight);
 /** a per-element phase in [0, 1): the element's own random (COLOR_0.r) + the instance's id hash */
 const phaseOf = (instanced) => (instanced ? fract(COL().x.add(attribute("xlod", "vec4").z)) : COL().x);
 
-function make(slot, uvs, instanced, mask = instanced) {
+function make(slot, uvs, instanced, mask = instanced, pass = null) {
   const c = COL();
   const ao = mix(float(0.35), float(1), c.z);                  // the baked AO (0.35 floor: AO is not shadow)
   let m;
@@ -131,18 +149,32 @@ function make(slot, uvs, instanced, mask = instanced) {
     case "fir_cards": {
       // the needle sprays: the atlas' albedo (front: the top views; back: the bottom views, v + 0.5), the per-card tint
       // (r), the canopy AO (b); glossy above, matt silvery below; alpha TESTED at 0.5 (coverage-preserving mips)
-      m = new THREE.MeshStandardNodeMaterial({ roughness: 0.5, metalness: 0, side: THREE.DoubleSide });
       const t = uv();
       const tx = texture(NEEDLES.tex, select(frontFacing, t, t.add(vec2(0, 0.5))));
+      const cut = tx.a.greaterThanEqual(0.5);
+      const keep = mask ? cut.and(bandMask(attribute("xlod", "vec4"))) : cut;
+      const tag = `${instanced ? (mask ? " (fade)" : "") : " (static)"}`;
+      if (pass === "depth") {
+        // FIR ROUND 3: the depth pre-pass twin: the atlas' alpha + the band, no colour; the same @invariant position as
+        // the lit pass (its depth must come out bit-equal for the EQUAL test)
+        m = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
+        m.maskNode = keep; m.colorWrite = false; m.contextNode = context({ invariant: true });
+        m.name = `xmas fir_cards depth${tag}`; m.userData.shared = true; m.userData.cards = true; m.userData.depthPrepass = true;
+        return m;
+      }
+      m = new THREE.MeshStandardNodeMaterial({ roughness: 0.5, metalness: 0, side: THREE.DoubleSide });
       const tint = mix(float(0.86), float(1.12), c.x).mul(select(frontFacing, float(1), xmasLook.under));
       m.colorNode = tx.rgb.mul(tint).mul(xmasLook.cards).mul(mix(float(0.3), float(1), c.z));
       m.roughnessNode = select(frontFacing, float(0.46), float(0.72));
       m.normalNode = normalViewGeometry;          // (the canopy normal on BOTH faces: DoubleSide would flip the back's)
-      const cut = tx.a.greaterThanEqual(0.5);
-      m.maskNode = mask ? cut.and(bandMask(attribute("xlod", "vec4"))) : cut;
+      m.maskNode = keep; m.maskShadowNode = keep;
       m.alphaTest = 0; m.transparent = false;
+      if (pass === "colour") {
+        // the lit pass after the twin: no discard (early depth works), only where the twin's depth is (EQUAL)
+        m.maskNode = null; m.depthFunc = THREE.EqualDepth; m.depthWrite = false; m.contextNode = context({ invariant: true });
+      }
       wxMat(m, { porosity: 0.35, snowMask: select(frontFacing, float(1), float(0.2)) });   // (snow on the sprays' tops, hardly under)
-      m.name = `xmas fir_cards${instanced ? (mask ? " (fade)" : "") : " (static)"}`;
+      m.name = `xmas fir_cards${pass === "colour" ? " lit" : ""}${tag}`;
       m.userData.shared = true; m.userData.cards = true;
       return m;
     }

@@ -7,6 +7,10 @@
    "card_tris": 76544,
    "baubles": 130,
    "bulbs": 606,
+   "shell_cards": 3325,
+   "shell_shortened": 676,
+   "shell_left_out": 394,
+   "shell_card_tris": 13300,
    "ornaments_clear_of_card_cores": 736,
    "height_m": 10.4,
    "width_m": 5.9,
@@ -144,11 +148,12 @@
     },
     {
      "node": "tree_lod1",
-     "triangles": 40582,
-     "draws": 8,
+     "triangles": 36572,
+     "draws": 9,
      "slots": [
       "fir_bark",
       "fir_needles",
+      "fir_cards",
       "bauble",
       "gold_metal",
       "bulb_warm",
@@ -158,12 +163,13 @@
      ],
      "slot_triangles": [
       60,
-      31418,
+      14138,
+      13300,
       2600,
-      454,
+      464,
       4848,
       20,
-      1176,
+      1136,
       6
      ],
      "error_m": 0.035,
@@ -222,7 +228,7 @@
     },
     {
      "node": "wreath_lod1",
-     "triangles": 2054,
+     "triangles": 2092,
      "draws": 5,
      "slots": [
       "fir_needles",
@@ -232,9 +238,9 @@
       "gold_metal"
      ],
      "slot_triangles": [
-      1738,
-      190,
-      36,
+      1762,
+      200,
+      40,
       80,
       10
      ],
@@ -243,7 +249,7 @@
     },
     {
      "node": "wreath_lod2",
-     "triangles": 1000,
+     "triangles": 868,
      "draws": 3,
      "slots": [
       "fir_needles",
@@ -251,11 +257,11 @@
       "bulb_warm"
      ],
      "slot_triangles": [
-      866,
-      94,
+      742,
+      86,
       40
      ],
-     "error_m": 0.03,
+     "error_m": 0.034499999999999996,
      "vertex_ao": true
     }
    ],
@@ -290,7 +296,7 @@
     },
     {
      "node": "swag_lod1",
-     "triangles": 3028,
+     "triangles": 2998,
      "draws": 5,
      "slots": [
       "fir_needles",
@@ -300,18 +306,18 @@
       "ribbon_red"
      ],
      "slot_triangles": [
-      2752,
+      2728,
       96,
       40,
       14,
-      126
+      120
      ],
      "error_m": 0.014,
      "vertex_ao": true
     },
     {
      "node": "swag_lod2",
-     "triangles": 1048,
+     "triangles": 1042,
      "draws": 4,
      "slots": [
       "fir_needles",
@@ -320,7 +326,7 @@
       "ribbon_red"
      ],
      "slot_triangles": [
-      936,
+      930,
       48,
       16,
       48
@@ -406,7 +412,7 @@
     },
     {
      "node": "spanmotif_lod1",
-     "triangles": 484,
+     "triangles": 486,
      "draws": 2,
      "slots": [
       "led_rope",
@@ -414,7 +420,7 @@
      ],
      "slot_triangles": [
       176,
-      308
+      310
      ],
      "error_m": 0.005,
      "vertex_ao": true
@@ -474,7 +480,7 @@
     },
     {
      "node": "chalet_lod1",
-     "triangles": 6130,
+     "triangles": 6116,
      "draws": 9,
      "slots": [
       "chalet_trim",
@@ -488,22 +494,22 @@
       "fir_needles"
      ],
      "slot_triangles": [
-      646,
-      2794,
+      644,
+      2784,
       792,
       136,
       40,
       32,
       88,
       88,
-      1514
+      1512
      ],
      "error_m": 0.015,
      "vertex_ao": true
     },
     {
      "node": "chalet_lod2",
-     "triangles": 3832,
+     "triangles": 3848,
      "draws": 7,
      "slots": [
       "chalet_trim",
@@ -515,13 +521,13 @@
       "fir_needles"
      ],
      "slot_triangles": [
-      546,
-      2118,
+      552,
+      2154,
       64,
       20,
       88,
       88,
-      908
+      882
      ],
      "error_m": 0.025,
      "vertex_ao": true
@@ -534,7 +540,7 @@
    ]
   }
  },
- "glb_bytes": 5878524,
+ "glb_bytes": 5984760,
  "lod_ranges_m": {
   "note": "per piece (lods[piece].range): each LOD's band END (camera distance)"
  },
@@ -553,14 +559,14 @@
   },
   "tree_lod1": {
    "blocking": 0,
-   "warnings": 286,
-   "foliage_exempt": 752,
+   "warnings": 247,
+   "foliage_exempt": 9679,
    "counts": {
-    "sliver": 220,
+    "sliver": 200,
     "nonmanifold": 32,
-    "backtoback": 193,
-    "seam": 2769,
-    "opening": 16
+    "backtoback": 152,
+    "seam": 6488,
+    "opening": 15
    }
   },
   "tree_lod2": {
@@ -585,22 +591,22 @@
   },
   "wreath_lod1": {
    "blocking": 0,
-   "warnings": 11,
-   "foliage_exempt": 14,
+   "warnings": 13,
+   "foliage_exempt": 18,
    "counts": {
     "nonmanifold": 11,
-    "backtoback": 13,
+    "backtoback": 10,
     "seam": 128
    }
   },
   "wreath_lod2": {
    "blocking": 0,
-   "warnings": 8,
-   "foliage_exempt": 6,
+   "warnings": 12,
+   "foliage_exempt": 7,
    "counts": {
-    "nonmanifold": 8,
-    "backtoback": 5,
-    "seam": 105
+    "nonmanifold": 12,
+    "backtoback": 11,
+    "seam": 101
    }
   },
   "swag_lod0": {
@@ -615,22 +621,23 @@
   },
   "swag_lod1": {
    "blocking": 0,
-   "warnings": 10,
-   "foliage_exempt": 3,
+   "warnings": 9,
+   "foliage_exempt": 4,
    "counts": {
-    "nonmanifold": 10,
-    "backtoback": 7,
-    "seam": 194
+    "nonmanifold": 6,
+    "near": 2,
+    "backtoback": 5,
+    "seam": 193
    }
   },
   "swag_lod2": {
    "blocking": 0,
-   "warnings": 19,
-   "foliage_exempt": 3,
+   "warnings": 12,
+   "foliage_exempt": 1,
    "counts": {
-    "nonmanifold": 19,
-    "backtoback": 15,
-    "seam": 143
+    "nonmanifold": 12,
+    "backtoback": 12,
+    "seam": 141
    }
   },
   "lampmotif_lod0": {
@@ -699,24 +706,24 @@
   },
   "chalet_lod1": {
    "blocking": 0,
-   "warnings": 1185,
-   "foliage_exempt": 7,
+   "warnings": 1189,
+   "foliage_exempt": 6,
    "counts": {
-    "sliver": 1179,
+    "sliver": 1183,
     "nonmanifold": 6,
-    "backtoback": 178,
+    "backtoback": 177,
     "seam": 142
    }
   },
   "chalet_lod2": {
    "blocking": 0,
-   "warnings": 962,
-   "foliage_exempt": 2,
+   "warnings": 988,
+   "foliage_exempt": 0,
    "counts": {
-    "sliver": 955,
-    "nonmanifold": 7,
-    "backtoback": 98,
-    "seam": 119
+    "sliver": 982,
+    "nonmanifold": 6,
+    "backtoback": 97,
+    "seam": 120
    }
   }
  },
@@ -746,5 +753,28 @@
   "ktx2_bytes": 760935,
   "gpu_bytes_bc7": 2796240,
   "source": "tools/blender/firNeedles.py (modelled needles) + tools/christmas/fir_needles_ktx2.py"
+ },
+ "fir_switch": {
+  "old": {
+   "iou": 0.836,
+   "coverage_ratio": 1.007,
+   "luminance_ratio": 0.775,
+   "chroma_diff": 0.028,
+   "row_width_err": 0.044,
+   "row_width_bias": 0,
+   "see_through_near": 0.096,
+   "see_through_middle": 0.066
+  },
+  "new": {
+   "iou": 0.844,
+   "coverage_ratio": 0.971,
+   "luminance_ratio": 1.069,
+   "chroma_diff": 0.03,
+   "row_width_err": 0.037,
+   "row_width_bias": -0.017,
+   "see_through_near": 0.096,
+   "see_through_middle": 0.095
+  },
+  "note": "tools/christmas/fir_review.py: the fir at 45 m from the street (game pixel density), near (LOD0) vs middle (LOD1) level, Cycles, same sun"
  }
 }

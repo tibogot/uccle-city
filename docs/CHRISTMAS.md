@@ -1,5 +1,93 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
+## FIR ROUND 3: the cards' cost and the middle level (claude/xmasfir3, 2026-11-18, OFFLINE; browser turn to come)
+
+- **Problems:** (1) the near level's needle cards cost +0.26 ms GPU at 8 m (budget 0.1 ms); (2) the middle level
+  (45-150 m: solid fronds) read as flat tiers next to the needle crown at the 45 m switch.
+- **Cost model** (`tools/christmas/firCost.mjs` on `tools/christmas/firRaster.mjs`, a software rasterizer: the cards with
+  the atlas' alpha, early depth TEST + late write as a discarding shader gets, 2 x 2 quads; 1920 x 1080, the game's
+  55 deg lens, eye 1.7 m; the sun's map at 2.9 cm texels, December sun 15 deg; lit lanes calibrated on the browser
+  turn: 0.20 ms for the 8 m single pass + 0.06 ms measured for the cards' shadow; a depth-only lane = 0.2 x a lit one,
+  an assumption): `docs/christmas/fir_cost.json` (before / after).
+
+| at 8 m (near level) | card fragments | layers per seen pixel | lit lanes | depth-only lanes | model ms |
+|---|---|---|---|---|---|
+| seen card pixels 291 k (tree 397 k) | 6.18 M rasterised | 21.2 rasterised, 6.6 pass the depth test | | | |
+| single alpha-tested pass (before) | | | 3.39 M | | 0.20 |
+| **P depth pre-pass** + EQUAL lit pass | | | 0.74 M | 3.39 M | **0.084** |
+| X fewer crossing cards (70 -> 55 %, -12 % cards) | | | 3.12 M / with P 0.70 M | | 0.184 / with P 0.078 |
+| C hidden-card cull (553 of 16,207 cards no eye sees from 344 views round the tree, 2-40 m, 1.7-14 m high) | | | 3.39 M (they fail the depth test already) | | 0.20 (0 gain) |
+| D per-direction card order (4 index orders, the nearest first; scratch test) | | | 2.67 M | | single pass -0.04; with P -0.008 |
+| M mip bias | the atlas is read at level 4.5 (8 m), 5.9 (21 m), 7 (45 m): a bias only matters inside ~1 m | | | | ~0 |
+| **S shadow**: cards + twigs + cone in the sun's map vs the FAR level's solid fronds + trunk | 0.47 M alpha-tested lanes vs 0.13 M opaque | | | | 0.06 -> **0.01** |
+
+  21 m: 0.042 -> 0.017 (lit + pre-pass); 45 m: 0.012 -> 0.004. **Shipped estimate (P + S): 8 m 0.26 -> 0.094 ms,
+  21 m 0.10 -> 0.027, 45 m 0.07 -> 0.014.** Ranked P >> S > X > D > C, M; implemented **P and S** (X changes the look
+  for -0.006 ms after P, D needs 4 x the card indices for -0.008 ms, C gains nothing): the vertex work is unchanged in
+  count (pre-pass + lit pass replace lit + shadow pass); the middle level's cards add ~0.001-0.003 ms at 45-100 m.
+- **Why it happened:** a discarding (alpha-tested) shader gets the depth TEST early but writes depth only after it
+  runs, so every card layer that passes the test runs the full lit shader (PBR, 5 PCF taps, IBL, weather, snow): 6.6
+  layers per seen pixel at 8 m; the outer-first order only took 9 % of them. And the cards were drawn into the sun's
+  map alpha-tested (3.7 x the lanes of solid fronds, noisy card-shaped shadows) at every redraw of the static cache.
+- **Fixes** (each behind a switch, defaults on):
+  - **P, `?firprepass=0` = before:** `viewer/christmas/xmasKit.js` slot `fir_cards` pass "depth" (MeshBasic, the atlas'
+    alpha + the band mask, colorWrite off, `@invariant` position) as a TWIN of every card mesh (same geometry wrapper,
+    instance matrices and band; renderOrder -1: before the city, whose pixels behind the tree then fail the depth test),
+    and pass "colour" (the lit material, no discard, depthFunc EQUAL, no depth write, `@invariant`): the lit shader
+    once per visible pixel, early depth back. As the city's leaves and impostors (viewer/treesStylized.js, impostors.js).
+  - **S, `?firshadow=cards` = before:** the tree's drawn meshes cast nothing; shadow-only copies on
+    `XMAS_SHADOW_LAYER` (25, enabled on the sun's shadow camera by xmasCity.js, re-asserted every 30 frames after an
+    interior visit) draw the FAR level's (LOD2) solid fronds + trunk for EVERY level's instances and band: the same
+    shadow on both sides of the 45 m and 150 m switches (no shadow change at a switch), no alpha-tested cards in the
+    sun's map. The cards receive the fronds' shadow (self-shadowing of the crown by its solid core).
+  - **The middle level (LOD1, 45-150 m) = a needle-card SHELL** (`tools/blender/christmasKit.py build_tree`): 3,325 big
+    cards of the SAME atlas (one material with the near cards: colour, light, canopy normals and canopy AO match by
+    construction) on the same branch curves as the near level's twigs: side sprays every ~21 cm (0.3-0.6 m long,
+    alternating, swept forward, 70 % crossed by a rolled one), a tip spray + a crossing one, the leader's two rings;
+    round a thin dark CORE (the fronds at 0.85 x the length, 0.45 x the width, no side sprays; AO at most 0.3 like the
+    near level's depths: lighter, their silvery undersides turned the middle crown blue-grey). Each shell card keeps
+    clear of the ornaments (shortened to 0.72 / 0.5, else left out: 676 / 394). LOD1 36,572 triangles (cards 13,300) from
+    40,582. The FAR level (LOD2) keeps the solid fronds. The 45 m cross-fade unchanged (dithered over 39.6-45 m,
+    `LOD_FADE` 0.12): now card crown to card crown. (Impostor rejected: a baked view turns with the walker at 45-60 m, the
+    bulbs / baubles would need their own channel, and a separate material breaks the colour / light match.)
+- **The switch's match** (`tools/blender/firReview.py`: the RAW kit GLB in Blender with the viewer's materials, the game's
+  pixel density, film transparent; `tools/christmas/fir_review.py`; christmas.json `fir_switch`), at 45 m near vs middle:
+
+| | silhouette IoU | foliage brightness | colour diff | row width err | see-through middle / near |
+|---|---|---|---|---|---|
+| old (solid fronds) | 0.836 | x 0.775 | 0.028 | 0.044 | 0.066 / 0.096 |
+| **new (card shell)** | **0.844** | **x 1.069** | 0.030 | **0.037** | **0.095 / 0.096** |
+
+- **Renders** (`docs/christmas/`, Cycles OptiX, the same sun and sky, the game's pixel density, enlarged by whole
+  pixels): `fir3_8m_old_vs_new.jpg`, `fir3_21m_...`, `fir3_45m_...` (near level), `fir3_60m_...`, `fir3_100m_...`
+  (middle level), `fir3_switch45_old_vs_new.jpg` (45 m: near over middle, old | new), `fir3_sheet.jpg` (all). The near
+  level's look is unchanged (8 / 21 / 45 m old = new: the pre-pass changes the cost, not the picture).
+- **Rule** (QUALITY_RULES 19, extended): the near cards as a depth pre-pass + EQUAL lit pass; alpha-tested cards never in
+  the sun's map (the far level's solid fronds cast for every level); the next level keeps the look (same atlas and
+  material), its match checked from the street at the game's pixel density, its cost by the model re-run per kit.
+- **Gate rows:** `xmas` (tools/audit/xmasCheck.mjs): triangles 160 k / 45 k / 15 k and card triangles 20-80 k / 5-16 k / 0
+  per level, the shell >= 1,500 cards with <= 20 % left out, the 45 m switch (IoU >= 0.82, brightness 1 +- 0.15, colour
+  <= 0.05, row width <= 0.08, see-through +- 0.03: the old fronds fail brightness and sit on the see-through edge), the cost
+  model re-run for this kit (card triangles equal) with <= 0.1 ms at 8 m, the switch defaults and the sun's shadow layer
+  in the code. `xmastest` (tools/christmas/xmasTest.mjs): canopy normals on BOTH card levels, the pre-pass pair (twin:
+  alpha + band, no colour, @invariant; lit: EQUAL, no discard, no depth write, @invariant, shadow mask kept), the field
+  (every level: the twin first, the drawn meshes cast nothing, the shadow copies = LOD2's fronds + trunk on layer 25 with
+  the level's band and instances; `cards` mode: each level's own), the 30 -> 70 m walk (38-46 m: both levels' fade sets),
+  `LOD_FADE` 0.12 with cards on both sides of 45 m.
+- **Rebuild:** `blender -b -P tools/blender/christmasKit.py` -> `node tools/christmas_pack.mjs` -> `blender -b -P
+  tools/blender/firReview.py -- --tag new` (+ `--raw <old raw> --tag old`) -> `python -E tools/christmas/fir_review.py
+  old new` -> `node tools/christmas/firCost.mjs --label after --out docs/christmas/fir_cost.json`.
+- **For the browser turn (GREEN only, one Chrome tab, `?xmas=1`):** at Place Saint-Job, night and day, eye height, 8 m
+  (the fir fills the view), 21 m (the street spot of 2026-11-17) and 45 m: `debug/gpuAB.js alternate` GPU p50, >= 10
+  rounds each: default vs `?firprepass=0` (expect -0.10..-0.12 ms at 8 m) and default vs `?firshadow=cards` (expect
+  -0.03..-0.06 ms averaged; a smaller spike at each sun-cache redraw), and `?xmas=0` vs default (the fir's total: the
+  model says <= 0.1 ms at 8 m). Look: no holes or z-fight specks in the cards (the EQUAL test; if any: the twin's depth
+  differs: check @invariant in the WGSL), the crown's self-shadow from the fronds (no blotches), the tree's shadow on
+  the paving at the 45 m switch (must not change), the walk 30 -> 70 m and back (no pop: colour, brightness,
+  silhouette; the middle crown should read as needles at 45-60 m); `window.xmas.fir`, `xmas.stats()`; the first
+  sun-cache redraw after boot: no shadow-shader hitch (the shadow copies share LOD2's materials). Then the visual tour
+  `views_xmas.json` and the HEAP 5-boot line.
+
 ## NEEDLE CARDS: BROWSER TURN (claude/xmasfir, 2026-11-17, foundation merged incl. mdraw + twinlink)
 
 - **Fixes from the stills review:** the LED bulbs read as flat white hexagons at 3 m: the tree's beads now 8-sided and the
