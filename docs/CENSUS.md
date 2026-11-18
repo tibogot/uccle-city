@@ -79,6 +79,22 @@ Rue Zeecrabbe 24 (395.8, -786.9) 802; I1 (1120.3, -1677.4) 663; G2 Av. Adolphe D
 (443.3, 1986.9) 444; C7 Ch. de Drogenbos 176A (-1876.7, 1470) 369. Shop fronts buried in their wall: Barat (E3), Brico (G3),
 Le Chemin des Vignes (F1), Battery Centre (I1).
 
+## Fixed
+
+- **B (claude/balcony, rule 27 provisional, gate row `balconies`).** `viewer/facadeGeom.js` `balcony()`: the slab and a
+  U-shaped parapet (front + both sides, the front's material, 1.16 m, 6 cm) as one shell: one soffit, mitred parapet
+  tops, no hidden / doubled faces, no T-junction, nothing in the wall; 22 triangles a balcony, as many as the old open
+  slab + parapet. Balconies touching side by side get one shared divider (none does in the city today: the spans keep
+  0.3 m gaps; the shell test covers the case). `balcClear()` cuts a balcony back where it would run into another
+  balcony (inside corners) or building mass (its own roof over the slab, a taller neighbour): a lower roof under it is a
+  terrace and keeps it. City-wide (120 tiles): before 20,658 slabs / 36,782 open ends (?balcony=old), after 19,603 slabs /
+  0 open ends (`docs/census/balconies_closed.json`, `balconies_old.json`); detail triangles
+  4,463,540 -> 4,443,498 (-20,042, from the balconies cut back / dropped: H2 48, G3 62, D6 9 dropped, most
+  into their own building's mass, 32 at inside corners; 0 per balcony), no draw call added (the tile's
+  detail mesh). zfight on H2 / H4 / G3 / D6: 1,544 -> 1,504 coplanar pairs. Detector changes: the U-shaped parapet top
+  counts as a parapet (fill < 0.4), a slab is >= 1.15 m deep and filled (the 1.1 m BLOCK entrance canopy was taken for a
+  slab under the closed balcony's U top), `--old`, `--max`, the shell self-test.
+
 ## Not detected here (needs the browser, or not located)
 
 - G: the window shimmer in 87 / 93 is not static geometry. It needs a browser A/B (window shader, interior glass, ivy

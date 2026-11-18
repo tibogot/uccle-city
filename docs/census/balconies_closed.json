@@ -1,0 +1,1217 @@
+{
+ "when": "2026-11-18T06:38:31.034Z",
+ "old": false,
+ "sum": {
+  "tiles": 120,
+  "slabs": 19603,
+  "openSlabs": 0,
+  "openEnds": 0,
+  "buildings": 1146,
+  "openBuildings": 0,
+  "kitBalconies": 1836,
+  "detailTris": 4443498
+ },
+ "tiles": [
+  {
+   "tile": "A5",
+   "slabs": 104,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 2864
+  },
+  {
+   "tile": "B4",
+   "slabs": 59,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 5536
+  },
+  {
+   "tile": "B5",
+   "slabs": 135,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 6,
+   "openBuildings": 0,
+   "kitBalconies": 14,
+   "detailTris": 32054
+  },
+  {
+   "tile": "B6",
+   "slabs": 20,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 4,
+   "openBuildings": 0,
+   "kitBalconies": 13,
+   "detailTris": 28258
+  },
+  {
+   "tile": "B7",
+   "slabs": 77,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 4,
+   "detailTris": 15472
+  },
+  {
+   "tile": "B8",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "C3",
+   "slabs": 40,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 10938
+  },
+  {
+   "tile": "C4",
+   "slabs": 93,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 8,
+   "openBuildings": 0,
+   "kitBalconies": 29,
+   "detailTris": 56060
+  },
+  {
+   "tile": "C5",
+   "slabs": 331,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 19,
+   "openBuildings": 0,
+   "kitBalconies": 72,
+   "detailTris": 90228
+  },
+  {
+   "tile": "C6",
+   "slabs": 152,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 4,
+   "openBuildings": 0,
+   "kitBalconies": 54,
+   "detailTris": 41396
+  },
+  {
+   "tile": "C7",
+   "slabs": 6,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 22,
+   "detailTris": 43968
+  },
+  {
+   "tile": "C8",
+   "slabs": 217,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 10,
+   "openBuildings": 0,
+   "kitBalconies": 33,
+   "detailTris": 44970
+  },
+  {
+   "tile": "C9",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 9,
+   "detailTris": 7138
+  },
+  {
+   "tile": "D1",
+   "slabs": 16,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 708
+  },
+  {
+   "tile": "D10",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 5,
+   "detailTris": 15818
+  },
+  {
+   "tile": "D2",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 292
+  },
+  {
+   "tile": "D3",
+   "slabs": 557,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 34,
+   "openBuildings": 0,
+   "kitBalconies": 44,
+   "detailTris": 93794
+  },
+  {
+   "tile": "D4",
+   "slabs": 528,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 17,
+   "openBuildings": 0,
+   "kitBalconies": 42,
+   "detailTris": 83344
+  },
+  {
+   "tile": "D5",
+   "slabs": 183,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 10,
+   "openBuildings": 0,
+   "kitBalconies": 56,
+   "detailTris": 64066
+  },
+  {
+   "tile": "D6",
+   "slabs": 604,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 15,
+   "openBuildings": 0,
+   "kitBalconies": 21,
+   "detailTris": 68380
+  },
+  {
+   "tile": "D7",
+   "slabs": 126,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 6,
+   "openBuildings": 0,
+   "kitBalconies": 37,
+   "detailTris": 45136
+  },
+  {
+   "tile": "D8",
+   "slabs": 61,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 6,
+   "openBuildings": 0,
+   "kitBalconies": 42,
+   "detailTris": 54218
+  },
+  {
+   "tile": "D9",
+   "slabs": 29,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 3,
+   "openBuildings": 0,
+   "kitBalconies": 15,
+   "detailTris": 16474
+  },
+  {
+   "tile": "E1",
+   "slabs": 490,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 51,
+   "openBuildings": 0,
+   "kitBalconies": 24,
+   "detailTris": 80624
+  },
+  {
+   "tile": "E10",
+   "slabs": 18,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 12,
+   "detailTris": 19668
+  },
+  {
+   "tile": "E2",
+   "slabs": 299,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 33,
+   "openBuildings": 0,
+   "kitBalconies": 51,
+   "detailTris": 110406
+  },
+  {
+   "tile": "E3",
+   "slabs": 691,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 54,
+   "openBuildings": 0,
+   "kitBalconies": 34,
+   "detailTris": 120304
+  },
+  {
+   "tile": "E4",
+   "slabs": 561,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 71,
+   "openBuildings": 0,
+   "kitBalconies": 57,
+   "detailTris": 141566
+  },
+  {
+   "tile": "E5",
+   "slabs": 311,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 29,
+   "openBuildings": 0,
+   "kitBalconies": 57,
+   "detailTris": 103916
+  },
+  {
+   "tile": "E6",
+   "slabs": 25,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 3,
+   "openBuildings": 0,
+   "kitBalconies": 44,
+   "detailTris": 69508
+  },
+  {
+   "tile": "E7",
+   "slabs": 41,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 3,
+   "openBuildings": 0,
+   "kitBalconies": 37,
+   "detailTris": 39198
+  },
+  {
+   "tile": "E8",
+   "slabs": 33,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 12,
+   "detailTris": 35386
+  },
+  {
+   "tile": "E9",
+   "slabs": 123,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 3,
+   "openBuildings": 0,
+   "kitBalconies": 13,
+   "detailTris": 50246
+  },
+  {
+   "tile": "F1",
+   "slabs": 379,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 43,
+   "openBuildings": 0,
+   "kitBalconies": 30,
+   "detailTris": 68870
+  },
+  {
+   "tile": "F10",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 4864
+  },
+  {
+   "tile": "F2",
+   "slabs": 1017,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 66,
+   "openBuildings": 0,
+   "kitBalconies": 42,
+   "detailTris": 112476
+  },
+  {
+   "tile": "F3",
+   "slabs": 995,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 25,
+   "openBuildings": 0,
+   "kitBalconies": 6,
+   "detailTris": 77704
+  },
+  {
+   "tile": "F4",
+   "slabs": 45,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 5,
+   "openBuildings": 0,
+   "kitBalconies": 25,
+   "detailTris": 42742
+  },
+  {
+   "tile": "F5",
+   "slabs": 157,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 19,
+   "openBuildings": 0,
+   "kitBalconies": 24,
+   "detailTris": 53530
+  },
+  {
+   "tile": "F6",
+   "slabs": 338,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 9,
+   "openBuildings": 0,
+   "kitBalconies": 55,
+   "detailTris": 71546
+  },
+  {
+   "tile": "F7",
+   "slabs": 228,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 8,
+   "openBuildings": 0,
+   "kitBalconies": 5,
+   "detailTris": 20978
+  },
+  {
+   "tile": "F8",
+   "slabs": 128,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 5,
+   "openBuildings": 0,
+   "kitBalconies": 13,
+   "detailTris": 25724
+  },
+  {
+   "tile": "F9",
+   "slabs": 50,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 4,
+   "openBuildings": 0,
+   "kitBalconies": 15,
+   "detailTris": 37934
+  },
+  {
+   "tile": "G1",
+   "slabs": 431,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 49,
+   "openBuildings": 0,
+   "kitBalconies": 12,
+   "detailTris": 78480
+  },
+  {
+   "tile": "G10",
+   "slabs": 16,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 9,
+   "detailTris": 21332
+  },
+  {
+   "tile": "G2",
+   "slabs": 718,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 36,
+   "openBuildings": 0,
+   "kitBalconies": 10,
+   "detailTris": 69144
+  },
+  {
+   "tile": "G3",
+   "slabs": 540,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 12,
+   "openBuildings": 0,
+   "kitBalconies": 11,
+   "detailTris": 56480
+  },
+  {
+   "tile": "G4",
+   "slabs": 101,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 3,
+   "openBuildings": 0,
+   "kitBalconies": 27,
+   "detailTris": 54442
+  },
+  {
+   "tile": "G5",
+   "slabs": 687,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 21,
+   "openBuildings": 0,
+   "kitBalconies": 22,
+   "detailTris": 68152
+  },
+  {
+   "tile": "G6",
+   "slabs": 301,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 15,
+   "openBuildings": 0,
+   "kitBalconies": 36,
+   "detailTris": 57964
+  },
+  {
+   "tile": "G7",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 1,
+   "detailTris": 5300
+  },
+  {
+   "tile": "G8",
+   "slabs": 60,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 3,
+   "detailTris": 16228
+  },
+  {
+   "tile": "G9",
+   "slabs": 114,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 12,
+   "detailTris": 25424
+  },
+  {
+   "tile": "H1",
+   "slabs": 822,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 72,
+   "openBuildings": 0,
+   "kitBalconies": 26,
+   "detailTris": 123012
+  },
+  {
+   "tile": "H10",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 13234
+  },
+  {
+   "tile": "H11",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "H2",
+   "slabs": 1357,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 52,
+   "openBuildings": 0,
+   "kitBalconies": 16,
+   "detailTris": 106724
+  },
+  {
+   "tile": "H3",
+   "slabs": 221,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 18,
+   "openBuildings": 0,
+   "kitBalconies": 38,
+   "detailTris": 79604
+  },
+  {
+   "tile": "H4",
+   "slabs": 448,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 12,
+   "openBuildings": 0,
+   "kitBalconies": 13,
+   "detailTris": 71570
+  },
+  {
+   "tile": "H5",
+   "slabs": 79,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 7,
+   "openBuildings": 0,
+   "kitBalconies": 16,
+   "detailTris": 47018
+  },
+  {
+   "tile": "H6",
+   "slabs": 76,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 9,
+   "openBuildings": 0,
+   "kitBalconies": 61,
+   "detailTris": 59290
+  },
+  {
+   "tile": "H7",
+   "slabs": 70,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 3,
+   "openBuildings": 0,
+   "kitBalconies": 44,
+   "detailTris": 33818
+  },
+  {
+   "tile": "H8",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 16,
+   "detailTris": 28194
+  },
+  {
+   "tile": "H9",
+   "slabs": 22,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 1,
+   "detailTris": 24020
+  },
+  {
+   "tile": "I1",
+   "slabs": 523,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 55,
+   "openBuildings": 0,
+   "kitBalconies": 12,
+   "detailTris": 77756
+  },
+  {
+   "tile": "I10",
+   "slabs": 2,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 10,
+   "detailTris": 44384
+  },
+  {
+   "tile": "I11",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 770
+  },
+  {
+   "tile": "I2",
+   "slabs": 659,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 35,
+   "openBuildings": 0,
+   "kitBalconies": 18,
+   "detailTris": 97608
+  },
+  {
+   "tile": "I3",
+   "slabs": 362,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 12,
+   "openBuildings": 0,
+   "kitBalconies": 38,
+   "detailTris": 80236
+  },
+  {
+   "tile": "I4",
+   "slabs": 410,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 18,
+   "openBuildings": 0,
+   "kitBalconies": 1,
+   "detailTris": 57516
+  },
+  {
+   "tile": "I5",
+   "slabs": 89,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 7,
+   "openBuildings": 0,
+   "kitBalconies": 17,
+   "detailTris": 70454
+  },
+  {
+   "tile": "I6",
+   "slabs": 44,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 7,
+   "openBuildings": 0,
+   "kitBalconies": 60,
+   "detailTris": 87296
+  },
+  {
+   "tile": "I7",
+   "slabs": 131,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 6,
+   "openBuildings": 0,
+   "kitBalconies": 20,
+   "detailTris": 37942
+  },
+  {
+   "tile": "I8",
+   "slabs": 9,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 12,
+   "detailTris": 33376
+  },
+  {
+   "tile": "I9",
+   "slabs": 25,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 7,
+   "detailTris": 38346
+  },
+  {
+   "tile": "J10",
+   "slabs": 4,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 12,
+   "detailTris": 44726
+  },
+  {
+   "tile": "J11",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 8400
+  },
+  {
+   "tile": "J2",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 3,
+   "detailTris": 344
+  },
+  {
+   "tile": "J3",
+   "slabs": 377,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 6,
+   "openBuildings": 0,
+   "kitBalconies": 2,
+   "detailTris": 24994
+  },
+  {
+   "tile": "J4",
+   "slabs": 390,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 20,
+   "openBuildings": 0,
+   "kitBalconies": 14,
+   "detailTris": 67972
+  },
+  {
+   "tile": "J5",
+   "slabs": 368,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 21,
+   "openBuildings": 0,
+   "kitBalconies": 49,
+   "detailTris": 83822
+  },
+  {
+   "tile": "J6",
+   "slabs": 313,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 12,
+   "openBuildings": 0,
+   "kitBalconies": 19,
+   "detailTris": 62632
+  },
+  {
+   "tile": "J7",
+   "slabs": 176,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 14,
+   "openBuildings": 0,
+   "kitBalconies": 34,
+   "detailTris": 75246
+  },
+  {
+   "tile": "J8",
+   "slabs": 61,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 6,
+   "openBuildings": 0,
+   "kitBalconies": 16,
+   "detailTris": 46494
+  },
+  {
+   "tile": "J9",
+   "slabs": 34,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 10,
+   "detailTris": 38940
+  },
+  {
+   "tile": "K10",
+   "slabs": 16,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 5,
+   "detailTris": 25056
+  },
+  {
+   "tile": "K11",
+   "slabs": 12,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 1,
+   "openBuildings": 0,
+   "kitBalconies": 4,
+   "detailTris": 15732
+  },
+  {
+   "tile": "K12",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "K4",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 1,
+   "detailTris": 686
+  },
+  {
+   "tile": "K5",
+   "slabs": 33,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 6,
+   "detailTris": 15474
+  },
+  {
+   "tile": "K6",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 4,
+   "detailTris": 18462
+  },
+  {
+   "tile": "K7",
+   "slabs": 27,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 6,
+   "detailTris": 40850
+  },
+  {
+   "tile": "K8",
+   "slabs": 184,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 7,
+   "openBuildings": 0,
+   "kitBalconies": 9,
+   "detailTris": 53776
+  },
+  {
+   "tile": "K9",
+   "slabs": 8,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 4,
+   "openBuildings": 0,
+   "kitBalconies": 5,
+   "detailTris": 33272
+  },
+  {
+   "tile": "L10",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 64
+  },
+  {
+   "tile": "L11",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 780
+  },
+  {
+   "tile": "L12",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "L5",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "L6",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 1058
+  },
+  {
+   "tile": "L7",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 1002
+  },
+  {
+   "tile": "L8",
+   "slabs": 16,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 2,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 3638
+  },
+  {
+   "tile": "L9",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 108
+  },
+  {
+   "tile": "M10",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "M11",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "M12",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "M5",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 5616
+  },
+  {
+   "tile": "M6",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "M7",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "M8",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "M9",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 10
+  },
+  {
+   "tile": "N10",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "N11",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "N5",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 106
+  },
+  {
+   "tile": "N6",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 822
+  },
+  {
+   "tile": "N7",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "N8",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "N9",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "O10",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "O11",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  },
+  {
+   "tile": "O9",
+   "slabs": 0,
+   "openSlabs": 0,
+   "openEnds": 0,
+   "buildings": 0,
+   "openBuildings": 0,
+   "kitBalconies": 0,
+   "detailTris": 0
+  }
+ ],
+ "buildings": []
+}
