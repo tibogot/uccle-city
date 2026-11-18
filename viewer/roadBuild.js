@@ -18,7 +18,7 @@ import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 import { relevelRoads } from "./streets/roadLevels.js";
 import { recentreRoads } from "./streets/recentre.js";
 import { trimBendFolds } from "./streets/roadBends.js";
-import { fitLinesToStreet } from "./streets/lineFit.js";
+import { measureLineFit, fitLinesToStreet, laneShifter } from "./streets/lineFit.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 
@@ -100,7 +100,12 @@ export function buildRoadData(o) {
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   // round 2: the lane graph traffic drives on, repaired (loops, centring, smoothing, hold points at the paint)
-  const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory) : null;
+  // markings (rule 33): the lane stacks' fit onto the measured carriageway, measured once: the painted strips (below)
+  // and the lanes traffic drives on (centred between those lines, in place of the lane graph's own centring) both use it
+  const roadLines = o.roadLines !== false;
+  const lineFitData = prep && roadLines ? measureLineFit(net, prep, surf) : null;
+  if (lineFitData) net.lineFit = lineFitData;
+  const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory, lineFitData && o.laneFit !== false ? { laneShift: laneShifter(net, lineFitData) } : {}) : null;
   if (v2) { pv.inventory.stats.laneGraph = laneGraph; pv.inventory.stats.laneJoins = laneJoins; lap("lane graph"); }
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};
@@ -125,8 +130,7 @@ export function buildRoadData(o) {
   // markings (census F, rule 33): the lane strips (and the lines they carry) moved across their roads onto the MEASURED
   // carriageway, station by station (viewer/streets/lineFit.js); what still leaves it is clipped in buildSurfaceRoads
   // (o.roadLines false = ?roadlines=old: the strips where the median width fit put them, their lines kept on sidewalks)
-  const roadLines = o.roadLines !== false;
-  const lineFit = prep && roadLines ? fitLinesToStreet(net, built.asphalt, prep, surf) : null;
+  const lineFit = lineFitData ? fitLinesToStreet(net, built.asphalt, lineFitData) : null;
   lap("line fit");
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
   let priority = null;

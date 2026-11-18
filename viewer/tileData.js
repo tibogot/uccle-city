@@ -389,7 +389,7 @@ export async function buildTileData(entry, base) {
   const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
     deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)

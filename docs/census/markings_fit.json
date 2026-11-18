@@ -1,21 +1,27 @@
 {
- "when": "2026-11-18T12:01:09.384Z",
+ "when": "2026-11-18T13:47:17.745Z",
  "old": false,
  "sum": {
   "tiles": 120,
   "strokeM": 123506,
   "unmeasuredM": 53687,
-  "offStreetM": 511,
-  "atKerbM": 406,
-  "skewM": 313,
-  "runs": 220,
-  "decalTris": 73585,
-  "decalOff": 3480
+  "offStreetM": 507,
+  "atKerbM": 396,
+  "skewM": 309,
+  "runs": 219,
+  "decalTris": 73572,
+  "decalOff": 3480,
+  "laneP95": 0.08,
+  "laneP50": 0,
+  "lanePts": 334024,
+  "laneOutside": 1595,
+  "laneOffPaint": 22555,
+  "laneNarrow": 88475
  },
  "byWhy": {
-  "offStreet": 142,
-  "skew": 71,
-  "atKerb": 119
+  "offStreet": 141,
+  "skew": 72,
+  "atKerb": 116
  },
  "runs": [
   {
@@ -111,13 +117,6 @@
    "at": "1009.4, 599.4",
    "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
    "on": "on sidewalk,on ramp"
-  },
-  {
-   "tile": "J5",
-   "len": 10,
-   "why": "skew",
-   "at": "1617.1, 353.9",
-   "street": "Avenue du Prince de Ligne - Prins de Lignelaan"
   },
   {
    "tile": "K11",
@@ -482,6 +481,13 @@
    "street": "Avenue De Fré - De Frélaan"
   },
   {
+   "tile": "J3",
+   "len": 5,
+   "why": "skew",
+   "at": "1891.7, -718.4",
+   "street": "Avenue du Vivier d'Oie - Diesdellelaan"
+  },
+  {
    "tile": "J4",
    "len": 5,
    "why": "atKerb",
@@ -680,21 +686,6 @@
    "street": "Avenue d'Andrimont - Andrimontlaan"
   },
   {
-   "tile": "J3",
-   "len": 4,
-   "why": "skew",
-   "at": "1891.7, -718.4",
-   "street": "Avenue du Vivier d'Oie - Diesdellelaan"
-  },
-  {
-   "tile": "J5",
-   "len": 4,
-   "why": "offStreet/atKerb",
-   "at": "1603.3, 362.3",
-   "street": "Avenue du Prince de Ligne - Prins de Lignelaan",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "J7",
    "len": 4,
    "why": "offStreet/skew/atKerb",
@@ -731,6 +722,13 @@
    "why": "skew",
    "at": "-2243.5, -177.6",
    "street": "Chaussée de Neerstalle - Neerstalse Steenweg"
+  },
+  {
+   "tile": "D1",
+   "len": 3,
+   "why": "skew",
+   "at": "-1412.3, -1569",
+   "street": "Avenue Victor Rousseau - Victor Rousseaulaan"
   },
   {
    "tile": "D1",
@@ -997,6 +995,13 @@
    "why": "skew",
    "at": "1018.1, -560.2",
    "street": "Avenue De Fré - De Frélaan"
+  },
+  {
+   "tile": "J5",
+   "len": 3,
+   "why": "skew",
+   "at": "1605.4, 359.4",
+   "street": "Avenue du Prince de Ligne - Prins de Lignelaan"
   },
   {
    "tile": "K4",
@@ -1648,19 +1653,19 @@
    "on": "on sidewalk"
   },
   {
+   "tile": "J3",
+   "len": 2,
+   "why": "offStreet",
+   "at": "1890.4, -709.4",
+   "street": "Avenue du Vivier d'Oie - Diesdellelaan",
+   "on": "offStreet"
+  },
+  {
    "tile": "J4",
    "len": 2,
    "why": "offStreet/atKerb",
    "at": "1999.8, -300.5",
    "street": "Avenue du Vivier d'Oie - Diesdellelaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "J5",
-   "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "1606.2, 360.2",
-   "street": "Avenue du Prince de Ligne - Prins de Lignelaan",
    "on": "on sidewalk"
   },
   {
@@ -1692,13 +1697,6 @@
    "why": "atKerb",
    "at": "2005.8, -279.4",
    "street": "Avenue du Vivier d'Oie - Diesdellelaan"
-  },
-  {
-   "tile": "M5",
-   "len": 2,
-   "why": "atKerb",
-   "at": "3407.7, 223",
-   "street": "Avenue du Pérou - Perulaan"
   }
  ]
 }

@@ -33,6 +33,7 @@ const MAX_D = 6;                         // m: a measured end farther than this 
 const WIN_MED = 15, WIN_MEAN = 6;        // m: half windows of the median / mean along the road
 const SLOPE = 0.125;                     // the end offsets change at most 1 m per 8 m along the road (7 deg)
 const MOUTH = 6;                         // m: samples this near a road end are not measured (junction mouths)
+const JOIN = 20;                         // m: a way split's step is faded out over this along each road
 const OUTLIER = 1.5;                     // m: a sample this far off the road's median shift is not used
 const MIN_SHARE = 0.45;
 const EDGE_IN = 0.3;                     // m: an edge line's centre inside the kerb / street edge
@@ -64,14 +65,18 @@ function lineGrid(lines) {
 
 /** the carriage interval [lo, hi] along x + n t round t = 0 (or the nearest carriage within FIND), ends refined on the
  *  kerb / edge lines; an end that runs out of reach is null */
-function interval(classAt, lg, x, z, nx, nz) {
+function interval(classAt, lg, x, z, nx, nz, parkL = true, parkR = true) {
   const C = (t) => CARR.has(classAt(x + nx * t, z + nz * t));
+  // (markings round 2: a side whose stack has no parking lane ends where measured parking bays begin: the bays hold
+  // parked cars, not the stack's driving lane)
+  const CL = parkL ? C : (t) => { const c = classAt(x + nx * t, z + nz * t); return c !== 3 && CARR.has(c); };
+  const CR = parkR ? C : (t) => { const c = classAt(x + nx * t, z + nz * t); return c !== 3 && CARR.has(c); };
   let t0 = null;
   for (let d = 0; d <= FIND && t0 == null; d += STEP) { if (C(d)) t0 = d; else if (C(-d)) t0 = -d; }
   if (t0 == null) return null;
   let hi = t0, lo = t0;
-  while (hi < t0 + REACH && C(hi + STEP)) hi += STEP;
-  while (lo > t0 - REACH && C(lo - STEP)) lo -= STEP;
+  while (hi < t0 + REACH && CL(hi + STEP)) hi += STEP;
+  while (lo > t0 - REACH && CR(lo - STEP)) lo -= STEP;
   const ref = (e, dir) => { const t = lg.hit(x, z, nx, nz, e - 0.6, e + 0.6, e + dir * STEP / 2); return t ?? e + dir * STEP / 2; };
   return { lo: lo <= t0 - REACH ? null : ref(lo, -1), hi: hi >= t0 + REACH ? null : ref(hi, 1) };
 }
@@ -94,16 +99,16 @@ function smooth(s, v) {
 }
 
 /**
- * Moves the lane-strip vertices of the engine's asphalt part across their roads onto the measured carriageway (in
- * place). surf: the tile's surfaces (kerbs, edges, after prepareSurfaces); prep: prepareSurfaces' result (classAt).
- * Returns stats { roads, fitted, moved, meanShift, maxShift }.
+ * The fit of every road's lane stack onto the measured carriageway: { fitOf: road index -> per-sample shifts of its
+ * two carriage ends, st }. surf: the tile's surfaces (kerbs, edges, after prepareSurfaces); prep: prepareSurfaces'
+ * result (classAt). Applied to the asphalt strips by fitLinesToStreet, to the lane graph by laneShifter.
  */
-export function fitLinesToStreet(net, part, prep, surf) {
-  const st = { roads: 0, fitted: 0, moved: 0, meanShift: 0, maxShift: 0, edgeIn: 0 };
-  if (!part?.position || !part.uv || !prep) return st;
+export function measureLineFit(net, prep, surf) {
+  const st = { roads: 0, fitted: 0, moved: 0, meanShift: 0, maxShift: 0, edgeIn: 0, lanes: 0, lanePts: 0 };
+  const fitOf = new Map();
+  if (!prep) return { fitOf, st };
   const lg = lineGrid([...(surf?.kerbs || []), ...(surf?.edges || []).map((e) => e.line)]);
   // per road: the smoothed shifts of its two carriage ends at its samples
-  const fitOf = new Map();
   net.roads.forEach((rr, ri) => {
     const S = rr.smp;
     if (!S || !rr.lays || !rr.al || S.s.length < 2) return;
@@ -115,7 +120,8 @@ export function fitLinesToStreet(net, part, prep, surf) {
       if (!prep.inside(S.x[i], S.z[i])) continue;
       // (a junction mouth: the side street's carriageway runs on past the kerb line; the ends hold their neighbours')
       if (S.s[i] - S.s[0] < MOUTH || S.s[n - 1] - S.s[i] < MOUTH) continue;
-      const iv = interval(prep.classAt, lg, S.x[i], S.z[i], Math.sin(S.th[i]), -Math.cos(S.th[i]));
+      const park = (side) => (rr.lays[i][side] || []).some((l) => l.present && l.type === "parking");
+      const iv = interval(prep.classAt, lg, S.x[i], S.z[i], Math.sin(S.th[i]), -Math.cos(S.th[i]), park("left"), park("right"));
       if (!iv) continue;
       if (iv.hi != null && Math.abs(iv.hi - e.curbL) < MAX_D) { dL[i] = iv.hi - e.curbL; any++; }
       if (iv.lo != null && Math.abs(iv.lo - e.curbR) < MAX_D) { dR[i] = iv.lo - e.curbR; any++; }
@@ -136,7 +142,101 @@ export function fitLinesToStreet(net, part, prep, surf) {
     fitOf.set(ri, { L, R, eL, eR, kL: near(dL, L), kR: near(dR, R) });
     st.fitted++;
   });
-  if (!fitOf.size) return st;
+  // a road that goes on as another (an OSM way split: a node with just those two roads): both fits meet at one place,
+  // the painted lines and the lanes go on without a step. The carriage edges' plan offsets at the node are averaged
+  // (in the first road's frame; a road leaving the node the other way has its left / right swapped and its normal
+  // turned) and each road's ends take the difference, faded out over JOIN m
+  const ends = new Map();
+  net.roads.forEach((rr, ri) => { if (!fitOf.has(ri)) return; for (const [nd, atEnd] of [[rr.src?.a, false], [rr.src?.b, true]]) { if (nd == null) continue; (ends.get(nd) || ends.set(nd, []).get(nd)).push({ ri, atEnd }); } });
+  const deg = new Map();
+  for (const rr of net.roads) for (const nd of [rr.src?.a, rr.src?.b]) if (nd != null) deg.set(nd, (deg.get(nd) || 0) + 1);
+  for (const [nd, E] of ends) {
+    if (E.length !== 2 || deg.get(nd) !== 2) continue;
+    const [A, B] = E, fa = fitOf.get(A.ri), fb = fitOf.get(B.ri);
+    const ia = A.atEnd ? fa.L.length - 1 : 0, ib = B.atEnd ? fb.L.length - 1 : 0;
+    // the edges' offsets in a frame along the travel A -> B: A's left normal if A ends here, else turned
+    const sa = A.atEnd ? 1 : -1, sb = B.atEnd ? -1 : 1;
+    const edges = (f, i, sg) => { const l = f.eL[i] + f.L[i], r = f.eR[i] + f.R[i]; return sg > 0 ? [l, r] : [-r, -l]; };
+    const [al, ar] = edges(fa, ia, sa), [bl, br] = edges(fb, ib, sb);
+    const ml = (al + bl) / 2, mr = (ar + br) / 2;
+    // corrections back in each road's own frame (left, right)
+    const corr = (sg, l, r) => (sg > 0 ? [ml - l, mr - r] : [-(mr - r), -(ml - l)]);
+    for (const [f, i, c, rr] of [[fa, ia, corr(sa, al, ar), net.roads[A.ri]], [fb, ib, corr(sb, bl, br), net.roads[B.ri]]]) {
+      const S = rr.smp, s0 = S.s[i];
+      for (let k = 0; k < S.s.length; k++) { const w = Math.max(0, 1 - Math.abs(S.s[k] - s0) / JOIN); if (!w) continue; f.L[k] += c[0] * w; f.R[k] += c[1] * w; }
+    }
+    st.joined = (st.joined || 0) + 1;
+  }
+  return { fitOf, st };
+}
+
+/** the lateral shift (m, along the road's left normal) of uv (s, t) on a fitted road: linear across the carriageway
+ *  [eR, eL] -> [eR + dR, eL + dL], beyond it the nearer end's; also the interpolated fit values at s */
+function shiftAt(f, S, s, t) {
+  let i = 1; while (i < S.s.length - 1 && S.s[i] < s) i++;
+  const a = Math.max(0, Math.min(1, (s - S.s[i - 1]) / (S.s[i] - S.s[i - 1] || 1)));
+  const lerp = (q) => q[i - 1] + (q[i] - q[i - 1]) * a;
+  const eL = lerp(f.eL), eR = lerp(f.eR), dL = lerp(f.L), dR = lerp(f.R);
+  const d = t >= eL ? dL : t <= eR ? dR : eL - eR > 1e-6 ? dR + ((t - eR) / (eL - eR)) * (dL - dR) : (dL + dR) / 2;
+  return { d, eL, eR, dL, dR, lerp };
+}
+
+/** (station, lateral) of plan point (x, z) on road rr: the nearest point of its alignment (samples, then refined) */
+export function roadFrameOf(rr, x, z) {
+  const S = rr.smp, n = S.s.length;
+  let bi = 0, bd = Infinity;
+  for (let i = 0; i < n; i++) { const d = (S.x[i] - x) ** 2 + (S.z[i] - z) ** 2; if (d < bd) { bd = d; bi = i; } }
+  let best = { s: S.s[bi], d: Infinity };
+  for (const j of [bi - 1, bi]) {
+    if (j < 0 || j + 1 >= n) continue;
+    const ax = S.x[j], az = S.z[j], dx = S.x[j + 1] - ax, dz = S.z[j + 1] - az, L2 = dx * dx + dz * dz || 1e-12;
+    const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), d = Math.hypot(x - ax - dx * u, z - az - dz * u);
+    if (d < best.d) best = { s: S.s[j] + (S.s[j + 1] - S.s[j]) * u, d };
+  }
+  const e = evalAlignment(rr.al, best.s), nx = Math.sin(e.th), nz = -Math.cos(e.th);
+  return { s: best.s, t: (x - e.x) * nx + (z - e.z) * nz, nx, nz };
+}
+
+/** markings round 2 (coordinator 2026-11-18: cars must drive centred between the painted lines): a lane path of a
+ *  fitted road moved across the road by the same shift as the strips under it. For viewer/streets/laneGraph.js
+ *  refineLaneGraph (opts.laneShift), in place of its own centring: (path, plan points) -> moved points | null */
+export function laneShifter(net, fit) {
+  const byId = new Map(net.roads.map((rr, ri) => [rr.id, ri]));
+  return (p, P) => {
+    const ri = byId.get(p.roadId), f = ri != null ? fit.fitOf.get(ri) : null;
+    if (!f) return null;
+    const rr = net.roads[ri];
+    fit.st.lanes++; fit.st.lanePts += P.length;
+    return P.map(([x, z]) => { const q = roadFrameOf(rr, x, z), { d } = shiftAt(f, rr.smp, q.s, q.t); return [x + q.nx * d, z + q.nz * d]; });
+  };
+}
+
+/** the painted lane under plan point (x, z) on road rr (the stretched stack's lane): { off (m from its centre, along
+ *  the road's left normal), type, width, edges (5 plan points across it, from 0.4 m inside one painted edge to 0.4 m inside the other) } or null */
+export function paintedLaneCentre(net, fit, rr, x, z) {
+  const ri = net.roads.indexOf(rr), f = fit.fitOf.get(ri);
+  if (!f) return null;
+  const q = roadFrameOf(rr, x, z), S = rr.smp;
+  let i = 1; while (i < S.s.length - 1 && S.s[i] < q.s) i++;
+  const lay = rr.lays[Math.abs(S.s[i] - q.s) < Math.abs(S.s[i - 1] - q.s) ? i : i - 1];
+  // the engine lane (uv t) whose PAINTED span holds the point
+  for (const l of [...lay.left, ...lay.right]) {
+    if (!l.present) continue;
+    const a = shiftAt(f, S, q.s, l.tIn), b = shiftAt(f, S, q.s, l.tOut);
+    const pa = l.tIn + a.d, pb = l.tOut + b.d;
+    if (q.t >= Math.min(pa, pb) && q.t <= Math.max(pa, pb)) {
+      const at = (t) => [x + q.nx * (t - q.t), z + q.nz * (t - q.t)], lo = Math.min(pa, pb), hi = Math.max(pa, pb);
+      const a0 = lo + 0.4, a1 = Math.max(a0, hi - 0.4);
+      return { off: q.t - (pa + pb) / 2, type: l.type, width: hi - lo, edges: [0, 0.25, 0.5, 0.75, 1].map((f) => at(a0 + (a1 - a0) * f)) };
+    }
+  }
+  return null;
+}
+
+/** Moves the lane-strip vertices of the engine's asphalt part across their roads (measureLineFit's fit), in place. */
+export function fitLinesToStreet(net, part, fit) {
+  const { fitOf, st } = fit;
+  if (!part?.position || !part.uv || !fitOf.size) return st;
   const P = part.position, U = part.uv, A = part.attributes?.aPiece?.array, E = part.attributes?.aEdges?.array, nv = P.length / 3;
   const member = roadMembers(net, part);
   // vertices the bend trim moved (off their sweep position, inside it): their road by phase, station and distance
@@ -154,13 +254,7 @@ export function fitLinesToStreet(net, part, prep, surf) {
     }
     const f = ri >= 0 ? fitOf.get(ri) : null;
     if (!f) continue;
-    const S = net.roads[ri].smp;
-    let i = 1; while (i < S.s.length - 1 && S.s[i] < s) i++;
-    const a = Math.max(0, Math.min(1, (s - S.s[i - 1]) / (S.s[i] - S.s[i - 1] || 1)));
-    const lerp = (q) => q[i - 1] + (q[i] - q[i - 1]) * a;
-    const eL = lerp(f.eL), eR = lerp(f.eR), dL = lerp(f.L), dR = lerp(f.R);
-    // linear across the carriageway [eR, eL] -> [eR + dR, eL + dL]; beyond it the nearer end's shift
-    const d = t >= eL ? dL : t <= eR ? dR : eL - eR > 1e-6 ? dR + ((t - eR) / (eL - eR)) * (dL - dR) : (dL + dR) / 2;
+    const { d, eL, eR, dL, dR, lerp } = shiftAt(f, net.roads[ri].smp, s, t);
     // a line ON the carriage edge (the engine's "edge" / "leftEdge" where it sees no sidewalk; a kerb there) comes
     // EDGE_IN inside it, as painted: never half under the kerb face (census F atKerb)
     // and it follows the measured kerb at this station (kL / kR, a short median), not the smoothed stack: its uv t is

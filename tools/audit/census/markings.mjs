@@ -106,6 +106,14 @@ if (!CHILD) {
     for (const x of r.runs) runs.push({ tile: r.tile, ...x });
   }
   for (const k of ["strokeM", "unmeasuredM", "offStreetM", "atKerbM", "skewM"]) sum[k] = Math.round(sum[k]);
+  // traffic lanes vs the painted lanes: |lane centre - painted lane centre| histogram (cm bins) over all tiles -> p95
+  const hist = new Array(301).fill(0);
+  for (const r of res) if (r.laneHist) r.laneHist.forEach((c, k) => { hist[k] += c; });
+  const nLane = hist.reduce((a, b) => a + b, 0);
+  let acc = 0, p95 = 0; for (let k = 0; k < hist.length; k++) { acc += hist[k]; if (acc >= 0.95 * nLane) { p95 = k / 100; break; } }
+  let acc2 = 0, p50 = 0; for (let k = 0; k < hist.length; k++) { acc2 += hist[k]; if (acc2 >= 0.5 * nLane) { p50 = k / 100; break; } }
+  sum.laneP95 = nLane ? p95 : null; sum.laneP50 = nLane ? p50 : null; sum.lanePts = nLane;
+  sum.laneOutside = res.reduce((a, r) => a + (r.laneOutside || 0), 0); sum.laneOffPaint = res.reduce((a, r) => a + (r.laneOffPaint || 0), 0); sum.laneNarrow = res.reduce((a, r) => a + (r.laneNarrow || 0), 0);
   runs.sort((a, b) => b.len - a.len);
   const byWhy = {}; for (const x of runs) for (const w of x.why.split("/")) byWhy[w] = (byWhy[w] || 0) + 1;
   console.log(`class F: ${JSON.stringify(sum)}\n  runs by why: ${JSON.stringify(byWhy)}`);
@@ -116,7 +124,7 @@ if (!CHILD) {
   const errs = res.filter((r) => r.error).length;
   if (errs) { console.log(`FAIL ${errs} tile(s) did not build`); bad++; }
   if (ceil) for (const [k, v] of Object.entries(ceil)) {
-    const got = sum[`${k}M`];
+    const got = sum[`${k}M`] !== undefined ? sum[`${k}M`] : sum[k];
     if (got == null) { console.log(`FAIL unknown ceiling ${k}`); bad++; continue; }
     const ok = got <= v; if (!ok) bad++;
     console.log(`  ${ok ? "ok  " : "FAIL"} ${k} ${got} m (ceiling ${v})`);
@@ -208,4 +216,35 @@ if (fit && A) {
   }
 }
 if (process.env.CENSUS_DBG) console.error(JSON.stringify(globalThis.H));
+// traffic lanes vs paint (markings round 2): every driven lane point of a fitted road, 12 m and more from its path's
+// ends (the junction blends), in the tile and on the carriageway, whose painted lane lies on the carriageway: its offset from the centre of the painted lane it
+// lies in (viewer/streets/lineFit.js paintedLaneCentre), in cm bins; points in no painted drive lane are counted apart
+{
+  const net = S.rd.net, fit = net.lineFit;
+  out.laneHist = new Array(301).fill(0); out.laneOutside = 0;
+  if (fit && net.graph) {
+    const { paintedLaneCentre } = await import("../../../viewer/streets/lineFit.js");
+    const byId = new Map(net.roads.map((r) => [r.id, r]));
+    for (const p of net.graph.paths) {
+      if (p.kind !== "lane") continue;
+      const rr = byId.get(p.roadId); if (!rr || !fit.fitOf.has(net.roads.indexOf(rr))) continue;
+      const P = p.pts.map((q) => [q[0] ?? q.x, q[1] ?? q.z]), c = [0];
+      for (let k = 1; k < P.length; k++) c.push(c[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]));
+      const L = c[c.length - 1];
+      for (let k = 0; k < P.length; k++) {
+        if (c[k] < 12 || L - c[k] < 12) continue;
+        const [x, z] = P[k];
+        if (!inB(x, z) || !MARKABLE.has(classAt(x, z))) continue;
+        const q = paintedLaneCentre(net, fit, rr, x, z);
+        if (!q || !["driving", "bus", "turn"].includes(q.type)) { out.laneOutside++; continue; }
+        // (where the painted lane itself is not clear carriageway across its width (a junction funnel the fit does not
+        // follow, its lines clipped there; a refuge island in it) the lane keeps to the street, not to the paint: apart)
+        if (!q.edges.every(([ex, ez]) => MARKABLE.has(classAt(ex, ez)))) { out.laneOffPaint = (out.laneOffPaint || 0) + 1; continue; }
+        // (a painted lane narrower than a car + 0.35 m a side (2.5 m): the lane keeps the car 1 m off the kerb instead)
+        if (q.width < 2.5) { out.laneNarrow = (out.laneNarrow || 0) + 1; continue; }
+        out.laneHist[Math.min(300, Math.round(Math.abs(q.off) * 100))]++;
+      }
+    }
+  }
+}
 console.log(JSON.stringify(out));
