@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import * as THREE from "three/webgpu";
 import { createStylizedTrees } from "../../vendor/stylized-trees/stylizedTrees.js";
 import {
-  bushShape, bushExtent, bushEnd, bushVariant, BUSH_SHAPES, BUSH_SEED, BUSH_TYPES, BUSH_KINDS, BUSH_NEAR, BUSH_TRIS, BUSH_END_BAND, BUSH_SHADOW, BUSH_END_MAX,
+  bushShape, bushExtent, bushEnd, bushVariant, fillBed, BUSH_SHAPES, BUSH_SEED, BUSH_TYPES, BUSH_KINDS, BUSH_NEAR, BUSH_TRIS, BUSH_END_BAND, BUSH_SHADOW, BUSH_END_MAX,
 } from "../../viewer/plants/bushes.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -60,12 +60,40 @@ for (const [t, T] of Object.entries(BUSH_TYPES)) if (!T.shapes.every((v) => BUSH
 const OLD_TRIS = { box_ball: [5214, 2742, 80], laurel: [7654, 6502, 80], rhododendron: [19626, 10854, 80], hydrangea: [17282, 8492, 80], rose: [5392, 3010, 80], lavender: [5880, 2064, 80] };   // docs/FOLIAGE.md
 const OLD_B = Object.fromEntries(oldB.map((m) => [m[1], [+m[2], +m[3], +m[4]]]));
 const D = path.join(ROOT, "data/plants");
-let worst = { new: 0, old: 0, at: "" }, worstOld = { new: 0, old: 0, at: "" }, nB = 0;
+let worst = { new: 0, old: 0, at: "" }, worstOld = { new: 0, old: 0, at: "" }, nB = 0, nBeds = 0, nFill = 0, covMin = 1, covSum = 0;
 for (const f of fs.readdirSync(D)) {
   if (!/^[A-Z]\d+\.json$/.test(f)) continue;
   const j = JSON.parse(fs.readFileSync(path.join(D, f), "utf8")), P = j.plants || [], types = j.types;
-  const pts = [];
-  for (let o = 0; o < P.length; o += 6) { const t = types[P[o + 2]]; if (BUSH_TYPES[t]) pts.push([P[o], P[o + 1], t, P[o + 4] / 100]); }
+  // the bushes as the city places them: the beds filled edge to edge (fillBed), their own shrubs replaced
+  const all = [];
+  for (let o = 0; o < P.length; o += 6) { const t = types[P[o + 2]]; all.push(BUSH_TYPES[t] ? { x: P[o], z: P[o + 1], type: t, h: P[o + 4] / 100 } : { x: P[o], z: P[o + 1], other: true }); }
+  const taken = new Set(), fills = [], BD = j.beds || [];
+  for (let o = 0; o < BD.length; o += 6) {
+    const cx = BD[o], cz = BD[o + 1], a = BD[o + 2] / 1000, L = BD[o + 3] / 100, W = BD[o + 4] / 100, R = Math.max(L, W);
+    const near = [], idx = [];
+    all.forEach((p, k) => { if (Math.abs(p.x - cx) < R && Math.abs(p.z - cz) < R) { near.push(p); idx.push(k); } });
+    const f = fillBed(cx, cz, a, L, W, near);
+    for (const k of f.taken) taken.add(idx[k]);
+    fills.push(...f.fill);
+    // coverage: the bed's points under a crown (radius 0.5 x the crown's width), and the rim reached
+    if (f.fill.length) {
+      nBeds++;
+      const c = Math.cos(a), s = Math.sin(a);
+      let inn = 0, cov = 0;
+      for (let i = 0; i <= 10; i++) for (let k = 0; k <= 10; k++) {
+        const u = (i / 10 - 0.5) * L * 0.98, v = (k / 10 - 0.5) * W * 0.98;
+        if ((2 * u / L) ** 4 + (2 * v / W) ** 4 > 1) continue;
+        inn++;
+        const x = cx + c * u - s * v, z = cz + s * u + c * v;
+        if (f.fill.some((q) => { const V = bushVariant(q.type, q.x, q.z), r = 0.5 * BUSH_SHAPES[V].w * q.h / BUSH_SHAPES[V].h; return Math.hypot(q.x - x, q.z - z) < r; })) cov++;
+      }
+      const share = inn ? cov / inn : 1;
+      covMin = Math.min(covMin, share); covSum += share;
+    }
+  }
+  nFill += fills.length;
+  const pts = [...all.filter((p, k) => !p.other && !taken.has(k)), ...fills].map((p) => [p.x, p.z, p.type, p.h]);
+  const olds = all.filter((p) => !p.other).map((p) => [p.x, p.z, p.type, p.h]);
   nB += pts.length;
   if (!pts.length) continue;
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
@@ -77,6 +105,10 @@ for (const f of fs.readdirSync(D)) {
       if (d > 100) continue;
       const v = bushVariant(t, x, z), e = bushEnd(t, sc);
       if (d < lodDist + 6) nw += triOf[v][0]; else if (d < e) nw += triOf[v][1];
+    }
+    for (const [x, z, t, sc] of olds) {
+      const d = Math.hypot(x - cx, z - cz);
+      if (d > 100) continue;
       const B = OLD_B[t], T = OLD_TRIS[t];
       if (d < B[0]) ol += T[0]; else if (d < B[1]) ol += T[1]; else if (d < Math.min(93, B[2] * (0.8 + 0.25 * Math.min(2, sc)))) ol += T[2];
     }
@@ -84,6 +116,7 @@ for (const f of fs.readdirSync(D)) {
     if (ol > worstOld.old) worstOld = { new: nw, old: ol, at: `${f.slice(0, -5)} (${cx.toFixed(0)}, ${cz.toFixed(0)})` };
   }
 }
+check("beds", nBeds > 0 && covSum / nBeds >= 0.9, `${nBeds} beds planted edge to edge with ${nFill} bushes: crowns over ${(100 * covSum / Math.max(1, nBeds)).toFixed(0)} % of a bed on average (>= 90 %), the least covered ${(100 * covMin).toFixed(0)} %`);
 check("tris-budget", worst.new <= Math.max(worst.old, worstOld.old) * 1.1, `${nB} bushes; worst new view ${worst.at}: ${Math.round(worst.new / 1000)}k tris (old there ${Math.round(worst.old / 1000)}k); worst old view ${worstOld.at}: ${Math.round(worstOld.old / 1000)}k (new ${Math.round(worstOld.new / 1000)}k)`);
 const pool = TS.slice(TS.indexOf("function makeTreePool"));
 const views = (pool.slice(0, pool.indexOf("const bands")).match(/\.addView\(/g) || []).length;

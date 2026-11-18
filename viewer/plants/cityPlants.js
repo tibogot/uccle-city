@@ -28,7 +28,7 @@ import { wind } from "../foliage/wind.js";
 import { StreamPool, Streamer, buildSource, MARGIN } from "../instanceStream.js";
 import { PLANT_TYPES, plantFades, plantMaterial, setTypeHeights, applyPlantSeason } from "./plantMaterial.js";
 import { bedGeometry, bedMaterial, windowBoxGeometry, windowBoxMaterial, BOX_VARIANTS } from "./plantKit.js";
-import { BUSH_OLD, BUSH_KINDS, bushEnd, bushSink, bushFoot, bushVariant } from "./bushes.js";
+import { BUSH_OLD, BUSH_KINDS, bushEnd, bushSink, bushFoot, bushVariant, fillBed } from "./bushes.js";
 import { bushPool } from "../treesStylized.js";
 
 const qs = new URLSearchParams(location.search);
@@ -193,24 +193,39 @@ export const cityPlants = {
     let srcs = null;
     const per = Object.fromEntries(PLANT_TYPES.map((t) => [t, []]));          // x y z yaw scale rnd end
     const ground = (x, z, r) => Math.min(groundAt(x, z), groundAt(x + r, z), groundAt(x - r, z), groundAt(x, z + r), groundAt(x, z - r));
+    const cand = [];                                                            // the bushes (+ the other plants, for the beds)
     if (doc?.plants) {
       const P = doc.plants, types = doc.types || PLANT_TYPES;
       for (let o = 0; o < P.length; o += 6) {
         const t = types[P[o + 2]], L = this.lib.types[t]; if (!L) continue;
         const x = P[o], z = P[o + 1], sc = P[o + 4] / 100, yaw = (P[o + 3] / 255) * Math.PI * 2;
         const kind = this.bushes ? BUSH_KINDS.indexOf(t) + 1 : 0;
-        if (kind) {
-          // JOINS: the foot on the lowest drawn ground under the bush, sunk (the lowest ring's cards reach below it)
-          const h = sc * L.height, v = bushVariant(t, x, z);
-          bush.push(x, ground(x, z, bushFoot(h, v)) - bushSink(h), z, yaw, h, v, kind, bushEnd(t, h));
-          continue;
-        }
+        if (kind) { cand.push({ x, z, type: t, h: sc * L.height, yaw }); continue; }
+        if (this.bushes) cand.push({ x, z, other: true });
         const r = Math.min(0.5, 0.3 * L.height * sc);
         const end = Math.min(END_MAX - 2, BANDS[t][2] * (0.8 + 0.25 * Math.min(2, sc * L.height)));
         per[t].push(x, ground(x, z, r) - 0.04, z, yaw, sc, h01(x, z, 9), end);
       }
     }
     const beds = this.bedList(doc, groundAt);
+    if (this.bushes) {
+      // PLANTED BEDS: each drawn bed filled edge to edge with its own shrubs' type (bushes.js fillBed), its shrubs replaced
+      const taken = new Set(), fills = [];
+      for (let i = 0; i < beds.length; i += 2) {
+        const m = beds[i], L = Math.hypot(m[0], m[2]), W = Math.hypot(m[8], m[10]);
+        const near = [], idx = [];
+        const R = Math.max(L, W);
+        cand.forEach((p, k) => { if (Math.abs(p.x - m[12]) < R && Math.abs(p.z - m[14]) < R) { near.push(p); idx.push(k); } });
+        const f = fillBed(m[12], m[14], Math.atan2(m[2], m[0]), L, W, near);
+        for (const k of f.taken) taken.add(idx[k]);
+        fills.push(...f.fill);
+      }
+      // JOINS: the foot on the lowest drawn ground under the bush, sunk (the lowest ring's cards reach below it)
+      for (const p of [...cand.filter((p, k) => !p.other && !taken.has(k)), ...fills]) {
+        const v = bushVariant(p.type, p.x, p.z);
+        bush.push(p.x, ground(p.x, p.z, bushFoot(p.h, v)) - bushSink(p.h), p.z, p.yaw, p.h, v, BUSH_KINDS.indexOf(p.type) + 1, bushEnd(p.type, p.h));
+      }
+    }
     counts.beds = beds.length / 2;
     // window boxes on the façade kit's sills, geraniums in them
     const boxes = [];

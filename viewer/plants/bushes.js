@@ -32,11 +32,16 @@ export const BUSH_END = { box_ball: 60, laurel: 80, rhododendron: 80, hydrangea:
 export const BUSH_END_MIN = 50, BUSH_END_MAX = 95, BUSH_END_BAND = 0.2;
 /** sun shadows cast to `end`, dithered out over `band` (m, the view camera) */
 export const BUSH_SHADOW = { end: 32, band: 8 };
-/** triangle budget per bush and LOD (the gate): LOD 1 at most the old far shell (80) */
-export const BUSH_TRIS = [220, 80];
+/** triangle budget per bush and LOD (the gate; the clipped shapes' dense crowns are the most) */
+export const BUSH_TRIS = [260, 130];
+/** the sunlit tips: the bushes' light through the leaves and fill (emissive) x this (the trees' x 1: the bushes' tips
+ *  read yellow-white next to the tree crowns at full strength) */
+export const BUSH_GLOW = 0.55;
 
 // shapes at scale 1 (m): h height, w width; rings [height share, clumps]; top clump; cardScale (card size / clump);
-// cards per clump [LOD 0, LOD 1, LOD 2] (nested: LOD 1 keeps the first n1 of LOD 0's)
+// cards per clump [LOD 0, LOD 1, LOD 2] (nested: LOD 1 keeps the first n1 of LOD 0's); inner: a ring of clumps inside
+// the outer one (CLIPPED shrubs, box / laurel: a dense, filled crown, its inside darker by the clumps over it), aoFloor
+// the darkest a card gets (lower = a darker inside)
 export const BUSH_SHAPES = [
   { name: "round-fine", h: 1.0, w: 1.05, rings: [[0.22, 6]], top: true, cardScale: 0.66, cards: [11, 5, 2] },
   { name: "round", h: 1.3, w: 1.5, rings: [[0.28, 6]], top: true, cardScale: 0.78, cards: [9, 5, 2] },
@@ -44,15 +49,18 @@ export const BUSH_SHAPES = [
   { name: "low", h: 0.6, w: 1.25, rings: [[0.42, 5]], top: true, cardScale: 0.75, cards: [9, 5, 2] },
   { name: "tall", h: 2.4, w: 1.5, rings: [[0.17, 5], [0.52, 5]], top: true, cardScale: 0.78, cards: [8, 3, 2] },
   { name: "tall-loose", h: 2.0, w: 1.9, rings: [[0.19, 6], [0.58, 4]], top: true, cardScale: 0.84, cards: [8, 3, 2] },
+  { name: "clipped-ball", h: 1.0, w: 1.15, rings: [[0.24, 7]], inner: [[0.5, 4]], top: true, cardScale: 0.92, cards: [9, 5, 2], aoFloor: 0.18, clipped: true },
+  { name: "clipped-tall", h: 2.2, w: 1.6, rings: [[0.16, 5], [0.5, 5]], inner: [[0.4, 3]], top: true, cardScale: 0.95, cards: [8, 4, 2], aoFloor: 0.18, clipped: true },
 ];
 /** per type: its variants and its leaf colour against the trees' palette (rgb multiplier, desaturation) */
 export const BUSH_TYPES = {
-  box_ball: { shapes: [0, 0, 1], tint: [0.58, 0.68, 0.5, 0.0] },
-  laurel: { shapes: [4, 5, 1], tint: [0.54, 0.7, 0.58, 0.0] },
-  rhododendron: { shapes: [1, 5, 2], tint: [0.58, 0.68, 0.54, 0.05] },
-  hydrangea: { shapes: [1, 2], tint: [0.8, 0.9, 0.74, 0.0] },
-  rose: { shapes: [2, 3], tint: [0.7, 0.78, 0.64, 0.05] },
-  lavender: { shapes: [3], tint: [0.92, 0.88, 0.92, 0.55] },
+  // (less red than green: the trees' top colour lit by a low sun read yellow on the bushes)
+  box_ball: { shapes: [6, 6, 0], tint: [0.46, 0.64, 0.5, 0.0] },
+  laurel: { shapes: [7, 7, 4], tint: [0.42, 0.62, 0.54, 0.0] },
+  rhododendron: { shapes: [1, 5, 2], tint: [0.5, 0.64, 0.54, 0.05] },
+  hydrangea: { shapes: [1, 2], tint: [0.66, 0.84, 0.72, 0.0] },
+  rose: { shapes: [2, 3], tint: [0.58, 0.72, 0.62, 0.05] },
+  lavender: { shapes: [3], tint: [0.8, 0.84, 0.92, 0.55] },
 };
 
 /** the instance's far end (m) from its type and height (m) */
@@ -105,12 +113,20 @@ export function bushShape(r, lod, seed) {
       clumps.push({ c: V(Math.cos(a) * rr, y + (r() - 0.5) * 0.1 * h, Math.sin(a) * rr), r: cr * (0.85 + r() * 0.3) });
     }
   }
+  // CLIPPED: an inner ring of smaller clumps (the crown filled: no ground seen through it)
+  for (const [fy, n] of S.inner || []) {
+    const y = Math.max(cr * 0.9, fy * h), a0 = r() * TAU;
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (i / n) * TAU + (r() - 0.5) * 0.6;
+      clumps.push({ c: V(Math.cos(a) * R * 0.32, y, Math.sin(a) * R * 0.32), r: cr * (0.8 + r() * 0.2) });
+    }
+  }
   if (S.top) clumps.push({ c: V((r() - 0.5) * 0.1 * S.w, h - cr * 0.95, (r() - 0.5) * 0.1 * S.w), r: cr * (0.95 + r() * 0.2) });
   clumps.push({ c: V(0, h * 0.42, 0), r: Math.min(h * 0.45, R * 0.6) });           // the core (fills the middle)
   return {
     crown: V(0, h * 0.48, 0), rad: V(R, h * 0.5, R), clumps,
     cards: S.cards, cardScale: S.cardScale, trunk: emptyTrunk,
-    aoOverhead: 0.85, aoFloor: 0.28, crownNormal: 0.45,
+    aoOverhead: S.clipped ? 0.78 : 0.85, aoFloor: S.aoFloor ?? 0.28, crownNormal: S.clipped ? 0.6 : 0.45,
   };
 }
 
@@ -125,4 +141,45 @@ export function bushExtent(leaves) {
   }
   const tris = leaves.index.count / 3;
   return { top, foot, tris, cards: tris / 2 };
+}
+
+/**
+ * PLANTED BEDS (coordinator 2026-11-18: "beds planted edge to edge, crowns touching and overlapping the rim"): a bed
+ * (cx, cz, its length axis angle, length L, width W, m) is filled with one shrub type on a grid at 0.7 x the crown's
+ * width, the outer crowns reaching ~25 % of their width over the rim; the bed's own shrubs give the type and height
+ * (the most common type, the median height); a bed with only bed flowers (bulbs) is left as it is; an empty one gets a
+ * low type by its position. plants: [{ x, z, type, h, other }] (other: a non-shrub plant) -> { fill: [{ x, z, type, h,
+ * yaw }], taken: Set of the plants' indices inside a filled bed (replaced by the fill) }
+ */
+export function fillBed(cx, cz, ang, L, W, plants) {
+  const c = Math.cos(ang), s = Math.sin(ang), inside = [];
+  let other = false;
+  plants.forEach((p, i) => {
+    const dx = p.x - cx, dz = p.z - cz, u = c * dx + s * dz, v = -s * dx + c * dz;
+    if ((2 * u / L) ** 4 + (2 * v / W) ** 4 > 1.15) return;
+    if (p.other) other = true; else inside.push(i);
+  });
+  if (!inside.length && other) return { fill: [], taken: new Set() };
+  const hsh = (k) => { let h = Math.imul(Math.floor(cx * 10) | 0, 73856093) ^ Math.imul(Math.floor(cz * 10) | 0, 19349663) ^ Math.imul(k + 7, 83492791); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  let type = ["box_ball", "lavender", "rose"][Math.floor(hsh(1) * 3)], h = 0.55 + 0.2 * hsh(2);
+  if (inside.length) {
+    const cnt = {};
+    for (const i of inside) cnt[plants[i].type] = (cnt[plants[i].type] || 0) + 1;
+    type = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0];
+    const hs = inside.map((i) => plants[i].h).sort((a, b) => a - b);
+    h = Math.min(1.4, Math.max(0.35, hs[hs.length >> 1]));
+  }
+  const v0 = bushVariant(type, cx, cz), w = BUSH_SHAPES[v0].w * h / BUSH_SHAPES[v0].h;
+  const sp = Math.max(0.25, w * 0.7);
+  const hu = Math.max(0, L / 2 - w * 0.25), hv = Math.max(0, W / 2 - w * 0.25);
+  const nu = Math.max(1, Math.round((2 * hu) / sp) + 1), nv = Math.max(1, Math.round((2 * hv) / sp) + 1);
+  const fill = [];
+  for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+    let u = nu === 1 ? 0 : -hu + (2 * hu * i) / (nu - 1), v = nv === 1 ? 0 : -hv + (2 * hv * j) / (nv - 1);
+    if ((u / Math.max(0.01, L / 2)) ** 4 + (v / Math.max(0.01, W / 2)) ** 4 > 1.0) continue;   // (the superellipse's corners)
+    const k = i * 31 + j;
+    u += (hsh(k * 3) - 0.5) * 0.15 * w; v += (hsh(k * 3 + 1) - 0.5) * 0.15 * w;
+    fill.push({ x: cx + c * u - s * v, z: cz + s * u + c * v, type, h: h * (0.9 + 0.2 * hsh(k * 3 + 2)), yaw: hsh(k * 5 + 9) * TAU });
+  }
+  return { fill, taken: new Set(inside) };
 }

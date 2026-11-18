@@ -20,7 +20,7 @@ import { useTreeKit, startTreeKit } from "./treeKitCity.js";
 import { frameBudget, FadeSlots, Streamer, buildSource } from "./instanceStream.js";
 import { setMultiDrawRenderer, multiDrawOK, MultiDrawSet, MultiStreamPool } from "./multiDraw.js";
 import { wxMat } from "./weather/cityWeatherize.js";
-import { BUSH_OLD, BUSH_SHAPES, BUSH_SEED, BUSH_KINDS, BUSH_TYPES, BUSH_SHADOW, BUSH_END_MAX, BUSH_END_BAND, bushShape, bushExtent } from "./plants/bushes.js";
+import { BUSH_OLD, BUSH_SHAPES, BUSH_SEED, BUSH_KINDS, BUSH_TYPES, BUSH_SHADOW, BUSH_END_MAX, BUSH_END_BAND, BUSH_GLOW, bushShape, bushExtent } from "./plants/bushes.js";
 import { wind, windAt, windPrev } from "./foliage/wind.js";
 import { setMotionDelta } from "./upscale.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
@@ -700,7 +700,8 @@ function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
       setMotionDelta(colour, bushMotion);
       colour.maskShadowNode = colour.maskShadowNode.and(bushShadowKeep());
       colour.colorNode = tintOf(pm.colour.colorNode);
-      if (pm.colour.emissiveNode) colour.emissiveNode = tintOf(pm.colour.emissiveNode);
+      // (the bushes' sunlit tips: their light through the leaves + fill at BUSH_GLOW: not yellow-white next to the trees)
+      if (pm.colour.emissiveNode) colour.emissiveNode = tintOf(pm.colour.emissiveNode).mul(select(slotParts().k.greaterThan(0.5), float(BUSH_GLOW), float(1)));
     }
     const bark = own(tr, `${tr.name || "stylized-bark"}:pool`); bark.maskNode = and(tr.maskNode, slotKeep()); bark.maskShadowNode = and(tr.maskShadowNode, slotKeep());
     return { depth, colour, bark };

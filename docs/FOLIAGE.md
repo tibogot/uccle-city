@@ -365,3 +365,28 @@ both sides). Check: `tools/audit/bushGate.mjs` (merge gate row `bushes`).
   brugmann-maisons, stjob-station, lycee-front, stpierre-parvis. From the bushes (the diff boxes sit on bushes only):
   stjob-shops, ham-terrace, orange-villas, defre-villas, waterloo-fortjaco, cortenbosch-lane: the old dark balls
   replaced by the leaf-card shrubs (airier, a lighter green than the old shells even after the tune).
+
+### Round 2 (coordinator's defect eye, 2026-11-18)
+
+- **Too sparse** -> CLIPPED shapes for box (`clipped-ball`) and laurel (`clipped-tall`): an inner ring of clumps
+  inside the outer one, bigger cards (0.9-0.95 of a clump), a darker inside (aoFloor 0.18, aoOverhead 0.78), a rounder
+  crown normal; the informal types (rhododendron, hydrangea, rose, lavender) keep the loose shapes. Per-shape budget
+  now 260 / 130 triangles (clipped-ball 226 / 126, clipped-tall 232 / 116).
+- **Beds planted edge to edge** -> `bushes.js fillBed`: every drawn mulch bed filled on a grid at 0.7 x the crown's
+  width with its own shrubs' type and median height (its shrubs replaced), the outer crowns ~25 % of their width over
+  the rim; a bed holding only bulbs is left; an empty one gets a low type. Data-wide: 5,332 beds, 26,674 bushes,
+  crowns over 96 % of a bed on average (gate row `beds`).
+- **Yellow-white tips** -> the bushes' light through the leaves + fill x 0.55 (`BUSH_GLOW`) and the type tints with
+  less red (the trees' top colour lit by the low sun read lime on the bushes).
+- Contact: 5,473 bushes on I6 / I5 / H5 / H6, 0 floating. Gate: worst 25 m-grid view 88 k bush triangles (E1, many
+  filled beds; old there 15 k), worst old view 391 k (new there 22 k).
+- Perf (preflight RED as before: INDICATIVE), GPU p50 ms / draws, one load each:
+  | view | old | new (round 2) |
+  |---|---|---|
+  | street | 5.51 / 94 | 5.24 / 93 |
+  | front garden | 5.83 / 115 | 5.37 / 114 |
+  | Place Saint-Job bed at 4 m | 6.03 / 128 | 5.90 / 129 |
+  | sky 160 m (no bushes drawn) | 5.18 / 114 | 5.31 / 115 |
+- Tour (the 6 bush views again, `.tour/bushes3`): all six still flag, on bushes only; stjob-shops = the Place
+  Saint-Job bed now planted; defre-villas = a lone informal shrub that reads smaller and airier than the old dark ball.
+  Shots: `docs/bushes/round2_*`.
