@@ -18,8 +18,12 @@ import { refineLaneGraph, joinLaneGraph } from "./streets/laneGraph.js";
 import { relevelRoads } from "./streets/roadLevels.js";
 import { recentreRoads } from "./streets/recentre.js";
 import { trimBendFolds } from "./streets/roadBends.js";
+import { edgeField } from "./heightmap.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
+// (claude/sidewalk, ?sidewalk=old = 0) the terrain higher than a street banks down to its outer edge at this slope (m per m,
+// 45 degrees), its mirror under the edge (viewer/heightmap.js clampUnder bank + edgeField): no saw-tooth bank foot, no terrain over the edge
+export const BANK_SLOPE = 1.0;
 
 const now = () => (globalThis.performance ?? Date).now();
 
@@ -75,7 +79,7 @@ export function buildRoadData(o) {
   const lap = (k) => { const t = now(); times[k] = Math.round(t - t0); t0 = t; };
   // measured surfaces first, then the engine's lane stacks fitted into the measured kerb-to-kerb widths
   const ground = o.ground ?? hm.ground;   // o.ground: e.g. the hero road bridges' decks over the cutting (rail/railData.js roadDeckGround)
-  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true }) : null;
+  const prep = surf ? prepareSurfaces(surf, ground, bounds, o.trees ?? null, { clampH: o.clampH === true, kerbLevel: o.kerbLevel === true }) : null;
   // citydefects (OPT-IN, o.recentre true = ?recentre=1): each OSM centre line moved onto the middle of its measured
   // carriageway (viewer/streets/recentre.js). Road checker on I6 / E4 / J5: "leaves the measured street" 57 -> 48, C4
   // paint off the street 36 -> 29, but folds 14 -> 23 and coplanar overlaps 134 -> 225: not default until those are 0
@@ -168,9 +172,11 @@ export function buildRoadData(o) {
   lap("road meshes + carve");
   const noDTM = hm.h?.min != null ? (x, z) => hm.ground(x, z) <= hm.h.min + 0.02 : () => false;
   const weldSkip = (x, z) => noDTM(x, z) || (ground !== hm.ground && Math.abs(ground(x, z) - hm.ground(x, z)) > 0.3);
-  const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip, nearest: o.weldNearest === true }) : 0;   // joins2: each cell banks on its nearest edge (heightmap.js weld)
+  // (claude/sidewalk: both banks on the exact distance to the streets' outer edges, viewer/heightmap.js edgeField)
+  const field = o.kerbLevel === true && hm.weld ? edgeField(welds, hm.h, { reach: 4, minWidth: o.clampTop === true ? 0.02 : 0 }) : null;
+  const weldedCells = hm.weld ? hm.weld(welds, { skip: weldSkip, nearest: o.weldNearest === true, field }) : 0;   // joins2: each cell banks on its nearest edge (heightmap.js weld)
   // joins2: then no terrain over any surface (heightmap.js clampUnder; ?groundweld=old: none)
-  const clampedCells = hm.clampUnder && o.weldNearest === true ? hm.clampUnder(welds, { skip: weldSkip, stackTop: o.clampTop === true, stackGap: 0.3, minWidth: o.clampTop === true ? 0.02 : 0 }) : 0;
+  const clampedCells = hm.clampUnder && o.weldNearest === true ? hm.clampUnder(welds, { skip: weldSkip, stackTop: o.clampTop === true, stackGap: 0.3, minWidth: o.clampTop === true ? 0.02 : 0, bank: o.kerbLevel === true ? BANK_SLOPE : 0, field }) : 0;
   const atlas = compactAtlas(built.atlas);
   lap("terrain weld");
   if (v2) {

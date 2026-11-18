@@ -28,12 +28,12 @@ function shim() {
 }
 
 /** the tile as the city builds it (default entry of tools/boot3/entries.json: kit on, heroes' solids hidden) + its buildings.json */
-export async function buildTile(T) {
+export async function buildTile(T, over = {}) {
   shim();
   const { buildTileData } = await imp("viewer/tileData.js");
   const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
   const entries = JSON.parse(readFileSync(join(ROOT, "tools/boot3/entries.json"), "utf8"));
-  const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false };
+  const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false, ...over };
   const realLog = console.log; console.log = () => {};
   let d;
   try { d = await buildTileData(entry, pathToFileURL(join(ROOT, "data/tiles") + "/").href); } finally { console.log = realLog; }

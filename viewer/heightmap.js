@@ -77,7 +77,7 @@ export class Heightmap {
    * to `depth` under it (the carve's depth). Only raises. Skipped where the rise would exceed maxRise (a structure: decks, overpasses) or where skip(x, z)
    * (no DTM data, bridge decks). meshes: [{ position, index }]. Returns the number of cells raised.
    */
-  weld(meshes, { slope = 0.7, reach = 4, maxRise = 2.0, depth = 0.12, skip = null, nearest = false } = {}) {
+  weld(meshes, { slope = 0.7, reach = 4, maxRise = 2.0, depth = 0.12, skip = null, nearest = false, field = null } = {}) {
     const { x0, z0, cols, rows, step } = this.h;
     const SHOULDER = 0.01, Y = this.y;
     const top = new Float32Array(cols * rows).fill(-Infinity);          // highest surface over each covered cell
@@ -108,7 +108,15 @@ export class Heightmap {
     // highest edge cell 1.5 m away stands up to grade x 1.5 m over the edge next to the cell, and the terrain raised to
     // it drew over the path in a saw-tooth of grid triangles (Wolvendael, Kauwberg: "a path in a forest with saw-tooth edges")
     const wantD = nearest ? new Float32Array(cols * rows).fill(Infinity) : null;
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    // (claude/sidewalk, field = edgeField of these meshes; ?sidewalk=old = none): the shoulder and bank from the EXACT
+    // distance to the nearest outer edge and that edge's height there, not from the nearest covered grid vertex: the
+    // bank's lines were offsets of the grid's stair-steps (a blocky mound beside a sidewalk / strip: owner image 77)
+    const FIELD_SHOULDER = 0.75;     // (m from the TRUE edge; the old 1.5 m was from the nearest covered vertex, ~0.5-1 m in)
+    if (field) for (let k = 0; k < cols * rows; k++) {
+      if (top[k] !== -Infinity || field.inside[k] || !(field.d[k] <= reach)) continue;
+      want[k] = field.y[k] - SHOULDER - slope * Math.max(0, field.d[k] - FIELD_SHOULDER);
+    }
+    if (!field) for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const k = r * cols + c;
       if (top[k] === -Infinity) continue;
       // only edge cells (an uncovered 8-neighbour) seed the bank
@@ -153,8 +161,10 @@ export class Heightmap {
    * natural ground beyond the ring is kept: a short bank one cell out. Only lowers; skipped where it would drop more than
    * maxDrop (a structure: a road through a tunnel / under an embankment) or skip(x, z). Returns the cells lowered.
    */
-  clampUnder(meshes, { lift = 0.012, rise = 0.1, maxDrop = 1.2, skip = null, stackTop = false, stackGap = 0, minWidth = 0 } = {}) {
+  clampUnder(meshes, { lift = 0.012, rise = 0.1, maxDrop = 1.2, skip = null, stackTop = false, stackGap = 0, minWidth = 0, bank = 0, bankReach = 3, field = null } = {}) {
     const { x0, z0, cols, rows, step } = this.h, Y = this.y;
+    // (bank: the triangles' own ring follows the bank's slope; field: edgeField of these meshes)
+    if (bank > 0) rise = bank;
     const cap = new Float32Array(cols * rows).fill(Infinity), reach2 = (1.5 * step) ** 2;
     // a vertex UNDER a surface takes only the triangles over it (a folded street's lower half next to it must not pull
     // it down: the street floated over a hole); a vertex beside one takes the nearest edges round it
@@ -208,12 +218,35 @@ export class Heightmap {
         }
       }
     }
+    // BANK (claude/sidewalk, rule 28 provisional; ?sidewalk=old = none): the terrain beside a street that is HIGHER than
+    // it (a sidewalk at the foot of a bank, a path cut into a slope) as a smooth bank from the street's outer edge at
+    // `bank` (m per m) out to bankReach: y(edge) - lift + bank x d outside and, under the street within 1.5 cells of the
+    // edge, its mirror y(edge) - lift - bank x d (hidden under the surface). A 1 m terrain triangle straddling the edge
+    // then crosses the street's height ON the edge (linear in the signed distance), wherever the grid falls. Before, the
+    // ring was held to +0.1 m per m out to 1.5 cells and the vertices under the street to its height: a straddling
+    // triangle rose over the edge up to ~0.5 m into the sidewalk in a zig-zag along the grid, and the bank stood up one
+    // cell out (a saw-tooth bank foot: owner images 81 / 91)
+    const B = bank > 0 ? (field ?? edgeField(meshes, this.h, { reach: bankReach, minWidth })) : null;
     let n = 0;
     for (let k = 0; k < Y.length; k++) {
       // fix3: a vertex BESIDE surfaces whose caps differ by more than stackGap (between a road and a sidewalk 0.9 m
       // lower, J6) follows its NEAREST edge, as the weld does, not the lowest one (the other surface floated over it)
       const spread = capHi && cap[k] < Infinity && capBHi[k] - cap[k] > stackGap;
-      const c = capIn[k] < Infinity ? (capHi && capHi[k] - capIn[k] > stackGap ? capHi[k] : capIn[k]) : spread ? capN[k] : cap[k];
+      let c = capIn[k] < Infinity ? (capHi && capHi[k] - capIn[k] > stackGap ? capHi[k] : capIn[k]) : spread ? capN[k] : cap[k];
+      // bank: beside the street the bank of its nearest outer edge; under it, the notch mirroring that bank
+      // (the notch never deeper than maxDrop: a vertex the base cap lowers within maxDrop is still lowered)
+      if (B && B.d[k] <= bankReach) {
+        const cb = B.y[k] - lift + (B.inside[k] ? -bank : bank) * B.d[k];
+        // (never deeper than maxDrop: where the bank would dig past it the vertex keeps its base cap, as before)
+        if (capIn[k] < Infinity) c = Math.min(c, Math.max(cb, Y[k] - maxDrop + 1e-3));
+        else if (!B.inside[k]) {
+          // past maxDrop the cut fades out (none where it would dig >= BANK_NEED_MAX: a structure), continuous in the
+          // need: skipping it outright left a 1 m step in the bank where the need crossed maxDrop (a saw-tooth crest)
+          const need = Y[k] - cb;
+          c = need <= maxDrop ? cb : Y[k] - 0.999 * maxDrop * Math.max(0, (BANK_NEED_MAX - need) / (BANK_NEED_MAX - maxDrop));
+          if (Y[k] - c > maxDrop) c = Y[k] - 0.999 * maxDrop;
+        }
+      }
       if (!(c < Y[k])) continue;
       if (Y[k] - c > maxDrop) continue;
       if (skip && skip(x0 + (k % cols) * step, z0 + Math.floor(k / cols) * step)) continue;
@@ -221,4 +254,94 @@ export class Heightmap {
     }
     return n;
   }
+}
+
+/**
+ * EDGE FIELD (claude/sidewalk, rule 28 provisional; ?sidewalk=old = none): for every grid vertex within `reach` of a
+ * street's OUTER edge, the exact plan distance d to the nearest such edge and the edge's height y there; inside[k] = 1
+ * for a vertex under a near-flat surface triangle (its d only within 1.5 cells). Outer edges: the edges of the
+ * near-flat triangles used once in their mesh whose outward side (0.3 m out) no near-flat triangle of any mesh covers.
+ * The weld's bank (a surface over the terrain) and clampUnder's bank (the terrain over a surface) are built on it as
+ * signed-distance fields: smooth offset curves of the real edge, never the 1 m grid's stair-steps.
+ * meshes: [{ position, index }]. Returns { d, y, inside, edges }.
+ */
+const BANK_NEED_MAX = 4;           // m: clampUnder's bank never digs where it would need this much (a tunnel, a structure)
+
+export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
+  const { x0, z0, cols, rows, step } = h, N = cols * rows;
+  const D = new Float32Array(N).fill(Infinity), Ye = new Float32Array(N), inside = new Uint8Array(N);
+  const flat = (P, a, b, c) => {
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    if (!(Math.abs(ny) > 1e-9 && Math.abs(ny) >= 0.6 * Math.hypot(nx, ny, nz))) return false;
+    if (minWidth > 0) {
+      const L = Math.max(Math.hypot(P[b] - P[a], P[b + 2] - P[a + 2]), Math.hypot(P[c] - P[b], P[c + 2] - P[b + 2]), Math.hypot(P[a] - P[c], P[a + 2] - P[c + 2]));
+      if (Math.abs(ny) / L < minWidth) return false;                 // |ny| = 2 x plan area: / longest edge = the width
+    }
+    return true;
+  };
+  const inTri = (P, a, b, c, x, z) => {
+    const ax = P[a], az = P[a + 2], bx = P[b], bz = P[b + 2], cx = P[c], cz = P[c + 2];
+    const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+    if (Math.abs(det) < 1e-12) return false;
+    const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det;
+    return l1 >= -1e-6 && l2 >= -1e-6 && 1 - l1 - l2 >= -1e-6;
+  };
+  // near-flat triangles: the grid vertices they cover, and a 2 m bucket grid (the coverage test)
+  const BK = 2, buckets = new Map(), tris = [];
+  const bkey = (i, j) => (i + 32768) * 65536 + (j + 32768);
+  meshes.forEach(({ position: P, index: I }, mi) => {
+    for (let t = 0; t < I.length; t += 3) {
+      const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+      if (!flat(P, a, b, c)) continue;
+      const id = tris.length / 2; tris.push(mi, t);
+      const xa = Math.min(P[a], P[b], P[c]), xb = Math.max(P[a], P[b], P[c]), za = Math.min(P[a + 2], P[b + 2], P[c + 2]), zb = Math.max(P[a + 2], P[b + 2], P[c + 2]);
+      for (let i = Math.floor(xa / BK); i <= Math.floor(xb / BK); i++) for (let j = Math.floor(za / BK); j <= Math.floor(zb / BK); j++) { const key = bkey(i, j); let L = buckets.get(key); if (!L) buckets.set(key, (L = [])); L.push(id); }
+      const c0 = Math.max(0, Math.ceil((xa - x0) / step)), c1 = Math.min(cols - 1, Math.floor((xb - x0) / step));
+      const r0 = Math.max(0, Math.ceil((za - z0) / step)), r1 = Math.min(rows - 1, Math.floor((zb - z0) / step));
+      for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) { const k = r * cols + cc; if (!inside[k] && inTri(P, a, b, c, x0 + cc * step, z0 + r * step)) inside[k] = 1; }
+    }
+  });
+  const coveredAt = (x, z) => {
+    const L = buckets.get(bkey(Math.floor(x / BK), Math.floor(z / BK)));
+    if (L) for (const id of L) { const { position: P, index: I } = meshes[tris[id * 2]], t = tris[id * 2 + 1]; if (inTri(P, I[t] * 3, I[t + 1] * 3, I[t + 2] * 3, x, z)) return true; }
+    return false;
+  };
+  const R = Math.max(reach, 1.5 * step), Rin = 1.5 * step, BIG = 4294967296;
+  let edges = 0;
+  for (const { position: P, index: I } of meshes) {
+    // edges of the near-flat triangles used once (by vertex index; a seam of split vertices fails the coverage test)
+    const use = new Map();
+    for (let t = 0; t < I.length; t += 3) {
+      if (!flat(P, I[t] * 3, I[t + 1] * 3, I[t + 2] * 3)) continue;
+      for (let e = 0; e < 3; e++) {
+        const u = I[t + e], v = I[t + (e + 1) % 3], key = u < v ? u * BIG + v : v * BIG + u;
+        const o = use.get(key);
+        if (o === undefined) use.set(key, I[t + (e + 2) % 3]); else if (o !== -1) use.set(key, -1);
+      }
+    }
+    for (const [key, opp] of use) {
+      if (opp === -1) continue;
+      const u = Math.floor(key / BIG), v = key - u * BIG;
+      const ax = P[u * 3], ay = P[u * 3 + 1], az = P[u * 3 + 2], bx = P[v * 3], by = P[v * 3 + 1], bz = P[v * 3 + 2];
+      const ex = bx - ax, ez = bz - az, L2 = ex * ex + ez * ez;
+      if (L2 < 1e-8) continue;
+      const L = Math.sqrt(L2);
+      let nx = -ez / L, nz = ex / L;                                   // outward: away from the opposite vertex
+      if ((P[opp * 3] - ax) * nx + (P[opp * 3 + 2] - az) * nz > 0) { nx = -nx; nz = -nz; }
+      const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+      if (coveredAt(mx + nx * 0.3, mz + nz * 0.3)) continue;          // another surface goes on: not an outer edge
+      edges++;
+      const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - R - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + R - x0) / step));
+      const r0 = Math.max(0, Math.floor((Math.min(az, bz) - R - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + R - z0) / step));
+      for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) {
+        const px = x0 + cc * step, pz = z0 + r * step;
+        const t = Math.min(1, Math.max(0, ((px - ax) * ex + (pz - az) * ez) / L2)), dx = px - ax - t * ex, dz = pz - az - t * ez;
+        const d = Math.hypot(dx, dz), k = r * cols + cc;
+        if (d > R || d >= D[k] || (inside[k] && d > Rin)) continue;
+        D[k] = d; Ye[k] = ay + (by - ay) * t;
+      }
+    }
+  }
+  return { d: D, y: Ye, inside, edges };
 }
