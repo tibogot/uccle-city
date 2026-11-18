@@ -390,3 +390,34 @@ both sides). Check: `tools/audit/bushGate.mjs` (merge gate row `bushes`).
 - Tour (the 6 bush views again, `.tour/bushes3`): all six still flag, on bushes only; stjob-shops = the Place
   Saint-Job bed now planted; defre-villas = a lone informal shrub that reads smaller and airier than the old dark ball.
   Shots: `docs/bushes/round2_*`.
+
+## 12. Garden hedges rebuilt (branch `claude/hedges`, 2026-11-18; `?hedges=old` = before)
+
+Owner playtest 2026-11-18: "garden hedges look very bad, very cheap". The city's front-garden hedges are the gardens
+kit's instanced ~1 m modules (`viewer/gardens/gardenHedge.js`, through `gardenKit.js` GardenPool: 3 body + 1 card
+draw for the whole city, unchanged). Old: a smooth swept box shaded by value noise (`viewer/gardens/gardenHedgeOld.js`).
+
+**Surface baked from modelled leaves** (`tools/blender/hedgeSurface.py`, Cycles / OptiX, ~15 s): a tileable 0.6 m
+patch of ~3,400 elliptic leaves (cupped, folded, tilted <= 55 degrees), dense at the clipped face and thinning inward,
+pushed deeper in noise clumps (the dark holes), twigs and a dark interior behind; emission passes -> `textures/hedges/
+hedge_leaf_a.webp` (leaf value, AO x depth, leaf / twig part) + `hedge_leaf_n.webp` (normals). Shader: two taps (the
+second turned 63 degrees, x 0.83) blended by a 2.2 m noise + the AO difference (no visible tile), in run metres (u along
+the run, v = the section's arc in metres; caps planar), per species a patch size (box 0.32 m, privet 0.6, hornbeam 0.9,
+beech 0.95, laurel 1.5: the leaf size), the species colour by season (beech / hornbeam keep brown leaves), a tint per
+run, lighter new growth on top, AO into the colour and `aoNode`; the foot: the leaves thin out over the lowest ~40 cm
+into the shadowed stems and the soil (the body still reaches 12 % of its height under the ground: JOINS).
+Lit check of the texture: `docs/hedges/surface_lit.jpg`; Blender render of a hedge sample with the runtime's formula
+(no cards, no foot): `docs/hedges/preview_near.jpg`, `preview_far.jpg`.
+
+**Shape**: a 17-point section (top corners rounded in 3 pieces, a slightly drawn-in foot), flat normals per piece (mesh
+audit), lumps in the vertex stage; 48 leaf cards a module on the silhouette (top corners x 3, top x 1.6, upper sides).
+**Wind**: the bushes' foliage wind, ~12 x weaker (the top leans <= ~1 cm) + a small card flutter, motion vectors.
+
+**LOD without ghost** (the bushes' lesson, §11): the lumps flatten out 28-38 m, so the LOD0 -> 1 dither (40.5-49.5 m)
+swaps two identical smooth boxes with the same shading; LOD1 -> 2 at 108-132 m; one material code on all LODs (far =
+the mips of near). The cards shrink 14-24 m (a morph) and are gone before their end dither (24.6-29 m). Old: dithered
+27-33 m between a lumpy and a smooth body, cards dithered 18.7-22 m.
+
+**Budget** (`tools/audit/hedgeGate.mjs`, merge gate row `hedges`): triangles a module 128 / 36 / 20 + 96 card
+(old 160 / 54 / 20 + 128); worst 25 m-grid view over all tiles 84.1k hedge triangles (old there 82.2k, worst old view
+84.0k): +2 %. Draws 4 (old 4). Fragment: 4 taps of the baked pair + 1 noise tap (old: 5 noise taps + a bump).

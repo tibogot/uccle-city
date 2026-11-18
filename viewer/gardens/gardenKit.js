@@ -22,7 +22,12 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
-import { hedgeGeometries, hedgeMaterials, hedgeInstancesGen, gardenFades } from "./gardenHedge.js";
+import * as HEDGE_NEW from "./gardenHedge.js";
+import * as HEDGE_OLD from "./gardenHedgeOld.js";
+/** ?hedges=old: the garden hedges before claude/hedges (2026-11-18: noise-shaded boxes, LOD dithers from 27 m) */
+export const HEDGES_OLD = typeof location !== "undefined" && /[?&]hedges=old(&|$)/.test(location.search);
+const { hedgeGeometries, hedgeMaterials, hedgeInstancesGen } = HEDGES_OLD ? HEDGE_OLD : HEDGE_NEW;
+const { gardenFades } = HEDGE_NEW;
 import { drain } from "../slices.js";
 import { StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
@@ -40,7 +45,9 @@ export const BANDS = {
   rail: [22, 60, 150], gate: [22, 60, 150], cargate: [25, 70, 160],
   // round 2: the hedges (viewer/gardens/gardenHedge.js): big soft solids, seen far (the end dithers out over 255-300 m);
   // the leaf cards near only (they shrink into the body by 18 m)
-  hedge: [30, 90, 300], hedgecard: [22, 22, 22],
+  // claude/hedges: [45, 120, 300] / [29, 29, 29] (gardenHedge.js HEDGE_BANDS: no dither inside 40 m, the lumps flat
+  // before the 0 -> 1 hand-over); ?hedges=old the bands above
+  ...(HEDGES_OLD ? { hedge: [30, 90, 300], hedgecard: [22, 22, 22] } : HEDGE_NEW.HEDGE_BANDS),
 };
 export const bandOf = (p) => BANDS[p] || BANDS[p.split("_")[0]];
 const GATE_W = { gate: 1.0, cargate: 1.6 }, GATE_H = { gate: 1.2, cargate: 1.3 };
