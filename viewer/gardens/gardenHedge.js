@@ -67,13 +67,14 @@ export const LUMP_FADE = [28, 38];
 export const HEDGE_TEX = ["textures/hedges/hedge_leaf_a.webp", "textures/hedges/hedge_leaf_n.webp"];
 
 // ------------------------------------------------------------------------------------------------ geometry
-/** the clipped section in unit space (z across -0.5..0.5, y 0..1): [z, y, nz, ny, vy, vz, round] (vy / vz = the arc
- *  length's vertical / horizontal parts: v in metres = vy x H + vz x W; round = a point of the rounded top corners) */
+/** the clipped section in unit space (z across -0.5..0.5, y 0..1.03): [z, y, nz, ny, vy, vz, round] (vy / vz = the arc
+ *  length's vertical / horizontal parts: v in metres = vy x H + vz x W; round = 1 a point of the rounded top corners,
+ *  2 the top's middle) */
 function section(lod) {
   const B = HEDGE_BOTTOM, r = 0.16, wt = 0.47;
   const half = [];                                   // the -z side, bottom up, then the corner round to the top
   if (lod === 2) {
-    half.push([-0.46, B, 0], [-0.49, 0.84, 0], [-0.33, 1.0, 0]);
+    half.push([-0.46, B, 0], [-0.49, 0.84, 1], [-0.33, 1.0, 1]);
   } else {
     half.push([-0.46, B, 0]);
     if (lod === 0) half.push([-0.48, 0.06, 0]);
@@ -83,7 +84,8 @@ function section(lod) {
     for (let k = 0; k <= nc; k++) { const a = Math.PI - (k / nc) * (Math.PI / 2); half.push([-wt + r + Math.cos(a) * r, 1 - r + Math.sin(a) * r, 1]); }
   }
   let P = [...half];
-  if (lod === 0) P.push([0, 1.0, 1]);
+  // (round 1c: the top slightly DOMED, 3 % of the height at its middle: a clipped top is never a flat lid)
+  if (lod < 2) P.push([0, 1.03, 2]);
   for (let k = half.length - 1; k >= 0; k--) P.push([-half[k][0], half[k][1], half[k][2]]);
   // normals: the outward normal of a piece a -> b is (-dy, dz); a point averages its two pieces
   const segN = (a, b) => { const dz = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dz, dy) || 1; return [-dy / l, dz / l]; };
@@ -106,13 +108,13 @@ function bodyGeometry(lod) {
   const P = [], N = [], V = [], D = [], I = [];
   const segN = (a, b) => { const dz = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dz, dy) || 1; return [-dy / l, dz / l]; };
   for (let k = 0; k < n - 1; k++) {
-    const [nz, ny] = segN(S[k], S[k + 1]), base = P.length / 3;
+    const [nz, ny] = segN(S[k], S[k + 1]), base = P.length / 3, edge = S[k][6] === 1 && S[k + 1][6] === 1 ? 1 : 0;
     for (let r = 0; r <= rings; r++) {
       const x = r / rings;
       for (const q of [S[k], S[k + 1]]) {
         P.push(x, q[1], q[0]);
         N.push(0, ny, nz);
-        V.push(x, q[4], q[5]); D.push(0, q[3], q[2]);
+        V.push(x, q[4], q[5], edge); D.push(0, q[3], q[2]);
       }
     }
     for (let r = 0; r < rings; r++) {
@@ -122,14 +124,14 @@ function bodyGeometry(lod) {
   }
   for (const [x, s] of [[0, -1], [1, 1]]) {
     const c = P.length / 3;
-    P.push(x, 0.45, 0); N.push(s, 0, 0); V.push(x, 0, 0); D.push(0, 0, 0);
-    for (const [z, y, dz, dy] of S) { P.push(x, y, z); N.push(s, 0, 0); V.push(x, 0, 0); D.push(0, dy, dz); }
+    P.push(x, 0.45, 0); N.push(s, 0, 0); V.push(x, 0, 0, 0); D.push(0, 0, 0);
+    for (const [z, y, dz, dy] of S) { P.push(x, y, z); N.push(s, 0, 0); V.push(x, 0, 0, 0); D.push(0, dy, dz); }
     for (let k = 0; k < n - 1; k++) { if (s < 0) I.push(c, c + 2 + k, c + 1 + k); else I.push(c, c + 1 + k, c + 2 + k); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(N, 3));
-  g.setAttribute("hv", new THREE.Float32BufferAttribute(V, 3));
+  g.setAttribute("hv", new THREE.Float32BufferAttribute(V, 4));   // (w: 1 on the rounded top corners: the silhouette)
   g.setAttribute("ld", new THREE.Float32BufferAttribute(D, 3));
   g.setIndex(I);
   g.computeBoundingBox(); g.computeBoundingSphere(); g.userData.shared = true;
@@ -138,14 +140,14 @@ function bodyGeometry(lod) {
 
 /** the card module: HEDGE_CARDS quads; per vertex: position / normal = the card's spot on the unit body's surface and
  *  its normal (the SAME for its 4 corners: the instancing takes them to the world), corner = the quad corner
- *  (-0.5..0.5), crnd = 4 randoms. Stratified along the module; on the silhouette: the top corners x 3, the top x 1.6,
+ *  (-0.5..0.5), crnd = 4 randoms. Stratified along the module; on the silhouette: the top corners x 1.8, the top x 1.3,
  *  the sides above 25 % of the height x 1 (none on the foot: the stems show there) */
 function cardGeometry() {
   const S = section(1).filter((p) => p[1] > 0.25);
   const segs = [];
   for (let k = 0; k + 1 < S.length; k++) {
     const a = S[k], b = S[k + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    const w = a[6] && b[6] ? 3 : Math.abs(a[3]) > 0.9 && Math.abs(b[3]) > 0.9 ? 1.6 : 1;
+    const w = a[6] === 1 && b[6] === 1 ? 1.8 : a[6] && b[6] ? 1.3 : 1;   // (1c: even, not a fringe on the corner)
     segs.push({ a, b, w: L * w });
   }
   const tot = segs.reduce((s, q) => s + q.w, 0);
@@ -247,7 +249,7 @@ export function hedgeMaterials() {
   const [texA, texN] = hedgeTextures();
   const body = [0, 1, 2].map((lod) => {
     const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
-    const I = inst(), hv = attribute("hv", "vec3"), pRaw = attribute("position", "vec3"), nRaw = attribute("normal", "vec3");
+    const I = inst(), hv = attribute("hv", "vec4"), pRaw = attribute("position", "vec3"), nRaw = attribute("normal", "vec3");
     const aux = attribute("iAux", "vec4");
     const sideW = vec3(aux.x, 0, aux.y), alongW = vec3(aux.y, 0, aux.x.negate());
     // run metres: u along the run (continuous over the module joints), v round the section; the end caps planar
@@ -314,7 +316,8 @@ export function hedgeMaterials() {
     // round seen from the side, a run's end edges), the baked gaps open through (the texture's own mips keep it at a
     // distance; the cards add the sprigs near). Not in the shadow (the body casts whole) nor at the foot.
     const vDir = normalize(cameraPosition.sub(positionWorld));
-    const graze = smoothstep(0.72, 0.95, float(1).sub(abs(dot(Nw, vDir)))).mul(footK);
+    // (1c: on the rounded top corners only, hv.w: a flat top or side seen at a low angle must not open into see-through)
+    const graze = smoothstep(0.72, 0.95, float(1).sub(abs(dot(Nw, vDir)))).mul(varying(hv.w, "v_hE"));
     m.maskNode = keep(lod).and(occl.greaterThan(graze.mul(0.42)));
     m.maskShadowNode = keep(lod);
     m.name = `gardens-hedge-lod${lod}`;
@@ -336,13 +339,13 @@ export function hedgeMaterials() {
   const ax = t1.mul(ca).add(t2.mul(sa)), ay = t2.mul(ca).sub(t1.mul(sa));
   // (round 1b: a CLIPPED hedge's sprigs lie close along the surface, 55-83 degrees off its normal, and stick out 3-8 cm,
   // not upright tufts)
-  const tilt = cr.y.mul(0.5).add(0.95);
+  const tilt = cr.y.mul(0.45).add(1.05);
   const cardN = normalize(cn.mul(cos(tilt)).add(ay.mul(sin(tilt))));
   const cardY = normalize(cross(cardN, ax));
   // (an end-face card: only on a run's own end; iAux.z = 1 its start, + 2 its end)
   const cend = attribute("cend", "float"), ends = attribute("iAux", "vec4").z;
   const onEnd = select(cend.lessThan(0.5), float(1), select(cend.lessThan(1.5), ends.mod(2), floor(ends.div(2).add(0.01))));
-  const size = sp.x.mul(cr.z.mul(0.4).add(0.6)).mul(grow).mul(onEnd);
+  const size = sp.x.mul(cr.z.mul(0.3).add(0.5)).mul(grow).mul(onEnd);
   // (the body's lean at the card's height + a small flutter of its own)
   const [flick, flickP] = windPrev(() => leanAt(anchor, fH).add(vec3(1, 0.3, 1).mul(sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(windAt(anchor.xz).z.mul(0.015).add(0.003)))));
   setMotionDelta(card, flickP.sub(flick));   // --- instmotion

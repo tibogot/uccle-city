@@ -25,7 +25,7 @@ B, r, wt = -0.12, 0.16, 0.47
 half = [(-0.46, B), (-0.48, 0.06), (-0.5, 0.32), (-0.49, 0.6)]
 for k in range(4):
     a = math.pi - (k / 3) * (math.pi / 2); half.append((-wt + r + math.cos(a) * r, 1 - r + math.sin(a) * r))
-sec = half + [(0, 1.0)] + [(-z, y) for (z, y) in reversed(half)]
+sec = half + [(0, 1.03)] + [(-z, y) for (z, y) in reversed(half)]
 vs = [0.0]
 for k in range(1, len(sec)):
     vs.append(vs[-1] + abs(sec[k][1] - sec[k - 1][1]) * H + abs(sec[k][0] - sec[k - 1][0]) * W)
@@ -113,7 +113,8 @@ nmix = MIXC(leafy, (0.5, 0.5, 1.0), Nn)
 nm = N("ShaderNodeNormalMap"); nt.links.new(nmix, nm.inputs["Color"]); nt.links.new(nm.outputs[0], bs.inputs["Normal"])
 bs.inputs["Roughness"].default_value = 0.6
 lw = N("ShaderNodeLayerWeight"); lw.inputs["Blend"].default_value = 0.5
-graze = M("MULTIPLY", SS(lw.outputs["Facing"], 0.72, 0.95), footK)
+corner = M("MULTIPLY", M("MULTIPLY", SS(gz.outputs[2], 0.1, 0.25), SS(gz.outputs[2], 0.97, 0.9)), SS(sp.outputs[2], 0.8 * H, 0.9 * H))
+graze = M("MULTIPLY", SS(lw.outputs["Facing"], 0.72, 0.95), corner)
 keep = M("GREATER_THAN", occl, M("MULTIPLY", graze, 0.42))
 tr = N("ShaderNodeBsdfTransparent"); ms = N("ShaderNodeMixShader")
 nt.links.new(keep, ms.inputs[0]); nt.links.new(tr.outputs[0], ms.inputs[1]); nt.links.new(bs.outputs[0], ms.inputs[2])
@@ -132,7 +133,7 @@ def spray(pos, nrm, size):
     upv = Vector((1, 0, 0)) if abs(nrm.z) > 0.9 else Vector((0, 0, 1))
     t1 = upv.cross(nrm).normalized(); t2 = nrm.cross(t1)
     ang = rng.random() * 6.283; ax = t1 * math.cos(ang) + t2 * math.sin(ang); ay = t2 * math.cos(ang) - t1 * math.sin(ang)
-    tilt = 0.95 + 0.5 * rng.random()
+    tilt = 1.05 + 0.45 * rng.random()
     cn = (nrm * math.cos(tilt) + ay * math.sin(tilt)).normalized()
     centre = pos + nrm * size * 0.12 + cn * 0.0
     bx = cn.cross(ax).normalized()
@@ -149,7 +150,7 @@ S1 = [(z, y) for (z, y) in sec if y > 0.25]
 for k in range(len(S1) - 1):
     (z0, y0), (z1, y1) = S1[k], S1[k + 1]
     L = math.hypot(z1 - z0, y1 - y0); round_ = y0 > 0.8 and y1 > 0.8 and (abs(z0) > 0.3 or abs(z1) > 0.3)
-    w = 3 if round_ else 1.6 if (y0 > 0.99 and y1 > 0.99) else 1
+    w = 1.8 if round_ else 1.3 if (y0 > 0.99 and y1 > 0.99) else 1
     segs.append((z0, y0, z1, y1, L * w))
 tot = sum(s[4] for s in segs)
 for mod in range(5):
@@ -162,10 +163,10 @@ for mod in range(5):
         nrm = Vector((0, (s[3] - s[1]) * H, -(s[2] - s[0]) * W)).normalized()
         if Vector((0, z, y - 0.5)).dot(nrm) < 0: nrm = -nrm
         x = mod + (c + rng.random()) / 48
-        spray(Vector((x, z * W, y * H + lump(x, y))), nrm, 0.24 * (0.6 + 0.4 * rng.random()))
+        spray(Vector((x, z * W, y * H + lump(x, y))), nrm, 0.24 * (0.5 + 0.3 * rng.random()))
 for end in (0, 1):
     for c in range(3):
-        spray(Vector((end * Lr, (rng.random() - 0.5) * 0.8 * W, (0.35 + 0.6 * rng.random()) * H)), Vector((1 if end else -1, 0, 0)), 0.24 * (0.6 + 0.4 * rng.random()))
+        spray(Vector((end * Lr, (rng.random() - 0.5) * 0.8 * W, (0.35 + 0.6 * rng.random()) * H)), Vector((1 if end else -1, 0, 0)), 0.24 * (0.5 + 0.3 * rng.random()))
 cm = bpy.data.meshes.new("cards"); cm.from_pydata(V, [], F); cm.update()
 cm.attributes.new("val", "FLOAT", "FACE"); cm.attributes["val"].data.foreach_set("value", C)
 cards = bpy.data.objects.new("cards", cm); scn.collection.objects.link(cards)

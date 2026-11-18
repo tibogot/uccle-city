@@ -430,6 +430,12 @@ the mips of near). The cards shrink 14-24 m (a morph) and are gone before their 
 - preview with the cards (as real leaf sprays), the foot and the grazing breakup: `tools/blender/hedgePreview.py` ->
   `docs/hedges/preview_{close,near,far}.jpg`.
 
-**Budget** (`tools/audit/hedgeGate.mjs`, merge gate row `hedges`): triangles a module 128 / 36 / 20 + 108 card
-(old 160 / 54 / 20 + 128); worst 25 m-grid view over all tiles 84.9k hedge triangles (old there 82.2k, worst old view
-84.0k): +3 %. Draws 4 (old 4). Fragment: 4 taps of the baked pair + 1 noise tap (old: 5 noise taps + a bump).
+**Round 1c** (coordinator: "the top reads as a flat dark lid with a row of sprouts"): the top domed 3 % of the height
+(LOD0 and LOD1 share the dome; LOD2 flat at 108 m+), the grazing breakup only on the rounded top corners (hv.w: a flat
+top or side seen at a low angle went see-through = the dark lid), the sprigs spread evenly (corners x 1.8, top x 1.3)
+and shorter (0.5-0.8 x the species card, 60-86 degrees off the normal). Snow caps (cityCaps.js) still take LOD2's flat
+top: up to 4 cm under the dome's middle (check in the browser with snow).
+
+**Budget** (`tools/audit/hedgeGate.mjs`, merge gate row `hedges`): triangles a module 128 / 40 / 20 + 108 card
+(old 160 / 54 / 20 + 128); worst 25 m-grid view over all tiles 86.4k hedge triangles (old there 82.2k, worst old view
+84.0k): +5 %. Draws 4 (old 4). Fragment: 4 taps of the baked pair + 1 noise tap (old: 5 noise taps + a bump).
