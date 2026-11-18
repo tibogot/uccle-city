@@ -43,6 +43,9 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 **Owner idea 2026-11-18: Dieweg cemetery (OSM way 16309623, landuse cemetery)**
 - [ ] Hero treatment like St-Job / Observatory (hero-buildings method: real photos, look only): the remarkable funerary chapels and tombs (neoclassical, Art Nouveau, Egyptian-style), the old Jewish section, overgrown paths, ivy, old trees, walls and gates. Closed since 1958, half wild. Also a key place for the kid game (docs/KIDGAME.md).
 
+**Owner idea 2026-11-18: physics props for all games**
+- [ ] Roadworks kit (cones, Heras fences, barriers, sandbags, skip, signs, temporary lights), street movables (wheelie bins, bags, boxes, trolley, café chairs/tables, ball), fun extras (box piles, pigeons, skateboard, gnome; ramp planks + bricks for the kid game). Perf: sleeping by default (wake only within ~30 m when touched), instanced per kind, primitive colliders, a light physics engine (Rapier) for at most a few dozen active bodies, reset when out of view; placement from data where possible (works permits, OSM cafés). Blender premium for complex pieces, boxy ones procedural. After the bike works in the city.
+
 **Defects found 2026-11-17**
 - [ ] Wire clearance too low under Av. des Tilleuls / Hospices / Carsoel bridges.
 - [ ] Vivier d'Oie station footbridges (UrbIS 751 / 752); Saint-Job deck sidewalks over the bank.
