@@ -23,6 +23,7 @@ import { ThirdPerson, CollisionWorld, Heightfield, PrismSet } from "../viewer/ch
 import { RiderIK, RIDE } from "../viewer/kid/riderIK.js";
 import { MOUNT, createMount, stepMount, parkStep, ridden, mountSpot } from "../viewer/kid/kidMount.js";
 import { findBikeEmpties } from "../viewer/kid/bikeRig.js";
+import { loadBmx } from "../viewer/kid/bmxModel.js";
 
 const qs = new URLSearchParams(location.search);
 const USE_KID = qs.get("kid") !== "0";
@@ -136,7 +137,12 @@ function place(name) {
   if (K.on) { mount.state = "riding"; mount.t = 0; mount.park.mode = "standing"; K.tp.on = false; K.tp.body.root.visible = true; camBlend.t = 1; }
 }
 // ---------------------------------------------------------------- the kid: on foot + on the bike (claude/kid)
-const K = { on: false, tp: null, rider: null, kid: null, E: null, snap: null, crashYaw: 0, lod: 0, ik: "" };
+const K = { on: false, tp: null, rider: null, kid: null, E: null, snap: null, crashYaw: 0, lod: 0, ik: "", bmx: null };
+// the BMX asset (claude/bmx: models/bike/bmx.glb) on the placeholder's pose (?bmx=0: the placeholder bike)
+if (qs.get("bmx") !== "0") {
+  try { K.bmx = await loadBmx(renderer, model, { colourway: qs.get("colourway") || null }); console.log("[bike lab] BMX", K.bmx.info); }
+  catch (e) { console.warn("[bike lab] the BMX failed, placeholder bike:", e); model.bikeFrame.traverse((o) => { if (o.isMesh) o.visible = true; }); }
+}
 const mount = createMount(qs.get("ride") === "1" ? "riding" : "foot");
 const camBlend = { t: 1, dur: 0.6, p: new THREE.Vector3(), q: new THREE.Quaternion() };
 function startCamBlend() { camBlend.t = 0; camBlend.p.copy(camera.position); camBlend.q.copy(camera.quaternion); }
@@ -152,7 +158,7 @@ if (USE_KID) {
     const info = await tp.useCharacter("kid", renderer);
     K.tp = tp; K.kid = info.kid;
     K.rider = new RiderIK(info.kid.gltf.scene, info.kid.gltf.animations);
-    K.E = findBikeEmpties(model.root, model.empties.frame); K.E.cg = BIKE.cgHeight;
+    K.E = K.bmx ? K.bmx.empties : findBikeEmpties(model.root, model.empties.frame); K.E.cg = BIKE.cgHeight;
     K.on = true;
     const sp = mountSpot(s);
     if (mount.state === "foot") { tp.start(sp.x + Math.cos(s.heading) * 0.6, testHeight(sp.x, sp.z) + 0.05, sp.z - Math.sin(s.heading) * 0.6, s.heading); }
@@ -209,7 +215,8 @@ const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
     "teal + khaki": { shirt: 0x1f8a8a, shirt_trim: 0xf2c230, shorts: 0xb59a6a, cap: 0xf2c230, cap_brim: 0x1f8a8a },
     "purple + black": { shirt: 0x6a3d9a, shirt_trim: 0x1d1d1d, shorts: 0x262626, cap: 0x1d1d1d, cap_brim: 0x6a3d9a, hair: 0x2a1a10 },
   };
-  const O = { outfit: "yellow ringer" };
+  const O = { outfit: "yellow ringer", bmx: qs.get("colourway") || "blue" };
+  fk.add(O, "bmx", ["blue", "red", "purple"]).name("BMX colourway").onChange((v) => K.bmx?.setColourway(v));
   fk.add(O, "outfit", Object.keys(OUTFITS)).name("outfit").onChange((v) => {
     if (!K.kid) return;
     import("../viewer/kid/kidModel.js").then(({ KID_PALETTE }) => { for (const n of K.kid.slots) K.kid.setColor(n, (OUTFITS[v][n] ?? KID_PALETTE[n])); });
@@ -300,6 +307,7 @@ renderer.setAnimationLoop(() => {
   physMs = physMs * 0.95 + (performance.now() - t0) * 0.05;
   bikePose(s, P.pause ? 1 : s.alpha, pose);
   model.update(s, pose, groundAt);
+  K.bmx?.update(s, camera.position.distanceTo(model.root.position));
   const tk = performance.now();
   if (K.on) {
     const tp = K.tp, root = tp.body.root, R = K.rider, st = mount.state;

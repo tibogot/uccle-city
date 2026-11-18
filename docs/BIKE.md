@@ -76,9 +76,13 @@ Kid numbers (a ~11 year old, 40 kg + an 11 kg BMX): flat 25 km/h seated, 30.6 km
 | pump | C | B |
 | trick (air) | F | X |
 | reset / get up / camera / pause / spots | R / G / V / P / 1-9 (start, kicker, table, pump, roots, bowl, kerb, sand, slope) | Back / - / Y |
+| get on / off the bike (claude/kid) | E (walk up to it; off when slow: stopped = it stands, rolling = it falls) | - |
+| on foot (claude/kid) | W A S D / arrows walk, Shift run, Space jump, C crouch, mouse drag camera | - |
 The arrows do exactly what W / A / S / D do and both sets always work (the owner rides with the arrows); one key table
 (`KEYS` in viewer/bike/bikeInput.js) feeds the input, and the tests check that both sets give identical inputs and that no
-key has two jobs. The controls card is shown at start, `?` toggles it (rule 14). Sounds: none.
+key has two jobs. The controls card is shown at start, `?` toggles it (rule 14). Sounds: none. On foot the same keys mean the same kind of
+thing (move = pedal / brake / steer, Shift = run / sprint, Space = jump / hop, C = crouch / pump); E is free on the bike
+(tools/kid/kidTest.mjs checks both, docs/KID.md).
 
 ## Constants (all panel sliders in the lab: `BIKE_RANGES`; surfaces in their own folder)
 | group | constants (default) |

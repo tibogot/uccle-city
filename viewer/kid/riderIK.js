@@ -15,7 +15,7 @@
 //      little out; the foot follows the frame with an ankling angle from the crank; a foot down at a stop.
 // Every limb's reach is measured (metrics): tools/kid/kidTest.mjs checks it over full crank turns and full steer.
 // Off the bike: pushPose (walking beside the bike, hand on the grip and on the seat), clipPose (the crash tumble, the
-// get-up, sitting). All on three.js bones; no allocation per frame.
+// get-up, sitting). All on three.js bones (a few small vectors a frame).
 import * as THREE from "three/webgpu";
 
 export const RIDE = {
@@ -40,9 +40,10 @@ const _X = new THREE.Vector3(1, 0, 0), _Y = new THREE.Vector3(0, 1, 0), _Z = new
 const _left = new THREE.Vector3(), _up = new THREE.Vector3(), _fwd = new THREE.Vector3();
 const _mat = new THREE.Matrix4();
 
+const _qs = new THREE.Quaternion();
 function setWorldQuat(b, q) {
-  b.parent.getWorldQuaternion(_q3);
-  b.quaternion.copy(_q3.invert().multiply(q));
+  b.parent.getWorldQuaternion(_qs);
+  b.quaternion.copy(_qs.invert().multiply(q));
   b.updateMatrixWorld(true);
 }
 function setWorldPos(b, p) {
@@ -75,11 +76,11 @@ export function twoBone(a, b, c, T, pole, maxRatio = 0.999) {
   if (_m.lengthSq() < 1e-10) _m.set(0, 1, 0).addScaledVector(dir, -dir.y);
   _m.normalize();
   const cosA = Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d))), sinA = Math.sqrt(1 - cosA * cosA);
-  const Bn = _a.copy(A).addScaledVector(dir, l1 * cosA).addScaledVector(_m, l1 * sinA);
-  const Cn = _e.copy(A).addScaledVector(dir, d);
-  aim(a, B.clone(), Bn.clone());
-  b.getWorldPosition(_b); c.getWorldPosition(_c);
-  aim(b, _c.clone(), Cn.clone());
+  // (aim() uses the module's scratch vectors: the targets are copies)
+  const Bn = A.clone().addScaledVector(dir, l1 * cosA).addScaledVector(_m, l1 * sinA);
+  const Cn = A.clone().addScaledVector(dir, d);
+  aim(a, B.clone(), Bn);
+  aim(b, c.getWorldPosition(new THREE.Vector3()), Cn);
   return ratio;
 }
 
@@ -108,7 +109,7 @@ export class RiderIK {
     this.arm = [L("upperarm_l", "lowerarm_l") + L("lowerarm_l", "hand_l"), L("upperarm_r", "lowerarm_r") + L("lowerarm_r", "hand_r")];
     const pw = this.b.pelvis.getWorldPosition(new THREE.Vector3());
     this.hipOff = ["thigh_l", "thigh_r"].map((n) => this.b[n].getWorldPosition(new THREE.Vector3()).sub(pw).applyQuaternion(inv));
-    this.metrics = { legRatio: [0, 0], armRatio: [0, 0], legErr: [0, 0], armErr: [0, 0], spine: 0, fitted: 0 };
+    this.metrics = { legRatio: [0, 0], armRatio: [0, 0], legErr: [0, 0], armErr: [0, 0], spine: 0, fitted: 0, slid: 0 };
     this._snap = null;
   }
 
@@ -173,7 +174,7 @@ export class RiderIK {
       const dy = hy - cy, dz = hz - cz, dl = Math.hypot(dy, dz);
       if (dl > lim) { const f = lim / dl; hip.y = cy + dy * f - off.y; hip.z = cz + dz * f - off.z; fitted = Math.max(fitted, dl - lim); }
     }
-    M.fitted = fitted;
+    M.fitted = fitted; M.slid = 0;
     // 2. the pelvis: placed + turned with the frame, pitched forward, leaning into the turn
     const roll = -(s.lean || 0) * P.leanExtra;
     const pitch = P.pelvisPitch + stand * P.standPitch - manual * 0.15;
@@ -193,10 +194,17 @@ export class RiderIK {
       const sr = b.upperarm_r.getWorldPosition(_a), d2 = sr.distanceTo(gR);
       return Math.max(d1, d2) - want;
     };
-    let lo = 0.05, hi = P.spineMax;
+    let lo = 0.05, hi = P.spineMax, excess = 0;
     if (bend(lo) <= 0) hi = lo;
-    else if (bend(hi) > 0) lo = hi;
-    else for (let i = 0; i < 12; i++) { const mid = (lo + hi) / 2; if (bend(mid) > 0) lo = mid; else hi = mid; }
+    else if ((excess = bend(hi)) > 0) {
+      // bent all the way and still short (a manual, hips far back): the body slides toward the bars by what is missing
+      b.upperarm_l.getWorldPosition(_a); b.upperarm_r.getWorldPosition(_c); _a.add(_c).multiplyScalar(0.5);
+      _d.copy(gL).add(gR).multiplyScalar(0.5).sub(_a).normalize();
+      b.pelvis.getWorldPosition(_p).addScaledVector(_d, excess + 0.005); setWorldPos(b.pelvis, _p.clone());
+      M.slid = excess;
+      lo = 0.05;
+    }
+    if (hi > lo) for (let i = 0; i < 12; i++) { const mid = (lo + hi) / 2; if (bend(mid) > 0) lo = mid; else hi = mid; }
     bend(hi); M.spine = hi;
     // 4. the head: level, looking ahead (the heading's yaw, half the bike's lean)
     const yaw = Math.atan2(_fwd.x, _fwd.z);
@@ -207,9 +215,9 @@ export class RiderIK {
       const side = k === 0 ? 1 : -1, g = k === 0 ? gL : gR;
       const ua = k === 0 ? b.upperarm_l : b.upperarm_r, la = k === 0 ? b.lowerarm_l : b.lowerarm_r, ha = k === 0 ? b.hand_l : b.hand_r;
       const sh = ua.getWorldPosition(new THREE.Vector3());
-      const T = _c.subVectors(sh, g).normalize().multiplyScalar(P.wristBack).add(g).addScaledVector(_up, 0.012);
+      const T = new THREE.Vector3().subVectors(sh, g).normalize().multiplyScalar(P.wristBack).add(g).addScaledVector(_up, 0.012);
       const pole = _d.copy(sh).addScaledVector(_left, side * 0.35).addScaledVector(_fwd, -0.25).addScaledVector(_up, -0.15);
-      M.armRatio[k] = twoBone(ua, la, ha, T.clone(), pole.clone(), 0.999);
+      M.armRatio[k] = twoBone(ua, la, ha, T, pole.clone(), 0.999);
       M.armErr[k] = ha.getWorldPosition(_e).distanceTo(T);
     }
     // 6. the legs (+ the foot down at a stop)

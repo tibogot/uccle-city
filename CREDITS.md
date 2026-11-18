@@ -220,6 +220,14 @@ spell, emotes; UAL2: farming, combat, parkour climb / slide, zombie, idles) on t
 turn / strafe / stairs clips (those are in the paid tiers): the turn on the spot is stepped with the walk, the stairs
 are synthesised offline (`ualBuild.mjs`). UAL2's female mannequin (`Mannequin_F`) shares the rig; not used yet.
 
+**The kid** (`models/characters/kid.glb`, claude/kid, docs/KID.md): made by our script `tools/characters/kid.py` FROM the UAL1
+mannequin above (CC0): its rig and skin weights, re-proportioned into an 11-12 year old, the mesh fused + re-made
+(voxel remesh, a sculpted kid head of ellipsoids), clothes / hair / cap / face built by the script; the clips are the
+same CC0 UAL1 + UAL2 clips on its joints (`ualBuild.mjs --kid`), plus Sitting_Idle_Loop, Sitting_Enter, Sitting_Exit,
+Push_Loop, PickUp_Table and Death01 (UAL1). No other source. Checked and NOT used (2026-11-18): Quaternius' **Universal
+Base Characters** (quaternius.com/packs/universalbasecharacters.html, itch.io; CC0 per both pages): its free Standard tier
+has 2 base bodies + 5 hairstyles, the TEEN bodies are in the paid Source tier only; none is a 10-13 kid.
+
 Not used: Quaternius' newer packs under the "Quaternius Asset Licence" (only the CC0 pack above is used), and
 three.js's example Soldier.glb (Mixamo, not shippable; it was only loaded by URL in a test, never copied).
 

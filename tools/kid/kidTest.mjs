@@ -156,29 +156,42 @@ else {
   const scene = new THREE.Scene(), holder = new THREE.Group();
   holder.add(gltf.scene); scene.add(holder);
   const rider = new RiderIK(gltf.scene, gltf.animations);
-  const bm = createBikeModel(BIKE, { rider: false });
-  scene.add(bm.root);
-  const E = findBikeEmpties(bm.root, bm.empties.frame); E.cg = BIKE.cgHeight;
-  const s = createBikeState(0, 0, 0.3, 0), pose = {};
-  let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0;
+  const { rigBmx } = await import("../../viewer/kid/bmxModel.js");
   const modes = {
     seated: {}, standing: { sprint: 1 }, crouched: { legs: -0.9, preload: 1 }, manual: { manual: 1, pitch: 0.45 }, leanL: { lean: 0.55 }, leanR: { lean: -0.55 }, air: { air: true, legs: 0.3 },
   };
-  for (const [mname, mo] of Object.entries(modes)) for (const steer of [-0.9, -0.45, 0, 0.45, 0.9]) for (let c = 0; c < 24; c++) {
-    Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0 }, mo);
-    s.crank = c / 24 * Math.PI * 2; s.steerAngle = steer;
-    s.prev.lean = s.lean; s.prev.pitch = s.pitch;
-    bikePose(s, 1, pose); bm.update(s, pose, () => 0); bm.root.updateMatrixWorld(true);
-    const M = rider.ride(E, s, holder, 0);
-    legMax = Math.max(legMax, ...M.legRatio); armMax = Math.max(armMax, ...M.armRatio);
-    legErr = Math.max(legErr, ...M.legErr); armErr = Math.max(armErr, ...M.armErr); fitMax = Math.max(fitMax, M.fitted);
-    gltf.scene.traverse((o) => { if (o.isBone && !o.matrixWorld.elements.every(Number.isFinite)) nan++; });
-    n++;
+  const s = createBikeState(0, 0, 0.3, 0), pose = {};
+  /** the BMX's node tree from its GLB (no meshes: node checks), as the lab mounts it */
+  function bmxTree() {
+    const g = readGLB(path.join(ROOT, "models/bike/bmx.glb")), objs = g.nodes.map((n) => { const o = new THREE.Object3D(); o.name = n.name; o.position.fromArray(n.t); o.quaternion.fromArray(n.r); o.scale.fromArray(n.s); return o; });
+    g.nodes.forEach((n, i) => { for (const c of n.children) objs[i].add(objs[c]); });
+    return objs[g.nodes.findIndex((n) => n.name === "BMX")] || objs[g.json.scenes[0].nodes[0]];
   }
-  check(`rider: legs never stretched (${n} poses: 24 crank x 5 steer x ${Object.keys(modes).length} modes)`, legMax <= 1.0, `max reach ${(legMax * 100).toFixed(1)} % of the leg (hips fitted up to ${(fitMax * 100).toFixed(1)} cm)`, "<= 100 %");
-  check("rider: arms never stretched", armMax <= 1.0, `max reach ${(armMax * 100).toFixed(1)} % of the arm`, "<= 100 %");
-  check("rider: feet on the pedals, hands on the grips", legErr < 0.01 && armErr < 0.01, `feet ${(legErr * 1000).toFixed(1)} mm, hands ${(armErr * 1000).toFixed(1)} mm`, "< 10 mm");
-  check("rider: no NaN in any bone", nan === 0, `${nan}`, "0");
+  let bm = null, E = null, rig = null;
+  for (const bike of ["placeholder", "bmx"]) {
+    if (bike === "bmx" && !fs.existsSync(path.join(ROOT, "models/bike/bmx.glb"))) { check("rider on the BMX", true, "skipped (no models/bike/bmx.glb)", "-"); continue; }
+    if (bm) scene.remove(bm.root);
+    bm = createBikeModel(BIKE, { rider: false }); scene.add(bm.root);
+    rig = null;
+    if (bike === "bmx") { rig = rigBmx(bmxTree(), JSON.parse(fs.readFileSync(path.join(ROOT, "models/bike/bmx.json"), "utf8")), bm); E = rig.empties; }
+    else { E = findBikeEmpties(bm.root, bm.empties.frame); E.cg = BIKE.cgHeight; }
+    let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0, spineMax = 0;
+    for (const [, mo] of Object.entries(modes)) for (const steer of [-0.9, -0.45, 0, 0.45, 0.9]) for (let c = 0; c < 24; c++) {
+      Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0 }, mo);
+      s.crank = c / 24 * Math.PI * 2; s.steerAngle = steer;
+      s.prev.lean = s.lean; s.prev.pitch = s.pitch;
+      bikePose(s, 1, pose); bm.update(s, pose, () => 0); rig?.update(s); bm.root.updateMatrixWorld(true);
+      const M = rider.ride(E, s, holder, 0);
+      legMax = Math.max(legMax, ...M.legRatio); armMax = Math.max(armMax, ...M.armRatio);
+      legErr = Math.max(legErr, ...M.legErr); armErr = Math.max(armErr, ...M.armErr); fitMax = Math.max(fitMax, M.fitted); spineMax = Math.max(spineMax, M.spine);
+      gltf.scene.traverse((o) => { if (o.isBone && !o.matrixWorld.elements.every(Number.isFinite)) nan++; });
+      n++;
+    }
+    check(`rider (${bike}): legs never stretched (${n} poses: 24 crank x 5 steer x ${Object.keys(modes).length} modes)`, legMax <= 1.0, `max reach ${(legMax * 100).toFixed(1)} % of the leg (hips fitted up to ${(fitMax * 100).toFixed(1)} cm)`, "<= 100 %");
+    check(`rider (${bike}): arms never stretched`, armMax <= 1.0, `max reach ${(armMax * 100).toFixed(1)} % of the arm (spine bent up to ${(spineMax * 57.3).toFixed(0)} deg)`, "<= 100 %");
+    check(`rider (${bike}): feet on the pedals, hands on the grips`, legErr < 0.01 && armErr < 0.01, `feet ${(legErr * 1000).toFixed(1)} mm, hands ${(armErr * 1000).toFixed(1)} mm`, "< 10 mm");
+    check(`rider (${bike}): no NaN in any bone`, nan === 0, `${nan}`, "0");
+  }
   // pushing + the crash poses + the mount blend: finite
   let bad = 0;
   s.pushing = true; rider.push(E, s, holder, 0, 1.3); s.pushing = false;
@@ -188,7 +201,7 @@ else {
   check("rider: push / tumble / mount blend poses finite", bad === 0, `${bad} bad bones`, "0");
   // cost
   const tc = performance.now();
-  for (let i = 0; i < 200; i++) { s.crank = i * 0.1; bm.update(s, pose, () => 0); rider.ride(E, s, holder, 0); }
+  for (let i = 0; i < 200; i++) { s.crank = i * 0.1; bm.update(s, pose, () => 0); rig?.update(s); rider.ride(E, s, holder, 0); }
   const us = (performance.now() - tc) / 200 * 1000;
   check("rider: cost a frame (node)", us < 1500, `${us.toFixed(0)} us`, "< 1.5 ms");
 }

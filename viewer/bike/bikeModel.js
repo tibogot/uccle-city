@@ -118,7 +118,7 @@ export function createBikeModel(B = BIKE, { rider = true } = {}) {
   }
 
   return {
-    root, fallen, empties, rider,
+    root, fallen, empties, rider, bikeFrame: bikeG,
     /** the bike's ground clearance etc. for the rider: crank length, wheel radius */
     geom: { crank: 0.165, wheelR: R, cgHeight: H },
     update(s, pose, groundAt) {
