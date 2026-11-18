@@ -81,41 +81,47 @@ const PAVE = new Set([3, 4, 5]), SIDE = new Set([4, 5]), LANE = new Set([3]);
 const cls = (x, z) => (fit ? fit.classAt(x, z) : -1);
 const h01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h / 4294967296; };
 const floorY = (x, z) => ground(x, z) + (fit ? fit.lift(x, z) : 0);
+// (round 3) the parking bays (tools/streetkit/parkBays.mjs: the parked cars' own slots, off the tram road): a "lane"
+// station's row may stand there (main.js's parked cars keep off its area: cityStreetKit.keepCarsClear)
+const { widthParking } = await imp("viewer/streets/parkPlace.js");
+const { parkBays } = await import("./parkBays.mjs");
+const BAYS = fit ? parkBays(widthParking(S.roads, S.feats, S.bounds, fit).sites, cls, (x, z) => tracks.dist(x, z), TRAM_CLEAR) : { bay: () => false };
+const okSpot = (x, z) => !bad(x, z) || BAYS.bay(x, z);           // out of the lanes / off the tracks, or in a parking bay
+const paved = (x, z) => PAVE.has(cls(x, z)) || BAYS.bay(x, z);
 /** the station's row as drawn: { offPaving, bent } (measured tiles only) */
 function villoQuality(v) {
   if (!fit || !v.docks.length) return { offPaving: 0, bent: false, bad: 0 };
   const d0 = v.docks[0], nx = Math.sin(d0.yaw), nz = Math.cos(d0.yaw);
-  const ok = v.mode === "lane" ? (c) => PAVE.has(c) : (c) => SIDE.has(c) || c === 3;
   let offPaving = 0, badN = 0;
   for (const d of v.docks) {
-    if (!ok(cls(d.x, d.z)) || !PAVE.has(cls(d.x + nx * 1.5, d.z + nz * 1.5))) offPaving++;
-    if (bad(d.x, d.z)) badN++;
+    if (!paved(d.x, d.z) || !paved(d.x + nx * 1.5, d.z + nz * 1.5)) offPaving++;
+    if (!okSpot(d.x, d.z)) badN++;
   }
-  for (const b of v.bikes) if (bad(b.x, b.z)) badN++;
-  if (v.totem && bad(v.totem.x, v.totem.z)) badN++;
+  for (const b of v.bikes) if (!okSpot(b.x, b.z)) badN++;
+  if (v.totem && !okSpot(v.totem.x, v.totem.z)) badN++;
   // straight: every dock within 0.3 m of the line through the row's two ends
   const tx = nz, tz = -nx, u = (d) => d.x * tx + d.z * tz, row = [...v.docks].sort((a, b) => u(a) - u(b));
   const a = row[0], b = row[row.length - 1], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
   const bent = row.some((d) => Math.abs(((d.x - a.x) * (b.z - a.z) - (d.z - a.z) * (b.x - a.x)) / L) > 0.3);
   return { offPaving, bent, bad: badN };
 }
-function layout(v, anchor, totem0) {
+function layout(v, anchor, totem0, R = 10) {
   // every kerb near the point (probed from it and from rings of 3 / 6 / 9 m round it): the longest row wins, then the
   // one nearest the point
   const kerbs = [];
-  for (const r of [0, 3, 6, 9]) for (let j = 0; j < (r ? 16 : 1); j++) {
+  for (const r of [0, 3, 6, 9, 12].filter((r) => r < R)) for (let j = 0; j < (r ? 16 : 1); j++) {
     const a = (j * Math.PI) / 8, k = fit.nearKerb(anchor.x + Math.cos(a) * r, anchor.z + Math.sin(a) * r, 4);
     if (k && !kerbs.some((q) => Math.hypot(q.x - k.x, q.z - k.z) < 1 && q.tx * k.tx + q.tz * k.tz > 0.95)) kerbs.push(k);
   }
   let best = null;
   for (const k of kerbs) {
-    const r = layoutOn(v, anchor, totem0, k, best ? best.docks.length : 5);
+    const r = layoutOn(v, anchor, totem0, k, best ? best.docks.length : 5, R);
     if (r && (!best || r.docks.length > best.docks.length || (r.docks.length === best.docks.length && r.dist < best.dist))) best = r;
   }
   if (best) delete best.dist;
   return best;
 }
-function layoutOn(v, anchor, totem0, k, atLeast) {
+function layoutOn(v, anchor, totem0, k, atLeast, R) {
   const nx = -k.lx, nz = -k.lz, yawN = Math.atan2(nx, nz);
   // the kerb point nearest the anchor along the kerb's line
   const s0 = (anchor.x - k.x) * k.tx + (anchor.z - k.z) * k.tz, Kx = k.x + k.tx * s0, Kz = k.z + k.tz * s0;
@@ -123,20 +129,22 @@ function layoutOn(v, anchor, totem0, k, atLeast) {
   const modes = v.mode === "lane" ? [["lane", -0.3, LANE], ["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE]] : [["sidewalk", 1.95, SIDE], ["sidewalk", 1.6, SIDE], ["lane", -0.3, LANE]];
   for (let N = stands; N >= Math.max(6, atLeast); N--) for (let ci = 0; ci <= 40; ci++) {
     const c = (ci % 2 ? 1 : -1) * Math.ceil(ci / 2) * 0.5;
-    if (Math.hypot(Kx + k.tx * c - anchor.x, Kz + k.tz * c - anchor.z) > 10) continue;
+    if (Math.hypot(Kx + k.tx * c - anchor.x, Kz + k.tz * c - anchor.z) > R) continue;
     for (const [mode, off, set] of modes) {
       const at = (i) => { const uu = c + (i - (N - 1) / 2) * 0.85; return [Kx + k.tx * uu + k.lx * off, Kz + k.tz * uu + k.lz * off]; };
       let fine = true;
       for (let i = 0; i < N && fine; i++) {
         const [x, z] = at(i);
-        fine = set.has(cls(x, z)) && !bad(x, z) && [0.42, 1.5].every((e) => { const bx = x + nx * e, bz = z + nz * e; return (mode === "lane" ? LANE : SIDE).has(cls(bx, bz)) && !bad(bx, bz); });
+        fine = mode === "lane"
+          ? [0, 0.42, 1.5].every((e) => { const bx = x + nx * e, bz = z + nz * e; return (LANE.has(cls(bx, bz)) && !bad(bx, bz)) || BAYS.bay(bx, bz); })
+          : set.has(cls(x, z)) && !bad(x, z) && [0.42, 1.5].every((e) => { const bx = x + nx * e, bz = z + nz * e; return SIDE.has(cls(bx, bz)) && !bad(bx, bz); });
       }
       if (!fine) continue;
       // the terminal 1 m past one end, in line
       let tot = null;
       for (const [i, sg] of [[N - 1, 1], [0, -1]]) {
         const [x, z] = at(i), px = x + k.tx * sg, pz = z + k.tz * sg;
-        if (PAVE.has(cls(px, pz)) && !bad(px, pz)) { tot = [px, pz]; break; }
+        if (paved(px, pz) && okSpot(px, pz)) { tot = [px, pz]; break; }
       }
       if (!tot) continue;
       const docks = [], bikes = [];
@@ -160,11 +168,13 @@ out.villoLog = [];
   if (good(main)) { if (v0.was) out.villo.push([i, { docks: main.docks, bikes: main.bikes, totem: main.totem || null, area: main.area || null, mode: main.mode, slid: 0 }]); return; }
   if (v0.alt && good(v0.alt)) { out.villo.push([i, { docks: v0.alt.docks, bikes: v0.alt.bikes, totem: v0.alt.totem || null, area: v0.alt.area || null, mode: v0.alt.mode, alt: true, slid: 0 }]); return; }
   const wfs = (sl.villo || []).find((w) => w.id === v0.id) || { x: main.docks[0]?.x ?? main.totem.x, z: main.docks[0]?.z ?? main.totem.z };
-  const r = fit ? layout({ ...main, stands: main.stands ?? wfs.stands }, wfs, main.totem) : null;
-  if (r) { out.villo.push([i, r]); out.villoLog.push(`${v0.id} ${v0.name}: laid out again, ${r.docks.length} docks (${r.mode})`); return; }
+  // within 10 m of the point, else 14 m (round 3: Rittweger's point lies in the tram road)
+  let r = null, R = 0;
+  for (const rr of [10, 14]) if (!r && fit) { r = layout({ ...main, stands: main.stands ?? wfs.stands }, wfs, main.totem, rr); R = rr; }
+  if (r) { out.villo.push([i, r]); out.villoLog.push(`${v0.id} ${v0.name}: laid out again, ${r.docks.length} docks (${r.mode}${R > 10 ? ", within 14 m" : ""})`); return; }
   out.dropped.stations = (out.dropped.stations || 0) + 1;
   out.villo.push([i, { docks: [], bikes: [], totem: null, area: null, slid: 0 }]);
-  out.villoLog.push(`${v0.id} ${v0.name}: DROPPED (no straight row of >= 6 docks on paving within 10 m)`);
+  out.villoLog.push(`${v0.id} ${v0.name}: DROPPED (no straight row of >= 6 docks on paving / in a parking bay within 14 m)`);
 });
 
 // ---- one-way pair signs (build_streetkit.py src "pair"): a C1 / F19 that still shows the other order to the same

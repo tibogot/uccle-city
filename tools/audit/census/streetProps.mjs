@@ -153,6 +153,14 @@ const axisOff = (fx, fz, ux, uz) => { const c = Math.abs(fx * ux + fz * uz); ret
   }
 }
 
+// ---- the parking bays + the parked cars main.js keeps (viewer/streets/parkPlace.js widthParking, cityStreetKit.keepCarsClear)
+const { widthParking } = await imp("viewer/streets/parkPlace.js");
+const { parkBays, carsKept, inCar } = await import("../../streetkit/parkBays.mjs");
+const { TRAM_CLEAR } = await imp("viewer/streets/carriageway.js");
+const parkSites = fit ? widthParking(S.roads, S.feats, S.bounds, fit).sites : [];
+const tracksB = trackIndex((S.feats.lines || []).filter((l) => l.kind === "tram").map((l) => smoothPolyline(l.line)));
+const BAYS = parkBays(parkSites, (x, z) => (fit ? fit.classAt(x, z) : -1), (x, z) => tracksB.dist(x, z), TRAM_CLEAR);
+
 // ---- drawn pieces in a driven lane / on a tram track
 const test = (kind, x, z, extra = {}) => {
   if (typeof x !== "number" || !inB(x, z)) return;
@@ -170,7 +178,9 @@ for (const v of sk.villo || []) {
   // one row per station: its worst piece
   const pieces = [...(v.totem ? [["totem", v.totem]] : []), ...v.docks.map((d) => ["dock", d]), ...v.bikes.map((b) => ["bike", b])];
   const before = items.inRoad.length, c0 = { ...counts };
-  for (const [k, p] of pieces) test(`villo ${k}`, p.x, p.z, { id: v.id });
+  // (round 3) a piece in a parking bay (tools/streetkit/parkBays.mjs: the parked cars' slots, off the tram road) is not
+  // in the road: real Villo stations stand in the parking lane (the parked cars keep off them: villoCarOverlap below)
+  for (const [k, p] of pieces) if (OLD || !BAYS.bay(p.x, p.z)) test(`villo ${k}`, p.x, p.z, { id: v.id });
   const mine = items.inRoad.splice(before);
   if (mine.length) {
     mine.sort((a, b) => b.deep - a.deep);
@@ -199,12 +209,18 @@ counts.villoOffPaving = 0; counts.villoBent = 0; items.villo = [];
 if (fit) for (const v of sk.villo || []) {
   if (!v.docks.length || !inB(v.docks[0].x, v.docks[0].z)) continue;
   const d0 = v.docks[0], nx = Math.sin(d0.yaw), nz = Math.cos(d0.yaw), C = (x, z) => fit.classAt(x, z);
-  const PAVE = new Set([3, 4, 5]);
-  const off = v.docks.filter((d) => !PAVE.has(C(d.x, d.z)) || !PAVE.has(C(d.x + nx * 1.5, d.z + nz * 1.5))).length;
+  const PAVE = new Set([3, 4, 5]), paved = (x, z) => PAVE.has(C(x, z)) || BAYS.bay(x, z);
+  const off = v.docks.filter((d) => !paved(d.x, d.z) || !paved(d.x + nx * 1.5, d.z + nz * 1.5)).length;
   const tx = nz, tz = -nx, u = (d) => d.x * tx + d.z * tz, row = [...v.docks].sort((a, b) => u(a) - u(b));
   const a = row[0], b = row[row.length - 1], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
   const bent = row.some((d) => Math.abs(((d.x - a.x) * (b.z - a.z) - (d.z - a.z) * (b.x - a.x)) / L) > 0.3);
   counts.villoOffPaving += off; if (bent) counts.villoBent++;
   if (off || bent) items.villo.push({ id: v.id, name: v.name, off, bent, at: at(d0.x, d0.z) });
+}
+// no parked car (the ones main.js keeps) over a Villo dock or bike
+counts.villoCarOverlap = 0;
+{
+  const kept = carsKept(parkSites, sk.villo);
+  for (const v of sk.villo || []) for (const p of [...v.docks, ...v.bikes]) if (inB(p.x, p.z) && kept.some((c) => inCar(c, p.x, p.z, 0.1))) { counts.villoCarOverlap++; items.villo.push({ id: v.id, name: v.name, car: true, at: at(p.x, p.z) }); }
 }
 console.log(JSON.stringify({ tile: T, counts, items }));

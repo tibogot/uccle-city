@@ -1,5 +1,5 @@
 {
- "when": "2026-11-18T10:24:12.155Z",
+ "when": "2026-11-18T10:49:51.685Z",
  "old": false,
  "sum": {
   "plates": 750,
@@ -8,13 +8,14 @@
   "signs": 1766,
   "signFacing": 8,
   "signMovedFar": 345,
-  "pieces": 4839,
+  "pieces": 4814,
   "inRoad": 47,
   "inLane": 41,
   "onTram": 11,
   "onPlatform": 51,
   "villoOffPaving": 0,
   "villoBent": 0,
+  "villoCarOverlap": 0,
   "postbox": 0,
   "villo": 0
  },
