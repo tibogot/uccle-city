@@ -242,7 +242,7 @@ export async function run({ route = "default", y = 165, seconds = 60, speed = nu
     for (const fr of frames) { const end = t0 + fr.t * 1000, start = end - fr.ms; if (end > a && start < b && fr.ms > 33) { (fr.loaf ||= []).push({ dur: Math.round(L.dur), block: Math.round(L.block), scripts: L.scripts.slice(0, 4) }); } }
   }
   const rep = report(frames, { label, seconds, skip, speed: +v.toFixed(1), length: Math.round(rt.length), y, reverse, valid: !hidden, sys: T.sys, gpu: V.gpuStats?.(),
-    switches: { compileslice: window.__fineCompile?.on ?? null, ...Object.fromEntries(["retirewarm", "boxshare", "gardenslice", "heropoll", "cullcopy"].map((k) => [k, new URLSearchParams(location.search).get(k) !== "old"])) } });
+    switches: { compileslice: window.__fineCompile?.on ?? null, ...Object.fromEntries(["retirewarm", "boxshare", "gardenslice", "heropoll"].map((k) => [k, new URLSearchParams(location.search).get(k) !== "old"])) } });
   try { localStorage.setItem("falconStutter.last", JSON.stringify({ ...rep, frames: undefined })); } catch { /* full */ }
   return (window.__falconStutterLast = rep);
 }

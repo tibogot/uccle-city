@@ -21,7 +21,7 @@
 //   4. hero colliders: heroTrianglesGen drained = sliced; a step <= 3 ms; the poll walks the scene once for missing roots,
 //      slices the triangles and blockers at POLL_MS = 3 (?heropoll=old); heroBVH transfers its copy
 //   5. viewer/slices.js sliced(): slices <= ms + one step, the same value as drain()
-//   6. cellCull.js transfers the sort input (?cullcopy=old); a viewer/features.js row per switch; no DynamicDrawUsage, no
+//   6. a viewer/features.js row per switch (cullcopy: dropped on the browser turn, it measured nothing); no DynamicDrawUsage, no
 //      light made in the files this gate covers
 import * as THREE from "three/webgpu";
 import fs from "node:fs";
@@ -168,16 +168,16 @@ const { drain, sliced } = await import("../../viewer/slices.js");
   function* work(n) { let s = 0; for (let i = 0; i < n; i++) { busy(0.5); s += i; yield; } return s; }
   const st = {};
   const v = await sliced(work(40), 3, st);
+  const sl = src("viewer/slices.js");
+  ok(sl.includes("await yieldTask();") && sl.includes('typeof S.yield === "function"') && sl.includes("new MessageChannel()"), "slices.js: yields by scheduler.yield / MessageChannel, not nested setTimeout (clamped to >= 4 ms each: a tile's gardens took 4-7 s of wall time at boot)");
   ok(v === drain(work(40)) && st.slices >= 5 && st.longest <= 3 + 0.5 + 1, `sliced(): the drained value, ${st.slices} slices, longest ${st.longest.toFixed(1)} ms (<= 3 ms + one step)`);
 }
 
 // ------------------------------------------------------------------ 6. copies, switches, rules
 {
-  const cc = src("viewer/cellCull.js");
-  ok(cc.includes("CULL_TRANSFER ? [P.buffer, ...(src ? [src.buffer] : [])] : []") && /CULL_TRANSFER = qs\.get\("cullcopy"\) !== "old"/.test(cc), "cellCull.js: the sort input transferred (?cullcopy=old)");
   const feat = src("viewer/features.js");
-  for (const k of ["retirewarm", "boxshare", "gardenslice", "heropoll", "cullcopy"]) ok(new RegExp(`old\\("${k}", "perf", [^\\n]*sub: "Stutter"`).test(feat), `viewer/features.js: a Stutter row for ?${k}`);
-  for (const p of ["viewer/slices.js", "viewer/heroTris.js", "viewer/heroColliders.js", "viewer/heroBVH.js", "viewer/gardens/cityGardens.js", "viewer/gardens/gardenKit.js", "viewer/gardens/gardenHedge.js", "viewer/streetlife/streetlife.js", "viewer/lodFade.js", "viewer/cellCull.js"]) {
+  for (const k of ["retirewarm", "boxshare", "gardenslice", "heropoll"]) ok(new RegExp(`old\\("${k}", "perf", [^\\n]*sub: "Stutter"`).test(feat), `viewer/features.js: a Stutter row for ?${k}`);
+  for (const p of ["viewer/slices.js", "viewer/heroTris.js", "viewer/heroColliders.js", "viewer/heroBVH.js", "viewer/gardens/cityGardens.js", "viewer/gardens/gardenKit.js", "viewer/gardens/gardenHedge.js", "viewer/streetlife/streetlife.js", "viewer/lodFade.js"]) {
     const s = src(p);
     ok(!/THREE\.DynamicDrawUsage|setUsage\([^)]*Dynamic/.test(s), `${p}: no DynamicDrawUsage`);
     ok(!/new THREE\.(Point|Spot|Directional|Hemisphere|RectArea|Ambient)Light\b/.test(s), `${p}: no light made`);

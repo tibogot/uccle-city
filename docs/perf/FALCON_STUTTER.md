@@ -130,7 +130,7 @@ Goal unchanged: 0 frames over 50 ms, p99 <= 25 ms. The round-1 leftovers re-read
 |---|---|---|---|
 | 1 | `walls (kit, far):fade` SHADOW build, 31-56 ms | NOT the attribute count: the kit walls are a plain Mesh (7 attributes; three's object-specific flag is set only for InstancedMesh over 8 vertex buffers and morph textures, nodes/accessors/Instance.js, Morph.js). The far material (`MATS.wallKitFar`, swapped in by kitField.js out of the kit's reach) never fades in: its fading copy was first made in `retire`, compiled for the scene pass only (compileAsync builds no shadow pass), and its shadow shader was built by the sun pass on the first fade-out frame. After that it is cached (shared material, shared fade graph): 1-2 per flight = the first time per pass context | `retirewarm`: lodFade.js fadeProxies also makes the copies of a mesh's `userData.cutMat` / `plainMat`, so both copies are compiled AND shadow-warmed (preCompile's warmShadows) when the first kit tile lands; `retire` shadow-warms any new copy before the fade-out starts |
 | 4 | `streetlife-box:fade` sync build 8-9 ms a tile | the box geometry had 4 + 7 per-instance attributes = 11 keys: `Object.keys(geometry.attributes).length + 1 (matrix) + 1 (previous matrix: motion vectors) > 8` (canReferenceInstanceData) sets `builder.objectSpecific`, and NodeManager.getForRender never caches such a build: every tile's box mesh, its fading copy and every warm-up stand-in built its own shader, the real mesh on its first frame (the stand-in's build is not reused) | `boxshare`: the 7 vec4s stay ONE InstancedInterleavedBuffer, read through `referenceAttribute("geometry.boxIB.<k>")` (resolved per render object, the way three reads `instanceMatrix`); the geometry keeps 4 attributes, the build is shared by all tiles (stand-ins share the geometry, so they carry the data); on dispose the columns join `geometry.attributes` so three frees the buffer |
-| 2 | major GC 50-100 ms (450-1170 MB drops) | measured nothing new offline. What a tile allocates on the main thread: the worker result (~37 MB a full tile, transferred: needed), CPU copies dropped after upload (heapDrop, needed), plus avoidable second copies: cellCull.js sliced position + index and then CLONED them again by postMessage (no transfer list), heroBVH.js the same for a landmark's whole triangle soup | `cullcopy`, (`heropoll`): the copies transferred (one copy fewer per big façade mesh per tile, per landmark). A 3DTilesRendererJS-style paced eviction was NOT added: round 1 measured the tile disposes themselves at 16-33 ms (`disposeslice` dropped), and a major GC's pause follows the live heap and the allocation rate, not when the garbage was made. The harness now reports `allocMB` (heap growth, ArrayBuffers included), `allocMBperTile` and `gcMB`, to find the next source on the browser turn |
+| 2 | major GC 50-100 ms (450-1170 MB drops) | measured nothing new offline. What a tile allocates on the main thread: the worker result (~37 MB a full tile, transferred: needed), CPU copies dropped after upload (heapDrop, needed), plus avoidable second copies: cellCull.js sliced position + index and then CLONED them again by postMessage (no transfer list), heroBVH.js the same for a landmark's whole triangle soup | `cullcopy` (DROPPED on the browser turn: measured nothing), (`heropoll`): the copies transferred (one copy fewer per big façade mesh per tile, per landmark). A 3DTilesRendererJS-style paced eviction was NOT added: round 1 measured the tile disposes themselves at 16-33 ms (`disposeslice` dropped), and a major GC's pause follows the live heap and the allocation rate, not when the garbage was made. The harness now reports `allocMB` (heap growth, ArrayBuffers included), `allocMBperTile` and `gcMB`, to find the next source on the browser turn |
 | 3 | gardens step 18-40 ms | cityGardens.addTile in one go: clearRoads (3 lane / clear-ring tests per segment, per pillar, gate, hedge point), the ground settle of segments and pillars, the hedge modules (~30 ground samples each) | `gardenslice`: one generator (addTileGen; gardenInstancesGen, settleGen, settlePillarsGen, hedgeInstancesGen, clearRoads) drained by addTile, run in <= 3 ms slices by addTileSliced (viewer/slices.js) |
 | 5 | hero collider poll 37-66 ms | every 2 s: `scene.getObjectByName` per landmark name (~40 whole-scene walks), a Box3 + mesh count of each LOD0 again, then heroTriangles of a LOD0 in one go, the car blockers in 6 ms slices, the BVH copy cloned again | `heropoll`: one scene walk a poll for the roots not found yet (cached while attached), mesh count + tiles cached per LOD0, triangles (viewer/heroTris.js heroTrianglesGen) and blockers in <= 3 ms slices, the BVH copy transferred |
 
@@ -150,15 +150,56 @@ features rows (sub "Stutter"); no DynamicDrawUsage, no light.
 
 Worker bundle: no worker code changed (viewer/tileWorker.bundle.js untouched).
 
-### Browser turn (to do)
-1. Preflight GREEN, one tab, `?game=falcon`: `F.run({ seconds: 60 })` alternated page loads default /
-   `&retirewarm=old&boxshare=old&gardenslice=old&heropoll=old&cullcopy=old` (3 each, a fresh tab each), the second
-   reversed flight too. Expect: no `walls (kit, far):fade` or `streetlife-box` node build in a long frame, no
-   "gardens" slice over ~4 ms in the tile log line (its counts now carry `slices` / `longest`), no hero-collider task;
-   `summary.allocMB` / `gcMB` / `gc` lower or equal.
-2. `?buildaudit=1` + debug/buildAudit.js: `streetlife-box` builds = 1 (+ its fade copy 1) per page, not per tile;
-   `walls (kit, far):fade` built with the first kit tile (shadow pass in the warm group), never on screen.
-3. Look: street signs / plates / house numbers / shop names on a few tiles (text pages placed, evicted, placed again),
-   a tile fading in / out with kit walls (no hole, no shadow pop), the gardens, a landmark's collisions (drive into
-   Saint-Job church, walk the steps). HEAP 5 boots (0 WebGPU errors: the box buffer layout is new), the visual tour.
-4. If GC frames remain: a DevTools trace of one (V8.GC_MC phases) + `allocMBperTile`, then cut the biggest source.
+### Browser turn (2026-11-18): results
+
+Machine: preflight **RED** the whole turn and not ours to fix: the owner's own Chrome (the taskbar one, 4-6 GB),
+two `next dev` servers (other projects) and Cursor: CPU 22-63 % busy and GPU 23-49 % busy at rest, 1.4-2.5 GB free
+of 15.7. Every number below is RED; the A/B pages were alternated (a fresh tab each, `?game=falcon`, the flight 5 s
+after the play loader, then the reversed flight on the same page) so both sides share the noise, which still swung
+4-15x between pairs. Worker bundle rebuilt locally for testing only (foundation's worker changes), restored before
+committing.
+
+| pair | variant | over50 (fwd / rev) | over33 | p99 | worst ms | allocMB | gcMB | gc |
+|---|---|---|---|---|---|---|---|---|
+| 1 | new | 58 / 81 | 159 / 162 | 66.7 / 66.8 | 283 / 233 | 3063 / 3549 | 3021 / 3185 | 116 / 126 |
+| 1 | old (`=old` x4 or x5) | 141 / 94 | 264 / 140 | 100 / 116.7 | 1367 / 4067 | 2927 / 3472 | 2609 / 3340 | 102 / 131 |
+| 2 | new | 92 / 38 | 167 / 92 | 133.2 / 66.5 | 1150 / 217 | 3094 / 3845 | 3544 / 3263 | 120 / 144 |
+| 2 | old | 48 / 97 | 114 / 164 | 66.6 / 83.4 | 200 / 867 | 3598 / 2795 | 3683 / 2996 | 137 / 99 |
+| 3 | new | 49 / 59 | 118 / 134 | 50.2 / 66.6 | 283 / 117 | 3357 / 3508 | 3589 / 3186 | 123 / 124 |
+| 3 | old | 14 / 9 | 39 / 30 | 33.5 / 33.4 | 217 / 200 | 3932 / 3797 | 3912 / 3296 | 147 / 140 |
+| 4 | new (+ the yield fix below) | 10 / 4 | 23 / 11 | 33.4 / 33.3 | 83 / 100 | 4491 / 3966 | 4437 / 3259 | 178 / 147 |
+
+(old 1-3 also had `cullcopy=old`.) The lightest-machine pair (old-3 then new-4, adjacent in time): over50 14 / 9 ->
+10 / 4, over33 39 / 30 -> 23 / 11, worst 217 / 200 -> 83 / 100 ms. Not a verdict on a RED machine; the goal (0 over
+50 ms, p99 <= 25) is not reached under this load either way. A GREEN re-measure is the first item of the next turn.
+
+Per fix (what measured, independent of the frame-time noise):
+- `boxshare`, KEPT: `?buildaudit=1` + a 60 s flight: `streetlife-box` built ONCE per page (15 ms) and its fade copy once
+  (20 ms), both under the boot cover (13.9 s / 18.7 s; play at 45 s); none during the flight (was one per tile).
+  Signs / plates / house numbers / shop names: the same picture as `?boxshare=old` at Place Saint-Job street level; a
+  tile's text pages evicted (its rects blanked) and placed again (pages 0,1 -> 7,8, rects identical, same picture).
+- `retirewarm`, KEPT: `walls (kit, far):fade` built for the scene pass at 19.2 s and its SHADOW pass at 21.4 s, both under
+  the cover (with the first kit tile's stand-ins); none on screen in the flight (round 1: 31-56 ms on screen).
+- `gardenslice`, KEPT + fixed: the first cut yielded with `setTimeout(0)`: Chrome clamps nested timers to >= 4 ms and the
+  slices queued behind every boot task: a tile's gardens took 4-7 s of WALL time at boot (the tile log's "longest
+  slice (gardens) 4431 / 7148 ms" = wall time over many tasks, not one task). Now `viewer/slices.js` yields with
+  `scheduler.yield()` (MessageChannel fallback), plus yields round the dedupe / cap joins / typed-array conversion and
+  the ground settle by samples (~192) instead of segments: boot tiles 33-200 ms of wall time, flight tiles 19-37 ms,
+  the longest slice 3.3-7.4 ms in flight (round 1: one 18-40 ms step); `streamer.addTile` (the pools' sources) is the
+  unsliced 1-2 ms left. Gate check: slices.js yields without the timer clamp.
+- `heropoll`, KEPT: the landmark colliders built (12 in the police boot, stjob 38579 triangles = the HEAP.md count);
+  its 37-66 ms task did not show among the long frames; not isolated by its own A/B on this machine.
+- `cullcopy`, DROPPED: allocation the same within noise (new ~3.5 GB / min vs old ~3.5); cellCull.js as before, row
+  and gate line removed.
+
+GC (#2, not fixed this turn, named): the flight allocates 3-4.5 GB a minute (`allocMB`; ~80-115 MB per tile event)
+and frees it in ~100-180 drops of 20-30 MB (every 0.3-0.6 s): mostly NOT big arrays. A typed-array probe on the main
+thread (constructors wrapped for 40 s of flight) saw only 244 MB of typed arrays against 2465 MB of heap growth: ~90 %
+is JS objects / closures / arrays per frame (~0.9 MB a frame). Of the typed arrays, the largest steady source is the
+sky's exposure meter, `vendor/firmament/firmamentExposure.js` meter <- `lighting.js` hazeHook <- `post.js`
+renderScene: a `readRenderTargetPixelsAsync` (copyTextureToBuffer, ~48 KB) most frames (78 MB / 40 s), then
+`gpuPrey.read` (26 MB), the ivy sources per tile (`cityIvy.js` src -> `instanceStream.js` buildSource, ~60 MB),
+`facades.js` splitRoofs copies (~9 MB), `multiDraw.js` cull lists (~9 MB). Next: an allocation-sampling profile
+(CDP HeapProfiler.startSampling, not in the DevTools MCP) of the flight to name the per-frame JS-object source, then
+the exposure meter's readback into a reused buffer (vendor is read-only: from our side).
+

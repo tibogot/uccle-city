@@ -221,8 +221,10 @@ export function* gardenInstancesGen(doc, groundAt = null, { hedgeFronts = true, 
   const pillars0 = groundAt ? yield* settlePillarsGen(doc, groundAt) : (doc.pillars || []);
   yield;
   const pillars = PIER_OLD ? pillars0 : dedupePillars(pillars0);     // (holes: one pier per spot, gardenDedupe.js)
+  yield;
   const push = (arr, m, v, aux = null) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); if (aux) arr.push(aux[0], aux[1], aux[2], aux[3]); else arr.push(0, 0, 0, 0); };
   // mitres + the copings' lift at mitred corners (gardenDedupe.js capJoins; ?gardenpier=old: no lift)
+  yield;
   const { ext, extW, lift } = capJoins(segs, CAP_W, !PIER_OLD);
   const m = new Float32Array(16);
   const shear = (x0, y0, z0, dx, dy, dz, sy) => {
@@ -311,7 +313,7 @@ export function* gardenInstancesGen(doc, groundAt = null, { hedgeFronts = true, 
     }
   }
   const inst = {};
-  for (const k of PIECES) if (L[k].length) inst[k] = k === "hedgecard" && inst.hedge ? inst.hedge : new Float32Array(L[k]);
+  for (const k of PIECES) if (L[k].length) { inst[k] = k === "hedgecard" && inst.hedge ? inst.hedge : new Float32Array(L[k]); yield; }
   return { inst, settled: { styles, segs, pillars }, stand: { wall: SW, pillar: SP, gate: SG, hedgeFrom: SW.hedgeFrom ?? SW.length }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
 }
 
@@ -340,7 +342,13 @@ function* settleGen(doc, G) {
     for (const [x, z, d] of [[g[0], g[2], d0], [g[3], g[5], d1]]) { const k = key(x, z); drop.set(k, Math.max(drop.get(k) || 0, d)); }
     return grow;
   };
-  for (let i = 0; i < segs.length; i++) { need.push(one(segs[i])); if ((i & 7) === 7) yield; }
+  // (a yield every ~192 ground samples: a long wall samples every 0.5 m, so a count of segments was uneven)
+  let samples = 0;
+  for (let i = 0; i < segs.length; i++) {
+    const g = segs[i]; need.push(one(g));
+    samples += 2 * Math.max(2, Math.ceil(Math.hypot(g[3] - g[0], g[5] - g[2]) / 0.5) + 1);
+    if (samples > 192) { samples = 0; yield; }
+  }
   return segs.map((g, i) => {
     const a = drop.get(key(g[0], g[2])) || 0, b = drop.get(key(g[3], g[5])) || 0;
     const up = Math.max(0, need[i]);

@@ -14,7 +14,6 @@ export { cellSort } from "./cellSort.js";
 
 const qs = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
 export const CELL_CULL = qs.get("cellcull") !== "old";
-const CULL_TRANSFER = qs.get("cullcopy") !== "old";
 const _frustum = new THREE.Frustum(), _m = new THREE.Matrix4(), _box = new THREE.Box3();
 /** the buildings' details: their sun shadow dithers out between these distances from the eye (facades.js) */
 export const DETAIL_SHADOW = [100, 140];
@@ -30,9 +29,7 @@ function sortInWorker(P, src, cell) {
     worker.onmessage = (e) => { const j = jobs.get(e.data.id); if (j) { jobs.delete(e.data.id); j(e.data); } };
   }
   const id = ++seq;
-  // (falcon2, ?cullcopy=old: cloned, as before): the two copies are TRANSFERRED; postMessage cloned them again (a second
-  // copy of every big façade mesh's positions + index per tile: main-thread garbage, round 2's GC leftover)
-  return new Promise((res) => { jobs.set(id, res); worker.postMessage({ id, P, src, cell }, CULL_TRANSFER ? [P.buffer, ...(src ? [src.buffer] : [])] : []); });
+  return new Promise((res) => { jobs.set(id, res); worker.postMessage({ id, P, src, cell }); });
 }
 
 /** set a big static mesh up for per-cell culling (lazily: at its first render, once the renderer is known) */
