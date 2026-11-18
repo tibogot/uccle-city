@@ -9,7 +9,7 @@
 //   rings   every parapet / railing collider piece (the drive walls of viewer/streets/bridgeDecks.js parapetRings) is
 //           sampled along its outer face every 0.5 m: the deck's walked top just inside it vs what is DRIVABLE outside
 //           it (the drawn streets of the drive raster, any other deck's top, a tram track on ground at that level): at
-//           the deck's level 1 m out (+-0.3 m) AND 2 m out (+-0.6 m: a street's grade) = the traffic surface goes on
+//           the deck's level 1 m out (+-0.5 m: the car's step) AND 2 m out (+-0.8 m) = the traffic surface goes on
 //           there = a railing ACROSS a street (FAIL, runs >= 1.5 m); or a driven lane / junction turn / tram track crosses
 //           the rail there (within 1.6 m, across it) and the surface 1 m out is within 0.6 m of the edge's level. (1 m alone is not enough: a measured street drawn
 //           past a deck's edge hangs a 1 m lip over the cutting, Avenue de la Chenaie G7)
@@ -29,7 +29,7 @@ const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
 const CHILD = flag("--child"), OLD = flag("--old"), QUIET = flag("--quiet"), OUT = opt("--out", null), JOBS = +opt("--jobs", 4);
-export const OUT1 = [1.0, 0.3], OUT2 = [2.0, 0.6], RAISED = 0.2, ON_RING = 0.45;     // [m out, level tolerance m]
+export const OUT1 = [1.0, 0.5], OUT2 = [2.0, 0.8], RAISED = 0.2, ON_RING = 0.45;     // [m out, level tolerance m]
 // a run counts from 1.5 m: the band decks' parapets come in 2 m pieces, a piece half over the street at the end of a run
 // (<= 1 m) is the piece grain, reported as "edge" (not failed)
 export const MIN_RUN = 1.5, DROP = 0.8;
@@ -148,6 +148,9 @@ for (const [di, deck] of decks.entries()) {
         if (nearTram(ox, oz) && Math.abs(hm.ground(ox, oz) - yt) <= tol) return { what: "tram track", dy: hm.ground(ox, oz) - yt };
         return null;
       };
+      // (browser turn) the rail itself stands on another deck higher than this one: it sticks up through that carriageway
+      const onOther = tops.some((f, j) => { if (j === di) return false; const y = f(x - nx * 0.15, z - nz * 0.15); return y != null && y - own(x - nx * 0.4, z - nz * 0.4) > 0.15; });
+      if (onOther) { if (!run) run = { at: [x, z], len: 0, what: "inside another (higher) deck", dy: 0 }; run.len += 0.5; continue; }
       const q1 = drivable(OUT1), q2 = q1 && drivable(OUT2), ql = !q2 && crossing(x, z, nx, nz) ? drivable([1.0, 0.6]) : null;
       if (!q2 && !ql) { flush(); continue; }
       const { what, dy } = q2 ? q1 : { what: `lane / tram track across, ${ql.what}`, dy: ql.dy };

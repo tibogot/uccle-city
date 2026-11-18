@@ -197,7 +197,10 @@ function at(d, s) {
 // the street that continues there), never against what is drawn there. Rule: an edge where the traffic surface goes on
 // at the deck's level (a drawn street, another deck, a tram track) carries no parapet / railing and no collider; a
 // drop keeps its railing. ?deckrail=old (entry.deckRail === false): no d.railCut, the railings as before.
-export const CONT = { near: 1.0, far: 2.0, tolNear: 0.3, tolFar: 0.6, tram: 1.5, lane: 1.6, laneTol: 0.6 };
+// (browser turn 2026-11-18: tolNear 0.3 left a parapet of the Kasteelstraat service deck standing 0.3-0.4 m over the
+// Hospices deck it runs into, the car stopped at it; 0.5 = the step the car rides up, carEnv.js MAX_STEP)
+const BURIED = 0.15;
+export const CONT = { near: 1.0, far: 2.0, tolNear: 0.5, tolFar: 0.8, tram: 1.5, lane: 1.6, laneTol: 0.6 };
 /** (x, z, y, tol, deckOnly) -> true when a traffic surface is drawn at (x, z) within tol of y: the drive raster's top
  *  surface (streets, sidewalks, tram platforms: { hm, raster }), any deck's walked top, a tram track on ground there.
  *  .crosses(x, z, nx, nz): a driven lane / junction turn (paths: [[x, z, x, z, ...] flat], the tile's traffic graph) or
@@ -223,6 +226,10 @@ export function deckContinuation({ hm, raster, decks, lines = [], paths = [] }) 
     return nearTram(x, z) && Math.abs(hm.ground(x, z) - y) <= tol;
   };
   cont.street = street;
+  // (browser turn) the edge point lies ON another deck standing higher than this one's top (two decks overlapping, the
+  // other on top): this deck's parapet would stick up through the other's carriageway (Kasteelstraat: the service
+  // deck's profile drops 0.7 m within a metre past the junction, under the Hospices deck: the car stopped at it)
+  cont.buried = (x, z, y, self) => tops.some((f, i) => { if (decks[i] === self || decks[i].id === self?.id) return false; const v = f(x, z); return v != null && v - y > BURIED; });
   // the lanes' and tram tracks' segments near a deck (boxes + 4 m)
   const segs = [], near = (x, z) => decks.some((d) => x > d.box[0] - 4 && z > d.box[1] - 4 && x < d.box[2] + 4 && z < d.box[3] + 4);
   for (const P of [...paths, ...trams.map((L) => L.flat())]) for (let i = 2; i + 1 < P.length; i += 2) {
@@ -248,7 +255,8 @@ const edgeLevel = (cont, x, z, nx, nz, y) => { const s = cont.street?.(x - nx * 
  *  (a 1 m lip of street hanging past the slab, or a street falling away down the bank, is not a continuation) */
 // or a lane / tram track crosses the edge there and the surface 1 m out is within CONT.laneTol of it (the drawn street
 // beyond can sag into the bank: Carsoel's eastbound lane and tram track at the west end; never a road far under a deck)
-const goesOn = (cont, x, z, nx, nz, y0, deckOnly) => {
+const goesOn = (cont, x, z, nx, nz, y0, deckOnly, self = null) => {
+  if (cont.buried?.(x - nx * 0.15, z - nz * 0.15, y0, self)) return true;
   const y = edgeLevel(cont, x, z, nx, nz, y0);
   if (cont(x + nx * CONT.near, z + nz * CONT.near, y, CONT.tolNear, deckOnly) && cont(x + nx * CONT.far, z + nz * CONT.far, y, CONT.tolFar, deckOnly)) return true;
   return !deckOnly && !!cont.crosses?.(x, z, nx, nz) && cont(x + nx * CONT.near, z + nz * CONT.near, y, CONT.laneTol);
@@ -267,7 +275,7 @@ export function markRailCuts(decks, cont) {
         const steps = Math.max(1, Math.ceil(L)), m = new Uint8Array(steps);
         if (L >= 0.01) {
           const nx = (bz - az) / L * sgn, nz = -(bx - ax) / L * sgn;
-          const on = (f) => { const x = ax + (bx - ax) * f, z = az + (bz - az) * f; return goesOn(cont, x, z, nx, nz, top(x, z), free.has(i)) ? 1 : 0; };
+          const on = (f) => { const x = ax + (bx - ax) * f, z = az + (bz - az) * f; return goesOn(cont, x, z, nx, nz, top(x, z), free.has(i), d) ? 1 : 0; };
           for (let k = 0; k < steps; k++) if (on(k / steps) + on((k + 0.5) / steps) + on((k + 1) / steps) >= 2) { m[k] = 1; cut++; }
         }
         edges.push(m);
@@ -278,7 +286,7 @@ export function markRailCuts(decks, cont) {
     const [s0, s1] = d.span, steps = Math.max(1, Math.ceil((s1 - s0) / SLAB.step)), sides = [];
     for (const sg of [1, -1]) {
       const m = new Uint8Array(steps);
-      const on = (s) => { const q = at(d, s), nx = q.tz * sg, nz = -q.tx * sg; return goesOn(cont, q.x + nx * d.half, q.z + nz * d.half, nx, nz, q.y - SLAB.sink, false) ? 1 : 0; };
+      const on = (s) => { const q = at(d, s), nx = q.tz * sg, nz = -q.tx * sg; return goesOn(cont, q.x + nx * d.half, q.z + nz * d.half, nx, nz, q.y - SLAB.sink, false, d) ? 1 : 0; };
       for (let k = 0; k < steps; k++) { const a = s0 + (s1 - s0) * k / steps, b = s0 + (s1 - s0) * (k + 1) / steps; if (on(a) + on((a + b) / 2) + on(b) >= 2) { m[k] = 1; cut++; } }
       sides.push(m);
     }
