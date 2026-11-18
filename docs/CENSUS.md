@@ -86,11 +86,12 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   tops, no hidden / doubled faces, no T-junction, nothing in the wall; 22 triangles a balcony, as many as the old open
   slab + parapet. Balconies touching side by side get one shared divider (none does in the city today: the spans keep
   0.3 m gaps; the shell test covers the case). `balcClear()` cuts a balcony back where it would run into another
-  balcony (inside corners) or building mass (its own roof over the slab, a taller neighbour): a lower roof under it is a
-  terrace and keeps it. City-wide (120 tiles): before 20,658 slabs / 36,782 open ends (?balcony=old), after 19,603 slabs /
-  0 open ends (`docs/census/balconies_closed.json`, `balconies_old.json`); detail triangles
-  4,463,540 -> 4,443,498 (-20,042, from the balconies cut back / dropped: H2 48, G3 62, D6 9 dropped, most
-  into their own building's mass, 32 at inside corners; 0 per balcony), no draw call added (the tile's
+  balcony (inside corners), one of its own building's other walls (an inside corner's other wing), its own roof
+  sloping through it or a taller neighbour; a roof high over it (an upper storey overhanging a loggia, G3 380, -570)
+  or a lower roof (a terrace) keeps it (browser turn: a first cut that dropped every balcony under its own roof removed
+  the G3 loggia balconies). City-wide (120 tiles): before 20,658 slabs / 36,782 open ends (?balcony=old), after 20,387
+  slabs / 0 open ends (`docs/census/balconies_closed.json`, `balconies_old.json`); detail triangles 4,463,540 ->
+  4,460,680 (-2,860, the balconies cut back at inside corners / walls; 0 per balcony), no draw call added (the tile's
   detail mesh). zfight on H2 / H4 / G3 / D6: 1,544 -> 1,504 coplanar pairs. Detector changes: the U-shaped parapet top
   counts as a parapet (fill < 0.4), a slab is >= 1.15 m deep and filled (the 1.1 m BLOCK entrance canopy was taken for a
   slab under the closed balcony's U top), `--old`, `--max`, the shell self-test.

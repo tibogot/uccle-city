@@ -159,6 +159,13 @@ function balcPlan(at, f, a, c, y0, y1, D0) {
   const p = at((a + c) / 2, D0 / 2), tx = -f.nz, tz = f.nx;
   return { cx: p[0], cz: p[2], tx, tz, nx: f.nx, nz: f.nz, hu: (c - a) / 2, hv: D0 / 2, y0, y1, a, c };
 }
+/** a plan segment crosses a balcony plan shrunk by m (a wall just touching its outline does not count): separating axes = the box's two + the segment's normal */
+function segObb(ax, az, bx, bz, P, m) {
+  const sx = bx - ax, sz = bz - az, L = Math.hypot(sx, sz) || 1, cx = (ax + bx) / 2 - P.cx, cz = (az + bz) / 2 - P.cz;
+  for (const [ux, uz, h] of [[P.tx, P.tz, P.hu], [P.nx, P.nz, P.hv]]) if (Math.abs(cx * ux + cz * uz) >= h - m + Math.abs(sx * ux + sz * uz) / 2) return false;
+  const nx = -sz / L, nz = sx / L;
+  return Math.abs(cx * nx + cz * nz) < P.hu * Math.abs(P.tx * nx + P.tz * nz) + P.hv * Math.abs(P.nx * nx + P.nz * nz) - m;
+}
 /** two plans overlap (or come within m) in plan: separating-axis test on the four box axes */
 function obbHit(P, Q, m) {
   const dx = Q.cx - P.cx, dz = Q.cz - P.cz;
@@ -649,11 +656,23 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
        *  building mass (its own roof over the slab there, a neighbour standing higher), 2 cm apart; 0.25 m steps */
       function balcClear(f, at, a, c, y0, y1, D0) {
         const hits = (P, list) => list.some((Q) => obbHit(P, Q, 0.02)) || wallHit(P);
+        // its own building's other walls standing in the balcony's box (an inside corner's other wing); NOT a roof high
+        // over it (an upper storey overhanging a loggia: the balcony stands under it) nor a lower roof (a terrace)
+        const walls = [];
+        for (const g of live) if (g !== f) for (const { p, n } of g.tris) {
+          if (Math.abs(n[1]) > 0.3) continue;
+          let ylo = Infinity, yhi = -Infinity; for (const v of p) { ylo = Math.min(ylo, v[1]); yhi = Math.max(yhi, v[1]); }
+          if (yhi <= y0 + 0.01 || ylo >= y1 - 0.01) continue;
+          let best = -1, A = null, B = null;
+          for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) { const L = Math.hypot(p[i][0] - p[j][0], p[i][2] - p[j][2]); if (L > best) { best = L; A = p[i]; B = p[j]; } }
+          if (best > 0.01) walls.push([A[0], A[2], B[0], B[2]]);
+        }
         const wallHit = (P) => {
+          for (const [ax, az, bx, bz] of walls) if (segObb(ax, az, bx, bz, P, 0.02)) return true;
           const k = Math.max(1, Math.ceil((P.c - P.a) / 0.5));                    // every <= 0.5 m, both ends
           for (let i = 0; i <= k; i++) for (const d of [0.4, D0 - 0.03]) {
             const [x, , z] = at(P.a + (P.c - P.a) * i / k, d);
-            if (ownRoof(bi, x, z) > y0 + 0.12) return true;                     // its own building's mass there (a roof over the slab top - 4 cm; a lower roof = a terrace: kept)
+            const r = ownRoof(bi, x, z); if (r > y0 + 0.12 && r < y1 + 0.5) return true;   // its own roof sloping through it
             const o = otherAt(x, z, bi); if (o >= 0 && doc.buildings[o].top > y0) return true;
           }
           return false;

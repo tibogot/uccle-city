@@ -1,15 +1,15 @@
 {
- "when": "2026-11-18T06:38:31.034Z",
+ "when": "2026-11-18T08:16:02.684Z",
  "old": false,
  "sum": {
   "tiles": 120,
-  "slabs": 19603,
+  "slabs": 20387,
   "openSlabs": 0,
   "openEnds": 0,
-  "buildings": 1146,
+  "buildings": 1149,
   "openBuildings": 0,
   "kitBalconies": 1836,
-  "detailTris": 4443498
+  "detailTris": 4460680
  },
  "tiles": [
   {
@@ -34,13 +34,13 @@
   },
   {
    "tile": "B5",
-   "slabs": 135,
+   "slabs": 137,
    "openSlabs": 0,
    "openEnds": 0,
-   "buildings": 6,
+   "buildings": 7,
    "openBuildings": 0,
    "kitBalconies": 14,
-   "detailTris": 32054
+   "detailTris": 32076
   },
   {
    "tile": "B6",
@@ -84,13 +84,13 @@
   },
   {
    "tile": "C4",
-   "slabs": 93,
+   "slabs": 99,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 8,
    "openBuildings": 0,
    "kitBalconies": 29,
-   "detailTris": 56060
+   "detailTris": 56192
   },
   {
    "tile": "C5",
@@ -104,13 +104,13 @@
   },
   {
    "tile": "C6",
-   "slabs": 152,
+   "slabs": 158,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 4,
    "openBuildings": 0,
    "kitBalconies": 54,
-   "detailTris": 41396
+   "detailTris": 41528
   },
   {
    "tile": "C7",
@@ -124,13 +124,13 @@
   },
   {
    "tile": "C8",
-   "slabs": 217,
+   "slabs": 222,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 10,
    "openBuildings": 0,
    "kitBalconies": 33,
-   "detailTris": 44970
+   "detailTris": 45080
   },
   {
    "tile": "C9",
@@ -174,23 +174,23 @@
   },
   {
    "tile": "D3",
-   "slabs": 557,
+   "slabs": 593,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 34,
    "openBuildings": 0,
    "kitBalconies": 44,
-   "detailTris": 93794
+   "detailTris": 94586
   },
   {
    "tile": "D4",
-   "slabs": 528,
+   "slabs": 559,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 17,
    "openBuildings": 0,
    "kitBalconies": 42,
-   "detailTris": 83344
+   "detailTris": 84026
   },
   {
    "tile": "D5",
@@ -204,13 +204,13 @@
   },
   {
    "tile": "D6",
-   "slabs": 604,
+   "slabs": 618,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 15,
    "openBuildings": 0,
    "kitBalconies": 21,
-   "detailTris": 68380
+   "detailTris": 68688
   },
   {
    "tile": "D7",
@@ -224,13 +224,13 @@
   },
   {
    "tile": "D8",
-   "slabs": 61,
+   "slabs": 63,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 6,
    "openBuildings": 0,
    "kitBalconies": 42,
-   "detailTris": 54218
+   "detailTris": 54262
   },
   {
    "tile": "D9",
@@ -244,13 +244,13 @@
   },
   {
    "tile": "E1",
-   "slabs": 490,
+   "slabs": 509,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 51,
    "openBuildings": 0,
    "kitBalconies": 24,
-   "detailTris": 80624
+   "detailTris": 80976
   },
   {
    "tile": "E10",
@@ -264,43 +264,43 @@
   },
   {
    "tile": "E2",
-   "slabs": 299,
+   "slabs": 302,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 33,
    "openBuildings": 0,
    "kitBalconies": 51,
-   "detailTris": 110406
+   "detailTris": 110472
   },
   {
    "tile": "E3",
-   "slabs": 691,
+   "slabs": 709,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 54,
    "openBuildings": 0,
    "kitBalconies": 34,
-   "detailTris": 120304
+   "detailTris": 120766
   },
   {
    "tile": "E4",
-   "slabs": 561,
+   "slabs": 570,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 71,
    "openBuildings": 0,
    "kitBalconies": 57,
-   "detailTris": 141566
+   "detailTris": 141786
   },
   {
    "tile": "E5",
-   "slabs": 311,
+   "slabs": 318,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 29,
    "openBuildings": 0,
    "kitBalconies": 57,
-   "detailTris": 103916
+   "detailTris": 104070
   },
   {
    "tile": "E6",
@@ -334,23 +334,23 @@
   },
   {
    "tile": "E9",
-   "slabs": 123,
+   "slabs": 126,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 3,
    "openBuildings": 0,
    "kitBalconies": 13,
-   "detailTris": 50246
+   "detailTris": 50312
   },
   {
    "tile": "F1",
-   "slabs": 379,
+   "slabs": 391,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 43,
    "openBuildings": 0,
    "kitBalconies": 30,
-   "detailTris": 68870
+   "detailTris": 69200
   },
   {
    "tile": "F10",
@@ -364,33 +364,33 @@
   },
   {
    "tile": "F2",
-   "slabs": 1017,
+   "slabs": 1058,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 66,
    "openBuildings": 0,
    "kitBalconies": 42,
-   "detailTris": 112476
+   "detailTris": 113400
   },
   {
    "tile": "F3",
-   "slabs": 995,
+   "slabs": 1141,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 25,
    "openBuildings": 0,
    "kitBalconies": 6,
-   "detailTris": 77704
+   "detailTris": 80916
   },
   {
    "tile": "F4",
-   "slabs": 45,
+   "slabs": 47,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 5,
    "openBuildings": 0,
    "kitBalconies": 25,
-   "detailTris": 42742
+   "detailTris": 42786
   },
   {
    "tile": "F5",
@@ -404,33 +404,33 @@
   },
   {
    "tile": "F6",
-   "slabs": 338,
+   "slabs": 351,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 9,
    "openBuildings": 0,
    "kitBalconies": 55,
-   "detailTris": 71546
+   "detailTris": 71788
   },
   {
    "tile": "F7",
-   "slabs": 228,
+   "slabs": 242,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 8,
    "openBuildings": 0,
    "kitBalconies": 5,
-   "detailTris": 20978
+   "detailTris": 21286
   },
   {
    "tile": "F8",
-   "slabs": 128,
+   "slabs": 133,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 5,
    "openBuildings": 0,
    "kitBalconies": 13,
-   "detailTris": 25724
+   "detailTris": 25834
   },
   {
    "tile": "F9",
@@ -444,13 +444,13 @@
   },
   {
    "tile": "G1",
-   "slabs": 431,
+   "slabs": 446,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 49,
    "openBuildings": 0,
    "kitBalconies": 12,
-   "detailTris": 78480
+   "detailTris": 78810
   },
   {
    "tile": "G10",
@@ -464,53 +464,53 @@
   },
   {
    "tile": "G2",
-   "slabs": 718,
+   "slabs": 759,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 36,
    "openBuildings": 0,
    "kitBalconies": 10,
-   "detailTris": 69144
+   "detailTris": 70090
   },
   {
    "tile": "G3",
-   "slabs": 540,
+   "slabs": 592,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 12,
    "openBuildings": 0,
    "kitBalconies": 11,
-   "detailTris": 56480
+   "detailTris": 57646
   },
   {
    "tile": "G4",
-   "slabs": 101,
+   "slabs": 103,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 3,
    "openBuildings": 0,
    "kitBalconies": 27,
-   "detailTris": 54442
+   "detailTris": 54486
   },
   {
    "tile": "G5",
-   "slabs": 687,
+   "slabs": 705,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 21,
    "openBuildings": 0,
    "kitBalconies": 22,
-   "detailTris": 68152
+   "detailTris": 68570
   },
   {
    "tile": "G6",
-   "slabs": 301,
+   "slabs": 309,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 15,
    "openBuildings": 0,
    "kitBalconies": 36,
-   "detailTris": 57964
+   "detailTris": 58140
   },
   {
    "tile": "G7",
@@ -524,33 +524,33 @@
   },
   {
    "tile": "G8",
-   "slabs": 60,
+   "slabs": 63,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 2,
    "openBuildings": 0,
    "kitBalconies": 3,
-   "detailTris": 16228
+   "detailTris": 16294
   },
   {
    "tile": "G9",
-   "slabs": 114,
+   "slabs": 118,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 2,
    "openBuildings": 0,
    "kitBalconies": 12,
-   "detailTris": 25424
+   "detailTris": 25512
   },
   {
    "tile": "H1",
-   "slabs": 822,
+   "slabs": 837,
    "openSlabs": 0,
    "openEnds": 0,
-   "buildings": 72,
+   "buildings": 73,
    "openBuildings": 0,
    "kitBalconies": 26,
-   "detailTris": 123012
+   "detailTris": 123408
   },
   {
    "tile": "H10",
@@ -574,23 +574,23 @@
   },
   {
    "tile": "H2",
-   "slabs": 1357,
+   "slabs": 1390,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 52,
    "openBuildings": 0,
    "kitBalconies": 16,
-   "detailTris": 106724
+   "detailTris": 107098
   },
   {
    "tile": "H3",
-   "slabs": 221,
+   "slabs": 252,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 18,
    "openBuildings": 0,
    "kitBalconies": 38,
-   "detailTris": 79604
+   "detailTris": 80286
   },
   {
    "tile": "H4",
@@ -604,23 +604,23 @@
   },
   {
    "tile": "H5",
-   "slabs": 79,
+   "slabs": 87,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 7,
    "openBuildings": 0,
    "kitBalconies": 16,
-   "detailTris": 47018
+   "detailTris": 47216
   },
   {
    "tile": "H6",
-   "slabs": 76,
+   "slabs": 84,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 9,
    "openBuildings": 0,
    "kitBalconies": 61,
-   "detailTris": 59290
+   "detailTris": 59466
   },
   {
    "tile": "H7",
@@ -654,13 +654,13 @@
   },
   {
    "tile": "I1",
-   "slabs": 523,
+   "slabs": 560,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 55,
    "openBuildings": 0,
    "kitBalconies": 12,
-   "detailTris": 77756
+   "detailTris": 78592
   },
   {
    "tile": "I10",
@@ -684,13 +684,13 @@
   },
   {
    "tile": "I2",
-   "slabs": 659,
+   "slabs": 677,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 35,
    "openBuildings": 0,
    "kitBalconies": 18,
-   "detailTris": 97608
+   "detailTris": 98004
   },
   {
    "tile": "I3",
@@ -700,27 +700,27 @@
    "buildings": 12,
    "openBuildings": 0,
    "kitBalconies": 38,
-   "detailTris": 80236
+   "detailTris": 80258
   },
   {
    "tile": "I4",
-   "slabs": 410,
+   "slabs": 429,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 18,
    "openBuildings": 0,
    "kitBalconies": 1,
-   "detailTris": 57516
+   "detailTris": 57912
   },
   {
    "tile": "I5",
-   "slabs": 89,
+   "slabs": 93,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 7,
    "openBuildings": 0,
    "kitBalconies": 17,
-   "detailTris": 70454
+   "detailTris": 70564
   },
   {
    "tile": "I6",
@@ -734,13 +734,13 @@
   },
   {
    "tile": "I7",
-   "slabs": 131,
+   "slabs": 136,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 6,
    "openBuildings": 0,
    "kitBalconies": 20,
-   "detailTris": 37942
+   "detailTris": 38052
   },
   {
    "tile": "I8",
@@ -804,43 +804,43 @@
   },
   {
    "tile": "J4",
-   "slabs": 390,
+   "slabs": 392,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 20,
    "openBuildings": 0,
    "kitBalconies": 14,
-   "detailTris": 67972
+   "detailTris": 68016
   },
   {
    "tile": "J5",
-   "slabs": 368,
+   "slabs": 380,
    "openSlabs": 0,
    "openEnds": 0,
-   "buildings": 21,
+   "buildings": 22,
    "openBuildings": 0,
    "kitBalconies": 49,
-   "detailTris": 83822
+   "detailTris": 84086
   },
   {
    "tile": "J6",
-   "slabs": 313,
+   "slabs": 314,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 12,
    "openBuildings": 0,
    "kitBalconies": 19,
-   "detailTris": 62632
+   "detailTris": 62654
   },
   {
    "tile": "J7",
-   "slabs": 176,
+   "slabs": 181,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 14,
    "openBuildings": 0,
    "kitBalconies": 34,
-   "detailTris": 75246
+   "detailTris": 75356
   },
   {
    "tile": "J8",
@@ -854,13 +854,13 @@
   },
   {
    "tile": "J9",
-   "slabs": 34,
+   "slabs": 35,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 2,
    "openBuildings": 0,
    "kitBalconies": 10,
-   "detailTris": 38940
+   "detailTris": 38962
   },
   {
    "tile": "K10",
@@ -874,13 +874,13 @@
   },
   {
    "tile": "K11",
-   "slabs": 12,
+   "slabs": 15,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 1,
    "openBuildings": 0,
    "kitBalconies": 4,
-   "detailTris": 15732
+   "detailTris": 15798
   },
   {
    "tile": "K12",
@@ -904,13 +904,13 @@
   },
   {
    "tile": "K5",
-   "slabs": 33,
+   "slabs": 32,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 2,
    "openBuildings": 0,
    "kitBalconies": 6,
-   "detailTris": 15474
+   "detailTris": 15452
   },
   {
    "tile": "K6",
@@ -934,13 +934,13 @@
   },
   {
    "tile": "K8",
-   "slabs": 184,
+   "slabs": 230,
    "openSlabs": 0,
    "openEnds": 0,
    "buildings": 7,
    "openBuildings": 0,
    "kitBalconies": 9,
-   "detailTris": 53776
+   "detailTris": 54810
   },
   {
    "tile": "K9",
