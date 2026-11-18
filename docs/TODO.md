@@ -11,6 +11,8 @@ on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QU
 ## OWNER PLAYTEST 2026-11-18 (car, live site) — TOP PRIORITY
 Owner's point: don't fix these one by one; find the CLASS of each defect, fix it at the generator, and add a city-wide detector so it can't come back unseen.
 
+**Census merged 2026-11-18 (docs/CENSUS.md):** A open meshes 1,524 tile buildings + 11/16 heroes (Saint-Pierre 53.5 m²); B balconies open 20,061 slabs; C ground: 4,052 tilted sidewalk patches, 1,462 road cross-fall bumps, 1,273 lumps, 3,038 holes (noisy), 675 spikes; D1 plates off post 237, D2 signs wrong 78, D3 furniture in road 389; E rails off the tram road 573 m; F markings off street 6.0 km; G z-fight 32,001 pairs. Drive check (claude/drivecheck): 274 blocked places. Jobs: streetprops (D), balcony (B) running; next: heroshell (A), sidewalk level-with-kerb (C), tramfit (E), markings (F), z-fight dedup (G).
+
 **Step 1: defect census (detectors city-wide, counts per class, before any fix)**
 - [ ] Car blocked by colliders near the Lycée Français / bridge on the Verrewinkel side (collider view: bridge parapet / wall colliders stand across the cobbled road; "like everywhere"). Class: colliders on drivable surface. Detector: drive every street centreline headless and list blocks.
 - [ ] Buildings with missing walls (Saint-Pierre church: whole wall pieces missing). Class: open meshes. Detector: open-edge / hole scan of every building + landmark.
