@@ -16,6 +16,7 @@ import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
 import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
 import { tramTracks } from "./track.js";
+import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
 import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
@@ -279,6 +280,8 @@ export async function buildTileData(entry, base) {
   const hasTram = (feats.lines || []).some((l) => l.kind === "tram");
   const tramFit = hasTram && entry.tramFit !== false ? await step("tramfit fetch", () => fetch(new URL(`../tramfit/${entry.name}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null)) : null;
   tramTracks(feats, tramFit);
+  // ... and the tram platforms beside them, never over a rail (viewer/streets/tramPlatforms.js; ?tramfit=old: as OSM)
+  if (entry.tramFit !== false) fitPlatforms(feats);
   // ?trains=1 (viewer/rail/): no LiDAR "trees" on rail bridge decks, platforms or the ballast; the line's verges as
   // undergrowth in the land cover
   const rail = entry.rail ? await step("rail fetch", () => railDocs(base, entry.bridges2 !== false)) : null;

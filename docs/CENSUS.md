@@ -142,7 +142,16 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   clean. Tram 92 (`tools/tramfit/tramSnap.mjs`): unsnapped points 1,920 = before, sideways step p99.9 0.36 -> 0.12 m,
   yaw rate p99.9 5.3 -> 6.0 deg/m, sub-18 m radii 245 -> 257 (junctions). Found, not fixed (pre-existing, another
   class): 713 m of rail lie under an OSM tram platform as `tram.js` draws it (a 2.6 m band centred on the OSM line,
-  often the platform EDGE in OSM): 688 m after the fit; the platforms should be cut clear of the fitted tracks.
+  often the platform EDGE in OSM): 688 m after the fit. Round 2 fixed it: `viewer/streets/tramPlatforms.js`
+  `fitPlatforms` (tile worker, after the tracks) keeps every tram platform's track-side edge 1.25 m from the track centre
+  (T3000 / T4000 2.30 m wide + ~10 cm boarding gap: ~0.5 m from the rail) by the smallest move: a line platform's band
+  (OSM `width`, else 2.6 m) slides across point by point, an island between two tracks takes the gap minus both
+  clearances (>= 1.2 m), an area platform's outline vertices are pushed out of the clearance on its own side; 63 of
+  100 platforms moved, max 1.28 m. tram.js (slab, edges, shelters at its middle), the drive surface
+  (`colliders.js tramPlatformSurface`, the band's width) and tram 92's platform segments read the moved ones; the STIB
+  poles data/stops puts on a platform follow it (`platformFollow`, main.js; an area platform's pole sat on its outline,
+  half off the slab: now 0.4 m in). Rail under a platform (census, as drawn): 705 m (`--old`) -> 0; platform poles off
+  every platform: 44 -> 16 (no OSM platform within 3 m of them in their tile: data/stops, pre-existing).
 
 ## Not detected here (needs the browser, or not located)
 

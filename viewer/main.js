@@ -71,6 +71,7 @@ import { cityKit } from "./facadeKit/cityKit.js";
 import { treeKit } from "./treeKitCity.js";
 import { cityStreetLife } from "./streetlife/cityStreetLife.js";
 import { cityStops } from "./stops/cityStops.js";
+import { platformFollow } from "./streets/tramPlatforms.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
@@ -970,6 +971,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   await frame("trees");
   // ?roads=surface: lamps, parked cars, the walker and the bollards on the measured street (viewer/streetFit.js)
   const stopsDoc = await stopsP, furnDoc = await furnP, skDoc = await skP;
+  // claude/tramfit: a STIB pole on a tram platform moves with the platform (viewer/streets/tramPlatforms.js: the
+  // platforms beside their fitted tracks); ?tramfit=old: no platform moved, nothing to follow
+  if (stopsDoc?.stops) { const n = platformFollow(stopsDoc.stops.map((s) => (s.pole?.platform ? s.pole : null)), feats); if (n) say(`tram platforms: ${n} stop pole(s) moved with their platform`); }
   const lamps = buildLamps(roads, (x, z) => hm.ground(x, z), bounds, { place: cityStreetKit.keepLampsClear(cityFurniture.keepLampsClear(cityStops.keepLampsClear(fit?.placeLamp, stopsDoc), furnDoc), skDoc), lift: fit?.lift });   // its heads join the city lamp-light pool (lampLightPool)
   own.features.add(lamps.group);
   ups.push(lamps.update);

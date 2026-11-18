@@ -61,6 +61,11 @@ export async function streetTile(T, opts = {}) {
   const fitDoc = opts.tramfit === false ? null : json(join(ROOT, "data/tramfit", `${T}.json`));
   const tf = { lines: (feats.lines || []).map((l) => ({ ...l, line: l.line.map((p) => p.slice()) })) };
   const tramMode = tramTracks(tf, fitDoc);
+  // the tram platforms beside the tracks (viewer/streets/tramPlatforms.js fitPlatforms, as the tile worker; not with
+  // opts.tramfit === false)
+  const { fitPlatforms } = await imp("viewer/streets/tramPlatforms.js");
+  const platFit = opts.tramfit === false ? null : fitPlatforms(tf);
+  const platforms = tf.lines.filter((l) => l.kind === "platform" && l.tags?.tram === "yes" && l.line?.length >= 2);
   const tram = tf.lines.filter((l) => l.kind === "tram");
   const tramIdx = lineIndex(tram.map((l) => l.line));
   // street names: the nearest named OSM road centre line (any highway), else "?"
@@ -69,7 +74,7 @@ export async function streetTile(T, opts = {}) {
   const nameIdx = lineIndex(named.map((r) => r.pts), 16);
   const nameAt = (x, z) => { const n = nameIdx.dist(x, z, 48); return n ? named[n.li].name : "?"; };
   const inB = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
-  return { T, tile, roads, feats, bounds, rd, fit, classAt, driven, lanes, tram, tramMode, tramIdx, nameAt, inB };
+  return { T, tile, roads, feats, bounds, rd, fit, classAt, driven, lanes, tram, tramMode, platforms, platFit, tramIdx, nameAt, inB };
 }
 
 const r1 = (v) => Math.round(v * 10) / 10;
