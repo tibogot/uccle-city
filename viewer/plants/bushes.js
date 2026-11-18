@@ -38,21 +38,21 @@ export const BUSH_TRIS = [220, 80];
 // shapes at scale 1 (m): h height, w width; rings [height share, clumps]; top clump; cardScale (card size / clump);
 // cards per clump [LOD 0, LOD 1, LOD 2] (nested: LOD 1 keeps the first n1 of LOD 0's)
 export const BUSH_SHAPES = [
-  { name: "round-fine", h: 1.0, w: 1.05, rings: [[0.22, 6]], top: true, cardScale: 0.52, cards: [11, 4, 2] },
-  { name: "round", h: 1.3, w: 1.5, rings: [[0.28, 6]], top: true, cardScale: 0.62, cards: [9, 4, 2] },
-  { name: "wide", h: 0.95, w: 1.9, rings: [[0.32, 7]], top: true, cardScale: 0.62, cards: [9, 4, 2] },
-  { name: "low", h: 0.6, w: 1.25, rings: [[0.42, 5]], top: true, cardScale: 0.6, cards: [9, 4, 2] },
-  { name: "tall", h: 2.4, w: 1.5, rings: [[0.17, 5], [0.52, 5]], top: true, cardScale: 0.62, cards: [8, 3, 2] },
-  { name: "tall-loose", h: 2.0, w: 1.9, rings: [[0.19, 6], [0.58, 4]], top: true, cardScale: 0.7, cards: [8, 3, 2] },
+  { name: "round-fine", h: 1.0, w: 1.05, rings: [[0.22, 6]], top: true, cardScale: 0.66, cards: [11, 5, 2] },
+  { name: "round", h: 1.3, w: 1.5, rings: [[0.28, 6]], top: true, cardScale: 0.78, cards: [9, 5, 2] },
+  { name: "wide", h: 0.95, w: 1.9, rings: [[0.32, 7]], top: true, cardScale: 0.78, cards: [9, 4, 2] },
+  { name: "low", h: 0.6, w: 1.25, rings: [[0.42, 5]], top: true, cardScale: 0.75, cards: [9, 5, 2] },
+  { name: "tall", h: 2.4, w: 1.5, rings: [[0.17, 5], [0.52, 5]], top: true, cardScale: 0.78, cards: [8, 3, 2] },
+  { name: "tall-loose", h: 2.0, w: 1.9, rings: [[0.19, 6], [0.58, 4]], top: true, cardScale: 0.84, cards: [8, 3, 2] },
 ];
 /** per type: its variants and its leaf colour against the trees' palette (rgb multiplier, desaturation) */
 export const BUSH_TYPES = {
-  box_ball: { shapes: [0, 0, 1], tint: [0.74, 0.84, 0.66, 0.0] },
-  laurel: { shapes: [4, 5, 1], tint: [0.68, 0.86, 0.74, 0.0] },
-  rhododendron: { shapes: [1, 5, 2], tint: [0.74, 0.84, 0.7, 0.05] },
-  hydrangea: { shapes: [1, 2], tint: [0.98, 1.06, 0.9, 0.0] },
-  rose: { shapes: [2, 3], tint: [0.86, 0.92, 0.8, 0.05] },
-  lavender: { shapes: [3], tint: [1.08, 1.02, 1.06, 0.55] },
+  box_ball: { shapes: [0, 0, 1], tint: [0.58, 0.68, 0.5, 0.0] },
+  laurel: { shapes: [4, 5, 1], tint: [0.54, 0.7, 0.58, 0.0] },
+  rhododendron: { shapes: [1, 5, 2], tint: [0.58, 0.68, 0.54, 0.05] },
+  hydrangea: { shapes: [1, 2], tint: [0.8, 0.9, 0.74, 0.0] },
+  rose: { shapes: [2, 3], tint: [0.7, 0.78, 0.64, 0.05] },
+  lavender: { shapes: [3], tint: [0.92, 0.88, 0.92, 0.55] },
 };
 
 /** the instance's far end (m) from its type and height (m) */

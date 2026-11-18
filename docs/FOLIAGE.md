@@ -343,3 +343,25 @@ both sides). Check: `tools/audit/bushGate.mjs` (merge gate row `bushes`).
   tiles 69 k bush triangles (F5; old there 150 k).
 - lost vs the old shrubs (follow-ups if wanted): flower colours / seasonal blooms and deciduous leaf loss (the trees
   have none either), the shells' snow caps (the cards' crown-top snow instead).
+
+### Browser turn (2026-11-18)
+
+- Boot (`?quick=1&place=stjob-street`): 0 console errors with the new bushes and with `?bushes=old`; trees unchanged.
+- JOINS: `__plants.contact(tile)` (the tile's own drawn ground by default now) on I6 / I5 / H5 / H6: 4,463 bushes, 0 floating.
+- Approach 40 -> 12 -> 4 m to the Place Saint-Job bed (`docs/bushes/approach_*`): no dissolve at any distance (the old
+  shot at 4 m: `approach_4m_old.png`). The approach / garden shots are BEFORE the tune below (lighter, smaller cards).
+- Tune after the tour: cards ~25 % larger, LOD 1 a card more per clump (fuller crowns, the old shells' mass), the
+  type tints darker (the first run read light yellow-green next to the trees). `docs/bushes/tour_*.png`: baseline | new | diff.
+- Perf (preflight RED: CPU throttled, GPU 52 % busy before start, other agents' headless jobs: INDICATIVE only), GPU p50
+  ms / draws, old (2 loads) vs new (2 loads), quick boot round Saint-Job:
+  | view | old | new |
+  |---|---|---|
+  | street (stjob-street) | 4.85 / 5.51 ms, 90-94 draws | 4.19 / 4.46 ms, 90-91 draws |
+  | front garden (712, 418) 5 m up | 5.44 / 6.03 ms, 116-119 | 4.26 / 5.70 ms, 114-117 |
+  | sky 160 m | 5.37 / 5.18 ms, 114-118 | 4.52 / 4.92 ms, 115-117 |
+  Plant triangles drawn: street 113 k -> 71 k, garden 288 k -> 26 k (+ bush cards 22 k in the trees' pool). Draws:
+  the shrubs' 2-3 merged plant objects gone (bulbs / geraniums: 0-2), the bushes in the trees' views: <= old.
+- Tour vs `.tour/foundation`: 12 of 22 flagged. From the merges (expected): wolvendael-park, coghen-blocks,
+  brugmann-maisons, stjob-station, lycee-front, stpierre-parvis. From the bushes (the diff boxes sit on bushes only):
+  stjob-shops, ham-terrace, orange-villas, defre-villas, waterloo-fortjaco, cortenbosch-lane: the old dark balls
+  replaced by the leaf-card shrubs (airier, a lighter green than the old shells even after the tune).

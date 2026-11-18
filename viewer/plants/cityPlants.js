@@ -241,7 +241,7 @@ export const cityPlants = {
     counts.bushes = bush.length / 8; counts.plants += counts.bushes;
     this.streamer.addTile(name, grp, (slot) => (srcs = this.sources(per, beds, boxes, slot)));
     this.bushes?.addBushes(name, grp, bush);
-    this.tiles.set(name, { name, group: grp, counts, per, beds, boxes, srcs, bush });
+    this.tiles.set(name, { name, group: grp, counts, per, beds, boxes, srcs, bush, groundAt });
     return { ...counts, ms: Math.round(performance.now() - t0) };
   },
   /** the tile's streaming sources per pool */
@@ -321,8 +321,9 @@ export const cityPlants = {
     return { tiles: this.tiles.size, total: tot, live, tris: Math.round(tris), bushes, stream: { ...this.streamer.stats } };
   },
   /** JOINS: every plant's foot and every bed's rim against the drawn ground of a tile (floating = above it) */
-  contact(name, groundAt) {
+  contact(name, groundAt = null) {
     const t = this.tiles.get(name); if (!t) return null;
+    groundAt ||= t.groundAt;                                                    // (default: the tile's own drawn ground)
     const out = { plants: 0, floating: 0, beds: 0, bedFloating: 0, maxFloat: 0, bushes: 0, bushFloating: 0 };
     // the bushes' feet (sunk under the lowest ground of their footprint)
     for (let o = 0; o < (t.bush?.length ?? 0); o += 8) {
