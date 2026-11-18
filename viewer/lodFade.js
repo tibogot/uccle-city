@@ -162,18 +162,27 @@ export class Fader {
 /** Stand-ins drawn with the fading copies of obj's materials that have none yet (made now, cached for fade()):
  *  compile them (warmup.js precompile) before fade(obj), and the fade builds no shader in a frame. The group
  *  shares the geometries; drop it after the compile (no dispose). Null when there is nothing new. */
+// falcon2 (docs/perf/FALCON_STUTTER.md round 2; ?retirewarm=old: as before): a mesh that swaps its material by distance
+// (the façade kit's walls: userData.cutMat near, plainMat far, viewer/facadeKit/kitField.js) gets the fading copies of
+// BOTH, so the far one's copy is built (scene pass + shadow pass, preCompile) when its first tile lands, not when a far
+// tile first retires (its "walls (kit, far):fade" shadow shader was then built on screen, 31-56 ms, round 1's #1)
+export const RETIRE_WARM = qs.get("retirewarm") !== "old";
 export function fadeProxies(obj) {
   if (!SMOOTH) return null;
   const g = new THREE.Group();
   obj.traverse((o) => {
-    const m = o.userData.fadeOrig || o.material;
-    if (!o.isMesh || Array.isArray(m) || !swappable(m) || variants.has(m)) return;
-    const v = fadeVariant(m);
-    const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, v, 1) : new THREE.Mesh(o.geometry, v);
-    if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
-    p.castShadow = o.castShadow; p.receiveShadow = o.receiveShadow;
-    p.matrixWorld.copy(o.matrixWorld);
-    g.add(p);
+    if (!o.isMesh) return;
+    const own = o.userData.fadeOrig || o.material;
+    const mats = RETIRE_WARM ? [own, o.userData.cutMat, o.userData.plainMat] : [own];
+    for (const m of new Set(mats)) {
+      if (!m || Array.isArray(m) || !swappable(m) || variants.has(m)) continue;
+      const v = fadeVariant(m);
+      const p = o.isInstancedMesh ? new THREE.InstancedMesh(o.geometry, v, 1) : new THREE.Mesh(o.geometry, v);
+      if (o.isInstancedMesh && o.instanceColor) p.instanceColor = o.instanceColor;
+      p.castShadow = o.castShadow; p.receiveShadow = o.receiveShadow;
+      p.matrixWorld.copy(o.matrixWorld);
+      g.add(p);
+    }
   });
   return g.children.length ? g : null;
 }

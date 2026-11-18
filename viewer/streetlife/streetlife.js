@@ -14,7 +14,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uniform, uniformArray, texture, vec2, vec3, vec4, float, uv, positionWorld, normalWorld, smoothstep, mix, fwidth,
-  max, min, clamp, step, select, length, abs, positionLocal,
+  max, min, clamp, step, select, length, abs, positionLocal, referenceAttribute,
 } from "three/tsl";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { FadeSlots, StreamPool, Streamer, sourceFromYaw, MARGIN } from "../instanceStream.js";
@@ -83,7 +83,7 @@ export const shrinkToward = (c) => c.xyz.add(positionLocal.sub(c.xyz).mul(shrink
 
 // ------------------------------------------------------------------------------------------------ the textured box
 /** unit box centred at 0, uv per face; attribute face: 1 = front (+z), 2 = back (-z, uv mirrored so text reads), 0 = sides */
-function boxGeometry() {
+export function boxGeometry() {
   const P = [], N = [], U = [], F = [], I = [];
   const quad = (a, b, c, d, n, f) => {
     const k = P.length / 3;
@@ -106,11 +106,33 @@ function boxGeometry() {
   return g;
 }
 
-function boxMaterial(atlas) {
+// falcon2 (docs/perf/FALCON_STUTTER.md round 2; ?boxshare=old: as before): ONE node build for every tile's box mesh. three
+// r187 caches a node build per (material, geometry layout, ...) only when it is not "object specific", and an InstancedMesh
+// build is object specific once Object.keys(geometry.attributes).length + its instance buffers (matrix, previous matrix for
+// the motion vectors, colour) pass 8 (nodes/accessors/Instance.js canReferenceInstanceData, MAX_VERTEX_BUFFERS): the box
+// geometry carried 4 + 7 per-instance attributes = 11, so every tile's box mesh (and its fading copy, and every warm-up
+// stand-in) built its own shader on the main thread, the real mesh on its first frame (8-9 ms a tile: the stand-in's build
+// is never reused). Now the 7 per-instance vec4s are read through referenceAttribute("geometry.boxIB.<name>") (per render
+// object, the way three reads instanceMatrix itself): the geometry has 4 attributes, the build is shared by every tile;
+// the GPU still sees ONE interleaved instance buffer (7 vertex buffers in all, under WebGPU's 8).
+export const BOX_SHARE = !/[?&]boxshare=old(&|$)/.test(typeof location === "undefined" ? "" : location.search);
+const boxAttr = (k) => (BOX_SHARE ? referenceAttribute(`geometry.boxIB.${k}`, "vec4") : attribute(k, "vec4"));
+/** a tile's box geometry: the shared box + the tile's interleaved instance buffer (IB, BOX_IB floats an instance) */
+export function boxTileGeometry(base, ib) {
+  const geo = base.clone();
+  const attrs = BOX_ATTRS.map((k, j) => [k, new THREE.InterleavedBufferAttribute(ib, 4, j * 4)]);
+  if (!BOX_SHARE) { for (const [k, a] of attrs) geo.setAttribute(k, a); return geo; }
+  geo.boxIB = Object.fromEntries(attrs);
+  // three frees a geometry's GPU buffers from geometry.attributes on dispose (renderers/common/Geometries.js initGeometry):
+  // the instance buffer joins them for that moment (this listener runs before three's, added at the first draw)
+  geo.addEventListener("dispose", () => { for (const [k, a] of attrs) if (!geo.attributes[k]) geo.setAttribute(k, a); });
+  return geo;
+}
+export function boxMaterial(atlas) {
   const U = streetUniforms;
   const m = new THREE.MeshStandardNodeMaterial();
-  const iRect = attribute("iRect", "vec4"), iBox = attribute("iBox", "vec4"), iBoard = attribute("iBoard", "vec4"), iInk = attribute("iInk", "vec4");
-  const iSize = attribute("iSize", "vec4"), iMisc = attribute("iMisc", "vec4"), iCen = attribute("iCen", "vec4");
+  const iRect = boxAttr("iRect"), iBox = boxAttr("iBox"), iBoard = boxAttr("iBoard"), iInk = boxAttr("iInk");
+  const iSize = boxAttr("iSize"), iMisc = boxAttr("iMisc"), iCen = boxAttr("iCen");
   // distance LOD without a pop: past 75 % of its range (iCen.w, ~350 x its middle size) a box shrinks to its centre,
   // sub-pixel by then (no discard: early-z stays on; nothing is drawn of it beyond the range)
   m.positionNode = shrinkToward(iCen);
@@ -349,9 +371,8 @@ export class StreetLife {
       for (let i = 0; i < r.nb; i++) if (IB[i * BOX_IB] >= 0) idx.push(i);
       text = { idx: Uint32Array.from(idx), rect: new Float32Array(idx.length * 5) };
       idx.forEach((i, k) => { text.rect.set(IB.subarray(i * BOX_IB, i * BOX_IB + 5), k * 5); IB.fill(-1, i * BOX_IB, i * BOX_IB + 4); IB[i * BOX_IB + 4] = 0; });
-      const geo = this.boxGeo.clone();
       ib = new THREE.InstancedInterleavedBuffer(IB, BOX_IB);
-      BOX_ATTRS.forEach((k, j) => geo.setAttribute(k, new THREE.InterleavedBufferAttribute(ib, 4, j * 4)));
+      const geo = boxTileGeometry(this.boxGeo, ib);
       const mesh = new THREE.InstancedMesh(geo, this.boxMat, r.nb);
       mesh.instanceMatrix = new THREE.InstancedBufferAttribute(r.boxMtx, 16);
       finish(mesh, "boxes");

@@ -83,7 +83,10 @@ function setup() {
   for (const [sys, [k, v]] of Object.entries(SYSTEMS)) if (!withSet.has(sys)) set(k, v);
   const lmIn = [];
   for (const [k, [x, z]] of Object.entries(LANDMARKS)) { if (near(x, z, MARGIN)) lmIn.push(k); else set(k, OFF_VALUE[k] ?? "0"); }
-  if (!lmIn.includes("townhall")) set("flags", "0");                      // the balcony flags ride on the town hall
+  // the balcony flags ride on the town hall; the Lycée Français's three poles (viewer/lyceeFront.js) fly theirs too, so
+  // the flags stay on when either is in the radius (claude/lycee: the Lycée's poles stood bare in a quick view)
+  const LYCEE_FLAGS = [-325.8, 1163.0];
+  if (!lmIn.includes("townhall") && !near(LYCEE_FLAGS[0], LYCEE_FLAGS[1], MARGIN)) set("flags", "0");
   const artIn = ART.some(([x, z]) => near(x, z, MARGIN));
   if (!artIn) set("art", "old");
   history.replaceState(history.state, "", `${location.pathname}?${P.toString()}${location.hash}`);
