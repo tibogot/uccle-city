@@ -221,7 +221,7 @@ class Placer:
                 px, pz = x0 + rx * 1.3, z0 + rz * 1.3; measured = False
             else:
                 k = self.S.kerb(x0, z0, -rx, -rz, s0=1.0, s1=14.0)
-                # (streetprops 2026-11-18, rule 27: a kerb further than the road's own half width + 2.5 m is another
+                # (streetprops 2026-11-18, rule 30: a kerb further than the road's own half width + 2.5 m is another
                 # street's: at a junction mouth the search crossed the side street and the pole stood on its far kerb,
                 # facing across it; 53 signs city-wide. --kerbreach=old: any kerb within 14 m)
                 if k is not None and not KERB_OLD:
@@ -325,7 +325,7 @@ def place_tile(name, src, stats, villo_rank):
             want("E9a", q.x - h[0] * 2.0, q.y - h[1] * 2.0, h[0], h[1], src_="osm")
 
     # ---- one-way roads: F19 where the flow starts, C1 where it ends (at junctions)
-    # (streetprops 2026-11-18, rule 27: at the mouth of a one-way PAIR (a piece flowing into the junction beside one
+    # (streetprops 2026-11-18, rule 30: at the mouth of a one-way PAIR (a piece flowing into the junction beside one
     # flowing out of it on the same side: a split carriageway round an island / median, a divided avenue) each
     # carriageway keeps its own sign, as in Belgium: C1 at the inflowing one's exit (on its island-nose side, facing the
     # wrong-way approach), F19 at the outflowing one's entry (its own kerb). They used to share ONE pole (owner image 79,
@@ -439,11 +439,11 @@ def place_tile(name, src, stats, villo_rank):
     for code, px, pz, fx, fz, measured, s_ in sorted(placed, key=lambda p: PRECEDENCE.index(p[0])):
         host = None
         for pl in poles:
-            if not ONEWAY_OLD and {code, *pl["codes"]} >= {"C1", "F19"}: continue        # (rule 27) never one pole
+            if not ONEWAY_OLD and {code, *pl["codes"]} >= {"C1", "F19"}: continue        # (rule 30) never one pole
             if len(pl["codes"]) < 2 and math.hypot(pl["x"] - px, pl["z"] - pz) < 1.5 and pl["fx"] * fx + pl["fz"] * fz > 0.85: host = pl; break
         if host: host["codes"].append(code); stats["plates_shared"] += 1
         else: poles.append({"x": px, "z": pz, "fx": fx, "fz": fz, "codes": [code], "measured": measured, "src": s_})
-    # (rule 27) a pair's C1 / F19 still showing the other order to the same approach (within 4 m, facing within 45 deg):
+    # (rule 30) a pair's C1 / F19 still showing the other order to the same approach (within 4 m, facing within 45 deg):
     # the two carriageways' signs landed on one kerb; the pair sign goes (a rule C1 / F19 stays)
     if not ONEWAY_OLD:
         def clash(a, b):
@@ -509,7 +509,7 @@ def place_villo(T, S, R, v, rank, stats, reanchor=False):
     k0 = kerb_at(x, z)
     no_kerb = k0 is None
     if k0 is None and reanchor:
-        # (streetprops 2026-11-18, rule 27) no sidewalk behind the point along its normal (the normal of the nearest OSM
+        # (streetprops 2026-11-18, rule 30) no sidewalk behind the point along its normal (the normal of the nearest OSM
         # centre line can point along the street, or the point lies in a wide tram road): the row went down "in the
         # lane" at the raw point, on the tram road (Coghen, Altitude Cent, Bois de la Cambre). Turn the station to the
         # nearest measured sidewalk (16 directions, <= 12 m, >= 1.5 m deep) as an ALTERNATIVE: snap_props keeps the variant
@@ -587,7 +587,7 @@ def place_villo(T, S, R, v, rank, stats, reanchor=False):
 
 
 def snap_props(docs, stats):
-    """(streetprops 2026-11-18, rule 27) the plates + their posts, the bpost boxes and the Villo stations out of the driven
+    """(streetprops 2026-11-18, rule 30) the plates + their posts, the bpost boxes and the Villo stations out of the driven
     lanes and off the tram tracks: tools/streetkit/snapProps.mjs decides with the viewer's own test
     (viewer/streets/carriageway.js offLane) on the tiles just written; the moves are applied here, to data/streetkit AND
     data/streetlife (the plates, the boxes), each moved item keeping its original under `was` (?streetprops=old)"""

@@ -80,14 +80,14 @@ from the data). The rules are in the script's header; in short (all positions fr
 - **traffic_sign=BE:*** nodes (B1, B5, C1, C3, D7, C43[n]) the same way; `BE:B22` (cyclists on red) has no face: skipped.
 - **F19 / C1**: one-way roads: F19 4 m into the road at each junction where the flow starts, C1 facing the wrong way
   4 m before each junction where it ends (segments >= 12 m). At the mouth of a one-way PAIR (claude/streetprops,
-  rule 27: a piece flowing in beside one flowing out on the same side: a split carriageway round an island, or a divided
+  rule 30: a piece flowing in beside one flowing out on the same side: a split carriageway round an island, or a divided
   avenue's two carriageways meeting a cross street within 15 m) each carriageway keeps its own sign on its own post (C1
   at the inflowing one's island-nose side, F19 at the outflowing one's kerb); a C1 and an F19 never share a pole, and a
   pair sign that still lands within 4 m of the other order facing the same approach is dropped (owner image 79: both
   on one pole). A measured kerb further than the road's own half width + 2.5 m is another street's (the
   pole stood across the side street, facing across it): the OSM width is used instead. The signs of the old rules are
   kept as `signsOld` where they differ (`?streetprops=old`).
-- **Out of the road** (rule 27): after the tiles are written, `tools/streetkit/snapProps.mjs` moves the post plates +
+- **Out of the road** (rule 30): after the tiles are written, `tools/streetkit/snapProps.mjs` moves the post plates +
   their posts (one move for both), the bpost boxes (turned to the road) and the Villo stations (row slid back <= 2 m,
   else the docks still in a lane / on a track dropped) out of the driven lanes and >= 1.5 m off the tram tracks, with
   the viewer's own test (`viewer/streets/carriageway.js offLane`); the originals stay under `was`.

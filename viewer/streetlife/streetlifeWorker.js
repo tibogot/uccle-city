@@ -21,7 +21,7 @@ self.onmessage = async (e) => {
     const r = await fetch(url);
     if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
     const doc = await r.json();
-    // (streetprops, rule 27) ?streetprops=old: the post plates and bpost boxes where the street life put them, before
+    // (streetprops, rule 30) ?streetprops=old: the post plates and bpost boxes where the street life put them, before
     // tools/streetkit/snapProps.mjs moved them out of the road (with their posts)
     if (propsOld) for (const it of [...(doc.plates || []), ...(doc.postboxes || [])]) if (it.was) { [it.x, it.y, it.z] = it.was; if (it.was.length > 3) [it.nx, it.nz] = it.was.slice(3); }
     // furniture kit 2 (viewer/furniture2/) draws the overground glass banks: this layer keeps the underground chutes only

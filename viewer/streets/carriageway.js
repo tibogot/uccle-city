@@ -12,7 +12,7 @@
 // Footways, paths, cycleways, service roads and steps are not carriageways (a lane through a car park is not either).
 import { ROAD_TYPES } from "../../vendor/roads/roadCrossSection.js";
 
-const NOT_DRIVEN = new Set(["footway", "path", "cycleway", "steps", "pedestrian", "bridleway", "track", "service", "corridor", "platform"]);
+export const NOT_DRIVEN = new Set(["footway", "path", "cycleway", "steps", "pedestrian", "bridleway", "track", "service", "corridor", "platform"]);
 const CARRIAGE = new Set([0, 1, 3]);      // viewer/surfaces.js SURF_CLASS: roadway, tramRoad, parking
 const LANES = new Set([0, 1]);            // lanesOnly: the driven lanes (a bike box or a sign in a parking bay is fine)
 const CELL = 16;
@@ -92,7 +92,7 @@ export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = 
 // their builders against older street edges: 258 signs, 361 plate posts, 64 stop poles, 51 bike boxes stood in a driven
 // lane city-wide (tools/audit/streetAudit.mjs). At load, a point in a lane moves onto the nearest raised surface, 0.5 m
 // behind the measured kerb (as the lamps), keeping its yaw; no kerb within 6 m: it stays.
-// STREET PROPS (class D, claude/streetprops 2026-11-18, rule 27 provisional): the move above gave up where there is no
+// STREET PROPS (class D, claude/streetprops 2026-11-18, rule 30 provisional): the move above gave up where there is no
 // measured kerb within 6 m (Flanders: no UrbIS street at all) and never looked at the tram tracks: post boxes, Villo
 // docks, signs and plate posts stood in the Chaussée d'Alsemberg / on its tracks. With `opt` (the default since then):
 //   tram   a trackIndex(): a point within TRAM_CLEAR of a tram track centre is in the road too, and no spot there is taken

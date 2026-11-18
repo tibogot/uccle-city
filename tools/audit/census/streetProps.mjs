@@ -21,7 +21,7 @@ import { join } from "node:path";
 import { streetTile, runTiles, cli, json, at, ROOT, imp, lineIndex } from "./lib_street.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
-// (claude/streetprops, rule 27) --old: the city as ?streetprops=old draws it (the data's `was` / signsOld, the load-time
+// (claude/streetprops, rule 30) --old: the city as ?streetprops=old draws it (the data's `was` / signsOld, the load-time
 // move without the tram tracks and the OSM width, the plate posts moved at load); --max k=v,...: a gate (exit 1 over)
 const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet");
 const TRAM_HW = 1.3, GAP = 0.15, FACE_TOL = 45, NEAR_ROAD = 12;

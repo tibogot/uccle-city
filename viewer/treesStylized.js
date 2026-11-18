@@ -366,13 +366,22 @@ export function makeSpecies(def) {
    *  (t.turn: the lab's turntable; the city leaves it out) */
   function treePlacements(trees, ground, inTile, variantOf = variantOfIndex) {
     const placements = [];
+    // (drivecheck round 2: a tree's `vi`, viewer/streets/roadTrees.js, is the index its variant is picked by when trees
+    // before it were dropped: placements.vi[i]; none: the index, as before)
+    let vi = null;
     for (const t of trees) {
       if (!inTile(t.x, t.z)) continue;
-      const h = Math.max(3, t.height ?? 9), H = def.perVariantHeight ? VARIANT_HEIGHT[variantOf(placements.length)] : NATURAL_HEIGHT;
+      if (t.vi != null && !vi) vi = placements.map((_, k) => k);
+      const k = t.vi ?? placements.length;
+      if (vi) vi.push(k);
+      const h = Math.max(3, t.height ?? 9), H = def.perVariantHeight ? VARIANT_HEIGHT[variantOf(k)] : NATURAL_HEIGHT;
       placements.push([t.x, t.z, ground(t.x, t.z), t.turn ?? hash(t.z, t.x, 2) * Math.PI * 2, Math.min(1.8, Math.max(0.3, h / H))]);
     }
+    if (vi) placements.vi = vi;
     return placements;
   }
+  /** variantOf(i) of placement i: through placements.vi when the list had drops */
+  const byVi = (placements, vo) => (placements.vi ? (i) => vo(placements.vi[i]) : vo);
 
   /** Trees for a FAR-LOD tile (main.js loadLiteTile): the same trees as its full version, as impostors at any
    *  distance (null without impostors). Returns { mesh, update(cameraPos) }. */
@@ -381,7 +390,7 @@ export function makeSpecies(def) {
     if (kit) {
       const placements = treePlacements(trees, ground, inTile);
       if (!placements.length) return null;
-      const release = kit.register(placements, variantOfIndex, "lite");
+      const release = kit.register(placements, byVi(placements, variantOfIndex), "lite");
       const mesh = new THREE.Group();
       mesh.name = "tree-kit-far-tile";
       return { mesh, update() {}, count: placements.length, dispose: release };
@@ -389,7 +398,8 @@ export function makeSpecies(def) {
     if (!impMatFar) return null;
     const placements = treePlacements(trees, ground, inTile);
     if (!placements.length) return null;
-    const imp = impostorField(placements, placements.map((_, i) => variantOfIndex(i)), impMatFar, { near: 0 });
+    const vf = byVi(placements, variantOfIndex);
+    const imp = impostorField(placements, placements.map((_, i) => vf(i)), impMatFar, { near: 0 });
     imp.mesh.boundingSphere = fieldSphere(placements);
     imp.mesh.frustumCulled = true;
     // (the far tiles' re-buckets spread over frames like the near fields', see relodTurn)
@@ -408,8 +418,9 @@ export function makeSpecies(def) {
   /** A tile's trees. opts.variantOf(i): the variant of tree i (the lab; default the vendor's hash of the index). */
   function buildField(trees, ground, inTile, opts = {}) {
     calibrate();
-    const variantOf = opts.variantOf ?? variantOfIndex;
-    const placements = treePlacements(trees, ground, inTile, variantOf);
+    const variantOf0 = opts.variantOf ?? variantOfIndex;
+    const placements = treePlacements(trees, ground, inTile, variantOf0);
+    const variantOf = byVi(placements, variantOf0);
     // perf pass 2 (docs/perf/AUDIT.md step 12): the street trees as ONE city-wide pool (?treepool=old = per tile)
     if (def.id === "street" && TREE_POOL && usePrepass && !opts.variantOf && multiDrawOK()) {
       pool ??= makeTreePool(shared, params(), VARIANTS, { kitRegister: kit ? (pl, vo) => kit.register(pl, vo, "full") : null });
@@ -419,7 +430,7 @@ export function makeSpecies(def) {
     holder.name = "StylizedTreesTile";
     const P = params();
     if (SMOOTH) P.maxDist = IMP.start.value;
-    const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: opts.variantOf ? { ...P, variantOf } : P });
+    const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: opts.variantOf || placements.vi ? { ...P, variantOf } : P });
     const imp = impMat ? impostorField(placements, placements.map((_, i) => variantOf(i)), impMat) : null;
     if (imp) holder.add(imp.mesh);
     // the kit: this tile's far trees join the one city field (released when main.js disposes the tile: it calls

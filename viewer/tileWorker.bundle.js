@@ -1214,6 +1214,54 @@ function box(D, A, B, yTop, height, depth, nx, nz, col2, closed = false) {
   quad(b0, b1, B1, B0, [tx, 0, tz]);
   if (closed) quad(a0, b0, b1, a1, [-nx, 0, -nz]);
 }
+function balcony(D, f, at2, tx, tz, a, c, mids, y, D0, PT, pc, sc) {
+  const yb = y - 0.16, yt = y + 1, DI = D0 - PT, h = PT / 2;
+  const P = (u, d, yy) => {
+    const p = at2(u, d);
+    p[1] = yy;
+    return p;
+  };
+  const n = [f.nx, 0, f.nz], nb = [-f.nx, 0, -f.nz], tp = [tx, 0, tz], tm = [-tx, 0, -tz], up = [0, 1, 0], dn = [0, -1, 0];
+  const Q = (p0, p1, p2, p3, nn, col2) => pushQuad(D, p0, p1, p2, p3, nn, col2);
+  Q(P(a, 0, yb), P(a, D0, yb), P(a, D0, yt), P(a, 0, yt), tm, pc);
+  Q(P(c, 0, yb), P(c, D0, yb), P(c, D0, yt), P(c, 0, yt), tp, pc);
+  const cuts = [a + PT, ...mids.flatMap((m) => [m - h, m + h]), c - PT];
+  for (let i = 0; i < cuts.length; i += 2) {
+    const l = cuts[i], r = cuts[i + 1];
+    Q(P(l, 0, y), P(r, 0, y), P(r, DI, y), P(l, DI, y), up, sc);
+    Q(P(l, DI, y), P(r, DI, y), P(r, DI, yt), P(l, DI, yt), nb, pc);
+    Q(P(l, 0, y), P(l, DI, y), P(l, DI, yt), P(l, 0, yt), tp, pc);
+    Q(P(r, 0, y), P(r, DI, y), P(r, DI, yt), P(r, 0, yt), tm, pc);
+  }
+  Q(P(a, 0, yt), P(a + PT, 0, yt), P(a + PT, DI, yt), P(a, D0, yt), up, pc);
+  Q(P(c - PT, 0, yt), P(c, 0, yt), P(c, D0, yt), P(c - PT, DI, yt), up, pc);
+  const xs = [a, ...mids.flatMap((m) => [m - h, m + h]), c];
+  for (let i = 0; i + 1 < xs.length; i++) {
+    const ol = xs[i], or = xs[i + 1], il = i === 0 ? a + PT : ol, ir = i + 2 === xs.length ? c - PT : or;
+    Q(P(ol, 0, yb), P(or, 0, yb), P(or, D0, yb), P(ol, D0, yb), dn, sc);
+    Q(P(ol, D0, yb), P(or, D0, yb), P(or, D0, yt), P(ol, D0, yt), n, pc);
+    Q(P(il, DI, yt), P(ir, DI, yt), P(or, D0, yt), P(ol, D0, yt), up, pc);
+  }
+  for (const m of mids) Q(P(m - h, 0, yt), P(m + h, 0, yt), P(m + h, DI, yt), P(m - h, DI, yt), up, pc);
+}
+function balcPlan(at2, f, a, c, y0, y1, D0) {
+  const p = at2((a + c) / 2, D0 / 2), tx = -f.nz, tz = f.nx;
+  return { cx: p[0], cz: p[2], tx, tz, nx: f.nx, nz: f.nz, hu: (c - a) / 2, hv: D0 / 2, y0, y1, a, c };
+}
+function segObb(ax, az, bx, bz, P, m) {
+  const sx = bx - ax, sz = bz - az, L2 = Math.hypot(sx, sz) || 1, cx = (ax + bx) / 2 - P.cx, cz = (az + bz) / 2 - P.cz;
+  for (const [ux, uz, h] of [[P.tx, P.tz, P.hu], [P.nx, P.nz, P.hv]]) if (Math.abs(cx * ux + cz * uz) >= h - m + Math.abs(sx * ux + sz * uz) / 2) return false;
+  const nx = -sz / L2, nz = sx / L2;
+  return Math.abs(cx * nx + cz * nz) < P.hu * Math.abs(P.tx * nx + P.tz * nz) + P.hv * Math.abs(P.nx * nx + P.nz * nz) - m;
+}
+function obbHit(P, Q, m) {
+  const dx = Q.cx - P.cx, dz = Q.cz - P.cz;
+  for (const [ax, az] of [[P.tx, P.tz], [P.nx, P.nz], [Q.tx, Q.tz], [Q.nx, Q.nz]]) {
+    const r = (B) => B.hu * Math.abs(B.tx * ax + B.tz * az) + B.hv * Math.abs(B.nx * ax + B.nz * az);
+    if (Math.abs(dx * ax + dz * az) >= r(P) + r(Q) + m) return false;
+  }
+  return true;
+}
 var STRIP_SETBACK = { eb: 2e-3, cu: 4e-3, cl: 6e-3, gu: 8e-3, xx: 4e-3, pi: 0.012, cp: 0.016 };
 function addStrip(S3, kind, A, B, yTop, h, depth, nx, nz, col2, off = 0) {
   if (h <= 0.01) return {};
@@ -1501,6 +1549,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const AWNING = /* @__PURE__ */ new Set(["cafe", "restaurant", "bar", "pub", "bakery", "ice_cream", "butcher", "greengrocer", "pastry", "chocolate"]);
   const D = { position: [], normal: [], color: [] };
   const SD = [];
+  const BALC = opts.balcony !== false, balcPlans = [];
   const chimneysAt = [], buttressAt = [], apexAt = [];
   const R2 = { position: [], normal: [], aRoof: [], aRoofCol: [] };
   const fitOut = opts.ground ? new Float32Array(doc.buildings.length).fill(NaN) : null;
@@ -1707,21 +1756,92 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           stats.canopies = (stats.canopies || 0) + 1;
         }
       }
+      function balcClear(f2, at3, a, c, y0, y1, D0) {
+        const hits = (P2, list) => list.some((Q) => obbHit(P2, Q, 0.02)) || wallHit(P2);
+        const walls = [];
+        for (const g of live) if (g !== f2) for (const { p, n } of g.tris) {
+          if (Math.abs(n[1]) > 0.3) continue;
+          let ylo = Infinity, yhi = -Infinity;
+          for (const v of p) {
+            ylo = Math.min(ylo, v[1]);
+            yhi = Math.max(yhi, v[1]);
+          }
+          if (yhi <= y0 + 0.01 || ylo >= y1 - 0.01) continue;
+          let best = -1, A = null, B = null;
+          for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) {
+            const L2 = Math.hypot(p[i][0] - p[j][0], p[i][2] - p[j][2]);
+            if (L2 > best) {
+              best = L2;
+              A = p[i];
+              B = p[j];
+            }
+          }
+          if (best > 0.01) walls.push([A[0], A[2], B[0], B[2]]);
+        }
+        const wallHit = (P2) => {
+          for (const [ax, az, bx, bz] of walls) if (segObb(ax, az, bx, bz, P2, 0.02)) return true;
+          const k = Math.max(1, Math.ceil((P2.c - P2.a) / 0.5));
+          for (let i = 0; i <= k; i++) for (const d of [0.4, D0 - 0.03]) {
+            const [x, , z] = at3(P2.a + (P2.c - P2.a) * i / k, d);
+            const r = ownRoof(bi, x, z);
+            if (r > y0 + 0.12 && r < y1 + 0.5) return true;
+            const o = otherAt(x, z, bi);
+            if (o >= 0 && doc.buildings[o].top > y0) return true;
+          }
+          return false;
+        };
+        const whole = balcPlan(at3, f2, a, c, y0, y1, D0);
+        const near = balcPlans.filter((Q) => Q.y0 < y1 && y0 < Q.y1 && obbHit(whole, Q, 0.02));
+        if (!near.length && !wallHit(whole)) return [[a, c]];
+        const out = [];
+        let s0 = null;
+        for (let u = a; u < c - 1e-6; u += 0.25) {
+          const e = Math.min(u + 0.25, c), clear = !hits(balcPlan(at3, f2, u, e, y0, y1, D0), near);
+          if (clear && s0 === null) s0 = u;
+          if ((!clear || e >= c - 1e-6) && s0 !== null) {
+            const r = clear ? e : u;
+            if (r - s0 >= 1.2) out.push([s0, r]);
+            s0 = null;
+          }
+        }
+        stats.balcCut = (stats.balcCut || 0) + 1;
+        if (near.length) stats.balcCutCorner = (stats.balcCutCorner || 0) + 1;
+        if (!out.length) stats.balcDropped = (stats.balcDropped || 0) + 1;
+        return out;
+      }
       if (btype2 === TYPE.BLOCK && width >= 5 && hash01(kk + "|balc") < 0.65) {
         const sk = storeyFit(Math.fround(faceEaves), opts.storeys !== false, TYPE.BLOCK);
         const pc = [[0.42, 0.41, 0.39], [0.62, 0.62, 0.6], [0.3, 0.36, 0.37], [0.06, 0.062, 0.066]][Math.floor(hash01(kk + "|par") * 4)];
         const cont = hash01(kk + "|cont") < 0.6;
         const spans = cont ? [[0.35, width - 0.35]] : [];
         if (!cont) for (let i = 0; i < nb; i += 2) spans.push([0.55 + bw * i + 0.15, Math.min(0.55 + bw * Math.min(i + 2, nb) - 0.15, width - 0.35)]);
-        const D0 = 1.25, PT = 0.06;
+        const D0 = 1.25, PT = 0.06, SC = [0.4, 0.39, 0.37];
         for (let fl3 = 1; fl3 < 40; fl3++) {
           const y = sk.G + (fl3 - 1) * sk.S;
           if (y + 2.2 > faceEaves) break;
-          for (const [a, c] of spans.flatMap(([a0, c0]) => runsOn(a0, c0, y - 0.1, y + 1.05))) {
-            if (c - a < 1.2) continue;
-            box(D, at2(a), at2(c), base2 + y, 0.16, D0 - PT, f.nx, f.nz, [0.4, 0.39, 0.37]);
-            box(D, at2(a, D0 - PT), at2(c, D0 - PT), base2 + y + 1, 1.16, PT, f.nx, f.nz, pc, true);
+          const runs = spans.flatMap(([a0, c0]) => runsOn(a0, c0, y - 0.1, y + 1.05)).filter(([a, c]) => c - a >= 1.2);
+          if (!BALC) {
+            for (const [a, c] of runs) {
+              box(D, at2(a), at2(c), base2 + y, 0.16, D0 - PT, f.nx, f.nz, SC);
+              box(D, at2(a, D0 - PT), at2(c, D0 - PT), base2 + y + 1, 1.16, PT, f.nx, f.nz, pc, true);
+              stats.balconies = (stats.balconies || 0) + 1;
+            }
+            continue;
+          }
+          const ok = runs.flatMap(([a, c]) => balcClear(f, at2, a, c, base2 + y - 0.16, base2 + y + 1, D0)).sort((p, q2) => p[0] - q2[0]);
+          for (let i = 0; i < ok.length; ) {
+            let j = i;
+            const mids = [];
+            while (j + 1 < ok.length && ok[j + 1][0] - ok[j][1] < 2 * PT + 0.05) {
+              mids.push((ok[j][1] + ok[j + 1][0]) / 2);
+              j++;
+            }
+            const a = ok[i][0], c = ok[j][1];
+            balcony(D, f, at2, tx, tz, a, c, mids, base2 + y, D0, PT, pc, SC);
+            balcPlans.push(balcPlan(at2, f, a, c, base2 + y - 0.16, base2 + y + 1, D0));
             stats.balconies = (stats.balconies || 0) + 1;
+            stats.balcDividers = (stats.balcDividers || 0) + mids.length;
+            i = j + 1;
           }
         }
       }
@@ -11053,20 +11173,20 @@ function refineLaneGraph(net, prep, inventory) {
     for (let d = 0.1; d < 15; d += 0.1) if (!CARRIAGE3.has(cls(x + dx * d, z + dz * d))) return d;
     return null;
   };
-  const CLEAR = 1.4;
+  const CLEAR2 = 1.4;
   const clearAt = (x, z, nx, nz) => {
     if (!CARRIAGE3.has(cls(x, z))) return -1;
     const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15;
-    return Math.min(a, b, CLEAR + 0.01) >= CLEAR ? CLEAR : Math.min(a, b) >= (a + b) / 2 - 0.15 ? CLEAR : Math.min(a, b);
+    return Math.min(a, b, CLEAR2 + 0.01) >= CLEAR2 ? CLEAR2 : Math.min(a, b) >= (a + b) / 2 - 0.15 ? CLEAR2 : Math.min(a, b);
   };
   const keepOnCarriage = (P, stt) => {
     if (P.length < 3) return P;
     const mv = P.map((q, k) => {
       const o = P[Math.max(0, k - 1)], n2 = P[Math.min(P.length - 1, k + 1)], tx = n2[0] - o[0], tz = n2[1] - o[1], tl = Math.hypot(tx, tz) || 1, nx = -tz / tl, nz = tx / tl;
-      if (clearAt(q[0], q[1], nx, nz) >= CLEAR) return null;
+      if (clearAt(q[0], q[1], nx, nz) >= CLEAR2) return null;
       for (let d = 0.2; d <= 8; d += 0.2) for (const sg of [1, -1]) {
         const x = q[0] + nx * d * sg, z = q[1] + nz * d * sg;
-        if (clearAt(x, z, nx, nz) >= CLEAR) return [nx * d * sg, nz * d * sg];
+        if (clearAt(x, z, nx, nz) >= CLEAR2) return [nx * d * sg, nz * d * sg];
       }
       return null;
     });
@@ -13213,14 +13333,14 @@ function kitCollector(opts = {}) {
         break;
       }
     }
-    const balcony = h012(key + "|bal") < (maitre ? 0.6 : villa ? 0.15 : 0.35);
+    const balcony2 = h012(key + "|bal") < (maitre ? 0.6 : villa ? 0.15 : 0.35);
     s = {
       win,
       variant,
       door,
       soup: h012(key + "|soup") < (maitre ? 0.85 : villa ? 0.3 : 0.6),
-      balcony,
-      bay: balcony && h012(key + "|bay") < (maitre ? 0.45 : 0.4),
+      balcony: balcony2,
+      bay: balcony2 && h012(key + "|bay") < (maitre ? 0.45 : 0.4),
       // a bay window (oriel) instead of the French window
       stained: win === "winA" && h012(key + "|stain") < 0.4,
       // window C (leaded transom) on the ground floor
@@ -15893,6 +16013,176 @@ function streetFit(data) {
   return { classAt, lift, nearKerb, placeLamp, placeCar };
 }
 
+// viewer/streets/carriageway.js
+var NOT_DRIVEN = /* @__PURE__ */ new Set(["footway", "path", "cycleway", "steps", "pedestrian", "bridleway", "track", "service", "corridor", "platform"]);
+var CARRIAGE7 = /* @__PURE__ */ new Set([0, 1, 3]);
+var LANES = /* @__PURE__ */ new Set([0, 1]);
+var CELL3 = 16;
+function carriageHalf(r) {
+  const sum = (a) => (a || []).filter((l) => l.type !== "sidewalk" && l.type !== "verge" && l.type !== "green").reduce((s, l) => s + (+l.width || 0), 0);
+  if (r.lanes?.left || r.lanes?.right) {
+    const c2 = (+r.lanes.center?.width || 0) / 2;
+    return [c2 + sum(r.lanes.left), c2 + sum(r.lanes.right)];
+  }
+  const t = ROAD_TYPES[r.type] || ROAD_TYPES.local;
+  const c = (t.center?.width || 0) / 2;
+  return [c + sum(t.left), c + sum(t.right)];
+}
+function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false } = {}) {
+  const CLS = lanesOnly ? LANES : CARRIAGE7;
+  const N2 = new Map((roads?.nodes || []).map((n) => [n.id, n]));
+  const segs = [], grid = /* @__PURE__ */ new Map(), key = (i, j) => `${i},${j}`;
+  for (const r of roads?.roads || []) {
+    if (NOT_DRIVEN.has(r.meta?.highway)) continue;
+    const pts = [N2.get(r.a), ...r.pts || [], N2.get(r.b)].filter(Boolean);
+    const [hl, hr] = carriageHalf(r), h = Math.max(hl, hr);
+    for (let k = 1; k < pts.length; k++) {
+      const a = pts[k - 1], b = pts[k], s = { ax: a.x, az: a.z, bx: b.x, bz: b.z, hl, hr, road: r };
+      const id = segs.push(s) - 1;
+      for (let i = Math.floor((Math.min(a.x, b.x) - h) / CELL3); i <= Math.floor((Math.max(a.x, b.x) + h) / CELL3); i++)
+        for (let j = Math.floor((Math.min(a.z, b.z) - h) / CELL3); j <= Math.floor((Math.max(a.z, b.z) + h) / CELL3); j++) {
+          const kk = key(i, j);
+          if (!grid.has(kk)) grid.set(kk, []);
+          grid.get(kk).push(id);
+        }
+    }
+  }
+  const near = (x, z, all = false) => {
+    let best = null;
+    for (const id of grid.get(key(Math.floor(x / CELL3), Math.floor(z / CELL3))) || []) {
+      const s = segs[id], dx = s.bx - s.ax, dz = s.bz - s.az, L2 = dx * dx + dz * dz;
+      if (L2 < 1e-6) continue;
+      const t = Math.max(0, Math.min(1, ((x - s.ax) * dx + (z - s.az) * dz) / L2));
+      const px = s.ax + dx * t, pz = s.az + dz * t, d = Math.hypot(x - px, z - pz), L3 = Math.sqrt(L2), ux = dx / L3, uz = dz / L3;
+      const side = -uz * (x - px) + ux * (z - pz) >= 0 ? 1 : -1, half = side > 0 ? s.hr : s.hl;
+      const e = { d, px, pz, ux, uz, side, half, road: s.road, t, end: t <= 0 || t >= 1 };
+      if (all) {
+        if (d < half) return e;
+        continue;
+      }
+      if (!best || d < best.d) best = e;
+    }
+    return best;
+  };
+  const inside3 = (x, z, margin = 0) => {
+    if (classAt) {
+      const c = classAt(x, z);
+      if (c >= 0 && !onDeck?.(x, z)) {
+        if (!CLS.has(c)) return false;
+        if (margin <= 0) return true;
+        return [[margin, 0], [-margin, 0], [0, margin], [0, -margin]].every(([dx, dz]) => CLS.has(classAt(x + dx, z + dz)));
+      }
+    }
+    for (const id of grid.get(key(Math.floor(x / CELL3), Math.floor(z / CELL3))) || []) {
+      const s = segs[id], dx = s.bx - s.ax, dz = s.bz - s.az, L2 = dx * dx + dz * dz;
+      if (L2 < 1e-6) continue;
+      const t = ((x - s.ax) * dx + (z - s.az) * dz) / L2;
+      if (t < 0 || t > 1) continue;
+      const px = s.ax + dx * t, pz = s.az + dz * t, L3 = Math.sqrt(L2);
+      const side = -(dz / L3) * (x - px) + dx / L3 * (z - pz) >= 0 ? 1 : -1;
+      if (Math.hypot(x - px, z - pz) < (side > 0 ? s.hr : s.hl) - margin) return true;
+    }
+    return false;
+  };
+  return { inside: inside3, nearest: (x, z) => near(x, z) };
+}
+
+// viewer/streets/roadTrees.js
+var CLEAR = 0.6;
+var MOVE_MIN = 1.5;
+var MOVE_MAX2 = 4;
+var DUP = 1.8;
+var DIRS = 24;
+function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null } = {}) {
+  if (!trees?.length) return { trees, moved: 0, dropped: 0 };
+  const ring2 = Array.from({ length: 8 }, (_, k) => [Math.cos(k / 8 * 2 * Math.PI) * CLEAR, Math.sin(k / 8 * 2 * Math.PI) * CLEAR]);
+  const touches = (x, z) => driven.inside(x, z, 0) || ring2.some(([dx, dz]) => driven.inside(x + dx, z + dz, 0));
+  const intrudes = (t) => driven.inside(t.x, t.z, 0);
+  const G2 = /* @__PURE__ */ new Map(), key = (x, z) => `${Math.floor(x / 4)},${Math.floor(z / 4)}`;
+  const add = (t) => {
+    const k = key(t.x, t.z);
+    if (!G2.has(k)) G2.set(k, []);
+    G2.get(k).push(t);
+  };
+  const near = (x, z, self2) => {
+    const i = Math.floor(x / 4), j = Math.floor(z / 4);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const o of G2.get(`${i + di},${j + dj}`) || []) if (o !== self2 && Math.hypot(o.x - x, o.z - z) < DUP) return true;
+    return false;
+  };
+  const bad = /* @__PURE__ */ new Set();
+  for (const t of trees) {
+    if (t.source === "urbis-chm" && intrudes(t)) bad.add(t);
+    else add(t);
+  }
+  if (!bad.size) return { trees, moved: 0, dropped: 0 };
+  let moved = 0, dropped = 0;
+  const out = [];
+  for (const [i, t] of trees.entries()) {
+    if (!bad.has(t)) {
+      out.push(t);
+      t.vi = i;
+      continue;
+    }
+    const maxR = Math.min(MOVE_MAX2, Math.max(MOVE_MIN, 0.8 * (t.crown || 3)));
+    let spot = null;
+    for (let r = 0.25; r <= maxR + 1e-6 && !spot; r += 0.25) {
+      for (let k = 0; k < DIRS; k++) {
+        const a = k / DIRS * 2 * Math.PI, x = t.x + Math.cos(a) * r, z = t.z + Math.sin(a) * r;
+        if (!inTile(x, z) || inBuilding(x, z) || touches(x, z)) continue;
+        spot = [x, z];
+        break;
+      }
+    }
+    if (!spot || near(spot[0], spot[1], t)) {
+      dropped++;
+      continue;
+    }
+    const m = { ...t, x: +spot[0].toFixed(2), z: +spot[1].toFixed(2), moved: [t.x, t.z], vi: i };
+    if (ground && m.y != null) m.y = +ground(m.x, m.z).toFixed(2);
+    out.push(m);
+    add(m);
+    moved++;
+  }
+  if (!dropped) for (const t of out) delete t.vi;
+  return { trees: out, moved, dropped };
+}
+
+// viewer/rail/roadDeck.js
+function roadFrame(info) {
+  const th = -info.placement.rotation_y_rad, c = Math.cos(th), s = Math.sin(th);
+  const [px, py, pz] = info.placement.city_local_position;
+  const toLocal = (x, z) => {
+    const dx = x - px, dz = z - pz;
+    return [dx * c + dz * s, -(-dx * s + dz * c)];
+  };
+  const toWorld = (X, Y) => [px + X * c + Y * s, pz + X * s - Y * c];
+  const d = info.deck, [r0, r1] = d.road_ends;
+  const road = (X) => r0 + (Math.max(d.x0, Math.min(d.x1, X)) - d.x0) * (r1 - r0) / (d.x1 - d.x0);
+  const faceY = (X, base) => base + d.flare * Math.max(0, (Math.abs(X) - d.fold) / (d.x1 - d.fold));
+  return { toLocal, toWorld, road, faceY, d, floor: py };
+}
+function squeezeDeckLanes(traffic, heroes) {
+  if (!traffic?.xy) return 0;
+  let n = 0;
+  for (const h of heroes || []) {
+    if (h.kind !== "road_over_rail") continue;
+    const F = roadFrame(h), d = F.d, xy = traffic.xy;
+    for (let i = 0; i < xy.length; i += 2) {
+      const [X, Y] = F.toLocal(xy[i], xy[i + 1]);
+      if (X < d.x0 - 3 || X > d.x1 + 3) continue;
+      const face = F.faceY(X, d.parapet_inner);
+      if (Math.abs(Y) >= face + 0.5) continue;
+      const lim = d.parapet_inner - 1 + 0.15 * Math.max(0, Math.abs(X) - d.x1);
+      if (Math.abs(Y) <= lim) continue;
+      const [x, z] = F.toWorld(X, Math.sign(Y) * lim);
+      xy[i] = x;
+      xy[i + 1] = z;
+      n++;
+    }
+  }
+  return n;
+}
+
 // viewer/rail/tunnels.js
 var TUNNELS = ["kleindal", "brasserie"];
 var TUNNEL_ROOTS = TUNNELS.map((n) => `tunnel-${n}`);
@@ -16944,6 +17234,20 @@ async function buildTileData(entry, base) {
     surfaceData: rd.surfaceData,
     inventory: rd.inventory ?? null
   };
+  let roadTrees = null;
+  if (entry.roadTrees !== false && feats.trees?.length) {
+    const fit0 = rd.surfaceData ? streetFit(rd.surfaceData) : null;
+    const noTram = fit0?.classAt ? (x, z) => {
+      const c = fit0.classAt(x, z);
+      return c === 1 ? 2 : c;
+    } : null;
+    roadTrees = await step("road trees", () => treesOffCarriageway(
+      feats.trees,
+      carriageway(roads, { classAt: noTram, onDeck: null }),
+      { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z) }
+    ));
+    feats.trees = roadTrees.trees;
+  }
   netInfo.deckUnder2 = deckUnderCut(osmBridges.decks, [hm.y, hm.orig], tHdr);
   const net = rd.net;
   const sg = rd.surfaceData?.grid;
@@ -16968,6 +17272,7 @@ async function buildTileData(entry, base) {
   if (tcut) tcut.recut = tunnelRecut(tcut, hm);
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
   const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false }));
+  const deckLanes = rail && traffic && entry.deckLanes !== false ? squeezeDeckLanes(traffic, rail.heroes) : 0;
   if (parked && traffic.parkedKept) {
     parked.stats.trafparkDropped = parked.sites.length - traffic.parkedKept.length;
     parked.sites = traffic.parkedKept;
@@ -17028,6 +17333,8 @@ async function buildTileData(entry, base) {
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
   if (railCuts != null) drive.counts.deckRailCuts = railCuts;
+  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped };
+  if (deckLanes) drive.counts.deckLanes = deckLanes;
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
   if (fences && railOut) railOut.fences = fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));
   drive.counts.hidden = nb - bDoc.buildings.length;
@@ -17036,7 +17343,7 @@ async function buildTileData(entry, base) {
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
@@ -17622,4 +17929,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "cae973c50ee0bb0d";
+self.__TILE_CODE_HASH = "2230947f8f85dce7";

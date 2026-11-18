@@ -1,4 +1,4 @@
-// STREET PROPS OUT OF THE ROAD, baked (class D, claude/streetprops 2026-11-18, rule 27 provisional; docs/CENSUS.md D1 / D3)
+// STREET PROPS OUT OF THE ROAD, baked (class D, claude/streetprops 2026-11-18, rule 30 provisional; docs/CENSUS.md D1 / D3)
 //
 // The street-name plates (data/streetlife plates, mount = post: drawn by the street-life worker) and their posts
 // (data/streetkit posts: drawn by the street kit) are ONE thing at ONE spot: main.js used to move the post out of the

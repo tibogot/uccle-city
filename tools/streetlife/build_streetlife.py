@@ -3,7 +3,7 @@
     python tools/streetlife/build_streetlife.py I6 I5 J6     # or --all
     python tools/streetlife/build_streetlife.py --all --raw C:/.../uccle-city/data/raw
     then ALWAYS tools/streetkit/build_streetkit.py on the same tiles: it moves the post plates (with their posts) and the
-    bpost boxes out of the road in these files (tools/streetkit/snapProps.mjs, rule 27; their originals under `was`)
+    bpost boxes out of the road in these files (tools/streetkit/snapProps.mjs, rule 30; their originals under `was`)
 
 Inputs (raw: run fetch_streetlife.py first; tile files: data/tiles/<T>/):
   OSM POIs (osm_pois.json: shop / amenity / craft ..., nodes + ways' centres; ODbL)      -> shops, cafés, fuel, ...

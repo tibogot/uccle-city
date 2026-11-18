@@ -22,6 +22,9 @@ import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround,
 import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { widthParking } from "./streets/parkPlace.js";
 import { streetFit } from "./streets/fitCore.js";
+import { carriageway } from "./streets/carriageway.js";
+import { treesOffCarriageway } from "./streets/roadTrees.js";
+import { squeezeDeckLanes } from "./rail/roadDeck.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 import { applyParkSquares, carveFlights, withoutLines } from "./heros/herosSurface.js";
@@ -396,6 +399,20 @@ export async function buildTileData(entry, base) {
   netInfo.deckAbutments = abutCells; netInfo.deckUnder = underCells;
   const road = { parts: rd.parts, atlas: rd.atlas, carvedCells: rd.carvedCells, clampedCells: rd.clampedCells, triangles: rd.triangles, surfaceStats: rd.surfaceStats,
     surfaceData: rd.surfaceData, inventory: rd.inventory ?? null };
+  // (claude/drivecheck round 2, rule 27) no LiDAR trunk on the DRAWN carriageway: pipeline/filter_road_trees.py only knew
+  // the measured surfaces, where a street has none the OSM band is drawn and the crown peak's trunk stood in it
+  // (viewer/streets/roadTrees.js); before the parking, traffic, colliders and the drawn tree list read feats.trees.
+  // entry.roadTrees === false (?roadtrees=old): as before
+  let roadTrees = null;
+  if (entry.roadTrees !== false && feats.trees?.length) {
+    const fit0 = rd.surfaceData ? streetFit(rd.surfaceData) : null;
+    // (a measured TRAM road keeps its trees: Avenue Churchill's tram reservation is a tram road in UrbIS, its two tree rows
+    // stand on it; browser turn, tour churchill-blocks. Only the roadway / parking where measured, the OSM band elsewhere)
+    const noTram = fit0?.classAt ? (x, z) => { const c = fit0.classAt(x, z); return c === 1 ? 2 : c; } : null;
+    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null }),
+      { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z) }));
+    feats.trees = roadTrees.trees;
+  }
   // (again after the road stage: its terrain weld brought the bank back up over a plan deck's tucked ends)
   netInfo.deckUnder2 = deckUnderCut(osmBridges.decks, [hm.y, hm.orig], tHdr);
   const net = rd.net;              // the live engine network (stays in the worker: drive colliders)
@@ -426,6 +443,8 @@ export async function buildTileData(entry, base) {
   // ?parkclear=old: the main thread's old slots), here so the traffic lanes keep clear of them (trafficGraph.js)
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
   const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false }));
+  // (claude/drivecheck round 2) the lanes over a hero road deck inside its roadway, clear of its parapets (rail/roadDeck.js)
+  const deckLanes = rail && traffic && entry.deckLanes !== false ? squeezeDeckLanes(traffic, rail.heroes) : 0;
   // trafpark: the graph checks every driven path (lanes + junction connectors) against the parked cars' boxes and keeps
   // only the cars no path touches (a car the lanes could not be moved clear of: a junction corner, a street too narrow)
   if (parked && traffic.parkedKept) { parked.stats.trafparkDropped = parked.sites.length - traffic.parkedKept.length; parked.sites = traffic.parkedKept; }
@@ -478,6 +497,8 @@ export async function buildTileData(entry, base) {
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
   if (railCuts != null) drive.counts.deckRailCuts = railCuts;
+  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped };
+  if (deckLanes) drive.counts.deckLanes = deckLanes;
   // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb
   // instead of sinking into the slab (docs/collisions/DRIVE_FIX.md); ?colfix=0 keeps the old surface
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
@@ -496,7 +517,7 @@ export async function buildTileData(entry, base) {
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;   // (the walls' feet: sunk before the drive colliders, above)
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);

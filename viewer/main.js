@@ -392,7 +392,7 @@ let trackProf = null, worldRef = null;
 // (a bridge is in every tile whose roads.json buffer reaches it: counted, removed with its last tile)
 const bridgeDeckRefs = new Map();     // road id -> { fn, n }
 const FURN_SNAP = params.get("furnsnap") !== "old";      // data-layer furniture out of the driven lanes
-const STREET_PROPS = params.get("streetprops") !== "old"; // (class D, rule 27) + off the tram tracks, the OSM width without a measured street; plates + posts, boxes, Villo baked
+const STREET_PROPS = params.get("streetprops") !== "old"; // (class D, rule 30) + off the tram tracks, the OSM width without a measured street; plates + posts, boxes, Villo baked
 const PARK_CLEAR = params.get("parkclear") !== "old";     // parked cars by the measured width, the traffic lanes clear of them
 const TRAFPARK = params.get("trafpark") !== "old";       // traffic vs parked cars (docs/TRAFPARK.md)
 const BRIDGE_PLAN = params.get("bridgeplan") !== "old";   // the measured deck outlines (data/overrides.json bridgePlans)
@@ -717,7 +717,10 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
+    deckLanes: params.get("decklanes") !== "old",                                                    // claude/drivecheck round 2: the traffic lanes over a hero road deck held clear of its parapets (rail/roadDeck.js squeezeDeckLanes), ?decklanes=old = as before
+    roadTrees: params.get("roadtrees") !== "old",                                                    // claude/drivecheck round 2 (rule 27): no LiDAR trunk on the DRAWN carriageway (viewer/streets/roadTrees.js: also where no surface is measured), ?roadtrees=old = as before
     deckRail: params.get("deckrail") !== "old",                                                     // claude/deckrail (rule 17): no deck parapet / railing (nor its collider) where the street, another deck or a tram track goes on at the deck's level (bridgeDecks.js markRailCuts), ?deckrail=old = as before
+    balcony: params.get("balcony") !== "old",                                                       // claude/balcony (rule 27): the blocks' balconies closed at the sides (facadeGeom.js balcony), ?balcony=old = slab + front parapet only (open ends)
     colFeet: params.get("colfeet") !== "old",                                                       // claude/collisions (rule 25): the walls' feet sunk onto the drawn ground BEFORE the building colliders are traced from them (tileData.js), ?colfeet=old = after (colliders from the floating solids)
     cache: params.get("tilecache") !== "0",
     cacheStore: params.get("tilecache") === "idb" ? "idb" : "capi" };                               // perfgame round 4: the Cache API store (viewer/tileCache.js), ?tilecache=idb = IndexedDB as before                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
@@ -1001,7 +1004,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.features.add(tram.group);
   // citydefects: the baked data layers' points that stand in a driven lane go onto the sidewalk behind the nearest kerb
   // (viewer/streets/carriageway.js docOffLanes; ?furnsnap=old: where their builders put them)
-  // (streetprops, rule 27; ?streetprops=old: as before) also where there is no measured street (Flanders: the OSM width
+  // (streetprops, rule 30; ?streetprops=old: as before) also where there is no measured street (Flanders: the OSM width
   // decides) and off the tram tracks; the plate posts are not moved here any more: they and their plates (drawn by the
   // street life) were moved together at build time (tools/streetkit/snapProps.mjs), as were the post boxes and Villo
   const lanesAt = FURN_SNAP && (fit || STREET_PROPS) ? carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;

@@ -700,7 +700,7 @@ def load_ground():
 ground_obj = load_ground()
 
 scn.render.engine = "CYCLES"
-scn.cycles.device = "CPU"
+SC.use_gpu(scn)                 # OptiX (heroshell: was the CPU)
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 3.0
 ao_img = bpy.data.images.new("rosaire_ao", AO_PX, AO_PX, alpha=False, float_buffer=False)

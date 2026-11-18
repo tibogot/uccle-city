@@ -23,6 +23,29 @@ so a spot can be opened with `?quick=1&at=x,z`.
 | F. Road lines off the carriageway / skewed | `markings.mjs` | of 121.8 km of painted strokes (53.7 km on unmeasured streets, not judged): 6.0 km off the measured carriageway, 0.96 km on a kerb line, 0.41 km skewed > 12° to a straight kerb; 401 runs | no owner image to match | the asphalt shader lines (`viewer/roadPaint.js`, aEdges) laid out by `vendor/roads` laneRoadMesh from the OSM centre line + lane stack, fitted by `viewer/roadBuild.js fitRoadWidths`, overlaid by `viewer/surfaces.js buildSurfaceRoads` | The engine's lines follow the OSM centre line, not the measured street, and the overlay keeps engine strips (with their lines) on sidewalks, ramps and pits. The paint decal (v2) is clipped by construction (3 % raster noise). |
 | G. Coplanar z-fighting | `zfight.mjs` (`--heroes`) | tiles: 32,001 pairs, ~33,100 m², in 3,301 buildings; 46 kit openings on an uncut painted wall; heroes: Saint-Pierre 49 / 118 / 59 m² (L0 / L1 / L2), town hall LOD1 134 m² | 87 / 93 NOT flagged (no coplanar pair at Maison Dandoy E3 / I5 or the Calzedonia front E4) | details: `viewer/facadeGeom.js` `box()` strips at corners (24,924 pairs); walls / roofs: UrbIS duplicate solids passed through (`pipeline/build_buildings.py` -> `analyseBuildings`, e.g. Av. Hamoir 8 J5: one solid twice); heroes: `tools/hero_pack.mjs` meshopt LOD1 | The UrbIS duplicates are not deduplicated, facade boxes overlap at corners, and LOD1 simplification collapses parts into each other. The window shimmer in 87 / 93 is not in the static geometry: likely the painted-window / interior shader, ivy cards or TAA (browser). |
 
+## Class A, heroes: fixed (claude/heroshell, 2026-11-18)
+
+Gate row `heroshell` (tools/audit/heroShell.mjs, rule 29 provisional): the probe below on all 17 heroes (the Square des
+Heros monument added) at every LOD, party walls against a neighbour's solid and 4 intended openings
+(tools/audit/heroShell.allow.json) excluded, ceilings = this after-count (tools/audit/heroShell.ceil.json). The probe's
+"through" fail now also needs the ray to come out from under the roof (a ray grazing under a cornice into a re-entrant
+corner counted before: most of the 1-direction clusters at ground level).
+
+| hero | cause (generator) | open m2 before L0 / L1 / L2 | after |
+|---|---|---|---|
+| Saint-Pierre | stpierre.py: the porch bay cut at nave bay 4 (the porch is under bay 3): two overlapping holes in one fill, a broken triangulation (screenshot 88); the south side ended at u 33.3, nothing above the south-east annex; the upper register's north side wound inward; LOD2 slits between slots (hero_pack) | 56.2 / 56 / 85.9 | 0 / 0 / 11.8 |
+| Saint-Augustin | augustin.py: every swept profile (plinth, copings, bands, sills) clockwise = facing inward (1,116 back-face fails) | 32.2 / 12.7 / 13 | 0 / 0 / 2 (+ the open lantern, allowed) |
+| Saint-Job | stjob.py: one corner chapel's arc centre fitted OUTSIDE the church: its walls and roof faced inward (~20 m2) | 32.1 / 34.3 | 4.4 / 5.2 (+ the dome lantern, allowed) |
+| Van Buuren, police station | party walls against UrbIS 509389 / 531654 (hidden by the neighbour in the city) | 29.2 / 12.5 | 0 / 0 |
+| Saint-Marc, Calevoet | the front colonnade porch, the platform canopy: open by design (allowed) | 16.3 / 10.3 | 0 / 0 |
+
+Left under the ceilings (not fixed, listed for their own pass): Observatory 25.2 / 31.3 / 23.1 (scattered 1-direction
+clusters <= 2.4 m2 across the site, not traced), Russian church 10.9 / 12.6 / 8.3 (a grazing gap between the round
+turret and the tower, 1-2 directions), town hall 5.2 / 4.8 / 37.9, police L1 / L2 10.5 / 24.6, Rosaire L2 24.9 (its
+scripted far variant), Papenkasteel L2 13.4, Saint-Pierre L2 11.8, Wolvendael L2 9, Sacre-Coeur 3.9 / 0 / 2.7. The L2
+levels are the meshopt far levels of the town hall / police / Papenkasteel / Wolvendael packers (their own
+`*_pack.mjs`, no LockBorder yet: a rebuild of each in Blender + its pack) and are seen from > ~450 m.
+
 ## 10 worst per class
 
 **A (tiles):** F7 Rue de Verrewinkel 95D (-368.8, 1378.8) 434 m²; F7 Verrewinkel 95C (-386.5, 1372.7) 391; H1 Rue Dodonée 92
@@ -49,7 +72,7 @@ F7 (-277, 1469); E6 Ch. de Saint-Job 253 (-535, 936) 165 m², +2 m; K6 Av. du Ma
 **Spikes:** D10 (-1038, 2941); E10 (-649, 2859) 7.9 m; E8 Rue Engeland 340 (-697, 1784) 3.8 m.
 
 
-**Class D fixed (claude/streetprops, rule 27, gate row `streetprops`).** Census (as the city draws it, `--old` =
+**Class D fixed (claude/streetprops, rule 30, gate row `streetprops`).** Census (as the city draws it, `--old` =
 `?streetprops=old`) before -> after: post plates off their post 237 -> 0; C1 + F19 to the same traffic 25 -> 0 (each carriageway of a one-way pair keeps its own C1 / F19 on its own post: 79 pair poles kept, 24 pair signs dropped where both landed on one kerb); signs facing
 across every street 53 -> 8; pieces in a driven lane / on a tram track 389 (367 after the false positives below) -> 47: post boxes
 25 -> 0, Villo stations 11 -> 0, signs 108 -> 9, plate posts 131 -> 8, furniture2 39 -> 2, stop poles 70 -> 28 (20 are `platform`
@@ -88,6 +111,23 @@ Rue Zeecrabbe 24 (395.8, -786.9) 802; I1 (1120.3, -1677.4) 663; G2 Av. Adolphe D
 (-143.4, 11.1) 551; F8 Clos Jean-Pierre de Launoit 5 (-263.6, 1656.3) 539; E2 (-710.4, -1482.4) 505; G8 Av. Dolez 143A
 (443.3, 1986.9) 444; C7 Ch. de Drogenbos 176A (-1876.7, 1470) 369. Shop fronts buried in their wall: Barat (E3), Brico (G3),
 Le Chemin des Vignes (F1), Battery Centre (I1).
+
+## Fixed
+
+- **B (claude/balcony, rule 28, gate row `balconies`).** `viewer/facadeGeom.js` `balcony()`: the slab and a
+  U-shaped parapet (front + both sides, the front's material, 1.16 m, 6 cm) as one shell: one soffit, mitred parapet
+  tops, no hidden / doubled faces, no T-junction, nothing in the wall; 22 triangles a balcony, as many as the old open
+  slab + parapet. Balconies touching side by side get one shared divider (none does in the city today: the spans keep
+  0.3 m gaps; the shell test covers the case). `balcClear()` cuts a balcony back where it would run into another
+  balcony (inside corners), one of its own building's other walls (an inside corner's other wing), its own roof
+  sloping through it or a taller neighbour; a roof high over it (an upper storey overhanging a loggia, G3 380, -570)
+  or a lower roof (a terrace) keeps it (browser turn: a first cut that dropped every balcony under its own roof removed
+  the G3 loggia balconies). City-wide (120 tiles): before 20,658 slabs / 36,782 open ends (?balcony=old), after 20,387
+  slabs / 0 open ends (`docs/census/balconies_closed.json`, `balconies_old.json`); detail triangles 4,463,540 ->
+  4,460,680 (-2,860, the balconies cut back at inside corners / walls; 0 per balcony), no draw call added (the tile's
+  detail mesh). zfight on H2 / H4 / G3 / D6: 1,544 -> 1,504 coplanar pairs. Detector changes: the U-shaped parapet top
+  counts as a parapet (fill < 0.4), a slab is >= 1.15 m deep and filled (the 1.1 m BLOCK entrance canopy was taken for a
+  slab under the closed balcony's U top), `--old`, `--max`, the shell self-test.
 
 ## Not detected here (needs the browser, or not located)
 

@@ -20,7 +20,7 @@ const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/streetkit/", import.meta.url);
 const PROPS_OLD = qs.get("streetprops") === "old";
 
-/** (streetprops, rule 27) ?streetprops=old: the doc as before the class D fixes: the signs of the old rules (signsOld,
+/** (streetprops, rule 30) ?streetprops=old: the doc as before the class D fixes: the signs of the old rules (signsOld,
  *  kept where they differ), the plate posts and Villo stations at their `was` (tools/streetkit/snapProps.mjs) */
 export function streetKitOld(doc) {
   if (!doc) return doc;
