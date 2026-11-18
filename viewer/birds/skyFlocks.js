@@ -201,8 +201,7 @@ export class SkyFlocks {
             If(nb.greaterThan(0), () => { acc.addAssign(coh.div(nb)); });
             const nr = clamp(sqrt(T7[DAY.TOPO - 1]).mul(1.02).add(0.01), spc.mul(0.5), 120);
             D.element(o).assign(vec4(p.xyz, float(slot).add(nr.div(1024))));      // (the same xyz: a neighbour reading it sees the same)
-            return;
-            }
+            } else {
             // ---- metric: every bird of the flock (separation 1.4 m, alignment / cohesion within 12 m)
             const sep = vec3(0).toVar(), coh = vec3(0).toVar(), nc = float(0).toVar();
             // personal space ~2.6 spans (a starling 1 m, a jackdaw 1.8 m, a gull 2.6 m)
@@ -222,6 +221,7 @@ export class SkyFlocks {
             });
             acc.addAssign(sep.mul(B5.w.mul(2.5)));
             If(nc.greaterThan(0), () => { acc.addAssign(coh.div(nc).mul(B5.y.mul(0.35))); });
+            }
           });
           const alignK = OLD ? 1.6 : select(B3.w.greaterThan(0.5), float(1.6), float(DAY.align));
           If(nb.greaterThan(0), () => { acc.addAssign(align.div(nb).sub(v.xyz).mul(B5.z.mul(alignK))); });
@@ -261,8 +261,7 @@ export class SkyFlocks {
               const g = goal.sub(p.xyz), gl = length(g);
               acc.addAssign(g.mul(min(gl, 40).div(max(gl, 0.01)).mul(MUR.form)));
               bankAdd.assign(B9.z.mul(sin(wq.mul(7.5).sub(B9.y.mul(1.3)))));
-              return;
-            }
+            } else {
             const halfW = float(nx).mul(rest).mul(B7.x).mul(0.5).add(1);
             const ox = ud.mul(halfW);
             const oz = wd.mul(float(ny).mul(rest).mul(B7.z).mul(0.5));
@@ -275,6 +274,7 @@ export class SkyFlocks {
             const goal = B0.xyz.add(R.mul(ox)).add(Up.mul(oy)).add(H.mul(oz));
             const g = goal.sub(p.xyz), gl = length(g);
             acc.addAssign(g.mul(min(gl, 40).div(max(gl, 0.01)).mul(0.45)));
+            }
           }).Else(() => {
             if (!OLD) {
               // ---- birds2, THE LEADER (a CPU point flying a path, flockModel.js LeaderPath; row 6: its velocity, the
@@ -291,13 +291,13 @@ export class SkyFlocks {
               const cruise = B1.y.add(B1.z).mul(0.5);
               acc.addAssign(tv.div(tl).mul(cruise).sub(v.xyz).mul(kg));
               acc.y.addAssign(B6.y.sub(v.y).mul(DAY.level));
-              return;
-            }
+            } else {
             // ---- the flock's target: inside radius B0.w free, beyond pulled in; height sprung; circling
             const outR = max(dh.sub(B0.w), 0);
             acc.addAssign(vec3(to.x, 0, to.z).div(dh).mul(outR.mul(0.06).add(min(dh, 30).mul(0.015))));
             acc.y.addAssign(clamp(to.y.mul(0.12), -4, 4));
             acc.addAssign(vec3(to.z.negate(), 0, to.x).div(dh).mul(B4.w));
+            }
           });
           // ---- threats: away, harder the closer, the alarm (speed, flapping) with it
           for (let t = 0; t < THREATS; t++) {

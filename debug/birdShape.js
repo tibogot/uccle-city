@@ -47,8 +47,9 @@ export async function run({ seconds = 30, every = 1000 } = {}) {
         const H = window.innerHeight, ps = cam.projectionMatrix.elements[5] * H * 0.5, v = new cam.position.constructor();
         const pts = []; let merged = 0, minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, dsum = 0;
         for (let i = 0; i < m; i++) {
-          v.set(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]); const d = v.distanceTo(cam.position); dsum += d; v.project(cam);
-          if (v.z > 1) continue;
+          v.set(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]); const d = v.distanceTo(cam.position); dsum += d;
+          if (v.clone().applyMatrix4(cam.matrixWorldInverse).z > -0.5) continue;      // behind the camera
+          v.project(cam);
           const x = v.x * window.innerWidth / 2, y = v.y * H / 2; pts.push(x, y, Math.max(span * ps / d, 2.2));
           minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
         }

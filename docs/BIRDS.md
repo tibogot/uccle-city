@@ -191,7 +191,11 @@ no flock is ever pulled to a fixed point. Check: `tools/audit/birdGate.mjs` (mer
 - **Falcon flight / game** (`flyer.on`): the prey flocks keep their sizes from before (`PREY_SIZES`: starlings 110-190,
   jackdaws 28-60, parakeets 24-52: the hunt's prey density unchanged) with the new rules (gate rows `prey-*`: loose flat
   flocks at 190 / 60 / 52, c/a median 0.14-0.30, 0 % ball-like); no sky pigeons there (not prey); the prey list
-  (`gpuPrey.js`) untouched.
+  (`gpuPrey.js`) untouched. A flock spawned before the flight came on (or after it went off) leaves and is replaced at the
+  right size; `?game=falcon` counts from the boot.
+- **Leader over the GPU floor** (browser turn): outside the floor texture's 1 km window the GPU floor is the camera's
+  ground + 30 m; a leader under it pinned its flock flat on it (parakeets 500 m off, every bird at one height). The
+  leader's altitude band is now over max(ground, the floor + the clearance).
 
 **The gate** (`node --preserve-symlinks --import ./tools/characters/threeHook.mjs tools/audit/birdGate.mjs`): the CPU mirror
 of the GPU step (`CpuFlock`, the same equations and per-bird hashes) runs every species (3 seeds) and the 3072 / 900

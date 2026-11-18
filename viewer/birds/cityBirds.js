@@ -118,6 +118,15 @@ export const cityBirds = {
     this.stats.floorBuilds++;
   },
 
+  /** birds2: the falcon flight / game is on (or booting: ?game=falcon): the prey flocks keep their old sizes */
+  preyMode() { return !!(this.hooks?.flyer?.on || params.get("game") === "falcon"); },
+  /** the GPU floor's height at (x, z) (skyFlocks.js floorAt on the CPU: the texture window, else floorBase) */
+  floorAt(x, z) {
+    const sky = this.sky, o = sky.u.floorO.value, n = FLOOR.n, cx = Math.floor((x - o.x) / FLOOR.cell), cz = Math.floor((z - o.y) / FLOOR.cell);
+    if (cx < 0 || cz < 0 || cx >= n || cz >= n) return sky.u.floorBase.value;
+    return sky.floorData[cz * n + cx];
+  },
+
   // ------------------------------------------------------------------------------------------------ the director
   sun() {
     // the real sun (lighting.firmSunDir: the solar hour, the day, Brussels): env.uSunDir is the LIGHT's direction, held
@@ -150,7 +159,7 @@ export const cityBirds = {
     W.parakeets = S.e > -3 ? this.nearest(PARKS.filter((p) => p.r >= 80), x, z, 1500) : null;
     // birds2: a party of feral pigeons flying loops over the nearest square by day
     // (not in the falcon flight / game: sky pigeons there would be birds the hunt cannot take: its prey stays as before)
-    W.pigeons = !this.old && !this.hooks?.flyer?.on && S.e > 2 ? this.nearest(SQUARES, x, z, 900) : null;
+    W.pigeons = !this.old && !this.preyMode() && S.e > 2 ? this.nearest(SQUARES, x, z, 900) : null;
     return W;
   },
 
@@ -172,7 +181,9 @@ export const cityBirds = {
         if (want && decide) this.spawn(F, want, cam, S);
       } else if (F.state === "on") {
         const moved = want && F.home && !F.home.drift && (want.name !== F.home.name);
-        if (decide && (!want || moved || F.end)) this.leave(F, cam);
+        // (birds2: a flock spawned before the falcon flight came on / after it went off leaves: the next one has the right size)
+        const resize = !this.old && decide && PREY_SIZES[F.key.startsWith("jackdaws") ? "jackdaws" : F.key] && F.prey !== this.preyMode();
+        if (decide && (!want || moved || F.end || resize)) this.leave(F, cam);
         else this.steer(F, cam, S, dt);
       } else if (F.state === "leaving") {
         // fly off; gone once far and out of view, or faded after 40 s
@@ -204,7 +215,7 @@ export const cityBirds = {
     }
     const P = this.profile(F.key, S);
     F.home = { ...home }; F.state = "on"; F.t = 0; F.fade = 1; F.wp = null; F.drop = false; F.end = false;
-    F.lead = null; F.hx = F.hz = undefined;
+    F.lead = null; F.hx = F.hz = undefined; F.prey = this.preyMode();
     if (!this.old) {
       // birds2: the leader starts at the spawn point, heading for home, and flies its path from there; the target is it
       F.lead = this.leader(F, P, best, cam);
@@ -242,7 +253,7 @@ export const cityBirds = {
       const dk = key.startsWith("jackdaws") ? "jackdaws" : key, D = DAY_PROFILES[dk];
       if (D) {
         // the falcon flight / game on: the prey flocks keep their sizes from before birds2 (the hunt unchanged), new rules
-        const R = (this.hooks?.flyer?.on && PREY_SIZES[dk]) || D.n;
+        const R = (this.preyMode() && PREY_SIZES[dk]) || D.n;
         const n = dk === "gulls" ? (S.winter ? rand(20, 34) : rand(6, 14)) : rand(R[0], R[1]);
         return { count: Math.round(n), radius: D.radius, floorClear: D.floorClear, vmin: D.vmin, vmax: D.vmax, spacing: D.spacing, informed: D.informed, cohesion: 1, align: 1, sep: 1, circle: 0 };
       }
@@ -283,7 +294,10 @@ export const cityBirds = {
     const sky = this.sky, L = F.lead;
     if (F.key === "gulls" && !L.goal) { L.home.x = cam.position.x; L.home.z = cam.position.z; }
     if (F.key === "starlings" && F.state === "on" && L.goal && Math.hypot(L.goal.x - L.x, L.goal.z - L.z) < 60) L.goal = this.nextLawn(F, cam);
-    L.step(dt, (x, z) => this.ground(x, z));
+    // the leader's altitude band over the ground, but never under the GPU's floor (the floor texture, or outside its 1 km
+    // window the camera's ground + 30 m) + the clearance: else the birds ride flat on the floor (seen: parakeets 500 m off)
+    const clear = sky.row(F.k, 1).x;
+    L.step(dt, (x, z) => Math.max(this.ground(x, z), this.floorAt(x, z) + clear - L.yLo + 4));
     sky.setTarget(F.k, L.x, L.y, L.z);
     if (F.key === "murmuration") {
       // the heading follows the leader's track (eased: the sheet swings round), the manoeuvres; a hawk pass = big waves
