@@ -84,7 +84,8 @@ from the data). The rules are in the script's header; in short (all positions fr
   avenue's two carriageways meeting a cross street within 15 m) each carriageway keeps its own sign on its own post (C1
   at the inflowing one's island-nose side, F19 at the outflowing one's kerb); a C1 and an F19 never share a pole, and a
   pair sign that still lands within 4 m of the other order facing the same approach is dropped (owner image 79: both
-  on one pole). A measured kerb further than the road's own half width + 2.5 m is another street's (the
+  on one pole). The one-kerb test is re-run in `snapProps.mjs` on the measured street at the spots main.js draws
+  the signs (20 C1 + 36 F19 pair signs drawn, 23 dropped). A measured kerb further than the road's own half width + 2.5 m is another street's (the
   pole stood across the side street, facing across it): the OSM width is used instead. The signs of the old rules are
   kept as `signsOld` where they differ (`?streetprops=old`).
 - **Out of the road** (rule 30): after the tiles are written, `tools/streetkit/snapProps.mjs` moves the post plates +

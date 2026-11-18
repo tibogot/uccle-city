@@ -143,7 +143,10 @@ const axisOff = (fx, fz, ux, uz) => { const c = Math.abs(fx * ux + fz * uz); ret
   const has = (s, c) => s.plates.some((p) => p.code === c);
   for (const a of L) if (has(a, "C1")) for (const b of L) if (has(b, "F19")) {
     const d = Math.hypot(a.x - b.x, a.z - b.z), facing = Math.cos(a.yaw - b.yaw);
-    if (d < 4 && facing > Math.cos(Math.PI / 4)) {
+    // (claude/streetprops) not when a carriageway runs between them: a one-way pair's C1 on the island nose and F19 at the
+    // other carriageway's kerb address the two carriageways, as in Belgium
+    const between = a !== b && [0.2, 0.35, 0.5, 0.65, 0.8].some((t) => S.driven.inside(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, 0));
+    if (d < 4 && facing > Math.cos(Math.PI / 4) && !between) {
       counts.signFacing++; counts.signConflict = (counts.signConflict || 0) + 1;
       items.signFacing.push({ why: a === b ? "C1 + F19 on one pole" : "C1 and F19 face the same traffic", codes: "C1/F19", off: 180, at: at(a.x, a.z), street: nameAt(a.x, a.z) });
     }

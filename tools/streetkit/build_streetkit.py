@@ -447,7 +447,10 @@ def place_tile(name, src, stats, villo_rank):
     # the two carriageways' signs landed on one kerb; the pair sign goes (a rule C1 / F19 stays)
     if not ONEWAY_OLD:
         def clash(a, b):
-            return math.hypot(a["x"] - b["x"], a["z"] - b["z"]) < 4 and a["fx"] * b["fx"] + a["fz"] * b["fz"] > math.cos(math.pi / 4)
+            if not (math.hypot(a["x"] - b["x"], a["z"] - b["z"]) < 4 and a["fx"] * b["fx"] + a["fz"] * b["fz"] > math.cos(math.pi / 4)): return False
+            # a carriageway between them: each stands at its own carriageway (the island nose / the outer kerb), fine
+            if math.hypot(a["x"] - b["x"], a["z"] - b["z"]) < 1.5: return True       # (one spot: both in the road)
+            return not any(P.on_carriageway(a["x"] + (b["x"] - a["x"]) * t, a["z"] + (b["z"] - a["z"]) * t) for t in (0.2, 0.35, 0.5, 0.65, 0.8))
         stats["oneway_pair_signs"] += sum(1 for pl in poles if pl["src"] == "pair")
         for pl in list(poles):
             if pl["src"] != "pair" or pl not in poles: continue
@@ -619,6 +622,9 @@ def snap_props(docs, stats):
             if st.get("alt"): v.update(mode=v["alt"]["mode"], notes=v["alt"]["notes"]); stats["villo_turned"] += 1
             stats["villo_dropped" if not st["docks"] else "villo_slid" if st["slid"] else "villo_trimmed" if st.get("trimmed") else "villo_turned_only"] += 1
         for v in d["villo"]: v.pop("alt", None)
+        if m.get("dropSigns"):
+            drop = set(m["dropSigns"]); stats["oneway_pair_dropped_measured"] += len(drop)
+            d["signs"] = [s for k, s in enumerate(d["signs"]) if k not in drop]
         stats["snap_plates"] += len(m["plates"]); stats["snap_posts"] += len(m["posts"]); stats["snap_postboxes"] += len(m["postboxes"])
         for k, v in m["stuck"].items(): stats["snap_stuck_" + k] += v
         for k, v in m["dropped"].items(): stats["snap_villo_dropped_" + k] += v

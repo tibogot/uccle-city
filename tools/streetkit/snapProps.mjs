@@ -118,4 +118,21 @@ function fixStation(v) {
   if (!win.keep) out.dropped.stations = (out.dropped.stations || 0) + 1;
   out.villo.push([i, win.r]);
 });
+// ---- one-way pair signs (build_streetkit.py src "pair"): a C1 / F19 that still shows the other order to the same
+// approach (within 4 m, facing within 45 deg, no carriageway between them by the viewer's own test) goes, with its pole
+// (build_streetkit's own check sees only the OSM bands; this one sees the measured street, as the census does)
+out.dropSigns = [];
+{
+  // (where main.js draws them: after its load-time move of the signs, viewer/streets/carriageway.js docOffLanes)
+  const L = (sk.signs || []).map((s) => { const r = offLane(s.x, s.z, lanes, fit, OPT); return { ...s, x: r.x, z: r.z }; });
+  const has = (s, c) => s.plates.some((p) => p.code === c);
+  L.forEach((a, i) => {
+    if (a.src !== "pair") return;
+    const other = has(a, "C1") ? "F19" : has(a, "F19") ? "C1" : null;
+    if (!other) return;
+    const hit = L.some((b) => b !== a && has(b, other) && !out.dropSigns.includes(L.indexOf(b)) && Math.hypot(a.x - b.x, a.z - b.z) < 4 && Math.cos(a.yaw - b.yaw) > Math.cos(Math.PI / 4)
+      && (Math.hypot(a.x - b.x, a.z - b.z) < 1.5 || ![0.2, 0.35, 0.5, 0.65, 0.8].some((t) => S.driven.inside(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, 0))));
+    if (hit) out.dropSigns.push(i);
+  });
+}
 console.log(JSON.stringify(out));

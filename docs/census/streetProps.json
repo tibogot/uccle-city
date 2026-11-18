@@ -1,14 +1,14 @@
 {
- "when": "2026-11-18T07:10:30.225Z",
+ "when": "2026-11-18T09:48:28.413Z",
  "old": false,
  "sum": {
   "plates": 750,
   "plateGap": 0,
   "plateNoPost": 0,
-  "signs": 1745,
+  "signs": 1746,
   "signFacing": 8,
   "signMovedFar": 342,
-  "pieces": 4749,
+  "pieces": 4750,
   "inRoad": 47,
   "inLane": 41,
   "onTram": 11,
