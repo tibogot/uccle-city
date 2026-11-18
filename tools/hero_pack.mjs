@@ -14,6 +14,12 @@ import fs from "fs";
 import { MeshoptEncoder } from "./worker/node_modules/meshoptimizer/meshopt_encoder.js";
 import { MeshoptSimplifier } from "./worker/node_modules/meshoptimizer/meshopt_simplifier.js";
 const NOLOD = process.argv.includes("--nolod");
+// heroshell 2026-11-18: the far level (LOD2, a pruned simplification of the scripted far variant) is simplified with
+// LockBorder: each slot is simplified on its own, so the open edges where one slot meets another (a brick panel in its
+// stone face, a window's reveal) moved independently and opened slits (Saint-Pierre LOD2: 12.8 m2 of probe holes, 461
+// back-face hits; with the lock 9 m2 / 249, +1,100 triangles at > 420 m). LOD1 keeps the free borders (no hole change
+// measured there). --no-lock-border = the old behaviour.
+const LOCK = !process.argv.includes("--no-lock-border");
 const NAME = process.argv.includes("--name") ? process.argv[process.argv.indexOf("--name") + 1] : "Stalle";
 const ARGV = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && all[i - 1] !== "--name");
 const LOD1_TRIS = +(ARGV[2] || 6000), LOD2_TRIS = +(ARGV[3] || 1200);
@@ -47,7 +53,7 @@ function readAcc(ai) {
 /** meshoptimizer on a flat-shaded architectural mesh (hard edges and UV seams split the vertices): simplify a
  *  position-WELDED index buffer (1 mm), then give each corner of each new triangle back the ORIGINAL vertex at that
  *  position whose normal best matches the new triangle (its UVs, lightmap UV, code and normal stay right). */
-function simplifyWelded(P, Nn, I, want, err, prune) {
+function simplifyWelded(P, Nn, I, want, err, prune, lock = false) {
   const n = P.length / 3, canon = new Uint32Array(n), map = new Map(), cpos = [], members = [];
   for (let i = 0; i < n; i++) {
     const key = `${Math.round(P[i * 3] * 1000)},${Math.round(P[i * 3 + 1] * 1000)},${Math.round(P[i * 3 + 2] * 1000)}`;
@@ -58,7 +64,7 @@ function simplifyWelded(P, Nn, I, want, err, prune) {
   const ci = new Uint32Array(I.length);
   for (let i = 0; i < I.length; i++) ci[i] = canon[I[i]];
   const C = new Float32Array(cpos);
-  const [out, e] = MeshoptSimplifier.simplify(ci, C, 3, want, err, prune ? ["ErrorAbsolute", "Prune"] : ["ErrorAbsolute"]);
+  const [out, e] = MeshoptSimplifier.simplify(ci, C, 3, want, err, [...(prune ? ["ErrorAbsolute", "Prune"] : ["ErrorAbsolute"]), ...(lock ? ["LockBorder"] : [])]);
   const res = new Uint32Array(out.length);
   for (let t = 0; t < out.length; t += 3) {
     const a = out[t], b = out[t + 1], c = out[t + 2];
@@ -77,7 +83,7 @@ function simplifyWelded(P, Nn, I, want, err, prune) {
   return [res, e];
 }
 const lodReport = {};
-function addLod(srcName, dstName, totalTarget, err, prune) {
+function addLod(srcName, dstName, totalTarget, err, prune, lock = false) {
   const node = json.nodes.find((n) => n.name === srcName);
   const mesh = json.meshes[node.mesh];
   const tris = mesh.primitives.reduce((s, p) => s + json.accessors[p.indices].count / 3, 0);
@@ -87,7 +93,7 @@ function addLod(srcName, dstName, totalTarget, err, prune) {
   for (const p of mesh.primitives) {
     const P = readAcc(p.attributes.POSITION), Nn = readAcc(p.attributes.NORMAL), I = readAcc(p.indices);
     const want = Math.min(I.length, Math.max(12, Math.floor((I.length / 3) * ratio)) * 3);
-    const [idx, e] = ratio < 1 ? simplifyWelded(P, Nn, Uint32Array.from(I), want, err, prune) : [Uint32Array.from(I), 0];
+    const [idx, e] = ratio < 1 ? simplifyWelded(P, Nn, Uint32Array.from(I), want, err, prune, lock) : [Uint32Array.from(I), 0];
     outTris += idx.length / 3;
     viewData.push(new Uint8Array(idx.buffer)); viewInfo.push({ tri: true });
     json.bufferViews.push({ buffer: 0, byteLength: idx.byteLength });
@@ -102,7 +108,7 @@ function addLod(srcName, dstName, totalTarget, err, prune) {
 }
 if (!NOLOD) {
   addLod(NAME, `${NAME}_lod1`, LOD1_TRIS, LOD1_ERR, false);
-  addLod(`${NAME}_far`, `${NAME}_lod2`, LOD2_TRIS, LOD2_ERR, true);
+  addLod(`${NAME}_far`, `${NAME}_lod2`, LOD2_TRIS, LOD2_ERR, true, LOCK);
 }
 
 function convertAttributes() {

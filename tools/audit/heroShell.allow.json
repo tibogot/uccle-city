@@ -1,0 +1,10 @@
+[
+ { "hero": "augustin", "level": "*", "at": [-896.3, 142.0, -1961.2], "radius": 5, "yRange": [139.0, 146.5],
+   "why": "the tower's OPEN lantern stage (four openings between the fins under the cross; photos c01 / c15, docs/landmarks/AUGUSTIN.md): seen through by design" },
+ { "hero": "stjob", "level": "*", "at": [1216.5, 113.0, 561.5], "radius": 3.5, "yRange": [111.0, 115.5],
+   "why": "the dome's lantern: an open arcade of piers under its cupola, with a railing (photos, models/stjob/NOTES.md)" },
+ { "hero": "saintmarc", "level": "*", "at": [451.5, 69.6, -614.6], "radius": 16, "yRange": [68.5, 71.0],
+   "why": "the front colonnade porch: open between its columns under the slab, the glazed wall set back behind it (rendered at eye level: closed behind)" },
+ { "hero": "calevoet_station", "level": "*", "at": [-1230.0, 53.6, 788.0], "radius": 22, "yRange": [52.5, 55.0],
+   "why": "the platform canopy (marquise) on cast-iron columns along the track side: open underneath by design" }
+]
