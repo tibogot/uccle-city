@@ -15,7 +15,8 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
 import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
-import { smoothPolyline } from "./track.js";
+import { tramTracks } from "./track.js";
+import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
 import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
@@ -272,8 +273,15 @@ export async function buildTileData(entry, base) {
   const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await step("fetch", () => Promise.all([
     get(F.terrainHeader), get(F.terrain, true), get(F.buildings), get(F.buildingsBin, true), get(F.roads), get(F.features),
   ]));
-  // the OSM tram tracks as smooth curves (viewer/track.js): rails, wires, platforms and the trams all follow them
-  for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
+  // the tram tracks (viewer/track.js tramTracks): rails, wire + poles, platforms' sides, the bridge deck and the trams all
+  // follow them. claude/tramfit (rule 32): the OSM ways fitted to the measured street (tools/tramfit/build_tramfit.mjs:
+  // both rails clear of every kerb and raised paving, smooth, continuous across tile seams), data/tramfit/<T>.json;
+  // ?tramfit=old (entry.tramFit false) = each OSM way smoothed as it is (rails under the kerb, onto the sidewalk)
+  const hasTram = (feats.lines || []).some((l) => l.kind === "tram");
+  const tramFit = hasTram && entry.tramFit !== false ? await step("tramfit fetch", () => fetch(new URL(`../tramfit/${entry.name}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null)) : null;
+  tramTracks(feats, tramFit);
+  // ... and the tram platforms beside them, never over a rail (viewer/streets/tramPlatforms.js; ?tramfit=old: as OSM)
+  if (entry.tramFit !== false) fitPlatforms(feats);
   // ?trains=1 (viewer/rail/): no LiDAR "trees" on rail bridge decks, platforms or the ballast; the line's verges as
   // undergrowth in the land cover
   const rail = entry.rail ? await step("rail fetch", () => railDocs(base, entry.bridges2 !== false)) : null;

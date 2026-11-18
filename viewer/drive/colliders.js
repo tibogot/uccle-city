@@ -715,7 +715,7 @@ export function tramPlatformSurface(feats, hm, ground, bounds, carve) {
       }
       continue;
     }
-    const d = densifyLine(l.line, TRAM_PLATFORM.step);
+    const d = densifyLine(l.line, TRAM_PLATFORM.step), hw = (l.platW ?? W) / 2;      // (tramfit: the band's width as drawn, tramPlatforms.js platformWidth)
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i];
       if (Math.max(ax, bx) < bounds.x0 - 3 || Math.min(ax, bx) > bounds.x1 + 3 || Math.max(az, bz) < bounds.z0 - 3 || Math.min(az, bz) > bounds.z1 + 3) continue;
