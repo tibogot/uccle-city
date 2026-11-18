@@ -11,6 +11,7 @@ import { farBuildings } from "./farLookData.js";   // the far city's façades (d
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData, tramPlatformSurface, driveGround } from "./drive/colliders.js";
+import { gardenIndex } from "./streets/retainWalls.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
@@ -82,6 +83,18 @@ function terrainArrays(hm, fitDiagonals = false) {
 
 /** the street-life layer's shopfronts of a tile (the poi kinds that get a shopfront in viewer/streetlife/layout.js:
  *  not ATMs, schools or civic buildings, which carry a plaque only): [{ x, z, nx, nz, w }], null when the tile has none */
+/** data/gardens/<tile>.json (the garden fronts: walls, hedges, gates), or null (claude/sidewalk: retaining walls) */
+/** (x, z) -> inside an OSM park / wood / grass / meadow / scrub area (public green: a bank, not a retaining wall) */
+function publicAreas(feats) {
+  const KINDS = new Set(["wood", "forest", "park", "grass", "meadow", "scrub", "heath", "recreation_ground", "cemetery"]);
+  const polys = (feats.areas || []).filter((a) => KINDS.has(a.kind)).map((a) => a.rings);
+  const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  return (x, z) => polys.some((R) => pip(x, z, R[0]) && !R.slice(1).some((h) => pip(x, z, h)));
+}
+async function gardenDoc(base, name) {
+  const r = await fetch(new URL(`../gardens/${name}.json`, base)).catch(() => null);
+  return r?.ok ? r.json().catch(() => null) : null;
+}
 async function streetlifeFronts(base, name) {
   const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
   if (!r?.ok) return null;
@@ -397,7 +410,9 @@ export async function buildTileData(entry, base) {
   const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false,
+  // (claude/sidewalk round 2) the garden fronts, for the retaining walls behind levelled sidewalks (viewer/streets/retainWalls.js)
+  const gardenNear = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? gardenIndex(await step("fetch gardens", () => gardenDoc(base, entry.name))) : null;
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false, gardenNear, publicAt: gardenNear ? publicAreas(feats) : null,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
     deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)

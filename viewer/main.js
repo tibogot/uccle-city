@@ -1044,7 +1044,16 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
   // the police station's vehicle gate)
   // (falcon2, ?gardenslice=old: in one go): in <= 3 ms slices (cityGardens.addTileSliced, viewer/slices.js)
-  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), CORTENBOSCH ? (await loadOverrides(DATA)).gardenRestyle : null);   // (cortenbosch: the lane's beech hedges, gardenRestyle)
+  // (claude/sidewalk round 2, ?sidewalk=old: the terrain only) the garden pieces seat on what is DRAWN: the terrain or a
+  // street surface over it (a retaining wall's coping / lawn strip at the garden level, viewer/streets/retainWalls.js)
+  const gDelta = params.get("sidewalk") !== "old" ? d.drive?.ground?.delta : null;
+  const gardenGround = !gDelta ? (x, z) => hm.surface(x, z) : (x, z) => {
+    const h = hm.h, c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1.001), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1.001);
+    const c0 = Math.floor(c), r0 = Math.floor(r), fc = c - c0, fr = r - r0, i = r0 * h.cols + c0;
+    const v = (k) => { const dl = gDelta[k]; return hm.y[k] + (dl > 0 && dl !== 65535 ? dl * 0.01 : 0); };
+    return Math.max(hm.surface(x, z), (v(i) * (1 - fc) + v(i + 1) * fc) * (1 - fr) + (v(i + h.cols) * (1 - fc) + v(i + h.cols + 1) * fc) * fr);
+  };
+  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await gardensP, own.features, gardenGround, (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), CORTENBOSCH ? (await loadOverrides(DATA)).gardenRestyle : null);   // (cortenbosch: the lane's beech hedges, gardenRestyle)
   await split("gardens");
   // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;

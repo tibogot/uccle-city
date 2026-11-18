@@ -1,5 +1,5 @@
 {
- "when": "2026-11-18T08:35:44.801Z",
+ "when": "2026-11-18T14:58:52.569Z",
  "old": true,
  "sum": {
   "lump": 1232,
@@ -12,13 +12,15 @@
   "tiltM2": 29510,
   "roadTilt": 1462,
   "roadTiltM2": 24092,
-  "over": 361,
-  "overM2": 2932
+  "over": 365,
+  "overM2": 2935,
+  "gardenVoid": 0,
+  "gardenVoidM2": 0
  },
  "perf": {
-  "roadMs": 296796,
-  "weldMs": 30852,
-  "surfMs": 48252,
+  "roadMs": 371119,
+  "weldMs": 38485,
+  "surfMs": 60550,
   "roadTris": 5403111
  },
  "tiles": [
@@ -36,12 +38,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 5,
-    "overM2": 7.0625
+    "overM2": 7.0625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2042,
-    "weldMs": 229,
-    "surfMs": 95,
+    "roadMs": 3863,
+    "weldMs": 391,
+    "surfMs": 146,
     "roadTris": 32866
    }
   },
@@ -59,12 +63,14 @@
     "roadTilt": 19,
     "roadTiltM2": 299.5627340329811,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4663,
-    "weldMs": 398,
-    "surfMs": 640,
+    "roadMs": 6945,
+    "weldMs": 430,
+    "surfMs": 1061,
     "roadTris": 93140
    }
   },
@@ -81,13 +87,15 @@
     "tiltM2": 5.306872196495533,
     "roadTilt": 6,
     "roadTiltM2": 54.183731622993946,
-    "over": 3,
-    "overM2": 1.5625
+    "over": 6,
+    "overM2": 3.4375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3173,
-    "weldMs": 382,
-    "surfMs": 475,
+    "roadMs": 6577,
+    "weldMs": 484,
+    "surfMs": 405,
     "roadTris": 51435
    }
   },
@@ -105,12 +113,14 @@
     "roadTilt": 1,
     "roadTiltM2": 0.6070110127329826,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 5396,
-    "weldMs": 635,
-    "surfMs": 390,
+    "roadMs": 3698,
+    "weldMs": 427,
+    "surfMs": 320,
     "roadTris": 61844
    }
   },
@@ -128,12 +138,14 @@
     "roadTilt": 1,
     "roadTiltM2": 1.019173040986061,
     "over": 4,
-    "overM2": 110.6875
+    "overM2": 110.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2334,
-    "weldMs": 228,
-    "surfMs": 346,
+    "roadMs": 3227,
+    "weldMs": 381,
+    "surfMs": 332,
     "roadTris": 50473
    }
   },
@@ -151,12 +163,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 4,
-    "overM2": 49.4375
+    "overM2": 49.4375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1843,
-    "weldMs": 281,
-    "surfMs": 37,
+    "roadMs": 1974,
+    "weldMs": 249,
+    "surfMs": 44,
     "roadTris": 24631
    }
   },
@@ -174,12 +188,14 @@
     "roadTilt": 29,
     "roadTiltM2": 1031.5502895284444,
     "over": 4,
-    "overM2": 4.9375
+    "overM2": 4.9375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4330,
-    "weldMs": 344,
-    "surfMs": 627,
+    "roadMs": 5896,
+    "weldMs": 433,
+    "surfMs": 792,
     "roadTris": 90242
    }
   },
@@ -197,12 +213,14 @@
     "roadTilt": 30,
     "roadTiltM2": 294.5563293430023,
     "over": 8,
-    "overM2": 71.875
+    "overM2": 71.875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3115,
-    "weldMs": 307,
-    "surfMs": 529,
+    "roadMs": 4373,
+    "weldMs": 569,
+    "surfMs": 890,
     "roadTris": 56521
    }
   },
@@ -220,12 +238,14 @@
     "roadTilt": 2,
     "roadTiltM2": 5.1926874955534,
     "over": 3,
-    "overM2": 7.875
+    "overM2": 7.875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4470,
-    "weldMs": 339,
-    "surfMs": 702,
+    "roadMs": 8126,
+    "weldMs": 518,
+    "surfMs": 1636,
     "roadTris": 82098
    }
   },
@@ -243,12 +263,14 @@
     "roadTilt": 22,
     "roadTiltM2": 436.8406587205827,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4942,
-    "weldMs": 498,
-    "surfMs": 829,
+    "roadMs": 2766,
+    "weldMs": 331,
+    "surfMs": 521,
     "roadTris": 53305
    }
   },
@@ -266,12 +288,14 @@
     "roadTilt": 2,
     "roadTiltM2": 6.017903231084347,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3618,
-    "weldMs": 322,
-    "surfMs": 680,
+    "roadMs": 4768,
+    "weldMs": 412,
+    "surfMs": 900,
     "roadTris": 79725
    }
   },
@@ -289,12 +313,14 @@
     "roadTilt": 4,
     "roadTiltM2": 10.124299928545952,
     "over": 1,
-    "overM2": 0.5
+    "overM2": 0.5,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3243,
-    "weldMs": 365,
-    "surfMs": 373,
+    "roadMs": 3386,
+    "weldMs": 343,
+    "surfMs": 415,
     "roadTris": 62223
    }
   },
@@ -312,12 +338,14 @@
     "roadTilt": 4,
     "roadTiltM2": 74.58704388141632,
     "over": 6,
-    "overM2": 23
+    "overM2": 23,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2635,
-    "weldMs": 350,
-    "surfMs": 135,
+    "roadMs": 3371,
+    "weldMs": 409,
+    "surfMs": 210,
     "roadTris": 25130
    }
   },
@@ -335,12 +363,14 @@
     "roadTilt": 16,
     "roadTiltM2": 316.24281626939774,
     "over": 2,
-    "overM2": 3.875
+    "overM2": 3.875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3830,
-    "weldMs": 349,
-    "surfMs": 670,
+    "roadMs": 4221,
+    "weldMs": 367,
+    "surfMs": 753,
     "roadTris": 73757
    }
   },
@@ -358,12 +388,14 @@
     "roadTilt": 20,
     "roadTiltM2": 463.87605191767216,
     "over": 35,
-    "overM2": 684.4375
+    "overM2": 684.4375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2772,
-    "weldMs": 406,
-    "surfMs": 220,
+    "roadMs": 3151,
+    "weldMs": 542,
+    "surfMs": 207,
     "roadTris": 34825
    }
   },
@@ -381,12 +413,14 @@
     "roadTilt": 3,
     "roadTiltM2": 3.2861120849847794,
     "over": 5,
-    "overM2": 33.75
+    "overM2": 33.75,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4039,
-    "weldMs": 406,
-    "surfMs": 704,
+    "roadMs": 3776,
+    "weldMs": 464,
+    "surfMs": 480,
     "roadTris": 77089
    }
   },
@@ -404,12 +438,14 @@
     "roadTilt": 6,
     "roadTiltM2": 104.86831876635551,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3649,
-    "weldMs": 342,
-    "surfMs": 563,
+    "roadMs": 4807,
+    "weldMs": 1128,
+    "surfMs": 607,
     "roadTris": 61668
    }
   },
@@ -427,12 +463,14 @@
     "roadTilt": 36,
     "roadTiltM2": 442.582519945332,
     "over": 5,
-    "overM2": 44.3125
+    "overM2": 44.3125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3802,
-    "weldMs": 354,
-    "surfMs": 601,
+    "roadMs": 5701,
+    "weldMs": 460,
+    "surfMs": 864,
     "roadTris": 84390
    }
   },
@@ -450,12 +488,14 @@
     "roadTilt": 43,
     "roadTiltM2": 738.5838752923883,
     "over": 1,
-    "overM2": 0.5625
+    "overM2": 0.5625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3779,
-    "weldMs": 382,
-    "surfMs": 549,
+    "roadMs": 6707,
+    "weldMs": 409,
+    "surfMs": 1243,
     "roadTris": 82119
    }
   },
@@ -473,12 +513,14 @@
     "roadTilt": 59,
     "roadTiltM2": 1157.707616288215,
     "over": 11,
-    "overM2": 90.375
+    "overM2": 90.375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 5975,
-    "weldMs": 389,
-    "surfMs": 1319,
+    "roadMs": 4195,
+    "weldMs": 448,
+    "surfMs": 491,
     "roadTris": 84590
    }
   },
@@ -496,12 +538,14 @@
     "roadTilt": 26,
     "roadTiltM2": 181.09190040826797,
     "over": 1,
-    "overM2": 1.6875
+    "overM2": 1.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3307,
-    "weldMs": 335,
-    "surfMs": 443,
+    "roadMs": 4545,
+    "weldMs": 381,
+    "surfMs": 624,
     "roadTris": 77065
    }
   },
@@ -519,12 +563,14 @@
     "roadTilt": 6,
     "roadTiltM2": 68.4757472872734,
     "over": 3,
-    "overM2": 1.8125
+    "overM2": 1.8125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2918,
-    "weldMs": 366,
-    "surfMs": 528,
+    "roadMs": 3041,
+    "weldMs": 337,
+    "surfMs": 563,
     "roadTris": 73415
    }
   },
@@ -542,12 +588,14 @@
     "roadTilt": 17,
     "roadTiltM2": 176.34008829295635,
     "over": 5,
-    "overM2": 2.9375
+    "overM2": 2.9375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2536,
-    "weldMs": 289,
-    "surfMs": 387,
+    "roadMs": 3277,
+    "weldMs": 360,
+    "surfMs": 498,
     "roadTris": 36048
    }
   },
@@ -565,12 +613,14 @@
     "roadTilt": 3,
     "roadTiltM2": 15.881664667278528,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 5309,
-    "weldMs": 454,
-    "surfMs": 854,
+    "roadMs": 6044,
+    "weldMs": 564,
+    "surfMs": 1011,
     "roadTris": 97908
    }
   },
@@ -587,13 +637,15 @@
     "tiltM2": 364.56833643466234,
     "roadTilt": 17,
     "roadTiltM2": 258.81199575960636,
-    "over": 18,
-    "overM2": 663.0625
+    "over": 19,
+    "overM2": 664,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2860,
-    "weldMs": 394,
-    "surfMs": 470,
+    "roadMs": 4212,
+    "weldMs": 341,
+    "surfMs": 618,
     "roadTris": 45285
    }
   },
@@ -611,12 +663,14 @@
     "roadTilt": 8,
     "roadTiltM2": 161.09152072295547,
     "over": 1,
-    "overM2": 0.5625
+    "overM2": 0.5625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3299,
-    "weldMs": 362,
-    "surfMs": 524,
+    "roadMs": 3891,
+    "weldMs": 415,
+    "surfMs": 594,
     "roadTris": 67068
    }
   },
@@ -634,12 +688,14 @@
     "roadTilt": 9,
     "roadTiltM2": 66.08938450645655,
     "over": 8,
-    "overM2": 8.5
+    "overM2": 8.5,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3832,
-    "weldMs": 360,
-    "surfMs": 699,
+    "roadMs": 5410,
+    "weldMs": 377,
+    "surfMs": 703,
     "roadTris": 68997
    }
   },
@@ -657,12 +713,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 3,
-    "overM2": 4.625
+    "overM2": 4.625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4824,
-    "weldMs": 538,
-    "surfMs": 710,
+    "roadMs": 7544,
+    "weldMs": 518,
+    "surfMs": 1461,
     "roadTris": 117914
    }
   },
@@ -680,12 +738,14 @@
     "roadTilt": 1,
     "roadTiltM2": 9.429800533689559,
     "over": 3,
-    "overM2": 2.1875
+    "overM2": 2.1875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2930,
-    "weldMs": 298,
-    "surfMs": 516,
+    "roadMs": 4928,
+    "weldMs": 358,
+    "surfMs": 736,
     "roadTris": 59021
    }
   },
@@ -703,12 +763,14 @@
     "roadTilt": 26,
     "roadTiltM2": 387.10675560310483,
     "over": 11,
-    "overM2": 49.1875
+    "overM2": 49.1875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4346,
-    "weldMs": 429,
-    "surfMs": 686,
+    "roadMs": 5196,
+    "weldMs": 517,
+    "surfMs": 639,
     "roadTris": 61838
    }
   },
@@ -726,12 +788,14 @@
     "roadTilt": 31,
     "roadTiltM2": 596.5465494059026,
     "over": 1,
-    "overM2": 0.625
+    "overM2": 0.625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2628,
-    "weldMs": 228,
-    "surfMs": 350,
+    "roadMs": 3744,
+    "weldMs": 382,
+    "surfMs": 458,
     "roadTris": 45450
    }
   },
@@ -749,12 +813,14 @@
     "roadTilt": 16,
     "roadTiltM2": 659.8587228506804,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2554,
-    "weldMs": 226,
-    "surfMs": 538,
+    "roadMs": 2652,
+    "weldMs": 313,
+    "surfMs": 540,
     "roadTris": 52490
    }
   },
@@ -772,12 +838,14 @@
     "roadTilt": 10,
     "roadTiltM2": 169.19101938605309,
     "over": 3,
-    "overM2": 4.5
+    "overM2": 4.5,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3621,
-    "weldMs": 325,
-    "surfMs": 843,
+    "roadMs": 4153,
+    "weldMs": 381,
+    "surfMs": 850,
     "roadTris": 63028
    }
   },
@@ -795,12 +863,14 @@
     "roadTilt": 1,
     "roadTiltM2": 58.28372445143759,
     "over": 2,
-    "overM2": 2.25
+    "overM2": 2.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4700,
-    "weldMs": 400,
-    "surfMs": 783,
+    "roadMs": 5215,
+    "weldMs": 512,
+    "surfMs": 900,
     "roadTris": 95676
    }
   },
@@ -818,12 +888,14 @@
     "roadTilt": 4,
     "roadTiltM2": 20.24048981879605,
     "over": 10,
-    "overM2": 73.8125
+    "overM2": 73.8125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1459,
-    "weldMs": 200,
-    "surfMs": 171,
+    "roadMs": 1798,
+    "weldMs": 283,
+    "surfMs": 200,
     "roadTris": 14845
    }
   },
@@ -841,12 +913,14 @@
     "roadTilt": 13,
     "roadTiltM2": 163.80005044443533,
     "over": 4,
-    "overM2": 3.25
+    "overM2": 3.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4324,
-    "weldMs": 347,
-    "surfMs": 733,
+    "roadMs": 6154,
+    "weldMs": 566,
+    "surfMs": 1469,
     "roadTris": 103497
    }
   },
@@ -864,12 +938,14 @@
     "roadTilt": 12,
     "roadTiltM2": 166.25134484516457,
     "over": 2,
-    "overM2": 9.1875
+    "overM2": 9.1875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3993,
-    "weldMs": 302,
-    "surfMs": 831,
+    "roadMs": 4475,
+    "weldMs": 384,
+    "surfMs": 844,
     "roadTris": 88717
    }
   },
@@ -887,12 +963,14 @@
     "roadTilt": 23,
     "roadTiltM2": 353.8105173899239,
     "over": 8,
-    "overM2": 15
+    "overM2": 15,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2711,
-    "weldMs": 303,
-    "surfMs": 527,
+    "roadMs": 4303,
+    "weldMs": 347,
+    "surfMs": 718,
     "roadTris": 64637
    }
   },
@@ -910,12 +988,14 @@
     "roadTilt": 16,
     "roadTiltM2": 172.41503621467564,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2766,
-    "weldMs": 253,
-    "surfMs": 484,
+    "roadMs": 5274,
+    "weldMs": 363,
+    "surfMs": 644,
     "roadTris": 64663
    }
   },
@@ -933,12 +1013,14 @@
     "roadTilt": 19,
     "roadTiltM2": 335.240306791733,
     "over": 7,
-    "overM2": 6.75
+    "overM2": 6.5625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3690,
-    "weldMs": 355,
-    "surfMs": 578,
+    "roadMs": 4548,
+    "weldMs": 767,
+    "surfMs": 432,
     "roadTris": 59791
    }
   },
@@ -956,12 +1038,14 @@
     "roadTilt": 1,
     "roadTiltM2": 0.505944823846221,
     "over": 5,
-    "overM2": 6.125
+    "overM2": 6.125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2020,
-    "weldMs": 204,
-    "surfMs": 272,
+    "roadMs": 3791,
+    "weldMs": 336,
+    "surfMs": 409,
     "roadTris": 39444
    }
   },
@@ -979,12 +1063,14 @@
     "roadTilt": 33,
     "roadTiltM2": 354.56312712375075,
     "over": 2,
-    "overM2": 6.3125
+    "overM2": 6.3125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2167,
-    "weldMs": 193,
-    "surfMs": 321,
+    "roadMs": 2426,
+    "weldMs": 180,
+    "surfMs": 317,
     "roadTris": 46365
    }
   },
@@ -1002,12 +1088,14 @@
     "roadTilt": 41,
     "roadTiltM2": 635.4372477377765,
     "over": 11,
-    "overM2": 17.125
+    "overM2": 17.125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3599,
-    "weldMs": 412,
-    "surfMs": 581,
+    "roadMs": 4797,
+    "weldMs": 407,
+    "surfMs": 817,
     "roadTris": 96604
    }
   },
@@ -1025,12 +1113,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4037,
-    "weldMs": 412,
-    "surfMs": 620,
+    "roadMs": 4421,
+    "weldMs": 425,
+    "surfMs": 718,
     "roadTris": 69444
    }
   },
@@ -1048,12 +1138,14 @@
     "roadTilt": 33,
     "roadTiltM2": 1323.718236638233,
     "over": 2,
-    "overM2": 2.625
+    "overM2": 2.625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1830,
-    "weldMs": 169,
-    "surfMs": 370,
+    "roadMs": 2746,
+    "weldMs": 235,
+    "surfMs": 340,
     "roadTris": 31272
    }
   },
@@ -1071,12 +1163,14 @@
     "roadTilt": 9,
     "roadTiltM2": 112.73413695581257,
     "over": 1,
-    "overM2": 0.6875
+    "overM2": 0.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3049,
-    "weldMs": 320,
-    "surfMs": 498,
+    "roadMs": 3687,
+    "weldMs": 481,
+    "surfMs": 605,
     "roadTris": 54530
    }
   },
@@ -1094,12 +1188,14 @@
     "roadTilt": 14,
     "roadTiltM2": 142.51819220837206,
     "over": 23,
-    "overM2": 64.8125
+    "overM2": 64.8125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2451,
-    "weldMs": 254,
-    "surfMs": 319,
+    "roadMs": 3140,
+    "weldMs": 388,
+    "surfMs": 339,
     "roadTris": 51488
    }
   },
@@ -1117,12 +1213,14 @@
     "roadTilt": 16,
     "roadTiltM2": 684.0473368834405,
     "over": 1,
-    "overM2": 1.625
+    "overM2": 1.625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2471,
-    "weldMs": 269,
-    "surfMs": 419,
+    "roadMs": 2686,
+    "weldMs": 331,
+    "surfMs": 344,
     "roadTris": 48076
    }
   },
@@ -1140,12 +1238,14 @@
     "roadTilt": 21,
     "roadTiltM2": 299.51492458104076,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3585,
-    "weldMs": 369,
-    "surfMs": 432,
+    "roadMs": 3923,
+    "weldMs": 389,
+    "surfMs": 763,
     "roadTris": 65015
    }
   },
@@ -1163,12 +1263,14 @@
     "roadTilt": 9,
     "roadTiltM2": 89.97352953196969,
     "over": 3,
-    "overM2": 40.4375
+    "overM2": 40.4375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3495,
-    "weldMs": 327,
-    "surfMs": 658,
+    "roadMs": 4597,
+    "weldMs": 467,
+    "surfMs": 532,
     "roadTris": 56727
    }
   },
@@ -1186,12 +1288,14 @@
     "roadTilt": 25,
     "roadTiltM2": 1172.1095033946913,
     "over": 2,
-    "overM2": 2.25
+    "overM2": 2.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1324,
-    "weldMs": 165,
-    "surfMs": 213,
+    "roadMs": 1742,
+    "weldMs": 342,
+    "surfMs": 367,
     "roadTris": 21524
    }
   },
@@ -1209,12 +1313,14 @@
     "roadTilt": 1,
     "roadTiltM2": 1.1416767742484808,
     "over": 1,
-    "overM2": 0.6875
+    "overM2": 0.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1646,
-    "weldMs": 190,
-    "surfMs": 158,
+    "roadMs": 3852,
+    "weldMs": 268,
+    "surfMs": 387,
     "roadTris": 24722
    }
   },
@@ -1232,12 +1338,14 @@
     "roadTilt": 17,
     "roadTiltM2": 254.72149442927912,
     "over": 10,
-    "overM2": 28.25
+    "overM2": 28.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2310,
-    "weldMs": 211,
-    "surfMs": 278,
+    "roadMs": 2512,
+    "weldMs": 260,
+    "surfMs": 390,
     "roadTris": 42048
    }
   },
@@ -1255,12 +1363,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4024,
-    "weldMs": 381,
-    "surfMs": 702,
+    "roadMs": 3803,
+    "weldMs": 348,
+    "surfMs": 684,
     "roadTris": 87531
    }
   },
@@ -1278,12 +1388,14 @@
     "roadTilt": 13,
     "roadTiltM2": 513.160650935024,
     "over": 1,
-    "overM2": 0.6875
+    "overM2": 0.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1414,
-    "weldMs": 160,
-    "surfMs": 229,
+    "roadMs": 1582,
+    "weldMs": 181,
+    "surfMs": 232,
     "roadTris": 25145
    }
   },
@@ -1301,11 +1413,13 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 585,
-    "weldMs": 63,
+    "roadMs": 444,
+    "weldMs": 59,
     "surfMs": 5,
     "roadTris": 112
    }
@@ -1324,12 +1438,14 @@
     "roadTilt": 16,
     "roadTiltM2": 268.0992090590298,
     "over": 3,
-    "overM2": 13
+    "overM2": 13,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3376,
-    "weldMs": 290,
-    "surfMs": 629,
+    "roadMs": 5034,
+    "weldMs": 956,
+    "surfMs": 683,
     "roadTris": 78405
    }
   },
@@ -1347,12 +1463,14 @@
     "roadTilt": 11,
     "roadTiltM2": 108.33058441057801,
     "over": 1,
-    "overM2": 2.1875
+    "overM2": 2.1875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3527,
-    "weldMs": 335,
-    "surfMs": 580,
+    "roadMs": 4838,
+    "weldMs": 399,
+    "surfMs": 978,
     "roadTris": 73353
    }
   },
@@ -1370,12 +1488,14 @@
     "roadTilt": 4,
     "roadTiltM2": 11.337195921689272,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3057,
-    "weldMs": 323,
-    "surfMs": 475,
+    "roadMs": 3549,
+    "weldMs": 381,
+    "surfMs": 442,
     "roadTris": 57349
    }
   },
@@ -1393,12 +1513,14 @@
     "roadTilt": 14,
     "roadTiltM2": 309.0031549106352,
     "over": 2,
-    "overM2": 8.25
+    "overM2": 8.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 4340,
-    "weldMs": 396,
-    "surfMs": 673,
+    "roadMs": 4307,
+    "weldMs": 367,
+    "surfMs": 578,
     "roadTris": 72544
    }
   },
@@ -1416,12 +1538,14 @@
     "roadTilt": 20,
     "roadTiltM2": 465.22537820693105,
     "over": 5,
-    "overM2": 2.8125
+    "overM2": 2.8125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2720,
-    "weldMs": 317,
-    "surfMs": 511,
+    "roadMs": 3883,
+    "weldMs": 620,
+    "surfMs": 637,
     "roadTris": 49777
    }
   },
@@ -1439,12 +1563,14 @@
     "roadTilt": 24,
     "roadTiltM2": 741.8082529492676,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1889,
-    "weldMs": 206,
-    "surfMs": 465,
+    "roadMs": 3356,
+    "weldMs": 321,
+    "surfMs": 955,
     "roadTris": 41791
    }
   },
@@ -1462,12 +1588,14 @@
     "roadTilt": 27,
     "roadTiltM2": 267.9050595983863,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2035,
-    "weldMs": 241,
-    "surfMs": 390,
+    "roadMs": 4160,
+    "weldMs": 273,
+    "surfMs": 1750,
     "roadTris": 40869
    }
   },
@@ -1485,12 +1613,14 @@
     "roadTilt": 12,
     "roadTiltM2": 100.85903123021126,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1547,
-    "weldMs": 168,
-    "surfMs": 330,
+    "roadMs": 1668,
+    "weldMs": 193,
+    "surfMs": 329,
     "roadTris": 21725
    }
   },
@@ -1508,12 +1638,14 @@
     "roadTilt": 5,
     "roadTiltM2": 26.57389148324728,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3421,
-    "weldMs": 382,
-    "surfMs": 475,
+    "roadMs": 2992,
+    "weldMs": 379,
+    "surfMs": 371,
     "roadTris": 71687
    }
   },
@@ -1531,12 +1663,14 @@
     "roadTilt": 31,
     "roadTiltM2": 320.2361949980259,
     "over": 2,
-    "overM2": 2
+    "overM2": 2,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2067,
-    "weldMs": 218,
-    "surfMs": 429,
+    "roadMs": 2316,
+    "weldMs": 224,
+    "surfMs": 520,
     "roadTris": 46475
    }
   },
@@ -1554,12 +1688,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 18,
-    "overM2": 258.6875
+    "overM2": 258.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1263,
-    "weldMs": 218,
-    "surfMs": 39,
+    "roadMs": 1304,
+    "weldMs": 222,
+    "surfMs": 45,
     "roadTris": 12933
    }
   },
@@ -1577,12 +1713,14 @@
     "roadTilt": 15,
     "roadTiltM2": 78.71013831347227,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2586,
-    "weldMs": 217,
-    "surfMs": 499,
+    "roadMs": 3599,
+    "weldMs": 351,
+    "surfMs": 664,
     "roadTris": 67280
    }
   },
@@ -1600,12 +1738,14 @@
     "roadTilt": 7,
     "roadTiltM2": 99.46298236772418,
     "over": 4,
-    "overM2": 15.25
+    "overM2": 15.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3123,
-    "weldMs": 292,
-    "surfMs": 593,
+    "roadMs": 4422,
+    "weldMs": 439,
+    "surfMs": 771,
     "roadTris": 61798
    }
   },
@@ -1623,12 +1763,14 @@
     "roadTilt": 7,
     "roadTiltM2": 16.447747425176203,
     "over": 8,
-    "overM2": 10.875
+    "overM2": 10.875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2579,
-    "weldMs": 215,
-    "surfMs": 434,
+    "roadMs": 2914,
+    "weldMs": 335,
+    "surfMs": 407,
     "roadTris": 44697
    }
   },
@@ -1646,12 +1788,14 @@
     "roadTilt": 24,
     "roadTiltM2": 348.3551479903981,
     "over": 3,
-    "overM2": 5.6875
+    "overM2": 5.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3251,
-    "weldMs": 339,
-    "surfMs": 426,
+    "roadMs": 3455,
+    "weldMs": 333,
+    "surfMs": 660,
     "roadTris": 50535
    }
   },
@@ -1669,12 +1813,14 @@
     "roadTilt": 7,
     "roadTiltM2": 133.5765862800181,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3557,
-    "weldMs": 319,
-    "surfMs": 634,
+    "roadMs": 5271,
+    "weldMs": 365,
+    "surfMs": 1552,
     "roadTris": 77215
    }
   },
@@ -1692,12 +1838,14 @@
     "roadTilt": 25,
     "roadTiltM2": 260.2450862675905,
     "over": 1,
-    "overM2": 3.1875
+    "overM2": 3.1875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2086,
-    "weldMs": 173,
-    "surfMs": 446,
+    "roadMs": 3972,
+    "weldMs": 348,
+    "surfMs": 1003,
     "roadTris": 40889
    }
   },
@@ -1715,12 +1863,14 @@
     "roadTilt": 26,
     "roadTiltM2": 137.57676035165787,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2360,
-    "weldMs": 198,
-    "surfMs": 497,
+    "roadMs": 3347,
+    "weldMs": 279,
+    "surfMs": 678,
     "roadTris": 45176
    }
   },
@@ -1738,12 +1888,14 @@
     "roadTilt": 8,
     "roadTiltM2": 26.061010904610157,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1628,
-    "weldMs": 211,
-    "surfMs": 281,
+    "roadMs": 1740,
+    "weldMs": 210,
+    "surfMs": 343,
     "roadTris": 31496
    }
   },
@@ -1761,12 +1913,14 @@
     "roadTilt": 24,
     "roadTiltM2": 148.0741758197546,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1425,
-    "weldMs": 174,
-    "surfMs": 318,
+    "roadMs": 1563,
+    "weldMs": 176,
+    "surfMs": 385,
     "roadTris": 30393
    }
   },
@@ -1784,12 +1938,14 @@
     "roadTilt": 5,
     "roadTiltM2": 16.03359042108059,
     "over": 6,
-    "overM2": 75.375
+    "overM2": 75.375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1447,
-    "weldMs": 184,
-    "surfMs": 163,
+    "roadMs": 1559,
+    "weldMs": 203,
+    "surfMs": 143,
     "roadTris": 15402
    }
   },
@@ -1807,12 +1963,14 @@
     "roadTilt": 24,
     "roadTiltM2": 274.7870138064027,
     "over": 3,
-    "overM2": 1.6875
+    "overM2": 1.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1426,
-    "weldMs": 188,
-    "surfMs": 272,
+    "roadMs": 1860,
+    "weldMs": 229,
+    "surfMs": 427,
     "roadTris": 28048
    }
   },
@@ -1830,12 +1988,14 @@
     "roadTilt": 34,
     "roadTiltM2": 711.2537543736398,
     "over": 1,
-    "overM2": 2.625
+    "overM2": 2.625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2505,
-    "weldMs": 183,
-    "surfMs": 450,
+    "roadMs": 3729,
+    "weldMs": 351,
+    "surfMs": 634,
     "roadTris": 52904
    }
   },
@@ -1853,12 +2013,14 @@
     "roadTilt": 14,
     "roadTiltM2": 158.4995228620246,
     "over": 4,
-    "overM2": 9.25
+    "overM2": 9.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3123,
-    "weldMs": 271,
-    "surfMs": 466,
+    "roadMs": 4223,
+    "weldMs": 429,
+    "surfMs": 525,
     "roadTris": 67176
    }
   },
@@ -1876,12 +2038,14 @@
     "roadTilt": 13,
     "roadTiltM2": 44.447012761142105,
     "over": 2,
-    "overM2": 4.0625
+    "overM2": 4.0625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 3302,
-    "weldMs": 252,
-    "surfMs": 574,
+    "roadMs": 3893,
+    "weldMs": 355,
+    "surfMs": 797,
     "roadTris": 62934
    }
   },
@@ -1899,12 +2063,14 @@
     "roadTilt": 17,
     "roadTiltM2": 94.8536121211946,
     "over": 2,
-    "overM2": 1.25
+    "overM2": 1.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2278,
-    "weldMs": 201,
-    "surfMs": 350,
+    "roadMs": 2948,
+    "weldMs": 310,
+    "surfMs": 453,
     "roadTris": 39662
    }
   },
@@ -1922,12 +2088,14 @@
     "roadTilt": 29,
     "roadTiltM2": 201.45436400920153,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2904,
-    "weldMs": 295,
-    "surfMs": 583,
+    "roadMs": 6426,
+    "weldMs": 411,
+    "surfMs": 978,
     "roadTris": 76144
    }
   },
@@ -1945,12 +2113,14 @@
     "roadTilt": 9,
     "roadTiltM2": 37.49035616964102,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1990,
-    "weldMs": 235,
-    "surfMs": 459,
+    "roadMs": 2119,
+    "weldMs": 305,
+    "surfMs": 492,
     "roadTris": 35686
    }
   },
@@ -1968,12 +2138,14 @@
     "roadTilt": 11,
     "roadTiltM2": 46.114410139620304,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1363,
-    "weldMs": 214,
-    "surfMs": 288,
+    "roadMs": 1451,
+    "weldMs": 157,
+    "surfMs": 356,
     "roadTris": 32219
    }
   },
@@ -1991,12 +2163,14 @@
     "roadTilt": 5,
     "roadTiltM2": 139.63593459129333,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1632,
-    "weldMs": 169,
-    "surfMs": 278,
+    "roadMs": 1554,
+    "weldMs": 200,
+    "surfMs": 275,
     "roadTris": 32694
    }
   },
@@ -2014,12 +2188,14 @@
     "roadTilt": 13,
     "roadTiltM2": 178.96551352739334,
     "over": 6,
-    "overM2": 33.625
+    "overM2": 33.625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1997,
-    "weldMs": 258,
-    "surfMs": 308,
+    "roadMs": 2099,
+    "weldMs": 262,
+    "surfMs": 314,
     "roadTris": 28954
    }
   },
@@ -2037,12 +2213,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 7,
-    "overM2": 60.8125
+    "overM2": 60.8125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1927,
-    "weldMs": 209,
-    "surfMs": 84,
+    "roadMs": 995,
+    "weldMs": 158,
+    "surfMs": 80,
     "roadTris": 14386
    }
   },
@@ -2060,12 +2238,14 @@
     "roadTilt": 4,
     "roadTiltM2": 100.17693868791685,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1830,
-    "weldMs": 201,
-    "surfMs": 338,
+    "roadMs": 2085,
+    "weldMs": 210,
+    "surfMs": 425,
     "roadTris": 38976
    }
   },
@@ -2083,12 +2263,14 @@
     "roadTilt": 28,
     "roadTiltM2": 253.81423457420533,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2460,
-    "weldMs": 245,
-    "surfMs": 568,
+    "roadMs": 2047,
+    "weldMs": 213,
+    "surfMs": 468,
     "roadTris": 29300
    }
   },
@@ -2106,12 +2288,14 @@
     "roadTilt": 27,
     "roadTiltM2": 177.01649002358317,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1603,
-    "weldMs": 179,
-    "surfMs": 310,
+    "roadMs": 1909,
+    "weldMs": 183,
+    "surfMs": 390,
     "roadTris": 30332
    }
   },
@@ -2129,12 +2313,14 @@
     "roadTilt": 13,
     "roadTiltM2": 48.1293928027153,
     "over": 1,
-    "overM2": 0.75
+    "overM2": 0.75,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1576,
-    "weldMs": 163,
-    "surfMs": 203,
+    "roadMs": 4159,
+    "weldMs": 317,
+    "surfMs": 341,
     "roadTris": 23121
    }
   },
@@ -2152,12 +2338,14 @@
     "roadTilt": 2,
     "roadTiltM2": 3.673859015107155,
     "over": 5,
-    "overM2": 31.8125
+    "overM2": 31.8125,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 2407,
-    "weldMs": 235,
-    "surfMs": 413,
+    "roadMs": 3673,
+    "weldMs": 391,
+    "surfMs": 625,
     "roadTris": 46920
    }
   },
@@ -2175,12 +2363,14 @@
     "roadTilt": 13,
     "roadTiltM2": 81.64147591590881,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1640,
-    "weldMs": 177,
-    "surfMs": 404,
+    "roadMs": 1415,
+    "weldMs": 145,
+    "surfMs": 339,
     "roadTris": 33617
    }
   },
@@ -2198,12 +2388,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 602,
-    "weldMs": 76,
-    "surfMs": 93,
+    "roadMs": 688,
+    "weldMs": 103,
+    "surfMs": 112,
     "roadTris": 8782
    }
   },
@@ -2221,12 +2413,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 454,
-    "weldMs": 59,
-    "surfMs": 59,
+    "roadMs": 587,
+    "weldMs": 81,
+    "surfMs": 60,
     "roadTris": 3044
    }
   },
@@ -2244,12 +2438,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 287,
-    "weldMs": 74,
-    "surfMs": 57,
+    "roadMs": 253,
+    "weldMs": 64,
+    "surfMs": 53,
     "roadTris": 1176
    }
   },
@@ -2267,12 +2463,14 @@
     "roadTilt": 34,
     "roadTiltM2": 1196.6302935182466,
     "over": 2,
-    "overM2": 1.75
+    "overM2": 1.75,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1535,
-    "weldMs": 206,
-    "surfMs": 311,
+    "roadMs": 1241,
+    "weldMs": 192,
+    "surfMs": 272,
     "roadTris": 18437
    }
   },
@@ -2290,12 +2488,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 663,
-    "weldMs": 177,
-    "surfMs": 120,
+    "roadMs": 667,
+    "weldMs": 104,
+    "surfMs": 156,
     "roadTris": 8555
    }
   },
@@ -2313,12 +2513,14 @@
     "roadTilt": 5,
     "roadTiltM2": 33.53085255622864,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1223,
-    "weldMs": 168,
-    "surfMs": 268,
+    "roadMs": 2003,
+    "weldMs": 201,
+    "surfMs": 468,
     "roadTris": 27344
    }
   },
@@ -2336,12 +2538,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 3,
-    "overM2": 4.1875
+    "overM2": 4.1875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1233,
-    "weldMs": 208,
-    "surfMs": 231,
+    "roadMs": 1818,
+    "weldMs": 255,
+    "surfMs": 304,
     "roadTris": 22588
    }
   },
@@ -2359,12 +2563,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 792,
-    "weldMs": 155,
-    "surfMs": 228,
+    "roadMs": 764,
+    "weldMs": 137,
+    "surfMs": 244,
     "roadTris": 12592
    }
   },
@@ -2382,12 +2588,14 @@
     "roadTilt": 2,
     "roadTiltM2": 4.13821616768837,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 547,
-    "weldMs": 84,
-    "surfMs": 95,
+    "roadMs": 1250,
+    "weldMs": 385,
+    "surfMs": 111,
     "roadTris": 7388
    }
   },
@@ -2405,12 +2613,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 346,
-    "weldMs": 63,
-    "surfMs": 92,
+    "roadMs": 338,
+    "weldMs": 61,
+    "surfMs": 75,
     "roadTris": 1765
    }
   },
@@ -2428,12 +2638,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 126,
-    "weldMs": 48,
-    "surfMs": 39,
+    "roadMs": 123,
+    "weldMs": 41,
+    "surfMs": 41,
     "roadTris": 744
    }
   },
@@ -2451,12 +2663,14 @@
     "roadTilt": 9,
     "roadTiltM2": 167.5451067034155,
     "over": 4,
-    "overM2": 14.25
+    "overM2": 14.25,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 5507,
-    "weldMs": 366,
-    "surfMs": 583,
+    "roadMs": 3451,
+    "weldMs": 320,
+    "surfMs": 549,
     "roadTris": 60942
    }
   },
@@ -2474,12 +2688,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 3,
-    "overM2": 4.0625
+    "overM2": 4.0625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 316,
-    "weldMs": 74,
-    "surfMs": 73,
+    "roadMs": 390,
+    "weldMs": 95,
+    "surfMs": 76,
     "roadTris": 2155
    }
   },
@@ -2497,12 +2713,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 1,
-    "overM2": 0.6875
+    "overM2": 0.6875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 360,
-    "weldMs": 94,
-    "surfMs": 172,
+    "roadMs": 361,
+    "weldMs": 101,
+    "surfMs": 157,
     "roadTris": 7308
    }
   },
@@ -2520,12 +2738,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 1,
-    "overM2": 0.875
+    "overM2": 0.875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 255,
-    "weldMs": 78,
-    "surfMs": 96,
+    "roadMs": 331,
+    "weldMs": 94,
+    "surfMs": 149,
     "roadTris": 3046
    }
   },
@@ -2543,12 +2763,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 301,
-    "weldMs": 59,
-    "surfMs": 57,
+    "roadMs": 189,
+    "weldMs": 41,
+    "surfMs": 32,
     "roadTris": 554
    }
   },
@@ -2566,12 +2788,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 294,
-    "weldMs": 61,
-    "surfMs": 43,
+    "roadMs": 476,
+    "weldMs": 98,
+    "surfMs": 72,
     "roadTris": 1241
    }
   },
@@ -2589,12 +2813,14 @@
     "roadTilt": 1,
     "roadTiltM2": 1.1726180613040924,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 695,
-    "weldMs": 103,
-    "surfMs": 110,
+    "roadMs": 520,
+    "weldMs": 117,
+    "surfMs": 92,
     "roadTris": 5051
    }
   },
@@ -2612,12 +2838,14 @@
     "roadTilt": 40,
     "roadTiltM2": 1105.4990662352393,
     "over": 6,
-    "overM2": 9.4375
+    "overM2": 9.4375,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 5576,
-    "weldMs": 584,
-    "surfMs": 760,
+    "roadMs": 3748,
+    "weldMs": 369,
+    "surfMs": 521,
     "roadTris": 82597
    }
   },
@@ -2635,12 +2863,14 @@
     "roadTilt": 9,
     "roadTiltM2": 101.80091607943177,
     "over": 1,
-    "overM2": 0.625
+    "overM2": 0.625,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1348,
-    "weldMs": 160,
-    "surfMs": 225,
+    "roadMs": 1765,
+    "weldMs": 260,
+    "surfMs": 333,
     "roadTris": 20231
    }
   },
@@ -2658,12 +2888,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 311,
-    "weldMs": 98,
-    "surfMs": 113,
+    "roadMs": 431,
+    "weldMs": 133,
+    "surfMs": 186,
     "roadTris": 5145
    }
   },
@@ -2681,12 +2913,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 268,
-    "weldMs": 89,
-    "surfMs": 111,
+    "roadMs": 365,
+    "weldMs": 116,
+    "surfMs": 148,
     "roadTris": 3904
    }
   },
@@ -2704,12 +2938,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 307,
-    "weldMs": 102,
-    "surfMs": 121,
+    "roadMs": 198,
+    "weldMs": 63,
+    "surfMs": 81,
     "roadTris": 1990
    }
   },
@@ -2727,12 +2963,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 289,
-    "weldMs": 82,
-    "surfMs": 82,
+    "roadMs": 422,
+    "weldMs": 96,
+    "surfMs": 138,
     "roadTris": 2149
    }
   },
@@ -2750,12 +2988,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 7,
-    "overM2": 197.1875
+    "overM2": 197.1875,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 1269,
-    "weldMs": 205,
-    "surfMs": 95,
+    "roadMs": 439,
+    "weldMs": 87,
+    "surfMs": 67,
     "roadTris": 3928
    }
   },
@@ -2773,12 +3013,14 @@
     "roadTilt": 0,
     "roadTiltM2": 0,
     "over": 0,
-    "overM2": 0
+    "overM2": 0,
+    "gardenVoid": 0,
+    "gardenVoidM2": 0
    },
    "perf": {
-    "roadMs": 381,
-    "weldMs": 119,
-    "surfMs": 169,
+    "roadMs": 386,
+    "weldMs": 113,
+    "surfMs": 172,
     "roadTris": 6122
    }
   }

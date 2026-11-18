@@ -235,10 +235,10 @@ export class Heightmap {
       let c = capIn[k] < Infinity ? (capHi && capHi[k] - capIn[k] > stackGap ? capHi[k] : capIn[k]) : spread ? capN[k] : cap[k];
       // bank: beside the street the bank of its nearest outer edge; under it, the notch mirroring that bank
       // (the notch never deeper than maxDrop: a vertex the base cap lowers within maxDrop is still lowered)
-      if (B && B.d[k] <= bankReach) {
+      if (B && B.d[k] < Infinity && (B.inside[k] || B.d[k] <= bankReach)) {
         const cb = B.y[k] - lift + (B.inside[k] ? -bank : bank) * B.d[k];
         // (never deeper than maxDrop: where the bank would dig past it the vertex keeps its base cap, as before)
-        if (capIn[k] < Infinity) c = Math.min(c, Math.max(cb, Y[k] - maxDrop + 1e-3));
+        if (capIn[k] < Infinity) c = Math.min(c, Math.max(cb, Y[k] - BANK_COVER_DROP + 1e-3));
         else if (!B.inside[k]) {
           // past maxDrop the cut fades out (none where it would dig >= BANK_NEED_MAX: a structure), continuous in the
           // need: skipping it outright left a 1 m step in the bank where the need crossed maxDrop (a saw-tooth crest)
@@ -248,7 +248,9 @@ export class Heightmap {
         }
       }
       if (!(c < Y[k])) continue;
-      if (Y[k] - c > maxDrop) continue;
+      // (bank mode: under a drawn street surface the terrain may go down to BANK_COVER_DROP, a levelled sidewalk / a
+      // retaining wall's lawn under a garden: held at 1.2 m it stood over them; beside one the 1.2 m guard stays)
+      if (Y[k] - c > (B && capIn[k] < Infinity ? BANK_COVER_DROP : maxDrop)) continue;
       if (skip && skip(x0 + (k % cols) * step, z0 + Math.floor(k / cols) * step)) continue;
       Y[k] = c; n++;
     }
@@ -265,7 +267,10 @@ export class Heightmap {
  * signed-distance fields: smooth offset curves of the real edge, never the 1 m grid's stair-steps.
  * meshes: [{ position, index }]. Returns { d, y, inside, edges }.
  */
-const BANK_NEED_MAX = 4;           // m: clampUnder's bank never digs where it would need this much (a tunnel, a structure)
+const BANK_NEED_MAX = 4;
+// m: clampUnder's bank never digs where it would need BANK_NEED_MAX (a tunnel, a structure); under a drawn street surface it
+// may lower the terrain down to BANK_COVER_DROP
+const BANK_COVER_DROP = 4.5;
 
 /** murmur3's 32-bit finaliser: every input bit reaches the low bits (the open-addressing tables mask them) */
 const mix32 = (h) => { h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); return (h ^ (h >>> 16)) >>> 0; };
@@ -304,7 +309,9 @@ function onceEdges(I, F, W) {
   return { KA, KB, OPP, order, n };
 }
 
-export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
+export function edgeField(meshes, h, { reach = 4, minWidth = 0, collect = null } = {}) {
+  // (collect = { mesh, out }: only the outer edges of meshes[mesh] are pushed to out as [ax, ay, az, bx, by, bz, nx, nz,
+  // u, v] (u, v: its vertices welded by position), no field: viewer/streets/retainWalls.js)
   const { x0, z0, cols, rows, step } = h, N = cols * rows;
   const D = new Float32Array(N).fill(Infinity), Ye = new Float32Array(N), inside = new Uint8Array(N);
   // (perf, claude/sidewalk: typed arrays throughout, each triangle's flatness once, no Math.hypot, a flat bucket grid,
@@ -337,7 +344,7 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
       // the grid vertices it covers
       const c0 = Math.max(0, Math.ceil((xa - x0) / step)), c1 = Math.min(cols - 1, Math.floor((xb - x0) / step));
       const r0 = Math.max(0, Math.ceil((za - z0) / step)), r1 = Math.min(rows - 1, Math.floor((zb - z0) / step));
-      for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) { const k = r * cols + cc; if (!inside[k] && inTri(P, a, b, c, x0 + cc * step, z0 + r * step)) inside[k] = 1; }
+      if (!collect) for (let r = r0; r <= r1; r++) for (let cc = c0; cc <= c1; cc++) { const k = r * cols + cc; if (!inside[k] && inTri(P, a, b, c, x0 + cc * step, z0 + r * step)) inside[k] = 1; }
     }
     flags.push(F); boxes.push(BX);
   }
@@ -376,6 +383,7 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
     }
     return false;
   };
+  if (collect) collect.covered = coveredAt;
   const R = Math.max(reach, 1.5 * step), R2 = R * R, Rin = 1.5 * step;
   let edges = 0;
   meshes.forEach(({ position: P, index: I }, mi) => {
@@ -384,6 +392,7 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
     // an open-addressing table, walked in first-use order (as a Map would be: ties in distance keep their winner)
     // (vertices welded by their exact position first: the parts split a vertex per paving frame / uv, and each seam
     // between two frames was a "boundary" edge to probe: ~8 probes for every real outer edge)
+    if (collect && mi !== collect.mesh) return;
     const W = weldVerts(P), { KA, KB, OPP, order, n } = onceEdges(I, F, W);
     for (let m = 0; m < n; m++) {
       const s = order[m], opp = OPP[s];
@@ -398,6 +407,7 @@ export function edgeField(meshes, h, { reach = 4, minWidth = 0 } = {}) {
       const mx = (ax + bx) / 2, mz = (az + bz) / 2;
       if (coveredAt(mx + nx * 0.3, mz + nz * 0.3)) continue;          // another surface goes on: not an outer edge
       edges++;
+      if (collect) { collect.out.push([ax, ay, az, bx, by, bz, nx, nz, u, v]); continue; }
       const c0 = Math.max(0, Math.floor((Math.min(ax, bx) - R - x0) / step)), c1 = Math.min(cols - 1, Math.ceil((Math.max(ax, bx) + R - x0) / step));
       const r0 = Math.max(0, Math.floor((Math.min(az, bz) - R - z0) / step)), r1 = Math.min(rows - 1, Math.ceil((Math.max(az, bz) + R - z0) / step));
       const ox = nx * R, oz = nz * R;

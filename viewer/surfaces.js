@@ -59,7 +59,7 @@ const CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
  *  2026-11-05: the raised square is old setts, the roads round it asphalt), parking pavers */
 const BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
 export const CELL = 6;             // m: height-field grid
-export const KERB_FALL_UP = 0.04, KERB_FALL_DOWN = 0.02, KERB_BAND = 4;   // per m: a levelled sidewalk's cross-fall limits (opts.kerbLevel)
+export const KERB_FALL_UP = 0.04, KERB_FALL_DOWN = 0.02, KERB_BAND = 4, LEVEL_MAX = 2.5;   // per m: a levelled sidewalk's cross-fall limits (opts.kerbLevel)
 const H_MARGIN = 0.6;              // m: a fitted corner within this of its street samples' heights (opts.clampH)
 // corner smoothing passes: 0. Tried 1-3 (plane-preserving, 4-neighbour): the street moves away from the DTM
 // (I6 median |H - DTM| 3.6 -> 6-10 cm), so folds are handled by the wide-stencil normals instead
@@ -725,6 +725,9 @@ export function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
         }
       }
       v = spans ? y : (1 - w) * (gk + Math.min(KERB_FALL_UP * d, Math.max(-KERB_FALL_DOWN * d, y - gk))) + w * y;
+      // (round 2: never more than LEVEL_MAX under its own ground: deeper is not a bank's toe but a sidewalk going up to the
+      // houses (H6 Rue Baron Perelman 4: 3.7 m under the gardens). The retaining walls stop at the same height)
+      v = Math.max(v, y - LEVEL_MAX);
     }
     levelCache.set(key, v);
     return v;

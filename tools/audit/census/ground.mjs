@@ -22,13 +22,17 @@
 //   roadTilt  a ROAD (roadway / tram road) triangle whose cross-fall is over 12 %: a sharp bump across the carriageway
 // Findings: groups of flagged triangles (centroids within 2 m), sized in m2 and the steepest.
 //
+// GARDENVOID (claude/sidewalk round 2): a garden piece seated as the city seats it with the drawn ground more than 5 cm
+// under its base somewhere across its footprint (over a cut / a step: the floating hedge of H6 Perelman 4). Groups as
+// SURFACES.
+//
 // OVER (claude/sidewalk): the drawn terrain (the 1 m grid as tileData.js terrainArrays splits it) more than OVER m above
 // the highest drawn street surface, sampled every 0.25 m over the street's near-flat triangles: terrain drawn over a
 // sidewalk / road (the saw-tooth zig-zag along a bank foot, a buried sidewalk). Groups as SURFACES.
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/ground.mjs [--all | T ...] [--out FILE] [--jobs N]
 //        [--old] (?sidewalk=old) [--quiet] [--max kind=n,...] (exit 1 when a city-wide group count is over its ceiling)
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { runTiles, cli, at, ROOT, SC, imp } from "./lib_street.mjs";
 import { buildTile, footprintIndex, streetAt, allBuiltTiles } from "./lib_mesh.mjs";
@@ -38,7 +42,7 @@ const { CHILD, OUT, JOBS, WORST } = c;
 const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null);
 const TILES = c.ALL ? allBuiltTiles() : c.argv.filter((a) => /^[A-Z]\d+$/i.test(a)).map((t) => t.toUpperCase());
 const LUMP = 0.5, HOLE = 0.5, SPIKE = 0.5, TILT = 0.15, ROAD_TILT = 0.12, OVER = 0.02;
-const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over"];
+const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid"];
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: ground.mjs [--all | T ...] [--out FILE] [--old] [--max kind=n,...]"); process.exit(2); }
@@ -196,7 +200,9 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
     return u + v <= 1 ? Y[a] + u * (Y[cc] - Y[a]) + v * (Y[bb] - Y[a]) : Y[dd] + (1 - u) * (Y[bb] - Y[dd]) + (1 - v) * (Y[cc] - Y[dd]);
   };
   const S = 0.25, top = new Map();
-  for (const name of ["asphalt", "concrete", "square", "grass", "pits"]) {
+  // (not the grass part: islands, and the retaining walls' lawn strips at the garden level, where terrain grass over
+  // the strip's grass is the garden itself: claude/sidewalk round 2)
+  for (const name of ["asphalt", "concrete", "square", "pits"]) {
     const P = d.road.parts?.[name]; if (!P) continue;
     const pos = P.position, I = P.index;
     for (let t = 0; t < I.length; t += 3) {
@@ -226,6 +232,46 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
     if (v > OVER) bad.push({ x, z, area: S * S, v });
   }
   group(bad, "over");
+}
+// ---------------------------------------------------------------- garden pieces over a void (claude/sidewalk round 2)
+// Every garden piece (data/gardens: wall / railing segments every 0.5 m, pillars, hedge points) is seated as the city
+// seats it (viewer/gardens/gardenKit.js settle, gardenHedge.js: its base on the LOWEST drawn ground of its centre and
+// its two sides, +-0.18 m for walls and posts, +-half its width for hedges). A void: the drawn ground anywhere across its
+// footprint (every 5 cm) more than VOID under that base: the piece stands over a cut / a step with nothing under it.
+{
+  const gp = join(ROOT, "data/gardens", T + ".json"), gdoc = existsSync(gp) ? JSON.parse(readFileSync(gp, "utf8")) : null;
+  const VOID = 0.05;
+  // (as viewer/main.js gardenGround seats them: the drawn terrain, or a street surface over it (a wall's lawn strip);
+  // --old: the terrain only, as ?sidewalk=old)
+  const gAt = (x, z) => {
+    const fc = Math.min(Math.max((x - H.x0) / st, 0), NC - 1.001), fr = Math.min(Math.max((z - H.z0) / st, 0), NR - 1.001);
+    const c0 = Math.floor(fc), r0 = Math.floor(fr), u = fc - c0, v = fr - r0, k = r0 * NC + c0;
+    const t = (Y[k] * (1 - u) + Y[k + 1] * u) * (1 - v) + (Y[k + NC] * (1 - u) + Y[k + NC + 1] * u) * v;
+    if (OLD || !delta) return t;
+    const s = (q) => { const dl = delta[q]; return Y[q] + (dl > 0 && dl !== 65535 ? dl * 0.01 : 0); };
+    return Math.max(t, (s(k) * (1 - u) + s(k + 1) * u) * (1 - v) + (s(k + NC) * (1 - u) + s(k + NC + 1) * u) * v);
+  };
+  const bad = [];
+  const probe = (x, z, nx, nz, hw) => {
+    if (x < b.x0 || x >= b.x1 || z < b.z0 || z >= b.z1) return;
+    const k = Math.round((z - H.z0) / st) * NC + Math.round((x - H.x0) / st);
+    if (intended[k]) return;
+    const base = Math.min(gAt(x, z), gAt(x + nx * hw, z + nz * hw), gAt(x - nx * hw, z - nz * hw));
+    let lo = Infinity; for (let s2 = -hw; s2 <= hw + 1e-6; s2 += 0.05) lo = Math.min(lo, gAt(x + nx * s2, z + nz * s2));
+    if (base - lo > VOID) bad.push({ x, z, area: 0.5 * 2 * hw, v: base - lo });
+  };
+  if (gdoc) {
+    for (const g of gdoc.segs || []) {
+      const dx = g[3] - g[0], dz = g[5] - g[2], L = Math.hypot(dx, dz) || 1e-6, nx = -dz / L, nz = dx / L, n = Math.max(2, Math.ceil(L / 0.5) + 1);
+      for (let k = 0; k < n; k++) probe(g[0] + dx * k / (n - 1), g[2] + dz * k / (n - 1), nx, nz, 0.18);
+    }
+    for (const p of gdoc.pillars || []) { probe(p[0], p[2], 1, 0, 0.18); probe(p[0], p[2], 0, 1, 0.18); }
+    for (const hdg of gdoc.hedges || []) {
+      const P = hdg.points || [], hw = Math.min(0.99, hdg.width || 0.7) / 2;
+      for (let k = 1; k < P.length; k++) { const dx = P[k][0] - P[k - 1][0], dz = P[k][1] - P[k - 1][1], L = Math.hypot(dx, dz) || 1e-6; probe(P[k][0], P[k][1], -dz / L, dx / L, hw); }
+    }
+  }
+  group(bad, "gardenVoid");
 }
 items.sort((a, c3) => c3.score - a.score);
 const tm = d.times || {};

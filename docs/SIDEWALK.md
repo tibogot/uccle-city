@@ -135,3 +135,60 @@ Spots, A/B with `&sidewalk=old` (docs/sidewalk/shots/*-new.jpg / *-old.jpg):
   (`over` sub-class, not fixed here).
 - F3 (-18, -851), a 0.82 m step spot: a forest path whose asphalt edge jogs where the engine strip meets it. Small,
   not the image 89 slab.
+
+## Round 2: retaining walls in front of gardens, grass banks (2026-11-18)
+
+WHY (browser turn): at H6 Rue Baron Perelman 4 the levelled sidewalk left the hedge and the gate posts on top of a
+1.5-3.7 m bare earth cut. A garden above a sidewalk in Uccle sits behind a RETAINING WALL. Every cut was 45 degrees
+of brown earth, and a sidewalk going 3.7 m up to the houses was pulled all the way down to its kerb.
+
+Fix:
+- `viewer/streets/retainWalls.js` (new). Every outer edge of the measured sidewalk mesh whose ground 1.2 m behind it is
+  0.4-3.5 m over the edge, with PRIVATE land behind it, gets a wall:
+  - private: not inside an OSM park / wood / grass / meadow / scrub area (tileData.js `publicAreas`), and a garden
+    front (data/gardens, within 10 m) or a house (the footprint ray, within 25 m) behind it;
+  - runs grow along the edge chains over lower private stretches (down to 0.1 m), so no one-edge gap shows the bank;
+  - geometry: a blue-stone front face (the kerbs' material, aKind 1, merged into the concrete part), a 0.3 m coping, a
+    lawn strip (grass part) at the garden level out to <= 2 m, end faces where a run stops. The garden level is the
+    highest ground over the strip (a fan of +-35 degrees, 4 rounds). A HOLD quad (not drawn) holds the terrain behind
+    the face at the sidewalk's height for clampUnder, so no 1 m terrain triangle rises in front of the face; the
+    coping + lawn cover it.
+  - Built in the worker after buildSurfaceRoads, before the terrain sees the street (roadBuild.js), from the outer
+    edges edgeField collects (`collect`). Cost: see below.
+- Garden pieces seat on what is DRAWN (viewer/main.js `gardenGround`: max of the terrain and the drive raster's
+  street top), so a hedge / post on a wall's lawn strip stands on it. With `?sidewalk=old`: the terrain only.
+- Banks: `BANK_SLOPE` 1.0 -> 0.6 (31 degrees); the ground shader's bare earth from ~35 degrees (normal.y 0.82 -> 0.74,
+  was 0.9 -> 0.72, viewer/ground.js `SOIL`; `?sidewalk=old`: as before): the street banks are grass; the natural
+  slopes over 35 degrees stay earth.
+- `LEVEL_MAX` 2.5 m (viewer/surfaces.js): a sidewalk is never levelled more than 2.5 m under its own ground (deeper is
+  a sidewalk going up to the houses, not a bank's toe). Under a drawn street surface clampUnder may lower the terrain
+  to 3 m (`BANK_COVER_DROP`); beside it the 1.2 m guard stays.
+- Census: new sub-class `gardenVoid` (a garden piece seated as the city seats it with the drawn ground > 5 cm under
+  its base across its footprint); the `over` scan leaves the grass part out (a wall's lawn strip under the garden's
+  own grass is not a defect).
+
+Round 2 counts (all 120 tiles; `--old` re-run with the same detector): tilt 4,052 -> 816 (29,510 -> 4,887 m2),
+roadTilt 1,462 -> 395, over 365 / 2,935 m2 -> 517 / 1,073 m2 (more, smaller groups: slivers at wall ends and bank
+creases; -63 % area), lump 1,232 -> 1,206, spike 463 -> 454, hole 3 -> 3, gardenVoid 0 -> 5 (3 m2). Gate ceilings are
+set to these counts.
+
+Round 2 cost: retaining walls ~150 ms a tile (6 tiles F2 E6 I6 G6 H6 D5; ~960 m of wall a tile, mostly the extra
+coverage pass of the edgeField collect call), edge field 64 ms; road triangles 45,026 -> 45,270 a tile (+0.5 %, the
+walls merged into the concrete / grass parts: no new draw call). A follow-up could share one coverage pass between
+the walls' collect call and the field.
+
+Bug found and fixed on the way: clampUnder applied the bank to every vertex under a street (`inside` with no edge in
+reach: cap -Infinity, clamped at the cover drop), which sank the terrain under every street 4.5 m. Trees and parked
+cars went with it (tour coghen-blocks, first round-2 run). It now needs a finite distance to an edge.
+
+Browser round 2 (docs/sidewalk/shots):
+- h6-perelman-wall.jpg: a blue-stone retaining wall, with the hedge and gate posts on the garden on top.
+- f2-brugmann349-r2.jpg: no wall (no garden or house behind). A 31 degree grass bank from the level sidewalk; the
+  natural slope over 35 degrees above it stays earth.
+- c3-bank-r2.jpg: the paving is level at the kerb and rises toward its back edge. It is levelled at most 2.5 m under
+  its own ground (`LEVEL_MAX`) and the bank here is 3.3 m. Parked cars are level.
+- e6-chateaudeau-wall.jpg: a hollow way with walls on both sides. There are no terrain teeth in front of the faces
+  now; the hold covers 1.6 m behind every face.
+- Tour vs foundation2: 20 of 22 views flagged (f3-loggia-blocks and far-300m ok), the same set as round 1. Diffs looked at:
+  ham-terrace, orange-villas, coghen-blocks (small camera-height shifts, tree and hedge tone, garden plants on the new
+  levels). Vs round 1: 14 of 22 flagged; the biggest are ham-terrace and coghen (3 % of pixels), lycee and police (2.5 %).
