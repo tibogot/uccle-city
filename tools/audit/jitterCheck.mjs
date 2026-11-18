@@ -9,7 +9,8 @@
 //   2. every card atlas (garden + kit, baked as the viewer bakes them): a full mip chain to 1 x 1, each level's mean
 //      coverage = level 0's (box mips: the bars' true share, within 8-bit rounding); every carded stroke's middle lands
 //      on its card's coverage (the uv / stretch mapping); the kit cards stretch like their strokes (misfit <= allowed)
-//   3. the card materials: blended (transparent, no depth write), no alpha test, no alpha to coverage, no shadow;
+//   3. the card materials: blended at their coverage, depth written where >= 4 % (CARD_DEPTH_CUT: the TAAU reprojects
+//      them at their own depth), no alpha to coverage, no shadow;
 //      they, the garden iron's near material and the kit's opaque compile to WGSL headless
 //   4. no change to the sun's shadows: the garden iron's modelled LOD0 keeps its old shadow band; the kit's opaque
 //      keeps the plain mask in the shadow pass
@@ -169,8 +170,8 @@ try {
       `the garden iron's near material dithers its colour out by ${TB.NEAR + TB.BAND} m but keeps the old LOD0 mask in the shadow pass (ironPlan shadow ${JSON.stringify(TB.ironPlan("rail").geometry[0].shadow)} = old ${JSON.stringify(TB.ironPlan("rail", true).geometry[0].shadow)}); the kit's opaque keeps the plain mask for shadows`);
   } finally { console.warn = warn; console.log = log; }
   check("wgsl", out.length === 5, `compile to WGSL headless: ${out.join(", ")} chars`);
-  const bad = props.filter(([, m, mesh]) => !(m.transparent === true && m.depthWrite === false && !m.alphaTest && m.alphaToCoverage !== true && mesh.castShadow !== true));
-  check("blended", !bad.length, `the cards blended (transparent, no depth write), no alpha test, no alpha to coverage, no shadow: ${props.map(([n]) => n).join(", ")}${bad.length ? `; NOT: ${bad.map(([n]) => n).join(", ")}` : ""}`);
+  const bad = props.filter(([, m, mesh]) => !(m.transparent === true && m.depthWrite === true && m.alphaTest === TB.CARD_DEPTH_CUT && m.alphaTest <= 0.05 && m.alphaToCoverage !== true && mesh.castShadow !== true));
+  check("blended", !bad.length, `the cards blended at their coverage, writing depth only where it is >= ${TB.CARD_DEPTH_CUT * 100} % (a depth cut, not a visible edge: without depth the TAAU reprojected them at the depth behind and they smeared away while moving, browser turn), no alpha to coverage, no shadow: ${props.map(([n]) => n).join(", ")}${bad.length ? `; NOT: ${bad.map(([n]) => n).join(", ")}` : ""}`);
 } catch (e) { check("wgsl", false, `materials / WGSL: ${e.message.split("\n")[0]} (run with node --preserve-symlinks --import ./tools/characters/threeHook.mjs)`); }
 
 // ---- 5. rules

@@ -20,6 +20,12 @@ export const JITTER_OLD = typeof location !== "undefined" && /[?&]jitter=old(&|$
 export const PXM = (1080 * 0.6) / (2 * Math.tan((55 * Math.PI) / 360));
 /** the modelled bars draw to NEAR m, dithered out by NEAR + BAND; the card fades in over CARD_IN */
 export const NEAR = 4, BAND = 2, CARD_IN = [2.5, 3.5];
+/** the cards are blended but WRITE DEPTH where the bars cover >= 4 % of the pixel (alphaTest as a depth cut only: the
+ *  colour still blends at the true coverage). Browser turn 2026-11-18: a card with no depth reprojected through the
+ *  TAAU at the depth of what is behind it (a window 0.43 m back, the campus behind the Lycée railing): under camera
+ *  motion its history landed off by the parallax every frame and the bars smeared away (Maison Dandoy's Juliet railing
+ *  vanished while dollying, present when still; native showed it). With its own depth (and motion) it reprojects. */
+export const CARD_DEPTH_CUT = 0.04;
 /** the garden ironwork's old LOD bands (m): [switch 0 -> 1, switch 1 -> 2, end] (gardenKit.js BANDS) */
 export const IRON_BANDS = { rail: [22, 60, 150], gate: [22, 60, 150], cargate: [25, 70, 160] };
 /** the façade kit's carded strokes stay geometry while they are >= STROKE_PX wide: to strokeEnd(w) m (at least

@@ -27,7 +27,7 @@ import {
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise, rampTo } from "../lodFade.js";
-import { JITTER_OLD, ironCards, NEAR, BAND, CARD_IN } from "../thinBars.js";
+import { JITTER_OLD, ironCards, NEAR, BAND, CARD_IN, CARD_DEPTH_CUT } from "../thinBars.js";
 import { atlasTexture } from "../thinCards.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
 import * as HEDGE_NEW from "./gardenHedge.js";
@@ -207,7 +207,7 @@ function ironCardPieces(pieces, mats) {
 /** the card: blended at the bars' coverage, faded in under the modelled bars over CARD_IN, the end dither and the
  *  tile fade as every LOD (lodKeep's), no shadow (the modelled LOD0 keeps its own) */
 function ironCardMaterial(tex) {
-  const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
+  const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: true, alphaTest: CARD_DEPTH_CUT });
   m.name = "gardens-iron-card";
   const T = texture(tex, uv()), a = T.a.max(1e-4);
   const L = ironLook(attribute("iVar", "vec4"), T.r.div(a).min(1), T.g.div(a).min(1));

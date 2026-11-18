@@ -26,7 +26,7 @@ import { paintedGlass, STOREYS_OLD } from "../facades.js";
 import { libSource } from "../materials/libSwitch.js";
 import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 import { lodEye, ditherNoise, rampTo } from "../lodFade.js";
-import { JITTER_OLD, CARD_IN, BAND } from "../thinBars.js";
+import { JITTER_OLD, CARD_IN, BAND, CARD_DEPTH_CUT } from "../thinBars.js";
 
 export const KIT_SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "brick_yellow", "wood_frame_white", "wood_frame_dark",
   "glass_window", "cast_iron_green", "painted_metal_white", "zinc_roof",
@@ -276,7 +276,7 @@ export function kitGlassMaterial(lod, opts = {}) {
  *  over CARD_IN under the modelled strokes, stretched like them (the 9-slice classes per quad), the LOD / distance /
  *  tile fades of the pieces (the LOD0 and LOD1 cards are the same: their complementary dither shows one). No shadow. */
 export function kitCardMaterial(lod, tex, opts = {}) {
-  const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
+  const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: true, alphaTest: CARD_DEPTH_CUT });
   m.name = `kit card lod${lod}`;
   const { dx, dy } = sliceDelta();
   const J = attribute("aKitJ", "vec4");

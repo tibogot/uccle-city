@@ -83,7 +83,9 @@ stochastic coverage, only -5..-15 %, a blended coverage card -43..-60 %):
   above, the bars' true share of the footprint (no alpha test, so no coverage-preserving rescale is needed), trilinear +
   8 x anisotropic. Channels: gardens tip share / steel share / AO / coverage (the paint and gilded tips per instance as
   before); kit wood-frame share (the building's variant picks white or dark) / cast iron / light metals / coverage.
-  **Blended** (transparent, no depth write, no shadow).
+  **Blended** at that coverage, no shadow, and **writing depth where the coverage is >= 4 %** (`CARD_DEPTH_CUT`: a
+  depth cut, not a visible edge; browser turn, section 5: without its own depth a card reprojected through the TAAU
+  at the depth of what lies behind it and smeared away while the camera moved).
 - **The modelled bars kept close up** and dithered out (viewer/lodFade.js dither: no pop): garden pieces to 4 m, gone by
   6 m; kit strokes while they are >= 1.3 px (`strokeEnd`: 4.5-12 m by width, e.g. a 16 mm balcony bar to 7.7 m),
   flagged per vertex in `aKitW.w`. The card fades in under them first (2.5-3.5 m: no halo of its magnified edge).
@@ -108,12 +110,52 @@ carded stroke on its card's coverage, the kit stretch fit, the cards blended (no
 and near materials compile to WGSL headless, shadows unchanged, the switch, no DynamicDrawUsage / light.
 Rule 35 (provisional) in docs/QUALITY_RULES.md.
 
-## 5. Browser turn (to do)
+## 5. Browser turn (2026-11-18, RTX 4050 laptop, one tab, 1280 x 720, `?quick=1&dynres=0&rscale=0.8`)
 
-- `?quick=1`, slow sideways pans (1.5 m/s and 8 m/s, e.g. a dolly like debug/lyceeCheck.js) past: garden gates and
-  railings at 3, 8, 20, 40 m (a Saint-Job street; the railings round Wolvendael); a façade with balconies and door
-  grilles at 8, 20, 40 m. Each A/B with `?jitter=old`: crop shimmer + hot pixels of the default <= old.
-- Close up: no pop / seam where the modelled bars hand over (gardens 4-6 m, kit 4.5-12 m) or where the card fades in
-  (2.5-3.5 m); the gilded tips and the paints read the same on the card; the kit card follows a stretched balcony.
-- Shadows of railings identical in both modes; console 0 WebGPU errors; no new pipeline after boot; boot time of the
-  kit / gardens start in the log (`window.__kit.cards`).
+Tool: debug/jitterCheck.js (zfightCheck's method: the crop of the fence / railing, 16 frames still, then 48 frames
+dollying sideways at 1.5 m/s and 8 m/s, viewer.step 1/60 s; real frames at the start spot first so the kit re-bucket
+and the garden pools have streamed). shimmer = median |high-pass change| per frame (x/255), hot = % of the crop
+changing > 8/255. One page load per mode, old = `?jitter=old`.
+
+**Found and fixed: the blended cards vanished while moving.** Maison Dandoy's Juliet railing (the coordinator's
+case: zfight found it still shimmering) disappeared from the frames while dollying and came back when still; native
+(`?upscale=0`) showed it moving. The card wrote no depth, so the TAAU reprojected its pixels at the depth of the
+window 0.43 m behind: every frame its history landed off by the parallax and the bars smeared into the wall (strip:
+`docs/jitter/shots/jitter-dandoy-8m-strip-blend-nodepth.jpg`, the railing gone). Tried in place: depth write over the
+whole quad (railing back, but the wall behind the gaps reprojected at the card's depth: brick noise), alpha to coverage
+(railing back, dotted), **depth write with a 4 % depth cut** (railing back, wall clean): kept, both kits. The first
+offline numbers of this turn (blended, no depth) were partly that disappearance and are not quoted.
+(The first measuring harness also jumped views in paused steps, before the kit re-bucket / garden pools had streamed:
+fixed in debug/jitterCheck.js.)
+
+Results (1.5 m/s dolly unless said; new = default with the depth cut):
+
+| view | old shimmer / hot | new shimmer / hot | still old -> new (shimmer / hot) |
+|---|---|---|---|
+| Saint-Job drive gate 3 m | 3.10 / 8.6 | 3.05 / 8.4 | 0.23 / 0.04 -> 0.21 / 0.04 |
+| gate 8 m | 5.15 / 17.4 | 4.79 / 16.0 | 0.49 / 0.27 -> 0.32 / 0.04 |
+| gate 20 m | 2.88 / 9.1 | 2.59 / 7.6 | 0.55 / 0.45 -> 0.26 / 0 |
+| gate 40 m | 2.08 / 5.7 | **1.44 / 2.9** | 1.10 / 2.32 -> 0.35 / 0.06 |
+| gate 8 m, 8 m/s | 6.59 / 21.2 | 5.44 / 16.7 | |
+| gate 3 m, 8 m/s | 3.51 / 10.0 | 3.94 / 12.2 (the card fading in under the bars at 2.5-3.5 m) | |
+| Wolvendael railing 8 m | 2.73 / 7.2 | 2.46 / 5.7 | 0.25 / 0.03 -> 0.21 / 0.02 |
+| Wolvendael 3 / 20 / 40 m | 2.35 / 5.9, 1.14 / 1.2, 2.39 / 3.7 | 2.32 / 5.6, 1.10 / 1.1, 2.37 / 3.3 (the hedge behind dominates the crop) | |
+| Maison Dandoy Juliet railing 8 m | 9.11 / 36.5 | **7.53 / 31.9** | 0.41 / 0.02 -> 0.37 / 0.03 |
+| Dandoy 20 m | 4.83 / 19.7 | **3.87 / 14.0** | 0.73 / 0.49 -> 0.38 / 0 |
+| Dandoy 40 m | 1.95 / 1.8 | **1.42 / 0.5** | 0.85 / 0.68 -> 0.45 / 0 |
+| door fanlight grille 8 / 20 m | 2.13 / 5.9, 1.55 / 3.0 | 1.98 / 5.1, 1.38 / 3.0 | 0.27 -> 0.21, 0.36 -> 0.25 |
+
+8 m/s rows of Dandoy / door / Wolvendael: equal within noise. The default is <= old everywhere but the 3 m gate at
+8 m/s (+12 %, the card's fade-in band). The Juliet railing still moves at 8 m: what remains is mostly the curtains and
+room behind it (interior parallax) and its 16 mm bars at ~1.2 px; its handrail and ring now hold.
+- **Hand-overs:** the modelled bars at 4-6 m (`jitter-wolv-5m-handover-new.jpg`) and close up at 3 m
+  (`jitter-wolv-3m-new.jpg` / `-old.jpg`): no seam or dither pattern visible; the gilded tips read the same.
+- **Shadows:** the 3 m frames new / old match (the iron's LOD0 keeps its old shadow band).
+- **Pipelines after boot** (create*Pipeline hooked, six views 40 -> 3 -> 40 m at Wolvendael): new 5 render, old 6
+  (the hero terracotta + ShadowMaterial, not the cards): no new pipeline from the cards. **Console: 0 WebGPU errors**
+  in every load.
+- **Boot:** kit card bake 207-262 ms in the browser (`window.__kit.cards.ms`); quick-mode ready times new 30-51 s,
+  old 34-45 s on the same spots (noise of the loads, no trend).
+- **Shots** (`docs/jitter/shots/`): `jitter-gate-8m-{new,old}.jpg`, `jitter-wolv-8m-{new,old}.jpg`,
+  `jitter-dandoy-8m-new.jpg`, strips (frames + |difference| x4) `jitter-dandoy-8m-strip-{old,new}.jpg`,
+  `jitter-gate-20m-strip-{old,new}.jpg`, `jitter-dandoy-8m-strip-blend-nodepth.jpg` (the bug).
