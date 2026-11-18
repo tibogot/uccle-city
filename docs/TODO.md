@@ -36,7 +36,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] Bicycle road marking: wrong shape; redo the real Belgian pictogram.
 - [ ] Traffic lights: Blender, premium.
 - [ ] Ivy: a more realistic shape.
-- [ ] Birds: the boids read as a ball; real murmuration-style movement.
+- [x] Birds: the boids read as a ball; real murmuration-style movement. MERGED 2026-11-18 (d3d56cd0, claude/birds2): loose flocks, folding dusk murmuration, birds gate row; falcon prey sizes unchanged; ?birds2=old.
 - [ ] Bats at night (owner 2026-11-18): many small bats flitting at dusk / night (erratic darting flight round street lamps, trees, parks, water). Build on the birds2 flock model once merged; tiny instanced flapping sprites / low-poly, one draw call, GPU-cheap, only near the camera, none by day. Must not hurt perf (budget-check it like the birds).
 - [ ] Cheap houses vs detailed ones: compare with photos, lift the cheap family.
 - [ ] Shadows: research a better / cheaper method, especially for static objects (cached static shadows).
