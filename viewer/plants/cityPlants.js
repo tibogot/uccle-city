@@ -12,6 +12,11 @@
 //     45-90 m (by the plant's size), nothing beyond; the hand-overs and the tile fade dithered per pixel (no pop)
 //   - JOINS: every plant / bed / box stands on the DRAWN ground (hm.surface) at its lowest point (a plant sinks 4 cm,
 //     a bed's skirt runs 18 cm down), never floating
+//   - BUSHES (claude/bushes, viewer/plants/bushes.js; ?bushes=old = as before): the shrub types (box ball, laurel,
+//     rhododendron, hydrangea, rose, lavender) are crowns of the street trees' leaf cards without a trunk, parts of
+//     the trees' city-wide pool (viewer/treesStylized.js bushPool: the same material, card morph LODs, instancing; 0
+//     more draws); their foot on the lowest drawn ground under them, sunk 6 % of their height. The bed plants (bulbs,
+//     window-box geraniums) stay the Blender models below
 //   - no shadows cast (small plants; the hedges carry the gardens' shadow), no light (fixed light count)
 //   - season: the city's day (viewer/seasons/season.js, the lighting's date) drives the foliage season (month) that
 //     the plants AND the gardens' hedges read (beech hedges brown in winter, hydrangea heads, bulbs in spring...)
@@ -23,6 +28,8 @@ import { wind } from "../foliage/wind.js";
 import { StreamPool, Streamer, buildSource, MARGIN } from "../instanceStream.js";
 import { PLANT_TYPES, plantFades, plantMaterial, setTypeHeights, applyPlantSeason } from "./plantMaterial.js";
 import { bedGeometry, bedMaterial, windowBoxGeometry, windowBoxMaterial, BOX_VARIANTS } from "./plantKit.js";
+import { BUSH_OLD, BUSH_KINDS, bushEnd, bushSink, bushFoot, bushVariant } from "./bushes.js";
+import { bushPool } from "../treesStylized.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/plants/", import.meta.url);
@@ -105,7 +112,7 @@ function makePool(key, geos, mats, live, attrs, group, r) {
 export const cityPlants = {
   on: qs.get("plants") !== "0",
   boxes: qs.get("windowboxes") !== "0",
-  lib: null, pools: [], group: null, streamer: null, tiles: new Map(), seasonDay: -1, tWind: 0,
+  lib: null, pools: [], group: null, streamer: null, tiles: new Map(), seasonDay: -1, tWind: 0, bushes: null, scene: null,
   async start({ scene, updaters, log = console.log }) {
     if (!this.on) return null;
     const t0 = performance.now();
@@ -113,10 +120,15 @@ export const cityPlants = {
     setTypeHeights(Object.fromEntries(PLANT_TYPES.map((t) => [t, this.lib.types[t]?.height || 1])));
     this.group = new THREE.Group(); this.group.name = "plants";
     scene.add(this.group);
+    this.scene = scene;
+    // the bushes in the trees' pool (null: ?bushes=old or no pool path: the shrubs as the Blender plants, as before)
+    if (!BUSH_OLD) { try { this.bushes = bushPool(); } catch (e) { log(`plants: bushes failed (${e.message}), the old shrubs`); this.bushes = null; } }
+    this.bushes?.attach(scene);
     const plantAttrs = [["instanceMatrix", "instanceMatrix", 16], ["iPlant", "iPlant", 4], ["iBand", "iBand", 4]];
     const mats = [0, 1, 2].map(plantMaterial);
     for (const t of PLANT_TYPES) {
       const L = this.lib.types[t]; if (!L) continue;
+      if (this.bushes && BUSH_KINDS.includes(t)) continue;                       // (drawn as bushes)
       const [s1, s2] = BANDS[t];
       const live = [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, END_MAX]];
       this.pools.push(makePool(t, [L.lods[0], L.lods[2] !== L.lods[1] ? (L.thin30 ||= thinLeaves(L.lods[0], 0.3)) : L.lods[1], L.lods[2]].map((g, k) => packPlant(g, k === 1 && L.lods[2] !== L.lods[1] ? L.lods[2] : null)), mats, live, plantAttrs, this.group, Math.max(1, L.height * 1.2)));
@@ -128,7 +140,7 @@ export const cityPlants = {
     this.syncSeason(true);
     updaters.push((eye, cam) => this.update(cam));
     window.__plants = this;
-    log(`plants: on (?plants=0 off; ?windowboxes=0 without the window boxes), ${PLANT_TYPES.length} types, ${Math.round(performance.now() - t0)} ms`);
+    log(`plants: on (?plants=0 off; ?windowboxes=0 without the window boxes), ${PLANT_TYPES.length} types, bushes ${this.bushes ? "as tree foliage (?bushes=old: as before)" : "old"}, ${Math.round(performance.now() - t0)} ms`);
     return this;
   },
   fetchTile(name) {
@@ -176,7 +188,8 @@ export const cityPlants = {
     const t0 = performance.now();
     const grp = new THREE.Group(); grp.name = `plants-${name}`;
     parent.add(grp);
-    const counts = { plants: 0, beds: 0, windowboxes: 0, geraniums: 0 };
+    const counts = { plants: 0, beds: 0, windowboxes: 0, geraniums: 0, bushes: 0 };
+    const bush = [];                                                            // x y(foot) z yaw height variant kind end
     let srcs = null;
     const per = Object.fromEntries(PLANT_TYPES.map((t) => [t, []]));          // x y z yaw scale rnd end
     const ground = (x, z, r) => Math.min(groundAt(x, z), groundAt(x + r, z), groundAt(x - r, z), groundAt(x, z + r), groundAt(x, z - r));
@@ -185,6 +198,13 @@ export const cityPlants = {
       for (let o = 0; o < P.length; o += 6) {
         const t = types[P[o + 2]], L = this.lib.types[t]; if (!L) continue;
         const x = P[o], z = P[o + 1], sc = P[o + 4] / 100, yaw = (P[o + 3] / 255) * Math.PI * 2;
+        const kind = this.bushes ? BUSH_KINDS.indexOf(t) + 1 : 0;
+        if (kind) {
+          // JOINS: the foot on the lowest drawn ground under the bush, sunk (the lowest ring's cards reach below it)
+          const h = sc * L.height, v = bushVariant(t, x, z);
+          bush.push(x, ground(x, z, bushFoot(h, v)) - bushSink(h), z, yaw, h, v, kind, bushEnd(t, h));
+          continue;
+        }
         const r = Math.min(0.5, 0.3 * L.height * sc);
         const end = Math.min(END_MAX - 2, BANDS[t][2] * (0.8 + 0.25 * Math.min(2, sc * L.height)));
         per[t].push(x, ground(x, z, r) - 0.04, z, yaw, sc, h01(x, z, 9), end);
@@ -218,8 +238,10 @@ export const cityPlants = {
       counts.windowboxes = boxes.length / 2;
     }
     for (const t of PLANT_TYPES) counts.plants += per[t].length / 7;
+    counts.bushes = bush.length / 8; counts.plants += counts.bushes;
     this.streamer.addTile(name, grp, (slot) => (srcs = this.sources(per, beds, boxes, slot)));
-    this.tiles.set(name, { name, group: grp, counts, per, beds, boxes, srcs });
+    this.bushes?.addBushes(name, grp, bush);
+    this.tiles.set(name, { name, group: grp, counts, per, beds, boxes, srcs, bush });
     return { ...counts, ms: Math.round(performance.now() - t0) };
   },
   /** the tile's streaming sources per pool */
@@ -261,6 +283,7 @@ export const cityPlants = {
     t.group.removeFromParent();
     this.tiles.delete(name);
     this.streamer.removeTile(name);
+    this.bushes?.removeBushes(name);
   },
   /** the foliage season (month 1-12.99: 1.0 = mid January) from the city's day of the year */
   syncSeason(force = false) {
@@ -279,6 +302,8 @@ export const cityPlants = {
       const now = performance.now(); if (!window.__gardens?.hedges) wind.update(Math.min(0.1, (now - (this.tWind || now)) / 1000)); this.tWind = now;
     }
     this.streamer.update(camera);
+    // (the trees' pool updates with its tree tiles; the bushes keep it going where there are none)
+    if (this.bushes) { this.bushes.attach(this.scene); this.bushes.tick(camera.position); }
   },
   report() {
     let tris = 0;
@@ -290,14 +315,21 @@ export const cityPlants = {
         const g = m.mesh.geometry; tris += m.mesh.count * (g.index ? g.index.count : g.attributes.position.count) / 3; void k;
       });
     }
-    const tot = { plants: 0, beds: 0, windowboxes: 0, geraniums: 0 };
-    for (const t of this.tiles.values()) for (const k of Object.keys(tot)) tot[k] += t.counts[k];
-    return { tiles: this.tiles.size, total: tot, live, tris: Math.round(tris), stream: { ...this.streamer.stats } };
+    const tot = { plants: 0, beds: 0, windowboxes: 0, geraniums: 0, bushes: 0 };
+    for (const t of this.tiles.values()) for (const k of Object.keys(tot)) tot[k] += t.counts[k] ?? 0;
+    const bushes = this.bushes ? this.bushes.bushStats() : null;
+    return { tiles: this.tiles.size, total: tot, live, tris: Math.round(tris), bushes, stream: { ...this.streamer.stats } };
   },
   /** JOINS: every plant's foot and every bed's rim against the drawn ground of a tile (floating = above it) */
   contact(name, groundAt) {
     const t = this.tiles.get(name); if (!t) return null;
-    const out = { plants: 0, floating: 0, beds: 0, bedFloating: 0, maxFloat: 0 };
+    const out = { plants: 0, floating: 0, beds: 0, bedFloating: 0, maxFloat: 0, bushes: 0, bushFloating: 0 };
+    // the bushes' feet (sunk under the lowest ground of their footprint)
+    for (let o = 0; o < (t.bush?.length ?? 0); o += 8) {
+      out.bushes++;
+      const f = t.bush[o + 1] - groundAt(t.bush[o], t.bush[o + 2]);
+      if (f > 0.005) { out.bushFloating++; out.maxFloat = Math.max(out.maxFloat, f); }
+    }
     for (const tp of PLANT_TYPES) {
       const a = t.per[tp];
       for (let o = 0; o < a.length; o += 7) {
