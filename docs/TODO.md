@@ -36,6 +36,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] Shadows: research a better / cheaper method, especially for static objects (cached static shadows).
 - [ ] Loading screen images: redo with the current city.
 
+**Reality check rounds (recurring, owner 2026-11-18):** one district at a time on Google Maps / Street View (look only, never stored or traced): what is missing, what is wrong, what looks nice and worth copying in spirit. Output: a short list per district into this TODO, then small jobs.
+
 **Step 3: places (compare with photos, look only)**
 - [ ] Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).
 - [ ] Place Saint-Pierre: the restaurant Le Petit Pont.
