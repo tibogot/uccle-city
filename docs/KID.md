@@ -95,6 +95,14 @@ a uniform write), the AO softened to a warm tint, a faint rim (the painted look;
 - Noted, unchanged: the arms read long (upper arm 0.78 + forearm 0.76 of the mannequin's on a 1.46 m kid: the hands
   reach mid-thigh); one back hair clump hangs down the nape like a tail (a `row` lock ending at z0 + 0.24 Hh).
 
+## Round 5 (2026-11-18)
+- arms: upper arm 0.69, forearm 0.66, hand 0.70 of the mannequin's (were 0.78 / 0.76 / 0.72): the wrists hang at the
+  hip / crotch with the arms relaxed; riding: RIDE.reachArm 0.86, the test now asks <= 92 % of the arm (elbows bent):
+  78.4 % on the placeholder, 79.2 % on the BMX;
+- hair: the back row ends at the nape's hairline (z0 + 0.31 Hh) and the clumps' round tips are half as long: no tail;
+- LOD0 14,753; skin stretch 0.081 % (knees 0.07, elbows 0.04, shoulders 0.09, hips 0.84 %); 24/24; bike 52/52;
+  renders + `round5_vs_round4.jpg` (round 4's views in `docs/kid/round4/`), `turn_nocap_back.jpg`.
+
 ## Renders (docs/kid/)
 Round 2: `round2_vs_round1.jpg` (the review's views side by side), `face_cap_back.jpg` / `turn_cap_back_q34.jpg`
 (`--cap back`); round 1's renders are kept in `docs/kid/round1/`.

@@ -248,7 +248,7 @@ else {
       n++;
     }
     check(`rider (${bike}): legs never stretched (${n} poses: 24 crank x 5 steer x ${Object.keys(modes).length} modes)`, legMax <= 1.0, `max reach ${(legMax * 100).toFixed(1)} % of the leg (hips fitted up to ${(fitMax * 100).toFixed(1)} cm)`, "<= 100 %");
-    check(`rider (${bike}): arms never stretched`, armMax <= 1.0, `max reach ${(armMax * 100).toFixed(1)} % of the arm (spine bent up to ${(spineMax * 57.3).toFixed(0)} deg)`, "<= 100 %");
+    check(`rider (${bike}): arms reach with the elbows bent`, armMax <= 0.92, `max reach ${(armMax * 100).toFixed(1)} % of the arm (spine bent up to ${(spineMax * 57.3).toFixed(0)} deg)`, "<= 92 %");
     check(`rider (${bike}): feet on the pedals, hands on the grips`, legErr < 0.01 && armErr < 0.01, `feet ${(legErr * 1000).toFixed(1)} mm, hands ${(armErr * 1000).toFixed(1)} mm`, "< 10 mm");
     check(`rider (${bike}): no NaN in any bone`, nan === 0, `${nan}`, "0");
   }

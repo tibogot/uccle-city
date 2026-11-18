@@ -56,8 +56,8 @@ OUTFIT = {"shirt": arg("--shirt", "tee"), "legs": arg("--legs", "shorts"), "cap"
 PROP = {
     "pelvis": (0.70, 0.84), "spine_01": (0.72, 0.74), "spine_02": (0.72, 0.72), "spine_03": (0.72, 0.68),
     "neck_01": (0.66, 0.66), "Head": (1.0, 1.0),
-    "clavicle": (0.50, 0.66), "upperarm": (0.78, 0.64), "lowerarm": (0.76, 0.64), "hand": (0.72, 0.72),
-    "finger": (0.72, 0.72),
+    "clavicle": (0.50, 0.66), "upperarm": (0.69, 0.64), "lowerarm": (0.66, 0.64), "hand": (0.70, 0.70),
+    "finger": (0.70, 0.70),
     "thigh": (0.79, 0.70), "calf": (0.80, 0.66), "foot": (0.72, 0.74), "ball": (0.72, 0.74),
 }
 def prop(name):
@@ -1089,7 +1089,7 @@ def ribbon(name, pts, widths, thick, slot, sides=6, rigid=True, round_tip=False,
     if round_tip:
         # a rounded end: a fan to a point a little beyond the last ring
         last, prev = Vector(pts[-1]), Vector(pts[-2])
-        tip = bm.verts.new(last + (last - prev).normalized() * widths[-1] * 0.9)
+        tip = bm.verts.new(last + (last - prev).normalized() * widths[-1] * 0.45)
         for kk in range(sides): bm.faces.new([rings[-1][kk], rings[-1][(kk + 1) % sides], tip]).smooth = True
     else: bm.faces.new(rings[-1]).smooth = True
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -1105,7 +1105,7 @@ NRM = [v.normal.copy() for v in body.data.vertices]
 # radiating from a crown whorl at the back of the top: a fringe to the brows, over the ears' tops, down to the nape.
 def z_end(az):
     a = abs(math.atan2(math.sin(az), math.cos(az))) / math.pi           # 0 front .. 1 back
-    front, side, back = EYE_Z + 0.034, EYE_Z + 0.006, z0 + Hh * 0.24
+    front, side, back = EYE_Z + 0.034, EYE_Z + 0.006, z0 + Hh * 0.31        # (the back ends at the nape's hairline: round 5, no tail)
     return front + (side - front) * smooth01(a / 0.5) if a < 0.5 else side + (back - side) * smooth01((a - 0.5) / 0.5)
 def in_hair(co, ws):
     if ws.get("Head", 0) + ws.get("neck_01", 0) < 0.5: return False

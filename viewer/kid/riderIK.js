@@ -26,7 +26,7 @@ export const RIDE = {
   swayStand: 0.035,                          // standing: the hips rock with the cranks
   pelvisPitch: 0.18, standPitch: 0.22,       // rad forward
   leanExtra: 0.22,                           // the upper body leans this much more than the bike
-  reachLeg: 0.965, reachArm: 0.90,           // fraction of the limb's length the targets are kept within
+  reachLeg: 0.965, reachArm: 0.86,           // fraction of the limb's length the targets are kept within
   ankleUp: 0.075, ankleBack: 0.055,          // the ankle above / behind the pedal's centre (the ball on the pedal)
   wristBack: 0.045,                          // the wrist behind the grip's centre (the fist round the bar)
   headDown: 0.10,                            // the gaze a little down the road
