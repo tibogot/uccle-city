@@ -165,11 +165,98 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   poles data/stops puts on a platform follow it (`platformFollow`, main.js; an area platform's pole sat on its outline,
   half off the slab: now 0.4 m in). Rail under a platform (census, as drawn): 705 m (`--old`) -> 0; platform poles off
   every platform: 44 -> 16 (no OSM platform within 3 m of them in their tile: data/stops, pre-existing).
+- **F (claude/markings, rule 33 provisional, gate row `markings`).** WHY: the lines along a road are the engine's lane
+  strips, swept from the OSM centre line with one lane stack per road; `fitRoadWidths` scaled it to the road's MEDIAN
+  kerb-to-kerb width and skipped one-way stacks, and `buildSurfaceRoads` kept the strips (with their lines) wherever the
+  street was raised over them. FIX: `viewer/streets/lineFit.js fitLinesToStreet` (after the bend trim, before the
+  overlay): at every engine sample the carriage interval round the centre line is measured along the normal (class
+  raster, ends refined on the kerb / street-edge lines; junction mouths and samples > 1.5 m off the road's median shift
+  not used), smoothed (30 m median, 12 m mean, slope <= 1:8), and every lane-strip vertex moves across its road so the
+  stack's [curbR, curbL] lands on it (linear across, uv untouched: the lines move with their strips); edge lines sit
+  0.3 m inside the kerb measured at their station (a 6 m median). `buildSurfaceRoads` (opts.lineClip) splits each
+  engine triangle at the kerb lines crossing it and zeroes the line codes of the parts not on roadway / tram roadway /
+  parking. The traffic lanes (net) are not moved. City-wide (120 tiles, `docs/census/markings_fit.json` vs
+  `markings_old.json`): off the street 6,020 -> 511 m, along a kerb 957 -> 406 m, skewed 411 -> 313 m, runs 401 -> 220
+  (of 123.5 km; 53.7 km on unmeasured streets not judged); worker +40-50 ms a tile (`line fit`). The bicycle: the
+  Brussels Mobility survey holds ONE template (P09, 608 in the city: 1.50 x 0.92 m, wheels side by side across the lane,
+  upright for the road user, anamorphic x 3.3) and the chevron (P10, 1.50 x 0.90 m, two at 1.59 / 2.38 m ahead of the
+  bicycle); `viewer/streets/bikeGlyph.js` draws the standard pictogram (round wheels, diamond frame, saddle, bar, crank)
+  to that outline, the paint shader evaluates it (and the chevron polygon) as signed distances box-filtered by their
+  own footprint (decal kind 3, one quad a glyph: decal triangles 123,811 -> 73,585). Surveyed P09s face the way their
+  frame side points (the outline's paint between the wheels); OSM shared lanes get bicycle + 2 chevrons. Switches
+  `?roadlines=old`, `?bikemark=old`. Still flagged: I10 Drève Pittoresque 27 m, I7 Av. d'Andrimont 19 m skew, short
+  roads whose OSM line lies > 6 m off their carriageway (E7 Saint-Job -714, 1003), kerb-raster noise at ramps.
+  Round 2 (coordinator: cars drove up to 1 m off the new lines): the fit is measured once (`measureLineFit`) and
+  applied to the strips AND to the traffic lanes (`laneGraph.js refineLaneGraph` opts.laneShift, in place of its own
+  centring; its keep-on-carriage push at 1.0 m instead of 1.4 m for those lanes: at 1.4 m on the 0.5 m raster it pushed
+  lanes up to 1 m off their paint into the next lane). A side whose stack has no parking lane is fitted to the
+  roadway, not the parking bays; two fits meet without a step at an OSM way split; a tram road band between two roadway
+  parts stops the fit. Lane centre vs painted lane centre: p95 0.08 m over 334k lane points (gate <= 0.25 m; counted
+  apart: 23k where the painted lane is off the carriageway, 88k in painted lanes under 2.5 m where the lane keeps 1 m off
+  the kerb). Lines after (round 2): 507 / 396 / 309 m. A LiDAR tree kept on a measured tram road but standing in a painted
+  driving lane (+ 0.3 m) is moved / dropped like the carriageway ones (`viewer/tileData.js`, `roadTrees.js
+  paintedDriveLanes`), unless it stands in a ROW on the tram road (two more within 12 m): Avenue Churchill's
+  reservation (one OSM road whose stack spans it) keeps its trees (G2 / H2 / I2: 0 moved by this pass), H5 Carsoel
+  (664, 472) moves 1. drivecheck back within its ceilings (211 places, tree 0).
+  Browser turn (tour vs foundation2 + spot shots `docs/markings/*.jpg`): the bicycle reads upright with round wheels
+  from the approaching road user (P09 at Alsemberg D5, the shared-lane bicycle + chevrons at Saint-Job I6); two fixes:
+  (1) a narrow street's stretched stack squeezed its parking lane under a car's width (Av. Henri Elleboudt: the parked
+  cars stood on the line): each sample's lanes are laid out again, a parking lane keeps min(its width, 2.0 m), the other
+  lanes share the rest (one mode per road); (2) the moved strips stretched the paving texture (laid out in uv): the
+  lateral uv is now the planar offset and the line positions go through the same map (lines unchanged, texture not
+  stretched). The census reads each line's t per vertex (as the shader interpolates it) and keeps one sample per 1 m
+  cell and side. City-wide after: 472 / 366 / 341 m (old 6,018 / 957 / 411), lane p95 0.08 m.
+
+- **G (claude/zfight, rule 34 provisional, gate row `zfight`).** City-wide (120 tiles, `docs/census/zfight_after.json`;
+  before `zfight.json`): 32,001 coplanar pairs / 33,117 m2 in 3,301 buildings -> 4,825 / 634 m2 in 1,401 (124 >= 1 m2).
+  Causes found (the census guessed "box() strips at corners": wrong, the strips were already mitred): (1) 24,900
+  details+details pairs were the MAITRE door steps (`facadeGeom.js typeDetails`): three stacked boxes each run down to
+  0.3 m under the ground, their soffits in one buried plane, and two flights in one place where two parallel street faces
+  a step apart each got a painted door (Homborch 10). Fix: no soffit on the buried boxes; a flight whose plan meets one
+  already placed in the tile is left out. (2) walls / roofs: UrbIS triangles overlapping inside ONE solid (roof polygons
+  triangulated into overlapping fans: Rue de Stalle 73 807 m2, Rue Zeecrabbe 24, Av. Dolez 143A; a wall given twice at
+  two heights: Av. Adolphe Dupuich 24) and one solid twice (Av. Hamoir 8: 760045 = 761186, the only exact duplicate of
+  25,459 solids). Fix: `viewer/coplanarClean.js`, in `analyseBuildings` for the whole tile in the buildings' order: every
+  triangle minus the coplanar same-facing (2 deg, 6 mm) triangles already kept, convex clip in its own plane, the
+  remainder fanned back on that plane; what is drawn is the union it was (no visible change but the fight), a solid
+  wholly under another is gone (J5: 190 triangles dropped, 2,015 m2). Cost: façade analysis +2-8 % (E4 2.33 -> 2.38 s,
+  J5 1.20 -> 1.33 s in node), triangles +-0.5 %. (3) landmarks: meshopt LOD1 / LOD2 collapse a slot's face 2-7 cm proud
+  of another into that slot's plane (`tools/lodNoFight.mjs`: pairs between two slots that LOD0 lacks there: lock the
+  LOD0 vertices round the pair and the slot's borders with its neighbours, simplify that slot again, repeat). LOD1
+  pairs LOD0 lacks: observatory 2,663 / 1,528 m2 -> 106 / 13.7 m2 (66,233 -> 77,166 triangles), Saint-Pierre 1,023 /
+  73.5 m2 -> 67 / 17.8 m2 (12,519 -> 15,432; the rest are one slot folded onto itself, left: re-simplifying a slot from
+  the decoded GLB opened its west door frame, heroshell 5 m2). The raw Blender exports are not kept, so the shipped GLBs
+  were rewritten in place (`tools/heroLodFix.mjs`: only the LOD1 index views; heroshell passes); `hero_pack.mjs` /
+  `observatory_pack.mjs` do it at LOD1 themselves. Left (gate ceiling heroNew 842 m2, before ~2,410): the town hall
+  (LOD1 134 m2, LOD2 26: its LOD1 carries a Blender AO bake keyed by the exact triangles: re-export, port the lock to
+  `townhall_pack.mjs`, re-bake `townhall_lod1_ao.py`), the far levels LOD2 (observatory 542 m2, Saint-Pierre 71: the
+  same fix at LOD2 opened probe holes on the observatory / Russian church, heroshell, so not applied), Rosaire LOD1 15.5
+  (one slot), and the LOD0 pairs of the Blender models
+  (Saint-Job 28 m2, Saint-Pierre 33, observatory 101: generator work in tools/blender). (4) image 87, Maison Dandoy:
+  the leaves over the right shop window are the IVY (data/plants/E3.ivy.json: a 3.5 % street-front wall whose avoid list
+  had the windows but no shopfront; 288 of its 339 sprays on the front, 4-9 cm out and tilted through the interior-mapped
+  glass 7.5 cm out, fluttering in the wind). 19 walls city-wide (4,518 sprays); fix: `g.shop` no-grow rects from the
+  street-life fronts (`tools/plants/build_ivy.mjs --shops` patched the data, every other byte unchanged), merged into
+  the avoid list by `viewer/plants/cityIvy.js` (?zfight=old: not). `?zfight=old` = all of (1), (2), (4) as before.
+  Residual (city): small strip / band ends 3-30 cm2 each, eaves boards over cornice pieces, kit walls on roofs (17).
+  (5) the window shimmer (image 93; the mottled lower half of Maison Dandoy's first-floor French window in 87): NOT
+  geometry. Browser A/B (`debug/zfightCheck.js`, knobs): only "kit off" or "the kit glass's painted room off" killed it.
+  Cause: the façade kit packs integer codes into float vertex attributes (aKitF.w = building hash + 2 street + 4 French
+  code (+ 1024 maître), aKit.w = the French code) and DECODED them in the fragment stage: interpolated, they arrive with
+  last-bit errors at their magnitude (aKitF.w ~1,100: ~1e-4), so the hash's 1/4096 quantisation and the French code's
+  mod / floor (17 = bay 0, floor 1 -> 16.99999) flipped per pixel and per TAAU jitter: gold blotches crawling over the
+  glass (the room / lit-window hashes) and the wall cut under a French window coming and going (brick through the
+  lace). The same bug was fixed for the painted walls' aBld in 2026-11 (rnd quantised, zq rounded) but not for the kit.
+  Fix: `kitMaterials.js kitGlassMaterial` decodes in the VERTEX stage (varyings) and rounds the integers per pixel;
+  `facades.js` rounds the kit walls' French code and paintedGlass's frCode, and the shop paint decode takes an epsilon
+  (30 = paint 3, no shop). Still camera, crop frame-to-frame |dY| (x/255): the house right of Dandoy 3.06 -> 0.27,
+  the French window 3.84 -> 0.62; zfightCheck ab() still-camera hot pixels: dandoyNext 0.64 % -> 0.04 %, dandoyFrench
+  0.69 -> 0.18 %, dandoyShop moving 5.6 -> 4.0 % (the ivy). What remains on the French window moving is its Juliet
+  railing's bars (rule 26's class, not z-fighting). `?zfight=old` = the fragment-stage decode as before.
 
 ## Not detected here (needs the browser, or not located)
 
-- G: the window shimmer in 87 / 93 is not static geometry. It needs a browser A/B (window shader, interior glass, ivy
-  cards, TAA).
+- G: found in the browser (claude/zfight browser turn), fixed: see G (5) under Fixed.
 - A: whether the heroes' see-through clusters at ground level are real porches / canopies (Calevoet, town hall, Russian
   church).
 - C: images 77 (blocky grass and gravel bump) and 89 (a raised asphalt slab with an edge line and kerb faces) could not

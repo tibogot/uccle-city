@@ -184,7 +184,8 @@ const interiorRoom = Fn(([gx, gy, winUV, cellId, bayW, storeyH, seed, litProb, f
  * k: the face's storey scale (storeyK; the kit packs it in aKitF.y).
  * -> { col, emissive, rough }  (KEEP IN SYNC with wallMaterial below)
  */
-export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode, k = float(1), type = float(0) }) {
+export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode: frIn, k = float(1), type = float(0) }) {
+  const frCode = ZF_OLD ? frIn : floor(frIn.add(0.5));    // (claude/zfight) an integer code: rounded (see wallMaterial isFr)
   // type: 1 = the maison de maître's grid (TYPE_GRID row 1), 0 the generic one (the kit's only two grids; aKitF.w + 1024)
   const T0 = TYPE_GRID[0], T1 = TYPE_GRID[1], tg = (i) => (STYLES_OLD ? float(T0[i]) : mix(float(T0[i]), float(T1[i]), type));
   const P = positionWorld;
@@ -239,6 +240,7 @@ export function paintedGlass({ u, h, fw, street, rnd: rndIn, frCode, k = float(1
 const BLD_SIDE = /[?&]bldside=double/.test(location.search) ? THREE.DoubleSide : THREE.FrontSide;
 // ?vfix2=old: the blind walls' round-1 marks (noise-shaped plaster loss + cement patches: pale blotches), docs/VISUAL_FIXES.md
 const VFIX2_OLD = /[?&]vfix2=old(&|$)/.test(location.search);
+const ZF_OLD = /[?&]zfight=old(&|$)/.test(location.search);   // claude/zfight: the packed codes decoded unrounded as before
 function bldMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: BLD_SIDE });
   m.shadowSide = BLD_SIDE;
@@ -322,7 +324,10 @@ export function wallMaterial(opts = {}) {
   // w = the French window's bay + 1 + 16 x storey (its opening runs down to the storey's floor + FRENCH_SILL)
   const kitA = opts.kit ? attribute("aKit", "vec4") : null;
   const isDoor = street.mul(step(abs(floor(gx).sub(doorBay)), 0.5)).mul(float(1).sub(up)).mul(ok).mul(kitA ? float(1).sub(kitA.z) : float(1)).toVar();
-  const isFr = kitA ? step(0.5, kitA.w).mul(step(abs(floor(gx).sub(mod(kitA.w.sub(1), 16.0))), 0.5)).mul(step(abs(fl.sub(floor(kitA.w.sub(1).div(16.0)))), 0.5)).mul(ok).toVar() : float(0);
+  // (claude/zfight) the French code rounded first: interpolated, 17 (bay 0, floor 1) arrived as 16.99999 / 17.00001 and
+  // mod / floor flipped per pixel: the wall's cut under Maison Dandoy's French window (image 87) came and went in blotches
+  const kFr = kitA ? (ZF_OLD ? kitA.w : floor(kitA.w.add(0.5))) : null;
+  const isFr = kitA ? step(0.5, kFr).mul(step(abs(floor(gx).sub(mod(kFr.sub(1), 16.0))), 0.5)).mul(step(abs(fl.sub(floor(kFr.sub(1).div(16.0)))), 0.5)).mul(ok).toVar() : float(0);
   // (styles) the garage door: the bay after the door's (facadeWindows.js faceOpenings kind "garage"), from the ground-floor
   // line, GARAGE_H tall, min(2.5, bay - 0.25) wide; the kit's faces cut it for the kit's sectional door
   const garBay = mod(doorBay.add(1), nb);
@@ -577,7 +582,7 @@ export function wallMaterial(opts = {}) {
 
   // ---- shopfront (OSM shop on this face): painted timber frame, stall riser, big display glass, a glazed door
   const fnA = attribute("aFN", "vec4");
-  const shopPaint = floor(fnA.w.div(10.0)), shopW = fnA.w.sub(shopPaint.mul(10.0));
+  const shopPaint = floor(fnA.w.div(10.0).add(ZF_OLD ? 0 : 1e-4)), shopW = fnA.w.sub(shopPaint.mul(10.0));   // (claude/zfight: 30 = paint 3, no shop, arrived as 29.99999)
   const su = u.sub(fnA.z).toVar();
   const isShop = step(0.5, shopW).mul(float(1).sub(isLM)).mul(step(abs(su), shopW.mul(0.5))).mul(step(h, 3.0)).toVar();
   const fwU = fwidth(u).add(0.002), fwH = fwidth(h).add(0.002);

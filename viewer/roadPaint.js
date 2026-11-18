@@ -18,7 +18,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, texture, positionWorld, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max,
-  fwidth, hash, mx_noise_float, uniform, select, normalWorld, If,
+  fwidth, hash, mx_noise_float, uniform, select, length, dot, clamp, normalWorld, If,
 } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
 import { filteredPulse, boxCoverage } from "./tslkit.js";
@@ -28,6 +28,7 @@ import { brickPattern, BRICK } from "./gardens/gardenKit.js";   // (the garden w
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (viewer/weather/, docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
+import { BIKE, CHEVRON, STRETCH, X_MID, Y_MID } from "./streets/bikeGlyph.js";
 // (cortenbosch2) the herringbone pavers' angle to the street's axis (degrees; the lane, Street View); ?hbangle=90 to compare
 const HB_DEG = (() => { const v = typeof location !== "undefined" ? Number(new URLSearchParams(location.search).get("hbangle")) : NaN; return Number.isFinite(v) && v !== 0 ? v : 45; })();
 export { SURFACE, hashPhase, surfaceAttribute };
@@ -251,6 +252,38 @@ function texturedRoad({ s, t, x, z, surf, phase, wheel, patch, speck }) {
  *  sharrows, as one decal mesh PAINT_LIFT above the street. No texture: each mark's (u, v) metres give box-filtered
  *  edges and stripes (tslkit filteredPulse / boxCoverage), so a zebra fades to its 50 % average far away instead of
  *  shimmering. Same paint colour and wear as the lines in the asphalt shader above. */
+/** markings (census F, rule 33): the painted glyphs (viewer/streets/bikeGlyph.js) as analytic signed distances in the
+ *  glyph frame (u along, v across, metres), each a coverage box-filtered over its own pixel footprint (fwidth of the
+ *  distance: exact edges near, the area share far, no facets, no texture). n: 0 the bicycle, 1 the chevron. */
+function glyphCoverage(u, v, n) {
+  const segSD = (p, a, b, w) => {
+    const bx = b[0] - a[0], by = b[1] - a[1], inv = 1 / Math.max(1e-9, bx * bx + by * by);
+    const pa = p.sub(vec2(a[0], a[1])), ba = vec2(bx, by);
+    const h = clamp(dot(pa, ba).mul(inv), 0, 1);
+    return length(pa.sub(ba.mul(h))).sub(w / 2);
+  };
+  // the bicycle, in its sign frame (x forward = across the lane, y up = along it, de-stretched)
+  const q = vec2(v.add(X_MID), u.div(STRETCH).add(Y_MID));
+  let bike = null;
+  for (const g of BIKE.rings) { const d = abs(length(q.sub(vec2(g.c[0], g.c[1]))).sub(g.r)).sub(g.w / 2); bike = bike ? min(bike, d) : d; }
+  for (const sg of BIKE.segs) bike = min(bike, segSD(q, sg.a, sg.b, sg.w));
+  // the chevron: a polygon's signed distance (Inigo Quilez's sdPolygon, unrolled)
+  const p = vec2(u, v);
+  let dmin = null, sgn = float(1);
+  for (let i = 0, j = CHEVRON.length - 1; i < CHEVRON.length; j = i++) {
+    const A = CHEVRON[j], B = CHEVRON[i];
+    const d = segSD(p, A, B, 0);
+    dmin = dmin ? min(dmin, d) : d;
+    const c1 = step(float(A[1]), v), c2 = float(1).sub(step(float(B[1]), v));
+    const c3 = step(float((B[1] - A[1])).mul(u.sub(A[0])), float(B[0] - A[0]).mul(v.sub(A[1])).sub(1e-9));
+    const all = c1.mul(c2).mul(c3), none = float(1).sub(c1).mul(float(1).sub(c2)).mul(float(1).sub(c3));
+    sgn = sgn.mul(float(1).sub(all.add(none).mul(2)));
+  }
+  const chev = dmin.mul(sgn);
+  const sd = select(n.lessThan(0.5), bike, chev);
+  return clamp(float(0.5).sub(sd.div(fwidth(sd).add(1e-5))), 0, 1);
+}
+
 const PAINT_WEAR2 = !(typeof location !== "undefined" && /[?&]zebrawear=old/.test(location.search));
 export function paintMaterial() {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, transparent: true, depthWrite: false,
@@ -267,7 +300,7 @@ export function paintMaterial() {
   const per = float(0.75), w = fract(v.div(per)).mul(per).sub(per.mul(0.5));
   const hw = float(0.25).mul(float(1).sub(u.div(0.7)));
   const teeth = smoothstep(fv.negate(), fv, hw.sub(abs(w))).mul(inU).mul(boxCoverage(v, float(0), e.y, fv));
-  let cov = solid.mul(band(kind, 0)).add(zebra.mul(band(kind, 1))).add(teeth.mul(band(kind, 2)));
+  let cov = solid.mul(band(kind, 0)).add(zebra.mul(band(kind, 1))).add(teeth.mul(band(kind, 2))).add(glyphCoverage(u, v, n).mul(band(kind, 3)));
   const speck = n3(x.mul(41.0), z.mul(41.0), 3.0);
   let wear = smoothstep(float(-0.65), float(-0.25), n3(x.mul(1.7), z.mul(1.7), 11.0)).mul(smoothstep(float(-0.8), float(-0.45), speck));
   if (PAINT_WEAR2) {
