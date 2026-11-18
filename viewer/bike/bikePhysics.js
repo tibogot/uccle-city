@@ -417,9 +417,10 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
     }
     if (rise > B.stepRoll && (dx * fx + dz * fz) > 0 && faceRise(env.ground, wx, wz, wx + dx, wz + dz, B) > B.faceSlope) {
       if (airborne && rise <= B.stepRoll + B.kerbCatch) {
-        // KERB CATCH, now: the wheel met the face just short of its top: lifted onto it (a small loss, no block)
-        catchLift(s, i, rise - B.stepRoll * 0.4, B);
-        s.wheelBot[i] = qn.h - B.stepRoll * 0.4;
+        // KERB CATCH, now: the wheel met the face just short of its top: lifted only to where it ROLLS (0.9 x stepRoll
+        // under the top: at most ~5 cm at once, no hitch), the tyre spring takes it the rest of the way (a small loss)
+        catchLift(s, i, rise - B.stepRoll * 0.9, B);
+        s.wheelBot[i] = qn.h - B.stepRoll * 0.9;
         if (!(s._catchT > 0)) { const k = 1 - B.kerbCatchLoss; s.vx *= k; s.vz *= k; vF *= k; vL *= k; s.catches++; }
         s._catchT = 0.25;
         wheelOffsets(s, B);

@@ -104,7 +104,7 @@ dirt (packed) 0.70 / 0.018 / 0 / 8 mm, grass 0.55 / 0.060 / 0.06 / 10 mm, sand 0
 roots 0.50 / 0.045 / 0.03 / 22 mm.
 
 ## Targets = the node checks (`node --import ./tools/heap/register.mjs tools/bike/bikeTest.mjs`, gate row `bike`)
-63 checks, all pass (~3 s; feel round 1's 14 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
+65 checks, all pass (~3 s; feel round 1's 16 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
 steps and state); speeds above; never tunnels (kicker / table / kerb / rollers entered at 58 km/h: deepest wheel 0.11 m =
 the bottom-out, 0 steps under; the wall at 58 km/h: never through, a crash; at walking pace: stopped, no crash); the
 15 cm kerb: a timed hop rides onto the pavement, no hop at 2.5 m/s = stopped, at 22 km/h = over the bars; a 6 cm kerb
@@ -131,7 +131,7 @@ with its timestamp; `advanceBike(s, (lag) => input)` asks once PER STEP with tha
 step, a key pressed and released between two steps counts for one step (`keys.apply(now)` after the steps flushes the
 rest). In the physics every input acts in the step it arrives (pedal, both brakes, steer, lean, the release's pop). The
 gamepad is polled per step too (the browser refreshes its snapshot once a frame). Render interpolation stays one step.
-Checks: 40 releases at 30 fps: 0 steps late every time (frame-latched: -3..0); a 25 ms tap between two 30 fps frames
+Checks: 40 releases at 30 / 60 / 144 fps: 0 steps late every time (frame-latched: -3..0 / -1..0 / -1..0); a 25 ms tap between two 30 fps frames
 hops; pedal / brakes / steer / lean / release: 0 steps.
 
 **2. Forgiveness.**
@@ -146,8 +146,8 @@ hops; pedal / brakes / steer / lean / release: 0 steps.
   ~0.36 s early: the buffer adds its 0.12 s past that edge.)
 - **Kerb catch**: an AIRBORNE wheel (its bottom above the ground under it) that will arrive short of a kerb's top by more
   than it rolls (stepRoll 7 cm) and by at most `kerbCatch` 4.5 cm more gets the lift it lacks, spread over the steps
-  before the face (at most 1.2 m/s, no snap; 4 % speed lost); met at the face itself it is lifted on at once (half body,
-  half pitch). A wheel rolling on the ground never is (no hop = still blocked). The same tap hop rides kerbs up to 29 cm
+  before the face (at most 1.2 m/s, no snap; 4 % speed lost); met at the face itself it is lifted at once only to where
+  it rolls (0.9 x stepRoll under the top, at most ~5 cm; half body, half pitch) and the tyre spring takes the rest. A wheel rolling on the ground never is (no hop = still blocked). The same tap hop rides kerbs up to 29 cm
   instead of 25 cm (+4 cm).
 - Found and fixed on the way (they made the kerb window ragged, crashes in the middle of it): the rear bonk threw the
   whole bike up (front included) and pitched it nose-down into an endo, and bonked twice on one face (63 % of the speed
@@ -178,7 +178,24 @@ ground. Now the bike leans toward it (`footLean` 0.08 rad as the foot goes down)
 as far as the foot needs (`RIDE.footReach` 0.97): the leg at 92-94 %, the ankle on its flat-foot height (`footAnkle`
 0.09 m: the kid's 7.5 cm ankle + the sole) on both bikes (kidTest checks it, and that the wobble moves the hips > 5 cm).
 
-**Needs the browser** (not done here): the hop buffer's hold (help or felt as lag?), the catch's lift (smooth or a
+**Browser check (2026-11-18, the lab, telemetry per frame):**
+- the hold: released 0.46 s before the 15 cm kerb at 14 km/h: held 235 ms, the legs keep crouching (pelvis 7 cm down),
+  speed 3.94 -> 3.89 m/s (rolling only), then the pop clears it;
+- the catch: the front wheel's height, 2nd difference per frame <= 3.4 cm through every catch (= a plain pop's arc).
+  The first version lifted a late wheel 11.6 cm in one frame: now only to where it rolls (above);
+- the wobble: on the bike the bars shake (7.5 deg) and it weaves a little (1-2 deg of lean at 13-29 km/h); on the kid
+  the hips swing and the body counter-rolls; the IK error 0 mm, the limbs <= 2 cm / step relative to the pelvis. Found:
+  the rider's stand / crouch / manual weights switched in one step (touch-down ends air, a rear-only contact starts
+  manual): the hips jumped 3-6 cm in a frame on EVERY landing (clean too): now followed over RIDE.poseTime 0.07 s
+  of the bike's time (a pose asked with no time passing, the tests, is taken as is);
+- the foot down: the bike leans 4.6 deg, the ankle at 0.090 m, the leg at 92.5 %;
+- the input: 64 fps 12 releases, 32 fps (CPU x6) 10 releases: 0 steps late; 10 fps (x14): 0 late, but one release
+  fell in time the frame driver drops (its 8 steps a frame cap, by design). 144 fps can't be made on this 60 Hz screen:
+  the node check covers it;
+- also fixed: my own first lab edit put the landing banner between  and its ,
+  which parked the bike every frame (it could not move).
+
+**Still for the owner** (feel, not checked here): the hop buffer's hold (help or felt as lag?), the catch's lift (smooth or a
 hitch?), the wobble's look on the kid and the bike, the bands' fairness, the foot-down lean; the per-step input at real
 frame rates (30 / 60 / 144 fps).
 

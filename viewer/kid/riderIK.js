@@ -38,6 +38,7 @@ export const RIDE = {
   footAnkle: 0.09,                           // the ankle over the ground with the foot flat (the kid's: 7.5 cm + the sole)
   wobbleHip: 0.05, wobbleRoll: 0.30,         // a sketchy landing's wobble (s.wobbleNow): hips sideways, body counter-roll
   wobbleCrouch: 0.45,                        // and the legs soaking it up (crouch at the wobble's start)
+  poseTime: 0.07,                            // s: the stand / crouch / manual weights follow their targets (no snap)
 };
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3();
@@ -168,10 +169,18 @@ export class RiderIK {
     this.model.updateMatrixWorld(true);
     // 1. the hips, in frame-local coordinates
     const legs = s.legs || 0, wob = s.wobbleNow || 0, wobW = s.wobbleW || 0;
-    const crouch = Math.min(1, Math.max(0, -legs * 1.4, s.preload ? s.preload * 0.6 : 0, wobW * P.wobbleCrouch));
+    const crouchT = Math.min(1, Math.max(0, -legs * 1.4, s.preload ? s.preload * 0.6 : 0, wobW * P.wobbleCrouch));
     const fdHip = Math.min(1, Math.max(0, ((s.footDown || 0) - 0.3) / 0.7));
-    const stand = Math.min(1, Math.max(s.sprint || 0, s.air ? 0.55 : 0, legs > 0.05 ? legs * 1.5 : 0, s.preload ? s.preload * 0.5 : 0));
-    const manual = (s.manual || 0) > 0 ? 1 : Math.max(0, Math.min(1, (s.pitch || 0) / 0.35));
+    const standT = Math.min(1, Math.max(s.sprint || 0, s.air ? 0.55 : 0, legs > 0.05 ? legs * 1.5 : 0, s.preload ? s.preload * 0.5 : 0));
+    const manualT = (s.manual || 0) > 0 ? 1 : Math.max(0, Math.min(1, (s.pitch || 0) / 0.35));
+    // (feel round 1, browser: these weights switch in one step - touch-down ends "air", a rear-only contact starts
+    // "manual" - and the hips jumped 3-6 cm in a frame. Followed over P.poseTime of the bike's own time; a pose asked
+    // with no time passing (a test, a paused lab) is taken as is)
+    const dtS = (s.t ?? 0) - (this._t ?? -1); this._t = s.t ?? 0;
+    const sm = this._sm || (this._sm = { crouch: crouchT, stand: standT, manual: manualT });
+    const kS = dtS > 0 && dtS < 0.25 && P.poseTime > 0 ? 1 - Math.exp(-dtS / P.poseTime) : 1;
+    sm.crouch += (crouchT - sm.crouch) * kS; sm.stand += (standT - sm.stand) * kS; sm.manual += (manualT - sm.manual) * kS;
+    const crouch = sm.crouch, stand = sm.stand, manual = sm.manual;
     const seat = F.worldToLocal(E.seat.getWorldPosition(_a));
     const hip = _b.set(
       P.swayStand * stand * Math.sin(s.crank || 0) + P.wobbleHip * wob,

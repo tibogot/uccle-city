@@ -425,11 +425,11 @@ function randomInputs(seed, n) {
   // Frames at 30 fps (4 steps a frame); Space held, released at 40 times spread over the frames; the pop must come in the
   // FIRST step whose time is at or after the release (0 steps late, never early). The frame-latched way (one read a
   // frame, the same input for every step of it) for comparison.
-  const releaseRun = (perStep, tRel) => {
+  const releaseRun = (perStep, tRel, fps = 30) => {
     const k = new BikeKeys(), s = spawn(flat, 0, 0, 0); s.vz = 4;
-    const fd = 1 / 30; let T = 1000, ideal = -1;
+    const fd = 1 / fps; let T = 1000, ideal = -1;
     k.press("Space", 600); k.release("Space", tRel);
-    for (let f = 0; f < 30; f++) {
+    for (let f = 0; f < fps; f++) {
       T += fd * 1000;
       if (perStep) {
         advanceBike(s, (lag) => { const t = T - lag * 1000; if (ideal < 0 && t >= tRel) ideal = s.steps + 1; return k.sample(t, DT); }, fd, flat);
@@ -444,10 +444,12 @@ function randomInputs(seed, n) {
     }
     return s.popStep - ideal;
   };
-  const late = [], latched = [];
-  for (let j = 0; j < 40; j++) { const tRel = 1120 + j * 2.9; late.push(releaseRun(true, tRel)); latched.push(releaseRun(false, tRel)); }
   const span = (a) => `${Math.min(...a)}..${Math.max(...a)}`;
-  check("input: a hop release acts in its own 120 Hz step (30 fps frames)", late.every((d) => d === 0), `per step: ${span(late)} steps late (40 releases); frame-latched: ${span(latched)}`, "0 steps, every release");
+  for (const fps of [30, 60, 144]) {
+    const late = [], latched = [];
+    for (let j = 0; j < 40; j++) { const tRel = 1120 + j * 2.9; late.push(releaseRun(true, tRel, fps)); latched.push(releaseRun(false, tRel, fps)); }
+    check(`input: a hop release acts in its own 120 Hz step (${fps} fps frames)`, late.every((d) => d === 0), `per step: ${span(late)} steps late (40 releases); frame-latched: ${span(latched)}`, "0 steps, every release");
+  }
   // a short tap that falls between two frames (30 fps: 33 ms apart) is not lost
   const tapHops = (() => {
     const k = new BikeKeys(), s = spawn(flat, 0, 0, 0); s.vz = 4;

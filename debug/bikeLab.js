@@ -226,7 +226,7 @@ const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
     ["standPitch", 0, 0.8, 0.01], ["leanExtra", 0, 0.8, 0.01], ["reachLeg", 0.85, 0.999, 0.001], ["reachArm", 0.7, 0.99, 0.01], ["ankleUp", 0, 0.15, 0.005],
     ["ankleBack", -0.05, 0.15, 0.005], ["wristBack", 0, 0.1, 0.005], ["headDown", -0.3, 0.5, 0.01], ["spineMax", 0.3, 1.5, 0.01],
     ["footReach", 0.8, 0.999, 0.005], ["footOut", 0, 0.3, 0.005], ["footFwd", -0.1, 0.3, 0.005], ["footAnkle", 0.05, 0.15, 0.005],
-    ["wobbleHip", 0, 0.15, 0.005], ["wobbleRoll", 0, 0.8, 0.01], ["wobbleCrouch", 0, 1, 0.05]])
+    ["wobbleHip", 0, 0.15, 0.005], ["wobbleRoll", 0, 0.8, 0.01], ["wobbleCrouch", 0, 1, 0.05], ["poseTime", 0, 0.3, 0.01]])
     fk.add(RIDE, k, a, b, st).name(k);
   for (const [k, a, b, st] of [["near", 0.5, 3, 0.05], ["mountTime", 0.1, 1.5, 0.05], ["dismountTime", 0.1, 1.5, 0.05], ["dismountMax", 0.5, 6, 0.1], ["standStill", 0, 2, 0.05]])
     fk.add(MOUNT, k, a, b, st).name(`mount ${k}`);
@@ -306,9 +306,9 @@ renderer.setAnimationLoop(() => {
   }
   const riding = !K.on || ridden(mount);
   if (riding) advanceBike(s, !K.on || mount.state === "riding" ? stepInput : NO_INPUT, fdt, env, BIKE, SURFACES);
+  else parkStep(mount, s, fdt, testHeight(s.x, s.z));
   keys.apply(now);           // (the events since the last step: the next frame's first step comes after them)
   if (s.lastLanding && s.lastLanding.t !== landT) { landT = s.lastLanding.t; if (s.lastLanding.band === "sketchy") banner(`sketchy landing (${s.lastLanding.why})`); }
-  else parkStep(mount, s, fdt, testHeight(s.x, s.z));
   physMs = physMs * 0.95 + (performance.now() - t0) * 0.05;
   bikePose(s, P.pause ? 1 : s.alpha, pose);
   model.update(s, pose, groundAt);
