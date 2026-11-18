@@ -80,7 +80,7 @@ Kid numbers (a ~11 year old, 40 kg + an 11 kg BMX): flat 25 km/h seated, 30.6 km
 | on foot (claude/kid) | W A S D / arrows walk, Shift run, Space jump, C crouch, mouse drag camera | - |
 The arrows do exactly what W / A / S / D do and both sets always work (the owner rides with the arrows); one key table
 (`KEYS` in viewer/bike/bikeInput.js) feeds the input, and the tests check that both sets give identical inputs and that no
-key has two jobs. The controls card is shown at start, `?` toggles it (rule 14). Sounds: none. On foot the same keys mean the same kind of
+key has two jobs. The controls card is shown at start, `?` toggles it (rule 14). Sounds: feel round 3 (off by default). On foot the same keys mean the same kind of
 thing (move = pedal / brake / steer, Shift = run / sprint, Space = jump / hop, C = crouch / pump); E is free on the bike
 (tools/kid/kidTest.mjs checks both, docs/KID.md).
 
@@ -105,7 +105,7 @@ dirt (packed) 0.70 / 0.018 / 0 / 8 mm, grass 0.55 / 0.060 / 0.06 / 10 mm, sand 0
 roots 0.50 / 0.045 / 0.03 / 22 mm.
 
 ## Targets = the node checks (`node --import ./tools/heap/register.mjs tools/bike/bikeTest.mjs`, gate row `bike`)
-79 checks, all pass (~4 s; feel round 1's 16 and round 2's 16 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
+87 checks, all pass (~6 s; feel rounds 1, 2, 3: 16 + 16 + 8 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
 steps and state); speeds above; never tunnels (kicker / table / kerb / rollers entered at 58 km/h: deepest wheel 0.11 m =
 the bottom-out, 0 steps under; the wall at 58 km/h: never through, a crash; at walking pace: stopped, no crash); the
 15 cm kerb: a timed hop rides onto the pavement, no hop at 2.5 m/s = stopped, at 22 km/h = over the bars; a 6 cm kerb
@@ -275,6 +275,52 @@ stairs at real frame rates.
 
 **Next**: per-step stair bumps (sound + a small kick), wallrides, kerbs as ride-along edges (tyre slides), rails along
 the city's stairs from the hero models, the edge layer into the city's tile loader (`viewer/tileData.js`).
+
+## Feel round 3: sound (2026-11-18, FEEL_RESEARCH.md technique 11: "the single biggest missing feel item")
+**What.** `viewer/bike/bikeAudio.js`: the BMX's sound, all procedural Web Audio (the project's way: docs/SOUND.md, the
+DSP kit viewer/audio/util.js). **No sample files** (nothing to credit: CREDITS.md unchanged); the textures are baked in
+memory when the sound is switched on. **OFF by default** (project rule): the lab's panel switch "sound (bike)" (our
+panel; the click is the browser's gesture); off = no AudioContext at all, then a suspended one: no audio work.
+
+**The sounds and what drives them** (`soundParams(s, B, mem, out)`: PURE, the bike's state -> the parameters; node-tested):
+| sound | driven by | how it is made |
+|---|---|---|
+| freewheel ratchet | (rear-wheel turns - cog turns) x 36 points of engagement: coasting at 4.7 m/s = 105 ticks/s; pedalling = 0 (the cog turns with the wheel); stopping the pedals: the ticks rise as the cadence decays | two baked loops of pawl clicks (3 steel modes 3.1-7.3 kHz), 16 and 128 a second, played at rate / 16 or / 128, crossfaded over 30-60 Hz |
+| rolling, per surface | each wheel on the ground adds half its surface's voice; level with speed (from 0.3 m/s, full at 7 m/s); the loop's rate = v / the surface's reference speed; none in the air / stopped / grinding | one 1 s loop per surface: asphalt (smooth pink hiss + a 130 Hz hum), setts (a stone-and-tyre knock every 10 cm, jittered), dirt (crunch grains 1.5-5 kHz), grass (soft swish), sand (dense hiss + grains), roots (irregular low knocks) |
+| chain / pedals | pedalling x cadence (its loop = one crank turn at 60 rpm, played at cadence / 60); standing: +50 % | 44 roller ticks a turn + a bottom-bracket knock at each power stroke + chain hiss |
+| skid | a locked rear with speed, a tyre sliding sideways (slip), a locked front | rubber rasp with ~180 Hz stick-slip; band-passed 2.1 kHz on asphalt / setts (a squeal), 950 Hz on loose ground (a rasp) |
+| grind scrape | the edge's material (round 2's layer): rail = steel on steel, bench = wood, ledge / wall / kerb = stone; level with the grind speed (a stall ~ silent) | steel: ringing modes 1.9-7.8 kHz + grit; stone: grit + grains; wood: lower band + fibrous ticks |
+| landing thud | once per landing, by BAND (round 1): clean = a low thump, sketchy = a thump + the bars / chain rattling, bail = body + bike + a slide + clatter; level with the impact speed | baked one-shots (modal) |
+| kerb knock | a front wheel blocked by a face, a rear bonk, a kerb catch | tyre-on-stone knock (170 / 420 Hz + a 2.5 kHz click) |
+| peg clank | a grind's snap, by material | steel / stone / wood one-shots |
+| crash | a crash that is not a landing's bail (a wall, a wash-out) | the bail one-shot, lower |
+Tunables: `SOUND` (volume, roll, rollV, tick, teeth, chain, skid, scrape, thud, knock, clank), the lab's "Sound" folder.
+
+**The graph (BikeSound)**: built once on the first switch-on: 13 looping voices (6 rolling, 2 ratchet, chain, skid, 3
+scrape), each a looped buffer -> (a filter) -> a gain -> master -> a gentle compressor; their gains / rates moved only
+when they change. One-shots: a pool of 4 persistent gains; Web Audio cannot restart a buffer source, so each EVENT makes
+one AudioBufferSourceNode (a few a second at most, never per frame; the oldest is stolen past 4). The 20 textures
+(3.1 MB in memory) are baked ONE PER MACROTASK after the switch (slowest 25-35 ms on a busy laptop, all within ~0.2 s):
+switching on never freezes a frame; each voice starts when its texture is ready.
+
+**Checks** (bikeTest section 16, 8 checks): the ratchet (= turns x teeth coasting, 0 pedalling, rising after), the
+chain rate (= cadence / 60); rolling per surface (each its own voice, louder + faster with speed, setts > asphalt, none
+in the air / stopped); skid (squeal vs rasp, none riding straight); the scrape by material, a stall near silent; the
+events once each (landings clean / sketchy / bail, no double crash on a bail, a kerb knock, a wood clank + scrape on the
+bench, a wall crash) and a new state is not an event; the textures (finite, levelled, deterministic one by one =
+together, each < 50 ms, < 4 MB); the graph on a stand-in AudioContext (13 + 4 nodes once, then exactly one source per
+event over 8 s of riding, nothing per frame); **off: no context, 0 GC over 1e6 updates; the mapping: 0 GC over 1e6
+calls** (~150-200 ns a call).
+
+**Found on the way (the physics step's garbage)**: counting garbage collections showed stepBike allocating ~350 bytes
+a step. Why: `Math.hypot` is not inlined by V8 (it boxes every result), and stepBike is too big for V8's inlining
+budget, so its small helpers (clamp, smooth, judgeSlope) box their double arguments. Fixed the two biggest: `hyp()`
+(sqrt) instead of Math.hypot in the bike's code, and round 2's two judgeSlope calls a step made lazy: 170 -> 95 young
+collections per million steps (a ~1 ms scavenge about every 1.5 min of riding). The rest needs stepBike split into phase
+functions (each small enough to inline its helpers): a later job.
+
+**Needs the browser** (not done: no browser this round): listening (levels, the ratchet's crossfade, the surface
+textures at speed, the scrape materials), the first switch-on's bake in the page.
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:

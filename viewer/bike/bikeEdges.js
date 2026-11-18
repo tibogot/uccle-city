@@ -16,6 +16,8 @@
 // and a uniform grid (CELL m) of segment ids, each segment listed in every cell its box + REACH touches: a query is one
 // cell's list. bytes(layer) = its memory.
 
+/** sqrt(a^2 + b^2): not Math.hypot, which V8 does not inline: it boxes its result, an allocation a call (feel round 3) */
+const hyp = (a, b) => Math.sqrt(a * a + b * b);
 export const EDGE = { kerb: 0, ledge: 1, bench: 2, wall: 3, rail: 4, stair: 5 };
 export const EDGE_NAMES = ["kerb", "ledge", "bench", "wall", "rail", "stair"];
 /** pegs ride an edge whose top stands at least this far over the ground (lower: the wheels would hit the ground) */
@@ -75,9 +77,9 @@ export function gardenEdges(doc, { CAP_T = 0.08 } = {}) {
     const st = styles[g[6]] || {};
     if (st.kind !== "wall" && st.kind !== "rail") { flush(); continue; }
     const h = g[7], top = h > 0.01 ? h + CAP_T : 0, rail = st.kind === "rail" && st.rail >= 0, H = top + (rail ? st.railH || 0 : 0);
-    if (H <= 0.05 || Math.hypot(g[3] - g[0], g[5] - g[2]) < 0.05) { flush(); continue; }
+    if (H <= 0.05 || hyp(g[3] - g[0], g[5] - g[2]) < 0.05) { flush(); continue; }
     const a = [g[0], g[1] + H, g[2]], b = [g[3], g[4] + H, g[5]];
-    if (cur && curStyle === g[6] && Math.hypot(cur.pts.at(-1)[0] - a[0], cur.pts.at(-1)[2] - a[2]) < 0.02) cur.pts.push(b);
+    if (cur && curStyle === g[6] && hyp(cur.pts.at(-1)[0] - a[0], cur.pts.at(-1)[2] - a[2]) < 0.02) cur.pts.push(b);
     else {
       flush();
       curStyle = g[6];
@@ -97,7 +99,7 @@ export function stairEdges(feats, H, { width = 2.0 } = {}) {
     const w = parseFloat(l.tags?.width) || width, P = l.line, n = P.length;
     const pts = P.map(([x, z]) => [x, H(x, z), z]);
     // the ENDS: the ground just beyond the flight (the bottom street / the top landing), not the first / last riser
-    const beyond = (a, b) => { const dx = a[0] - b[0], dz = a[1] - b[1], L = Math.hypot(dx, dz) || 1; return H(a[0] + dx / L * 0.4, a[1] + dz / L * 0.4); };
+    const beyond = (a, b) => { const dx = a[0] - b[0], dz = a[1] - b[1], L = hyp(dx, dz) || 1; return H(a[0] + dx / L * 0.4, a[1] + dz / L * 0.4); };
     pts[0][1] = beyond(P[0], P[1]); pts[n - 1][1] = beyond(P[n - 1], P[n - 2]);
     out.push({ type: EDGE.stair, pts, height: 0, width: w, grind: false, mat: l.tags?.surface || "stone" });
   }
@@ -110,7 +112,7 @@ export function handrailEdges(stairs, { side = 1, height = 0.9, inset = 0.15 } =
   for (const st of stairs) {
     const P = st.pts, off = st.width / 2 - inset;
     const pts = P.map((p, i) => {
-      const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)], dx = b[0] - a[0], dz = b[2] - a[2], L = Math.hypot(dx, dz) || 1;
+      const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)], dx = b[0] - a[0], dz = b[2] - a[2], L = hyp(dx, dz) || 1;
       return [p[0] - dz / L * off * side, p[1] + height, p[2] + dx / L * off * side];
     });
     out.push({ type: EDGE.rail, pts, height, width: 0.04, grind: true, mat: "steel" });
@@ -121,7 +123,7 @@ export function handrailEdges(stairs, { side = 1, height = 0.9, inset = 0.15 } =
 function densify(line, maxSeg) {
   const out = [line[0]];
   for (let i = 1; i < line.length; i++) {
-    const [x0, z0] = line[i - 1], [x1, z1] = line[i], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / maxSeg));
+    const [x0, z0] = line[i - 1], [x1, z1] = line[i], n = Math.max(1, Math.ceil(hyp(x1 - x0, z1 - z0) / maxSeg));
     for (let k = 1; k <= n; k++) out.push([x0 + (x1 - x0) * k / n, z0 + (z1 - z0) * k / n]);
   }
   return out;
@@ -145,7 +147,7 @@ export function buildEdgeLayer(lines, bounds) {
     }
     // a closed line (first point = last): the ends are neighbours
     const p0 = l.pts[0], p1 = l.pts.at(-1);
-    if (k - first > 2 && Math.hypot(p0[0] - p1[0], p0[2] - p1[2]) < 0.02) { segPrev[first] = k - 1; segNext[k - 1] = first; }
+    if (k - first > 2 && hyp(p0[0] - p1[0], p0[2] - p1[2]) < 0.02) { segPrev[first] = k - 1; segNext[k - 1] = first; }
   });
   const nx = Math.max(1, Math.ceil((bounds.x1 - bounds.x0) / CELL)), nz = Math.max(1, Math.ceil((bounds.z1 - bounds.z0) / CELL));
   const ci = (x) => Math.min(nx - 1, Math.max(0, Math.floor((x - bounds.x0) / CELL))), cj = (z) => Math.min(nz - 1, Math.max(0, Math.floor((z - bounds.z0) / CELL)));
@@ -183,11 +185,11 @@ export function edgeCell(E, x, z) {
  *  segment's direction), tx, tz (unit direction), y (the top there) }; returns the plan distance */
 export function segNearest(E, s, x, z, out) {
   const o = s * 6, x0 = E.seg[o], z0 = E.seg[o + 2], dx = E.seg[o + 3] - x0, dz = E.seg[o + 5] - z0;
-  const len = Math.hypot(dx, dz) || 1e-6, tx = dx / len, tz = dz / len;
+  const len = hyp(dx, dz) || 1e-6, tx = dx / len, tz = dz / len;
   const px = x - x0, pz = z - z0, u = px * tx + pz * tz, uc = u < 0 ? 0 : u > len ? len : u;
   out.u = u; out.len = len; out.tx = tx; out.tz = tz; out.d = tx * pz - tz * px;
   out.y = E.seg[o + 1] + (E.seg[o + 4] - E.seg[o + 1]) * uc / len;
-  return Math.hypot(px - tx * uc, pz - tz * uc);
+  return hyp(px - tx * uc, pz - tz * uc);
 }
 
 // ------------------------------------------------------------------------------------------------ stairs as ramps
@@ -244,7 +246,7 @@ const smooth01 = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 export function edgeCounts(lines) {
   const c = {};
   for (const l of lines) {
-    const k = EDGE_NAMES[l.type], m = l.pts.reduce((a, p, i) => (i ? a + Math.hypot(p[0] - l.pts[i - 1][0], p[2] - l.pts[i - 1][2]) : 0), 0);
+    const k = EDGE_NAMES[l.type], m = l.pts.reduce((a, p, i) => (i ? a + hyp(p[0] - l.pts[i - 1][0], p[2] - l.pts[i - 1][2]) : 0), 0);
     c[k] ||= { lines: 0, m: 0, grindM: 0 };
     c[k].lines++; c[k].m += m; if (l.grind) c[k].grindM += m;
   }

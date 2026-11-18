@@ -188,6 +188,8 @@ export const BIKE_RANGES = {
   grindTip: [0, 5, 0.1, "grind"], grindHold: [0, 8, 0.1, "grind"], grindSteer: [0, 6, 0.1, "grind"], grindBump: [0, 2, 0.05, "grind"], grindCrash: [2, 15, 0.1, "grind"],
 };
 
+/** sqrt(a^2 + b^2): not Math.hypot, which V8 does not inline: it boxes its result, an allocation a call (feel round 3) */
+const hyp = (a, b) => Math.sqrt(a * a + b * b);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const sgn = (v) => (v > 0 ? 1 : v < 0 ? -1 : 0);
@@ -264,7 +266,7 @@ function slopeOf(q, fx, fz) { return clamp(-(q.nx * fx + q.nz * fz) / Math.max(0
 
 /** the steepest 2 cm rise of the ground between two points (a face test), and the height at the far point */
 function faceRise(ground, x0, z0, x1, z1, B) {
-  const d = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.ceil(d / 0.02));
+  const d = hyp(x1 - x0, z1 - z0), n = Math.max(1, Math.ceil(d / 0.02));
   let prev = ground(x0, z0, QS).h, worst = 0;
   for (let k = 1; k <= n; k++) {
     const t = k / n, h = ground(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, QS).h;
@@ -359,7 +361,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   s.t += dt; s.steps++;
   savePrev(s);
   if (!(s._prepX === s._prepX) || Math.abs(s.x - s._prepX) + Math.abs(s.z - s._prepZ) > 1) {
-    env.prepare?.(s, 3 + Math.hypot(s.vx, s.vz) * dt);
+    env.prepare?.(s, 3 + hyp(s.vx, s.vz) * dt);
     s._prepX = s.x; s._prepZ = s.z;
   }
   if (s.crashed) { crashStep(s, env, B, S); return s; }
@@ -606,7 +608,7 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   } else if (footHold) vF *= Math.exp(-6 * dt);
   const dv = retard * dt;
   vF = Math.abs(vF) <= dv ? 0 : vF - sgn(vF) * dv;
-  const hs = Math.hypot(vF, vL), dragK = 1 / (1 + B.drag * hs * dt);
+  const hs = hyp(vF, vL), dragK = 1 / (1 + B.drag * hs * dt);
   vF *= dragK; vL *= dragK;
   s.vy += aY * dt;
   s.pitchVel += alpha * dt;
@@ -744,10 +746,17 @@ export function stepBike(s, input, env, B = BIKE, S = SURFACES) {
   if (!s.crashed && contactNow) {
     const saving = s.wobbleT > 0;
     const loop = saving ? Math.max(B.loopOut, B.tailBail) : B.loopOut, endo = saving ? Math.max(B.endo, B.noseBail) : B.endo;
-    const jR = judgeSlope(env.ground, s.x - fx * B.wheelbase / 2, s.z - fz * B.wheelbase / 2, fx, fz, s.slope[1]);
-    const jF = judgeSlope(env.ground, s.x + fx * B.wheelbase / 2, s.z + fz * B.wheelbase / 2, fx, fz, s.slope[0]);
-    if (s.manual > 0.1 && s.pitch - Math.atan(jR) > loop) crash(s, "looped out");
-    else if (s.contact[0] && !s.contact[1] && s.pitch - Math.atan(jF) < -endo) crash(s, "over the bars");
+    // (judged only when the rule can fire, and the slope re-measured only on a face: stepBike is too big for V8 to
+    // inline these calls, and a call with doubles boxes them: two calls a step were half the step's garbage)
+    const sR = s.slope[1], sF = s.slope[0];
+    if (s.manual > 0.1) {
+      const jR = sR > -0.6 && sR < 0.6 ? sR : judgeSlope(env.ground, s.x - fx * B.wheelbase / 2, s.z - fz * B.wheelbase / 2, fx, fz, sR);
+      if (s.pitch - Math.atan(jR) > loop) crash(s, "looped out");
+    }
+    if (!s.crashed && s.contact[0] && !s.contact[1]) {
+      const jF = sF > -0.6 && sF < 0.6 ? sF : judgeSlope(env.ground, s.x + fx * B.wheelbase / 2, s.z + fz * B.wheelbase / 2, fx, fz, sF);
+      if (s.pitch - Math.atan(jF) < -endo) crash(s, "over the bars");
+    }
   }
 
   // ---- wheels, cranks, telemetry
@@ -780,7 +789,7 @@ const GQ = { u: 0, len: 0, d: 0, tx: 0, tz: 0, y: 0 };
 
 /** the grind's pose targets on segment seg at u (dir: +1 along it): fills s._g0 = [x, y(top), z, heading, pitch] */
 function grindTarget(s, E, seg, u, dir, B) {
-  const o = seg * 6, x0 = E.seg[o], z0 = E.seg[o + 2], dx = E.seg[o + 3] - x0, dz = E.seg[o + 5] - z0, len = Math.hypot(dx, dz) || 1e-6;
+  const o = seg * 6, x0 = E.seg[o], z0 = E.seg[o + 2], dx = E.seg[o + 3] - x0, dz = E.seg[o + 5] - z0, len = hyp(dx, dz) || 1e-6;
   const tx = dx / len, tz = dz / len, uc = clamp(u, 0, len), y = E.seg[o + 1] + (E.seg[o + 4] - E.seg[o + 1]) * uc / len;
   const sl = (E.seg[o + 4] - E.seg[o + 1]) / len * dir;
   // (beside the edge: half its top's width + the pegs, on the side the bike came from; (-tz, tx) = the segment's left)
@@ -796,7 +805,7 @@ function trySnap(s, env, B) {
   if (!r) return false;
   // (never right after a hard hit: a bike knocked into line by a bench's back is not "sucked" onto its seat)
   if (s.lastHit && s.t - s.lastHit.t < 0.15) return false;
-  const hv = Math.hypot(s.vx, s.vz), cosA = Math.cos(B.snapAngle);
+  const hv = hyp(s.vx, s.vz), cosA = Math.cos(B.snapAngle);
   wheelOffsets(s, B);
   const hubY = s.y + (HU[0] + HU[1]) / 2;
   let best = -1, bestD = Infinity, bestU = 0, bestAlong = 0;
@@ -852,7 +861,7 @@ function grindStep(s, input, env, B) {
   s.grindT += dt;
   // speed along the edge: its slope, the material's drag; slower than grindMinSpeed it settles into a stall
   let seg = s.grindSeg;
-  const o = seg * 6, len0 = Math.hypot(E.seg[o + 3] - E.seg[o], E.seg[o + 5] - E.seg[o + 2]) || 1e-6;
+  const o = seg * 6, len0 = hyp(E.seg[o + 3] - E.seg[o], E.seg[o + 5] - E.seg[o + 2]) || 1e-6;
   const sl = (E.seg[o + 4] - E.seg[o + 1]) / len0 * s.grindDir;
   const decel = s.grindType === EDGE.rail ? B.grindDecelRail : B.grindDecel;
   s.grindV += -g * sl / Math.sqrt(1 + sl * sl) * dt - decel * dt;
@@ -862,17 +871,17 @@ function grindStep(s, input, env, B) {
   // along the polyline: on into the next segment, or off at its end / a sharp corner
   s.grindU += s.grindDir * s.grindV * dt; s.grindDist += s.grindV * dt;
   for (let guard = 0; guard < 4; guard++) {
-    const oo = seg * 6, len = Math.hypot(E.seg[oo + 3] - E.seg[oo], E.seg[oo + 5] - E.seg[oo + 2]) || 1e-6;
+    const oo = seg * 6, len = hyp(E.seg[oo + 3] - E.seg[oo], E.seg[oo + 5] - E.seg[oo + 2]) || 1e-6;
     if (s.grindU >= 0 && s.grindU <= len) break;
     const nxt = s.grindU > len ? E.segNext[seg] : E.segPrev[seg];
     if (nxt < 0) return grindExit(s, env, B, "end", 0, 0);
     // the bend between the two segments (in plan)
     const ax = E.seg[oo + 3] - E.seg[oo], az = E.seg[oo + 5] - E.seg[oo + 2], n6 = nxt * 6;
     const bx = E.seg[n6 + 3] - E.seg[n6], bz = E.seg[n6 + 5] - E.seg[n6 + 2];
-    const turn = Math.acos(clamp((ax * bx + az * bz) / ((Math.hypot(ax, az) * Math.hypot(bx, bz)) || 1), -1, 1));
+    const turn = Math.acos(clamp((ax * bx + az * bz) / ((hyp(ax, az) * hyp(bx, bz)) || 1), -1, 1));
     if (turn > B.cornerExit) return grindExit(s, env, B, "corner", 0, B.cornerPop);     // (the pegs pop off the corner)
     if (s.grindU > len) { s.grindU -= len; seg = nxt; }
-    else { seg = nxt; s.grindU += Math.hypot(bx, bz); }
+    else { seg = nxt; s.grindU += hyp(bx, bz); }
   }
   s.grindSeg = seg;
   // the balance: tips over by itself (grindTip), the helper pulls it back, the kid leans against it (steer)
@@ -924,7 +933,7 @@ const band = (x, a, b) => (x <= a ? 0 : (x - a) / Math.max(1e-6, b - a));
 function landing(s, wheel, sl, vn, vL, vF, B) {
   const ground = Math.atan(sl), rel = s.pitch - ground;
   const absorb = s.legs < -0.4 ? B.absorb : 0;
-  const side = Math.atan2(vL, Math.max(0.1, Math.abs(vF))), yawOff = Math.abs(side), moving = Math.hypot(vF, vL) > 2;
+  const side = Math.atan2(vL, Math.max(0.1, Math.abs(vF))), yawOff = Math.abs(side), moving = hyp(vF, vL) > 2;
   const R = LAND_RULES;
   R[0][1] = band(-rel, B.noseSketchy, B.noseBail);
   R[1][1] = band(rel, B.tailSketchy, B.tailBail);
@@ -963,7 +972,7 @@ const LAND_RULES = [["over the bars", 0], ["looped out", 0], ["landed leaning", 
 function crashStep(s, env, B, S) {
   const dt = DT, g = B.gravity;
   s.crashT += dt;
-  const hs = Math.hypot(s.vx, s.vz);
+  const hs = hyp(s.vx, s.vz);
   if (hs > 1e-4) { const k = Math.max(0, hs - 5 * dt) / hs; s.vx *= k; s.vz *= k; }
   s.x += s.vx * dt; s.z += s.vz * dt;
   s.yawVel *= Math.exp(-3 * dt); s.heading += s.yawVel * dt;

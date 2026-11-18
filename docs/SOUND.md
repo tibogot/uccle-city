@@ -29,6 +29,7 @@ R 18 m curve, the park (gravel / boardwalk / leaves), the playground, the rail l
 | `viewer/audio/bakeWorker.js`, `bake.js` | bakes all banks in a Web Worker (same synth code with a stand-in context), transfers the arrays back |
 | `labs/sound-lab.html/.js`, `labs/sound-render.html` | the lab and the render page |
 | `tools/sound/` | `save_server.py` (dev: POST target for renders), `pack_renders.py` (mono / trims into docs), `analyze_renders.py` (spectrogram sheets + numbers), `check_occlusion.mjs` |
+| `viewer/bike/bikeAudio.js` | the kid's BMX (claude/kid, docs/BIKE.md "Feel round 3"): freewheel ratchet, rolling per surface, chain, skid, grind scrape by material, landing thuds by band, kerb knock, peg clank; a pure state -> params mapping (node-tested), 13 fixed looping voices + 4 one-shot slots, textures baked one per macrotask on the first switch-on; off by default |
 | `vendor/slop-sound/` | Mr.doob's audio code, copied (MIT), see `ORIGIN.md` / `CHANGES.md` |
 
 ## What we took from Mr.doob (slop-newyork 536a907, MIT)

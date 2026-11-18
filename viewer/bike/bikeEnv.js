@@ -14,6 +14,8 @@ import { BIKE_BODY, bikeHit } from "./bikePhysics.js";
  * sets(x, z, r) -> collider sets that may hold items within r of (x, z) (one per tile; the lab: one)
  * ground(x, z, out) -> fills { h, nx, ny, nz, surf } (bikePhysics groundQuery makes one from a height function)
  */
+/** sqrt(a^2 + b^2): not Math.hypot, which V8 does not inline: it boxes its result, an allocation a call (feel round 3) */
+const hyp = (a, b) => Math.sqrt(a * a + b * b);
 export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit = bikeHit, edges = null }) {
   const near = [];
   const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
@@ -26,7 +28,7 @@ export function createBikeEnv({ sets = () => [], ground, dims = BIKE_BODY, onHit
     tested: 0,
     prepare(s, reach) {
       near.length = 0;
-      const r = Math.hypot(dims.hx, dims.hz) + reach;
+      const r = hyp(dims.hx, dims.hz) + reach;
       for (const col of sets(s.x, s.z, r)) gather(col, s.x, s.z, r, near);
       env.tested = near.length / 2;
     },

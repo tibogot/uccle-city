@@ -21,6 +21,7 @@ import { createBikeEnv } from "../viewer/bike/bikeEnv.js";
 import { FEATURES, testHeight, testSurface, testColliders, SPOTS, BOUNDS, testGroundRamped, testHeightRamped, testEdges } from "../viewer/bike/bikeGround.js";
 import { loadCityDocs, buildCitySpot } from "../viewer/bike/bikeCitySpot.js";
 import { EDGE, EDGE_NAMES, BENCH } from "../viewer/bike/bikeEdges.js";
+import { BikeSound, SOUND, SOUND_RANGES } from "../viewer/bike/bikeAudio.js";
 import { buildColliders, KIND } from "../viewer/drive/colliders.js";
 import { createBikeModel } from "../viewer/bike/bikeModel.js";
 import { BikeCamera, BIKE_CAMERA } from "../viewer/bike/bikeCamera.js";
@@ -220,7 +221,10 @@ const groundAt = (x, z) => W.height(x, z);
 const chase = new BikeCamera(camera, BIKE_CAMERA);
 if (qs.get("cam")) BIKE_CAMERA.mode = qs.get("cam");
 let s;
-const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true };
+const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true, sound: false };
+// FEEL ROUND 3: the bike's sound (viewer/bike/bikeAudio.js), OFF by default: the panel's "sound" switch (a click: the
+// browser's gesture) makes the context and bakes the textures in the background; off suspends it (no audio work)
+const snd = new BikeSound();
 function place(name) {
   const [x, z, h] = W.spots[name] || Object.values(W.spots)[0];
   s = createBikeState(x, z, h, W.height(x, z));
@@ -327,6 +331,7 @@ fr.add(P, "pause").name("pause (P)");
 fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
 fr.add(P, "spot", Object.keys(W.spots)).name("start spot").onChange((v) => place(v));
 fr.add(P, "edges").name("show the edge layer").onChange((v) => { edgeLines.visible = v; });
+fr.add(P, "sound").name("sound (bike)").onChange((v) => snd.setOn(v, s));
 fr.buttons([["reset bike (R)", () => place(P.spot)], ["get up (G)", () => s.crashed && getUp(s, env)],
   ["camera (V)", () => banner(`camera: ${chase.next()}`)], ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
   ["copy constants (JSON)", () => navigator.clipboard?.writeText(JSON.stringify({ BIKE: changed(BIKE, DEFAULTS), SURFACES: SURFACES.map((x, i) => changed(x, SURF_DEFAULTS[i])) }, null, 1))]], 2);
@@ -349,6 +354,8 @@ for (const [k, a, b, st] of [["distance", 1.5, 10, 0.1], ["height", 0.2, 4, 0.05
   ["followXZ", 1, 30, 0.5], ["followY", 0.5, 20, 0.5], ["fov", 40, 90, 1], ["fovKick", 0, 30, 1], ["roll", 0, 0.6, 0.01], ["shake", 0, 3, 0.1], ["minClear", 0.1, 1, 0.05]])
   fc.add(BIKE_CAMERA, k, a, b, st).name(k);
 fc.add(BIKE_CAMERA, "mode", ["chase", "far", "low", "side"]).name("mode").onChange(() => chase.reset());
+const fsd = ui.addFolder("Sound", { id: "bike-sound", open: false });
+for (const [k, [a, b, st]] of Object.entries(SOUND_RANGES)) fsd.add(SOUND, k, a, b, st).name(k);
 
 // ---------------------------------------------------------------- the telemetry strip
 const tele = document.getElementById("tele");
@@ -401,6 +408,7 @@ renderer.setAnimationLoop(() => {
   else parkStep(mount, s, fdt, W.height(s.x, s.z));
   keys.apply(now);           // (the events since the last step: the next frame's first step comes after them)
   if (s.lastLanding && s.lastLanding.t !== landT) { landT = s.lastLanding.t; if (s.lastLanding.band === "sketchy") banner(`sketchy landing (${s.lastLanding.why})`); }
+  snd.update(s, BIKE);       // (off: returns at once)
   physMs = physMs * 0.95 + (performance.now() - t0) * 0.05;
   bikePose(s, P.pause ? 1 : s.alpha, pose);
   model.update(s, pose, groundAt);
