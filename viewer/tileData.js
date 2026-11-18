@@ -10,11 +10,11 @@ import { classify, TYPE } from "./buildingTypes.js";
 import { farBuildings } from "./farLookData.js";   // the far city's façades (docs/FARCITY.md), ?farlook=old = the flat solids
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
+import { buildDriveData, tramPlatformSurface, driveGround } from "./drive/colliders.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
-import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, onCarriageway } from "./streets/bridgeDecks.js";
+import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
 import { smoothPolyline } from "./track.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
@@ -461,7 +461,13 @@ export async function buildTileData(entry, base) {
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround0, footprintIndex(bDoc)); }) : null);
   const feetEarly = entry.colFeet === false ? null : await sinkWalls();
   const feetLate = () => sinkWalls();
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy, clipBand: entry.colBand !== false,   // boot3: ?colband=old every wall sample (colliders.js buildingBlocks)
+  // (claude/deckrail, rule 17) the drive raster once, here: the decks' parapets / railings are left off every edge where
+  // the drawn street, another deck, a lane or a tram track goes on at the deck's level (bridgeDecks.js markRailCuts: the same
+  // decision for the drawn deck below and its car walls); entry.deckRail === false (?deckrail=old): as before
+  const raster0 = osmBridges.decks.length && !keep ? driveGround(hm, road.parts) : null;
+  const railCuts = raster0 && entry.deckRail !== false ? await step("deck rails", () => markRailCuts(osmBridges.decks, deckContinuation({ hm, raster: raster0, decks: osmBridges.decks, lines: feats.lines || [],
+    paths: traffic?.xy ? Array.from({ length: traffic.paths }, (_, p) => traffic.xy.subarray(traffic.off[p] * 2, traffic.off[p + 1] * 2)) : [] }))) : null;
+  const drive = await step("drive colliders", () => buildDriveData({ ground: raster0, bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy, clipBand: entry.colBand !== false,   // boot3: ?colband=old every wall sample (colliders.js buildingBlocks)
     // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
     // or the line's fence passes over them
     walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top, base: p.top - 1.2 })),   // (base: a car far under it passes: Linkebeek's platforms over the Kleindalstraat bore)
@@ -471,6 +477,7 @@ export async function buildTileData(entry, base) {
       ...(fences?.rings || []).map((ring) => ({ ring, top: Math.max(...ring.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
+  if (railCuts != null) drive.counts.deckRailCuts = railCuts;
   // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb
   // instead of sinking into the slab (docs/collisions/DRIVE_FIX.md); ?colfix=0 keeps the old surface
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
@@ -521,7 +528,7 @@ export async function buildTileData(entry, base) {
     netInfo, road, terrain, buildings, cover, traffic, parked: parked ? { sites: parked.sites, stats: parked.stats } : null, times, rail: railOut, grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
       return { ...d, ...(tops ? { plan: { ...d.plan, tops } } : {}), mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) }; }),   // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
-    ...(entry.keepNet ? { net, hm } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
+    ...(entry.keepNet ? { net, hm, deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)) } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
 }
 
 // ---------------------------------------------------------------- far level of detail

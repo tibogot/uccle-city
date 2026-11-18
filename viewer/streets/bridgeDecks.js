@@ -187,6 +187,114 @@ function at(d, s) {
   return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, tx: (bx - ax) / seg, tz: (bz - az) / seg, y: profY(d, s) };
 }
 
+// ------------------------------------------------------------------------------------------ RAILS ON JOINED EDGES (deckrail)
+// The collisions browser turn (2026-11-17): at Kasteelstraat (E10) the Avenue des Hospices deck and the service road's
+// deck leave one junction side by side, their concrete parapets drawn across the junction and across each other's
+// carriageway, and along the Hospices deck's east side for 38 m where the street beside it is at grade; on the Carsoel
+// deck (H6) a railing + upstand stood across the tram road at both ends of the slab, the rails passing under it. The
+// car stopped at all of them. Cause: a band deck drew its parapets on both sides over its whole span whatever was
+// beside it, and a plan deck measured "the drop" against the BARE TERRAIN half a metre out (the DTM of the bank under
+// the street that continues there), never against what is drawn there. Rule: an edge where the traffic surface goes on
+// at the deck's level (a drawn street, another deck, a tram track) carries no parapet / railing and no collider; a
+// drop keeps its railing. ?deckrail=old (entry.deckRail === false): no d.railCut, the railings as before.
+// (browser turn 2026-11-18: tolNear 0.3 left a parapet of the Kasteelstraat service deck standing 0.3-0.4 m over the
+// Hospices deck it runs into, the car stopped at it; 0.5 = the step the car rides up, carEnv.js MAX_STEP)
+const BURIED = 0.15;
+export const CONT = { near: 1.0, far: 2.0, tolNear: 0.5, tolFar: 0.8, tram: 1.5, lane: 1.6, laneTol: 0.6 };
+/** (x, z, y, tol, deckOnly) -> true when a traffic surface is drawn at (x, z) within tol of y: the drive raster's top
+ *  surface (streets, sidewalks, tram platforms: { hm, raster }), any deck's walked top, a tram track on ground there.
+ *  .crosses(x, z, nx, nz): a driven lane / junction turn (paths: [[x, z, x, z, ...] flat], the tile's traffic graph) or
+ *  a tram track passes the edge point within CONT.lane m, ACROSS the edge (not along it) */
+export function deckContinuation({ hm, raster, decks, lines = [], paths = [] }) {
+  const H = hm.h, Y = hm.y, D = raster.delta;
+  const tops = decks.map((d) => deckHeight(d, () => -Infinity, { drawn: true }));
+  const trams = lines.filter((l) => l.kind === "tram" && l.line?.length >= 2).map((l) => l.line);
+  const nearTram = (x, z) => trams.some((L) => { for (let i = 1; i < L.length; i++) {
+    const [ax, az] = L[i - 1], [bx, bz] = L[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+    if (Math.hypot(ax + dx * t - x, az + dz * t - z) < CONT.tram) return true; } return false; });
+  const street = (x, z) => {
+    const c = Math.round((x - H.x0) / H.step), r = Math.round((z - H.z0) / H.step);
+    if (c < 0 || r < 0 || c >= H.cols || r >= H.rows) return null;
+    const k = r * H.cols + c, v = D[k];
+    return v > 0 && v !== 65535 ? Y[k] + v / 100 : null;
+  };
+  const cont = (x, z, y, tol, deckOnly = false) => {
+    for (const f of tops) { const v = f(x, z); if (v != null && Math.abs(v - y) <= tol) return true; }
+    if (deckOnly) return false;
+    const s = street(x, z);
+    if (s != null && Math.abs(s - y) <= tol) return true;
+    return nearTram(x, z) && Math.abs(hm.ground(x, z) - y) <= tol;
+  };
+  cont.street = street;
+  // (browser turn) the edge point lies ON another deck standing higher than this one's top (two decks overlapping, the
+  // other on top): this deck's parapet would stick up through the other's carriageway (Kasteelstraat: the service
+  // deck's profile drops 0.7 m within a metre past the junction, under the Hospices deck: the car stopped at it)
+  cont.buried = (x, z, y, self) => tops.some((f, i) => { if (decks[i] === self || decks[i].id === self?.id) return false; const v = f(x, z); return v != null && v - y > BURIED; });
+  // the lanes' and tram tracks' segments near a deck (boxes + 4 m)
+  const segs = [], near = (x, z) => decks.some((d) => x > d.box[0] - 4 && z > d.box[1] - 4 && x < d.box[2] + 4 && z < d.box[3] + 4);
+  for (const P of [...paths, ...trams.map((L) => L.flat())]) for (let i = 2; i + 1 < P.length; i += 2) {
+    const ax = P[i - 2], az = P[i - 1], bx = P[i], bz = P[i + 1];
+    if (near(ax, az) || near(bx, bz) || near((ax + bx) / 2, (az + bz) / 2)) segs.push(ax, az, bx, bz);
+  }
+  cont.crosses = (x, z, nx, nz) => {
+    for (let i = 0; i < segs.length; i += 4) {
+      const ax = segs[i], az = segs[i + 1], dx = segs[i + 2] - ax, dz = segs[i + 3] - az, l2 = dx * dx + dz * dz;
+      if (l2 < 1e-6) continue;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+      if (Math.hypot(ax + dx * t - x, az + dz * t - z) < CONT.lane && Math.abs(dx * nx + dz * nz) / Math.sqrt(l2) > 0.5) return true;
+    }
+    return false;
+  };
+  return cont;
+}
+/** the level traffic meets at a deck edge: the street drawn on the deck just inside it (the measured streets lie on a
+ *  plan deck's slab, its top tucked under them: Carsoel's west end, the street 0.3-0.5 m under the fitted top), else the
+ *  deck's own top y */
+const edgeLevel = (cont, x, z, nx, nz, y) => { const s = cont.street?.(x - nx * 0.5, z - nz * 0.5); return s != null && Math.abs(s - y) < 0.6 ? s : y; };
+/** the surface goes on past an edge point (x, z) at the deck top y, out along (nx, nz): drawn at level 1 m AND 2 m out
+ *  (a 1 m lip of street hanging past the slab, or a street falling away down the bank, is not a continuation) */
+// or a lane / tram track crosses the edge there and the surface 1 m out is within CONT.laneTol of it (the drawn street
+// beyond can sag into the bank: Carsoel's eastbound lane and tram track at the west end; never a road far under a deck)
+const goesOn = (cont, x, z, nx, nz, y0, deckOnly, self = null) => {
+  if (cont.buried?.(x - nx * 0.15, z - nz * 0.15, y0, self)) return true;
+  const y = edgeLevel(cont, x, z, nx, nz, y0);
+  if (cont(x + nx * CONT.near, z + nz * CONT.near, y, CONT.tolNear, deckOnly) && cont(x + nx * CONT.far, z + nz * CONT.far, y, CONT.tolFar, deckOnly)) return true;
+  return !deckOnly && !!cont.crosses?.(x, z, nx, nz) && cont(x + nx * CONT.near, z + nz * CONT.near, y, CONT.laneTol);
+};
+/** decide, once per deck, which parapet / railing pieces stand on a joined edge (d.railCut; deckMesh and parapetRings
+ *  read the same decision, so what is drawn is what the car meets): a piece goes when 2 of its 3 samples (ends, middle)
+ *  go on. Band decks: [side +1, side -1] x SLAB.step pieces; plan decks: per ring edge x 1 m pieces (a FREE edge, over
+ *  the tracks, only where another deck goes on). Returns the pieces cut. */
+export function markRailCuts(decks, cont) {
+  let cut = 0;
+  for (const d of decks) {
+    if (d.plan) {
+      const ring = d.plan.ring, sgn = ringSign(ring), free = new Set(d.plan.free), top = (x, z) => planTop(d, x, z) - PLAN.sink, edges = [];
+      for (let i = 0; i < ring.length; i++) {
+        const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], L = Math.hypot(bx - ax, bz - az);
+        const steps = Math.max(1, Math.ceil(L)), m = new Uint8Array(steps);
+        if (L >= 0.01) {
+          const nx = (bz - az) / L * sgn, nz = -(bx - ax) / L * sgn;
+          const on = (f) => { const x = ax + (bx - ax) * f, z = az + (bz - az) * f; return goesOn(cont, x, z, nx, nz, top(x, z), free.has(i), d) ? 1 : 0; };
+          for (let k = 0; k < steps; k++) if (on(k / steps) + on((k + 0.5) / steps) + on((k + 1) / steps) >= 2) { m[k] = 1; cut++; }
+        }
+        edges.push(m);
+      }
+      d.railCut = { plan: edges };
+      continue;
+    }
+    const [s0, s1] = d.span, steps = Math.max(1, Math.ceil((s1 - s0) / SLAB.step)), sides = [];
+    for (const sg of [1, -1]) {
+      const m = new Uint8Array(steps);
+      const on = (s) => { const q = at(d, s), nx = q.tz * sg, nz = -q.tx * sg; return goesOn(cont, q.x + nx * d.half, q.z + nz * d.half, nx, nz, q.y - SLAB.sink, false, d) ? 1 : 0; };
+      for (let k = 0; k < steps; k++) { const a = s0 + (s1 - s0) * k / steps, b = s0 + (s1 - s0) * (k + 1) / steps; if (on(a) + on((a + b) / 2) + on(b) >= 2) { m[k] = 1; cut++; } }
+      sides.push(m);
+    }
+    d.railCut = { band: sides };
+  }
+  return cut;
+}
+
 /** The deck as a drawable: a slab between the bridge's own ends (not the extensions), carriageway and sidewalk bands on
  *  top (SLAB.sink under the deck height, so the street's own surface wins where both are drawn), parapets on both
  *  edges, closed ends and soffit. Plain arrays: { position, normal, color } (non-indexed triangles). */
@@ -215,6 +323,10 @@ export function deckMesh(d, ground = null, covered = null, streetY = null) {
     quad([0, -1, 0], COL.soffit, off(a, -H, ya - D), off(b, -H, yb - D), off(b, H, yb - D), off(a, H, ya - D));
     for (const sg of [-1, 1]) {
       const n = [a.tz * sg, 0, -a.tx * sg], ni = [-n[0], 0, -n[2]];
+      // (deckrail) a joined piece: the slab's edge face only, no parapet; where a parapet run starts / stops, its end cap
+      const cutOf = (j) => !!d.railCut?.band[sg > 0 ? 0 : 1][j];
+      if (cutOf(k)) { quad(n, COL.concrete, off(a, sg * H, ya - D), off(b, sg * H, yb - D), off(b, sg * H, yb), off(a, sg * H, ya)); continue; }
+      for (const [q, y, dir, j] of [[a, ya, -1, k - 1], [b, yb, 1, k + 1]]) if (j >= 0 && j < steps && cutOf(j)) quad([q.tx * dir, 0, q.tz * dir], COL.concrete, off(q, sg * (H - Wp), y), off(q, sg * H, y), off(q, sg * H, y + Ph), off(q, sg * (H - Wp), y + Ph));
       quad(n, COL.concrete, off(a, sg * H, ya - D), off(b, sg * H, yb - D), off(b, sg * H, yb + Ph), off(a, sg * H, ya + Ph));          // outer face
       quad(ni, COL.concrete, off(a, sg * (H - Wp), ya), off(b, sg * (H - Wp), yb), off(b, sg * (H - Wp), yb + Ph), off(a, sg * (H - Wp), ya + Ph));   // inner face
       quad([0, 1, 0], COL.concrete, off(a, sg * (H - Wp), ya + Ph), off(b, sg * (H - Wp), yb + Ph), off(b, sg * H, yb + Ph), off(a, sg * H, ya + Ph));  // coping
@@ -223,7 +335,10 @@ export function deckMesh(d, ground = null, covered = null, streetY = null) {
   for (const [q, dir] of [[S[0], -1], [S[S.length - 1], 1]]) {             // the ends: slab + parapet caps
     const n = [q.tx * dir, 0, q.tz * dir], y = q.y - SLAB.sink;
     quad(n, COL.concrete, off(q, -H, y - D), off(q, H, y - D), off(q, H, y), off(q, -H, y));
-    for (const sg of [-1, 1]) quad(n, COL.concrete, off(q, sg * (H - Wp), y), off(q, sg * H, y), off(q, sg * H, y + Ph), off(q, sg * (H - Wp), y + Ph));
+    for (const sg of [-1, 1]) {
+      if (d.railCut?.band[sg > 0 ? 0 : 1][dir < 0 ? 0 : steps - 1]) continue;      // (deckrail: no parapet at that end)
+      quad(n, COL.concrete, off(q, sg * (H - Wp), y), off(q, sg * H, y), off(q, sg * H, y + Ph), off(q, sg * (H - Wp), y + Ph));
+    }
   }
   return { position: new Float32Array(P), normal: new Float32Array(N), color: new Float32Array(C) };
 }
@@ -408,18 +523,20 @@ function planDeckMesh(d, ground, covered, streetY = null) {
       const gOut = ground(x + nx * 0.5, z + nz * 0.5);                       // the ground half a metre out
       S.push({ x, z, y, yb: base(x, z), drop: y - gOut, gr: Math.min(ground(x, z), gOut) });
     }
-    const ix = -nx * PLAN.upW, iz = -nz * PLAN.upW, U = PLAN.upstand, mx = ix * 0.5, mz = iz * 0.5;
+    const ix = -nx * PLAN.upW, iz = -nz * PLAN.upW, U = PLAN.upstand, mx = ix * 0.5, mz = iz * 0.5, cutE = d.railCut?.plan[i];
     for (let k = 0; k < steps; k++) {
       const a = S[k], b = S[k + 1];
       if (a.drop < -0.05 && b.drop < -0.05) continue;                         // buried: the bank is over the deck here
       const fr = free.has(i);
       const ya = fr ? a.yb - PLAN.depth : Math.min(a.yb - PLAN.depth, a.gr - 0.4), yb = fr ? b.yb - PLAN.depth : Math.min(b.yb - PLAN.depth, b.gr - 0.4);
       quad(n, fr ? COLP.fascia : COLP.wall, [a.x, ya, a.z], [b.x, yb, b.z], [b.x, b.y, b.z], [a.x, a.y, a.z]);
+      if (cutE?.[k]) continue;                                                   // (deckrail: the street goes on here)
       if (Math.max(a.drop, b.drop) < (fr ? FREE_DROP : RAIL_DROP)) continue;
       // a concrete upstand on the slab's edge (outer face, inner face, top), then the steel rails at 1.1 / 0.75 / 0.45 m
       quad(n, COLP.fascia, [a.x, a.y, a.z], [b.x, b.y, b.z], [b.x, b.y + U, b.z], [a.x, a.y + U, a.z]);
       quad([-nx, 0, -nz], COLP.fascia, [a.x + ix, a.y, a.z + iz], [b.x + ix, b.y, b.z + iz], [b.x + ix, b.y + U, b.z + iz], [a.x + ix, a.y + U, a.z + iz]);
       quad([0, 1, 0], COLP.fascia, [a.x, a.y + U, a.z], [b.x, b.y + U, b.z], [b.x + ix, b.y + U, b.z + iz], [a.x + ix, a.y + U, a.z + iz]);
+      for (const [q, dir, j] of [[a, -1, k - 1], [b, 1, k + 1]]) if (cutE?.[j]) quad([tx * dir, 0, tz * dir], COLP.fascia, [q.x, q.y, q.z], [q.x + ix, q.y, q.z + iz], [q.x + ix, q.y + U, q.z + iz], [q.x, q.y + U, q.z]);   // (deckrail: the upstand's end)
       for (const [h, t] of [[PLAN.railH, 0.06], [0.75, 0.035], [0.45, 0.035]]) {
         const ya0 = a.y + h - t, yb0 = b.y + h - t, w = 0.03;
         const A = [a.x + mx, a.z + mz], B = [b.x + mx, b.z + mz], Ai = [A[0] - nx * w, A[1] - nz * w], Bi = [B[0] - nx * w, B[1] - nz * w];
@@ -432,6 +549,7 @@ function planDeckMesh(d, ground, covered, streetY = null) {
     // posts every PLAN.post m along the railed stretches (6 cm square)
     for (let sAl = PLAN.post / 2; sAl < L; sAl += PLAN.post) {
       const x = ax + tx * sAl + mx, z = az + tz * sAl + mz, y = top(x, z);
+      if (cutE?.[Math.min(steps - 1, Math.floor(sAl / L * steps))]) continue;
       if (y - ground(x + nx * 0.65, z + nz * 0.65) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
       const h = 0.03, y0 = y + PLAN.upstand, y1 = y + PLAN.railH;
       const c = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([p, q]) => [x + tx * p + nx * q, z + tz * p + nz * q]);
@@ -490,8 +608,10 @@ function planParapetRings(d, ground) {
   for (let i = 0; i < ring.length; i++) {
     const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], L = Math.hypot(bx - ax, bz - az);
     if (L < 0.01) continue;
-    const nx = (bz - az) / L * outSign, nz = -(bx - ax) / L * outSign, steps = Math.max(1, Math.ceil(L / SLAB.step));
+    // (deckrail: the drawn railing's own 1 m pieces, so the cut pieces and the drop test match the mesh one for one)
+    const cutE = d.railCut?.plan[i], nx = (bz - az) / L * outSign, nz = -(bx - ax) / L * outSign, steps = Math.max(1, Math.ceil(cutE ? L : L / SLAB.step));
     for (let k = 0; k < steps; k++) {
+      if (cutE?.[k]) continue;
       const x0 = ax + (bx - ax) * k / steps, z0 = az + (bz - az) * k / steps, x1 = ax + (bx - ax) * (k + 1) / steps, z1 = az + (bz - az) * (k + 1) / steps;
       const ya = top(x0, z0), yb = top(x1, z1);
       if (ground && Math.max(ya - ground(x0 + nx * 0.5, z0 + nz * 0.5), yb - ground(x1 + nx * 0.5, z1 + nz * 0.5)) < (free.has(i) ? FREE_DROP : RAIL_DROP)) continue;
@@ -566,6 +686,7 @@ export function parapetRings(d, ground = null) {
   const off = (q, o) => [q.x + q.tz * o, q.z - q.tx * o];
   const out = [];
   for (const sg of [1, -1]) for (let k = 0; k < steps; k++) {
+    if (d.railCut?.band[sg > 0 ? 0 : 1][k]) continue;                        // (deckrail: a joined edge, no wall)
     const a = S[k], b = S[k + 1], o = sg * d.half, i = sg * (d.half - SLAB.parapetW);
     out.push({ ring: [off(a, o), off(b, o), off(b, i), off(a, i)], top: Math.max(a.y, b.y) - SLAB.sink + SLAB.parapetH, base: Math.min(a.y, b.y) - SLAB.sink - SLAB.depth });
   }

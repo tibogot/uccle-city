@@ -372,9 +372,9 @@ function cleanRing(ring) {
  *  - lamps and bollards: added on the main thread from the drawn lists (driveMode.js tileDrive).
  * legacy = true: the old sets (every engine island, every footprint) for the audit's "before".
  */
-export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [], clipBand = true }) {
+export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [], clipBand = true, ground: ground0 = null }) {
   const polys = [], circles = [];
-  const ground = driveGround(hm, parts);
+  const ground = ground0 || driveGround(hm, parts);     // (deckrail: tileData.js passes the raster it already made for the deck railings)
   let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
   // the drawn walls at car height (buildingBlocks); the footprints for ?drivecol=legacy and ?colfix=0 (no bBuf)
   if (bBuf && !legacy) {
