@@ -22,6 +22,7 @@ import { lineCode } from "../../vendor/roads/mesh/laneRoadMesh.js";
 import { markingStyle } from "../../vendor/roads/roadMarkings.js";
 import { hashPhase } from "../roadData.js";
 import { approachSpan } from "./inventory.js";
+import { GLYPH, CHEVRON_AT, glyphHalf } from "./bikeGlyph.js";
 import earcut from "three/src/extras/lib/earcut.js";
 
 export const PAINT_LIFT = 0.022;     // decal paint above H (the engine layer is LIFT 6 mm + 3 tiers 4.5 mm + DEV 8 mm = 18.5 mm at most: 3.5 mm clear)
@@ -405,7 +406,19 @@ export function afterNetworkV2(net, ctx, surf) {
       let sxx = 0, szz = 0, sxz = 0;
       for (const [x, z] of g.poly) { const dx = x - c[0], dz = z - c[1]; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; }
       const th = 0.5 * Math.atan2(2 * sxz, sxx - szz);
-      items.push(...sharrow(c[0] + Math.cos(th) * 0.3, c[1] + Math.sin(th) * 0.3, th, false));
+      if (ctx.bikeMark === false) items.push(...sharrow(c[0] + Math.cos(th) * 0.3, c[1] + Math.sin(th) * 0.3, th, false));
+      else {
+        // markings (rule 33): the surveyed outline is the bicycle painted upright for the road user coming toward it,
+        // its frame on the far side of the wheels' middle: the way of travel is the axis end the frame's paint is on
+        // (the outline's inside along the axis, |across| < 0.08 m: the gap between the two wheels)
+        const ux = Math.cos(th), uz = Math.sin(th);
+        let sum = 0, k = 0;
+        for (let a = -0.75; a <= 0.75; a += 0.05) for (const b of [-0.06, -0.02, 0.02, 0.06]) {
+          const x = c[0] + ux * a - uz * b, z = c[1] + uz * a + ux * b;
+          if (pip(x, z, g.poly)) { sum += a; k++; }
+        }
+        items.push(...bikeGlyphs(c[0], c[1], k && sum < 0 ? th + Math.PI : th, false, 0));
+      }
       inv.symbols.push({ id: g.id, src: "bm", kind: "glyph:P09", x: c[0], z: c[1] });
       glyphs++;
       continue;
@@ -440,7 +453,7 @@ export function afterNetworkV2(net, ctx, surf) {
         const x = rr.smp.x[i] + nx * t, z = rr.smp.z[i] + nz * t;
         if (!MARKABLE.has(cls(x, z))) continue;
         const dir = side === "right" ? th : th + Math.PI;
-        items.push(...sharrow(x, z, dir));
+        items.push(...(ctx.bikeMark === false ? sharrow(x, z, dir) : bikeGlyphs(x, z, dir, true, -1.2)));
         inv.symbols.push({ id: `v2:sharrow:${rr.id}:${side}:${Math.round(s)}`, src: "osm", kind: "sharrow", x, z, dir, road: rr.id });
       }
     }
@@ -455,8 +468,23 @@ function lineItem(kind, p, q, dx, dz, w) {
   return { kind: kind === "stop" ? "solid" : "teeth", poly: hull(poly), frame: { o: p, a: [dx, dz], b: [bx, bz], u0: 0, u1: w, v0: 0, vLen: len } };
 }
 
-/** The Belgian shared-lane symbol: a bicycle (two wheels, a frame) and two chevrons ahead, ~1.0 x 2.6 m. */
-function sharrow(x, z, dir, chevrons = true) {
+/** markings (rule 33, viewer/streets/bikeGlyph.js): the Brussels bicycle marking (upright for the road user coming
+ *  toward it, 1.50 x 0.92 m) centred `at` m along `dir` from (x, z), and with `chevrons` the two shared-lane chevrons
+ *  ahead of it; each one decal quad whose shape the paint shader draws as an analytic signed distance (kind "glyph") */
+function bikeGlyphs(x, z, dir, chevrons, at = 0) {
+  const fx = Math.cos(dir), fz = Math.sin(dir), lx = -fz, lz = fx;
+  const quad = (kind, u) => {
+    const [hu, hv] = glyphHalf(kind), o = [x + fx * u, z + fz * u];
+    const P = (a, b) => [o[0] + fx * a + lx * b, o[1] + fz * a + lz * b];
+    return { kind: "glyph", poly: [P(-hu, -hv), P(hu, -hv), P(hu, hv), P(-hu, hv)], frame: { o, a: [fx, fz], b: [lx, lz], u0: 0, u1: hu, v0: 0, vLen: hv, n: kind } };
+  };
+  const out = [quad(GLYPH.bike, at)];
+  if (chevrons) for (const d of CHEVRON_AT) out.push(quad(GLYPH.chevron, at + d));
+  return out;
+}
+
+/** ?bikemark=old: the shared-lane symbol as before: a bicycle of straight bars (decagon wheels) and two chevrons ahead. */
+export function sharrow(x, z, dir, chevrons = true) {
   const fx = Math.cos(dir), fz = Math.sin(dir), lx = -fz, lz = fx;
   const P = (u, v) => [x + fx * u + lx * v, z + fz * u + lz * v];
   const bar = (u0, v0, u1, v1, w) => {
@@ -509,7 +537,7 @@ export function paintMeshV2(items, prep, bounds) {
       }
   });
   const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
-  const KIND = { solid: 0, zebra: 1, teeth: 2 };
+  const KIND = { solid: 0, zebra: 1, teeth: 2, glyph: 3 };
   for (const it of items) {
     let poly = clipConvex(it.poly, tile);
     if (poly.length < 3) continue;
