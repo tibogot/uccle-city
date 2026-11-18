@@ -1,5 +1,5 @@
 // node --preserve-symlinks --import ./tools/characters/threeHook.mjs tools/audit/jitterCheck.mjs [--quiet]
-// THE THIN-BAR GATE (claude/jitter, QUALITY_RULES rule 34 provisional, docs/JITTER.md). Root cause it guards: a bar
+// THE THIN-BAR GATE (claude/jitter, QUALITY_RULES rule 35 provisional, docs/JITTER.md). Root cause it guards: a bar
 // narrower than ~1 internal pixel (garden railings / gates 8-16 mm, balcony railings, grilles and glazing bars 8-30 mm;
 // 1 px = 9.6 mm at 6 m, 45 mm at 28 m under the TAAU at Auto's floor) drawn as GEOMETRY is hit or missed by each
 // jitter phase and clipped out of the history when missed: it crawls / shimmers as the camera moves (owner

@@ -1,4 +1,4 @@
-// THIN BARS, PRE-FILTERED (claude/jitter, rule 34 provisional; docs/JITTER.md). Pure JS (no three): shared by the
+// THIN BARS, PRE-FILTERED (claude/jitter, rule 35 provisional; docs/JITTER.md). Pure JS (no three): shared by the
 // viewer (viewer/gardens/gardenKit.js, viewer/facadeKit/kitField.js) and the census / gate
 // (tools/audit/census/thinBars.mjs, tools/audit/jitterCheck.mjs).
 //

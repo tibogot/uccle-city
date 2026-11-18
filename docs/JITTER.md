@@ -2,7 +2,7 @@
 
 Owner playtest 2026-11-18: "gates, fences and window grilles jitter / shimmer when the camera moves". Not z-fighting
 (that is claude/zfight): aliasing of thin geometry. Offline turn: census, fix behind `?jitter=old`, gate row `jitter`
-(tools/audit/jitterCheck.mjs), rule 34 (provisional). The browser turn measures (section 5).
+(tools/audit/jitterCheck.mjs), rule 35 (provisional). The browser turn measures (section 5).
 
 ## 1. Why
 
@@ -73,7 +73,7 @@ viewer/facadeKit/kitField.js, viewer/facadeKit/kitMaterials.js, viewer/features.
 `jitter`): census ceilings 12 / 11 (old 421 / 312 shown failing), full mip chains keeping level 0's coverage, every
 carded stroke on its card's coverage, the kit stretch fit, the cards blended (no alpha test / A2C / shadow), the card
 and near materials compile to WGSL headless, shadows unchanged, the switch, no DynamicDrawUsage / light.
-Rule 34 (provisional) in docs/QUALITY_RULES.md.
+Rule 35 (provisional) in docs/QUALITY_RULES.md.
 
 ## 5. Browser turn (to do)
 
