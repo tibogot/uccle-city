@@ -7,7 +7,7 @@
 //   Space         hold = crouch / preload / absorb, release = hop (or a pump on a back slope)
 //   C             pump (extend the legs)        F   trick (held in the air; let go before landing!)
 //   Z / X         lean forward / back (I / K too): manual, nose dive, air pitch
-//   (one-shot, the lab: R reset, G get up, V camera, P pause, 1-9 spots, ? the card)
+//   (one-shot, the lab: R reset, G get up, V camera, P pause, 1-9 spots, ? the card, E get on / off: claude/kid)
 // Gamepad (standard mapping): left stick steer + lean, RT pedal, LT rear brake, LB front brake, A hop, B pump, X trick,
 // RB sprint; Y = camera, Back = reset (onKey).
 export const KEYS = {
@@ -16,7 +16,7 @@ export const KEYS = {
   leanFwd: ["KeyZ", "KeyI"], leanBack: ["KeyX", "KeyK"],
 };
 /** the lab's one-shot keys (onKey) */
-export const ONE_SHOT = ["KeyR", "KeyG", "KeyV", "KeyP", "Slash", "F1", ...Array.from({ length: 9 }, (_, i) => `Digit${i + 1}`)];
+export const ONE_SHOT = ["KeyR", "KeyG", "KeyV", "KeyP", "Slash", "F1", ...Array.from({ length: 9 }, (_, i) => `Digit${i + 1}`), "KeyE"];
 export class BikeKeys {
   constructor({ active = () => true, onKey = null } = {}) {
     this.down = new Set(); this.onKey = onKey;

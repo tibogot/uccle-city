@@ -2,6 +2,13 @@
 // the Blender kit later). Driven by bikePhysics state: heading / lean (round the contact line) / pitch (round the CoM),
 // the legs (the frame moves under the body), wheel spin, cranks with the feet on the pedals (2-bone IK), the bars
 // turned by the steer angle, pushing (the kid walks beside it), the crash (the bike on its side, the kid tumbling).
+//
+// THE RIDER'S EMPTIES (claude/kid): named Object3Ds on the bike that the real rider (viewer/kid/riderIK.js) reaches
+// for: grip_L / grip_R (on the bars: they turn with the steering), pedal_L / pedal_R (turn with the cranks), seat (top of
+// the saddle), bb (the crank axle), peg_FL / peg_FR / peg_RL / peg_RR (the BMX pegs), and `frame` (the CoM frame the
+// rider's body hangs in: lean + pitch, NOT moved by the legs). The same names as the BMX asset's empties
+// (models/bike/bmx.glb, claude/bmx): viewer/kid/bikeRig.js finds them in either. createBikeModel(B, { rider: false })
+// hides the placeholder kid (the real one rides).
 import * as THREE from "three/webgpu";
 import { BIKE } from "./bikePhysics.js";
 
@@ -28,7 +35,7 @@ function aim(seg, a, b, parent) {
   _a.copy(b); parent.localToWorld(_a); seg.lookAt(_a);
 }
 
-export function createBikeModel(B = BIKE) {
+export function createBikeModel(B = BIKE, { rider = true } = {}) {
   const H = B.cgHeight, R = B.wheelR, L = B.wheelbase;
   const root = new THREE.Group(); root.name = "bike (placeholder)";
   const leanG = new THREE.Group(); root.add(leanG);            // round the contact line
@@ -73,6 +80,17 @@ export function createBikeModel(B = BIKE) {
     const p = box(0.1, 0.02, 0.07, M.grip); pedals.push(p); bikeG.add(p);
   }
   const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.008, 20), M.chrome); ring.rotation.z = Math.PI / 2; ring.position.x = 0.05; crank.add(ring);
+  // the rider's empties (see the header); +x = the bike's LEFT (forward +z, up +y)
+  const empty = (name, parent, x, y, z) => { const e = new THREE.Object3D(); e.name = name; e.position.set(x, y, z); parent.add(e); return e; };
+  const empties = {
+    grip_L: empty("grip_L", bars, 0.3, 0, 0), grip_R: empty("grip_R", bars, -0.3, 0, 0),
+    pedal_L: empty("pedal_L", bikeG, 0, 0, 0), pedal_R: empty("pedal_R", bikeG, 0, 0, 0),
+    seat: empty("seat", bikeG, 0, -H + 0.83, -0.22), bb: empty("bb", bikeG, 0, bb.y, bb.z),
+    peg_FL: empty("peg_FL", frontG, 0.1, forkLocal(new THREE.Vector3(0, hubY, hubF)).y, forkLocal(new THREE.Vector3(0, hubY, hubF)).z),
+    peg_FR: empty("peg_FR", frontG, -0.1, forkLocal(new THREE.Vector3(0, hubY, hubF)).y, forkLocal(new THREE.Vector3(0, hubY, hubF)).z),
+    peg_RL: empty("peg_RL", bikeG, 0.1, hubY, hubR), peg_RR: empty("peg_RR", bikeG, -0.1, hubY, hubR),
+    frame: pitchG,
+  };
   // ---- the kid (in pitchG coordinates)
   const torso = box(0.26, 0.42, 0.16, M.shirt), headM = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 10), M.skin);
   const cap = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.cap);
@@ -83,6 +101,7 @@ export function createBikeModel(B = BIKE) {
   riderG.add(...thigh, ...shin, ...shoe, ...upper, ...fore);
   // the fallen kid (a crash): a separate group in world space
   const fallen = new THREE.Group();
+  riderG.visible = rider;
   { const t = box(0.26, 0.42, 0.16, M.shirt); const h = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), M.skin); h.position.y = 0.32; h.castShadow = true;
     const l1 = box(0.1, 0.5, 0.1, M.shorts); l1.position.set(0.07, -0.42, 0.05); const l2 = box(0.1, 0.5, 0.1, M.shorts); l2.position.set(-0.07, -0.42, -0.05);
     fallen.add(t, h, l1, l2); fallen.visible = false; }
@@ -99,7 +118,9 @@ export function createBikeModel(B = BIKE) {
   }
 
   return {
-    root, fallen,
+    root, fallen, empties, rider,
+    /** the bike's ground clearance etc. for the rider: crank length, wheel radius */
+    geom: { crank: 0.165, wheelR: R, cgHeight: H },
     update(s, pose, groundAt) {
       const legs = s.legs * B.legRange;
       root.position.set(pose.x, pose.y - H, pose.z);
@@ -117,6 +138,7 @@ export function createBikeModel(B = BIKE) {
         // (the crank arm points along +z at 0 and turns with crank.rotation.x: +z -> -y)
         const ang = s.crank + k * Math.PI;
         pedals[k].position.set((k === 0 ? 1 : -1) * 0.12, bb.y - Math.sin(ang) * 0.165, bb.z + Math.cos(ang) * 0.165);
+        (k === 0 ? empties.pedal_L : empties.pedal_R).position.copy(pedals[k].position);
         arms[k].rotation.x = k * Math.PI;
       }
       // the kid: seated / standing (sprint, hop crouch, landing), the hips over the seat or the BB
@@ -128,7 +150,7 @@ export function createBikeModel(B = BIKE) {
       const sh = tmpB.set(0, hip.y + 0.42 * Math.cos(lean), hip.z + 0.42 * Math.sin(lean));
       headM.position.set(0, sh.y + 0.15, sh.z + 0.05); cap.position.copy(headM.position).add({ x: 0, y: 0.01, z: 0 });
       cap.rotation.x = 0.15;
-      riderG.visible = !s.crashed && !s.pushing;
+      riderG.visible = rider && !s.crashed && !s.pushing;
       root.updateMatrixWorld(true);
       if (riderG.visible) {
         for (let k = 0; k < 2; k++) {
@@ -147,7 +169,7 @@ export function createBikeModel(B = BIKE) {
         }
       }
       // crashed: the kid tumbles in world space; pushing: the kid walks beside the bike (a simple stand-in)
-      fallen.visible = s.crashed || s.pushing;
+      fallen.visible = rider && (s.crashed || s.pushing);
       if (s.crashed) {
         fallen.position.set(s.rider.x, s.rider.y, s.rider.z);
         fallen.rotation.set(Math.min(1.5, s.crashT * 4), pose.heading, s.crashT * 2);

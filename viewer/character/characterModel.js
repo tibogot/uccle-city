@@ -24,6 +24,12 @@ export const CHARACTERS = {
     // the controller's gait speeds (m/s): walk 1.35 = the UAL walk (0.98 m/s authored) at 1.38x, a realistic cadence;
     // run / sprint a little under the clips' authored 5.36 / 8.25 (played at ~0.93 / 0.85); crouch 0.9 (0.75 authored)
     move: { walk: 1.35, run: 5.0, sprint: 7.0, crouch: 0.9, accel: 12, decel: 14 } },
+  // THE KID (docs/KID.md): tools/characters/kid.py (a 90s kid of ~11, 1.44 m, scripted on the UAL rig) + the UAL clips
+  // on its joints (tools/characters/ualBuild.mjs --kid). Named slots coloured by viewer/kid/kidModel.js (one draw / LOD).
+  // Gaits: the clips' authored speeds on the kid's legs (walk 0.78, jog 4.28, sprint 6.59, crouch 0.60 m/s) played
+  // with the same ratios as the UAL mannequin's.
+  kid: { file: "kid.glb", meta: "kid.json", label: "The kid (scripted, UAL rig + clips, CC0)", system: "loco", kid: true,
+    move: { walk: 1.1, run: 4.0, sprint: 5.6, crouch: 0.72, accel: 12, decel: 14 } },
   hoodie: { file: "hoodie.glb", label: "Hoodie (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
   casual: { file: "casual.glb", label: "Casual (Quaternius, CC0)", stride: MODULAR_MEN_STRIDE },
 };
@@ -39,9 +45,13 @@ const LEG = (s) => ({ upper: `UpperLeg${s}`, lower: `LowerLeg${s}`, end: `LowerL
 async function loadLoco(name, def) {
   const base = new URL("../../models/characters/", import.meta.url).href;
   const [gltf, meta] = await Promise.all([new GLTFLoader().loadAsync(base + def.file), fetch(base + def.meta).then((r) => { if (!r.ok) throw new Error(`${def.meta} ${r.status}`); return r.json(); })]);
-  let tris = 0, mesh = null;
+  let tris = 0, mesh = null, kid = null;
+  if (def.kid) {
+    const { prepareKid } = await import("../kid/kidModel.js");
+    kid = prepareKid(gltf); tris = kid.tris[0];
+  }
   gltf.scene.traverse((o) => { if (o.isSkinnedMesh && !mesh) mesh = o; });
-  if (mesh) {
+  if (mesh && !kid) {
     const g = mesh.geometry;
     tris = g.index ? g.index.count / 3 : g.attributes.position.count / 3;
     // (a node material: the body's camera fade sets opacityNode on its clone)
@@ -52,7 +62,7 @@ async function loadLoco(name, def) {
   return {
     gltf,
     opts: { system: "loco", meta, forward: "+z", move: def.move, rig: { left: leg("l"), right: leg("r"), hips: "pelvis", spine: ["spine_01", "spine_02", "spine_03"] } },
-    info: { name, label: def.label, tris, clips: Object.keys(meta.clips).length },
+    info: { name, label: def.label, tris, clips: Object.keys(meta.clips).length, ...(kid ? { kid, lods: kid.tris } : {}) },
   };
 }
 

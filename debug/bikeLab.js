@@ -4,6 +4,11 @@
 // Placeholder rider + bike (viewer/bike/bikeModel.js), a bike chase camera, keyboard + gamepad, our own panel
 // (viewer/panelUI.js) for every constant, a telemetry strip. No sound. One fixed light set (sun + sky), never changed.
 // URL: ?spot=kicker (start there), ?slow=0.25, ?cam=low
+// THE KID (claude/kid, docs/KID.md): the real kid (models/characters/kid.glb) walks ON FOOT with the merged third-person
+// controller (viewer/character: the same WASD / arrows, Shift run, Space jump, C crouch) and gets ON / OFF the bike
+// with E (viewer/kid/kidMount.js); riding, his body is driven by the bike (viewer/kid/riderIK.js: hands on the grips,
+// feet on the pedals, hips on the seat, standing, crouching, leaning, manuals; the crash tumble and the get-up).
+// ?kid=0: the placeholder rider only (phase 1); ?ride=1: start on the bike.
 import * as THREE from "three/webgpu";
 import { attribute, positionWorld, floor, mod, mix, float, fract, smoothstep, min, vec3 } from "three/tsl";
 import { Panel } from "../viewer/panelUI.js";
@@ -14,8 +19,13 @@ import { buildColliders, KIND } from "../viewer/drive/colliders.js";
 import { createBikeModel } from "../viewer/bike/bikeModel.js";
 import { BikeCamera, BIKE_CAMERA } from "../viewer/bike/bikeCamera.js";
 import { BikeKeys } from "../viewer/bike/bikeInput.js";
+import { ThirdPerson, CollisionWorld, Heightfield, PrismSet } from "../viewer/character/index.js";
+import { RiderIK, RIDE } from "../viewer/kid/riderIK.js";
+import { MOUNT, createMount, stepMount, parkStep, ridden, mountSpot } from "../viewer/kid/kidMount.js";
+import { findBikeEmpties } from "../viewer/kid/bikeRig.js";
 
 const qs = new URLSearchParams(location.search);
+const USE_KID = qs.get("kid") !== "0";
 const DEFAULTS = { ...BIKE }, SURF_DEFAULTS = SURFACES.map((s) => ({ ...s }));
 const renderer = new THREE.WebGPURenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -112,7 +122,7 @@ for (const p of CL.polys) {
 
 // ---------------------------------------------------------------- the bike
 const env = createBikeEnv({ sets: () => [COL], ground: testGround });
-const model = createBikeModel(BIKE);
+const model = createBikeModel(BIKE, { rider: !USE_KID });
 scene.add(model.root, model.fallen);
 const groundAt = (x, z) => testHeight(x, z);
 const chase = new BikeCamera(camera, BIKE_CAMERA);
@@ -123,9 +133,35 @@ function place(name) {
   const [x, z, h] = SPOTS[name] || SPOTS.start;
   s = createBikeState(x, z, h, testHeight(x, z));
   chase.reset(); P.spot = name;
+  if (K.on) { mount.state = "riding"; mount.t = 0; mount.park.mode = "standing"; K.tp.on = false; K.tp.body.root.visible = true; camBlend.t = 1; }
 }
+// ---------------------------------------------------------------- the kid: on foot + on the bike (claude/kid)
+const K = { on: false, tp: null, rider: null, kid: null, E: null, snap: null, crashYaw: 0, lod: 0, ik: "" };
+const mount = createMount(qs.get("ride") === "1" ? "riding" : "foot");
+const camBlend = { t: 1, dur: 0.6, p: new THREE.Vector3(), q: new THREE.Quaternion() };
+function startCamBlend() { camBlend.t = 0; camBlend.p.copy(camera.position); camBlend.q.copy(camera.quaternion); }
 place(P.spot);
+if (USE_KID) {
+  try {
+    const world = new CollisionWorld();
+    world.add(new Heightfield(testHeight));
+    const CLp = testColliders(KIND);
+    world.add(new PrismSet(CLp.polys.map((p) => ({ rings: p.rings, base: -2, top: p.kind === KIND.wall ? (p.top ?? 2.5) : (p.top ?? (p.kind === KIND.car ? 1.45 : 2.5)) })),
+      CLp.circles.map((c) => ({ x: c.x, z: c.z, r: c.r, base: -2, top: 1.1 }))));
+    const tp = new ThirdPerson({ scene, camera, dom: renderer.domElement, world, controller: { height: 1.45, radius: 0.24 } });
+    const info = await tp.useCharacter("kid", renderer);
+    K.tp = tp; K.kid = info.kid;
+    K.rider = new RiderIK(info.kid.gltf.scene, info.kid.gltf.animations);
+    K.E = findBikeEmpties(model.root, model.empties.frame); K.E.cg = BIKE.cgHeight;
+    K.on = true;
+    const sp = mountSpot(s);
+    if (mount.state === "foot") { tp.start(sp.x + Math.cos(s.heading) * 0.6, testHeight(sp.x, sp.z) + 0.05, sp.z - Math.sin(s.heading) * 0.6, s.heading); }
+    else { tp.on = false; tp.body.root.visible = true; }
+    console.log("[bike lab] the kid", info.label, info.lods, "tris per LOD");
+  } catch (e) { console.warn("[bike lab] the kid failed, placeholder rider:", e); model.root.traverse?.(() => {}); }
+}
 const keys = new BikeKeys({ onKey: (code) => {
+  if (code === "KeyE") { K.e = true; return; }
   if (code === "KeyR" || code === "PadBack") place(P.spot);
   else if (code === "KeyV" || code === "PadY") banner(`camera: ${chase.next()}`);
   else if (code === "KeyP") P.pause = !P.pause;
@@ -147,6 +183,11 @@ card.textContent = [
   "             manual, nose dive, air pitch",
   "F            trick in the air (let go before landing!)",
   "R reset  G get up  V camera  P pause  1-9 spots",
+  "E            get on / off the bike (walk up to it;",
+  "             off: stopped = it stands, rolling = it falls)",
+  "",
+  "ON FOOT: W A S D / arrows walk, Shift run, Space jump,",
+  "C crouch, mouse drag = camera, E get on the bike",
   "? this card",
   "",
   "Gamepad: stick steer + lean, RT pedal, LT rear,",
@@ -159,6 +200,28 @@ function banner(t) { bannerEl.textContent = t; bannerEl.style.opacity = 1; banne
 
 // ---------------------------------------------------------------- panel: every constant
 const ui = new Panel({ title: "Bike Lab", persist: "bikelab", search: true });
+{ // the kid (claude/kid): the riding constants (viewer/kid/riderIK.js RIDE), the mount, an outfit
+  const fk = ui.addFolder("Kid", { id: "bike-kid", open: false });
+  fk.add(K, "ik").name("state").listen();
+  const OUTFITS = {
+    "yellow ringer": {},
+    "red + jeans blue": { shirt: 0xc8302c, shirt_trim: 0xf4f1ea, shorts: 0x2f4a78, cap: 0x1f3f8a, cap_brim: 0x1f3f8a },
+    "teal + khaki": { shirt: 0x1f8a8a, shirt_trim: 0xf2c230, shorts: 0xb59a6a, cap: 0xf2c230, cap_brim: 0x1f8a8a },
+    "purple + black": { shirt: 0x6a3d9a, shirt_trim: 0x1d1d1d, shorts: 0x262626, cap: 0x1d1d1d, cap_brim: 0x6a3d9a, hair: 0x2a1a10 },
+  };
+  const O = { outfit: "yellow ringer" };
+  fk.add(O, "outfit", Object.keys(OUTFITS)).name("outfit").onChange((v) => {
+    if (!K.kid) return;
+    import("../viewer/kid/kidModel.js").then(({ KID_PALETTE }) => { for (const n of K.kid.slots) K.kid.setColor(n, (OUTFITS[v][n] ?? KID_PALETTE[n])); });
+  });
+  for (const [k, a, b, st] of [["hipUp", -0.05, 0.2, 0.005], ["hipBack", -0.15, 0.15, 0.005], ["standUp", 0, 0.3, 0.005], ["standFwd", 0, 0.3, 0.005],
+    ["crouchDown", 0, 0.3, 0.005], ["crouchBack", 0, 0.2, 0.005], ["manualBack", 0, 0.3, 0.005], ["swayStand", 0, 0.1, 0.005], ["pelvisPitch", -0.3, 0.8, 0.01],
+    ["standPitch", 0, 0.8, 0.01], ["leanExtra", 0, 0.8, 0.01], ["reachLeg", 0.85, 0.999, 0.001], ["reachArm", 0.7, 0.99, 0.01], ["ankleUp", 0, 0.15, 0.005],
+    ["ankleBack", -0.05, 0.15, 0.005], ["wristBack", 0, 0.1, 0.005], ["headDown", -0.3, 0.5, 0.01], ["spineMax", 0.3, 1.5, 0.01]])
+    fk.add(RIDE, k, a, b, st).name(k);
+  for (const [k, a, b, st] of [["near", 0.5, 3, 0.05], ["mountTime", 0.1, 1.5, 0.05], ["dismountTime", 0.1, 1.5, 0.05], ["dismountMax", 0.5, 6, 0.1], ["standStill", 0, 2, 0.05]])
+    fk.add(MOUNT, k, a, b, st).name(`mount ${k}`);
+}
 const fr = ui.addFolder("Ride");
 fr.add(P, "pause").name("pause (P)");
 fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
@@ -199,24 +262,79 @@ const graph = $("graph"), g2 = graph.getContext("2d");
 const HIST = 300, hist = { v: new Float32Array(HIST), lean: new Float32Array(HIST), slip: new Float32Array(HIST) };
 let hi = 0;
 
-window.__bike = { get state() { return s; }, BIKE, SURFACES, env, chase, place, P };
+window.__bike = { get state() { return s; }, BIKE, SURFACES, env, chase, place, P, K, mount, RIDE, MOUNT };
 
 // ---------------------------------------------------------------- loop
 const pose = {};
-let last = performance.now(), frames = 0, physMs = 0, histT = 0;
+const NO_INPUT = { pedal: 0, sprint: false, brakeF: 0, brakeR: 1, steer: 0, lean: 0, hop: false, pump: 0, trick: false };
+const ease = (x) => { const u = Math.min(1, Math.max(0, x)); return u * u * (3 - 2 * u); };
+let last = performance.now(), frames = 0, physMs = 0, histT = 0, kidMs = 0;
 renderer.setAnimationLoop(() => {
   const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now;
   const input = keys.read(dt);
   const t0 = performance.now();
-  if (!P.pause) advanceBike(s, input, dt * P.slow, env, BIKE, SURFACES);
+  const fdt = P.pause ? 0 : dt * P.slow;
+  // ON FOOT <-> ON THE BIKE (viewer/kid/kidMount.js)
+  if (K.on) {
+    const tp = K.tp, root = tp.body.root;
+    stepMount(mount, { e: !!K.e }, { x: tp.x, z: tp.z }, { x: s.x, z: s.z, heading: s.heading, speed: bikeSpeed(s), crashed: s.crashed, air: s.air, lean: s.lean, lying: mount.park.mode === "lying" }, fdt);
+    K.e = false;
+    for (const ev of mount.events) {
+      if (ev === "mount" || ev === "getUp") { K.snap = K.rider.snapshot(root); tp.on = false; root.visible = true; s.vx = s.vz = 0; startCamBlend(); chase.reset(); }
+      else if (ev === "pickUp") { getUp(s, env); banner("picks the bike up"); }
+      else if (ev === "dismount") {
+        K.snap = K.rider.snapshot(root);
+        const sp = mountSpot(s);
+        tp.start(sp.x, testHeight(sp.x, sp.z) + 0.03, sp.z, s.heading);
+        tp.autopilot = (inp) => { inp.x = 0; inp.z = 0; inp.run = false; };
+        startCamBlend();
+      } else if (ev === "foot") { tp.autopilot = null; root.rotation.set(0, root.rotation.y, 0); }
+      else if (ev === "tooFast") banner("too fast to get off (slow down)");
+      else if (ev === "far") banner("walk up to the bike, then E");
+      else if (ev === "crash") { const r = s.rider; K.crashYaw = Math.atan2(r.vx || Math.sin(s.heading), r.vz || Math.cos(s.heading)); }
+    }
+  }
+  const riding = !K.on || ridden(mount);
+  if (riding) advanceBike(s, !K.on || mount.state === "riding" ? input : NO_INPUT, fdt, env, BIKE, SURFACES);
+  else parkStep(mount, s, fdt, testHeight(s.x, s.z));
   physMs = physMs * 0.95 + (performance.now() - t0) * 0.05;
   bikePose(s, P.pause ? 1 : s.alpha, pose);
   model.update(s, pose, groundAt);
-  chase.update(s, pose, dt, groundAt);
-  sun.position.set(pose.x + 10, pose.y + 24, pose.z + 6); sun.target.position.set(pose.x, pose.y, pose.z);
+  const tk = performance.now();
+  if (K.on) {
+    const tp = K.tp, root = tp.body.root, R = K.rider, st = mount.state;
+    root.updateMatrixWorld(true);
+    if (st === "foot" || st === "dismounting" || st === "pickUp") {
+      if (fdt > 0) tp.update(fdt);
+      if (st === "dismounting" && K.snap) R.blendFrom(K.snap, root, ease(mount.t / MOUNT.dismountTime));
+    } else if (st === "crashed") {
+      const r = s.rider, gy = testHeight(r.x, r.z), t = mount.t;
+      if (t < 0.75) R.clipPose(root, "Roll", 0.15 + t * 1.6, r.x, gy, r.z, K.crashYaw);
+      else if (t < MOUNT.tumble) R.clipPose(root, "FallDown", 2.3, r.x, gy, r.z, K.crashYaw);
+      else R.clipPose(root, "CrouchIdle", 0, r.x, gy, r.z, K.crashYaw);
+    } else {
+      // riding / mounting: the body driven by the bike
+      if (s.pushing) R.push(K.E, s, root, testHeight(pose.x, pose.z), s.walkPhase);
+      else R.ride(K.E, s, root, testHeight(pose.x, pose.z));
+      if (st === "mounting" && K.snap) { const w = ease(mount.t / MOUNT.mountTime); R.blendFrom(K.snap, root, w, Math.sin(Math.PI * w) * 0.12); }
+    }
+    const M = R.metrics;
+    K.ik = `${st} · legs ${(M.legRatio[0] * 100).toFixed(0)}/${(M.legRatio[1] * 100).toFixed(0)} % arms ${(M.armRatio[0] * 100).toFixed(0)}/${(M.armRatio[1] * 100).toFixed(0)} % spine ${(M.spine * 57.3).toFixed(0)}° · LOD${K.kid.lod} · ${kidMs.toFixed(2)} ms`;
+  }
+  kidMs = kidMs * 0.95 + (performance.now() - tk) * 0.05;
+  const onFoot = K.on && (mount.state === "foot" || mount.state === "dismounting" || mount.state === "pickUp");
+  if (!onFoot) chase.update(s, pose, dt, groundAt);
+  if (camBlend.t < 1) {
+    camBlend.t = Math.min(1, camBlend.t + dt / camBlend.dur);
+    const w = ease(camBlend.t);
+    camera.position.lerpVectors(camBlend.p, camera.position.clone(), w); camera.quaternion.slerpQuaternions(camBlend.q, camera.quaternion.clone(), w);
+  }
+  if (K.on) K.kid.autoLod(camera.position.distanceTo(K.tp.body.root.position));
+  const fx = onFoot ? K.tp.x : pose.x, fy = onFoot ? K.tp.y : pose.y, fz = onFoot ? K.tp.z : pose.z;
+  sun.position.set(fx + 10, fy + 24, fz + 6); sun.target.position.set(fx, fy, fz);
   renderer.render(scene, camera);
   if (bannerT > 0 && (bannerT -= dt) <= 0) bannerEl.style.opacity = 0;
-  if (s.crashed && s.crashT < 0.05) banner(`crash: ${s.crashCause}`);
+  if (s.crashed && s.crashT < 0.05 && s.crashT > 0) banner(`crash: ${s.crashCause}`);
   // history (10 s at 30 Hz)
   histT += dt;
   if (histT > 1 / 30) { histT = 0; hist.v[hi] = bikeSpeed(s) * 3.6; hist.lean[hi] = s.lean * 57.3; hist.slip[hi] = s.slip; hi = (hi + 1) % HIST; drawGraph(); }
@@ -251,6 +369,6 @@ function writeTele() {
   $("tst").innerHTML = st + ` <span class="k">hops ${s.hops} crashes ${s.crashes}</span>`;
   const L = s.lastLanding;
   $("tland").textContent = L ? `last landing: ${L.cause} (${L.wheel} first, ${(L.rel * 57.3).toFixed(0)}°, ${L.vn.toFixed(1)} m/s, ${L.air.toFixed(2)} s air)` : "";
-  P.info = `${st.replace(/<[^>]+>/g, "")} · phys ${physMs.toFixed(3)} ms · ${keys.pad ? "gamepad" : "keyboard"}`;
+  P.info = `${K.on ? mount.state + " · " : ""}${st.replace(/<[^>]+>/g, "")} · phys ${physMs.toFixed(3)} ms · ${keys.pad ? "gamepad" : "keyboard"}`;
 }
 addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });

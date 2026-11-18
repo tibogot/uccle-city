@@ -10,6 +10,15 @@
 //                                stair riser / tread (the synthesised stair clips)
 //
 //   node tools/characters/ualBuild.mjs [--ual1 <UAL1_Standard.glb>] [--ual2 <UAL2_Standard.glb>] [--report]
+//   node tools/characters/ualBuild.mjs --kid        THE KID (docs/KID.md): the same clips on the kid's skeleton
+//
+// --kid: reads models/characters/kid_src.glb + kid_rig.json (tools/characters/kid.py: the UAL rig re-proportioned,
+// bone ORIENTATIONS unchanged, only the joints' offsets moved) and writes models/characters/kid.glb + kid.json: the
+// UAL nodes with the kid's joint offsets (rest translations), the clips' pelvis translation x pelvisScale (the other
+// bones' translation channels dropped: they only held the adult rest), the inverse bind matrices of the kid's rest,
+// and the kid's three LOD meshes, each merged into ONE primitive with a _SLOT attribute (the named material slot of
+// every vertex: the viewer's palette colours it; one draw per LOD) + its AO (COLOR_0). Everything else (contacts,
+// touch-downs, speeds, the synthesised stairs) is measured on the kid's own legs by the code below, unchanged.
 //
 // The metadata is the one tools/characters/mixamoClips.mjs (claude/character2) made for the Y Bot, so the locomotion
 // graph (viewer/character/locomotion.js) runs unchanged on this rig. The free UAL has no stair clips: they are
@@ -22,11 +31,13 @@ import { readGLB, sampleAnim, worldPose, q, v } from "./gltfAnim.mjs";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "../..");
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
-const RAW = path.join(ROOT, "data/raw/characters");
+const RAW = [path.join(ROOT, "data/raw/characters"), path.join(ROOT, "../uccle-city/data/raw/characters")].find((d) => fs.existsSync(d)) || path.join(ROOT, "data/raw/characters");
 const UAL1 = path.resolve(arg("--ual1", path.join(RAW, "ual1/x/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb")));
 const UAL2 = path.resolve(arg("--ual2", path.join(RAW, "ual2/x/Universal Animation Library 2 [Standard]/Unreal-Godot/UAL2_Standard.glb")));
 const FPS = 30;
 const report = process.argv.includes("--report");
+const KID = process.argv.includes("--kid");
+const NAME = KID ? "kid" : "ual";
 
 // source clip -> our name, role, loop, root-motion kind ("line": an in-place cycle, "air": jump / fall / land, "none")
 const CLIPS = [
@@ -44,22 +55,56 @@ const CLIPS = [
   { src: 2, anim: "Idle_FoldArms_Loop", name: "IdleFoldArms", role: "idleAlt1", loop: true, root: "none" },
   { src: 2, anim: "Idle_TalkingPhone_Loop", name: "IdlePhone", role: "idleAlt2", loop: true, root: "none" },
   { src: 1, anim: "Idle_Talking_Loop", name: "IdleTalk", role: "idleAlt3", loop: true, root: "none" },
+  // (the kid only: sitting, pushing the bike, picking it up, a fall for the crash)
+  ...(KID ? [
+    { src: 1, anim: "Sitting_Idle_Loop", name: "Sit", role: "sit", loop: true, root: "none" },
+    { src: 1, anim: "Sitting_Enter", name: "SitDown", role: "sitDown", loop: false, root: "none" },
+    { src: 1, anim: "Sitting_Exit", name: "StandUp", role: "standUp", loop: false, root: "none" },
+    { src: 1, anim: "Push_Loop", name: "Push", role: "push", loop: true, root: "none" },
+    { src: 1, anim: "PickUp_Table", name: "PickUp", role: "pickUp", loop: false, root: "none" },
+    { src: 1, anim: "Death01", name: "FallDown", role: "fallDown", loop: false, root: "none" },
+  ] : []),
 ];
 
 const g = readGLB(UAL1), g2 = readGLB(UAL2);
+const KS = KID ? readGLB(path.join(ROOT, "models/characters/kid_src.glb")) : null;
+const KIDRIG = KID ? JSON.parse(fs.readFileSync(path.join(ROOT, "models/characters/kid_rig.json"), "utf8")) : null;
 // the AUTHORED ground speeds: the root-motion twin of UAL1 (pelvis travel over the cycle)
 const RM = readGLB(arg("--ual1rm", UAL1.replace(/\.glb$/, "_RM.glb")));
 function rmSpeed(name) {
   const a = RM.anims.find((x) => x.name === name), i = RM.byName.get("pelvis");
   if (!a) return 0;
   const p0 = worldPose(RM, sampleAnim(RM, a, 0))[i].p, p1 = worldPose(RM, sampleAnim(RM, a, a.duration))[i].p;
-  return Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) / a.duration;
+  return Math.hypot(p1[0] - p0[0], p1[2] - p0[2]) / a.duration * (KID ? KIDRIG.pelvisScale : 1);
 }
 // (both packs: the same skeleton; UAL2's channels re-pointed at UAL1's nodes by name)
 for (const a of g2.anims) for (const ch of a.channels) {
   const j = g.byName.get(g2.nodes[ch.node].name);
   if (j === undefined) throw new Error(`UAL2 node ${g2.nodes[ch.node].name} not in UAL1`);
   ch.node = j;
+}
+if (KID) {
+  // the kid's joints: new rest translations (rotations kept), from kid_rig.json's joint positions (glTF world)
+  const W = worldPose(g, sampleAnim(g, null, 0));
+  const J = KIDRIG.joints;
+  let moved = 0;
+  for (const n of g.nodes) {
+    if (!(n.name in J) || n.parent < 0) continue;
+    const par = g.nodes[n.parent], P = W[n.parent];
+    const pp = par.name in J ? J[par.name] : P.p;
+    n.t = v.mul(q.rot(q.inv(P.q), v.sub(J[n.name], pp)), 1 / P.s); moved++;
+  }
+  const W2 = worldPose(g, sampleAnim(g, null, 0));
+  let err = 0;
+  for (const n of g.nodes) if (n.name in J) err = Math.max(err, v.len(v.sub(W2[n.i].p, J[n.name])));
+  if (err > 2e-4) throw new Error(`kid rig: joints off by ${err} m`);
+  // the clips: the pelvis translation x k, no other translation / scale channel (they held the adult rest)
+  const k = KIDRIG.pelvisScale;
+  for (const G of [g, g2]) for (const a of G.anims) {
+    a.channels = a.channels.filter((ch) => ch.path === "rotation" || (ch.path === "translation" && g.nodes[ch.node].name === "pelvis"));
+    for (const ch of a.channels) if (ch.path === "translation") { const V = new Float32Array(ch.values); for (let i = 0; i < V.length; i++) V[i] *= k; ch.values = V; }
+  }
+  console.log(`kid rig: ${moved} joints moved (max error ${(err * 1000).toFixed(3)} mm), pelvis x ${k}, height ${KIDRIG.height} m`);
 }
 const B = (n) => { const i = g.byName.get(n); if (i === undefined) throw new Error("no bone " + n); return i; };
 const HIPS = B("pelvis"), LUL = B("thigh_l"), RUL = B("thigh_r");
@@ -166,7 +211,7 @@ function metaOf(def, F, root, con, groundSpeed) {
   }));
   const both = con[0].map((c, k) => c || con[1][k]);
   const takeoff = both.findIndex((x, k) => k > 0 && !x && both[k - 1]), touchdown = both.findIndex((x, k) => k > 0 && x && !both[k - 1]);
-  const m = { file: "ual.glb", role: def.role, loop: def.loop, duration: +dur.toFixed(4), source: def.source, contact: con.map((a) => a.join("")), steps, stepPos };
+  const m = { file: `${NAME}.glb`, role: def.role, loop: def.loop, duration: +dur.toFixed(4), source: def.source, contact: con.map((a) => a.join("")), steps, stepPos };
   if (def.root === "line") m.speed = +(travel < 0.05 ? groundSpeed : travel / dur).toFixed(3);
   if (def.root === "air") { m.takeoff = takeoff > 0 ? +F[takeoff].t.toFixed(3) : null; m.touchdown = touchdown > 0 ? +F[touchdown].t.toFixed(3) : null; }
   return { m, travel, rise };
@@ -315,33 +360,90 @@ function addAcc(arr, type, componentType, extra = {}, target) {
 }
 const minmax = (a, N) => { const mn = Array(N).fill(Infinity), mx = Array(N).fill(-Infinity); for (let i = 0; i < a.length; i++) { const c = i % N; if (a[i] < mn[c]) mn[c] = a[i]; if (a[i] > mx[c]) mx[c] = a[i]; } return { min: mn, max: mx }; };
 
-// the mesh: both primitives -> one, colour per vertex from its material (the placeholder mannequin: light body, dark joints)
-const COL = { M_Main: [0.56, 0.55, 0.53], M_Joints: [0.10, 0.10, 0.11] };
-const prims = J.meshes[0].primitives;
-let nv = 0, ni = 0;
-for (const p of prims) { nv += J.accessors[p.attributes.POSITION].count; ni += J.accessors[p.indices].count; }
-const POS = new Float32Array(nv * 3), NRM = new Float32Array(nv * 3), JNT = new Uint8Array(nv * 4), WGT = new Float32Array(nv * 4), CLR = new Uint8Array(nv * 4);
-const IDX = new Uint16Array(ni);
-let vo = 0, io = 0;
-for (const p of prims) {
-  const P = acc(p.attributes.POSITION), Nn = acc(p.attributes.NORMAL), Jt = acc(p.attributes.JOINTS_0), Wt = acc(p.attributes.WEIGHTS_0), I = acc(p.indices);
-  const cnt = P.length / 3, c = COL[J.materials[p.material].name] || [0.5, 0.5, 0.5];
-  POS.set(P, vo * 3); NRM.set(Nn, vo * 3);
-  for (let i = 0; i < cnt * 4; i++) JNT[vo * 4 + i] = Jt[i];
-  for (let i = 0; i < cnt; i++) {
-    let s = 0; for (let k = 0; k < 4; k++) s += Wt[i * 4 + k];
-    for (let k = 0; k < 4; k++) WGT[(vo + i) * 4 + k] = Wt[i * 4 + k] / (s || 1);
-    // (glTF COLOR_0 is linear; sRGB-ish authoring values converted)
-    for (let k = 0; k < 3; k++) CLR[(vo + i) * 4 + k] = Math.round(Math.pow(c[k], 2.2) * 255);
-    CLR[(vo + i) * 4 + 3] = 255;
+let meshesOut, aIbm;
+const skin = J.skins[0];
+if (!KID) {
+  // the mesh: both primitives -> one, colour per vertex from its material (the placeholder mannequin: light body, dark joints)
+  const COL = { M_Main: [0.56, 0.55, 0.53], M_Joints: [0.10, 0.10, 0.11] };
+  const prims = J.meshes[0].primitives;
+  let nv = 0, ni = 0;
+  for (const p of prims) { nv += J.accessors[p.attributes.POSITION].count; ni += J.accessors[p.indices].count; }
+  const POS = new Float32Array(nv * 3), NRM = new Float32Array(nv * 3), JNT = new Uint8Array(nv * 4), WGT = new Float32Array(nv * 4), CLR = new Uint8Array(nv * 4);
+  const IDX = new Uint16Array(ni);
+  let vo = 0, io = 0;
+  for (const p of prims) {
+    const P = acc(p.attributes.POSITION), Nn = acc(p.attributes.NORMAL), Jt = acc(p.attributes.JOINTS_0), Wt = acc(p.attributes.WEIGHTS_0), I = acc(p.indices);
+    const cnt = P.length / 3, c = COL[J.materials[p.material].name] || [0.5, 0.5, 0.5];
+    POS.set(P, vo * 3); NRM.set(Nn, vo * 3);
+    for (let i = 0; i < cnt * 4; i++) JNT[vo * 4 + i] = Jt[i];
+    for (let i = 0; i < cnt; i++) {
+      let s = 0; for (let k = 0; k < 4; k++) s += Wt[i * 4 + k];
+      for (let k = 0; k < 4; k++) WGT[(vo + i) * 4 + k] = Wt[i * 4 + k] / (s || 1);
+      // (glTF COLOR_0 is linear; sRGB-ish authoring values converted)
+      for (let k = 0; k < 3; k++) CLR[(vo + i) * 4 + k] = Math.round(Math.pow(c[k], 2.2) * 255);
+      CLR[(vo + i) * 4 + 3] = 255;
+    }
+    for (let i = 0; i < I.length; i++) IDX[io + i] = I[i] + vo;
+    vo += cnt; io += I.length;
   }
-  for (let i = 0; i < I.length; i++) IDX[io + i] = I[i] + vo;
-  vo += cnt; io += I.length;
+  const aPos = addAcc(POS, "VEC3", 5126, minmax(POS, 3), 34962), aNrm = addAcc(NRM, "VEC3", 5126, {}, 34962);
+  const aJnt = addAcc(JNT, "VEC4", 5121, {}, 34962), aWgt = addAcc(WGT, "VEC4", 5126, {}, 34962), aClr = addAcc(CLR, "VEC4", 5121, { normalized: true }, 34962);
+  const aIdx = addAcc(IDX, "SCALAR", 5123, {}, 34963);
+  meshesOut = [{ name: "Mannequin", primitives: [{ attributes: { POSITION: aPos, NORMAL: aNrm, JOINTS_0: aJnt, WEIGHTS_0: aWgt, COLOR_0: aClr }, indices: aIdx, material: 0 }] }];
+} else {
+  // the kid's LOD meshes (kid_src.glb), each merged into one primitive with a _SLOT attribute; joints remapped by name
+  const KJ = KS.json, kjoints = KJ.skins[0].joints.map((ni) => KS.nodes[ni].name);
+  const ujoint = new Map(skin.joints.map((ni, k) => [g.nodes[ni].name, k]));
+  const jmap = kjoints.map((n) => { if (!ujoint.has(n)) throw new Error("kid joint not in UAL: " + n); return ujoint.get(n); });
+  const slots = KJ.materials.map((m) => m.name);
+  meshesOut = [];
+  const lodNodes = KJ.nodes.filter((n) => n.mesh !== undefined).sort((x, y) => x.name.localeCompare(y.name));
+  for (const nd of lodNodes) {
+    const prims = KJ.meshes[nd.mesh].primitives;
+    let nv = 0, ni = 0;
+    for (const p of prims) { nv += KJ.accessors[p.attributes.POSITION].count; ni += KJ.accessors[p.indices].count; }
+    const POS = new Float32Array(nv * 3), NRM = new Float32Array(nv * 3), JNT = new Uint8Array(nv * 4), WGT = new Float32Array(nv * 4), AO = new Uint8Array(nv * 4), SLOT = new Float32Array(nv);
+    const IDX = nv < 65536 ? new Uint16Array(ni) : new Uint32Array(ni);
+    let vo = 0, io = 0;
+    for (const p of prims) {
+      const P = KS.accessor(p.attributes.POSITION), Nn = KS.accessor(p.attributes.NORMAL), Jt = KS.accessor(p.attributes.JOINTS_0), Wt = KS.accessor(p.attributes.WEIGHTS_0), I = KS.accessor(p.indices);
+      const C = p.attributes.COLOR_0 !== undefined ? KS.accessor(p.attributes.COLOR_0) : null, cnt = P.length / 3, cn = C ? C.length / cnt : 0;
+      POS.set(P, vo * 3); NRM.set(Nn, vo * 3);
+      for (let i = 0; i < cnt; i++) {
+        let sw = 0; for (let kk = 0; kk < 4; kk++) sw += Wt[i * 4 + kk];
+        for (let kk = 0; kk < 4; kk++) { JNT[(vo + i) * 4 + kk] = jmap[Jt[i * 4 + kk]]; WGT[(vo + i) * 4 + kk] = Wt[i * 4 + kk] / (sw || 1); }
+        const ao = C ? C[i * cn] : 1;
+        for (let kk = 0; kk < 3; kk++) AO[(vo + i) * 4 + kk] = Math.round(Math.max(0, Math.min(1, ao)) * 255);
+        AO[(vo + i) * 4 + 3] = 255; SLOT[vo + i] = p.material;
+      }
+      for (let i = 0; i < I.length; i++) IDX[io + i] = I[i] + vo;
+      vo += cnt; io += I.length;
+    }
+    const aPos = addAcc(POS, "VEC3", 5126, minmax(POS, 3), 34962), aNrm = addAcc(NRM, "VEC3", 5126, {}, 34962);
+    const aJnt = addAcc(JNT, "VEC4", 5121, {}, 34962), aWgt = addAcc(WGT, "VEC4", 5126, {}, 34962), aClr = addAcc(AO, "VEC4", 5121, { normalized: true }, 34962);
+    const aSlot = addAcc(SLOT, "SCALAR", 5126, {}, 34962), aIdx = addAcc(IDX, "SCALAR", nv < 65536 ? 5123 : 5125, {}, 34963);
+    meshesOut.push({ name: nd.name, extras: { slots, tris: ni / 3 }, primitives: [{ attributes: { POSITION: aPos, NORMAL: aNrm, JOINTS_0: aJnt, WEIGHTS_0: aWgt, COLOR_0: aClr, _SLOT: aSlot }, indices: aIdx, material: 0 }] });
+    console.log(`  ${nd.name}: ${nv} verts ${ni / 3} tris, ${prims.length} slots merged`);
+  }
 }
-const aPos = addAcc(POS, "VEC3", 5126, minmax(POS, 3), 34962), aNrm = addAcc(NRM, "VEC3", 5126, {}, 34962);
-const aJnt = addAcc(JNT, "VEC4", 5121, {}, 34962), aWgt = addAcc(WGT, "VEC4", 5126, {}, 34962), aClr = addAcc(CLR, "VEC4", 5121, { normalized: true }, 34962);
-const aIdx = addAcc(IDX, "SCALAR", 5123, {}, 34963);
-const skin = J.skins[0], aIbm = addAcc(acc(skin.inverseBindMatrices), "MAT4", 5126);
+// the inverse bind matrices: the original (UAL) or the kid's rest
+if (!KID) aIbm = addAcc(acc(skin.inverseBindMatrices), "MAT4", 5126);
+else {
+  const W = worldPose(g, sampleAnim(g, null, 0)), M = new Float32Array(skin.joints.length * 16);
+  skin.joints.forEach((ni, k) => {
+    const { p, q: r, s: sc } = W[ni], [x, y, z, w] = r;
+    // world = T R S (uniform s); inverse = (R^T / s, -R^T p / s). R as rows: R[row * 3 + col]
+    const R = [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w),
+      2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w),
+      2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)];
+    const o = k * 16;
+    // inverse rotation Ri = R^T: Ri[row][col] = R[col][row]; column-major storage M[col * 4 + row]
+    for (let col = 0; col < 3; col++) for (let row = 0; row < 3; row++) M[o + col * 4 + row] = R[col * 3 + row] / sc;
+    for (let row = 0; row < 3; row++) M[o + 12 + row] = -(R[0 * 3 + row] * p[0] + R[1 * 3 + row] * p[1] + R[2 * 3 + row] * p[2]) / sc;
+    M[o + 15] = 1;
+  });
+  aIbm = addAcc(M, "MAT4", 5126);
+}
 
 // the clips: pelvis translation (root taken off) + the rotations that move or differ from rest (int16 normalised)
 const animations = [];
@@ -382,18 +484,26 @@ for (const { def, F, root } of out) {
   animations.push({ name: def.name, samplers, channels });
 }
 
-const nodes = J.nodes.map((nd) => {
+const nodes = J.nodes.map((nd, i) => {
+  if (KID && g.nodes[i].name in KIDRIG.joints) nd = { ...nd, translation: g.nodes[i].t };
   const o = { name: nd.name };
   for (const k of ["children", "translation", "rotation", "scale", "skin"]) if (nd[k] !== undefined) o[k] = nd[k];
   if (nd.mesh !== undefined) o.mesh = 0;
   return o;
 });
+if (KID) {
+  // the LOD meshes: one node each, skinned to the same skin (the mannequin's node becomes LOD0)
+  const mi = nodes.findIndex((n) => n.mesh !== undefined);
+  nodes[mi].name = meshesOut[0].name;
+  const parent = J.nodes.findIndex((n) => (n.children || []).includes(mi));
+  for (let l = 1; l < meshesOut.length; l++) { nodes.push({ name: meshesOut[l].name, mesh: l, skin: nodes[mi].skin }); nodes[parent].children = [...nodes[parent].children, nodes.length - 1]; }
+}
 const json = {
-  asset: { version: "2.0", generator: "uccle-city tools/characters/ualBuild.mjs", copyright: "Quaternius, Universal Animation Library 1 + 2 (Standard), CC0 1.0" },
+  asset: { version: "2.0", generator: "uccle-city tools/characters/ualBuild.mjs", copyright: KID ? "the kid: tools/characters/kid.py on the Quaternius Universal Animation Library 1 + 2 rig and clips (Standard, CC0 1.0)" : "Quaternius, Universal Animation Library 1 + 2 (Standard), CC0 1.0" },
   scene: 0, scenes: [{ nodes: J.scenes[J.scene || 0].nodes }],
   nodes,
-  meshes: [{ name: "Mannequin", primitives: [{ attributes: { POSITION: aPos, NORMAL: aNrm, JOINTS_0: aJnt, WEIGHTS_0: aWgt, COLOR_0: aClr }, indices: aIdx, material: 0 }] }],
-  materials: [{ name: "mannequin", pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0, roughnessFactor: 0.6 } }],
+  meshes: meshesOut,
+  materials: [{ name: KID ? "kid" : "mannequin", pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0, roughnessFactor: 0.6 } }],
   skins: [{ joints: skin.joints, inverseBindMatrices: aIbm, ...(skin.skeleton !== undefined ? { skeleton: skin.skeleton } : {}) }],
   animations, accessors, bufferViews, buffers: [{ byteLength: off }],
 };
@@ -402,7 +512,8 @@ const jb = pad(Buffer.from(JSON.stringify(json), "utf8"), 0x20), bb = pad(Buffer
 const head = Buffer.alloc(12); head.writeUInt32LE(0x46546c67, 0); head.writeUInt32LE(2, 4); head.writeUInt32LE(12 + 8 + jb.length + 8 + bb.length, 8);
 const jh = Buffer.alloc(8); jh.writeUInt32LE(jb.length, 0); jh.writeUInt32LE(0x4e4f534a, 4);
 const bh = Buffer.alloc(8); bh.writeUInt32LE(bb.length, 0); bh.writeUInt32LE(0x004e4942, 4);
-const OUT = path.join(ROOT, "models/characters/ual.glb");
+const OUT = path.join(ROOT, `models/characters/${NAME}.glb`);
 fs.writeFileSync(OUT, Buffer.concat([head, jh, jb, bh, bb]));
-fs.writeFileSync(path.join(ROOT, "models/characters/ual.json"), JSON.stringify({ model: "ual.glb", fps: FPS, rest: Object.fromEntries(Object.entries(REST).map(([k, x]) => [k, +x.toFixed(4)])), clips: meta }, null, 1));
-console.log(`wrote models/characters/ual.glb (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB: mesh ${nv} verts ${ni / 3} tris, ${animations.length} clips ${(animBytes / 1024).toFixed(0)} KB) + ual.json`);
+fs.writeFileSync(path.join(ROOT, `models/characters/${NAME}.json`), JSON.stringify({ model: `${NAME}.glb`, fps: FPS, rest: Object.fromEntries(Object.entries(REST).map(([k, x]) => [k, +x.toFixed(4)])),
+  ...(KID ? { kid: { height: KIDRIG.height, pelvisScale: KIDRIG.pelvisScale, slots: KIDRIG.slots, tris: meshesOut.map((m) => m.extras.tris), outfit: KIDRIG.outfit, sole: KIDRIG.sole } } : {}), clips: meta }, null, 1));
+console.log(`wrote models/characters/${NAME}.glb (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB: ${meshesOut.map((m) => m.name).join(" / ")}, ${animations.length} clips ${(animBytes / 1024).toFixed(0)} KB) + ${NAME}.json`);

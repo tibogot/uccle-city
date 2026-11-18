@@ -16,5 +16,7 @@ const B = main ? join(main, "tools", "worker", "node_modules", "three", "build")
 export async function resolve(spec, ctx, next) {
   if (spec === "three/webgpu" || spec === "three") return { url: pathToFileURL(join(B, "three.webgpu.js")).href, shortCircuit: true };
   if (spec === "three/tsl") return { url: pathToFileURL(join(B, "three.tsl.js")).href, shortCircuit: true };
+  // (three's addons: GLTFLoader for the kid's node checks, tools/kid/kidTest.mjs)
+  if (spec.startsWith("three/addons/")) return { url: pathToFileURL(join(B, "..", "examples", "jsm", spec.slice(13))).href, shortCircuit: true };
   return next(spec, ctx);
 }
