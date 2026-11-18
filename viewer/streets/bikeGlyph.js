@@ -20,17 +20,18 @@
 
 /** the bicycle in the sign frame (metres): wheels (rings) and strokes (capsules) */
 export const BIKE = (() => {
-  const R = 0.185, RING = 0.055, W = 0.045, HUB = 0.25, hy = R + RING / 2;   // wheel centre height: the ring's bottom on the ground
+  const R = 0.185, RING = 0.05, W = 0.04, HUB = 0.25, hy = R + RING / 2;    // wheel centre height: the ring's bottom on the ground
   const rear = [-HUB, hy], front = [HUB, hy];
-  const B = [-0.03, 0.195], S = [-0.1, 0.36], Ht = [0.16, 0.375], Hb = [0.185, 0.31];
+  const B = [-0.02, hy], S = [-0.1, hy + 0.17], Ht = [0.17, hy + 0.17];      // bottom bracket, seat cluster, head tube top
+  const fk = (y) => [Ht[0] + ((front[0] - Ht[0]) * (Ht[1] - y)) / (Ht[1] - front[1]), y];   // a point on the head tube / fork line
   const seg = (a, b, w = W) => ({ a, b, w });
   return {
     rings: [{ c: rear, r: R, w: RING }, { c: front, r: R, w: RING }],
     segs: [
-      seg(rear, B), seg(rear, S), seg(B, S), seg(S, Ht), seg(B, Hb), seg(Hb, front),       // chainstay, seat stay, seat tube, top tube, down tube, fork
-      seg(S, [-0.115, 0.415]), seg([-0.17, 0.425], [-0.06, 0.425], 0.05),                   // seat post, saddle
-      seg(Ht, [0.14, 0.425]), seg([0.14, 0.425], [0.21, 0.43]),                              // stem, handlebar
-      seg(B, [0.015, 0.125], 0.035),                                                         // crank
+      seg(rear, B), seg(rear, S), seg(B, S), seg(S, Ht), seg(B, fk(hy + 0.12)), seg(Ht, front),   // chainstay, seat stay, seat tube, top tube, down tube, head tube + fork
+      seg(S, [-0.115, hy + 0.21]), seg([-0.17, hy + 0.215], [-0.06, hy + 0.215], 0.045),           // seat post, saddle
+      seg(Ht, [0.16, hy + 0.215]), seg([0.16, hy + 0.215], [0.105, hy + 0.22]),                    // stem, handlebar (back toward the rider)
+      seg(B, B, 0.075),                                                                            // the chainring (a disc)
     ],
   };
 })();
