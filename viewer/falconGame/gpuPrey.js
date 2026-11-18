@@ -10,7 +10,7 @@
 import { ReadbackBuffer } from "three/webgpu";
 import { SLOTS, TOTAL } from "../birds/skyFlocks.js";
 
-const KIND = { murmuration: "starling", starlings: "starling", parakeets: "ring-necked parakeet", jackdaws: "jackdaw", jackdaws2: "jackdaw" };
+const KIND = { murmuration: "starling", starlings: "starling", parakeets: "ring-necked parakeet", jackdaws: "jackdaw", jackdaws2: "jackdaw", pigeons: "feral pigeon" };
 const FLY = 1, GONE = 3;
 
 export class GpuPrey {

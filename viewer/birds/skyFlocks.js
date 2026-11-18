@@ -3,7 +3,12 @@
 // few pixels) as a flapping chevron. The CPU only writes uniforms (the director, viewer/birds/cityBirds.js, says where
 // each flock is going, when it comes and goes, what threatens it).
 //
-// One buffer of 3 vec4 per bird: [pos.xyz, slot] [vel.xyz, wing phase] [bank, wing amplitude, glide timer, epoch].
+// BIRDS2 (2026-11-18, ?birds2=old = before; viewer/birds/flockModel.js says why the day flocks read as a ball): the day
+// flocks follow a LEADER on a path with their 7 nearest neighbours (topological), the murmuration's formation does
+// manoeuvres with density / banking waves. The "small flocks" / formation notes below describe the old rules too.
+//
+// One buffer of 3 vec4 per bird: [pos.xyz, slot (+ birds2 day flocks: the 7th neighbour's distance / 1024)]
+// [vel.xyz, wing phase] [bank, wing amplitude, glide timer, epoch].
 // The birds are split into fixed SLOTS (a flock each, a fixed range of the buffer, a species, a capacity); a slot is
 // switched on with a new epoch: its birds respawn round its spawn point (a lattice for a murmuration, a ball for the
 // others) and fly to the target the director moves.
@@ -28,10 +33,13 @@ import * as THREE from "three/webgpu";
 import {
   Fn, If, Loop, uniform, uniformArray, float, int, uint, vec3, vec4, ivec2, instanceIndex, instancedArray, storage, atomicAdd,
   atomicStore, hash, mix, clamp, max, min, abs, sqrt, length, normalize, cross, dot, cos, sin, select, floor, pow, attribute,
-  sign, positionLocal, cameraPosition, cameraViewMatrix, frontFacing, textureLoad, atan, lights,
+  sign, positionLocal, cameraPosition, cameraViewMatrix, frontFacing, textureLoad, atan, lights, fract, exp,
 } from "three/tsl";
 import { SP, SP_STRIDE, PART, speciesTable, nearBirdGeometry, farBirdGeometry } from "./birdMesh.js";
-import { setMotionDelta } from "../upscale.js";   // --- instmotion: the birds' motion vectors for the TAAU (docs/UPSCALE.md)
+import { setMotionDelta } from "../upscale.js";
+// --- birds2: the behaviour model (the leader-following topological day flocks, the murmuration's manoeuvres; its gains and
+// slot rows), shared with the director and the gate tools/audit/birdGate.mjs (a CPU mirror of this step)
+import { SB, DAY, MUR } from "./flockModel.js";   // --- instmotion: the birds' motion vectors for the TAAU (docs/UPSCALE.md)
 
 export const LATTICE = 1, SCAN = 0;
 /** the fixed flock slots: a range of the buffer each (multiples of 64: one workgroup never mixes two loop lengths much) */
@@ -42,18 +50,19 @@ export const SLOTS = [
   { key: "jackdaws2", species: SP.jackdaw, cap: 64, mode: SCAN },
   { key: "gulls", species: SP.gull, cap: 64, mode: SCAN },
   { key: "parakeets", species: SP.parakeet, cap: 64, mode: SCAN },
+  { key: "pigeons", species: SP.pigeon, cap: 64, mode: SCAN },                 // birds2: feral pigeons' flights round a square
 ];
 let base = 0;
 for (const s of SLOTS) { s.start = base; base += s.cap; }
-export const TOTAL = base;                 // 3520
+export const TOTAL = base;                 // 3584
 const NEAR_CAP = 1536;                     // near-mesh birds at most (the rest of the visible ones fall to the far list)
-const SB = 8;                              // vec4 per slot in the slot uniform array
 const THREATS = 4;
 export const FLOOR = { n: 128, cell: 8 };  // the floor texture: 128 x 128 cells of 8 m (1 km round the camera)
 
 export class SkyFlocks {
-  constructor(renderer, { lightList = null } = {}) {
+  constructor(renderer, { lightList = null, old = false } = {}) {
     this.renderer = renderer;
+    this.old = old;                          // ?birds2=old: the flocking before birds2 (point targets, all-to-all cohesion)
     this.group = new THREE.Group(); this.group.name = "sky-birds";
     // ---- the buffers
     const init = new Float32Array(TOTAL * 12);
@@ -105,6 +114,7 @@ export class SkyFlocks {
   // ------------------------------------------------------------------------------------------------ compute
   buildCompute() {
     const D = this.data, U = this.u, S = this.slotU, T = this.threatU, SPU = this.spU, cnt = this.counter, lists = this.lists;
+    const OLD = this.old;
     const sp = (s, k) => SPU.element(s.mul(SP_STRIDE).add(k));
     this.reset = Fn(() => { atomicStore(cnt.element(1), uint(0)); atomicStore(cnt.element(6), uint(0)); })().compute(1).setName("birds reset");
     // ---- pass 1: the forces -> the velocity, the bank, the wings
@@ -127,16 +137,18 @@ export class SkyFlocks {
           const nz = count.add(nx.mul(ny)).sub(1).div(nx.mul(ny));
           const jit = vec3(hash(seed), hash(seed.add(1)), hash(seed.add(2))).sub(0.5);
           const lat = vec3(float(lx).sub(float(nx).mul(0.5)), float(lz).sub(float(nz).mul(0.5)), float(ly).sub(float(ny).mul(0.5))).add(jit.mul(0.6)).mul(rest);
-          const ball = jit.mul(2).mul(B0.w.mul(0.25).add(8));
+          // (birds2: a loose flat party, a few spacings apart, not the old ball of radius / 4 + 8 m)
+          const ball = OLD ? jit.mul(2).mul(B0.w.mul(0.25).add(8)) : jit.mul(vec3(1, 0.35, 1)).mul(S.element(sb.add(7)).w.mul(pow(float(count), 1 / 3)).mul(2.2));
           const off = select(B3.w.greaterThan(0.5), lat, ball);
           const dir = normalize(B0.xyz.sub(B2.xyz).add(vec3(0.001, 0, 0)));
-          D.element(o).assign(vec4(B2.xyz.add(off), p.w));
+          D.element(o).assign(vec4(B2.xyz.add(off), OLD ? p.w : float(slot)));      // (birds2: p.w = slot + the 7th distance / 1024: none yet)
           D.element(o.add(1)).assign(vec4(dir.mul(B1.y.add(B1.z).mul(0.5)), hash(seed.add(3)).mul(6.283)));
           D.element(o.add(2)).assign(vec4(0, 0.5, hash(seed.add(4)).mul(2), B2.w));
         }).Else(() => {
           const acc = vec3(0).toVar();
           const align = vec3(0).toVar(), nb = float(0).toVar();
           const alarm = float(0).toVar();
+          const bankAdd = float(0).toVar();
           If(B3.w.greaterThan(0.5), () => {
             // ---- topological: the 6 lattice neighbours (a spring with a dead band + alignment)
             const nx = int(B4.x), ny = int(B4.y), rest = B4.z;
@@ -160,6 +172,37 @@ export class SkyFlocks {
               });
             }
           }).Else(() => {
+            if (!OLD) {
+            // ---- birds2, TOPOLOGICAL (Ballerini et al. 2008): the 7 nearest birds of the flock, found exactly by a sorted
+            // insertion over the slot each frame; this frame interacts with those within LAST frame's 7th distance r
+            // (packed in p.w: slot + r / 1024). A dead band (no force between 1 and 1.4 x the bird's own spacing),
+            // separation inside it (weaker vertically: flat parties), the mean of the pulls beyond it, alignment.
+            const rr = fract(p.w).mul(1024), r = select(rr.greaterThan(0.001), rr, float(30)), r2 = r.mul(r).toVar();
+            const spc = S.element(sb.add(7)).w.mul(hash(seed.add(26)).mul(0.5).add(0.75)).toVar();
+            const T7 = Array.from({ length: DAY.TOPO }, () => float(1e8).toVar());
+            const sep = vec3(0).toVar(), coh = vec3(0).toVar();
+            Loop({ start: start, end: start.add(count), type: "int", condition: "<" }, ({ i: k }) => {
+              If(k.notEqual(i), () => {
+                const j = k.mul(3);
+                const q = D.element(j);
+                const dv = q.xyz.sub(p.xyz), d2 = dot(dv, dv);
+                const c = d2.toVar();
+                for (const t of T7) { const lo = min(c, t).toVar(); c.assign(max(c, t)); t.assign(lo); }
+                If(d2.lessThan(r2), () => {
+                  const d = sqrt(max(d2, 1e-4)), dn = dv.div(d);
+                  const ps = max(spc.sub(d), 0).mul(B5.w.mul(DAY.sep)), pc = max(d.sub(spc.mul(DAY.band)), 0).mul(B5.y.mul(DAY.coh));
+                  sep.subAssign(dn.mul(ps).mul(vec3(1, DAY.sepY, 1)));
+                  coh.addAssign(dn.mul(pc));
+                  align.addAssign(D.element(j.add(1)).xyz); nb.addAssign(1);
+                });
+              });
+            });
+            acc.addAssign(sep);
+            If(nb.greaterThan(0), () => { acc.addAssign(coh.div(nb)); });
+            const nr = clamp(sqrt(T7[DAY.TOPO - 1]).mul(1.02).add(0.01), spc.mul(0.5), 120);
+            D.element(o).assign(vec4(p.xyz, float(slot).add(nr.div(1024))));      // (the same xyz: a neighbour reading it sees the same)
+            return;
+            }
             // ---- metric: every bird of the flock (separation 1.4 m, alignment / cohesion within 12 m)
             const sep = vec3(0).toVar(), coh = vec3(0).toVar(), nc = float(0).toVar();
             // personal space ~2.6 spans (a starling 1 m, a jackdaw 1.8 m, a gull 2.6 m)
@@ -180,7 +223,8 @@ export class SkyFlocks {
             acc.addAssign(sep.mul(B5.w.mul(2.5)));
             If(nc.greaterThan(0), () => { acc.addAssign(coh.div(nc).mul(B5.y.mul(0.35))); });
           });
-          If(nb.greaterThan(0), () => { acc.addAssign(align.div(nb).sub(v.xyz).mul(B5.z.mul(1.6))); });
+          const alignK = OLD ? 1.6 : select(B3.w.greaterThan(0.5), float(1.6), float(DAY.align));
+          If(nb.greaterThan(0), () => { acc.addAssign(align.div(nb).sub(v.xyz).mul(B5.z.mul(alignK))); });
           const to = B0.xyz.sub(p.xyz), dh = max(length(to.xz), 0.01);
           If(B3.w.greaterThan(0.5), () => {
             // ---- the murmuration's FORMATION: each bird has its own place in the flock's shape round the leader (the
@@ -196,6 +240,29 @@ export class SkyFlocks {
             const jx = hash(seed.add(11)).sub(0.5), jy = hash(seed.add(12)).sub(0.5);
             const u = float(lx).add(0.5).add(jx.mul(0.9)).div(float(nx)).mul(2).sub(1), w = float(ly).add(0.5).add(jy.mul(0.9)).div(float(ny)).mul(2).sub(1);
             const ud = u.mul(sqrt(max(float(1).sub(w.mul(w).mul(0.5)), 0))), wd = w.mul(sqrt(max(float(1).sub(u.mul(u).mul(0.5)), 0)));
+            if (!OLD) {
+              // ---- birds2: the MANOEUVRES (flockModel.js MurmurShape; formationOffset there is this, on the CPU): a density
+              // wave along the flock (wd' = wd + a sin(2 pi wd - phase) / 2 pi: compression bands run through it), the width
+              // pinched at the middle (hourglass / two lobes), the centre line bent sideways (C) and as an S, the sheet tilted
+              // about the heading and folded (front and back tilted apart); the banking wave (the dark bands) runs along it
+              const B8 = S.element(sb.add(8)), B9 = S.element(sb.add(9));
+              const wq = wd.add(B9.x.mul(sin(wd.mul(6.2832).sub(B9.y))).div(6.2832)).toVar();
+              const halfW = float(nx).mul(rest).mul(B7.x).mul(0.5).add(1), halfL = float(ny).mul(rest).mul(B7.z).mul(0.5);
+              const pinchK = float(1).sub(B8.z.mul(exp(wq.mul(wq).div(0.09).negate())));
+              const ox0 = ud.mul(halfW).mul(pinchK).add(B8.x.mul(wq.mul(wq)).add(B8.y.mul(wq.mul(wq).mul(wq))).mul(halfL));
+              const oz = wq.mul(halfL);
+              const lens = sqrt(max(float(1).sub(ud.mul(ud).add(wq.mul(wq)).mul(0.7)), 0.05));
+              const oy0 = float(lz).add(0.5).add(hash(seed.add(13)).sub(0.5)).sub(float(nz).mul(0.5)).mul(rest).mul(B7.y).mul(lens)
+                .add(B6.w.mul(ox0.mul(ox0)).div(halfW))
+                .add(sin(oz.mul(0.08).add(B7.w)).mul(halfW.mul(0.18)));
+              const ang = B8.w.add(B9.w.mul(wq)), ca = cos(ang), sa = sin(ang);
+              const ox = ox0.mul(ca).sub(oy0.mul(sa)), oy = ox0.mul(sa).add(oy0.mul(ca));
+              const goal = B0.xyz.add(R.mul(ox)).add(Up.mul(oy)).add(H.mul(oz));
+              const g = goal.sub(p.xyz), gl = length(g);
+              acc.addAssign(g.mul(min(gl, 40).div(max(gl, 0.01)).mul(MUR.form)));
+              bankAdd.assign(B9.z.mul(sin(wq.mul(7.5).sub(B9.y.mul(1.3)))));
+              return;
+            }
             const halfW = float(nx).mul(rest).mul(B7.x).mul(0.5).add(1);
             const ox = ud.mul(halfW);
             const oz = wd.mul(float(ny).mul(rest).mul(B7.z).mul(0.5));
@@ -209,6 +276,23 @@ export class SkyFlocks {
             const g = goal.sub(p.xyz), gl = length(g);
             acc.addAssign(g.mul(min(gl, 40).div(max(gl, 0.01)).mul(0.45)));
           }).Else(() => {
+            if (!OLD) {
+              // ---- birds2, THE LEADER (a CPU point flying a path, flockModel.js LeaderPath; row 6: its velocity, the
+              // informed fraction; row 7: the split offset). INFORMED birds (Couzin et al. 2005) steer for the leader's
+              // point 3 s ahead, each to its own place across the front (no point to converge on); half follow the split
+              // leader; the others only when they stray 1-2.5 x the radius off. Level with the leader's climb (flat parties).
+              const B6 = S.element(sb.add(6)), B7 = S.element(sb.add(7)), rad = B0.w;
+              const inf = hash(seed.add(21)).lessThan(B6.w), grpB = hash(seed.add(22)).lessThan(0.5);
+              const own = vec3(hash(seed.add(23)).sub(0.5).mul(rad.mul(0.8)), hash(seed.add(24)).sub(0.5).mul(min(rad.mul(0.25), 6)), hash(seed.add(25)).sub(0.5).mul(rad.mul(0.8)));
+              const Lp = B0.xyz.add(select(grpB, B7.xyz, vec3(0))).add(own);
+              const tv = Lp.add(B6.xyz.mul(DAY.ahead)).sub(p.xyz), tl = max(length(tv), 0.01);
+              const st = clamp(length(B0.xyz.sub(p.xyz)).sub(rad).div(rad.mul(1.5)), 0, 1);
+              const kg = select(inf, float(DAY.lead), st.mul(st).mul(float(3).sub(st.mul(2))).mul(DAY.stray).add(0.05));
+              const cruise = B1.y.add(B1.z).mul(0.5);
+              acc.addAssign(tv.div(tl).mul(cruise).sub(v.xyz).mul(kg));
+              acc.y.addAssign(B6.y.sub(v.y).mul(DAY.level));
+              return;
+            }
             // ---- the flock's target: inside radius B0.w free, beyond pulled in; height sprung; circling
             const outR = max(dh.sub(B0.w), 0);
             acc.addAssign(vec3(to.x, 0, to.z).div(dh).mul(outR.mul(0.06).add(min(dh, 30).mul(0.015))));
@@ -246,7 +330,7 @@ export class SkyFlocks {
           // bank into the turn: the horizontal turn rate x speed / g (pigeons.js), eased
           const a0 = atan(v.x, v.z), a1 = atan(nv.x, nv.z);
           const dy = atan(sin(a1.sub(a0)), cos(a1.sub(a0)));
-          const bankT = clamp(dy.negate().div(max(U.dt, 0.001)).mul(length(nv)).div(9.81).mul(0.5), -1.1, 1.1);
+          const bankT = clamp(dy.negate().div(max(U.dt, 0.001)).mul(length(nv)).div(9.81).mul(0.5), -1.1, 1.1).add(bankAdd);   // (+ the murmuration's banking wave, birds2)
           const bank = mix(x.x, bankT, min(U.dt.mul(5), 1));
           // the wings: a flapping burst, a glide (more gliding for gulls), none of it when alarmed or climbing
           const S0 = sp(s, 2), S1 = sp(s, 1);
@@ -397,7 +481,7 @@ export class SkyFlocks {
 
   // ------------------------------------------------------------------------------------------------ CPU side
   /** switch a slot on (a new epoch: its birds respawn at spawn, fly to the target) or off */
-  setSlot(k, { on, count, spawn, target, radius = 30, floorClear = 12, vmin = 8, vmax = 16, circle = 0, rest = 2, cohesion = 1, align = 1, sep = 1 }) {
+  setSlot(k, { on, count, spawn, target, radius = 30, floorClear = 12, vmin = 8, vmax = 16, circle = 0, rest = 2, cohesion = 1, align = 1, sep = 1, spacing = 2.5, informed = 0.35 }) {
     const S = SLOTS[k];
     if (!on) { this.row(k, 1).w = 0; return; }
     count = Math.max(1, Math.min(S.cap, Math.round(count ?? S.cap)));
@@ -412,7 +496,18 @@ export class SkyFlocks {
     const hx = target.x - spawn.x, hz = target.z - spawn.z, hl = Math.hypot(hx, hz) || 1;
     this.row(k, 6).set(hx / hl, 0, hz / hl, 0);
     this.row(k, 7).set(1, 1, 1, 0);
+    this.row(k, 8).set(0, 0, 0, 0); this.row(k, 9).set(0, 0, 0, 0);
+    if (S.mode === SCAN && !this.old) {
+      // birds2 day flock: row 6 the leader's velocity + the informed fraction, row 7 the split offset + the spacing
+      const c = (vmin + vmax) / 2;
+      this.row(k, 6).set((hx / hl) * c, 0, (hz / hl) * c, informed);
+      this.row(k, 7).set(0, 0, 0, spacing);
+    }
   }
+  /** birds2 day flock: the leader's velocity (m/s) and the split offset (m) */
+  setLeader(k, vx, vy, vz, sx, sy, sz) { const a = this.row(k, 6), b = this.row(k, 7); a.x = vx; a.y = vy; a.z = vz; b.x = sx; b.y = sy; b.z = sz; }
+  /** birds2 murmuration: the manoeuvre rows (flockModel.js MurmurShape.step's output o) */
+  setManoeuvre(k, o) { this.row(k, 8).set(o.side, o.sb, o.pinch, o.tilt); this.row(k, 9).set(o.dens, o.densPh, o.waveAmp, o.fold); }
   /** the murmuration's shape: heading (h, normalised by the GPU), bend, per-axis scale (across, up, along), wave phase */
   setShape(k, hx, hy, hz, bend, sx, sy, sz, wave) { this.row(k, 6).set(hx, hy, hz, bend); this.row(k, 7).set(sx, sy, sz, wave); }
   setTarget(k, x, y, z, radius) { const r = this.row(k, 0); r.set(x, y, z, radius ?? r.w); }
