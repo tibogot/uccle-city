@@ -1,5 +1,5 @@
 {
- "when": "2026-11-18T06:18:57.365Z",
+ "when": "2026-11-18T07:33:25.663Z",
  "old": false,
  "near": null,
  "tiles": 120,
@@ -18,7 +18,7 @@
   "edge lamp (street)": 172,
   "edge garden pillar": 66,
   "soft hedge": 210,
-  "edge tree (worker)": 177,
+  "edge tree (worker)": 206,
   "edge building (worker)": 18,
   "edge garden wall": 66,
   "edge post (street)": 68,
@@ -4120,7 +4120,7 @@
  "results": [
   {
    "tile": "A5",
-   "ms": 4910,
+   "ms": 5339,
    "heroes": 0,
    "roadTrees": {
     "moved": 1,
@@ -4135,7 +4135,7 @@
   },
   {
    "tile": "B4",
-   "ms": 6977,
+   "ms": 10822,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -4151,7 +4151,7 @@
   },
   {
    "tile": "B5",
-   "ms": 9889,
+   "ms": 12745,
    "heroes": 0,
    "roadTrees": {
     "moved": 3,
@@ -4166,7 +4166,7 @@
   },
   {
    "tile": "B6",
-   "ms": 7623,
+   "ms": 6947,
    "heroes": 0,
    "roadTrees": {
     "moved": 7,
@@ -4184,10 +4184,10 @@
   },
   {
    "tile": "B7",
-   "ms": 5220,
+   "ms": 4433,
    "heroes": 0,
    "roadTrees": {
-    "moved": 5,
+    "moved": 4,
     "dropped": 0
    },
    "lanes": 454,
@@ -4196,12 +4196,13 @@
    "info": {
     "soft parked car": 143,
     "edge lamp (street)": 16,
+    "edge tree (worker)": 2,
     "soft hedge": 27
    }
   },
   {
    "tile": "B8",
-   "ms": 3710,
+   "ms": 2193,
    "heroes": 0,
    "roadTrees": {
     "moved": 2,
@@ -4214,10 +4215,10 @@
   },
   {
    "tile": "C3",
-   "ms": 8148,
+   "ms": 11603,
    "heroes": 0,
    "roadTrees": {
-    "moved": 1,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 552,
@@ -4229,10 +4230,10 @@
   },
   {
    "tile": "C4",
-   "ms": 8869,
+   "ms": 12962,
    "heroes": 0,
    "roadTrees": {
-    "moved": 6,
+    "moved": 4,
     "dropped": 1
    },
    "lanes": 529,
@@ -4245,7 +4246,7 @@
   },
   {
    "tile": "C5",
-   "ms": 12020,
+   "ms": 16071,
    "heroes": 1,
    "roadTrees": {
     "moved": 5,
@@ -4262,10 +4263,10 @@
   },
   {
    "tile": "C6",
-   "ms": 8049,
+   "ms": 6918,
    "heroes": 0,
    "roadTrees": {
-    "moved": 5,
+    "moved": 4,
     "dropped": 2
    },
    "lanes": 536,
@@ -4283,11 +4284,11 @@
   },
   {
    "tile": "C7",
-   "ms": 8461,
+   "ms": 7155,
    "heroes": 0,
    "roadTrees": {
-    "moved": 5,
-    "dropped": 2
+    "moved": 4,
+    "dropped": 1
    },
    "lanes": 558,
    "centrelines": 79,
@@ -4301,7 +4302,7 @@
   },
   {
    "tile": "C8",
-   "ms": 8310,
+   "ms": 6277,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -4319,7 +4320,7 @@
   },
   {
    "tile": "C9",
-   "ms": 5681,
+   "ms": 3686,
    "heroes": 1,
    "roadTrees": {
     "moved": 3,
@@ -4335,7 +4336,7 @@
   },
   {
    "tile": "D1",
-   "ms": 5911,
+   "ms": 7211,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -4352,10 +4353,10 @@
   },
   {
    "tile": "D10",
-   "ms": 6033,
+   "ms": 3681,
    "heroes": 0,
    "roadTrees": {
-    "moved": 7,
+    "moved": 6,
     "dropped": 2
    },
    "lanes": 467,
@@ -4367,7 +4368,7 @@
   },
   {
    "tile": "D2",
-   "ms": 5902,
+   "ms": 8223,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -4382,7 +4383,7 @@
   },
   {
    "tile": "D3",
-   "ms": 9308,
+   "ms": 11680,
    "heroes": 1,
    "roadTrees": {
     "moved": 0,
@@ -4397,10 +4398,10 @@
   },
   {
    "tile": "D4",
-   "ms": 9831,
+   "ms": 13999,
    "heroes": 1,
    "roadTrees": {
-    "moved": 6,
+    "moved": 5,
     "dropped": 6
    },
    "lanes": 614,
@@ -4415,10 +4416,10 @@
   },
   {
    "tile": "D5",
-   "ms": 10900,
+   "ms": 15779,
    "heroes": 2,
    "roadTrees": {
-    "moved": 9,
+    "moved": 6,
     "dropped": 0
    },
    "lanes": 719,
@@ -4427,7 +4428,7 @@
    "info": {
     "soft parked car": 676,
     "edge lamp (street)": 4,
-    "edge tree (worker)": 3,
+    "edge tree (worker)": 4,
     "edge post (street)": 3,
     "edge garden pillar": 5,
     "soft hedge": 14
@@ -4435,10 +4436,10 @@
   },
   {
    "tile": "D6",
-   "ms": 10783,
+   "ms": 9967,
    "heroes": 1,
    "roadTrees": {
-    "moved": 9,
+    "moved": 8,
     "dropped": 5
    },
    "lanes": 598,
@@ -4452,10 +4453,10 @@
   },
   {
    "tile": "D7",
-   "ms": 8535,
+   "ms": 7215,
    "heroes": 1,
    "roadTrees": {
-    "moved": 1,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 541,
@@ -4468,7 +4469,7 @@
   },
   {
    "tile": "D8",
-   "ms": 8430,
+   "ms": 6151,
    "heroes": 1,
    "roadTrees": {
     "moved": 0,
@@ -4486,7 +4487,7 @@
   },
   {
    "tile": "D9",
-   "ms": 6683,
+   "ms": 4636,
    "heroes": 2,
    "roadTrees": {
     "moved": 2,
@@ -4502,7 +4503,7 @@
   },
   {
    "tile": "E1",
-   "ms": 10902,
+   "ms": 13901,
    "heroes": 1,
    "roadTrees": {
     "moved": 2,
@@ -4519,10 +4520,10 @@
   },
   {
    "tile": "E10",
-   "ms": 7229,
+   "ms": 5042,
    "heroes": 1,
    "roadTrees": {
-    "moved": 10,
+    "moved": 7,
     "dropped": 0
    },
    "lanes": 376,
@@ -4537,7 +4538,7 @@
   },
   {
    "tile": "E2",
-   "ms": 9543,
+   "ms": 9881,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -4552,10 +4553,10 @@
   },
   {
    "tile": "E3",
-   "ms": 11187,
+   "ms": 13789,
    "heroes": 1,
    "roadTrees": {
-    "moved": 8,
+    "moved": 7,
     "dropped": 0
    },
    "lanes": 444,
@@ -4568,10 +4569,10 @@
   },
   {
    "tile": "E4",
-   "ms": 15229,
+   "ms": 24340,
    "heroes": 3,
    "roadTrees": {
-    "moved": 8,
+    "moved": 6,
     "dropped": 0
    },
    "lanes": 641,
@@ -4584,10 +4585,10 @@
   },
   {
    "tile": "E5",
-   "ms": 10733,
+   "ms": 11610,
    "heroes": 0,
    "roadTrees": {
-    "moved": 7,
+    "moved": 5,
     "dropped": 0
    },
    "lanes": 490,
@@ -4601,18 +4602,18 @@
   },
   {
    "tile": "E6",
-   "ms": 9569,
+   "ms": 8511,
    "heroes": 0,
    "roadTrees": {
-    "moved": 17,
-    "dropped": 15
+    "moved": 14,
+    "dropped": 13
    },
    "lanes": 643,
    "centrelines": 90,
    "pathM": 8157,
    "info": {
     "soft parked car": 1048,
-    "edge tree (worker)": 7,
+    "edge tree (worker)": 10,
     "edge garden wall": 7,
     "edge garden pillar": 9,
     "soft hedge": 4,
@@ -4622,11 +4623,11 @@
   },
   {
    "tile": "E7",
-   "ms": 7496,
+   "ms": 6068,
    "heroes": 1,
    "roadTrees": {
-    "moved": 22,
-    "dropped": 12
+    "moved": 20,
+    "dropped": 10
    },
    "lanes": 520,
    "centrelines": 74,
@@ -4639,7 +4640,7 @@
   },
   {
    "tile": "E8",
-   "ms": 7508,
+   "ms": 6385,
    "heroes": 2,
    "roadTrees": {
     "moved": 5,
@@ -4657,10 +4658,10 @@
   },
   {
    "tile": "E9",
-   "ms": 7901,
+   "ms": 5806,
    "heroes": 0,
    "roadTrees": {
-    "moved": 2,
+    "moved": 1,
     "dropped": 0
    },
    "lanes": 449,
@@ -4675,7 +4676,7 @@
   },
   {
    "tile": "F1",
-   "ms": 10253,
+   "ms": 13111,
    "heroes": 1,
    "roadTrees": {
     "moved": 2,
@@ -4696,10 +4697,10 @@
   },
   {
    "tile": "F10",
-   "ms": 3804,
+   "ms": 2402,
    "heroes": 0,
    "roadTrees": {
-    "moved": 6,
+    "moved": 5,
     "dropped": 1
    },
    "lanes": 219,
@@ -4711,10 +4712,10 @@
   },
   {
    "tile": "F2",
-   "ms": 11094,
+   "ms": 10954,
    "heroes": 0,
    "roadTrees": {
-    "moved": 15,
+    "moved": 14,
     "dropped": 0
    },
    "lanes": 525,
@@ -4728,10 +4729,10 @@
   },
   {
    "tile": "F3",
-   "ms": 10239,
+   "ms": 10216,
    "heroes": 0,
    "roadTrees": {
-    "moved": 31,
+    "moved": 30,
     "dropped": 5
    },
    "lanes": 495,
@@ -4744,10 +4745,10 @@
   },
   {
    "tile": "F4",
-   "ms": 7846,
+   "ms": 14835,
    "heroes": 3,
    "roadTrees": {
-    "moved": 20,
+    "moved": 6,
     "dropped": 1
    },
    "lanes": 498,
@@ -4763,11 +4764,11 @@
   },
   {
    "tile": "F5",
-   "ms": 8048,
+   "ms": 6980,
    "heroes": 0,
    "roadTrees": {
-    "moved": 17,
-    "dropped": 4
+    "moved": 10,
+    "dropped": 1
    },
    "lanes": 391,
    "centrelines": 55,
@@ -4780,11 +4781,11 @@
   },
   {
    "tile": "F6",
-   "ms": 8763,
+   "ms": 7884,
    "heroes": 0,
    "roadTrees": {
-    "moved": 13,
-    "dropped": 3
+    "moved": 12,
+    "dropped": 2
    },
    "lanes": 589,
    "centrelines": 82,
@@ -4797,10 +4798,10 @@
   },
   {
    "tile": "F7",
-   "ms": 7595,
+   "ms": 5089,
    "heroes": 1,
    "roadTrees": {
-    "moved": 13,
+    "moved": 4,
     "dropped": 0
    },
    "lanes": 568,
@@ -4814,10 +4815,10 @@
   },
   {
    "tile": "F8",
-   "ms": 6690,
+   "ms": 5486,
    "heroes": 0,
    "roadTrees": {
-    "moved": 15,
+    "moved": 12,
     "dropped": 1
    },
    "lanes": 755,
@@ -4830,10 +4831,10 @@
   },
   {
    "tile": "F9",
-   "ms": 9135,
+   "ms": 6661,
    "heroes": 0,
    "roadTrees": {
-    "moved": 5,
+    "moved": 4,
     "dropped": 0
    },
    "lanes": 784,
@@ -4850,7 +4851,7 @@
   },
   {
    "tile": "G1",
-   "ms": 8670,
+   "ms": 11933,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -4865,11 +4866,11 @@
   },
   {
    "tile": "G10",
-   "ms": 5094,
+   "ms": 3096,
    "heroes": 0,
    "roadTrees": {
     "moved": 9,
-    "dropped": 11
+    "dropped": 6
    },
    "lanes": 183,
    "centrelines": 34,
@@ -4877,31 +4878,31 @@
    "info": {
     "soft parked car": 189,
     "edge lamp (street)": 3,
-    "edge tree (worker)": 1
+    "edge tree (worker)": 9
    }
   },
   {
    "tile": "G2",
-   "ms": 8007,
+   "ms": 7424,
    "heroes": 1,
    "roadTrees": {
-    "moved": 8,
-    "dropped": 16
+    "moved": 0,
+    "dropped": 3
    },
    "lanes": 405,
    "centrelines": 59,
    "pathM": 8530,
    "info": {
     "soft parked car": 861,
-    "edge tree (worker)": 3
+    "edge tree (worker)": 5
    }
   },
   {
    "tile": "G3",
-   "ms": 7212,
+   "ms": 8178,
    "heroes": 1,
    "roadTrees": {
-    "moved": 7,
+    "moved": 6,
     "dropped": 0
    },
    "lanes": 497,
@@ -4917,10 +4918,10 @@
   },
   {
    "tile": "G4",
-   "ms": 8716,
+   "ms": 13542,
    "heroes": 0,
    "roadTrees": {
-    "moved": 3,
+    "moved": 2,
     "dropped": 1
    },
    "lanes": 579,
@@ -4933,10 +4934,10 @@
   },
   {
    "tile": "G5",
-   "ms": 9338,
+   "ms": 8262,
    "heroes": 0,
    "roadTrees": {
-    "moved": 5,
+    "moved": 1,
     "dropped": 3
    },
    "lanes": 614,
@@ -4951,7 +4952,7 @@
   },
   {
    "tile": "G6",
-   "ms": 8279,
+   "ms": 8014,
    "heroes": 3,
    "roadTrees": {
     "moved": 12,
@@ -4968,10 +4969,10 @@
   },
   {
    "tile": "G7",
-   "ms": 4825,
+   "ms": 2615,
    "heroes": 0,
    "roadTrees": {
-    "moved": 16,
+    "moved": 8,
     "dropped": 0
    },
    "lanes": 259,
@@ -4985,10 +4986,10 @@
   },
   {
    "tile": "G8",
-   "ms": 4494,
+   "ms": 3739,
    "heroes": 0,
    "roadTrees": {
-    "moved": 2,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 581,
@@ -5002,10 +5003,10 @@
   },
   {
    "tile": "G9",
-   "ms": 6481,
+   "ms": 4693,
    "heroes": 1,
    "roadTrees": {
-    "moved": 5,
+    "moved": 4,
     "dropped": 3
    },
    "lanes": 532,
@@ -5019,7 +5020,7 @@
   },
   {
    "tile": "H1",
-   "ms": 10648,
+   "ms": 13747,
    "heroes": 0,
    "roadTrees": {
     "moved": 2,
@@ -5034,11 +5035,11 @@
   },
   {
    "tile": "H10",
-   "ms": 4817,
+   "ms": 2837,
    "heroes": 0,
    "roadTrees": {
-    "moved": 4,
-    "dropped": 5
+    "moved": 2,
+    "dropped": 4
    },
    "lanes": 189,
    "centrelines": 36,
@@ -5051,7 +5052,7 @@
   },
   {
    "tile": "H11",
-   "ms": 1827,
+   "ms": 1016,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5064,11 +5065,11 @@
   },
   {
    "tile": "H2",
-   "ms": 9226,
+   "ms": 12207,
    "heroes": 0,
    "roadTrees": {
-    "moved": 8,
-    "dropped": 17
+    "moved": 1,
+    "dropped": 0
    },
    "lanes": 379,
    "centrelines": 54,
@@ -5079,26 +5080,26 @@
   },
   {
    "tile": "H3",
-   "ms": 8959,
+   "ms": 14844,
    "heroes": 0,
    "roadTrees": {
-    "moved": 8,
-    "dropped": 3
+    "moved": 4,
+    "dropped": 2
    },
    "lanes": 394,
    "centrelines": 54,
    "pathM": 9672,
    "info": {
     "soft parked car": 1042,
-    "edge tree (worker)": 7
+    "edge tree (worker)": 8
    }
   },
   {
    "tile": "H4",
-   "ms": 9337,
+   "ms": 12776,
    "heroes": 1,
    "roadTrees": {
-    "moved": 6,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 516,
@@ -5111,11 +5112,11 @@
   },
   {
    "tile": "H5",
-   "ms": 10274,
+   "ms": 9882,
    "heroes": 1,
    "roadTrees": {
-    "moved": 13,
-    "dropped": 1
+    "moved": 3,
+    "dropped": 0
    },
    "lanes": 604,
    "centrelines": 76,
@@ -5128,11 +5129,11 @@
   },
   {
    "tile": "H6",
-   "ms": 8266,
+   "ms": 7752,
    "heroes": 0,
    "roadTrees": {
     "moved": 1,
-    "dropped": 2
+    "dropped": 0
    },
    "lanes": 390,
    "centrelines": 69,
@@ -5144,10 +5145,10 @@
   },
   {
    "tile": "H7",
-   "ms": 6916,
+   "ms": 4054,
    "heroes": 0,
    "roadTrees": {
-    "moved": 1,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 176,
@@ -5160,24 +5161,24 @@
   },
   {
    "tile": "H8",
-   "ms": 5048,
+   "ms": 4276,
    "heroes": 0,
    "roadTrees": {
-    "moved": 13,
-    "dropped": 34
+    "moved": 10,
+    "dropped": 31
    },
    "lanes": 185,
    "centrelines": 29,
    "pathM": 6589,
    "info": {
     "soft parked car": 1359,
-    "edge tree (worker)": 10,
+    "edge tree (worker)": 12,
     "edge lamp (street)": 4
    }
   },
   {
    "tile": "H9",
-   "ms": 4472,
+   "ms": 2889,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5192,7 +5193,7 @@
   },
   {
    "tile": "I1",
-   "ms": 8677,
+   "ms": 12018,
    "heroes": 0,
    "roadTrees": {
     "moved": 10,
@@ -5209,7 +5210,7 @@
   },
   {
    "tile": "I10",
-   "ms": 6524,
+   "ms": 4112,
    "heroes": 0,
    "roadTrees": {
     "moved": 3,
@@ -5225,7 +5226,7 @@
   },
   {
    "tile": "I11",
-   "ms": 3114,
+   "ms": 1736,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5238,11 +5239,11 @@
   },
   {
    "tile": "I2",
-   "ms": 9079,
+   "ms": 12104,
    "heroes": 1,
    "roadTrees": {
-    "moved": 3,
-    "dropped": 11
+    "moved": 1,
+    "dropped": 0
    },
    "lanes": 330,
    "centrelines": 51,
@@ -5255,10 +5256,10 @@
   },
   {
    "tile": "I3",
-   "ms": 7890,
+   "ms": 15644,
    "heroes": 0,
    "roadTrees": {
-    "moved": 14,
+    "moved": 12,
     "dropped": 10
    },
    "lanes": 393,
@@ -5266,16 +5267,16 @@
    "pathM": 6887,
    "info": {
     "soft parked car": 829,
-    "edge tree (worker)": 14,
+    "edge tree (worker)": 15,
     "edge garden wall": 1
    }
   },
   {
    "tile": "I4",
-   "ms": 7636,
+   "ms": 11290,
    "heroes": 0,
    "roadTrees": {
-    "moved": 6,
+    "moved": 4,
     "dropped": 0
    },
    "lanes": 399,
@@ -5288,7 +5289,7 @@
   },
   {
    "tile": "I5",
-   "ms": 9187,
+   "ms": 8831,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5303,10 +5304,10 @@
   },
   {
    "tile": "I6",
-   "ms": 9278,
+   "ms": 9211,
    "heroes": 0,
    "roadTrees": {
-    "moved": 4,
+    "moved": 3,
     "dropped": 2
    },
    "lanes": 422,
@@ -5324,10 +5325,10 @@
   },
   {
    "tile": "I7",
-   "ms": 6856,
+   "ms": 4432,
    "heroes": 0,
    "roadTrees": {
-    "moved": 4,
+    "moved": 2,
     "dropped": 0
    },
    "lanes": 353,
@@ -5335,15 +5336,15 @@
    "pathM": 4749,
    "info": {
     "soft parked car": 537,
-    "edge tree (worker)": 3
+    "edge tree (worker)": 6
    }
   },
   {
    "tile": "I8",
-   "ms": 5605,
+   "ms": 4372,
    "heroes": 0,
    "roadTrees": {
-    "moved": 2,
+    "moved": 1,
     "dropped": 1
    },
    "lanes": 272,
@@ -5357,7 +5358,7 @@
   },
   {
    "tile": "I9",
-   "ms": 5708,
+   "ms": 3544,
    "heroes": 0,
    "roadTrees": {
     "moved": 1,
@@ -5372,10 +5373,10 @@
   },
   {
    "tile": "J10",
-   "ms": 4931,
+   "ms": 3546,
    "heroes": 0,
    "roadTrees": {
-    "moved": 10,
+    "moved": 7,
     "dropped": 1
    },
    "lanes": 109,
@@ -5388,10 +5389,10 @@
   },
   {
    "tile": "J11",
-   "ms": 4191,
+   "ms": 2314,
    "heroes": 0,
    "roadTrees": {
-    "moved": 2,
+    "moved": 1,
     "dropped": 0
    },
    "lanes": 146,
@@ -5399,12 +5400,12 @@
    "pathM": 6069,
    "info": {
     "soft parked car": 294,
-    "edge tree (worker)": 6
+    "edge tree (worker)": 12
    }
   },
   {
    "tile": "J2",
-   "ms": 2607,
+   "ms": 3866,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5419,7 +5420,7 @@
   },
   {
    "tile": "J3",
-   "ms": 4791,
+   "ms": 12943,
    "heroes": 0,
    "roadTrees": {
     "moved": 5,
@@ -5435,10 +5436,10 @@
   },
   {
    "tile": "J4",
-   "ms": 8283,
+   "ms": 12640,
    "heroes": 0,
    "roadTrees": {
-    "moved": 14,
+    "moved": 13,
     "dropped": 4
    },
    "lanes": 488,
@@ -5454,10 +5455,10 @@
   },
   {
    "tile": "J5",
-   "ms": 8274,
+   "ms": 8248,
    "heroes": 0,
    "roadTrees": {
-    "moved": 6,
+    "moved": 5,
     "dropped": 1
    },
    "lanes": 464,
@@ -5470,10 +5471,10 @@
   },
   {
    "tile": "J6",
-   "ms": 6506,
+   "ms": 6105,
    "heroes": 0,
    "roadTrees": {
-    "moved": 4,
+    "moved": 1,
     "dropped": 0
    },
    "lanes": 360,
@@ -5488,7 +5489,7 @@
   },
   {
    "tile": "J7",
-   "ms": 9374,
+   "ms": 6298,
    "heroes": 0,
    "roadTrees": {
     "moved": 4,
@@ -5504,10 +5505,10 @@
   },
   {
    "tile": "J8",
-   "ms": 5355,
+   "ms": 4541,
    "heroes": 0,
    "roadTrees": {
-    "moved": 3,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 215,
@@ -5521,10 +5522,10 @@
   },
   {
    "tile": "J9",
-   "ms": 4933,
+   "ms": 3145,
    "heroes": 0,
    "roadTrees": {
-    "moved": 2,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 124,
@@ -5536,10 +5537,10 @@
   },
   {
    "tile": "K10",
-   "ms": 4722,
+   "ms": 3269,
    "heroes": 0,
    "roadTrees": {
-    "moved": 6,
+    "moved": 2,
     "dropped": 0
    },
    "lanes": 148,
@@ -5552,11 +5553,11 @@
   },
   {
    "tile": "K11",
-   "ms": 5636,
+   "ms": 2900,
    "heroes": 0,
    "roadTrees": {
-    "moved": 21,
-    "dropped": 14
+    "moved": 15,
+    "dropped": 13
    },
    "lanes": 213,
    "centrelines": 32,
@@ -5568,7 +5569,7 @@
   },
   {
    "tile": "K12",
-   "ms": 2396,
+   "ms": 1596,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5581,7 +5582,7 @@
   },
   {
    "tile": "K4",
-   "ms": 3612,
+   "ms": 4835,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5597,10 +5598,10 @@
   },
   {
    "tile": "K5",
-   "ms": 4184,
+   "ms": 4238,
    "heroes": 0,
    "roadTrees": {
-    "moved": 10,
+    "moved": 8,
     "dropped": 4
    },
    "lanes": 135,
@@ -5612,11 +5613,11 @@
   },
   {
    "tile": "K6",
-   "ms": 3845,
+   "ms": 3455,
    "heroes": 0,
    "roadTrees": {
-    "moved": 18,
-    "dropped": 9
+    "moved": 14,
+    "dropped": 7
    },
    "lanes": 138,
    "centrelines": 21,
@@ -5630,10 +5631,10 @@
   },
   {
    "tile": "K7",
-   "ms": 5743,
+   "ms": 4050,
    "heroes": 0,
    "roadTrees": {
-    "moved": 7,
+    "moved": 4,
     "dropped": 0
    },
    "lanes": 377,
@@ -5647,10 +5648,10 @@
   },
   {
    "tile": "K8",
-   "ms": 6604,
+   "ms": 5248,
    "heroes": 0,
    "roadTrees": {
-    "moved": 3,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 267,
@@ -5663,7 +5664,7 @@
   },
   {
    "tile": "K9",
-   "ms": 5064,
+   "ms": 2973,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5678,10 +5679,10 @@
   },
   {
    "tile": "L10",
-   "ms": 2658,
+   "ms": 1463,
    "heroes": 0,
    "roadTrees": {
-    "moved": 18,
+    "moved": 16,
     "dropped": 13
    },
    "lanes": 30,
@@ -5693,10 +5694,10 @@
   },
   {
    "tile": "L11",
-   "ms": 2194,
+   "ms": 1245,
    "heroes": 0,
    "roadTrees": {
-    "moved": 3,
+    "moved": 1,
     "dropped": 0
    },
    "lanes": 20,
@@ -5708,7 +5709,7 @@
   },
   {
    "tile": "L12",
-   "ms": 1265,
+   "ms": 911,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5721,10 +5722,10 @@
   },
   {
    "tile": "L5",
-   "ms": 2527,
+   "ms": 2509,
    "heroes": 0,
    "roadTrees": {
-    "moved": 14,
+    "moved": 11,
     "dropped": 3
    },
    "lanes": 140,
@@ -5736,10 +5737,10 @@
   },
   {
    "tile": "L6",
-   "ms": 1902,
+   "ms": 1703,
    "heroes": 0,
    "roadTrees": {
-    "moved": 11,
+    "moved": 1,
     "dropped": 0
    },
    "lanes": 57,
@@ -5751,10 +5752,10 @@
   },
   {
    "tile": "L7",
-   "ms": 3400,
+   "ms": 2181,
    "heroes": 0,
    "roadTrees": {
-    "moved": 9,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 153,
@@ -5767,10 +5768,10 @@
   },
   {
    "tile": "L8",
-   "ms": 3342,
+   "ms": 2230,
    "heroes": 0,
    "roadTrees": {
-    "moved": 3,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 116,
@@ -5782,10 +5783,10 @@
   },
   {
    "tile": "L9",
-   "ms": 2027,
+   "ms": 1348,
    "heroes": 0,
    "roadTrees": {
-    "moved": 8,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 19,
@@ -5797,7 +5798,7 @@
   },
   {
    "tile": "M10",
-   "ms": 2448,
+   "ms": 1380,
    "heroes": 0,
    "roadTrees": {
     "moved": 1,
@@ -5812,10 +5813,10 @@
   },
   {
    "tile": "M11",
-   "ms": 1916,
+   "ms": 1045,
    "heroes": 0,
    "roadTrees": {
-    "moved": 4,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 27,
@@ -5825,7 +5826,7 @@
   },
   {
    "tile": "M12",
-   "ms": 920,
+   "ms": 691,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5838,7 +5839,7 @@
   },
   {
    "tile": "M5",
-   "ms": 4930,
+   "ms": 4794,
    "heroes": 0,
    "roadTrees": {
     "moved": 1,
@@ -5854,10 +5855,10 @@
   },
   {
    "tile": "M6",
-   "ms": 1333,
+   "ms": 1232,
    "heroes": 0,
    "roadTrees": {
-    "moved": 5,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 47,
@@ -5867,10 +5868,10 @@
   },
   {
    "tile": "M7",
-   "ms": 1407,
+   "ms": 944,
    "heroes": 0,
    "roadTrees": {
-    "moved": 3,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 0,
@@ -5880,10 +5881,10 @@
   },
   {
    "tile": "M8",
-   "ms": 1421,
+   "ms": 1011,
    "heroes": 0,
    "roadTrees": {
-    "moved": 9,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 0,
@@ -5893,10 +5894,10 @@
   },
   {
    "tile": "M9",
-   "ms": 1420,
+   "ms": 896,
    "heroes": 0,
    "roadTrees": {
-    "moved": 2,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 19,
@@ -5906,10 +5907,10 @@
   },
   {
    "tile": "N10",
-   "ms": 1739,
+   "ms": 984,
    "heroes": 0,
    "roadTrees": {
-    "moved": 1,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 4,
@@ -5921,7 +5922,7 @@
   },
   {
    "tile": "N11",
-   "ms": 2188,
+   "ms": 1222,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -5936,10 +5937,10 @@
   },
   {
    "tile": "N5",
-   "ms": 5705,
+   "ms": 5084,
    "heroes": 0,
    "roadTrees": {
-    "moved": 6,
+    "moved": 5,
     "dropped": 0
    },
    "lanes": 502,
@@ -5953,10 +5954,10 @@
   },
   {
    "tile": "N6",
-   "ms": 2608,
+   "ms": 2333,
    "heroes": 0,
    "roadTrees": {
-    "moved": 5,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 199,
@@ -5969,7 +5970,20 @@
   },
   {
    "tile": "N7",
-   "ms": 1292,
+   "ms": 873,
+   "heroes": 0,
+   "roadTrees": {
+    "moved": 0,
+    "dropped": 0
+   },
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "N8",
+   "ms": 965,
    "heroes": 0,
    "roadTrees": {
     "moved": 1,
@@ -5981,24 +5995,11 @@
    "info": {}
   },
   {
-   "tile": "N8",
-   "ms": 1568,
-   "heroes": 0,
-   "roadTrees": {
-    "moved": 5,
-    "dropped": 0
-   },
-   "lanes": 0,
-   "centrelines": 0,
-   "pathM": 0,
-   "info": {}
-  },
-  {
    "tile": "N9",
-   "ms": 1203,
+   "ms": 811,
    "heroes": 0,
    "roadTrees": {
-    "moved": 2,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 0,
@@ -6008,10 +6009,10 @@
   },
   {
    "tile": "O10",
-   "ms": 1632,
+   "ms": 907,
    "heroes": 0,
    "roadTrees": {
-    "moved": 6,
+    "moved": 0,
     "dropped": 0
    },
    "lanes": 8,
@@ -6021,7 +6022,7 @@
   },
   {
    "tile": "O11",
-   "ms": 1715,
+   "ms": 1083,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,
@@ -6034,7 +6035,7 @@
   },
   {
    "tile": "O9",
-   "ms": 1416,
+   "ms": 886,
    "heroes": 0,
    "roadTrees": {
     "moved": 0,

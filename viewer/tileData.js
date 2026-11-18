@@ -406,7 +406,10 @@ export async function buildTileData(entry, base) {
   let roadTrees = null;
   if (entry.roadTrees !== false && feats.trees?.length) {
     const fit0 = rd.surfaceData ? streetFit(rd.surfaceData) : null;
-    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: fit0?.classAt, onDeck: null }),
+    // (a measured TRAM road keeps its trees: Avenue Churchill's tram reservation is a tram road in UrbIS, its two tree rows
+    // stand on it; browser turn, tour churchill-blocks. Only the roadway / parking where measured, the OSM band elsewhere)
+    const noTram = fit0?.classAt ? (x, z) => { const c = fit0.classAt(x, z); return c === 1 ? 2 : c; } : null;
+    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null }),
       { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z) }));
     feats.trees = roadTrees.trees;
   }

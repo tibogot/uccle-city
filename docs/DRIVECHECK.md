@@ -117,10 +117,13 @@ drèves, the streets past the region's edge, the forest lanes) the road is drawn
 it, drawn and colliding (53 of the 63 had no measured surface under them; 10 were on a measured roadway the pipeline
 missed). Fix: viewer/streets/roadTrees.js `treesOffCarriageway` at the tile build (viewer/tileData.js, after the road
 stage, before parking / traffic / colliders / the drawn tree list read feats.trees): a LiDAR tree whose point is on the
-DRAWN carriageway (carriageway.js: the measured class where there is one, else the OSM band) or whose trunk (the
-collider's radius) reaches >= 0.3 m into it moves to the nearest point 0.6 m clear of it within about a crown radius
+DRAWN carriageway (carriageway.js: the measured class where there is one, else the OSM band) moves to the nearest point 0.6 m clear of it within about a crown radius
 (clamp(0.8 crown, 1.5, 4) m; not in a building, in the tile), else, or onto another tree (< 1.8 m), it is dropped (the
-pipeline's rule). City-wide 697 moved, 278 dropped of 211,330 trees (0.46 %); trees in kerb pits stay. Trunk places
+pipeline's rule). A measured TRAM road keeps its trees (Avenue Churchill's tram reservation is "tram road" in UrbIS and
+its two tree rows stand on it). City-wide 448 moved, 212 dropped of 211,330 trees (0.31 %); trees in kerb pits and
+medians stay (browser turn: the first cut also moved trunks that only REACHED 0.3 m in and counted tram roads: 697 / 278,
+Churchill's rows went; now the point alone decides, roadway / parking where measured, the OSM band elsewhere; the 63
+places stay at 0, the reaching ones are "edge" info). Trunk places
 63 -> 0 (gate: `--maxsrc tree=0`). Visible: trees shift off drawn roads in clos / drèves (tour views may flag).
 
 **Also (simple): the Verrewinkel deck lanes (`?decklanes=old`).** The traffic lanes over the hero road deck come from the
@@ -135,3 +138,39 @@ the routing data, TODO step 1), c (34 measured bollards: the path should not use
 b gardens (20: garden pieces that reach 0.3 m+ into a measured roadway; the strict garden test `?gardenlane=new` was
 withdrawn after Carré Cassimans, docs/COLLIDER_AUDIT.md: a next job per spot). Reports: docs/drivecheck/round2_before.json,
 after.json. Gate: `--max 211 --maxhero 3 --maxsrc tree=0`.
+
+## Browser turn (2026-11-18, round 1 + 2; worker bundle rebuilt in the worktree only, not committed)
+
+Quick boots `?quick=1&at=..&radius=..&time=midday&still=1&xmas=0`, the car driven by a waypoint follower on
+`driver.autoInput` along Rue de Verrewinkel's OSM line (r14386610_5c1 -> the deck r28030783_0 -> r28030784_0).
+Screenshots in the session scratchpad (paths in the merge message).
+
+| check | default | old |
+|---|---|---|
+| Verrewinkel west -> east, over the deck | across, 0 contact frames | `&heroground=old`: stopped at the west deck end (X -20), 90 contact frames |
+| Verrewinkel east -> west | across, 0-1 contact frames | stopped at the east deck end (X 18.8), 94 |
+| collider view (G) at the west end | parapets along both sides, road open (`dc_verre_new_west.png`) | the owner's picture: rings across the road, "spikes" (`dc_verre_old_west.png`) |
+| on the deck | parapets both sides, nothing across (`dc_verre_new_deck.png`) | |
+
+Found and fixed in the browser turn:
+- **The collider view drew the layered blockers as a curtain.** viewer/drive/debugDraw.js drew every polygon from the
+  ground under the car's layer up 2.5 m: the pier blocks in the cutting (top 73-75 m) were drawn across the deck road
+  (78 m) the car drives through. Now an item with a vertical extent is drawn at its own heights, and not at all when the
+  car passes over / under it where it is now (`?heroground=old`: as before).
+- **Dropped trees re-dressed whole streets.** The street trees' look is picked by the tree's INDEX in the tile's list
+  (viewer/treesStylized.js variantOfIndex): one dropped tree shifted every later tree of the tile to another variant
+  (tour: orange-villas, churchill-blocks, police-station ... 14 views flagged). roadTrees.js now gives every kept tree
+  its index before the drops (`vi`) when it drops one, and treePlacements / the pool / impostors / the kit pick by it.
+- **Trunks reaching into the road vs on it, tram roads** (above): the point decides, tram roads keep their trees.
+- Spots: E6 Clos du Papenkasteel (-670, 875): old, two trunks in the loop's roadway / parking bays; new, on the island
+  and the kerb (`dc_trees_papenkasteel_old/new.png`). K6 Avenue du Fort-Jaco (2208, 940): the trunk at the cobbled
+  lane's edge is gone (dropped, a duplicate canopy peak), the verge reads normal (`dc_trees_fortjaco_old/new.png`).
+- Not colliders, seen on the way: the west approach of the bridge rises ~1 m in 2 m (X -37..-35 local, beside the
+  road's bend) where the car started off the road; the follower on the road line passes.
+
+Tour (`node tools/tour/compare.mjs deckrail drivecheck2`, 22 views, the worktree's own worker bundle; then
+`drivecheck3` for 4 views after the tram-road change): 1 flagged of 22. **wolvendael-park**: one corner cell (12.4 %,
+top right, 250 m off): a street tree at the park's edge street moved off the drawn road: intended. churchill-blocks
+(flagged in drivecheck2: the tram reservation's tree rows had been moved) ok after the tram-road change; the first run
+(`drivecheck`, before the `vi` fix) flagged 14 views, all the index re-dress of the trees (orange-villas, police-station,
+stjob-railbridge ...), ok in drivecheck2 / 3.
