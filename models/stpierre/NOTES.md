@@ -121,3 +121,23 @@ phase-2 reports), then the Stalle approach (portal, baked lightmaps, probes, doo
 `preview_*.png` (Cycles, no AO), `lab_*_view.jpg` (the lab at the solved photo viewpoints), `city_parvis_southwest.png`,
 `city_lod_sequence_moving.jpg`. Side-by-sides `side_*.jpg` are git-ignored (they hold the photos): west P02 (+50 %
 overlay), west c10 (+overlay), south-west P01, north-west P03.
+
+## Shell closed (claude/heroshell, 2026-11-18; owner playtest screenshot 88)
+- **Why the south side had holes**: `porch_bay` / `porch_panel` cut the bay over the porch at nave bay 4 while the porch
+  stands under bay 3 (`side_elevation` skipped bays[3] = nave bay 3): bay 4's panel got two overlapping holes in one
+  `fill2d`, `tessellate_polygon` returned a broken stone face (~50 m2 gone, bays 2-4 open to the sky). Now `PORCH_BAY = 2`
+  drives both. The south side also stopped at u 33.3 where the south-east annex begins: the main wall over the annex's
+  roof (u 33.3-40.3, 53.5-60.4) was never built; now `chancel_bay` (stone face, recessed brick panel, a short round-arched
+  window as the porch bay's, the corner pier, a flashing band; ESTIMATED) and the entablature / cornice / parapet run on
+  to the east wall. The upper register's two side faces are oriented by `face_dir` (the north one faced inward). The
+  aileron's brick infill curve ran outside its stone wing (radii - 0.35 instead of + 0.35): fixed (rule 27 found it).
+- **Rule 27 in the kit**: `stpierre_common.fill2d` checks every outer loop + holes (`tools/blender/polycheck.py`): a hole
+  outside or two holes overlapping stop the build. Cycles bakes on OptiX (`SC.use_gpu`).
+- **LOD2**: `tools/hero_pack.mjs` simplifies the far level with LockBorder (slot borders kept): probe 12.8 -> 4.6 m2.
+- Triangles LOD0 30,922 -> **31,626**, LOD1 12,489 -> **12,519**, LOD2 1,671 -> **2,782** (LockBorder). Probe (open m2
+  per level, gate `heroshell`): 56.2 / 56 / 85.9 -> **0 / 0 / 11.8**. Mesh audit (packed, same command as
+  HEROES_REPORT.md): LOD0 blocking 3,145 -> 3,221 (the added bay's windows; the kit's old debt: slivers / bentflat /
+  coplanar, not this job), leaks 61 -> 60.
+- Renders (back faces culled as in the browser; `tools/blender/hero_shellview.py`): `docs/saint-pierre/heroshell/`
+  before / after from the screenshot's viewpoint (`shot`), a 3/4 (`q34`), the south-east (`se`); checker + grazing light
+  after: flat walls even, no streaks round the new openings. NOT yet looked at in the browser (city, `?at=` the parvis).

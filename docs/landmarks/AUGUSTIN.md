@@ -143,3 +143,10 @@ pilaster, coping, band, sill, reveal, louvre, relief, plinth, mullion, door, cro
   shallow sloping roofs (ours flat), the wings' lower small windows (c17), the stained-glass designs (procedural pattern).
 - Openings are estimated from photos (no measured elevations); a photo-pose overlay (as Saint-Pierre's) would tighten them.
 - GPU cost to measure on a GREEN machine.
+
+## Shell fix (claude/heroshell, 2026-11-18)
+Every swept profile (plinth, copings, bands, sills) was listed clockwise in its (out, up) frame, so `sweep3d` wound them
+facing INWARD: in the browser (back faces culled) the plinth and bands were not drawn (census probe: 1,116 back-face
+fails, 32 m2 at LOD0). `augustin.py` now wraps `sweep3d` to make each profile counter-clockwise. Probe after: 0 open m2 at
+every level but the open lantern stage (allowed: tools/audit/heroShell.allow.json). Triangles unchanged (26,047 / 7,749 /
+5,852). The mesh audit has no "faces outward" check, which is why its 0 blocking did not see this (rule 27).

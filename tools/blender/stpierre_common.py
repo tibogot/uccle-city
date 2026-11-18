@@ -9,6 +9,7 @@ node goes at the city position of the frame origin, height OY, rotation.y = -rot
 import bpy, bmesh, math, os, json, time
 from mathutils import Vector
 from mathutils.geometry import tessellate_polygon
+from polycheck import check_fill
 
 OY = 50.0
 Z = Vector((0, 0, 1))
@@ -75,6 +76,19 @@ class Frame:
     def p(self, s, v, d=0.0): return self.O + self.U * s + Z * v + self.N * d
     def s_of(self, u, w): return (P(u, w, OY) - self.O).dot(self.U)
 
+def use_gpu(scn):
+    """Cycles on the laptop's RTX (OptiX, else CUDA, else CPU): factory-startup defaults to the CPU"""
+    prefs = bpy.context.preferences.addons["cycles"].preferences
+    for kind in ("OPTIX", "CUDA"):
+        try:
+            prefs.compute_device_type = kind; prefs.get_devices()
+            if any(d.type == kind for d in prefs.devices):
+                for d in prefs.devices: d.use = d.type == kind
+                scn.cycles.device = "GPU"; print("Cycles device:", kind); return kind
+        except Exception as e:
+            print("no", kind, e)
+    scn.cycles.device = "CPU"; return "CPU"
+
 def ccw(l):
     a = sum(l[i][0] * l[(i + 1) % len(l)][1] - l[(i + 1) % len(l)][0] * l[i][1] for i in range(len(l)))
     return l if a > 0 else list(reversed(l))
@@ -82,6 +96,7 @@ def fill2d(fr, loops, d, mat, code=0, flip=False):
     """a planar polygon with holes in the wall plane at depth d, facing out (+N) (flip: facing in)"""
     K.B.new_group()
     loops = [ccw(l) for l in loops]
+    check_fill(loops, f"fill2d frame O ({fr.O.x:.2f}, {fr.O.y:.2f}) N ({fr.N.x:.2f}, {fr.N.y:.2f}) d {d:.2f}")   # rule 27: holes inside, disjoint
     flat = [p for l in loops for p in l]
     for t in tessellate_polygon([[Vector((p[0], p[1], 0)) for p in l] for l in loops]):
         a, b, c = flat[t[0]], flat[t[1]], flat[t[2]]
