@@ -149,4 +149,4 @@ Every swept profile (plinth, copings, bands, sills) was listed clockwise in its 
 facing INWARD: in the browser (back faces culled) the plinth and bands were not drawn (census probe: 1,116 back-face
 fails, 32 m2 at LOD0). `augustin.py` now wraps `sweep3d` to make each profile counter-clockwise. Probe after: 0 open m2 at
 every level but the open lantern stage (allowed: tools/audit/heroShell.allow.json). Triangles unchanged (26,047 / 7,749 /
-5,852). The mesh audit has no "faces outward" check, which is why its 0 blocking did not see this (rule 27).
+5,852). The mesh audit has no "faces outward" check, which is why its 0 blocking did not see this (rule 29).

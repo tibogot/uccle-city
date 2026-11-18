@@ -1,4 +1,4 @@
-"""POLYGON-WITH-HOLES GUARD for the hero kits' fill2d (claude/heroshell 2026-11-18, QUALITY_RULES rule 27).
+"""POLYGON-WITH-HOLES GUARD for the hero kits' fill2d (claude/heroshell 2026-11-18, QUALITY_RULES rule 29).
 
 WHY: Saint-Pierre's south wall lost ~50 m2 of stone and brick (owner playtest 2026-11-18, screenshot 88) because two
 holes handed to one fill2d overlapped (the porch bay's panel was cut at bay 4 while bay 4 also cut its own panel).

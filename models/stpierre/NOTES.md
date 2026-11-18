@@ -130,7 +130,7 @@ overlay), west c10 (+overlay), south-west P01, north-west P03.
   roof (u 33.3-40.3, 53.5-60.4) was never built; now `chancel_bay` (stone face, recessed brick panel, a short round-arched
   window as the porch bay's, the corner pier, a flashing band; ESTIMATED) and the entablature / cornice / parapet run on
   to the east wall. The upper register's two side faces are oriented by `face_dir` (the north one faced inward). The
-  aileron's brick infill curve ran outside its stone wing (radii - 0.35 instead of + 0.35): fixed (rule 27 found it).
+  aileron's brick infill curve ran outside its stone wing (radii - 0.35 instead of + 0.35): fixed (rule 29 found it).
 - **Rule 27 in the kit**: `stpierre_common.fill2d` checks every outer loop + holes (`tools/blender/polycheck.py`): a hole
   outside or two holes overlapping stop the build. Cycles bakes on OptiX (`SC.use_gpu`).
 - **LOD2**: `tools/hero_pack.mjs` simplifies the far level with LockBorder (slot borders kept): probe 12.8 -> 4.6 m2.

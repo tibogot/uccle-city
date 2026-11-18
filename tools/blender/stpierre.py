@@ -410,7 +410,7 @@ def front_upper():
         loop = ccw([(sg * CB, hz(CORN_T - 0.02))] + curve + [(sg * AIL_OUT, hz(CORN_T - 0.02))])
         # the brick infill: the coping curve offset 0.35 INTO the wing (the same ellipse centre, radii + 0.35), between
         # the 0.35 m stone margins (heroshell: the old inner curve had smaller radii, so it ran outside the wing and the
-        # fill's hole crossed its outer loop: a broken triangulation, rule 27)
+        # fill's hole crossed its outer loop: a broken triangulation, rule 29)
         ea, eb, m_ = AIL_OUT - CB, UP_TOP - 0.1 - AIL_LOW, 0.35
         t0, t1 = math.acos((ea - m_) / (ea + m_)), math.acos(m_ / (ea + m_))
         arc = [(sg * (AIL_OUT - (ea + m_) * math.cos(t0 + (t1 - t0) * k / n)), hz(UP_TOP - 0.1) - (eb + m_) * math.sin(t0 + (t1 - t0) * k / n)) for k in range(n + 1)]
@@ -710,7 +710,7 @@ def porch_panel(fr, S):
 def porch_bay(fr, S):
     """the nave bay over the south porch: a shorter window above the porch's roof (estimated; P01 too far).
     heroshell 2026-11-18: this was cut at bay 4 while the porch stands under bay 3, so bay 4's panel was cut twice
-    (overlapping holes) and the south wall's triangulation broke: the owner's screenshot 88 (rule 27)"""
+    (overlapping holes) and the south wall's triangulation broke: the owner's screenshot 88 (rule 29)"""
     pan = porch_panel(fr, S)
     sm = S(NAVE_U0 + (PORCH_BAY + 0.5) * NAVE_BAY)
     win = arched(sm - SWIN[0], sm + SWIN[0], hz(56.4), hz(SWIN[2]))

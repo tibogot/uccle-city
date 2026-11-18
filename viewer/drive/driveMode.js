@@ -18,6 +18,7 @@ export const CARCTL_OLD = /[?&]carctl=old(&|$)/.test(location.search);
  *  islands / any rise over 0.5 m as walls, hedges solid, posts stop the car, parked cars immovable, the old camera */
 export const CARFEEL_OLD = /[?&]carfeel=old(&|$)/.test(location.search);
 import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
+import { surfaceLayers } from "./surfaceLayers.js";
 import { carFleet } from "../carFleet.js";
 import { createCarEnv } from "./carEnv.js";
 import { createRailMovers } from "./movers.js";
@@ -213,6 +214,9 @@ export class Driver {
       if (osm && Math.abs(g - dk) < 1.5) return Math.max(g, dk);                    // (a hero deck: its own surface)
       return Number.isFinite(near) && Math.abs(g - near) + 1 < Math.abs(dk - near) ? g : dk;
     };
+    // drivecheck (rule 27 provisional): the place's surface layers with no car in them (surfaceLayers.js): what
+    // the hero colliders measure their car band from (heroColliders.js; ?heroground=old: this.ground, the car's layer)
+    this.groundLayers = (x, z) => { const t = this.world.at(x, z); return surfaceLayers(this.world.decks, t.hm, t.drive?.ground, x, z); };
     this.sets = (x, z, r) => {
       const out = this._sets ||= [];
       out.length = 0;

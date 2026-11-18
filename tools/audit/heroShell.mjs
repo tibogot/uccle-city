@@ -1,4 +1,4 @@
-// GATE `heroshell` (claude/heroshell 2026-11-18, QUALITY_RULES rule 27, provisional): every hero (landmark GLB) is
+// GATE `heroshell` (claude/heroshell 2026-11-18, QUALITY_RULES rule 29, provisional): every hero (landmark GLB) is
 // closed from the street at every LOD level. Owner playtest 2026-11-18, screenshot 88: Saint-Pierre's south side had
 // whole wall pieces missing; the census (docs/CENSUS.md class A) found 11 of 16 heroes open. Nothing checked the heroes:
 // `shell` / wallAudit read only the UrbIS solids (every hero's solid is hidden), the pack-time mesh_audit treats a hole

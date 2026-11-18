@@ -96,7 +96,7 @@ def fill2d(fr, loops, d, mat, code=0, flip=False):
     """a planar polygon with holes in the wall plane at depth d, facing out (+N) (flip: facing in)"""
     K.B.new_group()
     loops = [ccw(l) for l in loops]
-    check_fill(loops, f"fill2d frame O ({fr.O.x:.2f}, {fr.O.y:.2f}) N ({fr.N.x:.2f}, {fr.N.y:.2f}) d {d:.2f}")   # rule 27: holes inside, disjoint
+    check_fill(loops, f"fill2d frame O ({fr.O.x:.2f}, {fr.O.y:.2f}) N ({fr.N.x:.2f}, {fr.N.y:.2f}) d {d:.2f}")   # rule 29: holes inside, disjoint
     flat = [p for l in loops for p in l]
     for t in tessellate_polygon([[Vector((p[0], p[1], 0)) for p in l] for l in loops]):
         a, b, c = flat[t[0]], flat[t[1]], flat[t[2]]
