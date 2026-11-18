@@ -18,7 +18,7 @@
 export const CLEAR = 0.6, MOVE_MIN = 1.5, MOVE_MAX = 4, DUP = 1.8;
 const DIRS = 24;
 
-export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null } = {}) {
+export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null, keep = null } = {}) {
   if (!trees?.length) return { trees, moved: 0, dropped: 0 };
   const ring = Array.from({ length: 8 }, (_, k) => [Math.cos(k / 8 * 2 * Math.PI) * CLEAR, Math.sin(k / 8 * 2 * Math.PI) * CLEAR]);
   const touches = (x, z) => driven.inside(x, z, 0) || ring.some(([dx, dz]) => driven.inside(x + dx, z + dz, 0));
@@ -31,13 +31,14 @@ export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuil
   const near = (x, z, self) => { const i = Math.floor(x / 4), j = Math.floor(z / 4);
     for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const o of G.get(`${i + di},${j + dj}`) || []) if (o !== self && Math.hypot(o.x - x, o.z - z) < DUP) return true;
     return false; };
+  const hadVi = trees.some((t) => t.vi != null);
   const bad = new Set();
-  for (const t of trees) { if (t.source === "urbis-chm" && intrudes(t)) bad.add(t); else add(t); }
+  for (const t of trees) { if (t.source === "urbis-chm" && intrudes(t) && !keep?.(t)) bad.add(t); else add(t); }
   if (!bad.size) return { trees, moved: 0, dropped: 0 };
   let moved = 0, dropped = 0;
   const out = [];
   for (const [i, t] of trees.entries()) {
-    if (!bad.has(t)) { out.push(t); t.vi = i; continue; }
+    if (!bad.has(t)) { out.push(t); t.vi = t.vi ?? i; continue; }
     const maxR = Math.min(MOVE_MAX, Math.max(MOVE_MIN, 0.8 * (t.crown || 3)));
     let spot = null;
     for (let r = 0.25; r <= maxR + 1e-6 && !spot; r += 0.25) {
@@ -48,13 +49,47 @@ export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuil
       }
     }
     if (!spot || near(spot[0], spot[1], t)) { dropped++; continue; }
-    const m = { ...t, x: +spot[0].toFixed(2), z: +spot[1].toFixed(2), moved: [t.x, t.z], vi: i };
+    const m = { ...t, x: +spot[0].toFixed(2), z: +spot[1].toFixed(2), moved: [t.x, t.z], vi: t.vi ?? i };
     if (ground && m.y != null) m.y = +ground(m.x, m.z).toFixed(2);
     out.push(m); add(m); moved++;
   }
   // (the street trees' look is picked by the tree's INDEX in the list, viewer/treesStylized.js variantOfIndex: a dropped
   // tree shifted every later tree of the tile to another variant, the tour saw whole streets of trees change. `vi` =
   // the index each kept tree had, the drawers pick its variant by it; no drop: no vi, as before)
-  if (!dropped) for (const t of out) delete t.vi;
+  // (a second pass over an already filtered list keeps the first pass's vi: the index in the ORIGINAL list)
+  if (!dropped && !hadVi) for (const t of out) delete t.vi;
   return { trees: out, moved, dropped };
+}
+
+/**
+ * markings round 2 (claude/markings, rule 33): the PAINTED driving lanes of the roads fitted to the measured carriageway
+ * (viewer/streets/lineFit.js), as a test (x, z) -> true within `margin` m of one (a driving, bus or turn lane). A tree
+ * on a measured TRAM road is kept by the pass above (Avenue Churchill's rows stand on the tram reservation), but one
+ * standing in a painted driving lane is wrong in reality too: tileData moves / drops those with this test. A tree in a
+ * ROW on the tram road (two more within 12 m: Churchill's reservation, which the engine's single-road stack paints over)
+ * is kept (tileData `keep`).
+ */
+export function paintedDriveLanes(net, paintedLaneCentre, roadFrameOf, margin = 0.3) {
+  const fit = net?.lineFit;
+  if (!fit?.fitOf?.size) return null;
+  const C = 16, cells = new Map(), K = (i, j) => i * 65536 + j;
+  for (const [ri] of fit.fitOf) {
+    const rr = net.roads[ri], S = rr.smp, r = 12;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let i = 0; i < S.s.length; i++) { x0 = Math.min(x0, S.x[i]); x1 = Math.max(x1, S.x[i]); z0 = Math.min(z0, S.z[i]); z1 = Math.max(z1, S.z[i]); }
+    for (let i = Math.floor((x0 - r) / C); i <= Math.floor((x1 + r) / C); i++)
+      for (let j = Math.floor((z0 - r) / C); j <= Math.floor((z1 + r) / C); j++) { const k = K(i, j); (cells.get(k) || cells.set(k, []).get(k)).push(rr); }
+  }
+  const DRIVE = new Set(["driving", "bus", "turn"]);
+  return (x, z) => {
+    for (const rr of cells.get(K(Math.floor(x / C), Math.floor(z / C))) || []) {
+      const q = roadFrameOf(rr, x, z);
+      if (q.s < rr.smp.s[0] - 0.5 || q.s > rr.smp.s[rr.smp.s.length - 1] + 0.5) continue;
+      for (const d of [0, margin, -margin]) {
+        const p = paintedLaneCentre(net, fit, rr, x + q.nx * d, z + q.nz * d);
+        if (p && DRIVE.has(p.type)) return true;
+      }
+    }
+    return false;
+  };
 }

@@ -1172,6 +1172,41 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
     }
     return parts;
   };
+  // markings (census F, rule 33; opts.lineClip, ?roadlines=old: off): no lane line off the carriageway. Each engine
+  // triangle is split at the measured kerb lines crossing it; a part lying on anything but roadway, tram roadway or
+  // parking (a sidewalk, dropped kerb, tree pit, median, square, tram site, or off the measured street) keeps its
+  // asphalt (hidden under the raised surface, or the base there) but loses its line codes, like a crossing's inside
+  const kseg = new Map();
+  if (opts.lineClip) for (const l of surf.kerbs || []) for (let k = 1; k < l.length; k++) {
+    const [ax, az] = l[k - 1], [bx, bz] = l[k];
+    for (let i = Math.floor(Math.min(ax, bx) / 8); i <= Math.floor(Math.max(ax, bx) / 8); i++)
+      for (let j = Math.floor(Math.min(az, bz) / 8); j <= Math.floor(Math.max(az, bz) / 8); j++) push(kseg, cellKey(i, j), [ax, az, bx, bz]);
+  }
+  const LINE_OK = (c) => c === SURF_CLASS.roadway || c === SURF_CLASS.tramRoad || c === SURF_CLASS.parking;
+  let linesClipped = 0;
+  const splitByKerbs = (parts, T) => {
+    if (!opts.lineClip) return parts;
+    let segs = null;
+    const out = [];
+    for (const pt of parts) {
+      if (pt.inside) { out.push(pt); continue; }
+      segs ??= (() => { const xs = T.map((p) => p[0]), zs = T.map((p) => p[1]), r = [], seen = new Set();
+        for (let i = Math.floor(Math.min(...xs) / 8); i <= Math.floor(Math.max(...xs) / 8); i++)
+          for (let j = Math.floor(Math.min(...zs) / 8); j <= Math.floor(Math.max(...zs) / 8); j++)
+            for (const sg of kseg.get(cellKey(i, j)) || []) { if (seen.has(sg)) continue; seen.add(sg); if (segHitsTri(sg, T)) r.push(sg); }
+        return r; })();
+      let pcs = [pt.poly];
+      for (const [ax, az, bx, bz] of segs) {
+        const next = [];
+        for (const q of pcs) for (const sd of [1, -1]) { const h = clipHalf(q, ax, az, bx, bz, sd); if (h.length >= 3 && Math.abs(ringArea(h)) > 1e-6) next.push(h); }
+        pcs = next;
+      }
+      const cls = pcs.map((q) => { let x = 0, z = 0; for (const p of q) { x += p[0]; z += p[1]; } return prep.classAt(x / q.length, z / q.length); });
+      if (cls.every(LINE_OK)) { out.push(pt); continue; }          // (unsplit: drawn exactly as before)
+      pcs.forEach((q, k) => { const off = !LINE_OK(cls[k]); if (off) linesClipped++; out.push({ poly: q, inside: off }); });
+    }
+    return out;
+  };
   const emit = (poly, vs, P2) => {     // a convex piece of engine triangle vs, LIFT above H
     const idx = [];
     for (const q of poly) {
@@ -1251,7 +1286,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
       poly = clipHalf(poly, bounds.x0, bounds.z1, bounds.x0, bounds.z0, 1); poly = clipHalf(poly, bounds.x1, bounds.z0, bounds.x1, bounds.z1, 1); }
     if (poly.length < 3 || Math.abs(ringArea(poly)) < 1e-5) { droppedTris++; continue; }
     if (hits.length) cutAtEdge++;
-    const cutParts = splitByCuts(poly);
+    const cutParts = splitByKerbs(splitByCuts(poly), P2);
     if (cutParts.length > 1 || cutParts[0].inside) {
       // split by a crossing: every part on the plane through H at the triangle's corners (as an uncut triangle), the
       // parts inside with no line codes
@@ -1664,7 +1699,7 @@ export function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = (
   // bollards (UrbIS Topo CR5702P / CR57L) on the measured surface
   const bollards = (surf.bollards || []).filter(([x, z]) => inTile(x, z)).map(([x, z]) => { const c = prep.classAt(x, z); return [x, H(x, z) + (c >= 0 ? riseAt(c, x, z) : 0), z]; });
   const stats = {
-    surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
+    surfaces: surf.surfaces.length, baseTris: base.length, overlayTris, overlayWhole, linesClipped, overlayCutAtCreases: devFail, overlayCutAtStreetEdge: cutAtEdge, keptEngineTris: keptTris, droppedEngineTris: droppedTris,
     kerbTris, skirtTris, sidewalkFill: fill, foldDropped, linesCutAtCrossings: linesCut, baseHiddenUnderLayer: baseHidden, skirtsInWalls,
     liftTiers: lift ? { pieces: lift.size, overlapping: [...lift.values()].filter((t) => t > 0).length, max: Math.max(0, ...lift.values()) } : null,
     keptSideTris: keptSide, kerbLength: Math.round(kerbLen), mappedPieces: mapped.size, unmappedPieces: tally.size - mapped.size,
