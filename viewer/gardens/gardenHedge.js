@@ -153,7 +153,7 @@ function cardGeometry() {
   const tot = segs.reduce((s, q) => s + q.w, 0);
   let h = 12345;
   const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507) + 0x9e3779b9 | 0; return (h >>> 0) / 4294967296; };
-  const P = [], A = [], AN = [], R = [], U = [], I = [], E = [];
+  const P = [], A = [], AN = [], R = [], I = [];
   for (let c = 0; c < HEDGE_CARDS; c++) {
     let t = rnd() * tot, q = segs[0];
     for (const s of segs) { if (t < s.w) { q = s; break; } t -= s.w; }
@@ -162,7 +162,7 @@ function cardGeometry() {
     let nz = q.a[2] + (q.b[2] - q.a[2]) * f, ny = q.a[3] + (q.b[3] - q.a[3]) * f; const l = Math.hypot(nz, ny) || 1; nz /= l; ny /= l;
     const r4 = [rnd(), rnd(), rnd(), rnd()], base = P.length / 3;
     for (const [px, py] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) {
-      P.push(x, y, z); A.push(px, py); AN.push(0, ny, nz); R.push(...r4); U.push(px + 0.5, py + 0.5); E.push(0);
+      P.push(x, y, z); A.push(px, py, 0); AN.push(0, ny, nz); R.push(...r4);
     }
     I.push(base, base + 1, base + 2, base, base + 2, base + 3);
   }
@@ -171,17 +171,17 @@ function cardGeometry() {
     const end = c % 2, x = end, y = 0.35 + 0.6 * rnd(), z = (rnd() - 0.5) * 0.8;
     const r4 = [rnd(), rnd(), rnd(), rnd()], base = P.length / 3;
     for (const [px, py] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) {
-      P.push(x, y, z); A.push(px, py); AN.push(end ? 1 : -1, 0, 0); R.push(...r4); U.push(px + 0.5, py + 0.5); E.push(1 + end);
+      P.push(x, y, z); A.push(px, py, 1 + end); AN.push(end ? 1 : -1, 0, 0); R.push(...r4);
     }
     I.push(base, base + 1, base + 2, base, base + 2, base + 3);
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(AN, 3));
-  g.setAttribute("cend", new THREE.Float32BufferAttribute(E, 1));
-  g.setAttribute("corner", new THREE.Float32BufferAttribute(A, 2));
+  // (corner.z = 0 a side / top card, 1 / 2 on the start / end face; the uv = corner.xy + 0.5 in the shader: WebGPU allows
+  // 8 vertex buffers and the instanced cards use all 8: position, normal, corner, crnd + matrix, iBand, iVar, iAux)
+  g.setAttribute("corner", new THREE.Float32BufferAttribute(A, 3));
   g.setAttribute("crnd", new THREE.Float32BufferAttribute(R, 4));
-  g.setAttribute("uv", new THREE.Float32BufferAttribute(U, 2));
   g.setIndex(I);
   g.computeBoundingBox(); g.boundingBox.expandByScalar(0.4);
   g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
@@ -293,7 +293,7 @@ export function hedgeMaterials() {
     const runK = vRun.sub(0.5).mul(0.16);
     const up = saturate(normalWorld.y);
     const leafAlb = leafC.mul(vec3(float(1).add(runK.mul(1.3)), float(1).add(runK), float(1).sub(runK.mul(0.5)))).mul(mix(float(0.92), float(1.12), up.mul(up))).mul(big.a.mul(0.25).add(0.88));
-    const alb = mix(leafAlb, vec3(0.05, 0.038, 0.028), part).mul(A.x.mul(1.25));
+    const alb = mix(leafAlb, vec3(0.05, 0.038, 0.028), part).mul(A.x.mul(1.45));
     // the foot: the leaves thin out downward (only the least occluded stay), the stems and the dark inside show
     const footK = smoothstep(0.04, 0.42, vY);
     const thr = float(1).sub(footK).mul(0.62);
@@ -304,8 +304,8 @@ export function hedgeMaterials() {
     const base = mix(mix(inside, alb, leafy), vec3(0.045, 0.034, 0.025), soil.mul(0.8));
     const snowTop = smoothstep(0.55, 0.9, normalWorld.y).mul(season.uSnow).mul(leafy);
     // the gaps: the occlusion darkens the colour (the sun reaches little of a gap) and the ambient (aoNode)
-    m.colorNode = mix(base.mul(mix(0.5, 1, occl)), vec3(0.88, 0.9, 0.94), snowTop);
-    m.aoNode = mix(mix(float(0.3), float(1), occl), float(0.15), float(1).sub(leafy)).max(0.08);
+    m.colorNode = mix(base.mul(mix(0.62, 1, occl)), vec3(0.88, 0.9, 0.94), snowTop);
+    m.aoNode = mix(mix(float(0.45), float(1), occl), float(0.15), float(1).sub(leafy)).max(0.08);
     // the leaves' normals in the run frame (T along u, B = cross(T, N) along v); flat inside the foot
     const Nw = normalize(normalWorld), Tw = normalize(vT.sub(Nw.mul(dot(vT, Nw)))), Bw = cross(Tw, Nw);
     const nL = mix(vec3(0, 0, 1), nT, leafy.mul(float(1).sub(snowTop.mul(0.7))));
@@ -328,7 +328,7 @@ export function hedgeMaterials() {
   const tex = [leafCard("privet"), leafCard("beech"), leafCard("laurel")];
   const card = new THREE.MeshStandardNodeMaterial({ metalness: 0, side: THREE.DoubleSide });
   card.alphaToCoverage = true;
-  const I = inst(), sp = uSp.element(I.spi), cr = attribute("crnd", "vec4"), corner = attribute("corner", "vec2");
+  const I = inst(), sp = uSp.element(I.spi), cr = attribute("crnd", "vec4"), corner = attribute("corner", "vec3");
   const fH = attribute("position", "vec3").y;
   const anchor = positionLocal, cn = normalize(normalLocal);
   const grow = float(1).sub(smoothstep(float(CARD_NEAR), float(CARD_FAR), length(anchor.sub(lodEye))));
@@ -343,14 +343,14 @@ export function hedgeMaterials() {
   const cardN = normalize(cn.mul(cos(tilt)).add(ay.mul(sin(tilt))));
   const cardY = normalize(cross(cardN, ax));
   // (an end-face card: only on a run's own end; iAux.z = 1 its start, + 2 its end)
-  const cend = attribute("cend", "float"), ends = attribute("iAux", "vec4").z;
+  const cend = corner.z, ends = attribute("iAux", "vec4").z;
   const onEnd = select(cend.lessThan(0.5), float(1), select(cend.lessThan(1.5), ends.mod(2), floor(ends.div(2).add(0.01))));
   const size = sp.x.mul(cr.z.mul(0.3).add(0.5)).mul(grow).mul(onEnd);
   // (the body's lean at the card's height + a small flutter of its own)
   const [flick, flickP] = windPrev(() => leanAt(anchor, fH).add(vec3(1, 0.3, 1).mul(sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(windAt(anchor.xz).z.mul(0.015).add(0.003)))));
   setMotionDelta(card, flickP.sub(flick));   // --- instmotion
   card.positionNode = anchor.add(cn.mul(size.mul(0.12))).add(ax.mul(corner.x.mul(size))).add(cardY.mul(corner.y.add(0.15).mul(size))).add(flick);
-  const uvc = uv();
+  const uvc = corner.xy.add(0.5);
   const a0 = texture(tex[0], uvc), a1c = texture(tex[1], uvc), a2c = texture(tex[2], uvc);
   const a = select(I.sI.equal(3), a2c, select(I.sI.equal(1).or(I.sI.equal(2)), a1c, a0));
   card.opacityNode = saturate(a.a.sub(0.5).div(max(fwidth(a.a), 1e-4)).add(0.5));

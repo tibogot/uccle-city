@@ -5,7 +5,8 @@
 // body LODs at 27-33 m (a lumpy body -> a smoother one) and their cards' end at 18.7-22 m. Checks:
 //   1. near range: no hedge dither inside NEAR (30 m): the body's 0 -> 1 hand-over starts >= 40 m and the lumps are flat
 //      before it (LOD0 = LOD1's shape there); the cards shrink (a morph) and are gone before their end dither
-//   2. geometry: triangles per LOD <= the old ones, cards per module <= the old 64; every LOD's foot reaches
+//   2. geometry: triangles per LOD <= the old ones, cards per module <= the old 64; <= 8 vertex buffers a pipeline
+//      (attributes + the 4 instance columns: WebGPU's limit); every LOD's foot reaches
 //      HEDGE_BOTTOM (12 % of the height under the base line)
 //   3. budget on the real data (all tiles, a view every 25 m, the modules within 300 m): the worst view's hedge
 //      triangles new <= old x 1.15; draws: the kit's pools keep 3 body + 1 card draw
@@ -38,6 +39,11 @@ const gN = H.hedgeGeometries(), gO = O.hedgeGeometries();
 const tri = (g) => g.index.count / 3;
 const tN = gN.body.map(tri), tO = gO.body.map(tri), cN = tri(gN.cards[0]), cO = tri(gO.cards[0]);
 check("tris", tN.every((t, k) => t <= tO[k]) && cN <= cO, `body ${tN.join(" / ")} (old ${tO.join(" / ")}), cards ${cN} (old ${cO}) a module`);
+// WebGPU's limit: 8 vertex buffers a pipeline (browser turn 2026-11-18: the cards with a 6th attribute + iAux = 9, the
+// card pipeline failed to build and no card drew); every per-vertex attribute + the pools' 4 instance columns
+// (instanceMatrix, iBand, iVar, iAux) must fit
+const vb = (g) => Object.keys(g.attributes).length + 4;
+check("vertex-buffers", [...gN.body, gN.cards[0]].every((g) => vb(g) <= 8), `vertex buffers: body ${gN.body.map(vb).join(" / ")}, cards ${vb(gN.cards[0])} (<= 8, WebGPU maxVertexBuffers)`);
 const foot = gN.body.map((g) => { const p = g.attributes.position.array; let lo = Infinity; for (let i = 1; i < p.length; i += 3) lo = Math.min(lo, p[i]); return lo; });
 check("foot", foot.every((y) => Math.abs(y - H.HEDGE_BOTTOM) < 1e-6), `every LOD's foot at ${foot.map((y) => y.toFixed(2)).join(" / ")} of the height (HEDGE_BOTTOM ${H.HEDGE_BOTTOM})`);
 
