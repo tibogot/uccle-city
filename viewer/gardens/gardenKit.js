@@ -22,7 +22,8 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
-import { hedgeGeometries, hedgeMaterials, hedgeInstances, gardenFades } from "./gardenHedge.js";
+import { hedgeGeometries, hedgeMaterials, hedgeInstancesGen, gardenFades } from "./gardenHedge.js";
+import { drain } from "../slices.js";
 import { StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
 import { dedupePillars, cleanSegs, capJoins } from "./gardenDedupe.js";
@@ -208,16 +209,22 @@ const rnd01 = (x, z) => { let h = Math.imul(Math.round(x * 100) | 0, 73856093) ^
  * stand: { wall: [mat16...], pillar: [...], gate: [...] } (collision stand-ins: unit boxes), counts }.
  * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style].
  */
-export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedges = true } = {}) {
+export const gardenInstances = (...a) => drain(gardenInstancesGen(...a));
+/** the same as a generator (falcon2, rule 22: a yield every few pieces; viewer/slices.js sliced() while playing) */
+export function* gardenInstancesGen(doc, groundAt = null, { hedgeFronts = true, hedges = true } = {}) {
   const L = Object.fromEntries(PIECES.map((p) => [p, []]));
   const SW = [], SP = [], SG = [];
   const styles = doc.styles || [];
-  const segs0 = groundAt ? settle(doc, groundAt) : (doc.segs || []);
+  const segs0 = groundAt ? yield* settleGen(doc, groundAt) : (doc.segs || []);
+  yield;
   const segs = PIER_OLD ? segs0 : cleanSegs(segs0);                  // (holes: no spur doubling back over its run)
-  const pillars0 = groundAt ? settlePillars(doc, groundAt) : (doc.pillars || []);
+  const pillars0 = groundAt ? yield* settlePillarsGen(doc, groundAt) : (doc.pillars || []);
+  yield;
   const pillars = PIER_OLD ? pillars0 : dedupePillars(pillars0);     // (holes: one pier per spot, gardenDedupe.js)
+  yield;
   const push = (arr, m, v, aux = null) => { for (let k = 0; k < 16; k++) arr.push(m[k]); arr.push(v[0], v[1], v[2], v[3]); if (aux) arr.push(aux[0], aux[1], aux[2], aux[3]); else arr.push(0, 0, 0, 0); };
   // mitres + the copings' lift at mitred corners (gardenDedupe.js capJoins; ?gardenpier=old: no lift)
+  yield;
   const { ext, extW, lift } = capJoins(segs, CAP_W, !PIER_OLD);
   const m = new Float32Array(16);
   const shear = (x0, y0, z0, dx, dy, dz, sy) => {
@@ -230,12 +237,15 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
     m.set([c * sx, 0, -s * sx, 0, 0, sy, 0, 0, s * sz, 0, c * sz, 0, x, y, z, 1]);
     return m;
   };
-  segs.forEach((g, i) => {
+  yield;
+  for (let i = 0; i < segs.length; i++) {
+    if ((i & 15) === 15) yield;
+    const g = segs[i];
     const st = styles[g[6]] || {}, h = g[7];
     const [x0, y0, z0, x1, y1, z1] = g;
     let dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
     const lh = Math.hypot(dx, dz);
-    if (lh < 0.05) return;
+    if (lh < 0.05) continue;
     const v = styleVar(st, rnd01(x0, z0));
     if (h > 0.01) {
       const ux = dx / lh, uy = dy / lh, uz = dz / lh;
@@ -254,16 +264,21 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
     // the stand-in: the whole height (wall + coping + railing) as one sheared box, 30 cm thick
     const H = top + railH;
     if (H > 0.05) for (let k = 0; k < 16; k++) SW.push(shear(x0, y0, z0, dx, dy, dz, H)[k]);
-  });
+  }
+  yield;
   // (a hedge front without its hedge would be lone gate pillars: none of it then)
+  let np = 0;
   for (const p of pillars) {
+    if ((++np & 31) === 0) yield;
     const [x, y, z, yaw, h, s] = p, st = styles[s] || {}, v = styleVar(st, rnd01(x, z));
     if (!hedgeFronts && st.kind === "hedge") continue;
     push(L.pillar, rot(x, y, z, yaw, 1, h, 1), v);
     push(L.pcap, rot(x, y + h, z, yaw, 1, 1, 1), v);
     for (let k = 0; k < 16; k++) SP.push(rot(x, y, z, yaw, PILLAR_W, h + 0.12, PILLAR_W)[k]);
   }
+  let ng = 0;
   for (const gt of doc.gates || []) {
+    if ((++ng & 31) === 0) yield;
     const [x, y, z, yaw, w, kind, open, s] = gt, st = styles[s] || {};
     if (!hedgeFronts && st.kind === "hedge") continue;
     const type = RAILS[st.rail >= 0 ? st.rail : 0], v = styleVar(st, rnd01(x, z));
@@ -286,7 +301,7 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
       m.set([dx, dy, dz, 0, 0, sy, 0, 0, -dz / lh * w, 0, dx / lh * w, 0, x0, y0, z0, 1]);
       push(out, m, v, [-dz / lh, dx / lh, 0, 0]);
     };
-    hedgeInstances(doc.hedges, groundAt, shearW, L.hedge);
+    yield* hedgeInstancesGen(doc.hedges, groundAt, shearW, L.hedge);
     L.hedgecard = L.hedge;
     // collision stand-ins: each module as a wall box (the unit stand-in is 30 cm thick: scaled to the hedge's width)
     // (police feel: the hedge boxes come last in SW, from hedgeFrom: cityGardens.js gives them their own stand-in mesh)
@@ -298,7 +313,7 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
     }
   }
   const inst = {};
-  for (const k of PIECES) if (L[k].length) inst[k] = k === "hedgecard" && inst.hedge ? inst.hedge : new Float32Array(L[k]);
+  for (const k of PIECES) if (L[k].length) { inst[k] = k === "hedgecard" && inst.hedge ? inst.hedge : new Float32Array(L[k]); yield; }
   return { inst, settled: { styles, segs, pillars }, stand: { wall: SW, pillar: SP, gate: SG, hedgeFrom: SW.hedgeFrom ?? SW.length }, counts: Object.fromEntries(Object.entries(inst).map(([k, a]) => [k, a.length / STRIDE])) };
 }
 
@@ -308,10 +323,11 @@ export function gardenInstances(doc, groundAt = null, { hedgeFronts = true, hedg
  * the two sides everywhere along the segment (sampled every 0.5 m); a vertex two segments share takes the larger drop
  * (the base line stays continuous); the wall grows by the drop (its top stays). Returns new segment arrays.
  */
-function settle(doc, G) {
+function* settleGen(doc, G) {
   const segs = doc.segs || [], styles = doc.styles || [];
   const key = (x, z) => `${Math.round(x * 50)},${Math.round(z * 50)}`, drop = new Map();
-  const need = segs.map((g) => {
+  const need = [];
+  const one = (g) => {
     const st = styles[g[6]] || {}, h = g[7], foot = h > 0.01 ? 0.6 * h : 0.03 * (st.railH || 1);
     const dx = g[3] - g[0], dz = g[5] - g[2], Lh = Math.hypot(dx, dz) || 1e-6, nx = -dz / Lh, nz = dx / Lh;
     const n = Math.max(2, Math.ceil(Lh / 0.5) + 1);
@@ -325,7 +341,14 @@ function settle(doc, G) {
     }
     for (const [x, z, d] of [[g[0], g[2], d0], [g[3], g[5], d1]]) { const k = key(x, z); drop.set(k, Math.max(drop.get(k) || 0, d)); }
     return grow;
-  });
+  };
+  // (a yield every ~192 ground samples: a long wall samples every 0.5 m, so a count of segments was uneven)
+  let samples = 0;
+  for (let i = 0; i < segs.length; i++) {
+    const g = segs[i]; need.push(one(g));
+    samples += 2 * Math.max(2, Math.ceil(Math.hypot(g[3] - g[0], g[5] - g[2]) / 0.5) + 1);
+    if (samples > 192) { samples = 0; yield; }
+  }
   return segs.map((g, i) => {
     const a = drop.get(key(g[0], g[2])) || 0, b = drop.get(key(g[3], g[5])) || 0;
     const up = Math.max(0, need[i]);
@@ -335,13 +358,16 @@ function settle(doc, G) {
     return [g[0], g[1] - a, g[2], g[3], g[4] - b, g[5], g[6], h > 0.01 ? h + m : h];
   });
 }
-function settlePillars(doc, G) {
-  return (doc.pillars || []).map((p) => {
+function* settlePillarsGen(doc, G) {
+  const out = [];
+  for (const p of doc.pillars || []) {
+    if ((out.length & 15) === 15) yield;
     const [x, y, z, yaw, h, s] = p;
     let lo = Infinity; for (const [ox, oz] of [[0.18, 0.18], [-0.18, 0.18], [0.18, -0.18], [-0.18, -0.18]]) lo = Math.min(lo, G(x + ox, z + oz));
     const over = y - 0.4 * h - lo + 0.02;
-    return over > 0 ? [x, y - over, z, yaw, h + over, s] : p;
-  });
+    out.push(over > 0 ? [x, y - over, z, yaw, h + over, s] : p);
+  }
+  return out;
 }
 
 // ------------------------------------------------------------------------------------------------ the pools

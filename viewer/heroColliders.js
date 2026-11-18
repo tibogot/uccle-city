@@ -14,6 +14,7 @@ import * as THREE from "three/webgpu";
 import { KIND } from "./drive/colliders.js";
 import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 import { ART_ROOTS } from "./publicart/artRoots.js";
+import { sliced } from "./slices.js";
 
 export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "papenkasteel", "stpierre", "observatory", "augustin", "russian", "rosaire", "sacrecoeur", "saintmarc", "latourdefrein", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
@@ -22,28 +23,17 @@ export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvenda
 const CELL = 0.25, STEP = 0.12, BAND = [0.30, 1.30];
 const SLICE_OLD = new URLSearchParams(location.search).get("heroslice") === "old";
 const BAND_OLD = new URLSearchParams(location.search).get("colband") === "old";
+/** falcon2 (docs/perf/FALCON_STUTTER.md round 2, rule 22; ?heropoll=old: as before): the 2 s poll was one 37-66 ms task
+ *  when a landmark's tiles came in: a scene.getObjectByName walk of the WHOLE scene per root name (~40 a poll, every
+ *  2 s), a Box3 of the LOD0 per root per poll, the LOD0's world triangles in one go (heroTriangles: every vertex through
+ *  its matrix) and the car blockers' 6 ms slices. Now: one scene walk a poll for the roots not found yet (found roots,
+ *  their meshes and tiles cached), the triangles in <= POLL_MS slices, the blockers yield after POLL_MS. */
+export const HERO_POLL = new URLSearchParams(location.search).get("heropoll") !== "old";
+export const POLL_MS = 3;
 
-/** Not a collider: cloth, foliage cards, glow / light cones, decals. */
-const soft = (o) => /flag|fabric|leaves|leaf|foliage|light|glow|beam|decal/i.test(`${o.name} ${[].concat(o.material || [])[0]?.name || ""}`);
-
-/** LOD0 of a root: its "<name>_lod0" / "-lod0" child (else the root). */
-export const lod0 = (root) => root.children.find((c) => /[-_]lod0$/.test(c.name)) || root;
-
-/** World-space triangle soup (9 floats each) of the root's LOD0 solid meshes. */
-export function heroTriangles(root) {
-  const l0 = lod0(root);
-  root.updateMatrixWorld(true);
-  let n = 0;
-  const meshes = [];
-  l0.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && o.geometry?.attributes?.position && !soft(o)) { meshes.push(o); n += o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count; } });
-  const out = new Float32Array(n * 3), v = new THREE.Vector3();
-  let k = 0;
-  for (const o of meshes) {
-    const P = o.geometry.attributes.position, I = o.geometry.index, c = I ? I.count : P.count;
-    for (let q = 0; q < c; q++) { v.fromBufferAttribute(P, I ? I.getX(q) : q).applyMatrix4(o.matrixWorld); out[k++] = v.x; out[k++] = v.y; out[k++] = v.z; }
-  }
-  return out;
-}
+// (falcon2: the LOD0 triangle soup moved to viewer/heroTris.js, a generator: sliced while playing, node-testable)
+export { soft, lod0, heroTriangles, heroTrianglesGen } from "./heroTris.js";
+import { lod0, heroTriangles, heroTrianglesGen } from "./heroTris.js";
 
 /** Plan box of a triangle soup. */
 function boxOf(T) {
@@ -89,7 +79,7 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
   for (let t = 0; t < T.length; t += 9) {
     // (perf audit 2026-11-14: was `(t & 0x3fff) === 0` with t stepping by 9 = a time check every 16,384 triangles: one
     // landmark slice ran 90-120 ms. Now every 64 triangles; ?heroslice=old: as before)
-    if ((SLICE_OLD ? (t & 0x3fff) === 0 : (++nTri & 63) === 0) && performance.now() - slice > 6) { yield; slice = performance.now(); }
+    if ((SLICE_OLD ? (t & 0x3fff) === 0 : (++nTri & 63) === 0) && performance.now() - slice > (HERO_POLL ? POLL_MS : 6)) { yield; slice = performance.now(); }
     const ax = T[t], ay = T[t + 1], az = T[t + 2], bx = T[t + 3], by = T[t + 4], bz = T[t + 5], cx = T[t + 6], cy = T[t + 7], cz = T[t + 8];
     const g = gAt((ax + bx + cx) / 3, (az + bz + cz) / 3);
     if (Math.min(ay, by, cy) > g + band[1] + 1 || Math.max(ay, by, cy) < g + band[0] - 1) continue;
@@ -156,6 +146,25 @@ export function createHeroColliders({ scene, world, manifest, driver, log = () =
     if (bb.isEmpty()) return null;
     return manifest.tiles.filter((t) => bb.max.x >= t.bounds.x[0] && bb.min.x < t.bounds.x[1] && bb.max.z >= t.bounds.z[0] && bb.min.z < t.bounds.z[1]).map((t) => t.name);
   };
+  // (HERO_POLL) the roots by name: one scene walk a poll, only while some are not found or have left the scene
+  const roots = new Map(), info = new WeakMap();
+  const attached = (o) => { for (let k = 0; o && k < 64; k++, o = o.parent) if (o === scene) return true; return false; };
+  const findRoots = () => {
+    for (const [n, r] of roots) if (!attached(r)) roots.delete(n);
+    const want = new Set(HERO_ROOTS.filter((n) => !roots.has(n) && !done.get(n)?.complete));
+    if (!want.size) return;
+    scene.traverse((o) => { if (want.has(o.name) && !roots.has(o.name)) roots.set(o.name, o); });
+  };
+  // its LOD0's mesh count and the tiles under it, once it has meshes (a landmark's LOD0 does not move or change)
+  const rootInfo = (root) => {
+    let c = info.get(root);
+    const l0 = lod0(root);
+    if (c && c.l0 === l0 && c.kids === l0.children.length) return c;
+    let meshes = 0; l0.traverse((o) => { if (o.isMesh) meshes++; });
+    c = { l0, kids: l0.children.length, meshes, tiles: meshes ? tilesUnder(root) : null };
+    if (meshes) info.set(root, c);
+    return c;
+  };
   const api = {
     done,
     /** fn(name, positions Float32Array) for every built model, now and later */
@@ -164,20 +173,23 @@ export function createHeroColliders({ scene, world, manifest, driver, log = () =
       if (busy) return;
       busy = true;
       try {
+        if (HERO_POLL) findRoots();
         for (const name of HERO_ROOTS) {
           const prev = done.get(name);
           if (prev?.complete) continue;
-          const root = scene.getObjectByName(name);
+          const root = HERO_POLL ? roots.get(name) : scene.getObjectByName(name);
           if (!root) continue;
-          let meshes = 0; lod0(root).traverse((o) => { if (o.isMesh) meshes++; });
+          const c = HERO_POLL ? rootInfo(root) : null;
+          let meshes = 0;
+          if (c) meshes = c.meshes; else lod0(root).traverse((o) => { if (o.isMesh) meshes++; });
           if (!meshes) continue;
-          const tiles = tilesUnder(root);
+          const tiles = c ? c.tiles : tilesUnder(root);
           // built as soon as one tile under it is in (the drive surface of the others falls back to that tile), built
           // again once all of them are
           const inN = tiles?.filter((n) => world.tiles.some((t) => t.name === n)).length || 0;
           if (!inN || (prev && inN < tiles.length)) continue;
           const t0 = performance.now();
-          const tris = prev?.tris ?? heroTriangles(root);
+          const tris = prev?.tris ?? (HERO_POLL ? await sliced(heroTrianglesGen(root), POLL_MS) : heroTriangles(root));
           const polys = await carBlockers(tris, driver.ground);
           if (prev?.set) driver.removeStatic(prev.set);
           const set = driver.addStatic(polys);

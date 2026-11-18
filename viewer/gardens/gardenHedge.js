@@ -18,6 +18,7 @@
 // NOTE (three r187 NodeMaterial.setupPosition): the instancing runs BEFORE material.positionNode, so positionLocal /
 // normalLocal are already the instance-transformed position / normal there (= world: the pools sit at the origin).
 import * as THREE from "three/webgpu";
+import { drain } from "../slices.js";
 import {
   attribute, uniformArray, vec2, vec3, vec4, float, mix, smoothstep, length, normalize, cross, cos, sin, select, abs, max,
   fwidth, saturate, texture, uv, cameraPosition, cameraViewMatrix, varying, positionLocal, normalLocal, normalWorld,
@@ -285,9 +286,12 @@ export function hedgeMaterials() {
 
 /** a tile's hedge runs ({ points, species, height, width }) -> module instances: { body: [mat16 + iVar4...] }.
  *  groundAt = the drawn ground; each module end stands on the lower of the hedge's two sides there (no floating foot) */
-export function hedgeInstances(runs, groundAt, push, out) {
+export const hedgeInstances = (...a) => drain(hedgeInstancesGen(...a));
+/** the same as a generator (a yield every 4 modules: viewer/slices.js, falcon2) */
+export function* hedgeInstancesGen(runs, groundAt, push, out) {
   let n = 0;
   for (const r of runs) {
+    yield;
     const sp = Math.max(0, HEDGE_SPECIES.indexOf(r.species));
     const pts = r.points;
     if (pts.length < 2) continue;
@@ -316,7 +320,7 @@ export function hedgeInstances(runs, groundAt, push, out) {
       const drop = gap > 0 ? gap + 0.01 : 0, Hm = H + drop;
       ya -= drop; yb -= drop;
       push(out, ax, ya, az, bx - ax, yb - ya, bz - az, Hm, W, [sp + W / 10, s0 + i * step - e, l + 2 * e, Hm]);
-      n++;
+      if ((++n & 3) === 0) yield;
     }
   }
   return n;
