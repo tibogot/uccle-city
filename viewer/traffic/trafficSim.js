@@ -31,6 +31,11 @@ const ROOM_OLD = typeof location !== "undefined" && /[?&]bikeroom=old(&|$)/.test
 // the parked cars at run time (the lanes are built clear of them, viewer/traffic/trafficGraph.js; this guard covers the
 // ones that moved: shoved by the player, a game's prop) and the pull-over / yield shifts not clamped by them
 const TP_OLD = typeof location !== "undefined" && /[?&]trafpark=old(&|$)/.test(location.search);
+// (claude/deckrail, docs/TOUR.md "Determinism") the visual tour (?still=1, tools/tour/views.json common switches) freezes
+// the random parked-car pull-outs / reverse-ins: whether a car in view had pulled out before the capture depended on the
+// boot's length (traffic-alsemberg's van came and went from run to run). Normal play keeps 1.
+/** the parking rate (pull-outs / reverse-ins) for a page's query string: 0 under ?still=1 (the tour), else 1 */
+export const parkRateFor = (search) => (/[?&]still=1(&|$)/.test(search || "") ? 0 : 1);
 const TP_TOUCH = 0.05;
 const TP_BLOCK = 0.96;          // m: a parked box this close to a lane's line blocks it (the widest traffic type: 0.975 half width; built lanes keep 0.98)          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
 const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
@@ -109,7 +114,7 @@ export class TrafficSim {
     this.tpLA = new Float64Array(this.cap).fill(-1); // the shifted-body look-ahead's hit (m along its route, -1 none), every 4th step   // a car's pass shift round a parked car, its timer
     this.tmp = new Float64Array(4); this.tmp2 = new Float64Array(4); this.tmp3 = new Float64Array(4);
     this.t = 0; this.acc_ = 0; this.steps = 0;
-    this.params = { density: 1, speed: 1, hour: 9, radius: 470, minSpawnDist: 45, parkRate: 1, signals: true, maxCars: cap,
+    this.params = { density: 1, speed: 1, hour: 9, radius: 470, minSpawnDist: 45, parkRate: parkRateFor(typeof location !== "undefined" ? location.search : ""), signals: true, maxCars: cap,
       narrow: !(typeof location !== "undefined" && /[?&]narrow=0/.test(location.search)) };   // one way at a time on narrow stretches
     this.stats = { yielding: 0, cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0 };
     this.freeSlots = [];         // parking slots vacated by pull-outs (viewer/carFleet.js car objects)

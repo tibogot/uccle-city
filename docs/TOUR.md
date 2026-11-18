@@ -50,6 +50,11 @@ Add a view: one entry `{ id, what, q: { ...URL switches }, tol? }`. Take a new b
 
 - `?still=1` (viewer/lighting.js): the clouds, cirrus and volumetric fog do not drift (Firmament's wind 0 from the
   first frame). Without it the cloud field and its shadows depend on how long the boot took.
+  It also sets the traffic sim's parking rate to 0 (viewer/traffic/trafficSim.js `parkRateFor`, claude/deckrail): no
+  random parked-car pull-outs / reverse-ins. The sim pulls out a VISIBLE parked car 20-150 m from the orbit target now
+  and then, so whether a car in view was still parked at the capture depended on the boot's length (traffic-alsemberg's
+  van at the left kerb: missing in mdraw / xmasfir / falconstutter / curvedroads / collisions / lycee, present in the
+  others). Normal play (no `still=1`) is unchanged. Check: gate row `tourdet` (tools/tour/tourDeterminism.mjs).
 - The tour holds three's TSL clock (`renderer._nodes.nodeFrame.time`) at a fixed value before settling: tree wind,
   water, flags give the same frame whatever the boot length.
 - Settle: at least `minFrames` frames and `minMs`, until the eye adaptation is converged (exposure within 0.4 % of its

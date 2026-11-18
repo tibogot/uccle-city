@@ -93,4 +93,8 @@ once picked it is hidden in the parked fleet and drives off. Whether that happen
 long the sim ran (boot, settle): the tour runs show it is random and older than curvedroads. Van present: foundation-2,
 foundation-prev, foundation, policerear (boot 27.7-30.2 s). Van absent: mdraw, xmasfir, falconstutter (all BEFORE
 curvedroads), curvedroads, collisions, lycee (boot 29.2-56.8 s). Same pose / plate whenever present (a parked car, not a
-moving one). No fix made; suggestion: `?still=1` (the tour) could set the sim's parkRate to 0 so the view is stable.
+moving one). **Fix (tour only):** under `?still=1` (the tour's common switch) the sim's parkRate is 0 (trafficSim.js
+`parkRateFor`): no random pull-outs / reverse-ins, the van stays parked in every run; normal play unchanged. Rule 6
+(the tour) extended: a tour view is deterministic, nothing random may change it by the boot's length. Check: gate row
+`tourdet` (tools/tour/tourDeterminism.mjs: still=1 in both views files' common switches, a TrafficSim built under
+?still=1 has parkRate 0, without it 1). Expect traffic-alsemberg to flag ONCE against a baseline that lacks the van.
