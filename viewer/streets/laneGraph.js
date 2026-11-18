@@ -159,7 +159,7 @@ export function joinLaneGraph(net) {
   return st;
 }
 
-export function refineLaneGraph(net, prep, inventory) {
+export function refineLaneGraph(net, prep, inventory, opts = {}) {
   const st = { paths: 0, loops: 0, cusps: 0, centred: 0, centredPts: 0, holds: 0 };
   if (!net?.graph) return st;
   // round 5: off the class raster (it covers the tile's core square only; the graph reaches 150 m beyond) nothing is
@@ -182,16 +182,16 @@ export function refineLaneGraph(net, prep, inventory) {
   // nearest place with CLEAR on both sides (or the middle of a carriageway narrower than 2 x CLEAR); the moves get a
   // tent envelope over +-6 points and the path is smoothed after, so it bends instead of denting. A lane whose engine
   // centreline left the measured street (J1's south-west arm) comes back onto it this way
-  const CLEAR = 1.4;
-  const clearAt = (x, z, nx, nz) => { if (!CARRIAGE.has(cls(x, z))) return -1; const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15; return Math.min(a, b, CLEAR + 0.01) >= CLEAR ? CLEAR : Math.min(a, b) >= (a + b) / 2 - 0.15 ? CLEAR : Math.min(a, b); };
-  const keepOnCarriage = (P, stt) => {
+  const CLEAR = 1.4, CLEAR_FIT = 1.0;
+  const clearAt = (x, z, nx, nz, C = CLEAR) => { if (!CARRIAGE.has(cls(x, z))) return -1; const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15; return Math.min(a, b, C + 0.01) >= C ? C : Math.min(a, b) >= (a + b) / 2 - 0.15 ? C : Math.min(a, b); };
+  const keepOnCarriage = (P, stt, C = CLEAR) => {
     if (P.length < 3) return P;
     const mv = P.map((q, k) => {
       const o = P[Math.max(0, k - 1)], n2 = P[Math.min(P.length - 1, k + 1)], tx = n2[0] - o[0], tz = n2[1] - o[1], tl = Math.hypot(tx, tz) || 1, nx = -tz / tl, nz = tx / tl;
-      if (clearAt(q[0], q[1], nx, nz) >= CLEAR) return null;
+      if (clearAt(q[0], q[1], nx, nz, C) >= C) return null;
       for (let d = 0.2; d <= 8; d += 0.2) for (const sg of [1, -1]) {
         const x = q[0] + nx * d * sg, z = q[1] + nz * d * sg;
-        if (clearAt(x, z, nx, nz) >= CLEAR) return [nx * d * sg, nz * d * sg];
+        if (clearAt(x, z, nx, nz, C) >= C) return [nx * d * sg, nz * d * sg];
       }
       return null;
     });
@@ -210,7 +210,13 @@ export function refineLaneGraph(net, prep, inventory) {
     P = resample(P, 1.0);
     const kind = prep ? simple(p) : null;
     const a0 = [P[0][0], P[0][1]], b0 = [P[P.length - 1][0], P[P.length - 1][1]];
-    if (kind && P.length >= 4) {
+    // markings round 2 (rule 33, viewer/streets/lineFit.js laneShifter): on a road whose painted strips were fitted to
+    // the measured carriageway the lane moves with them, centred between its painted lines, in place of the centring;
+    // the keep-on-carriage push below then needs only CLEAR_FIT (1.4 m on the 0.5 m raster pushed lanes up to 1 m off
+    // their paint, into the next lane)
+    const fitted = opts.laneShift ? opts.laneShift(p, P) : null;
+    if (fitted) { P = fitted; st.laneFit = (st.laneFit || 0) + 1; }
+    else if (kind && P.length >= 4) {
       const shift = P.map(() => null);
       for (let k = 0; k < P.length; k++) {
         const q = P[Math.min(P.length - 1, k + 1)], o = P[Math.max(0, k - 1)];
@@ -240,7 +246,10 @@ export function refineLaneGraph(net, prep, inventory) {
     }
     P = unloop(P, st);
     // (simple stacks only: two lanes of one direction pushed to the same clear place crossed each other)
-    if (prep && kind) P = keepOnCarriage(P, st);
+    // (a fitted lane: only its points within half a car (+ 0.1 m) of the street's edge or off it are moved, e.g. a
+    // dead-end square's or a junction funnel's lane the paint does not follow there)
+    if (prep && fitted) P = keepOnCarriage(P, st, CLEAR_FIT);
+    else if (prep && kind) P = keepOnCarriage(P, st);
     P = smooth(P, 3);
     endMove.set(p.id, { a: [P[0][0] - a0[0], P[0][1] - a0[1]], b: [P[P.length - 1][0] - b0[0], P[P.length - 1][1] - b0[1]] });
     p.pts = P;

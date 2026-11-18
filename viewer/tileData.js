@@ -24,7 +24,8 @@ import { buildTrafficGraph } from "./traffic/trafficGraph.js";
 import { widthParking } from "./streets/parkPlace.js";
 import { streetFit } from "./streets/fitCore.js";
 import { carriageway } from "./streets/carriageway.js";
-import { treesOffCarriageway } from "./streets/roadTrees.js";
+import { treesOffCarriageway, paintedDriveLanes } from "./streets/roadTrees.js";
+import { paintedLaneCentre, roadFrameOf } from "./streets/lineFit.js";
 import { squeezeDeckLanes } from "./rail/roadDeck.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
@@ -397,7 +398,7 @@ export async function buildTileData(entry, base) {
   const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
     deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)
@@ -420,6 +421,20 @@ export async function buildTileData(entry, base) {
     roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null }),
       { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z) }));
     feats.trees = roadTrees.trees;
+    // markings round 2 (rule 33): a LiDAR tree kept on a measured tram road but standing in a PAINTED driving lane (or
+    // within 0.3 m of one) moves off it the same way (or is dropped); the tram reservation's rows are not in a driving
+    // lane and stay (rows: below). (entry.roadLines false: no fitted lanes, nothing to do)
+    const inLane = fit0?.classAt ? paintedDriveLanes(rd.net, paintedLaneCentre, roadFrameOf, 0.3) : null;
+    if (inLane) {
+      const base = carriageway(roads, { classAt: noTram, onDeck: null });
+      const lanes = { inside: (x, z, m = 0) => (fit0.classAt(x, z) === 1 ? inLane(x, z) : base.inside(x, z, m)) };
+      // (a tree in a ROW on the tram road, two more within 12 m, is the reservation's planting (Avenue Churchill: one OSM
+      // road with the reservation in its middle, its stack painted over it): kept)
+      const onTram = feats.trees.filter((t) => fit0.classAt(t.x, t.z) === 1);
+      const inRow = (t) => onTram.filter((o) => o !== t && Math.hypot(o.x - t.x, o.z - t.z) < 12).length >= 2;
+      const r2 = treesOffCarriageway(feats.trees, lanes, { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z), keep: inRow });
+      feats.trees = r2.trees; roadTrees.lanesMoved = r2.moved; roadTrees.lanesDropped = r2.dropped;
+    }
   }
   // (again after the road stage: its terrain weld brought the bank back up over a plan deck's tucked ends)
   netInfo.deckUnder2 = deckUnderCut(osmBridges.decks, [hm.y, hm.orig], tHdr);
@@ -505,7 +520,7 @@ export async function buildTileData(entry, base) {
   if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
   if (fences) drive.counts.railFences = fences.rings.length;
   if (railCuts != null) drive.counts.deckRailCuts = railCuts;
-  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped };
+  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped, lanesMoved: roadTrees.lanesMoved ?? 0, lanesDropped: roadTrees.lanesDropped ?? 0 };
   if (deckLanes) drive.counts.deckLanes = deckLanes;
   // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb
   // instead of sinking into the slab (docs/collisions/DRIVE_FIX.md); ?colfix=0 keeps the old surface

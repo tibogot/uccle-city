@@ -23,7 +23,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] Street-name plate floating away from its pole; signs in the wrong rotation. Detector: sign-to-pole distance + facing vs the street.
 - [ ] Props in the carriageway: post box in the middle of the Chaussée d'Alsemberg, a Villo bike station on the tram tracks. Detector: furniture inside road polygons.
 - [ ] Tram rails running into the sidewalk. Detector: rails vs sidewalk polygons.
-- [ ] Road white lines going "anyhow"; a traffic car driving on the sidewalk (Chaussée d'Alsemberg). Detector: markings outside the carriageway; traffic paths vs sidewalks.
+- [x] Road white lines going "anyhow"; a traffic car driving on the sidewalk (Chaussée d'Alsemberg). Detector: markings outside the carriageway; traffic paths vs sidewalks. MERGED 2026-11-18 (360df82f, claude/markings, rule 33): lines off street 6,018 -> 472 m, traffic lanes follow the paint (p95 0.08 m), parking lanes >= 2 m, round-wheel bicycle glyphs; ?roadlines=old / ?bikemark=old. Left: the Saint-Pierre parked van -> car in the tour (unattributed).
 - [ ] Rue du Repos (and others): weird sharp bumps in the road. Check against the real street (data vs DTM).
 - [ ] Z-fighting / shaking windows (Maison Dandoy right window, others). Detector: coplanar faces in building meshes.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
