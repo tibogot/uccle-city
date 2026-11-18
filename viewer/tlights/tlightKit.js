@@ -14,14 +14,14 @@
 //   LOD hand-over: per instance band (iBand: switch 0-1, switch 1-2, end, the tile's fade slot) and the per-pixel
 //            dither of viewer/lodFade.js (same noise in the shadow pass: no pop, no shadow snap)
 import * as THREE from "three/webgpu";
-import { attribute, uniformArray, texture, uv, vec3, float, mix, smoothstep, length, positionWorld, select, fract } from "three/tsl";
+import { attribute, uniformArray, texture, uv, vec2, vec3, float, mix, smoothstep, length, positionWorld, select, fract } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { FadeSlots, StreamPool, sourceFromYaw, MARGIN } from "../instanceStream.js";
 import { wxMat } from "../weather/cityWeatherize.js";
 import { env } from "../lighting.js";
 import { SIGNAL_STATE, WALK_STATE } from "../furniture.js";
-import { TL_PIECES, TL_STRIDE } from "./tlightPlace.js";
+import { TL_PIECES, TL_STRIDE, LIT, EMIT } from "./tlightPlace.js";
 export { TRI_BUDGET } from "./tlightPlace.js";
 
 export const tlightFades = new FadeSlots(128);
@@ -137,11 +137,17 @@ function materials(picto) {
     const is = (name) => si.equal(float(SLOT[name]));
     const on = is("lens_red").and(st.equal(2)).or(is("lens_amber").and(st.equal(1))).or(is("lens_green").and(st.equal(0)))
       .or(is("ped_red").and(walk.lessThan(0.5))).or(is("ped_green").and(walk.greaterThan(0.5)));
-    const lit = select(is("lens_red").or(is("ped_red")), vec3(1, 0.06, 0.02), select(is("lens_amber"), vec3(1, 0.48, 0.04), vec3(0.08, 1, 0.42)));
+    // the lit colour and its strength per colour (tlightPlace.js LIT / EMIT: kept saturated through the ACES tone map),
+    // a hot centre (the cell's radius: the lens fills 0.94 of its half width)
+    const red = is("lens_red").or(is("ped_red")), amber = is("lens_amber");
+    const lit = select(red, vec3(...LIT.red), select(amber, vec3(...LIT.amber), vec3(...LIT.green)));
+    const k = select(red, float(EMIT.red), select(amber, float(EMIT.amber), float(EMIT.green))).mul(mix(float(1), float(EMIT.night), env.uNight));
+    const r = length(fract(uv().mul(2)).sub(vec2(0.5))).div(0.47);
+    const hot = float(1).add(float(EMIT.hot).mul(float(1).sub(smoothstep(0.0, 0.45, r))));
     const mask = select(si.greaterThanEqual(float(LENS0)), texture(picto, uv()).r, float(0));
     const base = C.xyz.mul(mix(float(1), ao, 0.85));
-    m.colorNode = select(on, mix(base, lit.mul(0.55), mask), base);
-    m.emissiveNode = select(on, lit.mul(mask).mul(mix(float(2.2), float(6.0), env.uNight)), vec3(0));
+    m.colorNode = select(on, mix(base, lit.mul(0.25), mask), base);
+    m.emissiveNode = select(on, lit.mul(mask).mul(k).mul(hot), vec3(0));
     m.aoNode = ao;
     m.roughnessNode = C.w;
     m.metalnessNode = slotM.element(idx);

@@ -210,13 +210,19 @@ def backplate(w, h, rc, border, hole_w, hole_h, hole_rc, y0, thick, k=4, chamfer
     return bb, bp
 
 
-def visor(r_in, thick, y0, lmin, lmax, a0, a1, segs, lip=0.0015):
+def visor(r_in, thick, y0, lmin, lmax, a0, a1, segs, lip=0.0015, round_lip=0):
     """a cap visor in the lens frame (axis +Y, top = +Z): a shell from angle a0 to a1 (0 = +X, 90 = top), longer at the
     top; open at the back (it sits on the housing face), chamfered lip, closed ends"""
     bm = bmesh.new()
     r_out = r_in + thick
     def L(a): return y0 + lmin + (lmax - lmin) * ((math.sin(a) + 1) / 2) ** 1.6
-    prof = lambda a: [(r_out, y0), (r_out, L(a) - lip), (r_out - lip, L(a)), (r_in + lip, L(a)), (r_in, L(a) - lip), (r_in, y0)]
+    if round_lip:   # (LOD0, polish round) the lip rounded: two quarter arcs of radius `lip`, round_lip steps each
+        def prof(a):
+            l = L(a)
+            arc = lambda cx, a0d, a1d: [(cx + lip * math.cos(math.radians(a0d + (a1d - a0d) * k / round_lip)), l - lip + lip * math.sin(math.radians(a0d + (a1d - a0d) * k / round_lip))) for k in range(round_lip + 1)]
+            return [(r_out, y0)] + arc(r_out - lip, 0, 90) + arc(r_in + lip, 90, 180) + [(r_in, y0)]
+    else:
+        prof = lambda a: [(r_out, y0), (r_out, L(a) - lip), (r_out - lip, L(a)), (r_in + lip, L(a)), (r_in, L(a) - lip), (r_in, y0)]
     angs = [math.radians(a0 + (a1 - a0) * i / segs) for i in range(segs + 1)]
     rings = []
     for a in angs:
@@ -284,16 +290,19 @@ def head(b, kind, M, lod):
         bb, bp = backplate(pw, ph, prc, border, W + 2 * cl, H + 2 * cl, hrc, py, 0.012, k=4 if lod == 0 else (2 if lod == 1 else 1), chamfer=0.003 if lod < 2 else 0.0)
         b.add(bb, "tl_border", M); b.add(bp, "tl_backplate", M)
     for (slot, cell), zc in zip(LENSES[kind], zs):
-        segs = (20 if rl > 0.07 else 14) if lod == 0 else ((12 if rl > 0.07 else 8) if lod == 1 else 6)
+        # (polish round: LOD0 rims round, not octagonal: 32 / 24 segments; the dome behind the bezel lip needs fewer)
+        segs = (32 if rl > 0.07 else 20) if lod == 0 else ((12 if rl > 0.07 else 8) if lod == 1 else 6)
+        dsegs = (16 if rl > 0.07 else 14) if lod == 0 else segs
         if lod == 0:
             # bezel ring (sits on the housing face), lens dome behind its lip, visor
             rb = rl + 0.016 * (rl / 0.098) ** 0.5
             q = 0.012 * (rl / 0.098) ** 0.5
-            bz = lathe([(rb, -0.003), (rb, q * 0.65), (rb - 0.003, q), (rl + 0.002, q), (rl, q * 0.75), (rl, q * 0.3)], segs)
+            bz = lathe([(rb, -0.003), (rb, q * 0.65), (rb - 0.003, q), (rl + 0.002, q), (rl, q * 0.75), (rl, q * 0.3)] if rl > 0.07
+                       else [(rb, -0.003), (rb, q), (rl, q), (rl, q * 0.3)], segs)      # (the 100 mm bezels: no chamfers, budget)
             b.add(to_y(bz, yf, 0, zc), "tl_housing", M)
-            dome = lathe([(rl - 0.0005, q * 0.4)] + [((rl - 0.0005) * math.cos(t), q * 0.4 + 0.012 * (rl / 0.098) * math.sin(t)) for t in (0.6, 1.1)] + [(0.0, q * 0.4 + 0.012 * (rl / 0.098))], segs)
+            dome = lathe([(rl - 0.001, q * 0.4)] + [((rl - 0.001) * math.cos(t), q * 0.4 + 0.012 * (rl / 0.098) * math.sin(t)) for t in (0.6, 1.1)] + [(0.0, q * 0.4 + 0.012 * (rl / 0.098))], dsegs)
             b.add(to_y(dome, yf, 0, zc), slot, M, uvf=lens_uv(cell, rl, zc))
-            v = visor(rb + 0.0005, 0.003, -0.003, h["vmin"], h["vmax"], -22, 202, 12 if rl > 0.07 else 8)
+            v = visor(rb + 0.0005, 0.003, -0.003, h["vmin"], h["vmax"], -22, 202, 18 if rl > 0.07 else 12, lip=0.0013, round_lip=2 if rl > 0.07 else 1)
             b.add(v, "tl_housing", T(0, yf, zc))
         elif lod == 1:
             lz = 0.004
@@ -323,13 +332,13 @@ def mount(b, M_pole_side, zs, lod, arm_w=0.05):
         shared = any(abs(z - c) < 0.06 for c in b.clamps)       # one band round the pole serves two heads
         if not shared: b.clamps.append(z)
         if lod == 0 and not shared:
-            cb = lathe([(PR - 0.001, z - 0.022), (PR + 0.006, z - 0.022), (PR + 0.008, z - 0.019), (PR + 0.008, z + 0.019), (PR + 0.006, z + 0.022), (PR - 0.001, z + 0.022)], 24)
+            cb = lathe([(PR - 0.001, z - 0.022), (PR + 0.007, z - 0.022), (PR + 0.007, z + 0.022), (PR - 0.001, z + 0.022)], 16)
             b.add(cb, "tl_bracket")
             for sx in (-1, 1):   # the clamp's bolts, either side of the arm
                 bolt = lathe([(0.0065, -0.004), (0.0065, 0.010), (0.004, 0.0135), (0.0, 0.0135)], 6, smooth=False)
                 b.add(bolt, "tl_bracket", M_pole_side @ Matrix.Translation((sx * 0.034, PR + 0.002, z)) @ Matrix.Rotation(-math.pi / 2, 4, "X"))
         if lod < 2:
-            arm = box(arm_w, GAP + 0.016, 0.034, bevel=0.004 if lod == 0 else 0.0, segs=2)
+            arm = box(arm_w, GAP + 0.016, 0.034, bevel=0.003 if lod == 0 else 0.0, segs=1)
             b.add(arm, "tl_bracket", M_pole_side @ Matrix.Translation((0, PR - 0.012 + (GAP + 0.016) / 2 + 0.004, z)))
         elif arm_w >= 0.05:      # LOD2: the big heads' arms only
             arm = box(arm_w, GAP + 0.01, 0.03)
@@ -340,9 +349,9 @@ def pole(b, lod):
     if lod == 0:
         zs = [-SINK, 0.0, 0.08, 0.4, 1.3, 2.2, 2.8, 3.36]
         prof = [(PR, z) for z in zs] + [(PR + 0.004, 3.36), (PR + 0.004, 3.40), (PR, 3.412), (PR * 0.7, 3.424), (0.0, 3.428)]
-        b.add(lathe(prof, 24), "tl_pole")
+        b.add(lathe(prof, 20), "tl_pole")
         # galvanised collar at the foot (the pavement's joint round the pole)
-        b.add(lathe([(0.074, -0.04), (0.074, 0.032), (0.070, 0.044), (PR - 0.0008, 0.050)], 24), "tl_bracket")
+        b.add(lathe([(0.074, -0.04), (0.074, 0.032), (0.070, 0.044), (PR - 0.0008, 0.050)], 20), "tl_bracket")
     elif lod == 1:
         b.add(lathe([(PR, -SINK), (PR, 0.0), (PR, 0.08), (PR, 0.5), (PR, 1.5), (PR, 2.5), (PR, 3.40), (PR * 0.6, 3.425), (0.0, 3.428)], 16), "tl_pole")
         b.add(lathe([(0.074, -0.04), (0.074, 0.04), (PR - 0.0008, 0.050)], 16), "tl_bracket")
@@ -540,7 +549,12 @@ tick("triangles: " + ", ".join(f"{p} {'/'.join(str(v['triangles']) for v in d.va
 if PREV:
     P = os.path.abspath(PREV)
     scn.cycles.samples = SAMPLES; scn.cycles.use_denoising = True
-    scn.view_settings.view_transform = "AgX"; scn.view_settings.exposure = -0.8
+    # the view transform nearest the engine's ACES filmic tone map (three ACESFilmicToneMapping), else AgX
+    for vt in ("ACES 1.3", "ACES 2.0", "AgX"):
+        try: scn.view_settings.view_transform = vt; break
+        except TypeError: pass
+    tick(f"preview view transform: {scn.view_settings.view_transform}")
+    scn.view_settings.exposure = -0.8
     scn.render.image_settings.file_format = "JPEG"; scn.render.image_settings.quality = 90
     scn.world.use_nodes = True
     bg = scn.world.node_tree.nodes.get("Background")
@@ -565,18 +579,37 @@ if PREV:
     oadd(bpy.ops.mesh.primitive_cube_add, size=1, location=(OLDX, 0, 0.9 + 0.12), scale=(0.5, 0.12, 0.12)).data.materials.append(om["white"])
     for o in old_parts: o.hide_render = True
 
-    def lit(on):
-        """preview emission: the lens slots in `on` glow through the pictogram mask"""
+    # the engine's lit aspect (viewer/tlights/tlightPlace.js LIT / EMIT: saturated, a hot centre only), rendered with
+    # the view transform closest to the engine's ACES filmic
+    LIT = {"red": (1, 0.04, 0.02), "amber": (1, 0.4, 0), "green": (0.02, 1, 0.72)}
+    EMIT = {"red": 1.1, "amber": 0.85, "green": 0.38, "hot": 0.9}
+
+    def lit(on, night=1.0):
+        """preview emission: the lens slots in `on` glow through the pictogram mask x the hot centre"""
         for s in LENS_SLOTS:
             m = MATS[s]; nt = m.node_tree; b = nt.nodes["Principled BSDF"]
             for n in [n for n in nt.nodes if n.name.startswith("pv_")]: nt.nodes.remove(n)
+            for l in list(b.inputs["Emission Strength"].links): nt.links.remove(l)
             if s in on:
-                tex = nt.nodes.new("ShaderNodeTexImage"); tex.name = "pv_tex"; tex.image = PICTO
-                col = {"red": (1, 0.06, 0.02), "amber": (1, 0.45, 0.03), "green": (0.08, 1, 0.45)}[s.split("_")[1]]
-                b.inputs["Emission Color"].default_value = (*col, 1)
-                nt.links.new(tex.outputs["Color"], b.inputs["Emission Strength"])
-                mul = nt.nodes.new("ShaderNodeMath"); mul.name = "pv_mul"; mul.operation = "MULTIPLY"; mul.inputs[1].default_value = 14.0
-                nt.links.new(tex.outputs["Color"], mul.inputs[0]); nt.links.new(mul.outputs[0], b.inputs["Emission Strength"])
+                kind = s.split("_")[1]
+                N = lambda t, name: (lambda n: (setattr(n, "name", "pv_" + name), n)[1])(nt.nodes.new(t))
+                tex = N("ShaderNodeTexImage", "tex"); tex.image = PICTO
+                uvn = N("ShaderNodeUVMap", "uv"); uvn.uv_map = "UVMap"
+                v2 = N("ShaderNodeVectorMath", "x2"); v2.operation = "MULTIPLY"; v2.inputs[1].default_value = (2, 2, 2)
+                fr = N("ShaderNodeVectorMath", "fr"); fr.operation = "FRACTION"
+                sub = N("ShaderNodeVectorMath", "sub"); sub.operation = "SUBTRACT"; sub.inputs[1].default_value = (0.5, 0.5, 0)
+                ln = N("ShaderNodeVectorMath", "len"); ln.operation = "LENGTH"
+                mr = N("ShaderNodeMapRange", "hot"); mr.interpolation_type = "SMOOTHSTEP"
+                mr.inputs["From Min"].default_value = 0.0; mr.inputs["From Max"].default_value = 0.45 * 0.47
+                mr.inputs["To Min"].default_value = 1 + EMIT["hot"]; mr.inputs["To Max"].default_value = 1.0
+                for a_, b_ in ((uvn.outputs[0], v2.inputs[0]), (v2.outputs[0], fr.inputs[0]), (fr.outputs[0], sub.inputs[0]), (sub.outputs[0], ln.inputs[0]), (ln.outputs["Value"], mr.inputs["Value"])):
+                    nt.links.new(a_, b_)
+                mul = N("ShaderNodeMath", "mul"); mul.operation = "MULTIPLY"
+                nt.links.new(tex.outputs["Color"], mul.inputs[0]); nt.links.new(mr.outputs["Result"], mul.inputs[1])
+                k = N("ShaderNodeMath", "k"); k.operation = "MULTIPLY"; k.inputs[1].default_value = EMIT[kind] * night
+                nt.links.new(mul.outputs[0], k.inputs[0])
+                b.inputs["Emission Color"].default_value = (*LIT[kind], 1)
+                nt.links.new(k.outputs[0], b.inputs["Emission Strength"])
             else:
                 b.inputs["Emission Strength"].default_value = 0.0
 
@@ -639,7 +672,7 @@ if PREV:
     for o in old_parts: o.hide_render = True
     # 7. night: the heads lit, no sun
     sun_d.energy = 0.0; bg.inputs[1].default_value = 0.004
-    lit({"lens_green", "ped_red"})
+    lit({"lens_green", "ped_red"}, night=1.15)
     show({("tl_post_bike", 0)})
     shot("tl_post_night.jpg", (2.6, 5.2, 1.9), (0, 0, 2.15), lens=40)
 tick("done")

@@ -1,5 +1,5 @@
 // TRAFFIC LIGHTS CHECK (claude/tlights, owner playtest 2026-11-18 "make better traffic lights in Blender"; docs/TLIGHTS.md,
-// docs/QUALITY_RULES.md rule 33). Offline, no browser:
+// docs/QUALITY_RULES.md rule 36). Offline, no browser:
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/tlightsCheck.mjs [--quiet] [--tiles T,T] [--old]
 //   (--old: the city placement as before claude/tlights, ?tlights=old: the counts it had)
@@ -36,7 +36,7 @@ const { streetFit } = await imp("viewer/streets/fitCore.js");
 const { carriageway } = await imp("viewer/streets/carriageway.js");
 const { signalSites } = await imp("viewer/streets/signalPlace.js");
 const { nearestRoad } = await imp("viewer/traffic/signals.js");
-const { tlightInstances, seatY, TL_PIECES, TRI_BUDGET, LOD_END } = await imp("viewer/tlights/tlightPlace.js");
+const { tlightInstances, seatY, TL_PIECES, TRI_BUDGET, LOD_END, LIT, EMIT, LIT_TARGET } = await imp("viewer/tlights/tlightPlace.js");
 
 const argv = process.argv.slice(2);
 const QUIET = argv.includes("--quiet");
@@ -110,6 +110,31 @@ for (const f of readdirSync(join(ROOT, "viewer/tlights"))) {
 if (!/old\("tlights"/.test(readFileSync(join(ROOT, "viewer/features.js"), "utf8"))) FAIL("code: no ?tlights switch row in viewer/features.js");
 const mainSrc = readFileSync(join(ROOT, "viewer/main.js"), "utf8");
 if (!/noSignals: cityTLights\.drawing/.test(mainSrc) || !/cityTLights\.addTile\(/.test(mainSrc) || !/cityTLights\.removeTile\(/.test(mainSrc)) FAIL("code: main.js does not hand the signal sites to cityTLights (add / remove / furniture.js noSignals)");
+
+// ------------------------------------------------------------------------------------------------ the lit aspect on screen
+// three's ACESFilmicToneMapping (r187 ToneMappingFunctions), then sRGB: the rim of each lit colour at its strength must keep
+// its hue and saturation (LIT_TARGET at exposure 1 by day; never washed to white: sat >= 0.4 at exposure 0.55..1.6, day
+// and night); the old emissive (amber x 2.2) failed this (sat 0.54 at exposure 1, 0.39 at 1.6)
+{
+  const IN = [[0.59719, 0.076, 0.0284], [0.35458, 0.90834, 0.13383], [0.04823, 0.01566, 0.83777]];
+  const OUT = [[1.60475, -0.10208, -0.00327], [-0.53108, 1.10813, -0.07276], [-0.07367, -0.00605, 1.07602]];
+  const mul = (M, v) => [0, 1, 2].map((i) => M[0][i] * v[0] + M[1][i] * v[1] + M[2][i] * v[2]);
+  const fit = (v) => (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.432951) + 0.238081);
+  const aces = (c, e) => mul(OUT, mul(IN, c.map((x) => (x * e) / 0.6)).map(fit)).map((x) => Math.min(1, Math.max(0, x)));
+  const srgb = (x) => (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055);
+  const hs = ([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let h = 0; if (d > 0) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [((h * 60) + 360) % 360, mx ? d / mx : 0]; };
+  const out = [];
+  for (const [k, [hue, sat]] of Object.entries(LIT_TARGET)) {
+    for (const [when, kk] of [["day", 1], ["night", EMIT.night]]) for (const e of [0.55, 1, 1.6]) {
+      const [h, sa] = hs(aces(LIT[k].map((x) => x * EMIT[k] * kk), e).map(srgb));
+      const dh = Math.min(Math.abs(h - hue), 360 - Math.abs(h - hue));
+      const need = when === "day" && e === 1 ? sat : 0.4;
+      if (when === "day" && e === 1) out.push(`${k} hue ${h.toFixed(0)} sat ${sa.toFixed(2)}`);
+      if (sa < need || dh > 15) FAIL(`lit: ${k} (${when}, exposure ${e}) on screen hue ${h.toFixed(0)} (want ${hue} +-15), saturation ${sa.toFixed(2)} (want >= ${need}): washed out`);
+    }
+  }
+  say(`lit aspects at exposure 1 by day: ${out.join(", ")}`);
+}
 
 // ------------------------------------------------------------------------------------------------ the city
 let TILES;

@@ -16,6 +16,17 @@ export const TRI_BUDGET = [9000, 1500, 300];
 /** LOD band ends (m): the distance each LOD's mesh audit is run for */
 export const LOD_END = [27.5, 88, 450];
 
+/** THE LIT ASPECT (polish round): an LED aspect is SATURATED with a hot centre only. The engine tone-maps with three's
+ *  ACESFilmic (viewer/post.js, exposure ~1; 0.55 without the post chain): its curve and channel mixing wash a bright
+ *  emissive out to cream / white (the first cut: amber x 2.2..6 = sat 0.16-0.54 on screen). So the emissive stays at the
+ *  level ACES keeps the hue: per colour (green desaturates first), x night at night; the centre (inner ~45 % of the
+ *  lens) up to x (1 + hot) (that part may go pale: the LED's hot spot). Colours linear; tools/audit/tlightsCheck.mjs
+ *  runs them through the same ACES and checks hue + saturation. */
+export const LIT = { red: [1, 0.04, 0.02], amber: [1, 0.4, 0], green: [0.02, 1, 0.72] };
+export const EMIT = { red: 1.1, amber: 0.85, green: 0.38, night: 1.15, hot: 0.9 };
+/** what the screen must keep (gate): hue (deg, sRGB) and the least saturation of the rim at exposure 1 by day */
+export const LIT_TARGET = { red: [6, 0.75], amber: [42, 0.75], green: [170, 0.5] };
+
 /** the drawn pavement height under (x, z) */
 export const seatY = (ground, lift, x, z) => ground(x, z) + (lift ? lift(x, z) : 0.12);
 

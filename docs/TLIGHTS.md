@@ -32,11 +32,12 @@ assets).
 
 | piece | LOD0 | LOD1 | LOD2 | budget |
 |---|---|---|---|---|
-| `tl_post` (pole, main head + backplate, repeater, pedestrian head, push button) | 7,362 | 1,140 | 226 | 9,000 / 1,500 / 300 |
-| `tl_post_bike` (+ the bike head) | 8,610 | 1,356 | 250 | |
+| `tl_post` (pole, main head + backplate, repeater, pedestrian head, push button) | 7,630 | 1,140 | 226 | 9,000 / 1,500 / 300 |
+| `tl_post_bike` (+ the bike head) | 8,928 | 1,356 | 250 | |
 
-- **LODs authored, not decimated**: LOD0 (to 25 m) bevelled housings (4 segments: no streak), lathed bezels, domed
-  lenses behind the bezel lip, cap visors with a chamfered lip, clamp bands with bolts, the collar, the button's
+- **LODs authored, not decimated**: LOD0 (to 25 m) bevelled housings (4 segments: no streak), lathed bezels (32
+  segments on the 200 mm lenses, 20 on the 100 mm ones: round, not octagonal; polish round), domed lenses behind the
+  bezel lip, cap visors (18 / 12 steps round the arc) with a ROUNDED lip (two quarter arcs, r 1.3 mm), clamp bands with bolts, the collar, the button's
   tactile arrow; LOD1 (25-80 m) the same shapes with fewer segments, no bevels, no small parts; LOD2 (80-450 m) boxes,
   a hexagonal pole and flat lens discs 8 mm proud (resolvable at 450 m): a lit aspect still reads far away. A
   simplifier (meshopt) eats the visors and lens discs the far levels need.
@@ -62,11 +63,31 @@ Renders (Cycles, OptiX):
 | | |
 |---|---|
 | ![shaded](tlights/tl_post_shaded.jpg) | ![close-up](tlights/tl_heads_closeup.jpg) |
-| the bike variant, car red / walking man green | lens domes, bezels, visors, backplate border, bike figure |
+| the bike variant, car red / walking man green | round rims, rounded visor lips, saturated amber with a hot centre, bike figure |
 | ![checker](tlights/tl_post_checker.jpg) | ![grazing](tlights/tl_post_grazing.jpg) |
 | 10 cm checker, object space: no stretching | sun 7 deg over the horizon: no shading bands |
 | ![LODs](tlights/tl_lods.jpg) | ![night](tlights/tl_post_night.jpg) |
 | LOD2 / LOD1 / LOD0 | night: the lit aspects only (no light added) |
+
+## The lit aspect (polish round)
+
+An LED aspect is saturated, with a hot centre only. The engine tone-maps with three's ACESFilmic (viewer/post.js,
+exposure ~1; 0.55 on the path without the post chain), whose curve and channel mixing wash a bright emissive out: the
+first cut (amber (1, 0.48, 0.04) x 2.2 by day .. x 6 at night) came out pale cream / near white (saturation 0.16-0.54
+on screen). Now (`viewer/tlights/tlightPlace.js` LIT / EMIT, used by the shader and the gate):
+
+| aspect | colour (linear) | emissive strength (day; x 1.15 at night) | on screen at exposure 1 (ACES, sRGB) |
+|---|---|---|---|
+| red (cars, pedestrian, bike) | (1, 0.04, 0.02) | 1.1 | hue 9, saturation 0.81 |
+| amber | (1, 0.40, 0) | 0.85 | hue 44, saturation 0.82 |
+| green (blue-green, as Belgian LEDs) | (0.02, 1, 0.72) | 0.38 | hue 171, saturation 0.77 |
+
+The centre (inner ~45 % of the lens, from the atlas UV) goes up to x 1.9: the hot spot may go pale, the rim keeps the
+hue. Green is the weakest: ACES desaturates it first (and it reads brightest). The gate runs every colour through the
+same ACES at exposures 0.55 / 1 / 1.6, day and night: hue within 15 deg, saturation >= the target at exposure 1 by day,
+>= 0.4 everywhere. Bloom works before the tone map, so the glow stays coloured. The lit lens's albedo is lit x 0.25 (not
+0.55: daylight on it paled it too). The Blender previews use the same colours / strengths with the ACES 1.3 view
+transform.
 
 ## In the city: `viewer/tlights/`
 
@@ -104,7 +125,7 @@ Measured by `tools/audit/tlightsCheck.mjs` on the 249 posts of the 40 signal til
   else the NEAREST spot (10 cm rings, up to 8 m) on the traffic's right, out of every carriageway, on raised paving
   where the street is measured, its foot ring (r 10 cm) level within 3 cm; one-way streets: one approach, their own
   flow.
-- **Rule**: docs/QUALITY_RULES.md rule 33. **Check**: `tlights` in tools/audit/mergeGate.mjs.
+- **Rule**: docs/QUALITY_RULES.md rule 36. **Check**: `tlights` in tools/audit/mergeGate.mjs.
 
 ## Checks
 

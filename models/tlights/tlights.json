@@ -30,7 +30,7 @@
  "pieces": {
   "tl_post": {
    "lod0": {
-    "triangles": 7362,
+    "triangles": 7630,
     "size_m": [
      0.759,
      0.634,
@@ -56,7 +56,7 @@
   },
   "tl_post_bike": {
    "lod0": {
-    "triangles": 8610,
+    "triangles": 8928,
     "size_m": [
      0.759,
      0.634,
