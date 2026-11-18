@@ -418,6 +418,18 @@ swaps two identical smooth boxes with the same shading; LOD1 -> 2 at 108-132 m; 
 the mips of near). The cards shrink 14-24 m (a morph) and are gone before their end dither (24.6-29 m). Old: dithered
 27-33 m between a lumpy and a smooth body, cards dithered 18.7-22 m.
 
-**Budget** (`tools/audit/hedgeGate.mjs`, merge gate row `hedges`): triangles a module 128 / 36 / 20 + 96 card
-(old 160 / 54 / 20 + 128); worst 25 m-grid view over all tiles 84.1k hedge triangles (old there 82.2k, worst old view
-84.0k): +2 %. Draws 4 (old 4). Fragment: 4 taps of the baked pair + 1 noise tap (old: 5 noise taps + a bump).
+**Round 1b** (coordinator's defect eye on the first Blender preview: "a speckled green granite block"):
+- clumps: the bake's leaves sit on a tileable 3 x 3 field of domes (12-19 cm radius, 55 % as tall) and turn with them;
+  the hollows between are deep (AO x depth^2.2): 10-30 cm leaf masses with shadowed hollows; per-leaf contrast lowered
+  (value 0.88-1.06, midrib 0.07);
+- colour: fresher yellow-greens (privet #557a2b, beech #5c8030, hornbeam #608533, laurel #3b6226, box #46692a), the
+  occlusion into the colour 0.5-1 and the ambient 0.3-1;
+- silhouette: the cards are now sprigs lying close along the surface (55-83 degrees off the normal, 3-8 cm out), + 6 end
+  cards a module drawn only on a run's two end modules (iAux.z flags from hedgeInstancesGen); at every distance the
+  body opens its baked gaps where it turns away from the eye (grazing, colour pass only);
+- preview with the cards (as real leaf sprays), the foot and the grazing breakup: `tools/blender/hedgePreview.py` ->
+  `docs/hedges/preview_{close,near,far}.jpg`.
+
+**Budget** (`tools/audit/hedgeGate.mjs`, merge gate row `hedges`): triangles a module 128 / 36 / 20 + 108 card
+(old 160 / 54 / 20 + 128); worst 25 m-grid view over all tiles 84.9k hedge triangles (old there 82.2k, worst old view
+84.0k): +3 %. Draws 4 (old 4). Fragment: 4 taps of the baked pair + 1 noise tap (old: 5 noise taps + a bump).

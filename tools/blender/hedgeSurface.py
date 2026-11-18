@@ -135,25 +135,53 @@ def copies(x, y, reach):
     return out
 
 
+# CLUMPS (coordinator round 1b: a clipped hedge reads by 10-30 cm leaf masses with soft shadowed hollows, not an even
+# salt-and-pepper of leaves): a jittered 4 x 4 grid of domes (radius 0.14-0.24 of the patch = 8-15 cm, 35 % as tall),
+# tileable; the leaves sit on the dome surface (the hollows between them deeper: darker AO) and turn with the dome's
+# normal (clump-scale shading in the normal map). 3 x 3 domes, radius 0.2-0.32 (12-19 cm), 55 % as tall
+_cr = random.Random(11)
+DOMES = [((i + 0.2 + 0.6 * _cr.random()) / 3, (j + 0.2 + 0.6 * _cr.random()) / 3, 0.2 + 0.12 * _cr.random()) for i in range(3) for j in range(3)]
+
+
+def dome(x, y):
+    """the clump surface height (0 on a dome's top) and its normal at (x, y); -0.16 in a hollow"""
+    best, bn = -0.16, Vector((0, 0, 1))
+    for cx, cy, R in DOMES:
+        for ox in (-1, 0, 1):
+            for oy in (-1, 0, 1):
+                dx, dy = x - cx - ox, y - cy - oy
+                q = (dx * dx + dy * dy) / (R * R)
+                if q >= 1:
+                    continue
+                h = 0.55 * R * math.sqrt(1 - q) - 0.55 * 0.32
+                if h > best:
+                    k = 0.55 / math.sqrt(max(1e-4, 1 - q))       # dh/dr / r
+                    best, bn = h, Vector((dx * k, dy * k, 1)).normalized()
+    return best, bn
+
+
 def build(B):
     LEAF = 0.075                                          # 4.5 cm on the 0.6 m patch (privet)
     n = 0
+    up = Vector((0, 0, 1))
     while n < N_LEAVES:
         x, y = rng.random(), rng.random()
         c = clump(x, y)
-        # depth under the clipped face: dense at the surface, thinning inward; deeper in the holes
-        d = -math.log(1 - rng.random() * 0.97) * 0.035 + (1 - c) * 0.1
-        if d > 0.26:
+        h, dn = dome(x, y)
+        # depth under the clump surface: dense at it, thinning inward; a little deeper where the noise says
+        d = -math.log(1 - rng.random() * 0.97) * 0.03 + (1 - c) * 0.04 - h
+        if d > 0.32:
             continue
         n += 1
-        ln = LEAF * (0.8 + rng.random() * 0.4) * (0.85 if d > 0.08 else 1.0)
+        ln = LEAF * (0.8 + rng.random() * 0.4) * (0.85 if d + h > 0.08 else 1.0)
         yaw = rng.random() * math.pi * 2
-        tilt = math.acos(1 - rng.random() * (1 - math.cos(math.radians(55))))   # 0..65 deg out of the face
+        tilt = math.acos(1 - rng.random() * (1 - math.cos(math.radians(50))))   # 0..50 deg out of the clump's face
         roll = (rng.random() - 0.5) * 0.8
-        val = (0.78 + rng.random() * 0.34) * (1.0 if d < 0.05 else 0.88)
+        val = (0.88 + rng.random() * 0.18) * (1.0 if d + h < 0.05 else 0.92)
         cup, fold, arch = 0.04 + rng.random() * 0.05, 0.04 + rng.random() * 0.05, (rng.random() - 0.3) * 0.12
+        align = up.rotation_difference(up.lerp(dn, 0.85).normalized()).to_matrix().to_4x4()
         for dx, dy in copies(x, y, 0.12):
-            M = (Matrix.Translation(Vector((x + dx, y + dy, -d))) @ Matrix.Rotation(yaw, 4, "Z")
+            M = (Matrix.Translation(Vector((x + dx, y + dy, -d))) @ align @ Matrix.Rotation(yaw, 4, "Z")
                  @ Matrix.Rotation(-tilt, 4, "Y") @ Matrix.Rotation(roll, 4, "X") @ Matrix.Translation(Vector((-ln * 0.3, 0, 0))))
             B.leaf(M, ln, val, cup, fold, arch)
     # twigs inside: grey-brown, mostly across the face, a few toward it
@@ -161,7 +189,7 @@ def build(B):
         x, y = rng.random(), rng.random()
         a = rng.random() * math.pi * 2
         L = 0.08 + rng.random() * 0.22
-        z0 = -0.07 - rng.random() * 0.17
+        z0 = dome(x, y)[0] - 0.07 - rng.random() * 0.13       # (under the clump surface there)
         dz = (rng.random() - 0.3) * 0.08
         r0 = 0.003 + rng.random() * 0.005
         val = 0.4 + rng.random() * 0.25
@@ -207,13 +235,13 @@ def make_material(mode, backing=False):
     comb = node(nt, "ShaderNodeCombineXYZ")
     if mode == "a":
         ao = node(nt, "ShaderNodeAmbientOcclusion", samples=16)
-        ao.inputs["Distance"].default_value = 0.16
+        ao.inputs["Distance"].default_value = 0.22
         # (the occlusion x a depth term: light fades fast into a clipped hedge, deep leaves read dark)
         geo = node(nt, "ShaderNodeNewGeometry")
         pz = node(nt, "ShaderNodeSeparateXYZ")
         nt.links.new(geo.outputs["Position"], pz.inputs[0])
-        depthk = mnode(nt, "ADD", 1.0, mnode(nt, "DIVIDE", pz.outputs[2], 0.2), clamp=True)
-        aod = mnode(nt, "MULTIPLY", ao.outputs["AO"], mnode(nt, "POWER", depthk, 1.6))
+        depthk = mnode(nt, "ADD", 1.0, mnode(nt, "DIVIDE", pz.outputs[2], 0.3), clamp=True)
+        aod = mnode(nt, "MULTIPLY", ao.outputs["AO"], mnode(nt, "POWER", depthk, 2.2))
         if backing:
             comb.inputs[0].default_value = 0.25
             comb.inputs[1].default_value = 0.0
@@ -228,9 +256,9 @@ def make_material(mode, backing=False):
             # midrib: lighter line along y = 0, fading toward the tip; the blade darker toward the petiole
             mid = mnode(nt, "SUBTRACT", 1.0, mnode(nt, "DIVIDE", mnode(nt, "ABSOLUTE", uy), 0.014), clamp=True)
             mid = mnode(nt, "MULTIPLY", mid, mnode(nt, "SUBTRACT", 1.0, ux, clamp=True))
-            base = mnode(nt, "ADD", 0.82, mnode(nt, "MULTIPLY", mnode(nt, "MINIMUM", ux, 0.5), 0.36))
+            base = mnode(nt, "ADD", 0.9, mnode(nt, "MULTIPLY", mnode(nt, "MINIMUM", ux, 0.5), 0.2))
             v = mnode(nt, "MULTIPLY", a_val.outputs["Fac"], base)
-            v = mnode(nt, "ADD", v, mnode(nt, "MULTIPLY", mid, 0.18))
+            v = mnode(nt, "ADD", v, mnode(nt, "MULTIPLY", mid, 0.07))
             blade = mnode(nt, "LESS_THAN", a_part.outputs["Fac"], 0.5)
             v = mnode(nt, "ADD", mnode(nt, "MULTIPLY", v, blade), mnode(nt, "MULTIPLY", a_val.outputs["Fac"], mnode(nt, "SUBTRACT", 1.0, blade)))
             nt.links.new(mnode(nt, "MULTIPLY", v, 0.8), comb.inputs[0])      # (headroom: values up to ~1.25 -> 1.0)

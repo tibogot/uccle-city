@@ -204,7 +204,7 @@ function materials() {
 function vec4c(r, g, b) { return vec3(r, g, b); }
 
 // ------------------------------------------------------------------------------------------------ data -> instances
-export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction; 0 elsewhere)
+export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction x / z, the run-end flags; 0 elsewhere)
 /** a style's iVar */
 function styleVar(st, rnd) {
   return [st.brick ?? 0, st.cap === 1 ? 1 : 0, (st.paint ?? 0) + (st.gilded ? 4 : 0), rnd];
@@ -303,10 +303,10 @@ export function* gardenInstancesGen(doc, groundAt = null, { hedgeFronts = true, 
   }
   // the hedges: ~1 m modules on the drawn ground (gardenHedge.js); the leaf cards ride on the same instances
   if (hedges && groundAt && doc.hedges?.length) {
-    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v) => {
+    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v, ends = 0) => {   // (ends: 1 a run's first module, + 2 its last)
       const lh = Math.hypot(dx, dz) || 1e-6;
       m.set([dx, dy, dz, 0, 0, sy, 0, 0, -dz / lh * w, 0, dx / lh * w, 0, x0, y0, z0, 1]);
-      push(out, m, v, [-dz / lh, dx / lh, 0, 0]);
+      push(out, m, v, [-dz / lh, dx / lh, ends, 0]);
     };
     yield* hedgeInstancesGen(doc.hedges, groundAt, shearW, L.hedge);
     L.hedgecard = L.hedge;
@@ -410,7 +410,7 @@ export function gardenSources(inst, slot) {
  *  (the streamer's hysteresis). */
 export class GardenPool {
   constructor(piece, mats, group, margin = MARGIN) {
-    this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge";
+    this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge" || piece.name === "hedgecard";   // (the cards: the run-end flags, iAux.z)
     const [s1, s2, end] = piece.band;
     // what the shaders may draw per LOD (gardenKit.js lodKeep / gardenHedge.js keep smoothstep windows); a one-LOD piece
     // (the hedge cards) to its end

@@ -31,7 +31,7 @@ import * as THREE from "three/webgpu";
 import { drain } from "../slices.js";
 import {
   attribute, uniformArray, vec2, vec3, vec4, float, mix, smoothstep, length, normalize, cross, cos, sin, select, abs, max,
-  fwidth, saturate, texture, uv, cameraViewMatrix, varying, positionLocal, normalLocal, normalWorld, positionWorld, fract,
+  fwidth, saturate, texture, uv, cameraViewMatrix, cameraPosition, varying, positionLocal, normalLocal, normalWorld, positionWorld, fract,
   floor, sign, dot,
 } from "three/tsl";
 import { season } from "../foliage/seasons.js";
@@ -46,19 +46,19 @@ import { FadeSlots } from "../instanceStream.js";
 /** the gardens' tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
 export const gardenFades = new FadeSlots();
 
-// species: summer, winter (sRGB), card size (m), lumps (m), gloss, holds (marcescence: beech keeps its brown leaves all
+// species: summer, winter (sRGB; round 1b: fresher, yellower greens next to the bushes' / trees' palette), card size (m), lumps (m), gloss, holds (marcescence: beech keeps its brown leaves all
 // winter), patch = the world size (m) of the baked surface patch (0.6 m = privet's 4.5 cm leaves)
 export const HEDGE_SPECIES = ["privet", "beech", "hornbeam", "laurel", "box"];
 const SP = {
-  privet:   { summer: "#4a6a28", winter: "#45552a", card: 0.24, lump: 0.03, gloss: 0.55, holds: 0, patch: 0.6 },
-  beech:    { summer: "#557a2c", winter: "#94603a", card: 0.3, lump: 0.04, gloss: 0.7, holds: 1, patch: 0.95 },
-  hornbeam: { summer: "#5a7e30", winter: "#86643a", card: 0.3, lump: 0.045, gloss: 0.75, holds: 0.6, patch: 0.9 },
-  laurel:   { summer: "#335722", winter: "#335222", card: 0.38, lump: 0.05, gloss: 0.35, holds: 0, patch: 1.5 },
-  box:      { summer: "#3d5e25", winter: "#425228", card: 0.17, lump: 0.02, gloss: 0.6, holds: 0, patch: 0.32 },
+  privet:   { summer: "#557a2b", winter: "#45552a", card: 0.24, lump: 0.03, gloss: 0.55, holds: 0, patch: 0.6 },
+  beech:    { summer: "#5c8030", winter: "#94603a", card: 0.3, lump: 0.04, gloss: 0.7, holds: 1, patch: 0.95 },
+  hornbeam: { summer: "#608533", winter: "#86643a", card: 0.3, lump: 0.045, gloss: 0.75, holds: 0.6, patch: 0.9 },
+  laurel:   { summer: "#3b6226", winter: "#335222", card: 0.38, lump: 0.05, gloss: 0.35, holds: 0, patch: 1.5 },
+  box:      { summer: "#46692a", winter: "#425228", card: 0.17, lump: 0.02, gloss: 0.6, holds: 0, patch: 0.32 },
 };
 export const HEDGE_MODULE = 1.0;          // m: nominal module length (a run is cut into equal modules near this)
 export const HEDGE_BOTTOM = -0.12;        // unit y of the body's bottom: 12 % of the height under the base line (JOINS)
-export const HEDGE_CARDS = 48;
+export const HEDGE_CARDS = 48, HEDGE_END_CARDS = 6;   // (+ 3 on each end face: drawn on a RUN's ends only, iAux.z)
 export const CARD_NEAR = 14, CARD_FAR = 24;
 /** LOD bands (m) [0 -> 1, 1 -> 2, end] (gardenKit.js BANDS): no dither inside 40 m (the hand-overs dither over +-10 %) */
 export const HEDGE_BANDS = { hedge: [45, 120, 300], hedgecard: [29, 29, 29] };   // (the cards: gone by CARD_FAR before their end dither 24.7-29 m)
@@ -151,7 +151,7 @@ function cardGeometry() {
   const tot = segs.reduce((s, q) => s + q.w, 0);
   let h = 12345;
   const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507) + 0x9e3779b9 | 0; return (h >>> 0) / 4294967296; };
-  const P = [], A = [], AN = [], R = [], U = [], I = [];
+  const P = [], A = [], AN = [], R = [], U = [], I = [], E = [];
   for (let c = 0; c < HEDGE_CARDS; c++) {
     let t = rnd() * tot, q = segs[0];
     for (const s of segs) { if (t < s.w) { q = s; break; } t -= s.w; }
@@ -160,13 +160,23 @@ function cardGeometry() {
     let nz = q.a[2] + (q.b[2] - q.a[2]) * f, ny = q.a[3] + (q.b[3] - q.a[3]) * f; const l = Math.hypot(nz, ny) || 1; nz /= l; ny /= l;
     const r4 = [rnd(), rnd(), rnd(), rnd()], base = P.length / 3;
     for (const [px, py] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) {
-      P.push(x, y, z); A.push(px, py); AN.push(0, ny, nz); R.push(...r4); U.push(px + 0.5, py + 0.5);
+      P.push(x, y, z); A.push(px, py); AN.push(0, ny, nz); R.push(...r4); U.push(px + 0.5, py + 0.5); E.push(0);
+    }
+    I.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+  // the end faces (a run's two ends: the cards there grow only where the module is a run's first / last, iAux.z)
+  for (let c = 0; c < HEDGE_END_CARDS; c++) {
+    const end = c % 2, x = end, y = 0.35 + 0.6 * rnd(), z = (rnd() - 0.5) * 0.8;
+    const r4 = [rnd(), rnd(), rnd(), rnd()], base = P.length / 3;
+    for (const [px, py] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) {
+      P.push(x, y, z); A.push(px, py); AN.push(end ? 1 : -1, 0, 0); R.push(...r4); U.push(px + 0.5, py + 0.5); E.push(1 + end);
     }
     I.push(base, base + 1, base + 2, base, base + 2, base + 3);
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(AN, 3));
+  g.setAttribute("cend", new THREE.Float32BufferAttribute(E, 1));
   g.setAttribute("corner", new THREE.Float32BufferAttribute(A, 2));
   g.setAttribute("crnd", new THREE.Float32BufferAttribute(R, 4));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(U, 2));
@@ -292,16 +302,21 @@ export function hedgeMaterials() {
     const base = mix(mix(inside, alb, leafy), vec3(0.045, 0.034, 0.025), soil.mul(0.8));
     const snowTop = smoothstep(0.55, 0.9, normalWorld.y).mul(season.uSnow).mul(leafy);
     // the gaps: the occlusion darkens the colour (the sun reaches little of a gap) and the ambient (aoNode)
-    m.colorNode = mix(base.mul(mix(0.42, 1, occl)), vec3(0.88, 0.9, 0.94), snowTop);
-    m.aoNode = mix(occl, float(0.15), float(1).sub(leafy)).max(0.08);
+    m.colorNode = mix(base.mul(mix(0.5, 1, occl)), vec3(0.88, 0.9, 0.94), snowTop);
+    m.aoNode = mix(mix(float(0.3), float(1), occl), float(0.15), float(1).sub(leafy)).max(0.08);
     // the leaves' normals in the run frame (T along u, B = cross(T, N) along v); flat inside the foot
     const Nw = normalize(normalWorld), Tw = normalize(vT.sub(Nw.mul(dot(vT, Nw)))), Bw = cross(Tw, Nw);
     const nL = mix(vec3(0, 0, 1), nT, leafy.mul(float(1).sub(snowTop.mul(0.7))));
     const nW = normalize(Tw.mul(nL.x).add(Bw.mul(nL.y)).add(Nw.mul(nL.z.max(0.05))));
     m.normalNode = normalize(cameraViewMatrix.mul(vec4(nW, 0)).xyz);
     m.roughnessNode = mix(uSp.element(I.spi).z, float(0.95), max(part, float(1).sub(leafy)));
-    m.maskNode = keep(lod);
-    m.maskShadowNode = m.maskNode;
+    // a leafy SILHOUETTE at every distance (round 1b): where the surface turns away from the eye (grazing: the top's
+    // round seen from the side, a run's end edges), the baked gaps open through (the texture's own mips keep it at a
+    // distance; the cards add the sprigs near). Not in the shadow (the body casts whole) nor at the foot.
+    const vDir = normalize(cameraPosition.sub(positionWorld));
+    const graze = smoothstep(0.72, 0.95, float(1).sub(abs(dot(Nw, vDir)))).mul(footK);
+    m.maskNode = keep(lod).and(occl.greaterThan(graze.mul(0.42)));
+    m.maskShadowNode = keep(lod);
     m.name = `gardens-hedge-lod${lod}`;
     m.userData.shared = true; m.userData.noFade = true;
     return m;
@@ -319,14 +334,19 @@ export function hedgeMaterials() {
   const t1 = normalize(cross(upv, cn)), t2 = cross(cn, t1);
   const ang = cr.x.mul(6.2832), ca = cos(ang), sa = sin(ang);
   const ax = t1.mul(ca).add(t2.mul(sa)), ay = t2.mul(ca).sub(t1.mul(sa));
-  const tilt = cr.y.mul(0.7).add(0.45);
+  // (round 1b: a CLIPPED hedge's sprigs lie close along the surface, 55-83 degrees off its normal, and stick out 3-8 cm,
+  // not upright tufts)
+  const tilt = cr.y.mul(0.5).add(0.95);
   const cardN = normalize(cn.mul(cos(tilt)).add(ay.mul(sin(tilt))));
   const cardY = normalize(cross(cardN, ax));
-  const size = sp.x.mul(cr.z.mul(0.5).add(0.75)).mul(grow);
+  // (an end-face card: only on a run's own end; iAux.z = 1 its start, + 2 its end)
+  const cend = attribute("cend", "float"), ends = attribute("iAux", "vec4").z;
+  const onEnd = select(cend.lessThan(0.5), float(1), select(cend.lessThan(1.5), ends.mod(2), floor(ends.div(2).add(0.01))));
+  const size = sp.x.mul(cr.z.mul(0.4).add(0.6)).mul(grow).mul(onEnd);
   // (the body's lean at the card's height + a small flutter of its own)
   const [flick, flickP] = windPrev(() => leanAt(anchor, fH).add(vec3(1, 0.3, 1).mul(sin(wind.uTime.mul(5.0).add(cr.w.mul(40))).mul(windAt(anchor.xz).z.mul(0.015).add(0.003)))));
   setMotionDelta(card, flickP.sub(flick));   // --- instmotion
-  card.positionNode = anchor.add(cn.mul(size.mul(0.36))).add(ax.mul(corner.x.mul(size))).add(cardY.mul(corner.y.add(0.3).mul(size))).add(flick);
+  card.positionNode = anchor.add(cn.mul(size.mul(0.12))).add(ax.mul(corner.x.mul(size))).add(cardY.mul(corner.y.add(0.15).mul(size))).add(flick);
   const uvc = uv();
   const a0 = texture(tex[0], uvc), a1c = texture(tex[1], uvc), a2c = texture(tex[2], uvc);
   const a = select(I.sI.equal(3), a2c, select(I.sI.equal(1).or(I.sI.equal(2)), a1c, a0));
@@ -379,7 +399,7 @@ export function* hedgeInstancesGen(runs, groundAt, push, out) {
       for (let k = 1; k < 8; k++) { const f = k / 8; gap = Math.max(gap, ya + (yb - ya) * f + HEDGE_BOTTOM * H - G(a[0] + dx * f, a[1] + dz * f)); }
       const drop = gap > 0 ? gap + 0.01 : 0, Hm = H + drop;
       ya -= drop; yb -= drop;
-      push(out, ax, ya, az, bx - ax, yb - ya, bz - az, Hm, W, [sp + W / 10, s0 + i * step - e, l + 2 * e, Hm]);
+      push(out, ax, ya, az, bx - ax, yb - ya, bz - az, Hm, W, [sp + W / 10, s0 + i * step - e, l + 2 * e, Hm], (i === 0 ? 1 : 0) + (i === m - 1 ? 2 : 0));
       if ((++n & 3) === 0) yield;
     }
   }
