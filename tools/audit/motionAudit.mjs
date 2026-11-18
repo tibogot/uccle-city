@@ -30,7 +30,7 @@ const MOVER = {
   "falconFlight/pigeons.js": "pigeons (InstancePrev)",
   "birds/skyFlocks.js": "sky flocks (p - v dt in the shader)",
   "foliage/hedges.js": "hedge wind (windPrev)", "foliage/ivy.js": "ivy wind", "foliage/plants.js": "plant wind",
-  "gardens/gardenHedge.js": "garden hedge wind", "plants/cityIvy.js": "city ivy wind", "plants/plantMaterial.js": "plant wind",
+  "gardens/gardenHedge.js": "garden hedge wind", "gardens/gardenHedgeOld.js": "garden hedge wind (?hedges=old)", "plants/cityIvy.js": "city ivy wind", "plants/plantMaterial.js": "plant wind",
 };
 /** written on load / on change, or not drawn in the city by default: no per-frame motion */
 const STATIC = {

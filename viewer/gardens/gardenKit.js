@@ -22,7 +22,12 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
-import { hedgeGeometries, hedgeMaterials, hedgeInstancesGen, gardenFades } from "./gardenHedge.js";
+import * as HEDGE_NEW from "./gardenHedge.js";
+import * as HEDGE_OLD from "./gardenHedgeOld.js";
+/** ?hedges=old: the garden hedges before claude/hedges (2026-11-18: noise-shaded boxes, LOD dithers from 27 m) */
+export const HEDGES_OLD = typeof location !== "undefined" && /[?&]hedges=old(&|$)/.test(location.search);
+const { hedgeGeometries, hedgeMaterials, hedgeInstancesGen } = HEDGES_OLD ? HEDGE_OLD : HEDGE_NEW;
+const { gardenFades } = HEDGE_NEW;
 import { drain } from "../slices.js";
 import { StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
@@ -40,7 +45,9 @@ export const BANDS = {
   rail: [22, 60, 150], gate: [22, 60, 150], cargate: [25, 70, 160],
   // round 2: the hedges (viewer/gardens/gardenHedge.js): big soft solids, seen far (the end dithers out over 255-300 m);
   // the leaf cards near only (they shrink into the body by 18 m)
-  hedge: [30, 90, 300], hedgecard: [22, 22, 22],
+  // claude/hedges: [45, 120, 300] / [29, 29, 29] (gardenHedge.js HEDGE_BANDS: no dither inside 40 m, the lumps flat
+  // before the 0 -> 1 hand-over); ?hedges=old the bands above
+  ...(HEDGES_OLD ? { hedge: [30, 90, 300], hedgecard: [22, 22, 22] } : HEDGE_NEW.HEDGE_BANDS),
 };
 export const bandOf = (p) => BANDS[p] || BANDS[p.split("_")[0]];
 const GATE_W = { gate: 1.0, cargate: 1.6 }, GATE_H = { gate: 1.2, cargate: 1.3 };
@@ -197,7 +204,7 @@ function materials() {
 function vec4c(r, g, b) { return vec3(r, g, b); }
 
 // ------------------------------------------------------------------------------------------------ data -> instances
-export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction; 0 elsewhere)
+export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction x / z, the run-end flags; 0 elsewhere)
 /** a style's iVar */
 function styleVar(st, rnd) {
   return [st.brick ?? 0, st.cap === 1 ? 1 : 0, (st.paint ?? 0) + (st.gilded ? 4 : 0), rnd];
@@ -296,10 +303,10 @@ export function* gardenInstancesGen(doc, groundAt = null, { hedgeFronts = true, 
   }
   // the hedges: ~1 m modules on the drawn ground (gardenHedge.js); the leaf cards ride on the same instances
   if (hedges && groundAt && doc.hedges?.length) {
-    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v) => {
+    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v, ends = 0) => {   // (ends: 1 a run's first module, + 2 its last)
       const lh = Math.hypot(dx, dz) || 1e-6;
       m.set([dx, dy, dz, 0, 0, sy, 0, 0, -dz / lh * w, 0, dx / lh * w, 0, x0, y0, z0, 1]);
-      push(out, m, v, [-dz / lh, dx / lh, 0, 0]);
+      push(out, m, v, [-dz / lh, dx / lh, ends, 0]);
     };
     yield* hedgeInstancesGen(doc.hedges, groundAt, shearW, L.hedge);
     L.hedgecard = L.hedge;
@@ -403,7 +410,7 @@ export function gardenSources(inst, slot) {
  *  (the streamer's hysteresis). */
 export class GardenPool {
   constructor(piece, mats, group, margin = MARGIN) {
-    this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge";
+    this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge" || piece.name === "hedgecard";   // (the cards: the run-end flags, iAux.z)
     const [s1, s2, end] = piece.band;
     // what the shaders may draw per LOD (gardenKit.js lodKeep / gardenHedge.js keep smoothstep windows); a one-LOD piece
     // (the hedge cards) to its end
