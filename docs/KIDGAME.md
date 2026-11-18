@@ -16,6 +16,9 @@ Owner's direction (2026-11-18): a FULL game, built on the Uccle 3D city. The pla
 ## Physics props
 Cones, barriers, bins, boxes, a ball, planks + bricks to BUILD ramps; sleeping physics near the player only (docs/TODO.md 'physics props').
 
+## Autumn leaves
+Riding / jumping into leaf piles, leaves kicked up by the bike: docs/TODO.md 8j (GPU leaves + piles reacting to movers; builds on viewer/weather/precipitation.js leaves).
+
 ## Privacy and realism
 Real places, FICTIONAL people: no real family, house or resident is marked or named; homes stay generic. Google imagery is look-only (never stored or traced).
 
