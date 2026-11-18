@@ -6,7 +6,8 @@
 //          straight in through every outer footprint edge (tile buildings, 3 heights). A ray FAILS when
 //            back     its first hit is a face seen from behind: the street sees the inside of a wall / roof through a hole
 //            through  it runs >= THRU m under the building's own roof (the drawn top-down height raster, DSM) without
-//                     meeting any face: the street sees through the building (sky, trees behind)
+//                     meeting any face, and comes out from under it (heroshell 2026-11-18: before that, a ray grazing
+//                     under a cornice into a re-entrant corner counted): the street sees through the building
 //          A fail stands for 0.4 x 0.5 m (landmarks) / its sample cell (tiles): summed per building = the hole m2.
 //   LOOPS  (landmarks, info) open boundary-edge loops of the welded LOD mesh with a perimeter > 2 m.
 // Landmarks: every hero GLB (models/<hero>/<hero>.glb + .json placement), each LOD level apart (what is drawn together).
@@ -27,13 +28,15 @@ const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); 
 const CHILD = opt("--child", null), OUT = opt("--out", null), JOBS = +opt("--jobs", 4);
 const HEROES = flag("--heroes"), ALL = flag("--all"), TILES_F = flag("--tiles");
 const ONLY_HERO = opt("--hero", null);
+const GLB_OVERRIDE = opt("--glb", null);   // with --hero: probe this GLB instead of models/<hero>.glb (a candidate build)
 const TILES = ALL ? allBuiltTiles() : argv.filter((a) => !a.startsWith("--")).map((t) => t.toUpperCase());
 const THRU = 1.5;         // m under the own roof without a face = see-through
 const MIN_CLUSTER = 1.0;  // m2: a hole cluster smaller than this is not listed
 
 export const HERO_LIST = ["augustin/augustin", "calevoet_station/calevoet", "latourdefrein/latourdefrein", "observatory/observatory", "papenkasteel/papenkasteel",
   "police_rouge/police", "rosaire/rosaire", "russian/russian", "sacrecoeur/sacrecoeur", "saintmarc/saintmarc", "stalle/stalle", "stjob/stjob",
-  "stpierre/stpierre", "townhall/townhall", "vanbuuren/vanbuuren", "wolvendael_chateau/wolvendael"];
+  "stpierre/stpierre", "townhall/townhall", "vanbuuren/vanbuuren", "wolvendael_chateau/wolvendael",
+  "heros/heros"];          // heroshell 2026-11-18: the Square des Heros monument (it hides solid 534309) was never probed
 /** LOD level of a GLB node: 0 the model (+ its _door / _slates / _courses), 1 _lod1 (else _far), 2 _lod2 / _xfar */
 export function levelsOf(nodes) {
   const has = (re) => nodes.some((n) => re.test(n));
@@ -80,8 +83,12 @@ function probeAround(pos, ground) {
       if (hit && hit.back) bad = "back";
       else {
         // under-roof run before the hit (or to the end)
+        // (heroshell: and then comes OUT from under the roof before its hit: a ray grazing along a wall under the
+        // cornice into a re-entrant corner ends on that corner's front face, still under the roof: not a hole)
         const tStop = hit ? hit.t : tEnd;
-        for (let t = tEntry + 2.0; t < tStop; t += step) if (dsm.deep(ox + dx * t, oz + dz * t, h, 1.5)) { bad = "through"; break; }
+        let deepAt = -1;
+        for (let t = tEntry + 2.0; t < tStop; t += step) if (dsm.deep(ox + dx * t, oz + dz * t, h, 1.5)) { deepAt = t; break; }
+        if (deepAt >= 0) for (let t = deepAt; t < tStop; t += step) if (!(dsm.at(ox + dx * t, oz + dz * t) > h + 0.5)) { bad = "through"; break; }
       }
       if (!bad) continue;
       F.set(si * 100000 + hi, { bad, ex: ox + dx * tEntry, ez: oz + dz * tEntry, h });
@@ -107,7 +114,7 @@ async function heroes() {
   const { readGlb } = await import(pathToFileURL(join(ROOT, "tools/mesh_audit/glb.mjs")).href);
   const res = [];
   for (const name of HERO_LIST.filter((n) => !ONLY_HERO || n.includes(ONLY_HERO))) {
-    const g = await readGlb(join(ROOT, "models", name + ".glb"));
+    const g = await readGlb(GLB_OVERRIDE && ONLY_HERO ? GLB_OVERRIDE : join(ROOT, "models", name + ".glb"));
     const nodes = [...new Set(g.parts.map((p) => p.node))];
     const L = levelsOf(nodes), { toCity } = heroPlacement(name);
     for (const [lv, keep] of Object.entries(L)) {
@@ -196,14 +203,30 @@ async function tileChild(T) {
   return { tile: T, buildings: bDoc.buildings.length, rays, fails, affected: per.length, affected1: per.filter((p) => p.m2 >= 1).length, m2: +per.reduce((s, p) => s + p.m2, 0).toFixed(0), worst: per.slice(0, 15), ms: Date.now() - t0 };
 }
 
-if (CHILD) {
+/** one hero's probe at every LOD level (the gate, tools/audit/heroShell.mjs): [{ level, tris, holeM2, clusters, ... }] */
+export async function probeHero(name, glbPath = null) {
+  const { groundAt } = await import("./lib_mesh.mjs"); GROUND ??= await groundAt();
+  const { readGlb } = await import(pathToFileURL(join(ROOT, "tools/mesh_audit/glb.mjs")).href);
+  const g = await readGlb(glbPath || join(ROOT, "models", name + ".glb"));
+  const nodes = [...new Set(g.parts.map((p) => p.node))];
+  const L = levelsOf(nodes), { toCity } = heroPlacement(name);
+  const out = [];
+  for (const [lv, keep] of Object.entries(L)) {
+    const pos = placeSoup(soupFromParts(g.parts, keep), toCity);
+    out.push({ hero: name.split("/")[0], level: +lv, tris: pos.length / 9, ...probeAround(pos, GROUND) });
+  }
+  return out;
+}
+
+const IS_MAIN = process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url;
+if (IS_MAIN && CHILD) {
   const r = await tileChild(CHILD);
   console.log(JSON.stringify(r));
   process.exit(0);
 }
 const out = { when: new Date().toISOString() };
-if (HEROES || (!TILES.length && !TILES_F)) out.heroes = await heroes();
-if (TILES.length) {
+if (IS_MAIN && (HEROES || (!TILES.length && !TILES_F))) out.heroes = await heroes();
+if (IS_MAIN && TILES.length) {
   const queue = TILES.slice(), results = [];
   const run = (T) => new Promise((ok) => {
     const p = spawn(process.execPath, ["--max-old-space-size=3072", "--import", "./tools/road_audit/register.mjs", fileURLToPath(import.meta.url), "--child", T], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
@@ -222,4 +245,4 @@ if (TILES.length) {
   console.log(`tiles ${ok.length}: ${out.tiles.affected} buildings with a probe fail (${out.tiles.affected1} >= 1 m2), ${out.tiles.m2} m2`);
   for (const w of worst.slice(0, 10)) console.log(`  ${w.tile} ${String(w.m2).padStart(6)} m2  ?at=${w.x},${w.z}  bu ${w.id}  back ${w.back} through ${w.through}  ${w.street || ""}`);
 }
-if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify(out, null, 1));
+if (IS_MAIN && OUT) writeFileSync(join(ROOT, OUT), JSON.stringify(out, null, 1));

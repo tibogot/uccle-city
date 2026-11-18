@@ -45,3 +45,10 @@ that glow at night, AO weight 0 in the MRT (post.js). Metal: iron, gilt, clock d
 UrbIS (Brussels Regional Informatics Centre / paradigm.brussels), CC0. Reference photos (`data/raw/refs/stjob/`, git-ignored,
 never shipped): a.jpg Jean-Pol GRANDMONT CC BY-SA 3.0, b.jpg User:Tram Bruxelles CC BY-SA 4.0 (Wikimedia Commons),
 c-f the owner's photos (reference only).
+
+## Shell fix (claude/heroshell, 2026-11-18)
+One corner chapel's arc (3 footprint points, a shallow arc) had its fitted circle centre OUTSIDE the church: `chapel()`
+oriented its walls away from that centre, i.e. inward, and put its roof apex outside (the street saw through the chapel
+and under its roof: ~20 m2 at LOD0 / LOD1). Walls are now oriented away from the plan's centre (the drum axis), the roof
+and eave overhang go from a centre inside the chapel. Probe after: 4.4 / 5.2 open m2 (small, 1-direction) + the dome's
+open lantern (allowed). Triangles unchanged. Cycles bakes on OptiX.

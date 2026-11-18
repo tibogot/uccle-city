@@ -29,7 +29,16 @@ from mathutils import Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stpierre_common as SC
 SC.OY = 100.0                                         # this site's height offset (Blender z = TAW - 100)
-from stpierre_common import K, P, hz, Z, Frame, rect, box, fbox, rod, lathe_axis, sweep3d, face_dir, quad, ccw, inside
+from stpierre_common import K, P, hz, Z, Frame, rect, box, fbox, rod, lathe_axis, face_dir, quad, ccw, inside
+import stpierre_common as _SC
+
+def sweep3d(path, prof, up, mat, code, closed=False, caps=True):
+    """stpierre_common.sweep3d with the profile made counter-clockwise in (x = right of the path, y = up): sweep3d winds
+    each quad as t x (the profile's step), so only a CCW profile faces OUT. heroshell 2026-11-18: every profile here
+    (plinth, copings, bands, sills) was listed clockwise, so they all faced inward and the street saw their back faces
+    (culled: the plinth and the bands were not drawn; the census probe's back-face fails at 6.3 / 8.8 / 11 / 13.3 m ...)"""
+    a2 = sum(prof[i][0] * prof[(i + 1) % len(prof)][1] - prof[(i + 1) % len(prof)][0] * prof[i][1] for i in range(len(prof)))
+    return _SC.sweep3d(path, prof if a2 > 0 else prof[::-1], up, mat, code, closed=closed, caps=caps)
 OY = SC.OY
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
@@ -973,7 +982,7 @@ ground_obj = load_ground()
 
 # ------------------------------------------------------------------------------------------------ AO bake (lighting only)
 scn.render.engine = "CYCLES"
-scn.cycles.device = "CPU"
+SC.use_gpu(scn)                 # OptiX (heroshell: was the CPU)
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 4.0
 ao_img = bpy.data.images.new("augustin_ao", AO_PX, AO_PX, alpha=False, float_buffer=False)

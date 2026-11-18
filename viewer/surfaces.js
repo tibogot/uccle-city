@@ -692,7 +692,7 @@ export function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
   // higher), so its value is a weighted least-squares plane through the DTM at the measured-surface points around
   // it (1 m lattice within one CELL, tent weights), evaluated at the corner. Then two smoothing passes over the
   // corners of the street (each corner halfway to the mean of its street neighbours), so the planes do not fold.
-  // SIDEWALK LEVEL WITH THE KERB (claude/sidewalk, rule 28 provisional; opts.kerbLevel, ?sidewalk=old = off): the DTM
+  // SIDEWALK LEVEL WITH THE KERB (claude/sidewalk, rule 31 provisional; opts.kerbLevel, ?sidewalk=old = off): the DTM
   // under a sidewalk at the foot of a bank climbs the bank (a 1 m LiDAR grid, the bank's toe inside UrbIS's polygon),
   // and the corners fitted to it stood the sidewalk up the bank: Av. Brugmann 349 (F2), 62 % across a 3 m sidewalk,
   // "unusable" (owner 2026-11-18, image 91). A raised sample (sidewalk, island, dropped kerb, tree pit) is fitted at the

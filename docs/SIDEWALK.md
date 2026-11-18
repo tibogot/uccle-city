@@ -17,7 +17,7 @@ Switch: `?sidewalk=old` (entry `sidewalkLevel: false`, a features.js A/B row) = 
 3. **Blocky mounds (77).** The weld's shoulder / bank was measured from the nearest COVERED grid vertex (a 1 m raster
    distance), not from the edge: the bank's contour lines were offsets of the grid's stair-steps.
 
-## Rule 28 (provisional)
+## Rule 31 (provisional)
 
 A raised street surface (sidewalk, paved island, dropped kerb, tree pit) is level with its kerb: its cross-section
 follows the kerb top with a real cross-fall (<= 4 % rising away from the kerb, <= 2 % falling), its long profile follows

@@ -218,7 +218,7 @@ export class Heightmap {
         }
       }
     }
-    // BANK (claude/sidewalk, rule 28 provisional; ?sidewalk=old = none): the terrain beside a street that is HIGHER than
+    // BANK (claude/sidewalk, rule 31 provisional; ?sidewalk=old = none): the terrain beside a street that is HIGHER than
     // it (a sidewalk at the foot of a bank, a path cut into a slope) as a smooth bank from the street's outer edge at
     // `bank` (m per m) out to bankReach: y(edge) - lift + bank x d outside and, under the street within 1.5 cells of the
     // edge, its mirror y(edge) - lift - bank x d (hidden under the surface). A 1 m terrain triangle straddling the edge
@@ -257,7 +257,7 @@ export class Heightmap {
 }
 
 /**
- * EDGE FIELD (claude/sidewalk, rule 28 provisional; ?sidewalk=old = none): for every grid vertex within `reach` of a
+ * EDGE FIELD (claude/sidewalk, rule 31 provisional; ?sidewalk=old = none): for every grid vertex within `reach` of a
  * street's OUTER edge, the exact plan distance d to the nearest such edge and the edge's height y there; inside[k] = 1
  * for a vertex under a near-flat surface triangle (its d only within 1.5 cells). Outer edges: the edges of the
  * near-flat triangles used once in their mesh whose outward side (0.3 m out) no near-flat triangle of any mesh covers.
