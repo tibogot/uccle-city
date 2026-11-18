@@ -1,0 +1,356 @@
+{
+ "file": "bmx.glb",
+ "source": "tools/blender/bmx.py (+ tools/bike/bmx_pack.mjs)",
+ "frame": "glTF: x left, y up, z forward; root on the ground midway between the axles",
+ "colourway": "blue",
+ "colourways": {
+  "blue": {
+   "paint": [
+    0.0123,
+    0.0782,
+    0.6867
+   ],
+   "pad": [
+    0.8879,
+    0.6445,
+    0.011
+   ],
+   "grip": [
+    0.8879,
+    0.6445,
+    0.011
+   ],
+   "saddle": [
+    0.0075,
+    0.0075,
+    0.0075
+   ],
+   "note": "electric blue, neon yellow pads + grips"
+  },
+  "red": {
+   "paint": [
+    0.552,
+    0.007,
+    0.0116
+   ],
+   "pad": [
+    0.008,
+    0.008,
+    0.008
+   ],
+   "grip": [
+    0.807,
+    0.807,
+    0.807
+   ],
+   "saddle": [
+    0.008,
+    0.008,
+    0.008
+   ],
+   "note": "flame red, black pads, white grips"
+  },
+  "purple": {
+   "paint": [
+    0.1022,
+    0.0137,
+    0.2623
+   ],
+   "pad": [
+    0.0091,
+    0.4621,
+    0.3515
+   ],
+   "grip": [
+    0.0091,
+    0.4621,
+    0.3515
+   ],
+   "saddle": [
+    0.0091,
+    0.4621,
+    0.3515
+   ],
+   "note": "purple pearl, mint pads, grips + saddle"
+  }
+ },
+ "dims": {
+  "wheelbase": 0.95,
+  "wheelR": 0.254,
+  "headAngleDeg": 74,
+  "seatAngleDeg": 71,
+  "forkOffset": 0.028,
+  "trail": 0.0437,
+  "bbHeight": 0.28999999165534973,
+  "chainStay": 0.366,
+  "crankLength": 0.175,
+  "barWidth": 0.674,
+  "teeth": [
+   44,
+   16
+  ],
+  "rollout": 4.389
+ },
+ "nodes": {
+  "Body": {
+   "parent": "BMX",
+   "pos": [
+    0,
+    0,
+    0
+   ]
+  },
+  "Steer": {
+   "parent": "Body",
+   "pos": [
+    0,
+    0.62117,
+    0.34059
+   ],
+   "axis": [
+    0,
+    0.96126,
+    -0.27564
+   ],
+   "note": "local +Y = the steering axis; rotate about local +Y, + = left"
+  },
+  "Wheel_F": {
+   "parent": "Steer",
+   "pos": [
+    0,
+    0.254,
+    0.475
+   ],
+   "spin": "local +X, + = rolling forward"
+  },
+  "Wheel_R": {
+   "parent": "Body",
+   "pos": [
+    0,
+    0.254,
+    -0.475
+   ],
+   "spin": "local +X, + = rolling forward"
+  },
+  "Cog": {
+   "parent": "Body",
+   "pos": [
+    0,
+    0.254,
+    -0.475
+   ],
+   "spin": "local +X; = crank angle * 44 / 16 while pedalling (freewheel: free when coasting)"
+  },
+  "Crank": {
+   "parent": "Body",
+   "pos": [
+    0,
+    0.29,
+    -0.109
+   ],
+   "spin": "local +X, + = pedalling forward; at rest the right arm points forward (+z)"
+  },
+  "Pedal_L": {
+   "parent": "Crank",
+   "pos": [
+    0.13,
+    0.29,
+    -0.284
+   ],
+   "note": "rotation.x = -crank keeps it level"
+  },
+  "Pedal_R": {
+   "parent": "Crank",
+   "pos": [
+    -0.13,
+    0.29,
+    0.066
+   ],
+   "note": "rotation.x = -crank keeps it level"
+  }
+ },
+ "empties": {
+  "Grip_R": {
+   "parent": "Steer",
+   "pos": [
+    -0.27406,
+    0.96245,
+    0.28492
+   ]
+  },
+  "Grip_L": {
+   "parent": "Steer",
+   "pos": [
+    0.27406,
+    0.96245,
+    0.28492
+   ]
+  },
+  "Peg_FL": {
+   "parent": "Steer",
+   "pos": [
+    0.1055,
+    0.273,
+    0.475
+   ]
+  },
+  "Peg_FR": {
+   "parent": "Steer",
+   "pos": [
+    -0.1055,
+    0.273,
+    0.475
+   ]
+  },
+  "Peg_RL": {
+   "parent": "Body",
+   "pos": [
+    0.1115,
+    0.273,
+    -0.475
+   ]
+  },
+  "Peg_RR": {
+   "parent": "Body",
+   "pos": [
+    -0.1115,
+    0.273,
+    -0.475
+   ]
+  },
+  "Seat": {
+   "parent": "Body",
+   "pos": [
+    0,
+    0.74048,
+    -0.2596
+   ]
+  },
+  "Foot_L": {
+   "parent": "Pedal_L",
+   "pos": [
+    0.13,
+    0.3005,
+    -0.284
+   ]
+  },
+  "Foot_R": {
+   "parent": "Pedal_R",
+   "pos": [
+    -0.13,
+    0.3005,
+    0.066
+   ]
+  },
+  "Contact_F": {
+   "parent": "Body",
+   "pos": [
+    0,
+    0,
+    0.475
+   ]
+  },
+  "Contact_R": {
+   "parent": "Body",
+   "pos": [
+    0,
+    0,
+    -0.475
+   ]
+  }
+ },
+ "gripAxis": {
+  "R": [
+   -0.98346,
+   0.05226,
+   -0.17341
+  ],
+  "L": [
+   0.98346,
+   0.05226,
+   -0.17341
+  ]
+ },
+ "lods": {
+  "meshes": "<Node>_LOD0/1/2 children of each node (show one level)",
+  "suggestedMetres": [
+   12,
+   40
+  ],
+  "triangles": {
+   "LOD0": 15802,
+   "LOD1": 8116,
+   "LOD2": 1794
+  }
+ },
+ "chain": {
+  "slot": "bmx_chain",
+  "length": 1.1225,
+  "periods": 44,
+  "period": 0.0254,
+  "uvPerMetre": 39.1979,
+  "ringPitchRadius": 0.08901,
+  "scroll": "texture offset.x -= crankAngleDelta * ringPitchRadius * uvPerMetre (pedalling forward: the upper run moves forward)"
+ },
+ "textures": {
+  "bmx_chain": {
+   "file": "bmx_chain.ktx2",
+   "alpha": "MASK 0.5"
+  },
+  "bmx_spokes": {
+   "file": "bmx_spokes.ktx2",
+   "alpha": "BLEND, double sided (pre-filtered cards)"
+  }
+ },
+ "pack": {
+  "file": "bmx.glb",
+  "bytes": 732212,
+  "tris": {
+   "LOD0": 15802,
+   "LOD1": 8116,
+   "LOD2": 1794
+  },
+  "audit": {
+   "LOD0": {
+    "blocking": 0,
+    "warnings": 78,
+    "counts": {
+     "sliver": 8,
+     "nonmanifold": 48,
+     "backtoback": 38,
+     "near": 18,
+     "seam": 249,
+     "tjunction": 4,
+     "opening": 6
+    }
+   },
+   "LOD1": {
+    "blocking": 0,
+    "warnings": 122,
+    "counts": {
+     "sliver": 8,
+     "nonmanifold": 32,
+     "backtoback": 34,
+     "near": 77,
+     "seam": 171,
+     "tjunction": 5
+    }
+   },
+   "LOD2": {
+    "blocking": 0,
+    "warnings": 71,
+    "counts": {
+     "sliver": 8,
+     "backtoback": 4,
+     "near": 63,
+     "seam": 55
+    }
+   }
+  },
+  "lodRange": [
+   12,
+   40,
+   150
+  ]
+ }
+}

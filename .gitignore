@@ -91,3 +91,7 @@ models/christmas/*.raw.glb
 
 # visual regression tour runs (tools/tour/serve.mjs writes them; docs/TOUR.md): images stay out of git
 .tour/
+.bake_cache/
+models/bike/*.raw.glb
+models/bike/audit/*.json
+docs/bike/tex/_work/
