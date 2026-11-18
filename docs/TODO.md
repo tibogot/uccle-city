@@ -29,6 +29,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Step 2: asset quality (all at no perf cost)**
 - [ ] Bushes: redo with the tree foliage technique (foliage without trunk); today they read as green balls that fade out wrongly close up (LOD bug). **claude/bushes (headless done, browser turn pending)**: the trees' leaf-card crowns without trunk, parts of the trees' pool (0 more draws); cause = dithered model hand-overs at 4 / 10 m; docs/FOLIAGE.md §11, gate `bushes`.
+- [ ] Bushes follow-up: flower clusters on the new leaf-card crowns (hydrangea heads, rhododendron / laurel blooms, roses, lavender spikes) with their seasons; the move to tree foliage dropped them (a step back, coordinator 2026-11-18).
 - [ ] Garden hedges: look cheap; redo.
 - [ ] Bicycle road marking: wrong shape; redo the real Belgian pictogram.
 - [ ] Traffic lights: Blender, premium.
