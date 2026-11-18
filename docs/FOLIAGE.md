@@ -311,3 +311,82 @@ gardens read too open ("ball garden"; the CHM is capped at 3.2 m, taller masses 
   tiles (~18 MB of instance data); nothing beyond 75 m
 - window boxes only where the façade kit draws (none with `?kit=0` or on painted fronts)
 - GPU cost not measured on GREEN; no flicker test on the city views
+
+## 11. Bushes as tree foliage (branch `claude/bushes`, 2026-11-18; `?bushes=old` = section 10's shrubs)
+
+Owner playtest 2026-11-18: "green balls that fade out weirdly when I come close; use the trees' foliage technique,
+bushes are foliage without trunks".
+
+**Cause of the fade.** The shrubs' LOD hand-overs were at 4 m (Blender model -> 30 % of its leaves + a dark inner
+shell) and 9-11 m (-> an 80-triangle lumpy shell), each a per-PIXEL dither cross-fade (by the pixel's own distance)
+between two different models. The chase / walk cameras keep the nearby bushes inside those bands: each one drew half
+one model and half the other, which the TAA history averages into a see-through ghost, and every bush past ~10 m was
+the 80-triangle ball. Rule: no LOD dither / fade of a bush inside 30 m; the LOD switch is a morph (the same pixels on
+both sides). Check: `tools/audit/bushGate.mjs` (merge gate row `bushes`).
+
+**Now** (`viewer/plants/bushes.js`, `viewer/treesStylized.js` makeTreePool, `viewer/plants/cityPlants.js`):
+- the shrub types (box ball, laurel, rhododendron, hydrangea, rose, lavender) are crowns of the street trees' leaf
+  cards without a trunk: 6 shapes (round-fine, round, wide, low, tall, tall-loose: rings of clumps on a mound profile,
+  a top clump, a core), built by the vendor's own builder (`createStylizedTrees` with `bushShape`), so the same leaf
+  mask, clump domes, baked occlusion (darker at the base and under other clumps), sun shadows on the cards, light
+  through the leaves; each type picks among its shapes per position and has its own colour on the trees' palette
+  (`BUSH_TYPES` tint: box / laurel darker, lavender grey). Bulbs and window-box geraniums stay the Blender models.
+- drawn as extra PARTS of the trees' city-wide multi-draw sets (LOD 0 and 1): 0 more draws, the trees' depth
+  pre-pass; LOD 0 -> 1 at the trees' 40 m with their card morph (LOD 1's dropped cards shrink away from 26 m); each
+  bush dithers out at its own far end (50-95 m by type and size, over its last 20 %). `treeSlot` = slot + 128 x kind +
+  1024 x end (kind 0 = a tree: unchanged).
+- wind: the foliage wind (`viewer/foliage/wind.js`, as the hedges / grass) leans the crown and flutters the cards,
+  with motion vectors (bushes only: an `If` on the kind, the trees untouched).
+- ground: the foot on the lowest drawn ground under the footprint, sunk 6 % of the height; the lowest ring's cards
+  reach below the foot. Sun shadows cast to 32 m (dithered out 24-32 m, shadow pass only).
+- triangles per bush: LOD 0 118-184, LOD 1 52-70 (old: 5-20 k / 2-11 k / 80). Gate: worst 25 m-grid view on all
+  tiles 69 k bush triangles (F5; old there 150 k).
+- lost vs the old shrubs (follow-ups if wanted): flower colours / seasonal blooms and deciduous leaf loss (the trees
+  have none either), the shells' snow caps (the cards' crown-top snow instead).
+
+### Browser turn (2026-11-18)
+
+- Boot (`?quick=1&place=stjob-street`): 0 console errors with the new bushes and with `?bushes=old`; trees unchanged.
+- JOINS: `__plants.contact(tile)` (the tile's own drawn ground by default now) on I6 / I5 / H5 / H6: 4,463 bushes, 0 floating.
+- Approach 40 -> 12 -> 4 m to the Place Saint-Job bed (`docs/bushes/approach_*`): no dissolve at any distance (the old
+  shot at 4 m: `approach_4m_old.png`). The approach / garden shots are BEFORE the tune below (lighter, smaller cards).
+- Tune after the tour: cards ~25 % larger, LOD 1 a card more per clump (fuller crowns, the old shells' mass), the
+  type tints darker (the first run read light yellow-green next to the trees). `docs/bushes/tour_*.png`: baseline | new | diff.
+- Perf (preflight RED: CPU throttled, GPU 52 % busy before start, other agents' headless jobs: INDICATIVE only), GPU p50
+  ms / draws, old (2 loads) vs new (2 loads), quick boot round Saint-Job:
+  | view | old | new |
+  |---|---|---|
+  | street (stjob-street) | 4.85 / 5.51 ms, 90-94 draws | 4.19 / 4.46 ms, 90-91 draws |
+  | front garden (712, 418) 5 m up | 5.44 / 6.03 ms, 116-119 | 4.26 / 5.70 ms, 114-117 |
+  | sky 160 m | 5.37 / 5.18 ms, 114-118 | 4.52 / 4.92 ms, 115-117 |
+  Plant triangles drawn: street 113 k -> 71 k, garden 288 k -> 26 k (+ bush cards 22 k in the trees' pool). Draws:
+  the shrubs' 2-3 merged plant objects gone (bulbs / geraniums: 0-2), the bushes in the trees' views: <= old.
+- Tour vs `.tour/foundation`: 12 of 22 flagged. From the merges (expected): wolvendael-park, coghen-blocks,
+  brugmann-maisons, stjob-station, lycee-front, stpierre-parvis. From the bushes (the diff boxes sit on bushes only):
+  stjob-shops, ham-terrace, orange-villas, defre-villas, waterloo-fortjaco, cortenbosch-lane: the old dark balls
+  replaced by the leaf-card shrubs (airier, a lighter green than the old shells even after the tune).
+
+### Round 2 (coordinator's defect eye, 2026-11-18)
+
+- **Too sparse** -> CLIPPED shapes for box (`clipped-ball`) and laurel (`clipped-tall`): an inner ring of clumps
+  inside the outer one, bigger cards (0.9-0.95 of a clump), a darker inside (aoFloor 0.18, aoOverhead 0.78), a rounder
+  crown normal; the informal types (rhododendron, hydrangea, rose, lavender) keep the loose shapes. Per-shape budget
+  now 260 / 130 triangles (clipped-ball 226 / 126, clipped-tall 232 / 116).
+- **Beds planted edge to edge** -> `bushes.js fillBed`: every drawn mulch bed filled on a grid at 0.7 x the crown's
+  width with its own shrubs' type and median height (its shrubs replaced), the outer crowns ~25 % of their width over
+  the rim; a bed holding only bulbs is left; an empty one gets a low type. Data-wide: 5,332 beds, 26,674 bushes,
+  crowns over 96 % of a bed on average (gate row `beds`).
+- **Yellow-white tips** -> the bushes' light through the leaves + fill x 0.55 (`BUSH_GLOW`) and the type tints with
+  less red (the trees' top colour lit by the low sun read lime on the bushes).
+- Contact: 5,473 bushes on I6 / I5 / H5 / H6, 0 floating. Gate: worst 25 m-grid view 88 k bush triangles (E1, many
+  filled beds; old there 15 k), worst old view 391 k (new there 22 k).
+- Perf (preflight RED as before: INDICATIVE), GPU p50 ms / draws, one load each:
+  | view | old | new (round 2) |
+  |---|---|---|
+  | street | 5.51 / 94 | 5.24 / 93 |
+  | front garden | 5.83 / 115 | 5.37 / 114 |
+  | Place Saint-Job bed at 4 m | 6.03 / 128 | 5.90 / 129 |
+  | sky 160 m (no bushes drawn) | 5.18 / 114 | 5.31 / 115 |
+- Tour (the 6 bush views again, `.tour/bushes3`): all six still flag, on bushes only; stjob-shops = the Place
+  Saint-Job bed now planted; defre-villas = a lone informal shrub that reads smaller and airier than the old dark ball.
+  Shots: `docs/bushes/round2_*`.
