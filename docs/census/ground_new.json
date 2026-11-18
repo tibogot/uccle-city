@@ -1,29 +1,29 @@
 {
- "when": "2026-11-18T16:10:32.581Z",
+ "when": "2026-11-18T20:42:16.380Z",
  "old": false,
  "sum": {
-  "lump": 865,
-  "lumpM2": 11924,
+  "lump": 864,
+  "lumpM2": 11966,
   "hole": 3,
   "holeM2": 320,
   "spike": 174,
   "spikeM2": 490,
   "tilt": 811,
   "tiltM2": 4876,
-  "roadTilt": 395,
-  "roadTiltM2": 6791,
-  "over": 353,
-  "overM2": 874,
+  "roadTilt": 380,
+  "roadTiltM2": 6822,
+  "over": 352,
+  "overM2": 875,
   "gardenVoid": 0,
   "gardenVoidM2": 0,
   "blade": 0,
   "bladeM2": 0
  },
  "perf": {
-  "roadMs": 393676,
-  "weldMs": 52674,
-  "surfMs": 68442,
-  "roadTris": 5500326
+  "roadMs": 326365,
+  "weldMs": 43099,
+  "surfMs": 47059,
+  "roadTris": 7050377
  },
  "tiles": [
   {
@@ -47,10 +47,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3945,
-    "weldMs": 428,
-    "surfMs": 413,
-    "roadTris": 32689
+    "roadMs": 2252,
+    "weldMs": 340,
+    "surfMs": 121,
+    "roadTris": 33327
    }
   },
   {
@@ -65,7 +65,7 @@
     "tilt": 56,
     "tiltM2": 795.0469731241465,
     "roadTilt": 7,
-    "roadTiltM2": 204.65836012735963,
+    "roadTiltM2": 201.62652690708637,
     "over": 2,
     "overM2": 1.3125,
     "gardenVoid": 0,
@@ -74,10 +74,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4681,
-    "weldMs": 509,
-    "surfMs": 932,
-    "roadTris": 92435
+    "roadMs": 5301,
+    "weldMs": 605,
+    "surfMs": 714,
+    "roadTris": 126954
    }
   },
   {
@@ -101,10 +101,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3854,
-    "weldMs": 401,
-    "surfMs": 533,
-    "roadTris": 51093
+    "roadMs": 3667,
+    "weldMs": 497,
+    "surfMs": 413,
+    "roadTris": 66774
    }
   },
   {
@@ -128,10 +128,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5287,
-    "weldMs": 1663,
-    "surfMs": 288,
-    "roadTris": 61253
+    "roadMs": 3495,
+    "weldMs": 435,
+    "surfMs": 278,
+    "roadTris": 68191
    }
   },
   {
@@ -146,7 +146,7 @@
     "tilt": 0,
     "tiltM2": 0,
     "roadTilt": 1,
-    "roadTiltM2": 1.019173040986061,
+    "roadTiltM2": 1.121474415063858,
     "over": 7,
     "overM2": 16.25,
     "gardenVoid": 0,
@@ -155,10 +155,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3183,
-    "weldMs": 478,
-    "surfMs": 355,
-    "roadTris": 50535
+    "roadMs": 2822,
+    "weldMs": 419,
+    "surfMs": 274,
+    "roadTris": 63411
    }
   },
   {
@@ -182,10 +182,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2579,
-    "weldMs": 478,
-    "surfMs": 32,
-    "roadTris": 24601
+    "roadMs": 1812,
+    "weldMs": 311,
+    "surfMs": 29,
+    "roadTris": 25097
    }
   },
   {
@@ -200,7 +200,7 @@
     "tilt": 19,
     "tiltM2": 210.02555826678872,
     "roadTilt": 8,
-    "roadTiltM2": 61.692469246685505,
+    "roadTiltM2": 73.00489170849323,
     "over": 2,
     "overM2": 1.375,
     "gardenVoid": 0,
@@ -209,10 +209,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4984,
-    "weldMs": 499,
-    "surfMs": 1002,
-    "roadTris": 89923
+    "roadMs": 4710,
+    "weldMs": 512,
+    "surfMs": 642,
+    "roadTris": 113943
    }
   },
   {
@@ -227,7 +227,7 @@
     "tilt": 15,
     "tiltM2": 85.73203846253455,
     "roadTilt": 4,
-    "roadTiltM2": 33.06985699944198,
+    "roadTiltM2": 34.11786218173802,
     "over": 10,
     "overM2": 26.875,
     "gardenVoid": 0,
@@ -236,10 +236,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4040,
-    "weldMs": 505,
-    "surfMs": 807,
-    "roadTris": 59556
+    "roadMs": 3666,
+    "weldMs": 460,
+    "surfMs": 548,
+    "roadTris": 75408
    }
   },
   {
@@ -263,17 +263,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4839,
-    "weldMs": 456,
-    "surfMs": 949,
-    "roadTris": 81305
+    "roadMs": 5672,
+    "weldMs": 572,
+    "surfMs": 732,
+    "roadTris": 121848
    }
   },
   {
    "tile": "C6",
    "sum": {
     "lump": 32,
-    "lumpM2": 664,
+    "lumpM2": 670,
     "hole": 0,
     "holeM2": 0,
     "spike": 0,
@@ -281,7 +281,7 @@
     "tilt": 8,
     "tiltM2": 85.70231338962913,
     "roadTilt": 4,
-    "roadTiltM2": 50.52684901282191,
+    "roadTiltM2": 42.81921072304249,
     "over": 2,
     "overM2": 1.25,
     "gardenVoid": 0,
@@ -290,10 +290,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4529,
-    "weldMs": 1340,
-    "surfMs": 766,
-    "roadTris": 54187
+    "roadMs": 3275,
+    "weldMs": 441,
+    "surfMs": 532,
+    "roadTris": 65696
    }
   },
   {
@@ -317,10 +317,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4428,
-    "weldMs": 489,
-    "surfMs": 897,
-    "roadTris": 78560
+    "roadMs": 4548,
+    "weldMs": 528,
+    "surfMs": 679,
+    "roadTris": 111213
    }
   },
   {
@@ -334,8 +334,8 @@
     "spikeM2": 2,
     "tilt": 1,
     "tiltM2": 0.6416080147027969,
-    "roadTilt": 4,
-    "roadTiltM2": 10.124299928545952,
+    "roadTilt": 2,
+    "roadTiltM2": 15.830643653869629,
     "over": 1,
     "overM2": 1.3125,
     "gardenVoid": 0,
@@ -344,10 +344,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4762,
-    "weldMs": 604,
-    "surfMs": 564,
-    "roadTris": 61925
+    "roadMs": 3913,
+    "weldMs": 479,
+    "surfMs": 413,
+    "roadTris": 74754
    }
   },
   {
@@ -371,10 +371,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4404,
-    "weldMs": 398,
-    "surfMs": 881,
-    "roadTris": 25216
+    "roadMs": 2347,
+    "weldMs": 392,
+    "surfMs": 126,
+    "roadTris": 26415
    }
   },
   {
@@ -389,7 +389,7 @@
     "tilt": 20,
     "tiltM2": 93.97648362070322,
     "roadTilt": 4,
-    "roadTiltM2": 21.308914586901665,
+    "roadTiltM2": 21.976122058928013,
     "over": 1,
     "overM2": 3.375,
     "gardenVoid": 0,
@@ -398,17 +398,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5506,
-    "weldMs": 515,
-    "surfMs": 1524,
-    "roadTris": 72910
+    "roadMs": 4097,
+    "weldMs": 446,
+    "surfMs": 629,
+    "roadTris": 92174
    }
   },
   {
    "tile": "D10",
    "sum": {
     "lump": 46,
-    "lumpM2": 802,
+    "lumpM2": 803,
     "hole": 0,
     "holeM2": 0,
     "spike": 10,
@@ -416,19 +416,19 @@
     "tilt": 14,
     "tiltM2": 55.97383116185665,
     "roadTilt": 16,
-    "roadTiltM2": 314.56745307147503,
+    "roadTiltM2": 305.4786070436239,
     "over": 28,
-    "overM2": 187.875,
+    "overM2": 189.0625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3571,
-    "weldMs": 478,
-    "surfMs": 343,
-    "roadTris": 36379
+    "roadMs": 2931,
+    "weldMs": 471,
+    "surfMs": 203,
+    "roadTris": 39977
    }
   },
   {
@@ -452,10 +452,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4076,
-    "weldMs": 451,
-    "surfMs": 666,
-    "roadTris": 76410
+    "roadMs": 4385,
+    "weldMs": 529,
+    "surfMs": 602,
+    "roadTris": 109367
    }
   },
   {
@@ -479,10 +479,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4035,
-    "weldMs": 520,
-    "surfMs": 758,
-    "roadTris": 61874
+    "roadMs": 3882,
+    "weldMs": 467,
+    "surfMs": 577,
+    "roadTris": 81800
    }
   },
   {
@@ -497,7 +497,7 @@
     "tilt": 11,
     "tiltM2": 88.81724256038251,
     "roadTilt": 12,
-    "roadTiltM2": 67.65279419487342,
+    "roadTiltM2": 65.21804675279418,
     "over": 10,
     "overM2": 21,
     "gardenVoid": 0,
@@ -506,10 +506,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4385,
-    "weldMs": 544,
-    "surfMs": 664,
-    "roadTris": 88209
+    "roadMs": 4597,
+    "weldMs": 515,
+    "surfMs": 628,
+    "roadTris": 113137
    }
   },
   {
@@ -524,7 +524,7 @@
     "tilt": 13,
     "tiltM2": 163.81786467507482,
     "roadTilt": 3,
-    "roadTiltM2": 22.934150830842555,
+    "roadTiltM2": 24.680916436947882,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -533,17 +533,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4760,
-    "weldMs": 497,
-    "surfMs": 781,
-    "roadTris": 84383
+    "roadMs": 4545,
+    "weldMs": 491,
+    "surfMs": 646,
+    "roadTris": 104149
    }
   },
   {
    "tile": "D6",
    "sum": {
     "lump": 23,
-    "lumpM2": 256,
+    "lumpM2": 260,
     "hole": 0,
     "holeM2": 0,
     "spike": 1,
@@ -551,7 +551,7 @@
     "tilt": 29,
     "tiltM2": 281.59381004050374,
     "roadTilt": 30,
-    "roadTiltM2": 723.7616268470883,
+    "roadTiltM2": 706.2105980999768,
     "over": 18,
     "overM2": 41.625,
     "gardenVoid": 0,
@@ -560,10 +560,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 8804,
-    "weldMs": 714,
-    "surfMs": 1426,
-    "roadTris": 85068
+    "roadMs": 4973,
+    "weldMs": 568,
+    "surfMs": 502,
+    "roadTris": 115246
    }
   },
   {
@@ -578,7 +578,7 @@
     "tilt": 6,
     "tiltM2": 38.50998719781637,
     "roadTilt": 3,
-    "roadTiltM2": 9.67392684519291,
+    "roadTiltM2": 10.063438571989536,
     "over": 2,
     "overM2": 3.6875,
     "gardenVoid": 0,
@@ -587,10 +587,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3854,
-    "weldMs": 474,
-    "surfMs": 525,
-    "roadTris": 76503
+    "roadMs": 4502,
+    "weldMs": 462,
+    "surfMs": 505,
+    "roadTris": 106332
    }
   },
   {
@@ -605,7 +605,7 @@
     "tilt": 5,
     "tiltM2": 7.298215076327324,
     "roadTilt": 1,
-    "roadTiltM2": 46.23655694723129,
+    "roadTiltM2": 45.29316009581089,
     "over": 2,
     "overM2": 1.375,
     "gardenVoid": 0,
@@ -614,10 +614,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4126,
-    "weldMs": 594,
-    "surfMs": 845,
-    "roadTris": 75737
+    "roadMs": 3461,
+    "weldMs": 469,
+    "surfMs": 550,
+    "roadTris": 89808
    }
   },
   {
@@ -632,7 +632,7 @@
     "tilt": 2,
     "tiltM2": 1.9703827649354935,
     "roadTilt": 5,
-    "roadTiltM2": 36.36970326304436,
+    "roadTiltM2": 32.239788219332695,
     "over": 2,
     "overM2": 2.5,
     "gardenVoid": 0,
@@ -641,10 +641,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3953,
-    "weldMs": 1182,
-    "surfMs": 677,
-    "roadTris": 36117
+    "roadMs": 2622,
+    "weldMs": 436,
+    "surfMs": 294,
+    "roadTris": 44697
    }
   },
   {
@@ -668,10 +668,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 7248,
-    "weldMs": 689,
-    "surfMs": 1991,
-    "roadTris": 97100
+    "roadMs": 5843,
+    "weldMs": 549,
+    "surfMs": 853,
+    "roadTris": 141315
    }
   },
   {
@@ -695,10 +695,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3640,
-    "weldMs": 420,
-    "surfMs": 675,
-    "roadTris": 47338
+    "roadMs": 3224,
+    "weldMs": 448,
+    "surfMs": 425,
+    "roadTris": 57109
    }
   },
   {
@@ -713,7 +713,7 @@
     "tilt": 14,
     "tiltM2": 183.77869115024805,
     "roadTilt": 7,
-    "roadTiltM2": 91.31486961990595,
+    "roadTiltM2": 90.03794275969267,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -722,17 +722,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4040,
-    "weldMs": 521,
-    "surfMs": 601,
-    "roadTris": 67796
+    "roadMs": 3779,
+    "weldMs": 523,
+    "surfMs": 570,
+    "roadTris": 87257
    }
   },
   {
    "tile": "E3",
    "sum": {
     "lump": 23,
-    "lumpM2": 164,
+    "lumpM2": 167,
     "hole": 0,
     "holeM2": 0,
     "spike": 7,
@@ -749,10 +749,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4247,
-    "weldMs": 484,
-    "surfMs": 853,
-    "roadTris": 69248
+    "roadMs": 4175,
+    "weldMs": 523,
+    "surfMs": 663,
+    "roadTris": 92836
    }
   },
   {
@@ -776,10 +776,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 6322,
-    "weldMs": 720,
-    "surfMs": 991,
-    "roadTris": 117502
+    "roadMs": 6159,
+    "weldMs": 616,
+    "surfMs": 799,
+    "roadTris": 163448
    }
   },
   {
@@ -803,10 +803,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3938,
-    "weldMs": 451,
-    "surfMs": 641,
-    "roadTris": 59804
+    "roadMs": 3857,
+    "weldMs": 441,
+    "surfMs": 519,
+    "roadTris": 81194
    }
   },
   {
@@ -821,26 +821,26 @@
     "tilt": 4,
     "tiltM2": 13.125536888837814,
     "roadTilt": 1,
-    "roadTiltM2": 6.571461813524365,
-    "over": 7,
-    "overM2": 10,
+    "roadTiltM2": 6.48254781216383,
+    "over": 6,
+    "overM2": 9.5,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 8229,
-    "weldMs": 711,
-    "surfMs": 887,
-    "roadTris": 66580
+    "roadMs": 4247,
+    "weldMs": 569,
+    "surfMs": 683,
+    "roadTris": 85168
    }
   },
   {
    "tile": "E7",
    "sum": {
     "lump": 15,
-    "lumpM2": 194,
+    "lumpM2": 203,
     "hole": 0,
     "holeM2": 0,
     "spike": 0,
@@ -848,7 +848,7 @@
     "tilt": 18,
     "tiltM2": 50.71262630261481,
     "roadTilt": 4,
-    "roadTiltM2": 157.33331451378763,
+    "roadTiltM2": 152.73935637809336,
     "over": 2,
     "overM2": 1.75,
     "gardenVoid": 0,
@@ -857,17 +857,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3092,
-    "weldMs": 405,
-    "surfMs": 431,
-    "roadTris": 46308
+    "roadMs": 3148,
+    "weldMs": 431,
+    "surfMs": 426,
+    "roadTris": 61448
    }
   },
   {
    "tile": "E8",
    "sum": {
     "lump": 3,
-    "lumpM2": 46,
+    "lumpM2": 47,
     "hole": 0,
     "holeM2": 0,
     "spike": 0,
@@ -875,7 +875,7 @@
     "tilt": 6,
     "tiltM2": 34.998964846134186,
     "roadTilt": 1,
-    "roadTiltM2": 43.85927990823984,
+    "roadTiltM2": 46.930555023252964,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -884,10 +884,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3687,
-    "weldMs": 523,
-    "surfMs": 730,
-    "roadTris": 55911
+    "roadMs": 3555,
+    "weldMs": 471,
+    "surfMs": 650,
+    "roadTris": 74179
    }
   },
   {
@@ -902,7 +902,7 @@
     "tilt": 3,
     "tiltM2": 7.3630859069526196,
     "roadTilt": 1,
-    "roadTiltM2": 20.27819737046957,
+    "roadTiltM2": 22.01110126823187,
     "over": 9,
     "overM2": 8.375,
     "gardenVoid": 0,
@@ -911,10 +911,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5814,
-    "weldMs": 480,
-    "surfMs": 863,
-    "roadTris": 67430
+    "roadMs": 3755,
+    "weldMs": 462,
+    "surfMs": 737,
+    "roadTris": 87026
    }
   },
   {
@@ -929,7 +929,7 @@
     "tilt": 5,
     "tiltM2": 6.107570608961396,
     "roadTilt": 1,
-    "roadTiltM2": 26.035202749073505,
+    "roadTiltM2": 23.200825191102922,
     "over": 1,
     "overM2": 1.0625,
     "gardenVoid": 0,
@@ -938,10 +938,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 6267,
-    "weldMs": 698,
-    "surfMs": 1699,
-    "roadTris": 94832
+    "roadMs": 5966,
+    "weldMs": 569,
+    "surfMs": 716,
+    "roadTris": 150625
    }
   },
   {
@@ -965,10 +965,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1828,
-    "weldMs": 323,
-    "surfMs": 230,
-    "roadTris": 15281
+    "roadMs": 1601,
+    "weldMs": 294,
+    "surfMs": 170,
+    "roadTris": 18521
    }
   },
   {
@@ -982,20 +982,20 @@
     "spikeM2": 3,
     "tilt": 23,
     "tiltM2": 78.9753848563414,
-    "roadTilt": 5,
-    "roadTiltM2": 79.03600083244964,
+    "roadTilt": 4,
+    "roadTiltM2": 72.50906979618594,
     "over": 5,
-    "overM2": 3.3125,
+    "overM2": 3.8125,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 6944,
-    "weldMs": 516,
-    "surfMs": 888,
-    "roadTris": 104324
+    "roadMs": 5247,
+    "weldMs": 523,
+    "surfMs": 797,
+    "roadTris": 139130
    }
   },
   {
@@ -1010,7 +1010,7 @@
     "tilt": 7,
     "tiltM2": 35.40703184786253,
     "roadTilt": 6,
-    "roadTiltM2": 40.05432846187614,
+    "roadTiltM2": 39.135944893350825,
     "over": 1,
     "overM2": 1.5,
     "gardenVoid": 0,
@@ -1019,10 +1019,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5172,
-    "weldMs": 733,
-    "surfMs": 1075,
-    "roadTris": 90508
+    "roadMs": 4435,
+    "weldMs": 520,
+    "surfMs": 718,
+    "roadTris": 119482
    }
   },
   {
@@ -1037,7 +1037,7 @@
     "tilt": 10,
     "tiltM2": 58.00101913465187,
     "roadTilt": 14,
-    "roadTiltM2": 195.52084086778632,
+    "roadTiltM2": 195.48464391792368,
     "over": 3,
     "overM2": 4.5625,
     "gardenVoid": 0,
@@ -1046,10 +1046,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3857,
-    "weldMs": 449,
-    "surfMs": 680,
-    "roadTris": 66823
+    "roadMs": 3177,
+    "weldMs": 510,
+    "surfMs": 544,
+    "roadTris": 81876
    }
   },
   {
@@ -1063,8 +1063,8 @@
     "spikeM2": 0,
     "tilt": 22,
     "tiltM2": 123.24935770709999,
-    "roadTilt": 9,
-    "roadTiltM2": 154.57290470553562,
+    "roadTilt": 8,
+    "roadTiltM2": 157.10428464226425,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -1073,10 +1073,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3771,
-    "weldMs": 476,
-    "surfMs": 769,
-    "roadTris": 65709
+    "roadMs": 3383,
+    "weldMs": 505,
+    "surfMs": 569,
+    "roadTris": 81087
    }
   },
   {
@@ -1090,8 +1090,8 @@
     "spikeM2": 2,
     "tilt": 43,
     "tiltM2": 186.24044205178507,
-    "roadTilt": 12,
-    "roadTiltM2": 193.3997528750915,
+    "roadTilt": 11,
+    "roadTiltM2": 190.93005325458944,
     "over": 2,
     "overM2": 1.25,
     "gardenVoid": 0,
@@ -1100,17 +1100,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 6012,
-    "weldMs": 541,
-    "surfMs": 964,
-    "roadTris": 60061
+    "roadMs": 3665,
+    "weldMs": 447,
+    "surfMs": 508,
+    "roadTris": 77813
    }
   },
   {
    "tile": "F7",
    "sum": {
     "lump": 20,
-    "lumpM2": 349,
+    "lumpM2": 350,
     "hole": 0,
     "holeM2": 0,
     "spike": 0,
@@ -1127,10 +1127,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2865,
-    "weldMs": 439,
-    "surfMs": 322,
-    "roadTris": 39898
+    "roadMs": 2343,
+    "weldMs": 303,
+    "surfMs": 314,
+    "roadTris": 52291
    }
   },
   {
@@ -1144,8 +1144,8 @@
     "spikeM2": 0,
     "tilt": 12,
     "tiltM2": 104.8416185574606,
-    "roadTilt": 25,
-    "roadTiltM2": 228.52458883915097,
+    "roadTilt": 21,
+    "roadTiltM2": 212.71807845216244,
     "over": 3,
     "overM2": 2.75,
     "gardenVoid": 0,
@@ -1154,10 +1154,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3303,
-    "weldMs": 332,
-    "surfMs": 499,
-    "roadTris": 46381
+    "roadMs": 2840,
+    "weldMs": 324,
+    "surfMs": 373,
+    "roadTris": 65069
    }
   },
   {
@@ -1172,7 +1172,7 @@
     "tilt": 19,
     "tiltM2": 230.3546238951385,
     "roadTilt": 6,
-    "roadTiltM2": 41.01457290770486,
+    "roadTiltM2": 40.656174080912024,
     "over": 10,
     "overM2": 13.4375,
     "gardenVoid": 0,
@@ -1181,10 +1181,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5587,
-    "weldMs": 597,
-    "surfMs": 937,
-    "roadTris": 101729
+    "roadMs": 5150,
+    "weldMs": 595,
+    "surfMs": 595,
+    "roadTris": 138278
    }
   },
   {
@@ -1208,10 +1208,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5579,
-    "weldMs": 552,
-    "surfMs": 1524,
-    "roadTris": 68094
+    "roadMs": 4387,
+    "weldMs": 464,
+    "surfMs": 603,
+    "roadTris": 95728
    }
   },
   {
@@ -1221,12 +1221,12 @@
     "lumpM2": 104,
     "hole": 0,
     "holeM2": 0,
-    "spike": 6,
-    "spikeM2": 23,
+    "spike": 7,
+    "spikeM2": 25,
     "tilt": 17,
     "tiltM2": 283.42678087204695,
-    "roadTilt": 16,
-    "roadTiltM2": 473.01694981381297,
+    "roadTilt": 15,
+    "roadTiltM2": 468.9321238771081,
     "over": 8,
     "overM2": 9.0625,
     "gardenVoid": 0,
@@ -1235,10 +1235,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2168,
-    "weldMs": 330,
-    "surfMs": 397,
-    "roadTris": 37251
+    "roadMs": 2065,
+    "weldMs": 278,
+    "surfMs": 360,
+    "roadTris": 43645
    }
   },
   {
@@ -1253,7 +1253,7 @@
     "tilt": 11,
     "tiltM2": 45.371809201838914,
     "roadTilt": 7,
-    "roadTiltM2": 108.21904673427343,
+    "roadTiltM2": 97.30532369529828,
     "over": 1,
     "overM2": 1.0625,
     "gardenVoid": 0,
@@ -1262,10 +1262,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3523,
-    "weldMs": 460,
-    "surfMs": 894,
-    "roadTris": 54924
+    "roadMs": 3162,
+    "weldMs": 480,
+    "surfMs": 529,
+    "roadTris": 57676
    }
   },
   {
@@ -1289,10 +1289,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3468,
-    "weldMs": 403,
-    "surfMs": 381,
-    "roadTris": 53042
+    "roadMs": 3037,
+    "weldMs": 466,
+    "surfMs": 349,
+    "roadTris": 58553
    }
   },
   {
@@ -1306,8 +1306,8 @@
     "spikeM2": 0,
     "tilt": 6,
     "tiltM2": 44.61315160353115,
-    "roadTilt": 13,
-    "roadTiltM2": 609.265398370791,
+    "roadTilt": 12,
+    "roadTiltM2": 618.2023818584412,
     "over": 2,
     "overM2": 1.6875,
     "gardenVoid": 0,
@@ -1316,10 +1316,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4806,
-    "weldMs": 493,
-    "surfMs": 1082,
-    "roadTris": 49478
+    "roadMs": 2867,
+    "weldMs": 447,
+    "surfMs": 377,
+    "roadTris": 60825
    }
   },
   {
@@ -1334,7 +1334,7 @@
     "tilt": 7,
     "tiltM2": 31.74082644257578,
     "roadTilt": 3,
-    "roadTiltM2": 85.75459666896177,
+    "roadTiltM2": 83.2505470699798,
     "over": 2,
     "overM2": 1.5625,
     "gardenVoid": 0,
@@ -1343,10 +1343,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3519,
-    "weldMs": 431,
-    "surfMs": 546,
-    "roadTris": 67068
+    "roadMs": 3724,
+    "weldMs": 507,
+    "surfMs": 520,
+    "roadTris": 91867
    }
   },
   {
@@ -1370,10 +1370,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5519,
-    "weldMs": 501,
-    "surfMs": 1030,
-    "roadTris": 57784
+    "roadMs": 3466,
+    "weldMs": 380,
+    "surfMs": 532,
+    "roadTris": 78600
    }
   },
   {
@@ -1387,8 +1387,8 @@
     "spikeM2": 0,
     "tilt": 16,
     "tiltM2": 117.84461764269508,
-    "roadTilt": 19,
-    "roadTiltM2": 359.1287820066791,
+    "roadTilt": 18,
+    "roadTiltM2": 401.6582508883439,
     "over": 1,
     "overM2": 0.8125,
     "gardenVoid": 0,
@@ -1397,17 +1397,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2993,
-    "weldMs": 430,
-    "surfMs": 252,
-    "roadTris": 22234
+    "roadMs": 1531,
+    "weldMs": 245,
+    "surfMs": 226,
+    "roadTris": 26627
    }
   },
   {
    "tile": "G8",
    "sum": {
-    "lump": 9,
-    "lumpM2": 170,
+    "lump": 8,
+    "lumpM2": 168,
     "hole": 0,
     "holeM2": 0,
     "spike": 1,
@@ -1424,10 +1424,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2001,
-    "weldMs": 320,
-    "surfMs": 215,
-    "roadTris": 24194
+    "roadMs": 1999,
+    "weldMs": 294,
+    "surfMs": 165,
+    "roadTris": 25329
    }
   },
   {
@@ -1451,10 +1451,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3096,
-    "weldMs": 417,
-    "surfMs": 415,
-    "roadTris": 42111
+    "roadMs": 2472,
+    "weldMs": 353,
+    "surfMs": 332,
+    "roadTris": 50196
    }
   },
   {
@@ -1478,10 +1478,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4421,
-    "weldMs": 505,
-    "surfMs": 952,
-    "roadTris": 86541
+    "roadMs": 4557,
+    "weldMs": 486,
+    "surfMs": 603,
+    "roadTris": 114729
    }
   },
   {
@@ -1496,7 +1496,7 @@
     "tilt": 4,
     "tiltM2": 14.511636275798082,
     "roadTilt": 3,
-    "roadTiltM2": 129.9319081939757,
+    "roadTiltM2": 132.27528869360685,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -1505,10 +1505,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2126,
-    "weldMs": 275,
-    "surfMs": 268,
-    "roadTris": 25636
+    "roadMs": 1802,
+    "weldMs": 279,
+    "surfMs": 242,
+    "roadTris": 32552
    }
   },
   {
@@ -1532,9 +1532,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 465,
-    "weldMs": 46,
-    "surfMs": 6,
+    "roadMs": 406,
+    "weldMs": 58,
+    "surfMs": 4,
     "roadTris": 112
    }
   },
@@ -1559,10 +1559,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3866,
-    "weldMs": 412,
-    "surfMs": 649,
-    "roadTris": 80130
+    "roadMs": 3878,
+    "weldMs": 485,
+    "surfMs": 685,
+    "roadTris": 100957
    }
   },
   {
@@ -1586,10 +1586,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4032,
-    "weldMs": 394,
-    "surfMs": 939,
-    "roadTris": 78455
+    "roadMs": 4144,
+    "weldMs": 583,
+    "surfMs": 581,
+    "roadTris": 104852
    }
   },
   {
@@ -1603,8 +1603,8 @@
     "spikeM2": 0,
     "tilt": 9,
     "tiltM2": 68.32309543789597,
-    "roadTilt": 0,
-    "roadTiltM2": 0,
+    "roadTilt": 1,
+    "roadTiltM2": 0.5122768029686995,
     "over": 4,
     "overM2": 3.3125,
     "gardenVoid": 0,
@@ -1613,10 +1613,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4304,
-    "weldMs": 480,
-    "surfMs": 797,
-    "roadTris": 59973
+    "roadMs": 3547,
+    "weldMs": 535,
+    "surfMs": 536,
+    "roadTris": 71170
    }
   },
   {
@@ -1640,10 +1640,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3772,
-    "weldMs": 398,
-    "surfMs": 731,
-    "roadTris": 75287
+    "roadMs": 4128,
+    "weldMs": 480,
+    "surfMs": 578,
+    "roadTris": 96575
    }
   },
   {
@@ -1657,8 +1657,8 @@
     "spikeM2": 0,
     "tilt": 22,
     "tiltM2": 84.18040557578206,
-    "roadTilt": 11,
-    "roadTiltM2": 116.61785784456879,
+    "roadTilt": 10,
+    "roadTiltM2": 114.90979362092912,
     "over": 1,
     "overM2": 0.5,
     "gardenVoid": 0,
@@ -1667,10 +1667,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4995,
-    "weldMs": 450,
-    "surfMs": 905,
-    "roadTris": 51748
+    "roadMs": 3352,
+    "weldMs": 466,
+    "surfMs": 471,
+    "roadTris": 66213
    }
   },
   {
@@ -1694,10 +1694,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3821,
-    "weldMs": 732,
-    "surfMs": 929,
-    "roadTris": 41846
+    "roadMs": 2391,
+    "weldMs": 311,
+    "surfMs": 524,
+    "roadTris": 53333
    }
   },
   {
@@ -1721,10 +1721,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2665,
-    "weldMs": 437,
-    "surfMs": 474,
-    "roadTris": 44557
+    "roadMs": 2524,
+    "weldMs": 324,
+    "surfMs": 457,
+    "roadTris": 54413
    }
   },
   {
@@ -1748,10 +1748,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2127,
-    "weldMs": 271,
-    "surfMs": 508,
-    "roadTris": 22926
+    "roadMs": 1714,
+    "weldMs": 254,
+    "surfMs": 285,
+    "roadTris": 29255
    }
   },
   {
@@ -1766,7 +1766,7 @@
     "tilt": 8,
     "tiltM2": 24.95507573336363,
     "roadTilt": 4,
-    "roadTiltM2": 25.309066243469715,
+    "roadTiltM2": 25.23075293749571,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -1775,10 +1775,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3721,
-    "weldMs": 494,
-    "surfMs": 527,
-    "roadTris": 70471
+    "roadMs": 3751,
+    "weldMs": 509,
+    "surfMs": 461,
+    "roadTris": 91774
    }
   },
   {
@@ -1802,10 +1802,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2464,
-    "weldMs": 380,
-    "surfMs": 498,
-    "roadTris": 50706
+    "roadMs": 2687,
+    "weldMs": 377,
+    "surfMs": 524,
+    "roadTris": 61110
    }
   },
   {
@@ -1829,10 +1829,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1607,
-    "weldMs": 305,
-    "surfMs": 51,
-    "roadTris": 12800
+    "roadMs": 1254,
+    "weldMs": 263,
+    "surfMs": 39,
+    "roadTris": 14156
    }
   },
   {
@@ -1846,8 +1846,8 @@
     "spikeM2": 0,
     "tilt": 2,
     "tiltM2": 1.3411633893847466,
-    "roadTilt": 2,
-    "roadTiltM2": 12.699334502220154,
+    "roadTilt": 3,
+    "roadTiltM2": 13.537599608302116,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -1856,17 +1856,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5086,
-    "weldMs": 455,
-    "surfMs": 627,
-    "roadTris": 66941
+    "roadMs": 3248,
+    "weldMs": 394,
+    "surfMs": 554,
+    "roadTris": 84533
    }
   },
   {
    "tile": "I3",
    "sum": {
-    "lump": 7,
-    "lumpM2": 83,
+    "lump": 8,
+    "lumpM2": 85,
     "hole": 0,
     "holeM2": 0,
     "spike": 2,
@@ -1883,10 +1883,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3353,
-    "weldMs": 362,
-    "surfMs": 634,
-    "roadTris": 62084
+    "roadMs": 3324,
+    "weldMs": 434,
+    "surfMs": 479,
+    "roadTris": 72554
    }
   },
   {
@@ -1910,10 +1910,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2916,
-    "weldMs": 347,
-    "surfMs": 494,
-    "roadTris": 46125
+    "roadMs": 2807,
+    "weldMs": 307,
+    "surfMs": 386,
+    "roadTris": 58597
    }
   },
   {
@@ -1928,7 +1928,7 @@
     "tilt": 9,
     "tiltM2": 18.602058064192533,
     "roadTilt": 1,
-    "roadTiltM2": 16.070703342556953,
+    "roadTiltM2": 16.110991762951016,
     "over": 1,
     "overM2": 3.75,
     "gardenVoid": 0,
@@ -1937,10 +1937,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3168,
-    "weldMs": 343,
-    "surfMs": 621,
-    "roadTris": 51746
+    "roadMs": 2991,
+    "weldMs": 423,
+    "surfMs": 493,
+    "roadTris": 63856
    }
   },
   {
@@ -1954,8 +1954,8 @@
     "spikeM2": 0,
     "tilt": 16,
     "tiltM2": 62.89717987924814,
-    "roadTilt": 2,
-    "roadTiltM2": 33.82145491242409,
+    "roadTilt": 3,
+    "roadTiltM2": 36.344162590801716,
     "over": 2,
     "overM2": 1.8125,
     "gardenVoid": 0,
@@ -1964,10 +1964,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 5244,
-    "weldMs": 626,
-    "surfMs": 914,
-    "roadTris": 80992
+    "roadMs": 4471,
+    "weldMs": 497,
+    "surfMs": 666,
+    "roadTris": 107540
    }
   },
   {
@@ -1991,10 +1991,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4888,
-    "weldMs": 501,
-    "surfMs": 908,
-    "roadTris": 42181
+    "roadMs": 2514,
+    "weldMs": 307,
+    "surfMs": 453,
+    "roadTris": 49554
    }
   },
   {
@@ -2018,10 +2018,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2845,
-    "weldMs": 390,
-    "surfMs": 548,
-    "roadTris": 50381
+    "roadMs": 2805,
+    "weldMs": 344,
+    "surfMs": 501,
+    "roadTris": 66122
    }
   },
   {
@@ -2045,10 +2045,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2360,
-    "weldMs": 307,
-    "surfMs": 414,
-    "roadTris": 35010
+    "roadMs": 2011,
+    "weldMs": 321,
+    "surfMs": 409,
+    "roadTris": 41250
    }
   },
   {
@@ -2072,10 +2072,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1829,
-    "weldMs": 301,
-    "surfMs": 400,
-    "roadTris": 34392
+    "roadMs": 1704,
+    "weldMs": 290,
+    "surfMs": 327,
+    "roadTris": 39261
    }
   },
   {
@@ -2090,7 +2090,7 @@
     "tilt": 4,
     "tiltM2": 15.490165710449219,
     "roadTilt": 1,
-    "roadTiltM2": 0.5201781392097473,
+    "roadTiltM2": 0.5795520097017288,
     "over": 3,
     "overM2": 7.4375,
     "gardenVoid": 0,
@@ -2099,10 +2099,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1863,
-    "weldMs": 309,
-    "surfMs": 178,
-    "roadTris": 15838
+    "roadMs": 1530,
+    "weldMs": 257,
+    "surfMs": 141,
+    "roadTris": 18387
    }
   },
   {
@@ -2126,10 +2126,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3508,
-    "weldMs": 832,
-    "surfMs": 361,
-    "roadTris": 27878
+    "roadMs": 1782,
+    "weldMs": 264,
+    "surfMs": 348,
+    "roadTris": 28822
    }
   },
   {
@@ -2144,7 +2144,7 @@
     "tilt": 8,
     "tiltM2": 21.41966262087226,
     "roadTilt": 11,
-    "roadTiltM2": 164.58204547688365,
+    "roadTiltM2": 171.6765969991684,
     "over": 1,
     "overM2": 0.5,
     "gardenVoid": 0,
@@ -2153,10 +2153,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2825,
-    "weldMs": 316,
-    "surfMs": 512,
-    "roadTris": 51881
+    "roadMs": 2817,
+    "weldMs": 345,
+    "surfMs": 407,
+    "roadTris": 61275
    }
   },
   {
@@ -2171,7 +2171,7 @@
     "tilt": 3,
     "tiltM2": 3.857841338030994,
     "roadTilt": 3,
-    "roadTiltM2": 3.3652112651616335,
+    "roadTiltM2": 3.3053258899599314,
     "over": 2,
     "overM2": 1.875,
     "gardenVoid": 0,
@@ -2180,10 +2180,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4560,
-    "weldMs": 883,
-    "surfMs": 633,
-    "roadTris": 68022
+    "roadMs": 3888,
+    "weldMs": 439,
+    "surfMs": 461,
+    "roadTris": 90682
    }
   },
   {
@@ -2198,7 +2198,7 @@
     "tilt": 3,
     "tiltM2": 2.942546473816037,
     "roadTilt": 1,
-    "roadTiltM2": 5.805484648793936,
+    "roadTiltM2": 4.9639024790376425,
     "over": 3,
     "overM2": 5.625,
     "gardenVoid": 0,
@@ -2207,10 +2207,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3408,
-    "weldMs": 422,
-    "surfMs": 649,
-    "roadTris": 65756
+    "roadMs": 3569,
+    "weldMs": 394,
+    "surfMs": 557,
+    "roadTris": 85747
    }
   },
   {
@@ -2234,10 +2234,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3588,
-    "weldMs": 419,
-    "surfMs": 472,
-    "roadTris": 42084
+    "roadMs": 2815,
+    "weldMs": 382,
+    "surfMs": 395,
+    "roadTris": 50692
    }
   },
   {
@@ -2261,10 +2261,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 6962,
-    "weldMs": 571,
-    "surfMs": 2004,
-    "roadTris": 79501
+    "roadMs": 3870,
+    "weldMs": 495,
+    "surfMs": 658,
+    "roadTris": 101860
    }
   },
   {
@@ -2288,10 +2288,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2366,
-    "weldMs": 329,
-    "surfMs": 542,
-    "roadTris": 36636
+    "roadMs": 2305,
+    "weldMs": 278,
+    "surfMs": 487,
+    "roadTris": 46449
    }
   },
   {
@@ -2315,17 +2315,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2259,
-    "weldMs": 523,
-    "surfMs": 432,
-    "roadTris": 34813
+    "roadMs": 1882,
+    "weldMs": 251,
+    "surfMs": 398,
+    "roadTris": 40330
    }
   },
   {
    "tile": "K10",
    "sum": {
-    "lump": 9,
-    "lumpM2": 1178,
+    "lump": 8,
+    "lumpM2": 1192,
     "hole": 0,
     "holeM2": 0,
     "spike": 0,
@@ -2342,10 +2342,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1966,
-    "weldMs": 289,
-    "surfMs": 361,
-    "roadTris": 33042
+    "roadMs": 1896,
+    "weldMs": 259,
+    "surfMs": 342,
+    "roadTris": 39909
    }
   },
   {
@@ -2369,10 +2369,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2399,
-    "weldMs": 370,
-    "surfMs": 386,
-    "roadTris": 29488
+    "roadMs": 2157,
+    "weldMs": 264,
+    "surfMs": 297,
+    "roadTris": 43278
    }
   },
   {
@@ -2396,10 +2396,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2294,
-    "weldMs": 294,
-    "surfMs": 81,
-    "roadTris": 14202
+    "roadMs": 1104,
+    "weldMs": 204,
+    "surfMs": 78,
+    "roadTris": 14530
    }
   },
   {
@@ -2414,7 +2414,7 @@
     "tilt": 5,
     "tiltM2": 22.464573984208982,
     "roadTilt": 3,
-    "roadTiltM2": 86.16194743709639,
+    "roadTiltM2": 88.73821110487916,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -2423,10 +2423,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2832,
-    "weldMs": 769,
-    "surfMs": 430,
-    "roadTris": 38518
+    "roadMs": 2124,
+    "weldMs": 333,
+    "surfMs": 329,
+    "roadTris": 45783
    }
   },
   {
@@ -2440,8 +2440,8 @@
     "spikeM2": 0,
     "tilt": 0,
     "tiltM2": 0,
-    "roadTilt": 9,
-    "roadTiltM2": 140.31726108910516,
+    "roadTilt": 10,
+    "roadTiltM2": 135.99700530804694,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -2450,17 +2450,17 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1806,
-    "weldMs": 227,
-    "surfMs": 506,
-    "roadTris": 28195
+    "roadMs": 1850,
+    "weldMs": 218,
+    "surfMs": 359,
+    "roadTris": 33746
    }
   },
   {
    "tile": "K6",
    "sum": {
     "lump": 14,
-    "lumpM2": 196,
+    "lumpM2": 199,
     "hole": 0,
     "holeM2": 0,
     "spike": 0,
@@ -2468,7 +2468,7 @@
     "tilt": 5,
     "tiltM2": 3.673651285469532,
     "roadTilt": 6,
-    "roadTiltM2": 35.422480665147305,
+    "roadTiltM2": 36.68184581398964,
     "over": 1,
     "overM2": 0.5,
     "gardenVoid": 0,
@@ -2477,10 +2477,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2383,
-    "weldMs": 334,
-    "surfMs": 432,
-    "roadTris": 31124
+    "roadMs": 1893,
+    "weldMs": 273,
+    "surfMs": 334,
+    "roadTris": 36225
    }
   },
   {
@@ -2494,8 +2494,8 @@
     "spikeM2": 0,
     "tilt": 1,
     "tiltM2": 0.6447424292564392,
-    "roadTilt": 0,
-    "roadTiltM2": 0,
+    "roadTilt": 1,
+    "roadTiltM2": 0.5963646620512009,
     "over": 2,
     "overM2": 1.8125,
     "gardenVoid": 0,
@@ -2504,10 +2504,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3717,
-    "weldMs": 431,
-    "surfMs": 419,
-    "roadTris": 23127
+    "roadMs": 1835,
+    "weldMs": 269,
+    "surfMs": 207,
+    "roadTris": 27364
    }
   },
   {
@@ -2531,10 +2531,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3222,
-    "weldMs": 343,
-    "surfMs": 613,
-    "roadTris": 47123
+    "roadMs": 2813,
+    "weldMs": 410,
+    "surfMs": 529,
+    "roadTris": 59105
    }
   },
   {
@@ -2558,10 +2558,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3584,
-    "weldMs": 981,
-    "surfMs": 437,
-    "roadTris": 36627
+    "roadMs": 1764,
+    "weldMs": 242,
+    "surfMs": 411,
+    "roadTris": 43286
    }
   },
   {
@@ -2585,10 +2585,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 762,
-    "weldMs": 146,
-    "surfMs": 138,
-    "roadTris": 8358
+    "roadMs": 803,
+    "weldMs": 149,
+    "surfMs": 134,
+    "roadTris": 9216
    }
   },
   {
@@ -2612,10 +2612,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 663,
-    "weldMs": 136,
-    "surfMs": 77,
-    "roadTris": 3044
+    "roadMs": 520,
+    "weldMs": 116,
+    "surfMs": 65,
+    "roadTris": 3022
    }
   },
   {
@@ -2639,9 +2639,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 422,
-    "weldMs": 160,
-    "surfMs": 74,
+    "roadMs": 293,
+    "weldMs": 95,
+    "surfMs": 51,
     "roadTris": 1176
    }
   },
@@ -2656,8 +2656,8 @@
     "spikeM2": 4,
     "tilt": 45,
     "tiltM2": 335.64937038643984,
-    "roadTilt": 29,
-    "roadTiltM2": 727.2900246647769,
+    "roadTilt": 27,
+    "roadTiltM2": 717.6475690198713,
     "over": 1,
     "overM2": 0.5625,
     "gardenVoid": 0,
@@ -2666,10 +2666,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1551,
-    "weldMs": 319,
-    "surfMs": 264,
-    "roadTris": 18034
+    "roadMs": 1396,
+    "weldMs": 306,
+    "surfMs": 212,
+    "roadTris": 19655
    }
   },
   {
@@ -2693,10 +2693,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 853,
-    "weldMs": 186,
-    "surfMs": 171,
-    "roadTris": 8361
+    "roadMs": 743,
+    "weldMs": 179,
+    "surfMs": 144,
+    "roadTris": 8462
    }
   },
   {
@@ -2720,10 +2720,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 2991,
-    "weldMs": 379,
-    "surfMs": 817,
-    "roadTris": 26722
+    "roadMs": 1583,
+    "weldMs": 300,
+    "surfMs": 286,
+    "roadTris": 34080
    }
   },
   {
@@ -2747,10 +2747,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1576,
-    "weldMs": 256,
-    "surfMs": 265,
-    "roadTris": 22048
+    "roadMs": 1274,
+    "weldMs": 245,
+    "surfMs": 198,
+    "roadTris": 23457
    }
   },
   {
@@ -2774,10 +2774,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1441,
-    "weldMs": 535,
-    "surfMs": 280,
-    "roadTris": 11872
+    "roadMs": 825,
+    "weldMs": 215,
+    "surfMs": 194,
+    "roadTris": 12284
    }
   },
   {
@@ -2792,7 +2792,7 @@
     "tilt": 0,
     "tiltM2": 0,
     "roadTilt": 1,
-    "roadTiltM2": 3.596167743206024,
+    "roadTiltM2": 3.592848837375641,
     "over": 0,
     "overM2": 0,
     "gardenVoid": 0,
@@ -2801,10 +2801,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 757,
-    "weldMs": 195,
-    "surfMs": 121,
-    "roadTris": 7051
+    "roadMs": 850,
+    "weldMs": 154,
+    "surfMs": 161,
+    "roadTris": 7137
    }
   },
   {
@@ -2828,9 +2828,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 414,
-    "weldMs": 106,
-    "surfMs": 84,
+    "roadMs": 426,
+    "weldMs": 99,
+    "surfMs": 95,
     "roadTris": 1765
    }
   },
@@ -2855,9 +2855,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 226,
-    "weldMs": 85,
-    "surfMs": 63,
+    "roadMs": 112,
+    "weldMs": 44,
+    "surfMs": 34,
     "roadTris": 744
    }
   },
@@ -2882,10 +2882,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 3513,
-    "weldMs": 410,
-    "surfMs": 591,
-    "roadTris": 60778
+    "roadMs": 3998,
+    "weldMs": 494,
+    "surfMs": 558,
+    "roadTris": 96159
    }
   },
   {
@@ -2909,9 +2909,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 449,
-    "weldMs": 139,
-    "surfMs": 77,
+    "roadMs": 397,
+    "weldMs": 122,
+    "surfMs": 71,
     "roadTris": 2155
    }
   },
@@ -2936,9 +2936,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 590,
-    "weldMs": 222,
-    "surfMs": 210,
+    "roadMs": 408,
+    "weldMs": 144,
+    "surfMs": 169,
     "roadTris": 7308
    }
   },
@@ -2963,9 +2963,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 286,
-    "weldMs": 117,
-    "surfMs": 95,
+    "roadMs": 253,
+    "weldMs": 94,
+    "surfMs": 90,
     "roadTris": 3046
    }
   },
@@ -2990,9 +2990,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 365,
-    "weldMs": 87,
-    "surfMs": 71,
+    "roadMs": 200,
+    "weldMs": 51,
+    "surfMs": 30,
     "roadTris": 554
    }
   },
@@ -3017,10 +3017,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 324,
-    "weldMs": 104,
-    "surfMs": 45,
-    "roadTris": 1217
+    "roadMs": 250,
+    "weldMs": 67,
+    "surfMs": 39,
+    "roadTris": 1416
    }
   },
   {
@@ -3044,10 +3044,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 791,
-    "weldMs": 188,
-    "surfMs": 123,
-    "roadTris": 4835
+    "roadMs": 561,
+    "weldMs": 121,
+    "surfMs": 98,
+    "roadTris": 4961
    }
   },
   {
@@ -3057,12 +3057,12 @@
     "lumpM2": 115,
     "hole": 0,
     "holeM2": 0,
-    "spike": 8,
-    "spikeM2": 18,
+    "spike": 7,
+    "spikeM2": 16,
     "tilt": 15,
     "tiltM2": 50.24187638051808,
-    "roadTilt": 17,
-    "roadTiltM2": 452.56775442510843,
+    "roadTilt": 12,
+    "roadTiltM2": 500.1058369791135,
     "over": 5,
     "overM2": 5.6875,
     "gardenVoid": 0,
@@ -3071,10 +3071,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 4776,
-    "weldMs": 749,
-    "surfMs": 549,
-    "roadTris": 80137
+    "roadMs": 4392,
+    "weldMs": 501,
+    "surfMs": 418,
+    "roadTris": 109981
    }
   },
   {
@@ -3098,10 +3098,10 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 1610,
-    "weldMs": 244,
-    "surfMs": 315,
-    "roadTris": 19377
+    "roadMs": 1503,
+    "weldMs": 227,
+    "surfMs": 256,
+    "roadTris": 24707
    }
   },
   {
@@ -3125,9 +3125,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 384,
-    "weldMs": 163,
-    "surfMs": 127,
+    "roadMs": 312,
+    "weldMs": 119,
+    "surfMs": 107,
     "roadTris": 5145
    }
   },
@@ -3152,9 +3152,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 320,
-    "weldMs": 125,
-    "surfMs": 109,
+    "roadMs": 300,
+    "weldMs": 113,
+    "surfMs": 98,
     "roadTris": 3904
    }
   },
@@ -3179,9 +3179,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 316,
-    "weldMs": 129,
-    "surfMs": 108,
+    "roadMs": 205,
+    "weldMs": 80,
+    "surfMs": 66,
     "roadTris": 1990
    }
   },
@@ -3206,9 +3206,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 352,
-    "weldMs": 121,
-    "surfMs": 87,
+    "roadMs": 263,
+    "weldMs": 91,
+    "surfMs": 64,
     "roadTris": 2149
    }
   },
@@ -3233,9 +3233,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 577,
-    "weldMs": 179,
-    "surfMs": 60,
+    "roadMs": 521,
+    "weldMs": 157,
+    "surfMs": 43,
     "roadTris": 3928
    }
   },
@@ -3260,9 +3260,9 @@
     "bladeM2": 0
    },
    "perf": {
-    "roadMs": 630,
-    "weldMs": 279,
-    "surfMs": 189,
+    "roadMs": 339,
+    "weldMs": 130,
+    "surfMs": 123,
     "roadTris": 6122
    }
   }
@@ -3271,9 +3271,9 @@
   {
    "tile": "K10",
    "kind": "lump",
-   "m2": 919,
+   "m2": 977,
    "worst": 1.99,
-   "score": 1826.171745300293,
+   "score": 1941.4252395629883,
    "at": "2324, 2918",
    "street": ""
   },
@@ -3352,9 +3352,9 @@
   {
    "tile": "F7",
    "kind": "lump",
-   "m2": 135,
+   "m2": 136,
    "worst": 1.96,
-   "score": 265.1236152648926,
+   "score": 267.0874938964844,
    "at": "-307, 1467",
    "street": ""
   },
@@ -3442,9 +3442,9 @@
   {
    "tile": "C6",
    "kind": "lump",
-   "m2": 76,
+   "m2": 78,
    "worst": 1.99,
-   "score": 150.9890594482422,
+   "score": 154.96245574951172,
    "at": "-1851, 830",
    "street": "Rue Keyenbempt 66"
   },
@@ -3566,6 +3566,15 @@
    "street": ""
   },
   {
+   "tile": "L5",
+   "kind": "roadTilt",
+   "m2": 328,
+   "worst": 0.31,
+   "score": 100.72777420471621,
+   "at": "2743.3, 107.9",
+   "street": ""
+  },
+  {
    "tile": "C4",
    "kind": "lump",
    "m2": 51,
@@ -3594,21 +3603,21 @@
   },
   {
    "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 339.4,
-   "worst": 0.29,
-   "score": 97.22711904513699,
-   "at": "-1302.3, 851.9",
-   "street": "Rue François Vervloet 10"
-  },
-  {
-   "tile": "D6",
    "kind": "lump",
    "m2": 91,
    "worst": 1.07,
    "score": 97.18876647949219,
    "at": "-1137, 920",
    "street": ""
+  },
+  {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 328.1,
+   "worst": 0.29,
+   "score": 94.0062288376872,
+   "at": "-1302.2, 851.9",
+   "street": "Rue François Vervloet 10"
   },
   {
    "tile": "E10",
@@ -3627,15 +3636,6 @@
    "score": 91.88397216796875,
    "at": "2252, 2929",
    "street": "Avenue d'Hougoumont 14"
-  },
-  {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 338.7,
-   "worst": 0.27,
-   "score": 89.96220656060136,
-   "at": "2735.2, 106.6",
-   "street": ""
   },
   {
    "tile": "E7",
@@ -3782,6 +3782,15 @@
    "street": "Chaussée d'Alsemberg 1033A"
   },
   {
+   "tile": "E8",
+   "kind": "lump",
+   "m2": 40,
+   "worst": 1.82,
+   "score": 72.6214599609375,
+   "at": "-502, 1508",
+   "street": "Chemin du Puits 49"
+  },
+  {
    "tile": "I11",
    "kind": "lump",
    "m2": 36,
@@ -3789,15 +3798,6 @@
    "score": 71.37515258789062,
    "at": "1263, 3487",
    "street": ""
-  },
-  {
-   "tile": "E8",
-   "kind": "lump",
-   "m2": 39,
-   "worst": 1.82,
-   "score": 70.80592346191406,
-   "at": "-502, 1508",
-   "street": "Chemin du Puits 49"
   },
   {
    "tile": "E10",
@@ -3836,6 +3836,15 @@
    "street": ""
   },
   {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 178.9,
+   "worst": 0.38,
+   "score": 68.5751584466121,
+   "at": "97, -11.3",
+   "street": "Avenue Kamerdelle 91"
+  },
+  {
    "tile": "G8",
    "kind": "lump",
    "m2": 57,
@@ -3852,15 +3861,6 @@
    "score": 67.77458190917969,
    "at": "183, -690",
    "street": ""
-  },
-  {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 176.6,
-   "worst": 0.38,
-   "score": 67.71871055162957,
-   "at": "97.3, -11.1",
-   "street": "Avenue Kamerdelle 91"
   },
   {
    "tile": "B4",
@@ -4052,6 +4052,15 @@
    "street": ""
   },
   {
+   "tile": "N5",
+   "kind": "lump",
+   "m2": 35,
+   "worst": 1.58,
+   "score": 55.13957977294922,
+   "at": "3728, 258",
+   "street": ""
+  },
+  {
    "tile": "B7",
    "kind": "lump",
    "m2": 39,
@@ -4133,15 +4142,6 @@
    "street": ""
   },
   {
-   "tile": "N5",
-   "kind": "lump",
-   "m2": 35,
-   "worst": 1.48,
-   "score": 51.8890380859375,
-   "at": "3728, 258",
-   "street": ""
-  },
-  {
    "tile": "H6",
    "kind": "lump",
    "m2": 29,
@@ -4162,9 +4162,9 @@
   {
    "tile": "N5",
    "kind": "roadTilt",
-   "m2": 117.5,
+   "m2": 117.4,
    "worst": 0.44,
-   "score": 51.13324514659117,
+   "score": 51.08833368349718,
    "at": "3781.2, 295",
    "street": ""
   },
@@ -4223,24 +4223,6 @@
    "street": ""
   },
   {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 131.6,
-   "worst": 0.34,
-   "score": 45.15533347670825,
-   "at": "78.4, -42.1",
-   "street": "Avenue Kamerdelle 85"
-  },
-  {
-   "tile": "H10",
-   "kind": "roadTilt",
-   "m2": 106.4,
-   "worst": 0.42,
-   "score": 44.922223471793096,
-   "at": "501.4, 2744.6",
-   "street": "Avenue Dolez 321"
-  },
-  {
    "tile": "C3",
    "kind": "lump",
    "m2": 23,
@@ -4248,6 +4230,33 @@
    "score": 44.88555145263672,
    "at": "-1802, -951",
    "street": ""
+  },
+  {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 130.7,
+   "worst": 0.34,
+   "score": 44.87637541481729,
+   "at": "78.2, -42.8",
+   "street": "Avenue Kamerdelle 85"
+  },
+  {
+   "tile": "N5",
+   "kind": "roadTilt",
+   "m2": 148.5,
+   "worst": 0.3,
+   "score": 44.769516900971134,
+   "at": "3731.3, 256.3",
+   "street": ""
+  },
+  {
+   "tile": "H10",
+   "kind": "roadTilt",
+   "m2": 105.4,
+   "worst": 0.42,
+   "score": 44.56846861081396,
+   "at": "500.5, 2746",
+   "street": "Avenue Dolez 321"
   },
   {
    "tile": "N5",
@@ -4261,9 +4270,9 @@
   {
    "tile": "E7",
    "kind": "roadTilt",
-   "m2": 143.6,
+   "m2": 140,
    "worst": 0.31,
-   "score": 44.01191710091127,
+   "score": 42.918498942292636,
    "at": "-540.6, 1493.6",
    "street": ""
   },
@@ -4376,15 +4385,6 @@
    "street": ""
   },
   {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 130,
-   "worst": 0.3,
-   "score": 39.3783046684806,
-   "at": "3731.2, 257",
-   "street": ""
-  },
-  {
    "tile": "G8",
    "kind": "lump",
    "m2": 33,
@@ -4437,6 +4437,15 @@
    "score": 38.1597900390625,
    "at": "1795, 450",
    "street": "Drève du Sénéchal 34"
+  },
+  {
+   "tile": "E7",
+   "kind": "lump",
+   "m2": 38,
+   "worst": 0.99,
+   "score": 37.47843933105469,
+   "at": "-628, 1084",
+   "street": "Rue Papenkasteel 124"
   },
   {
    "tile": "D6",
@@ -4520,15 +4529,6 @@
    "street": "Chaussée de Saint-Job 263"
   },
   {
-   "tile": "K10",
-   "kind": "lump",
-   "m2": 44,
-   "worst": 0.8,
-   "score": 35.397186279296875,
-   "at": "2323, 2625",
-   "street": "Avenue d'Hougoumont 2B"
-  },
-  {
    "tile": "C3",
    "kind": "lump",
    "m2": 22,
@@ -4547,13 +4547,13 @@
    "street": ""
   },
   {
-   "tile": "G10",
+   "tile": "G4",
    "kind": "roadTilt",
-   "m2": 124.8,
-   "worst": 0.27,
-   "score": 34.212790085257254,
-   "at": "370.9, 2694.3",
-   "street": "Avenue Buysdelle 2"
+   "m2": 94,
+   "worst": 0.36,
+   "score": 34.245084411485706,
+   "at": "77.7, -54.2",
+   "street": "Avenue Kamerdelle 85"
   },
   {
    "tile": "D6",
@@ -4563,6 +4563,15 @@
    "score": 34.16414823809147,
    "at": "-1155.2, 865.8",
    "street": "Chaussée d'Alsemberg 1010A"
+  },
+  {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 121.3,
+   "worst": 0.27,
+   "score": 33.25359661993396,
+   "at": "370.5, 2694.5",
+   "street": "Avenue Buysdelle 2"
   },
   {
    "tile": "G3",
@@ -4637,15 +4646,6 @@
    "street": "Rue du Bourdon 353"
   },
   {
-   "tile": "E7",
-   "kind": "lump",
-   "m2": 31,
-   "worst": 0.99,
-   "score": 30.57451629638672,
-   "at": "-628, 1084",
-   "street": "Rue Papenkasteel 124"
-  },
-  {
    "tile": "E6",
    "kind": "lump",
    "m2": 18,
@@ -4680,15 +4680,6 @@
    "score": 29.60858154296875,
    "at": "2737, 2097",
    "street": ""
-  },
-  {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 93.5,
-   "worst": 0.31,
-   "score": 29.02457977515534,
-   "at": "82.6, -48.3",
-   "street": "Avenue Kamerdelle 85"
   },
   {
    "tile": "J3",
@@ -4781,6 +4772,15 @@
    "street": ""
   },
   {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 55.5,
+   "worst": 0.49,
+   "score": 27.23746033725724,
+   "at": "329.4, 2795.3",
+   "street": "Rue de Percke 161"
+  },
+  {
    "tile": "F6",
    "kind": "lump",
    "m2": 14,
@@ -4788,6 +4788,15 @@
    "score": 27.225296020507812,
    "at": "-383, 785",
    "street": "Chaussée de Saint-Job 234"
+  },
+  {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 80,
+   "worst": 0.34,
+   "score": 26.96650821867336,
+   "at": "93.5, -32",
+   "street": "Avenue Kamerdelle 89"
   },
   {
    "tile": "G3",
@@ -4835,6 +4844,15 @@
    "street": "Avenue François Folie 24"
   },
   {
+   "tile": "D10",
+   "kind": "lump",
+   "m2": 14,
+   "worst": 1.86,
+   "score": 26.083160400390625,
+   "at": "-1297, 2611",
+   "street": "Vieux Chemin 76"
+  },
+  {
    "tile": "D2",
    "kind": "lump",
    "m2": 18,
@@ -4869,24 +4887,6 @@
    "score": 25.380348205566406,
    "at": "232, 2288",
    "street": "Rue Engeland 557"
-  },
-  {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 74.1,
-   "worst": 0.34,
-   "score": 24.956816173310607,
-   "at": "94.1, -31.8",
-   "street": "Avenue Kamerdelle 89"
-  },
-  {
-   "tile": "G10",
-   "kind": "roadTilt",
-   "m2": 50.7,
-   "worst": 0.49,
-   "score": 24.922027311667478,
-   "at": "329.4, 2795.3",
-   "street": "Rue de Percke 161"
   },
   {
    "tile": "C3",
@@ -4932,15 +4932,6 @@
    "score": 24.578720092773438,
    "at": "-426, 315",
    "street": "Rue Colonel Chaltin 103"
-  },
-  {
-   "tile": "D10",
-   "kind": "lump",
-   "m2": 13,
-   "worst": 1.86,
-   "score": 24.220077514648438,
-   "at": "-1297, 2611",
-   "street": "Vieux Chemin 76"
   },
   {
    "tile": "G5",
@@ -5040,6 +5031,15 @@
    "score": 22.412796020507812,
    "at": "-1690, 2429",
    "street": ""
+  },
+  {
+   "tile": "E7",
+   "kind": "lump",
+   "m2": 20,
+   "worst": 1.11,
+   "score": 22.161865234375,
+   "at": "-662, 1210",
+   "street": "Rue Kinsendael 28"
   },
   {
    "tile": "B4",
@@ -5161,10 +5161,10 @@
   {
    "tile": "G4",
    "kind": "roadTilt",
-   "m2": 44.5,
+   "m2": 44.7,
    "worst": 0.46,
-   "score": 20.25082509535402,
-   "at": "60.8, -65.8",
+   "score": 20.367849441627843,
+   "at": "60.8, -65.6",
    "street": "Avenue Kamerdelle 83"
   },
   {
@@ -5204,15 +5204,6 @@
    "street": ""
   },
   {
-   "tile": "D10",
-   "kind": "roadTilt",
-   "m2": 54.9,
-   "worst": 0.36,
-   "score": 19.7504197311596,
-   "at": "-1043.5, 2681.6",
-   "street": "Rue du Bourdon 393"
-  },
-  {
    "tile": "E10",
    "kind": "over",
    "m2": 7.9,
@@ -5229,6 +5220,15 @@
    "score": 19.559844970703125,
    "at": "-265, 917",
    "street": "Chemin privé 't Cortenbosch 18A"
+  },
+  {
+   "tile": "E3",
+   "kind": "lump",
+   "m2": 14,
+   "worst": 1.4,
+   "score": 19.553131103515625,
+   "at": "-800, -780",
+   "street": "Rue du Doyenné 33"
   },
   {
    "tile": "D10",
@@ -5249,24 +5249,6 @@
    "street": ""
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 44.7,
-   "worst": 0.41,
-   "score": 18.13655853406527,
-   "at": "-179.8, 1998.8",
-   "street": ""
-  },
-  {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 62,
-   "worst": 0.29,
-   "score": 18.03924450390181,
-   "at": "-1307.8, 846.5",
-   "street": "Rue François Vervloet 15"
-  },
-  {
    "tile": "I1",
    "kind": "lump",
    "m2": 11,
@@ -5274,6 +5256,15 @@
    "score": 17.893630981445312,
    "at": "1099, -1944",
    "street": "Rue Stanley 37"
+  },
+  {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 61.2,
+   "worst": 0.29,
+   "score": 17.81475670991071,
+   "at": "-1307.8, 846.5",
+   "street": "Rue François Vervloet 15"
   },
   {
    "tile": "H10",
@@ -5330,6 +5321,15 @@
    "street": "Rue Keyenbempt 30"
   },
   {
+   "tile": "D10",
+   "kind": "roadTilt",
+   "m2": 47.4,
+   "worst": 0.36,
+   "score": 17.071970060147642,
+   "at": "-1043.6, 2681.8",
+   "street": "Rue du Bourdon 393"
+  },
+  {
    "tile": "G3",
    "kind": "over",
    "m2": 5.5,
@@ -5357,15 +5357,6 @@
    "street": ""
   },
   {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 68.7,
-   "worst": 0.24,
-   "score": 16.63339957341798,
-   "at": "-1295.7, 840.7",
-   "street": "Rue François Vervloet 9"
-  },
-  {
    "tile": "C4",
    "kind": "over",
    "m2": 7.5,
@@ -5373,6 +5364,15 @@
    "score": 16.57133405502,
    "at": "-1849.7, -250.2",
    "street": "Avenue Kersbeek 306"
+  },
+  {
+   "tile": "F2",
+   "kind": "roadTilt",
+   "m2": 68.5,
+   "worst": 0.24,
+   "score": 16.50231026389731,
+   "at": "-476.9, -1003.3",
+   "street": "Avenue de Boetendael 69"
   },
   {
    "tile": "C7",
@@ -5402,6 +5402,33 @@
    "street": "Rue de Percke 122"
   },
   {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 67.1,
+   "worst": 0.24,
+   "score": 16.2522173273978,
+   "at": "-1295.7, 840.7",
+   "street": "Rue François Vervloet 9"
+  },
+  {
+   "tile": "K6",
+   "kind": "lump",
+   "m2": 17,
+   "worst": 0.94,
+   "score": 15.940742492675781,
+   "at": "2156, 599",
+   "street": ""
+  },
+  {
+   "tile": "K4",
+   "kind": "roadTilt",
+   "m2": 80.4,
+   "worst": 0.2,
+   "score": 15.93958774477333,
+   "at": "2191.5, -5",
+   "street": ""
+  },
+  {
    "tile": "I1",
    "kind": "lump",
    "m2": 9,
@@ -5411,15 +5438,6 @@
    "street": ""
   },
   {
-   "tile": "E7",
-   "kind": "lump",
-   "m2": 16,
-   "worst": 0.98,
-   "score": 15.7454833984375,
-   "at": "-662, 1210",
-   "street": "Rue Kinsendael 28"
-  },
-  {
    "tile": "F8",
    "kind": "lump",
    "m2": 9,
@@ -5427,6 +5445,15 @@
    "score": 15.679618835449219,
    "at": "-278, 1655",
    "street": "Clos Jean-Pierre de Launoit 5"
+  },
+  {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 38.7,
+   "worst": 0.41,
+   "score": 15.679574036471491,
+   "at": "-179.8, 1998.8",
+   "street": ""
   },
   {
    "tile": "H2",
@@ -5465,24 +5492,6 @@
    "street": "Avenue De Fré 94"
   },
   {
-   "tile": "K4",
-   "kind": "roadTilt",
-   "m2": 77.8,
-   "worst": 0.2,
-   "score": 15.430084892947836,
-   "at": "2194.3, -2.8",
-   "street": ""
-  },
-  {
-   "tile": "H6",
-   "kind": "roadTilt",
-   "m2": 63.4,
-   "worst": 0.24,
-   "score": 15.345689335718887,
-   "at": "877.4, 524.1",
-   "street": ""
-  },
-  {
    "tile": "G10",
    "kind": "lump",
    "m2": 14,
@@ -5494,10 +5503,10 @@
   {
    "tile": "L5",
    "kind": "roadTilt",
-   "m2": 77.9,
+   "m2": 78.3,
    "worst": 0.19,
-   "score": 15.000232045976203,
-   "at": "2819.7, 16.7",
+   "score": 15.110153397596045,
+   "at": "2819.2, 17.1",
    "street": ""
   },
   {
@@ -5516,6 +5525,15 @@
    "worst": 0.83,
    "score": 14.934677124023438,
    "at": "121, 1940",
+   "street": ""
+  },
+  {
+   "tile": "H6",
+   "kind": "roadTilt",
+   "m2": 60.9,
+   "worst": 0.24,
+   "score": 14.755624698956193,
+   "at": "877.3, 524.2",
    "street": ""
   },
   {
@@ -5564,13 +5582,13 @@
    "street": "Avenue Fond'Roy 105"
   },
   {
-   "tile": "G5",
-   "kind": "roadTilt",
-   "m2": 55,
-   "worst": 0.26,
-   "score": 14.346779653806054,
-   "at": "103.1, 1",
-   "street": "Avenue Kamerdelle 93"
+   "tile": "E7",
+   "kind": "lump",
+   "m2": 13,
+   "worst": 1.1,
+   "score": 14.322097778320312,
+   "at": "-648, 1197",
+   "street": "Rue Kinsendael 22"
   },
   {
    "tile": "E7",
@@ -5636,15 +5654,6 @@
    "street": "Avenue de Floréal 114"
   },
   {
-   "tile": "E3",
-   "kind": "lump",
-   "m2": 11,
-   "worst": 1.27,
-   "score": 14.006805419921875,
-   "at": "-800, -780",
-   "street": "Rue du Doyenné 33"
-  },
-  {
    "tile": "B8",
    "kind": "lump",
    "m2": 12,
@@ -5708,6 +5717,15 @@
    "street": ""
   },
   {
+   "tile": "N5",
+   "kind": "roadTilt",
+   "m2": 62.1,
+   "worst": 0.22,
+   "score": 13.562694302277125,
+   "at": "3611.2, 125.5",
+   "street": ""
+  },
+  {
    "tile": "F9",
    "kind": "tilt",
    "m2": 29.5,
@@ -5715,6 +5733,15 @@
    "score": 13.512037153384911,
    "at": "-175.4, 2026.5",
    "street": "Avenue de la Gazelle 1"
+  },
+  {
+   "tile": "G5",
+   "kind": "roadTilt",
+   "m2": 51.4,
+   "worst": 0.26,
+   "score": 13.456477155450028,
+   "at": "103.6, 1.5",
+   "street": "Avenue Kamerdelle 93"
   },
   {
    "tile": "I5",
@@ -5744,6 +5771,15 @@
    "street": ""
   },
   {
+   "tile": "G7",
+   "kind": "roadTilt",
+   "m2": 59.1,
+   "worst": 0.22,
+   "score": 13.273349806342887,
+   "at": "38.7, 1157.9",
+   "street": ""
+  },
+  {
    "tile": "E3",
    "kind": "lump",
    "m2": 12,
@@ -5751,6 +5787,15 @@
    "score": 13.228271484375,
    "at": "-636, -604",
    "street": ""
+  },
+  {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 45,
+   "worst": 0.29,
+   "score": 13.203965320976382,
+   "at": "106.9, -1.1",
+   "street": "Avenue Kamerdelle 91"
   },
   {
    "tile": "F6",
@@ -5771,6 +5816,15 @@
    "street": "Clos de l'Abbé Froidure 11"
   },
   {
+   "tile": "C3",
+   "kind": "roadTilt",
+   "m2": 42.7,
+   "worst": 0.31,
+   "score": 13.028219141762593,
+   "at": "-1842.2, -792.4",
+   "street": ""
+  },
+  {
    "tile": "D10",
    "kind": "lump",
    "m2": 11,
@@ -5780,13 +5834,22 @@
    "street": ""
   },
   {
-   "tile": "D10",
+   "tile": "N5",
    "kind": "roadTilt",
-   "m2": 39.7,
-   "worst": 0.32,
-   "score": 12.907040586905834,
-   "at": "-1035.5, 2696.1",
-   "street": "Rue du Bourdon 378"
+   "m2": 66.3,
+   "worst": 0.2,
+   "score": 12.987851241405222,
+   "at": "3743, 263.5",
+   "street": ""
+  },
+  {
+   "tile": "L5",
+   "kind": "roadTilt",
+   "m2": 56.1,
+   "worst": 0.23,
+   "score": 12.931651107047578,
+   "at": "2772, 113.7",
+   "street": ""
   },
   {
    "tile": "C4",
@@ -5798,13 +5861,13 @@
    "street": "Rue Gatti de Gamond 138"
   },
   {
-   "tile": "N5",
+   "tile": "D10",
    "kind": "roadTilt",
-   "m2": 65.2,
-   "worst": 0.2,
-   "score": 12.758724344818322,
-   "at": "3741.9, 263.4",
-   "street": ""
+   "m2": 39.3,
+   "worst": 0.32,
+   "score": 12.766468658752265,
+   "at": "-1035, 2696.7",
+   "street": "Rue du Bourdon 380"
   },
   {
    "tile": "H7",
@@ -5861,15 +5924,6 @@
    "street": ""
   },
   {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 43.2,
-   "worst": 0.29,
-   "score": 12.67179298589301,
-   "at": "106.9, -1.1",
-   "street": "Avenue Kamerdelle 91"
-  },
-  {
    "tile": "H10",
    "kind": "lump",
    "m2": 7,
@@ -5897,24 +5951,6 @@
    "street": "Avenue De Fré 139"
   },
   {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 53.7,
-   "worst": 0.23,
-   "score": 12.362961314826101,
-   "at": "2771.9, 113.7",
-   "street": ""
-  },
-  {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 53.8,
-   "worst": 0.23,
-   "score": 12.32106016967134,
-   "at": "-1322.8, 865.8",
-   "street": "Rue François Vervloet 16"
-  },
-  {
    "tile": "I4",
    "kind": "lump",
    "m2": 16,
@@ -5931,15 +5967,6 @@
    "score": 12.230614554316,
    "at": "-1026.2, 2704.1",
    "street": "Rue du Bourdon 382"
-  },
-  {
-   "tile": "K6",
-   "kind": "lump",
-   "m2": 14,
-   "worst": 0.87,
-   "score": 12.227249145507812,
-   "at": "2156, 600",
-   "street": ""
   },
   {
    "tile": "H10",
@@ -5967,15 +5994,6 @@
    "score": 11.986661142755526,
    "at": "-1600.2, -274.1",
    "street": "Avenue du Val Fleuri 19"
-  },
-  {
-   "tile": "G2",
-   "kind": "roadTilt",
-   "m2": 37.8,
-   "worst": 0.31,
-   "score": 11.876760139095797,
-   "at": "119.7, -1082.5",
-   "street": "Avenue Adolphe Dupuich 38"
   },
   {
    "tile": "K7",
@@ -6014,13 +6032,13 @@
    "street": "Drève de Lorraine 41"
   },
   {
-   "tile": "N5",
+   "tile": "E8",
    "kind": "roadTilt",
-   "m2": 52.3,
-   "worst": 0.22,
-   "score": 11.434168288776773,
-   "at": "3611.2, 125.5",
-   "street": ""
+   "m2": 46.9,
+   "worst": 0.24,
+   "score": 11.415663163694811,
+   "at": "-706, 1785.2",
+   "street": "Rue Engeland 340"
   },
   {
    "tile": "D7",
@@ -6050,11 +6068,29 @@
    "street": ""
   },
   {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 48.8,
+   "worst": 0.23,
+   "score": 11.21057064278036,
+   "at": "-1321, 864.1",
+   "street": "Rue François Vervloet 16"
+  },
+  {
+   "tile": "G2",
+   "kind": "roadTilt",
+   "m2": 34.8,
+   "worst": 0.32,
+   "score": 11.1275615301755,
+   "at": "119.7, -1080.5",
+   "street": "Avenue Adolphe Dupuich 38"
+  },
+  {
    "tile": "D10",
    "kind": "roadTilt",
-   "m2": 47.6,
+   "m2": 47.1,
    "worst": 0.24,
-   "score": 11.225377681400031,
+   "score": 11.115090110436153,
    "at": "-1205, 2641",
    "street": "Vieux Chemin 50"
   },
@@ -6074,6 +6110,24 @@
    "worst": 0.29,
    "score": 11.094357808711377,
    "at": "-1850, -795.9",
+   "street": ""
+  },
+  {
+   "tile": "N5",
+   "kind": "roadTilt",
+   "m2": 26.8,
+   "worst": 0.41,
+   "score": 11.044513369586815,
+   "at": "3695.9, 221.2",
+   "street": ""
+  },
+  {
+   "tile": "L5",
+   "kind": "roadTilt",
+   "m2": 66.7,
+   "worst": 0.17,
+   "score": 11.006597050556271,
+   "at": "2825, 59.1",
    "street": ""
   },
   {
@@ -6140,15 +6194,6 @@
    "street": ""
   },
   {
-   "tile": "E7",
-   "kind": "lump",
-   "m2": 11,
-   "worst": 0.98,
-   "score": 10.754776000976562,
-   "at": "-648, 1197",
-   "street": "Rue Kinsendael 22"
-  },
-  {
    "tile": "F9",
    "kind": "lump",
    "m2": 7,
@@ -6183,24 +6228,6 @@
    "score": 10.672416687011719,
    "at": "2419, 526",
    "street": ""
-  },
-  {
-   "tile": "E8",
-   "kind": "roadTilt",
-   "m2": 43.9,
-   "worst": 0.24,
-   "score": 10.668588210529306,
-   "at": "-706, 1785.2",
-   "street": "Rue Engeland 340"
-  },
-  {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 23.5,
-   "worst": 0.45,
-   "score": 10.653185491263434,
-   "at": "-215.2, 510.6",
-   "street": "Rue du Repos 125"
   },
   {
    "tile": "F4",
@@ -6266,15 +6293,6 @@
    "street": "Avenue Coghen 205"
   },
   {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 62.9,
-   "worst": 0.17,
-   "score": 10.395521904210156,
-   "at": "2825.8, 59.9",
-   "street": ""
-  },
-  {
    "tile": "D10",
    "kind": "lump",
    "m2": 15,
@@ -6291,15 +6309,6 @@
    "score": 10.365325927734375,
    "at": "-1008, 2803",
    "street": ""
-  },
-  {
-   "tile": "E2",
-   "kind": "roadTilt",
-   "m2": 36.6,
-   "worst": 0.28,
-   "score": 10.346243379367472,
-   "at": "-516.6, -1086.5",
-   "street": "Avenue de Floréal 118"
   },
   {
    "tile": "G3",
@@ -6333,7 +6342,7 @@
    "kind": "roadTilt",
    "m2": 26.3,
    "worst": 0.39,
-   "score": 10.18403852654321,
+   "score": 10.178398441424985,
    "at": "498.7, 2747.9",
    "street": "Avenue Dolez 319"
   },
@@ -6392,15 +6401,6 @@
    "street": ""
   },
   {
-   "tile": "G7",
-   "kind": "roadTilt",
-   "m2": 28.5,
-   "worst": 0.35,
-   "score": 9.915805481789542,
-   "at": "113.6, 1265.7",
-   "street": "Avenue de la Chênaie 85"
-  },
-  {
    "tile": "I7",
    "kind": "lump",
    "m2": 15,
@@ -6417,6 +6417,15 @@
    "score": 9.843227760518392,
    "at": "-2278, -452",
    "street": ""
+  },
+  {
+   "tile": "E2",
+   "kind": "roadTilt",
+   "m2": 35.1,
+   "worst": 0.28,
+   "score": 9.814347926449384,
+   "at": "-516.8, -1086.4",
+   "street": "Avenue de Floréal 116"
   },
   {
    "tile": "D5",
@@ -6444,15 +6453,6 @@
    "score": 9.745040893554688,
    "at": "-1830, -886",
    "street": ""
-  },
-  {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 44.5,
-   "worst": 0.22,
-   "score": 9.710765312814827,
-   "at": "-1289.6, 834.1",
-   "street": "Rue François Vervloet 7"
   },
   {
    "tile": "E9",
@@ -6491,6 +6491,15 @@
    "street": "Chaussée de Saint-Job 506"
   },
   {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 43.4,
+   "worst": 0.22,
+   "score": 9.480149750007222,
+   "at": "-1289.6, 834.1",
+   "street": "Rue François Vervloet 7"
+  },
+  {
    "tile": "B6",
    "kind": "lump",
    "m2": 10,
@@ -6507,42 +6516,6 @@
    "score": 9.32168197631836,
    "at": "-1903, -497",
    "street": ""
-  },
-  {
-   "tile": "C3",
-   "kind": "roadTilt",
-   "m2": 30.5,
-   "worst": 0.31,
-   "score": 9.294251991489867,
-   "at": "-1842.2, -792.4",
-   "street": ""
-  },
-  {
-   "tile": "G7",
-   "kind": "roadTilt",
-   "m2": 41.3,
-   "worst": 0.22,
-   "score": 9.273679743244564,
-   "at": "41.6, 1157.9",
-   "street": ""
-  },
-  {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 21.2,
-   "worst": 0.43,
-   "score": 9.184704204804458,
-   "at": "-207.5, 524",
-   "street": "Rue du Repos 129"
-  },
-  {
-   "tile": "F2",
-   "kind": "roadTilt",
-   "m2": 37.9,
-   "worst": 0.24,
-   "score": 9.153281619306902,
-   "at": "-474.5, -1002.2",
-   "street": "Avenue de Boetendael 69"
   },
   {
    "tile": "I4",
@@ -6590,6 +6563,15 @@
    "street": "Avenue Château de Walzin 10"
   },
   {
+   "tile": "C6",
+   "kind": "lump",
+   "m2": 9,
+   "worst": 1,
+   "score": 9.00662612915039,
+   "at": "-1676, 964",
+   "street": ""
+  },
+  {
    "tile": "I1",
    "kind": "lump",
    "m2": 12,
@@ -6635,6 +6617,15 @@
    "street": ""
   },
   {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 19.6,
+   "worst": 0.45,
+   "score": 8.865509475248361,
+   "at": "-212.8, 513",
+   "street": "Rue du Repos 127"
+  },
+  {
    "tile": "E2",
    "kind": "tilt",
    "m2": 30.6,
@@ -6660,6 +6651,15 @@
    "score": 8.808447193086428,
    "at": "349.8, -965.1",
    "street": "Avenue Léo Errera 94"
+  },
+  {
+   "tile": "D10",
+   "kind": "roadTilt",
+   "m2": 27.4,
+   "worst": 0.32,
+   "score": 8.791977846970559,
+   "at": "-1030.7, 2706.4",
+   "street": "Rue du Bourdon 382"
   },
   {
    "tile": "L5",
@@ -6732,6 +6732,15 @@
    "score": 8.659901237688752,
    "at": "-227.1, 480.6",
    "street": "Rue du Repos 113"
+  },
+  {
+   "tile": "G7",
+   "kind": "roadTilt",
+   "m2": 26.8,
+   "worst": 0.32,
+   "score": 8.63360927351249,
+   "at": "119.2, 1271.3",
+   "street": "Avenue de la Chênaie 85"
   },
   {
    "tile": "B4",
@@ -6887,6 +6896,15 @@
    "street": "Rue François Vervloet 8"
   },
   {
+   "tile": "E3",
+   "kind": "lump",
+   "m2": 5,
+   "worst": 1.67,
+   "score": 8.353652954101562,
+   "at": "-794, -769",
+   "street": "Rue du Doyenné 33"
+  },
+  {
    "tile": "B4",
    "kind": "tilt",
    "m2": 18,
@@ -6903,6 +6921,15 @@
    "score": 8.331653594970703,
    "at": "-1161, 2938",
    "street": ""
+  },
+  {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 19.2,
+   "worst": 0.43,
+   "score": 8.307066460503282,
+   "at": "-209.8, 522.1",
+   "street": "Rue du Repos 129"
   },
   {
    "tile": "D10",
@@ -6984,15 +7011,6 @@
    "score": 8.142826080322266,
    "at": "-1211, 2804",
    "street": ""
-  },
-  {
-   "tile": "D10",
-   "kind": "roadTilt",
-   "m2": 25.4,
-   "worst": 0.32,
-   "score": 8.134482047100192,
-   "at": "-1031.1, 2706.3",
-   "street": "Rue du Bourdon 382"
   },
   {
    "tile": "B4",
@@ -7139,15 +7157,6 @@
    "street": ""
   },
   {
-   "tile": "K5",
-   "kind": "roadTilt",
-   "m2": 35.7,
-   "worst": 0.22,
-   "score": 7.872315796537674,
-   "at": "2089.1, 66.6",
-   "street": "Drève des Gendarmes 13"
-  },
-  {
    "tile": "B6",
    "kind": "lump",
    "m2": 8,
@@ -7173,15 +7182,6 @@
    "score": 7.782986079453673,
    "at": "4396.8, 3150",
    "street": ""
-  },
-  {
-   "tile": "E3",
-   "kind": "lump",
-   "m2": 5,
-   "worst": 1.55,
-   "score": 7.7599334716796875,
-   "at": "-794, -769",
-   "street": "Rue du Doyenné 33"
   },
   {
    "tile": "G1",
@@ -7319,15 +7319,6 @@
    "street": ""
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 39.3,
-   "worst": 0.19,
-   "score": 7.472648088043576,
-   "at": "-155.9, 1914.2",
-   "street": "Avenue Jacqueline Harpman 2"
-  },
-  {
    "tile": "J2",
    "kind": "roadTilt",
    "m2": 18,
@@ -7407,6 +7398,15 @@
    "score": 7.360973358154297,
    "at": "-399, -525",
    "street": "Avenue de l'Echevinage 15"
+  },
+  {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 18.1,
+   "worst": 0.41,
+   "score": 7.3538298869334735,
+   "at": "-202.5, 534.1",
+   "street": "Rue du Repos 131"
   },
   {
    "tile": "I4",
@@ -7539,8 +7539,8 @@
    "kind": "roadTilt",
    "m2": 22.5,
    "worst": 0.32,
-   "score": 7.075958659624482,
-   "at": "-510.8, -1097.9",
+   "score": 7.073899863632164,
+   "at": "-510.5, -1097.9",
    "street": "Avenue de Floréal 120"
   },
   {
@@ -7569,6 +7569,15 @@
    "score": 7.015113830566406,
    "at": "447, 658",
    "street": "Rue de la Pêcherie 158"
+  },
+  {
+   "tile": "F5",
+   "kind": "roadTilt",
+   "m2": 23.9,
+   "worst": 0.29,
+   "score": 6.9242605577749075,
+   "at": "-236, 464.8",
+   "street": "Rue du Repos 113"
   },
   {
    "tile": "E2",
@@ -7607,15 +7616,6 @@
    "street": "Avenue Henri Pirenne 16"
   },
   {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 23.4,
-   "worst": 0.29,
-   "score": 6.778329924461787,
-   "at": "-237.1, 463.4",
-   "street": "Rue du Repos 113"
-  },
-  {
    "tile": "I4",
    "kind": "lump",
    "m2": 9,
@@ -7623,15 +7623,6 @@
    "score": 6.760093688964844,
    "at": "1226, -411",
    "street": "Avenue de l'Observatoire 37B"
-  },
-  {
-   "tile": "G2",
-   "kind": "roadTilt",
-   "m2": 27.1,
-   "worst": 0.25,
-   "score": 6.7444313935921425,
-   "at": "131.7, -1099",
-   "street": "Avenue Adolphe Dupuich 34"
   },
   {
    "tile": "J4",
@@ -7679,15 +7670,6 @@
    "street": ""
   },
   {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 26.2,
-   "worst": 0.25,
-   "score": 6.626023910645381,
-   "at": "-243.3, 451",
-   "street": "Rue du Repos 113"
-  },
-  {
    "tile": "F6",
    "kind": "lump",
    "m2": 9,
@@ -7704,6 +7686,15 @@
    "score": 6.610198974609375,
    "at": "-65, 2507",
    "street": ""
+  },
+  {
+   "tile": "E2",
+   "kind": "roadTilt",
+   "m2": 18.2,
+   "worst": 0.36,
+   "score": 6.607434125259284,
+   "at": "-533.4, -1091.6",
+   "street": "Avenue de Floréal 112"
   },
   {
    "tile": "E10",
@@ -7733,13 +7724,22 @@
    "street": "Avenue Dolez 548A"
   },
   {
-   "tile": "F6",
+   "tile": "G2",
    "kind": "roadTilt",
-   "m2": 16,
-   "worst": 0.41,
-   "score": 6.51774495938161,
-   "at": "-203.1, 534.6",
-   "street": "Rue du Repos 131"
+   "m2": 26.3,
+   "worst": 0.25,
+   "score": 6.553883275625239,
+   "at": "131.7, -1099",
+   "street": "Avenue Adolphe Dupuich 34"
+  },
+  {
+   "tile": "F5",
+   "kind": "roadTilt",
+   "m2": 21.7,
+   "worst": 0.3,
+   "score": 6.5251839531602585,
+   "at": "-231.3, 476.2",
+   "street": "Rue du Repos 113"
   },
   {
    "tile": "D7",
@@ -7769,6 +7769,15 @@
    "street": ""
   },
   {
+   "tile": "F5",
+   "kind": "roadTilt",
+   "m2": 25.5,
+   "worst": 0.25,
+   "score": 6.45119668160632,
+   "at": "-244.5, 450.3",
+   "street": "Rue du Repos 113"
+  },
+  {
    "tile": "D6",
    "kind": "lump",
    "m2": 4,
@@ -7776,15 +7785,6 @@
    "score": 6.451141357421875,
    "at": "-1110, 864",
    "street": "Dieweg 3"
-  },
-  {
-   "tile": "E2",
-   "kind": "roadTilt",
-   "m2": 17.7,
-   "worst": 0.36,
-   "score": 6.448821734022257,
-   "at": "-533.2, -1091.6",
-   "street": "Avenue de Floréal 112"
   },
   {
    "tile": "F9",
@@ -7800,8 +7800,8 @@
    "kind": "roadTilt",
    "m2": 29,
    "worst": 0.22,
-   "score": 6.4112097073777266,
-   "at": "1894.1, -696.6",
+   "score": 6.420169652008538,
+   "at": "1893, -698.7",
    "street": ""
   },
   {
@@ -7823,6 +7823,15 @@
    "street": ""
   },
   {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 32,
+   "worst": 0.2,
+   "score": 6.397988659898397,
+   "at": "319.8, 2545.5",
+   "street": "Avenue Dolez 534"
+  },
+  {
    "tile": "C6",
    "kind": "lump",
    "m2": 6,
@@ -7839,24 +7848,6 @@
    "score": 6.3838348388671875,
    "at": "-1310, -309",
    "street": "Avenue de l'Aulne 95"
-  },
-  {
-   "tile": "D8",
-   "kind": "roadTilt",
-   "m2": 46.2,
-   "worst": 0.14,
-   "score": 6.370887045719937,
-   "at": "-1284, 1746.4",
-   "street": "Rue de Calevoet 110M"
-  },
-  {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 21.2,
-   "worst": 0.3,
-   "score": 6.3592111785240775,
-   "at": "-231.3, 476.2",
-   "street": "Rue du Repos 113"
   },
   {
    "tile": "G9",
@@ -7895,22 +7886,13 @@
    "street": "Rue Groeselenberg 51"
   },
   {
-   "tile": "G10",
+   "tile": "D8",
    "kind": "roadTilt",
-   "m2": 41.9,
-   "worst": 0.15,
-   "score": 6.271374937255661,
-   "at": "455.3, 2813.4",
-   "street": ""
-  },
-  {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 17.8,
-   "worst": 0.35,
-   "score": 6.256356224835024,
-   "at": "-173.4, 594.5",
-   "street": "Rue du Repos 153"
+   "m2": 45.3,
+   "worst": 0.14,
+   "score": 6.248532317669193,
+   "at": "-1281.8, 1750.8",
+   "street": "Rue de Calevoet 110M"
   },
   {
    "tile": "K8",
@@ -7920,15 +7902,6 @@
    "score": 6.2452392578125,
    "at": "2470, 1612",
    "street": "Drève de Lorraine 41"
-  },
-  {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 15,
-   "worst": 0.42,
-   "score": 6.226533452405945,
-   "at": "-221, 498.4",
-   "street": ""
   },
   {
    "tile": "H7",
@@ -7958,6 +7931,15 @@
    "street": ""
   },
   {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 41.1,
+   "worst": 0.15,
+   "score": 6.139634595447878,
+   "at": "454.8, 2812.9",
+   "street": ""
+  },
+  {
    "tile": "C3",
    "kind": "lump",
    "m2": 8,
@@ -7976,6 +7958,15 @@
    "street": "Avenue de la Princesse Paola 33"
   },
   {
+   "tile": "F5",
+   "kind": "roadTilt",
+   "m2": 14.6,
+   "worst": 0.42,
+   "score": 6.087767650066147,
+   "at": "-221, 498.4",
+   "street": ""
+  },
+  {
    "tile": "C9",
    "kind": "lump",
    "m2": 7,
@@ -7991,6 +7982,24 @@
    "worst": 0.67,
    "score": 6.0558013916015625,
    "at": "-105, 1349",
+   "street": ""
+  },
+  {
+   "tile": "I6",
+   "kind": "roadTilt",
+   "m2": 27.4,
+   "worst": 0.22,
+   "score": 6.054964150523895,
+   "at": "1110.2, 852.7",
+   "street": "Montagne de Saint-Job 121"
+  },
+  {
+   "tile": "F5",
+   "kind": "roadTilt",
+   "m2": 20.1,
+   "worst": 0.3,
+   "score": 6.041906735553874,
+   "at": "-226.2, 487.4",
    "street": ""
   },
   {
@@ -8039,15 +8048,6 @@
    "street": "Chemin privé 't Cortenbosch 47"
   },
   {
-   "tile": "C6",
-   "kind": "roadTilt",
-   "m2": 31.1,
-   "worst": 0.19,
-   "score": 5.991012430543964,
-   "at": "-1673.3, 978.5",
-   "street": ""
-  },
-  {
    "tile": "G10",
    "kind": "over",
    "m2": 3.1,
@@ -8055,15 +8055,6 @@
    "score": 5.984930417070533,
    "at": "316.3, 2768",
    "street": "Avenue Buysdelle 30"
-  },
-  {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 17.9,
-   "worst": 0.33,
-   "score": 5.984438573340684,
-   "at": "-183.5, 572.1",
-   "street": "Rue du Repos 145"
   },
   {
    "tile": "D6",
@@ -8138,15 +8129,6 @@
    "street": ""
   },
   {
-   "tile": "I6",
-   "kind": "roadTilt",
-   "m2": 26.7,
-   "worst": 0.22,
-   "score": 5.892518132457384,
-   "at": "1110.2, 852.7",
-   "street": "Montagne de Saint-Job 121"
-  },
-  {
    "tile": "C3",
    "kind": "lump",
    "m2": 8,
@@ -8172,6 +8154,24 @@
    "score": 5.864482293676545,
    "at": "-1350.3, -1638.1",
    "street": ""
+  },
+  {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 16.5,
+   "worst": 0.35,
+   "score": 5.8498586441824845,
+   "at": "-195.9, 547.4",
+   "street": "Rue du Repos 137"
+  },
+  {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 15.9,
+   "worst": 0.37,
+   "score": 5.845980390150965,
+   "at": "-166.4, 607.4",
+   "street": "Rue du Repos 116"
   },
   {
    "tile": "G7",
@@ -8219,6 +8219,24 @@
    "street": "Chaussée de Waterloo 1327E"
   },
   {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 16.3,
+   "worst": 0.35,
+   "score": 5.743633809460589,
+   "at": "-172.4, 594.3",
+   "street": "Rue du Repos 153"
+  },
+  {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 17.2,
+   "worst": 0.33,
+   "score": 5.738196027956901,
+   "at": "-189.7, 559.8",
+   "street": "Rue du Repos 141"
+  },
+  {
    "tile": "D7",
    "kind": "lump",
    "m2": 8,
@@ -8264,15 +8282,6 @@
    "street": "Rue Gatti de Gamond 138"
   },
   {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 15.5,
-   "worst": 0.37,
-   "score": 5.687381871085289,
-   "at": "-167.8, 606.1",
-   "street": "Rue du Repos 116"
-  },
-  {
    "tile": "I11",
    "kind": "lump",
    "m2": 8,
@@ -8297,6 +8306,15 @@
    "worst": 0.81,
    "score": 5.67083740234375,
    "at": "25, 2085",
+   "street": ""
+  },
+  {
+   "tile": "J3",
+   "kind": "roadTilt",
+   "m2": 35,
+   "worst": 0.16,
+   "score": 5.666631597222515,
+   "at": "1850.6, -719.6",
    "street": ""
   },
   {
@@ -8327,13 +8345,13 @@
    "street": "Avenue du Vert Chasseur 12"
   },
   {
-   "tile": "J3",
+   "tile": "F5",
    "kind": "roadTilt",
-   "m2": 34.9,
-   "worst": 0.16,
-   "score": 5.650651205537807,
-   "at": "1852.5, -718.8",
-   "street": ""
+   "m2": 25.2,
+   "worst": 0.22,
+   "score": 5.6493065909107925,
+   "at": "-250.8, 439",
+   "street": "Rue du Repos 109"
   },
   {
    "tile": "I7",
@@ -8352,6 +8370,15 @@
    "score": 5.621360778808594,
    "at": "-1239, 2962",
    "street": ""
+  },
+  {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 16.8,
+   "worst": 0.33,
+   "score": 5.614821678366125,
+   "at": "-182.3, 573.5",
+   "street": "Rue du Repos 145"
   },
   {
    "tile": "G7",
@@ -8435,6 +8462,15 @@
    "street": ""
   },
   {
+   "tile": "F6",
+   "kind": "roadTilt",
+   "m2": 16.4,
+   "worst": 0.34,
+   "score": 5.535127077993285,
+   "at": "-178, 582.5",
+   "street": "Rue du Repos 149"
+  },
+  {
    "tile": "G3",
    "kind": "lump",
    "m2": 3,
@@ -8457,9 +8493,9 @@
    "kind": "roadTilt",
    "m2": 30,
    "worst": 0.18,
-   "score": 5.523730936075147,
-   "at": "472.4, 2751.6",
-   "street": "Avenue Dolez 315A"
+   "score": 5.5120896809746895,
+   "at": "471.5, 2751.4",
+   "street": "Avenue Dolez 315"
   },
   {
    "tile": "G8",
@@ -8588,24 +8624,6 @@
    "street": "Rue Rouge 39"
   },
   {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 15.9,
-   "worst": 0.34,
-   "score": 5.357948703643995,
-   "at": "-178.7, 582.7",
-   "street": "Rue du Repos 149"
-  },
-  {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 16,
-   "worst": 0.33,
-   "score": 5.348186511472807,
-   "at": "-189.7, 559.8",
-   "street": "Rue du Repos 141"
-  },
-  {
    "tile": "D1",
    "kind": "over",
    "m2": 3.4,
@@ -8613,24 +8631,6 @@
    "score": 5.3468591066336835,
    "at": "-1337.2, -1503.7",
    "street": ""
-  },
-  {
-   "tile": "D10",
-   "kind": "roadTilt",
-   "m2": 26.3,
-   "worst": 0.2,
-   "score": 5.321152214614363,
-   "at": "-1088, 2670.5",
-   "street": "Vieux Chemin 8"
-  },
-  {
-   "tile": "F2",
-   "kind": "roadTilt",
-   "m2": 37,
-   "worst": 0.14,
-   "score": 5.284780428973317,
-   "at": "-481.1, -1014.6",
-   "street": "Avenue de Boetendael 71"
   },
   {
    "tile": "G3",
@@ -8658,6 +8658,15 @@
    "score": 5.2653350830078125,
    "at": "-1269, -1853",
    "street": ""
+  },
+  {
+   "tile": "K5",
+   "kind": "roadTilt",
+   "m2": 23.8,
+   "worst": 0.22,
+   "score": 5.253038372451027,
+   "at": "2089.1, 66.6",
+   "street": "Drève des Gendarmes 13"
   },
   {
    "tile": "F6",
@@ -8694,15 +8703,6 @@
    "score": 5.1771697998046875,
    "at": "1788, 447",
    "street": "Drève du Sénéchal 32"
-  },
-  {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 22.9,
-   "worst": 0.22,
-   "score": 5.1407860575748465,
-   "at": "-250.8, 439",
-   "street": "Rue du Repos 109"
   },
   {
    "tile": "I1",
@@ -8777,39 +8777,21 @@
    "street": "Rue du Repos 113"
   },
   {
+   "tile": "D10",
+   "kind": "roadTilt",
+   "m2": 25,
+   "worst": 0.2,
+   "score": 5.050243242291989,
+   "at": "-1089.2, 2671.5",
+   "street": "Vieux Chemin 8"
+  },
+  {
    "tile": "F7",
    "kind": "lump",
    "m2": 5,
    "worst": 1.01,
    "score": 5.040321350097656,
    "at": "-58, 1213",
-   "street": ""
-  },
-  {
-   "tile": "J3",
-   "kind": "roadTilt",
-   "m2": 27.2,
-   "worst": 0.18,
-   "score": 5.0384238069119585,
-   "at": "1902, -664.2",
-   "street": ""
-  },
-  {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 16.6,
-   "worst": 0.3,
-   "score": 5.005474724647738,
-   "at": "-226.2, 487.4",
-   "street": ""
-  },
-  {
-   "tile": "C6",
-   "kind": "lump",
-   "m2": 5,
-   "worst": 1,
-   "score": 5.003681182861328,
-   "at": "-1676, 964",
    "street": ""
   },
   {
@@ -8831,13 +8813,13 @@
    "street": "Avenue de Saturne 13"
   },
   {
-   "tile": "F6",
+   "tile": "J3",
    "kind": "roadTilt",
-   "m2": 14,
-   "worst": 0.35,
-   "score": 4.970404789410004,
-   "at": "-195.9, 547.4",
-   "street": "Rue du Repos 137"
+   "m2": 27,
+   "worst": 0.18,
+   "score": 4.982953789941515,
+   "at": "1901.9, -664.3",
+   "street": ""
   },
   {
    "tile": "B4",
@@ -8856,6 +8838,24 @@
    "score": 4.968711853027344,
    "at": "1382, 3116",
    "street": ""
+  },
+  {
+   "tile": "J3",
+   "kind": "roadTilt",
+   "m2": 38,
+   "worst": 0.13,
+   "score": 4.9315710269178705,
+   "at": "1782.7, -718.4",
+   "street": ""
+  },
+  {
+   "tile": "K5",
+   "kind": "roadTilt",
+   "m2": 31.1,
+   "worst": 0.16,
+   "score": 4.9242180654571275,
+   "at": "2142.8, 462.4",
+   "street": "Drève des Gendarmes 57"
   },
   {
    "tile": "G7",
@@ -8883,24 +8883,6 @@
    "score": 4.881489300030921,
    "at": "-1343, -1485.2",
    "street": ""
-  },
-  {
-   "tile": "K5",
-   "kind": "roadTilt",
-   "m2": 30.6,
-   "worst": 0.16,
-   "score": 4.854997731821985,
-   "at": "2142.8, 462.4",
-   "street": "Drève des Gendarmes 57"
-  },
-  {
-   "tile": "G2",
-   "kind": "roadTilt",
-   "m2": 22.1,
-   "worst": 0.22,
-   "score": 4.830256023293717,
-   "at": "125.7, -1086.5",
-   "street": "Avenue Adolphe Dupuich 34"
   },
   {
    "tile": "F10",
@@ -9101,13 +9083,13 @@
    "street": "Rue de Linkebeek 1"
   },
   {
-   "tile": "G4",
+   "tile": "C6",
    "kind": "roadTilt",
-   "m2": 24.2,
+   "m2": 23.4,
    "worst": 0.19,
-   "score": 4.525704102675861,
-   "at": "48.8, -83.4",
-   "street": "Avenue Kamerdelle 83"
+   "score": 4.509294801561678,
+   "at": "-1673, 978.8",
+   "street": ""
   },
   {
    "tile": "J6",
@@ -9164,6 +9146,15 @@
    "street": ""
   },
   {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 23.4,
+   "worst": 0.19,
+   "score": 4.416285796965294,
+   "at": "-154.6, 1916.8",
+   "street": "Avenue Jacqueline Harpman 2"
+  },
+  {
    "tile": "E2",
    "kind": "tilt",
    "m2": 12.1,
@@ -9180,15 +9171,6 @@
    "score": 4.34637451171875,
    "at": "-1760, 878",
    "street": ""
-  },
-  {
-   "tile": "G10",
-   "kind": "roadTilt",
-   "m2": 30.2,
-   "worst": 0.14,
-   "score": 4.322037643864632,
-   "at": "404.4, 2702.5",
-   "street": "Avenue Dolez 301"
   },
   {
    "tile": "F4",
@@ -9326,6 +9308,24 @@
    "street": ""
   },
   {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 29.5,
+   "worst": 0.14,
+   "score": 4.211989203088481,
+   "at": "403.2, 2703.4",
+   "street": "Avenue Dolez 301"
+  },
+  {
+   "tile": "N5",
+   "kind": "roadTilt",
+   "m2": 32.7,
+   "worst": 0.13,
+   "score": 4.207825135762328,
+   "at": "3677.6, 208.4",
+   "street": ""
+  },
+  {
    "tile": "G9",
    "kind": "lump",
    "m2": 5,
@@ -9335,6 +9335,15 @@
    "street": "Rue Engeland 563"
   },
   {
+   "tile": "G7",
+   "kind": "roadTilt",
+   "m2": 32.1,
+   "worst": 0.13,
+   "score": 4.191686503669846,
+   "at": "36.5, 1104.7",
+   "street": ""
+  },
+  {
    "tile": "E3",
    "kind": "lump",
    "m2": 5,
@@ -9342,15 +9351,6 @@
    "score": 4.171085357666016,
    "at": "-556, -632",
    "street": "Avenue Coghen 278"
-  },
-  {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 24.2,
-   "worst": 0.17,
-   "score": 4.164811407034561,
-   "at": "-254.7, 429.2",
-   "street": "Rue du Repos 107"
   },
   {
    "tile": "E10",
@@ -9371,15 +9371,6 @@
    "street": "Avenue de la Chênaie 85"
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 17.4,
-   "worst": 0.24,
-   "score": 4.131553073424106,
-   "at": "-173.4, 1975.7",
-   "street": ""
-  },
-  {
    "tile": "F6",
    "kind": "tilt",
    "m2": 6.2,
@@ -9396,6 +9387,15 @@
    "score": 4.125690589398659,
    "at": "-1327, 870.7",
    "street": "Rue François Vervloet 23"
+  },
+  {
+   "tile": "F5",
+   "kind": "roadTilt",
+   "m2": 23.9,
+   "worst": 0.17,
+   "score": 4.1203040899430805,
+   "at": "-253.3, 430.6",
+   "street": "Rue du Repos 107"
   },
   {
    "tile": "F9",
@@ -9425,6 +9425,15 @@
    "street": ""
   },
   {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 33.5,
+   "worst": 0.12,
+   "score": 4.0927927536984186,
+   "at": "-226.1, 1987.5",
+   "street": "Rue Engeland 489"
+  },
+  {
    "tile": "H10",
    "kind": "lump",
    "m2": 3,
@@ -9449,6 +9458,15 @@
    "worst": 0.27,
    "score": 4.028540712053223,
    "at": "2734.4, 104.5",
+   "street": ""
+  },
+  {
+   "tile": "G7",
+   "kind": "roadTilt",
+   "m2": 28.8,
+   "worst": 0.14,
+   "score": 4.026861494467029,
+   "at": "41.4, 1084.5",
    "street": ""
   },
   {
@@ -9479,15 +9497,6 @@
    "street": "Avenue Achille Reisdorff 20"
   },
   {
-   "tile": "J3",
-   "kind": "roadTilt",
-   "m2": 30.9,
-   "worst": 0.13,
-   "score": 4.006582431799019,
-   "at": "1784.3, -717.3",
-   "street": ""
-  },
-  {
    "tile": "D10",
    "kind": "over",
    "m2": 5.2,
@@ -9513,15 +9522,6 @@
    "score": 3.9779042042854322,
    "at": "-2312, -496",
    "street": ""
-  },
-  {
-   "tile": "E7",
-   "kind": "lump",
-   "m2": 6,
-   "worst": 0.66,
-   "score": 3.9556503295898438,
-   "at": "-617, 1100",
-   "street": "Rue Geleytsbeek 183"
   },
   {
    "tile": "K5",
@@ -9623,6 +9623,15 @@
    "street": "Avenue Kersbeek 300"
   },
   {
+   "tile": "N5",
+   "kind": "roadTilt",
+   "m2": 23.2,
+   "worst": 0.17,
+   "score": 3.8702804610742314,
+   "at": "3591.5, 88.1",
+   "street": ""
+  },
+  {
    "tile": "D7",
    "kind": "tilt",
    "m2": 14.7,
@@ -9704,13 +9713,13 @@
    "street": "Rue Gatti de Gamond 161"
   },
   {
-   "tile": "G10",
-   "kind": "roadTilt",
-   "m2": 28.5,
-   "worst": 0.13,
-   "score": 3.8086477072040563,
-   "at": "433, 2813.6",
-   "street": ""
+   "tile": "D6",
+   "kind": "lump",
+   "m2": 6,
+   "worst": 0.64,
+   "score": 3.8207015991210938,
+   "at": "-1116, 663",
+   "street": "Chaussée d'Alsemberg 962"
   },
   {
    "tile": "C6",
@@ -9729,6 +9738,15 @@
    "score": 3.78497314453125,
    "at": "-1812, -275",
    "street": "Avenue Kersbeek 306"
+  },
+  {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 20.2,
+   "worst": 0.19,
+   "score": 3.782252796016512,
+   "at": "50.2, -82.8",
+   "street": "Avenue Kamerdelle 83"
   },
   {
    "tile": "C3",
@@ -9758,15 +9776,6 @@
    "street": "Rue Marie Depage 45"
   },
   {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 29.2,
-   "worst": 0.13,
-   "score": 3.7637490944056045,
-   "at": "3677.9, 208.1",
-   "street": ""
-  },
-  {
    "tile": "C5",
    "kind": "tilt",
    "m2": 10.3,
@@ -9774,6 +9783,15 @@
    "score": 3.754670248741637,
    "at": "-1502.9, 268.7",
    "street": "Rue du Roetaert 1"
+  },
+  {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 15.8,
+   "worst": 0.24,
+   "score": 3.7503725541453212,
+   "at": "-173.3, 1976.1",
+   "street": ""
   },
   {
    "tile": "E10",
@@ -9792,33 +9810,6 @@
    "score": 3.7386066117755012,
    "at": "-1306.3, 862",
    "street": "Rue François Vervloet 16"
-  },
-  {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 22.3,
-   "worst": 0.17,
-   "score": 3.730016128629941,
-   "at": "3590.6, 87.1",
-   "street": ""
-  },
-  {
-   "tile": "D4",
-   "kind": "roadTilt",
-   "m2": 20.9,
-   "worst": 0.18,
-   "score": 3.7137823273421553,
-   "at": "-1111.4, -129.3",
-   "street": "Avenue de la Princesse Paola 24"
-  },
-  {
-   "tile": "K6",
-   "kind": "roadTilt",
-   "m2": 15,
-   "worst": 0.25,
-   "score": 3.7063892070221627,
-   "at": "2153.7, 563.8",
-   "street": "Avenue des Chênes 125"
   },
   {
    "tile": "J2",
@@ -9956,6 +9947,15 @@
    "street": "Rue Gatti de Gamond 337"
   },
   {
+   "tile": "D4",
+   "kind": "roadTilt",
+   "m2": 20.3,
+   "worst": 0.18,
+   "score": 3.600651510233207,
+   "at": "-1110.4, -127",
+   "street": "Avenue de la Princesse Paola 24"
+  },
+  {
    "tile": "G7",
    "kind": "roadTilt",
    "m2": 22.8,
@@ -10019,6 +10019,15 @@
    "street": ""
   },
   {
+   "tile": "G7",
+   "kind": "roadTilt",
+   "m2": 25.8,
+   "worst": 0.14,
+   "score": 3.554707366001215,
+   "at": "35.8, 1120.1",
+   "street": ""
+  },
+  {
    "tile": "F6",
    "kind": "tilt",
    "m2": 15.4,
@@ -10028,11 +10037,20 @@
    "street": "Chaussée de Saint-Job 334"
   },
   {
+   "tile": "K6",
+   "kind": "roadTilt",
+   "m2": 14.3,
+   "worst": 0.25,
+   "score": 3.545935194981549,
+   "at": "2153.5, 563.8",
+   "street": "Avenue des Chênes 125"
+  },
+  {
    "tile": "G10",
    "kind": "spike",
    "m2": 6,
    "worst": 0.59,
-   "score": 3.546123504638672,
+   "score": 3.5444869995117188,
    "at": "421, 2712",
    "street": "Avenue Dolez 303"
   },
@@ -10080,15 +10098,6 @@
    "score": 3.5232429211600196,
    "at": "-205.8, 525.5",
    "street": "Rue du Repos 129"
-  },
-  {
-   "tile": "F1",
-   "kind": "roadTilt",
-   "m2": 26,
-   "worst": 0.14,
-   "score": 3.5190630736847703,
-   "at": "-136, -1704.4",
-   "street": "Avenue Albert 270"
   },
   {
    "tile": "C3",
@@ -10161,6 +10170,15 @@
    "score": 3.4756622314453125,
    "at": "211, 639",
    "street": "Clos du Drossart 3A"
+  },
+  {
+   "tile": "G2",
+   "kind": "roadTilt",
+   "m2": 15.9,
+   "worst": 0.22,
+   "score": 3.4701275212876816,
+   "at": "125.9, -1086.2",
+   "street": "Avenue Adolphe Dupuich 34"
   },
   {
    "tile": "F6",
@@ -10253,6 +10271,15 @@
    "street": ""
   },
   {
+   "tile": "N5",
+   "kind": "roadTilt",
+   "m2": 8.3,
+   "worst": 0.41,
+   "score": 3.405771216396546,
+   "at": "3690.8, 216.6",
+   "street": ""
+  },
+  {
    "tile": "F6",
    "kind": "lump",
    "m2": 4,
@@ -10289,30 +10316,21 @@
    "street": "Avenue Jacques Pastur 106"
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 27.4,
-   "worst": 0.12,
-   "score": 3.358865306683658,
-   "at": "-227.6, 1986.3",
-   "street": "Rue Engeland 489"
-  },
-  {
    "tile": "I5",
    "kind": "roadTilt",
    "m2": 16.1,
    "worst": 0.21,
-   "score": 3.3499456069440168,
+   "score": 3.358343746965207,
    "at": "1211.6, 197.9",
    "street": "Avenue Albert Lancaster 101"
   },
   {
    "tile": "G7",
    "kind": "roadTilt",
-   "m2": 26.2,
-   "worst": 0.13,
-   "score": 3.3447307619936657,
-   "at": "36.7, 1104.8",
+   "m2": 20.5,
+   "worst": 0.16,
+   "score": 3.342784975492585,
+   "at": "35.6, 1143.7",
    "street": ""
   },
   {
@@ -10451,6 +10469,15 @@
    "street": "Rue François Vervloet 6"
   },
   {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 24.2,
+   "worst": 0.13,
+   "score": 3.228491840690178,
+   "at": "433, 2813.8",
+   "street": ""
+  },
+  {
    "tile": "B4",
    "kind": "tilt",
    "m2": 6,
@@ -10586,13 +10613,13 @@
    "street": ""
   },
   {
-   "tile": "B4",
+   "tile": "F1",
    "kind": "roadTilt",
-   "m2": 20.9,
-   "worst": 0.15,
-   "score": 3.1429101013467062,
-   "at": "-2259.5, -438.7",
-   "street": ""
+   "m2": 23.2,
+   "worst": 0.14,
+   "score": 3.135952809583215,
+   "at": "-136, -1704.4",
+   "street": "Avenue Albert 270"
   },
   {
    "tile": "L9",
@@ -10601,15 +10628,6 @@
    "worst": 0.22,
    "score": 3.1235787186590636,
    "at": "2740.8, 2102",
-   "street": ""
-  },
-  {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 22.6,
-   "worst": 0.14,
-   "score": 3.116364458235309,
-   "at": "2753.6, 113.4",
    "street": ""
   },
   {
@@ -10629,6 +10647,15 @@
    "score": 3.1097412109375,
    "at": "-1148, 845",
    "street": "Dieweg 4"
+  },
+  {
+   "tile": "L5",
+   "kind": "roadTilt",
+   "m2": 22.5,
+   "worst": 0.14,
+   "score": 3.1097362933634844,
+   "at": "2753.6, 112.9",
+   "street": ""
   },
   {
    "tile": "B8",
@@ -10656,6 +10683,15 @@
    "score": 3.0988311767578125,
    "at": "661, -979",
    "street": "Bosveldweg 35"
+  },
+  {
+   "tile": "B4",
+   "kind": "roadTilt",
+   "m2": 20.6,
+   "worst": 0.15,
+   "score": 3.09218464550712,
+   "at": "-2256.4, -438.2",
+   "street": ""
   },
   {
    "tile": "H2",
@@ -10793,15 +10829,6 @@
    "street": "Avenue Jean Burgers 4"
   },
   {
-   "tile": "B4",
-   "kind": "roadTilt",
-   "m2": 19.8,
-   "worst": 0.15,
-   "score": 3.0151632566063267,
-   "at": "-2102.9, -181.8",
-   "street": ""
-  },
-  {
    "tile": "B8",
    "kind": "lump",
    "m2": 4,
@@ -10847,6 +10874,15 @@
    "street": "Rue de Percke 157"
   },
   {
+   "tile": "E9",
+   "kind": "roadTilt",
+   "m2": 22,
+   "worst": 0.14,
+   "score": 2.9972282545838387,
+   "at": "-540.6, 2087.9",
+   "street": "Homborch 94"
+  },
+  {
    "tile": "I5",
    "kind": "lump",
    "m2": 2,
@@ -10872,6 +10908,15 @@
    "score": 2.9381555649125146,
    "at": "-2560, 185.8",
    "street": ""
+  },
+  {
+   "tile": "G10",
+   "kind": "spike",
+   "m2": 5,
+   "worst": 0.59,
+   "score": 2.9348278045654297,
+   "at": "432, 2721",
+   "street": "Avenue Dolez 586"
   },
   {
    "tile": "C3",
@@ -10901,15 +10946,6 @@
    "street": "Avenue Buysdelle 30"
   },
   {
-   "tile": "G10",
-   "kind": "spike",
-   "m2": 5,
-   "worst": 0.58,
-   "score": 2.914400100708008,
-   "at": "432, 2721",
-   "street": "Avenue Dolez 586"
-  },
-  {
    "tile": "M5",
    "kind": "over",
    "m2": 3.1,
@@ -10932,7 +10968,7 @@
    "kind": "lump",
    "m2": 3,
    "worst": 0.96,
-   "score": 2.894451141357422,
+   "score": 2.892322540283203,
    "at": "-1660, 1001",
    "street": ""
   },
@@ -10973,12 +11009,12 @@
    "street": "Rue du Ham 1B"
   },
   {
-   "tile": "E10",
-   "kind": "spike",
-   "m2": 5,
-   "worst": 0.57,
-   "score": 2.873516082763672,
-   "at": "-839, 2914",
+   "tile": "C6",
+   "kind": "lump",
+   "m2": 3,
+   "worst": 0.96,
+   "score": 2.881805419921875,
+   "at": "-1672, 972",
    "street": ""
   },
   {
@@ -10986,9 +11022,18 @@
    "kind": "roadTilt",
    "m2": 16.2,
    "worst": 0.18,
-   "score": 2.869811838989042,
-   "at": "2119.2, 294.7",
+   "score": 2.8815043009115375,
+   "at": "2119.1, 294.6",
    "street": "Drève des Gendarmes 51C"
+  },
+  {
+   "tile": "E10",
+   "kind": "spike",
+   "m2": 5,
+   "worst": 0.57,
+   "score": 2.873516082763672,
+   "at": "-839, 2914",
+   "street": ""
   },
   {
    "tile": "D6",
@@ -11054,15 +11099,6 @@
    "street": ""
   },
   {
-   "tile": "G10",
-   "kind": "roadTilt",
-   "m2": 14.2,
-   "worst": 0.2,
-   "score": 2.8303171085075505,
-   "at": "320, 2545.8",
-   "street": "Avenue Dolez 241"
-  },
-  {
    "tile": "C4",
    "kind": "spike",
    "m2": 3,
@@ -11088,6 +11124,15 @@
    "score": 2.8082970091324744,
    "at": "-182, -1259.1",
    "street": "Avenue de Messidor 184"
+  },
+  {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 10.8,
+   "worst": 0.26,
+   "score": 2.8070496860952,
+   "at": "64.9, -72.8",
+   "street": "Avenue Kamerdelle 83"
   },
   {
    "tile": "F4",
@@ -11180,15 +11225,6 @@
    "street": ""
   },
   {
-   "tile": "E9",
-   "kind": "roadTilt",
-   "m2": 20.3,
-   "worst": 0.14,
-   "score": 2.760981530670326,
-   "at": "-540.6, 2087.7",
-   "street": "Homborch 94"
-  },
-  {
    "tile": "D4",
    "kind": "lump",
    "m2": 4,
@@ -11202,8 +11238,8 @@
    "kind": "roadTilt",
    "m2": 19.6,
    "worst": 0.14,
-   "score": 2.744921010818768,
-   "at": "1899.2, -678.9",
+   "score": 2.7390319456463166,
+   "at": "1899.3, -679.9",
    "street": ""
   },
   {
@@ -11223,15 +11259,6 @@
    "score": 2.7318572998046875,
    "at": "-458, -1939",
    "street": ""
-  },
-  {
-   "tile": "G10",
-   "kind": "roadTilt",
-   "m2": 17.2,
-   "worst": 0.16,
-   "score": 2.723609221404548,
-   "at": "319.6, 2543.2",
-   "street": "Avenue Dolez 534"
   },
   {
    "tile": "G10",
@@ -11276,6 +11303,15 @@
    "worst": 0.9,
    "score": 2.7073488235473633,
    "at": "-791, 2980",
+   "street": ""
+  },
+  {
+   "tile": "H10",
+   "kind": "roadTilt",
+   "m2": 17.6,
+   "worst": 0.15,
+   "score": 2.7031163236465545,
+   "at": "700.6, 2741.5",
    "street": ""
   },
   {
@@ -11331,6 +11367,15 @@
    "score": 2.6800423472781216,
    "at": "1296.8, -1637.5",
    "street": "Chaussée de Waterloo 751"
+  },
+  {
+   "tile": "C3",
+   "kind": "roadTilt",
+   "m2": 19.9,
+   "worst": 0.13,
+   "score": 2.6788139360199033,
+   "at": "-1739.6, -659.5",
+   "street": "Avenue du Jonc 37"
   },
   {
    "tile": "E2",
@@ -11459,15 +11504,6 @@
    "street": ""
   },
   {
-   "tile": "G7",
-   "kind": "roadTilt",
-   "m2": 19.1,
-   "worst": 0.14,
-   "score": 2.625084593008407,
-   "at": "35.6, 1120.1",
-   "street": ""
-  },
-  {
    "tile": "I11",
    "kind": "lump",
    "m2": 3,
@@ -11475,15 +11511,6 @@
    "score": 2.62261962890625,
    "at": "1025, 3029",
    "street": ""
-  },
-  {
-   "tile": "C3",
-   "kind": "roadTilt",
-   "m2": 19.3,
-   "worst": 0.13,
-   "score": 2.6063871673649013,
-   "at": "-1739.6, -659.5",
-   "street": "Avenue du Jonc 37"
   },
   {
    "tile": "C3",
@@ -11524,9 +11551,9 @@
   {
    "tile": "G10",
    "kind": "roadTilt",
-   "m2": 17.8,
+   "m2": 17.7,
    "worst": 0.15,
-   "score": 2.586198972922316,
+   "score": 2.5704773963664125,
    "at": "325.9, 2557.2",
    "street": "Avenue Dolez 241"
   },
@@ -11544,7 +11571,7 @@
    "kind": "lump",
    "m2": 4,
    "worst": 0.64,
-   "score": 2.555084228515625,
+   "score": 2.5550537109375,
    "at": "-578, 1437",
    "street": ""
   },
@@ -11573,15 +11600,6 @@
    "worst": 0.64,
    "score": 2.54803466796875,
    "at": "442, -810",
-   "street": ""
-  },
-  {
-   "tile": "H10",
-   "kind": "roadTilt",
-   "m2": 16.6,
-   "worst": 0.15,
-   "score": 2.54748836992142,
-   "at": "700.8, 2741.5",
    "street": ""
   },
   {
@@ -11673,33 +11691,6 @@
    "score": 2.517303466796875,
    "at": "1211, 350",
    "street": "Avenue Latérale 143"
-  },
-  {
-   "tile": "G7",
-   "kind": "roadTilt",
-   "m2": 18,
-   "worst": 0.14,
-   "score": 2.512256646106268,
-   "at": "41.6, 1084.7",
-   "street": ""
-  },
-  {
-   "tile": "C6",
-   "kind": "lump",
-   "m2": 3,
-   "worst": 0.84,
-   "score": 2.5098495483398438,
-   "at": "-1672, 972",
-   "street": ""
-  },
-  {
-   "tile": "F3",
-   "kind": "roadTilt",
-   "m2": 9,
-   "worst": 0.28,
-   "score": 2.5091400428483355,
-   "at": "-66.3, -726.3",
-   "street": "Avenue de la Ferme Rose 13"
   },
   {
    "tile": "G3",
@@ -11819,15 +11810,6 @@
    "street": ""
   },
   {
-   "tile": "D4",
-   "kind": "roadTilt",
-   "m2": 20.1,
-   "worst": 0.12,
-   "score": 2.469066445632312,
-   "at": "-1100, -146.3",
-   "street": "Avenue de la Princesse Paola 24"
-  },
-  {
    "tile": "F2",
    "kind": "tilt",
    "m2": 2.9,
@@ -11835,6 +11817,33 @@
    "score": 2.4663151936518157,
    "at": "-236, -1253.8",
    "street": "Avenue Brugmann 308"
+  },
+  {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 16.8,
+   "worst": 0.15,
+   "score": 2.463448650560584,
+   "at": "-1276.1, 828.3",
+   "street": "Rue François Vervloet 3"
+  },
+  {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 13.8,
+   "worst": 0.18,
+   "score": 2.462437988942722,
+   "at": "-213.8, 1999.4",
+   "street": "Rue Engeland 489"
+  },
+  {
+   "tile": "B4",
+   "kind": "roadTilt",
+   "m2": 16.1,
+   "worst": 0.15,
+   "score": 2.4580469665040448,
+   "at": "-2102.9, -181.8",
+   "street": ""
   },
   {
    "tile": "F7",
@@ -11900,6 +11909,15 @@
    "street": "Rue Steenvelt 28"
   },
   {
+   "tile": "B4",
+   "kind": "roadTilt",
+   "m2": 17.7,
+   "worst": 0.14,
+   "score": 2.4319252750105504,
+   "at": "-2250.7, -444.7",
+   "street": ""
+  },
+  {
    "tile": "C3",
    "kind": "lump",
    "m2": 4,
@@ -11943,15 +11961,6 @@
    "score": 2.4111671447753906,
    "at": "-2453, 853",
    "street": ""
-  },
-  {
-   "tile": "K5",
-   "kind": "roadTilt",
-   "m2": 16.4,
-   "worst": 0.15,
-   "score": 2.4093330672225175,
-   "at": "2106.9, 204.4",
-   "street": "Drève des Gendarmes 47"
   },
   {
    "tile": "L5",
@@ -11999,12 +12008,30 @@
    "street": ""
   },
   {
+   "tile": "K5",
+   "kind": "roadTilt",
+   "m2": 16.3,
+   "worst": 0.15,
+   "score": 2.392528638304019,
+   "at": "2107.5, 204.6",
+   "street": "Drève des Gendarmes 47"
+  },
+  {
    "tile": "F10",
    "kind": "lump",
    "m2": 3,
    "worst": 0.8,
    "score": 2.3883590698242188,
    "at": "-496, 2975",
+   "street": ""
+  },
+  {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 3.5,
+   "worst": 0.67,
+   "score": 2.3841264804250364,
+   "at": "-461.3, 1506.8",
    "street": ""
   },
   {
@@ -12017,15 +12044,6 @@
    "street": "Montagne de Saint-Job 123"
   },
   {
-   "tile": "B4",
-   "kind": "roadTilt",
-   "m2": 17.3,
-   "worst": 0.14,
-   "score": 2.3761637340136343,
-   "at": "-2250.8, -444.3",
-   "street": ""
-  },
-  {
    "tile": "F4",
    "kind": "lump",
    "m2": 3,
@@ -12035,13 +12053,13 @@
    "street": ""
   },
   {
-   "tile": "F9",
+   "tile": "D4",
    "kind": "roadTilt",
-   "m2": 10.9,
-   "worst": 0.22,
-   "score": 2.375219787809081,
-   "at": "-185.7, 2010.1",
-   "street": "Avenue de la Gazelle 1"
+   "m2": 19.3,
+   "worst": 0.12,
+   "score": 2.372942107601474,
+   "at": "-1099.3, -146.1",
+   "street": "Avenue de la Princesse Paola 24"
   },
   {
    "tile": "B4",
@@ -12107,6 +12125,15 @@
    "street": "Avenue Kersbeek 308"
   },
   {
+   "tile": "C8",
+   "kind": "roadTilt",
+   "m2": 14.9,
+   "worst": 0.16,
+   "score": 2.341456124894876,
+   "at": "-1711.5, 1650.3",
+   "street": "Rue Zandbeek 151"
+  },
+  {
    "tile": "M5",
    "kind": "over",
    "m2": 3.3,
@@ -12161,15 +12188,6 @@
    "street": ""
   },
   {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 8.8,
-   "worst": 0.26,
-   "score": 2.301576738223623,
-   "at": "64.9, -72.8",
-   "street": "Avenue Kamerdelle 83"
-  },
-  {
    "tile": "C4",
    "kind": "lump",
    "m2": 3,
@@ -12206,6 +12224,15 @@
    "street": "Chaussée d'Alsemberg 1033A"
   },
   {
+   "tile": "F9",
+   "kind": "roadTilt",
+   "m2": 10.5,
+   "worst": 0.22,
+   "score": 2.2970650314092405,
+   "at": "-185.7, 2010.1",
+   "street": "Avenue de la Gazelle 1"
+  },
+  {
    "tile": "E10",
    "kind": "lump",
    "m2": 3,
@@ -12240,6 +12267,15 @@
    "score": 2.284634585487426,
    "at": "-186.8, 561.6",
    "street": "Rue du Repos 145"
+  },
+  {
+   "tile": "K5",
+   "kind": "roadTilt",
+   "m2": 15.1,
+   "worst": 0.15,
+   "score": 2.284422814431784,
+   "at": "2125.1, 336.6",
+   "street": "Drève des Gendarmes 53"
   },
   {
    "tile": "F4",
@@ -12341,6 +12377,15 @@
    "street": ""
   },
   {
+   "tile": "F3",
+   "kind": "roadTilt",
+   "m2": 8,
+   "worst": 0.28,
+   "score": 2.2519020679997537,
+   "at": "-66.3, -726.3",
+   "street": "Avenue de la Ferme Rose 13"
+  },
+  {
    "tile": "G9",
    "kind": "lump",
    "m2": 4,
@@ -12366,15 +12411,6 @@
    "score": 2.24981689453125,
    "at": "2389, 378",
    "street": ""
-  },
-  {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 15.3,
-   "worst": 0.15,
-   "score": 2.248491061058288,
-   "at": "-1276.1, 828.3",
-   "street": "Rue François Vervloet 3"
   },
   {
    "tile": "C3",
@@ -12764,15 +12800,6 @@
    "street": "Rue Baron Perelman 3"
   },
   {
-   "tile": "G2",
-   "kind": "roadTilt",
-   "m2": 12.3,
-   "worst": 0.17,
-   "score": 2.1319381180240664,
-   "at": "137.9, -1104.5",
-   "street": "Avenue Adolphe Dupuich 32"
-  },
-  {
    "tile": "F8",
    "kind": "tilt",
    "m2": 11.3,
@@ -12962,15 +12989,6 @@
    "street": "Rue Victor Allard 269"
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 11.4,
-   "worst": 0.18,
-   "score": 2.027017337150486,
-   "at": "-214.2, 1999",
-   "street": "Rue Engeland 489"
-  },
-  {
    "tile": "C9",
    "kind": "lump",
    "m2": 3,
@@ -13061,6 +13079,15 @@
    "street": "Avenue Buysdelle 97"
   },
   {
+   "tile": "D5",
+   "kind": "roadTilt",
+   "m2": 12.2,
+   "worst": 0.16,
+   "score": 1.9895858941477422,
+   "at": "-1074.5, 180.5",
+   "street": "Rue Camille Van Exter 21"
+  },
+  {
    "tile": "J7",
    "kind": "lump",
    "m2": 2,
@@ -13070,13 +13097,13 @@
    "street": "Avenue de Foestraets 12B"
   },
   {
-   "tile": "F8",
+   "tile": "J3",
    "kind": "roadTilt",
-   "m2": 8.9,
-   "worst": 0.22,
-   "score": 1.9638860073766575,
-   "at": "-336.4, 1871.2",
-   "street": "Rue Engeland 427"
+   "m2": 14,
+   "worst": 0.14,
+   "score": 1.975292190407458,
+   "at": "1745.8, -714",
+   "street": ""
   },
   {
    "tile": "F2",
@@ -13106,6 +13133,15 @@
    "street": "Avenue des Sorbiers 2"
   },
   {
+   "tile": "D5",
+   "kind": "roadTilt",
+   "m2": 8.3,
+   "worst": 0.24,
+   "score": 1.9550168206100675,
+   "at": "-1491.3, 269.9",
+   "street": ""
+  },
+  {
    "tile": "D6",
    "kind": "roadTilt",
    "m2": 13.9,
@@ -13113,6 +13149,15 @@
    "score": 1.9546399133161374,
    "at": "-1323, 873.8",
    "street": "Rue François Vervloet 16"
+  },
+  {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 8.9,
+   "worst": 0.22,
+   "score": 1.953355874704881,
+   "at": "-232.2, 1975.2",
+   "street": "Rue Engeland 489"
   },
   {
    "tile": "F6",
@@ -13134,15 +13179,6 @@
   },
   {
    "tile": "J3",
-   "kind": "roadTilt",
-   "m2": 13.8,
-   "worst": 0.14,
-   "score": 1.9460828468413625,
-   "at": "1744, -713.6",
-   "street": ""
-  },
-  {
-   "tile": "J3",
    "kind": "tilt",
    "m2": 7.8,
    "worst": 0.25,
@@ -13160,13 +13196,13 @@
    "street": ""
   },
   {
-   "tile": "D5",
+   "tile": "G2",
    "kind": "roadTilt",
-   "m2": 11.9,
-   "worst": 0.16,
-   "score": 1.9397831862917951,
-   "at": "-1074.6, 180.5",
-   "street": "Rue Camille Van Exter 21"
+   "m2": 11.2,
+   "worst": 0.17,
+   "score": 1.9409756499111586,
+   "at": "137.9, -1104.4",
+   "street": "Avenue Adolphe Dupuich 32"
   },
   {
    "tile": "G10",
@@ -13196,15 +13232,6 @@
    "street": ""
   },
   {
-   "tile": "G7",
-   "kind": "roadTilt",
-   "m2": 11.9,
-   "worst": 0.16,
-   "score": 1.9348954386222341,
-   "at": "35.6, 1143.7",
-   "street": ""
-  },
-  {
    "tile": "D9",
    "kind": "spike",
    "m2": 3,
@@ -13220,15 +13247,6 @@
    "worst": 0.64,
    "score": 1.9279861450195312,
    "at": "191, -648",
-   "street": ""
-  },
-  {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 13,
-   "worst": 0.15,
-   "score": 1.9204654547299886,
-   "at": "2681.4, 95",
    "street": ""
   },
   {
@@ -13763,15 +13781,6 @@
    "street": "Avenue du Directoire 54"
   },
   {
-   "tile": "K5",
-   "kind": "roadTilt",
-   "m2": 11.9,
-   "worst": 0.15,
-   "score": 1.792396954493623,
-   "at": "2124.7, 336.4",
-   "street": "Drève des Gendarmes 53"
-  },
-  {
    "tile": "H6",
    "kind": "roadTilt",
    "m2": 8.1,
@@ -13925,6 +13934,15 @@
    "street": "Avenue Kersbeek 308"
   },
   {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 8,
+   "worst": 0.22,
+   "score": 1.7557727400121959,
+   "at": "-336.5, 1871.1",
+   "street": "Rue Engeland 427"
+  },
+  {
    "tile": "C4",
    "kind": "spike",
    "m2": 2,
@@ -14006,6 +14024,15 @@
    "street": ""
   },
   {
+   "tile": "N5",
+   "kind": "spike",
+   "m2": 3,
+   "worst": 0.58,
+   "score": 1.7421627044677734,
+   "at": "3677, 217",
+   "street": ""
+  },
+  {
    "tile": "C4",
    "kind": "spike",
    "m2": 3,
@@ -14022,15 +14049,6 @@
    "score": 1.7410257179081068,
    "at": "-1057.2, 864",
    "street": "Dieweg 22"
-  },
-  {
-   "tile": "N5",
-   "kind": "spike",
-   "m2": 3,
-   "worst": 0.58,
-   "score": 1.7402114868164062,
-   "at": "3677, 217",
-   "street": ""
   },
   {
    "tile": "F2",
@@ -14231,15 +14249,6 @@
    "street": ""
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 8.8,
-   "worst": 0.19,
-   "score": 1.7002720686315784,
-   "at": "-167.5, 1959.1",
-   "street": ""
-  },
-  {
    "tile": "D1",
    "kind": "spike",
    "m2": 2,
@@ -14339,15 +14348,6 @@
    "street": ""
   },
   {
-   "tile": "D5",
-   "kind": "roadTilt",
-   "m2": 7.1,
-   "worst": 0.24,
-   "score": 1.676656299861241,
-   "at": "-1489.9, 269.6",
-   "street": ""
-  },
-  {
    "tile": "E7",
    "kind": "over",
    "m2": 1.1,
@@ -14375,6 +14375,15 @@
    "street": ""
   },
   {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 8.1,
+   "worst": 0.21,
+   "score": 1.672297288002947,
+   "at": "-167.9, 1962.9",
+   "street": ""
+  },
+  {
    "tile": "C3",
    "kind": "spike",
    "m2": 2,
@@ -14382,15 +14391,6 @@
    "score": 1.670928955078125,
    "at": "-1863, -941",
    "street": ""
-  },
-  {
-   "tile": "G10",
-   "kind": "roadTilt",
-   "m2": 7.7,
-   "worst": 0.22,
-   "score": 1.6701566383511357,
-   "at": "331.3, 2568.3",
-   "street": "Avenue Dolez 257"
   },
   {
    "tile": "L5",
@@ -14735,15 +14735,6 @@
    "street": ""
   },
   {
-   "tile": "G7",
-   "kind": "roadTilt",
-   "m2": 7.1,
-   "worst": 0.22,
-   "score": 1.602577036394437,
-   "at": "38.7, 1157.9",
-   "street": ""
-  },
-  {
    "tile": "D10",
    "kind": "lump",
    "m2": 2,
@@ -14886,15 +14877,6 @@
    "score": 1.5701905528950233,
    "at": "279.5, -558",
    "street": "Avenue De Fré 135"
-  },
-  {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 3.8,
-   "worst": 0.41,
-   "score": 1.5684188608868253,
-   "at": "3694, 219.6",
-   "street": ""
   },
   {
    "tile": "F4",
@@ -15041,6 +15023,15 @@
    "street": ""
   },
   {
+   "tile": "L5",
+   "kind": "roadTilt",
+   "m2": 10.3,
+   "worst": 0.15,
+   "score": 1.5306610034632446,
+   "at": "2681.4, 95",
+   "street": ""
+  },
+  {
    "tile": "G3",
    "kind": "spike",
    "m2": 2,
@@ -15057,6 +15048,15 @@
    "score": 1.5280317319853374,
    "at": "868, 528.4",
    "street": ""
+  },
+  {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 7,
+   "worst": 0.22,
+   "score": 1.5254350859215506,
+   "at": "331.2, 2568.8",
+   "street": "Avenue Dolez 257"
   },
   {
    "tile": "D4",
@@ -15311,6 +15311,15 @@
    "street": "Avenue Arnold Delvaux 15"
   },
   {
+   "tile": "D7",
+   "kind": "roadTilt",
+   "m2": 7.5,
+   "worst": 0.2,
+   "score": 1.4794894389594855,
+   "at": "-1085.7, 1086.3",
+   "street": "Rue Engeland 42"
+  },
+  {
    "tile": "G9",
    "kind": "lump",
    "m2": 2,
@@ -15489,6 +15498,15 @@
    "score": 1.448944091796875,
    "at": "620, -329",
    "street": "Avenue Houzeau 61"
+  },
+  {
+   "tile": "I6",
+   "kind": "roadTilt",
+   "m2": 8.2,
+   "worst": 0.18,
+   "score": 1.4487034289373086,
+   "at": "1124.9, 962.6",
+   "street": "Vieille rue du Moulin 105B"
   },
   {
    "tile": "E10",
@@ -15707,15 +15725,6 @@
    "street": "Avenue Dolez 321"
   },
   {
-   "tile": "D10",
-   "kind": "roadTilt",
-   "m2": 8.6,
-   "worst": 0.16,
-   "score": 1.407686597593587,
-   "at": "-1108.9, 2676.9",
-   "street": "Vieux Chemin 8"
-  },
-  {
    "tile": "N5",
    "kind": "tilt",
    "m2": 8.5,
@@ -15743,15 +15752,6 @@
    "street": ""
   },
   {
-   "tile": "D7",
-   "kind": "roadTilt",
-   "m2": 7.2,
-   "worst": 0.2,
-   "score": 1.402832383285821,
-   "at": "-1084.8, 1086.1",
-   "street": "Rue Engeland 42"
-  },
-  {
    "tile": "H5",
    "kind": "lump",
    "m2": 2,
@@ -15770,15 +15770,6 @@
    "street": "Avenue Montjoie 141"
   },
   {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 7,
-   "worst": 0.2,
-   "score": 1.394789269090626,
-   "at": "3700, 225.2",
-   "street": ""
-  },
-  {
    "tile": "E6",
    "kind": "lump",
    "m2": 2,
@@ -15794,6 +15785,15 @@
    "worst": 0.58,
    "score": 1.388767170365231,
    "at": "-392.7, 2850.5",
+   "street": ""
+  },
+  {
+   "tile": "D9",
+   "kind": "roadTilt",
+   "m2": 11.2,
+   "worst": 0.12,
+   "score": 1.388571900756593,
+   "at": "-1224.8, 2147.6",
    "street": ""
   },
   {
@@ -15833,15 +15833,6 @@
    "street": "Avenue Kersbeek 306"
   },
   {
-   "tile": "D9",
-   "kind": "roadTilt",
-   "m2": 11,
-   "worst": 0.12,
-   "score": 1.3701499097899985,
-   "at": "-1224.8, 2147.6",
-   "street": ""
-  },
-  {
    "tile": "D4",
    "kind": "lump",
    "m2": 2,
@@ -15869,6 +15860,24 @@
    "street": ""
   },
   {
+   "tile": "K6",
+   "kind": "roadTilt",
+   "m2": 8.3,
+   "worst": 0.16,
+   "score": 1.3536237828882016,
+   "at": "2166.4, 630.1",
+   "street": "Avenue du Maréchal 37"
+  },
+  {
+   "tile": "I3",
+   "kind": "lump",
+   "m2": 2,
+   "worst": 0.68,
+   "score": 1.3532867431640625,
+   "at": "1362, -659",
+   "street": "Avenue De Fré 206"
+  },
+  {
    "tile": "C3",
    "kind": "spike",
    "m2": 2,
@@ -15876,6 +15885,15 @@
    "score": 1.3531055450439453,
    "at": "-1862, -943",
    "street": ""
+  },
+  {
+   "tile": "D10",
+   "kind": "over",
+   "m2": 1.9,
+   "worst": 0.7,
+   "score": 1.3522948754526567,
+   "at": "-1119, 2675",
+   "street": "Vieux Chemin 16"
   },
   {
    "tile": "F5",
@@ -16013,6 +16031,15 @@
    "street": ""
   },
   {
+   "tile": "D10",
+   "kind": "roadTilt",
+   "m2": 5.4,
+   "worst": 0.24,
+   "score": 1.3186172185241385,
+   "at": "-1020.4, 2711.8",
+   "street": "Rue du Bourdon 384"
+  },
+  {
    "tile": "D9",
    "kind": "roadTilt",
    "m2": 10.6,
@@ -16065,6 +16092,15 @@
    "score": 1.3122419837140777,
    "at": "-1315.4, 866.1",
    "street": "Rue François Vervloet 16"
+  },
+  {
+   "tile": "H10",
+   "kind": "roadTilt",
+   "m2": 9.3,
+   "worst": 0.14,
+   "score": 1.3086793985205807,
+   "at": "833, 2818.8",
+   "street": "Rue de Percke 127B"
   },
   {
    "tile": "J2",
@@ -16220,15 +16256,6 @@
    "street": "Rue Baron Guillaume Van Hamme 31"
   },
   {
-   "tile": "C4",
-   "kind": "roadTilt",
-   "m2": 6.3,
-   "worst": 0.2,
-   "score": 1.2778453994560812,
-   "at": "-1799.8, -491.7",
-   "street": "Rue du Bambou 7"
-  },
-  {
    "tile": "G3",
    "kind": "lump",
    "m2": 2,
@@ -16364,15 +16391,6 @@
    "street": "Avenue Jacques Pastur 94"
   },
   {
-   "tile": "I6",
-   "kind": "roadTilt",
-   "m2": 7.1,
-   "worst": 0.18,
-   "score": 1.2560583826350602,
-   "at": "1124.9, 962.8",
-   "street": "Vieille rue du Moulin 105B"
-  },
-  {
    "tile": "D4",
    "kind": "over",
    "m2": 4.4,
@@ -16380,15 +16398,6 @@
    "score": 1.2546994332566719,
    "at": "-1429, -366.7",
    "street": "Avenue du Vossegat 41"
-  },
-  {
-   "tile": "D10",
-   "kind": "roadTilt",
-   "m2": 5.1,
-   "worst": 0.24,
-   "score": 1.2544809347652783,
-   "at": "-1020.4, 2711.8",
-   "street": "Rue du Bourdon 384"
   },
   {
    "tile": "C6",
@@ -16490,15 +16499,6 @@
    "street": "Rue Victor Allard 263"
   },
   {
-   "tile": "D4",
-   "kind": "roadTilt",
-   "m2": 7.2,
-   "worst": 0.17,
-   "score": 1.2436348793228165,
-   "at": "-1218.3, -12.1",
-   "street": "Avenue Adolphe Wansart 8"
-  },
-  {
    "tile": "I4",
    "kind": "lump",
    "m2": 2,
@@ -16553,15 +16553,6 @@
    "street": "Avenue De Fré 219"
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 2.6,
-   "worst": 0.48,
-   "score": 1.2312188455946187,
-   "at": "-459.7, 1508.3",
-   "street": ""
-  },
-  {
    "tile": "D10",
    "kind": "roadTilt",
    "m2": 8.6,
@@ -16587,6 +16578,15 @@
    "score": 1.226361917677441,
    "at": "-274, 1805.9",
    "street": "Place Olivier Strebelle 3"
+  },
+  {
+   "tile": "D10",
+   "kind": "roadTilt",
+   "m2": 7.5,
+   "worst": 0.16,
+   "score": 1.2209403807057895,
+   "at": "-1109.3, 2676.3",
+   "street": "Vieux Chemin 8"
   },
   {
    "tile": "D10",
@@ -16859,15 +16859,6 @@
    "street": ""
   },
   {
-   "tile": "D6",
-   "kind": "lump",
-   "m2": 2,
-   "worst": 0.59,
-   "score": 1.1775588989257812,
-   "at": "-1113, 659",
-   "street": "Chaussée d'Alsemberg 962"
-  },
-  {
    "tile": "D10",
    "kind": "lump",
    "m2": 2,
@@ -16875,15 +16866,6 @@
    "score": 1.1774215698242188,
    "at": "-1289, 2761",
    "street": ""
-  },
-  {
-   "tile": "K6",
-   "kind": "roadTilt",
-   "m2": 7.2,
-   "worst": 0.16,
-   "score": 1.1769550800120734,
-   "at": "2166.6, 630.4",
-   "street": "Avenue du Maréchal 37"
   },
   {
    "tile": "G3",
@@ -16983,15 +16965,6 @@
    "score": 1.1671180725097656,
    "at": "-99, -167",
    "street": "Chemin du Crabbegat 41"
-  },
-  {
-   "tile": "N5",
-   "kind": "spike",
-   "m2": 2,
-   "worst": 0.58,
-   "score": 1.1669769287109375,
-   "at": "3684, 222",
-   "street": ""
   },
   {
    "tile": "D1",
@@ -17120,15 +17093,6 @@
    "street": ""
   },
   {
-   "tile": "I1",
-   "kind": "roadTilt",
-   "m2": 4.4,
-   "worst": 0.26,
-   "score": 1.1535358890027207,
-   "at": "1296.6, -1631.9",
-   "street": "Chaussée de Waterloo 751"
-  },
-  {
    "tile": "E3",
    "kind": "spike",
    "m2": 2,
@@ -17192,6 +17156,15 @@
    "street": "Avenue Coghen 268B"
   },
   {
+   "tile": "E7",
+   "kind": "lump",
+   "m2": 2,
+   "worst": 0.57,
+   "score": 1.14752197265625,
+   "at": "-596, 1160",
+   "street": "Rue Kinsendael 2"
+  },
+  {
    "tile": "K10",
    "kind": "lump",
    "m2": 2,
@@ -17235,6 +17208,15 @@
    "score": 1.1435089111328125,
    "at": "1166, 1028",
    "street": "Avenue d'Andrimont 7"
+  },
+  {
+   "tile": "L5",
+   "kind": "roadTilt",
+   "m2": 7.9,
+   "worst": 0.15,
+   "score": 1.1434539744743992,
+   "at": "2799.9, 119.6",
+   "street": ""
   },
   {
    "tile": "F7",
@@ -17399,6 +17381,15 @@
    "street": "Clos Jean-Pierre de Launoit 1"
   },
   {
+   "tile": "I1",
+   "kind": "roadTilt",
+   "m2": 4.3,
+   "worst": 0.26,
+   "score": 1.1327948779868373,
+   "at": "1296.6, -1631.9",
+   "street": "Chaussée de Waterloo 751"
+  },
+  {
    "tile": "K10",
    "kind": "lump",
    "m2": 2,
@@ -17457,7 +17448,7 @@
    "kind": "spike",
    "m2": 2,
    "worst": 0.56,
-   "score": 1.1297225952148438,
+   "score": 1.1297187805175781,
    "at": "423, 2713",
    "street": "Avenue Dolez 303"
   },
@@ -17550,24 +17541,6 @@
    "score": 1.1214675903320312,
    "at": "-392, 856",
    "street": "Rue Geleytsbeek 110"
-  },
-  {
-   "tile": "E2",
-   "kind": "roadTilt",
-   "m2": 5,
-   "worst": 0.22,
-   "score": 1.1214342991396788,
-   "at": "-528.5, -1080.5",
-   "street": "Avenue Henri Pirenne 11"
-  },
-  {
-   "tile": "D9",
-   "kind": "roadTilt",
-   "m2": 9.2,
-   "worst": 0.12,
-   "score": 1.120380660507107,
-   "at": "-1289, 2307.5",
-   "street": "Moensberg 20"
   },
   {
    "tile": "L5",
@@ -17768,6 +17741,15 @@
    "street": ""
   },
   {
+   "tile": "E2",
+   "kind": "roadTilt",
+   "m2": 4.9,
+   "worst": 0.22,
+   "score": 1.1038462737129149,
+   "at": "-529, -1080.5",
+   "street": "Avenue Henri Pirenne 11"
+  },
+  {
    "tile": "E4",
    "kind": "spike",
    "m2": 2,
@@ -17811,6 +17793,15 @@
    "score": 1.1002731323242188,
    "at": "-1180, -1901",
    "street": ""
+  },
+  {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 7.7,
+   "worst": 0.14,
+   "score": 1.0982873252427494,
+   "at": "182.6, -426.1",
+   "street": "Rue Groeselenberg 53"
   },
   {
    "tile": "J11",
@@ -17894,15 +17885,6 @@
    "street": ""
   },
   {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 7.6,
-   "worst": 0.14,
-   "score": 1.089893793023166,
-   "at": "2799.3, 119.9",
-   "street": ""
-  },
-  {
    "tile": "K7",
    "kind": "lump",
    "m2": 2,
@@ -17937,6 +17919,15 @@
    "score": 1.0844752551806434,
    "at": "3691, 216.2",
    "street": ""
+  },
+  {
+   "tile": "G10",
+   "kind": "spike",
+   "m2": 2,
+   "worst": 0.54,
+   "score": 1.0844573974609375,
+   "at": "403, 2696",
+   "street": "Avenue Buysdelle 6A"
   },
   {
    "tile": "F2",
@@ -18018,15 +18009,6 @@
    "score": 1.0776329040527344,
    "at": "-484, 850",
    "street": "Chaussée de Saint-Job 263"
-  },
-  {
-   "tile": "G8",
-   "kind": "lump",
-   "m2": 2,
-   "worst": 0.54,
-   "score": 1.0776214599609375,
-   "at": "404, 1828",
-   "street": "Avenue des Pâturins 11"
   },
   {
    "tile": "N5",
@@ -18335,6 +18317,15 @@
    "street": "Avenue Léo Errera 94"
   },
   {
+   "tile": "C4",
+   "kind": "roadTilt",
+   "m2": 5.2,
+   "worst": 0.2,
+   "score": 1.0534143243259162,
+   "at": "-1799.8, -491.7",
+   "street": "Rue du Bambou 7"
+  },
+  {
    "tile": "B8",
    "kind": "lump",
    "m2": 2,
@@ -18614,6 +18605,15 @@
    "street": ""
   },
   {
+   "tile": "D4",
+   "kind": "roadTilt",
+   "m2": 5.9,
+   "worst": 0.17,
+   "score": 1.0167045823431713,
+   "at": "-1219.3, -12.4",
+   "street": "Avenue Adolphe Wansart 8"
+  },
+  {
    "tile": "I1",
    "kind": "tilt",
    "m2": 3.8,
@@ -18648,15 +18648,6 @@
    "score": 1.0071718324915935,
    "at": "1678.5, 859.5",
    "street": "Chaussée de Waterloo 1323A"
-  },
-  {
-   "tile": "E6",
-   "kind": "roadTilt",
-   "m2": 6.6,
-   "worst": 0.15,
-   "score": 0.9972520265069936,
-   "at": "-630.4, 689.6",
-   "street": "Dieweg 61D"
   },
   {
    "tile": "F4",
@@ -18722,6 +18713,15 @@
    "street": ""
   },
   {
+   "tile": "E6",
+   "kind": "roadTilt",
+   "m2": 6.5,
+   "worst": 0.15,
+   "score": 0.9827267355828767,
+   "at": "-632, 688.7",
+   "street": "Dieweg 61D"
+  },
+  {
    "tile": "D6",
    "kind": "tilt",
    "m2": 3.2,
@@ -18738,15 +18738,6 @@
    "score": 0.9775666130982383,
    "at": "3943.5, 300.3",
    "street": ""
-  },
-  {
-   "tile": "H10",
-   "kind": "roadTilt",
-   "m2": 6.9,
-   "worst": 0.14,
-   "score": 0.9743816482417474,
-   "at": "833, 2818.8",
-   "street": "Rue de Percke 127B"
   },
   {
    "tile": "F2",
@@ -18884,6 +18875,15 @@
    "street": "Avenue De Fré 275"
   },
   {
+   "tile": "B4",
+   "kind": "roadTilt",
+   "m2": 7.7,
+   "worst": 0.12,
+   "score": 0.9305517078252721,
+   "at": "-2244.3, -450.2",
+   "street": ""
+  },
+  {
    "tile": "E7",
    "kind": "tilt",
    "m2": 3,
@@ -18956,6 +18956,15 @@
    "street": "Rue Rouge 43"
   },
   {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 6.8,
+   "worst": 0.13,
+   "score": 0.9203088419314627,
+   "at": "357, 2728.8",
+   "street": "Avenue Buysdelle 22"
+  },
+  {
    "tile": "F5",
    "kind": "tilt",
    "m2": 4.1,
@@ -18990,15 +18999,6 @@
    "score": 0.9106188656574059,
    "at": "-167.1, 602.3",
    "street": "Rue du Repos 116"
-  },
-  {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 4.1,
-   "worst": 0.22,
-   "score": 0.9044917063858311,
-   "at": "-233.8, 1974.1",
-   "street": "Rue Engeland 489"
   },
   {
    "tile": "F7",
@@ -19109,15 +19109,6 @@
    "street": "Rue du Bourdon 378"
   },
   {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 6.2,
-   "worst": 0.14,
-   "score": 0.8863743087846885,
-   "at": "183.5, -426.7",
-   "street": "Rue Groeselenberg 53"
-  },
-  {
    "tile": "M5",
    "kind": "over",
    "m2": 1.3,
@@ -19160,15 +19151,6 @@
    "worst": 0.16,
    "score": 0.8684660650274705,
    "at": "2747.4, 2138.4",
-   "street": ""
-  },
-  {
-   "tile": "B4",
-   "kind": "roadTilt",
-   "m2": 7.2,
-   "worst": 0.12,
-   "score": 0.8635571471467489,
-   "at": "-2244.8, -450.2",
    "street": ""
   },
   {
@@ -19388,15 +19370,6 @@
    "street": ""
   },
   {
-   "tile": "G10",
-   "kind": "roadTilt",
-   "m2": 6.1,
-   "worst": 0.13,
-   "score": 0.8222484409044174,
-   "at": "357.6, 2729.5",
-   "street": "Avenue Buysdelle 22"
-  },
-  {
    "tile": "F6",
    "kind": "tilt",
    "m2": 3.6,
@@ -19469,6 +19442,15 @@
    "street": "Rue du Roetaert 1"
   },
   {
+   "tile": "K6",
+   "kind": "roadTilt",
+   "m2": 4.4,
+   "worst": 0.18,
+   "score": 0.8099998002457602,
+   "at": "2230.7, 959.6",
+   "street": "Avenue du Fort-Jaco 94"
+  },
+  {
    "tile": "D6",
    "kind": "tilt",
    "m2": 4.2,
@@ -19476,15 +19458,6 @@
    "score": 0.8098287665055703,
    "at": "-1283.9, 836",
    "street": "Rue François Vervloet 5"
-  },
-  {
-   "tile": "K6",
-   "kind": "roadTilt",
-   "m2": 4.4,
-   "worst": 0.18,
-   "score": 0.8083846480502739,
-   "at": "2229.7, 959.9",
-   "street": "Avenue du Fort-Jaco 94"
   },
   {
    "tile": "C3",
@@ -19613,15 +19586,6 @@
    "street": "Avenue de Sumatra 8"
   },
   {
-   "tile": "E7",
-   "kind": "roadTilt",
-   "m2": 4.6,
-   "worst": 0.17,
-   "score": 0.7823931808178638,
-   "at": "-624.9, 1085.2",
-   "street": "Rue Papenkasteel 124"
-  },
-  {
    "tile": "D2",
    "kind": "over",
    "m2": 1.6,
@@ -19638,6 +19602,15 @@
    "score": 0.7787356798986338,
    "at": "1119.2, -824",
    "street": "Rue Langeveld 101"
+  },
+  {
+   "tile": "K5",
+   "kind": "roadTilt",
+   "m2": 3.6,
+   "worst": 0.21,
+   "score": 0.778591073840618,
+   "at": "2088.4, 63.1",
+   "street": "Drève des Gendarmes 13"
   },
   {
    "tile": "D10",
@@ -19667,15 +19640,6 @@
    "street": "Avenue du Manoir 35"
   },
   {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 1.1,
-   "worst": 0.67,
-   "score": 0.7736307563230014,
-   "at": "-461.8, 1506.4",
-   "street": ""
-  },
-  {
    "tile": "D6",
    "kind": "roadTilt",
    "m2": 5,
@@ -19683,15 +19647,6 @@
    "score": 0.7668717084918101,
    "at": "-1290.8, 855.8",
    "street": "Rue François Vervloet 6A"
-  },
-  {
-   "tile": "F4",
-   "kind": "roadTilt",
-   "m2": 4.9,
-   "worst": 0.16,
-   "score": 0.7658215959421064,
-   "at": "-38, -109.2",
-   "street": "Chemin du Crabbegat 47"
   },
   {
    "tile": "H3",
@@ -19719,6 +19674,15 @@
    "score": 0.7602167998964674,
    "at": "-461.8, 1507",
    "street": ""
+  },
+  {
+   "tile": "F4",
+   "kind": "roadTilt",
+   "m2": 4.8,
+   "worst": 0.16,
+   "score": 0.7599702384354148,
+   "at": "-38.4, -109.9",
+   "street": "Chemin du Crabbegat 47"
   },
   {
    "tile": "G6",
@@ -19847,6 +19811,24 @@
    "street": "Avenue Coghen 278"
   },
   {
+   "tile": "D10",
+   "kind": "roadTilt",
+   "m2": 6.1,
+   "worst": 0.12,
+   "score": 0.7387050095859438,
+   "at": "-1030.6, 2712",
+   "street": "Rue du Bourdon 384"
+  },
+  {
+   "tile": "H6",
+   "kind": "roadTilt",
+   "m2": 5.6,
+   "worst": 0.13,
+   "score": 0.7383585779320665,
+   "at": "924.6, 714.2",
+   "street": "Rue Jean Benaets 70"
+  },
+  {
    "tile": "D6",
    "kind": "over",
    "m2": 1.1,
@@ -19892,15 +19874,6 @@
    "street": ""
   },
   {
-   "tile": "D10",
-   "kind": "roadTilt",
-   "m2": 6,
-   "worst": 0.12,
-   "score": 0.7268849085896846,
-   "at": "-1030.6, 2712",
-   "street": "Rue du Bourdon 384"
-  },
-  {
    "tile": "G3",
    "kind": "over",
    "m2": 1.6,
@@ -19917,15 +19890,6 @@
    "score": 0.7253281655895581,
    "at": "-1733.9, -652.5",
    "street": "Avenue du Jonc 35"
-  },
-  {
-   "tile": "J5",
-   "kind": "roadTilt",
-   "m2": 5.8,
-   "worst": 0.12,
-   "score": 0.7233002266832931,
-   "at": "1979.8, 473.7",
-   "street": "Drève du Sénéchal 21"
   },
   {
    "tile": "K10",
@@ -20072,15 +20036,6 @@
    "street": "Rue Jean Benaets 91"
   },
   {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 2.3,
-   "worst": 0.31,
-   "score": 0.6943958014991941,
-   "at": "2742.6, 107.6",
-   "street": ""
-  },
-  {
    "tile": "D2",
    "kind": "tilt",
    "m2": 1.5,
@@ -20099,21 +20054,21 @@
    "street": "Avenue de la Princesse Paola 33"
   },
   {
+   "tile": "K6",
+   "kind": "roadTilt",
+   "m2": 4.2,
+   "worst": 0.16,
+   "score": 0.6907771254422486,
+   "at": "2241.6, 953.6",
+   "street": ""
+  },
+  {
    "tile": "D6",
    "kind": "over",
    "m2": 2,
    "worst": 0.35,
    "score": 0.6904696393630729,
    "at": "-1054.2, 891.8",
-   "street": ""
-  },
-  {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 3.4,
-   "worst": 0.2,
-   "score": 0.6882269330672272,
-   "at": "3701.5, 227.4",
    "street": ""
   },
   {
@@ -20124,15 +20079,6 @@
    "score": 0.6865232310000238,
    "at": "725.3, -479.5",
    "street": "Avenue de Saturne 2"
-  },
-  {
-   "tile": "K6",
-   "kind": "roadTilt",
-   "m2": 4.2,
-   "worst": 0.16,
-   "score": 0.6854996311540457,
-   "at": "2243.6, 953.9",
-   "street": ""
   },
   {
    "tile": "C4",
@@ -20207,6 +20153,15 @@
    "street": ""
   },
   {
+   "tile": "D5",
+   "kind": "roadTilt",
+   "m2": 4.2,
+   "worst": 0.16,
+   "score": 0.6722729392426213,
+   "at": "-1485.6, 282",
+   "street": ""
+  },
+  {
    "tile": "F6",
    "kind": "tilt",
    "m2": 2.7,
@@ -20223,6 +20178,15 @@
    "score": 0.6694883691686704,
    "at": "348.3, -994.8",
    "street": "Avenue Léo Errera 69"
+  },
+  {
+   "tile": "G5",
+   "kind": "roadTilt",
+   "m2": 2.5,
+   "worst": 0.27,
+   "score": 0.6688998960679214,
+   "at": "107.8, 0.5",
+   "street": "Avenue Kamerdelle 93"
   },
   {
    "tile": "F2",
@@ -20290,10 +20254,10 @@
   {
    "tile": "D9",
    "kind": "roadTilt",
-   "m2": 4.9,
-   "worst": 0.13,
-   "score": 0.6465256891763885,
-   "at": "-1292.1, 2310",
+   "m2": 5.3,
+   "worst": 0.12,
+   "score": 0.648620472369963,
+   "at": "-1288.9, 2307.6",
    "street": "Moensberg 20"
   },
   {
@@ -20342,13 +20306,13 @@
    "street": "Square Coghen 48"
   },
   {
-   "tile": "D5",
+   "tile": "C4",
    "kind": "roadTilt",
-   "m2": 3.9,
-   "worst": 0.16,
-   "score": 0.6301974484000779,
-   "at": "-1485.6, 282",
-   "street": ""
+   "m2": 4.5,
+   "worst": 0.14,
+   "score": 0.6284897419897078,
+   "at": "-1823.9, -459.1",
+   "street": "Rue du Bambou 1"
   },
   {
    "tile": "F3",
@@ -20423,6 +20387,15 @@
    "street": "Chaussée de Saint-Job 361"
   },
   {
+   "tile": "J5",
+   "kind": "roadTilt",
+   "m2": 5,
+   "worst": 0.12,
+   "score": 0.6184482442938809,
+   "at": "1979.8, 473.7",
+   "street": "Drève du Sénéchal 21"
+  },
+  {
    "tile": "G3",
    "kind": "tilt",
    "m2": 3.8,
@@ -20484,6 +20457,15 @@
    "score": 0.6080571058712158,
    "at": "2340.2, 2344.1",
    "street": "Chaussée de Waterloo 1565"
+  },
+  {
+   "tile": "E7",
+   "kind": "roadTilt",
+   "m2": 3.6,
+   "worst": 0.17,
+   "score": 0.6077438105040327,
+   "at": "-625.3, 1085",
+   "street": "Rue Papenkasteel 124"
   },
   {
    "tile": "L5",
@@ -20666,15 +20648,6 @@
    "street": "Rue du Repos 105"
   },
   {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 2.8,
-   "worst": 0.2,
-   "score": 0.5651978238307034,
-   "at": "3698.5, 223.2",
-   "street": ""
-  },
-  {
    "tile": "J2",
    "kind": "roadTilt",
    "m2": 4.1,
@@ -20720,13 +20693,13 @@
    "street": "Avenue Vanderaey 25"
   },
   {
-   "tile": "H6",
+   "tile": "D9",
    "kind": "roadTilt",
    "m2": 4.2,
    "worst": 0.13,
-   "score": 0.5563627724243906,
-   "at": "924.8, 714.3",
-   "street": "Rue Jean Benaets 70"
+   "score": 0.5544776026639399,
+   "at": "-1292.3, 2309.1",
+   "street": "Moensberg 20"
   },
   {
    "tile": "E7",
@@ -20754,6 +20727,15 @@
    "score": 0.5515368838518899,
    "at": "3607.3, 119.2",
    "street": ""
+  },
+  {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 4,
+   "worst": 0.14,
+   "score": 0.5511064437214883,
+   "at": "-1268.1, 833.7",
+   "street": "Rue Egide Van Ophem 18"
   },
   {
    "tile": "I11",
@@ -20871,6 +20853,15 @@
    "score": 0.5374705129896604,
    "at": "-945, -1797.4",
    "street": ""
+  },
+  {
+   "tile": "K6",
+   "kind": "roadTilt",
+   "m2": 4,
+   "worst": 0.14,
+   "score": 0.537252642756067,
+   "at": "2477.4, 838.5",
+   "street": "Drève de Lorraine 17"
   },
   {
    "tile": "H8",
@@ -21021,7 +21012,7 @@
    "kind": "roadTilt",
    "m2": 4.1,
    "worst": 0.13,
-   "score": 0.5198860967109453,
+   "score": 0.5223007785897079,
    "at": "-1110.7, 658.7",
    "street": "Chaussée d'Alsemberg 962"
   },
@@ -21215,6 +21206,15 @@
    "street": "Chaussée de Waterloo 1565"
   },
   {
+   "tile": "H6",
+   "kind": "roadTilt",
+   "m2": 3.9,
+   "worst": 0.13,
+   "score": 0.4931901846003095,
+   "at": "635.5, 504",
+   "street": ""
+  },
+  {
    "tile": "L5",
    "kind": "roadTilt",
    "m2": 3.2,
@@ -21269,15 +21269,6 @@
    "street": ""
   },
   {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 3.6,
-   "worst": 0.14,
-   "score": 0.48716693299594344,
-   "at": "-1267.5, 833.8",
-   "street": "Rue Egide Van Ophem 18"
-  },
-  {
    "tile": "G7",
    "kind": "tilt",
    "m2": 2.7,
@@ -21330,15 +21321,6 @@
    "score": 0.4842960926509663,
    "at": "-1073.7, 1930.5",
    "street": "Rue des Griottes 48"
-  },
-  {
-   "tile": "C3",
-   "kind": "roadTilt",
-   "m2": 1.9,
-   "worst": 0.26,
-   "score": 0.483438725075916,
-   "at": "-1806.2, -936.5",
-   "street": ""
   },
   {
    "tile": "E10",
@@ -21476,15 +21458,6 @@
    "street": "Rue des Griottes 48"
   },
   {
-   "tile": "C8",
-   "kind": "roadTilt",
-   "m2": 3.7,
-   "worst": 0.12,
-   "score": 0.461546171697601,
-   "at": "-1725.6, 1650.4",
-   "street": "Rue Zandbeek 153"
-  },
-  {
    "tile": "J8",
    "kind": "over",
    "m2": 0.6,
@@ -21510,15 +21483,6 @@
    "score": 0.46042072443516974,
    "at": "-1414.8, -1553.6",
    "street": ""
-  },
-  {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 3.4,
-   "worst": 0.14,
-   "score": 0.46038415715422115,
-   "at": "-1404.1, 814.1",
-   "street": "Avenue Ilya Prigogine 14"
   },
   {
    "tile": "E7",
@@ -21566,15 +21530,6 @@
    "street": ""
   },
   {
-   "tile": "D10",
-   "kind": "over",
-   "m2": 0.8,
-   "worst": 0.6,
-   "score": 0.4530359475578898,
-   "at": "-1118, 2675",
-   "street": "Vieux Chemin 16"
-  },
-  {
    "tile": "F1",
    "kind": "tilt",
    "m2": 0.8,
@@ -21591,15 +21546,6 @@
    "score": 0.4511318098849583,
    "at": "-1311.8, 866.8",
    "street": "Rue François Vervloet 16"
-  },
-  {
-   "tile": "F5",
-   "kind": "roadTilt",
-   "m2": 2.9,
-   "worst": 0.16,
-   "score": 0.44910068864169905,
-   "at": "-251.5, 433.9",
-   "street": "Rue du Repos 107"
   },
   {
    "tile": "G2",
@@ -21633,7 +21579,7 @@
    "kind": "roadTilt",
    "m2": 3.6,
    "worst": 0.12,
-   "score": 0.4460229686763693,
+   "score": 0.44561133375360423,
    "at": "3066.8, 2707.1",
    "street": ""
   },
@@ -21647,13 +21593,13 @@
    "street": "Avenue de la Gazelle 23"
   },
   {
-   "tile": "C8",
+   "tile": "D6",
    "kind": "roadTilt",
    "m2": 3.3,
-   "worst": 0.13,
-   "score": 0.44156341897304424,
-   "at": "-1718, 1650.2",
-   "street": "Rue Zandbeek 151"
+   "worst": 0.14,
+   "score": 0.44179864976267147,
+   "at": "-1404.1, 814.1",
+   "street": "Avenue Ilya Prigogine 14"
   },
   {
    "tile": "C8",
@@ -21701,15 +21647,6 @@
    "street": ""
   },
   {
-   "tile": "K6",
-   "kind": "roadTilt",
-   "m2": 3.2,
-   "worst": 0.14,
-   "score": 0.430898525771321,
-   "at": "2477.4, 838.5",
-   "street": "Drève de Lorraine 17"
-  },
-  {
    "tile": "K11",
    "kind": "tilt",
    "m2": 0.9,
@@ -21737,15 +21674,6 @@
    "street": "Chaussée d'Alsemberg 561"
   },
   {
-   "tile": "K5",
-   "kind": "roadTilt",
-   "m2": 3.3,
-   "worst": 0.13,
-   "score": 0.4179690925598643,
-   "at": "2101, 162.9",
-   "street": "Drève des Gendarmes 45"
-  },
-  {
    "tile": "I4",
    "kind": "over",
    "m2": 1.3,
@@ -21755,13 +21683,13 @@
    "street": ""
   },
   {
-   "tile": "C3",
+   "tile": "K5",
    "kind": "roadTilt",
-   "m2": 3.1,
-   "worst": 0.14,
-   "score": 0.4169724720556154,
-   "at": "-1691.2, -725.9",
-   "street": "Drève d'Anjou 17"
+   "m2": 3.3,
+   "worst": 0.13,
+   "score": 0.41777872416398726,
+   "at": "2100.3, 162.2",
+   "street": "Drève des Gendarmes 45"
   },
   {
    "tile": "D10",
@@ -21789,15 +21717,6 @@
    "score": 0.41074521142524034,
    "at": "1198, 2424",
    "street": "Avenue des Myrtilles 57"
-  },
-  {
-   "tile": "H6",
-   "kind": "roadTilt",
-   "m2": 3.2,
-   "worst": 0.13,
-   "score": 0.4098056007193129,
-   "at": "634.8, 504",
-   "street": ""
   },
   {
    "tile": "K4",
@@ -21843,15 +21762,6 @@
    "score": 0.40634444739132053,
    "at": "1841.3, -1386.4",
    "street": ""
-  },
-  {
-   "tile": "C3",
-   "kind": "roadTilt",
-   "m2": 2.7,
-   "worst": 0.15,
-   "score": 0.404357024528399,
-   "at": "-1733.4, -707.6",
-   "street": "Drève d'Anjou 3"
   },
   {
    "tile": "H3",
@@ -21953,15 +21863,6 @@
    "street": "Rue de Verrewinkel 298"
   },
   {
-   "tile": "H6",
-   "kind": "roadTilt",
-   "m2": 2.6,
-   "worst": 0.15,
-   "score": 0.3937696678690919,
-   "at": "892.9, 731.7",
-   "street": "Rue Jean Benaets 89"
-  },
-  {
    "tile": "D4",
    "kind": "roadTilt",
    "m2": 2.4,
@@ -22032,6 +21933,15 @@
    "score": 0.3875007629394531,
    "at": "-746, 498.5",
    "street": "Rue du Château d'Eau 62"
+  },
+  {
+   "tile": "G7",
+   "kind": "roadTilt",
+   "m2": 3.2,
+   "worst": 0.12,
+   "score": 0.3874790364401985,
+   "at": "34.8, 1127.2",
+   "street": ""
   },
   {
    "tile": "F1",
@@ -22115,15 +22025,6 @@
    "street": ""
   },
   {
-   "tile": "C3",
-   "kind": "roadTilt",
-   "m2": 2.7,
-   "worst": 0.14,
-   "score": 0.38077806869795566,
-   "at": "-1997.6, -874.2",
-   "street": ""
-  },
-  {
    "tile": "G10",
    "kind": "tilt",
    "m2": 1.3,
@@ -22196,15 +22097,6 @@
    "street": "Montagne de Saint-Job 134"
   },
   {
-   "tile": "G5",
-   "kind": "roadTilt",
-   "m2": 1.4,
-   "worst": 0.27,
-   "score": 0.37494758701314085,
-   "at": "108, 0.6",
-   "street": "Avenue Kamerdelle 95"
-  },
-  {
    "tile": "H3",
    "kind": "tilt",
    "m2": 2.1,
@@ -22212,6 +22104,15 @@
    "score": 0.3724212693629653,
    "at": "978.2, -903.8",
    "street": "Avenue Moscicki 28"
+  },
+  {
+   "tile": "N5",
+   "kind": "roadTilt",
+   "m2": 2.7,
+   "worst": 0.14,
+   "score": 0.37141455378913807,
+   "at": "3617.1, 137.7",
+   "street": ""
   },
   {
    "tile": "J6",
@@ -22259,6 +22160,15 @@
    "street": "Rue François Vervloet 9"
   },
   {
+   "tile": "C3",
+   "kind": "roadTilt",
+   "m2": 2.4,
+   "worst": 0.15,
+   "score": 0.3666134544478595,
+   "at": "-1733.5, -707.7",
+   "street": "Drève d'Anjou 3"
+  },
+  {
    "tile": "J11",
    "kind": "tilt",
    "m2": 1.1,
@@ -22266,15 +22176,6 @@
    "score": 0.36587324201108984,
    "at": "1854.8, 3030.2",
    "street": "Avenue de la Petite Espinette 20"
-  },
-  {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 2.6,
-   "worst": 0.14,
-   "score": 0.36520958233363204,
-   "at": "3617.1, 137.7",
-   "street": ""
   },
   {
    "tile": "C3",
@@ -22403,15 +22304,6 @@
    "street": "Rue Jean Benaets 85"
   },
   {
-   "tile": "C8",
-   "kind": "roadTilt",
-   "m2": 2.2,
-   "worst": 0.16,
-   "score": 0.3489041341325044,
-   "at": "-1711.5, 1650.3",
-   "street": "Rue Zandbeek 151"
-  },
-  {
    "tile": "H4",
    "kind": "over",
    "m2": 0.6,
@@ -22421,13 +22313,13 @@
    "street": "Avenue Hamoir 79"
   },
   {
-   "tile": "H6",
+   "tile": "C3",
    "kind": "roadTilt",
-   "m2": 1.6,
-   "worst": 0.21,
-   "score": 0.3440563163972126,
-   "at": "918.7, 720.2",
-   "street": "Rue Jean Benaets 79"
+   "m2": 2.5,
+   "worst": 0.14,
+   "score": 0.3463319035625249,
+   "at": "-1691.2, -725.9",
+   "street": "Drève d'Anjou 17"
   },
   {
    "tile": "J7",
@@ -22493,6 +22385,15 @@
    "street": ""
   },
   {
+   "tile": "H6",
+   "kind": "roadTilt",
+   "m2": 1.6,
+   "worst": 0.21,
+   "score": 0.3399782800414409,
+   "at": "918.5, 720.2",
+   "street": "Rue Jean Benaets 79"
+  },
+  {
    "tile": "D6",
    "kind": "roadTilt",
    "m2": 1.7,
@@ -22518,6 +22419,15 @@
    "score": 0.33749866485595703,
    "at": "-1233.5, -10",
    "street": "Avenue Adolphe Wansart 3"
+  },
+  {
+   "tile": "H6",
+   "kind": "roadTilt",
+   "m2": 2.2,
+   "worst": 0.15,
+   "score": 0.3349229604739096,
+   "at": "892.9, 731.7",
+   "street": "Rue Jean Benaets 89"
   },
   {
    "tile": "H5",
@@ -22619,15 +22529,6 @@
    "street": "Rue du Repos 151"
   },
   {
-   "tile": "F2",
-   "kind": "roadTilt",
-   "m2": 2.1,
-   "worst": 0.15,
-   "score": 0.3255363628686241,
-   "at": "-78.3, -1039",
-   "street": ""
-  },
-  {
    "tile": "C4",
    "kind": "tilt",
    "m2": 0.8,
@@ -22643,6 +22544,15 @@
    "worst": 0.17,
    "score": 0.32475848256933865,
    "at": "2822.2, 66.3",
+   "street": ""
+  },
+  {
+   "tile": "C3",
+   "kind": "roadTilt",
+   "m2": 1.6,
+   "worst": 0.2,
+   "score": 0.32362211158561865,
+   "at": "-1991.8, -934.7",
    "street": ""
   },
   {
@@ -22682,15 +22592,6 @@
    "street": "Avenue Dolez 534"
   },
   {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 2.4,
-   "worst": 0.13,
-   "score": 0.318703300631269,
-   "at": "-1115.4, 642.9",
-   "street": "Chaussée d'Alsemberg 962"
-  },
-  {
    "tile": "H6",
    "kind": "tilt",
    "m2": 0.5,
@@ -22698,15 +22599,6 @@
    "score": 0.31792011407939913,
    "at": "882.6, 750.2",
    "street": "Rue Jean Benaets 74"
-  },
-  {
-   "tile": "C4",
-   "kind": "roadTilt",
-   "m2": 2.3,
-   "worst": 0.14,
-   "score": 0.317670549180045,
-   "at": "-1823.9, -459.6",
-   "street": "Rue du Bambou 1"
   },
   {
    "tile": "G5",
@@ -22725,15 +22617,6 @@
    "score": 0.3163226987509873,
    "at": "-1397, 824.8",
    "street": "Avenue Ilya Prigogine 14"
-  },
-  {
-   "tile": "D10",
-   "kind": "roadTilt",
-   "m2": 2.6,
-   "worst": 0.12,
-   "score": 0.31492834011160237,
-   "at": "-1095.9, 2671.8",
-   "street": "Vieux Chemin 8"
   },
   {
    "tile": "C4",
@@ -22871,6 +22754,15 @@
    "street": ""
   },
   {
+   "tile": "C3",
+   "kind": "roadTilt",
+   "m2": 2.2,
+   "worst": 0.14,
+   "score": 0.30717538961002283,
+   "at": "-1997.7, -874.9",
+   "street": ""
+  },
+  {
    "tile": "E9",
    "kind": "over",
    "m2": 0.6,
@@ -22907,12 +22799,12 @@
    "street": ""
   },
   {
-   "tile": "N5",
+   "tile": "F2",
    "kind": "roadTilt",
-   "m2": 2.3,
-   "worst": 0.13,
-   "score": 0.3008500222787132,
-   "at": "3715.4, 240.7",
+   "m2": 2,
+   "worst": 0.15,
+   "score": 0.3014714915706515,
+   "at": "-78.3, -1039",
    "street": ""
   },
   {
@@ -22959,15 +22851,6 @@
    "score": 0.2966816042998827,
    "at": "-1080.9, 1080.7",
    "street": "Rue Engeland 42"
-  },
-  {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 2.4,
-   "worst": 0.12,
-   "score": 0.2963894132503912,
-   "at": "-413.1, 1758.3",
-   "street": "Chemin du Puits 91"
   },
   {
    "tile": "B4",
@@ -23021,15 +22904,6 @@
    "worst": 0.16,
    "score": 0.2920048619020424,
    "at": "-12.7, 2500.4",
-   "street": ""
-  },
-  {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 1,
-   "worst": 0.3,
-   "score": 0.29149593335777296,
-   "at": "3696.5, 221.6",
    "street": ""
   },
   {
@@ -23096,6 +22970,15 @@
    "street": ""
   },
   {
+   "tile": "L5",
+   "kind": "roadTilt",
+   "m2": 1.5,
+   "worst": 0.19,
+   "score": 0.2868033636574863,
+   "at": "2748.2, 114.4",
+   "street": ""
+  },
+  {
    "tile": "H6",
    "kind": "tilt",
    "m2": 0.6,
@@ -23103,6 +22986,15 @@
    "score": 0.2867247896905801,
    "at": "565.9, 821.1",
    "street": "Chaussée de Saint-Job 617"
+  },
+  {
+   "tile": "I6",
+   "kind": "roadTilt",
+   "m2": 0.7,
+   "worst": 0.41,
+   "score": 0.285438074892565,
+   "at": "1140.2, 684.1",
+   "street": "Montagne de Saint-Job 53"
   },
   {
    "tile": "D6",
@@ -23121,6 +23013,15 @@
    "score": 0.28321211574409144,
    "at": "-263.7, 1704.7",
    "street": "Clos Jean-Pierre de Launoit 6"
+  },
+  {
+   "tile": "C8",
+   "kind": "roadTilt",
+   "m2": 1,
+   "worst": 0.29,
+   "score": 0.28304070184011704,
+   "at": "-1691.7, 1644.3",
+   "street": "Rue Zandbeek 147"
   },
   {
    "tile": "E9",
@@ -23157,6 +23058,15 @@
    "score": 0.28189062465374354,
    "at": "-1814.6, 70.9",
    "street": "Rue du Merlo 74A"
+  },
+  {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 2.1,
+   "worst": 0.13,
+   "score": 0.28159166496678206,
+   "at": "-1115.5, 642.8",
+   "street": "Chaussée d'Alsemberg 962"
   },
   {
    "tile": "E5",
@@ -23276,12 +23186,21 @@
    "street": "Avenue Winston Churchill 11"
   },
   {
-   "tile": "J4",
+   "tile": "D1",
    "kind": "roadTilt",
-   "m2": 1.7,
-   "worst": 0.16,
-   "score": 0.2735157887240747,
-   "at": "1980.8, -383.2",
+   "m2": 1.8,
+   "worst": 0.15,
+   "score": 0.27470413868741866,
+   "at": "-1350.5, -1632.5",
+   "street": ""
+  },
+  {
+   "tile": "C3",
+   "kind": "roadTilt",
+   "m2": 1.1,
+   "worst": 0.26,
+   "score": 0.274353495837348,
+   "at": "-1806.3, -936.6",
    "street": ""
   },
   {
@@ -23292,6 +23211,15 @@
    "score": 0.2734881302290848,
    "at": "1614.2, 2016.5",
    "street": "Avenue Maréchal Ney 2"
+  },
+  {
+   "tile": "F8",
+   "kind": "roadTilt",
+   "m2": 2.2,
+   "worst": 0.12,
+   "score": 0.2733530504076,
+   "at": "-413.3, 1758.1",
+   "street": "Chemin du Puits 91"
   },
   {
    "tile": "M5",
@@ -23339,6 +23267,15 @@
    "street": "Dieweg 102"
   },
   {
+   "tile": "J4",
+   "kind": "roadTilt",
+   "m2": 1.7,
+   "worst": 0.16,
+   "score": 0.2698894050234383,
+   "at": "1980.3, -383.8",
+   "street": ""
+  },
+  {
    "tile": "G9",
    "kind": "over",
    "m2": 0.8,
@@ -23355,15 +23292,6 @@
    "score": 0.26681598877501755,
    "at": "-772.5, 883.8",
    "street": "Rue Papenkasteel 27"
-  },
-  {
-   "tile": "H6",
-   "kind": "roadTilt",
-   "m2": 1.3,
-   "worst": 0.21,
-   "score": 0.2665081514334648,
-   "at": "667.2, 523.4",
-   "street": "Rue Baron Perelman 4"
   },
   {
    "tile": "I5",
@@ -23427,15 +23355,6 @@
    "score": 0.25810201426997414,
    "at": "-631.9, 689.4",
    "street": "Dieweg 61D"
-  },
-  {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 1.7,
-   "worst": 0.15,
-   "score": 0.25782948395779204,
-   "at": "2825.7, 71.8",
-   "street": ""
   },
   {
    "tile": "D10",
@@ -23537,15 +23456,6 @@
    "street": ""
   },
   {
-   "tile": "C8",
-   "kind": "roadTilt",
-   "m2": 0.9,
-   "worst": 0.29,
-   "score": 0.2517498154912132,
-   "at": "-1691.7, 1644.3",
-   "street": "Rue Zandbeek 147"
-  },
-  {
    "tile": "I3",
    "kind": "tilt",
    "m2": 0.6,
@@ -23562,15 +23472,6 @@
    "score": 0.2514312443838836,
    "at": "454.3, -951.5",
    "street": "Rue Roberts Jones 26"
-  },
-  {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 2,
-   "worst": 0.13,
-   "score": 0.251271540503401,
-   "at": "3799.5, 313.5",
-   "street": ""
   },
   {
    "tile": "J8",
@@ -23708,12 +23609,12 @@
    "street": "Avenue de Floréal 124"
   },
   {
-   "tile": "F8",
+   "tile": "N5",
    "kind": "roadTilt",
-   "m2": 1.2,
-   "worst": 0.21,
-   "score": 0.2410490425877903,
-   "at": "-167.9, 1962.9",
+   "m2": 1.9,
+   "worst": 0.13,
+   "score": 0.2430769008710298,
+   "at": "3799.5, 313.5",
    "street": ""
   },
   {
@@ -23753,21 +23654,30 @@
    "street": ""
   },
   {
-   "tile": "L5",
-   "kind": "tilt",
-   "m2": 1.1,
-   "worst": 0.21,
-   "score": 0.23502564300977555,
-   "at": "2695.1, 95.8",
-   "street": ""
+   "tile": "D10",
+   "kind": "roadTilt",
+   "m2": 1.9,
+   "worst": 0.12,
+   "score": 0.23584109657487953,
+   "at": "-1095.9, 2671.9",
+   "street": "Vieux Chemin 8"
   },
   {
    "tile": "F8",
    "kind": "roadTilt",
    "m2": 1.3,
    "worst": 0.18,
-   "score": 0.2349974072287458,
-   "at": "-161.7, 1941.8",
+   "score": 0.23580739143372867,
+   "at": "-161.8, 1942.1",
+   "street": ""
+  },
+  {
+   "tile": "L5",
+   "kind": "tilt",
+   "m2": 1.1,
+   "worst": 0.21,
+   "score": 0.23502564300977555,
+   "at": "2695.1, 95.8",
    "street": ""
   },
   {
@@ -23825,6 +23735,15 @@
    "street": "Avenue Coghen 270"
   },
   {
+   "tile": "D4",
+   "kind": "roadTilt",
+   "m2": 1.4,
+   "worst": 0.17,
+   "score": 0.23267227387772457,
+   "at": "-1068.8, -60.3",
+   "street": ""
+  },
+  {
    "tile": "D6",
    "kind": "roadTilt",
    "m2": 1.8,
@@ -23861,15 +23780,6 @@
    "street": "Rue Zandbeek 83"
   },
   {
-   "tile": "D4",
-   "kind": "roadTilt",
-   "m2": 1.4,
-   "worst": 0.17,
-   "score": 0.2291462291404791,
-   "at": "-1068.8, -60.3",
-   "street": ""
-  },
-  {
    "tile": "G6",
    "kind": "tilt",
    "m2": 0.7,
@@ -23904,15 +23814,6 @@
    "score": 0.22633328498572214,
    "at": "-1070.7, -66.8",
    "street": ""
-  },
-  {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 1,
-   "worst": 0.22,
-   "score": 0.22628536409062558,
-   "at": "-230, 1978",
-   "street": "Rue Engeland 489"
   },
   {
    "tile": "E4",
@@ -23958,6 +23859,15 @@
    "score": 0.22531723976135254,
    "at": "2416, 1382.3",
    "street": "Avenue des Chalets 38"
+  },
+  {
+   "tile": "F2",
+   "kind": "over",
+   "m2": 1.1,
+   "worst": 0.2,
+   "score": 0.22441707533285893,
+   "at": "-202.7, -1075",
+   "street": "Avenue Maxime Van Praag 2"
   },
   {
    "tile": "H4",
@@ -24059,15 +23969,6 @@
    "street": "Avenue Maxime Van Praag 1"
   },
   {
-   "tile": "G7",
-   "kind": "roadTilt",
-   "m2": 1.7,
-   "worst": 0.12,
-   "score": 0.21012290869056155,
-   "at": "35.7, 1127.8",
-   "street": ""
-  },
-  {
    "tile": "E9",
    "kind": "tilt",
    "m2": 0.7,
@@ -24120,6 +24021,15 @@
    "score": 0.20673335961086536,
    "at": "-870, 2845.5",
    "street": ""
+  },
+  {
+   "tile": "K5",
+   "kind": "roadTilt",
+   "m2": 1.7,
+   "worst": 0.12,
+   "score": 0.2066193078669926,
+   "at": "2130.2, 378.1",
+   "street": "Drève des Gendarmes 55"
   },
   {
    "tile": "E10",
@@ -24329,6 +24239,15 @@
    "street": ""
   },
   {
+   "tile": "D6",
+   "kind": "roadTilt",
+   "m2": 1.3,
+   "worst": 0.15,
+   "score": 0.19651823573439964,
+   "at": "-1037.9, 570.9",
+   "street": "Rue du Coq 111"
+  },
+  {
    "tile": "F5",
    "kind": "tilt",
    "m2": 0.6,
@@ -24336,15 +24255,6 @@
    "score": 0.19646511162642652,
    "at": "-41.1, 282.2",
    "street": "Dieweg 127"
-  },
-  {
-   "tile": "F6",
-   "kind": "roadTilt",
-   "m2": 0.6,
-   "worst": 0.33,
-   "score": 0.1961651675963458,
-   "at": "-182, 573.7",
-   "street": "Rue du Repos 145"
   },
   {
    "tile": "D1",
@@ -24372,15 +24282,6 @@
    "score": 0.19352753436569547,
    "at": "1836.6, 3042.2",
    "street": "Avenue de la Petite Espinette 22"
-  },
-  {
-   "tile": "C3",
-   "kind": "roadTilt",
-   "m2": 0.9,
-   "worst": 0.2,
-   "score": 0.19327331658201186,
-   "at": "-1991.9, -934.4",
-   "street": ""
   },
   {
    "tile": "H6",
@@ -24446,15 +24347,6 @@
    "street": ""
   },
   {
-   "tile": "E2",
-   "kind": "roadTilt",
-   "m2": 1.5,
-   "worst": 0.13,
-   "score": 0.1872471742500762,
-   "at": "-534, -1075.5",
-   "street": "Avenue Henri Pirenne 11"
-  },
-  {
    "tile": "C4",
    "kind": "tilt",
    "m2": 0.6,
@@ -24471,6 +24363,15 @@
    "score": 0.1871002903376926,
    "at": "1069.2, -563.8",
    "street": "Avenue De Fré 168"
+  },
+  {
+   "tile": "H6",
+   "kind": "roadTilt",
+   "m2": 1.4,
+   "worst": 0.13,
+   "score": 0.18657187213325038,
+   "at": "677, 526.7",
+   "street": "Rue Baron Perelman 4"
   },
   {
    "tile": "D6",
@@ -24653,15 +24554,6 @@
    "street": "Chaussée de La Hulpe 53"
   },
   {
-   "tile": "K5",
-   "kind": "roadTilt",
-   "m2": 1.5,
-   "worst": 0.12,
-   "score": 0.17478335328718098,
-   "at": "2130.7, 378.4",
-   "street": "Drève des Gendarmes 55"
-  },
-  {
    "tile": "F1",
    "kind": "tilt",
    "m2": 1,
@@ -24698,13 +24590,13 @@
    "street": "Avenue des Chênes 125"
   },
   {
-   "tile": "D1",
+   "tile": "E2",
    "kind": "roadTilt",
-   "m2": 1.1,
-   "worst": 0.15,
-   "score": 0.17187010050583262,
-   "at": "-1350.5, -1632.5",
-   "street": ""
+   "m2": 1.4,
+   "worst": 0.13,
+   "score": 0.1717614493845525,
+   "at": "-534.4, -1074.7",
+   "street": "Avenue Henri Pirenne 11"
   },
   {
    "tile": "I7",
@@ -24846,7 +24738,7 @@
    "kind": "roadTilt",
    "m2": 1.3,
    "worst": 0.13,
-   "score": 0.16384867076133655,
+   "score": 0.16395422264148019,
    "at": "-50.5, -1086.1",
    "street": "Avenue Château de Walzin 12"
   },
@@ -24879,21 +24771,21 @@
   },
   {
    "tile": "G2",
+   "kind": "roadTilt",
+   "m2": 1.2,
+   "worst": 0.13,
+   "score": 0.16284244428333702,
+   "at": "149.9, -1122.5",
+   "street": "Avenue Adolphe Dupuich 32"
+  },
+  {
+   "tile": "G2",
    "kind": "tilt",
    "m2": 1,
    "worst": 0.16,
    "score": 0.16263775739958206,
    "at": "160.5, -1151.6",
    "street": "Avenue Adolphe Dupuich 28"
-  },
-  {
-   "tile": "F8",
-   "kind": "roadTilt",
-   "m2": 1.3,
-   "worst": 0.13,
-   "score": 0.1620895407755948,
-   "at": "-410, 1645.8",
-   "street": "Avenue de l'Hélianthe 49"
   },
   {
    "tile": "F9",
@@ -24957,15 +24849,6 @@
    "score": 0.15862218214179274,
    "at": "-467.1, 1278.2",
    "street": "Rue de Verrewinkel 85"
-  },
-  {
-   "tile": "J4",
-   "kind": "roadTilt",
-   "m2": 1.2,
-   "worst": 0.13,
-   "score": 0.158587781719851,
-   "at": "1992.7, -335.5",
-   "street": ""
   },
   {
    "tile": "I10",
@@ -25049,6 +24932,24 @@
    "street": ""
   },
   {
+   "tile": "G4",
+   "kind": "roadTilt",
+   "m2": 0.8,
+   "worst": 0.18,
+   "score": 0.15209127161019048,
+   "at": "58.9, -85",
+   "street": "Avenue Kamerdelle 68"
+  },
+  {
+   "tile": "J4",
+   "kind": "roadTilt",
+   "m2": 1.1,
+   "worst": 0.13,
+   "score": 0.15175580062685884,
+   "at": "1992.4, -335.7",
+   "street": ""
+  },
+  {
    "tile": "E10",
    "kind": "over",
    "m2": 0.8,
@@ -25119,15 +25020,6 @@
    "score": 0.1477480280520077,
    "at": "-1889.8, 90.4",
    "street": "Rue Baron Guillaume Van Hamme 52"
-  },
-  {
-   "tile": "L5",
-   "kind": "roadTilt",
-   "m2": 0.8,
-   "worst": 0.19,
-   "score": 0.14747105732953203,
-   "at": "2748.2, 114.4",
-   "street": ""
   },
   {
    "tile": "D8",
@@ -25211,6 +25103,15 @@
    "street": "Avenue Coghen 242"
   },
   {
+   "tile": "B7",
+   "kind": "roadTilt",
+   "m2": 1.1,
+   "worst": 0.13,
+   "score": 0.14132799977917623,
+   "at": "-2094.3, 1247.2",
+   "street": "Rue François Vervloet 176D"
+  },
+  {
    "tile": "F8",
    "kind": "roadTilt",
    "m2": 1,
@@ -25218,15 +25119,6 @@
    "score": 0.1409834053435797,
    "at": "-301, 1655.1",
    "street": "Clos Jean-Pierre de Launoit 3"
-  },
-  {
-   "tile": "G2",
-   "kind": "roadTilt",
-   "m2": 1.1,
-   "worst": 0.13,
-   "score": 0.140808766654827,
-   "at": "149.8, -1122.7",
-   "street": "Avenue Adolphe Dupuich 32"
   },
   {
    "tile": "J7",
@@ -25254,6 +25146,15 @@
    "score": 0.13810076338350186,
    "at": "282, -453",
    "street": "Chemin de la Source 1"
+  },
+  {
+   "tile": "G10",
+   "kind": "roadTilt",
+   "m2": 1.1,
+   "worst": 0.12,
+   "score": 0.13776910300027365,
+   "at": "306.3, 2502.1",
+   "street": "Avenue Dolez 229"
   },
   {
    "tile": "G2",
@@ -25290,15 +25191,6 @@
    "score": 0.13361407086640012,
    "at": "630.9, 618.2",
    "street": "Rue de la Pêcherie 100"
-  },
-  {
-   "tile": "H6",
-   "kind": "roadTilt",
-   "m2": 1,
-   "worst": 0.13,
-   "score": 0.1333228153085033,
-   "at": "677.8, 527.4",
-   "street": "Rue Baron Perelman 4"
   },
   {
    "tile": "G2",
@@ -25344,6 +25236,15 @@
    "score": 0.13268607417450218,
    "at": "-1473.7, 2545",
    "street": ""
+  },
+  {
+   "tile": "K7",
+   "kind": "roadTilt",
+   "m2": 0.6,
+   "worst": 0.22,
+   "score": 0.13242568984912004,
+   "at": "2328.5, 1434.1",
+   "street": "Avenue des Chalets 32"
   },
   {
    "tile": "I3",
@@ -25427,15 +25328,6 @@
    "street": "Place du Chat Botté 7"
   },
   {
-   "tile": "B7",
-   "kind": "roadTilt",
-   "m2": 1,
-   "worst": 0.13,
-   "score": 0.1284359994099542,
-   "at": "-2094.3, 1247.2",
-   "street": "Rue François Vervloet 176D"
-  },
-  {
    "tile": "C6",
    "kind": "tilt",
    "m2": 0.8,
@@ -25443,15 +25335,6 @@
    "score": 0.12833300538218137,
    "at": "-1679.4, 960.2",
    "street": ""
-  },
-  {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 0.7,
-   "worst": 0.19,
-   "score": 0.12766501970230096,
-   "at": "53.3, -78.9",
-   "street": "Avenue Kamerdelle 83"
   },
   {
    "tile": "E10",
@@ -25490,13 +25373,13 @@
    "street": ""
   },
   {
-   "tile": "G10",
+   "tile": "D4",
    "kind": "roadTilt",
    "m2": 1,
-   "worst": 0.12,
-   "score": 0.12482906123235184,
-   "at": "306.7, 2502.4",
-   "street": "Avenue Dolez 229"
+   "worst": 0.13,
+   "score": 0.12461459882276182,
+   "at": "-1350.9, -156.1",
+   "street": "Avenue Joseph Jongen 4"
   },
   {
    "tile": "D6",
@@ -25607,6 +25490,15 @@
    "street": "Avenue du Maréchal 29"
   },
   {
+   "tile": "J11",
+   "kind": "roadTilt",
+   "m2": 0.6,
+   "worst": 0.2,
+   "score": 0.11588826205131204,
+   "at": "1548.4, 3006.1",
+   "street": "Avenue des Sorbiers 24"
+  },
+  {
    "tile": "I6",
    "kind": "tilt",
    "m2": 0.6,
@@ -25670,15 +25562,6 @@
    "street": "Avenue du Furet 2"
   },
   {
-   "tile": "G4",
-   "kind": "roadTilt",
-   "m2": 0.6,
-   "worst": 0.18,
-   "score": 0.11314316339249246,
-   "at": "58.9, -85",
-   "street": "Avenue Kamerdelle 68"
-  },
-  {
    "tile": "D4",
    "kind": "over",
    "m2": 0.5,
@@ -25686,6 +25569,15 @@
    "score": 0.11307283939768098,
    "at": "-1401, -379.7",
    "street": "Avenue du Vossegat 37"
+  },
+  {
+   "tile": "D9",
+   "kind": "roadTilt",
+   "m2": 0.9,
+   "worst": 0.13,
+   "score": 0.11278403736146202,
+   "at": "-1300.1, 2313.8",
+   "street": "Moensberg 15"
   },
   {
    "tile": "H5",
@@ -25733,6 +25625,15 @@
    "street": "Rue du Roetaert 1"
   },
   {
+   "tile": "I2",
+   "kind": "roadTilt",
+   "m2": 0.8,
+   "worst": 0.13,
+   "score": 0.10929273454548102,
+   "at": "1405, -1211.2",
+   "street": "Chaussée de Waterloo 841"
+  },
+  {
    "tile": "D10",
    "kind": "over",
    "m2": 0.6,
@@ -25767,15 +25668,6 @@
    "score": 0.10855598927456239,
    "at": "825.8, 505.7",
    "street": "Rue de la Pêcherie 24"
-  },
-  {
-   "tile": "D6",
-   "kind": "roadTilt",
-   "m2": 0.7,
-   "worst": 0.15,
-   "score": 0.10846856958145343,
-   "at": "-1037.7, 570.5",
-   "street": "Rue du Coq 111"
   },
   {
    "tile": "I6",
@@ -25868,15 +25760,6 @@
    "street": ""
   },
   {
-   "tile": "N5",
-   "kind": "roadTilt",
-   "m2": 0.6,
-   "worst": 0.17,
-   "score": 0.10465403461957241,
-   "at": "3692.5, 217.8",
-   "street": ""
-  },
-  {
    "tile": "C4",
    "kind": "tilt",
    "m2": 0.7,
@@ -25893,15 +25776,6 @@
    "score": 0.10419769918870195,
    "at": "779.6, -990.8",
    "street": "Bosveldweg 55"
-  },
-  {
-   "tile": "J11",
-   "kind": "roadTilt",
-   "m2": 0.5,
-   "worst": 0.2,
-   "score": 0.10399205615876049,
-   "at": "1548.4, 3006.1",
-   "street": "Avenue des Sorbiers 24"
   },
   {
    "tile": "E10",
@@ -25956,15 +25830,6 @@
    "score": 0.10256568400173045,
    "at": "1326.8, 450.2",
    "street": "Avenue du Prince de Ligne 100"
-  },
-  {
-   "tile": "E6",
-   "kind": "over",
-   "m2": 0.5,
-   "worst": 0.2,
-   "score": 0.10196611718858861,
-   "at": "-975.5, 798.5",
-   "street": "Dieweg 28"
   },
   {
    "tile": "J5",
@@ -26102,6 +25967,15 @@
    "street": ""
   },
   {
+   "tile": "J4",
+   "kind": "roadTilt",
+   "m2": 0.5,
+   "worst": 0.18,
+   "score": 0.09366745310068629,
+   "at": "1986.3, -359.8",
+   "street": ""
+  },
+  {
    "tile": "J3",
    "kind": "tilt",
    "m2": 0.6,
@@ -26109,24 +25983,6 @@
    "score": 0.09191624636422543,
    "at": "1854.9, -718.7",
    "street": ""
-  },
-  {
-   "tile": "J4",
-   "kind": "roadTilt",
-   "m2": 0.5,
-   "worst": 0.18,
-   "score": 0.0912710026272294,
-   "at": "1986.3, -359.8",
-   "street": ""
-  },
-  {
-   "tile": "D4",
-   "kind": "roadTilt",
-   "m2": 0.7,
-   "worst": 0.13,
-   "score": 0.08937607268086158,
-   "at": "-1350.9, -156.2",
-   "street": "Avenue Joseph Jongen 4"
   },
   {
    "tile": "D3",
@@ -26172,15 +26028,6 @@
    "score": 0.08749733163385096,
    "at": "113.7, -1084.3",
    "street": "Avenue Adolphe Dupuich 38"
-  },
-  {
-   "tile": "F2",
-   "kind": "over",
-   "m2": 0.6,
-   "worst": 0.14,
-   "score": 0.08679674355390965,
-   "at": "-202, -1075.2",
-   "street": "Avenue Maxime Van Praag 2"
   },
   {
    "tile": "J4",
@@ -26327,15 +26174,6 @@
    "street": "Chaussée de Waterloo 1131"
   },
   {
-   "tile": "D9",
-   "kind": "roadTilt",
-   "m2": 0.6,
-   "worst": 0.13,
-   "score": 0.07438944494585854,
-   "at": "-1299.7, 2315.1",
-   "street": "Moensberg 15"
-  },
-  {
    "tile": "I11",
    "kind": "over",
    "m2": 0.6,
@@ -26424,6 +26262,15 @@
    "score": 0.06363548143453102,
    "at": "-2449.7, 464",
    "street": ""
+  },
+  {
+   "tile": "H4",
+   "kind": "roadTilt",
+   "m2": 0.5,
+   "worst": 0.12,
+   "score": 0.062088424608453326,
+   "at": "797.5, -24.3",
+   "street": "Avenue de Saturne 46"
   },
   {
    "tile": "G9",

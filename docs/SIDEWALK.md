@@ -232,3 +232,27 @@ blade 0 (0). Round 2's walls had 35 blades on H6 + E6 + H7 alone. Gate ceilings:
 Round 3 cost (6 tiles F2 E6 I6 G6 H6 D5, worker): retaining walls 150 -> 59 ms a tile (~1,090 m of wall, 63 runs,
 133 piers a tile), edge field 81-87 ms. Road triangles 45,026 (old) -> 45,836 a tile (+1.8 %: the walls' steps and
 piers), in the concrete / grass parts: no new draw call. The brick / stone pattern is evaluated only on wall pixels.
+
+## Round 3 browser turn (2026-11-18, after merging foundation: markings, zfight, birds2)
+
+- The census after the merge, all 120 tiles: tilt 811, roadTilt 380 (395 before the merge: the markings merge's
+  re-fitted road strips), over 352, lump 864, spike 174, hole 3, gardenVoid 0, blade 0. The ceilings are set to these.
+- Walls re-measured after the last fixes: 48 ms a tile (6 tiles; ~780 m of wall, 47 runs, 99 piers a tile; fewer since
+  the engine's sidewalks no longer get walls). Edge field ~100 ms.
+- Fix found in the browser: the wall shader's `If` must be inside an `Fn` (TSL: "Cannot read properties of null
+  (reading 'If')", the page did not boot).
+- Shots (docs/sidewalk/shots):
+  - r3-h6.jpg: H6 Perelman 4, a coursed-stone run, stepped tops, piers at the run ends, the hedge and gate posts
+    on the garden. A short earth wedge shows between two runs at the gate.
+  - r3-e6.jpg: E6 Château d'Eau, an orange-red brick run stepping up the bank, lawns between the steps. The left
+    side is now a grass bank (no measured sidewalk edge there).
+  - r3-i6-brick.jpg: I6 near (1143, 663). The camera landed in a garden; low walls along the front gardens show
+    only their blue-stone plinth. Not a good brick shot: the brick look is best seen in r3-e6.
+  - r3-g3-robertsjones.jpg: G3 Rue Roberts Jones. The lawn strips are drawn, and the trench is gone. But there are
+    several stepped walls one behind another inside the garden: probably the sidewalk polygon's own back edges, not
+    traced yet.
+- Tour vs foundation2: 20 of 22 flagged (as round 2). Vs round 2 (sidewalk2): 11 flagged. Looked at:
+  - stpierre-parvis: road lines and a parked car moved (markings merge).
+  - defre-villas: lane lines (markings) and a tree.
+  - ham-terrace: a far garden hedge and a tree, and the car's outline.
+  All of these come from foundation's merges, not the walls.

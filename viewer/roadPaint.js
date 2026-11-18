@@ -18,7 +18,7 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, texture, positionWorld, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max,
-  fwidth, hash, mx_noise_float, uniform, select, length, dot, clamp, normalWorld, If,
+  fwidth, hash, mx_noise_float, uniform, select, length, dot, clamp, normalWorld, If, Fn,
 } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
 import { filteredPulse, boxCoverage } from "./tslkit.js";
@@ -424,7 +424,8 @@ export function concreteMaterial({ framed = false } = {}) {
   // ~0.5 x 0.24 m, staggered courses, per-stone tone); the first PLINTH m over the foot (uv.y) a blue-stone course
   const isBrick = band(kind, 4), isCoursed = band(kind, 5), isWall = isBrick.add(isCoursed);
   // (only on wall pixels: the bond and the stones are not evaluated on the sidewalks)
-  const wallCol = vec3(0).toVar();
+  const wallCol = Fn(() => {
+  const wc = vec3(0).toVar();
   If(isWall.greaterThan(0.5), () => {
     const wTone = attribute("aUv2", "vec2").x;
     const bp = brickPattern(wTone);
@@ -443,8 +444,10 @@ export function concreteMaterial({ framed = false } = {}) {
     const stoneBase = mix(vec3(0.3, 0.285, 0.25), vec3(0.24, 0.235, 0.22), hash(crs.mul(1.7).add(sbi)).mul(0.6));
     const coursedCol = mix(mix(stoneBase.mul(sTone), vec3(0.17, 0.165, 0.155), float(1).sub(sj).mul(0.85)), stoneBase, sFar);
     const plinth = float(1).sub(smoothstep(float(PLINTH - 0.005), float(PLINTH + 0.005), uv().y));
-    wallCol.assign(mix(mix(brickCol, coursedCol, isCoursed), kerb, plinth));
+    wc.assign(mix(mix(brickCol, coursedCol, isCoursed), kerb, plinth));
   });
+  return wc;
+  })();
   m.colorNode = mix(mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron), wallCol, isWall);
   // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
   const slabRough = TX ? TX.rough.mul(1.04).min(0.97) : mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint);
