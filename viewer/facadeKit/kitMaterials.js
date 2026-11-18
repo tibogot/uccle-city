@@ -17,7 +17,7 @@ import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, uv, positionWorld, positionLocal, positionGeometry, normalWorld, cameraPosition, vec2, vec3, vec4, float, floor,
   fract, mix, step, smoothstep, clamp, abs, sin, dot, max, min, mod, pow, normalize, uniform, mrt, roughness, round, select, fwidth,
-  sqrt, length, dFdx, dFdy, normalViewGeometry, cameraViewMatrix, varying,
+  sqrt, length, dFdx, dFdy, normalViewGeometry, cameraViewMatrix, texture, varying,
 } from "three/tsl";
 const ZF_OLD = /[?&]zfight=old(&|$)/.test(location.search);
 import { env } from "../lighting.js";
@@ -25,6 +25,8 @@ import { pieceKeep, kitFades } from "./kitFade.js";
 import { paintedGlass, STOREYS_OLD } from "../facades.js";
 import { libSource } from "../materials/libSwitch.js";
 import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
+import { lodEye, ditherNoise, rampTo } from "../lodFade.js";
+import { JITTER_OLD, CARD_IN, BAND, CARD_DEPTH_CUT } from "../thinBars.js";
 
 export const KIT_SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "brick_yellow", "wood_frame_white", "wood_frame_dark",
   "glass_window", "cast_iron_green", "painted_metal_white", "zinc_roof",
@@ -155,6 +157,17 @@ function finish(m, lod, opts, { glass = false } = {}) {
     m.roughnessNode = specularAA(m.roughnessNode, nBent);
   }
   if (!opts.raw) m.maskNode = opts.lab ? null : pieceKeep(lod, kitFades.fade(J.w));
+  // (jitter, docs/JITTER.md) a CARDED thin stroke (aKitW.w = its end x 20, viewer/thinBars.js kitCards): drawn while
+  // it is >= 1.3 px wide, dithered out over the band before its end (LOD1: never, the card carries it); its sun shadow
+  // as before (the shadow pass keeps the plain mask)
+  if (!glass && !opts.raw && !JITTER_OLD) {
+    const end = W.w.mul(255 / 20), bandW = clamp(end.sub(CARD_IN[1]), 1, BAND), n = ditherNoise();
+    const d = length(positionWorld.sub(lodEye));
+    const near = W.w.lessThan(0.5 / 255).or(n.greaterThanEqual(rampTo(d, end, bandW)));
+    const keep = opts.lab ? null : pieceKeep(lod, kitFades.fade(J.w));
+    m.maskShadowNode = keep ?? float(1).greaterThan(0);
+    m.maskNode = keep ? keep.and(near) : near;
+  }
   m.userData.shared = true;
   m.userData.lod = lod;
   return m;
@@ -256,6 +269,31 @@ export function kitGlassMaterial(lod, opts = {}) {
   m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(0)) });   // no GTAO on glass (facades.js)
   finish(m, lod, opts, { glass: true });
   return wxMat(m, { porosity: 0, glass: true, snow: false });     // the weather: beads + trails on the panes
+}
+
+/** (jitter, docs/JITTER.md) THE KIT'S THIN-BAR CARD for LOD `lod`: the carded strokes' coverage (viewer/thinBars.js
+ *  kitCards atlas: r wood_frame_white, g cast_iron_green, b the light metals, a = all; the rest dark) BLENDED, faded in
+ *  over CARD_IN under the modelled strokes, stretched like them (the 9-slice classes per quad), the LOD / distance /
+ *  tile fades of the pieces (the LOD0 and LOD1 cards are the same: their complementary dither shows one). No shadow. */
+export function kitCardMaterial(lod, tex, opts = {}) {
+  const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: true, alphaTest: CARD_DEPTH_CUT });
+  m.name = `kit card lod${lod}`;
+  const { dx, dy } = sliceDelta();
+  const J = attribute("aKitJ", "vec4");
+  m.positionNode = positionLocal.add(vec3(J.y.mul(dx), dy, J.x.negate().mul(dx)));
+  const T = texture(tex, uv()), a = T.a.max(1e-4);
+  const sw = T.r.div(a).min(1), si = T.g.div(a).min(1), sl = T.b.div(a).min(1), sd = float(1).sub(sw).sub(si).sub(sl).max(0);
+  const b2 = mod(floor(variantBits().div(2)), 2).greaterThan(0.5);            // wood_frame_white -> wood_frame_dark
+  const wood = select(b2, lin(0x32200f), lin(0xe6e3da)), woodR = select(b2, float(0.38), float(0.42));
+  m.colorNode = wood.mul(sw).add(lin(0x1f3326).mul(si)).add(lin(0xc4c1b8).mul(sl)).add(lin(0x2a1d12).mul(sd));
+  m.roughnessNode = woodR.mul(sw).add(float(0.45).mul(si)).add(float(0.4).mul(sl)).add(float(0.5).mul(sd));
+  m.metalnessNode = float(0.35).mul(si).add(float(0.3).mul(sl));
+  const d = length(positionWorld.sub(lodEye));
+  m.opacityNode = T.a.mul(smoothstep(CARD_IN[0], CARD_IN[1], d));
+  if (!opts.raw && !opts.lab) m.maskNode = pieceKeep(lod, kitFades.fade(J.w));
+  m.userData.shared = true;
+  m.userData.lod = lod;
+  return m;
 }
 
 // ------------------------------------------------------------------------------------------------ the looks
