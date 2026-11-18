@@ -13,6 +13,9 @@ Owner's direction (2026-11-18): a FULL game, built on the Uccle 3D city. The pla
 8. **Learning life**: small choices with lasting effects (keep a promise or not, tell the truth, help an old neighbour); nothing preachy, friends remember.
 9. **Seasons later**: summer first; then autumn (school), winter (the Christmas layer, snow).
 
+## Street riding (owner 2026-11-18)
+The bike rides on almost EVERYTHING in the city, like a street bike game: kerbs, steps, benches, walls, ledges, rails, banks, slopes, stairs, planters. Nice feel, nothing cheap: physics, animation, sound, camera all on point. Research how the best bike / skate games get their feel (game-dev talks, articles, postmortems) before deepening docs/BIKE.md. Later: BMX spots with bumps, dirt jumps and crazy lines (the bike park, the Kauwberg).
+
 ## Physics props
 Cones, barriers, bins, boxes, a ball, planks + bricks to BUILD ramps; sleeping physics near the player only (docs/TODO.md 'physics props').
 
