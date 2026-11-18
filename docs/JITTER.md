@@ -37,6 +37,39 @@ Frein 969, police station 730, Papenkasteel 652, Wolvendael château 303 (+ 42 a
 Saint-Pierre 144 (+ 160 L1), Square des Héros 146, Sacré-Coeur 84, Stalle 66, Calevoet 54, Observatory 51 (+ 24 L1),
 Van Buuren 30, Rosaire L1 203; Saint-Job / Saint-Marc none.
 
+**Heroes: plan, not built** (coordinator 2026-11-18: the load-time path only if it applies cleanly). What the four
+worst carry (LOD0, the census' stroke test per node / slot):
+
+| hero | strokes | what | widths | planes |
+|---|---|---|---|---|
+| La Tour de Frein | 968 | wood_frame_white glazing bars | 27-29 mm | every façade (long axis y 472, z 308, x 188) |
+| police station | 642 + 86 | cast_iron_green (a 3-5 mm mesh / grille) + galvanised steel posts 17 mm | 3-5 mm | mostly vertical, two orientations |
+| Papenkasteel | 649 | wood_frame_white glazing bars | 18-21 mm | every façade |
+| Wolvendael château | 269 + 34 | wood_frame_white glazing bars, zinc | 5-28 mm | every façade |
+
+The bake itself (viewer/thinBars.js: strokes, coverage raster, box-mipped atlas) applies; the way it is hooked into the
+garden / kit draw does NOT, for four reasons: (1) a hero level is ONE merged mesh per slot material (no instance, no
+spare per-vertex channel to flag a stroke for the near dither, as aKitW.w does in the kit); (2) its strokes lie in
+every façade plane of the building, at arbitrary orientations, not the kit's front / side planes in a piece frame;
+(3) each hero has its own loader, LOD hand-over and fade copies (lodFade fadeVariant / settleRamp, the staged
+landmarks' shadow warm-up), so a load-time split would be four different hooks into code that the stutter gates guard;
+(4) the LOD1 / LOD2 are meshopt-simplified, so their strokes do not match LOD0's one for one (the kit's 2 cm middle match).
+**Plan (pack-side, one generic viewer hook):**
+1. at pack time (the hero's tools/blender/<hero>.py export, or a node step after it reading the GLB with
+   tools/mesh_audit/glb.mjs): run thinBars `strokes()` on each level, move the stroke triangles into their own node
+   `<name>_thin` (LOD0 only; on LOD1 / LOD2 drop them: the card carries them) and cluster them by plane with a general
+   plane fit (normal from the stroke's cross axes + the façade it touches; merge within 3 cm and 5 deg);
+2. per plane a card quad in node `<name>_thincards`, its coverage rasterised into one atlas per hero (`rasterCoverage` +
+   `packAtlas`, the slot shares as channels), shipped as a KTX2 with the box mips precomputed (no boot bake);
+3. viewer: one generic hook in the hero placement (the place every hero GLB already passes, e.g. the heroes' shared
+   loader): `_thin` gets a near-dither mask (rampTo at max(4.5 m, w x 622 / 1.3), its shadow as before), `_thincards`
+   the blended card material (viewer/thinCards.js, the kit card's look with the hero's slot colours) inside the same
+   LOD / fade group as LOD0 + LOD1;
+4. census: the heroes' rows turn from report-only into ceilings in tools/audit/jitterCheck.mjs (the after-counts), and
+   heroshell must still pass (the card nodes listed as see-through by design);
+5. order: police station first (3-5 mm, the worst per stroke), then La Tour de Frein, Papenkasteel, Wolvendael. One
+   hero per job, a browser A/B each (the hero method: max 2 agents).
+
 ## 3. Fix (default; `?jitter=old` = as before)
 
 Pre-filtering, not removing detail (Mr.doob / three.js first: three r187 WebGPU has no sampler LOD bias or per-material
