@@ -89,8 +89,8 @@
    "plates": 53,
    "posts": 22,
    "villo": 2,
-   "docks": 22,
-   "bikes": 12
+   "docks": 21,
+   "bikes": 11
   },
   "F1": {
    "poles": 53,
@@ -153,8 +153,8 @@
    "plates": 16,
    "posts": 8,
    "villo": 1,
-   "docks": 21,
-   "bikes": 10
+   "docks": 17,
+   "bikes": 7
   },
   "H2": {
    "poles": 15,
@@ -225,8 +225,8 @@
    "plates": 40,
    "posts": 3,
    "villo": 1,
-   "docks": 8,
-   "bikes": 8
+   "docks": 7,
+   "bikes": 7
   },
   "I3": {
    "poles": 17,

@@ -84,8 +84,8 @@ const floorY = (x, z) => ground(x, z) + (fit ? fit.lift(x, z) : 0);
 // (round 3) the parking bays (tools/streetkit/parkBays.mjs: the parked cars' own slots, off the tram road): a "lane"
 // station's row may stand there (main.js's parked cars keep off its area: cityStreetKit.keepCarsClear)
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
-const { parkBays } = await import("./parkBays.mjs");
-const BAYS = fit ? parkBays(widthParking(S.roads, S.feats, S.bounds, fit).sites, cls, (x, z) => tracks.dist(x, z), TRAM_CLEAR) : { bay: () => false };
+const { parkBays, bayAvoid } = await import("./parkBays.mjs");
+const BAYS = fit ? parkBays(widthParking(S.roads, S.feats, S.bounds, fit).sites, cls, (x, z) => tracks.dist(x, z), TRAM_CLEAR, bayAvoid(S.feats)) : { bay: () => false };
 const okSpot = (x, z) => !bad(x, z) || BAYS.bay(x, z);           // out of the lanes / off the tracks, or in a parking bay
 const paved = (x, z) => PAVE.has(cls(x, z)) || BAYS.bay(x, z);
 /** the station's row as drawn: { offPaving, bent } (measured tiles only) */

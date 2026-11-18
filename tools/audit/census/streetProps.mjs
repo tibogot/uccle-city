@@ -155,11 +155,11 @@ const axisOff = (fx, fz, ux, uz) => { const c = Math.abs(fx * ux + fz * uz); ret
 
 // ---- the parking bays + the parked cars main.js keeps (viewer/streets/parkPlace.js widthParking, cityStreetKit.keepCarsClear)
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
-const { parkBays, carsKept, inCar } = await import("../../streetkit/parkBays.mjs");
+const { parkBays, carsKept, inCar, bayAvoid } = await import("../../streetkit/parkBays.mjs");
 const { TRAM_CLEAR } = await imp("viewer/streets/carriageway.js");
 const parkSites = fit ? widthParking(S.roads, S.feats, S.bounds, fit).sites : [];
 const tracksB = trackIndex((S.feats.lines || []).filter((l) => l.kind === "tram").map((l) => smoothPolyline(l.line)));
-const BAYS = parkBays(parkSites, (x, z) => (fit ? fit.classAt(x, z) : -1), (x, z) => tracksB.dist(x, z), TRAM_CLEAR);
+const BAYS = parkBays(parkSites, (x, z) => (fit ? fit.classAt(x, z) : -1), (x, z) => tracksB.dist(x, z), TRAM_CLEAR, bayAvoid(S.feats));
 
 // ---- drawn pieces in a driven lane / on a tram track
 const test = (kind, x, z, extra = {}) => {
