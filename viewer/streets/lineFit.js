@@ -21,7 +21,7 @@
 // a sidewalk / median / square / tram site carry no line codes). The traffic lanes (net) are not moved.
 // ?roadlines=old: off (viewer/features.js).
 import { evalAlignment } from "../../vendor/roads/roadAlignment.js";
-import { layoutEdges } from "../../vendor/roads/roadCrossSection.js";
+import { layoutEdges, LANE_TYPES } from "../../vendor/roads/roadCrossSection.js";
 import { roadMembers } from "./roadBends.js";
 import { hashPhase } from "../roadData.js";
 
@@ -37,6 +37,7 @@ const JOIN = 20;                         // m: a way split's step is faded out o
 const OUTLIER = 1.5;                     // m: a sample this far off the road's median shift is not used
 const MIN_SHARE = 0.45;
 const EDGE_IN = 0.3;                     // m: an edge line's centre inside the kerb / street edge
+const PARK_W = 2.0;                      // m: a painted parking lane keeps at least this (a parked car's width + margin)
 const EDGE_WIN = 3;                      // m: half window of the edge lines' kerb median                  // the fitted carriageway keeps at least this share of the engine's width
 
 /** segments of the kerb and street-edge lines in an 8 m grid: { hit(x, z, nx, nz, t0, t1) -> t | null } */
@@ -181,7 +182,52 @@ export function measureLineFit(net, prep, surf) {
     }
     st.joined = (st.joined || 0) + 1;
   }
+  // browser turn: stretched linearly, a narrow street squeezed its parking lane under a car's width (Av. Henri
+  // Elleboudt: the parked cars stood on the painted line). Each sample's lanes are laid out again across the fitted
+  // carriageway: a parking lane keeps min(its width, PARK_W), the other lanes share the rest by their widths (all
+  // linear again where the rest would fall under half its engine width)
+  for (const [ri, f] of fitOf) {
+    const rr = net.roads[ri];
+    // (one mode per road: a road switching between the two layouts from one sample to the next drew its lines
+    // diagonally across the switch)
+    let anyLinear = false;
+    const lay2 = rr.lays.map((lay, i) => {
+      const iv = [];
+      for (const l of lay.right || []) if (l.present && LANE_TYPES[l.type]?.carriage) iv.push([Math.min(l.tIn, l.tOut), Math.max(l.tIn, l.tOut), l.type]);
+      for (const l of lay.left || []) if (l.present && LANE_TYPES[l.type]?.carriage) iv.push([Math.min(l.tIn, l.tOut), Math.max(l.tIn, l.tOut), l.type]);
+      iv.sort((a, b) => a[0] - b[0]);
+      const e = [f.eR[i]];
+      const type = [];
+      for (const [a, b, ty] of iv) { if (a > e[e.length - 1] + 1e-3) { e.push(a); type.push("centre"); } if (b > e[e.length - 1] + 1e-3) { e.push(b); type.push(ty); } }
+      if (f.eL[i] > e[e.length - 1] + 1e-3) { e.push(f.eL[i]); type.push("centre"); }
+      const lo = f.eR[i] + f.R[i], hi = f.eL[i] + f.L[i], W0 = e[e.length - 1] - e[0], W1 = hi - lo;
+      const w0 = type.map((_, k) => e[k + 1] - e[k]);
+      const fixed = type.map((ty, k) => (ty === "parking" ? Math.min(w0[k], PARK_W) : null));
+      const fx0 = w0.reduce((a, w, k) => a + (fixed[k] != null ? w : 0), 0), fx1 = fixed.reduce((a, w) => a + (w ?? 0), 0);
+      const rest = (W1 - fx1) / Math.max(1e-6, W0 - fx0);
+      if (fx0 && (W0 - fx0 < 0.5 || rest < 0.5)) anyLinear = true;
+      return { e, type, w0, fixed, rest, lo, W0, W1 };
+    });
+    f.B = lay2.map(({ e, type, w0, fixed, rest, lo, W0, W1 }) => {
+      const linear = anyLinear || !fixed.some((x) => x != null);
+      const n = [lo];
+      for (let k = 0; k < type.length; k++) n.push(n[k] + (linear ? (w0[k] * W1) / Math.max(1e-6, W0) : fixed[k] ?? w0[k] * rest));
+      return { e, n };
+    });
+  }
   return { fitOf, st };
+}
+
+/** the shift of uv t at sample i of fit f (its lane layout B[i]; beyond the carriageway the nearer end's) */
+function shiftI(f, i, t) {
+  const B = f.B?.[i];
+  if (!B) { const eL = f.eL[i], eR = f.eR[i], dL = f.L[i], dR = f.R[i]; return t >= eL ? dL : t <= eR ? dR : dR + ((t - eR) / Math.max(1e-6, eL - eR)) * (dL - dR); }
+  const { e, n } = B, m = e.length - 1;
+  if (t <= e[0]) return n[0] - e[0];
+  if (t >= e[m]) return n[m] - e[m];
+  let k = 0; while (k < m - 1 && e[k + 1] < t) k++;
+  const a = (t - e[k]) / Math.max(1e-9, e[k + 1] - e[k]);
+  return n[k] + (n[k + 1] - n[k]) * a - t;
 }
 
 /** the lateral shift (m, along the road's left normal) of uv (s, t) on a fitted road: linear across the carriageway
@@ -191,8 +237,8 @@ function shiftAt(f, S, s, t) {
   const a = Math.max(0, Math.min(1, (s - S.s[i - 1]) / (S.s[i] - S.s[i - 1] || 1)));
   const lerp = (q) => q[i - 1] + (q[i] - q[i - 1]) * a;
   const eL = lerp(f.eL), eR = lerp(f.eR), dL = lerp(f.L), dR = lerp(f.R);
-  const d = t >= eL ? dL : t <= eR ? dR : eL - eR > 1e-6 ? dR + ((t - eR) / (eL - eR)) * (dL - dR) : (dL + dR) / 2;
-  return { d, eL, eR, dL, dR, lerp };
+  const at = (tt) => shiftI(f, i - 1, tt) * (1 - a) + shiftI(f, i, tt) * a;
+  return { d: at(t), eL, eR, dL, dR, lerp, at };
 }
 
 /** (station, lateral) of plan point (x, z) on road rr: the nearest point of its alignment (samples, then refined) */
@@ -266,24 +312,36 @@ export function fitLinesToStreet(net, part, fit) {
       const e = evalAlignment(rr.al, s);
       if (Math.hypot(P[v * 3] - e.x, P[v * 3 + 2] - e.z) <= Math.abs(t) + 0.05) { ri = rj; break; }
     }
+    // (a vertex of a fitted road's phase still unmatched (a junction-mouth row the engine bent off its sweep): its
+    // phase's single fitted road when its station is on it. Every vertex of a fitted strip must be converted to the
+    // planar uv below, or its triangles' lines kink)
+    if (ri < 0 && A) { const c = byPhase.get(Math.round(A[v * 2] * 100)); if (c?.length === 1) { const S = net.roads[c[0]].smp; if (s >= S.s[0] - 0.5 && s <= S.s[S.s.length - 1] + 0.5) ri = c[0]; else st.unmatched = (st.unmatched || 0) + 1; } else if (c) st.unmatched = (st.unmatched || 0) + 1; }
     const f = ri >= 0 ? fitOf.get(ri) : null;
     if (!f) continue;
-    const { d, eL, eR, dL, dR, lerp } = shiftAt(f, net.roads[ri].smp, s, t);
+    const { d, eL, eR, lerp, at } = shiftAt(f, net.roads[ri].smp, s, t);
     // a line ON the carriage edge (the engine's "edge" / "leftEdge" where it sees no sidewalk; a kerb there) comes
     // EDGE_IN inside it, as painted: never half under the kerb face (census F atKerb)
     // and it follows the measured kerb at this station (kL / kR, a short median), not the smoothed stack: its uv t is
     // where the stretched strip puts EDGE_IN inside that kerb, kept inside its own strip (else the kerb clip ends it)
     if (E && eL - eR > 2 * EDGE_IN + 1) for (let k = 0; k < 2; k++) {
       if (E[v * 4 + 2 + k] < 1) continue;
-      const lt = E[v * 4 + k], other = E[v * 4 + 1 - k], kk = (dL - dR) / (eL - eR);
+      const lt = E[v * 4 + k], other = E[v * 4 + 1 - k];
       const side = Math.abs(lt - eL) < 0.03 ? 1 : Math.abs(lt - eR) < 0.03 ? -1 : 0;
       if (!side) continue;
       const target = side > 0 ? eL + lerp(f.kL) - EDGE_IN : eR + lerp(f.kR) + EDGE_IN;     // offset from the centre line
-      let tt = (target - dR + eR * kk) / (1 + kk);                                         // its uv t (the linear map's inverse)
+      // its uv t: the map's inverse (monotonic: bisection over the carriageway)
+      let a0 = eR - 1, a1 = eL + 1; for (let it = 0; it < 30; it++) { const m = (a0 + a1) / 2; if (m + at(m) < target) a0 = m; else a1 = m; }
+      let tt = (a0 + a1) / 2;
       const lo = Math.min(lt, other) + 0.08, hi = Math.max(lt, other) - 0.08;
       if (side > 0) tt = Math.min(tt, eL - 0.08); else tt = Math.max(tt, eR + 0.08);
       E[v * 4 + k] = Math.max(lo, Math.min(hi, tt)); st.edgeIn++;
     }
+    // browser turn (tour: Saint-Pierre's setts, the asphalt grain): the paving texture is laid out in uv (station,
+    // lateral); a stretched strip stretched its stones. The lateral uv becomes the PLANAR offset (t + its shift) and
+    // the strip's line positions go through the same map, so the lines draw where they did and the texture is not
+    // stretched (the map is linear across each lane strip: interpolation keeps them exact)
+    if (E) for (let k = 0; k < 2; k++) E[v * 4 + k] += at(E[v * 4 + k]);
+    U[v * 2 + 1] = t + d;
     if (Math.abs(d) < 1e-4) continue;
     const th = evalAlignment(net.roads[ri].al, s).th;
     P[v * 3] += Math.sin(th) * d; P[v * 3 + 2] -= Math.cos(th) * d;

@@ -158,11 +158,19 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   roadway, not the parking bays; two fits meet without a step at an OSM way split; a tram road band between two roadway
   parts stops the fit. Lane centre vs painted lane centre: p95 0.08 m over 334k lane points (gate <= 0.25 m; counted
   apart: 23k where the painted lane is off the carriageway, 88k in painted lanes under 2.5 m where the lane keeps 1 m off
-  the kerb). Lines after: 507 / 396 / 309 m. A LiDAR tree kept on a measured tram road but standing in a painted
+  the kerb). Lines after (round 2): 507 / 396 / 309 m. A LiDAR tree kept on a measured tram road but standing in a painted
   driving lane (+ 0.3 m) is moved / dropped like the carriageway ones (`viewer/tileData.js`, `roadTrees.js
   paintedDriveLanes`), unless it stands in a ROW on the tram road (two more within 12 m): Avenue Churchill's
   reservation (one OSM road whose stack spans it) keeps its trees (G2 / H2 / I2: 0 moved by this pass), H5 Carsoel
   (664, 472) moves 1. drivecheck back within its ceilings (211 places, tree 0).
+  Browser turn (tour vs foundation2 + spot shots `docs/markings/*.jpg`): the bicycle reads upright with round wheels
+  from the approaching road user (P09 at Alsemberg D5, the shared-lane bicycle + chevrons at Saint-Job I6); two fixes:
+  (1) a narrow street's stretched stack squeezed its parking lane under a car's width (Av. Henri Elleboudt: the parked
+  cars stood on the line): each sample's lanes are laid out again, a parking lane keeps min(its width, 2.0 m), the other
+  lanes share the rest (one mode per road); (2) the moved strips stretched the paving texture (laid out in uv): the
+  lateral uv is now the planar offset and the line positions go through the same map (lines unchanged, texture not
+  stretched). The census reads each line's t per vertex (as the shader interpolates it) and keeps one sample per 1 m
+  cell and side. City-wide after: 472 / 366 / 341 m (old 6,018 / 957 / 411), lane p95 0.08 m.
 
 ## Not detected here (needs the browser, or not located)
 

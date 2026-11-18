@@ -152,14 +152,14 @@ if (fit && A) {
       if (!lineOf(E[e + ck])) continue;
       const lt = E[e + tk], pts = [];
       for (let q = 0; q < 3; q++) {
-        const a = v[q], b = v[(q + 1) % 3], ta = UV[a * 2 + 1] - lt, tb = UV[b * 2 + 1] - lt;
+        const a = v[q], b = v[(q + 1) % 3], ta = UV[a * 2 + 1] - E[a * 4 + tk], tb = UV[b * 2 + 1] - E[b * 4 + tk];   // (the line's t per vertex, as the shader interpolates it)
         if ((ta <= 0) !== (tb <= 0) && ta !== tb) { const f = ta / (ta - tb); pts.push([P[a * 3] + (P[b * 3] - P[a * 3]) * f, P[a * 3 + 2] + (P[b * 3 + 2] - P[a * 3 + 2]) * f]); }
       }
       if (pts.length < 2) continue;
       const [p, q] = pts, L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 0.05) continue;
       const ux = (q[0] - p[0]) / L, uz = (q[1] - p[1]) / L;
       for (let d = 0; d <= L; d += 0.5) {
-        const x = p[0] + ux * d, z = p[1] + uz * d, key = `${kind}${Math.round(x)},${Math.round(z)},${Math.round(lt * 2)}`;
+        const x = p[0] + ux * d, z = p[1] + uz * d, key = `${kind}${Math.round(x)},${Math.round(z)}`;   // (one sample per 1 m cell and side, whatever strip / copy drew it: the lateral uv is planar now, claude/markings)
         if (!inB(x, z) || seen.has(key)) continue; seen.add(key);
         samples.push({ x, z, ux, uz, kind });
       }

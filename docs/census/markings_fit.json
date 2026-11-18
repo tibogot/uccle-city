@@ -1,27 +1,27 @@
 {
- "when": "2026-11-18T13:47:17.745Z",
+ "when": "2026-11-18T17:22:12.534Z",
  "old": false,
  "sum": {
   "tiles": 120,
-  "strokeM": 123506,
-  "unmeasuredM": 53687,
-  "offStreetM": 507,
-  "atKerbM": 396,
-  "skewM": 309,
-  "runs": 219,
+  "strokeM": 125843,
+  "unmeasuredM": 53686,
+  "offStreetM": 472,
+  "atKerbM": 366,
+  "skewM": 341,
+  "runs": 216,
   "decalTris": 73572,
   "decalOff": 3480,
   "laneP95": 0.08,
   "laneP50": 0,
-  "lanePts": 334024,
-  "laneOutside": 1595,
-  "laneOffPaint": 22555,
-  "laneNarrow": 88475
+  "lanePts": 327908,
+  "laneOutside": 1594,
+  "laneOffPaint": 22891,
+  "laneNarrow": 94182
  },
  "byWhy": {
-  "offStreet": 141,
-  "skew": 72,
-  "atKerb": 116
+  "offStreet": 131,
+  "skew": 84,
+  "atKerb": 109
  },
  "runs": [
   {
@@ -34,18 +34,17 @@
   },
   {
    "tile": "I7",
-   "len": 19,
+   "len": 17,
    "why": "skew",
-   "at": "1314.5, 1090.8",
+   "at": "1313.2, 1090.2",
    "street": "Avenue d'Andrimont - Andrimontlaan"
   },
   {
-   "tile": "I3",
-   "len": 14,
-   "why": "offStreet/atKerb",
-   "at": "1478.1, -920.6",
-   "street": "Rue Langeveld - Langeveldstraat",
-   "on": "on sidewalk,offStreet,on ramp"
+   "tile": "M5",
+   "len": 16,
+   "why": "skew",
+   "at": "3407.2, 217.2",
+   "street": "Avenue du Pérou - Perulaan"
   },
   {
    "tile": "G9",
@@ -54,6 +53,14 @@
    "at": "490.4, 2010.5",
    "street": "Avenue Dolez - Dolezlaan",
    "on": "on sidewalk"
+  },
+  {
+   "tile": "I3",
+   "len": 13,
+   "why": "offStreet/atKerb",
+   "at": "1481, -921.7",
+   "street": "Rue Langeveld - Langeveldstraat",
+   "on": "on sidewalk,offStreet,on ramp"
   },
   {
    "tile": "G9",
@@ -87,27 +94,19 @@
    "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg"
   },
   {
-   "tile": "N5",
-   "len": 11,
-   "why": "skew/offStreet/atKerb",
-   "at": "3825.2, 335.7",
-   "street": "Chaussée de La Hulpe - Terhulpsesteenweg",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D1",
-   "len": 10,
-   "why": "atKerb/offStreet",
-   "at": "-1241.3, -1585.4",
-   "street": "Avenue Télémaque - Telemachuslaan",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "H6",
    "len": 10,
    "why": "offStreet/atKerb",
    "at": "724.4, 556.4",
    "street": "Rue de la Pêcherie - Visserijstraat",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "I5",
+   "len": 10,
+   "why": "offStreet/atKerb",
+   "at": "1225.5, 481.5",
+   "street": "Avenue du Prince de Ligne - Prins de Lignelaan",
    "on": "on sidewalk"
   },
   {
@@ -134,14 +133,6 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "E4",
-   "len": 9,
-   "why": "offStreet/atKerb",
-   "at": "-894, -166",
-   "street": "Avenue Brugmann - Brugmannlaan",
-   "on": "on ramp,on sidewalk"
-  },
-  {
    "tile": "E7",
    "len": 9,
    "why": "skew",
@@ -155,6 +146,13 @@
    "at": "991.8, 457.8",
    "street": "Avenue Latérale - Zijlaan",
    "on": "on sidewalk"
+  },
+  {
+   "tile": "D1",
+   "len": 8,
+   "why": "skew",
+   "at": "-1444.6, -1544",
+   "street": "Avenue Victor Rousseau - Victor Rousseaulaan"
   },
   {
    "tile": "D2",
@@ -172,6 +170,14 @@
    "street": "Avenue De Fré - De Frélaan"
   },
   {
+   "tile": "J4",
+   "len": 8,
+   "why": "offStreet/atKerb",
+   "at": "1978.1, -380.6",
+   "street": "Avenue du Vivier d'Oie - Diesdellelaan",
+   "on": "on sidewalk"
+  },
+  {
    "tile": "J5",
    "len": 8,
    "why": "skew",
@@ -182,8 +188,15 @@
    "tile": "J5",
    "len": 8,
    "why": "skew",
-   "at": "1670.4, 352.3",
+   "at": "1670.4, 352.2",
    "street": "Avenue du Prince de Ligne - Prins de Lignelaan"
+  },
+  {
+   "tile": "N5",
+   "len": 8,
+   "why": "skew",
+   "at": "3833.3, 337.3",
+   "street": "Chaussée de La Hulpe - Terhulpsesteenweg"
   },
   {
    "tile": "C8",
@@ -192,14 +205,6 @@
    "at": "-1957.2, 1735.9",
    "street": "Beersellaan - Avenue de Beersel",
    "on": "offStreet"
-  },
-  {
-   "tile": "D2",
-   "len": 7,
-   "why": "atKerb/offStreet",
-   "at": "-1084.5, -1492.6",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
   },
   {
    "tile": "D4",
@@ -213,7 +218,7 @@
    "tile": "E1",
    "len": 7,
    "why": "skew",
-   "at": "-737.5, -1970.4",
+   "at": "-737.4, -1970.5",
    "street": "Avenue Saint-Augustin - Sint-Augustinuslaan"
   },
   {
@@ -225,35 +230,12 @@
    "on": "offStreet"
   },
   {
-   "tile": "E4",
+   "tile": "E9",
    "len": 7,
-   "why": "offStreet",
-   "at": "-553.5, -455.4",
-   "street": "Avenue De Fré - De Frélaan",
-   "on": "on square"
-  },
-  {
-   "tile": "E4",
-   "len": 7,
-   "why": "skew/atKerb",
-   "at": "-874.9, -178.3",
-   "street": "Avenue Brugmann - Brugmannlaan"
-  },
-  {
-   "tile": "E6",
-   "len": 7,
-   "why": "offStreet/atKerb",
-   "at": "-956.6, 787.9",
-   "street": "Dieweg",
+   "why": "atKerb/offStreet",
+   "at": "-647.3, 2061.9",
+   "street": "Homborch",
    "on": "on sidewalk"
-  },
-  {
-   "tile": "G5",
-   "len": 7,
-   "why": "offStreet",
-   "at": "373.7, 144",
-   "street": "Dieweg",
-   "on": "on ramp,on sidewalk"
   },
   {
    "tile": "I3",
@@ -268,14 +250,6 @@
    "why": "offStreet",
    "at": "1490, 1008.5",
    "street": "Vieille rue du Moulin - Oude Molenstraat",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "J4",
-   "len": 7,
-   "why": "atKerb/offStreet",
-   "at": "1978.1, -380.6",
-   "street": "Avenue du Vivier d'Oie - Diesdellelaan",
    "on": "on sidewalk"
   },
   {
@@ -313,15 +287,39 @@
    "tile": "E4",
    "len": 6,
    "why": "skew",
-   "at": "-721.4, -471.6",
+   "at": "-722.2, -471.2",
    "street": "Parvis Saint-Pierre - Sint-Pietersvoorplein"
+  },
+  {
+   "tile": "E4",
+   "len": 6,
+   "why": "offStreet",
+   "at": "-551.3, -454.6",
+   "street": "Avenue De Fré - De Frélaan",
+   "on": "on square"
+  },
+  {
+   "tile": "E7",
+   "len": 6,
+   "why": "offStreet",
+   "at": "-856.5, 1039.5",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "on": "on ramp,on sidewalk"
+  },
+  {
+   "tile": "F1",
+   "len": 6,
+   "why": "skew",
+   "at": "-88.6, -1682.6",
+   "street": "Avenue Brugmann - Brugmannlaan"
   },
   {
    "tile": "F3",
    "len": 6,
-   "why": "atKerb/skew",
-   "at": "-53.8, -698.4",
-   "street": "Square De Fré - De Frésquare"
+   "why": "atKerb/skew/offStreet",
+   "at": "-53.5, -698.5",
+   "street": "Square De Fré - De Frésquare",
+   "on": "on sidewalk"
   },
   {
    "tile": "G3",
@@ -340,14 +338,6 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "H5",
-   "len": 6,
-   "why": "offStreet/atKerb",
-   "at": "912, 499.8",
-   "street": "Avenue Latérale - Zijlaan",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "H6",
    "len": 6,
    "why": "offStreet/atKerb/skew",
@@ -361,6 +351,14 @@
    "why": "atKerb/offStreet",
    "at": "678.8, 1020.5",
    "street": "Avenue Dolez - Dolezlaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "J4",
+   "len": 6,
+   "why": "offStreet/atKerb",
+   "at": "1986.2, -348.2",
+   "street": "Avenue du Vivier d'Oie - Diesdellelaan",
    "on": "on sidewalk"
   },
   {
@@ -395,27 +393,34 @@
    "on": "offStreet"
   },
   {
-   "tile": "D1",
-   "len": 5,
-   "why": "skew",
-   "at": "-1444.7, -1542.7",
-   "street": "Avenue Victor Rousseau - Victor Rousseaulaan"
-  },
-  {
-   "tile": "D1",
-   "len": 5,
-   "why": "offStreet/skew/atKerb",
-   "at": "-1137.8, -1787.3",
-   "street": "Avenue Victor Rousseau - Victor Rousseaulaan",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "D4",
    "len": 5,
-   "why": "atKerb/offStreet",
-   "at": "-1093.4, -161.3",
+   "why": "offStreet/atKerb",
+   "at": "-1092.6, -163.5",
    "street": "Rue Victor Gambier - Victor Gambierstraat",
    "on": "on sidewalk"
+  },
+  {
+   "tile": "D5",
+   "len": 5,
+   "why": "offStreet/atKerb",
+   "at": "-1484.9, 282",
+   "street": "Rue de Stalle - Stallestraat",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "E1",
+   "len": 5,
+   "why": "skew",
+   "at": "-738.2, -1963.9",
+   "street": "Avenue Saint-Augustin - Sint-Augustinuslaan"
+  },
+  {
+   "tile": "E1",
+   "len": 5,
+   "why": "skew",
+   "at": "-707.2, -1965.9",
+   "street": "Avenue Saint-Augustin - Sint-Augustinuslaan"
   },
   {
    "tile": "E7",
@@ -426,12 +431,11 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "E9",
+   "tile": "F1",
    "len": 5,
-   "why": "atKerb/offStreet",
-   "at": "-648.5, 2059.3",
-   "street": "Homborch",
-   "on": "on sidewalk"
+   "why": "skew",
+   "at": "-91.9, -1673.5",
+   "street": "Avenue Brugmann - Brugmannlaan"
   },
   {
    "tile": "F1",
@@ -439,14 +443,6 @@
    "why": "offStreet",
    "at": "-135.5, -1700",
    "street": "Avenue Albert - Albertlaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "G10",
-   "len": 5,
-   "why": "offStreet/atKerb",
-   "at": "369.6, 2693.5",
-   "street": "Avenue Buysdelle - Buysdellelaan",
    "on": "on sidewalk"
   },
   {
@@ -458,11 +454,11 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "H10",
+   "tile": "H5",
    "len": 5,
-   "why": "atKerb/offStreet",
-   "at": "892, 2841.4",
-   "street": "Rue de Percke - de Perckestraat",
+   "why": "offStreet/atKerb",
+   "at": "913.2, 499.2",
+   "street": "Avenue Latérale - Zijlaan",
    "on": "on sidewalk"
   },
   {
@@ -488,13 +484,6 @@
    "street": "Avenue du Vivier d'Oie - Diesdellelaan"
   },
   {
-   "tile": "J4",
-   "len": 5,
-   "why": "atKerb",
-   "at": "1986, -348.8",
-   "street": "Avenue du Vivier d'Oie - Diesdellelaan"
-  },
-  {
    "tile": "B7",
    "len": 4,
    "why": "offStreet",
@@ -506,7 +495,7 @@
    "tile": "C4",
    "len": 4,
    "why": "skew",
-   "at": "-1556.1, -290.7",
+   "at": "-1555.8, -294.1",
    "street": "Rue Gatti de Gamond - Gatti de Gamondstraat"
   },
   {
@@ -524,28 +513,6 @@
    "at": "-1721.6, 2039.3",
    "street": "Grote Baan - Grand'Route",
    "on": "offStreet"
-  },
-  {
-   "tile": "D1",
-   "len": 4,
-   "why": "skew/atKerb",
-   "at": "-1170.9, -1752.2",
-   "street": "Avenue Victor Rousseau - Victor Rousseaulaan"
-  },
-  {
-   "tile": "D1",
-   "len": 4,
-   "why": "offStreet/atKerb",
-   "at": "-1178.8, -1746.3",
-   "street": "Avenue Victor Rousseau - Victor Rousseaulaan",
-   "on": "on sidewalk,offStreet"
-  },
-  {
-   "tile": "D1",
-   "len": 4,
-   "why": "atKerb/skew",
-   "at": "-1108.7, -1906.7",
-   "street": "Avenue Jupiter - Jupiterlaan"
   },
   {
    "tile": "D10",
@@ -566,17 +533,16 @@
   {
    "tile": "D5",
    "len": 4,
-   "why": "offStreet/atKerb",
-   "at": "-1401.4, 357.5",
-   "street": "Rue du Wagon - Wagenstraat",
-   "on": "offStreet"
+   "why": "skew",
+   "at": "-1383.4, 412.3",
+   "street": "Rue du Wagon - Wagenstraat"
   },
   {
-   "tile": "E1",
+   "tile": "D5",
    "len": 4,
    "why": "skew",
-   "at": "-705.7, -1972.5",
-   "street": "Avenue Saint-Augustin - Sint-Augustinuslaan"
+   "at": "-1475.6, 276.4",
+   "street": "Rue de Stalle - Stallestraat"
   },
   {
    "tile": "E10",
@@ -585,21 +551,6 @@
    "at": "-977, 2732.1",
    "street": "Braambeziënlaan - Avenue des Mûres",
    "on": "offStreet"
-  },
-  {
-   "tile": "E4",
-   "len": 4,
-   "why": "skew",
-   "at": "-730, -478.1",
-   "street": "Parvis Saint-Pierre - Sint-Pietersvoorplein"
-  },
-  {
-   "tile": "E7",
-   "len": 4,
-   "why": "offStreet",
-   "at": "-858.3, 1039.7",
-   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
-   "on": "on ramp"
   },
   {
    "tile": "E9",
@@ -620,17 +571,24 @@
   {
    "tile": "F3",
    "len": 4,
-   "why": "offStreet/atKerb",
-   "at": "-53.7, -689.8",
-   "street": "Square De Fré - De Frésquare",
-   "on": "on sidewalk"
+   "why": "skew/atKerb",
+   "at": "-60, -695.4",
+   "street": "Square De Fré - De Frésquare"
   },
   {
    "tile": "F4",
    "len": 4,
    "why": "skew",
-   "at": "-343.9, -485.5",
+   "at": "-343.9, -485.4",
    "street": "Avenue De Fré - De Frélaan"
+  },
+  {
+   "tile": "G10",
+   "len": 4,
+   "why": "offStreet/atKerb",
+   "at": "369.6, 2693.5",
+   "street": "Avenue Buysdelle - Buysdellelaan",
+   "on": "on sidewalk"
   },
   {
    "tile": "G6",
@@ -702,6 +660,14 @@
    "on": "on sidewalk"
   },
   {
+   "tile": "K6",
+   "len": 4,
+   "why": "atKerb/offStreet",
+   "at": "2151, 547",
+   "street": "Drève des Gendarmes - Gendarmendreef",
+   "on": "on sidewalk"
+  },
+  {
    "tile": "N11",
    "len": 4,
    "why": "offStreet",
@@ -733,39 +699,37 @@
   {
    "tile": "D1",
    "len": 3,
+   "why": "atKerb/skew",
+   "at": "-1111.2, -1898.8",
+   "street": "Avenue Jupiter - Jupiterlaan"
+  },
+  {
+   "tile": "D1",
+   "len": 3,
    "why": "skew",
-   "at": "-1363.9, -1602.3",
-   "street": "Avenue Victor Rousseau - Victor Rousseaulaan"
+   "at": "-1109.7, -1906.8",
+   "street": "Avenue Jupiter - Jupiterlaan"
+  },
+  {
+   "tile": "D1",
+   "len": 3,
+   "why": "offStreet/atKerb/skew",
+   "at": "-1106.5, -1937.6",
+   "street": "Avenue Jupiter - Jupiterlaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "D1",
+   "len": 3,
+   "why": "skew",
+   "at": "-1105, -1979.8",
+   "street": "Avenue Jupiter - Jupiterlaan"
   },
   {
    "tile": "D2",
    "len": 3,
    "why": "atKerb/offStreet",
    "at": "-1309.8, -1007.1",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D2",
-   "len": 3,
-   "why": "offStreet/atKerb",
-   "at": "-1122.5, -1428",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D2",
-   "len": 3,
-   "why": "atKerb/offStreet",
-   "at": "-1128.7, -1415.3",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D2",
-   "len": 3,
-   "why": "atKerb/offStreet",
-   "at": "-1147, -1378.4",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
    "on": "on sidewalk"
   },
@@ -778,47 +742,56 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "D4",
-   "len": 3,
-   "why": "skew",
-   "at": "-1089.2, -179.3",
-   "street": "Rue Victor Gambier - Victor Gambierstraat"
-  },
-  {
    "tile": "D5",
    "len": 3,
-   "why": "skew",
-   "at": "-1383.6, 411.7",
+   "why": "skew/atKerb",
+   "at": "-1435.4, 300",
    "street": "Rue du Wagon - Wagenstraat"
   },
   {
    "tile": "D5",
    "len": 3,
-   "why": "skew/offStreet",
-   "at": "-1435.3, 300",
+   "why": "offStreet/atKerb/skew",
+   "at": "-1397.1, 366",
    "street": "Rue du Wagon - Wagenstraat",
    "on": "on sidewalk"
   },
   {
-   "tile": "D5",
+   "tile": "D6",
    "len": 3,
-   "why": "skew/offStreet/atKerb",
-   "at": "-1398.9, 362.8",
-   "street": "Rue du Wagon - Wagenstraat",
-   "on": "offStreet"
+   "why": "offStreet/atKerb",
+   "at": "-1178.8, 804.6",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "on": "on sidewalk"
   },
   {
    "tile": "E1",
    "len": 3,
-   "why": "skew",
-   "at": "-738.9, -1964.4",
+   "why": "offStreet/atKerb/skew",
+   "at": "-845.2, -1920.7",
+   "street": "Avenue Everard - Everardlaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "E1",
+   "len": 3,
+   "why": "skew/offStreet",
+   "at": "-715.5, -1837.9",
+   "street": "Avenue Everard - Everardlaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "E1",
+   "len": 3,
+   "why": "atKerb",
+   "at": "-831.5, -1968.7",
    "street": "Avenue Saint-Augustin - Sint-Augustinuslaan"
   },
   {
    "tile": "E1",
    "len": 3,
    "why": "skew",
-   "at": "-707.3, -1966",
+   "at": "-705.2, -1972.6",
    "street": "Avenue Saint-Augustin - Sint-Augustinuslaan"
   },
   {
@@ -830,6 +803,14 @@
    "on": "on sidewalk"
   },
   {
+   "tile": "E1",
+   "len": 3,
+   "why": "offStreet/atKerb",
+   "at": "-955.3, -1912.3",
+   "street": "Avenue Victor Rousseau - Victor Rousseaulaan",
+   "on": "on sidewalk"
+  },
+  {
    "tile": "E10",
    "len": 3,
    "why": "offStreet",
@@ -838,11 +819,26 @@
    "on": "offStreet"
   },
   {
+   "tile": "E4",
+   "len": 3,
+   "why": "skew",
+   "at": "-730.2, -477.3",
+   "street": "Parvis Saint-Pierre - Sint-Pietersvoorplein"
+  },
+  {
    "tile": "E6",
    "len": 3,
    "why": "skew",
    "at": "-981.8, 817.2",
    "street": "Dieweg"
+  },
+  {
+   "tile": "E7",
+   "len": 3,
+   "why": "offStreet/atKerb",
+   "at": "-864.9, 1040.7",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "on": "on sidewalk"
   },
   {
    "tile": "E9",
@@ -892,14 +888,6 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "G10",
-   "len": 3,
-   "why": "offStreet/atKerb",
-   "at": "365.9, 2707.5",
-   "street": "Avenue Buysdelle - Buysdellelaan",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "G6",
    "len": 3,
    "why": "skew",
@@ -910,31 +898,24 @@
    "tile": "G6",
    "len": 3,
    "why": "skew",
-   "at": "487.3, 636.5",
+   "at": "487.3, 636.6",
    "street": "Rue de la Pêcherie - Visserijstraat"
   },
   {
    "tile": "G6",
    "len": 3,
-   "why": "offStreet/atKerb",
-   "at": "225.2, 721.4",
+   "why": "offStreet/atKerb/skew",
+   "at": "315.1, 692.5",
    "street": "Rue de la Pêcherie - Visserijstraat",
    "on": "on sidewalk"
   },
   {
    "tile": "H10",
    "len": 3,
-   "why": "atKerb",
-   "at": "951.9, 2874.8",
-   "street": "Rue de Percke - de Perckestraat"
-  },
-  {
-   "tile": "H10",
-   "len": 3,
    "why": "offStreet/atKerb",
-   "at": "918.3, 2856.7",
-   "street": "Rue de Percke - de Perckestraat",
-   "on": "on sidewalk"
+   "at": "501.1, 2747.1",
+   "street": "Avenue Dolez - Dolezlaan",
+   "on": "offStreet,on sidewalk"
   },
   {
    "tile": "H2",
@@ -951,13 +932,6 @@
    "at": "651.2, 597.9",
    "street": "Rue de la Pêcherie - Visserijstraat",
    "on": "on sidewalk"
-  },
-  {
-   "tile": "I1",
-   "len": 3,
-   "why": "skew",
-   "at": "1241.4, -1834.9",
-   "street": "Chaussée de Waterloo - Waterloosesteenweg"
   },
   {
    "tile": "I2",
@@ -1012,14 +986,6 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "K6",
-   "len": 3,
-   "why": "offStreet/atKerb",
-   "at": "2151.2, 548",
-   "street": "Drève des Gendarmes - Gendarmendreef",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "M5",
    "len": 3,
    "why": "atKerb/offStreet",
@@ -1031,7 +997,7 @@
    "tile": "B5",
    "len": 2,
    "why": "skew",
-   "at": "-2165.5, 364.5",
+   "at": "-2165.6, 364.4",
    "street": "Rue de Stalle - Stallestraat"
   },
   {
@@ -1040,14 +1006,6 @@
    "why": "skew",
    "at": "-1549.8, -340.3",
    "street": "Rue Gatti de Gamond - Gatti de Gamondstraat"
-  },
-  {
-   "tile": "C7",
-   "len": 2,
-   "why": "atKerb/offStreet",
-   "at": "-1764.6, 1378.9",
-   "street": "Chaussée de Drogenbos - Drogenbossesteenweg",
-   "on": "on sidewalk"
   },
   {
    "tile": "D1",
@@ -1069,50 +1027,72 @@
    "tile": "D1",
    "len": 2,
    "why": "skew",
-   "at": "-1169.5, -1763.7",
+   "at": "-1149.4, -1595.1",
+   "street": "Avenue Neptune - Neptunuslaan"
+  },
+  {
+   "tile": "D1",
+   "len": 2,
+   "why": "skew",
+   "at": "-1297.3, -1670.2",
    "street": "Avenue Victor Rousseau - Victor Rousseaulaan"
   },
   {
    "tile": "D1",
    "len": 2,
    "why": "skew",
-   "at": "-1343.8, -1620",
+   "at": "-1338.8, -1639.2",
    "street": "Avenue Victor Rousseau - Victor Rousseaulaan"
   },
   {
    "tile": "D1",
    "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "-1119.8, -1839.6",
+   "why": "offStreet/atKerb/skew",
+   "at": "-1120.4, -1841.3",
    "street": "Avenue Jupiter - Jupiterlaan",
    "on": "on sidewalk"
   },
   {
    "tile": "D1",
    "len": 2,
-   "why": "skew",
-   "at": "-1107.7, -1912.8",
-   "street": "Avenue Jupiter - Jupiterlaan"
+   "why": "offStreet/atKerb/skew",
+   "at": "-1108.3, -1914",
+   "street": "Avenue Jupiter - Jupiterlaan",
+   "on": "on sidewalk"
   },
   {
-   "tile": "D1",
+   "tile": "D2",
    "len": 2,
    "why": "skew",
-   "at": "-1105.6, -1938",
-   "street": "Avenue Jupiter - Jupiterlaan"
+   "at": "-1467.7, -1100",
+   "street": "Avenue du Domaine - Domeinlaan"
   },
   {
-   "tile": "D1",
+   "tile": "D2",
    "len": 2,
    "why": "skew",
-   "at": "-1103.6, -1978.7",
-   "street": "Avenue Jupiter - Jupiterlaan"
+   "at": "-1455, -1212",
+   "street": "Avenue du Domaine - Domeinlaan"
+  },
+  {
+   "tile": "D2",
+   "len": 2,
+   "why": "skew",
+   "at": "-1445.2, -1297.8",
+   "street": "Avenue du Domaine - Domeinlaan"
+  },
+  {
+   "tile": "D2",
+   "len": 2,
+   "why": "skew/atKerb",
+   "at": "-1433.1, -1401.7",
+   "street": "Avenue du Domaine - Domeinlaan"
   },
   {
    "tile": "D2",
    "len": 2,
    "why": "offStreet/atKerb",
-   "at": "-1088.6, -1471.9",
+   "at": "-1088.6, -1471.8",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
    "on": "on sidewalk"
   },
@@ -1120,7 +1100,7 @@
    "tile": "D2",
    "len": 2,
    "why": "offStreet",
-   "at": "-1094.6, -1463.3",
+   "at": "-1094.5, -1463.3",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
    "on": "on sidewalk"
   },
@@ -1128,22 +1108,47 @@
    "tile": "D2",
    "len": 2,
    "why": "atKerb/offStreet",
-   "at": "-1134.9, -1383.8",
+   "at": "-1134.9, -1383.7",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
    "on": "on sidewalk"
   },
   {
    "tile": "D2",
    "len": 2,
-   "why": "atKerb",
-   "at": "-1142.4, -1387.5",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan"
+   "why": "offStreet/atKerb",
+   "at": "-1087.1, -1489.4",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "D2",
+   "len": 2,
+   "why": "offStreet",
+   "at": "-1101.6, -1468",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "D2",
+   "len": 2,
+   "why": "offStreet/atKerb",
+   "at": "-1142.6, -1387.4",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "on": "on ramp"
   },
   {
    "tile": "D2",
    "len": 2,
    "why": "atKerb/offStreet",
-   "at": "-1163.9, -1321.5",
+   "at": "-1163.9, -1321.6",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "D2",
+   "len": 2,
+   "why": "offStreet/atKerb",
+   "at": "-1175.8, -1294.5",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
    "on": "on sidewalk"
   },
@@ -1166,8 +1171,8 @@
   {
    "tile": "D2",
    "len": 2,
-   "why": "atKerb/offStreet",
-   "at": "-1183.3, -1298.2",
+   "why": "offStreet/atKerb",
+   "at": "-1188.9, -1285.6",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
    "on": "on sidewalk"
   },
@@ -1175,9 +1180,24 @@
    "tile": "D2",
    "len": 2,
    "why": "atKerb/offStreet",
-   "at": "-1202.6, -1254.2",
+   "at": "-1202.6, -1254.3",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
    "on": "on sidewalk"
+  },
+  {
+   "tile": "D2",
+   "len": 2,
+   "why": "offStreet",
+   "at": "-1208.7, -1240.2",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "D3",
+   "len": 2,
+   "why": "atKerb",
+   "at": "-1308.8, -987.9",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan"
   },
   {
    "tile": "D3",
@@ -1197,31 +1217,15 @@
   {
    "tile": "D3",
    "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "-1334.3, -929.1",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D3",
-   "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "-1342.8, -909.5",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D3",
-   "len": 2,
    "why": "atKerb",
-   "at": "-1348.6, -896.1",
+   "at": "-1348.7, -896.1",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan"
   },
   {
    "tile": "D3",
    "len": 2,
    "why": "atKerb",
-   "at": "-1353.6, -884.7",
+   "at": "-1353.6, -884.8",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan"
   },
   {
@@ -1243,47 +1247,32 @@
   {
    "tile": "D3",
    "len": 2,
+   "why": "offStreet/atKerb",
+   "at": "-1321.3, -980.3",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "D3",
+   "len": 2,
    "why": "atKerb",
-   "at": "-1316, -992.3",
+   "at": "-1326.4, -968.4",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan"
   },
   {
    "tile": "D3",
    "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "-1321.1, -980.4",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D3",
-   "len": 2,
-   "why": "atKerb/offStreet",
-   "at": "-1342.5, -931",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D3",
-   "len": 2,
-   "why": "atKerb/offStreet",
-   "at": "-1350.6, -912.6",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "D3",
-   "len": 2,
    "why": "atKerb",
-   "at": "-1381.4, -841.3",
+   "at": "-1381.5, -841.4",
    "street": "Avenue des Sept Bonniers - Zevenbunderslaan"
   },
   {
    "tile": "D4",
    "len": 2,
-   "why": "atKerb",
-   "at": "-1121.8, -112.7",
-   "street": "Rue Victor Gambier - Victor Gambierstraat"
+   "why": "atKerb/offStreet",
+   "at": "-1121.6, -113.1",
+   "street": "Rue Victor Gambier - Victor Gambierstraat",
+   "on": "on sidewalk"
   },
   {
    "tile": "D4",
@@ -1291,13 +1280,6 @@
    "why": "skew",
    "at": "-1080.3, -357.2",
    "street": "Rue Victor Allard - Victor Allardstraat"
-  },
-  {
-   "tile": "D5",
-   "len": 2,
-   "why": "skew/atKerb",
-   "at": "-1431.4, 294.1",
-   "street": "Rue du Wagon - Wagenstraat"
   },
   {
    "tile": "D5",
@@ -1314,20 +1296,26 @@
    "street": "Rue de Stalle - Stallestraat"
   },
   {
-   "tile": "D6",
+   "tile": "E1",
    "len": 2,
-   "why": "offStreet",
-   "at": "-1176.5, 797.6",
-   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "why": "skew",
+   "at": "-833, -1960.4",
+   "street": "Avenue Saint-Augustin - Sint-Augustinuslaan"
+  },
+  {
+   "tile": "E1",
+   "len": 2,
+   "why": "offStreet/atKerb",
+   "at": "-701.7, -1967.6",
+   "street": "Avenue Saint-Augustin - Sint-Augustinuslaan",
    "on": "on sidewalk"
   },
   {
    "tile": "E1",
    "len": 2,
-   "why": "offStreet",
-   "at": "-747, -1966",
-   "street": "Avenue Saint-Augustin - Sint-Augustinuslaan",
-   "on": "on sidewalk"
+   "why": "skew",
+   "at": "-916.1, -1901.5",
+   "street": "Avenue des Armures - Wapenrustinglaan"
   },
   {
    "tile": "E1",
@@ -1339,10 +1327,9 @@
   {
    "tile": "E1",
    "len": 2,
-   "why": "atKerb/offStreet",
-   "at": "-955.4, -1912.3",
-   "street": "Avenue Victor Rousseau - Victor Rousseaulaan",
-   "on": "on sidewalk"
+   "why": "atKerb/skew",
+   "at": "-972.2, -1624.7",
+   "street": "Avenue des Armures - Wapenrustinglaan"
   },
   {
    "tile": "E4",
@@ -1376,19 +1363,19 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "E7",
-   "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "-865, 1040.7",
-   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "E9",
    "len": 2,
    "why": "offStreet",
    "at": "-633, 2095.1",
    "street": "Homborch",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "F1",
+   "len": 2,
+   "why": "offStreet/atKerb",
+   "at": "-145.4, -1691.2",
+   "street": "Avenue Albert - Albertlaan",
    "on": "on sidewalk"
   },
   {
@@ -1403,7 +1390,7 @@
    "tile": "F1",
    "len": 2,
    "why": "skew",
-   "at": "-45.5, -1780.8",
+   "at": "-43.7, -1781",
    "street": "Avenue Brugmann - Brugmannlaan"
   },
   {
@@ -1445,10 +1432,16 @@
   {
    "tile": "F3",
    "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "-60.1, -690.1",
-   "street": "Square De Fré - De Frésquare",
-   "on": "on sidewalk"
+   "why": "atKerb",
+   "at": "-53.1, -688",
+   "street": "Square De Fré - De Frésquare"
+  },
+  {
+   "tile": "F5",
+   "len": 2,
+   "why": "skew",
+   "at": "-454.5, 79.6",
+   "street": "Avenue Wolvendael - Wolvendaellaan"
   },
   {
    "tile": "G10",
@@ -1467,6 +1460,14 @@
    "on": "on ramp,on sidewalk"
   },
   {
+   "tile": "G10",
+   "len": 2,
+   "why": "offStreet",
+   "at": "471.5, 2751.4",
+   "street": "Avenue Dolez - Dolezlaan",
+   "on": "offStreet"
+  },
+  {
    "tile": "G5",
    "len": 2,
    "why": "atKerb/offStreet",
@@ -1475,28 +1476,12 @@
    "on": "on ramp"
   },
   {
-   "tile": "H10",
+   "tile": "G6",
    "len": 2,
    "why": "offStreet",
-   "at": "884.7, 2837",
-   "street": "Rue de Percke - de Perckestraat",
+   "at": "225.2, 721.3",
+   "street": "Rue de la Pêcherie - Visserijstraat",
    "on": "on sidewalk"
-  },
-  {
-   "tile": "H10",
-   "len": 2,
-   "why": "offStreet",
-   "at": "825, 2820.5",
-   "street": "Rue de Percke - de Perckestraat",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "H10",
-   "len": 2,
-   "why": "offStreet",
-   "at": "502.3, 2746.5",
-   "street": "Avenue Dolez - Dolezlaan",
-   "on": "offStreet,on sidewalk"
   },
   {
    "tile": "H3",
@@ -1506,10 +1491,18 @@
    "street": "Avenue De Fré - De Frélaan"
   },
   {
+   "tile": "H3",
+   "len": 2,
+   "why": "atKerb/offStreet",
+   "at": "889, -982.5",
+   "street": "Bosveldweg",
+   "on": "on sidewalk"
+  },
+  {
    "tile": "H5",
    "len": 2,
    "why": "skew",
-   "at": "547.3, 300.8",
+   "at": "546.3, 300.5",
    "street": "Avenue Circulaire - Ringlaan"
   },
   {
@@ -1517,6 +1510,22 @@
    "len": 2,
    "why": "offStreet",
    "at": "999.7, 453.5",
+   "street": "Avenue Latérale - Zijlaan",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "H6",
+   "len": 2,
+   "why": "offStreet/atKerb",
+   "at": "797.5, 529.1",
+   "street": "Rue de la Pêcherie - Visserijstraat",
+   "on": "on sidewalk"
+  },
+  {
+   "tile": "H6",
+   "len": 2,
+   "why": "atKerb/offStreet",
+   "at": "885.6, 510.6",
    "street": "Avenue Latérale - Zijlaan",
    "on": "on sidewalk"
   },
@@ -1605,22 +1614,6 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "I5",
-   "len": 2,
-   "why": "offStreet/atKerb",
-   "at": "1226.1, 481.2",
-   "street": "Avenue du Prince de Ligne - Prins de Lignelaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "I5",
-   "len": 2,
-   "why": "offStreet",
-   "at": "1106.2, 398",
-   "street": "Avenue Latérale - Zijlaan",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "I6",
    "len": 2,
    "why": "offStreet/atKerb",
@@ -1637,14 +1630,6 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "I7",
-   "len": 2,
-   "why": "atKerb/offStreet",
-   "at": "1136.6, 1021.5",
-   "street": "Avenue d'Andrimont - Andrimontlaan",
-   "on": "on sidewalk"
-  },
-  {
    "tile": "J3",
    "len": 2,
    "why": "offStreet/atKerb",
@@ -1653,27 +1638,11 @@
    "on": "on sidewalk"
   },
   {
-   "tile": "J3",
-   "len": 2,
-   "why": "offStreet",
-   "at": "1890.4, -709.4",
-   "street": "Avenue du Vivier d'Oie - Diesdellelaan",
-   "on": "offStreet"
-  },
-  {
    "tile": "J4",
    "len": 2,
    "why": "offStreet/atKerb",
    "at": "1999.8, -300.5",
    "street": "Avenue du Vivier d'Oie - Diesdellelaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "J5",
-   "len": 2,
-   "why": "atKerb/offStreet",
-   "at": "1932, 115.5",
-   "street": "Avenue Montana - Montanalaan",
    "on": "on sidewalk"
   },
   {

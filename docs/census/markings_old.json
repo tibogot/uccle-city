@@ -1,16 +1,22 @@
 {
- "when": "2026-11-18T12:02:38.719Z",
+ "when": "2026-11-18T17:23:31.484Z",
  "old": true,
  "sum": {
   "tiles": 120,
-  "strokeM": 121792,
+  "strokeM": 121786,
   "unmeasuredM": 53689,
-  "offStreetM": 6020,
+  "offStreetM": 6018,
   "atKerbM": 957,
   "skewM": 411,
   "runs": 401,
-  "decalTris": 73585,
-  "decalOff": 3480
+  "decalTris": 73572,
+  "decalOff": 3480,
+  "laneP95": null,
+  "laneP50": null,
+  "lanePts": 0,
+  "laneOutside": 0,
+  "laneOffPaint": 0,
+  "laneNarrow": 0
  },
  "byWhy": {
   "offStreet": 351,
@@ -843,22 +849,6 @@
    "on": "on sidewalk,on ramp"
   },
   {
-   "tile": "D2",
-   "len": 16,
-   "why": "atKerb/offStreet",
-   "at": "-1078.5, -1486.8",
-   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
-   "on": "on sidewalk"
-  },
-  {
-   "tile": "E4",
-   "len": 16,
-   "why": "offStreet/atKerb/skew",
-   "at": "-562.7, -458.9",
-   "street": "Avenue De Fré - De Frélaan",
-   "on": "on square"
-  },
-  {
    "tile": "I6",
    "len": 16,
    "why": "offStreet/atKerb",
@@ -899,6 +889,14 @@
    "on": "on sidewalk"
   },
   {
+   "tile": "D2",
+   "len": 15,
+   "why": "atKerb/offStreet",
+   "at": "-1080.2, -1484.5",
+   "street": "Avenue des Sept Bonniers - Zevenbunderslaan",
+   "on": "on sidewalk"
+  },
+  {
    "tile": "D3",
    "len": 15,
    "why": "offStreet",
@@ -913,6 +911,14 @@
    "at": "-828, -291.5",
    "street": "Rue de Nieuwenhove - de Nieuwenhovestraat",
    "on": "on sidewalk"
+  },
+  {
+   "tile": "E4",
+   "len": 15,
+   "why": "offStreet/atKerb/skew",
+   "at": "-560.9, -458.2",
+   "street": "Avenue De Fré - De Frélaan",
+   "on": "on square"
   },
   {
    "tile": "F1",
