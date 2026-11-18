@@ -77,8 +77,22 @@ function interval(classAt, lg, x, z, nx, nz, parkL = true, parkR = true) {
   let hi = t0, lo = t0;
   while (hi < t0 + REACH && CL(hi + STEP)) hi += STEP;
   while (lo > t0 - REACH && CR(lo - STEP)) lo -= STEP;
+  // (markings round 2: a tram road band BETWEEN two roadway parts is a tram reservation in the middle of a dual
+  // carriageway (Avenue Churchill: its tree rows stand on it), not this road's lanes: the interval stops where it begins.
+  // A road whose own centre lies on the tram road (street running, Alsemberg) or a tram road reaching the kerb keep it)
+  const cutTram = (from, to, dir) => {
+    if (classAt(x + nx * from, z + nz * from) === 1) return null;
+    let enter = null;
+    for (let t = from; dir > 0 ? t <= to : t >= to; t += dir * STEP) {
+      const c = classAt(x + nx * t, z + nz * t);
+      if (c === 1 && enter == null) enter = t;
+      else if (c === 0 && enter != null) return enter - dir * STEP / 2;
+    }
+    return null;
+  };
+  const cHi = cutTram(t0, hi, 1), cLo = cutTram(t0, lo, -1);
   const ref = (e, dir) => { const t = lg.hit(x, z, nx, nz, e - 0.6, e + 0.6, e + dir * STEP / 2); return t ?? e + dir * STEP / 2; };
-  return { lo: lo <= t0 - REACH ? null : ref(lo, -1), hi: hi >= t0 + REACH ? null : ref(hi, 1) };
+  return { lo: cLo != null ? cLo : lo <= t0 - REACH ? null : ref(lo, -1), hi: cHi != null ? cHi : hi >= t0 + REACH ? null : ref(hi, 1) };
 }
 
 /** robust smoothing of v (null = no measurement) over stations s: running median (+-WIN_MED), running mean (+-WIN_MEAN),

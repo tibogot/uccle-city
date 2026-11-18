@@ -151,6 +151,18 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   frame side points (the outline's paint between the wheels); OSM shared lanes get bicycle + 2 chevrons. Switches
   `?roadlines=old`, `?bikemark=old`. Still flagged: I10 Drève Pittoresque 27 m, I7 Av. d'Andrimont 19 m skew, short
   roads whose OSM line lies > 6 m off their carriageway (E7 Saint-Job -714, 1003), kerb-raster noise at ramps.
+  Round 2 (coordinator: cars drove up to 1 m off the new lines): the fit is measured once (`measureLineFit`) and
+  applied to the strips AND to the traffic lanes (`laneGraph.js refineLaneGraph` opts.laneShift, in place of its own
+  centring; its keep-on-carriage push at 1.0 m instead of 1.4 m for those lanes: at 1.4 m on the 0.5 m raster it pushed
+  lanes up to 1 m off their paint into the next lane). A side whose stack has no parking lane is fitted to the
+  roadway, not the parking bays; two fits meet without a step at an OSM way split; a tram road band between two roadway
+  parts stops the fit. Lane centre vs painted lane centre: p95 0.08 m over 334k lane points (gate <= 0.25 m; counted
+  apart: 23k where the painted lane is off the carriageway, 88k in painted lanes under 2.5 m where the lane keeps 1 m off
+  the kerb). Lines after: 507 / 396 / 309 m. A LiDAR tree kept on a measured tram road but standing in a painted
+  driving lane (+ 0.3 m) is moved / dropped like the carriageway ones (`viewer/tileData.js`, `roadTrees.js
+  paintedDriveLanes`), unless it stands in a ROW on the tram road (two more within 12 m): Avenue Churchill's
+  reservation (one OSM road whose stack spans it) keeps its trees (G2 / H2 / I2: 0 moved by this pass), H5 Carsoel
+  (664, 472) moves 1. drivecheck back within its ceilings (211 places, tree 0).
 
 ## Not detected here (needs the browser, or not located)
 
