@@ -229,8 +229,12 @@ def demuscle():
             new[idx] = ax + rv / np.maximum(r, 1e-9)[:, None] * nr[:, None]
     # the torso
     zlo, zhi = bone_head("pelvis").z + 0.03, bone_head("upperarm_l").z - 0.015
-    idx = np.array([i for i, ws in enumerate(WSb) if sum(ws.get(n, 0) for n in ("spine_01", "spine_02", "spine_03", "pelvis")) > 0.6
-                    and ws.get("clavicle_l", 0) + ws.get("clavicle_r", 0) < 0.25 and zlo < co[i][2] < zhi])
+    sp_ = lambda ws: sum(ws.get(n, 0) for n in ("spine_01", "spine_02", "spine_03", "pelvis"))
+    cl_ = lambda ws: ws.get("clavicle_l", 0) + ws.get("clavicle_r", 0) + ws.get("upperarm_l", 0) + ws.get("upperarm_r", 0) + ws.get("neck_01", 0)
+    idx = np.array([i for i, ws in enumerate(WSb) if sp_(ws) > 0.3 and zlo < co[i][2] < zhi])
+    # (how much each vertex follows the torso's shape: full deep in the torso, fading out toward the shoulders and the
+    # neck: a hard cut there left a ledge on the upper back)
+    soft = np.array([np.clip((sp_(WSb[i]) - 0.3) / 0.4, 0, 1) * np.clip(1 - cl_(WSb[i]) / 0.6, 0, 1) for i in idx]) if len(idx) else None
     if len(idx):
         P = co[idx]; z = P[:, 2]; tz = (z - zlo) / (zhi - zlo)
         yc = slices(tz, P[:, 1], lo=0, hi=1)
@@ -248,7 +252,7 @@ def demuscle():
         ry = np.where(front, ryf, ryb)
         ux, uy = P[:, 0] / rx, (P[:, 1] - yc) / ry
         rho = np.maximum(np.hypot(ux, uy), 1e-6)
-        k_ = 0.7 * np.clip(np.minimum(tz, 1 - tz) / 0.12, 0, 1)            # (eased at both ends: no step at the hips / shoulders)
+        k_ = 0.7 * np.clip(np.minimum(tz, 1 - tz) / 0.20, 0, 1) * soft     # (eased at both ends and toward the shoulders: no step)
         f = 1 + (1 / rho - 1) * k_
         new[idx, 0] = P[:, 0] * f; new[idx, 1] = yc + (P[:, 1] - yc) * f
     for i, v in enumerate(me_.vertices): v.co = new[i]
@@ -263,7 +267,9 @@ src.modifiers.clear(); src.hide_render = True
 bm = bm_of(body); bm.faces.ensure_lookup_table()
 NB = bone_head("neck_01")
 # (all of the doll's head: what was left at its sides fused into bumps on the kid's head)
-bmesh.ops.delete(bm, geom=[f for f in bm.faces if (f.calc_center_median().z > NB.z + 0.012 and abs(f.calc_center_median().x) < 0.12)
+# (a neck-sized hole only: a wide one, closed by holes_fill, left a flat lid across the shoulders that the remesh
+# turned into a ledge on the upper back)
+bmesh.ops.delete(bm, geom=[f for f in bm.faces if (f.calc_center_median().z > NB.z + 0.012 and abs(f.calc_center_median().x) < 0.06)
                            or max(head_w[v.index] for v in f.verts) > 0.3], context="FACES")
 # (the doll's segments are open shells: closed here, or the voxel remesh drops them)
 nb0 = sum(1 for e in bm.edges if e.is_boundary)
@@ -288,6 +294,8 @@ parts = [
     ellipsoid("nose", (0, cy - 0.083, z0 + Hh * 0.33), (0.0075, 0.009, 0.012), rot=(math.radians(-20), 0, 0), segs=24, rings=16),
     ellipsoid("earL", (0.082, cy + 0.012, z0 + Hh * 0.37), (0.009, 0.019, 0.028), rot=(0, math.radians(-14), math.radians(-8)), segs=24, rings=16),
     ellipsoid("earR", (-0.082, cy + 0.012, z0 + Hh * 0.37), (0.009, 0.019, 0.028), rot=(0, math.radians(14), math.radians(8)), segs=24, rings=16),
+    # under the jaw: fills the crease where the jaw meets the neck (round 3)
+    ellipsoid("underjaw", (0, cy + 0.004, z0 + 0.018), (0.042, 0.048, 0.034), segs=32, rings=16),
     # the neck: a kid's thin neck, from the collar up into the jaw
     ellipsoid("neck", (0, (NB.y + HB.y) / 2 + 0.006, (NB.z + z0 + Hh * 0.22) / 2), (0.038, 0.037, (z0 + Hh * 0.22 - NB.z) / 2 + 0.035), segs=32, rings=16),
 ]
@@ -327,12 +335,27 @@ sm.vertex_group = "_smooth"
 apply_mod(skin, sm)
 sm = skin.modifiers.new("Smooth2", "SMOOTH"); sm.iterations = 8; sm.factor = 0.5; sm.vertex_group = "_smooth"
 apply_mod(skin, sm)
+# the chin -> neck: a long local smoothing (no bump, no crease where the sculpted head meets the body)
+jn = skin.vertex_groups.new(name="_jaw")
+for v in skin.data.vertices:
+    dz = abs(v.co.z - (z0 + 0.005)) / 0.06; dx = abs(v.co.x) / 0.075
+    w_jaw = max(0.0, 1 - dz * dz - dx * dx * 0.5) if v.co.y > cy - 0.075 else 0.0
+    # (+ the neck's base: the crease between the neck and the shoulders, which a shirt offset folds over)
+    _na = bone_head("neck_01"); rr = math.hypot(v.co.x - _na.x, v.co.y - _na.y)
+    w_base = max(0.0, 1 - ((v.co.z - _na.z - 0.01) / 0.06) ** 2) * max(0.0, min(1.0, (0.14 - rr) / 0.05))
+    # (+ the upper back and shoulder tops: the doll's chest plate left a ledge there that the remesh kept)
+    w_back = max(0.0, 1 - ((v.co.z - (_na.z - 0.03)) / 0.07) ** 2) * max(0.0, min(1.0, (0.20 - abs(v.co.x)) / 0.05)) * (1.0 if v.co.y > _na.y - 0.06 else 0.0)
+    jn.add([v.index], max(w_jaw, w_base, w_back), "REPLACE")
+sm = skin.modifiers.new("SmoothJaw", "LAPLACIANSMOOTH"); sm.iterations = 40; sm.lambda_factor = 1.5; sm.use_volume_preserve = True
+sm.vertex_group = "_jaw"
+apply_mod(skin, sm)
+skin.vertex_groups.remove(skin.vertex_groups["_jaw"])
 # the smooth high-res skin, kept for its normals
 hi = skin.copy(); hi.data = skin.data.copy(); hi.name = "SkinHi"; scn.collection.objects.link(hi); hi.hide_render = True
 for p in hi.data.polygons: p.use_smooth = True
 # two passes: the body (the head protected by its vertex group) to BODY_TRIS, then the head (the body protected) to
 # HEAD_TRIS: the head keeps a third of the skin's budget (a smooth round face, no facets)
-BODY_TRIS, HEAD_TRIS = 4150, 2200
+BODY_TRIS, HEAD_TRIS = 3150, 2200
 HIP_SMOOTH = int(arg("--hipsmooth", "14"))
 def in_head(c): return c.z > z0 - 0.01 and abs(c.x) < 0.13
 for inv, want_n in ((True, BODY_TRIS), (True, BODY_TRIS), (True, BODY_TRIS), (False, HEAD_TRIS), (False, HEAD_TRIS)):
@@ -377,14 +400,14 @@ def smooth_skin_weights(o, iters=10, keep=HANDS):
         W = W * (1 - hipm2) + hipm2 * (0.5 * W + 0.5 * S / cnt)
         hipm = hipm2
     co = np.array([v.co[:] for v in me.vertices])
-    hk = np.clip((co[:, 2] - (HB.z - 0.005)) / 0.035, 0, 1); hk = hk * hk * (3 - 2 * hk)
+    hk = np.clip((co[:, 2] - (HB.z - 0.020)) / 0.060, 0, 1); hk = hk * hk * (3 - 2 * hk)
     hk *= (np.abs(co[:, 0]) < 0.14) & (np.abs(co[:, 1] - cy) < 0.14)
     Wh = np.zeros(ng); Wh[names.index("Head")] = 1
     W = W * (1 - hk[:, None]) + Wh[None, :] * hk[:, None]
     # the neckline rides on the chest (spine_03): a shrug or a head turn does not fold the collar into the neck
     na = bone_head("neck_01"); zc = na.z + 0.016
     nr = np.hypot(co[:, 0] - na.x, co[:, 1] - na.y)
-    nk = np.clip((0.105 - nr) / 0.035, 0, 1) * np.clip(1 - np.abs(co[:, 2] - zc) / 0.04, 0, 1) * 0.75
+    nk = np.clip((0.12 - nr) / 0.06, 0, 1) * np.clip(1 - np.abs(co[:, 2] - zc) / 0.06, 0, 1) * 0.3
     Ws = np.zeros(ng); Ws[names.index("spine_03")] = 1
     W = W * (1 - nk[:, None]) + Ws[None, :] * nk[:, None]
     top = np.argsort(-W, axis=1)[:, :4]
@@ -490,11 +513,19 @@ SHORTS = 0.80 if OUTFIT["legs"] == "shorts" else 0.93     # along the thigh / al
 
 NECK_AX = bone_head("neck_01")
 def neck_r(co): return math.hypot(co.x - NECK_AX.x, (co.y - NECK_AX.y) * 1.15 + 0.012)
-def NECK_Z_AT(th, r=0.045): return NECK_AX.z + 0.016 - 0.010 * math.cos(th) * r / 0.045   # the crew neck's plane (low in front)
+NECK_R = 0.052                                                       # the crew neck's radius round the neck's axis
+NECK_UP = 0.020                                                      # and never higher than this over the plane (the back)
+NECK_ZC, NECK_M = 0.016, 0.010 / 0.045                                # the crew neck's plane: centre height, tilt (low in front)
+def NECK_Z_AT(th, r=0.045): return NECK_AX.z + NECK_ZC - NECK_M * 0.045 * math.cos(th) * r / 0.045
+def neck_poly_r(co):
+    """the distance from the neck's axis measured against the 20-gon of the tangent cuts (its inscribed radius = NECK_R)"""
+    th_ = math.atan2(co.x - NECK_AX.x, -(co.y - NECK_AX.y)); k_ = round(th_ / (2 * math.pi / 20)); c_ = 2 * math.pi * k_ / 20
+    return (co.x - NECK_AX.x) * math.sin(c_) - (co.y - NECK_AX.y) * math.cos(c_)
 def in_shirt(co, ws):
     # a crew neck: round the neck's axis, above the neckline, is out
     th_ = math.atan2(co.x - NECK_AX.x, -(co.y - NECK_AX.y))
-    if math.hypot(co.x - NECK_AX.x, co.y - NECK_AX.y) < 0.085 and co.z - NECK_AX.z - 0.016 - (0.010 / 0.045) * (co.y - NECK_AX.y) > 0: return False
+    _over = co.z - NECK_AX.z - NECK_ZC - NECK_M * (co.y - NECK_AX.y)
+    if (neck_poly_r(co) < NECK_R and _over > 0) or (neck_poly_r(co) < NECK_R + 0.035 and _over > NECK_UP): return False
     if co.z > NECK_AX.z + 0.06: return False
     up = 0
     for s in "lr":
@@ -547,7 +578,30 @@ def cut(o, planes):
             keep = [f for f in bm.faces if all(lo[a] <= f.calc_center_median()[a] <= hi[a] for a in range(3))]
             es = {e for f in keep for e in f.edges}; vs = {v for f in keep for v in f.verts}
             geom = list(vs) + list(es) + keep
+        old = set(bm.verts)
         bmesh.ops.bisect_plane(bm, geom=geom, plane_co=Vector(co), plane_no=Vector(no).normalized(), dist=0.0004)
+        # (the new vertices' skin weights: interpolated here from the two ends of the edge each one split, by distance;
+        # bisect_plane does not interpolate the deform layer reliably: a vertex at the neckline once took a thigh's weights)
+        dl = bm.verts.layers.deform.active
+        if dl is not None:
+            for v in bm.verts:
+                if v in old: continue
+                ends = [e.other_vert(v) for e in v.link_edges if e.other_vert(v) in old]
+                ends.sort(key=lambda u: (u.co - v.co).length)
+                if len(ends) < 2: ends = ends[:1]
+                else:
+                    # the two ends on opposite sides of the plane (the edge it split)
+                    pn = Vector(no).normalized(); a0 = ends[0]
+                    side0 = (a0.co - Vector(co)).dot(pn)
+                    b0 = next((u for u in ends[1:] if (u.co - Vector(co)).dot(pn) * side0 < 0), ends[1])
+                    ends = [a0, b0]
+                if not ends: continue
+                ds = [max(1e-6, (u.co - v.co).length) for u in ends]; ws_ = [1 / d for d in ds]; tw = sum(ws_)
+                acc = {}
+                for u, w_ in zip(ends, ws_):
+                    for gi_, x in u[dl].items(): acc[gi_] = acc.get(gi_, 0) + x * w_ / tw
+                v[dl].clear()
+                for gi_, x in acc.items(): v[dl][gi_] = x
     bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4])
     bm.to_mesh(o.data); bm.free(); o.data.update()
 
@@ -577,6 +631,36 @@ def shell(o_src, faces, name, slot, off, off_fn=None, rim_in=0.012, hem_slot=Non
         try: bm.faces.new(vs).smooth = True
         except ValueError: pass
     bm.verts.ensure_lookup_table()
+    # (islands: a few faces cut off by a hem plane or a region test stand up as flakes: dropped, < 4 % of the part)
+    bm.faces.ensure_lookup_table()
+    seen, islands = set(), []
+    for f in bm.faces:
+        if f in seen: continue
+        stack, isl = [f], []
+        seen.add(f)
+        while stack:
+            g_ = stack.pop(); isl.append(g_)
+            for e in g_.edges:
+                for h in e.link_faces:
+                    if h not in seen: seen.add(h); stack.append(h)
+        islands.append(isl)
+    big = max((len(x) for x in islands), default=0)
+    drop = [f for isl in islands if len(isl) < max(12, 0.04 * big) for f in isl]
+    if drop:
+        tick(f"  {name}: {len(drop)} faces in {sum(1 for isl in islands if len(isl) < max(12, 0.04 * big))} stray islands dropped")
+        # (which vertices survive, decided BEFORE the delete: a FACES delete also removes the verts it frees)
+        dropset = set(drop)
+        used = {v for f in bm.faces if f not in dropset for v in f.verts}
+        keep_idx = [k for k, v in enumerate(bm.verts) if v in used]
+        bmesh.ops.delete(bm, geom=drop, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if v not in used], context="VERTS")
+        src_of = [src_of[k] for k in keep_idx]
+        assert len(src_of) == len(bm.verts), "shell: vertex map out of step"
+        # (re-packed: BMesh reuses the freed slots for NEW vertices, which then come out in the middle of the mesh's
+        # vertex order (the hem's vertices took the weights of the waist's: spikes); a fresh BMesh keeps the order)
+        _tmp = bpy.data.meshes.new("_pack"); bm.to_mesh(_tmp); bm.free()
+        bm = bmesh.new(); bm.from_mesh(_tmp); bpy.data.meshes.remove(_tmp)
+        bm.verts.ensure_lookup_table(); bm.verts.index_update()
     relax_border(bm, 4)
     N = src_normals if src_normals is not None else [v.normal.copy() for v in me.vertices]
     want = []
@@ -588,10 +672,11 @@ def shell(o_src, faces, name, slot, off, off_fn=None, rim_in=0.012, hem_slot=Non
         # its offset off the skin (no poke-through)
         inner = [v for v in bm.verts if not v.is_boundary]
         for _ in range(drape): bmesh.ops.smooth_vert(bm, verts=inner, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-        sk = BVHTree.FromObject(o_src, bpy.context.evaluated_depsgraph_get())
-        for v, d in zip(list(bm.verts), want):
-            loc, n, _, dist = sk.find_nearest(v.co)
-            if loc is not None and (v.co - loc).dot(n) < 0.6 * d: v.co = loc + n * 0.6 * d
+        # (measured along each vertex's own skin normal from its own skin point: the nearest skin point was the NECK's
+        # for the shirt's back neckline, which pushed it the wrong way into folds)
+        for v, d, si in zip(list(bm.verts), want, src_of):
+            o_ = (v.co - me.vertices[si].co).dot(N[si])
+            if o_ < 0.6 * d: v.co = v.co + N[si] * (0.6 * d - o_)
     base = len(src_of)
     # the outer border's loops (ordered), for trims: [(points, source vertex indices)]
     loops, seen = [], set()
@@ -722,7 +807,7 @@ SCRATCH = arg("--scratch", os.path.join(ROOT, ".kid_tmp"))
 if STAGE == "body":
     os.makedirs(SCRATCH, exist_ok=True)
     preview(os.path.join(SCRATCH, "body_{v}.jpg"), [("front", 0, 8, 3.2), ("side", 90, 8, 3.2)], res=(700, 900))
-    preview(os.path.join(SCRATCH, "body_{v}.jpg"), [("face", 0, 3, 0.55), ("face34", 35, 5, 0.55), ("profile", 90, 0, 0.55)], res=(600, 600), target=(0, FACE["cy"], FACE["z0"] + FACE["Hh"] * 0.5))
+    preview(os.path.join(SCRATCH, "body_{v}.jpg"), [("lshoulder", 150, 30, 0.6), ("rshoulder", -150, 30, 0.6)], res=(600, 600), target=(0, FACE["cy"] + 0.03, FACE["z0"] - 0.03))
     sys.exit(0)
 
 # ------------------------------------------------------------------------------------------------ 4. the clothes
@@ -747,8 +832,16 @@ for s_ in "lr":
     else: P_.append(across(f"calf_{s_}", SHORTS))
     for t_ in (0.66, 0.715, 0.735, 0.75, 0.77, 0.93): P_.append(across(f"calf_{s_}", t_))
 # the crew neck: a plane tilted down to the front (NECK_Z_AT), cut only round the neck
-_m = 0.010 / 0.045
-P_.append(((NECK_AX.x, NECK_AX.y, NECK_AX.z + 0.016), (0, -_m, 1), ((NECK_AX.x - 0.09, NECK_AX.y - 0.11, NECK_AX.z - 0.05), (NECK_AX.x + 0.09, NECK_AX.y + 0.11, NECK_AX.z + 0.07))))
+# the crew neck = the skin outside a cylinder round the neck (NECK_R) or under a plane tilted down to the front: the
+# plane cut where it meets the skin inside the cylinder, the cylinder as 20 short tangent planes above the plane (the
+# trapezius at the back rises over the plane: a plane alone opened a boat neck there)
+P_.append(((NECK_AX.x, NECK_AX.y, NECK_AX.z + NECK_ZC), (0, -NECK_M, 1), ((NECK_AX.x - NECK_R - 0.01, NECK_AX.y - NECK_R - 0.01, NECK_AX.z - 0.05), (NECK_AX.x + NECK_R + 0.01, NECK_AX.y + NECK_R + 0.01, NECK_AX.z + 0.08))))
+P_.append(((NECK_AX.x, NECK_AX.y, NECK_AX.z + NECK_ZC + NECK_UP), (0, -NECK_M, 1), ((NECK_AX.x - NECK_R - 0.04, NECK_AX.y - NECK_R - 0.04, NECK_AX.z - 0.03), (NECK_AX.x + NECK_R + 0.04, NECK_AX.y + NECK_R + 0.04, NECK_AX.z + 0.10))))
+for k_ in range(20):
+    th_ = 2 * math.pi * k_ / 20; d_ = Vector((math.sin(th_), -math.cos(th_), 0)); c_ = Vector((NECK_AX.x, NECK_AX.y, 0)) + d_ * NECK_R
+    t_ = Vector((-d_.y, d_.x, 0)); half = NECK_R * math.tan(math.pi / 20) + 0.002
+    lo_ = [min(c_[a] - t_[a] * half, c_[a] + t_[a] * half) - 0.004 for a in range(2)]; hi_ = [max(c_[a] - t_[a] * half, c_[a] + t_[a] * half) + 0.004 for a in range(2)]
+    P_.append(((c_.x, c_.y, NECK_AX.z), (d_.x, d_.y, 0), ((lo_[0], lo_[1], NECK_Z_AT(th_) - 0.01), (hi_[0], hi_[1], NECK_AX.z + 0.12))))
 cut(body, P_)
 tick(f"hems cut: {len(body.data.polygons)} faces")
 NRM = [v.normal.copy() for v in body.data.vertices]
@@ -764,6 +857,7 @@ def shirt_off(co, i):
         if ws.get(f"upperarm_{s}", 0) > 0.3: sl = max(sl, smooth01((along(co, f"upperarm_{s}") - 0.1) / 0.3))
     return 0.0085 + 0.007 * hem + 0.006 * sl + 0.0015 * noise.noise(co * 18)
 shirt = shell(body, F_shirt, "shirt", "shirt", 0, off_fn=shirt_off, rim_in=0.013, hem_slot="shirt_trim", drape=6)
+smooth_weights(shirt, 4)                                           # (cloth: no fold where the chest meets the shoulder)
 # the collar and the cuffs (+ the sweatshirt's waistband): ribbed bands along the garment's borders
 def bone_band(name, bone, t, r, out, slot, n=24, flat=0.55):
     """a ribbed band round a limb at `t` along `bone` (the cuffs): a ring on the skin from the bone's axis outward"""
@@ -799,38 +893,71 @@ for i in range(NRING):
     th = 2 * math.pi * i / NRING
     d = Vector((math.sin(th), -math.cos(th), 0))
     z = NECK_Z_AT(th)
-    loc, n, _, _ = body_bvh.ray_cast(Vector((NECK_AX.x, NECK_AX.y + 0.004, z)), d)      # (from inside: the neck's own skin)
-    if loc is None: loc, n = Vector((NECK_AX.x, NECK_AX.y, z)) + d * 0.045, d
+    # (from OUTSIDE, at the edge of the neckline's region, inward: the outer place where the neckline plane meets the
+    # skin: exactly where the shirt was cut)
+    # where the shirt ends: on the cylinder if the skin there is above the plane (the back), else where the plane meets
+    # the skin inside it (the front)
+    pc = Vector((NECK_AX.x, NECK_AX.y, 0)) + d * NECK_R
+    hit = body_bvh.ray_cast(Vector((pc.x, pc.y, NECK_AX.z + 0.15)), Vector((0, 0, -1)), 0.25)
+    if hit[0] is not None and hit[0].z > z + NECK_UP:
+        # (the skin at the cylinder is over the cap height: the shirt ends where the raised plane meets it, outside)
+        z2 = z + NECK_UP
+        loc, n, _, _ = body_bvh.ray_cast(Vector((NECK_AX.x, NECK_AX.y, z2)) + d * (NECK_R + 0.034), -d, NECK_R + 0.034)
+        if loc is None: loc, n = Vector((NECK_AX.x, NECK_AX.y, z2)) + d * NECK_R, d
+        z = z2
+    elif hit[0] is not None and hit[0].z > z:
+        loc, n = hit[0], hit[1]; z = loc.z
+    else:
+        loc, n, _, _ = body_bvh.ray_cast(Vector((NECK_AX.x, NECK_AX.y, z)) + d * (NECK_R - 0.001), -d, NECK_R)
+        if loc is None: loc, n = Vector((NECK_AX.x, NECK_AX.y, z)) + d * 0.045, d
     RING.append((loc, n, z))
-# (a ray that slipped past the neck into the shoulder: its radius replaced by its neighbours' median, then smoothed)
-_rad = [math.hypot(q.x - NECK_AX.x, q.y - NECK_AX.y) for q, _, _ in RING]
-for _ in range(3):
-    _rad = [sorted([_rad[(i + k) % NRING] for k in (-2, -1, 0, 1, 2)])[2] for i in range(NRING)]
-    _rad = [0.25 * _rad[i - 1] + 0.5 * _rad[i] + 0.25 * _rad[(i + 1) % NRING] for i in range(NRING)]
-for i in range(NRING):
-    th = 2 * math.pi * i / NRING; d = Vector((math.sin(th), -math.cos(th), 0))
-    q, n, z = RING[i]
-    q2 = Vector((NECK_AX.x, NECK_AX.y, z)) + d * _rad[i]
-    loc, nn, _, _ = body_bvh.find_nearest(q2)
-    RING[i] = (loc, (nn * 0.5 + d * 0.5).normalized(), z)
-tick(f"  neckline radius {min(_rad):.3f}-{max(_rad):.3f} m")
-def ring_at(th):
-    f = (th % (2 * math.pi)) / (2 * math.pi) * NRING; i = int(f) % NRING; u = f - int(f); a, b = RING[i], RING[(i + 1) % NRING]
-    return a[0].lerp(b[0], u), a[1].lerp(b[1], u).normalized(), a[2] + (b[2] - a[2]) * u
+# the neckline's radius round the neck: a median against rays that slipped into the shoulder, then FITTED by a low-pass
+# Fourier series (3 harmonics): a clean, even curve (round 3: the band followed every bump of the skin)
+_raw = [math.hypot(q.x - NECK_AX.x, q.y - NECK_AX.y) for q, _, _ in RING]
+_med = [sorted([_raw[(i + k) % NRING] for k in (-2, -1, 0, 1, 2)])[2] for i in range(NRING)]
+_th = [2 * math.pi * i / NRING for i in range(NRING)]
+_co = [sum(_med[i] * math.cos(h * _th[i]) for i in range(NRING)) * 2 / NRING for h in range(4)]
+_si = [sum(_med[i] * math.sin(h * _th[i]) for i in range(NRING)) * 2 / NRING for h in range(4)]
+def r_fit(th): return _co[0] / 2 + sum(_co[h] * math.cos(h * th) + _si[h] * math.sin(h * th) for h in range(1, 4))
+_lift = max(0.0, max(_med[i] - r_fit(_th[i]) for i in range(NRING)))
+_zs = [RING[i][2] for i in range(NRING)]
+_zc = [sum(_zs[i] * math.cos(h * _th[i]) for i in range(NRING)) * 2 / NRING for h in range(4)]
+_zsn = [sum(_zs[i] * math.sin(h * _th[i]) for i in range(NRING)) * 2 / NRING for h in range(4)]
+def z_fit(th): return _zc[0] / 2 + sum(_zc[h] * math.cos(h * th) + _zsn[h] * math.sin(h * th) for h in range(1, 4))
+def neck_pt(th):
+    d = Vector((math.sin(th), -math.cos(th), 0))
+    return Vector((NECK_AX.x, NECK_AX.y, z_fit(th))) + d * (r_fit(th) + min(0.006, _lift)), d
+tick(f"  neckline fitted: radius {min(r_fit(t) for t in _th):.3f}-{max(r_fit(t) for t in _th):.3f} m (+{_lift * 1000:.1f} mm)")
 def nth(co): return math.atan2(co.x - NECK_AX.x, -(co.y - NECK_AX.y))
 def nrad(co): return math.hypot(co.x - NECK_AX.x, co.y - NECK_AX.y)
+PLANE_N = Vector((0, -NECK_M, 1)).normalized()
+NR2, SIDES, CR = 48, 6, 0.0078
 bm = bmesh.new(); rings = []
-for i in range(NRING):
-    q, n, _ = RING[i]
-    t = (RING[(i + 1) % NRING][0] - RING[i - 1][0]).normalized()
-    sd = t.cross(n).normalized()
-    c = q + n * 0.0075
-    rings.append([bm.verts.new(c + n * 0.0085 * 0.55 * math.sin(a) + sd * 0.0085 * math.cos(a)) for a in [k * 2 * math.pi / 6 for k in range(6)]])
-for i in range(NRING):
-    r0, r1 = rings[i], rings[(i + 1) % NRING]
-    for kk in range(6): bm.faces.new([r0[kk], r0[(kk + 1) % 6], r1[(kk + 1) % 6], r1[kk]]).smooth = True
+for i in range(NR2):
+    th = 2 * math.pi * i / NR2
+    q, d = neck_pt(th)
+    q1, _ = neck_pt(th + 0.01); q0, _ = neck_pt(th - 0.01)
+    t = (q1 - q0).normalized()
+    nout = (d - PLANE_N * d.dot(PLANE_N)).normalized()                 # out from the neck, in the neckline's plane
+    up = t.cross(nout).normalized()
+    if up.dot(PLANE_N) < 0: up = -up
+    c = q + nout * (CR * 0.55)
+    rings.append([bm.verts.new(c + nout * CR * 0.55 * math.cos(a) + up * CR * math.sin(a)) for a in [k * 2 * math.pi / SIDES for k in range(SIDES)]])
+for i in range(NR2):
+    r0, r1 = rings[i], rings[(i + 1) % NR2]
+    for kk in range(SIDES): bm.faces.new([r0[kk], r0[(kk + 1) % SIDES], r1[(kk + 1) % SIDES], r1[kk]]).smooth = True
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-collar = new_obj("collar", bm, ["shirt_trim"]); nearest_weights(collar, shirt); smooth_weights(collar, 3)   # (the shirt's weights: it moves with the shirt, not the neck)
+def collar_weights(o):
+    """the collar's weights by its angle round the neck (no lookup that can pick a wrong vertex): the chest, a little of
+    the neck, the collarbones at the sides"""
+    gs = {n: o.vertex_groups.new(name=n) for n in ("spine_03", "neck_01", "clavicle_l", "clavicle_r")}
+    for v in o.data.vertices:
+        th = nth(v.co); side = math.sin(th)
+        cl = 0.40 * abs(side)
+        w = {"spine_03": 0.75 - cl, "neck_01": 0.25, "clavicle_l" if side > 0 else "clavicle_r": cl}
+        for n, x in w.items():
+            if x > 1e-4: gs[n].add([v.index], x, "REPLACE")
+collar = new_obj("collar", bm, ["shirt_trim"]); collar_weights(collar)   # (the shirt's weights: it moves with the shirt, not the neck)
 trims.append(collar)
 
 covered |= F_shirt
@@ -911,20 +1038,26 @@ def el_at(az, z):
 def surf(p, out=0.0):
     loc, n, _, _ = skin_bvh.find_nearest(Vector(p))
     return loc + n * out, n
-def ribbon(name, pts, widths, thick, slot, sides=6, rigid=True):
+def ribbon(name, pts, widths, thick, slot, sides=6, rigid=True, round_tip=False, nfun=None):
     """a tapered lock / strip along pts, widths per point, thick: a flat closed tube lying on the skin"""
     bm = bmesh.new(); rings = []
     for i, p in enumerate(pts):
         q = Vector(p)
         t = (Vector(pts[min(i + 1, len(pts) - 1)]) - Vector(pts[max(i - 1, 0)])).normalized()
-        _, n = surf(q)
+        n = nfun(q) if nfun else surf(q)[1]
         sd = t.cross(n).normalized()
-        w, th = widths[i], thick * (1 - 0.6 * i / max(1, len(pts) - 1))
+        w, th = widths[i], thick * (1 - (0 if nfun else 0.35 if round_tip else 0.6) * i / max(1, len(pts) - 1))
         rings.append([bm.verts.new(q + sd * w * math.cos(a) + n * th * math.sin(a)) for a in [kk * 2 * math.pi / sides for kk in range(sides)]])
     for r0, r1 in zip(rings, rings[1:]):
         for kk in range(sides):
             bm.faces.new([r0[kk], r0[(kk + 1) % sides], r1[(kk + 1) % sides], r1[kk]]).smooth = True
-    bm.faces.new(rings[0][::-1]).smooth = True; bm.faces.new(rings[-1]).smooth = True
+    bm.faces.new(rings[0][::-1]).smooth = True
+    if round_tip:
+        # a rounded end: a fan to a point a little beyond the last ring
+        last, prev = Vector(pts[-1]), Vector(pts[-2])
+        tip = bm.verts.new(last + (last - prev).normalized() * widths[-1] * 0.9)
+        for kk in range(sides): bm.faces.new([rings[-1][kk], rings[-1][(kk + 1) % sides], tip]).smooth = True
+    else: bm.faces.new(rings[-1]).smooth = True
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     o = new_obj(name, bm, [slot])
     if rigid: rigid_head(o)
@@ -947,15 +1080,16 @@ F_hair, _ = face_region(body, in_hair)
 hair = shell(body, F_hair, "hair", "hair", 0, off_fn=lambda co, i: 0.0045 + 0.0015 * noise.noise(co * 40), rim_in=0.006, src_normals=NRM)
 rigid_head(hair)
 locks = []
-def lock(name, az0, el0, az1, z1, w, th, n=4, out0=0.011, out1=0.004, sides=5):
+def lock(name, az0, el0, az1, z1, w, th, n=5, out0=0.011, out1=0.004, sides=6):
     el1 = el_at(az1, z1)
     pts = []
     for k in range(n):
         t = k / (n - 1)
         az = az0 + (az1 - az0) * t; el = el0 + (el1 - el0) * (t ** 0.85)
         pts.append(scalp(az, el, out0 + (out1 - out0) * t)[0])
-    widths = [w * (1.0 - 0.75 * (k / (n - 1)) ** 1.6) for k in range(n)]
-    locks.append(ribbon(name, pts, widths, th, "hair", sides=sides))
+    # (a soft clump: full most of its length, then a ROUND tip: no needle ends)
+    widths = [w * math.sqrt(max(0.0, 1.0 - (k / (n - 1)) ** 2.4)) * 0.92 + w * 0.08 for k in range(n)]
+    locks.append(ribbon(name, pts, widths, th * 1.25, "hair", sides=sides, round_tip=True))
 NA = 16
 cap_el = el_at(0, z0 + Hh * 0.66) if CAP else None
 for i in range(NA):                                                   # the top row (under a cap: never seen, left out)
@@ -992,9 +1126,20 @@ if CAP:
             az = 2 * math.pi * i / NA_
             el = el_at(az, rim_z(az)) if j == 0 else None
             if j: el = grid[0][i][1] + (1.50 - grid[0][i][1]) * (t ** 0.9)
-            p, n = scalp(az, el, CLEAR + 0.006 * math.sin(math.pi * min(1, t * 1.1)))
+            p, n = scalp(az, el, 0.0)
+            p = p + dirv(az, el) * (CLEAR + 0.006 * math.sin(math.pi * min(1, t * 1.1)))     # (out along the ray: a clean dome, no jitter from the skin's normals)
             row.append((p, el, az))
         grid.append(row)
+    # the crown smoothed: each point's distance from the head's centre averaged with its neighbours round and up
+    # (the skin under it has small dents; a cap's crown is a taut dome: no crease along a seam)
+    for _ in range(6):
+        R_ = [[(grid[j][i][0] - HC).length for i in range(NA_)] for j in range(NR)]
+        for j in range(NR):
+            for i in range(NA_):
+                nbs = [R_[j][(i - 1) % NA_], R_[j][(i + 1) % NA_]] + ([R_[j - 1][i]] if j > 0 else []) + ([R_[j + 1][i]] if j < NR - 1 else [])
+                r_ = 0.5 * R_[j][i] + 0.5 * sum(nbs) / len(nbs)
+                p_, el_, az_ = grid[j][i]
+                grid[j][i] = (HC + (p_ - HC).normalized() * max(r_, R_[j][i] - 0.002), el_, az_)
     V_ = [[bm.verts.new(p) for (p, _, _) in row] for row in grid]
     pole = bm.verts.new(scalp(0, math.pi / 2, CLEAR + 0.004)[0])
     def opening(i, j):
@@ -1015,8 +1160,11 @@ if CAP:
         az = off + ks * math.pi / 3
         i = int(round(az / (2 * math.pi) * NA_)) % NA_
         js = [j for j in range(NR) if not opening(i, j) and not opening((i - 1) % NA_, j)]
-        pts = [grid[j][i][0] + (grid[j][i][0] - HC).normalized() * 0.0012 for j in js]
-        if len(pts) > 2 and "--noseams" not in ARGV: caps.append(ribbon(f"seam{ks}", pts, [0.0017] * len(pts), 0.0015, "cap", sides=4))
+        # (the piping's path: the crown's own grid points along the seam, lifted half a cord; its cross-section round)
+        pts = [grid[j][i][0] + (grid[j][i][0] - HC).normalized() * 0.0024 for j in js]
+        pts.append(scalp(0, math.pi / 2, CLEAR + 0.004)[0] + Vector((0, 0, 0.001)))
+        if len(pts) > 2 and "--noseams" not in ARGV:
+            caps.append(ribbon(f"seam{ks}", pts, [0.0021] * len(pts), 0.0021 / 0.65, "cap", sides=6, nfun=lambda q: (q - HC).normalized()))
     # the button
     b2 = bmesh.new(); bmesh.ops.create_uvsphere(b2, u_segments=12, v_segments=6, radius=1)
     bmesh.ops.transform(b2, matrix=Matrix.Translation(scalp(0, math.pi / 2, CLEAR + 0.007)[0]) @ Matrix.Diagonal((0.008, 0.008, 0.004, 1)), verts=b2.verts)
@@ -1197,7 +1345,7 @@ def pose(clip, t):
 W_ = (900, 1200)
 if "--restview" in ARGV:
     for pb in arm.pose.bones: pb.matrix_basis = Matrix.Identity(4)
-    preview(os.path.join(DOCS, "rest_{v}.jpg"), [("neck", 20, 10, 0.7)], res=(700, 700), lens=50, samples=32, target=(0, FACE["cy"], NECK_AX.z + 0.03))
+    preview(os.path.join(DOCS, "rest_{v}.jpg"), [("neck", 20, 10, 0.7), ("lshoulder", 60, 25, 0.6)], res=(700, 700), lens=50, samples=32, target=(0, FACE["cy"], NECK_AX.z + 0.03))
 pose("Idle_Loop", 0.0)
 preview(os.path.join(DOCS, "turn_{v}.jpg"), [("front", 0, 6, 3.0), ("q34", 40, 8, 3.0), ("side", 90, 6, 3.0), ("back", 180, 8, 3.0)], res=W_, lens=55, samples=48)
 for clip, t, nm in [("Walk_Loop", 0.25, "walk"), ("Jog_Fwd_Loop", 0.3, "run"), ("Jump_Loop", 0.5, "jump"), ("Crouch_Idle_Loop", 0.2, "crouch"), ("Sitting_Idle_Loop", 0.3, "sit")]:

@@ -41,6 +41,51 @@ const { KID_PALETTE } = await import("../../viewer/kid/kidModel.js").catch(() =>
 const slots = meta.kid.slots;
 if (KID_PALETTE) check("named slots: every slot has a palette colour", slots.every((sl) => sl in KID_PALETTE), slots.join(","), "all in KID_PALETTE");
 
+// ------------------------------------------------------------------------------------------------ stray pieces, spikes
+// (round 3: a flake of the shirt cut off by a hem plane stood up at the shoulder; a hem vertex took the waist's weights
+// and became a blade in the Idle pose) Every connected piece of the LOD0 mesh in a body / clothes slot is big (>= 40
+// tris: the collar, a cuff, a shoe, the shirt...), and no long thin sliver triangle in those slots.
+{
+  const pr = kid.json.meshes[0].primitives[0];
+  const I = kid.accessor(pr.indices), P = kid.accessor(pr.attributes.POSITION), SL = kid.accessor(pr.attributes._SLOT);
+  const nv = P.length / 3, par = new Int32Array(nv).map((_, i) => i);
+  const find = (x) => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
+  // (vertices at the same place are one: the export splits them at slot borders and hard edges)
+  const key = (i) => `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}`;
+  const at = new Map(), weld = new Int32Array(nv);
+  for (let i = 0; i < nv; i++) { const k = key(i); if (at.has(k)) { par[find(i)] = find(at.get(k)); weld[i] = at.get(k); } else { at.set(k, i); weld[i] = i; } }
+  for (let t = 0; t < I.length; t += 3) { par[find(I[t])] = find(I[t + 1]); par[find(I[t + 1])] = find(I[t + 2]); }
+  const BODY = new Set(["skin", "shirt", "shirt_trim", "shorts", "socks", "sock_stripe", "shoe", "sole", "shoe_accent", "lace"].map((n) => slots.indexOf(n)));
+  const comp = new Map();
+  // (a SPIKE: a triangle folded against its neighbours - its normal more than 115 deg off the mean normal round its
+  // corners (a hem band turns 90 deg: allowed) - and longer than 2 cm: a flake or a blade)
+  const fn = [], vn = new Float64Array(nv * 3);
+  for (let t = 0; t < I.length; t += 3) {
+    const v = (k) => [P[I[t + k] * 3], P[I[t + k] * 3 + 1], P[I[t + k] * 3 + 2]];
+    const a = v(0), b = v(1), cc = v(2);
+    const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], ac = [cc[0] - a[0], cc[1] - a[1], cc[2] - a[2]];
+    const n = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
+    const L = Math.max(...[[a, b], [b, cc], [cc, a]].map(([x, y]) => Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2])));
+    fn.push([n, L]);
+    for (let k = 0; k < 3; k++) { const r = weld[I[t + k]]; for (let c = 0; c < 3; c++) vn[r * 3 + c] += n[c]; }
+    const r = find(I[t]), c = comp.get(r) || { n: 0, body: 0 }; c.n++; if (BODY.has(SL[I[t]])) c.body++; comp.set(r, c);
+  }
+  let sliv = 0, slivHigh = 0;
+  for (let t = 0, f = 0; t < I.length; t += 3, f++) {
+    if (!BODY.has(SL[I[t]])) continue;
+    const [n, L] = fn[f]; if (L < 0.02) continue;
+    const ln = Math.hypot(...n) || 1;
+    let m = [0, 0, 0]; for (let k = 0; k < 3; k++) { const r = weld[I[t + k]]; for (let c = 0; c < 3; c++) m[c] += vn[r * 3 + c]; }
+    const lm = Math.hypot(...m) || 1;
+    if ((n[0] * m[0] + n[1] * m[1] + n[2] * m[2]) / (ln * lm) < Math.cos(115 * Math.PI / 180)) { sliv++; if (P[I[t] * 3 + 1] > 0.95) slivHigh++; }
+  }
+  const small = [...comp.values()].filter((c) => c.body > c.n / 2 && c.n < 40);
+  // (the hems overlap at the waist and the shoe collars: a few small folds there; none from the chest up, where the
+  // round-2 flake stood: 18 folded triangles in that model, 9 now, 0 above the waist)
+  check("no stray pieces or spikes (body + clothes slots of LOD0)", small.length === 0 && slivHigh === 0 && sliv <= 12,
+    `${small.length} small pieces (${small.map((c) => c.n).join(", ") || "-"} tris), ${sliv} folded triangles > 2 cm (${slivHigh} above the waist)`, "0 pieces, 0 folded above the waist, <= 12 in all");
+}
+
 // ------------------------------------------------------------------------------------------------ every UAL clip binds
 const RAWS = [path.join(ROOT, "data/raw/characters"), path.join(ROOT, "../uccle-city/data/raw/characters")];
 const raw = RAWS.find((d) => fs.existsSync(path.join(d, "ual1")));

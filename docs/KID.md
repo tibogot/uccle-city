@@ -64,6 +64,29 @@ m/s) and `viewer/kid/kidModel.js`: one palette material (slot colours + roughnes
 a uniform write), the AO softened to a warm tint, a faint rim (the painted look; no light added), one draw per LOD;
 `autoLod(d)` 14 / 40 m with hysteresis.
 
+## Round 3 (polish, 2026-11-18)
+- chin -> neck: an under-jaw fill + a 40-step local smoothing of the jaw, the neck's base and the upper back; the rigid
+  head blends over 6 cm; the doll's neck hole kept neck-sized (a wide hole closed by holes_fill left a flat lid across
+  the shoulders: a ledge on the upper back that every shirt folded over: the "flake" at the left shoulder);
+- the crew neck: the skin outside a cylinder round the neck (r 5.2 cm, cut as 20 tangent planes) or under a plane tilted
+  down to the front, never more than 2 cm over that plane at the back; the collar rib: a 3-harmonic fitted ring on that
+  edge, an even 8-sided rib, weights by angle (chest / neck / collarbones);
+- stray pieces: every garment drops its islands under 4 % of its faces; TWO real bugs behind the round-2 spikes, fixed:
+  BMesh reuses freed slots for new vertices (after a delete the hem's vertices came out mid-order and took the waist's
+  weights: blades in the Idle pose; the BMesh is re-packed), and a bisect's new vertices now get their weights
+  interpolated from the edge they split; the drape push-out goes along each vertex's own normal;
+- hair: 6-sided clumps of 5 rings with ROUND tips (a fan), fuller (no needle ends);
+- cap: the crown pushed out along its rays (no jitter from the skin's normals: the front seam was a wavy crack), smoothed
+  as a taut dome; the seams an even round piping (6 sides, 2.1 mm) on every panel;
+- new test row: no stray piece (< 40 tris) in a body / clothes slot and no folded triangle (> 115 deg off its
+  neighbours, > 2 cm) above the waist (round 2's model has 6 there: the check catches the flake);
+- LOD0 14,854 / 4,999 / 1,595 tris; skin stretch 0.042 % (mannequin 0.038 %), knees 0.02, elbows 0.01, shoulders 0.21,
+  hips 0.73 %; IK on the BMX unchanged (legs <= 95.5 %, arms <= 82 %, 0 mm); 24/24.
+- RENDERS: the final build's renders were stopped (the owner's playtest needed the machine): docs/kid/ shows the build
+  just before the last neckline fix (the collar a little high at the back); `round3_vs_round2.jpg` is from that build.
+  Redo: `blender -b --factory-startup -P tools/characters/kid.py -- --renders` (+ `--cap 0 --out/--docs <tmp>` for the
+  no-cap views) and the side-by-side.
+
 ## Renders (docs/kid/)
 Round 2: `round2_vs_round1.jpg` (the review's views side by side), `face_cap_back.jpg` / `turn_cap_back_q34.jpg`
 (`--cap back`); round 1's renders are kept in `docs/kid/round1/`.
