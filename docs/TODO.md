@@ -25,7 +25,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] Tram rails running into the sidewalk. Detector: rails vs sidewalk polygons.
 - [x] Road white lines going "anyhow"; a traffic car driving on the sidewalk (Chaussée d'Alsemberg). Detector: markings outside the carriageway; traffic paths vs sidewalks. MERGED 2026-11-18 (360df82f, claude/markings, rule 33): lines off street 6,018 -> 472 m, traffic lanes follow the paint (p95 0.08 m), parking lanes >= 2 m, round-wheel bicycle glyphs; ?roadlines=old / ?bikemark=old. Left: the Saint-Pierre parked van -> car in the tour (unattributed).
 - [ ] Rue du Repos (and others): weird sharp bumps in the road. Check against the real street (data vs DTM).
-- [ ] Z-fighting / shaking windows (Maison Dandoy right window, others). Detector: coplanar faces in building meshes.
+- [x] Z-fighting / shaking windows (Maison Dandoy right window, others). Detector: coplanar faces in building meshes. MERGED 2026-11-18 (8098a930, claude/zfight, rule 34): pairs 32,001 -> 4,825; kit packed codes decoded in the vertex stage (window shimmer 2.9 -> 0.3); ivy off shopfronts; ?zfight=old. Left: town hall LOD1 re-export + AO, hero LOD2s, pale ivy on Dandoy's side corner wall, Juliet railing bars (jitter branch).
+- [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
 - [ ] Some places look hollow.
 

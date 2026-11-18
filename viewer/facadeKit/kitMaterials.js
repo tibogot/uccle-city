@@ -17,15 +17,16 @@ import * as THREE from "three/webgpu";
 import {
   Fn, If, attribute, uv, positionWorld, positionLocal, positionGeometry, normalWorld, cameraPosition, vec2, vec3, vec4, float, floor,
   fract, mix, step, smoothstep, clamp, abs, sin, dot, max, min, mod, pow, normalize, uniform, mrt, roughness, round, select, fwidth,
-  sqrt, length, dFdx, dFdy, normalViewGeometry, cameraViewMatrix, texture,
+  sqrt, length, dFdx, dFdy, normalViewGeometry, cameraViewMatrix, texture, varying,
 } from "three/tsl";
+const ZF_OLD = /[?&]zfight=old(&|$)/.test(location.search);
 import { env } from "../lighting.js";
 import { pieceKeep, kitFades } from "./kitFade.js";
 import { paintedGlass, STOREYS_OLD } from "../facades.js";
 import { libSource } from "../materials/libSwitch.js";
-import { wxMat } from "../weather/cityWeatherize.js";
+import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 import { lodEye, ditherNoise, rampTo } from "../lodFade.js";
-import { JITTER_OLD, CARD_IN, BAND } from "../thinBars.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
+import { JITTER_OLD, CARD_IN, BAND } from "../thinBars.js";
 
 export const KIT_SLOTS = ["stone_white", "stone_blue", "brick_red_brussels", "brick_yellow", "wood_frame_white", "wood_frame_dark",
   "glass_window", "cast_iron_green", "painted_metal_white", "zinc_roof",
@@ -240,10 +241,24 @@ export function kitGlassMaterial(lod, opts = {}) {
   const u = P.x.mul(J.y.negate()).add(P.z.mul(J.x)).sub(F.x);   // t = (-nz, nx): facadeGeom.js
   const h = P.y.sub(F.z);
   // (styles) aKitF.w + 1024: the maison de maître's window grid (placement.js; buildingTypes.js TYPE_GRID row 1)
-  const maitre = step(1023.5, F.w), Fw = F.w.sub(maitre.mul(1024));
-  const fr = floor(Fw.div(4)), rest = Fw.sub(fr.mul(4)), street = floor(rest.div(2)), rnd = rest.sub(street.mul(2));
   // aKitF.y = width + 256 x (128 k - 100): the face's storey scale k (placement.js; docs/STOREYS.md)
-  const kq = floor(F.y.div(256)), fw = F.y.sub(kq.mul(256));
+  // (claude/zfight, the owner's "shaking windows", image 93) decoded in the VERTEX stage, the integers rounded per pixel:
+  // read in the fragment stage, aKitF arrives interpolated with last-bit errors at its magnitude (w up to ~1,100): the
+  // building hash rnd = w - 4 French - 2 street moved by ~1e-4, its 1/4096 quantisation flipped per pixel and the room /
+  // lit-window hashes turned that into gold blotches crawling with the TAAU jitter (still-camera crop: 3.06 -> 0.27 /
+  // 255 a frame). ?zfight=old = the fragment-stage decode as before
+  let fw, street, rnd, fr, maitre, kq;
+  if (ZF_OLD) {
+    maitre = step(1023.5, F.w); const Fw = F.w.sub(maitre.mul(1024));
+    fr = floor(Fw.div(4)); const rest = Fw.sub(fr.mul(4)); street = floor(rest.div(2)); rnd = rest.sub(street.mul(2));
+    kq = floor(F.y.div(256)); fw = F.y.sub(kq.mul(256));
+  } else {
+    const m0 = step(1023.5, F.w), Fw0 = F.w.sub(m0.mul(1024)), fr0 = floor(Fw0.div(4)), rest0 = Fw0.sub(fr0.mul(4)), st0 = floor(rest0.div(2));
+    const kq0 = floor(F.y.div(256));
+    const D = varying(vec4(m0, fr0, st0, kq0), "v_kitDec"), R = varying(vec2(floor(rest0.sub(st0.mul(2)).mul(4096).add(0.5)).div(4096), F.y.sub(kq0.mul(256))), "v_kitDec2");
+    const rd = (x) => floor(x.add(0.5));
+    maitre = rd(D.x); fr = rd(D.y); street = rd(D.z); kq = rd(D.w); rnd = R.x; fw = R.y;
+  }
   const g = paintedGlass({ u, h, fw, street, rnd, frCode: fr, k: STOREYS_OLD ? float(1) : kq.add(100).div(128), type: maitre });
   // (roomGlass 0: the plain dark glass of round 1, for A/B)
   const dark = LOOKS.glass_window(uv());
