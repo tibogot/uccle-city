@@ -30,7 +30,7 @@ export const RIDE = {
   ankleUp: 0.075, ankleBack: 0.055,          // the ankle above / behind the pedal's centre (the ball on the pedal)
   wristBack: 0.045,                          // the wrist behind the grip's centre (the fist round the bar)
   headDown: 0.10,                            // the gaze a little down the road
-  spineMax: 1.15,                            // rad of forward bend at most
+  spineMax: 0.75,                            // rad of forward bend at most (more reach: the body slides toward the bars)
 };
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3();
@@ -41,10 +41,10 @@ const _left = new THREE.Vector3(), _up = new THREE.Vector3(), _fwd = new THREE.V
 const _mat = new THREE.Matrix4();
 
 const _qs = new THREE.Quaternion();
-function setWorldQuat(b, q) {
+function setWorldQuat(b, q, deep = true) {
   b.parent.getWorldQuaternion(_qs);
   b.quaternion.copy(_qs.invert().multiply(q));
-  b.updateMatrixWorld(true);
+  if (deep) b.updateMatrixWorld(true);
 }
 function setWorldPos(b, p) {
   b.parent.updateWorldMatrix(true, false);
@@ -97,12 +97,19 @@ export class RiderIK {
     this._samplers = new Map();
     this.base = base;
     this.bones = []; model.traverse((o) => { if (o.isBone) this.bones.push(o); });
-    // the model-space rest orientation of the bones we set absolutely (base pose, model at identity)
-    this.samplePose(base, 0);
+    // the BIND pose (symmetric: the Idle clip's spine is twisted and its shoulders shrugged, which put one hand 2 cm
+    // lower and the arms at 32 / 76 % on a straight road): the spine / neck / clavicles / head / pelvis / feet come from
+    // it; the Idle frame gives only the hands (fists) and fingers
+    let sk = null; model.traverse((o) => { if (o.isSkinnedMesh && !sk) sk = o.skeleton; });
+    if (sk) sk.pose();
+    this.SYM = ["pelvis", "spine_01", "spine_02", "spine_03", "neck_01", "Head", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r",
+      "thigh_l", "thigh_r", "calf_l", "calf_r", "foot_l", "foot_r", "ball_l", "ball_r"].map((n) => model.getObjectByName(n)).filter(Boolean);
+    this.restQ = this.SYM.map((o) => o.quaternion.clone());
     model.updateMatrixWorld(true);
     model.getWorldQuaternion(_q2); const inv = _q2.clone().invert();
     this.mq = {};
     for (const n of ["pelvis", "spine_01", "spine_02", "spine_03", "Head", "foot_l", "foot_r"]) this.mq[n] = inv.clone().multiply(this.b[n].getWorldQuaternion(new THREE.Quaternion()));
+    this.samplePose(base, 0); model.updateMatrixWorld(true);
     // limb lengths and the hip joints' offset from the pelvis (model space)
     const L = (a, b2) => this.b[a].getWorldPosition(new THREE.Vector3()).distanceTo(this.b[b2].getWorldPosition(new THREE.Vector3()));
     this.leg = [L("thigh_l", "calf_l") + L("calf_l", "foot_l"), L("thigh_r", "calf_r") + L("calf_r", "foot_r")];
@@ -150,6 +157,7 @@ export class RiderIK {
     root.position.copy(_p).addScaledVector(_up, -(E.cg ?? 0.95)); root.quaternion.copy(_qF);
     root.updateMatrixWorld(true);
     this.samplePose(this.base, 0);
+    this.SYM.forEach((o, k) => o.quaternion.copy(this.restQ[k]));          // (symmetric body, the Idle's hands)
     this.model.updateMatrixWorld(true);
     // 1. the hips, in frame-local coordinates
     const legs = s.legs || 0, crouch = Math.min(1, Math.max(0, -legs * 1.4, s.preload ? s.preload * 0.6 : 0));
@@ -188,24 +196,40 @@ export class RiderIK {
     const bend = (th) => {
       for (const [n, w] of [["spine_01", 0.3], ["spine_02", 0.35], ["spine_03", 0.35]]) {
         _q.setFromAxisAngle(_Z, roll * 1.3); _q2.setFromAxisAngle(_X, pitch + th * (n === "spine_01" ? 0.3 : n === "spine_02" ? 0.65 : 1.0));
-        setWorldQuat(b[n], _q3.copy(_qF).multiply(_q).multiply(_q2).multiply(this.mq[n]));
+        // (lite: no descendants' update per trial; getWorldPosition / -Quaternion refresh the chain they read)
+        setWorldQuat(b[n], _q3.copy(_qF).multiply(_q).multiply(_q2).multiply(this.mq[n]), false);
       }
       const sl = b.upperarm_l.getWorldPosition(_a), d1 = sl.distanceTo(gL);
       const sr = b.upperarm_r.getWorldPosition(_a), d2 = sr.distanceTo(gR);
       return Math.max(d1, d2) - want;
     };
-    let lo = 0.05, hi = P.spineMax, excess = 0;
-    if (bend(lo) <= 0) hi = lo;
-    else if ((excess = bend(hi)) > 0) {
-      // bent all the way and still short (a manual, hips far back): the body slides toward the bars by what is missing
+    // (the shoulders' distance to the grips is NOT monotonic in the bend: past some angle the shoulders drop under the
+    // bars and move away again - the bisection used to run to the full bend, hunched over the bars. Scanned first: the
+    // LEAST bend that reaches; if none does, the bend that comes closest, and the body slides forward by what is left)
+    const NS = 12;
+    let lo = 0.05, hi = -1, best = lo, bestF = Infinity, prevT = lo;
+    for (let k = 0; k <= NS; k++) {
+      const t = 0.05 + (P.spineMax - 0.05) * k / NS, f = bend(t);
+      if (f <= 0) { lo = k ? prevT : t; hi = t; break; }
+      if (f < bestF) { bestF = f; best = t; }
+      prevT = t;
+    }
+    if (hi < 0) {
+      bend(best);
       b.upperarm_l.getWorldPosition(_a); b.upperarm_r.getWorldPosition(_c); _a.add(_c).multiplyScalar(0.5);
       _d.copy(gL).add(gR).multiplyScalar(0.5).sub(_a).normalize();
-      b.pelvis.getWorldPosition(_p).addScaledVector(_d, excess + 0.005); setWorldPos(b.pelvis, _p.clone());
-      M.slid = excess;
-      lo = 0.05;
+      b.pelvis.getWorldPosition(_p).addScaledVector(_d, bestF + 0.005); setWorldPos(b.pelvis, _p.clone());
+      M.slid = bestF;
+      // (then the least bend that reaches from there)
+      hi = best; lo = 0.05; prevT = lo;
+      for (let k = 0; k <= NS; k++) {
+        const t = 0.05 + (P.spineMax - 0.05) * k / NS;
+        if (bend(t) <= 0) { lo = k ? prevT : t; hi = t; break; }
+        prevT = t;
+      }
     }
-    if (hi > lo) for (let i = 0; i < 12; i++) { const mid = (lo + hi) / 2; if (bend(mid) > 0) lo = mid; else hi = mid; }
-    bend(hi); M.spine = hi;
+    if (hi > lo) for (let i = 0; i < 8; i++) { const mid = (lo + hi) / 2; if (bend(mid) > 0) lo = mid; else hi = mid; }
+    bend(hi); M.spine = hi; b.spine_01.updateMatrixWorld(true);
     // 4. the head: level, looking ahead (the heading's yaw, half the bike's lean)
     const yaw = Math.atan2(_fwd.x, _fwd.z);
     _qY.setFromAxisAngle(_Y, yaw); _q.setFromAxisAngle(_Z, (s.lean || 0) * -0.35 + 0); _q2.setFromAxisAngle(_X, P.headDown);

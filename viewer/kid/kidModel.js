@@ -25,7 +25,8 @@ export function kidMaterial(slots, palette = KID_PALETTE) {
   const cols = slots.map((n) => new THREE.Color(palette[n] ?? 0xff00ff));
   const rough = slots.map((n) => KID_ROUGH[n] ?? 0.85);
   const uCol = uniformArray(cols, "color"), uRough = uniformArray(rough, "float");
-  const slot = int(attribute("_slot", "float"));
+  // (rounded: the slot is interpolated across the triangle like any varying; 10.9999 truncated to 10 speckled the cap)
+  const slot = int(attribute("_slot", "float").add(0.5));
   const ao = attribute("color", "vec4").x;
   const base = uCol.element(slot);
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0 });

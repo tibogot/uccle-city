@@ -235,8 +235,8 @@ else {
     rig = null;
     if (bike === "bmx") { rig = rigBmx(bmxTree(), JSON.parse(fs.readFileSync(path.join(ROOT, "models/bike/bmx.json"), "utf8")), bm); E = rig.empties; }
     else { E = findBikeEmpties(bm.root, bm.empties.frame); E.cg = BIKE.cgHeight; }
-    let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0, spineMax = 0;
-    for (const [, mo] of Object.entries(modes)) for (const steer of [-0.9, -0.45, 0, 0.45, 0.9]) for (let c = 0; c < 24; c++) {
+    let legMax = 0, armMax = 0, legErr = 0, armErr = 0, nan = 0, n = 0, fitMax = 0, spineMax = 0, asym = 0;
+    for (const [mname, mo] of Object.entries(modes)) for (const steer of [-0.9, -0.45, 0, 0.45, 0.9]) for (let c = 0; c < 24; c++) {
       Object.assign(s, { sprint: 0, legs: 0, preload: 0, manual: 0, pitch: 0, lean: 0, air: false, footDown: 0 }, mo);
       s.crank = c / 24 * Math.PI * 2; s.steerAngle = steer;
       s.prev.lean = s.lean; s.prev.pitch = s.pitch;
@@ -244,6 +244,7 @@ else {
       const M = rider.ride(E, s, holder, 0);
       legMax = Math.max(legMax, ...M.legRatio); armMax = Math.max(armMax, ...M.armRatio);
       legErr = Math.max(legErr, ...M.legErr); armErr = Math.max(armErr, ...M.armErr); fitMax = Math.max(fitMax, M.fitted); spineMax = Math.max(spineMax, M.spine);
+      if (mname === "seated" && steer === 0) asym = Math.max(asym, Math.abs(M.armRatio[0] - M.armRatio[1]));
       gltf.scene.traverse((o) => { if (o.isBone && !o.matrixWorld.elements.every(Number.isFinite)) nan++; });
       n++;
     }
@@ -251,6 +252,8 @@ else {
     check(`rider (${bike}): arms reach with the elbows bent`, armMax <= 0.92, `max reach ${(armMax * 100).toFixed(1)} % of the arm (spine bent up to ${(spineMax * 57.3).toFixed(0)} deg)`, "<= 92 %");
     check(`rider (${bike}): feet on the pedals, hands on the grips`, legErr < 0.01 && armErr < 0.01, `feet ${(legErr * 1000).toFixed(1)} mm, hands ${(armErr * 1000).toFixed(1)} mm`, "< 10 mm");
     check(`rider (${bike}): no NaN in any bone`, nan === 0, `${nan}`, "0");
+    // (browser turn: the Idle clip's twisted spine put the arms at 32 / 76 % on a straight road)
+    check(`rider (${bike}): seated, bars straight: both arms alike, the back not hunched`, asym < 0.05 && spineMax <= 0.80, `arms differ by ${(asym * 100).toFixed(1)} %, spine at most ${(spineMax * 57.3).toFixed(0)} deg`, "< 5 %, <= 46 deg");
   }
   // pushing + the crash poses + the mount blend: finite
   let bad = 0;

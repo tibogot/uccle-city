@@ -103,6 +103,24 @@ a uniform write), the AO softened to a warm tint, a faint rim (the painted look;
 - LOD0 14,753; skin stretch 0.081 % (knees 0.07, elbows 0.04, shoulders 0.09, hips 0.84 %); 24/24; bike 52/52;
   renders + `round5_vs_round4.jpg` (round 4's views in `docs/kid/round4/`), `turn_nocap_back.jpg`.
 
+## Browser turn 1 (2026-11-18, debug/bikeLab.html, screenshots in docs/kid/browser/)
+Checked: on foot (arrows = WASD: 1.60 / 1.67 m in 1.5 s, Shift run 4.5 m/s), E far (nothing) / near (mount 0.45 s,
+mid-blend 14_mount_mid), riding (pedal, lean, sprint, kicker air 12_air_slow, landing, Space crouch 18, X manual 19),
+E stopped (dismount, bike stands 13), the kerb crash -> tumble (20) -> back on (crashed -> mounting -> riding), the LODs
+while the camera pulls away (kid 0->1 at 15.8 m, 1->2 at 42 m, back 1 at 37 m, 0 at 12.4 m; the BMX 12 / 40 m;
+LOD0 vs LOD1 at 15 m: 20 pixels differ, LOD1 vs LOD2 at 41 m: 13: no visible pop), shadows and ground contact.
+Found and fixed:
+- the palette slot was truncated after interpolation (10.9999 -> 10): the cap, shoes and shirt speckled (01 vs 02):
+  rounded (kidModel.js);
+- the spine bend: the shoulders' reach is not monotonic in the bend, the bisection ran to the full 66 deg (hunched,
+  05): the least bend that reaches (scan), at most 43 deg, the body slides forward for the rest (06, 07); trials no
+  longer update every descendant (0.25 ms a frame in node);
+- the riding base took the Idle clip's twisted spine / shrugged shoulders: one arm at 32 %, the other 76 % on a
+  straight road: the spine, clavicles, arms and legs now start from the symmetric bind pose (the Idle gives the fists);
+  a new test row: seated, bars straight, both arms within 5 %, the spine <= 46 deg (26/26).
+Seen, not changed: the foot-down at a stop asks 104 % of the leg (the foot stops ~2 cm short of the ground); the side
+camera can sit inside the kerb (bike camera, not the kid); the BMX's KTX2 loads (no console error).
+
 ## Renders (docs/kid/)
 Round 2: `round2_vs_round1.jpg` (the review's views side by side), `face_cap_back.jpg` / `turn_cap_back_q34.jpg`
 (`--cap back`); round 1's renders are kept in `docs/kid/round1/`.
