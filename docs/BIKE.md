@@ -192,7 +192,7 @@ as far as the foot needs (`RIDE.footReach` 0.97): the leg at 92-94 %, the ankle 
 - the input: 64 fps 12 releases, 32 fps (CPU x6) 10 releases: 0 steps late; 10 fps (x14): 0 late, but one release
   fell in time the frame driver drops (its 8 steps a frame cap, by design). 144 fps can't be made on this 60 Hz screen:
   the node check covers it;
-- also fixed: my own first lab edit put the landing banner between  and its ,
+- also fixed: my own first lab edit put the landing banner between `if (riding) advanceBike(...)` and its `else parkStep(...)`,
   which parked the bike every frame (it could not move).
 
 **Still for the owner** (feel, not checked here): the hop buffer's hold (help or felt as lag?), the catch's lift (smooth or a
