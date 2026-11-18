@@ -1,0 +1,148 @@
+# Car-car contact, both ways (branch claude/carhit, 2026-11-18)
+
+Owner, 2026-11-18: "we need collision with the cars, being able to push them".
+
+Until now the traffic cars were **one-way obstacles**: `viewer/traffic/cityTraffic.js` `driver.env.dynamic` pushed the
+player's car out of the traffic boxes exactly as out of a wall (`carEnv.js` push + `carPhysics.js hitSlide`, infinite
+mass): a 1.3 t car hitting another at 60 km/h stopped as on a concrete wall and the hit car never moved. Parked cars
+had a clamped "nudge" (police feel round): moved at most 1 m / 20 deg from their slot, by a fixed share of the hit,
+through whatever stood behind them.
+
+| URL | what you get |
+|---|---|
+| (default) | two-way contact: viewer/drive/carHit.js |
+| `?carpush=old` | the one-way obstacles and the parked-car nudge as before (and no crumple code in the car shaders) |
+
+(`?carhit=old` was already taken: it is collisions round 2's wall response, docs/COLLISIONS.md. The task asked for
+`?carhit=old`; the new switch is `?carpush=old`, row in `viewer/features.js`, A/B > Collisions.)
+
+Automated check: `node tools/carHitTest.mjs` (rule 37, gate row `carhit` in `tools/audit/mergeGate.mjs`).
+
+## How it works (viewer/drive/carHit.js, `CarHitWorld`, one per page on the Driver)
+
+**Bodies.** At most 16 awake rigid bodies on the ground plane: x, z, yaw, vx, vz, yaw rate; mass per car type
+(`MASS`: hatch_s 1150, hatch_c 1300, estate 1500, saloon 1520, suv 1800, van_c 1650, van_p 2300, taxi 1530, police
+1580 kg, a driver included; the player's two-wheelers `MASS2`: motorbike 300, scooter 200, Villo 100 with the rider);
+yaw inertia m (w^2 + l^2) / 12 x 0.85. Fixed typed arrays, slot 16 = the player's vehicle during a solve.
+
+**Contact.** Box vs box by the existing SAT (`obb.js`): normal + depth. The contact point = the corners of each box
+inside the other (2 cm slack) averaged (a corner nudge: that corner; bumper to bumper: the middle of the overlap);
+edge across edge: between the two deepest corners. Positional split by inverse mass, then the impulse
+`j = -(1 + e) vn / (1/mA + 1/mB + (rA x n)^2 / IA + (rB x n)^2 / IB)` with a restitution falling with the closing
+speed (0.3 at 1 m/s: bumpers spring back; 0.06 from 11 m/s: crumple), and a Coulomb friction impulse <= 0.4 j along
+the contact. So the angle and the speed decide: a rear-quarter nudge spins a car, a T-bone shoves it sideways, a
+5 km/h tap barely moves a car standing in a queue, a panel van moves a third of what a small hatch does.
+The player's car takes the reaction (its velocity / yaw rate back into carCtl's state: forward speed + side slip +
+yaw rate; carCtl's `loose` lets the spin play out), plus a small pitch / roll kick. Walls, buildings, trams stay as
+they were (infinite mass, `hitSlide`).
+
+**A two-wheeler** (motorbike, scooter, Villo) keeps its own impact response and crash rules (`motoHit`): the car it
+hits takes the impulse of the bike's mass (300 kg barely moves a car), the bike takes its share of the overlap.
+
+**Knocked cars** (`trafficSim.js` `ST.knocked`, `knock` 1 sliding / 2 settled / 3 wreck / 4 a shoved parked car):
+a traffic car hit with more than 0.5 m/s closing speed (a touch below that: pushed out as before) leaves its lane; the
+sim skips it (no IDM, no pose from the route, not in the lane lists) and the body drives its drawn pose (`px = x`: no
+interpolation). Its tyres: two axles, a friction circle each (mu 0.95, load m g / 2): longitudinally rolling for
+0.45 s (the driver's reaction), then braking at 0.85 g (a car standing in a queue: braking at once; a parked car: its
+handbrake, 0.55 g); laterally the axle's side speed is taken away within the grip, and the two axles' side forces turn
+the car (a spun car stops spinning on its tyres). A hit takes the side grip away in proportion to the change of speed
+of the contact corner (down to 25 % at 4 m/s, back over 1.6 s): a shaken car slides and spins on, then grips again.
+It collides with the drive colliders round it (gathered once a frame: buildings, walls, garden walls, trees, posts,
+furniture; kerb islands ridden up; kerbs / retaining walls by carEnv's `stepContact` ledge rule; trams / trains by
+their boxes): pushed out fully, an impulse at its deepest corner (restitution 0.1, scrape 0.35). It also hits other
+traffic cars (they wake too: a chain) and other parked cars (they wake when a slot is free, else they are walls).
+
+**Settle, rejoin, wreck.** Below 5 cm/s and 0.03 rad/s for 0.4 s the body sleeps (its slot is free again). A traffic
+car then stands with **hazards** (both indicators, `bits` 12) and after 3.5 s (a flee car of the police game: 1.2 s;
+never within 4 m of the player) `sim.rejoin(i)` joins it back IN PLACE (same index, gen, type, paint, dents: a game's
+entity on it stays valid): the `joinFrom` pull-out from its pose onto the nearest lane its way (within 7 m), waiting
+for a gap with the indicator (`outWait`; never vanishing after 20 s as a pull-out does). No lane its way (spun round
+past 37 deg of any lane), or a hit of > 8.5 m/s change of speed, or > 0.4 m of crumple in total: a **wreck** (hazards
+on, it stays) until it is out of sight past 70 m or past 280 m (`sim.kill`, never in view). A game's car (`keep`) is
+never cleared. Police game: a car told to pull over (ctl 2) that is knocked counts as stopped (ctl 3) once below
+0.4 m/s.
+
+**The traffic reacts.** Every knocked car (sliding or standing) is a box obstacle of the sim each step
+(`addObstacles`, through cityTraffic's obstacle source): the cars behind brake and queue as for the police game's
+stopped cars; nobody drives through a wreck. A knocked car is not in the lane lists, so it is never anybody's leader
+twice.
+
+**Parked cars** hit by the player (closing > 0.08 m/s) become a knocked car of the traffic sim on the spot (the
+pull-out hand-over: same pose, type, paint; the parked one hidden the same frame, its drive / walker colliders off
+through `carFleet.touch`; `handoff` so the fleet's pop counters do not count it), pushed the same way (no driver: lights
+off, `bits` 32). When it stops: undamaged, it goes back into the parked fleet where it stands (its colliders follow:
+`setBox`); dented, it stays a standing car of the traffic fleet (dents drawn) while its tile is loaded. With
+`?traffic=0` there is no sim to hand it to: the old clamped nudge stays.
+
+**Damage.** Per corner (FL FR RL RR), from the change of speed of the body at the hit: (dv - 1.2 m/s) x 2.4 cm per m/s,
+at most 14 cm per hit, 28 cm per corner, shared between the corners by where the point is (a centred head-on: both
+front corners). Drawn by the accident props' sheet-metal fold (police/props.js), generalised to four corners
+(`carPacks.js crumpleOffset`): the traffic fleet packs the corners (3 bits each, 4 cm a level) and the type's half
+length into its per-instance `motion.z` above the light bits, decoded in the VERTEX stage; the fragment gets the light
+bits through a varying (an interpolated packed code would not floor cleanly: the zfight lesson, rule 34). The player's
+car: one `vec4` uniform (`playerDamage`), the crumple added to its material (police car too). No new draw call, no new
+pipeline per hit, no light.
+
+**For the games** (no rule uses them yet): `driver.damage` (0..1, the player's vehicle), `driver.carHit.player.corners`
+(m), `driver.carHit.player.lastImpulse`; the game kit emits `"carHit"` `{ other: { kind: "traffic" | "parked",
+index, type }, impulse (N s), point: { x, z }, speed (closing m/s), damage }` (at most one per car per 0.25 s, from
+0.4 m/s of change of speed). `c.lastHit` (kind 6, speed > 2 m/s) is set as before: the stolen-car job's ram count
+works unchanged. R (reset) clears the player's damage.
+
+## Cost
+
+- `tools/carHitTest.mjs`: **0.4-1.0 us per contact pair** (SAT + contact point + impulse + friction + dents), **0.9-2.6 us
+  per body substep** (tyres + walls + pairs); 16 awake bodies at 120 Hz < 5 ms per second of play (~0.08 ms a frame)
+  in the worst case, nothing when nobody was hit. The player's substep tests the traffic boxes as before (one
+  `boxesNear` pass, now with the indices).
+- No allocation in the step (V8's sampling heap profiler over 20 000 substeps x 4 bodies: 0 bytes in steady state;
+  only a JIT tier-up now and then). A hit itself allocates its `lastHit` (as before) and, with listeners, the event.
+  `Math.hypot` replaced in the hot paths (it allocates in some tiers), double-typed scratch objects.
+- Fixed arrays: 16 bodies, 64 knocked cars tracked, 16 traffic cars per body per frame. No DynamicDrawUsage, no
+  light, no draw call (the fleet's existing instance attribute carries the dents).
+
+## Shared files touched
+
+- `viewer/traffic/trafficSim.js`: `ST.knocked`, `knock` / `dmg` / `kT` arrays, the step skips knocked cars,
+  `rejoin(i)`, a rejoining car never times out of `outWait`.
+- `viewer/traffic/traffic.js`: `boxesNear(..., idx)` returns the sim indices.
+- `viewer/traffic/trafficFleet.js`: the damage code into `motion.z`.
+- `viewer/traffic/cityTraffic.js`: attaches the traffic, the knocked cars as obstacles, the bodies settle when nobody
+  drives.
+- `viewer/drive/carEnv.js`: `carHit` / `two` options (parked car wake, `playerStep` where `env.dynamic` was);
+  `stepContact` without `Math.hypot`.
+- `viewer/drive/carPacks.js`: `crumpleOffset`, `playerDamage`, the motion path's vertex decode + light-bit varying,
+  lights-off bit 32.
+- `viewer/drive/driveMode.js`: the world, the masses, `frame()` after each step, reset, `driver.damage`.
+- `viewer/game/kit.js`: forwards `"carHit"`. `viewer/features.js`: `?carpush=old`.
+
+## Browser checks (the coordinator's Chrome turn)
+
+1. Drive mode in a busy street (`?view=drive`, e.g. Chaussée d'Alsemberg): ram a traffic car from behind at
+   **30** and **60 km/h**: it is shoved on, slides, stops with hazards, dents at the hit corner (both cars), drives
+   off after ~3.5 s with its indicator; the cars behind it stop and queue, none drives through it. At 60 km/h it
+   should usually stay a wreck (hazards) and vanish only out of sight.
+2. **Rear-corner nudge**: come alongside a moving car and steer into its rear quarter: it spins.
+3. **T-bone** a car crossing a junction: shoved sideways, not spun.
+4. **Push a parked car into a wall / another parked car** (slow, full throttle): it moves, the one behind is pushed
+   too, never into a building; when it stops it is a parked car again where it stands (undamaged) or a dented car.
+5. **A van** (`van_p`, white panel van): the same hit moves it clearly less.
+6. Two-wheelers: ride the motorbike / Villo into a car: the car barely moves, the bike's crash rules as before.
+7. **Police game, stolen car** (`?game=police`): chase, ram it (the ram counter still counts, the target can be
+   knocked and recovers in 1.2 s), box it in (stopped next to it): it gives up, arrest works. Speed check: pull over.
+8. **A/B `?carpush=old`**: the old one-way behaviour; the shaders without the crumple.
+9. Watch: no traffic car popping when a knocked car rejoins / a parked car is handed back; night: a shoved parked car
+   has no lights on; `driver.carHit.stats` (awake, knocked, frameMs) and the traffic `stepMs` while 10 cars are
+   knocked.
+
+## Weak spots / next
+
+- The hit car has no roll / pitch kick (the fleet's matrix has yaw + pitch only) and no body sway: a big hit could
+  rock it (a per-instance roll would need a channel).
+- Dents are four corner zones (the fold of the accident props): a hit in the middle of a side dents both ends of that
+  side a little instead of the middle.
+- A knocked car's rejoin is a pull-out curve onto the nearest lane its way: a car spun across the street stays a wreck
+  rather than doing a three-point turn.
+- Traffic two-wheelers (motorbikes / scooters in the traffic) stay one-way obstacles (they would need to fall over).
+- The walker (third person) cannot push cars.
+- Tuning (restitution, grip loss, rejoin times) was done with the scripted tests; it wants the owner's hands.

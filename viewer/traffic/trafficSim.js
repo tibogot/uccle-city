@@ -39,7 +39,9 @@ export const parkRateFor = (search) => (/[?&]still=1(&|$)/.test(search || "") ? 
 const TP_TOUCH = 0.05;
 const TP_BLOCK = 0.96;          // m: a parked box this close to a lane's line blocks it (the widest traffic type: 0.975 half width; built lanes keep 0.98)          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
 const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
-const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4 };
+// (carhit, docs/CARHIT.md: knocked = hit by the player, off its lane: viewer/drive/carHit.js drives its pose, the sim
+// skips it; it rejoins through rejoin() below, or stays as a wreck)
+const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4, knocked: 5 };
 const ROUTE = 4;
 const blendF = (t) => (t <= 0 ? 1 : t >= 1 ? 0 : 1 - t * t * (3 - 2 * t));     // twinlink: the handover blend's S                 // planned paths ahead
 const MAN = 16;                  // maneuver polyline points
@@ -84,6 +86,10 @@ export class TrafficSim {
       // speedF a speed factor (a speeder); yr the sideways room a car wants (m, + left: yielding pulls right);
       // overT an overtaking flee car's timer (s)
       ctl: U(), speedF: F(), yr: F(), overT: F(),
+      // CARHIT (docs/CARHIT.md, viewer/drive/carHit.js): knock 0 on its lane, 1 sliding (a rigid body), 2 settled (hazards,
+      // rejoins), 3 wreck, 4 a shoved parked car standing; dmg the crumpled corners (3 bits each: FL FR RL RR, 4 cm a
+      // level), drawn by the fleet's vertex shader; kT the time since it settled (s)
+      knock: U(), dmg: new Uint16Array(cap), kT: F(),
       room: F(),                                     // collisions round 2: the sideways shift (m, + = left) a car makes for a filtering motorbike
       gap: F(), lead: U(),                            // debug: the gap IDM used and what it was to (1 car, 2 obstacle, 3 hold)   // where a maneuvering car sits on its lane (for followers)
     });
@@ -203,6 +209,7 @@ export class TrafficSim {
     this.spin[i] = this.rand() * 6.28; this.steer[i] = 0; this.offX[i] = 0; this.offZ[i] = 0; this.age[i] = 0; this.seen[i] = 0;
     this.slot[i] = null; this.onPath[i] = -1; this.gen[i]++; this.handoff[i] = 0; this.keep[i] = 0;
     this.ctl[i] = 0; this.speedF[i] = 1; this.yr[i] = 0; this.overT[i] = 0;
+    this.knock[i] = 0; this.dmg[i] = 0; this.kT[i] = 0;
     if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.tpLA[i] = -1; }
     this.pose(i); this.copyPrev(i);
     this.count++;
@@ -834,14 +841,16 @@ export class TrafficSim {
       if (!this.alive[i]) continue;
       // its road graph was unloaded under it (a long camera jump): retire the car instead of reading a null graph
       if (!this.W.slots[this.path[i] >>> 16]) { this.kill(i); continue; }
-      this.copyPrev(i);
       const st = this.state[i];
+      if (st === ST.knocked) continue;                   // (carhit: its pose is the rigid body's, carHit.js)
+      this.copyPrev(i);
       if (this.pwWait[i] > 0) this.pwWait[i] -= STEP;
       if (st === ST.drive || st === ST.inStop) this.accel(i);
     }
     for (let i = 0; i < this.cap; i++) {
       if (!this.alive[i]) continue;
       const st = this.state[i];
+      if (st === ST.knocked) { this.age[i] += STEP; continue; }
       if (st === ST.drive || st === ST.inStop) this.move(i);
       else this.maneuver(i, ctx);
       if (!this.alive[i]) continue;
@@ -1157,6 +1166,35 @@ export class TrafficSim {
     this.insertInList(i);
     return i;
   }
+  /** CARHIT (docs/CARHIT.md): knocked car i, standing where it stopped, joins the traffic again IN PLACE (same index, gen,
+   *  type, paint, damage: a game's entity on it stays valid): the joinFrom() pull-out from its pose. A flee car (ctl 1)
+   *  goes at once; the others wait for a gap with the indicator (outWait). -> 1 joined, 0 not now (no room: retry),
+   *  -1 no lane its way within 7 m (a wreck). */
+  rejoin(i) {
+    const x = this.x[i], z = this.z[i], hx = Math.sin(this.yaw[i]), hz = Math.cos(this.yaw[i]);
+    const lane = this.laneAt(x, z, hx, hz, 7);
+    if (!lane) return -1;
+    const { gid, along } = lane, L = this.plen(gid);
+    if (L - along < 4.5) return 0;
+    const at = Math.min(L - 0.5, along + Math.min(12, Math.max(4, L - along - 2)));
+    this.path[i] = gid; this.prev[i] = -1; this.pin[i] = 0; this.bL[i] = 0; this.pbL[i] = 0; this.d[i] = at; this.acc[i] = 0;
+    for (let k = 0; k < ROUTE; k++) this.route[i * ROUTE + k] = -1;
+    this.fillRoute(i);
+    this.hold[i] = 0; this.holdT[i] = 0; this.stopDone[i] = -1; this.committed[i] = -1; this.waitT[i] = 0;
+    this.room[i] = 0; this.offX[i] = this.offZ[i] = 0; this.yr[i] = 0; this.overT[i] = 0;
+    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.tpLA[i] = -1; }
+    this.W.point(gid, at, this.tmp);
+    this.bezier(i, x, z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], 3, 3.5);
+    this.manDir[i] = 1; this.manT[i] = 0; this.slot[i] = null;
+    if (!this.manClear(i, null)) return 0;
+    this.knock[i] = 0; this.kT[i] = 0;
+    if (this.ctl[i] === 1) { this.state[i] = ST.out; this.onPath[i] = gid; this.v[i] = 0.5; }
+    else { this.state[i] = ST.outWait; this.onPath[i] = -1; this.v[i] = 0; }
+    this.onD[i] = along;
+    this.pose(i); this.copyPrev(i);
+    if (this.state[i] === ST.out) this.insertInList(i);
+    return 1;
+  }
   /** trafpark: car i's manoeuvre polyline (pull-out / reverse-in) as pose() drives it, clear of every parked car but
    *  `skip` (its own slot)? */
   manClear(i, skip) {
@@ -1208,7 +1246,8 @@ export class TrafficSim {
       // it stays parked)
       if (clear && (this.nearManeuver(i) || !this.manClear(i, this.slot[i]))) {
         clear = false;
-        if (this.waitT[i] > 20) { const c = this.slot[i]; if (c) { c.hidden = false; c.busy = true; this.onPark?.(c, false); } this.handoff[i] = 1; this.kill(i); this.stats.pullOutsSkipped = (this.stats.pullOutsSkipped || 0) + 1; return; }
+        if (this.waitT[i] > 20 && !this.slot[i]) this.waitT[i] = 1.6;     // (carhit: a car rejoining after a knock waits on, it never vanishes)
+        else if (this.waitT[i] > 20) { const c = this.slot[i]; if (c) { c.hidden = false; c.busy = true; this.onPark?.(c, false); } this.handoff[i] = 1; this.kill(i); this.stats.pullOutsSkipped = (this.stats.pullOutsSkipped || 0) + 1; return; }
       }
       if (clear) { this.state[i] = ST.out; this.waitT[i] = 0; this.onPath[i] = gid; }
       return;
