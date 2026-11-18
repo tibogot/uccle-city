@@ -108,7 +108,8 @@ CL = -0.044                               # chain line (right side = -Y)
 R_RING, R_COG = 0.0127 / (2 * math.sin(math.pi / 44)), 0.0127 / (2 * math.sin(math.pi / 16))
 CRANK = 0.175
 PIVOT_STEER = ax(0.390)
-RIM_BED, RIM_HOLE = 0.1895, 0.191         # spoke bed, nipple seat radius
+RIM_BED, RIM_HOLE = 0.1945, 0.1945        # spoke bed = nipple seat radius (the nipples sit in the rim)
+TYRE_RC = 0.2285                           # tyre section centre radius (carcass top 0.252, knobs to 0.2542)
 SEAT_POST_TOP = st(0.395)
 GRIP_Y = 0.337
 
@@ -131,8 +132,8 @@ def make_materials():
     global PAINT, CHROME, METAL, BLACK, RUBBER, GRIP, SADDLE, PAD, CABLE, CHAIN, SPOKES
     K._MATS.clear()
     PAINT = slot("bmx_paint", lin(CWY["paint"]), 0.36, 0.35, coat=1.0)
-    CHROME = slot("bmx_chrome", (0.90, 0.90, 0.90), 0.07, 1.0)
-    METAL = slot("bmx_metal", (0.80, 0.80, 0.82), 0.30, 1.0)
+    CHROME = slot("bmx_chrome", (0.62, 0.62, 0.64), 0.05, 1.0)
+    METAL = slot("bmx_metal", (0.74, 0.74, 0.76), 0.28, 1.0)
     BLACK = slot("bmx_black", (0.025, 0.025, 0.028), 0.42, 0.5)
     RUBBER = slot("bmx_rubber", (0.028, 0.028, 0.028), 0.86, 0.0)
     GRIP = slot("bmx_grip", lin(CWY["grip"]), 0.75, 0.0)
@@ -200,9 +201,9 @@ def cyl(P, m, a, b, r, segs=None, bevel=0.0, r2=None):
         n = max(1, math.ceil((L - 0.06) / 0.14))
         ts = [0.0, 0.03] + [0.03 + (L - 0.06) * k / n for k in range(1, n)] + [L - 0.03, L]
         rr = [r + ((r2 if r2 is not None else r) - r) * t / L for t in ts]
-        P.add_bm(T.tube([a + d * t for t in ts], rr, segs or S(9, 6, 4)), m, d)
+        P.add_bm(T.tube([a + d * t for t in ts], rr, segs or S(8, 6, 4)), m, d)
         return
-    bm = T.cyl_between(a, b, r, segs or S(9, 6, 4), bevel if DET < 2 else 0.0, r2)
+    bm = T.cyl_between(a, b, r, segs or S(8, 6, 4), bevel if DET < 2 else 0.0, r2)
     if DET == 2 and L > 0.09: T.flat(bm)
     P.add_bm(bm, m, b - a)
 
@@ -210,7 +211,7 @@ def cyl(P, m, a, b, r, segs=None, bevel=0.0, r2=None):
 def tubep(P, m, pts, r, segs=None, per=None, cap=True):
     pts = [Vector(p) for p in pts]
     path = T.smooth_path(pts, per=per or S(3, 2, 1)) if len(pts) > 2 else pts
-    P.add_bm(T.tube(path, r, segs or S(9, 6, 4), cap), m, pts[-1] - pts[0])
+    P.add_bm(T.tube(path, r, segs or S(8, 6, 4), cap), m, pts[-1] - pts[0])
 
 
 def lathe_on(P, m, prof, axis, o, segs=None, closed=True):
@@ -291,7 +292,7 @@ def build_body(P):
     # bottom bracket shell + cups
     cyl(P, PAINT, BB + Y * 0.034, BB - Y * 0.034, 0.0275, segs=S(14, 9, 6), bevel=0.0015)
     for s in ((1, -1) if DET < 2 else ()):
-        cyl(P, BLACK, BB + Y * (s * 0.034), BB + Y * (s * 0.0395), 0.0215, segs=S(14, 9, 6), bevel=0.0008)
+        cyl(P, BLACK, BB + Y * (s * 0.034), BB + Y * (s * 0.0395), 0.0215, segs=S(12, 9, 6))
     # gussets at the head tube
     if DET < 2:
         gusset(P, HTj, -dS, tube_dir(HTj, STj), 0.030, 0.070)
@@ -330,7 +331,7 @@ def peg(P, c, s, y0):
     L = 0.100
     prof = [(0.0, 0.0), (0.0180, 0.0), (0.0190, 0.0025), (0.0190, L - 0.004), (0.0176, L), (0.0105, L), (0.0095, L - 0.004), (0.0, L - 0.004)]
     if DET == 2: prof = [(0.0, 0.0), (0.019, 0.0), (0.019, L), (0.0, L)]
-    lathe_on(P, CHROME, prof, Y * s, c + Y * (s * y0), segs=S(12, 8, 6), closed=False)
+    lathe_on(P, CHROME, prof, Y * s, c + Y * (s * y0), segs=S(10, 8, 6), closed=False)
 
 
 def build_seat(P):
@@ -342,10 +343,10 @@ def build_seat(P):
     obox(P, BLACK, c0, (0.045, 0.032, 0.016), X, Y, Z, bevel=0.003)
     if DET == 0:
         for s in (1, -1):
-            tubep(P, METAL, [c0 + V(-0.065, s * 0.020, 0.014), c0 + V(-0.045, s * 0.022, 0.006), c0 + V(0.045, s * 0.022, 0.006), c0 + V(0.070, s * 0.017, 0.016)], 0.0035, segs=S(5, 4, 3))
+            tubep(P, METAL, [c0 + V(-0.065, s * 0.020, 0.014), c0 + V(-0.045, s * 0.022, 0.006), c0 + V(0.045, s * 0.022, 0.006), c0 + V(0.070, s * 0.017, 0.016)], 0.0035, segs=S(4, 4, 3))
     keys = [(-0.105, 0.040, 0.030, 0.010), (-0.094, 0.067, 0.044, 0.002), (-0.050, 0.072, 0.050, 0.0), (0.0, 0.058, 0.047, 0.0),
             (0.060, 0.033, 0.043, 0.002), (0.112, 0.023, 0.039, 0.006), (0.135, 0.011, 0.031, 0.012)]
-    bm = T.loft_x(keys, stations=S(10, 7, 3), n=S(14, 10, 6), p_top=2.4, p_bot=4.0)
+    bm = T.loft_x(keys, stations=S(8, 6, 3), n=S(14, 10, 6), p_top=2.4, p_bot=4.0)
     bm.transform(Matrix.Translation(c0 + V(-0.005, 0, 0.011)))
     P.add_bm(bm, SADDLE, X)
 
@@ -362,17 +363,17 @@ def build_brake(P, sdir):
         pv = RA + rdir * 0.205 + V(0, s * 0.0375, 0)
         at = RA + rdir * 0.262 + V(0, s * 0.027, 0)
         tubep(P, BLACK, [pv, pv + rdir * 0.030 + V(0, s * 0.004, 0), at], 0.0052, segs=S(8, 5, 4), per=S(3, 2, 1))
-        cyl(P, BLACK, pv + Y * (s * 0.004), pv - Y * (s * 0.006), 0.0075, segs=S(10, 6, 4), bevel=0.001)
+        cyl(P, BLACK, pv + Y * (s * 0.004), pv - Y * (s * 0.006), 0.0075, segs=S(8, 6, 4))
         pad = RA + rdir * 0.2035 + V(0, s * 0.0215, 0)
         obox(P, RUBBER, pad, (0.034, 0.010, 0.0085), tdir, Y, rdir, bevel=0.0018)
         if DET < 2:
-            cyl(P, METAL, pad + Y * (s * 0.005), pv - Y * (s * 0.002), 0.0028, segs=S(5, 4, 3))
+            cyl(P, METAL, pad + Y * (s * 0.005), pv - Y * (s * 0.002), 0.0028, segs=S(4, 4, 3))
         tops.append(at)
     yk = RA + rdir * 0.282
     if DET == 0 and tops:
-        for at in tops: tubep(P, METAL, [at, (at + yk) / 2 + rdir * 0.004, yk + Y * (0.004 if at.y > 0 else -0.004)], 0.0012, segs=S(5, 4, 3), per=2)
+        for at in tops: tubep(P, METAL, [at, (at + yk) / 2 + rdir * 0.004, yk + Y * (0.004 if at.y > 0 else -0.004)], 0.0012, segs=S(4, 4, 3), per=2)
         obox(P, METAL, yk, (0.010, 0.012, 0.010), tdir, Y, rdir, bevel=0.0015)
-        tubep(P, METAL, [yk, RA + rdir * 0.30 + V(0, 0, 0.015)], 0.0010, segs=S(5, 4, 3))
+        tubep(P, METAL, [yk, RA + rdir * 0.30 + V(0, 0, 0.015)], 0.0010, segs=S(4, 4, 3))
 
 
 def tt_frame():
@@ -388,11 +389,11 @@ def build_body_cables(P, br):
     lsp = HTj + tt * (0.20 * Lt) + dn * 0.022
     for s in (1, -1):
         ear = ax(0.4655) - nS * 0.024 + Y * (s * 0.038)
-        tubep(P, CABLE, [ear, ear - nS * 0.030 - dS * 0.006, lsp + tt * -0.03 + Y * (s * 0.008), lsp + Y * (s * 0.0045)], 0.0025, segs=S(5, 4, 3))
+        tubep(P, CABLE, [ear, ear - nS * 0.030 - dS * 0.006, lsp + tt * -0.03 + Y * (s * 0.008), lsp + Y * (s * 0.0045)], 0.0025, segs=S(4, 4, 3))
     obox(P, BLACK, lsp, (0.018, 0.010, 0.008), tt, Y, -dn, bevel=0.002)
     path = [lsp, HTj + tt * (0.55 * Lt) + dn * 0.022, HTj + tt * (0.86 * Lt) + dn * 0.021 + Y * 0.010,
             STj + V(-0.004, 0.024, -0.035), br + V(0.010, 0.012, 0.035), br + V(0, 0, 0.015)]
-    tubep(P, CABLE, path, 0.0025, segs=S(5, 4, 3), per=S(3, 2, 1))
+    tubep(P, CABLE, path, 0.0025, segs=S(4, 4, 3), per=S(2, 2, 1))
 
 
 # ------------------------------------------------------------------------------------------------ chain (on Body, UV-scrolled)
@@ -502,12 +503,12 @@ def build_steer(P):
         for sy in (1, -1):
             for sz in (1, -1):
                 b = C + nS * 0.019 + Y * (sy * 0.017) + dS * (sz * 0.013)
-                cyl(P, BLACK, b, b + nS * 0.004, 0.0040, segs=6)
+                cyl(P, BLACK, b, b + nS * 0.004, 0.0040, segs=5)
     # stem pad
-    obox(P, PAD, ax(0.546) - nS * 0.002, (0.080, 0.074, 0.050), nS, Y, dS, bevel=0.017, segs=2)
+    obox(P, PAD, ax(0.546) - nS * 0.002, (0.080, 0.074, 0.050), nS, Y, dS, bevel=0.015, segs=1)
     # bars: one tube, centre clamp section, uprights, grip sections (7.5" rise, 674 mm wide)
     full = [mir(p) for p in reversed(right[1:])] + right
-    tubep(P, CHROME, full, 0.0111, segs=S(10, 7, 4), per=S(2, 2, 1))
+    tubep(P, CHROME, full, 0.0111, segs=S(9, 7, 4), per=S(2, 2, 1))
     f = (0.125 - 0.032) / (0.168 - 0.032)
     cx = right[2].lerp(right[3], f)
     cyl(P, CHROME, mir(cx), cx, 0.0095, segs=S(12, 8, 5))
@@ -521,14 +522,14 @@ def build_steer(P):
         end = pts[-1]
         g0 = end - g * 0.128
         prof = [(0.0108, 0.0), (0.0215, 0.0), (0.0220, 0.004), (0.0165, 0.007)]
-        nr = S(3, 2, 0)
+        nr = S(2, 2, 0)
         for k in range(nr):
             y = 0.010 + k * (0.105 / max(1, nr))
             prof += [(0.0168, y + 0.002), (0.0178, y + 0.006), (0.0168, y + 0.011)]
         prof += [(0.0168, 0.122), (0.0160, 0.129), (0.0120, 0.131), (0.0, 0.131)]
         if DET >= 1: prof = [(0.0108, 0.0), (0.0215, 0.0), (0.0215, 0.004), (0.0168, 0.008), (0.0168, 0.070), (0.0168, 0.124), (0.0120, 0.131), (0.0, 0.131)]
         if DET == 2: prof = [(0.0108, 0.0), (0.0215, 0.0), (0.0168, 0.007), (0.0168, 0.070), (0.0168, 0.125), (0.0, 0.131)]
-        lathe_on(P, GRIP, prof, g, g0, segs=S(10, 8, 5), closed=False)
+        lathe_on(P, GRIP, prof, g, g0, segs=S(9, 8, 5), closed=False)
     # brake lever (right) + its cable to the splitter and the two cables to the gyro's upper plate
     if DET < 2:
         g, end = gR, right[-1]
@@ -540,38 +541,46 @@ def build_steer(P):
         tubep(P, METAL, blade, 0.0042, segs=S(8, 6, 4))
         sp = ax(0.508) + nS * 0.060
         cab = [pv - g * 0.004 + Z * 0.008, pv + X * 0.03 + Z * 0.01, right[3] + X * 0.05 + Y * 0.02, (right[2] + right[3]) / 2 + X * 0.06 + Y * 0.06, sp + dS * 0.02, sp]
-        tubep(P, CABLE, cab, 0.0025, segs=S(5, 4, 3), per=S(3, 2, 1))
+        tubep(P, CABLE, cab, 0.0025, segs=S(4, 4, 3), per=S(2, 2, 1))
         obox(P, BLACK, sp, (0.010, 0.020, 0.012), nS, Y, dS, bevel=0.002)
         for s in (1, -1):
             ear = ax(0.473) + nS * 0.004 + Y * (s * 0.038) + dS * 0.014
-            tubep(P, CABLE, [sp + Y * (s * 0.006) - dS * 0.004, sp + Y * (s * 0.024) - dS * 0.010 - nS * 0.010, ear + dS * 0.012, ear], 0.0022, segs=S(5, 4, 3))
+            tubep(P, CABLE, [sp + Y * (s * 0.006) - dS * 0.004, sp + Y * (s * 0.024) - dS * 0.010 - nS * 0.010, ear + dS * 0.012, ear], 0.0022, segs=S(4, 4, 3))
 
 
 # ------------------------------------------------------------------------------------------------ wheels
 def tyre_ellipse(th):
-    rc, a, b = 0.2275, 0.0235, 0.027
+    rc, a, b = TYRE_RC, 0.0235, 0.027
     return rc + a * math.cos(th), b * math.sin(th)
 
 
 def build_wheel(P, c, rear):
     # tyre (knobby 20 x 2.0): carcass lathe + knobs on LOD0
-    th0 = math.radians(157)
-    n = S(9, 7, 5)
+    th0 = math.radians(160)
+    n = S(8, 7, 5)
     prof = [tyre_ellipse(-th0 + 2 * th0 * k / (n - 1)) for k in range(n)]
     if DET == 2: prof = [(0.2040, -0.0080), (0.2200, -0.0250), (0.2440, -0.0200), (0.2540, 0.0), (0.2440, 0.0200), (0.2200, 0.0250), (0.2040, 0.0080)]
     bm = T.lathe([(r, y) for r, y in prof], segs=S(28, 20, 12), closed=False)
     bm.transform(Matrix.Translation(c)); P.add_bm(bm, RUBBER, Y)
     if DET == 0: knobs(P, c)
-    # rim (chrome, double wall)
-    half = [(0.2005, 0.0), (0.2052, 0.0112), (0.2125, 0.0122), (0.2110, 0.0161), (0.1960, 0.0160), (0.1895, 0.0)]
-    if DET == 1: half = [(0.2005, 0.0), (0.2050, 0.0112), (0.2125, 0.0125), (0.2110, 0.0160), (0.1960, 0.0160), (0.1895, 0.0)]
-    if DET == 2: half = [(0.2050, 0.0), (0.2100, 0.0150), (0.1960, 0.0150), (0.1895, 0.0)]
-    prof = half + [(r, -y) for r, y in reversed(half[1:-1])]
-    bm = T.lathe(prof, segs=S(28, 18, 10), closed=True)
-    bm.transform(Matrix.Translation(c)); P.add_bm(bm, CHROME, Y)
+    # rim: a narrow (29 mm) chrome rim; the brake track a flat polished-alloy band on each side; the tyre's bead
+    # tucked behind the hook (the black rubber meets the rim)
+    segs = S(28, 18, 10)
+
+    def rl(prof, m):
+        bm = T.lathe(prof, segs=segs, closed=False); bm.transform(Matrix.Translation(c)); P.add_bm(bm, m, Y)
+    if DET < 2:
+        rl([(0.2092, -0.0148), (0.2106, -0.0145), (0.2118, -0.0128), (0.2050, -0.0100), (0.2010, 0.0), (0.2050, 0.0100), (0.2118, 0.0128), (0.2106, 0.0145), (0.2092, 0.0148)]
+           if DET == 0 else [(0.2092, -0.0148), (0.2118, -0.0128), (0.2010, 0.0), (0.2118, 0.0128), (0.2092, 0.0148)], CHROME)
+        rl([(0.1998, 0.0148), (0.1958, 0.0110), (0.1945, 0.0), (0.1958, -0.0110), (0.1998, -0.0148)] if DET == 0 else
+           [(0.1998, 0.0148), (0.1945, 0.0), (0.1998, -0.0148)], CHROME)
+        for sd in (1, -1): rl([(0.1998, sd * 0.0148), (0.2092, sd * 0.0148)], METAL)
+    else:
+        bm = T.lathe([(0.2050, 0.0), (0.2100, 0.0145), (0.1965, 0.0145), (0.1945, 0.0), (0.1965, -0.0145), (0.2100, -0.0145)], segs=segs, closed=True)
+        bm.transform(Matrix.Translation(c)); P.add_bm(bm, CHROME, Y)
     # hub
     w = 0.052 if rear else 0.050
-    hp = [(0.0075, w), (0.0125, w - 0.002), (0.0160, w - 0.010), (0.0240, 0.0345), (0.0244, 0.0318), (0.0240, 0.0290), (0.0145, 0.026), (0.0140, 0.0)]
+    hp = [(0.0075, w), (0.0160, w - 0.010), (0.0240, 0.0345), (0.0244, 0.0318), (0.0240, 0.0290), (0.0145, 0.026), (0.0140, 0.0)]
     if DET >= 1: hp = [(0.0075, w), (0.0160, w - 0.010), (0.0240, 0.034), (0.0240, 0.029), (0.0145, 0.0)]
     if DET == 2: hp = [(0.0075, w), (0.0240, 0.034), (0.0145, 0.0)]
     yr = -0.040 if rear else -w                         # (the rear hub's right end meets the cog's driver)
@@ -582,10 +591,10 @@ def build_wheel(P, c, rear):
 
 
 def knobs(P, c):
-    """the tread: 4 rows of tapered blocks (centre rows staggered, shoulder rows), sitting into the carcass"""
-    rows = [(math.radians(13), 22, 0.0, 0.0105, 0.0085, 0.0038), (math.radians(-13), 22, 0.5, 0.0105, 0.0085, 0.0038),
-            ]
-    rc, a, b = 0.2275, 0.0235, 0.027
+    """the tread (a 90s BMX street / dirt tyre): a smooth centre line, two staggered rows of small low blocks either
+    side of it (8.5 x 6.8 mm, 2.2 mm high, 24 a row), sitting 1.2 mm into the carcass"""
+    rows = [(math.radians(15), 24, 0.0, 0.0085, 0.0068, 0.0022), (math.radians(-15), 24, 0.5, 0.0080, 0.0068, 0.0022)]
+    rc, a, b = TYRE_RC, 0.0235, 0.027
     for th, N, ph, lt, ll, h in rows:
         r0, y0 = tyre_ellipse(th)
         nr, ny = math.cos(th) / a, math.sin(th) / b; l = math.hypot(nr, ny); nr, ny = nr / l, ny / l
@@ -625,8 +634,8 @@ def spokes_left():
 def spoke_cards(P, c):
     """two blended cone cards (one per side, between the flange and the rim) mapped with the rendered spoke set:
     a pre-filtered texture, never sub-pixel geometry (QUALITY_RULES 23: the player's vehicle in the chase view)"""
-    n = S(32, 20, 8)
-    r0, r1 = 0.0185, 0.1935
+    n = S(24, 18, 8)
+    r0, r1 = 0.0185, RIM_BED + 0.0018
     yat = lambda r: FLANGE_Y + (RIM_Y - FLANGE_Y) * (r - FLANGE_R) / (RIM_HOLE - FLANGE_R)
     rot = math.radians(10)
     for s in (1, -1):
@@ -650,30 +659,85 @@ def spoke_cards(P, c):
 
 
 # ------------------------------------------------------------------------------------------------ cog, crank, pedals
-def sprocket(P, m, c, y, N, Rp, r_in, thick):
-    st_ = S(2, 0, 0)
-    if st_ == 0:
-        cyl(P, m, c + Y * (y + thick / 2), c + Y * (y - thick / 2), Rp + 0.002, segs=S(24, 20, 10))
+def sprocket(P, m, c, y, N, Rp, r_in, thick, holes=None):
+    """a machined sprocket in the XZ plane at y: tooth-shaped teeth (a flat-bottomed roller seat between them, the tips
+    chamfered to 1.8 mm), the web flat, optional lightening holes = (r0, r1, centre angles, half angle): kidney cut-outs
+    between the bolts. LOD1: a plain annulus; LOD2: a disc."""
+    h = thick / 2
+    if DET == 1:
+        lathe_on(P, m, [(r_in, -h), (Rp + 0.002, -h), (Rp + 0.002, h), (r_in, h)], Y, c + Y * y, segs=20)
         return
-    rr, rt = Rp - 0.0042, Rp + 0.0040
-    pat = [(0.0, rr), (0.40, rt), (0.60, rt)] if st_ == 3 else [(0.0, rr), (0.5, rt)]
-    outer = []
-    for k in range(N):
-        for f, r in pat:
-            a = 2 * math.pi * (k + f) / N
-            outer.append((r * math.cos(a), r * math.sin(a)))
-    M = len(outer)
-    inner = [(r_in * math.cos(2 * math.pi * i / M), r_in * math.sin(2 * math.pi * i / M)) for i in range(M)]
+    if DET == 2:
+        cyl(P, m, c + Y * (y + h), c + Y * (y - h), Rp + 0.002, segs=10)
+        return
+    step = 2 * math.pi / N
+    rr, rt = Rp - 0.0040, Rp + 0.0036          # roller seat (7.9 mm roller), tooth tip
+    hr = 0.0009
+    bands = [r_in] + ([holes[0], holes[1]] if holes else [])
     bm = bmesh.new()
-    ring = lambda pts, yy: [bm.verts.new(c + V(x, yy, z)) for x, z in pts]
-    oT, oB, iT, iB = ring(outer, y + thick / 2), ring(outer, y - thick / 2), ring(inner, y + thick / 2), ring(inner, y - thick / 2)
-    for i in range(M):
-        j = (i + 1) % M
-        bm.faces.new([oT[i], oT[j], iT[j], iT[i]]); bm.faces.new([oB[i], iB[i], iB[j], oB[j]])
-        bm.faces.new([oT[i], oB[i], oB[j], oT[j]]); bm.faces.new([iT[i], iT[j], iB[j], iB[i]])
+
+    def pv(a, r, yy): return bm.verts.new(c + V(r * math.cos(a), yy, r * math.sin(a)))
+    S2 = (1, -1)
+    circ = {sd: [[pv(k * step, r, y + sd * h) for k in range(N)] for r in bands] for sd in S2}
+    rootL = {sd: [pv(k * step - 0.24 * step, rr, y + sd * h) for k in range(N)] for sd in S2}
+    rootR = {sd: [pv(k * step + 0.24 * step, rr, y + sd * h) for k in range(N)] for sd in S2}
+    tipL = {sd: [pv(k * step - 0.09 * step, rt, y + sd * hr) for k in range(N)] for sd in S2}
+    tipR = {sd: [pv(k * step + 0.09 * step, rt, y + sd * hr) for k in range(N)] for sd in S2}
+
+    def hole(k):
+        if not holes: return False
+        mid = (k + 0.5) * step
+        return any(abs((mid - hc + math.pi) % (2 * math.pi) - math.pi) < holes[3] for hc in holes[2])
+    F = lambda vs: bm.faces.new(vs)
+    for sd in S2:
+        C, b = circ[sd], circ[sd][-1]
+        for k in range(N):
+            j = (k + 1) % N
+            for i in range(len(bands) - 1):
+                if i == 1 and hole(k): continue
+                F([C[i][k], C[i][j], C[i + 1][j], C[i + 1][k]])
+            F([b[k], rootR[sd][k], rootL[sd][j], b[j]])
+            F([b[k], rootL[sd][k], rootR[sd][k]])
+            F([rootL[sd][k], tipL[sd][k], tipR[sd][k], rootR[sd][k]])
+
+    def wall(A, B): F([A[1], B[1], B[-1], A[-1]])
+    g = lambda D, k: {sd: D[sd][k] for sd in S2}
+    cl = lambda i, k: {sd: circ[sd][i][k] for sd in S2}
+    for k in range(N):
+        j = (k + 1) % N
+        wall(g(rootL, k), g(tipL, k)); wall(g(tipL, k), g(tipR, k)); wall(g(tipR, k), g(rootR, k)); wall(g(rootR, k), g(rootL, j))
+        wall(cl(0, j), cl(0, k))
+        if holes and hole(k):
+            wall(cl(1, k), cl(1, j))
+            wall(cl(2, j), cl(2, k))
+            if not hole((k - 1) % N): wall(cl(2, k), cl(1, k))
+            if not hole(j): wall(cl(1, j), cl(2, j))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     for f in bm.faces: f.smooth = True
     P.add_bm(bm, m, X)
+
+
+SPIDER_A0 = math.radians(18)
+BOLT_R = 0.055
+SPIDER_T = 0.0040
+SPIDER_Y = CL - 0.00175 - SPIDER_T / 2 + 0.00005      # flat on the ring's outer face (0.05 mm into it)
+
+
+def spider_outline():
+    """the forged 5-arm spider (XZ, relative to the BB): tapered arms ending in a round pad UNDER each ring bolt"""
+    pts = []
+    for j in range(5):
+        a = SPIDER_A0 + 2 * math.pi * j / 5
+        er, et = Vector((math.cos(a), math.sin(a))), Vector((-math.sin(a), math.cos(a)))
+        pts.append(er * 0.020 - et * 0.0090)
+        n = S(4, 3, 2)
+        for i in range(n + 1):
+            t = -math.pi / 2 + math.pi * i / n
+            pts.append(er * BOLT_R + (er * math.cos(t) + et * math.sin(t)) * 0.0064)
+        pts.append(er * 0.020 + et * 0.0090)
+        av = a + math.pi / 5
+        pts.append(Vector((math.cos(av), math.sin(av))) * 0.0165)
+    return [(BB.x + p.x, BB.z + p.y) for p in pts]
 
 
 def build_cog(P):
@@ -687,21 +751,24 @@ def build_crank(P):
         y0, y1 = s * 0.064, s * 0.072
         c0, c1 = BB + Y * y0, BB + d * CRANK + Y * y1
         if DET < 2:
-            cyl(P, CHROME, c0 - Y * (s * (0.0195 if s < 0 else 0.010)), c0 + Y * (s * 0.009), 0.0170, segs=S(12, 8, 6), bevel=0.002)
-            cyl(P, CHROME, c1 - Y * (s * 0.009), c1 + Y * (s * 0.009), 0.0125, segs=S(12, 8, 6), bevel=0.002)
+            cyl(P, CHROME, c0 - Y * (s * (0.0165 if s < 0 else 0.010)), c0 + Y * (s * 0.009), 0.0170, segs=S(12, 8, 6), bevel=0.002)
+            cyl(P, CHROME, c1 - Y * (s * 0.009), c1 + Y * (s * 0.009), 0.0125, segs=S(10, 8, 6), bevel=0.0)
         tubep(P, CHROME, [c0 + d * 0.010, c0 + d * 0.06 + Y * (s * 0.002), c1 - d * 0.008], [0.0118, 0.0105, 0.0098], segs=S(10, 7, 5), per=2)
         if DET == 0:
             cyl(P, BLACK, c0 + Y * (s * 0.009), c0 + Y * (s * 0.0115), 0.0085, segs=6)   # the crank bolt
-    # 5-arm spider (right side), 44T ring, bolts
-    for j in range(5 if DET < 2 else 0):
-        a = 2 * math.pi * j / 5 + math.radians(18)
-        er = V(math.cos(a), 0, math.sin(a))
-        obox(P, CHROME, BB + er * 0.034 + Y * -0.0485, (0.050, 0.0040, 0.012), er, Y, er.cross(Y), bevel=0.0012)
-        if DET == 0:
-            b = BB + er * 0.055
-            cyl(P, BLACK, b + Y * -0.0505, b + Y * (CL + 0.0028), 0.0042, segs=6)
-            cyl(P, BLACK, b + Y * (CL + 0.0018), b + Y * (CL + 0.0042), 0.0035, segs=6)
-    sprocket(P, CHROME, BB, CL, 44, R_RING, 0.050, 0.0035)
+    # 5-arm spider (right side) flat on the ring, its arms ending under the ring bolts; the 44T ring (polished alloy,
+    # 5 kidney lightening holes between the bolts); bolt heads on the spider, sleeve nuts on the ring's inner face
+    if DET < 2:
+        out = spider_outline()
+        a2 = sum(out[i][0] * out[(i + 1) % len(out)][1] - out[(i + 1) % len(out)][0] * out[i][1] for i in range(len(out)))
+        if a2 < 0: out.reverse()
+        plate_xz(P, CHROME, out, SPIDER_Y, SPIDER_T, bevel=0.0010)
+    for j in range(5 if DET == 0 else 0):
+        a = SPIDER_A0 + 2 * math.pi * j / 5
+        b = BB + V(math.cos(a), 0, math.sin(a)) * BOLT_R
+        lathe_on(P, BLACK, [(0.0, 0.0), (0.0046, 0.0), (0.0042, 0.0020), (0.0, 0.0020)], -Y, b + Y * (SPIDER_Y - SPIDER_T / 2 + 0.0002), segs=6, closed=False)
+    hc = [SPIDER_A0 + math.pi / 5 + 2 * math.pi * j / 5 for j in range(5)]
+    sprocket(P, METAL, BB, CL, 44, R_RING, 0.0470, 0.0035, holes=(0.0625, 0.0765, hc, math.radians(15.5)))
 
 
 def pedal_centre(side):
@@ -713,21 +780,22 @@ def pedal_centre(side):
 def build_pedal(P, side):
     s = 1 if side == "L" else -1
     c = pedal_centre(side)
-    if DET == 2:
-        obox(P, BLACK, c, (0.090, 0.100, 0.021), X, Y, Z, bevel=0.0)
+    if DET >= 1:                                       # (12 m +: a box on its spindle)
+        obox(P, BLACK, c, (0.090, 0.100, 0.021), X, Y, Z, bevel=0.003 if DET == 1 else 0.0)
+        if DET == 1: cyl(P, METAL, c - Y * (s * 0.056), c - Y * (s * 0.050), 0.0065, segs=5)
         return
     cyl(P, METAL, c - Y * (s * 0.056), c - Y * (s * 0.044), 0.0065, segs=S(10, 6, 4))
     cyl(P, BLACK, c - Y * (s * 0.046), c + Y * (s * 0.046), 0.0105, segs=S(10, 7, 5), bevel=0.001)
     for sx in (1, -1):
         obox(P, BLACK, c + X * (sx * 0.042), (0.010, 0.100, 0.021), X, Y, Z, bevel=0.0025, segs=1)
     for sy in (1, -1):
-        obox(P, BLACK, c + Y * (sy * 0.047), (0.094, 0.008, 0.018), X, Y, Z, bevel=0.0025, segs=1)
+        obox(P, BLACK, c + Y * (sy * 0.047), (0.086, 0.008, 0.017), X, Y, Z, bevel=0.0, segs=1)
     if DET == 0:
         for sx in (1, -1):
             for k in (-1, 0, 1):
                 for sz in (1,):
                     p = c + X * (sx * 0.042) + Y * (k * 0.033) + Z * (sz * 0.0105)
-                    cyl(P, METAL, p, p + Z * (sz * 0.0035), 0.0017, segs=6)
+                    cyl(P, METAL, p, p + Z * (sz * 0.0035), 0.0017, segs=4)
 
 
 # ------------------------------------------------------------------------------------------------ the build
@@ -760,7 +828,7 @@ def empties_def():
         "Peg_RL": ("Body", RA + V(0, 0.1115, 0.019)), "Peg_RR": ("Body", RA + V(0, -0.1115, 0.019)),
         "Seat": ("Body", sp),
         "Foot_L": ("Pedal_L", pedal_centre("L") + Z * 0.0105), "Foot_R": ("Pedal_R", pedal_centre("R") + Z * 0.0105),
-        "Contact_F": ("Body", V(FA.x, 0, 0)), "Contact_R": ("Body", V(RA.x, 0, 0)),
+        "Contact_F": ("Steer", V(FA.x, 0, 0)), "Contact_R": ("Body", V(RA.x, 0, 0)),
     }
 
 
@@ -902,7 +970,7 @@ def main():
     for o in lod_objs:                                  # the sprockets' faces: one AO (tooth tips vs roots made radial wedges)
         node = o.name.rsplit("_LOD", 1)[0]
         if node not in ("Crank", "Cog"): continue
-        rin, rp = (0.050, R_RING) if node == "Crank" else (0.014, R_COG)
+        rin, rp = (0.047, R_RING) if node == "Crank" else (0.014, R_COG)
         col = o.data.color_attributes["Col"]
         for v in o.data.vertices:
             if abs(v.co.x - CL) < 0.0025 and rin - 0.001 < math.hypot(v.co.y, v.co.z) < rp + 0.006: col.data[v.index].color = (0.9, 0.9, 0.9, 1)
@@ -1004,6 +1072,10 @@ def renders(parts):
     look("close_cranks", V(0.12, -0.75, 0.40), BB + V(0.0, -0.05, 0.0), 55, sun_rot=(50, 0, 20))
     look("close_stem", V(0.75, -0.40, 1.08), ax(0.53), 58, sun_rot=(50, 0, 40))
     look("close_rear", V(-0.55, -0.55, 0.55), RA + V(0.08, 0, 0.12), 50, sun_rot=(50, 0, 20))
+    look("close_ring_side", V(-0.11, -0.62, 0.30), BB + V(0.0, -0.04, 0.0), 60, sun_rot=(50, 0, 10))
+    look("close_cog", V(-0.62, -0.42, 0.40), RA + V(0.02, -0.04, 0.0), 75, sun_rot=(50, 0, 20))
+    look("close_rim_tyre", V(0.75, -0.42, 0.42), FA + V(0.10, 0, 0.12), 70, sun_rot=(50, 0, 40))
+    look("close_tread", FA + V(0.55, -0.20, 0.42), FA + V(0.20, 0, 0.13), 60, sun_rot=(50, 0, 40))
     look("close_downtube", V(0.35, -0.55, 0.75), (DTj + BB) / 2, 50, sun_rot=(54, 0, 40))
     look("lod1_side", V(0.0, 2.6, 0.55), mid, 42, sun_rot=default_sun, lod=1)
     look("lod2_side", V(0.0, 2.6, 0.55), mid, 42, sun_rot=default_sun, lod=2)
@@ -1049,7 +1121,7 @@ def preview_setup():
     scn.view_settings.view_transform = "AgX"; scn.view_settings.exposure = -1.0
     cam_d = bpy.data.cameras.new("Cam"); cam = bpy.data.objects.new("Cam", cam_d); scn.collection.objects.link(cam); scn.camera = cam
     gm = bpy.data.materials.new("preview_ground"); gm.use_nodes = True
-    gm.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.32, 0.31, 0.28, 1)
+    gm.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.10, 0.10, 0.10, 1)
     gm.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.9
     bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0.0)); bpy.context.active_object.data.materials.append(gm)
     return so, cam

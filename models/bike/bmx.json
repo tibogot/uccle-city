@@ -95,20 +95,20 @@
   "Body": {
    "parent": "BMX",
    "pos": [
-    0,
-    0,
-    0
+    0.0,
+    0.0,
+    0.0
    ]
   },
   "Steer": {
    "parent": "Body",
    "pos": [
-    0,
+    0.0,
     0.62117,
     0.34059
    ],
    "axis": [
-    0,
+    0.0,
     0.96126,
     -0.27564
    ],
@@ -117,7 +117,7 @@
   "Wheel_F": {
    "parent": "Steer",
    "pos": [
-    0,
+    0.0,
     0.254,
     0.475
    ],
@@ -126,7 +126,7 @@
   "Wheel_R": {
    "parent": "Body",
    "pos": [
-    0,
+    0.0,
     0.254,
     -0.475
    ],
@@ -135,7 +135,7 @@
   "Cog": {
    "parent": "Body",
    "pos": [
-    0,
+    0.0,
     0.254,
     -0.475
    ],
@@ -144,7 +144,7 @@
   "Crank": {
    "parent": "Body",
    "pos": [
-    0,
+    0.0,
     0.29,
     -0.109
    ],
@@ -221,7 +221,7 @@
   "Seat": {
    "parent": "Body",
    "pos": [
-    0,
+    0.0,
     0.74048,
     -0.2596
    ]
@@ -243,18 +243,18 @@
    ]
   },
   "Contact_F": {
-   "parent": "Body",
+   "parent": "Steer",
    "pos": [
-    0,
-    0,
+    0.0,
+    0.0,
     0.475
    ]
   },
   "Contact_R": {
    "parent": "Body",
    "pos": [
-    0,
-    0,
+    0.0,
+    0.0,
     -0.475
    ]
   }
@@ -278,8 +278,8 @@
    40
   ],
   "triangles": {
-   "LOD0": 15802,
-   "LOD1": 8116,
+   "LOD0": 15344,
+   "LOD1": 7640,
    "LOD2": 1794
   }
  },
@@ -301,56 +301,5 @@
    "file": "bmx_spokes.ktx2",
    "alpha": "BLEND, double sided (pre-filtered cards)"
   }
- },
- "pack": {
-  "file": "bmx.glb",
-  "bytes": 732212,
-  "tris": {
-   "LOD0": 15802,
-   "LOD1": 8116,
-   "LOD2": 1794
-  },
-  "audit": {
-   "LOD0": {
-    "blocking": 0,
-    "warnings": 78,
-    "counts": {
-     "sliver": 8,
-     "nonmanifold": 48,
-     "backtoback": 38,
-     "near": 18,
-     "seam": 249,
-     "tjunction": 4,
-     "opening": 6
-    }
-   },
-   "LOD1": {
-    "blocking": 0,
-    "warnings": 122,
-    "counts": {
-     "sliver": 8,
-     "nonmanifold": 32,
-     "backtoback": 34,
-     "near": 77,
-     "seam": 171,
-     "tjunction": 5
-    }
-   },
-   "LOD2": {
-    "blocking": 0,
-    "warnings": 71,
-    "counts": {
-     "sliver": 8,
-     "backtoback": 4,
-     "near": 63,
-     "seam": 55
-    }
-   }
-  },
-  "lodRange": [
-   12,
-   40,
-   150
-  ]
  }
 }

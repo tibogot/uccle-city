@@ -22,11 +22,11 @@ const { readGlb } = await imp("tools/mesh_audit/glb.mjs");
 const { auditParts } = await imp("tools/mesh_audit/audit.js");
 const QUIET = process.argv.includes("--quiet");
 const DIR = path.join(root, "models", "bike");
-const BUDGET = [16000, 8500, 2000];
+const BUDGET = [15500, 8500, 2000];
 const SLOTS = ["bmx_paint", "bmx_chrome", "bmx_metal", "bmx_black", "bmx_rubber", "bmx_grip", "bmx_saddle", "bmx_pad", "bmx_cable", "bmx_chain", "bmx_spokes"];
 const PARENT = { Body: "BMX", Steer: "Body", Wheel_F: "Steer", Wheel_R: "Body", Cog: "Body", Crank: "Body", Pedal_L: "Crank", Pedal_R: "Crank",
   Grip_L: "Steer", Grip_R: "Steer", Peg_FL: "Steer", Peg_FR: "Steer", Peg_RL: "Body", Peg_RR: "Body", Seat: "Body", Foot_L: "Pedal_L", Foot_R: "Pedal_R",
-  Contact_F: "Body", Contact_R: "Body" };
+  Contact_F: "Steer", Contact_R: "Body" };
 const MOVING = ["Body", "Steer", "Wheel_F", "Wheel_R", "Cog", "Crank", "Pedal_L", "Pedal_R"];
 
 const fails = [], notes = [];
@@ -87,6 +87,17 @@ if (!fails.length) {
   const cf = pos("Contact_F"), cR = pos("Contact_R");
   check(near(cf[1], 0, 1e-4) && near(cR[1], 0, 1e-4) && near(cf[2], wf[2], 1e-3) && near(cR[2], wr[2], 1e-3), "contacts on the ground under the axles");
   const st = pos("Seat"); check(st[1] > 0.65 && st[1] < 0.8 && st[2] < cr[2], `seat top ${st[1].toFixed(3)} m, behind the BB`);
+  // the chain wraps the ring and the cog on their PITCH circles (rollers seated in the teeth): around the ring's front and
+  // the cog's back, the chain strip's mid-height radius = the pitch radius (44T 88.9 mm, 16T 32.6 mm)
+  const chain = parts.filter((p) => p.node === "Body_LOD0" && p.slot === "bmx_chain");
+  for (const [what, c, Rp, sel] of [["ring", cr, 0.08901, (z) => z > cr[2] + 0.06], ["cog", wr, 0.03255, (z) => z < wr[2] - 0.022]]) {
+    let lo = Infinity, hi = 0;
+    for (const p of chain) for (let i = 0; i < p.positions.length; i += 3) {
+      if (!sel(p.positions[i + 2])) continue;
+      const r = Math.hypot(p.positions[i + 1] - c[1], p.positions[i + 2] - c[2]); lo = Math.min(lo, r); hi = Math.max(hi, r);
+    }
+    check(near((lo + hi) / 2, Rp, 0.0008), `chain on the ${what}'s pitch circle: mid radius ${((lo + hi) / 2 * 1000).toFixed(1)} mm (${(Rp * 1000).toFixed(1)})`);
+  }
   // the tyres reach the wheel radius (their farthest point from the axle)
   for (const [w, c] of [["Wheel_F", wf], ["Wheel_R", wr]]) {
     let m = 0; for (const p of parts.filter((q) => q.node === `${w}_LOD0`)) for (let i = 0; i < p.positions.length; i += 3) m = Math.max(m, Math.hypot(p.positions[i + 1] - c[1], p.positions[i + 2] - c[2]));

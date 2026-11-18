@@ -27,7 +27,7 @@ node tools/audit/bmxCheck.mjs                                               # ga
 | `Pedal_L`, `Pedal_R` | `Crank` | pedal spindles: `rotation.x = -crank` keeps them level |
 
 Empties (rider IK, UAL kid later): `Grip_L/R` (Steer), `Foot_L/R` (pedal tops), `Seat` (saddle top), `Peg_FL/FR`
-(Steer), `Peg_RL/RR` (Body), `Contact_F/R` (the tyre contacts at rest). Each node holds `<Node>_LOD0/1/2` meshes: show
+(Steer), `Peg_RL/RR` (Body), `Contact_F` (Steer: follows the steering) / `Contact_R` (Body), the tyre contacts at rest. Each node holds `<Node>_LOD0/1/2` meshes: show
 one level (suggested switch 12 m / 40 m). All numbers: `models/bike/bmx.json`.
 
 Slots: `bmx_paint` (colourway colour, clear coat), `bmx_chrome`, `bmx_metal`, `bmx_black`, `bmx_rubber`, `bmx_grip`,
@@ -36,4 +36,11 @@ bmx.json `chain`), `bmx_spokes` (blended cone cards, pre-filtered: QUALITY_RULES
 player's bike). COLOR_0 = baked vertex AO. Colourways (bmx.json `colourways`): blue / red / purple (paint, pads, grips,
 saddle): recolour the slots at run time, no re-export needed.
 
-Triangles: LOD0 15.8k, LOD1 8.1k, LOD2 1.8k. 717 KB GLB + 2 x ~120 KB KTX2.
+Triangles: LOD0 15.3k, LOD1 7.6k, LOD2 1.8k. 692 KB GLB + 2 x ~120 KB KTX2.
+
+Review round 1 (coordinator, 2026-11-18): the 44T ring is a machined polished-alloy part (tooth-shaped teeth with
+chamfered tips, 5 kidney lightening holes), the forged 5-arm spider lies flat on it and ends under the 5 ring bolts;
+the chain wraps both sprockets on their pitch circles (gate-checked: mid radius 89.0 / 32.6 mm); narrow 29 mm chrome
+rims with a flat alloy brake track, the tyre bead tucked behind the hook, the spoke nipples seated in the rim bed;
+a lower tread (two staggered rows of small blocks either side of a smooth centre line); chrome at a real F0 (0.62);
+the previews' ground is asphalt grey (chrome needs something dark to reflect, as in the city).
