@@ -92,29 +92,88 @@ export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = 
 // their builders against older street edges: 258 signs, 361 plate posts, 64 stop poles, 51 bike boxes stood in a driven
 // lane city-wide (tools/audit/streetAudit.mjs). At load, a point in a lane moves onto the nearest raised surface, 0.5 m
 // behind the measured kerb (as the lamps), keeping its yaw; no kerb within 6 m: it stays.
-/** (x, z) -> { x, z, moved } . lanes: carriageway(..., { lanesOnly: true }); fit: viewer/streets/fitCore.js streetFit */
-export function offLane(x, z, lanes, fit) {
-  if (!lanes?.inside(x, z, 0) || !fit) return { x, z, moved: false };
-  const k = fit.nearKerb(x, z, 6);
-  if (!k) return { x, z, moved: false };
-  for (const back of [0.5, 0.35, 0.8, 1.2]) {
+// STREET PROPS (class D, claude/streetprops 2026-11-18, rule 30 provisional): the move above gave up where there is no
+// measured kerb within 6 m (Flanders: no UrbIS street at all) and never looked at the tram tracks: post boxes, Villo
+// docks, signs and plate posts stood in the Chaussée d'Alsemberg / on its tracks. With `opt` (the default since then):
+//   tram   a trackIndex(): a point within TRAM_CLEAR of a tram track centre is in the road too, and no spot there is taken
+//   osm    no measured kerb spot: the OSM street width decides (the nearest driven road's carriageway half width on the
+//          point's own side + 0.6 / 1.0 / 1.6 m, then the other side; on measured ground only onto a raised surface),
+//          else the nearest free spot within 8 m
+//   ground (x, z) -> the un-carved DTM: a moved baked y follows the ground (not only the kerb lift)
+// The result carries the road side's normal (nx, nz: from the spot toward the road) for the things that face the street.
+export const TRAM_CLEAR = 1.5;      // a prop's centre from a tram track's centre (the car body's half width 1.15 + 0.35)
+
+/** tram track centre lines ([[x, z], ...][], as viewer/track.js smoothPolyline draws them) -> { dist(x, z) } (m, or
+ *  Infinity beyond 4 m) */
+export function trackIndex(lines, C = 8) {
+  const segs = [], grid = new Map(), key = (i, j) => `${i},${j}`;
+  for (const pts of lines || []) for (let k = 1; k < pts.length; k++) {
+    const [ax, az] = pts[k - 1], [bx, bz] = pts[k], id = segs.push([ax, az, bx, bz]) - 1;
+    for (let i = Math.floor((Math.min(ax, bx) - 4) / C); i <= Math.floor((Math.max(ax, bx) + 4) / C); i++)
+      for (let j = Math.floor((Math.min(az, bz) - 4) / C); j <= Math.floor((Math.max(az, bz) + 4) / C); j++) { const q = key(i, j); if (!grid.has(q)) grid.set(q, []); grid.get(q).push(id); }
+  }
+  const dist = (x, z) => {
+    let best = Infinity;
+    for (const id of grid.get(key(Math.floor(x / C), Math.floor(z / C))) || []) {
+      const [ax, az, bx, bz] = segs[id], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+      if (L2 < 1e-9) continue;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), d = Math.hypot(x - ax - dx * t, z - az - dz * t);
+      if (d < best) best = d;
+    }
+    return best <= 4 ? best : Infinity;
+  };
+  return { dist, size: segs.length };
+}
+
+/** (x, z) -> { x, z, moved, nx?, nz? } . lanes: carriageway(..., { lanesOnly: true }); fit: viewer/streets/fitCore.js
+ *  streetFit (null: no measured street); opt { tram, osm } (above; {} = the 2026-11-16 move, ?streetprops=old) */
+export function offLane(x, z, lanes, fit, opt = {}) {
+  const { tram = null, osm = false } = opt;
+  const onTram = (px, pz) => !!tram && tram.dist(px, pz) < TRAM_CLEAR;
+  if (!lanes || (!fit && !osm) || !(lanes.inside(x, z, 0) || onTram(x, z))) return { x, z, moved: false };
+  const free = (px, pz) => !lanes.inside(px, pz, 0) && !onTram(px, pz);
+  const k = fit ? fit.nearKerb(x, z, 6) : null;
+  if (k) for (const back of [0.5, 0.35, 0.8, 1.2]) {
     const qx = k.x + k.lx * back, qz = k.z + k.lz * back;
-    if (fit.lift(qx, qz) > 0 && !lanes.inside(qx, qz, 0)) return { x: qx, z: qz, moved: true };
+    if (fit.lift(qx, qz) > 0 && free(qx, qz)) return { x: qx, z: qz, moved: true, nx: -k.lx, nz: -k.lz };
+  }
+  if (osm) {
+    const e = lanes.nearest(x, z);
+    if (e) {
+      const [hl, hr] = carriageHalf(e.road), rx = -e.uz, rz = e.ux;      // the road's right normal
+      for (const side of [e.side, -e.side]) for (const extra of [0.6, 1.0, 1.6]) {
+        const h = (side > 0 ? hr : hl) + extra, qx = e.px + rx * side * h, qz = e.pz + rz * side * h;
+        if (!free(qx, qz)) continue;
+        if (fit && fit.classAt(qx, qz) >= 0 && !(fit.lift(qx, qz) > 0)) continue;     // measured ground: a raised surface only
+        return { x: qx, z: qz, moved: true, nx: -rx * side, nz: -rz * side };
+      }
+    }
+    // neither (a junction's corner: every OSM side spot is in another street's band; no kerb near): the nearest free
+    // spot round the point (rings 1-8 m, 16 directions; raised where measured), facing back to where it stood
+    for (let r = 1; r <= 8; r += 0.5) for (let i = 0; i < 16; i++) {
+      const a = (i * Math.PI) / 8, qx = x + Math.cos(a) * r, qz = z + Math.sin(a) * r;
+      if (!free(qx, qz) || (fit && fit.classAt(qx, qz) >= 0 && !(fit.lift(qx, qz) > 0))) continue;
+      return { x: qx, z: qz, moved: true, nx: -Math.cos(a), nz: -Math.sin(a) };
+    }
   }
   return { x, z, moved: false };
 }
 
 /** a data layer doc with every listed point moved out of the lanes (a copy; a baked y gets the kerb's rise: + the
- *  measured lift there - the lift where it stood). paths: [["stops", "pole"], ["signs"], ...] */
-export function docOffLanes(doc, paths, lanes, fit) {
+ *  measured lift there - the lift where it stood; with opt.ground also the ground's). paths: [["stops", "pole"],
+ *  ["signs"], ...]; opt: offLane's + ground + keep (p -> true: left where it is) */
+export function docOffLanes(doc, paths, lanes, fit, opt = {}) {
   if (!doc) return { doc, moved: 0 };
   let moved = 0;
-  const fix = (p) => { if (!p || typeof p.x !== "number") return p; const r = offLane(p.x, p.z, lanes, fit); if (!r.moved) return p; moved++;
-    return { ...p, x: r.x, z: r.z, ...(typeof p.y === "number" ? { y: p.y + fit.lift(r.x, r.z) - fit.lift(p.x, p.z) } : {}) }; };
+  const lift = (x, z) => (fit ? fit.lift(x, z) : 0) + (opt.ground ? opt.ground(x, z) : 0);
+  const fix = (p) => { if (!p || typeof p.x !== "number" || opt.keep?.(p)) return p; const r = offLane(p.x, p.z, lanes, fit, opt); if (!r.moved) return p; moved++;
+    return { ...p, x: r.x, z: r.z, ...(typeof p.y === "number" ? { y: p.y + lift(r.x, r.z) - lift(p.x, p.z) } : {}) }; };
   const out = { ...doc };
   for (const [key, sub] of paths) {
     if (!Array.isArray(doc[key])) continue;
-    out[key] = doc[key].map((it) => (sub ? (it?.[sub] ? { ...it, [sub]: fix(it[sub]) } : it) : fix(it)));
+    // (streetprops: from out[key], not doc[key]: a second path on the same key, ["stops", "shelter"] after
+    // ["stops", "pole"], threw the first one's moves away: no STIB pole was ever moved; ?streetprops=old as before)
+    out[key] = (opt.osm ? out[key] : doc[key]).map((it) => (sub ? (it?.[sub] ? { ...it, [sub]: fix(it[sub]) } : it) : fix(it)));
   }
   return { doc: out, moved };
 }

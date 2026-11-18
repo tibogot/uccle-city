@@ -71,6 +71,17 @@ F7 (-277, 1469); E6 Ch. de Saint-Job 253 (-535, 936) 165 m², +2 m; K6 Av. du Ma
 (rail cutting, intended); G6 Ch. de Saint-Job 454 (444, 782) -7 m; F4 (-471, -418) 316 m²; D5 (-1412, 360) -3.8 m.
 **Spikes:** D10 (-1038, 2941); E10 (-649, 2859) 7.9 m; E8 Rue Engeland 340 (-697, 1784) 3.8 m.
 
+
+**Class D fixed (claude/streetprops, rule 30, gate row `streetprops`).** Census (as the city draws it, `--old` =
+`?streetprops=old`) before -> after: post plates off their post 237 -> 0; C1 + F19 to the same traffic 25 -> 0 (each carriageway of a one-way pair keeps its own C1 / F19 on its own post, a carriageway between them: C1 47 of 53 asked, F19 29 of 51; where both landed on one kerb the F19 goes, the C1 tries the far kerb); signs facing
+across every street 53 -> 8; pieces in a driven lane / on a tram track 389 (367 after the false positives below) -> 47: post boxes
+25 -> 0, Villo stations 11 -> 0 (round 2: docks off paving 109 -> 0, bent rows 9 -> 0; 18 rows laid out again, Coghen + Rittweger dropped), signs 108 -> 9, plate posts 131 -> 8, furniture2 39 -> 2, stop poles 70 -> 28 (20 are `platform`
+poles of the stops builder the detector finds no OSM tram platform under (browser 2026-11-18: Messidor's pole IS on a drawn
+platform: likely the platform way lives in the neighbour tile's features, a detector gap), 8 bus poles at the kerb within 1.3 m of a track or
+in a lane: the stops keep out of the tram test on purpose (island stops); both need a browser look), shelters 5 -> 0.
+False positives verified: 51 tram stop poles on a drawn OSM tram platform (Globe, Churchill, ...): the stops builder puts
+them on the platform's centre line, UrbIS calls the spot tram road; the detector now skips them (`onPlatform`).
+
 **D1 plates off their post:** E3 Av. de l'Échevinage (-522.9, -591.8) 6.5 m; K10 Av. de la Petite Espinette 6.5; F5 Dieweg
 (-119.8, 321.2) 6.4; N5 Ch. de La Hulpe 6.4; D4 Rue Victor Gambier (-1108.4, -7.3) 6.3; M10 Drève Saint-Hubert 6.3; F3 Square
 De Fré 6.3; E4 Rue Rouge 6.2; E1 Av. Coghen 6.0; E10 Av. des Mûres 6.0 (Papenkasteel E6 (-677, 988.7) 4.1).
