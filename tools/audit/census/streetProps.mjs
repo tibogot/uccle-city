@@ -18,14 +18,17 @@
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/streetProps.mjs [--all | T ...] [--out FILE] [--jobs N]
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { streetTile, runTiles, cli, json, at, ROOT, imp } from "./lib_street.mjs";
+import { streetTile, runTiles, cli, json, at, ROOT, imp, lineIndex } from "./lib_street.mjs";
 
-const { CHILD, TILES, OUT, JOBS, WORST } = cli();
+const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
+// (claude/streetprops, rule 27) --old: the city as ?streetprops=old draws it (the data's `was` / signsOld, the load-time
+// move without the tram tracks and the OSM width, the plate posts moved at load); --max k=v,...: a gate (exit 1 over)
+const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet");
 const TRAM_HW = 1.3, GAP = 0.15, FACE_TOL = 45, NEAR_ROAD = 12;
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: streetProps.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS });
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET });
   const sum = {}, items = { plateGap: [], signFacing: [], inRoad: [] };
   for (const r of res) {
     if (r.error) continue;
@@ -33,6 +36,9 @@ if (!CHILD) {
     for (const k of Object.keys(items)) for (const it of r.items[k] || []) items[k].push({ tile: r.tile, ...it });
   }
   items.plateGap.sort((a, b) => b.gap - a.gap); items.signFacing.sort((a, b) => b.off - a.off); items.inRoad.sort((a, b) => b.deep - a.deep);
+  // (gate keys) the owner's classes by kind: post boxes and Villo stations in the road
+  sum.postbox = items.inRoad.filter((it) => it.kind === "postbox").length;
+  sum.villo = items.inRoad.filter((it) => it.kind === "villo station").length;
   console.log(`class D, ${res.length} tiles${res.some((r) => r.error) ? ` (${res.filter((r) => r.error).length} failed)` : ""}`);
   console.log(JSON.stringify(sum));
   const byKind = {}; for (const it of items.inRoad) { const k = `${it.kind}${it.tram ? " (tram)" : ""}`; byKind[k] = (byKind[k] || 0) + 1; }
@@ -41,8 +47,14 @@ if (!CHILD) {
     console.log(`worst ${k}:`);
     for (const it of items[k].slice(0, WORST)) console.log(`  ${it.tile} ${JSON.stringify(it)}`);
   }
-  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), sum, byKind, items }, null, 1));
-  process.exit(0);
+  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byKind, items }, null, 1));
+  // the gate (tools/audit/mergeGate.mjs streetprops): ceilings per count
+  let bad = res.some((r) => r.error) ? 1 : 0;
+  if (MAX) for (const kv of MAX.split(",")) {
+    const [k, v] = kv.split("="), n = sum[k] || 0;
+    if (n > +v) { console.log(`FAIL ${k} ${n} > ${v}`); bad++; } else console.log(`ok ${k} ${n} <= ${v}`);
+  }
+  process.exit(bad ? 1 : 0);
 }
 
 // ------------------------------------------------------------------ child: one tile
@@ -55,10 +67,29 @@ const sk = json(join(ROOT, "data/streetkit", `${T}.json`)) || {};
 const furn = json(join(ROOT, "data/furniture", `${T}.json`));
 const stops = json(join(ROOT, "data/stops", `${T}.json`));
 // as main.js: snap(doc, paths) (no road decks here: the few deck points are left as they are)
-const snap = (doc, paths) => (doc && fit ? docOffLanes(doc, paths, lanes, fit).doc : doc);
-const skS = snap(sk, [["signs"], ["posts"]]);
-const furnS = snap(furn, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]);
-const stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]]);
+const { trackIndex } = await imp("viewer/streets/carriageway.js");
+const { smoothPolyline } = await imp("viewer/track.js");
+let skS, furnS, stopsS;
+if (OLD) {
+  // ?streetprops=old: the data as built before (viewer/streetkit/cityStreetKit.js streetKitOld, streetlifeWorker.js)
+  if (sk.signsOld) sk.signs = sk.signsOld;
+  for (const p of sk.posts || []) if (p.was) [p.x, p.y, p.z] = p.was;
+  for (const v of sk.villo || []) if (v.was) Object.assign(v, v.was);
+  for (const it of [...(sl.plates || []), ...(sl.postboxes || [])]) if (it.was) [it.x, it.y, it.z] = it.was;
+  const snap = (doc, paths) => (doc && fit ? docOffLanes(doc, paths, lanes, fit).doc : doc);
+  skS = snap(sk, [["signs"], ["posts"]]);
+  furnS = snap(furn, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]);
+  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]]);
+} else {
+  // main.js loadTile since claude/streetprops: lanes also without a measured street, the tram tracks, the OSM width;
+  // the plate posts not moved at load (baked with their plates); the stops without the tram test
+  const tracks = trackIndex((S.feats.lines || []).filter((l) => l.kind === "tram").map((l) => smoothPolyline(l.line)));
+  const o = { osm: true, tram: tracks };
+  const snap = (doc, paths, op = o) => (doc ? docOffLanes(doc, paths, lanes, fit, op).doc : doc);
+  skS = snap(sk, [["signs"]]);
+  furnS = snap(furn, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]);
+  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]], { osm: true, keep: (p) => p.platform });
+}
 const counts = { plates: 0, plateGap: 0, plateNoPost: 0, signs: 0, signFacing: 0, signMovedFar: 0, pieces: 0, inRoad: 0, inLane: 0, onTram: 0 };
 const items = { plateGap: [], signFacing: [], inRoad: [] };
 
@@ -147,7 +178,16 @@ for (const v of sk.villo || []) {
 for (const s of skS?.signs || []) test("sign", s.x, s.z, { codes: s.plates.map((p) => p.code).join("+") });
 for (const p of skS?.posts || []) test("plate post", p.x, p.z);
 for (const k of ["benches", "bins", "hoops", "boxes", "banks"]) for (const p of furnS?.[k] || []) test(k, p.x, p.z);
-for (const s of stopsS?.stops || []) { if (s.pole) test("stop pole", s.pole.x, s.pole.z, { stop: s.fr }); if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); }
+// a tram stop's pole on an OSM tram platform (tools/stops/build_stops.py: on the platform's centre line; tram.js draws the
+// slab there, UrbIS calls the spot tram road): not in the road (census false positives, e.g. Globe E4, Churchill G2)
+const { isTramPlatform, platformRing, inRing2, TRAM_PLATFORM } = await imp("viewer/drive/colliders.js");
+const plats = (S.feats.lines || []).filter(isTramPlatform), platRings = plats.map(platformRing).filter(Boolean);
+const platLines = lineIndex(plats.filter((l) => !platformRing(l)).map((l) => l.line));
+const onPlatform = (x, z) => platRings.some((r) => inRing2(r, x, z)) || (platLines.dist(x, z, 4)?.d ?? 9) <= TRAM_PLATFORM.W / 2 + 0.2;
+counts.onPlatform = 0;
+for (const s of stopsS?.stops || []) {
+  if (s.pole?.platform && onPlatform(s.pole.x, s.pole.z)) { counts.onPlatform++; if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); continue; }
+  if (s.pole) test("stop pole", s.pole.x, s.pole.z, { stop: s.fr }); if (s.shelter) test("shelter", s.shelter.x, s.shelter.z, { stop: s.fr }); }
 for (const p of stopsS?.panels || []) test("ad panel", p.x, p.z);
 
 console.log(JSON.stringify({ tile: T, counts, items }));

@@ -79,7 +79,16 @@ from the data). The rules are in the script's header; in short (all positions fr
   `direction=forward / backward` along the OSM way (151), else toward the node's nearer junction (63).
 - **traffic_sign=BE:*** nodes (B1, B5, C1, C3, D7, C43[n]) the same way; `BE:B22` (cyclists on red) has no face: skipped.
 - **F19 / C1**: one-way roads: F19 4 m into the road at each junction where the flow starts, C1 facing the wrong way
-  4 m before each junction where it ends (segments >= 12 m).
+  4 m before each junction where it ends (segments >= 12 m). Not at the mouth of a one-way PAIR (claude/streetprops,
+  rule 27): a piece flowing in beside one flowing out on the same side (a split carriageway round an island, or a divided
+  avenue's two carriageways meeting a cross street within 15 m): there C1 and F19 addressed the same traffic (owner
+  image 79); 64 + 64 dropped. A measured kerb further than the road's own half width + 2.5 m is another street's (the
+  pole stood across the side street, facing across it): the OSM width is used instead. The signs of the old rules are
+  kept as `signsOld` where they differ (`?streetprops=old`).
+- **Out of the road** (rule 27): after the tiles are written, `tools/streetkit/snapProps.mjs` moves the post plates +
+  their posts (one move for both), the bpost boxes (turned to the road) and the Villo stations (row slid back <= 2 m,
+  else the docks still in a lane / on a track dropped) out of the driven lanes and >= 1.5 m off the tram tracks, with
+  the viewer's own test (`viewer/streets/carriageway.js offLane`); the originals stay under `was`.
 - **C43 50 / 70**: where a slower road meets a 50 / 70 road, at the faster road's start for the traffic entering it
   (Brussels is a 30 region since 2021: 50 is the signed exception); one per 150 m per road and facing.
 - **C43 30** where the same street drops from 50 to 30; **F4a** where a road tagged `source:maxspeed=BE:zone30` is

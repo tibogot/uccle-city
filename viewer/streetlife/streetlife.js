@@ -285,6 +285,7 @@ export class StreetLife {
     this.dropWallPlates = dropWallPlates;   // [[x, z, r]]: wall plates there dropped (their wall is hidden: viewer/publicart/)
     this.noFuel = noFuel;                // the petrol station kit on (viewer/fuel/): no box canopy / pumps / pylon here
     this.noBubbles = noBubbles;          // furniture kit 2 on (viewer/furniture2/): its glass banks replace the bubbles
+    this.propsOld = /[?&]streetprops=old(&|$)/.test(location.search);   // (streetprops) plates + post boxes at their `was` (tools/streetkit/snapProps.mjs)
     this.noStreetKit = noStreetKit;      // the street kit on (viewer/streetkit/): its Villo stations and plate posts replace these
     this.stopsBase = stopsBase;          // data/stops/ when the STIB stops kit is on (viewer/stops/): the stops' text only
     this.group = new THREE.Group(); this.group.name = "streetlife";
@@ -342,7 +343,7 @@ export class StreetLife {
     return new Promise((resolve, reject) => {
       const id = ++this.reqId;
       this.req.set(id, { resolve, reject });
-      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H, stopsUrl: this.stopsBase ? new URL(`${tile}.json`, this.stopsBase).href : null, noBubbles: this.noBubbles, noFuel: this.noFuel, noStreetKit: this.noStreetKit, dropWallPlates: this.dropWallPlates,
+      this.worker.postMessage({ id, tile, url: new URL(`${tile}.json`, this.base).href, pageW: this.atlas.W, pageH: this.atlas.H, stopsUrl: this.stopsBase ? new URL(`${tile}.json`, this.stopsBase).href : null, noBubbles: this.noBubbles, noFuel: this.noFuel, noStreetKit: this.noStreetKit, dropWallPlates: this.dropWallPlates, propsOld: this.propsOld,
         shops: this.shops, terracesUrl: new URL("../shops/terraces.json", this.base).href });
     });
   }
