@@ -8,6 +8,43 @@ One list of all open work, roughly in priority order. `HANDOFF.md` says how to r
 Older sections (per-branch notes from 2026-11-04 .. 11-13, labs, master list) moved UNCHANGED to **docs/TODO_ARCHIVE.md**
 on 2026-11-17; their open items are carried into NOW below. Every merge: docs/QUALITY_RULES.md + merge gate + city tour.
 
+## OWNER PLAYTEST 2026-11-18 (car, live site) — TOP PRIORITY
+Owner's point: don't fix these one by one; find the CLASS of each defect, fix it at the generator, and add a city-wide detector so it can't come back unseen.
+
+**Step 1: defect census (detectors city-wide, counts per class, before any fix)**
+- [ ] Car blocked by colliders near the Lycée Français / bridge on the Verrewinkel side (collider view: bridge parapet / wall colliders stand across the cobbled road; "like everywhere"). Class: colliders on drivable surface. Detector: drive every street centreline headless and list blocks.
+- [ ] Buildings with missing walls (Saint-Pierre church: whole wall pieces missing). Class: open meshes. Detector: open-edge / hole scan of every building + landmark.
+- [ ] Balconies / terraces open at the sides (apartment blocks, Alsemberg). Class: generator. Detector: balcony side check.
+- [ ] Terrain: blocky shapes, saw-tooth slopes, a hole, sidewalk ground with saw edges + trees in the middle (unusable sidewalk). Class: terrain fit. Detector: slope / step / hole scan over every tile.
+- [ ] Street-name plate floating away from its pole; signs in the wrong rotation. Detector: sign-to-pole distance + facing vs the street.
+- [ ] Props in the carriageway: post box in the middle of the Chaussée d'Alsemberg, a Villo bike station on the tram tracks. Detector: furniture inside road polygons.
+- [ ] Tram rails running into the sidewalk. Detector: rails vs sidewalk polygons.
+- [ ] Road white lines going "anyhow"; a traffic car driving on the sidewalk (Chaussée d'Alsemberg). Detector: markings outside the carriageway; traffic paths vs sidewalks.
+- [ ] Rue du Repos (and others): weird sharp bumps in the road. Check against the real street (data vs DTM).
+- [ ] Z-fighting / shaking windows (Maison Dandoy right window, others). Detector: coplanar faces in building meshes.
+- [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
+- [ ] Some places look hollow.
+
+**Step 2: asset quality (all at no perf cost)**
+- [ ] Bushes: redo with the tree foliage technique (foliage without trunk); today they read as green balls that fade out wrongly close up (LOD bug).
+- [ ] Garden hedges: look cheap; redo.
+- [ ] Bicycle road marking: wrong shape; redo the real Belgian pictogram.
+- [ ] Traffic lights: Blender, premium.
+- [ ] Ivy: a more realistic shape.
+- [ ] Birds: the boids read as a ball; real murmuration-style movement.
+- [ ] Cheap houses vs detailed ones: compare with photos, lift the cheap family.
+- [ ] Shadows: research a better / cheaper method, especially for static objects (cached static shadows).
+- [ ] Loading screen images: redo with the current city.
+
+**Step 3: places (compare with photos, look only)**
+- [ ] Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).
+- [ ] Place Saint-Pierre: the restaurant Le Petit Pont.
+- [ ] Restaurant De Hoef: far better.
+- [ ] Notre-Dame des Champs school: better, with its fences.
+- [ ] Collège Saint-Pierre: better.
+- [ ] The building at the top of Rue Engeland: gates and fences.
+- [ ] Saint-Pierre church: missing walls (step 1).
+
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
 **Running:** bmx (scripted 90s BMX, Blender), kid (stylised kid on the UAL rig + get on / off the bike in the bike lab), carshadow (waits for a quiet machine). Bike lab branch claude/bike (not merged; lab served for the owner). Merged 2026-11-17/18: falconstutter, policerear, curvedroads, collisions, lycee, falcon2, deckrail. Open from deckrail: the Carsoel west street sags 1.2 m into the bank (0.6 m ledge eastbound), a pit in the drive surface on the Carsoel deck (883-884, 521), the Kasteelstraat service deck 0.7-1 m low.
