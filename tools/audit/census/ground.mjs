@@ -97,7 +97,7 @@ for (const dk of d.bridgeDecks || []) for (const [x, z] of dk.pts || []) markNea
 
 // ---------------------------------------------------------------- terrain cells
 // (claude/sidewalk re-tune) a cell lowered under the DTM that stays above the lowest street surface within 4 m (+ BANK_TOL
-// under it) is the bank cut down to a street's edge (viewer/heightmap.js bankCaps), not a pit: not a hole
+// under it) is the bank cut down to a street's edge (viewer/heightmap.js clampUnder bank), not a pit: not a hole
 const BANK_TOL = 0.3;
 const besideStreet = (k) => { if (!delta) return false; for (const q of [k - 1, k + 1, k - NC, k + NC, k - NC - 1, k - NC + 1, k + NC - 1, k + NC + 1]) { const v = delta[q]; if (v > 0 && v !== 65535) return true; } return false; };
 const bankCut = (k) => {
