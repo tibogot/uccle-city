@@ -9,7 +9,8 @@
 // 2.6 m crouched ridden, the kicker / table ridden hands-off, a held trick = crash); brakes (skid 6-11 m, full front
 // < 6 m no endo, + lean forward = endo); the manual (assist holds, none loops out); pumping beats coasting; hop heights;
 // the 25 cm log; turning; 10 minutes of random input (4 seeds): finite, never under the ground; cost; every constant a
-// panel slider; the lab's model + camera with three in node (run with --import ./tools/heap/register.mjs).
+// panel slider; the lab's model + camera with three in node (run with --import ./tools/heap/register.mjs); the keys (the
+// arrows give exactly the W A S D input, the lean on Z / X and I / K, no key with two jobs).
 import { DT, BIKE, SURF, createBikeState, stepBike, groundQuery, bikeSpeed, stateHash, advanceBike, restHeight, wheelPoints, BIKE_RANGES } from "../../viewer/bike/bikePhysics.js";
 import { createBikeEnv } from "../../viewer/bike/bikeEnv.js";
 import { testGround, testHeight, testColliders, SPOTS, KERB, KICKER, TABLE, SLOPE, STEEP, SAND, WALL, LOG, PUMP, BOUNDS } from "../../viewer/bike/bikeGround.js";
@@ -377,6 +378,39 @@ function randomInputs(seed, n) {
     BIKE_CAMERA.mode = "chase";
     check("lab model + camera (three in node), 4 camera modes", !err && !nan && !under, err || `${frames} frames, NaN ${nan}, camera under the ground ${under}`, "no error, finite, camera over the ground");
   }
+}
+
+// ---------------------------------------------------------------- 13. the keys: arrows = W A S D, no key with two jobs
+{
+  globalThis.addEventListener ??= () => {};
+  globalThis.navigator ??= {};
+  const { BikeKeys, KEYS, ONE_SHOT } = await import("../../viewer/bike/bikeInput.js");
+  const PAIRS = [["KeyW", "ArrowUp"], ["KeyS", "ArrowDown"], ["KeyA", "ArrowLeft"], ["KeyD", "ArrowRight"]];
+  const combos = [];
+  for (let m = 1; m < 16; m++) combos.push(PAIRS.filter((_, i) => m & (1 << i)));
+  const extra = [[], ["Space"], ["ShiftLeft"], ["KeyQ"], ["KeyZ"], ["KeyX"], ["KeyC"], ["KeyF"]];
+  let diff = 0, n = 0, first = "";
+  for (const c of combos) for (const e of extra) {
+    const a = new BikeKeys(), b = new BikeKeys();
+    for (const [w] of c) a.down.add(w);
+    for (const [, ar] of c) b.down.add(ar);
+    for (const x of e) { a.down.add(x); b.down.add(x); }
+    for (let f = 0; f < 30; f++) {       // half a second of frames (the steer / brake ramps)
+      const ia = { ...a.read(1 / 60) }, ib = { ...b.read(1 / 60) }; n++;
+      if (JSON.stringify(ia) !== JSON.stringify(ib)) { diff++; if (!first) first = `${c.map((p) => p[0]).join("+")} ${e.join("+")}: ${JSON.stringify(ia)} vs ${JSON.stringify(ib)}`; }
+    }
+  }
+  check("keys: the arrows give the same input as W A S D", diff === 0, diff ? first : `${n} frames, ${combos.length * extra.length} key combos identical`, "identical");
+  // each arrow does its job (and the lean is not on the arrows any more)
+  const one = (code, frames = 30) => { const k = new BikeKeys(); k.down.add(code); let i; for (let f = 0; f < frames; f++) i = { ...k.read(1 / 60) }; return i; };
+  const up = one("ArrowUp"), dn = one("ArrowDown"), lf = one("ArrowLeft"), rt = one("ArrowRight"), z = one("KeyZ"), x = one("KeyX"), ik = one("KeyI"), kk = one("KeyK");
+  const jobs = up.pedal === 1 && !up.lean && dn.brakeR === 1 && !dn.lean && lf.steer > 0.9 && rt.steer < -0.9 && z.lean === -1 && x.lean === 1 && ik.lean === -1 && kk.lean === 1;
+  check("keys: Up pedal, Down rear brake, Left / Right steer; Z / X (I / K) lean", jobs, `up ${JSON.stringify({ p: up.pedal, l: up.lean })} down ${JSON.stringify({ b: dn.brakeR, l: dn.lean })} left ${lf.steer.toFixed(2)} right ${rt.steer.toFixed(2)} Z ${z.lean} X ${x.lean} I ${ik.lean} K ${kk.lean}`, "each its job");
+  // no key with two jobs (riding keys and the lab's one-shot keys R G V P 1-9 ?)
+  const owner = new Map(); const clash = [];
+  for (const [job, codes] of Object.entries(KEYS)) for (const c of codes) { if (owner.has(c)) clash.push(`${c}: ${owner.get(c)} + ${job}`); owner.set(c, job); }
+  for (const c of ONE_SHOT) if (owner.has(c)) clash.push(`${c}: ${owner.get(c)} + one-shot`);
+  check("keys: no key with two jobs", !clash.length, clash.length ? clash.join(", ") : `${owner.size} riding keys + ${ONE_SHOT.length} one-shot keys, all distinct`, "no clash");
 }
 
 if (!quiet || failed) {

@@ -1,13 +1,22 @@
 // Keyboard + gamepad for the kid's BMX (bikePhysics input). Keys never need another key held (rule 14), and the lab
-// shows them on screen.
-//   W / Up-free   pedal           Shift   stand up and sprint
-//   S             rear brake (ramps in: a tap brakes, held = a skid)        Q   front brake
-//   A / D         steer (ramped: a tap is a small lean, held = full)
+// shows them on screen. The ARROWS do exactly what W / A / S / D do (both sets always work; the owner rides with the
+// arrows); the rider's lean is on Z / X (I / K too). KEYS below is the one table (the lab's card and the tests read it).
+//   W / Up        pedal           Shift   stand up and sprint
+//   S / Down      rear brake (ramps in: a tap brakes, held = a skid)        Q   front brake
+//   A D / Left Right   steer (ramped: a tap is a small lean, held = full)
 //   Space         hold = crouch / preload / absorb, release = hop (or a pump on a back slope)
 //   C             pump (extend the legs)        F   trick (held in the air; let go before landing!)
-//   Up / Down     lean forward / back (I / K too): manual, nose dive, air pitch
+//   Z / X         lean forward / back (I / K too): manual, nose dive, air pitch
+//   (one-shot, the lab: R reset, G get up, V camera, P pause, 1-9 spots, ? the card)
 // Gamepad (standard mapping): left stick steer + lean, RT pedal, LT rear brake, LB front brake, A hop, B pump, X trick,
 // RB sprint; Y = camera, Back = reset (onKey).
+export const KEYS = {
+  pedal: ["KeyW", "ArrowUp"], brakeR: ["KeyS", "ArrowDown"], left: ["KeyA", "ArrowLeft"], right: ["KeyD", "ArrowRight"],
+  brakeF: ["KeyQ"], sprint: ["ShiftLeft", "ShiftRight"], hop: ["Space"], pump: ["KeyC"], trick: ["KeyF"],
+  leanFwd: ["KeyZ", "KeyI"], leanBack: ["KeyX", "KeyK"],
+};
+/** the lab's one-shot keys (onKey) */
+export const ONE_SHOT = ["KeyR", "KeyG", "KeyV", "KeyP", "Slash", "F1", ...Array.from({ length: 9 }, (_, i) => `Digit${i + 1}`)];
 export class BikeKeys {
   constructor({ active = () => true, onKey = null } = {}) {
     this.down = new Set(); this.onKey = onKey;
@@ -15,7 +24,7 @@ export class BikeKeys {
     this.steerK = 0; this.rearK = 0; this.pad = false; this.prevBtn = [];
     addEventListener("keydown", (e) => {
       if (!active() || e.target?.closest?.("input,select,textarea")) return;
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyF"].includes(e.code) || e.code === "Slash") e.preventDefault();
       if (!e.repeat && this.onKey) this.onKey(e.code);
       this.down.add(e.code);
     });
@@ -25,18 +34,19 @@ export class BikeKeys {
   /** the input for this frame (dt: frame seconds, for the keyboard ramps) */
   read(dt) {
     const k = this.down, i = this.input;
-    const steerT = (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0) - (k.has("KeyD") || k.has("ArrowRight") ? 1 : 0);
+    const on = (name) => KEYS[name].some((c) => k.has(c));
+    const steerT = (on("left") ? 1 : 0) - (on("right") ? 1 : 0);
     // (keyboard ramps: a key is 0 / 1, the bike wants a lean; in 0.3 s to full, back to centre faster)
     const rate = steerT === 0 || Math.sign(steerT) !== Math.sign(this.steerK) ? 7 : 3.4;
     this.steerK += Math.max(-rate * dt, Math.min(rate * dt, steerT - this.steerK));
-    const rearT = k.has("KeyS") ? 1 : 0;
+    const rearT = on("brakeR") ? 1 : 0;
     this.rearK = rearT ? Math.min(1, Math.max(0.55, this.rearK + dt * 1.6)) : 0;
-    i.pedal = k.has("KeyW") ? 1 : 0;
-    i.sprint = k.has("ShiftLeft") || k.has("ShiftRight");
-    i.brakeR = this.rearK; i.brakeF = k.has("KeyQ") ? 1 : 0;
+    i.pedal = on("pedal") ? 1 : 0;
+    i.sprint = on("sprint");
+    i.brakeR = this.rearK; i.brakeF = on("brakeF") ? 1 : 0;
     i.steer = this.steerK;
-    i.lean = (k.has("ArrowDown") || k.has("KeyK") ? 1 : 0) - (k.has("ArrowUp") || k.has("KeyI") ? 1 : 0);
-    i.hop = k.has("Space"); i.pump = k.has("KeyC") ? 1 : 0; i.trick = k.has("KeyF");
+    i.lean = (on("leanBack") ? 1 : 0) - (on("leanFwd") ? 1 : 0);
+    i.hop = on("hop"); i.pump = on("pump") ? 1 : 0; i.trick = on("trick");
     this.pad = this.readPad(i);
     return i;
   }

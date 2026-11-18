@@ -137,14 +137,15 @@ const keys = new BikeKeys({ onKey: (code) => {
 // ---------------------------------------------------------------- the controls card (rule 14: shown once + ?)
 const card = document.getElementById("card");
 card.textContent = [
-  "W        pedal            Shift  stand up / sprint",
-  "S        rear brake (hold = skid)   Q  front brake",
-  "A / D    steer (lean)",
-  "Space    hold = crouch / preload / absorb",
-  "         release = hop (on a back slope: a pump)",
-  "C        pump (push the bike down a back slope)",
-  "Up/Down  lean forward / back (manual, air pitch)",
-  "F        trick in the air (let go before landing!)",
+  "W / Up       pedal          Shift  stand up / sprint",
+  "S / Down     rear brake (hold = skid)   Q  front brake",
+  "A D / Left Right   steer (lean)",
+  "Space        hold = crouch / preload / absorb",
+  "             release = hop (on a back slope: a pump)",
+  "C            pump (push the bike down a back slope)",
+  "Z / X        lean forward / back (I / K too):",
+  "             manual, nose dive, air pitch",
+  "F            trick in the air (let go before landing!)",
   "R reset  G get up  V camera  P pause  1-9 spots",
   "? this card",
   "",

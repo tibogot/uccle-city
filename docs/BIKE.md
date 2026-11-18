@@ -68,15 +68,17 @@ Kid numbers (a ~11 year old, 40 kg + an 11 kg BMX): flat 25 km/h seated, 30.6 km
 ## Controls
 | | keyboard | gamepad |
 |---|---|---|
-| pedal / sprint | W / Shift (stand up) | RT / RB |
-| rear brake (held = skid) / front brake | S (ramps in) / Q | LT / LB |
-| steer (lean) | A / D (ramped) | left stick X |
-| lean forward / back (manual, nose, air pitch) | Up / Down (I / K) | left stick Y |
+| pedal / sprint | W or Up / Shift (stand up) | RT / RB |
+| rear brake (held = skid) / front brake | S or Down (ramps in) / Q | LT / LB |
+| steer (lean) | A / D or Left / Right (ramped) | left stick X |
+| lean forward / back (manual, nose, air pitch) | Z / X (or I / K) | left stick Y |
 | crouch + hop (back slope: pump) | Space hold / release | A |
 | pump | C | B |
 | trick (air) | F | X |
 | reset / get up / camera / pause / spots | R / G / V / P / 1-9 (start, kicker, table, pump, roots, bowl, kerb, sand, slope) | Back / - / Y |
-The controls card is shown at start, `?` toggles it (rule 14). Sounds: none.
+The arrows do exactly what W / A / S / D do and both sets always work (the owner rides with the arrows); one key table
+(`KEYS` in viewer/bike/bikeInput.js) feeds the input, and the tests check that both sets give identical inputs and that no
+key has two jobs. The controls card is shown at start, `?` toggles it (rule 14). Sounds: none.
 
 ## Constants (all panel sliders in the lab: `BIKE_RANGES`; surfaces in their own folder)
 | group | constants (default) |
@@ -136,16 +138,16 @@ the lab's model + camera run in node with three (4 camera modes, 4,800 frames, f
    25 km/h: too twitchy / too lazy? Tune the keyboard ramp (bikeInput.js 3.4 / 7 per s), leanRate, maxLean, barV0/V1,
    yawResponse. Watch for wobble when the lean settles.
 3. **Skid**: hold S at 20 km/h, steer during it (skidYaw); the tail should step out and come back without a spin-out
-   unless forced. Front brake (Q) panic stop; Q + Up = endo.
+   unless forced. Front brake (Q) panic stop; Q + Z = endo.
 4. **Kerb hop**: the 15 cm kerb (spot 7) at 10-20 km/h: is the timing readable (preload feel, pop height)? Can a kid
    do it every time after a few tries? Tune preloadTime, popVel, popPreload, popPitch, coyote. Also riding into it
    without a hop at low speed (stop) vs fast (over the bars) - fair or frustrating?
-5. **Kicker + table**: hands-off at 25-30 km/h, then with air pitch (Up / Down) and a 180 (A/D in the air). Is the
+5. **Kicker + table**: hands-off at 25-30 km/h, then with air pitch (Z / X) and a 180 (A / D or Left / Right in the air). Is the
    landing judgement fair (noseTol, tailTol, yawTol)? Does airLevel feel like help or like the bike steering itself?
 6. **Pump rollers** (spot 4): hold Space on the faces, release on the backs (or C on the backs): does it feel like
    pumping (speed you earned) at pumpGain 45? Coasting them should die by the 4th roller.
 7. **Bowl**: ride the walls, carve, pump the transition; check the camera in the bowl (minClear, followY).
-8. **Manual** (Down held): the balance point with manualAssist 0.8 / 0.4 / 0; how long is fun? Loop-out fair?
+8. **Manual** (X held): the balance point with manualAssist 0.8 / 0.4 / 0; how long is fun? Loop-out fair?
 9. **12 % slope** (spot 9): climb seated (slow grind), sprint up, come down: 50 km/h coasting at the bottom: too
    fast for a kid's game? (drag). **20 % (steep)**: getting off to push, and back on at the top.
 10. **Sand / grass / roots / setts**: the surface changes should be felt (sink, grip, camera buzz on setts / roots).
