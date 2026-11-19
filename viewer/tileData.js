@@ -467,7 +467,7 @@ export async function buildTileData(entry, base) {
   // citydefects: the parked cars by the measured width (viewer/streets/parkPlace.js widthParking; entry.parkWidth false =
   // ?parkclear=old: the main thread's old slots), here so the traffic lanes keep clear of them (trafficGraph.js)
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
-  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false, roadsR: entry.roadsR !== false }));
+  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false, roadsR: entry.roadsR !== false, inBuilding: (x, z) => onRoof(roofs, x, z) }));
   // (claude/drivecheck round 2) the lanes over a hero road deck inside its roadway, clear of its parapets (rail/roadDeck.js)
   const deckLanes = rail && traffic && entry.deckLanes !== false ? squeezeDeckLanes(traffic, rail.heroes) : 0;
   // trafpark: the graph checks every driven path (lanes + junction connectors) against the parked cars' boxes and keeps

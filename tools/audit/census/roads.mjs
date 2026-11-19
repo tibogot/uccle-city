@@ -85,7 +85,10 @@ async function graphOf(T) {
   const parked = rd.surfaceData ? widthParking(roads, feats, bounds, fit) : null;
   const trace = {};
   const refined = rd.net.graph.paths.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((q) => [q[0] ?? q.x, q[1] ?? q.z]) }));
-  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roadsR: !OLD });
+  // (the worker's own building test, tileData.js onRoof: the tile's roof grid)
+  const { roofGrid, onRoof } = await imp("viewer/tileData.js");
+  const roofs = roofGrid(json(join(ROOT, "data/tiles", T, "buildings.json")), bounds);
+  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roadsR: !OLD, inBuilding: (x, z) => onRoof(roofs, x, z) });
   return { S, g, trace, refined, parked };
 }
 const pathPts = (g, p) => { const out = []; for (let k = g.off[p]; k < g.off[p + 1]; k++) out.push([g.xy[k * 2], g.xy[k * 2 + 1]]); return out; };

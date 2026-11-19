@@ -9,7 +9,9 @@
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/roadSim.mjs [T ...] [--secs S] [--old] [--max k=v,...]
 //   default tiles: I6 (Saint-Job), E7 (Ch. de Saint-Job / Engeland), J6 (Ch. de Waterloo), D6 (Ch. d'Alsemberg)
 //   --old: ?roads=old (the graph as before); --max perKm=N,...: the gate (sum over the tiles)
-import { streetTile, imp, at } from "./lib_street.mjs";
+import { streetTile, imp, at, ROOT } from "./lib_street.mjs";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { resample, judge1 } from "./lib_path.mjs";
 
 const argv = process.argv.slice(2);
@@ -24,6 +26,7 @@ const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
 const { TrafficWorld } = await imp("viewer/traffic/trafficWorld.js");
 const { TrafficSim, STEP } = await imp("viewer/traffic/trafficSim.js");
 const { roadFrameOf } = await imp("viewer/streets/lineFit.js");
+const { roofGrid, onRoof } = await imp("viewer/tileData.js");
 
 const tot = { metres: 0, wobbleM: 0, slalomM: 0 }, rows = [];
 for (const T of TILES) {
@@ -31,7 +34,8 @@ for (const T of TILES) {
   const { rd, roads, feats, bounds, fit } = S;
   const parked = rd.surfaceData ? widthParking(roads, feats, bounds, fit) : null;
   const trace = {};
-  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roadsR: !OLD });
+  const roofs = roofGrid(JSON.parse(readFileSync(join(ROOT, "data/tiles", T, "buildings.json"), "utf8")), bounds);
+  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roadsR: !OLD, inBuilding: (x, z) => onRoof(roofs, x, z) });
   const sites = g.parkedKept ?? parked?.sites ?? [];
   const cars = sites.map((c) => ({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { setRGB() {} }, room: 6 }));
   const W = new TrafficWorld(); W.add(T, g);

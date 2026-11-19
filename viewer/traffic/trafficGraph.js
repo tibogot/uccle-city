@@ -27,6 +27,7 @@ import { nearestRoad, phaseOfDir } from "./signals.js";
 import { joinLaneGraph } from "../streets/laneGraph.js";
 import { NOT_DRIVEN } from "../streets/carriageway.js";
 import { laneOffsetProfile } from "../streets/laneOffset.js";
+import { roadFrameOf } from "../streets/lineFit.js";
 
 const TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
 export const CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
@@ -180,7 +181,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
   const raw2 = parked && TP ? densify(raw, 1.5) : raw;
   const tF = performance.now();
-  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP, opts.roadsR !== false) : raw2;
+  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP, opts.roadsR !== false, opts.inBuilding ? laneOffOf(net) : null, opts.inBuilding) : raw2;
   fitStats.fitMs = Math.round(performance.now() - tF);
   if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
@@ -392,6 +393,15 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   };
 }
 
+/** (lane path, x, z, its left normal) -> the lane's offset from its road's OSM centre line along that normal (m) */
+function laneOffOf(net) {
+  if (!net?.roadsById) return null;
+  return (p, x, z, nx, nz) => {
+    const rr = net.roadsById.get(p.roadId); if (!rr?.smp || !rr.al) return 0;
+    const f = roadFrameOf(rr, x, z);
+    return f.t * (f.nx * nx + f.nz * nz);
+  };
+}
 const norm = ([x, z]) => { const L = Math.hypot(x, z) || 1; return [x / L, z / L]; };
 /** Direction of lane piece p over its last `back` m. */
 function dirAtEnd(p, back = 1) {
@@ -569,7 +579,8 @@ function densify(paths, step) {
   });
 }
 
-function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38 = false) {
+const FAR_SNAP = 14, FAR_RUN = 6;           // m: how far a lane off its street looks for the measured carriageway (class R)
+function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38 = false, laneOff = null, inBuilding = null) {
   const ok = (x, z) => {
     const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step);
     if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true;          // off the raster: leave it
@@ -589,7 +600,7 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
   const fitsPark = (x, z, nx, nz, s) => fitsRoad(x, z, nx, nz, s) && parked.clear(x + nx * s, z + nz * s);
   for (const p of paths) {
     if (p.kind === "connector") continue;
-    const q = p.pts, n = q.length, off = new Float32Array(n);
+    const q = p.pts, n = q.length, off = new Float32Array(n), far = new Uint8Array(n);
     const how = trace || (TP && parked) ? new Uint8Array(n) : null;          // (audit: 0 no shift, 1 shifted clear of cars, 2 road-only fit, 3 none)
     if (trace) (trace.fit ??= new Map()).set(p.id, how);
     for (let k = 0; k < n; k++) {
@@ -607,6 +618,42 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
         if (done) break;
         if (f === fitsPark) st.parkBlocked = (st.parkBlocked || 0) + 1;
       }
+      if (!done) far[k] = 1;
+    }
+    // class R (rule 38, docs/ROADS_R.md "in a building"; with opts.inBuilding): a lane point with no carriageway within 9 m is a lane whose
+    // OSM line runs far off the measured street (Ch. de Waterloo J6 1723, 546: ~10 m east of it, through the houses;
+    // Ch. d'Alsemberg D6). Where the measured carriageway lies within FAR_SNAP m on ONE side only (never a guess
+    // between two streets), the lane goes onto it at its own offset from its road's centre line (laneOff), held >= 1 m
+    // inside the carriageway's edges; the offset profile below blends it in. ?roads=old: as before (left where it was)
+    const snap = new Uint8Array(n);
+    if (R38 && laneOff && far.some(Boolean)) for (let k = 0; k < n; k++) {
+      if (!far[k]) continue;
+      const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
+      const hit = (sg) => { for (let d = 9.25; d <= FAR_SNAP; d += 0.25) if (fitsRoad(x, z, nx, nz, sg * d)) return d; return 0; };
+      const dp = hit(1), dn = hit(-1);
+      if (!!dp === !!dn) continue;
+      const sg = dp ? 1 : -1, d0 = dp || dn;
+      let d1 = d0; while (d1 < d0 + 30 && ok(x + nx * sg * (d1 + 0.25), z + nz * sg * (d1 + 0.25))) d1 += 0.25;
+      let da = d0; while (da > 0.25 && ok(x + nx * sg * (da - 0.25), z + nz * sg * (da - 0.25))) da -= 0.25;
+      const lo = sg * da, hi = sg * d1, a0 = Math.min(lo, hi) + 1, a1 = Math.max(lo, hi) - 1;
+      const mid = (lo + hi) / 2, want = mid + laneOff(p, x, z, nx, nz);
+      const u = a1 >= a0 ? Math.max(a0, Math.min(a1, want)) : mid;
+      // (the carriageway found must run WITH the lane: clear 4 m ahead and behind along the lane's direction at that
+      // offset; a cross street met sideways is not this road's)
+      const px = x + nx * u, pz = z + nz * u;
+      if (![4, -4].every((dd) => fitsRoad(px + tx * dd, pz + tz * dd, nx, nz, 0))) continue;
+      snap[k] = 1; off[k] = u;
+    }
+    // (only a RUN of snapped points (>= FAR_RUN in a row) where the lane runs THROUGH A BUILDING (opts.inBuilding: the
+    // drawn footprints) is the lane's own street off its OSM line; elsewhere (a lone point, a lane over open ground: a
+    // private lane, a park road) it stays where it was: snapped blind, 2.0 km more lane went off the carriageway)
+    if (R38) for (let k = 0; k < n;) {
+      if (!snap[k]) { k++; continue; }
+      let e = k; while (e < n && snap[e]) e++;
+      let inB = 0; for (let m = k; m < e; m++) if (inBuilding(q[m][0], q[m][1])) inB++;
+      if (e - k < FAR_RUN || inB < FAR_RUN) for (let m = k; m < e; m++) off[m] = 0;
+      else st.farSnap = (st.farSnap || 0) + (e - k);
+      k = e;
     }
     // smooth: a wide moving average (points are ~1-2 m apart), so a lane bends gently around a misfit
     const smooth = (hard) => {

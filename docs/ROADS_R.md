@@ -200,3 +200,36 @@ stand, the car stops at them; a lawn behind a gap in them is still open); a few 
 (&at=-338,756, &at=816,689), Ch. d'Alsemberg (&at=-901,-629), Ch. de Waterloo (&at=1729,607): no weaving between
 parked cars, no sideways jumps. The tour will flag views where garden pieces come back and plants go: intended.
 Worker bundle: rebuild in the worktree for the browser turn only (rule 12).
+
+## 6. Round 2 (coordinator, 2026-11-19): the in-building places fixable by cause
+
+The 35 places left were sorted by cause. **The OSM line far off the measured street** (no carriageway within 9 m
+of the lane, the lane through the houses): `trafficGraph.js fitToSurface`, with the worker's building test
+(`opts.inBuilding`: tileData.js onRoof, the roof grid): a run of >= 6 lane points with no fit within 9 m that runs
+THROUGH A BUILDING takes the measured carriageway found within 14 m on one side only (never a guess between two
+streets), at the lane's own offset from its road's centre line (lineFit.js roadFrameOf), >= 1 m inside its edges,
+only where that carriageway runs WITH the lane (clear 4 m ahead and behind); the offset profile blends it in (1:10).
+Snapped blind (no building test), it put 2 km more lane off the carriageway (lanes over open ground: park roads,
+private lanes) and is not used.
+
+City-wide: in a building 35 -> **31** places (624 -> 546 m), off the carriageway 337 -> 332 places; slalom 7,889 ->
+7,924 m, wobble 4,260 -> 4,280 m (the 1:10 blends into the snapped stretches). Gone: J6 Ch. de Waterloo (1722.8,
+546.3), D6 Ch. d'Alsemberg (-1218.7, 946) and (-1218.3, 917.5), D7 Ch. d'Alsemberg (-1254.1, 1000.3), F1 Rue
+Vanderkindere (-145.9, -1639.6). New: D6 Ch. d'Alsemberg (-1228.9, 898.2) 13.5 m, 1.2 m deep (the snap's blend end);
+D6 (-1238.9, 964.1) 20 -> 33 m, 1.7 m deep. Gate `roads` ceilings: inBuildingPlaces 31, offCarriagePlaces 332, slalomM
+7924, wobbleM 4280.
+
+Left, by cause (not this rule's fix):
+- **A residential clos whose OSM line runs through the houses and UrbIS has no carriageway within 14 m on one side**
+  (C6 / C5 Clos des Myosotis (-1700, 513), (-1728, 487), (-1720, 565)): the street data itself (TODO step 1).
+- **Pedestrian courts / alleys the data calls roadway** (F1 Carré Cassimans (-473, -1542)): routing data
+  (docs/COLLIDER_AUDIT.md).
+- **Junction turns crossing a building corner** (G6 Ch. de Saint-Job / Kauwberg (212, 798), (221, 801), K11 Ch. de
+  Waterloo (2326, 3354), I6 Vieille rue du Moulin (1141, 967), B5, F1 Brugmann, J4): the junction's own geometry
+  (the cubic over a tight corner: a next job, per junction class).
+- **A lane within 1-3 m of a façade on a narrow street** (D7 Rue du Roseau (-1016, 1400), F4 Av. Paul Stroobant
+  (-194, -135), E6 Ch. de Saint-Job (-524, 929), F6 Rue Geleytsbeek, E3 Square Coghen, D8 Rue de la Cueillette, G6 Clos
+  du Drossart): the carriageway there is within 9 m, the lane fit reaches it, the body still clips the footprint
+  (UrbIS footprints overhanging the measured street, or the lane on the band of an unmeasured stretch).
+The trafpark / twinlink audits build the graph without the building test (they see the lane before the snap); the
+worker's own parked-car check (parkedKept) runs on the snapped graph.
