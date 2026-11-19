@@ -54,7 +54,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [x] Car contact (owner 2026-11-18): MERGED 2026-11-19 (claude/carhit, rule 37): two-way push / spin / dents, knocked / wreck / rejoin, parked cars pushable; ?carpush=old. Left: no roll / pitch kick, 4 dent zones, traffic two-wheelers still one-way, the walker cannot push cars, owner tuning.
 - [x] Traffic lights in Blender (owner 2026-11-18): MERGED 2026-11-19 (claude/tlights, rule 36): Brussels-style posts, heads face the approach, seated, never in a lane, lit hues kept through ACES + eye adaptation; ?tlights=old. Far LOD hand-overs (120 / 80 m) not seen in the browser yet.
 - [ ] RESUME (paused 2026-11-19, owner closing the laptop):
-  - claude/roads (C:/Users/tibog/Downloads/uccle-roads, 02e85fe1, foundation d19f7adb merged in): browser turn mostly done (J6 off-carriageway 11.7 -> 1.5 %, slalom flips 36 -> 15; bushes gone; Papenkasteel fronts back). Left:
+  - claude/roads MERGED 2026-11-19 (03356fe7, rule 38). Left: J5 (1670, 352) 8 m skew in a square; J6 (1730, 610-620) Waterloo lane on the engine strip 10 m off the measured street; a 0.2 m step where a tile-split zebra meets; 31 in-building places (bad OSM, junction corners); short unfitted pieces now paint no lines (3.1 km). OLD NOTE: browser turn mostly done (J6 off-carriageway 11.7 -> 1.5 %, slalom flips 36 -> 15; bushes gone; Papenkasteel fronts back). Left:
     - the full gate after the merge;
     - the tour vs a foundation baseline;
     - the Papenkasteel drive test (car stops at the hedges / walls);
@@ -70,6 +70,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
     - Chrome turn: H6, G3, a stone wall, retaining vs garden brick, the steps (Perelman 4's flight: 19 risers, 5.7 m deep, check it);
     - merge + rebuild the bundle.
   - claude/kid (bike rounds 1-4, 07754f3c): browser turn not started (D6 city spot, ledge, stairs, sound, weight, camera); then the owner tries the bike lab.
+- [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
 - [ ] Some places look hollow.
