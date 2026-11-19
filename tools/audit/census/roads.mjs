@@ -66,7 +66,7 @@ if (!CHILD) {
     console.log(`worst ${k} (${items[k].length}):`);
     for (const it of items[k].slice(0, WORST)) console.log(`  ${it.tile} ${JSON.stringify(it)}`);
   }
-  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byCause, items }, null, 1));
+  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byCause, items }));
   let bad = res.some((r) => r.error) ? 1 : 0;
   if (bad) console.log(`FAIL ${res.filter((r) => r.error).length} tile(s) did not build`);
   if (MAX) for (const kv of MAX.split(",")) {
