@@ -18,10 +18,12 @@
 export const CLEAR = 0.6, MOVE_MIN = 1.5, MOVE_MAX = 4, DUP = 1.8;
 const DIRS = 24;
 
-export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null, keep = null } = {}) {
+export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null, keep = null, avoid = null } = {}) {
   if (!trees?.length) return { trees, moved: 0, dropped: 0 };
   const ring = Array.from({ length: 8 }, (_, k) => [Math.cos(k / 8 * 2 * Math.PI) * CLEAR, Math.sin(k / 8 * 2 * Math.PI) * CLEAR]);
-  const touches = (x, z) => driven.inside(x, z, 0) || ring.some(([dx, dz]) => driven.inside(x + dx, z + dz, 0));
+  // (avoid: another driven test the new spot keeps off too: the path pass never moves a trunk onto the carriageway)
+  const off = (x, z) => driven.inside(x, z, 0) || (avoid ? avoid.inside(x, z, 0) : false);
+  const touches = (x, z) => off(x, z) || ring.some(([dx, dz]) => off(x + dx, z + dz));
   // (browser turn: also moving trunks that only REACH 0.3 m in moved the real tree rows in narrow medians and kerb pits,
   // Avenue Churchill's central reservation: the point alone decides, as the pipeline's rule)
   const intrudes = (t) => driven.inside(t.x, t.z, 0);
@@ -92,4 +94,34 @@ export function paintedDriveLanes(net, paintedLaneCentre, roadFrameOf, margin = 
     }
     return false;
   };
+}
+
+/**
+ * claude/moto (2026-11-19, rule 27): the traffic's DRIVEN PATHS (viewer/traffic/trafficGraph.js: every lane piece and
+ * junction turn) as a corridor test (x, z, m) -> true within `half` + m of one. The carriageway test above leaves a trunk
+ * where no street surface is measured and a junction turn cuts the corner outside the OSM band (Kauwberg x Chaussée de
+ * Saint-Job: a LiDAR trunk 0.11 m from the turn, the motorbike's feel test rode into it): tileData moves / drops the
+ * LiDAR trees in this corridor too (half = a car's half width 0.9 + a trunk ~0.3 m).
+ */
+export const PATH_HALF = 1.25;
+export function pathCorridor(traffic, half = PATH_HALF) {
+  if (!traffic?.xy || !traffic.paths) return null;
+  const C = 4, cells = new Map(), K = (i, j) => i * 65536 + j, xy = traffic.xy, off = traffic.off;
+  for (let p = 0; p < traffic.paths; p++) for (let k = off[p]; k < off[p + 1] - 1; k++) {
+    const ax = xy[2 * k], az = xy[2 * k + 1], bx = xy[2 * k + 2], bz = xy[2 * k + 3];
+    for (let i = Math.floor((Math.min(ax, bx) - half - 1) / C); i <= Math.floor((Math.max(ax, bx) + half + 1) / C); i++)
+      for (let j = Math.floor((Math.min(az, bz) - half - 1) / C); j <= Math.floor((Math.max(az, bz) + half + 1) / C); j++) {
+        const q = K(i, j); (cells.get(q) || cells.set(q, []).get(q)).push(k);
+      }
+  }
+  return { inside: (x, z, m = 0) => {
+    const r = half + m;
+    for (const k of cells.get(K(Math.floor(x / C), Math.floor(z / C))) || []) {
+      const ax = xy[2 * k], az = xy[2 * k + 1], dx = xy[2 * k + 2] - ax, dz = xy[2 * k + 3] - az, L2 = dx * dx + dz * dz;
+      const t = L2 > 1e-9 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)) : 0;
+      const ex = ax + dx * t - x, ez = az + dz * t - z;
+      if (ex * ex + ez * ez < r * r) return true;
+    }
+    return false;
+  } };
 }

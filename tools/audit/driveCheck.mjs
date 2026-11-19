@@ -45,6 +45,9 @@ const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
 const SETS = []; for (let i = argv.indexOf("--set"); i >= 0; i = argv.indexOf("--set")) SETS.push(argv.splice(i, 2)[1]);
 const CHILD = flag("--child"), ALL = flag("--all"), QUIET = flag("--quiet"), OLD = flag("--old");
+// --lanesonly-trees: the census before claude/moto (a tree counted only where it reaches >= 0.3 m into the drawn
+// carriageway; a trunk on a traffic lane / junction turn off it was not counted)
+const TREES_ON_PATHS = !flag("--lanesonly-trees");
 const NEAR = +opt("--near", "-1000");
 const OUT = opt("--out", null), JOBS = +opt("--jobs", Math.max(1, Math.min(4, Math.floor(os.totalmem() / 2 ** 30 / 4), os.cpus().length - 1))), WORST = +opt("--worst", 40);
 const MAXP = opt("--max", null), MAXH = opt("--maxhero", null);
@@ -59,7 +62,7 @@ if (!CHILD) {
   const t0 = Date.now(), results = [], queue = TILES.slice();
   const node = ["--import", "./tools/road_audit/register.mjs", "--import", "./tools/heap/register.mjs"];
   const run = (T) => new Promise((ok) => {
-    const p = spawn(process.execPath, [...node, fileURLToPath(import.meta.url), "--child", T, ...(OLD ? ["--old", "--near", String(NEAR)] : []), ...SETS.flatMap((k) => ["--set", k])], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    const p = spawn(process.execPath, [...node, fileURLToPath(import.meta.url), "--child", T, ...(OLD ? ["--old", "--near", String(NEAR)] : []), ...(TREES_ON_PATHS ? [] : ["--lanesonly-trees"]), ...SETS.flatMap((k) => ["--set", k])], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
     let out = "", err = "";
     p.stdout.on("data", (b) => { out += b; }); p.stderr.on("data", (b) => { err += b; });
     p.on("close", (code) => {
@@ -72,10 +75,10 @@ if (!CHILD) {
   await Promise.all(Array.from({ length: Math.min(JOBS, queue.length) }, async () => { while (queue.length) await run(queue.shift()); }));
   results.sort((a, b) => a.tile.localeCompare(b.tile));
   const errors = results.filter((r) => r.error).length, places = [], bySrc = {}, info = {};
-  let metres = 0, heroes = 0, tMoved = 0, tDropped = 0;
+  let metres = 0, heroes = 0, tMoved = 0, tDropped = 0, pMoved = 0, pDropped = 0;
   for (const r of results) {
     if (r.error) continue;
-    heroes += r.heroes || 0; tMoved += r.roadTrees?.moved || 0; tDropped += r.roadTrees?.dropped || 0;
+    heroes += r.heroes || 0; tMoved += r.roadTrees?.moved || 0; tDropped += r.roadTrees?.dropped || 0; pMoved += r.roadTrees?.pathMoved || 0; pDropped += r.roadTrees?.pathDropped || 0;
     for (const p of r.places) { places.push({ tile: r.tile, ...p }); metres += p.m; const k = p.src.split(" ")[0]; bySrc[k] = (bySrc[k] || 0) + 1; }
     for (const [k, v] of Object.entries(r.info || {})) info[k] = (info[k] || 0) + v;
   }
@@ -96,7 +99,7 @@ if (!CHILD) {
     const L = byCause[c], src = {}; for (const p of L) { const k = p.src.split(" ")[0]; src[k] = (src[k] || 0) + 1; }
     console.log(`  ${c} ${NAMES[c] || "?"}: ${L.length} (${Object.entries(src).map(([k, v]) => `${k} ${v}`).join(", ")}); e.g. ${L.slice(0, 3).map((p) => `${p.tile} ${p.street.split(" - ")[0]} ${p.x}, ${p.z} (${p.src})`).join(" | ")}`);
   }
-  console.log(`  LiDAR trees off the drawn carriageway (roadTrees.js): moved ${tMoved}, dropped ${tDropped}`);
+  console.log(`  LiDAR trees off the drawn carriageway (roadTrees.js): moved ${tMoved}, dropped ${tDropped}; off a traffic lane / turn (pathCorridor): moved ${pMoved}, dropped ${pDropped}`);
   console.log(`  info (not counted): ${Object.entries(info).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", ") || "-"}`);
   if (OUT) writeFileSync(OUT, JSON.stringify({ when: new Date().toISOString(), old: OLD, near: OLD ? NEAR : null, tiles: results.length, places: places.length, hero, metres: +metres.toFixed(1), bySrc, info, byCause: Object.fromEntries(Object.entries(byCause).map(([k, v]) => [k, v.length])), list: places.map((p) => ({ cause: cause(p), ...p })), results: results.map(({ places: _, ...r }) => r) }, null, 1));
   let fail = errors > 0;
@@ -284,8 +287,13 @@ for (const [pi, P] of paths.entries()) {
       const ly = layers(x, z);
       const y = Number.isFinite(ly.low) && Number.isFinite(yPrev) && Math.abs(ly.low - yPrev) < Math.abs(ly.top - yPrev) ? ly.low : ly.top;
       yPrev = y;
-      if (!inTile(x, z) || !lanesAt.inside(x, z, 0)) continue;
-      laneM += L / n;
+      if (!inTile(x, z)) continue;
+      // (claude/moto: a traffic path off the drawn carriageway, a junction turn cutting an unmeasured corner, still
+      // meets nothing hard: a TREE trunk the traffic's car body meets there counts too (the owner: a tree never stands in
+      // a driven lane); the centre lines only on the carriageway, as before)
+      const onCarr = lanesAt.inside(x, z, 0);
+      if (!onCarr && (pkind[pi] === "centre" || !TREES_ON_PATHS)) continue;
+      if (onCarr) laneM += L / n;
       out.length = 0; gather(col, x, z, CAR_HW + 3, out);
       for (let q = 1; q < out.length; q += 2) {
         const id = out[q];
@@ -293,8 +301,9 @@ for (const [pi, P] of paths.entries()) {
         if (id < col.P && col.ptop[id] < 1e3 && col.ptop[id] < y + 0.3) continue;      // under the car band (a kerb-high piece)
         if (!itemContact(col, id, x, z, body, contact)) continue;
         const k = id < col.P ? col.pkind[id] : col.ckind[id - col.P];
+        if (!onCarr && k !== KIND.tree) continue;
         if (!HARD.has(k)) { const key = `soft ${what(id)}`; info[key] = (info[key] || 0) + 1; continue; }
-        if (!intrudes(id)) { const key = `edge ${what(id)}`; info[key] = (info[key] || 0) + 1; continue; }
+        if (!intrudes(id) && !(k === KIND.tree && pkind[pi] !== "centre" && TREES_ON_PATHS)) { const key = `edge ${what(id)}`; info[key] = (info[key] || 0) + 1; continue; }
         const h = hits.get(id); if (h) { h.n++; h.paths.add(pkind[pi]); } else hits.set(id, { n: 1, x, z, paths: new Set([pkind[pi]]) });
       }
     }

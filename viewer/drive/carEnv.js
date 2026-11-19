@@ -13,14 +13,15 @@ export const MAX_STEP = 0.5;
 /** Ledge contact: the drive surface under the car's perimeter more than MAX_STEP over the surface under its centre.
  *  contact <- the push away from the ledge (the mean direction from the high points to the centre). */
 export function ledgeContact(c, body, ground, contact) {
-  let sx = 0, sz = 0, n = 0;
+  let sx = 0, sz = 0, n = 0, rise = 0;
   for (const [u, w] of LEDGE_PTS) {
     const x = c.x + u * body.hx * body.cos + w * body.hz * body.sin, z = c.z - u * body.hx * body.sin + w * body.hz * body.cos;
-    if (ground(x, z) - c.y > MAX_STEP) { sx += c.x - x; sz += c.z - z; n++; }
+    const r = ground(x, z) - c.y;
+    if (r > MAX_STEP) { sx += c.x - x; sz += c.z - z; n++; if (r > rise) rise = r; }
   }
   if (!n) return false;
   const L = Math.hypot(sx, sz) || 1;
-  contact.nx = sx / L; contact.nz = sz / L; contact.depth = 0.06; contact.kind = KIND.wall;
+  contact.nx = sx / L; contact.nz = sz / L; contact.depth = 0.06; contact.kind = KIND.wall; contact.rise = rise;
   return true;
 }
 const LEDGE_PTS = [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]];
@@ -32,17 +33,18 @@ const LEDGE_PTS = [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], 
  *  the hill), and every lawn bank steeper than ~20 %. The drive grid is bilinear over 1 m: a kerb of H rises ~0.7 H
  *  over 0.7 m, so kerbs and garden edges up to ~0.4 m are ridden up, a wall / retaining wall is not. */
 export const STEP_RUN = 0.7, STEP_RISE = 0.3, BANK = 1.3;
-export function stepContact(c, body, ground, contact) {
-  let sx = 0, sz = 0, n = 0;
-  for (const [u, w] of LEDGE_PTS) {
+export function stepContact(c, body, ground, contact, run = STEP_RUN, riseMax = STEP_RISE, bank = BANK) {
+  let sx = 0, sz = 0, n = 0, top = 0;
+  for (let p = 0; p < LEDGE_PTS.length; p++) {
+    const u = LEDGE_PTS[p][0], w = LEDGE_PTS[p][1];
     const ox = u * body.hx * body.cos + w * body.hz * body.sin, oz = -u * body.hx * body.sin + w * body.hz * body.cos;
     const x = c.x + ox, z = c.z + oz, L = Math.sqrt(ox * ox + oz * oz) || 1;     // (not Math.hypot: it allocates in some tiers; carhit's bodies call this per substep)
-    const g = ground(x, z);
-    if (g - ground(x - ox / L * STEP_RUN, z - oz / L * STEP_RUN) > STEP_RISE || g - c.y > BANK) { sx -= ox; sz -= oz; n++; }
+    const g = ground(x, z), rise = g - ground(x - ox / L * run, z - oz / L * run);
+    if (rise > riseMax || g - c.y > bank) { sx -= ox; sz -= oz; n++; if (g - c.y > top) top = g - c.y; if (rise > top) top = rise; }
   }
   if (!n) return false;
-  const L = Math.hypot(sx, sz) || 1;
-  contact.nx = sx / L; contact.nz = sz / L; contact.depth = 0.04; contact.kind = KIND.wall;
+  const L = Math.sqrt(sx * sx + sz * sz) || 1;
+  contact.nx = sx / L; contact.nz = sz / L; contact.depth = 0.04; contact.kind = KIND.wall; contact.rise = top;
   return true;
 }
 /** hedges: the car goes through, slowed: speed x exp(-HEDGE_DRAG dt) while its box overlaps one (a tall one: more) */
@@ -55,7 +57,9 @@ const POST_R = 0.12, POST_SIDE = 0.3, POST_BOX = 0.6;   // (POST_BOX: a polygon 
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
  * ground(x, z) -> drivable height
  */
-export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null, movers = null, carHit = null, two = false }) {
+export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null, movers = null, carHit = null, two = false, step: stepRule = null }) {
+  // step (two-wheelers' feel, docs/MOTO_FEEL.md): their own step rule { run, rise, bank } (a bike rides up a higher
+  // kerb / garden edge and a steeper bank than a car); a ledge contact's onHit gets the rise as a 6th argument
   // carHit (docs/CARHIT.md, carHit.js; null = ?carpush=old): the cars two-way: a parked car hit wakes as a pushed body,
   // the traffic's cars take impulses (instead of env.dynamic's infinite-mass push); two: a two-wheeler (its own response)
   // movers (car control round, movers.js): the trams / trains as oriented boxes, gathered once per frame (prepare), tested
@@ -67,7 +71,7 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
   // dims: the vehicle's half width / half length (carPhysics BODY; the motorbike's narrow box, viewer/moto/motoPhysics.js);
   // onHit(c, nx, nz, kind, handling): the impact response (carPhysics hit, or the motorbike's: it may crash)
   const near = [];
-  const contact = { nx: 0, nz: 0, depth: 0, kind: 0 };
+  const contact = { nx: 0, nz: 0, depth: 0, kind: 0, rise: 0 };
   const body = { hx: dims.hx, hz: dims.hz, cos: 1, sin: 0 };
   const push = (c, nx, nz, depth, kind) => {
     c.x += nx * depth; c.z += nz * depth;
@@ -150,9 +154,10 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
         }
         if (!any) break;
       }
-      if (ledges && Number.isFinite(c.y) && (feel ? stepContact(c, body, ground, contact) : ledgeContact(c, body, ground, contact))) {
+      // (c.airH: a two-wheeler's height over the ground in the air, motoPhysics.js: a face under it is no step contact)
+      if (ledges && Number.isFinite(c.y) && !(c.airH > 0.15) && (feel ? (stepRule ? stepContact(c, body, ground, contact, stepRule.run, stepRule.rise, stepRule.bank) : stepContact(c, body, ground, contact)) : ledgeContact(c, body, ground, contact))) {
         c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
-        onHit(c, contact.nx, contact.nz, contact.kind, handling);
+        onHit(c, contact.nx, contact.nz, contact.kind, handling, contact.rise);
         env.contacts++;
       }
       // moving things (the traffic, viewer/traffic/cityTraffic.js): env.dynamic(c, body, push) calls push per contact
