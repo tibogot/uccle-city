@@ -177,6 +177,9 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     },
     /** k x every look's exposure (Firmament's light is in Tidewater's units: k = 0.55) */
     setExposureScale(k) { this.exposureScale = k; this.look(this.lookId || "golden"); },
+    /** the exposure the grade applies now (look x scale x eye adaptation x bias): read by the traffic lights' emissive
+     *  (viewer/tlights/tlightKit.js tlightExposure) to keep the lit aspects' hue through the tone map */
+    get exposureValue() { return exposure.value; },
     /** the sky's eye adaptation, each frame (x on top of the look and the scale) */
     setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f * Math.pow(2, (this.evBias || 0) + (this.wxEV || 0)); },
     /** dev panel handles: AO / SSR weights, bloom pass, exposure bias (stops, this.evBias) */

@@ -21,7 +21,7 @@ import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
 import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
-import { buildTrafficGraph } from "./traffic/trafficGraph.js";
+import { tileTrafficGraph } from "./traffic/tileTraffic.js";
 import { widthParking } from "./streets/parkPlace.js";
 import { streetFit } from "./streets/fitCore.js";
 import { carriageway } from "./streets/carriageway.js";
@@ -448,12 +448,14 @@ export async function buildTileData(entry, base) {
   // (viewer/streets/roadTrees.js); before the parking, traffic, colliders and the drawn tree list read feats.trees.
   // entry.roadTrees === false (?roadtrees=old): as before
   let roadTrees = null;
+  // (claude/roads, rule 38: the trees keep the OSM band past a measured street's edge (bandOnMeasured), as before: the
+  // worker has no drawn-street raster yet at this step and a trunk moved out of a front garden's first metres is cheap)
   if (entry.roadTrees !== false && feats.trees?.length) {
     const fit0 = rd.surfaceData ? streetFit(rd.surfaceData) : null;
     // (a measured TRAM road keeps its trees: Avenue Churchill's tram reservation is a tram road in UrbIS, its two tree rows
     // stand on it; browser turn, tour churchill-blocks. Only the roadway / parking where measured, the OSM band elsewhere)
     const noTram = fit0?.classAt ? (x, z) => { const c = fit0.classAt(x, z); return c === 1 ? 2 : c; } : null;
-    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null }),
+    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null, bandOnMeasured: true }),
       { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z) }));
     feats.trees = roadTrees.trees;
     // markings round 2 (rule 33): a LiDAR tree kept on a measured tram road but standing in a PAINTED driving lane (or
@@ -461,7 +463,7 @@ export async function buildTileData(entry, base) {
     // lane and stay (rows: below). (entry.roadLines false: no fitted lanes, nothing to do)
     const inLane = fit0?.classAt ? paintedDriveLanes(rd.net, paintedLaneCentre, roadFrameOf, 0.3) : null;
     if (inLane) {
-      const base = carriageway(roads, { classAt: noTram, onDeck: null });
+      const base = carriageway(roads, { classAt: noTram, onDeck: null, bandOnMeasured: true });
       const lanes = { inside: (x, z, m = 0) => (fit0.classAt(x, z) === 1 ? inLane(x, z) : base.inside(x, z, m)) };
       // (a tree in a ROW on the tram road, two more within 12 m, is the reservation's planting (Avenue Churchill: one OSM
       // road with the reservation in its middle, its stack painted over it): kept)
@@ -500,7 +502,7 @@ export async function buildTileData(entry, base) {
   // citydefects: the parked cars by the measured width (viewer/streets/parkPlace.js widthParking; entry.parkWidth false =
   // ?parkclear=old: the main thread's old slots), here so the traffic lanes keep clear of them (trafficGraph.js)
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
-  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false }));
+  const traffic = await step("traffic graph", () => tileTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, roofs, entry }));   // (one builder with the audits: traffic/tileTraffic.js)
   // (claude/drivecheck round 2) the lanes over a hero road deck inside its roadway, clear of its parapets (rail/roadDeck.js)
   const deckLanes = rail && traffic && entry.deckLanes !== false ? squeezeDeckLanes(traffic, rail.heroes) : 0;
   // trafpark: the graph checks every driven path (lanes + junction connectors) against the parked cars' boxes and keeps

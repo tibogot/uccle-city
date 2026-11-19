@@ -104,15 +104,16 @@ export function buildRoadData(o) {
   const offGrid = (x, z) => { const h = hm.h; return x < h.x0 || z < h.z0 || x > h.x0 + (h.cols - 1) * h.step || z > h.z0 + (h.rows - 1) * h.step; };
   // o.noData: the tile worker's (tileData.js paddedGround: the neighbours' grids answer past the edge)
   const levels = relevelRoads(net, ground, o.noData ?? ((x, z) => offGrid(x, z) || (hm.h.min != null && hm.ground(x, z) <= hm.h.min + 0.02)), { roughLanes: o.roughLanes !== false, deckLevel: o.deckLevel ?? null });
+  if (ctx) ctx.zebraKerb = o.roadsR !== false;       // (class R: a surveyed zebra ending in the open road goes on to the kerb)
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   // round 2: the lane graph traffic drives on, repaired (loops, centring, smoothing, hold points at the paint)
   // markings (rule 33): the lane stacks' fit onto the measured carriageway, measured once: the painted strips (below)
   // and the lanes traffic drives on (centred between those lines, in place of the lane graph's own centring) both use it
   const roadLines = o.roadLines !== false;
-  const lineFitData = prep && roadLines ? measureLineFit(net, prep, surf) : null;
+  const lineFitData = prep && roadLines ? measureLineFit(net, prep, surf, { roadsR: o.roadsR !== false }) : null;
   if (lineFitData) net.lineFit = lineFitData;
-  const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory, lineFitData && o.laneFit !== false ? { laneShift: laneShifter(net, lineFitData) } : {}) : null;
+  const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory, { ...(lineFitData && o.laneFit !== false ? { laneShift: laneShifter(net, lineFitData) } : {}), roadsR: o.roadsR !== false }) : null;
   if (v2) { pv.inventory.stats.laneGraph = laneGraph; pv.inventory.stats.laneJoins = laneJoins; lap("lane graph"); }
   const errors = net.issues.filter((i) => i.level === "error");
   const byCode = {};

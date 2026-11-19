@@ -16,6 +16,7 @@ const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
 const { buildTrafficGraph, parkedBoxDist } = await imp("viewer/traffic/trafficGraph.js");
+const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");   // (one builder with the worker, rule 38)
 const { laneHits } = await imp("viewer/traffic/borderPark.js");
 
 const argv = process.argv.slice(2);
@@ -25,10 +26,10 @@ const HALF = 0.98, TURN = 0.3;
 
 const T = new Map();
 for (const name of TILES) {
-  const { roads, feats, bounds, rd } = loadTile(name);
+  const { roads, feats, bounds, rd, roofs } = loadTile(name);
   if (!rd.surfaceData) continue;
   const wp = widthParking(roads, feats, bounds, streetFit(rd.surfaceData));
-  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites });
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, roofs });
   T.set(name, { g, sites: g.parkedKept ?? wp.sites });
 }
 const graphs = new Map([...T].map(([n, t]) => [n, t.g]));

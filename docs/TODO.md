@@ -34,11 +34,43 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   - CLASS P (physics props): more things to hit with the car: parked motorbikes / scooters, bins, bollards, cones, sign posts, bikes, barriers (breakable or pushable, sleeping physics near the player; builds on carhit).
   - MOTORBIKE: nearly unusable: the rider falls all the time. It must go fast, climb steep places, ride almost anywhere, not fall easily (arcade-forgiving like the bike's landing bands; docs/MOTO.md + docs/bike/FEEL_RESEARCH.md).
   - REALITY CHECKS each round (owner): Google Maps / Street View, look only: colours, missing things. First class: FRONT GATES: most Uccle houses have a garden gate / front fence; we miss many. Census gates per house frontage vs a Street View sample of streets, cause, rule, gate row (gardenKit placement).
+  - ROUND 3 (owner 2026-11-19, live site, shots 104-107):
+    - INVISIBLE COLLIDER under the Rue de Stalle bridge stops the car (shot 105 with G colliders). Rule 25 says every collider stands for something drawn: find the source, then run a city-wide "collider with no drawn twin" census.
+    - Stalle railway bridge: totally blocked on it and on top of it (shot 107: wall boxes along the deck / tracks); goes with CLASS T.
+    - The LUMO fuel price board (Rue de Stalle) stands on the road: the streetprops snap must cover the fuel-station POI signs too.
+    - The Rue de Stalle sidewalk verge is still saw-tooth / bumpy (shot 104; live site, before claude/sidewalk merges). Re-check this spot after that merge, and add it to the tour.
+    - Few police patrols seen while driving: check the traffic mix. Also add ambulances, fire engines, buses / De Lijn / STIB buses, delivery vans, bin lorries.
+    - Place Danco Delhaize: the entrance runs through a passage in the building into a car park (Street View, look only). UNDERGROUND / INNER CAR PARKS would be the first below-ground places; pick a few real ones.
+  - ROUND 3b (owner 2026-11-19, shots 108-110):
+    - Rail fences look blocky / low-poly: mesh panels step and misalign on slopes (Verrewinkel cutting). They should follow the ground smoothly. Goes with CLASS T.
+    - Floating garden pieces: a hedge + white pergola / gate up in the air on Ch. de Saint-Job near Clos Monique Rifflet (shot 109). Find why they are seated wrong; the gardenVoid census should catch it.
+    - Car damage leaves HOLLOW mesh: the crumple pushes faces inside out and you see through the body (rear corner, shots 109 / 110). Clamp the crumple so the shell stays closed, or render both sides. Add a check: the dented shell stays watertight from outside views.
+    - Weird white lines near the Papenkasteel / Ch. de Saint-Job junction (shot 110: diagonal dashes, a cut zebra crossing). Re-check after claude/roads merges.
+    - The white shop on Place de Saint-Job is placed right, but it stands on grass where the real place has a small car park (Street View).
   - PLACES (Street View look-only): Chaussée de Saint-Job night shop and Brico Job opposite it; Le Pigeon Noir (entrance on the wrong side, building colours wrong) and the children's garden / kindergarten in front of it; Papenkasteel castle: gates all round and very big fences.
 - [ ] SOUND hookup (owner 2026-11-18, "I don't hear any sound"): the city sound engine (viewer/audio/engine.js, docs/SOUND.md: traffic, trams, nature, people, bells, canyon reverb, occlusion) is only in labs/sound-lab.html, never wired into the city; the two-wheelers need N on top of the speaker button, the falcon its own menu tick. Job: wire the engine into the city, ONE speaker button for every sound (no second switches), crash / scrape sounds for the car push, perf check. Still OFF by default. NOT the car engine sound: the owner will show another repo with a better engine-sound approach first.
 - [ ] LATER (owner 2026-11-18): full church interiors: Saint-Job (nave + the belfry chamber with the eyrie, the falcon can hop in from the ledge), then Saint-Pierre. Method: docs/INTERIOR.md + the Chapelle de Stalle interior (models/stalle/interior.glb, on by default). The kid's room on the same method.
 - [x] Gate / fence / grille jitter: MERGED 2026-11-19 (claude/jitter, rule 35): thin bars hand over to coverage cards (depth where coverage >= 4 %); ?jitter=old. Left: the Lycée railing card writes no depth (likely vanishes while moving under TAAU: apply the 4 % depth cut), the gate at 3 m at 8 m/s slightly worse (card fade-in).
 - [x] Car contact (owner 2026-11-18): MERGED 2026-11-19 (claude/carhit, rule 37): two-way push / spin / dents, knocked / wreck / rejoin, parked cars pushable; ?carpush=old. Left: no roll / pitch kick, 4 dent zones, traffic two-wheelers still one-way, the walker cannot push cars, owner tuning.
+- [x] Traffic lights in Blender (owner 2026-11-18): MERGED 2026-11-19 (claude/tlights, rule 36): Brussels-style posts, heads face the approach, seated, never in a lane, lit hues kept through ACES + eye adaptation; ?tlights=old. Far LOD hand-overs (120 / 80 m) not seen in the browser yet.
+- [ ] RESUME (paused 2026-11-19, owner closing the laptop):
+  - claude/roads MERGED 2026-11-19 (03356fe7, rule 38). Left: J5 (1670, 352) 8 m skew in a square; J6 (1730, 610-620) Waterloo lane on the engine strip 10 m off the measured street; a 0.2 m step where a tile-split zebra meets; 31 in-building places (bad OSM, junction corners); short unfitted pieces now paint no lines (3.1 km). OLD NOTE: browser turn mostly done (J6 off-carriageway 11.7 -> 1.5 %, slalom flips 36 -> 15; bushes gone; Papenkasteel fronts back). Left:
+    - the full gate after the merge;
+    - the tour vs a foundation baseline;
+    - the Papenkasteel drive test (car stops at the hedges / walls);
+    - the Waterloo slalom watch (1729, 607);
+    - J6 (1730, 610-620), a lane still off its carriageway;
+    - Av. du Prince de Ligne (1592, 360) still UNFIXED (junction funnel), the owner's complaint;
+    - at merge, rebuild the worker bundle.
+  - claude/sidewalk (C:/Users/tibog/Downloads/uccle-sidewalk, round 5 1aea8662 + gate-steps WIP 707414c2, notes in docs/SIDEWALK.md "Round 5b"). Left:
+    - 12 gates still without steps on the 4 test tiles (G3 Roberts Jones 55, H6 Perelman 1): trace them to 0;
+    - bareBank rose 64 -> 76 round the flights;
+    - full census + ceilings (gateNoSteps=0), full gate;
+    - quiet-machine wall ms;
+    - Chrome turn: H6, G3, a stone wall, retaining vs garden brick, the steps (Perelman 4's flight: 19 risers, 5.7 m deep, check it);
+    - merge + rebuild the bundle.
+  - claude/kid (bike rounds 1-4, 07754f3c): browser turn not started (D6 city spot, ledge, stairs, sound, weight, camera); then the owner tries the bike lab.
+- [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
 - [ ] Some places look hollow.
