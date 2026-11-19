@@ -1,6 +1,6 @@
 // THE MOTO LAB: the city's motorbike (viewer/moto/: model, physics, camera, sound: the very same code as ?view=moto) on a
 // test ground: a 10 % ramp, a kerb, two lanes of parked cars 1.3 m apart (filtering), a wall to crash into, a slalom.
-//   W gas  S front brake  Space rear brake  A / D lean  Shift full gas (wheelie)  R reset  C camera  N mute
+//   W gas  S front brake  Space rear brake  A / D lean  Shift full gas (wheelie)  R reset  C camera  (sound: the speaker button)
 // ?pose=1 (or the panel's "pose"): the physics frozen, lean / steer / wheelie / tuck from sliders (model checks, stills).
 import * as THREE from "three/webgpu";
 import { color, positionWorld, floor, mod, mix, float, fract, smoothstep, min } from "three/tsl";
@@ -10,6 +10,7 @@ import { loadMotoModel, createMoto, motoLights, MOTO_PAINTS } from "../viewer/mo
 import { MOTO, MOTO_BODY, createMotoState, stepMoto, motoHit } from "../viewer/moto/motoPhysics.js";
 import { MotoCamera, MOTO_CAMERA } from "../viewer/moto/motoCamera.js";
 import { MotoAudio } from "../viewer/moto/motoAudio.js";
+import { soundGate } from "../viewer/audio/soundGate.js";
 import { buildColliders, KIND } from "../viewer/drive/colliders.js";
 import { createCarEnv } from "../viewer/drive/carEnv.js";
 import { DriveKeys } from "../viewer/drive/input.js";
@@ -83,8 +84,9 @@ let state;
 const env = createCarEnv({ sets: () => [COL], ground, handling: MOTO, dims: MOTO_BODY, onHit: motoHit });
 const chase = new MotoCamera(camera, renderer.domElement); chase.active = true;
 const audio = new MotoAudio(); audio.active = true;
+soundGate.mountButton();                 // the one sound switch (OFF by default, remembered per browser), as in the city
 const reset = () => { state = createMotoState(START.x, START.z, START.h); state.y = ground(START.x, START.z); chase.reset(); moto.reattach(); };
-const keys = new DriveKeys({ onKey: (k) => { if (k === "KeyR") reset(); else if (k === "KeyC") chase.next(); else if (k === "KeyN") audio.toggleMute(); } });
+const keys = new DriveKeys({ onKey: (k) => { if (k === "KeyR") reset(); else if (k === "KeyC") chase.next(); } });
 reset();
 
 // ---------------------------------------------------------------- panel
@@ -131,7 +133,7 @@ renderer.setAnimationLoop(() => {
     $speedo.innerHTML = `${(Math.abs(c.speed) * 3.6).toFixed(0)} <small>km/h · gear ${c.gear} · ${Math.round(c.rpm)} rpm${c.crashed ? " · CRASH" : ""}</small>`;
     P.info = `lean ${(c.lean * 57.3).toFixed(0)}° wheelie ${(c.wheelie * 57.3).toFixed(0)}° LOD${moto.lod} · cpu ${msAvg.toFixed(3)} ms`;
     $info.textContent = `tris LOD0/1/2: ${model.tris.join(" / ")} · load ${model.loadMs.toFixed(0)} ms (page ${(performance.now() - t0).toFixed(0)}) · AO ${model.ao ? "baked" : "none"}\n` +
-      `W gas · S front brake · Space rear brake · A/D lean · Shift full gas (wheelie) · R reset · C camera · N mute`;
+      `W gas · S front brake · Space rear brake · A/D lean · Shift full gas (wheelie) · R reset · C camera`;
   }
 });
 addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });

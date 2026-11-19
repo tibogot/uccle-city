@@ -235,7 +235,9 @@ energy (reverb was ~15 dB too loud), a NaN that stopped the muffling / reverb / 
 - Rain is a bed, not positional drips on nearby surfaces; no gutters / downpipes.
 - The 15 MB of WAVs: fine for a review branch, delete before merging if the repo size matters.
 
-## Next (into the city): see docs/TODO_ARCHIVE.md section 6
+## Into the city: done 2026-11-19, docs/SOUND_CITY.md (viewer/audio/citySound.js)
+
+(The plan as it stood before, kept for the record:)
 
 Wire the engine to the city: listener = camera; occluders = the drive colliders' cells; sources = parked /
 moving cars (carFleet), the tram 92 (`tramline.js` positions + the real curve geometry from the track),

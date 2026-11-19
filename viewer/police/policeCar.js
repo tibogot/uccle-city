@@ -13,8 +13,8 @@
 // NO LIGHT THROUGH WALLS: pool lights have no shadow, so the beam's range is cut at the first building it meets: a
 // march along the beam in 1.5 m steps against the drive colliders' building footprints round the car (gathered every
 // 8 frames within 30 m, the same polygons the car collides with): the wall it hits is lit, what stands behind it is not.
-// SOUND: the siren plays only when the game's "siren sound" option is on (the owner: vehicle sounds are OFF by
-// default); with it off J still switches the siren "on" for the traffic (it yields) and the HUD shows it.
+// SOUND: the siren plays through the game kit's audio, behind the speaker button (viewer/audio/soundGate.js: every sound
+// OFF by default, one switch); muted, J still switches the siren "on" for the traffic (it yields) and the HUD shows it.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, float } from "three/tsl";
 import { loadPack, packMaterial, playerSeeThrough, FLEET_SOURCE, CARS_OLD } from "../drive/carPacks.js";
@@ -23,6 +23,7 @@ import { gather, pointInBuilding } from "../drive/colliders.js";
 import { NIGHT } from "../nightLights/nightMode.js";
 import { buildBeacon, buildFlasher, buildVisor, buildCable, beaconU, BLUE } from "../policeCar/beaconModel.js";
 import { fitPoliceKit } from "../policeCar/fitCar.js";
+import { soundGate } from "../audio/soundGate.js";
 import { lampState } from "../policeCar/pattern.js";
 import { Siren } from "../policeCar/siren.js";
 import { env as lightEnv } from "../lighting.js";
@@ -91,6 +92,7 @@ export class PoliceCar {
     this.lightsOn = false; this.sirenOn = false; this.master = 0; this.t = 0;
     this.parts = null; this.prevSpec = null; this.installed = false;
     this.siren = null; this.sound = false;
+    soundGate.onChange(() => this.syncSound());            // (a siren already on starts the moment the speaker button turns on)
     this.near = []; this.nearN = 0; this.nearAt = { x: 1e9, z: 1e9 };
     this.cost = { cpu: 0 }; this.range = 0;
   }

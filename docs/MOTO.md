@@ -20,7 +20,6 @@ physics and poses the bike from sliders).
 | A / D, ← / → | lean (the bike turns by leaning; the front wheel counter-steers first) |
 | C | camera: chase / far / helmet / orbit (drag to look round, wheel to zoom) |
 | R | back to the start |
-| N | sound on / off (the sound is OFF by default: `?motosound=1` or the dev panel's "motorbike sound" toggle) |
 | G | the colliders (as the car) |
 
 HUD: speed, gear, a rev bar (red over 10,000 rpm), rpm.
@@ -127,8 +126,9 @@ The city has no shared audio bus yet (the sound lab's engine in viewer/audio/ is
 its own), so the bike owns a small Web Audio graph, all procedural: an inline four (one periodic wave on half the firing
 frequency rpm / 30, half orders for the rasp, two detuned voices, a soft clipper driven by the throttle, a low-pass
 opening with rpm and load, an induction howl band), shift cuts and clicks, downshift blips, overrun crackle when the gas
-is shut over 6,500 rpm, wind with speed, a tyre screech in a slide, a crash thump. **Off by default** (owner,
-2026-11-15): `?motosound=1`, the dev panel's "motorbike sound" toggle, or N while riding; off suspends the AudioContext.
+is shut over 6,500 rpm, wind with speed, a tyre screech in a slide, a crash thump. **Off by default** like every
+sound: the speaker button (top centre) is the one switch for every mode since 2026-11-19 (docs/SOUND_CITY.md; the old
+`?motosound=1`, the dev panel toggle and N are gone); off suspends the AudioContext.
 
 ## Night
 
@@ -192,8 +192,8 @@ positions from moto.json), so the head lamp throws its pool on the road (docs/mo
 | Villo keys | W pedal, Shift stand on the pedals, S front / Space rear roller brake, Q bell, C camera |
 | `?at=x,z` | now honoured for every vehicle (round 1 searched the BOOT tile only and spawned at Saint-Job): the ?at tile streams in first |
 
-Go to and the share link keep the mode (`view=scooter` / `view=villo`). Sound: OFF by default for all three (`?motosound=1`,
-the dev panel's "two-wheeler sound", N).
+Go to and the share link keep the mode (`view=scooter` / `view=villo`). Sound: OFF by default for all three, the speaker button
+turns it on (docs/SOUND_CITY.md).
 
 ## Files (round 2)
 

@@ -18,6 +18,7 @@ import { FalconBird } from "../viewer/falconFlight/falconBird.js";
 import { FalconInput } from "../viewer/falconFlight/falconInput.js";
 import { FalconCamera } from "../viewer/falconFlight/falconCamera.js";
 import { FalconAudio } from "../viewer/falconFlight/falconAudio.js";
+import { soundGate } from "../viewer/audio/soundGate.js";
 import { FalconGame } from "../viewer/falconFlight/falconGame.js";
 import { G } from "../viewer/falconFlight/flightModel.js";
 
@@ -53,6 +54,7 @@ scene.add(bird.root);
 const input = new FalconInput(renderer.domElement, { invert: qp.get("invert") === "1" });
 const fcam = new FalconCamera(camera, scene);
 const audio = new FalconAudio();
+soundGate.mountButton();                 // the one sound switch (OFF by default, remembered per browser), as in the city
 const game = new FalconGame({ world, air, bird, pigeons, fam, audio, input });
 game.size.readable = SIZE;
 

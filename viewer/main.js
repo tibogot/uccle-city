@@ -1833,6 +1833,14 @@ async function main() {
   cityWeather.start({ scene, renderer, camera, lighting, updaters, world, pipe, log }).catch((e) => log(`weather: ${e.message}`));
   cityWeather.movers = { driver, walker, third: () => third, traffic: () => window.__traffic };   // snowtracks: who stamps the snow
   // ---- /WEATHER
+  // ---- CITY SOUND (viewer/audio/citySound.js, docs/SOUND_CITY.md): the sound engine on the live city (traffic, trams,
+  // trains, birds, wind, rain, people, bells, crashes). Nothing is built until the speaker button unmutes the first time;
+  // ?citysound=old: the city as before (silent: only the vehicles' / games' own sounds)
+  if (params.get("citysound") !== "old") {
+    Promise.all([import("./audio/citySound.js"), import("./weather/weatherState.js")]).then(([m, { wx }]) => m.hookCitySound({ soundGate, camera, world, driver,
+      getTram: () => tramLine, getTrains: () => window.__trains, getTraffic: () => cityTraffic, getFlocks: () => (cityBirds.on ? cityBirds : null), wx, updaters, log }))
+      .catch((e) => log(`city sound: ${e.message}`));
+  } else log("city sound: off (?citysound=old)");
   const focus = new THREE.Vector3(), fwd = new THREE.Vector3();
   let mapHook = null;                      // ?map=1: the minimap + full map (viewer/map/cityMap.js), set below
   const hazeHook = lighting.firmament ? (rt, d, size) => lighting.hazeHook(rt, d, size) : null;   // ?haze=0: off
