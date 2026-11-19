@@ -444,19 +444,25 @@ export function appendToPart(part, G, ex = {}) {
 }
 
 /** data/gardens/<tile>.json -> (x, z, r) => a garden piece within r (5 m buckets of points every <= 1 m) */
-export function gardenIndex(doc, { gatesOnly = false } = {}) {
+export function gardenIndex(doc, { gatesOnly = false, span = false } = {}) {
   if (!doc) return () => false;
   // (5 m buckets, numeric keys: a query of r = 10 m reads 5 x 5 buckets; round 3: 2 m string keys cost 40 ms a tile)
   const B = 5, grid = new Map(), K = (i, j) => (i + 50000) * 100000 + (j + 50000), add = (x, z) => { const k = K(Math.floor(x / B), Math.floor(z / B)); let L = grid.get(k); if (!L) grid.set(k, (L = [])); L.push(x, z); };
   if (!gatesOnly) for (const g of doc.segs || []) { const L = Math.hypot(g[3] - g[0], g[5] - g[2]), n = Math.max(1, Math.ceil(L)); for (let k = 0; k <= n; k++) add(g[0] + (g[3] - g[0]) * k / n, g[2] + (g[5] - g[2]) * k / n); }
   if (!gatesOnly) for (const p of doc.pillars || []) add(p[0], p[2]);
-  for (const p of doc.gates || []) add(p[0], p[2]);
+  for (const p of doc.gates || []) {
+    add(p[0], p[2]);
+    // (claude/gates, span: the leaf's middle and far end too, not only its hinge: a gate's steps are centred on the
+    // opening, a 2.5 m driveway pair or a gate at a run's end read its garden 1.2 m off (census gateNoSteps 3 -> 2: E6 Dieweg 28M))
+    if (span) { const c = Math.cos(p[3]), s = Math.sin(p[3]); add(p[0] + c * p[4] / 2, p[2] - s * p[4] / 2); add(p[0] + c * p[4], p[2] - s * p[4]); }
+  }
   if (!gatesOnly) for (const h of doc.hedges || []) for (const [x, z] of h.points || []) add(x, z);
-  return (x, z, r) => {
+  const near = (x, z, r) => {
     for (let i = Math.floor((x - r) / B); i <= Math.floor((x + r) / B); i++) for (let j = Math.floor((z - r) / B); j <= Math.floor((z + r) / B); j++) {
       const L = grid.get(K(i, j)); if (!L) continue;
       for (let k = 0; k < L.length; k += 2) if ((L[k] - x) ** 2 + (L[k + 1] - z) ** 2 <= r * r) return true;
     }
     return false;
   };
+  return near;
 }

@@ -93,10 +93,10 @@ function publicAreas(feats) {
   return (x, z) => polys.some((R) => pip(x, z, R[0]) && !R.slice(1).some((h) => pip(x, z, h)));
 }
 /** the tile's garden doc, with the 4 neighbour tiles' pieces (segs, pillars, gates, hedges) within 30 m of its bounds */
-async function gardenDocNear(base, name, b) {
+async function gardenDocNear(base, name, b, old = false) {
   const m = /^([A-Z])(\d+)$/.exec(name), R = 30;
   const near = m ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dz]) => String.fromCharCode(m[1].charCodeAt(0) + dx) + (+m[2] + dz)) : [];
-  const [own, ...nb] = await Promise.all([gardenDoc(base, name), ...near.map((n) => gardenDoc(base, n))]);
+  const [own, ...nb] = await Promise.all([gardenDoc(base, name, old), ...near.map((n) => gardenDoc(base, n, old))]);
   if (!b) return own;
   const inR = (x, z) => x > b.x0 - R && x < b.x1 + R && z > b.z0 - R && z < b.z1 + R;
   const doc = own ? { ...own, segs: [...(own.segs || [])], pillars: [...(own.pillars || [])], gates: [...(own.gates || [])], hedges: [...(own.hedges || [])] } : { segs: [], pillars: [], gates: [], hedges: [] };
@@ -109,8 +109,9 @@ async function gardenDocNear(base, name, b) {
   }
   return doc;
 }
-async function gardenDoc(base, name) {
-  const r = await fetch(new URL(`../gardens/${name}.json`, base)).catch(() => null);
+/** (claude/gates: old = entry.gatesOld, ?gates=old: the garden data before the front-gates job, data/gardens/old) */
+async function gardenDoc(base, name, old = false) {
+  const r = await fetch(new URL(`../gardens/${old ? "old/" : ""}${name}.json`, base)).catch(() => null);
   return r?.ok ? r.json().catch(() => null) : null;
 }
 async function streetlifeFronts(base, name) {
@@ -431,8 +432,8 @@ export async function buildTileData(entry, base) {
   // (claude/sidewalk round 2) the garden fronts, for the retaining walls behind levelled sidewalks (viewer/streets/retainWalls.js)
   // (round 5: + the garden pieces of the 4 neighbour tiles within 30 m of this one: a garden front belongs to its
   // building's tile and runs over the border (H6 Perelman 4: H5's gate 18 m into H6; the wall closed it off))
-  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds)) : null;
-  const gardenNear = gardenDoc0 !== null || (entry.sidewalkLevel !== false && entry.retainWalls !== false && surf) ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true }) : null;
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
+  const gardenNear = gardenDoc0 !== null || (entry.sidewalkLevel !== false && entry.retainWalls !== false && surf) ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false, gardenNear, gateNear, publicAt: gardenNear ? publicAreas(feats) : null,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),

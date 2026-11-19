@@ -14,7 +14,8 @@
 //     coping + railing as one sheared box, each hedge module, the pillars, the closed driveway gates), never drawn
 //     (visible = false): the car (viewer/drive featureColliders), the walker / third person (viewer/character/cityHook)
 //     and the collision test read them like the furniture kits' stand-ins. The pedestrian gates are drawn OPEN: the
-//     walker gets in at the door
+//     walker gets in at the door; a driveway gate across a way a car uses stands OPEN (its leaves swung into the garden:
+//     no stand-in), claude/gates
 import * as THREE from "three/webgpu";
 import { loadGardenKit, GardenPool, PIECES, gardenInstancesGen, gardenSources, gardenFades, standinGeometries } from "./gardenKit.js";
 import { drain, sliced } from "../slices.js";
@@ -34,7 +35,12 @@ const GARDEN_LANE_OLD = qs.get("gardenlane") !== "new";
  *  feel), the walker still stops at it (viewer/character/cityHook.js) */
 const HEDGE_COL_OLD = qs.get("hedgecol") === "old";
 
-const DATA = new URL("../../data/gardens/", import.meta.url);
+/** ?gates=old (claude/gates, rule 43, docs/GATES.md): the garden data before the front-gates job (data/gardens/old): a
+ *  street whose drawn style was "open" left 60 % of its houses open, doors inside a driveway walked through it ungated,
+ *  doors near a run end lost their gate, buildings with the door on a side face had no way in, two coplanar faces of one
+ *  wall dropped each other's front, driveway gates 55 % everywhere and never open */
+export const GATES_OLD = qs.get("gates") === "old";
+const DATA = new URL(GATES_OLD ? "../../data/gardens/old/" : "../../data/gardens/", import.meta.url);
 
 export const cityGardens = {
   on: qs.get("gardens") !== "0",          // ON by default again (2026-11-14, claude/gather-perf): the pools stream time-sliced (viewer/instanceStream.js; driving: gardens on = off within noise, docs/perf/AUDIT.md "instance pools"); ?gardens=0 off

@@ -5,6 +5,8 @@ Kit 7 "front gardens" of `docs/assets/STREET_KITS.md`, built like the furniture 
 `?gardens=0` gives back the city without them (house fronts meeting the sidewalk bare); `?gardenhedges=0` = without the
 hedges.
 
+**Front gates (claude/gates, 2026-11-19):** the placement rules for gates / open fronts changed after a per-house census: docs/GATES.md (rule 43, ?gates=old = data/gardens/old).
+
 ## Round 2 (claude/gardens2, 2026-11-14): what changed and why it can be on
 
 ### 1. The lawn strip between the drawn sidewalk and the wall: cause and fix

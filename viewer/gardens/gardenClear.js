@@ -113,8 +113,8 @@ export function gardenPieces(doc, { CAP_T = 0.08, PILLAR_W = 0.36, T = 0.3 } = {
     const c = Math.cos(yaw), s = Math.sin(yaw), r = PILLAR_W / 2;
     out.push({ rings: [[[-r, -r], [r, -r], [r, r], [-r, r]].map(([u, v]) => [x + u * c + v * s, z - u * s + v * c])], kind: 7, base: y, top: y + h + 0.12, what: "garden pillar" });
   }
-  for (const [x, y, z, yaw, w, kind, , s] of doc.gates || []) {
-    if (kind === 0) continue;                                            // a pedestrian gate: drawn open
+  for (const [x, y, z, yaw, w, kind, open, s] of doc.gates || []) {
+    if (kind === 0 || open > 0) continue;                                // a pedestrian gate / an open driveway pair (claude/gates): drawn open
     const st = styles[s] || {}, H = st.kind === "rail" ? Math.max(1.0, (st.wallH || 0) + CAP_T + (st.railH || 0)) : st.kind === "wall" ? Math.max(1.0, Math.min(1.8, (st.wallH || 0) + CAP_T + 0.1)) : 1.1;
     const c = Math.cos(yaw), sn = Math.sin(yaw);
     out.push({ rings: [band(x, z, x + c * w, z - sn * w, T / 2)], kind: 7, base: y, top: y + H, what: "garden car gate (closed)" });
