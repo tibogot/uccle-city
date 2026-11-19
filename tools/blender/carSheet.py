@@ -107,7 +107,12 @@ def make_mat(paint):
         Lk.new(hc.outputs[2], tc.inputs[6])
         tr = N.new("ShaderNodeCombineColor"); Lk.new(t.outputs[0], tr.inputs[0]); tr.inputs[1].default_value = 0.0; tr.inputs[2].default_value = 0.0
         Lk.new(tr.outputs[0], tc.inputs[7])
-        Lk.new(tc.outputs[2], bsdf.inputs["Emission Color"]); bsdf.inputs["Emission Strength"].default_value = 1.0
+        # (claude/trafmix) beacons (kind 9) lit blue, as the traffic shader flashes them on a run
+        bz = N.new("ShaderNodeMath"); bz.operation = "MULTIPLY"; Lk.new(eq(9), bz.inputs[0]); bz.inputs[1].default_value = 8
+        bc = N.new("ShaderNodeCombineColor"); Lk.new(bz.outputs[0], bc.inputs[2]); bm = N.new("ShaderNodeMath"); bm.operation = "MULTIPLY"; Lk.new(bz.outputs[0], bm.inputs[0]); bm.inputs[1].default_value = 0.2; Lk.new(bm.outputs[0], bc.inputs[1])
+        ba = N.new("ShaderNodeMix"); ba.data_type = "RGBA"; ba.blend_type = "ADD"; ba.inputs[0].default_value = 1
+        Lk.new(tc.outputs[2], ba.inputs[6]); Lk.new(bc.outputs[0], ba.inputs[7])
+        Lk.new(ba.outputs[2], bsdf.inputs["Emission Color"]); bsdf.inputs["Emission Strength"].default_value = 1.0
     return m
 
 def to_blender(P):   # car coords (x left, y up, z forward) -> Blender (x, -z, y)

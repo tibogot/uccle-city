@@ -15,6 +15,7 @@ import { createTraffic } from "./traffic.js";
 import { obbObb } from "../drive/obb.js";
 import { carFleet } from "../carFleet.js";
 import { cityTwoWheelers } from "../moto/cityTwoWheelers.js";
+import { TRAFMIX_OLD, TrafficSiren } from "./trafMix.js";   // TRAFMIX: the ambulances' / fire engines' siren
 
 const CAR_KIND = 6;
 /** ?bikeroom=old: the motorbike seen by the traffic as two 0.55 m circles, no room made (before collisions round 2) */
@@ -125,6 +126,10 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
   };
   let hooked = null;
 
+  // TRAFMIX: the nearest ambulance / fire engine on a run within 380 m sounds the two-tone siren (its AudioContext
+  // is the sound gate's: silent until the speaker button is on)
+  const siren = TRAFMIX_OLD ? null : new TrafficSiren();
+  const lisP = { x: 0, z: 0 }, lisV = { x: 0, z: 0 };
   let last = performance.now(), lastTram = 0;
   const update = (camPos, cam) => {
     const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000);
@@ -139,6 +144,13 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
     const f = focus();
     if (driver?.carHit && !driver.on) driver.carHit.frame(dt, f.x, f.z);   // (carhit: nobody drives: the bodies still settle)
     T.update(dt, cam || camera, f);
+    if (siren && dt > 0) {
+      const c = cam || camera, k = Math.min(1, dt * 4);
+      lisV.x += ((c.position.x - lisP.x) / dt - lisV.x) * k; lisV.z += ((c.position.z - lisP.z) / dt - lisV.z) * k;
+      if (Math.abs(lisV.x) + Math.abs(lisV.z) > 200) lisV.x = lisV.z = 0;        // (a camera jump)
+      lisP.x = c.position.x; lisP.z = c.position.z;
+      siren.update(sim, lisP, lisV, dt);
+    }
   };
   return { ...T, T, update, addTile: T.addTile, removeTile: T.removeTile };
 }

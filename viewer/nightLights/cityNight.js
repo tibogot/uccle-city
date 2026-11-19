@@ -498,7 +498,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     const T = types[ti];
     const len = T.len, h = T.h;
     L = { head: [0, Math.min(0.75, h * 0.48), len / 2 - 0.15], tail: [0, Math.min(0.9, h * 0.55), -len / 2 + 0.1], fromKinds: false };
-    const src = carFleet.types?.[T.name];
+    const src = carFleet.types?.[T.name] ?? carFleet.extra?.[T.name];   // (claude/trafmix: the service vehicles)
     const g = src?.lods?.[1]?.geo ?? src?.lods?.[0]?.geo;
     const K = g?.attributes?._kind, P = g?.attributes?.position;
     if (K && P) {
