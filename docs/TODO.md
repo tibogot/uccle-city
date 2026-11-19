@@ -40,6 +40,17 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [x] Gate / fence / grille jitter: MERGED 2026-11-19 (claude/jitter, rule 35): thin bars hand over to coverage cards (depth where coverage >= 4 %); ?jitter=old. Left: the Lycée railing card writes no depth (likely vanishes while moving under TAAU: apply the 4 % depth cut), the gate at 3 m at 8 m/s slightly worse (card fade-in).
 - [x] Car contact (owner 2026-11-18): MERGED 2026-11-19 (claude/carhit, rule 37): two-way push / spin / dents, knocked / wreck / rejoin, parked cars pushable; ?carpush=old. Left: no roll / pitch kick, 4 dent zones, traffic two-wheelers still one-way, the walker cannot push cars, owner tuning.
 - [x] Traffic lights in Blender (owner 2026-11-18): MERGED 2026-11-19 (claude/tlights, rule 36): Brussels-style posts, heads face the approach, seated, never in a lane, lit hues kept through ACES + eye adaptation; ?tlights=old. Far LOD hand-overs (120 / 80 m) not seen in the browser yet.
+- [ ] RESUME (paused 2026-11-19, owner closing the laptop):
+  - claude/roads (C:/Users/tibog/Downloads/uccle-roads, 02e85fe1, foundation d19f7adb merged in): browser turn mostly done (J6 off-carriageway 11.7 -> 1.5 %, slalom flips 36 -> 15; bushes gone; Papenkasteel fronts back). Left:
+    - the full gate after the merge;
+    - the tour vs a foundation baseline;
+    - the Papenkasteel drive test (car stops at the hedges / walls);
+    - the Waterloo slalom watch (1729, 607);
+    - J6 (1730, 610-620), a lane still off its carriageway;
+    - Av. du Prince de Ligne (1592, 360) still UNFIXED (junction funnel), the owner's complaint;
+    - at merge, rebuild the worker bundle.
+  - claude/sidewalk (C:/Users/tibog/Downloads/uccle-sidewalk, round 5 1aea8662 + gate-steps WIP): steps inside raised gate openings + census 'gateNoSteps'. Then census, gate, Chrome turn (H6, G3, a stone wall, retaining vs garden brick side by side), merge + rebuild the bundle.
+  - claude/kid (bike rounds 1-4, 07754f3c): browser turn not started (D6 city spot, ledge, stairs, sound, weight, camera); then the owner tries the bike lab.
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
 - [ ] Some places look hollow.
