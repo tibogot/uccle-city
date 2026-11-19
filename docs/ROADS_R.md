@@ -244,3 +244,32 @@ Left, by cause (not this rule's fix):
   du Drossart): the carriageway there is within 9 m, the lane fit reaches it, the body still clips the footprint
   (UrbIS footprints overhanging the measured street, or the lane on the band of an unmeasured stretch).
 - **A lane whose snap would touch another building** (D6 Ch. d'Alsemberg, three places): no snap (above).
+
+## 7. Browser turn (2026-11-19, after merging foundation d19f7adb; worker bundle rebuilt in the worktree only, reverted)
+
+The bundle held the branch's code (tileTrafficGraph, roadFollowTurns, laneOffsetProfile, smoothTrend, farSnap); in the
+page J6's graph stats showed serviceLanes 34, serviceTurns 75, farSnap 237. Traffic watch (60 s, every 0.25 s, every
+moving car: off the drawn carriageway (main.js drivenAt + 0.5 m) and yaw-rate sign flips per 1000 samples), default vs
+`?roads=old`:
+
+| spot | off the carriageway | yaw flips / 1000 |
+|---|---|---|
+| J6 Ch. de Waterloo junction (1700, 815) | 1.46 % vs **11.72 %** | 14.6 vs **36.1** |
+| F6 Ch. de Saint-Job (-338, 756) | 1.6 % vs **5.09 %** | 20.0 vs **47.8** |
+| E3 Ch. d'Alsemberg (-901, -629) | 1.2 % vs 1.39 % | 12.0 vs **27.2** |
+
+(old's carriageway test is the old, wider band, so its off share is understated.) Left at J6: (1730, 610-620), the
+Waterloo lane known off its carriageway (section 5).
+- Bushes, Ch. de Waterloo (1726, 573): old, two laurels standing on the asphalt; default, none.
+- Rue Papenkasteel (-729, 949): the kit's garden pieces in E6 + its neighbour, default vs old: walls 1,426 vs 1,349,
+  hedges 1,620 vs 1,508, railings 659 vs 621: the fronts the band had dropped stand again (the hedge across the street
+  is back in the shot).
+- Av. du Prince de Ligne (1592, 360): identical in both modes: this spot is the junction funnel left in section 4 (not
+  fixed).
+- Tour, default vs `?roads=old` on this branch (both after the merge, so only class R differs): 2 of 22 flagged.
+  cortenbosch-lane: the front garden's hedges stand again by the lane (the band had dropped them; intended, but they
+  stand right before the tour camera); coghen-blocks: parked cars differ (the kept set follows the smoother lanes; a
+  car now parked at the left kerb in the foreground). Images in `.tour/roads/_vs_roads-old/` (git-ignored).
+
+Not done in this turn (stopped for the owner): the full gate after the merge, the tour against a foundation baseline,
+the Papenkasteel drive test (the car stopping at the restored hedges / walls), the slalom watch on Waterloo.
