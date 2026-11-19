@@ -611,14 +611,16 @@ const segCross = (a, b, c, d) => {
 const carriage = (r) => { const side = (a) => (a || []).reduce((s, l) => s + (l.type === "sidewalk" ? 0 : +l.width || 0), 0); return Math.max(3, side(r.lanes?.left), side(r.lanes?.right)) + (r.lanes?.center?.width || 0) / 2; };
 
 /**
- * The road-rail crossings near the tile, classified as tools/audit/bridgeAudit.mjs does: the road's ground 12-30 m
- * either side of the crossing (the highest sample: a cutting's slope reads low) vs the rail top: over (> rail + 3 m both
+ * The road-rail crossings near the tile, classified as tools/audit/bridgeAudit.mjs does (a road deck's footprint: over;
+ * else the road's ground 4-12 m either side of the crossing (the highest sample: a cutting's slope reads low) vs the rail top: over (> rail + 3 m both
  * sides), under (< rail - 3 m both sides), else LEVEL. Roads tagged bridge / tunnel are over / under. Only the car's
  * roads (footways, paths, steps: not). Returns [{ x, z, kind, half, segs: [[ax, az, bx, bz]] (the road's segments
  * within 25 m), name }].
  */
-export function railCrossings(doc, bounds, roadsDoc, orig, m = 40) {
+export function railCrossings(doc, bounds, roadsDoc, orig, m = 40, heroes = [], roadY = null) {
   const tracks = tracksIn(doc, bounds, m).filter((t) => !t.tunnel);
+  const deckRings = doc.decks.map((b) => ringBox(b.ring)).concat((heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => ringBox(heroFrame(h).ring)));
+  const inDeck = (x, z) => deckRings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
   const N = new Map((roadsDoc?.nodes || []).map((n) => [n.id, n]));
   const out = [];
   for (const r of roadsDoc?.roads || []) {
@@ -635,9 +637,16 @@ export function railCrossings(doc, bounds, roadsDoc, orig, m = 40) {
           if (!p) continue;
           const ry = t.pts[k - 1][1] + (t.pts[k][1] - t.pts[k - 1][1]) * p[2];
           const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L;
-          const side = (sg) => { let mx = -Infinity; for (let q = 12; q <= 30; q += 3) { const g = orig(p[0] + sg * ux * q, p[1] + sg * uz * q); if (g > mx) mx = g; } return mx; };
+          // (a road deck's footprint over the line: over, whatever the DTM under it says; else the road's ground 4-12 m either
+          // side: bridgeAudit's 12-30 m read a road climbing to the next bridge as "over" where it crosses the Moensberg
+          // chord L26/5 at grade, Avenue des Tilleuls, and closed a real level crossing)
+          const side = (sg) => { let mx = -Infinity; for (let q = 4; q <= 12; q += 2) { const g = orig(p[0] + sg * ux * q, p[1] + sg * uz * q); if (g > mx) mx = g; } return mx; };
           const g1 = side(-1), g2 = side(1);
-          const kind = br || t.bridge ? (br ? "over" : "under") : tun ? "under" : g1 > ry + 3 && g2 > ry + 3 ? "over" : g1 < ry - 3 && g2 < ry - 3 ? "under" : "level";
+          // (roadY, the road AS THE CITY BUILDS IT at the crossing (tileData.js roadGround: OSM / hero decks included) decides
+          // first: Avenue des Tilleuls is tagged bridge=yes over the whole way but is laid at grade over the L26/5 chord)
+          const rY = roadY ? roadY(p[0], p[1]) : NaN;
+          const kind = t.bridge && !br ? "under" : tun ? "under" : Number.isFinite(rY) ? (Math.abs(rY - ry) < 1.5 ? "level" : rY > ry ? "over" : "under")
+            : br ? "over" : inDeck(p[0], p[1]) ? "over" : g1 > ry + 3 && g2 > ry + 3 ? "over" : g1 < ry - 3 && g2 < ry - 3 ? "under" : "level";
           const segs = [];
           for (let j = 1; j < pts.length; j++) if (segDist(p[0], p[1], [pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1]]) < 25) segs.push([pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1]]);
           out.push({ x: p[0], z: p[1], kind, half: carriage(r) + 2, segs, name: r.meta?.name || r.name || r.id, road: r.id, rail: ry, track: t.id });
@@ -660,7 +669,7 @@ export function railFences2(doc, bounds, heroes, roadsDoc, orig, opts = {}) {
   const pr = new Set(doc.platforms.map((p) => p.ring));
   const inAny = (x, z) => { for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return pr.has(b.ring) ? "platform" : "bridge"; return null; };
   const tracks = tracksIn(doc, bounds, FENCE + 4);
-  const crossings = railCrossings(doc, bounds, roadsDoc, orig);
+  const crossings = railCrossings(doc, bounds, roadsDoc, orig, 40, heroes, opts.roadY || null);
   const level = crossings.filter((c) => c.kind === "level");
   const levelSegs = segGrid(level.flatMap((c) => c.segs.map((s) => [...s, c.half])));
   // the car's roads not on a structure: a fence never stands in their carriageway (a street beside the line); a road that

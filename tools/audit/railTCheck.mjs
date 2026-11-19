@@ -11,8 +11,9 @@
 //      point on a road deck over the line stays, a point inside a hero road bridge is dropped (its model draws it)
 //   5. a hero's car colliders exist exactly while it is drawn (heroColliders.js HERO_SHOWN): hidden, the set leaves the
 //      driver; shown again, the same set comes back
+//   6. a pole (mast, signal, stop pole) collides over its drawn height only (driveMode.js featureColliders)
 // --old: every check against ?rail=old (must FAIL: the gate's own test).
-//   node --import ./tools/road_audit/register.mjs --import ./tools/heap/register.mjs tools/audit/railTCheck.mjs [--quiet] [--old]
+//   node --import ./tools/characters/threeHook.mjs --import ./tools/road_audit/register.mjs --import ./tools/heap/register.mjs tools/audit/railTCheck.mjs [--quiet] [--old]
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -133,6 +134,20 @@ const bounds = { x0: 0, x1: 200, z0: -50, z1: 50 };
   root.visible = true; await api.poll();
   const back = extra.length === 1 && extra[0] === set0;
   check("hero colliders: only while the hero is drawn", built === 1 && hidden === 0 && back, `built ${built}, while hidden ${hidden}, back (same set) ${back}`);
+}
+
+// 6. a pole is a post of its DRAWN height (driveMode.js featureColliders): a catenary mast on a viaduct's deck 17 m over a
+//    street is no post in the street (the Stalle viaduct's mast stopped the car in Rue de Stalle: owner shot 105)
+{
+  const THREE = await import("three/webgpu");
+  const { featureColliders } = await imp("viewer/drive/driveMode.js");
+  const { buildColliders, heightClear } = await imp("viewer/drive/colliders.js");
+  const g = new THREE.Group(), mast = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 8, 0.2).translate(0, 4, 0), new THREE.MeshBasicNodeMaterial(), 1);
+  mast.name = "rail-masts"; mast.setMatrixAt(0, new THREE.Matrix4().makeTranslation(5, 49, 5)); g.add(mast);
+  const f = featureColliders(g, { x0: 0, x1: 10, z0: 0, z1: 10 });
+  const col = buildColliders(f.polys, f.circles, { x0: 0, x1: 10, z0: 0, z1: 10 });
+  const n = col.P + col.C, under = n === 1 && col.P === 1 && heightClear(col, 0, 31.8), onDeck = n === 1 && col.P === 1 && !heightClear(col, 0, 49.1);
+  check("poles: a post of its drawn height", under && onDeck, `${col.P} polys / ${col.C} circles; a car on the street 17 m under it passes ${under}, a car beside it on the deck stops ${onDeck}`);
 }
 
 const bad = rows.filter((r) => r[1] === "FAIL");

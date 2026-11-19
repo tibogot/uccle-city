@@ -530,7 +530,7 @@ export async function buildTileData(entry, base) {
   // crossings, platforms, bridges, covered boxes, a second track, a street's carriageway; panels per post bay, the car's
   // walls the drawn panels (foot to top: over a bore the car under the lid passes, no ring cut needed)
   const railT = entry.railT !== false;
-  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => (railT ? railFences2(rail.doc, bounds, rail.heroes, roads, hm.ground, { surface: tunnelSurface(tcut, hm.surface) }) : railFences(rail.doc, bounds, rail.heroes, roads, hm.ground))) : null;
+  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => (railT ? railFences2(rail.doc, bounds, rail.heroes, roads, hm.ground, { surface: tunnelSurface(tcut, hm.surface), roadY: roadGround }) : railFences(rail.doc, bounds, rail.heroes, roads, hm.ground))) : null;
   if (fences && tcut && !railT) fences.rings = tunnelFenceRings(tunnels, fences);         // no fence collider over a bore (tunnels.js)
   const fenceB = fences && railT ? fenceBays(fences.lines, tunnelSurface(tcut, hm.surface)) : null;
   // the ground AS DRAWN and the walls' feet sunk onto it BEFORE the drive colliders (claude/collisions, rule 25): the

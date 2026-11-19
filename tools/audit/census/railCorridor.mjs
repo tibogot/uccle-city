@@ -170,7 +170,7 @@ const rb = railBridgeRings(rail, heroNotes);
 const onRailBridge0 = (x, z) => rb.some((q) => x >= q.x0 - 3 && x <= q.x1 + 3 && z >= q.z0 - 3 && z <= q.z1 + 3 && inRing2(q.ring, x, z));
 // (+ 2 m: the bridge's end, where the 1 m drive grid blends the bed into the ground under the deck)
 const onRailBridge = (x, z) => [[0, 0], [2, 0], [-2, 0], [0, 2], [0, -2]].some(([dx, dz]) => onRailBridge0(x + dx, z + dz));
-const crossings = railCrossings(rail, b, d.roads, (x, z) => hm.ground(x, z)).filter((c) => c.kind === "level");
+const crossings = railCrossings(rail, b, d.roads, (x, z) => hm.ground(x, z), 40, heroNotes).filter((c) => c.kind === "level");
 const nearLevel = (x, z) => crossings.some((c) => c.segs.some((s) => { const dx = s[2] - s[0], dz = s[3] - s[1], L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L2)); return Math.hypot(x - s[0] - dx * u, z - s[1] - dz * u) < c.half + 2; }));
 info.levelCrossings = crossings.length;
 const out = [];
