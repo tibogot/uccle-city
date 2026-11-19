@@ -55,7 +55,14 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [x] Car contact (owner 2026-11-18): MERGED 2026-11-19 (claude/carhit, rule 37): two-way push / spin / dents, knocked / wreck / rejoin, parked cars pushable; ?carpush=old. Left: no roll / pitch kick, 4 dent zones, traffic two-wheelers still one-way, the walker cannot push cars, owner tuning.
 - [x] Traffic lights in Blender (owner 2026-11-18): MERGED 2026-11-19 (claude/tlights, rule 36): Brussels-style posts, heads face the approach, seated, never in a lane, lit hues kept through ACES + eye adaptation; ?tlights=old. Far LOD hand-overs (120 / 80 m) not seen in the browser yet.
 - [ ] RESUME 2026-11-19 EVENING (the owner closed the project and Cursor; every branch below is committed, WIP where noted). Each worktree is at C:/Users/tibog/Downloads/uccle-<name> with data/raw + tools/worker/node_modules junctions. Order of Chrome turns when resuming:
-  1. claude/ground (uccle-ground): ONE ground for every mover (traffic / trams sink into decks and reshaped roads: Carsoel deck, Place de Saint-Job, Pasta Commedia). Code WIP; census + gate after "heavy OK"; then Chrome.
+  1. claude/ground (uccle-ground, 2a3f66b1 WIP; 4-tile test: traffic points off the drawn road 2,298 -> 124). Left:
+     - parked-car kerb-side wheels float 5-10 cm (the 1 m grid blends the kerb);
+     - the Carsoel deck height function is 13 cm above the drawn deck (bridgeDecks.js pavingTop; worker);
+     - I6 (1129, 958): the drive grid is up to 1.4 m over the road;
+     - the tram on the Carsoel deck: track profile +0.64 / -0.21 m;
+     - the walker's walkY still differs;
+     - the full census, the ceilings, the gate, the docs, the browser checks.
+     ONE ground for every mover (traffic / trams sink into decks and reshaped roads: Carsoel deck, Place de Saint-Job, Pasta Commedia). Code WIP; census + gate after "heavy OK"; then Chrome.
   2. claude/props (uccle-props, b0dcfe48): browser turn 1 done (bins, signs, bollards, motos, Villo OK; 60 fps with 18 knocked). Left:
      - the café-terrace chairs that don't wake when the table is hit;
      - in the browser: lamp stop, night shadows, the walker (no post left), police cones, ?props=old;
@@ -65,7 +72,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
      - census + ceilings (drivecheck 142 at cef1f714), the browser checks, the gate.
      - Next round: wrought-iron rows (Brugmann / Coghen / Molière), modern sliding anthracite gates, wooden fences (new kit pieces).
   4. claude/trafmix (uccle-trafmix, ec3e3509): done offline (no patrols in traffic was the cause; patrols, ambulances, fire, STIB / De Lijn buses on real routes, vans, bin lorries, taxis; polish: fluorescent ambulance, rounded arches). Left: the browser turn (docs/TRAFMIX.md §8).
-  5. claude/engine (uccle-engine): engine sound by the Thunderline method (docs/THUNDERLINE_STUDY.md; our own enginesound renders; demo WAVs to C:/Users/tibog/Downloads/uccle-sound-clips/engine_*.wav). WIP.
+  5. claude/engine (uccle-engine, f870ac76: only the plan, in its docs/ENGINE_SOUND.md; enginesound CLI at C:/Users/tibog/Downloads/tools-dl/enginesound/, a FLAC venv at tools-dl/pyaudio-venv). LIVE BUG to fix: citySound.js hookCitySound listener(): the facing-direction lines are inside a // comment, so the listener never turns with the camera. Engine sound by the Thunderline method (docs/THUNDERLINE_STUDY.md; our own enginesound renders; demo WAVs to C:/Users/tibog/Downloads/uccle-sound-clips/engine_*.wav). WIP.
   6. claude/tyremarks (uccle-marks): tyre marks (the owner's skid_mark01.png OK to use; NO DynamicDrawUsage; fade by age; wet variant). WIP.
   7. claude/kid (uccle-kid, 07754f3c): the bike browser turn, never run yet.
   - The STREET MODEL plan (one canonical street model per segment; checks on the DRAWN output at 0; a data-gap register; a street walker; the Ch. de Saint-Job / Rue Engeland diagonal line): the planning job's output goes to docs/STREET_MODEL_PLAN.md. Show it to the owner BEFORE building.
