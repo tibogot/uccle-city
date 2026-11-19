@@ -71,6 +71,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
     - Chrome turn: H6, G3, a stone wall, retaining vs garden brick, the steps (Perelman 4's flight: 19 risers, 5.7 m deep, check it);
     - merge + rebuild the bundle.
   - claude/kid (bike rounds 1-4, 07754f3c): browser turn not started (D6 city spot, ledge, stairs, sound, weight, camera); then the owner tries the bike lab.
+- [x] Rail corridor (CLASS T + Stalle invisible post + rail fences): MERGED 2026-11-19 (a4ad7b35, rule 39). Left: T8 Av. des Tilleuls E9 (-962, 2175): OSM bridge=yes over L26/5 but no deck nor road drawn (missing-deck job, drivecheck 158); outer-lane drive runs stuck at Rue de Stalle start points (unexplained); a catenary mast stands on the Stalle viaduct deck (real viaducts carry masts).
+- [ ] GATE FLAKE: stutter2 fails under load on a different sub-check each run (clearRoads, heroTrianglesGen, hero triangle slices) and passes alone. A flaky gate row hides real regressions: make it load-robust (median of N runs, or measure CPU time not wall time) or isolate it.
 - [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
