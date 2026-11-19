@@ -1,10 +1,13 @@
 // GAME SOUNDS (docs/GAMEKIT.md): tiny WebAudio cues, synthesised (no files): the radio squelch + beep before a message,
 // a success chime, a fail tone, a tick for the last seconds of a timer. One AudioContext, created on the first cue
 // (a key / click has happened by then), one master gain = the settings' volume. Voice lines later (a hook: play(url)).
+// Behind the speaker button (viewer/audio/soundGate.js, the one switch): no context while it is off (a cue is dropped).
+import { soundGate } from "../audio/soundGate.js";
 export class GameAudio {
   constructor(volume = 0.7) { this.ctx = null; this.master = null; this.volume = volume; }
   setVolume(v) { this.volume = v; if (this.master) this.master.gain.value = v * 0.5; }
   ready() {
+    if (soundGate.muted && !this.ctx) return null;
     if (!this.ctx) {
       try {
         this.ctx = new AudioContext();

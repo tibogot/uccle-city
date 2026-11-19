@@ -10,14 +10,17 @@
 //   vario     (off by default) a glider's climb beep: faster and higher in rising air
 //   strike    a thump and the falcon's "kek-kek-kek" (saw chirps ~2.2 kHz)
 // Starts on the first click / key (browsers need a gesture).
+import { soundGate } from "../audio/soundGate.js";
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const smooth = (x, a, b) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 
 export class FalconAudio {
   constructor() {
     this.ctx = null; this.on = true; this.vario = false; this.volume = 0.8;
-    const start = () => { if (!this.ctx && this.on) this.init(); };
+    // (the context only while the speaker button is on, viewer/audio/soundGate.js: the one switch for every sound)
+    const start = () => { if (!this.ctx && this.on && !soundGate.muted) this.init(); };
     addEventListener("pointerdown", start); addEventListener("keydown", start);
+    soundGate.onChange((m) => { if (!m) start(); });
     this.varioT = 0;
   }
 

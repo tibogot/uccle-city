@@ -110,7 +110,7 @@ export const FALCON_GAME = {
   id: "falcon", title: "Falcon", icon: "falcon",
   tagline: "The Saint-Job peregrines: you are the tiercel. Stoop on pigeons and starlings, feed the three eyases, drive the crows off the eyrie.",
   modes: [{ id: "missions", label: "Missions", desc: "hunt, feed the eyases, defend the eyrie", primary: true }, { id: "free", label: "Free flight", desc: "fly over Uccle, hunt when you like" }],
-  options: [{ id: "assist", label: "Aim assist in the strike", default: true }, { id: "avoid", label: "Flight assist: steer clear of roofs, trees and the ground", default: true }, { id: "sound", label: "Sound: the wind, wingbeats, the falcon's call", default: false }],
+  options: [{ id: "assist", label: "Aim assist in the strike", default: true }, { id: "avoid", label: "Flight assist: steer clear of roofs, trees and the ground", default: true }],   // (no sound tick: the speaker button is the one switch, docs/SOUND_CITY.md)
   idleText: { missions: "Rest on a perch or circle the tower: the falcon will call.", free: "Free flight. Hunt anytime: pigeons on the squares, starlings and parakeets over the parks." },
   keys: { default: CTL_OLD ? "<kbd>W S A D</kbd> fly · <kbd>Space</kbd> flap · <kbd>Shift</kbd> stoop · <kbd>F</kbd> talons · <kbd>E</kbd> land · <kbd>V</kbd> camera · click: mouse aim · <kbd>Esc</kbd> pause"
     : "click + mouse or <kbd>A D</kbd> steer · <kbd>W S</kbd> down / up · <kbd>Space</kbd> climb · <kbd>Shift</kbd> stoop · <kbd>E</kbd> land · <kbd>F</kbd> talons · <kbd>V</kbd> camera · <kbd>Esc</kbd> pause" },
@@ -192,11 +192,11 @@ export const FALCON_GAME = {
       if (S.eyrie && host.areaReady && window.__playLoader?.active) await host.areaReady({ x: S.eyrie.x, z: S.eyrie.z, label: "Falcon", near: 550 });
       // the nest start (the intro: the scrape, the hop to the ledge, the launch; Space skips)
       await host.fly();
-      S.prev = { sound: fl.audio?.on ?? null, P: fl.game.f.P };
+      S.prev = { P: fl.game.f.P };
       // the tiercel: a fit adult (the flight lab's numbers are a juvenile's): wingbeats last ~22 s, rest back in ~20 s
       const P0 = fl.game.f.P;
       fl.game.f.P = { ...P0, stamina: { ...P0.stamina, drain: 0.045, regen: 0.05 } };
-      if (fl.audio) fl.audio.on = !!options.sound;
+      if (fl.audio) fl.audio.on = true;                          // (the falcon's sound follows the speaker button)
       tiercel(fl, true);
     } finally { kit.hud.toast(null); }
     if (mode === "missions") {
@@ -215,7 +215,6 @@ export const FALCON_GAME = {
     if (fl?.game) {
       fl.preySource = null;
       fl.game.pigeons = fl.pigeons ?? null; fl.game.target = -1; fl.game.timeScale = 1;
-      if (fl.audio && S.prev?.sound != null) fl.audio.on = S.prev.sound;
       if (S.prev?.P) fl.game.f.P = S.prev.P;
       if (Object.prototype.hasOwnProperty.call(fl.game, "perchInReach")) delete fl.game.perchInReach;
       tiercel(fl, false);

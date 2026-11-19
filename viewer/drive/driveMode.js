@@ -207,9 +207,12 @@ export class Driver {
     this.twos = {};                                   // kind -> { model, rig, env }
     this.motoChase = new MotoCamera(camera, dom);
     this.audios = { moto: new MotoAudio(VOICES.four), scooter: new MotoAudio(VOICES.single), villo: new BikeAudio() };
+    // THE ENGINE SOUND SLOT (docs/SOUND_CITY.md): empty. The owner brings the car / motorbike engine model from another
+    // repo; it plugs in here: { update(state, dt, driver), stop() }, called every frame while driving (any vehicle) and
+    // stopped when the drive mode ends. The city sound (viewer/audio/citySound.js) already plays the player car's tyres.
+    this.engineVoice = null;
     this.keys = new DriveKeys({ active: () => this.on, onKey: (k) => {
       if (k === "KeyR") this.reset(); else if (k === "KeyC") (this.twoWheel ? this.motoChase : this.chase).next();
-      else if (k === "KeyN") { if (this.twoWheel) this.setSound(this.audio.muted); }
       else if (k === "KeyQ") { if (this.vehicle === "villo" && this.state) { this.state.bell = 0; this.state.bells++; this.audio.bell?.(); } }
       else if (k === "KeyE") this.onUse?.();
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
@@ -355,7 +358,7 @@ export class Driver {
   get motoEnv() { return this.envs[this.vehicle] ?? this.envs.moto; }
   get audio() { return this.audios[this.vehicle] ?? this.audios.moto; }
   get body() { return BODIES[this.vehicle] ?? null; }
-  /** the two-wheelers' sound, all at once (OFF by default: ?motosound=1, the dev panel, N) */
+  /** the two-wheelers' sound, all at once, for code only: the speaker button (viewer/audio/soundGate.js) is the one switch */
   setSound(on) { for (const a of Object.values(this.audios)) a.setMuted(!on); return on; }
 
   /** "car" | "moto" | "scooter" | "villo": which vehicle start() uses (a two-wheeler loads on first use) */
@@ -428,6 +431,7 @@ export class Driver {
     for (const t of Object.values(this.twos)) t.rig.reattach();
     this.showOnly();
     for (const a of Object.values(this.audios)) a.stop(); this.motoChase.active = false;
+    this.engineVoice?.stop?.();
     this.debug.visible = false;
     this.hud.style.display = "none";
   }
@@ -461,6 +465,7 @@ export class Driver {
     for (const col of this.sets(c.x, c.z, 14)) gather(col, c.x, c.z, 14, this.camNear);
     this.chase.update(c, dt, this.ground, this.insideWall);
     this.debug.update(this.sets, this.ground, c, this.env.contacts > 0, 40, this.flagsOf);
+    this.engineVoice?.update?.(c, dt, this);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
     // (perfgame: not while a game hides this line: body.game-on .g-drivehud = display none; the innerHTML + its layout every
     // 6th frame was ~0.1 ms of main thread for nothing; ?hudskip=old = always)
@@ -511,18 +516,19 @@ export class Driver {
     this.motoChase.update(c, dt, this.ground, this.insideWall, this.headAt);
     this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, BODIES[kind]);
     this.audio.update(c, dt);
+    this.engineVoice?.update?.(c, dt, this);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
     if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0 && !(HUD_SKIP && document.body.classList.contains("game-on") && this.hud.classList.contains("g-drivehud"))) {
       const small = (t) => `<small style="font-size:12px;color:#b8c2cc;font-weight:400">${t}</small>`;
-      const kmh = (Math.abs(c.speed) * 3.6).toFixed(0), snd = `N sound ${this.audio.muted ? "off" : "on"}`;
+      const kmh = (Math.abs(c.speed) * 3.6).toFixed(0);
       if (kind === "villo") {
         const what = c.crashed ? "CRASH" : c.pushing ? "pushing it up the hill" : `gear ${c.gear} · ${Math.round(c.rpm)} rpm`;
-        this.hud.innerHTML = `${kmh} ${small(`km/h · ${what} · ${this.prompt || "Shift stand on the pedals · Space rear · Q bell · C camera"} · ${snd}`)}`;
+        this.hud.innerHTML = `${kmh} ${small(`km/h · ${what} · ${this.prompt || "Shift stand on the pedals · Space rear · Q bell · C camera"}`)}`;
       } else {
         const red = H.rpm.red, rpm = Math.round(c.rpm / 100) * 100, bar = Math.round(Math.min(1, c.rpm / red) * 10);
         this.hud.innerHTML = `${kmh} ${small(`km/h · ${c.crashed ? "CRASH" : kind === "scooter" ? "CVT" : `gear ${c.gear}`} ` +
           `<span style="letter-spacing:-1px;color:${bar > 8 ? "#ff6a4a" : "#9fe08a"}">${"▮".repeat(bar)}</span><span style="letter-spacing:-1px;color:#4a525c">${"▮".repeat(10 - bar)}</span> ${rpm} rpm` +
-          ` · ${kind === "moto" ? "Shift wheelie · " : ""}Space rear · C camera · ${snd}`)}`;
+          ` · ${kind === "moto" ? "Shift wheelie · " : ""}Space rear · C camera`)}`;
       }
     }
   }
