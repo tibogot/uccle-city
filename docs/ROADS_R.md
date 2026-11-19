@@ -212,12 +212,24 @@ only where that carriageway runs WITH the lane (clear 4 m ahead and behind); the
 Snapped blind (no building test), it put 2 km more lane off the carriageway (lanes over open ground: park roads,
 private lanes) and is not used.
 
-City-wide: in a building 35 -> **31** places (624 -> 546 m), off the carriageway 337 -> 332 places; slalom 7,889 ->
-7,924 m, wobble 4,260 -> 4,280 m (the 1:10 blends into the snapped stretches). Gone: J6 Ch. de Waterloo (1722.8,
-546.3), D6 Ch. d'Alsemberg (-1218.7, 946) and (-1218.3, 917.5), D7 Ch. d'Alsemberg (-1254.1, 1000.3), F1 Rue
-Vanderkindere (-145.9, -1639.6). New: D6 Ch. d'Alsemberg (-1228.9, 898.2) 13.5 m, 1.2 m deep (the snap's blend end);
-D6 (-1238.9, 964.1) 20 -> 33 m, 1.7 m deep. Gate `roads` ceilings: inBuildingPlaces 31, offCarriagePlaces 332, slalomM
-7924, wobbleM 4280.
+**No new place (coordinator, round 2b).** A snap whose 1:10 blend puts the lane's body (centre +- 0.9 m) into a
+building it did not touch without the snap is lengthened over that point (the snapped run takes it, the profile is
+laid again, up to 4 times); a new contact left after that drops the lane's snap entirely (the no-snap profile is the
+reference). The census builds every tile's graph twice (with and without the building test) and counts the places
+in a building the snap CREATES and REMOVES: gate `snapCreated=0`.
+
+**One builder (rule 38).** viewer/traffic/tileTraffic.js `tileTrafficGraph` is the only way a tile's traffic graph is
+built: the worker (tileData.js) and every audit that checks lanes (trafParkAudit, trafParkSimTest, trafParkBorder,
+twinLink, streetAudit's worker graph, the class R census and sim) call it with the same inputs (net, class raster,
+parked cars, the roof grid: tools/road_audit/tile.mjs loadTile now returns `roofs`). Before, those audits built the
+graph without the building test and checked the lane before the snap.
+
+City-wide: in a building 35 -> **32** places (624 -> 556 m), snap created 0, removed 3 (J6 Ch. de Waterloo (1722.8,
+546.3), D7 Ch. d'Alsemberg (-1254.1, 1000.3), F1 Rue Vanderkindere (-145.9, -1639.6)); off the carriageway 337 -> 332
+places; slalom 7,889 -> 7,908 m, wobble 4,260 -> 4,272 m (the blends). D6 Ch. d'Alsemberg's lane (14.7 m off its OSM
+line) is no longer snapped: lengthened, its blend still met a building, so it stays as before (D6 (-1218.7, 946),
+(-1218.3, 917.5), (-1238.9, 964.1) as listed in round 1). Gate `roads` ceilings: inBuildingPlaces 32,
+offCarriagePlaces 332, slalomM 7908, wobbleM 4272, snapCreated 0.
 
 Left, by cause (not this rule's fix):
 - **A residential clos whose OSM line runs through the houses and UrbIS has no carriageway within 14 m on one side**
@@ -231,5 +243,4 @@ Left, by cause (not this rule's fix):
   (-194, -135), E6 Ch. de Saint-Job (-524, 929), F6 Rue Geleytsbeek, E3 Square Coghen, D8 Rue de la Cueillette, G6 Clos
   du Drossart): the carriageway there is within 9 m, the lane fit reaches it, the body still clips the footprint
   (UrbIS footprints overhanging the measured street, or the lane on the band of an unmeasured stretch).
-The trafpark / twinlink audits build the graph without the building test (they see the lane before the snap); the
-worker's own parked-car check (parkedKept) runs on the snapped graph.
+- **A lane whose snap would touch another building** (D6 Ch. d'Alsemberg, three places): no snap (above).

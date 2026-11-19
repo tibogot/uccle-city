@@ -85,17 +85,18 @@ async function graphOf(T) {
   const parked = rd.surfaceData ? widthParking(roads, feats, bounds, fit) : null;
   const trace = {};
   const refined = rd.net.graph.paths.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((q) => [q[0] ?? q.x, q[1] ?? q.z]) }));
-  // (the worker's own building test, tileData.js onRoof: the tile's roof grid)
-  const { roofGrid, onRoof } = await imp("viewer/tileData.js");
-  const roofs = roofGrid(json(join(ROOT, "data/tiles", T, "buildings.json")), bounds);
-  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roadsR: !OLD, inBuilding: (x, z) => onRoof(roofs, x, z) });
-  return { S, g, trace, refined, parked };
+  // (the worker's own builder, viewer/traffic/tileTraffic.js: the roof grid as its building test)
+  const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roofs: S.tile.roofs, entry: OLD ? { roadsR: false } : {} });
+  // (the same graph without the far-lane snap (no building test): the places the snap creates / removes)
+  const gNo = OLD ? null : tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, roofs: null });
+  return { S, g, gNo, trace, refined, parked };
 }
 const pathPts = (g, p) => { const out = []; for (let k = g.off[p]; k < g.off[p + 1]; k++) out.push([g.xy[k * 2], g.xy[k * 2 + 1]]); return out; };
 
 // ------------------------------------------------------------------ child: one tile
 const T = TILES[0];
-const { S, g, trace, refined } = await graphOf(T);
+const { S, g, gNo, trace, refined } = await graphOf(T);
 const { roads, feats, bounds, fit, driven, inB, nameAt, rd } = S;
 const counts = { lanePathM: 0, wobbleM: 0, slalomM: 0, inBuildingM: 0, inBuildingPlaces: 0, offCarriageM: 0, offCarriagePlaces: 0,
   plants: 0, plantsOn: 0, plantsReach: 0, beds: 0, bedsOn: 0, frontM: 0, frontKerbM: 0, frontOpenM: 0, frontOpenKerbM: 0, frontHardM: 0, frontHedgeM: 0, frontGateM: 0, frontBuildingM: 0, bandOnPrivateM: 0, gardenDroppedM: 0 };
@@ -182,6 +183,21 @@ const blds = [];
 for (const t of nbrs) { const f = join(ROOT, "data/tiles", t, "buildings.json"); if (existsSync(f)) for (const b of json(f).buildings) if (b.footprint?.[0]?.length >= 3) blds.push({ ...b, tile: t }); }
 const FI = footprintIndex(blds);
 const ringDist = (x, z, r) => { let m = Infinity; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [ax, az] = r[j], [bx, bz] = r[i], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9; const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)); m = Math.min(m, Math.hypot(x - ax - dx * t, z - az - dz * t)); } return m; };
+// the points of graph G whose car body (centre +- 0.9 m across) stands in a footprint (> 0.05 m deep)
+function inBuildingPts(G) {
+  const out = [];
+  for (let i = 0; i < G.paths; i++) {
+    const { Q } = resample(pathPts(G, i), 0.5);
+    for (let q = 0; q < Q.length; q++) {
+      const [x, z] = Q[q]; if (!inB(x, z)) continue;
+      const a = Q[Math.max(0, q - 1)], b = Q[Math.min(Q.length - 1, q + 1)], tl = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / tl, nz = (b[0] - a[0]) / tl;
+      let deep = 0;
+      for (const w of [0, 0.9, -0.9]) { const px = x + nx * w, pz = z + nz * w, k = FI.at(px, pz); if (k >= 0) deep = Math.max(deep, ringDist(px, pz, blds[k].footprint[0])); }
+      if (deep > 0.05) out.push({ x, z, deep });
+    }
+  }
+  return out;
+}
 {
   const inPts = [], offPts = [];
   const carrDist = (x, z) => { for (let d = 0.25; d <= 6; d += 0.25) for (let a = 0; a < 16; a++) { const th = (a / 16) * Math.PI * 2; if (driven.inside(x + Math.cos(th) * d, z + Math.sin(th) * d)) return d; } return 6; };
@@ -197,6 +213,14 @@ const ringDist = (x, z, r) => { let m = Infinity; for (let i = 0, j = r.length -
     }
   }
   counts.inBuildingM = inPts.length * 0.5; counts.offCarriageM = offPts.length * 0.5;
+  // the far-lane snap (trafficGraph.js fitToSurface): places in a building it creates / removes against the same graph
+  // built without it (rule 38: no new place)
+  counts.snapCreated = 0; counts.snapRemoved = 0; items.snapCreated = [];
+  if (gNo) {
+    const noPts = inBuildingPts(gNo), near = (L, x, z) => L.some((q) => Math.hypot(q.x - x, q.z - z) < 6);
+    for (const mem of groupPlaces(inPts, 6)) if (!mem.some((q) => near(noPts, q.x, q.z))) { counts.snapCreated++; const w = mem[0]; items.snapCreated.push({ m: mem.length * 0.5, at: at(w.x, w.z), street: nameAt(w.x, w.z) }); }
+    for (const mem of groupPlaces(noPts, 6)) if (!mem.some((q) => near(inPts, q.x, q.z))) counts.snapRemoved++;
+  }
   for (const [list, key] of [[inPts, "inBuilding"], [offPts, "offCarriage"]]) {
     const places = groupPlaces(list, 6);
     counts[`${key}Places`] = places.length;

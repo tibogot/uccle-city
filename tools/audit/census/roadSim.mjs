@@ -26,7 +26,7 @@ const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
 const { TrafficWorld } = await imp("viewer/traffic/trafficWorld.js");
 const { TrafficSim, STEP } = await imp("viewer/traffic/trafficSim.js");
 const { roadFrameOf } = await imp("viewer/streets/lineFit.js");
-const { roofGrid, onRoof } = await imp("viewer/tileData.js");
+const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");
 
 const tot = { metres: 0, wobbleM: 0, slalomM: 0 }, rows = [];
 for (const T of TILES) {
@@ -34,8 +34,7 @@ for (const T of TILES) {
   const { rd, roads, feats, bounds, fit } = S;
   const parked = rd.surfaceData ? widthParking(roads, feats, bounds, fit) : null;
   const trace = {};
-  const roofs = roofGrid(JSON.parse(readFileSync(join(ROOT, "data/tiles", T, "buildings.json"), "utf8")), bounds);
-  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roadsR: !OLD, inBuilding: (x, z) => onRoof(roofs, x, z) });
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roofs: S.tile.roofs, entry: OLD ? { roadsR: false } : {} });
   const sites = g.parkedKept ?? parked?.sites ?? [];
   const cars = sites.map((c) => ({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { setRGB() {} }, room: 6 }));
   const W = new TrafficWorld(); W.add(T, g);

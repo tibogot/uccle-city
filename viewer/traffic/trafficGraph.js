@@ -625,7 +625,7 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
     // Ch. d'Alsemberg D6). Where the measured carriageway lies within FAR_SNAP m on ONE side only (never a guess
     // between two streets), the lane goes onto it at its own offset from its road's centre line (laneOff), held >= 1 m
     // inside the carriageway's edges; the offset profile below blends it in. ?roads=old: as before (left where it was)
-    const snap = new Uint8Array(n);
+    const snap = new Uint8Array(n), off0 = Float32Array.from(off);
     if (R38 && laneOff && far.some(Boolean)) for (let k = 0; k < n; k++) {
       if (!far[k]) continue;
       const [tx, tz] = tangent(q, k), nx = -tz, nz = tx, x = q[k][0], z = q[k][1];
@@ -651,7 +651,7 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
       if (!snap[k]) { k++; continue; }
       let e = k; while (e < n && snap[e]) e++;
       let inB = 0; for (let m = k; m < e; m++) if (inBuilding(q[m][0], q[m][1])) inB++;
-      if (e - k < FAR_RUN || inB < FAR_RUN) for (let m = k; m < e; m++) off[m] = 0;
+      if (e - k < FAR_RUN || inB < FAR_RUN) for (let m = k; m < e; m++) { off[m] = off0[m]; snap[m] = 0; }
       else st.farSnap = (st.farSnap || 0) + (e - k);
       k = e;
     }
@@ -681,6 +681,32 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
       return sm;
     };
     let sm = R38 ? laneOffsetProfile(off, p.cum || cumulative(q)) : smooth(null);
+    // (the snap must not put the lane into ANOTHER building: its 1:10 blends reach past the snapped run. Where the
+    // blended lane's body (centre +- 0.9 m) stands in a building it did not stand in without the snap, the snapped run
+    // is lengthened over that point (it takes the run's end offset) and the profile laid again, up to 4 times; if a new
+    // building contact is still left, the lane is not snapped at all (Ch. d'Alsemberg D6: the 14.7 m snap's blend ends
+    // made two places worse). The no-snap profile is the reference)
+    if (R38 && snap.some(Boolean)) {
+      const cum = p.cum || cumulative(q);
+      const smNo = laneOffsetProfile(off0, cum);
+      const body = (k, o) => { const [tx, tz] = tangent(q, k), nx = -tz, nz = tx; return [0, 0.9, -0.9].some((w) => inBuilding(q[k][0] + nx * (o + w), q[k][1] + nz * (o + w))); };
+      const fresh = () => { const f = []; for (let k = 0; k < n; k++) if (body(k, sm[k]) && !body(k, smNo[k])) f.push(k); return f; };
+      let bad = fresh();
+      for (let it = 0; it < 4 && bad.length; it++) {
+        for (const k of bad) {
+          if (snap[k]) continue;
+          // the nearest snapped point's offset, carried over to k (and every point between)
+          let a = k; while (a >= 0 && !snap[a]) a--; let b = k; while (b < n && !snap[b]) b++;
+          const from = a >= 0 && (b >= n || k - a <= b - k) ? a : b < n ? b : -1;
+          if (from < 0) continue;
+          for (let m = Math.min(from, k); m <= Math.max(from, k); m++) if (!snap[m]) { snap[m] = 1; off[m] = off[from]; }
+        }
+        sm = laneOffsetProfile(off, cum);
+        bad = fresh();
+      }
+      if (bad.length) { for (let k = 0; k < n; k++) { off[k] = off0[k]; snap[k] = 0; } sm = smNo; st.farSnapDropped = (st.farSnapDropped || 0) + 1; }
+      else st.farSnapLanes = (st.farSnapLanes || 0) + 1;
+    }
     // trafpark: the smoothing (the average, then the light pass) pulled lanes back toward the cars they had been moved
     // clear of: the smoothed line is checked against the cars, a point that touches one takes the nearest clear offset
     // as a hard constraint, smoothed again (at most 6 rounds)
