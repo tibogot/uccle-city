@@ -1,29 +1,31 @@
 {
- "when": "2026-11-18T20:42:16.380Z",
+ "when": "2026-11-18T22:10:34.748Z",
  "old": false,
  "sum": {
   "lump": 864,
   "lumpM2": 11966,
   "hole": 3,
   "holeM2": 320,
-  "spike": 174,
-  "spikeM2": 490,
+  "spike": 173,
+  "spikeM2": 488,
   "tilt": 811,
   "tiltM2": 4876,
   "roadTilt": 380,
   "roadTiltM2": 6822,
-  "over": 352,
-  "overM2": 875,
+  "over": 344,
+  "overM2": 868,
   "gardenVoid": 0,
   "gardenVoidM2": 0,
   "blade": 0,
-  "bladeM2": 0
+  "bladeM2": 0,
+  "stacked": 0,
+  "stackedM2": 0
  },
  "perf": {
-  "roadMs": 326365,
-  "weldMs": 43099,
-  "surfMs": 47059,
-  "roadTris": 7050377
+  "roadMs": 650044,
+  "weldMs": 69132,
+  "surfMs": 98124,
+  "roadTris": 7043591
  },
  "tiles": [
   {
@@ -44,12 +46,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2252,
-    "weldMs": 340,
-    "surfMs": 121,
+    "roadMs": 4590,
+    "weldMs": 649,
+    "surfMs": 295,
     "roadTris": 33327
    }
   },
@@ -66,18 +70,20 @@
     "tiltM2": 795.0469731241465,
     "roadTilt": 7,
     "roadTiltM2": 201.62652690708637,
-    "over": 2,
-    "overM2": 1.3125,
+    "over": 1,
+    "overM2": 0.625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 5301,
-    "weldMs": 605,
-    "surfMs": 714,
-    "roadTris": 126954
+    "roadMs": 13258,
+    "weldMs": 915,
+    "surfMs": 2385,
+    "roadTris": 126934
    }
   },
   {
@@ -98,12 +104,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3667,
-    "weldMs": 497,
-    "surfMs": 413,
+    "roadMs": 6600,
+    "weldMs": 682,
+    "surfMs": 897,
     "roadTris": 66774
    }
   },
@@ -125,12 +133,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3495,
-    "weldMs": 435,
-    "surfMs": 278,
+    "roadMs": 5017,
+    "weldMs": 594,
+    "surfMs": 375,
     "roadTris": 68191
    }
   },
@@ -152,12 +162,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2822,
-    "weldMs": 419,
-    "surfMs": 274,
+    "roadMs": 3667,
+    "weldMs": 465,
+    "surfMs": 309,
     "roadTris": 63411
    }
   },
@@ -179,12 +191,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1812,
-    "weldMs": 311,
-    "surfMs": 29,
+    "roadMs": 3646,
+    "weldMs": 608,
+    "surfMs": 62,
     "roadTris": 25097
    }
   },
@@ -206,13 +220,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4710,
-    "weldMs": 512,
-    "surfMs": 642,
-    "roadTris": 113943
+    "roadMs": 10424,
+    "weldMs": 837,
+    "surfMs": 1600,
+    "roadTris": 113829
    }
   },
   {
@@ -228,18 +244,20 @@
     "tiltM2": 85.73203846253455,
     "roadTilt": 4,
     "roadTiltM2": 34.11786218173802,
-    "over": 10,
-    "overM2": 26.875,
+    "over": 11,
+    "overM2": 27.375,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3666,
-    "weldMs": 460,
-    "surfMs": 548,
-    "roadTris": 75408
+    "roadMs": 8693,
+    "weldMs": 946,
+    "surfMs": 1429,
+    "roadTris": 75322
    }
   },
   {
@@ -260,13 +278,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 5672,
-    "weldMs": 572,
-    "surfMs": 732,
-    "roadTris": 121848
+    "roadMs": 10603,
+    "weldMs": 780,
+    "surfMs": 1409,
+    "roadTris": 121822
    }
   },
   {
@@ -287,13 +307,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3275,
-    "weldMs": 441,
-    "surfMs": 532,
-    "roadTris": 65696
+    "roadMs": 4616,
+    "weldMs": 526,
+    "surfMs": 676,
+    "roadTris": 65610
    }
   },
   {
@@ -314,12 +336,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4548,
-    "weldMs": 528,
-    "surfMs": 679,
+    "roadMs": 6600,
+    "weldMs": 732,
+    "surfMs": 874,
     "roadTris": 111213
    }
   },
@@ -341,13 +365,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3913,
-    "weldMs": 479,
-    "surfMs": 413,
-    "roadTris": 74754
+    "roadMs": 7769,
+    "weldMs": 696,
+    "surfMs": 972,
+    "roadTris": 74716
    }
   },
   {
@@ -368,12 +394,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2347,
-    "weldMs": 392,
-    "surfMs": 126,
+    "roadMs": 4458,
+    "weldMs": 675,
+    "surfMs": 395,
     "roadTris": 26415
    }
   },
@@ -395,12 +423,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4097,
-    "weldMs": 446,
-    "surfMs": 629,
+    "roadMs": 7621,
+    "weldMs": 746,
+    "surfMs": 835,
     "roadTris": 92174
    }
   },
@@ -422,13 +452,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2931,
-    "weldMs": 471,
-    "surfMs": 203,
-    "roadTris": 39977
+    "roadMs": 5254,
+    "weldMs": 632,
+    "surfMs": 332,
+    "roadTris": 39973
    }
   },
   {
@@ -449,12 +481,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4385,
-    "weldMs": 529,
-    "surfMs": 602,
+    "roadMs": 9742,
+    "weldMs": 916,
+    "surfMs": 1551,
     "roadTris": 109367
    }
   },
@@ -476,13 +510,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3882,
-    "weldMs": 467,
-    "surfMs": 577,
-    "roadTris": 81800
+    "roadMs": 8943,
+    "weldMs": 821,
+    "surfMs": 1487,
+    "roadTris": 81790
    }
   },
   {
@@ -492,24 +528,26 @@
     "lumpM2": 73,
     "hole": 0,
     "holeM2": 0,
-    "spike": 6,
-    "spikeM2": 13,
+    "spike": 5,
+    "spikeM2": 11,
     "tilt": 11,
     "tiltM2": 88.81724256038251,
     "roadTilt": 12,
     "roadTiltM2": 65.21804675279418,
-    "over": 10,
-    "overM2": 21,
+    "over": 8,
+    "overM2": 18.1875,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4597,
-    "weldMs": 515,
-    "surfMs": 628,
-    "roadTris": 113137
+    "roadMs": 10175,
+    "weldMs": 799,
+    "surfMs": 1351,
+    "roadTris": 112757
    }
   },
   {
@@ -530,13 +568,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4545,
-    "weldMs": 491,
-    "surfMs": 646,
-    "roadTris": 104149
+    "roadMs": 8613,
+    "weldMs": 776,
+    "surfMs": 1416,
+    "roadTris": 104027
    }
   },
   {
@@ -553,17 +593,19 @@
     "roadTilt": 30,
     "roadTiltM2": 706.2105980999768,
     "over": 18,
-    "overM2": 41.625,
+    "overM2": 42.0625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4973,
-    "weldMs": 568,
-    "surfMs": 502,
-    "roadTris": 115246
+    "roadMs": 6352,
+    "weldMs": 632,
+    "surfMs": 800,
+    "roadTris": 115156
    }
   },
   {
@@ -579,18 +621,20 @@
     "tiltM2": 38.50998719781637,
     "roadTilt": 3,
     "roadTiltM2": 10.063438571989536,
-    "over": 2,
-    "overM2": 3.6875,
+    "over": 3,
+    "overM2": 4.5625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4502,
-    "weldMs": 462,
-    "surfMs": 505,
-    "roadTris": 106332
+    "roadMs": 7750,
+    "weldMs": 657,
+    "surfMs": 742,
+    "roadTris": 106324
    }
   },
   {
@@ -606,18 +650,20 @@
     "tiltM2": 7.298215076327324,
     "roadTilt": 1,
     "roadTiltM2": 45.29316009581089,
-    "over": 2,
-    "overM2": 1.375,
+    "over": 3,
+    "overM2": 2.4375,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3461,
-    "weldMs": 469,
-    "surfMs": 550,
-    "roadTris": 89808
+    "roadMs": 7764,
+    "weldMs": 789,
+    "surfMs": 1169,
+    "roadTris": 89744
    }
   },
   {
@@ -634,17 +680,19 @@
     "roadTilt": 5,
     "roadTiltM2": 32.239788219332695,
     "over": 2,
-    "overM2": 2.5,
+    "overM2": 2.375,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2622,
-    "weldMs": 436,
-    "surfMs": 294,
-    "roadTris": 44697
+    "roadMs": 4737,
+    "weldMs": 601,
+    "surfMs": 721,
+    "roadTris": 44649
    }
   },
   {
@@ -665,12 +713,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 5843,
-    "weldMs": 549,
-    "surfMs": 853,
+    "roadMs": 11125,
+    "weldMs": 948,
+    "surfMs": 1167,
     "roadTris": 141315
    }
   },
@@ -687,18 +737,20 @@
     "tiltM2": 0.7895232439041138,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 23,
-    "overM2": 169.1875,
+    "over": 22,
+    "overM2": 168.5,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3224,
-    "weldMs": 448,
-    "surfMs": 425,
-    "roadTris": 57109
+    "roadMs": 6204,
+    "weldMs": 783,
+    "surfMs": 883,
+    "roadTris": 57005
    }
   },
   {
@@ -719,13 +771,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3779,
-    "weldMs": 523,
-    "surfMs": 570,
-    "roadTris": 87257
+    "roadMs": 8780,
+    "weldMs": 1007,
+    "surfMs": 1112,
+    "roadTris": 87225
    }
   },
   {
@@ -741,18 +795,20 @@
     "tiltM2": 0.6955253928899765,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 5,
-    "overM2": 5.5,
+    "over": 7,
+    "overM2": 7.125,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4175,
-    "weldMs": 523,
-    "surfMs": 663,
-    "roadTris": 92836
+    "roadMs": 10492,
+    "weldMs": 918,
+    "surfMs": 1817,
+    "roadTris": 92662
    }
   },
   {
@@ -773,13 +829,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 6159,
-    "weldMs": 616,
-    "surfMs": 799,
-    "roadTris": 163448
+    "roadMs": 13757,
+    "weldMs": 1002,
+    "surfMs": 2101,
+    "roadTris": 163472
    }
   },
   {
@@ -800,13 +858,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3857,
-    "weldMs": 441,
-    "surfMs": 519,
-    "roadTris": 81194
+    "roadMs": 7602,
+    "weldMs": 690,
+    "surfMs": 1151,
+    "roadTris": 81062
    }
   },
   {
@@ -827,13 +887,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4247,
-    "weldMs": 569,
-    "surfMs": 683,
-    "roadTris": 85168
+    "roadMs": 5389,
+    "weldMs": 562,
+    "surfMs": 663,
+    "roadTris": 84898
    }
   },
   {
@@ -854,13 +916,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3148,
-    "weldMs": 431,
-    "surfMs": 426,
-    "roadTris": 61448
+    "roadMs": 6300,
+    "weldMs": 630,
+    "surfMs": 709,
+    "roadTris": 61232
    }
   },
   {
@@ -881,13 +945,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3555,
-    "weldMs": 471,
-    "surfMs": 650,
-    "roadTris": 74179
+    "roadMs": 7171,
+    "weldMs": 749,
+    "surfMs": 1126,
+    "roadTris": 73809
    }
   },
   {
@@ -903,18 +969,20 @@
     "tiltM2": 7.3630859069526196,
     "roadTilt": 1,
     "roadTiltM2": 22.01110126823187,
-    "over": 9,
-    "overM2": 8.375,
+    "over": 10,
+    "overM2": 9.0625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3755,
-    "weldMs": 462,
-    "surfMs": 737,
-    "roadTris": 87026
+    "roadMs": 7312,
+    "weldMs": 814,
+    "surfMs": 1195,
+    "roadTris": 86814
    }
   },
   {
@@ -935,13 +1003,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 5966,
-    "weldMs": 569,
-    "surfMs": 716,
-    "roadTris": 150625
+    "roadMs": 11091,
+    "weldMs": 889,
+    "surfMs": 968,
+    "roadTris": 150607
    }
   },
   {
@@ -962,13 +1032,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1601,
-    "weldMs": 294,
-    "surfMs": 170,
-    "roadTris": 18521
+    "roadMs": 3339,
+    "weldMs": 440,
+    "surfMs": 419,
+    "roadTris": 18515
    }
   },
   {
@@ -989,13 +1061,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 5247,
-    "weldMs": 523,
-    "surfMs": 797,
-    "roadTris": 139130
+    "roadMs": 10965,
+    "weldMs": 873,
+    "surfMs": 1973,
+    "roadTris": 139012
    }
   },
   {
@@ -1016,13 +1090,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4435,
-    "weldMs": 520,
-    "surfMs": 718,
-    "roadTris": 119482
+    "roadMs": 11041,
+    "weldMs": 882,
+    "surfMs": 2267,
+    "roadTris": 119362
    }
   },
   {
@@ -1043,13 +1119,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3177,
-    "weldMs": 510,
-    "surfMs": 544,
-    "roadTris": 81876
+    "roadMs": 8281,
+    "weldMs": 808,
+    "surfMs": 1282,
+    "roadTris": 81832
    }
   },
   {
@@ -1070,13 +1148,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3383,
-    "weldMs": 505,
-    "surfMs": 569,
-    "roadTris": 81087
+    "roadMs": 7417,
+    "weldMs": 765,
+    "surfMs": 1333,
+    "roadTris": 81057
    }
   },
   {
@@ -1092,18 +1172,20 @@
     "tiltM2": 186.24044205178507,
     "roadTilt": 11,
     "roadTiltM2": 190.93005325458944,
-    "over": 2,
-    "overM2": 1.25,
+    "over": 1,
+    "overM2": 0.5625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3665,
-    "weldMs": 447,
-    "surfMs": 508,
-    "roadTris": 77813
+    "roadMs": 4871,
+    "weldMs": 543,
+    "surfMs": 613,
+    "roadTris": 77753
    }
   },
   {
@@ -1119,18 +1201,20 @@
     "tiltM2": 19.59704157523811,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 4,
-    "overM2": 4.5625,
+    "over": 3,
+    "overM2": 4,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2343,
-    "weldMs": 303,
-    "surfMs": 314,
-    "roadTris": 52291
+    "roadMs": 5139,
+    "weldMs": 625,
+    "surfMs": 594,
+    "roadTris": 52271
    }
   },
   {
@@ -1151,12 +1235,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2840,
-    "weldMs": 324,
-    "surfMs": 373,
+    "roadMs": 6822,
+    "weldMs": 667,
+    "surfMs": 947,
     "roadTris": 65069
    }
   },
@@ -1174,17 +1260,19 @@
     "roadTilt": 6,
     "roadTiltM2": 40.656174080912024,
     "over": 10,
-    "overM2": 13.4375,
+    "overM2": 13.5625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 5150,
-    "weldMs": 595,
-    "surfMs": 595,
-    "roadTris": 138278
+    "roadMs": 10625,
+    "weldMs": 908,
+    "surfMs": 1282,
+    "roadTris": 137980
    }
   },
   {
@@ -1205,12 +1293,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4387,
-    "weldMs": 464,
-    "surfMs": 603,
+    "roadMs": 8355,
+    "weldMs": 797,
+    "surfMs": 800,
     "roadTris": 95728
    }
   },
@@ -1227,18 +1317,20 @@
     "tiltM2": 283.42678087204695,
     "roadTilt": 15,
     "roadTiltM2": 468.9321238771081,
-    "over": 8,
-    "overM2": 9.0625,
+    "over": 7,
+    "overM2": 8.1875,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2065,
-    "weldMs": 278,
-    "surfMs": 360,
-    "roadTris": 43645
+    "roadMs": 4427,
+    "weldMs": 501,
+    "surfMs": 658,
+    "roadTris": 43455
    }
   },
   {
@@ -1259,13 +1351,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3162,
-    "weldMs": 480,
-    "surfMs": 529,
-    "roadTris": 57676
+    "roadMs": 6813,
+    "weldMs": 719,
+    "surfMs": 1291,
+    "roadTris": 57578
    }
   },
   {
@@ -1286,13 +1380,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3037,
-    "weldMs": 466,
-    "surfMs": 349,
-    "roadTris": 58553
+    "roadMs": 7057,
+    "weldMs": 673,
+    "surfMs": 990,
+    "roadTris": 58481
    }
   },
   {
@@ -1313,13 +1409,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2867,
-    "weldMs": 447,
-    "surfMs": 377,
-    "roadTris": 60825
+    "roadMs": 7488,
+    "weldMs": 765,
+    "surfMs": 812,
+    "roadTris": 60769
    }
   },
   {
@@ -1335,18 +1433,20 @@
     "tiltM2": 31.74082644257578,
     "roadTilt": 3,
     "roadTiltM2": 83.2505470699798,
-    "over": 2,
-    "overM2": 1.5625,
+    "over": 1,
+    "overM2": 0.5,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3724,
-    "weldMs": 507,
-    "surfMs": 520,
-    "roadTris": 91867
+    "roadMs": 7162,
+    "weldMs": 628,
+    "surfMs": 908,
+    "roadTris": 91815
    }
   },
   {
@@ -1362,18 +1462,20 @@
     "tiltM2": 4.625518546905369,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 8,
-    "overM2": 14.0625,
+    "over": 7,
+    "overM2": 13.0625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3466,
-    "weldMs": 380,
-    "surfMs": 532,
-    "roadTris": 78600
+    "roadMs": 4732,
+    "weldMs": 504,
+    "surfMs": 703,
+    "roadTris": 78556
    }
   },
   {
@@ -1394,13 +1496,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1531,
-    "weldMs": 245,
-    "surfMs": 226,
-    "roadTris": 26627
+    "roadMs": 3012,
+    "weldMs": 399,
+    "surfMs": 528,
+    "roadTris": 26579
    }
   },
   {
@@ -1421,12 +1525,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1999,
-    "weldMs": 294,
-    "surfMs": 165,
+    "roadMs": 3568,
+    "weldMs": 573,
+    "surfMs": 294,
     "roadTris": 25329
    }
   },
@@ -1448,13 +1554,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2472,
-    "weldMs": 353,
-    "surfMs": 332,
-    "roadTris": 50196
+    "roadMs": 5373,
+    "weldMs": 595,
+    "surfMs": 878,
+    "roadTris": 50186
    }
   },
   {
@@ -1475,12 +1583,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4557,
-    "weldMs": 486,
-    "surfMs": 603,
+    "roadMs": 11154,
+    "weldMs": 955,
+    "surfMs": 1764,
     "roadTris": 114729
    }
   },
@@ -1502,13 +1612,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1802,
-    "weldMs": 279,
-    "surfMs": 242,
-    "roadTris": 32552
+    "roadMs": 4022,
+    "weldMs": 512,
+    "surfMs": 563,
+    "roadTris": 32520
    }
   },
   {
@@ -1529,12 +1641,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 406,
-    "weldMs": 58,
-    "surfMs": 4,
+    "roadMs": 831,
+    "weldMs": 109,
+    "surfMs": 9,
     "roadTris": 112
    }
   },
@@ -1556,13 +1670,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3878,
-    "weldMs": 485,
-    "surfMs": 685,
-    "roadTris": 100957
+    "roadMs": 8804,
+    "weldMs": 825,
+    "surfMs": 1454,
+    "roadTris": 100881
    }
   },
   {
@@ -1578,18 +1694,20 @@
     "tiltM2": 31.188622817397118,
     "roadTilt": 2,
     "roadTiltM2": 4.296606274321675,
-    "over": 5,
-    "overM2": 4.6875,
+    "over": 4,
+    "overM2": 3.75,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4144,
-    "weldMs": 583,
-    "surfMs": 581,
-    "roadTris": 104852
+    "roadMs": 10198,
+    "weldMs": 807,
+    "surfMs": 1580,
+    "roadTris": 104578
    }
   },
   {
@@ -1605,18 +1723,20 @@
     "tiltM2": 68.32309543789597,
     "roadTilt": 1,
     "roadTiltM2": 0.5122768029686995,
-    "over": 4,
-    "overM2": 3.3125,
+    "over": 3,
+    "overM2": 2.5,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3547,
-    "weldMs": 535,
-    "surfMs": 536,
-    "roadTris": 71170
+    "roadMs": 7791,
+    "weldMs": 752,
+    "surfMs": 1340,
+    "roadTris": 70976
    }
   },
   {
@@ -1632,18 +1752,20 @@
     "tiltM2": 1.3262570694787428,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 2,
-    "overM2": 1.25,
+    "over": 1,
+    "overM2": 0.5625,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4128,
-    "weldMs": 480,
-    "surfMs": 578,
-    "roadTris": 96575
+    "roadMs": 8071,
+    "weldMs": 757,
+    "surfMs": 1554,
+    "roadTris": 96431
    }
   },
   {
@@ -1664,13 +1786,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3352,
-    "weldMs": 466,
-    "surfMs": 471,
-    "roadTris": 66213
+    "roadMs": 4587,
+    "weldMs": 522,
+    "surfMs": 826,
+    "roadTris": 66071
    }
   },
   {
@@ -1691,13 +1815,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2391,
-    "weldMs": 311,
-    "surfMs": 524,
-    "roadTris": 53333
+    "roadMs": 4444,
+    "weldMs": 532,
+    "surfMs": 986,
+    "roadTris": 53327
    }
   },
   {
@@ -1718,13 +1844,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2524,
-    "weldMs": 324,
-    "surfMs": 457,
-    "roadTris": 54413
+    "roadMs": 5094,
+    "weldMs": 507,
+    "surfMs": 973,
+    "roadTris": 54283
    }
   },
   {
@@ -1740,18 +1868,20 @@
     "tiltM2": 1.5626584365963936,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 1,
-    "overM2": 0.5,
+    "over": 0,
+    "overM2": 0,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1714,
-    "weldMs": 254,
-    "surfMs": 285,
-    "roadTris": 29255
+    "roadMs": 3891,
+    "weldMs": 483,
+    "surfMs": 766,
+    "roadTris": 29171
    }
   },
   {
@@ -1772,12 +1902,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3751,
-    "weldMs": 509,
-    "surfMs": 461,
+    "roadMs": 8377,
+    "weldMs": 928,
+    "surfMs": 1099,
     "roadTris": 91774
    }
   },
@@ -1799,13 +1931,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2687,
-    "weldMs": 377,
-    "surfMs": 524,
-    "roadTris": 61110
+    "roadMs": 5296,
+    "weldMs": 745,
+    "surfMs": 849,
+    "roadTris": 61044
    }
   },
   {
@@ -1826,12 +1960,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1254,
-    "weldMs": 263,
-    "surfMs": 39,
+    "roadMs": 2711,
+    "weldMs": 607,
+    "surfMs": 93,
     "roadTris": 14156
    }
   },
@@ -1853,13 +1989,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3248,
-    "weldMs": 394,
-    "surfMs": 554,
-    "roadTris": 84533
+    "roadMs": 8817,
+    "weldMs": 695,
+    "surfMs": 1524,
+    "roadTris": 84471
    }
   },
   {
@@ -1880,13 +2018,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3324,
-    "weldMs": 434,
-    "surfMs": 479,
-    "roadTris": 72554
+    "roadMs": 8046,
+    "weldMs": 776,
+    "surfMs": 1376,
+    "roadTris": 72518
    }
   },
   {
@@ -1907,13 +2047,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2807,
-    "weldMs": 307,
-    "surfMs": 386,
-    "roadTris": 58597
+    "roadMs": 6322,
+    "weldMs": 575,
+    "surfMs": 907,
+    "roadTris": 58543
    }
   },
   {
@@ -1934,13 +2076,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2991,
-    "weldMs": 423,
-    "surfMs": 493,
-    "roadTris": 63856
+    "roadMs": 6049,
+    "weldMs": 556,
+    "surfMs": 1064,
+    "roadTris": 63734
    }
   },
   {
@@ -1961,13 +2105,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4471,
-    "weldMs": 497,
-    "surfMs": 666,
-    "roadTris": 107540
+    "roadMs": 5726,
+    "weldMs": 615,
+    "surfMs": 970,
+    "roadTris": 107354
    }
   },
   {
@@ -1988,13 +2134,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2514,
-    "weldMs": 307,
-    "surfMs": 453,
-    "roadTris": 49554
+    "roadMs": 5349,
+    "weldMs": 671,
+    "surfMs": 808,
+    "roadTris": 49490
    }
   },
   {
@@ -2015,13 +2163,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2805,
-    "weldMs": 344,
-    "surfMs": 501,
-    "roadTris": 66122
+    "roadMs": 5708,
+    "weldMs": 629,
+    "surfMs": 1251,
+    "roadTris": 66040
    }
   },
   {
@@ -2042,13 +2192,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2011,
-    "weldMs": 321,
-    "surfMs": 409,
-    "roadTris": 41250
+    "roadMs": 3655,
+    "weldMs": 411,
+    "surfMs": 769,
+    "roadTris": 41178
    }
   },
   {
@@ -2069,13 +2221,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1704,
-    "weldMs": 290,
-    "surfMs": 327,
-    "roadTris": 39261
+    "roadMs": 4130,
+    "weldMs": 469,
+    "surfMs": 879,
+    "roadTris": 39163
    }
   },
   {
@@ -2096,13 +2250,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1530,
-    "weldMs": 257,
-    "surfMs": 141,
-    "roadTris": 18387
+    "roadMs": 3266,
+    "weldMs": 422,
+    "surfMs": 270,
+    "roadTris": 18377
    }
   },
   {
@@ -2123,12 +2279,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1782,
-    "weldMs": 264,
-    "surfMs": 348,
+    "roadMs": 3983,
+    "weldMs": 642,
+    "surfMs": 799,
     "roadTris": 28822
    }
   },
@@ -2150,13 +2308,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2817,
-    "weldMs": 345,
-    "surfMs": 407,
-    "roadTris": 61275
+    "roadMs": 6647,
+    "weldMs": 631,
+    "surfMs": 1078,
+    "roadTris": 61265
    }
   },
   {
@@ -2177,13 +2337,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3888,
-    "weldMs": 439,
-    "surfMs": 461,
-    "roadTris": 90682
+    "roadMs": 7389,
+    "weldMs": 670,
+    "surfMs": 1108,
+    "roadTris": 90648
    }
   },
   {
@@ -2199,18 +2361,20 @@
     "tiltM2": 2.942546473816037,
     "roadTilt": 1,
     "roadTiltM2": 4.9639024790376425,
-    "over": 3,
-    "overM2": 5.625,
+    "over": 4,
+    "overM2": 6.125,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3569,
-    "weldMs": 394,
-    "surfMs": 557,
-    "roadTris": 85747
+    "roadMs": 6126,
+    "weldMs": 643,
+    "surfMs": 1023,
+    "roadTris": 85609
    }
   },
   {
@@ -2231,13 +2395,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2815,
-    "weldMs": 382,
-    "surfMs": 395,
-    "roadTris": 50692
+    "roadMs": 3551,
+    "weldMs": 399,
+    "surfMs": 452,
+    "roadTris": 50592
    }
   },
   {
@@ -2253,18 +2419,20 @@
     "tiltM2": 4.02518218010664,
     "roadTilt": 2,
     "roadTiltM2": 10.802215576171875,
-    "over": 2,
-    "overM2": 1.375,
+    "over": 1,
+    "overM2": 0.6875,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3870,
-    "weldMs": 495,
-    "surfMs": 658,
-    "roadTris": 101860
+    "roadMs": 7945,
+    "weldMs": 694,
+    "surfMs": 1383,
+    "roadTris": 101700
    }
   },
   {
@@ -2285,13 +2453,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2305,
-    "weldMs": 278,
-    "surfMs": 487,
-    "roadTris": 46449
+    "roadMs": 4174,
+    "weldMs": 613,
+    "surfMs": 718,
+    "roadTris": 46359
    }
   },
   {
@@ -2312,13 +2482,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1882,
-    "weldMs": 251,
-    "surfMs": 398,
-    "roadTris": 40330
+    "roadMs": 3826,
+    "weldMs": 431,
+    "surfMs": 780,
+    "roadTris": 40238
    }
   },
   {
@@ -2339,13 +2511,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1896,
-    "weldMs": 259,
-    "surfMs": 342,
-    "roadTris": 39909
+    "roadMs": 4167,
+    "weldMs": 458,
+    "surfMs": 701,
+    "roadTris": 39851
    }
   },
   {
@@ -2361,18 +2535,20 @@
     "tiltM2": 17.530623346567154,
     "roadTilt": 0,
     "roadTiltM2": 0,
-    "over": 5,
-    "overM2": 5.75,
+    "over": 4,
+    "overM2": 5,
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2157,
-    "weldMs": 264,
-    "surfMs": 297,
-    "roadTris": 43278
+    "roadMs": 5561,
+    "weldMs": 515,
+    "surfMs": 702,
+    "roadTris": 43232
    }
   },
   {
@@ -2393,12 +2569,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1104,
-    "weldMs": 204,
-    "surfMs": 78,
+    "roadMs": 2167,
+    "weldMs": 401,
+    "surfMs": 139,
     "roadTris": 14530
    }
   },
@@ -2420,12 +2598,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2124,
-    "weldMs": 333,
-    "surfMs": 329,
+    "roadMs": 4015,
+    "weldMs": 535,
+    "surfMs": 840,
     "roadTris": 45783
    }
   },
@@ -2447,13 +2627,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1850,
-    "weldMs": 218,
-    "surfMs": 359,
-    "roadTris": 33746
+    "roadMs": 3096,
+    "weldMs": 432,
+    "surfMs": 530,
+    "roadTris": 33738
    }
   },
   {
@@ -2474,13 +2656,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1893,
-    "weldMs": 273,
-    "surfMs": 334,
-    "roadTris": 36225
+    "roadMs": 2481,
+    "weldMs": 352,
+    "surfMs": 394,
+    "roadTris": 36123
    }
   },
   {
@@ -2501,13 +2685,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1835,
-    "weldMs": 269,
-    "surfMs": 207,
-    "roadTris": 27364
+    "roadMs": 3825,
+    "weldMs": 492,
+    "surfMs": 533,
+    "roadTris": 27344
    }
   },
   {
@@ -2528,12 +2714,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 2813,
-    "weldMs": 410,
-    "surfMs": 529,
+    "roadMs": 5936,
+    "weldMs": 562,
+    "surfMs": 1208,
     "roadTris": 59105
    }
   },
@@ -2555,13 +2743,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1764,
-    "weldMs": 242,
-    "surfMs": 411,
-    "roadTris": 43286
+    "roadMs": 4373,
+    "weldMs": 531,
+    "surfMs": 926,
+    "roadTris": 43174
    }
   },
   {
@@ -2582,12 +2772,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 803,
-    "weldMs": 149,
-    "surfMs": 134,
+    "roadMs": 1706,
+    "weldMs": 320,
+    "surfMs": 271,
     "roadTris": 9216
    }
   },
@@ -2609,12 +2801,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 520,
-    "weldMs": 116,
-    "surfMs": 65,
+    "roadMs": 1210,
+    "weldMs": 271,
+    "surfMs": 145,
     "roadTris": 3022
    }
   },
@@ -2636,12 +2830,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 293,
-    "weldMs": 95,
-    "surfMs": 51,
+    "roadMs": 527,
+    "weldMs": 158,
+    "surfMs": 81,
     "roadTris": 1176
    }
   },
@@ -2663,12 +2859,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1396,
-    "weldMs": 306,
-    "surfMs": 212,
+    "roadMs": 2504,
+    "weldMs": 388,
+    "surfMs": 503,
     "roadTris": 19655
    }
   },
@@ -2690,12 +2888,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 743,
+    "roadMs": 939,
     "weldMs": 179,
-    "surfMs": 144,
+    "surfMs": 184,
     "roadTris": 8462
    }
   },
@@ -2717,12 +2917,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1583,
-    "weldMs": 300,
-    "surfMs": 286,
+    "roadMs": 3516,
+    "weldMs": 542,
+    "surfMs": 740,
     "roadTris": 34080
    }
   },
@@ -2744,12 +2946,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1274,
-    "weldMs": 245,
-    "surfMs": 198,
+    "roadMs": 2586,
+    "weldMs": 439,
+    "surfMs": 475,
     "roadTris": 23457
    }
   },
@@ -2771,12 +2975,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 825,
-    "weldMs": 215,
-    "surfMs": 194,
+    "roadMs": 1815,
+    "weldMs": 401,
+    "surfMs": 547,
     "roadTris": 12284
    }
   },
@@ -2798,12 +3004,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 850,
-    "weldMs": 154,
-    "surfMs": 161,
+    "roadMs": 1694,
+    "weldMs": 323,
+    "surfMs": 257,
     "roadTris": 7137
    }
   },
@@ -2825,12 +3033,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 426,
-    "weldMs": 99,
-    "surfMs": 95,
+    "roadMs": 994,
+    "weldMs": 246,
+    "surfMs": 196,
     "roadTris": 1765
    }
   },
@@ -2852,12 +3062,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 112,
-    "weldMs": 44,
-    "surfMs": 34,
+    "roadMs": 281,
+    "weldMs": 93,
+    "surfMs": 91,
     "roadTris": 744
    }
   },
@@ -2879,13 +3091,15 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 3998,
-    "weldMs": 494,
-    "surfMs": 558,
-    "roadTris": 96159
+    "roadMs": 5907,
+    "weldMs": 572,
+    "surfMs": 929,
+    "roadTris": 96143
    }
   },
   {
@@ -2906,12 +3120,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 397,
+    "roadMs": 454,
     "weldMs": 122,
-    "surfMs": 71,
+    "surfMs": 106,
     "roadTris": 2155
    }
   },
@@ -2933,12 +3149,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 408,
-    "weldMs": 144,
-    "surfMs": 169,
+    "roadMs": 680,
+    "weldMs": 245,
+    "surfMs": 249,
     "roadTris": 7308
    }
   },
@@ -2960,12 +3178,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 253,
-    "weldMs": 94,
-    "surfMs": 90,
+    "roadMs": 460,
+    "weldMs": 160,
+    "surfMs": 169,
     "roadTris": 3046
    }
   },
@@ -2987,12 +3207,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 200,
-    "weldMs": 51,
-    "surfMs": 30,
+    "roadMs": 521,
+    "weldMs": 108,
+    "surfMs": 108,
     "roadTris": 554
    }
   },
@@ -3014,12 +3236,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 250,
-    "weldMs": 67,
-    "surfMs": 39,
+    "roadMs": 621,
+    "weldMs": 157,
+    "surfMs": 110,
     "roadTris": 1416
    }
   },
@@ -3041,12 +3265,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 561,
-    "weldMs": 121,
-    "surfMs": 98,
+    "roadMs": 1436,
+    "weldMs": 256,
+    "surfMs": 303,
     "roadTris": 4961
    }
   },
@@ -3068,12 +3294,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 4392,
-    "weldMs": 501,
-    "surfMs": 418,
+    "roadMs": 6132,
+    "weldMs": 612,
+    "surfMs": 658,
     "roadTris": 109981
    }
   },
@@ -3095,12 +3323,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 1503,
-    "weldMs": 227,
-    "surfMs": 256,
+    "roadMs": 1987,
+    "weldMs": 304,
+    "surfMs": 303,
     "roadTris": 24707
    }
   },
@@ -3122,12 +3352,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 312,
-    "weldMs": 119,
-    "surfMs": 107,
+    "roadMs": 615,
+    "weldMs": 192,
+    "surfMs": 247,
     "roadTris": 5145
    }
   },
@@ -3149,12 +3381,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 300,
-    "weldMs": 113,
-    "surfMs": 98,
+    "roadMs": 507,
+    "weldMs": 220,
+    "surfMs": 165,
     "roadTris": 3904
    }
   },
@@ -3176,12 +3410,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 205,
-    "weldMs": 80,
-    "surfMs": 66,
+    "roadMs": 437,
+    "weldMs": 144,
+    "surfMs": 185,
     "roadTris": 1990
    }
   },
@@ -3203,12 +3439,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 263,
-    "weldMs": 91,
-    "surfMs": 64,
+    "roadMs": 613,
+    "weldMs": 184,
+    "surfMs": 183,
     "roadTris": 2149
    }
   },
@@ -3230,12 +3468,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 521,
-    "weldMs": 157,
-    "surfMs": 43,
+    "roadMs": 979,
+    "weldMs": 232,
+    "surfMs": 134,
     "roadTris": 3928
    }
   },
@@ -3257,12 +3497,14 @@
     "gardenVoid": 0,
     "gardenVoidM2": 0,
     "blade": 0,
-    "bladeM2": 0
+    "bladeM2": 0,
+    "stacked": 0,
+    "stackedM2": 0
    },
    "perf": {
-    "roadMs": 339,
-    "weldMs": 130,
-    "surfMs": 123,
+    "roadMs": 720,
+    "weldMs": 272,
+    "surfMs": 251,
     "roadTris": 6122
    }
   }
@@ -4538,6 +4780,15 @@
    "street": ""
   },
   {
+   "tile": "D6",
+   "kind": "over",
+   "m2": 19.9,
+   "worst": 1.75,
+   "score": 34.930651563946086,
+   "at": "-1155.2, 865.8",
+   "street": "Chaussée d'Alsemberg 1010A"
+  },
+  {
    "tile": "N6",
    "kind": "lump",
    "m2": 19,
@@ -4554,15 +4805,6 @@
    "score": 34.245084411485706,
    "at": "77.7, -54.2",
    "street": "Avenue Kamerdelle 85"
-  },
-  {
-   "tile": "D6",
-   "kind": "over",
-   "m2": 19.5,
-   "worst": 1.75,
-   "score": 34.16414823809147,
-   "at": "-1155.2, 865.8",
-   "street": "Chaussée d'Alsemberg 1010A"
   },
   {
    "tile": "G10",
@@ -7598,6 +7840,15 @@
    "street": ""
   },
   {
+   "tile": "F9",
+   "kind": "over",
+   "m2": 6.4,
+   "worst": 1.06,
+   "score": 6.839676418234811,
+   "at": "-8, 2096",
+   "street": "Chemin de la Forêt 1"
+  },
+  {
    "tile": "L5",
    "kind": "roadTilt",
    "m2": 36.6,
@@ -7632,15 +7883,6 @@
    "score": 6.708770751953125,
    "at": "1505, -128",
    "street": ""
-  },
-  {
-   "tile": "F9",
-   "kind": "over",
-   "m2": 6.3,
-   "worst": 1.06,
-   "score": 6.7068671673953,
-   "at": "-8, 2096",
-   "street": "Chemin de la Forêt 1"
   },
   {
    "tile": "D6",
@@ -8048,15 +8290,6 @@
    "street": "Chemin privé 't Cortenbosch 47"
   },
   {
-   "tile": "G10",
-   "kind": "over",
-   "m2": 3.1,
-   "worst": 1.92,
-   "score": 5.984930417070533,
-   "at": "316.3, 2768",
-   "street": "Avenue Buysdelle 30"
-  },
-  {
    "tile": "D6",
    "kind": "lump",
    "m2": 4,
@@ -8361,6 +8594,15 @@
    "score": 5.641441345214844,
    "at": "1249, 1055",
    "street": "Avenue d'Andrimont 54"
+  },
+  {
+   "tile": "G10",
+   "kind": "over",
+   "m2": 2.9,
+   "worst": 1.92,
+   "score": 5.625834592046301,
+   "at": "316.3, 2768",
+   "street": "Avenue Buysdelle 30"
   },
   {
    "tile": "D10",
@@ -10755,15 +10997,6 @@
    "score": 3.0551376342773438,
    "at": "-286, 1152",
    "street": "Avenue du Lycée Français 9"
-  },
-  {
-   "tile": "D4",
-   "kind": "over",
-   "m2": 2.4,
-   "worst": 1.25,
-   "score": 3.0528341640584244,
-   "at": "-1242, -2",
-   "street": "Avenue Adolphe Wansart 3"
   },
   {
    "tile": "D5",
@@ -15635,6 +15868,15 @@
    "street": ""
   },
   {
+   "tile": "D8",
+   "kind": "over",
+   "m2": 1.1,
+   "worst": 1.34,
+   "score": 1.4184375405311584,
+   "at": "-1020.7, 1666.5",
+   "street": "Rue des Bigarreaux 22"
+  },
+  {
    "tile": "H6",
    "kind": "lump",
    "m2": 2,
@@ -17010,15 +17252,6 @@
    "score": 1.1622314453125,
    "at": "-1608, 704",
    "street": "Rue Egide Van Ophem 108"
-  },
-  {
-   "tile": "D4",
-   "kind": "spike",
-   "m2": 2,
-   "worst": 0.58,
-   "score": 1.1620368957519531,
-   "at": "-1231, -14",
-   "street": "Avenue Joseph Jongen 97"
   },
   {
    "tile": "L5",
@@ -18803,15 +19036,6 @@
    "street": "Avenue des Sorbiers 24"
   },
   {
-   "tile": "G5",
-   "kind": "over",
-   "m2": 1.1,
-   "worst": 0.9,
-   "score": 0.9562536478042603,
-   "at": "386.3, 38.5",
-   "street": "Avenue des Statuaires 116"
-  },
-  {
    "tile": "C4",
    "kind": "roadTilt",
    "m2": 7.6,
@@ -19046,6 +19270,15 @@
    "street": "Rue du Repos 153"
   },
   {
+   "tile": "D4",
+   "kind": "over",
+   "m2": 0.8,
+   "worst": 1.11,
+   "score": 0.8998422622680664,
+   "at": "-1143, -77.2",
+   "street": "Avenue de la Princesse Paola 33"
+  },
+  {
    "tile": "G3",
    "kind": "over",
    "m2": 1.7,
@@ -19107,6 +19340,15 @@
    "score": 0.8871973873734738,
    "at": "-1035.1, 2696",
    "street": "Rue du Bourdon 378"
+  },
+  {
+   "tile": "D7",
+   "kind": "over",
+   "m2": 0.9,
+   "worst": 1.01,
+   "score": 0.8859390020370483,
+   "at": "-1101.2, 1025.3",
+   "street": "Rue Engeland 38"
   },
   {
    "tile": "M5",
@@ -19260,15 +19502,6 @@
    "score": 0.8365238324802791,
    "at": "-1299.6, 862.2",
    "street": "Rue François Vervloet 10"
-  },
-  {
-   "tile": "J7",
-   "kind": "over",
-   "m2": 0.7,
-   "worst": 1.22,
-   "score": 0.8358620405197144,
-   "at": "1652.3, 1319.5",
-   "street": "Avenue Fond'Roy 72"
   },
   {
    "tile": "B4",
@@ -19946,15 +20179,6 @@
    "street": ""
   },
   {
-   "tile": "F6",
-   "kind": "over",
-   "m2": 0.7,
-   "worst": 1.04,
-   "score": 0.7115650177001953,
-   "at": "-128, 650.5",
-   "street": "Rue du Repos 130"
-  },
-  {
    "tile": "D6",
    "kind": "tilt",
    "m2": 4.2,
@@ -20043,15 +20267,6 @@
    "score": 0.6940383162551245,
    "at": "-1445.8, -1180",
    "street": ""
-  },
-  {
-   "tile": "D4",
-   "kind": "over",
-   "m2": 0.6,
-   "worst": 1.11,
-   "score": 0.6921863555908203,
-   "at": "-1143, -77.2",
-   "street": "Avenue de la Princesse Paola 33"
   },
   {
    "tile": "K6",
@@ -20522,15 +20737,6 @@
    "street": "Avenue Adolphe Dupuich 34"
   },
   {
-   "tile": "H5",
-   "kind": "over",
-   "m2": 0.7,
-   "worst": 0.87,
-   "score": 0.5972679853439331,
-   "at": "911.3, 483.8",
-   "street": "Rue de l'Equateur 20A"
-  },
-  {
    "tile": "K9",
    "kind": "tilt",
    "m2": 1.7,
@@ -20574,15 +20780,6 @@
    "score": 0.5785298442378893,
    "at": "-1064.1, -77.3",
    "street": ""
-  },
-  {
-   "tile": "I10",
-   "kind": "over",
-   "m2": 0.6,
-   "worst": 0.92,
-   "score": 0.5781221389770597,
-   "at": "1458.5, 2697",
-   "street": "Rue de Percke 85"
   },
   {
    "tile": "K11",
@@ -20927,15 +21124,6 @@
    "street": "Avenue Buysdelle 22"
   },
   {
-   "tile": "B4",
-   "kind": "over",
-   "m2": 0.7,
-   "worst": 0.78,
-   "score": 0.5328128933906555,
-   "at": "-2128.2, -101.2",
-   "street": "Chaussée de Neerstalle 368"
-  },
-  {
    "tile": "K9",
    "kind": "tilt",
    "m2": 1.4,
@@ -21017,6 +21205,15 @@
    "street": "Chaussée d'Alsemberg 962"
   },
   {
+   "tile": "E3",
+   "kind": "over",
+   "m2": 0.7,
+   "worst": 0.76,
+   "score": 0.520437479019165,
+   "at": "-687.2, -896.2",
+   "street": "Square Coghen 2"
+  },
+  {
    "tile": "J11",
    "kind": "over",
    "m2": 0.8,
@@ -21060,15 +21257,6 @@
    "score": 0.512333215558457,
    "at": "1843.4, -1379.2",
    "street": ""
-  },
-  {
-   "tile": "D9",
-   "kind": "over",
-   "m2": 0.6,
-   "worst": 0.82,
-   "score": 0.5103468894958452,
-   "at": "-1223.5, 2419.5",
-   "street": "Moensberg 47"
   },
   {
    "tile": "F5",
@@ -21150,15 +21338,6 @@
    "score": 0.5008648141881274,
    "at": "2340.2, 2338.1",
    "street": "Chaussée de Waterloo 1565"
-  },
-  {
-   "tile": "H4",
-   "kind": "over",
-   "m2": 0.8,
-   "worst": 0.62,
-   "score": 0.5006372928619385,
-   "at": "854.3, -170.5",
-   "street": "Rue Copernic 6"
   },
   {
    "tile": "C4",
@@ -21321,15 +21500,6 @@
    "score": 0.4842960926509663,
    "at": "-1073.7, 1930.5",
    "street": "Rue des Griottes 48"
-  },
-  {
-   "tile": "E10",
-   "kind": "over",
-   "m2": 0.7,
-   "worst": 0.7,
-   "score": 0.4800165891647339,
-   "at": "-642.7, 2640",
-   "street": "Avenue des Tilleuls 2"
   },
   {
    "tile": "G2",
@@ -21737,6 +21907,15 @@
    "street": "Avenue des Eglantiers 8"
   },
   {
+   "tile": "D9",
+   "kind": "over",
+   "m2": 0.5,
+   "worst": 0.82,
+   "score": 0.40827751159667613,
+   "at": "-1223.5, 2419.5",
+   "street": "Moensberg 47"
+  },
+  {
    "tile": "E9",
    "kind": "over",
    "m2": 0.9,
@@ -22052,15 +22231,6 @@
    "street": ""
   },
   {
-   "tile": "G10",
-   "kind": "over",
-   "m2": 0.7,
-   "worst": 0.55,
-   "score": 0.3761444091796875,
-   "at": "323.8, 2541.8",
-   "street": "Avenue Dolez 534"
-  },
-  {
    "tile": "E10",
    "kind": "over",
    "m2": 0.8,
@@ -22248,15 +22418,6 @@
    "score": 0.3560594600924249,
    "at": "-548.3, 1484",
    "street": ""
-  },
-  {
-   "tile": "G6",
-   "kind": "over",
-   "m2": 1,
-   "worst": 0.35,
-   "score": 0.3531910931783102,
-   "at": "249.8, 707",
-   "street": "Rue de la Pêcherie 133"
   },
   {
    "tile": "C4",
@@ -22718,6 +22879,15 @@
    "street": "Rue Papenkasteel 124"
   },
   {
+   "tile": "E3",
+   "kind": "over",
+   "m2": 0.9,
+   "worst": 0.33,
+   "score": 0.30870169401168157,
+   "at": "-853.5, -855.2",
+   "street": "Rue du Doyenné 13"
+  },
+  {
    "tile": "E9",
    "kind": "over",
    "m2": 0.8,
@@ -22862,15 +23032,6 @@
    "street": ""
   },
   {
-   "tile": "H9",
-   "kind": "over",
-   "m2": 0.5,
-   "worst": 0.59,
-   "score": 0.2950000762939453,
-   "at": "690.5, 2017.5",
-   "street": "Avenue du Gui 26"
-  },
-  {
    "tile": "H3",
    "kind": "over",
    "m2": 1.1,
@@ -22878,15 +23039,6 @@
    "score": 0.2931042831044568,
    "at": "624, -741",
    "street": "Rue Edith Cavell 232"
-  },
-  {
-   "tile": "F7",
-   "kind": "over",
-   "m2": 0.6,
-   "worst": 0.52,
-   "score": 0.2929476499557495,
-   "at": "-281, 1102.3",
-   "street": "Avenue du Lycée Français 11"
   },
   {
    "tile": "J3",
@@ -23510,15 +23662,6 @@
    "street": "Chaussée de Waterloo 1039"
   },
   {
-   "tile": "D4",
-   "kind": "over",
-   "m2": 0.6,
-   "worst": 0.44,
-   "score": 0.2474997639656067,
-   "at": "-1145.2, -89.7",
-   "street": "Avenue de la Princesse Paola 33"
-  },
-  {
    "tile": "H3",
    "kind": "tilt",
    "m2": 0.6,
@@ -23897,6 +24040,15 @@
    "street": ""
   },
   {
+   "tile": "I10",
+   "kind": "over",
+   "m2": 0.6,
+   "worst": 0.35,
+   "score": 0.22051696266506937,
+   "at": "1218, 2608",
+   "street": "Avenue du Gui 165"
+  },
+  {
    "tile": "F9",
    "kind": "tilt",
    "m2": 1,
@@ -24113,15 +24265,6 @@
    "street": "Avenue Brugmann 379"
   },
   {
-   "tile": "H3",
-   "kind": "over",
-   "m2": 0.9,
-   "worst": 0.21,
-   "score": 0.20142853260040283,
-   "at": "638, -584.2",
-   "street": "Rue Edith Cavell 258"
-  },
-  {
    "tile": "J6",
    "kind": "tilt",
    "m2": 0.8,
@@ -24174,15 +24317,6 @@
    "score": 0.19940473633906386,
    "at": "-307.5, 2230.5",
    "street": "Rue du Kriekenput 88"
-  },
-  {
-   "tile": "K11",
-   "kind": "over",
-   "m2": 0.8,
-   "worst": 0.26,
-   "score": 0.19874954223632812,
-   "at": "2108, 3180.5",
-   "street": "Avenue d'Hougoumont 26"
   },
   {
    "tile": "H8",
@@ -24896,6 +25030,15 @@
    "street": "Rue des Trois Arbres 10"
   },
   {
+   "tile": "C4",
+   "kind": "over",
+   "m2": 0.5,
+   "worst": 0.31,
+   "score": 0.154998779296875,
+   "at": "-1597.5, -288.5",
+   "street": "Rue Gatti de Gamond 163"
+  },
+  {
    "tile": "H8",
    "kind": "tilt",
    "m2": 0.7,
@@ -25038,6 +25181,24 @@
    "score": 0.1467608605041374,
    "at": "-1325.8, 1177",
    "street": "Chaussée d'Alsemberg 1118"
+  },
+  {
+   "tile": "E9",
+   "kind": "over",
+   "m2": 0.7,
+   "worst": 0.21,
+   "score": 0.14589428037354413,
+   "at": "-604, 2088.5",
+   "street": "Homborch 71"
+  },
+  {
+   "tile": "J5",
+   "kind": "over",
+   "m2": 0.5,
+   "worst": 0.29,
+   "score": 0.14565658569335227,
+   "at": "1795.3, 188.3",
+   "street": "Chaussée de Waterloo 1159C"
   },
   {
    "tile": "M5",

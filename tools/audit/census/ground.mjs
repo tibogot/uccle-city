@@ -26,6 +26,8 @@
 // under its base somewhere across its footprint (over a cut / a step: the floating hedge of H6 Perelman 4). Groups as
 // SURFACES.
 //
+// STACKED (claude/sidewalk round 4): a retaining wall face with another wall face of the same facing 0.5-4 m behind it.
+//
 // BLADE (claude/sidewalk round 3): a retaining wall's top sloping over 20 degrees along more than 1 m (a wall that starts
 // as a knife edge; walls step and end at a pier now).
 //
@@ -45,7 +47,7 @@ const { CHILD, OUT, JOBS, WORST } = c;
 const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null);
 const TILES = c.ALL ? allBuiltTiles() : c.argv.filter((a) => /^[A-Z]\d+$/i.test(a)).map((t) => t.toUpperCase());
 const LUMP = 0.5, HOLE = 0.5, SPIKE = 0.5, TILT = 0.15, ROAD_TILT = 0.12, OVER = 0.02;
-const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid", "blade"];
+const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid", "blade", "stacked"];
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: ground.mjs [--all | T ...] [--out FILE] [--old] [--max kind=n,...]"); process.exit(2); }
@@ -310,6 +312,45 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
     }
   }
   group(bad, "blade", 1.0);
+}
+// ---------------------------------------------------------------- stacked retaining walls (claude/sidewalk round 4)
+// A wall face (aKind 4 / 5, vertical) with ANOTHER wall face of the same facing 0.5-4 m straight behind it (into the
+// garden): a second wall line behind the first. Step faces and piers' sides face along the run (not the same facing);
+// a pier's front stands 6 cm in front of its wall. Triangles over 0.2 m2 (no corner slivers); groups (2 m) of more
+// than 2 m2 of face.
+{
+  const P = d.road.parts?.concrete, K = P?.attributes?.aKind?.array, faces = [];
+  if (P && K) {
+    const pos = P.position, I = P.index;
+    for (let t = 0; t < I.length; t += 3) {
+      const k = K[I[t]]; if (k < 3.5 || k > 5.5) continue;
+      const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+      const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2], vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, L = Math.hypot(nx, ny, nz), Lh = Math.hypot(nx, nz);
+      if (L < 1e-9 || Math.abs(ny) > 0.2 * L) continue;
+      const fx = (pos[a] + pos[b] + pos[c]) / 3, fz = (pos[a + 2] + pos[b + 2] + pos[c + 2]) / 3;
+      // (a wall's FRONT face: 0.5 m in front of it is a measured street surface; step faces and piers' sides face along
+      // the wall, into its own garden or the next run)
+      if (!fit || fit.classAt(fx + nx / Lh * 0.5, fz + nz / Lh * 0.5) < 0 || L / 2 < 0.2) continue;   // (no corner slivers)
+      // (no piers: a run-end pier's 0.45 m front is a run's END, counted with its own wall, not a second wall line)
+      if (Math.hypot(Math.max(pos[a], pos[b], pos[c]) - Math.min(pos[a], pos[b], pos[c]), Math.max(pos[a + 2], pos[b + 2], pos[c + 2]) - Math.min(pos[a + 2], pos[b + 2], pos[c + 2])) < 0.6) continue;
+      faces.push({ x: fx, z: fz, nx: nx / Lh, nz: nz / Lh, area: L / 2 });
+    }
+    const B = 4, g = new Map(), key = (x, z) => `${Math.floor(x / B)},${Math.floor(z / B)}`;
+    faces.forEach((f, i) => { const k = key(f.x, f.z); if (!g.has(k)) g.set(k, []); g.get(k).push(i); });
+    const bad = [];
+    for (const f of faces) {
+      let hit = false;
+      for (let i = Math.floor(f.x / B) - 1; i <= Math.floor(f.x / B) + 1 && !hit; i++) for (let j = Math.floor(f.z / B) - 1; j <= Math.floor(f.z / B) + 1 && !hit; j++) for (const o of g.get(`${i},${j}`) || []) {
+        const h = faces[o];
+        if (h.nx * f.nx + h.nz * f.nz < 0.85) continue;                  // not the same facing (a pier's back faces the garden)
+        const dx = h.x - f.x, dz = h.z - f.z, along = Math.abs(dx * f.nx + dz * f.nz), side = Math.abs(-dx * f.nz + dz * f.nx);
+        if (along >= 0.5 && along <= 4 && side < 0.5) { hit = true; break; }
+      }
+      if (hit) bad.push({ x: f.x, z: f.z, area: f.area, v: 1 });
+    }
+    group(bad, "stacked", 2.0);
+  }
 }
 items.sort((a, c3) => c3.score - a.score);
 const tm = d.times || {};

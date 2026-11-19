@@ -256,3 +256,34 @@ piers), in the concrete / grass parts: no new draw call. The brick / stone patte
   - defre-villas: lane lines (markings) and a tree.
   - ham-terrace: a far garden hedge and a tree, and the car's outline.
   All of these come from foundation's merges, not the walls.
+
+## Round 4: one wall line, gaps closed (code, 2026-11-19)
+
+- G3 Rue Roberts Jones, traced. The "stacked walls inside the garden" in r3-g3-robertsjones.jpg are ONE wall line: the
+  camera stood on it, looking along it, so its stepped tops (a step face across the 3.1 m strip at every 0.35 m step)
+  read as walls one behind the other. The census did find real stacking elsewhere (H6 Benaets 91, E6 Dieweg / Château
+  d'Eau): a run's end pier standing 0.6 m behind the next run's face at a corner, and a few cases of two sidewalk
+  edges with a strip of land between.
+- Rules now in viewer/streets/retainWalls.js:
+  - One wall line: where a wall edge has another wall edge of the same facing 0.5-4 m behind it, only the back one
+    keeps its wall (the one farthest from the carriageway).
+  - No pier where another wall line passes the run's end (within 0.8 m).
+  - A pier stops short of another wall line along its depth (E6 Château d'Eau 120: a run-end pier's 3 m side ran
+    0.5 m behind the next run's face at a corner, the last stacked case); an edge of the same facing on the run's own
+    line is the same wall, not another line.
+  - A gap bridge never lies along or across an existing wall (I9 Myrtilles 62: the outline doubles back over itself
+    under other vertex ids; the bridge laid a face over the run's own face, both end piers were dropped and the bared
+    earth past the end was a 0.6 m lump).
+  - Gaps under 3 m between two runs are carried across: by the edge chain, or by a straight face between the two run
+    ends when the outline turns into another polygon there. Not where a garden gate stands within 2 m (an opening,
+    piers either side), the land behind is public, or a measured path / driveway goes into the garden. H6 tile: 31
+    runs / 65 piers -> 29 runs / 52 piers (E6 82 / 169 -> 73 / 139, I6 67 / 142 -> 67 / 127; wall metres within 3 %).
+- Census: new sub-class `stacked`. A wall's FRONT face (a measured street 0.5 m in front of it; triangles over 0.2 m2)
+  with another front face of the same facing 0.5-4 m behind it; groups over 2 m2. Gate ceiling 0.
+
+Round 4 counts (all 120 tiles): tilt 811, roadTilt 380, over 344 / 868 m2, lump 864, spike 173, hole 3, gardenVoid 0,
+blade 0, stacked 0 (15 before the round-4 rules, on E6 / H6 / G3 and a few other tiles). Gate ceilings: these, stacked 0.
+
+Round 4 cost: the new checks (gap bridges, one wall line, pier depth) run on small grids of the wall's segments, not on
+every edge of the tile (same geometry, byte for byte, on E6 H6 G3 I9 F2). Timing: see the report (the machine was
+loaded by the owner's play session during this round's measures).
