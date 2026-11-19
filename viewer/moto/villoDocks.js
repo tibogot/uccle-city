@@ -22,7 +22,7 @@ export function nearBike(x, z, r = 2.2) {
       // (the bike's middle: 0.56 m from its front contact toward its rear)
       const yaw = a[i + 3], mx = a[i] + Math.sin(yaw) * 0.56, mz = a[i + 2] + Math.cos(yaw) * 0.56;
       const d = Math.hypot(mx - x, mz - z);
-      if (d < r && d < hit.d && !taken.has(`${name}:${i / 8}`)) { hit.d = d; hit.x = a[i]; hit.y = a[i + 1]; hit.z = a[i + 2]; hit.yaw = yaw; hit.tile = name; hit.i = i / 8; }
+      if (d < r && d < hit.d && !taken.has(`${name}:${i / 8}`) && !t.bikeRefs?.[i / 8]?.hidden) {   // (props: a bike knocked out of its dock is not there) hit.d = d; hit.x = a[i]; hit.y = a[i + 1]; hit.z = a[i + 2]; hit.yaw = yaw; hit.tile = name; hit.i = i / 8; }
     }
   }
   return hit.tile ? hit : null;
@@ -42,7 +42,7 @@ export function freeDock(x, z, r = 3.5, parked = null) {
       const d = Math.hypot(mx - x, mz - z);
       if (d >= r || d >= dock.d) continue;
       let busy = false;
-      if (B) for (let j = 0; j < B.length && !busy; j += 8) busy = (B[j] - fx) ** 2 + (B[j + 2] - fz) ** 2 < 0.25 && !taken.has(`${name}:${j / 8}`);
+      if (B) for (let j = 0; j < B.length && !busy; j += 8) busy = (B[j] - fx) ** 2 + (B[j + 2] - fz) ** 2 < 0.25 && !taken.has(`${name}:${j / 8}`) && !t.bikeRefs?.[j / 8]?.prop?.state;
       if (!busy && parked) busy = (parked.x - fx) ** 2 + (parked.z - fz) ** 2 < 0.25;
       if (busy) continue;
       dock.d = d; dock.ok = true; dock.x = fx; dock.z = fz; dock.y = D[i + 1] + 0.01; dock.yaw = yaw;

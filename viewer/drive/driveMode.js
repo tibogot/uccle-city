@@ -10,6 +10,7 @@ import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
 import { FLEET_SOURCE, playerDamage, setPlayerDent } from "./carPacks.js";
 import { HANDLING, BODY, createCarState, stepCar } from "./carPhysics.js";
 import { CarHitWorld, CARPUSH_OLD, MASS, MASS2 } from "./carHit.js";
+import { PropWorld, PROPS_OLD } from "../props/propWorld.js";
 import { createFeelState, stepFeel } from "./carFeel.js";
 import { createCtlState, stepCtl } from "./carCtl.js";
 /** ?carctl=old: the police-feel handling + camera (carFeel.js, chaseCamera.js updateCar) instead of car control round 3
@@ -48,7 +49,7 @@ export function tileDrive(drive, roads, bounds, drawn = null, features = null) {
   if (!drive) return null;
   const old = !drawn || drive.legacy;
   const lamps = (old ? lampSites(roads, bounds) : drawn.lamps).map((p) => ({ x: p.x, z: p.z, r: 0.2, kind: KIND.lamp }));
-  const posts = old ? [] : (drawn.bollards || []).map((p) => ({ x: p.x, z: p.z, r: 0.1, kind: KIND.post }));
+  const posts = old ? [] : (drawn.bollards || []).map((p) => ({ x: p.x, z: p.z, r: 0.1, kind: KIND.post, ref: p.ref || null }));   // (props: a bollard bends / snaps, docs/PROPS.md)
   addCircles(drive.col, [...lamps, ...posts]);
   drive.counts.lamps = lamps.length; drive.counts.posts = posts.length;
   if (features && !old) {
@@ -277,8 +278,13 @@ export class Driver {
     this.carHit = CARPUSH_OLD ? null : new CarHitWorld({ sets: this.sets, movers: this.movers,
       ground: (x, z, near) => { const g0 = this.groundHint; this.groundHint = Number.isFinite(near) ? near : g0; const y = this.ground(x, z); this.groundHint = g0; return y; } });
     if (this.carHit) this.carHit.onPlayerDamage = (C) => playerDamage.depth.value.set(C[0], C[1], C[2], C[3]);
+    // (props, docs/PROPS.md; ?props=old = none): bins, cones, signs, bollards, parked two-wheelers, terraces knocked
+    // about (viewer/props/propWorld.js; the city's glue: viewer/props/cityProps.js); its ground as carHit's
+    this.props = PROPS_OLD ? null : new PropWorld({ sets: this.sets,
+      ground: (x, z, near) => { const g0 = this.groundHint; this.groundHint = Number.isFinite(near) ? near : g0; const y = this.ground(x, z); this.groundHint = g0; return y; } });
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges,
-      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers, carHit: this.carHit });
+      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers, carHit: this.carHit,
+      props: this.props, mass: () => this.carHit?.player.m ?? this.carMass() });
     // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
     // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too. The feel round
     // (docs/MOTO_FEEL.md; ?moto=old = before): kerb islands ridden up, hedges soft, thin posts slid round, the bike's own
@@ -287,6 +293,7 @@ export class Driver {
     for (const k of TWO_WHEEL) {
       const H = TWO_WHEELERS[k];
       const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: H, waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers, carHit: this.carHit, two: true,
+        props: this.props, mass: () => MASS2[k] ?? 250,
         ...twoWheelEnv(H), surface: H.feel ? this.surface : null });
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
@@ -444,6 +451,7 @@ export class Driver {
     if (CARFEEL_OLD) stepCar(c, inp, dt, this.env, HANDLING);
     else { (CARCTL_OLD ? stepFeel : stepCtl)(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
     this.carHit?.frame(dt, c.x, c.z);
+    this.props?.frame(dt, c.x, c.z);
     carLights.brake.value = c.braking ? 1 : 0;
     carLights.head.value = carLights.tail.value = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     this.car.update(c);
@@ -487,6 +495,7 @@ export class Driver {
     if (this.carHit) this.carHit.player.m = MASS2[kind] ?? 250;
     stepMoto(c, this.keys.readMoto(), dt, this.motoEnv, H);
     this.carHit?.frame(dt, c.x, c.z);
+    this.props?.frame(dt, c.x, c.z);
     const night = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     const ML = this.motoLights;
     ML.head.value = ML.tail.value = night; ML.brake.value = c.braking ? 1 : 0;

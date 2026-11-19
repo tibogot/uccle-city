@@ -21,6 +21,7 @@ import { lampSites } from "../lamps.js";
 import { carFleet } from "../carFleet.js";
 import { heroBVH } from "../heroBVH.js";
 import { parkedCarRing } from "../drive/driveMode.js";
+import { PROPS_ON } from "../props/cityProps.js";
 
 const DATA = new URL("../../data/tiles/", import.meta.url);
 // instanced props by mesh name: "mesh" = its real triangles into the BVH (open shapes), "prop" = a box for body +
@@ -28,6 +29,7 @@ const DATA = new URL("../../data/tiles/", import.meta.url);
 // the street)
 const KIND = (m) => {
   const n = m.name || "", parent = m.parent?.name || "";
+  if (m.userData.kick && PROPS_ON) return null;   // (props, docs/PROPS.md: bins, Villo bikes, terrace tables: the walker kicks them, viewer/props/)
   if (/bollard/i.test(n)) return "post";
   if (n === "furniture-shelter" || n === "furniture-adpanel" || (parent === "tram" && !n)) return "mesh";   // (stops kit: viewer/stops/cityStops.js stand-ins)
   if (/^furniture-garden(wall|gate|hedge)$/.test(n)) return "mesh";

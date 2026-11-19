@@ -57,7 +57,10 @@ const POST_R = 0.12, POST_SIDE = 0.3, POST_BOX = 0.6;   // (POST_BOX: a polygon 
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
  * ground(x, z) -> drivable height
  */
-export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null, movers = null, carHit = null, two = false, step: stepRule = null }) {
+export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null, movers = null, carHit = null, two = false, step: stepRule = null, props = null, mass = null }) {
+  // props (docs/PROPS.md, viewer/props/propWorld.js; null = ?props=old): a collider whose ref carries `.prop` (a bin, a
+  // sign post, a parked motorbike...) is handed to the prop world (it wakes / bends / snaps, or stays a wall); the awake
+  // and knocked-over props are solved against the vehicle after the cars. mass(): the vehicle's mass (kg)
   // step (two-wheelers' feel, docs/MOTO_FEEL.md): their own step rule { run, rise, bank } (a bike rides up a higher
   // kerb / garden edge and a steeper bank than a car); a ledge contact's onHit gets the rise as a 6th argument
   // carHit (docs/CARHIT.md, carHit.js; null = ?carpush=old): the cars two-way: a parked car hit wakes as a pushed body,
@@ -113,6 +116,8 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
           if (feel && id < col.P && col.pkind[id] === KIND.island) continue;     // (feel: a kerb island is ridden up)
           if (heightClear(col, id, c.y)) continue;                               // a platform / fence / parapet over or under the car
           if (carHit && id < col.P && col.pref?.[id]?.hidden) continue;           // (carhit: a parked car woken this frame: a body now)
+          const pref = props ? (id < col.P ? col.pref?.[id] : col.cref?.[id - col.P]) : null;
+          if (pref && pref.hidden) continue;                                      // (props: woken / flattened this frame)
           if (!itemContact(col, id, c.x, c.z, body, contact)) continue;
           if (feel && contact.kind === KIND.hedge) {
             if (pass === 0) {
@@ -121,6 +126,10 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
               c.speed *= kk; c.vx *= kk; c.vz *= kk; env.hedge = 1;
             }
             continue;
+          }
+          // (props) a prop's collider: the prop world decides (pass 0; a bent post keeps taking the push in pass 1 too)
+          if (pref?.prop && (pass === 0 || pref.prop.state === 3)) {
+            if (pass > 0 || props.touch(pref.prop, c, contact, body, mass ? mass() : 1400, two, step)) continue;
           }
           // (carhit) a parked car hit (closing): a body of its own from now on, solved with the others below
           if (carHit && contact.kind === KIND.car && id < col.P && col.pref?.[id] && pass === 0) {
@@ -163,6 +172,7 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
       // moving things (the traffic, viewer/traffic/cityTraffic.js): env.dynamic(c, body, push) calls push per contact
       if (carHit) carHit.playerStep(c, body, step, env, push, two);
       else env.dynamic?.(c, body, push);
+      if (props) props.playerStep(c, body, step, mass ? mass() : 1400, two);
       for (let k = 0; k < mN; k++) {
         const o = k * 7;
         if (Number.isFinite(c.y) && (mbox[o + 5] > c.y + 1.6 || mbox[o + 5] + mbox[o + 6] < c.y + 0.2)) continue;   // (a bridge over / under)

@@ -78,6 +78,7 @@ import { cityTLights } from "./tlights/cityTLights.js";
 import { tlightExposure } from "./tlights/tlightKit.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
+import { cityProps } from "./props/cityProps.js";   // physics props: bins, cones, signs, bollards, parked two-wheelers, terraces (docs/PROPS.md), ?props=old off
 import { cityGardens } from "./gardens/cityGardens.js";
 import { carriageway, docOffLanes, trackIndex, drawnTest } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
@@ -1146,6 +1147,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const roofStats = cityRoofs.addTile(entry.name, B.roofKit, own.buildings);   // its roof pieces join the roof pools, fading with its buildings
   if (roofStats) say(`roofs: ${roofStats.stacks} stacks (${roofStats.pots} pots), ${Math.round(roofStats.parapetM)} m of parapet, ${roofStats.velux} roof windows, ${roofStats.pv} solar modules on ${roofStats.pvRoofs} roofs, ${roofStats.flatItems} flat-roof pieces`);
   const dispose = () => {
+    cityProps.removeTile(entry.name);               // (props: its knocked-over props back to rest, forgotten)
     removeBridgeDecks(decks);
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
@@ -1176,7 +1178,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (TRAFFIC && d.traffic) { trafficTiles.set(entry.name, d.traffic); cityTraffic?.addTile(entry.name, d.traffic); }
   await frame("tram line snap");
   const bxyz = d.road.surfaceData?.bollards || [];
-  const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2] })),
+  // (props, docs/PROPS.md) each drawn bollard a prop (bends / snaps when hit hard): its circle collider carries the ref
+  const bref = (i) => (bollards && cityProps.on ? cityProps.make("bollard", entry.name, bxyz[i * 3], bxyz[i * 3 + 1], bxyz[i * 3 + 2], 0, [{ mesh: bollards, i }])?.ref : null);
+  const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2], ref: bref(i) })),
     hiddenBuildings: d.drive?.counts?.hidden || 0 };
   const drive = tileDrive(d.drive, roads, bounds, drawn, COLFIX ? own.features : null);
   frame("drive colliders");
@@ -1698,6 +1702,7 @@ async function main() {
   driver.railSources.push(() => tramLine, () => window.__trains);
   cityNight?.setDriver(driver);                         // ?night=1: the player's car's head / tail lights
   window.__driver = driver;
+  cityProps.start({ scene, updaters, driver, log });   // (props: knocked-over street furniture, docs/PROPS.md; ?props=old off)
   cityGrass.pushers = { driver, walker };          // ?grass=1: the car's wheels and the walker lay the grass down
   // every landmark / bridge collides by its own LOD0 (car blocks + character triangles), built once its tiles are in
   // (viewer/heroColliders.js; replaces the hand-made Saint-Job steps and road-bridge parapet rings)
