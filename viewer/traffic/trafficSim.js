@@ -59,7 +59,7 @@ export function hourFactor(h) {
 
 export class TrafficSim {
   /**
-   * world: TrafficWorld; opts: { cap, types: [{ name, len, wb, wheelR, w, h, weight }], paints: [[r,g,b]], ground(x, z) -> y,
+   * world: TrafficWorld; opts: { cap, types: [{ name, len, wb, wheelR, w, h, weight }], paints: [[r,g,b]], ground(x, z, near) -> y (the mover ground, viewer/drive/moverGround.js: the layer nearest near),
    *   seed }
    */
   constructor(world, { cap = 768, types, paints, ground, seed = 1 } = {}) {
@@ -211,6 +211,7 @@ export class TrafficSim {
     this.ctl[i] = 0; this.speedF[i] = 1; this.yr[i] = 0; this.overT[i] = 0;
     this.knock[i] = 0; this.dmg[i] = 0; this.kT[i] = 0;
     if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.tpLA[i] = -1; }
+    this.y[i] = NaN;                                 // (rule 46: no height yet: pose() takes the top layer)
     this.pose(i); this.copyPrev(i);
     this.count++;
     return i;
@@ -315,7 +316,8 @@ export class TrafficSim {
     const yaw = Math.atan2(fx, fz);
     const rm = this.room[i];
     const x = (F[0] + R[0]) / 2 + this.offX[i] + Math.cos(yaw) * rm, z = (F[1] + R[1]) / 2 + this.offZ[i] - Math.sin(yaw) * rm;
-    const yf = this.ground(F[0], F[1]), yr = this.ground(R[0], R[1]);
+    // (claude/ground, rule 46) the mover ground, the layer nearest the car's own height (NaN on a new car: the top layer)
+    const yn = this.y[i], yf = this.ground(F[0], F[1], yn), yr = this.ground(R[0], R[1], yn);
     this.x[i] = x; this.z[i] = z; this.y[i] = (yf + yr) / 2;
     this.pitch[i] = Math.atan2(yf - yr, 2 * hw);
     // steer: the front path's direction against the body
@@ -1012,6 +1014,9 @@ export class TrafficSim {
       const x = this.tmp[0], z = this.tmp[1], dx = x - fx, dz = z - fz, d2 = dx * dx + dz * dz;
       if (d2 > R * R) continue;
       const y = this.ground(x, z);
+      // (claude/ground, rule 46) not where two drive layers stack (a street under a deck): a new car has no height to
+      // pick its layer by; it gets there along its lane, on its own layer
+      if (this.ground(x, z, -1e9) < y - 1.5) continue;
       if (ctx.visible(x, y, z, 4)) continue;
       if (d2 < P.minSpawnDist * P.minSpawnDist) continue;
       // room: nobody within 14 m on this path, not right before its hold point
