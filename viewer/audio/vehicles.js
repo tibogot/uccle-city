@@ -147,5 +147,58 @@ export function createCarVoice(ctx, bank, out, src, now) {
   };
 }
 
+// a brake squeal one-shot (worn pads): 2.8-4 kHz with vibrato
+function playSqueal(ctx, bank, out, t, seed) { return playBuffer(ctx, bank.squeal(Math.floor(seed * 3)), out, t, { gain: 0.05, rate: 0.9 + seed * 0.25 }); }
 export function playDoor(ctx, bank, out, when, close = true, seed = 0) { return playBuffer(ctx, bank.door(close, seed % 3), out, when, { gain: 0.9 }); }
 export function playHorn(ctx, bank, out, when, len = 0.37) { return playBuffer(ctx, bank.horn(len), out, when, { gain: 0.8 }); }
+
+// A car WITHOUT its engine (the city's traffic for now: the owner brings the engine model from another repo; the
+// drive mode keeps an `engineVoice` slot for it): tyre / road noise by speed and surface only. Same rolling model
+// as createCarVoice (one broad band round 0.9 kHz, level ~ v^1.5; setts +8 dB and the impact train, built lazily),
+// plus what a passing car makes besides its engine: a low body / suspension rumble (pink noise low-passed ~140 Hz,
+// ~ v^1.2) and, on a wet road, the tyre spray hiss (2.5-6 kHz band, ~ v^2 x wet). src: speed m/s, load (<0 braking),
+// surface "asphalt" | "setts" | "concrete", roadWet 0..1 (not `wet`: that is the engine's reverb send), tyreGain, seed,
+// squeal (share of cars with squealing pads).
+export function createTyreVoice(ctx, bank, out, src, now) {
+  const nodes = [], sources = [];
+  const own = (n) => (nodes.push(n), n);
+  const loop = (buf, rate = 1, off = Math.random()) => { const s = own(loopSource(ctx, buf, rate, off * buf.duration)); sources.push(s); return s; };
+  const mix = own(makeGain(ctx, 1)); mix.connect(out);
+  const road = loop(bank.pink(), 1, src.seed || Math.random());
+  const roadBP = own(makeFilter(ctx, "bandpass", 900, 0.55)), roadG = own(makeGain(ctx, 0));
+  const bodyLP = own(makeFilter(ctx, "lowpass", 140, 0.7)), bodyG = own(makeGain(ctx, 0));
+  road.connect(roadBP).connect(roadG).connect(mix); road.connect(bodyLP).connect(bodyG).connect(mix);
+  let S = null, W = null;
+  const setts = () => {
+    const s4 = loop(bank.setts(4)), s12 = loop(bank.setts(12)), s4G = own(makeGain(ctx, 0)), s12G = own(makeGain(ctx, 0));
+    s4.connect(s4G).connect(mix); s12.connect(s12G).connect(mix);
+    return { s4: smoothParam(s4G.gain, 0.12), s12: smoothParam(s12G.gain, 0.12), s4r: smoothParam(s4.playbackRate, 0.1, 1e-3), s12r: smoothParam(s12.playbackRate, 0.1, 1e-3) };
+  };
+  const wet = () => { const f = own(makeFilter(ctx, "bandpass", 3800, 0.6)), g = own(makeGain(ctx, 0)); road.connect(f).connect(g).connect(mix); return smoothParam(g.gain, 0.2); };
+  const P = { road: smoothParam(roadG.gain, 0.15), roadF: smoothParam(roadBP.frequency, 0.2, 1), body: smoothParam(bodyG.gain, 0.2), rate: smoothParam(road.playbackRate, 0.3, 2e-3) };
+  let squealUntil = 0;
+  return {
+    update(t, s) {
+      const v = Math.abs(s.speed || 0), surf = s.surface || "asphalt", k = s.tyreGain ?? 1;
+      const roll = Math.pow(clamp(v / 14, 0, 1.6), 1.5) * 0.12;
+      P.road(roll * (surf === "setts" ? 2.5 : surf === "concrete" ? 1.4 : 1) * k, t);
+      P.roadF(surf === "setts" ? 650 : 900 + v * 15, t);
+      P.body(Math.pow(clamp(v / 14, 0, 1.6), 1.2) * 0.05 * k, t);
+      P.rate(0.85 + clamp(v / 20) * 0.3, t);
+      if (surf === "setts" && !S) S = setts();
+      if (S) {
+        const sv = surf === "setts" ? clamp(v / 2) : 0, mixHi = clamp((v - 4) / 8);
+        S.s4(sv * (1 - mixHi) * 0.35 * k, t); S.s12(sv * mixHi * 0.5 * k, t);
+        S.s4r(Math.max(0.05, v / 4), t); S.s12r(Math.max(0.05, v / 12), t);
+      }
+      const w = s.roadWet || 0;
+      if (w > 0.05 && !W) W = wet();
+      if (W) W(w * Math.pow(clamp(v / 14, 0, 1.6), 2) * 0.09 * k, t);
+      const load = s.load || 0;
+      if (load < -0.3 && v > 0.6 && v < 4 && t > squealUntil && ((s.seed || 0) * 1000) % 1 < (s.squeal ?? 0.3)) {
+        squealUntil = t + 3; playSqueal(ctx, bank, mix, t, s.seed || 0);
+      }
+    },
+    dispose(when) { for (const s of sources) { try { s.stop(when + 0.05); } catch { /* */ } } sources[0].onended = () => { for (const n of nodes) n.disconnect(); }; },
+  };
+}

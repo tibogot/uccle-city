@@ -174,3 +174,17 @@ top right, 250 m off): a street tree at the park's edge street moved off the dra
 (flagged in drivecheck2: the tram reservation's tree rows had been moved) ok after the tram-road change; the first run
 (`drivecheck`, before the `vi` fix) flagged 14 views, all the index re-dress of the trees (orange-villas, police-station,
 stjob-railbridge ...), ok in drivecheck2 / 3.
+
+## Trees on traffic paths (claude/moto, 2026-11-19)
+
+The motorbike feel test (docs/MOTO_FEEL.md) rode the Kauwberg x Chaussée de Saint-Job junction into a LiDAR trunk
+(urbis-chm 297754_329212, G6 233.75, 787.75) standing 0.11 m from the traffic's junction turn. **Why:** roadTrees.js
+moved trunks off the DRAWN CARRIAGEWAY (measured class, else the OSM band) only; a junction turn that cuts an unmeasured
+corner runs outside both, and the census walked traffic paths only where they were on the carriageway, so it never saw
+it. **Fix:** tileData.js runs a third pass after the traffic graph: LiDAR trees within 1.25 m (car half width + trunk) of
+any traffic lane or junction turn (roadTrees.js `pathCorridor`) move off it, never onto the carriageway or a parked car,
+else are dropped (city-wide about 108: 90 moved, 18 dropped on the first full run; `?pathtrees=old` = before). **Check:** driveCheck walks the car's body
+along every traffic path also OFF the carriageway, counting tree trunks there (`--lanesonly-trees` = the census before);
+the gate's `tree=0` fails on `--set pathTrees=false` (G6 + I6: 3 places). The Av. De Fré trunk and the Montagne de
+Saint-Job trees / lamp the feel test met stand on the measured sidewalk (class 5), 5.7 / 1.4-1.5 m from the lane centre:
+not lane defects (the test line). Tour impact: ~108 street trees moved by 1-4 m.

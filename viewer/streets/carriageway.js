@@ -144,8 +144,10 @@ export function trackIndex(lines, C = 8) {
 /** (x, z) -> { x, z, moved, nx?, nz? } . lanes: carriageway(..., { lanesOnly: true }); fit: viewer/streets/fitCore.js
  *  streetFit (null: no measured street); opt { tram, osm } (above; {} = the 2026-11-16 move, ?streetprops=old) */
 export function offLane(x, z, lanes, fit, opt = {}) {
-  const { tram = null, osm = false } = opt;
-  const onTram = (px, pz) => !!tram && tram.dist(px, pz) < TRAM_CLEAR;
+  const { tram = null, osm = false, rail = null, y = null } = opt;
+  // (CLASS T, rule 39) rail: viewer/rail/railData.js railBed: a track bed is road too (no prop on the rails); y = the
+  // point's own height (a point on a road deck over the line is not on the bed)
+  const onTram = (px, pz) => (!!tram && tram.dist(px, pz) < TRAM_CLEAR) || (!!rail && rail.on(px, pz, y));
   if (!lanes || (!fit && !osm) || !(lanes.inside(x, z, 0) || onTram(x, z))) return { x, z, moved: false };
   const free = (px, pz) => !lanes.inside(px, pz, 0) && !onTram(px, pz);
   const k = fit ? fit.nearKerb(x, z, 6) : null;
@@ -179,10 +181,12 @@ export function offLane(x, z, lanes, fit, opt = {}) {
  *  measured lift there - the lift where it stood; with opt.ground also the ground's). paths: [["stops", "pole"],
  *  ["signs"], ...]; opt: offLane's + ground + keep (p -> true: left where it is) */
 export function docOffLanes(doc, paths, lanes, fit, opt = {}) {
-  if (!doc) return { doc, moved: 0 };
-  let moved = 0;
+  if (!doc) return { doc, moved: 0, dropped: 0 };
+  let moved = 0, dropped = 0;
   const lift = (x, z) => (fit ? fit.lift(x, z) : 0) + (opt.ground ? opt.ground(x, z) : 0);
-  const fix = (p) => { if (!p || typeof p.x !== "number" || opt.keep?.(p)) return p; const r = offLane(p.x, p.z, lanes, fit, opt); if (!r.moved) return p; moved++;
+  // (rule 39) opt.drop(p) -> true: the point is left out (inside a hero road bridge: its model draws what stands on it)
+  const fix = (p) => { if (!p || typeof p.x !== "number" || opt.keep?.(p)) return p; if (opt.drop?.(p)) { dropped++; return null; }
+    const r = offLane(p.x, p.z, lanes, fit, opt.rail ? { ...opt, y: p.y } : opt); if (!r.moved) return p; moved++;
     return { ...p, x: r.x, z: r.z, ...(typeof p.y === "number" ? { y: p.y + lift(r.x, r.z) - lift(p.x, p.z) } : {}) }; };
   const out = { ...doc };
   for (const [key, sub] of paths) {
@@ -190,6 +194,7 @@ export function docOffLanes(doc, paths, lanes, fit, opt = {}) {
     // (streetprops: from out[key], not doc[key]: a second path on the same key, ["stops", "shelter"] after
     // ["stops", "pole"], threw the first one's moves away: no STIB pole was ever moved; ?streetprops=old as before)
     out[key] = (opt.osm ? out[key] : doc[key]).map((it) => (sub ? (it?.[sub] ? { ...it, [sub]: fix(it[sub]) } : it) : fix(it)));
+    if (opt.drop) out[key] = out[key].filter((it) => (sub ? !(it?.[sub] === null) : it !== null));
   }
-  return { doc: out, moved };
+  return { doc: out, moved, dropped };
 }

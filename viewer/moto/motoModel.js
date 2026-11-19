@@ -219,7 +219,7 @@ export function createMoto(model, { shadows = true } = {}) {
   const fall = riderFall(root, rider, hip);
   const attach = () => { sprung.add(rider); rider.position.set(0, 0, 0); rider.quaternion.identity(); rider.scale.set(1, 1, 1); fall.on = false; };
 
-  let tuckS = 0;
+  let tuckS = 0, airS = 0;
   const update = (c, dt = 1 / 60, ground = null) => {
     root.position.set(c.x, c.y, c.z);
     root.rotation.set(-c.slopePitch, c.heading, 0);
@@ -227,7 +227,10 @@ export function createMoto(model, { shadows = true } = {}) {
     lean.position.y = leanLift(c.lean, c.crashed ? 0.06 : I.wheels.R.crown, model.kind);
     pitchR.rotation.x = c.wheelie > 0 ? -c.wheelie : 0;
     pitchF.rotation.x = c.wheelie < 0 ? -c.wheelie : 0;
-    sprung.position.y = c.heave * 0.5;
+    // (feel round, docs/MOTO_FEEL.md: the rider follows the physics) the landing's compression sinks the sprung mass
+    const ab = c.absorb || 0, wob = c.wobbleT > 0 ? Math.sin(c.wobbleT * 19) * Math.min(1, c.wobbleT / 0.15) : 0;
+    airS += ((c.air ? 1 : 0) - airS) * Math.min(1, dt * 8);
+    sprung.position.y = c.heave * 0.5 - ab * 0.04;
     sprung.rotation.x = c.pitch * 0.6;
     steer.quaternion.setFromAxisAngle(axis, c.steerAngle);
     wheelF.rotation.x = c.frontSpin;
@@ -243,8 +246,11 @@ export function createMoto(model, { shadows = true } = {}) {
       return;
     }
     tuckS += ((scooter ? 0 : c.tuck || 0) - tuckS) * Math.min(1, dt * 4);
-    torso.rotation.set(torsoRest + tuckS * 0.26 + Math.max(0, c.wheelie) * 0.5 + (scooter ? -Math.min(0.06, Math.max(-0.06, (c.accel || 0) * 0.012)) : 0), 0, -c.lean * (scooter ? 0.1 : 0.18));
-    rider.position.x = c.lean * (scooter ? 0.015 : 0.035);
+    // the torso: tucked with speed, back in a wheelie, folding forward to absorb a landing, up off the seat in the air,
+    // weaving with a sketchy landing's wobble, countering a slide
+    torso.rotation.set(torsoRest + tuckS * 0.26 + Math.max(0, c.wheelie) * 0.5 + ab * 0.25 + airS * 0.12 + (scooter ? -Math.min(0.06, Math.max(-0.06, (c.accel || 0) * 0.012)) : 0), 0,
+      -c.lean * (scooter ? 0.1 : 0.18) + wob * 0.12 + (c.slide || 0) * 0.08 * Math.sign(c.lean || 0));
+    rider.position.x = c.lean * (scooter ? 0.015 : 0.035) + wob * 0.03;
     eul.set(torso.rotation.x, 0, torso.rotation.z); q.setFromEuler(eul);
     solveArm("L", q, 0); solveArm("R", q, 0);
   };
@@ -297,14 +303,16 @@ export function createVillo(model, { shadows = true } = {}) {
     const a = crankR0 - phase + (side === "L" ? Math.PI : 0);
     return out.set(side === "L" ? PX : -PX, bb.y + CR * Math.sin(a), bb.z + CR * Math.cos(a));
   };
-  let push = 0;
+  let push = 0, airS = 0;
   const update = (c, dt = 1 / 60, ground = null) => {
     root.position.set(c.x, c.y, c.z);
     root.rotation.set(-c.slopePitch, c.heading, 0);
     lean.rotation.z = -c.lean;
     lean.position.y = leanLift(c.lean, c.crashed ? 0.06 : I.wheels.R.crown, "villo");
     pitchR.rotation.x = 0; pitchF.rotation.x = c.wheelie < 0 ? -c.wheelie : 0;
-    sprung.position.y = c.heave * 0.3;
+    const ab = c.absorb || 0, wob = c.wobbleT > 0 ? Math.sin(c.wobbleT * 19) * Math.min(1, c.wobbleT / 0.15) : 0;
+    airS += ((c.air ? 1 : 0) - airS) * Math.min(1, dt * 8);
+    sprung.position.y = c.heave * 0.3 - ab * 0.03;
     steer.quaternion.setFromAxisAngle(axis, c.steerAngle);
     wheelF.rotation.x = c.frontSpin;
     wheelR.rotation.x = c.wheelSpin;
@@ -319,7 +327,7 @@ export function createVillo(model, { shadows = true } = {}) {
     torso.position.copy(hip).lerp(standHip, push);
     torso.position.x += rock;
     const limp = fall.on ? fall.limp : 0;
-    torso.rotation.set(0.15 * push - 0.5 * limp + (1 - push) * Math.min(0.12, Math.max(0, (c.accel || 0) * 0.04)), 0, -c.lean * 0.1 * (1 - push) + rock * 2);
+    torso.rotation.set(0.15 * push - 0.5 * limp + (1 - push) * (Math.min(0.12, Math.max(0, (c.accel || 0) * 0.04)) + ab * 0.25 + airS * 0.15), 0, -c.lean * 0.1 * (1 - push) + rock * 2 + wob * 0.1 * (1 - push));
     if (fall.on && ground) fall.step(dt, ground);
     eul.set(torso.rotation.x, 0, torso.rotation.z); q.setFromEuler(eul);
     // legs: hips -> the pedals (feet flat on them), or a walking gait beside the bike

@@ -5181,8 +5181,8 @@ function fitVertices(V2, o, issues, defaultRadius) {
     const dx = Math.cos(ch), dz = Math.sin(ch);
     const tsx = V2[i].x - Math.cos(legDir[i - 1]) * c.T;
     const tsz = V2[i].z - Math.sin(legDir[i - 1]) * c.T;
-    const lineLen = Math.max(0, (tsx - cx) * dx + (tsz - cz) * dz);
-    pushSeg(lineLen, 0, 0, "line");
+    const lineLen2 = Math.max(0, (tsx - cx) * dx + (tsz - cz) * dz);
+    pushSeg(lineLen2, 0, 0, "line");
     const sTS = s;
     const kk = Math.sign(c.delta) / c.R;
     const arcLen = Math.max(0, c.R * Math.abs(c.delta) - c.Ls);
@@ -5218,8 +5218,8 @@ function fitVertices(V2, o, issues, defaultRadius) {
   {
     const last = V2[n - 1];
     const dx = Math.cos(ch), dz = Math.sin(ch);
-    const lineLen = Math.max(0, (last.x - cx) * dx + (last.z - cz) * dz);
-    pushSeg(lineLen, 0, 0, "line");
+    const lineLen2 = Math.max(0, (last.x - cx) * dx + (last.z - cz) * dz);
+    pushSeg(lineLen2, 0, 0, "line");
   }
   if (!segments.length) {
     segments.push({ type: "line", s0: 0, len: 0.01, x0: V2[0].x, z0: V2[0].z, h0: legDir[0], k0: 0, k1: 0 });
@@ -5906,10 +5906,10 @@ function buildRoundaboutGeometry(node, arms) {
   ];
   for (const a of arms) {
     if (!a.approach.length || !a.depart.length) continue;
-    const carriage = a.edges.curbL - a.edges.curbR;
-    if (carriage < 8 * sc) continue;
+    const carriage2 = a.edges.curbL - a.edges.curbR;
+    if (carriage2 < 8 * sc) continue;
     const s0 = Ro + 1.2, s1 = Math.max(s0 + 3, a.trim + 1);
-    const hw0 = Math.min(1.5 * sc, carriage * 0.12), hw1 = 0.35;
+    const hw0 = Math.min(1.5 * sc, carriage2 * 0.12), hw1 = 0.35;
     const left = [], right = [];
     const N2 = 10;
     for (let k = 0; k <= N2; k++) {
@@ -10468,31 +10468,31 @@ function fitRoadWidths(roads, prep) {
     for (const [side, w] of [["left", med(wl)], ["right", med(wr)]]) {
       const lanes = (src[side] || []).map((l) => ({ ...l }));
       const k = lanes.findIndex((l) => !LANE_TYPES[l.type]?.carriage);
-      const carriage = k < 0 ? lanes : lanes.slice(0, k), rest = k < 0 ? [] : lanes.slice(k);
-      if (!carriage.some((l) => LANE_TYPES[l.type]?.drive)) {
+      const carriage2 = k < 0 ? lanes : lanes.slice(0, k), rest = k < 0 ? [] : lanes.slice(k);
+      if (!carriage2.some((l) => LANE_TYPES[l.type]?.drive)) {
         ok = false;
         break;
       }
       const target = Math.max(0.5, w - center.width / 2);
-      const minSum = () => carriage.reduce((s, l) => s + (MIN[l.type] ?? 1), 0);
+      const minSum = () => carriage2.reduce((s, l) => s + (MIN[l.type] ?? 1), 0);
       for (const ty of ["parking", "bike", "driving"]) {
         while (minSum() > target) {
-          const drives = carriage.filter((l) => LANE_TYPES[l.type]?.drive).length;
+          const drives = carriage2.filter((l) => LANE_TYPES[l.type]?.drive).length;
           let idx2 = -1;
-          for (let q = carriage.length - 1; q >= 0; q--) if (carriage[q].type === ty && (ty !== "driving" || drives > 1)) {
+          for (let q = carriage2.length - 1; q >= 0; q--) if (carriage2[q].type === ty && (ty !== "driving" || drives > 1)) {
             idx2 = q;
             break;
           }
           if (idx2 < 0) break;
-          carriage.splice(idx2, 1);
+          carriage2.splice(idx2, 1);
           st.lanesDropped++;
         }
       }
-      const sum = carriage.reduce((s, l) => s + l.width, 0) || 1;
+      const sum = carriage2.reduce((s, l) => s + l.width, 0) || 1;
       const f = target / sum;
-      for (const l of carriage) l.width = Math.round(l.width * f * 100) / 100;
+      for (const l of carriage2) l.width = Math.round(l.width * f * 100) / 100;
       chg += Math.abs(target - sum);
-      sides[side] = [...carriage, ...rest];
+      sides[side] = [...carriage2, ...rest];
     }
     if (!ok) {
       st.oneSided++;
@@ -16261,6 +16261,9 @@ function roadDeckPins(heroes) {
     return null;
   };
 }
+function railBridgeRings(doc, heroes) {
+  return bridgeRings(doc, (heroes || []).filter((h) => h.kind !== "road_over_rail"));
+}
 function bridgeRings(doc, heroes) {
   const hs = (heroes || []).map(heroFrame);
   const rings = hs.map((h) => h.ring);
@@ -16523,9 +16526,9 @@ function railKeepClear(doc, bounds, heroes = []) {
   };
 }
 var ON_RAIL = 0.02;
-function railDriveSurface(doc, hm, ground, bounds, heroes = []) {
+function railDriveSurface(doc, hm, ground, bounds, heroes = [], { old = false } = {}) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y, D = ground.delta;
-  const rings = bridgeRings(doc, heroes);
+  const rings = old ? bridgeRings(doc, heroes) : railBridgeRings(doc, heroes);
   const onBridge = (x, z) => {
     for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing3(b.ring, x, z)) return true;
     return false;
@@ -16548,7 +16551,15 @@ function railDriveSurface(doc, hm, ground, bounds, heroes = []) {
         const rt = a[1] + (b[1] - a[1]) * u;
         const target = d < CREST_HW ? rt - ON_RAIL : rt - ON_RAIL + (rt + BED - (rt - ON_RAIL)) * (d - CREST_HW) / (FOOT_HW - CREST_HW);
         const k = r * cols + c, cm = Math.round((target - Y[k]) * 100);
-        if (cm <= D[k] || cm > 400 || onBridge(px, pz)) continue;
+        if (cm > 400 || onBridge(px, pz)) continue;
+        if (!old && D[k] !== 65535 && D[k] - cm > 150 && ground.delta2) {
+          if (ground.delta2[k] === 65535 || ground.delta2[k] < cm) {
+            ground.delta2[k] = cm;
+            raised++;
+          }
+          continue;
+        }
+        if (cm <= D[k]) continue;
         D[k] = cm;
         raised++;
       }
@@ -16643,6 +16654,229 @@ function fenceMesh(lines, surface) {
     }
   }
   return P.length ? { position: Float32Array.from(P), normal: Float32Array.from(N2), aS: Float32Array.from(S3), aH: Float32Array.from(H) } : null;
+}
+var POST_STEP = 2.5;
+var FENCE_FOOT = 0.1;
+var RUN_STEP = 1;
+var CHUNK_BAYS = 1;
+var NOT_CAR = /* @__PURE__ */ new Set(["footway", "path", "steps", "cycleway", "pedestrian", "bridleway", "corridor", "platform", "track"]);
+function segGrid2(segs, C = 16) {
+  const g = /* @__PURE__ */ new Map(), key = (i, j) => i * 100003 + j;
+  segs.forEach((s, id) => {
+    for (let i = Math.floor((Math.min(s[0], s[2]) - 2) / C); i <= Math.floor((Math.max(s[0], s[2]) + 2) / C); i++)
+      for (let j = Math.floor((Math.min(s[1], s[3]) - 2) / C); j <= Math.floor((Math.max(s[1], s[3]) + 2) / C); j++) {
+        const k = key(i, j);
+        if (!g.has(k)) g.set(k, []);
+        g.get(k).push(id);
+      }
+  });
+  const out = [], seen = new Uint32Array(segs.length);
+  let stamp = 0;
+  return (x, z, r) => {
+    out.length = 0;
+    stamp++;
+    for (let i = Math.floor((x - r) / C); i <= Math.floor((x + r) / C); i++) for (let j = Math.floor((z - r) / C); j <= Math.floor((z + r) / C); j++)
+      for (const id of g.get(key(i, j)) || []) if (seen[id] !== stamp) {
+        seen[id] = stamp;
+        out.push(segs[id]);
+      }
+    return out;
+  };
+}
+var segDist2 = (x, z, s) => {
+  const dx = s[2] - s[0], dz = s[3] - s[1], L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L2));
+  return Math.hypot(x - s[0] - dx * u, z - s[1] - dz * u);
+};
+var segCross = (a, b, c, d) => {
+  const r0 = b[0] - a[0], r1 = b[1] - a[1], s0 = d[0] - c[0], s1 = d[1] - c[1], den = r0 * s1 - r1 * s0;
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c[0] - a[0]) * s1 - (c[1] - a[1]) * s0) / den, u = ((c[0] - a[0]) * r1 - (c[1] - a[1]) * r0) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? [a[0] + r0 * t, a[1] + r1 * t, u] : null;
+};
+var carriage = (r) => {
+  const side = (a) => (a || []).reduce((s, l) => s + (l.type === "sidewalk" ? 0 : +l.width || 0), 0);
+  return Math.max(3, side(r.lanes?.left), side(r.lanes?.right)) + (r.lanes?.center?.width || 0) / 2;
+};
+function railCrossings(doc, bounds, roadsDoc, orig, m = 40, heroes = [], roadY = null) {
+  const tracks = tracksIn(doc, bounds, m).filter((t) => !t.tunnel);
+  const deckRings = doc.decks.map((b) => ringBox(b.ring)).concat((heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => ringBox(heroFrame(h).ring)));
+  const inDeck = (x, z) => deckRings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing3(b.ring, x, z));
+  const N2 = new Map((roadsDoc?.nodes || []).map((n) => [n.id, n]));
+  const out = [];
+  for (const r of roadsDoc?.roads || []) {
+    if (NOT_CAR.has(r.meta?.highway)) continue;
+    const pts = [N2.get(r.a), ...r.pts || [], N2.get(r.b)].filter(Boolean).map((p) => [p.x, p.z]);
+    const br = r.meta?.bridge && r.meta.bridge !== "no", tun = r.meta?.tunnel && r.meta.tunnel !== "no";
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      if (Math.max(a[0], b[0]) < bounds.x0 - m || Math.min(a[0], b[0]) > bounds.x1 + m || Math.max(a[1], b[1]) < bounds.z0 - m || Math.min(a[1], b[1]) > bounds.z1 + m) continue;
+      for (const t of tracks) {
+        if (Math.max(a[0], b[0]) < t.box.x0 || Math.min(a[0], b[0]) > t.box.x1 || Math.max(a[1], b[1]) < t.box.z0 || Math.min(a[1], b[1]) > t.box.z1) continue;
+        for (let k = 1; k < t.pts.length; k++) {
+          const p = segCross(a, b, [t.pts[k - 1][0], t.pts[k - 1][2]], [t.pts[k][0], t.pts[k][2]]);
+          if (!p) continue;
+          const ry = t.pts[k - 1][1] + (t.pts[k][1] - t.pts[k - 1][1]) * p[2];
+          const L2 = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / L2, uz = (b[1] - a[1]) / L2;
+          const side = (sg) => {
+            let mx = -Infinity;
+            for (let q = 4; q <= 12; q += 2) {
+              const g = orig(p[0] + sg * ux * q, p[1] + sg * uz * q);
+              if (g > mx) mx = g;
+            }
+            return mx;
+          };
+          const g1 = side(-1), g2 = side(1);
+          const rY = roadY ? roadY(p[0], p[1]) : NaN;
+          const kind = t.bridge && !br ? "under" : tun ? "under" : Number.isFinite(rY) ? Math.abs(rY - ry) < 1.5 ? "level" : rY > ry ? "over" : "under" : br ? "over" : inDeck(p[0], p[1]) ? "over" : g1 > ry + 3 && g2 > ry + 3 ? "over" : g1 < ry - 3 && g2 < ry - 3 ? "under" : "level";
+          const segs = [];
+          for (let j = 1; j < pts.length; j++) if (segDist2(p[0], p[1], [pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1]]) < 25) segs.push([pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1]]);
+          out.push({ x: p[0], z: p[1], kind, half: carriage(r) + 2, segs, name: r.meta?.name || r.name || r.id, road: r.id, rail: ry, track: t.id });
+        }
+      }
+    }
+  }
+  return out;
+}
+function railFences2(doc, bounds, heroes, roadsDoc, orig, opts = {}) {
+  const rings = railBridgeRings(doc, heroes).concat(doc.platforms.map((p) => ringBox(p.ring)));
+  const pr = new Set(doc.platforms.map((p) => p.ring));
+  const inAny = (x, z) => {
+    for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing3(b.ring, x, z)) return pr.has(b.ring) ? "platform" : "bridge";
+    return null;
+  };
+  const tracks = tracksIn(doc, bounds, FENCE + 4);
+  const crossings = railCrossings(doc, bounds, roadsDoc, orig, 40, heroes, opts.roadY || null);
+  const level = crossings.filter((c) => c.kind === "level");
+  const levelSegs = segGrid2(level.flatMap((c) => c.segs.map((s) => [...s, c.half])));
+  const N2 = new Map((roadsDoc?.nodes || []).map((n) => [n.id, n]));
+  const across = new Set(crossings.filter((c) => c.kind !== "level").map((c) => c.road));
+  const rs = [];
+  for (const r of roadsDoc?.roads || []) {
+    if (NOT_CAR.has(r.meta?.highway) || r.meta?.bridge && r.meta.bridge !== "no" || r.meta?.tunnel && r.meta.tunnel !== "no" || across.has(r.id)) continue;
+    const half2 = carriage(r) + 0.3, pts = [N2.get(r.a), ...r.pts || [], N2.get(r.b)].filter(Boolean);
+    for (let i = 1; i < pts.length; i++) rs.push([pts[i - 1].x, pts[i - 1].z, pts[i].x, pts[i].z, half2]);
+  }
+  const roadSegs = segGrid2(rs);
+  const trackSegs = segGrid2(tracks.flatMap((t) => t.pts.slice(1).map((p, i) => [t.pts[i][0], t.pts[i][2], p[0], p[2], t, (t.pts[i][1] + p[1]) / 2])));
+  const inLevel = (x, z) => levelSegs(x, z, 16).some((s) => segDist2(x, z, s) < s[4]);
+  const inRoad = (x, z, y) => roadSegs(x, z, 12).some((s) => segDist2(x, z, s) < s[4] && Math.abs(orig(x, z) - y) < 3);
+  const nearOther = (x, z, t, y) => trackSegs(x, z, 4).some((s) => s[4] !== t && Math.abs(s[5] - y) < 2.5 && segDist2(x, z, s) < 3);
+  const m = 4, inTile = (x, z) => x >= bounds.x0 - m && x <= bounds.x1 + m && z >= bounds.z0 - m && z <= bounds.z1 + m;
+  const lines = [], breaks = { level: 0, platform: 0, bridge: 0, covered: 0, track: 0, road: 0, skip: 0 };
+  let posts = 0;
+  for (const t of tracks) {
+    const F = frames(t);
+    for (const sd of [-1, 1]) {
+      let run = [];
+      const flush = () => {
+        if (run.length >= 2) lines.push(run);
+        run = [];
+      };
+      for (let s = 0; s <= t.len + 1e-6; s += RUN_STEP) {
+        const f = sample(F, Math.min(s, t.len));
+        const x = f.x + f.nx * sd * FENCE, z = f.z + f.nz * sd * FENCE;
+        if (!inTile(x, z)) {
+          flush();
+          continue;
+        }
+        const sf = opts.surface || orig, onPlat = inAny(x, z), onT = inAny(f.x, f.z);
+        const struct = (onT === "bridge" || t.bridge) && sf(f.x, f.z) < f.y - 2.5 || (onPlat === "bridge" || t.bridge) && sf(x, z) < f.y - 2.5;
+        const why = (onPlat === "platform" || onT === "platform" ? "platform" : null) || (struct ? "bridge" : null) || (orig(x, z) - f.y >= 3 ? "covered" : null) || (nearOther(x, z, t, f.y) ? "track" : null) || (inLevel(x, z) || inLevel(f.x, f.z) ? "level" : null) || (inRoad(x, z, f.y) ? "road" : null) || (opts.skip?.(x, z) ? "skip" : null);
+        if (why) {
+          breaks[why]++;
+          flush();
+          continue;
+        }
+        run.push([x, z, f.nx * sd, f.nz * sd]);
+      }
+      flush();
+    }
+  }
+  for (const r of lines) posts += Math.ceil(lineLen(r) / POST_STEP) + 1;
+  return { lines, posts, crossings, breaks };
+}
+var lineLen = (run) => {
+  let L2 = 0;
+  for (let i = 1; i < run.length; i++) L2 += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]);
+  return L2;
+};
+function fenceBays(lines, surface) {
+  const out = [];
+  for (const run of lines) {
+    const L2 = lineLen(run);
+    if (L2 < 0.5) continue;
+    const nPost = Math.max(1, Math.round(L2 / POST_STEP)), step = L2 / nPost;
+    const pts = [];
+    let s = 0, k = 1, next = 0, pi = 0;
+    const at2 = (i, f) => {
+      const a = run[i - 1], b = run[i];
+      return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f];
+    };
+    pts.push({ x: run[0][0], z: run[0][1], nx: run[0][2], nz: run[0][3], s: 0, post: 0 });
+    pi = 1;
+    next = step;
+    for (k = 1; k < run.length; k++) {
+      const seg = Math.hypot(run[k][0] - run[k - 1][0], run[k][1] - run[k - 1][1]);
+      while (pi <= nPost && next <= s + seg + 1e-6) {
+        const f = seg > 1e-9 ? Math.min(1, (next - s) / seg) : 1, q = at2(k, f);
+        pts.push({ x: q[0], z: q[1], nx: q[2], nz: q[3], s: next, post: pi });
+        pi++;
+        next = pi * step;
+      }
+      s += seg;
+      if (k < run.length - 1 && pts.at(-1).s < s - 0.05 && next > s + 0.05) pts.push({ x: run[k][0], z: run[k][1], nx: run[k][2], nz: run[k][3], s, post: -1 });
+    }
+    const postY = new Float64Array(nPost + 1);
+    for (const p of pts) if (p.post >= 0) postY[p.post] = surface(p.x, p.z);
+    for (const p of pts) {
+      const b = Math.min(nPost - 1, Math.floor(p.s / step + 1e-9)), f = Math.max(0, Math.min(1, (p.s - b * step) / step));
+      p.L = postY[b] + (postY[b + 1] - postY[b]) * f;
+      p.g = surface(p.x, p.z);
+      p.foot = Math.min(p.L, p.g) - FENCE_FOOT;
+      p.bay = b;
+    }
+    out.push({ pts, step, posts: nPost + 1 });
+  }
+  return out;
+}
+function fenceMesh2(bays) {
+  const P = [], N2 = [], S3 = [], H = [];
+  for (const { pts, step } of bays) {
+    const k = POST_STEP / step;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const n = [(a.nx + b.nx) / 2, 0, (a.nz + b.nz) / 2], nl = Math.hypot(n[0], n[2]) || 1;
+      const v = [[a.x, a.foot, a.z, a.s * k, -FENCE_FOOT], [b.x, b.foot, b.z, b.s * k, -FENCE_FOOT], [b.x, b.L + FENCE_H, b.z, b.s * k, FENCE_H], [a.x, a.L + FENCE_H, a.z, a.s * k, FENCE_H]];
+      for (const q of [0, 1, 2, 0, 2, 3]) {
+        const p = v[q];
+        P.push(p[0], p[1], p[2]);
+        N2.push(n[0] / nl, 0, n[2] / nl);
+        S3.push(p[3]);
+        H.push(p[4]);
+      }
+    }
+  }
+  return P.length ? { position: Float32Array.from(P), normal: Float32Array.from(N2), aS: Float32Array.from(S3), aH: Float32Array.from(H) } : null;
+}
+function fenceWalls(bays) {
+  const W2 = FENCE_W / 2, out = [];
+  for (const { pts } of bays) {
+    for (let i0 = 0; i0 < pts.length - 1; ) {
+      let i1 = i0 + 1;
+      while (i1 < pts.length - 1 && !(pts[i1].post >= 0 && pts[i1].post % CHUNK_BAYS === 0)) i1++;
+      if (Math.abs(pts[i1].L - pts[i0].L) > 0.4) i1 = i0 + 1;
+      const c = pts.slice(i0, i1 + 1);
+      const ring2 = [...c.map((p) => [p.x + p.nx * W2, p.z + p.nz * W2]), ...c.map((p) => [p.x - p.nx * W2, p.z - p.nz * W2]).reverse()];
+      let top = -Infinity, base = Infinity;
+      for (const p of c) {
+        top = Math.max(top, p.L + FENCE_H);
+        base = Math.min(base, p.foot);
+      }
+      out.push({ ring: ring2, top, base });
+      i0 = i1;
+    }
+  }
+  return out;
 }
 function railVerges(doc, bounds) {
   const out = [];
@@ -18176,10 +18410,11 @@ var MOVE_MIN = 1.5;
 var MOVE_MAX2 = 4;
 var DUP = 1.8;
 var DIRS = 24;
-function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null, keep = null } = {}) {
+function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null, keep = null, avoid = null } = {}) {
   if (!trees?.length) return { trees, moved: 0, dropped: 0 };
   const ring2 = Array.from({ length: 8 }, (_, k) => [Math.cos(k / 8 * 2 * Math.PI) * CLEAR, Math.sin(k / 8 * 2 * Math.PI) * CLEAR]);
-  const touches = (x, z) => driven.inside(x, z, 0) || ring2.some(([dx, dz]) => driven.inside(x + dx, z + dz, 0));
+  const off = (x, z) => driven.inside(x, z, 0) || (avoid ? avoid.inside(x, z, 0) : false);
+  const touches = (x, z) => off(x, z) || ring2.some(([dx, dz]) => off(x + dx, z + dz));
   const intrudes = (t) => driven.inside(t.x, t.z, 0);
   const G2 = /* @__PURE__ */ new Map(), key = (x, z) => `${Math.floor(x / 4)},${Math.floor(z / 4)}`;
   const add = (t) => {
@@ -18261,6 +18496,29 @@ function paintedDriveLanes(net, paintedLaneCentre2, roadFrameOf2, margin = 0.3) 
     }
     return false;
   };
+}
+var PATH_HALF = 1.25;
+function pathCorridor(traffic, half2 = PATH_HALF) {
+  if (!traffic?.xy || !traffic.paths) return null;
+  const C = 4, cells = /* @__PURE__ */ new Map(), K = (i, j) => i * 65536 + j, xy = traffic.xy, off = traffic.off;
+  for (let p = 0; p < traffic.paths; p++) for (let k = off[p]; k < off[p + 1] - 1; k++) {
+    const ax = xy[2 * k], az = xy[2 * k + 1], bx = xy[2 * k + 2], bz = xy[2 * k + 3];
+    for (let i = Math.floor((Math.min(ax, bx) - half2 - 1) / C); i <= Math.floor((Math.max(ax, bx) + half2 + 1) / C); i++)
+      for (let j = Math.floor((Math.min(az, bz) - half2 - 1) / C); j <= Math.floor((Math.max(az, bz) + half2 + 1) / C); j++) {
+        const q = K(i, j);
+        (cells.get(q) || cells.set(q, []).get(q)).push(k);
+      }
+  }
+  return { inside: (x, z, m = 0) => {
+    const r = half2 + m;
+    for (const k of cells.get(K(Math.floor(x / C), Math.floor(z / C))) || []) {
+      const ax = xy[2 * k], az = xy[2 * k + 1], dx = xy[2 * k + 2] - ax, dz = xy[2 * k + 3] - az, L2 = dx * dx + dz * dz;
+      const t = L2 > 1e-9 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)) : 0;
+      const ex = ax + dx * t - x, ez = az + dz * t - z;
+      if (ex * ex + ez * ez < r * r) return true;
+    }
+    return false;
+  } };
 }
 
 // viewer/rail/roadDeck.js
@@ -19450,6 +19708,25 @@ async function buildTileData(entry, base) {
     parked.sites = traffic.parkedKept;
   }
   delete traffic.parkedKept;
+  if (roadTrees && entry.pathTrees !== false && traffic && feats.trees?.length) {
+    const corridor = pathCorridor(traffic);
+    const P = parked?.sites || [];
+    const onCar = (x, z) => P.some((c) => {
+      const dx = x - c.x, dz = z - c.z;
+      if (dx * dx + dz * dz > 9) return false;
+      const ax = Math.cos(c.yaw), az = -Math.sin(c.yaw);
+      const u = dx * ax + dz * az, w = -dx * az + dz * ax;
+      return Math.abs(u) < 2.7 && Math.abs(w) < 1.25;
+    });
+    if (corridor) {
+      const fitT = road.surfaceData ? streetFit(road.surfaceData) : null;
+      const avoid = carriageway(roads, { classAt: fitT?.classAt, onDeck: null, bandOnMeasured: true });
+      const r3 = treesOffCarriageway(feats.trees, corridor, { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z) || onCar(x, z), ground: (x, z) => hm.ground(x, z), avoid });
+      feats.trees = r3.trees;
+      roadTrees.pathMoved = r3.moved;
+      roadTrees.pathDropped = r3.dropped;
+    }
+  }
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
   await step("terrain simplify", async () => {
@@ -19461,8 +19738,10 @@ async function buildTileData(entry, base) {
   const keep = entry.driveKeepHidden ? { buildings: bDoc.buildings.slice() } : null;
   hideBuildings(bDoc, entry.hide);
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));
-  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
-  if (fences && tcut) fences.rings = tunnelFenceRings(tunnels, fences);
+  const railT = entry.railT !== false;
+  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railT ? railFences2(rail.doc, bounds, rail.heroes, roads, hm.ground, { surface: tunnelSurface(tcut, hm.surface), roadY: roadGround }) : railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
+  if (fences && tcut && !railT) fences.rings = tunnelFenceRings(tunnels, fences);
+  const fenceB = fences && railT ? fenceBays(fences.lines, tunnelSurface(tcut, hm.surface)) : null;
   const fitGround0 = entry.groundFit !== false ? await step("ground fit", () => drawnGround(hm, road.parts)) : null;
   const sinkWalls = () => fitGround0 && bBuf ? step("wall feet", () => {
     const dv = new DataView(bBuf), V2 = dv.getUint32(0, true), T3 = dv.getUint32(4, true);
@@ -19499,16 +19778,17 @@ async function buildTileData(entry, base) {
       // the road bridges' parapets (citydefects 2026-11-16: this spread had slipped into the comment above, so no OSM
       // deck's parapet was a car wall since the round-2 edit)
       ...osmBridges.decks.flatMap((d) => parapetRings(d, hm.ground)),
-      ...(fences?.rings || []).map((ring2) => ({ ring: ring2, top: Math.max(...ring2.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))
+      ...fenceB ? fenceWalls(fenceB) : (fences?.rings || []).map((ring2) => ({ ring: ring2, top: Math.max(...ring2.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))
     ]
   }));
-  if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
-  if (fences) drive.counts.railFences = fences.rings.length;
+  if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes, { old: !railT }));
+  if (fences) drive.counts.railFences = fenceB ? fenceB.length : fences.rings.length;
+  if (fences?.breaks) drive.counts.railFenceBreaks = fences.breaks;
   if (railCuts != null) drive.counts.deckRailCuts = railCuts;
-  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped, lanesMoved: roadTrees.lanesMoved ?? 0, lanesDropped: roadTrees.lanesDropped ?? 0 };
+  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped, lanesMoved: roadTrees.lanesMoved ?? 0, lanesDropped: roadTrees.lanesDropped ?? 0, pathMoved: roadTrees.pathMoved ?? 0, pathDropped: roadTrees.pathDropped ?? 0 };
   if (deckLanes) drive.counts.deckLanes = deckLanes;
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
-  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));
+  if (fences && railOut) railOut.fences = fenceB ? fenceMesh2(fenceB) : fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));
   drive.counts.hidden = nb - bDoc.buildings.length;
   const fitGround = fitGround0;
   const kit = entry.kit ? kitCollector({ exclude: new Set(entry.kitExclude || []), ground: fitGround || ((x, z) => hm.ground(x, z)), fit: entry.storeys !== false }) : null;
@@ -20101,4 +20381,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "867a844fe09940c1";
+self.__TILE_CODE_HASH = "5be7be018fb4dd82";

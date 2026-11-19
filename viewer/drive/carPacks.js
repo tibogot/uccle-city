@@ -8,11 +8,12 @@
 // Paint comes from a uniform (one car) or a per-instance attribute "paint" (parked cars). LODs are made here at load by
 // meshoptimizer (absolute error in metres; colour seams are open borders, so the simplifier keeps them as borders).
 import * as THREE from "three/webgpu";
-import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, vec4, cos, sin, positionLocal, normalLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix, varying } from "three/tsl";
+import { attribute, color, float, select, uniform, uniformArray, int, screenCoordinate, vec2, vec3, vec4, cos, sin, positionLocal, normalLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix, varying } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts, partLevel } from "./carLod.js";
 import { wxMat } from "../weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
+import { DENT_OLD, dentFrame, frameRows, dentNodes, shadeDent } from "./carDent.js";   // claude/dent: dents without holes
 
 // ?vfix2=old: the traffic's light bits decoded as before round 2 of the visual fixes (A/B)
 const CARLIGHTS_OLD = typeof location !== "undefined" && /[?&](carlights|polish1)=old(&|$)/.test(location.search);   // polish1 item 6
@@ -86,8 +87,11 @@ export function loadPack(source) {
         }
         return out;
       });
+      const bodyGeo = parts.Body?.geo;
       cars.push({ id: node.name, label: x.label || node.name, type: x.type, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])),
-        keepPaint: !!x.keepPaint, size: x.size || [1.8, 1.45, 4.3], parts, lods });
+        keepPaint: !!x.keepPaint, size: x.size || [1.8, 1.45, 4.3], parts, lods,
+        // (claude/dent) the dent's frame: half width, ends, cabin box (carDent.js)
+        dent: bodyGeo ? dentFrame(bodyGeo.attributes.position.array, bodyGeo.attributes._kind?.array) : null });
     }
     return { source, label: S.label, credit: S.credit, rich: !!S.rich, lods: S.lods || PACK_LODS, cars };
   })();
@@ -137,7 +141,18 @@ export function crumpleOffset(p, n, dep, hl) {
   return one(1, 1, dep.x).add(one(-1, 1, dep.y)).add(one(1, -1, dep.z)).add(one(-1, -1, dep.w));
 }
 /** the player's car damage (viewer/drive/carHit.js -> driveMode.js): corner depths (m) FL FR RL RR, its half length */
-export const playerDamage = { depth: uniform(new THREE.Vector4(0, 0, 0, 0)), hl: uniform(2.15) };
+export const playerDamage = { depth: uniform(new THREE.Vector4(0, 0, 0, 0)), hl: uniform(2.15),
+  // (claude/dent) the model's dent frame rows (carDent.js frameRows): set by setPlayerDent when the car changes
+  frame: [uniform(new THREE.Vector4(0.9, 2.15, -2.15, 0)), uniform(new THREE.Vector4(-0.75, 0.68, -1.9, 0)), uniform(new THREE.Vector4(0.75, 1.3, 0.9, 0))] };
+/** the player's / police car model changed: its dent frame (model.dent from loadPack; else a box from its size) */
+export function setPlayerDent(model) {
+  const s = model?.size || [1.8, 1.45, 4.3];
+  const F = model?.dent || { hw: s[0] / 2, zF: s[2] / 2, zR: -s[2] / 2, box: { x0: -s[0] / 2 + 0.22, y0: 0.68, z0: -s[2] / 2 + 0.15, x1: s[0] / 2 - 0.22, y1: s[1] - 0.12, z1: s[2] / 2 - 1.2 } };
+  frameRows(F).forEach((r, k) => playerDamage.frame[k].value.set(...r));
+}
+/** the traffic types' dent frames: 3 vec4 rows per type index (trafficFleet.js TYPE_NAMES order, <= 8 types) */
+export const trafficDentRows = Array.from({ length: 24 }, (_, i) => new THREE.Vector4(...[[0.9, 2.15, -2.15, 0], [-0.75, 0.68, -1.9, 0], [0.75, 1.3, 0.9, 0]][i % 3]));
+const trafficDentU = uniformArray(trafficDentRows, "vec4").setName("carDentTypes");
 const CARPUSH_OLD = typeof location !== "undefined" && /[?&]carpush=old(&|$)/.test(location.search);
 
 /** THE PLAYER'S CAR GLASS (policefeel, owner 2026-11-17: "bad lines at the back of the car when moving"): under the
@@ -249,7 +264,13 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     // rich: the lamp's own vertex colour glows (white lamps, amber taxi sign); packs: a fixed warm white
     m.emissiveNode = (rich ? vc.mul(1.15) : color(0xfff1dc)).mul(head).add(color(0xff1408).mul(tail));
     // (carhit: the player's car crumples where it was hit; one uniform, so no new pipeline per hit)
-    if (!CARPUSH_OLD) m.positionNode = positionLocal.sub(crumpleOffset(positionLocal, normalLocal, playerDamage.depth, playerDamage.hl));
+    // (claude/dent: a position-only field that keeps the shell closed, carDent.js; ?dent=old the normal push as before)
+    if (!CARPUSH_OLD && DENT_OLD) m.positionNode = positionLocal.sub(crumpleOffset(positionLocal, normalLocal, playerDamage.depth, playerDamage.hl));
+    else if (!CARPUSH_OLD) {
+      const D = dentNodes(positionLocal, playerDamage.depth, ...playerDamage.frame);
+      m.positionNode = positionLocal.add(D.offset);
+      shadeDent(m, D.tone, isPaint);
+    }
   }
   if (motion) {
     // THE MOVING TRAFFIC (viewer/traffic/trafficFleet.js): per-instance attribute "motion" = (wheel spin, front-wheel
@@ -268,8 +289,19 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     // through a varying (an interpolated 70 000 would not floor cleanly)
     const zi = Mo.z.add(0.5).floor(), D = zi.div(64).floor();
     const dep = vec4(mod(D, 8), mod(D.div(8).floor(), 8), mod(D.div(64).floor(), 8), mod(D.div(512).floor(), 8)).mul(0.04);
-    const dent = CARPUSH_OLD ? vec3(0, 0, 0) : select(W.w.greaterThan(0.5), vec3(0, 0, 0), crumpleOffset(p0, normalLocal, dep, D.div(4096).floor().mul(0.12).add(1.9)));
-    m.positionNode = positionLocal.add(vec3(dl.x.mul(ch).add(dl.z.mul(sh)), dl.y, dl.z.mul(ch).sub(dl.x.mul(sh)))).sub(dent);
+    // (claude/dent) the top code is the TYPE index (trafficFleet.js TYPE_CODE): its dent frame from carDentTypes;
+    // ?dent=old: the half-length code (hl = 1.9 + 0.12 code) and the normal push as before
+    let dent;
+    if (CARPUSH_OLD) dent = vec3(0, 0, 0);
+    else if (DENT_OLD) dent = select(W.w.greaterThan(0.5), vec3(0, 0, 0), crumpleOffset(p0, normalLocal, dep, D.div(4096).floor().mul(0.12).add(1.9))).negate();
+    else {
+      const ti = int(D.div(4096).floor().clamp(0, 7)).mul(3);
+      const N = dentNodes(p0, dep, trafficDentU.element(ti), trafficDentU.element(ti.add(1)), trafficDentU.element(ti.add(2)));
+      const body = W.w.lessThan(0.5);
+      dent = select(body, N.offset, vec3(0, 0, 0));
+      shadeDent(m, select(body, N.tone, float(0)), isPaint);
+    }
+    m.positionNode = positionLocal.add(vec3(dl.x.mul(ch).add(dl.z.mul(sh)), dl.y, dl.z.mul(ch).sub(dl.x.mul(sh)))).add(dent);
     // lights: bits of motion.z: 1 brake, 2 head (forced), 4 left indicator, 8 right indicator, 16 reversing.
     // motion is per instance, but READ IN THE FRAGMENT it is an interpolated varying: 1 arrives as 0.99999 / 1.00001
     // per pixel (like _kind above), and floor() then flipped the bits pixel by pixel: a brake-lit lens speckled

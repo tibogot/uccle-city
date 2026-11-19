@@ -173,13 +173,13 @@ Coordinator review: no garden piece in a driven lane, no gate over a step withou
 
 ### Drive check (rule 27)
 
-Foundation 158 places -> 140; garden places 47 -> 31, cause b (a piece in a measured roadway) now 0 (the
+Foundation 158 places -> 140 (142 after the merge with moto + sound: the rail fence adds 2 `wall` places); garden places 47 -> 31, cause b (a piece in a measured roadway) now 0 (the
 foundation had them: B6, G10, D6, J4, G6, K11 ...); the 31 left are all cause a, lane / centre-line data over land the
 street data does not measure as roadway: 27 are the OSM centre line (`paths` centre / turn only) of a street whose drawn
 carriageway is narrower than its OSM band, walked over the measured sidewalk / ramp in front of the garden (class
 sidewalk / ramp under the piece); 2 at I6 Montagne de Saint-Job (lane + centre line on an unmeasured stretch, the lane
 band over the gardens), 2 at H6 Av. Carsoel (the tram road beside the Saint-Job deck, centre line). They are the lane
-data's to fix (the drive check's own cause a), not the gardens'. Ceiling 140 (below the foundation's 158).
+data's to fix (the drive check's own cause a), not the gardens'. Ceiling 142 (below the foundation's 158).
 
 | tile | street | x, z | piece | blocked m | depth m | measured class | paths |
 |---|---|---|---|---|---|---|---|
