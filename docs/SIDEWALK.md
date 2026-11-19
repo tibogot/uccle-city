@@ -377,3 +377,7 @@ Round 5b, done (2026-11-19): the 12 gates without steps traced to 1.
   settle only lowers a piece onto the drawn ground. So it is a runtime effect (a ground that changes after the gardens
   seat: a tile's lite -> full terrain swap, a landmark's site ground, ...). Needs the browser: pick the piece, compare
   its base with hm.surface there.
+- K10 fixed: a gate standing just past a wall run's END with no outline edge found at it gets a flight from the end
+  pier on, along the run's line, 1.2 m wide, facing as the run does (unless a flight is already within 2 m or a measured
+  path goes in there). City census: gateNoSteps 0 (ceiling 0); the other counts unchanged (over 310, spike 171,
+  bareBank 575).

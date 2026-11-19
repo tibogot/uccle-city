@@ -1,5 +1,5 @@
 {
- "when": "2026-11-19T05:23:33.157Z",
+ "when": "2026-11-19T06:07:59.418Z",
  "old": false,
  "sum": {
   "lump": 867,
@@ -21,15 +21,15 @@
   "stacked": 0,
   "stackedM2": 0,
   "bareBank": 575,
-  "bareBankM2": 1256,
-  "gateNoSteps": 1,
-  "gateNoStepsM2": 2
+  "bareBankM2": 1257,
+  "gateNoSteps": 0,
+  "gateNoStepsM2": 0
  },
  "perf": {
-  "roadMs": 532643,
-  "weldMs": 61844,
-  "surfMs": 81637,
-  "roadTris": 7118159
+  "roadMs": 564241,
+  "weldMs": 65470,
+  "surfMs": 90266,
+  "roadTris": 7119679
  },
  "tiles": [
   {
@@ -59,9 +59,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3650,
-    "weldMs": 570,
-    "surfMs": 205,
+    "roadMs": 3324,
+    "weldMs": 523,
+    "surfMs": 192,
     "roadTris": 33327
    }
   },
@@ -92,9 +92,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 8740,
-    "weldMs": 789,
-    "surfMs": 1611,
+    "roadMs": 6818,
+    "weldMs": 617,
+    "surfMs": 1138,
     "roadTris": 127056
    }
   },
@@ -125,10 +125,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5551,
-    "weldMs": 506,
-    "surfMs": 745,
-    "roadTris": 66934
+    "roadMs": 5115,
+    "weldMs": 551,
+    "surfMs": 663,
+    "roadTris": 66966
    }
   },
   {
@@ -158,9 +158,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6280,
-    "weldMs": 698,
-    "surfMs": 583,
+    "roadMs": 7407,
+    "weldMs": 778,
+    "surfMs": 951,
     "roadTris": 68191
    }
   },
@@ -191,9 +191,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4896,
-    "weldMs": 582,
-    "surfMs": 405,
+    "roadMs": 6995,
+    "weldMs": 666,
+    "surfMs": 493,
     "roadTris": 63411
    }
   },
@@ -224,9 +224,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3335,
-    "weldMs": 579,
-    "surfMs": 53,
+    "roadMs": 3632,
+    "weldMs": 571,
+    "surfMs": 62,
     "roadTris": 25097
    }
   },
@@ -257,10 +257,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7610,
-    "weldMs": 701,
-    "surfMs": 1246,
-    "roadTris": 115775
+    "roadMs": 8519,
+    "weldMs": 791,
+    "surfMs": 1682,
+    "roadTris": 115783
    }
   },
   {
@@ -290,10 +290,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6247,
-    "weldMs": 682,
-    "surfMs": 935,
-    "roadTris": 76272
+    "roadMs": 5209,
+    "weldMs": 497,
+    "surfMs": 844,
+    "roadTris": 76320
    }
   },
   {
@@ -323,9 +323,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 8069,
-    "weldMs": 728,
-    "surfMs": 1354,
+    "roadMs": 7701,
+    "weldMs": 668,
+    "surfMs": 1009,
     "roadTris": 122216
    }
   },
@@ -356,9 +356,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5927,
-    "weldMs": 681,
-    "surfMs": 943,
+    "roadMs": 6627,
+    "weldMs": 761,
+    "surfMs": 1161,
     "roadTris": 65866
    }
   },
@@ -389,9 +389,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7574,
-    "weldMs": 746,
-    "surfMs": 1291,
+    "roadMs": 9381,
+    "weldMs": 808,
+    "surfMs": 1490,
     "roadTris": 111339
    }
   },
@@ -422,9 +422,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7013,
-    "weldMs": 747,
-    "surfMs": 744,
+    "roadMs": 8678,
+    "weldMs": 972,
+    "surfMs": 783,
     "roadTris": 74928
    }
   },
@@ -455,9 +455,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2824,
-    "weldMs": 420,
-    "surfMs": 177,
+    "roadMs": 4358,
+    "weldMs": 599,
+    "surfMs": 372,
     "roadTris": 26637
    }
   },
@@ -488,9 +488,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6279,
-    "weldMs": 663,
-    "surfMs": 1058,
+    "roadMs": 4803,
+    "weldMs": 524,
+    "surfMs": 702,
     "roadTris": 92174
    }
   },
@@ -521,9 +521,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2971,
-    "weldMs": 438,
-    "surfMs": 206,
+    "roadMs": 3189,
+    "weldMs": 540,
+    "surfMs": 261,
     "roadTris": 40087
    }
   },
@@ -554,9 +554,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7244,
-    "weldMs": 680,
-    "surfMs": 1146,
+    "roadMs": 10000,
+    "weldMs": 752,
+    "surfMs": 1407,
     "roadTris": 109367
    }
   },
@@ -587,10 +587,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6227,
-    "weldMs": 666,
-    "surfMs": 927,
-    "roadTris": 82076
+    "roadMs": 7139,
+    "weldMs": 719,
+    "surfMs": 1100,
+    "roadTris": 82108
    }
   },
   {
@@ -620,9 +620,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7501,
-    "weldMs": 709,
-    "surfMs": 1181,
+    "roadMs": 6005,
+    "weldMs": 653,
+    "surfMs": 879,
     "roadTris": 113763
    }
   },
@@ -653,10 +653,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6838,
-    "weldMs": 740,
-    "surfMs": 845,
-    "roadTris": 104227
+    "roadMs": 6421,
+    "weldMs": 596,
+    "surfMs": 973,
+    "roadTris": 104243
    }
   },
   {
@@ -686,9 +686,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 8541,
-    "weldMs": 755,
-    "surfMs": 1159,
+    "roadMs": 8740,
+    "weldMs": 742,
+    "surfMs": 1435,
     "roadTris": 116554
    }
   },
@@ -719,10 +719,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7508,
-    "weldMs": 672,
-    "surfMs": 1039,
-    "roadTris": 106846
+    "roadMs": 9717,
+    "weldMs": 703,
+    "surfMs": 1784,
+    "roadTris": 106870
    }
   },
   {
@@ -752,10 +752,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6421,
-    "weldMs": 802,
-    "surfMs": 1121,
-    "roadTris": 90142
+    "roadMs": 8354,
+    "weldMs": 1127,
+    "surfMs": 1115,
+    "roadTris": 90166
    }
   },
   {
@@ -785,9 +785,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2811,
-    "weldMs": 384,
-    "surfMs": 394,
+    "roadMs": 4243,
+    "weldMs": 543,
+    "surfMs": 637,
     "roadTris": 45033
    }
   },
@@ -818,9 +818,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 9028,
-    "weldMs": 900,
-    "surfMs": 1473,
+    "roadMs": 6905,
+    "weldMs": 650,
+    "surfMs": 948,
     "roadTris": 141349
    }
   },
@@ -851,9 +851,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3289,
-    "weldMs": 445,
-    "surfMs": 447,
+    "roadMs": 3549,
+    "weldMs": 576,
+    "surfMs": 503,
     "roadTris": 57597
    }
   },
@@ -884,10 +884,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6395,
-    "weldMs": 675,
-    "surfMs": 991,
-    "roadTris": 88331
+    "roadMs": 8606,
+    "weldMs": 812,
+    "surfMs": 1929,
+    "roadTris": 88411
    }
   },
   {
@@ -917,9 +917,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6832,
-    "weldMs": 736,
-    "surfMs": 1169,
+    "roadMs": 7675,
+    "weldMs": 753,
+    "surfMs": 1272,
     "roadTris": 94270
    }
   },
@@ -950,9 +950,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 10044,
-    "weldMs": 955,
-    "surfMs": 1511,
+    "roadMs": 8364,
+    "weldMs": 873,
+    "surfMs": 1282,
     "roadTris": 163740
    }
   },
@@ -983,10 +983,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6021,
-    "weldMs": 701,
-    "surfMs": 656,
-    "roadTris": 82382
+    "roadMs": 5597,
+    "weldMs": 640,
+    "surfMs": 817,
+    "roadTris": 82486
    }
   },
   {
@@ -1016,10 +1016,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7502,
-    "weldMs": 798,
-    "surfMs": 1182,
-    "roadTris": 88942
+    "roadMs": 7292,
+    "weldMs": 733,
+    "surfMs": 1473,
+    "roadTris": 89022
    }
   },
   {
@@ -1049,9 +1049,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5731,
-    "weldMs": 659,
-    "surfMs": 744,
+    "roadMs": 6421,
+    "weldMs": 705,
+    "surfMs": 862,
     "roadTris": 62742
    }
   },
@@ -1082,9 +1082,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6008,
-    "weldMs": 615,
-    "surfMs": 1092,
+    "roadMs": 8163,
+    "weldMs": 550,
+    "surfMs": 1348,
     "roadTris": 75113
    }
   },
@@ -1115,9 +1115,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4044,
-    "weldMs": 435,
-    "surfMs": 698,
+    "roadMs": 6282,
+    "weldMs": 609,
+    "surfMs": 1092,
     "roadTris": 87814
    }
   },
@@ -1148,9 +1148,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 9295,
-    "weldMs": 860,
-    "surfMs": 1263,
+    "roadMs": 7107,
+    "weldMs": 569,
+    "surfMs": 834,
     "roadTris": 150607
    }
   },
@@ -1181,10 +1181,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 1624,
-    "weldMs": 292,
-    "surfMs": 179,
-    "roadTris": 19799
+    "roadMs": 1702,
+    "weldMs": 270,
+    "surfMs": 203,
+    "roadTris": 19807
    }
   },
   {
@@ -1214,9 +1214,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 8092,
-    "weldMs": 798,
-    "surfMs": 1443,
+    "roadMs": 10282,
+    "weldMs": 1556,
+    "surfMs": 1380,
     "roadTris": 139860
    }
   },
@@ -1247,10 +1247,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7622,
-    "weldMs": 830,
-    "surfMs": 1283,
-    "roadTris": 120414
+    "roadMs": 8596,
+    "weldMs": 726,
+    "surfMs": 1613,
+    "roadTris": 120430
    }
   },
   {
@@ -1280,9 +1280,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6493,
-    "weldMs": 671,
-    "surfMs": 1260,
+    "roadMs": 5111,
+    "weldMs": 675,
+    "surfMs": 913,
     "roadTris": 82702
    }
   },
@@ -1313,10 +1313,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6068,
-    "weldMs": 648,
-    "surfMs": 1249,
-    "roadTris": 81919
+    "roadMs": 6723,
+    "weldMs": 739,
+    "surfMs": 1297,
+    "roadTris": 81951
    }
   },
   {
@@ -1346,10 +1346,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6721,
-    "weldMs": 742,
-    "surfMs": 947,
-    "roadTris": 78575
+    "roadMs": 6019,
+    "weldMs": 704,
+    "surfMs": 931,
+    "roadTris": 78623
    }
   },
   {
@@ -1379,9 +1379,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5185,
-    "weldMs": 555,
-    "surfMs": 668,
+    "roadMs": 5340,
+    "weldMs": 656,
+    "surfMs": 638,
     "roadTris": 52337
    }
   },
@@ -1412,9 +1412,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5962,
-    "weldMs": 665,
-    "surfMs": 752,
+    "roadMs": 5763,
+    "weldMs": 633,
+    "surfMs": 919,
     "roadTris": 65331
    }
   },
@@ -1445,9 +1445,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5294,
-    "weldMs": 584,
-    "surfMs": 753,
+    "roadMs": 6953,
+    "weldMs": 533,
+    "surfMs": 1196,
     "roadTris": 140778
    }
   },
@@ -1478,9 +1478,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6632,
-    "weldMs": 653,
-    "surfMs": 1113,
+    "roadMs": 5026,
+    "weldMs": 530,
+    "surfMs": 676,
     "roadTris": 95912
    }
   },
@@ -1506,15 +1506,15 @@
     "stacked": 0,
     "stackedM2": 0,
     "bareBank": 25,
-    "bareBankM2": 38,
+    "bareBankM2": 39,
     "gateNoSteps": 0,
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2103,
-    "weldMs": 317,
-    "surfMs": 351,
-    "roadTris": 45131
+    "roadMs": 2690,
+    "weldMs": 569,
+    "surfMs": 381,
+    "roadTris": 45323
    }
   },
   {
@@ -1544,10 +1544,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4892,
-    "weldMs": 542,
-    "surfMs": 919,
-    "roadTris": 58034
+    "roadMs": 5594,
+    "weldMs": 626,
+    "surfMs": 1029,
+    "roadTris": 58074
    }
   },
   {
@@ -1577,9 +1577,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5076,
-    "weldMs": 563,
-    "surfMs": 603,
+    "roadMs": 4592,
+    "weldMs": 594,
+    "surfMs": 609,
     "roadTris": 59555
    }
   },
@@ -1610,10 +1610,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5666,
-    "weldMs": 608,
-    "surfMs": 594,
-    "roadTris": 61411
+    "roadMs": 4490,
+    "weldMs": 550,
+    "surfMs": 518,
+    "roadTris": 61451
    }
   },
   {
@@ -1643,10 +1643,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6777,
-    "weldMs": 734,
-    "surfMs": 926,
-    "roadTris": 93625
+    "roadMs": 7488,
+    "weldMs": 494,
+    "surfMs": 1720,
+    "roadTris": 93697
    }
   },
   {
@@ -1676,9 +1676,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7019,
-    "weldMs": 646,
-    "surfMs": 1201,
+    "roadMs": 5920,
+    "weldMs": 697,
+    "surfMs": 1017,
     "roadTris": 79246
    }
   },
@@ -1709,9 +1709,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3156,
+    "roadMs": 2693,
     "weldMs": 411,
-    "surfMs": 530,
+    "surfMs": 448,
     "roadTris": 26777
    }
   },
@@ -1742,9 +1742,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3603,
-    "weldMs": 528,
-    "surfMs": 349,
+    "roadMs": 3544,
+    "weldMs": 529,
+    "surfMs": 297,
     "roadTris": 25353
    }
   },
@@ -1775,9 +1775,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2837,
-    "weldMs": 402,
-    "surfMs": 423,
+    "roadMs": 3095,
+    "weldMs": 379,
+    "surfMs": 523,
     "roadTris": 50812
    }
   },
@@ -1808,9 +1808,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7520,
-    "weldMs": 737,
-    "surfMs": 1101,
+    "roadMs": 8865,
+    "weldMs": 889,
+    "surfMs": 1917,
     "roadTris": 114813
    }
   },
@@ -1841,9 +1841,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2085,
-    "weldMs": 337,
-    "surfMs": 246,
+    "roadMs": 3012,
+    "weldMs": 435,
+    "surfMs": 389,
     "roadTris": 32880
    }
   },
@@ -1874,9 +1874,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 528,
-    "weldMs": 63,
-    "surfMs": 6,
+    "roadMs": 1517,
+    "weldMs": 126,
+    "surfMs": 22,
     "roadTris": 112
    }
   },
@@ -1907,9 +1907,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6314,
-    "weldMs": 711,
-    "surfMs": 968,
+    "roadMs": 8389,
+    "weldMs": 1461,
+    "surfMs": 984,
     "roadTris": 101505
    }
   },
@@ -1940,10 +1940,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7196,
-    "weldMs": 796,
-    "surfMs": 1013,
-    "roadTris": 106686
+    "roadMs": 6276,
+    "weldMs": 637,
+    "surfMs": 1026,
+    "roadTris": 106702
    }
   },
   {
@@ -1973,10 +1973,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5957,
-    "weldMs": 623,
-    "surfMs": 907,
-    "roadTris": 72882
+    "roadMs": 4992,
+    "weldMs": 535,
+    "surfMs": 796,
+    "roadTris": 72930
    }
   },
   {
@@ -2006,10 +2006,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7593,
-    "weldMs": 763,
-    "surfMs": 1155,
-    "roadTris": 98041
+    "roadMs": 6798,
+    "weldMs": 901,
+    "surfMs": 1120,
+    "roadTris": 98089
    }
   },
   {
@@ -2039,9 +2039,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5926,
-    "weldMs": 644,
-    "surfMs": 974,
+    "roadMs": 7195,
+    "weldMs": 633,
+    "surfMs": 933,
     "roadTris": 68565
    }
   },
@@ -2072,9 +2072,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4416,
-    "weldMs": 537,
-    "surfMs": 876,
+    "roadMs": 4757,
+    "weldMs": 587,
+    "surfMs": 748,
     "roadTris": 53391
    }
   },
@@ -2105,9 +2105,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4391,
-    "weldMs": 538,
-    "surfMs": 890,
+    "roadMs": 4646,
+    "weldMs": 594,
+    "surfMs": 794,
     "roadTris": 55355
    }
   },
@@ -2138,9 +2138,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 1843,
-    "weldMs": 268,
-    "surfMs": 362,
+    "roadMs": 1976,
+    "weldMs": 307,
+    "surfMs": 370,
     "roadTris": 30089
    }
   },
@@ -2171,9 +2171,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6349,
-    "weldMs": 698,
-    "surfMs": 793,
+    "roadMs": 8619,
+    "weldMs": 915,
+    "surfMs": 795,
     "roadTris": 91774
    }
   },
@@ -2204,9 +2204,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2939,
-    "weldMs": 441,
-    "surfMs": 454,
+    "roadMs": 2988,
+    "weldMs": 429,
+    "surfMs": 510,
     "roadTris": 63108
    }
   },
@@ -2237,9 +2237,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 1833,
-    "weldMs": 407,
-    "surfMs": 57,
+    "roadMs": 3749,
+    "weldMs": 487,
+    "surfMs": 204,
     "roadTris": 14156
    }
   },
@@ -2270,9 +2270,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6135,
-    "weldMs": 683,
-    "surfMs": 1287,
+    "roadMs": 7895,
+    "weldMs": 737,
+    "surfMs": 1237,
     "roadTris": 85067
    }
   },
@@ -2303,9 +2303,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5843,
-    "weldMs": 678,
-    "surfMs": 933,
+    "roadMs": 4982,
+    "weldMs": 579,
+    "surfMs": 762,
     "roadTris": 73432
    }
   },
@@ -2336,9 +2336,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4848,
-    "weldMs": 602,
-    "surfMs": 862,
+    "roadMs": 4029,
+    "weldMs": 443,
+    "surfMs": 585,
     "roadTris": 59229
    }
   },
@@ -2369,9 +2369,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6182,
-    "weldMs": 682,
-    "surfMs": 944,
+    "roadMs": 4921,
+    "weldMs": 636,
+    "surfMs": 840,
     "roadTris": 65936
    }
   },
@@ -2402,9 +2402,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7707,
-    "weldMs": 793,
-    "surfMs": 1401,
+    "roadMs": 9067,
+    "weldMs": 765,
+    "surfMs": 2723,
     "roadTris": 109752
    }
   },
@@ -2435,9 +2435,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5005,
-    "weldMs": 608,
-    "surfMs": 870,
+    "roadMs": 4982,
+    "weldMs": 551,
+    "surfMs": 960,
     "roadTris": 50136
    }
   },
@@ -2468,10 +2468,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4869,
-    "weldMs": 558,
-    "surfMs": 857,
-    "roadTris": 67352
+    "roadMs": 5261,
+    "weldMs": 577,
+    "surfMs": 916,
+    "roadTris": 67384
    }
   },
   {
@@ -2501,9 +2501,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2352,
-    "weldMs": 272,
-    "surfMs": 506,
+    "roadMs": 2279,
+    "weldMs": 308,
+    "surfMs": 398,
     "roadTris": 42206
    }
   },
@@ -2534,10 +2534,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2175,
-    "weldMs": 336,
-    "surfMs": 388,
-    "roadTris": 41213
+    "roadMs": 2290,
+    "weldMs": 385,
+    "surfMs": 461,
+    "roadTris": 41261
    }
   },
   {
@@ -2567,9 +2567,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2402,
-    "weldMs": 400,
-    "surfMs": 195,
+    "roadMs": 2537,
+    "weldMs": 371,
+    "surfMs": 344,
     "roadTris": 18553
    }
   },
@@ -2600,9 +2600,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2989,
-    "weldMs": 433,
-    "surfMs": 618,
+    "roadMs": 3301,
+    "weldMs": 527,
+    "surfMs": 641,
     "roadTris": 28822
    }
   },
@@ -2633,9 +2633,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 5125,
-    "weldMs": 588,
-    "surfMs": 768,
+    "roadMs": 3945,
+    "weldMs": 453,
+    "surfMs": 645,
     "roadTris": 61677
    }
   },
@@ -2666,10 +2666,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6182,
-    "weldMs": 691,
-    "surfMs": 817,
-    "roadTris": 91126
+    "roadMs": 5188,
+    "weldMs": 504,
+    "surfMs": 766,
+    "roadTris": 91166
    }
   },
   {
@@ -2699,10 +2699,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6565,
-    "weldMs": 625,
-    "surfMs": 1127,
-    "roadTris": 88027
+    "roadMs": 8592,
+    "weldMs": 667,
+    "surfMs": 1304,
+    "roadTris": 88051
    }
   },
   {
@@ -2732,10 +2732,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4652,
-    "weldMs": 507,
-    "surfMs": 631,
-    "roadTris": 51528
+    "roadMs": 6253,
+    "weldMs": 532,
+    "surfMs": 2024,
+    "roadTris": 51600
    }
   },
   {
@@ -2765,10 +2765,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 6976,
-    "weldMs": 684,
-    "surfMs": 1159,
-    "roadTris": 103344
+    "roadMs": 6335,
+    "weldMs": 545,
+    "surfMs": 1065,
+    "roadTris": 103544
    }
   },
   {
@@ -2798,9 +2798,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3855,
-    "weldMs": 514,
-    "surfMs": 768,
+    "roadMs": 4632,
+    "weldMs": 732,
+    "surfMs": 832,
     "roadTris": 47405
    }
   },
@@ -2831,9 +2831,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2010,
-    "weldMs": 341,
-    "surfMs": 436,
+    "roadMs": 2141,
+    "weldMs": 403,
+    "surfMs": 461,
     "roadTris": 41008
    }
   },
@@ -2860,14 +2860,14 @@
     "stackedM2": 0,
     "bareBank": 1,
     "bareBankM2": 1,
-    "gateNoSteps": 1,
-    "gateNoStepsM2": 2
+    "gateNoSteps": 0,
+    "gateNoStepsM2": 0
    },
    "perf": {
     "roadMs": 2549,
-    "weldMs": 373,
-    "surfMs": 445,
-    "roadTris": 40201
+    "weldMs": 388,
+    "surfMs": 424,
+    "roadTris": 40241
    }
   },
   {
@@ -2897,9 +2897,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3487,
-    "weldMs": 437,
-    "surfMs": 443,
+    "roadMs": 3387,
+    "weldMs": 420,
+    "surfMs": 577,
     "roadTris": 43544
    }
   },
@@ -2930,9 +2930,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 1829,
-    "weldMs": 363,
-    "surfMs": 107,
+    "roadMs": 1589,
+    "weldMs": 349,
+    "surfMs": 113,
     "roadTris": 14530
    }
   },
@@ -2963,9 +2963,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3294,
-    "weldMs": 467,
-    "surfMs": 611,
+    "roadMs": 2767,
+    "weldMs": 392,
+    "surfMs": 566,
     "roadTris": 45783
    }
   },
@@ -2996,9 +2996,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3267,
-    "weldMs": 539,
-    "surfMs": 561,
+    "roadMs": 3457,
+    "weldMs": 509,
+    "surfMs": 650,
     "roadTris": 33762
    }
   },
@@ -3029,9 +3029,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3573,
-    "weldMs": 583,
-    "surfMs": 567,
+    "roadMs": 3435,
+    "weldMs": 497,
+    "surfMs": 609,
     "roadTris": 37211
    }
   },
@@ -3062,9 +3062,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3788,
-    "weldMs": 489,
-    "surfMs": 513,
+    "roadMs": 3369,
+    "weldMs": 485,
+    "surfMs": 342,
     "roadTris": 27724
    }
   },
@@ -3095,10 +3095,10 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 4830,
-    "weldMs": 517,
-    "surfMs": 863,
-    "roadTris": 59263
+    "roadMs": 5227,
+    "weldMs": 571,
+    "surfMs": 1037,
+    "roadTris": 59319
    }
   },
   {
@@ -3128,9 +3128,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2087,
-    "weldMs": 338,
-    "surfMs": 417,
+    "roadMs": 2329,
+    "weldMs": 451,
+    "surfMs": 473,
     "roadTris": 44650
    }
   },
@@ -3161,9 +3161,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 1075,
-    "weldMs": 176,
-    "surfMs": 159,
+    "roadMs": 1116,
+    "weldMs": 182,
+    "surfMs": 172,
     "roadTris": 9216
    }
   },
@@ -3194,9 +3194,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 796,
-    "weldMs": 155,
-    "surfMs": 85,
+    "roadMs": 780,
+    "weldMs": 148,
+    "surfMs": 94,
     "roadTris": 3022
    }
   },
@@ -3227,9 +3227,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 470,
-    "weldMs": 136,
-    "surfMs": 95,
+    "roadMs": 409,
+    "weldMs": 116,
+    "surfMs": 80,
     "roadTris": 1176
    }
   },
@@ -3260,9 +3260,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2497,
-    "weldMs": 388,
-    "surfMs": 407,
+    "roadMs": 2572,
+    "weldMs": 396,
+    "surfMs": 435,
     "roadTris": 19655
    }
   },
@@ -3293,9 +3293,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 1354,
-    "weldMs": 305,
-    "surfMs": 234,
+    "roadMs": 1388,
+    "weldMs": 377,
+    "surfMs": 212,
     "roadTris": 8462
    }
   },
@@ -3326,9 +3326,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 3351,
-    "weldMs": 548,
-    "surfMs": 641,
+    "roadMs": 3008,
+    "weldMs": 390,
+    "surfMs": 592,
     "roadTris": 34080
    }
   },
@@ -3359,9 +3359,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 1930,
-    "weldMs": 333,
-    "surfMs": 352,
+    "roadMs": 2373,
+    "weldMs": 465,
+    "surfMs": 383,
     "roadTris": 23457
    }
   },
@@ -3392,9 +3392,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 860,
-    "weldMs": 238,
-    "surfMs": 219,
+    "roadMs": 1080,
+    "weldMs": 259,
+    "surfMs": 220,
     "roadTris": 12284
    }
   },
@@ -3425,9 +3425,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 915,
-    "weldMs": 150,
-    "surfMs": 173,
+    "roadMs": 862,
+    "weldMs": 158,
+    "surfMs": 161,
     "roadTris": 7137
    }
   },
@@ -3458,9 +3458,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 711,
-    "weldMs": 171,
-    "surfMs": 130,
+    "roadMs": 555,
+    "weldMs": 154,
+    "surfMs": 107,
     "roadTris": 1765
    }
   },
@@ -3491,8 +3491,8 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 210,
-    "weldMs": 76,
+    "roadMs": 208,
+    "weldMs": 86,
     "surfMs": 61,
     "roadTris": 744
    }
@@ -3524,9 +3524,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 7209,
-    "weldMs": 679,
-    "surfMs": 1137,
+    "roadMs": 8744,
+    "weldMs": 1392,
+    "surfMs": 1032,
     "roadTris": 96181
    }
   },
@@ -3557,9 +3557,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 668,
-    "weldMs": 183,
-    "surfMs": 125,
+    "roadMs": 778,
+    "weldMs": 212,
+    "surfMs": 146,
     "roadTris": 2155
    }
   },
@@ -3590,9 +3590,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 737,
-    "weldMs": 261,
-    "surfMs": 271,
+    "roadMs": 665,
+    "weldMs": 209,
+    "surfMs": 264,
     "roadTris": 7308
    }
   },
@@ -3623,9 +3623,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 374,
-    "weldMs": 138,
-    "surfMs": 142,
+    "roadMs": 486,
+    "weldMs": 180,
+    "surfMs": 175,
     "roadTris": 3046
    }
   },
@@ -3656,9 +3656,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 255,
-    "weldMs": 71,
-    "surfMs": 36,
+    "roadMs": 283,
+    "weldMs": 79,
+    "surfMs": 42,
     "roadTris": 554
    }
   },
@@ -3689,9 +3689,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 368,
-    "weldMs": 104,
-    "surfMs": 52,
+    "roadMs": 1416,
+    "weldMs": 247,
+    "surfMs": 218,
     "roadTris": 1416
    }
   },
@@ -3722,9 +3722,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 862,
-    "weldMs": 183,
-    "surfMs": 168,
+    "roadMs": 921,
+    "weldMs": 223,
+    "surfMs": 134,
     "roadTris": 4961
    }
   },
@@ -3755,9 +3755,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 8203,
-    "weldMs": 690,
-    "surfMs": 902,
+    "roadMs": 9250,
+    "weldMs": 785,
+    "surfMs": 1802,
     "roadTris": 109981
    }
   },
@@ -3788,9 +3788,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 2545,
-    "weldMs": 395,
-    "surfMs": 445,
+    "roadMs": 2975,
+    "weldMs": 471,
+    "surfMs": 437,
     "roadTris": 24707
    }
   },
@@ -3821,9 +3821,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 600,
-    "weldMs": 223,
-    "surfMs": 230,
+    "roadMs": 676,
+    "weldMs": 227,
+    "surfMs": 285,
     "roadTris": 5145
    }
   },
@@ -3854,9 +3854,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 332,
-    "weldMs": 122,
-    "surfMs": 121,
+    "roadMs": 684,
+    "weldMs": 246,
+    "surfMs": 286,
     "roadTris": 3904
    }
   },
@@ -3887,9 +3887,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 268,
-    "weldMs": 97,
-    "surfMs": 93,
+    "roadMs": 251,
+    "weldMs": 86,
+    "surfMs": 87,
     "roadTris": 1990
    }
   },
@@ -3920,9 +3920,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 364,
-    "weldMs": 130,
-    "surfMs": 90,
+    "roadMs": 1098,
+    "weldMs": 279,
+    "surfMs": 399,
     "roadTris": 2149
    }
   },
@@ -3953,9 +3953,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 781,
-    "weldMs": 181,
-    "surfMs": 93,
+    "roadMs": 705,
+    "weldMs": 147,
+    "surfMs": 111,
     "roadTris": 3928
    }
   },
@@ -3986,9 +3986,9 @@
     "gateNoStepsM2": 0
    },
    "perf": {
-    "roadMs": 374,
-    "weldMs": 141,
-    "surfMs": 143,
+    "roadMs": 483,
+    "weldMs": 201,
+    "surfMs": 167,
     "roadTris": 6122
    }
   }
@@ -11141,6 +11141,15 @@
    "street": ""
   },
   {
+   "tile": "G10",
+   "kind": "bareBank",
+   "m2": 2,
+   "worst": 2.16,
+   "score": 4.323266592538914,
+   "at": "426.1, 2724",
+   "street": "Avenue Dolez 305"
+  },
+  {
    "tile": "F4",
    "kind": "roadTilt",
    "m2": 22.5,
@@ -11879,15 +11888,6 @@
    "street": "Rue Copernic 13"
   },
   {
-   "tile": "J7",
-   "kind": "bareBank",
-   "m2": 1.5,
-   "worst": 2.54,
-   "score": 3.816805170685363,
-   "at": "1632, 1302.1",
-   "street": "Avenue Fond'Roy 72"
-  },
-  {
    "tile": "F2",
    "kind": "bareBank",
    "m2": 3.5,
@@ -11940,6 +11940,15 @@
    "score": 3.782252796016512,
    "at": "50.2, -82.8",
    "street": "Avenue Kamerdelle 83"
+  },
+  {
+   "tile": "J7",
+   "kind": "bareBank",
+   "m2": 1.5,
+   "worst": 2.52,
+   "score": 3.776679975297732,
+   "at": "1632, 1302.1",
+   "street": "Avenue Fond'Roy 72"
   },
   {
    "tile": "C3",
@@ -14820,15 +14829,6 @@
    "score": 2.398967074844548,
    "at": "-161.6, 1946.1",
    "street": ""
-  },
-  {
-   "tile": "G10",
-   "kind": "bareBank",
-   "m2": 1,
-   "worst": 2.4,
-   "score": 2.396346304135804,
-   "at": "425.3, 2723.2",
-   "street": "Avenue Dolez 305"
   },
   {
    "tile": "D9",
@@ -19716,15 +19716,6 @@
    "score": 1.388571900756593,
    "at": "-1224.8, 2147.6",
    "street": ""
-  },
-  {
-   "tile": "K10",
-   "kind": "gateNoSteps",
-   "m2": 2,
-   "worst": 0.69,
-   "score": 1.3843915902510275,
-   "at": "2056.3, 2921.2",
-   "street": "Avenue des Paysages 2"
   },
   {
    "tile": "K11",
@@ -30993,6 +30984,15 @@
    "score": 0.11736164871632937,
    "at": "1601.3, 0.5",
    "street": "Avenue Hamoir 17A"
+  },
+  {
+   "tile": "K6",
+   "kind": "tilt",
+   "m2": 0.7,
+   "worst": 0.17,
+   "score": 0.11668136015590537,
+   "at": "2082.9, 660.2",
+   "street": "Avenue du Maréchal 29"
   }
  ]
 }

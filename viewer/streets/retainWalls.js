@@ -336,6 +336,25 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
     flights.push({ e, L, y0, h, n, D, pa, pb });
     for (const [id, ins] of [[e[8], pa], [e[9], pb]]) if (ins <= PIER / 2) flightAt.set(id, Math.max(flightAt.get(id) || 0, D));
   }
+  // (a gate standing just past a run's END with no outline edge found at it (the sidewalk's outline there is not in the
+  // list: covered / shared with another surface, K10 Avenue des Paysages 2): a flight from the end pier on, along the
+  // run's line, 1.2 m wide, facing as the run does)
+  if (gateNear) for (const e of wall) for (const [id, other, sx, sy, sz] of [[e[8], e[9], e[0], e[1], e[2]], [e[9], e[8], e[3], e[4], e[5]]]) {
+    if (V.get(id).n !== 1) continue;                                            // (a run's end: one wall edge)
+    const o = V.get(other), tl = Math.hypot(sx - o.x, sz - o.z) || 1, tx = (sx - o.x) / tl, tz = (sz - o.z) / tl;
+    let hit = false;
+    for (const sv of [0.4, 0.8, 1.2]) for (const dd of [-0.5, 0, 0.5, 1.25]) if (!hit && gateNear(sx + tx * sv + e[6] * dd, sz + tz * sv + e[7] * dd, 0.9)) hit = true;
+    if (!hit) continue;
+    const W0 = PIER / 2, W1 = W0 + 1.2, cx = sx + tx * (W0 + W1) / 2, cz = sz + tz * (W0 + W1) / 2;
+    if (flights.some((F) => Math.hypot((F.e[0] + F.e[3]) / 2 - cx, (F.e[2] + F.e[5]) / 2 - cz) < 2)) continue;   // (one there already)
+    if (covered && covered(cx + e[6] * 0.6, cz + e[7] * 0.6)) continue;          // (a measured path into the garden: its own levels)
+    const gs = [BEHIND, 1.6, 2.0].map((d) => ground(cx + e[6] * d, cz + e[7] * d)).sort((x, y) => x - y)[1];
+    const h = Math.min(MAX_CUT, gs - sy); if (!(h > STEPS_MIN)) continue;
+    const fe = [sx, sy, sz, sx + tx * W1, sy, sz + tz * W1, e[6], e[7], id, -1];
+    const n = Math.ceil(h / RISER), D = n * TREAD;
+    flights.push({ e: fe, L: W1, y0: sy, h, n, D, pa: W0, pb: 0 });
+    flightAt.set(id, Math.max(flightAt.get(id) || 0, D));
+  }
   // run ends: a short pier (PIER x the strip's depth, PIER_UP over the wall, stone cap) closing the wall, never a knife edge
   let piers = 0;
   const wg = segGrid(), wBuf = []; wall.forEach((f, j) => { f.j = j; wg.add(f); });
