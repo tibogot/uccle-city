@@ -4,6 +4,7 @@
 import { gather, itemContact, heightClear, KIND } from "./colliders.js";
 import { BODY, hit } from "./carPhysics.js";
 import { obbObb } from "./obb.js";
+import { HIT } from "./carHit.js";
 
 /** The highest step a car climbs (m): a kerb (15-25 cm) is ridden up, a road wall, a retaining wall or a raised
  *  platform's edge over this is a wall (docs/collisions/README.md: until 2026-11-13 the car climbed any height the
@@ -35,7 +36,7 @@ export function stepContact(c, body, ground, contact) {
   let sx = 0, sz = 0, n = 0;
   for (const [u, w] of LEDGE_PTS) {
     const ox = u * body.hx * body.cos + w * body.hz * body.sin, oz = -u * body.hx * body.sin + w * body.hz * body.cos;
-    const x = c.x + ox, z = c.z + oz, L = Math.hypot(ox, oz) || 1;
+    const x = c.x + ox, z = c.z + oz, L = Math.sqrt(ox * ox + oz * oz) || 1;     // (not Math.hypot: it allocates in some tiers; carhit's bodies call this per substep)
     const g = ground(x, z);
     if (g - ground(x - ox / L * STEP_RUN, z - oz / L * STEP_RUN) > STEP_RISE || g - c.y > BANK) { sx -= ox; sz -= oz; n++; }
   }
@@ -54,7 +55,9 @@ const POST_R = 0.12, POST_SIDE = 0.3, POST_BOX = 0.6;   // (POST_BOX: a polygon 
  * sets(x, z, r) -> array of collider sets (one per tile) that may hold items within r of (x, z)
  * ground(x, z) -> drivable height
  */
-export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null, movers = null }) {
+export function createCarEnv({ sets, ground, handling, waters = () => null, ledges = true, dims = BODY, onHit = hit, feel = false, surface = null, nudge = null, movers = null, carHit = null, two = false }) {
+  // carHit (docs/CARHIT.md, carHit.js; null = ?carpush=old): the cars two-way: a parked car hit wakes as a pushed body,
+  // the traffic's cars take impulses (instead of env.dynamic's infinite-mass push); two: a two-wheeler (its own response)
   // movers (car control round, movers.js): the trams / trains as oriented boxes, gathered once per frame (prepare), tested
   // every substep; kinematic (never pushed): the car is pushed out (hitSlide: slide / bounce)
   const mbox = new Float32Array(48 * 7), mout = { nx: 0, nz: 0, depth: 0 };
@@ -105,6 +108,7 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
           const col = near[k], id = near[k + 1];
           if (feel && id < col.P && col.pkind[id] === KIND.island) continue;     // (feel: a kerb island is ridden up)
           if (heightClear(col, id, c.y)) continue;                               // a platform / fence / parapet over or under the car
+          if (carHit && id < col.P && col.pref?.[id]?.hidden) continue;           // (carhit: a parked car woken this frame: a body now)
           if (!itemContact(col, id, c.x, c.z, body, contact)) continue;
           if (feel && contact.kind === KIND.hedge) {
             if (pass === 0) {
@@ -113,6 +117,12 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
               c.speed *= kk; c.vx *= kk; c.vz *= kk; env.hedge = 1;
             }
             continue;
+          }
+          // (carhit) a parked car hit (closing): a body of its own from now on, solved with the others below
+          if (carHit && contact.kind === KIND.car && id < col.P && col.pref?.[id] && pass === 0) {
+            const s = Math.sin(c.heading), k = Math.cos(c.heading);
+            const vn = -((s * c.speed + (c.vx || 0)) * contact.nx + (k * c.speed + (c.vz || 0)) * contact.nz);
+            if (vn > HIT.wakeParked && carHit.wakeParked(col.pref[id]) >= 0) continue;
           }
           let px = NaN, pz = 0;
           if (feel) {
@@ -130,7 +140,7 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
           }
           c.x += contact.nx * contact.depth; c.z += contact.nz * contact.depth;
           const vn = onHit(c, contact.nx, contact.nz, contact.kind, handling);
-          if (feel && nudge && contact.kind === KIND.car && vn > 0.02 && col.pref?.[id]) {
+          if (feel && nudge && !carHit?.S && contact.kind === KIND.car && vn > 0.02 && col.pref?.[id]) {
             // a parked car takes part of the hit: shoved along the push, turned by where it was hit
             const ref = col.pref[id], d = Math.min(0.25, vn * 0.03);
             const rx = c.x - ref.x, rz = c.z - ref.z, tq = (rx * -contact.nz - rz * -contact.nx);
@@ -146,7 +156,8 @@ export function createCarEnv({ sets, ground, handling, waters = () => null, ledg
         env.contacts++;
       }
       // moving things (the traffic, viewer/traffic/cityTraffic.js): env.dynamic(c, body, push) calls push per contact
-      env.dynamic?.(c, body, push);
+      if (carHit) carHit.playerStep(c, body, step, env, push, two);
+      else env.dynamic?.(c, body, push);
       for (let k = 0; k < mN; k++) {
         const o = k * 7;
         if (Number.isFinite(c.y) && (mbox[o + 5] > c.y + 1.6 || mbox[o + 5] + mbox[o + 6] < c.y + 0.2)) continue;   // (a bridge over / under)

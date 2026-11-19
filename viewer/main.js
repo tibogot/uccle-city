@@ -74,6 +74,8 @@ import { cityStops } from "./stops/cityStops.js";
 import { platformFollow } from "./streets/tramPlatforms.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
+import { cityTLights } from "./tlights/cityTLights.js";
+import { tlightExposure } from "./tlights/tlightKit.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
@@ -1006,8 +1008,11 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // terrain under a plan deck is the cutting's floor between its walls; a C43 sign stood 1.4 m under the deck)
   const deckY = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return null; };
   const onDeck = (f) => (VIVIER ? (x, z) => deckY(x, z) ?? f(x, z) : f);
-  const furn = buildFurniture(furnFeats, roads, onDeck((x, z) => hm.ground(x, z)), bounds, { fit, driven: drivenAt });
+  const furn = buildFurniture(furnFeats, roads, onDeck((x, z) => hm.ground(x, z)), bounds, { fit, driven: drivenAt, noSignals: cityTLights.drawing });
   own.features.add(furn.group);
+  // the Blender traffic lights at the same sites (viewer/tlights/, ?tlights=old: furniture.js's posts)
+  const tlCounts = cityTLights.addTile(entry.name, furn.signals, onDeck((x, z) => hm.ground(x, z)), fit?.lift, bounds, own.features);
+  if (tlCounts) say(`traffic lights: ${tlCounts.tl_post} posts, ${tlCounts.tl_post_bike} with a bike head (viewer/tlights)`);
   await frame("furniture");
   // (the tram platforms / shelters on an OSM road deck stand on the deck, not on the cutting under it: the Saint-Job
   // station stop on the Carsoel deck, citydefects 2026-11-16; ?bridgeplan=old as before)
@@ -1118,6 +1123,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
     cityKit.removeTile(entry.name);
     cityRoofs.removeTile(entry.name);               // its instances leave the roof pools
     cityFurniture.removeTile(entry.name);           // its instances leave the furniture pools
+    cityTLights.removeTile(entry.name);             // its posts leave the traffic light pools
     carriageRefs.delete(entry.name);
     cityStreetKit.removeTile(entry.name);           // its instances leave the street kit pools
     cityTwoWheelers.removeTile(entry.name);
@@ -1395,6 +1401,7 @@ async function main() {
     () => cityKit.start({ scene, updaters, log }),                   // ?kit=1: the façade kit (before the first tile and the warm-up)
     () => cityStreetLife.start({ scene, updaters, log, renderer }),            // the street life (shop names, plates, numbers, stops), ?streetlife=0 off
     () => cityFurniture.start({ scene, updaters, log }),             // benches, bike hoops / boxes, bins, glass banks (viewer/furniture2/), ?furniture=old off
+    () => cityTLights.start({ scene, updaters, log }),               // the Blender traffic lights (viewer/tlights/), ?tlights=old off
     () => cityStreetKit.start({ scene, updaters, log }),             // road signs, plate posts, Villo stations (viewer/streetkit/), ?streetkit=old off
     () => cityTwoWheelers.start({ scene, updaters, log }),           // parked / traffic two-wheelers (models load ~6 s later), ?twowheelers=0 off
     () => cityGardens.start({ scene, updaters, log }),               // front-garden walls, railings, gates, hedges (viewer/gardens/), on by default, ?gardens=0 off
@@ -1843,6 +1850,7 @@ async function main() {
     if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); }
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
+    tlightExposure.value = pipe ? pipe.exposureValue : renderer.toneMappingExposure;   // (the lit signal aspects: hue kept)
     sampleGpu();
     frames++;
     if (frames % 10 === 1 && hud.statsOn) {         // (not while the HUD is folded / hidden: no DOM write)
