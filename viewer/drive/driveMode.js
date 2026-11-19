@@ -78,6 +78,7 @@ carFleet.onChange((c) => { if (c.driveBox && !c.hidden) setBox(c.driveBox.col, c
  * foot). From the features group's instanced meshes, by name (the same ones viewer/character/cityHook.js uses).
  */
 const EDGE_OLD = /[?&]edgecol=old(&|$)/.test(location.search);
+const POLE_OLD = /[?&]rail=old(&|$)/.test(location.search);
 const COLCACHE = new URLSearchParams(location.search).get("colcache") !== "0";
 const localBlocks = new WeakMap();          // geometry -> Map(scale key -> blocker rings in the piece's scaled frame)
 const cPos = new THREE.Vector3(), cQ = new THREE.Quaternion(), cS = new THREE.Vector3();
@@ -121,7 +122,16 @@ export function featureColliders(features, bounds) {
       // it, some standing a little over the tile's edge (garden walls along a boundary street); they were dropped here
       // and no neighbour made them either: drawn, not solid. Each group is one tile's, so nothing is counted twice.)
       if (EDGE_OLD ? !inT(o.x, o.z) : !inT2(o.x, o.z)) continue;
-      if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
+      // (CLASS T, rule 39 / 25; ?rail=old: a circle with no height) a pole is a post of its DRAWN height: a circle has none,
+      // so the catenary masts standing on the Stalle viaduct's deck were invisible posts in Rue de Stalle 17 m under them
+      // (owner 2026-11-19, shot 105). Now a square of the pole's radius from its foot to its top (heightClear passes it).
+      if (kind === "pole") {
+        const r = n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08;
+        if (POLE_OLD) circles.push({ x: o.x, z: o.z, r, kind: KIND.furniture });
+        else { v.set(0, bb.min.y, 0).applyMatrix4(W); const base = v.y; v.set(0, bb.max.y, 0).applyMatrix4(W); const top = v.y;
+          polys.push({ rings: [[[o.x - r, o.z - r], [o.x + r, o.z - r], [o.x + r, o.z + r], [o.x - r, o.z + r]]], kind: KIND.furniture, base: Math.min(base, top), top: Math.max(base, top), ref }); }
+        counts.poles++; continue;
+      }
       if (kind === "car") {
         // the car as it is NOW (its type may have changed since the box mesh was made: the traffic parks other cars in)
         const car = m.userData.cars?.[i] || null;

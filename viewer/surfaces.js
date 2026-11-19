@@ -59,6 +59,7 @@ const CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
  *  2026-11-05: the raised square is old setts, the roads round it asphalt), parking pavers */
 const BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
 export const CELL = 6;             // m: height-field grid
+export const KERB_FALL_UP = 0.04, KERB_FALL_DOWN = 0.02, KERB_BAND = 4, LEVEL_MAX = 2.5;   // per m: a levelled sidewalk's cross-fall limits (opts.kerbLevel)
 const H_MARGIN = 0.6;              // m: a fitted corner within this of its street samples' heights (opts.clampH)
 // corner smoothing passes: 0. Tried 1-3 (plane-preserving, 4-neighbour): the street moves away from the DTM
 // (I6 median |H - DTM| 3.6 -> 6-10 cm), so folds are handled by the wide-stencil normals instead
@@ -603,62 +604,6 @@ export function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     return i >= 0 && j >= 0 && i < nx && j < nz ? grid[j * nx + i] - 1 : -1;
   };
 
-  // ---- the height field. A grid corner often lies off the street (a front garden, a bank, a wall foot 1 m
-  // higher), so its value is a weighted least-squares plane through the DTM at the measured-surface points around
-  // it (1 m lattice within one CELL, tent weights), evaluated at the corner. Then two smoothing passes over the
-  // corners of the street (each corner halfway to the mean of its street neighbours), so the planes do not fold.
-  const fitCorner = (cx, cz) => {
-    let sw = 0, sx = 0, sz = 0, sxx = 0, sxz = 0, szz = 0, sy = 0, sxy = 0, szy = 0, n = 0, lo = Infinity, hi = -Infinity;
-    for (let dx = -CELL + 0.5; dx < CELL; dx += 1) for (let dz = -CELL + 0.5; dz < CELL; dz += 1) {
-      const x = cx + dx, z = cz + dz;
-      if (classAt(x, z) < 0) continue;                         // only the street's own ground
-      const w = (1 - Math.abs(dx) / CELL) * (1 - Math.abs(dz) / CELL), y = G(x, z);
-      sw += w; sx += w * dx; sz += w * dz; sxx += w * dx * dx; sxz += w * dx * dz; szz += w * dz * dz; sy += w * y; sxy += w * dx * y; szy += w * dz * y; n++;
-      if (y < lo) lo = y; if (y > hi) hi = y;
-    }
-    if (n === (2 * CELL) ** 2 || n < 6) return G(cx, cz);       // all street (G is right) / too little street
-    const det3 = (a, b, c, d, e, f, g, h, k) => a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g);
-    const D = det3(sw, sx, sz, sx, sxx, sxz, sz, sxz, szz);
-    if (Math.abs(D) < 1e-9) return sy / sw;
-    const v = det3(sy, sx, sz, sxy, sxx, sxz, szy, sxz, szz) / D;
-    // joins2 (docs/JOINS2.md; ?surfh=old = unclamped): a narrow path's points are a thin strip, its plane's cross slope
-    // ill-conditioned: extrapolated 6 m to the corner it stood a park path up to 3 m over the ground (Kauwberg, D7
-    // -1462, 1148: a spike). The corner stays within H_MARGIN of the street ground it was fitted to.
-    return opts.clampH ? Math.min(hi + H_MARGIN, Math.max(lo - H_MARGIN, v)) : v;
-  };
-  const inside = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
-  const corner = new Map();
-  const street = new Set();
-  for (const b of base) {
-    const cx = (b.a[0] + b.b[0] + b.c[0]) / 3, cz = (b.a[1] + b.b[1] + b.c[1]) / 3;
-    const i = Math.floor(cx / CELL), j = Math.floor(cz / CELL);
-    for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) street.add(cellKey(i + di, j + dj));
-  }
-  for (const k of street) { const i = Math.floor(k / 8192) - 4096, j = (k % 8192) - 4096; corner.set(k, fitCorner(i * CELL, j * CELL)); }
-  for (let pass = 0; pass < SMOOTH_PASSES; pass++) {
-    const next = new Map();
-    for (const k of street) {
-      let s = 0, n = 0;
-      for (const d of [8192, -8192, 1, -1]) { const v = corner.get(k + d); if (v !== undefined && street.has(k + d)) { s += v; n++; } }
-      // only corners with all four street neighbours: their mean keeps a sloping plane exactly (an edge corner
-      // pulled toward one side would sink or rise by the slope)
-      next.set(k, n === 4 ? 0.5 * corner.get(k) + 0.5 * s / n : corner.get(k));
-    }
-    for (const [k, v] of next) corner.set(k, v);
-  }
-  const Gc = (i, j) => { const k = cellKey(i, j); let v = corner.get(k); if (v === undefined) { v = fitCorner(i * CELL, j * CELL); corner.set(k, v); } return v; };
-  const H = (x, z) => {
-    const i = Math.floor(x / CELL), j = Math.floor(z / CELL), fx = x / CELL - i, fz = z / CELL - j;
-    const g00 = Gc(i, j), g11 = Gc(i + 1, j + 1);
-    return fx >= fz ? g00 + fx * (Gc(i + 1, j) - g00) + fz * (g11 - Gc(i + 1, j))
-      : g00 + fz * (Gc(i, j + 1) - g00) + fx * (g11 - Gc(i, j + 1));
-  };
-  // shading normals: central differences of H over 3 m, so the half-cell creases do not show in the light
-  const nrmAt = (x, z) => {
-    const hx = (H(x + 3, z) - H(x - 3, z)) / 6, hz = (H(x, z + 3) - H(x, z - 3)) / 6, L = Math.hypot(hx, 1, hz);
-    return [-hx / L, 1 / L, -hz / L];
-  };
-
   // ---- kerb frames: every kerb polyline with its stations, in an 8 m grid of segments
   const lines = (surf.kerbs || []).map((l) => {
     const cum = [0];
@@ -743,6 +688,106 @@ export function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     if (v === undefined) { v = nearKerbUV0(x, z, only); uvCache.set(k, v); }
     return v;
   };
+  // ---- the height field. A grid corner often lies off the street (a front garden, a bank, a wall foot 1 m
+  // higher), so its value is a weighted least-squares plane through the DTM at the measured-surface points around
+  // it (1 m lattice within one CELL, tent weights), evaluated at the corner. Then two smoothing passes over the
+  // corners of the street (each corner halfway to the mean of its street neighbours), so the planes do not fold.
+  // SIDEWALK LEVEL WITH THE KERB (claude/sidewalk, rule 31 provisional; opts.kerbLevel, ?sidewalk=old = off): the DTM
+  // under a sidewalk at the foot of a bank climbs the bank (a 1 m LiDAR grid, the bank's toe inside UrbIS's polygon),
+  // and the corners fitted to it stood the sidewalk up the bank: Av. Brugmann 349 (F2), 62 % across a 3 m sidewalk,
+  // "unusable" (owner 2026-11-18, image 91). A raised sample (sidewalk, island, dropped kerb, tree pit) is fitted at the
+  // ground of its nearest kerb point (the street's long profile) + the DTM's rise from there, held to a real
+  // sidewalk's cross-fall: KERB_FALL_UP (rising away from the kerb, it drains to the gutter) / KERB_FALL_DOWN per metre.
+  // The bank then starts at the sidewalk's back edge (viewer/heightmap.js clampUnder bank).
+  const LEVELLED = new Set([SURF_CLASS.sidewalk, SURF_CLASS.median, SURF_CLASS.ramp, SURF_CLASS.pit]);
+  const levelCache = new Map();
+  const groundAt = !opts.kerbLevel ? (x, z) => G(x, z) : (x, z, cls = classAt(x, z)) => {
+    if (!LEVELLED.has(cls)) return G(x, z);
+    const key = Math.round(x * 2) * 1048576 + Math.round(z * 2);
+    let v = levelCache.get(key);
+    if (v !== undefined) return v;
+    const k = nearKerb(x, z), y = G(x, z);
+    if (!k) v = y;
+    else {
+      // (a sidewalk deeper than KERB_BAND from its kerb (a forecourt, a plaza-like sidewalk going down a slope, B4) blends
+      // back to its own ground over the next KERB_BAND: no kerb's level carried 10 m into a slope)
+      const gk = G(k.x, k.z), d = Math.abs(k.d), w = Math.min(1, Math.max(0, (d - KERB_BAND) / KERB_BAND));
+      // (a raised surface that runs on, away from its kerb, down / up to ANOTHER street at another level (a paved slope
+      // between two streets, B4 -2302, -482) keeps its ground: levelled from both kerbs it folded where they meet)
+      let spans = false;
+      if (d > 0.3 && Math.abs(y - gk) > 0.2) {
+        const ux = (x - k.x) / d, uz = (z - k.z) / d;
+        for (let s = 0.5; s <= 16; s += 0.5) {
+          const qx = x + ux * s, qz = z + uz * s, c = classAt(qx, qz);
+          if (LEVELLED.has(c)) continue;
+          if (c >= 0 && Math.abs(G(qx, qz) - gk) > 0.5) spans = true;
+          break;
+        }
+      }
+      v = spans ? y : (1 - w) * (gk + Math.min(KERB_FALL_UP * d, Math.max(-KERB_FALL_DOWN * d, y - gk))) + w * y;
+      // (round 2: never more than LEVEL_MAX under its own ground: deeper is not a bank's toe but a sidewalk going up to the
+      // houses (H6 Rue Baron Perelman 4: 3.7 m under the gardens). The retaining walls stop at the same height)
+      v = Math.max(v, y - LEVEL_MAX);
+    }
+    levelCache.set(key, v);
+    return v;
+  };
+  const fitCorner = (cx, cz) => {
+    let sw = 0, sx = 0, sz = 0, sxx = 0, sxz = 0, szz = 0, sy = 0, sxy = 0, szy = 0, n = 0, lo = Infinity, hi = -Infinity, lv = false;
+    for (let dx = -CELL + 0.5; dx < CELL; dx += 1) for (let dz = -CELL + 0.5; dz < CELL; dz += 1) {
+      const x = cx + dx, z = cz + dz, cls = classAt(x, z);
+      if (cls < 0) continue;                                   // only the street's own ground
+      if (LEVELLED.has(cls)) lv = true;
+      const w = (1 - Math.abs(dx) / CELL) * (1 - Math.abs(dz) / CELL), y = groundAt(x, z, cls);
+      sw += w; sx += w * dx; sz += w * dz; sxx += w * dx * dx; sxz += w * dx * dz; szz += w * dz * dz; sy += w * y; sxy += w * dx * y; szy += w * dz * y; n++;
+      if (y < lo) lo = y; if (y > hi) hi = y;
+    }
+    // (kerbLevel: a corner with a few street points round it, off the street (on the bank behind a sidewalk), takes their
+    // mean, not the DTM under it: the bank's height there pulled the sidewalk's back edge up the bank)
+    if (opts.kerbLevel && lv && n > 0 && n < 6) return sy / sw;
+    if (n === (2 * CELL) ** 2 || n < 6) return groundAt(cx, cz);   // all street (G is right) / too little street
+    const det3 = (a, b, c, d, e, f, g, h, k) => a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g);
+    const D = det3(sw, sx, sz, sx, sxx, sxz, sz, sxz, szz);
+    if (Math.abs(D) < 1e-9) return sy / sw;
+    const v = det3(sy, sx, sz, sxy, sxx, sxz, szy, sxz, szz) / D;
+    // joins2 (docs/JOINS2.md; ?surfh=old = unclamped): a narrow path's points are a thin strip, its plane's cross slope
+    // ill-conditioned: extrapolated 6 m to the corner it stood a park path up to 3 m over the ground (Kauwberg, D7
+    // -1462, 1148: a spike). The corner stays within H_MARGIN of the street ground it was fitted to.
+    return opts.clampH ? Math.min(hi + H_MARGIN, Math.max(lo - H_MARGIN, v)) : v;
+  };
+  const inside = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
+  const corner = new Map();
+  const street = new Set();
+  for (const b of base) {
+    const cx = (b.a[0] + b.b[0] + b.c[0]) / 3, cz = (b.a[1] + b.b[1] + b.c[1]) / 3;
+    const i = Math.floor(cx / CELL), j = Math.floor(cz / CELL);
+    for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) street.add(cellKey(i + di, j + dj));
+  }
+  for (const k of street) { const i = Math.floor(k / 8192) - 4096, j = (k % 8192) - 4096; corner.set(k, fitCorner(i * CELL, j * CELL)); }
+  for (let pass = 0; pass < SMOOTH_PASSES; pass++) {
+    const next = new Map();
+    for (const k of street) {
+      let s = 0, n = 0;
+      for (const d of [8192, -8192, 1, -1]) { const v = corner.get(k + d); if (v !== undefined && street.has(k + d)) { s += v; n++; } }
+      // only corners with all four street neighbours: their mean keeps a sloping plane exactly (an edge corner
+      // pulled toward one side would sink or rise by the slope)
+      next.set(k, n === 4 ? 0.5 * corner.get(k) + 0.5 * s / n : corner.get(k));
+    }
+    for (const [k, v] of next) corner.set(k, v);
+  }
+  const Gc = (i, j) => { const k = cellKey(i, j); let v = corner.get(k); if (v === undefined) { v = fitCorner(i * CELL, j * CELL); corner.set(k, v); } return v; };
+  const H = (x, z) => {
+    const i = Math.floor(x / CELL), j = Math.floor(z / CELL), fx = x / CELL - i, fz = z / CELL - j;
+    const g00 = Gc(i, j), g11 = Gc(i + 1, j + 1);
+    return fx >= fz ? g00 + fx * (Gc(i + 1, j) - g00) + fz * (g11 - Gc(i + 1, j))
+      : g00 + fz * (Gc(i, j + 1) - g00) + fx * (g11 - Gc(i, j + 1));
+  };
+  // shading normals: central differences of H over 3 m, so the half-cell creases do not show in the light
+  const nrmAt = (x, z) => {
+    const hx = (H(x + 3, z) - H(x - 3, z)) / 6, hz = (H(x, z + 3) - H(x, z - 3)) / 6, L = Math.hypot(hx, 1, hz);
+    return [-hx / L, 1 / L, -hz / L];
+  };
+
   // ---- dropped kerbs (round 3). Each UrbIS ramp polygon is a band RAMP_DEPTH deep cut out of the sidewalk along a
   // kerb piece (build_surfaces.py: a driveway or a crossing, + flares). Its bateau is defined in ITS kerb frame: station s
   // along its kerb (s0..s1 = the polygon's extent) and distance d from it. Low at the kerb (RAMP_LOW), back to KERB at

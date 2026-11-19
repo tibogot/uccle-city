@@ -15,7 +15,7 @@ so a spot can be opened with `?quick=1&at=x,z`.
 |---|---|---|---|---|---|
 | A. Open meshes / missing walls | `openMeshes.mjs` (`--heroes` for the landmark GLBs) | tiles: 1,524 of 25,412 buildings, ~12,800 m²; heroes: 11 of 16 open, Saint-Pierre 53.5 m² at LOD0 (80 m² at LOD2) | yes (88, Saint-Pierre: south side) | Saint-Pierre: `tools/blender/stpierre.py` (`side_elevation` / `porch_bay`, the estimated east and annex walls); tiles: `viewer/facadeGeom.js analyseBuildings` + `viewer/wallRepair.js` | The checks never see the heroes: `shellGate`/`wallAudit` read only the UrbIS solids, and every hero's solid is hidden. The pack-time `mesh_audit` treats a wide hole as an "opening" (info only), and 4 heroes were never pack-audited. In the tiles, UrbIS triangles face inward, or there are gaps off the footprint edges `wallAudit` tests. |
 | B. Balconies open at the sides | `balconies.mjs` | 20,061 of 20,663 balcony slabs open (36,791 open ends) in 1,162 buildings | yes (84: Ch. d'Alsemberg 1033E D6, 860 / 905 E5, 997 D5) | `viewer/facadeGeom.js` `typeDetails`, the BLOCK "BALCONIES" branch | By design: slab + front parapet only, no side panels and no returns. The facade kit's own balconies (`tools/blender/facadeKit.py` `railing(returns=True)`, 1,836 placed) are closed. |
-| C. Terrain / sidewalk ground | `ground.mjs` | sidewalk tilt 4,052 groups / 29,510 m²; road cross-fall bumps 1,462 / 24,092 m²; terrain lumps 1,273 / 16,701 m²; holes 3,038 / 16,850 m²; spikes 675 / 2,751 m² | 91 yes (Av. Brugmann 349, F2 -275.5, -1191.7: 18 m² at a 62 % cross-fall); 77 / 89 not located | sidewalks / roads: `viewer/surfaces.js` `prepareSurfaces` / `buildSurfaceRoads` (the street height field `prep.H` follows the DTM); terrain: `viewer/heightmap.js` `weld` / `clampUnder` / `carve` | The measured street's height comes from the DTM, so a sidewalk at the foot of a bank climbs the bank: there is no "level with the kerb" rule. Weld banks go up to 2 m (maxRise) to a surface edge, and clamp / carve drop cells up to 1.2 m. The terrain list is noisy: rail cuttings and tunnels (D9 / E9 / G6) are intended. |
+| C. Terrain / sidewalk ground (**fixed: claude/sidewalk, docs/SIDEWALK.md, gate row `ground`**) | `ground.mjs` (re-tuned: railway / deck earthworks and the bank cut to a street edge intended; new `over`) | sidewalk tilt 4,052 groups / 29,510 m²; road cross-fall bumps 1,462 / 24,092 m²; terrain lumps 1,273 / 16,701 m²; holes 3,038 / 16,850 m²; spikes 675 / 2,751 m² | 91 yes (Av. Brugmann 349, F2 -275.5, -1191.7: 18 m² at a 62 % cross-fall); 77 / 89 not located | sidewalks / roads: `viewer/surfaces.js` `prepareSurfaces` / `buildSurfaceRoads` (the street height field `prep.H` follows the DTM); terrain: `viewer/heightmap.js` `weld` / `clampUnder` / `carve` | The measured street's height comes from the DTM, so a sidewalk at the foot of a bank climbs the bank: there is no "level with the kerb" rule. Weld banks go up to 2 m (maxRise) to a surface edge, and clamp / carve drop cells up to 1.2 m. The terrain list is noisy: rail cuttings and tunnels (D9 / E9 / G6) are intended. |
 | D1. Street-name plate away from its post | `streetProps.mjs` | 237 of 748 post plates (gap > 0.15 m, up to 6.5 m) | yes (78, Rue Papenkasteel E6: 4.07 m) | `viewer/main.js` loadTile `snap(skDoc, [["signs"], ["posts"]])` (`viewer/streets/carriageway.js docOffLanes`) | The load-time snap moves the street kit's post out of the lane, but the street-life layer (`viewer/streetlife/layout.js`, plates) still draws the plate at the baked spot. They are two layers with one position and only one of them is moved. |
 | D2. Signs facing wrongly | `streetProps.mjs` | 78 of 1,792 poles: 25 show a no-entry C1 and a one-way F19 to the same traffic (one pole, or poles under 4 m apart); 53 face across every street within 12 m | yes (79, E6 -685.1, 999.7: C1 + F19 on one pole at the Papenkasteel / Ch. de Saint-Job junction) | `tools/streetkit/build_streetkit.py` `place_tile` (the one-way rule: F19 at the flow start, C1 at the flow end) + pole sharing | Two one-way pieces meet at one junction: one piece's end (C1) and the next piece's start (F19) land on one corner and are merged onto one pole. Also 78 signs moved > 1.5 m by the load-time snap (onto another kerb). |
 | D3. Furniture in the carriageway / on tram tracks | `streetProps.mjs` | 389 of 4,977 pieces still in a driven lane or within 1.3 m of a tram track after the load-time moves (369 lane, 34 tram): 25 post boxes, 11 Villo stations, 108 signs, 131 plate posts, 70 stop poles, 39 furniture2 pieces, 5 shelters | yes (85 bpost:4405 Ch. d'Alsemberg E5 -986.4, 312.6; 86 Villo Rittweger E5 -939.2, 144.6, 4 of 29 pieces on the tracks) | post boxes / Villo: `tools/streetlife/build_streetlife.py` (WFS point kept as is, only turned to the road) and `tools/streetkit/build_streetkit.py` `place_villo`; the rest: `docOffLanes` gives up (no kerb within 6 m, no measured street in Flanders) | Post boxes and Villo stations are not in main.js's snap list at all. The snap tests lanes only, not the tram tracks. |
@@ -45,6 +45,13 @@ turret and the tower, 1-2 directions), town hall 5.2 / 4.8 / 37.9, police L1 / L
 scripted far variant), Papenkasteel L2 13.4, Saint-Pierre L2 11.8, Wolvendael L2 9, Sacre-Coeur 3.9 / 0 / 2.7. The L2
 levels are the meshopt far levels of the town hall / police / Papenkasteel / Wolvendael packers (their own
 `*_pack.mjs`, no LockBorder yet: a rebuild of each in Blender + its pack) and are seen from > ~450 m.
+
+## Class T, the rail corridor: fixed (claude/rail, 2026-11-19)
+
+Detector tools/audit/census/railCorridor.mjs (`--old`), 32 rail tiles: car in the ballast 51 -> 5 m, track bed reached
+from a street 8,108 -> 0 m, stepped fence bays 1,173 -> 0, fence walls over / under the drawn fence 12,002 -> 58 m,
+floating panels 185 -> 71 m; streetProps onRail / inHero 0 / 3 -> 0 / 0. Gate rows `railt`, `railcorridor`, docs/RAIL_T.md,
+rule 39.
 
 ## Class J, thin bars: fixed (claude/jitter, 2026-11-18)
 
@@ -259,6 +266,13 @@ Le Chemin des Vignes (F1), Battery Centre (I1).
   the French window 3.84 -> 0.62; zfightCheck ab() still-camera hot pixels: dandoyNext 0.64 % -> 0.04 %, dandoyFrench
   0.69 -> 0.18 %, dandoyShop moving 5.6 -> 4.0 % (the ivy). What remains on the French window moving is its Juliet
   railing's bars (rule 26's class, not z-fighting). `?zfight=old` = the fragment-stage decode as before.
+
+- **R (claude/roads, rule 38 provisional, gate rows `roads` + `roadsim`; docs/ROADS_R.md).** The road graph and the
+  street edges (owner playtest 2026-11-18 round 2): slalom (lane offsets fitted point by point round parked cars and
+  kerb build-outs), traffic through houses (service ways driven, a 157 m junction turn across a block), plants on the
+  drawn carriageway, the OSM band on private land dropping the garden kit off the lawns, the line fit's running median
+  on short roads. City-wide before / after: slalom 58,261 -> 7,889 m (sim 122.6 -> 10.0 per km), traffic in a building
+  191 -> 35 places, plants on the road 878 -> 0, garden kit dropped 4,761 -> 1,787 m. `?roads=old` = before.
 
 ## Not detected here (needs the browser, or not located)
 

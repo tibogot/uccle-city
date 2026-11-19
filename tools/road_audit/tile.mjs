@@ -40,5 +40,5 @@ export function loadTile(T, opts = {}) {
   const rd = buildRoadData({ roads, surf, markings: paint === "v2" ? markings : null, hm, bounds, paint, trees: feats.trees, keep: true,
     onBuilding: (x, z) => onRoof(roofs, x, z), ...(opts.build || {}) });
   rd.totalMs = Math.round(performance.now() - t0);
-  return { T, entry, bounds, roads, surf, markings, feats, hm, rd, paint };
+  return { T, entry, bounds, roads, surf, markings, feats, hm, rd, paint, roofs };   // (roofs: the traffic graph's building test, viewer/traffic/tileTraffic.js)
 }
