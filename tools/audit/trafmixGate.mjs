@@ -78,6 +78,30 @@ const BEACON = new Set(["police_t", "ambulance", "fire"]);
   }
 }
 
+// ---- the liveries on screen: the palette colours lit (0.5 / 1 / 1.8 x), through the engine's grade (viewer/post.js
+// midday: contrast 1.1, saturation 1.06 + vibrance) and three's ACESFilmic, then sRGB (as tools/audit/tlightsCheck.mjs).
+// The Belgian ambulance's fluorescent yellow-green must read saturated, not pale / muddy: hue 60-75, saturation >= 0.6 and
+// value >= 0.8 at 1 x (the first cut, (0.80, 0.78, 0.02) on the clear-coated paint: hue 58, saturation 0.57 at 0.89 value
+// before the coat's sky reflection)
+{
+  const src = readFileSync(join(ROOT, "tools/blender/heavies.py"), "utf8");
+  const pal = (n) => { const m = new RegExp(String.raw`\("${n}", (\d), \(([^)]*)\)\)`).exec(src); return m ? { kind: +m[1], rgb: m[2].split(",").map(Number) } : null; };
+  const IN = [[0.59719, 0.076, 0.0284], [0.35458, 0.90834, 0.13383], [0.04823, 0.01566, 0.83777]];
+  const OUT = [[1.60475, -0.10208, -0.00327], [-0.53108, 1.10813, -0.07276], [-0.07367, -0.00605, 1.07602]];
+  const mul = (Mx, v) => [0, 1, 2].map((i) => Mx[0][i] * v[0] + Mx[1][i] * v[1] + Mx[2][i] * v[2]);
+  const fit = (v) => (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.432951) + 0.238081);
+  const aces = (c) => mul(OUT, mul(IN, c.map((x) => x / 0.6)).map(fit)).map((x) => Math.min(1, Math.max(0, x)));
+  const srgb = (x) => (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055);
+  const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  const grade = (c) => { c = c.map((x) => x * Math.pow(Math.max(lum(c), 1e-4) / 0.18, 0.1)); const g = lum(c), hi = Math.max(...c), ch = hi - Math.min(...c); const k = 1.06 + 0.1 * (1 - ch / Math.max(hi, 1e-4)); return c.map((x) => Math.max(0, g + (x - g) * k)); };
+  const hsv = ([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; let h = 0; if (d > 0) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [((h * 60) + 360) % 360, mx ? d / mx : 0, mx]; };
+  const P = pal("amb_yellow"), G = pal("amb_green");
+  const at = (p, E) => hsv(aces(grade(p.rgb.map((x) => x * (p.kind === 1 ? 0.75 : 1) * E))).map(srgb));
+  const y1 = P && at(P, 1), g1 = G && at(G, 1);
+  const ok = P && P.kind === 0 && y1[0] >= 60 && y1[0] <= 75 && y1[1] >= 0.6 && y1[2] >= 0.8 && G && g1[0] > 110 && g1[0] < 160 && g1[1] > 0.8;
+  check("ambulance colours on screen", !!ok, P ? `yellow (kind ${P.kind}) ${[0.5, 1, 1.8].map((E) => at(P, E).map((v, k) => (k ? v.toFixed(2) : v.toFixed(0))).join("/")).join("  ")} (hue / sat / value at 0.5 / 1 / 1.8 x); green ${g1.map((v, k) => (k ? v.toFixed(2) : v.toFixed(0))).join("/")}` : "amb_yellow not in heavies.py");
+}
+
 // ---------------------------------------------------------------- 2. the mix tables
 const GROUP = (n) => (["hatch_s", "hatch_c", "estate", "saloon", "suv"].includes(n) ? "car" : n === "van_c" || n === "van_p" ? "van" : n);
 {

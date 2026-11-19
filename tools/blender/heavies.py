@@ -31,8 +31,8 @@ SRC = open(os.path.join(HERE, "cars2.py"), encoding="utf8").read()
 CUT = SRC.index("# ------------------------------------------------------------------------------------------------ main")
 # the extra palette entries (before the material list is made)
 EXTRA_PAL = '''    ("beacon", 9, (0.010, 0.040, 0.42)),           # blue beacon lens (kind 9: flashed by the traffic shader)
-    ("amb_yellow", 0, (0.80, 0.78, 0.02)),         # Belgian ambulance: fluorescent yellow (RAL 1016 class)
-    ("amb_green", 0, (0.010, 0.30, 0.10)),         # its green
+    ("amb_yellow", 0, (0.42, 0.62, 0.0)),          # Belgian ambulance: fluorescent yellow-green, kind 0 (no clear coat / metal sheen); trafmixGate checks it through grade + ACES
+    ("amb_green", 0, (0.0, 0.32, 0.06)),           # its green
     ("fire_white", 0, (0.82, 0.82, 0.80)),         # reflective white band
     ("fire_yellow", 0, (0.85, 0.62, 0.01)),        # rear blocks
     ("shutter", 5, (0.42, 0.43, 0.44)),            # aluminium roller shutters (chrome kind: metal)
@@ -192,6 +192,63 @@ class Shell:
             self._wall(2, za, (xa, xb), (y0, ytop), (0, 0, 1))           # rear wall, faces forward
             self._wall(0, xi, (y0, ytop), (za, zb), (sd, 0, 0))          # inner wall, faces out
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
+    def arch(self, za, zb, ytop, yc, mat="paint", lip="trim", n=None):
+        """A ROUNDED wheel arch in a notch (claude/trafmix polish): on both sides, the notch's rectangle minus the arch
+        opening (a semicircle over the wheel centre, radius Ra, straight sides down) is closed by ONE flat n-gon in the
+        side plane through every vertex already on the notch's outline (no T-junction), in `mat` (the skirt follows the
+        arch); a rounded lip (a half-round bead swept along the arc, ends capped) in `lip`. The well behind stays."""
+        x0, x1, y0, y1, z0, z1 = self.b
+        bm = self.bm
+        d = DETAIL[0]
+        n = n or (14 if d == 0 else 6 if d == 1 else 5)
+        c = (za + zb) / 2
+        Ra = min((zb - za) / 2 - 0.03, ytop - yc - 0.025)
+        for sd in (1, -1):
+            xo = x1 if sd > 0 else x0
+            pts = {}
+            for vv in bm.verts:
+                p = car(vv.co)
+                if abs(p[0] - xo) > 2e-4 or not (za - 2e-4 <= p[2] <= zb + 2e-4) or not (y0 - 2e-4 <= p[1] <= ytop + 2e-4): continue
+                onL, onR, onT = abs(p[2] - za) < 2e-4, abs(p[2] - zb) < 2e-4, abs(p[1] - ytop) < 2e-4
+                if onL or onR or onT: pts[(round(p[2], 4), round(p[1], 4))] = vv
+            for k in [(round(za, 4), round(y0, 4)), (round(za, 4), round(ytop, 4)), (round(zb, 4), round(ytop, 4)), (round(zb, 4), round(y0, 4))]:
+                if k not in pts: pts[k] = bm.verts.new(bl((xo, k[1], k[0])))
+            L = sorted([k for k in pts if abs(k[0] - za) < 2e-4], key=lambda k: k[1])
+            T = sorted([k for k in pts if abs(k[1] - ytop) < 2e-4 and za + 2e-4 < k[0] < zb - 2e-4], key=lambda k: k[0])
+            Rr = sorted([k for k in pts if abs(k[0] - zb) < 2e-4], key=lambda k: -k[1])
+            ring = [pts[k] for k in L + T + Rr]
+            ring.append(bm.verts.new(bl((xo, y0, c + Ra))))
+            arc = []
+            for q in range(n + 1):
+                t = math.pi * q / n
+                v = bm.verts.new(bl((xo, yc + Ra * math.sin(t), c + Ra * math.cos(t)))); arc.append(v)
+            ring += arc
+            ring.append(bm.verts.new(bl((xo, y0, c - Ra))))
+            try: f = bm.faces.new(ring)
+            except ValueError: continue
+            f.material_index = M[mat]; f.normal_update()
+            if f.normal.dot(Vector(bl((sd, 0, 0)))) < 0: f.normal_flip()
+            # the lip: a half-round bead on the panel round the arc (LOD2: none)
+            if d < 2:
+                if not hasattr(self, "lips"): self.lips = MB()
+                bm = self.lips.bm
+                prof = [(-0.004, 0.0), (0.006, 0.02), (0.03, 0.026), (0.05, 0.0)] if d == 0 else [(-0.004, 0.0), (0.02, 0.024), (0.05, 0.0)]
+                rows = []
+                for q in range(n + 1):
+                    t = math.pi * q / n
+                    rows.append([bm.verts.new(bl((xo + sd * hx, yc + (Ra + r) * math.sin(t), c + (Ra + r) * math.cos(t)))) for r, hx in prof])
+                for q in range(n):
+                    for k in range(len(prof) - 1):
+                        g = bm.faces.new([rows[q][k], rows[q + 1][k], rows[q + 1][k + 1], rows[q][k + 1]]); g.material_index = M[lip]
+                        g.normal_update()
+                        mid = (rows[q][k].co + rows[q + 1][k + 1].co) / 2
+                        if g.normal.dot(Vector(bl((sd, 0, 0)))) < -0.2: g.normal_flip()
+                for row, t in ((rows[0], 0.0), (rows[-1], math.pi)):
+                    g = bm.faces.new(row); g.material_index = M[lip]; g.normal_update()
+                    want = Vector(bl((0, 0, -1 if t == 0 else 1))) if False else Vector(bl((0, -1, 0)))
+                    if g.normal.dot(want) < 0: g.normal_flip()
+                bm = self.bm
+        bmesh.ops.remove_doubles(self.bm, verts=self.bm.verts, dist=1e-4)
     def drop(self, fn):
         """remove faces where fn(centre, normal, side)"""
         dead = [f for f, c, n in self.faces() if fn(c, n, self.side(n))]
@@ -213,7 +270,7 @@ class Shell:
         if thick > 0:
             o.vertex_groups.new(name="shell"); o.vertex_groups.new(name="rim")
             mod = o.modifiers.new("solid", "SOLIDIFY")
-            mod.thickness = thick; mod.offset = -1; mod.use_even_offset = True; mod.use_rim = True; mod.use_quality_normals = True
+            mod.thickness = thick; mod.offset = -1; mod.use_even_offset = False; mod.use_rim = True; mod.use_quality_normals = True
             mod.shell_vertex_group = "shell"; mod.rim_vertex_group = "rim"
             with bpy.context.temp_override(object=o, active_object=o, selected_objects=[o], selected_editable_objects=[o]):
                 bpy.ops.object.modifier_apply(modifier=mod.name)
@@ -238,6 +295,7 @@ class Shell:
                 f.material_index = M[glass]; f.normal_update()
                 if f.normal.dot(n) < 0: f.normal_flip()
             out.append(mb.obj(self.name + "_glass", weld=False))
+        if getattr(self, "lips", None): out.append(self.lips.obj(self.name + "_lips", weld=True))
         return out
 
 
@@ -357,7 +415,7 @@ def build_bus(detail):
             if s == "K" and 1.45 < c[1] < 2.62 and abs(c[0]) < 0.95: return "glass_dark"
             return None
         S.paint(glassy)
-    S.notch(WZ - 0.62, WZ + 0.62, 1.12, sidew=0.42); S.notch(-WZ - 0.62, -WZ + 0.62, 1.12, sidew=0.42)
+    for zc in (WZ, -WZ): S.notch(zc - 0.62, zc + 0.62, 1.12, sidew=0.42); S.arch(zc - 0.62, zc + 0.62, 1.12, RW, mat="paint", lip="bus_dark")
     out += S.obj(thick=0.06 if detail < 2 else 0)
     dt = MB()
     # door leaves: a vertical black seal down the middle of each door, the lower panel dark (kick plates)
@@ -429,7 +487,7 @@ def build_ambulance(detail):
         if s in ("L", "R") and bands[0] < c[1] < bands[2] and zc0 + 0.1 < c[2] < zF - 0.98:
             k = int((c[2] - (zc0 + 0.10)) / 0.40) + int((c[1] - bands[0]) / 0.24)
             return "amb_green" if k % 2 == 0 else "amb_yellow"
-        return "paint"
+        return "amb_yellow"
     C.paint(ccol)
     def cab_open(c, n, s):
         if s == "F" or (n[2] > 0.3 and n[1] > 0.2): return 1.22 < c[1] < 2.40 and abs(c[0]) < 0.86
@@ -437,7 +495,7 @@ def build_ambulance(detail):
         return False
     if detail < 2: C.openings(cab_open)
     else: C.paint(lambda c, n: "glass" if cab_open(c, n, C.side(n, 0.5)) else None)
-    C.notch(WZ - 0.46, WZ + 0.46, 0.80, sidew=0.38)
+    C.notch(WZ - 0.46, WZ + 0.46, 0.80, sidew=0.38); C.arch(WZ - 0.46, WZ + 0.46, 0.80, RW, mat="trim", lip="trim")
     out += C.obj(thick=0.05 if detail < 2 else 0)
     # --- box: 2.20 wide, y 0.40..2.85, z zR..0.62; rear arch notch; Battenburg along both sides and the back
     Xb = 1.10
@@ -455,7 +513,7 @@ def build_ambulance(detail):
             k = int((c[0] + 1.05) / 0.42) + int((c[1] - bands[0]) / 0.24)
             return "amb_green" if k % 2 == 0 else "amb_yellow"
         if s in ("L", "R") and 2.55 < c[1]: return "amb_green"                                 # a green band at the top
-        return "paint"
+        return "amb_yellow"
     B.paint(bcol)
     if detail < 2:
         # side window (left, the patient compartment: frosted = dark glass) and the rear doors' windows
@@ -465,7 +523,7 @@ def build_ambulance(detail):
             if s == "K" and 1.9 < c[1] < 2.55 and abs(c[0]) > 0.21 and abs(c[0]) < 0.84: return "glass_dark"
             return None
         B.paint(box_glass)
-    B.notch(-WZ - 0.48, -WZ + 0.48, 0.86, sidew=0.40)
+    B.notch(-WZ - 0.48, -WZ + 0.48, 0.86, sidew=0.40); B.arch(-WZ - 0.48, -WZ + 0.48, 0.86, RW, mat="trim", lip="trim")
     out += B.obj()
     dt = MB()
     for sd in (1, -1):
@@ -523,7 +581,7 @@ def build_fire(detail):
         # (the window columns need their own cuts: done by the z list above + a few more)
         C.openings(lambda c, n, s: C2(c, n, s))
     else: C.paint(lambda c, n: "glass" if C2(c, n, C.side(n, 0.5)) else None)
-    C.notch(WZ - 0.60, WZ + 0.60, 1.10, sidew=0.42)
+    C.notch(WZ - 0.60, WZ + 0.60, 1.10, sidew=0.42); C.arch(WZ - 0.60, WZ + 0.60, 1.10, RW, mat="paint", lip="trim")
     out += C.obj(thick=0.05 if detail < 2 else 0)
     # body: lockers (3 a side), the rear arch, rear face with a shutter and the chevron blocks
     lockers = [(-0.10, 0.65), (-1.45, -0.20), (-4.70, -2.85)]
@@ -550,7 +608,7 @@ def build_fire(detail):
             return "paint"
         return "paint"
     B.paint(bcol)
-    B.notch(-WZ - 0.62, -WZ + 0.62, 1.19, sidew=0.42)
+    B.notch(-WZ - 0.62, -WZ + 0.62, 1.19, sidew=0.42); B.arch(-WZ - 0.62, -WZ + 0.62, 1.19, RW, mat="paint", lip="trim")
     out += B.obj()
     dt = MB()
     for sd in (1, -1):
@@ -604,7 +662,7 @@ def build_bin(detail):
         return False
     if detail < 2: C.openings(cab_open)
     else: C.paint(lambda c, n: "glass" if cab_open(c, n, C.side(n, 0.5)) else None)
-    C.notch(WZ - 0.60, WZ + 0.60, 1.08, sidew=0.42)
+    C.notch(WZ - 0.60, WZ + 0.60, 1.08, sidew=0.42); C.arch(WZ - 0.60, WZ + 0.60, 1.08, RW, mat="paint", lip="trim")
     out += C.obj(thick=0.05 if detail < 2 else 0)
     # compactor body over the tandem
     r0, r1 = -WZ - T, -WZ + T
@@ -617,7 +675,7 @@ def build_bin(detail):
         if s in ("L", "R") and c[1] > 3.10: return "skid"
         return "paint"
     B.paint(bcol)
-    B.notch(r0 - 0.58, r0 + 0.58, 1.20, sidew=0.42); B.notch(r1 - 0.58, r1 + 0.58, 1.20, sidew=0.42)
+    for zc in (r0, r1): B.notch(zc - 0.58, zc + 0.58, 1.20, sidew=0.42); B.arch(zc - 0.58, zc + 0.58, 1.20, RW, mat="paint", lip="trim")
     out += B.obj()
     # rear hopper: slightly narrower, its back raked; the loading mouth dark; orange / white blocks low
     H = Shell(-X + 0.03, X - 0.03, 0.55, 3.0, zR, -4.10, cuts={"x": [-1.0 + k * 0.40 for k in range(6)] + [1.0, -1.0], "y": [0.70, 0.95, 1.55, 2.0], "z": []},
@@ -676,7 +734,7 @@ def build_police(detail):
 
 HEAVY = {
     "police_t": dict(label="police estate + light bar (traffic patrol)", type="police", paint=(0.80, 0.80, 0.79), keepPaint=True, build=build_police),
-    "ambulance": dict(label="Belgian ambulance (type C box)", type="ambulance", paint=(0.80, 0.78, 0.02), keepPaint=True, build=build_ambulance),
+    "ambulance": dict(label="Belgian ambulance (type C box)", type="ambulance", paint=(0.42, 0.62, 0.0), keepPaint=True, build=build_ambulance),
     "fire": dict(label="Brussels fire engine (autopompe)", type="fire", paint=(0.42, 0.012, 0.010), keepPaint=True, build=build_fire),
     "bus": dict(label="12 m city bus", type="bus", paint=(0.62, 0.64, 0.66), keepPaint=False, build=build_bus),
     "bin": dict(label="refuse lorry (rear loader)", type="bin", paint=(0.80, 0.80, 0.78), keepPaint=True, build=build_bin),

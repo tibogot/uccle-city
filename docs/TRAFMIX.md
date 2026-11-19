@@ -106,16 +106,32 @@ colour schemes, no logo, no lettering.
 
 | id | what | size L x W x H, WB | tris LOD0 / 1 / 2 (budget) | sheet |
 |---|---|---|---|---|
-| bus | 12 m low-floor city bus (Citaro / Urbino class), 3 double doors right, roof AC pod, amber destination display (lit at night), seats, grab poles; paint per instance: STIB silver-grey / De Lijn yellow | 12.0 x 2.55 x 3.07, 5.95 | 12,910 / 2,218 / 454 (14,000 / 2,600 / 600) | docs/trafmix/sheet_bus.jpg |
-| ambulance | Belgian type C box ambulance on a van chassis: fluorescent yellow, two rows of green / yellow Battenburg, green top band, blue beacons (cab bar, 4 box corners, grille) | 6.94 x 2.20 x 3.02, 3.665 | 9,101 / 1,825 / 626 (11,000 / 2,200 / 700) | docs/trafmix/sheet_ambulance.jpg |
-| fire | Brussels autopompe (18 t 4x2, crew cab): red, white band, roller-shutter lockers, roof ladder, red / yellow rear blocks, cab light bar + rear beacons | 8.30 x 2.50 x 3.28, 4.20 | 10,174 / 1,736 / 504 (12,000 / 2,200 / 650) | docs/trafmix/sheet_fire.jpg |
-| bin | refuse lorry (26 t 6x2 rear loader, low-entry cab): white, orange band, orange / white rear blocks, hopper + lifter, amber beacons | 9.34 x 2.50 x 3.42, 4.575 (front to the tandem's middle) | 9,444 / 1,815 / 526 (11,000 / 2,200 / 650) | docs/trafmix/sheet_bin.jpg |
+| bus | 12 m low-floor city bus (Citaro / Urbino class), 3 double doors right, roof AC pod, amber destination display (lit at night), seats, grab poles; paint per instance: STIB silver-grey / De Lijn yellow | 12.0 x 2.55 x 3.07, 5.95 | 13,626 / 2,541 / 503 (14,000 / 2,600 / 600) | docs/trafmix/sheet_bus.jpg |
+| ambulance | Belgian type C box ambulance on a van chassis: fluorescent yellow-green, two rows of green / yellow Battenburg, green top band, blue beacons (cab bar, 4 box corners, grille) | 6.94 x 2.20 x 3.02, 3.665 | 9,671 / 2,034 / 678 (11,000 / 2,200 / 700) | docs/trafmix/sheet_ambulance.jpg |
+| fire | Brussels autopompe (18 t 4x2, crew cab): red, white band, roller-shutter lockers, roof ladder, red / yellow rear blocks, cab light bar + rear beacons | 8.30 x 2.50 x 3.28, 4.20 | 10,752 / 1,986 / 566 (12,000 / 2,200 / 650) | docs/trafmix/sheet_fire.jpg |
+| bin | refuse lorry (26 t 6x2 rear loader, low-entry cab): white, orange band, orange / white rear blocks, hopper + lifter, amber beacons | 9.34 x 2.50 x 3.42, 4.575 (front to the tandem's middle) | 10,228 / 2,134 / 620 (11,000 / 2,200 / 650) | docs/trafmix/sheet_bin.jpg |
 | police_t | cars2's police estate (white + blue / yellow Battenburg, POLICE) + a blue light bar on the roof | 4.70 x 1.85 x 1.58, 2.69 | 15,182 / 2,636 / 318 (16,000 / 2,800 / 400) | docs/trafmix/sheet_police_t.jpg |
 | (delivery) | the panel / compact vans of cars2 (reused) in post-van red, white or grey | | | |
 
-Night (beacons + lamps lit): docs/trafmix/night_*.jpg; LOD1 / LOD2: docs/trafmix/lod1_*.jpg, lod2_*.jpg. The fleet maps
+Close-ups (front, rear, side glass, wheel arch): docs/trafmix/close_*.jpg. Night (beacons + lamps lit): docs/trafmix/night_*.jpg; LOD1 / LOD2: docs/trafmix/lod1_*.jpg, lod2_*.jpg. The fleet maps
 the authored LODs as cars2 (level 0 to 30 m, 1 to 130 m, 2 beyond). Mesh: tyres on the ground (|lowest| < 1.2 cm), the
 body >= 0.10 m up, head / tail / beacon / glass kinds on every level: all in the gate.
+
+### Polish round (coordinator review, 2026-11-19)
+- **Wheel arches**: were square black notches. Now ROUNDED: the notch's rectangle minus a semicircle over the wheel
+  (straight sides down) closed by one flat n-gon in the side plane through the notch outline's vertices (no
+  T-junction), in the body / skirt colour (the bus's white skirt follows the arch), and a half-round lip swept round
+  the arc (bus: black rubber; fire engine, bin lorry, ambulance: trim), in its own mesh (not thickened); the dark well
+  stays behind. All vehicles (bus 2, fire engine 2, bin lorry 3 incl. the tandem, ambulance 2). 14 / 6 / 5 arc
+  segments per level. The cabs' wall thickness (Solidify) is now uniform-offset off ("even offset" threw a vertex
+  100 km out at the arch n-gon's concave corners).
+- **Ambulance yellow**: was (0.80, 0.78, 0.02) on the clear-coated PAINT kind: pale / muddy (the coat's sky reflection
+  and the 0.25 metalness wash it; through the grade + ACES it is hue 58, saturation 0.57 at value 0.89). Now a
+  fluorescent yellow-green (0.42, 0.62, 0.0) as a FIXED colour (kind 0: matt, no coat): hue 66 / saturation 0.67 /
+  value 0.83 at 1 x light, 70 / 0.92 / 0.66 in shade; the Battenburg green (0.0, 0.32, 0.06). ACES desaturates any
+  bright yellow (at 1.8 x light every candidate falls to ~0.45 saturation): the hue shift toward yellow-green and the
+  matt surface are the levers. The gate's "ambulance colours on screen" row checks it through the engine's midday
+  grade (contrast 1.1, saturation 1.06 + vibrance) and three's ACESFilmic, as tlightsCheck does.
 
 ## 6. Cost
 
