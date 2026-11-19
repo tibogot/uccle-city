@@ -49,6 +49,7 @@ export const CTL = {
   springK: 27, springC: 4.2, bump: 0.1, maxRise: 2.2, maxGroundV: 6, pitchI: 1.55, rollI: 0.6,
   cgHeight: 0.52, transfer: 0.4,     // load transfer into the plate's pitch / roll (visual): x0.4 of round 2
   airGravity: 1.7, gravity: 9.81,
+  frontDrive: true,                  // the driven axle (the hatchbacks): its wheels spin under too much gas (tyre marks)
 };
 
 const G = 9.81, DEG = Math.PI / 180;
@@ -60,7 +61,16 @@ const gW = [0, 0, 0, 0];
 export function createCtlState(x, z, heading) {
   const c = createFeelState(x, z, heading);
   c.steerS = 0; c.thrS = 0; c.loose = 0; c.roadY = NaN; c.roadPitch = 0; c.roadRoll = 0; c.ctl = true;
+  c.tyres = createTyreOut();
   return c;
+}
+
+/** (tyre marks, docs/TYREMARKS.md) the per-wheel contact out of the last step, wheels FL FR RL RR (WX / WZ):
+ *  on 0 / 1 (the spring touches the ground), x / y / z the contact (y = the drive surface there), touch = the speed
+ *  (m/s) into the ground of a wheel that came down this frame (0 none), over = 0..1 how far the pedals ask past the
+ *  tyre's lengthwise grip (brake lock / wheelspin); hb = the handbrake held. Filled in place: no allocation. */
+export function createTyreOut() {
+  return { on: [1, 1, 1, 1], x: [0, 0, 0, 0], y: [0, 0, 0, 0], z: [0, 0, 0, 0], touch: [0, 0, 0, 0], over: [0, 0, 0, 0], hb: 0, front: CTL.frontDrive ? 1 : 0 };
 }
 
 /** the keyboard / pad input shaped toward the raw input (steer -1..1 left +, throttle -1..1) */
@@ -99,6 +109,9 @@ export function stepCtl(c, input, dt, env, F = CTL) {
   const prevX = c.x, prevZ = c.z;
   if (c.steerS === undefined) { c.steerS = 0; c.thrS = 0; c.loose = 0; c.roadY = NaN; c.roadPitch = 0; c.roadRoll = 0; }
   shapeInput(c, input, dt, F, c.speed);
+  const T = c.tyres ||= createTyreOut();
+  T.hb = hb;
+  for (let i = 0; i < 4; i++) { T.touch[i] = 0; T.over[i] = 0; }
   const throttle = c.thrS, steerIn = c.steerS;
 
   env.prepare?.(c, Math.hypot(c.speed, c.vx, c.vz) * dt + 8);
@@ -138,10 +151,13 @@ export function stepCtl(c, input, dt, env, F = CTL) {
       c.gPrev[i] = g;
       const vh = c.vy + lz * c.pitchV + lx * c.rollV;
       let f = 0;
-      if (ci > -preload / F.springK) {
+      const on = ci > -preload / F.springK ? 1 : 0;
+      if (on) {
         f = Math.max(0, preload + F.springK * ci + F.springC * (vg - vh));
         if (WZ[i] > 0) front++; else rear++;
+        if (!T.on[i]) T.touch[i] = Math.max(T.touch[i], vg - vh);     // came down: the speed into the ground
       }
+      T.on[i] = on; T.x[i] = wx; T.y[i] = g; T.z[i] = wz;
       c.wy[i] = clamp(ci, -preload / F.springK, F.bump);
       fSum += f; fP += f * lz; fR += f * lx;
     }
@@ -191,6 +207,9 @@ export function stepCtl(c, input, dt, env, F = CTL) {
     let axP = (uT - u) / h;
     if (hb && Math.abs(u) > 0.05) axP -= Math.sign(u) * Math.min(Math.abs(u) / h, F.hbDecel);
     const axMax = mu * G * Math.max(0.05, grounded) * 1.05;
+    // (tyre marks) the pedals past the tyres' lengthwise grip: braking locks all four, the gas spins the driven axle
+    const over = clamp((Math.abs(axP) / axMax - 0.85) / 0.15, 0, 1);
+    if (over > 0) { const lock = axP * u < 0; for (let i = 0; i < 4; i++) if (lock || (WZ[i] > 0) === F.frontDrive) T.over[i] = Math.max(T.over[i], over); }
     axP = clamp(axP, -axMax, axMax);
     const gx = -F.gravity * Math.sin(Pg), gy = -F.gravity * Math.sin(Rg) * 0.5;
     const hold = !throttle && !hb && Math.abs(u) < 0.3 && Math.abs(Pg) < 0.38;
