@@ -3,7 +3,7 @@
 // that must never stand in a driven lane: garden pieces (viewer/gardens/cityGardens.js), signal posts (viewer/furniture.js),
 // tram poles (viewer/tram.js), and the audit (debug/furnitureAudit.js).
 //
-//   carriageway(roads, { classAt, onDeck })  ->  { inside(x, z, margin = 0), nearest(x, z) }
+//   carriageway(roads, { classAt, onDeck, bandOnMeasured, drawn })  ->  { inside(x, z, margin = 0), nearest(x, z) }
 //     inside   true where (x, z) is on a carriageway: the MEASURED one (UrbIS street surfaces: roadway, tram road,
 //              parking; fit.classAt of viewer/streetFit.js) where the tile has them, else (and also: UrbIS predates the
 //              2025 Carsoel deck) within the OSM road's carriageway half width (its lanes; the engine type's defaults
@@ -29,7 +29,7 @@ export function carriageHalf(r) {
   return [c + sum(t.left), c + sum(t.right)];
 }
 
-export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false } = {}) {
+export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false, bandOnMeasured = false, drawn = null } = {}) {
   const CLS = lanesOnly ? LANES : CARRIAGE;
   const N = new Map((roads?.nodes || []).map((n) => [n.id, n]));
   const segs = [], grid = new Map(), key = (i, j) => `${i},${j}`;
@@ -73,6 +73,14 @@ export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = 
       }
     }
     // OSM band: ends of a road's line are round (a junction's corner: the cross street's own band decides)
+    // (claude/roads, rule 38: where UrbIS measures the ROAD itself (its centre line's point here lies on a measured
+    // surface), land the survey leaves out of its street surfaces is not carriageway: a front garden, a building. The
+    // band used to reach 1-6 m past the measured street's edge onto private land, where main.js then dropped the
+    // garden kit's walls / railings / hedges as "on the carriageway" (Rue Papenkasteel: the lawns opened to the car).
+    // bandOnMeasured: as before, ?roads=old). Unless the city DRAWS a street there all the same (drawn(x, z): the
+    // engine's own pieces kept past the survey where no measured edge cuts them: a forecourt mouth on the Chaussée de
+    // Waterloo, J6 1726, 571: asphalt over class -1, a laurel stood on it)
+    const bandOk = (px, pz) => bandOnMeasured || !classAt || classAt(px, pz) < 0 || !!onDeck?.(px, pz) || !!drawn?.(x, z);
     for (const id of grid.get(key(Math.floor(x / CELL), Math.floor(z / CELL))) || []) {
       const s = segs[id], dx = s.bx - s.ax, dz = s.bz - s.az, L2 = dx * dx + dz * dz;
       if (L2 < 1e-6) continue;
@@ -80,11 +88,19 @@ export function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = 
       if (t < 0 || t > 1) continue;
       const px = s.ax + dx * t, pz = s.az + dz * t, L = Math.sqrt(L2);
       const side = (-(dz / L) * (x - px) + (dx / L) * (z - pz)) >= 0 ? 1 : -1;
-      if (Math.hypot(x - px, z - pz) < (side > 0 ? s.hr : s.hl) - margin) return true;
+      if (Math.hypot(x - px, z - pz) < (side > 0 ? s.hr : s.hl) - margin && bandOk(px, pz)) return true;
     }
     return false;
   };
   return { inside, nearest: (x, z) => near(x, z) };
+}
+
+/** claude/roads (rule 38): "a street is drawn here" from the drive raster (viewer/drive/colliders.js driveGround: cm
+ *  of road / sidewalk / island surface over the carved terrain on the 1 m grid of header h, 65535 = none): the
+ *  carriageway test's `drawn` (the OSM band past a measured street only where the city draws a street) */
+export function drawnTest(h, delta) {
+  if (!h || !delta) return null;
+  return (x, z) => { const c = Math.round((x - h.x0) / h.step), r = Math.round((z - h.z0) / h.step); if (c < 0 || r < 0 || c >= h.cols || r >= h.rows) return false; const v = delta[r * h.cols + c]; return v > 0 && v !== 65535; };
 }
 
 // POINT FURNITURE OUT OF THE LANES (citydefects 2026-11-16): the baked data layers (data/streetkit signs / plate posts,
@@ -128,8 +144,10 @@ export function trackIndex(lines, C = 8) {
 /** (x, z) -> { x, z, moved, nx?, nz? } . lanes: carriageway(..., { lanesOnly: true }); fit: viewer/streets/fitCore.js
  *  streetFit (null: no measured street); opt { tram, osm } (above; {} = the 2026-11-16 move, ?streetprops=old) */
 export function offLane(x, z, lanes, fit, opt = {}) {
-  const { tram = null, osm = false } = opt;
-  const onTram = (px, pz) => !!tram && tram.dist(px, pz) < TRAM_CLEAR;
+  const { tram = null, osm = false, rail = null, y = null } = opt;
+  // (CLASS T, rule 39) rail: viewer/rail/railData.js railBed: a track bed is road too (no prop on the rails); y = the
+  // point's own height (a point on a road deck over the line is not on the bed)
+  const onTram = (px, pz) => (!!tram && tram.dist(px, pz) < TRAM_CLEAR) || (!!rail && rail.on(px, pz, y));
   if (!lanes || (!fit && !osm) || !(lanes.inside(x, z, 0) || onTram(x, z))) return { x, z, moved: false };
   const free = (px, pz) => !lanes.inside(px, pz, 0) && !onTram(px, pz);
   const k = fit ? fit.nearKerb(x, z, 6) : null;
@@ -163,10 +181,12 @@ export function offLane(x, z, lanes, fit, opt = {}) {
  *  measured lift there - the lift where it stood; with opt.ground also the ground's). paths: [["stops", "pole"],
  *  ["signs"], ...]; opt: offLane's + ground + keep (p -> true: left where it is) */
 export function docOffLanes(doc, paths, lanes, fit, opt = {}) {
-  if (!doc) return { doc, moved: 0 };
-  let moved = 0;
+  if (!doc) return { doc, moved: 0, dropped: 0 };
+  let moved = 0, dropped = 0;
   const lift = (x, z) => (fit ? fit.lift(x, z) : 0) + (opt.ground ? opt.ground(x, z) : 0);
-  const fix = (p) => { if (!p || typeof p.x !== "number" || opt.keep?.(p)) return p; const r = offLane(p.x, p.z, lanes, fit, opt); if (!r.moved) return p; moved++;
+  // (rule 39) opt.drop(p) -> true: the point is left out (inside a hero road bridge: its model draws what stands on it)
+  const fix = (p) => { if (!p || typeof p.x !== "number" || opt.keep?.(p)) return p; if (opt.drop?.(p)) { dropped++; return null; }
+    const r = offLane(p.x, p.z, lanes, fit, opt.rail ? { ...opt, y: p.y } : opt); if (!r.moved) return p; moved++;
     return { ...p, x: r.x, z: r.z, ...(typeof p.y === "number" ? { y: p.y + lift(r.x, r.z) - lift(p.x, p.z) } : {}) }; };
   const out = { ...doc };
   for (const [key, sub] of paths) {
@@ -174,6 +194,7 @@ export function docOffLanes(doc, paths, lanes, fit, opt = {}) {
     // (streetprops: from out[key], not doc[key]: a second path on the same key, ["stops", "shelter"] after
     // ["stops", "pole"], threw the first one's moves away: no STIB pole was ever moved; ?streetprops=old as before)
     out[key] = (opt.osm ? out[key] : doc[key]).map((it) => (sub ? (it?.[sub] ? { ...it, [sub]: fix(it[sub]) } : it) : fix(it)));
+    if (opt.drop) out[key] = out[key].filter((it) => (sub ? !(it?.[sub] === null) : it !== null));
   }
-  return { doc: out, moved };
+  return { doc: out, moved, dropped };
 }

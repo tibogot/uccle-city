@@ -27,6 +27,7 @@ const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
 const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
+const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");   // (one builder with the worker, rule 38)
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
@@ -50,12 +51,12 @@ for (const T of TILES) {
   const t0 = Date.now();
   let tile;
   try { tile = loadTile(T); } catch (e) { console.error(`${T}: ${e.message}`); continue; }
-  const { roads, feats, bounds, rd } = tile;
+  const { roads, feats, bounds, rd, roofs } = tile;
   if (!rd.surfaceData) { if (!QUIET) console.log(`${T}: no measured surfaces (no width parking)`); continue; }
   const fit = streetFit(rd.surfaceData);
   const wp = widthParking(roads, feats, bounds, fit);
   const trace = {};
-  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, trace, old: OLD });
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, trace, roofs, entry: OLD ? { trafpark: false } : {} });
   const cars = process.env.TP_ALL ? wp.sites : g.parkedKept ?? wp.sites;   // (trafpark: the graph drops cars no lane can pass; TP_ALL=1: classes of all, before the drop)
   // grid of cars
   const G = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096), CELL = 6;
