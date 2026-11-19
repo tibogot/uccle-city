@@ -135,7 +135,34 @@ Measured by `tools/audit/tlightsCheck.mjs` on the 249 posts of the 40 signal til
   viewer/tlights, the `?tlights` row, main.js wiring.
 - Browser turn (not done on this branch, Chrome belongs to another agent): see "For the browser turn".
 
-## For the browser turn
+## Browser turn (2026-11-19, merge of foundation incl. markings / zfight / jitter / carhit)
+
+Shots: `docs/tlights/browser/` (canvas JPEGs of the city frame, HUD hidden).
+
+| check | result | shot |
+|---|---|---|
+| Saint-Job posts on the pavement, heads toward the coming cars | yes (10 posts, the 4 tiles round the square) | `stjob-head-close-red.jpg` |
+| cars stop on the red shown | yes: the queue at the zebra stop line while the posts show red | `stjob-cars-red.jpg` |
+| walking man green on the crossed road's red | yes (SIGNAL_STATE.B = 2, WALK_STATE.B = 1) | `stjob-ped-walk.jpg` |
+| aspects coloured by day (golden look, eye adaptation x 2.2) | **was not**: green came out mint white; fixed (below) | `head-green-golden.jpg`, `head-amber-golden.jpg`, `head-red-golden.jpg` |
+| aspects coloured at night (`time=night&hour=22.5`, bloom + grade) | yes | `head-green-night.jpg`, `head-amber-night.jpg`, `head-red-night.jpg` |
+| LOD 28 / 25 / 22 m (the 0 -> 1 switch) | no visible change across the band; the 120 / 80 m views were hidden by buildings on that bend | - |
+| WebGPU / console errors | 0 in every boot (`__quickErrors`) | - |
+| moved posts E2 / F2 / H2 / K11 / I3 | on paving facing their approach (F2 on the island, H2 on the tram median); **I3 stood on the lawn** behind the pavement: fixed (below) | `moved-*.jpg` |
+| tour views with signals, new vs `?tlights=old` (same code) | 8 of 9 ok (pixels <= 0.11 %); stjob-shops flagged = the new post near the camera (intended); far-300m first run timed out cold, ok on the rerun | `tour-stjob-shops-old-vs-new.jpg` |
+
+Fixes from the turn:
+- **Exposure compensation**: the post chain's exposure (look x scale x the sky's eye adaptation) was ~2.2 in the street
+  (1.7 at night), so the lit aspects reached ACES at twice the strength the gate assumed and green washed out. Now the
+  emissive is divided by the frame's exposure (`tlightExposure`, set every frame in main.js from `pipe.exposureValue`,
+  a new getter in viewer/post.js): what reaches the tone map is LIT x EMIT whatever the adaptation, as the gate checks.
+  Gate: the shader divides and main.js sets it (static check in `tlights`).
+- **Paving first**: the settle search took the nearest LEVEL spot, which can be unmeasured ground (a lawn); now
+  square / sidewalk / median first, unmeasured only where no paving is within 8 m. The pedestrian-head check now
+  measures against the road's normal (not the direction to the stop point, which a post moved along the kerb sees
+  obliquely). Gate after: facing 0, pedestrian 0, unseated 0, in lane 0 (249 posts).
+
+## For the next browser turn
 
 1. `?quick=1&place=stjob-street&with=traffic` (+ `&at=1077,514` Saint-Job junction): the posts on the pavement at the
    junction mouths, heads toward the coming cars, the cars stopping on the red the head shows; the walking man green

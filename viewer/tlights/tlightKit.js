@@ -14,7 +14,7 @@
 //   LOD hand-over: per instance band (iBand: switch 0-1, switch 1-2, end, the tile's fade slot) and the per-pixel
 //            dither of viewer/lodFade.js (same noise in the shadow pass: no pop, no shadow snap)
 import * as THREE from "three/webgpu";
-import { attribute, uniformArray, texture, uv, vec2, vec3, float, mix, smoothstep, length, positionWorld, select, fract } from "three/tsl";
+import { attribute, uniform, uniformArray, texture, uv, vec2, vec3, float, mix, smoothstep, length, positionWorld, select, fract } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
 import { FadeSlots, StreamPool, sourceFromYaw, MARGIN } from "../instanceStream.js";
@@ -25,6 +25,10 @@ import { TL_PIECES, TL_STRIDE, LIT, EMIT } from "./tlightPlace.js";
 export { TRI_BUDGET } from "./tlightPlace.js";
 
 export const tlightFades = new FadeSlots(128);
+/** the exposure the frame is graded with (main.js sets it every frame from the post chain): the lit aspects' emissive is
+ *  divided by it, so what reaches the ACES tone map is LIT x EMIT whatever the eye adaptation (browser turn: the street's
+ *  adaptation raised the exposure and a green aspect came out mint white) */
+export const tlightExposure = uniform(1);
 
 /** slot palette by NAME (the Blender slots): [name, rgb (linear), roughness, metalness]; the lenses LAST (index >= LENS0) */
 export const SLOTS = [
@@ -147,7 +151,7 @@ function materials(picto) {
     const mask = select(si.greaterThanEqual(float(LENS0)), texture(picto, uv()).r, float(0));
     const base = C.xyz.mul(mix(float(1), ao, 0.85));
     m.colorNode = select(on, mix(base, lit.mul(0.25), mask), base);
-    m.emissiveNode = select(on, lit.mul(mask).mul(k).mul(hot), vec3(0));
+    m.emissiveNode = select(on, lit.mul(mask).mul(k).mul(hot).div(tlightExposure.max(0.05)), vec3(0));
     m.aoNode = ao;
     m.roughnessNode = C.w;
     m.metalnessNode = slotM.element(idx);

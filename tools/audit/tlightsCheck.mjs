@@ -18,7 +18,7 @@
 // on the tile worker's road stage, as main.js runs them):
 //   facing   the vehicle heads face the cars coming up their approach: the direction from the head to the lane centre
 //            15-25 m back up the road (walked along the road's polyline, bends included) within 35 deg of the heads'
-//            facing; the pedestrian head looks at the carriageway (toward the road's centre line within 50 deg: the post is aimed at its approach, up to 30 deg)
+//            facing; the pedestrian head looks at the carriageway (the road's normal toward the carriageway within 50 deg: the post is aimed at its approach, up to 30 deg)
 //   seated   the foot on the drawn pavement: 9 points round the pole (r 7.5 cm) within 5 cm of the post's height
 //            (ground + the measured raise): a post across a kerb line or on a slope edge fails
 //   lane     no post centre in a driven lane (viewer/streets/carriageway.js lanesOnly, as tools/audit/streetAudit.mjs)
@@ -109,6 +109,9 @@ for (const f of readdirSync(join(ROOT, "viewer/tlights"))) {
 }
 if (!/old\("tlights"/.test(readFileSync(join(ROOT, "viewer/features.js"), "utf8"))) FAIL("code: no ?tlights switch row in viewer/features.js");
 const mainSrc = readFileSync(join(ROOT, "viewer/main.js"), "utf8");
+// (browser turn 2026-11-19) the eye adaptation raised the grade's exposure to ~2.2 in the street and a green aspect came
+// out mint white: the emissive is divided by the frame's exposure (main.js sets tlightExposure from the post chain)
+if (!/\.div\(tlightExposure/.test(kitSrc) || !/tlightExposure\.value = /.test(mainSrc)) FAIL("code: the lit aspects are not exposure-compensated (tlightKit.js emissive / tlightExposure, set in main.js)");
 if (!/noSignals: cityTLights\.drawing/.test(mainSrc) || !/cityTLights\.addTile\(/.test(mainSrc) || !/cityTLights\.removeTile\(/.test(mainSrc)) FAIL("code: main.js does not hand the signal sites to cityTLights (add / remove / furniture.js noSignals)");
 
 // ------------------------------------------------------------------------------------------------ the lit aspect on screen
@@ -202,7 +205,10 @@ for (const T of TILES) {
       // the pedestrian head (local +x) toward the carriageway
       const px = Math.cos(p.yaw), pz = -Math.sin(p.yaw), rx = nr.px - p.x, rz = nr.pz - p.z, rl = Math.hypot(rx, rz);
       if (rl > 2) {                // (a post on a median within 2 m of the centre line: either way is across)
-        const a2 = deg(Math.acos(Math.max(-1, Math.min(1, (px * rx + pz * rz) / rl))));
+        // across = the road's normal toward the carriageway (the traffic's left, or right for a post on the far side);
+        // not the direction to the stop point: a post moved along the kerb (onto paving) looks at it obliquely
+        const sg = Math.sign(rx * p.tz - rz * p.tx) || 1, nx = p.tz * sg, nz = -p.tx * sg;
+        const a2 = deg(Math.acos(Math.max(-1, Math.min(1, px * nx + pz * nz))));
         if (a2 > 50) { S.pedBad++; worst.push({ T, kind: "ped head", ang: +a2.toFixed(0), x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
       }
     }

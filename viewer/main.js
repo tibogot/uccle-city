@@ -75,6 +75,7 @@ import { platformFollow } from "./streets/tramPlatforms.js";
 import { cityFuel } from "./fuel/cityFuel.js";
 import { cityFurniture } from "./furniture2/cityFurniture.js";
 import { cityTLights } from "./tlights/cityTLights.js";
+import { tlightExposure } from "./tlights/tlightKit.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
@@ -1839,6 +1840,7 @@ async function main() {
     if (!stateFreeze) { lodEye.value.copy(camera.position); for (const u of updaters) u(camera.position, camera); }
     renderFrame();
     if (pipe && lighting.firmament) pipe.setExposureFactor(lighting.adapt(dt));
+    tlightExposure.value = pipe ? pipe.exposureValue : renderer.toneMappingExposure;   // (the lit signal aspects: hue kept)
     sampleGpu();
     frames++;
     if (frames % 10 === 1 && hud.statsOn) {         // (not while the HUD is folded / hidden: no DOM write)

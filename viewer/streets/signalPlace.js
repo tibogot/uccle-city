@@ -54,11 +54,15 @@ function signalPost(r, px, pz, tx, tz, opts) {
   // a parallel road, and a median's kerb put a post 1 m from the centre line (tools/audit/tlightsCheck.mjs)
   if (!opts.pre && (opts.driven || opts.fit?.lift)) {
     const L = opts.fit?.lift, C = opts.fit?.classAt, D = opts.driven;
+    // (browser turn: a post took the nearest LEVEL spot, which was the lawn behind the pavement at I3: paving first —
+    // square, sidewalk, median (not a tree pit or a ramp) — an unmeasured spot only where no paving is within 8 m)
+    const PAVED = new Set([4, 5, 6]);
+    let soft = false;
     const ok = (qx, qz) => {
       if ((qx - px) * rx + (qz - pz) * rz < half * 0.5 || D?.inside(qx, qz, 0)) return false;
       if (!L) return true;
-      const c = L(qx, qz);
-      if (!(c > 0) && !(C && C(qx, qz) < 0)) return false;           // measured: on raised paving
+      const c = L(qx, qz), cl = C ? C(qx, qz) : 5;
+      if (!(PAVED.has(cl) || (soft && cl < 0))) return false;
       for (let j = 0; j < 8; j++) {
         const ax = qx + Math.cos(j * Math.PI / 4) * 0.1, az = qz + Math.sin(j * Math.PI / 4) * 0.1;
         if (Math.abs(L(ax, az) - c) > 0.03 || D?.inside(ax, az, 0)) return false;
@@ -67,11 +71,15 @@ function signalPost(r, px, pz, tx, tz, opts) {
     };
     if (!ok(x, z)) {
       let best = null;
-      for (let rad = 0.1; rad <= 8 && !best; rad += 0.1) {
-        for (let j = 0; j < 36; j++) {
-          const a = (j / 36) * 2 * Math.PI, qx = x + Math.cos(a) * rad, qz = z + Math.sin(a) * rad;
-          if (ok(qx, qz)) { best = [qx, qz]; break; }
+      for (const pass of [false, true]) {
+        soft = pass;
+        for (let rad = 0.1; rad <= 8 && !best; rad += 0.1) {
+          for (let j = 0; j < 36; j++) {
+            const a = (j / 36) * 2 * Math.PI, qx = x + Math.cos(a) * rad, qz = z + Math.sin(a) * rad;
+            if (ok(qx, qz)) { best = [qx, qz]; break; }
+          }
         }
+        if (best) break;
       }
       if (best) [x, z] = best;
     }
