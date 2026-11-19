@@ -2,6 +2,10 @@
 
     C:/Users/tibog/Downloads/venv/Scripts/python.exe tools/gardens/build_gardens.py --all --raw C:/Users/tibog/Downloads/uccle-city/data/raw
     ... --tile I6 --debug <dir>          (one tile, with a plan view PNG of the strips, runs, openings and pieces)
+    then (claude/gates, rule 43) the pieces fitted to the built tile, in this order:
+    node --import ./tools/road_audit/register.mjs tools/gardens/fitGardens.mjs --lanes --all   (no piece in a driven lane; again until it
+                                                    reports nothing: a run moved back can bring a piece the viewer cleared back in)
+    node --import ./tools/road_audit/register.mjs tools/gardens/fitGardens.mjs --steps --all   (no gate over a step without steps)
 
 Inputs (docs/assets/GARDENS.md)
   faces       the city's own street faces and front doors (tools/gardens/faces.mjs = viewer/facadeGeom.js analyseBuildings

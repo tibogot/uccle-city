@@ -77,7 +77,7 @@ paved and open in front of the garage door; apartment blocks have a low hedge / 
 | 20 | rows, Saint-Job | Chaussée de Saint-Job | terraced | E7 -975.2, 1077.1 | 50.789318, 4.335676 | 5 | hedge | gate | open | hedge / gate / open | (browser turn) |
 | 21 | rows, Saint-Job | Rue Basse | terraced | G5 22.4, 467.7 | 50.794799, 4.349822 | 4.1 | gate | gate | gate | gate / gate / gate | (browser turn) |
 | 22 | rows, Saint-Job | Rue Basse | terraced | G6 84.4, 571.8 | 50.793864, 4.350702 | 4.1 | pillar | gate | open | hedge / no gate / open | (browser turn) |
-| 23 | rows, Saint-Job | Venelle de Saint-Job | terraced | I6 1075, 599.5 | 50.793616, 4.364752 | 2.5 | open | gate | - | open / gate / - | (browser turn) |
+| 23 | rows, Saint-Job | Venelle de Saint-Job | terraced | I6 1075, 599.5 | 50.793616, 4.364752 | 2.5 | wall | gate | - | open / gate / - | (browser turn) |
 | 24 | rows, Saint-Job | Rue Jean Benaets | terraced | I6 1033, 624.8 | 50.793388, 4.364156 | 17.1 | gate | gate | open | open / no gate / open | (browser turn) |
 | 25 | rows, Vanderkindere | Avenue Coghen | terraced | E3 -643.4, -875.3 | 50.806871, 4.340371 | 7.7 | hedge | gate | - | hedge / no gate / - | (browser turn) |
 | 26 | rows, Vanderkindere | Rue Victor Allard | terraced | C4 -1667.3, -220.6 | 50.800981, 4.325850 | 14.3 | hedge | gate | - | hedge / no gate / - | (browser turn) |
@@ -135,56 +135,104 @@ frontages are the same 15,316 houses (the census's geometry does not depend on t
 | | before | after |
 |---|---|---|
 | house frontages with a garden (villa + terraced) | 8,035 | 8,004 (31 drawn paved to the facade) |
-| of them open by mistake | 879 (10.9 %) | 313 (3.9 %) |
+| of them open by mistake | 879 (10.9 %) | 302 (3.8 %) |
 | villas open | 189 / 1,579 | 57 / 1,578 |
 | rows open | 705 / 6,456 | 268 / 6,426 |
 | apartment blocks open | 86 / 853 | 31 / 849 |
-| door paths with a gate at the line (all types) | 4,355 / 8,646 (50.4 %) | 7,419 / 8,618 (86.1 %) |
+| door paths with a gate at the line (all types) | 4,355 / 8,646 (50.4 %) | 7,426 / 8,618 (86.2 %) |
 | villas | 742 / 1,466 | 1,250 / 1,465 |
 | rows | 3,125 / 6,309 | 5,485 / 6,284 |
 | apartment blocks | 488 / 813 | 675 / 811 |
-| driveways with a driveway gate | 2,016 / 5,312 (38.0 %) | 2,485 / 5,299 (46.9 %) |
-| gates drawn | 6,153 (3,556 pedestrian, 2,597 closed pairs) | 13,316 (10,137 pedestrian, 3,155 closed + 24 open pairs) |
+| driveways with a driveway gate | 2,016 / 5,312 (38.0 %) | 2,494 / 5,299 (47.1 %) |
+| gates drawn | 6,153 (3,556 pedestrian, 2,597 closed pairs) | 13,332 (10,140 pedestrian, 3,166 closed + 26 open pairs) |
 | closed driveway gates across a used way | 14 | 0 |
-| piers | 41,754 | 52,643 |
-| house paths still without a gate | 4,291 | 1,199 (inDrive 357, frontOpen 219, gap 206, noOpening 138, leafMissing 94) |
+| piers | 41,754 | 53,045 |
+| house paths still without a gate | 4,291 | 1,192 (inDrive 353, frontOpen 216, gap 205, noOpening 139, leafMissing 94) |
 
-The gate row with `--old` fails on openByMistake 879 > 313, houseOpenPm 109 > 40, pathUngated 4,291 > 1,199,
-pathGatedPm 504 < 861, driveGatedPm 380 < 469 and gateAcrossDriven 14 > 0.
+The gate row with `--old` fails on openByMistake 879 > 302, houseOpenPm 109 > 38, pathUngated 4,291 > 1,192,
+pathGatedPm 504 < 862, driveGatedPm 380 < 471 and gateAcrossDriven 14 > 0.
 
 Before the census learned driveways (a ray through a UrbIS CR42L line counted open), the old data read 2,777 open:
 most of those were driveway mouths and garage forecourts, open by design.
 
+### Fitted to the built tile (`tools/gardens/fitGardens.mjs`, after the build)
+
+Coordinator review: no garden piece in a driven lane, no gate over a step without steps; both at build time.
+
+- `--lanes`: the pieces main.js keeps (as driveCheck.mjs clears them) tested against the car's LANE carriageway
+  (carriageway.js lanesOnly, 0.3 m in), which is not the drivenAt test main.js clears by: on kerbless streets the
+  property line is the UrbIS roadway's edge and the piers / walls on it hung 0.3-0.5 m over the roadway (B6 Prof. Hustin,
+  G10 Dolez, D6 Engeland, J4, G6 Kauwberg: drivecheck cause b). Where the lane is on a measured roadway / tram road, the
+  whole RUN (segments, piers and gates joined end to end, and its hedge) moves back into the garden 0.1-0.8 m as one
+  (232 runs, 3,015 pieces, mostly 0.1-0.2 m; nothing opens at a joint); with no clear place within 0.8 m the pieces on
+  the roadway go (5 piers dropped, 3 walls cut). `--check` (gate row `gardenlanes`): gardenInLane 0.
+- `--steps`: the ground census's own gateNoSteps test on the tile built with the new doc. The steps builder now reads
+  the garden behind the gates themselves (`retainWalls.js`, `gardenIndex(..., { span })` gate records): that gave F7 Rue
+  de Verrewinkel 87 and E6 Dieweg 28M their steps. Two gates the walls read as BELOW the sidewalk (E8 Rue Engeland 340,
+  H4 Carre Dewandeleer 4) are not placed: their openings are closed by the run's hedge. gateNoSteps 0.
+
+### Drive check (rule 27)
+
+Foundation 158 places -> 140; garden places 47 -> 31, cause b (a piece in a measured roadway) now 0 (the
+foundation had them: B6, G10, D6, J4, G6, K11 ...); the 31 left are all cause a, lane / centre-line data over land the
+street data does not measure as roadway: 27 are the OSM centre line (`paths` centre / turn only) of a street whose drawn
+carriageway is narrower than its OSM band, walked over the measured sidewalk / ramp in front of the garden (class
+sidewalk / ramp under the piece); 2 at I6 Montagne de Saint-Job (lane + centre line on an unmeasured stretch, the lane
+band over the gardens), 2 at H6 Av. Carsoel (the tram road beside the Saint-Job deck, centre line). They are the lane
+data's to fix (the drive check's own cause a), not the gardens'. Ceiling 140 (below the foundation's 158).
+
+| tile | street | x, z | piece | blocked m | depth m | measured class | paths |
+|---|---|---|---|---|---|---|---|
+| I6 | Montagne de Saint-Job | 1151, 651.4 | pillar | 4 | 2.5 | roadway | centre+lane |
+| C7 | Chaussée de Drogenbos | -1738.7, 1367.4 | pillar | 3 | 2.5 | sidewalk | centre |
+| J7 | Drève de Carloo | 1647.4, 1137.9 | pillar | 2.5 | 2.5 | sidewalk | centre |
+| B7 | Rue des Trois Rois | -2045.1, 1432.9 | pillar | 2 | 2.5 | ramp | centre |
+| E6 | Rue du Château d'Eau | -535.8, 848 | pillar | 2 | 1.5 | sidewalk | centre |
+| F3 | Avenue de l'Échevinage | -245.6, -513.2 | pillar | 2 | 2.5 | sidewalk | centre |
+| G4 | Chemin de la Source | 270.5, -460 | pillar | 2 | 1.5 | sidewalk/ramp | centre |
+| G5 | (no named road within 60 m) | 344.1, 147.8 | pillar | 2 | 2.5 | sidewalk | centre |
+| G5 | (no named road within 60 m) | 351.7, 145.4 | pillar | 2 | 2.5 | sidewalk | centre |
+| I6 | Montagne de Saint-Job | 1140, 681.9 | pillar | 2 | 1.5 | roadway | centre+lane |
+| B6 | Rue Professeur Hustin | -2016.5, 905.7 | wall | 1.5 | 2.5 | roadway | centre |
+| E7 | Chaussée de Saint-Job | -825.7, 1033.8 | pillar | 1.5 | 2.5 | sidewalk | turn |
+| F3 | Avenue de l'Échevinage | -294.1, -503.7 | pillar | 1.5 | 2.5 | sidewalk | centre |
+| F4 | Avenue du Manoir | -367, -445.3 | pillar | 1.5 | 2.5 | sidewalk | centre |
+| H6 | Avenue Jean et Pierre Carsoel | 936.6, 530.7 | wall | 1.5 | 2.5 | tram road | centre |
+| J4 | Avenue du Vert Chasseur | 1621.4, -317.8 | pillar | 1.5 | 2.5 | sidewalk | centre |
+| J7 | Drève de Carloo | 1646.9, 1138.1 | wall | 1.5 | 2.5 | sidewalk | centre |
+| C5 | Rue de la Magnanerie | -1750.7, 116.9 | pillar | 1 | 2.5 | sidewalk | centre |
+| D5 | Rue Camille Van Exter | -1053.1, 154.3 | pillar | 1 | 0.3 | roadway | centre |
+| D9 | Rue de la Cueillette | -1037.2, 2007 | pillar | 1 | 2.5 | sidewalk | centre |
+| E6 | Dieweg | -965, 793.5 | pillar | 1 | 1.5 | sidewalk | centre |
+| E6 | Rue du Château d'Eau | -600.8, 741.3 | pillar | 1 | 1.5 | sidewalk | centre |
+| E7 | Rue Geleytsbeek | -548.9, 1043.2 | car gate (closed) | 1 | 2.5 | sidewalk | turn |
+| E8 | (no named road within 60 m) | -950.5, 1946.7 | pillar | 1 | 1.5 | sidewalk | centre |
+| E8 | Avenue de la Gazelle | -660.8, 1832 | pillar | 1 | 2.5 | sidewalk | centre |
+| F4 | Avenue des Statuaires | -67.9, -409.3 | pillar | 1 | 1.5 | sidewalk | centre |
+| H6 | Avenue Jean et Pierre Carsoel | 935.1, 530.8 | pillar | 1 | 2.5 | tram road | centre |
+| J4 | Avenue du Vert Chasseur | 1536.8, -278.8 | pillar | 1 | 2.5 | sidewalk | centre |
+| E7 | Chaussée de Saint-Job | -923.5, 1064.3 | pillar | 0.5 | 2.5 | sidewalk | centre |
+| F9 | Avenue du Furet | -68.5, 2106.8 | wall | 0.5 | 2.5 | sidewalk | centre |
+| J4 | Opstalweg | 1660.3, -243.1 | pillar | 0.5 | 2.5 | roadway | centre |
+
 ### Ground (rule 31 census, the `ground` row)
 
 The garden rebuild moves the tile worker's retaining walls (they follow the garden fronts and open at gates):
-foundation -> gates over 310 -> 303, bareBank 575 -> 552, lump 867 -> 868 (E4 Rue du Doyenne 118, no garden piece
-within 10 m: a group boundary), spike 171 -> 173 (D3 Asselbergs 74, H5 Equateur 20A, G10 Chantemerle 4 new; E6
-Chateau d'Eau 135 gone), gardenVoid 0 -> 0, gateNoSteps 0 -> 3. The gate index the walls read now holds each gate's
-span, not only its hinge (`viewer/streets/retainWalls.js gardenIndex span`, worker code): that gave E6 Dieweg 28M its
-steps. **Open (3 gates over a 0.37-0.43 m jump without steps):** E8 Rue Engeland 340 (-706.8, 1772.6: the gate just past
-a short sidewalk-outline edge; the walls read the garden at that edge's middle, -0.13 m, the census at the gate,
-+0.43 m), H4 Carre Dewandeleer 4 (607.3, -475.5: the walls read the garden 0.78 m BELOW the sidewalk there, the census
-takes the street top 1 m out along a side face's normal: likely a census misread), F7 Rue de Verrewinkel 87 (-427.6,
-1279: the pedestrian gate beside a driveway pair). The ground row's ceilings are set to these after-counts.
+foundation -> gates over 310 -> 305, bareBank 575 -> 553, lump 867 -> 868 (E4 Rue du Doyenne 118: no garden piece
+within 10 m, a group boundary), spike 171 -> 174 (small weld spikes beside moved walls: D3 Asselbergs 74, H5 Equateur
+20A, G10 Chantemerle 4), gardenVoid 0, gateNoSteps 0. Ceilings set to these.
 
-### Drive check (rule 27) and the roads census
+### The roads census
 
-`drivecheck` (every driven lane / centre line against the car's colliders): the foundation already read 158 places
-(ceiling 157); after the rebuild 170 (garden 47 -> 61): 27 new garden places, 14 gone. Of the new, 17 are cause a
-(lane / band data: lanes over measured sidewalks or unmeasured streets, depth 1.5-2.5 m: C7 Drogenbos, E6 Chateau
-d'Eau, G5, J4 Vert Chasseur, F4 Manoir...) and 10 cause b (a new pier / wall end 0.3 m into a lane at a measured
-street: G10 Av. Dolez 4, B6 Prof. Hustin 3, D6 Engeland 2, J4 Cite du Vert Chasseur, G6 Kauwberg). Ceiling set to 170;
-the cause-b ten are the next garden job's (a pier at a run end within 0.3 m of a lane: hold it back to the 0.3 m the
-viewer clears by). `roads`: gardenDroppedM (metres of kit pieces main.js clears off the carriageway) 1,787 -> 1,853:
-more fronts placed, the same clearing; ceiling 1,853.
+`roads`: gardenDroppedM (metres of kit pieces main.js clears off the carriageway) 1,787 -> 1,853: more fronts placed,
+the same clearing; ceiling 1,853.
 
 ## 5. Perf
 
 Everything is instances in the kit's existing pools (gate_*, cargate_*, pillar, pcap: the same 3-LOD / thin-bar card
 pieces, viewer/thinBars.js rule 35): **no new piece, no new draw call, no new material**. City-wide +7,163 gates
-and +10,889 piers; the per-tile budget is in the gate row (the busiest tile: 449 leaves, 1,420 piers; ceilings 460 /
-1,420). The streamer gathers near the camera only (gates end at 150 m, the modelled bars within 6 m, cards of 2
+and +11,291 piers; the per-tile budget is in the gate row (the busiest tile: 449 leaves, 1,428 piers; ceilings 460 /
+1,430). The streamer gathers near the camera only (gates end at 150 m, the modelled bars within 6 m, cards of 2
 triangles beyond); the tile's garden add stays sliced (rule 22). data/gardens/old is a byte copy of the committed files
 (the same git blobs).
 
