@@ -7,7 +7,7 @@
 // The car only looks at the cells round it (carEnv.js). Ground = the drivable surface grid (road deck, sidewalks).
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
-import { FLEET_SOURCE, playerDamage } from "./carPacks.js";
+import { FLEET_SOURCE, playerDamage, setPlayerDent } from "./carPacks.js";
 import { HANDLING, BODY, createCarState, stepCar } from "./carPhysics.js";
 import { CarHitWorld, CARPUSH_OLD, MASS, MASS2 } from "./carHit.js";
 import { createFeelState, stepFeel } from "./carFeel.js";
@@ -31,7 +31,7 @@ const HUD_SKIP = new URLSearchParams(location.search).get("hudskip") !== "old";
 import { lampSites } from "../lamps.js";
 import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
-import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit } from "../moto/motoPhysics.js";
+import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit, twoWheelEnv } from "../moto/motoPhysics.js";
 import { MotoCamera } from "../moto/motoCamera.js";
 import { MotoAudio, BikeAudio, VOICES } from "../moto/motoAudio.js";
 
@@ -78,6 +78,7 @@ carFleet.onChange((c) => { if (c.driveBox && !c.hidden) setBox(c.driveBox.col, c
  * foot). From the features group's instanced meshes, by name (the same ones viewer/character/cityHook.js uses).
  */
 const EDGE_OLD = /[?&]edgecol=old(&|$)/.test(location.search);
+const POLE_OLD = /[?&]rail=old(&|$)/.test(location.search);
 const COLCACHE = new URLSearchParams(location.search).get("colcache") !== "0";
 const localBlocks = new WeakMap();          // geometry -> Map(scale key -> blocker rings in the piece's scaled frame)
 const cPos = new THREE.Vector3(), cQ = new THREE.Quaternion(), cS = new THREE.Vector3();
@@ -121,7 +122,16 @@ export function featureColliders(features, bounds) {
       // it, some standing a little over the tile's edge (garden walls along a boundary street); they were dropped here
       // and no neighbour made them either: drawn, not solid. Each group is one tile's, so nothing is counted twice.)
       if (EDGE_OLD ? !inT(o.x, o.z) : !inT2(o.x, o.z)) continue;
-      if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
+      // (CLASS T, rule 39 / 25; ?rail=old: a circle with no height) a pole is a post of its DRAWN height: a circle has none,
+      // so the catenary masts standing on the Stalle viaduct's deck were invisible posts in Rue de Stalle 17 m under them
+      // (owner 2026-11-19, shot 105). Now a square of the pole's radius from its foot to its top (heightClear passes it).
+      if (kind === "pole") {
+        const r = n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08;
+        if (POLE_OLD) circles.push({ x: o.x, z: o.z, r, kind: KIND.furniture });
+        else { v.set(0, bb.min.y, 0).applyMatrix4(W); const base = v.y; v.set(0, bb.max.y, 0).applyMatrix4(W); const top = v.y;
+          polys.push({ rings: [[[o.x - r, o.z - r], [o.x + r, o.z - r], [o.x + r, o.z + r], [o.x - r, o.z + r]]], kind: KIND.furniture, base: Math.min(base, top), top: Math.max(base, top), ref }); }
+        counts.poles++; continue;
+      }
       if (kind === "car") {
         // the car as it is NOW (its type may have changed since the box mesh was made: the traffic parks other cars in)
         const car = m.userData.cars?.[i] || null;
@@ -273,10 +283,14 @@ export class Driver {
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges,
       feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers, carHit: this.carHit });
     // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
-    // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
+    // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too. The feel round
+    // (docs/MOTO_FEEL.md; ?moto=old = before): kerb islands ridden up, hedges soft, thin posts slid round, the bike's own
+    // step rule, the terrain's grip (this.surface: grass / soil = 1)
     this.envs = {};
     for (const k of TWO_WHEEL) {
-      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers, carHit: this.carHit, two: true });
+      const H = TWO_WHEELERS[k];
+      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: H, waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers, carHit: this.carHit, two: true,
+        ...twoWheelEnv(H), surface: H.feel ? this.surface : null });
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
     this.camNear = [];
@@ -320,6 +334,7 @@ export class Driver {
     this.spec = spec; this.model = model;
     fitBody(model);
     playerDamage.hl.value = BODY.hz;                     // (carhit: the crumple's reach on this model)
+    setPlayerDent(model);                                // (claude/dent: its half width, ends and cabin box)
     this.car = createCar(model);
     this.car.root.visible = this.on;
     this.scene.add(this.car.root);

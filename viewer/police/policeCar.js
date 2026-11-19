@@ -17,7 +17,7 @@
 // OFF by default, one switch); muted, J still switches the siren "on" for the traffic (it yields) and the HUD shows it.
 import * as THREE from "three/webgpu";
 import { uniform, select, positionLocal, float } from "three/tsl";
-import { loadPack, packMaterial, playerSeeThrough, FLEET_SOURCE, CARS_OLD } from "../drive/carPacks.js";
+import { loadPack, packMaterial, playerSeeThrough, FLEET_SOURCE, CARS_OLD, setPlayerDent } from "../drive/carPacks.js";
 import { createCar, carLights, fitBody } from "../drive/carModel.js";
 import { gather, pointInBuilding } from "../drive/colliders.js";
 import { NIGHT } from "../nightLights/nightMode.js";
@@ -70,7 +70,7 @@ async function policeModel() {
     wheels: Object.fromEntries(["FL", "FR", "RL", "RR"].map((k) => [k, L[`Wheel_${k}`] ? [{ geo: L[`Wheel_${k}`], mat, name: "Wheel" }] : []])),
     tris: L.tris,
   }));
-  models = { spec: `police:${car.id}`, label: "unmarked police car", lods, wheelPos, size: car.size, mats: { Pack: mat }, lodDist: pack.lods.map((l) => l.until),
+  models = { spec: `police:${car.id}`, label: "unmarked police car", lods, wheelPos, size: car.size, dent: car.dent, mats: { Pack: mat }, lodDist: pack.lods.map((l) => l.until),
     setPaint: (hex) => { if (!MARKED) paint.setHex(hex ?? POLICE_CAR.paint); } };
   return models;
 }
@@ -105,6 +105,7 @@ export class PoliceCar {
       if (d.car) d.scene.remove(d.car.root);
       d.spec = model.spec; d.model = model;
       fitBody(model);
+      setPlayerDent(model);                          // (claude/dent: the crumple's frame on this model)
       d.car = createCar(model);
       d.car.root.visible = d.on;
       d.scene.add(d.car.root);

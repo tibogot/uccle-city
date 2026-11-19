@@ -20,12 +20,12 @@ import { tramTracks } from "./track.js";
 import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
-import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
+import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H, railFences2, fenceBays, fenceMesh2, fenceWalls } from "./rail/railData.js";
 import { tileTrafficGraph } from "./traffic/tileTraffic.js";
 import { widthParking } from "./streets/parkPlace.js";
 import { streetFit } from "./streets/fitCore.js";
 import { carriageway } from "./streets/carriageway.js";
-import { treesOffCarriageway, paintedDriveLanes } from "./streets/roadTrees.js";
+import { treesOffCarriageway, paintedDriveLanes, pathCorridor } from "./streets/roadTrees.js";
 import { paintedLaneCentre, roadFrameOf } from "./streets/lineFit.js";
 import { squeezeDeckLanes } from "./rail/roadDeck.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
@@ -509,6 +509,20 @@ export async function buildTileData(entry, base) {
   // only the cars no path touches (a car the lanes could not be moved clear of: a junction corner, a street too narrow)
   if (parked && traffic.parkedKept) { parked.stats.trafparkDropped = parked.sites.length - traffic.parkedKept.length; parked.sites = traffic.parkedKept; }
   delete traffic.parkedKept;
+  // (claude/moto, rule 27) no LiDAR trunk on a DRIVEN PATH either: a junction turn cutting an unmeasured corner outside
+  // the carriageway passed through one (Kauwberg x Chaussee de Saint-Job); moved / dropped as above, never onto a parked
+  // car (viewer/streets/roadTrees.js pathCorridor). entry.pathTrees === false (?pathtrees=old): as before
+  if (roadTrees && entry.pathTrees !== false && traffic && feats.trees?.length) {
+    const corridor = pathCorridor(traffic);
+    const P = parked?.sites || [];
+    const onCar = (x, z) => P.some((c) => { const dx = x - c.x, dz = z - c.z; if (dx * dx + dz * dz > 9) return false; const ax = Math.cos(c.yaw), az = -Math.sin(c.yaw); const u = dx * ax + dz * az, w = -dx * az + dz * ax; return Math.abs(u) < 2.7 && Math.abs(w) < 1.25; });
+    if (corridor) {
+      const fitT = road.surfaceData ? streetFit(road.surfaceData) : null;
+      const avoid = carriageway(roads, { classAt: fitT?.classAt, onDeck: null, bandOnMeasured: true });
+      const r3 = treesOffCarriageway(feats.trees, corridor, { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z) || onCar(x, z), ground: (x, z) => hm.ground(x, z), avoid });
+      feats.trees = r3.trees; roadTrees.pathMoved = r3.moved; roadTrees.pathDropped = r3.dropped;
+    }
+  }
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
@@ -526,8 +540,13 @@ export async function buildTileData(entry, base) {
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));      // the falcon's collision (drawn roofs)
   // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
-  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
-  if (fences && tcut) fences.rings = tunnelFenceRings(tunnels, fences);         // no fence collider over a bore (tunnels.js)
+  // (CLASS T, rule 39, docs/RAIL_T.md; entry.railT === false = ?rail=old: as before) the fences break only at level
+  // crossings, platforms, bridges, covered boxes, a second track, a street's carriageway; panels per post bay, the car's
+  // walls the drawn panels (foot to top: over a bore the car under the lid passes, no ring cut needed)
+  const railT = entry.railT !== false;
+  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => (railT ? railFences2(rail.doc, bounds, rail.heroes, roads, hm.ground, { surface: tunnelSurface(tcut, hm.surface), roadY: roadGround }) : railFences(rail.doc, bounds, rail.heroes, roads, hm.ground))) : null;
+  if (fences && tcut && !railT) fences.rings = tunnelFenceRings(tunnels, fences);         // no fence collider over a bore (tunnels.js)
+  const fenceB = fences && railT ? fenceBays(fences.lines, tunnelSurface(tcut, hm.surface)) : null;
   // the ground AS DRAWN and the walls' feet sunk onto it BEFORE the drive colliders (claude/collisions, rule 25): the
   // building colliders are traced from these walls at car height (colliders.js buildingBlocks); traced from the solids
   // before sinkFeet, a solid standing up to 2.8 m over a slope had no wall in the car band where its drawn wall (sunk
@@ -553,16 +572,17 @@ export async function buildTileData(entry, base) {
       // the road bridges' parapets (citydefects 2026-11-16: this spread had slipped into the comment above, so no OSM
       // deck's parapet was a car wall since the round-2 edit)
       ...osmBridges.decks.flatMap((d) => parapetRings(d, hm.ground)),
-      ...(fences?.rings || []).map((ring) => ({ ring, top: Math.max(...ring.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
-  if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
-  if (fences) drive.counts.railFences = fences.rings.length;
+      ...(fenceB ? fenceWalls(fenceB) : (fences?.rings || []).map((ring) => ({ ring, top: Math.max(...ring.map(([x, z]) => hm.surface(x, z))) + FENCE_H })))] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
+  if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes, { old: !railT }));
+  if (fences) drive.counts.railFences = fenceB ? fenceB.length : fences.rings.length;
+  if (fences?.breaks) drive.counts.railFenceBreaks = fences.breaks;
   if (railCuts != null) drive.counts.deckRailCuts = railCuts;
-  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped, lanesMoved: roadTrees.lanesMoved ?? 0, lanesDropped: roadTrees.lanesDropped ?? 0 };
+  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped, lanesMoved: roadTrees.lanesMoved ?? 0, lanesDropped: roadTrees.lanesDropped ?? 0, pathMoved: roadTrees.pathMoved ?? 0, pathDropped: roadTrees.pathDropped ?? 0 };
   if (deckLanes) drive.counts.deckLanes = deckLanes;
   // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb
   // instead of sinking into the slab (docs/collisions/DRIVE_FIX.md); ?colfix=0 keeps the old surface
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
-  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));   // (over a bore: on the drawn earth)        // drawn: viewer/rail/railway.js
+  if (fences && railOut) railOut.fences = fenceB ? fenceMesh2(fenceB) : fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));   // (over a bore: on the drawn earth)        // drawn: viewer/rail/railway.js
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces

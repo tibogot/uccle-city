@@ -23,13 +23,13 @@ import { streetTile, runTiles, cli, json, at, ROOT, imp, lineIndex } from "./lib
 const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
 // (claude/streetprops, rule 30) --old: the city as ?streetprops=old draws it (the data's `was` / signsOld, the load-time
 // move without the tram tracks and the OSM width, the plate posts moved at load); --max k=v,...: a gate (exit 1 over)
-const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet");
+const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet"), RAILOLD = flag("--railold");   // --railold: ?rail=old (no track-bed keep-clear, rule 39)
 const TRAM_HW = 1.3, GAP = 0.15, FACE_TOL = 45, NEAR_ROAD = 12;
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: streetProps.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET });
-  const sum = {}, items = { plateGap: [], signFacing: [], inRoad: [], villo: [] };
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(RAILOLD ? ["--railold"] : [])], log: !QUIET });
+  const sum = {}, items = { plateGap: [], signFacing: [], inRoad: [], villo: [], onRail: [] };
   for (const r of res) {
     if (r.error) continue;
     for (const [k, v] of Object.entries(r.counts)) sum[k] = (sum[k] || 0) + v;
@@ -70,6 +70,19 @@ const stops = json(join(ROOT, "data/stops", `${T}.json`));
 const { trackIndex } = await imp("viewer/streets/carriageway.js");
 const { smoothPolyline } = await imp("viewer/track.js");
 let skS, furnS, stopsS;
+// (CLASS T, rule 39) the rail doc + the hero bridges' notes, as main.js railBedP (--old: none, ?rail=old)
+const RAIL = await (async () => {
+  const rd = await imp("viewer/rail/railData.js"), rk = await imp("viewer/rail/roadDeck.js");
+  const doc = rd.prepRail(json(join(ROOT, "data/rail/rail.json")));
+  const heroes = rd.heroBridgeNames(true).map((n) => json(join(ROOT, "models/rail", `${n}.json`))).filter(Boolean);
+  const decks = heroes.filter((h) => h.kind === "road_over_rail").map(rk.deckHeightFn);
+  const deckY = (x, z) => { for (const f of decks) { const y = f(x, z); if (y != null) return y; } return null; };
+  const bed = rd.railBed(doc, S.bounds, heroes);
+  const lift = (d, paths) => { if (!d) return d; for (const path of paths) { let arr = d; for (const k of path) arr = arr?.[k]; if (Array.isArray(arr)) for (const p of arr) { if (typeof p?.x !== "number") continue; const y = deckY(p.x, p.z); if (y != null && y > p.y) p.y = y; } } return d; };
+  return { bed, deckY, lift };
+})();
+const RAIL_ON = !OLD && !RAILOLD;
+if (!RAIL_ON) RAIL.off = true;
 if (OLD) {
   // ?streetprops=old: the data as built before (viewer/streetkit/cityStreetKit.js streetKitOld, streetlifeWorker.js)
   if (sk.signsOld) sk.signs = sk.signsOld;
@@ -84,11 +97,15 @@ if (OLD) {
   // main.js loadTile since claude/streetprops: lanes also without a measured street, the tram tracks, the OSM width;
   // the plate posts not moved at load (baked with their plates); the stops without the tram test
   const tracks = trackIndex((S.feats.lines || []).filter((l) => l.kind === "tram").map((l) => smoothPolyline(l.line)));
-  const o = { osm: true, tram: tracks };
+  // (CLASS T, rule 39) + the track beds (railData.js railBed; main.js propOpt.rail), the furniture inside a hero road
+  // bridge dropped (its model draws the deck's benches), the rest lifted onto its deck (main.js deckDoc heroDeckY)
+  const R = RAIL.off ? null : RAIL;
+  const o = { osm: true, tram: tracks, ...(R ? { rail: R.bed } : {}) };
   const snap = (doc, paths, op = o) => (doc ? docOffLanes(doc, paths, lanes, fit, op).doc : doc);
-  skS = snap(sk, [["signs"]]);
-  furnS = snap(furn, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]);
-  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]], { osm: true, keep: (p) => p.platform });
+  skS = R ? R.lift(snap(sk, [["signs"]]), [["signs"]]) : snap(sk, [["signs"]]);
+  furnS = snap(furn, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], R ? { ...o, drop: (p) => R.bed.inHero(p.x, p.z) } : o);
+  stopsS = snap(stops, [["stops", "pole"], ["stops", "shelter"], ["panels"]], { osm: true, keep: (p) => p.platform, ...(R ? { rail: R.bed } : {}) });
+  if (R) R.lift(stopsS, [["stops", "pole"], ["stops", "shelter"], ["panels"]]);
 }
 const counts = { plates: 0, plateGap: 0, plateNoPost: 0, signs: 0, signFacing: 0, signMovedFar: 0, pieces: 0, inRoad: 0, inLane: 0, onTram: 0 };
 const items = { plateGap: [], signFacing: [], inRoad: [] };
@@ -222,5 +239,24 @@ counts.villoCarOverlap = 0;
 {
   const kept = carsKept(parkSites, sk.villo);
   for (const v of sk.villo || []) for (const p of [...v.docks, ...v.bikes]) if (inB(p.x, p.z) && kept.some((c) => inCar(c, p.x, p.z, 0.1))) { counts.villoCarOverlap++; items.villo.push({ id: v.id, name: v.name, car: true, at: at(p.x, p.z) }); }
+}
+// (CLASS T, rule 39) every drawn piece on a track bed (railData.js railBed: within BED_CLEAR of a track on the ground, at
+// the rail's level, not on a road deck), and every piece inside a hero road bridge seated > 1.5 m under its deck (in
+// the cutting under it: Verrewinkel's OSM bench + bin stood on the rails)
+counts.onRail = 0; counts.inHero = 0; items.onRail = [];
+{
+  const chk = (kind, p) => {
+    if (!p || typeof p.x !== "number" || !inB(p.x, p.z)) return;
+    if (RAIL.bed.on(p.x, p.z, p.y)) { counts.onRail++; items.onRail.push({ kind, why: "on a track bed", at: at(p.x, p.z), y: p.y }); }
+    const hy = RAIL.deckY(p.x, p.z);
+    if (hy != null && typeof p.y === "number" && p.y < hy - 1.5) { counts.inHero++; items.onRail.push({ kind, why: "under a hero road deck (in its cutting)", at: at(p.x, p.z), y: p.y, deck: +hy.toFixed(2) }); }
+  };
+  for (const k of ["benches", "bins", "hoops", "boxes", "banks"]) for (const p of furnS?.[k] || []) chk(k, p);
+  for (const p of skS?.signs || []) chk("sign", p);
+  for (const p of skS?.posts || []) chk("plate post", p);
+  for (const s of stopsS?.stops || []) { chk("stop pole", s.pole); chk("shelter", s.shelter); }
+  for (const p of stopsS?.panels || []) chk("ad panel", p);
+  for (const p of sl.postboxes || []) chk("postbox", p);
+  for (const v of sk.villo || []) for (const p of [v.totem, ...(v.docks || []), ...(v.bikes || [])]) chk("villo", p);
 }
 console.log(JSON.stringify({ tile: T, counts, items }));
