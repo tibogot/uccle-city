@@ -530,7 +530,10 @@ export function createCitySound(host, opts = {}) {
       E = cs.engine = new SoundEngine(ctx, { voiceLimit: opts.voiceLimit ?? 32, hrtfVoices: opts.hrtfVoices ?? 6, controlRate: 10, offline: !!opts.offline, environment: "open", irs: B.irs.c });
       E.obstructionFn = obstruction; E.enclosureFn = enclosure; E.timing = cs.timing;
       wind = E.addBed("nature", createWindBed(B.amb)); rain = E.addBed("nature", createRainBed(B.amb)); hum = E.addBed("traffic", createHumBed(B.amb));
-      E.setCategory("traffic", 0.9); E.setCategory("people", 0.8);
+      // people murmur MUTED by default (owner 2026-11-19: "very annoying"; the formant babble reads robotic): ?citypeople=1
+      // (or opts.people) brings it back at 0.8
+      const peopleQ = typeof location !== "undefined" ? new URLSearchParams(location.search).get("citypeople") : null;
+      E.setCategory("traffic", 0.9); E.setCategory("people", opts.people ?? (peopleQ === "1" ? 0.8 : 0));
       makeSources();
       E.beforeControl = feed;
       cs.ready = true;
