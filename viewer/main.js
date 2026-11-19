@@ -469,8 +469,19 @@ const updaters = [];
 // The railway (?trains=1, Train Lab first): tracks per tile, hero bridges, SNCB trains on the real timetable (viewer/rail/)
 const TRAINS = params.get("trains") !== "0";
 const BRIDGES2 = params.get("bridges2") !== "0";
+// CLASS T (rule 39, docs/RAIL_T.md; ?rail=old: as before): the track bed in the drive surface under road bridges too, the
+// line's fences closed but at level crossings (panels per post bay, walls as drawn), nothing placed on a track bed
+const RAIL_T = params.get("rail") !== "old";
 const TUNNELS = params.get("tunnels") !== "0";          // ?tunnels=0: no road tunnels (docs/trains/TUNNELS.md): no model, no cut through the embankments        // ?bridges2=0: no round-2 hero bridges (docs/trains/BRIDGES_ROUND2.md): the track crosses those gaps on its ballast
 const railP = TRAINS ? import("./rail/railway.js").then(async (m) => ({ m, doc: await m.loadRail() })).catch((e) => { log(`railway: ${e.message}`); return null; }) : null;
+// (CLASS T, rule 39) the track beds for the data layers' props (viewer/rail/railData.js railBed) + the hero road decks
+// (viewer/rail/roadDeck.js: what stands on one stands on it, not on the cutting under it)
+const railBedP = TRAINS && RAIL_T ? Promise.all([import("./rail/railData.js"), import("./rail/roadDeck.js")]).then(async ([rd, rk]) => {
+  const doc = (await railP)?.doc;
+  if (!doc) return null;
+  const heroes = (await Promise.all(rd.heroBridgeNames(BRIDGES2).map((n) => fetch(new URL(`../models/rail/${n}.json`, import.meta.url)).then((r) => (r.ok ? r.json() : null)).catch(() => null)))).filter(Boolean);
+  return { rd, doc, heroes, decks: heroes.filter((h) => h.kind === "road_over_rail").map(rk.deckHeightFn) };
+}).catch((e) => { log(`rail beds: ${e.message}`); return null; }) : null;
 // ?traffic=1: the moving traffic (viewer/traffic/cityTraffic.js). Each full tile's lane graph is kept here until the
 // traffic exists, then added / removed with its tile.
 const TRAFFIC = params.get("traffic") !== "0";   // round 4: on by default (?traffic=0 off)
@@ -721,7 +732,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     fuelClear: cityFuel.on ? cityFuel.clear : null,                                                 // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
     streetlife: cityStreetLife.on && !lite,                                                          // the street life's shopfronts (viewer/streetlife/), ?streetlife=0 off
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
-    rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
+    rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", railT: RAIL_T, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
     roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
@@ -1030,15 +1041,20 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const lanesAt = FURN_SNAP && (fit || STREET_PROPS) ? carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck, lanesOnly: true, bandOnMeasured: !ROADS_R, drawn: drawnRoad }) : null;
   // (the tracks as the worker drew them: fitted to the street, claude/tramfit, or smoothed with ?tramfit=old: already smooth)
   const tracksAt = STREET_PROPS && lanesAt ? trackIndex((feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line)) : null;
-  const propOpt = STREET_PROPS ? { osm: true, tram: tracksAt, ground: (x, z) => hm.ground(x, z) } : {};
+  // (CLASS T, rule 39; ?rail=old: none) no prop on a track bed (moved off it as off a tram track); a point the data put
+  // inside a hero ROAD bridge's footprint: its model draws the deck's furniture (dropped), signs / poles go up on its deck
+  const railBedT = railBedP ? await railBedP : null;
+  const bed = railBedT ? railBedT.rd.railBed(railBedT.doc, bounds, railBedT.heroes) : null;
+  const heroDeckY = railBedT?.decks.length ? (x, z) => { for (const f of railBedT.decks) { const y = f(x, z); if (y != null) return y; } return null; } : null;
+  const propOpt = STREET_PROPS ? { osm: true, tram: tracksAt, ground: (x, z) => hm.ground(x, z), ...(bed ? { rail: bed } : {}) } : {};
   await split("lanes");
   const snap = (doc, paths, opt = propOpt) => deckDoc(!lanesAt ? doc : (() => { const r = docOffLanes(doc, paths, lanesAt, fit, opt); snapMoved += r.moved; return r.doc; })(), paths);
   // (vivier) the baked points (y = the DTM at build time) on a road deck: up onto it
   const deckDoc = (doc, paths) => {
-    if (!VIVIER || !doc || !bridgeDeckRefs.size) return doc;
+    if (!doc || !((VIVIER && bridgeDeckRefs.size) || heroDeckY)) return doc;
     for (const path of paths) {
       let arr = doc; for (const k of path) arr = arr?.[k];
-      if (Array.isArray(arr)) for (const p of arr) { if (typeof p?.x !== "number") continue; const y = deckY(p.x, p.z); if (y != null && y > p.y) p.y = y; }
+      if (Array.isArray(arr)) for (const p of arr) { if (typeof p?.x !== "number") continue; const y = (VIVIER && bridgeDeckRefs.size ? deckY(p.x, p.z) : null) ?? heroDeckY?.(p.x, p.z) ?? null; if (y != null && y > p.y) p.y = y; }
     }
     return doc;
   };
@@ -1046,7 +1062,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (the STIB stops: not the tram test: a tram-island stop's pole and shelter stand beside the track by design; a pole the
   // stops builder put on an OSM tram platform (pole.platform: on the slab tram.js draws, UrbIS calls it tram road) stays)
   const stopCounts = cityStops.addTile(entry.name, snap(stopsDoc, [["stops", "pole"], ["stops", "shelter"], ["panels"]], STREET_PROPS ? { ...propOpt, tram: null, keep: (p) => p.platform } : {}), own.features, { shelters: tram.shelterSites, deckAt: BRIDGE_PLAN ? deckAt : null });
-  const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]]), own.features);
+  const furnCounts = cityFurniture.addTile(entry.name, snap(furnDoc, [["benches"], ["bins"], ["hoops"], ["boxes"], ["banks"]], bed ? { ...propOpt, drop: (p) => bed.inHero(p.x, p.z) } : propOpt), own.features);
   const skCounts = cityStreetKit.addTile(entry.name, snap(skDoc, STREET_PROPS ? [["signs"]] : [["signs"], ["posts"]]), own.features);
   await split("stops, furniture, street kit");
   if (snapMoved) say(`street furniture: ${snapMoved} data-layer points moved out of a driven lane onto the sidewalk (?furnsnap=old)`);

@@ -135,6 +135,10 @@ export function roadDeckPins(heroes) {
 }
 
 /** the rail bridge footprints: the hero models' (they may run beyond UrbIS), else the UrbIS RAB polygons */
+/** CLASS T (rule 39, docs/RAIL_T.md): only the RAIL bridges' footprints (a track standing on a structure: the hero
+ *  railway bridges + the UrbIS RAB). A hero ROAD bridge over the line is not one: under its deck the cutting's floor is
+ *  the track bed (bridgeRings() counts every hero, which left the drive surface 0.6 m under the rails at Verrewinkel). */
+export function railBridgeRings(doc, heroes) { return bridgeRings(doc, (heroes || []).filter((h) => h.kind !== "road_over_rail")); }
 function bridgeRings(doc, heroes) {
   const hs = (heroes || []).map(heroFrame);
   const rings = hs.map((h) => h.ring);
@@ -405,6 +409,41 @@ export function railKeepClear(doc, bounds, heroes = []) {
   };
 }
 
+// ------------------------------------------------------------------------------------------------ the track bed (props)
+/** CLASS T (rule 39): nothing the data layers place stands on a track bed. A prop's centre within BED_CLEAR of a track on
+ *  the ground (the fence line + the prop) at the rail's level is on the railway's land; a ROAD deck over the line (a
+ *  UrbIS ROB / PB polygon, a hero road bridge) is not the bed. Inside a hero ROAD bridge's footprint the hero draws the
+ *  deck's own furniture (tools/blender/roadBridge.py: Verrewinkel's two OSM benches on the footbridge): a data-layer
+ *  point there is dropped (the builders seated it on the DTM = the cutting floor: on the rails). */
+export const BED_CLEAR = 3.6;
+export function railBed(doc, bounds, heroes = [], m = 20) {
+  const hs = (heroes || []).filter((h) => h.kind === "road_over_rail").map(heroFrame).map((h) => ringBox(h.ring));
+  const decks = doc.decks.map((b) => ringBox(b.ring)).concat(hs).filter((b) => b.x1 > bounds.x0 - m && b.x0 < bounds.x1 + m && b.z1 > bounds.z0 - m && b.z0 < bounds.z1 + m);
+  const inB = (list, x, z) => list.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
+  const rails = railBridgeRings(doc, heroes).filter((b) => b.x1 > bounds.x0 - m && b.x0 < bounds.x1 + m && b.z1 > bounds.z0 - m && b.z0 < bounds.z1 + m);
+  const segs = [];
+  for (const t of tracksIn(doc, bounds, m)) if (!t.bridge && !t.tunnel) for (let i = 1; i < t.pts.length; i++) segs.push([t.pts[i - 1][0], t.pts[i - 1][2], t.pts[i][0], t.pts[i][2], t.pts[i - 1][1], t.pts[i][1]]);
+  const near = segGrid(segs);
+  /** the nearest bed track within BED_CLEAR: { d, y (its rail top) } or null */
+  const at = (x, z) => {
+    let best = null;
+    for (const s of near(x, z, BED_CLEAR)) { const d = segDist(x, z, s); if (d < BED_CLEAR && (!best || d < best.d)) { const dx = s[2] - s[0], dz = s[3] - s[1], L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L2)); best = { d, y: s[4] + (s[5] - s[4]) * u }; } }
+    return best;
+  };
+  return {
+    size: segs.length,
+    /** (x, z[, y]) -> true on a track bed (y: the point's own height; a point 2.5 m over / under the rail is elsewhere) */
+    on(x, z, y = null) {
+      if (!segs.length) return false;
+      const b = at(x, z);
+      if (!b || inB(decks, x, z) || inB(rails, x, z)) return false;
+      return y == null || !Number.isFinite(y) || Math.abs(y - b.y) < 2.5;
+    },
+    /** inside a hero road bridge's footprint (its model draws what stands on it) */
+    inHero: (x, z) => inB(hs, x, z),
+  };
+}
+
 // ------------------------------------------------------------------------------------------------ the car on the line
 // (owner, 2026-11-13: "see car going inside ground in the train rail"). carveGrid leaves the terrain 6 cm under the
 // ballast crest and the rail heads stand 19 cm over it, so a car on the line sat ~25 cm low with the rails through its
@@ -414,9 +453,11 @@ const ON_RAIL = 0.02;          // m under the rail top: the car rides on the rai
 /** Raise the drive grid (colliders.js driveGround: cm over the carved terrain) to the line's surface where a track is
  *  on the ground (not on a bridge: the road under it keeps its own ground): rail top over the crest, the ballast
  *  shoulder down to the bed. Never lowers (a level crossing's road stays). Returns the number of cells raised. */
-export function railDriveSurface(doc, hm, ground, bounds, heroes = []) {
+export function railDriveSurface(doc, hm, ground, bounds, heroes = [], { old = false } = {}) {
   const { x0, z0, cols, rows, step } = hm.h, Y = hm.y, D = ground.delta;
-  const rings = bridgeRings(doc, heroes);
+  // (rule 39; old = ?rail=old: every hero's footprint, the road bridges' too: the car sank 0.6 m into the ballast
+  // under the Verrewinkel deck, the drive grid there the carved terrain)
+  const rings = old ? bridgeRings(doc, heroes) : railBridgeRings(doc, heroes);
   const onBridge = (x, z) => { for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return true; return false; };
   let raised = 0;
   for (const t of tracksIn(doc, bounds, FOOT_HW + 1)) {
@@ -436,7 +477,10 @@ export function railDriveSurface(doc, hm, ground, bounds, heroes = []) {
         const rt = a[1] + (b[1] - a[1]) * u;
         const target = d < CREST_HW ? rt - ON_RAIL : rt - ON_RAIL + (rt + BED - (rt - ON_RAIL)) * (d - CREST_HW) / (FOOT_HW - CREST_HW);
         const k = r * cols + c, cm = Math.round((target - Y[k]) * 100);
-        if (cm <= D[k] || cm > 400 || onBridge(px, pz)) continue;        // never lower; > 4 m over the grid: not this line's ground
+        if (cm > 400 || onBridge(px, pz)) continue;                       // > 4 m over the grid: not this line's ground
+        // (rule 39) a road drawn > 1.5 m over the bed here (a deck's street over the cutting): the bed is the LOW layer
+        if (!old && D[k] !== 65535 && D[k] - cm > 150 && ground.delta2) { if (ground.delta2[k] === 65535 || ground.delta2[k] < cm) { ground.delta2[k] = cm; raised++; } continue; }
+        if (cm <= D[k]) continue;                                        // never lower (a level crossing's road stays)
         D[k] = cm; raised++;
       }
     }
@@ -521,6 +565,241 @@ export function fenceMesh(lines, surface) {
     }
   }
   return P.length ? { position: Float32Array.from(P), normal: Float32Array.from(N), aS: Float32Array.from(S), aH: Float32Array.from(H) } : null;
+}
+
+// ------------------------------------------------------------------------------------------------ CLASS T fences
+// RULE 39 (docs/QUALITY_RULES.md, docs/RAIL_T.md; ?rail=old: railFences / fenceMesh above, as before). The line is
+// closed for the car where the real one is: the fence runs on both sides wherever a track is on the ground, and breaks
+// only where something real breaks it: a LEVEL crossing (a road crossing the line at its level, bridgeAudit.mjs's test),
+// a platform, a rail bridge's footprint, a tunnel / covered box, a second track beside it, a street's carriageway it would
+// stand in. Before, ANY road centre line within max(3, lanes) + 2 m of a fence post broke it (the roads passing over or
+// under the line and the streets running beside it too): the car drove down the Verrewinkel cutting's bank beside the
+// road bridge and up the Stalle embankment onto the viaduct.
+// The panels: posts every POST_STEP m along the fence line, seated on the drawn ground; each bay a straight panel from
+// post to post (its rails parallel to the slope between the two posts, the same post height for both bays at a post: no
+// step), its foot following the ground under it (0.1 m into it). Before, the strip's top followed the ground at every
+// 2 m vertex while the posts stood every 2.5 m: the rails kinked mid-panel and stepped on every bump of the 1 m grid.
+// The car's walls are the drawn panels, a chunk of CHUNK_BAYS bays each, from the drawn foot to the drawn top (before:
+// one ring per run, from -10 km to the HIGHEST post of the run + 1.8 m: a wall far over the fence where a run climbs).
+// One wall per bay: its top is the higher post's + FENCE_H (a 2.5 m bay on a 1:5 grade: 0.5 m over the lower end).
+export const POST_STEP = 2.5, FENCE_FOOT = 0.1;
+const RUN_STEP = 1, CHUNK_BAYS = 1, NOT_CAR = new Set(["footway", "path", "steps", "cycleway", "pedestrian", "bridleway", "corridor", "platform", "track"]);
+
+/** A uniform grid of segments [ax, az, bx, bz, ...]: near(x, z, r) -> the segments within r of (x, z) (cell C m). */
+function segGrid(segs, C = 16) {
+  const g = new Map(), key = (i, j) => i * 100003 + j;
+  segs.forEach((s, id) => {
+    for (let i = Math.floor((Math.min(s[0], s[2]) - 2) / C); i <= Math.floor((Math.max(s[0], s[2]) + 2) / C); i++)
+      for (let j = Math.floor((Math.min(s[1], s[3]) - 2) / C); j <= Math.floor((Math.max(s[1], s[3]) + 2) / C); j++) { const k = key(i, j); if (!g.has(k)) g.set(k, []); g.get(k).push(id); }
+  });
+  const out = [], seen = new Uint32Array(segs.length); let stamp = 0;
+  return (x, z, r) => {
+    out.length = 0; stamp++;
+    for (let i = Math.floor((x - r) / C); i <= Math.floor((x + r) / C); i++) for (let j = Math.floor((z - r) / C); j <= Math.floor((z + r) / C); j++)
+      for (const id of g.get(key(i, j)) || []) if (seen[id] !== stamp) { seen[id] = stamp; out.push(segs[id]); }
+    return out;
+  };
+}
+const segDist = (x, z, s) => { const dx = s[2] - s[0], dz = s[3] - s[1], L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L2)); return Math.hypot(x - s[0] - dx * u, z - s[1] - dz * u); };
+const segCross = (a, b, c, d) => {
+  const r0 = b[0] - a[0], r1 = b[1] - a[1], s0 = d[0] - c[0], s1 = d[1] - c[1], den = r0 * s1 - r1 * s0;
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c[0] - a[0]) * s1 - (c[1] - a[1]) * s0) / den, u = ((c[0] - a[0]) * r1 - (c[1] - a[1]) * r0) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? [a[0] + r0 * t, a[1] + r1 * t, u] : null;
+};
+/** A road's carriageway half width on its wider side (OSM lanes; 3 m if none). */
+const carriage = (r) => { const side = (a) => (a || []).reduce((s, l) => s + (l.type === "sidewalk" ? 0 : +l.width || 0), 0); return Math.max(3, side(r.lanes?.left), side(r.lanes?.right)) + (r.lanes?.center?.width || 0) / 2; };
+
+/**
+ * The road-rail crossings near the tile, classified as tools/audit/bridgeAudit.mjs does (a road deck's footprint: over;
+ * else the road's ground 4-12 m either side of the crossing (the highest sample: a cutting's slope reads low) vs the rail top: over (> rail + 3 m both
+ * sides), under (< rail - 3 m both sides), else LEVEL. Roads tagged bridge / tunnel are over / under. Only the car's
+ * roads (footways, paths, steps: not). Returns [{ x, z, kind, half, segs: [[ax, az, bx, bz]] (the road's segments
+ * within 25 m), name }].
+ */
+export function railCrossings(doc, bounds, roadsDoc, orig, m = 40, heroes = [], roadY = null) {
+  const tracks = tracksIn(doc, bounds, m).filter((t) => !t.tunnel);
+  const deckRings = doc.decks.map((b) => ringBox(b.ring)).concat((heroes || []).filter((h) => h.kind === "road_over_rail").map((h) => ringBox(heroFrame(h).ring)));
+  const inDeck = (x, z) => deckRings.some((b) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z));
+  const N = new Map((roadsDoc?.nodes || []).map((n) => [n.id, n]));
+  const out = [];
+  for (const r of roadsDoc?.roads || []) {
+    if (NOT_CAR.has(r.meta?.highway)) continue;
+    const pts = [N.get(r.a), ...(r.pts || []), N.get(r.b)].filter(Boolean).map((p) => [p.x, p.z]);
+    const br = r.meta?.bridge && r.meta.bridge !== "no", tun = r.meta?.tunnel && r.meta.tunnel !== "no";
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      if (Math.max(a[0], b[0]) < bounds.x0 - m || Math.min(a[0], b[0]) > bounds.x1 + m || Math.max(a[1], b[1]) < bounds.z0 - m || Math.min(a[1], b[1]) > bounds.z1 + m) continue;
+      for (const t of tracks) {
+        if (Math.max(a[0], b[0]) < t.box.x0 || Math.min(a[0], b[0]) > t.box.x1 || Math.max(a[1], b[1]) < t.box.z0 || Math.min(a[1], b[1]) > t.box.z1) continue;
+        for (let k = 1; k < t.pts.length; k++) {
+          const p = segCross(a, b, [t.pts[k - 1][0], t.pts[k - 1][2]], [t.pts[k][0], t.pts[k][2]]);
+          if (!p) continue;
+          const ry = t.pts[k - 1][1] + (t.pts[k][1] - t.pts[k - 1][1]) * p[2];
+          const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L;
+          // (a road deck's footprint over the line: over, whatever the DTM under it says; else the road's ground 4-12 m either
+          // side: bridgeAudit's 12-30 m read a road climbing to the next bridge as "over" where it crosses the Moensberg
+          // chord L26/5 at grade, Avenue des Tilleuls, and closed a real level crossing)
+          const side = (sg) => { let mx = -Infinity; for (let q = 4; q <= 12; q += 2) { const g = orig(p[0] + sg * ux * q, p[1] + sg * uz * q); if (g > mx) mx = g; } return mx; };
+          const g1 = side(-1), g2 = side(1);
+          // (roadY, the road AS THE CITY BUILDS IT at the crossing (tileData.js roadGround: OSM / hero decks included) decides
+          // first: Avenue des Tilleuls is tagged bridge=yes over the whole way but is laid at grade over the L26/5 chord)
+          const rY = roadY ? roadY(p[0], p[1]) : NaN;
+          const kind = t.bridge && !br ? "under" : tun ? "under" : Number.isFinite(rY) ? (Math.abs(rY - ry) < 1.5 ? "level" : rY > ry ? "over" : "under")
+            : br ? "over" : inDeck(p[0], p[1]) ? "over" : g1 > ry + 3 && g2 > ry + 3 ? "over" : g1 < ry - 3 && g2 < ry - 3 ? "under" : "level";
+          const segs = [];
+          for (let j = 1; j < pts.length; j++) if (segDist(p[0], p[1], [pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1]]) < 25) segs.push([pts[j - 1][0], pts[j - 1][1], pts[j][0], pts[j][1]]);
+          out.push({ x: p[0], z: p[1], kind, half: carriage(r) + 2, segs, name: r.meta?.name || r.name || r.id, road: r.id, rail: ry, track: t.id });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The fence lines (rule 39): runs [[x, z, nx, nz], ...] FENCE m either side of each track on the ground, sampled every
+ * RUN_STEP m along it, broken as the header says. opts.skip(x, z) -> true: no fence there (a tunnel bore's lid).
+ * Returns { lines, posts, crossings, breaks: { level, platform, bridge, covered, track, road, tile } (samples) }.
+ */
+export function railFences2(doc, bounds, heroes, roadsDoc, orig, opts = {}) {
+  // (the RAIL bridges' footprints only: under a road bridge the fence runs on to the abutments, as the real one does;
+  // ending it at the road bridge's footprint left a gap to the abutment walls: the car went down the Verrewinkel bank)
+  const rings = railBridgeRings(doc, heroes).concat(doc.platforms.map((p) => ringBox(p.ring)));
+  const pr = new Set(doc.platforms.map((p) => p.ring));
+  const inAny = (x, z) => { for (const b of rings) if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && inRing(b.ring, x, z)) return pr.has(b.ring) ? "platform" : "bridge"; return null; };
+  const tracks = tracksIn(doc, bounds, FENCE + 4);
+  const crossings = railCrossings(doc, bounds, roadsDoc, orig, 40, heroes, opts.roadY || null);
+  const level = crossings.filter((c) => c.kind === "level");
+  const levelSegs = segGrid(level.flatMap((c) => c.segs.map((s) => [...s, c.half])));
+  // the car's roads not on a structure: a fence never stands in their carriageway (a street beside the line); a road that
+  // crosses the line over or under it (on a bridge, through an arch: its plan band reaches over the cutting) is not one
+  const N = new Map((roadsDoc?.nodes || []).map((n) => [n.id, n]));
+  const across = new Set(crossings.filter((c) => c.kind !== "level").map((c) => c.road));
+  const rs = [];
+  for (const r of roadsDoc?.roads || []) {
+    if (NOT_CAR.has(r.meta?.highway) || (r.meta?.bridge && r.meta.bridge !== "no") || (r.meta?.tunnel && r.meta.tunnel !== "no") || across.has(r.id)) continue;
+    const half = carriage(r) + 0.3, pts = [N.get(r.a), ...(r.pts || []), N.get(r.b)].filter(Boolean);
+    for (let i = 1; i < pts.length; i++) rs.push([pts[i - 1].x, pts[i - 1].z, pts[i].x, pts[i].z, half]);
+  }
+  const roadSegs = segGrid(rs);
+  const trackSegs = segGrid(tracks.flatMap((t) => t.pts.slice(1).map((p, i) => [t.pts[i][0], t.pts[i][2], p[0], p[2], t, (t.pts[i][1] + p[1]) / 2])));
+  const inLevel = (x, z) => levelSegs(x, z, 16).some((s) => segDist(x, z, s) < s[4]);
+  const inRoad = (x, z, y) => roadSegs(x, z, 12).some((s) => segDist(x, z, s) < s[4] && Math.abs(orig(x, z) - y) < 3);
+  // (a second track at the same level: a flyover's track over the line is not "between the tracks")
+  const nearOther = (x, z, t, y) => trackSegs(x, z, 4).some((s) => s[4] !== t && Math.abs(s[5] - y) < 2.5 && segDist(x, z, s) < 3);
+  const m = 4, inTile = (x, z) => x >= bounds.x0 - m && x <= bounds.x1 + m && z >= bounds.z0 - m && z <= bounds.z1 + m;
+  const lines = [], breaks = { level: 0, platform: 0, bridge: 0, covered: 0, track: 0, road: 0, skip: 0 };
+  let posts = 0;
+  for (const t of tracks) {
+    // (an OSM bridge way is not always over a void: Moensberg's are short spans on the embankment; the structure test
+    // below decides per sample, as for the footprints)
+    const F = frames(t);
+    for (const sd of [-1, 1]) {
+      let run = [];
+      const flush = () => { if (run.length >= 2) lines.push(run); run = []; };
+      for (let s = 0; s <= t.len + 1e-6; s += RUN_STEP) {
+        const f = sample(F, Math.min(s, t.len));
+        const x = f.x + f.nx * sd * FENCE, z = f.z + f.nz * sd * FENCE;
+        if (!inTile(x, z)) { flush(); continue; }
+        // (a rail bridge breaks it where the TRACK is on it, or where the fence would stand over the drop beside its deck;
+        // a fence post inside the footprint's flare beside the embankment stays: the car climbed the bank round the end)
+        // (the footprint alone is not enough: a hero's footprint reaches past its OSM bridge way and over the tracks beside
+        // it; on a structure = in a rail bridge's footprint with the drawn ground > 2.5 m under the rail top)
+        const sf = opts.surface || orig, onPlat = inAny(x, z), onT = inAny(f.x, f.z);
+        const struct = ((onT === "bridge" || t.bridge) && sf(f.x, f.z) < f.y - 2.5) || ((onPlat === "bridge" || t.bridge) && sf(x, z) < f.y - 2.5);
+        const why = (onPlat === "platform" || onT === "platform" ? "platform" : null) || (struct ? "bridge" : null) || (orig(x, z) - f.y >= 3 ? "covered" : null) || (nearOther(x, z, t, f.y) ? "track" : null)
+          || (inLevel(x, z) || inLevel(f.x, f.z) ? "level" : null) || (inRoad(x, z, f.y) ? "road" : null) || (opts.skip?.(x, z) ? "skip" : null);
+        if (why) { breaks[why]++; flush(); continue; }
+        run.push([x, z, f.nx * sd, f.nz * sd]);
+      }
+      flush();
+    }
+  }
+  for (const r of lines) posts += Math.ceil(lineLen(r) / POST_STEP) + 1;
+  return { lines, posts, crossings, breaks };
+}
+const lineLen = (run) => { let L = 0; for (let i = 1; i < run.length; i++) L += Math.hypot(run[i][0] - run[i - 1][0], run[i][1] - run[i - 1][1]); return L; };
+
+/**
+ * The fence bays (rule 39): per run, the points along it with their arc length s, the posts every POST_STEP m (and at the
+ * run's end), each point's panel line L (the straight line between its bay's two post tops - FENCE_H) and foot
+ * (min(L, ground) - FENCE_FOOT). surface(x, z) = the drawn ground. Returns [{ pts: [{ x, z, nx, nz, s, L, foot, post }] }].
+ */
+export function fenceBays(lines, surface) {
+  const out = [];
+  for (const run of lines) {
+    const L = lineLen(run);
+    if (L < 0.5) continue;
+    const nPost = Math.max(1, Math.round(L / POST_STEP)), step = L / nPost;       // (the run's bays all equal, ~2.5 m)
+    // the points: every run vertex + every post, by arc length
+    const pts = [];
+    let s = 0, k = 1, next = 0, pi = 0;
+    const at = (i, f) => { const a = run[i - 1], b = run[i]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f]; };
+    pts.push({ x: run[0][0], z: run[0][1], nx: run[0][2], nz: run[0][3], s: 0, post: 0 }); pi = 1; next = step;
+    for (k = 1; k < run.length; k++) {
+      const seg = Math.hypot(run[k][0] - run[k - 1][0], run[k][1] - run[k - 1][1]);
+      while (pi <= nPost && next <= s + seg + 1e-6) {
+        const f = seg > 1e-9 ? Math.min(1, (next - s) / seg) : 1, q = at(k, f);
+        pts.push({ x: q[0], z: q[1], nx: q[2], nz: q[3], s: next, post: pi }); pi++; next = pi * step;
+      }
+      s += seg;
+      if (k < run.length - 1 && pts.at(-1).s < s - 0.05 && next > s + 0.05) pts.push({ x: run[k][0], z: run[k][1], nx: run[k][2], nz: run[k][3], s, post: -1 });
+    }
+    // post heights, then each point's panel line and foot
+    const postY = new Float64Array(nPost + 1);
+    for (const p of pts) if (p.post >= 0) postY[p.post] = surface(p.x, p.z);
+    for (const p of pts) {
+      const b = Math.min(nPost - 1, Math.floor(p.s / step + 1e-9)), f = Math.max(0, Math.min(1, (p.s - b * step) / step));
+      p.L = postY[b] + (postY[b + 1] - postY[b]) * f;
+      p.g = surface(p.x, p.z);
+      p.foot = Math.min(p.L, p.g) - FENCE_FOOT;
+      p.bay = b;
+    }
+    out.push({ pts, step, posts: nPost + 1 });
+  }
+  return out;
+}
+
+/** The drawn fence of fenceBays (railway.js fence material: aS = metres along the run, posts where aS is a multiple of
+ *  POST_STEP; aH = -FENCE_FOOT at the foot, FENCE_H at the top: the mesh from 5 cm over the ground to 1.72, the top rail
+ *  to FENCE_H, straight between the posts). Non-indexed triangles,
+ *  one quad per point pair (foot a, foot b, top b / foot a, top b, top a). */
+export function fenceMesh2(bays) {
+  const P = [], N = [], S = [], H = [];
+  for (const { pts, step } of bays) {
+    const k = POST_STEP / step;                                       // aS scaled: the posts land on multiples of POST_STEP
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const n = [(a.nx + b.nx) / 2, 0, (a.nz + b.nz) / 2], nl = Math.hypot(n[0], n[2]) || 1;
+      // (the foot's aH is -FENCE_FOOT wherever it is: where the ground dips under the bay's line the mesh reaches down to
+      // it, a few cm taller, instead of floating over it; the top rail stays the straight line between the posts)
+      const v = [[a.x, a.foot, a.z, a.s * k, -FENCE_FOOT], [b.x, b.foot, b.z, b.s * k, -FENCE_FOOT], [b.x, b.L + FENCE_H, b.z, b.s * k, FENCE_H], [a.x, a.L + FENCE_H, a.z, a.s * k, FENCE_H]];
+      for (const q of [0, 1, 2, 0, 2, 3]) { const p = v[q]; P.push(p[0], p[1], p[2]); N.push(n[0] / nl, 0, n[2] / nl); S.push(p[3]); H.push(p[4]); }
+    }
+  }
+  return P.length ? { position: Float32Array.from(P), normal: Float32Array.from(N), aS: Float32Array.from(S), aH: Float32Array.from(H) } : null;
+}
+
+/** The car's walls of fenceBays: a thin ring per CHUNK_BAYS bays, from the drawn foot to the drawn top (rule 25: the
+ *  collider is the panel as drawn). */
+export function fenceWalls(bays) {
+  const W = FENCE_W / 2, out = [];
+  for (const { pts } of bays) {
+    for (let i0 = 0; i0 < pts.length - 1;) {
+      let i1 = i0 + 1;
+      while (i1 < pts.length - 1 && !(pts[i1].post >= 0 && pts[i1].post % CHUNK_BAYS === 0)) i1++;
+      // (a steep bay, > 0.4 m between its posts: a wall per point pair, so no wall stands 0.5 m over the panel's low end)
+      if (Math.abs(pts[i1].L - pts[i0].L) > 0.4) i1 = i0 + 1;
+      const c = pts.slice(i0, i1 + 1);
+      const ring = [...c.map((p) => [p.x + p.nx * W, p.z + p.nz * W]), ...c.map((p) => [p.x - p.nx * W, p.z - p.nz * W]).reverse()];
+      let top = -Infinity, base = Infinity;
+      for (const p of c) { top = Math.max(top, p.L + FENCE_H); base = Math.min(base, p.foot); }
+      out.push({ ring, top, base });
+      i0 = i1;
+    }
+  }
+  return out;
 }
 
 /** The verges of the line (cuttings and embankments): polylines of the drawn tracks inside the tile, for the land cover

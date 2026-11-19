@@ -124,6 +124,7 @@ export const FEATURES = [
   on("trackprofile", "transit", "track profile", "The tram tracks' smooth rail-top profile (rails, wire, deck, trams).", { sub: "Trams & trains" }),
   on("trains", "transit", "trains + railway", "SNCB trains, track, fences, bridges.", { sub: "Trams & trains" }),
   on("bridges2", "transit", "round-2 bridges", "The six round-2 hero railway bridges (docs/trains/BRIDGES_ROUND2.md).", { sub: "Trams & trains" }),
+  old("rail", "transit", "rail corridor: as before", "CLASS T (rule 39, docs/RAIL_T.md): old = the drive surface 0.6 m under the rails under road bridges (Verrewinkel), the line's fences broken by any road within ~5-9 m (cars onto the track bed), panels kinked every 2 m, one fence wall per run up to its highest post, benches / bins of the data layers on the track bed, hero colliders kept while the hero is not drawn.", { sub: "Trams & trains" }),
   on("tunnels", "transit", "road tunnels", "Road tunnels under the embankments (docs/trains/TUNNELS.md).", { sub: "Trams & trains" }),
   txt("clock", "transit", "timetable clock", "Trams / trains clock HH:MM (absent = now).", "08:30", { live: "timetable clock (h)" }),
   num("timescale", "transit", "timetable speed", "Trams / trains clock speed (x real).", 1, 0, 60, 0.5, { live: "timetable speed (x real)" }),
