@@ -381,3 +381,18 @@ Round 5b, done (2026-11-19): the 12 gates without steps traced to 1.
   pier on, along the run's line, 1.2 m wide, facing as the run does (unless a flight is already within 2 m or a measured
   path goes in there). City census: gateNoSteps 0 (ceiling 0); the other counts unchanged (over 310, spike 171,
   bareBank 575).
+
+## Round 5 browser turn (2026-11-19, after merging foundation: roads)
+
+- Census after the merge: the same counts (gateNoSteps 0, stacked 0, bareBank 575, lump 867, spike 171, over 310).
+  Full gate: 42 / 42 PASS. The test bundle checked to hold the branch's code (gateSteps / flightCap / segGrid /
+  gardenDocNear) before the look.
+- r5-h6-steps.jpg: H6 Perelman 4, the flight of blue-stone steps up through the gate opening between the brick
+  cheeks; the brick reads (courses, mortar, tone) at 5-10 m.
+- r5-g3-bank.jpg: G3 Roberts Jones (the r3 camera): the earth band behind the lawn strips is grass now; the
+  retaining wall's sand brick beside the garden kit's sand-brick piers reads alike.
+- r5-h6-stone.jpg: a coursed-stone wall (H6 683, 526): courses and joints read; a little regular.
+- r5-rifflet-air.jpg: Ch. de Saint-Job near Clos Monique Rifflet on the branch: no floating garden piece seen; the
+  garden contact audit on the loaded tiles (E6 F6 E7 F7) at runtime: 0 floating. Not reproduced on this branch.
+- r5-stalle-verge.jpg: Rue de Stalle past the railway bridge (x -1440, z 254): the sidewalk / grass verge is smooth
+  on the branch (the saw-tooth of shot 104 is the live site, before claude/sidewalk).
