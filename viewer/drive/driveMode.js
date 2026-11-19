@@ -31,7 +31,7 @@ const HUD_SKIP = new URLSearchParams(location.search).get("hudskip") !== "old";
 import { lampSites } from "../lamps.js";
 import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
-import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit } from "../moto/motoPhysics.js";
+import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit, twoWheelEnv } from "../moto/motoPhysics.js";
 import { MotoCamera } from "../moto/motoCamera.js";
 import { MotoAudio, BikeAudio, VOICES } from "../moto/motoAudio.js";
 
@@ -270,10 +270,14 @@ export class Driver {
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges,
       feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers, carHit: this.carHit });
     // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
-    // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
+    // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too. The feel round
+    // (docs/MOTO_FEEL.md; ?moto=old = before): kerb islands ridden up, hedges soft, thin posts slid round, the bike's own
+    // step rule, the terrain's grip (this.surface: grass / soil = 1)
     this.envs = {};
     for (const k of TWO_WHEEL) {
-      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers, carHit: this.carHit, two: true });
+      const H = TWO_WHEELERS[k];
+      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: H, waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers, carHit: this.carHit, two: true,
+        ...twoWheelEnv(H), surface: H.feel ? this.surface : null });
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
     this.camNear = [];

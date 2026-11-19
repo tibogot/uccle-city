@@ -308,3 +308,12 @@ on the grip, right on the saddle, a walking gait). Crash (all): the rider tumble
 - City LOD / ridden audit items (crossings of simplified parts, 25 m+).
 - Scooter / bicycle / bell sounds designed, not tuned by ear (off by default).
 - GPU A/B on GREEN and the perf preflight not run (shared machine).
+
+---
+
+# Round 3 (2026-11-19, branch claude/moto): the feel round
+
+The owner: "barely usable, the guy always falls". Why, what changed (grip-capped lean + traction control / cornering
+ABS, slips that recover, the bike's own step rule, air + three landing bands, a crash only head-on or a bail), the
+before / after table and the browser checks: **docs/MOTO_FEEL.md** (rule 40, gate row `motofeel`,
+tools/moto/feelTest.mjs; `?moto=old` = the handling above).
