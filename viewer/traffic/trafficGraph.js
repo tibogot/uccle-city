@@ -25,6 +25,8 @@
 import { cumulative } from "../../vendor/roads/roadMath.js";
 import { nearestRoad, phaseOfDir } from "./signals.js";
 import { joinLaneGraph } from "../streets/laneGraph.js";
+import { NOT_DRIVEN } from "../streets/carriageway.js";
+import { laneOffsetProfile } from "../streets/laneOffset.js";
 
 const TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
 export const CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
@@ -156,15 +158,29 @@ function roundKinks(paths, keep = null) {
  */
 export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   const t0 = performance.now();
-  const raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
-  const fitStats = { points: 0, moved: 0, maxShift: 0 };
+  const fitStatsPre = {};
+  let raw = net.graph.paths.filter((p) => p.len > 0.2 && p.pts.length >= 2);
+  // class R (claude/roads, rule 38): the moving traffic drives where the city's carriageway test says cars drive
+  // (viewer/streets/carriageway.js NOT_DRIVEN): not the service ways the engine also draws (alleys behind the houses,
+  // private estate roads, car-park ramps: OSM highway=service, 2,360 ways). Before, a car turned off the Chaussée de
+  // Waterloo into the service alley behind its houses (J6) and along a private road through the Stalle depot (C5).
+  // Lanes on those roads and every turn into / out of them are left out (?roads=old: opts.roadsR false)
+  if (opts.roadsR !== false && net.roadsById) {
+    const off = new Set(raw.filter((p) => p.kind === "lane" && NOT_DRIVEN.has(net.roadsById.get(p.roadId)?.src?.meta?.highway)).map((p) => p.id));
+    if (off.size) {
+      const dropT = new Set(raw.filter((p) => p.kind !== "lane" && [...(p.prev || []), ...(p.next || [])].some((id) => off.has(id))).map((p) => p.id));
+      raw = raw.filter((p) => !off.has(p.id) && !dropT.has(p.id));
+      fitStatsPre.serviceLanes = off.size; fitStatsPre.serviceTurns = dropT.size;
+    }
+  }
+  const fitStats = { points: 0, moved: 0, maxShift: 0, ...fitStatsPre };
   // citydefects: the parked cars (viewer/streets/parkPlace.js widthParking, built in the worker too) are kept clear of:
   // each lane slides sideways to pass them by PARK_CLEAR where the measured carriageway lets it
   const TP = !opts.old;                       // trafpark (?trafpark=old: opts.old)
   const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
   const raw2 = parked && TP ? densify(raw, 1.5) : raw;
   const tF = performance.now();
-  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP) : raw2;
+  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP, opts.roadsR !== false) : raw2;
   fitStats.fitMs = Math.round(performance.now() - tF);
   if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
@@ -553,7 +569,7 @@ function densify(paths, step) {
   });
 }
 
-function fitToSurface(paths, G, st, parked = null, trace = null, TP = false) {
+function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38 = false) {
   const ok = (x, z) => {
     const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step);
     if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true;          // off the raster: leave it
@@ -617,7 +633,7 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false) {
       if (hard) for (let k = 0; k < n; k++) if (hard[k]) sm[k] = off[k];
       return sm;
     };
-    let sm = smooth(null);
+    let sm = R38 ? laneOffsetProfile(off, p.cum || cumulative(q)) : smooth(null);
     // trafpark: the smoothing (the average, then the light pass) pulled lanes back toward the cars they had been moved
     // clear of: the smoothed line is checked against the cars, a point that touches one takes the nearest clear offset
     // as a hard constraint, smoothed again (at most 6 rounds)
@@ -638,7 +654,7 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false) {
         }
         if (!bad) break;
         st.tpRounds = (st.tpRounds || 0) + 1;
-        sm = smooth(hard);
+        sm = R38 ? laneOffsetProfile(off, p.cum || cumulative(q)) : smooth(hard);
       }
     }
     const pts = q.map((pt, k) => {

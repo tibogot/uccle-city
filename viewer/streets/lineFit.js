@@ -113,12 +113,43 @@ function smooth(s, v) {
   return out;
 }
 
+/** class R (claude/roads, rule 38, docs/ROADS_R.md): the robust smoothing above as a robust LOCAL LINE. The running
+ *  median holds a constant: where the OSM line meets the measured carriageway at an angle (the kerb offset growing
+ *  along the road) it lagged the trend, and on a short road (every sample within one window of an end, the MOUTH
+ *  samples unmeasured) it held one value for the whole road: the lines stayed parallel to the OSM line and ran
+ *  diagonally across the lane into the kerb (Av. du Prince de Ligne r220837890, J5 1590, 363: census F "skew").
+ *  Here each sample takes the Theil-Sen line of the valid samples within +-WIN_MED (the median of the pairwise slopes,
+ *  then the median intercept: robust to bulb-outs and lay-bys like the median), evaluated at its own station, so a
+ *  trend is followed and carried into the unmeasured ends; then the same mean, and the slope limit at TREND_SLOPE
+ *  (1:5, 11 deg: what the line may turn against the OSM line, the 1:8 cap held the skew). */
+const TREND_SLOPE = 0.2, SHORT_ROAD = 2 * (WIN_MED + MOUTH);   // (42 m)
+function smoothTrend(s, v) {
+  const n = s.length;
+  if (!v.some((q) => q != null)) return null;
+  const val = new Array(n).fill(null);
+  for (let i = 0; i < n; i++) {
+    const J = []; for (let j = 0; j < n; j++) if (v[j] != null && Math.abs(s[j] - s[i]) <= WIN_MED) J.push(j);
+    if (J.length < 3) { let bj = -1; for (let j = 0; j < n; j++) if (v[j] != null && (bj < 0 || Math.abs(s[j] - s[i]) < Math.abs(s[bj] - s[i]))) bj = j; val[i] = v[bj]; continue; }
+    const sl = [];
+    for (let a = 0; a < J.length; a++) for (let b = a + 1; b < J.length; b++) { const ds = s[J[b]] - s[J[a]]; if (Math.abs(ds) > 1e-6) sl.push((v[J[b]] - v[J[a]]) / ds); }
+    sl.sort((a, b) => a - b);
+    const m = sl.length ? Math.max(-TREND_SLOPE, Math.min(TREND_SLOPE, sl[sl.length >> 1])) : 0;
+    const ic = J.map((j) => v[j] - m * (s[j] - s[i])).sort((a, b) => a - b);
+    val[i] = ic[ic.length >> 1];
+  }
+  const out = val.map((_, i) => { let a = 0, k = 0; for (let j = 0; j < n; j++) if (Math.abs(s[j] - s[i]) <= WIN_MEAN) { a += val[j]; k++; } return a / k; });
+  for (let i = 1; i < n; i++) { const mm = TREND_SLOPE * (s[i] - s[i - 1]); out[i] = Math.min(out[i - 1] + mm, Math.max(out[i - 1] - mm, out[i])); }
+  for (let i = n - 2; i >= 0; i--) { const mm = TREND_SLOPE * (s[i + 1] - s[i]); out[i] = Math.min(out[i + 1] + mm, Math.max(out[i + 1] - mm, out[i])); }
+  return out;
+}
+
 /**
  * The fit of every road's lane stack onto the measured carriageway: { fitOf: road index -> per-sample shifts of its
  * two carriage ends, st }. surf: the tile's surfaces (kerbs, edges, after prepareSurfaces); prep: prepareSurfaces'
  * result (classAt). Applied to the asphalt strips by fitLinesToStreet, to the lane graph by laneShifter.
  */
-export function measureLineFit(net, prep, surf) {
+export function measureLineFit(net, prep, surf, opts = {}) {
+  const R38 = opts.roadsR !== false;
   const st = { roads: 0, fitted: 0, moved: 0, meanShift: 0, maxShift: 0, edgeIn: 0, lanes: 0, lanePts: 0 };
   const fitOf = new Map();
   if (!prep) return { fitOf, st };
@@ -145,7 +176,17 @@ export function measureLineFit(net, prep, surf) {
     if (any < Math.max(2, (2 * n) / 3)) return;
     // a sample more than OUTLIER off the road's own median shift is a lay-by, a bus bay or a side street: not the street
     const cut = (v) => { const w = v.filter((q) => q != null).sort((a, b) => a - b); if (!w.length) return v; const m = w[w.length >> 1]; return v.map((q) => (q != null && Math.abs(q - m) <= OUTLIER ? q : null)); };
-    const sL = smooth(S.s, cut(dL)), sR = smooth(S.s, cut(dR));
+    // (rule 38: the outliers are judged against the road's own robust LINE, not its median: a road whose kerb offset
+    // grows along it kept only its middle samples)
+    const cutLine = (v) => { const J = v.map((q, j) => (q != null ? j : -1)).filter((j) => j >= 0); if (J.length < 3) return cut(v);
+      const sl = []; for (let a = 0; a < J.length; a++) for (let b = a + 1; b < J.length; b++) { const ds = S.s[J[b]] - S.s[J[a]]; if (Math.abs(ds) > 1e-6) sl.push((v[J[b]] - v[J[a]]) / ds); }
+      sl.sort((a, b) => a - b); const m = Math.max(-TREND_SLOPE, Math.min(TREND_SLOPE, sl[sl.length >> 1] ?? 0));
+      const ic = J.map((j) => v[j] - m * S.s[j]).sort((a, b) => a - b), c0 = ic[ic.length >> 1];
+      return v.map((q, j) => (q != null && Math.abs(q - (c0 + m * S.s[j])) <= OUTLIER ? q : null)); };
+    // (only on a SHORT road, where every sample is within one median window of an end: a longer road keeps the median,
+    // its trend-following there tilted the lines at junction flares: Av. de Boitsfort K4, Av. Brugmann F1)
+    const short = R38 && S.s[n - 1] - S.s[0] < SHORT_ROAD;
+    const sL = short ? smoothTrend(S.s, cutLine(dL)) : smooth(S.s, cut(dL)), sR = short ? smoothTrend(S.s, cutLine(dR)) : smooth(S.s, cut(dR));
     const L = sL ?? new Array(n).fill(0), R = sR ?? new Array(n).fill(0);
     for (let i = 0; i < n; i++) {
       // never squeeze the stack under MIN_SHARE of its width (a measurement gone wrong): scale both shifts back
