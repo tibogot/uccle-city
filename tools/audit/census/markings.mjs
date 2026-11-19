@@ -26,10 +26,10 @@
 //        [--max offStreet=N,atKerb=N,skew=N] [--quiet]
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { streetTile, runTiles, cli, at, ROOT, SC, CLASS_NAME } from "./lib_street.mjs";
+import { streetTile, runTiles, cli, at, ROOT, SC, CLASS_NAME, lineIndex } from "./lib_street.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, opt, flag } = cli();
-const OLD = flag("--old"), QUIET = flag("--quiet"), MAX = opt("--max", null);
+const OLD = flag("--old"), ROADS_OLD = flag("--roadsold"), QUIET = flag("--quiet"), MAX = opt("--max", null);
 const ceil = MAX ? Object.fromEntries(MAX.split(",").map((kv) => kv.split("=")).map(([k, v]) => [k, +v])) : null;
 
 /** the bicycle / chevron glyph geometry test: [{ name, ok, info }] */
@@ -91,21 +91,22 @@ async function glyphTest() {
 function segDist(px, py, [ax, ay], [bx, by]) { const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, t = L2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L2)) : 0; return Math.hypot(px - ax - dx * t, py - ay - dy * t); }
 function pipPoly(x, z, r) { let ins = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) ins = !ins; } return ins; }
 const MARKABLE = new Set([SC.roadway, SC.tramRoad, SC.parking]);
-const KERB_D = 0.10, SKEW = 12, NEAR_KERB = 4, JUNCTION_R = 15;
+const KERB_D = 0.10, SKEW = 12, NEAR_KERB = 4, JUNCTION_R = 15, LS_NEAR = 1.2, LS_END = 8;
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: markings.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
   const gt = await glyphTest();
   for (const t of gt) console.log(`  glyph ${t.ok ? "ok  " : "FAIL"} ${t.name}: ${t.info}`);
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET });
-  const sum = { tiles: 0, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, runs: 0, decalTris: 0, decalOff: 0 }, runs = [];
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(ROADS_OLD ? ["--roadsold"] : [])], log: !QUIET });
+  const sum = { tiles: 0, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, laneSkewM: 0, tickM: 0, tickSkewM: 0, tickLaneM: 0, zebraShort: 0, runs: 0, decalTris: 0, decalOff: 0 }, runs = [];
   for (const r of res) {
     if (r.error) continue;
     sum.tiles++; for (const k of Object.keys(sum)) if (k !== "tiles" && k !== "runs") sum[k] += r[k] || 0;
     sum.runs += r.runs.length;
     for (const x of r.runs) runs.push({ tile: r.tile, ...x });
+    for (const x of r.zebraShortAt || []) runs.push({ tile: r.tile, len: 0, why: "zebraShort", ...x });
   }
-  for (const k of ["strokeM", "unmeasuredM", "offStreetM", "atKerbM", "skewM"]) sum[k] = Math.round(sum[k]);
+  for (const k of ["strokeM", "unmeasuredM", "offStreetM", "atKerbM", "skewM", "laneSkewM", "tickM", "tickSkewM", "tickLaneM"]) sum[k] = Math.round(sum[k]);
   // traffic lanes vs the painted lanes: |lane centre - painted lane centre| histogram (cm bins) over all tiles -> p95
   const hist = new Array(301).fill(0);
   for (const r of res) if (r.laneHist) r.laneHist.forEach((c, k) => { hist[k] += c; });
@@ -119,7 +120,7 @@ if (!CHILD) {
   console.log(`class F: ${JSON.stringify(sum)}\n  runs by why: ${JSON.stringify(byWhy)}`);
   if (WORST) console.log(`worst ${WORST}:`);
   for (const x of runs.slice(0, WORST)) console.log(`  ${x.tile} ${JSON.stringify(x)}`);
-  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byWhy, runs }, null, 1));
+  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byWhy, runs, perTile: res.filter((r) => !r.error).map((r) => ({ tile: r.tile, offStreetM: r.offStreetM, atKerbM: r.atKerbM, skewM: r.skewM })) }, null, 1));
   let bad = gt.filter((t) => !t.ok).length;
   const errs = res.filter((r) => r.error).length;
   if (errs) { console.log(`FAIL ${errs} tile(s) did not build`); bad++; }
@@ -133,9 +134,10 @@ if (!CHILD) {
 }
 
 const T = TILES[0];
-const S = await streetTile(T, OLD ? { build: { roadLines: false } } : {});
+// (--roadsold: ?roads=old, claude/roads rule 38: the line fit's running median as before)
+const S = await streetTile(T, { build: { ...(OLD ? { roadLines: false } : {}), ...(ROADS_OLD ? { roadsR: false } : {}) } });
 const { rd, fit, classAt, inB, nameAt, roads } = S;
-const out = { tile: T, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, decalTris: 0, decalOff: 0, runs: [] };
+const out = { tile: T, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, laneSkewM: 0, tickM: 0, tickSkewM: 0, tickLaneM: 0, decalTris: 0, decalOff: 0, runs: [] };
 const A = rd.parts.asphalt;
 if (fit && A) {
   const P = A.position, UV = A.uv, I = A.index, E = A.attributes.aEdges.array;
@@ -166,6 +168,71 @@ if (fit && A) {
     }
   }
   out.strokeM = samples.length;
+  // claude/roads (rule 38, census R c): a stroke running across a DRIVEN LANE. The skew test above judges a stroke
+  // against the nearest measured kerb, and only on a stretch (no OSM junction node within 15 m, the kerb straight
+  // 2 m both ways, a kerb within 4 m): a line laid diagonally across a lane next to a side street, a parking bay notch
+  // or a kerb build-out is never judged (Av. du Prince de Ligne: side streets every 40-60 m). Here the stroke is judged
+  // against the traffic lane it lies on (net.graph lanes, within LS_NEAR m of its centre line), wherever that lane is
+  // straight (its heading 4 m before and after within 4 deg) and >= LS_END m from the lane piece's ends (the junction
+  // blends): a painted line along the road runs WITH the lanes, it never crosses one
+  const laneSegs = [];
+  for (const p of S.rd.net?.graph?.paths || []) {
+    if (p.kind !== "lane") continue;
+    const P = p.pts.map((q) => [q[0] ?? q.x, q[1] ?? q.z]), c = [0];
+    for (let k = 1; k < P.length; k++) c.push(c[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]));
+    laneSegs.push({ P, c, L: c[c.length - 1] });
+  }
+  const laneIdx = lineIndex(laneSegs.map((l) => l.P), 8);
+  const headAt = (l, d) => { let k = 1; while (k < l.P.length - 1 && l.c[k] < d) k++; const a = l.P[k - 1], b = l.P[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[0] - a[0]) / L, (b[1] - a[1]) / L]; };
+  const laneSkew = (s) => {
+    const n = laneIdx.dist(s.x, s.z, LS_NEAR); if (!n) return false;
+    const l = laneSegs[n.li], a = l.P[n.k - 1], d = l.c[n.k - 1] + ((s.x - a[0]) * n.ux + (s.z - a[1]) * n.uz);
+    if (d < LS_END || l.L - d < LS_END) return false;
+    const h0 = headAt(l, d - 4), h1 = headAt(l, d + 4);
+    if (h0[0] * h1[0] + h0[1] * h1[1] < Math.cos((4 * Math.PI) / 180)) return false;
+    return (Math.acos(Math.min(1, Math.abs(s.ux * n.ux + s.uz * n.uz))) * 180) / Math.PI > SKEW;
+  };
+  // claude/roads (census R c): the PARKING BAY TICKS. The shader paints a tick across every strip whose aMark.w is set
+  // (the engine's parking lanes: viewer/roadPaint.js "parking bay ticks every 5.5 m", the iso-lines s = 5.5 k), not a
+  // line code: the census above traced only the along-road strokes (aEdges), so a tick never entered it. A tick should
+  // stand square to its road (within SKEW deg) and only on a parking strip, never on a driving lane: traced here per
+  // triangle (s = 5.5 k), sampled every 0.25 m, judged against the nearest OSM centre line's direction (tickSkew) and
+  // the driven lanes (tickLane: within LS_NEAR m of a lane's centre line, >= LS_END m from its ends)
+  const MK = A.attributes.aMark?.array;
+  const N0 = new Map((roads.nodes || []).map((n) => [n.id, n]));
+  const cl = (roads.roads || []).map((r) => [N0.get(r.a), ...(r.pts || []), N0.get(r.b)].filter(Boolean).map((p) => [p.x, p.z]));
+  const clIdx = lineIndex(cl, 16);
+  const tickSeen = new Set(), ticks = [];
+  if (MK) for (let t = 0; t < I.length; t += 3) {
+    const v = [I[t], I[t + 1], I[t + 2]];
+    if (!v.every((q) => MK[q * 4 + 3] > 0.5)) continue;
+    const sv = v.map((q) => UV[q * 2]);
+    for (let kk = Math.ceil(Math.min(...sv) / 5.5); kk * 5.5 <= Math.max(...sv); kk++) {
+      const S0 = kk * 5.5, pts = [];
+      for (let q = 0; q < 3; q++) {
+        const a = v[q], b = v[(q + 1) % 3], ta = UV[a * 2] - S0, tb = UV[b * 2] - S0;
+        if ((ta <= 0) !== (tb <= 0) && ta !== tb) { const f = ta / (ta - tb); pts.push([P[a * 3] + (P[b * 3] - P[a * 3]) * f, P[a * 3 + 2] + (P[b * 3 + 2] - P[a * 3 + 2]) * f]); }
+      }
+      if (pts.length < 2) continue;
+      const [p, q] = pts, L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 0.05) continue;
+      const ux = (q[0] - p[0]) / L, uz = (q[1] - p[1]) / L;
+      for (let d = 0; d <= L; d += 0.25) {
+        const x = p[0] + ux * d, z = p[1] + uz * d, key = `${Math.round(x * 4)},${Math.round(z * 4)}`;
+        if (!inB(x, z) || tickSeen.has(key)) continue; tickSeen.add(key);
+        ticks.push({ x, z, ux, uz });
+      }
+    }
+  }
+  out.tickM = ticks.length * 0.25; out.tickSkewM = 0; out.tickLaneM = 0;
+  const tickBad = [];
+  for (const s of ticks) {
+    const c = classAt(s.x, s.z), why = [];
+    const r = clIdx.dist(s.x, s.z, 16);
+    if (r && Math.abs(s.ux * r.ux + s.uz * r.uz) > Math.sin((SKEW * Math.PI) / 180)) { why.push("tickSkew"); out.tickSkewM += 0.25; }
+    const n = laneIdx.dist(s.x, s.z, 0.9);
+    if (n) { const l = laneSegs[n.li], a = l.P[n.k - 1], d = l.c[n.k - 1] + ((s.x - a[0]) * n.ux + (s.z - a[1]) * n.uz); if (d >= LS_END && l.L - d >= LS_END) { why.push("tickLane"); out.tickLaneM += 0.25; } }
+    if (why.length) tickBad.push({ ...s, why, c });
+  }
   // classify
   const flagged = [];
   for (const s of samples) {
@@ -184,8 +251,10 @@ if (fit && A) {
       if (process.env.CENSUS_DBG) { (globalThis.H ??= {})[`${straight ? "S" : "c"}${Math.min(9, Math.floor(ang / 5))}`] = ((globalThis.H[`${straight ? "S" : "c"}${Math.min(9, Math.floor(ang / 5))}`]) || 0) + 1; }
       if (straight && ang > SKEW) { why.push("skew"); out.skewM++; }
     }
+    if (!why.includes("skew") && (c >= 0 || k) && laneSkew(s)) { why.push("laneSkew"); out.laneSkewM++; }
     if (why.length) flagged.push({ ...s, why });
   }
+  for (const b of tickBad) flagged.push(b);
   // runs: chain flagged samples within 3 m (greedy over a 3 m grid)
   const grid = new Map(), gk = (x, z) => `${Math.floor(x / 3)},${Math.floor(z / 3)}`;
   flagged.forEach((f, i) => { const k = gk(f.x, f.z); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(i); });
@@ -214,6 +283,17 @@ if (fit && A) {
     const x = (D.position[a] + D.position[b] + D.position[c]) / 3, z = (D.position[a + 2] + D.position[b + 2] + D.position[c + 2]) / 3;
     out.decalTris++; const k = classAt(x, z); if (!MARKABLE.has(k) && k !== SC.tramSite) out.decalOff++;
   }
+}
+// claude/roads (rule 38, census R c): a ZEBRA that ends in the open roadway: a drawn crossing (rd.inventory.crossings)
+// whose stripes stop with >= 1.5 m of the same carriageway still to go to the kerb on either side (no island between)
+out.zebraShort = 0; out.zebraShortAt = [];
+for (const r of rd.inventory?.crossings || []) {
+  if (!r.vSpan || !inB(r.c[0], r.c[1])) continue;
+  const ax = Math.cos(r.axis), az = Math.sin(r.axis), bx = -az, bz = ax;
+  // (an end meeting another drawn crossing's outline (Brussels Mobility's pieces across tram tracks) is not open)
+  const others = (rd.inventory?.crossings || []).filter((o) => o !== r && o.poly);
+  const open = (v, sg) => { let d = 0; for (; d < 3; d += 0.25) { const x = r.c[0] + bx * (v + sg * (d + 0.25)), z = r.c[1] + bz * (v + sg * (d + 0.25)); if (!MARKABLE.has(classAt(x, z)) || others.some((o) => pipPoly(x, z, o.poly))) break; } return d >= 1.5 + 0.15; };
+  if (open(r.vSpan[0], -1) || open(r.vSpan[1], 1)) { out.zebraShort++; out.zebraShortAt.push({ id: r.id, at: at(r.c[0], r.c[1]), street: nameAt(r.c[0], r.c[1]) }); }
 }
 if (process.env.CENSUS_DBG) console.error(JSON.stringify(globalThis.H));
 // traffic lanes vs paint (markings round 2): every driven lane point of a fitted road, 12 m and more from its path's

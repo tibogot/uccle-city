@@ -193,7 +193,7 @@ export const FEATURES = [
   on("falcons", "world", "falcons", "The Saint-Job peregrine family (+ the flight start from the nest).", { sub: "Landmarks" }),
   sel("herostatue", "world", "Héros statue", "The statue slot: the dropped-in model (default) or our scripted bronze.", [[null, "slot model"], ["ours", "ours (scripted)"]], { sub: "Landmarks" }),
   sel("heroslawn", "world", "Héros lawn", "The square's lighter lawn (default) or the city's lawn.", [[null, "square lawn"], ["city", "city lawn"]], { sub: "Landmarks" }),
-  sel("roads", "world", "road surfaces", "Measured UrbIS street surfaces (default) or the road engine's guessed carriageways.", [[null, "measured"], ["engine", "road engine"]], { sub: "City" }),
+  sel("roads", "world", "road surfaces", "Measured UrbIS street surfaces (default) or the road engine's guessed carriageways. 'old' (claude/roads, rule 38, docs/ROADS_R.md): the measured streets with class R as before: lane offsets fitted point by point (the traffic slaloms round parked cars), junction turns cut across blocks, the traffic on service ways, the OSM band on private land (the garden kit dropped off the lawns), plants on the carriageway, the line fit's running median. Tile worker change.", [[null, "measured"], ["engine", "road engine"], ["old", "measured, class R as before"]], { sub: "City" }),
   on("kit", "world", "façade kit", "Instanced façade details (windows, doors...).", { sub: "City" }),
   on("streetlife", "world", "street life", "Shopfronts, names, house numbers.", { sub: "City" }),
   on("gardens", "world", "front gardens", "Front gardens' instance pools.", { sub: "City" }),

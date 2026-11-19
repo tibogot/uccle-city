@@ -53,8 +53,13 @@ export async function streetTile(T, opts = {}) {
   const { roads, feats, bounds, rd } = tile;
   const fit = rd.surfaceData ? streetFit(rd.surfaceData) : null;
   const classAt = fit ? fit.classAt : () => -1;
-  const driven = carriageway(roads, { classAt: fit?.classAt });
-  const lanes = carriageway(roads, { classAt: fit?.classAt, lanesOnly: true });
+  // (claude/roads: opts.bandOnMeasured = ?roads=old, the OSM band also on private land beside a measured street; else
+  // the band there only where a street is drawn: the drive raster of the road parts, as main.js)
+  const { driveGround } = await imp("viewer/drive/colliders.js");
+  const { drawnTest } = await imp("viewer/streets/carriageway.js");
+  const drawn = opts.bandOnMeasured ? null : drawnTest(tile.hm.h, driveGround(tile.hm, rd.parts).delta);
+  const driven = carriageway(roads, { classAt: fit?.classAt, bandOnMeasured: !!opts.bandOnMeasured, drawn });
+  const lanes = carriageway(roads, { classAt: fit?.classAt, lanesOnly: true, bandOnMeasured: !!opts.bandOnMeasured, drawn });
   // the tram tracks as the tile worker makes them (tileData.js -> viewer/track.js tramTracks: rails, wire, trams follow
   // these): the fit of data/tramfit/<T>.json (claude/tramfit), or with opts.tramfit === false (?tramfit=old) each OSM
   // way smoothed as it is
@@ -74,7 +79,7 @@ export async function streetTile(T, opts = {}) {
   const nameIdx = lineIndex(named.map((r) => r.pts), 16);
   const nameAt = (x, z) => { const n = nameIdx.dist(x, z, 48); return n ? named[n.li].name : "?"; };
   const inB = (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1;
-  return { T, tile, roads, feats, bounds, rd, fit, classAt, driven, lanes, tram, tramMode, platforms, platFit, tramIdx, nameAt, inB };
+  return { T, tile, roads, feats, bounds, rd, fit, classAt, driven, lanes, drawn, tram, tramMode, platforms, platFit, tramIdx, nameAt, inB };
 }
 
 const r1 = (v) => Math.round(v * 10) / 10;
