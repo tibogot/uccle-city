@@ -287,3 +287,20 @@ blade 0, stacked 0 (15 before the round-4 rules, on E6 / H6 / G3 and a few other
 Round 4 cost: the new checks (gap bridges, one wall line, pier depth) run on small grids of the wall's segments, not on
 every edge of the tile (same geometry, byte for byte, on E6 H6 G3 I9 F2). Timing: see the report (the machine was
 loaded by the owner's play session during this round's measures).
+
+## Round 4 browser turn (2026-11-19, after merging foundation: jitter, carhit)
+
+- Census after the merge: the same counts (stacked 0, lump 864, over 344). Full gate: 38 / 38 PASS.
+- r4-g3-robertsjones.jpg (the r3 camera) and r4-g3-across.jpg (from the far side of the street): G3 Rue Roberts Jones
+  is ONE stepped wall along the sidewalk's back edge (x 272 -> 291, its top 86.5 -> 89.3 m). Seen along the street,
+  every 0.35 m step's face across the 3.1 m lawn strip reads as a wall of its own. Behind the lawn strip, where the
+  garden rises more than the wall holds, the bank is bare earth. Both are look issues of the wall design, not stacking:
+  the strip's lawn could slope between steps (only the wall's own thickness stepped), and the earth behind could be
+  grass. Not changed in this round.
+- r4-h6.jpg (H6 Perelman 4, the r3 camera): the earth wedge at the gate is gone; the wall runs on across it. The two
+  dark posts behind it are not in the garden data (no gate or pillar within 30 m), so the gap is not an opening.
+  The run is now brick (its hash changed when the two runs became one).
+- Tour, the 4 wall-heavy views vs round 3 (sidewalk3): coghen-blocks, orange-villas, defre-villas ok; ham-terrace
+  flagged on one cell (a brick pier at a garden path, r4-tour-ham-terrace-vs-r3.png).
+- Lesson: the worktree's tileWorker.bundle.js was foundation's (no retaining walls at all) until rebuilt; the first G3
+  look showed no walls. Always rebuild the bundle before a browser look and check it holds the branch's code.
