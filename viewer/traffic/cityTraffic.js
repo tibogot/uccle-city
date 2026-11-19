@@ -8,6 +8,9 @@
 //   colliders  drive mode: the traffic cars are oriented boxes (SAT box-box against the player's box, through the
 //              drive env's `dynamic` hook); the walker: a collider source on the character's collision world
 //   parking    the parked fleet's cars (viewer/carFleet.js) can pull out / be parked into
+//   carhit     (docs/CARHIT.md, ?carpush=old = off) the player's car / two-wheeler hits the cars both ways: the driver's
+//              CarHitWorld (viewer/drive/carHit.js) gets the traffic: a hit car is knocked off its lane (a rigid body),
+//              an obstacle the others brake for, rejoins or stays as a wreck
 import { createTraffic } from "./traffic.js";
 import { obbObb } from "../drive/obb.js";
 import { carFleet } from "../carFleet.js";
@@ -77,7 +80,9 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
     const th = getThird?.();
     if (th?.on && th.tp) { const p = th.tp.ctl.pos, v = th.tp.ctl.vel; s.addObstacle(p[0], p[2], 0.9, v[0], v[2]); }
     for (let i = 0; i < TR.n; i++) s.addObstacle(TR.x[i], TR.z[i], 1.5, TR.vx[i], TR.vz[i], TR.cross[i]);
+    driver?.carHit?.addObstacles(s);                              // (carhit: the knocked cars, standing or sliding)
   });
+  driver?.carHit?.attachTraffic(T);
 
   // ---- drive mode: the traffic cars as oriented boxes
   const boxes = new Float32Array(32 * 7), out = { nx: 0, nz: 0, depth: 0 };
@@ -131,7 +136,9 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
     }
     const th = getThird?.();
     if (th?.world && hooked !== th.world) { th.world.add(source); hooked = th.world; }
-    T.update(dt, cam || camera, focus());
+    const f = focus();
+    if (driver?.carHit && !driver.on) driver.carHit.frame(dt, f.x, f.z);   // (carhit: nobody drives: the bodies still settle)
+    T.update(dt, cam || camera, f);
   };
   return { ...T, T, update, addTile: T.addTile, removeTile: T.removeTile };
 }

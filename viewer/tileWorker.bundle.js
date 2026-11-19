@@ -542,12 +542,12 @@ var SHORT_HOLE = 0.3;
 function repairWalls(tris, ring2, base, { fix = true, party = null, roofs = null } = {}) {
   const used = /* @__PURE__ */ new Set(), flip = /* @__PURE__ */ new Set(), out = [], edges = [], pend = [];
   const n = ring2.length - (ring2.length > 1 && ring2[0][0] === ring2[ring2.length - 1][0] && ring2[0][1] === ring2[ring2.length - 1][1] ? 1 : 0);
-  let area23 = 0;
+  let area24 = 0;
   for (let i = 0; i < n; i++) {
     const [x0, z0] = ring2[i], [x1, z1] = ring2[(i + 1) % n];
-    area23 += x0 * z1 - x1 * z0;
+    area24 += x0 * z1 - x1 * z0;
   }
-  const out1 = area23 > 0 ? -1 : 1;
+  const out1 = area24 > 0 ? -1 : 1;
   for (let i = 0; i < n; i++) {
     const [ax, az] = ring2[i], [bx, bz] = ring2[(i + 1) % n], L2 = Math.hypot(bx - ax, bz - az);
     if (L2 < MIN_EDGE) continue;
@@ -738,6 +738,151 @@ function clipU(poly, sg, c) {
     }
   }
   return out;
+}
+
+// viewer/coplanarClean.js
+var COS = Math.cos(2 * Math.PI / 180);
+var SEP = 6e-3;
+var MIN_OV = 2e-3;
+var MIN_PIECE = 2e-4;
+var CELL = 4;
+function coplanarCleaner() {
+  const grid = /* @__PURE__ */ new Map();
+  const key = (i, j) => i * 100003 + j;
+  const stats = { cut: 0, dropped: 0, pieces: 0, m2: 0 };
+  function add(t) {
+    const b = t.bb ?? (t.bb = bbox(t.p));
+    for (let i = Math.floor(b[0] / CELL); i <= Math.floor(b[3] / CELL); i++) for (let j = Math.floor(b[2] / CELL); j <= Math.floor(b[5] / CELL); j++) {
+      const k = key(i, j);
+      let a = grid.get(k);
+      if (!a) grid.set(k, a = []);
+      a.push(t);
+    }
+  }
+  function near(b) {
+    const out = /* @__PURE__ */ new Set();
+    for (let i = Math.floor(b[0] / CELL); i <= Math.floor(b[3] / CELL); i++) for (let j = Math.floor(b[2] / CELL); j <= Math.floor(b[5] / CELL); j++)
+      for (const t of grid.get(key(i, j)) || []) out.add(t);
+    return out;
+  }
+  function clean(tris) {
+    const out = [];
+    for (const t of tris) {
+      const b = t.bb = bbox(t.p);
+      const n = t.n, d = n[0] * t.p[0][0] + n[1] * t.p[0][1] + n[2] * t.p[0][2];
+      const hits = [];
+      for (const o of near(b)) {
+        if (o.n[0] * n[0] + o.n[1] * n[1] + o.n[2] * n[2] < COS) continue;
+        const ob = o.bb;
+        if (ob[0] > b[3] + 0.01 || ob[3] < b[0] - 0.01 || ob[1] > b[4] + 0.01 || ob[4] < b[1] - 0.01 || ob[2] > b[5] + 0.01 || ob[5] < b[2] - 0.01) continue;
+        let far = 0;
+        for (const q of o.p) far = Math.max(far, Math.abs(n[0] * q[0] + n[1] * q[1] + n[2] * q[2] - d));
+        if (far > SEP) continue;
+        hits.push(o);
+      }
+      if (!hits.length) {
+        out.push(t);
+        add(t);
+        continue;
+      }
+      const u = norm(Math.abs(n[1]) < 0.9 ? cross([0, 1, 0], n) : cross([1, 0, 0], n)), v = cross(n, u);
+      const to2 = (q) => [q[0] * u[0] + q[1] * u[1] + q[2] * u[2], q[0] * v[0] + q[1] * v[1] + q[2] * v[2]];
+      let pieces = [ccw(t.p.map(to2))];
+      let cut = false;
+      for (const o of hits) {
+        const C = ccw(o.p.map(to2));
+        const next = [];
+        for (const P of pieces) {
+          const inter = clipConvex(P, C);
+          if (area(inter) < MIN_OV) {
+            next.push(P);
+            continue;
+          }
+          cut = true;
+          let cur = P;
+          for (let e = 0; e < C.length && cur.length >= 3; e++) {
+            const A = C[e], B = C[(e + 1) % C.length];
+            const outside = half(cur, B, A), inside3 = half(cur, A, B);
+            if (outside.length >= 3 && area(outside) > MIN_PIECE) next.push(outside);
+            cur = inside3;
+          }
+        }
+        pieces = next;
+        if (!pieces.length) break;
+      }
+      if (!cut) {
+        out.push(t);
+        add(t);
+        continue;
+      }
+      stats.cut++;
+      stats.m2 += t.area - pieces.reduce((s, P) => s + area(P), 0);
+      if (!pieces.length) {
+        stats.dropped++;
+        continue;
+      }
+      const lift = (q) => [u[0] * q[0] + v[0] * q[1] + n[0] * d, u[1] * q[0] + v[1] * q[1] + n[1] * d, u[2] * q[0] + v[2] * q[1] + n[2] * d];
+      for (const P of pieces) for (let k = 1; k + 1 < P.length; k++) {
+        const a2 = area([P[0], P[k], P[k + 1]]);
+        if (a2 < 1e-6) continue;
+        const piece = { p: [lift(P[0]), lift(P[k]), lift(P[k + 1])], n, area: a2 };
+        out.push(piece);
+        add(piece);
+        stats.pieces++;
+      }
+    }
+    return out;
+  }
+  clean.stats = stats;
+  return clean;
+}
+function bbox(p) {
+  return [
+    Math.min(p[0][0], p[1][0], p[2][0]),
+    Math.min(p[0][1], p[1][1], p[2][1]),
+    Math.min(p[0][2], p[1][2], p[2][2]),
+    Math.max(p[0][0], p[1][0], p[2][0]),
+    Math.max(p[0][1], p[1][1], p[2][1]),
+    Math.max(p[0][2], p[1][2], p[2][2])
+  ];
+}
+var cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+var norm = (a) => {
+  const l = Math.hypot(a[0], a[1], a[2]) || 1;
+  return [a[0] / l, a[1] / l, a[2] / l];
+};
+function area(P) {
+  let s = 0;
+  for (let i = 0; i < P.length; i++) {
+    const a = P[i], b = P[(i + 1) % P.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
+}
+function ccw(P) {
+  let s = 0;
+  for (let i = 0; i < P.length; i++) {
+    const a = P[i], b = P[(i + 1) % P.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return s < 0 ? P.slice().reverse() : P;
+}
+function half(P, A, B) {
+  const out = [], side = (q) => (B[0] - A[0]) * (q[1] - A[1]) - (B[1] - A[1]) * (q[0] - A[0]);
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i], q = P[(i + 1) % P.length], sp = side(p), sq = side(q);
+    if (sp >= 0) out.push(p);
+    if (sp >= 0 !== sq >= 0) {
+      const t = sp / (sp - sq);
+      out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+    }
+  }
+  return out;
+}
+function clipConvex(P, C) {
+  let r = P;
+  for (let e = 0; e < C.length && r.length >= 3; e++) r = half(r, C[e], C[(e + 1) % C.length]);
+  return r.length >= 3 ? r : [];
 }
 
 // viewer/buildingTypes.js
@@ -1028,19 +1173,19 @@ function faceOpenings(f) {
         if (!(f.partyH > 0 && 0 < f.partyH + 0.3)) out.push({ kind: "garage", bay: k, floor: 0, u0: uc - gh, u1: uc + gh, h0: 0, h1: GARAGE_H, frame: FRAME });
         continue;
       }
-      const half = door ? type === 4 || type === 7 ? Math.min(1, bw * 0.4) : 0.55 : ww / 2;
+      const half2 = door ? type === 4 || type === 7 ? Math.min(1, bw * 0.4) : 0.55 : ww / 2;
       const h0 = door ? raise : y0 + ya * sh, h1 = door ? 0.72 * G2 + 0.5 * raise : winTop;
       if (f.partyH > 0 && h0 < f.partyH + 0.3) continue;
       if (f.shop > 0.5 && !up) {
         const shopW = f.shop - 10 * Math.floor(f.shop / 10), su = f.shopU ?? 0;
-        if (Math.abs(uc - su) < shopW / 2 + half) continue;
+        if (Math.abs(uc - su) < shopW / 2 + half2) continue;
       }
       const o = {
         kind: door ? "door" : "window",
         bay: k,
         floor: fl2,
-        u0: uc - half,
-        u1: uc + half,
+        u0: uc - half2,
+        u1: uc + half2,
         h0,
         h1,
         frame: FRAME,
@@ -1195,7 +1340,7 @@ function pushQuad(D, p0, p1, p2, p3, n, col2) {
     D.color.push(col2[0], col2[1], col2[2]);
   }
 }
-function box(D, A, B, yTop, height, depth, nx, nz, col2, closed = false) {
+function box(D, A, B, yTop, height, depth, nx, nz, col2, closed = false, soffit = true) {
   if (height <= 0.01) return;
   const y0 = yTop - height, y1 = yTop;
   const ax = A[0], az = A[2], bx = B[0], bz = B[2];
@@ -1209,7 +1354,7 @@ function box(D, A, B, yTop, height, depth, nx, nz, col2, closed = false) {
   const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
   quad(A0, B0, B1, A1, [nx, 0, nz]);
   quad(a1, A1, B1, b1, [0, 1, 0]);
-  quad(a0, b0, B0, A0, [0, -1, 0]);
+  if (soffit) quad(a0, b0, B0, A0, [0, -1, 0]);
   quad(a0, A0, A1, a1, [-tx, 0, -tz]);
   quad(b0, b1, B1, B0, [tx, 0, tz]);
   if (closed) quad(a0, b0, b1, a1, [-nx, 0, -nz]);
@@ -1555,6 +1700,8 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const fitOut = opts.ground ? new Float32Array(doc.buildings.length).fill(NaN) : null;
   const cls = opts.styles === false ? null : classify(doc, P, I2, (b, key) => wallStyle(hash01(key + "s"), b.height));
   const stats = { fit: {}, faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0, strips: 0, stripMerged: 0, stripJoins: 0, chimneysShared: 0 };
+  const clean = opts.zfight === false ? null : coplanarCleaner();
+  const stepPlans = [];
   doc.buildings.forEach((b, bi) => {
     let base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -1593,10 +1740,19 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n;
       }
     }
+    if (clean) all = clean(all);
     const wallTris = all.length;
-    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
-      const o = triOf(P, I2, t);
-      if (o) all.push(o);
+    {
+      const rt = [];
+      for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) {
+        const o = triOf(P, I2, t);
+        if (o) rt.push(o);
+      }
+      all.push(...clean ? clean(rt) : rt);
+    }
+    if (!all.length) {
+      stats.solidsGone = (stats.solidsGone || 0) + 1;
+      return;
     }
     const smooth4 = smoother(all);
     const faces = /* @__PURE__ */ new Map();
@@ -1741,11 +1897,14 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         return out;
       };
       const doorHere = street && width >= 1.6 && faceEaves >= 2.8 && !(sw > 0.5);
-      if (btype2 === TYPE.MAITRE && doorHere && !kitOn) {
+      const stepPlan = btype2 === TYPE.MAITRE && doorHere && !kitOn ? balcPlan(at2, f, du - 0.79, du + 0.79, 0, 0.51, 0.95) : null;
+      if (stepPlan && opts.zfight !== false && stepPlans.some((Q) => obbHit(stepPlan, Q, -0.01))) stats.stepsShared = (stats.stepsShared || 0) + 1;
+      else if (stepPlan) {
+        stepPlans.push(stepPlan);
         const g = opts.ground ? opts.ground(tx * (u0 + du) + f.nx * (dd + 0.6), tz * (u0 + du) + f.nz * (dd + 0.6)) : base2;
         const foot = Math.min(base2, Number.isFinite(g) ? g : base2) - 0.3;
         for (const [y, d, hw] of [[0.51, 0.35, 0.75], [0.34, 0.65, 0.77], [0.17, 0.95, 0.79]])
-          box(D, at2(du - hw), at2(du + hw), base2 + y, base2 + y - foot, d, f.nx, f.nz, [0.15, 0.155, 0.16]);
+          box(D, at2(du - hw), at2(du + hw), base2 + y, base2 + y - foot, d, f.nx, f.nz, [0.15, 0.155, 0.16], false, opts.zfight === false);
         stats.typeSteps = (stats.typeSteps || 0) + 1;
       }
       if ((btype2 === TYPE.DECO || btype2 === TYPE.BELETAGE || btype2 === TYPE.BLOCK) && doorHere) {
@@ -2282,6 +2441,7 @@ function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     }
   });
   emitStrips(D, SD, stats);
+  if (clean) stats.coplanar = { cut: clean.stats.cut, dropped: clean.stats.dropped, pieces: clean.stats.pieces, m2: Math.round(clean.stats.m2) };
   const f32 = (a) => new Float32Array(a);
   return {
     walls: {
@@ -3284,7 +3444,7 @@ var MeshoptSimplifier = (function() {
 })();
 
 // viewer/drive/colliders.js
-var CELL = 48;
+var CELL2 = 48;
 var KIND2 = { building: 0, island: 1, tree: 2, lamp: 3, post: 4, wall: 5, car: 6, furniture: 7, hedge: 8 };
 function buildColliders(polys, circles, bounds) {
   let nv = 0, nr = 0;
@@ -3328,19 +3488,19 @@ function buildColliders(polys, circles, bounds) {
     circ[i * 3 + 2] = q.r;
     ckind[i] = q.kind ?? KIND2.post;
   });
-  const col2 = { cell: CELL, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind, pref };
+  const col2 = { cell: CELL2, bounds, pts, ringStart, polyRing, pbox, pkind, ptop, pbase, circ, ckind, pref };
   indexCells(col2);
   return col2;
 }
 function indexCells(col2) {
   const { bounds: b, pbox, circ } = col2;
-  const nx = Math.max(1, Math.ceil((b.x1 - b.x0) / CELL)), nz = Math.max(1, Math.ceil((b.z1 - b.z0) / CELL));
+  const nx = Math.max(1, Math.ceil((b.x1 - b.x0) / CELL2)), nz = Math.max(1, Math.ceil((b.z1 - b.z0) / CELL2));
   const P = pbox.length / 4, C = circ.length / 3;
-  const ci = (x) => Math.min(nx - 1, Math.max(0, Math.floor((x - b.x0) / CELL)));
-  const cj = (z) => Math.min(nz - 1, Math.max(0, Math.floor((z - b.z0) / CELL)));
+  const ci = (x) => Math.min(nx - 1, Math.max(0, Math.floor((x - b.x0) / CELL2)));
+  const cj = (z) => Math.min(nz - 1, Math.max(0, Math.floor((z - b.z0) / CELL2)));
   const span = (k) => k < P ? [pbox[k * 4], pbox[k * 4 + 1], pbox[k * 4 + 2], pbox[k * 4 + 3]] : [circ[(k - P) * 3] - circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] - circ[(k - P) * 3 + 2], circ[(k - P) * 3] + circ[(k - P) * 3 + 2], circ[(k - P) * 3 + 1] + circ[(k - P) * 3 + 2]];
   const count = new Uint32Array(nx * nz + 1);
-  const keep = (s) => s[2] >= b.x0 - CELL && s[0] <= b.x1 + CELL && s[3] >= b.z0 - CELL && s[1] <= b.z1 + CELL;
+  const keep = (s) => s[2] >= b.x0 - CELL2 && s[0] <= b.x1 + CELL2 && s[3] >= b.z0 - CELL2 && s[1] <= b.z1 + CELL2;
   for (let k = 0; k < P + C; k++) {
     const s = span(k);
     if (!keep(s)) continue;
@@ -4005,9 +4165,9 @@ function cleanPolygon(input, eps = 0.02) {
     for (let i = 0; i < n; i++) {
       const a = pts[(i - 1 + n) % n], p = pts[i], b = pts[(i + 1) % n];
       const ux = p[0] - a[0], uz = p[1] - a[1], vx = b[0] - p[0], vz = b[1] - p[1];
-      const cross2 = ux * vz - uz * vx, dot = ux * vx + uz * vz;
+      const cross3 = ux * vz - uz * vx, dot = ux * vx + uz * vz;
       const lu = Math.hypot(ux, uz), lv = Math.hypot(vx, vz);
-      if (lu > 1e-9 && lv > 1e-9 && Math.abs(cross2) < 1e-6 * lu * lv * 50 && dot < 0) continue;
+      if (lu > 1e-9 && lv > 1e-9 && Math.abs(cross3) < 1e-6 * lu * lv * 50 && dot < 0) continue;
       out.push(p);
     }
     if (out.length === pts.length) break;
@@ -4729,11 +4889,11 @@ function designElevation(vpis, x) {
   let yv = vpis[i].y + grade(i) * (x - vpis[i].s);
   for (let k = 1; k < vpis.length - 1; k++) {
     const v = vpis[k];
-    const half = v.L / 2;
-    if (half <= 0 || x < v.s - half || x > v.s + half) continue;
+    const half2 = v.L / 2;
+    if (half2 <= 0 || x < v.s - half2 || x > v.s + half2) continue;
     const g1 = grade(k - 1), g2 = grade(k);
-    const bvc = v.s - half;
-    const yb = v.y - g1 * half;
+    const bvc = v.s - half2;
+    const yb = v.y - g1 * half2;
     const dx = x - bvc;
     return yb + g1 * dx + (g2 - g1) / (2 * v.L) * dx * dx;
   }
@@ -5168,14 +5328,14 @@ function armMouthMarkings(node, arm, style) {
     const s0 = node.kind === "roundabout" ? s : s + 0.8;
     if (node.kind === "roundabout") {
       const R2 = node.ring.Ro + 0.6;
-      const half = 0.4, tall = 1, step = 1.25;
+      const half2 = 0.4, tall = 1, step = 1.25;
       const clear = (p) => pointInPolygon(p[0], p[1], node.pad) && !node.islands.some((isl) => isl.kind === "raised" && pointInPolygon(p[0], p[1], isl.poly));
       const teeth = [];
       for (let t = 0.2; t < Math.min(R2 - 1, e.curbL + 20); t += 0.25) {
         const sg = Math.sqrt(R2 * R2 - t * t);
-        const tri = [armPoint(arm, sg, t - half), armPoint(arm, sg, t + half), armPoint(arm, sg + tall, t)];
+        const tri = [armPoint(arm, sg, t - half2), armPoint(arm, sg, t + half2), armPoint(arm, sg + tall, t)];
         const mid = armPoint(arm, sg + tall / 2, t);
-        const ok = tri.every(clear) && clear(mid) && clear(armPoint(arm, sg, t - half - 0.25)) && clear(armPoint(arm, sg, t + half + 0.25));
+        const ok = tri.every(clear) && clear(mid) && clear(armPoint(arm, sg, t - half2 - 0.25)) && clear(armPoint(arm, sg, t + half2 + 0.25));
         if (!ok) {
           if (teeth.length && t - teeth[teeth.length - 1].t > step * 1.5) break;
           continue;
@@ -5205,12 +5365,12 @@ function arrowMarkings(x, z, th, kinds, color = "white", laneW = 3.25) {
   const P = (u, v) => [x + fx * u * k + lx * v * k, z + fz * u * k + lz * v * k];
   const out = [];
   const shaftW = 0.15 * k;
-  const head = (u, v, hx, hz, len = 1.2, half = 0.45) => {
+  const head = (u, v, hx, hz, len = 1.2, half2 = 0.45) => {
     const nx = -hz, nz = hx;
     return {
       kind: "poly",
       color,
-      pts: [P(u + hx * len, v + hz * len), P(u + nx * half, v + nz * half), P(u - nx * half, v - nz * half)]
+      pts: [P(u + hx * len, v + hz * len), P(u + nx * half2, v + nz * half2), P(u - nx * half2, v - nz * half2)]
     };
   };
   const bend = 0.6, turnAt = 0.6;
@@ -6713,7 +6873,7 @@ function locate(result, grid, x, z) {
   if (lat > edges.propL + 0.5 || lat < edges.propR - 0.5) return null;
   if (!lane && Math.abs(lat) <= lay.cw / 2) lane = { type: `median (${rr.stack.center.kind})`, w: lay.cw, id: "C" };
   const p = profileAt(rr.prof, s);
-  const cross2 = surfaceOffset(surfaceFrame(rr, s, e.th, e.k, lay), lat);
+  const cross3 = surfaceOffset(surfaceFrame(rr, s, e.th, e.k, lay), lat);
   return {
     kind: "road",
     roadId: rr.id,
@@ -6722,7 +6882,7 @@ function locate(result, grid, x, z) {
     L: rr.L,
     t: lat,
     lane,
-    y: p.y + cross2,
+    y: p.y + cross3,
     grade: p.g,
     ground: p.ground,
     radius: Math.abs(e.k) > 1e-6 ? 1 / Math.abs(e.k) : Infinity,
@@ -6785,7 +6945,7 @@ function filterPoints(start, end) {
   let p = start, again;
   do {
     again = false;
-    if (!p.steiner && (equals(p, p.next) || area(p.prev, p, p.next) === 0)) {
+    if (!p.steiner && (equals(p, p.next) || area2(p.prev, p, p.next) === 0)) {
       removeNode(p);
       p = end = p.prev;
       if (p === p.next) break;
@@ -6826,35 +6986,35 @@ function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
 }
 function isEar(ear) {
   const a = ear.prev, b = ear, c = ear.next;
-  if (area(a, b, c) >= 0) return false;
+  if (area2(a, b, c) >= 0) return false;
   const ax = a.x, bx = b.x, cx = c.x, ay = a.y, by = b.y, cy = c.y;
   const x0 = Math.min(ax, bx, cx), y0 = Math.min(ay, by, cy), x1 = Math.max(ax, bx, cx), y1 = Math.max(ay, by, cy);
   let p = c.next;
   while (p !== a) {
-    if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, p.x, p.y) && area(p.prev, p, p.next) >= 0) return false;
+    if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, p.x, p.y) && area2(p.prev, p, p.next) >= 0) return false;
     p = p.next;
   }
   return true;
 }
 function isEarHashed(ear, minX, minY, invSize) {
   const a = ear.prev, b = ear, c = ear.next;
-  if (area(a, b, c) >= 0) return false;
+  if (area2(a, b, c) >= 0) return false;
   const ax = a.x, bx = b.x, cx = c.x, ay = a.y, by = b.y, cy = c.y;
   const x0 = Math.min(ax, bx, cx), y0 = Math.min(ay, by, cy), x1 = Math.max(ax, bx, cx), y1 = Math.max(ay, by, cy);
   const minZ = zOrder(x0, y0, minX, minY, invSize), maxZ = zOrder(x1, y1, minX, minY, invSize);
   let p = ear.prevZ, n = ear.nextZ;
   while (p && p.z >= minZ && n && n.z <= maxZ) {
-    if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && p !== a && p !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, p.x, p.y) && area(p.prev, p, p.next) >= 0) return false;
+    if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && p !== a && p !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, p.x, p.y) && area2(p.prev, p, p.next) >= 0) return false;
     p = p.prevZ;
-    if (n.x >= x0 && n.x <= x1 && n.y >= y0 && n.y <= y1 && n !== a && n !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, n.x, n.y) && area(n.prev, n, n.next) >= 0) return false;
+    if (n.x >= x0 && n.x <= x1 && n.y >= y0 && n.y <= y1 && n !== a && n !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, n.x, n.y) && area2(n.prev, n, n.next) >= 0) return false;
     n = n.nextZ;
   }
   while (p && p.z >= minZ) {
-    if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && p !== a && p !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, p.x, p.y) && area(p.prev, p, p.next) >= 0) return false;
+    if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1 && p !== a && p !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, p.x, p.y) && area2(p.prev, p, p.next) >= 0) return false;
     p = p.prevZ;
   }
   while (n && n.z <= maxZ) {
-    if (n.x >= x0 && n.x <= x1 && n.y >= y0 && n.y <= y1 && n !== a && n !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, n.x, n.y) && area(n.prev, n, n.next) >= 0) return false;
+    if (n.x >= x0 && n.x <= x1 && n.y >= y0 && n.y <= y1 && n !== a && n !== c && pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, n.x, n.y) && area2(n.prev, n, n.next) >= 0) return false;
     n = n.nextZ;
   }
   return true;
@@ -6965,7 +7125,7 @@ function findHoleBridge(hole, outerNode) {
   return m;
 }
 function sectorContainsSector(m, p) {
-  return area(m.prev, m, p.prev) < 0 && area(p.next, m, m.next) < 0;
+  return area2(m.prev, m, p.prev) < 0 && area2(p.next, m, m.next) < 0;
 }
 function indexCurve(start, minX, minY, invSize) {
   let p = start;
@@ -7050,20 +7210,20 @@ function pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, px, py) {
 function isValidDiagonal(a, b) {
   return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && // doesn't intersect other edges
   (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && // locally visible
-  (area(a.prev, a, b.prev) || area(a, b.prev, b)) || // does not create opposite-facing sectors
-  equals(a, b) && area(a.prev, a, a.next) > 0 && area(b.prev, b, b.next) > 0);
+  (area2(a.prev, a, b.prev) || area2(a, b.prev, b)) || // does not create opposite-facing sectors
+  equals(a, b) && area2(a.prev, a, a.next) > 0 && area2(b.prev, b, b.next) > 0);
 }
-function area(p, q, r) {
+function area2(p, q, r) {
   return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 }
 function equals(p1, p2) {
   return p1.x === p2.x && p1.y === p2.y;
 }
 function intersects(p1, q1, p2, q2) {
-  const o1 = sign(area(p1, q1, p2));
-  const o2 = sign(area(p1, q1, q2));
-  const o3 = sign(area(p2, q2, p1));
-  const o4 = sign(area(p2, q2, q1));
+  const o1 = sign(area2(p1, q1, p2));
+  const o2 = sign(area2(p1, q1, q2));
+  const o3 = sign(area2(p2, q2, p1));
+  const o4 = sign(area2(p2, q2, q1));
   if (o1 !== o2 && o3 !== o4) return true;
   if (o1 === 0 && onSegment(p1, p2, q1)) return true;
   if (o2 === 0 && onSegment(p1, q2, q1)) return true;
@@ -7086,7 +7246,7 @@ function intersectsPolygon(a, b) {
   return false;
 }
 function locallyInside(a, b) {
-  return area(a.prev, a, a.next) < 0 ? area(a, b, a.next) >= 0 && area(a, a.prev, b) >= 0 : area(a, b, a.prev) < 0 || area(a, a.next, b) < 0;
+  return area2(a.prev, a, a.next) < 0 ? area2(a, b, a.next) >= 0 && area2(a, a.prev, b) >= 0 : area2(a, b, a.prev) < 0 || area2(a, a.next, b) < 0;
 }
 function middleInside(a, b) {
   let p = a;
@@ -8299,8 +8459,8 @@ function normName(s) {
   const t = fixMojibake(String(s)).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/[’‘'`´.,;:()"/-]/g, " ").replace(/\s+/g, " ").trim();
   return t.split(" ").map((w) => ABBR[w] || w).join(" ");
 }
-function looseKey(norm4) {
-  return norm4.split(" ").filter((w) => w && !TYPE2.has(w)).sort().join(" ");
+function looseKey(norm5) {
+  return norm5.split(" ").filter((w) => w && !TYPE2.has(w)).sort().join(" ");
 }
 function osmSides(name) {
   if (!name) return [];
@@ -8471,7 +8631,7 @@ var OVERLAY = [1, 1, 0, 1, 0, 0, 0, 0, 0, 0];
 var COVER = OVERLAY.map((o, c) => o || RAISE[c] > 0 ? 1 : 0);
 var CARRIAGE = [1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
 var BASE_SURF = [0, 0, 1, 2, 1, 0, 0, 0, 0, 0];
-var CELL2 = 6;
+var CELL3 = 6;
 var H_MARGIN = 0.6;
 var SMOOTH_PASSES = 0;
 var LIFT = 6e-3;
@@ -8508,14 +8668,14 @@ function clipHalf(poly, ax, az, bx, bz, s) {
   return out;
 }
 function clipHalfCell(poly, i, j, h) {
-  const x0 = i * CELL2, z0 = j * CELL2, x1 = x0 + CELL2, z1 = z0 + CELL2;
+  const x0 = i * CELL3, z0 = j * CELL3, x1 = x0 + CELL3, z1 = z0 + CELL3;
   let p = clipHalf(poly, x0, z0, x1, z0, 1);
   p = clipHalf(p, x1, z1, x0, z1, 1);
   p = clipHalf(p, x0, z1, x0, z0, 1);
   p = clipHalf(p, x1, z0, x1, z1, 1);
   return clipHalf(p, x0, z0, x1, z1, h ? 1 : -1);
 }
-var area2 = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+var area22 = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
 var ringArea = (p) => {
   let s = 0;
   for (let k = 0; k < p.length; k++) {
@@ -8525,9 +8685,9 @@ var ringArea = (p) => {
   return s / 2;
 };
 function bary(p, a, b, c) {
-  const d = area2(a, b, c);
+  const d = area22(a, b, c);
   if (Math.abs(d) < 1e-12) return null;
-  const l1 = area2(p, b, c) / d, l2 = area2(a, p, c) / d;
+  const l1 = area22(p, b, c) / d, l2 = area22(a, p, c) / d;
   return [l1, l2, 1 - l1 - l2];
 }
 function convexParts(flat, tris) {
@@ -8535,13 +8695,13 @@ function convexParts(flat, tris) {
   const polys = [];
   for (let q = 0; q < tris.length; q += 3) {
     let t = [tris[q], tris[q + 1], tris[q + 2]];
-    const a = area2(P(t[0]), P(t[1]), P(t[2]));
+    const a = area22(P(t[0]), P(t[1]), P(t[2]));
     if (Math.abs(a) < 1e-9) continue;
     if (a < 0) t = [t[0], t[2], t[1]];
     polys.push(t);
   }
   const convexOk = (poly) => {
-    for (let k = 0; k < poly.length; k++) if (area2(P(poly[k]), P(poly[(k + 1) % poly.length]), P(poly[(k + 2) % poly.length])) < -1e-9) return false;
+    for (let k = 0; k < poly.length; k++) if (area22(P(poly[k]), P(poly[(k + 1) % poly.length]), P(poly[(k + 2) % poly.length])) < -1e-9) return false;
     return true;
   };
   const rot = (A, k) => A.slice(k).concat(A.slice(0, k));
@@ -8949,7 +9109,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
   const convexCover = /* @__PURE__ */ new Map();
   let fallbacks = 0;
   const addTri = (cls, si2, a, b, c, hk) => {
-    const A = Math.abs(area2(a, b, c)) / 2;
+    const A = Math.abs(area22(a, b, c)) / 2;
     if (A < 5e-8) return;
     base.push({ cls, si: si2, a, b, c, hk });
     push(halves, hk, base.length - 1);
@@ -8983,8 +9143,8 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
       for (let q = 0; q < t.length; q += 3) {
         const tri = [0, 1, 2].map((m) => [flat[t[q + m] * 2], flat[t[q + m] * 2 + 1]]);
         const xs = tri.map((p) => p[0]), zs = tri.map((p) => p[1]);
-        for (let i = Math.floor(Math.min(...xs) / CELL2); i <= Math.floor(Math.max(...xs) / CELL2); i++)
-          for (let j = Math.floor(Math.min(...zs) / CELL2); j <= Math.floor(Math.max(...zs) / CELL2); j++) for (let h = 0; h < 2; h++) {
+        for (let i = Math.floor(Math.min(...xs) / CELL3); i <= Math.floor(Math.max(...xs) / CELL3); i++)
+          for (let j = Math.floor(Math.min(...zs) / CELL3); j <= Math.floor(Math.max(...zs) / CELL3); j++) for (let h = 0; h < 2; h++) {
             const p = clipHalfCell(tri, i, j, h), hk = halfKey(i, j, h);
             if (p.length < 3) continue;
             for (let k = 1; k + 1 < p.length; k++) addTri(s.c, si2, p[0], p[k], p[k + 1], hk);
@@ -8993,7 +9153,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
       }
       return;
     }
-    for (let i = Math.floor(x0 / CELL2); i <= Math.floor(x1 / CELL2); i++) for (let j = Math.floor(z0 / CELL2); j <= Math.floor(z1 / CELL2); j++) for (let h = 0; h < 2; h++) {
+    for (let i = Math.floor(x0 / CELL3); i <= Math.floor(x1 / CELL3); i++) for (let j = Math.floor(z0 / CELL3); j <= Math.floor(z1 / CELL3); j++) for (let h = 0; h < 2; h++) {
       const hk = halfKey(i, j, h);
       const p = clipHalfCell(rings[0], i, j, h);
       if (p.length < 3) continue;
@@ -9002,15 +9162,15 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
       const flat = p.flat(), tris = earcut(flat, null, 2);
       const T3 = (q) => [flat[tris[q] * 2], flat[tris[q] * 2 + 1]];
       let At = 0;
-      for (let q = 0; q < tris.length; q += 3) At += Math.abs(area2(T3(q), T3(q + 1), T3(q + 2))) / 2;
+      for (let q = 0; q < tris.length; q += 3) At += Math.abs(area22(T3(q), T3(q + 1), T3(q + 2))) / 2;
       if (Math.abs(At - A) > 1e-3 * Math.max(1, A)) fallbacks++;
       for (let q = 0; q < tris.length; q += 3) addTri(s.c, si2, T3(q), T3(q + 1), T3(q + 2), hk);
       if (COVER[s.c]) for (const c of convexParts(flat, tris)) push(convexCover, hk, c);
     }
   });
   const halfOf = (x, z) => {
-    const i = Math.floor(x / CELL2), j = Math.floor(z / CELL2);
-    return [i, j, x / CELL2 - i >= z / CELL2 - j ? 0 : 1];
+    const i = Math.floor(x / CELL3), j = Math.floor(z / CELL3);
+    return [i, j, x / CELL3 - i >= z / CELL3 - j ? 0 : 1];
   };
   const baseAt = (x, z, want) => {
     const [i, j, h] = halfOf(x, z);
@@ -9043,10 +9203,10 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
   };
   const fitCorner = (cx, cz) => {
     let sw = 0, sx = 0, sz = 0, sxx = 0, sxz = 0, szz = 0, sy = 0, sxy = 0, szy = 0, n = 0, lo = Infinity, hi = -Infinity;
-    for (let dx = -CELL2 + 0.5; dx < CELL2; dx += 1) for (let dz = -CELL2 + 0.5; dz < CELL2; dz += 1) {
+    for (let dx = -CELL3 + 0.5; dx < CELL3; dx += 1) for (let dz = -CELL3 + 0.5; dz < CELL3; dz += 1) {
       const x = cx + dx, z = cz + dz;
       if (classAt(x, z) < 0) continue;
-      const w = (1 - Math.abs(dx) / CELL2) * (1 - Math.abs(dz) / CELL2), y = G2(x, z);
+      const w = (1 - Math.abs(dx) / CELL3) * (1 - Math.abs(dz) / CELL3), y = G2(x, z);
       sw += w;
       sx += w * dx;
       sz += w * dz;
@@ -9060,7 +9220,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
       if (y < lo) lo = y;
       if (y > hi) hi = y;
     }
-    if (n === (2 * CELL2) ** 2 || n < 6) return G2(cx, cz);
+    if (n === (2 * CELL3) ** 2 || n < 6) return G2(cx, cz);
     const det3 = (a, b, c, d, e, f, g, h, k) => a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g);
     const D = det3(sw, sx, sz, sx, sxx, sxz, sz, sxz, szz);
     if (Math.abs(D) < 1e-9) return sy / sw;
@@ -9072,12 +9232,12 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
   const street = /* @__PURE__ */ new Set();
   for (const b of base) {
     const cx = (b.a[0] + b.b[0] + b.c[0]) / 3, cz = (b.a[1] + b.b[1] + b.c[1]) / 3;
-    const i = Math.floor(cx / CELL2), j = Math.floor(cz / CELL2);
+    const i = Math.floor(cx / CELL3), j = Math.floor(cz / CELL3);
     for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) street.add(cellKey(i + di, j + dj));
   }
   for (const k of street) {
     const i = Math.floor(k / 8192) - 4096, j = k % 8192 - 4096;
-    corner.set(k, fitCorner(i * CELL2, j * CELL2));
+    corner.set(k, fitCorner(i * CELL3, j * CELL3));
   }
   for (let pass = 0; pass < SMOOTH_PASSES; pass++) {
     const next = /* @__PURE__ */ new Map();
@@ -9098,13 +9258,13 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
     const k = cellKey(i, j);
     let v = corner.get(k);
     if (v === void 0) {
-      v = fitCorner(i * CELL2, j * CELL2);
+      v = fitCorner(i * CELL3, j * CELL3);
       corner.set(k, v);
     }
     return v;
   };
   const H = (x, z) => {
-    const i = Math.floor(x / CELL2), j = Math.floor(z / CELL2), fx = x / CELL2 - i, fz = z / CELL2 - j;
+    const i = Math.floor(x / CELL3), j = Math.floor(z / CELL3), fx = x / CELL3 - i, fz = z / CELL3 - j;
     const g00 = Gc(i, j), g11 = Gc(i + 1, j + 1);
     return fx >= fz ? g00 + fx * (Gc(i + 1, j) - g00) + fz * (g11 - Gc(i + 1, j)) : g00 + fz * (Gc(i, j + 1) - g00) + fx * (g11 - Gc(i, j + 1));
   };
@@ -9276,16 +9436,16 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
         const r = P.o * 1.5;
         if (Math.max(b.a[0], b.b[0], b.c[0]) < P.x - r || Math.min(b.a[0], b.b[0], b.c[0]) > P.x + r || Math.max(b.a[1], b.b[1], b.c[1]) < P.z - r || Math.min(b.a[1], b.b[1], b.c[1]) > P.z + r) continue;
         const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, c2]) => [P.x + (P.tx * a - P.tz * c2) * P.o, P.z + (P.tz * a + P.tx * c2) * P.o]);
-        const ccw = ringArea(C) > 0 ? 1 : -1;
+        const ccw2 = ringArea(C) > 0 ? 1 : -1;
         const next = [];
         for (const poly of pieces) {
           let inside4 = poly;
           const outs = [];
           for (let e = 0; e < 4 && inside4.length >= 3; e++) {
             const [ax, az] = C[e], [bx, bz] = C[(e + 1) % 4];
-            const outside = clipHalf(inside4, ax, az, bx, bz, -ccw);
+            const outside = clipHalf(inside4, ax, az, bx, bz, -ccw2);
             if (outside.length >= 3 && Math.abs(ringArea(outside)) > 1e-6) outs.push(outside);
-            inside4 = clipHalf(inside4, ax, az, bx, bz, ccw);
+            inside4 = clipHalf(inside4, ax, az, bx, bz, ccw2);
           }
           if (inside4.length >= 3 && Math.abs(ringArea(inside4)) > 1e-6) {
             cut = true;
@@ -9298,7 +9458,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
         keep.push(b);
         continue;
       }
-      for (const p of pieces) for (let k2 = 1; k2 + 1 < p.length; k2++) if (Math.abs(area2(p[0], p[k2], p[k2 + 1])) > 1e-7) keep.push({ ...b, a: p[0], b: p[k2], c: p[k2 + 1] });
+      for (const p of pieces) for (let k2 = 1; k2 + 1 < p.length; k2++) if (Math.abs(area22(p[0], p[k2], p[k2 + 1])) > 1e-7) keep.push({ ...b, a: p[0], b: p[k2], c: p[k2 + 1] });
     }
     base.length = 0;
     for (const b of keep) base.push(b);
@@ -9363,7 +9523,7 @@ function prepareSurfaces(surf, ground, bounds, trees = null, opts = {}) {
         }
         pieces = next;
       }
-      for (const q of pieces) for (let k = 1; k + 1 < q.length; k++) if (Math.abs(area2(q[0], q[k], q[k + 1])) > 1e-7) out.push({ ...b, a: q[0], b: q[k], c: q[k + 1] });
+      for (const q of pieces) for (let k = 1; k + 1 < q.length; k++) if (Math.abs(area22(q[0], q[k], q[k + 1])) > 1e-7) out.push({ ...b, a: q[0], b: q[k], c: q[k + 1] });
     };
     for (const b of base) {
       if (b.cls === SURF_CLASS.ramp && RAMP_LINE_CUTS) {
@@ -9772,13 +9932,13 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       return w && w[0] >= 0 && w[1] >= 0 && w[2] >= 0;
     };
     if (inT(ax, az) || inT(bx, bz)) return true;
-    const cross2 = (p, q, r, s2) => {
+    const cross3 = (p, q, r, s2) => {
       const d = (q[0] - p[0]) * (s2[1] - r[1]) - (q[1] - p[1]) * (s2[0] - r[0]);
       if (Math.abs(d) < 1e-12) return false;
       const t = ((r[0] - p[0]) * (s2[1] - r[1]) - (r[1] - p[1]) * (s2[0] - r[0])) / d, u = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d;
       return t >= 0 && t <= 1 && u >= 0 && u <= 1;
     };
-    for (let k = 0; k < 3; k++) if (cross2([ax, az], [bx, bz], T4[k], T4[(k + 1) % 3])) return true;
+    for (let k = 0; k < 3; k++) if (cross3([ax, az], [bx, bz], T4[k], T4[(k + 1) % 3])) return true;
     return false;
   };
   const edgesAcross = (T4) => {
@@ -9854,8 +10014,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       for (const cp of cutParts) {
         zeroLines = cp.inside;
         const xs2 = cp.poly.map((q) => q[0]), zs2 = cp.poly.map((q) => q[1]), pcs = [];
-        for (let i = Math.floor(Math.min(...xs2) / CELL2); i <= Math.floor(Math.max(...xs2) / CELL2); i++)
-          for (let j = Math.floor(Math.min(...zs2) / CELL2); j <= Math.floor(Math.max(...zs2) / CELL2); j++) for (let h = 0; h < 2; h++) {
+        for (let i = Math.floor(Math.min(...xs2) / CELL3); i <= Math.floor(Math.max(...xs2) / CELL3); i++)
+          for (let j = Math.floor(Math.min(...zs2) / CELL3); j <= Math.floor(Math.max(...zs2) / CELL3); j++) for (let h = 0; h < 2; h++) {
             const q = clipHalfCell(cp.poly, i, j, h);
             if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) pcs.push(q);
           }
@@ -9863,8 +10023,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
         const all = [];
         {
           const xa = P2.map((q) => q[0]), za = P2.map((q) => q[1]);
-          for (let i = Math.floor(Math.min(...xa) / CELL2); i <= Math.floor(Math.max(...xa) / CELL2); i++)
-            for (let j = Math.floor(Math.min(...za) / CELL2); j <= Math.floor(Math.max(...za) / CELL2); j++) for (let h = 0; h < 2; h++) {
+          for (let i = Math.floor(Math.min(...xa) / CELL3); i <= Math.floor(Math.max(...xa) / CELL3); i++)
+            for (let j = Math.floor(Math.min(...za) / CELL3); j <= Math.floor(Math.max(...za) / CELL3); j++) for (let h = 0; h < 2; h++) {
               const q = clipHalfCell(P2, i, j, h);
               if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) all.push(q);
             }
@@ -9889,8 +10049,8 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     }
     const xs = poly.map((q) => q[0]), zs = poly.map((q) => q[1]);
     const pieces = [];
-    for (let i = Math.floor(Math.min(...xs) / CELL2); i <= Math.floor(Math.max(...xs) / CELL2); i++)
-      for (let j = Math.floor(Math.min(...zs) / CELL2); j <= Math.floor(Math.max(...zs) / CELL2); j++) for (let h = 0; h < 2; h++) {
+    for (let i = Math.floor(Math.min(...xs) / CELL3); i <= Math.floor(Math.max(...xs) / CELL3); i++)
+      for (let j = Math.floor(Math.min(...zs) / CELL3); j <= Math.floor(Math.max(...zs) / CELL3); j++) for (let h = 0; h < 2; h++) {
         const q = clipHalfCell(poly, i, j, h);
         if (q.length >= 3 && Math.abs(ringArea(q)) > 1e-6) pieces.push(q);
       }
@@ -9930,7 +10090,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
   for (const b of base) {
     if (!paved(b.cls)) continue;
     const fsi = hostOf(b.si);
-    const A2 = Math.abs(area2(b.a, b.b, b.c)), c0 = cen.get(fsi) || [0, 0, 0];
+    const A2 = Math.abs(area22(b.a, b.b, b.c)), c0 = cen.get(fsi) || [0, 0, 0];
     c0[0] += A2 * (b.a[0] + b.b[0] + b.c[0]) / 3;
     c0[1] += A2 * (b.a[1] + b.b[1] + b.c[1]) / 3;
     c0[2] += A2;
@@ -9938,7 +10098,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     const k = prep.nearKerb((b.a[0] + b.b[0] + b.c[0]) / 3, (b.a[1] + b.b[1] + b.c[1]) / 3);
     if (!k) continue;
     const m = votes2.get(fsi) || /* @__PURE__ */ new Map();
-    m.set(k.li, (m.get(k.li) || 0) + Math.abs(area2(b.a, b.b, b.c)));
+    m.set(k.li, (m.get(k.li) || 0) + Math.abs(area22(b.a, b.b, b.c)));
     votes2.set(fsi, m);
   }
   const sidewalkKerb = new Map([...votes2].map(([si2, m]) => [si2, [...m].sort((p, q) => q[1] - p[1])[0][0]]));
@@ -9991,7 +10151,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     const pts = [b.a, b.b, b.c];
     let uvs = pts.map((p) => [p[0], p[1]]), frame2 = -1, uv2 = uvs, fw = [0, 0, 0];
     if (paved(cls)) {
-      const ok = (ks2) => ks2 && ks2.every(Boolean) && Math.max(...ks2.map((k) => k.s)) - Math.min(...ks2.map((k) => k.s)) < 3 * CELL2;
+      const ok = (ks2) => ks2 && ks2.every(Boolean) && Math.max(...ks2.map((k) => k.s)) - Math.min(...ks2.map((k) => k.s)) < 3 * CELL3;
       let li = sidewalkKerb.get(hostOf(b.si)) ?? -1;
       let ks = li >= 0 ? pts.map((p) => prep.nearKerbUV(p[0], p[1], li)) : null;
       if (!ok(ks)) {
@@ -10071,7 +10231,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
       const [ax, az] = line[k - 1], [bx, bz] = line[k], ts = [];
       for (const [a0, b0] of [[ax, bx], [az, bz], [ax - az, bx - bz]]) {
         const lo = Math.min(a0, b0), hi = Math.max(a0, b0);
-        for (let g = Math.ceil(lo / CELL2) * CELL2; g < hi; g += CELL2) {
+        for (let g = Math.ceil(lo / CELL3) * CELL3; g < hi; g += CELL3) {
           const t = (g - a0) / (b0 - a0);
           if (t > 1e-6 && t < 1 - 1e-6) ts.push(t);
         }
@@ -10427,7 +10587,7 @@ var lineDist = (x, z, pts) => {
   for (let i = 1; i < pts.length; i++) d = Math.min(d, segD(x, z, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]));
   return d;
 };
-var area22 = (p) => {
+var area23 = (p) => {
   let a = 0;
   for (let i = 0, j = p.length - 1; i < p.length; j = i++) a += p[j][0] * p[i][1] - p[i][0] * p[j][1];
   return a / 2;
@@ -10446,9 +10606,9 @@ function hull(pts) {
   }
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
-function clipConvex(subject, clip) {
+function clipConvex2(subject, clip) {
   let out = subject;
-  const s = area22(clip) > 0 ? 1 : -1;
+  const s = area23(clip) > 0 ? 1 : -1;
   for (let i = 0; i < clip.length && out.length; i++) {
     const a = clip[i], b = clip[(i + 1) % clip.length];
     const side = (p) => s * ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]));
@@ -10660,8 +10820,8 @@ function afterNetworkV2(net, ctx, surf) {
     }
     poly = hull(poly);
     if (drawnPolys.some((m) => {
-      const o = clipConvex(poly, m);
-      return o.length >= 3 && Math.abs(area22(o)) > 0.5;
+      const o = clipConvex2(poly, m);
+      return o.length >= 3 && Math.abs(area23(o)) > 0.5;
     })) {
       inv.stats.crossingsOverlap++;
       continue;
@@ -10825,7 +10985,7 @@ function afterNetworkV2(net, ctx, surf) {
       if (t1 - t0 < 1.5) continue;
       const hits = (s0) => {
         const band = [armPoint(a, s0, t0), armPoint(a, s0, t1), armPoint(a, s0 + w, t1), armPoint(a, s0 + w, t0)];
-        return polys.some((P) => clipConvex(band, P).length >= 3 && Math.abs(area22(clipConvex(band, P))) > 0.01);
+        return polys.some((P) => clipConvex2(band, P).length >= 3 && Math.abs(area23(clipConvex2(band, P))) > 0.01);
       };
       let tries = 0;
       while (hits(sg) && tries++ < 40) sg += 0.25;
@@ -10892,7 +11052,7 @@ function afterNetworkV2(net, ctx, surf) {
     const F = { o: [x0 - 0.05, z0 - 0.05], a: [1, 0], b: [0, 1], u0: 0, u1: x1 - x0 + 0.1, v0: 0, vLen: z1 - z0 + 0.1 };
     for (let k = 0; k < tri.length; k += 3) {
       const t3 = [0, 1, 2].map((m) => [flat[tri[k + m] * 2], flat[tri[k + m] * 2 + 1]]);
-      if (Math.abs(area22(t3)) < 1e-6) continue;
+      if (Math.abs(area23(t3)) < 1e-6) continue;
       items.push({ kind: "solid", poly: t3, frame: F });
     }
     inv.symbols.push({ id: g.id, src: "bm", kind: `glyph:${g.type}`, x: c[0], z: c[1] });
@@ -10997,7 +11157,7 @@ function paintMeshV2(items, prep, bounds) {
   const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
   const KIND5 = { solid: 0, zebra: 1, teeth: 2, glyph: 3 };
   for (const it of items) {
-    let poly = clipConvex(it.poly, tile);
+    let poly = clipConvex2(it.poly, tile);
     if (poly.length < 3) continue;
     const xs = poly.map((p) => p[0]), zs = poly.map((p) => p[1]);
     const seen = /* @__PURE__ */ new Set();
@@ -11015,11 +11175,11 @@ function paintMeshV2(items, prep, bounds) {
           if (seen.has(bi)) continue;
           seen.add(bi);
           const b = prep.base[bi];
-          const piece = clipConvex(poly, [b.a, b.b, b.c]);
-          if (piece.length < 3 || Math.abs(area22(piece)) < 1e-5) continue;
+          const piece = clipConvex2(poly, [b.a, b.b, b.c]);
+          if (piece.length < 3 || Math.abs(area23(piece)) < 1e-5) continue;
           const v0 = pos.length / 3;
           const [pa, pb, pc] = piece;
-          const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
+          const ccw2 = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
           for (const p of piece) {
             pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
             const nn = prep.nrmAt(p[0], p[1]);
@@ -11030,7 +11190,7 @@ function paintMeshV2(items, prep, bounds) {
             a2.push(ext[0], ext[1], 0, 0);
           }
           for (let k = 1; k + 1 < piece.length; k++) {
-            if (ccw) idx2.push(v0, v0 + k + 1, v0 + k);
+            if (ccw2) idx2.push(v0, v0 + k + 1, v0 + k);
             else idx2.push(v0, v0 + k, v0 + k + 1);
           }
         }
@@ -11067,7 +11227,7 @@ function roadTextMesh(texts, prep, bounds) {
         const row = rows.indexOf(line), off = (i - (n - 1) / 2) * (h + gap);
         const cx = t.at[0] + rx * off, cz = t.at[1] + rz * off;
         const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [cx + fx * a * Lg / 2 + rx * b * h / 2, cz + fz * a * Lg / 2 + rz * b * h / 2]);
-        const poly = clipConvex(corners, tile);
+        const poly = clipConvex2(corners, tile);
         if (poly.length < 3) return;
         const uvOf = (p) => {
           const dx = p[0] - cx, dz = p[1] - cz;
@@ -11082,7 +11242,7 @@ function roadTextMesh(texts, prep, bounds) {
       const ox = t.at[0] + fx * along, oz = t.at[1] + fz * along;
       const p0 = [ox - rx * w / 2 - fx * h / 2, oz - rz * w / 2 - fz * h / 2];
       const corners = [p0, [p0[0] + rx * w, p0[1] + rz * w], [p0[0] + rx * w + fx * h, p0[1] + rz * w + fz * h], [p0[0] + fx * h, p0[1] + fz * h]];
-      const poly = clipConvex(corners, tile);
+      const poly = clipConvex2(corners, tile);
       if (poly.length < 3) return;
       const uvOf = (p) => {
         const dx = p[0] - p0[0], dz = p[1] - p0[1];
@@ -11094,11 +11254,11 @@ function roadTextMesh(texts, prep, bounds) {
   function drape(poly, uvOf) {
     for (const b of prep.base) {
       if (!MARKABLE.has(b.cls)) continue;
-      const piece = clipConvex(poly, [b.a, b.b, b.c]);
-      if (piece.length < 3 || Math.abs(area22(piece)) < 1e-5) continue;
+      const piece = clipConvex2(poly, [b.a, b.b, b.c]);
+      if (piece.length < 3 || Math.abs(area23(piece)) < 1e-5) continue;
       const v0 = pos.length / 3;
       const [pa, pb, pc] = piece;
-      const ccw = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
+      const ccw2 = (pc[0] - pa[0]) * (pb[1] - pa[1]) - (pb[0] - pa[0]) * (pc[1] - pa[1]) < 0;
       for (const p of piece) {
         pos.push(p[0], prep.H(p[0], p[1]) + PAINT_LIFT, p[1]);
         const nn = prep.nrmAt(p[0], p[1]);
@@ -11106,7 +11266,7 @@ function roadTextMesh(texts, prep, bounds) {
         uv.push(...uvOf(p));
       }
       for (let q = 1; q + 1 < piece.length; q++) {
-        if (ccw) idx2.push(v0, v0 + q + 1, v0 + q);
+        if (ccw2) idx2.push(v0, v0 + q + 1, v0 + q);
         else idx2.push(v0, v0 + q, v0 + q + 1);
       }
     }
@@ -12009,7 +12169,7 @@ var foldsAt = (S3, t) => {
   for (let i = 0; i < S3.k.length; i++) if (1 + S3.k[i] * t < 0) return true;
   return false;
 };
-function cross(p0x, p0z, p1x, p1z, q0x, q0z, q1x, q1z) {
+function cross2(p0x, p0z, p1x, p1z, q0x, q0z, q1x, q1z) {
   const rx = p1x - p0x, rz = p1z - p0z, sx = q1x - q0x, sz = q1z - q0z;
   const d = rx * sz - rz * sx;
   if (Math.abs(d) < 1e-12) return null;
@@ -12048,7 +12208,7 @@ function trimIntervals(S3, t) {
       if (best && ss[i0] - ss[a + 1] > best.span) break;
       for (let b = Math.max(a + 2, i1 - 1); b <= Math.min(N2 - 2, i1 + SEARCH); b++) {
         if (best && ss[b] - ss[a + 1] > best.span) break;
-        const c = cross(qx[a], qz[a], qx[a + 1], qz[a + 1], qx[b], qz[b], qx[b + 1], qz[b + 1]);
+        const c = cross2(qx[a], qz[a], qx[a + 1], qz[a + 1], qx[b], qz[b], qx[b + 1], qz[b + 1]);
         if (!c) continue;
         const sA = ss[a] + c[0] * (ss[a + 1] - ss[a]), sB = ss[b] + c[1] * (ss[b + 1] - ss[b]);
         if (!best || sB - sA < best.span) best = { sA, sB, span: sB - sA, x: qx[a] + c[0] * (qx[a + 1] - qx[a]), z: qz[a] + c[0] * (qz[a + 1] - qz[a]), i0, i1 };
@@ -12742,9 +12902,9 @@ var COL = { asphalt: [0.115, 0.118, 0.125], sidewalk: [0.36, 0.35, 0.33], concre
 function widths(r) {
   const side = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
   const road = (a) => (a || []).filter((l) => l.type !== "sidewalk").reduce((s, l) => s + (+l.width || 0), 0);
-  const half = Math.max(side(r.lanes?.left), side(r.lanes?.right));
+  const half2 = Math.max(side(r.lanes?.left), side(r.lanes?.right));
   const carr = Math.max(road(r.lanes?.left), road(r.lanes?.right));
-  return half > 1 ? { half: Math.min(14, half + SLAB.parapetW), carr: Math.min(half, carr || half) } : { half: HALF, carr: HALF - 2 };
+  return half2 > 1 ? { half: Math.min(14, half2 + SLAB.parapetW), carr: Math.min(half2, carr || half2) } : { half: HALF, carr: HALF - 2 };
 }
 function centreLine(r, nodes) {
   const a = nodes.get(r.a), b = nodes.get(r.b);
@@ -12775,7 +12935,7 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
       x1 = Math.max(x1, x);
       z1 = Math.max(z1, z);
     }
-    const { half, carr } = widths(r);
+    const { half: half2, carr } = widths(r);
     const d = {
       id: r.id,
       name: r.meta?.name || "",
@@ -12784,10 +12944,10 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
       cum,
       h0,
       h1,
-      half,
+      half: half2,
       carr,
       span: [EXT, cum[cum.length - 1] - EXT],
-      box: [x0 - half, z0 - half, x1 + half, z1 + half]
+      box: [x0 - half2, z0 - half2, x1 + half2, z1 + half2]
     };
     const plan = plans?.[String(r.meta?.osm)];
     if (plan?.ring?.length >= 3) {
@@ -13489,7 +13649,7 @@ var WALL_MAX = 8.5;
 var OVER_MIN = 4;
 var BAND_OK = 0.85;
 var SPREAD_MAX = 12;
-function bandCover(line, half, ring2) {
+function bandCover(line, half2, ring2) {
   let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity, n = 0, k = 0;
   for (const [x, z] of ring2) {
     x0 = Math.min(x0, x);
@@ -13502,7 +13662,7 @@ function bandCover(line, half, ring2) {
     n++;
     for (let i = 1; i < line.length; i++) {
       const [ax, az] = line[i - 1], [bx, bz] = line[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1, t = ((x - ax) * dx + (z - az) * dz) / l2;
-      if (t >= 0 && t <= 1 && Math.hypot(ax + dx * t - x, az + dz * t - z) <= half) {
+      if (t >= 0 && t <= 1 && Math.hypot(ax + dx * t - x, az + dz * t - z) <= half2) {
         k++;
         break;
       }
@@ -15168,8 +15328,8 @@ function carveGrid(doc, Y, hdr, bounds, heroes = [], opts = {}) {
       for (const o of h.openings) {
         if (o.floor == null) continue;
         const xs = X - h.skew_dx_per_dy * Yb;
-        const half = (o.x1 - o.x0) / 2 - 0.25, mid = (o.x0 + o.x1) / 2;
-        if (Math.abs(xs - mid) > half) continue;
+        const half2 = (o.x1 - o.x0) / 2 - 0.25, mid = (o.x0 + o.x1) / 2;
+        if (Math.abs(xs - mid) > half2) continue;
         const floor = h.road + o.floor - 0.05 + out * 0.6;
         const k = rr * cols + c;
         if (Y[k] > floor) set(k, floor);
@@ -15294,9 +15454,9 @@ function railFences(doc, bounds, heroes, roadsDoc, orig) {
     const hw = r.meta?.highway;
     if (hw === "footway" || hw === "path" || hw === "steps" || hw === "cycleway" || hw === "pedestrian" || hw === "bridleway") continue;
     const side = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
-    const half = Math.max(3, side(r.lanes?.left), side(r.lanes?.right)) + 2;
+    const half2 = Math.max(3, side(r.lanes?.left), side(r.lanes?.right)) + 2;
     const pts = [nodes.get(r.a), ...r.pts || [], nodes.get(r.b)].filter(Boolean);
-    for (let i = 1; i < pts.length; i++) segs.push([pts[i - 1].x, pts[i - 1].z, pts[i].x, pts[i].z, half]);
+    for (let i = 1; i < pts.length; i++) segs.push([pts[i - 1].x, pts[i - 1].z, pts[i].x, pts[i].z, half2]);
   }
   const segD2 = (x, z, s) => {
     const dx = s[2] - s[0], dz = s[3] - s[1], L2 = dx * dx + dz * dz || 1e-9, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L2));
@@ -15726,9 +15886,9 @@ function minRadius(pts) {
   for (let i = 1; i + 1 < pts.length; i++) {
     const [ax, az] = pts[i - 1], [bx, bz] = pts[i], [cx, cz] = pts[i + 1];
     const a = Math.hypot(bx - ax, bz - az), b = Math.hypot(cx - bx, cz - bz), c = Math.hypot(cx - ax, cz - az);
-    const cross2 = Math.abs((bx - ax) * (cz - az) - (bz - az) * (cx - ax));
-    if (cross2 < 1e-6 || a < 0.05 || b < 0.05) continue;
-    R2 = Math.min(R2, a * b * c / (2 * cross2));
+    const cross3 = Math.abs((bx - ax) * (cz - az) - (bz - az) * (cx - ax));
+    if (cross3 < 1e-6 || a < 0.05 || b < 0.05) continue;
+    R2 = Math.min(R2, a * b * c / (2 * cross3));
   }
   return R2;
 }
@@ -16080,7 +16240,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
       if (!at2) continue;
       const ea = entries.get(la), eb = entries.get(lb);
       let y = 0;
-      const [hax, haz] = norm(head(ia)), [hbx, hbz] = norm(head(ib));
+      const [hax, haz] = norm4(head(ia)), [hbx, hbz] = norm4(head(ib));
       const opp = hax * hbx + haz * hbz < -0.6;
       const bFromRight = hbx * -haz + hbz * hax < -0.35, aFromRight = hax * -hbz + haz * hbx < -0.35;
       const ta = turn[ia], tb = turn[ib];
@@ -16141,13 +16301,13 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) }
   };
 }
-var norm = ([x, z]) => {
+var norm4 = ([x, z]) => {
   const L2 = Math.hypot(x, z) || 1;
   return [x / L2, z / L2];
 };
 function dirAtEnd(p, back = 1) {
   const q = p.pts, n = q.length, [ax, az] = pointAt(q, p.cum, Math.max(0, p.len - back));
-  return norm([q[n - 1][0] - ax, q[n - 1][1] - az]);
+  return norm4([q[n - 1][0] - ax, q[n - 1][1] - az]);
 }
 function nearestSig(list, x, z, r) {
   let best = null, bd = r * r;
@@ -16706,7 +16866,7 @@ function streetFit(data) {
 var NOT_DRIVEN = /* @__PURE__ */ new Set(["footway", "path", "cycleway", "steps", "pedestrian", "bridleway", "track", "service", "corridor", "platform"]);
 var CARRIAGE7 = /* @__PURE__ */ new Set([0, 1, 3]);
 var LANES = /* @__PURE__ */ new Set([0, 1]);
-var CELL3 = 16;
+var CELL4 = 16;
 function carriageHalf(r) {
   const sum = (a) => (a || []).filter((l) => l.type !== "sidewalk" && l.type !== "verge" && l.type !== "green").reduce((s, l) => s + (+l.width || 0), 0);
   if (r.lanes?.left || r.lanes?.right) {
@@ -16728,8 +16888,8 @@ function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false }
     for (let k = 1; k < pts.length; k++) {
       const a = pts[k - 1], b = pts[k], s = { ax: a.x, az: a.z, bx: b.x, bz: b.z, hl, hr, road: r };
       const id = segs.push(s) - 1;
-      for (let i = Math.floor((Math.min(a.x, b.x) - h) / CELL3); i <= Math.floor((Math.max(a.x, b.x) + h) / CELL3); i++)
-        for (let j = Math.floor((Math.min(a.z, b.z) - h) / CELL3); j <= Math.floor((Math.max(a.z, b.z) + h) / CELL3); j++) {
+      for (let i = Math.floor((Math.min(a.x, b.x) - h) / CELL4); i <= Math.floor((Math.max(a.x, b.x) + h) / CELL4); i++)
+        for (let j = Math.floor((Math.min(a.z, b.z) - h) / CELL4); j <= Math.floor((Math.max(a.z, b.z) + h) / CELL4); j++) {
           const kk = key(i, j);
           if (!grid.has(kk)) grid.set(kk, []);
           grid.get(kk).push(id);
@@ -16738,15 +16898,15 @@ function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false }
   }
   const near = (x, z, all = false) => {
     let best = null;
-    for (const id of grid.get(key(Math.floor(x / CELL3), Math.floor(z / CELL3))) || []) {
+    for (const id of grid.get(key(Math.floor(x / CELL4), Math.floor(z / CELL4))) || []) {
       const s = segs[id], dx = s.bx - s.ax, dz = s.bz - s.az, L2 = dx * dx + dz * dz;
       if (L2 < 1e-6) continue;
       const t = Math.max(0, Math.min(1, ((x - s.ax) * dx + (z - s.az) * dz) / L2));
       const px = s.ax + dx * t, pz = s.az + dz * t, d = Math.hypot(x - px, z - pz), L3 = Math.sqrt(L2), ux = dx / L3, uz = dz / L3;
-      const side = -uz * (x - px) + ux * (z - pz) >= 0 ? 1 : -1, half = side > 0 ? s.hr : s.hl;
-      const e = { d, px, pz, ux, uz, side, half, road: s.road, t, end: t <= 0 || t >= 1 };
+      const side = -uz * (x - px) + ux * (z - pz) >= 0 ? 1 : -1, half2 = side > 0 ? s.hr : s.hl;
+      const e = { d, px, pz, ux, uz, side, half: half2, road: s.road, t, end: t <= 0 || t >= 1 };
       if (all) {
-        if (d < half) return e;
+        if (d < half2) return e;
         continue;
       }
       if (!best || d < best.d) best = e;
@@ -16762,7 +16922,7 @@ function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false }
         return [[margin, 0], [-margin, 0], [0, margin], [0, -margin]].every(([dx, dz]) => CLS.has(classAt(x + dx, z + dz)));
       }
     }
-    for (const id of grid.get(key(Math.floor(x / CELL3), Math.floor(z / CELL3))) || []) {
+    for (const id of grid.get(key(Math.floor(x / CELL4), Math.floor(z / CELL4))) || []) {
       const s = segs[id], dx = s.bx - s.ax, dz = s.bz - s.az, L2 = dx * dx + dz * dz;
       if (L2 < 1e-6) continue;
       const t = ((x - s.ax) * dx + (z - s.az) * dz) / L2;
@@ -17118,13 +17278,13 @@ function tunnelTrees(tunnels, trees) {
         keep = null;
         break;
       }
-      const half = t.r + 1.3;
-      if (Math.abs(X) <= t.L / 2 + 0.5 && Math.abs(Y) <= half) {
+      const half2 = t.r + 1.3;
+      if (Math.abs(X) <= t.L / 2 + 0.5 && Math.abs(Y) <= half2) {
         if (Math.abs(X) > t.L / 2 - 2.5) {
           keep = null;
           break;
         }
-        const [x, z] = t.toWorld(X, (Y >= 0 ? 1 : -1) * (half + 0.3));
+        const [x, z] = t.toWorld(X, (Y >= 0 ? 1 : -1) * (half2 + 0.3));
         keep = { ...tr, x, z };
       }
     }
@@ -18082,7 +18242,7 @@ async function buildTileData(entry, base) {
   const fronts = entry.streetlife ? await step("street-life fronts", () => streetlifeFronts(base, entry.name)) : null;
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;
-  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("fa\xE7ade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
   const cover = await step("land cover", () => landCoverData(withoutLines(feats, entry.heros?.paths), bounds, { sdf: entry.groundSdf !== false }));
@@ -18668,4 +18828,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "5b93f5fed2d6a8b5";
+self.__TILE_CODE_HASH = "4f1fbc37e6f6953c";

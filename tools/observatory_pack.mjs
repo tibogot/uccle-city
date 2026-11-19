@@ -12,6 +12,7 @@
 import fs from "fs";
 import { MeshoptEncoder } from "./worker/node_modules/meshoptimizer/meshopt_encoder.js";
 import { MeshoptSimplifier } from "./worker/node_modules/meshoptimizer/meshopt_simplifier.js";
+import { noFightLod1, simplifyWeldedLocked } from "./lodNoFight.mjs";   // (claude/zfight, rule 34) LOD1 without faces collapsed into another slot's plane
 const LOD1_TRIS = +(process.argv[4] || 60000), LOD2_TRIS = +(process.argv[5] || 14000);
 const LOD1_ERR = 0.12, LOD2_ERR = 0.6;          // metres (ErrorAbsolute): the simplifier stops there even short of the target
 
@@ -73,17 +74,27 @@ function simplifyWelded(P, Nn, I, want, err, prune) {
   return [res, e];
 }
 const lodReport = {};
-function addLod(srcName, dstName, totalTarget, err, prune) {
+function addLod(srcName, dstName, totalTarget, err, prune, noFight = false) {
   const node = json.nodes.find((n) => n.name === srcName);
   const mesh = json.meshes[node.mesh];
   const tris = mesh.primitives.reduce((s, p) => s + json.accessors[p.indices].count / 3, 0);
   const ratio = Math.min(1, totalTarget / tris);
   const prims = [];
   let outTris = 0;
-  for (const p of mesh.primitives) {
-    const P = readAcc(p.attributes.POSITION), Nn = readAcc(p.attributes.NORMAL), I = readAcc(p.indices);
+  // (claude/zfight, rule 34) LOD1: simplify every primitive, then lock round the faces collapsed into another slot's
+  // plane and simplify those again (tools/lodNoFight.mjs); --fight-ok = as before
+  const sp = mesh.primitives.map((p) => {
+    const P = readAcc(p.attributes.POSITION), Nn = readAcc(p.attributes.NORMAL), I = Uint32Array.from(readAcc(p.indices));
     const want = Math.min(I.length, Math.max(12, Math.floor((I.length / 3) * ratio)) * 3);
-    const [idx, e] = ratio < 1 ? simplifyWelded(P, Nn, Uint32Array.from(I), want, err, prune) : [Uint32Array.from(I), 0];
+    const [lod] = ratio < 1 ? simplifyWelded(P, Nn, I, want, err, prune) : [I, 0];
+    return { p, P, Nn, I, want, lod };
+  });
+  if (noFight && ratio < 1 && !process.argv.includes("--fight-ok")) {
+    const r = noFightLod1(sp, (k, vlock) => simplifyWeldedLocked(sp[k].P, sp[k].Nn, sp[k].I, sp[k].want, err, ["ErrorAbsolute", ...(prune ? ["Prune"] : [])], vlock)[0], { log: (t) => console.log(t) });
+    console.log(`${dstName}: collapsed coplanar pairs ${r.before.pairs} -> ${r.after.pairs}, ${r.locked} vertices locked`);
+    lodReport[`${dstName}_noFight`] = r;
+  }
+  for (const { p, lod: idx } of sp) {
     outTris += idx.length / 3;
     viewData.push(new Uint8Array(idx.buffer)); viewInfo.push({ tri: true });
     json.bufferViews.push({ buffer: 0, byteLength: idx.byteLength });
@@ -96,7 +107,7 @@ function addLod(srcName, dstName, totalTarget, err, prune) {
   lodReport[dstName] = { from: srcName, sourceTris: tris, tris: outTris };
   console.log(`${dstName}: ${tris} -> ${outTris} triangles`);
 }
-addLod("Observatory", "Observatory_lod1", LOD1_TRIS, LOD1_ERR, false);
+addLod("Observatory", "Observatory_lod1", LOD1_TRIS, LOD1_ERR, false, true);
 addLod("Observatory_far", "Observatory_lod2", LOD2_TRIS, LOD2_ERR, true);
 
 function convertAttributes() {

@@ -7,8 +7,9 @@
 // The car only looks at the cells round it (carEnv.js). Ground = the drivable surface grid (road deck, sidewalks).
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
-import { FLEET_SOURCE } from "./carPacks.js";
-import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
+import { FLEET_SOURCE, playerDamage } from "./carPacks.js";
+import { HANDLING, BODY, createCarState, stepCar } from "./carPhysics.js";
+import { CarHitWorld, CARPUSH_OLD, MASS, MASS2 } from "./carHit.js";
 import { createFeelState, stepFeel } from "./carFeel.js";
 import { createCtlState, stepCtl } from "./carCtl.js";
 /** ?carctl=old: the police-feel handling + camera (carFeel.js, chaseCamera.js updateCar) instead of car control round 3
@@ -261,13 +262,18 @@ export class Driver {
     // (car control round: trams / trains solid, movers.js; main.js fills railSources)
     this.railSources = [];
     this.movers = /[?&]railsolid=0(&|$)/.test(location.search) ? null : createRailMovers(this.railSources);
+    // (carhit, docs/CARHIT.md; ?carpush=old = none): the cars both ways, the knocked ones' rigid bodies (the traffic is
+    // attached by viewer/traffic/cityTraffic.js); its ground: the drive surface on the layer nearest `near`
+    this.carHit = CARPUSH_OLD ? null : new CarHitWorld({ sets: this.sets, movers: this.movers,
+      ground: (x, z, near) => { const g0 = this.groundHint; this.groundHint = Number.isFinite(near) ? near : g0; const y = this.ground(x, z); this.groundHint = g0; return y; } });
+    if (this.carHit) this.carHit.onPlayerDamage = (C) => playerDamage.depth.value.set(C[0], C[1], C[2], C[3]);
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges,
-      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers });
+      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers, carHit: this.carHit });
     // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
     // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
     this.envs = {};
     for (const k of TWO_WHEEL) {
-      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers });
+      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers, carHit: this.carHit, two: true });
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
     this.camNear = [];
@@ -310,6 +316,7 @@ export class Driver {
     if (this.car) this.scene.remove(this.car.root);
     this.spec = spec; this.model = model;
     fitBody(model);
+    playerDamage.hl.value = BODY.hz;                     // (carhit: the crumple's reach on this model)
     this.car = createCar(model);
     this.car.root.visible = this.on;
     this.scene.add(this.car.root);
@@ -388,6 +395,7 @@ export class Driver {
     this.moto?.reattach();
     this.motoChase.reset();
     this.state.y = NaN;                                   // (no layer hint yet: the top surface)
+    this.carHit?.resetPlayer();                           // (carhit: R = a fresh car)
     this.state.y = this.ground(s.x, s.z);
     this.chase.reset();
   }
@@ -399,6 +407,13 @@ export class Driver {
     this.debug.visible = false;
     this.hud.style.display = "none";
   }
+  /** (carhit) the player's car's mass (kg): its model's type (the police estate, a hatchback ...), else by its size */
+  carMass() {
+    const id = (this.spec || "").split(":")[1];
+    return MASS[id] ?? Math.round(1300 * (BODY.hx * BODY.hz) / (0.905 * 2.155));
+  }
+  /** (carhit) the player's vehicle damage 0..1 (the games read it; corners: driver.carHit.player.corners) */
+  get damage() { return this.carHit?.player.damage ?? 0; }
   get x() { return this.state?.x ?? 0; }
   get z() { return this.state?.z ?? 0; }
 
@@ -410,8 +425,10 @@ export class Driver {
     const c = this.state;
     // (autoInput: a scripted { throttle, steer, handbrake } for route tests, docs/policefeel/; null = the keyboard)
     const inp = this.autoInput || this.keys.read();
+    if (this.carHit) this.carHit.player.m = this.carMass();
     if (CARFEEL_OLD) stepCar(c, inp, dt, this.env, HANDLING);
     else { (CARCTL_OLD ? stepFeel : stepCtl)(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
+    this.carHit?.frame(dt, c.x, c.z);
     carLights.brake.value = c.braking ? 1 : 0;
     carLights.head.value = carLights.tail.value = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     this.car.update(c);
@@ -452,7 +469,9 @@ export class Driver {
     this.motoChase.active = true; this.chase.active = false;
     const t0 = performance.now();
     const c = this.state, kind = this.vehicle, H = TWO_WHEELERS[kind];
+    if (this.carHit) this.carHit.player.m = MASS2[kind] ?? 250;
     stepMoto(c, this.keys.readMoto(), dt, this.motoEnv, H);
+    this.carHit?.frame(dt, c.x, c.z);
     const night = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     const ML = this.motoLights;
     ML.head.value = ML.tail.value = night; ML.brake.value = c.braking ? 1 : 0;

@@ -1,5 +1,5 @@
 // IVY AND CLIMBERS, grown per tile: data/plants/<T>.ivy.bin (+ ivy_summary.json). Deterministic.
-//   node tools/plants/build_ivy.mjs [--all | <tile>...]
+//   node tools/plants/build_ivy.mjs [--all | <tile>...] [--shops: only add the shopfronts' no-grow rects to the existing data]
 // WHERE (docs/FOLIAGE.md "City"; the city's own walls, so the ivy is on what is drawn):
 //   house walls  the façade analysis of the tile (viewer/facadeGeom.js analyseBuildings, as tools/gardens/faces.mjs):
 //                every wall face that is not a party wall, not a landmark, >= 2.5 m wide; the window grid the city
@@ -53,6 +53,31 @@ function tileFaces(tile) {
   return faces;
 }
 
+// (claude/zfight, rule 34) THE SHOPFRONTS the street-life layer draws (data/streetlife/<T>.json pois[].face): faceOpenings
+// leaves the ground-floor windows out under a shop but returns no opening FOR the shop, so a wall's ivy grew over the
+// front (Maison Dandoy, E3): 4-9 cm sprays, tilted, crossing the interior-mapped glass 7.5 cm out = leaves cut by the
+// glass, flickering in the wind. Each front on the wall (same facing, its plane within 0.5 m) is a no-grow rect, its
+// width + 0.25 m a side, from the foot to the cornice (fascia 2.55 / 3.0 m + 1.15 m), in g.shop (viewer/plants/
+// cityIvy.js adds it to g.avoid; ?zfight=old leaves it out)
+function shopFronts(tile) {
+  const f = new URL(`data/streetlife/${tile}.json`, ROOT);
+  if (!fs.existsSync(f)) return [];
+  return (JSON.parse(fs.readFileSync(f)).pois || []).filter((p) => p.face).map((p) => p.face);
+}
+function shopRects(fronts, o, wall) {
+  const out = [];
+  for (const q of fronts) {
+    if (q.nx * o.nx + q.nz * o.nz < 0.9) continue;
+    const off = (q.x - o.x) * o.nx + (q.z - o.z) * o.nz;
+    if (Math.abs(off) > 0.5) continue;
+    const u = (q.x - o.x) * o.tx + (q.z - o.z) * o.tz, W = Math.max(2.0, Math.min(q.w, 9.9));
+    const top = q.y - o.y + (q.eaves - q.y < 4.0 ? 2.55 : 3.0) + 1.15;
+    if (u + W / 2 < 0 || u - W / 2 > wall.width || top < 0) continue;
+    out.push([u - W / 2 - 0.25, -1, u + W / 2 + 0.25, top].map((v) => Math.round(v * 1000) / 1000));
+  }
+  return out;
+}
+
 function build(tile) {
   const t0 = Date.now();
   const walls = [];
@@ -60,10 +85,12 @@ function build(tile) {
   const r3 = (v) => Math.round(v * 1000) / 1000;
   const add = (o, wall, g, flags = 0) => {
     walls.push({ o: [r3(o.x), r3(o.y), r3(o.z)], t: [r3(o.tx), r3(o.tz)], n: [r3(o.nx), r3(o.nz)], out: r3(o.out || 0), w: r3(wall.width), h: r3(wall.height), f: flags,
-      g: { roots: g.roots.map(r3), maxHeight: r3(g.maxHeight), avoid: (g.avoid || []).map((a) => a.map(r3)), seed: g.seed, reach: r3(g.reach), maxBranches: g.maxBranches } });
-    if (COUNT) stats.leaves += growIvyData(wall, g).leaves.length;
+      g: { roots: g.roots.map(r3), maxHeight: r3(g.maxHeight), avoid: (g.avoid || []).map((a) => a.map(r3)), seed: g.seed, reach: r3(g.reach), maxBranches: g.maxBranches, ...(g.shop?.length ? { shop: g.shop } : {}) } });
+    if (g.shop?.length) stats.shopWalls = (stats.shopWalls || 0) + 1;
+    if (COUNT) stats.leaves += growIvyData(wall, { ...g, avoid: [...(g.avoid || []), ...(g.shop || [])] }).leaves.length;
   };
   // ---- house walls
+  const fronts = shopFronts(tile);
   for (const f of tileFaces(tile)) {
     const blind = f.ops.length === 0, old = f.type === TYPE.MAITRE || f.type === TYPE.VILLA;
     const p = blind ? 0.15 : !f.street ? 0.045 : old ? 0.05 : 0.025;
@@ -75,7 +102,8 @@ function build(tile) {
     const sink = 0.3;                                    // roots start under the ground-floor line (the drawn ground meets them)
     add({ x: f.a[0], y: f.base - sink, z: f.a[1], tx: f.tx, tz: f.tz, nx: f.nx, nz: f.nz },
       { width: W, height: Hmax + sink },
-      { roots, maxHeight: Math.min(Hmax + sink, (blind ? 3.5 + 6 * r : 2.5 + 5 * r) + sink), avoid: f.ops.map(([a, b, c, d]) => [a - 0.08, b + sink - 0.06, c + 0.08, d + sink]), seed: Math.floor(h01(f.key) * 1e6), reach: 2.8 + 1.4 * r, maxBranches: Math.min(420, Math.round(70 * W)) });
+      { roots, maxHeight: Math.min(Hmax + sink, (blind ? 3.5 + 6 * r : 2.5 + 5 * r) + sink), avoid: f.ops.map(([a, b, c, d]) => [a - 0.08, b + sink - 0.06, c + 0.08, d + sink]), seed: Math.floor(h01(f.key) * 1e6), reach: 2.8 + 1.4 * r, maxBranches: Math.min(420, Math.round(70 * W)),
+        shop: shopRects(fronts, { x: f.a[0], y: f.base - sink, z: f.a[1], tx: f.tx, tz: f.tz, nx: f.nx, nz: f.nz }, { width: W }) });
     stats.walls++; if (blind) stats.blind++; else if (!f.street) stats.side++; else stats.front++;
   }
   // ---- garden walls and fences (data/gardens: segments [x0, y0, z0, x1, y1, z1, style, wallH])
@@ -117,15 +145,29 @@ function build(tile) {
   return stats;
 }
 const COUNT = process.argv.includes("--count");
+/** --shops: add g.shop to the walls of the tile's existing data/plants/<T>.ivy.json only (every other byte as it was) */
+function patchShops(tile) {
+  const file = new URL(`${tile}.ivy.json`, OUT);
+  if (!fs.existsSync(file)) return { walls: 0 };
+  const doc = JSON.parse(fs.readFileSync(file)), fronts = shopFronts(tile);
+  let n = 0;
+  for (const w of doc.walls) {
+    if (w.f) continue;
+    const r = shopRects(fronts, { x: w.o[0], y: w.o[1], z: w.o[2], tx: w.t[0], tz: w.t[1], nx: w.n[0], nz: w.n[1] }, { width: w.w });
+    if (r.length) { w.g.shop = r; n++; } else delete w.g.shop;
+  }
+  if (n) fs.writeFileSync(file, JSON.stringify(doc));
+  return { shopWalls: n };
+}
 
 const args = process.argv.slice(2);
 const tiles = args.filter((a) => !a.startsWith("--")).length ? args.filter((a) => !a.startsWith("--")) : args.includes("--all") ? fs.readdirSync(new URL("data/tiles/", ROOT)).filter((t) => fs.existsSync(new URL(`data/tiles/${t}/buildings.json`, ROOT))) : ["D8"];
 const sum = { tiles: {}, total: {} };
 for (const t of tiles) {
-  const s = build(t);
+  const s = args.includes("--shops") ? patchShops(t) : build(t);
   sum.tiles[t] = s;
   for (const [k, v] of Object.entries(s)) if (k !== "ms") sum.total[k] = (sum.total[k] || 0) + v;
   console.log(t, JSON.stringify(s));
 }
-if (args.includes("--all")) fs.writeFileSync(new URL("ivy_summary.json", OUT), JSON.stringify(sum, null, 1));
+if (args.includes("--all") && !args.includes("--shops")) fs.writeFileSync(new URL("ivy_summary.json", OUT), JSON.stringify(sum, null, 1));
 console.log(JSON.stringify(sum.total));

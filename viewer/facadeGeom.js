@@ -1,5 +1,6 @@
 import { fitBase } from "./groundFit.js";
-import { repairWalls } from "./wallRepair.js";   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
+import { repairWalls } from "./wallRepair.js";
+import { coplanarCleaner } from "./coplanarClean.js";   // census class G (rule 34): overlapping coplanar UrbIS triangles cut (?zfight=old: off)   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
 import { faceBays, storeyFit } from "./interior/facadeWindows.js";
 import { litWindows } from "./nightLights/litHash.js";
 import { classify, TYPE, typedStyle, typedCode } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
@@ -105,7 +106,7 @@ function pushQuad(D, p0, p1, p2, p3, n, col) {
 
 /** Push a box that sticks out of a wall: the wall segment A->B (xz), extruded `depth` along the outward
  *  normal (nx, nz), from yTop - height to yTop. Flat normals, one colour. The back (inside the wall) is skipped. */
-function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
+function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false, soffit = true) {
   if (height <= 0.01) return;
   const y0 = yTop - height, y1 = yTop;
   const ax = A[0], az = A[2], bx = B[0], bz = B[2];
@@ -116,7 +117,7 @@ function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
   const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
   quad(A0, B0, B1, A1, [nx, 0, nz]);           // front
   quad(a1, A1, B1, b1, [0, 1, 0]);             // top
-  quad(a0, b0, B0, A0, [0, -1, 0]);            // soffit
+  if (soffit) quad(a0, b0, B0, A0, [0, -1, 0]);   // soffit (soffit = false: buried, e.g. the steps' feet 0.3 m under the ground)
   quad(a0, A0, A1, a1, [-tx, 0, -tz]);         // end at A
   quad(b0, b1, B1, B0, [tx, 0, tz]);           // end at B
   if (closed) quad(a0, b0, b1, a1, [-nx, 0, -nz]);   // the back (a box standing free: chimney stacks, caps, pots)
@@ -477,6 +478,9 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   // 16 garage (facades.js decodes it). opts.styles === false: the generic façade for all (?styles=old)
   const cls = opts.styles === false ? null : classify(doc, P, I, (b, key) => wallStyle(hash01(key + "s"), b.height));
   const stats = { fit: {}, faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0, strips: 0, stripMerged: 0, stripJoins: 0, chimneysShared: 0 };
+  // (claude/zfight, rule 34; opts.zfight === false = ?zfight=old: the UrbIS triangles as given)
+  const clean = opts.zfight === false ? null : coplanarCleaner();
+  const stepPlans = [];                                                          // (rule 34) the door steps placed in the tile (plans)
   doc.buildings.forEach((b, bi) => {
     let base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -510,8 +514,12 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) { all = r.tris; stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n; }
     }
+    // (census class G, rule 34) the UrbIS triangles that overlap one already kept in their plane (fans of one roof
+    // polygon over each other, a wall given twice, a solid twice): cut to what is not drawn yet (viewer/coplanarClean.js)
+    if (clean) all = clean(all);
     const wallTris = all.length;
-    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }
+    { const rt = []; for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) rt.push(o); } all.push(...(clean ? clean(rt) : rt)); }
+    if (!all.length) { stats.solidsGone = (stats.solidsGone || 0) + 1; return; }   // (a solid wholly under another: Av. Hamoir 8's second copy)
     const smooth = smoother(all);
     // --- walls: group triangles into planar faces
     const faces = new Map();
@@ -636,13 +644,18 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         return out;
       };
       const doorHere = street && width >= 1.6 && faceEaves >= 2.8 && !(sw > 0.5);
-      if (btype === TYPE.MAITRE && doorHere && !kitOn) {
+      // (rule 34) the painted façade has a door on every street face: two parallel street faces a step apart (a recessed
+      // porch, a stepped front: Homborch 10) put two flights in one place, their treads coplanar; the second is left out
+      const stepPlan = btype === TYPE.MAITRE && doorHere && !kitOn ? balcPlan(at, f, du - 0.79, du + 0.79, 0, 0.51, 0.95) : null;
+      if (stepPlan && opts.zfight !== false && stepPlans.some((Q) => obbHit(stepPlan, Q, -0.01))) stats.stepsShared = (stats.stepsShared || 0) + 1;
+      else if (stepPlan) {
+        stepPlans.push(stepPlan);
         // three 17 cm steps up to the raised door (TYPE_GRID raise 0.51 m): a landing and two treads, each lower one 2 cm
         // wider a side (no coplanar end caps), run 0.3 m into the ground
         const g = opts.ground ? opts.ground(tx * (u0 + du) + f.nx * (dd + 0.6), tz * (u0 + du) + f.nz * (dd + 0.6)) : base;
         const foot = Math.min(base, Number.isFinite(g) ? g : base) - 0.3;
         for (const [y, d, hw] of [[0.51, 0.35, 0.75], [0.34, 0.65, 0.77], [0.17, 0.95, 0.79]])
-          box(D, at(du - hw), at(du + hw), base + y, base + y - foot, d, f.nx, f.nz, [0.15, 0.155, 0.16]);
+          box(D, at(du - hw), at(du + hw), base + y, base + y - foot, d, f.nx, f.nz, [0.15, 0.155, 0.16], false, opts.zfight === false);   // (rule 34) no soffits: the three are buried 0.3 m in one plane (24,900 coplanar pairs city-wide)
         stats.typeSteps = (stats.typeSteps || 0) + 1;
       }
       if ((btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) && doorHere) {
@@ -1100,6 +1113,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     }
   });
   emitStrips(D, SD, stats);
+  if (clean) stats.coplanar = { cut: clean.stats.cut, dropped: clean.stats.dropped, pieces: clean.stats.pieces, m2: Math.round(clean.stats.m2) };
   const f32 = (a) => new Float32Array(a);
   return {
     walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN), aCel: f32(W.aCel),
