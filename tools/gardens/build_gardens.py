@@ -567,6 +567,7 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
     door_of = {}
     for f in faces:
         if f.get("door") and (f["bu"] not in door_of or f["doorFace"]): door_of[f["bu"]] = f["door"]
+    terraced_bi = {f["bi"] for f in faces if f["partyH"] >= 999}     # (rows and semis: a whole party wall)
     door_on_run, longest = set(), {}
     for r in runs:
         f = faces[r["fi"]]; L = arclen(r["pts"])[-1]
@@ -692,6 +693,11 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             if o[2] == "car":
                 if o[0] < 0.6: o[0] = 0.0
                 if L - o[1] < 0.6: o[1] = L
+            elif any(abs(c[1] - o[0]) < 1e-3 or abs(c[0] - o[1]) < 1e-3 for c in cars):
+                # a gate BESIDE a driveway keeps its shared pier, and a sliver to the run's end joins the gate (moved to the
+                # end it left a second pier 0.3-0.6 m off the drive's: browser turn, F7 Rue de Verrewinkel 87, 444 pairs)
+                if o[0] < 0.6 and abs(o[0]) > 1e-3 and not any(abs(c[1] - o[0]) < 1e-3 for c in cars): o[0] = 0.0
+                if L - o[1] < 0.6 and not any(abs(c[0] - o[1]) < 1e-3 for c in cars): o[1] = L
             else:
                 if o[0] < 0.6: o[0], o[1] = 0.0, min(L, PED_W)
                 elif L - o[1] < 0.6: o[0], o[1] = max(0.0, L - PED_W), L
@@ -807,6 +813,10 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 # short one (a car stands in front of the garage) 1 in 2 (was 55 % everywhere); a wider mouth than
                 # 4.6 m is a forecourt / car park: open
                 p_gate = 0.75 if gardens[r["fi"]] >= 5.0 else 0.5
+                # (claude/gates browser turn, Street View: 6 of 6 row / semi garage drives sampled have NO gate (Ch. de
+                # Saint-Job 136, Rue Basse 125, Av. Coghen 84, Rue Zandbeek 89, Van Ophem 138, Av. Brugmann 495): the car
+                # stands on the paved front of a terraced house (a building with a whole party wall); 1 in 8 there)
+                if f["bi"] in terraced_bi: p_gate = 0.125
                 osm_gate = any(a - 0.5 <= q <= b + 0.5 for q in forced)       # (an OSM gate node there: a gate, always)
                 if 2.2 <= w <= (5.2 if osm_gate else 4.6) and (osm_gate or h01(bu, "cargate" + str(round(c))) < p_gate):
                     # a gate across a way the player / traffic drives (an OSM service road, a track into a yard) stands OPEN

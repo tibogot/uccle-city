@@ -64,6 +64,10 @@ if (!CHILD) {
   sum.pathGatedPm = pm(sum.pathGated || 0, sum.pathFronts || 0);
   sum.driveGatedPm = pm(sum.driveGated || 0, sum.driveFronts || 0);
   sum.houseOpenPm = pm(sum.openByMistake || 0, sum.houseGardenFronts || 0);
+  // (browser turn, Street View: a row's garage drive has no gate; a villa's drive is gated about half the time) the
+  // driveway share the gate holds is the VILLAS' and the rows' separately
+  sum.villaDriveGatedPm = pm(byType.villa?.driveGated || 0, byType.villa?.drive || 0);
+  sum.rowDriveGatedPm = pm(byType.terraced?.driveGated || 0, byType.terraced?.drive || 0);
   sum.pathUngated = (sum.pathFronts || 0) - (sum.pathGated || 0);
   // the per-tile budget: the most gate leaves / piers a tile draws (instances in the kit's pools: no draw call each)
   sum.gatesTileMax = Math.max(0, ...res.filter((r) => !r.error).map((r) => 2 * r.counts.gates - r.counts.pedGates));   // (leaves: a driveway gate is two)

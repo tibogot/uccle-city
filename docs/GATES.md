@@ -3,6 +3,15 @@
 Owner, 2026-11-19: "most people around their house are supposed to have gates; I feel you miss many". Also: regular
 Google Maps / Street View reality checks (look only: never store, trace or ship imagery).
 
+> **WIP (2026-11-19, stopped for the owner's play session).** The committed data/gardens is the gate-passing state of
+> 7d561ad2 (+ the foundation merge). The browser turn's two build fixes are in `tools/gardens/build_gardens.py` but NOT
+> applied to the data yet: (1) a terraced front's driveway gate 1 in 8 (Street View: 6 of 6 row garage drives open),
+> (2) a gate beside a driveway keeps its shared pier (444 doubled piers city-wide, F7 Rue de Verrewinkel 87). The counts in
+> section 4 and the villa / row driveway lines were measured on a test rebuild with fix (1) only; the gate row's
+> ceilings in tools/audit/mergeGate.mjs are still the committed data's. To finish: rebuild all tiles, fitGardens
+> --lanes until it reports nothing, --steps, --check, the census, re-set the gates ceilings (villaDriveGatedPm /
+> rowDriveGatedPm in place of driveGatedPm), the full gate, the city browser checks.
+
 `?gates=old` = the garden data before this job (data/gardens/old/<T>.json, a frozen copy: same blobs in git). Rule 43
 (docs/QUALITY_RULES.md), gate row `gates`. Census class G: `tools/audit/census/gates.mjs`; reports
 `docs/census/gates_old.json` (before) and `docs/census/gates_after.json` (after).
@@ -42,8 +51,8 @@ rings; `viewer/gardens/gardenClear.js`):
 docs/census/gates_after.json docs/census/gates_old.json`): villas round Fort-Jaco / Prince d'Orange / the Observatoire,
 rows round Saint-Job / Vanderkindere / Calevoet, apartment blocks. "line" = what the census reads on the property line
 (wall, railing, hedge, gate = gate leaves are the majority piece, pillar, drive = a UrbIS driveway, open); "path" = the
-door's path at the line; "drive" = the driveway's gate. The Street View column is filled in the browser turn: LOOK
-ONLY (no screenshot stored, nothing traced or shipped), per frontage gate / fence / hedge / wall / open and the style
+door's path at the line; "drive" = the driveway's gate. The Street View column was filled in the browser turn (2026-11-19): LOOK
+ONLY (no screenshot stored, nothing traced or shipped; the viewer's cached frames deleted), per frontage gate / fence / hedge / wall / open and the style
 (wrought iron, brick piers, hedge + small gate, sliding / double driveway gate).
 
 Until Chrome, the expectation from the data and the Brussels residential type: the villa avenues (Fort-Jaco, Prince
@@ -55,46 +64,68 @@ paved and open in front of the garage door; apartment blocks have a low hedge / 
 
 | # | group | street | type | at (local x, z) | lat, lon | gap m | ours: line | path | drive | ?gates=old: line / path / drive | Street View |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | villas, Fort-Jaco | Avenue de la Sapinière | villa | K9 2043.4, 2312.4 | 50.778217, 4.378483 | 18.6 | wall | gate | - | wall / no gate / - | (browser turn) |
-| 2 | villas, Fort-Jaco | Avenue Jacques Pastur | villa | J7 1521.4, 1303 | 50.787292, 4.371083 | 10.9 | gate | gate | gate | gate / gate / gate | (browser turn) |
-| 3 | villas, Fort-Jaco | Avenue de la Sapinière | villa | J9 1867.9, 2426.9 | 50.777188, 4.375995 | 19 | hedge | - | - | hedge / - / - | (browser turn) |
-| 4 | villas, Fort-Jaco | Avenue Jacques Pastur | villa | I8 1057.4, 1544.9 | 50.785117, 4.364503 | 6.4 | hedge | gate | - | hedge / gate / - | (browser turn) |
-| 5 | villas, Fort-Jaco | Avenue du Fort-Jaco | villa | K7 2192.6, 984 | 50.790159, 4.380602 | 16 | open | no gate | - | open / no gate / - | (browser turn) |
-| 6 | villas, Fort-Jaco | Avenue du Fort-Jaco | villa | K6 2167.3, 986 | 50.790141, 4.380243 | 20.2 | gate | gate | gate | drive / no gate / open | (browser turn) |
-| 7 | villas, Prince d'Orange | Avenue Hamoir | villa | I5 1397.6, 136 | 50.797783, 4.369327 | 7.3 | drive | gate | open | drive / no gate / open | (browser turn) |
-| 8 | villas, Prince d'Orange | Avenue des Hospices | villa | E10 -654.6, 2686.5 | 50.774851, 4.340231 | 7.4 | hedge | no gate | - | open / no gate / - | (browser turn) |
-| 9 | villas, Prince d'Orange | Avenue des Hospices | villa | F10 -360, 2531 | 50.776250, 4.344407 | 8.5 | hedge | gate | open | hedge / no gate / open | (browser turn) |
-| 10 | villas, Prince d'Orange | Avenue du Prince d'Orange | villa | I9 1293.5, 2254.5 | 50.778738, 4.367851 | 13.2 | hedge | gate | open | hedge / no gate / open | (browser turn) |
-| 11 | villas, Prince d'Orange | Avenue du Prince d'Orange | villa | H8 768.4, 1837.1 | 50.782490, 4.360405 | 18.7 | hedge | gate | gate | hedge / gate / gate | (browser turn) |
-| 12 | villas, Prince d'Orange | Avenue Hamoir | villa | H4 915, -340.5 | 50.802066, 4.362481 | 5.7 | hedge | gate | - | open / no gate / - | (browser turn) |
-| 13 | villas, Observatoire | Avenue Circulaire | terraced | G5 463.5, 49.8 | 50.798557, 4.356077 | 5.7 | gate | gate | gate | gate / gate / gate | (browser turn) |
-| 14 | villas, Observatoire | Avenue Houzeau | terraced | H4 664.5, -229 | 50.801064, 4.358928 | 7.2 | hedge | gate | open | open / no gate / open | (browser turn) |
-| 15 | villas, Observatoire | Avenue Brugmann | terraced | E3 -493.3, -695.6 | 50.805256, 4.342502 | 8.6 | hedge | no gate | - | hedge / no gate / - | (browser turn) |
-| 16 | villas, Observatoire | Avenue Circulaire | terraced | G5 468.8, 38.5 | 50.798659, 4.356153 | 5 | hedge | gate | open | hedge / gate / open | (browser turn) |
-| 17 | villas, Observatoire | Avenue Brugmann | terraced | E3 -552.9, -556.8 | 50.804008, 4.341657 | 5.1 | gate | gate | gate | drive / no gate / open | (browser turn) |
-| 18 | villas, Observatoire | Avenue de l'Observatoire | villa | I4 1337, -278.8 | 50.801512, 4.368468 | 7 | railing | gate | - | open / no gate / - | (browser turn) |
-| 19 | rows, Saint-Job | Chaussée de Saint-Job | terraced | E6 -655, 969.5 | 50.790287, 4.340217 | 5.1 | gate | gate | gate | drive / gate / open | (browser turn) |
-| 20 | rows, Saint-Job | Chaussée de Saint-Job | terraced | E7 -975.2, 1077.1 | 50.789318, 4.335676 | 5 | hedge | gate | open | hedge / gate / open | (browser turn) |
-| 21 | rows, Saint-Job | Rue Basse | terraced | G5 22.4, 467.7 | 50.794799, 4.349822 | 4.1 | gate | gate | gate | gate / gate / gate | (browser turn) |
-| 22 | rows, Saint-Job | Rue Basse | terraced | G6 84.4, 571.8 | 50.793864, 4.350702 | 4.1 | pillar | gate | open | hedge / no gate / open | (browser turn) |
-| 23 | rows, Saint-Job | Venelle de Saint-Job | terraced | I6 1075, 599.5 | 50.793616, 4.364752 | 2.5 | wall | gate | - | open / gate / - | (browser turn) |
-| 24 | rows, Saint-Job | Rue Jean Benaets | terraced | I6 1033, 624.8 | 50.793388, 4.364156 | 17.1 | gate | gate | open | open / no gate / open | (browser turn) |
-| 25 | rows, Vanderkindere | Avenue Coghen | terraced | E3 -643.4, -875.3 | 50.806871, 4.340371 | 7.7 | hedge | gate | - | hedge / no gate / - | (browser turn) |
-| 26 | rows, Vanderkindere | Rue Victor Allard | terraced | C4 -1667.3, -220.6 | 50.800981, 4.325850 | 14.3 | hedge | gate | - | hedge / no gate / - | (browser turn) |
-| 27 | rows, Vanderkindere | Avenue Molière | terraced | H1 697.4, -1831.6 | 50.815470, 4.359392 | 5 | hedge | gate | - | hedge / gate / - | (browser turn) |
-| 28 | rows, Vanderkindere | Rue Victor Allard | terraced | D4 -1213.6, -294.5 | 50.801647, 4.332286 | 9.6 | hedge | - | gate | hedge / - / gate | (browser turn) |
-| 29 | rows, Vanderkindere | Avenue Coghen | terraced | E2 -656, -1362.5 | 50.811250, 4.340190 | 5.1 | gate | gate | gate | drive / no gate / open | (browser turn) |
-| 30 | rows, Vanderkindere | Rue de Boetendael | terraced | F2 -481.6, -1447 | 50.812011, 4.342664 | 14.1 | hedge | gate | - | hedge / gate / - | (browser turn) |
-| 31 | rows, Calevoet | Rue Égide Van Ophem | terraced | C6 -1593.9, 527 | 50.794261, 4.326897 | 5 | gate | gate | gate | drive / no gate / open | (browser turn) |
-| 32 | rows, Calevoet | Rue du Bourdon | terraced | D8 -1163.9, 1796.6 | 50.782849, 4.333005 | 4 | hedge | gate | open | hedge / gate / open | (browser turn) |
-| 33 | rows, Calevoet | Rue Zandbeek | terraced | C7 -1522.2, 1475.2 | 50.785737, 4.327922 | 4.9 | gate | gate | gate | railing / gate / gate | (browser turn) |
-| 34 | rows, Calevoet | Chaussée de Drogenbos | terraced | C7 -1491.9, 1286 | 50.787438, 4.328350 | 16.9 | railing | gate | - | railing / gate / - | (browser turn) |
-| 35 | rows, Calevoet | Rue Zandbeek | terraced | C8 -1626, 1625.5 | 50.784385, 4.326451 | 5.5 | hedge | - | open | hedge / - / open | (browser turn) |
-| 36 | apartment blocks | Rue Roberts Jones | apartment | G3 187, -766.7 | 50.805897, 4.352153 | 8 | railing | gate | gate | railing / gate / open | (browser turn) |
-| 37 | apartment blocks | Avenue des Cytises | apartment | J8 1872.2, 1490.6 | 50.785605, 4.376057 | 18.1 | hedge | no gate | - | hedge / gate / - | (browser turn) |
-| 38 | apartment blocks | Avenue des Aubépines | apartment | I10 1434.6, 2849 | 50.773394, 4.369851 | 5.6 | hedge | - | - | hedge / - / - | (browser turn) |
-| 39 | apartment blocks | Rue de la Primevère | apartment | H1 785.7, -1810 | 50.815276, 4.360645 | 5.6 | hedge | no gate | - | hedge / no gate / - | (browser turn) |
-| 40 | apartment blocks | Avenue Bourgmestre Jean Herinckx | apartment | F2 -25, -1228.1 | 50.810044, 4.349144 | 4.9 | hedge | gate | - | hedge / gate / - | (browser turn) |
+| 1 | villas, Fort-Jaco | Avenue de la Sapinière | villa | K9 2043.4, 2312.4 | 50.778217, 4.378483 | 18.6 | wall | gate | - | wall / no gate / - | hedge (tall, mixed) on the line, wooden gate posts, wooden driveway gate (open), gravel drive; no pedestrian gate (walk via drive) |
+| 2 | villas, Fort-Jaco | Avenue Jacques Pastur | villa | J7 1521.4, 1303 | 50.787292, 4.371083 | 10.9 | gate | gate | gate | gate / gate / gate | wire-mesh fence on posts + young hedge planted, modern anthracite SLIDING solid-panel driveway gate between rendered piers; ped access via drive |
+| 3 | villas, Fort-Jaco | Avenue de la Sapinière | villa | J9 1867.9, 2426.9 | 50.777188, 4.375995 | 19 | hedge | - | - | hedge / - / - | tall clipped hedge (beech / ivy) on the corner, no gate on this side |
+| 4 | villas, Fort-Jaco | Avenue Jacques Pastur | villa | I8 1057.4, 1544.9 | 50.785117, 4.364503 | 6.4 | hedge | gate | - | hedge / gate / - | tall clipped beech hedge ~2 m, the path through an open HEDGE ARCH (no leaf) |
+| 5 | villas, Fort-Jaco | Avenue du Fort-Jaco | villa | K7 2192.6, 984 | 50.790159, 4.380602 | 16 | open | no gate | - | open / no gate / - | tall old red-brick wall ~2.2 m with brick piers, stepped down the slope (an old estate wall); ours OPEN = miss |
+| 6 | villas, Fort-Jaco | Avenue du Fort-Jaco | villa | K6 2167.3, 986 | 50.790141, 4.380243 | 20.2 | gate | gate | gate | drive / no gate / open | low clipped hedge ~0.9 m, a curved white-painted low wall at the drive mouth, driveway OPEN (no gate); ours a driveway pair = over-gated |
+| 7 | villas, Prince d'Orange | Avenue Hamoir | villa | I5 1397.6, 136 | 50.797783, 4.369327 | 7.3 | drive | gate | open | drive / no gate / open | low sand-brick wall with a clipped ivy / laurel hedge on top, the drive to a garage OPEN, a stone number post; ours drive open + path gate: matches |
+| 8 | villas, Prince d'Orange | Avenue des Hospices | villa | E10 -654.6, 2686.5 | 50.774851, 4.340231 | 7.4 | hedge | no gate | - | open / no gate / - | dense informal shrub / hedge mass on the line, a banded brick pier + iron railing next door; ours hedge (old: open): fixed |
+| 9 | villas, Prince d'Orange | Avenue des Hospices | villa | F10 -360, 2531 | 50.776250, 4.344407 | 8.5 | hedge | gate | open | hedge / no gate / open | (heading along the street) clipped hedge + grey solid screen-fence panels on the line; ours hedge + gate: line ok |
+| 10 | villas, Prince d'Orange | Avenue du Prince d'Orange | villa | I9 1293.5, 2254.5 | 50.778738, 4.367851 | 13.2 | hedge | gate | open | hedge / no gate / open | tall clipped hedges, white rendered low walls and piers, a SOLID anthracite pedestrian gate set in the rendered wall, the drive down to a garage open; ours hedge / path gate / drive open: matches (style: solid modern leaf) |
+| 11 | villas, Prince d'Orange | Avenue du Prince d'Orange | villa | H8 768.4, 1837.1 | 50.782490, 4.360405 | 18.7 | hedge | gate | gate | hedge / gate / gate | low brick wall ~0.4 m (ivy) with a tall clipped hedge behind it; ours hedge: matches |
+| 12 | villas, Prince d'Orange | Avenue Hamoir | villa | H4 915, -340.5 | 50.802066, 4.362481 | 5.7 | hedge | gate | - | open / no gate / - | low clipped hedge ~1 m, two white-painted brick piers (mailbox in one) at the path, the path OPEN, no leaf; ours hedge + a leaf (old: open): line right, the leaf is extra |
+| 13 | villas, Observatoire | Avenue Circulaire | terraced | G5 463.5, 49.8 | 50.798557, 4.356077 | 5.7 | gate | gate | gate | gate / gate / gate | house blurred by Google; visible: low hedge on a low wall, sand-brick piers at an open drive; next door a green metal sliding gate |
+| 14 | villas, Observatoire | Avenue Houzeau | terraced | H4 664.5, -229 | 50.801064, 4.358928 | 7.2 | hedge | gate | open | open / no gate / open | clipped hedge ~1.2 m, red-brick piers with stone caps, a black double gate (solid lower half, iron grille top) across the drive; ours hedge + path gate, drive open (old: open): line fixed, the drive gate missed (the 1-in-2 draw) |
+| 15 | villas, Observatoire | Avenue Brugmann | terraced | E3 -493.3, -695.6 | 50.805256, 4.342502 | 8.6 | hedge | no gate | - | hedge / no gate / - | Av. Brugmann 463, the classic row: low blue-stone plinth with black wrought-iron railings (spear / scroll tops), small iron gates at every path (several standing open), shrubs behind; ours HEDGE + no gate (old the same) = miss: style (the Brugmann rows are rail + iron gate) and the path gate |
+| 16 | villas, Observatoire | Avenue Circulaire | terraced | G5 468.8, 38.5 | 50.798659, 4.356153 | 5 | hedge | gate | open | hedge / gate / open | house blurred by Google (2019); visible: blue-stone piers at a cobbled drive, low hedge, iron railing beyond; partial |
+| 17 | villas, Observatoire | Avenue Brugmann | terraced | E3 -552.9, -556.8 | 50.804008, 4.341657 | 5.1 | gate | gate | gate | drive / no gate / open | Av. Brugmann 495 row: red-brick piers with stone caps and low iron railings on the gardens, a garage with its paved front OPEN, stoop steps; ours a closed driveway pair = over-gated (a row's garage front is open) |
+| 18 | villas, Observatoire | Avenue de l'Observatoire | villa | I4 1337, -278.8 | 50.801512, 4.368468 | 7 | railing | gate | - | open / no gate / - | tall clipped hedge (right), wire-mesh fence + conifers (left), red-brick piers at an open gravel drive, no leaf; ours railing + path gate (old: open): closed now, style (hedge, not railing) differs |
+| 19 | rows, Saint-Job | Chaussée de Saint-Job | terraced | E6 -655, 969.5 | 50.790287, 4.340217 | 5.1 | gate | gate | gate | drive / gate / open | Ch. de Saint-Job 136, a 1980s garage row: clipped hedges between OPEN paved garage drives, no gate anywhere; ours a closed driveway pair = over-gated (class: a row's garage drive has no gate) |
+| 20 | rows, Saint-Job | Chaussée de Saint-Job | terraced | E7 -975.2, 1077.1 | 50.789318, 4.335676 | 5 | hedge | gate | open | hedge / gate / open | Ch. de Saint-Job 78, a 1960s row: the whole front PAVED to the garage, a low stone kerb wall at the side, no gate; ours hedge + path gate, drive open: the line is over-closed (a paved forecourt) |
+| 21 | rows, Saint-Job | Rue Basse | terraced | G5 22.4, 467.7 | 50.794799, 4.349822 | 4.1 | gate | gate | gate | gate / gate / gate | Rue Basse 125 (2014 imagery), a row: PAVED forecourts to the garages, low planter walls, no gates; ours a closed driveway pair = over-gated (the same class as 17 and 19) |
+| 22 | rows, Saint-Job | Rue Basse | terraced | G6 84.4, 571.8 | 50.793864, 4.350702 | 4.1 | pillar | gate | open | hedge / no gate / open | no Street View coverage at the point (Rue Basse G6): not checked |
+| 23 | rows, Saint-Job | Venelle de Saint-Job | terraced | I6 1075, 599.5 | 50.793616, 4.364752 | 2.5 | wall | gate | - | open / gate / - | Venelle de Saint-Job 6-10, a 2010s row: PAVED forecourts to the garages, low shrubs, no gate; ours open line: matches |
+| 24 | rows, Saint-Job | Rue Jean Benaets | terraced | I6 1033, 624.8 | 50.793388, 4.364156 | 17.1 | gate | gate | open | open / no gate / open | Rue Jean Benaets 22: a SOLID black double gate + a solid pedestrian leaf (~1.8 m) closing a deep yard between two buildings; ours gate line + path gate (old: open): matches, style (solid panels) differs |
+| 25 | rows, Vanderkindere | Avenue Coghen | terraced | E3 -643.4, -875.3 | 50.806871, 4.340371 | 7.7 | hedge | gate | - | hedge / no gate / - | Av. Coghen 218, the classic row: low stone / brick plinths with decorative iron railings (scrolls), brick and stone piers, small iron gates at the paths (one path with no leaf), a hedge next door; ours HEDGE + path gate: the gate right, the style (railing) differs |
+| 26 | rows, Vanderkindere | Rue Victor Allard | terraced | C4 -1667.3, -220.6 | 50.800981, 4.325850 | 14.3 | hedge | gate | - | hedge / no gate / - | Rue Victor Allard 225: rendered low walls with black iron railing panels between rendered piers, a black iron bar driveway gate into a courtyard; ours hedge + path gate (old: hedge, no gate): closed and gated now, style (railing) differs |
+| 27 | rows, Vanderkindere | Avenue Molière | terraced | H1 697.4, -1831.6 | 50.815470, 4.359392 | 5 | hedge | gate | - | hedge / gate / - | Av. Moliere 333: low brick walls with black iron railings, brick piers, hedges behind the railings, a garage ramp open; ours hedge + path gate: closed and gated, style (railing on a wall) differs |
+| 28 | rows, Vanderkindere | Rue Victor Allard | terraced | D4 -1213.6, -294.5 | 50.801647, 4.332286 | 9.6 | hedge | - | gate | hedge / - / gate | Rue Victor Allard 90: banded brick-and-stone piers with tall wrought-iron railings (~1.6 m) and an iron pedestrian gate, a tall banded brick wall, a closed wooden plank driveway gate; ours hedge + driveway gate: gates right, style (railing / wall) differs |
+| 29 | rows, Vanderkindere | Avenue Coghen | terraced | E2 -656, -1362.5 | 50.811250, 4.340190 | 5.1 | gate | gate | gate | drive / no gate / open | Av. Coghen 84, a row: PAVED forecourts open to the garages, low brick kerb walls at the sides, no gate; ours a closed driveway pair = over-gated (the row-garage class) |
+| 30 | rows, Vanderkindere | Rue de Boetendael | terraced | F2 -481.6, -1447 | 50.812011, 4.342664 | 14.1 | hedge | gate | - | hedge / gate / - | Rue de Boetendael 105: a WOODEN plank fence with a wooden double driveway gate and a wooden pedestrian gate, shrubs behind; ours hedge + path gate: gated, style (wood: no kit piece; OSM wood fences map to hedges) differs |
+| 31 | rows, Calevoet | Rue Égide Van Ophem | terraced | C6 -1593.9, 527 | 50.794261, 4.326897 | 5 | gate | gate | gate | drive / no gate / open | Rue Egide Van Ophem 138, a semi: the paved drive to the garage OPEN, low concrete edging + clipped shrubs, a low brick wall next door; ours a closed driveway pair = over-gated (row / semi garage class) |
+| 32 | rows, Calevoet | Rue du Bourdon | terraced | D8 -1163.9, 1796.6 | 50.782849, 4.333005 | 4 | hedge | gate | open | hedge / gate / open | Rue du Bourdon 153: a low rubble-stone wall with stone piers and white tube rails between, the path open, a paved drive open next door; ours hedge + path gate, drive open: line closed (style: stone wall + rail), the leaf extra |
+| 33 | rows, Calevoet | Rue Zandbeek | terraced | C7 -1522.2, 1475.2 | 50.785737, 4.327922 | 4.9 | gate | gate | gate | railing / gate / gate | Rue Zandbeek 89 (2009 imagery), a 1960s row: sunken garage drives OPEN, stepped brick planter walls, steps up to the doors, no gate anywhere; ours a closed driveway pair = over-gated (the row-garage class, clearest case) |
+| 34 | rows, Calevoet | Chaussée de Drogenbos | terraced | C7 -1491.9, 1286 | 50.787438, 4.328350 | 16.9 | railing | gate | - | railing / gate / - | Ch. de Drogenbos / Keyenbempt: an open gravel lot used as a car park in front of the building (17 m deep), a low wire fence far back; ours railing + path gate = over-closed (an informal car park not in the OSM forecourts) |
+| 35 | rows, Calevoet | Rue Zandbeek | terraced | C8 -1626, 1625.5 | 50.784385, 4.326451 | 5.5 | hedge | - | open | hedge / - / open | Rue Zandbeek corner (2019): a brushwood / reed screen fence on posts round a corner garden, an apartment block with hedges on its line; ours hedge, drive open: matches (screen fence read as hedge) |
+| 36 | apartment blocks | Rue Roberts Jones | apartment | G3 187, -766.7 | 50.805897, 4.352153 | 8 | railing | gate | gate | railing / gate / open | Rue Roberts Jones 80, a small apartment block: a dark slate retaining wall ~0.8 m with clipped hedges on it, a black vertical-bar driveway gate (closed) to the garage; ours railing + path gate + driveway gate (old: no drive gate): matches |
+| 37 | apartment blocks | Avenue des Cytises | apartment | J8 1872.2, 1490.6 | 50.785605, 4.376057 | 18.1 | hedge | no gate | - | hedge / gate / - | Av. des Cytises 6: a tall clipped hedge, rendered stone piers, a wooden picket double driveway gate + a wooden pedestrian gate; ours hedge, the path ungated (old: gated) = a regression at this spot (the access gate moved to another run) |
+| 38 | apartment blocks | Avenue des Aubépines | apartment | I10 1434.6, 2849 | 50.773394, 4.369851 | 5.6 | hedge | - | - | hedge / - / - | Av. des Aubepines 109 (modern villa): layered clipped hedges, the paved drive to the garage OPEN, no gate; ours hedge, no path / drive: matches |
+| 39 | apartment blocks | Rue de la Primevère | apartment | H1 785.7, -1810 | 50.815276, 4.360645 | 5.6 | hedge | no gate | - | hedge / no gate / - | Rue de la Primevere 2, an apartment block: a low stone kerb wall + low hedge round the lawn, the entrance path OPEN (no gate); ours hedge, path ungated: matches |
+| 40 | apartment blocks | Avenue Bourgmestre Jean Herinckx | apartment | F2 -25, -1228.1 | 50.810044, 4.349144 | 4.9 | hedge | gate | - | hedge / gate / - | Av. Bourgmestre Jean Herinckx 23, an apartment block: a clipped hedge ~1.2 m on the line, the entrance path OPEN through it (no gate); ours hedge + path gate = over-gated (an apartment entrance has no garden gate) |
+
+### Street View result (40 frontages, 2026-11-19)
+
+38 seen (22: no coverage; 13 / 16: houses blurred, partial). What the line carries:
+
+- **Closed where it is closed: 30 of 38.** Every villa and nearly every row has a hedge, wall, railing or fence on its
+  line, as the owner said. The fixes closed 8 the old data left open (8, 12, 14, 18, 26 and the gated 9, 24, 36).
+- **Still a miss: 2.** 5 Av. du Fort-Jaco 83, an old 2.2 m estate wall drawn open (the individual "open" draw); 15 Av.
+  Brugmann 463, the classic row (railings + iron gates) drawn as a hedge with no gate.
+- **Over-closed: 2.** 20 Ch. de Saint-Job 78 (a paved forecourt) and 34 Drogenbos (an informal gravel car park): no data
+  marks them as forecourts.
+- **Driveway gates: the clearest class.** 6 of 6 row / semi garage drives (17, 19, 21, 29, 31, 33) have NO gate: the
+  car stands on the paved front; we drew a closed pair on each. **Fixed in this turn:** a terraced front's driveway gets
+  a gate 1 in 8 (`build_gardens.py`, `partyH > 0`); villas keep 3 in 4 / 1 in 2 (their drives are gated or open about
+  half and half in the sample: 1, 2, 14, 28 gated; 6, 7, 10, 38 open).
+- **Path gates:** villas and rows mostly have a leaf (1 via the drive, 2, 10, 15, 24, 25, 26, 28, 30, 37). Open paths
+  with piers and no leaf: 4 (a hedge arch), 12, 32; apartment entrances have no garden gate (39, 40). Next round: piers
+  without a leaf on part of the paths, none on apartment blocks.
+- **Styles (next round, the kit's pieces exist for most):** the 1900-1930 rows round Brugmann / Coghen / Moliere /
+  Allard are low plinths with wrought-iron railings and iron gates (15, 17, 25, 26, 27, 28), where the street draw gave
+  hedges; modern villas use SOLID anthracite panels (2 sliding, 10, 24); wood fences and gates (1, 30, 37) have no kit
+  piece yet (the build maps OSM wood fences to hedges).
 
 ## 3. Causes and fixes
 
@@ -109,7 +140,7 @@ build (`GARDEN_DEBUG_BU=<id> python tools/gardens/build_gardens.py --tile T --ou
 | d. door near a run end | openings | the 0.6 m sliver to the run end joined the opening: wider than 1.6 m, so no leaf, one pier | the pedestrian opening moves to the end (pier on the run end), a gate's width |
 | e. door on another face | openings | only the door face's door made a gate: a garden face without the door (a side door, a corner plot) had no way in at all | one access gate on the building's longest run, nearest its door (2,996) |
 | f. hedge-front leaf | gate width / swing | hedge fronts counted no pier width: 1.34 m leaves (bars stretched 34 %, 0.2 m into each pier), swung up to 100 deg into the hedge's end | the leaf between the piers' faces (0.98 m); <= 77 deg beside a hedge |
-| g. driveway gates 55 % everywhere, never open | car gates | a coin per drive, and a closed gate also where an OSM service road / track runs through it (14 across a used way) | 3 in 4 on drives >= 5 m deep, 1 in 2 shorter, open forecourt > 4.6 m; an OSM gate node always gets a gate (to 5.2 m); a gate across a way a car uses stands OPEN (both leaves swung into the garden, no stand-in; viewer/gardens/gardenKit.js): 0 across |
+| g. driveway gates 55 % everywhere, never open | car gates | a coin per drive, and a closed gate also where an OSM service road / track runs through it (14 across a used way) | villas: 3 in 4 on drives >= 5 m deep, 1 in 2 shorter; rows / semis 1 in 8 (browser turn, Street View: 6 of 6 sampled garage drives open); open forecourt > 4.6 m; an OSM gate node always gets a gate (to 5.2 m); a gate across a way a car uses stands OPEN (both leaves swung into the garden, no stand-in; viewer/gardens/gardenKit.js): 0 across |
 | h. shop radius | face rules | an OSM shop point within 6 m made a building a shop: the houses either side of a shop in a row lost their gardens | 2.5 m (skip_shop 2,130 -> 1,475) |
 | i. OSM gate nodes unused | inputs | barrier=gate / swing / sliding / wicket nodes were loaded and never read | an opening (driveway if motor_vehicle / sliding, else pedestrian) with a leaf (12 on runs) |
 | j. viewer drops | main.js clearRoads | pieces on the carriageway (0.3 m in) cleared: 36 -> 29 frontages | unchanged (right: the carriageway is not private land; the roads job's band rule) |
@@ -135,22 +166,23 @@ frontages are the same 15,316 houses (the census's geometry does not depend on t
 | | before | after |
 |---|---|---|
 | house frontages with a garden (villa + terraced) | 8,035 | 8,004 (31 drawn paved to the facade) |
-| of them open by mistake | 879 (10.9 %) | 302 (3.8 %) |
+| of them open by mistake | 879 (10.9 %) | 321 (4.0 %) |
 | villas open | 189 / 1,579 | 57 / 1,578 |
 | rows open | 705 / 6,456 | 268 / 6,426 |
 | apartment blocks open | 86 / 853 | 31 / 849 |
-| door paths with a gate at the line (all types) | 4,355 / 8,646 (50.4 %) | 7,426 / 8,618 (86.2 %) |
+| door paths with a gate at the line (all types) | 4,355 / 8,646 (50.4 %) | 7,104 / 8,618 (82.4 %) |
 | villas | 742 / 1,466 | 1,250 / 1,465 |
 | rows | 3,125 / 6,309 | 5,485 / 6,284 |
 | apartment blocks | 488 / 813 | 675 / 811 |
-| driveways with a driveway gate | 2,016 / 5,312 (38.0 %) | 2,494 / 5,299 (47.1 %) |
-| gates drawn | 6,153 (3,556 pedestrian, 2,597 closed pairs) | 13,332 (10,140 pedestrian, 3,166 closed + 26 open pairs) |
+| driveways with a driveway gate: villas | 258 / 1,107 (23.3 %) | 350 / 1,058 (33.1 %) |
+| driveways with a driveway gate: rows / semis (Street View: 6 of 6 open) | 1,615 / 5,755 (28.1 %) | 436 / 6,373 (6.8 %) |
+| gates drawn | 6,153 (3,556 pedestrian, 2,597 closed pairs) | 11,429 (10,140 pedestrian, 1,274 closed + 15 open pairs) |
 | closed driveway gates across a used way | 14 | 0 |
 | piers | 41,754 | 53,045 |
-| house paths still without a gate | 4,291 | 1,192 (inDrive 353, frontOpen 216, gap 205, noOpening 139, leafMissing 94) |
+| house paths still without a gate | 4,291 | 1,514 (inDrive 593: the walk through an open row drive; frontOpen 232, gap 220, noOpening 144, leafMissing 128) |
 
-The gate row with `--old` fails on openByMistake 879 > 302, houseOpenPm 109 > 38, pathUngated 4,291 > 1,192,
-pathGatedPm 504 < 862, driveGatedPm 380 < 471 and gateAcrossDriven 14 > 0.
+The gate row with `--old` fails on openByMistake 879 > 321, houseOpenPm 109 > 40, pathUngated 4,291 > 1,514,
+pathGatedPm 504 < 824, villaDriveGatedPm 233 < 331, rowDriveGatedPm 281 > 100 and gateAcrossDriven 14 > 0.
 
 Before the census learned driveways (a ray through a UrbIS CR42L line counted open), the old data read 2,777 open:
 most of those were driveway mouths and garage forecourts, open by design.
@@ -230,8 +262,8 @@ the same clearing; ceiling 1,853.
 ## 5. Perf
 
 Everything is instances in the kit's existing pools (gate_*, cargate_*, pillar, pcap: the same 3-LOD / thin-bar card
-pieces, viewer/thinBars.js rule 35): **no new piece, no new draw call, no new material**. City-wide +7,163 gates
-and +11,291 piers; the per-tile budget is in the gate row (the busiest tile: 449 leaves, 1,428 piers; ceilings 460 /
+pieces, viewer/thinBars.js rule 35): **no new piece, no new draw call, no new material**. City-wide +5,276 gates
+and +11,291 piers; the per-tile budget is in the gate row (the busiest tile: 353 leaves, 1,428 piers; ceilings 460 /
 1,430). The streamer gathers near the camera only (gates end at 150 m, the modelled bars within 6 m, cards of 2
 triangles beyond); the tile's garden add stays sliced (rule 22). data/gardens/old is a byte copy of the committed files
 (the same git blobs).
