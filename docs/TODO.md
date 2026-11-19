@@ -72,6 +72,11 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
     - merge + rebuild the bundle.
   - claude/kid (bike rounds 1-4, 07754f3c): browser turn not started (D6 city spot, ledge, stairs, sound, weight, camera); then the owner tries the bike lab.
 - [x] Rail corridor (CLASS T + Stalle invisible post + rail fences): MERGED 2026-11-19 (a4ad7b35, rule 39). Left: T8 Av. des Tilleuls E9 (-962, 2175): OSM bridge=yes over L26/5 but no deck nor road drawn (missing-deck job, drivecheck 158); outer-lane drive runs stuck at Rue de Stalle start points (unexplained); a catenary mast stands on the Stalle viaduct deck (real viaducts carry masts).
+- [ ] NEXT (owner 2026-11-19, shot 111): TRAFFIC CARS SINK INTO THE ROAD on the Carsoel deck, at Pasta Commedia and in front of the white shop on Place de Saint-Job.
+  - Cause: the traffic (and tram 92) take their height from viewer/main.js movingGround (worldRef.surface + CARVE; deckY only for VIVIER). The player's car drives the drawn drive surface (surfaceLayers / hero decks / the levelled roads), so on hero road decks and where the sidewalk / roads jobs reshaped the street, the traffic sinks or floats.
+  - Fix: ONE ground for every mover (player, traffic, knocked / parked cars, trams, props): the drawn drive surface, layered.
+  - Census: every lane point vs the drawn road, |dy| > 5 cm counted, city-wide; gate at 0 (or a justified ceiling).
+- [ ] GATE PARSE (props job finding): a branch that did not boot (a comment swallowed an export) passed the gate; the gate must parse every viewer/ and tools/ file as an ES module.
 - [ ] GATE FLAKE: stutter2 fails under load on a different sub-check each run (clearRoads, heroTrianglesGen, hero triangle slices) and passes alone. A flaky gate row hides real regressions: make it load-robust (median of N runs, or measure CPU time not wall time) or isolate it.
 - [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
