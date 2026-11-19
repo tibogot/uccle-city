@@ -109,6 +109,12 @@ the browser turn reads `__citySound.stats` with `?soundstats=1`):
 9. **Cost**: `?soundstats=1` then `__citySound.stats` (feedMs, frameMs, voices) and `__citySound.engine.stats`; one
    Chrome tab, preflight GREEN (memory: perf preflight).
 
+The browser tool cannot listen, so the turn reads the graph and records: `debug/soundCheck.js`:
+`watchUnmute()` before the first click (long tasks, longest frame, time to ready), `await probe(3)` at each spot (voices,
+voices per category, environment, RMS / peak of the master and every category bus through AnalyserNode taps, feeds /
+control ms), `await record("<spot>", 12, 8827)` with `python tools/sound/save_server.py 8827 docs/sound` running: a WAV
+of the master bus per spot into `docs/sound/` for the owner (peak-normalised to -3 dBFS; the real level is returned).
+
 ## Weak points (honest)
 
 - The traffic has **no engine sound** (by the owner's choice): idling cars at a light are silent but for their tyres.
