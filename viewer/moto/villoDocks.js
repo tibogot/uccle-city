@@ -22,7 +22,8 @@ export function nearBike(x, z, r = 2.2) {
       // (the bike's middle: 0.56 m from its front contact toward its rear)
       const yaw = a[i + 3], mx = a[i] + Math.sin(yaw) * 0.56, mz = a[i + 2] + Math.cos(yaw) * 0.56;
       const d = Math.hypot(mx - x, mz - z);
-      if (d < r && d < hit.d && !taken.has(`${name}:${i / 8}`) && !t.bikeRefs?.[i / 8]?.hidden) {   // (props: a bike knocked out of its dock is not there) hit.d = d; hit.x = a[i]; hit.y = a[i + 1]; hit.z = a[i + 2]; hit.yaw = yaw; hit.tile = name; hit.i = i / 8; }
+      // (props: a bike knocked out of its dock is not there)
+      if (d < r && d < hit.d && !taken.has(`${name}:${i / 8}`) && !t.bikeRefs?.[i / 8]?.hidden) { hit.d = d; hit.x = a[i]; hit.y = a[i + 1]; hit.z = a[i + 2]; hit.yaw = yaw; hit.tile = name; hit.i = i / 8; }
     }
   }
   return hit.tile ? hit : null;

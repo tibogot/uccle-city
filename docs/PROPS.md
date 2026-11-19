@@ -197,3 +197,24 @@ stand-in's `userData.refs[i]` (or `addStatic` polygons with `ref`, as the cones)
 - A post bends as a rigid tilt about its foot (no bent tube shape); street-name plate posts stay solid.
 - Tuning (masses, lift, the posts' yield forces and snap speeds) was done with the scripted tests; it wants the owner's
   hands.
+
+## 8. Browser turn 1 (2026-11-19, WIP: stopped early for the owner's playtest)
+
+Quick mode at Place Saint-Job (`?quick=1&place=stjob-street&view=drive&radius=300`), scripted rams with
+`debug/propsCheck.js` (`ram(cls, kmh)`: a clear run-up on paving, `driver.autoInput`). Shots in `docs/props/`.
+
+| check | result |
+|---|---|
+| boot | FIRST LOAD BROKEN: `viewer/moto/villoDocks.js` had a comment swallowing a block (`Unexpected token 'export'`, main() stopped, with `?props=old` too). `node --check` missed it (it reads a `.js` as CommonJS); fixed, every changed module now parsed as ESM (vm.SourceTextModule). Root cause + check to add: parse every changed `viewer/` file as a module in the gate. |
+| bin_round 50 km/h | flies ~1 m up (`bin50_flying.jpg`), lies on its side; with the throttle held it was pushed on to 40 m (`bin50_landed.jpg`); the car 50 -> 52 km/h (throttle) |
+| sign 20 km/h | bent, flattened at 82 deg, collider off, the car rolled over it (20 -> 7 km/h with braking): `sign20_flattened.jpg` |
+| sign 50 km/h | snapped, flies with its plate (`sign50_snapped.jpg`), the car 49 -> 46 km/h |
+| bollard 20 / 50 | 20: bent 54 deg (flattened); 50: snapped, the car 44 -> 36 km/h: `bollard50_snapped.jpg` (a café terrace's chairs scattered too) |
+| parked moto 20 / scooter 50 | moto tipped 80 deg, 9 m; scooter tumbling in the air with a second bike knocked: `scooter50_hit.jpg` |
+| Villo bike 25 km/h | bikes knocked out of the station row: `villo25.jpg` |
+| terrace 30 km/h | the TABLE knocked over (91 deg, 0.8 m) but its two CHAIRS stayed at rest (never woken): **bug, open** (the group wake in `touch()` did not run for it; not yet found) |
+| cost | 60 fps steady with 18 props displaced (frame median 16.7 ms, p95 20.6); world frameMs 0.005-0.13 ms, proxy renderMs 0.08 ms, 11 proxy draws |
+
+**Left (not done):** the terrace chairs bug; a lamp stops the car (gate only); night shadows; third person (walker kicks,
+no post where a snapped bollard stood: gate only); cones (police game); `?props=old` A/B; first-knock hitch measure;
+the full gate after this commit (the boot fix + `debug/propsCheck.js` only; the gate passed on d09f19ef).
