@@ -55,7 +55,17 @@ export function routeTrack(r) {
     const tx = tan[lo * 2] * (1 - f) + tan[hi * 2] * f, tz = tan[lo * 2 + 1] * (1 - f) + tan[hi * 2 + 1] * f;
     return [P[lo * 3] + (P[hi * 3] - P[lo * 3]) * f, P[lo * 3 + 1] + (P[hi * 3 + 1] - P[lo * 3 + 1]) * f, P[lo * 3 + 2] + (P[hi * 3 + 2] - P[lo * 3 + 2]) * f, Math.atan2(-tz, tx)];
   };
-  return { at, len, inTiles: r.inTiles };
+  /** at() into o[0..3] (no allocation: the city sound's feed, trains soundFeed) */
+  const atInto = (s, o) => {
+    s = Math.max(0, Math.min(len, s));
+    let lo = 0, hi = n - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
+    const f = (s - cum[lo]) / ((cum[hi] - cum[lo]) || 1);
+    const tx = tan[lo * 2] * (1 - f) + tan[hi * 2] * f, tz = tan[lo * 2 + 1] * (1 - f) + tan[hi * 2 + 1] * f;
+    o[0] = P[lo * 3] + (P[hi * 3] - P[lo * 3]) * f; o[1] = P[lo * 3 + 1] + (P[hi * 3 + 1] - P[lo * 3 + 1]) * f; o[2] = P[lo * 3 + 2] + (P[hi * 3 + 2] - P[lo * 3 + 2]) * f; o[3] = Math.atan2(-tz, tx);
+    return o;
+  };
+  return { at, atInto, len, inTiles: r.inTiles };
 }
 
 export async function createTrains({ rail, url = new URL("../../data/transit/sncb-uccle.json", import.meta.url), parent, clock = null, maxUnits = 40 }) {
@@ -75,6 +85,7 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
   let ownClock = () => startSecs + ((performance.now() - t0) / 1000) * scale;
   const clockFn = () => (clock ? clock() : ownClock());
   const trips = doc.trips.filter((t) => t.days.includes(params.get("day") || dayType));
+  trips.forEach((t, i) => { t._si = i; });                          // (the city sound tells the trains apart by it: soundFeed)
   let source = { delay: () => 0, cancelled: () => false };
   const L = model.layout.length;
 
@@ -99,7 +110,7 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
   let prevInView = new Set();
   const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere();
   // (car control round: the trains are solid for the player's car at level crossings / the walker, viewer/drive/movers.js)
-  const nearR = new Array(64), nearD = new Float64Array(64), nearL = new Float64Array(64);
+  const nearR = new Array(64), nearD = new Float64Array(64), nearL = new Float64Array(64), nearV = new Float32Array(64), nearI = new Int32Array(64);
   let nearN = 0;
   const bodies = (x, z, r, out, o = 0) => {
     const max = out.length / 7, seg = 5;
@@ -117,6 +128,15 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
     }
     return n;
   };
+  /** (the city sound, viewer/audio/citySound.js) the trains near the last camera, no allocation: per train 4 floats into
+   *  out (trip index, speed m/s, length m, nose distance along the route) and its route into outR; -> count. The
+   *  caller places its cars with route.atInto(d - k, o). */
+  const soundFeed = (out, outR) => {
+    const max = Math.min(out.length / 4, outR.length);
+    let n = 0;
+    for (let i = 0; i < nearN && n < max; i++) { const o = n * 4; out[o] = nearI[i]; out[o + 1] = nearV[i]; out[o + 2] = nearL[i]; out[o + 3] = nearD[i]; outR[n++] = nearR[i]; }
+    return n;
+  };
   const update = (camPos, camera = null) => {
     const T = clockFn() % 86400;
     nearN = 0;
@@ -132,7 +152,7 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
       const len = L * (t.units || 1);
       if (p.d - len > R.len + 50 || p.d < -50) continue;       // wholly beyond the route's ends (outside the tiles)
       stats.running++;
-      { const m = R.at(p.d); if (nearN < 64 && (m[0] - camPos.x) ** 2 + (m[2] - camPos.z) ** 2 < 600 * 600) { nearR[nearN] = R; nearD[nearN] = p.d; nearL[nearN++] = len; } }
+      { const m = R.at(p.d); if (nearN < 64 && (m[0] - camPos.x) ** 2 + (m[2] - camPos.z) ** 2 < 600 * 600) { nearR[nearN] = R; nearD[nearN] = p.d; nearV[nearN] = p.v; nearI[nearN] = t._si ?? 0; nearL[nearN++] = len; } }
       trainPose(model.layout, R.at, p.d, pose, { pool });
       fleet.add(pose, t, 0);                                       // (t, 0 / 1: the motion key, --- instmotion)
       if ((t.units || 1) > 1) { trainPose(model.layout, R.at, p.d - L, pose2, { reversed: true, leadFront: false, pool: pool2 }); fleet.add(pose2, t, 1); }
@@ -169,6 +189,6 @@ export async function createTrains({ rail, url = new URL("../../data/transit/snc
   const setClock = (secs = null) => { startSecs = secs ?? brusselsNow().secs; t0 = performance.now(); };
   const setTimescale = (k) => { startSecs = ownClock(); t0 = performance.now(); scale = k; };
   const setSource = (s) => { source = s; };
-  return { update, info, positions, bodies, setClock, setTimescale, setSource, fleet, model, group, stats, trips, routes, doc,
+  return { update, info, positions, bodies, soundFeed, setClock, setTimescale, setSource, fleet, model, group, stats, trips, routes, doc,
     get clockSecs() { return clockFn() % 86400; }, get timescale() { return scale; } };
 }

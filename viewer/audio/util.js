@@ -96,13 +96,15 @@ export function poisson(rand, seconds, rate) {
 }
 
 // Control-rate parameter writer that skips tiny changes (after slop-newyork's smoothParameter).
+// (the last target lives in a Float64Array: a double reassigned in a closure is a new heap number per write)
 export function smoothParam(param, tc = 0.07, eps = 1e-4) {
-  let target = NaN;
+  const T = new Float64Array(1); T[0] = NaN;
   return (v, now, t = tc) => {
+    const target = T[0];
     if (Math.abs(v - target) < eps) return;
     param.cancelScheduledValues(now);
     if (Number.isNaN(target)) param.setValueAtTime(v, now); else param.setTargetAtTime(v, now, t);
-    target = v;
+    T[0] = v;
   };
 }
 

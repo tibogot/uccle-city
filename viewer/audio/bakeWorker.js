@@ -5,12 +5,14 @@ import { FootstepBank } from "./footsteps.js";
 import { VehicleBank } from "./vehicles.js";
 import { TransitBank } from "./transit.js";
 import { AmbienceBank, BirdBank, BellBank } from "./ambience.js";
+import { CrashBank } from "./crash.js";
+import { IRBank } from "./engine.js";
 
 class FakeBuffer {
   constructor(ch, n, sr) { this.numberOfChannels = ch; this.length = n; this.sampleRate = sr; this.duration = n / sr; this._d = Array.from({ length: ch }, () => new Float32Array(n)); }
   getChannelData(i) { return this._d[i]; }
 }
-const BANKS = { feet: FootstepBank, veh: VehicleBank, tr: TransitBank, amb: AmbienceBank, birds: BirdBank, bells: BellBank };
+const BANKS = { feet: FootstepBank, veh: VehicleBank, tr: TransitBank, amb: AmbienceBank, birds: BirdBank, bells: BellBank, crash: CrashBank, irs: IRBank };
 
 function pack(v, transfer) {
   if (v instanceof FakeBuffer) { transfer.push(...v._d.map((a) => a.buffer)); return { __buf: 1, sr: v.sampleRate, d: v._d }; }
