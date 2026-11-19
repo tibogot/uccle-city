@@ -337,3 +337,20 @@ loaded by the owner's play session during this round's measures).
   with plain loops (the same exact tests: the census on G3 H6 E6 I9 unchanged; the growth's geometry byte for byte). In situ (the tile build's 'retaining walls'
   stage, 6 tiles F2 E6 I6 G6 H6 D5 x 3, round 3 and round 5 alternated in one process, CPU load 2-4 %): round 3 mean
   46 ms (median 42), round 5 mean 55 ms (median 46): <= 60.
+
+## Round 5b: steps in the gate openings (WIP, 2026-11-19)
+
+- Where a gate opening's garden stands > 0.3 m over the sidewalk, a flight of blue-stone steps (risers ~17 cm, treads
+  30 cm) from the sidewalk's edge up to the garden level between the piers; the piers' returns only as deep as the
+  flight + 0.1 m (viewer/streets/retainWalls.js GATE STEPS; treads marked aUv2.y = 1). The terrain round a flight is
+  lowered under the line of its treads (retainWalls flightCap, applied in roadBuild.js after clampUnder): a 1 m grid
+  triangle from a vertex held at the garden level beside a 1.1 m opening crossed over the lower treads (census 'over'
+  45 -> 25 on H6 G3 E6 I6, the no-steps figure).
+- Census `gateNoSteps` (tools/audit/census/ground.mjs): a gate in a wall (a face within 3 m), its garden (1.2-2 m behind)
+  > 0.3 m over the lowest sidewalk top within 3 m, fewer than 2 tread heights within 2.5 m. H6 G3 E6 I6: 62 with no
+  steps built -> 12 with the flights.
+- LEFT for the next session: the 12 remaining gates (e.g. G3 Roberts Jones 55, H6 Perelman 1 at 698.5, 540.2: a gate
+  the wall's gate test does not take as an opening, or the census's "in a wall" too loose; trace them to 0); the full
+  census (new ceilings incl. gateNoSteps 0; bareBank rose 64 -> 76 on the 4 tiles round the flights: check), the full
+  gate, the cost re-measure (quiet machine), the Chrome turn (H6 / G3 / a stone wall / brick beside a garden wall, the
+  steps). Flights can be tall: Perelman 4 rises ~3.2 m (19 risers, 5.7 m deep).

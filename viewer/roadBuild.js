@@ -150,7 +150,7 @@ export function buildRoadData(o) {
   const parts = {};
   let carvedCells = 0, triangles = 0, surfaceStats = null, surfaceData = null;
   const welds = [];
-  let wallHold = null, weldsNoWalls = null, wallTops = null;                  // the road meshes the terrain is welded to (JOINS, after the carve)
+  let wallHold = null, weldsNoWalls = null, wallTops = null, wallFlights = null;                  // the road meshes the terrain is welded to (JOINS, after the carve)
   if (surf) {
     // measured surfaces + the engine's markings clipped to them (viewer/surfaces.js)
     const lineCuts = v2 ? pv.inventory.crossings.filter((c) => c.poly).map((c) => c.poly) : null;
@@ -174,7 +174,7 @@ export function buildRoadData(o) {
       const out = onceEdgeList(C.position, C.index, 0.02).filter((e) => own(e) && !covered((e[0] + e[3]) / 2 + e[6] * 0.3, (e[2] + e[5]) / 2 + e[7] * 0.3));
       out.covered = covered;
       const W = retainingWalls(out, ground, o.gardenNear, { wallRay: o.wallRay ?? null, publicAt: o.publicAt ?? null, gateNear: o.gateNear ?? null, covered: out.covered ?? null, slope: BANK_SLOPE, inTile: (x, z) => x >= bounds.x0 && x < bounds.x1 && z >= bounds.z0 && z < bounds.z1 });
-      if (W) { weldsNoWalls = names.map((k) => ({ position: S.parts[k].position, index: S.parts[k].index })); appendToPart(S.parts.concrete, W.stone, { aKind: (i) => W.stone.kind[i], aUv2: (i) => [W.stone.tone[i], 0] }); S.parts.grass ??= { position: new Float32Array(0), normal: new Float32Array(0), uv: new Float32Array(0), attributes: {}, index: new Uint32Array(0), vertexCount: 0, extra: null }; appendToPart(S.parts.grass, W.lawn);   /* (a tile with no island has no grass part: the lawn went missing over its hold, a trench) */ S.stats.retainWalls = { edges: W.edges, runs: W.runs, piers: W.piers, metres: W.metres }; wallHold = W.hold; wallTops = W.tops; }
+      if (W) { weldsNoWalls = names.map((k) => ({ position: S.parts[k].position, index: S.parts[k].index })); appendToPart(S.parts.concrete, W.stone, { aKind: (i) => W.stone.kind[i], aUv2: (i) => [W.stone.tone[i], W.stone.step[i]] }); S.parts.grass ??= { position: new Float32Array(0), normal: new Float32Array(0), uv: new Float32Array(0), attributes: {}, index: new Uint32Array(0), vertexCount: 0, extra: null }; appendToPart(S.parts.grass, W.lawn);   /* (a tile with no island has no grass part: the lawn went missing over its hold, a trench) */ S.stats.retainWalls = { edges: W.edges, runs: W.runs, piers: W.piers, metres: W.metres, gateSteps: W.gateSteps }; wallHold = W.hold; wallTops = W.tops; wallFlights = W.flightCap ? { cap: W.flightCap, box: W.capBox } : null; }
       times["retaining walls"] = Math.round(now() - tw);
     }
     for (const c of S.carve) carvedCells += hm.carve(c.position, c.index, CARVE);
@@ -210,6 +210,16 @@ export function buildRoadData(o) {
   const weldedCells = hm.weld ? hm.weld(weldsNoWalls ?? welds, { skip: weldSkip, nearest: o.weldNearest === true, field }) : 0;   // joins2: each cell banks on its nearest edge (heightmap.js weld)
   // joins2: then no terrain over any surface (heightmap.js clampUnder; ?groundweld=old: none)
   const clampedCells = hm.clampUnder && o.weldNearest === true ? hm.clampUnder(wallHold ? welds.concat([wallHold]) : welds, { skip: weldSkip, stackTop: o.clampTop === true, stackGap: 0.3, minWidth: o.clampTop === true ? 0.02 : 0, bank: o.kerbLevel === true ? BANK_SLOPE : 0, bankReach: 3, field }) : 0;
+  // (round 5) the gates' steps: every grid vertex round a flight under the line of its treads (retainWalls.js flightCap)
+  if (wallFlights && hm.y && hm.h) {
+    const { x0, z0, cols, rows, step } = hm.h, Yg = hm.y;
+    for (const [bx0, bx1, bz0, bz1] of wallFlights.box) {
+      for (let r = Math.max(0, Math.floor((bz0 - z0) / step)); r <= Math.min(rows - 1, Math.ceil((bz1 - z0) / step)); r++) for (let c = Math.max(0, Math.floor((bx0 - x0) / step)); c <= Math.min(cols - 1, Math.ceil((bx1 - x0) / step)); c++) {
+        const x = x0 + c * step, z = z0 + r * step, cap = wallFlights.cap(x, z), k = r * cols + c;
+        if (cap < Yg[k] && !weldSkip(x, z)) Yg[k] = cap;
+      }
+    }
+  }
   const atlas = compactAtlas(built.atlas);
   lap("terrain weld");
   if (v2) {

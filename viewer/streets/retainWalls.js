@@ -31,6 +31,8 @@ const PIER = 0.45, PIER_UP = 0.12;  // m: the pier at a run's end, and how far i
 const STONE_SHARE = 0.3;           // share of runs in coursed stone (the rest brick)
 const GAP_MAX = 3, GATE_R = 2;     // m: a gap between two runs carried across; a garden gate this near keeps it open
 const STACK_R = 4;                 // m: no second wall line within this behind another
+const RISER = 0.17, TREAD = 0.3;   // m: a gate's steps (round 5), from the sidewalk up to the garden
+const STEPS_MIN = 0.3;             // m: a gate opening with a jump over this gets steps
 const fr = (x) => x - Math.floor(x);
 // (a grid of segments, each in every 4 m cell its box touches: near(x, z, r) holds every segment within r of the point,
 // and a few more; the wall tests below ran over every edge of the tile: cost)
@@ -198,6 +200,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
   }
   // gate openings: no wall across a garden gate standing just behind the sidewalk (up to 3 m back): the run stops
   // either side of it and ends in piers (round 5: H6 Perelman 4, a wall built across the gate of H5's garden)
+  const gateEdges = [];
   if (gateNear) for (let i = 0; i < edges.length; i++) {
     if (!on[i]) continue;
     const e = edges[i], L = Math.hypot(e[3] - e[0], e[5] - e[2]), ns = Math.max(1, Math.ceil(L / 0.5));
@@ -208,7 +211,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
       const sx = e[0] + (e[3] - e[0]) * q / ns, sz = e[2] + (e[5] - e[2]) * q / ns;
       for (const dd of [0.5, 1.25, 2, 2.75]) if (gateNear(sx + e[6] * dd, sz + e[7] * dd, 0.9)) { gate = true; break; }
     }
-    if (gate) on[i] = false;
+    if (gate) { on[i] = false; gateEdges.push(i); }
   }
   const wall = edges.filter((e, i) => on[i]);
   if (!wall.length) return null;
@@ -252,14 +255,14 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
     look.push(h < STONE_SHARE ? { kind: 5, tone: 0 } : { kind: 4, tone: Math.min(3, Math.floor(h2 * 4)) });
   }
   // 4. geometry: { pos, nrm, uv, idx, kind, tone } for the stone (concrete part) and the lawn (grass part)
-  const stone = { pos: [], nrm: [], uv: [], idx: [], kind: [], tone: [] }, lawn = { pos: [], nrm: [], uv: [], idx: [] };
+  const stone = { pos: [], nrm: [], uv: [], idx: [], kind: [], tone: [], step: [] }, lawn = { pos: [], nrm: [], uv: [], idx: [] };
   // hold: not drawn, for viewer/heightmap.js clampUnder only: the terrain behind the face held at the sidewalk's height
   // over HOLD m, so no terrain triangle rises in front of the face (the strip covers it from above)
   const hold = { pos: [], nrm: [], uv: [], idx: [] }, tops = { pos: [], nrm: [], uv: [], idx: [] };
   let cur = { kind: 1, tone: 0 };
   const quad = (G, P, n, uvs, kind = cur.kind) => {
     const i = G.pos.length / 3;
-    P.forEach((p, k) => { G.pos.push(p[0], p[1], p[2]); G.nrm.push(n[0], n[1], n[2]); G.uv.push(uvs[k][0], uvs[k][1]); if (G.kind) { G.kind.push(kind); G.tone.push(cur.tone); } });
+    P.forEach((p, k) => { G.pos.push(p[0], p[1], p[2]); G.nrm.push(n[0], n[1], n[2]); G.uv.push(uvs[k][0], uvs[k][1]); if (G.kind) { G.kind.push(kind); G.tone.push(cur.tone); G.step.push(cur.step || 0); } });
     // wound to face n
     const [a, b, c] = P, ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
     const d = (uy * vz - uz * vy) * n[0] + (uz * vx - ux * vz) * n[1] + (ux * vy - uy * vx) * n[2];
@@ -298,6 +301,20 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
     }
     len += L;
   });
+  // GATE STEPS (round 5): where a gate opening's garden stands over STEPS_MIN above the sidewalk, a flight of blue-stone
+  // steps inside the opening (risers ~RISER, treads TREAD) from the sidewalk's edge up to the garden level, between the
+  // piers' returns; the returns of the piers either side only as deep as the flight (+ 0.1 m). A real Uccle front: the
+  // gate at the top of a few steps, not a 3 m passage with the garden 1.5 m up (H6 Perelman 4)
+  const flights = [], flightAt = new Map();
+  for (const i of gateEdges) {
+    const e = edges[i], L = Math.hypot(e[3] - e[0], e[5] - e[2]); if (L < PIER + 0.4) continue;
+    const mx = (e[0] + e[3]) / 2, mz = (e[2] + e[5]) / 2, y0 = (e[1] + e[4]) / 2;
+    const gs = [BEHIND, 1.6, 2.0].map((d) => ground(mx + e[6] * d, mz + e[7] * d)).sort((a, b) => a - b)[1];
+    const h = Math.min(MAX_CUT, gs - y0); if (!(h > STEPS_MIN)) continue;
+    const n = Math.ceil(h / RISER), D = n * TREAD;
+    flights.push({ e, L, y0, h, n, D });
+    for (const id of [e[8], e[9]]) flightAt.set(id, Math.max(flightAt.get(id) || 0, D));
+  }
   // run ends: a short pier (PIER x the strip's depth, PIER_UP over the wall, stone cap) closing the wall, never a knife edge
   let piers = 0;
   const wg = segGrid(), wBuf = []; wall.forEach((f, j) => { f.j = j; wg.add(f); });
@@ -315,6 +332,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
       // (a lump))
       const own = (f) => f[6] * e[6] + f[7] * e[7] >= 0.85 && Math.abs(((f[0] + f[3]) / 2 - v.x) * e[6] + ((f[2] + f[5]) / 2 - v.z) * e[7]) < 0.2;
       let d1 = Math.max(v.w, PIER);
+      if (flightAt.has(id)) d1 = Math.max(PIER, Math.min(d1, flightAt.get(id) + 0.1));   // (beside a gate's steps)
       const others = wg.near(v.x, v.z, d1 + 0.9, wBuf).filter((f) => f.j !== i && f[8] !== id && f[9] !== id && !own(f) && segD(v.x, v.z, f) < d1 + 0.9);
       const near = (dd) => { const px = v.x + e[6] * dd, pz = v.z + e[7] * dd; return others.some((f) => segD(px, pz, f) < 0.8); };
       if (near(0.3)) continue;
@@ -329,7 +347,36 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
       piers++;
     }
   });
-  return { stone, lawn, tops: { position: Float32Array.from(tops.pos), index: Uint32Array.from(tops.idx), wall: true }, hold: { position: Float32Array.from(hold.pos), index: Uint32Array.from(hold.idx) }, edges: wall.length, runs, piers, metres: +len.toFixed(1) };
+  cur = { kind: 1, tone: 0, step: 1 };   // (aUv2.y = 1: a step, for the census's gateNoSteps)
+  for (const F of flights) {
+    const { e, L, y0, h, n } = F, r = h / n, ux = (e[3] - e[0]) / L, uz = (e[5] - e[2]) / L, gx = e[6], gz = e[7];
+    const s0 = PIER / 2, s1 = L - PIER / 2, bot = y0 - FOOT;
+    const at = (sv, d, y) => [e[0] + ux * sv + gx * d, y, e[2] + uz * sv + gz * d];
+    for (let k = 0; k < n; k++) {
+      const d0 = k * TREAD, d1 = (k + 1) * TREAD, yl = y0 + k * r, yt = y0 + (k + 1) * r;
+      // riser (facing the sidewalk), tread, the two sides (down to the foot: no slit over the bank)
+      quad(stone, [at(s0, d0, k ? yl : bot), at(s1, d0, k ? yl : bot), at(s1, d0, yt), at(s0, d0, yt)], [-gx, 0, -gz], [[0, 0], [s1 - s0, 0], [s1 - s0, r], [0, r]], 1);
+      quad(stone, [at(s0, d0, yt), at(s1, d0, yt), at(s1, d1, yt), at(s0, d1, yt)], [0, 1, 0], [[0, 0], [s1 - s0, 0], [s1 - s0, TREAD], [0, TREAD]], 1);
+      quad(stone, [at(s0, d0, bot), at(s0, d1, bot), at(s0, d1, yt), at(s0, d0, yt)], [-ux, 0, -uz], [[0, 0], [TREAD, 0], [TREAD, yt - bot], [0, yt - bot]], 1);
+      quad(stone, [at(s1, d0, bot), at(s1, d1, bot), at(s1, d1, yt), at(s1, d0, yt)], [ux, 0, uz], [[0, 0], [TREAD, 0], [TREAD, yt - bot], [0, yt - bot]], 1);
+    }
+    // (the terrain under the flight: roadBuild.js lowers every grid vertex within 1 m of it to the line of the treads'
+    // inner corners (flightCap), the strips' holds either side included: a 1 m grid triangle from a vertex held at the
+    // garden level beside a 1.1 m opening crossed over the lower treads (census 'over' at Perelman 4: 0.86 m))
+    F.cap = { ox: e[0], oz: e[2], ux, uz, gx, gz, s0: s0 - 1.0, s1: s1 + 1.0, D: F.D, y0: y0 - 0.03, k: (h - r) / F.D };
+  }
+  // the flights' terrain caps: (x, z) -> the highest the terrain may stand, or Infinity
+  const caps = flights.map((F) => F.cap);
+  const flightCap = caps.length ? (x, z) => {
+    let c = Infinity;
+    for (const q of caps) {
+      const dx = x - q.ox, dz = z - q.oz, sv = dx * q.ux + dz * q.uz, d = dx * q.gx + dz * q.gz;
+      if (sv >= q.s0 && sv <= q.s1 && d >= -0.5 && d <= q.D + 0.5) c = Math.min(c, q.y0 + q.k * Math.max(0, Math.min(q.D, d)));
+    }
+    return c;
+  } : null;
+  const capBox = caps.map((q) => { const xs = [], zs = []; for (const sv of [q.s0, q.s1]) for (const d of [-0.5, q.D + 0.5]) { xs.push(q.ox + q.ux * sv + q.gx * d); zs.push(q.oz + q.uz * sv + q.gz * d); } return [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]; });
+  return { stone, lawn, gateSteps: flights.length, flightCap, capBox, tops: { position: Float32Array.from(tops.pos), index: Uint32Array.from(tops.idx), wall: true }, hold: { position: Float32Array.from(hold.pos), index: Uint32Array.from(hold.idx) }, edges: wall.length, runs, piers, metres: +len.toFixed(1) };
 }
 
 /** append { pos, nrm, uv, idx } to a finished part (viewer/surfaces.js Part.finish layout); extra attributes get `ex` or 0 */

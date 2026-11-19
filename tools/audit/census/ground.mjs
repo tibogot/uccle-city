@@ -28,6 +28,12 @@
 //
 // STACKED (claude/sidewalk round 4): a retaining wall face with another wall face of the same facing 0.5-4 m behind it.
 //
+// GATENOSTEPS (claude/sidewalk round 5): a garden gate (data/gardens, this tile's and its 4 neighbours', inside this
+// tile) standing in a retaining wall (a wall face within 3 m) whose garden (the drawn terrain 1.2-2 m behind the gate,
+// the middle of three) is more than
+// 0.3 m over the sidewalk in front of it (the lowest drawn sidewalk top within 3 m), with no steps: fewer than 2 step
+// treads (aKind 1 marked aUv2.y = 1, facing up) at different heights between the two within 2.5 m. One finding a gate.
+//
 // BAREBANK (claude/sidewalk round 5): behind a retaining wall, the garden's drawn terrain (where no lawn strip covers
 // it) climbing steeper than 42 degrees (the ground shader's full soil: viewer/ground.js SOIL) by more than 0.3 m within
 // 8 m of the face: a bare earth band over the wall's lawn (G3 Roberts Jones). Groups (2 m) over 1 m of wall.
@@ -51,7 +57,7 @@ const { CHILD, OUT, JOBS, WORST } = c;
 const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null);
 const TILES = c.ALL ? allBuiltTiles() : c.argv.filter((a) => /^[A-Z]\d+$/i.test(a)).map((t) => t.toUpperCase());
 const LUMP = 0.5, HOLE = 0.5, SPIKE = 0.5, TILT = 0.15, ROAD_TILT = 0.12, OVER = 0.02;
-const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid", "blade", "stacked", "bareBank"];
+const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid", "blade", "stacked", "bareBank", "gateNoSteps"];
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: ground.mjs [--all | T ...] [--out FILE] [--old] [--max kind=n,...]"); process.exit(2); }
@@ -412,6 +418,50 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
       if (bare > 0.3) bad.push({ x: fx, z: fz, area: 0.5, v: bare });
     }
     group(bad, "bareBank", 1.0);
+  }
+}
+// ---------------------------------------------------------------- a gate in a wall over a level jump, no steps (round 5)
+{
+  const P = d.road.parts?.concrete, K = P?.attributes?.aKind?.array, U2 = P?.attributes?.aUv2?.array;
+  const docs = [];
+  const m = /^([A-Z])(\d+)$/.exec(T);
+  for (const n of [T, ...(m ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dz]) => String.fromCharCode(m[1].charCodeAt(0) + dx) + (+m[2] + dz)) : [])]) {
+    const gp = join(ROOT, "data/gardens", n + ".json"); if (existsSync(gp)) docs.push(JSON.parse(readFileSync(gp, "utf8")));
+  }
+  const gates = docs.flatMap((g) => g.gates || []).filter((q) => q[0] >= b.x0 && q[0] < b.x1 && q[2] >= b.z0 && q[2] < b.z1);
+  if (P && K && gates.length) {
+    const terr = (x, z) => {
+      const fc = (x - H.x0) / st, fr = (z - H.z0) / st, c0 = Math.floor(fc), r0 = Math.floor(fr);
+      if (c0 < 0 || r0 < 0 || c0 >= NC - 1 || r0 >= NR - 1) return NaN;
+      const u = fc - c0, v = fr - r0, a = r0 * NC + c0, bb = a + NC, cc = a + 1, dd = bb + 1;
+      if (Math.abs(Y[a] - Y[dd]) < Math.abs(Y[bb] - Y[cc]) - 0.01) return u >= v ? Y[a] + u * (Y[cc] - Y[a]) + v * (Y[dd] - Y[cc]) : Y[a] + v * (Y[bb] - Y[a]) + u * (Y[dd] - Y[bb]);
+      return u + v <= 1 ? Y[a] + u * (Y[cc] - Y[a]) + v * (Y[bb] - Y[a]) : Y[dd] + (1 - u) * (Y[bb] - Y[dd]) + (1 - v) * (Y[cc] - Y[dd]);
+    };
+    // the wall faces, the treads (aKind 1 facing up) and the street tops (near-flat, not aKind 1 / 4 / 5), as points
+    const pos = P.position, I = P.index, faces = [], treads = [], tops = [];
+    for (let t = 0; t < I.length; t += 3) {
+      const k = K[I[t]], a = I[t] * 3, b2 = I[t + 1] * 3, c = I[t + 2] * 3;
+      const ux = pos[b2] - pos[a], uy = pos[b2 + 1] - pos[a + 1], uz = pos[b2 + 2] - pos[a + 2], vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, L = Math.hypot(nx, ny, nz); if (L < 1e-9) continue;
+      const cx = (pos[a] + pos[b2] + pos[c]) / 3, cy = (pos[a + 1] + pos[b2 + 1] + pos[c + 1]) / 3, cz = (pos[a + 2] + pos[b2 + 2] + pos[c + 2]) / 3;
+      if (k > 3.5 && k < 5.5) { if (Math.abs(ny) < 0.2 * L) { const h = Math.hypot(nx, nz); faces.push(cx, cz, nx / h, nz / h); } }
+      else if (k > 0.5 && k < 1.5) { if (ny > 0.9 * L && U2 && U2[I[t] * 2 + 1] > 0.5) treads.push(cx, cy, cz); }   // (a step: aUv2.y = 1; kerbs / copings 0)
+      else if (Math.abs(ny) > 0.9 * L) tops.push(cx, cy, cz);
+    }
+    const bad = [];
+    for (const q of gates) {
+      const gx = q[0], gz = q[2];
+      // (in a wall: the nearest wall face within 3 m; the garden lies against its normal (a face's normal points at the street
+      // or along it; the front ones dominate the nearest few))
+      let best = 9, fnx = 0, fnz = 0; for (let i = 0; i < faces.length; i += 4) { const d2 = (faces[i] - gx) ** 2 + (faces[i + 1] - gz) ** 2; if (d2 < best) { best = d2; fnx = faces[i + 2]; fnz = faces[i + 3]; } }
+      if (best >= 9) continue;
+      let lo = Infinity; for (let i = 0; i < tops.length; i += 3) if ((tops[i] - gx) ** 2 + (tops[i + 2] - gz) ** 2 < 9) lo = Math.min(lo, tops[i + 1]);
+      const gy = [1.2, 1.6, 2.0].map((dd) => terr(gx - fnx * dd, gz - fnz * dd)).sort((a, c) => a - c)[1];   // (the garden level, as the walls read it)
+      if (!(lo < Infinity) || !(gy === gy) || gy - lo <= 0.3) continue;
+      const hs = new Set(); for (let i = 0; i < treads.length; i += 3) if ((treads[i] - gx) ** 2 + (treads[i + 2] - gz) ** 2 < 6.25 && treads[i + 1] > lo + 0.05 && treads[i + 1] < gy + 0.1) hs.add(Math.round(treads[i + 1] * 20));
+      if (hs.size < 2) bad.push({ x: gx, z: gz, area: 2, v: gy - lo });
+    }
+    group(bad, "gateNoSteps", 1.0);
   }
 }
 items.sort((a, c3) => c3.score - a.score);
