@@ -9,7 +9,7 @@ up the steep streets), none of them falls easily now. `?moto=old` (a features.js
 
 The test rides scripted routes headless with the real physics and the real collision env (carEnv.js) and logs every
 crash with its trigger. Riders: **keys** (steer / gas / brake only 0 or 1, the lean tapped at 10 Hz, as the owner
-plays), **analog**, and **late** (keys, 30 % faster, braking only once in the bend: the owner's way).
+plays), **analog**, and **late** (keys, 30 % faster, braking at the last moment its stopping distance allows: the owner's way).
 
 | trigger | falls on rides that should have none (old) | what it was |
 |---|---|---|
@@ -102,3 +102,27 @@ would be >= 288 KB), the switch, or if `?moto=old` PASSES the table (it fails 26
 7. Real crashes still happen: head-on into a wall / car above ~40 km/h; respawn 1.6 s.
 8. The scooter and the Villo on the same streets (the Villo pushed up the steep ones); console 0 errors; CPU per frame
    (driver.ms) still ~0.15 ms.
+
+## 6. Browser turn (2026-11-19, Chrome, foundation 09339bbd merged; worker bundle rebuilt in the worktree only)
+
+Keyboard only: `debug/motoFeel.js` holds the real keys in `driver.keys.down` (W / S / A / D / Space / Shift), riding the
+traffic lane graph with A / D tapped (or held, the "late" rider) or scripted key holds; traffic cars removed so they do
+not block the line (`__traffic.removeTile`). `?quick=1&view=moto&traffic=1`, Av. De Fré (F3), Kauwberg (G6), Av.
+Winston Churchill (G2); then `&moto=old` on De Fré. Shots: the scratchpad `moto/` folder (paths in the report).
+
+| ride (keys) | new | old (`?moto=old`) |
+|---|---|---|
+| De Fré west, keys, 90 km/h | no fall, 90 km/h | no fall |
+| De Fré west, late braker, up to 117 km/h | **no fall**, 116 km/h | **lean crash at 79 km/h** |
+| full lean + full brake from ~100 km/h | **no fall** (stands up, stops) | **lean crash at 90 km/h** |
+| full lean + gas from 30 km/h | no lean crash (traction control widens the line; the scripted hold then ran head-on into a wall at 75 km/h: a real crash) | **lean crash at 70 km/h** |
+| kerb up / down onto the sidewalk ~50 km/h (moto, scooter, Villo) | no fall | no fall |
+| Kauwberg bank down-jumps (100 % grass banks, ~50 km/h) | 0.86-0.95 s of air, **sketchy landings saved**, no fall | - |
+| Kauwberg street (late), Ch. de Saint-Job (late, 93 km/h) | no fall | - |
+| Churchill: full gas + lane changes at 120-164 km/h | stable, 4 clean crest landings | - |
+| across the tram reservation at an angle (moto 60, scooter 45, Villo) | no fall | - |
+
+Crashes seen with the new tuning were all head-on above the crash speed (a parked car / wall / lamp / Villo station /
+garden pillar the scripted line ran into: the pilot does not avoid obstacles), i.e. real crashes by rule 40. Console: 0
+errors. Physics + rig + camera: 0.11-0.19 ms a frame. Seen, not this round: the chase camera can sit inside a garden
+pillar (the camera's wall test knows buildings / trees / lamps, not garden pieces); the pilot's lane choice at junctions.

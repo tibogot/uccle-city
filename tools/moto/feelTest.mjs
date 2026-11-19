@@ -352,8 +352,8 @@ async function cityChild(spec) {
           else if (pilot === "late") I.steer = Math.abs(s) > 0.3 ? Math.sign(s) : 0;
           else { if ((tick = (tick + 1) % 6) === 0) { acc += s; key = acc > 0.5 ? 1 : acc < -0.5 ? -1 : 0; acc -= key; } I.steer = key; }
           let turn = 0;
-          // ("late": the owner's way: keyboard, 30 % faster, braking only once IN the bend (the next 12 m), at 0.95 g)
-          for (let k = i; k < Math.min(L.length - 2, i + (pilot === "late" ? 6 : 25)); k++) { const a = Math.atan2(L[k + 1][0] - L[k][0], L[k + 1][1] - L[k][1]), b2 = Math.atan2(L[k + 2][0] - L[k + 1][0], L[k + 2][1] - L[k + 1][1]); turn = Math.max(turn, Math.abs(Math.atan2(Math.sin(b2 - a), Math.cos(b2 - a))) / 2); }
+          // ("late": the owner's way: keyboard, 30 % faster, braking at the last moment (within its stopping distance at 8 m/s2 + 6 m), at 0.95 g)
+          for (let k = i; k < Math.min(L.length - 2, i + (pilot === "late" ? Math.ceil((v * v / 16 + 6) / 2) : 25)); k++) { const a = Math.atan2(L[k + 1][0] - L[k][0], L[k + 1][1] - L[k][1]), b2 = Math.atan2(L[k + 2][0] - L[k + 1][0], L[k + 2][1] - L[k + 1][1]); turn = Math.max(turn, Math.abs(Math.atan2(Math.sin(b2 - a), Math.cos(b2 - a))) / 2); }
           const late = pilot === "late" ? 1.3 : 1;
           const vt = Math.min(kmh * KMH * late, vmaxOf(kind) * (kind === "moto" ? 1.3 : 1) * late, Math.sqrt(9.81 * (late > 1 ? 0.95 : 0.8) / Math.max(turn, 1e-3)));
           if (pilot === "analog") { I.throttle = v < vt ? Math.min(1, (vt - v) / 3 + 0.3) : 0; I.brake = v > vt + 1 ? Math.min(1, (v - vt) / 5) : 0; }
@@ -369,6 +369,8 @@ async function cityChild(spec) {
       if (process.env.MOTO_DEBUG) for (const cr of log.crashes) {
         let bi = 0, bd = 1e9; L.forEach((p, k) => { const d = Math.hypot(p[0] - cr.x, p[1] - cr.z); if (d < bd) { bd = d; bi = k; } });
         let pc = null, pd = 1e9; for (const t of tiles) for (const q of (t.parkedSites || [])) { const d = Math.hypot(q.x - cr.x, q.z - cr.z); if (d < pd) { pd = d; pc = q; } }
+        { let best = null, bd = 9; for (const t of tiles) { const C = t.col, P0 = C.pbox.length / 4; for (let q = 0; q < C.circ.length / 3; q++) { const dd = Math.hypot(C.circ[q * 3] - cr.x, C.circ[q * 3 + 1] - cr.z); if (dd < bd) { bd = dd; best = [C.circ[q * 3], C.circ[q * 3 + 1], C.circ[q * 3 + 2], C.ckind[q]]; } } }
+          if (best) { let ld = 1e9; for (const [, A] of LG) for (let q = 0; q < A.length; q += 4) ld = Math.min(ld, Math.hypot(A[q] - best[0], A[q + 1] - best[1])); let rd = 1e9; for (const p of L) rd = Math.min(rd, Math.hypot(p[0] - best[0], p[1] - best[1])); console.error(`    nearest circle kind ${best[3]} (${best[0].toFixed(2)}, ${best[1].toFixed(2)}) r ${best[2].toFixed(2)}: to the nearest lane point ${ld.toFixed(2)} m, to the route ${rd.toFixed(2)} m`); } }
         if (pc) { let ld = 1e9; for (const [, A] of LG) for (let q = 0; q < A.length; q += 4) ld = Math.min(ld, Math.hypot(A[q] - pc.x, A[q + 1] - pc.z)); let pd2 = 1e9; for (const p of L) pd2 = Math.min(pd2, Math.hypot(p[0] - pc.x, p[1] - pc.z)); console.error(`    parked car to the nearest lane point ${ld.toFixed(2)} m, to the route ${pd2.toFixed(2)} m`); }
         console.error(`  ${rs.name} ${dirn} ${pilot} ${kind}: ${cr.why} at (${cr.x}, ${cr.z}) ${cr.kmh} km/h; path ${bd.toFixed(1)} m away (pt ${bi}/${L.length}); nearest parked ${pc ? `${JSON.stringify(pc).slice(0, 200)} ${pd.toFixed(1)} m` : "-"}`);
       }
