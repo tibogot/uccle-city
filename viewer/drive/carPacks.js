@@ -8,7 +8,7 @@
 // Paint comes from a uniform (one car) or a per-instance attribute "paint" (parked cars). LODs are made here at load by
 // meshoptimizer (absolute error in metres; colour seams are open borders, so the simplifier keeps them as borders).
 import * as THREE from "three/webgpu";
-import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, cos, sin, positionLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix } from "three/tsl";
+import { attribute, color, float, select, uniform, screenCoordinate, vec2, vec3, vec4, cos, sin, positionLocal, normalLocal, smoothstep, mod, normalView, positionView, dot, normalize, mix, varying } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { lodMesh, lodOpts, partLevel } from "./carLod.js";
@@ -122,6 +122,24 @@ const lensK = () => {
   return mix(float(1), nv.mul(nv).mul(0.8).add(0.3), packLook.lensShade);
 };
 
+// ---------------------------------------------------------------- CARHIT (docs/CARHIT.md): crumpled corners
+/** The crumple of four corners (the police accident props' sheet-metal fold, viewer/police/props.js, per corner): p the
+ *  vertex (local, metres, x = left, z = forward), n its normal, dep a vec4 of push depths (m) for the corners front-left,
+ *  front-right, rear-left, rear-right, hl the body's half length. -> the offset to SUBTRACT from p. Near a corner (the
+ *  last metre of the body, from 0.2 m short of the centre line out) the panel is pushed in along its normal with a wavy
+ *  fold, sagged a little and shortened along the car. All corners 0: an exact 0 (no cost in the picture). */
+export function crumpleOffset(p, n, dep, hl) {
+  const fold = sin(p.y.mul(23)).mul(0.35).add(sin(p.z.mul(17).add(p.x.mul(9))).mul(0.25)).add(0.7);
+  const one = (sx, sz, d) => {
+    const w = smoothstep(hl.sub(1.0), hl, p.z.mul(sz)).mul(smoothstep(-0.2, 0.75, p.x.mul(sx))).mul(d);
+    return n.mul(w.mul(fold)).add(vec3(0, w.mul(0.25), w.mul(sz * 0.6)));
+  };
+  return one(1, 1, dep.x).add(one(-1, 1, dep.y)).add(one(1, -1, dep.z)).add(one(-1, -1, dep.w));
+}
+/** the player's car damage (viewer/drive/carHit.js -> driveMode.js): corner depths (m) FL FR RL RR, its half length */
+export const playerDamage = { depth: uniform(new THREE.Vector4(0, 0, 0, 0)), hl: uniform(2.15) };
+const CARPUSH_OLD = typeof location !== "undefined" && /[?&]carpush=old(&|$)/.test(location.search);
+
 /** THE PLAYER'S CAR GLASS (policefeel, owner 2026-11-17: "bad lines at the back of the car when moving"): under the
  *  TAAU the see-through glass is a stochastic per-frame discard (viewer/upscale.js) the history averages; on the
  *  player's car, big and close in the chase view and moving with the camera, the clamp never settles it: the rear window
@@ -230,6 +248,8 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const tail = select(isTail, lights.tail.mul(kT).add(lights.brake ? lights.brake.mul(kBr) : float(0)).mul(lensK()), float(0));
     // rich: the lamp's own vertex colour glows (white lamps, amber taxi sign); packs: a fixed warm white
     m.emissiveNode = (rich ? vc.mul(1.15) : color(0xfff1dc)).mul(head).add(color(0xff1408).mul(tail));
+    // (carhit: the player's car crumples where it was hit; one uniform, so no new pipeline per hit)
+    if (!CARPUSH_OLD) m.positionNode = positionLocal.sub(crumpleOffset(positionLocal, normalLocal, playerDamage.depth, playerDamage.hl));
   }
   if (motion) {
     // THE MOVING TRAFFIC (viewer/traffic/trafficFleet.js): per-instance attribute "motion" = (wheel spin, front-wheel
@@ -242,17 +262,25 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const st = select(W.w.lessThan(1.5), Mo.y, float(0)), cst = cos(st), sst = sin(st);
     const r2 = vec3(r1.x.mul(cst).add(r1.z.mul(sst)), r1.y, r1.z.mul(cst).sub(r1.x.mul(sst)));          // steer (front)
     const dl = select(W.w.greaterThan(0.5), r2.sub(rel), vec3(0, 0, 0)), ch = cos(Mo.w), sh = sin(Mo.w);
-    m.positionNode = positionLocal.add(vec3(dl.x.mul(ch).add(dl.z.mul(sh)), dl.y, dl.z.mul(ch).sub(dl.x.mul(sh))));
+    // CARHIT (docs/CARHIT.md): motion.z = light bits (0..63, 32 = lights off: a shoved parked car) + 64 x the damage code
+    // (3 bits per corner FL FR RL RR, 4 cm a level; + 4096 x the type's half-length code, hl = 1.9 + 0.12 code), decoded
+    // here in the VERTEX stage (an attribute read in the vertex shader is exact); the fragment gets the light bits alone
+    // through a varying (an interpolated 70 000 would not floor cleanly)
+    const zi = Mo.z.add(0.5).floor(), D = zi.div(64).floor();
+    const dep = vec4(mod(D, 8), mod(D.div(8).floor(), 8), mod(D.div(64).floor(), 8), mod(D.div(512).floor(), 8)).mul(0.04);
+    const dent = CARPUSH_OLD ? vec3(0, 0, 0) : select(W.w.greaterThan(0.5), vec3(0, 0, 0), crumpleOffset(p0, normalLocal, dep, D.div(4096).floor().mul(0.12).add(1.9)));
+    m.positionNode = positionLocal.add(vec3(dl.x.mul(ch).add(dl.z.mul(sh)), dl.y, dl.z.mul(ch).sub(dl.x.mul(sh)))).sub(dent);
     // lights: bits of motion.z: 1 brake, 2 head (forced), 4 left indicator, 8 right indicator, 16 reversing.
     // motion is per instance, but READ IN THE FRAGMENT it is an interpolated varying: 1 arrives as 0.99999 / 1.00001
     // per pixel (like _kind above), and floor() then flipped the bits pixel by pixel: a brake-lit lens speckled
     // half lit / half dark (white-hot vs dark red through the tone map): the "grainy tail lamps" (docs/VISUAL_FIXES.md
     // round 2); indicators and reversing lamps the same. (0 interpolates to exactly 0: unlit cars were clean.)
     // Round to the integer first.
-    const bits = VFIX2_OLD ? Mo.z : Mo.z.add(0.5).floor();
+    const bits = VFIX2_OLD ? Mo.z : CARPUSH_OLD ? Mo.z.add(0.5).floor() : varying(mod(zi, 64), "v_carBits").add(0.5).floor();
     const bit = VFIX2_OLD ? (k) => mod(bits.div(k).floor(), 2) : (k) => mod(bits.add(0.5).div(k).floor(), 2);
     const night = smoothstep(0.3, 0.6, motion.night);
-    const headOn = night.max(bit(2)), blink = mod(motion.time.mul(1.5), 1).lessThan(0.5);
+    const lit = float(1).sub(bit(32));                              // (carhit: 32 = no driver: a shoved parked car)
+    const headOn = night.max(bit(2)).mul(lit), blink = mod(motion.time.mul(1.5), 1).lessThan(0.5);
     const px = p0.x, outer = px.abs().greaterThan(0.55);
     const ind = select(px.greaterThan(0), bit(4), bit(8)).mul(select(blink.and(outer).and(isHead.or(isTail)), float(1), float(0)));
     const head = select(isHead, headOn.mul(5), float(0));
@@ -262,7 +290,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     // levels instead: by day brake 0.35 = a lit RED; at night the tail 0.4 = deep red glow (227 0 11) and the brake on
     // top (255 ~65 35) still reads a step brighter; amber indicators 0.5 (255 151 45), reversing white 1.8.
     const kB = VFIX2_OLD ? 5 : packLook.brake, kN = VFIX2_OLD ? 1.2 : packLook.tailNight, kR = VFIX2_OLD ? 4 : packLook.reversing, kI = VFIX2_OLD ? 6 : packLook.indicator;
-    const tail = select(isTail, night.mul(kN).add(bit(1).mul(kB)).mul(lensK()), float(0));
+    const tail = select(isTail, night.mul(kN).mul(lit).add(bit(1).mul(kB)).mul(lensK()), float(0));
     const rev = select(isTail.and(outer.not()), bit(16).mul(kR), float(0));
     m.emissiveNode = vc.mul(1.15).mul(head).add(color(0xff1408).mul(tail)).add(color(0xffffff).mul(rev)).add(color(0xff8a00).mul(ind.mul(kI)));
   }
