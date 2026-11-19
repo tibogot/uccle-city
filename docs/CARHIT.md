@@ -77,7 +77,7 @@ off, `bits` 32). When it stops: undamaged, it goes back into the parked fleet wh
 
 **Damage.** Per corner (FL FR RL RR), from the change of speed of the body at the hit: (dv - 1.2 m/s) x 2.4 cm per m/s,
 at most 14 cm per hit, 28 cm per corner, shared between the corners by where the point is (a centred head-on: both
-front corners). Drawn by the accident props' sheet-metal fold (police/props.js), generalised to four corners
+front corners). (Since claude/dent drawn by the closed-shell field of carDent.js: "Dents without holes" below.) Drawn by the accident props' sheet-metal fold (police/props.js), generalised to four corners
 (`carPacks.js crumpleOffset`): the traffic fleet packs the corners (3 bits each, 4 cm a level) and the type's half
 length into its per-instance `motion.z` above the light bits, decoded in the VERTEX stage; the fragment gets the light
 bits through a varying (an interpolated packed code would not floor cleanly: the zfight lesson, rule 34). The player's
@@ -159,12 +159,65 @@ contacts: only hits > 1.5 m/s count; an undamaged car left at 40-63 deg to its l
 within 63 deg (`laneAt(..., minDot)`); a wreck pushed again rejoined: it stays a wreck; the night pool (cityNight.js)
 lit a shoved parked car's lamps: skipped for `bits & 32`.
 
+## Dents without holes (claude/dent, 2026-11-19, rule 41)
+
+Owner playtest 2026-11-19: "the car damage is a cool idea, but the damage leaves some hollow mesh". **Why:** the crumple
+(`crumpleOffset`, the accident props' fold) pushed every vertex along its OWN NORMAL by up to 1.3 x the corner's depth
+(28 cm -> 36 cm) with a 23 / m fold wave. The copies of a vertex at a hard edge (split normals) moved apart (torn
+seams), the inner face of every two-faced part (bumper lip, wheel arch, boot lining) was pushed OUT through the outer
+one, and the push changed faster than the panels: faces turned inside out, and with back faces culled you saw through
+the dented corner.
+
+**Now** (`viewer/drive/carDent.js`, one function for the shader and the gate): a smooth field of the position only.
+Each end is pushed in along the car, evenly across the width for a head-on hit and tilted for a corner hit (the share
+is linear in x), fading over 1 m along the car and above the belt line; the sides near the dented corner squeeze toward
+the mid-plane; everything is softly capped by the distance to the mid-planes and to the cabin box (the model's interior
+bounds, or its glass house). A 4 cm hit gives 5.8 cm, the 28 cm cap about 15 cm: a light dent. The paint in the zone is
+up to 20 % darker and rougher with less clear coat, plus a darker crease band on the dent's flank (a varying, paint
+only). Coincident vertices move together, so the shell stays closed. No flip had to be patched with two-sided faces, so
+the body stays one-sided.
+
+| URL | what you get |
+|---|---|
+| (default) | the closed-shell dent |
+| `?dent=old` | the normal-push crumple as before (row in `viewer/features.js`, A/B > Collisions) |
+| `?carpush=old` | no crumple at all (as before) |
+
+Where it runs: the player's / police car (`packMaterial` lights path; `setPlayerDent(model)` on every model change,
+also the police car's install, which never set the old `hl`), the traffic fleet (all 6 materials incl. the glass pass:
+the top of `motion.z` is now the TYPE index, its frame read from a `uniformArray` of 8 x 3 vec4 filled from the fleet's
+own bodies in `carFleet.load`; `?dent=old` keeps the half-length code), the accident props (`props.js damagedMaterial`,
+the corner's depth in a vec4 uniform). No new draw call, pipeline per hit, light or DynamicDrawUsage.
+
+**Check:** `tools/audit/dentGate.mjs` (gate row `dent`), on every model of the 4 packs (cars2, faceted, kenney,
+quaternius: 28 models, 103 LOD meshes as the game builds them) dented 28 cm on each corner and on all four:
+
+| measure | before (`?dent=old`, `--old`) | after |
+|---|---|---|
+| wound-round triangles seen from outside (17 views from 10 / 35 deg above and the top, 1.5 cm pixels) | 7,668 | **0** |
+| see-through holes >= 4.5 cm on the levels drawn nearer than 55 m | 2,193,765 px | **0** |
+| the same on the far levels (the lab packs' meshopt LOD2-3, open already; under a pixel there) | 2,731,692 px | 2,249 px |
+| back-face pixels added in all (hairlines: a lamp / panel seam that was open already moved by a pixel) | 8,369,238 px | 5,750 px |
+| wound-round triangles in all (incl. never-seen 1-3 mm slivers under / inside the body) | 19,335 | 26 |
+| torn seams (vertices of one position moved > 1 mm apart) | 73,724 | **0** |
+| vertices across the mid-plane / into the cabin box | 418 / 38,718 | **0 / 0** |
+| deepest push at 28 cm of damage | 0.54 m | 0.16 m |
+
+Plus: no NaN, the wheels (own frame on the player's car) untouched, the default materials compile to WGSL headless with
+the dent (player / police, traffic, props), the features row, no draw call / light / DynamicDrawUsage.
+
+**Browser turn (to do):** drive mode, ram a few car types (hatch, estate, SUV, panel van; also with `?cars=old`) at
+**30** and **60 km/h**, front and rear corners; walk round each dented corner close up (third person / orbit camera)
+from all sides, above and low: no hole, no see-through, no flicker at the dent; the darker crease reads as a dent; the
+player's car and the police car (`?game=police`, ram the stolen car) the same; the accident props of the police game;
+LOD hand-overs of a dented traffic car while driving away (no pop); A/B with `?dent=old`.
+
 ## Weak spots / next
 
 - The hit car has no roll / pitch kick (the fleet's matrix has yaw + pitch only) and no body sway: a big hit could
   rock it (a per-instance roll would need a channel).
-- Dents are four corner zones (the fold of the accident props): a hit in the middle of a side dents both ends of that
-  side a little instead of the middle.
+- Dents are four corner depths drawn as two ends (claude/dent): a hit in the middle of a side dents the nearer end(s),
+  not the middle of the side; the shading normal is not bent (the dent reads by its shape and the darker paint).
 - A knocked car's rejoin is a pull-out curve onto the nearest lane its way: a car spun across the street stays a wreck
   rather than doing a three-point turn.
 - Traffic two-wheelers (motorbikes / scooters in the traffic) stay one-way obstacles (they would need to fall over).
