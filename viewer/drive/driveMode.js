@@ -60,6 +60,8 @@ export function tileDrive(drive, roads, bounds, drawn = null, features = null) {
     // type's size when another car parks into the slot (road fix round 3: the G view's "invisible cars")
     const P = drive.col.pref;
     if (P) for (let id = 0; id < P.length; id++) if (P[id]) (P[id].driveBox = { col: drive.col, id });
+    // (props, rule 25 / 44) each prop's polygons in this set: a bent sign's tops follow its tilt (propWorld.js syncCols)
+    if (P) { const seen = new Set(); for (let id = 0; id < P.length; id++) { const r = P[id]; if (!r?.prop) continue; if (!seen.has(r)) { seen.add(r); r.drive = []; } r.drive.push([drive.col, id, drive.col.ptop[id], drive.col.pbase[id]]); } }
   }
   return drive;
 }

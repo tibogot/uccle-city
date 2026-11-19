@@ -97,6 +97,19 @@ prop by one `cityProps.make` call where its layer places it (section 4).
   `{ kind, impulse (N s), point { x, y, z }, speed (m/s) }` on a hit by the vehicle (> 0.5 m/s change of the prop's
   speed), a walker's kick (> 0.6 m/s), a landing or a wall hit over 2 m/s; at most one per prop per 0.15 s; an object
   only when someone listens. No audio here (the sound job, claude/sound).
+- **Colliders follow the prop (rule 25, coordinator 2026-11-19: "a snapped bollard leaving an invisible post for the
+  walker"):** `PropWorld.hideRef` / `syncCols` is the one place a prop's colliders change. Knocked, snapped or flattened:
+  its drive collider off (the ref hidden) AND its walker items off (`ref.walk`: cityHook.js registers each prop's
+  PrismSet item when the walker's tile set lands, and applies the state it is in); back at rest: both on, at their rest
+  tops. Bent: both stay at its foot (the post is drawn standing there), their TOPS lowered to the leaning post's drawn
+  top (cos theta: `ref.drive` = the prop's polygons in the tile's set, driveMode.js tileDrive). The gate row checks it
+  after every class hit and 400 random hits ("colliders follow (rule 25)": 0 props with a collider where nothing is
+  drawn; with the walker sync off it finds 404).
+- **Night:** the proxies cast on the lamp maps' MOVER layer (the props group is a `lampMover`), a marker object over the
+  awake bodies (`nightMover`, its radius over them) tells the lamps something moves there, and a prop leaving / rejoining
+  its pool calls `__night.refreshStatic()` (new in cityNight.js: both lamp maps re-render their static casters, whose
+  per-tile instance proxies copy the instance matrices at that render: the hidden instance casts nothing). So a knocked
+  bollard's lamp shadow goes with it.
 - **Villo docks:** a knocked Villo bike is not offered at its dock (moto/villoDocks.js `nearBike`), its dock counts as
   free; a bike the player took (ref hidden) is never a prop.
 
@@ -155,7 +168,7 @@ stand-in's `userData.refs[i]` (or `addStatic` polygons with `ref`, as the cones)
   into their circles, the two-wheelers' env.
 - Layers: `viewer/furniture2/cityFurniture.js`, `viewer/streetkit/cityStreetKit.js` (+ `signLinks`),
   `viewer/moto/cityTwoWheelers.js`, `viewer/moto/villoDocks.js`, `viewer/streetlife/streetlife.js`, `viewer/streetFit.js`,
-  `viewer/police/props.js`, `viewer/main.js` (bollard props, tile dispose, start), `viewer/character/cityHook.js` (kick
+  `viewer/police/props.js`, `viewer/main.js` (bollard props + refs, tile dispose, start), `viewer/nightLights/cityNight.js` (refreshStatic), `viewer/character/cityHook.js` (walker items follow the props, kick
   stand-ins), `viewer/traffic/cityTraffic.js` (obstacles), `viewer/game/kit.js` (propHit), `viewer/features.js`.
 - `tools/audit/motionAudit.mjs`: props/cityProps.js a MOVER (InstancePrev).
 
@@ -181,8 +194,6 @@ stand-in's `userData.refs[i]` (or `addStatic` polygons with `ref`, as the cones)
 - Not yet seen in a browser (no Chrome turn on this branch): the proxies' LOD hand-over, shadows and motion are by
   construction (the pools' own geometry / materials / columns); the first knock's pipeline relies on the warm-up.
 - The traffic's cars and the knocked traffic cars (carHit) treat a prop at rest as a wall; they never knock one.
-- A snapped bollard's walker post stays (the walker's posts are built in a worker per tile: not updated live).
-- The lamp shadow maps' per-tile instance proxies (cityNight round 3) keep a hidden bollard's shadow at its rest spot.
 - A post bends as a rigid tilt about its foot (no bent tube shape); street-name plate posts stay solid.
 - Tuning (masses, lift, the posts' yield forces and snap speeds) was done with the scripted tests; it wants the owner's
   hands.

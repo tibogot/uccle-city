@@ -101,6 +101,13 @@ export const cityProps = {
     if (!PROPS_ON || !driver?.props) { this.on = false; return null; }
     this.driver = driver; this.world = driver.props;
     if (!this.group) { this.group = new THREE.Group(); this.group.name = "props"; }
+    // night (cityNight.js): the proxies cast on the lamp maps' MOVER layer (redrawn while they move, over the static
+    // cache), a marker at the awake bodies tells the lamps something moves there; a prop leaving / rejoining its pool
+    // re-renders the maps' static casters (refreshStatic: the cache would keep its old shadow)
+    this.group.userData.lampMover = true;
+    this.marker = new THREE.Object3D(); this.marker.name = "props-night-marker"; this.marker.position.set(1e6, -1e4, 1e6);
+    this.marker.userData.nightMover = 3;
+    this.group.add(this.marker);
     scene.add(this.group);
     const W = this.world;
     W.onResolve = (p) => this.resolve(p);
@@ -263,6 +270,7 @@ export const cityProps = {
       }
     }
     this.dirty = true;
+    window.__night?.refreshStatic?.();
   },
 
   // ---------------------------------------------------------------- the proxies
@@ -336,6 +344,14 @@ export const cityProps = {
       mesh.boundingSphere.radius = Math.hypot(B[3] - B[0], B[4] - B[1], B[5] - B[2]) / 2;
     }
     prev?.end();
+    // the night marker: over the awake bodies (their middle, a radius over them), else far away
+    if (this.marker) {
+      let n = 0, x = 0, z = 0, r = 0;
+      for (let k = 0; k < W.act.length; k++) if (W.act[k]) { x += W.px[k]; z += W.pz[k]; n++; }
+      if (n) { x /= n; z /= n; for (let k = 0; k < W.act.length; k++) if (W.act[k]) r = Math.max(r, Math.hypot(W.px[k] - x, W.pz[k] - z)); this.marker.position.set(x, 0, z); this.marker.userData.nightMover = Math.max(3, r + 3); }
+      else this.marker.position.set(1e6, -1e4, 1e6);
+      this.marker.updateMatrixWorld();
+    }
     this.drawnLast = drawn;
     this.stats.drawn = drawn; this.stats.rebuilds++;
     this.stats.renderMs = this.stats.renderMs * 0.95 + (performance.now() - t0) * 0.05;

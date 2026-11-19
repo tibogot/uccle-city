@@ -39,7 +39,7 @@ const OLD = process.argv.includes("--old");
 const QUIET = process.argv.includes("--quiet");
 const { createCtlState, stepCtl } = await import("../viewer/drive/carCtl.js");
 const { createCarEnv } = await import("../viewer/drive/carEnv.js");
-const { buildColliders, addCircles, KIND } = await import("../viewer/drive/colliders.js");
+const { buildColliders, addCircles, KIND, gather: gatherC } = await import("../viewer/drive/colliders.js");
 const { HANDLING } = await import("../viewer/drive/carPhysics.js");
 const { PropWorld, CLASSES, PROP } = await import("../viewer/props/propWorld.js");
 
@@ -86,6 +86,11 @@ function scene({ walls = [], props = [], lamps = [] } = {}) {
   col = addCircles(col, circles);
   const sets = () => [col];
   if (world) world.sets = sets;
+  // (rule 25) each prop's drive polygons (driveMode.js tileDrive) + a walker post of its drawn height (cityHook.js)
+  if (world) {
+    if (col.pref) for (let id = 0; id < col.P; id++) { const r = col.pref[id]; if (r?.prop) (r.drive ||= []).push([col, id, col.ptop[id], col.pbase[id]]); }
+    for (const p of P) { const S = { off: new Uint8Array(1), iy: Float64Array.of(-0.5, (p.shape.cy + p.shape.hy)) }; p.ref.walk = [[S, 0, S.iy[1]]]; }
+  }
   const env = createCarEnv({ sets, ground: () => 0, handling: HANDLING, feel: true, props: world, mass: () => CAR_M });
   return { world, env, P, col };
 }
@@ -95,6 +100,32 @@ function player(W, x, z, h, v) {
   stepCtl(c, { throttle: 0, steer: 0 }, DT, W.env);
   c.x = x; c.z = z; c.heading = h; c.speed = v; c.vx = c.vz = 0; c.angularVel = 0;
   return c;
+}
+/** (rule 25) prop p's colliders stand for what is drawn: knocked / snapped / flattened = no drive collider found at its
+ *  rest spot and its walker post off; bent = both still at its foot, their tops at the leaning post's drawn top; at rest
+ *  = as built. -> null or what is wrong */
+const colTally = { props: 0, bad: [], states: {} };
+function colCheck(W, p) {
+  if (!W.world) return null;
+  colTally.props++; colTally.states[p.state] = (colTally.states[p.state] || 0) + 1;
+  const L = [];
+  gatherC(W.col, p.x, p.z, 0.5, L);
+  let live = 0;
+  for (let q = 0; q < L.length; q += 2) { const c = L[q], id = L[q + 1], r = id < c.P ? c.pref?.[id] : c.cref?.[id - c.P]; if (r === p.ref) live++; }
+  const S = p.ref.walk[0][0], top0 = p.ref.walk[0][2], H = top0 - S.iy[0];
+  const standing = p.state === 0 || (p.state === 3 && !p.ref.hidden);
+  let err = null;
+  if (!standing && (live || !S.off[0])) err = `state ${p.state}: ${live} drive collider(s) left, walker post ${S.off[0] ? "off" : "ON"}`;
+  if (standing && (!live && p.cls.name !== "bollard" ? true : false)) err = `state ${p.state}: standing but no drive collider`;
+  if (standing && S.off[0]) err = `state ${p.state}: standing but its walker post off`;
+  if (p.state === 3 && !p.ref.hidden) {
+    const want = S.iy[0] + H * Math.cos(p.theta);
+    if (Math.abs(S.iy[1] - want) > 0.05) err = `bent ${(p.theta * DEG).toFixed(0)} deg: walker top ${S.iy[1].toFixed(2)} vs drawn ${want.toFixed(2)}`;
+    for (const D of p.ref.drive || []) { const t = D[3] + (D[2] - D[3]) * Math.cos(p.theta); if (Math.abs(D[0].ptop[D[1]] - t) > 0.05) err = `bent: drive top ${D[0].ptop[D[1]].toFixed(2)} vs ${t.toFixed(2)}`; }
+  }
+  if (p.state === 0 && Math.abs(S.iy[1] - top0) > 1e-6) err = "at rest: walker top not restored";
+  if (err) colTally.bad.push(`${p.cls.name}: ${err}`);
+  return err;
 }
 /** run frames (no throttle: the car coasts); each(t) after each frame */
 function run(W, c, secs, each = null, input = null) {
@@ -134,6 +165,7 @@ function hit(cls, kmh, o = {}) {
     vMin = Math.min(vMin, c.speed);
   }, inp);
   const P = pose(W, p);
+  colCheck(W, p);
   return { W, p, c, d: Math.hypot(P.x - p.x, P.z - p.z), tilt: P.tilt, maxTilt, maxY, keep: keep ?? c.speed / Math.max(1e-3, g.speed), vMin, body, end: P };
 }
 
@@ -234,6 +266,7 @@ for (const v of [20, 50]) {
     }, (tt) => ({ throttle: tt < 2 ? 0.6 : 0, steer: 0 }));
     runs++;
     if (!W.world) continue;
+    colCheck(W, p);
     if (p.state) hits++;
     const w = W.world;
     for (const a of [c.x, c.z, c.speed, w.dpos[0], w.dpos[1], w.dpos[2], w.dq[0], w.dq[3]]) if (!Number.isFinite(a)) bad++;
@@ -260,6 +293,7 @@ for (const v of [20, 50]) {
   check("no NaN", !OLD && bad === 0, `${bad} non-finite values after ${runs} hits`);
   check("sleep", !OLD && awakeLate === 0, `${awakeLate} bodies still awake 8 s after their last hit (sleep below ${PROP.sleepV} m/s, ${PROP.sleepW} rad/s for ${PROP.sleepT} s)`);
 }
+check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.bad.length, `${colTally.props} props after their hits (states ${JSON.stringify(colTally.states)}: 0 rest, 2 knocked / snapped, 3 bent): ${colTally.bad.length} with a collider where nothing is drawn${colTally.bad.length ? ": " + colTally.bad.slice(0, 3).join(" / ") : " (knocked / snapped / flattened: drive collider + walker post off; bent: at its foot, tops at the drawn lean)"}`);
 // ---------------------------------------------------------------- 9 cost + allocation: 24 awake bodies
 {
   const props = [];

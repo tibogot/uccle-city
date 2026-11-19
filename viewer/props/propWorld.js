@@ -147,7 +147,7 @@ export class PropWorld {
     if (p.slot >= 0) this.freeBody(p.slot);
     this.dfree(p);
     p.state = 0; p.theta = 0; p.adv = 0;
-    if (p.ref) p.ref.hidden = false;
+    this.hideRef(p, false);
     this.onReset?.(p);
     this.stats.resets++;
   }
@@ -227,7 +227,7 @@ export class PropWorld {
     this.sampleGround(k);
     this.act[k] = 1; this.nAwake++;
     this.prop[k] = p; p.slot = k;
-    if (p.state === 0) { if (p.ref) p.ref.hidden = true; this.onWake?.(p); this.stats.wakes++; }
+    if (p.state === 0) { this.hideRef(p, true); this.onWake?.(p); this.stats.wakes++; }
     p.state = 1; p.gen++;
     this.dmoved[q] = 2;
     this.gatherNear(k);
@@ -553,15 +553,40 @@ export class PropWorld {
     if (vb > 0) {
       p.adv += vb * h;
       const th = Math.atan2(p.adv, cls.hinge);
-      if (th > p.theta) { p.theta = th; this.bendPose(p); }
+      if (th > p.theta) { p.theta = th; this.bendPose(p); this.syncCols(p); }
       // the post's resistance (its plastic moment over the bumper height): the work it takes
       const dv = Math.min(vb, cls.Fy * h / m);
       this.loadP(c, m, box);
       this.pv[2] += p.nx0 * dv; this.pv[3] += p.nz0 * dv;
       this.storeP(c);
-      if (p.theta * 180 / Math.PI >= cls.flatDeg) { if (p.ref) p.ref.hidden = true; this.stats.flattened++; this.bendPose(p, true); }
+      if (p.theta * 180 / Math.PI >= cls.flatDeg) { this.stats.flattened++; this.bendPose(p, true); this.hideRef(p, true); }
     }
     return true;
+  }
+  /** rule 25 (every collider stands for something drawn): prop p's colliders follow it. Hidden (woken, snapped,
+   *  flattened): its drive collider (colliders.js skips a hidden ref) AND its walker posts (ref.walk: [set, item, top],
+   *  viewer/character/cityHook.js) off; back at rest: on again at their rest tops. Bent: still standing at its foot (the
+   *  collider's foot is drawn there), its tops lowered to the leaning post's drawn top (cos theta): ref.drive
+   *  [col, id, top, base] (driveMode.js tileDrive), the walker posts' tops */
+  hideRef(p, v) {
+    if (!p.ref) return;
+    p.ref.hidden = v;
+    this.syncCols(p);
+  }
+  syncCols(p) {
+    const r = p.ref;
+    if (!r) return;
+    const off = r.hidden ? 1 : 0, c = p.state === 3 && !r.hidden ? Math.cos(p.theta) : 1;
+    if (r.walk) for (let i = 0; i < r.walk.length; i++) {
+      const W = r.walk[i], S = W[0], k = W[1], base = S.iy[k * 2];
+      S.off[k] = off;
+      S.iy[k * 2 + 1] = base + (W[2] - base) * c;
+    }
+    if (r.drive) for (let i = 0; i < r.drive.length; i++) {
+      const D = r.drive[i], col = D[0], id = D[1];
+      if (D[2] < 1e3 && D[3] > -1e3) col.ptop[id] = D[3] + (D[2] - D[3]) * c;
+    }
+    this.onCols?.(p);
   }
   /** a bent post's foot pose: its rest frame turned about the hinge axis by theta at its foot */
   bendPose(p, flat = false) {
@@ -584,7 +609,7 @@ export class PropWorld {
     if (p.state === 3) p.state = 2;                                      // (bent: it breaks from its bent pose)
     const slot = this.wake(p);
     if (slot < 0) return false;
-    if (p.ref) p.ref.hidden = true;
+    this.hideRef(p, true);
     const dv = Math.min(vn * 0.5, p.cls.breakJ / m);
     this.loadP(c, m, box);
     this.pv[2] += contact.nx * dv; this.pv[3] += contact.nz * dv;

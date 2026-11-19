@@ -1182,6 +1182,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const bref = (i) => (bollards && cityProps.on ? cityProps.make("bollard", entry.name, bxyz[i * 3], bxyz[i * 3 + 1], bxyz[i * 3 + 2], 0, [{ mesh: bollards, i }])?.ref : null);
   const drawn = { trees: fo.userData.treesDrawn || [], lamps: lamps.sites || [], bollards: Array.from({ length: bxyz.length / 3 }, (_, i) => ({ x: bxyz[i * 3], z: bxyz[i * 3 + 2], ref: bref(i) })),
     hiddenBuildings: d.drive?.counts?.hidden || 0 };
+  if (bollards && cityProps.on) bollards.userData.refs = drawn.bollards.map((q) => q.ref);   // (props: the walker's bollard posts follow a snapped / bent one, cityHook.js)
   const drive = tileDrive(d.drive, roads, bounds, drawn, COLFIX ? own.features : null);
   frame("drive colliders");
   log(`tile ${entry.name}: main-thread work ${busy.toFixed(0)} ms, longest slice ${longest.toFixed(0)} ms (${worst}); slices over 4 ms: ${slices.join(", ") || "none"}; ${tileWorker ? "CPU build in the worker" : "CPU build ALSO on the main thread"}`);

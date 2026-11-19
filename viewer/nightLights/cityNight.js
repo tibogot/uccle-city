@@ -1065,6 +1065,9 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     setTraffic: (t) => { traffic = t; },
     setDriver: (d) => { driver = d; },
     setTram: (t) => { tram = t; },
+    /** (props, docs/PROPS.md) a static caster changed (a knocked prop left its pool / came back): both lamp maps re-render
+     *  their static casters next frame (their cache would keep the old shadow) */
+    refreshStatic: () => { sLamp[0] = sLamp[1] = -2; },
     debug: dbg,                        // (?nightdebug=1: the pop metric, its worst events)
     /** (checks) queue every lamp-shadow caster for the next by-day warm-up */
     /** perf8: casters queued for the lamp-shadow warm-up (first tries only) + a warm render in progress: main.js areaReady waits for 0 */
