@@ -49,7 +49,13 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
     - J6 (1730, 610-620), a lane still off its carriageway;
     - Av. du Prince de Ligne (1592, 360) still UNFIXED (junction funnel), the owner's complaint;
     - at merge, rebuild the worker bundle.
-  - claude/sidewalk (C:/Users/tibog/Downloads/uccle-sidewalk, round 5 1aea8662 + gate-steps WIP): steps inside raised gate openings + census 'gateNoSteps'. Then census, gate, Chrome turn (H6, G3, a stone wall, retaining vs garden brick side by side), merge + rebuild the bundle.
+  - claude/sidewalk (C:/Users/tibog/Downloads/uccle-sidewalk, round 5 1aea8662 + gate-steps WIP 707414c2, notes in docs/SIDEWALK.md "Round 5b"). Left:
+    - 12 gates still without steps on the 4 test tiles (G3 Roberts Jones 55, H6 Perelman 1): trace them to 0;
+    - bareBank rose 64 -> 76 round the flights;
+    - full census + ceilings (gateNoSteps=0), full gate;
+    - quiet-machine wall ms;
+    - Chrome turn: H6, G3, a stone wall, retaining vs garden brick, the steps (Perelman 4's flight: 19 risers, 5.7 m deep, check it);
+    - merge + rebuild the bundle.
   - claude/kid (bike rounds 1-4, 07754f3c): browser turn not started (D6 city spot, ledge, stairs, sound, weight, camera); then the owner tries the bike lab.
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
