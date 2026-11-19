@@ -273,3 +273,51 @@ Waterloo lane known off its carriageway (section 5).
 
 Not done in this turn (stopped for the owner): the full gate after the merge, the tour against a foundation baseline,
 the Papenkasteel drive test (the car stopping at the restored hedges / walls), the slalom watch on Waterloo.
+
+## 8. Round 3 (2026-11-19): the lines the owner reported, the leftovers
+
+**Av. du Prince de Ligne (1592, 360), reported twice: a JUNCTION FUNNEL.** r220837890 is a 37.7 m piece inside the
+funnel where the avenue splits round a refuge island: its measured carriageway runs from -9.5..+5 m to -3.1..+5.5 m in
+37 m. The engine's lane strips run straight along the OSM line through it; no fit of two smoothed edges makes a lane
+line follow a flare, so the lane / centre lines ran diagonally across. Rule (lineFit.js `funnel`): a road shorter than
+42 m whose measured carriageway changes width by more than 2 m along it paints its EDGE lines only (as in Brussels:
+lane lines stop at the junction mouth). Browser: the diagonal line is gone (only the other road's dashes remain).
+Left on the same avenue: J5 (1670, 352) 8 m skew, r40459755d688421967, a 60 m OSM line along the middle of a 32 m wide
+square with a central parking (a different case: the OSM road stands for the whole square).
+
+**Rue Papenkasteel / Ch. de Saint-Job (owner's new shot): two causes.**
+- Diagonal dashes: Ch. de Saint-Job r1156334403_1 (E7, 33.5 m) lies on the measured street but the fit finds no kerb
+  within 6 m of its OSM line: it kept the engine's lines along the OSM line, across the street. Rule (lineFit.js
+  `unpaint`): a road under 42 m whose centre line lies on the measured street but which the fit cannot place paints
+  no line (no line rather than a wrong one). City-wide 3.1 km of strokes (2.5 %), mostly short junction pieces
+  (Place de Saint-Job's sett pieces 176 m). Longer unfitted roads keep their lines (Vanderkindere, Churchill: gaps).
+- The zebra cut short: bm:14036 (-701.8, 999.3) straddles the E6 | E7 seam (z = 1000). The kerb rays stop at the
+  tile's class-raster edge, so E6 drew the stripes to the seam and E7 (its centre outside) almost none. Rule
+  (measuredPaint.js): where the seam cuts a crossing (a kerb ray leaves the raster), the stripes run on to the
+  outline's end on that side and their phase is anchored to the outline's start (v0 + k x period): both tiles lay out
+  the same stripes, each draws its part. Also: a surveyed outline ending > 1.5 m short of the kerb in the open
+  carriageway goes on to the kerb, never into another surveyed outline (Brussels Mobility draws zebras across tram
+  tracks as pieces: the first cut grew one piece over the next, the tour's brugmann-maisons showed doubled stripes).
+- The census (markings.mjs) now counts `zebraShort`: a drawn zebra with >= 1.5 m of the same carriageway still to go
+  to the kerb, not at another outline. It does not see the seam case (the raster ends there): that one is checked in
+  the browser (shot: full zebra across both tiles; a 0.2 m step remains where the two halves meet).
+
+**J6 Ch. de Waterloo (1730, 610-620), lane off its carriageway: left.** r236627442_2's OSM line runs ~10 m east of
+the measured carriageway; half the lane has no fit within 9 m and its fit (-7 m) is released by the join to the next
+unshifted piece. The far-lane snap only works where the lane runs through a building (round 2); here it runs over
+the engine's own strip drawn east of the street. Browser traffic watch there: cars off the carriageway 3.8 %
+(old 12.8 %), yaw flips 7 / 1000 (old 36.3).
+
+**Papenkasteel drive test (browser).** Default: the kit's hedges and walls stand on the property line again (old:
+gone). The car still reaches the lawn at hedges: hedges are SOFT for the car (police feel, carEnv.js HEDGE_DRAG: the
+car pushes through slowed), walls hard. Whether a hedge > ~1 m should stop the car is a feel decision for the owner.
+
+**Tour vs a fresh foundation baseline (be6b4fc1, temp worktree, removed after).** 3-4 of 22 flagged, all explained:
+cortenbosch-lane (front hedges restored), coghen-blocks (parked-car set follows the smoother lanes), stpierre-parvis
+(a parked van instead of a saloon; a parking-bay line moved with the line fit), brugmann-maisons (after the outline
+fix 0.22 % pixels, one cell: the junction's lane arrow / lines in the distance). Shots: `.tour/roads3`, `.tour/roads5`.
+
+Markings city-wide (120 tiles, `--roadsold` vs default): off the street 472 -> 441 m, at a kerb 366 -> 321 m, skew
+341 -> 283 m, zebras ending in the open road 187 -> 34, lane-to-paint p95 0.08 -> 0.08 m; strokes 125.8 -> 122.8 km
+(the unpainted short pieces and funnels). Gate `markings`: offStreet 441, atKerb 321, skew 283, laneP95 0.25,
+zebraShort 34.

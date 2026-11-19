@@ -98,12 +98,13 @@ if (!CHILD) {
   const gt = await glyphTest();
   for (const t of gt) console.log(`  glyph ${t.ok ? "ok  " : "FAIL"} ${t.name}: ${t.info}`);
   const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(ROADS_OLD ? ["--roadsold"] : [])], log: !QUIET });
-  const sum = { tiles: 0, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, laneSkewM: 0, tickM: 0, tickSkewM: 0, tickLaneM: 0, runs: 0, decalTris: 0, decalOff: 0 }, runs = [];
+  const sum = { tiles: 0, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, laneSkewM: 0, tickM: 0, tickSkewM: 0, tickLaneM: 0, zebraShort: 0, runs: 0, decalTris: 0, decalOff: 0 }, runs = [];
   for (const r of res) {
     if (r.error) continue;
     sum.tiles++; for (const k of Object.keys(sum)) if (k !== "tiles" && k !== "runs") sum[k] += r[k] || 0;
     sum.runs += r.runs.length;
     for (const x of r.runs) runs.push({ tile: r.tile, ...x });
+    for (const x of r.zebraShortAt || []) runs.push({ tile: r.tile, len: 0, why: "zebraShort", ...x });
   }
   for (const k of ["strokeM", "unmeasuredM", "offStreetM", "atKerbM", "skewM", "laneSkewM", "tickM", "tickSkewM", "tickLaneM"]) sum[k] = Math.round(sum[k]);
   // traffic lanes vs the painted lanes: |lane centre - painted lane centre| histogram (cm bins) over all tiles -> p95
@@ -282,6 +283,17 @@ if (fit && A) {
     const x = (D.position[a] + D.position[b] + D.position[c]) / 3, z = (D.position[a + 2] + D.position[b + 2] + D.position[c + 2]) / 3;
     out.decalTris++; const k = classAt(x, z); if (!MARKABLE.has(k) && k !== SC.tramSite) out.decalOff++;
   }
+}
+// claude/roads (rule 38, census R c): a ZEBRA that ends in the open roadway: a drawn crossing (rd.inventory.crossings)
+// whose stripes stop with >= 1.5 m of the same carriageway still to go to the kerb on either side (no island between)
+out.zebraShort = 0; out.zebraShortAt = [];
+for (const r of rd.inventory?.crossings || []) {
+  if (!r.vSpan || !inB(r.c[0], r.c[1])) continue;
+  const ax = Math.cos(r.axis), az = Math.sin(r.axis), bx = -az, bz = ax;
+  // (an end meeting another drawn crossing's outline (Brussels Mobility's pieces across tram tracks) is not open)
+  const others = (rd.inventory?.crossings || []).filter((o) => o !== r && o.poly);
+  const open = (v, sg) => { let d = 0; for (; d < 3; d += 0.25) { const x = r.c[0] + bx * (v + sg * (d + 0.25)), z = r.c[1] + bz * (v + sg * (d + 0.25)); if (!MARKABLE.has(classAt(x, z)) || others.some((o) => pipPoly(x, z, o.poly))) break; } return d >= 1.5 + 0.15; };
+  if (open(r.vSpan[0], -1) || open(r.vSpan[1], 1)) { out.zebraShort++; out.zebraShortAt.push({ id: r.id, at: at(r.c[0], r.c[1]), street: nameAt(r.c[0], r.c[1]) }); }
 }
 if (process.env.CENSUS_DBG) console.error(JSON.stringify(globalThis.H));
 // traffic lanes vs paint (markings round 2): every driven lane point of a fitted road, 12 m and more from its path's

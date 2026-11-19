@@ -122,7 +122,7 @@ function smooth(s, v) {
  *  then the median intercept: robust to bulb-outs and lay-bys like the median), evaluated at its own station, so a
  *  trend is followed and carried into the unmeasured ends; then the same mean, and the slope limit at TREND_SLOPE
  *  (1:5, 11 deg: what the line may turn against the OSM line, the 1:8 cap held the skew). */
-const TREND_SLOPE = 0.2, SHORT_ROAD = 2 * (WIN_MED + MOUTH);   // (42 m)
+const TREND_SLOPE = 0.2, SHORT_ROAD = 2 * (WIN_MED + MOUTH), FUNNEL_W = 2;   // (42 m)
 function smoothTrend(s, v) {
   const n = s.length;
   if (!v.some((q) => q != null)) return null;
@@ -152,7 +152,8 @@ export function measureLineFit(net, prep, surf, opts = {}) {
   const R38 = opts.roadsR !== false;
   const st = { roads: 0, fitted: 0, moved: 0, meanShift: 0, maxShift: 0, edgeIn: 0, lanes: 0, lanePts: 0 };
   const fitOf = new Map();
-  if (!prep) return { fitOf, st };
+  const unpaint = new Set();
+  if (!prep) return { fitOf, st, unpaint };
   const lg = lineGrid([...(surf?.kerbs || []), ...(surf?.edges || []).map((e) => e.line)]);
   // per road: the smoothed shifts of its two carriage ends at its samples
   net.roads.forEach((rr, ri) => {
@@ -173,7 +174,15 @@ export function measureLineFit(net, prep, surf, opts = {}) {
       if (iv.lo != null && Math.abs(iv.lo - e.curbR) < MAX_D) { dR[i] = iv.lo - e.curbR; any++; }
     }
     // a road measured at fewer than a third of its samples keeps the engine's lines (UrbIS does not map it here)
-    if (any < Math.max(2, (2 * n) / 3)) return;
+    if (any < Math.max(2, (2 * n) / 3)) {
+      // class R (rule 38, docs/ROADS_R.md 8): a road whose centre line lies ON the measured street but whose kerbs the
+      // fit cannot find (the OSM line more than MAX_D off them, a short piece in a junction: Ch. de Saint-Job E7
+      // r1156334403_1 at the Rue Papenkasteel junction, the owner's diagonal dashes) has no measured place for its
+      // lines: the engine's would run along the OSM line, across the street. They are not painted (unpaint)
+      // (short pieces only: a longer road that the fit misses in places (a tram reservation, gaps) keeps the engine's lines)
+      if (R38 && S.s[n - 1] - S.s[0] < SHORT_ROAD) { let on = 0, inside = 0; for (let i = 0; i < n; i++) { if (!prep.inside(S.x[i], S.z[i])) continue; inside++; if (prep.classAt(S.x[i], S.z[i]) >= 0) on++; } if (inside && on >= inside / 3) unpaint.add(ri); }
+      return;
+    }
     // a sample more than OUTLIER off the road's own median shift is a lay-by, a bus bay or a side street: not the street
     const cut = (v) => { const w = v.filter((q) => q != null).sort((a, b) => a - b); if (!w.length) return v; const m = w[w.length >> 1]; return v.map((q) => (q != null && Math.abs(q - m) <= OUTLIER ? q : null)); };
     // (rule 38: the outliers are judged against the road's own robust LINE, not its median: a road whose kerb offset
@@ -195,7 +204,18 @@ export function measureLineFit(net, prep, surf, opts = {}) {
     }
     // the edge lines follow the kerb closer than the stack: a +-EDGE_WIN median of the raw ends (no measurement: the stack's)
     const near = (v, sm) => S.s.map((s0, i) => { const w = []; for (let j = 0; j < n; j++) if (v[j] != null && Math.abs(S.s[j] - s0) <= EDGE_WIN) w.push(v[j]); if (!w.length) return sm[i]; w.sort((a, b) => a - b); return w[w.length >> 1]; });
-    fitOf.set(ri, { L, R, eL, eR, kL: near(dL, L), kR: near(dR, R) });
+    // class R (rule 38, docs/ROADS_R.md 8): a JUNCTION FUNNEL. A short road (under SHORT_ROAD) whose measured
+    // carriageway changes width by more than FUNNEL_W m along it (a flare into a junction, the split round a refuge
+    // island: Av. du Prince de Ligne r220837890, J5 1590, 362, the owner's line twice) is not a stretch with lanes: the
+    // engine's lane strips run straight along the OSM line through it and no smoothing of two edges makes a lane line
+    // follow a flare, so its lane / centre lines ran diagonally across the funnel. As painted in Brussels, the lane
+    // lines stop at the junction mouth: in a funnel only the EDGE lines are painted (fitLinesToStreet), along the kerbs
+    let funnel = false;
+    if (R38 && S.s[n - 1] - S.s[0] < SHORT_ROAD) {
+      const W = []; for (let i = 0; i < n; i++) if (dL[i] != null && dR[i] != null) W.push(eL[i] + dL[i] - (eR[i] + dR[i]));
+      if (W.length >= 3 && Math.max(...W) - Math.min(...W) > FUNNEL_W) { funnel = true; st.funnels = (st.funnels || 0) + 1; }
+    }
+    fitOf.set(ri, { L, R, eL, eR, kL: near(dL, L), kR: near(dR, R), funnel });
     st.fitted++;
   });
   // a road that goes on as another (an OSM way split: a node with just those two roads): both fits meet at one place,
@@ -256,7 +276,8 @@ export function measureLineFit(net, prep, surf, opts = {}) {
       return { e, n };
     });
   }
-  return { fitOf, st };
+  st.unpainted = unpaint.size;
+  return { fitOf, st, unpaint };
 }
 
 /** the shift of uv t at sample i of fit f (its lane layout B[i]; beyond the carriageway the nearer end's) */
@@ -337,7 +358,7 @@ export function paintedLaneCentre(net, fit, rr, x, z) {
 /** Moves the lane-strip vertices of the engine's asphalt part across their roads (measureLineFit's fit), in place. */
 export function fitLinesToStreet(net, part, fit) {
   const { fitOf, st } = fit;
-  if (!part?.position || !part.uv || !fitOf.size) return st;
+  if (!part?.position || !part.uv || (!fitOf.size && !fit.unpaint?.size)) return st;
   const P = part.position, U = part.uv, A = part.attributes?.aPiece?.array, E = part.attributes?.aEdges?.array, nv = P.length / 3;
   const member = roadMembers(net, part);
   // vertices the bend trim moved (off their sweep position, inside it): their road by phase, station and distance
@@ -358,6 +379,7 @@ export function fitLinesToStreet(net, part, fit) {
     // planar uv below, or its triangles' lines kink)
     if (ri < 0 && A) { const c = byPhase.get(Math.round(A[v * 2] * 100)); if (c?.length === 1) { const S = net.roads[c[0]].smp; if (s >= S.s[0] - 0.5 && s <= S.s[S.s.length - 1] + 0.5) ri = c[0]; else st.unmatched = (st.unmatched || 0) + 1; } else if (c) st.unmatched = (st.unmatched || 0) + 1; }
     const f = ri >= 0 ? fitOf.get(ri) : null;
+    if (!f && ri >= 0 && E && fit.unpaint?.has(ri)) { if (E[v * 4 + 2] || E[v * 4 + 3]) st.unpaintedVerts = (st.unpaintedVerts || 0) + 1; E[v * 4 + 2] = 0; E[v * 4 + 3] = 0; continue; }
     if (!f) continue;
     const { d, eL, eR, lerp, at } = shiftAt(f, net.roads[ri].smp, s, t);
     // a line ON the carriage edge (the engine's "edge" / "leftEdge" where it sees no sidewalk; a kerb there) comes
@@ -368,6 +390,7 @@ export function fitLinesToStreet(net, part, fit) {
       if (E[v * 4 + 2 + k] < 1) continue;
       const lt = E[v * 4 + k], other = E[v * 4 + 1 - k];
       const side = Math.abs(lt - eL) < 0.03 ? 1 : Math.abs(lt - eR) < 0.03 ? -1 : 0;
+      if (!side && f.funnel) { E[v * 4 + 2 + k] = 0; st.funnelLines = (st.funnelLines || 0) + 1; continue; }   // (a junction funnel: no lane line)
       if (!side) continue;
       const target = side > 0 ? eL + lerp(f.kL) - EDGE_IN : eR + lerp(f.kR) + EDGE_IN;     // offset from the centre line
       // its uv t: the map's inverse (monotonic: bisection over the carriageway)
