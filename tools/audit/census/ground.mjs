@@ -31,7 +31,7 @@
 // GATENOSTEPS (claude/sidewalk round 5): a garden gate (data/gardens, this tile's and its 4 neighbours', inside this
 // tile) standing in a retaining wall (a wall face within 3 m) whose garden (the drawn terrain 1.2-2 m behind the gate,
 // the middle of three) is more than
-// 0.3 m over the sidewalk in front of it (the lowest drawn sidewalk top within 3 m), with no steps: fewer than 2 step
+// 0.3 m over the sidewalk in front of it (the drawn street top nearest 1 m out along the wall's normal), with no steps: fewer than 2 step
 // treads (aKind 1 marked aUv2.y = 1, facing up) at different heights between the two within 2.5 m. One finding a gate.
 //
 // BAREBANK (claude/sidewalk round 5): behind a retaining wall, the garden's drawn terrain (where no lawn strip covers
@@ -444,7 +444,7 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
       const ux = pos[b2] - pos[a], uy = pos[b2 + 1] - pos[a + 1], uz = pos[b2 + 2] - pos[a + 2], vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
       const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, L = Math.hypot(nx, ny, nz); if (L < 1e-9) continue;
       const cx = (pos[a] + pos[b2] + pos[c]) / 3, cy = (pos[a + 1] + pos[b2 + 1] + pos[c + 1]) / 3, cz = (pos[a + 2] + pos[b2 + 2] + pos[c + 2]) / 3;
-      if (k > 3.5 && k < 5.5) { if (Math.abs(ny) < 0.2 * L) { const h = Math.hypot(nx, nz); faces.push(cx, cz, nx / h, nz / h); } }
+      if (k > 3.5 && k < 5.5) { if (Math.abs(ny) < 0.2 * L) { const h = Math.hypot(nx, nz); if (fit && fit.classAt(cx + nx / h * 0.5, cz + nz / h * 0.5) >= 0) faces.push(cx, cz, nx / h, nz / h); } }   // (FRONT faces: a street 0.5 m in front; a pier's side gave a wrong garden direction)
       else if (k > 0.5 && k < 1.5) { if (ny > 0.9 * L && U2 && U2[I[t] * 2 + 1] > 0.5) treads.push(cx, cy, cz); }   // (a step: aUv2.y = 1; kerbs / copings 0)
       else if (Math.abs(ny) > 0.9 * L) tops.push(cx, cy, cz);
     }
@@ -455,7 +455,13 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
       // or along it; the front ones dominate the nearest few))
       let best = 9, fnx = 0, fnz = 0; for (let i = 0; i < faces.length; i += 4) { const d2 = (faces[i] - gx) ** 2 + (faces[i + 1] - gz) ** 2; if (d2 < best) { best = d2; fnx = faces[i + 2]; fnz = faces[i + 3]; } }
       if (best >= 9) continue;
-      let lo = Infinity; for (let i = 0; i < tops.length; i += 3) if ((tops[i] - gx) ** 2 + (tops[i + 2] - gz) ** 2 < 9) lo = Math.min(lo, tops[i + 1]);
+      // (the sidewalk in front of it: the street top nearest a point 1 m out along the face's normal, within 1.5 m; the
+      // lowest top within 3 m took a street below on another level (H6 Perelman 1: 4 m down))
+      const fx = gx + fnx * 1.0, fz = gz + fnz * 1.0; let lo = Infinity, bd = 2.25;
+      for (let i = 0; i < tops.length; i += 3) { const d2 = (tops[i] - fx) ** 2 + (tops[i + 2] - fz) ** 2; if (d2 < bd) { bd = d2; lo = tops[i + 1]; } }
+      // (a measured path / drive behind the gate (the street surfaces go on into the garden): its own levels, not a wall
+      // opening over a jump (K10 Paysages 2))
+      if (fit && [[1.2, 0], [1.6, 0], [2.0, 0], [0.8, 1], [0.8, -1], [1.6, 1], [1.6, -1]].some(([dd, sd]) => fit.classAt(gx - fnx * dd + fnz * sd, gz - fnz * dd - fnx * sd) >= 0)) continue;   // (or beside it, within 1 m: K10 Paysages 2)
       const gy = [1.2, 1.6, 2.0].map((dd) => terr(gx - fnx * dd, gz - fnz * dd)).sort((a, c) => a - c)[1];   // (the garden level, as the walls read it)
       if (!(lo < Infinity) || !(gy === gy) || gy - lo <= 0.3) continue;
       const hs = new Set(); for (let i = 0; i < treads.length; i += 3) if ((treads[i] - gx) ** 2 + (treads[i + 2] - gz) ** 2 < 6.25 && treads[i + 1] > lo + 0.05 && treads[i + 1] < gy + 0.1) hs.add(Math.round(treads[i + 1] * 20));

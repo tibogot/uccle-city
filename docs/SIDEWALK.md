@@ -354,3 +354,26 @@ loaded by the owner's play session during this round's measures).
   census (new ceilings incl. gateNoSteps 0; bareBank rose 64 -> 76 on the 4 tiles round the flights: check), the full
   gate, the cost re-measure (quiet machine), the Chrome turn (H6 / G3 / a stone wall / brick beside a garden wall, the
   steps). Flights can be tall: Perelman 4 rises ~3.2 m (19 risers, 5.7 m deep).
+
+Round 5b, done (2026-11-19): the 12 gates without steps traced to 1.
+- The gate's place along a long outline edge is the middle of the samples that meet it, and the flight spans only the
+  gate's width (+-0.9 m) there; the garden level is the highest of three reads across the opening (G5 Thévenet 8,
+  I8 Blücher 50: a 5 m edge read the garden at its middle, level with the sidewalk).
+- Gates seated up to 0.5 m in front of the sidewalk's back edge count (the test samples from -0.5 m).
+- An opening of several short outline edges gets a flight per edge, inset for a pier only where a run stops (H6
+  Perelman 1, G3 Roberts Jones 55); edges already off within 2 m of a run are tested too.
+- One step from 12 cm (the census flags > 0.3 m on the drawn ground; the DTM read at the edge runs lower).
+- The pier returns beside a flight are as deep as the flight (+ 0.1 m), deeper than the strip for a tall one; the
+  terrain cap round a flight spreads 1 m to the sides only under the lawn strips (to 3 m deep), past that under the
+  cheeks only (bareBank round tall flights).
+- Census: the sidewalk in front of a gate is the street top nearest 1 m out along the wall's FRONT face normal (the
+  lowest top within 3 m took a street 4 m below; a pier's side gave a wrong direction); a measured path behind or beside
+  the gate is skipped (its own levels).
+- Left: K10 Avenue des Paysages 2 (2056.3, 2921.2): the gate stands between two runs where the sidewalk has no outer
+  edge in the walls' list (filtered as covered / not a once-edge), so no opening is found; gateNoSteps ceiling 1.
+- City census: over 310, spike 171 (+1), bareBank 575, gateNoSteps 1; the rest unchanged.
+- The floating hedge + white railing near Clos Monique Rifflet (owner shot, live site): not in the node build. The
+  garden pieces within 90 m sit within 0.5 m of the drawn terrain in both builds (?sidewalk=old too), gardenVoid 0; the
+  settle only lowers a piece onto the drawn ground. So it is a runtime effect (a ground that changes after the gardens
+  seat: a tile's lite -> full terrain swap, a landmark's site ground, ...). Needs the browser: pick the piece, compare
+  its base with hm.surface there.
