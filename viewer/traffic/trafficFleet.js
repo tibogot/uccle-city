@@ -9,12 +9,16 @@
 import * as THREE from "three/webgpu";
 import { uniform } from "three/tsl";
 import { carFleet, TYPE_MIX, FADE_FROM, FADE_TO, BANDS, SIZES } from "../carFleet.js";
-import { packMaterial, GLASS_PASS, glassGeometry } from "../drive/carPacks.js";
+import { packMaterial, GLASS_PASS, glassGeometry, trafficDentRows } from "../drive/carPacks.js";
+import { DENT_OLD, frameRows } from "../drive/carDent.js";
 import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-car motion vectors for the TAAU (docs/UPSCALE.md)
 
 export const TYPE_NAMES = TYPE_MIX.map(([t]) => t);
 /** (carhit) each type's half-length code for the crumple shader (carPacks.js: hl = 1.9 + 0.12 code), x 4096 x 64 */
 const LEN_CODE = TYPE_NAMES.map((t) => Math.max(0, Math.min(7, Math.round(((SIZES[t] || SIZES.hatch_c)[2] / 2 - 1.9) / 0.12))) * 4096);
+/** (claude/dent) the default code: the TYPE index (<= 7), the shader reads that type's dent frame (carPacks.js
+ *  trafficDentRows, filled from the fleet's bodies in load()); ?dent=old: the half-length code as before */
+const TYPE_CODE = DENT_OLD ? LEN_CODE : TYPE_NAMES.map((_, i) => Math.min(i, 7) * 4096);
 export const trafficTime = uniform(0);
 
 const COMPILE_OLD = typeof location !== "undefined" && /[?&]trafficwarm=old(&|$)/.test(location.search);
@@ -56,6 +60,8 @@ export class TrafficFleet {
       const glass = GLASS_PASS ? packMaterial({ paint: "instance", rich: true, motion, glass: "pass" }) : null;
       const glassFade = GLASS_PASS ? packMaterial({ paint: "instance", rich: true, crossFade: true, motion, glass: "pass" }) : null;
       for (const m of [near, far, nearFade, farFade, glass, glassFade]) if (m) this.prev.hook(m);   // --- instmotion
+      // (claude/dent) each type's dent frame into the shader's table (rows of 3 vec4, TYPE_CODE order)
+      TYPE_NAMES.forEach((name, i) => { const F = S.types[name]?.dent; if (F && i < 8) frameRows(F).forEach((r, k) => trafficDentRows[i * 3 + k].set(...r)); });
       this.types = [];
       for (const name of TYPE_NAMES) {
         await frame();
@@ -193,7 +199,7 @@ export class TrafficFleet {
       const T = this.types[P.type[i]], pa = bt.geo.attributes.paint.array, mo = bt.geo.attributes.motion.array;
       if (T.keepPaint) { pa[n * 3] = T.paint.r; pa[n * 3 + 1] = T.paint.g; pa[n * 3 + 2] = T.paint.b; }
       else { pa[n * 3] = P.paint[i * 3]; pa[n * 3 + 1] = P.paint[i * 3 + 1]; pa[n * 3 + 2] = P.paint[i * 3 + 2]; }
-      mo[n * 4] = P.pspin[i] * b1 + P.spin[i] * a; mo[n * 4 + 1] = P.steer[i]; mo[n * 4 + 2] = P.dmg[i] ? P.bits[i] + 64 * (P.dmg[i] + LEN_CODE[P.type[i]]) : P.bits[i]; mo[n * 4 + 3] = yaw;
+      mo[n * 4] = P.pspin[i] * b1 + P.spin[i] * a; mo[n * 4 + 1] = P.steer[i]; mo[n * 4 + 2] = P.dmg[i] ? P.bits[i] + 64 * (P.dmg[i] + TYPE_CODE[P.type[i]]) : P.bits[i]; mo[n * 4 + 3] = yaw;
       if (bt.fade) bt.geo.attributes.lodFade.array[n] = this.jf[q];
       this.prev.put(m, n, i, P.gen[i], e[o + 12], e[o + 13], e[o + 14], yaw);       // --- instmotion
     }

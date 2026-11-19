@@ -61,7 +61,7 @@ async function loadPackCar(spec) {
   }));
   return {
     spec: `${src}:${car.id}`, label: `${pack.label} · ${car.label}`, credit: pack.credit, lods, wheelPos, size: car.size, mats: { Pack: mat },
-    lodDist: pack.lods.map((l) => l.until), keepPaint: car.keepPaint, defaultPaint: car.paint,
+    lodDist: pack.lods.map((l) => l.until), keepPaint: car.keepPaint, defaultPaint: car.paint, dent: car.dent,
     setPaint: (hex) => { if (car.keepPaint) return; if (hex == null) paint.copy(car.paint); else paint.setHex(hex); },
   };
 }

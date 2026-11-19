@@ -7,7 +7,7 @@
 // The car only looks at the cells round it (carEnv.js). Ground = the drivable surface grid (road deck, sidewalks).
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
-import { FLEET_SOURCE, playerDamage } from "./carPacks.js";
+import { FLEET_SOURCE, playerDamage, setPlayerDent } from "./carPacks.js";
 import { HANDLING, BODY, createCarState, stepCar } from "./carPhysics.js";
 import { CarHitWorld, CARPUSH_OLD, MASS, MASS2 } from "./carHit.js";
 import { createFeelState, stepFeel } from "./carFeel.js";
@@ -327,6 +327,7 @@ export class Driver {
     this.spec = spec; this.model = model;
     fitBody(model);
     playerDamage.hl.value = BODY.hz;                     // (carhit: the crumple's reach on this model)
+    setPlayerDent(model);                                // (claude/dent: its half width, ends and cabin box)
     this.car = createCar(model);
     this.car.root.visible = this.on;
     this.scene.add(this.car.root);
