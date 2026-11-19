@@ -46,6 +46,13 @@ scripted far variant), Papenkasteel L2 13.4, Saint-Pierre L2 11.8, Wolvendael L2
 levels are the meshopt far levels of the town hall / police / Papenkasteel / Wolvendael packers (their own
 `*_pack.mjs`, no LockBorder yet: a rebuild of each in Blender + its pack) and are seen from > ~450 m.
 
+## Class T, the rail corridor: fixed (claude/rail, 2026-11-19)
+
+Detector tools/audit/census/railCorridor.mjs (`--old`), 32 rail tiles: car in the ballast 51 -> 5 m, track bed reached
+from a street 8,108 -> 0 m, stepped fence bays 1,173 -> 0, fence walls over / under the drawn fence 12,002 -> 58 m,
+floating panels 185 -> 71 m; streetProps onRail / inHero 0 / 3 -> 0 / 0. Gate rows `railt`, `railcorridor`, docs/RAIL_T.md,
+rule 39.
+
 ## Class J, thin bars: fixed (claude/jitter, 2026-11-18)
 
 Strokes (bars, rails, grilles, glazing bars under 3 cm) drawn as geometry where they project under 1 internal px:

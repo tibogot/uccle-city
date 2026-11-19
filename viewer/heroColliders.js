@@ -41,6 +41,14 @@ export const HERO_GROUND_OLD = new URLSearchParams(location.search).get("herogro
  *  their meshes and tiles cached), the triangles in <= POLL_MS slices, the blockers yield after POLL_MS. */
 export const HERO_POLL = new URLSearchParams(location.search).get("heropoll") !== "old";
 export const POLL_MS = 3;
+/** CLASS T (rule 39 + rule 25, docs/RAIL_T.md; ?rail=old: as before): a hero's car blockers exist exactly while the hero
+ *  is DRAWN. They were built as soon as ONE tile under the model was in and kept for the session, while the model itself
+ *  is hidden until its HOME tile is loaded (main.js: a bridge's group.visible follows its home tile; a landmark's root
+ *  leaves the scene with its tile): the Stalle viaduct (home D5) collided from C5 with nothing drawn. Now the poll
+ *  takes a built set out of the driver while its root is hidden / detached and puts it back when it shows again. */
+export const HERO_SHOWN = new URLSearchParams(location.search).get("rail") !== "old";
+/** the root and every parent visible, up to the scene */
+export const shownIn = (o, scene) => { for (let k = 0; o && k < 64; k++, o = o.parent) { if (!o.visible) return false; if (o === scene) return true; } return false; };
 
 // (falcon2: the LOD0 triangle soup moved to viewer/heroTris.js, a generator: sliced while playing, node-testable)
 export { soft, lod0, heroTriangles, heroTrianglesGen } from "./heroTris.js";
@@ -245,6 +253,12 @@ export function createHeroColliders({ scene, world, manifest, driver, log = () =
       busy = true;
       try {
         if (HERO_POLL) findRoots();
+        if (HERO_SHOWN) for (const [name, d] of done) {          // (rule 39) colliders only while drawn
+          const root = HERO_POLL ? (roots.get(name) || d.root) : scene.getObjectByName(name);
+          const shown = !!root && shownIn(root, scene);
+          if (!shown && d.set) { driver.removeStatic(d.set); d.off = d.set; d.set = null; }      // (the built set kept: no rebuild)
+          else if (shown && !d.set && d.polys) { if (d.off && driver.extra) { driver.extra.push(d.off); d.set = d.off; d.off = null; } else d.set = driver.addStatic(d.polys); }
+        }
         for (const name of HERO_ROOTS) {
           const prev = done.get(name);
           if (prev?.complete) continue;
@@ -263,8 +277,8 @@ export function createHeroColliders({ scene, world, manifest, driver, log = () =
           const tris = prev?.tris ?? (HERO_POLL ? await sliced(heroTrianglesGen(root), POLL_MS) : heroTriangles(root));
           const polys = !HERO_GROUND_OLD && driver.groundLayers ? await layeredBlockers(tris, driver.groundLayers) : await carBlockers(tris, driver.ground);
           if (prev?.set) driver.removeStatic(prev.set);
-          const set = driver.addStatic(polys);
-          done.set(name, { tris, polys, tiles, set, complete: inN === tiles.length });
+          const set = !HERO_SHOWN || shownIn(root, scene) ? driver.addStatic(polys) : null;
+          done.set(name, { tris, polys, tiles, set, root, complete: inN === tiles.length });
           if (!prev) for (const fn of listeners) fn(name, tris);
           log(`colliders from ${name}'s LOD0: ${tris.length / 9} triangles (walk / third person), ${polys.length} car blocks${inN < tiles.length ? ` (${inN}/${tiles.length} tiles in)` : ""}; ${(performance.now() - t0).toFixed(0)} ms in slices`);
         }
