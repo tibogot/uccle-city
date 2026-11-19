@@ -115,6 +115,37 @@ voices per category, environment, RMS / peak of the master and every category bu
 control ms), `await record("<spot>", 12, 8827)` with `python tools/sound/save_server.py 8827 docs/sound` running: a WAV
 of the master bus per spot into `docs/sound/` for the owner (peak-normalised to -3 dBFS; the real level is returned).
 
+## Browser turn 2026-11-19 (Chrome, this laptop, other agents' jobs running: timings indicative)
+
+Read through `debug/soundCheck.js` (the tool cannot listen). WAVs of the master bus (the city sound only: the
+two-wheelers' / falcon's / game's own contexts are not in it), peak-normalised, in `docs/sound/` (worktree, not
+committed: 29 MB; the owner listens there):
+
+| spot | WAV | what the graph showed |
+|---|---|---|
+| Place / Ch. de Saint-Job, 14:50 | `stjob_day.wav` | canyon (enclosure 0.42), 21 voices (14 cars, 4 murmurs, birds, a tram), HRTF 6; master -26.7 dBFS RMS, traffic -35.7, people -33.2, nature -54.7 |
+| tram 92 arriving + held 37 m away | `tram_passing.wav` | transit -52.6 dBFS at 37-66 m |
+| the same tram pulling away past the camera | `tram_stop_leaving.wav` | the bell rang once (someone on the track ahead), 1-2 one-shots; no door cycle here (the tram did not stop at a platform) |
+| Parc de Wolvendael | `park_wolvendael.wav` | park environment, in the park, no murmur, 6 cars (the road), birds as one-shots (mid-November, 15 h: few) |
+| noon bells (`?clock=11:59:20`) | `bells_noon_stjob.wav` | both towers struck (1.8 bell one-shots held), bells bus -40.4 dBFS RMS / -23 peak |
+| rain (`?wx=rain`) | `stjob_rain.wav` | nature bus -54.7 -> -33.8 dBFS (the rain bed), wet tyres |
+| drive: low-speed nudge, held against it | `drive_crash_scrape.wav` | one impact, no scrape at 0 km/h (right: nothing slides) |
+| drive: 54 km/h into a building, then along it | `drive_wall_crash.wav` | 9 impacts (crash + wall + posts), the scrape while sliding |
+| motorbike (city bus only) | `motorbike_ride.wav` | the city round the rider |
+
+- **First unmute** (fresh origin): banks + IRs baked in the worker in 1.7-1.8 s, unpacked in 9-19 ms on the main
+  thread; no long task in the clean run (longest frame 34 ms; one earlier run had a 67 ms task, not reproduced).
+- **Cost**: frameMs 0.043-0.060 ms a frame (feeds 0.05-0.09 ms, control 0.08-0.10 ms per 10 Hz step, control max ~2 ms
+  when voices are built) - under the 0.1 ms budget in Chrome too.
+- **The button**: muted at start (no context in any mode: city, motorbike, Villo, falcon, game cues, all clicked /
+  keyed); one click: city, motorbike, Villo, falcon, game all `running`; one click: all `suspended`, stored "off";
+  reloads keep the choice. Police game (free patrol): J with the sound off = no sound, the chip shows SIREN; the button on
+  = the siren plays at once (game bus -22 dBFS). The falcon game's options: assist, avoid (no sound tick); police: calls
+  (no siren option). The motorbike HUD has no "N sound".
+- **`?citysound=old`**: no `__citySound`, the log says "city sound: off".
+- Fixed on the turn (rule 42, both now in the headless test): the canyon probes never ran (the engine measured the
+  enclosure only with occluder boxes) and rose 30 m over 9-13 m houses; the scrape voice kept itself active once built.
+
 ## Weak points (honest)
 
 - The traffic has **no engine sound** (by the owner's choice): idling cars at a light are silent but for their tyres.

@@ -403,7 +403,7 @@ export class SoundEngine {
     } else { l.setPosition(L.x, L.y, L.z); l.setOrientation(L.fx, L.fy, L.fz, 0, 1, 0); }
     // Environment from the street-canyon probes (2 Hz), unless the panel forces one.
     if (now >= this.nextEnclosure) {
-      this.enclosure = this.occluders.length ? this.measureEnclosure() : 0;
+      this.enclosure = this.occluders.length || this.enclosureFn ? this.measureEnclosure() : 0;   // (the city's probes: no boxes)
       this.nextEnclosure = now + 0.5;
       if (this.envAuto) this.setEnvironment(this.enclosure > 0.35 ? "canyon" : (L.inPark ? "park" : "open"));
     }

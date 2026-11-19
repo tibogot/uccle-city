@@ -176,12 +176,13 @@ export function createCitySound(host, opts = {}) {
     blockedLen(l.x - ox, l.y, l.z - oz, s.x - ox, s.y, s.z - oz, step); const b = SC[0];
     s._occl = ((1 - Math.exp(-a * 0.45)) + (1 - Math.exp(-b * 0.45))) / 2;
   };
-  // the street canyon: 8 probes 60 m out, rising 30 m (slop-newyork's enclosure): the share blocked by roofs (2 Hz)
+  // the street canyon: 8 probes 60 m out, rising 12 m (slop-newyork's enclosure rises 30 m for Manhattan; Uccle's
+  // terraces are 9-13 m: a 30 m rise passed over them, every street read "open"): the share blocked by roofs (2 Hz)
   const enclosure = (l) => {
     let covered = 0;
     for (let i = 0; i < 8; i++) {
       const a = i * Math.PI / 4, bx = l.x + Math.cos(a) * 60, bz = l.z + Math.sin(a) * 60;
-      blockedLen(l.x, l.y, l.z, bx, l.y + 30, bz, 3);
+      blockedLen(l.x, l.y, l.z, bx, l.y + 12, bz, 3);
       covered += 1 - Math.exp(-SC[0] * 0.1);
     }
     return covered / 8;
@@ -491,7 +492,7 @@ export function createCitySound(host, opts = {}) {
     if (tyre.active) { tyre.x = P.x; tyre.y = P.y + 0.3; tyre.z = P.z; tyre.speed = P.speed; tyre.load = P.load; tyre.roadWet = W.wet; const g = gridFor(P.x, P.z); tyre.surface = g && cellVal(g, g.setts, P.x, P.z) ? "setts" : "asphalt"; }
     scrape.x = P.x; scrape.y = P.y + 0.4; scrape.z = P.z;
     scrape.scrape = P.on ? ST[SCRAPE] : 0; scrape.slide = ST[SLIDE];
-    scrape.active = P.on && (ST[SCRAPE] > 0.02 || !!scrape._voice);
+    scrape.active = P.on && ST[SCRAPE] > 0.02;    // (the voice fades out when released: a held voice must not keep itself active)
     ST[SCRAPE] *= 0.55;                          // (decays unless the contact goes on: cs.contact() each frame)
   }
 

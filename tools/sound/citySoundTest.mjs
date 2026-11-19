@@ -6,6 +6,7 @@
 // Checks (exit 1 on a failure):
 //   render        the 20 s scene renders non-silent (overall and in every 2 s window), no NaN
 //   heard         traffic, transit, nature, people and bells each held a voice; the bells struck; the crash played
+//   environment   the walk meets the street canyon (roof-grid probes) and the park (OSM area)
 //   voices        never more voices than the engine's limit, at any control step
 //   cost          the main-thread cost of the live frames (feeds + control steps + slices) < 0.1 ms per 60 fps frame
 //   garbage       the live control-rate updates make no object / array / closure: all allocation (V8 sampling heap
@@ -118,6 +119,8 @@ function makeCity() {
   const bakeS = (Date.now() - tb) / 1000;
   const E = cs.engine, held = { traffic: 0, transit: 0, nature: 0, people: 0, bells: 0 };
   let maxVoices = 0, over = 0, crash = null;
+  const envs = new Set();
+  let scrapeOn = 0, scrapeAfter = 0;
   const dt = 0.1;
   for (let k = 0; k < DUR * 10; k++) {
     const t = k * dt;
@@ -126,6 +129,9 @@ function makeCity() {
     if (t >= 12.2 && t < 13.8) cs.contact(6);
     cs.step(t);
     const v = E.stats.voices; maxVoices = Math.max(maxVoices, v); if (v > E.voiceLimit) over++;
+    envs.add(E.envName);
+    const scr = E._list.find((q) => q.priority === 3 && q.category === "traffic");   // the player's scrape
+    if (scr?._voice) { if (t >= 12.2 && t < 13.8) scrapeOn++; else if (t >= 15) scrapeAfter++; }
     for (const s of E._list) if (s._voice) held[s.category]++;
     for (const ev of E.events) held[ev.src.category]++;
   }
@@ -148,6 +154,8 @@ function makeCity() {
   const cats = Object.entries(held);
   check("heard", cats.every(([, n]) => n > 0) && cs.stats.bells > 0 && !!crash,
     `voice-steps per category: ${cats.map(([c, n]) => `${c} ${n}`).join(", ")}; bells struck ${cs.stats.bells} (tram bells + the hour), crash event ${crash ? "played" : "MISSING"}, perches ${cs.stats.perches}, murmurs ${cs.stats.murmurs}, env ${cs.stats.env}`);
+  check("scrape", scrapeOn > 5 && scrapeAfter === 0, `the scrape voice held while sliding (12.2-13.8 s): ${scrapeOn} steps, still held after 15 s: ${scrapeAfter} (a released voice must not keep itself active)`);
+  check("environment", envs.has("canyon") && envs.has("park"), `environments met along the walk (street canyon between the blocks, then the park): ${[...envs].join(" -> ")} (the canyon from the roof-grid probes, the park from the OSM park area)`);
   check("voices", over === 0 && maxVoices > 8, `max ${maxVoices} voices held at once (limit ${E.voiceLimit}), steps over the limit ${over}`);
 }
 
