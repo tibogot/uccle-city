@@ -79,8 +79,9 @@ import { tlightExposure } from "./tlights/tlightKit.js";
 import { cityStreetKit } from "./streetkit/cityStreetKit.js";
 import { cityTwoWheelers } from "./moto/cityTwoWheelers.js";   // parked / traffic motorbikes + scooters (docs/MOTO.md), ?twowheelers=0 off
 import { cityGardens } from "./gardens/cityGardens.js";
-import { carriageway, docOffLanes, trackIndex } from "./streets/carriageway.js";
+import { carriageway, docOffLanes, trackIndex, drawnTest } from "./streets/carriageway.js";
 import { cityPlants } from "./plants/cityPlants.js";
+import { plantsOffCarriageway } from "./plants/plantsClear.js";
 import { cityIvy } from "./plants/cityIvy.js";
 import { keepPipelinesAsync, boostCompile, fineCompile } from "./asyncPipes.js";
 import { stagedCompiler, setStagedFocus, setStagedShadowWarm, STAGED } from "./stagedCompile.js";
@@ -688,6 +689,9 @@ const PONDS = [];
 /** Tiles that have surfaces.json draw the measured UrbIS street surfaces (viewer/surfaces.js), the default since
  *  2026-11-05; ?roads=engine: the road engine's own guessed carriageways, sidewalks and kerbs, as before. */
 const ROAD_SURFACES = params.get("roads") !== "engine";
+// claude/roads (class R, rule 38, docs/ROADS_R.md): ?roads=old = the road graph / street edges as before (lane offsets point by
+// point round parked cars, the OSM band on private land, plants on the carriageway, no restricted-access check)
+const ROADS_R = params.get("roads") !== "old";
 /** Square des Heros as a hero place (viewer/heros/, docs/landmarks/HEROS.md); ?heros=old: the city as before (the
  *  square drawn as one raised setts plaza, no memorial). */
 const HEROS = params.get("heros") !== "old";
@@ -712,6 +716,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     groundFit: params.get("groundfit") !== "old",                                                  // façades' ground-floor line on the drawn ground (viewer/groundFit.js, docs/GROUND_FIT.md), ?groundfit=old = before
     cellar: params.get("cellar") !== "0",                                                           // cellar lights / a lower-ground floor in tall downhill plinths (viewer/facades.js CELLAR, docs/JOINS2.md), ?cellar=0 = plain blue stone
     sidewalkFill: params.get("sidewalkfill") !== "0",                                               // the sidewalk paving carried on to the façade where UrbIS stops short of it (viewer/surfaces.js, docs/JOINS2.md), ?sidewalkfill=0 = none
+    sidewalkLevel: params.get("sidewalk") !== "old",                                                // sidewalks level with the kerb (<= 4 % cross-fall), the bank behind from their back edge (viewer/surfaces.js groundAt, viewer/heightmap.js clampUnder bank, docs/SIDEWALK.md), ?sidewalk=old = on the DTM (up the bank)
     surfH: params.get("surfh") !== "old",                                                           // street heights fitted within 0.6 m of their own ground (viewer/surfaces.js fitCorner, docs/JOINS2.md), ?surfh=old = unclamped (path spikes)
     groundWeld: params.get("groundweld") !== "old",                                                 // the terrain beside a street / path banks on its NEAREST edge (viewer/heightmap.js weld, docs/JOINS2.md), ?groundweld=old = the highest edge within reach (saw-tooth over climbing paths)
     clampTop: params.get("clamptop") !== "old",                                                     // fix3: stacked surfaces hold the terrain under the TOP one (viewer/heightmap.js clampUnder, docs/FIX3.md), ?clamptop=old = under the lowest (joins2: the top one floated)
@@ -738,6 +743,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     balcony: params.get("balcony") !== "old",                                                       // claude/balcony (rule 27): the blocks' balconies closed at the sides (facadeGeom.js balcony), ?balcony=old = slab + front parapet only (open ends)
     zfight: params.get("zfight") !== "old",                                                         // claude/zfight (rule 34): overlapping coplanar UrbIS triangles cut, the steps' buried soffits left out (facadeGeom.js, viewer/coplanarClean.js), the ivy off the shopfronts; ?zfight=old = as before (z-fighting roofs / walls)
     colFeet: params.get("colfeet") !== "old",                                                       // claude/collisions (rule 25): the walls' feet sunk onto the drawn ground BEFORE the building colliders are traced from them (tileData.js), ?colfeet=old = after (colliders from the floating solids)
+    roadsR: ROADS_R,                                                                                 // claude/roads (rule 38): smooth lane offsets, the band only off measured streets, restricted service roads out of the traffic (docs/ROADS_R.md), ?roads=old = before
     tramFit: params.get("tramfit") !== "old",                                                       // claude/tramfit (rule 32): the tram tracks fitted to the measured street (data/tramfit, viewer/track.js tramTracks), ?tramfit=old = the OSM ways as they are (rails under the kerb / on the sidewalk)
     cache: params.get("tilecache") !== "0",
     cacheStore: params.get("tilecache") === "idb" ? "idb" : "capi" };                               // perfgame round 4: the Cache API store (viewer/tileCache.js), ?tilecache=idb = IndexedDB as before                                                        // built tiles kept in IndexedDB (viewer/tileCache.js); boot2: ON by default (return visits: cover 30-31 s -> 20-25 s, docs/BOOT.md), ?tilecache=0 off
@@ -971,7 +977,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   say(`façades: ${B.stats.faces} wall faces, ${B.stats.party} party walls, ${B.stats.street} facing a street; details: ${B.stats.cornices} cornices, ${B.stats.buttresses} buttresses, ${B.stats.ridges} ridge/hip caps, ${B.stats.chimneys} chimneys, ${B.stats.eaves || 0} eaves, ${B.stats.shops} shopfronts (OSM shops)`);
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
-  const plantDoc = await plantsP;
+  let plantDoc = await plantsP;
   if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z)), grounds.mesh].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
@@ -1005,7 +1011,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const furnFeats = dropKinds.size ? { ...feats, points: (feats.points || []).filter((p) => !dropKinds.has(p.kind)) } : feats;
   const onRoadDeck = (x, z) => { for (const e of bridgeDeckRefs.values()) if (e.fn(x, z) != null) return true; return false; };
   // where cars drive (viewer/streets/carriageway.js): no garden piece, signal post or tram pole stands there
-  const drivenAt = carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck });
+  // (claude/roads, rule 38: on a measured street the OSM band counts only where a street is drawn: the drive raster's road pieces)
+  const drawnRoad = drawnTest(hm.h, d.drive?.ground?.delta);
+  const drivenAt = carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck, bandOnMeasured: !ROADS_R, drawn: drawnRoad });
   carriageRefs.set(entry.name, { test: drivenAt, bounds });   // (debug/furnitureAudit.js: window.__carriage)
   // (vivier 2026-11-17) what stands on a road deck stands on the deck, not on the cut terrain under it (the street lamps,
   // signals, the data layers' signs / benches, the parked cars on the Chaussee de Waterloo bridge at Vivier d'Oie: the
@@ -1030,7 +1038,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (streetprops, rule 30; ?streetprops=old: as before) also where there is no measured street (Flanders: the OSM width
   // decides) and off the tram tracks; the plate posts are not moved here any more: they and their plates (drawn by the
   // street life) were moved together at build time (tools/streetkit/snapProps.mjs), as were the post boxes and Villo
-  const lanesAt = FURN_SNAP && (fit || STREET_PROPS) ? carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck, lanesOnly: true }) : null;
+  const lanesAt = FURN_SNAP && (fit || STREET_PROPS) ? carriageway(roads, { classAt: fit?.classAt, onDeck: onRoadDeck, lanesOnly: true, bandOnMeasured: !ROADS_R, drawn: drawnRoad }) : null;
   // (the tracks as the worker drew them: fitted to the street, claude/tramfit, or smoothed with ?tramfit=old: already smooth)
   const tracksAt = STREET_PROPS && lanesAt ? trackIndex((feats.lines || []).filter((l) => l.kind === "tram").map((l) => l.line)) : null;
   // (CLASS T, rule 39; ?rail=old: none) no prop on a track bed (moved off it as off a tram track); a point the data put
@@ -1067,7 +1075,16 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
   // the police station's vehicle gate)
   // (falcon2, ?gardenslice=old: in one go): in <= 3 ms slices (cityGardens.addTileSliced, viewer/slices.js)
-  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await gardensP, own.features, (x, z) => hm.surface(x, z), (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), CORTENBOSCH ? (await loadOverrides(DATA)).gardenRestyle : null);   // (cortenbosch: the lane's beech hedges, gardenRestyle)
+  // (claude/sidewalk round 2, ?sidewalk=old: the terrain only) the garden pieces seat on what is DRAWN: the terrain or a
+  // street surface over it (a retaining wall's coping / lawn strip at the garden level, viewer/streets/retainWalls.js)
+  const gDelta = params.get("sidewalk") !== "old" ? d.drive?.ground?.delta : null;
+  const gardenGround = !gDelta ? (x, z) => hm.surface(x, z) : (x, z) => {
+    const h = hm.h, c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1.001), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1.001);
+    const c0 = Math.floor(c), r0 = Math.floor(r), fc = c - c0, fr = r - r0, i = r0 * h.cols + c0;
+    const v = (k) => { const dl = gDelta[k]; return hm.y[k] + (dl > 0 && dl !== 65535 ? dl * 0.01 : 0); };
+    return Math.max(hm.surface(x, z), (v(i) * (1 - fc) + v(i + 1) * fc) * (1 - fr) + (v(i + h.cols) * (1 - fc) + v(i + h.cols + 1) * fc) * fr);
+  };
+  const gardenCounts = await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name, await gardensP, own.features, gardenGround, (x, z) => onRoadDeck(x, z) || drivenAt.inside(x, z, 0.3) || inClear(x, z), CORTENBOSCH ? (await loadOverrides(DATA)).gardenRestyle : null);   // (cortenbosch: the lane's beech hedges, gardenRestyle)
   await split("gardens");
   // (cortenbosch) the Lycée Français's front: railing, gate, flag poles, lettering (viewer/lyceeFront.js; tile F7)
   const lycee = CORTENBOSCH ? lyceeFront.tile(entry.name, own.features, (x, z) => hm.surface(x, z)) : null;
@@ -1078,6 +1095,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   if (VIVIER && bridgeDeckRefs.size && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (deckY(B[o], B[o + 1]) == null) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
   if (clearRings.length && plantDoc?.plants) { const P = plantDoc.plants, out = []; for (let o = 0; o < P.length; o += 6) if (!inClear(P[o], P[o + 1])) out.push(...P.slice(o, o + 6)); plantDoc.plants = out; }
   if (clearRings.length && plantDoc?.beds) { const B = plantDoc.beds, out = []; for (let o = 0; o < B.length; o += 6) if (!inClear(B[o], B[o + 1])) out.push(...B.slice(o, o + 6)); plantDoc.beds = out; }
+  // claude/roads (rule 38): no shrub / bed standing in, or hanging its crown over, the drawn carriageway (viewer/plants/plantsClear.js;
+  // ?roads=old: as before)
+  if (ROADS_R && plantDoc) { const r = plantsOffCarriageway(plantDoc, drivenAt); if (r.plants || r.beds) { plantDoc = r.doc; say(`plants: ${r.plants} shrub(s), ${r.beds} bed(s) off the carriageway (rule 38)`); } }
   const plantCounts = cityPlants.addTile(entry.name, plantDoc, own.features, treeGround || ((x, z) => hm.surface(x, z)), B.kit);   // (on the DRAWN ground: the measured squares / medians' lift, as the trees; window boxes on the façade kit's sills)
   ivyP.then((doc) => cityIvy.addTile(entry.name, doc, own.features)).then((c) => { if (c) say(`ivy: ${c.walls} walls, ${c.leaves} leaf sprays, ${c.stems} stem pieces (worker ${c.workerMs} ms)`); });
   if (plantCounts) say(`plants: ${Object.entries(plantCounts).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(", ")} (data/plants, viewer/plants)`);

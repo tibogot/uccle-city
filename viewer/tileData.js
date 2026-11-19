@@ -11,6 +11,7 @@ import { farBuildings } from "./farLookData.js";   // the far city's façades (d
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
 import { buildDriveData, tramPlatformSurface, driveGround } from "./drive/colliders.js";
+import { gardenIndex } from "./streets/retainWalls.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
@@ -20,7 +21,7 @@ import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
 import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H, railFences2, fenceBays, fenceMesh2, fenceWalls } from "./rail/railData.js";
-import { buildTrafficGraph } from "./traffic/trafficGraph.js";
+import { tileTrafficGraph } from "./traffic/tileTraffic.js";
 import { widthParking } from "./streets/parkPlace.js";
 import { streetFit } from "./streets/fitCore.js";
 import { carriageway } from "./streets/carriageway.js";
@@ -83,6 +84,35 @@ function terrainArrays(hm, fitDiagonals = false) {
 
 /** the street-life layer's shopfronts of a tile (the poi kinds that get a shopfront in viewer/streetlife/layout.js:
  *  not ATMs, schools or civic buildings, which carry a plaque only): [{ x, z, nx, nz, w }], null when the tile has none */
+/** data/gardens/<tile>.json (the garden fronts: walls, hedges, gates), or null (claude/sidewalk: retaining walls) */
+/** (x, z) -> inside an OSM park / wood / grass / meadow / scrub area (public green: a bank, not a retaining wall) */
+function publicAreas(feats) {
+  const KINDS = new Set(["wood", "forest", "park", "grass", "meadow", "scrub", "heath", "recreation_ground", "cemetery"]);
+  const polys = (feats.areas || []).filter((a) => KINDS.has(a.kind)).map((a) => a.rings);
+  const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  return (x, z) => polys.some((R) => pip(x, z, R[0]) && !R.slice(1).some((h) => pip(x, z, h)));
+}
+/** the tile's garden doc, with the 4 neighbour tiles' pieces (segs, pillars, gates, hedges) within 30 m of its bounds */
+async function gardenDocNear(base, name, b) {
+  const m = /^([A-Z])(\d+)$/.exec(name), R = 30;
+  const near = m ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dz]) => String.fromCharCode(m[1].charCodeAt(0) + dx) + (+m[2] + dz)) : [];
+  const [own, ...nb] = await Promise.all([gardenDoc(base, name), ...near.map((n) => gardenDoc(base, n))]);
+  if (!b) return own;
+  const inR = (x, z) => x > b.x0 - R && x < b.x1 + R && z > b.z0 - R && z < b.z1 + R;
+  const doc = own ? { ...own, segs: [...(own.segs || [])], pillars: [...(own.pillars || [])], gates: [...(own.gates || [])], hedges: [...(own.hedges || [])] } : { segs: [], pillars: [], gates: [], hedges: [] };
+  for (const d of nb) {
+    if (!d) continue;
+    for (const g of d.segs || []) if (inR(g[0], g[2]) || inR(g[3], g[5])) doc.segs.push(g);
+    for (const q of d.pillars || []) if (inR(q[0], q[2])) doc.pillars.push(q);
+    for (const q of d.gates || []) if (inR(q[0], q[2])) doc.gates.push(q);
+    for (const h of d.hedges || []) if ((h.points || []).some(([x, z]) => inR(x, z))) doc.hedges.push(h);
+  }
+  return doc;
+}
+async function gardenDoc(base, name) {
+  const r = await fetch(new URL(`../gardens/${name}.json`, base)).catch(() => null);
+  return r?.ok ? r.json().catch(() => null) : null;
+}
 async function streetlifeFronts(base, name) {
   const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
   if (!r?.ok) return null;
@@ -398,7 +428,12 @@ export async function buildTileData(entry, base) {
   const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
+  // (claude/sidewalk round 2) the garden fronts, for the retaining walls behind levelled sidewalks (viewer/streets/retainWalls.js)
+  // (round 5: + the garden pieces of the 4 neighbour tiles within 30 m of this one: a garden front belongs to its
+  // building's tile and runs over the border (H6 Perelman 4: H5's gate 18 m into H6; the wall closed it off))
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds)) : null;
+  const gardenNear = gardenDoc0 !== null || (entry.sidewalkLevel !== false && entry.retainWalls !== false && surf) ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true }) : null;
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false, gardenNear, gateNear, publicAt: gardenNear ? publicAreas(feats) : null,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
     deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)
@@ -413,12 +448,14 @@ export async function buildTileData(entry, base) {
   // (viewer/streets/roadTrees.js); before the parking, traffic, colliders and the drawn tree list read feats.trees.
   // entry.roadTrees === false (?roadtrees=old): as before
   let roadTrees = null;
+  // (claude/roads, rule 38: the trees keep the OSM band past a measured street's edge (bandOnMeasured), as before: the
+  // worker has no drawn-street raster yet at this step and a trunk moved out of a front garden's first metres is cheap)
   if (entry.roadTrees !== false && feats.trees?.length) {
     const fit0 = rd.surfaceData ? streetFit(rd.surfaceData) : null;
     // (a measured TRAM road keeps its trees: Avenue Churchill's tram reservation is a tram road in UrbIS, its two tree rows
     // stand on it; browser turn, tour churchill-blocks. Only the roadway / parking where measured, the OSM band elsewhere)
     const noTram = fit0?.classAt ? (x, z) => { const c = fit0.classAt(x, z); return c === 1 ? 2 : c; } : null;
-    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null }),
+    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null, bandOnMeasured: true }),
       { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z) }));
     feats.trees = roadTrees.trees;
     // markings round 2 (rule 33): a LiDAR tree kept on a measured tram road but standing in a PAINTED driving lane (or
@@ -426,7 +463,7 @@ export async function buildTileData(entry, base) {
     // lane and stay (rows: below). (entry.roadLines false: no fitted lanes, nothing to do)
     const inLane = fit0?.classAt ? paintedDriveLanes(rd.net, paintedLaneCentre, roadFrameOf, 0.3) : null;
     if (inLane) {
-      const base = carriageway(roads, { classAt: noTram, onDeck: null });
+      const base = carriageway(roads, { classAt: noTram, onDeck: null, bandOnMeasured: true });
       const lanes = { inside: (x, z, m = 0) => (fit0.classAt(x, z) === 1 ? inLane(x, z) : base.inside(x, z, m)) };
       // (a tree in a ROW on the tram road, two more within 12 m, is the reservation's planting (Avenue Churchill: one OSM
       // road with the reservation in its middle, its stack painted over it): kept)
@@ -465,7 +502,7 @@ export async function buildTileData(entry, base) {
   // citydefects: the parked cars by the measured width (viewer/streets/parkPlace.js widthParking; entry.parkWidth false =
   // ?parkclear=old: the main thread's old slots), here so the traffic lanes keep clear of them (trafficGraph.js)
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
-  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false }));
+  const traffic = await step("traffic graph", () => tileTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, roofs, entry }));   // (one builder with the audits: traffic/tileTraffic.js)
   // (claude/drivecheck round 2) the lanes over a hero road deck inside its roadway, clear of its parapets (rail/roadDeck.js)
   const deckLanes = rail && traffic && entry.deckLanes !== false ? squeezeDeckLanes(traffic, rail.heroes) : 0;
   // trafpark: the graph checks every driven path (lanes + junction connectors) against the parked cars' boxes and keeps

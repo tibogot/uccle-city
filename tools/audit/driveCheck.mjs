@@ -123,7 +123,7 @@ const { Heightmap } = await imp("viewer/heightmap.js");
 const { KIND, driveHeight, gather, itemContact, heightClear, addCircles, extendColliders } = await imp("viewer/drive/colliders.js");
 const { surfaceLayers } = await imp("viewer/drive/surfaceLayers.js");
 const { streetFit } = await imp("viewer/streets/fitCore.js");
-const { carriageway, NOT_DRIVEN } = await imp("viewer/streets/carriageway.js");
+const { carriageway, NOT_DRIVEN, drawnTest } = await imp("viewer/streets/carriageway.js");
 const { placedLampSites } = await imp("viewer/streets/lampPlace.js");
 const { clearRoads, restyleHedges, gardenPieces } = await imp("viewer/gardens/gardenClear.js");
 const { deckHeight } = await imp("viewer/streets/bridgeDecks.js");
@@ -199,7 +199,7 @@ for (const c of d.parked?.sites || []) {
 const gPath = join(ROOT, "data/gardens", `${T}.json`);
 if (existsSync(gPath)) {
   let doc = JSON.parse(readFileSync(gPath, "utf8"));
-  const drivenAt = carriageway(d.roads, { classAt: fit?.classAt, onDeck: null });
+  const drivenAt = carriageway(d.roads, { classAt: fit?.classAt, onDeck: null, ...(entry.roadsR === false ? { bandOnMeasured: true } : { drawn: drawnTest(d.hdr, d.drive?.ground?.delta) }) });   // (claude/roads: as main.js)
   const clearRings = Object.entries(overrides.plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring);
   const inR = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
   const blocked = (x, z) => drivenAt.inside(x, z, 0.3) || clearRings.some((r) => inR(r, x, z));

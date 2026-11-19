@@ -18,12 +18,14 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uv, texture, positionWorld, float, vec2, vec3, mix, step, smoothstep, floor, fract, abs, min, max,
-  fwidth, hash, mx_noise_float, uniform, select, length, dot, clamp,
+  fwidth, hash, mx_noise_float, uniform, select, length, dot, clamp, normalWorld, If, Fn, sin, vec4,
 } from "three/tsl";
 import { addLampLight } from "./lampLight.js";
 import { filteredPulse, boxCoverage } from "./tslkit.js";
 import { pavingTextures, pavingSample, pavingNormal, regrade, LAYER } from "./streets/paving.js";
 import { hash22 } from "./materials/antitile.js";
+import { BRICK } from "./gardens/gardenKit.js";   // (the garden walls' four brick tones: the retaining walls, viewer/streets/retainWalls.js)
+import { brickFace, stoneFace, tslOps } from "./streets/wallPattern.js";   // (round 5: the walls' faces, one math for shader + gate check)
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (viewer/weather/, docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 import { SURFACE, hashPhase, surfaceAttribute } from "./roadData.js";
@@ -355,6 +357,7 @@ export function roadTextMaterial(rows) {
  *  kerb, metres from it), so the tiles run along the street in one continuous pattern, and the first 15 cm from
  *  the kerb is painted as the blue-stone kerb band. */
 const KERB_STONE = 1.0;            // m: kerbstone length
+const PLINTH = 0.3;                // m: a retaining wall's blue-stone plinth course over its foot (round 3)
 const KERB_TONE2 = !(typeof location !== "undefined" && /[?&]kerbtone=old/.test(location.search));
 export function concreteMaterial({ framed = false } = {}) {
   const m = new THREE.MeshStandardNodeMaterial({ metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
@@ -417,11 +420,37 @@ export function concreteMaterial({ framed = false } = {}) {
   const fwFace = fwidth(P.y).add(fw);
   const kerbFar = smoothstep(float(0.02), float(0.08), fwFace);
   const kerbStone = mix(mix(mix(kerb.add(stoneTone), kerb.mul(1.9), arris.mul(0.6)), vec3(0.03, 0.032, 0.036), kJoint), vec3(0.11, 0.11, 0.108), kerbFar.mul(0.7));
-  m.colorNode = mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron);
+  // RETAINING WALLS (claude/sidewalk round 3, viewer/streets/retainWalls.js): aKind 4 = brick in the garden walls' four
+  // tones (aUv2.x; their stretcher bond in WORLD space: no seam, real 22 x 6.5 cm bricks), 5 = coursed stone (stones
+  // ~0.5 x 0.24 m, staggered courses, per-stone tone); the first PLINTH m over the foot (uv.y) a blue-stone course
+  const isBrick = band(kind, 4), isCoursed = band(kind, 5), isWall = isBrick.add(isCoursed);
+  // (only on wall pixels: the bond and the stones are not evaluated on the sidewalks)
+  // (round 5: viewer/streets/wallPattern.js, the same math the gate's check runs: the bond / courses kept to ~2 px, then
+  // the face's average (the mortar's share mixed in, a low-frequency patch tone), never the bare brick colour)
+  const wallLook = Fn(() => {
+  const wc = vec4(0, 0, 0, 0.9).toVar();
+  If(isWall.greaterThan(0.5), () => {
+    const O = tslOps({ float, floor, fract, sin, max, mix, smoothstep });
+    const wTone = attribute("aUv2", "vec2").x;
+    const bt = wTone.add(0.5).floor();
+    const nW = normalWorld.normalize(), tU = vec2(nW.z.negate(), nW.x).add(vec2(1e-5, 0)).normalize();
+    const su = P.x.mul(tU.x).add(P.z.mul(tU.y)), sv = P.y, wu = fwidth(su), wv = fwidth(sv);
+    const bf = brickFace(O, su, sv, wu, wv), sf = stoneFace(O, su, sv, wu, wv);
+    const brickBase = select(bt.lessThan(0.5), vec3(...BRICK[0].slice(0, 3)), select(bt.lessThan(1.5), vec3(...BRICK[1].slice(0, 3)), select(bt.lessThan(2.5), vec3(...BRICK[2].slice(0, 3)), vec3(...BRICK[3].slice(0, 3)))));
+    const brickCol = mix(brickBase.mul(bf.tone), vec3(0.24, 0.23, 0.21).mul(select(bt.equal(1), float(0.62), float(1))), bf.mortar.mul(0.9));
+    const stoneBase = mix(vec3(0.3, 0.285, 0.25), vec3(0.24, 0.235, 0.22), hash(floor(sv.div(0.24)).mul(1.7)).mul(0.6));
+    const coursedCol = mix(stoneBase.mul(sf.tone), vec3(0.17, 0.165, 0.155), sf.mortar.mul(0.85));
+    const plinth = float(1).sub(smoothstep(float(PLINTH - 0.005), float(PLINTH + 0.005), uv().y));
+    wc.assign(vec4(mix(mix(brickCol, coursedCol, isCoursed), kerb, plinth), mix(mix(bf.rough, sf.rough, isCoursed), float(0.6), plinth)));
+  });
+  return wc;
+  })();
+  const wallCol = wallLook.xyz;
+  m.colorNode = mix(mix(mix(slab, framed ? kerbStone : kerb, isKerb), apron, isApron), wallCol, isWall);
   // framed (?roads=surface): honed blue stone, rougher, so a kerb face toward a low sun does not flare white
   const slabRough = TX ? TX.rough.mul(1.04).min(0.97) : mix(float(framed ? 0.92 : 0.88), float(0.95), tiles.joint);
-  m.roughnessNode = mix(mix(slabRough, float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron);
-  if (TX) m.normalNode = pavingNormal(TX.n, ta, tb, float(0.9).mul(float(1).sub(isKerb)).mul(float(1).sub(isApron)));
+  m.roughnessNode = mix(mix(mix(slabRough, float(framed ? 0.82 : 0.6), isKerb), float(0.8), isApron), wallLook.w, isWall);
+  if (TX) m.normalNode = pavingNormal(TX.n, ta, tb, float(0.9).mul(float(1).sub(isKerb)).mul(float(1).sub(isApron)).mul(float(1).sub(isWall)));
   wxMat(m, { porosity: 0.55, puddles: true, puddleBias: float(-0.2), slush: true, frost: true, map: true });   // the weather (sidewalks, kerbs)
   return addLampLight(m);
 }
