@@ -1,0 +1,84 @@
+{
+ "asset": "Traffic lights kit (tools/blender/trafficLights.py): the Brussels signal post, docs/TLIGHTS.md",
+ "frame": "glTF: y up, the pole axis on the origin, ground y = 0 (foot to -0.30); vehicle heads look along -z, the pedestrian head along +x, the button along -x",
+ "colour": {
+  "COLOR_0.r": "vertex AO (1 = open)"
+ },
+ "uv0": "lens slots: the pictogram atlas tlights_picto.png (cells: disc, standing, walking, bicycle)",
+ "slots": [
+  "tl_pole",
+  "tl_housing",
+  "tl_backplate",
+  "tl_border",
+  "tl_bracket",
+  "lens_red",
+  "lens_amber",
+  "lens_green",
+  "ped_red",
+  "ped_green",
+  "tl_buttonbox",
+  "tl_buttonplate",
+  "tl_button"
+ ],
+ "lens_slots": [
+  "lens_red",
+  "lens_amber",
+  "lens_green",
+  "ped_red",
+  "ped_green"
+ ],
+ "pieces": {
+  "tl_post": {
+   "lod0": {
+    "triangles": 7630,
+    "size_m": [
+     0.759,
+     0.634,
+     3.8
+    ]
+   },
+   "lod1": {
+    "triangles": 1140,
+    "size_m": [
+     0.759,
+     0.634,
+     3.8
+    ]
+   },
+   "lod2": {
+    "triangles": 226,
+    "size_m": [
+     0.57,
+     0.445,
+     3.8
+    ]
+   }
+  },
+  "tl_post_bike": {
+   "lod0": {
+    "triangles": 8928,
+    "size_m": [
+     0.759,
+     0.634,
+     3.8
+    ]
+   },
+   "lod1": {
+    "triangles": 1356,
+    "size_m": [
+     0.759,
+     0.634,
+     3.8
+    ]
+   },
+   "lod2": {
+    "triangles": 250,
+    "size_m": [
+     0.57,
+     0.445,
+     3.8
+    ]
+   }
+  }
+ }
+}

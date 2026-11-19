@@ -272,6 +272,7 @@ export const FEATURES = [
   old("streetkit", "ab", "street kit", "Road signs, plate posts, Villo before.", { sub: "Places & assets" }),
   old("stops", "ab", "STIB stops", "The stops kit before.", { sub: "Places & assets" }),
   old("furniture", "ab", "street furniture", "Furniture kit 2 off (the old bubbles).", { sub: "Places & assets" }),
+  old("tlights", "ab", "traffic lights", "The procedural signal posts of viewer/furniture.js (pole, box head, three lenses) instead of the Blender traffic lights kit (viewer/tlights/, tools/blender/trafficLights.py: backplate, visors, repeater, pedestrian and bike heads, push button; docs/TLIGHTS.md). Same sites either way.", { sub: "Places & assets" }),
   old("fuel", "ab", "petrol stations", "Petrol stations before.", { sub: "Places & assets" }),
   old("shops", "ab", "shopfronts", "Shopfronts before.", { sub: "Places & assets" }),
   old("paving", "ab", "paving", "Sidewalk paving before.", { sub: "Places & assets" }),
