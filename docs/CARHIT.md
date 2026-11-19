@@ -171,11 +171,14 @@ the dented corner.
 **Now** (`viewer/drive/carDent.js`, one function for the shader and the gate): a smooth field of the position only.
 Each end is pushed in along the car, evenly across the width for a head-on hit and tilted for a corner hit (the share
 is linear in x), fading over 1 m along the car and above the belt line; the sides near the dented corner squeeze toward
-the mid-plane; everything is softly capped by the distance to the mid-planes and to the cabin box (the model's interior
-bounds, or its glass house). A 4 cm hit gives 5.8 cm, the 28 cm cap about 15 cm: a light dent. The paint in the zone is
-up to 20 % darker and rougher with less clear coat, plus a darker crease band on the dent's flank (a varying, paint
-only). Coincident vertices move together, so the shell stays closed. No flip had to be patched with two-sided faces, so
-the body stays one-sided.
+the mid-plane. Each axis of the push is kept under 0.6 x the vertex's distance outside the cabin box's slab along that
+axis (the model's interior bounds, or its glass house), as a smooth SCALE linear in the push: a hard min() folds the
+field (thin triangles flip along the fold), a soft min bends it (the browser turn found a 0.6 mm plate glyph sunk into
+its 4-vertex plate: `docs/dent/before_fix_van_plate_sunk.jpg`; the gate's thin-layer check now catches it). A 4 cm hit
+gives up to 5.8 cm, the 28 cm cap up to 14 cm, less near the cabin (a van's rear doors barely move): a light dent. The
+paint in the zone is up to 20 % darker and rougher with less clear coat, plus a darker crease band on the dent's flank
+(a varying, paint only). Coincident vertices move together, so the shell stays closed. No flip had to be patched with
+two-sided faces: the body stays one-sided.
 
 | URL | what you get |
 |---|---|
@@ -194,23 +197,35 @@ quaternius: 28 models, 103 LOD meshes as the game builds them) dented 28 cm on e
 
 | measure | before (`?dent=old`, `--old`) | after |
 |---|---|---|
-| wound-round triangles seen from outside (17 views from 10 / 35 deg above and the top, 1.5 cm pixels) | 7,668 | **0** |
-| see-through holes >= 4.5 cm on the levels drawn nearer than 55 m | 2,193,765 px | **0** |
-| the same on the far levels (the lab packs' meshopt LOD2-3, open already; under a pixel there) | 2,731,692 px | 2,249 px |
-| back-face pixels added in all (hairlines: a lamp / panel seam that was open already moved by a pixel) | 8,369,238 px | 5,750 px |
-| wound-round triangles in all (incl. never-seen 1-3 mm slivers under / inside the body) | 19,335 | 26 |
+| wound-round triangles seen from outside (17 views from 10 / 35 deg above and the top, 1.5 cm pixels), levels nearer than 55 m | 6,628 | **0** |
+| the same on the levels drawn from 55 m (a 2 mm sliver of the faceted panel van's LOD2, 1 px) | 1,040 | 2 (ceiling 4) |
+| see-through holes >= 4.5 cm (new back-face regions not next to an opening the model already had), near / far levels | 2,167,304 / 2,676,887 px | **0 / 0** |
+| back-face pixels added in all (hairlines: lamp / panel seams that were open already, moved by a pixel) | 8,369,238 | 2,286 (ceiling 2,600) |
+| thin layers sunk (vertices 0.1-3 mm over a plate: its glyphs, border) | 1,375 of 28,095 | **0** |
+| wound-round triangles in all (incl. never-seen 1-3 mm slivers under / inside the body) | 19,335 | 19 (ceiling 60) |
 | torn seams (vertices of one position moved > 1 mm apart) | 73,724 | **0** |
 | vertices across the mid-plane / into the cabin box | 418 / 38,718 | **0 / 0** |
-| deepest push at 28 cm of damage | 0.54 m | 0.16 m |
+| deepest push at 28 cm of damage | 0.54 m | 0.14 m |
 
 Plus: no NaN, the wheels (own frame on the player's car) untouched, the default materials compile to WGSL headless with
 the dent (player / police, traffic, props), the features row, no draw call / light / DynamicDrawUsage.
 
-**Browser turn (to do):** drive mode, ram a few car types (hatch, estate, SUV, panel van; also with `?cars=old`) at
-**30** and **60 km/h**, front and rear corners; walk round each dented corner close up (third person / orbit camera)
-from all sides, above and low: no hole, no see-through, no flicker at the dent; the darker crease reads as a dent; the
-player's car and the police car (`?game=police`, ram the stolen car) the same; the accident props of the police game;
-LOD hand-overs of a dented traffic car while driving away (no pop); A/B with `?dent=old`.
+**Browser turn (2026-11-19, quick mode Chaussée d'Alsemberg, scripted rams through `driver.autoInput`, shots in
+`docs/dent/`):**
+
+| check | result |
+|---|---|
+| first pass (soft-min cabin cap) | no hole, but the van's plate glyphs sank into the plate: `before_fix_van_plate_sunk.jpg` -> caps made linear scales, gate thin-layer check added |
+| van_c rammed ~40 km/h (rear right 8 cm, player front left 11 cm) | closed, plate readable, player's front intact: `van_c_ram30_rear_and_player_front.jpg` |
+| saloon rammed 63 km/h (rear left 8 cm, player 21 cm) | closed: `saloon_ram60_rear.jpg` |
+| saloon at the 28 cm cap, rear left, low views both sides | the corner pushed in, lamp tilted, no hole / see-through: `saloon_max28_rear_left_low.jpg`, `saloon_max28_rear_right_low.jpg` |
+| player's car (cars2 hatch) at 28 cm front left | closed, front tilted back on the left: `player_hatch_max28_front_left.jpg` |
+| `?cars=old` faceted hatch at 28 cm both rear corners | closed, darker rear: `faceted_hatch_max28_both_rear.jpg` |
+| `?dent=old` A/B, saloon 28 cm rear left | the old look: torn corner, lamp spikes, plate shredded: `old_dent_saloon_max28_rear_left.jpg` |
+| console | 0 errors in every load |
+
+Not looked at in the browser: the police game's accident props and the police car (same material path as the player's
+car; the gate compiles all three headless). A dark paint hides the darker tone: the dent reads mainly by its shape.
 
 ## Weak spots / next
 

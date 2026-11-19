@@ -17,10 +17,12 @@
 //     with b the distance from the end and `over` the height above the belt line YT (/ RY); dv the corner's depth
 //     eased (a 4 cm hit 5.8 cm, the 28 cm cap ~15 cm: a light dent, never a hole); a little sag (UY);
 //   - the sides near a dented corner squeezed toward the mid-plane (x' = x (1 - UX dv f / hw): 0 on the mid-plane);
-//   - the across / along parts softly capped by KM x the distance to the mid-planes, the whole push by KB x the
-//     distance to the CABIN box (rounded by RB: the interior's bounding box from the model's own kind-8 vertices, the
-//     glass house when a pack has none): no skin vertex reaches the cabin or the other side, whatever the depth.
-//     Soft caps (v c / sqrt(v^2 + c^2)): a hard min() folds the field and the long thin triangles flip along the fold.
+//   - each axis of the push kept under KB x the vertex's distance outside the CABIN box's slab along that axis
+//     (the interior's bounding box from the model's own kind-8 vertices, the glass house when a pack has none): linear
+//     in the position, so thin layers (a plate's glyphs) keep their order; no skin vertex reaches the cabin, the
+//     squeeze keeps x' = x (1 - k) and the push fades before z = 0: nothing crosses a mid-plane.
+//     The caps are smooth scales c / (c + the axis's deepest push), linear in the push: a hard min() folds the field
+//     (thin triangles flip along the fold) and a soft min bends it (a 0.6 mm plate glyph sank into its plate).
 // Coincident vertices move together (same position, same offset): the shell stays closed by construction; the
 // gradients stay well under 1, so no triangle turns its back (rule 41: every model of every pack at every LOD at the
 // full depth of each corner, seen from 17 outside directions, tools/audit/dentGate.mjs).
@@ -36,7 +38,7 @@ export const DENT_OLD = typeof location !== "undefined" && /[?&]dent=old(&|$)/.t
 export const DENT = {
   RZ: 1.0, RY: 0.9, YT: 0.62,              // the dent's reach along the car / above the belt line YT
   DMAX: 0.2035, DK: 0.1,                    // visual depth dv = DMAX d / (d + DK): 4 cm -> 5.8, 12 -> 11, 28 -> 15 cm
-  KB: 0.6, KM: 0.9, RB: 0.2,                // soft caps: x the (rounded by RB) distance to the cabin box / to the mid-plane
+  KB: 0.6, E: 0.2,                          // caps: KB x the distance outside the cabin box's slab, per axis (E: its smooth start)
   UX: 0.55, UY: 0.08, UZ: 1,                // the push direction (inward across, down, inward along)
   TONE: 0.15,                               // dv giving full paint tone
 };
@@ -49,19 +51,20 @@ export const tslOps = { add, sub, mul, div, min, max, sqrt };
 /** The dent at local point (x, y, z): dep = 4 corner depths (m, FL FR RL RR), F = { hw, zF, zR } the body's half width
  *  and front / rear ends, B = { x0, y0, z0, x1, y1, z1 } the cabin box. -> [dx, dy, dz, tone] (ADD the offset; tone
  *  0.. ~1.2, the paint's dent shading). Works on numbers (jsOps) and TSL nodes (tslOps).
- *  Every cap is SOFT (v c / sqrt(v^2 + c^2) < c, smooth): a hard min() folds the field along the line where it switches
- *  and the long thin triangles of a body flip across such a fold. */
+ *  Every cap is a smooth SCALE (no min(): a hard min() folds the field along the line where it switches and the long
+ *  thin triangles of a body flip across such a fold). */
 export function dentField(o, x, y, z, dep, F, B) {
   const { add, sub, mul, div, min, max, sqrt } = o, K = DENT;
   const sq = (v) => mul(v, v);
-  const soft = (v, c) => div(mul(v, c), sqrt(add(add(sq(v), sq(c)), 1e-12)));     // |result| < c, ~v while |v| << c
-  // the cabin cap: the distance to the box ROUNDED by RB (its inner box grown by RB, minus RB sqrt 3: never more than
-  // the distance to the box itself, curvature <= 1 / RB instead of 1 / d at the box's edges)
-  const r = K.RB;
-  const ex = max(max(sub(B.x0, add(x, -r)), sub(x, sub(B.x1, r))), 0);
-  const ey = max(max(sub(B.y0, add(y, -r)), sub(y, sub(B.y1, r))), 0);
-  const ez = max(max(sub(B.z0, add(z, -r)), sub(z, sub(B.z1, r))), 0);
-  const g = max(sub(sqrt(add(add(sq(ex), sq(ey)), sq(ez))), r * Math.sqrt(3)), 0);
+  // the cabin caps, PER AXIS and linear in the position: each part of the push is kept under KB x how far the vertex
+  // lies outside the cabin box's slab ALONG THAT AXIS (sp: 0 inside, d^2 / (d + E) outside: <= d, smooth). A vertex
+  // outside the box is outside along some axis, and along that axis it moves less than its distance: it never gets in.
+  // (A distance to the box itself curves round the box's edges, and a 0.6 mm plate glyph over a 4-vertex plate sank
+  // into it: the browser turn, 2026-11-19.)
+  const sp = (d) => { const p = max(d, 0); return div(mul(p, p), add(p, K.E)); };
+  const capX = mul(add(sp(sub(x, B.x1)), sp(sub(B.x0, x))), K.KB);
+  const capY = mul(sp(max(sub(y, B.y1), sub(B.y0, y))), K.KB);
+  const capZ = mul(add(sp(sub(z, B.z1)), sp(sub(B.z0, z))), K.KB);
   const h = max(sub(y, K.YT), 0), hh = mul(sq(h), 1 / (K.RY * K.RY));
   let dx = 0, dy = 0, dz = 0, tone = 0;
   // across the width: the left corner's share t (0 at the right side, 1 at the left), LINEAR in x: the push along
@@ -82,9 +85,12 @@ export function dentField(o, x, y, z, dep, F, B) {
     // shading: the dent's floor + a crease band on its flank (q (1 - q) peaks half way along)
     tone = add(tone, mul(add(mul(vL, t), mul(vR, sub(1, t))), add(mul(f, 0.6), mul(mul(q, sub(1, q)), 3.2))));
   }
-  // the cabin: the whole push softly capped by KB x the (rounded) distance to the cabin box
-  const len = sqrt(add(add(add(sq(dx), sq(dy)), sq(dz)), 1e-12)), k = div(soft(len, mul(g, K.KB)), len);
-  return [mul(dx, k), mul(dy, k), mul(dz, k), mul(tone, 1 / K.TONE)];
+  // the caps as a SCALE that does not depend on the push itself (c / (c + the most that axis can push)): linear in the
+  // push, so a thin layer over a coarse face (a plate's glyphs over its 4-vertex plate) moves exactly as that face
+  // (a soft min of the push bent it: the browser turn's sunk plate glyphs), and |push| < c still holds
+  const lim = (v, c, m) => mul(v, div(c, add(c, m)));
+  const vmax = (K.DMAX * 0.28) / (0.28 + K.DK) + 1e-3;                   // the deepest end push (the 28 cm cap)
+  return [lim(dx, capX, vmax * K.UX), lim(dy, capY, vmax * K.UY), lim(dz, capZ, vmax * K.UZ), mul(tone, 1 / K.TONE)];
 }
 
 /** The dent frame of a car body from its arrays (P xyz, K kind, skip(i) -> true for a wheel vertex):
