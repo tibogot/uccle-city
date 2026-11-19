@@ -45,7 +45,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   - ROUND 3b (owner 2026-11-19, shots 108-110):
     - Rail fences look blocky / low-poly: mesh panels step and misalign on slopes (Verrewinkel cutting). They should follow the ground smoothly. Goes with CLASS T.
     - Floating garden pieces: a hedge + white pergola / gate up in the air on Ch. de Saint-Job near Clos Monique Rifflet (shot 109). Find why they are seated wrong; the gardenVoid census should catch it.
-    - Car damage leaves HOLLOW mesh: the crumple pushes faces inside out and you see through the body (rear corner, shots 109 / 110). Clamp the crumple so the shell stays closed, or render both sides. Add a check: the dented shell stays watertight from outside views.
+    - [x] MERGED 2026-11-19 (claude/dent, rule 41; left: police car + accident props not seen in the browser, dark paint shows the dent mostly by shape). Car damage leaves HOLLOW mesh: the crumple pushes faces inside out and you see through the body (rear corner, shots 109 / 110). Clamp the crumple so the shell stays closed, or render both sides. Add a check: the dented shell stays watertight from outside views.
     - Weird white lines near the Papenkasteel / Ch. de Saint-Job junction (shot 110: diagonal dashes, a cut zebra crossing). Re-check after claude/roads merges.
     - The white shop on Place de Saint-Job is placed right, but it stands on grass where the real place has a small car park (Street View).
   - PLACES (Street View look-only): Chaussée de Saint-Job night shop and Brico Job opposite it; Le Pigeon Noir (entrance on the wrong side, building colours wrong) and the children's garden / kindergarten in front of it; Papenkasteel castle: gates all round and very big fences.
