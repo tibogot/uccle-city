@@ -38,9 +38,9 @@ function segGrid(C = 4) {
   const g = new Map(), K = (i, j) => (i + 50000) * 100000 + (j + 50000);
   return {
     add(e) { for (let i = Math.floor(Math.min(e[0], e[3]) / C); i <= Math.floor(Math.max(e[0], e[3]) / C); i++) for (let j = Math.floor(Math.min(e[2], e[5]) / C); j <= Math.floor(Math.max(e[2], e[5]) / C); j++) { const k = K(i, j); if (!g.has(k)) g.set(k, []); g.get(k).push(e); } },
-    near(x, z, r) {
-      const out = new Set();
-      for (let i = Math.floor((x - r) / C); i <= Math.floor((x + r) / C); i++) for (let j = Math.floor((z - r) / C); j <= Math.floor((z + r) / C); j++) for (const e of g.get(K(i, j)) || []) out.add(e);
+    near(x, z, r, out = []) {
+      out.length = 0;
+      for (let i = Math.floor((x - r) / C); i <= Math.floor((x + r) / C); i++) for (let j = Math.floor((z - r) / C); j <= Math.floor((z + r) / C); j++) { const c = g.get(K(i, j)); if (c) for (let q = 0; q < c.length; q++) out.push(c[q]); }
       return out;
     },
   };
@@ -79,12 +79,20 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
   // runs grown along the edge chains: a lower stretch (>= RUN_MIN) between or beside wall edges carries the wall on
   // (a gap of one edge left the bank's grid teeth showing between two walls)
   const byV = new Map(); edges.forEach((e, i) => { for (const id of [e[8], e[9]]) { let L = byV.get(id); if (!L) byV.set(id, (L = [])); L.push(i); } });
-  for (let it = 0; it < 24; it++) {
+  // (only the edges that can grow are visited, with plain loops: the 24 passes over every edge with closures were
+  // ~4 ms a tile; the same passes in the same order, the same result)
+  const growable = [];
+  for (let i = 0; i < edges.length; i++) if (!on[i] && info[i] && info[i].priv && info[i].cut >= RUN_MIN && info[i].cut <= MAX_CUT) growable.push(i);
+  for (let it = 0; it < 24 && growable.length; it++) {
     let grown = 0;
-    edges.forEach((e, i) => {
-      if (on[i] || !info[i] || !info[i].priv || info[i].cut < RUN_MIN || info[i].cut > MAX_CUT) return;
-      if ([e[8], e[9]].some((id) => byV.get(id).some((j) => j !== i && on[j]))) { on[i] = true; grown++; }
-    });
+    for (const i of growable) {
+      if (on[i]) continue;
+      const e = edges[i], A = byV.get(e[8]), Bv = byV.get(e[9]);
+      let hit = false;
+      for (let q = 0; q < A.length && !hit; q++) if (A[q] !== i && on[A[q]]) hit = true;
+      for (let q = 0; q < Bv.length && !hit; q++) if (Bv[q] !== i && on[Bv[q]]) hit = true;
+      if (hit) { on[i] = true; grown++; }
+    }
     if (!grown) break;
   }
   // gaps under GAP_MAX between two runs (along the sidewalk's edge chain) carried across, unless a garden gate stands in
@@ -117,7 +125,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
   {
     const ends = [];
     edges.forEach((e, i) => { if (!on[i]) return; for (const [id, x, y, z] of [[e[8], e[0], e[1], e[2]], [e[9], e[3], e[4], e[5]]]) if (degOn(id) === 1) ends.push({ id, x, y, z, nx: e[6], nz: e[7], i }); });
-    const used = new Set(), eg = segGrid(), endG = new Map(), EK = (x, z) => `${Math.floor(x / GAP_MAX)},${Math.floor(z / GAP_MAX)}`;
+    const nearBuf = [], used = new Set(), eg = segGrid(), endG = new Map(), EK = (x, z) => `${Math.floor(x / GAP_MAX)},${Math.floor(z / GAP_MAX)}`;
     edges.forEach((e, j) => { if (on[j]) eg.add(e); });
     ends.forEach((A, a) => { const k = EK(A.x, A.z); if (!endG.has(k)) endG.set(k, []); endG.get(k).push(a); });
     for (let a = 0; a < ends.length; a++) {
@@ -135,7 +143,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
         if ((publicAt && publicAt(mx + nx * (BEHIND + 0.8), mz + nz * (BEHIND + 0.8))) || (gateNear && gateNear(mx + nx * 0.5, mz + nz * 0.5, GATE_R))) continue;
         if (covered && covered(mx + nx * 0.6, mz + nz * 0.6)) continue;        // a driveway / path into the garden: open
         // (not across a wall that is already there: at a concave corner the two ends' straight face cut across the run)
-        const nearE = [...eg.near(mx, mz, L / 2 + 0.6)];   // (the edges the samples can reach: cost)
+        const nearE = eg.near(mx, mz, L / 2 + 0.6, nearBuf);   // (the edges the samples can reach: cost)
         if ([0.25, 0.5, 0.75].some((f) => nearE.some((e) => e[8] !== A.id && e[9] !== A.id && e[8] !== B.id && e[9] !== B.id && segD(A.x + dx * f, A.z + dz * f, e) < 0.6))) continue;
         // (nor along one: two ends of the same wall line, the outline doubling back over itself under other vertex ids (I9
         // Myrtilles 62): the face laid over the run's own face, its ends' piers dropped, the earth past the end a lump)
@@ -149,29 +157,32 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
   // with a strip of land between), only the back one (the farthest from the carriageway, on the private land) keeps its
   // wall; the front edge's step is left to the bank (round 4: G3 / E6 / H6, two wall lines one behind the other)
   {
-    const idx = [], B = 4, g = new Map(), K = (i, j) => (i + 50000) * 100000 + (j + 50000);
-    edges.forEach((e, i) => { if (!on[i]) return; const mx = (e[0] + e[3]) / 2, mz = (e[2] + e[5]) / 2, k = K(Math.floor(mx / B), Math.floor(mz / B)); if (!g.has(k)) g.set(k, []); g.get(k).push(i); idx.push(i); });
-    const drop = [];
+    const idx = [], B = 4, g = new Map(), NB = 16, K = (i, j) => (i + 50000) * 100000 + (j + 50000);
+    const bin = (e) => Math.floor((Math.atan2(e[7], e[6]) + Math.PI) / (2 * Math.PI) * NB) % NB;
+    // (the grid keyed by cell AND facing, 16 bins of 22.5 degrees: a same-facing edge (dot >= 0.85, <= 31.8 degrees) is
+    // in the edge's own bin or the two either side; the scan had read every edge of the cells, 14 ms a tile: cost;
+    // a cell holds its 16 bins: one map read a cell)
+    edges.forEach((e, i) => { if (!on[i]) return; const mx = (e[0] + e[3]) / 2, mz = (e[2] + e[5]) / 2, k = K(Math.floor(mx / B), Math.floor(mz / B)); let c = g.get(k); if (!c) g.set(k, (c = Array.from({ length: NB }, () => null))); const b = bin(e); (c[b] ??= []).push(i); idx.push(i); });
+    const drop = [], cand = [];
     // (sampled along the edge every 0.5 m, a ray 0.5-4 m into the garden: a long edge with a short one behind part of it
     // was missed by its midpoint)
     for (const i of idx) {
       const e = edges[i], L = Math.hypot(e[3] - e[0], e[5] - e[2]), ns = Math.max(1, Math.ceil(L / 0.5));
       let behind = false;
       // (the candidates, filtered once: same facing, not adjacent, in a cell within reach of a sample; cost)
-      const reach = (x0, x1) => [Math.floor(Math.min(x0, x1) / B) - 1, Math.floor(Math.max(x0, x1) / B) + 1];
-      const [ia, ib] = reach(Math.min(e[0], e[3], e[0] + e[6] * STACK_R, e[3] + e[6] * STACK_R), Math.max(e[0], e[3], e[0] + e[6] * STACK_R, e[3] + e[6] * STACK_R));
-      const [ja, jb] = reach(Math.min(e[2], e[5], e[2] + e[7] * STACK_R, e[5] + e[7] * STACK_R), Math.max(e[2], e[5], e[2] + e[7] * STACK_R, e[5] + e[7] * STACK_R));
-      const cand = [];
-      for (let ga = ia; ga <= ib; ga++) for (let gc = ja; gc <= jb; gc++) for (const j of g.get(K(ga, gc)) || []) {
+      const ia = Math.floor(Math.min(e[0], e[3], e[0] + e[6] * STACK_R, e[3] + e[6] * STACK_R) / B) - 1, ib = Math.floor(Math.max(e[0], e[3], e[0] + e[6] * STACK_R, e[3] + e[6] * STACK_R) / B) + 1;
+      const ja = Math.floor(Math.min(e[2], e[5], e[2] + e[7] * STACK_R, e[5] + e[7] * STACK_R) / B) - 1, jb = Math.floor(Math.max(e[2], e[5], e[2] + e[7] * STACK_R, e[5] + e[7] * STACK_R) / B) + 1;
+      cand.length = 0;
+      const eb = bin(e), ux = (e[3] - e[0]) / (L || 1), uz = (e[5] - e[2]) / (L || 1);
+      for (let ga = ia; ga <= ib; ga++) for (let gc = ja; gc <= jb; gc++) { const cell = g.get(K(ga, gc)); if (!cell) continue; for (let ab = eb - 2; ab <= eb + 2; ab++) { const L2 = cell[(ab + NB) % NB]; if (L2) for (const j of L2) {
         const f = edges[j]; if (j === i || f[6] * e[6] + f[7] * e[7] < 0.85 || f[8] === e[8] || f[8] === e[9] || f[9] === e[8] || f[9] === e[9]) continue;
         // (none that cannot come within 0.4 m of the samples: wholly in front of t = 0.5 or past STACK_R, or wholly to one
         // side of the edge)
-        const ux = (e[3] - e[0]) / (L || 1), uz = (e[5] - e[2]) / (L || 1);
         const o0 = (f[0] - e[0]) * e[6] + (f[2] - e[2]) * e[7], o1 = (f[3] - e[0]) * e[6] + (f[5] - e[2]) * e[7];
         const s0 = (f[0] - e[0]) * ux + (f[2] - e[2]) * uz, s1 = (f[3] - e[0]) * ux + (f[5] - e[2]) * uz;
         if (Math.max(o0, o1) < 0.1 || Math.min(o0, o1) > STACK_R + 0.4 || Math.max(s0, s1) < -0.4 || Math.min(s0, s1) > L + 0.4) continue;
         cand.push(f, ga, gc);
-      }
+      } } }
       if (!cand.length) continue;
       for (let q = 0; q <= ns && !behind; q++) {
         const sx = e[0] + (e[3] - e[0]) * q / ns, sz = e[2] + (e[5] - e[2]) * q / ns;
@@ -184,6 +195,20 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
       if (behind) drop.push(i);
     }
     for (const i of drop) on[i] = false;
+  }
+  // gate openings: no wall across a garden gate standing just behind the sidewalk (up to 3 m back): the run stops
+  // either side of it and ends in piers (round 5: H6 Perelman 4, a wall built across the gate of H5's garden)
+  if (gateNear) for (let i = 0; i < edges.length; i++) {
+    if (!on[i]) continue;
+    const e = edges[i], L = Math.hypot(e[3] - e[0], e[5] - e[2]), ns = Math.max(1, Math.ceil(L / 0.5));
+    // (one query first: no gate within reach of the whole edge, nothing to sample; cost)
+    if (!gateNear((e[0] + e[3]) / 2 + e[6] * 1.6, (e[2] + e[5]) / 2 + e[7] * 1.6, L / 2 + 2.1)) continue;
+    let gate = false;
+    for (let q = 0; q <= ns && !gate; q++) {
+      const sx = e[0] + (e[3] - e[0]) * q / ns, sz = e[2] + (e[5] - e[2]) * q / ns;
+      for (const dd of [0.5, 1.25, 2, 2.75]) if (gateNear(sx + e[6] * dd, sz + e[7] * dd, 0.9)) { gate = true; break; }
+    }
+    if (gate) on[i] = false;
   }
   const wall = edges.filter((e, i) => on[i]);
   if (!wall.length) return null;
@@ -275,7 +300,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
   });
   // run ends: a short pier (PIER x the strip's depth, PIER_UP over the wall, stone cap) closing the wall, never a knife edge
   let piers = 0;
-  const wg = segGrid(); wall.forEach((f, j) => { f.j = j; wg.add(f); });
+  const wg = segGrid(), wBuf = []; wall.forEach((f, j) => { f.j = j; wg.add(f); });
   wall.forEach((e, i) => {
     cur = look[runE[i]];
     for (const [id, other] of [[e[8], e[9]], [e[9], e[8]]]) {
@@ -290,7 +315,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
       // (a lump))
       const own = (f) => f[6] * e[6] + f[7] * e[7] >= 0.85 && Math.abs(((f[0] + f[3]) / 2 - v.x) * e[6] + ((f[2] + f[5]) / 2 - v.z) * e[7]) < 0.2;
       let d1 = Math.max(v.w, PIER);
-      const others = [...wg.near(v.x, v.z, d1 + 0.9)].filter((f) => f.j !== i && f[8] !== id && f[9] !== id && !own(f) && segD(v.x, v.z, f) < d1 + 0.9);
+      const others = wg.near(v.x, v.z, d1 + 0.9, wBuf).filter((f) => f.j !== i && f[8] !== id && f[9] !== id && !own(f) && segD(v.x, v.z, f) < d1 + 0.9);
       const near = (dd) => { const px = v.x + e[6] * dd, pz = v.z + e[7] * dd; return others.some((f) => segD(px, pz, f) < 0.8); };
       if (near(0.3)) continue;
       for (let dd = 0.8; dd <= d1 + 1e-6; dd += 0.5) if (near(dd)) { d1 = Math.max(PIER, dd - 0.5); break; }

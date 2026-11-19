@@ -92,6 +92,23 @@ function publicAreas(feats) {
   const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
   return (x, z) => polys.some((R) => pip(x, z, R[0]) && !R.slice(1).some((h) => pip(x, z, h)));
 }
+/** the tile's garden doc, with the 4 neighbour tiles' pieces (segs, pillars, gates, hedges) within 30 m of its bounds */
+async function gardenDocNear(base, name, b) {
+  const m = /^([A-Z])(\d+)$/.exec(name), R = 30;
+  const near = m ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dz]) => String.fromCharCode(m[1].charCodeAt(0) + dx) + (+m[2] + dz)) : [];
+  const [own, ...nb] = await Promise.all([gardenDoc(base, name), ...near.map((n) => gardenDoc(base, n))]);
+  if (!b) return own;
+  const inR = (x, z) => x > b.x0 - R && x < b.x1 + R && z > b.z0 - R && z < b.z1 + R;
+  const doc = own ? { ...own, segs: [...(own.segs || [])], pillars: [...(own.pillars || [])], gates: [...(own.gates || [])], hedges: [...(own.hedges || [])] } : { segs: [], pillars: [], gates: [], hedges: [] };
+  for (const d of nb) {
+    if (!d) continue;
+    for (const g of d.segs || []) if (inR(g[0], g[2]) || inR(g[3], g[5])) doc.segs.push(g);
+    for (const q of d.pillars || []) if (inR(q[0], q[2])) doc.pillars.push(q);
+    for (const q of d.gates || []) if (inR(q[0], q[2])) doc.gates.push(q);
+    for (const h of d.hedges || []) if ((h.points || []).some(([x, z]) => inR(x, z))) doc.hedges.push(h);
+  }
+  return doc;
+}
 async function gardenDoc(base, name) {
   const r = await fetch(new URL(`../gardens/${name}.json`, base)).catch(() => null);
   return r?.ok ? r.json().catch(() => null) : null;
@@ -412,7 +429,9 @@ export async function buildTileData(entry, base) {
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   // (claude/sidewalk round 2) the garden fronts, for the retaining walls behind levelled sidewalks (viewer/streets/retainWalls.js)
-  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDoc(base, entry.name)) : null;
+  // (round 5: + the garden pieces of the 4 neighbour tiles within 30 m of this one: a garden front belongs to its
+  // building's tile and runs over the border (H6 Perelman 4: H5's gate 18 m into H6; the wall closed it off))
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds)) : null;
   const gardenNear = gardenDoc0 !== null || (entry.sidewalkLevel !== false && entry.retainWalls !== false && surf) ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true }) : null;
   const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false, gardenNear, gateNear, publicAt: gardenNear ? publicAreas(feats) : null,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,

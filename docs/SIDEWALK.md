@@ -304,3 +304,36 @@ loaded by the owner's play session during this round's measures).
   flagged on one cell (a brick pier at a garden path, r4-tour-ham-terrace-vs-r3.png).
 - Lesson: the worktree's tileWorker.bundle.js was foundation's (no retaining walls at all) until rebuilt; the first G3
   look showed no walls. Always rebuild the bundle before a browser look and check it holds the branch's code.
+
+## Round 5: walls that read, the bank behind, gates, cost (code, 2026-11-19)
+
+- BRICK NOT VISIBLE. WHY: the brick pattern (gardenKit brickPattern) fades out as a course shrinks under ~3 px, and it
+  faded to the BARE base colour (tone 1, mortar 0): from ~6 m on every wall was one flat slab of the brick colour, and
+  slightly too saturated and too dark (the mortar's 21 % share of the face gone). Not a wiring bug: close up the bond
+  showed (r4-g3-robertsjones.jpg). FIX: viewer/streets/wallPattern.js, the walls' brick and coursed stone as ONE piece
+  of math written against an ops table (TSL nodes in the shader, plain numbers in the gate's check): the bond kept to
+  ~2 px a course, then the face's average (mortar share mixed in), a low-frequency patch tone (4 bricks x 3 courses) that
+  survives 3x further, the mortar rougher than the brick (roughness). The garden walls keep their own pattern.
+  RULE: a face reads as its material at the distances it is seen from, never the bare base colour. CHECK: `walllook`
+  (tools/audit/wallLook.mjs): head-on with the game camera at 4-40 m, contrast >= 0.08 up to 12 m and the mean within
+  8 % of the near face; round 3's brick rebuilt from the same pieces fails it (contrast 0.06 at 12 m, mean -11 % at
+  20 m); roadPaint.js wired to it inside its Fn.
+- G3 BARE EARTH BAND. WHY: clampUnder gave the walls' lawn tops no bank (round 3: the garden keeps its ground), so where
+  the garden rises behind the 3.1 m strip faster than the soil threshold (~42 degrees) the bank between was bare earth.
+  FIX: the bank from the strip's back edge as from a street edge (31 degrees, BANK_SLOPE), faded over the last 1.5 m of
+  its reach, and the vertices round a cut that stand > 0.3 m over their 8 neighbours brought down (a hillside rising
+  1-2 m a cell left single spikes). The census counts the earth band (`bareBank`: drawn terrain behind a wall face,
+  not covered by the lawn, steeper than 42 degrees over > 0.3 m within 8 m): G3 + H6 + E6 + I9 144 -> 60; city 575
+  left where the hillside rises > 1.2 m within the 3 m reach (a structure: no cut). The census's bank-cut exemption
+  now includes a cut down to a wall's lawn (as to a street edge). The lawn stays stepped (the steps across the strip
+  are the wall's own); not changed.
+- H6 DARK POSTS. WHY: they are a garden GATE and its two pillars from H5's garden data (data/gardens/H5.json run 4,
+  at 670.8, 518.4: H5's building, its garden front 18 m over the border into H6). The walls read only their own tile's
+  garden doc, so the gate was unseen and round 4's gap closing built the wall across it. FIX: the tile's garden doc +
+  the 4 neighbours' pieces within 30 m of its bounds (tileData.js gardenDocNear), and no wall edge with a gate up to
+  2.75 m behind it (the run ends in piers either side: a ~1.1 m opening at Perelman 4). Not orphans: nothing to delete.
+- COST: the one-wall-line check's grid keyed by cell AND facing (a cell holds 16 facing bins, 5 read), no Set / spread /
+  closures in the hot loops, the gate test one query an edge first, round 3's run growth over the growable edges only
+  with plain loops (the same exact tests: the census on G3 H6 E6 I9 unchanged; the growth's geometry byte for byte). In situ (the tile build's 'retaining walls'
+  stage, 6 tiles F2 E6 I6 G6 H6 D5 x 3, round 3 and round 5 alternated in one process, CPU load 2-4 %): round 3 mean
+  46 ms (median 42), round 5 mean 55 ms (median 46): <= 60.

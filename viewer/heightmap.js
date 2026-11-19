@@ -229,7 +229,7 @@ export class Heightmap {
     // triangle rose over the edge up to ~0.5 m into the sidewalk in a zig-zag along the grid, and the bank stood up one
     // cell out (a saw-tooth bank foot: owner images 81 / 91)
     const B = bank > 0 ? (field ?? edgeField(meshes, this.h, { reach: bankReach, minWidth })) : null;
-    let n = 0;
+    let n = 0, wallCut = null;
     for (let k = 0; k < Y.length; k++) {
       // fix3: a vertex BESIDE surfaces whose caps differ by more than stackGap (between a road and a sidewalk 0.9 m
       // lower, J6) follows its NEAREST edge, as the weld does, not the lowest one (the other surface floated over it)
@@ -241,13 +241,17 @@ export class Heightmap {
         const cb = B.y[k] - lift + (B.inside[k] ? -bank : bank) * B.d[k];
         // (never deeper than maxDrop: where the bank would dig past it the vertex keeps its base cap, as before)
         if (capIn[k] < Infinity) c = Math.min(c, Math.max(cb, Y[k] - BANK_COVER_DROP + 1e-3));
-        else if (!B.inside[k] && !B.wallTop?.[k]) {   // (not behind a retaining wall: the garden keeps its ground)
+        else if (!B.inside[k]) {   // (behind a retaining wall's lawn strip too, round 5: the garden rising behind it in a
+          // grass bank from the strip's back edge, not a bare >42 degree earth band (G3 Roberts Jones))
           // past maxDrop the cut fades out (none where it would dig >= BANK_NEED_MAX: a structure), continuous in the
           // need: skipping it outright left a 1 m step in the bank where the need crossed maxDrop (a saw-tooth crest)
           const need = Y[k] - cb;
           c = need <= maxDrop ? cb : Y[k] - 0.999 * maxDrop * Math.max(0, (BANK_NEED_MAX - need) / (BANK_NEED_MAX - maxDrop));
           if (Y[k] - c > maxDrop) c = Y[k] - 0.999 * maxDrop;
-        } else if (!B.inside[k]) c = Infinity;          // (behind a wall's top: no ring either, the garden's own ground)
+          // (behind a wall: the cut faded out over the last 1.5 m of the reach, or the bank's outer rim was a step of up
+          // to maxDrop where the hillside goes on rising: spikes / pits on the 1 m grid, census 'spike' / 'hole')
+          if (B.wallTop?.[k] && c < Y[k]) c = Y[k] - (Y[k] - c) * Math.min(1, Math.max(0, (bankReach - B.d[k]) / 1.5));
+        }
       }
       if (!(c < Y[k])) continue;
       // (bank mode: under a drawn street surface the terrain may go down to BANK_COVER_DROP, a levelled sidewalk / a
@@ -255,6 +259,19 @@ export class Heightmap {
       if (Y[k] - c > (B && capIn[k] < Infinity ? BANK_COVER_DROP : maxDrop)) continue;
       if (skip && skip(x0 + (k % cols) * step, z0 + Math.floor(k / cols) * step)) continue;
       Y[k] = c; n++;
+      if (B && B.wallTop?.[k] && !B.inside[k]) (wallCut ??= []).push(k);
+    }
+    // (round 5) behind a retaining wall the bank meets a hillside that rises 1-2 m a cell: a vertex the cut leaves (its
+    // need past BANK_NEED_MAX) beside ones it lowers stood up as a spike. Round the cut ones, a vertex over its 8
+    // neighbours' mean by more than 0.3 m comes down to it (lowered only, once)
+    if (wallCut) {
+      const seen = new Uint8Array(cols * rows);
+      for (const k0 of wallCut) for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        const r = Math.floor(k0 / cols) + dr, cc = (k0 % cols) + dc; if (r < 1 || cc < 1 || r >= rows - 1 || cc >= cols - 1) continue;
+        const k = r * cols + cc; if (seen[k] || B.inside[k] || capIn[k] < Infinity) continue; seen[k] = 1;
+        let m = 0; for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (a || b) m += Y[k + a * cols + b];
+        m /= 8; if (Y[k] - m > 0.3 && !(skip && skip(x0 + cc * step, z0 + r * step))) { Y[k] = m + 0.3; n++; }
+      }
     }
     return n;
   }

@@ -28,6 +28,10 @@
 //
 // STACKED (claude/sidewalk round 4): a retaining wall face with another wall face of the same facing 0.5-4 m behind it.
 //
+// BAREBANK (claude/sidewalk round 5): behind a retaining wall, the garden's drawn terrain (where no lawn strip covers
+// it) climbing steeper than 42 degrees (the ground shader's full soil: viewer/ground.js SOIL) by more than 0.3 m within
+// 8 m of the face: a bare earth band over the wall's lawn (G3 Roberts Jones). Groups (2 m) over 1 m of wall.
+//
 // BLADE (claude/sidewalk round 3): a retaining wall's top sloping over 20 degrees along more than 1 m (a wall that starts
 // as a knife edge; walls step and end at a pier now).
 //
@@ -47,7 +51,7 @@ const { CHILD, OUT, JOBS, WORST } = c;
 const OLD = c.flag("--old"), QUIET = c.flag("--quiet"), MAX = c.opt("--max", null);
 const TILES = c.ALL ? allBuiltTiles() : c.argv.filter((a) => /^[A-Z]\d+$/i.test(a)).map((t) => t.toUpperCase());
 const LUMP = 0.5, HOLE = 0.5, SPIKE = 0.5, TILT = 0.15, ROAD_TILT = 0.12, OVER = 0.02;
-const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid", "blade", "stacked"];
+const KINDS = ["lump", "hole", "spike", "tilt", "roadTilt", "over", "gardenVoid", "blade", "stacked", "bareBank"];
 
 if (!CHILD) {
   if (!TILES.length) { console.error("usage: ground.mjs [--all | T ...] [--out FILE] [--old] [--max kind=n,...]"); process.exit(2); }
@@ -109,12 +113,22 @@ for (const dk of d.bridgeDecks || []) for (const [x, z] of dk.pts || []) markNea
 // under it) is the bank cut down to a street's edge (viewer/heightmap.js clampUnder bank), not a pit: not a hole
 const BANK_TOL = 0.3;
 const besideStreet = (k) => { if (!delta) return false; for (const q of [k - 1, k + 1, k - NC, k + NC, k - NC - 1, k - NC + 1, k + NC - 1, k + NC + 1]) { const v = delta[q]; if (v > 0 && v !== 65535) return true; } return false; };
+// (round 5) and the bank cut down to a retaining wall's lawn strip (clampUnder banks from the strip's back edge too):
+// the lawn (grass part, near-flat triangles over the terrain) on the 1 m grid, its lowest top a cell
+const lawnLo = new Map();
+{
+  const G = d.road.parts?.grass;
+  if (G) { const pos = G.position, I = G.index; for (let t = 0; t < I.length; t += 3) for (let q = 0; q < 3; q++) {
+    const a = I[t + q] * 3, k = Math.round((pos[a + 2] - H.z0) / st) * NC + Math.round((pos[a] - H.x0) / st), o = lawnLo.get(k);
+    if (o === undefined || pos[a + 1] < o) lawnLo.set(k, pos[a + 1]);
+  } }
+}
 const bankCut = (k) => {
-  if (!delta) return false;
   const r = Math.floor(k / NC), cc = k % NC; let lo = Infinity;
   for (let dr = -4; dr <= 4; dr++) for (let dc = -4; dc <= 4; dc++) {
     const rr = r + dr, c2 = cc + dc; if (rr < 0 || c2 < 0 || rr >= NR || c2 >= NC || dr * dr + dc * dc > 16) continue;
-    const q = rr * NC + c2, v = delta[q]; if (v > 0 && v !== 65535) lo = Math.min(lo, Y[q] + v / 100);
+    const q = rr * NC + c2, v = delta ? delta[q] : 0; if (v > 0 && v !== 65535) lo = Math.min(lo, Y[q] + v / 100);
+    const l = lawnLo.get(q); if (l !== undefined) lo = Math.min(lo, l);
   }
   return lo < Infinity && Y[k] >= lo - BANK_TOL;
 };
@@ -350,6 +364,54 @@ if (fit) for (const [part, want, lim, kind] of [["concrete", [SC.sidewalk], TILT
       if (hit) bad.push({ x: f.x, z: f.z, area: f.area, v: 1 });
     }
     group(bad, "stacked", 2.0);
+  }
+}
+// ---------------------------------------------------------------- bare earth bank behind a retaining wall (round 5)
+{
+  const P = d.road.parts?.concrete, K = P?.attributes?.aKind?.array, G = d.road.parts?.grass;
+  if (P && K) {
+    const terr = (x, z) => {                     // the drawn terrain grid (as OVER)
+      const fc = (x - H.x0) / st, fr = (z - H.z0) / st, c0 = Math.floor(fc), r0 = Math.floor(fr);
+      if (c0 < 0 || r0 < 0 || c0 >= NC - 1 || r0 >= NR - 1) return NaN;
+      const u = fc - c0, v = fr - r0, a = r0 * NC + c0, bb = a + NC, cc = a + 1, dd = bb + 1;
+      if (Math.abs(Y[a] - Y[dd]) < Math.abs(Y[bb] - Y[cc]) - 0.01) return u >= v ? Y[a] + u * (Y[cc] - Y[a]) + v * (Y[dd] - Y[cc]) : Y[a] + v * (Y[bb] - Y[a]) + u * (Y[dd] - Y[bb]);
+      return u + v <= 1 ? Y[a] + u * (Y[cc] - Y[a]) + v * (Y[bb] - Y[a]) : Y[dd] + (1 - u) * (Y[bb] - Y[dd]) + (1 - v) * (Y[cc] - Y[dd]);
+    };
+    // the lawn strips (grass part, near-flat): their top on a 0.25 m raster
+    const S = 0.25, lawn = new Map(), LK = (x, z) => (Math.round(x / S) + 50000) * 100000 + (Math.round(z / S) + 50000);
+    if (G) { const pos = G.position, I = G.index; for (let t = 0; t < I.length; t += 3) {
+      const a = I[t] * 3, b2 = I[t + 1] * 3, c2 = I[t + 2] * 3;
+      const ax = pos[a], ay = pos[a + 1], az = pos[a + 2], bx = pos[b2], by = pos[b2 + 1], bz = pos[b2 + 2], cx = pos[c2], cy = pos[c2 + 1], cz = pos[c2 + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz); if (Math.abs(det) < 1e-9) continue;
+      for (let j = Math.ceil(Math.min(az, bz, cz) / S); j <= Math.floor(Math.max(az, bz, cz) / S); j++) for (let i = Math.ceil(Math.min(ax, bx, cx) / S); i <= Math.floor(Math.max(ax, bx, cx) / S); i++) {
+        const px = i * S, pz = j * S, l1 = ((bz - cz) * (px - cx) + (cx - bx) * (pz - cz)) / det, l2 = ((cz - az) * (px - cx) + (ax - cx) * (pz - cz)) / det, l3 = 1 - l1 - l2;
+        if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+        const y = l1 * ay + l2 * by + l3 * cy, k = LK(px, pz), o = lawn.get(k); if (o === undefined || y > o) lawn.set(k, y);
+      }
+    } }
+    const pos = P.position, I = P.index, bad = [], seen = new Set(), TAN = Math.tan(42 * Math.PI / 180);
+    for (let t = 0; t < I.length; t += 3) {
+      const k = K[I[t]]; if (k < 3.5 || k > 5.5) continue;
+      const a = I[t] * 3, b2 = I[t + 1] * 3, c = I[t + 2] * 3;
+      const ux = pos[b2] - pos[a], uy = pos[b2 + 1] - pos[a + 1], uz = pos[b2 + 2] - pos[a + 2], vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, L = Math.hypot(nx, ny, nz), Lh = Math.hypot(nx, nz);
+      if (L < 1e-9 || Math.abs(ny) > 0.2 * L) continue;
+      const fx = (pos[a] + pos[b2] + pos[c]) / 3, fz = (pos[a + 2] + pos[b2 + 2] + pos[c + 2]) / 3, ex = nx / Lh, ez = nz / Lh;
+      if (!fit || fit.classAt(fx + ex * 0.5, fz + ez * 0.5) < 0) continue;            // a FRONT face (a street in front)
+      if (fx < b.x0 || fx >= b.x1 || fz < b.z0 || fz >= b.z1) continue;
+      const key = Math.round(fx * 2) * 100003 + Math.round(fz * 2); if (seen.has(key)) continue; seen.add(key);   // (one probe per 0.5 m of face)
+      // walk into the garden (against the face's normal): the drawn surface = the lawn where it covers, else the terrain
+      let bare = 0, py = NaN;
+      for (let dd = 0.25; dd <= 8 + 1e-6; dd += 0.25) {
+        const x = fx - ex * dd, z = fz - ez * dd, ty = terr(x, z), ly = lawn.get(LK(x, z));
+        if (!(ty === ty)) break;
+        const shows = ly === undefined || ty > ly + 0.02;
+        if (shows && py === py && ty - py > TAN * 0.25) bare += ty - py;
+        py = shows ? ty : NaN;
+      }
+      if (bare > 0.3) bad.push({ x: fx, z: fz, area: 0.5, v: bare });
+    }
+    group(bad, "bareBank", 1.0);
   }
 }
 items.sort((a, c3) => c3.score - a.score);
