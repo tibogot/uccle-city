@@ -62,7 +62,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
     - J6 (1730, 610-620), a lane still off its carriageway;
     - Av. du Prince de Ligne (1592, 360) still UNFIXED (junction funnel), the owner's complaint;
     - at merge, rebuild the worker bundle.
-  - claude/sidewalk (C:/Users/tibog/Downloads/uccle-sidewalk, round 5 1aea8662 + gate-steps WIP 707414c2, notes in docs/SIDEWALK.md "Round 5b"). Left:
+  - claude/sidewalk MERGED 2026-11-19 (51df6438, rule 31). Left: the floating hedge near Clos Monique Rifflet not reproduced (needs the owner's camera position); the shot-104 spot near Av. Adolphe Wansart to re-check on live; a dark bare earth face left of the H6 stone wall (683, 526); coursed stone a bit regular; quiet-machine wall ms after the steps. OLD NOTES:
     - 12 gates still without steps on the 4 test tiles (G3 Roberts Jones 55, H6 Perelman 1): trace them to 0;
     - bareBank rose 64 -> 76 round the flights;
     - full census + ceilings (gateNoSteps=0), full gate;
