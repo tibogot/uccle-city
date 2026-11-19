@@ -77,10 +77,14 @@ would be >= 288 KB), the switch, or if `?moto=old` PASSES the table (it fails 26
 - **City rides leave the parked cars out**: the autopilot follows a line, it does not thread a street of cars parked
   at an angle; parked-car contact is tested on the synthetic side-swipe / head-on. With them in, the old tuning fell at
   nearly every glancing touch; the new one slides.
-- **Blocked, not fallen** (info in the report): a collider standing on the lane line stops the autopilot. Worth a look
-  on the browser turn: a LiDAR tree (urbis-chm, x -280.3, z -508.3, tile F3) on the westbound lane line of Avenue De Fré
-  (driveCheck's census should say whether it is on the carriageway or a median), lamps / trees in the Montagne de
-  Saint-Job living street's band, and one spot on the Kauwberg paths (82.9, 1075.7).
+- **Blocked, not fallen** (info in the report): a collider near the test's line stops the autopilot. Checked on
+  foundation e0eca6d8 (roads + sidewalk merged; tile worker build in node, tools probe 2026-11-19): **none is a lane
+  defect**. The Av. De Fré LiDAR tree (urbis-chm 296726_331804) is already moved by roadTrees.js from (-280.25, -508.25)
+  to (-278.8, -507.9), on the measured sidewalk (class 5), 5.7 m from the nearest traffic lane: the test's line there was
+  the OSM centre line left unsnapped (no lane of its own tile within 6 m) running along the sidewalk edge. The Montagne
+  de Saint-Job trees (1137.8, 689.8), (1111.3, 851.3) and the lamp (1139.1, 687.0) stand on the measured sidewalk
+  (class 5), 1.4-1.5 m from the lane centre (a car's half width 0.9 m clears them); the living street is narrow and the
+  autopilot's weave (~1 m) touched them. drivecheck (tree=0, >= 0.3 m into the carriageway) agrees.
 - No foot-down / mount animation; the slip has no tyre-scrub sound yet (motoAudio reads `slide`, so the screech plays).
 - The air control is arcade (30 % yaw, pitch assist); no tricks.
 
