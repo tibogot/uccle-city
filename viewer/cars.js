@@ -65,11 +65,17 @@ function carGeometry() {
 // Now its four wheels' contact points are sampled, the car pitched and rolled to their plane (front / rear, left / right
 // means) and lifted until no wheel is under the ground. ?carfit=old: level, as before.
 const CARFIT_OLD = typeof location !== "undefined" && /[?&]carfit=old/.test(location.search);
+const MOVG_OLD = typeof location !== "undefined" && /[?&]movground=old/.test(location.search);
+export const PARK_IN = 0.45;                                   // (rule mover-ground: the wheel's inner sample, x the half track)
 function wheelFit(c, ground) {
   const [w, , l] = carFleet.sizeOf(c.type);
   const hb = l * 0.31, ht = Math.max(0.6, w / 2 - 0.12);           // half wheelbase, half track (m)
   const fx = Math.sin(c.heading), fz = Math.cos(c.heading), rx = fz, rz = -fx;   // bonnet (+z model) and its side
-  const at = (a, b) => ground(c.x + fx * a + rx * b, c.z + fz * a + rz * b);
+  // (claude/ground, rule mover-ground) a wheel's contact: the lower of the ground under it and 0.45 x the half track in
+  // from it: the 1 m drive grid blends the kerb into the gutter, the kerb-side wheels stood 5-10 cm up in the air;
+  // ?movground=old: under the wheel only
+  const at0 = (a, b) => ground(c.x + fx * a + rx * b, c.z + fz * a + rz * b);
+  const at = MOVG_OLD ? at0 : (a, b) => Math.min(at0(a, b), at0(a, b * PARK_IN));
   const fl = at(hb, ht), fr = at(hb, -ht), bl = at(-hb, ht), br = at(-hb, -ht);
   const front = (fl + fr) / 2, back = (bl + br) / 2, left = (fl + bl) / 2, right = (fr + br) / 2;
   c.pitch = -Math.atan2(front - back, 2 * hb);                     // nose up: a negative turn about the car's X

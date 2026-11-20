@@ -62,6 +62,7 @@ import { lyceeFront } from "./lyceeFront.js";
 import { Flyer } from "./flight.js";
 import { CityFlyer } from "./falconFlight/cityFlyer.js";
 import { Driver, tileDrive } from "./drive/driveMode.js";
+import { moverGroundY, tileMoverGround } from "./drive/moverGround.js";
 import { addLamps } from "./lampLight.js";
 import { installWgslIntern } from "./wgslIntern.js";
 import { installHeapDrop, dropAfterUpload, dropTextureData, heapOn } from "./heapDrop.js";   // heap: CPU copies let go after their upload (docs/HEAP.md)
@@ -357,7 +358,10 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
     const pts = dense.filter(([x, z]) => inTile(x, z)).map(([x, z], i, arr) => {
       const p = arr[Math.max(0, i - 1)], q = arr[Math.min(arr.length - 1, i + 1)];
       const dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz) || 1;
-      return [x, z, -dz / L, dx / L, trackProf ? trackProf.railTop(x, z, roadOffFor(hm, inTile)) : null];
+      // (rule mover-ground) on a road deck the rails lie on its drawn top (the Carsoel deck, H6: the profile, interpolated
+      // between the bridge's ends, ran 0.1-0.2 m under the deck's asphalt and 0.16 m over it); ?movground=old: the profile
+      const dk = MOVGROUND ? oneDeckY(x, z) : null;
+      return [x, z, -dz / L, dx / L, dk ?? (trackProf ? trackProf.railTop(x, z, roadOffFor(hm, inTile)) : null)];
     });
     if (pts.length < 2) continue;
     for (const side of [-1, 1]) ribbon(pts, side);
@@ -404,7 +408,16 @@ const VIVIER = params.get("vivier") !== "old";            // vivier 2026-11-17: 
 // (vivier) the moving traffic and the trams on a road deck drive ON it (world.decks: the OSM decks + the hero road
 // bridges), not on the terrain under it: on the Vivier d'Oie deck a car dipped 7 m into the cutting, on the band decks
 // before it 3-4 m into the DTM's hump under the slab
-const movingGround = (x, z) => { if (VIVIER && worldRef) { const y = worldRef.deckY(x, z); if (y != null) return y; } return worldRef.surface(x, z) + CARVE; };
+// (claude/ground, rule mover-ground, docs/MOVERGROUND.md) ONE ground for every mover: the drawn drive surface the player's car
+// drives (viewer/drive/moverGround.js: the decks, the drive grid's layer nearest the mover's height `near`). The traffic
+// (moving, knocked, wrecks), tram 92 and the parked cars stood on worldRef.surface + CARVE with only the decks over it:
+// 20-40 cm into the levelled carriageways / squares and the street drawn on the Carsoel deck (owner shots 111 / 112).
+// ?movground=old: as before. worldRef.moverY is the same function for anyone else (the props' bodies).
+const MOVGROUND = params.get("movground") !== "old";
+const movingGroundOld = (x, z) => { if (VIVIER && worldRef) { const y = worldRef.deckY(x, z); if (y != null) return y; } return worldRef.surface(x, z) + CARVE; };
+// the road decks' drawn top at (x, z) (the OSM decks and the hero road bridges), or null
+const oneDeckY = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return worldRef ? worldRef.deckY(x, z) : null; };
+const movingGround = MOVGROUND ? (x, z, near) => worldRef.moverY(x, z, near) : movingGroundOld;
 const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
 window.__carriage = carriageRefs;
 function addBridgeDecks(decks, hm) {
@@ -736,7 +749,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", railT: RAIL_T, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     deckLanes: params.get("decklanes") !== "old",                                                    // claude/drivecheck round 2: the traffic lanes over a hero road deck held clear of its parapets (rail/roadDeck.js squeezeDeckLanes), ?decklanes=old = as before
@@ -1111,7 +1124,10 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   let parkDropped = 0;
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  const cars = buildCars(carRoads, feats, onDeck((x, z) => hm.surface(x, z) + CARVE), bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP),
+  // (claude/ground, rule mover-ground) parked cars / two-wheelers on the mover ground (this tile's drive grid + the decks), the top
+  // layer; ?movground=old: the terrain + CARVE (the decks over it)
+  const parkGround = MOVGROUND && d.drive?.ground ? tileMoverGround(worldRef?.decks ?? [], hm, d.drive) : onDeck((x, z) => hm.surface(x, z) + CARVE);
+  const cars = buildCars(carRoads, feats, parkGround, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP),
     // citydefects: the slots by the measured width, built in the worker with the traffic lanes kept clear of them
     // (d.parked: viewer/streets/parkPlace.js widthParking; ?parkclear=old: the old slots above), still kept off the
     // furniture kits' pieces
@@ -1120,7 +1136,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
       const border = TRAFPARK && trafficTiles.size ? laneHits(d.parked.sites, trafficTiles, entry.name) : null;
       if (border?.size) window.__trafparkBorder = (window.__trafparkBorder || 0) + border.size;
       const out = d.parked.sites.filter((c, i) => keep(c.x, c.z, c.yaw) && !border?.has(i)); parkDropped = d.parked.sites.length - out.length; return out; } : null });
-  const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, onDeck((x, z) => hm.surface(x, z) + CARVE));
+  const twCounts = cityTwoWheelers.addTile(entry.name, cars.twoSites, own.features, parkGround);
   if (twCounts) say(`two-wheelers: ${twCounts.bikes} parked in ${twCounts.slots} slots (viewer/moto/cityTwoWheelers.js)`);
   await frame("parked cars");
   const bollards = fit ? buildBollards(d.road.surfaceData.bollards) : null;
@@ -1343,6 +1359,9 @@ async function main() {
     /** hero road-bridge decks (viewer/rail/bridgeModel.js deckHeightFn): (x, z) -> m TAW or null off them */
     decks: [],
     deckY(x, z) { for (const f of this.decks) { const y = f(x, z); if (y != null) return y; } return null; },
+    /** THE MOVER GROUND (rule mover-ground, viewer/drive/moverGround.js): the drawn drive surface the player's car drives, the
+     *  layer nearest `near` (the mover's height; null: the top) where two stack. Traffic, trams, parked / knocked cars, props. */
+    moverY(x, z, near = null) { return moverGroundY(this.decks, this.at(x, z), x, z, near); },
     /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface); on a
      *  hero road bridge its deck (the terrain there is the cutting under it) */
     walkY(x, z) { const d = this.decks.length ? this.deckY(x, z) : null; if (d != null) return d; const t = this.at(x, z); return t.hm.surface(x, z) + CARVE + (t.lift ? t.lift(x, z) : 0); },
@@ -1538,7 +1557,7 @@ async function main() {
   const { hm, roads, net } = T0;
   if (params.get("trams") !== "0") {
     try {
-      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, movingGround, trackProf, roadOffFor(world.tiles[0].hm, () => false));
+      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, movingGround, trackProf, roadOffFor(world.tiles[0].hm, () => false), MOVGROUND ? oneDeckY : null);
       for (const t of world.tiles) tramLine.snapTile(t.name, t.feats, t.bounds);
       updaters.push(tramLine.update);
       cityNight?.setTram(tramLine);                     // ?night=1: a tram passing a shadowed lamp re-renders its shadow map

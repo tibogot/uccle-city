@@ -73,7 +73,9 @@ function moduleGeometry(cab, lineCol) {
 }
 
 /** ground(x, z): the road surface; prof (viewer/trackProfile.js, optional): the tracks' smooth rail-top profile */
-export async function createTramLine(url, scene, ground, prof = null, roadOff = null) {
+/** deckAt(x, z) -> y | null (optional, rule mover-ground): a road deck's drawn top; on a deck the trams stand on it (the
+ *  rails are drawn there: main.js featureObjects), not on the track profile interpolated between the bridge's ends */
+export async function createTramLine(url, scene, ground, prof = null, roadOff = null, deckAt = null) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
   const doc = await r.json();
@@ -230,9 +232,9 @@ export async function createTramLine(url, scene, ground, prof = null, roadOff = 
   }
   // rail top: the track's smooth vertical profile (vertical curves, bridge decks; the rails are drawn on it too), else
   // the road surface under the point
-  const pose = [], railTop = (x, z) => (prof?.y(x, z, 1.5) ?? ground(x, z)) + 0.02;           // (culling, the box trams)
+  const pose = [], railTop = (x, z) => ((deckAt && deckAt(x, z)) ?? prof?.y(x, z, 1.5) ?? ground(x, z)) + 0.02;           // (culling, the box trams)
   // the drawn rail top under a point of the track running at heading h (main.js featureObjects draws the rails there)
-  const railY = (x, z, h) => (prof?.railTop(x, z, roadOff, 1.5) ?? ground(x, z)) + 0.02;
+  const railY = (x, z, h) => ((deckAt && deckAt(x, z)) ?? prof?.railTop(x, z, roadOff, 1.5) ?? ground(x, z)) + 0.02;
   // ... along a shape, averaged over +-3 m (1-2-3-2-1): the profile is already smooth (this moves it by < 5 mm), but where
   // the line leaves the OSM tracks (321 m along the commune's north edge, outside the study area: no rails drawn there)
   // the fallback is the raw road surface, and this softens it and the hand-over to the profile

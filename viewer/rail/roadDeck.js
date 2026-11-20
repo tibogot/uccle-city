@@ -19,7 +19,15 @@ export function roadFrame(info) {
 export function deckHeightFn(info) {
   if (info.kind !== "road_over_rail") return () => null;
   const F = roadFrame(info), d = F.d, f = info.foot;
+  // (claude/ground: every mover asks every deck, per wheel per step: a circle test round the deck first, no array made
+  // away from it; the circle holds the deck's roadway, its flared parapet line and the footbridge, + 1 m)
+  const [px, , pz] = info.placement.city_local_position;
+  const xMax = Math.max(Math.abs(d.x0), Math.abs(d.x1), f ? Math.max(Math.abs(f.x0), Math.abs(f.x1)) : 0) + 0.6;
+  const yMax = Math.max(F.faceY(xMax, d.parapet_inner), f ? Math.abs(f.y_inner) + Math.max(f.w, f.w_nw ?? f.w) : 0);
+  const R2 = (Math.hypot(xMax, yMax) + 1) ** 2;
   return (x, z) => {
+    const ex = x - px, ez = z - pz;
+    if (ex * ex + ez * ez > R2) return null;
     const [X, Y] = F.toLocal(x, z);
     if (X < d.x0 - 0.6 || X > d.x1 + 0.6) return null;
     const yi = F.faceY(X, d.parapet_inner);

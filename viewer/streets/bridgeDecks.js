@@ -127,17 +127,43 @@ function gridTop(G, x, z) {
 }
 /** the plan deck's drawn top on a 1 m grid (tileData.js, after the road stage): the street drawn there (streetY) where
  *  the measured street covers the deck, else the paving's top as planDeckMesh draws it */
-export function deckTopGrid(d, covered, streetY) {
+export function deckTopGrid(d, covered, streetY, meshTop = null) {
   if (!d.plan) return null;
   const x0 = Math.floor(d.box[0]), z0 = Math.floor(d.box[1]), nx = Math.ceil(d.box[2]) - x0 + 1, nz = Math.ceil(d.box[3]) - z0 + 1, v = new Array(nx * nz).fill(NaN);
   let n = 0;
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const x = x0 + i, z = z0 + j;
     if (!inRing(d.plan.ring, x, z)) continue;
-    const t = pavingTop(d, x, z, covered, streetY);
+    // (claude/ground, rule mover-ground) never under the deck's own drawn top (meshTop: its asphalt / paving triangles):
+    // where pavingTop found no street over a covered point the walker / the car / the traffic stood on the fitted plane,
+    // 13 cm over the slab drawn there (the Carsoel deck, H6); where the slab is drawn over the street, its top
+    const p = pavingTop(d, x, z, covered, streetY), m = meshTop ? meshTop(x, z) : null;
+    const t = p == null ? m : m == null ? p : Math.max(p, m);
     if (t != null) { v[j * nx + i] = +t.toFixed(3); n++; }
   }
   return n ? { x0, z0, nx, nz, v } : null;
+}
+/** (claude/ground) the deck mesh's DRAWN top on the integer 1 m nodes (deckTopGrid's): the highest up-facing asphalt /
+ *  paving triangle over each node (not the kerb faces, upstands, rails, soffit) -> (x, z) -> y | null */
+export function meshTopNodes(mesh) {
+  if (!mesh?.groups || !mesh.position) return null;
+  const P = mesh.position, top = new Map(), key = (i, j) => i * 100003 + j;
+  for (const g of mesh.groups) {
+    if (g.slot !== 0 && g.slot !== 1) continue;
+    for (let v = g.start; v + 2 < g.start + g.count; v += 3) {
+      const a = v * 3, b = a + 3, c = a + 6;
+      const ax = P[a], ay = P[a + 1], az = P[a + 2], bx = P[b], by = P[b + 1], bz = P[b + 2], cx = P[c], cy = P[c + 1], cz = P[c + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      for (let i = Math.ceil(Math.min(ax, bx, cx)); i <= Math.floor(Math.max(ax, bx, cx)); i++) for (let j = Math.ceil(Math.min(az, bz, cz)); j <= Math.floor(Math.max(az, bz, cz)); j++) {
+        const l1 = ((bz - cz) * (i - cx) + (cx - bx) * (j - cz)) / det, l2 = ((cz - az) * (i - cx) + (ax - cx) * (j - cz)) / det, l3 = 1 - l1 - l2;
+        if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+        const y = l1 * ay + l2 * by + l3 * cy, k = key(i, j), o = top.get(k);
+        if (o === undefined || y > o) top.set(k, y);
+      }
+    }
+  }
+  return (x, z) => top.get(key(Math.round(x), Math.round(z))) ?? null;
 }
 /** the walked top the mesh draws at (x, z): the street over a covered point (null when none is found), the paving else */
 function pavingTop(d, x, z, covered, streetY) {

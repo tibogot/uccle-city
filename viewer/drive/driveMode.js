@@ -19,8 +19,9 @@ export const CARCTL_OLD = /[?&]carctl=old(&|$)/.test(location.search);
 /** ?carfeel=old: the car's handling before the police-feel round (docs/POLICE_FEEL.md): carPhysics.js stepCar, kerb
  *  islands / any rise over 0.5 m as walls, hedges solid, posts stop the car, parked cars immovable, the old camera */
 export const CARFEEL_OLD = /[?&]carfeel=old(&|$)/.test(location.search);
-import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
+import { addCircles, buildColliders, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
 import { surfaceLayers } from "./surfaceLayers.js";
+import { moverGroundY } from "./moverGround.js";
 import { carFleet } from "../carFleet.js";
 import { createCarEnv } from "./carEnv.js";
 import { createRailMovers } from "./movers.js";
@@ -221,20 +222,9 @@ export class Driver {
       else if (k === "KeyE") this.onUse?.();
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
-    this.ground = (x, z) => {
-      let dk = null, osm = false;                                                    // a road bridge's deck (hero or OSM)
-      for (const f of this.world.decks || []) { const y = f(x, z); if (y != null) { dk = y; osm = !!f.osm; break; } }
-      const near = this.groundHint ?? (this.on && this.state ? this.state.y : null);
-      const t = this.world.at(x, z);
-      const g = t.drive ? driveHeight(t.hm, t.drive.ground, x, z, near) : t.hm.surface(x, z) + 0.12;
-      // an OSM deck and the road drawn with it (the OSM decks' road runs on or just through the slab, e.g. 0.3 m under it
-      // on the Chaussée de Waterloo, 0.4 m over it on Avenue des Hospices): the higher of the two is the surface; a
-      // surface far under the deck (a street passing under the bridge) when the car is on it: the layer nearest the
-      // car, as driveHeight does for the grid's two layers (before 2026-11-13 the deck always won)
-      if (dk == null) return g;
-      if (osm && Math.abs(g - dk) < 1.5) return Math.max(g, dk);                    // (a hero deck: its own surface)
-      return Number.isFinite(near) && Math.abs(g - near) + 1 < Math.abs(dk - near) ? g : dk;
-    };
+    // THE MOVER GROUND (claude/ground, rule mover-ground: viewer/drive/moverGround.js): the decks, then the drive grid, the layer
+    // nearest the car where two stack; the traffic, the trams, the parked and knocked cars stand on the same function
+    this.ground = (x, z) => moverGroundY(this.world.decks, this.world.at(x, z), x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null));
     // drivecheck (rule 27 provisional): the place's surface layers with no car in them (surfaceLayers.js): what
     // the hero colliders measure their car band from (heroColliders.js; ?heroground=old: this.ground, the car's layer)
     this.groundLayers = (x, z) => { const t = this.world.at(x, z); return surfaceLayers(this.world.decks, t.hm, t.drive?.ground, x, z); };
