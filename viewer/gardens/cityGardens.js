@@ -35,7 +35,7 @@ const GARDEN_LANE_OLD = qs.get("gardenlane") !== "new";
  *  feel), the walker still stops at it (viewer/character/cityHook.js) */
 const HEDGE_COL_OLD = qs.get("hedgecol") === "old";
 
-/** ?gates=old (claude/gates, rule 43, docs/GATES.md): the garden data before the front-gates job (data/gardens/old): a
+/** ?gates=old (claude/gates, rule house-front-garden-closed, docs/GATES.md): the garden data before the front-gates job (data/gardens/old): a
  *  street whose drawn style was "open" left 60 % of its houses open, doors inside a driveway walked through it ungated,
  *  doors near a run end lost their gate, buildings with the door on a side face had no way in, two coplanar faces of one
  *  wall dropped each other's front, driveway gates 55 % everywhere and never open */

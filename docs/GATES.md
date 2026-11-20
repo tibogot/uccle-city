@@ -12,7 +12,7 @@ Google Maps / Street View reality checks (look only: never store, trace or ship 
 > --lanes until it reports nothing, --steps, --check, the census, re-set the gates ceilings (villaDriveGatedPm /
 > rowDriveGatedPm in place of driveGatedPm), the full gate, the city browser checks.
 
-`?gates=old` = the garden data before this job (data/gardens/old/<T>.json, a frozen copy: same blobs in git). Rule 43
+`?gates=old` = the garden data before this job (data/gardens/old/<T>.json, a frozen copy: same blobs in git). Rule house-front-garden-closed
 (docs/QUALITY_RULES.md), gate row `gates`. Census class G: `tools/audit/census/gates.mjs`; reports
 `docs/census/gates_old.json` (before) and `docs/census/gates_after.json` (after).
 

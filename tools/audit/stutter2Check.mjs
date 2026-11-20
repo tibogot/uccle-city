@@ -21,8 +21,7 @@
 //   4. hero colliders: heroTrianglesGen drained = sliced; a step <= 3 ms; the poll walks the scene once for missing roots,
 //      slices the triangles and blockers at POLL_MS = 3 (?heropoll=old); heroBVH transfers its copy
 //   5. viewer/slices.js sliced(): slices <= ms + one step, the same value as drain()
-//   6. a viewer/features.js row per switch (cullcopy: dropped on the browser turn, it measured nothing); no DynamicDrawUsage, no
-//      light made in the files this gate covers
+//   6. (the features rows, main.js wiring, no DynamicDrawUsage / no light: the meta row, tools/audit/gate.d/stutter2.mjs)
 import * as THREE from "three/webgpu";
 import fs from "node:fs";
 import path from "node:path";
@@ -108,10 +107,6 @@ const { drain, sliced } = await import("../../viewer/slices.js");
   const names = p1 ? p1.children.map((c) => c.material.name).sort() : [];
   ok(names.length === 2 && names.includes("walls (kit):fade") && names.includes("walls (kit, far):fade") && p1.children.every((c) => c.castShadow), `a landing tile's stand-ins: both copies, shadow casters (${names.join(", ")})`);
   ok(L.fadeProxies(mk()) === null, "the next tile: none (the copies are shared: nothing left to build when a tile retires)");
-  const main = src("viewer/main.js");
-  const r = main.slice(main.indexOf("const retire = async (groups, dispose) => {"), main.indexOf("const stream = async"));
-  ok(r.indexOf("if (px.length && RETIRE_WARM && shadowWarm) await shadowWarm(px);") > r.indexOf("await compileFor(px, { first: true });") && r.indexOf("fader.fade(g, -1") > r.indexOf("await shadowWarm(px)"), "main.js retire: the new copies' shadow pass warmed (warmShadows) before the fade-out starts");
-  ok(/if \(shadowWarm\) await shadowWarm\(\[\.\.\.\[\]\.concat\(roots\), \.\.\.fp\]\);/.test(main), "main.js preCompile: a landing tile's stand-ins (both copies) are shadow-warmed");
 }
 
 // ------------------------------------------------------------------ 3. gardens in slices
@@ -139,9 +134,8 @@ const { drain, sliced } = await import("../../viewer/slices.js");
   for (let k = 0; k < 3; k++) { const s1 = {}; const r = await sliced(GC.clearRoadsGen(doc, blocked), 3, s1); if (!st2 || s1.longest < st2.longest) { st2 = s1; c2 = r; } }
   ok(c1 && c2 && c1.segs === c2.segs && c1.doc.segs.length === c2.doc.segs.length && c1.doc.hedges.length === c2.doc.hedges.length && c1.segs > 0, `clearRoads drained = sliced (${c1.segs} segments, ${c1.pillars} pillars, ${c1.gates} gates off the road)`);
   ok(st2.slices > 1 && st2.longest <= 3 + 2, `clearRoads: ${st2.slices} slices, longest ${st2.longest.toFixed(1)} ms`);
-  const cg = src("viewer/gardens/cityGardens.js"), main = src("viewer/main.js");
+  const cg = src("viewer/gardens/cityGardens.js");
   ok(cg.includes("addTile(...a) { return drain(this.addTileGen(...a)); },") && cg.includes("yield* clearRoadsGen(doc, blocked, { old: GARDEN_LANE_OLD })") && cg.includes("yield* gardenInstancesGen(doc, groundAt"), "cityGardens.js: addTile drains the same generator addTileSliced slices");
-  ok(main.includes("await (GARDEN_SLICE ? cityGardens.addTileSliced : cityGardens.addTile).call(cityGardens, entry.name") && /GARDEN_SLICE = params\.get\("gardenslice"\) !== "old"/.test(main), "main.js loadTile: the gardens through addTileSliced (?gardenslice=old)");
 }
 
 // ------------------------------------------------------------------ 4. hero collider poll
@@ -171,17 +165,6 @@ const { drain, sliced } = await import("../../viewer/slices.js");
   const sl = src("viewer/slices.js");
   ok(sl.includes("await yieldTask();") && sl.includes('typeof S.yield === "function"') && sl.includes("new MessageChannel()"), "slices.js: yields by scheduler.yield / MessageChannel, not nested setTimeout (clamped to >= 4 ms each: a tile's gardens took 4-7 s of wall time at boot)");
   ok(v === drain(work(40)) && st.slices >= 5 && st.longest <= 3 + 0.5 + 1, `sliced(): the drained value, ${st.slices} slices, longest ${st.longest.toFixed(1)} ms (<= 3 ms + one step)`);
-}
-
-// ------------------------------------------------------------------ 6. copies, switches, rules
-{
-  const feat = src("viewer/features.js");
-  for (const k of ["retirewarm", "boxshare", "gardenslice", "heropoll"]) ok(new RegExp(`old\\("${k}", "perf", [^\\n]*sub: "Stutter"`).test(feat), `viewer/features.js: a Stutter row for ?${k}`);
-  for (const p of ["viewer/slices.js", "viewer/heroTris.js", "viewer/heroColliders.js", "viewer/heroBVH.js", "viewer/gardens/cityGardens.js", "viewer/gardens/gardenKit.js", "viewer/gardens/gardenHedge.js", "viewer/streetlife/streetlife.js", "viewer/lodFade.js"]) {
-    const s = src(p);
-    ok(!/THREE\.DynamicDrawUsage|setUsage\([^)]*Dynamic/.test(s), `${p}: no DynamicDrawUsage`);
-    ok(!/new THREE\.(Point|Spot|Directional|Hemisphere|RectArea|Ambient)Light\b/.test(s), `${p}: no light made`);
-  }
 }
 console.log(fails ? `${fails} stutter2 check(s) FAILED` : "stutter2 checks pass");
 process.exit(fails ? 1 : 0);

@@ -1,7 +1,8 @@
 // THE CITY'S SOUND (docs/SOUND_CITY.md): the sound engine (engine.js, the Sound Lab's) wired to the live city. Every emitter
 // comes from what the city simulates, nothing is a recording:
 //   traffic   the nearest N cars of the moving traffic (viewer/traffic, sim arrays): tyre / road noise by speed, setts /
-//             asphalt / wet road, brake squeal (no engine tone: the owner brings that model; drive mode's engineVoice slot)
+//             asphalt / wet road, brake squeal (no engine tone yet); the PLAYER car's engine (engineSound.js, the drive
+//             mode's engineVoice slot, recorded loops, docs/ENGINE_SOUND.md)
 //   transit   the trams 92 (tramline soundFeed: rumble, curve squeal, traction whine, bell leaving a stop and when someone
 //             is on the track ahead, doors + chime at the stops) and the SNCB trains (trains soundFeed: rolling per car,
 //             traction whine, bogie clacks at the switches)
@@ -24,6 +25,7 @@ import { TransitBank, createTramVoice, createTrainVoice, playTramBell, playTramC
 import { AmbienceBank, BirdBank, BellBank, createWindBed, createHumBed, createRainBed, createPlaygroundVoice, birdActivity, playHourStrikes } from "./ambience.js";
 import { CrashBank, playImpact, createScrapeVoice } from "./crash.js";
 import { playBuffer, clamp } from "./util.js";
+import { createPlayerEngine, ENGINE_OLD } from "./engineSound.js";
 
 export const CITY_SOUND_OLD = typeof location !== "undefined" && /[?&]citysound=old(&|$)/.test(location.search);
 
@@ -530,7 +532,10 @@ export function createCitySound(host, opts = {}) {
       E = cs.engine = new SoundEngine(ctx, { voiceLimit: opts.voiceLimit ?? 32, hrtfVoices: opts.hrtfVoices ?? 6, controlRate: 10, offline: !!opts.offline, environment: "open", irs: B.irs.c });
       E.obstructionFn = obstruction; E.enclosureFn = enclosure; E.timing = cs.timing;
       wind = E.addBed("nature", createWindBed(B.amb)); rain = E.addBed("nature", createRainBed(B.amb)); hum = E.addBed("traffic", createHumBed(B.amb));
-      E.setCategory("traffic", 0.9); E.setCategory("people", 0.8);
+      // people murmur MUTED by default (owner 2026-11-19: "very annoying"; the formant babble reads robotic): ?citypeople=1
+      // (or opts.people) brings it back at 0.8
+      const peopleQ = typeof location !== "undefined" ? new URLSearchParams(location.search).get("citypeople") : null;
+      E.setCategory("traffic", 0.9); E.setCategory("people", opts.people ?? (peopleQ === "1" ? 0.8 : 0));
       makeSources();
       E.beforeControl = feed;
       cs.ready = true;
@@ -557,6 +562,7 @@ export function createCitySound(host, opts = {}) {
   /** the player's vehicle in contact this frame (sliding speed m/s): the scrape follows it */
   cs.contact = (slide) => { if (slide > 0.8) { ST[SCRAPE] = Math.max(ST[SCRAPE], clamp((slide - 0.8) / 8, 0.15, 1)); ST[SLIDE] = slide; } };
   cs.WALL_KINDS = WALL_KINDS;
+  cs.poolSource = poolSource;              // (the player's engine, engineSound.js: a source of the pool's one shape)
   return cs;
 }
 
@@ -573,7 +579,8 @@ export function hookCitySound({ soundGate, camera, world, driver, getTram, getTr
     listener(L) {
       L.x = camera.position.x; L.y = camera.position.y; L.z = camera.position.z;
       fwd.x = -e[8]; fwd.y = -e[9]; fwd.z = -e[10];             // (the camera looks down its -z: no Vector3 per call)
-      const n = Math.sqrt(fwd.x * fwd.x + fwd.y * fwd.y + fwd.z * fwd.z) || 1;   // (no Math.hypot on a hot path: it allocates) L.fx = fwd.x / n; L.fy = fwd.y / n; L.fz = fwd.z / n;
+      const n = Math.sqrt(fwd.x * fwd.x + fwd.y * fwd.y + fwd.z * fwd.z) || 1;   // (no Math.hypot on a hot path: it allocates)
+      L.fx = fwd.x / n; L.fy = fwd.y / n; L.fz = fwd.z / n;   // (claude/engine: these sat inside the comment above: the listener never turned)
     },
     tiles: () => world.tiles,
     groundAt: (x, z) => world.surface(x, z),
@@ -599,6 +606,8 @@ export function hookCitySound({ soundGate, camera, world, driver, getTram, getTr
   };
   const cs = createCitySound(host, { timing: typeof location !== "undefined" && /[?&]soundstats=1(&|$)/.test(location.search) });
   window.__citySound = cs;
+  // the player car's engine (engineSound.js, docs/ENGINE_SOUND.md; ?engine=old: none): the drive mode's engineVoice slot
+  if (!ENGINE_OLD && driver && !driver.engineVoice) driver.engineVoice = createPlayerEngine({ getEngine: () => (cs.ready ? cs.engine : null), makeSource: cs.poolSource, gate: soundGate });
   // the hits: the two-way car contact's event (traffic / parked / bodies) and the walls (carPhysics lastHit, not a car)
   let hooked = null, lastWall = 0;
   const hookHits = () => {

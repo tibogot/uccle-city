@@ -331,7 +331,7 @@ export function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile 
     // the ground can climb a lot along a 2 m opening)
     const ux0 = (e[3] - e[0]) / L, uz0 = (e[5] - e[2]) / L, half = (L - pa - pb) / 2;
     let gs = Math.max(...[-0.6, 0, 0.6].map((f) => { const ox = mx + ux0 * f * half, oz = mz + uz0 * f * half; return [BEHIND, 1.6, 2.0].map((d) => ground(ox + e[6] * d, oz + e[7] * d)).sort((a, b) => a - b)[1]; }));
-    // (claude/gates, rule 43: gateNear.gates, the new garden data) the garden is also read behind the GATES themselves
+    // (claude/gates, rule house-front-garden-closed: gateNear.gates, the new garden data) the garden is also read behind the GATES themselves
     // (hinge, middle, far end): a gate just past a short outline edge's end, or beside a driveway at the edge's end,
     // read the edge's middle level with the sidewalk and got no steps while its own garden stood 0.37-0.43 m up (E8 Rue
     // Engeland 340, F7 Rue de Verrewinkel 87)

@@ -16,10 +16,10 @@
 //   gate default  muted with nothing stored and no ?sound=
 //   one button    while muted no mode makes a context (city, motorbike, Villo, falcon, game cues); one unmute makes them
 //                 and runs every one, one mute suspends every one; the choice is stored per browser
-//   no 2nd switch no ?motosound / N key / falcon sound tick / police siren option / dev panel toggle left; every module
-//                 that makes an AudioContext imports the gate; main.js imports it first; features.js has citysound
+//   no 2nd switch (static: the meta row, tools/audit/gate.d/citysound.mjs: no ?motosound / N key / ... , every AudioContext
+//                 maker imports the gate, main.js imports it first, features.js has citysound)
 //   old           ?citysound=old: the hook makes nothing
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { OfflineAudioContext, ClockAudioContext } from "./miniWebAudio.mjs";
@@ -262,35 +262,11 @@ function makeCity() {
     `muted: ${mutedMade} contexts made (clicks, keys, game cues, 30 city frames); one unmute: ${after.length} made (${Object.entries(who).map(([k, v]) => `${k} ${v ? "yes" : "NO"}`).join(", ")}), ${running} running; one mute: ${suspended} suspended; stored "${stored}" then "${store.get("uccle-sound")}"`);
 }
 
-// ---------------------------------------------------------------------------------------------- 4 no second switch (static)
-{
-  const files = [];
-  const walk = (d) => { for (const f of readdirSync(d)) { const p = path.join(d, f); const st = statSync(p); if (st.isDirectory()) walk(p); else if (/\.js$/.test(f) && !/bundle/.test(f)) files.push(p); } };
-  walk(path.join(ROOT, "viewer"));
-  const rel = (p) => path.relative(ROOT, p).replace(/\\/g, "/");
-  const bad = [];
-  for (const p of files) {
-    const s = readFileSync(p, "utf8"), r = rel(p);
-    if (/motosound/.test(s)) bad.push(`${r}: ?motosound`);
-    if (/new (window\.)?(webkit)?AudioContext\(/.test(s) && !/soundGate\.js/.test(s) && !/audio\/soundGate\.js$/.test(r)) bad.push(`${r}: makes an AudioContext without importing the gate`);
-  }
-  const src = (r) => readFileSync(path.join(ROOT, r), "utf8");
-  if (/"KeyN"/.test(src("viewer/drive/input.js")) || /KeyN/.test(src("viewer/drive/driveMode.js"))) bad.push("drive: the N sound key");
-  if (/id: "sound"/.test(src("viewer/falconGame/falconGameDef.js"))) bad.push("falcon game: the sound tick");
-  if (/id: "siren"/.test(src("viewer/police/policeGame.js"))) bad.push("police game: the siren sound option");
-  if (/two-wheeler sound/.test(src("viewer/devPanel.js"))) bad.push("dev panel: the two-wheeler sound toggle");
-  // main.js: the gate right after quick.js (which must stay first: it rewrites the URL) and quick.js makes no context
-  const imports = src("viewer/main.js").match(/^import .*$/gm) || [], gi = imports.findIndex((l) => /audio\/soundGate\.js/.test(l));
-  if (gi < 0 || imports.slice(0, gi).some((l) => !/\.\/quick\.js/.test(l)) || /AudioContext/.test(src("viewer/quick.js"))) bad.push(`main.js: the gate is not imported first (after quick.js): import #${gi}`);
-  if (!/old\("citysound"/.test(src("viewer/features.js"))) bad.push("features.js: no citysound row");
-  check("no 2nd switch", bad.length === 0, bad.length ? bad.join("; ") : `${files.length} viewer modules: no ?motosound / N key / falcon sound tick / siren option / panel toggle; every AudioContext maker imports the gate; main.js imports it first; features.js row citysound`);
-}
-
 // ---------------------------------------------------------------------------------------------- 5 ?citysound=old
 {
-  const s = readFileSync(path.join(ROOT, "viewer/audio/citySound.js"), "utf8"), m = readFileSync(path.join(ROOT, "viewer/main.js"), "utf8");
-  const ok = /CITY_SOUND_OLD\) \{ log\(/.test(s) && /params\.get\("citysound"\) !== "old"/.test(m);
-  check("old", ok, "?citysound=old: main.js skips the hook (and hookCitySound returns null): the silent city as before");
+  const s = readFileSync(path.join(ROOT, "viewer/audio/citySound.js"), "utf8");
+  const ok = /CITY_SOUND_OLD\) \{ log\(/.test(s);
+  check("old", ok, "?citysound=old: hookCitySound returns null (main.js skipping the hook: the meta row)");
 }
 
 console.log(`\n## citySoundTest (rule 42, docs/SOUND_CITY.md)\n| check | result | measured |\n|---|---|---|\n${out.join("\n")}`);

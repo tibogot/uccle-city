@@ -1,4 +1,4 @@
-// GARDEN PIECES FITTED TO THE BUILT TILE (claude/gates, rule 43; docs/GATES.md): two build-time passes over
+// GARDEN PIECES FITTED TO THE BUILT TILE (claude/gates, rule house-front-garden-closed; docs/GATES.md): two build-time passes over
 // data/gardens/<T>.json against the tile as the worker builds it (viewer/tileData.js in node, tools/audit/census/
 // lib_mesh.mjs buildTile), after tools/gardens/build_gardens.py:
 //

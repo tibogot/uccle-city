@@ -208,17 +208,12 @@ ok(blendBad === 0, `blended view under the view camera: the old order (${blendBa
   c.g.forEach((g, k) => g.inst.forEach((q, j) => { _b.min.set(q.x - q.h, q.y - q.hy, q.z - q.h); _b.max.set(q.x + q.h, q.y + q.hy, q.z + q.h); if (F.intersectsBox(_b) && !drawnSet(S, l2).has(k * 1e7 + j)) miss++; }));
   ok(miss === 0, `same camera + frame, other matrices (cube faces): culled again (${l1.length} -> ${l2.length} records, ${miss} lost)`);
 }
-// the switches: ?mdsort=0&mdchunk=160 = the old order and chunks; both have a features.js row
+// the switches: ?mdsort=0&mdchunk=160 = the old order and chunks (their features.js rows, main.js wiring: the meta row)
 {
   globalThis.location = { search: "?mdsort=1&mdchunk=80" };
   const O = await import("../../viewer/multiDraw.js?switches");
   globalThis.location = { search: "" };
   ok(O.MD_SORT === true && O.CHUNK_M === 80 && O.CHUNK_MAX === 128, `?mdsort=1&mdchunk=80: sorted, 80 m / 128 (got ${O.MD_SORT} / ${O.CHUNK_M} / ${O.CHUNK_MAX})`);
-  const { readFileSync } = await import("node:fs");
-  const feats = readFileSync(new URL("../../viewer/features.js", import.meta.url), "utf8");
-  ok(/opt\("mdsort",/.test(feats) && /opt\("mdchunk",.*on: "80"/.test(feats), "features.js rows: mdsort (on = 1), mdchunk (on = 80)");
-  const main = readFileSync(new URL("../../viewer/main.js", import.meta.url), "utf8");
-  ok(/setMultiDrawViewCamera\(camera\)/.test(main), "main.js registers the view camera (only its culls are sorted)");
 }
 
 // ------------------------------------------------------------------ 5. budget
