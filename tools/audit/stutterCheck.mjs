@@ -25,6 +25,7 @@ import * as THREE from "three/webgpu";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { measure, bestOf } from "../gate/timing.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet");
 let fails = 0;
@@ -75,14 +76,21 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   H.installHeapDrop({ _attributes: A, _textures: T }, {});
   globalThis.setInterval = si;
   ok(timers.length === 1, "heapDrop: its 1 s check captured");
-  const root = new THREE.Group(), geos = [];
-  for (let i = 0; i < 60; i++) { const g = new THREE.SphereGeometry(1, 96, 64); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial()); m.name = `buildings-${i}`; root.add(m); geos.push(g); }
-  H.dropAfterUpload(root, { tag: "buildings:T" });
-  for (const g of geos) { for (const a of Object.values(g.attributes)) A.update(a); A.update(g.index); }
-  const one = new THREE.SphereGeometry(1, 96, 64); const t1 = performance.now(); one.computeBoundingBox(); one.computeBoundingSphere(); const per = performance.now() - t1;
-  const t0 = performance.now(); timers.forEach((f) => f()); const first = performance.now() - t0;
-  const droppedNow = geos.filter((g) => g.attributes.position.array.length === 0).length;
-  ok(first <= 3 + 3 * per + 2 && droppedNow < geos.length, `a tick: ${first.toFixed(1)} ms (<= 3 ms + one geometry, ${per.toFixed(1)} ms), ${droppedNow}/${geos.length} dropped, the rest later`);
+  // (tools/gate/timing.mjs: the best of 3 first ticks, each on a fresh tile, between two calibrations; budget * k)
+  const geos = [];
+  const tickRun = () => {
+    const root = new THREE.Group(), mine = [];
+    for (let i = 0; i < 60; i++) { const g = new THREE.SphereGeometry(1, 96, 64); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial()); m.name = `buildings-${i}`; root.add(m); mine.push(g); }
+    geos.push(...mine);
+    H.dropAfterUpload(root, { tag: "buildings:T" });
+    for (const g of mine) { for (const a of Object.values(g.attributes)) A.update(a); A.update(g.index); }
+    const one = new THREE.SphereGeometry(1, 96, 64); const t1 = performance.now(); one.computeBoundingBox(); one.computeBoundingSphere(); const per = performance.now() - t1;
+    const t0 = performance.now(); timers.forEach((f) => f()); const first = performance.now() - t0;
+    return { first, per, over: first - 3 * per, droppedNow: mine.filter((g) => g.attributes.position.array.length === 0).length, n: mine.length };
+  };
+  const M = await measure(() => bestOf(3, tickRun, "over"));
+  const { first, per, droppedNow, n } = M.value;
+  ok(first <= (3 + 3 * per + 2) * M.k && droppedNow < n, `a tick: ${first.toFixed(1)} ms (<= 3 ms + one geometry, ${per.toFixed(1)} ms; best of 3, ${M.note}), ${droppedNow}/${n} dropped, the rest later`);
   for (let i = 0; i < 200 && geos.some((g) => g.attributes.position.array.length); i++) await new Promise((r) => setTimeout(r, 60));
   ok(geos.every((g) => g.attributes.position.array.length === 0 && g.boundingSphere), "every geometry dropped in later tasks, bounds first");
   const hd = src("viewer/heapDrop.js");

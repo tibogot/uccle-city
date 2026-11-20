@@ -32,10 +32,61 @@ script. If those live in the script, the row has to run every time someone touch
 
 A browser-turn check is `tools/audit/gate.d/browser/<name>.mjs`: `export default { name, text }`.
 
+Two more fields:
+- `timing: true` when the row asserts a wall time. It must measure through `tools/gate/timing.mjs` (see "Timing rows"
+  below); the `meta` row checks that.
+- `heavy: true` when the row builds many tiles. Usually not needed: the runner measures each row's memory.
+
 Run the gate:
-- `node tools/audit/mergeGate.mjs` runs everything.
-- `node tools/audit/mergeGate.mjs meta tlights` runs only those rows.
+- `node tools/audit/mergeGate.mjs` runs every row, except the rows the memo skips (below).
+- `node tools/audit/mergeGate.mjs meta tlights` runs only those rows (the memo still applies).
+- `--full` turns the memo off: every picked row runs.
+- `--changed [--base REF]` runs only the rows whose deps changed since REF, plus `meta`. REF defaults to the merge base
+  with claude/foundation; uncommitted and untracked files count as changed.
+- `--serial` runs one row at a time. `--jobs N` and `--mem MB` set the parallel budgets.
 - `--list` prints the row names. An unknown name exits 2.
+
+It prints which rows it skips and why, then the table in the rows' own order (a skipped row says `SKIP`). Each row's
+full output is in `.cache/gate/logs/<row>.txt`.
+
+## Memo and --changed
+
+Every row runs traced: `tools/gate/trace.mjs` is loaded into the row's process, its node children and its worker
+threads (through `NODE_OPTIONS`). It records the modules they load, the files they read and the directories they list,
+into `.cache/gate/deps/<row>.json` (git-ignored). Files the row writes are its outputs, so they are left out.
+- **Memo.** After a PASS, the gate stores a key in `.cache/gate/pass/<row>.json`. The key hashes the node version, the
+  row's gate.d file, the content of every traced file and the names in every listed directory. The next run skips the
+  row while the key is the same. A file edited while the row ran gives no memo.
+- **--changed.** A row runs when a changed file is one of its traced files, or a file added to / deleted from a
+  directory it listed. A row with no trace yet falls back to the static import crawl (`tools/gate/deps.mjs`).
+- **Not memoised:** a row that runs a program other than node or git (`meta` runs esbuild): what that program reads is
+  not traced.
+- **Limits.** The trace sees what one run did: a file read only on another code path (another tile list, a failure
+  branch) is not in it. `--full` is the nightly safety net. A file inside `node_modules` is recorded as its package's
+  `package.json`.
+
+`tools/merge.mjs` `auto` runs `mergeGate --changed --base <the pre-merge commit>`; `full` runs `--full`.
+
+## Timing rows
+
+A row that asserts a wall time is `timing: true` and uses `tools/gate/timing.mjs` (rule timing-rows):
+- `measure(fn)` times a fixed loop before and after `fn`. If the two calibrations differ by more than 15 %, it throws
+  the run away and measures again (up to 5 times). It returns `k`, the slow-down against the fastest calibration this
+  machine ever gave (`.cache/gate/calib.json`; at least 1, at most 3). Write budgets as `budget * k`.
+- `bestOf(n, fn)` keeps the best of n repeats.
+- `cleanSteps(makeGen, 5)` times every step of a sliced generator 5 times and keeps each step's best. It then cuts the
+  clean steps the way `sliced()` does. Check those slices, and check that a real `sliced()` run yields at least half
+  as often.
+- No `process.cpuUsage()` for a window under 1 s: on Windows it counts in 15.6 ms ticks.
+
+The gate runs the timing rows alone, first, one at a time. Then it runs the other rows in parallel:
+- a CPU budget (the logical cores);
+- a memory budget (60 % of RAM, and 1 GB must stay free on the machine);
+- at most 3 heavy rows at once.
+
+Each row's cost comes from its last trace (peak memory of its processes, peak node threads). Without a trace, `--jobs` /
+`--all` in its args make it heavy. The longest rows start first. Timeouts are doubled in the parallel part. The table
+warns when a row writes a file another row reads.
 
 ## Add a rule
 
@@ -77,9 +128,9 @@ node tools/merge.mjs claude/<job> --message-file <msg.txt> [--rows auto|full|a,b
    `node tools/merge.mjs claude/<job> --no-merge`.
 2. Rebuilds `viewer/tileWorker.bundle.js` here in the main repo (rule 12). If its code hash changed, it commits the bundle.
 3. Runs the gate rows:
-   - `auto` (the default) runs `meta` plus every row whose script imports a changed file, or names it as a path.
-     If a changed `data/` or `models/` file is named by no row, it runs the full gate.
-   - `full` runs every row (the nightly safety net).
+   - `auto` (the default) runs `mergeGate --changed` against the pre-merge commit: `meta`, plus every row whose traced
+     deps the merge changed, minus the rows the memo skips (see "Memo and --changed").
+   - `full` runs every row with the memo off (the nightly safety net).
    - `a,b,c` runs those rows only.
 4. On PASS it pushes (never `--force`). On FAIL it stops: nothing is pushed and the merge stays a local commit.
 5. It unlinks the branch's worktree junctions (`rmdir`, never a delete through a junction) and removes the worktree

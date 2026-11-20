@@ -61,12 +61,12 @@ Also: 5 rule renumberings, and 23 hand commits that only rebuild the worker bund
 1. gate-split
 2. rules-split + the features.js union
 3. meta row
-4. dependency tracer
-5. row memo + `--changed`
-6. timing robustness
-7. parallel runner
-8. tile cache / shared pass (measure first)
-9. bundle freshness + merge script
+4. dependency tracer (done, claude/speed2)
+5. row memo + `--changed` (done)
+6. timing robustness (done)
+7. parallel runner (done)
+8. tile cache / shared pass (measured, plan below; not built)
+9. bundle freshness + merge script (done, claude/speed1)
 10. headless runner (BIRDS, TRAFPARK, HEAP, JITTER first)
 11. old-switch retirement
 
@@ -94,8 +94,91 @@ See docs/WORKFLOW.md for the how-to.
   - checks that every viewer/ debug/ tools/ module parses and links (esbuild, about 800 files, about 1 s);
   - `skyctl` keeps its features-vs-panel check, because that check is its test.
 - **merge script** `tools/merge.mjs` does merge, bundle, rows (auto / full / list), push and worktree cleanup.
-  - `auto` uses a static import crawl plus the repo paths named in the scripts (`tools/gate/deps.mjs`). The tracer
-    (job 4) will replace it.
+  - `auto` used a static import crawl plus the repo paths named in the scripts. The tracer (job 4, claude/speed2)
+    replaced it.
+
+## Done in claude/speed2 (jobs 4, 5, 6, 7; job 8 measured only)
+
+See docs/WORKFLOW.md "Memo and --changed" and "Timing rows" for the how-to.
+
+- **Dependency tracer** (`tools/gate/trace.mjs`):
+  - an `--import` hook loaded through `NODE_OPTIONS`, so it reaches the row's node children (runTiles) and worker
+    threads (roadbends);
+  - it records the modules loaded (a load hook), the files read and the directories listed, plus the files written
+    (the row's outputs, left out) and each process's peak memory;
+  - into `.cache/gate/deps/<row>.json`. `tools/gate/deps.mjs` prefers it over the static crawl.
+  - `viewer/main.js` is now read by 2 rows (meta, motion), not 14; `viewer/features.js` by 3. A tile-core file
+    (heightmap.js, roadBuild.js) is read by 23 rows.
+- **Row memo + `--changed`** (`tools/gate/memo.mjs`, `tools/gate/select.mjs`):
+  - the memo key = node version + the row's gate.d file + the content hash of every traced file + the names in every
+    listed directory (hashes cached by size + mtime);
+  - `--changed [--base REF]` runs meta plus the rows a changed file touches. `tools/merge.mjs auto` uses it against the
+    pre-merge commit. `--full` turns the memo off. Every skip is printed with its reason.
+- **Timing robustness** (`tools/gate/timing.mjs`, rule timing-rows, checked by `meta`):
+  - budgets are multiplied by `k`, a calibration loop timed before and after in the same process; a run is discarded
+    while the two differ by more than 15 %;
+  - worst-step checks use each step's best of 5 (`cleanSteps`) or the best of 3;
+  - mdrawcull's sort cost is now the best of 150 short windows, not of 15 windows of 300 frames;
+  - engine's idle-garbage sample re-warms when the optimizing compiler ran late;
+  - 8 timing rows (carhit, citysound, engine, mdrawcull, orbitcam, stutter, stutter2, tyremarks) run alone, first.
+- **Parallel runner** (`tools/audit/mergeGate.mjs`):
+  - the other rows run in a pool, longest first, within a CPU budget (the logical cores) and a memory budget (60 % of
+    RAM, and 1 GB must stay free on the machine);
+  - at most 3 heavy rows at once. Costs come from the traces: tile rows peak at 1.6-3.0 GB;
+  - timeouts are doubled in the pool, and a timeout kills the whole process tree;
+  - the table keeps the rows' order. It warns when one row writes a file another reads (none today).
+  - `trafpark` and `tlights` now use runTiles (`--jobs 4`): tlights 575 s -> 121 s; trafpark from a 600 s timeout to
+    226 s.
+
+**Numbers** (2026-11-20, the 16 GB laptop, with 3-4 other agents' gates and censuses running all along):
+
+| mode | wall | rows run | verdict |
+|---|---|---|---|
+| old gate, serial (cf95fd01) | 102.6 min | 47 | 2 FAIL: ground and trafpark timed out at 600 s (load) |
+| new `--full` | 73.2 min | 50 | all PASS (same verdicts; ground took 600.1 s, inside its doubled timeout) |
+| new, nothing changed (memo) | 14 s | 1 (meta) | 49 skipped by the memo |
+| one file changed (`viewer/audio/engineModel.js`), `--changed` | 38 s | 4 | citysound, engine, motion, meta |
+| the same change again (memo) | 7 s | 1 | |
+| a tile-core file changed (`viewer/heightmap.js`), `--changed` | 29.8 min | 23 | all PASS; 92.8 min of row time in parallel (3.1x) |
+| timing group alone, 3 runs during a `ground` census (--jobs 4) | 69 / 103 / 87 s | 8 | 3 / 3 PASS |
+
+- The `--full` run was memory-bound: 1-4 GB free, so the pool mostly ran one heavy row at a time. With no trace yet,
+  a heavy row was guessed at 6 GB (now 3 GB); the core run used the measured costs.
+- ground took 600-827 s under this load: over its 600 s timeout with `--serial`, inside the
+  doubled one in the pool (raise its `timeout` if `--serial` matters).
+- With only the `k` scaling (before `cleanSteps`, the short mdrawcull windows and the engine re-warm), the same group
+  under the heavier load of four gates failed in 3 of 3 runs: mdrawcull's sort 34 us,
+  stutter2's garden slices 11-20 ms, engine's idle garbage.
+
+
+## Job 8 (tile cache): measured, not built
+
+Measured on 2026-11-20 (tools/road_audit/tile.mjs `loadTile`, I6 / E4 / B6 / F3, on a busy laptop):
+- **Cost.** The road stage (`buildRoadData`) takes 7.7-13 s a tile. It is about all of `loadTile`; reading the tile's
+  files is about 0.1 s. The gate builds it ~579 times for 120 distinct tiles.
+- **Size.** On I6 the data-only parts of the result serialize (v8) to 26.6 MB: `built` 15.4 MB, `parts` 8.9 MB,
+  `atlas` 1.2 MB, `surfaceData` 1.05 MB. That is ~3 GB for 120 tiles, per option set.
+- **Why it is not cloneable as is:**
+  - `net` holds `locate`, a closure;
+  - `prep` holds 11 closures (`classAt`, `nearKerb`, `rampAt`, `inside`...);
+  - the build **carves the heightmap in place** (`carvedCells` / `weldedCells`), so a cached result also needs the
+    carved `hm`;
+  - the rows call it with different options (`engineOnly`, `roadBend: false`, `paint`, `bandOnMeasured`, `tramfit`).
+
+**The plan, when it is worth the risk:**
+1. Split `buildRoadData` into a data stage (typed arrays + JSON, carved heights included) and a cheap `rehydrate(data)`
+   that rebuilds `net.locate` and `prep`'s closures from the data.
+2. `tools/audit/tileCache.mjs`:
+   - key = sha256(the tile core's source closure from the tracer's module list + the tile's input files + the canonical
+     options + node version);
+   - value = `v8.serialize(data)` in `.cache/tiles/`, capped at ~4 GB, LRU.
+3. A parity check: for 3 tiles, every field of rehydrated == fresh build. It fails the gate on any difference.
+4. Wire `ground`, `drivecheck` and `railcorridor` first.
+
+When the tile core did not change, the memo (job 5) already skips every tile row, so a cache adds nothing there. Its
+gain is on core runs: the same tile built ~4.8 times inside one gate run (8-12 min). That needs step 1 inside the
+worker's own code path, and that path is what every row tests. So it waits for its own job, with the parity check
+first.
 
 ## Branch conversion
 

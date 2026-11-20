@@ -30,6 +30,7 @@ import { pathToFileURL } from "node:url";
 import { loadTile, allTiles, ROOT } from "../road_audit/tile.mjs";
 import { readGlb } from "../mesh_audit/glb.mjs";
 import { auditGlb } from "../mesh_audit/cli.mjs";
+import { runTiles } from "./census/lib_street.mjs";
 
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
@@ -44,6 +45,85 @@ const OLD = argv.includes("--old");          // the placement before claude/tlig
 const say = (s) => { if (!QUIET) console.log(s); };
 const fails = [];
 const FAIL = (s) => { fails.push(s); console.log(`FAIL ${s}`); };
+
+// ------------------------------------------------------------------------------------------------ one city tile
+// (each signal tile in its own process, <= --jobs at once: census/lib_street.mjs runTiles; --child T is one tile)
+const deg = (a) => a * 180 / Math.PI;
+function cityTile(T) {
+  const S = { tiles: 0, posts: 0, bike: 0, facingBad: 0, facingNA: 0, pedBad: 0, unseated: 0, inLane: 0, worstSeat: 0, worstFace: 0 };
+  const worst = [];
+  let tile;
+  try { tile = loadTile(T); } catch (e) { return { tile: T, error: e.message }; }
+  const { roads, feats, bounds, rd, hm } = tile;
+  const fit = rd.surfaceData ? streetFit(rd.surfaceData) : null;
+  const driven = carriageway(roads, { classAt: fit?.classAt });
+  const lanes = carriageway(roads, { classAt: fit?.classAt, lanesOnly: true });
+  const sites = signalSites(feats.points, roads, { fit, driven, pre: OLD });
+  const ground = (x, z) => hm.ground(x, z);
+  const { list } = tlightInstances(sites, ground, fit?.lift, bounds);
+  const N = new Map(roads.nodes.map((n) => [n.id, n]));
+  S.tiles++;
+  for (const p of list) {
+    S.posts++; if (p.piece === "tl_post_bike") S.bike++;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);              // the vehicle heads' facing (local -z)
+    // facing: the lane 15-25 m back up the approach, walked along the road's polyline from the post's projection
+    // the road the post is FOR (the OSM point's road) and the stop point on it (signalPlace.js site.road / site.stop)
+    const road = roads.roads.find((r) => r.id === p.road);
+    const nr = road ? { road, px: p.stop[0], pz: p.stop[1] } : null;
+    if (nr) {
+      const pts = [N.get(nr.road.a), ...nr.road.pts, N.get(nr.road.b)].filter(Boolean);
+      // the segment of the projection and the walking direction (against the travel)
+      let k = 1, bestD = Infinity;
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], b = pts[i], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1e-9;
+        const t = Math.max(0, Math.min(1, ((nr.px - a.x) * dx + (nr.pz - a.z) * dz) / L2));
+        const d = Math.hypot(a.x + dx * t - nr.px, a.z + dz * t - nr.pz);
+        if (d < bestD) { bestD = d; k = i; }
+      }
+      const fwd = p.tx * (pts[k].x - pts[k - 1].x) + p.tz * (pts[k].z - pts[k - 1].z) >= 0;   // travel along a -> b
+      // two points back up the approach (15 and 25 m: the cars that come see the heads from there)
+      let bad = false;
+      for (const back of [15, 25]) {
+        let x = nr.px, z = nr.pz, left = back, i = fwd ? k - 1 : k;
+        while (left > 0 && i >= 0 && i < pts.length) {
+          const d = Math.hypot(pts[i].x - x, pts[i].z - z);
+          if (d > 1e-6 && ((pts[i].x - x) * -p.tx + (pts[i].z - z) * -p.tz) / d < 0.5) break;   // past a hairpin (> 60 deg): not this approach
+          if (d >= left) { x += (pts[i].x - x) * left / d; z += (pts[i].z - z) * left / d; left = 0; break; }
+          left -= d; x = pts[i].x; z = pts[i].z; i += fwd ? -1 : 1;
+        }
+        if (back - left < 8) { if (back === 15) S.facingNA++; continue; }     // a short stub before the way's end
+        // the lane's centre: from the centre line toward the traffic's right (the side the post is on)
+        const ox = p.x - nr.px, oz = p.z - nr.pz, ol = Math.hypot(ox, oz) || 1;
+        const lx = x + (ox / ol) * Math.min(1.6, ol * 0.4), lz = z + (oz / ol) * Math.min(1.6, ol * 0.4);
+        const vx = lx - p.x, vz = lz - p.z, vl = Math.hypot(vx, vz) || 1;
+        const ang = deg(Math.acos(Math.max(-1, Math.min(1, (fx * vx + fz * vz) / vl))));
+        S.worstFace = Math.max(S.worstFace, ang);
+        if (ang > 35) { bad = true; worst.push({ T, kind: `facing @${back} m`, ang: +ang.toFixed(0), x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
+      }
+      if (bad) S.facingBad++;
+      // the pedestrian head (local +x) toward the carriageway
+      const px = Math.cos(p.yaw), pz = -Math.sin(p.yaw), rx = nr.px - p.x, rz = nr.pz - p.z, rl = Math.hypot(rx, rz);
+      if (rl > 2) {                // (a post on a median within 2 m of the centre line: either way is across)
+        // across = the road's normal toward the carriageway (the traffic's left, or right for a post on the far side);
+        // not the direction to the stop point: a post moved along the kerb (onto paving) looks at it obliquely
+        const sg = Math.sign(rx * p.tz - rz * p.tx) || 1, nx = p.tz * sg, nz = -p.tx * sg;
+        const a2 = deg(Math.acos(Math.max(-1, Math.min(1, px * nx + pz * nz))));
+        if (a2 > 50) { S.pedBad++; worst.push({ T, kind: "ped head", ang: +a2.toFixed(0), x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
+      }
+    }
+    // seated: the foot ring on the drawn pavement
+    let dmax = 0;
+    for (let j = 0; j <= 8; j++) {
+      const a = (j / 8) * 2 * Math.PI, r = j === 8 ? 0 : 0.075;
+      dmax = Math.max(dmax, Math.abs(seatY(ground, fit?.lift, p.x + Math.cos(a) * r, p.z + Math.sin(a) * r) - p.y));
+    }
+    S.worstSeat = Math.max(S.worstSeat, dmax);
+    if (dmax > 0.05) { S.unseated++; worst.push({ T, kind: "seat", dy: +dmax.toFixed(3), x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
+    if (lanes.inside(p.x, p.z, 0)) { S.inLane++; worst.push({ T, kind: "in lane", x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
+  }
+  return { tile: T, S, worst, n: list.length };
+}
+if (argv.includes("--child")) { console.log(JSON.stringify(cityTile(argv[argv.indexOf("--child") + 1]))); process.exit(0); }
 
 // ------------------------------------------------------------------------------------------------ the kit
 const GLB = join(ROOT, "models/tlights/tlights.glb");
@@ -145,78 +225,12 @@ else {
 }
 const S = { tiles: 0, posts: 0, bike: 0, facingBad: 0, facingNA: 0, pedBad: 0, unseated: 0, inLane: 0, worstSeat: 0, worstFace: 0 };
 const worst = [];
-const deg = (a) => a * 180 / Math.PI;
-for (const T of TILES) {
-  let tile;
-  try { tile = loadTile(T); } catch (e) { FAIL(`city: ${T} ${e.message}`); continue; }
-  const { roads, feats, bounds, rd, hm } = tile;
-  const fit = rd.surfaceData ? streetFit(rd.surfaceData) : null;
-  const driven = carriageway(roads, { classAt: fit?.classAt });
-  const lanes = carriageway(roads, { classAt: fit?.classAt, lanesOnly: true });
-  const sites = signalSites(feats.points, roads, { fit, driven, pre: OLD });
-  const ground = (x, z) => hm.ground(x, z);
-  const { list } = tlightInstances(sites, ground, fit?.lift, bounds);
-  const N = new Map(roads.nodes.map((n) => [n.id, n]));
-  S.tiles++;
-  for (const p of list) {
-    S.posts++; if (p.piece === "tl_post_bike") S.bike++;
-    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);              // the vehicle heads' facing (local -z)
-    // facing: the lane 15-25 m back up the approach, walked along the road's polyline from the post's projection
-    // the road the post is FOR (the OSM point's road) and the stop point on it (signalPlace.js site.road / site.stop)
-    const road = roads.roads.find((r) => r.id === p.road);
-    const nr = road ? { road, px: p.stop[0], pz: p.stop[1] } : null;
-    if (nr) {
-      const pts = [N.get(nr.road.a), ...nr.road.pts, N.get(nr.road.b)].filter(Boolean);
-      // the segment of the projection and the walking direction (against the travel)
-      let k = 1, bestD = Infinity;
-      for (let i = 1; i < pts.length; i++) {
-        const a = pts[i - 1], b = pts[i], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1e-9;
-        const t = Math.max(0, Math.min(1, ((nr.px - a.x) * dx + (nr.pz - a.z) * dz) / L2));
-        const d = Math.hypot(a.x + dx * t - nr.px, a.z + dz * t - nr.pz);
-        if (d < bestD) { bestD = d; k = i; }
-      }
-      const fwd = p.tx * (pts[k].x - pts[k - 1].x) + p.tz * (pts[k].z - pts[k - 1].z) >= 0;   // travel along a -> b
-      // two points back up the approach (15 and 25 m: the cars that come see the heads from there)
-      let bad = false;
-      for (const back of [15, 25]) {
-        let x = nr.px, z = nr.pz, left = back, i = fwd ? k - 1 : k;
-        while (left > 0 && i >= 0 && i < pts.length) {
-          const d = Math.hypot(pts[i].x - x, pts[i].z - z);
-          if (d > 1e-6 && ((pts[i].x - x) * -p.tx + (pts[i].z - z) * -p.tz) / d < 0.5) break;   // past a hairpin (> 60 deg): not this approach
-          if (d >= left) { x += (pts[i].x - x) * left / d; z += (pts[i].z - z) * left / d; left = 0; break; }
-          left -= d; x = pts[i].x; z = pts[i].z; i += fwd ? -1 : 1;
-        }
-        if (back - left < 8) { if (back === 15) S.facingNA++; continue; }     // a short stub before the way's end
-        // the lane's centre: from the centre line toward the traffic's right (the side the post is on)
-        const ox = p.x - nr.px, oz = p.z - nr.pz, ol = Math.hypot(ox, oz) || 1;
-        const lx = x + (ox / ol) * Math.min(1.6, ol * 0.4), lz = z + (oz / ol) * Math.min(1.6, ol * 0.4);
-        const vx = lx - p.x, vz = lz - p.z, vl = Math.hypot(vx, vz) || 1;
-        const ang = deg(Math.acos(Math.max(-1, Math.min(1, (fx * vx + fz * vz) / vl))));
-        S.worstFace = Math.max(S.worstFace, ang);
-        if (ang > 35) { bad = true; worst.push({ T, kind: `facing @${back} m`, ang: +ang.toFixed(0), x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
-      }
-      if (bad) S.facingBad++;
-      // the pedestrian head (local +x) toward the carriageway
-      const px = Math.cos(p.yaw), pz = -Math.sin(p.yaw), rx = nr.px - p.x, rz = nr.pz - p.z, rl = Math.hypot(rx, rz);
-      if (rl > 2) {                // (a post on a median within 2 m of the centre line: either way is across)
-        // across = the road's normal toward the carriageway (the traffic's left, or right for a post on the far side);
-        // not the direction to the stop point: a post moved along the kerb (onto paving) looks at it obliquely
-        const sg = Math.sign(rx * p.tz - rz * p.tx) || 1, nx = p.tz * sg, nz = -p.tx * sg;
-        const a2 = deg(Math.acos(Math.max(-1, Math.min(1, px * nx + pz * nz))));
-        if (a2 > 50) { S.pedBad++; worst.push({ T, kind: "ped head", ang: +a2.toFixed(0), x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
-      }
-    }
-    // seated: the foot ring on the drawn pavement
-    let dmax = 0;
-    for (let j = 0; j <= 8; j++) {
-      const a = (j / 8) * 2 * Math.PI, r = j === 8 ? 0 : 0.075;
-      dmax = Math.max(dmax, Math.abs(seatY(ground, fit?.lift, p.x + Math.cos(a) * r, p.z + Math.sin(a) * r) - p.y));
-    }
-    S.worstSeat = Math.max(S.worstSeat, dmax);
-    if (dmax > 0.05) { S.unseated++; worst.push({ T, kind: "seat", dy: +dmax.toFixed(3), x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
-    if (lanes.inside(p.x, p.z, 0)) { S.inLane++; worst.push({ T, kind: "in lane", x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); }
-  }
-  say(`${T}: ${list.length} posts`);
+const JOBS = argv.includes("--jobs") ? +argv[argv.indexOf("--jobs") + 1] : undefined;
+for (const r of TILES.length > 1 ? await runTiles(import.meta.url, TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET }) : TILES.map(cityTile)) {
+  if (r.error) { FAIL(`city: ${r.tile} ${r.error === true ? "the child process failed" : r.error}`); continue; }
+  for (const k of Object.keys(S)) S[k] = /^worst/.test(k) ? Math.max(S[k], r.S[k]) : S[k] + r.S[k];
+  worst.push(...r.worst);
+  say(`${r.tile}: ${r.n} posts`);
 }
 S.worstSeat = +S.worstSeat.toFixed(3); S.worstFace = +S.worstFace.toFixed(1);
 console.log(`city: ${JSON.stringify(S)}`);
