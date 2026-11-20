@@ -46,6 +46,12 @@ The player car (our hatchback, the police estate) has an engine you hear. Fast-l
 - `--demo file.wav` renders a 32 s city drive. The owner's clip: `C:/Users/tibog/Downloads/uccle-sound-clips/engine_player.wav`.
 - The shift cuts' fast load swing makes a sharper-than-usual transient in the render (an isolated spike of about 5-6). It is reported as information, not gated. Constant-load sweeps through every bracket stay at the loops' own level.
 - **Browser:** the mergeGate BROWSER line "ENGINE".
+- **Browser turn, 2026-11-20** (Chrome, `?quick=1&view=drive&at=1100,540&sound=1`, after the merge of claude/foundation):
+  - The voice was held, on the HRTF model, with the loops loaded and no load error.
+  - RPM and gear followed the drive: 1st to 2800 rpm on the launch floor, then 5367 rpm at 43 km/h, the shift into 2nd at 53 km/h, 5479 rpm at 74 km/h, and idle 850 when stopped.
+  - The listener turned with the camera: its forward vector tracked the car's heading (-0.59/-0.80 to -0.97/0.24 through a turn).
+  - Engine voice cost: 0.015 ms a frame (338 frames).
+  - Console: no errors, and no warnings from our code (only the existing powerPreference / TSL / aUv2 warnings).
 
 ## Credits
 - **Loops:** `sounds/engines/gen6/**`. They are Thunderline's renders, made with enginesound 1.5.0 (MIT, github.com/DasEtwas/enginesound) from its example6.esc plus an off-load variant (gen6.esc / gen6_off.esc, copied next to them). They are our own output. The recipe is in game-engine-v1 `games/thunderline/assets-src/engines/README.md`.
