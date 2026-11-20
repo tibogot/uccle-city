@@ -214,6 +214,11 @@ for (const v of [20, 50]) {
   run(W, c, 5);
   const moved = W.P.map((p) => Math.hypot(pose(W, p).x - p.x, pose(W, p).z - p.z));
   check("terrace 30 km/h", moved.every((d) => d > 0.5), `table ${f2(moved[0])} m, chairs ${f2(moved[1])} / ${f2(moved[2])} m`);
+  // a table woken by anything else (a neighbour flying into it: browser turn 1) wakes its chairs too
+  const W2 = scene({ props: [{ cls: "table", x: 0, z: 12 }, { cls: "chair", x: -0.56, z: 12, yaw: Math.PI / 2 }, { cls: "chair", x: 0.56, z: 12, yaw: -Math.PI / 2 }] });
+  let woke = [0, 0, 0];
+  if (W2.world) { W2.P[0].group = [W2.P[1], W2.P[2]]; W2.world.wake(W2.P[0]); woke = W2.P.map((p) => p.state); }
+  check("terrace chairs follow", woke.every((st) => st === 1), `a table woken by a chain (not the car): states ${woke.join(" / ")} (1 = awake)`);
 }
 // ---------------------------------------------------------------- 6 a lamp still stops the car
 for (const v of [20, 50]) {

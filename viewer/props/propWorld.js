@@ -227,8 +227,13 @@ export class PropWorld {
     this.sampleGround(k);
     this.act[k] = 1; this.nAwake++;
     this.prop[k] = p; p.slot = k;
-    if (p.state === 0) { this.hideRef(p, true); this.onWake?.(p); this.stats.wakes++; }
+    const was = p.state;
+    if (was === 0) { this.hideRef(p, true); this.onWake?.(p); this.stats.wakes++; }
     p.state = 1; p.gen++;
+    // a terrace table's chairs wake with it, however it woke (the vehicle, another prop flying into it, the walker):
+    // they stand inside its collider box, so nothing else ever reaches them (browser turn 1: a table chain-woken by a
+    // neighbour left its chairs standing)
+    if (was === 0 && p.cls.group && p.group) for (let i = 0; i < p.group.length; i++) if (p.group[i] && p.group[i].state === 0) this.wake(p.group[i]);
     this.dmoved[q] = 2;
     this.gatherNear(k);
     return k;
@@ -531,7 +536,6 @@ export class PropWorld {
       if (vn <= PROP.wake || (two && cls.type === "heavy")) return false;   // (a rider into a parked motorbike: a wall, its crash rules)
       const slot = this.wake(p);
       if (slot < 0) return false;
-      if (cls.group && p.group) for (const g of p.group) if (g.state === 0) this.wake(g);   // (a terrace table: its chairs)
       return true;
     }
     if (two) return false;                                               // (a rider: its own crash rules on a post)
