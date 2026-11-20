@@ -308,15 +308,17 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // (between two calibrations, again while the machine changed speed: tools/gate/timing.mjs; a ratio, so no k)
   const MT = await measure(() => {
     ta.length = 0; tb.length = 0;
-    for (let r = 0; r < 20; r++) for (const [S, out] of r % 2 ? [[A, ta], [B, tb]] : [[B, tb], [A, ta]]) {
+    for (let r = 0; r < 30; r++) for (const [S, out] of r % 2 ? [[A, ta], [B, tb]] : [[B, tb], [A, ta]]) {
       const t = performance.now();
       let cars = 0;
       for (let s = 0; s < 150; s++) { S.clearObstacles(); S.step(ctx); cars += S.count; }
       out.push(((performance.now() - t) / cars) * 1000);            // (us per car per step)
     }
   }, { tries: 3 });
-  const ra = Math.min(...ta), rb = Math.min(...tb), ratio = ra / rb;
-  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${ra.toFixed(2)} us per car per step with the mix vs ${rb.toFixed(2)} without (x${ratio.toFixed(3)}), ${A.count} / ${B.count} cars (${MT.note})`);
+  // the ratio: the median of the rounds' own ratios (each round times both sims back to back, so both see the machine
+  // in the same state; the ratio of the two minima mixed two moments and swung 0.98-1.24 x under load, claude/speed2)
+  const ra = Math.min(...ta), rb = Math.min(...tb), pr = ta.map((v, i) => v / tb[i]).sort((x, y) => x - y), ratio = pr[pr.length >> 1];
+  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${ra.toFixed(2)} us per car per step with the mix vs ${rb.toFixed(2)} without (x${ratio.toFixed(3)}, the median of 30 paired rounds), ${A.count} / ${B.count} cars (${MT.note})`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");
 process.exitCode = fails ? 1 : 0;
