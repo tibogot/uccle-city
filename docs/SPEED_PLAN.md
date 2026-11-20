@@ -97,6 +97,35 @@ See docs/WORKFLOW.md for the how-to.
   - `auto` uses a static import crawl plus the repo paths named in the scripts (`tools/gate/deps.mjs`). The tracer
     (job 4) will replace it.
 
+## Job 8 (tile cache): measured, not built
+
+Measured on 2026-11-20 (tools/road_audit/tile.mjs `loadTile`, I6 / E4 / B6 / F3, on a busy laptop):
+- **Cost.** The road stage (`buildRoadData`) takes 7.7-13 s a tile. It is about all of `loadTile`; reading the tile's
+  files is about 0.1 s. The gate builds it ~579 times for 120 distinct tiles.
+- **Size.** On I6 the data-only parts of the result serialize (v8) to 26.6 MB: `built` 15.4 MB, `parts` 8.9 MB,
+  `atlas` 1.2 MB, `surfaceData` 1.05 MB. That is ~3 GB for 120 tiles, per option set.
+- **Why it is not cloneable as is:**
+  - `net` holds `locate`, a closure;
+  - `prep` holds 11 closures (`classAt`, `nearKerb`, `rampAt`, `inside`...);
+  - the build **carves the heightmap in place** (`carvedCells` / `weldedCells`), so a cached result also needs the
+    carved `hm`;
+  - the rows call it with different options (`engineOnly`, `roadBend: false`, `paint`, `bandOnMeasured`, `tramfit`).
+
+**The plan, when it is worth the risk:**
+1. Split `buildRoadData` into a data stage (typed arrays + JSON, carved heights included) and a cheap `rehydrate(data)`
+   that rebuilds `net.locate` and `prep`'s closures from the data.
+2. `tools/audit/tileCache.mjs`:
+   - key = sha256(the tile core's source closure from the tracer's module list + the tile's input files + the canonical
+     options + node version);
+   - value = `v8.serialize(data)` in `.cache/tiles/`, capped at ~4 GB, LRU.
+3. A parity check: for 3 tiles, every field of rehydrated == fresh build. It fails the gate on any difference.
+4. Wire `ground`, `drivecheck` and `railcorridor` first.
+
+When the tile core did not change, the memo (job 5) already skips every tile row, so a cache adds nothing there. Its
+gain is on core runs: the same tile built ~4.8 times inside one gate run (8-12 min). That needs step 1 inside the
+worker's own code path, and that path is what every row tests. So it waits for its own job, with the parity check
+first.
+
 ## Branch conversion
 
 The open branches made before claude/speed1 still edit the old single files: claude/ground, props, gates, trafmix and

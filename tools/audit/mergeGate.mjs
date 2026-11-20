@@ -120,7 +120,7 @@ function cost(c) {
   const argN = (k) => { const i = c.args.indexOf(k); return i >= 0 ? +c.args[i + 1] || 0 : 0; };
   const jobsArg = argN("--jobs") || argN("--threads");
   const guessHeavy = c.args.includes("--all") || jobsArg > 1;
-  const mem = t?.peakMB || (guessHeavy ? 6000 : 500);
+  const mem = t?.peakMB || (guessHeavy ? 3000 : 500);   // (measured 2026-11-20: tile rows 1.6-3.0 GB, the rest < 0.8 GB)
   const threads = t ? Math.max(1, (t.peakThreads || 1) - (t.procs > 1 ? 1 : 0)) : 0;
   const cpu = Math.min(CPU, Math.max(1, jobsArg || threads || (guessHeavy ? 4 : 1)));
   const heavy = c.heavy ?? (mem >= 2000 || guessHeavy);
