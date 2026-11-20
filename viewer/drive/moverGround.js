@@ -1,4 +1,4 @@
-// ONE GROUND FOR EVERY MOVER (claude/ground 2026-11-19, rule 46 provisional, docs/MOVERGROUND.md). Main-thread / node
+// ONE GROUND FOR EVERY MOVER (claude/ground 2026-11-19, rule mover-ground, provisional, docs/MOVERGROUND.md). Main-thread / node
 // only: not in the tile worker bundle.
 //
 // The player's car drives the DRAWN drive surface: the road bridges' decks (world.decks: the OSM decks + the hero road

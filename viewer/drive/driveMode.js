@@ -35,6 +35,8 @@ import { env as lightEnv } from "../lighting.js";
 import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit, twoWheelEnv } from "../moto/motoPhysics.js";
 import { MotoCamera } from "../moto/motoCamera.js";
 import { MotoAudio, BikeAudio, VOICES } from "../moto/motoAudio.js";
+import { createTyreMarks, TYREMARKS_OLD } from "./tyreMarks.js";
+import { wx } from "../weather/weatherState.js";
 
 /** the two-wheelers (viewer/moto/, docs/MOTO.md): the motorbike (round 1), the scooter and the Villo bike (round 2) */
 export const TWO_WHEEL = ["moto", "scooter", "villo"];
@@ -197,6 +199,8 @@ export class Driver {
     Object.assign(this, { camera, dom, scene, world, on: false });
     this.chase = new ChaseCamera(camera, dom);
     this.debug = new ColliderDebug(scene);
+    // tyre marks (docs/TYREMARKS.md, rule 48; ?tyremarks=old = none): one mesh, laid on this.ground (defined below)
+    this.marks = TYREMARKS_OLD ? null : createTyreMarks({ scene, ground: (x, z) => this.ground(x, z), surface: (x, z) => this.surface(x, z), wet: wx.uWet, snow: wx.uSnowCover, night: lightEnv.uNight });
     this.debug.visible = /[?&]drivedebug=1/.test(location.search);
     // the two-wheelers (viewer/moto/, docs/MOTO.md): the same driver, colliders, ground and traffic; their own physics
     // numbers, models, camera numbers and sound. setVehicle("car" | "moto" | "scooter" | "villo"); ?view=moto / scooter /
@@ -215,7 +219,7 @@ export class Driver {
       else if (k === "KeyE") this.onUse?.();
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
-    // THE MOVER GROUND (claude/ground, rule 46: viewer/drive/moverGround.js): the decks, then the drive grid, the layer
+    // THE MOVER GROUND (claude/ground, rule mover-ground: viewer/drive/moverGround.js): the decks, then the drive grid, the layer
     // nearest the car where two stack; the traffic, the trams, the parked and knocked cars stand on the same function
     this.ground = (x, z) => moverGroundY(this.world.decks, this.world.at(x, z), x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null));
     // drivecheck (rule 27 provisional): the place's surface layers with no car in them (surfaceLayers.js): what
@@ -409,6 +413,7 @@ export class Driver {
   }
   stop() {
     this.on = false; this.chase.active = false;
+    this.marks?.lift();
     for (const t of Object.values(this.twos)) t.rig.reattach();
     this.showOnly();
     for (const a of Object.values(this.audios)) a.stop(); this.motoChase.active = false;
@@ -438,6 +443,7 @@ export class Driver {
     if (CARFEEL_OLD) stepCar(c, inp, dt, this.env, HANDLING);
     else { (CARCTL_OLD ? stepFeel : stepCtl)(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
     this.carHit?.frame(dt, c.x, c.z);
+    this.marks?.update(c, "car", null, dt);
     carLights.brake.value = c.braking ? 1 : 0;
     carLights.head.value = carLights.tail.value = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     this.car.update(c);
@@ -482,6 +488,7 @@ export class Driver {
     if (this.carHit) this.carHit.player.m = MASS2[kind] ?? 250;
     stepMoto(c, this.keys.readMoto(), dt, this.motoEnv, H);
     this.carHit?.frame(dt, c.x, c.z);
+    this.marks?.update(c, kind, H, dt);
     const night = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     const ML = this.motoLights;
     ML.head.value = ML.tail.value = night; ML.brake.value = c.braking ? 1 : 0;

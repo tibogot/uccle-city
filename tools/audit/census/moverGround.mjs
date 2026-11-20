@@ -1,4 +1,4 @@
-// CENSUS: THE MOVERS' GROUND vs THE DRAWN STREET (claude/ground 2026-11-19, rule 46 provisional, docs/MOVERGROUND.md).
+// CENSUS: THE MOVERS' GROUND vs THE DRAWN STREET (claude/ground 2026-11-19, rule mover-ground, provisional, docs/MOVERGROUND.md).
 // Owner playtest 2026-11-19 (shots 111 / 112): traffic cars 20-40 cm into the road on the Carsoel deck (H6), on Place de
 // Saint-Job and at Pasta Commedia. The traffic, tram 92 and the parked cars stood on worldRef.surface + CARVE (+ the
 // decks); the player's car on the drawn drive surface (viewer/drive/moverGround.js). Gate row `moverground`.

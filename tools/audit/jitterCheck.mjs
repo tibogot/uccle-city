@@ -174,12 +174,9 @@ try {
   check("blended", !bad.length, `the cards blended at their coverage, writing depth only where it is >= ${TB.CARD_DEPTH_CUT * 100} % (a depth cut, not a visible edge: without depth the TAAU reprojected them at the depth behind and they smeared away while moving, browser turn), no alpha to coverage, no shadow: ${props.map(([n]) => n).join(", ")}${bad.length ? `; NOT: ${bad.map(([n]) => n).join(", ")}` : ""}`);
 } catch (e) { check("wgsl", false, `materials / WGSL: ${e.message.split("\n")[0]} (run with node --preserve-symlinks --import ./tools/characters/threeHook.mjs)`); }
 
-// ---- 5. rules
-const files = ["viewer/thinBars.js", "viewer/thinCards.js", "viewer/gardens/gardenKit.js", "viewer/facadeKit/kitField.js", "viewer/facadeKit/kitMaterials.js"];
-const src = files.map((f) => [f, rd(f)]);
-check("switch", /old\("jitter"/.test(rd("viewer/features.js")) && ["viewer/gardens/gardenKit.js", "viewer/facadeKit/kitField.js", "viewer/facadeKit/kitMaterials.js"].every((f) => /JITTER_OLD/.test(rd(f))), "?jitter=old: the features row + gardenKit.js, kitField.js, kitMaterials.js honour it");
-check("no-dynamic-draw", src.every(([, s]) => !/setUsage\([^)]*DynamicDraw|=\s*THREE\.DynamicDrawUsage/.test(s)), "no DynamicDrawUsage in the changed files");
-check("no-lights", src.every(([, s]) => !/new THREE\.\w*Light\b/.test(s)), "no light created (fixed light count)");
+// ---- 5. rules (the ?jitter features row, no DynamicDrawUsage / no light in the changed files: the meta row,
+// tools/audit/gate.d/jitter.mjs)
+check("switch", ["viewer/gardens/gardenKit.js", "viewer/facadeKit/kitField.js", "viewer/facadeKit/kitMaterials.js"].every((f) => /JITTER_OLD/.test(rd(f))), "?jitter=old: gardenKit.js, kitField.js, kitMaterials.js honour it");
 
 if (!quiet || fails) {
   console.log("| check | result | detail |\n|---|---|---|");

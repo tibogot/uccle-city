@@ -122,9 +122,7 @@ const pool = TS.slice(TS.indexOf("function makeTreePool"));
 const views = (pool.slice(0, pool.indexOf("const bands")).match(/\.addView\(/g) || []).length;
 check("draws", views === 3 && /if \(this\.bushes && BUSH_KINDS\.includes\(t\)\) continue/.test(CP), `the trees' pool keeps ${views} views a LOD (bushes are parts of them: 0 more draws); the plants make no pool for the shrub types`);
 
-// ---- 4. rules
-const BJ = rd("viewer/plants/bushes.js"), bushCode = BJ + pool;
-check("rules", !/DynamicDrawUsage\)|setUsage\(THREE\.Dynamic/.test(bushCode) && !/new THREE\.\w*Light\(/.test(bushCode), "no DynamicDrawUsage, no light added (bushes.js + the trees' pool)");
+// ---- 4. rules (no DynamicDrawUsage, no light added in bushes.js + treesStylized.js: the meta row, tools/audit/gate.d/bushes.mjs)
 
 if (!quiet || fails) {
   console.log("| check | result | detail |\n|---|---|---|");

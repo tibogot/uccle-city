@@ -1,11 +1,10 @@
-// ONE GROUND FOR EVERY MOVER: the unit checks (claude/ground 2026-11-19, rule 46 provisional, docs/MOVERGROUND.md). Fast,
+// ONE GROUND FOR EVERY MOVER: the unit checks (claude/ground 2026-11-19, rule mover-ground, provisional, docs/MOVERGROUND.md). Fast,
 // no tile build:
 //   1. moverGround.js gridLayerY gives colliders.js driveHeight's numbers (random grids, two layers, any near)
 //   2. moverGroundY gives the player car's ground as driveMode.js had it before (the same decks + grid logic, copied
 //      here from claude/foundation 58d69aa0), so the player's car drives exactly as before
 //   3. roadDeck.js deckHeightFn with its circle test gives the same heights as without it (the hero road decks' notes)
-//   4. the traffic sim asks the ground WITH the car's height (a car under a deck stays under it; ?movground=old's
-//      two-argument ground still works)
+//   5. cost + no allocation per step (768 cars x 2 wheels)
 //   node tools/audit/moverGroundTest.mjs
 import { readFileSync, readdirSync, writeFileSync, mkdtempSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -92,18 +91,7 @@ for (const [name, t] of [["grid", tileA], ["no grid", tileB]]) {
   }
 }
 
-// 4. the traffic sim passes the car's height (source check: pose() and the spawn's layer test)
-{
-  const src = readFileSync(join(ROOT, "viewer/traffic/trafficSim.js"), "utf8");
-  check(/this\.ground\(F\[0\], F\[1\], yn\)/.test(src) && /this\.ground\(R\[0\], R\[1\], yn\)/.test(src), "trafficSim pose() asks the ground with the car's height");
-  check(/this\.y\[i\] = NaN;/.test(src), "trafficSim spawnAt() clears the height (a new car: the top layer)");
-  check(/this\.ground\(x, z, -1e9\) < y - 1\.5/.test(src), "trafficSim spawns not where two layers stack");
-  const main = readFileSync(join(ROOT, "viewer/main.js"), "utf8");
-  check(/const movingGround = MOVGROUND \? \(x, z, near\) => worldRef\.moverY\(x, z, near\) : movingGroundOld;/.test(main), "main.js movingGround = world.moverY (?movground=old: the old one)");
-  check(/moverY\(x, z, near = null\) \{ return moverGroundY\(this\.decks, this\.at\(x, z\), x, z, near\); \}/.test(main), "main.js world.moverY");
-  const dm = readFileSync(join(ROOT, "viewer/drive/driveMode.js"), "utf8");
-  check(/this\.ground = \(x, z\) => moverGroundY\(this\.world\.decks, this\.world\.at\(x, z\), x, z,/.test(dm), "driveMode.js Driver.ground = moverGroundY (one function)");
-}
+// 4. (the source checks: main.js / driveMode.js / trafficSim.js call the one function) are the `meta` row's: gate.d/movergroundunit.mjs
 
 // 5. cost + no allocation: 768 cars x 2 wheels per step over a world of 9 tiles and 12 decks (the deck tests as the city's:
 // a box / circle test first), V8's sampling heap profiler on moverGround.js

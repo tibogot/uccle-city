@@ -404,7 +404,7 @@ const VIVIER = params.get("vivier") !== "old";            // vivier 2026-11-17: 
 // (vivier) the moving traffic and the trams on a road deck drive ON it (world.decks: the OSM decks + the hero road
 // bridges), not on the terrain under it: on the Vivier d'Oie deck a car dipped 7 m into the cutting, on the band decks
 // before it 3-4 m into the DTM's hump under the slab
-// (claude/ground, rule 46, docs/MOVERGROUND.md) ONE ground for every mover: the drawn drive surface the player's car
+// (claude/ground, rule mover-ground, docs/MOVERGROUND.md) ONE ground for every mover: the drawn drive surface the player's car
 // drives (viewer/drive/moverGround.js: the decks, the drive grid's layer nearest the mover's height `near`). The traffic
 // (moving, knocked, wrecks), tram 92 and the parked cars stood on worldRef.surface + CARVE with only the decks over it:
 // 20-40 cm into the levelled carriageways / squares and the street drawn on the Carsoel deck (owner shots 111 / 112).
@@ -1117,7 +1117,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // measured street is too narrow for), then each one against the measured kerb if it fits there wholly
   let parkDropped = 0;
   const carRoads = fit ? { ...roads, roads: roads.roads.map((r) => (r.meta?.widthFit ? { ...r, lanes: r.meta.unfitLanes ?? undefined } : r)) } : roads;
-  // (claude/ground, rule 46) parked cars / two-wheelers on the mover ground (this tile's drive grid + the decks), the top
+  // (claude/ground, rule mover-ground) parked cars / two-wheelers on the mover ground (this tile's drive grid + the decks), the top
   // layer; ?movground=old: the terrain + CARVE (the decks over it)
   const parkGround = MOVGROUND && d.drive?.ground ? tileMoverGround(worldRef?.decks ?? [], hm, d.drive) : onDeck((x, z) => hm.surface(x, z) + CARVE);
   const cars = buildCars(carRoads, feats, parkGround, bounds, { place: cityStreetKit.keepCarsClear(cityFurniture.keepCarsClear(fit?.placeCar, furnDoc), skDoc), twoWheel: cityTwoWheelers.picker(await twP),
@@ -1348,7 +1348,7 @@ async function main() {
     /** hero road-bridge decks (viewer/rail/bridgeModel.js deckHeightFn): (x, z) -> m TAW or null off them */
     decks: [],
     deckY(x, z) { for (const f of this.decks) { const y = f(x, z); if (y != null) return y; } return null; },
-    /** THE MOVER GROUND (rule 46, viewer/drive/moverGround.js): the drawn drive surface the player's car drives, the
+    /** THE MOVER GROUND (rule mover-ground, viewer/drive/moverGround.js): the drawn drive surface the player's car drives, the
      *  layer nearest `near` (the mover's height; null: the top) where two stack. Traffic, trams, parked / knocked cars, props. */
     moverY(x, z, near = null) { return moverGroundY(this.decks, this.at(x, z), x, z, near); },
     /** where feet stand: the road level, plus the kerb height on measured sidewalks / squares (?roads=surface); on a
