@@ -176,6 +176,7 @@ export function createMotoState(x, z, heading) {
     // (feel) the vertical state, the slip, the landing bands
     air: false, airT: 0, airH: 0, vy: 0, vyF: 0, yb: 0, vyB: 0, gyPrev: NaN, pxV: x, pzV: z, gradeNow: 0, airPitch: 0,
     slipping: 0, slips: 0, wobbleT: 0, absorb: 0, landings: { clean: 0, sketchy: 0, bail: 0 }, lastLanding: 0, lastSev: 0,
+    touchV: 0, touchN: 0,   // (tyre marks) the last touch-down's speed into the ground (m/s) and a count of them
   };
 }
 
@@ -474,6 +475,7 @@ function vertical(c, env, step, speed, throttle, front, H, F, L) {
       sev = Math.max(sev, (nose - F.noseSketchy) / (F.noseBail - F.noseSketchy), (-nose - F.tailSketchy) / (F.tailBail - F.tailSketchy), (lean - F.leanSketchy) / (F.leanBail - F.leanSketchy));
       c.air = false; c.y = gy; c.yb = gy; c.vyF = c.vyB = Math.min(c.gradeNow * speed, 0); c.vy = 0;
       c.lastSev = sev;
+      c.touchV = down; c.touchN++;
       if (c.airT > 0.12 && !c.crashed) {
         c.lastLanding = sev >= 1 ? 3 : sev > 0 ? 2 : 1;
         if (sev >= 1) c.landings.bail++; else if (sev > 0) c.landings.sketchy++; else c.landings.clean++;

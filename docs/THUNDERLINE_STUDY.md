@@ -66,8 +66,8 @@ Runners-up:
 - Licences:
   - The engine loops: renders from an MIT tool, so ours.
   - The sfx samples: CC0.
-  - public/textures/skid_mark01.png: origin unknown. Ask the owner, or make our own.
-  - The smoke flipbooks were baked in-house with vendor/fire-pro: check that simulator's licence.
+  - public/textures/skid_mark01.png: the owner's own asset (confirmed 2026-11-19), OK to use.
+  - The smoke flipbooks were baked in-house with vendor/fire-pro: licence OK (owner confirmed 2026-11-19), so fp_tyreSmoke_* can be reused.
 - keepPipelines.js touches three's internals; it is fragile across versions.
 
 The full study report (constants, file and line references) is in the coordinator session of 2026-11-19. This page is the summary.

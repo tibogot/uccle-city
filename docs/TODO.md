@@ -54,7 +54,30 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [x] Gate / fence / grille jitter: MERGED 2026-11-19 (claude/jitter, rule 35): thin bars hand over to coverage cards (depth where coverage >= 4 %); ?jitter=old. Left: the Lycée railing card writes no depth (likely vanishes while moving under TAAU: apply the 4 % depth cut), the gate at 3 m at 8 m/s slightly worse (card fade-in).
 - [x] Car contact (owner 2026-11-18): MERGED 2026-11-19 (claude/carhit, rule 37): two-way push / spin / dents, knocked / wreck / rejoin, parked cars pushable; ?carpush=old. Left: no roll / pitch kick, 4 dent zones, traffic two-wheelers still one-way, the walker cannot push cars, owner tuning.
 - [x] Traffic lights in Blender (owner 2026-11-18): MERGED 2026-11-19 (claude/tlights, rule 36): Brussels-style posts, heads face the approach, seated, never in a lane, lit hues kept through ACES + eye adaptation; ?tlights=old. Far LOD hand-overs (120 / 80 m) not seen in the browser yet.
-- [ ] RESUME (paused 2026-11-19, owner closing the laptop):
+- [ ] RESUME 2026-11-19 EVENING (the owner closed the project and Cursor; every branch below is committed, WIP where noted). Each worktree is at C:/Users/tibog/Downloads/uccle-<name> with data/raw + tools/worker/node_modules junctions. Order of Chrome turns when resuming:
+  1. claude/ground (uccle-ground, 2a3f66b1 WIP; 4-tile test: traffic points off the drawn road 2,298 -> 124). Left:
+     - parked-car kerb-side wheels float 5-10 cm (the 1 m grid blends the kerb);
+     - the Carsoel deck height function is 13 cm above the drawn deck (bridgeDecks.js pavingTop; worker);
+     - I6 (1129, 958): the drive grid is up to 1.4 m over the road;
+     - the tram on the Carsoel deck: track profile +0.64 / -0.21 m;
+     - the walker's walkY still differs;
+     - the full census, the ceilings, the gate, the docs, the browser checks.
+     ONE ground for every mover (traffic / trams sink into decks and reshaped roads: Carsoel deck, Place de Saint-Job, Pasta Commedia). Code WIP; census + gate after "heavy OK"; then Chrome.
+  2. claude/props (uccle-props, b0dcfe48): browser turn 1 done (bins, signs, bollards, motos, Villo OK; 60 fps with 18 knocked). Left:
+     - the café-terrace chairs that don't wake when the table is hit;
+     - in the browser: lamp stop, night shadows, the walker (no post left), police cones, ?props=old;
+     - the full gate.
+  3. claude/gates (uccle-gates, d89145cd WIP): Street View notes for 40 frontages done (30/38 match; terraced garage driveways have NO gate, now 1 in 8). Left:
+     - apply the two build fixes to the data (a full garden rebuild + fitGardens lanes ×3, steps, check);
+     - census + ceilings (drivecheck 142 at cef1f714), the browser checks, the gate.
+     - Next round: wrought-iron rows (Brugmann / Coghen / Molière), modern sliding anthracite gates, wooden fences (new kit pieces).
+  4. claude/trafmix (uccle-trafmix, ec3e3509): done offline (no patrols in traffic was the cause; patrols, ambulances, fire, STIB / De Lijn buses on real routes, vans, bin lorries, taxis; polish: fluorescent ambulance, rounded arches). Left: the browser turn (docs/TRAFMIX.md §8).
+  5. claude/engine (uccle-engine, f870ac76: only the plan, in its docs/ENGINE_SOUND.md; enginesound CLI at C:/Users/tibog/Downloads/tools-dl/enginesound/, a FLAC venv at tools-dl/pyaudio-venv). LIVE BUG to fix: citySound.js hookCitySound listener(): the facing-direction lines are inside a // comment, so the listener never turns with the camera. Engine sound by the Thunderline method (docs/THUNDERLINE_STUDY.md; our own enginesound renders; demo WAVs to C:/Users/tibog/Downloads/uccle-sound-clips/engine_*.wav). WIP.
+  6. claude/tyremarks (uccle-marks): tyre marks (the owner's skid_mark01.png OK to use; NO DynamicDrawUsage; fade by age; wet variant). WIP.
+  7. claude/kid (uccle-kid, 07754f3c): the bike browser turn, never run yet.
+  - The STREET MODEL plan (one canonical street model per segment; checks on the DRAWN output at 0; a data-gap register; a street walker; the Ch. de Saint-Job / Rue Engeland diagonal line): the planning job's output goes to docs/STREET_MODEL_PLAN.md. Show it to the owner BEFORE building.
+  - Owner decisions: skid mark + fire-pro smoke licences OK; the people murmur muted by default (?citypeople=1); hedges soft vs hard is still open.
+- [ ] OLD RESUME (paused 2026-11-19, owner closing the laptop):
   - claude/roads MERGED 2026-11-19 (03356fe7, rule 38). Left: J5 (1670, 352) 8 m skew in a square; J6 (1730, 610-620) Waterloo lane on the engine strip 10 m off the measured street; a 0.2 m step where a tile-split zebra meets; 31 in-building places (bad OSM, junction corners); short unfitted pieces now paint no lines (3.1 km). OLD NOTE: browser turn mostly done (J6 off-carriageway 11.7 -> 1.5 %, slalom flips 36 -> 15; bushes gone; Papenkasteel fronts back). Left:
     - the full gate after the merge;
     - the tour vs a foundation baseline;
@@ -77,6 +100,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   - Fix: ONE ground for every mover (player, traffic, knocked / parked cars, trams, props): the drawn drive surface, layered.
   - Census: every lane point vs the drawn road, |dy| > 5 cm counted, city-wide; gate at 0 (or a justified ceiling).
 - [ ] GATE PARSE (props job finding): a branch that did not boot (a comment swallowed an export) passed the gate; the gate must parse every viewer/ and tools/ file as an ES module.
+- [x] Christmas firs (xmasfir3) MERGED 2026-11-20 (fast lane); the perf saving is not measurable on a busy machine.
+- [ ] CLOSED 2026-11-20: claude/carshadow: no mode measurably reduced the rear shimmer (blur noise ±18 %, less sharp); the verdict is in that branch's docs/CARSHADOW.md; branch kept, worktree removed.
 - [ ] GATE FLAKE: stutter2 fails under load on a different sub-check each run (clearRoads, heroTrianglesGen, hero triangle slices) and passes alone. A flaky gate row hides real regressions: make it load-robust (median of N runs, or measure CPU time not wall time) or isolate it.
 - [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
@@ -153,9 +178,10 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Christmas (on 1 Dec - 6 Jan)**
 - [x] Fir round 2 MERGED 2026-11-17 (needle cards, round bulbs; docs/CHRISTMAS.md "NEEDLE CARDS").
-- [ ] Before 1 Dec: fir cards cost +0.26 ms at 8 m (budget 0.1; try the shadow from the middle level, fewer / smaller
-  cards near the trunk); the middle level (45-150 m) still reads as flat tiers next to the needle crown (cards there
-  too, or an impostor); re-measure the whole layer on GREEN (+0.33-0.59 ms on YELLOW vs +0.00 on GREEN before).
+- [ ] Before 1 Dec: fir round 3 on claude/xmasfir3 (OFFLINE done, docs/CHRISTMAS.md "FIR ROUND 3": cards' depth pre-pass,
+  the shadow from the far level's solid fronds, the middle level = a card shell; model 0.26 -> 0.094 ms at 8 m): the
+  BROWSER turn on GREEN (A/B ?firprepass=0, ?firshadow=cards at 8 / 21 / 45 m; holes / specks; the 30 -> 70 m walk;
+  re-measure the whole layer, +0.33-0.59 ms on YELLOW vs +0.00 on GREEN before), then merge.
 - [ ] Owner review of the market + garlands + fir in game (?xmas=1); more decorations if the owner asks.
 
 **City content (open from the archive)**

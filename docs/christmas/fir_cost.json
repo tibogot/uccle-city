@@ -1,0 +1,443 @@
+{
+ "before": {
+  "label": "before",
+  "raw": "models/christmas/christmas.raw.glb as of claude/foundation b2eb854b (the 2026-11-17 kit)",
+  "screen": [
+   1920,
+   1080
+  ],
+  "fovY": 55,
+  "eye": 1.7,
+  "calibration": {
+   "ms": 0.2,
+   "at": 8,
+   "cheapRatio": 0.2,
+   "shadowMeasured": 0.06
+  },
+  "near": {
+   "8": {
+    "covered": 397035,
+    "cards": {
+     "tris": 76544,
+     "verts": 195620,
+     "fragAll": 6182272,
+     "fragZ": 1920604,
+     "quadAll": 8895464,
+     "quadZ": 3392128,
+     "quadEq": 738304,
+     "vis": 291410,
+     "layers": 6.59,
+     "layersAll": 21.22
+    }
+   },
+   "21": {
+    "covered": 62601,
+    "cards": {
+     "tris": 76544,
+     "verts": 195620,
+     "fragAll": 850709,
+     "fragZ": 282416,
+     "quadAll": 1775356,
+     "quadZ": 705456,
+     "quadEq": 143288,
+     "vis": 42489,
+     "layers": 6.65,
+     "layersAll": 20.02
+    }
+   },
+   "45": {
+    "covered": 13176,
+    "cards": {
+     "tris": 76544,
+     "verts": 195620,
+     "fragAll": 181576,
+     "fragZ": 59629,
+     "quadAll": 540544,
+     "quadZ": 198016,
+     "quadEq": 33688,
+     "vis": 8805,
+     "layers": 6.77,
+     "layersAll": 20.62
+    }
+   }
+  },
+  "middle": {
+   "45": {
+    "covered": 13405,
+    "cards": null
+   },
+   "60": {
+    "covered": 7500,
+    "cards": null
+   },
+   "100": {
+    "covered": 2680,
+    "cards": null
+   }
+  },
+  "shadow": {
+   "sunElevDeg": 15,
+   "texelCm": 2.93,
+   "cards": {
+    "texels": 26757,
+    "lanes": 473244,
+    "fragAll": 432166,
+    "cardLanes": 424512
+   },
+   "proxy": {
+    "texels": 28642,
+    "lanes": 127212,
+    "fragAll": 165686,
+    "cardLanes": 0
+   }
+  },
+  "options": {
+   "8": {
+    "single_pass": {
+     "full": 3392128,
+     "cheap": 0,
+     "ms": 0.2
+    },
+    "P_prepass": {
+     "full": 738304,
+     "cheap": 3392128,
+     "ms": 0.084
+    },
+    "M_mip": {
+     "mipLevel": 4.5,
+     "note": "the atlas level read; a bias only matters closer than ~1 m (level < 1)"
+    }
+   },
+   "21": {
+    "single_pass": {
+     "full": 705456,
+     "cheap": 0,
+     "ms": 0.042
+    },
+    "P_prepass": {
+     "full": 143288,
+     "cheap": 705456,
+     "ms": 0.017
+    },
+    "M_mip": {
+     "mipLevel": 5.9,
+     "note": "the atlas level read; a bias only matters closer than ~1 m (level < 1)"
+    }
+   },
+   "45": {
+    "single_pass": {
+     "full": 198016,
+     "cheap": 0,
+     "ms": 0.012
+    },
+    "P_prepass": {
+     "full": 33688,
+     "cheap": 198016,
+     "ms": 0.004
+    },
+    "M_mip": {
+     "mipLevel": 7,
+     "note": "the atlas level read; a bias only matters closer than ~1 m (level < 1)"
+    }
+   },
+   "S_shadow": {
+    "cards_lanes": 473244,
+    "proxy_lanes": 127212,
+    "ms_cards": 0.06,
+    "ms_proxy": 0.01,
+    "note": "proxy lanes are opaque (no discard: early depth, no alpha tap): x 0.6 of an alpha-tested shadow lane (assumption)"
+   },
+   "X_fewer_crossing": {
+    "8": {
+     "full": 3123604,
+     "quadEq": 700600,
+     "ms_single": 0.184,
+     "ms_prepass": 0.078
+    },
+    "21": {
+     "full": 645512,
+     "quadEq": 135532,
+     "ms_single": 0.038,
+     "ms_prepass": 0.016
+    },
+    "cards": 14219
+   },
+   "C_cull_hidden": {
+    "8": {
+     "full": 3390068,
+     "ms_single": 0.2,
+     "ms_prepass": 0.084
+    },
+    "21": {
+     "full": 704924,
+     "ms_single": 0.042,
+     "ms_prepass": 0.017
+    },
+    "views": 344,
+    "hidden": 553,
+    "of": 16207
+   }
+  },
+  "cards": {
+   "lod0": 16207,
+   "lod1": 0,
+   "tris0": 76544,
+   "tris1": 0
+  },
+  "shipped": {
+   "note": "lit pass + pre-pass (model) + the shadow share (measured 0.06 ms for the cards' shadow, scaled by lanes); vertex work not modelled (the 21 m measurement: ~0)",
+   "near": {
+    "8": {
+     "before": 0.26,
+     "after": 0.094
+    },
+    "21": {
+     "before": 0.102,
+     "after": 0.027
+    },
+    "45": {
+     "before": 0.072,
+     "after": 0.014
+    }
+   },
+   "middle": {}
+  },
+  "seconds": 85.9
+ },
+ "after": {
+  "label": "after",
+  "raw": "models/christmas/christmas.raw.glb",
+  "screen": [
+   1920,
+   1080
+  ],
+  "fovY": 55,
+  "eye": 1.7,
+  "calibration": {
+   "ms": 0.2,
+   "at": 8,
+   "cheapRatio": 0.2,
+   "shadowMeasured": 0.06
+  },
+  "near": {
+   "8": {
+    "covered": 397035,
+    "cards": {
+     "tris": 76544,
+     "verts": 196747,
+     "fragAll": 6182272,
+     "fragZ": 1920604,
+     "quadAll": 8895464,
+     "quadZ": 3392128,
+     "quadEq": 738304,
+     "vis": 291410,
+     "layers": 6.59,
+     "layersAll": 21.22
+    }
+   },
+   "21": {
+    "covered": 62601,
+    "cards": {
+     "tris": 76544,
+     "verts": 196747,
+     "fragAll": 850709,
+     "fragZ": 282416,
+     "quadAll": 1775356,
+     "quadZ": 705456,
+     "quadEq": 143288,
+     "vis": 42489,
+     "layers": 6.65,
+     "layersAll": 20.02
+    }
+   },
+   "45": {
+    "covered": 13176,
+    "cards": {
+     "tris": 76544,
+     "verts": 196747,
+     "fragAll": 181576,
+     "fragZ": 59629,
+     "quadAll": 540544,
+     "quadZ": 198016,
+     "quadEq": 33688,
+     "vis": 8805,
+     "layers": 6.77,
+     "layersAll": 20.62
+    }
+   }
+  },
+  "middle": {
+   "45": {
+    "covered": 12874,
+    "cards": {
+     "tris": 13300,
+     "verts": 35054,
+     "fragAll": 81486,
+     "fragZ": 19690,
+     "quadAll": 197680,
+     "quadZ": 53324,
+     "quadEq": 11768,
+     "vis": 3326,
+     "layers": 5.92,
+     "layersAll": 24.5
+    }
+   },
+   "60": {
+    "covered": 7246,
+    "cards": {
+     "tris": 13300,
+     "verts": 35054,
+     "fragAll": 45815,
+     "fragZ": 11068,
+     "quadAll": 126404,
+     "quadZ": 33572,
+     "quadEq": 6960,
+     "vis": 1872,
+     "layers": 5.91,
+     "layersAll": 24.47
+    }
+   },
+   "100": {
+    "covered": 2589,
+    "cards": {
+     "tris": 13300,
+     "verts": 35054,
+     "fragAll": 16357,
+     "fragZ": 3944,
+     "quadAll": 56060,
+     "quadZ": 14264,
+     "quadEq": 2676,
+     "vis": 682,
+     "layers": 5.78,
+     "layersAll": 23.98
+    }
+   }
+  },
+  "shadow": {
+   "sunElevDeg": 15,
+   "texelCm": 2.93,
+   "cards": {
+    "texels": 26757,
+    "lanes": 473244,
+    "fragAll": 432166,
+    "cardLanes": 424512
+   },
+   "proxy": {
+    "texels": 28642,
+    "lanes": 127212,
+    "fragAll": 165686,
+    "cardLanes": 0
+   }
+  },
+  "options": {
+   "8": {
+    "single_pass": {
+     "full": 3392128,
+     "cheap": 0,
+     "ms": 0.2
+    },
+    "P_prepass": {
+     "full": 738304,
+     "cheap": 3392128,
+     "ms": 0.084
+    },
+    "M_mip": {
+     "mipLevel": 4.5,
+     "note": "the atlas level read; a bias only matters closer than ~1 m (level < 1)"
+    }
+   },
+   "21": {
+    "single_pass": {
+     "full": 705456,
+     "cheap": 0,
+     "ms": 0.042
+    },
+    "P_prepass": {
+     "full": 143288,
+     "cheap": 705456,
+     "ms": 0.017
+    },
+    "M_mip": {
+     "mipLevel": 5.9,
+     "note": "the atlas level read; a bias only matters closer than ~1 m (level < 1)"
+    }
+   },
+   "45": {
+    "single_pass": {
+     "full": 198016,
+     "cheap": 0,
+     "ms": 0.012
+    },
+    "P_prepass": {
+     "full": 33688,
+     "cheap": 198016,
+     "ms": 0.004
+    },
+    "M_mip": {
+     "mipLevel": 7,
+     "note": "the atlas level read; a bias only matters closer than ~1 m (level < 1)"
+    }
+   },
+   "S_shadow": {
+    "cards_lanes": 473244,
+    "proxy_lanes": 127212,
+    "ms_cards": 0.06,
+    "ms_proxy": 0.01,
+    "note": "proxy lanes are opaque (no discard: early depth, no alpha tap): x 0.6 of an alpha-tested shadow lane (assumption)"
+   },
+   "X_fewer_crossing": {
+    "8": {
+     "full": 3123604,
+     "quadEq": 700600,
+     "ms_single": 0.184,
+     "ms_prepass": 0.078
+    },
+    "21": {
+     "full": 645512,
+     "quadEq": 135532,
+     "ms_single": 0.038,
+     "ms_prepass": 0.016
+    },
+    "cards": 14219
+   }
+  },
+  "cards": {
+   "lod0": 16207,
+   "lod1": 3202,
+   "tris0": 76544,
+   "tris1": 13300
+  },
+  "shipped": {
+   "note": "lit pass + pre-pass (model) + the shadow share (measured 0.06 ms for the cards' shadow, scaled by lanes); vertex work not modelled (the 21 m measurement: ~0)",
+   "near": {
+    "8": {
+     "before": 0.26,
+     "after": 0.094
+    },
+    "21": {
+     "before": 0.102,
+     "after": 0.027
+    },
+    "45": {
+     "before": 0.072,
+     "after": 0.014
+    }
+   },
+   "middle": {
+    "45": {
+     "single": 0.003,
+     "prepass": 0.001
+    },
+    "60": {
+     "single": 0.002,
+     "prepass": 0.001
+    },
+    "100": {
+     "single": 0.001,
+     "prepass": 0
+    }
+   }
+  },
+  "seconds": 3.8
+ }
+}

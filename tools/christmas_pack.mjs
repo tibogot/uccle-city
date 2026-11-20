@@ -29,7 +29,9 @@ const NO_AUDIT = process.argv.includes("--no-audit");
 // LOD2 to [2], nothing beyond (the viewer cross-fades at each switch)
 const CFG = {
   // (the fir: LOD0 = the needle CARDS (alpha-tested, the near level only); LOD1 / LOD2 = the solid frond stand-ins)
-  tree: { err: [0.035, 0.14], range: [45, 150, 1000], drop: { wood_planks: [2], mulch: [2], fir_cards: [1, 2] } },
+  // (fir round 3: LOD1 = the needle-card SHELL round a thin solid core, the stand-in "tree__lod1" with its UVs; LOD2 = the
+  // solid fronds, which also cast the shadow of LOD0 and LOD1 in the viewer)
+  tree: { err: [0.035, 0.14], range: [45, 150, 1000], drop: { wood_planks: [2], mulch: [2], fir_cards: [2] } },
   wreath: { err: [0.012, 0.03], range: [10, 32, 90] },
   swag: { err: [0.014, 0.035], range: [14, 45, 150] },
   lampmotif: { err: [0.004, 0.012], range: [30, 100, 380], drop: { metal_frame: [2] } },
@@ -305,7 +307,7 @@ for (const piece of pieces) {
       const err = k === 0 ? 0 : C_.err[k - 1] * mul;
       const SI = k === 0 ? {} : standIn(piece, k);
       let prims = k === 0 ? main.map(outerFirst) : main.filter((m) => !(C_.drop?.[m.slot] ?? []).includes(k))
-        .map((m) => SI[m.slot] ? { ...SI[m.slot], UV0: null, UV1: null } : renormal(simplifyWelded(m, err * (C_.slotErr?.[m.slot] ?? 1), k === 2), CREASE));
+        .map((m) => SI[m.slot] ? (m.slot === CARD ? outerFirst({ ...SI[m.slot], UV1: null }) : { ...SI[m.slot], UV0: null, UV1: null }) : renormal(simplifyWelded(m, err * (C_.slotErr?.[m.slot] ?? 1), k === 2), CREASE));
       prims = prims.filter((m) => m.I.length);
       if (!NO_AUDIT && k > 0 && mul !== 1.6) {
         const r = audit(`${piece}_lod${k}`, prims, C_.range[k]);
