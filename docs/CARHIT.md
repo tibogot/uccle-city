@@ -249,6 +249,11 @@ Owner decision (docs/TODO.md): a dense clipped hedge over ~1.2 m stops the car l
 - **Old.** `?hedgewall=old`: every hedge module soft, no shake. Gate row `hedgewall` (tools/collide/hedgeWallTest.mjs).
 - **Audits.** gardenClear.js gardenPieces gives a tall hedge kind 9; colliderAudit / driveCheck / railCorridor count
   `KIND.hedgeWall` as HARD.
+- **drivecheck.** 5 tall hedges now count as hard places (147 = 142 + 5, pinned `--maxsrc hedge=5`): a centre / turn
+  path of an unmeasured street crosses them (cause "?", like the 31 garden places in docs/GATES.md): I6 Montagne de
+  Saint-Job (1094.5, 882.3), D5 Rue Camille Van Exter (-1053.1, 154.3), C9 Korte Linkebeekstraat (-1702.3, 2116.9),
+  F4 Avenue des Statuaires (-90, -401.3), H1 Rue Général Lotz (588, -1690.9). Before they were soft (driven through).
+  Next: a Street View look at each, then clear the hedge by its footprint or fix the path data.
 - Known (before this job): the soft-hedge drag is applied per overlapped module, so a car crossing 2-3 modules at once
   is slowed 2-3x the nominal `HEDGE_DRAG` (a coasting car at 30 km/h stops inside a low hedge; on the throttle it passes).
 
