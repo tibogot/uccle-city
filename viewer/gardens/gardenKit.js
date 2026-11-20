@@ -14,15 +14,28 @@
 //            viewer/lodFade.js in colour and shadow (no pop, no shadow snap). LOD2 casts no shadow (its shadow dithers out
 //            with LOD1 across the 1-2 hand-over): low walls and railings have no far shadow
 //   night    nothing glows, no light (fixed light count)
+//   jitter   (claude/jitter, docs/JITTER.md; ?jitter=old = the three modelled LODs over their bands, as before) the
+//            ironwork's bars (8-16 mm) are under 1 internal px beyond ~6-10 m: the modelled LOD0 draws only to 4-6 m
+//            (dithered out; its sun shadow over the old 0-22 m band, unchanged), a COVERAGE CARD (one quad in the bars'
+//            mid plane, the piece's LOD0 rasterised into one atlas with box mips, viewer/thinBars.js ironCards) BLENDED
+//            from 2.5 m to the old end: the bars' true share of each pixel, nothing to crawl. LOD1 / LOD2 not drawn
+//            (2 draws a piece instead of 3)
 import * as THREE from "three/webgpu";
 import {
   attribute, uniformArray, vec2, vec3, float, int, mix, smoothstep, length, positionWorld, normalWorld, select, fract, floor, abs, dot,
-  normalize, fwidth, sin, max, min, saturate,
+  normalize, fwidth, sin, max, min, saturate, texture, uv,
 } from "three/tsl";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { lodEye, keepBand, ditherNoise } from "../lodFade.js";
+import { lodEye, keepBand, ditherNoise, rampTo } from "../lodFade.js";
+import { JITTER_OLD, ironCards, NEAR, BAND, CARD_IN, CARD_DEPTH_CUT } from "../thinBars.js";
+import { atlasTexture } from "../thinCards.js";
 import { boxyPieces, SLOT, CAP_T, PILLAR_W, CAP_W } from "./gardenGeom.js";
-import { hedgeGeometries, hedgeMaterials, hedgeInstancesGen, gardenFades } from "./gardenHedge.js";
+import * as HEDGE_NEW from "./gardenHedge.js";
+import * as HEDGE_OLD from "./gardenHedgeOld.js";
+/** ?hedges=old: the garden hedges before claude/hedges (2026-11-18: noise-shaded boxes, LOD dithers from 27 m) */
+export const HEDGES_OLD = typeof location !== "undefined" && /[?&]hedges=old(&|$)/.test(location.search);
+const { hedgeGeometries, hedgeMaterials, hedgeInstancesGen } = HEDGES_OLD ? HEDGE_OLD : HEDGE_NEW;
+const { gardenFades } = HEDGE_NEW;
 import { drain } from "../slices.js";
 import { StreamPool, buildSource, MARGIN } from "../instanceStream.js";
 import { wxMat } from "../weather/cityWeatherize.js";      // the weather (wet, beads, snow cover, frost; gated: ~0 in clear weather)
@@ -40,7 +53,9 @@ export const BANDS = {
   rail: [22, 60, 150], gate: [22, 60, 150], cargate: [25, 70, 160],
   // round 2: the hedges (viewer/gardens/gardenHedge.js): big soft solids, seen far (the end dithers out over 255-300 m);
   // the leaf cards near only (they shrink into the body by 18 m)
-  hedge: [30, 90, 300], hedgecard: [22, 22, 22],
+  // claude/hedges: [45, 120, 300] / [29, 29, 29] (gardenHedge.js HEDGE_BANDS: no dither inside 40 m, the lumps flat
+  // before the 0 -> 1 hand-over); ?hedges=old the bands above
+  ...(HEDGES_OLD ? { hedge: [30, 90, 300], hedgecard: [22, 22, 22] } : HEDGE_NEW.HEDGE_BANDS),
 };
 export const bandOf = (p) => BANDS[p] || BANDS[p.split("_")[0]];
 const GATE_W = { gate: 1.0, cargate: 1.6 }, GATE_H = { gate: 1.2, cargate: 1.3 };
@@ -87,7 +102,9 @@ export function loadGardenKit(base = new URL("../../", import.meta.url)) {
       const lods = [0, 1, 2].map((l) => { const r = raw[`${p}_lod${l}`]; if (!r) throw new Error(`gardens kit: ${p}_lod${l} missing`); return mergePrims(r); });
       add(p, lods);
     }
-    return { pieces, mats: materials(), loadMs: performance.now() - t0 };
+    const mats = materials();
+    const cards = JITTER_OLD ? null : ironCardPieces(pieces, mats);
+    return { pieces, mats, cards, loadMs: performance.now() - t0 };
   })());
 }
 
@@ -154,8 +171,72 @@ export function brickPattern(tone) {
   return { tone: select(render, float(1), mix(tv, float(1), far)), mortar: select(render, float(0), mortarShare.mul(float(1).sub(far))), far };
 }
 
+/** the iron's colour, roughness, metalness from its iVar (paint, gilded tips) and the slot shares (tip, steel) */
+function ironLook(V, tip, steel) {
+  const pz = V.z.add(0.5).floor(), gilded = pz.greaterThan(3.5), paintI = select(gilded, pz.sub(4), pz).toInt();
+  const Pn = uPaint.element(paintI);
+  const tipCol = select(gilded, vec3(0.55, 0.38, 0.12), Pn.xyz), tipR = select(gilded, float(0.35), Pn.w), tipM = select(gilded, float(1), float(0.15));
+  const rest = float(1).sub(tip).sub(steel).max(0);
+  return {
+    col: Pn.xyz.mul(rest).add(tipCol.mul(tip)).add(vec3(0.05, 0.05, 0.052).mul(steel)),
+    rough: Pn.w.mul(rest).add(tipR.mul(tip)).add(float(0.42).mul(steel)),
+    metal: float(0.15).mul(rest).add(tipM.mul(tip)).add(float(0.6).mul(steel)),
+  };
+}
+
+/** (jitter) the cards: one quad a piece, uv into the atlas (rgba: tip share, steel share, AO x coverage, coverage) */
+function ironCardPieces(pieces, mats) {
+  const src = {};
+  for (const p of IRON) { const g = pieces[p].lods[0]; src[p] = { pos: g.attributes.position.array, index: g.index.array, slot: g.attributes.slot.array }; }
+  const C = ironCards(src, { tipSlot: SLOT.iron_tip, steelSlot: SLOT.steel_dark });
+  const tex = atlasTexture(C.atlas, "garden iron cards");
+  const near = opaqueMaterial(0, { near: true }), card = ironCardMaterial(tex);
+  mats.ironNear = near; mats.ironCard = card;
+  for (const p of IRON) {
+    const c = C.cards[p], g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(c.pos, 3));
+    g.setAttribute("normal", new THREE.Float32BufferAttribute(c.nrm, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(c.uv, 2));
+    g.setIndex(c.idx); g.computeBoundingSphere(); g.computeBoundingBox(); g.userData.shared = true;
+    const P = pieces[p], [s1, , end] = P.band;
+    P.lods = [P.lods[0], g]; P.tris = [P.tris[0], 2]; P.mats = [near, card];
+    P.live = [[0, s1 * 1.1], [0, end]];                      // (LOD0: its shadow's old band; the colour pass discards past 6 m)
+  }
+  return { tex, stats: C.stats };
+}
+/** the card: blended at the bars' coverage, faded in under the modelled bars over CARD_IN, the end dither and the
+ *  tile fade as every LOD (lodKeep's), no shadow (the modelled LOD0 keeps its own) */
+function ironCardMaterial(tex) {
+  const m = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: true, alphaTest: CARD_DEPTH_CUT });
+  m.name = "gardens-iron-card";
+  const T = texture(tex, uv()), a = T.a.max(1e-4);
+  const L = ironLook(attribute("iVar", "vec4"), T.r.div(a).min(1), T.g.div(a).min(1));
+  const ao = T.b.div(a).min(1);
+  m.colorNode = L.col.mul(mix(float(1), ao, 0.7));
+  m.aoNode = ao;
+  m.roughnessNode = L.rough; m.metalnessNode = L.metal;
+  const d = length(positionWorld.sub(lodEye));
+  m.opacityNode = T.a.mul(smoothstep(CARD_IN[0], CARD_IN[1], d));
+  const band = attribute("iBand", "vec4"), n = ditherNoise();
+  const e = smoothstep(band.z.mul(0.85), band.z, d);
+  const f = gardenFades.fade(band.w);
+  const tile = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
+  m.maskNode = keepBand(e, float(1.01), n).and(tile);
+  m.userData.shared = true; m.userData.noFade = true;
+  return m;
+}
+
 function materials() {
-  const opaque = [0, 1, 2].map((lod) => {
+  const opaque = [0, 1, 2].map((lod) => opaqueMaterial(lod));
+  const standin = new THREE.MeshStandardNodeMaterial({ color: 0x555555 });
+  standin.name = "gardens-collision-standin";
+  standin.userData.shared = true; standin.userData.noFade = true;
+  return { opaque, standin };
+}
+/** the kit's opaque material for LOD `lod`; near: (jitter) the ironwork's modelled LOD0, drawn in colour only to NEAR,
+ *  dithered out by NEAR + BAND (the card carries it on), its shadow over the old band */
+function opaqueMaterial(lod, { near = false } = {}) {
+  {
     const m = new THREE.MeshStandardNodeMaterial();
     const sl = attribute("slot", "float"), idx = sl.add(0.0005).floor().toInt();
     const V = attribute("iVar", "vec4");
@@ -184,20 +265,20 @@ function materials() {
     m.metalnessNode = select(tipGold, float(1), select(isP.or(isT), float(0.15), select(isB.or(isS), float(0), float(0.6))));
     m.maskNode = lodKeep(lod, attribute("iBand", "vec4"));
     m.maskShadowNode = m.maskNode;
-    m.name = `gardens-lod${lod}`;
+    if (near) {
+      const n = ditherNoise(), d = length(positionWorld.sub(lodEye));
+      m.maskNode = n.greaterThanEqual(rampTo(d, float(NEAR + BAND), float(BAND))).and(lodKeep(lod, attribute("iBand", "vec4"), n));
+    }
+    m.name = near ? "gardens-iron-near" : `gardens-lod${lod}`;
     wxMat(m, { porosity: 0.5, streaks: true, frost: true });   // snow round 2: the weather (brick, copings, ironwork)
     m.userData.shared = true; m.userData.noFade = true;          // (the tile fade: its slot rides in iBand.w)
     return m;
-  });
-  const standin = new THREE.MeshStandardNodeMaterial({ color: 0x555555 });
-  standin.name = "gardens-collision-standin";
-  standin.userData.shared = true; standin.userData.noFade = true;
-  return { opaque, standin };
+  }
 }
 function vec4c(r, g, b) { return vec3(r, g, b); }
 
 // ------------------------------------------------------------------------------------------------ data -> instances
-export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction; 0 elsewhere)
+export const STRIDE = 24;              // 16 (matrix, column major) + 4 (iVar) + 4 (iAux: the hedges' world side direction x / z, the run-end flags; 0 elsewhere)
 /** a style's iVar */
 function styleVar(st, rnd) {
   return [st.brick ?? 0, st.cap === 1 ? 1 : 0, (st.paint ?? 0) + (st.gilded ? 4 : 0), rnd];
@@ -207,7 +288,8 @@ const rnd01 = (x, z) => { let h = Math.imul(Math.round(x * 100) | 0, 73856093) ^
 /**
  * A tile's data/gardens doc -> { inst: { <piece>: Float32Array stride 24 } (gardenSources: the streaming sources),
  * stand: { wall: [mat16...], pillar: [...], gate: [...] } (collision stand-ins: unit boxes), counts }.
- * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style].
+ * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style]
+ * (open: the swing into the garden, rad: every pedestrian gate; a driveway gate (kind 1) only across a way a car uses).
  */
 export const gardenInstances = (...a) => drain(gardenInstancesGen(...a));
 /** the same as a generator (falcon2, rule 22: a yield every few pieces; viewer/slices.js sliced() while playing) */
@@ -286,20 +368,20 @@ export function* gardenInstancesGen(doc, groundAt = null, { hedgeFronts = true, 
     if (kind === 0) {
       push(L[`gate_${type}`], rot(x, y, z, yaw + open, w / GATE_W.gate, H / GATE_H.gate, 1), v);   // open into the garden: walkable
     } else {
-      const lw = w / 2, c = Math.cos(yaw), sn = Math.sin(yaw);
-      push(L[`cargate_${type}`], rot(x, y, z, yaw, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
-      push(L[`cargate_${type}`], rot(x + c * w, y, z - sn * w, yaw + Math.PI, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
-      const mm = rot(x, y, z, yaw, 1, 1, 1);
-      for (let k = 0; k < 16; k++) SG.push(shear(x, y, z, c * w, 0, -sn * w, H)[k]);
-      void mm;
+      // (claude/gates) open > 0: a driveway gate across a way a car uses, both leaves swung into the garden by `open`
+      // (the far leaf the other way round its own hinge); an open pair has no stand-in (it stands along the drive's sides)
+      const lw = w / 2, c = Math.cos(yaw), sn = Math.sin(yaw), op = open > 0 ? open : 0;
+      push(L[`cargate_${type}`], rot(x, y, z, yaw + op, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
+      push(L[`cargate_${type}`], rot(x + c * w, y, z - sn * w, yaw + Math.PI - op, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
+      if (!op) for (let k = 0; k < 16; k++) SG.push(shear(x, y, z, c * w, 0, -sn * w, H)[k]);
     }
   }
   // the hedges: ~1 m modules on the drawn ground (gardenHedge.js); the leaf cards ride on the same instances
   if (hedges && groundAt && doc.hedges?.length) {
-    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v) => {
+    const shearW = (out, x0, y0, z0, dx, dy, dz, sy, w, v, ends = 0) => {   // (ends: 1 a run's first module, + 2 its last)
       const lh = Math.hypot(dx, dz) || 1e-6;
       m.set([dx, dy, dz, 0, 0, sy, 0, 0, -dz / lh * w, 0, dx / lh * w, 0, x0, y0, z0, 1]);
-      push(out, m, v, [-dz / lh, dx / lh, 0, 0]);
+      push(out, m, v, [-dz / lh, dx / lh, ends, 0]);
     };
     yield* hedgeInstancesGen(doc.hedges, groundAt, shearW, L.hedge);
     L.hedgecard = L.hedge;
@@ -403,12 +485,12 @@ export function gardenSources(inst, slot) {
  *  (the streamer's hysteresis). */
 export class GardenPool {
   constructor(piece, mats, group, margin = MARGIN) {
-    this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge";
+    this.piece = piece; this.meshes = []; this.aux = piece.name === "hedge" || piece.name === "hedgecard";   // (the cards: the run-end flags, iAux.z)
     const [s1, s2, end] = piece.band;
     // what the shaders may draw per LOD (gardenKit.js lodKeep / gardenHedge.js keep smoothstep windows); a one-LOD piece
     // (the hedge cards) to its end
     const one = piece.lods.length === 1;
-    const live = one ? [[0, end]] : [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, end]];
+    const live = piece.live || (one ? [[0, end]] : [[0, s1 * 1.1], [s1 * 0.9, s2 * 1.1], [s2 * 0.9, end]]);
     const spec = piece.lods.map((geo, k) => {
       const g = new THREE.BufferGeometry();
       for (const a of Object.keys(geo.attributes)) g.setAttribute(a, geo.attributes[a]);
@@ -453,3 +535,6 @@ export function standinGeometries() {
   };
   return { wall: box(0, 1, 0, 1, -0.15, 0.15), pillar: box(-0.5, 0.5, 0, 1, -0.5, 0.5), gate: box(0, 1, 0, 1, -0.04, 0.04) };
 }
+
+/** (tools/audit/jitterCheck.mjs) the jitter materials, built headless to WGSL by the gate */
+export const _jitterTest = { opaqueMaterial, ironCardMaterial };

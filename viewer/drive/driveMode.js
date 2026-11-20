@@ -7,8 +7,10 @@
 // The car only looks at the cells round it (carEnv.js). Ground = the drivable surface grid (road deck, sidewalks).
 import * as THREE from "three/webgpu";
 import { loadCarModel, createCar, carLights, fitBody } from "./carModel.js";
-import { FLEET_SOURCE } from "./carPacks.js";
-import { HANDLING, createCarState, stepCar } from "./carPhysics.js";
+import { FLEET_SOURCE, playerDamage, setPlayerDent } from "./carPacks.js";
+import { HANDLING, BODY, createCarState, stepCar } from "./carPhysics.js";
+import { CarHitWorld, CARPUSH_OLD, MASS, MASS2 } from "./carHit.js";
+import { PropWorld, PROPS_OLD } from "../props/propWorld.js";
 import { createFeelState, stepFeel } from "./carFeel.js";
 import { createCtlState, stepCtl } from "./carCtl.js";
 /** ?carctl=old: the police-feel handling + camera (carFeel.js, chaseCamera.js updateCar) instead of car control round 3
@@ -17,7 +19,9 @@ export const CARCTL_OLD = /[?&]carctl=old(&|$)/.test(location.search);
 /** ?carfeel=old: the car's handling before the police-feel round (docs/POLICE_FEEL.md): carPhysics.js stepCar, kerb
  *  islands / any rise over 0.5 m as walls, hedges solid, posts stop the car, parked cars immovable, the old camera */
 export const CARFEEL_OLD = /[?&]carfeel=old(&|$)/.test(location.search);
-import { addCircles, buildColliders, driveHeight, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
+import { addCircles, buildColliders, extendColliders, gather, pointInBuilding, setBox, KIND } from "./colliders.js";
+import { surfaceLayers } from "./surfaceLayers.js";
+import { moverGroundY } from "./moverGround.js";
 import { carFleet } from "../carFleet.js";
 import { createCarEnv } from "./carEnv.js";
 import { createRailMovers } from "./movers.js";
@@ -29,9 +33,11 @@ const HUD_SKIP = new URLSearchParams(location.search).get("hudskip") !== "old";
 import { lampSites } from "../lamps.js";
 import { carBlockersSync } from "../heroColliders.js";
 import { env as lightEnv } from "../lighting.js";
-import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit } from "../moto/motoPhysics.js";
+import { TWO_WHEELERS, BODIES, createMotoState, stepMoto, motoHit, twoWheelEnv } from "../moto/motoPhysics.js";
 import { MotoCamera } from "../moto/motoCamera.js";
 import { MotoAudio, BikeAudio, VOICES } from "../moto/motoAudio.js";
+import { createTyreMarks, TYREMARKS_OLD } from "./tyreMarks.js";
+import { wx } from "../weather/weatherState.js";
 
 /** the two-wheelers (viewer/moto/, docs/MOTO.md): the motorbike (round 1), the scooter and the Villo bike (round 2) */
 export const TWO_WHEEL = ["moto", "scooter", "villo"];
@@ -46,7 +52,7 @@ export function tileDrive(drive, roads, bounds, drawn = null, features = null) {
   if (!drive) return null;
   const old = !drawn || drive.legacy;
   const lamps = (old ? lampSites(roads, bounds) : drawn.lamps).map((p) => ({ x: p.x, z: p.z, r: 0.2, kind: KIND.lamp }));
-  const posts = old ? [] : (drawn.bollards || []).map((p) => ({ x: p.x, z: p.z, r: 0.1, kind: KIND.post }));
+  const posts = old ? [] : (drawn.bollards || []).map((p) => ({ x: p.x, z: p.z, r: 0.1, kind: KIND.post, ref: p.ref || null }));   // (props: a bollard bends / snaps, docs/PROPS.md)
   addCircles(drive.col, [...lamps, ...posts]);
   drive.counts.lamps = lamps.length; drive.counts.posts = posts.length;
   if (features && !old) {
@@ -57,6 +63,8 @@ export function tileDrive(drive, roads, bounds, drawn = null, features = null) {
     // type's size when another car parks into the slot (road fix round 3: the G view's "invisible cars")
     const P = drive.col.pref;
     if (P) for (let id = 0; id < P.length; id++) if (P[id]) (P[id].driveBox = { col: drive.col, id });
+    // (props, rule 25 / 44) each prop's polygons in this set: a bent sign's tops follow its tilt (propWorld.js syncCols)
+    if (P) { const seen = new Set(); for (let id = 0; id < P.length; id++) { const r = P[id]; if (!r?.prop) continue; if (!seen.has(r)) { seen.add(r); r.drive = []; } r.drive.push([drive.col, id, drive.col.ptop[id], drive.col.pbase[id]]); } }
   }
   return drive;
 }
@@ -76,6 +84,7 @@ carFleet.onChange((c) => { if (c.driveBox && !c.hidden) setBox(c.driveBox.col, c
  * foot). From the features group's instanced meshes, by name (the same ones viewer/character/cityHook.js uses).
  */
 const EDGE_OLD = /[?&]edgecol=old(&|$)/.test(location.search);
+const POLE_OLD = /[?&]rail=old(&|$)/.test(location.search);
 const COLCACHE = new URLSearchParams(location.search).get("colcache") !== "0";
 const localBlocks = new WeakMap();          // geometry -> Map(scale key -> blocker rings in the piece's scaled frame)
 const cPos = new THREE.Vector3(), cQ = new THREE.Quaternion(), cS = new THREE.Vector3();
@@ -119,7 +128,16 @@ export function featureColliders(features, bounds) {
       // it, some standing a little over the tile's edge (garden walls along a boundary street); they were dropped here
       // and no neighbour made them either: drawn, not solid. Each group is one tile's, so nothing is counted twice.)
       if (EDGE_OLD ? !inT(o.x, o.z) : !inT2(o.x, o.z)) continue;
-      if (kind === "pole") { circles.push({ x: o.x, z: o.z, r: n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08, kind: KIND.furniture }); counts.poles++; continue; }
+      // (CLASS T, rule 39 / 25; ?rail=old: a circle with no height) a pole is a post of its DRAWN height: a circle has none,
+      // so the catenary masts standing on the Stalle viaduct's deck were invisible posts in Rue de Stalle 17 m under them
+      // (owner 2026-11-19, shot 105). Now a square of the pole's radius from its foot to its top (heightClear passes it).
+      if (kind === "pole") {
+        const r = n === "tram-poles" || n === "rail-masts" ? 0.15 : 0.08;
+        if (POLE_OLD) circles.push({ x: o.x, z: o.z, r, kind: KIND.furniture });
+        else { v.set(0, bb.min.y, 0).applyMatrix4(W); const base = v.y; v.set(0, bb.max.y, 0).applyMatrix4(W); const top = v.y;
+          polys.push({ rings: [[[o.x - r, o.z - r], [o.x + r, o.z - r], [o.x + r, o.z + r], [o.x - r, o.z + r]]], kind: KIND.furniture, base: Math.min(base, top), top: Math.max(base, top), ref }); }
+        counts.poles++; continue;
+      }
       if (kind === "car") {
         // the car as it is NOW (its type may have changed since the box mesh was made: the traffic parks other cars in)
         const car = m.userData.cars?.[i] || null;
@@ -184,6 +202,8 @@ export class Driver {
     Object.assign(this, { camera, dom, scene, world, on: false });
     this.chase = new ChaseCamera(camera, dom);
     this.debug = new ColliderDebug(scene);
+    // tyre marks (docs/TYREMARKS.md, rule 48; ?tyremarks=old = none): one mesh, laid on this.ground (defined below)
+    this.marks = TYREMARKS_OLD ? null : createTyreMarks({ scene, ground: (x, z) => this.ground(x, z), surface: (x, z) => this.surface(x, z), wet: wx.uWet, snow: wx.uSnowCover, night: lightEnv.uNight });
     this.debug.visible = /[?&]drivedebug=1/.test(location.search);
     // the two-wheelers (viewer/moto/, docs/MOTO.md): the same driver, colliders, ground and traffic; their own physics
     // numbers, models, camera numbers and sound. setVehicle("car" | "moto" | "scooter" | "villo"); ?view=moto / scooter /
@@ -192,27 +212,22 @@ export class Driver {
     this.twos = {};                                   // kind -> { model, rig, env }
     this.motoChase = new MotoCamera(camera, dom);
     this.audios = { moto: new MotoAudio(VOICES.four), scooter: new MotoAudio(VOICES.single), villo: new BikeAudio() };
+    // THE ENGINE SOUND SLOT (docs/SOUND_CITY.md): empty. The owner brings the car / motorbike engine model from another
+    // repo; it plugs in here: { update(state, dt, driver), stop() }, called every frame while driving (any vehicle) and
+    // stopped when the drive mode ends. The city sound (viewer/audio/citySound.js) already plays the player car's tyres.
+    this.engineVoice = null;
     this.keys = new DriveKeys({ active: () => this.on, onKey: (k) => {
       if (k === "KeyR") this.reset(); else if (k === "KeyC") (this.twoWheel ? this.motoChase : this.chase).next();
-      else if (k === "KeyN") { if (this.twoWheel) this.setSound(this.audio.muted); }
       else if (k === "KeyQ") { if (this.vehicle === "villo" && this.state) { this.state.bell = 0; this.state.bells++; this.audio.bell?.(); } }
       else if (k === "KeyE") this.onUse?.();
       else if (k === "KeyG") this.debug.visible = !this.debug.visible; else if (k === "Escape") this.onExit?.();
     } });
-    this.ground = (x, z) => {
-      let dk = null, osm = false;                                                    // a road bridge's deck (hero or OSM)
-      for (const f of this.world.decks || []) { const y = f(x, z); if (y != null) { dk = y; osm = !!f.osm; break; } }
-      const near = this.groundHint ?? (this.on && this.state ? this.state.y : null);
-      const t = this.world.at(x, z);
-      const g = t.drive ? driveHeight(t.hm, t.drive.ground, x, z, near) : t.hm.surface(x, z) + 0.12;
-      // an OSM deck and the road drawn with it (the OSM decks' road runs on or just through the slab, e.g. 0.3 m under it
-      // on the Chaussée de Waterloo, 0.4 m over it on Avenue des Hospices): the higher of the two is the surface; a
-      // surface far under the deck (a street passing under the bridge) when the car is on it: the layer nearest the
-      // car, as driveHeight does for the grid's two layers (before 2026-11-13 the deck always won)
-      if (dk == null) return g;
-      if (osm && Math.abs(g - dk) < 1.5) return Math.max(g, dk);                    // (a hero deck: its own surface)
-      return Number.isFinite(near) && Math.abs(g - near) + 1 < Math.abs(dk - near) ? g : dk;
-    };
+    // THE MOVER GROUND (claude/ground, rule mover-ground: viewer/drive/moverGround.js): the decks, then the drive grid, the layer
+    // nearest the car where two stack; the traffic, the trams, the parked and knocked cars stand on the same function
+    this.ground = (x, z) => moverGroundY(this.world.decks, this.world.at(x, z), x, z, this.groundHint ?? (this.on && this.state ? this.state.y : null));
+    // drivecheck (rule 27 provisional): the place's surface layers with no car in them (surfaceLayers.js): what
+    // the hero colliders measure their car band from (heroColliders.js; ?heroground=old: this.ground, the car's layer)
+    this.groundLayers = (x, z) => { const t = this.world.at(x, z); return surfaceLayers(this.world.decks, t.hm, t.drive?.ground, x, z); };
     this.sets = (x, z, r) => {
       const out = this._sets ||= [];
       out.length = 0;
@@ -257,13 +272,28 @@ export class Driver {
     // (car control round: trams / trains solid, movers.js; main.js fills railSources)
     this.railSources = [];
     this.movers = /[?&]railsolid=0(&|$)/.test(location.search) ? null : createRailMovers(this.railSources);
+    // (carhit, docs/CARHIT.md; ?carpush=old = none): the cars both ways, the knocked ones' rigid bodies (the traffic is
+    // attached by viewer/traffic/cityTraffic.js); its ground: the drive surface on the layer nearest `near`
+    this.carHit = CARPUSH_OLD ? null : new CarHitWorld({ sets: this.sets, movers: this.movers,
+      ground: (x, z, near) => { const g0 = this.groundHint; this.groundHint = Number.isFinite(near) ? near : g0; const y = this.ground(x, z); this.groundHint = g0; return y; } });
+    if (this.carHit) this.carHit.onPlayerDamage = (C) => playerDamage.depth.value.set(C[0], C[1], C[2], C[3]);
+    // (props, docs/PROPS.md; ?props=old = none): bins, cones, signs, bollards, parked two-wheelers, terraces knocked
+    // about (viewer/props/propWorld.js; the city's glue: viewer/props/cityProps.js); its ground as carHit's
+    this.props = PROPS_OLD ? null : new PropWorld({ sets: this.sets,
+      ground: (x, z, near) => { const g0 = this.groundHint; this.groundHint = Number.isFinite(near) ? near : g0; const y = this.ground(x, z); this.groundHint = g0; return y; } });
     this.env = createCarEnv({ sets: this.sets, ground: this.ground, handling: HANDLING, waters: () => this.world.waters, ledges: this.ledges,
-      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers });
+      feel: !CARFEEL_OLD, surface: CARFEEL_OLD ? null : this.surface, nudge: CARFEEL_OLD ? null : this.nudge, movers: this.movers, carHit: this.carHit,
+      props: this.props, mass: () => this.carHit?.player.m ?? this.carMass() });
     // each two-wheeler's env: its narrow box (it filters between cars), its impact response (a hard hit = a crash); the
-    // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too
+    // traffic's moving boxes (cityTraffic.js sets env.dynamic on the car's env) reach it too. The feel round
+    // (docs/MOTO_FEEL.md; ?moto=old = before): kerb islands ridden up, hedges soft, thin posts slid round, the bike's own
+    // step rule, the terrain's grip (this.surface: grass / soil = 1)
     this.envs = {};
     for (const k of TWO_WHEEL) {
-      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: TWO_WHEELERS[k], waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers });
+      const H = TWO_WHEELERS[k];
+      const e = this.envs[k] = createCarEnv({ sets: this.sets, ground: this.ground, handling: H, waters: () => this.world.waters, ledges: this.ledges, dims: BODIES[k], onHit: motoHit, movers: this.movers, carHit: this.carHit, two: true,
+        props: this.props, mass: () => MASS2[k] ?? 250,
+        ...twoWheelEnv(H), surface: H.feel ? this.surface : null });
       Object.defineProperty(e, "dynamic", { get: () => this.env.dynamic, set: () => {}, configurable: true });
     }
     this.camNear = [];
@@ -306,6 +336,8 @@ export class Driver {
     if (this.car) this.scene.remove(this.car.root);
     this.spec = spec; this.model = model;
     fitBody(model);
+    playerDamage.hl.value = BODY.hz;                     // (carhit: the crumple's reach on this model)
+    setPlayerDent(model);                                // (claude/dent: its half width, ends and cabin box)
     this.car = createCar(model);
     this.car.root.visible = this.on;
     this.scene.add(this.car.root);
@@ -320,7 +352,7 @@ export class Driver {
   get motoEnv() { return this.envs[this.vehicle] ?? this.envs.moto; }
   get audio() { return this.audios[this.vehicle] ?? this.audios.moto; }
   get body() { return BODIES[this.vehicle] ?? null; }
-  /** the two-wheelers' sound, all at once (OFF by default: ?motosound=1, the dev panel, N) */
+  /** the two-wheelers' sound, all at once, for code only: the speaker button (viewer/audio/soundGate.js) is the one switch */
   setSound(on) { for (const a of Object.values(this.audios)) a.setMuted(!on); return on; }
 
   /** "car" | "moto" | "scooter" | "villo": which vehicle start() uses (a two-wheeler loads on first use) */
@@ -384,17 +416,27 @@ export class Driver {
     this.moto?.reattach();
     this.motoChase.reset();
     this.state.y = NaN;                                   // (no layer hint yet: the top surface)
+    this.carHit?.resetPlayer();                           // (carhit: R = a fresh car)
     this.state.y = this.ground(s.x, s.z);
     this.chase.reset();
   }
   stop() {
     this.on = false; this.chase.active = false;
+    this.marks?.lift();
     for (const t of Object.values(this.twos)) t.rig.reattach();
     this.showOnly();
     for (const a of Object.values(this.audios)) a.stop(); this.motoChase.active = false;
+    this.engineVoice?.stop?.();
     this.debug.visible = false;
     this.hud.style.display = "none";
   }
+  /** (carhit) the player's car's mass (kg): its model's type (the police estate, a hatchback ...), else by its size */
+  carMass() {
+    const id = (this.spec || "").split(":")[1];
+    return MASS[id] ?? Math.round(1300 * (BODY.hx * BODY.hz) / (0.905 * 2.155));
+  }
+  /** (carhit) the player's vehicle damage 0..1 (the games read it; corners: driver.carHit.player.corners) */
+  get damage() { return this.carHit?.player.damage ?? 0; }
   get x() { return this.state?.x ?? 0; }
   get z() { return this.state?.z ?? 0; }
 
@@ -406,8 +448,12 @@ export class Driver {
     const c = this.state;
     // (autoInput: a scripted { throttle, steer, handbrake } for route tests, docs/policefeel/; null = the keyboard)
     const inp = this.autoInput || this.keys.read();
+    if (this.carHit) this.carHit.player.m = this.carMass();
     if (CARFEEL_OLD) stepCar(c, inp, dt, this.env, HANDLING);
     else { (CARCTL_OLD ? stepFeel : stepCtl)(c, inp, dt, this.env); if (this.nudged.size) this.flushNudges(); }
+    this.carHit?.frame(dt, c.x, c.z);
+    this.props?.frame(dt, c.x, c.z);
+    this.marks?.update(c, "car", null, dt);
     carLights.brake.value = c.braking ? 1 : 0;
     carLights.head.value = carLights.tail.value = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     this.car.update(c);
@@ -415,6 +461,7 @@ export class Driver {
     for (const col of this.sets(c.x, c.z, 14)) gather(col, c.x, c.z, 14, this.camNear);
     this.chase.update(c, dt, this.ground, this.insideWall);
     this.debug.update(this.sets, this.ground, c, this.env.contacts > 0, 40, this.flagsOf);
+    this.engineVoice?.update?.(c, dt, this);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
     // (perfgame: not while a game hides this line: body.game-on .g-drivehud = display none; the innerHTML + its layout every
     // 6th frame was ~0.1 ms of main thread for nothing; ?hudskip=old = always)
@@ -448,7 +495,11 @@ export class Driver {
     this.motoChase.active = true; this.chase.active = false;
     const t0 = performance.now();
     const c = this.state, kind = this.vehicle, H = TWO_WHEELERS[kind];
+    if (this.carHit) this.carHit.player.m = MASS2[kind] ?? 250;
     stepMoto(c, this.keys.readMoto(), dt, this.motoEnv, H);
+    this.carHit?.frame(dt, c.x, c.z);
+    this.props?.frame(dt, c.x, c.z);
+    this.marks?.update(c, kind, H, dt);
     const night = lightEnv.uNight?.value > 0.5 ? 1 : 0;
     const ML = this.motoLights;
     ML.head.value = ML.tail.value = night; ML.brake.value = c.braking ? 1 : 0;
@@ -462,18 +513,19 @@ export class Driver {
     this.motoChase.update(c, dt, this.ground, this.insideWall, this.headAt);
     this.debug.update(this.sets, this.ground, c, this.motoEnv.contacts > 0, 40, this.flagsOf, BODIES[kind]);
     this.audio.update(c, dt);
+    this.engineVoice?.update?.(c, dt, this);
     this.ms = this.ms * 0.95 + (performance.now() - t0) * 0.05;
     if ((this._hudN = (this._hudN || 0) + 1) % 6 === 0 && !(HUD_SKIP && document.body.classList.contains("game-on") && this.hud.classList.contains("g-drivehud"))) {
       const small = (t) => `<small style="font-size:12px;color:#b8c2cc;font-weight:400">${t}</small>`;
-      const kmh = (Math.abs(c.speed) * 3.6).toFixed(0), snd = `N sound ${this.audio.muted ? "off" : "on"}`;
+      const kmh = (Math.abs(c.speed) * 3.6).toFixed(0);
       if (kind === "villo") {
         const what = c.crashed ? "CRASH" : c.pushing ? "pushing it up the hill" : `gear ${c.gear} · ${Math.round(c.rpm)} rpm`;
-        this.hud.innerHTML = `${kmh} ${small(`km/h · ${what} · ${this.prompt || "Shift stand on the pedals · Space rear · Q bell · C camera"} · ${snd}`)}`;
+        this.hud.innerHTML = `${kmh} ${small(`km/h · ${what} · ${this.prompt || "Shift stand on the pedals · Space rear · Q bell · C camera"}`)}`;
       } else {
         const red = H.rpm.red, rpm = Math.round(c.rpm / 100) * 100, bar = Math.round(Math.min(1, c.rpm / red) * 10);
         this.hud.innerHTML = `${kmh} ${small(`km/h · ${c.crashed ? "CRASH" : kind === "scooter" ? "CVT" : `gear ${c.gear}`} ` +
           `<span style="letter-spacing:-1px;color:${bar > 8 ? "#ff6a4a" : "#9fe08a"}">${"▮".repeat(bar)}</span><span style="letter-spacing:-1px;color:#4a525c">${"▮".repeat(10 - bar)}</span> ${rpm} rpm` +
-          ` · ${kind === "moto" ? "Shift wheelie · " : ""}Space rear · C camera · ${snd}`)}`;
+          ` · ${kind === "moto" ? "Shift wheelie · " : ""}Space rear · C camera`)}`;
       }
     }
   }

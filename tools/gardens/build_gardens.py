@@ -2,6 +2,10 @@
 
     C:/Users/tibog/Downloads/venv/Scripts/python.exe tools/gardens/build_gardens.py --all --raw C:/Users/tibog/Downloads/uccle-city/data/raw
     ... --tile I6 --debug <dir>          (one tile, with a plan view PNG of the strips, runs, openings and pieces)
+    then (claude/gates, rule house-front-garden-closed) the pieces fitted to the built tile, in this order:
+    node --import ./tools/road_audit/register.mjs tools/gardens/fitGardens.mjs --lanes --all   (no piece in a driven lane; again until it
+                                                    reports nothing: a run moved back can bring a piece the viewer cleared back in)
+    node --import ./tools/road_audit/register.mjs tools/gardens/fitGardens.mjs --steps --all   (no gate over a step without steps)
 
 Inputs (docs/assets/GARDENS.md)
   faces       the city's own street faces and front doors (tools/gardens/faces.mjs = viewer/facadeGeom.js analyseBuildings
@@ -62,6 +66,8 @@ RAMP = 8
 MIN_GAP, MIN_FACE = 1.0, 2.0
 EXT = 12.0                                          # how far a run may extend past its face's ends (detached houses)
 CAP_T = 0.08                                        # cap thickness (the kit's caps: 8 cm slab)
+SHOP_R = 2.5                                        # an OSM shop point this near a building makes it a shop (was 6 m)
+PED_W = 1.3                                         # a pedestrian opening, pier centre to pier centre
 BURY = 0.35
 
 
@@ -268,7 +274,7 @@ def load_osm(worktree_raw: Path):
             if e["type"] == "way" and t.get("barrier") in ("wall", "retaining_wall", "fence", "hedge"):
                 pts = [tuple(map(float, wgs_to_local(g["lon"], g["lat"]))) for g in e["geometry"]]
                 if len(pts) >= 2: bars.append((LineString(pts), t, e["id"]))
-            elif e["type"] == "node" and "gate" in (t.get("barrier") or ""):
+            elif e["type"] == "node" and t.get("barrier") in ("gate", "swing_gate", "sliding_gate", "wicket_gate", "hampshire_gate"):
                 gates.append((tuple(map(float, wgs_to_local(e["lon"], e["lat"]))), t))
     else:
         print("no", f, "(OSM barriers not used)", file=sys.stderr)
@@ -354,12 +360,19 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
     x0, z0, x1, z1 = tile_bounds(name)
     tb = Polygon([(x0 - 50, z0 - 50), (x1 + 50, z0 - 50), (x1 + 50, z1 + 50), (x0 - 50, z1 + 50)])
     bars = [b for b in bars if b[0].intersects(tb)]
+    # (claude/gates) the OSM gate nodes (barrier=gate / swing / sliding / wicket): loaded since round 1, never used
+    osm_gates = [g for g in osm_gates if tb.contains(Point(g[0]))]
     bar_tree = STRtree([b[0] for b in bars]) if bars else None
     fore = [f for f in fore if f[0].intersects(tb)]
     fore_tree = STRtree([f[0] for f in fore]) if fore else None
     drives, topo_ok = driveway_lines(raw, name)
     drive_tree = STRtree(drives) if drives else None
     service = [LineString(r["line"]) for r in T.roads if r["hw"] == "service" and len(r["line"]) > 1]
+    # (claude/gates) every way a car uses (not foot / cycle ways): a driveway gate across one stands open
+    FOOT = {"footway", "path", "steps", "cycleway", "pedestrian", "bridleway", "corridor"}
+    driven_ways = [LineString(r["line"]) for r in T.roads if r["hw"] not in FOOT and len(r["line"]) > 1]
+    way_tree = STRtree(driven_ways) if driven_ways else None
+    def ways_near(g): return [driven_ways[k] for k in way_tree.query(g.buffer(1.0))] if way_tree is not None else []
     feats = json.loads((TILES / name / "features.json").read_text(encoding="utf-8"))
     shops = [Point(p["x"], p["z"]) for p in feats.get("points", []) if p["kind"] == "shop"]
     # street names: the nearest named road (for the per-street dominant style)
@@ -369,19 +382,23 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         own_bu[k] = (b.get("attrs") or {}).get("BU_ID") or b["id"]
 
     # ---- 1. rays from every candidate face
+    skips = {}                # (claude/gates: why a street face got no garden: tools/audit/census/gates.mjs causes)
+    def skip(f, why): skips.setdefault(f["bu"].rsplit("/", 1)[-1], why)
     samples = []          # dicts: face index, u, hit (x, z), gap, cls, core
     cand = []
     for fi, f in enumerate(faces):
         if not f["street"] or f["partyH"] >= 999 or f["landmark"] or f["width"] < MIN_FACE: continue
-        if f["shopW"] and f["shopW"] > 0.5: stats["skip_shopfront"] += 1; continue
+        if f["shopW"] and f["shopW"] > 0.5: stats["skip_shopfront"] += 1; skip(f, "shopfront"); continue
         cand.append(fi)
     shop_bi = set()
+    # (claude/gates: 6 m -> 2.5 m: an OSM shop point lies in its shop or on its facade; at 6 m it took the gardens of the
+    # houses either side of a shop in a row)
     for p in shops:
-        for k in R.btree.query(p.buffer(6.0)):
-            if R.bpolys[k].distance(p) < 6.0 and R.bkey[k][0] == name: shop_bi.add(R.bkey[k][1])
+        for k in R.btree.query(p.buffer(SHOP_R)):
+            if R.bpolys[k].distance(p) < SHOP_R and R.bkey[k][0] == name: shop_bi.add(R.bkey[k][1])
     for fi in cand:
         f = faces[fi]
-        if f["bi"] in shop_bi: stats["skip_shop"] += 1; continue
+        if f["bi"] in shop_bi: stats["skip_shop"] += 1; skip(f, "shop"); continue
         ax, az = f["a"]; bx, bz = f["b"]; W = f["width"]; tx, tz = (bx - ax) / W, (bz - az) / W; nx, nz = f["nx"], f["nz"]
         own = R.gid.get((name, f["bi"]), -1)
         us = list(np.arange(0.25, W - 0.24, 0.5)) or [W / 2]
@@ -404,8 +421,8 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         if not core: continue
         gaps = sorted(s["gap"] for s in hits)
         med = gaps[len(gaps) // 2] if gaps else 0
-        if len(hits) < 0.5 * len(core): stats["face_nohit"] += 1; continue
-        if med < MIN_GAP: stats["face_on_line"] += 1; continue
+        if len(hits) < 0.5 * len(core): stats["face_nohit"] += 1; skip(faces[fi], "nohit"); continue
+        if med < MIN_GAP: stats["face_on_line"] += 1; skip(faces[fi], "online"); continue
         gardens[fi] = med
     # refine the accepted hits; drop samples outside a garden face, gaps far from the face's median, forecourts
     keep = []
@@ -413,18 +430,19 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         fi = s["fi"]
         if fi not in gardens or s["gap"] is None: continue
         f = faces[fi]; med = gardens[fi]
-        if s["gap"] < MIN_GAP * 0.8 or abs(s["gap"] - med) > max(1.5, med * 0.35): continue
+        if s["gap"] < MIN_GAP * 0.8 or abs(s["gap"] - med) > max(1.5, med * 0.35): s["fate"] = "gapdev"; continue
         d = R.refine(s["ox"], s["oz"], f["nx"], f["nz"], s["d"])
         s["x"] = s["ox"] + f["nx"] * d; s["z"] = s["oz"] + f["nz"] * d; s["gap"] = d + 0.15
         if fore_tree is not None:
             ray = LineString([(s["ox"], s["oz"]), (s["x"], s["z"])])
             if any(fore[k][0].intersection(ray).length > 0.5 for k in fore_tree.query(ray)):
-                stats["forecourt_samples"] += 1; continue
+                stats["forecourt_samples"] += 1; s["fate"] = "forecourt"; continue
         keep.append(s)
     # conflicts: a spot claimed by two faces goes to the face it lies in front of, else the one whose end is nearer (plots split
     # half way between detached houses), then the shallower gap
     grid = defaultdict(list)
     for i, s in enumerate(keep): grid[(int(s["x"] // 1), int(s["z"] // 1))].append(i)
+    prio = {fi: (round(gardens[fi], 1), -faces[fi]["width"], fi) for fi in gardens}
     drop = set()
     for i, s in enumerate(keep):
         cx, cz = int(s["x"] // 1), int(s["z"] // 1)
@@ -433,8 +451,17 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 for j in grid.get((cx + di, cz + dj), []):
                     o = keep[j]
                     if o["fi"] == s["fi"] or math.hypot(o["x"] - s["x"], o["z"] - s["z"]) > 0.75: continue
-                    if (o["ext"], o["gap"], o["fi"]) < (s["ext"], s["gap"], s["fi"]): drop.add(i)
+                    # (claude/gates) the order is per FACE (its median gap, then the wider face), not per sample: two faces
+                    # of one wall (UrbIS splits a facade into stacked coplanar faces) whose gaps cross along the run each
+                    # beat the other's next sample, and BOTH dropped the spot (Av. Dupuich G2: 12 m of a villa's front open;
+                    # census class G "partial")
+                    if (o["ext"], prio[o["fi"]]) < (s["ext"], prio[s["fi"]]): drop.add(i); s["fate"] = f"claimed:{faces[o['fi']]['bu'][-8:]}:{o['ext']}:{round(o['gap'],1)}"
     keep = [s for i, s in enumerate(keep) if i not in drop]
+    DBG = __import__("os").environ.get("GARDEN_DEBUG_BU")
+    if DBG:
+        for s in samples:
+            f = faces[s["fi"]]
+            if f["bu"].endswith(DBG) and s["core"]: print("DBG", s["fi"], round(s["u"], 2), s.get("gap") and round(s["gap"], 2), s.get("why"), s.get("fate", "kept" if s in keep else ("noface" if s["fi"] not in gardens else "?")), file=sys.stderr)
 
     # ---- 2. runs per face (consecutive samples), simplified
     runs = []
@@ -526,6 +553,26 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
 
     out_segs, out_pillars, out_gates, out_hedges, out_gardens = [], [], [], [], []
     run_metres = Counter()
+    def door_s(f, ls):
+        """the door's projection (along the face normal) onto the run ls: its arc length, or None"""
+        if not f.get("door"): return None
+        dx, dz = f["door"]["x"], f["door"]["z"]
+        ray = LineString([(dx + f["nx"] * 0.1, dz + f["nz"] * 0.1), (dx + f["nx"] * (REACH + 1), dz + f["nz"] * (REACH + 1))])
+        q = ray.intersection(ls)
+        if q.is_empty: return None
+        q = q if q.geom_type == "Point" else min(getattr(q, "geoms", [q]), key=lambda g: g.distance(Point(dx, dz)))
+        return ls.project(q if q.geom_type == "Point" else q.centroid)
+    # (claude/gates) a building whose door opens onto none of its runs (the door on a side face, a garden face without
+    # a door) still has a way in from the street: one gate on its longest run, at the point nearest its door
+    door_of = {}
+    for f in faces:
+        if f.get("door") and (f["bu"] not in door_of or f["doorFace"]): door_of[f["bu"]] = f["door"]
+    terraced_bi = {f["bi"] for f in faces if f["partyH"] >= 999}     # (rows and semis: a whole party wall)
+    door_on_run, longest = set(), {}
+    for r in runs:
+        f = faces[r["fi"]]; L = arclen(r["pts"])[-1]
+        if door_s(f, LineString(r["pts"])) is not None: door_on_run.add(f["bu"])
+        if L > longest.get(f["bu"], (0, None))[0]: longest[f["bu"]] = (L, id(r))
     for ri, r in enumerate(runs):
         f = faces[r["fi"]]
         bu = str(f["bu"])
@@ -548,6 +595,11 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             mix = VILLA_MIX if villa else TERRACE_MIX
             dom = pick(mix, h01(street or bu, "street-kind" + ("v" if villa else "t")))
             kind = dom if (street and h01(bu, "follow") < 0.6) else pick(mix, h01(bu, "kind"))
+            # (claude/gates) an OPEN front only as a house's own choice, about 1 in 3 of the old picks (villas 2 %, rows
+            # 1.7 %): a street whose dominant draw was "open" had 60 % of its houses open (Rue du Ham I6); the owner and
+            # the Street View sample (docs/GATES.md): nearly every Uccle house has a front fence, hedge or wall
+            if kind == "open" and ((kind == dom and street) or h01(bu, "open-keep") >= 0.34):
+                kind = pick([m for m in mix if m[0] != "open"], h01(bu, "kind-no-open") * (1 - dict(mix)["open"]))
             seed = (street + "|dom") if (street and kind == dom and h01(bu, "same-look") < 0.65) else bu
             gap = gardens[r["fi"]]
             if gap < 2.5 and kind in ("railhedge", "hedge", "wallhedge"): kind = "rail" if kind == "railhedge" else "wall"   # no hedge in a 1-2.5 m strip
@@ -561,19 +613,19 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         # ---- openings (arc length intervals on this run)
         ops = []
         ls = LineString(line)
-        if f.get("door"):
-            dx, dz = f["door"]["x"], f["door"]["z"]
-            ray = LineString([(dx + f["nx"] * 0.1, dz + f["nz"] * 0.1), (dx + f["nx"] * (REACH + 1), dz + f["nz"] * (REACH + 1))])
-            q = ray.intersection(ls)
-            if not q.is_empty:
-                q = q if q.geom_type == "Point" else min(getattr(q, "geoms", [q]), key=lambda g: g.distance(Point(dx, dz)))
-                s = ls.project(q if q.geom_type == "Point" else q.centroid)
-                # round 2: 1.3 m between the pillars' centres (0.94 m clear: a real garden gate, and the walker's 0.6 m
-                # body gets through); no gate where a building stands right behind the line (an annex, a garage)
-                gp = ls.interpolate(s)
-                if R.in_building(gp.x - f["nx"] * 0.6, gp.y - f["nz"] * 0.6): stats["door_gate_blocked"] += 1
-                else: ops.append([s - 0.65, s + 0.65, "ped"]); stats["door_gates"] += 1
-            else: stats["door_off_run"] += 1
+        s = door_s(f, ls)
+        if s is None and f.get("door"): stats["door_off_run"] += 1
+        if s is None and f["bu"] not in door_on_run and longest.get(f["bu"], (0, None))[1] == id(r) and L >= 2.6:
+            # (claude/gates) the access gate of a building whose door is not in front of a run: nearest its door
+            dd = door_of.get(f["bu"])
+            s = ls.project(Point(dd["x"], dd["z"])) if dd else L / 2
+            s = min(max(s, PED_W / 2), L - PED_W / 2); stats["access_gates"] += 1
+        if s is not None:
+            # round 2: 1.3 m between the pillars' centres (0.94 m clear: a real garden gate, and the walker's 0.6 m
+            # body gets through); no gate where a building stands right behind the line (an annex, a garage)
+            gp = ls.interpolate(s)
+            if R.in_building(gp.x - f["nx"] * 0.6, gp.y - f["nz"] * 0.6): stats["door_gate_blocked"] += 1
+            else: ops.append([s - PED_W / 2, s + PED_W / 2, "ped"]); stats["door_gates"] += 1
         for dl in ([drives[k] for k in drive_tree.query(ls.buffer(1.5))] if drive_tree is not None else []):
             if dl.distance(ls) > 1.5: continue
             a = ls.project(Point(dl.coords[0])); b = ls.project(Point(dl.coords[-1]))
@@ -591,6 +643,13 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 else: grp.append([v, v])
             for a, b in grp:
                 if b - a >= 1.5: ops.append([a - 0.25, b + 0.25, "car"]); stats["drive_ramp"] += 1
+        forced = []
+        for (gx, gz), gt in osm_gates:
+            if ls.distance(Point(gx, gz)) > 1.2: continue
+            sg = ls.project(Point(gx, gz)); forced.append(sg); stats["osm_gate_nodes"] += 1
+            if not any(o[0] - 0.5 <= sg <= o[1] + 0.5 for o in ops):
+                if gt.get("motor_vehicle") in ("yes", "private", "destination") or gt.get("barrier") == "sliding_gate": ops.append([sg - 1.6, sg + 1.6, "car"])
+                else: ops.append([sg - PED_W / 2, sg + PED_W / 2, "ped"])
         for sl in service:
             q = sl.intersection(ls)
             if q.is_empty: continue
@@ -598,19 +657,50 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
                 if g.geom_type != "Point": continue
                 s = ls.project(g)
                 if not any(o[0] - 0.5 < s < o[1] + 0.5 for o in ops if o[2] == "car"): ops.append([s - 1.6, s + 1.6, "car"]); stats["drive_osm"] += 1
-        # merge: a door inside / against a driveway walks through the driveway; overlapping driveways join
-        ops.sort()
-        merged = []
-        for o in ops:
-            o[0] = max(0.0, o[0]); o[1] = min(L, o[1])
-            if o[1] - o[0] < 0.6: continue
-            if merged and o[0] < merged[-1][1] + 0.5:
-                m = merged[-1]; m[1] = max(m[1], o[1]); m[2] = "car" if "car" in (m[2], o[2]) else "ped"
-                if m[2] == "car" and o[2] == "ped": stats["door_in_driveway"] += 1
-            else: merged.append(o)
-        for o in merged:                                  # slivers at the run ends join the opening
-            if o[0] < 0.6: o[0] = 0.0
-            if L - o[1] < 0.6: o[1] = L
+        # merge: overlapping driveways join. (claude/gates) A door inside / against a driveway gets its own pedestrian
+        # gate BESIDE the driveway (sharing a pier: the Brussels pair, a driveway gate + a garden gate), on the door's
+        # side where the run has room, else carved from a driveway >= 4.1 m wide; only where neither fits does the walk
+        # go through the driveway (before: always, 2,668 doors city-wide; their paths ungated where the drive was open)
+        for o in ops: o[0] = max(0.0, o[0]); o[1] = min(L, o[1])
+        cars = []
+        for o in sorted([o for o in ops if o[2] == "car" and o[1] - o[0] >= 0.6]):
+            if cars and o[0] < cars[-1][1] + 0.5: cars[-1][1] = max(cars[-1][1], o[1])
+            else: cars.append(o)
+        peds = []
+        for o in sorted([o for o in ops if o[2] == "ped" and o[1] - o[0] >= 0.6]):
+            if peds and o[0] < peds[-1][1] + 0.5: continue        # (two doors at one spot: one gate)
+            sd = (o[0] + o[1]) / 2
+            hit = next((c for c in cars if o[0] < c[1] + 0.5 and o[1] > c[0] - 0.5), None)
+            if hit is None: peds.append(o); continue
+            stats["door_in_driveway"] += 1
+            def free(a, b, hit=hit):
+                if a < -1e-6 or b > L + 1e-6: return False
+                if any(a < c[1] - 1e-3 and b > c[0] + 1e-3 for c in cars if c is not hit) or any(a < q[1] + 0.4 and b > q[0] - 0.4 for q in peds): return False
+                gp = ls.interpolate((a + b) / 2)
+                return not R.in_building(gp.x - f["nx"] * 0.6, gp.y - f["nz"] * 0.6)
+            cand = sorted([(hit[0] - PED_W, hit[0]), (hit[1], hit[1] + PED_W)], key=lambda q: abs((q[0] + q[1]) / 2 - sd))
+            put = next(([a, b, "ped"] for a, b in cand if free(a, b)), None)
+            if put is None and hit[1] - hit[0] >= 4.1:
+                if abs(hit[0] - sd) <= abs(hit[1] - sd): put = [hit[0], hit[0] + PED_W, "ped"]; hit[0] += PED_W
+                else: put = [hit[1] - PED_W, hit[1], "ped"]; hit[1] -= PED_W
+                stats["ped_carved"] += 1
+            if put is not None: peds.append(put); stats["ped_beside_drive"] += 1
+            else: stats["door_through_drive"] += 1
+        merged = sorted([list(c) for c in cars] + peds)
+        for o in merged:
+            # slivers at the run ends: a driveway takes them in; (claude/gates) a pedestrian opening moves to the end
+            # instead (its pier on the run end), so it stays a gate's width (before: widened past 1.6 m, no leaf)
+            if o[2] == "car":
+                if o[0] < 0.6: o[0] = 0.0
+                if L - o[1] < 0.6: o[1] = L
+            elif any(abs(c[1] - o[0]) < 1e-3 or abs(c[0] - o[1]) < 1e-3 for c in cars):
+                # a gate BESIDE a driveway keeps its shared pier, and a sliver to the run's end joins the gate (moved to the
+                # end it left a second pier 0.3-0.6 m off the drive's: browser turn, F7 Rue de Verrewinkel 87, 444 pairs)
+                if o[0] < 0.6 and abs(o[0]) > 1e-3 and not any(abs(c[1] - o[0]) < 1e-3 for c in cars): o[0] = 0.0
+                if L - o[1] < 0.6 and not any(abs(c[0] - o[1]) < 1e-3 for c in cars): o[1] = L
+            else:
+                if o[0] < 0.6: o[0], o[1] = 0.0, min(L, PED_W)
+                elif L - o[1] < 0.6: o[0], o[1] = max(0.0, L - PED_W), L
         # ---- solid stretches between the openings
         solid, s = [], 0.0
         for o in merged:
@@ -637,6 +727,9 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             for o in merged:                               # hedges get gate pillars at openings only
                 if o[0] > 0.01: pil.add(round(o[0], 3))
                 if o[1] < L - 0.01: pil.add(round(o[1], 3))
+                # (claude/gates) a pedestrian gate at a run's end: its pier on the end too (a leaf hung on one pier)
+                if o[2] == "ped" and o[0] <= 0.01: pil.add(0.0)
+                if o[2] == "ped" and o[1] >= L - 0.01: pil.add(round(L, 3))
         maxbay = 3.2 if st["kind"] == "rail" else 6.0
         if has_pillars:
             for a, b in solid:
@@ -696,7 +789,9 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
         # gates
         for o in merged:
             a, b = o[0], o[1]
-            w = b - a - (PW - 0.04 if has_pillars or st["kind"] == "hedge" else 0)
+            # (claude/gates: a hedge front has piers at its openings too: the leaf between their faces, not 0.2 m into
+            # each (was 1.34 m, its bars stretched 34 %))
+            w = b - a - (0.32 if has_pillars or st["kind"] == "hedge" else 0)
             c = (a + b) / 2
             x, z = point_at(line, c)
             pa = point_at(line, max(0.0, c - w / 2)); pb = point_at(line, min(L, c + w / 2))
@@ -709,10 +804,27 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
             if o[2] == "ped":
                 if w < 0.7 or w > 1.6: continue
                 ang = 1.2 + 0.5 * h01(bu, "open")             # open into the garden (70 - 100 deg)
+                # (claude/gates) beside a hedge: <= 77 deg, the leaf clear of the hedge's end (it ends at the pier: past 90
+                # deg the leaf swung into its foliage)
+                if st["kind"] == "hedge" or st.get("hedge"): ang = 1.2 + 0.15 * h01(bu, "open")
                 out_gates.append([r2(pa[0]), r2(gy), r2(pa[1]), round(yaw, 4), r2(w), 0, round(ang, 3), sid]); stats["ped_gates"] += 1
             else:
-                if 2.2 <= w <= 4.6 and h01(bu, "cargate" + str(round(c))) < 0.55:
-                    out_gates.append([r2(pa[0]), r2(gy), r2(pa[1]), round(yaw, 4), r2(w), 1, 0.0, sid]); stats["car_gates"] += 1
+                # (claude/gates) a driveway long enough to hold a car behind its gate (>= 5 m) is gated 3 in 4, a
+                # short one (a car stands in front of the garage) 1 in 2 (was 55 % everywhere); a wider mouth than
+                # 4.6 m is a forecourt / car park: open
+                p_gate = 0.75 if gardens[r["fi"]] >= 5.0 else 0.5
+                # (claude/gates browser turn, Street View: 6 of 6 row / semi garage drives sampled have NO gate (Ch. de
+                # Saint-Job 136, Rue Basse 125, Av. Coghen 84, Rue Zandbeek 89, Van Ophem 138, Av. Brugmann 495): the car
+                # stands on the paved front of a terraced house (a building with a whole party wall); 1 in 8 there)
+                if f["bi"] in terraced_bi: p_gate = 0.125
+                osm_gate = any(a - 0.5 <= q <= b + 0.5 for q in forced)       # (an OSM gate node there: a gate, always)
+                if 2.2 <= w <= (5.2 if osm_gate else 4.6) and (osm_gate or h01(bu, "cargate" + str(round(c))) < p_gate):
+                    # a gate across a way the player / traffic drives (an OSM service road, a track into a yard) stands OPEN
+                    span = LineString([pa, pb])
+                    used = any(rl.intersects(span) or rl.distance(Point(x, z)) < 0.8 for rl in ways_near(span))
+                    ang = (1.35 + 0.2 * h01(bu, "cg-open")) if used else 0.0
+                    if used: stats["car_gates_open"] += 1
+                    out_gates.append([r2(pa[0]), r2(gy), r2(pa[1]), round(yaw, 4), r2(w), 1, round(ang, 3), sid]); stats["car_gates"] += 1
                 else: stats["car_open"] += 1
         stats["gardens"] += 1
         out_gardens.append({"bu": bu, "gap": r2(gardens[r["fi"]]), "len": r2(L), "kind": st["kind"], "style": sid, "osm": bool(st.get("osm")),
@@ -722,7 +834,7 @@ def place_tile(name, raw, wraw, osm, stats, debug=None):
            "hedges": out_hedges, "gardens": out_gardens,
            "counts": {"faces": len(cand), "gardenFaces": len(gardens), "runs": len(runs), "segs": len(out_segs), "pillars": len(out_pillars),
                       "gates": len(out_gates), "hedges": len(out_hedges), "metres": {k: round(v, 1) for k, v in run_metres.items()}},
-           "topo": topo_ok}
+           "topo": topo_ok, "skips": skips}
     for k, v in run_metres.items(): stats["m_" + k] += v
     stats["tiles"] += 1
     if debug: draw_debug(debug, name, R, faces, gardens, runs, doc)
@@ -762,6 +874,22 @@ def draw_debug(out, name, R, faces, gardens, runs, doc):
     im.save(Path(out) / f"{name}_plan.png")
 
 
+_W = {}
+
+
+def _init_worker(raw, osm_dir, out, debug):
+    global OUT
+    OUT = Path(out)
+    _W.update(raw=Path(raw), osm_dir=Path(osm_dir), osm=load_osm(Path(osm_dir)), debug=debug)
+
+
+def _one_tile(name):
+    st = Counter()
+    doc = place_tile(name, _W["raw"], _W["osm_dir"], _W["osm"], st, _W["debug"])
+    (OUT / f"{name}.json").write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+    return name, doc["counts"], st
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tile", action="append")
@@ -769,15 +897,25 @@ def main():
     ap.add_argument("--raw", default=str(ROOT / "data" / "raw"), help="the main checkout's data/raw (UrbIS Topo CR42L)")
     ap.add_argument("--osm", default=str(ROOT / "data" / "raw"), help="where osm/barriers.json + osm/forecourts.json are")
     ap.add_argument("--debug", default=None)
+    ap.add_argument("--jobs", type=int, default=1, help="tiles placed in this many processes")
+    ap.add_argument("--out", default=None, help="write the docs here instead of data/gardens (a comparison build)")
     a = ap.parse_args()
+    global OUT
+    if a.out: OUT = Path(a.out)
     tiles = list(all_tiles()) if a.all else (a.tile or ["I6"])
     OUT.mkdir(parents=True, exist_ok=True)
     osm = load_osm(Path(a.osm))
     stats = Counter()
     t0 = time.time()
     per = {}
-    for name in tiles:
-        if not (TILES / name / "surfaces.json").exists(): continue
+    todo = [n for n in tiles if (TILES / n / "surfaces.json").exists()]
+    if a.jobs > 1:
+        # (claude/gates) tiles in parallel processes: each places its tile and writes it, the stats come back
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(a.jobs, initializer=_init_worker, initargs=(a.raw, a.osm, str(OUT), a.debug)) as ex:
+            for name, counts, st in ex.map(_one_tile, todo):
+                per[name] = counts; stats.update(st)
+    for name in (todo if a.jobs <= 1 else []):
         doc = place_tile(name, Path(a.raw), Path(a.osm), osm, stats, a.debug)
         (OUT / f"{name}.json").write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
         per[name] = doc["counts"]

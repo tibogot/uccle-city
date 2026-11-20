@@ -2,7 +2,7 @@
 // procedural test ground (viewer/bike/bikeGround.js, the same one tools/bike/bikeTest.mjs rides): a kicker, a table,
 // pump rollers, a dirt bowl, a sand patch, a 15 cm kerb, a 12 % slope, a 20 % one, roots, a wall, posts, a log, a car.
 // Placeholder rider + bike (viewer/bike/bikeModel.js), a bike chase camera, keyboard + gamepad, our own panel
-// (viewer/panelUI.js) for every constant, a telemetry strip. No sound. One fixed light set (sun + sky), never changed.
+// (viewer/panelUI.js) for every constant, a telemetry strip. Sound: the speaker button (off by default). One fixed light set (sun + sky), never changed.
 // URL: ?spot=kicker (start there), ?slow=0.25, ?cam=low
 // THE KID (claude/kid, docs/KID.md): the real kid (models/characters/kid.glb) walks ON FOOT with the merged third-person
 // controller (viewer/character: the same WASD / arrows, Shift run, Space jump, C crouch) and gets ON / OFF the bike
@@ -21,6 +21,7 @@ import { createBikeEnv } from "../viewer/bike/bikeEnv.js";
 import { FEATURES, testHeight, testSurface, testColliders, SPOTS, BOUNDS, testGroundRamped, testHeightRamped, testEdges } from "../viewer/bike/bikeGround.js";
 import { loadCityDocs, buildCitySpot } from "../viewer/bike/bikeCitySpot.js";
 import { EDGE, EDGE_NAMES, BENCH } from "../viewer/bike/bikeEdges.js";
+import { soundGate } from "../viewer/audio/soundGate.js";
 import { BikeSound, SOUND, SOUND_RANGES } from "../viewer/bike/bikeAudio.js";
 import { buildColliders, KIND } from "../viewer/drive/colliders.js";
 import { createBikeModel } from "../viewer/bike/bikeModel.js";
@@ -221,10 +222,11 @@ const groundAt = (x, z) => W.height(x, z);
 const chase = new BikeCamera(camera, BIKE_CAMERA);
 if (qs.get("cam")) BIKE_CAMERA.mode = qs.get("cam");
 let s;
-const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true, sound: false };
-// FEEL ROUND 3: the bike's sound (viewer/bike/bikeAudio.js), OFF by default: the panel's "sound" switch (a click: the
-// browser's gesture) makes the context and bakes the textures in the background; off suspends it (no audio work)
-const snd = new BikeSound();
+const P = { pause: false, slow: +(qs.get("slow") || 1), spot: qs.get("spot") || (W.city ? (W.spots.stairs ? "stairs" : "centre") : "start"), info: "", card: true, edges: true };
+// FEEL ROUND 3: the bike's sound (viewer/bike/bikeAudio.js), OFF by default: the speaker button (top centre, the city's
+// one sound switch: viewer/audio/soundGate.js) makes the context and bakes the textures in the background; off suspends it
+const snd = new BikeSound().followGate(() => s);
+soundGate.mountButton();
 function place(name) {
   const [x, z, h] = W.spots[name] || Object.values(W.spots)[0];
   s = createBikeState(x, z, h, W.height(x, z));
@@ -334,7 +336,6 @@ fr.add(P, "pause").name("pause (P)");
 fr.add(P, "slow", 0.05, 1, 0.05).name("time scale");
 fr.add(P, "spot", Object.keys(W.spots)).name("start spot").onChange((v) => place(v));
 fr.add(P, "edges").name("show the edge layer").onChange((v) => { edgeLines.visible = v; });
-fr.add(P, "sound").name("sound (bike)").onChange((v) => snd.setOn(v, s));
 fr.buttons([["reset bike (R)", () => place(P.spot)], ["get up (G)", () => s.crashed && getUp(s, env)],
   ["camera (V)", () => banner(`camera: ${chase.next()}`)], ["constants to defaults", () => { Object.assign(BIKE, DEFAULTS); SURFACES.forEach((x, i) => Object.assign(x, SURF_DEFAULTS[i])); ui.controllersRecursive().forEach((c) => c.updateDisplay?.()); }],
   ["copy constants (JSON)", () => navigator.clipboard?.writeText(JSON.stringify({ BIKE: changed(BIKE, DEFAULTS), SURFACES: SURFACES.map((x, i) => changed(x, SURF_DEFAULTS[i])) }, null, 1))]], 2);

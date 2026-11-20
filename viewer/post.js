@@ -17,6 +17,7 @@ import { ao } from "three/addons/tsl/display/GTAONode.js";
 import { denoise } from "three/addons/tsl/display/DenoiseNode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
 import { sharpenResolved, setSceneMRT, enableThinAA } from "./upscale.js";
+import { NTE, NTE_LOOKS } from "./lookNte.js";
 
 const LOOKS = {
   misty: { exposure: 1.06, contrast: 1.04, saturation: 0.94, balance: [1.01, 1.0, 0.99], bloom: 0.2, threshold: 1.3 },
@@ -26,6 +27,9 @@ const LOOKS = {
   twilight: { exposure: 1.06, contrast: 1.1, saturation: 1.08, balance: [1.025, 0.995, 1.015], bloom: 0.28, threshold: 1.05 },
   night: { exposure: 1.04, contrast: 1.08, saturation: 1.06, balance: [0.985, 1.0, 1.035], bloom: 0.3, threshold: 1.0 },
 };
+// ?grade=nte (docs/LOOK_NTE.md steps 1-3, viewer/lookNte.js): merged over the looks, so the weather's grade blend
+// (viewer/weather/cityWeather.js) starts from them too
+if (NTE) for (const [id, o] of Object.entries(NTE_LOOKS)) Object.assign(LOOKS[id], o);
 
 export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = true, upscale = null, samples = renderer.samples } = {}) {
   const up = upscale;                 // the upscaler (viewer/upscale.js createUpscaler) or null: native
@@ -142,16 +146,24 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
   bloomPass.smoothWidth.value = 0.3;
   bloomPass.setResolutionScale(0.5);
 
+  // ?grade=nte: the shadow lift (toe), the shadow tint and the vibrance as uniforms (set per look); built only with the
+  // switch, so the default shader stays exactly as before
+  const uToe = uniform(0), uVib = uniform(0.1), uTint = uniform(new THREE.Vector3(0.965, 1.005, 1.045));
   const outputNode = Fn(() => {
     const c = hdrSharp.mul(exposure).mul(balance).add(bloomPass.rgb).toVar();
     const luma = dot(c, vec3(0.2126, 0.7152, 0.0722)).toVar();
-    const shadows = mix(vec3(0.965, 1.005, 1.045), vec3(1), smoothstep(0.02, 0.6, luma));
+    if (NTE) {
+      // a toe before the contrast pow (the darks never crush: p5 ~0.07), in the shadow tint's cool blue
+      c.addAssign(vec3(uTint).mul(uToe).mul(float(1).sub(smoothstep(0.0, 0.25, luma))));
+      luma.assign(dot(c, vec3(0.2126, 0.7152, 0.0722)));
+    }
+    const shadows = mix(NTE ? vec3(uTint) : vec3(0.965, 1.005, 1.045), vec3(1), smoothstep(0.02, 0.6, luma));
     const highs = mix(vec3(1), vec3(1.035, 1.005, 0.965), smoothstep(0.6, 3.0, luma).mul(warmHighs));
     c.mulAssign(shadows.mul(highs));
     c.mulAssign(pow(max(luma, 0.0001).div(0.18), contrast.sub(1.0)));
     const gray = dot(c, vec3(0.2126, 0.7152, 0.0722));
     const hi = max(max(c.r, c.g), c.b), chroma = hi.sub(min(min(c.r, c.g), c.b));
-    const vibrance = float(0.1).mul(float(1).sub(chroma.div(max(hi, 0.0001))));
+    const vibrance = (NTE ? uVib : float(0.1)).mul(float(1).sub(chroma.div(max(hi, 0.0001))));
     c.assign(max(mix(vec3(gray), c, saturation.add(vibrance)), vec3(0)));
     const aspect = screenSize.x.div(screenSize.y);
     const r = length(screenUV.sub(0.5).mul(vec2(aspect, 1))).div(length(vec2(aspect, 1).mul(0.5)));
@@ -177,6 +189,9 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
     },
     /** k x every look's exposure (Firmament's light is in Tidewater's units: k = 0.55) */
     setExposureScale(k) { this.exposureScale = k; this.look(this.lookId || "golden"); },
+    /** the exposure the grade applies now (look x scale x eye adaptation x bias): read by the traffic lights' emissive
+     *  (viewer/tlights/tlightKit.js tlightExposure) to keep the lit aspects' hue through the tone map */
+    get exposureValue() { return exposure.value; },
     /** the sky's eye adaptation, each frame (x on top of the look and the scale) */
     setExposureFactor(f) { this.exposureFactor = f; exposure.value = (LOOKS[this.lookId] || LOOKS.golden).exposure * (this.exposureScale || 1) * f * Math.pow(2, (this.evBias || 0) + (this.wxEV || 0)); },
     /** dev panel handles: AO / SSR weights, bloom pass, exposure bias (stops, this.evBias) */
@@ -194,6 +209,9 @@ export function createPipeline(renderer, scene, camera, { aoOn = true, ssrOn = t
       exposure.value = l.exposure * (this.exposureScale || 1) * (this.exposureFactor || 1); contrast.value = l.contrast; saturation.value = l.saturation;
       balance.value.set(...l.balance);
       bloomPass.strength.value = l.bloom; bloomPass.threshold.value = l.threshold;
+      if (NTE) { uToe.value = l.toe ?? 0; uVib.value = l.vib ?? 0.1; uTint.value.set(...(l.tint ?? [0.965, 1.005, 1.045])); }
     },
+    /** ?grade=nte: the lift / vibrance / shadow-tint uniforms (live tuning) */
+    get nte() { return NTE ? { toe: uToe, vib: uVib, tint: uTint } : null; },
   };
 }

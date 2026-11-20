@@ -54,18 +54,27 @@ export function makeImpulse(ctx, name) {
   return ir;
 }
 
+// The impulse responses as a bank (the bake worker makes them off the main thread: ~10-20 ms each at 48 kHz)
+export class IRBank {
+  constructor(ctx) { this.ctx = ctx; this.c = {}; }
+  ir(name) { return (this.c[name] ??= makeImpulse(this.ctx, name)); }
+}
+
 // ---- occlusion --------------------------------------------------------------------------------------------
 // Length of the segment a->b inside the box (2D slab test + height): after slop-newyork audio-acoustics.js.
 function insideLength(c, ax, ay, az, bx, by, bz) {
   const dx = bx - ax, dy = by - ay, dz = bz - az;
-  let t0 = 0, t1 = 1;
-  for (const [o, d, lo, hi] of [[ax, dx, c.minX, c.maxX], [az, dz, c.minZ, c.maxZ], [ay, dy, 0, c.maxY]]) {
-    if (Math.abs(d) < 1e-7) { if (o <= lo || o >= hi) return 0; continue; }
-    const p = (lo - o) / d, q = (hi - o) / d;
-    t0 = Math.max(t0, Math.min(p, q)); t1 = Math.min(t1, Math.max(p, q));
-    if (t1 <= t0) return 0;
-  }
-  return (t1 - t0) * Math.hypot(dx, dy, dz);
+  const r = SLAB; r.t0 = 0; r.t1 = 1;
+  if (!slab(r, ax, dx, c.minX, c.maxX) || !slab(r, az, dz, c.minZ, c.maxZ) || !slab(r, ay, dy, 0, c.maxY)) return 0;
+  return (r.t1 - r.t0) * Math.hypot(dx, dy, dz);
+}
+// one axis of the slab test (no array per call: the city runs it at control rate; one shared scratch)
+const SLAB = { t0: 0, t1: 1 };
+function slab(r, o, d, lo, hi) {
+  if (Math.abs(d) < 1e-7) return !(o <= lo || o >= hi);
+  const p = (lo - o) / d, q = (hi - o) / d;
+  r.t0 = Math.max(r.t0, Math.min(p, q)); r.t1 = Math.min(r.t1, Math.max(p, q));
+  return r.t1 > r.t0;
 }
 
 // ---- spatial emitter --------------------------------------------------------------------------------------
@@ -90,6 +99,8 @@ class Emitter {
     this.lp.connect(this.send).connect(engine.reverbIn[src.category] || engine.reverbIn.traffic);
     this.paths = [];
     this.model = null;
+    this.k = { x: NaN, y: NaN, z: NaN, g: NaN, dir: NaN, lp: NaN, send: NaN, delay: NaN };   // the last written values (skip-if-unchanged)
+    this.fresh = false; this.retiring = false; this.newPath = false;
     this.occl = 0; this.nextOccl = 0;
     this.setModel(model, true);
   }
@@ -122,10 +133,10 @@ class Emitter {
   // Cost matters here (~40 voices x 10 Hz): AudioParam calls are the main-thread cost, so every write is skipped
   // when its value has not changed enough to hear (positions of parked sources, gains, filters).
   control(now, ahead, L) {
-    const s = this.src, e = this.engine, k = this.k ??= { x: NaN, y: NaN, z: NaN, g: NaN, dir: NaN, lp: NaN, send: NaN, delay: NaN };
+    const s = this.src, e = this.engine, k = this.k;
     // Extrapolate one period ahead with the source velocity so ramps lead instead of lag.
     const x = s.x + (s.vx || 0) * ahead, y = s.y + (s.vy || 0) * ahead, z = s.z + (s.vz || 0) * ahead;
-    const d = Math.hypot(x - L.x, y - L.y, z - L.z);
+    const ex = x - L.x, ey = y - L.y, ez = z - L.z, d = Math.sqrt(ex * ex + ey * ey + ez * ez);   // (not Math.hypot: it allocates its argument list)
     const moved = !(Math.abs(x - k.x) + Math.abs(y - k.y) + Math.abs(z - k.z) <= 0.01) || this.newPath;  // NaN-safe: first call writes
     if (moved) {
       for (const path of this.paths) {
@@ -138,16 +149,13 @@ class Emitter {
       }
       k.x = x; k.y = y; k.z = z; this.newPath = false;
     }
-    if (this.paths.length > 1 && !e.offline) for (let i = this.paths.length - 1; i >= 0; i--) {
-      const path = this.paths[i];
-      if (path.dead && now >= path.dead) { path.g.disconnect(); path.p.disconnect(); this.paths.splice(i, 1); }
-    }
+    if (this.paths.length > 1 && !e.offline) this._dropDead(now);
     if (this.delay) {
       const dl = Math.min(1.45, d / C);
       if (!(Math.abs(dl - k.delay) <= 2e-6)) { const dt = this.delay.delayTime; dt.cancelAndHoldAtTime(now); dt.linearRampToValueAtTime(dl, now + ahead); k.delay = dl; }
     }
     if (now >= this.nextOccl) {
-      this.occl = e.obstruction(s, L);
+      e.obstructInto(s, L); this.occl = s._occl;
       this.nextOccl = now + 0.25 + ((s.seed || 0) % 1) * 0.1;
     }
     // Range fade (smooth, so a voice entering the budget fades in), source gain, air absorption + muffling.
@@ -164,7 +172,14 @@ class Emitter {
     const send = e.envSend * (s.wet ?? 1) * Math.sqrt(ref / Math.max(ref, d)) * fade;
     if (!(Math.abs(send - k.send) <= 0.01 * Math.max(send, 0.01))) { this.send.gain.setTargetAtTime(send, now, 0.15); k.send = send; }
     this.fresh = false;
-    return d;
+  }
+  // the panner paths a model swap faded out: disconnected once silent (graph teardown)
+  _dropDead(now) {
+    for (let i = this.paths.length - 1; i >= 0; i--) {
+      const path = this.paths[i];
+      // (the low-pass's edge into it too: disconnect() only cuts a node's OUTPUTS, the old path kept being fed and processed)
+      if (path.dead && now >= path.dead) { try { this.lp.disconnect(path.g); } catch { /* */ } path.g.disconnect(); path.p.disconnect(); this.paths.splice(i, 1); }
+    }
   }
   dispose(when) {
     const t = when ?? this.engine.now;
@@ -175,15 +190,41 @@ class Emitter {
   }
 }
 
+// a one-shot's source with ONE fixed shape (every field, numbers as numbers): the control steps write its position and
+// muffling, and a spread copy's mixed shapes made those writes allocate
+function eventSource(p) {
+  return {
+    category: p.category ?? "people", priority: p.priority ?? 1, ref: p.ref ?? 2, range: p.range ?? 60, seed: p.seed ?? Math.random(),
+    x: +p.x || 0, y: +p.y || 0, z: +p.z || 0, vx: +p.vx || 0, vy: +p.vy || 0, vz: +p.vz || 0, dy: +p.dy || 0,
+    gain: p.gain ?? 1, wet: p.wet ?? 1, doppler: !!p.doppler, noOcclusion: !!p.noOcclusion, follow: p.follow ?? null, cone: p.cone ?? null, heading: p.heading ?? 0,
+    _d: 0, score: 0, _rank: 0, _want: false, _occl: 0, _voice: null, _emitter: null, _retiring: false, _tick: 0,
+  };
+}
+// the fields the engine adds to a source, made at once (added one by one later, each grew the object's property store
+// on a control step)
+function initFields(s) { s._d ??= 0; s.score ??= 0; s._rank ??= 0; s._want ??= false; s._occl ??= 0; s._voice ??= null; s._emitter ??= null; s._retiring ??= false; s._tick ??= 0; }
+// AudioParam ramp from the held value to v over `ahead` (the listener's six params)
+function ramp(p, v, now, ahead) { p.cancelAndHoldAtTime(now); p.linearRampToValueAtTime(v, now + ahead); }
+// in-place insertion sorts of the first n of a short array (no allocation): by _rank descending, by _d ascending
+function sortRank(a, n) {
+  for (let i = 1; i < n; i++) { const x = a[i], v = x._rank; let j = i - 1; while (j >= 0 && a[j]._rank < v) { a[j + 1] = a[j]; j--; } a[j + 1] = x; }
+}
+function sortDist(a, n) {
+  for (let i = 1; i < n; i++) { const x = a[i], v = x._d; let j = i - 1; while (j >= 0 && a[j]._d > v) { a[j + 1] = a[j]; j--; } a[j + 1] = x; }
+}
+
 // ---- engine -----------------------------------------------------------------------------------------------
 export class SoundEngine {
-  constructor(ctx, { voiceLimit = 40, hrtfVoices = 8, hrtfRadius = 60, controlRate = 10, offline = false, environment = "canyon" } = {}) {
+  constructor(ctx, { voiceLimit = 40, hrtfVoices = 8, hrtfRadius = 60, controlRate = 10, offline = false, environment = "canyon", irs = null } = {}) {
     this.ctx = ctx; this.offline = offline; this.hrtfRadius = hrtfRadius; this.maxNewPerStep = offline ? 99 : 4; this.fps = 60;
     this.voiceLimit = voiceLimit; this.hrtfVoices = hrtfVoices; this.controlRate = controlRate;
     this.now = 0; this.acc = 0;
     this.listener = { x: 0, y: 1.7, z: 0, fx: 0, fy: 0, fz: -1 };
     this.occluders = []; this.occlusionOn = true;
-    this.sources = new Set(); this.events = []; this.beds = [];
+    this.sources = new Set(); this._list = []; this.events = []; this.beds = [];   // (_list: the sources as an array: no iterator per control step)
+    this.obstructionFn = null; this.enclosureFn = null;   // optional: muffling / street-canyon probes from the host (the city's roof grid)
+    this.beforeControl = null;
+    this.timing = true;                                   // the stats' ms (performance.now: off in the city unless asked, it boxes a number per call)                            // optional: called with the time just before each live control step (the city's feeds)
     this.stats = { voices: 0, hrtf: 0, equalpower: 0, events: 0, sources: 0, beds: 0, dropped: 0, stolen: 0, controlMs: 0, controlMax: 0 };
     const L = ctx.listener;
     if (L.positionX) setControlRate(L.positionX, L.positionY, L.positionZ, L.forwardX, L.forwardY, L.forwardZ, L.upX, L.upY, L.upZ);
@@ -205,7 +246,7 @@ export class SoundEngine {
       const g = makeGain(ctx, 1); g.connect(this.mix); this.bus[c] = g; this.catGain[c] = g;
       const r = makeGain(ctx, 1); r.connect(this.reverbBus); this.reverbIn[c] = r;
     }
-    this.envName = null; this.envSend = 0.2; this.envAuto = true; this.irs = {};
+    this.envName = null; this.envSend = 0.2; this.envAuto = true; this.irs = irs || {};   // (irs: impulse responses baked elsewhere: IRBank in a worker)
     this.setEnvironment(environment, true);
     this.enclosure = 0; this.nextEnclosure = 0;
   }
@@ -233,11 +274,18 @@ export class SoundEngine {
     this.envName = name; this.envSend = ENVIRONMENTS[name].send;
   }
 
-  distanceTo(s) { const L = this.listener; return Math.hypot(s.x - L.x, s.y - L.y, s.z - L.z); }
+  distanceTo(s) { const L = this.listener, dx = s.x - L.x, dy = s.y - L.y, dz = s.z - L.z; return Math.sqrt(dx * dx + dy * dy + dz * dz); }
 
-  // Muffling 0..1: three parallel rays listener->source (0.9 m apart, a small aperture so corners blend).
+  // Muffling 0..1 into s._occl (no number returned: a double returned from a call that is not inlined is a heap number
+  // per call, ~160 a second at 40 voices). The city: obstructionFn marches the roof grid (citySound.js) and writes s._occl.
+  obstructInto(s, L) {
+    if (!this.occlusionOn || s.noOcclusion) { s._occl = 0; return; }
+    if (this.obstructionFn) { this.obstructionFn(s, L); return; }
+    s._occl = this.obstruction(s, L);
+  }
+  // the lab's box trace: three parallel rays listener->source (0.9 m apart, a small aperture so corners blend)
   obstruction(s, L) {
-    if (!this.occlusionOn || !this.occluders.length || s.noOcclusion) return 0;
+    if (!this.occlusionOn || s.noOcclusion || !this.occluders.length) return 0;
     const dx = s.x - L.x, dz = s.z - L.z, dist = Math.hypot(dx, dz);
     if (dist < 2) return 0;
     const sx = -dz / dist * 0.9, sz = dx / dist * 0.9;
@@ -255,6 +303,7 @@ export class SoundEngine {
 
   // Street-canyon detector: 8 rising probes, the fraction blocked by nearby walls (slop-newyork's enclosure).
   measureEnclosure() {
+    if (this.enclosureFn) return this.enclosureFn(this.listener);
     const L = this.listener; let covered = 0;
     for (let i = 0; i < 8; i++) {
       const a = i * Math.PI / 4, bx = L.x + Math.cos(a) * 60, bz = L.z + Math.sin(a) * 60;
@@ -267,8 +316,8 @@ export class SoundEngine {
 
   // A continuous source: { category, priority, x,y,z, vx,vy,vz, ref, range, gain, doppler, create(ctx, input) }
   // create() builds the voice graph only while the source holds a voice; it returns { update(now, src, dist), dispose(when) }.
-  add(src) { src.seed ??= Math.random(); src.priority ??= 1; this.sources.add(src); return src; }
-  remove(src) { this.sources.delete(src); if (src._voice) this._release(src, this.time); }
+  add(src) { src.seed ??= Math.random(); src.priority ??= 1; initFields(src); if (!this.sources.has(src)) { this.sources.add(src); this._list.push(src); } return src; }
+  remove(src) { if (this.sources.delete(src)) this._list.splice(this._list.indexOf(src), 1); if (src._voice) this._release(src, this.time); }
 
   // A non-positional bed (wind, rain, hum): always on, outside the voice budget (2-3 cheap loops each).
   addBed(category, create) { const out = makeGain(this.ctx, 1); out.connect(this.bus[category]); const send = makeGain(this.ctx, 0.25); out.connect(send).connect(this.reverbIn[category]); const bed = create(this.ctx, out); bed.out = out; this.beds.push(bed); return bed; }
@@ -276,7 +325,7 @@ export class SoundEngine {
   // A one-shot at a position. play(ctx, input, when) schedules buffers into input and returns the end time.
   // Gets an emitter for its duration; when the budget is full it steals the lowest-scored voice, if lower.
   event(spec, play, when = this.time) {
-    const s = { category: "people", priority: 1, ref: 2, range: 60, seed: Math.random(), ...spec };
+    const s = eventSource(spec);
     const d = this.distanceTo(s);
     if (d > s.range) { this.stats.dropped++; return null; }
     s.score = this.score(s, d);
@@ -289,14 +338,14 @@ export class SoundEngine {
     return ev;
   }
 
-  voiceCount() { let n = this.events.length; for (const s of this.sources) if (s._voice) n++; return n; }
+  voiceCount() { let n = this.events.length; const list = this._list; for (let i = 0; i < list.length; i++) if (list[i]._voice) n++; return n; }
   // Loudness estimate for ranking: priority x gain x inverse-distance (from the source's reference distance).
   score(s, d) { if (d > (s.range ?? 200)) return 0; const ref = s.ref ?? 3; return (s.priority ?? 1) * (s.gain ?? 1) * ref / Math.max(ref, d); }
   _modelFor(d) { return this.hrtfVoices > 0 && d < this.hrtfRadius ? "HRTF" : "equalpower"; }
 
   _steal(score) {
     let worst = null, ws = score;
-    for (const s of this.sources) if (s._voice && !s._retiring && s.score < ws) { worst = s; ws = s.score; }
+    for (const s of this._list) if (s._voice && !s._retiring && s.score < ws) { worst = s; ws = s.score; }
     for (const ev of this.events) if (ev.src.score < ws && !ev.dead) { worst = ev; ws = ev.src.score; }
     if (!worst) return false;
     this.stats.stolen++;
@@ -304,6 +353,7 @@ export class SoundEngine {
     else this._release(worst, this.time, true);
     return true;
   }
+  _retire(i, now) { this.events[i].em.dispose(now); this.events.splice(i, 1); }   // a finished one-shot (graph teardown)
   _release(s, now, hard = false) {
     s._voice.dispose(now + (hard ? 0.03 : 0.15)); s._emitter.dispose(now + (hard ? 0.0 : 0.12));
     s._voice = null; s._emitter = null; s._retiring = false;
@@ -315,15 +365,19 @@ export class SoundEngine {
     if (dt > 0) this.fps = this.fps * 0.95 + Math.min(240, 1 / dt) * 0.05;
     this.acc += dt;
     if (this.acc < 1 / this.controlRate) {
-      if (!this._work || this._next >= this._work.length) return 0;
+      if (!this._work || this._next >= this._nWork) return 0;
+      if (!this.timing) { this._slice(this.ctx.currentTime + 0.01); return 0; }
       const t0 = performance.now(); this._slice(this.ctx.currentTime + 0.01); return performance.now() - t0;
     }
     this.acc %= 1 / this.controlRate;
-    return this.control(this.ctx.currentTime + 0.01);
+    const t = this.ctx.currentTime + 0.01;
+    let ms = 0;
+    if (this.beforeControl) { const t0 = this.timing ? performance.now() : 0; this.beforeControl(t); if (this.timing) ms = performance.now() - t0; }
+    return ms + this.control(t);
   }
   _slice(now) {
     const work = this._work, L = this.listener, ahead = 1 / this.controlRate;
-    const end = Math.min(work.length, this._next + Math.ceil(work.length / this._slices));
+    const end = Math.min(this._nWork, this._next + Math.ceil(this._nWork / this._slices));
     for (let i = this._next; i < end; i++) {
       const s = work[i];
       if (!s._voice) continue;
@@ -337,27 +391,26 @@ export class SoundEngine {
 
   // The control step (live: from frame(); offline: called by the scene simulation with an explicit time).
   control(now) {
-    const t0 = performance.now();
+    const t0 = this.timing ? performance.now() : 0;
     this.now = now;
     const ahead = 1 / this.controlRate, L = this.listener, ctx = this.ctx;
     // Listener.
     const l = ctx.listener;
     if (l.positionX) {
-      const vals = [L.x, L.y, L.z, L.fx, L.fy, L.fz];
-      const prm = [l.positionX, l.positionY, l.positionZ, l.forwardX, l.forwardY, l.forwardZ];
-      for (let i = 0; i < 6; i++) { prm[i].cancelAndHoldAtTime(now); prm[i].linearRampToValueAtTime(vals[i], now + ahead); }
-      l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0;
+      ramp(l.positionX, L.x, now, ahead); ramp(l.positionY, L.y, now, ahead); ramp(l.positionZ, L.z, now, ahead);
+      ramp(l.forwardX, L.fx, now, ahead); ramp(l.forwardY, L.fy, now, ahead); ramp(l.forwardZ, L.fz, now, ahead);
+      if (!this._upSet) { l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0; this._upSet = true; }
     } else { l.setPosition(L.x, L.y, L.z); l.setOrientation(L.fx, L.fy, L.fz, 0, 1, 0); }
     // Environment from the street-canyon probes (2 Hz), unless the panel forces one.
     if (now >= this.nextEnclosure) {
-      this.enclosure = this.occluders.length ? this.measureEnclosure() : 0;
+      this.enclosure = this.occluders.length || this.enclosureFn ? this.measureEnclosure() : 0;   // (the city's probes: no boxes)
       this.nextEnclosure = now + 0.5;
       if (this.envAuto) this.setEnvironment(this.enclosure > 0.35 ? "canyon" : (L.inPark ? "park" : "open"));
     }
     // Events: retire finished ones.
     for (let i = this.events.length - 1; i >= 0; i--) {
       const ev = this.events[i];
-      if (now >= ev.end + 0.1) { ev.em.dispose(now); this.events.splice(i, 1); }
+      if (now >= ev.end + 0.1) this._retire(i, now);
       else {
         const f = ev.src.follow;   // events on a moving vehicle (horn, bell) ride along with it (Doppler too)
         if (f) { ev.src.x = f.x; ev.src.y = f.y + (ev.src.dy || 0); ev.src.z = f.z; ev.src.vx = f.vx; ev.src.vz = f.vz; }
@@ -365,16 +418,26 @@ export class SoundEngine {
       }
     }
     // Rank continuous sources; the top (limit - events) hold voices.
+    // (fixed arrays with a count: `length = 0` would drop their backing store and every push re-grow it, each step)
     const ranked = this._ranked ??= [];
-    ranked.length = 0;
-    for (const s of this.sources) { s._d = this.distanceTo(s); s.score = s.active === false ? 0 : this.score(s, s._d); if (s.score > 0) ranked.push(s); }
+    let nr = 0;
+    const list = this._list;
+    for (let i = 0; i < list.length; i++) {
+      // (inline distance + score: no double returned from a call per source per step)
+      const s = list[i], dx = s.x - L.x, dy = s.y - L.y, dz = s.z - L.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz), ref = s.ref ?? 3;
+      s._d = d;
+      s.score = s.active === false || d > (s.range ?? 200) ? 0 : (s.priority ?? 1) * (s.gain ?? 1) * ref / Math.max(ref, d);
+      s._rank = s.score * (s._voice ? 1.3 : 1);
+      if (s.score > 0) ranked[nr++] = s;
+    }
     // Hysteresis: a source that holds a voice ranks 30 % higher, so voices near the cut-off don't churn
-    // (building / tearing down graphs is the expensive part of a control step).
-    ranked.sort((a, b) => b.score * (b._voice ? 1.3 : 1) - a.score * (a._voice ? 1.3 : 1));
+    // (building / tearing down graphs is the expensive part of a control step). Insertion sort: no allocation, n small.
+    sortRank(ranked, nr);
     const slots = Math.max(0, this.voiceLimit - this.events.length);
-    for (let i = 0; i < ranked.length; i++) ranked[i]._want = i < slots;
+    for (let i = 0; i < nr; i++) ranked[i]._want = i < slots;
     let created = 0;
-    for (const s of this.sources) {
+    for (let i = 0; i < list.length; i++) {
+      const s = list[i];
       const want = s.score > 0 && s._want;
       if (want && !s._voice) {
         if (created++ >= this.maxNewPerStep) { s._want = false; continue; }   // spread graph building over steps
@@ -387,11 +450,11 @@ export class SoundEngine {
     }
     // HRTF for the nearest few voices (by distance), equal-power for the rest.
     const voiced = this._voiced ??= [];
-    voiced.length = 0;
-    for (const s of this.sources) if (s._voice) voiced.push(s);
-    voiced.sort((a, b) => a._d - b._d);
+    let nv = 0;
+    for (let i = 0; i < list.length; i++) if (list[i]._voice) voiced[nv++] = list[i];
+    sortDist(voiced, nv);
     let hrtf = 0;
-    for (let i = 0; i < voiced.length; i++) {
+    for (let i = 0; i < nv; i++) {
       const s = voiced[i];
       // Hysteresis (+20 % radius, +2 ranks) so a voice near the boundary doesn't flip models; the swap is a
       // 0.25 s cross-fade (HRTF and equal-power differ in timbre, mostly the far ear's highs).
@@ -402,14 +465,15 @@ export class SoundEngine {
     }
     // Per-voice parameter writes are the bulk of the cost: live, they are spread over the frames until the next
     // control step (slices), so no single frame pays for all 40 voices. Offline: all at once.
-    this._work = voiced; this._next = 0;
+    this._work = voiced; this._nWork = nv; this._next = 0;
     this._slices = this.offline ? 1 : Math.max(1, Math.min(6, Math.round(this.fps / this.controlRate)));
     this._slice(now);
     for (const ev of this.events) if (ev.em.model === "HRTF") hrtf++;
     for (const b of this.beds) b.update?.(now);
     const st = this.stats;
-    st.sources = this.sources.size; st.events = this.events.length; st.voices = voiced.length + this.events.length;
+    st.sources = this.sources.size; st.events = this.events.length; st.voices = nv + this.events.length;
     st.hrtf = hrtf; st.equalpower = st.voices - hrtf; st.beds = this.beds.length;
+    if (!this.timing) return 0;
     const ms = performance.now() - t0;
     st.controlMs = st.controlMs * 0.9 + ms * 0.1; st.controlMax = Math.max(st.controlMax * 0.995, ms);
     return ms;

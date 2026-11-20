@@ -76,13 +76,20 @@ export function indexCells(col) {
   return col;
 }
 
-/** Add circles (lamp posts, computed on the main thread) to a set and re-index it. */
+/** Add circles (lamp posts, computed on the main thread) to a set and re-index it. A circle may carry a `ref` (a
+ *  bollard that can snap: docs/PROPS.md): col.cref[i], skipped (gather) while ref.hidden, as the polygons' pref. */
 export function addCircles(col, circles) {
   if (!circles.length) return col;
   const n0 = col.circ.length / 3, circ = new Float32Array((n0 + circles.length) * 3), ckind = new Uint8Array(n0 + circles.length);
   circ.set(col.circ); ckind.set(col.ckind);
   circles.forEach((q, i) => { circ[(n0 + i) * 3] = q.x; circ[(n0 + i) * 3 + 1] = q.z; circ[(n0 + i) * 3 + 2] = q.r; ckind[n0 + i] = q.kind ?? KIND.post; });
   col.circ = circ; col.ckind = ckind;
+  if (col.cref || circles.some((q) => q.ref)) {
+    const R = new Array(n0 + circles.length).fill(null);
+    for (let i = 0; i < n0; i++) R[i] = col.cref?.[i] || null;
+    circles.forEach((q, i) => { R[n0 + i] = q.ref || null; });
+    col.cref = R;
+  }
   return indexCells(col);
 }
 
@@ -99,8 +106,10 @@ export function extendColliders(col, polys, circles) {
     old.push({ rings, kind: col.pkind[p], top: col.ptop[p], base: col.pbase[p], ref: col.pref?.[p] || null });
   }
   const oc = [];
-  for (let c = 0; c < col.C; c++) oc.push({ x: col.circ[c * 3], z: col.circ[c * 3 + 1], r: col.circ[c * 3 + 2], kind: col.ckind[c] });
-  return buildColliders(old.concat(polys), oc.concat(circles), col.bounds);
+  for (let c = 0; c < col.C; c++) oc.push({ x: col.circ[c * 3], z: col.circ[c * 3 + 1], r: col.circ[c * 3 + 2], kind: col.ckind[c], ref: col.cref?.[c] || null });
+  const all = oc.concat(circles), out = buildColliders(old.concat(polys), all, col.bounds);
+  if (all.some((q) => q.ref)) out.cref = all.map((q) => q.ref || null);     // (props: the circles' refs, as addCircles)
+  return out;
 }
 
 /**
@@ -138,6 +147,7 @@ export function gather(col, x, z, r, out) {
         const q = id * 4;
         if (col.pbox[q] > x + r || col.pbox[q + 2] < x - r || col.pbox[q + 1] > z + r || col.pbox[q + 3] < z - r) continue;
       } else {
+        if (col.cref !== undefined && col.cref !== null && col.cref[id - col.P] !== null && col.cref[id - col.P].hidden) continue;   // (a snapped bollard)
         const q = (id - col.P) * 3, rr = col.circ[q + 2] + r;
         if (Math.abs(col.circ[q] - x) > rr || Math.abs(col.circ[q + 1] - z) > rr) continue;
       }
@@ -378,9 +388,9 @@ function cleanRing(ring) {
  *  - lamps and bollards: added on the main thread from the drawn lists (driveMode.js tileDrive).
  * legacy = true: the old sets (every engine island, every footprint) for the audit's "before".
  */
-export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [], clipBand = true }) {
+export function buildDriveData({ bDoc, bBuf = null, net, feats, hm, parts, bounds, surf = null, legacy = false, walls = [], clipBand = true, ground: ground0 = null }) {
   const polys = [], circles = [];
-  const ground = driveGround(hm, parts);
+  const ground = ground0 || driveGround(hm, parts);     // (deckrail: tileData.js passes the raster it already made for the deck railings)
   let overhead = 0, islands = 0, islandsHidden = 0, medianIslands = 0, fromWalls = null;
   // the drawn walls at car height (buildingBlocks); the footprints for ?drivecol=legacy and ?colfix=0 (no bBuf)
   if (bBuf && !legacy) {
@@ -721,7 +731,7 @@ export function tramPlatformSurface(feats, hm, ground, bounds, carve) {
       }
       continue;
     }
-    const d = densifyLine(l.line, TRAM_PLATFORM.step);
+    const d = densifyLine(l.line, TRAM_PLATFORM.step), hw = (l.platW ?? W) / 2;      // (tramfit: the band's width as drawn, tramPlatforms.js platformWidth)
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i];
       if (Math.max(ax, bx) < bounds.x0 - 3 || Math.min(ax, bx) > bounds.x1 + 3 || Math.max(az, bz) < bounds.z0 - 3 || Math.min(az, bz) > bounds.z1 + 3) continue;

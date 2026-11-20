@@ -17,6 +17,7 @@
 //   5. budget: indirect buffer <= 2560 B a part, a part's write uploads only its records (update range, no whole
 //      buffer, no DynamicDrawUsage); sort CPU <= 0.02 ms a frame; the whole cull (all cameras) <= 2 x the 160 m one
 import * as THREE from "three/webgpu";
+import { measure } from "../gate/timing.mjs";
 globalThis.window = globalThis; globalThis.location = { search: "" };
 const MD = await import("../../viewer/multiDraw.js");
 const { MultiDrawSet, setMultiDrawViewCamera, nearBucket, CHUNK_M, CHUNK_MAX, MD_SORT } = MD;
@@ -208,17 +209,12 @@ ok(blendBad === 0, `blended view under the view camera: the old order (${blendBa
   c.g.forEach((g, k) => g.inst.forEach((q, j) => { _b.min.set(q.x - q.h, q.y - q.hy, q.z - q.h); _b.max.set(q.x + q.h, q.y + q.hy, q.z + q.h); if (F.intersectsBox(_b) && !drawnSet(S, l2).has(k * 1e7 + j)) miss++; }));
   ok(miss === 0, `same camera + frame, other matrices (cube faces): culled again (${l1.length} -> ${l2.length} records, ${miss} lost)`);
 }
-// the switches: ?mdsort=0&mdchunk=160 = the old order and chunks; both have a features.js row
+// the switches: ?mdsort=0&mdchunk=160 = the old order and chunks (their features.js rows, main.js wiring: the meta row)
 {
   globalThis.location = { search: "?mdsort=1&mdchunk=80" };
   const O = await import("../../viewer/multiDraw.js?switches");
   globalThis.location = { search: "" };
   ok(O.MD_SORT === true && O.CHUNK_M === 80 && O.CHUNK_MAX === 128, `?mdsort=1&mdchunk=80: sorted, 80 m / 128 (got ${O.MD_SORT} / ${O.CHUNK_M} / ${O.CHUNK_MAX})`);
-  const { readFileSync } = await import("node:fs");
-  const feats = readFileSync(new URL("../../viewer/features.js", import.meta.url), "utf8");
-  ok(/opt\("mdsort",/.test(feats) && /opt\("mdchunk",.*on: "80"/.test(feats), "features.js rows: mdsort (on = 1), mdchunk (on = 80)");
-  const main = readFileSync(new URL("../../viewer/main.js", import.meta.url), "utf8");
-  ok(/setMultiDrawViewCamera\(camera\)/.test(main), "main.js registers the view camera (only its culls are sorted)");
 }
 
 // ------------------------------------------------------------------ 5. budget
@@ -242,14 +238,26 @@ function timeFrames(which, cams, frames) {
   return (performance.now() - t0) / frames;
 }
 place(3);
-const R = { old: [], neu: [], neuU: [], vS: [], vU: [] };
-for (let r = 0; r < 15; r++) {
-  R.old.push(timeFrames("old", [viewCam, sunCam, lampCam], 200)); R.neu.push(timeFrames("neu", [viewCam, sunCam, lampCam], 200)); R.neuU.push(timeFrames("neuU", [viewCam, sunCam, lampCam], 200));
-  R.vS.push(timeFrames("neu", [viewCam], 300)); R.vU.push(timeFrames("neuU", [viewCam], 300));
-}
+// (interleaved rounds between two calibrations, again while the machine changed speed; the absolute sort budget * k:
+// tools/gate/timing.mjs)
+const MT = await measure(() => {
+  const R = { old: [], neu: [], neuU: [], vS: [], vU: [] };
+  // (short windows, interleaved: 120 rounds of 20 frames, the best of each; 15 windows of 200 frames each held another
+  // process's time slice on a busy machine: the ratio swung 1.5-2.04 x)
+  for (let r = 0; r < 120; r++) {
+    R.old.push(timeFrames("old", [viewCam, sunCam, lampCam], 20)); R.neu.push(timeFrames("neu", [viewCam, sunCam, lampCam], 20)); R.neuU.push(timeFrames("neuU", [viewCam, sunCam, lampCam], 20));
+  }
+  // the sort: many short windows (30 frames, a few ms: most of them see no preemption), sorted and unsorted back to
+  // back; the best of each (a 300-frame window always held some other process's time slice: the difference of two
+  // such bests swung 10-35 us on a busy machine)
+  for (let r = 0; r < 150; r++) { R.vS.push(timeFrames("neu", [viewCam], 30)); R.vU.push(timeFrames("neuU", [viewCam], 30)); }
+  return R;
+});
+const R = MT.value;
 const best = (a) => Math.min(...a), us = (ms) => (ms * 1000).toFixed(1);
+if (process.env.MDRAW_DEBUG) console.log(`sort: best ${us(best(R.vS))} - ${us(best(R.vU))} us, k ${MT.k.toFixed(2)}`);
 const sortMs = Math.max(0, best(R.vS) - best(R.vU)), visible = city.reduce((s, c) => s + c.neu.set.culls.find((e) => e.cam === viewCam).all.length / 2, 0);
-ok(sortMs <= 0.02, `sort CPU ${us(sortMs)} us a frame (${visible} visible chunks in ${city.length} sets; target <= 20 us)`);
+ok(sortMs <= 0.02 * MT.k, `sort CPU ${us(sortMs)} us a frame (${visible} visible chunks in ${city.length} sets; target <= 20 us; ${MT.note})`);
 ok(best(R.neu) <= 2 * best(R.old), `whole cull a frame (view + sun + lamp, ${city.length} sets, ${chunksNew} chunks): new ${us(best(R.neu))} us (unsorted ${us(best(R.neuU))}) <= 2 x the 160 m chunks' ${us(best(R.old))} us (${chunksOld} chunks); browser target < 50 us on the real city`);
 
 console.log(fails ? `mdrawCull: ${fails} FAIL` : "mdrawCull: all pass");

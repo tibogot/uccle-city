@@ -1,0 +1,572 @@
+{
+ "when": "2026-11-18T10:49:51.685Z",
+ "old": false,
+ "sum": {
+  "plates": 750,
+  "plateGap": 0,
+  "plateNoPost": 0,
+  "signs": 1766,
+  "signFacing": 8,
+  "signMovedFar": 345,
+  "pieces": 4814,
+  "inRoad": 47,
+  "inLane": 41,
+  "onTram": 11,
+  "onPlatform": 51,
+  "villoOffPaving": 0,
+  "villoBent": 0,
+  "villoCarOverlap": 0,
+  "postbox": 0,
+  "villo": 0
+ },
+ "byKind": {
+  "sign": 8,
+  "plate post": 7,
+  "stop pole": 19,
+  "sign (tram)": 1,
+  "plate post (tram)": 1,
+  "benches": 1,
+  "bins": 1,
+  "stop pole (tram)": 9
+ },
+ "items": {
+  "plateGap": [],
+  "signFacing": [
+   {
+    "tile": "J3",
+    "why": "faces across the streets",
+    "codes": "C43_50",
+    "off": 89,
+    "moved": 7,
+    "at": "1583.9, -711.1",
+    "street": "Chaussée de Waterloo - Waterloosesteenweg"
+   },
+   {
+    "tile": "C5",
+    "why": "faces across the streets",
+    "codes": "C43_50",
+    "off": 82,
+    "moved": 7,
+    "at": "-1999, 321.1",
+    "street": "Chaussée de Neerstalle - Neerstallesteenweg"
+   },
+   {
+    "tile": "F1",
+    "why": "faces across the streets",
+    "codes": "C43_30+F19",
+    "off": 82,
+    "moved": 3.2,
+    "at": "-106.5, -1631.6",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan"
+   },
+   {
+    "tile": "M5",
+    "why": "faces across the streets",
+    "codes": "D7",
+    "off": 81,
+    "moved": 0,
+    "at": "3029.3, 11.2",
+    "street": "Avenue de la Colombie - Colombialaan"
+   },
+   {
+    "tile": "I2",
+    "why": "faces across the streets",
+    "codes": "C43_30",
+    "off": 77,
+    "moved": 7,
+    "at": "1337.9, -1464.3",
+    "street": "Avenue de la Lisière - Boskantlaan"
+   },
+   {
+    "tile": "J2",
+    "why": "faces across the streets",
+    "codes": "C3",
+    "off": 71,
+    "moved": 0,
+    "at": "1506.7, -1210.4",
+    "street": "Avenue de Diane - Dianalaan"
+   },
+   {
+    "tile": "K11",
+    "why": "faces across the streets",
+    "codes": "B1",
+    "off": 58,
+    "moved": 0,
+    "at": "2374.1, 3259",
+    "street": "r413024240_0"
+   },
+   {
+    "tile": "M5",
+    "why": "faces across the streets",
+    "codes": "D7",
+    "off": 49,
+    "moved": 0,
+    "at": "3230.8, 156.1",
+    "street": "Avenue de la Forêt - Woudlaan"
+   }
+  ],
+  "inRoad": [
+   {
+    "tile": "D3",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1120.1, -527.6",
+    "street": "Place Jean Vander Elst - Jean Vander Elstplein",
+    "codes": "C1"
+   },
+   {
+    "tile": "D5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-1454.5, 253.8",
+    "street": "Rue Gatti de Gamond - Gatti de Gamondstraat"
+   },
+   {
+    "tile": "E2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-823.6, -1302.4",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Roosendael"
+   },
+   {
+    "tile": "E4",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-842.4, -185.3",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Globe"
+   },
+   {
+    "tile": "E8",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-630.5, 1854.7",
+    "street": "Avenue de la Gazelle - Gazellelaan"
+   },
+   {
+    "tile": "E9",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-787.7, 2145.9",
+    "street": "Avenue d'Homborchveld - Homborchveldlaan",
+    "codes": "C1"
+   },
+   {
+    "tile": "E9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-787.4, 2143.6",
+    "street": "Avenue d'Homborchveld - Homborchveldlaan"
+   },
+   {
+    "tile": "F1",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-21.1, -1859.9",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Molière"
+   },
+   {
+    "tile": "F2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-253.9, -1271.8",
+    "street": "Avenue de Messidor - Messidorlaan",
+    "codes": "C43_30"
+   },
+   {
+    "tile": "F2",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": true,
+    "at": "-259.1, -1262.3",
+    "street": "Avenue de Messidor - Messidorlaan"
+   },
+   {
+    "tile": "F2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-230.4, -1316.8",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Messidor"
+   },
+   {
+    "tile": "F4",
+    "kind": "benches",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-453.1, -384.4",
+    "street": "Allée Charles Viane - Charles Vianedreef"
+   },
+   {
+    "tile": "F4",
+    "kind": "bins",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-454.5, -383.5",
+    "street": "Allée Charles Viane - Charles Vianedreef"
+   },
+   {
+    "tile": "F9",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-168.9, 2055.3",
+    "street": "Rue Engeland - Engelandstraat",
+    "codes": "C1"
+   },
+   {
+    "tile": "F9",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "-170.4, 2052.4",
+    "street": "Rue Engeland - Engelandstraat"
+   },
+   {
+    "tile": "G1",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "21, -1950",
+    "street": "Avenue Brugmann - Brugmannlaan",
+    "stop": "Molière"
+   },
+   {
+    "tile": "G2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "277.2, -1436.7",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "codes": "B15"
+   },
+   {
+    "tile": "G2",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "348.7, -1433.5",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "codes": "B15"
+   },
+   {
+    "tile": "G4",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "79.2, -172.6",
+    "street": "Avenue des Archères - Boogschutterinnenlaan",
+    "codes": "F19"
+   },
+   {
+    "tile": "H3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "976.4, -942.2",
+    "street": "Avenue Moscicki - Moscickilaan"
+   },
+   {
+    "tile": "I2",
+    "kind": "stop pole",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1292.9, -1440.8",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Longchamp"
+   },
+   {
+    "tile": "J3",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "1702.6, -950",
+    "street": "Avenue de Diane - Dianalaan"
+   },
+   {
+    "tile": "N5",
+    "kind": "sign",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3615.1, 284.9",
+    "street": "Avenue des Coccinelles - Onze-Lieve-Heersbeestjeslaan",
+    "codes": "C1"
+   },
+   {
+    "tile": "N5",
+    "kind": "plate post",
+    "deep": 3,
+    "lane": true,
+    "tram": false,
+    "at": "3613.7, 285.9",
+    "street": "Avenue des Coccinelles - Onze-Lieve-Heersbeestjeslaan"
+   },
+   {
+    "tile": "B7",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "-2251.7, 1252.4",
+    "street": "Kerkstraat - Rue de l'Église",
+    "stop": "Grand'Route"
+   },
+   {
+    "tile": "E3",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": true,
+    "at": "-891.1, -916",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Bens"
+   },
+   {
+    "tile": "E4",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": true,
+    "at": "-918.8, -179",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Globe"
+   },
+   {
+    "tile": "G2",
+    "kind": "stop pole",
+    "deep": 2,
+    "lane": true,
+    "tram": false,
+    "at": "412.6, -1408.3",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Churchill"
+   },
+   {
+    "tile": "B6",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-2235, 899.9",
+    "street": "Sterstraat - Rue de l'Étoile",
+    "stop": "RODTS"
+   },
+   {
+    "tile": "D4",
+    "kind": "sign",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1121.4, -482.8",
+    "street": "Place Jean Vander Elst - Jean Vander Elstplein",
+    "codes": "C1"
+   },
+   {
+    "tile": "D7",
+    "kind": "stop pole",
+    "deep": 1.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1403.6, 1346.7",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Bourdon"
+   },
+   {
+    "tile": "B6",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2205.6, 998.2",
+    "street": "Kerkstraat - Rue de l'Église",
+    "stop": "RODTS"
+   },
+   {
+    "tile": "B7",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-2217, 1460.7",
+    "street": "Grote Baan - Grand'Route",
+    "stop": "Drogenbos"
+   },
+   {
+    "tile": "C8",
+    "kind": "stop pole",
+    "deep": 1,
+    "lane": true,
+    "tram": false,
+    "at": "-1514, 1621.5",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Crematorium"
+   },
+   {
+    "tile": "H6",
+    "kind": "stop pole",
+    "deep": 0.67,
+    "lane": false,
+    "tram": true,
+    "at": "894, 528.6",
+    "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+    "stop": "Gare de Saint-Job"
+   },
+   {
+    "tile": "E2",
+    "kind": "stop pole",
+    "deep": 0.59,
+    "lane": false,
+    "tram": true,
+    "at": "-841.1, -1259",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Roosendael"
+   },
+   {
+    "tile": "D8",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-1489.5, 1577.9",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Crematorium"
+   },
+   {
+    "tile": "F5",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "-235.3, 249.4",
+    "street": "Avenue Wolvendael - Wolvendaellaan",
+    "stop": "Dieweg"
+   },
+   {
+    "tile": "I2",
+    "kind": "stop pole",
+    "deep": 0.5,
+    "lane": true,
+    "tram": false,
+    "at": "1252.5, -1439.2",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Longchamp"
+   },
+   {
+    "tile": "E5",
+    "kind": "stop pole",
+    "deep": 0.28,
+    "lane": false,
+    "tram": true,
+    "at": "-936.7, 150.7",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Rittweger"
+   },
+   {
+    "tile": "E3",
+    "kind": "stop pole",
+    "deep": 0.13,
+    "lane": true,
+    "tram": true,
+    "at": "-902.1, -576.5",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Xavier de Bue"
+   },
+   {
+    "tile": "G2",
+    "kind": "stop pole",
+    "deep": 0.08,
+    "lane": false,
+    "tram": true,
+    "at": "224.4, -1463.2",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Churchill"
+   },
+   {
+    "tile": "D6",
+    "kind": "stop pole",
+    "deep": 0.06,
+    "lane": false,
+    "tram": true,
+    "at": "-1178.1, 780.2",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Uccle Calevoet"
+   },
+   {
+    "tile": "H2",
+    "kind": "stop pole",
+    "deep": 0.02,
+    "lane": false,
+    "tram": true,
+    "at": "852.7, -1380.1",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Gossart"
+   },
+   {
+    "tile": "D7",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-1392.3, 1318.1",
+    "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+    "stop": "Bourdon"
+   },
+   {
+    "tile": "F1",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "-66.1, -1578.7",
+    "street": "Avenue Winston Churchill - Winston Churchilllaan",
+    "stop": "Vanderkindere"
+   },
+   {
+    "tile": "I1",
+    "kind": "stop pole",
+    "deep": 0,
+    "lane": true,
+    "tram": false,
+    "at": "1343.1, -1785.2",
+    "street": "Avenue Legrand - Legrandlaan",
+    "stop": "Bascule"
+   }
+  ],
+  "villo": []
+ }
+}

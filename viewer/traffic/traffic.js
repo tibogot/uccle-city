@@ -13,6 +13,7 @@ import { TrafficFleet, TYPE_NAMES } from "./trafficFleet.js";
 import { TYPE_MIX, SIZES, PAINTS, FADE_TO } from "../carFleet.js";
 import { CARS_OLD } from "../drive/carPacks.js";
 import { TRAFFIC_TYPES } from "../moto/cityTwoWheelers.js";
+import { TRAFMIX_OLD, HEAVY, TrafMix, DATA_URL } from "./trafMix.js";   // TRAFMIX (docs/TRAFMIX.md): the mix by hour and place
 
 /** motorbike round 2 (docs/MOTO.md): motorbikes and scooters in the city's traffic (createTraffic twoWheelers: the city;
  *  ?twowheelers=0: cars only). They are sim types after the cars' (drawn by viewer/moto/cityTwoWheelers.js
@@ -29,12 +30,20 @@ const BOX_OLD = /[?&]trafficbox=old(&|$)/.test(location.search);
 export function createTraffic({ scene, renderer, camera, ground, night, cap = 768, seed = 7, twoWheelers = false, compile = null }) {
   const world = new TrafficWorld();
   const mix = new Map(TYPE_MIX);
-  const types = TYPE_NAMES.map((name) => ({ name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: mix.get(name) }));
+  // (TRAFMIX: the service vehicles after the street types: models/cars/heavy.glb; zc = the body's centre off the axles)
+  const types = TYPE_NAMES.map((name) => HEAVY[name]
+    ? { name, len: HEAVY[name].size[2], w: HEAVY[name].size[0], h: HEAVY[name].size[1], wb: HEAVY[name].wb, wheelR: HEAVY[name].wheelR, zc: HEAVY[name].zc, weight: 0, heavy: true }
+    : { name, len: SIZES[name][2], w: SIZES[name][0], h: SIZES[name][1], wb: WHEELS[name][0], wheelR: WHEELS[name][1], weight: mix.get(name) });
   if (TWO_TRAFFIC && twoWheelers) for (const t of TRAFFIC_TYPES) types.push({ ...t });
   const c = new THREE.Color();
   const paints = PAINTS.map((h) => { c.setHex(h); return [c.r, c.g, c.b]; });
   const sim = new TrafficSim(world, { cap, types, paints, ground, seed });
   const fleet = new TrafficFleet({ night, maxCars: cap });
+  if (!TRAFMIX_OLD) {
+    // TRAFMIX: the spawns by hour and place (a service vehicle only once the fleet can draw it), the bus lines
+    sim.mix = new TrafMix(types, { ready: (name) => fleet.ready && !!fleet.typeOk?.[name] });
+    fetch(DATA_URL).then((r) => r.json()).then((d) => sim.mix.setData(d)).catch((e) => console.warn("[traffic] trafmix data:", e));
+  }
   scene.add(fleet.group);
   fleet.load(renderer, scene, camera, compile);
   const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sphere = new THREE.Sphere(new THREE.Vector3(), 4);
@@ -86,7 +95,7 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
     T.cpu.max = Math.max(T.cpu.max * 0.995, t2 - t0);
   };
   /** Oriented boxes of the cars within r of (x, z): out = Float32Array chunks of 7 (x, z, yaw, hw, hl, y, h); -> count. */
-  T.boxesNear = (x, z, r, out) => {
+  T.boxesNear = (x, z, r, out, idx = null) => {          // (idx: Int32Array <- each box's sim index, carhit)
     // (collisions round 2: no boxes before the fleet can draw the cars: while its models load the sim already runs, and
     // its cars were solid and invisible: the bike's "traffic box where no car was drawn")
     if (!BOX_OLD && !fleet.ready) return 0;
@@ -106,7 +115,10 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
         if (dy > Math.PI) dy -= 2 * Math.PI; else if (dy < -Math.PI) dy += 2 * Math.PI;
         out[o] = sim.px[i] * b + sim.x[i] * a; out[o + 1] = sim.pz[i] * b + sim.z[i] * a; out[o + 2] = sim.pyaw[i] + dy * a;
       }
+      // (TRAFMIX: a long vehicle's body is off the axles' middle by zc along its heading)
+      if (ty.zc) { out[o] += Math.sin(out[o + 2]) * ty.zc; out[o + 1] += Math.cos(out[o + 2]) * ty.zc; }
       out[o + 3] = ty.w / 2; out[o + 4] = ty.len / 2; out[o + 5] = sim.y[i]; out[o + 6] = ty.h;
+      if (idx) idx[n] = i;
       n++;
     }
     return n;

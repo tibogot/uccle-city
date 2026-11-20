@@ -248,6 +248,13 @@ SOURCES.json has the pages): Stratoswift (CC BY-SA 4.0; one CC BY 4.0): "Chauss√
 "AM 08176 + 08206 - IC 4011 - Saint-Job"; Sjenghai (CC BY-SA 4.0): "Uccle-Ukkel - Infrabel ligne-lijn 26 + AM-MS86 ...",
 "Infrabel ligne-lijn 124 - ... Gare d'Uccle Stalle ..."; Japplemedia (CC BY 4.0): "Station Sint-Job 2025".
 
+## Sounds
+
+| What | Files | Source | Licence |
+|---|---|---|---|
+| Engine loops "gen6" (a four-cylinder, 9 RPM points x throttle / coasting, 1 s, 16-bit 48 kHz) | `sounds/engines/gen6/**` (+ the two `.esc` configs) | Rendered by the owner's Thunderline project (game-engine-v1, `public/sounds/thunderline/engines/gen6/`, recipe in `games/thunderline/assets-src/engines/README.md`) with **enginesound** 1.5.0 by DasEtwas (https://github.com/DasEtwas/enginesound): its `example6.esc`, and an off-load variant | The tool is MIT; the renders are our own output (the owner's) |
+| Engine model + loop engine (code) | `viewer/audio/engineModel.js`, `viewer/audio/engineLoops.js` | Ported from the owner's Thunderline (`games/thunderline/proto/kit/engineModel.js`, `engineLoops.js`) | the owner's own code |
+
 ## Build tools
 
 | Tool | Licence | Use |

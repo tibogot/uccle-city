@@ -20,6 +20,7 @@ import { cityMaterial } from "./twoWheelMats.js";
 import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-bike motion vectors for the TAAU (docs/UPSCALE.md)
 import { CITY_PAINTS } from "./twoWheelSlots.js";
 import { loadCityTwoWheeler } from "./motoModel.js";
+import { cityProps } from "../props/cityProps.js";
 
 const qs = new URLSearchParams(location.search);
 export const TW_KINDS = ["moto", "scooter"];
@@ -57,9 +58,10 @@ export const cityTwoWheelers = {
     const t0 = performance.now();
     const geos = await Promise.all(TW_KINDS.map((k) => loadCityTwoWheeler(k)));
     this.geo = Object.fromEntries(TW_KINDS.map((k, i) => [k, geos[i]]));
-    this.mats = [0, 1, 2].map((lod) => cityMaterial(lod, { fades: twoWheelFades, name: "parked" }));
+    this.mats = [0, 1, 2].map((lod) => cityProps.hook(cityMaterial(lod, { fades: twoWheelFades, name: "parked" })));   // (props: knocked-over bikes' motion vectors)
     for (const k of TW_KINDS) this.pools.push(this.pool(k));
     this.streamer = new Streamer({ name: "twowheelers", pools: this.pools.map((p) => p.stream), fades: twoWheelFades, budget: 0.1 });
+    cityProps.prepare(this.streamer, TW_KINDS);
     this.ready = true;
     for (const [name, g] of this.pending) this.stream(name, g);
     this.pending.length = 0;
@@ -137,6 +139,15 @@ export const cityTwoWheelers = {
     }
     col.computeBoundingSphere();
     col.name = "furniture-twowheel"; col.visible = false; col.castShadow = col.receiveShadow = false; col.userData.collisionStandin = true;
+    // (props, docs/PROPS.md) each parked bike a prop: tipped over and slid when hit; drawn by its kind's pool instance
+    // (the index among its kind's records: stream() builds each kind's source in record order)
+    if (cityProps.on) {
+      const seen = [0, 0], self = this;
+      col.userData.refs = Array.from({ length: n }, (_, i) => {
+        const o = i * STRIDE, ki = a[o], kind = TW_KINDS[ki];
+        return cityProps.make(kind, name, a[o + 1], a[o + 2], a[o + 3], a[o + 4], [{ get streamer() { return self.streamer; }, tile: name, key: kind, i: seen[ki]++ }])?.ref || null;
+      });
+    }
     g.add(col);
     parent.add(g);
     this.stats.tiles++; this.stats.parked += n; this.stats.slots += sites.length;

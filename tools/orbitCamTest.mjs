@@ -2,6 +2,7 @@
 // A small test town: ground at 50 m TAW sloping 5 % along +x, a 20 m block (x 0..20, z -60..-40), a 60 m tower
 // (x 100..110, z -60..-50). Mouse events are fed to the controller's handlers; each line prints PASS / FAIL + numbers.
 import { InspectControls } from "../viewer/orbitCam.js";
+import { measure } from "./gate/timing.mjs";
 
 const W = 1000, H = 600;
 const ground = (x, z) => 50 + 0.05 * Math.max(0, x - 200);
@@ -44,8 +45,10 @@ const ev = (o) => ({ pointerId: 1, pointerType: "mouse", button: 0, preventDefau
   check("pick: sky = no hit", !c2.pick(W / 2, 5), "");
   // a long grazing ray (street level, 2 km): timing
   const { c: c3 } = rig([-1000, 52, -50], [1000, 51.5, -50]);
-  const t0 = performance.now(); let n = 0; for (let i = 0; i < 100; i++) if (c3.pick(W / 2, H / 2 + 2)) n++;
-  check("pick: grazing ray cost", (performance.now() - t0) / 100 < 2, `${f((performance.now() - t0) / 100, 3)} ms a pick, ${n}/100 hits`);
+  // (between two calibrations, the budget * k: tools/gate/timing.mjs)
+  const MT = await measure(() => { const t0 = performance.now(); let n = 0; for (let i = 0; i < 100; i++) if (c3.pick(W / 2, H / 2 + 2)) n++; return { ms: (performance.now() - t0) / 100, n }; }, { tries: 3 });
+  const { ms, n } = MT.value;
+  check("pick: grazing ray cost", ms < 2 * MT.k, `${f(ms, 3)} ms a pick, ${n}/100 hits (${MT.note})`);
 }
 // 2. orbit round the point under the cursor: it stays under the cursor; never past the pitch limits
 {

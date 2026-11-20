@@ -18,6 +18,8 @@
 import * as THREE from "three/webgpu";
 import { PACK_SOURCES, packMaterial, FLEET_SOURCE, CARS_OLD, GLASS_PASS, glassGeometry } from "./drive/carPacks.js";
 import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
+import { dentFrame } from "./drive/carDent.js";
+import { HEAVY_TYPES, HEAVY_URL } from "./traffic/trafMix.js";   // TRAFMIX: the traffic's service vehicles (not parked)
 
 /** ?carmerge=old: one InstancedMesh per (type, LOD, plain / fade): 26 scene + 11 shadow render objects in a street,
  *  instead of one multi-draw mesh per (material, shadow) (6 + 4; viewer/multiDraw.js, docs/perf/AUDIT.md step 13) */
@@ -115,11 +117,17 @@ class CarFleet {
       const t = performance.now();
       const S = PACK_SOURCES[FLEET_SOURCE];
       const worker = new Worker(new URL("./carLodWorker.js", import.meta.url), { type: "module" });
-      const data = await new Promise((resolve, reject) => {
-        worker.onmessage = (e) => (e.data.error ? reject(new Error(e.data.error)) : resolve(e.data));
-        worker.onerror = (e) => reject(new Error(e.message || "car LOD worker failed"));
-        worker.postMessage({ id: 1, url: S.url, S: { welded: S.welded, prune: S.prune, smooth: S.smooth, authored: S.authored, lods: S.lods } });
+      const waits = new Map();
+      const call = (id, url, P) => new Promise((resolve, reject) => {
+        waits.set(id, [resolve, reject]);
+        worker.postMessage({ id, url, S: { welded: P.welded, prune: P.prune, smooth: P.smooth, authored: P.authored, lods: P.lods } });
       });
+      worker.onmessage = (e) => { const w = waits.get(e.data.id); waits.delete(e.data.id); if (w) (e.data.error ? w[1](new Error(e.data.error)) : w[0](e.data)); };
+      worker.onerror = (e) => { for (const w of waits.values()) w[1](new Error(e.message || "car LOD worker failed")); waits.clear(); };
+      // (TRAFMIX: the service vehicles, models/cars/heavy.glb, authored LODs like cars2; ?trafmix=old: not loaded)
+      const heavyP = HEAVY_TYPES.length ? call(2, HEAVY_URL, PACK_SOURCES.cars2).catch((e) => { console.warn("[cars] heavy.glb:", e); return null; }) : Promise.resolve(null);
+      const data = await call(1, S.url, S);
+      const heavy = await heavyP;
       worker.terminate();
       this.lodDist = S.lods.map((l) => l.until);
       // (carglass2: the near material's glass is drawn by the blended glass pass; carPacks.js GLASS_PASS)
@@ -147,10 +155,30 @@ class CarFleet {
           return { tris: m.I.length / 3, geo, W: m.W, plain: this.batch(geo, isNear ? near : far, k < 3, false), fade: this.batch(geo, isNear ? nearFade : farFade, k < 3, true) };
         });
         const x = c.extras || {};
-        types[c.id] = { lods, keepPaint: !!x.keepPaint, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])) };
+        // (claude/dent) the dent frame of the body (LOD0, wheels left out): the traffic's crumple shader (carDent.js)
+        const m0 = c.lods[0], W0 = m0.W;
+        const dent = dentFrame(m0.P, m0.K, W0 ? (i) => W0[i * 4 + 3] > 0.5 : null);
+        types[c.id] = { lods, dent, keepPaint: !!x.keepPaint, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])) };
         slice = Math.max(slice, performance.now() - s0);
       }
       this.types = types;
+      // (TRAFMIX) the traffic-only types: geometry for the moving fleet's own batches (viewer/traffic/trafficFleet.js), no
+      // parked batches
+      this.extra = {};
+      for (const c of heavy?.cars || []) {
+        if (!HEAVY_TYPES.includes(c.id)) continue;
+        await frame();
+        const lods = c.lods.map((m) => {
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute("position", new THREE.BufferAttribute(m.P, 3)); geo.setAttribute("normal", new THREE.BufferAttribute(m.N, 3));
+          geo.setAttribute("color", new THREE.BufferAttribute(m.C, 3)); geo.setAttribute("_kind", new THREE.BufferAttribute(m.K, 1));
+          geo.setIndex(new THREE.BufferAttribute(m.I, 1));
+          geo.computeBoundingSphere();
+          return { tris: m.I.length / 3, geo, W: m.W };
+        });
+        const x = c.extras || {}, m0 = c.lods[0], W0 = m0.W;
+        this.extra[c.id] = { lods, dent: dentFrame(m0.P, m0.K, W0 ? (i) => W0[i * 4 + 3] > 0.5 : null), keepPaint: !!x.keepPaint, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])) };
+      }
       // pipelines: compile the four materials (and their shadow variants) off the frame, one batch of each
       for (let i = 0; i < 300 && !(this.renderer && this.camera); i++) await frame();   // the camera comes with the first update
       const views = this.mergeBatches();

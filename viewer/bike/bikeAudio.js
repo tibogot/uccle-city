@@ -15,6 +15,7 @@
 //                                gains; a new AudioBufferSourceNode per EVENT is the one thing Web Audio cannot reuse: a
 //                                few per second at most, never per frame; the oldest is stolen past 4).
 import { bake, Biquad, Mode, OnePole, pinkSource, poisson, TAU } from "../audio/util.js";
+import { soundGate } from "../audio/soundGate.js";
 
 /** the tunables (a lab panel folder "Sound") */
 export const SOUND = {
@@ -232,6 +233,14 @@ export class BikeSound {
       if (s) syncSoundMem(this.mem, s);
     } else if (this.ctx) { this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.03); this.ctx.suspend?.(); }
     return this.on;
+  }
+  /** ONE BUTTON (rule 42, docs/SOUND_CITY.md): the speaker button (viewer/audio/soundGate.js) is the only switch. On:
+   *  the sound starts at once (that click is the gesture) or on the first key / click if the page loaded unmuted. */
+  followGate(getState) {
+    const go = () => { if (!soundGate.muted && !this.on) this.setOn(true, getState()); };
+    soundGate.onChange((m) => { if (m) this.setOn(false); else go(); });
+    addEventListener("pointerdown", go); addEventListener("keydown", go);
+    return this;
   }
   init() {
     const ctx = this.ctx = new AudioContext();

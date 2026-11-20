@@ -64,7 +64,7 @@ const KEYS = [
   ["Walk", [["W A S D / arrows", "move"], ["drag", "look"], ["Shift", "run"]]],
   ["Drive", [["W A S D / arrows", "throttle, brake, steer"], ["R", "reset the car"], ["C", "camera"], ["G", "the car colliders"]]],
   ["Scooter / Villo", [["K", "ride the scooter (from any mode)"], ["V", "a Villo bike from the nearest station"], ["E", "on foot: take a docked Villo · riding: dock it at a free dock"], ["W / Shift + W", "pedal / stand on the pedals (Villo)"], ["Q", "the Villo's bell"]]],
-  ["Motorbike", [["B", "ride the motorbike (from any mode)"], ["W / S", "gas / front brake (S stopped: paddle back)"], ["A / D", "lean (counter-steer feel)"], ["Shift + W", "full gas: wheelie"], ["Space", "rear brake: slide"], ["C", "camera (chase / far / helmet / orbit)"], ["R", "reset"], ["N", "sound on / off (off by default, ?motosound=1)"]]],
+  ["Motorbike", [["B", "ride the motorbike (from any mode)"], ["W / S", "gas / front brake (S stopped: paddle back)"], ["A / D", "lean (counter-steer feel)"], ["Shift + W", "full gas: wheelie"], ["Space", "rear brake: slide"], ["C", "camera (chase / far / helmet / orbit)"], ["R", "reset"]]],
   ["Third person", [["W A S D", "move"], ["Shift", "run"], ["Space", "jump"], ["G", "the character colliders"]]],
   ["Falcon", [["W / S", "nose down / up"], ["A / D", "bank"], ["Space", "flap"], ["Shift", "tuck (stoop)"], ["C", "half fold (fast glide)"], ["Q", "brake"], ["F", "talons / strike"], ["E", "land"], ["V", "camera"], ["R", "reset"], ["G", "flight debug"]]],
 ];
@@ -95,7 +95,11 @@ export function createDevPanel(ctx) {
   const rows = new Map();                     // key -> { f, ctrl, folder, boot }
   const folderOf = new Map();                 // group -> folder
   function switches(folder, group) {
-    const list = FEATURES.filter((f) => f.group === group && f.ui !== false && !f.live);
+    // grouped by sub-heading (first appearance), file order inside one: a row's place in features.js only orders it
+    // within its sub (features.js merges with merge=union, so two branches' rows may land in either order)
+    const all = FEATURES.filter((f) => f.group === group && f.ui !== false && !f.live);
+    const subs = [...new Set(all.map((f) => f.sub))];
+    const list = subs.flatMap((s) => all.filter((f) => f.sub === s));
     if (!list.length) return;
     folderOf.set(group, folder);
     folder.heading("Switches", "(read at boot: change, then Apply & reload)");
@@ -265,11 +269,10 @@ export function createDevPanel(ctx) {
     ["Overview", go("overview", () => setView("overview")), "orbit, the start tile from above"], ["Close-up", go("stjob", () => setView("stjob")), "orbit, Saint-Job (or ?at / ?cam)"],
     ["Walk", go("walk", () => walk()), "first person: WASD, drag to look, Shift run"], ["Fly (falcon)", go("fly", () => fly()), "the falcon flight"],
     ["Drive", go("drive", () => drive()), "the car, on the nearest road"], ["Third person", go("third", () => thirdPerson()), "a character on foot"],
-    ["Motorbike (B)", go("moto", () => moto?.()), "the motorbike, on the nearest road: W gas, S brake, Space rear brake, A / D lean, Shift full gas (wheelie), N mute"],
-    ["Scooter (K)", go("scooter", () => scooter?.()), "the scooter (CVT, ~90 km/h), on the nearest road: W gas, S brake, Space rear, A / D lean, N mute"],
+    ["Motorbike (B)", go("moto", () => moto?.()), "the motorbike, on the nearest road: W gas, S brake, Space rear brake, A / D lean, Shift full gas (wheelie)"],
+    ["Scooter (K)", go("scooter", () => scooter?.()), "the scooter (CVT, ~90 km/h), on the nearest road: W gas, S brake, Space rear, A / D lean"],
     ["Villo bike (V)", go("villo", () => villo?.()), "a Villo from the nearest station (else on the nearest road): W pedal, Shift stand on the pedals, S / Space brakes, Q bell; E docks it at a free dock. On foot: E near a docked bike takes it"],
   ], 3);
-  fC.add({ on: /[?&]motosound=1/.test(location.search) }, "on").name("two-wheeler sound").onChange((v) => { if (driver.setSound) driver.setSound(v); else driver.audio?.setMuted(!v); setParam("motosound", v ? "1" : null); });
   fC.add({ paint: "racing red" }, "paint", ["racing red", "acid green", "pearl white", "matte black", "cobalt blue", "orange"]).name("bike paint").onChange(async (v) => {
     const { loadMotoModel, MOTO_PAINTS } = await import("./moto/motoModel.js");
     (await loadMotoModel()).setPaint(MOTO_PAINTS[v]);

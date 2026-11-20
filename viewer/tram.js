@@ -13,6 +13,7 @@ import { MODELS } from "./furniture.js";
 import { TRAM_PLATFORM, isTramPlatform, platformRing } from "./drive/colliders.js";
 import { thinWire, wireHalfPx } from "./upscale.js";   // (the wire under the TAAU: blended, >= 0.6 internal px half-width)
 import { densify, tramPoleSites, POLE_OFF } from "./streets/tramPoles.js";
+import { platformWidth } from "./streets/tramPlatforms.js";
 
 const WIRE_H = 5.8, WIRE_R = 0.012;
 let wireMat = null;
@@ -290,7 +291,8 @@ export function buildTram(feats, surface, bounds, prof = null, onRoadDeck = null
     for (let i = 1; i < d.length; i++) {
       const [ax, az] = d[i - 1], [bx, bz] = d[i], L = Math.hypot(bx - ax, bz - az) || 1;
       if (!inB((ax + bx) / 2, (az + bz) / 2)) continue;
-      const nx = -(bz - az) / L * W / 2, nz = (bx - ax) / L * W / 2;
+      const pw = platformWidth(l);                                              // (tramfit: an island's width, OSM width=)
+      const nx = -(bz - az) / L * pw / 2, nz = (bx - ax) / L * pw / 2;
       const ya = surface(ax, az) + H, yb = surface(bx, bz) + H, ya0 = ya - H - 0.1, yb0 = yb - H - 0.1;
       quad(slab, [ax - nx, ya, az - nz], [ax + nx, ya, az + nz], [bx + nx, yb, bz + nz], [bx - nx, yb, bz - nz]);
       for (const s of [1, -1]) {

@@ -13,6 +13,9 @@ Owner's direction (2026-11-18): a FULL game, built on the Uccle 3D city. The pla
 8. **Learning life**: small choices with lasting effects (keep a promise or not, tell the truth, help an old neighbour); nothing preachy, friends remember.
 9. **Seasons later**: summer first; then autumn (school), winter (the Christmas layer, snow).
 
+## Street riding (owner 2026-11-18)
+The bike rides on almost EVERYTHING in the city, like a street bike game: kerbs, steps, benches, walls, ledges, rails, banks, slopes, stairs, planters. Nice feel, nothing cheap: physics, animation, sound, camera all on point. Research how the best bike / skate games get their feel (game-dev talks, articles, postmortems) before deepening docs/BIKE.md. Later: BMX spots with bumps, dirt jumps and crazy lines (the bike park, the Kauwberg).
+
 ## Physics props
 Cones, barriers, bins, boxes, a ball, planks + bricks to BUILD ramps; sleeping physics near the player only (docs/TODO.md 'physics props').
 
@@ -26,7 +29,7 @@ Real places, FICTIONAL people: no real family, house or resident is marked or na
 1. The kid walks and rides a bike: very good feel on streets, hills and forest paths (a bike lab first, own UI, no lil-gui).
 2. One friend calls; you meet at the Kauwberg, race down, find one strange thing.
 3. Get home before dark: the day ends.
-Then: the Kauwberg made for bikes (bumps, roots, sand quarries, ground detail at bike height), the bike park, more friends and days.
+Later (owner 2026-11-18): the kid's ROOM as an interior (the day starts there; 90s posters, landline in the hall, bike in the garden shed). Then: the Kauwberg made for bikes (bumps, roots, sand quarries, ground detail at bike height), the bike park, more friends and days.
 
 ## Known data (OSM 2026)
 - Kauwberg nature reserve: OSM way 16396691 (landuse forest, leisure nature_reserve); the sand quarries are not tagged (to shape from the DTM + references).

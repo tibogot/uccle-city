@@ -8,11 +8,21 @@
 // instance buffers from the sim's interpolated poses.
 import * as THREE from "three/webgpu";
 import { uniform } from "three/tsl";
-import { carFleet, TYPE_MIX, FADE_FROM, FADE_TO, BANDS } from "../carFleet.js";
-import { packMaterial, GLASS_PASS, glassGeometry } from "../drive/carPacks.js";
+import { carFleet, TYPE_MIX, FADE_FROM, FADE_TO, BANDS, SIZES } from "../carFleet.js";
+import { packMaterial, GLASS_PASS, glassGeometry, trafficDentRows } from "../drive/carPacks.js";
+import { DENT_OLD, frameRows } from "../drive/carDent.js";
 import { InstancePrev } from "../instMotion.js";   // --- instmotion: per-car motion vectors for the TAAU (docs/UPSCALE.md)
+import { HEAVY, HEAVY_TYPES } from "./trafMix.js";   // TRAFMIX: the service vehicles (models/cars/heavy.glb)
 
-export const TYPE_NAMES = TYPE_MIX.map(([t]) => t);
+export const TYPE_NAMES = [...TYPE_MIX.map(([t]) => t), ...HEAVY_TYPES];
+/** (carhit) each type's half-length code for the crumple shader (carPacks.js: hl = 1.9 + 0.12 code), x 4096 x 64 */
+const LEN_CODE = TYPE_NAMES.map((t) => Math.max(0, Math.min(7, Math.round(((SIZES[t] || HEAVY[t]?.size || SIZES.hatch_c)[2] / 2 - 1.9) / 0.12))) * 4096);
+/** (claude/dent) the default code: the TYPE index (<= 7), the shader reads that type's dent frame (carPacks.js
+ *  trafficDentRows, filled from the fleet's bodies in load()); ?dent=old: the half-length code as before */
+const TYPE_CODE = DENT_OLD ? LEN_CODE : TYPE_NAMES.map((_, i) => Math.min(i, 15) * 4096);
+/** (TRAFMIX) the trucks / bus do not crumple (a car's knock on a 13-20 t body: no visible dent; rule 41's gate covers
+ *  the car packs): only the street types and the patrol car (the cars2 police estate's body) take the dent field */
+const NO_DENT = TYPE_NAMES.map((t) => !!HEAVY[t] && !HEAVY[t].dent);
 export const trafficTime = uniform(0);
 
 const COMPILE_OLD = typeof location !== "undefined" && /[?&]trafficwarm=old(&|$)/.test(location.search);
@@ -34,6 +44,7 @@ export class TrafficFleet {
     this.drawnLast = new Uint8Array(maxCars); this.genLast = new Uint32Array(maxCars);
     this.lastPos = new THREE.Vector3(); this.hasLast = false;
     this.all = [];
+    this.typeOk = {};                                  // (TRAFMIX) name -> drawable
     this.prev = new InstancePrev(J, "trafficPrev");   // --- instmotion (one row per drawn instance this frame)
   }
   /** Wait for the parked fleet's geometries, build the batches + materials, compile them off the frame. */
@@ -54,10 +65,15 @@ export class TrafficFleet {
       const glass = GLASS_PASS ? packMaterial({ paint: "instance", rich: true, motion, glass: "pass" }) : null;
       const glassFade = GLASS_PASS ? packMaterial({ paint: "instance", rich: true, crossFade: true, motion, glass: "pass" }) : null;
       for (const m of [near, far, nearFade, farFade, glass, glassFade]) if (m) this.prev.hook(m);   // --- instmotion
+      // (claude/dent) each type's dent frame into the shader's table (rows of 3 vec4, TYPE_CODE order)
+      TYPE_NAMES.forEach((name, i) => { const F = (S.types[name] || S.extra?.[name])?.dent; if (F && i < 16) frameRows(F).forEach((r, k) => trafficDentRows[i * 3 + k].set(...r)); });
       this.types = [];
       for (const name of TYPE_NAMES) {
         await frame();
-        const src = S.types[name];
+        const src = S.types[name] || S.extra?.[name];
+        // (TRAFMIX: a service vehicle whose model did not load: a type with no levels, never spawned (typeOk), skipped)
+        if (!src) { this.types.push({ name, lods: null }); continue; }
+        this.typeOk[name] = true;
         const lods = src.lods.map((l, k) => {
           const g = new THREE.BufferGeometry();
           for (const [n, a] of Object.entries(l.geo.attributes)) g.setAttribute(n, a);
@@ -69,9 +85,13 @@ export class TrafficFleet {
           return { tris: l.tris, plain: this.batch(g, isNear ? near : far, k < 3, false, 32, gg && { geo: gg, mat: glass }),
             fade: this.batch(g, isNear ? nearFade : farFade, k < 3, true, 32, gg && { geo: gg, mat: glassFade }) };
         });
-        this.types.push({ name, lods, keepPaint: src.keepPaint, paint: src.paint });
+        // (TRAFMIX: the cull sphere reaches a long vehicle's far end: a bus's centre may be off screen while its tail shows)
+        const rad = Math.max(3.2, (HEAVY[name] ? HEAVY[name].size[2] / 2 + Math.abs(HEAVY[name].zc) : 0) + 0.6);
+        this.types.push({ name, lods, keepPaint: src.keepPaint, paint: src.paint, rad });
       }
-      for (const T of this.types) for (const l of T.lods) this.all.push(l.plain, l.fade);
+      // (one stride per type: the job's batch index is type x levels x 2; a type with no model keeps empty slots)
+      const nl = this.types.find((T) => T.lods)?.lods.length || 4;
+      for (const T of this.types) for (let k = 0; k < nl; k++) { const l = T.lods?.[k]; this.all.push(l?.plain || EMPTY, l?.fade || EMPTY); }
       if (renderer?.compileAsync && camera) {
         const T = this.types[0], probes = [T.lods[0].plain, T.lods[0].fade, T.lods[2].plain, T.lods[2].fade];
         const pm = probes.flatMap((b) => (b.glass ? [b.mesh, b.glass] : [b.mesh]));
@@ -84,7 +104,7 @@ export class TrafficFleet {
       // each, in the background (the scene pass's target + MRT): the probes warm type 0 only, and each other batch (its
       // own render object: the per-object motion hooks) builds its node graph the frame it first gets a car (~15-22 ms
       // each). Not awaited: the queue runs behind the landmarks' compiles, the traffic shows as before
-      if (compile && !COMPILE_OLD) (async () => { this.warmed = 0; for (const b of this.all) { if (b.mesh.count === 0) await compile(b.glass ? [b.mesh, b.glass] : [b.mesh]); this.warmed++; await frame(); } })().catch(() => {});
+      if (compile && !COMPILE_OLD) (async () => { this.warmed = 0; for (const b of this.all) { if (b === EMPTY) continue; if (b.mesh.count === 0) await compile(b.glass ? [b.mesh, b.glass] : [b.mesh]); this.warmed++; await frame(); } })().catch(() => {});
     } catch (e) { this.failed = e; console.warn("[traffic] fleet failed:", e); }
   }
   batch(geo, mat, cast, fade, cap = 32, glass = null) {
@@ -143,11 +163,11 @@ export class TrafficFleet {
     const a = alpha, b1 = 1 - alpha;
     const P = sim;
     for (let i = 0; i < sim.cap; i++) {
-      if (!P.alive[i] || P.type[i] >= this.types.length) { this.shown[i] = -1; continue; }   // (two-wheelers: viewer/moto/cityTwoWheelers.js)
+      if (!P.alive[i] || P.type[i] >= this.types.length || !this.types[P.type[i]].lods) { this.shown[i] = -1; continue; }   // (two-wheelers: viewer/moto/cityTwoWheelers.js)
       const fresh = P.gen[i] !== this.genLast[i];
       this.genLast[i] = P.gen[i]; this.drawnLast[i] = 0;
       const x = P.px[i] * b1 + P.x[i] * a, y = P.py[i] * b1 + P.y[i] * a, z = P.pz[i] * b1 + P.z[i] * a;
-      this.sphere.center.set(x, y + 0.9, z);
+      this.sphere.center.set(x, y + 0.9, z); this.sphere.radius = this.types[P.type[i]].rad;
       if (!this.frustum.intersectsSphere(this.sphere)) { st.culled++; this.shown[i] = -1; continue; }
       const dx = x - camPos.x, dy = y + 0.9 - camPos.y, dz = z - camPos.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
       if (d >= FADE_TO) { st.far++; this.shown[i] = -1; continue; }
@@ -191,7 +211,7 @@ export class TrafficFleet {
       const T = this.types[P.type[i]], pa = bt.geo.attributes.paint.array, mo = bt.geo.attributes.motion.array;
       if (T.keepPaint) { pa[n * 3] = T.paint.r; pa[n * 3 + 1] = T.paint.g; pa[n * 3 + 2] = T.paint.b; }
       else { pa[n * 3] = P.paint[i * 3]; pa[n * 3 + 1] = P.paint[i * 3 + 1]; pa[n * 3 + 2] = P.paint[i * 3 + 2]; }
-      mo[n * 4] = P.pspin[i] * b1 + P.spin[i] * a; mo[n * 4 + 1] = P.steer[i]; mo[n * 4 + 2] = P.bits[i]; mo[n * 4 + 3] = yaw;
+      mo[n * 4] = P.pspin[i] * b1 + P.spin[i] * a; mo[n * 4 + 1] = P.steer[i]; mo[n * 4 + 2] = P.dmg[i] && !NO_DENT[P.type[i]] ? P.bits[i] + 64 * (P.dmg[i] + TYPE_CODE[P.type[i]]) : P.bits[i]; mo[n * 4 + 3] = yaw;
       if (bt.fade) bt.geo.attributes.lodFade.array[n] = this.jf[q];
       this.prev.put(m, n, i, P.gen[i], e[o + 12], e[o + 13], e[o + 14], yaw);       // --- instmotion
     }
@@ -210,3 +230,5 @@ export class TrafficFleet {
   }
 }
 const ATTRS = [["paint", 3], ["motion", 4], ["lodFade", 1]];
+/** (TRAFMIX) the empty batch slot of a type with no model: never gets a car */
+const EMPTY = { n: 0, cap: 0, mesh: { count: 0, visible: false }, geo: { attributes: {} }, glass: null, fade: false };

@@ -98,9 +98,9 @@ reads their arrays on the CPU: all dropped once uploaded. The far-tree field (bu
 WHY IT HAPPENED: three r187 keeps every array it was given after the upload, nothing let them go, and loadTile's dispose
 closure read `d.bridgeDecks`, so a tile's whole worker build result (~37 MB a full tile) lived as long as the tile.
 RULE: a module that reads a tile layer's meshes on the CPU after the tile is built is listed in "Readers" above and in
-heapGate.mjs KNOWN (and keeps its arrays: keep list / hold / needCpu); loadTile's dispose keeps no build result.
-CHECKS: heapGate.mjs (node): the heapDrop logic (tools/heap/dropCheck.mjs), no unlisted reader of a tile layer by name,
-loadTile's dispose free of `d.`, the switches' features.js rows. BROWSER line: a police play + gamePerf police 45 s
+the KNOWN list of tools/audit/gate.d/heap.mjs (its `meta`, run by the `meta` row since claude/speed1) (and keeps its arrays: keep list / hold / needCpu); loadTile's dispose keeps no build result.
+CHECKS: heapGate.mjs (node): the heapDrop logic (tools/heap/dropCheck.mjs) and the queue check; the `meta` row: no unlisted
+reader of a tile layer by name, loadTile's dispose free of `d.`, the switches' features.js rows. BROWSER line: a police play + gamePerf police 45 s
 with `window.__heapDrop.tripCounts` = {}.
 
 ## heapfix (2026-11-17): the compile flush drew disposed far tiles

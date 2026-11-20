@@ -19,12 +19,13 @@
 //      sliced() (?herosslice=old); main.js loadTile's frames between the stops-to-plants placements (?slicesplit=old);
 //      grass.js re-bakes the field only after the blades-can-show test (?grassbake=old); lighting.js "*-warm" groups
 //      are sun-cache movers (?warmmover=old); stagedCompile.js warms a released landmark's shadow pass
-//      (?stagedshadow=old); a viewer/features.js row for every switch
-//   4. no DynamicDrawUsage, no light made in the files this gate covers
+//      (?stagedshadow=old) (main.js wiring, the features rows: the meta row)
+//   4. (no DynamicDrawUsage, no light made: the meta row, tools/audit/gate.d/stutter.mjs)
 import * as THREE from "three/webgpu";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { measure, bestOf } from "../gate/timing.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet");
 let fails = 0;
@@ -62,7 +63,6 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   loader = false; stats.on = false;
   await renderer._nodes.getForRenderAsync({}, threeYield);
   ok(stats.yields === y0, "switched off (live): three's path");
-  ok(/params\.get\("compileslice"\) !== "old"\) window\.__fineCompile = fineCompile\(renderer, \(\) => playLoader\.active/.test(src("viewer/main.js")), "main.js: fineCompile on unless ?compileslice=old, off under the play loader");
 }
 
 // ------------------------------------------------------------------ 2. heapDrop tick slices
@@ -76,14 +76,21 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   H.installHeapDrop({ _attributes: A, _textures: T }, {});
   globalThis.setInterval = si;
   ok(timers.length === 1, "heapDrop: its 1 s check captured");
-  const root = new THREE.Group(), geos = [];
-  for (let i = 0; i < 60; i++) { const g = new THREE.SphereGeometry(1, 96, 64); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial()); m.name = `buildings-${i}`; root.add(m); geos.push(g); }
-  H.dropAfterUpload(root, { tag: "buildings:T" });
-  for (const g of geos) { for (const a of Object.values(g.attributes)) A.update(a); A.update(g.index); }
-  const one = new THREE.SphereGeometry(1, 96, 64); const t1 = performance.now(); one.computeBoundingBox(); one.computeBoundingSphere(); const per = performance.now() - t1;
-  const t0 = performance.now(); timers.forEach((f) => f()); const first = performance.now() - t0;
-  const droppedNow = geos.filter((g) => g.attributes.position.array.length === 0).length;
-  ok(first <= 3 + 3 * per + 2 && droppedNow < geos.length, `a tick: ${first.toFixed(1)} ms (<= 3 ms + one geometry, ${per.toFixed(1)} ms), ${droppedNow}/${geos.length} dropped, the rest later`);
+  // (tools/gate/timing.mjs: the best of 3 first ticks, each on a fresh tile, between two calibrations; budget * k)
+  const geos = [];
+  const tickRun = () => {
+    const root = new THREE.Group(), mine = [];
+    for (let i = 0; i < 60; i++) { const g = new THREE.SphereGeometry(1, 96, 64); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial()); m.name = `buildings-${i}`; root.add(m); mine.push(g); }
+    geos.push(...mine);
+    H.dropAfterUpload(root, { tag: "buildings:T" });
+    for (const g of mine) { for (const a of Object.values(g.attributes)) A.update(a); A.update(g.index); }
+    const one = new THREE.SphereGeometry(1, 96, 64); const t1 = performance.now(); one.computeBoundingBox(); one.computeBoundingSphere(); const per = performance.now() - t1;
+    const t0 = performance.now(); timers.forEach((f) => f()); const first = performance.now() - t0;
+    return { first, per, over: first - 3 * per, droppedNow: mine.filter((g) => g.attributes.position.array.length === 0).length, n: mine.length };
+  };
+  const M = await measure(() => bestOf(3, tickRun, "over"));
+  const { first, per, droppedNow, n } = M.value;
+  ok(first <= (3 + 3 * per + 2) * M.k && droppedNow < n, `a tick: ${first.toFixed(1)} ms (<= 3 ms + one geometry, ${per.toFixed(1)} ms; best of 3, ${M.note}), ${droppedNow}/${n} dropped, the rest later`);
   for (let i = 0; i < 200 && geos.some((g) => g.attributes.position.array.length); i++) await new Promise((r) => setTimeout(r, 60));
   ok(geos.every((g) => g.attributes.position.array.length === 0 && g.boundingSphere), "every geometry dropped in later tasks, bounds first");
   const hd = src("viewer/heapDrop.js");
@@ -96,9 +103,6 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   ok(/export const dolomiteGeometry = \(\.\.\.a\) => drain\(dolomiteGen\(\.\.\.a\)\)/.test(hg) && /export const lawnGeometry = \(\.\.\.a\) => drain\(lawnGen\(\.\.\.a\)\)/.test(hg), "herosGround.js: the plain builders drain the generators (one code path)");
   ok(/export async function sliced\(g, ms = [1-5]\)/.test(hg) && /if \(\(t & 1535\) === 0\) yield null;/.test(hg), "herosGround.js: sliced() <= 5 ms, the terrain scan yields");
   ok(/HEROS_SLICE \? await sliced\(dolomiteGen\(/.test(hc) && /HEROS_SLICE \? await sliced\(lawnGen\(/.test(hc) && /get\("herosslice"\) !== "old"/.test(hc), "herosCity.js: the ground built through sliced() unless ?herosslice=old");
-  const main = src("viewer/main.js");
-  const lt = main.slice(main.indexOf("async function loadTile("), main.indexOf("\n}\n", main.indexOf("async function loadTile(")));
-  ok(["tram", "lanes", "stops, furniture, street kit", "gardens"].every((l) => lt.includes(`await split("${l}");`)) && lt.includes("const split = (label) => (SPLIT_SLICES ? frame(label) : null);") && /SPLIT_SLICES = params\.get\("slicesplit"\) !== "old"/.test(main), "main.js loadTile: frames between tram / lanes / stops+furniture+street kit / gardens / plants (?slicesplit=old)");
   const gr = src("viewer/grass/grass.js");
   const at = gr.indexOf("  frame(camera, dt"), fr = gr.slice(at, at + 1400);
   ok(fr.indexOf("if (!on) return [];") > 0 && fr.indexOf("if (!BAKE_OLD) this.field.update(cam);") > fr.indexOf("if (!on) return [];") && /grassbake=old/.test(gr), "grass.js: the field re-bakes only once the blades can show (?grassbake=old)");
@@ -106,14 +110,7 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   ok(li.includes("(WARM_MOVER && /-warm$/.test(o.name") && /get\("warmmover"\) !== "old"/.test(li), "lighting.js: \"*-warm\" groups are sun-cache movers (?warmmover=old)");
   ok(/g\.name = "boot3-late-warm"/.test(src("viewer/warmup.js")), "warmup.js: warmShadows' group name ends with -warm");
   const st = src("viewer/stagedCompile.js");
-  ok(st.includes("STAGED_SHADOW && warmShadow ? warmShadow(d.roots)") && /stagedshadow=old/.test(st) && main.includes("setStagedShadowWarm((roots) => warmShadows(renderer, scene, roots, { perFrame: 1 })"), "stagedCompile.js: a released landmark's shadow pass warmed, one mesh a frame (?stagedshadow=old)");
-  const feat = src("viewer/features.js");
-  for (const k of ["slicesplit", "dropslice", "herosslice", "compileslice", "compileslicems", "warmmover", "stagedshadow", "grassbake"]) ok(new RegExp(`\\("${k}",`).test(feat), `viewer/features.js: a row for ?${k}`);
-  for (const p of ["viewer/asyncPipes.js", "viewer/heapDrop.js", "viewer/heros/herosGround.js", "viewer/heros/herosCity.js", "viewer/grass/grass.js", "viewer/stagedCompile.js", "debug/falconStutter.js"]) {
-    const s = src(p);
-    ok(!/DynamicDrawUsage/.test(s), `${p}: no DynamicDrawUsage`);
-    ok(!/new THREE\.(Point|Spot|Directional|Hemisphere|RectArea|Ambient)Light\b/.test(s), `${p}: no light made`);
-  }
+  ok(st.includes("STAGED_SHADOW && warmShadow ? warmShadow(d.roots)") && /stagedshadow=old/.test(st), "stagedCompile.js: a released landmark's shadow pass warmed, one mesh a frame (?stagedshadow=old)");
 }
 console.log(fails ? `${fails} stutter check(s) FAILED` : "stutter checks pass");
 process.exit(fails ? 1 : 0);

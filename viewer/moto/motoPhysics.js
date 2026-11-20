@@ -101,11 +101,66 @@ export const VILLO_BODY = { hx: 0.32, hz: 0.9, height: 1.8 };
 const BODY_OF = new Map();
 
 export const RPM = MOTO.rpm;
-/** the handling sets by vehicle */
-export const TWO_WHEELERS = { moto: MOTO, scooter: SCOOTER, villo: VILLO };
+
+// ---------------------------------------------------------------- the feel round (docs/MOTO_FEEL.md, rule 40)
+// Owner playtest 2026-11-18: "the motorbike is barely usable, the guy always falls". tools/moto/feelTest.mjs found why:
+// (1) over the grip at lean = a crash: full lean (a key is all or nothing) + the gas (< 72 km/h) or the brake (any
+// speed) asked more of the tyres than they had, the low-side came 0.35 s later; (2) any impact over 8.5 m/s INTO
+// anything = a crash, so a glancing scrape of a parked car or a wall at 35 deg and 90 km/h was a fall; (3) the car's
+// old step rule (anything 0.5 m over the bike's centre = a wall) on a steep street, a bank, stairs: a wall hit at speed
+// = a crash; (4) no air at all: the bike glued to the ground off a ramp, a 12 m cliff ridden down as a slope.
+// Now (`feel` on the handling set; ?moto=old = the sets before):
+//   GRIP      the lean target never asks more than the tyres hold (the cap shrinks with the surface's grip and with the
+//             brake / gas asked: the bike stands up a little under hard braking); the drive and the brakes take what the
+//             lean leaves (traction control + cornering ABS); grip lost anyway (a tram rail, grass, a landing wobble) =
+//             a SLIP: the lean falls back to what the tyres hold, the tail slides, the yaw drops, it recovers: no crash
+//   AIR       a vertical state: the body follows the ground through a suspension (its vertical speed low-passed), and
+//             leaves it where the ground falls away faster than gravity (a ballistic ghost): ramps, banks, crests,
+//             kerbs down; in the air: no drive / brakes after a coyote window, little yaw, the lean free, the pitch
+//             drifting toward the flight path (gas noses up, the brake noses down)
+//   LANDING   three bands (clean / sketchy / bail) from the impact speed into the ground, the nose / tail angle to it,
+//             the lean: sketchy = a wobble (less grip, a weave) and some speed lost, the rider saves it; bail only far out
+//   CRASH     only a real one: head-on (within 53 deg of square) above crashSpeed into a wall / building / tree / lamp /
+//             car / furniture, or a bail; a step / bank face under wallRise and every glancing contact slide
+//   STEPS     the bike's own step rule: kerbs and edges up to `rise` over 0.7 m ridden (the motorbike 55 cm), banks
+//   QUICK     respawn after 1.6 s
+/** ?moto=old: the two-wheelers' handling before the feel round */
+export const MOTO_OLD = typeof location !== "undefined" && /[?&]moto=old(&|$)/.test(location.search);
+const FEEL = {
+  terrainGrip: 0.75,     // x grip on bare terrain (grass, a park path's soil: carEnv surface 1)
+  margin: 0.93,          // the lean target keeps this share of the grip (the rest: bumps, a little throttle)
+  longShare: 0.55,       // how much of a brake / gas request the lean cap leaves room for (the bike stands up)
+  hiCut: 0.2, hiV0: 30, hiV1: 60,   // the lean cap less by this share from hiV0 to hiV1 m/s (calm at 200 km/h)
+  slipRecover: 7,        // 1/s: a slipping lean falls back to what the tyres hold
+  airYaw: 0.3,           // share of the ground's yaw rate in the air (arcade: a little line control)
+  coyote: 0.12,          // s after leaving the ground the drive / brakes / grip still act (a kerb hop keeps control)
+  suspTau: 0.08,         // s: the body's vertical speed follows the ground's through the springs
+  airGap: 0.1,           // m the ghost must clear the ground before the bike is airborne (the suspension's droop)
+  airPitchRate: 2.5, airFollow: 0.5, airGas: 0.15, airBrake: -0.25,   // the air pitch: toward the flight path, the rider's input
+  hardSketchy: 6.5, hardBail: 13,       // m/s into the ground at touch-down (a 2.2 m / 8.6 m flat drop)
+  noseSketchy: 0.35, noseBail: 1.0,     // rad nose-down to the ground
+  tailSketchy: 0.55, tailBail: 1.25,    // rad nose-up
+  leanSketchy: 0.7, leanBail: 1.3,      // rad of lean at touch-down (more than the tyres hold on the flat)
+  wobbleTime: 0.5, wobbleGrip: 0.85, wobbleLean: 0.07, sketchyLoss: 0.12,
+  crashSpeed: 11,        // m/s head-on into an obstacle = a crash (40 km/h into a wall)
+  headOn: 0.6,           // |cos| of the angle between the heading and the obstacle's normal for a head-on
+  wallRise: 0.9,         // m: a step / bank face lower than this is never a crash (slide along it)
+  step: { run: 0.7, rise: 0.55, bank: 1.6 },   // carEnv stepContact for the bike
+};
+export const MOTO_FEEL = { ...MOTO, respawn: 1.6, feel: FEEL };
+export const SCOOTER_FEEL = { ...SCOOTER, respawn: 1.6, feel: { ...FEEL, terrainGrip: 0.7, crashSpeed: 10, hardSketchy: 5.5, hardBail: 12, step: { run: 0.7, rise: 0.42, bank: 1.4 } } };
+export const VILLO_FEEL = { ...VILLO, respawn: 1.5, feel: { ...FEEL, terrainGrip: 0.7, crashSpeed: 7, hardSketchy: 4.5, hardBail: 10, airGas: 0, step: { run: 0.7, rise: 0.35, bank: 1.4 } } };
+/** the handling sets by vehicle (?moto=old: before the feel round) */
+export const TWO_WHEELERS_OLD = { moto: MOTO, scooter: SCOOTER, villo: VILLO };
+export const TWO_WHEELERS_FEEL = { moto: MOTO_FEEL, scooter: SCOOTER_FEEL, villo: VILLO_FEEL };
+export const TWO_WHEELERS = MOTO_OLD ? TWO_WHEELERS_OLD : TWO_WHEELERS_FEEL;
 /** the vehicle's box (half width / length, height) */
 export const BODIES = { moto: MOTO_BODY, scooter: SCOOTER_BODY, villo: VILLO_BODY };
 BODY_OF.set(MOTO, MOTO_BODY); BODY_OF.set(SCOOTER, SCOOTER_BODY); BODY_OF.set(VILLO, VILLO_BODY);
+BODY_OF.set(MOTO_FEEL, MOTO_BODY); BODY_OF.set(SCOOTER_FEEL, SCOOTER_BODY); BODY_OF.set(VILLO_FEEL, VILLO_BODY);
+/** the carEnv options a handling set rides with (driveMode.js, tools/moto/feelTest.mjs): the feel sets ride up kerb
+ *  islands, through hedges, round thin posts, by their own step rule; the old ones as before (feel off) */
+export function twoWheelEnv(H) { return H.feel ? { feel: true, step: H.feel.step } : {}; }
 
 export function createMotoState(x, z, heading) {
   return {
@@ -117,7 +172,11 @@ export function createMotoState(x, z, heading) {
     crashed: false, crashT: 0, crashes: 0, crashDir: 1, overGrip: 0,
     crank: 0, pedal: 0, pushing: 0, pushT: 0, walk: 0, footDown: 1, stillT: 1, grade: 0, bell: 9, bells: 0,
     safe: { x, z, heading, t: 0 },
-    hits: 0, lastHit: null, accel: 0,
+    hits: 0, lastHit: null, accel: 0, crashWhy: null,
+    // (feel) the vertical state, the slip, the landing bands
+    air: false, airT: 0, airH: 0, vy: 0, vyF: 0, yb: 0, vyB: 0, gyPrev: NaN, pxV: x, pzV: z, gradeNow: 0, airPitch: 0,
+    slipping: 0, slips: 0, wobbleT: 0, absorb: 0, landings: { clean: 0, sketchy: 0, bail: 0 }, lastLanding: 0, lastSev: 0,
+    touchV: 0, touchN: 0,   // (tyre marks) the last touch-down's speed into the ground (m/s) and a count of them
   };
 }
 
@@ -215,6 +274,7 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
   const steps = Math.max(1, Math.ceil(dt * 120)), step = dt / steps;
   const tireResponse = 1 - Math.exp(-6 * step);
   let accel = 0;
+  const F = H.feel;
   for (let i = 0; i < steps; i++) {
     sinH = Math.sin(c.heading); cosH = Math.cos(c.heading);
     const vx = sinH * c.speed + c.vx, vz = cosH * c.speed + c.vz;
@@ -222,7 +282,20 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     const v = Math.abs(forward);
     // brakes: the front loses effect in a stoppie's air time... no: the rear does (it is off the ground)
     const rearOn = c.wheelie > -0.03 ? 1 : 0, frontOn = c.wheelie < 0.03 ? 1 : 0;
-    const brake = front * H.brakeFront * frontOn + rear * H.brakeRear * rearOn + (c.crashed ? 6.5 : 0);
+    let brake = front * H.brakeFront * frontOn + rear * H.brakeRear * rearOn + (c.crashed ? 6.5 : 0);
+    // (feel) the slope under the wheels this substep, the surface's grip, what the lean leaves for the drive / brakes
+    let ga = gAlong, mu = 1, gripTot = H.grip, onG = true, aMax = 0, drv = drive;
+    if (F) {
+      ga = c.air ? 0 : -H.gravity * c.gradeNow / Math.sqrt(1 + c.gradeNow * c.gradeNow);
+      mu = env.grip ? env.grip(c.x, c.z) : env.surface && env.surface(c.x, c.z) ? F.terrainGrip : 1;
+      onG = !c.air || c.airT < F.coyote;
+      gripTot = H.grip * mu * (c.wobbleT > 0 ? F.wobbleGrip : 1);
+      const need = H.gravity * Math.tan(Math.min(1.3, Math.abs(c.lean)));
+      const longAvail = Math.sqrt(Math.max(0, gripTot * gripTot - need * need));
+      aMax = H.power * (1 + ((c.boost ? H.boost : 1) - 1) * smooth(26, 8, v)) * H.powerSpeed / Math.max(H.powerSpeed, v);
+      if (!c.crashed) brake = onG ? Math.min(brake, Math.max(longAvail, 2)) : 0;                 // cornering ABS
+      drv = onG ? drive * Math.min(1, Math.max(longAvail, 1.5) / aMax) : 0;                       // traction control
+    }
     let speed;
     if (walking) {
       // pushing: the walker sets the pace (gravity is the walker's to carry); S stops, back = walking it backwards
@@ -231,19 +304,43 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     } else if (paddle) speed = Math.max(-H.reverseSpeed, forward - paddle * 2.5 * step);
     else if (forward < 0 && throttle) speed = forward + (H.power * drive + 2) * step;          // rolling back: the gas pulls forward
     else if (forward < 0) speed = Math.min(0, forward + (2 + brake) * step);
-    else speed = driveSpeed(forward, drive * (c.crashed ? 0 : 1) * rearOn, brake, step, H, c.boost ? H.boost : 1);
-    if (!walking && (Math.abs(speed) > 0.3 || throttle)) speed += gAlong * step;
-    if (!throttle && !paddle && Math.abs(speed) < 0.3 && Math.abs(gAlong) < 1.5) speed *= Math.exp(-8 * step);   // feet down: held still
+    else speed = driveSpeed(forward, drv * (c.crashed ? 0 : 1) * rearOn, brake, step, H, c.boost ? H.boost : 1);
+    if (!walking && (Math.abs(speed) > 0.3 || throttle)) speed += ga * step;
+    if (!throttle && !paddle && Math.abs(speed) < 0.3 && Math.abs(ga) < 1.5 && !c.air) speed *= Math.exp(-8 * step);   // feet down: held still
     const acceleration = (speed - forward) / step;
     accel = acceleration;
 
     // the friction circle: what is left for cornering
-    const tireAcc = acceleration + H.drag * forward * Math.abs(forward) - gAlong;
-    const lat = Math.sqrt(Math.max(0, H.grip * H.grip - tireAcc * tireAcc));
+    const tireAcc = acceleration + H.drag * forward * Math.abs(forward) - ga;
+    const lat = Math.sqrt(Math.max(0, gripTot * gripTot - tireAcc * tireAcc));
 
     // ---- lean (the steering)
     const vs = Math.max(v, 0.01);
-    if (!c.crashed) {
+    let yawK = 1;
+    if (F && !c.crashed) {
+      // the lean target within what the tyres hold, with room for the brake / gas asked (the bike stands up a little)
+      const speedLean = H.maxLean * smooth(1.2, 9, v) * (1 - F.hiCut * smooth(F.hiV0, F.hiV1, v));
+      const aReq = onG ? Math.max(front * H.brakeFront + rear * H.brakeRear, drive * aMax) : 0;
+      const capLat = Math.sqrt(Math.max(0.3 * gripTot * gripTot, gripTot * gripTot - (F.longShare * aReq) * (F.longShare * aReq)));
+      const leanCap = c.air ? H.maxLean : Math.atan(capLat * F.margin / H.gravity);
+      let tgt = steerIn * Math.min(speedLean, leanCap);
+      if (c.wobbleT > 0) { c.wobbleT -= step; tgt += F.wobbleLean * Math.sin(c.wobbleT * 19) * Math.min(1, c.wobbleT / 0.15); }   // the sketchy landing's weave (~3 Hz)
+      c.leanTarget = tgt;
+      const rate = H.leanRate / (1 + v / 20);
+      c.lean += (c.leanTarget - c.lean) * (1 - Math.exp(-rate * step));
+      // a SLIP: the lean asks more than the tyres hold (grip dropped under it: a rail, grass, a wobble): it falls back
+      // to what they hold, the tail slides out, the turn widens; recovered, never a crash
+      const hold = Math.atan(gripTot / H.gravity);
+      if (onG && v > 3 && Math.abs(c.lean) > hold) {
+        const sg = c.lean > 0 ? 1 : -1;
+        c.lean = sg * (hold + (Math.abs(c.lean) - hold) * Math.exp(-F.slipRecover * step));
+        if (!c.slipping) c.slips++;
+        c.slipping = 1; c.slide = Math.min(1, c.slide + step * 4);
+        yawK = Math.min(1, gripTot / (H.gravity * Math.tan(Math.abs(c.lean)) + 1e-6));
+      } else c.slipping = 0;
+      if (c.air && c.airT >= F.coyote) yawK *= F.airYaw;
+      c.overGrip = 0;
+    } else if (!c.crashed) {
       const speedLean = H.maxLean * smooth(1.2, 9, v);
       const gripLean = Math.atan(lat / H.gravity) + 0.06;
       c.leanTarget = steerIn * Math.min(speedLean, gripLean + 0.05);
@@ -252,7 +349,7 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
       // over the grip (braking / gassing hard at full lean): the front tucks -> a low-side
       const need = H.gravity * Math.tan(Math.abs(c.lean));
       c.overGrip = need > lat + 1.2 && v > 6 ? c.overGrip + step : Math.max(0, c.overGrip - step * 2);
-      if (c.overGrip > 0.35) crash(c, Math.sign(c.lean) || 1, H);
+      if (c.overGrip > 0.35) crash(c, Math.sign(c.lean) || 1, H, "lean");
     } else {
       // on its side: the fall, then lying
       const tgt = 1.42 * c.crashDir;
@@ -262,10 +359,10 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     const wLean = smooth(2.5, 6.5, v);
     const bar = steerIn * H.lowSteer * (1 - wLean);
     let yaw = c.crashed ? c.angularVel * Math.exp(-2.5 * step)
-      : (1 - wLean) * speed * Math.tan(bar) / H.wheelbase + wLean * Math.sign(speed) * H.gravity * Math.tan(c.lean) / Math.max(vs, 3);
+      : ((1 - wLean) * speed * Math.tan(bar) / H.wheelbase + wLean * Math.sign(speed) * H.gravity * Math.tan(c.lean) / Math.max(vs, 3)) * yawK;
     // the rear brake slide: the tail steps out, steering pushes it further (a drift-ish skid)
-    if (rear && v > 4 && !c.crashed) { yaw += steerIn * 0.45 * smooth(4, 12, v); c.slide = Math.min(1, c.slide + step * 3); }
-    else c.slide = Math.max(0, c.slide - step * 2.5);
+    if (rear && v > 4 && !c.crashed && onG) { yaw += steerIn * 0.45 * smooth(4, 12, v); c.slide = Math.min(1, c.slide + step * 3); }
+    else if (!c.slipping) c.slide = Math.max(0, c.slide - step * 2.5);
     c.angularVel += (yaw - c.angularVel) * (1 - Math.exp(-(c.crashed ? 30 : 12) * step));
     c.heading += c.angularVel * step;
 
@@ -279,15 +376,16 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     const wx = sinH * speed + cosH * sideways, wz = cosH * speed - sinH * sideways;
     c.speed = wx * ns + wz * nc;
     const slip = wx * nc - wz * ns;
-    const latGrip = c.crashed ? 5 : lat * (1 - 0.55 * c.slide) + 2;
+    const latGrip = c.crashed ? 5 : F && !onG ? 0.3 : lat * (1 - 0.55 * c.slide) + 2 * mu;
     const corr = clamp(-slip * tireResponse, -latGrip * step, latGrip * step);
     c.vx = nc * (slip + corr); c.vz = -ns * (slip + corr);
     c.x += (ns * c.speed + c.vx) * step;
     c.z += (nc * c.speed + c.vz) * step;
     env.collide?.(c, step);
+    if (F) vertical(c, env, step, speed, throttle, front, H, F, L);
 
     // ---- wheelie / stoppie: pitch about the rear (> 0) or the front (< 0) contact
-    if (!c.crashed) {
+    if (!c.crashed && !c.air) {
       const h = H.cgHeight, w = c.wheelie, aw = Math.abs(w), cw = Math.cos(aw), sw = Math.sin(aw);
       // front up: the drive force (a h) against gravity's arm to the rear contact (shrinks as it rises: the balance point)
       const up = Math.max(0, acceleration) * (c.boost && throttle ? 1 + 0.28 * smooth(24, 12, v) : 1) * h * cw - H.gravity * (H.cgToRear * cw - h * sw) - (throttle ? 0 : 6);
@@ -315,7 +413,8 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
     c.heave = clamp(c.heave + c.heaveVel * step, -0.06, 0.08);
   }
   // the bike's height: the wheels on the ground (y = midway), lifted in a wheelie / stoppie by the pivot
-  c.y = (hF + hB) / 2;
+  if (!F) c.y = (hF + hB) / 2;
+  else { c.slopePitch = c.air ? c.airPitch : Math.atan(c.gradeNow); c.absorb *= Math.exp(-dt * 5); }
   c.accel = accel;
   // the rider tucks at speed (visual)
   c.tuck += (smooth(18, 45, Math.abs(c.speed)) * (throttle > 0.2 ? 1 : 0.6) - c.tuck) * (1 - Math.exp(-dt * 2.5));
@@ -335,17 +434,69 @@ export function stepMoto(c, input, dt, env, H = MOTO) {
   if (c.crashed) {
     c.crashT += dt;
     if (c.crashT > H.respawn) respawn(c);
-  } else if (Math.abs(c.lean) < 0.25 && Math.abs(c.speed) > 1.5 && !env.contacts && Math.abs(c.wheelie) < 0.05) {
+  } else if (Math.abs(c.lean) < 0.25 && Math.abs(c.speed) > 1.5 && !env.contacts && Math.abs(c.wheelie) < 0.05 && !c.air && !c.slipping) {
     c.safe.t += dt;
     if (c.safe.t > 0.5) { c.safe.x = c.x; c.safe.z = c.z; c.safe.heading = c.heading; c.safe.t = 0; }
   }
 }
 
-function crash(c, dir, H = MOTO) {
+/** (feel) the bike's height this substep: on the ground through the suspension, or in the air; the landing bands */
+function vertical(c, env, step, speed, throttle, front, H, F, L) {
+  const s = Math.sin(c.heading), k = Math.cos(c.heading), g = H.gravity;
+  const gF = env.ground(c.x + s * L, c.z + k * L), gR = env.ground(c.x - s * L, c.z - k * L), gy = (gF + gR) / 2;
+  // the first step, a respawn / teleport (moved > 4 m in a substep), a ground far over the body (a deck appeared)
+  const dx = c.x - c.pxV, dz = c.z - c.pzV;
+  c.gradeNow = (gF - gR) / H.wheelbase;
+  if (!(c.gyPrev === c.gyPrev) || dx * dx + dz * dz > 16 || gy - c.y > 3) {
+    c.gyPrev = gy; c.vyF = c.vyB = c.gradeNow * speed; c.yb = gy; c.air = false; c.y = gy; c.vy = 0;   // (moving along the ground)
+  }
+  c.pxV = c.x; c.pzV = c.z;
+  const rate = (gy - c.gyPrev) / step;
+  c.gyPrev = gy;
+  if (!c.air) {
+    c.vyF += (rate - c.vyF) * (1 - Math.exp(-step / F.suspTau));
+    // the ghost: where the body would fly if the ground let it go (it leaves where the ground falls away faster than g)
+    const yb = c.yb + c.vyB * step - 0.5 * g * step * step;
+    if (yb <= gy) { c.yb = gy; c.vyB = c.vyF; } else { c.yb = yb; c.vyB -= g * step; }
+    if (c.yb - gy > F.airGap) { c.air = true; c.airT = 0; c.y = c.yb; c.vy = c.vyB; c.airPitch = Math.atan(c.gradeNow); }
+    else c.y = gy;
+  } else {
+    c.airT += step;
+    c.vy -= g * step;
+    c.y += c.vy * step;
+    const vh = Math.abs(speed) > 1 ? Math.abs(speed) : 1;
+    const tgt = F.airFollow * Math.atan2(c.vy, vh) + (throttle > 0 ? F.airGas : 0) + (front > 0 ? F.airBrake : 0);
+    c.airPitch += (tgt - c.airPitch) * (1 - Math.exp(-F.airPitchRate * step));
+    if (c.y <= gy) {
+      // TOUCH-DOWN: the impact into the ground, the nose / tail to it, the lean -> clean / sketchy / bail
+      const gp = Math.atan(c.gradeNow), down = Math.max(0, c.gradeNow * speed - c.vy) * Math.cos(gp);
+      const nose = gp - c.airPitch, lean = Math.abs(c.lean);
+      let sev = (down - F.hardSketchy) / (F.hardBail - F.hardSketchy);
+      sev = Math.max(sev, (nose - F.noseSketchy) / (F.noseBail - F.noseSketchy), (-nose - F.tailSketchy) / (F.tailBail - F.tailSketchy), (lean - F.leanSketchy) / (F.leanBail - F.leanSketchy));
+      c.air = false; c.y = gy; c.yb = gy; c.vyF = c.vyB = Math.min(c.gradeNow * speed, 0); c.vy = 0;
+      c.lastSev = sev;
+      c.touchV = down; c.touchN++;
+      if (c.airT > 0.12 && !c.crashed) {
+        c.lastLanding = sev >= 1 ? 3 : sev > 0 ? 2 : 1;
+        if (sev >= 1) c.landings.bail++; else if (sev > 0) c.landings.sketchy++; else c.landings.clean++;
+      }
+      c.heaveVel -= Math.min(1.6, down * 0.16);
+      c.absorb = Math.min(1, Math.max(c.absorb, down / F.hardSketchy));
+      if (sev >= 1 && !c.crashed) crash(c, c.lean >= 0 ? 1 : -1, H, "landing");
+      else if (sev > 0) { c.wobbleT = F.wobbleTime * (1 + sev); c.speed *= 1 - F.sketchyLoss * sev; }
+    }
+  }
+  c.airH = c.air ? c.y - gy : 0;
+}
+
+function crash(c, dir, H = MOTO, why = "hit") {
   if (c.crashed) return;
-  c.crashed = true; c.crashT = 0; c.crashes++; c.crashDir = dir; c.overGrip = 0;
+  c.crashed = true; c.crashT = 0; c.crashes++; c.crashDir = dir; c.overGrip = 0; c.crashWhy = why;
   c.wheelieVel = 0;
 }
+
+/** the crash trigger by collider kind (colliders.js KIND) */
+const HIT_WHY = ["wall", "island", "tree", "lamp", "post", "wall", "car", "furniture", "hedge"];
 
 /** after a crash: upright at the last safe pose (half a second or more before), stopped */
 export function respawn(c) {
@@ -353,20 +504,26 @@ export function respawn(c) {
   c.x = c.safe.x; c.z = c.safe.z; c.heading = c.safe.heading;
   c.speed = 0; c.vx = 0; c.vz = 0; c.angularVel = 0; c.lean = 0; c.leanTarget = 0; c.wheelie = 0; c.wheelieVel = 0; c.slide = 0;
   c.gear = 1; c.respawned = (c.respawned || 0) + 1;
+  c.air = false; c.airT = 0; c.vy = 0; c.vyF = 0; c.vyB = 0; c.gyPrev = NaN; c.wobbleT = 0; c.slipping = 0; c.airH = 0;
 }
 
 /**
  * Impact response for one contact (carEnv push: n = out of the obstacle, the position already pushed).
  * A glancing touch keeps the speed and turns the bike along the wall; a hard hit (> crashSpeed into it) = a crash.
  */
-export function motoHit(c, nx, nz, kind, H = MOTO) {
+export function motoHit(c, nx, nz, kind, H = MOTO, rise = undefined) {
   const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
   const tvx = sinH * c.speed + c.vx, tvz = cosH * c.speed + c.vz;
   const vn = -(tvx * nx + tvz * nz);
   if (vn <= 0.4) return 0;
   const headOn = Math.abs(sinH * nx + cosH * nz), side = cosH * nx - sinH * nz;
-  if (vn > H.crashSpeed && !c.crashed) {
-    crash(c, side >= 0 ? -1 : 1, H);
+  const F = H.feel;
+  // (feel) a crash only head-on above crashSpeed into something solid; a step / bank face under wallRise, a kerb island,
+  // a hedge and every glancing contact slide (hitSlide)
+  const hard = F ? !c.crashed && vn > F.crashSpeed && headOn > F.headOn && kind !== 1 && kind !== 8 && !(rise !== undefined && rise < F.wallRise)
+    : vn > H.crashSpeed && !c.crashed;
+  if (hard) {
+    crash(c, side >= 0 ? -1 : 1, H, rise !== undefined ? "step" : HIT_WHY[kind] ?? "hit");
     c.speed *= 0.35 * (1 - headOn * 0.6); c.vx += nx * vn * 0.3; c.vz += nz * vn * 0.3;
     c.angularVel += side * 3.5;
   } else if (!HIT_OLD) {

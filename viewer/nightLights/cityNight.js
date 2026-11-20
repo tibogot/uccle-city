@@ -498,7 +498,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     const T = types[ti];
     const len = T.len, h = T.h;
     L = { head: [0, Math.min(0.75, h * 0.48), len / 2 - 0.15], tail: [0, Math.min(0.9, h * 0.55), -len / 2 + 0.1], fromKinds: false };
-    const src = carFleet.types?.[T.name];
+    const src = carFleet.types?.[T.name] ?? carFleet.extra?.[T.name];   // (claude/trafmix: the service vehicles)
     const g = src?.lods?.[1]?.geo ?? src?.lods?.[0]?.geo;
     const K = g?.attributes?._kind, P = g?.attributes?.position;
     if (K && P) {
@@ -660,6 +660,7 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
               if (wasAlive[i] && inR[i] && lf[i] > 0) toGhost(i);
               lf[i] = 0; gen[i] = sim.gen[i]; wasAlive[i] = 1; inR[i] = 0;
             }
+            if (sim.bits[i] & 32) { lf[i] = 0; inR[i] = 0; continue; }     // (carhit: a shoved parked car, nobody in it: no lights)
             lf[i] = Math.min(1, lf[i] + fstep / CAR_IN);
             const x = sim.px[i] * b1 + sim.x[i] * a, z = sim.pz[i] * b1 + sim.z[i] * a;
             const cx = x - camPos.x, cz = z - camPos.z;
@@ -1064,6 +1065,9 @@ export function startCityNight({ scene, renderer, updaters, groundAt = null, log
     setTraffic: (t) => { traffic = t; },
     setDriver: (d) => { driver = d; },
     setTram: (t) => { tram = t; },
+    /** (props, docs/PROPS.md) a static caster changed (a knocked prop left its pool / came back): both lamp maps re-render
+     *  their static casters next frame (their cache would keep the old shadow) */
+    refreshStatic: () => { sLamp[0] = sLamp[1] = -2; },
     debug: dbg,                        // (?nightdebug=1: the pop metric, its worst events)
     /** (checks) queue every lamp-shadow caster for the next by-day warm-up */
     /** perf8: casters queued for the lamp-shadow warm-up (first tries only) + a warm render in progress: main.js areaReady waits for 0 */

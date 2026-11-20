@@ -15,9 +15,21 @@
 import * as THREE from "three/webgpu";
 import { loadStreetKit, StreetKitPool, PIECES, PLATE_SIZE, AXIS, streetKitSource, streetKitFades } from "./streetKit.js";
 import { Streamer, MARGIN } from "../instanceStream.js";
+import { cityProps } from "../props/cityProps.js";
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/streetkit/", import.meta.url);
+const PROPS_OLD = qs.get("streetprops") === "old";
+
+/** (streetprops, rule 30) ?streetprops=old: the doc as before the class D fixes: the signs of the old rules (signsOld,
+ *  kept where they differ), the plate posts and Villo stations at their `was` (tools/streetkit/snapProps.mjs) */
+export function streetKitOld(doc) {
+  if (!doc) return doc;
+  if (doc.signsOld) doc.signs = doc.signsOld;
+  for (const p of doc.posts || []) if (p.was) [p.x, p.y, p.z] = p.was;
+  for (const v of doc.villo || []) if (v.was) Object.assign(v, v.was);
+  return doc;
+}
 const STANDIN_NAME = { sign_pole: "furniture-sign", sign_pole_tall: "furniture-sign", plate_post: "furniture-platepost", villo_totem: "furniture-villo", villo_dock: "furniture-villo", villo_bike: "furniture-villo" };
 
 function hash01(s) {
@@ -47,6 +59,16 @@ export function streetKitInstances(doc) {
   const out = {};
   for (const k of PIECES) if (L[k].length) out[k] = new Float32Array(L[k]);
   return out;
+}
+
+/** (props, docs/PROPS.md) each sign's pole and plates as instance indices of their pieces, in streetKitInstances'
+ *  order: [{ pole: [piece, i], plates: [[piece, i], ...] }] */
+export function signLinks(doc) {
+  const n = {}, at = (k) => { const i = n[k] || 0; n[k] = i + 1; return i; };
+  return (doc?.signs || []).map((s) => {
+    const pk = s.tall ? "sign_pole_tall" : "sign_pole";
+    return { pole: [pk, at(pk)], plates: s.plates.map((p) => { const k = "plate_" + p.shape; return [k, at(k)]; }) };
+  });
 }
 
 // joins2 (docs/JOINS2.md; ?artsigns=old = as placed): the street kit's rule signs are placed from the road graph and two
@@ -85,7 +107,9 @@ export const cityStreetKit = {
     this.group = new THREE.Group(); this.group.name = "streetkit";
     scene.add(this.group);
     for (const p of PIECES) this.pools.push(new StreetKitPool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    for (const m of this.kit.mats.opaque) cityProps.hook(m);          // (props: the snapped / bent signs' and knocked Villo bikes' motion vectors)
     this.streamer = new Streamer({ name: "streetkit", pools: this.pools.map((p) => p.stream), fades: streetKitFades, budget: 0.15 });
+    cityProps.prepare(this.streamer, PIECES.filter((p) => p.startsWith("sign_pole") || (p.startsWith("plate_") && p !== "plate_post") || p === "villo_bike"));
     updaters.push((eye, cam) => this.update(cam));
     window.__streetkit = this;
     log(`streetkit: on (?streetkit=old off), ${PIECES.length} pieces, ${Math.round(performance.now() - t0)} ms`);
@@ -93,7 +117,7 @@ export const cityStreetKit = {
   },
   fetchTile(name) {
     if (!this.on) return Promise.resolve(null);
-    const doc = fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const doc = fetch(new URL(`${name}.json`, DATA)).then((r) => (r.ok ? r.json() : null)).then((d) => (PROPS_OLD ? streetKitOld(d) : d)).catch(() => null);
     return ARTSIGNS ? Promise.all([doc, artIslands()]).then(([d, isl]) => (d && isl.length ? signsOffIslands(d, isl) : d)) : doc;
   },
   /** a cars.js `place` (x, z, yaw) -> { x, z, yaw } | null that leaves the Villo stations' parking-lane space free */
@@ -138,7 +162,7 @@ export const cityStreetKit = {
     const g = new THREE.Group(); g.name = `streetkit-${name}`;
     const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
     const counts = {};
-    let bikeRefs = null;
+    let bikeRefs = null, links = null;
     for (const k of PIECES) {
       const a = inst[k]; counts[k] = a ? a.length / 8 : 0;
       const sg = this.kit.pieces[k].standin;
@@ -154,6 +178,19 @@ export const cityStreetKit = {
       // (motorbike round 2: each station bike's collider knows its ref: off once the player takes that bike,
       // viewer/moto/villoDocks.js; driveMode.js featureColliders carries it)
       if (k === "villo_bike") m.userData.refs = bikeRefs = Array.from({ length: a.length / 8 }, (_, i) => ({ hidden: false, villo: i }));
+      if (cityProps.on) {
+        // (props, docs/PROPS.md) the Villo bikes knocked out of their docks; the sign posts bend / snap with their plates
+        if (k === "villo_bike") { m.userData.kick = true; for (let i = 0; i < a.length / 8; i++) cityProps.make("villo", name, a[i * 8], a[i * 8 + 1], a[i * 8 + 2], a[i * 8 + 3], [{ streamer: this.streamer, tile: name, key: k, i }], bikeRefs[i]); }
+        if (k === "sign_pole" || k === "sign_pole_tall") {
+          links ||= signLinks(doc);
+          const refs = m.userData.refs = new Array(a.length / 8).fill(null);
+          for (const L of links) {
+            if (L.pole[0] !== k) continue;
+            const i = L.pole[1], mem = [L.pole, ...L.plates].map(([key, j]) => ({ streamer: this.streamer, tile: name, key, i: j }));
+            refs[i] = cityProps.make("sign", name, a[i * 8], a[i * 8 + 1], a[i * 8 + 2], a[i * 8 + 3], mem)?.ref || null;
+          }
+        }
+      }
       g.add(m);
     }
     parent.add(g);

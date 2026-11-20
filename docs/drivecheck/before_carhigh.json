@@ -1,0 +1,4001 @@
+{
+ "when": "2026-11-18T05:43:46.351Z",
+ "old": true,
+ "near": 1000,
+ "tiles": 120,
+ "places": 280,
+ "hero": 9,
+ "metres": 1562.5,
+ "bySrc": {
+  "tree": 63,
+  "building": 100,
+  "garden": 73,
+  "post": 34,
+  "wall": 1,
+  "hero": 9
+ },
+ "info": {
+  "soft parked car": 81797,
+  "edge lamp (street)": 172,
+  "edge garden pillar": 66,
+  "soft hedge": 210,
+  "edge tree (street)": 199,
+  "edge building (worker)": 18,
+  "edge garden wall": 66,
+  "edge post (street)": 68,
+  "edge hero tunnel-kleindal": 223,
+  "edge garden car gate (closed)": 8,
+  "edge hero bridge-engeland_chord": 13,
+  "edge hero bridge-verrewinkel": 98
+ },
+ "list": [
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -473.9,
+   "z": -1545.3,
+   "src": "building (worker)",
+   "m": 56.5,
+   "colliders": 3
+  },
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -480.3,
+   "z": -1558.3,
+   "src": "building (worker)",
+   "m": 45.5,
+   "colliders": 4
+  },
+  {
+   "tile": "F1",
+   "street": "Rue Vanderkindere - Vanderkinderestraat",
+   "x": -145.1,
+   "z": -1635,
+   "src": "building (worker)",
+   "m": 41,
+   "colliders": 2
+  },
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -474.3,
+   "z": -1546.2,
+   "src": "garden wall",
+   "m": 39,
+   "colliders": 8
+  },
+  {
+   "tile": "E6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -524.2,
+   "z": 929.3,
+   "src": "building (worker)",
+   "m": 38.5,
+   "colliders": 3
+  },
+  {
+   "tile": "F7",
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "x": -277.6,
+   "z": 1297.9,
+   "src": "hero bridge-verrewinkel",
+   "m": 32,
+   "colliders": 15
+  },
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -477.6,
+   "z": -1552.9,
+   "src": "garden wall",
+   "m": 29,
+   "colliders": 5
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 205.3,
+   "z": 830.4,
+   "src": "building (worker)",
+   "m": 27.5,
+   "colliders": 2
+  },
+  {
+   "tile": "F7",
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "x": -253.4,
+   "z": 1320.2,
+   "src": "hero bridge-verrewinkel",
+   "m": 26,
+   "colliders": 6
+  },
+  {
+   "tile": "D5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "x": -1008.5,
+   "z": 342.6,
+   "src": "building (worker)",
+   "m": 24,
+   "colliders": 3
+  },
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -484.2,
+   "z": -1566.3,
+   "src": "building (worker)",
+   "m": 23,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Albert - Albertlaan",
+   "x": -186.1,
+   "z": -1636.9,
+   "src": "building (worker)",
+   "m": 22,
+   "colliders": 2
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 234.9,
+   "z": 798.3,
+   "src": "building (worker)",
+   "m": 22,
+   "colliders": 2
+  },
+  {
+   "tile": "F7",
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "x": -262.3,
+   "z": 1312.2,
+   "src": "hero bridge-verrewinkel",
+   "m": 21.5,
+   "colliders": 15
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 237.8,
+   "z": 804.1,
+   "src": "building (worker)",
+   "m": 20,
+   "colliders": 1
+  },
+  {
+   "tile": "E3",
+   "street": "Square Coghen - Coghensquare",
+   "x": -810.4,
+   "z": -813.3,
+   "src": "building (worker)",
+   "m": 19,
+   "colliders": 3
+  },
+  {
+   "tile": "J6",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "x": 1725.4,
+   "z": 541.6,
+   "src": "building (worker)",
+   "m": 19,
+   "colliders": 2
+  },
+  {
+   "tile": "F1",
+   "street": "(no named road within 60 m)",
+   "x": -233.5,
+   "z": -1637.8,
+   "src": "building (worker)",
+   "m": 18.5,
+   "colliders": 4
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -481.7,
+   "z": 936,
+   "src": "building (worker)",
+   "m": 17.5,
+   "colliders": 2
+  },
+  {
+   "tile": "D5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "x": -1000,
+   "z": 314.6,
+   "src": "building (worker)",
+   "m": 17,
+   "colliders": 4
+  },
+  {
+   "tile": "E10",
+   "street": "Kasteelstraat - Rue du Château",
+   "x": -755.4,
+   "z": 2795.4,
+   "src": "wall (worker)",
+   "m": 17,
+   "colliders": 3
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Albert - Albertlaan",
+   "x": -154.1,
+   "z": -1635.2,
+   "src": "building (worker)",
+   "m": 17,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Albert - Albertlaan",
+   "x": -162.1,
+   "z": -1635.7,
+   "src": "building (worker)",
+   "m": 17,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Albert - Albertlaan",
+   "x": -170.1,
+   "z": -1636.1,
+   "src": "building (worker)",
+   "m": 17,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Albert - Albertlaan",
+   "x": -178.1,
+   "z": -1636.5,
+   "src": "building (worker)",
+   "m": 17,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "(no named road within 60 m)",
+   "x": -242,
+   "z": -1638.2,
+   "src": "building (worker)",
+   "m": 17,
+   "colliders": 2
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -483.8,
+   "z": 942,
+   "src": "building (worker)",
+   "m": 15.5,
+   "colliders": 1
+  },
+  {
+   "tile": "B7",
+   "street": "Rue des Trois Rois - Drie Koningenstraat",
+   "x": -2023.6,
+   "z": 1470,
+   "src": "building (worker)",
+   "m": 15,
+   "colliders": 3
+  },
+  {
+   "tile": "E3",
+   "street": "Square Coghen - Coghensquare",
+   "x": -745.1,
+   "z": -847.1,
+   "src": "building (worker)",
+   "m": 15,
+   "colliders": 2
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Albert - Albertlaan",
+   "x": -193.6,
+   "z": -1637.6,
+   "src": "building (worker)",
+   "m": 15,
+   "colliders": 2
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1168.3,
+   "z": 781.9,
+   "src": "building (worker)",
+   "m": 14.5,
+   "colliders": 2
+  },
+  {
+   "tile": "C5",
+   "street": "Rue de la Magnanerie - Zijdeteeltstraat",
+   "x": -1769.2,
+   "z": 112.3,
+   "src": "building (worker)",
+   "m": 14,
+   "colliders": 2
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -361.8,
+   "z": -417.8,
+   "src": "building (worker)",
+   "m": 14,
+   "colliders": 2
+  },
+  {
+   "tile": "F7",
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "x": -271.4,
+   "z": 1303.7,
+   "src": "hero bridge-verrewinkel",
+   "m": 14,
+   "colliders": 11
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -330.6,
+   "z": -374.2,
+   "src": "building (worker)",
+   "m": 13.5,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1577,
+   "z": -304,
+   "src": "building (worker)",
+   "m": 13.5,
+   "colliders": 3
+  },
+  {
+   "tile": "E6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -525.5,
+   "z": 939.6,
+   "src": "building (worker)",
+   "m": 13,
+   "colliders": 2
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -360.2,
+   "z": -410,
+   "src": "building (worker)",
+   "m": 13,
+   "colliders": 2
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1170.4,
+   "z": 817.1,
+   "src": "building (worker)",
+   "m": 12.5,
+   "colliders": 2
+  },
+  {
+   "tile": "E8",
+   "street": "Rue des Bigarreaux - Vleeskersenstraat",
+   "x": -688.4,
+   "z": 1804.6,
+   "src": "hero bridge-engeland",
+   "m": 12.5,
+   "colliders": 11
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1162.5,
+   "z": 813.9,
+   "src": "building (worker)",
+   "m": 12,
+   "colliders": 2
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 215.8,
+   "z": 812.4,
+   "src": "building (worker)",
+   "m": 12,
+   "colliders": 2
+  },
+  {
+   "tile": "I1",
+   "street": "Rue De Praetere - De Praeterestraat",
+   "x": 1239.6,
+   "z": -1898.5,
+   "src": "post (street)",
+   "m": 12,
+   "colliders": 7
+  },
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -474.1,
+   "z": -1545.8,
+   "src": "garden pillar",
+   "m": 11.5,
+   "colliders": 5
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -337.5,
+   "z": -379.2,
+   "src": "building (worker)",
+   "m": 11.5,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 218.7,
+   "z": 806.6,
+   "src": "building (worker)",
+   "m": 11.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J6",
+   "street": "(no named road within 60 m)",
+   "x": 1719.1,
+   "z": 538.3,
+   "src": "building (worker)",
+   "m": 11.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "x": -1016.8,
+   "z": 357.3,
+   "src": "building (worker)",
+   "m": 11,
+   "colliders": 2
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1176.1,
+   "z": 805.6,
+   "src": "building (worker)",
+   "m": 11,
+   "colliders": 2
+  },
+  {
+   "tile": "E8",
+   "street": "Rue de la Cueillette - Plukstraat",
+   "x": -999.6,
+   "z": 1996.4,
+   "src": "building (worker)",
+   "m": 11,
+   "colliders": 2
+  },
+  {
+   "tile": "E8",
+   "street": "Rue de la Cueillette - Plukstraat",
+   "x": -988.2,
+   "z": 1985.3,
+   "src": "building (worker)",
+   "m": 10.5,
+   "colliders": 2
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -350.4,
+   "z": -388.7,
+   "src": "building (worker)",
+   "m": 10.5,
+   "colliders": 2
+  },
+  {
+   "tile": "G6",
+   "street": "Clos du Drossart - Drossaardgaarde",
+   "x": 170.7,
+   "z": 621.9,
+   "src": "building (worker)",
+   "m": 10.5,
+   "colliders": 3
+  },
+  {
+   "tile": "I6",
+   "street": "Venelle de Saint-Job - Sint-Jobsteeg",
+   "x": 1080,
+   "z": 592.1,
+   "src": "building (worker)",
+   "m": 10.5,
+   "colliders": 3
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Rittweger - Rittwegerstraat",
+   "x": -1089.7,
+   "z": 54.5,
+   "src": "building (worker)",
+   "m": 10,
+   "colliders": 1
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1170.8,
+   "z": 789.5,
+   "src": "building (worker)",
+   "m": 10,
+   "colliders": 2
+  },
+  {
+   "tile": "J6",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "x": 1734.2,
+   "z": 585.8,
+   "src": "building (worker)",
+   "m": 10,
+   "colliders": 2
+  },
+  {
+   "tile": "C5",
+   "street": "Rue de Stalle - Stallestraat",
+   "x": -1525.5,
+   "z": 310.3,
+   "src": "building (worker)",
+   "m": 9.5,
+   "colliders": 2
+  },
+  {
+   "tile": "D6",
+   "street": "Rue du Coq - Haanstraat",
+   "x": -1044,
+   "z": 576.5,
+   "src": "building (worker)",
+   "m": 9.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1154.2,
+   "z": 810.5,
+   "src": "building (worker)",
+   "m": 9.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1173.4,
+   "z": 797.6,
+   "src": "building (worker)",
+   "m": 9.5,
+   "colliders": 1
+  },
+  {
+   "tile": "H1",
+   "street": "Rue Général Lotz - Generaal Lotzstraat",
+   "x": 616.9,
+   "z": -1692.5,
+   "src": "building (worker)",
+   "m": 9.5,
+   "colliders": 2
+  },
+  {
+   "tile": "C5",
+   "street": "Rue de la Magnanerie - Zijdeteeltstraat",
+   "x": -1761.4,
+   "z": 114.2,
+   "src": "building (worker)",
+   "m": 9,
+   "colliders": 3
+  },
+  {
+   "tile": "F1",
+   "street": "(no named road within 60 m)",
+   "x": -250,
+   "z": -1638.6,
+   "src": "building (worker)",
+   "m": 9,
+   "colliders": 2
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -358.6,
+   "z": -401.6,
+   "src": "building (worker)",
+   "m": 9,
+   "colliders": 1
+  },
+  {
+   "tile": "K6",
+   "street": "Avenue du Fort-Jaco - Fort-Jacolaan",
+   "x": 2450.9,
+   "z": 854.4,
+   "src": "building (worker)",
+   "m": 9,
+   "colliders": 2
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Rittweger - Rittwegerstraat",
+   "x": -1082.3,
+   "z": 55.7,
+   "src": "building (worker)",
+   "m": 8.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1176.4,
+   "z": 819.6,
+   "src": "building (worker)",
+   "m": 8.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1165.5,
+   "z": 773.4,
+   "src": "building (worker)",
+   "m": 8,
+   "colliders": 2
+  },
+  {
+   "tile": "E6",
+   "street": "Dieweg",
+   "x": -968.6,
+   "z": 798.1,
+   "src": "tree (street)",
+   "m": 8,
+   "colliders": 2
+  },
+  {
+   "tile": "F3",
+   "street": "Avenue de l'Échevinage - Schepenijlaan",
+   "x": -284.8,
+   "z": -511.2,
+   "src": "building (worker)",
+   "m": 8,
+   "colliders": 2
+  },
+  {
+   "tile": "C5",
+   "street": "Clos des Myosotis - Vergeet-mij-nietjesgaarde",
+   "x": -1722.1,
+   "z": 486.5,
+   "src": "building (worker)",
+   "m": 7,
+   "colliders": 2
+  },
+  {
+   "tile": "C6",
+   "street": "Clos des Myosotis - Vergeet-mij-nietjesgaarde",
+   "x": -1723.2,
+   "z": 563.1,
+   "src": "building (worker)",
+   "m": 7,
+   "colliders": 2
+  },
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -478.8,
+   "z": -1555.1,
+   "src": "garden pillar",
+   "m": 7,
+   "colliders": 3
+  },
+  {
+   "tile": "E6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -514.6,
+   "z": 932.4,
+   "src": "building (worker)",
+   "m": 6.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -356.9,
+   "z": -393.4,
+   "src": "building (worker)",
+   "m": 6.5,
+   "colliders": 2
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -480.7,
+   "z": 949.2,
+   "src": "building (worker)",
+   "m": 6.5,
+   "colliders": 2
+  },
+  {
+   "tile": "E6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -518.7,
+   "z": 941,
+   "src": "building (worker)",
+   "m": 6,
+   "colliders": 1
+  },
+  {
+   "tile": "F2",
+   "street": "Carré Meert - Meertblok",
+   "x": -476.3,
+   "z": -1444.6,
+   "src": "building (worker)",
+   "m": 6,
+   "colliders": 1
+  },
+  {
+   "tile": "H1",
+   "street": "Rue Général Lotz - Generaal Lotzstraat",
+   "x": 592.4,
+   "z": -1689.9,
+   "src": "building (worker)",
+   "m": 6,
+   "colliders": 2
+  },
+  {
+   "tile": "J6",
+   "street": "(no named road within 60 m)",
+   "x": 1720.5,
+   "z": 521.9,
+   "src": "building (worker)",
+   "m": 6,
+   "colliders": 2
+  },
+  {
+   "tile": "B6",
+   "street": "Sterstraat - Rue de l'Étoile",
+   "x": -2204.3,
+   "z": 880.1,
+   "src": "building (worker)",
+   "m": 5.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1178.7,
+   "z": 813.7,
+   "src": "building (worker)",
+   "m": 5.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -526.9,
+   "z": 918.1,
+   "src": "building (worker)",
+   "m": 5.5,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1586.8,
+   "z": -310.1,
+   "src": "building (worker)",
+   "m": 5.5,
+   "colliders": 2
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "x": -1050.7,
+   "z": 151.1,
+   "src": "garden car gate (closed)",
+   "m": 5,
+   "colliders": 1
+  },
+  {
+   "tile": "C6",
+   "street": "Rue Keyenbempt - Keyenbemptstraat",
+   "x": -1680.7,
+   "z": 961,
+   "src": "tree (street)",
+   "m": 4.5,
+   "colliders": 2
+  },
+  {
+   "tile": "F7",
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "x": -285.2,
+   "z": 1295,
+   "src": "hero bridge-verrewinkel",
+   "m": 4.5,
+   "colliders": 3
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 212.7,
+   "z": 803.5,
+   "src": "building (worker)",
+   "m": 4.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Cité du Vert Chasseur - Groene Jagerswijk",
+   "x": 1691.3,
+   "z": -241.3,
+   "src": "building (worker)",
+   "m": 4.5,
+   "colliders": 2
+  },
+  {
+   "tile": "C5",
+   "street": "Rue de la Magnanerie - Zijdeteeltstraat",
+   "x": -1776.2,
+   "z": 106.4,
+   "src": "building (worker)",
+   "m": 4,
+   "colliders": 1
+  },
+  {
+   "tile": "E8",
+   "street": "Rue de la Cueillette - Plukstraat",
+   "x": -982.7,
+   "z": 1979.6,
+   "src": "building (worker)",
+   "m": 4,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -269.6,
+   "z": -1917.6,
+   "src": "post (street)",
+   "m": 4,
+   "colliders": 4
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -261.9,
+   "z": -1919.8,
+   "src": "post (street)",
+   "m": 4,
+   "colliders": 4
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -270.9,
+   "z": -1925.2,
+   "src": "post (street)",
+   "m": 4,
+   "colliders": 5
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -345.6,
+   "z": -385.1,
+   "src": "building (worker)",
+   "m": 4,
+   "colliders": 3
+  },
+  {
+   "tile": "F7",
+   "street": "Avenue du Lycée Français - Frans Lyceumlaan",
+   "x": -312.7,
+   "z": 1157.1,
+   "src": "building (worker)",
+   "m": 4,
+   "colliders": 1
+  },
+  {
+   "tile": "G3",
+   "street": "Chemin de la Source - Bronweg",
+   "x": 259.4,
+   "z": -512.5,
+   "src": "garden wall",
+   "m": 4,
+   "colliders": 3
+  },
+  {
+   "tile": "E7",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -814.9,
+   "z": 1031.9,
+   "src": "garden car gate (closed)",
+   "m": 3.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E8",
+   "street": "Rue des Bigarreaux - Vleeskersenstraat",
+   "x": -705.3,
+   "z": 1785.8,
+   "src": "hero bridge-engeland_chord",
+   "m": 3.5,
+   "colliders": 3
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -275.4,
+   "z": -1915.9,
+   "src": "post (street)",
+   "m": 3.5,
+   "colliders": 4
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -478.3,
+   "z": -1818,
+   "src": "post (street)",
+   "m": 3.5,
+   "colliders": 3
+  },
+  {
+   "tile": "G6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": 24.4,
+   "z": 788.4,
+   "src": "tree (street)",
+   "m": 3.5,
+   "colliders": 2
+  },
+  {
+   "tile": "G8",
+   "street": "(no named road within 60 m)",
+   "x": 103.2,
+   "z": 1619.9,
+   "src": "building (worker)",
+   "m": 3.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J9",
+   "street": "(no named road within 60 m)",
+   "x": 1733.4,
+   "z": 2482.3,
+   "src": "building (worker)",
+   "m": 3.5,
+   "colliders": 2
+  },
+  {
+   "tile": "D1",
+   "street": "Rue du Mystère - Mysteriestraat",
+   "x": -1442.3,
+   "z": -1554,
+   "src": "post (street)",
+   "m": 3,
+   "colliders": 4
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Rittweger - Rittwegerstraat",
+   "x": -1095.3,
+   "z": 49.8,
+   "src": "building (worker)",
+   "m": 3,
+   "colliders": 1
+  },
+  {
+   "tile": "E5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "x": -996.7,
+   "z": 322.9,
+   "src": "post (street)",
+   "m": 3,
+   "colliders": 2
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -339.3,
+   "z": -1881.4,
+   "src": "post (street)",
+   "m": 3,
+   "colliders": 1
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -122.6,
+   "z": 781.1,
+   "src": "post (street)",
+   "m": 3,
+   "colliders": 2
+  },
+  {
+   "tile": "G1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": 48.3,
+   "z": -1885,
+   "src": "post (street)",
+   "m": 3,
+   "colliders": 3
+  },
+  {
+   "tile": "G6",
+   "street": "Rue Basse - Diepestraat",
+   "x": 114.1,
+   "z": 651.3,
+   "src": "building (worker)",
+   "m": 3,
+   "colliders": 1
+  },
+  {
+   "tile": "I6",
+   "street": "Montagne de Saint-Job - Berg van Sint-Job",
+   "x": 1151,
+   "z": 651.3,
+   "src": "garden pillar",
+   "m": 3,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Opstalweg",
+   "x": 1656.5,
+   "z": -270.2,
+   "src": "garden wall",
+   "m": 3,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Cité du Vert Chasseur - Groene Jagerswijk",
+   "x": 1664.4,
+   "z": -222.9,
+   "src": "garden pillar",
+   "m": 3,
+   "colliders": 3
+  },
+  {
+   "tile": "J6",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "x": 1733.6,
+   "z": 579.3,
+   "src": "building (worker)",
+   "m": 3,
+   "colliders": 1
+  },
+  {
+   "tile": "K11",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "x": 2346.2,
+   "z": 3230.2,
+   "src": "tree (street)",
+   "m": 3,
+   "colliders": 2
+  },
+  {
+   "tile": "C6",
+   "street": "Avenue Achille Reisdorff - Achille Reisdorfflaan",
+   "x": -1718.6,
+   "z": 652.8,
+   "src": "garden car gate (closed)",
+   "m": 2.5,
+   "colliders": 1
+  },
+  {
+   "tile": "C7",
+   "street": "Rue Keyenbempt - Keyenbemptstraat",
+   "x": -1598.3,
+   "z": 1138.6,
+   "src": "post (street)",
+   "m": 2.5,
+   "colliders": 3
+  },
+  {
+   "tile": "C9",
+   "street": "Rue de Linkebeek - Linkebeekstraat",
+   "x": -1651.3,
+   "z": 2128.3,
+   "src": "building (worker)",
+   "m": 2.5,
+   "colliders": 2
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "x": -1075.6,
+   "z": 149.9,
+   "src": "garden wall",
+   "m": 2.5,
+   "colliders": 2
+  },
+  {
+   "tile": "D6",
+   "street": "Ancien Dieweg - Oude Dieweg",
+   "x": -1145.4,
+   "z": 806.9,
+   "src": "building (worker)",
+   "m": 2.5,
+   "colliders": 2
+  },
+  {
+   "tile": "E1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -530.3,
+   "z": -1801.2,
+   "src": "post (street)",
+   "m": 2.5,
+   "colliders": 3
+  },
+  {
+   "tile": "E10",
+   "street": "Avenue des Mûres - Braambeziënlaan",
+   "x": -980.8,
+   "z": 2729.9,
+   "src": "tree (street)",
+   "m": 2.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -450.8,
+   "z": 926,
+   "src": "garden car gate (closed)",
+   "m": 2.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F9",
+   "street": "Place du Chat Botté - Gelaarsde Katplein",
+   "x": -373.9,
+   "z": 2297.8,
+   "src": "building (worker)",
+   "m": 2.5,
+   "colliders": 2
+  },
+  {
+   "tile": "G1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": 37.8,
+   "z": -1888.2,
+   "src": "post (street)",
+   "m": 2.5,
+   "colliders": 3
+  },
+  {
+   "tile": "J7",
+   "street": "Drève de Carloo - Carloodreef",
+   "x": 1647.4,
+   "z": 1137.9,
+   "src": "garden pillar",
+   "m": 2.5,
+   "colliders": 3
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2060.3,
+   "z": 963.7,
+   "src": "garden pillar",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2018.3,
+   "z": 906.5,
+   "src": "garden pillar",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "C6",
+   "street": "Rue Keyenbempt - Keyenbemptstraat",
+   "x": -1777.1,
+   "z": 870.7,
+   "src": "tree (street)",
+   "m": 2,
+   "colliders": 1
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "x": -1047.6,
+   "z": 146.6,
+   "src": "garden pillar",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "D7",
+   "street": "Rue Zandbeek - Zandbeekstraat",
+   "x": -1433.4,
+   "z": 1410.9,
+   "src": "post (street)",
+   "m": 2,
+   "colliders": 3
+  },
+  {
+   "tile": "D7",
+   "street": "Rue Zandbeek - Zandbeekstraat",
+   "x": -1446.7,
+   "z": 1403.4,
+   "src": "post (street)",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "E1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -537.5,
+   "z": -1804.3,
+   "src": "post (street)",
+   "m": 2,
+   "colliders": 3
+  },
+  {
+   "tile": "E6",
+   "street": "Clos du Papenkasteel",
+   "x": -670,
+   "z": 875.1,
+   "src": "tree (street)",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "E8",
+   "street": "Rue des Bigarreaux - Vleeskersenstraat",
+   "x": -698.7,
+   "z": 1794.4,
+   "src": "hero bridge-engeland",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -256.1,
+   "z": -1921.3,
+   "src": "post (street)",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "F3",
+   "street": "Avenue de l'Échevinage - Schepenijlaan",
+   "x": -245.6,
+   "z": -513.2,
+   "src": "garden pillar",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -122.2,
+   "z": 780.9,
+   "src": "tree (street)",
+   "m": 2,
+   "colliders": 1
+  },
+  {
+   "tile": "G1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": 58.4,
+   "z": -1882,
+   "src": "post (street)",
+   "m": 2,
+   "colliders": 3
+  },
+  {
+   "tile": "G1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": 52.6,
+   "z": -1891.6,
+   "src": "post (street)",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Buysdelle - Buysdellelaan",
+   "x": 389.7,
+   "z": 2689.6,
+   "src": "garden pillar",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "G3",
+   "street": "Chemin de la Source - Bronweg",
+   "x": 259.4,
+   "z": -512.5,
+   "src": "garden pillar",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "G3",
+   "street": "Chemin de la Source - Bronweg",
+   "x": 259.6,
+   "z": -506.3,
+   "src": "garden wall",
+   "m": 2,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 207.9,
+   "z": 819.8,
+   "src": "tree (street)",
+   "m": 2,
+   "colliders": 1
+  },
+  {
+   "tile": "H8",
+   "street": "Avenue du Gui - Maretaklaan",
+   "x": 533.8,
+   "z": 1815.5,
+   "src": "tree (street)",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Opstalweg",
+   "x": 1656.8,
+   "z": -268.2,
+   "src": "garden pillar",
+   "m": 2,
+   "colliders": 2
+  },
+  {
+   "tile": "K6",
+   "street": "Avenue du Fort-Jaco - Fort-Jacolaan",
+   "x": 2457.4,
+   "z": 850.6,
+   "src": "building (worker)",
+   "m": 2,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2060.3,
+   "z": 963.7,
+   "src": "garden wall",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2032.3,
+   "z": 918.5,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "C6",
+   "street": "Rue Keyenbempt - Keyenbemptstraat",
+   "x": -1685.3,
+   "z": 950,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D8",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "x": -1487.7,
+   "z": 1545.7,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D9",
+   "street": "Rue de la Cueillette - Plukstraat",
+   "x": -1013.6,
+   "z": 2000.3,
+   "src": "building (worker)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E5",
+   "street": "(no named road within 60 m)",
+   "x": -578,
+   "z": 26.5,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 2
+  },
+  {
+   "tile": "E6",
+   "street": "Clos du Papenkasteel",
+   "x": -672,
+   "z": 882.3,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E6",
+   "street": "Clos Monique Rifflet - Monique Riffletgaarde",
+   "x": -575.8,
+   "z": 788,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E6",
+   "street": "Clos du Papenkasteel",
+   "x": -674,
+   "z": 869.3,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Carré Cassimans - Cassimansblok",
+   "x": -484.9,
+   "z": -1567.6,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "(no named road within 60 m)",
+   "x": -202,
+   "z": -1636.1,
+   "src": "building (worker)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F3",
+   "street": "Avenue de l'Échevinage - Schepenijlaan",
+   "x": -279.6,
+   "z": -507.6,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F3",
+   "street": "Avenue de l'Échevinage - Schepenijlaan",
+   "x": -294.1,
+   "z": -503.7,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 2
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue des Statuaires - Beeldhouwerslaan",
+   "x": -67.9,
+   "z": -409.3,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 2
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -376.6,
+   "z": 854,
+   "src": "post (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Buysdelle - Buysdellelaan",
+   "x": 299,
+   "z": 2761,
+   "src": "garden wall",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "G9",
+   "street": "Rue Engeland - Engelandstraat",
+   "x": 67,
+   "z": 2124.7,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 2
+  },
+  {
+   "tile": "H8",
+   "street": "(no named road within 60 m)",
+   "x": 850.7,
+   "z": 1634.9,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "H8",
+   "street": "(no named road within 60 m)",
+   "x": 844.9,
+   "z": 1637.8,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "H8",
+   "street": "(no named road within 60 m)",
+   "x": 828.8,
+   "z": 1645.8,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "I6",
+   "street": "Montagne de Saint-Job - Berg van Sint-Job",
+   "x": 1141.8,
+   "z": 683,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1539.8,
+   "z": -280.7,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1554.6,
+   "z": -290,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1611.1,
+   "z": -315.5,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Opstalweg",
+   "x": 1657.9,
+   "z": -258.9,
+   "src": "garden pillar",
+   "m": 1.5,
+   "colliders": 2
+  },
+  {
+   "tile": "J4",
+   "street": "Cité du Vert Chasseur - Groene Jagerswijk",
+   "x": 1664.5,
+   "z": -222.4,
+   "src": "garden wall",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "K11",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "x": 2346.4,
+   "z": 3239.7,
+   "src": "tree (street)",
+   "m": 1.5,
+   "colliders": 1
+  },
+  {
+   "tile": "B5",
+   "street": "Rue des Polders - Poldersstraat",
+   "x": -2134.1,
+   "z": 287.5,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2030.5,
+   "z": 925.7,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2047.7,
+   "z": 940.4,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2023.8,
+   "z": 909.2,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2096.1,
+   "z": 960.8,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "B7",
+   "street": "Rue des Trois Rois - Drie Koningenstraat",
+   "x": -2046.9,
+   "z": 1428.2,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "C5",
+   "street": "Rue de Stalle - Stallestraat",
+   "x": -1970.4,
+   "z": 342.8,
+   "src": "building (worker)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "C5",
+   "street": "Rue de Stalle - Stallestraat",
+   "x": -1665.6,
+   "z": 304.7,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "C5",
+   "street": "Rue de la Magnanerie - Zijdeteeltstraat",
+   "x": -1750.7,
+   "z": 116.9,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "C7",
+   "street": "Rue Keyenbempt - Keyenbemptstraat",
+   "x": -1605.6,
+   "z": 1137.5,
+   "src": "post (street)",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "C7",
+   "street": "Chaussée de Drogenbos - Drogenbossesteenweg",
+   "x": -1743.5,
+   "z": 1368.6,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "C8",
+   "street": "Rue Molensteen - Molensteenstraat",
+   "x": -1553.6,
+   "z": 1710.7,
+   "src": "building (worker)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "D10",
+   "street": "Vieux Chemin - Oude Weg",
+   "x": -1029.3,
+   "z": 2705.5,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "x": -1129.9,
+   "z": 87.6,
+   "src": "post (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "x": -1075.6,
+   "z": 149.9,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "D6",
+   "street": "Rue du Coq - Haanstraat",
+   "x": -1030.7,
+   "z": 562.3,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "D9",
+   "street": "Rue de la Cueillette - Plukstraat",
+   "x": -1037.2,
+   "z": 2007,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "E6",
+   "street": "Rue du Château d'Eau - Waterkasteelstraat",
+   "x": -603.2,
+   "z": 736.9,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "E6",
+   "street": "Clos Monique Rifflet - Monique Riffletgaarde",
+   "x": -570.6,
+   "z": 797.7,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "E7",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -794,
+   "z": 1027.1,
+   "src": "garden wall",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "E7",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -794.4,
+   "z": 1026.8,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "E8",
+   "street": "(no named road within 60 m)",
+   "x": -950.5,
+   "z": 1946.7,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "(no named road within 60 m)",
+   "x": -208.5,
+   "z": -1636.5,
+   "src": "building (worker)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F3",
+   "street": "Avenue de l'Échevinage - Schepenijlaan",
+   "x": -290.4,
+   "z": -504.1,
+   "src": "garden wall",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F3",
+   "street": "Avenue de l'Échevinage - Schepenijlaan",
+   "x": -277.2,
+   "z": -513.7,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F3",
+   "street": "Avenue de l'Échevinage - Schepenijlaan",
+   "x": -292.6,
+   "z": -504.1,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F4",
+   "street": "Avenue du Manoir - Riddershofstedelaan",
+   "x": -357.7,
+   "z": -396.7,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F4",
+   "street": "Chemin du Crabbegat - Crabbegatweg",
+   "x": -56.2,
+   "z": -139.2,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F5",
+   "street": "Rue Colonel Chaltin - Kolonel Chaltinstraat",
+   "x": -389.8,
+   "z": 364.9,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -454.2,
+   "z": 928.8,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F9",
+   "street": "Place du Chat Botté - Gelaarsde Katplein",
+   "x": -403.7,
+   "z": 2362.1,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "F9",
+   "street": "Avenue de l'Agneau - Lamlaan",
+   "x": -242.6,
+   "z": 2356.7,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": 63.1,
+   "z": -1888.5,
+   "src": "post (street)",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Buysdelle - Buysdellelaan",
+   "x": 285.8,
+   "z": 2762.2,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Buysdelle - Buysdellelaan",
+   "x": 404.7,
+   "z": 2704,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Dolez - Dolezlaan",
+   "x": 426.4,
+   "z": 2724.1,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Dolez - Dolezlaan",
+   "x": 435.8,
+   "z": 2732.3,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Buysdelle - Buysdellelaan",
+   "x": 413.7,
+   "z": 2710.8,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G4",
+   "street": "Chemin de la Source - Bronweg",
+   "x": 270.5,
+   "z": -460,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G5",
+   "street": "Avenue des Statuaires - Beeldhouwerslaan",
+   "x": 394.7,
+   "z": 132.1,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Rue Basse - Diepestraat",
+   "x": 149.4,
+   "z": 634.4,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Clos du Drossart - Drossaardgaarde",
+   "x": 165.9,
+   "z": 627.2,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Clos du Drossart - Drossaardgaarde",
+   "x": 162.4,
+   "z": 625.5,
+   "src": "building (worker)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Rue Basse - Diepestraat",
+   "x": 131.2,
+   "z": 639,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 207.5,
+   "z": 833.4,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 219.9,
+   "z": 797.2,
+   "src": "building (worker)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "H8",
+   "street": "(no named road within 60 m)",
+   "x": 834.6,
+   "z": 1642.9,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "H8",
+   "street": "(no named road within 60 m)",
+   "x": 803.7,
+   "z": 1658.1,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "I1",
+   "street": "Rue De Praetere - De Praeterestraat",
+   "x": 1231.8,
+   "z": -1896,
+   "src": "post (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "I1",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "x": 1252,
+   "z": -1862.4,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "I3",
+   "street": "Avenue De Fré - De Frélaan",
+   "x": 1428.8,
+   "z": -672.3,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "I3",
+   "street": "Avenue De Fré - De Frélaan",
+   "x": 1422.3,
+   "z": -674.3,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "I3",
+   "street": "Avenue De Fré - De Frélaan",
+   "x": 1055.8,
+   "z": -570.7,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "I6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": 1075.3,
+   "z": 531.2,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1536.8,
+   "z": -278.8,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1545.7,
+   "z": -284.4,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Cité du Vert Chasseur - Groene Jagerswijk",
+   "x": 1662.3,
+   "z": -233.3,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 2
+  },
+  {
+   "tile": "K11",
+   "street": "Chaussée de Waterloo - Waterloosesteenweg",
+   "x": 2353.4,
+   "z": 3250.8,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "K6",
+   "street": "Avenue du Fort-Jaco - Fort-Jacolaan",
+   "x": 2210.4,
+   "z": 953.3,
+   "src": "garden pillar",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "K6",
+   "street": "Avenue du Fort-Jaco - Fort-Jacolaan",
+   "x": 2209.7,
+   "z": 948.8,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "K6",
+   "street": "Avenue du Fort-Jaco - Fort-Jacolaan",
+   "x": 2208.7,
+   "z": 942.4,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "K6",
+   "street": "Avenue du Fort-Jaco - Fort-Jacolaan",
+   "x": 2206.1,
+   "z": 925.1,
+   "src": "tree (street)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "K7",
+   "street": "Drève du Caporal - Korporaaldreef",
+   "x": 2131.1,
+   "z": 1278.3,
+   "src": "garden car gate (closed)",
+   "m": 1,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2054.2,
+   "z": 944.3,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Rue Professeur Hustin - Professor Hustinstraat",
+   "x": -2096,
+   "z": 961.2,
+   "src": "garden wall",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "B6",
+   "street": "Petite Drève du Maréchal - Maarschalkdreefje",
+   "x": -2061.1,
+   "z": 670.9,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "B7",
+   "street": "Rue des Trois Rois - Drie Koningenstraat",
+   "x": -2016.5,
+   "z": 1480.5,
+   "src": "building (worker)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "C3",
+   "street": "Rue Jean-Baptiste Baeck - Jean-Baptiste Baeckstraat",
+   "x": -1944.6,
+   "z": -574.9,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "C6",
+   "street": "Rue Keyenbempt - Keyenbemptstraat",
+   "x": -1675.2,
+   "z": 969.3,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "C8",
+   "street": "Rue Molensteen - Molensteenstraat",
+   "x": -1553.6,
+   "z": 1710.7,
+   "src": "garden wall",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "C8",
+   "street": "Rue Molensteen - Molensteenstraat",
+   "x": -1553.6,
+   "z": 1710.7,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D5",
+   "street": "Rue Camille Van Exter - Camille Van Exterstraat",
+   "x": -1053.4,
+   "z": 154.7,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "D6",
+   "street": "Rue du Coq - Haanstraat",
+   "x": -1030.7,
+   "z": 562.3,
+   "src": "garden wall",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E1",
+   "street": "Rue Marconi - Marconistraat",
+   "x": -570,
+   "z": -1864.5,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -582.7,
+   "z": -1794.4,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E8",
+   "street": "Avenue de la Gazelle - Gazellelaan",
+   "x": -614.8,
+   "z": 1869,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E8",
+   "street": "Avenue de la Gazelle - Gazellelaan",
+   "x": -663.7,
+   "z": 1829.2,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "E9",
+   "street": "Avenue d'Homborchveld - Homborchveldlaan",
+   "x": -540.8,
+   "z": 2456.5,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -276.7,
+   "z": -1923.4,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Molière - Molièrelaan",
+   "x": -484.1,
+   "z": -1811.7,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Rue de la Mutualité - Onderlinge Bijstandstraat",
+   "x": -349.8,
+   "z": -1860.2,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F1",
+   "street": "Avenue Brugmann - Brugmannlaan",
+   "x": -84.4,
+   "z": -1664.8,
+   "src": "building (worker)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -211.5,
+   "z": 805.2,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -175.6,
+   "z": 800,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": -257.3,
+   "z": 710.4,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F6",
+   "street": "Rue Geleytsbeek - Geleytsbeekstraat",
+   "x": -180.2,
+   "z": 805.5,
+   "src": "building (worker)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "F7",
+   "street": "Rue de Verrewinkel - Verrewinkelstraat",
+   "x": -258.9,
+   "z": 1317.6,
+   "src": "hero bridge-verrewinkel",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Dolez - Dolezlaan",
+   "x": 431.6,
+   "z": 2728.7,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "G10",
+   "street": "Avenue Buysdelle - Buysdellelaan",
+   "x": 395.7,
+   "z": 2694.9,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "G4",
+   "street": "Rue Groeselenberg - Groeselenbergstraat",
+   "x": 271.3,
+   "z": -457.6,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "G6",
+   "street": "Kauwberg",
+   "x": 225,
+   "z": 784.2,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "H6",
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "x": 931.7,
+   "z": 532.6,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "H8",
+   "street": "Avenue du Gui - Maretaklaan",
+   "x": 530.7,
+   "z": 1830.7,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "I3",
+   "street": "Avenue Ptolémée - Ptoléméelaan",
+   "x": 1380.4,
+   "z": -528.2,
+   "src": "garden car gate (closed)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "I6",
+   "street": "Venelle de Saint-Job - Sint-Jobsteeg",
+   "x": 1052.5,
+   "z": 608.5,
+   "src": "building (worker)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "I6",
+   "street": "Montagne de Saint-Job - Berg van Sint-Job",
+   "x": 1096.3,
+   "z": 879.4,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "I6",
+   "street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+   "x": 1064.1,
+   "z": 544.1,
+   "src": "building (worker)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Avenue du Vert Chasseur - Groene Jagerslaan",
+   "x": 1623.8,
+   "z": -318.3,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J4",
+   "street": "Opstalweg",
+   "x": 1660.3,
+   "z": -243.1,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J5",
+   "street": "Avenue Montana - Montanalaan",
+   "x": 1877.9,
+   "z": 127.1,
+   "src": "post (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "J7",
+   "street": "Drève de Carloo - Carloodreef",
+   "x": 1619.9,
+   "z": 1150,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "K6",
+   "street": "(no named road within 60 m)",
+   "x": 2197.1,
+   "z": 865.8,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "K7",
+   "street": "Drève du Caporal - Korporaaldreef",
+   "x": 2131.1,
+   "z": 1278.3,
+   "src": "garden pillar",
+   "m": 0.5,
+   "colliders": 1
+  },
+  {
+   "tile": "L10",
+   "street": "Drève Saint-Hubert - Sint-Hubertusdreef",
+   "x": 2923.3,
+   "z": 2924.4,
+   "src": "tree (street)",
+   "m": 0.5,
+   "colliders": 1
+  }
+ ],
+ "results": [
+  {
+   "tile": "A5",
+   "ms": 4254,
+   "heroes": 0,
+   "lanes": 547,
+   "centrelines": 47,
+   "pathM": 5246,
+   "info": {
+    "soft parked car": 278
+   }
+  },
+  {
+   "tile": "B4",
+   "ms": 6765,
+   "heroes": 0,
+   "lanes": 655,
+   "centrelines": 100,
+   "pathM": 8850,
+   "info": {
+    "soft parked car": 897,
+    "edge lamp (street)": 3
+   }
+  },
+  {
+   "tile": "B5",
+   "ms": 8797,
+   "heroes": 0,
+   "lanes": 715,
+   "centrelines": 74,
+   "pathM": 7552,
+   "info": {
+    "soft parked car": 396
+   }
+  },
+  {
+   "tile": "B6",
+   "ms": 6883,
+   "heroes": 0,
+   "lanes": 714,
+   "centrelines": 87,
+   "pathM": 10776,
+   "info": {
+    "soft parked car": 544,
+    "edge garden pillar": 2,
+    "soft hedge": 4
+   }
+  },
+  {
+   "tile": "B7",
+   "ms": 5045,
+   "heroes": 0,
+   "lanes": 454,
+   "centrelines": 62,
+   "pathM": 7448,
+   "info": {
+    "soft parked car": 143,
+    "edge lamp (street)": 16,
+    "edge tree (street)": 2,
+    "soft hedge": 27
+   }
+  },
+  {
+   "tile": "B8",
+   "ms": 2690,
+   "heroes": 0,
+   "lanes": 476,
+   "centrelines": 66,
+   "pathM": 8130,
+   "info": {}
+  },
+  {
+   "tile": "C3",
+   "ms": 10766,
+   "heroes": 0,
+   "lanes": 552,
+   "centrelines": 90,
+   "pathM": 11527,
+   "info": {
+    "soft parked car": 2379
+   }
+  },
+  {
+   "tile": "C4",
+   "ms": 8314,
+   "heroes": 0,
+   "lanes": 529,
+   "centrelines": 73,
+   "pathM": 7329,
+   "info": {
+    "soft parked car": 641,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "C5",
+   "ms": 11206,
+   "heroes": 1,
+   "lanes": 722,
+   "centrelines": 97,
+   "pathM": 9418,
+   "info": {
+    "soft parked car": 779,
+    "edge tree (street)": 4,
+    "edge lamp (street)": 3
+   }
+  },
+  {
+   "tile": "C6",
+   "ms": 6856,
+   "heroes": 0,
+   "lanes": 536,
+   "centrelines": 83,
+   "pathM": 7256,
+   "info": {
+    "soft parked car": 497,
+    "edge building (worker)": 7,
+    "edge garden pillar": 5,
+    "edge garden wall": 2,
+    "soft hedge": 1,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "C7",
+   "ms": 7907,
+   "heroes": 0,
+   "lanes": 558,
+   "centrelines": 79,
+   "pathM": 8304,
+   "info": {
+    "soft parked car": 1359,
+    "edge lamp (street)": 10,
+    "edge tree (street)": 4,
+    "soft hedge": 4
+   }
+  },
+  {
+   "tile": "C8",
+   "ms": 7924,
+   "heroes": 0,
+   "lanes": 716,
+   "centrelines": 84,
+   "pathM": 7830,
+   "info": {
+    "soft parked car": 488,
+    "edge garden pillar": 2,
+    "edge garden wall": 2,
+    "edge lamp (street)": 3
+   }
+  },
+  {
+   "tile": "C9",
+   "ms": 4812,
+   "heroes": 1,
+   "lanes": 455,
+   "centrelines": 62,
+   "pathM": 8374,
+   "info": {
+    "soft parked car": 63,
+    "edge lamp (street)": 1
+   }
+  },
+  {
+   "tile": "D1",
+   "ms": 7680,
+   "heroes": 0,
+   "lanes": 447,
+   "centrelines": 66,
+   "pathM": 6905,
+   "info": {
+    "soft parked car": 766,
+    "edge post (street)": 4,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "D10",
+   "ms": 5359,
+   "heroes": 0,
+   "lanes": 467,
+   "centrelines": 82,
+   "pathM": 8030,
+   "info": {
+    "soft parked car": 164
+   }
+  },
+  {
+   "tile": "D2",
+   "ms": 8263,
+   "heroes": 0,
+   "lanes": 528,
+   "centrelines": 70,
+   "pathM": 8873,
+   "info": {
+    "soft parked car": 664
+   }
+  },
+  {
+   "tile": "D3",
+   "ms": 12971,
+   "heroes": 1,
+   "lanes": 526,
+   "centrelines": 78,
+   "pathM": 8237,
+   "info": {
+    "soft parked car": 1521
+   }
+  },
+  {
+   "tile": "D4",
+   "ms": 9602,
+   "heroes": 1,
+   "lanes": 614,
+   "centrelines": 104,
+   "pathM": 9262,
+   "info": {
+    "edge tree (street)": 5,
+    "edge lamp (street)": 2,
+    "soft parked car": 1018,
+    "soft hedge": 2
+   }
+  },
+  {
+   "tile": "D5",
+   "ms": 10122,
+   "heroes": 2,
+   "lanes": 719,
+   "centrelines": 112,
+   "pathM": 9362,
+   "info": {
+    "soft parked car": 676,
+    "edge lamp (street)": 4,
+    "edge tree (street)": 4,
+    "edge post (street)": 3,
+    "edge garden pillar": 5,
+    "soft hedge": 14
+   }
+  },
+  {
+   "tile": "D6",
+   "ms": 9989,
+   "heroes": 1,
+   "lanes": 598,
+   "centrelines": 92,
+   "pathM": 9501,
+   "info": {
+    "soft parked car": 857,
+    "edge lamp (street)": 6,
+    "edge building (worker)": 2
+   }
+  },
+  {
+   "tile": "D7",
+   "ms": 7905,
+   "heroes": 1,
+   "lanes": 541,
+   "centrelines": 74,
+   "pathM": 8783,
+   "info": {
+    "soft parked car": 706,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "D8",
+   "ms": 7952,
+   "heroes": 1,
+   "lanes": 451,
+   "centrelines": 55,
+   "pathM": 8432,
+   "info": {
+    "soft parked car": 1075,
+    "edge post (street)": 1,
+    "edge garden wall": 5,
+    "edge garden pillar": 2
+   }
+  },
+  {
+   "tile": "D9",
+   "ms": 5690,
+   "heroes": 2,
+   "lanes": 300,
+   "centrelines": 50,
+   "pathM": 5190,
+   "info": {
+    "soft parked car": 530,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "E1",
+   "ms": 13670,
+   "heroes": 1,
+   "lanes": 507,
+   "centrelines": 91,
+   "pathM": 17204,
+   "info": {
+    "soft parked car": 1280,
+    "edge lamp (street)": 1,
+    "edge post (street)": 5
+   }
+  },
+  {
+   "tile": "E10",
+   "ms": 6597,
+   "heroes": 1,
+   "lanes": 376,
+   "centrelines": 84,
+   "pathM": 8543,
+   "info": {
+    "soft parked car": 706,
+    "edge lamp (street)": 1,
+    "edge tree (street)": 2,
+    "edge hero tunnel-kleindal": 223
+   }
+  },
+  {
+   "tile": "E2",
+   "ms": 12655,
+   "heroes": 0,
+   "lanes": 438,
+   "centrelines": 87,
+   "pathM": 8822,
+   "info": {
+    "soft parked car": 1244
+   }
+  },
+  {
+   "tile": "E3",
+   "ms": 15180,
+   "heroes": 1,
+   "lanes": 444,
+   "centrelines": 91,
+   "pathM": 7715,
+   "info": {
+    "soft parked car": 425,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "E4",
+   "ms": 14077,
+   "heroes": 3,
+   "lanes": 641,
+   "centrelines": 125,
+   "pathM": 13640,
+   "info": {
+    "soft parked car": 978,
+    "edge lamp (street)": 3
+   }
+  },
+  {
+   "tile": "E5",
+   "ms": 11239,
+   "heroes": 0,
+   "lanes": 490,
+   "centrelines": 89,
+   "pathM": 8083,
+   "info": {
+    "soft parked car": 1878,
+    "edge post (street)": 5,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "E6",
+   "ms": 8524,
+   "heroes": 0,
+   "lanes": 643,
+   "centrelines": 90,
+   "pathM": 8157,
+   "info": {
+    "soft parked car": 1048,
+    "edge garden wall": 7,
+    "edge garden pillar": 9,
+    "soft hedge": 4,
+    "edge tree (street)": 9,
+    "edge lamp (street)": 4,
+    "edge garden car gate (closed)": 1
+   }
+  },
+  {
+   "tile": "E7",
+   "ms": 6695,
+   "heroes": 1,
+   "lanes": 520,
+   "centrelines": 74,
+   "pathM": 7396,
+   "info": {
+    "soft parked car": 757,
+    "edge lamp (street)": 5,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "E8",
+   "ms": 8096,
+   "heroes": 2,
+   "lanes": 348,
+   "centrelines": 59,
+   "pathM": 5777,
+   "info": {
+    "soft parked car": 930,
+    "edge lamp (street)": 1,
+    "edge hero bridge-engeland_chord": 13,
+    "edge tree (street)": 1
+   }
+  },
+  {
+   "tile": "E9",
+   "ms": 7270,
+   "heroes": 0,
+   "lanes": 449,
+   "centrelines": 80,
+   "pathM": 5680,
+   "info": {
+    "soft parked car": 394,
+    "edge tree (street)": 1,
+    "edge garden car gate (closed)": 3,
+    "edge garden wall": 2
+   }
+  },
+  {
+   "tile": "F1",
+   "ms": 12632,
+   "heroes": 1,
+   "lanes": 542,
+   "centrelines": 94,
+   "pathM": 10361,
+   "info": {
+    "edge garden pillar": 22,
+    "soft hedge": 44,
+    "soft parked car": 1389,
+    "edge lamp (street)": 4,
+    "edge building (worker)": 5,
+    "edge post (street)": 9,
+    "edge tree (street)": 11
+   }
+  },
+  {
+   "tile": "F10",
+   "ms": 3048,
+   "heroes": 0,
+   "lanes": 219,
+   "centrelines": 50,
+   "pathM": 2909,
+   "info": {
+    "soft parked car": 463
+   }
+  },
+  {
+   "tile": "F2",
+   "ms": 13693,
+   "heroes": 0,
+   "lanes": 525,
+   "centrelines": 86,
+   "pathM": 10679,
+   "info": {
+    "soft parked car": 1903,
+    "edge tree (street)": 6,
+    "edge lamp (street)": 1
+   }
+  },
+  {
+   "tile": "F3",
+   "ms": 13072,
+   "heroes": 0,
+   "lanes": 495,
+   "centrelines": 74,
+   "pathM": 8652,
+   "info": {
+    "soft parked car": 1009,
+    "edge garden wall": 2
+   }
+  },
+  {
+   "tile": "F4",
+   "ms": 7434,
+   "heroes": 3,
+   "lanes": 498,
+   "centrelines": 77,
+   "pathM": 5696,
+   "info": {
+    "soft parked car": 736,
+    "edge lamp (street)": 6,
+    "edge garden wall": 14,
+    "edge garden pillar": 3,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "F5",
+   "ms": 7551,
+   "heroes": 0,
+   "lanes": 391,
+   "centrelines": 55,
+   "pathM": 7855,
+   "info": {
+    "soft parked car": 767,
+    "edge tree (street)": 4,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "F6",
+   "ms": 7895,
+   "heroes": 0,
+   "lanes": 589,
+   "centrelines": 82,
+   "pathM": 7655,
+   "info": {
+    "soft parked car": 588,
+    "edge post (street)": 11,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "F7",
+   "ms": 5820,
+   "heroes": 1,
+   "lanes": 568,
+   "centrelines": 59,
+   "pathM": 4866,
+   "info": {
+    "soft parked car": 382,
+    "edge hero bridge-verrewinkel": 98,
+    "edge tree (street)": 3
+   }
+  },
+  {
+   "tile": "F8",
+   "ms": 7147,
+   "heroes": 0,
+   "lanes": 755,
+   "centrelines": 57,
+   "pathM": 4720,
+   "info": {
+    "soft parked car": 94,
+    "edge tree (street)": 3
+   }
+  },
+  {
+   "tile": "F9",
+   "ms": 8108,
+   "heroes": 0,
+   "lanes": 784,
+   "centrelines": 88,
+   "pathM": 11699,
+   "info": {
+    "soft parked car": 1110,
+    "edge garden wall": 13,
+    "edge garden pillar": 3,
+    "edge tree (street)": 4,
+    "soft hedge": 22,
+    "edge lamp (street)": 3
+   }
+  },
+  {
+   "tile": "G1",
+   "ms": 12031,
+   "heroes": 0,
+   "lanes": 580,
+   "centrelines": 85,
+   "pathM": 11497,
+   "info": {
+    "soft parked car": 2154
+   }
+  },
+  {
+   "tile": "G10",
+   "ms": 4265,
+   "heroes": 0,
+   "lanes": 183,
+   "centrelines": 34,
+   "pathM": 3449,
+   "info": {
+    "soft parked car": 189,
+    "edge lamp (street)": 3,
+    "edge tree (street)": 9
+   }
+  },
+  {
+   "tile": "G2",
+   "ms": 10372,
+   "heroes": 1,
+   "lanes": 405,
+   "centrelines": 59,
+   "pathM": 8530,
+   "info": {
+    "soft parked car": 861,
+    "edge tree (street)": 5
+   }
+  },
+  {
+   "tile": "G3",
+   "ms": 9635,
+   "heroes": 1,
+   "lanes": 497,
+   "centrelines": 56,
+   "pathM": 3738,
+   "info": {
+    "soft parked car": 1120,
+    "edge garden wall": 13,
+    "soft hedge": 14,
+    "edge tree (street)": 5,
+    "edge garden pillar": 4
+   }
+  },
+  {
+   "tile": "G4",
+   "ms": 8063,
+   "heroes": 0,
+   "lanes": 579,
+   "centrelines": 51,
+   "pathM": 5190,
+   "info": {
+    "soft parked car": 726,
+    "edge tree (street)": 1
+   }
+  },
+  {
+   "tile": "G5",
+   "ms": 8955,
+   "heroes": 0,
+   "lanes": 614,
+   "centrelines": 62,
+   "pathM": 7673,
+   "info": {
+    "soft parked car": 562,
+    "soft hedge": 58,
+    "edge post (street)": 2,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "G6",
+   "ms": 7751,
+   "heroes": 3,
+   "lanes": 488,
+   "centrelines": 65,
+   "pathM": 7615,
+   "info": {
+    "soft parked car": 673,
+    "edge tree (street)": 3,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "G7",
+   "ms": 3090,
+   "heroes": 0,
+   "lanes": 259,
+   "centrelines": 17,
+   "pathM": 3457,
+   "info": {
+    "soft parked car": 166,
+    "edge lamp (street)": 4,
+    "edge tree (street)": 6
+   }
+  },
+  {
+   "tile": "G8",
+   "ms": 4988,
+   "heroes": 0,
+   "lanes": 581,
+   "centrelines": 22,
+   "pathM": 3543,
+   "info": {
+    "soft parked car": 43,
+    "edge lamp (street)": 3,
+    "edge tree (street)": 3
+   }
+  },
+  {
+   "tile": "G9",
+   "ms": 5866,
+   "heroes": 1,
+   "lanes": 532,
+   "centrelines": 34,
+   "pathM": 5999,
+   "info": {
+    "soft parked car": 566,
+    "edge tree (street)": 2,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "H1",
+   "ms": 14248,
+   "heroes": 0,
+   "lanes": 526,
+   "centrelines": 81,
+   "pathM": 16640,
+   "info": {
+    "soft parked car": 2294
+   }
+  },
+  {
+   "tile": "H10",
+   "ms": 4095,
+   "heroes": 0,
+   "lanes": 189,
+   "centrelines": 36,
+   "pathM": 2893,
+   "info": {
+    "soft parked car": 15,
+    "edge tree (street)": 2,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "H11",
+   "ms": 1324,
+   "heroes": 0,
+   "lanes": 87,
+   "centrelines": 18,
+   "pathM": 56,
+   "info": {}
+  },
+  {
+   "tile": "H2",
+   "ms": 11671,
+   "heroes": 0,
+   "lanes": 379,
+   "centrelines": 54,
+   "pathM": 7862,
+   "info": {
+    "soft parked car": 1298
+   }
+  },
+  {
+   "tile": "H3",
+   "ms": 10781,
+   "heroes": 0,
+   "lanes": 394,
+   "centrelines": 54,
+   "pathM": 9672,
+   "info": {
+    "soft parked car": 1042,
+    "edge tree (street)": 8
+   }
+  },
+  {
+   "tile": "H4",
+   "ms": 7810,
+   "heroes": 1,
+   "lanes": 516,
+   "centrelines": 49,
+   "pathM": 8359,
+   "info": {
+    "soft parked car": 1332,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "H5",
+   "ms": 9849,
+   "heroes": 1,
+   "lanes": 604,
+   "centrelines": 76,
+   "pathM": 6812,
+   "info": {
+    "soft parked car": 1500,
+    "edge post (street)": 6,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "H6",
+   "ms": 7614,
+   "heroes": 0,
+   "lanes": 390,
+   "centrelines": 69,
+   "pathM": 5666,
+   "info": {
+    "soft parked car": 696,
+    "edge lamp (street)": 1
+   }
+  },
+  {
+   "tile": "H7",
+   "ms": 5141,
+   "heroes": 0,
+   "lanes": 176,
+   "centrelines": 31,
+   "pathM": 5014,
+   "info": {
+    "soft parked car": 1145,
+    "edge lamp (street)": 1
+   }
+  },
+  {
+   "tile": "H8",
+   "ms": 5411,
+   "heroes": 0,
+   "lanes": 185,
+   "centrelines": 29,
+   "pathM": 6589,
+   "info": {
+    "soft parked car": 1359,
+    "edge tree (street)": 11,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "H9",
+   "ms": 3968,
+   "heroes": 0,
+   "lanes": 168,
+   "centrelines": 30,
+   "pathM": 4104,
+   "info": {
+    "soft parked car": 1035
+   }
+  },
+  {
+   "tile": "I1",
+   "ms": 12026,
+   "heroes": 0,
+   "lanes": 514,
+   "centrelines": 94,
+   "pathM": 8651,
+   "info": {
+    "soft parked car": 1262,
+    "edge post (street)": 6,
+    "edge tree (street)": 1
+   }
+  },
+  {
+   "tile": "I10",
+   "ms": 5579,
+   "heroes": 0,
+   "lanes": 178,
+   "centrelines": 32,
+   "pathM": 7907,
+   "info": {
+    "soft parked car": 1919,
+    "edge tree (street)": 4
+   }
+  },
+  {
+   "tile": "I11",
+   "ms": 2211,
+   "heroes": 0,
+   "lanes": 122,
+   "centrelines": 21,
+   "pathM": 6504,
+   "info": {}
+  },
+  {
+   "tile": "I2",
+   "ms": 11359,
+   "heroes": 1,
+   "lanes": 330,
+   "centrelines": 51,
+   "pathM": 7337,
+   "info": {
+    "soft parked car": 1314,
+    "edge post (street)": 12,
+    "edge tree (street)": 1
+   }
+  },
+  {
+   "tile": "I3",
+   "ms": 9476,
+   "heroes": 0,
+   "lanes": 393,
+   "centrelines": 50,
+   "pathM": 6887,
+   "info": {
+    "soft parked car": 829,
+    "edge tree (street)": 13,
+    "edge garden wall": 1
+   }
+  },
+  {
+   "tile": "I4",
+   "ms": 6652,
+   "heroes": 0,
+   "lanes": 399,
+   "centrelines": 32,
+   "pathM": 3737,
+   "info": {
+    "soft parked car": 390,
+    "edge tree (street)": 3
+   }
+  },
+  {
+   "tile": "I5",
+   "ms": 9004,
+   "heroes": 0,
+   "lanes": 519,
+   "centrelines": 57,
+   "pathM": 5673,
+   "info": {
+    "soft parked car": 1472
+   }
+  },
+  {
+   "tile": "I6",
+   "ms": 8661,
+   "heroes": 0,
+   "lanes": 422,
+   "centrelines": 67,
+   "pathM": 10442,
+   "info": {
+    "soft parked car": 1004,
+    "edge garden wall": 3,
+    "edge garden pillar": 2,
+    "edge post (street)": 2,
+    "soft hedge": 5,
+    "edge lamp (street)": 2,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "I7",
+   "ms": 5884,
+   "heroes": 0,
+   "lanes": 353,
+   "centrelines": 53,
+   "pathM": 4749,
+   "info": {
+    "soft parked car": 537,
+    "edge tree (street)": 6
+   }
+  },
+  {
+   "tile": "I8",
+   "ms": 5544,
+   "heroes": 0,
+   "lanes": 272,
+   "centrelines": 39,
+   "pathM": 7495,
+   "info": {
+    "soft parked car": 1530,
+    "edge lamp (street)": 4,
+    "edge tree (street)": 3
+   }
+  },
+  {
+   "tile": "I9",
+   "ms": 5048,
+   "heroes": 0,
+   "lanes": 203,
+   "centrelines": 38,
+   "pathM": 6722,
+   "info": {
+    "soft parked car": 1990
+   }
+  },
+  {
+   "tile": "J10",
+   "ms": 4689,
+   "heroes": 0,
+   "lanes": 109,
+   "centrelines": 20,
+   "pathM": 5075,
+   "info": {
+    "soft parked car": 857,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "J11",
+   "ms": 3057,
+   "heroes": 0,
+   "lanes": 146,
+   "centrelines": 27,
+   "pathM": 6069,
+   "info": {
+    "soft parked car": 294,
+    "edge tree (street)": 12
+   }
+  },
+  {
+   "tile": "J2",
+   "ms": 4346,
+   "heroes": 0,
+   "lanes": 248,
+   "centrelines": 38,
+   "pathM": 1583,
+   "info": {
+    "soft parked car": 304
+   }
+  },
+  {
+   "tile": "J3",
+   "ms": 4960,
+   "heroes": 0,
+   "lanes": 276,
+   "centrelines": 40,
+   "pathM": 6554,
+   "info": {
+    "soft parked car": 614,
+    "edge lamp (street)": 3
+   }
+  },
+  {
+   "tile": "J4",
+   "ms": 7041,
+   "heroes": 0,
+   "lanes": 488,
+   "centrelines": 45,
+   "pathM": 7246,
+   "info": {
+    "soft parked car": 328,
+    "edge garden pillar": 7,
+    "edge tree (street)": 2,
+    "edge lamp (street)": 5,
+    "edge garden wall": 2
+   }
+  },
+  {
+   "tile": "J5",
+   "ms": 8811,
+   "heroes": 0,
+   "lanes": 464,
+   "centrelines": 42,
+   "pathM": 7221,
+   "info": {
+    "soft parked car": 865,
+    "edge lamp (street)": 7
+   }
+  },
+  {
+   "tile": "J6",
+   "ms": 6093,
+   "heroes": 0,
+   "lanes": 360,
+   "centrelines": 57,
+   "pathM": 4841,
+   "info": {
+    "soft parked car": 506,
+    "edge building (worker)": 4,
+    "edge lamp (street)": 1,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "J7",
+   "ms": 8171,
+   "heroes": 0,
+   "lanes": 402,
+   "centrelines": 62,
+   "pathM": 10243,
+   "info": {
+    "soft parked car": 1716,
+    "edge post (street)": 1
+   }
+  },
+  {
+   "tile": "J8",
+   "ms": 5509,
+   "heroes": 0,
+   "lanes": 215,
+   "centrelines": 37,
+   "pathM": 6662,
+   "info": {
+    "soft parked car": 1609,
+    "edge lamp (street)": 2,
+    "edge tree (street)": 4
+   }
+  },
+  {
+   "tile": "J9",
+   "ms": 4301,
+   "heroes": 0,
+   "lanes": 124,
+   "centrelines": 26,
+   "pathM": 5574,
+   "info": {
+    "soft parked car": 1352
+   }
+  },
+  {
+   "tile": "K10",
+   "ms": 4305,
+   "heroes": 0,
+   "lanes": 148,
+   "centrelines": 23,
+   "pathM": 5641,
+   "info": {
+    "soft parked car": 545,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "K11",
+   "ms": 4210,
+   "heroes": 0,
+   "lanes": 213,
+   "centrelines": 32,
+   "pathM": 6397,
+   "info": {
+    "soft parked car": 313,
+    "edge tree (street)": 6
+   }
+  },
+  {
+   "tile": "K12",
+   "ms": 2274,
+   "heroes": 0,
+   "lanes": 136,
+   "centrelines": 24,
+   "pathM": 6030,
+   "info": {}
+  },
+  {
+   "tile": "K4",
+   "ms": 3136,
+   "heroes": 0,
+   "lanes": 144,
+   "centrelines": 27,
+   "pathM": 3466,
+   "info": {
+    "soft parked car": 349,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "K5",
+   "ms": 4699,
+   "heroes": 0,
+   "lanes": 135,
+   "centrelines": 27,
+   "pathM": 4265,
+   "info": {
+    "soft parked car": 186
+   }
+  },
+  {
+   "tile": "K6",
+   "ms": 3816,
+   "heroes": 0,
+   "lanes": 138,
+   "centrelines": 21,
+   "pathM": 4561,
+   "info": {
+    "soft parked car": 497,
+    "soft hedge": 8,
+    "edge garden car gate (closed)": 4,
+    "edge lamp (street)": 3
+   }
+  },
+  {
+   "tile": "K7",
+   "ms": 4755,
+   "heroes": 0,
+   "lanes": 377,
+   "centrelines": 46,
+   "pathM": 3266,
+   "info": {
+    "soft parked car": 308,
+    "soft hedge": 3,
+    "edge tree (street)": 3
+   }
+  },
+  {
+   "tile": "K8",
+   "ms": 6520,
+   "heroes": 0,
+   "lanes": 267,
+   "centrelines": 36,
+   "pathM": 5359,
+   "info": {
+    "soft parked car": 228,
+    "edge post (street)": 1
+   }
+  },
+  {
+   "tile": "K9",
+   "ms": 4513,
+   "heroes": 0,
+   "lanes": 135,
+   "centrelines": 21,
+   "pathM": 6176,
+   "info": {
+    "soft parked car": 757
+   }
+  },
+  {
+   "tile": "L10",
+   "ms": 1919,
+   "heroes": 0,
+   "lanes": 30,
+   "centrelines": 5,
+   "pathM": 2892,
+   "info": {
+    "soft parked car": 271
+   }
+  },
+  {
+   "tile": "L11",
+   "ms": 1649,
+   "heroes": 0,
+   "lanes": 20,
+   "centrelines": 4,
+   "pathM": 1037,
+   "info": {
+    "soft parked car": 28
+   }
+  },
+  {
+   "tile": "L12",
+   "ms": 1357,
+   "heroes": 0,
+   "lanes": 23,
+   "centrelines": 3,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "L5",
+   "ms": 2905,
+   "heroes": 0,
+   "lanes": 140,
+   "centrelines": 18,
+   "pathM": 2315,
+   "info": {
+    "soft parked car": 206
+   }
+  },
+  {
+   "tile": "L6",
+   "ms": 1882,
+   "heroes": 0,
+   "lanes": 57,
+   "centrelines": 5,
+   "pathM": 769,
+   "info": {
+    "soft parked car": 151
+   }
+  },
+  {
+   "tile": "L7",
+   "ms": 2704,
+   "heroes": 0,
+   "lanes": 153,
+   "centrelines": 12,
+   "pathM": 2743,
+   "info": {
+    "soft parked car": 411,
+    "edge tree (street)": 3
+   }
+  },
+  {
+   "tile": "L8",
+   "ms": 2587,
+   "heroes": 0,
+   "lanes": 116,
+   "centrelines": 9,
+   "pathM": 1622,
+   "info": {
+    "soft parked car": 421
+   }
+  },
+  {
+   "tile": "L9",
+   "ms": 1693,
+   "heroes": 0,
+   "lanes": 19,
+   "centrelines": 3,
+   "pathM": 1538,
+   "info": {
+    "soft parked car": 558
+   }
+  },
+  {
+   "tile": "M10",
+   "ms": 1690,
+   "heroes": 0,
+   "lanes": 41,
+   "centrelines": 6,
+   "pathM": 2408,
+   "info": {
+    "soft parked car": 736
+   }
+  },
+  {
+   "tile": "M11",
+   "ms": 1431,
+   "heroes": 0,
+   "lanes": 27,
+   "centrelines": 4,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "M12",
+   "ms": 874,
+   "heroes": 0,
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "M5",
+   "ms": 5219,
+   "heroes": 0,
+   "lanes": 292,
+   "centrelines": 45,
+   "pathM": 6932,
+   "info": {
+    "soft parked car": 479,
+    "edge lamp (street)": 4
+   }
+  },
+  {
+   "tile": "M6",
+   "ms": 1210,
+   "heroes": 0,
+   "lanes": 47,
+   "centrelines": 2,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "M7",
+   "ms": 1147,
+   "heroes": 0,
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "M8",
+   "ms": 1100,
+   "heroes": 0,
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "M9",
+   "ms": 1163,
+   "heroes": 0,
+   "lanes": 19,
+   "centrelines": 3,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "N10",
+   "ms": 1217,
+   "heroes": 0,
+   "lanes": 4,
+   "centrelines": 1,
+   "pathM": 400,
+   "info": {
+    "soft parked car": 151
+   }
+  },
+  {
+   "tile": "N11",
+   "ms": 1808,
+   "heroes": 0,
+   "lanes": 6,
+   "centrelines": 2,
+   "pathM": 1286,
+   "info": {
+    "soft parked car": 453
+   }
+  },
+  {
+   "tile": "N5",
+   "ms": 5454,
+   "heroes": 0,
+   "lanes": 502,
+   "centrelines": 72,
+   "pathM": 7634,
+   "info": {
+    "soft parked car": 426,
+    "edge lamp (street)": 8,
+    "edge tree (street)": 2
+   }
+  },
+  {
+   "tile": "N6",
+   "ms": 2592,
+   "heroes": 0,
+   "lanes": 199,
+   "centrelines": 24,
+   "pathM": 2458,
+   "info": {
+    "soft parked car": 333,
+    "edge lamp (street)": 2
+   }
+  },
+  {
+   "tile": "N7",
+   "ms": 1075,
+   "heroes": 0,
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "N8",
+   "ms": 1103,
+   "heroes": 0,
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "N9",
+   "ms": 1061,
+   "heroes": 0,
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "O10",
+   "ms": 1126,
+   "heroes": 0,
+   "lanes": 8,
+   "centrelines": 2,
+   "pathM": 0,
+   "info": {}
+  },
+  {
+   "tile": "O11",
+   "ms": 1654,
+   "heroes": 0,
+   "lanes": 6,
+   "centrelines": 2,
+   "pathM": 1539,
+   "info": {}
+  },
+  {
+   "tile": "O9",
+   "ms": 1348,
+   "heroes": 0,
+   "lanes": 0,
+   "centrelines": 0,
+   "pathM": 0,
+   "info": {}
+  }
+ ]
+}

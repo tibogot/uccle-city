@@ -279,8 +279,9 @@ the city's stairs from the hero models, the edge layer into the city's tile load
 ## Feel round 3: sound (2026-11-18, FEEL_RESEARCH.md technique 11: "the single biggest missing feel item")
 **What.** `viewer/bike/bikeAudio.js`: the BMX's sound, all procedural Web Audio (the project's way: docs/SOUND.md, the
 DSP kit viewer/audio/util.js). **No sample files** (nothing to credit: CREDITS.md unchanged); the textures are baked in
-memory when the sound is switched on. **OFF by default** (project rule): the lab's panel switch "sound (bike)" (our
-panel; the click is the browser's gesture); off = no AudioContext at all, then a suspended one: no audio work.
+memory when the sound is switched on. **OFF by default** (project rule): the speaker button (top centre: the city's ONE sound
+switch, viewer/audio/soundGate.js, rule 42; it replaced the lab's own panel switch when claude/foundation was merged in;
+the click is the browser's gesture); off = no AudioContext at all, then a suspended one: no audio work.
 
 **The sounds and what drives them** (`soundParams(s, B, mem, out)`: PURE, the bike's state -> the parameters; node-tested):
 | sound | driven by | how it is made |
@@ -322,7 +323,7 @@ functions (each small enough to inline its helpers): a later job.
 **Needs the browser** (not done: no browser this round): listening (levels, the ratchet's crossfade, the surface
 textures at speed, the scrape materials), the first switch-on's bake in the page.
 
-**For the owner: what to listen for** (the lab: Ride > "sound (bike)" on; the Sound folder has every level):
+**For the owner: what to listen for** (the lab: the speaker button on; the Sound folder has every level):
 1. Coast after pedalling hard on the plaza: the ratchet should come in as the pedals stop, a fast buzz at speed slowing to
    single ticks as you roll to a stop. Does the crossfade between the two tick loops (around 30-60 ticks a second, ~1.5 m/s)
    sound like one sound?

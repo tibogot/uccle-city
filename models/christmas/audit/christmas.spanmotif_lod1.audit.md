@@ -1,6 +1,6 @@
 # Mesh audit: christmas spanmotif_lod1 (needle-vs-needle overlaps exempt: 0)
 
-484 triangles, 256 welded vertices, 0 open edges, 0 rays, 7 ms.
+486 triangles, 257 welded vertices, 0 open edges, 0 rays, 7 ms.
 
 **0 blocking**, 60 warnings. Clean (no blocking item).
 
@@ -64,7 +64,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 |---|---|---|---|---|
 | -0.01, -0.06, -0.03 | spanmotif_lod1/metal_frame + spanmotif_lod1/metal_frame | 0.05 | 24 | 20.9 |
 | 0.02, -0.95, -0.02 | spanmotif_lod1/metal_frame + spanmotif_lod1/metal_frame | 0.04 | 17 | 69.1 |
-| -0.01, -1.02, -0.02 | spanmotif_lod1/metal_frame + spanmotif_lod1/metal_frame | 0.04 | 16 | 66.8 |
+| -0.01, -1.02, -0.02 | spanmotif_lod1/metal_frame + spanmotif_lod1/metal_frame | 0.04 | 17 | 71.7 |
 | -0.02, -0.95, -0.03 | spanmotif_lod1/metal_frame + spanmotif_lod1/metal_frame | 0.04 | 16 | 69.1 |
 | 0.04, -0.99, -0.02 | spanmotif_lod1/metal_frame + spanmotif_lod1/metal_frame | 0.04 | 14 | 73.5 |
 | -0.04, -0.99, -0.03 | spanmotif_lod1/metal_frame + spanmotif_lod1/metal_frame | 0.04 | 14 | 73.5 |

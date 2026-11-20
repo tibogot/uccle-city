@@ -1,0 +1,444 @@
+{
+ "when": "2026-11-18T05:53:08.729Z",
+ "sum": {
+  "tiles": 33,
+  "trackM": 47389,
+  "raisedM": 421,
+  "kerbM": 152,
+  "runs": 48
+ },
+ "runs": [
+  {
+   "tile": "H2",
+   "len": 178,
+   "at": "853, -1379.6",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 57.5,
+   "kerb": 31.5,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "H2",
+   "len": 121,
+   "at": "701.3, -1378.7",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 28.8,
+   "kerb": 31.8,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "I2",
+   "len": 96,
+   "at": "1246.3, -1437",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 32.8,
+   "kerb": 10,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "E3",
+   "len": 74,
+   "at": "-908.1, -551.4",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 37,
+   "kerb": 0,
+   "what": "sidewalk/ramp"
+  },
+  {
+   "tile": "E5",
+   "len": 50.5,
+   "at": "-943.1, 178.7",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 23.8,
+   "kerb": 0.8,
+   "what": "kerb/sidewalk/ramp"
+  },
+  {
+   "tile": "G2",
+   "len": 49,
+   "at": "220, -1464",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 15.3,
+   "kerb": 8.8,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "B4",
+   "len": 47.5,
+   "at": "-2334.4, -58",
+   "street": "Chaussée de Ruisbroek - Ruisbroekse Steenweg",
+   "raised": 47.3,
+   "kerb": 0,
+   "what": "sidewalk/ramp"
+  },
+  {
+   "tile": "H2",
+   "len": 46.5,
+   "at": "992.3, -1391.7",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 18.8,
+   "kerb": 3,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "E2",
+   "len": 37.5,
+   "at": "-887.5, -1051.8",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 16.5,
+   "kerb": 2.3,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "E2",
+   "len": 37.5,
+   "at": "-834.5, -1284.8",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 18.3,
+   "kerb": 0.5,
+   "what": "kerb/sidewalk/ramp"
+  },
+  {
+   "tile": "G2",
+   "len": 36.5,
+   "at": "450.2, -1401.6",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 7.8,
+   "kerb": 10.5,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "D6",
+   "len": 30.5,
+   "at": "-1175.3, 774.6",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 9.5,
+   "kerb": 5.3,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "B4",
+   "len": 27,
+   "at": "-2321.5, -67.1",
+   "street": "Chaussée de Ruisbroek - Ruisbroekse Steenweg",
+   "raised": 17.3,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "F1",
+   "len": 26.5,
+   "at": "-43.7, -1572.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 4.8,
+   "kerb": 8,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "H2",
+   "len": 22,
+   "at": "959.1, -1387.9",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 6.3,
+   "kerb": 4.8,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "D6",
+   "len": 21,
+   "at": "-1087.5, 567",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 7,
+   "kerb": 3.5,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "D6",
+   "len": 17.5,
+   "at": "-1078.9, 546.1",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 3,
+   "kerb": 5,
+   "what": "sidewalk/kerb/ramp"
+  },
+  {
+   "tile": "B4",
+   "len": 16,
+   "at": "-2334.5, -57.8",
+   "street": "Chaussée de Ruisbroek - Ruisbroekse Steenweg",
+   "raised": 8.8,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "E4",
+   "len": 15,
+   "at": "-918.3, -31",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 4,
+   "kerb": 3.5,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "H2",
+   "len": 15,
+   "at": "980.2, -1385.3",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 3.5,
+   "kerb": 4,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "H6",
+   "len": 13.5,
+   "at": "871.6, 524.3",
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "raised": 6.8,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "B5",
+   "len": 10.5,
+   "at": "-2225.6, 347",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 7.8,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "E1",
+   "len": 10,
+   "at": "-760.1, -1571.7",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 0,
+   "kerb": 5,
+   "what": "kerb"
+  },
+  {
+   "tile": "B5",
+   "len": 9.5,
+   "at": "-2218.1, 353.2",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 8,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "E1",
+   "len": 8,
+   "at": "-764.1, -1556.5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 0,
+   "kerb": 4,
+   "what": "kerb"
+  },
+  {
+   "tile": "G2",
+   "len": 7,
+   "at": "272.4, -1448.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 2.3,
+   "kerb": 1.3,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "B5",
+   "len": 6.5,
+   "at": "-2213.9, 351.6",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 5.5,
+   "kerb": 0.3,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "F5",
+   "len": 6,
+   "at": "-201.5, 271.5",
+   "street": "Avenue Wolvendael - Wolvendaellaan",
+   "raised": 1,
+   "kerb": 2,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "E3",
+   "len": 5,
+   "at": "-889.1, -977.5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 1,
+   "kerb": 1.5,
+   "what": "kerb/ramp"
+  },
+  {
+   "tile": "B5",
+   "len": 4.5,
+   "at": "-2217.5, 349.8",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 3.8,
+   "kerb": 0.3,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "E2",
+   "len": 4.5,
+   "at": "-866.9, -1157.9",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 1.5,
+   "kerb": 0.8,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "G2",
+   "len": 4.5,
+   "at": "266.6, -1449.9",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 1,
+   "kerb": 1.3,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "H6",
+   "len": 3.5,
+   "at": "868.4, 523.4",
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "raised": 1,
+   "kerb": 0.8,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "I2",
+   "len": 3.5,
+   "at": "1202.1, -1423.4",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.8,
+   "kerb": 0.5,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "D6",
+   "len": 3,
+   "at": "-1082.4, 554.5",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 1,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "E2",
+   "len": 3,
+   "at": "-851.9, -1217.6",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 0.8,
+   "kerb": 0.8,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "H2",
+   "len": 3,
+   "at": "720.2, -1378",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 1.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "H2",
+   "len": 2,
+   "at": "705.7, -1378.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 1,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "F1",
+   "len": 1.5,
+   "at": "-17.8, -1559.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "F1",
+   "len": 1.5,
+   "at": "-7.4, -1554.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "F1",
+   "len": 1.5,
+   "at": "-19.8, -1560.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "C5",
+   "len": 1,
+   "at": "-1986.5, 459.7",
+   "street": "Rue de l'Étoile - Sterstraat",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "C6",
+   "len": 1,
+   "at": "-1993, 510.4",
+   "street": "Rue de l'Étoile - Sterstraat",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "ramp"
+  },
+  {
+   "tile": "E4",
+   "len": 1,
+   "at": "-917.5, -58.2",
+   "street": "Chaussée d'Alsemberg - Alsembergsesteenweg",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "H2",
+   "len": 1,
+   "at": "627.7, -1383",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "H2",
+   "len": 1,
+   "at": "621.7, -1383.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "I2",
+   "len": 1,
+   "at": "1207.2, -1424.4",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "I2",
+   "len": 1,
+   "at": "1106.1, -1409",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  }
+ ]
+}

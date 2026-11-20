@@ -8,6 +8,7 @@ let fails = 0;
 const ok = (c, msg) => { console.log(`${c ? "PASS" : "FAIL"} ${msg}`); if (!c) fails++; };
 
 const { xmasActive, buildSpans, XmasField } = await import("../../viewer/christmas/xmasCity.js");
+const THREE_ = await import("three/webgpu");
 const P = (s) => new URLSearchParams(s);
 ok(xmasActive(P(""), new Date(2026, 11, 1)) === true, "1 Dec: on");
 ok(xmasActive(P(""), new Date(2026, 10, 30)) === false, "30 Nov: off");
@@ -24,9 +25,10 @@ ok(want.length >= 5 && want.every((p) => kit.pieces[p]?.lods.length === 3), `${w
 for (const p of want) {
   const P_ = kit.pieces[p];
   const colour = P_.lods.every((l) => l.every((x) => x.geometry.attributes.color?.itemSize === 4));
-  const uv0 = P_.lods[0].every((x) => x.geometry.attributes.uv), noUvFar = P_.lods.slice(1).every((l) => l.every((x) => !x.geometry.attributes.uv));
+  // (the fir's middle-level card shell keeps its atlas UVs: fir round 3)
+  const uv0 = P_.lods[0].every((x) => x.geometry.attributes.uv), noUvFar = P_.lods.slice(1).every((l) => l.every((x) => !x.geometry.attributes.uv || x.slot === "fir_cards"));
   const falling = P_.tris[0] >= P_.tris[1] && P_.tris[1] >= P_.tris[2];
-  ok(colour && uv0 && noUvFar && falling, `${p}: tris ${P_.tris.join(" / ")}, range ${P_.range.join(" / ")} m, COLOR_0 everywhere, UV on LOD0 only`);
+  ok(colour && uv0 && noUvFar && falling, `${p}: tris ${P_.tris.join(" / ")}, range ${P_.range.join(" / ")} m, COLOR_0 everywhere, UV on LOD0 only (+ the fir's middle-level cards)`);
 }
 const slots = new Set(Object.values(kit.pieces).flatMap((p) => p.lods.flatMap((l) => l.map((x) => x.slot))));
 let built = 0;
@@ -41,15 +43,20 @@ ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)")
 // flat leaves / cards up close (docs/CHRISTMAS.md "needle cards"). On the decoded GLB (what the viewer gets).
 {
   const T = kit.pieces.tree, cards = T.lods.map((l) => l.find((x) => x.slot === "fir_cards"));
-  const g = cards[0]?.geometry;
-  ok(!!g && !!g.attributes.uv && !cards[1] && !cards[2], `fir: needle cards on LOD0 only (${cards.map((c) => (c ? c.geometry.index.count / 3 : 0)).join(" / ")} card triangles per level)`);
-  if (g) {
+  const ct = cards.map((c) => (c ? c.geometry.index.count / 3 : 0));
+  // (fir round 3: the MIDDLE level carries a shell of big cards of the same atlas, the FAR level none; budgets: near
+  // <= 80 k card triangles, middle 5-16 k (the shell: ~3.3 k cards), far 0)
+  ok(!!cards[0]?.geometry.attributes.uv && !!cards[1]?.geometry.attributes.uv && !cards[2] && ct[0] <= 80000 && ct[1] >= 5000 && ct[1] <= 16000,
+    `fir: needle cards on the near level and the middle level's shell, none on the far level (${ct.join(" / ")} card triangles per level; budgets <= 80 k / 5-16 k / 0)`);
+  for (const [k, c] of cards.entries()) {
+    if (!c) continue;
+    const g = c.geometry;
     const P = g.attributes.position, N = g.attributes.normal, I = g.index.array, n = P.count;
     // the kit's canopy direction (glTF: Y up): out from the trunk, 35.5 deg up, straight up round the leader
     let good = 0;
     for (let i = 0; i < n; i++) {
-      const x = P.getX(i), y = P.getY(i), z = P.getZ(i), rl = Math.hypot(x, z), k = Math.min(1, rl / 0.35);
-      let cx = rl > 1e-5 ? (x / rl) * Math.cos(0.62) * k : 0, cz = rl > 1e-5 ? (z / rl) * Math.cos(0.62) * k : 0, cy = Math.sin(0.62) * k + (1 - k);
+      const x = P.getX(i), y = P.getY(i), z = P.getZ(i), rl = Math.hypot(x, z), kk = Math.min(1, rl / 0.35);
+      let cx = rl > 1e-5 ? (x / rl) * Math.cos(0.62) * kk : 0, cz = rl > 1e-5 ? (z / rl) * Math.cos(0.62) * kk : 0, cy = Math.sin(0.62) * kk + (1 - kk);
       const l = Math.hypot(cx, cy, cz); cx /= l; cy /= l; cz /= l;
       if (N.getX(i) * cx + N.getY(i) * cy + N.getZ(i) * cz > 0.8) good++;
     }
@@ -57,18 +64,60 @@ ok(emissive, "LEDs, LED rope and the star glow (emissive only: no light added)")
     let flat = 0;
     const v = (i) => [P.getX(i), P.getY(i), P.getZ(i)];
     for (let t = 0; t < I.length; t += 3) {
-      const [a, b, c] = [v(I[t]), v(I[t + 1]), v(I[t + 2])];
-      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+      const [a, b, cc] = [v(I[t]), v(I[t + 1]), v(I[t + 2])];
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [cc[0] - a[0], cc[1] - a[1], cc[2] - a[2]];
       const fn = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]], fl = Math.hypot(...fn) || 1;
       if ([0, 1, 2].every((q) => Math.abs((N.getX(I[t + q]) * fn[0] + N.getY(I[t + q]) * fn[1] + N.getZ(I[t + q]) * fn[2]) / fl) > Math.cos(3 * Math.PI / 180))) flat++;
     }
     const nt = I.length / 3;
-    ok(good / n >= 0.98 && flat / nt < 0.05, `fir cards shade as a volume: ${(100 * good / n).toFixed(1)} % of ${n} vertices within 37 deg of the canopy normal (>= 98 %), ${(100 * flat / nt).toFixed(1)} % of ${nt} triangles flat-shaded (< 5 %)`);
+    ok(good / n >= 0.98 && flat / nt < 0.05, `fir cards (LOD${k}) shade as a volume: ${(100 * good / n).toFixed(1)} % of ${n} vertices within 37 deg of the canopy normal (>= 98 %), ${(100 * flat / nt).toFixed(1)} % of ${nt} triangles flat-shaded (< 5 %)`);
   }
   const m = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: true }), s = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: false });
-  ok([m, s].every((x) => x.maskNode && !x.transparent && x.side === 2 && x.normalNode && x.depthWrite !== false), "fir cards: alpha TESTED (a mask, never blended), two-sided, own (canopy) normal node, depth written");
+  ok([m, s].every((x) => x.maskNode && !x.transparent && x.side === 2 && x.normalNode && x.depthWrite !== false), "fir cards (one pass, ?firprepass=0): alpha TESTED (a mask, never blended), two-sided, own (canopy) normal node, depth written");
+  // FIR ROUND 3 (rule 19): the depth PRE-PASS: a twin writes the depth (the atlas' alpha + the band; no colour), the lit
+  // pass runs with depth EQUAL and no discard (the lit shader once per visible pixel), both @invariant; the lit pass's
+  // shadow mask = the twin's (if it ever casts)
+  const { FIR, XMAS_SHADOW_LAYER, LOD_FADE } = await import("../../viewer/christmas/xmasKit.js");
+  for (const fade of [true, false]) {
+    const d = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade, pass: "depth" }), c = kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade, pass: "colour" });
+    ok(d.maskNode && d.colorWrite === false && d.depthWrite !== false && d.side === 2 && d.contextNode?.value?.invariant === true && !d.transparent
+      && !c.maskNode && c.maskShadowNode && c.depthFunc === THREE_.EqualDepth && c.depthWrite === false && c.side === 2 && c.normalNode && c.contextNode?.value?.invariant === true && !c.transparent,
+      `fir cards pre-pass (${fade ? "fade" : "solid"} set): twin = depth only (alpha + band mask, no colour, @invariant), lit = EQUAL depth, no discard, no depth write, @invariant, shadow mask kept`);
+  }
+  ok(FIR.prepass === true && FIR.shadow === "far" && XMAS_SHADOW_LAYER > 0 && XMAS_SHADOW_LAYER < 32, `fir switches default: pre-pass on (?firprepass=0: one pass), shadow from the far level (?firshadow=cards: each level its own), shadow layer ${XMAS_SHADOW_LAYER}`);
+  // the 45 m switch: a dithered cross-fade over the band's last LOD_FADE (39.6-45 m), card crown on BOTH sides
+  ok(LOD_FADE === 0.12 && T.range[0] === 45 && T.range[1] === 150 && !!cards[1], `fir 45 m switch: dithered over ${(T.range[0] * (1 - LOD_FADE)).toFixed(1)}-${T.range[0]} m, needle cards on both sides (the near crown -> the middle shell: one material)`);
   const nd = kit.info.needles;
   ok(!!nd && fs.existsSync(new URL(`../../models/christmas/${nd.file}`, import.meta.url)) && nd.levels >= 10, `needle atlas ${nd?.file} ${nd?.px?.join(" x ")}, ${nd?.levels} coverage-preserving mip levels, ${((nd?.ktx2_bytes ?? 0) / 1024).toFixed(0)} KB`);
+}
+
+// ---- FIR ROUND 3: the fir in the field: the pre-pass twins and the shadow-only casters
+{
+  const { XMAS_SHADOW_LAYER } = await import("../../viewer/christmas/xmasKit.js");
+  const { FIR_SHADOW_LEVEL } = await import("../../viewer/christmas/xmasCity.js");
+  const T = kit.pieces.tree, far = T.lods[FIR_SHADOW_LEVEL];
+  for (const firShadow of ["far", "cards"]) {
+    const f = new XmasField(kit, { shadows: { tree: true }, prepass: true, firShadow });
+    f.add("tree", new THREE_.Matrix4(), "t0");
+    const bad = [];
+    for (const [k, lv] of f.levels.tree.entries()) for (const S of [lv.solid, lv.fade]) {
+      const lit = S.meshes.filter((m) => m.userData.slot === "fir_cards" && !m.userData.depthPrepass && !m.userData.shadowOnly);
+      const tw = S.meshes.filter((m) => m.userData.depthPrepass);
+      if (k < 2 && (lit.length !== 1 || tw.length !== 1 || tw[0].geometry !== lit[0].geometry || tw[0].instanceMatrix !== lit[0].instanceMatrix || tw[0].renderOrder >= lit[0].renderOrder || tw[0].castShadow)) bad.push(`lod${k}: twin`);
+      if (S.meshes.some((m) => !m.userData.shadowOnly && m.castShadow)) bad.push(`lod${k}: a drawn mesh casts`);
+      const sh = S.meshes.filter((m) => m.userData.shadowOnly);
+      const want = firShadow === "far" ? far.filter((x) => ["fir_needles", "fir_bark"].includes(x.slot)) : T.lods[k].filter((x) => ["fir_needles", "fir_cards", "fir_bark"].includes(x.slot));
+      if (sh.length !== want.length || !sh.every((m) => m.castShadow && !m.receiveShadow && m.layers.mask === 1 << XMAS_SHADOW_LAYER && want.some((w) => w.geometry.index === m.geometry.index) && m.geometry.attributes.xlod === S.band && m.instanceMatrix === S.mat)) bad.push(`lod${k}: shadow copies`);
+      if (firShadow === "far" && sh.some((m) => m.userData.slot === "fir_cards")) bad.push(`lod${k}: cards cast`);
+    }
+    ok(!bad.length, `fir field (${firShadow}): every level's cards drawn as a depth twin (first) + the lit pass; the drawn meshes cast nothing; the shadow from ${firShadow === "far" ? `the far level's (LOD${FIR_SHADOW_LEVEL}) solid fronds + trunk` : "each level's own casters"} (shadow layer only, the level's band and instances)${bad.length ? " :: " + bad.join(", ") : ""}`);
+  }
+  // the 45 m switch while walking 30 -> 70 m: inside 39.6 - 45 m both levels' fade sets hold the tree (the dither splits
+  // the pixels), outside one level's solid set ("solid fade" per level)
+  const f = new XmasField(kit, { shadows: { tree: true } }); f.add("tree", new THREE_.Matrix4(), "t0");
+  const at = (d) => { f.update(new THREE_.Vector3(0, 1.7, d)); return f.levels.tree.map((lv) => `${lv.solid.n}${lv.fade.n}`).join(" "); };
+  const walk = [30, 38, 42, 46, 52, 70].map((d) => `${d} m: ${at(d)}`);
+  ok(/^30 m: 10 00/.test(walk[0]) && /01 01/.test(walk[2]) && / 10 /.test(walk[5]), `fir walk 30 -> 70 m (solid|fade per level): ${walk.join("; ")}`);
 }
 
 // ---- the site
@@ -98,7 +147,7 @@ for (const s of site.spans) { const H = s.tram ? 7.3 : 6.8, ground = (s.a[1] + s
 ok(lowest > 4.4, `the lowest point (sag, the bulbs, the star motif) stays > 4.4 m over the street (the walls' mean ground) (${lowest.toFixed(2)} m)`);
 
 // ---- the field's level buckets
-const THREE = await import("three/webgpu");
+const THREE = THREE_;
 const field = new XmasField(kit, { shadows: { tree: true } });
 const m = new THREE.Matrix4();
 for (let i = 0; i < 50; i++) field.add("swag", m.makeTranslation(i * 4, 0, 0), `s${i}`);

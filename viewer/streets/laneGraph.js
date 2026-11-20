@@ -13,6 +13,8 @@
 //   4. hold points: a lane that ends at a painted stop / give-way line (rd.inventory.stops) holds at that line
 //      (p.stop.at, p.stop.line), not at the engine's own station 4-6 m away
 // Plain JS, no three.js. Returns stats.
+import { evalAlignment } from "../../vendor/roads/roadAlignment.js";
+import { laneOffsetProfile } from "./laneOffset.js";
 const CARRIAGE = new Set([0, 1, 2, 3]);
 const XY = (q) => [q[0] ?? q.x, q[1] ?? q.z];
 
@@ -159,9 +161,11 @@ export function joinLaneGraph(net) {
   return st;
 }
 
-export function refineLaneGraph(net, prep, inventory) {
+export function refineLaneGraph(net, prep, inventory, opts = {}) {
   const st = { paths: 0, loops: 0, cusps: 0, centred: 0, centredPts: 0, holds: 0 };
   if (!net?.graph) return st;
+  // class R (rule 38): junction turns that start / end far from their junction follow their roads there
+  if (opts.roadsR !== false) Object.assign(st, roadFollowTurns(net));
   // round 5: off the class raster (it covers the tile's core square only; the graph reaches 150 m beyond) nothing is
   // known: count it as carriageway, so junctions on the tile edge are not pulled out of shape toward their centre
   const RG = prep?.grid;
@@ -182,21 +186,33 @@ export function refineLaneGraph(net, prep, inventory) {
   // nearest place with CLEAR on both sides (or the middle of a carriageway narrower than 2 x CLEAR); the moves get a
   // tent envelope over +-6 points and the path is smoothed after, so it bends instead of denting. A lane whose engine
   // centreline left the measured street (J1's south-west arm) comes back onto it this way
-  const CLEAR = 1.4;
-  const clearAt = (x, z, nx, nz) => { if (!CARRIAGE.has(cls(x, z))) return -1; const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15; return Math.min(a, b, CLEAR + 0.01) >= CLEAR ? CLEAR : Math.min(a, b) >= (a + b) / 2 - 0.15 ? CLEAR : Math.min(a, b); };
-  const keepOnCarriage = (P, stt) => {
+  const CLEAR = 1.4, CLEAR_FIT = 1.0;
+  const clearAt = (x, z, nx, nz, C = CLEAR) => { if (!CARRIAGE.has(cls(x, z))) return -1; const a = ray(x, z, nx, nz) ?? 15, b = ray(x, z, -nx, -nz) ?? 15; return Math.min(a, b, C + 0.01) >= C ? C : Math.min(a, b) >= (a + b) / 2 - 0.15 ? C : Math.min(a, b); };
+  const keepOnCarriage = (P, stt, C = CLEAR, fittedLane = false) => {
     if (P.length < 3) return P;
     const mv = P.map((q, k) => {
       const o = P[Math.max(0, k - 1)], n2 = P[Math.min(P.length - 1, k + 1)], tx = n2[0] - o[0], tz = n2[1] - o[1], tl = Math.hypot(tx, tz) || 1, nx = -tz / tl, nz = tx / tl;
-      if (clearAt(q[0], q[1], nx, nz) >= CLEAR) return null;
+      if (clearAt(q[0], q[1], nx, nz, C) >= C) return null;
       for (let d = 0.2; d <= 8; d += 0.2) for (const sg of [1, -1]) {
         const x = q[0] + nx * d * sg, z = q[1] + nz * d * sg;
-        if (clearAt(x, z, nx, nz) >= CLEAR) return [nx * d * sg, nz * d * sg];
+        if (clearAt(x, z, nx, nz, C) >= C) return [nx * d * sg, nz * d * sg];
       }
       return null;
     });
     if (!mv.some(Boolean)) return P;
     stt.keptOn = (stt.keptOn || 0) + 1;
+    // class R (rule 38): the needs as one smooth sideways offset (trafficGraph.js laneOffsetProfile: gaps under 30 m
+    // held, ramps <= 1:10, C1 blends), not a tent per point: a lane past a row of kerb build-outs (Av. Van Bever's
+    // chicane islands every 12-30 m) wove +-0.5 m between each. Not for a lane fitted to its painted lines (rule 33):
+    // it stays centred on its paint (the paint already follows the kerbs, smoothed over 30 m) and only the points
+    // within half a car of a kerb take the short tent below (a held profile put lanes 0.2-0.5 m off their paint over
+    // the whole stretch: the markings gate's lane-to-paint p95 0.08 -> 0.5 m)
+    if (opts.roadsR !== false && !fittedLane) {
+      const c = cumulative(P), nrm = P.map((q, k) => { const o = P[Math.max(0, k - 1)], n2 = P[Math.min(P.length - 1, k + 1)], tx = n2[0] - o[0], tz = n2[1] - o[1], tl = Math.hypot(tx, tz) || 1; return [-tz / tl, tx / tl]; });
+      const need = mv.map((m, k) => (m ? m[0] * nrm[k][0] + m[1] * nrm[k][1] : 0));
+      const prof = laneOffsetProfile(need, c);
+      return P.map((q, k) => [q[0] + nrm[k][0] * prof[k], q[1] + nrm[k][1] * prof[k]]);
+    }
     const M = mv.map((_, k) => { let bx = 0, bz = 0, bw = 0; for (let j = Math.max(0, k - 6); j <= Math.min(mv.length - 1, k + 6); j++) { if (!mv[j]) continue; const w = 1 - Math.abs(j - k) / 7; const L = Math.hypot(mv[j][0], mv[j][1]) * w; if (L > bw) { bw = L; bx = mv[j][0] * w; bz = mv[j][1] * w; } } return [bx, bz]; });
     return P.map((q, k) => [q[0] + M[k][0], q[1] + M[k][1]]);
   };
@@ -210,7 +226,13 @@ export function refineLaneGraph(net, prep, inventory) {
     P = resample(P, 1.0);
     const kind = prep ? simple(p) : null;
     const a0 = [P[0][0], P[0][1]], b0 = [P[P.length - 1][0], P[P.length - 1][1]];
-    if (kind && P.length >= 4) {
+    // markings round 2 (rule 33, viewer/streets/lineFit.js laneShifter): on a road whose painted strips were fitted to
+    // the measured carriageway the lane moves with them, centred between its painted lines, in place of the centring;
+    // the keep-on-carriage push below then needs only CLEAR_FIT (1.4 m on the 0.5 m raster pushed lanes up to 1 m off
+    // their paint, into the next lane)
+    const fitted = opts.laneShift ? opts.laneShift(p, P) : null;
+    if (fitted) { P = fitted; st.laneFit = (st.laneFit || 0) + 1; }
+    else if (kind && P.length >= 4) {
       const shift = P.map(() => null);
       for (let k = 0; k < P.length; k++) {
         const q = P[Math.min(P.length - 1, k + 1)], o = P[Math.max(0, k - 1)];
@@ -240,7 +262,10 @@ export function refineLaneGraph(net, prep, inventory) {
     }
     P = unloop(P, st);
     // (simple stacks only: two lanes of one direction pushed to the same clear place crossed each other)
-    if (prep && kind) P = keepOnCarriage(P, st);
+    // (a fitted lane: only its points within half a car (+ 0.1 m) of the street's edge or off it are moved, e.g. a
+    // dead-end square's or a junction funnel's lane the paint does not follow there)
+    if (prep && fitted) P = keepOnCarriage(P, st, CLEAR_FIT, true);
+    else if (prep && kind) P = keepOnCarriage(P, st);
     P = smooth(P, 3);
     endMove.set(p.id, { a: [P[0][0] - a0[0], P[0][1] - a0[1]], b: [P[P.length - 1][0] - b0[0], P[P.length - 1][1] - b0[1]] });
     p.pts = P;
@@ -327,6 +352,60 @@ export function refineLaneGraph(net, prep, inventory) {
   }
   // ---- round 5: no junction turn tighter than a car turns (R >= 5 m)
   Object.assign(st, widenTightTurns(net, cls));
+  return st;
+}
+
+/**
+ * LONG JUNCTION TURNS (claude/roads, class R, rule 38, docs/ROADS_R.md). The engine trims every arm of a junction by
+ * its own rule (arm.trim) and a turn connector runs from the entry lane's end to the exit lane's start. Where a trim
+ * is longer than the junction (a 5-arm node whose arms meet at a grazing angle, a short road swallowed by its
+ * junction) the lane piece ends far up its road and joinLaneGraph's rebuilt turn (a cubic between the two ends) runs
+ * STRAIGHT across the block: Chaussée de Waterloo J6 (node 1753.8, 816): two turns of 154-157 m from 1625, 801, through
+ * the houses (the owner's white car "through a house"). A road system lays a turn as an arc in the junction only, the
+ * lanes follow their roads up to it. Here: a turn end more than FAR m from its junction's node follows its road's own
+ * alignment (the engine's spiral-arc-spiral fit of the OSM line) at the lane's lateral offset until NEAR m from the
+ * node, and only the rest is the cubic (the engine's ~0.56 tangent handles: a circle-like arc).
+ */
+const FAR = 20, NEAR = 10;
+export function roadFollowTurns(net) {
+  const st = { farTurns: 0, farMetres: 0 };
+  const by = net.graph.byId, roads = net.roadsById || new Map(net.roads.map((r) => [r.id, r]));
+  const nodes = new Map(net.nodes.map((n) => [n.id, n]));
+  // the lane's leg along its road from plan point P toward node N, at P's lateral offset: points every 1 m, or null
+  const leg = (rr, P, N) => {
+    const S = rr?.smp, al = rr?.al; if (!S || !al || S.s.length < 2) return null;
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < S.s.length; i++) { const d = (S.x[i] - P[0]) ** 2 + (S.z[i] - P[1]) ** 2; if (d < bd) { bd = d; bi = i; } }
+    const s0 = S.s[bi], e0 = evalAlignment(al, s0), t = (P[0] - e0.x) * Math.sin(e0.th) + (P[1] - e0.z) * -Math.cos(e0.th);
+    const dEnd = (k) => Math.hypot(S.x[k] - N.x, S.z[k] - N.z);
+    const dir = dEnd(S.s.length - 1) < dEnd(0) ? 1 : -1;
+    const out = [];
+    for (let s = s0 + dir; s >= 0 && s <= al.length; s += dir) {
+      const e = evalAlignment(al, s), q = [e.x + Math.sin(e.th) * t, e.z - Math.cos(e.th) * t];
+      if (Math.hypot(q[0] - N.x, q[1] - N.z) < NEAR) break;
+      out.push(q);
+      if (out.length > 400) return null;
+    }
+    return out.length ? out : null;
+  };
+  for (const c of net.graph.paths) {
+    if (c.kind !== "connector" || c.turn === "ring" || c.turn === "uturn") continue;
+    const N = nodes.get(c.nodeId), a = by.get(c.prev[0]), b = by.get(c.next[0]);
+    if (!N || !a || !b || a.kind !== "lane" || b.kind !== "lane" || a.pts.length < 2 || b.pts.length < 2) continue;
+    const E = XY(a.pts[a.pts.length - 1]), S = XY(b.pts[0]);
+    const fe = Math.hypot(E[0] - N.x, E[1] - N.z) > FAR, fs = Math.hypot(S[0] - N.x, S[1] - N.z) > FAR;
+    if (!fe && !fs) continue;
+    const A = fe ? leg(roads.get(a.roadId), E, N) : null, B = fs ? leg(roads.get(b.roadId), S, N) : null;
+    if (!A && !B) continue;
+    const Bf = B ? B.slice().reverse() : null;                      // (built from S toward the node: reversed, it runs into S)
+    const p0 = A ? A[A.length - 1] : E, p3 = Bf ? Bf[0] : S;
+    const d0 = A ? dirOver([E, ...A], true, 2) : dirOver(a.pts.map(XY), true), d3 = Bf ? dirOver([...Bf, S], false, 2) : dirOver(b.pts.map(XY), false);
+    const mid = cubicJoin(p0, d0, p3, d3);
+    const P = [E, ...(A || []), ...mid.slice(1, -1), p3, ...(Bf ? Bf.slice(1) : []), S];
+    const L0 = c.len ?? 0;
+    c.pts = P; c.cum = cumulative(P); c.len = c.cum[c.cum.length - 1];
+    st.farTurns++; st.farMetres += Math.round(Math.max(0, L0 - c.len));
+  }
   return st;
 }
 

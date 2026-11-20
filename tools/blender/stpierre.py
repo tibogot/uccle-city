@@ -74,6 +74,7 @@ DOME_TOP = 79.6                 # DSM: 79.4 at 0.75 m from the axis, the bulb's 
 WALL_S, WALL_N = 9.53, -9.8
 BAY1 = (1.34, 6.25)
 NAVE_U0, NAVE_BAY, NAVE_N = 7.53, 4.954, 5                     # 5 bays to u 32.3 (footprint)
+PORCH_BAY = 2                   # the nave bay (0-based from the west) over the south porch (u 17.81-21.58 under bay u 17.44-22.39)
 SWIN = (0.76, 53.79, 57.92)      # the side windows: half-width, sill, springing (semicircular heads, r = half-width)
 U_EAST = 40.3                   # the main block's east wall (DSM: the roof ends at u 40.3 for |w| > 6.3)
 APSE = [(U_EAST, 6.3), (43.5, 2.6)]                             # three-sided apse (DSM roof outline)
@@ -368,8 +369,8 @@ def front_upper():
     # the sides of the upper register (seen from the north / south above the ailerons) and its back
     for sg in (-1, 1):
         a = sg * CB
-        quad(fr.p(a, hz(CORN_T), d), fr.p(a, hz(CORN_T), d - tk), fr.p(a, hz(UP_TOP), d - tk), fr.p(a, hz(UP_TOP), d), STONE, C_PLAIN) if sg < 0 else \
-            quad(fr.p(a, hz(CORN_T), d - tk), fr.p(a, hz(CORN_T), d), fr.p(a, hz(UP_TOP), d), fr.p(a, hz(UP_TOP), d - tk), STONE, C_PLAIN)
+        # heroshell: oriented by face_dir (the north one was wound inward: the street saw its back over the aileron)
+        face_dir([fr.p(a, hz(CORN_T), d), fr.p(a, hz(CORN_T), d - tk), fr.p(a, hz(UP_TOP), d - tk), fr.p(a, hz(UP_TOP), d)], fr.U * sg, STONE, C_PLAIN)
     fill2d(fr, [out], d - tk, STONE, C_PLAIN, flip=True)
     # its window: blue-stone frame (eared), reveal, leaded glass with a grid of bars (P02)
     reveal(fr, win, d - 0.05, 0.35, STONE, C_SUR)
@@ -407,8 +408,13 @@ def front_upper():
         curve = [(sg * (AIL_OUT + (AIL_OUT - CB) * math.cos(math.pi + 0.5 * math.pi * k / n) * 1.0 - 0.0), 0.0) for k in range(n + 1)]
         curve = [(sg * (AIL_OUT + (AIL_OUT - CB) * math.cos(math.pi + 0.5 * math.pi * k / n)), hz(UP_TOP - 0.1) + (UP_TOP - 0.1 - AIL_LOW) * math.sin(math.pi + 0.5 * math.pi * k / n)) for k in range(n + 1)]
         loop = ccw([(sg * CB, hz(CORN_T - 0.02))] + curve + [(sg * AIL_OUT, hz(CORN_T - 0.02))])
-        inner = ccw([(sg * (CB + 0.35), hz(CORN_T + 0.25))] + [(sg * (AIL_OUT + (AIL_OUT - CB - 0.35) * math.cos(math.pi + 0.5 * math.pi * k / n)), hz(UP_TOP - 0.45) + (UP_TOP - 0.45 - AIL_LOW - 0.3) * math.sin(math.pi + 0.5 * math.pi * k / n)) for k in range(n + 1)][:-1]
-                     + [(sg * (AIL_OUT - 0.35), hz(CORN_T + 0.25))])
+        # the brick infill: the coping curve offset 0.35 INTO the wing (the same ellipse centre, radii + 0.35), between
+        # the 0.35 m stone margins (heroshell: the old inner curve had smaller radii, so it ran outside the wing and the
+        # fill's hole crossed its outer loop: a broken triangulation, rule 29)
+        ea, eb, m_ = AIL_OUT - CB, UP_TOP - 0.1 - AIL_LOW, 0.35
+        t0, t1 = math.acos((ea - m_) / (ea + m_)), math.acos(m_ / (ea + m_))
+        arc = [(sg * (AIL_OUT - (ea + m_) * math.cos(t0 + (t1 - t0) * k / n)), hz(UP_TOP - 0.1) - (eb + m_) * math.sin(t0 + (t1 - t0) * k / n)) for k in range(n + 1)]
+        inner = ccw([(sg * (CB + m_), hz(CORN_T + 0.25))] + arc + [(sg * (AIL_OUT - m_), hz(CORN_T + 0.25))])
         if FAR():
             slab2d(fr, loop, da, da - 0.6, BRICK, C_PLAIN)
         else:
@@ -636,7 +642,7 @@ def side_elevation(side):
     for k, (a, b) in enumerate(bays):
         m = (a + b) / 2
         s0, s1 = sorted((S(a + 0.15), S(b - 0.15)))
-        porch = side > 0 and k == 3
+        porch = side > 0 and k == 1 + PORCH_BAY          # bays[0] is bay 1 (before the urn pilaster)
         if porch:
             continue            # the porch bay: handled below (a shorter window above the porch's roof)
         pan = rect(s0, hz(PLINTH_TOP), s1, hz(PANEL_TOP))
@@ -651,6 +657,7 @@ def side_elevation(side):
         side_window(fr, sm, -0.05)
     if side > 0:
         porch_bay(fr, S)
+        chancel_bay(fr, S)
     # big pilaster (urn) at u 6.25-7.53 (south) / 5.9-6.4 (north, the 4th nave's corner): projects 0.3
     if side > 0:
         a, b = sorted((S(6.25), S(7.53)))
@@ -677,7 +684,8 @@ def side_elevation(side):
         a, b = sorted((S(u0), S(u1)))
         if FAR(): fbox(fr, a, b, hb, hz(PLINTH_TOP), 0.0, 0.06, STONE, C_PLINTH)
         else: sweep2d(fr, [(a, hz(PLINTH_TOP)), (b, hz(PLINTH_TOP))], [(0.06, -(PLINTH_TOP - HB)), (0.06, -0.06), (0.0, 0.0)], STONE, C_PLINTH, d0=0.0)
-    a, b = sorted((S(0.0), S(u_end)))
+    # the entablature, cornice and parapet run on to the east wall (south: over the south-east annex's roof too)
+    a, b = sorted((S(0.0), S(U_EAST if side > 0 else u_end)))
     if not FAR():
         fbox(fr, a, b, hz(ARCHI), hz(ARCHI + 0.17), 0.0, 0.035, STONE, C_CORN, skip=("back",))
         fbox(fr, a, b, hz(ARCHI + 0.17), hz(FRIEZE), 0.0, 0.06, STONE, C_CORN, skip=("back",))
@@ -696,17 +704,43 @@ def parapet(fr, s0, s1, t=0.65):
     fbox(fr, s0, s1, hz(EAVE_H - 0.6), hz(CORN_B), -t, 0.0, STONE, C_COPING, skip=("front", "bottom"))
 
 def porch_panel(fr, S):
-    a, b = sorted((S(NAVE_U0 + 3 * NAVE_BAY + 0.93), S(NAVE_U0 + 4 * NAVE_BAY - 0.93)))
+    a, b = sorted((S(NAVE_U0 + PORCH_BAY * NAVE_BAY + 0.93), S(NAVE_U0 + (PORCH_BAY + 1) * NAVE_BAY - 0.93)))
     return rect(a, hz(PORCH["corn"] + 0.6), b, hz(PANEL_TOP))
 
 def porch_bay(fr, S):
-    """bay 4 (from the west) over the south porch: a shorter window above the porch's roof (estimated; P01 too far)"""
+    """the nave bay over the south porch: a shorter window above the porch's roof (estimated; P01 too far).
+    heroshell 2026-11-18: this was cut at bay 4 while the porch stands under bay 3, so bay 4's panel was cut twice
+    (overlapping holes) and the south wall's triangulation broke: the owner's screenshot 88 (rule 29)"""
     pan = porch_panel(fr, S)
-    sm = S(NAVE_U0 + 3.5 * NAVE_BAY)
+    sm = S(NAVE_U0 + (PORCH_BAY + 0.5) * NAVE_BAY)
     win = arched(sm - SWIN[0], sm + SWIN[0], hz(56.4), hz(SWIN[2]))
     strip2d(fr, pan, 0.0, -0.05, STONE, C_PLAIN)
     fill2d(fr, [pan, win], -0.05, BRICK, C_PLAIN)
     side_window(fr, sm, -0.05, sill=56.4)
+
+def chancel_bay(fr, S):
+    """the main block's south wall over the south-east annex (u 33.3 .. U_EAST, from just under the annex's flat roof to
+    the cornice): one bay in the nave's order (stone face, recessed brick panel, a shorter round-arched window like the
+    porch bay's, a corner pier at the east end). Estimated: P01 does not reach it; the DSM shows the main roof running on
+    to u 40.3 over it. heroshell 2026-11-18: the side stopped at u 33.3 where the annex begins, so ~40 m2 of wall above
+    the annex's roof was simply missing (census class A)"""
+    u0, u1 = 33.3, U_EAST
+    lo = hz(ANNEX_TOP - 0.5)                           # under the annex's roof (53.88) and its coping: no gap at the join
+    sa, sb = sorted((S(u0), S(u1)))
+    pa, pb = sorted((S(u0 + 1.1), S(u1 - 1.0 - 1.1)))  # the panel between the pier at 32.3-33.3 and the corner pier
+    pan = rect(pa, hz(ANNEX_TOP + 0.6), pb, hz(PANEL_TOP))
+    fill2d(fr, [rect(sa, lo, sb, hz(CORN_B)), pan], 0.0, STONE, C_PLAIN)
+    sm = (pa + pb) / 2
+    win = arched(sm - SWIN[0], sm + SWIN[0], hz(56.4), hz(SWIN[2]))
+    strip2d(fr, pan, 0.0, -0.05, STONE, C_PLAIN)
+    fill2d(fr, [pan, win], -0.05, BRICK, C_PLAIN)
+    side_window(fr, sm, -0.05, sill=56.4)
+    # the corner pier at the east end (as the one at u 32.3-33.3: 0.16 proud)
+    a, b = sorted((S(u1 - 1.0), S(u1)))
+    fbox(fr, a, b, lo, hz(CORN_B), 0.0, 0.16, STONE, C_PLAIN, skip=("back",))
+    if not FAR():
+        # a stone band where the wall meets the annex's roof (the roof's flashing line)
+        fbox(fr, sa, sb, lo, hz(ANNEX_TOP + 0.25), 0.0, 0.05, STONE, C_PLINTH, skip=("back",))
 
 def pedestal_urn(fr, s, d):
     b0 = hz(CORN_T)
@@ -1015,7 +1049,7 @@ ground_obj = load_ground()
 
 # ------------------------------------------------------------------------------------------------ AO bake (lighting only)
 scn.render.engine = "CYCLES"
-scn.cycles.device = "CPU"
+SC.use_gpu(scn)                 # OptiX (heroshell: was the CPU)
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 3.0
 ao_img = bpy.data.images.new("stpierre_ao", AO_PX, AO_PX, alpha=False, float_buffer=False)
@@ -1110,6 +1144,7 @@ info = {
              "east_wall": U_EAST, "apse": APSE, "fourth_nave": N4, "porch": PORCH},
     "estimated": "the east end (main block's east wall, the apse's walls and windows), the annexes' walls and windows, the north-east block's roof, "
                  "the fourth nave's north wall (4 bays with the south side's window type), the porch's sides and door, the window over the porch, "
+                 "the main block's south wall over the south-east annex (one bay with a short window, claude/heroshell), "
                  "the dial sizes on the N / E / S faces, the cartouche and the urns (stylised), the wall thicknesses",
 }
 json.dump(info, open(os.path.join(OUT, "stpierre.json"), "w"), indent=1)

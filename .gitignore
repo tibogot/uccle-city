@@ -95,3 +95,6 @@ models/christmas/*.raw.glb
 models/bike/*.raw.glb
 models/bike/audit/*.json
 docs/bike/tex/_work/
+
+# the gate cache (tools/audit/mergeGate.mjs: traced deps, memo, logs; docs/WORKFLOW.md)
+.cache/

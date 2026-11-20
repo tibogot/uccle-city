@@ -16,6 +16,10 @@
 import * as THREE from "three/webgpu";
 import { loadFurnitureKit, FurniturePool, PIECES, furnitureSource, furnitureFades } from "./furnitureKit.js";
 import { Streamer, MARGIN } from "../instanceStream.js";
+import { cityProps } from "../props/cityProps.js";
+
+/** (props, docs/PROPS.md) the pieces that are physics props: piece -> class (the bins fly when hit) */
+const PROP_CLASS = { bin_round: "bin", bin_column: "bin_column" };
 
 const qs = new URLSearchParams(location.search);
 const DATA = new URL("../../data/furniture/", import.meta.url);
@@ -68,7 +72,9 @@ export const cityFurniture = {
     this.group = new THREE.Group(); this.group.name = "furniture2";
     scene.add(this.group);
     for (const p of PIECES) this.pools.push(new FurniturePool(this.kit.pieces[p], this.kit.mats, this.group, MARGIN));
+    for (const m of this.kit.mats.opaque) cityProps.hook(m);          // (props: the knocked-over bins' motion vectors)
     this.streamer = new Streamer({ name: "furniture2", pools: this.pools.map((p) => p.stream), fades: furnitureFades, budget: 0.15 });
+    cityProps.prepare(this.streamer, Object.keys(PROP_CLASS));
     updaters.push((eye, cam) => this.update(cam));
     window.__furniture2 = this;
     log(`furniture2: on (?furniture=old for the placeholders), kit ${PIECES.map((p) => `${p} ${this.kit.pieces[p].tris.join("/")}`).join(", ")} tris, ${Math.round(performance.now() - t0)} ms`);
@@ -124,6 +130,11 @@ export const cityFurniture = {
       m.visible = false;                         // never drawn: the pools draw; the collision code reads it
       m.castShadow = m.receiveShadow = false;
       m.userData.collisionStandin = true;
+      // (props) each bin a prop: its collider's ref (off while it flies / lies elsewhere), drawn by its pool instance
+      if (PROP_CLASS[k] && cityProps.on) {
+        m.userData.refs = Array.from({ length: a.length / 8 }, (_, i) => cityProps.make(PROP_CLASS[k], name, a[i * 8], a[i * 8 + 1], a[i * 8 + 2], a[i * 8 + 3], [{ streamer: this.streamer, tile: name, key: k, i }])?.ref);
+        m.userData.kick = true;                  // (the walker kicks it: not a walker post, viewer/character/cityHook.js)
+      }
       g.add(m);
     }
     parent.add(g);

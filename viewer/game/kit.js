@@ -43,6 +43,11 @@ export class GameKit {
     this.waypoint = new Waypoint(host.scene);
     this.dispatch = new Dispatch(this);
     this.current = null;            // { def, mode, options }
+    // (carhit, docs/CARHIT.md) the player's vehicle hit a car: "carHit" { other, impulse, point, speed, damage }; the
+    // vehicle's damage 0..1: host.driver.damage (no game rule uses them yet)
+    host.driver?.carHit?.on("carHit", (e) => this.emit("carHit", e));
+    // (props, docs/PROPS.md) a prop hit by the player / walker, a landing or a wall hit: "propHit" { kind, impulse, point, speed }
+    host.driver?.props?.on("propHit", (e) => this.emit("propHit", e));
     this.mission = null;            // the MissionRunner playing
     this.lastMission = null;        // (restart)
     this.paused = false;

@@ -19,13 +19,14 @@ const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
 const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
+const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");   // (one builder with the worker, rule 38)
 const { TrafficWorld } = await imp("viewer/traffic/trafficWorld.js");
 const { TrafficSim, STEP } = await imp("viewer/traffic/trafficSim.js");
 
 const T = opt("--tile", "I6").toUpperCase(), SECS = +opt("--secs", 240), SHOVE = +opt("--shove", 40), SEED = +opt("--seed", 7);
-const { roads, feats, bounds, rd } = loadTile(T);
+const { roads, feats, bounds, rd, roofs } = loadTile(T);
 const wp = widthParking(roads, feats, bounds, streetFit(rd.surfaceData));
-const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, old: OLD });
+const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, roofs, entry: OLD ? { trafpark: false } : {} });
 const sites = g.parkedKept ?? wp.sites;
 const SIZE = [1.85, 1.47, 4.70];
 const cars = sites.map((c) => ({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { r: 0.5, g: 0.5, b: 0.5, setRGB(r, g, b) { this.r = r; this.g = g; this.b = b; } }, room: 6 }));

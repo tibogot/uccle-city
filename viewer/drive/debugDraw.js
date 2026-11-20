@@ -4,13 +4,14 @@
 // drawn, a post where no lamp stands, ...) is drawn red with a tall red cross over it, and the legend (bottom left)
 // counts them. One LineSegments, refilled a few times a second (only while it is shown).
 import * as THREE from "three/webgpu";
-import { gather, KIND } from "./colliders.js";
+import { gather, heightClear, KIND } from "./colliders.js";
 import { BODY } from "./carPhysics.js";
 
 const COLORS = { [KIND.building]: [1, 0.85, 0.2], [KIND.island]: [0.2, 0.9, 1], [KIND.tree]: [0.3, 1, 0.3], [KIND.lamp]: [1, 0.3, 1], [KIND.post]: [1, 0.55, 0.1], [KIND.wall]: [0.7, 0.7, 1], [KIND.car]: [1, 1, 1], [KIND.furniture]: [0.9, 0.6, 1], [KIND.hedge]: [0.35, 0.75, 0.25] };
 const BAD = [1, 0.1, 0.1];
 const css = (c) => `rgb(${c.map((v) => Math.round(v * 255)).join(",")})`;
 const MAX = 60000;
+const DRAW_OLD = typeof location !== "undefined" && /[?&]heroground=old(&|$)/.test(location.search);
 
 export class ColliderDebug {
   constructor(scene) {
@@ -64,10 +65,18 @@ export class ColliderDebug {
       }
       if (id < col.P) {
         const rgb = bad ? BAD : COLORS[col.pkind[id]] || [1, 1, 1], h = col.pkind[id] === KIND.island ? 0.5 : 2.5;
+        // (drivecheck: an item with a vertical extent (a hero blocker on a layer, a deck parapet, a garden wall on a bank)
+        // is drawn at its own heights (and not at all when the car passes over / under it where it is now), not stood on the
+        // ground under the car: the cutting's pier blocks under the
+        // Verrewinkel deck were drawn as a curtain across the road the car drives through; ?heroground=old: as before)
+        const t0 = col.ptop[id], b0 = col.pbase[id], fixed = !DRAW_OLD && (t0 < 1e3 || b0 > -1e3);
+        if (fixed && heightClear(col, id, c.y)) continue;      // over / under the car where it is now: not drawn
+        const lo = b0 > -1e3 ? b0 : t0 - 1.0, hi = t0 < 1e3 ? t0 : b0 + h;
         for (let r = col.polyRing[id]; r < col.polyRing[id + 1]; r++) {
           const s = col.ringStart[r], e = col.ringStart[r + 1];
           for (let i = s, j = e - 1; i < e; j = i++) {
             const ax = col.pts[j * 2], az = col.pts[j * 2 + 1], bx = col.pts[i * 2], bz = col.pts[i * 2 + 1];
+            if (fixed) { seg(ax, lo, az, bx, lo, bz, rgb); seg(ax, hi, az, bx, hi, bz, rgb); seg(ax, lo, az, ax, hi, az, rgb); continue; }
             const ya = ground(ax, az), yb = ground(bx, bz);
             seg(ax, ya + 0.05, az, bx, yb + 0.05, bz, rgb);
             seg(ax, ya + h, az, bx, yb + h, bz, rgb);

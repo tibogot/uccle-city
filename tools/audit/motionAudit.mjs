@@ -28,16 +28,17 @@ const MOVER = {
   "tram2Model.js": "trams, the default model (InstancePrev)",
   "rail/trainModel.js": "SNCB trains (InstancePrev)",
   "falconFlight/pigeons.js": "pigeons (InstancePrev)",
+  "props/cityProps.js": "knocked-over street props: the proxies (InstancePrev; the layers' materials hooked at start)",
   "birds/skyFlocks.js": "sky flocks (p - v dt in the shader)",
   "foliage/hedges.js": "hedge wind (windPrev)", "foliage/ivy.js": "ivy wind", "foliage/plants.js": "plant wind",
-  "gardens/gardenHedge.js": "garden hedge wind", "plants/cityIvy.js": "city ivy wind", "plants/plantMaterial.js": "plant wind",
+  "gardens/gardenHedge.js": "garden hedge wind", "gardens/gardenHedgeOld.js": "garden hedge wind (?hedges=old)", "plants/cityIvy.js": "city ivy wind", "plants/plantMaterial.js": "plant wind",
 };
 /** written on load / on change, or not drawn in the city by default: no per-frame motion */
 const STATIC = {
   "carFleet.js": "parked cars: written when a tile comes / goes",
   "cars.js": "parked cars (old path): per tile, once",
   "facadeKit/kitField.js": "facade kit pieces: per tile",
-  "fuel/cityFuel.js": "fuel stations: once", "furniture.js": "street furniture: per tile", "furniture2/cityFurniture.js": "street furniture: per tile",
+  "fuel/cityFuel.js": "fuel stations: once", "furniture.js": "street furniture: per tile", "furniture2/cityFurniture.js": "street furniture: per tile", "tlights/cityTLights.js": "traffic light posts: per tile (collision stand-ins, never move)",
   "gardens/cityGardens.js": "gardens: per tile", "grass/grassField.js": "grass trunks: once (grass default off)",
   "impostorKit/sources/stylizedTrees.js": "impostor bake source: one identity instance", "impostors.js": "impostor bake: identity instance",
   "lamps.js": "street lamps: per tile", "nightLights/cityNight.js": "night light cards: on change", "nightLights/nightStreet.js": "night lab street: once",

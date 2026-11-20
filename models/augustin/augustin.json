@@ -73,9 +73,9 @@
    0.78,
    0.925
   ],
-  "lod0_px_per_m": 20.5,
+  "lod0_px_per_m": 20.4,
   "far_px_per_m": 9.8,
-  "very_far_px_per_m": 7.3,
+  "very_far_px_per_m": 7.4,
   "thin_faces_vertex_ao": [
    4535,
    344,

@@ -1,0 +1,8 @@
+---
+number: 36
+status: provisional
+check: `tlights`: tools/audit/tlightsCheck.mjs (`--old` = ?tlights=old: 22 / 10 / 5; the lit colours through three's ACES: hue + saturation) + Blender checker / grazing renders (docs/tlights/)
+---
+**Rule.** A street signal is the real thing, placed for its traffic: a Blender kit piece (named slots, no baked colour; LOD0 / 1 / 2 authored with a triangle budget each; mesh audit 0 blocking on every LOD; the foot >= 0.25 m into the ground), its lit aspect an EMISSIVE lens slot driven by the shared signal uniforms (never a light, never DynamicDrawUsage), at a strength the tone map keeps saturated (an LED aspect is coloured with a hot centre only, never cream / white). A signal post stands on this traffic's right, out of every carriageway, its foot whole on ONE surface (level within 3 cm under it), and its vehicle heads face the cars that come (aimed at the lane 20 m back up the approach, within 30 deg of the road); a one-way street has one approach, its own flow. Checked on every post of every signal tile, from the approach's polyline (not the post's nearest road).
+
+**Why.** the signals were a pole, a box and three discs (owner playtest 2026-11-18: "make better traffic lights in Blender"); measured on the 249 posts: 22 heads > 35 deg off their approach (heads set on the stop point's tangent before a bend; a one-way exit given a post for traffic that never comes), 10 posts standing across a kerb line (12-14 cm proud of the road on one side), 5 in a driven lane (16 steps of 0.5 m walked posts 8-12 m off across a parallel road; a median's kerb put one 1 m from the centre line on the wrong side) ; the first lit amber (x 2.2..6 through ACES) showed cream / near white (saturation 0.16-0.54 on screen) (claude/tlights)

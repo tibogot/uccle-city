@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shops Array Lab</title>
+<link rel="icon" href="../viewer/favicon.svg" type="image/svg+xml">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #222; font: 13px/1.4 system-ui, sans-serif; color: #ddd; }
+  #info { position: fixed; left: 10px; top: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(20, 24, 30, .85);
+          font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; z-index: 2; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.webgpu.js",
+    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.tsl.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="info">Shops Array Lab: does r187's KTX2Loader + a TSL array fetch (texture(tex, uv).depth(layer).level(lod)) work on WebGPU?
+(Shops v2, docs/assets/SHOPS.md §3b). ?src=&lt;ktx2 url&gt; (default the v2 interiors), ?test=1 = the 4-layer test file.</div>
+<script type="module">
+// A grid of quads, one per array layer, each sampling the KTX2 2D array texture at its layer (and one quad per layer at
+// mip 3, to see the mips are there). window.__arrayLab = { ok, layers, width, height, format, isArray, errors }.
+import * as THREE from "three/webgpu";
+import { texture, uv, float, vec4, uniform } from "three/tsl";
+import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
+const q = new URLSearchParams(location.search);
+const src = q.get("src") ?? (q.get("test") ? "../textures/shops/_work/arraytest.ktx2" : "../textures/shops/interiors_v2.ktx2");
+const info = document.getElementById("info");
+const errors = [];
+window.addEventListener("error", (e) => errors.push(String(e.message)));
+const renderer = new THREE.WebGPURenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight); document.body.appendChild(renderer.domElement);
+await renderer.init();
+const scene = new THREE.Scene();
+const cam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
+const res = { ok: false, src, errors };
+window.__arrayLab = res;
+try {
+  const ktx = new KTX2Loader().setTranscoderPath("https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/libs/basis/").detectSupport(renderer);
+  const tex = await ktx.loadAsync(src);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const n = tex.image.depth ?? 1;
+  Object.assign(res, { layers: n, width: tex.image.width, height: tex.image.height, isArray: !!tex.isCompressedArrayTexture, format: tex.format, mips: tex.mipmaps?.length });
+  const cols = Math.ceil(Math.sqrt(n * 2)), rows = Math.ceil(n * 2 / cols);
+  const aspect = tex.image.width / tex.image.height;
+  const cw = 1 / cols, ch = 1 / rows;
+  cam.right = 1; cam.top = 1; cam.updateProjectionMatrix();
+  for (let i = 0; i < n * 2; i++) {
+    const layer = i % n, lod = i < n ? 0 : 3;
+    const m = new THREE.MeshBasicNodeMaterial({ transparent: true });
+    const s = texture(tex, uv()).depth(float(layer)).level(float(lod));
+    // premultiplied cards over a checker: rgb + (1 - a) * bg
+    const chk = uv().x.mul(16).floor().add(uv().y.mul(8).floor()).mod(2).mul(0.15).add(0.2);
+    m.colorNode = vec4(s.rgb.add(chk.mul(float(1).sub(s.a))), 1);
+    const g = new THREE.PlaneGeometry(cw * 0.96, ch * 0.96);
+    const me = new THREE.Mesh(g, m);
+    me.position.set((i % cols + 0.5) * cw, 1 - (Math.floor(i / cols) + 0.5) * ch, 0);
+    scene.add(me);
+  }
+  renderer.setAnimationLoop(() => renderer.render(scene, cam));
+  await new Promise((r) => setTimeout(r, 500));
+  res.ok = errors.length === 0;
+  info.textContent += `\n\n${JSON.stringify({ ...res, errors: errors.length })}`;
+} catch (e) { errors.push(e.message); info.textContent += "\n\nFAILED: " + e.message; }
+</script>
+</body>
+</html>

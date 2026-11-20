@@ -1,7 +1,9 @@
 // Headless numbers of the round-2 two-wheelers (viewer/moto/motoPhysics.js SCOOTER, VILLO) beside the motorbike's:
 //   node tools/moto/physicsTest2.mjs
 // The ground is a plane rising toward +z by `g` (the bike rides toward +z: g > 0 = uphill).
-import { createMotoState, stepMoto, MOTO, SCOOTER, VILLO } from "../../viewer/moto/motoPhysics.js";
+import { createMotoState, stepMoto, TWO_WHEELERS, TWO_WHEELERS_OLD } from "../../viewer/moto/motoPhysics.js";
+// (the feel round: the default sets; --old = ?moto=old)
+const { moto: MOTO, scooter: SCOOTER, villo: VILLO } = process.argv.includes("--old") ? TWO_WHEELERS_OLD : TWO_WHEELERS;
 const plane = (g = 0) => ({ ground: (x, z) => z * g, prepare() {}, collide() {}, contacts: 0 });
 const run = (c, inp, secs, H, env = plane(), each) => { for (let t = 0; t < secs; t += 1 / 60) { stepMoto(c, inp, 1 / 60, env, H); each?.(c, t); } };
 const kmh = (v) => +(v * 3.6).toFixed(1);

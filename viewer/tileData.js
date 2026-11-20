@@ -10,18 +10,24 @@ import { classify, TYPE } from "./buildingTypes.js";
 import { farBuildings } from "./farLookData.js";   // the far city's façades (docs/FARCITY.md), ?farlook=old = the flat solids
 import { landCoverData } from "./landcover.js";
 import { MeshoptSimplifier } from "meshoptimizer/simplifier";
-import { buildDriveData, tramPlatformSurface } from "./drive/colliders.js";
+import { buildDriveData, tramPlatformSurface, driveGround } from "./drive/colliders.js";
+import { gardenIndex } from "./streets/retainWalls.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
-import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, onCarriageway } from "./streets/bridgeDecks.js";
-import { smoothPolyline } from "./track.js";
+import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
+import { tramTracks } from "./track.js";
+import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
 import { roofCollector, stampRoofCols } from "./roofs/roofPlace.js";
-import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H } from "./rail/railData.js";
-import { buildTrafficGraph } from "./traffic/trafficGraph.js";
+import { prepRail, heroBridgeNames, abutmentFill, underpassCut, underpassGround, carveGrid, railTileData, railKeepClear, railVerges, roadDeckGround, roadDeckPins, railDriveSurface, railFences, fenceMesh, FENCE_H, railFences2, fenceBays, fenceMesh2, fenceWalls } from "./rail/railData.js";
+import { tileTrafficGraph } from "./traffic/tileTraffic.js";
 import { widthParking } from "./streets/parkPlace.js";
 import { streetFit } from "./streets/fitCore.js";
+import { carriageway } from "./streets/carriageway.js";
+import { treesOffCarriageway, paintedDriveLanes, pathCorridor } from "./streets/roadTrees.js";
+import { paintedLaneCentre, roadFrameOf } from "./streets/lineFit.js";
+import { squeezeDeckLanes } from "./rail/roadDeck.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
 import { grassTypeData } from "./grass/grassTypes.js";
 import { applyParkSquares, carveFlights, withoutLines } from "./heros/herosSurface.js";
@@ -78,6 +84,36 @@ function terrainArrays(hm, fitDiagonals = false) {
 
 /** the street-life layer's shopfronts of a tile (the poi kinds that get a shopfront in viewer/streetlife/layout.js:
  *  not ATMs, schools or civic buildings, which carry a plaque only): [{ x, z, nx, nz, w }], null when the tile has none */
+/** data/gardens/<tile>.json (the garden fronts: walls, hedges, gates), or null (claude/sidewalk: retaining walls) */
+/** (x, z) -> inside an OSM park / wood / grass / meadow / scrub area (public green: a bank, not a retaining wall) */
+function publicAreas(feats) {
+  const KINDS = new Set(["wood", "forest", "park", "grass", "meadow", "scrub", "heath", "recreation_ground", "cemetery"]);
+  const polys = (feats.areas || []).filter((a) => KINDS.has(a.kind)).map((a) => a.rings);
+  const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  return (x, z) => polys.some((R) => pip(x, z, R[0]) && !R.slice(1).some((h) => pip(x, z, h)));
+}
+/** the tile's garden doc, with the 4 neighbour tiles' pieces (segs, pillars, gates, hedges) within 30 m of its bounds */
+async function gardenDocNear(base, name, b, old = false) {
+  const m = /^([A-Z])(\d+)$/.exec(name), R = 30;
+  const near = m ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dz]) => String.fromCharCode(m[1].charCodeAt(0) + dx) + (+m[2] + dz)) : [];
+  const [own, ...nb] = await Promise.all([gardenDoc(base, name, old), ...near.map((n) => gardenDoc(base, n, old))]);
+  if (!b) return own;
+  const inR = (x, z) => x > b.x0 - R && x < b.x1 + R && z > b.z0 - R && z < b.z1 + R;
+  const doc = own ? { ...own, segs: [...(own.segs || [])], pillars: [...(own.pillars || [])], gates: [...(own.gates || [])], hedges: [...(own.hedges || [])] } : { segs: [], pillars: [], gates: [], hedges: [] };
+  for (const d of nb) {
+    if (!d) continue;
+    for (const g of d.segs || []) if (inR(g[0], g[2]) || inR(g[3], g[5])) doc.segs.push(g);
+    for (const q of d.pillars || []) if (inR(q[0], q[2])) doc.pillars.push(q);
+    for (const q of d.gates || []) if (inR(q[0], q[2])) doc.gates.push(q);
+    for (const h of d.hedges || []) if ((h.points || []).some(([x, z]) => inR(x, z))) doc.hedges.push(h);
+  }
+  return doc;
+}
+/** (claude/gates: old = entry.gatesOld, ?gates=old: the garden data before the front-gates job, data/gardens/old) */
+async function gardenDoc(base, name, old = false) {
+  const r = await fetch(new URL(`../gardens/${old ? "old/" : ""}${name}.json`, base)).catch(() => null);
+  return r?.ok ? r.json().catch(() => null) : null;
+}
 async function streetlifeFronts(base, name) {
   const r = await fetch(new URL(`../streetlife/${name}.json`, base)).catch(() => null);
   if (!r?.ok) return null;
@@ -269,8 +305,15 @@ export async function buildTileData(entry, base) {
   const [tHdr, tBuf, bDoc, bBuf, roads, feats] = await step("fetch", () => Promise.all([
     get(F.terrainHeader), get(F.terrain, true), get(F.buildings), get(F.buildingsBin, true), get(F.roads), get(F.features),
   ]));
-  // the OSM tram tracks as smooth curves (viewer/track.js): rails, wires, platforms and the trams all follow them
-  for (const l of feats.lines || []) if (l.kind === "tram") l.line = smoothPolyline(l.line);
+  // the tram tracks (viewer/track.js tramTracks): rails, wire + poles, platforms' sides, the bridge deck and the trams all
+  // follow them. claude/tramfit (rule 32): the OSM ways fitted to the measured street (tools/tramfit/build_tramfit.mjs:
+  // both rails clear of every kerb and raised paving, smooth, continuous across tile seams), data/tramfit/<T>.json;
+  // ?tramfit=old (entry.tramFit false) = each OSM way smoothed as it is (rails under the kerb, onto the sidewalk)
+  const hasTram = (feats.lines || []).some((l) => l.kind === "tram");
+  const tramFit = hasTram && entry.tramFit !== false ? await step("tramfit fetch", () => fetch(new URL(`../tramfit/${entry.name}.json`, base)).then((r) => (r.ok ? r.json() : null)).catch(() => null)) : null;
+  tramTracks(feats, tramFit);
+  // ... and the tram platforms beside them, never over a rail (viewer/streets/tramPlatforms.js; ?tramfit=old: as OSM)
+  if (entry.tramFit !== false) fitPlatforms(feats);
   // ?trains=1 (viewer/rail/): no LiDAR "trees" on rail bridge decks, platforms or the ballast; the line's verges as
   // undergrowth in the land cover
   const rail = entry.rail ? await step("rail fetch", () => railDocs(base, entry.bridges2 !== false)) : null;
@@ -386,7 +429,12 @@ export async function buildTileData(entry, base) {
   const planLevel = planFns.length ? (x, z) => { for (const f of planFns) { const y = f(x, z); if (y != null) return y; } return null; } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false,
+  // (claude/sidewalk round 2) the garden fronts, for the retaining walls behind levelled sidewalks (viewer/streets/retainWalls.js)
+  // (round 5: + the garden pieces of the 4 neighbour tiles within 30 m of this one: a garden front belongs to its
+  // building's tile and runs over the border (H6 Perelman 4: H5's gate 18 m into H6; the wall closed it off))
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
+  const gardenNear = gardenDoc0 !== null || (entry.sidewalkLevel !== false && entry.retainWalls !== false && surf) ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
+  const rd = await step("roads", () => buildRoadData({ roads, surf, markings, hm, bounds, paint, ground: roadGround, noData: pad?.noData, roughLanes: entry.roughLanes !== false, recentre: entry.recentre === true, roadBend: entry.roadBend !== false, roadLines: entry.roadLines !== false, streetInv: entry.streetInv !== false, laneFit: entry.laneFit !== false, bikeMark: entry.bikeMark !== false, weldNearest: entry.groundWeld !== false, clampTop: entry.clampTop !== false, clampH: entry.surfH !== false, kerbLevel: entry.sidewalkLevel !== false, gardenNear, gateNear, publicAt: gardenNear ? publicAreas(feats) : null,
     wallRay: entry.sidewalkFill !== false ? wallRayOf(bDoc) : null, levelPins: rail ? roadDeckPins(rail.heroes) : null,
     trees: entry.pits === false ? null : feats.trees, onBuilding: (x, z) => onRoof(roofs, x, z),
     deckLevel: entry.vivier !== false ? planLevel : null,   // (vivier: junctions on a measured deck at its level)
@@ -396,6 +444,36 @@ export async function buildTileData(entry, base) {
   netInfo.deckAbutments = abutCells; netInfo.deckUnder = underCells;
   const road = { parts: rd.parts, atlas: rd.atlas, carvedCells: rd.carvedCells, clampedCells: rd.clampedCells, triangles: rd.triangles, surfaceStats: rd.surfaceStats,
     surfaceData: rd.surfaceData, inventory: rd.inventory ?? null };
+  // (claude/drivecheck round 2, rule 27) no LiDAR trunk on the DRAWN carriageway: pipeline/filter_road_trees.py only knew
+  // the measured surfaces, where a street has none the OSM band is drawn and the crown peak's trunk stood in it
+  // (viewer/streets/roadTrees.js); before the parking, traffic, colliders and the drawn tree list read feats.trees.
+  // entry.roadTrees === false (?roadtrees=old): as before
+  let roadTrees = null;
+  // (claude/roads, rule 38: the trees keep the OSM band past a measured street's edge (bandOnMeasured), as before: the
+  // worker has no drawn-street raster yet at this step and a trunk moved out of a front garden's first metres is cheap)
+  if (entry.roadTrees !== false && feats.trees?.length) {
+    const fit0 = rd.surfaceData ? streetFit(rd.surfaceData) : null;
+    // (a measured TRAM road keeps its trees: Avenue Churchill's tram reservation is a tram road in UrbIS, its two tree rows
+    // stand on it; browser turn, tour churchill-blocks. Only the roadway / parking where measured, the OSM band elsewhere)
+    const noTram = fit0?.classAt ? (x, z) => { const c = fit0.classAt(x, z); return c === 1 ? 2 : c; } : null;
+    roadTrees = await step("road trees", () => treesOffCarriageway(feats.trees, carriageway(roads, { classAt: noTram, onDeck: null, bandOnMeasured: true }),
+      { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z) }));
+    feats.trees = roadTrees.trees;
+    // markings round 2 (rule 33): a LiDAR tree kept on a measured tram road but standing in a PAINTED driving lane (or
+    // within 0.3 m of one) moves off it the same way (or is dropped); the tram reservation's rows are not in a driving
+    // lane and stay (rows: below). (entry.roadLines false: no fitted lanes, nothing to do)
+    const inLane = fit0?.classAt ? paintedDriveLanes(rd.net, paintedLaneCentre, roadFrameOf, 0.3) : null;
+    if (inLane) {
+      const base = carriageway(roads, { classAt: noTram, onDeck: null, bandOnMeasured: true });
+      const lanes = { inside: (x, z, m = 0) => (fit0.classAt(x, z) === 1 ? inLane(x, z) : base.inside(x, z, m)) };
+      // (a tree in a ROW on the tram road, two more within 12 m, is the reservation's planting (Avenue Churchill: one OSM
+      // road with the reservation in its middle, its stack painted over it): kept)
+      const onTram = feats.trees.filter((t) => fit0.classAt(t.x, t.z) === 1);
+      const inRow = (t) => onTram.filter((o) => o !== t && Math.hypot(o.x - t.x, o.z - t.z) < 12).length >= 2;
+      const r2 = treesOffCarriageway(feats.trees, lanes, { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z), ground: (x, z) => hm.ground(x, z), keep: inRow });
+      feats.trees = r2.trees; roadTrees.lanesMoved = r2.moved; roadTrees.lanesDropped = r2.dropped;
+    }
+  }
   // (again after the road stage: its terrain weld brought the bank back up over a plan deck's tucked ends)
   netInfo.deckUnder2 = deckUnderCut(osmBridges.decks, [hm.y, hm.orig], tHdr);
   const net = rd.net;              // the live engine network (stays in the worker: drive colliders)
@@ -425,11 +503,27 @@ export async function buildTileData(entry, base) {
   // citydefects: the parked cars by the measured width (viewer/streets/parkPlace.js widthParking; entry.parkWidth false =
   // ?parkclear=old: the main thread's old slots), here so the traffic lanes keep clear of them (trafficGraph.js)
   const parked = entry.parkWidth !== false && road.surfaceData ? await step("parking", () => widthParking(roads, feats, bounds, streetFit(road.surfaceData))) : null;
-  const traffic = await step("traffic graph", () => buildTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, old: entry.trafpark === false }));
+  const traffic = await step("traffic graph", () => tileTrafficGraph(net, roads, feats, bounds, road.surfaceData?.grid, { parked: parked?.sites, roofs, entry }));   // (one builder with the audits: traffic/tileTraffic.js)
+  // (claude/drivecheck round 2) the lanes over a hero road deck inside its roadway, clear of its parapets (rail/roadDeck.js)
+  const deckLanes = rail && traffic && entry.deckLanes !== false ? squeezeDeckLanes(traffic, rail.heroes) : 0;
   // trafpark: the graph checks every driven path (lanes + junction connectors) against the parked cars' boxes and keeps
   // only the cars no path touches (a car the lanes could not be moved clear of: a junction corner, a street too narrow)
   if (parked && traffic.parkedKept) { parked.stats.trafparkDropped = parked.sites.length - traffic.parkedKept.length; parked.sites = traffic.parkedKept; }
   delete traffic.parkedKept;
+  // (claude/moto, rule 27) no LiDAR trunk on a DRIVEN PATH either: a junction turn cutting an unmeasured corner outside
+  // the carriageway passed through one (Kauwberg x Chaussee de Saint-Job); moved / dropped as above, never onto a parked
+  // car (viewer/streets/roadTrees.js pathCorridor). entry.pathTrees === false (?pathtrees=old): as before
+  if (roadTrees && entry.pathTrees !== false && traffic && feats.trees?.length) {
+    const corridor = pathCorridor(traffic);
+    const P = parked?.sites || [];
+    const onCar = (x, z) => P.some((c) => { const dx = x - c.x, dz = z - c.z; if (dx * dx + dz * dz > 9) return false; const ax = Math.cos(c.yaw), az = -Math.sin(c.yaw); const u = dx * ax + dz * az, w = -dx * az + dz * ax; return Math.abs(u) < 2.7 && Math.abs(w) < 1.25; });
+    if (corridor) {
+      const fitT = road.surfaceData ? streetFit(road.surfaceData) : null;
+      const avoid = carriageway(roads, { classAt: fitT?.classAt, onDeck: null, bandOnMeasured: true });
+      const r3 = treesOffCarriageway(feats.trees, corridor, { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z) || onCar(x, z), ground: (x, z) => hm.ground(x, z), avoid });
+      feats.trees = r3.trees; roadTrees.pathMoved = r3.moved; roadTrees.pathDropped = r3.dropped;
+    }
+  }
   const terrain = await step("terrain grid", () => terrainArrays(hm, entry.groundFit !== false));
   // the tunnels: the drawn earth over the bores (the lid) and the ground clipped at the walls (tunnels.js)
   if (tcut) netInfo.tunnels = await step("tunnel terrain", () => tunnelTerrain(tcut, terrain, hm, rail?.doc, bounds));
@@ -447,8 +541,13 @@ export async function buildTileData(entry, base) {
   roofs.surf = await step("roof surface", () => roofSurface(bDoc, bBuf, bounds));      // the falcon's collision (drawn roofs)
   // the railway for the car (viewer/rail/railData.js): fences along the line where it runs on the ground (not on bridges,
   // not over a tunnel, broken at road crossings), and below the line's own surface in the drive grid (rail top, shoulders)
-  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => railFences(rail.doc, bounds, rail.heroes, roads, hm.ground)) : null;
-  if (fences && tcut) fences.rings = tunnelFenceRings(tunnels, fences);         // no fence collider over a bore (tunnels.js)
+  // (CLASS T, rule 39, docs/RAIL_T.md; entry.railT === false = ?rail=old: as before) the fences break only at level
+  // crossings, platforms, bridges, covered boxes, a second track, a street's carriageway; panels per post bay, the car's
+  // walls the drawn panels (foot to top: over a bore the car under the lid passes, no ring cut needed)
+  const railT = entry.railT !== false;
+  const fences = rail && !keep && entry.railFix ? await step("rail fences", () => (railT ? railFences2(rail.doc, bounds, rail.heroes, roads, hm.ground, { surface: tunnelSurface(tcut, hm.surface), roadY: roadGround }) : railFences(rail.doc, bounds, rail.heroes, roads, hm.ground))) : null;
+  if (fences && tcut && !railT) fences.rings = tunnelFenceRings(tunnels, fences);         // no fence collider over a bore (tunnels.js)
+  const fenceB = fences && railT ? fenceBays(fences.lines, tunnelSurface(tcut, hm.surface)) : null;
   // the ground AS DRAWN and the walls' feet sunk onto it BEFORE the drive colliders (claude/collisions, rule 25): the
   // building colliders are traced from these walls at car height (colliders.js buildingBlocks); traced from the solids
   // before sinkFeet, a solid standing up to 2.8 m over a slope had no wall in the car band where its drawn wall (sunk
@@ -461,20 +560,30 @@ export async function buildTileData(entry, base) {
     return sinkFeet(bDoc, new Float32Array(bBuf, 8, V * 3), new Uint32Array(bBuf, 8 + V * 12, T * 3), fitGround0, footprintIndex(bDoc)); }) : null);
   const feetEarly = entry.colFeet === false ? null : await sinkWalls();
   const feetLate = () => sinkWalls();
-  const drive = await step("drive colliders", () => buildDriveData({ bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy, clipBand: entry.colBand !== false,   // boot3: ?colband=old every wall sample (colliders.js buildingBlocks)
+  // (claude/deckrail, rule 17) the drive raster once, here: the decks' parapets / railings are left off every edge where
+  // the drawn street, another deck, a lane or a tram track goes on at the deck's level (bridgeDecks.js markRailCuts: the same
+  // decision for the drawn deck below and its car walls); entry.deckRail === false (?deckrail=old): as before
+  const raster0 = osmBridges.decks.length && !keep ? driveGround(hm, road.parts) : null;
+  const railCuts = raster0 && entry.deckRail !== false ? await step("deck rails", () => markRailCuts(osmBridges.decks, deckContinuation({ hm, raster: raster0, decks: osmBridges.decks, lines: feats.lines || [],
+    paths: traffic?.xy ? Array.from({ length: traffic.paths }, (_, p) => traffic.xy.subarray(traffic.off[p] * 2, traffic.off[p + 1] * 2)) : [] }))) : null;
+  const drive = await step("drive colliders", () => buildDriveData({ ground: raster0, bDoc: keep || bDoc, bBuf: keep ? null : bBuf, net, feats, hm, parts: road.parts, bounds, surf, legacy: !!entry.driveLegacy, clipBand: entry.colBand !== false,   // boot3: ?colband=old every wall sample (colliders.js buildingBlocks)
     // the walls with their vertical extent (colliders.js heightClear): a car on a road bridge over a station's platform
     // or the line's fence passes over them
     walls: keep ? [] : [...(rail?.doc.platforms || []).map((p) => ({ ring: p.ring, top: p.top, base: p.top - 1.2 })),   // (base: a car far under it passes: Linkebeek's platforms over the Kleindalstraat bore)
       // the road bridges' parapets (citydefects 2026-11-16: this spread had slipped into the comment above, so no OSM
       // deck's parapet was a car wall since the round-2 edit)
       ...osmBridges.decks.flatMap((d) => parapetRings(d, hm.ground)),
-      ...(fences?.rings || []).map((ring) => ({ ring, top: Math.max(...ring.map(([x, z]) => hm.surface(x, z))) + FENCE_H }))] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
-  if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes));
-  if (fences) drive.counts.railFences = fences.rings.length;
+      ...(fenceB ? fenceWalls(fenceB) : (fences?.rings || []).map((ring) => ({ ring, top: Math.max(...ring.map(([x, z]) => hm.surface(x, z))) + FENCE_H })))] }));   // + the road bridges' parapets          // rail platforms: 0.76 m walls for the car   // drive mode (viewer/drive/)
+  if (rail && !keep && entry.railFix) drive.counts.railSurface = await step("rail drive surface", () => railDriveSurface(rail.doc, hm, drive.ground, bounds, rail.heroes, { old: !railT }));
+  if (fences) drive.counts.railFences = fenceB ? fenceB.length : fences.rings.length;
+  if (fences?.breaks) drive.counts.railFenceBreaks = fences.breaks;
+  if (railCuts != null) drive.counts.deckRailCuts = railCuts;
+  if (roadTrees) drive.counts.roadTrees = { moved: roadTrees.moved, dropped: roadTrees.dropped, lanesMoved: roadTrees.lanesMoved ?? 0, lanesDropped: roadTrees.lanesDropped ?? 0, pathMoved: roadTrees.pathMoved ?? 0, pathDropped: roadTrees.pathDropped ?? 0 };
+  if (deckLanes) drive.counts.deckLanes = deckLanes;
   // the tram platforms (drawn by viewer/tram.js 25 cm over the road) in the drive surface: the car rides up their kerb
   // instead of sinking into the slab (docs/collisions/DRIVE_FIX.md); ?colfix=0 keeps the old surface
   if (!keep) drive.counts.tramPlatforms = tramPlatformSurface(feats, hm, drive.ground, bounds, CARVE);
-  if (fences && railOut) railOut.fences = fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));   // (over a bore: on the drawn earth)        // drawn: viewer/rail/railway.js
+  if (fences && railOut) railOut.fences = fenceB ? fenceMesh2(fenceB) : fenceMesh(fences.lines, tunnelSurface(tcut, hm.surface));   // (over a bore: on the drawn earth)        // drawn: viewer/rail/railway.js
   drive.counts.hidden = nb - bDoc.buildings.length;     // solids a hero model replaces (it collides by its own LOD0)
   // ?kit=1: the façade kit's placement (viewer/facadeKit/placement.js) runs inside the analysis, here in the worker;
   // entry.kitExclude = BU_IDs a hero model or the interior pilot replaces
@@ -489,7 +598,7 @@ export async function buildTileData(entry, base) {
   // entry.roofs !== false: the roof kit (viewer/roofs/roofPlace.js, docs/assets/ROOFS.md; ?roofs=old = the roofs before)
   const roofKit = entry.roofs !== false ? roofCollector() : null;
   const feet = entry.colFeet === false ? await feetLate() : feetEarly;   // (the walls' feet: sunk before the drive colliders, above)
-  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
+  const buildings = await step("façade analysis", () => analyseBuildings(bDoc, bBuf, roads, feats, { kit, fronts, roofs: roofKit, ground: fitGround, fitExclude: new Set(entry.kitExclude || []), storeys: entry.storeys !== false, styles: entry.styles !== false, balcony: entry.balcony !== false, zfight: entry.zfight !== false, cellar: entry.cellar !== false, wallFix: entry.wallFix !== false, roofFlat: entry.roofFlat !== false, looks: entry.looks === false ? null : lookSet(ov.buildingLooks, entry) }));
   // what the roof kit stands on the roofs, in the falcon's drawn-roof grid (it collides with what is drawn)
   if (feet) buildings.stats.feet = feet;
   if (buildings.roofKit && roofs.surf) buildings.roofKit.stats.stampedCells = stampRoofCols(roofs.surf, buildings.roofKit.cols);
@@ -519,9 +628,13 @@ export async function buildTileData(entry, base) {
   };
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, traffic, parked: parked ? { sites: parked.sites, stats: parked.stats } : null, times, rail: railOut, grassTypes,
-    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
-      return { ...d, ...(tops ? { plan: { ...d.plan, tops } } : {}), mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) }; }),   // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
-    ...(entry.keepNet ? { net, hm } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, mesh = deckMesh(d, hm.ground, cov, v ? streetTop : null);
+      // (claude/ground, rule mover-ground; entry.movGround === false = ?movground=old: the fitted top only) the walked top never under the drawn slab
+      // every plan deck (the band-fitted ones too: the Carsoel deck, H6, walked 13 cm over its slab where the street covers it)
+      const tops = entry.movGround === false ? (v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null)
+        : d.plan ? deckTopGrid(d, cov ?? (() => false), v ? streetTop : null, meshTopNodes(mesh)) : null;
+      return { ...d, ...(tops ? { plan: { ...d.plan, tops } } : {}), mesh }; }),   // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
+    ...(entry.keepNet ? { net, hm, deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)) } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
 }
 
 // ---------------------------------------------------------------- far level of detail

@@ -1,55 +1,40 @@
 // node tools/audit/mergeGate.mjs: every gate check before a merge, one table. Each check is a node script that exits
-// non-zero on failure. To add one: one line in CHECKS (name, script, args, what it guards; optional node: [node options]). Keep it simple.
-// Browser-side gates (need the viewer running) go in BROWSER: the merger runs them on a browser turn.
-// node tools/audit/mergeGate.mjs [name ...]   (only those)
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+// non-zero on failure. One file per row: tools/audit/gate.d/<name>.mjs (export default { name, script, node?, args,
+// guards, deps?, timing?, heavy?, timeout? (s, default 600), meta? }); browser-side gates (need the viewer running) are
+// tools/audit/gate.d/browser/<name>.mjs ({ name, text }): the merger runs them on a browser turn. docs/WORKFLOW.md.
+//   node tools/audit/mergeGate.mjs [name ...]     every row (or only those), the memo on
+//     --full              ignore the memo: run every picked row
+//     --changed [--base REF]   only the rows whose deps changed vs REF (default: the merge base with claude/foundation),
+//                         + meta (tools/merge.mjs auto)
+//     --serial            one row at a time (default: the timing rows alone first, then the rest in parallel)
+//     --jobs N            the parallel CPU budget (default: the logical cores); --mem MB the memory budget (60 % of RAM)
+//     --list              the row names, one a line
+// Every row runs traced (tools/gate/trace.mjs): its deps land in .cache/gate/deps/<row>.json, a PASS's memo key in
+// .cache/gate/pass/<row>.json, its full output in .cache/gate/logs/<row>.txt (docs/SPEED_PLAN.md jobs 4-7).
+import { spawn, spawnSync } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
-import { existsSync, symlinkSync } from "node:fs";
+import os from "node:os";
+import { existsSync, symlinkSync, realpathSync, lstatSync, mkdirSync, writeFileSync, statSync } from "node:fs";
+import { loadRows, loadBrowser } from "../gate/rowFiles.mjs";
+import { rawDir, collectTrace, readTrace, CACHE } from "../gate/deps.mjs";
+import { rowKey, writePass, saveHashes } from "../gate/memo.mjs";
+import { selectRows, gitChanges } from "../gate/select.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const CHECKS = [
-  { name: "carctl", script: "tools/carctlTest.mjs", args: [], guards: "car handling targets (radius, response, slip, kerb, hill, braking), camera jitter, trams / trains solid (docs/CARCTL.md)" },
-  { name: "motion", script: "tools/audit/motionAudit.mjs", args: [], guards: "motion vectors on every mover + upscale guarantees (claude/sharp)" },
-  { name: "shell", script: "tools/audit/shellGate.mjs", args: [], guards: "every building's outer shell closed from the street: no wall wound inward, no open edge (claude/holes)" },
-  { name: "gardenzfight", script: "tools/audit/gardenZfight.mjs", args: ["--all", "--max", "40"], guards: "no two garden pieces draw a face in one plane over the same area, <= 40 small known (claude/holes)" },
-  { name: "heap", script: "tools/audit/heapGate.mjs", args: [], guards: "CPU copies dropped after the GPU upload have no unlisted reader; loadTile keeps no build result; heapDrop logic; the compile queue / flush never draw a disposed geometry (claude/heap, docs/HEAP.md)" },
-  { name: "orbitcam", script: "tools/orbitCamTest.mjs", args: [], guards: "orbit camera: picks, orbit / zoom / pan / frame, keyboard moves (no NaN, over the ground, speed by height, walls stop it) (claude/orbitcam2)" },
-  { name: "trafpark", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/trafParkAudit.mjs", args: ["--quiet", "--max", "0", "--all"], guards: "no parked car overlaps a traffic lane, all tiles (claude/trafpark)" },
-  { name: "trafparksim", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/trafParkSimTest.mjs", args: ["--tile", "I6", "--secs", "240"], guards: "simulated traffic never drives through a parked car (tile I6, 240 s) (claude/trafpark)" },
-  { name: "trafparkborder", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/trafParkBorder.mjs", args: [], guards: "no parked car under a NEIGHBOUR tile's own lane after the border drop (8 tiles: D3 D4 E3 E4 H5 H6 I5 I6) (claude/trafpark)" },
-  { name: "twinlink", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/twinLink.mjs", args: ["--quiet"], guards: "tile-border lane links: >= 99 % of the buffer copies with a twin in a loaded neighbour linked to it, 0 wrong links, link <= 5 ms per tile pair (13 tiles: Saint-Job 3 x 3 + Alsemberg) (claude/twinlink, docs/TWINLINK.md)" },
-  { name: "bridges", script: "tools/audit/bridgeAudit.mjs", args: ["--quiet"], guards: "every road-rail crossing resolves to a built structure: road bridges' decks cover their UrbIS polygon, no slab in a cutting, no open cutting under a road, roads under the line under a rail bridge, catenary under the decks (docs/VIVIER.md)" },
-  { name: "deckjoins", script: "tools/audit/deckJoins.mjs", args: [], guards: "measured (plan) bridge decks meet the streets / ground on every edge: joined, skirted or railed, no street over the deck at a joint (docs/VIVIER.md)" },
-  { name: "xmas", script: "tools/audit/xmasCheck.mjs", args: ["--quiet"], guards: "the Christmas layer: firs and market chalets on paving, clear of tram tracks, walls, tree trunks and shop doors; street garlands 7-26 m wide, >= 4.4 m over the street, no star over a tram; the kit's mesh audit 0 blocking; the fir's needle cards on the near level only, its triangle budget per level, the needle atlas size, ornaments clear of the card cores; no light added, no DynamicDrawUsage under viewer/christmas/ (claude/christmas, claude/xmasfir, docs/CHRISTMAS.md)" },
-  { name: "xmastest", node: ["--import", "./tools/christmas/hook.mjs"], script: "tools/christmas/xmasTest.mjs", args: [], guards: "the Christmas layer offline: the date switch (1 Dec - 6 Jan, ?xmas, ?day), the kit's pieces / levels / attributes, every slot material builds, lights emissive only, the fir's needle cards (canopy normals on the decoded GLB, alpha tested not blended, two-sided), the shop-front families, the level buckets (claude/christmas, claude/xmasfir)" },
-  { name: "skyctl", script: "tools/audit/skyctlCheck.mjs", args: [], guards: "the dev panel's sky controls: every URL key has a features row + panel control with one range, defaults = the sky's own (the look as before), extras neutral, no lights, uniforms only (claude/skyctl)" },
-  { name: "stutter", node: ["--import", "./tools/heap/register.mjs"], script: "tools/audit/stutterCheck.mjs", args: ["--quiet"], guards: "falcon-flight hitches: compile slices <= 4 ms while playing (asyncPipes.js fineCompile), the heap-drop check <= 3 ms a task, the Square des Heros ground in slices, a tile landing's stops-to-plants placements a frame apart, the grass field baked only when blades can show, shadow-warm groups drawn by the sun cache, staged landmarks' shadow pass warmed; each behind its ?x=old (claude/falconstutter, docs/perf/FALCON_STUTTER.md)" },
-  { name: "stutter2", node: ["--import", "./tools/christmas/hook.mjs"], script: "tools/audit/stutter2Check.mjs", args: ["--quiet"], guards: "falcon-flight hitches round 2: the street-life boxes' node build shared by every tile (three's own canReferenceInstanceData passes, 0 builds per new tile), a distance-swapped mesh's fading copies (kit walls near + far) made with its first tile and a retire's new copies shadow-warmed, a tile's gardens and the hero collider poll in <= 3 ms slices (same results as at once, yields without the timer clamp), the hero BVH copy transferred; each behind its ?x=old (claude/falcon2, docs/perf/FALCON_STUTTER.md)" },
-  { name: "roadbends", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/roadBends.mjs", args: ["--quiet"], guards: "road-engine strips at sharp bends, all tiles: 0 folded triangles (plan vs station / lateral frame), no spike, no crack between a row's copies, no exposed hole added, the engine sidewalks / verges (drawn where UrbIS maps nothing) 0 folded too, every vertex the trim moved near a folding bend (the rest bit-identical, kept triangles in order), the default build path = the audited trim (claude/curvedroads, docs/roads/BENDS.md)" },
-  { name: "mdrawcull", node: ["--import", "./tools/heap/register.mjs"], script: "tools/audit/mdrawCull.mjs", args: ["--quiet"], guards: "multi-draw culls (viewer/multiDraw.js) on a synthetic city: chunks tile every part exactly (CHMAX fallback too), no instance in a view / sun / lamp frustum lost vs 160 m chunks, fewer drawn with ?mdchunk=80, view camera near to far with ?mdsort=1, shadow + blended passes in the old order, defaults 160 m / 48 unsorted, indirect <= 2560 B a part with range uploads, sort <= 20 us, cull <= 2 x old (claude/mdraw, docs/AGARGARO.md)" },
-  { name: "policerear", node: ["--import", "./tools/christmas/hook.mjs"], script: "tools/audit/policeRear.mjs", args: ["--quiet"], guards: "the player's police car rear in the chase view: the rear plate a pre-filtered texture on every police body, the rear's thin-feature (clamp-miss) budget at the chase camera, the switch a features row, no light / DynamicDrawUsage (claude/policerear, docs/POLICEREAR.md)" },
-  { name: "colliders", node: ["--import", "./tools/road_audit/register.mjs"], script: "tools/audit/colliderAudit.mjs", args: ["F1", "E4", "B6", "D4", "--jobs", "4", "--quiet", "--worst", "0", "--max", "gate=0,lane=75,missing=6,invisible=7,offset=17"], guards: "colliders vs what is drawn on 4 tiles (Carre Cassimans F1, the police station E4, Professeur Hustin B6, the D4 slope block): the police gate mouth clear, building colliders traced from the SUNK walls (?colfeet=old: missing 10 / invisible 13 / offset 34 fails), no new lane blocker (ceilings); city-wide: --all (claude/collisions, rule 25 provisional, docs/COLLIDER_AUDIT.md)" },
-  { name: "bike", node: ["--import", "./tools/heap/register.mjs"], script: "tools/bike/bikeTest.mjs", args: ["--quiet"], guards: "the kid's BMX (viewer/bike/, docs/BIKE.md): deterministic fixed step, kid speeds (flat 22-28 / sprint 28-35 km/h, 12 % descent), never tunnels (ramps / kerb / rollers at 58 km/h, the wall), a hop clears the 15 cm kerb (no hop: stopped / over the bars), 12 % pedalled seated / 20 % pushed, sand slows, landing rules (level / rear first ridden, nose down / sideways / 4 m flat / trick held = crash), brakes + skid, manual, pumping beats coasting, the log hop, 10 min random input finite and never under the ground, every constant a panel slider, the lab's model + camera, arrows = WASD and no key clash (claude/bike, rule 27 provisional)" },
-  { name: "kid", node: ["--import", "./tools/heap/register.mjs"], script: "tools/kid/kidTest.mjs", args: ["--quiet"], guards: "the kid (docs/KID.md: models/characters/kid.glb from tools/characters/kid.py + ualBuild.mjs --kid): the UAL rig's joints and rest orientations, every UAL1 + UAL2 clip binds, the bind pose, CPU-skinned deformation through 15 clips (tears no worse than the UAL mannequin's x3), LOD budgets 15k / 6k / 2k, named slots in the palette; the rider IK on the placeholder bike AND the BMX (full crank turn x full steer x 7 modes: no limb stretched, hands and feet on their empties, no NaN); the mount / dismount state machine; E free on the bike, foot keys = the bike's meaning (claude/kid, rule 28 provisional)" },
-  { name: "bmx", script: "tools/audit/bmxCheck.mjs", args: ["--quiet"], guards: "the kid's BMX (models/bike/bmx.glb): the moving nodes + rider / contact empties under the right parents, no scale, pivots on the lab's numbers (wheelbase 0.95, wheel 0.254, head angle 74, fork offset 28 mm, BB 0.29, cranks 175 opposite), every node's 3 LODs within budget (16k / 8.5k / 2k), named slots only, spoke cards blended + KTX2 (rule 23), chain KTX2, mesh audit 0 blocking per LOD (claude/bmx, docs/BMX.md)" },
-  { name: "lycee", node: ["--import", "./tools/christmas/hook.mjs"], script: "tools/audit/lyceeCheck.mjs", args: ["--quiet"], guards: "the Lycée Français front: its bars pre-filtered (a coverage card on every panel and the gate, the modelled bars only where >= 2 internal px), no two faces within 1 mm over the same area, none in a building wall, no garden piece / plant on the railing; ?quick=1 keeps its flags; the Chemin privé 't Cortenbosch old lane (OSM 1235727248) built every metre, >= 2.5 m, joined at both ends, one-way in the OSM direction, nothing standing on it (claude/lycee, docs/LYCEE.md)" },
-];
-const BROWSER = [
-  "BIKE (docs/BIKE.md): debug/bikeLab.html, the feel checklist in docs/BIKE.md \"Browser turn\" (claude/bike)",
-  "HEAP (docs/HEAP.md): fresh tab, localStorage cleared, each boot: ?gamemenu=0&orbitcam2=old, default (menu), ?gamemenu=0&tilecache=0 (cold), ?game=police (+ debug/gamePerf.js police({ seconds: 45 }): tiles unload + reload), ?game=falcon: console 0 [heapDrop] errors, 0 WebGPU errors, window.__heapDrop.tripCounts {} (window.__queueSkips: disposed meshes the queue left out) (claude/heap)",
-  "FALCON STUTTER (docs/perf/FALCON_STUTTER.md): ?game=falcon, after the play loader (await import('/debug/falconStutter.js')).run({ seconds: 60 }): summary.over50 0, p99 <= 25 ms, every long frame's why attributed (claude/falconstutter); round 2: alternate page loads default / &retirewarm=old&boxshare=old&gardenslice=old&heropoll=old, and ?buildaudit=1: 0 streetlife-box / walls (kit, far):fade builds on screen after the first tile (claude/falcon2)",
-  "VISUAL TOUR (docs/TOUR.md): debug/tour.html on the branch vs the claude/foundation baseline, node tools/tour/compare.mjs; look at every flagged view (claude/tour)",
-  "debug/sharpCheck.js  motionCoverage(): every mesh that moved over 30 frames has a motion source (claude/sharp)",
-  "debug/sharpCheck.js  stability(): frame-to-frame luma noise + Laplacian sharpness while parked / driving (claude/sharp)",
-  "debug/rearCheck.js  ab(): the police car's rear crop while driving straight / turning in the chase view, old (modelled plate) vs new (textured) alternated + isolation knobs: shimmer + hot pixels of the default <= the old state (claude/policerear)",
-  "debug/lyceeCheck.js  ab(): the Lycée Français fence (left of the vehicle gate) and gate crops at 3 / 8 / 20 m while the camera dollies sideways, ?lyceerail old / new / blend alternated: shimmer + hot pixels of the default <= old (claude/lycee, docs/LYCEE.md)",
-  "TRAFPARK (docs/TRAFPARK.md): ?quick=1&place=alsemberg|stjob-street|fortjaco&with=traffic, then (await import('/debug/trafparkWatch.js')).watch(150): into 0, parkedHit 0 (claude/trafpark)",
-];
+const CHECKS = await loadRows(ROOT);
+const BROWSER = (await loadBrowser(ROOT)).map((b) => b.text);
+const argv = process.argv.slice(2);
+if (argv.includes("--list")) { for (const c of CHECKS) console.log(c.name); process.exit(0); }
+const VALUED = new Set(["--base", "--jobs", "--mem"]);
+const opt = (k, d = null) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
+const FULL = argv.includes("--full"), CHANGED = argv.includes("--changed"), SERIAL = argv.includes("--serial");
+const CPU = Math.max(1, +opt("--jobs", 0) || os.cpus().length);
+const MEM = +opt("--mem", 0) || Math.round((os.totalmem() / 2 ** 20) * 0.6);
 
 // A git worktree lacks the main checkout's untracked inputs (node_modules, the raw data): link them in (junctions),
-// so a gate in a worktree tests the code, not the folder. Both paths are git-ignored.
-const LOCAL_ONLY = ["tools/worker/node_modules", "data/raw"];
+// so a gate in a worktree tests the code, not the folder. All are git-ignored.
+const LOCAL_ONLY = ["tools/worker/node_modules", "tools/road_audit/node_modules", "data/raw"];
 try {
   const main = path.dirname(spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: ROOT, encoding: "utf8" }).stdout.trim());
   if (main && path.resolve(main) !== path.resolve(ROOT)) {
@@ -59,22 +44,147 @@ try {
     }
   }
 } catch (e) { console.log(`(worktree links skipped: ${e.message})`); }
-
-const only = process.argv.slice(2);
-const rows = [];
-let failed = 0;
-for (const c of CHECKS) {
-  if (only.length && !only.includes(c.name)) continue;
-  const t0 = Date.now();
-  const r = spawnSync(process.execPath, [...(c.node || []), path.join(ROOT, c.script), ...c.args], { cwd: ROOT, encoding: "utf8", timeout: 10 * 60 * 1000 });
-  const ok = r.status === 0;
-  if (!ok) failed++;
-  const out = ((r.stdout || "") + (r.stderr || "")).trim().split("\n");
-  const fails = out.filter((l) => /FAIL/.test(l)).slice(0, 3).map((l) => l.trim().slice(0, 120));
-  rows.push([c.name, ok ? "PASS" : "FAIL", ((Date.now() - t0) / 1000).toFixed(1) + " s", ok ? c.guards : fails.join(" / ") || `exit ${r.status}`]);
+// the junctions' targets, so the tracer records their files by their repo path
+const LINKS = [];
+for (const p of LOCAL_ONLY) {
+  const here = path.join(ROOT, p);
+  try { const real = realpathSync(here); if (path.resolve(real).toLowerCase() !== path.resolve(here).toLowerCase()) LINKS.push([real, p]); } catch {}
 }
-console.log("| check | result | time | guards / failures |\n|---|---|---|---|");
-for (const r of rows) console.log("| " + r.join(" | ") + " |");
+
+const only = argv.filter((a, i) => !a.startsWith("--") && !VALUED.has(argv[i - 1]));
+const unknown = only.filter((n) => !CHECKS.some((c) => c.name === n));
+if (unknown.length) { console.log(`unknown gate row(s): ${unknown.join(", ")} (node tools/audit/mergeGate.mjs --list)`); process.exit(2); }
+
+// ------------------------------------------------------------------ which rows
+const T0 = Date.now();
+let changes = null;
+if (CHANGED) {
+  const g = gitChanges(opt("--base"));
+  changes = g.changes;
+  console.log(`--changed: ${changes.length} file(s) changed vs ${g.ref.slice(0, 12)}${changes.length ? ": " + changes.slice(0, 8).map((c) => c.path).join(", ") + (changes.length > 8 ? " ..." : "") : ""}`);
+}
+const { run: RUN, skip: SKIP } = selectRows(CHECKS, { only, changes, full: FULL });
+if (SKIP.length) {
+  console.log(`skipped ${SKIP.length} row(s):`);
+  for (const s of SKIP) console.log(`  ${s.row.name.padEnd(16)} ${s.why}`);
+}
+console.log(`running ${RUN.length} row(s)${FULL ? " (--full: memo off)" : ""}:`);
+for (const r of RUN) console.log(`  ${r.name.padEnd(16)} ${[r.because && `touched by ${r.because}`, r.memoWhy].filter(Boolean).join("; ")}`);
+
+// ------------------------------------------------------------------ running one row (traced)
+const LOGS = path.join(CACHE, "logs");
+mkdirSync(LOGS, { recursive: true });
+const TRACE = pathToFileURL(path.join(ROOT, "tools/gate/trace.mjs")).href;
+const results = new Map();
+
+function treeKill(p) {
+  if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(p.pid), "/T", "/F"], { stdio: "ignore" });
+  else try { process.kill(-p.pid, "SIGKILL"); } catch { p.kill("SIGKILL"); }
+}
+
+function runRow(c, { timeoutScale = 1 } = {}) {
+  return new Promise((done) => {
+    const raw = rawDir(c.name), t0 = Date.now(), limit = c.timeout * timeoutScale;
+    const env = { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ""} --import=${TRACE}`.trim(), GATE_TRACE_OUT: raw, GATE_TRACE_ROOT: ROOT, GATE_TRACE_LINKS: JSON.stringify(LINKS) };
+    const p = spawn(process.execPath, [...c.node, path.join(ROOT, c.script), ...c.args], { cwd: ROOT, env, stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32", windowsHide: true });
+    let out = "", timedOut = false;
+    p.stdout.on("data", (b) => { out += b; }); p.stderr.on("data", (b) => { out += b; });
+    const timer = setTimeout(() => { timedOut = true; treeKill(p); }, limit * 1000);
+    p.on("close", (code) => {
+      clearTimeout(timer);
+      const secs = (Date.now() - t0) / 1000, ok = code === 0 && !timedOut;
+      writeFileSync(path.join(LOGS, `${c.name}.txt`), out);
+      const trace = collectTrace(c, raw, { links: LINKS, secs, ok });
+      // the memo: a PASS whose deps did not change while it ran (a file edited mid-run is not what it tested)
+      let memo = "";
+      if (ok) {
+        const moved = trace.files.filter((f) => { try { return statSync(path.join(ROOT, f)).mtimeMs > t0; } catch { return false; } });
+        if (moved.length) memo = `not memoised: ${moved.slice(0, 3).join(", ")} changed while it ran`;
+        else writePass(c.name, rowKey(c, trace), { secs: +secs.toFixed(1), files: trace.files.length });
+      }
+      const lines = out.trim().split("\n");
+      const fails = lines.filter((l) => /FAIL/.test(l)).slice(0, 3).map((l) => l.trim().slice(0, 120));
+      const why = timedOut ? `timeout after ${limit} s` : `exit ${code}`;
+      results.set(c.name, { ok, secs, text: ok ? c.guards : [fails.join(" / "), why].filter(Boolean).join(" / "), memo, trace });
+      console.log(`[${String(results.size).padStart(2)}/${RUN.length}] ${c.name.padEnd(16)} ${ok ? "PASS" : "FAIL"} ${secs.toFixed(1).padStart(6)} s  (${((Date.now() - T0) / 1000) | 0} s in)${ok ? "" : `  log: .cache/gate/logs/${c.name}.txt`}${memo ? "  " + memo : ""}`);
+      done();
+    });
+  });
+}
+
+// ------------------------------------------------------------------ the scheduler
+// cost estimates from the row's last trace (else from its args): memory = its processes' peak, CPU = its peak node
+// threads (or --jobs / --threads), heavy = declared, or >= 2 GB, or a tile build over many tiles
+function cost(c) {
+  const t = readTrace(c.name);
+  const argN = (k) => { const i = c.args.indexOf(k); return i >= 0 ? +c.args[i + 1] || 0 : 0; };
+  const jobsArg = argN("--jobs") || argN("--threads");
+  const guessHeavy = c.args.includes("--all") || jobsArg > 1;
+  const mem = t?.peakMB || (guessHeavy ? 3000 : 500);   // (measured 2026-11-20: tile rows 1.6-3.0 GB, the rest < 0.8 GB)
+  const threads = t ? Math.max(1, (t.peakThreads || 1) - (t.procs > 1 ? 1 : 0)) : 0;
+  const cpu = Math.min(CPU, Math.max(1, jobsArg || threads || (guessHeavy ? 4 : 1)));
+  const heavy = c.heavy ?? (mem >= 2000 || guessHeavy);
+  return { mem: Math.min(mem, MEM), cpu, heavy, secs: t?.secs || (guessHeavy ? 300 : 20) };
+}
+
+const timing = RUN.filter((c) => c.timing), rest = RUN.filter((c) => !c.timing);
+if (timing.length) console.log(`\n== timing group (alone, one at a time): ${timing.map((c) => c.name).join(" ")}`);
+for (const c of timing) await runRow(c);
+if (SERIAL) {
+  if (rest.length) console.log(`\n== the other rows, one at a time (--serial)`);
+  for (const c of rest) await runRow(c);
+} else if (rest.length) {
+  const HEAVY_MAX = 3;
+  const C = new Map(rest.map((c) => [c.name, cost(c)]));
+  console.log(`\n== the other ${rest.length} rows in parallel (CPU ${CPU}, memory ${MEM} MB, heavy <= ${HEAVY_MAX}; heavy: ${rest.filter((c) => C.get(c.name).heavy).map((c) => c.name).join(" ") || "-"})`);
+  // longest first (the makespan); the timeouts doubled (the rows share the machine)
+  const queue = rest.slice().sort((a, b) => C.get(b.name).secs - C.get(a.name).secs);
+  let mem = 0, cpu = 0, heavy = 0;
+  const live = new Set(), started = [];
+  // the machine's own free memory too (other jobs share it): a row starts only while what is free, less what the rows
+  // started in the last 30 s have not taken yet, keeps 1 GB spare; a timer re-pumps while rows wait on memory
+  const FREE_SPARE = 1024, RAMP_MS = 30000;
+  let timer = null;
+  await new Promise((allDone) => {
+    const pump = () => {
+      const now = Date.now();
+      while (started.length && now - started[0].t > RAMP_MS) started.shift();
+      let free = os.freemem() / 2 ** 20 - started.reduce((s, x) => s + x.mem, 0);
+      for (let i = 0; i < queue.length; i++) {
+        const c = queue[i], k = C.get(c.name);
+        const fits = !live.size || (mem + k.mem <= MEM && free - k.mem >= FREE_SPARE && cpu + k.cpu <= CPU && (!k.heavy || heavy < HEAVY_MAX));
+        if (!fits) continue;
+        queue.splice(i--, 1);
+        mem += k.mem; cpu += k.cpu; heavy += k.heavy ? 1 : 0; free -= k.mem;
+        started.push({ t: now, mem: k.mem });
+        const pr = runRow(c, { timeoutScale: 2 }).then(() => { mem -= k.mem; cpu -= k.cpu; heavy -= k.heavy ? 1 : 0; live.delete(pr); pump(); });
+        live.add(pr);
+      }
+      clearTimeout(timer);
+      if (queue.length) timer = setTimeout(pump, 5000);
+      if (!live.size && !queue.length) allDone();
+    };
+    pump();
+  });
+}
+saveHashes();
+
+// ------------------------------------------------------------------ the table (the rows' own order)
+// a row that writes a file another row reads: a race when they run together (listed: fix the writer)
+if (!SERIAL) {
+  for (const [a, ra] of results) for (const [b, rb] of results) if (a !== b) {
+    const both = (ra.trace.writes || []).filter((w) => rb.trace.files.includes(w));
+    if (both.length) console.log(`WARNING: ${a} writes ${both.slice(0, 3).join(", ")}, which ${b} reads (parallel rows: a race)`);
+  }
+}
+let failed = 0;
+console.log("\n| check | result | time | guards / failures |\n|---|---|---|---|");
+for (const c of CHECKS) {
+  const r = results.get(c.name), s = SKIP.find((x) => x.row === c);
+  if (r) { if (!r.ok) failed++; console.log(`| ${c.name} | ${r.ok ? "PASS" : "FAIL"} | ${r.secs.toFixed(1)} s | ${r.text} |`); }
+  else if (s) console.log(`| ${c.name} | SKIP | - | ${s.why} |`);
+}
 console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}`);
-console.log(failed ? `\n${failed} gate check(s) FAILED` : "\nall gate checks pass");
+console.log(`\n${RUN.length} run, ${SKIP.length} skipped, ${((Date.now() - T0) / 1000).toFixed(0)} s wall`);
+console.log(failed ? `${failed} gate check(s) FAILED` : "all gate checks pass");
 process.exitCode = failed ? 1 : 0;

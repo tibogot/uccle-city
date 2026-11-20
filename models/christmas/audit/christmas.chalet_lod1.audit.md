@@ -1,19 +1,19 @@
-# Mesh audit: christmas chalet_lod1 (needle-vs-needle overlaps exempt: 7)
+# Mesh audit: christmas chalet_lod1 (needle-vs-needle overlaps exempt: 6)
 
-6,130 triangles, 3,449 welded vertices, 0 open edges, 0 rays, 125 ms.
+6,116 triangles, 3,442 welded vertices, 0 open edges, 0 rays, 144 ms.
 
-**0 blocking**, 1185 warnings. Clean (no blocking item).
+**0 blocking**, 1189 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| sliver | warn | 1179 |
+| sliver | warn | 1183 |
 | nonmanifold | warn | 6 |
 | seam | info | 142 |
-| backtoback | info | 178 |
+| backtoback | info | 177 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## sliver (warn, 1179)
+## sliver (warn, 1183)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -58,7 +58,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | -0.39, 1.85, 1.01 | chalet_lod1/chalet_trim | 58 | 2.33 |
 | 0.39, 1.92, 1.01 | chalet_lod1/chalet_trim | 58 | 2.33 |
 
-(1139 more in the JSON)
+(1143 more in the JSON)
 
 ## nonmanifold (warn, 6)
 
@@ -75,50 +75,50 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| -1.67, 1.79, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.4 | 49 | 13.4 |
-| -0.66, 1.73, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.31 | 44 | 16.8 |
+| -1.67, 1.79, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.42 | 48 | 12.2 |
+| -0.66, 1.73, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.32 | 46 | 16.8 |
 | 0.34, 1.72, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.36 | 44 | 13.7 |
 | -1.16, 1.99, 1.26 | chalet_lod1/chalet_wood + chalet_lod1/roof_felt | 9.44 | 36 | 58.7 |
 | -1.25, 0.97, 1.00 | chalet_lod1/chalet_trim + chalet_lod1/chalet_wood | 5.08 | 34 | 90 |
-| -1.32, 1.69, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.38 | 33 | 20.5 |
+| 0.01, 1.67, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.25 | 34 | 12.2 |
 | -0.96, 1.69, 1.38 | chalet_lod1/metal_frame + chalet_lod1/fir_needles | 0.16 | 32 | 24 |
+| -1.32, 1.69, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.38 | 31 | 14.1 |
+| 0.17, 1.62, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.18 | 31 | 24.8 |
 | 0.68, 1.75, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.27 | 31 | 18.2 |
 | 0.94, 1.65, 1.33 | chalet_lod1/metal_frame + chalet_lod1/fir_needles | 0.17 | 30 | 31.5 |
 | -0.33, 1.71, 1.34 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.27 | 30 | 14.7 |
-| 1.01, 1.68, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.24 | 29 | 21.6 |
-| 1.34, 1.70, 1.35 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.28 | 28 | 24.6 |
-| -0.99, 1.67, 1.35 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.26 | 26 | 32.9 |
-| -0.02, 1.67, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.22 | 26 | 18.9 |
-| 0.17, 1.62, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.15 | 25 | 12.8 |
+| 1.01, 1.68, 1.36 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.24 | 30 | 21.6 |
+| 1.34, 1.70, 1.35 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.29 | 30 | 15.9 |
+| -0.98, 1.67, 1.35 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.29 | 27 | 25.4 |
 | -1.25, 1.00, 0.94 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 5.23 | 24 | 90 |
 | -0.75, 1.97, 1.02 | chalet_lod1/chalet_wood + chalet_lod1/sign_board | 3.26 | 24 | 76 |
-| -0.35, 1.72, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 24 | 39.9 |
-| -1.66, 1.77, 1.37 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.15 | 22 | 35.3 |
-| -1.46, 1.72, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 22 | 43.1 |
-| -0.12, 1.68, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.15 | 21 | 28.7 |
-| -1.67, 1.78, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 20 | 47.7 |
-| -0.34, 1.69, 1.37 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.15 | 20 | 41.4 |
-| 0.21, 1.68, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.16 | 20 | 51.3 |
+| -0.12, 1.68, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 24 | 34.4 |
+| -0.35, 1.72, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 22 | 34.1 |
+| -1.66, 1.77, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.16 | 21 | 35.3 |
+| -1.46, 1.72, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 21 | 43.1 |
+| -0.81, 1.71, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 20 | 24.5 |
 | -1.73, 1.97, -1.35 | chalet_lod1/chalet_trim + chalet_lod1/roof_felt | 7 | 19 | 56.5 |
 | -0.75, 2.11, 1.02 | chalet_lod1/chalet_wood + chalet_lod1/sign_board | 3.05 | 19 | 76 |
 | -1.23, 1.65, 1.37 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.16 | 19 | 32.3 |
-| -1.01, 1.67, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 19 | 42.4 |
-| -0.66, 1.73, 1.37 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 19 | 50.3 |
-| -0.56, 1.78, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 19 | 47.7 |
-| 0.87, 1.70, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 19 | 43.7 |
+| -0.34, 1.69, 1.37 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.15 | 19 | 29.1 |
 | -1.54, 0.15, -1.05 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 0.35 | 18 | 90 |
 | 1.47, 0.15, 0.96 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 0.35 | 18 | 90 |
-| 1.25, 1.01, 1.02 | chalet_lod1/chalet_trim + chalet_lod1/chalet_wood | 0.22 | 18 | 89.2 |
-| -1.73, 1.97, 1.35 | chalet_lod1/chalet_trim + chalet_lod1/roof_felt | 7 | 18 | 56.5 |
+| 1.73, 1.97, 1.35 | chalet_lod1/chalet_trim + chalet_lod1/roof_felt | 7 | 18 | 56.5 |
+| -1.67, 1.78, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.13 | 18 | 50.6 |
+| -1.01, 1.67, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 18 | 42.4 |
+| -0.66, 1.73, 1.37 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 18 | 50.4 |
 | -0.44, 1.74, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.17 | 18 | 40.3 |
-| 0.67, 1.74, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 18 | 37.7 |
+| 0.21, 1.68, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.16 | 18 | 51.3 |
+| 0.67, 1.74, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.15 | 18 | 35.4 |
+| 0.98, 1.68, 1.38 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 18 | 40 |
 | 1.33, 1.67, 1.37 | chalet_lod1/fir_needles + chalet_lod1/fir_needles | 0.14 | 18 | 63.4 |
 | -1.50, 0.73, -0.96 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 4.25 | 17 | 90 |
 | 1.46, 0.16, -1.00 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 4.25 | 17 | 90 |
+| -1.50, 1.02, 0.96 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 1.85 | 17 | 90 |
 
 (102 more in the JSON)
 
-## backtoback (info, 178)
+## backtoback (info, 177)
 
 | at | parts | area |
 |---|---|---|
@@ -163,4 +163,4 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 1.21, 1.00, 0.97 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 0.01181 |
 | 1.41, 1.00, 0.98 | chalet_lod1/chalet_trim + chalet_lod1/chalet_trim | 0.01059 |
 
-(138 more in the JSON)
+(137 more in the JSON)
