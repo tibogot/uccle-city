@@ -227,6 +227,31 @@ the dent (player / police, traffic, props), the features row, no draw call / lig
 Not looked at in the browser: the police game's accident props and the police car (same material path as the player's
 car; the gate compiles all three headless). A dark paint hides the darker tone: the dent reads mainly by its shape.
 
+## Hedges (HEDGES SOLID, claude/hedges2, 2026-11-20, rule hedge-wall)
+
+Owner decision (docs/TODO.md): a dense clipped hedge over ~1.2 m stops the car like a wall, softly; lower ones stay soft.
+- **Where.** The garden hedge modules' collision stand-ins (`furniture-gardenhedge`, cityGardens.js) get their kind in
+  viewer/drive/driveMode.js featureColliders from the module's DRAWN height (the instance's y column, gardenHedge.js
+  `Hm`; not the sheared box, which grows with the slope): `hedgeKind(h)` (colliders.js) = `KIND.hedgeWall` (9) over
+  `HEDGE_WALL_H` = 1.18 m, else `KIND.hedge` (8). The data (18.4k runs): 1.2-1.8 m about 73 %, 1.1 m 9 %, <= 1.0 m 9 %.
+  Every collider is still the drawn hedge's stand-in (rule 25); the walker's mesh collider is unchanged (blocked by all).
+- **Response.** carEnv.js: a hedgeWall is a normal wall contact (pushed out, `onHit`), not the soft-hedge drag. hitSlide
+  (carPhysics.js): head-on restitution x `HEDGE_BOUNCE` 0.35, the scrape x `HEDGE_MU` 0.6, the body jolt x 0.6. The
+  two-wheelers' `motoHit` treats it as a wall (a hard head-on hit is a crash, "hedge"). carHit's pushed parked cars and
+  the prop world skip only `KIND.hedge`, so a tall hedge stops them too.
+- **Shake.** carEnv hands each hit (vn > 0.3) to `HEDGE_HITS.sink` = viewer/gardens/hedgeShake.js `shakeHedge`: a fixed
+  pool of 4 vec4 uniforms (hit point + the displacement now), stepped by cityGardens.update while a slot lives, added to
+  the hedge body's and cards' wind lean (gardenHedge.js `leanAt`): up to 12 cm at the top, falling off over 1.4 m,
+  5 Hz, gone by 0.6 s. No buffer writes, no DynamicDrawUsage, no material rebuild, 0 draws.
+- **Leaves.** Skipped: the only leaf particles (viewer/weather/precipitation.js `leaves`) are the weather's autumn
+  emitter (crown slots, global rate, only with weather on; a landed leaf rests a minute): not a burst system. A small
+  pooled burst would be its own job.
+- **Old.** `?hedgewall=old`: every hedge module soft, no shake. Gate row `hedgewall` (tools/collide/hedgeWallTest.mjs).
+- **Audits.** gardenClear.js gardenPieces gives a tall hedge kind 9; colliderAudit / driveCheck / railCorridor count
+  `KIND.hedgeWall` as HARD.
+- Known (before this job): the soft-hedge drag is applied per overlapped module, so a car crossing 2-3 modules at once
+  is slowed 2-3x the nominal `HEDGE_DRAG` (a coasting car at 30 km/h stops inside a low hedge; on the throttle it passes).
+
 ## Weak spots / next
 
 - The hit car has no roll / pitch kick (the fleet's matrix has yaw + pitch only) and no body sway: a big hit could

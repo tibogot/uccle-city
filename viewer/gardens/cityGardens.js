@@ -22,6 +22,7 @@ import { drain, sliced } from "../slices.js";
 import { Streamer, MARGIN } from "../instanceStream.js";
 import { wind } from "../foliage/wind.js";
 import { clearRoadsGen, restyleHedges } from "./gardenClear.js";
+import { shakeLive, updateShake } from "./hedgeShake.js";
 
 const qs = new URLSearchParams(location.search);
 const GARDEN_ROAD_OLD = qs.get("gardenroad") === "old";
@@ -124,6 +125,7 @@ export const cityGardens = {
     if (this.hedges && !globalThis.grass) {          // the leaf cards' flutter (with the grass on, viewer/grass/cityGrass.js steps the shared wind)
       const now = performance.now(); wind.update(Math.min(0.1, (now - (this.tWind || now)) / 1000)); this.tWind = now;
     }
+    if (shakeLive()) updateShake();                   // (rule hedge-wall: a hit hedge's wobble)
     this.streamer.update(camera);
   },
   /** JOINS check (HANDOFF: no floating edge where a model meets the ground) against the drawn ground of a tile:
