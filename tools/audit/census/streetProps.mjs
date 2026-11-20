@@ -19,11 +19,15 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, json, at, ROOT, imp, lineIndex } from "./lib_street.mjs";
+import { judge, report, rewrite } from "../gaps.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
 // (claude/streetprops, rule 30) --old: the city as ?streetprops=old draws it (the data's `was` / signsOld, the load-time
-// move without the tram tracks and the OSM width, the plate posts moved at load); --max k=v,...: a gate (exit 1 over)
-const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet"), RAILOLD = flag("--railold");   // --railold: ?rail=old (no track-bed keep-clear, rule 39)
+// move without the tram tracks and the OSM width, the plate posts moved at load); --max k=v,...: count ceilings (exit 1
+// over); --register (claude/street1, rule gap-register): every finding judged against data/gaps.json by its stable id
+// (`streetprops.<check>:<kind>@<x>,<z>:0-0`, tools/audit/gaps.mjs), no counts; --write-register rewrites those entries
+const OLD = flag("--old"), MAX = opt("--max", null), QUIET = flag("--quiet"), RAILOLD = flag("--railold"), REG = flag("--register"), WREG = flag("--write-register");
+const GATED = ["plateGap", "signFacing", "signConflict", "inRoad", "villo", "onRail", "inHero"].map((k) => `streetprops.${k}`);   // --railold: ?rail=old (no track-bed keep-clear, rule 39)
 const TRAM_HW = 1.3, GAP = 0.15, FACE_TOL = 45, NEAR_ROAD = 12;
 
 if (!CHILD) {
@@ -50,6 +54,10 @@ if (!CHILD) {
   if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byKind, items }, null, 1));
   // the gate (tools/audit/mergeGate.mjs streetprops): ceilings per count
   let bad = res.some((r) => r.error) ? 1 : 0;
+  const findings = res.flatMap((r) => r.findings || []), done = res.filter((r) => !r.error).map((r) => r.tile);
+  console.log(`findings by check: ${JSON.stringify(findings.reduce((a, f) => ((a[f.inv] = (a[f.inv] || 0) + 1), a), {}))}`);
+  if (WREG) { const w = rewrite(findings, { invariants: GATED, tiles: done, date: new Date().toISOString().slice(0, 10), decision: (f) => `open (${f.cause}): keep-out from the street model (STREET_MODEL_PLAN job 6)` }); console.log(`  register rewritten: ${w.written} entries, ${w.kept} others kept`); }
+  else if (REG) bad += report("streetprops", judge(findings, { invariants: GATED, tiles: done }));
   if (MAX) for (const kv of MAX.split(",")) {
     const [k, v] = kv.split("="), n = sum[k] || 0;
     if (n > +v) { console.log(`FAIL ${k} ${n} > ${v}`); bad++; } else console.log(`ok ${k} ${n} <= ${v}`);
@@ -259,4 +267,15 @@ counts.onRail = 0; counts.inHero = 0; items.onRail = [];
   for (const p of sl.postboxes || []) chk("postbox", p);
   for (const v of sk.villo || []) for (const p of [v.totem, ...(v.docks || []), ...(v.bikes || [])]) chk("villo", p);
 }
-console.log(JSON.stringify({ tile: T, counts, items }));
+// stable ids (rule gap-register): one finding per drawn piece, its element = its data id or kind@x,z
+const findings = [];
+{
+  const el = (it) => `${String(it.id ?? it.kind ?? "plate").replace(/[:\s]+/g, "_")}@${String(it.at).replace(/\s/g, "")}`;
+  const add = (inv, it, cause, info) => findings.push({ id: `streetprops.${inv}:${el(it)}:0-0`, tile: T, inv, at: it.at, street: it.street ?? it.stop ?? it.name, cause, info });
+  for (const it of items.plateGap) add("plateGap", it, "source-data", it.what);
+  for (const it of items.signFacing) add(it.codes === "C1/F19" ? "signConflict" : "signFacing", { ...it, kind: `sign-${it.codes}` }, "sign-data", it.why);
+  for (const it of items.inRoad) add("inRoad", it, it.tram && !it.lane ? "tram-envelope" : "lane-data", `${it.kind}${it.tram ? " (tram)" : ""} ${it.deep} m in`);
+  for (const it of items.villo) add("villo", { ...it, kind: `villo${it.car ? "Car" : it.bent ? "Bent" : "Off"}` }, "lane-data", it.name);
+  for (const it of items.onRail) add(it.why.startsWith("on a track") ? "onRail" : "inHero", it, "source-data", it.kind);
+}
+console.log(JSON.stringify({ tile: T, counts, items, findings }));

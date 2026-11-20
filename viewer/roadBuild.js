@@ -111,7 +111,7 @@ export function buildRoadData(o) {
   // markings (rule 33): the lane stacks' fit onto the measured carriageway, measured once: the painted strips (below)
   // and the lanes traffic drives on (centred between those lines, in place of the lane graph's own centring) both use it
   const roadLines = o.roadLines !== false;
-  const lineFitData = prep && roadLines ? measureLineFit(net, prep, surf, { roadsR: o.roadsR !== false }) : null;
+  const lineFitData = prep && roadLines ? measureLineFit(net, prep, surf, { roadsR: o.roadsR !== false, streetInv: o.streetInv !== false }) : null;
   if (lineFitData) net.lineFit = lineFitData;
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory, { ...(lineFitData && o.laneFit !== false ? { laneShift: laneShifter(net, lineFitData) } : {}), roadsR: o.roadsR !== false }) : null;
   if (v2) { pv.inventory.stats.laneGraph = laneGraph; pv.inventory.stats.laneJoins = laneJoins; lap("lane graph"); }
