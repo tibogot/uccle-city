@@ -14,6 +14,7 @@
 // Frame per front: X = right along the wall seen from the street, Y = up, Z = the wall's outward normal; the kit's
 // local +z is Z. Records: SHOP_STRIDE floats (x y z yaw, dW dH ys stripes, r g b amount).
 import { W0, PIECES } from "./shopPieces.js";
+import { v2Variant } from "./shopScale.js";
 
 export const SHOP_PIECES = Object.keys(PIECES);
 
@@ -131,7 +132,8 @@ export function layoutShop(p, f, frame, lit, env) {
     const m = new Float32Array(WIN_STRIDE);
     m.set([X[0] * wW, X[1] * wW, X[2] * wW, 0, 0, wH, 0, 0, Z[0], 0, Z[2], 0, o[0], o[1], o[2], 1]);
     m.set([wW, wH, hash01(id + "w"), lit], 16);
-    m.set([cf.interior ?? interiorType(p), gb, hash01(id + "m") < 0.5 ? 1 : 0, 0], 20);   // (curated interior: Lefevre's office)
+    // (curated interior: Lefevre's office); w = the v2 variant (shopScale.js v2Variant: 0 café, 1 brasserie)
+    m.set([cf.interior ?? interiorType(p), gb, hash01(id + "m") < 0.5 ? 1 : 0, v2Variant(p.kind, p.cat || "")], 20);
     windows.push(m);
     night.shops.push(o[0] + Z[0] * 0.6, f.y + 1.6, o[2] + Z[2] * 0.6);
     // ?night=1 (viewer/nightLights/cityNight.js): the lit window as a light through its opening, in the facade's own
