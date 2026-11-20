@@ -45,6 +45,9 @@ const drive = (m, c, inp, secs) => { for (let i = 0; i < secs / DT; i++) { stepC
   drive(m3, c3, { throttle: 1, steer: 0 }, 3);
   drive(m3, c3, { throttle: -0.5, steer: 0 }, 2);
   check("half brake: no marks", m3.stats.segs === 0, `${m3.stats.segs} segments`);
+  const m4 = mk(), c4 = createCtlState(0, 0, 0), e4 = { ground: () => 0, contacts: 0, surface: () => 1 };
+  for (let i = 0; i < 360; i++) { stepCtl(c4, { throttle: i < 240 ? 1 : 0.3, steer: i < 240 ? 0 : 1, handbrake: i >= 240 }, DT, e4); m4.update(c4, "car", null, DT); clock += DT; }
+  check("on grass / soil: no rubber", m4.stats.segs === 0, `${m4.stats.segs} segments after a handbrake slide on terrain`);
 }
 
 // ---- 2. synthetic: front-lock rule, touch-down, the motorbike
@@ -113,6 +116,8 @@ const run = (m, c, kind = "car", H = null, frames = 30, after = null) => {
   check("ring wraps (1.5 x), no NaN", m.stats.segs >= MAX_SEG * 1.5 && wrapped && nan === 0 && m.filled === MAX_SEG, `${m.stats.segs} segments, cursor ${m.cursor}, ${nan} NaN, draw ${G.drawRange.count}`);
   check("uploads by ranges only (1 or 2, never the whole buffer)", rangesOk && ranges[2] > 0 && maxCount < MAX_SEG * 18 / 4 && m.stats.uploads > 0, `ranges per upload ${JSON.stringify(ranges.map((n, i) => n ? `${i}:${n}` : null).filter(Boolean))}, largest ${maxCount} of ${MAX_SEG * 18} floats`);
   check("an unrendered frame keeps its span", before === 0 && kept >= 2, `pending ${before} -> ${kept}`);
+  const nr = G.attributes.normal?.array;
+  check("an up normal on every vertex (the post chain's normal target: no AO / SSR imprint)", !!nr && nr.length === MAX_SEG * 18 && nr[1] === 1 && nr[nr.length - 2] === 1 && G.attributes.normal.version === 0, nr ? `${nr.length / 3} vertices, never re-uploaded` : "no normal attribute");
   const usages = Object.values(G.attributes).map((a) => a.usage);
   const src = fs.readFileSync(path.join(ROOT, "viewer/drive/tyreMarks.js"), "utf8");
   check("no DynamicDrawUsage", usages.every((u) => u === THREE.StaticDrawUsage) && !/(setUsage\(|usage\s*=)\s*(THREE\.)?DynamicDrawUsage/.test(src), `usages ${[...new Set(usages)]}`);

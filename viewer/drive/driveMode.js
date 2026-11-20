@@ -199,7 +199,7 @@ export class Driver {
     this.chase = new ChaseCamera(camera, dom);
     this.debug = new ColliderDebug(scene);
     // tyre marks (docs/TYREMARKS.md, rule 48; ?tyremarks=old = none): one mesh, laid on this.ground (defined below)
-    this.marks = TYREMARKS_OLD ? null : createTyreMarks({ scene, ground: (x, z) => this.ground(x, z), wet: wx.uWet, snow: wx.uSnowCover, night: lightEnv.uNight });
+    this.marks = TYREMARKS_OLD ? null : createTyreMarks({ scene, ground: (x, z) => this.ground(x, z), surface: (x, z) => this.surface(x, z), wet: wx.uWet, snow: wx.uSnowCover, night: lightEnv.uNight });
     this.debug.visible = /[?&]drivedebug=1/.test(location.search);
     // the two-wheelers (viewer/moto/, docs/MOTO.md): the same driver, colliders, ground and traffic; their own physics
     // numbers, models, camera numbers and sound. setVehicle("car" | "moto" | "scooter" | "villo"); ?view=moto / scooter /

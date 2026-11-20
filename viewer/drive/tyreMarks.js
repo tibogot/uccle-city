@@ -17,9 +17,10 @@
 //     tracks in the snow: not drawn twice).
 //   - No allocation per frame (preallocated states, ranges, arrays); a few µs per frame (gate `tyremarks`).
 import * as THREE from "three/webgpu";
-import { Fn, attribute, texture, uniform, float, mix, smoothstep } from "three/tsl";
+import { Fn, attribute, texture, uniform, float, mix, smoothstep, mrt, vec4, normalView } from "three/tsl";
 import { HANDLING, BODY } from "./carPhysics.js";
 
+const NO_MRT = typeof location !== "undefined" && /[?&]fx=0(&|$)/.test(location.search);   // (no post chain: no MRT)
 export const TYREMARKS_OLD = typeof location !== "undefined" && /[?&]tyremarks=old(&|$)/.test(location.search);
 
 export const MARKS = {
@@ -36,7 +37,7 @@ export const MARKS = {
   slipMin: 0.18, slipFull: 0.7,   // |v lateral| / max(|v long|, 3.5) at the wheel: from here it marks, fully dark here
   slipFloor: 3.5,
   brakeMark: 0.75,         // a tyre past its lengthwise grip (brake lock, wheelspin) marks, a little lighter
-  hbMark: 0.6,             // the rear wheels under the handbrake
+  hbMark: 0.85, hbEntry: 4, // the rear wheels under the handbrake (locked: dark), from hbEntry m/s (full at 2.5x)
   touchSpeed: 3.5, touchFull: 11, touchTime: 0.14,   // m/s into the road at touch-down: scuff from / darkest at; s
   touchSpeedBike: 2.5,
   frontLockCar: 0.56,      // rad (CTL.maxSteer): a slide wider than the fronts can countersteer = they mark too (a spin)
@@ -71,16 +72,22 @@ const T0 = typeof performance !== "undefined" ? performance.now() : 0;
 const clockNow = () => (performance.now() - T0) / 1000;
 
 /**
- * opts: { scene, ground(x, z) -> y (the drawn drive surface), wet, snow, night (TSL uniforms, 0..1),
- *         maskUrl (null: a plain soft ribbon), now() (s; tests) }
+ * opts: { scene, ground(x, z) -> y (the drawn drive surface), surface(x, z) -> 0 paved / 1 bare terrain (no rubber
+ *         on grass or soil: driveMode's this.surface), wet, snow, night (TSL uniforms, 0..1), maskUrl (null: a plain soft
+ *         ribbon), now() (s; tests) }
  */
-export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow = uniform(0), night = uniform(0), maskUrl = MASK_URL, now = clockNow } = {}) {
+export function createTyreMarks({ scene = null, ground, surface = null, wet = uniform(0), snow = uniform(0), night = uniform(0), maskUrl = MASK_URL, now = clockNow } = {}) {
   const M = MARKS;
   const geometry = new THREE.BufferGeometry();
   const pos = new Float32Array(MAX_SEG * POS_F), uvs = new Float32Array(MAX_SEG * UV_F), mk = new Float32Array(MAX_SEG * MK_F);
   // aMark = (alpha, birth s); static usage (the default): only the written spans are uploaded
   const aPos = new THREE.BufferAttribute(pos, 3), aUv = new THREE.BufferAttribute(uvs, 2), aMk = new THREE.BufferAttribute(mk, 2);
   geometry.setAttribute("position", aPos); geometry.setAttribute("uv", aUv); geometry.setAttribute("aMark", aMk);
+  // a static UP normal (never uploaded again): the post chain's MRT writes normalView into its normal target (GTAO,
+  // SSR); with no normal attribute the marks wrote a null normal there and stayed as a dark imprint even at opacity 0
+  const nrm = new Float32Array(MAX_SEG * VERTS * 3);
+  for (let i = 1; i < nrm.length; i += 3) nrm[i] = 1;
+  geometry.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
   geometry.setDrawRange(0, 0);
   geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e9);
   const ATTR = [[aPos, POS_F], [aUv, UV_F], [aMk, MK_F]];
@@ -94,13 +101,18 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
   const setMask = (tex) => {
     const a = attribute("aMark", "vec2");
     material.colorNode = mix(uRubber, uCleared.mul(mix(float(1), float(M.clearedNight), night)), wet);
-    material.opacityNode = Fn(() => {
+    const op = Fn(() => {
       // the mask READ SOFT (a blurrier mip, half its contrast): rubber laid by a slide is a smear, not a printed tread
       const m = tex ? texture(tex).bias(1.5).a.mul(0.5).add(0.45) : float(0.8);
       const life = mix(float(M.life), float(M.lifeWet), wet);
       const fade = float(1).sub(smoothstep(life.mul(M.hold), life, uTime.sub(a.y)));
       return a.x.mul(m).mul(fade).mul(mix(float(1), float(M.clearedAlpha), wet)).mul(float(1).sub(smoothstep(M.snowHide[0], M.snowHide[1], snow)));
     })();
+    material.opacityNode = op;
+    // the post chain's normal / metal-rough targets (viewer/post.js, MaterialBlending): blended by the mark's own
+    // opacity, so the road's values stay under a faint or faded mark (written at alpha 1 they left a dark imprint:
+    // GTAO / SSR read the mark's flat rough patch even where the mark had faded out)
+    if (!NO_MRT) material.mrtNode = mrt({ normal: vec4(normalView, op), metalRough: vec4(0, 1, 1, op) });
     material.needsUpdate = true;
   };
   setMask(null);   // a plain soft ribbon until the mask arrives (or for good: no loader in node)
@@ -230,12 +242,12 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
       W.hw[i] = (front ? P.front : P.rear) * 0.5;
       if (T) { W.x[i] = T.x[i]; W.z[i] = T.z[i]; W.y[i] = T.y[i]; }
       else { W.x[i] = c.x + sinH * lz + cosH * lx; W.z[i] = c.z + cosH * lz - sinH * lx; W.y[i] = NaN; }
-      if (T && !T.on[i]) { W.k[i] = 0; st.touch = 0; continue; }
+      if ((T && !T.on[i]) || c.surface) { W.k[i] = 0; st.touch = 0; continue; }   // (in the air; on grass / soil: no rubber)
       const s = slide(u, v, r, lx, lz, front, M.frontLockCar);
       let k = s.k;
       if (T) {
         k = Math.max(k, clamp(T.over[i] * M.brakeMark, 0, 1) * smooth(0.3, 2, s.speed));
-        if (T.hb && !front) k = Math.max(k, M.hbMark * s.gate);
+        if (T.hb && !front) k = Math.max(k, M.hbMark * smooth(M.hbEntry, M.hbEntry * 2.5, s.speed));
         k = Math.max(k, touchdown(st, T.touch[i], M.touchSpeed, dt));
       }
       W.k[i] = k * P.alpha;
@@ -256,7 +268,7 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
       // a touch-down (motoPhysics vertical(): touchN counts them, touchV the speed into the ground)
       let into = 0;
       if (c.touchN !== undefined && st.touchN !== c.touchN) { if (st.touchN >= 0) into = c.touchV || 0; st.touchN = c.touchN; }
-      if (off) { W.k[i] = 0; st.touch = 0; continue; }
+      if (off || (surface && surface(W.x[i], W.z[i]))) { W.k[i] = 0; st.touch = 0; continue; }
       const s = slide(u, v, r, 0, lz, front, M.frontLockBike);
       let k = s.k;
       if (!front && c.rearBrake && Math.abs(c.speed) > 4) k = Math.max(k, M.brakeMark * smooth(4, 8, s.speed));   // the rear locks
