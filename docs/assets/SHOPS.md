@@ -114,6 +114,60 @@ spots or pendants), lit as an open shop (Cycles, 40 samples, denoised):
 - Atlas 4096 x 2048 (rooms in two rows, cards in two rows), **KTX2 UASTC + zstd: 3.4 MB download, 8 MB GPU + mips
   (BC7, ~10.7 MB)**; WebP fallback 0.3 MB (`?shopsktx=0`). Encoder: `tools/shops/png_to_rgba.py` + `encode_interiors.mjs`.
 
+## 3b. Shops v2: the layered café / restaurant interior (claude/shops3, rule shop-room-layers)
+
+The 135 café / restaurant / bar windows (interior type `cafe`) now use the Forza Horizon 4 layered method
+(docs/SHOPS_V2_PLAN.md jobs 3-4); the other seven types stay on the v1 atlas above. `?shopsv2=old` = v1 everywhere.
+
+**Bake** (`tools/blender/shopInteriors.py --v2`, Cycles on OptiX, 128 spp + denoise, ~2 min for all 20 renders): a
+café (dark wood wainscot, ochre walls, a zinc bar with its mirror and bottle shelves, a chalkboard, marble bistro tables,
+bentwood chairs, opal globes) and a brasserie / restaurant (cabochon tiles, a red leather banquette under brass mirrors,
+white-clothed tables, a wine rack, the service counter + the lit kitchen pass). Each 6 m wide x 6 m deep (= the
+viewer's café depth: metric, no depth scaling) x 3 m, the same pinhole camera as v1, five renders per variant and light:
+- **L0** the shell (walls, floor, ceiling, bar, shelves, banquette); the free-standing tables / chairs / pendants are in
+  the scene with `visible_camera = False`, so the floor keeps their shadows and AO; their floor-flush parts (foot plates,
+  ceiling canopies, trestles) are left out of this one shot (under an invisible plate the floor would be black);
+- **L1** the furniture 1.8-3.5 m deep, **L2** 0.6-1.8 m, **L3** the window display 0-0.6 m below 1.45 m (an oak shelf
+  on trestles, a chalk menu on an easel, pot plants, cakes on stands / wine + a cloche): transparent film, every other
+  object hidden from the camera but lighting and shadowing them;
+- the **composite** (everything): the single fetch beyond 40 m;
+- **day**: a sun through the glass (34 deg up, 28 deg aside; an invisible fascia, piers, glazing bars and transom shape
+  the patch) + a sky + the shop lights; **night**: the lamps only.
+
+**Pack** (`tools/shops/pack_v2.py`): cards premultiplied in linear light (srgb(lin(c) a)), the composite resized to
+half height into the upper half of the L3 layer (L3 projects below the image's middle only: checked). **Encode**
+(`tools/shops/encode_array.mjs`, ktx2-encoder's Basis module driven directly with `cBASISTexType2DArray`): one KTX2
+2D array, UASTC + zstd, 11 mips: **16 layers x 1024 x 512 (café / brasserie x day / night x L0 / L1 / L2 / L3+composite),
+2.85 MB download, 10.67 MB GPU (BC7)**. three r187's KTX2Loader makes a `CompressedArrayTexture`; `labs/shops-array-lab.html`
+checks loader + TSL `texture(tex, uv).depth(layer).level(lod)` on WebGPU (BC7, all layers and mips: OK).
+
+**Shader** (`viewer/shops/shopWindow.js`, one Fn per window pixel, still the one street-life window draw per tile):
+the room box and metric layout of rule shop-room-metric; within 40 m L0 + the three cards at 2.6 / 1.2 / 0.3 m,
+composited front to back (`c = L3 + (1 - a3)(L2 + (1 - a2)(L1 + (1 - a1) L0))`, each card only where its plane is in
+front of the room's hit): **4 fetches**; beyond 45 m **1 fetch** (the composite through the room projection); a
+cross-fade over 35-45 m (both: no pop). Day / night are uniform branches (dusk: both). Day x 0.2, night open x 0.7,
+**closed at night** (the opening hours end before 19:00: 10 of the 135) = the night bake x 0.1 + a security light (a
+cool glow at the back, a green exit sign). Grazing fresnel exponent 2.5 for v2 windows (3 for v1). The variant per shop
+(`iWinT.w`, shopScale.js `v2Variant`): restaurants / fast food -> the brasserie (108), cafés / bars / pubs -> the café
+(27). No light added, no DynamicDrawUsage, no new draw. Without the KTX2 (or `?shopsktx=0`) the cafés stay v1.
+
+**Gate row `shopsv2`** (tools/audit/shopsV2Check.mjs): the array's layers / size / mips, GPU <= 12 MB, file <= 4 MB;
+the fetch count of nearV2 / farV2 = shopScale.js V2_FETCH (4 / 1) within budget, only through fetchV2 at an explicit
+level, near / far and day / night as branches; the bake's RD2 / planes / slabs / size = shopScale.js V2, RD2 =
+DEPTH.cafe; every v2 window within +-10 % across and with a variant.
+
+**Cost.** Per café pixel within 40 m: 4 array fetches (v1: 2) + ~60 ALU (four plane projections, the composite);
+beyond 45 m: 1 fetch; the 35-45 m band and dusk: twice that. Memory +10.7 MB GPU, +2.85 MB download. Preflight was
+RED all session (CPU 96 % busy, 1.5 GB free, GPU 37 % busy at rest): **no GPU millisecond claimed**; the A/B timing is
+left for a GREEN machine (`?shopsv2=old` vs default, Place de Saint-Job at 2-5 m).
+
+A/B shots (outside the repo): `Downloads/uccle-shops-ab/v2/index.html` (the 8 shops of the scale A/B + 4 cafés, 2 / 5 /
+15 m, head-on / 45 deg, day / night, `?shopsv2=old` vs v2).
+
+Left: L4 glass dressing (job 5); the other types (job 6); more variants + the neighbour rule (job 7: 27 cafés share one
+room, 108 restaurants the other); the baked sun patch does not follow the city's sun (north-facing cafés too); 1024 px
+across 6 m is soft at 2 m (a 2048 layer set would be 43 MB: over budget).
+
 ## 4. Terraces
 
 `layoutTerrace`: square bistro tables with two chairs (three on a single deep row: the street-life kit's rattan bistro

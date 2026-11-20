@@ -68,6 +68,14 @@ Causes:
    x day / night) outside the repo: `Downloads/uccle-shops-ab/index.html`.
 3. Café / restaurant v2 bake.
 4. Shader v2: the layers, day / night / closed, fresnel, the distance composite; VRAM and fetch gate rows.
+
+   **Jobs 3 + 4 done on claude/shops3 (2026-11-21)** for the café type (135 windows: 27 café, 108 brasserie variant;
+   docs/assets/SHOPS.md §3b). Bake v2 on OptiX (128 spp, ~2 min): L0 shell with the free-standing furniture hidden from
+   the camera (shadows / AO kept), L1 1.8-3.5 m, L2 0.6-1.8 m, L3 the window display, a composite; day (sun patch, sky)
+   and night bakes; a café and a brasserie. One KTX2 2D array (r187 KTX2Loader + TSL array fetch checked in
+   labs/shops-array-lab.html): 16 x 1024 x 512, 2.85 MB file, 10.67 MB GPU. Shader: 4 fetches within 40 m, 1 beyond,
+   a 35-45 m cross-fade; closed = 10 % + a security light; fresnel exponent 2.5. `?shopsv2=old`; gate row `shopsv2`,
+   rule shop-room-layers. A/B: `Downloads/uccle-shops-ab/v2/index.html`. GPU ms not measured (preflight RED).
 5. Glass dressing.
 6. Roll out the types, 4 per job.
 7. Variants + the neighbour rule; Street View check (look only).
