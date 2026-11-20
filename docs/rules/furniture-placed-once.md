@@ -1,7 +1,7 @@
 ---
 number: 30
 status: provisional
-check: `streetprops`: tools/audit/census/streetProps.mjs --all (ceilings incl. villoOffPaving = villoBent = 0; `--old` = ?streetprops=old)
+check: `streetprops`: tools/audit/census/streetProps.mjs --all (every finding by id in the gap register data/gaps.json, rule gap-register; `--old` = ?streetprops=old)
 ---
 **Rule.** A piece of street furniture is placed ONCE, where it is drawn, by the test the viewer uses: never in a driven lane (measured roadway / tram road, else the OSM street width) and never within 1.5 m of a tram track centre; two layers that draw one object (a street-name plate and its post) share one spot, moved together, never each by its own pass; a thing that faces the street faces the road it ends up beside. Where no measured kerb is near, the OSM width decides (then the nearest free spot within 8 m). A pole keeps to its own street's kerb (<= the road's half width + 2.5 m), and no two signs show contradictory orders (C1 no entry + F19 one-way) to the same traffic: at a one-way pair's mouth (two one-way pieces of opposite flow side by side: an island, a divided avenue) each carriageway keeps its own sign on its own post (C1 facing the traffic that must not enter it, F19 facing the traffic that may), never one pole for both, never both within 4 m to one approach, and every carriageway exit shows its C1 (island nose / median, else that carriageway's far kerb). A Villo station is ONE straight row on paving (measured sidewalk / square, or a parking lane), never bent round a corner, never on a lawn or verge: shortened from the ends to fit within 10 m of its point (>= terminal + 6 docks), else dropped with a log line. A tram stop pole on a drawn OSM tram platform is on the platform, not in the road.
 

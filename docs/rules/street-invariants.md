@@ -1,0 +1,8 @@
+---
+status: provisional
+added: 2026-11-20
+check: `markings2` (tools/audit/census/markings2.mjs, report only + fixtures built as ?streetinv=old)
+---
+**Rule.** Street paint is judged on what the city DRAWS (the asphalt line codes and the paint decal) against the MEASURED kerb, with no exclusion zones and nothing skipped as unmeasured: an along-road stroke runs within 3 deg of the kerb tangent, its paint at least 0.10 m inside the carriageway, an edge line at kerb - 0.30 +- 0.10 m, no along-road stroke inside a junction. No line rather than a wrong line: an edge line is painted only as an offset of a measured kerb (none where the fit lost the kerb, where its strip would hold it off that offset, or where the OSM line lies > 1.5 m outside the measured carriageway: confidence X); no lane / centre line at confidence X or where the stack lags the measured carriageway (both kerbs > 0.5 m off its ends the same way); a road the fit cannot measure on a measured street is unpainted at any length when a third of it is at confidence X (viewer/streets/lineFit.js; `?streetinv=old` = before).
+
+**Why.** The old skew test fired only above 12 deg (the generator itself allows 7-11 deg ramps), skipped 15 m round junctions, curved kerbs and "unmeasured" strokes, and nothing checked "edge line = kerb - 0.30 m": the owner's Ch. de Saint-Job / Rue Engeland edge line (E7) drifted from 1.7 m to 0.06 m off the kerb at 4-9 deg onto the ramp, because where the kerb ran out of the lagging lane stack the strip held the line, and where the fit lost the kerb the edges fell back to the guessed stack (docs/STREET_MODEL_PLAN.md 1 d, 2; claude/street1).
