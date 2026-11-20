@@ -77,8 +77,8 @@ Left (why the ceilings are not 0):
   E7 (-820, 1022), F4 (-208, -163), D10 (-1029, 2709): each needs its own look (a lane through a raised square,
   a ramp, a missing street piece).
 - tram: the track profile off the decks (Ch. d'Alsemberg E2: -0.38 .. +0.31 m) is the tram profile's own fit
-  against the levelled road, outside this job: on the Carsoel deck the trams / rails now lie on the deck (H6 deck
-  points flagged before: 0 on the deck; 875.5 524 just off its west end, +0.64 m, is the profile's ramp).
+  against the levelled road, outside this job: on the Carsoel deck the trams / rails now lie on the deck (H6 tram 119 -> 66 points; on the deck 5-7 cm left, the deck grid's bilinear; 939.8 529.2 -0.14 at the east end; traffic on the deck 31 -> 33 points within 9.4 cm; the
+  875.5 524 just off its west end, +0.64 m, is the profile's ramp).
 
 ## Browser list
 
