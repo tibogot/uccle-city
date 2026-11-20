@@ -89,7 +89,7 @@ export function parseLegacyGate(src) {
   const grab = (decl) => {
     const a = src.indexOf(decl);
     if (a < 0) return null;
-    let i = src.indexOf("[", a), depth = 0, q = null;
+    let i = a + decl.length - 1, depth = 0, q = null;
     for (let j = i; j < src.length; j++) {
       const c = src[j];
       if (q) { if (c === "\\") j++; else if (c === q) q = null; continue; }
@@ -99,7 +99,7 @@ export function parseLegacyGate(src) {
     }
     throw new Error(`${decl}: unbalanced array`);
   };
-  const checks = grab("const CHECKS = ");
+  const checks = grab("const CHECKS = [");
   if (!checks) return null;
-  return { checks, browser: grab("const BROWSER = ") ?? [] };
+  return { checks, browser: grab("const BROWSER = [") ?? [] };
 }

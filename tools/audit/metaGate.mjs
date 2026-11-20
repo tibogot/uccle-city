@@ -128,10 +128,11 @@ ok(nMeta > 0, `${nMeta} rows declare meta checks`);
   }
 }
 
-
 // ------------------------------------------------------------------ 4. the generated indexes are current
 {
   const { rulesIndex, censusIndex } = await import("../docs/rulesIndex.mjs");
+  const marks = ["docs/rules", "docs/census"].flatMap((d) => readdirSync(path.join(ROOT, d)).filter((f) => f.endsWith(".md") && /convertBranch:/.test(rd(`${d}/${f}`))).map((f) => `${d}/${f}`));
+  ok(!marks.length, `no convertBranch block left to merge by hand${marks.length ? `: ${marks.join(", ")}` : ""}`);
   for (const [out, make] of [["docs/QUALITY_RULES.md", rulesIndex], ["docs/CENSUS.md", censusIndex]]) {
     const have = existsSync(path.join(ROOT, out)) ? rd(out).replace(/\r\n/g, "\n") : "";
     ok(have === make(ROOT), `${out} is what docs/${out.includes("RULES") ? "rules" : "census"}/*.md make (else: node tools/docs/rulesIndex.mjs; never edit the index by hand)`);
