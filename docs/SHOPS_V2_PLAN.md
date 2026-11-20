@@ -56,6 +56,16 @@ Causes:
 ## Jobs, in order
 1. Audit + baseline shots + a scale gate row.
 2. Metric scale in the shader (no new assets).
+
+   **Done on claude/shops1 (2026-11-20).** Audit (`node tools/shops/shopScaleAudit.mjs`): 502 interior-mapped windows in
+   52 tiles; glass 2.10-6.38 m (median 5.06); the old stretch of the 6 m render was 0.94-2.86 render m per glass m
+   (only 84 within 10 % of metric); café 135, shop 90, grocery 69, bakery 60, boutique 44, pharmacy 39, office 34, salon
+   31 windows per room image; 42 windows have a same-type twin within 12 m. Shader: the glass in metres on the 6 m room
+   (viewer/shops/shopScale.js, the JS twin), a per-shop offset, one room up to 6.6 m of glass (no front is wider today;
+   wider glass gets side-by-side rooms + a partition, the next mirrored), depth by type 3.5-6 m (the render's 5 m scaled:
+   job 3 bakes each type at its own depth), fresnel exponent 4 -> 3; `?shopscale=old`. Gate row `shopscale`, rule
+   shop-room-metric. The bake script now runs on OptiX (not re-baked). A/B shots (8 shops x 2 / 5 / 15 m x head-on / 45 deg
+   x day / night) outside the repo: `Downloads/uccle-shops-ab/index.html`.
 3. Café / restaurant v2 bake.
 4. Shader v2: the layers, day / night / closed, fresnel, the distance composite; VRAM and fetch gate rows.
 5. Glass dressing.
