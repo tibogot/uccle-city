@@ -42,6 +42,8 @@ import { leafCard } from "../foliage/cards.js";
 import { nightLeaf } from "../foliage/nightLeaf.js";
 import { lodEye, ditherNoise, keepBand } from "../lodFade.js";
 import { FadeSlots } from "../instanceStream.js";
+import { shakeAt } from "./hedgeShake.js";
+import { HEDGE_WALL_OLD } from "../drive/colliders.js";
 
 /** the gardens' tile fades (viewer/instanceStream.js): iBand.w = the instance's tile slot */
 export const gardenFades = new FadeSlots();
@@ -226,7 +228,8 @@ function keep(lod, only = false) {
 
 /** the clipped lean (world metres) at a world point `p`, `f` = its height fraction in the hedge (0 foot .. 1 top): the
  *  bushes' crown lean, ~12 x smaller (a clipped hedge is stiff), <= ~1 cm at the top in a strong gust */
-const leanAt = (p, f) => { const w = windAt(p.xz), k = f.clamp(0, 1); return vec3(w.x, 0, w.y).mul(k.mul(k)).mul(0.018); };
+//  (+ a hit's shake, viewer/gardens/hedgeShake.js, rule hedge-wall; none under ?hedgewall=old: no hedge is a wall then)
+const leanAt = (p, f) => { const w = windAt(p.xz), k = f.clamp(0, 1); const ln = vec3(w.x, 0, w.y).mul(k.mul(k)).mul(0.018); return HEDGE_WALL_OLD ? ln : ln.add(shakeAt(p, f)); };
 
 let texs = null;
 /** the baked surface (tools/blender/hedgeSurface.py): [a = value / occlusion / part, n = normal], repeat, mipmapped, 4x aniso */
