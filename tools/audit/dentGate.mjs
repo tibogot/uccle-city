@@ -9,7 +9,7 @@
 //   cabin    skin vertices entering the cabin box (the interior's bounds) = 0
 //   NaN      = 0; the wheels (own local frame: the player's / props' material) not moved
 // The old crumple (?dent=old: carPacks.js crumpleOffset, the push along each vertex normal) measured the same way must
-// FAIL (flips / cracks). Code: ?dent=old a features.js row, no DynamicDrawUsage / light / new mesh (no new draw call:
+// FAIL (flips / cracks). Code (the features row, no DynamicDrawUsage / light: the meta row): no new mesh (no new draw call:
 // the dent is the existing materials' vertex stage), the default materials (player / police, traffic, props) compile
 // to WGSL headless with the dent, the traffic's packed code decoded in the vertex stage (rule 34).
 //   node --import ./tools/christmas/hook.mjs tools/audit/dentGate.mjs [--quiet] [--old]
@@ -301,21 +301,16 @@ const N = onlyOld ? tot.old : tot.new, O = tot.old;     // (--old: the old crump
 }
 if (!onlyOld) check("?dent=old fails here", O.flipSeen > 0 && O.blob > 0 && O.cracks > 0, `the old crumple: ${O.flipSeen} wound-round triangles seen from outside, ${O.blob} px of see-through holes (near levels), ${O.cracks} torn seams, ${O.mid} mid-plane, ${O.cabin} cabin entries`);
 
-// ---- 2. code: the switch, no draw call / light / DynamicDrawUsage, the traffic code in the vertex stage
+// ---- 2. code: no draw call, the traffic code in the vertex stage (the ?dent features row, no light / DynamicDrawUsage:
+// the meta row, tools/audit/gate.d/dent.mjs)
 {
   const rd = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
-  check("?dent=old is a features.js row", /old\("dent"/.test(rd("viewer/features.js")));
   const bad = [];
-  for (const f of ["viewer/drive/carDent.js", "viewer/drive/carPacks.js", "viewer/police/props.js", "viewer/traffic/trafficFleet.js", "viewer/carFleet.js"]) {
-    const t = rd(f);
-    if (/(setUsage\(|usage\s*=)\s*(THREE\.)?DynamicDrawUsage/.test(t)) bad.push(`${f}: DynamicDrawUsage`);
-    if (/new THREE\.\w*Light\(/.test(t)) bad.push(`${f}: a light`);
-  }
   if (/new THREE\.(Mesh|InstancedMesh|BatchedMesh)\(/.test(rd("viewer/drive/carDent.js"))) bad.push("carDent.js: a mesh");
   const tf = rd("viewer/traffic/trafficFleet.js");
   const nMat = (tf.match(/packMaterial\(/g) || []).length;
   if (nMat !== 6) bad.push(`trafficFleet.js: ${nMat} materials (6 before)`);
-  check("no draw call / light / DynamicDrawUsage", !bad.length, bad.join(", ") || "the dent rides on the existing materials' vertex stage (traffic 6 materials, player / police 1, props 1 per car)");
+  check("no draw call", !bad.length, bad.join(", ") || "the dent rides on the existing materials' vertex stage (traffic 6 materials, player / police 1, props 1 per car)");
 }
 
 // ---- 3. the default materials compile to WGSL with the dent (headless)

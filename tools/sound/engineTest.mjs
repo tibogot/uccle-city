@@ -16,7 +16,7 @@
 //   garbage   no object / array / closure / string per frame in engineModel / engineLoops / engineSound: what is left is
 //             the doubles boxed into the Web Audio calls (<= 40 B per AudioParam write), as rule 42 allows
 //   default   muted by default: nothing is fetched or built while the speaker button is off
-//   old       ?engine=old: the hook makes no engine; features.js has the row
+//   old       ?engine=old: the hook makes no engine; (the features.js row: the meta row)
 // --demo <file.wav>: also renders a 30 s city drive (stereo, 48 kHz) for listening.
 import { readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import path from "node:path";
@@ -274,8 +274,8 @@ async function renderDrive(seconds, script, { sr = 48000, file = null } = {}) {
   globalThis.location = { search: "?engine=old" };
   const m = await import(pathToFileURL(path.join(ROOT, "viewer/audio/engineSound.js")).href + "?old");
   globalThis.location = { search: "" };
-  const city = readFileSync(path.join(ROOT, "viewer/audio/citySound.js"), "utf8"), feats = readFileSync(path.join(ROOT, "viewer/features.js"), "utf8");
-  check("old", m.ENGINE_OLD === true && /if \(!ENGINE_OLD && driver && !driver\.engineVoice\)/.test(city) && /old\("engine", "ab"/.test(feats), `?engine=old read by engineSound.js (${m.ENGINE_OLD}); the city hook makes the engine only without it; features.js row "engine"`);
+  const city = readFileSync(path.join(ROOT, "viewer/audio/citySound.js"), "utf8");
+  check("old", m.ENGINE_OLD === true && /if \(!ENGINE_OLD && driver && !driver\.engineVoice\)/.test(city), `?engine=old read by engineSound.js (${m.ENGINE_OLD}); the city hook makes the engine only without it (the features.js row "engine": the meta row)`);
 }
 
 if (DEMO) {

@@ -119,8 +119,8 @@ const run = (m, c, kind = "car", H = null, frames = 30, after = null) => {
   const nr = G.attributes.normal?.array;
   check("an up normal on every vertex (the post chain's normal target: no AO / SSR imprint)", !!nr && nr.length === MAX_SEG * 18 && nr[1] === 1 && nr[nr.length - 2] === 1 && G.attributes.normal.version === 0, nr ? `${nr.length / 3} vertices, never re-uploaded` : "no normal attribute");
   const usages = Object.values(G.attributes).map((a) => a.usage);
-  const src = fs.readFileSync(path.join(ROOT, "viewer/drive/tyreMarks.js"), "utf8");
-  check("no DynamicDrawUsage", usages.every((u) => u === THREE.StaticDrawUsage) && !/(setUsage\(|usage\s*=)\s*(THREE\.)?DynamicDrawUsage/.test(src), `usages ${[...new Set(usages)]}`);
+  // (the source text has no DynamicDrawUsage: the meta row, tools/audit/gate.d/tyremarks.mjs)
+  check("no DynamicDrawUsage", usages.every((u) => u === THREE.StaticDrawUsage), `usages ${[...new Set(usages)]}`);
   // births are the clock; the fade
   const mkA = G.attributes.aMark.array, last = ((m.cursor - 1 + MAX_SEG) % MAX_SEG) * 12;
   check("fade by age: births stamped, gone at life, seconds when wet", Math.abs(mkA[last + 1] - clock) < 0.1 && markFade(0) === 1 && markFade(30) === 1 && markFade(100) > 0 && markFade(100) < 1 && markFade(MARKS.life) === 0 && markFade(MARKS.lifeWet, 1) === 0,

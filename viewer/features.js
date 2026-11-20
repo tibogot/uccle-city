@@ -33,8 +33,7 @@ export const SECTIONS = {
 export const FEATURES = [
   // ---------------------------------------------------------------- navigation (written by Go to / the share link)
   txt("tile", "nav", "start tile", "The tile the city boots on (I6 = Saint-Job).", "I6", { ui: false }),
-  sel("view", "nav", "start view", "The first view / mode: overview, stjob (close-up / ?at / ?cam), walk, fly, drive, moto (the motorbike), scooter, villo (a Villo bike: docs/MOTO.md), third.",
-    [[null, "overview"], ["stjob", "close-up"], ["walk", "walk"], ["fly", "fly"], ["drive", "drive"], ["moto", "motorbike"], ["scooter", "scooter"], ["villo", "Villo bike"], ["third", "third person"]], { ui: false }),
+  sel("view", "nav", "start view", "The first view / mode: overview, stjob (close-up / ?at / ?cam), walk, fly, drive, moto (the motorbike), scooter, villo (a Villo bike: docs/MOTO.md), third.", [[null, "overview"], ["stjob", "close-up"], ["walk", "walk"], ["fly", "fly"], ["drive", "drive"], ["moto", "motorbike"], ["scooter", "scooter"], ["villo", "Villo bike"], ["third", "third person"]], { ui: false }),
   txt("at", "nav", "at x,z", "Close-up target / walk / drive start, city metres (x east, z south).", "1153,540", { ui: false }),
   txt("cam", "nav", "camera x,z,h", "Close-up camera position: x, z and height above the ground (m).", "1223,650,45", { ui: false }),
   num("yaw", "nav", "walk facing (°)", "Walk mode's facing at the start: 0 = -z (north-ish), 90 = -x.", 0, 0, 360, 1, { ui: false }),
@@ -53,12 +52,10 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- modes & camera (live ones are the section's own controls)
   txt("car", "modes", "car (drive)", "The drive mode's car: scripted, cars2:<id> (default family) or faceted:<id> (the old family).", "cars2:hatch_c", { live: "car (drive)" }),
-  sel("char", "modes", "character", "Third person character: ual = the Quaternius Universal Animation Library mannequin (CC0) with the locomotion graph (walk / run / sprint, turn on the spot, stairs, slopes, jump / fall / land, crouch on C, idle variants: viewer/character/locomotion.js); hoodie = the old character (Quaternius modular man, foot IK); casual; capsule.",
-    [[null, "ual (default)"], ["hoodie", "hoodie (old)"], ["casual", "casual"], ["capsule", "capsule"]], { live: "character (3rd person)" }),
+  sel("char", "modes", "character", "Third person character: ual = the Quaternius Universal Animation Library mannequin (CC0) with the locomotion graph (walk / run / sprint, turn on the spot, stairs, slopes, jump / fall / land, crouch on C, idle variants: viewer/character/locomotion.js); hoodie = the old character (Quaternius modular man, foot IK); casual; capsule.", [[null, "ual (default)"], ["hoodie", "hoodie (old)"], ["casual", "casual"], ["capsule", "capsule"]], { live: "character (3rd person)" }),
   old("citysound", "ab", "city sound (old: silent city)", "?citysound=old: the city without its sound engine (as before 2026-11-19: only the two-wheelers', the falcon's and the games' own sounds). Default: the city sound (viewer/audio/citySound.js, docs/SOUND_CITY.md): traffic tyres, trams, trains, birds, wind, rain, people, the church bells on the hour, crash / scrape sounds, all behind the speaker button (OFF by default, remembered per browser; ?sound=1 starts on).", { sub: "Sound" }),
   old("engine", "ab", "engine sound (old: none)", "?engine=old: the player car without its engine tone (as before 2026-11-20). Default: the recorded-loop engine (viewer/audio/engineSound.js, docs/ENGINE_SOUND.md): Thunderline's engine model (RPM, 6 gears, the shift cut, the limiter, load) playing the gen6 loops through the city sound engine (Doppler, HRTF, the speaker button).", { sub: "Sound" }),
-  sel("xmas", "world", "Christmas", "The Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): the firs on Place de Saint-Job and the Parvis Saint-Pierre, LED garlands across the shopping streets (Chaussee de Saint-Job, Rue Xavier De Bue, Chaussee d'Alsemberg), shopfront swags, door wreaths, lamp-post snowflakes. By date: 1 December - 6 January (the real date, or ?day=); 1 = always on, 0 = off.",
-    [[null, "by date (1 Dec - 6 Jan)"], ["1", "on"], ["0", "off"]]),
+  sel("xmas", "world", "Christmas", "The Christmas layer (viewer/christmas/, docs/CHRISTMAS.md): the firs on Place de Saint-Job and the Parvis Saint-Pierre, LED garlands across the shopping streets (Chaussee de Saint-Job, Rue Xavier De Bue, Chaussee d'Alsemberg), shopfront swags, door wreaths, lamp-post snowflakes. By date: 1 December - 6 January (the real date, or ?day=); 1 = always on, 0 = off.", [[null, "by date (1 Dec - 6 Jan)"], ["1", "on"], ["0", "off"]]),
   on("xmaschalets", "world", "Christmas market", "The Christmas market's chalets on Place de Saint-Job (with the Christmas layer; models/christmas/site.json chalets). ?xmaschalets=0: without."),
   on("twowheelers", "world", "two-wheelers", "Parked motorbikes / scooters near shops (groups in parking-lane slots) and motorbikes / scooters in the traffic (viewer/moto/cityTwoWheelers.js, docs/MOTO.md)."),
   opt("drivedebug", "modes", "car colliders", "Draw the drive colliders (key G in drive mode).", { live: "car colliders (G)" }),
@@ -91,8 +88,7 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- weather
   opt("vfog", "weather", "volumetric fog", "Volumetric valley fog (opt-in).", { live: "volumetric valley fog" }),
-  sel("wx", "weather", "weather", "The weather at start (viewer/weather/cityWeather.js): rain, snow, fog... (clear = the city as before); 'live' = Uccle now (Open-Meteo).",
-    [[null, "clear"], ["overcast", "overcast"], ["drizzle", "drizzle"], ["rain", "rain"], ["storm", "storm"], ["snowfall", "snowfall"], ["snow_cover", "snow cover"], ["fog", "fog"], ["live", "live (Open-Meteo)"]], { live: "weather" }),
+  sel("wx", "weather", "weather", "The weather at start (viewer/weather/cityWeather.js): rain, snow, fog... (clear = the city as before); 'live' = Uccle now (Open-Meteo).", [[null, "clear"], ["overcast", "overcast"], ["drizzle", "drizzle"], ["rain", "rain"], ["storm", "storm"], ["snowfall", "snowfall"], ["snow_cover", "snow cover"], ["fog", "fog"], ["live", "live (Open-Meteo)"]], { live: "weather" }),
   old("texlimit", "weather", "default GPU texture limit", "?texlimit=old: ask the GPU for the WebGPU default of 16 textures/samplers per stage (the facade kit lod1 + snow + ?night=0 binds 17: validation error). Default: up to 32 when the adapter has them."),
   old("weather", "weather", "no weather system", "?weather=old: the city before the weather hookup (no wet / snow layer in the materials, no rain, no overhead bake)."),
   on("snowtracks", "weather", "snow tracks", "Footprints, tyre and motorbike tracks in the snow (viewer/weather/snowTrails.js: a camera-centred trail texture the walker / character / cars stamp; the snow layer and the ground cover read it)."),
@@ -408,8 +404,7 @@ export const FEATURES = [
   on("bootlite", "streaming", "boot far ring", "The start tile's ring as far tiles under the cover (off: before).", { sub: "Boot & loading" }),
   opt("earlyshow", "streaming", "early show", "Far tiles after the cover lifts (sooner reveal, stutters; not kept).", { sub: "Boot & loading" }),
   sel("bootprefetch", "streaming", "boot prefetch", "Boot ring prefetch: default, 0 = off, 1 = the extra prefetch (no gain measured).", [[null, "default"], ["0", "off"], ["1", "extra"]], { sub: "Boot & loading" }),
-  sel("loader", "streaming", "loading screen", "The loading screen: the city's stills with a CSS zoom + one progress bar (default), the old aerial flight in a worker canvas (it jumped), or the plain cover (A/B).",
-    [[null, "stills"], ["flight", "aerial flight (old)"], ["0", "plain cover"]], { sub: "Boot & loading" }),
+  sel("loader", "streaming", "loading screen", "The loading screen: the city's stills with a CSS zoom + one progress bar (default), the old aerial flight in a worker canvas (it jumped), or the plain cover (A/B).", [[null, "stills"], ["flight", "aerial flight (old)"], ["0", "plain cover"]], { sub: "Boot & loading" }),
   on("bootdefer", "streaming", "far models after the cover", "Landmarks and hero rail bridges outside the boot's ring load after the cover lifts (viewer/bootGate.js): ~20 MB and ~120 node builds less before the cover; boot3: on by default (off: everything under the cover, as before).", { sub: "Boot & loading" }),
   // boot3 (docs/BOOT.md section 5)
   old("bootquiet", "streaming", "warm-up waits for all", "The boot warm-up waits until the whole device stops making pipelines (the far models' background compiles too), as before; default: only the frames' pipelines + the jobs the first view needs (warmup.js bootQuiet).", { value: "all", sub: "Boot & loading" }),
