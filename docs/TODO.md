@@ -110,7 +110,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [ ] LOOK: Neverness to Everness as the art reference (memory art-direction-nte): reference shots in data/raw/refs/nte/ (outside git); fine-tune, don't change the look.
 - [ ] LATER (owner 2026-11-20): shop interiors look flat at street level. Plan: docs/SHOPS_V2_PLAN.md (layered baked interior mapping in the Forza Horizon style + 2-4 hero café cells). Also: shopInteriors.py bakes on the CPU (breaks the OptiX rule).
 - [ ] GATE FLAKE: stutter2 fails under load on a different sub-check each run (clearRoads, heroTrianglesGen, hero triangle slices) and passes alone. A flaky gate row hides real regressions: make it load-robust (median of N runs, or measure CPU time not wall time) or isolate it.
-- [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
+- [ ] HEDGES SOLID (decided 2026-11-20): dense clipped garden hedges taller than ~1.2 m stop the car like a wall, with a soft bounce, the hedge shaking and a few leaves falling. Low hedges (< 1 m) and loose shrubs stay soft (push through, slowed). Small job after the current queue.
+- [x] OWNER QUESTION (roads 2026-11-19, answered above): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
 - [ ] Window grilles, gates, fences jitter when the camera moves (thin geometry aliasing).
 - [ ] Some places look hollow.
