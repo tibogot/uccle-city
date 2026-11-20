@@ -21,6 +21,7 @@
 //   ranges                  a woken prop's instance writes are update ranges (instanceStream.js StreamPool.patch,
 //                           cityProps.js proxies): no whole-buffer upload, no DynamicDrawUsage
 import { register } from "node:module";
+import { measure } from "./gate/timing.mjs";   // rule timing-rows: wall-time asserts between two calibrations, budget * k
 
 const STUB = `export class Vector3 { constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;} copy(v){this.x=v.x;this.y=v.y;this.z=v.z;return this;} distanceToSquared(v){return (this.x-v.x)**2+(this.y-v.y)**2+(this.z-v.z)**2;} distanceTo(v){return Math.sqrt(this.distanceToSquared(v));} set(x,y,z){this.x=x;this.y=y;this.z=z;return this;} }
 export class Sphere { constructor(){this.center=new Vector3();this.radius=0;} }
@@ -304,7 +305,7 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
   const props = [];
   for (let i = 0; i < 24; i++) props.push({ cls: ["bin", "cone", "moto", "chair", "sign", "villo"][i % 6], x: (i % 6) * 3 - 8, z: Math.floor(i / 6) * 4 + 6, yaw: i });
   const W = scene({ walls: [[-30, 30, 30, 34], [12, -10, 15, 40]], props });
-  let ms = NaN, bytes = [NaN];
+  let ms = NaN, bytes = [NaN], costK = 1, costNote = "";
   if (W.world) {
     const w = W.world;
     const kick = () => {
@@ -314,9 +315,12 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
     kick();
     for (let i = 0; i < 240; i++) w.substep(1 / 120);          // (JIT warm)
     kick();
-    const t0 = performance.now(), M = 2400;
-    for (let i = 0; i < M; i++) { if (i % 600 === 0) kick(); w.substep(1 / 120); }
-    ms = (performance.now() - t0) / M * 2;                    // a 60 fps frame = 2 substeps
+    const MT = await measure(() => {
+      const t0 = performance.now(), M = 2400;
+      for (let i = 0; i < M; i++) { if (i % 600 === 0) kick(); w.substep(1 / 120); }
+      return (performance.now() - t0) / M * 2;                // a 60 fps frame = 2 substeps
+    });
+    ms = MT.value; costK = MT.k; costNote = MT.note;
     const { Session } = await import("node:inspector/promises");
     const ses = new Session(); ses.connect();
     await ses.post("HeapProfiler.enable");
@@ -335,7 +339,7 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
     ses.disconnect();
   }
   check("allocation", Math.min(...bytes) < 2048, `20 000 substeps x 24 awake bodies: ${bytes.join(" / ")} bytes in propWorld / colliders / obb (V8 sampling heap profiler, 64 B)`);
-  check("cost", ms < 0.1, `24 awake bodies (ground points, walls, pairs): ${f2(ms, 3)} ms per 60 fps frame (2 substeps)`);
+  check("cost", ms < 0.1 * costK, `24 awake bodies (ground points, walls, pairs): ${f2(ms, 3)} ms per 60 fps frame (2 substeps), budget 0.1 ms x k (${costNote})`);
 }
 // ---------------------------------------------------------------- 10 instance writes: update ranges only
 {
