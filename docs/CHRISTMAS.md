@@ -1,6 +1,16 @@
 # Christmas in Uccle: the seasonal layer (branch claude/christmas)
 
-## FIR ROUND 3: the cards' cost and the middle level (claude/xmasfir3, 2026-11-18, OFFLINE; browser turn to come)
+## FIR ROUND 3: the cards' cost and the middle level (claude/xmasfir3, 2026-11-18 offline, browser turn 2026-11-20)
+
+- **Browser turn (2026-11-20, fast lane, preflight RED: Chrome 6.2 GB, GPU 52 % busy before start, power cap):**
+  foundation merged; rows xmas, xmastest, stutter, stutter2, tourdet PASS. Place Saint-Job, `?quick=1&xmas=1`, eye
+  height, 8 / 21 / 45 m, one page per variant (the switches are boot-only), GPU p50 ms, INDICATIVE only:
+  default 12.65 / 12.65 / 12.78 then 11.80 / 11.93 / 11.93 (drift 0.8 ms between two loads of the same page);
+  `?firprepass=0` 11.67 / 11.53 / 11.60; `?firshadow=cards` 11.53 / 11.99 / 11.73; 60 fps in all. The expected
+  -0.1 ms of the pre-pass is under this machine's noise: neither switch measurably cheaper or dearer here; re-measure
+  on GREEN with `gpuAB.alternate` once the switches can flip live. Look: no holes / z-fight specks in the cards at 8 m
+  (day and night), the 42 -> 48 m switch keeps colour and silhouette, the tree's shadow on the paving, 0 console
+  errors. Shots `docs/christmas/fir3_browser_{8m_day,42m_day,48m_day,8m_night}.jpg`.
 
 - **Problems:** (1) the near level's needle cards cost +0.26 ms GPU at 8 m (budget 0.1 ms); (2) the middle level
   (45-150 m: solid fronds) read as flat tiers next to the needle crown at the 45 m switch.
