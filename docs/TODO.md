@@ -99,7 +99,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   - Cause: the traffic (and tram 92) take their height from viewer/main.js movingGround (worldRef.surface + CARVE; deckY only for VIVIER). The player's car drives the drawn drive surface (surfaceLayers / hero decks / the levelled roads), so on hero road decks and where the sidewalk / roads jobs reshaped the street, the traffic sinks or floats.
   - Fix: ONE ground for every mover (player, traffic, knocked / parked cars, trams, props): the drawn drive surface, layered.
   - Census: every lane point vs the drawn road, |dy| > 5 cm counted, city-wide; gate at 0 (or a justified ceiling).
-- [ ] GATE PARSE (props job finding): a branch that did not boot (a comment swallowed an export) passed the gate; the gate must parse every viewer/ and tools/ file as an ES module.
+- [x] GATE PARSE (props job finding; DONE claude/speed1: the `meta` row bundles every viewer/ debug/ tools/ module with esbuild): a branch that did not boot (a comment swallowed an export) passed the gate; the gate must parse every viewer/ and tools/ file as an ES module.
 - [x] Christmas firs (xmasfir3) MERGED 2026-11-20 (fast lane); the perf saving is not measurable on a busy machine.
 - [ ] CLOSED 2026-11-20: claude/carshadow: no mode measurably reduced the rear shimmer (blur noise ±18 %, less sharp); the verdict is in that branch's docs/CARSHADOW.md; branch kept, worktree removed.
 - [ ] LATER (owner 2026-11-20): shop interiors look flat at street level. Plan: docs/SHOPS_V2_PLAN.md (layered baked interior mapping in the Forza Horizon style + 2-4 hero café cells). Also: shopInteriors.py bakes on the CPU (breaks the OptiX rule).

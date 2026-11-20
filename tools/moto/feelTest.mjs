@@ -493,12 +493,12 @@ if (modes.includes(false)) {
   if (nan) { fails++; console.log("FAIL NaN in a ride"); }
   if (alloc) { const ok = alloc.least < 2048; if (!ok) fails++; console.log(`${ok ? "  ok" : "FAIL"} allocation: ${alloc.runs.join(" / ")} bytes in motoPhysics / carEnv / colliders per ${alloc.steps} steps (per-step garbage would be >= ${alloc.steps * 16})`); }
 }
-// the switch: ?moto=old a features row, read by motoPhysics.js, the city's envs made by twoWheelEnv (the feel options)
+// the switch: ?moto=old read by motoPhysics.js (its features row: the meta row), the city's envs made by twoWheelEnv (the feel options)
 {
   const rd = (f) => readFileSync(join(ROOT, f), "utf8");
-  const ok = /old\("moto", "ab"/.test(rd("viewer/features.js")) && /moto=old/.test(rd("viewer/moto/motoPhysics.js")) && /twoWheelEnv\(H\)/.test(rd("viewer/drive/driveMode.js"));
+  const ok = /moto=old/.test(rd("viewer/moto/motoPhysics.js")) && /twoWheelEnv\(H\)/.test(rd("viewer/drive/driveMode.js"));
   if (!ok) fails++;
-  console.log(`${ok ? "  ok" : "FAIL"} switch: ?moto=old (features row, motoPhysics.js MOTO_OLD), driveMode.js envs by twoWheelEnv`);
+  console.log(`${ok ? "  ok" : "FAIL"} switch: ?moto=old (motoPhysics.js MOTO_OLD), driveMode.js envs by twoWheelEnv`);
 }
 if (BOTH) {
   const oldBad = OLDT.filter((r) => !r.ok).length;

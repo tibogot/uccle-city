@@ -135,14 +135,6 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
     && /export const FIR_SHADOW_LEVEL = 2;/.test(citySrc) && /shadow\.camera\.layers\.enable\(XMAS_SHADOW_LAYER\)/.test(citySrc);
   out(ok, "fir: depth pre-pass on by default (?firprepass=0), the shadow from the far level's solid fronds (?firshadow=cards), its layer enabled on the sun's shadow camera");
 }
-// no light, no DynamicDrawUsage
-{
-  const dir = path.join(ROOT, "viewer/christmas"), hits = [];
-  for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".js"))) {
-    const src = fs.readFileSync(path.join(dir, f), "utf8").replace(/\/\/.*$/gm, "");
-    for (const re of [/new\s+THREE\.\w*Light\b/g, /\b(PointLight|SpotLight|DirectionalLight|RectAreaLight|HemisphereLight|AmbientLight)\b/g, /DynamicDrawUsage/g]) for (const m of src.matchAll(re)) hits.push(`${f}: ${m[0]}`);
-  }
-  out(!hits.length, `no light added, no DynamicDrawUsage in viewer/christmas/ (${hits.length ? hits.join(", ") : "none"})`);
-}
+// (no light, no DynamicDrawUsage in viewer/christmas/: the meta row, tools/audit/gate.d/xmas.mjs)
 console.log(fails ? `xmasCheck: ${fails} FAIL` : "xmasCheck: all PASS");
 process.exit(fails ? 1 : 0);
