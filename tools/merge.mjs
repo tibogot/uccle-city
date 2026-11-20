@@ -82,8 +82,18 @@ if (NO_MERGE) {
   const m = gitTry("merge", "--no-ff", branch, "-F", path.resolve(msgFile));
   process.stdout.write(m.stdout + m.stderr);
   if (m.status !== 0) {
-    const un = gitTry("diff", "--name-only", "--diff-filter=U").stdout.trim();
-    die(un ? `merge conflicts in:\n  ${un.split("\n").join("\n  ")}\nresolve them (tools/audit/gate.d, docs/rules: one file each, so mostly a real conflict), git commit, then: node tools/merge.mjs ${branch} --no-merge` : `git merge failed (exit ${m.status})`);
+    let un = gitTry("diff", "--name-only", "--diff-filter=U").stdout.trim();
+    // the generated indexes (docs/QUALITY_RULES.md, docs/CENSUS.md) conflict whenever both sides add a rule: they are
+    // rebuilt from docs/rules/ + docs/census/, so regenerate them and go on when they are the only conflicts
+    const GEN = new Set(["docs/QUALITY_RULES.md", "docs/CENSUS.md"]);
+    const list = un ? un.split("\n").filter(Boolean) : [];
+    if (list.length && list.every((f) => GEN.has(f))) {
+      step("regenerating the rule / census indexes (the only conflicts)");
+      const r = spawnSync(process.execPath, [path.join(ROOT, "tools/docs/rulesIndex.mjs")], { cwd: ROOT, stdio: "inherit" });
+      if (r.status === 0 && gitTry("add", ...GEN).status === 0 && gitTry("commit", "--no-edit", "-F", path.resolve(msgFile)).status === 0) un = "";
+      else un = list.join("\n");
+    }
+    if (un || gitTry("rev-parse", "-q", "--verify", "MERGE_HEAD").status === 0) die(un ? `merge conflicts in:\n  ${un.split("\n").join("\n  ")}\nresolve them (tools/audit/gate.d, docs/rules: one file each, so mostly a real conflict), git commit, then: node tools/merge.mjs ${branch} --no-merge` : `git merge failed (exit ${m.status})`);
   }
   if (git("rev-parse", "HEAD") === base) die("the merge made no commit (already merged?)");
   changed = git("diff", "--name-only", "HEAD^1", "HEAD").split("\n").filter(Boolean);
