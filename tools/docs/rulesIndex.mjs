@@ -88,7 +88,7 @@ export function parseLegacyRules(md) {
 /** a slug from a rule's text: its first words that matter */
 export function slugOf(text, taken = new Set()) {
   const stop = new Set("a an the of to and or is are be by in on at for from with its it as never every any no not one that this what where when which who".split(" "));
-  const w = text.replace(/`[^`]*`/g, " ").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((x) => x && !stop.has(x));
+  const w = text.replace(/`[^`]*`/g, " ").replace(/['’]s\b/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((x) => x && !stop.has(x));
   let s = w.slice(0, 4).join("-") || "rule", i = 2;
   const base = s;
   while (taken.has(s)) s = `${base}-${i++}`;

@@ -45,19 +45,28 @@ if (!existsSync(path.join(ROOT, "tools/audit/gate.d/meta.mjs"))) { console.log(`
   if (!T) console.log("1. the branch's mergeGate.mjs has no CHECKS array: nothing to convert");
   else {
     const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-    const have = new Set((await loadRows(ROOT)).map((r) => r.name));
+    const Frows = await loadRows(ROOT), have = new Set(Frows.map((r) => r.name));
+    const FIELDS = ["script", "node", "args", "guards"], norm = (r, k) => JSON.stringify(k === "node" || k === "args" ? r?.[k] ?? [] : r?.[k]);
     for (const r of T.checks) {
       const old = B.checks.find((x) => x.name === r.name);
       if (old && same(old, r)) continue;
       const rel = `tools/audit/gate.d/${r.name}.mjs`;
-      let src = rowSource(r);
+      // three-way per field: base (fork point), the branch, foundation now (its gate.d file)
+      const F = Frows.find((x) => x.name === r.name), row = { name: r.name }, both = [];
+      for (const k of FIELDS) {
+        const b = norm(old, k), t = norm(r, k), fv = norm(F, k);
+        const pick = !F || !old ? t : t === b ? fv : fv === b || fv === t ? t : (both.push(k), t);
+        if (pick !== undefined && pick !== "undefined") row[k] = JSON.parse(pick);
+      }
+      if (F && !old) both.push("the whole row (foundation has one of that name)");
+      let src = rowSource(row);
       const cur = existsSync(path.join(ROOT, rel)) ? readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n") : "";
       const keep = (k) => { const m = new RegExp(`\\n  ${k}: [^\\n]*`).exec(cur); return m && !new RegExp(`\\n  ${k}: `).test(src) ? m[0] : ""; };
       const meta = /\n  meta: \{[\s\S]*?\n  \},/.exec(cur)?.[0] ?? "";
       const extra = keep("timing") + keep("timeout") + keep("deps") + meta;
       if (extra) src = src.replace(/\n\};\n$/, `${extra}\n};\n`);
       put(rel, src);
-      notes.push(old ? `row ${r.name}: the branch changed it${meta ? " (foundation's meta kept: drop any features.js / main.js / no-light text check the branch's script still does)" : ""}` : `row ${r.name}: new${have.has(r.name) ? " (a file of that name was already there: overwritten)" : ""}`);
+      notes.push((both.length ? `CHECK row ${r.name}: the branch AND foundation changed ${both.join(", ")}: the branch's value taken, merge them by hand. ` : "") + (old ? `row ${r.name}: the branch changed it${meta ? " (foundation's meta kept: drop any features.js / main.js / no-light text check the branch's script still does)" : ""}` : `row ${r.name}: new`));
     }
     for (const r of B.checks) if (!T.checks.some((x) => x.name === r.name)) { del(`tools/audit/gate.d/${r.name}.mjs`); notes.push(`row ${r.name}: removed by the branch`); }
     const files = await loadBrowser(ROOT), taken = new Set(files.map((f) => f.name));
