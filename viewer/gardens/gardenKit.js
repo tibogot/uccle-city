@@ -288,7 +288,8 @@ const rnd01 = (x, z) => { let h = Math.imul(Math.round(x * 100) | 0, 73856093) ^
 /**
  * A tile's data/gardens doc -> { inst: { <piece>: Float32Array stride 24 } (gardenSources: the streaming sources),
  * stand: { wall: [mat16...], pillar: [...], gate: [...] } (collision stand-ins: unit boxes), counts }.
- * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style].
+ * Segments: [x0, y0, z0, x1, y1, z1, style, wallH]; pillars: [x, y, z, yaw, h, style]; gates: [x, y, z, yaw, w, kind, open, style]
+ * (open: the swing into the garden, rad: every pedestrian gate; a driveway gate (kind 1) only across a way a car uses).
  */
 export const gardenInstances = (...a) => drain(gardenInstancesGen(...a));
 /** the same as a generator (falcon2, rule 22: a yield every few pieces; viewer/slices.js sliced() while playing) */
@@ -367,12 +368,12 @@ export function* gardenInstancesGen(doc, groundAt = null, { hedgeFronts = true, 
     if (kind === 0) {
       push(L[`gate_${type}`], rot(x, y, z, yaw + open, w / GATE_W.gate, H / GATE_H.gate, 1), v);   // open into the garden: walkable
     } else {
-      const lw = w / 2, c = Math.cos(yaw), sn = Math.sin(yaw);
-      push(L[`cargate_${type}`], rot(x, y, z, yaw, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
-      push(L[`cargate_${type}`], rot(x + c * w, y, z - sn * w, yaw + Math.PI, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
-      const mm = rot(x, y, z, yaw, 1, 1, 1);
-      for (let k = 0; k < 16; k++) SG.push(shear(x, y, z, c * w, 0, -sn * w, H)[k]);
-      void mm;
+      // (claude/gates) open > 0: a driveway gate across a way a car uses, both leaves swung into the garden by `open`
+      // (the far leaf the other way round its own hinge); an open pair has no stand-in (it stands along the drive's sides)
+      const lw = w / 2, c = Math.cos(yaw), sn = Math.sin(yaw), op = open > 0 ? open : 0;
+      push(L[`cargate_${type}`], rot(x, y, z, yaw + op, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
+      push(L[`cargate_${type}`], rot(x + c * w, y, z - sn * w, yaw + Math.PI - op, lw / GATE_W.cargate, H / GATE_H.cargate, 1), v);
+      if (!op) for (let k = 0; k < 16; k++) SG.push(shear(x, y, z, c * w, 0, -sn * w, H)[k]);
     }
   }
   // the hedges: ~1 m modules on the drawn ground (gardenHedge.js); the leaf cards ride on the same instances

@@ -8,9 +8,10 @@ import fs from "fs";
 import { analyseBuildings, hash01 } from "../../viewer/facadeGeom.js";
 import { faceOpenings } from "../../viewer/interior/facadeWindows.js";
 
-const tile = process.argv[2];
+import { pathToFileURL } from "url";
 const KIT_MAX_H = 16;                               // = viewer/facadeKit/placement.js MAX_H (not exported)
-if (!tile) throw new Error("usage: node tools/gardens/faces.mjs <tile>");
+/** (claude/gates: importable, tools/audit/census/gates.mjs) a tile's street faces -> [face] */
+export function tileFaces(tile) {
 const dir = new URL(`../../data/tiles/${tile}/`, import.meta.url);
 const rd = (f) => fs.readFileSync(new URL(f, dir));
 const doc = JSON.parse(rd("buildings.json"));
@@ -47,4 +48,10 @@ const kit = {
   },
 };
 analyseBuildings(doc, buf, roads, feats, { kit });
-process.stdout.write(JSON.stringify({ tile, faces }));
+return faces;
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const tile = process.argv[2];
+  if (!tile) throw new Error("usage: node tools/gardens/faces.mjs <tile>");
+  process.stdout.write(JSON.stringify({ tile, faces: tileFaces(tile) }));
+}
