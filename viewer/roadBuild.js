@@ -21,6 +21,8 @@ import { trimBendFolds } from "./streets/roadBends.js";
 import { edgeField, onceEdgeList } from "./heightmap.js";
 import { retainingWalls, appendToPart } from "./streets/retainWalls.js";
 import { measureLineFit, fitLinesToStreet, laneShifter } from "./streets/lineFit.js";
+import { buildStreetModel } from "./street/model.js";
+import { modelLineItems, lineQuery } from "./street/markings.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // (claude/sidewalk, ?sidewalk=old = 0) the terrain higher than a street banks down to its outer edge at this slope (m per m,
@@ -140,6 +142,17 @@ export function buildRoadData(o) {
   // (o.roadLines false = ?roadlines=old: the strips where the median width fit put them, their lines kept on sidewalks)
   const lineFit = lineFitData ? fitLinesToStreet(net, built.asphalt, lineFitData) : null;
   lap("line fit");
+  // THE STREET MODEL (claude/street2, rule street-model; o.streetModel = viewer/street/inputs.js, null = ?streetmodel=old):
+  // segments / kerbs / lanes / junctions from the unclipped measured inputs, each element as its owner builds it. Its
+  // first consumer is the paint: the lines along the roads are drawn from it (viewer/street/markings.js, into the paint
+  // decal below), so the engine strips' own line codes go (the strips stay: the paving uv and the traffic still use them)
+  let streetModel = null;
+  if (v2 && o.streetModel) {
+    streetModel = buildStreetModel({ ...o.streetModel, bounds });
+    const E = built.asphalt?.attributes?.aEdges?.array;
+    if (E) for (let v = 0; v < E.length; v += 4) { E[v + 2] = 0; E[v + 3] = 0; }
+    lap("street model");
+  }
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
   let priority = null;
   if (v2) {
@@ -225,14 +238,20 @@ export function buildRoadData(o) {
   lap("terrain weld");
   if (v2) {
     // the measured paint as its own decal mesh (one draw, viewer/roadPaint.js paintMaterial)
-    const paintPart = paintMeshV2(pv.items, prep, bounds);
+    // (claude/street2) + the model's lines, the runs whose axis comes within PAD m of this tile (an edge line lies up to a
+    // half carriageway off its axis; paintMeshV2 cuts them on the tile edge)
+    const PAD = 15, inT = (x, z) => x >= bounds.x0 - PAD && x < bounds.x1 + PAD && z >= bounds.z0 - PAD && z < bounds.z1 + PAD;
+    const ml = streetModel ? modelLineItems(streetModel, { near: inT, drawn: lineQuery([...(surf.kerbs || []), ...(surf.edges || []).map((e) => e.line).filter(Boolean)]) }) : null;
+    if (ml) streetModel.stats.paint = ml.stats;
+    const paintPart = paintMeshV2(ml ? pv.items.concat(ml.items) : pv.items, prep, bounds);
     if (paintPart) { parts.paint = paintPart; triangles += paintPart.index.length / 3; }
     // (cortenbosch2) words painted on the street (data/overrides.json roadTexts: "Private Weg" / "Cortenbosch")
     const textPart = o.roadTexts ? roadTextMesh(o.roadTexts, prep, bounds) : null;
     if (textPart) { parts.roadtext = textPart; triangles += textPart.index.length / 3; }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
-  if (o.keep) Object.assign(out, { prep, built });
+  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1",
+    streetModel: streetModel ? { stats: streetModel.stats } : null };
+  if (o.keep) Object.assign(out, { prep, built, model: streetModel });
   return out;
 }

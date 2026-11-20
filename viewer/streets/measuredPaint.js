@@ -547,7 +547,8 @@ export function unpaintParking(built, ctx) {
  * roadway, parking: never a sidewalk, median, square or tram site) piece by piece on the base triangles, so each
  * piece lies on its triangle's plane of H, PAINT_LIFT above it. Attributes for viewer/roadPaint.js paintMaterial:
  *   aPaint  (u, v, kind, n)     u along the mark, v across it (m), kind 0 solid / 1 zebra / 2 teeth, n stripes
- *   aPaint2 (u1, vLen, -, -)    the mark's extent (for the antialiased edges)
+ *   aPaint2 (u1, vLen, id, line) the mark's extent (for the antialiased edges); claude/street2: id = a street-model
+ *                               line run (u runs along the whole run), line = 1 for those (the detectors trace them)
  */
 export function paintMeshV2(items, prep, bounds) {
   const pos = [], nrm = [], uv = [], a1 = [], a2 = [], idx = [];
@@ -596,7 +597,7 @@ export function paintMeshV2(items, prep, bounds) {
             const [u, v] = uvOf(p);
             uv.push(u, v);
             a1.push(u, v, kind, F.n ?? 0);
-            a2.push(ext[0], ext[1], 0, 0);
+            a2.push(ext[0], ext[1], it.line ?? 0, it.line ? 1 : 0);   // (claude/street2: z = the run id, w = 1 an along-road line of the street model)
           }
           for (let k = 1; k + 1 < piece.length; k++) {
             if (ccw) idx.push(v0, v0 + k + 1, v0 + k); else idx.push(v0, v0 + k, v0 + k + 1);

@@ -24,8 +24,10 @@
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/markings2.mjs [--all | T ...] [--old] [--out FILE]
 //        [--fixtures] [--register] [--write-register] [--quiet] [--worst N]
-//   --old = ?streetinv=old (the lines before "no line rather than a wrong line"); --streets: metres per street (for
-//   the A/B of the fix)
+//   --old = ?streetinv=old + ?streetmodel=old (the lines before "no line rather than a wrong line"); --modelold =
+//   ?streetmodel=old (the step-1 lines, claude/street1); --streets: metres per street (for the A/B of the fix)
+// claude/street2: the street model's lines (decal, aPaint2.w = 1) are traced exactly like the asphalt's (the iso-line
+// at their mid-width in every triangle); the other decal marks as before.
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, at, ROOT, SC, lineIndex } from "./lib_street.mjs";
@@ -33,7 +35,7 @@ import { findCtx, roadRuns } from "./lib_find.mjs";
 import { judge, report, rewrite } from "../gaps.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, flag } = cli();
-const OLD = flag("--old"), QUIET = flag("--quiet"), FIX = flag("--fixtures"), REG = flag("--register"), WREG = flag("--write-register");
+const OLD = flag("--old"), MODEL_OLD = flag("--modelold"), QUIET = flag("--quiet"), FIX = flag("--fixtures"), REG = flag("--register"), WREG = flag("--write-register");
 const CHECKS = ["noKerb", "junction", "angle", "margin", "edge"];
 const GATED = CHECKS.map((c) => `markings2.${c}`);
 const REACH = 12, ANGLE = 3, MARGIN = 0.10, EDGE_ZONE = 1.0, EDGE_AT = 0.30, EDGE_TOL = 0.10, ALONG = 45;
@@ -47,7 +49,7 @@ if (!CHILD) {
   if (!TILES.length && !FIX) { console.error("usage: markings2.mjs [--all | T ...] [--old] [--fixtures]"); process.exit(2); }
   let bad = 0;
   if (TILES.length) {
-    const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET });
+    const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : MODEL_OLD ? ["--modelold"] : [], log: !QUIET });
     const sum = { tiles: 0, strokeM: 0, decalM: 0, decalUnjudged: 0 }, byCheck = Object.fromEntries(CHECKS.map((c) => [c, 0])), streets = {};
     for (const r of res) {
       if (r.error) { bad++; continue; }
@@ -60,7 +62,7 @@ if (!CHILD) {
     const findings = res.flatMap((r) => r.findings || []);
     const byInv = {}; for (const f of findings) byInv[f.inv] = (byInv[f.inv] || 0) + 1;
     const byCause = {}; for (const f of findings) byCause[f.cause] = (byCause[f.cause] || 0) + 1;
-    console.log(`markings2${OLD ? " (?streetinv=old)" : ""}: ${JSON.stringify(sum)}\n  flagged metres by check: ${JSON.stringify(byCheck)}\n  findings by check: ${JSON.stringify(byInv)}\n  findings by cause: ${JSON.stringify(byCause)}`);
+    console.log(`markings2${OLD ? " (?streetinv=old)" : MODEL_OLD ? " (?streetmodel=old)" : ""}: ${JSON.stringify(sum)}\n  flagged metres by check: ${JSON.stringify(byCheck)}\n  findings by check: ${JSON.stringify(byInv)}\n  findings by cause: ${JSON.stringify(byCause)}`);
     findings.sort((a, b) => b.m - a.m);
     for (const f of findings.slice(0, WORST)) console.log(`  ${f.id} ${f.m} m ${f.at} ${f.street} (${f.cause})`);
     if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byCheck, byInv, byCause, streets, findings }, null, 1));
@@ -83,7 +85,8 @@ if (!CHILD) {
 
 // ------------------------------------------------------------------ child: one tile
 const T = TILES[0], POINTS = flag("--points");
-const S = await streetTile(T, { build: OLD ? { streetInv: false } : {} });
+// (--old: before street1 AND street2; --modelold: ?streetmodel=old, the step-1 lines from the fitted engine strips)
+const S = await streetTile(T, { build: OLD ? { streetInv: false, streetModel: false } : MODEL_OLD ? { streetModel: false } : {} });
 const { rd, classAt, inB, nameAt } = S;
 const out = { tile: T, strokeM: 0, decalM: 0, decalUnjudged: 0, byCheck: Object.fromEntries(CHECKS.map((c) => [c, 0])), streets: {}, findings: [] };
 const kerbs = [...(rd.surfaceData?.kerbs || []), ...(S.tile.surf?.edges || []).map((e) => e.line).filter(Boolean)];
@@ -120,7 +123,24 @@ if (A?.attributes?.aEdges) {
 const D = rd.parts.paint;
 if (D?.attributes?.aPaint) {
   const P = D.position, a1 = D.attributes.aPaint.array, a2 = D.attributes.aPaint2.array, nv = P.length / 3, groups = new Map();
+  // (claude/street2) the street model's along-road lines (aPaint2.w = 1, viewer/street/markings.js): traced exactly, as
+  // the asphalt's: the iso-line v = vLen / 2 inside each of their triangles (their width = vLen)
+  const I = D.index;
+  for (let t = 0; t < I.length; t += 3) {
+    const v = [I[t], I[t + 1], I[t + 2]];
+    if (!v.every((q) => a2[q * 4 + 3] > 0.5)) continue;
+    const half = a2[v[0] * 4 + 1] / 2, pts = [];
+    for (let q = 0; q < 3; q++) {
+      const a = v[q], b = v[(q + 1) % 3], ta = a1[a * 4 + 1] - half, tb = a1[b * 4 + 1] - half;
+      if ((ta <= 0) !== (tb <= 0) && ta !== tb) { const f = ta / (ta - tb); pts.push([P[a * 3] + (P[b * 3] - P[a * 3]) * f, P[a * 3 + 2] + (P[b * 3 + 2] - P[a * 3 + 2]) * f]); }
+    }
+    if (pts.length < 2) continue;
+    const [p, q] = pts, L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 0.02) continue;
+    const ux = (q[0] - p[0]) / L, uz = (q[1] - p[1]) / L;
+    for (let d = 0; d <= L; d += 0.25) { const n0 = samples.length; push(p[0] + ux * d, p[1] + uz * d, ux, uz, half, 0.5, "line"); if (samples.length > n0) out.decalM += 0.5; }
+  }
   for (let i = 0; i < nv; i++) {
+    if (a2[i * 4 + 3] > 0.5) continue;                       // (a model line: traced above)
     if (Math.round(a1[i * 4 + 2]) !== 0) continue;           // kind 0 solid
     const ox = P[i * 3] - a1[i * 4], oz = P[i * 3 + 2] - a1[i * 4 + 1];
     const k = `${a2[i * 4].toFixed(3)},${a2[i * 4 + 1].toFixed(3)},${ox.toFixed(1)},${oz.toFixed(1)}`;
