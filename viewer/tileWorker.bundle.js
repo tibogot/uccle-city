@@ -4638,10 +4638,13 @@ function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile = () =>
     if (L2 - pa - pb < 0.3) continue;
     const sm = (pa + L2 - pb) / 2 / L2, mx = e[0] + (e[3] - e[0]) * sm, mz = e[2] + (e[5] - e[2]) * sm, y0 = e[1] + (e[4] - e[1]) * sm;
     const ux0 = (e[3] - e[0]) / L2, uz0 = (e[5] - e[2]) / L2, half2 = (L2 - pa - pb) / 2;
-    const gs = Math.max(...[-0.6, 0, 0.6].map((f) => {
+    let gs = Math.max(...[-0.6, 0, 0.6].map((f) => {
       const ox = mx + ux0 * f * half2, oz = mz + uz0 * f * half2;
       return [BEHIND, 1.6, 2].map((d) => ground(ox + e[6] * d, oz + e[7] * d)).sort((a, b) => a - b)[1];
     }));
+    if (gateNear?.gates) for (const g of gateNear.gates(mx, mz, L2 / 2 + 1.5)) {
+      for (const [ox, oz] of g.pts) gs = Math.max(gs, [BEHIND, 1.6, 2].map((d) => ground(ox + e[6] * d, oz + e[7] * d)).sort((a, b) => a - b)[1]);
+    }
     const h = Math.min(MAX_CUT, gs - y0);
     if (!(h > STEPS_MIN)) continue;
     const n = Math.ceil(h / RISER), D = n * TREAD;
@@ -4762,7 +4765,7 @@ function appendToPart(part, G2, ex = {}) {
   if (part.vertexCount !== void 0) part.vertexCount += n;
   return part;
 }
-function gardenIndex(doc, { gatesOnly = false } = {}) {
+function gardenIndex(doc, { gatesOnly = false, span = false } = {}) {
   if (!doc) return () => false;
   const B = 5, grid = /* @__PURE__ */ new Map(), K = (i, j) => (i + 5e4) * 1e5 + (j + 5e4), add = (x, z) => {
     const k = K(Math.floor(x / B), Math.floor(z / B));
@@ -4775,9 +4778,20 @@ function gardenIndex(doc, { gatesOnly = false } = {}) {
     for (let k = 0; k <= n; k++) add(g[0] + (g[3] - g[0]) * k / n, g[2] + (g[5] - g[2]) * k / n);
   }
   if (!gatesOnly) for (const p of doc.pillars || []) add(p[0], p[2]);
-  for (const p of doc.gates || []) add(p[0], p[2]);
+  for (const p of doc.gates || []) {
+    add(p[0], p[2]);
+    if (span) {
+      const c = Math.cos(p[3]), s = Math.sin(p[3]);
+      add(p[0] + c * p[4] / 2, p[2] - s * p[4] / 2);
+      add(p[0] + c * p[4], p[2] - s * p[4]);
+    }
+  }
   if (!gatesOnly) for (const h of doc.hedges || []) for (const [x, z] of h.points || []) add(x, z);
-  return (x, z, r) => {
+  const G2 = span ? (doc.gates || []).map((p) => {
+    const c = Math.cos(p[3]), s = Math.sin(p[3]);
+    return { x: p[0] + c * p[4] / 2, z: p[2] - s * p[4] / 2, pts: [[p[0], p[2]], [p[0] + c * p[4] / 2, p[2] - s * p[4] / 2], [p[0] + c * p[4], p[2] - s * p[4]]] };
+  }) : null;
+  const near = (x, z, r) => {
     for (let i = Math.floor((x - r) / B); i <= Math.floor((x + r) / B); i++) for (let j = Math.floor((z - r) / B); j <= Math.floor((z + r) / B); j++) {
       const L2 = grid.get(K(i, j));
       if (!L2) continue;
@@ -4785,6 +4799,8 @@ function gardenIndex(doc, { gatesOnly = false } = {}) {
     }
     return false;
   };
+  if (G2) near.gates = (x, z, r) => G2.filter((g) => (g.x - x) ** 2 + (g.z - z) ** 2 <= r * r);
+  return near;
 }
 
 // vendor/roads/roadMath.js
@@ -19418,10 +19434,10 @@ function publicAreas(feats) {
   };
   return (x, z) => polys.some((R2) => pip5(x, z, R2[0]) && !R2.slice(1).some((h) => pip5(x, z, h)));
 }
-async function gardenDocNear(base, name, b) {
+async function gardenDocNear(base, name, b, old = false) {
   const m = /^([A-Z])(\d+)$/.exec(name), R2 = 30;
   const near = m ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dz]) => String.fromCharCode(m[1].charCodeAt(0) + dx) + (+m[2] + dz)) : [];
-  const [own, ...nb] = await Promise.all([gardenDoc(base, name), ...near.map((n) => gardenDoc(base, n))]);
+  const [own, ...nb] = await Promise.all([gardenDoc(base, name, old), ...near.map((n) => gardenDoc(base, n, old))]);
   if (!b) return own;
   const inR = (x, z) => x > b.x0 - R2 && x < b.x1 + R2 && z > b.z0 - R2 && z < b.z1 + R2;
   const doc = own ? { ...own, segs: [...own.segs || []], pillars: [...own.pillars || []], gates: [...own.gates || []], hedges: [...own.hedges || []] } : { segs: [], pillars: [], gates: [], hedges: [] };
@@ -19434,8 +19450,8 @@ async function gardenDocNear(base, name, b) {
   }
   return doc;
 }
-async function gardenDoc(base, name) {
-  const r = await fetch(new URL(`../gardens/${name}.json`, base)).catch(() => null);
+async function gardenDoc(base, name, old = false) {
+  const r = await fetch(new URL(`../gardens/${old ? "old/" : ""}${name}.json`, base)).catch(() => null);
   return r?.ok ? r.json().catch(() => null) : null;
 }
 async function streetlifeFronts(base, name) {
@@ -19722,8 +19738,8 @@ async function buildTileData(entry, base) {
   } : null;
   const roadGround0 = rail ? roadDeckGround(rail.heroes, osmBridges.wrap(baseGround)) : osmBridges.wrap(baseGround);
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
-  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds)) : null;
-  const gardenNear = gardenDoc0 !== null || entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true }) : null;
+  const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
+  const gardenNear = gardenDoc0 !== null || entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
   const rd = await step("roads", () => buildRoadData({
     roads,
     surf,
@@ -20498,4 +20514,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "e130c4f41924e55d";
+self.__TILE_CODE_HASH = "8da2cb4e2ef4f504";
