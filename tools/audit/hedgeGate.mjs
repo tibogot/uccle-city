@@ -103,10 +103,9 @@ for (const q of out) {
 }
 check("on-ground", out.length > 200 && floating === 0, `${out.length} modules on a bumpy ground: ${floating} with the foot over the lower side (worst ${worstF.toFixed(3)} m)`);
 
-// ---- 5. rules
-const code = rd("viewer/gardens/gardenHedge.js");
-check("rules", !/DynamicDrawUsage|setUsage\(THREE\.Dynamic/.test(code) && !/new THREE\.\w*Light\(/.test(code), "no DynamicDrawUsage, no light added (gardenHedge.js)");
-check("switch", /hedges=old/.test(KIT) && /old\("hedges", "world"/.test(rd("viewer/features.js")) && H.HEDGE_TEX.every((p) => fs.existsSync(path.join(ROOT, p))), "?hedges=old in gardenKit.js + its features row; the baked surface textures exist");
+// ---- 5. rules (no DynamicDrawUsage / no light in gardenHedge.js, the ?hedges features row: the meta row,
+// tools/audit/gate.d/hedges.mjs)
+check("switch", /hedges=old/.test(KIT) && H.HEDGE_TEX.every((p) => fs.existsSync(path.join(ROOT, p))), "?hedges=old in gardenKit.js; the baked surface textures exist");
 
 if (!quiet || fails) {
   console.log("| check | result | detail |\n|---|---|---|");

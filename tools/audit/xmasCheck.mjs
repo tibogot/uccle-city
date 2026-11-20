@@ -9,8 +9,11 @@
 //     never carry a star over a tram track;
 //   - the kit's mesh audit (models/christmas/christmas.json) has 0 blocking items on every piece and level;
 //   - the fir's NEAR level is alpha-tested needle cards (slot fir_cards; canopy normals, alpha test: tools/christmas/
-//     xmasTest.mjs on the decoded GLB), the far levels none; triangles per level within budget; the needle atlas small;
-//     every ornament clear of the solid foliage and the cards' cores;
+//     xmasTest.mjs on the decoded GLB), the MIDDLE level a shell of big cards round a thin solid core, the FAR level
+//     none; triangles and card triangles per level within budget; the needle atlas small; every ornament clear of the
+//     solid foliage and the cards' cores; the 45 m switch matched (silhouette, brightness, colour, see-through: the
+//     Blender review renders, tools/christmas/fir_review.py); the cost model (tools/christmas/firCost.mjs) re-run for
+//     this kit and its estimate for the shipped switches within the 0.1 ms budget at 8 m;
 //   - NO LIGHT: no three.js light is constructed or added under viewer/christmas/ (rule 7: emissive only), no
 //     DynamicDrawUsage (rule 8).
 // Exit 1 on any failure.
@@ -101,24 +104,37 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
 // ornament clear of the solid foliage and the cards' cores (it may nestle among a card's transparent fringe)
 {
   const info = J("models/christmas/christmas.json"), L = info.lods?.tree?.lods ?? [], tp = info.pieces?.tree ?? {}, nd = info.needles;
-  const BUDGET = [160000, 45000, 15000];
+  const BUDGET = [160000, 45000, 15000], CARDS = [[20000, 80000], [5000, 16000], [0, 0]];
   const cards = L.map((l) => l.slots.includes("fir_cards") ? l.slot_triangles[l.slots.indexOf("fir_cards")] : 0);
   const okBudget = L.length === 3 && L.every((l, k) => l.triangles <= BUDGET[k]);
-  out(okBudget && cards[0] > 20000 && !cards[1] && !cards[2],
-    `fir: ${L.map((l) => l.triangles).join(" / ")} triangles (budget ${BUDGET.join(" / ")}), needle-card triangles ${cards.join(" / ")} (near level only)`);
+  out(okBudget && cards.every((c, k) => c >= CARDS[k][0] && c <= CARDS[k][1]),
+    `fir: ${L.map((l) => l.triangles).join(" / ")} triangles (budget ${BUDGET.join(" / ")}), needle-card triangles ${cards.join(" / ")} (near 20-80 k, middle shell 5-16 k, far 0)`);
+  // FIR ROUND 3 (rule 19): the middle level's shell keeps clear of the ornaments by construction (shortened / left out)
+  out((tp.shell_cards ?? 0) >= 1500 && (tp.shell_left_out ?? 1e9) <= 0.2 * (tp.shell_cards ?? 0),
+    `fir middle-level shell: ${tp.shell_cards} cards (>= 1500), ${tp.shell_shortened} shortened and ${tp.shell_left_out} left out to clear the ornaments (<= 20 %)`);
+  // the 45 m switch from the street (the review renders: near level vs middle level, same spot, same light). Why: the
+  // solid fronds read as flat tiers next to the needle crown (claude/xmasfir3). Bounds: the 2026-11-17 fronds' silhouette
+  // IoU 0.84 is kept; the foliage brightness within 15 %, colour within 0.05 (chromaticity), the row width within 8 %,
+  // the see-through (gaps between the tiers) within 0.03 of the near level's (the fronds' 0.066 vs 0.096 read solid)
+  const sw = info.fir_switch?.new;
+  out(!!sw && sw.iou >= 0.82 && Math.abs(sw.luminance_ratio - 1) <= 0.15 && sw.chroma_diff <= 0.05 && sw.row_width_err <= 0.08 && Math.abs(sw.see_through_middle - sw.see_through_near) <= 0.03,
+    `fir 45 m switch (review renders): silhouette IoU ${sw?.iou} (>= 0.82), foliage brightness x ${sw?.luminance_ratio} (1 +- 0.15), colour diff ${sw?.chroma_diff} (<= 0.05), row width err ${sw?.row_width_err} (<= 0.08), see-through ${sw?.see_through_middle} vs ${sw?.see_through_near} (+- 0.03)`);
+  // the cost model re-run for this kit (its card triangles = the kit's) and the shipped switches' estimate at 8 m <= 0.1 ms
+  const cf = fs.existsSync(path.join(ROOT, "docs/christmas/fir_cost.json")) ? J("docs/christmas/fir_cost.json").after : null;
+  out(!!cf && cf.cards.tris0 === cards[0] && cf.cards.tris1 === cards[1] && cf.shipped.near[8].after <= 0.1,
+    `fir cost model (docs/christmas/fir_cost.json): for this kit (${cf?.cards.tris0} / ${cf?.cards.tris1} card triangles), at 8 m ${cf?.shipped.near[8].before} -> ${cf?.shipped.near[8].after} ms (budget 0.1; the browser turn measures it)`);
   out(!!nd && fs.existsSync(path.join(ROOT, "models/christmas", nd.file ?? "-")) && nd.ktx2_bytes <= 1.5 * 1048576 && nd.gpu_bytes_bc7 <= 4 * 1048576 && nd.levels >= 10,
     `fir needle atlas: ${nd?.file} ${nd?.px?.join(" x ")} ${((nd?.ktx2_bytes ?? 0) / 1024).toFixed(0)} KB file, ${((nd?.gpu_bytes_bc7 ?? 0) / 1048576).toFixed(1)} MB on the GPU (<= 4), ${nd?.levels} mip levels`);
   out(tp.ornaments_clear_of_card_cores === (tp.baubles ?? -1) + (tp.bulbs ?? -1),
     `fir: ${tp.ornaments_clear_of_card_cores} of ${(tp.baubles ?? 0) + (tp.bulbs ?? 0)} ornaments clear of the solid foliage and the needle cards' cores`);
 }
-// no light, no DynamicDrawUsage
+// the fir's shadow and pre-pass in the viewer (rule 19, fir round 3): the defaults and the shadow layer on the sun
 {
-  const dir = path.join(ROOT, "viewer/christmas"), hits = [];
-  for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".js"))) {
-    const src = fs.readFileSync(path.join(dir, f), "utf8").replace(/\/\/.*$/gm, "");
-    for (const re of [/new\s+THREE\.\w*Light\b/g, /\b(PointLight|SpotLight|DirectionalLight|RectAreaLight|HemisphereLight|AmbientLight)\b/g, /DynamicDrawUsage/g]) for (const m of src.matchAll(re)) hits.push(`${f}: ${m[0]}`);
-  }
-  out(!hits.length, `no light added, no DynamicDrawUsage in viewer/christmas/ (${hits.length ? hits.join(", ") : "none"})`);
+  const kitSrc = fs.readFileSync(path.join(ROOT, "viewer/christmas/xmasKit.js"), "utf8"), citySrc = fs.readFileSync(path.join(ROOT, "viewer/christmas/xmasCity.js"), "utf8");
+  const ok = /prepass: QS\.get\("firprepass"\) !== "0"/.test(kitSrc) && /shadow: QS\.get\("firshadow"\) === "cards" \? "cards" : "far"/.test(kitSrc)
+    && /export const FIR_SHADOW_LEVEL = 2;/.test(citySrc) && /shadow\.camera\.layers\.enable\(XMAS_SHADOW_LAYER\)/.test(citySrc);
+  out(ok, "fir: depth pre-pass on by default (?firprepass=0), the shadow from the far level's solid fronds (?firshadow=cards), its layer enabled on the sun's shadow camera");
 }
+// (no light, no DynamicDrawUsage in viewer/christmas/: the meta row, tools/audit/gate.d/xmas.mjs)
 console.log(fails ? `xmasCheck: ${fails} FAIL` : "xmasCheck: all PASS");
 process.exit(fails ? 1 : 0);

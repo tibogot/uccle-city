@@ -36,6 +36,8 @@ slots instead of simplifying.
 import bpy, bmesh, math, os, sys, json, time, random
 from mathutils import Vector, Matrix, noise
 from mathutils.bvhtree import BVHTree
+from mathutils.kdtree import KDTree
+from mathutils.geometry import closest_point_on_tri
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def opt(name, default): return ARGS[ARGS.index(name) + 1] if name in ARGS else default
@@ -419,19 +421,15 @@ NEEDLE_CELLS, NEEDLE_ASPECT = 4, 0.5
 NEEDLE_ATLAS = os.path.join(ROOT, "data", "raw", "textures", "christmas", "fir_needles_atlas.png")
 
 
-def needle_card(M, base, T, side, length, roll, droop, variant, col, mirror=False, fold=0.2, core=None):
-    """one alpha-tested needle card: a spray `length` long, half as wide, its base (the twig's cut end) at `base`,
-    pointing along T, its width toward `side` turned by `roll` round T; bent DOWN along its length (droop: the drop of
-    the tip as a share of the length: the spray hangs) and folded into a shallow V along its twig (the needles' V);
-    2 x 1 (cards up to 36 cm) or 2 x 2 quads. UV = the atlas cell (front = the top view, seen from the front face the image is
-    not mirrored: right = +Wd, up = T); mirror: the cell flipped left / right. Returns the twig's line on the card."""
+def card_geom(base, T, side, length, roll, droop, variant, mirror=False, fold=0.2, ns=None):
+    """one needle card's geometry (see needle_card): (V, F, U, Wd, Nn, w)"""
     T = Vector(T).normalized()
     Wd = (Vector(side) - T * Vector(side).dot(T)).normalized()
     Wd = (Matrix.Rotation(roll, 3, T) @ Wd).normalized()
     Nn = Wd.cross(T).normalized()
     if Nn.z < 0: Wd = -Wd; Nn = -Nn                       # (the card's front = the spray's top: facing up)
     w = length * NEEDLE_ASPECT
-    ns = 1 if length < 0.36 else 2
+    if ns is None: ns = 1 if length < 0.36 else 2
     u0 = variant / NEEDLE_CELLS; du = 1 / NEEDLE_CELLS
     V, F, U = [], [], []
     for j in range(ns + 1):
@@ -444,6 +442,17 @@ def needle_card(M, base, T, side, length, roll, droop, variant, col, mirror=Fals
         for i in range(2):
             a0 = j * 3 + i
             F.append([a0, a0 + 1, a0 + 4, a0 + 3])           # ((v1 - v0) x (v3 - v0) = Wd x T = Nn: the front face up)
+    return V, F, U, Wd, Nn, w
+
+
+def needle_card(M, base, T, side, length, roll, droop, variant, col, mirror=False, fold=0.2, core=None):
+    """one alpha-tested needle card: a spray `length` long, half as wide, its base (the twig's cut end) at `base`,
+    pointing along T, its width toward `side` turned by `roll` round T; bent DOWN along its length (droop: the drop of
+    the tip as a share of the length: the spray hangs) and folded into a shallow V along its twig (the needles' V);
+    2 x 1 (cards up to 36 cm) or 2 x 2 quads. UV = the atlas cell (front = the top view, seen from the front face the image is
+    not mirrored: right = +Wd, up = T); mirror: the cell flipped left / right. Returns the twig's line on the card."""
+    V, F, U, Wd, Nn, w = card_geom(base, T, side, length, roll, droop, variant, mirror, fold)
+    ns = len(V) // 3 - 1
     M.add(V, F, "fir_cards", col, U)
     if core is not None:
         # the card's CORE: the twig's line +- 30 % of the half width (where the needles are dense: the ornaments' ray
@@ -498,12 +507,15 @@ def build_tree():
             branches.append((p0, d, LL, 0.5 + 0.35 * LL / 2.85, rnd.uniform(0.14, 0.22), rnd.uniform(0.06, 0.12), (rnd.random(), 0.75 + 0.25 * rnd.random(), 1.0), j * 31 + b))
     nfr = len(branches)
     # the FAR levels (LOD1 / LOD2 stand-ins): the solid fronds (opaque, no texture: cheap at 45 m +) + the trunk
-    for Mx, det, cs in ((far1, dict(nl=4, na=5, side=2, snl=3, sna=4), 16), (far2, dict(nl=3, na=4, side=0), 10)):
+    # (fir round 3: the MIDDLE level (LOD1) is a needle-card SHELL (below, after the ornaments) round a thin solid CORE:
+    # these fronds at 0.85 x the length, 0.45 x the width, no side sprays; the FAR level (LOD2) keeps the solid fronds
+    # (0.93 / 0.6, the 2026-11-17 match) and casts the shadow of all three levels: viewer/christmas/xmasCity.js)
+    for Mx, det, cs, kl, kw in ((far1, dict(nl=4, na=5, side=0), 16, 0.85, 0.45), (far2, dict(nl=3, na=4, side=0), 10, 0.93, 0.6)):
         inner_cone(Mx, cs)
         for (p0, d, LL, W, dr, tu, col, sd) in branches:
             # (narrower and a little shorter than the first fronds: the far crown matches the near level's needle-card
             # crown in the browser (40 m, both levels forced: the old fronds stood ~25 % wider): no swelling at the switch)
-            frond(Mx, p0, d, LL * 0.93, W * 0.6, dr, tu, col, seed=sd, **det)
+            frond(Mx, p0, d, LL * kl, W * kw, dr, tu, col, seed=sd, **det)
         frond(Mx, Vector((0, 0, H_TOP - 0.35)), Vector((0.0, 0.05, 1.0)), 0.55, 0.16, 0.0, 0.0, (0.3, 0.9, 1.0), seed=999, nl=3, na=4, side=0)
         tube(Mx, [(0, 0, 0.3), (0, 0, 3.0), (0, 0, 6.0), (0, 0, 9.0)], [0.17, 0.13, 0.08, 0.03], "fir_bark", segs=8 if Mx is far1 else 6, col=(0.5, 0.5, 1.0))
     # the NEAR level (LOD0): every branch a twig (bark) carrying alpha-tested NEEDLE CARDS (the modelled sprays of
@@ -665,6 +677,66 @@ def build_tree():
         bulbs.append(c)
         bead(M, c, 0.022, "bulb_warm", col, axis=nrm, segs=8)   # (8 sides + the viewer's facing glow: a round bulb, no hexagon)
         poly_shape(far1, c, 0.026, "bulb_warm", "oct", col); poly_shape(far2, c, 0.04, "bulb_warm", "tet", col)
+    # ---------------------------------------------------------------- the MIDDLE level's needle-card SHELL (LOD1)
+    # (fir round 3, docs/CHRISTMAS.md: the solid fronds alone read as flat tiers next to the needle crown at the 45 m
+    # switch.) A few BIG cards of the same atlas on every branch, on the SAME branch curve as the near level's twigs:
+    # side sprays every ~28 cm (alternating, swept forward; half of them crossed by a rolled one), a tip spray + a
+    # crossing one, the leader's two rings; ONE material with the near cards (colour, light and the canopy normals /
+    # canopy AO match by construction); the thin solid core inside (no sky through the middle of the crown). Each card
+    # keeps clear of the ornaments (the far stand-ins sit at the near level's places): shortened, or left out.
+    STAR_C, STAR_R = Vector((0, 0, 9.98)), 0.42
+    orn = [(c, r * 1.3 + 0.03) for c, r in bb] + [(c, 0.026 + 0.025) for c in bulbs] + [(STAR_C, STAR_R + 0.06), (Vector((0, 0, 9.5)), 0.1)]
+    kd = KDTree(len(orn))
+    for i, (c, r) in enumerate(orn): kd.insert(c, i)
+    kd.balance()
+    def shell_clear(V, F):
+        ctr = sum(V, Vector()) / len(V); rad = max((v - ctr).length for v in V)
+        for (_co, i, _dist) in kd.find_range(ctr, rad + 0.5):
+            c, r = orn[i]
+            for f in F:
+                for tri in ((f[0], f[1], f[2]), (f[0], f[2], f[3])):
+                    if (closest_point_on_tri(c, V[tri[0]], V[tri[1]], V[tri[2]]) - c).length < r: return False
+        return True
+    srnd = random.Random(4517)
+    shell = {"cards": 0, "shortened": 0, "left_out": 0}
+    def shell_card(base, T, side, length, roll, droop, variant, tint):
+        mir = srnd.random() < 0.5
+        for q, sc_ in enumerate((1.0, 0.72, 0.5)):
+            V, F, U, _wd, _nn, _w = card_geom(base, T, side, length * sc_, roll, droop, variant, mir, ns=1)
+            if shell_clear(V, F):
+                far1.add(V, F, "fir_cards", (tint, variant / 3, canopy_ao(base + Vector(T).normalized() * length * sc_ * 0.5)), U)
+                shell["cards"] += 1; shell["shortened"] += q > 0
+                return
+        shell["left_out"] += 1
+    for (p0, d, LL, W, dr, tu, col, sd) in branches:
+        d = Vector(d).normalized()
+        nl = 6
+        pts = [p0 + d * (LL * t) + Z * (LL * (-dr * t * t + tu * t ** 3)) for t in (i / nl for i in range(nl + 1))]
+        def at(s):
+            t = max(0.0, min(1.0, s / LL)); x = t * nl; i = min(nl - 1, int(x)); f = x - i
+            return pts[i].lerp(pts[i + 1], f), (pts[i + 1] - pts[i]).normalized()
+        tint = col[0]; reach = min(1.0, LL / 1.6)
+        s, k = 0.12 + srnd.uniform(0, 0.06), 0
+        while s < LL - 0.3:
+            P, T = at(s)
+            lat = Z.cross(T).normalized(); sg = 1 if k % 2 else -1; tt = s / LL
+            Ln = max(0.3, min(0.6, 0.32 + 0.38 * (1 - tt) * reach)) * srnd.uniform(0.9, 1.1)
+            var = srnd.choice((0, 1)) if tt > 0.55 or LL < 0.7 else srnd.choice((2, 3))
+            for q in range(2 if srnd.random() < 0.7 else 1):
+                ang = math.radians(srnd.uniform(32, 46) - 8 * tt)
+                Dd = (T * math.cos(ang) + lat * (sg * math.sin(ang)))
+                Dd = (Dd - Z * math.tan(math.radians(srnd.uniform(4, 18) if q == 0 else srnd.uniform(14, 34)))).normalized()
+                roll = math.radians(srnd.uniform(-25, 25)) if q == 0 else math.radians(srnd.uniform(60, 85) * srnd.choice((-1, 1)))
+                shell_card(P, Dd, lat * sg, Ln * (1.0 if q == 0 else 0.85), roll, srnd.uniform(0.06, 0.14), var if q == 0 else (var + 1) % 4, tint)
+            s += 0.21 * srnd.uniform(0.85, 1.15); k += 1
+        Lt = min(0.55, max(0.26, LL * 0.4))
+        P, T = at(LL - Lt * 0.85)
+        shell_card(P, (T + Z * 0.08).normalized(), Z.cross(T), Lt, math.radians(srnd.uniform(-10, 10)), 0.05, srnd.choice((0, 1)), tint)
+        shell_card(P, (T + Z * 0.04).normalized(), Z.cross(T), Lt * 0.85, math.radians(srnd.uniform(65, 85) * srnd.choice((-1, 1))), 0.08, srnd.choice((0, 1)), tint)
+    for q in range(10):
+        a = q * 2 * math.pi / 5 * 1.07 + 0.3
+        z_ = H_TOP - (0.75 if q < 5 else 0.42)
+        shell_card(Vector((0, 0, z_)), Vector((0.22 * math.cos(a), 0.22 * math.sin(a), 1.0)), Vector((math.cos(a + 1.3), math.sin(a + 1.3), 0)), 0.36 if q < 5 else 0.3, 0.0, 0.02, q % 2, 0.5)
     # ---------------------------------------------------------------- the star on its rod
     sc = Vector((0, 0, 9.98)); RO, RI, DEP = 0.42, 0.18, 0.11
     out = [sc + Vector((math.sin(2 * math.pi * k / 10) * (RO if k % 2 == 0 else RI), 0, math.cos(2 * math.pi * k / 10) * (RO if k % 2 == 0 else RI))) for k in range(10)]
@@ -706,7 +778,8 @@ def build_tree():
     # (the rule the audit's card-fringe exemption leans on: every ornament clear of the solid foliage and card cores)
     clear_n = sum(1 for c, r in bb if bvh.find_nearest(c)[3] >= r) + sum(1 for c in bulbs if bvh.find_nearest(c)[3] >= 0.022 * 1.15)
     info = {"foliage_tris": foliage_tris, "fronds": nfr, "needle_cards": ncards, "card_tris": sum(len(f) - 2 for f, si in zip(M.F, M.FS) if si == ci),
-            "baubles": len(bb), "bulbs": len(bulbs), "ornaments_clear_of_card_cores": clear_n,  "height_m": round(sc.z + RO, 2), "width_m": round(2 * (L_at(Z0) + 0.1), 2)}
+            "baubles": len(bb), "bulbs": len(bulbs), "shell_cards": shell["cards"], "shell_shortened": shell["shortened"], "shell_left_out": shell["left_out"],
+            "shell_card_tris": sum(len(f) - 2 for f, si in zip(far1.F, far1.FS) if far1.slots[si] == "fir_cards"), "ornaments_clear_of_card_cores": clear_n,  "height_m": round(sc.z + RO, 2), "width_m": round(2 * (L_at(Z0) + 0.1), 2)}
     return M, {1: far1, 2: far2}, info
 
 
@@ -1059,11 +1132,17 @@ if BAKE and objs:
                 for li in p.loop_indices:
                     co = me.vertices[me.loops[li].vertex_index].co
                     c[4 * li + 2] = CANOPY["ao"](co) * (0.62 + 0.38 * a[4 * li])
-            # the dark inner core (fir_needles on the near level): deep in the crown, never a sunlit column
+            # the dark inner core (fir_needles on the near level): deep in the crown, never a sunlit column; on the middle
+            # level (fir round 3) the thin solid core inside the card shell: as dark as the near level's depths (seen
+            # through the shell's gaps where the near level shows its inner cone and the deep cards: the canopy AO, at
+            # most 0.3; lighter, its silvery undersides turned the middle crown blue-grey at the 45 m switch)
             ni = [i for i, m_ in enumerate(me.materials) if m_.name == "fir_needles"]
+            mid = o.name.endswith("__lod1")
             for p in me.polygons:
                 if not ni or p.material_index != ni[0]: continue
-                for li in p.loop_indices: c[4 * li + 2] = min(c[4 * li + 2], 0.18)
+                for li in p.loop_indices:
+                    if mid: c[4 * li + 2] = min(0.3, CANOPY["ao"](me.vertices[me.loops[li].vertex_index].co) * (0.62 + 0.38 * a[4 * li]))
+                    else: c[4 * li + 2] = min(c[4 * li + 2], 0.18)
         me.color_attributes["Col"].data.foreach_set("color", c)
         me.color_attributes.remove(me.color_attributes["AO"])
         me.color_attributes.active_color = me.color_attributes["Col"]

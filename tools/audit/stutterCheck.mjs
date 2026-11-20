@@ -19,8 +19,8 @@
 //      sliced() (?herosslice=old); main.js loadTile's frames between the stops-to-plants placements (?slicesplit=old);
 //      grass.js re-bakes the field only after the blades-can-show test (?grassbake=old); lighting.js "*-warm" groups
 //      are sun-cache movers (?warmmover=old); stagedCompile.js warms a released landmark's shadow pass
-//      (?stagedshadow=old); a viewer/features.js row for every switch
-//   4. no DynamicDrawUsage, no light made in the files this gate covers
+//      (?stagedshadow=old) (main.js wiring, the features rows: the meta row)
+//   4. (no DynamicDrawUsage, no light made: the meta row, tools/audit/gate.d/stutter.mjs)
 import * as THREE from "three/webgpu";
 import fs from "node:fs";
 import path from "node:path";
@@ -62,7 +62,6 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   loader = false; stats.on = false;
   await renderer._nodes.getForRenderAsync({}, threeYield);
   ok(stats.yields === y0, "switched off (live): three's path");
-  ok(/params\.get\("compileslice"\) !== "old"\) window\.__fineCompile = fineCompile\(renderer, \(\) => playLoader\.active/.test(src("viewer/main.js")), "main.js: fineCompile on unless ?compileslice=old, off under the play loader");
 }
 
 // ------------------------------------------------------------------ 2. heapDrop tick slices
@@ -96,9 +95,6 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   ok(/export const dolomiteGeometry = \(\.\.\.a\) => drain\(dolomiteGen\(\.\.\.a\)\)/.test(hg) && /export const lawnGeometry = \(\.\.\.a\) => drain\(lawnGen\(\.\.\.a\)\)/.test(hg), "herosGround.js: the plain builders drain the generators (one code path)");
   ok(/export async function sliced\(g, ms = [1-5]\)/.test(hg) && /if \(\(t & 1535\) === 0\) yield null;/.test(hg), "herosGround.js: sliced() <= 5 ms, the terrain scan yields");
   ok(/HEROS_SLICE \? await sliced\(dolomiteGen\(/.test(hc) && /HEROS_SLICE \? await sliced\(lawnGen\(/.test(hc) && /get\("herosslice"\) !== "old"/.test(hc), "herosCity.js: the ground built through sliced() unless ?herosslice=old");
-  const main = src("viewer/main.js");
-  const lt = main.slice(main.indexOf("async function loadTile("), main.indexOf("\n}\n", main.indexOf("async function loadTile(")));
-  ok(["tram", "lanes", "stops, furniture, street kit", "gardens"].every((l) => lt.includes(`await split("${l}");`)) && lt.includes("const split = (label) => (SPLIT_SLICES ? frame(label) : null);") && /SPLIT_SLICES = params\.get\("slicesplit"\) !== "old"/.test(main), "main.js loadTile: frames between tram / lanes / stops+furniture+street kit / gardens / plants (?slicesplit=old)");
   const gr = src("viewer/grass/grass.js");
   const at = gr.indexOf("  frame(camera, dt"), fr = gr.slice(at, at + 1400);
   ok(fr.indexOf("if (!on) return [];") > 0 && fr.indexOf("if (!BAKE_OLD) this.field.update(cam);") > fr.indexOf("if (!on) return [];") && /grassbake=old/.test(gr), "grass.js: the field re-bakes only once the blades can show (?grassbake=old)");
@@ -106,14 +102,7 @@ globalThis.requestAnimationFrame = (f) => { rafQ.push(f); setTimeout(() => { con
   ok(li.includes("(WARM_MOVER && /-warm$/.test(o.name") && /get\("warmmover"\) !== "old"/.test(li), "lighting.js: \"*-warm\" groups are sun-cache movers (?warmmover=old)");
   ok(/g\.name = "boot3-late-warm"/.test(src("viewer/warmup.js")), "warmup.js: warmShadows' group name ends with -warm");
   const st = src("viewer/stagedCompile.js");
-  ok(st.includes("STAGED_SHADOW && warmShadow ? warmShadow(d.roots)") && /stagedshadow=old/.test(st) && main.includes("setStagedShadowWarm((roots) => warmShadows(renderer, scene, roots, { perFrame: 1 })"), "stagedCompile.js: a released landmark's shadow pass warmed, one mesh a frame (?stagedshadow=old)");
-  const feat = src("viewer/features.js");
-  for (const k of ["slicesplit", "dropslice", "herosslice", "compileslice", "compileslicems", "warmmover", "stagedshadow", "grassbake"]) ok(new RegExp(`\\("${k}",`).test(feat), `viewer/features.js: a row for ?${k}`);
-  for (const p of ["viewer/asyncPipes.js", "viewer/heapDrop.js", "viewer/heros/herosGround.js", "viewer/heros/herosCity.js", "viewer/grass/grass.js", "viewer/stagedCompile.js", "debug/falconStutter.js"]) {
-    const s = src(p);
-    ok(!/DynamicDrawUsage/.test(s), `${p}: no DynamicDrawUsage`);
-    ok(!/new THREE\.(Point|Spot|Directional|Hemisphere|RectArea|Ambient)Light\b/.test(s), `${p}: no light made`);
-  }
+  ok(st.includes("STAGED_SHADOW && warmShadow ? warmShadow(d.roots)") && /stagedshadow=old/.test(st), "stagedCompile.js: a released landmark's shadow pass warmed, one mesh a frame (?stagedshadow=old)");
 }
 console.log(fails ? `${fails} stutter check(s) FAILED` : "stutter checks pass");
 process.exit(fails ? 1 : 0);

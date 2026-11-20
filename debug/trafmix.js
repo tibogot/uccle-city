@@ -1,4 +1,4 @@
-// TRAFMIX (docs/TRAFMIX.md, rule 45) in the page: what drives now, the buses on their lines, an ambulance run on demand.
+// TRAFMIX (docs/TRAFMIX.md, rule traffic-mix) in the page: what drives now, the buses on their lines, an ambulance run on demand.
 //   const M = await import("/debug/trafmix.js");
 //   M.report()          -> { hour, weekday, cars, byType, byRole, buses: [{ line, op, next stop, dist, dwell }], runs, stepMs, draws, tris }
 //   M.ambulance()       -> replaces a car 40-120 m ahead of the camera (in view) by an ambulance on a run (beacons +

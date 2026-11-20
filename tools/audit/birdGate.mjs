@@ -177,9 +177,7 @@ const pairsNew = Object.entries(DAY_PROFILES).reduce((s, [k, p]) => s + p.n[1] *
 const pairsPrey = Object.entries(DAY_PROFILES).filter(([k]) => k !== "pigeons").reduce((s, [k, p]) => s + (PREY_SIZES[k] ?? p.n)[1] ** 2 * (k === "jackdaws" ? 2 : 1), 0);   // (no sky pigeons in the falcon flight)
 const pairsOld = 190 ** 2 + 2 * 60 ** 2 + 34 ** 2 + 52 ** 2;
 check("cost-pairs", pairsNew <= pairsOld && pairsPrey <= pairsOld, `day flocks' pair tests a frame at the largest counts: ${pairsNew}, falcon game sizes ${pairsPrey} (old ${pairsOld}; the 7-neighbour insertion ~7 min/max a pair more); murmuration 6 lattice reads a bird (unchanged)`);
-const src = ["viewer/birds/skyFlocks.js", "viewer/birds/cityBirds.js", "viewer/birds/birdMesh.js", "viewer/birds/flockModel.js"].map((p) => [p, rd(p)]);
-check("no-dynamic-draw", src.every(([, s]) => !/DynamicDrawUsage/.test(s)), "no DynamicDrawUsage in viewer/birds");
-check("no-lights", src.every(([, s]) => !/new THREE\.\w*Light\b/.test(s)), "no light created in viewer/birds (fixed light count)");
+// (no DynamicDrawUsage, no light created in viewer/birds, the ?birds2 features row: the meta row, tools/audit/gate.d/birds.mjs)
 const sky = rd("viewer/birds/skyFlocks.js");
 const computeCalls = [...sky.matchAll(/\.compute\(/g)].length, buildOnce = /constructor[\s\S]*?this\.buildCompute\(\)/.test(sky) && [...sky.matchAll(/this\.buildCompute\(\)/g)].length === 1;
 check("pipelines-once", buildOnce && !/update\([^)]*\)\s*\{[^}]*Fn\(/.test(sky), `compute nodes built once in the constructor (${computeCalls} .compute( sites; the dispatch in update() reuses them): 0 pipelines at runtime (browser: create*Pipeline hooked, see docs/BIRDS.md)`);
@@ -206,8 +204,7 @@ try {
   check("wgsl", loops <= 1, `compute nodes compile to WGSL headless (${out.length}: ${out.slice(0, 2).join(", ")} chars ...); the new steer has ${loops} loop (the slot scan; the murmuration reads 6 neighbours unrolled)`);
 } catch (e) { check("wgsl", false, `compute WGSL build: ${e.message.split("\n")[0]} (run with node --preserve-symlinks --import ./tools/characters/threeHook.mjs)`); }
 
-const feat = rd("viewer/features.js");
-check("switch", /old\("birds2"/.test(feat) && /birds2/.test(rd("viewer/birds/cityBirds.js")) && /birds2/.test(sky), "?birds2=old: the features row + both files honour it");
+check("switch", /birds2/.test(rd("viewer/birds/cityBirds.js")) && /birds2/.test(sky), "?birds2=old: both files honour it");
 
 if (!quiet || fails) {
   console.log("| check | result | detail |\n|---|---|---|");

@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(fileURLToPath(import.meta.url), "..", "..");
 // the folders the viewer reads data from, and the file types worth caching (the code stays on the network: it changes
 // with every deploy and is small)
-const DIRS = ["data", "models", "textures", "clouds", "viewer"];
+const DIRS = ["data", "models", "textures", "clouds", "viewer", "sounds"];
 const EXT = /\.(glb|gltf|bin|ktx2|png|jpg|jpeg|avif|webp|json|hdr|exr|ogg|mp3|wav|f32|u16|u8|i16|dat|pbf|geojson|svg)$/i;
 const SKIP = /(^|\/)(raw|_before|audit|src|node_modules|__pycache__)(\/|$)/;
 const MAX = 40 * 1048576;                  // (no single file this big is fetched by the viewer)

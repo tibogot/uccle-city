@@ -7,13 +7,22 @@
 //   shifts   a short drive cut (the gain dips 60 ms) and a click; downshifts blip
 //   overrun  throttle shut above 6,500 rpm: crackles and pops from the exhaust for ~0.7 s
 //   wind     noise through a low-pass opening with speed; tyres: a screech in a slide; crash: a thump + scrape
-// OFF by default (owner 2026-11-15: annoying while working): ?motosound=1 or the dev panel's "motorbike sound" toggle
-// turns it on; then it starts on the first key / click while the bike is active (browsers need a gesture). N mutes.
+// ONE BUTTON (owner 2026-11-18, docs/SOUND_CITY.md): the speaker button (viewer/audio/soundGate.js) is the only switch:
+// OFF by default like every sound; on, this starts on the first key / click while the bike is active (browsers need a
+// gesture) or at once when the button turns the sound on. No second switch (the old N key and URL switch are gone).
 // Round 2: VOICES per engine (the scooter: a 125 cc four-stroke SINGLE: it fires once every two crank turns, rpm / 120 Hz
 // (55 Hz held on the CVT): a thumping fundamental with strong low harmonics, a muffled can, no shifts, no overrun pops).
 // BikeAudio below: the Villo (no engine): tyre hum, the freewheel's pawls ticking when coasting, the chain while
 // pedalling, wind, a roller-brake hiss, and the BELL (Q): two strikes of an inharmonic ding (partials 1 : 2.76 : 5.4).
+import { soundGate } from "../audio/soundGate.js";
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
+/** the context is made only while the speaker button is on: on the first key / click while the vehicle is active, or
+ *  when the button turns the sound on (that click is the gesture) */
+function gateStart(a) {
+  const start = () => { if (soundGate.muted) return; if (!a.ctx && a.active && !a.muted) a.init(); else if (a.ctx?.state === "suspended" && a.active) a.ctx.resume(); };
+  addEventListener("pointerdown", start); addEventListener("keydown", start);
+  soundGate.onChange((m) => { if (!m) start(); });
+}
 
 /** engine voices: firing frequency = rpm / div; the oscillators run at fire x mul; amp: harmonic amplitudes */
 export const VOICES = {
@@ -27,10 +36,9 @@ export class MotoAudio {
   constructor(voice = VOICES.four) {
     this.voice = voice;
     this.ctx = null; this.volume = 0.55; this.active = false;
-    this.muted = !/[?&]motosound=1/.test(location.search);      // (off by default)
+    this.muted = false;                                          // (a per-vehicle mute for code; the speaker button gates all)
     this.lastShifts = 0; this.lastCrashes = 0; this.popUntil = 0; this.nextPop = 0; this.prevThrottle = 0;
-    const start = () => { if (!this.ctx && this.active && !this.muted) this.init(); else if (this.ctx?.state === "suspended" && this.active) this.ctx.resume(); };
-    addEventListener("pointerdown", start); addEventListener("keydown", start);
+    gateStart(this);
   }
 
   init() {
@@ -162,16 +170,15 @@ export class MotoAudio {
 }
 
 /**
- * THE VILLO'S SOUND (no engine): all procedural, OFF by default like the motorbike's (?motosound=1, the dev panel's
- * "two-wheeler sound", N). update(c) once a frame (c = motoPhysics state: speed, pedal, braking, crashes); bell() rings it.
+ * THE VILLO'S SOUND (no engine): all procedural, behind the speaker button like every sound (OFF by default).
+ * update(c) once a frame (c = motoPhysics state: speed, pedal, braking, crashes); bell() rings it.
  */
 export class BikeAudio {
   constructor() {
     this.ctx = null; this.volume = 0.6; this.active = false;
-    this.muted = !/[?&]motosound=1/.test(location.search);
+    this.muted = false;
     this.lastCrashes = 0; this.tickAt = 0;
-    const start = () => { if (!this.ctx && this.active && !this.muted) this.init(); else if (this.ctx?.state === "suspended" && this.active) this.ctx.resume(); };
-    addEventListener("pointerdown", start); addEventListener("keydown", start);
+    gateStart(this);
   }
   init() {
     const ctx = this.ctx = new AudioContext();

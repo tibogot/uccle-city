@@ -84,7 +84,7 @@ export const POLICE_GAME = {
   id: "police", title: "Police", icon: "police",
   tagline: "An unmarked car out of the Rue Rouge station. Radio dispatch: cars on the tram line, speed checks, accidents, stolen cars.",
   modes: [{ id: "missions", label: "Shift", desc: "dispatch sends you jobs", primary: true }, { id: "free", label: "Free patrol", desc: "lights + siren, no job" }],
-  options: [{ id: "calls", label: "Dispatch calls in free patrol", default: true }, { id: "siren", label: "Siren sound (off = silent siren)", default: false }],
+  options: [{ id: "calls", label: "Dispatch calls in free patrol", default: true }],   // (the siren sound follows the speaker button: no second switch)
   idleText: { missions: "Patrol. Dispatch will call you.", free: "Free patrol. L blue lights, J siren." },
   keys: { default: "<kbd>W A S D</kbd> drive · <kbd>L</kbd> blue lights · <kbd>J</kbd> siren · <kbd>Y</kbd>/<kbd>X</kbd> calls · <kbd>E</kbd> act · <kbd>Esc</kbd> pause · <kbd>M</kbd> map" },
 
@@ -94,7 +94,7 @@ export const POLICE_GAME = {
     if (!G.car) G.car = new PoliceCar({ driver, kit });
     if (!G.props) G.props = new Props({ scene: host.scene, driver, getTraffic: () => G.traffic(), renderer: host.renderer, camera: host.camera });
     if (!G.chip) G.chip = makeChip();
-    G.car.setSound(!!options.siren);
+    G.car.setSound(true);                                       // (heard only while the speaker button is on)
     const T = (globalThis.__gameTimes ||= []); let tt = performance.now();
     const mark = (k) => { const n = performance.now(); T.push([`police ${k}`, Math.round(n - tt)]); tt = n; };
     await loadSpots(); mark("spots");

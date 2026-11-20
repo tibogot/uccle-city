@@ -1,7 +1,7 @@
 # The traffic mix (branch claude/trafmix, 2026-11-19)
 
 Owner playtest 2026-11-19: *"while driving I don't see much police patrol, why? Also we need ambulances and other
-things."* Rule 45 (docs/QUALITY_RULES.md), gate row `trafmix` (tools/audit/trafmixGate.mjs). `?trafmix=old` = the mix
+things."* Rule traffic-mix (docs/rules/traffic-mix.md), gate row `trafmix` (tools/audit/trafmixGate.mjs). `?trafmix=old` = the mix
 as before (a features.js row); `?weekday=1|0` forces a weekday / weekend (default: today).
 
 ## 1. Why there were (almost) no patrols
@@ -155,7 +155,7 @@ boxes), viewer/traffic/trafficFleet.js (the service types, cull radius, no dent 
 viewer/carFleet.js (heavy.glb through the LOD worker as traffic-only types), viewer/drive/carPacks.js (beacon kind 9,
 dent rows 48), viewer/traffic/cityTraffic.js (the siren), viewer/drive/carHit.js (masses, trucks not knocked, zc),
 viewer/nightLights/cityNight.js (the service vehicles' lamp places), viewer/features.js (trafmix, weekday),
-tools/blender/carSheet.py (beacons lit in --night), tools/audit/mergeGate.mjs, docs/QUALITY_RULES.md (rule 45).
+tools/blender/carSheet.py (beacons lit in --night), tools/audit/mergeGate.mjs, docs/QUALITY_RULES.md (rule traffic-mix).
 No worker code changed (no bundle rebuild).
 
 ## 8. Browser check (to do on a Chrome turn: not run in this job)

@@ -1,4 +1,4 @@
-// TRAFMIX GATE (rule 45, docs/TRAFMIX.md): the traffic's mix and its service vehicles, node, no browser.
+// TRAFMIX GATE (rule traffic-mix, docs/TRAFMIX.md): the traffic's mix and its service vehicles, node, no browser.
 //   1. models   models/cars/heavy.glb (tools/blender/heavies.py): triangles per LOD within budget, the named kinds on
 //               every LOD (head / tail lamps; beacons on the emergency vehicles; glass on the near levels), the tyres on
 //               the ground, the body clear of it
