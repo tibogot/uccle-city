@@ -3,8 +3,10 @@
 // interiors.ktx2): eight shop types (bakery, pharmacy, cafe, boutique, grocery, office, salon, shop), each a ROOM image
 // (floor, ceiling, side and back walls in one perspective render: the "single texture" interior mapping) and a CARD
 // image (the free-standing counter / tables / rails, alpha) drawn on a plane CARD_D in, in front of the room, so the
-// counter slides against the shelves as you walk past. Per window: the room box is the glass's width x 3 m (from the
-// shop floor, iWinT.y below the glass's bottom edge) x 4 m deep; the hit point is projected back with the render's own
+// counter slides against the shelves as you walk past. Per window: the room box is the render's 6 m room in METRES
+// across the glass (at a per-shop offset; wide fronts get two rooms and a partition: viewer/shops/shopScale.js, rule
+// shop-room-metric; ?shopscale=old = stretched to the glass's width) x 3 m (from the shop floor, iWinT.y below the
+// glass's bottom edge) x the type's depth (3.5-6 m); the hit point is projected back with the render's own
 // pinhole (F = 3 m in front of a 6 x 3 x 5 m room) -> the atlas cell of the shop's type (iWinT.x), mirrored per shop
 // (iWinT.z). Mip level from the footprint ON THE GLASS (continuous across the room's wall seams: no seam lines).
 // Glass: near-black, glossy (the street mirrored by the environment / SSR), the interior as emission x the shop light
@@ -16,11 +18,13 @@ import {
   step, mix, clamp, select, fwidth, log2, pow, normalize, smoothstep, length, reflect,
 } from "three/tsl";
 import { ktxLoader } from "../materials/scans.js";
+import { RW, RD, RH, F, CARD_Y, DEPTH_BY_INDEX, OLD_DEPTH, STRETCH_MAX } from "./shopScale.js";
 
-/** render geometry (shopInteriors.py): room 6 x 3 x 5 m, camera F in front, the card plane CARD_Y in */
-const RW = 6, RD = 5, F = 3, CARD_Y = 1.4;
-/** the viewer's room: depth (m) into the shop, ceiling height above the shop floor */
-const D = 4.0, CEIL = 3.0;
+/** the viewer's room: ceiling height above the shop floor (= the render's room height: metric up) */
+const CEIL = RH;
+/** (shops1, rule shop-room-metric) ?shopscale=old: the room stretched over the glass (nx = hx / w), 4 m deep for every
+ *  type, the old fresnel; default: the glass's x in metres on the 6 m room (shopScale.js) */
+const SCALE_OLD = typeof location !== "undefined" && /[?&]shopscale=old(&|$)/.test(location.search);
 export const INTERIOR_TYPES = ["bakery", "pharmacy", "cafe", "boutique", "grocery", "office", "salon", "shop"];
 
 export const windowUniforms = {
@@ -83,27 +87,47 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
   const tx = vec3(n.z, 0, n.x.negate());
   const dx = dot(ray, tx).div(inward), dy = ray.y.div(inward);
   const gb = iWinT.y, yTop = float(CEIL).sub(gb), yBot = gb.negate();
-  const txh = select(dx.greaterThan(0), w.sub(x0), x0).div(max(abs(dx), 1e-4));
+  const type = iWinT.x.add(0.5).floor();
+  // the room box across the glass (m, glass x): old = the glass itself (0 .. w, the render stretched over it); new =
+  // 6 m rooms laid on the glass in metres (shopScale.js roomLayout): one at a per-shop offset o when the glass is
+  // narrower than the room, else rooms side by side centred on the glass, partition walls where they meet, the odd
+  // ones mirrored. k = the room the pixel's glass point opens into (the ray stays in it up to its hit, the card too).
+  let xL, xR, roomW, D, flip;
+  if (SCALE_OLD) {
+    xL = float(0); xR = w; roomW = w; D = float(OLD_DEPTH); flip = iWinT.z.greaterThan(0.5);
+  } else {
+    // (= shopScale.js roomLayout: one room up to STRETCH_MAX x RW, stretched to the glass past RW; else 6 m rooms)
+    const nR = max(w.div(RW * STRETCH_MAX).sub(1e-4).ceil(), 1), one = nR.lessThan(1.5);
+    const hsh = iWin.z.mul(13.713).add(0.37).fract();                       // = shopScale.js offsetHash
+    roomW = select(one, max(w, RW), float(RW));
+    const o = select(one, hsh.mul(max(float(RW).sub(w), 0)), nR.mul(RW).sub(w).mul(0.5));
+    const k = clamp(x0.add(o).div(roomW).floor(), 0, nR.sub(1));
+    xL = k.mul(roomW).sub(o); xR = xL.add(roomW);
+    // the room depth by type (shopScale.js DEPTH, 3.5-6 m): a select chain over the 8 types
+    D = float(DEPTH_BY_INDEX[7]);
+    for (let i = 6; i >= 0; i--) D = select(type.lessThan(i + 0.5), float(DEPTH_BY_INDEX[i]), D);
+    flip = abs(iWinT.z.sub(k.mod(2))).greaterThan(0.5);                   // the shop's mirror flag XOR the odd room
+  }
+  const txh = select(dx.greaterThan(0), xR.sub(x0), x0.sub(xL)).div(max(abs(dx), 1e-4));
   const tyh = select(dy.greaterThan(0), yTop.sub(y0), y0.sub(yBot)).div(max(abs(dy), 1e-4));
-  const t = min(min(txh, tyh), float(D));
-  // the hit -> the render's normalized room coords -> its pinhole projection
+  const t = min(min(txh, tyh), D);
+  // the hit -> the render's normalized room coords -> its pinhole projection (the render's depth RD scaled to D)
   const K = float(RD / F);
   const proj = (tt) => {
     const hx = x0.add(dx.mul(tt)), hy = y0.add(dy.mul(tt));
-    let nx = hx.div(w).mul(2).sub(1);
-    nx = select(iWinT.z.greaterThan(0.5), nx.negate(), nx);
+    let nx = hx.sub(xL).div(roomW).mul(2).sub(1);
+    nx = select(flip, nx.negate(), nx);
     const ny = hy.add(gb).div(CEIL).mul(2).sub(1);
     const s = float(1).div(float(1).add(tt.div(D).mul(K)));
     return vec2(nx.mul(s).mul(0.5).add(0.5), ny.mul(s).mul(0.5).add(0.5));
   };
   const ruv = clamp(proj(t), 0.001, 0.999);
   // the card: a plane CARD_D in (the render's CARD_Y scaled to the viewer's depth)
-  const CARD_D = float(CARD_Y / RD * D);
+  const CARD_D = float(CARD_Y / RD).mul(D);
   const cuvRaw = proj(CARD_D);
   const cIn = step(0, cuvRaw.x).mul(step(cuvRaw.x, 1)).mul(step(0, cuvRaw.y)).mul(step(cuvRaw.y, 1)).mul(step(CARD_D, t));
   const cuv = clamp(cuvRaw, 0.001, 0.999);
   // the atlas cell (rows from the bottom: rooms 0-1, cards 2-3), v flipped for KTX2
-  const type = iWinT.x.add(0.5).floor();
   const col = type.mod(4), row = type.div(4).floor();
   const cell = (q, r0) => {
     const v = r0.add(row).add(q.y).div(4);
@@ -112,7 +136,7 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
   // mip level: the footprint on the GLASS (metres per pixel) x texels per metre at the front of the room (a cell is a
   // quarter of the atlas across the window's width), a little sharper for the deeper (smaller) surfaces
   const fw = max(fwidth(x0), fwidth(y0)).max(1e-5);
-  const texPerPx = fw.mul(float(I.W / 4)).div(w);
+  const texPerPx = fw.mul(float(I.W / 4)).div(roomW);
   const lod = clamp(log2(texPerPx.mul(0.8).max(1)), 0, 11);
   const room = texture(I.tex, cell(ruv, float(0))).level(lod).rgb;
   const card = texture(I.tex, cell(cuv, float(2))).level(lod);
@@ -125,7 +149,9 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
   // room; by day the reflection carries the glass, at night the lit room does (Schlick-like, with a floor: shop glass
   // reflects ~10 % even head-on)
   const view = normalize(cameraPosition.sub(positionWorld));
-  const fres = float(0.1).add(float(0.9).mul(pow(clamp(float(1).sub(abs(dot(view, n))), 0, 1), 4)));
+  // (shops1) the grazing part raised a little (Forza Horizon 4's shop glass: the street takes over sooner as you walk
+  // along a front): exponent 4 -> 3 (at 70 deg from the normal 0.27 -> 0.36, at 80 deg 0.52 -> 0.61); old = 4
+  const fres = float(0.1).add(float(0.9).mul(pow(clamp(float(1).sub(abs(dot(view, n))), 0, 1), SCALE_OLD ? 4 : 3)));
   const rv = reflect(view.negate(), n);
   const sky = mix(vec3(0.07, 0.07, 0.072), vec3(0.42, 0.5, 0.6), smoothstep(-0.05, 0.4, rv.y));
   const light = mix(U.day, U.nightOpen.mul(mix(0.3, 1, lit)), night);

@@ -40,10 +40,26 @@ RW, RD, RH, F, CARD_Y = 6.0, 5.0, 3.0, 3.0, 1.4
 PX = (1024, 512)
 
 
+def gpu_setup(s):
+    """Cycles on the OptiX GPU (RTX 4050; CUDA, then CPU as fallbacks). --factory-startup resets the preferences to the
+    CPU, so every reset() sets the device again (the OptiX rule, memory blender-gpu-optix)."""
+    try:
+        prefs = bpy.context.preferences.addons["cycles"].preferences
+        for kind in ("OPTIX", "CUDA"):
+            try:
+                prefs.compute_device_type = kind; prefs.get_devices()
+                if any(d.type == kind for d in prefs.devices):
+                    for d in prefs.devices: d.use = d.type == kind
+                    s.cycles.device = "GPU"; print("Cycles device:", kind); return
+            except Exception as e: print("no", kind, e)
+    except Exception as e: print("GPU setup failed:", e)
+    s.cycles.device = "CPU"; print("Cycles device: CPU (no OptiX / CUDA found)")
+
+
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     s = bpy.context.scene
-    s.render.engine = "CYCLES"; s.cycles.device = "CPU"; s.cycles.samples = SAMPLES; s.cycles.use_denoising = True
+    s.render.engine = "CYCLES"; gpu_setup(s); s.cycles.samples = SAMPLES; s.cycles.use_denoising = True
     s.cycles.max_bounces = 6; s.cycles.diffuse_bounces = 3; s.cycles.glossy_bounces = 2; s.cycles.transmission_bounces = 4
     s.view_settings.view_transform = "AgX"; s.view_settings.look = "AgX - Base Contrast"; s.view_settings.exposure = -0.6
     s.render.resolution_x, s.render.resolution_y = PX
