@@ -6,6 +6,7 @@
 //   bollards(...)   the low green Uccle bollards at their UrbIS Topo positions (CR5702P / CR57L), one draw per tile
 import * as THREE from "three/webgpu";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { cityProps } from "./props/cityProps.js";
 
 export { streetFit } from "./streets/fitCore.js";
 
@@ -25,7 +26,7 @@ export function buildBollards(xyz) {
   const n = xyz.length / 3;
   if (!n) return null;
   BOLLARD_GEO ??= bollardGeometry();
-  BOLLARD_MAT ??= Object.assign(new THREE.MeshStandardNodeMaterial({ color: 0x1f3a26, roughness: 0.55, metalness: 0.35 }), { userData: { shared: true } });
+  BOLLARD_MAT ??= cityProps.hook(Object.assign(new THREE.MeshStandardNodeMaterial({ color: 0x1f3a26, roughness: 0.55, metalness: 0.35 }), { userData: { shared: true } }));   // (props: a snapped bollard's motion vectors)
   const m = new THREE.InstancedMesh(BOLLARD_GEO, BOLLARD_MAT, n);
   const M = new THREE.Matrix4();
   for (let i = 0; i < n; i++) m.setMatrixAt(i, M.makeTranslation(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2]));

@@ -26,6 +26,7 @@ import { simplifyKit } from "./kitLod.js";
 import { shopInterior } from "../../vendor/slop-street/shopInterior.js";
 import { loadShopKit, ShopPool, stretchCheck } from "../shops/shopKit.js";
 import { loadInteriors, shopWindowMaterial } from "../shops/shopWindow.js";
+import { cityProps } from "../props/cityProps.js";
 
 export const streetUniforms = {
   night: uniform(0),            // 0 day .. 1 night (signs, lightboxes, shop windows, screens)
@@ -309,7 +310,7 @@ export class StreetLife {
   async _kits() {
     const t0 = performance.now();
     this.kit = {};
-    this.propMats = [propMaterial(0), propMaterial(1)];
+    this.propMats = [propMaterial(0), propMaterial(1)].map((m) => cityProps.hook(m));   // (props: knocked chairs' motion vectors)
     for (const [kind, k] of Object.entries(KITS)) {
       const a0 = k.build(0).arrays(), a1 = await simplifyKit(k.build(1).arrays(), kind);
       const geo = (a) => {
@@ -329,6 +330,7 @@ export class StreetLife {
     if (this.shops) {
       const [kit, I] = await Promise.all([loadShopKit(propFades), loadInteriors(this.renderer)]);
       this.shopKit = kit; this.interiors = I;
+      for (const m of kit.mats) cityProps.hook(m);                     // (props: knocked terrace tables' motion vectors)
       for (const piece of Object.values(kit.pieces)) this.shopPools.push(new ShopPool(piece, kit.mats, this.group));
       this.winMat = shopWindowMaterial(I, { night: streetUniforms.night, glow: streetUniforms.glow, shrink: shrinkToward });
       this.shopStretch = stretchCheck(kit);
@@ -337,6 +339,7 @@ export class StreetLife {
       this.colliderMat = new THREE.MeshBasicNodeMaterial(); this.colliderMat.userData.shared = true;
     }
     this.streamer.pools = [...this.pools, ...this.shopPools].map((p) => p.stream);
+    cityProps.prepare(this.streamer, ["chair", "shops-table_sq"]);
     this.kitMs = performance.now() - t0;
   }
   _work(tile) {
@@ -404,6 +407,19 @@ export class StreetLife {
       const n = a.length / 4, mesh = new THREE.InstancedMesh(this.colliderGeo[k], this.colliderMat, n), M = new THREE.Matrix4();
       for (let i = 0; i < n; i++) { M.makeRotationY(a[i * 4 + 3]).setPosition(a[i * 4], a[i * 4 + 1], a[i * 4 + 2]); mesh.setMatrixAt(i, M); }
       mesh.name = "furniture-terrace"; mesh.visible = false; mesh.userData.collider = k;
+      // (props, docs/PROPS.md) a terrace table hit: it and its chairs (within 0.9 m) are knocked about; its collider is
+      // the table + chairs box, the i-th table collider is the i-th table_sq of the tile (shopLayout.js layoutTerrace)
+      const T = r.shops?.table_sq, C = r.props.chair;
+      if (k === "table" && cityProps.on && T && T.length / 12 === n) {
+        const chairs = [];
+        if (C) for (let j = 0; j < C.length / 8; j++) chairs.push(cityProps.make("chair", tile, C[j * 8], C[j * 8 + 1], C[j * 8 + 2], C[j * 8 + 3], [{ streamer: this.streamer, tile, key: "chair", i: j }]));
+        mesh.userData.refs = Array.from({ length: n }, (_, i) => {
+          const p = cityProps.make("table", tile, a[i * 4], a[i * 4 + 1], a[i * 4 + 2], a[i * 4 + 3], [{ streamer: this.streamer, tile, key: "shops-table_sq", i }]);
+          if (p) p.group = chairs.filter((c) => c && (c.x - p.x) ** 2 + (c.z - p.z) ** 2 < 0.9 * 0.9);
+          return p?.ref || null;
+        });
+        mesh.userData.kick = true;
+      }
       g.add(mesh);
     }
     // ---- street props' colliders (never drawn; collisions round 2, docs/COLLISIONS.md; ?propcol=0 = before: the car and

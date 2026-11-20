@@ -15,6 +15,9 @@
 //     The margin covers the camera's travel while a gather runs (trigger + a few frames at car speed); if the camera
 //     ever outruns it (a teleport), the gather in flight is finished at once
 //   - never DynamicDrawUsage (r187 re-uploads such buffers whole in every pass); a mesh with nothing to draw is hidden
+//   - patch (docs/PROPS.md: a prop knocked over leaves its pool): one instance's column re-written in its source (so
+//     every later gather carries it) AND where the pools hold it now (the gather's runs are logged: source, range, slot),
+//     as an update range of that one instance (a multi-draw set's region too); a gather in flight gets it as well
 import * as THREE from "three/webgpu";
 import { uniformArray } from "three/tsl";
 
@@ -61,7 +64,8 @@ export function buildSource(n, cols, cen, C = 50) {
   const key = new Float64Array(n), idx = new Uint32Array(n);
   for (let i = 0; i < n; i++) { idx[i] = i; key[i] = Math.floor(cen[i * 4] / C) * 4096 + Math.floor(cen[i * 4 + 2] / C); }
   idx.sort((p, q) => key[p] - key[q] || p - q);
-  const out = { n, cols: {}, w: {}, cen: new Float32Array(n * 4), cells: [] };
+  const out = { n, cols: {}, w: {}, cen: new Float32Array(n * 4), cells: [], inv: new Uint32Array(n) };
+  for (let j = 0; j < n; j++) out.inv[idx[j]] = j;          // (the caller's instance i is at inv[i] in the sorted columns)
   for (const [k, [a, w]] of Object.entries(cols)) {
     const o = new Float32Array(n * w);
     for (let j = 0; j < n; j++) { const i = idx[j]; for (let c = 0; c < w; c++) o[j * w + c] = a[i * w + c]; }
@@ -109,7 +113,7 @@ export function sourceFromYaw(a, stride, half, extras = {}) {
 export class StreamPool {
   constructor(key, meshes, r = 1, margin = MARGIN) {
     this.key = key; this.r = r; this.margin = margin; this.at = new THREE.Vector3(1e9, 0, 0);
-    this.meshes = meshes.map((m) => ({ ...m, d0: Math.max(0, m.l0 - margin), d1: m.l1 + margin, back: {}, n: 0, cap: 0, box: new Float64Array(6) }));
+    this.meshes = meshes.map((m) => ({ ...m, d0: Math.max(0, m.l0 - margin), d1: m.l1 + margin, back: {}, n: 0, cap: 0, box: new Float64Array(6), log: [], logB: [] }));
     for (const m of this.meshes) {
       m.mesh.count = 0; m.mesh.visible = false;
       m.mesh.boundingSphere ||= new THREE.Sphere();
@@ -130,7 +134,7 @@ export class StreamPool {
    *  each mesh's [d0, d1] of c into the back arrays, then the commit */
   *gather(srcs, c, over) {
     const cx = c.x, cy = c.y, cz = c.z;
-    for (const m of this.meshes) { m.n = 0; m.box.fill(Infinity, 0, 3); m.box.fill(-Infinity, 3, 6); }
+    for (const m of this.meshes) { m.n = 0; m.box.fill(Infinity, 0, 3); m.box.fill(-Infinity, 3, 6); (m.logB ||= []).length = 0; }
     for (const s of srcs) {
       const src = s.src;
       for (const cl of src.cells) {
@@ -157,10 +161,42 @@ export class StreamPool {
       }
     }
     this.commit(c);
+    // (patch) the runs just committed are what the pools hold now
+    for (const m of this.meshes) { const L = m.log || []; m.log = m.logB; m.logB = L; L.length = 0; }
+  }
+  /** where the pool's mesh m holds source instance j (sorted index), in log L: -> its slot or -1 */
+  slotOf(L, src, j) {
+    for (let q = 0; q < L.length; q += 4) if (L[q] === src && j >= L[q + 1] && j < L[q + 2]) return L[q + 3] + j - L[q + 1];
+    return -1;
+  }
+  /** source instance j's column `col` := vals (its source, the meshes holding it now as one update range, a gather in
+   *  flight's back arrays) -> how many live copies were written */
+  patch(src, j, col, vals) {
+    const w = src.w[col];
+    if (!w) return 0;
+    src.cols[col].set(vals, j * w);
+    let n = 0;
+    for (const m of this.meshes) {
+      const at = m.attrs.find((e) => e[1] === col);
+      if (!at) continue;
+      const name = at[0];
+      const b = this.slotOf(m.logB || [], src, j);
+      if (b >= 0 && m.back[name]) m.back[name].set(vals, b * w);
+      const k = this.slotOf(m.log || [], src, j);
+      if (k < 0) continue;
+      let att, o = k;
+      if (m.set) { att = m.set.buf[name]; o = m.set.parts[m.part].off + k; } else att = this.attr(m, name);
+      if (!att || (o + 1) * w > att.array.length) continue;
+      att.array.set(vals, o * w);
+      att.addUpdateRange(o * w, w); att.needsUpdate = true;
+      n++;
+    }
+    return n;
   }
   copy(m, src, a, b) {
     const k = b - a; if (k <= 0) return;
     const need = m.n + k;
+    (m.logB ||= []).push(src, a, b, m.n);
     for (const [name, col, w] of m.attrs) {
       let B = m.back[name];
       if (!B || B.length < need * w) { const nb = new Float32Array(Math.max(need, (B ? B.length / w : 0) * 2, 64) * w); if (B) nb.set(B.subarray(0, m.n * w)); B = m.back[name] = nb; }
@@ -269,6 +305,20 @@ export class Streamer {
       const seq = r.value;
       this.quarantine = this.quarantine.filter(([slot, s]) => { if (s < seq) { this.fades.release(slot); return false; } return true; });
     }
+  }
+  /** (patch, docs/PROPS.md) tile `name`'s instance i (the order its source was built in) of pool `key`: column `col` :=
+   *  vals, live (update ranges) and in the source -> the source's sorted index, or -1 (no such tile / piece) */
+  patch(name, key, i, col, vals) {
+    const src = this.tiles.get(name)?.srcs?.[key];
+    if (!src || i >= src.n) return -1;
+    const j = src.inv[i], pool = this.pools.find((p) => p.key === key);
+    if (pool) pool.patch(src, j, col, vals); else src.cols[col]?.set(vals, j * src.w[col]);
+    return j;
+  }
+  /** tile `name`'s source of pool `key` and its sorted index for instance i (the props' proxies copy its columns) */
+  source(name, key, i) {
+    const src = this.tiles.get(name)?.srcs?.[key];
+    return src && i < src.n ? { src, j: src.inv[i] } : null;
   }
   /** finish any gather in flight now (tests, a view jump) */
   flush(camera) { if (!this.job) this.start(camera.position); while (this.job) this.pump(Infinity); }

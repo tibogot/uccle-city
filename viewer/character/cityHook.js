@@ -21,6 +21,7 @@ import { lampSites } from "../lamps.js";
 import { carFleet } from "../carFleet.js";
 import { heroBVH } from "../heroBVH.js";
 import { parkedCarRing } from "../drive/driveMode.js";
+import { PROPS_ON, cityProps } from "../props/cityProps.js";
 
 const DATA = new URL("../../data/tiles/", import.meta.url);
 // instanced props by mesh name: "mesh" = its real triangles into the BVH (open shapes), "prop" = a box for body +
@@ -28,6 +29,7 @@ const DATA = new URL("../../data/tiles/", import.meta.url);
 // the street)
 const KIND = (m) => {
   const n = m.name || "", parent = m.parent?.name || "";
+  if (m.userData.kick && PROPS_ON) return null;   // (props, docs/PROPS.md: bins, Villo bikes, terrace tables: the walker kicks them, viewer/props/)
   if (/bollard/i.test(n)) return "post";
   if (n === "furniture-shelter" || n === "furniture-adpanel" || (parent === "tram" && !n)) return "mesh";   // (stops kit: viewer/stops/cityStops.js stand-ins)
   if (/^furniture-garden(wall|gate|hedge)$/.test(n)) return "mesh";
@@ -127,7 +129,7 @@ async function buildCityCollision({ scene, world, log }) {
     const M = new THREE.Matrix4(), W = new THREE.Matrix4(), v = new THREE.Vector3(), o = new THREE.Vector3();
     const inTile = (x, z) => x >= t.bounds.x0 && x <= t.bounds.x1 && z >= t.bounds.z0 && z <= t.bounds.z1;
     const nearTile = (x, z) => x >= t.bounds.x0 - 40 && x <= t.bounds.x1 + 40 && z >= t.bounds.z0 - 40 && z <= t.bounds.z1 + 40;
-    const inst = [], carRefs = [];
+    const inst = [], carRefs = [], propRefs = [];      // (props: [into, circle?, index, ref] of a prop's walker items)
     feats?.traverse((m) => { const kd = m.isInstancedMesh && KIND(m); if (kd && kd !== "mesh") inst.push(m); });
     for (const m of inst) {
       await breathe();
@@ -152,9 +154,9 @@ async function buildCityCollision({ scene, world, log }) {
           carRefs.push([props.polys.length, car]);                   // (a box, never a circle: >= 1.7 m)
         }
         const sx = Math.hypot(ring[1][0] - ring[0][0], ring[1][1] - ring[0][1]), sz = Math.hypot(ring[2][0] - ring[1][0], ring[2][1] - ring[1][1]);
-        const into = kind === "prop" ? props : posts;
-        if (Math.max(sx, sz) < 0.3) into.circles.push({ x: o.x, z: o.z, r: Math.max(0.06, Math.max(sx, sz) / 2), base: y0 - 0.5, top: y1 });
-        else into.polys.push({ rings: [ring], base: y0 - 0.5, top: y1, id: `${m.name || "tram-shelter"}#${i}` });
+        const into = kind === "prop" ? props : posts, pref = PROPS_ON ? m.userData.refs?.[i] : null;
+        if (Math.max(sx, sz) < 0.3) { if (pref?.prop) propRefs.push([into, true, into.circles.length, pref]); into.circles.push({ x: o.x, z: o.z, r: Math.max(0.06, Math.max(sx, sz) / 2), base: y0 - 0.5, top: y1 }); }
+        else { if (pref?.prop) propRefs.push([into, false, into.polys.length, pref]); into.polys.push({ rings: [ring], base: y0 - 0.5, top: y1, id: `${m.name || "tram-shelter"}#${i}` }); }
       }
     }
     await breathe();
@@ -168,7 +170,7 @@ async function buildCityCollision({ scene, world, log }) {
     // first puts them (invisible posts, docs/CITY_TREES.md §3)
     for (const l of t.drawn?.lamps ?? lampSites(t.roads, t.bounds)) { const g = t.hm.surface(l.x, l.z); posts.circles.push({ x: l.x, z: l.z, r: 0.12, base: g - 2, top: g + 6 }); }
     busy += performance.now() - slice;
-    return { positions, props, posts, busy, carRefs };
+    return { positions, props, posts, busy, carRefs, propRefs };
   }
 
   async function buildTile(t) {
@@ -189,6 +191,13 @@ async function buildCityCollision({ scene, world, log }) {
     // the new type's size when another car parks into the slot (carFleet.touch -> onChange below)
     for (const [k, c] of g.carRefs) { c.walkBox = { set: props, k }; props.off[k] = c.hidden ? 1 : 0; }
     const posts = PrismSet.fromData(r.posts); posts.tag = 5; posts.ray = false;
+    // (props, rule 25 / 44, docs/PROPS.md) a knocked / snapped / bent prop's walker item follows it (propWorld.js syncCols):
+    // off while it is not standing there, its top lowered while it leans; set now to the state it is in
+    for (const [into, circ, j, ref] of g.propRefs) {
+      const S = into === g.props ? props : posts, k = circ ? into.polys.length + j : j;
+      (ref.walk ||= []).push([S, k, S.iy[k * 2 + 1]]);
+      cityProps.world?.syncCols(ref.prop);
+    }
     const sets = [bvh, buildings, props, posts];
     for (const s of sets) cw.add(s);
     built.set(t.name, { sets, tile: t });

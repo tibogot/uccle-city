@@ -12,6 +12,7 @@ import { uniform, select, positionLocal, normalLocal, attribute, float, vec3, sm
 import { loadPack, packMaterial, FLEET_SOURCE, standingSeeThrough } from "../drive/carPacks.js";
 import { DENT_OLD, CORNERS, frameRows, dentNodes, shadeDent } from "../drive/carDent.js";
 import { KIND } from "../drive/colliders.js";
+import { cityProps } from "../props/cityProps.js";
 
 export const hazard = uniform(0);                   // the damaged cars' hazard lights 0 / 1 (blinks, set by the game)
 const CONES = 8;
@@ -94,7 +95,7 @@ export class Props {
     const fine = new THREE.LatheGeometry([...Array(13)].map((_, k) => { const y = 0.06 + (0.44 * k) / 12; return new THREE.Vector2(0.15 - (0.12 * k) / 12, y); }).concat([new THREE.Vector2(0.022, 0.52), new THREE.Vector2(0, 0.52)]), 24);
     void cone;
     const g = merge([[base, false], [fine, true]]);
-    const m = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.55 });
+    const m = cityProps.hook(new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.55 }));   // (props: a knocked cone's motion vectors)
     m.name = "police cone";
     const mesh = new THREE.InstancedMesh(g, m, CONES);
     mesh.count = 0; mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false; mesh.name = "police-cones";
@@ -177,6 +178,9 @@ export class Props {
   }
   // ---- cones: a fixed pool of 8 instances (static usage, written on change only)
   setCones(list) {
+    // (props, docs/PROPS.md) the last set's cones back to rest (their knocked poses forgotten), their colliders off
+    cityProps.removeTile("police-cones");
+    if (this.coneCol) { this.driver.removeStatic(this.coneCol); this.coneCol = null; }
     const m = this.cones, M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1);
     const sim = this.getTraffic()?.sim;
     if (sim) for (const o of this.coneObs) { const i = sim.extraObs.indexOf(o); if (i >= 0) sim.extraObs.splice(i, 1); }
@@ -192,6 +196,16 @@ export class Props {
     if (sim) sim.extraObs.push(...this.coneObs);
     m.count = this.coneN;
     m.instanceMatrix.needsUpdate = true;
+    // (props) each cone a prop with a collider of its own (they had none: the car went through them); it flies when hit
+    if (cityProps.on && this.coneN) {
+      const polys = [];
+      for (let k = 0; k < this.coneN; k++) {
+        const [x, z] = list[k], y = this.ground(x, z);
+        const p = cityProps.make("cone", "police-cones", x, y, z, k * 0.7, [{ mesh: m, i: k }]);
+        if (p) polys.push({ rings: [[[x - 0.19, z - 0.19], [x + 0.19, z - 0.19], [x + 0.19, z + 0.19], [x - 0.19, z + 0.19]]], kind: KIND.furniture, base: y - 0.05, top: y + 0.52, ref: p.ref });
+      }
+      if (polys.length) this.coneCol = this.driver.addStatic(polys);
+    }
   }
   clear() {
     for (const c of [...this.cars]) this.removeCar(c);

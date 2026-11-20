@@ -16,6 +16,7 @@ import { obbObb } from "../drive/obb.js";
 import { carFleet } from "../carFleet.js";
 import { cityTwoWheelers } from "../moto/cityTwoWheelers.js";
 import { TRAFMIX_OLD, TrafficSiren } from "./trafMix.js";   // TRAFMIX: the ambulances' / fire engines' siren
+import { cityProps } from "../props/cityProps.js";
 
 const CAR_KIND = 6;
 /** ?bikeroom=old: the motorbike seen by the traffic as two 0.55 m circles, no room made (before collisions round 2) */
@@ -82,6 +83,7 @@ export function createCityTraffic({ scene, renderer, camera, ground, night, focu
     if (th?.on && th.tp) { const p = th.tp.ctl.pos, v = th.tp.ctl.vel; s.addObstacle(p[0], p[2], 0.9, v[0], v[2]); }
     for (let i = 0; i < TR.n; i++) s.addObstacle(TR.x[i], TR.z[i], 1.5, TR.vx[i], TR.vz[i], TR.cross[i]);
     driver?.carHit?.addObstacles(s);                              // (carhit: the knocked cars, standing or sliding)
+    cityProps.obstacles(s);                                         // (props: the knocked-over bins, signs, motorbikes... docs/PROPS.md)
   });
   driver?.carHit?.attachTraffic(T);
 
