@@ -7,7 +7,8 @@
 // the parked car when that distance is under CAR_HALF: an OVERLAP. Under CAR_HALF + MARGIN: a TIGHT pass (counted, not
 // failed).
 //
-//   node --import ./tools/road_audit/register.mjs tools/audit/trafParkAudit.mjs [--old] [--out FILE] [--max N] T... | --all
+//   node --import ./tools/road_audit/register.mjs tools/audit/trafParkAudit.mjs [--old] [--out FILE] [--max N] [--jobs N] T... | --all
+//   (each tile in its own process, <= --jobs at once: census/lib_street.mjs runTiles; --child T is one tile)
 //
 //   --old    the graph as before trafpark (?trafpark=old)
 //   --max N  the gate: exit 1 when more than N parked cars overlap a driven path over the tiles run (default 0)
@@ -22,6 +23,7 @@ import { writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { loadTile, allTiles, ROOT } from "../road_audit/tile.mjs";
+import { runTiles } from "./census/lib_street.mjs";
 
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
@@ -32,7 +34,7 @@ const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");   // (o
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
-const OUT = opt("--out", null), MAX = +opt("--max", 0), OLD = flag("--old"), ALL = flag("--all"), QUIET = flag("--quiet");
+const OUT = opt("--out", null), MAX = +opt("--max", 0), OLD = flag("--old"), ALL = flag("--all"), QUIET = flag("--quiet"), CHILD = flag("--child"), JOBS = +opt("--jobs", 0) || undefined;
 const TILES = ALL ? allTiles() : argv.map((t) => t.toUpperCase());
 if (!TILES.length) { console.error("usage: trafParkAudit.mjs [--old] [--out FILE] [--max N] T... | --all"); process.exit(2); }
 
@@ -47,12 +49,13 @@ function boxDist(c, x, z) {
 }
 
 const results = [], sum = { tiles: 0, cars: 0, overlapCars: 0, tightCars: 0, pairs: 0, overlapM: 0, classes: {}, tram: 0, narrowCovered: 0, removed: 0, ms: 0 };
-for (const T of TILES) {
+/** one tile: { tile, cars, removed, overlapCars, ... } (or { tile, skip } / { tile, error }) */
+function auditTile(T) {
   const t0 = Date.now();
   let tile;
-  try { tile = loadTile(T); } catch (e) { console.error(`${T}: ${e.message}`); continue; }
+  try { tile = loadTile(T); } catch (e) { console.error(`${T}: ${e.message}`); return { tile: T, skip: true }; }
   const { roads, feats, bounds, rd, roofs } = tile;
-  if (!rd.surfaceData) { if (!QUIET) console.log(`${T}: no measured surfaces (no width parking)`); continue; }
+  if (!rd.surfaceData) { if (!QUIET) console.error(`${T}: no measured surfaces (no width parking)`); return { tile: T, skip: true }; }
   const fit = streetFit(rd.surfaceData);
   const wp = widthParking(roads, feats, bounds, fit);
   const trace = {};
@@ -109,12 +112,24 @@ for (const T of TILES) {
   R.worst.sort((p, q) => p.d - q.d);
   R.overlapM = Math.round(R.overlapM);
   R.ms = Date.now() - t0;
+  return R;
+}
+
+// each tile in its own process, <= JOBS at once (lib_street.mjs runTiles, the census helper); --child T: one tile
+if (CHILD) { console.log(JSON.stringify(auditTile(TILES[0]))); process.exit(0); }
+// (a child that crashed: { tile, error }, a FAIL; a tile that does not build: skipped, as before)
+const out = TILES.length > 1 ? await runTiles(import.meta.url, TILES, { jobs: JOBS, extra: OLD ? ["--old"] : [], log: !QUIET }) : TILES.map(auditTile);
+let errors = 0;
+for (const R of out) {
+  if (R.error) { errors++; continue; }
+  if (R.skip) continue;
   results.push(R);
   sum.tiles++; for (const k of ["cars", "removed", "overlapCars", "tightCars", "pairs", "overlapM", "tram", "narrowCovered", "ms"]) sum[k] += R[k];
   for (const [k, v] of Object.entries(R.classes)) sum.classes[k] = (sum.classes[k] || 0) + v;
-  if (!QUIET) console.log(`${T}: ${cars.length} cars${R.removed ? ` (${R.removed} removed)` : ""}, overlapping a driven path ${R.overlapCars}, tight ${R.tightCars} | pairs ${R.pairs} (${Object.entries(R.classes).map(([k, v]) => `${k} ${v}`).join(", ") || "-"}; tram ${R.tram}, under a narrow stretch ${R.narrowCovered}), ${R.overlapM} m of lane (${R.ms} ms)`);
+  if (!QUIET) console.log(`${R.tile}: ${R.cars} cars${R.removed ? ` (${R.removed} removed)` : ""}, overlapping a driven path ${R.overlapCars}, tight ${R.tightCars} | pairs ${R.pairs} (${Object.entries(R.classes).map(([k, v]) => `${k} ${v}`).join(", ") || "-"}; tram ${R.tram}, under a narrow stretch ${R.narrowCovered}), ${R.overlapM} m of lane (${R.ms} ms)`);
 }
 console.log(JSON.stringify(sum));
 if (OUT) writeFileSync(resolve(ROOT, OUT), JSON.stringify({ old: OLD, summary: sum, tiles: results }, null, 1));
+if (errors) { console.error(`FAIL trafpark: ${errors} tile(s) failed to build`); process.exit(1); }
 if (sum.overlapCars > MAX) { console.error(`FAIL trafpark: ${sum.overlapCars} parked cars overlap a driven path (gate: <= ${MAX})`); process.exit(1); }
 console.log(`PASS trafpark: ${sum.overlapCars} parked cars overlap a driven path (gate: <= ${MAX})`);

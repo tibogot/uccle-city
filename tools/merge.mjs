@@ -8,9 +8,9 @@
 //      a conflict stops here and lists the files (resolve, commit, then run again with --rows ... --no-merge);
 //   3. viewer/tileWorker.bundle.js rebuilt HERE (rule 12: only in the main repo) by tools/build_worker.mjs; when its code
 //      hash (self.__TILE_CODE_HASH) changed, the bundle is committed;
-//   4. the gate rows: auto (default) = `meta` + every row whose script / --import hooks import (or name as a path) a file
-//      the merge changed (tools/gate/deps.mjs: a static crawl, the tracer comes later); a changed data/ or models/ file
-//      that no row names runs the full gate; full = every row; a,b,c = those;
+//   4. the gate rows: auto (default) = mergeGate --changed vs the pre-merge commit: `meta` + every row whose traced deps
+//      (tools/gate/deps.mjs; the static crawl for a row never traced here) the merge touched, minus the rows the memo
+//      skips (deps as at their last PASS here); full = every row, memo off (--full); a,b,c = those;
 //   5. PASS: git push (never --force). FAIL: stop and print (the merge stays a local commit: fix on the branch, or
 //      `git reset --hard ORIG_HEAD` yourself);
 //   6. the branch's worktree (git worktree list: a path under Downloads/uccle-jobs/ or named uccle-*) loses its
@@ -23,7 +23,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
 import { loadRows } from "./gate/rowFiles.mjs";
-import { rowDeps, touches } from "./gate/deps.mjs";
+import { selectRows } from "./gate/select.mjs";
 import { ROOT } from "./gate/rowFiles.mjs";
 
 const argv = process.argv.slice(2);
@@ -112,19 +112,22 @@ if (!DRY) {
 }
 
 // ------------------------------------------------------------------ 4. the gate rows
+// auto: mergeGate --changed vs the pre-merge commit (the rows whose traced deps the merge touched, + meta; the memo
+// skips a row whose deps are as at its last PASS here); full: every row, memo off (--full); a,b,c: those rows
 const rows = await loadRows(ROOT);
-let pick;
-if (ROWS === "full") pick = rows.map((r) => r.name);
-else if (ROWS === "auto") {
-  const D = rows.map((r) => [r, rowDeps(r)]);
-  pick = D.filter(([r, d]) => r.name === "meta" || changed.some((p) => touches(d, p))).map(([r]) => r.name);
-  const blind = changed.filter((p) => /^(data|models)\//.test(p) && !D.some(([, d]) => touches(d, p)));
-  if (blind.length) { console.log(`no row names ${blind.slice(0, 5).join(", ")}${blind.length > 5 ? " ..." : ""}: the full gate`); pick = rows.map((r) => r.name); }
-} else pick = ROWS.split(",").map((s) => s.trim()).filter(Boolean);
-step(`gate rows (${ROWS}): ${pick.length} of ${rows.length}: ${pick.join(" ")}`);
+const NAMES = ROWS === "auto" || ROWS === "full" ? [] : ROWS.split(",").map((s) => s.trim()).filter(Boolean);
+const preMerge = DRY ? git("merge-base", INTO, branch) : NO_MERGE ? git("rev-parse", "HEAD^1") : base;
+const gateArgs = ROWS === "full" ? ["--full"] : ROWS === "auto" ? ["--changed", "--base", preMerge] : NAMES;
+if (DRY && ROWS === "auto") {
+  // the gate's own pick, on the dry run's changed files
+  const status = Object.fromEntries(git("diff", "--name-status", "--no-renames", `${INTO}...${branch}`).split("\n").filter(Boolean).map((l) => { const [s, p] = l.split("\t"); return [p, s[0]]; }));
+  const { run, skip } = selectRows(rows, { changes: changed.map((p) => ({ path: p, status: status[p] || "M" })) });
+  step(`gate rows (auto): ${run.length} of ${rows.length}: ${run.map((r) => r.name).join(" ")}`);
+  for (const s of skip) console.log(`  skip ${s.row.name.padEnd(16)} ${s.why}`);
+} else step(`gate rows (${ROWS}): node tools/audit/mergeGate.mjs ${gateArgs.join(" ")}`);
 if (DRY) { console.log("\n(dry run: nothing merged, built, run, pushed or removed)"); process.exit(0); }
 const t0 = Date.now();
-const g = spawnSync(process.execPath, ["tools/audit/mergeGate.mjs", ...pick], { cwd: ROOT, stdio: "inherit" });
+const g = spawnSync(process.execPath, ["tools/audit/mergeGate.mjs", ...gateArgs], { cwd: ROOT, stdio: "inherit" });
 console.log(`(gate ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 if (g.status !== 0) die(`the gate FAILED (exit ${g.status}): nothing pushed. The merge is a local commit: fix on ${branch} and merge again, or undo it yourself (git reset --hard ORIG_HEAD)`);
 

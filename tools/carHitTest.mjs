@@ -14,6 +14,7 @@
 //   cost                 the solver per contact pair (us), a body's substep (us)
 //   allocation           20 000 substeps of 4 bodies sliding into walls and each other: no heap growth (< 32 KB)
 import { register } from "node:module";
+import { measure } from "./gate/timing.mjs";
 
 const STUB = `export class Vector3 { constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;} }`;
 register("data:text/javascript," + encodeURIComponent(`
@@ -214,6 +215,8 @@ function rnd(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= 
   const a = body(W, "hatch_c", 0, 0, 0), b = body(W, "suv", 0.6, 4.0, 0.3);
   const o = { nx: 0, nz: 0, depth: 0 };
   const N = 200000;
+  // (between two calibrations, the budgets * k: tools/gate/timing.mjs; once: the loops change the world)
+  const MT = await measure(() => {
   let t0 = performance.now();
   for (let i = 0; i < N; i++) {
     w.x[a] = 0; w.z[a] = 0; w.h[a] = 0; w.vx[a] = 0; w.vz[a] = 10; w.w[a] = 0;
@@ -232,7 +235,10 @@ function rnd(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= 
     w.substep(1 / 120);
   }
   const usBody = (performance.now() - t0) * 1000 / M / 2;
-  check("solver cost", usPair < 5 && usBody < 20, `${f2(usPair, 2)} us per contact pair (SAT + point + impulse + friction + dents), ${f2(usBody, 2)} us per body substep (tyres + walls + body pairs); 16 awake bodies at 120 Hz < ${f2(usBody * 16 * 120 / 1000, 2)} ms/s`);
+  return { usPair, usBody };
+  }, { tries: 1 });
+  const { usPair, usBody } = MT.value;
+  check("solver cost", usPair < 5 * MT.k && usBody < 20 * MT.k, `${f2(usPair, 2)} us per contact pair (SAT + point + impulse + friction + dents), ${f2(usBody, 2)} us per body substep (tyres + walls + body pairs); 16 awake bodies at 120 Hz < ${f2(usBody * 16 * 120 / 1000, 2)} ms/s (${MT.note})`);
 }
 // ---------------------------------------------------------------- 10 allocation in the step (V8's sampling heap profiler)
 {

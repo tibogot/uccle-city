@@ -22,6 +22,7 @@ import { readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { OfflineAudioContext, ClockAudioContext } from "./miniWebAudio.mjs";
+import { measure, bestOf } from "../gate/timing.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet"), WHY = process.argv.includes("--why");
@@ -228,9 +229,10 @@ async function renderDrive(seconds, script, { sr = 48000, file = null } = {}) {
   let t = 0;
   const frame = () => { t += dt; ctx.currentTime = t; D.step(dt); E.listener.x = D.c.x; E.listener.z = D.c.z - 6; const a = performance.now(); pe.update(D.c, dt, null); const ms = performance.now() - a; E.frame(dt); return ms; };
   for (let i = 0; i < 7200; i++) frame();
-  let best = null;
-  for (let r = 0; r < 3; r++) { const ms = new Float64Array(1200); for (let i = 0; i < 1200; i++) ms[i] = frame(); ms.sort(); const mean = ms.reduce((a, b) => a + b, 0) / ms.length; if (!best || mean < best.mean) best = { mean, p99: ms[1188], max: ms[1199] }; }
-  check("cost", !!pe.voice && best.mean < 0.05, `the engine voice per frame (model + 18 loops' setIf writes + tone, voice ${pe.voice ? "held" : "MISSING"}; best of 3 x 1200): ${f2(best.mean, 4)} ms mean, p99 ${f2(best.p99, 4)}, max ${f2(best.max, 3)} ms (budget 0.05 ms mean)`);
+  // (between two calibrations, budget * k: tools/gate/timing.mjs)
+  const MT = await measure(() => bestOf(3, () => { const ms = new Float64Array(1200); for (let i = 0; i < 1200; i++) ms[i] = frame(); ms.sort(); const mean = ms.reduce((a, b) => a + b, 0) / ms.length; return { mean, p99: ms[1188], max: ms[1199] }; }, "mean"));
+  const best = MT.value;
+  check("cost", !!pe.voice && best.mean < 0.05 * MT.k, `the engine voice per frame (model + 18 loops' setIf writes + tone, voice ${pe.voice ? "held" : "MISSING"}; best of 3 x 1200): ${f2(best.mean, 4)} ms mean, p99 ${f2(best.p99, 4)}, max ${f2(best.max, 3)} ms (budget 0.05 ms mean, ${MT.note})`);
   const { Session } = await import("node:inspector/promises");
   const ses = new Session(); ses.connect();
   await ses.post("HeapProfiler.enable");
@@ -255,7 +257,10 @@ async function renderDrive(seconds, script, { sr = 48000, file = null } = {}) {
   // parked at idle: nothing moves, nothing is written: the frame itself must make nothing
   D.c.speed = 0; D.c.thrS = 0; const hold = D.step; D.step = () => {};
   for (let i = 0; i < 6000; i++) frame();                         // (re-warm: the parked car's paths reach the optimizing tier)
-  SINK[2] = 0; const gi = Math.min(await sample(1200), await sample(1200), await sample(1200)), wi = SINK[2] * 2 / 3;
+  SINK[2] = 0; let gi = Math.min(await sample(1200), await sample(1200), await sample(1200)); const wi = SINK[2] * 2 / 3;
+  // (on a busy machine the optimizing compiler runs late (its background threads starved): code still in a baseline
+  // tier boxes its doubles. Up to 3 more re-warms + samples; a frame that really allocates does in every sample)
+  for (let r = 0; r < 3 && gi / 1200 >= 4; r++) { for (let i = 0; i < 6000; i++) frame(); gi = Math.min(gi, await sample(1200)); }
   D.step = hold;
   Object.assign(AP, saved);
   const perWrite = g / Math.max(1, writes);

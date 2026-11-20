@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { OfflineAudioContext, ClockAudioContext } from "./miniWebAudio.mjs";
+import { measure, bestOf } from "../gate/timing.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet"), WHY = process.argv.includes("--why");
@@ -172,18 +173,18 @@ function makeCity() {
   for (let i = 0; i < 7200; i++) frame();                        // warm: 2 min of frames (the 10 Hz code reaches the optimizing tier; unoptimized code boxes every double)
   // three runs of 1200 frames (20 s): the best run's mean (a GC pause or the OS taking the core on a loaded machine lands
   // in one run, not in all three: timing rows flake under load, re-run alone)
-  let best = null;
-  for (let r = 0; r < 3; r++) {
+  // (between two calibrations, budget * k: tools/gate/timing.mjs)
+  const MT = await measure(() => bestOf(3, () => {
     const ms = new Float64Array(1200);
     const t0 = performance.now();
     for (let i = 0; i < 1200; i++) ms[i] = frame();
     const wall = (performance.now() - t0) / 1200;                 // (includes the fake city's own advance)
     ms.sort();
-    const mean = ms.reduce((a, b) => a + b, 0) / ms.length, run = { mean, p99: ms[Math.floor(ms.length * 0.99)], max: ms[ms.length - 1], wall, voices: cs.engine.stats.voices };
-    if (!best || run.mean < best.mean) best = run;
-  }
-  const { mean, p99, max, wall } = best;
-  check("cost", mean < 0.1, `live frames (feeds + 10 Hz control + slices, ${best.voices} voices, best of 3 x 1200): ${f2(mean, 4)} ms per frame mean, p99 ${f2(p99)} ms, max ${f2(max)} ms (budget 0.1 ms mean; whole frame with the fake city ${f2(wall, 4)} ms)`);
+    const mean = ms.reduce((a, b) => a + b, 0) / ms.length;
+    return { mean, p99: ms[Math.floor(ms.length * 0.99)], max: ms[ms.length - 1], wall, voices: cs.engine.stats.voices };
+  }, "mean"));
+  const best = MT.value, { mean, p99, max, wall } = best;
+  check("cost", mean < 0.1 * MT.k, `live frames (feeds + 10 Hz control + slices, ${best.voices} voices, best of 3 x 1200): ${f2(mean, 4)} ms per frame mean, p99 ${f2(p99)} ms, max ${f2(max)} ms (budget 0.1 ms mean, ${MT.note}; whole frame with the fake city ${f2(wall, 4)} ms)`);
 
   const { Session } = await import("node:inspector/promises");
   const ses = new Session(); ses.connect();

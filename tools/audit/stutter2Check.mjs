@@ -27,6 +27,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { measure, cleanSteps } from "../gate/timing.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const QUIET = process.argv.includes("--quiet");
 let fails = 0;
@@ -121,19 +122,21 @@ const { drain, sliced } = await import("../../viewer/slices.js");
   let slow = 0;
   const ground = (x, z) => { slow++; busy(0.004); return 99.8 + 0.001 * x + 0.002 * z; };
   const a = GK.gardenInstances(doc, ground);
-  // (the best of 3 runs: a slice bound measured beside other processes carries their scheduling noise)
-  let st = null, b = null;
-  for (let k = 0; k < 3; k++) { const s1 = {}; const r = await sliced(GK.gardenInstancesGen(doc, ground), 3, s1); if (!st || s1.longest < st.longest) { st = s1; b = r; } }
+  // the slices: each step's best of 5 drains, cut at 3 ms as sliced() cuts (tools/gate/timing.mjs cleanSteps: one
+  // preemption on a busy machine made the longest of a run's slices 11-20 ms, every run), budget * k; the real
+  // sliced() run must yield at least half as often as the clean steps ask (a slicer that stops checking the clock fails)
+  const MG = await measure(() => cleanSteps(() => GK.gardenInstancesGen(doc, ground), 5));
+  const GS = MG.value, st = {}, b = await sliced(GK.gardenInstancesGen(doc, ground), 3, st);
   const same = Object.keys(a.inst).length === Object.keys(b.inst).length && Object.keys(a.inst).every((k) => a.inst[k].length === b.inst[k].length && a.inst[k].every((v, i) => v === b.inst[k][i]));
   ok(same && a.stand.wall.length === b.stand.wall.length, `gardenInstances drained = sliced (${Object.keys(a.inst).length} pieces, ${Object.values(a.inst).reduce((s, x) => s + x.length / GK.STRIDE, 0)} instances)`);
-  ok(st.slices > 1 && st.longest <= 3 + 2, `gardens on a slow ground (${slow} samples): ${st.slices} slices, longest ${st.longest.toFixed(1)} ms (<= 3 ms + one piece)`);
+  ok(st.slices > 1 && st.slices >= GS.slices(3) / 2 && GS.longest(3) <= (3 + 2) * MG.k, `gardens on a slow ground (${slow} samples): ${GS.slices(3)} slices of clean steps, longest ${GS.longest(3).toFixed(1)} ms (<= 3 ms + one piece; ${GS.steps} steps, the longest ${GS.maxStep.toFixed(2)} ms; ${MG.note}); sliced(): ${st.slices} slices (longest ${st.longest.toFixed(1)} ms wall)`);
   const blocked = (x, z) => { busy(0.01); return Math.floor(x) % 11 === 0; };
   const GC = await import("../../viewer/gardens/gardenClear.js");
   const c1 = GC.clearRoads(doc, blocked);
-  let st2 = null, c2 = null;
-  for (let k = 0; k < 3; k++) { const s1 = {}; const r = await sliced(GC.clearRoadsGen(doc, blocked), 3, s1); if (!st2 || s1.longest < st2.longest) { st2 = s1; c2 = r; } }
+  const MC = await measure(() => cleanSteps(() => GC.clearRoadsGen(doc, blocked), 5));
+  const CC = MC.value, st2 = {}, c2 = await sliced(GC.clearRoadsGen(doc, blocked), 3, st2);
   ok(c1 && c2 && c1.segs === c2.segs && c1.doc.segs.length === c2.doc.segs.length && c1.doc.hedges.length === c2.doc.hedges.length && c1.segs > 0, `clearRoads drained = sliced (${c1.segs} segments, ${c1.pillars} pillars, ${c1.gates} gates off the road)`);
-  ok(st2.slices > 1 && st2.longest <= 3 + 2, `clearRoads: ${st2.slices} slices, longest ${st2.longest.toFixed(1)} ms`);
+  ok(st2.slices > 1 && st2.slices >= CC.slices(3) / 2 && CC.longest(3) <= (3 + 2) * MC.k, `clearRoads: ${CC.slices(3)} slices of clean steps, longest ${CC.longest(3).toFixed(1)} ms (${CC.steps} steps, the longest ${CC.maxStep.toFixed(2)} ms; ${MC.note}); sliced(): ${st2.slices} slices`);
   const cg = src("viewer/gardens/cityGardens.js");
   ok(cg.includes("addTile(...a) { return drain(this.addTileGen(...a)); },") && cg.includes("yield* clearRoadsGen(doc, blocked, { old: GARDEN_LANE_OLD })") && cg.includes("yield* gardenInstancesGen(doc, groundAt"), "cityGardens.js: addTile drains the same generator addTileSliced slices");
 }
@@ -146,11 +149,11 @@ const { drain, sliced } = await import("../../viewer/slices.js");
   for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(5, 160, 120), new THREE.MeshBasicMaterial()); m.position.set(i * 20, 3, -i * 7); m.rotation.y = i; l0.add(m); }
   const flag = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial()); flag.name = "flag"; l0.add(flag);
   const A = HT.heroTriangles(root);
-  let worst = 0, steps = 0; const g = HT.heroTrianglesGen(root); let r, t = performance.now();
-  while (!(r = g.next()).done) { const d = performance.now() - t; if (d > worst) worst = d; steps++; t = performance.now(); }
-  const B = r.value;
+  // (each step's best of 5 walks, budget * k: tools/gate/timing.mjs cleanSteps)
+  const MH = await measure(() => cleanSteps(() => HT.heroTrianglesGen(root), 5));
+  const { maxStep: worst, steps, value: B } = MH.value;
   ok(A.length === B.length && A.length % 9 === 0 && A.every((v, i) => v === B[i]), `heroTriangles drained = stepped (${A.length / 9} triangles, the flag left out)`);
-  ok(steps > 10 && worst <= 3, `heroTrianglesGen: ${steps} steps, the longest ${worst.toFixed(2)} ms (<= 3 ms)`);
+  ok(steps > 10 && worst <= 3 * MH.k, `heroTrianglesGen: ${steps} steps, the longest ${worst.toFixed(2)} ms (<= 3 ms; each step's best of 5, ${MH.note})`);
   const hc = src("viewer/heroColliders.js"), hb = src("viewer/heroBVH.js");
   ok(/HERO_POLL = new URLSearchParams\(location\.search\)\.get\("heropoll"\) !== "old"/.test(hc) && /export const POLL_MS = 3;/.test(hc), "heroColliders.js: ?heropoll=old, POLL_MS = 3");
   ok(hc.includes("if (HERO_POLL) findRoots();") && hc.includes("HERO_POLL ? roots.get(name) : scene.getObjectByName(name)") && hc.includes("await sliced(heroTrianglesGen(root), POLL_MS)") && hc.includes("(HERO_POLL ? POLL_MS : 6)"), "heroColliders.js poll: one scene walk for missing roots, cached roots / tiles, triangles + blockers in <= 3 ms slices");
@@ -160,11 +163,11 @@ const { drain, sliced } = await import("../../viewer/slices.js");
 // ------------------------------------------------------------------ 5. slices.js
 {
   function* work(n) { let s = 0; for (let i = 0; i < n; i++) { busy(0.5); s += i; yield; } return s; }
-  const st = {};
-  const v = await sliced(work(40), 3, st);
+  const MS = await measure(() => cleanSteps(() => work(40), 5));
+  const CW = MS.value, st = {}, v = await sliced(work(40), 3, st);
   const sl = src("viewer/slices.js");
   ok(sl.includes("await yieldTask();") && sl.includes('typeof S.yield === "function"') && sl.includes("new MessageChannel()"), "slices.js: yields by scheduler.yield / MessageChannel, not nested setTimeout (clamped to >= 4 ms each: a tile's gardens took 4-7 s of wall time at boot)");
-  ok(v === drain(work(40)) && st.slices >= 5 && st.longest <= 3 + 0.5 + 1, `sliced(): the drained value, ${st.slices} slices, longest ${st.longest.toFixed(1)} ms (<= 3 ms + one step)`);
+  ok(v === drain(work(40)) && st.slices >= 5 && st.slices >= CW.slices(3) / 2 && CW.longest(3) <= (3 + 0.5 + 1) * MS.k, `sliced(): the drained value, ${st.slices} slices (clean steps: ${CW.slices(3)}, longest ${CW.longest(3).toFixed(1)} ms <= 3 ms + one step; ${MS.note}; wall longest ${st.longest.toFixed(1)} ms)`);
 }
 console.log(fails ? `${fails} stutter2 check(s) FAILED` : "stutter2 checks pass");
 process.exit(fails ? 1 : 0);

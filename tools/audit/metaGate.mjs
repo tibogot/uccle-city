@@ -104,6 +104,20 @@ for (const r of rows) {
 }
 ok(nMeta > 0, `${nMeta} rows declare meta checks`);
 
+// ------------------------------------------------------------------ 1b. timing rows (rule timing-rows, docs/SPEED_PLAN.md job 6)
+{
+  // a `timing: true` row measures through tools/gate/timing.mjs (calibrated budgets, best of N); no gate row script
+  // times a window with process.cpuUsage() (15.6 ms ticks on Windows)
+  const bad = [];
+  for (const r of rows) {
+    if (!existsSync(path.join(ROOT, r.script))) continue;
+    const code = stripComments(rd(r.script));
+    if (r.timing && !/gate\/timing\.mjs["']/.test(code)) bad.push(`${r.name}: a timing row whose script does not import tools/gate/timing.mjs`);
+    if (r.name !== "meta" && /process\.cpuUsage\s*\(/.test(code)) bad.push(`${r.name}: ${r.script} times with process.cpuUsage() (15.6 ms ticks on Windows: use performance.now through tools/gate/timing.mjs)`);
+  }
+  ok(!bad.length, `timing rows measure through tools/gate/timing.mjs, no process.cpuUsage() in a row script (rule timing-rows)${bad.length ? `: ${bad.join("; ")}` : ""}`);
+}
+
 // ------------------------------------------------------------------ 3. every module parses and links
 {
   const req = createRequire(path.join(ROOT, "tools/worker/package.json"));
