@@ -131,6 +131,7 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- lighting & post
   on("fx", "lighting", "post effects", "AO + reflections + bloom + grade (off: plain render, slow machines)."),
+  sel("grade", "lighting", "look grade", "?grade=nte: the NTE fine-tune of the look (docs/LOOK_NTE.md steps 1-3, viewer/lookNte.js; default off, for the owner's A/B): the day grade with more saturation / vibrance, a small cool shadow lift, golden kept warm (lift only); more sky-environment fill by day and a blue far haze, bigger midday cumulus; night as a blue hour (more ambient fill, +0.5 EV night look, more bloom, the sodium lamps unchanged). Uniforms and parameters only: no light, no pass. (Not ?look=: that is quick mode's look-at point.)", [[null, "current"], ["nte", "NTE fine-tune"]]),
   on("ao", "lighting", "AO pass", "Ambient occlusion in the post pipeline (A/B)."),
   on("ssr", "lighting", "SSR pass", "Screen-space reflections in the post pipeline (A/B)."),
   on("upscale", "lighting", "temporal upscaling", "TAAU: the scene, haze, AO and SSR at an internal resolution (no MSAA), jittered, resolved to the screen by a temporal pass + a clamped sharpen; dithered fades blend smooth (docs/UPSCALE.md). ?upscale=0 = native + MSAA as before 2026-11-15.", { sub: "Upscaling" }),

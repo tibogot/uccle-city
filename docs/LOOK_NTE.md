@@ -130,6 +130,49 @@ Steps 1-3 shift every tour view, so they should land as one deliberate "look" me
     - Depth of field in photo mode (H) only.
     - These are new passes and have to pass the perf preflight first.
 
+## 3b. Steps 1-3 as an A/B: `?grade=nte` (claude/look1, 2026-11-20)
+
+Steps 1-3 are behind ONE switch, `?grade=nte` (default off; a `viewer/features.js` row, dev panel "Lighting & post").
+`?look=` was the plan, but `look` is already quick mode's look-at point (docs/QUICKTEST.md). All values live in
+`viewer/lookNte.js`; `viewer/post.js` and `viewer/lighting.js` build their extra nodes only when the switch is on, so the
+default shaders are unchanged. Uniforms and parameters only: no light added (rule fixed-light-count), no pass added.
+
+- **Grade** (`NTE_LOOKS`, merged over `LOOKS`, so the weather's grade blend starts from it too). Midday: exposure 1.04,
+  saturation 1.18, vibrance 0.2, a toe of +0.009 linear in the shadow tint before the contrast pow, shadow tint
+  (0.95, 1.0, 1.06), balance (1.01, 1, 0.99). Golden, misty, overcast: the toe only (0.008); golden keeps its warm
+  balance. Twilight / night: a cooler shadow tint, more bloom (night 0.42, threshold 0.85), a small toe.
+- **Sky** (`NTE_SKY`, Firmament path). The fill is `scene.environmentIntensity` (midday 1.18, golden 1.12; night eases
+  to 2.4 with Firmament's night factor), not the hemisphere light (it stays 0: the weather owns it for its sky glow).
+  Midday: cumulus coverage 0.38 -> 0.46, fog density x1.5, Firmament air haze 1.6 -> 2.0, and the aerial fog's colour
+  45 % of the way to a pale blue of the same brightness (night 30 %).
+- **Night** = blue hour: Firmament `nightEV` 0.6 -> 0.85 (+0.25 stop; +0.5 blew the lamp pools to white and lost the
+  sodium warmth, so the rest of the lift comes from the ambient fill), `nightBlue` 0.8 -> 1.05. The lamps' own colour
+  is untouched.
+
+Measured (quick mode, 1280x720, `quality=native&rscale=1&dynres=0&still=1&xmas=0`; whole frame minus the top / bottom
+4 %, sRGB 0-1; the same statistics as section 2, which this method reproduces on the study's own shots within 0.01).
+Pairs: `C:/Users/tibog/Downloads/uccle-look-ab/index.html` (outside git).
+
+| view | saturation | p5 luma | p95 luma | mean luma | R/B |
+|---|---|---|---|---|---|
+| Saint-Job street, midday | 0.253 -> **0.345** | 0.045 -> **0.107** | 0.669 -> 0.673 | 0.378 -> 0.368 | 0.88 -> 0.72 |
+| residential (Rue du Ham), midday | 0.367 -> 0.377 | 0.047 -> **0.085** | 0.793 -> 0.722 | 0.364 -> 0.377 | 0.86 -> 0.73 |
+| Fort-Jaco / Ch. de Waterloo, midday | 0.325 -> 0.334 | 0.033 -> **0.105** | 0.658 -> **0.735** | 0.402 -> 0.390 | 0.82 -> 0.70 |
+| golden hour, Saint-Job street | 0.380 -> 0.339 | 0.062 -> 0.093 | 0.867 -> 0.860 | 0.346 -> 0.361 | 1.10 -> 1.08 |
+| night, Saint-Job street | 0.384 -> 0.271 | 0.000 -> **0.032** | 0.373 -> 0.445 | 0.108 -> **0.169** | 1.38 -> 1.10 |
+| rain at dusk (twilight + rain) | 0.404 -> 0.242 | 0.004 -> **0.054** | 0.283 -> 0.332 | 0.097 -> **0.153** | 1.13 -> 0.97 |
+
+Reading it:
+- Shadows are no longer crushed: day p5 0.085-0.107 (NTE 0.08-0.15), night p5 0.032 (target >= 0.03).
+- Day white balance is now cool (R/B 0.70-0.73, NTE 0.6-0.8). Golden stays warm (1.08).
+- Saturation rises clearly on the grey-neutral Saint-Job view (0.25 -> 0.35). On views that were already colourful
+  (residential, Fort-Jaco) it holds: the extra ambient fill and lift dilute about as much as the grade adds. The
+  rest of the gap to NTE's 0.40-0.49 is content (steps 4-8), as section 3 predicted.
+- Night 0.169 and rain dusk 0.153 mean luma: near the targets (about 0.2 and 0.15). The frames are less saturated
+  because the lifted dark areas are a neutral blue-grey; the lamp pools keep their warm colour.
+- Golden saturation drops a little (0.38 -> 0.34) from the shadow lift; if the owner wants golden untouched, set
+  `golden: {}` in `NTE_LOOKS` and `golden: {}` in `NTE_SKY`.
+
 ## 4. What NOT to change
 
 - **Real Uccle stays real.** Keep the real streets, buildings, brick and render, setts and cobbles, tram, Belgian signs and white markings. No neon-Tokyo makeover, no invented skyscrapers.
