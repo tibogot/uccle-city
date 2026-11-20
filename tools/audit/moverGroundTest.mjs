@@ -14,7 +14,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
-const { gridLayerY, moverGroundY, createMoverGround, moverLayered } = await imp("viewer/drive/moverGround.js");
+const { gridLayerY, moverGroundY, createMoverGround, moverLayered, STEP_GAP } = await imp("viewer/drive/moverGround.js");
 const { driveHeight } = await imp("viewer/drive/colliders.js");
 const { deckHeightFn } = await imp("viewer/rail/roadDeck.js");
 let fails = 0;
@@ -31,13 +31,19 @@ const hm = { h, y: Y, surface: (x, z) => 0 };
 hm.surface = (x, z) => { const c = Math.min(Math.max(x - h.x0, 0), cols - 1), r = Math.min(Math.max(z - h.z0, 0), rows - 1), c0 = Math.min(Math.floor(c), cols - 2), r0 = Math.min(Math.floor(r), rows - 2), fc = c - c0, fr = r - r0, i = r0 * cols + c0; return (Y[i] * (1 - fc) + Y[i + 1] * fc) * (1 - fr) + (Y[i + cols] * (1 - fc) + Y[i + cols + 1] * fc) * fr; };
 const ground = { delta, delta2 };
 
-// 1. grid
+// 1. grid (the same numbers but in a cell holding a > STEP_GAP step with a known near: there the mover's side only)
+const stepCell = (x, z, near) => {
+  if (near == null) return false;
+  const c = Math.min(Math.max(x - h.x0, 0), cols - 1), r = Math.min(Math.max(z - h.z0, 0), rows - 1), c0 = Math.min(Math.floor(c), cols - 2), r0 = Math.min(Math.floor(r), rows - 2), i = r0 * cols + c0;
+  const v = [i, i + 1, i + cols, i + cols + 1].map((k) => { const p = Y[k] + delta[k] * 0.01; if (delta2[k] === 65535) return p; const q = Y[k] + delta2[k] * 0.01; return Math.abs(q - near) < Math.abs(p - near) ? q : p; });
+  return Math.max(...v) - Math.min(...v) > STEP_GAP;
+};
 let n1 = 0;
 for (let q = 0; q < 20000; q++) {
   const x = h.x0 - 3 + rnd() * (cols + 6), z = h.z0 - 3 + rnd() * (rows + 6);
   const near = q % 3 === 0 ? null : 48 + rnd() * 12;
   const a = driveHeight(hm, ground, x, z, near), b = gridLayerY(hm, ground, x, z, near);
-  if (Math.abs(a - b) > 1e-9) n1++;
+  if (Math.abs(a - b) > 1e-9 && !stepCell(x, z, near)) n1++;
 }
 check(n1 === 0, `gridLayerY differs from driveHeight at ${n1} of 20000 points`);
 check(gridLayerY(hm, ground, 110.5, 210.5, NaN) === driveHeight(hm, ground, 110.5, 210.5, null), "NaN near = no near");
@@ -63,7 +69,7 @@ for (const [name, t] of [["grid", tileA], ["no grid", tileB]]) {
   for (let q = 0; q < 20000; q++) {
     const x = h.x0 + rnd() * cols, z = h.z0 + rnd() * rows, near = q % 4 === 0 ? null : 45 + rnd() * 16;
     const a = oldDriverGround(world, x, z, near), b = moverGroundY(world.decks, t, x, z, near), c = mg(x, z, near);
-    if (Math.abs(a - b) > 1e-9 || a !== c) n2++;
+    if ((Math.abs(a - b) > 1e-9 && !(t.drive && stepCell(x, z, near))) || b !== c) n2++;
   }
   check(n2 === 0, `moverGroundY (${name}) differs from the player's old ground at ${n2} of 20000 points`);
 }
@@ -73,6 +79,13 @@ for (const [name, t] of [["grid", tileA], ["no grid", tileB]]) {
   const under = moverGroundY(world.decks, tileB, 130, 215, 51), on = moverGroundY(world.decks, tileB, 130, 215, 57.9), none = moverGroundY(world.decks, tileB, 130, 215, null);
   check(under < 55 && on === 58 && none === 58, `layers: under ${under}, on ${on}, none ${none}`);
   check(moverLayered(createMoverGround(world), 130, 215) && !moverLayered(createMoverGround(world), 112, 210), "moverLayered");
+}
+
+// 2b. a step in the cell: a mover beside a 1.6 m raised square stays on its street; with no height, the bilinear ramp
+{
+  const H2 = { x0: 0, z0: 0, step: 1, cols: 2, rows: 2 }, Y2 = new Float32Array([80, 81.6, 80, 81.6]), D2 = { delta: new Uint16Array(4), delta2: new Uint16Array(4).fill(65535) };
+  const hm2 = { h: H2, y: Y2 }, low = gridLayerY(hm2, D2, 0.4, 0.5, 80.1), high = gridLayerY(hm2, D2, 0.4, 0.5, 81.5), none = gridLayerY(hm2, D2, 0.4, 0.5, null);
+  check(Math.abs(low - 80) < 1e-4 && Math.abs(high - 81.6) < 1e-4 && Math.abs(none - 80.64) < 1e-4, `step cell: street ${low}, terrace ${high}, no height ${none}`);
 }
 
 // 3. the hero road decks: the circle test changes no height (the notes' fn as it was, from git)

@@ -81,7 +81,7 @@ const T = c.argv.find((a) => /^[A-Z]\d+$/i.test(a)).toUpperCase();
 const t0 = Date.now();
 const manifest = JSON.parse(readFileSync(join(ROOT, "data/tiles/manifest.json"), "utf8"));
 const entries = JSON.parse(readFileSync(join(ROOT, "tools/boot3/entries.json"), "utf8"));
-const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false };
+const entry = { ...entries.find((e) => !e.lite).entry, ...manifest.tiles.find((t) => t.name === T), cache: false, ...(OLD ? { movGround: false } : {}) };
 const realLog = console.log; console.log = () => {};
 let d;
 try { d = await buildTileData(entry, pathToFileURL(join(ROOT, "data/tiles") + "/").href); } finally { console.log = realLog; }
@@ -133,6 +133,10 @@ function drawnAt(x, z) {
     if (!ys.some((v) => Math.abs(v - y) < 0.02)) ys.push(y);
   }
   for (const f of heroFns) { const y = f(x, z); if (y != null && !ys.some((v) => Math.abs(v - y) < 0.02)) ys.push(y); }
+  // the drawn terrain (the tile's 1 m grid d.y, as the terrain mesh draws it): under a street it is the same layer (carved
+  // 12 cm under it: the street is the top), where no street is drawn (a lane under a deck whose street the deck cut
+  // removed, D9) it is what the mover is seen on
+  if (ys.length && inTile(x, z)) { const y = hm.surface(x, z); if (!ys.some((v) => Math.abs(v - y) < 0.02)) ys.push(y); }
   return ys;
 }
 // the LAYERS a mover can stand on: surfaces within 1.5 m of each other are one layer seen from above (a street drawn
@@ -189,14 +193,15 @@ if (g?.xy) for (let p = 0; p < g.paths; p++) {
 }
 
 // ---- 2. parked cars: the four wheel contacts of every slot (viewer/cars.js wheelFit, a 1.8 x 4.4 m car)
+const PARK_IN = 0.45;                                  // viewer/cars.js PARK_IN (cars.js imports THREE: not loaded here)
 const HB = 4.4 * 0.31, HT = Math.max(0.6, 1.8 / 2 - 0.12);
 for (const s of d.parked?.sites || []) {
   if (!inTile(s.x, s.z)) continue;
   const h = s.yaw + Math.PI / 2, fx = Math.sin(h), fz = Math.cos(h), rx = fz, rz = -fx;
   let worst = 0, wOld = 0, any = false;
   for (const [u, v] of [[HB, HT], [HB, -HT], [-HB, HT], [-HB, -HT]]) {
-    const x = s.x + fx * u + rx * v, z = s.z + fz * u + rz * v;
-    const y = OLD ? moverOld(x, z) : moverNew(x, z, null), L = drawnAt(x, z);
+    const x = s.x + fx * u + rx * v, z = s.z + fz * u + rz * v, xi = s.x + fx * u + rx * v * PARK_IN, zi = s.z + fz * u + rz * v * PARK_IN;
+    const y = OLD ? moverOld(x, z) : Math.min(moverNew(x, z, null), moverNew(xi, zi, null)), L = drawnAt(x, z);   // (viewer/cars.js wheelFit)
     if (!L.length) continue;
     any = true;
     const t = nearestOf(L, y), dy = y - t;
@@ -221,7 +226,9 @@ for (const l of d.feats?.lines || []) {
     for (let s = k === 1 ? 0 : 1; s <= n; s++) {
       const x = x0 + (x1 - x0) * s / n, z = z0 + (z1 - z0) * s / n;
       if (!inTile(x, z)) { tPrev = NaN; continue; }
-      const seat = prof?.railTop(x, z, roadOff, 1.5) ?? mover(x, z, null);
+      // (main.js oneDeckY: on a road deck the rails / trams on its drawn top; --old: the profile)
+      let dk = null; if (!OLD) for (const f of decks) { const y = f(x, z); if (y != null) { dk = y; break; } }
+      const seat = dk ?? prof?.railTop(x, z, roadOff, 1.5) ?? mover(x, z, null);
       const L = drawnAt(x, z);
       if (!L.length) { inf("tramNoDrawn"); tPrev = NaN; continue; }
       const t = nearestOf(L, tPrev === tPrev ? tPrev : seat); tPrev = t;

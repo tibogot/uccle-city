@@ -15,7 +15,7 @@ import { gardenIndex } from "./streets/retainWalls.js";
 import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
-import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
+import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
 import { tramTracks } from "./track.js";
 import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
@@ -627,8 +627,12 @@ export async function buildTileData(entry, base) {
   };
   return { name: entry.name, bounds, hdr: tHdr, y: hm.y, orig: hm.orig, roads, feats, buildingCount: bDoc.count, roofs, drive,
     netInfo, road, terrain, buildings, cover, traffic, parked: parked ? { sites: parked.sites, stats: parked.stats } : null, times, rail: railOut, grassTypes,
-    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
-      return { ...d, ...(tops ? { plan: { ...d.plan, tops } } : {}), mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) }; }),   // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
+    bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => { const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || (onCarriageway(d, x, z) && drawnAt(x, z)) : measuredAt, mesh = deckMesh(d, hm.ground, cov, v ? streetTop : null);
+      // (claude/ground, rule mover-ground; entry.movGround === false = ?movground=old: the fitted top only) the walked top never under the drawn slab
+      // every plan deck (the band-fitted ones too: the Carsoel deck, H6, walked 13 cm over its slab where the street covers it)
+      const tops = entry.movGround === false ? (v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null)
+        : d.plan ? deckTopGrid(d, cov ?? (() => false), v ? streetTop : null, meshTopNodes(mesh)) : null;
+      return { ...d, ...(tops ? { plan: { ...d.plan, tops } } : {}), mesh }; }),   // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
     ...(entry.keepNet ? { net, hm, deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)) } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
 }
 

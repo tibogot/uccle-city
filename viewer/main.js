@@ -357,7 +357,10 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
     const pts = dense.filter(([x, z]) => inTile(x, z)).map(([x, z], i, arr) => {
       const p = arr[Math.max(0, i - 1)], q = arr[Math.min(arr.length - 1, i + 1)];
       const dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz) || 1;
-      return [x, z, -dz / L, dx / L, trackProf ? trackProf.railTop(x, z, roadOffFor(hm, inTile)) : null];
+      // (rule mover-ground) on a road deck the rails lie on its drawn top (the Carsoel deck, H6: the profile, interpolated
+      // between the bridge's ends, ran 0.1-0.2 m under the deck's asphalt and 0.16 m over it); ?movground=old: the profile
+      const dk = MOVGROUND ? oneDeckY(x, z) : null;
+      return [x, z, -dz / L, dx / L, dk ?? (trackProf ? trackProf.railTop(x, z, roadOffFor(hm, inTile)) : null)];
     });
     if (pts.length < 2) continue;
     for (const side of [-1, 1]) ribbon(pts, side);
@@ -411,6 +414,8 @@ const VIVIER = params.get("vivier") !== "old";            // vivier 2026-11-17: 
 // ?movground=old: as before. worldRef.moverY is the same function for anyone else (the props' bodies).
 const MOVGROUND = params.get("movground") !== "old";
 const movingGroundOld = (x, z) => { if (VIVIER && worldRef) { const y = worldRef.deckY(x, z); if (y != null) return y; } return worldRef.surface(x, z) + CARVE; };
+// the road decks' drawn top at (x, z) (the OSM decks and the hero road bridges), or null
+const oneDeckY = (x, z) => { for (const e of bridgeDeckRefs.values()) { const y = e.fn(x, z); if (y != null) return y; } return worldRef ? worldRef.deckY(x, z) : null; };
 const movingGround = MOVGROUND ? (x, z, near) => worldRef.moverY(x, z, near) : movingGroundOld;
 const carriageRefs = new Map();       // tile -> viewer/streets/carriageway.js test (debug/furnitureAudit.js)
 window.__carriage = carriageRefs;
@@ -742,7 +747,7 @@ function tileData(entry, lite = false, viaBoot = false, viaHold = false) {
     grass: cityGrass.on && !lite,                                                                    // ?grass=1: the grass types raster, built in the worker
     rail: TRAINS, bridges2: BRIDGES2, railFix: params.get("railcar") !== "0", railT: RAIL_T, driveLegacy: params.get("drivecol") === "legacy", driveKeepHidden: !COLFIX, padRoads: params.get("padroads") !== "0",
     // road fix round 2 (docs/collisions/ROAD_FIX2.md): ?roughlanes=0 rough junctions left up, ?abutments=0 OSM deck ends on the bare DTM, ?underpasslevel=0 the street riding the underpass banks
-    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
+    roughLanes: params.get("roughlanes") !== "0", deckAbutments: params.get("abutments") !== "0", bridgePlan: params.get("bridgeplan") !== "old", wallFix: params.get("wallfix") !== "old", roofFlat: params.get("roofflat") !== "old", looks: params.get("looks") !== "old", parkWidth: params.get("parkclear") !== "old", trafpark: params.get("trafpark") !== "old", movGround: params.get("movground") !== "old", recentre: params.get("recentre") === "1", platformEdge: params.get("platformedge") !== "old", underpassLevel: params.get("underpasslevel") !== "0", tunnels: TUNNELS,         // ?drivecol=legacy: the drive colliders before the audit; ?colfix=0: as before the collision audit
     paint: PAINT_PARAM,                                                                              // ?paint=v1: the road engine's own markings (A/B)
     colBand: params.get("colband") !== "old",                                                       // boot3: the drive colliders' wall samples only where they can be in the car band (colliders.js buildingBlocks; same colliders), ?colband=old = every sample
     deckLanes: params.get("decklanes") !== "old",                                                    // claude/drivecheck round 2: the traffic lanes over a hero road deck held clear of its parapets (rail/roadDeck.js squeezeDeckLanes), ?decklanes=old = as before
@@ -1546,7 +1551,7 @@ async function main() {
   const { hm, roads, net } = T0;
   if (params.get("trams") !== "0") {
     try {
-      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, movingGround, trackProf, roadOffFor(world.tiles[0].hm, () => false));
+      tramLine = await createTramLine(new URL("../data/transit/stib-92.json", import.meta.url), scene, movingGround, trackProf, roadOffFor(world.tiles[0].hm, () => false), MOVGROUND ? oneDeckY : null);
       for (const t of world.tiles) tramLine.snapTile(t.name, t.feats, t.bounds);
       updaters.push(tramLine.update);
       cityNight?.setTram(tramLine);                     // ?night=1: a tram passing a shadowed lamp re-renders its shadow map

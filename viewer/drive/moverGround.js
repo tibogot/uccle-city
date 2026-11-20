@@ -21,16 +21,31 @@
 // No allocation, no raycast: one bilinear read of the grid, the decks' own tests (each has a box test first).
 export const MOVER_CARVE = 0.12;          // main.js CARVE: the terrain is carved this far under a road with no drive grid
 
-/** The drive grid's height at (x, z): colliders.js driveHeight without its per-call closure (the same numbers: the
- *  census and tools/audit/moverGroundTest.mjs check it). D = { delta, delta2 } (cm over hm.y, 65535 = none). */
+/** The drive grid's height at (x, z): colliders.js driveHeight without its per-call closure (the same numbers where the
+ *  four nodes round (x, z) lie within STEP_GAP of each other: tools/audit/moverGroundTest.mjs checks it). D = { delta,
+ *  delta2 } (cm over hm.y, 65535 = none). (claude/ground) where they do not (a > 0.5 m step inside the 1 m cell: a raised
+ *  square, a terrace beside the street, I6 1129 958) and the mover's height is known: the nodes on the mover's side of
+ *  the step only (those within STEP_GAP of the node nearest `near`), so a car 0.5 m from a 1.6 m step stays on its
+ *  street instead of riding the grid's ramp up the step. */
+export const STEP_GAP = 0.5;
 export function gridLayerY(hm, D, x, z, near) {
   const h = hm.h, Y = hm.y, d1 = D.delta ?? D, d2 = D.delta2;
   const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
   const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
   const fc = c - c0, fr = r - r0, i = r0 * h.cols + c0, j = i + h.cols;
   const nr = near == null || near !== near ? null : near;
-  return (cell(Y, d1, d2, i, nr) * (1 - fc) + cell(Y, d1, d2, i + 1, nr) * fc) * (1 - fr)
-    + (cell(Y, d1, d2, j, nr) * (1 - fc) + cell(Y, d1, d2, j + 1, nr) * fc) * fr;
+  const a = cell(Y, d1, d2, i, nr), b = cell(Y, d1, d2, i + 1, nr), e = cell(Y, d1, d2, j, nr), f = cell(Y, d1, d2, j + 1, nr);
+  const wa = (1 - fc) * (1 - fr), wb = fc * (1 - fr), we = (1 - fc) * fr, wf = fc * fr;
+  if (nr !== null && Math.max(a, b, e, f) - Math.min(a, b, e, f) > STEP_GAP) {
+    let m = a; if (Math.abs(b - nr) < Math.abs(m - nr)) m = b; if (Math.abs(e - nr) < Math.abs(m - nr)) m = e; if (Math.abs(f - nr) < Math.abs(m - nr)) m = f;
+    let s = 0, w = 0;
+    if (Math.abs(a - m) <= STEP_GAP) { s += wa * a; w += wa; }
+    if (Math.abs(b - m) <= STEP_GAP) { s += wb * b; w += wb; }
+    if (Math.abs(e - m) <= STEP_GAP) { s += we * e; w += we; }
+    if (Math.abs(f - m) <= STEP_GAP) { s += wf * f; w += wf; }
+    return w > 1e-6 ? s / w : m;
+  }
+  return (a * (1 - fc) + b * fc) * (1 - fr) + (e * (1 - fc) + f * fc) * fr;
 }
 function cell(Y, d1, d2, k, near) {
   const a = Y[k] + d1[k] * 0.01;
