@@ -14225,20 +14225,41 @@ function gridTop(G2, x, z) {
   const near = [[a, tx * tx + tz * tz], [b, (1 - tx) ** 2 + tz * tz], [c, tx * tx + (1 - tz) ** 2], [e, (1 - tx) ** 2 + (1 - tz) ** 2]].filter(([v]) => v === v).sort((p, q) => p[1] - q[1]);
   return near.length ? near[0][0] : null;
 }
-function deckTopGrid(d, covered, streetY) {
+function deckTopGrid(d, covered, streetY, meshTop = null) {
   if (!d.plan) return null;
   const x0 = Math.floor(d.box[0]), z0 = Math.floor(d.box[1]), nx = Math.ceil(d.box[2]) - x0 + 1, nz = Math.ceil(d.box[3]) - z0 + 1, v = new Array(nx * nz).fill(NaN);
   let n = 0;
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const x = x0 + i, z = z0 + j;
     if (!inRing(d.plan.ring, x, z)) continue;
-    const t = pavingTop(d, x, z, covered, streetY);
+    const p = pavingTop(d, x, z, covered, streetY), m = meshTop ? meshTop(x, z) : null;
+    const t = p == null ? m : m == null ? p : Math.max(p, m);
     if (t != null) {
       v[j * nx + i] = +t.toFixed(3);
       n++;
     }
   }
   return n ? { x0, z0, nx, nz, v } : null;
+}
+function meshTopNodes(mesh) {
+  if (!mesh?.groups || !mesh.position) return null;
+  const P = mesh.position, top = /* @__PURE__ */ new Map(), key = (i, j) => i * 100003 + j;
+  for (const g of mesh.groups) {
+    if (g.slot !== 0 && g.slot !== 1) continue;
+    for (let v = g.start; v + 2 < g.start + g.count; v += 3) {
+      const a = v * 3, b = a + 3, c = a + 6;
+      const ax = P[a], ay = P[a + 1], az = P[a + 2], bx = P[b], by = P[b + 1], bz = P[b + 2], cx = P[c], cy = P[c + 1], cz = P[c + 2];
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-9) continue;
+      for (let i = Math.ceil(Math.min(ax, bx, cx)); i <= Math.floor(Math.max(ax, bx, cx)); i++) for (let j = Math.ceil(Math.min(az, bz, cz)); j <= Math.floor(Math.max(az, bz, cz)); j++) {
+        const l1 = ((bz - cz) * (i - cx) + (cx - bx) * (j - cz)) / det, l2 = ((cz - az) * (i - cx) + (ax - cx) * (j - cz)) / det, l3 = 1 - l1 - l2;
+        if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+        const y = l1 * ay + l2 * by + l3 * cy, k = key(i, j), o = top.get(k);
+        if (o === void 0 || y > o) top.set(k, y);
+      }
+    }
+  }
+  return (x, z) => top.get(key(Math.round(x), Math.round(z))) ?? null;
 }
 function pavingTop(d, x, z, covered, streetY) {
   const b = planBase(d, x, z) - PLAN.sink, B = d._band ??= bandOf(d), lift = offBand(B, x, z) ? KERB2 : 0;
@@ -19937,8 +19958,9 @@ async function buildTileData(entry, base) {
     rail: railOut,
     grassTypes,
     bridgeDecks: osmBridges.decks.filter(ownDeck).map((d) => {
-      const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || onCarriageway(d, x, z) && drawnAt(x, z) : measuredAt, tops = v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null;
-      return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh: deckMesh(d, hm.ground, cov, v ? streetTop : null) };
+      const v = entry.vivier !== false && !!d.plan?.urbis, cov = v && d.plan ? (x, z) => (measuredAt ? measuredAt(x, z) : false) || onCarriageway(d, x, z) && drawnAt(x, z) : measuredAt, mesh = deckMesh(d, hm.ground, cov, v ? streetTop : null);
+      const tops = entry.movGround === false ? v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null : d.plan ? deckTopGrid(d, cov ?? (() => false), v ? streetTop : null, meshTopNodes(mesh)) : null;
+      return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh };
     }),
     // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
     ...entry.keepNet ? { net, hm, deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)) } : {}
@@ -20476,4 +20498,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "7049a67785506c2d";
+self.__TILE_CODE_HASH = "e130c4f41924e55d";
