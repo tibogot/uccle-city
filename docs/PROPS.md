@@ -215,6 +215,17 @@ Quick mode at Place Saint-Job (`?quick=1&place=stjob-street&view=drive&radius=30
 | terrace 30 km/h | the TABLE knocked over (91 deg, 0.8 m) but its two CHAIRS stayed at rest (never woken): **bug, open** (the group wake in `touch()` did not run for it; not yet found) |
 | cost | 60 fps steady with 18 props displaced (frame median 16.7 ms, p95 20.6); world frameMs 0.005-0.13 ms, proxy renderMs 0.08 ms, 11 proxy draws |
 
-**Left (not done):** the terrace chairs bug; a lamp stops the car (gate only); night shadows; third person (walker kicks,
-no post where a snapped bollard stood: gate only); cones (police game); `?props=old` A/B; first-knock hitch measure;
-the full gate after this commit (the boot fix + `debug/propsCheck.js` only; the gate passed on d09f19ef).
+**Browser turn 2 (2026-11-20, same spot, `&with=night&hour=22` then `?props=old`):**
+
+| check | result |
+|---|---|
+| terrace chairs | FIXED: a table wakes its chairs however it woke (in `wake()`, not only the car's touch); gate check "terrace chairs follow"; in the browser a bollard flung into a terrace woke its table AND chairs |
+| a lamp stops the car | 50 km/h into a street lamp: stopped dead, front at the post (centre 2.4 m): `lamp50_stopped.jpg` |
+| night | the props' proxies on the lamp maps' MOVER layer (11), the marker over the awake bodies, the static lamp maps re-rendered on a knock (shadowFull 30 -> 46); a snapped bollard lying lit under the street lamps: `night_bollard.jpg` |
+| walker, snapped bollard | its walker post OFF (the only walker item at its rest spot, `ref.walk` item 904 off); walked through the spot |
+| walker kicks | a café chair shoved 1.28 m by walking into it: `walker_kick.jpg`; a column bin only woken (4 cm: 24 kg on its plinth, the walk stopped at the wake in that run) |
+| police cones | 3 cones (police/props.js setCones) at 40 km/h: all thrown 17-18 m: `cones40.jpg` |
+| `?props=old` | the car stopped dead at a round bin (30 km/h -> 0), no prop world: `old_bin_wall.jpg` |
+| perf | 60 fps by day with 18 knocked; the night shots ran with the gate rows in the background (13 fps, GPU 20 ms): not a measure |
+
+**Left:** a first-knock hitch measure per kind on a quiet machine (none seen at 60 fps by day).
