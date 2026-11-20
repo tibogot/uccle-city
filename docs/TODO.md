@@ -100,6 +100,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
   - Fix: ONE ground for every mover (player, traffic, knocked / parked cars, trams, props): the drawn drive surface, layered.
   - Census: every lane point vs the drawn road, |dy| > 5 cm counted, city-wide; gate at 0 (or a justified ceiling).
 - [ ] GATE PARSE (props job finding): a branch that did not boot (a comment swallowed an export) passed the gate; the gate must parse every viewer/ and tools/ file as an ES module.
+- [x] Christmas firs (xmasfir3) MERGED 2026-11-20 (fast lane); the perf saving is not measurable on a busy machine.
+- [ ] CLOSED 2026-11-20: claude/carshadow: no mode measurably reduced the rear shimmer (blur noise ±18 %, less sharp); the verdict is in that branch's docs/CARSHADOW.md; branch kept, worktree removed.
 - [ ] GATE FLAKE: stutter2 fails under load on a different sub-check each run (clearRoads, heroTrianglesGen, hero triangle slices) and passes alone. A flaky gate row hides real regressions: make it load-robust (median of N runs, or measure CPU time not wall time) or isolate it.
 - [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?
 - [ ] Hero ironwork shimmer (thin bars on La Tour de Frein, police station, Papenkasteel, Wolvendael château): pack-side bake plan in docs/JITTER.md §2 (after claude/jitter merges); one hero per job, police station first.
