@@ -18,6 +18,7 @@ import { DENT_OLD, dentFrame, frameRows, dentNodes, shadeDent } from "./carDent.
 // ?vfix2=old: the traffic's light bits decoded as before round 2 of the visual fixes (A/B)
 const CARLIGHTS_OLD = typeof location !== "undefined" && /[?&](carlights|polish1)=old(&|$)/.test(location.search);   // polish1 item 6
 const VFIX2_OLD = typeof location !== "undefined" && /[?&]vfix2=old\b/.test(location.search);
+const TRAFMIX_OLD_PACK = typeof location !== "undefined" && /[?&]trafmix=old(&|$)/.test(location.search);   // (claude/trafmix: no beacon node)
 
 export const PACK_SOURCES = {
   kenney: { label: "Kenney Car Kit", url: new URL("../../models/cars/kenney.glb", import.meta.url).href, credit: "Kenney (kenney.nl), CC0" },
@@ -119,6 +120,7 @@ export const packLook = { glass: uniform(1), glassOpacity: uniform(0.76), clearc
   // (fix4 item 1, live; ?rearpool=old = 0) the tail lens lit by the view angle: a real lamp's reflector + prism lens
   // throw the light backwards, so the lens seen head-on is the bright part and the wrap-round facets fall off. At night
   // the brake + tail (0.75) clipped the red channel on every facet alike: the whole wrap-round lamp one flat red block
+  beacon: uniform(9),        // (claude/trafmix) the beacons' strength while flashing (kind 9)
   lensShade: uniform(/[?&]rearpool=old(&|$)/.test(typeof location !== "undefined" ? location.search : "") ? 0 : 1) };
 /** the tail lens's view-angle factor (1 when lensShade = 0): ~1.1 head-on, ~0.35 edge-on */
 const lensK = () => {
@@ -150,8 +152,9 @@ export function setPlayerDent(model) {
   const F = model?.dent || { hw: s[0] / 2, zF: s[2] / 2, zR: -s[2] / 2, box: { x0: -s[0] / 2 + 0.22, y0: 0.68, z0: -s[2] / 2 + 0.15, x1: s[0] / 2 - 0.22, y1: s[1] - 0.12, z1: s[2] / 2 - 1.2 } };
   frameRows(F).forEach((r, k) => playerDamage.frame[k].value.set(...r));
 }
-/** the traffic types' dent frames: 3 vec4 rows per type index (trafficFleet.js TYPE_NAMES order, <= 8 types) */
-export const trafficDentRows = Array.from({ length: 24 }, (_, i) => new THREE.Vector4(...[[0.9, 2.15, -2.15, 0], [-0.75, 0.68, -1.9, 0], [0.75, 1.3, 0.9, 0]][i % 3]));
+/** the traffic types' dent frames: 3 vec4 rows per type index (trafficFleet.js TYPE_NAMES order, <= 16 types: the 8
+ *  street types + the service vehicles, claude/trafmix) */
+export const trafficDentRows = Array.from({ length: 48 }, (_, i) => new THREE.Vector4(...[[0.9, 2.15, -2.15, 0], [-0.75, 0.68, -1.9, 0], [0.75, 1.3, 0.9, 0]][i % 3]));
 const trafficDentU = uniformArray(trafficDentRows, "vec4").setName("carDentTypes");
 const CARPUSH_OLD = typeof location !== "undefined" && /[?&]carpush=old(&|$)/.test(location.search);
 
@@ -295,7 +298,7 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     if (CARPUSH_OLD) dent = vec3(0, 0, 0);
     else if (DENT_OLD) dent = select(W.w.greaterThan(0.5), vec3(0, 0, 0), crumpleOffset(p0, normalLocal, dep, D.div(4096).floor().mul(0.12).add(1.9))).negate();
     else {
-      const ti = int(D.div(4096).floor().clamp(0, 7)).mul(3);
+      const ti = int(D.div(4096).floor().clamp(0, 15)).mul(3);
       const N = dentNodes(p0, dep, trafficDentU.element(ti), trafficDentU.element(ti.add(1)), trafficDentU.element(ti.add(2)));
       const body = W.w.lessThan(0.5);
       dent = select(body, N.offset, vec3(0, 0, 0));
@@ -325,6 +328,15 @@ export function packMaterial({ paint = new THREE.Color(0.5, 0.5, 0.5), lights = 
     const tail = select(isTail, night.mul(kN).mul(lit).add(bit(1).mul(kB)).mul(lensK()), float(0));
     const rev = select(isTail.and(outer.not()), bit(16).mul(kR), float(0));
     m.emissiveNode = vc.mul(1.15).mul(head).add(color(0xff1408).mul(tail)).add(color(0xffffff).mul(rev)).add(color(0xff8a00).mul(ind.mul(kI)));
+    // TRAFMIX (docs/TRAFMIX.md): the service vehicles' BEACONS (kind 9, tools/blender/heavies.py): blue lenses flashed
+    // while bit 2 is set (an ambulance / fire engine on a run; their dipped beams come on with it): a double flash,
+    // the left (+x) and right lenses alternating, ~1.6 cycles a second. Emissive only (no light: the fixed pool rule)
+    if (!TRAFMIX_OLD_PACK) {
+      const isBeacon = kind.equal(9);
+      const ph = mod(motion.time.mul(1.6).add(select(px.greaterThan(0), float(0), float(0.5))), 1);
+      const flash = select(ph.lessThan(0.12).or(ph.greaterThan(0.22).and(ph.lessThan(0.34))), float(1), float(0.04));
+      m.emissiveNode = m.emissiveNode.add(color(0x2a5cff).mul(select(isBeacon, bit(2).mul(flash).mul(packLook.beacon), float(0))));
+    }
   }
   if (crossFade) {
     // dithered LOD cross-fade (instanced fleets): per-instance attribute lodFade in [0, 2]. 0..1 = the outgoing LOD,

@@ -35,7 +35,8 @@ const G = 9.81;
 const KNOCKED = 5;                     // trafficSim.js ST.knocked
 /** kg, kerb weight + a driver (cars2 family, real classes: Polo / Golf / Passat estate / Passat / Tiguan / Caddy /
  *  Transit Custom loaded / Prius taxi) */
-export const MASS = { hatch_s: 1150, hatch_c: 1300, estate: 1500, saloon: 1520, suv: 1800, van_c: 1650, van_p: 2300, taxi: 1530, police: 1580 };
+export const MASS = { hatch_s: 1150, hatch_c: 1300, estate: 1500, saloon: 1520, suv: 1800, van_c: 1650, van_p: 2300, taxi: 1530, police: 1580,
+  police_t: 1650, ambulance: 4500, fire: 15000, bus: 13000, bin: 20000 };   // (claude/trafmix: the service vehicles)
 /** kg, the player's two-wheelers with their rider */
 export const MASS2 = { moto: 300, scooter: 200, villo: 100 };
 export const massOf = (type) => MASS[type] ?? 1450;
@@ -346,6 +347,7 @@ export class CarHitWorld {
     let dy = S.yaw[i] - S.pyaw[i];
     if (dy > Math.PI) dy -= 2 * Math.PI; else if (dy < -Math.PI) dy += 2 * Math.PI;
     B[0] = S.px[i] * b + S.x[i] * a; B[1] = S.pz[i] * b + S.z[i] * a; B[2] = S.pyaw[i] + dy * a;
+    if (ty.zc) { B[0] += Math.sin(B[2]) * ty.zc; B[1] += Math.cos(B[2]) * ty.zc; }   // (claude/trafmix: a long body off the axles)
     B[3] = ty.w / 2; B[4] = ty.len / 2; B[5] = S.y[i];
     const v = S.state[i] === KNOCKED ? 0 : S.v[i];
     B[6] = Math.sin(B[2]) * v; B[7] = Math.cos(B[2]) * v;
@@ -372,6 +374,7 @@ export class CarHitWorld {
     if (this.bodyOf[i] >= 0) return this.bodyOf[i];
     const ty = T.types[S.type[i]];
     if (!ty || ty.two || !S.alive[i]) return -1;
+    if (ty.heavy && massOf(ty.name) > 3000) return -1;          // (claude/trafmix: a bus / truck is not shoved: a wall that brakes for us)
     if (S.state[i] !== KNOCKED && !this.listAdd(i)) return -1;
     const k = this.alloc();
     if (k < 0) return -1;

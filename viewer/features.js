@@ -114,6 +114,8 @@ export const FEATURES = [
 
   // ---------------------------------------------------------------- traffic, trams & trains
   on("traffic", "transit", "moving traffic", "Cars driving on the lane graph."),
+  old("trafmix", "transit", "traffic mix as before", "claude/trafmix (docs/TRAFMIX.md, rule traffic-mix): the traffic's mix by hour and place (cars / vans / SUVs / taxis, police patrols - more near Rue Rouge -, ambulances and fire engines on runs with beacons + siren the traffic yields to, delivery vans stopping with hazards, weekday-morning bin lorries, STIB / De Lijn buses on their OSM lines stopping at their stops); ?trafmix=old = the 8 street types by one fixed weight as before (no police, no service vehicle, no bus)."),
+  sel("weekday", "transit", "weekday / weekend", "The traffic mix's day (claude/trafmix): today's by default; 1 = a weekday (bin lorries, delivery rounds, full bus service), 0 = a weekend.", [[null, "today"], ["1", "weekday"], ["0", "weekend"]]),
   sel("cars", "transit", "car models", "Every car (parked, traffic, police yard / game, the drive car's default): the cars2 family (default: tools/blender/cars2.py, smooth lofted bodies at real proportions, authored LODs; docs/CARS2.md), ?cars=old the faceted family as before, ?cars=box the old parked boxes.", [[null, "cars2 (lofted)"], ["old", "faceted (old)"], ["box", "boxes (old)"]]),
   opt("policecar", "transit", "police car: marked", "?policecar=marked: the player's police car is the Belgian police estate in its livery (cars2: white, blue + yellow Battenburg, POLICE) instead of the unmarked dark estate.", { on: "marked" }),
   on("trams", "transit", "trams", "STIB line 92 on its timetable.", { sub: "Trams & trains" }),
