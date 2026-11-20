@@ -32,6 +32,7 @@ const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
 const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
+const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");   // (one builder with the worker, rule 38)
 const { TrafficWorld } = await imp("viewer/traffic/trafficWorld.js");
 const { TrafficSim, STEP } = await imp("viewer/traffic/trafficSim.js");
 
@@ -45,10 +46,10 @@ function graph(name) {
     for (const [k, C] of [["xy", Float32Array], ["cum", Float32Array], ["len", Float32Array], ["off", Uint32Array], ["core", Uint8Array], ["kind", Uint8Array]]) o[k] = C.from(o[k]);
     return o;
   }
-  const { roads, feats, bounds, rd } = loadTile(name);
+  const { roads, feats, bounds, rd, roofs } = loadTile(name);
   if (!rd.surfaceData) return null;
   const wp = widthParking(roads, feats, bounds, streetFit(rd.surfaceData));
-  const g = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites });
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, roofs });
   if (f) { mkdirSync(CACHE, { recursive: true }); const o = {}; for (const k of KEEP) o[k] = ArrayBuffer.isView(g[k]) ? Array.from(g[k]) : g[k]; writeFileSync(f, JSON.stringify(o)); }
   return g;
 }

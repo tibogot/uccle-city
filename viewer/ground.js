@@ -28,6 +28,10 @@ import { noise2D, bumpNormal } from "./tslkit.js";
 import { landCoverData } from "./landcover.js";
 import { houseCut, cutOpacity } from "./interior/cut.js";
 import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
+// (claude/sidewalk round 2; ?sidewalk=old = 0.9 / 0.72) bare earth only on banks steeper than ~35 degrees (normal.y
+// 0.82 -> 0.74: soil from ~35, full at ~42 degrees): the street banks (31 degrees, viewer/roadBuild.js BANK_SLOPE) stay
+// grass; before, soil began at 26 degrees and every cut bank read as brown earth
+const SOIL = typeof location !== "undefined" && /[?&]sidewalk=old/.test(location.search) ? [0.9, 0.72] : [0.82, 0.74];
 
 /** The mask as a texture; `pre` = landCoverData() already computed (e.g. by the tile worker). */
 export function landCoverTexture(feats, bounds, pre) {
@@ -93,7 +97,7 @@ export function proceduralGround(cover, bounds, contour) {
   col = mix(col, sand, mk.b);
   col = mix(col, gravel, mk.g);
   // steep banks: bare earth
-  const slope = smoothstep(float(0.9), float(0.72), normalWorld.y);
+  const slope = smoothstep(float(SOIL[0]), float(SOIL[1]), normalWorld.y);
   col = mix(col, mix(color(0x6d5a40), color(0x7d6a4f), n2), slope.mul(float(1).sub(mk.g)).mul(float(1).sub(mk.r.mul(0.95))));   // (wooded banks stay green-brown)
   col = mix(col, water, mk.a);
   col = contour ? contour(col) : col;
@@ -196,7 +200,7 @@ function texturedGround(cover, bounds, contour) {
       const n1 = nzA.r, n2 = nzB.r, n3 = nzC.r;
       const wood = mk.r, path = mk.g, sand = mk.b;
       const grassW = one.sub(wood).mul(one.sub(sand)).mul(one.sub(path));
-      const slope = smoothstep(float(0.9), float(0.72), normalWorld.y).mul(one.sub(path)).mul(one.sub(wood.mul(0.95)));
+      const slope = smoothstep(float(SOIL[0]), float(SOIL[1]), normalWorld.y).mul(one.sub(path)).mul(one.sub(wood.mul(0.95)));
       // grass flavours: rough (darker, denser: unmown park corners, long verges) in ~40 m patches; dry / worn (thin grass
       // over soil) in ~10 m patches; a few bare worn spots
       const rough = smoothstep(0.45, 0.8, n1).mul(S.uRough.mul(2).min(1));

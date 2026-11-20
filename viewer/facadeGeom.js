@@ -1,5 +1,6 @@
 import { fitBase } from "./groundFit.js";
-import { repairWalls } from "./wallRepair.js";   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
+import { repairWalls } from "./wallRepair.js";
+import { coplanarCleaner } from "./coplanarClean.js";   // census class G (rule 34): overlapping coplanar UrbIS triangles cut (?zfight=old: off)   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
 import { faceBays, storeyFit } from "./interior/facadeWindows.js";
 import { litWindows } from "./nightLights/litHash.js";
 import { classify, TYPE, typedStyle, typedCode } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
@@ -105,7 +106,7 @@ function pushQuad(D, p0, p1, p2, p3, n, col) {
 
 /** Push a box that sticks out of a wall: the wall segment A->B (xz), extruded `depth` along the outward
  *  normal (nx, nz), from yTop - height to yTop. Flat normals, one colour. The back (inside the wall) is skipped. */
-function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
+function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false, soffit = true) {
   if (height <= 0.01) return;
   const y0 = yTop - height, y1 = yTop;
   const ax = A[0], az = A[2], bx = B[0], bz = B[2];
@@ -116,10 +117,64 @@ function box(D, A, B, yTop, height, depth, nx, nz, col, closed = false) {
   const A0 = [ax + ox, y0, az + oz], B0 = [bx + ox, y0, bz + oz], A1 = [ax + ox, y1, az + oz], B1 = [bx + ox, y1, bz + oz];
   quad(A0, B0, B1, A1, [nx, 0, nz]);           // front
   quad(a1, A1, B1, b1, [0, 1, 0]);             // top
-  quad(a0, b0, B0, A0, [0, -1, 0]);            // soffit
+  if (soffit) quad(a0, b0, B0, A0, [0, -1, 0]);   // soffit (soffit = false: buried, e.g. the steps' feet 0.3 m under the ground)
   quad(a0, A0, A1, a1, [-tx, 0, -tz]);         // end at A
   quad(b0, b1, B1, B0, [tx, 0, tz]);           // end at B
   if (closed) quad(a0, b0, b1, a1, [-nx, 0, -nz]);   // the back (a box standing free: chimney stacks, caps, pots)
+}
+
+/** CLOSED BALCONY (rule 27, census class B: "people could fall from their terrace"): a slab and a U-shaped parapet
+ *  (the front + both sides, one material, one height, one thickness PT) from the wall plane out to D0, as ONE shell:
+ *  one soffit under slab and parapet; outer sides + front from the soffit to the parapet top; inner faces from the slab
+ *  top; parapet tops MITRED at the two front corners (every edge meets one edge: no T-junction, no doubled or hidden
+ *  face, no end cap in the wall). `mids`: where two balconies touch side by side, ONE shared divider (PT thick, centred
+ *  on m) instead of two panels. Without dividers: 11 quads, as many as the old open slab + parapet boxes. */
+export function balcony(D, f, at, tx, tz, a, c, mids, y, D0, PT, pc, sc) {
+  const yb = y - 0.16, yt = y + 1.0, DI = D0 - PT, h = PT / 2;
+  const P = (u, d, yy) => { const p = at(u, d); p[1] = yy; return p; };
+  const n = [f.nx, 0, f.nz], nb = [-f.nx, 0, -f.nz], tp = [tx, 0, tz], tm = [-tx, 0, -tz], up = [0, 1, 0], dn = [0, -1, 0];
+  const Q = (p0, p1, p2, p3, nn, col) => pushQuad(D, p0, p1, p2, p3, nn, col);
+  Q(P(a, 0, yb), P(a, D0, yb), P(a, D0, yt), P(a, 0, yt), tm, pc);                 // outer side at a
+  Q(P(c, 0, yb), P(c, D0, yb), P(c, D0, yt), P(c, 0, yt), tp, pc);                 // outer side at c
+  const cuts = [a + PT, ...mids.flatMap((m) => [m - h, m + h]), c - PT];           // the bays between panels / dividers
+  for (let i = 0; i < cuts.length; i += 2) {
+    const l = cuts[i], r = cuts[i + 1];
+    Q(P(l, 0, y), P(r, 0, y), P(r, DI, y), P(l, DI, y), up, sc);                   // slab top
+    Q(P(l, DI, y), P(r, DI, y), P(r, DI, yt), P(l, DI, yt), nb, pc);               // inner front
+    Q(P(l, 0, y), P(l, DI, y), P(l, DI, yt), P(l, 0, yt), tp, pc);                 // inner face of the panel / divider at l
+    Q(P(r, 0, y), P(r, DI, y), P(r, DI, yt), P(r, 0, yt), tm, pc);                 // ... at r
+  }
+  Q(P(a, 0, yt), P(a + PT, 0, yt), P(a + PT, DI, yt), P(a, D0, yt), up, pc);       // side tops, mitred into the front's
+  Q(P(c - PT, 0, yt), P(c, 0, yt), P(c, D0, yt), P(c - PT, DI, yt), up, pc);
+  const xs = [a, ...mids.flatMap((m) => [m - h, m + h]), c];                       // soffit, outer front, front top: split at each divider
+  for (let i = 0; i + 1 < xs.length; i++) {
+    const ol = xs[i], or = xs[i + 1], il = i === 0 ? a + PT : ol, ir = i + 2 === xs.length ? c - PT : or;
+    Q(P(ol, 0, yb), P(or, 0, yb), P(or, D0, yb), P(ol, D0, yb), dn, sc);           // soffit (slab + parapet underside: one face)
+    Q(P(ol, D0, yb), P(or, D0, yb), P(or, D0, yt), P(ol, D0, yt), n, pc);
+    Q(P(il, DI, yt), P(ir, DI, yt), P(or, D0, yt), P(ol, D0, yt), up, pc);
+  }
+  for (const m of mids) Q(P(m - h, 0, yt), P(m + h, 0, yt), P(m + h, DI, yt), P(m - h, DI, yt), up, pc);   // divider tops
+}
+/** a balcony's plan: an oriented box (centre, along t, out along n, half sizes) + its height range */
+function balcPlan(at, f, a, c, y0, y1, D0) {
+  const p = at((a + c) / 2, D0 / 2), tx = -f.nz, tz = f.nx;
+  return { cx: p[0], cz: p[2], tx, tz, nx: f.nx, nz: f.nz, hu: (c - a) / 2, hv: D0 / 2, y0, y1, a, c };
+}
+/** a plan segment crosses a balcony plan shrunk by m (a wall just touching its outline does not count): separating axes = the box's two + the segment's normal */
+function segObb(ax, az, bx, bz, P, m) {
+  const sx = bx - ax, sz = bz - az, L = Math.hypot(sx, sz) || 1, cx = (ax + bx) / 2 - P.cx, cz = (az + bz) / 2 - P.cz;
+  for (const [ux, uz, h] of [[P.tx, P.tz, P.hu], [P.nx, P.nz, P.hv]]) if (Math.abs(cx * ux + cz * uz) >= h - m + Math.abs(sx * ux + sz * uz) / 2) return false;
+  const nx = -sz / L, nz = sx / L;
+  return Math.abs(cx * nx + cz * nz) < P.hu * Math.abs(P.tx * nx + P.tz * nz) + P.hv * Math.abs(P.nx * nx + P.nz * nz) - m;
+}
+/** two plans overlap (or come within m) in plan: separating-axis test on the four box axes */
+function obbHit(P, Q, m) {
+  const dx = Q.cx - P.cx, dz = Q.cz - P.cz;
+  for (const [ax, az] of [[P.tx, P.tz], [P.nx, P.nz], [Q.tx, Q.tz], [Q.nx, Q.nz]]) {
+    const r = (B) => B.hu * Math.abs(B.tx * ax + B.tz * az) + B.hv * Math.abs(B.nx * ax + B.nz * az);
+    if (Math.abs(dx * ax + dz * az) >= r(P) + r(Q) + m) return false;
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------- strip details (cornices, eaves boards, gutters)
@@ -414,6 +469,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   const AWNING = new Set(["cafe", "restaurant", "bar", "pub", "bakery", "ice_cream", "butcher", "greengrocer", "pastry", "chocolate"]);
   const D = { position: [], normal: [], color: [] };                             // detail geometry
   const SD = [];                                                                 // strip details, emitted mitred at the end (emitStrips)
+  const BALC = opts.balcony !== false, balcPlans = [];                           // closed balconies (rule 27; ?balcony=old: open sides), every one placed in the tile
   const chimneysAt = [], buttressAt = [], apexAt = [];                                        // one stack per party wall, one buttress per spot
   const R = { position: [], normal: [], aRoof: [], aRoofCol: [] };
   const fitOut = opts.ground ? new Float32Array(doc.buildings.length).fill(NaN) : null;
@@ -422,6 +478,9 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
   // 16 garage (facades.js decodes it). opts.styles === false: the generic façade for all (?styles=old)
   const cls = opts.styles === false ? null : classify(doc, P, I, (b, key) => wallStyle(hash01(key + "s"), b.height));
   const stats = { fit: {}, faces: 0, party: 0, street: 0, cornices: 0, buttresses: 0, ridges: 0, chimneys: 0, shops: 0, strips: 0, stripMerged: 0, stripJoins: 0, chimneysShared: 0 };
+  // (claude/zfight, rule 34; opts.zfight === false = ?zfight=old: the UrbIS triangles as given)
+  const clean = opts.zfight === false ? null : coplanarCleaner();
+  const stepPlans = [];                                                          // (rule 34) the door steps placed in the tile (plans)
   doc.buildings.forEach((b, bi) => {
     let base = b.base, eaves = (b.eaves ?? b.top) - base;
     const key = String(b.attrs?.BU_ID ?? b.id);
@@ -455,8 +514,12 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       const n = r.edges.filter((e) => e.rebuilt).length;
       if (n) { all = r.tris; stats.wallsRebuilt = (stats.wallsRebuilt || 0) + n; }
     }
+    // (census class G, rule 34) the UrbIS triangles that overlap one already kept in their plane (fans of one roof
+    // polygon over each other, a wall given twice, a solid twice): cut to what is not drawn yet (viewer/coplanarClean.js)
+    if (clean) all = clean(all);
     const wallTris = all.length;
-    for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) all.push(o); }
+    { const rt = []; for (let t = b.roof.first; t < b.roof.first + b.roof.count; t++) { const o = triOf(P, I, t); if (o) rt.push(o); } all.push(...(clean ? clean(rt) : rt)); }
+    if (!all.length) { stats.solidsGone = (stats.solidsGone || 0) + 1; return; }   // (a solid wholly under another: Av. Hamoir 8's second copy)
     const smooth = smoother(all);
     // --- walls: group triangles into planar faces
     const faces = new Map();
@@ -581,13 +644,18 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         return out;
       };
       const doorHere = street && width >= 1.6 && faceEaves >= 2.8 && !(sw > 0.5);
-      if (btype === TYPE.MAITRE && doorHere && !kitOn) {
+      // (rule 34) the painted façade has a door on every street face: two parallel street faces a step apart (a recessed
+      // porch, a stepped front: Homborch 10) put two flights in one place, their treads coplanar; the second is left out
+      const stepPlan = btype === TYPE.MAITRE && doorHere && !kitOn ? balcPlan(at, f, du - 0.79, du + 0.79, 0, 0.51, 0.95) : null;
+      if (stepPlan && opts.zfight !== false && stepPlans.some((Q) => obbHit(stepPlan, Q, -0.01))) stats.stepsShared = (stats.stepsShared || 0) + 1;
+      else if (stepPlan) {
+        stepPlans.push(stepPlan);
         // three 17 cm steps up to the raised door (TYPE_GRID raise 0.51 m): a landing and two treads, each lower one 2 cm
         // wider a side (no coplanar end caps), run 0.3 m into the ground
         const g = opts.ground ? opts.ground(tx * (u0 + du) + f.nx * (dd + 0.6), tz * (u0 + du) + f.nz * (dd + 0.6)) : base;
         const foot = Math.min(base, Number.isFinite(g) ? g : base) - 0.3;
         for (const [y, d, hw] of [[0.51, 0.35, 0.75], [0.34, 0.65, 0.77], [0.17, 0.95, 0.79]])
-          box(D, at(du - hw), at(du + hw), base + y, base + y - foot, d, f.nx, f.nz, [0.15, 0.155, 0.16]);
+          box(D, at(du - hw), at(du + hw), base + y, base + y - foot, d, f.nx, f.nz, [0.15, 0.155, 0.16], false, opts.zfight === false);   // (rule 34) no soffits: the three are buried 0.3 m in one plane (24,900 coplanar pairs city-wide)
         stats.typeSteps = (stats.typeSteps || 0) + 1;
       }
       if ((btype === TYPE.DECO || btype === TYPE.BELETAGE || btype === TYPE.BLOCK) && doorHere) {
@@ -595,6 +663,45 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         const sk = storeyFit(Math.fround(faceEaves), opts.storeys !== false, btype);
         const y = base + 0.72 * sk.G + 0.22, hw = btype === TYPE.BLOCK ? 1.4 : 0.85;
         if (faceEaves > 0.72 * sk.G + 1.2 && on(du - hw, y - base - 0.05) && on(du + hw, y - base - 0.05)) { box(D, at(du - hw), at(du + hw), y, 0.1, btype === TYPE.BLOCK ? 1.1 : 0.7, f.nx, f.nz, [0.5, 0.49, 0.47]); stats.canopies = (stats.canopies || 0) + 1; }
+      }
+      /** (rule 27) the parts of the run [a, c] where a balcony 0.16 m under to 1.0 m over its floor (y0..y1) and D0 deep
+       *  is clear of every balcony already placed in the tile (an inside corner: the other face's balconies) and of
+       *  building mass (its own roof over the slab there, a neighbour standing higher), 2 cm apart; 0.25 m steps */
+      function balcClear(f, at, a, c, y0, y1, D0) {
+        const hits = (P, list) => list.some((Q) => obbHit(P, Q, 0.02)) || wallHit(P);
+        // its own building's other walls standing in the balcony's box (an inside corner's other wing); NOT a roof high
+        // over it (an upper storey overhanging a loggia: the balcony stands under it) nor a lower roof (a terrace)
+        const walls = [];
+        for (const g of live) if (g !== f) for (const { p, n } of g.tris) {
+          if (Math.abs(n[1]) > 0.3) continue;
+          let ylo = Infinity, yhi = -Infinity; for (const v of p) { ylo = Math.min(ylo, v[1]); yhi = Math.max(yhi, v[1]); }
+          if (yhi <= y0 + 0.01 || ylo >= y1 - 0.01) continue;
+          let best = -1, A = null, B = null;
+          for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) { const L = Math.hypot(p[i][0] - p[j][0], p[i][2] - p[j][2]); if (L > best) { best = L; A = p[i]; B = p[j]; } }
+          if (best > 0.01) walls.push([A[0], A[2], B[0], B[2]]);
+        }
+        const wallHit = (P) => {
+          for (const [ax, az, bx, bz] of walls) if (segObb(ax, az, bx, bz, P, 0.02)) return true;
+          const k = Math.max(1, Math.ceil((P.c - P.a) / 0.5));                    // every <= 0.5 m, both ends
+          for (let i = 0; i <= k; i++) for (const d of [0.4, D0 - 0.03]) {
+            const [x, , z] = at(P.a + (P.c - P.a) * i / k, d);
+            const r = ownRoof(bi, x, z); if (r > y0 + 0.12 && r < y1 + 0.5) return true;   // its own roof sloping through it
+            const o = otherAt(x, z, bi); if (o >= 0 && doc.buildings[o].top > y0) return true;
+          }
+          return false;
+        };
+        const whole = balcPlan(at, f, a, c, y0, y1, D0);
+        const near = balcPlans.filter((Q) => Q.y0 < y1 && y0 < Q.y1 && obbHit(whole, Q, 0.02));
+        if (!near.length && !wallHit(whole)) return [[a, c]];
+        const out = []; let s0 = null;
+        for (let u = a; u < c - 1e-6; u += 0.25) {
+          const e = Math.min(u + 0.25, c), clear = !hits(balcPlan(at, f, u, e, y0, y1, D0), near);
+          if (clear && s0 === null) s0 = u;
+          if ((!clear || e >= c - 1e-6) && s0 !== null) { const r = clear ? e : u; if (r - s0 >= 1.2) out.push([s0, r]); s0 = null; }
+        }
+        stats.balcCut = (stats.balcCut || 0) + 1; if (near.length) stats.balcCutCorner = (stats.balcCutCorner || 0) + 1;
+        if (!out.length) stats.balcDropped = (stats.balcDropped || 0) + 1;
+        return out;
       }
       if (btype === TYPE.BLOCK && width >= 5 && hash01(kk + "|balc") < 0.65) {
         // BALCONIES on every upper storey: a 16 cm slab 1.25 m deep and a 1.0 m parapet on its front edge (concrete,
@@ -605,15 +712,31 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         const cont = hash01(kk + "|cont") < 0.6;
         const spans = cont ? [[0.35, width - 0.35]] : [];
         if (!cont) for (let i = 0; i < nb; i += 2) spans.push([0.55 + bw * i + 0.15, Math.min(0.55 + bw * Math.min(i + 2, nb) - 0.15, width - 0.35)]);
-        const D0 = 1.25, PT = 0.06;
+        const D0 = 1.25, PT = 0.06, SC = [0.4, 0.39, 0.37];
         for (let fl = 1; fl < 40; fl++) {
           const y = sk.G + (fl - 1) * sk.S;                     // the storey's floor over the ground-floor line
           if (y + 2.2 > faceEaves) break;
-          for (const [a, c] of spans.flatMap(([a0, c0]) => runsOn(a0, c0, y - 0.1, y + 1.05))) {
-            if (c - a < 1.2) continue;
-            box(D, at(a), at(c), base + y, 0.16, D0 - PT, f.nx, f.nz, [0.4, 0.39, 0.37]);                       // slab
-            box(D, at(a, D0 - PT), at(c, D0 - PT), base + y + 1.0, 1.16, PT, f.nx, f.nz, pc, true);               // parapet
-            stats.balconies = (stats.balconies || 0) + 1;
+          const runs = spans.flatMap(([a0, c0]) => runsOn(a0, c0, y - 0.1, y + 1.05)).filter(([a, c]) => c - a >= 1.2);
+          if (!BALC) {
+            // (?balcony=old) open at the sides: slab + front parapet only (census class B)
+            for (const [a, c] of runs) {
+              box(D, at(a), at(c), base + y, 0.16, D0 - PT, f.nx, f.nz, SC);                                   // slab
+              box(D, at(a, D0 - PT), at(c, D0 - PT), base + y + 1.0, 1.16, PT, f.nx, f.nz, pc, true);           // parapet
+              stats.balconies = (stats.balconies || 0) + 1;
+            }
+            continue;
+          }
+          // closed (rule 27): each run cut to where it is clear of other balconies and walls, then runs that touch
+          // side by side (gap < 2 panels) chained into one balcony with ONE shared divider between them
+          const ok = runs.flatMap(([a, c]) => balcClear(f, at, a, c, base + y - 0.16, base + y + 1.0, D0)).sort((p, q) => p[0] - q[0]);
+          for (let i = 0; i < ok.length; ) {
+            let j = i; const mids = [];
+            while (j + 1 < ok.length && ok[j + 1][0] - ok[j][1] < 2 * PT + 0.05) { mids.push((ok[j][1] + ok[j + 1][0]) / 2); j++; }
+            const a = ok[i][0], c = ok[j][1];
+            balcony(D, f, at, tx, tz, a, c, mids, base + y, D0, PT, pc, SC);
+            balcPlans.push(balcPlan(at, f, a, c, base + y - 0.16, base + y + 1.0, D0));
+            stats.balconies = (stats.balconies || 0) + 1; stats.balcDividers = (stats.balcDividers || 0) + mids.length;
+            i = j + 1;
           }
         }
       }
@@ -990,6 +1113,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     }
   });
   emitStrips(D, SD, stats);
+  if (clean) stats.coplanar = { cut: clean.stats.cut, dropped: clean.stats.dropped, pieces: clean.stats.pieces, m2: Math.round(clean.stats.m2) };
   const f32 = (a) => new Float32Array(a);
   return {
     walls: { position: f32(W.position), normal: f32(W.normal), aWall: f32(W.aWall), aBld: f32(W.aBld), aFN: f32(W.aFN), aCel: f32(W.aCel),

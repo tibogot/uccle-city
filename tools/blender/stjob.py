@@ -500,7 +500,10 @@ def chapel(k):
     for i in range(nf):
         a, b = arc[i], arc[i + 1]
         N = (b - a).cross(Z).normalized()
-        if N.dot((a + b) / 2 - c) < 0: N = -N
+        # outward = away from the PLAN's centre (the drum axis at the origin), not from the arc's centre: a shallow
+        # arc's fitted centre can lie OUTSIDE the church (heroshell 2026-11-18: one chapel's walls faced inward, the
+        # street saw through them: census class A, 20 m2)
+        if N.dot((a + b) / 2) < 0: N = -N
         fr = Frame((a + b) / 2, N)
         L = (b - a).length
         ops = [Arch(0, 2.3, 4.7, 0.78, sur=0.16)] if (1 <= i <= nf - 2 and L > 1.5 and not small) else []
@@ -511,9 +514,16 @@ def chapel(k):
     bis = ang_dir(45 * k + 22.5)
     D = bis * (A / math.cos(math.pi / 8))
     top_z = CH_TOP - (1.0 if small else 0.0)
-    X = c + Z * top_z
+    # the roof's apex and the eave overhang go from a centre INSIDE the chapel: the fitted arc centre, unless it lies
+    # outside (a shallow arc, centre beyond the arc as seen from the plan's origin: heroshell 2026-11-18, that chapel's
+    # roof leaned outward and the street saw its underside); then the arc's mean point pulled 1.5 m towards the drum
+    cc = c
+    if c.length > pm.length:
+        mean = sum(arc, Vector((0, 0, 0))) / len(arc)
+        cc = mean - mean.normalized() * 1.5
+    X = cc + Z * top_z
     ov = 0.3
-    E = [c + (p - c) * ((rad + ov) / rad) + Z * (eave - ov * 0.7) for p in arc]
+    E = [p + (p - cc).normalized() * ov + Z * (eave - ov * 0.7) for p in arc]
     for i in range(nf): face_up([X, E[i], E[i + 1]], ROOF, SLATE)
     for i in (1, nf - 1): beam(X, E[i], Z, 0.06, 0, 0.08, ROOF, LEAD)
     # lean-to parts between the apex, the drum corner and the wing walls (mostly hidden; closes the roof)
@@ -1007,7 +1017,7 @@ ground = load_ground()
 
 # ------------------------------------------------------------------------------------------------ AO bake
 scn.render.engine = "CYCLES"
-scn.cycles.device = "CPU"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import stpierre_common as _SCg; _SCg.use_gpu(scn)      # OptiX (heroshell: was the CPU)
 if scn.world is None: scn.world = bpy.data.worlds.new("World")
 scn.world.light_settings.distance = 5.0
 ao_img = bpy.data.images.new("stjob_ao", AO_PX, AO_PX, alpha=False, float_buffer=False)

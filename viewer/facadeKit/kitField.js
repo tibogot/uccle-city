@@ -15,7 +15,9 @@
 //   const kit = await loadKitField({ base });  scene.add(kit.group);  kit.addTile(name, data, wallsMesh);
 //   kit.update(eye, camera, dt);  kit.removeTile(name);  kit.stats
 import * as THREE from "three/webgpu";
-import { kitOpaqueMaterial, kitGlassMaterial, loadKitMaterialSource } from "./kitMaterials.js";
+import { kitOpaqueMaterial, kitGlassMaterial, kitCardMaterial, loadKitMaterialSource } from "./kitMaterials.js";
+import { JITTER_OLD, kitCards } from "../thinBars.js";
+import { atlasTexture } from "../thinCards.js";
 import { kitRanges, kitFades } from "./kitFade.js";
 import { STRIDE } from "./placement.js";
 import { frameBudget } from "../instanceStream.js";
@@ -29,9 +31,13 @@ const MOVE = 2.5, MARGIN = 5, BUDGET = 0.25;      // m, m, ms a frame (docs/perf
 const TURN = (8 * Math.PI) / 180, CONE_MARGIN = (25 * Math.PI) / 180;
 const fwd = new THREE.Vector3(), dirTmp = new THREE.Vector3(), dirTmp2 = new THREE.Vector3();
 let coneHalf = Math.PI;
-const KINDS = ["opaque", "glass"];
+//   - (jitter, docs/JITTER.md; ?jitter=old none) a third kind, CARD: the pieces' thin strokes (balcony railings, grilles,
+//     glazing bars: 8-30 mm, under 1 px beyond 6-28 m) as their coverage on blended cards (viewer/thinBars.js kitCards,
+//     baked at load from the LOD0: one atlas); the strokes themselves draw only while >= 1.3 px (aKitW.w); +1 multi-draw
+//     per LOD, no shadow.
+const KINDS = JITTER_OLD ? ["opaque", "glass"] : ["opaque", "glass", "card"];
 /** the per-instance attributes each kind's material reads (kitMaterials.js): only these are bound */
-const INST_ATTRS = { opaque: ["aKitI", "aKitJ"], glass: ["aKitI", "aKitJ", "aKitF"] };
+const INST_ATTRS = { opaque: ["aKitI", "aKitJ"], glass: ["aKitI", "aKitJ", "aKitF"], card: ["aKitI", "aKitJ"] };
 
 export async function loadKitField({ base = new URL("../../models/facadekit/", import.meta.url).href, lab = false } = {}) {
   const [json, bin] = await Promise.all([fetch(base + "kit.json").then((r) => r.json()), fetch(base + "kit.bin").then((r) => r.arrayBuffer()), loadKitMaterialSource()]);
@@ -52,9 +58,32 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
         index: new THREE.BufferAttribute(idx, 1), tris: s.iCount / 3 }];
     })));
   }
-  // materials: opaque + glass per LOD (4), shared by every piece and tile
+  // (jitter) the thin strokes' cards: baked from the LOD0 (their flags into aKitW.w before any mesh or interleave reads it)
+  let cardTex = null, cardStats = null;
+  if (!JITTER_OLD) {
+    const src = {};
+    for (const [name, p] of Object.entries(json.pieces)) {
+      src[name] = { mode: p.slice || p.kind, lods: geo[name].map((l) => (l.opaque ? { pos: l.opaque.attrs.position.array, index: l.opaque.index.array, kv: l.opaque.attrs.aKitV.array, kw: l.opaque.attrs.aKitW.array } : null)) };
+    }
+    const K = kitCards(src, json);
+    for (const [name, F] of Object.entries(K.flags)) F.forEach((f, lod) => {
+      if (!f) return;
+      const kw = geo[name][lod].opaque.attrs.aKitW.array;
+      for (let i = 0; i < f.length; i++) if (f[i]) kw[i * 4 + 3] = f[i];
+    });
+    cardTex = atlasTexture(K.atlas, "facade kit cards");
+    for (const [name, c] of Object.entries(K.cards)) {
+      const n = c.pos.length / 3;
+      const card = { attrs: { position: new THREE.Float32BufferAttribute(c.pos, 3), normal: new THREE.Float32BufferAttribute(c.nrm, 3), uv: new THREE.Float32BufferAttribute(c.uv, 2),
+        aKitV: new THREE.BufferAttribute(Uint8Array.from(c.kv), 4, true), aKitW: new THREE.BufferAttribute(Uint8Array.from(c.kw), 4, true) },
+      index: new THREE.BufferAttribute(n > 65535 ? Uint32Array.from(c.idx) : Uint16Array.from(c.idx), 1), tris: c.idx.length / 3 };
+      for (let lod = 0; lod < json.lods; lod++) geo[name][lod].card = card;      // (the same card in both LODs' sets)
+    }
+    cardStats = { ...K.stats, atlas: `${K.atlas.width} x ${K.atlas.height}`, kept: K.stats.kept.length };
+  }
+  // materials: opaque + glass (+ card) per LOD, shared by every piece and tile
   const mats = {};
-  const matFor = (kind, lod) => (mats[`${kind}|${lod}`] ??= kind === "glass" ? kitGlassMaterial(lod, { lab }) : kitOpaqueMaterial(lod, { lab }));
+  const matFor = (kind, lod) => (mats[`${kind}|${lod}`] ??= kind === "glass" ? kitGlassMaterial(lod, { lab }) : kind === "card" ? kitCardMaterial(lod, cardTex, { lab }) : kitOpaqueMaterial(lod, { lab }));
   const group = new THREE.Group();
   group.name = "facade-kit";
   const meshes = new Map();           // key piece|lod|kind -> { mesh, piece, lod, kind, n, cap, arrays }
@@ -367,7 +396,7 @@ export async function loadKitField({ base = new URL("../../models/facadekit/", i
   }
   /** triangles per piece and LOD (the report) */
   const pieceTris = Object.fromEntries(Object.entries(json.pieces).map(([k, p]) => [k, p.tris]));
-  return { group, meshes, sets, update, addTile, removeTile, stats, json, geo, mats, matFor, pieceInfo, pieceTris, rebucket, forceRebucket: () => { dirty = true; } };
+  return { group, meshes, sets, update, addTile, removeTile, stats, json, geo, mats, matFor, pieceInfo, pieceTris, rebucket, forceRebucket: () => { dirty = true; }, cards: cardStats };
 }
 
 const _box6 = new Float64Array(6);

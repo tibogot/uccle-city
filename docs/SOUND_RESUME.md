@@ -8,7 +8,7 @@ To continue:
 2. Re-render after a change: serve the repo, run `python tools/sound/save_server.py 8827 <dir>`, open
    `labs/sound-render.html?run=all&save=8827`, then `python tools/sound/pack_renders.py <dir> docs/sound/renders`
    and `python tools/sound/analyze_renders.py docs/sound/<sheet>.png docs/sound/renders/<files>.wav`.
-3. Into the city: see "Next" in `docs/SOUND.md` (camera listener, drive-collider occluders, carFleet / tramline sources).
+3. Into the city: done, `docs/SOUND_CITY.md` (viewer/audio/citySound.js, gate row `citysound`).
 
 Gotchas learned:
 - Offline renders: never use `param.value` to read automation state (it is the initial value until rendered); use

@@ -18,6 +18,7 @@
 import * as THREE from "three/webgpu";
 import { PACK_SOURCES, packMaterial, FLEET_SOURCE, CARS_OLD, GLASS_PASS, glassGeometry } from "./drive/carPacks.js";
 import { MultiDrawSet, multiDrawOK } from "./multiDraw.js";
+import { dentFrame } from "./drive/carDent.js";
 
 /** ?carmerge=old: one InstancedMesh per (type, LOD, plain / fade): 26 scene + 11 shadow render objects in a street,
  *  instead of one multi-draw mesh per (material, shadow) (6 + 4; viewer/multiDraw.js, docs/perf/AUDIT.md step 13) */
@@ -147,7 +148,10 @@ class CarFleet {
           return { tris: m.I.length / 3, geo, W: m.W, plain: this.batch(geo, isNear ? near : far, k < 3, false), fade: this.batch(geo, isNear ? nearFade : farFade, k < 3, true) };
         });
         const x = c.extras || {};
-        types[c.id] = { lods, keepPaint: !!x.keepPaint, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])) };
+        // (claude/dent) the dent frame of the body (LOD0, wheels left out): the traffic's crumple shader (carDent.js)
+        const m0 = c.lods[0], W0 = m0.W;
+        const dent = dentFrame(m0.P, m0.K, W0 ? (i) => W0[i * 4 + 3] > 0.5 : null);
+        types[c.id] = { lods, dent, keepPaint: !!x.keepPaint, paint: new THREE.Color().setRGB(...(x.paint || [0.5, 0.5, 0.5])) };
         slice = Math.max(slice, performance.now() - s0);
       }
       this.types = types;

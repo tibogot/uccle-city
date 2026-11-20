@@ -9,7 +9,7 @@
 // placements from features.json (height from the LiDAR, a stable turn per tree), one shared set of
 // materials and built trees for every tile, and the sun from viewer/lighting.js.
 import * as THREE from "three/webgpu";
-import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform, attribute, select } from "three/tsl";
+import { positionGeometry, vec3, float, mix, smoothstep, mx_noise_float, normalGeometry, max, uniform, attribute, select, uniformArray, dot, sin, Fn, If, positionLocal } from "three/tsl";
 import { createStylizedTrees, lodMorph } from "../vendor/stylized-trees/stylizedTrees.js";
 import { branchShape } from "../vendor/stylized-trees/branchTree.js";
 import { bumpNormal } from "./tslkit.js";
@@ -19,7 +19,10 @@ import { env } from "./lighting.js";
 import { useTreeKit, startTreeKit } from "./treeKitCity.js";
 import { frameBudget, FadeSlots, Streamer, buildSource } from "./instanceStream.js";
 import { setMultiDrawRenderer, multiDrawOK, MultiDrawSet, MultiStreamPool } from "./multiDraw.js";
-import { wxMat } from "./weather/cityWeatherize.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
+import { wxMat } from "./weather/cityWeatherize.js";
+import { BUSH_OLD, BUSH_SHAPES, BUSH_SEED, BUSH_KINDS, BUSH_TYPES, BUSH_SHADOW, BUSH_END_MAX, BUSH_END_BAND, BUSH_GLOW, bushShape, bushExtent } from "./plants/bushes.js";
+import { wind, windAt, windPrev } from "./foliage/wind.js";
+import { setMotionDelta } from "./upscale.js";   // the weather (docs/WEATHER.md "City hookup"): gated, ?weather=old none
 
 // ---- the tree fields' re-buckets, spread over frames (docs/perf/AUDIT.md "instance pools"): within the city's
 // streaming budget a frame (viewer/instanceStream.js frameBudget, shared with the instance pools and the façade kit)
@@ -366,13 +369,22 @@ export function makeSpecies(def) {
    *  (t.turn: the lab's turntable; the city leaves it out) */
   function treePlacements(trees, ground, inTile, variantOf = variantOfIndex) {
     const placements = [];
+    // (drivecheck round 2: a tree's `vi`, viewer/streets/roadTrees.js, is the index its variant is picked by when trees
+    // before it were dropped: placements.vi[i]; none: the index, as before)
+    let vi = null;
     for (const t of trees) {
       if (!inTile(t.x, t.z)) continue;
-      const h = Math.max(3, t.height ?? 9), H = def.perVariantHeight ? VARIANT_HEIGHT[variantOf(placements.length)] : NATURAL_HEIGHT;
+      if (t.vi != null && !vi) vi = placements.map((_, k) => k);
+      const k = t.vi ?? placements.length;
+      if (vi) vi.push(k);
+      const h = Math.max(3, t.height ?? 9), H = def.perVariantHeight ? VARIANT_HEIGHT[variantOf(k)] : NATURAL_HEIGHT;
       placements.push([t.x, t.z, ground(t.x, t.z), t.turn ?? hash(t.z, t.x, 2) * Math.PI * 2, Math.min(1.8, Math.max(0.3, h / H))]);
     }
+    if (vi) placements.vi = vi;
     return placements;
   }
+  /** variantOf(i) of placement i: through placements.vi when the list had drops */
+  const byVi = (placements, vo) => (placements.vi ? (i) => vo(placements.vi[i]) : vo);
 
   /** Trees for a FAR-LOD tile (main.js loadLiteTile): the same trees as its full version, as impostors at any
    *  distance (null without impostors). Returns { mesh, update(cameraPos) }. */
@@ -381,7 +393,7 @@ export function makeSpecies(def) {
     if (kit) {
       const placements = treePlacements(trees, ground, inTile);
       if (!placements.length) return null;
-      const release = kit.register(placements, variantOfIndex, "lite");
+      const release = kit.register(placements, byVi(placements, variantOfIndex), "lite");
       const mesh = new THREE.Group();
       mesh.name = "tree-kit-far-tile";
       return { mesh, update() {}, count: placements.length, dispose: release };
@@ -389,7 +401,8 @@ export function makeSpecies(def) {
     if (!impMatFar) return null;
     const placements = treePlacements(trees, ground, inTile);
     if (!placements.length) return null;
-    const imp = impostorField(placements, placements.map((_, i) => variantOfIndex(i)), impMatFar, { near: 0 });
+    const vf = byVi(placements, variantOfIndex);
+    const imp = impostorField(placements, placements.map((_, i) => vf(i)), impMatFar, { near: 0 });
     imp.mesh.boundingSphere = fieldSphere(placements);
     imp.mesh.frustumCulled = true;
     // (the far tiles' re-buckets spread over frames like the near fields', see relodTurn)
@@ -408,8 +421,9 @@ export function makeSpecies(def) {
   /** A tile's trees. opts.variantOf(i): the variant of tree i (the lab; default the vendor's hash of the index). */
   function buildField(trees, ground, inTile, opts = {}) {
     calibrate();
-    const variantOf = opts.variantOf ?? variantOfIndex;
-    const placements = treePlacements(trees, ground, inTile, variantOf);
+    const variantOf0 = opts.variantOf ?? variantOfIndex;
+    const placements = treePlacements(trees, ground, inTile, variantOf0);
+    const variantOf = byVi(placements, variantOf0);
     // perf pass 2 (docs/perf/AUDIT.md step 12): the street trees as ONE city-wide pool (?treepool=old = per tile)
     if (def.id === "street" && TREE_POOL && usePrepass && !opts.variantOf && multiDrawOK()) {
       pool ??= makeTreePool(shared, params(), VARIANTS, { kitRegister: kit ? (pl, vo) => kit.register(pl, vo, "full") : null });
@@ -419,7 +433,7 @@ export function makeSpecies(def) {
     holder.name = "StylizedTreesTile";
     const P = params();
     if (SMOOTH) P.maxDist = IMP.start.value;
-    const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: opts.variantOf ? { ...P, variantOf } : P });
+    const f = createStylizedTrees({ scene: holder, trees: placements, shared, variants: VARIANTS, params: opts.variantOf || placements.vi ? { ...P, variantOf } : P });
     const imp = impMat ? impostorField(placements, placements.map((_, i) => variantOf(i)), impMat) : null;
     if (imp) holder.add(imp.mesh);
     // the kit: this tile's far trees join the one city field (released when main.js disposes the tile: it calls
@@ -525,8 +539,17 @@ export function makeSpecies(def) {
     PARAMS = null;
   }
 
+  /** the city-wide pool without a tree field (the bushes join it: viewer/plants/cityPlants.js); null when the pool
+   *  path is off (?treepool=old, ?prepass=0, no multi-draw) */
+  function ensurePool() {
+    if (def.id !== "street" || !TREE_POOL || !usePrepass || !multiDrawOK()) return null;
+    calibrate();
+    pool ??= makeTreePool(shared, params(), VARIANTS, { kitRegister: kit ? (pl, vo) => kit.register(pl, vo, "full") : null });
+    return pool;
+  }
+
   const sp = {
-    def, shared, variants: VARIANTS, calibrate, buildField, buildFarField, dispose, treePlacements, variantOfIndex, params,
+    def, shared, variants: VARIANTS, calibrate, buildField, buildFarField, dispose, treePlacements, variantOfIndex, params, ensurePool,
     buildMs: 0, bakeMs: 0, get pool() { return pool; },
     get naturalHeight() { return NATURAL_HEIGHT; }, variantHeight: (v) => (def.perVariantHeight ? VARIANT_HEIGHT[v] : NATURAL_HEIGHT), get bake() { return impBake; }, get impMat() { return impMat; }, get impMatFar() { return impMatFar; },
   };
@@ -602,6 +625,9 @@ export const STREET = makeSpecies({
 export const treeParams = () => STREET.params();
 export const buildStylizedTreeField = (trees, ground, inTile) => STREET.buildField(trees, ground, inTile);
 export const buildFarTreeField = (trees, ground, inTile) => STREET.buildFarField(trees, ground, inTile);
+/** the bushes' pool (the street trees' city-wide pool, viewer/plants/bushes.js): null with ?bushes=old or without
+ *  the pool path (the plants then draw the shrubs as before) */
+export const bushPool = () => (BUSHES ? STREET.ensurePool() : null);
 
 // ------------------------------------------------------------------------------------------------ the city tree pool
 // Perf pass 2 (docs/perf/AUDIT.md step 12; ?treepool=old = the per-tile fields). Before: every loaded tile had its own
@@ -615,30 +641,92 @@ export const buildFarTreeField = (trees, ground, inTile) => STREET.buildFarField
 const TREE_POOL = !/[?&]treepool=old(&|$)/.test(location.search);
 const treeFades = new FadeSlots();
 
+// BUSHES in the pool (claude/bushes, viewer/plants/bushes.js; ?bushes=old: the Blender plants as before): the shrubs
+// are extra PARTS of the same multi-draw sets (crowns of leaf cards without bark, built by the vendor from bush shapes),
+// drawn by the same leaf views: 0 more draws. treeSlot carries slot + 128 x kind + 1024 x far end (m): kind 0 = a tree
+// (its value unchanged), 1..6 = the shrub type (its leaf colour on the trees' palette, BUSH_TYPES tint), the end the
+// bush's dithered fade-out (from > 40 m: tools/audit/bushGate.mjs). Bushes sway in the foliage wind (the plants' and
+// hedges' wind, viewer/foliage/wind.js, with its motion vectors) and cast sun shadows to BUSH_SHADOW.end.
+const BUSHES = !BUSH_OLD;
+const bushTint = uniformArray([new THREE.Vector4(1, 1, 1, 0), ...BUSH_KINDS.map((t) => new THREE.Vector4(...BUSH_TYPES[t].tint))], "vec4");
+/** the decoded treeSlot: { s: the fade slot, k: the kind (0 tree), e: the far end (m) } */
+function slotParts() {
+  const v = attribute("treeSlot", "float");
+  const e = v.add(0.5).div(1024).floor(), r = v.sub(e.mul(1024)), k = r.add(0.5).div(128).floor();
+  return { s: r.sub(k.mul(128)), k, e };
+}
+
 function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
+  const NB = BUSHES ? BUSH_SHAPES.length : 0;
+  const { d: lodD } = lodMorph(shared.U);
   const slotKeep = () => {
-    const f = treeFades.fade(attribute("treeSlot", "float")), n = ditherNoise();
-    return select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
+    const { s, k, e } = slotParts();
+    const f = treeFades.fade(s), n = ditherNoise();
+    const tile = select(f.greaterThan(1.5), n.greaterThanEqual(f.sub(2)), n.lessThan(f));
+    if (!NB) return tile;
+    // a bush's far end: dithered out over its last 20 % (per instance: the whole bush dissolves, never in the near range)
+    return tile.and(k.lessThan(0.5).or(n.lessThan(float(1).sub(rampTo(lodD, e, e.mul(BUSH_END_BAND))))));
   };
+  // the bushes' shadows end at BUSH_SHADOW.end (dithered over its band); the trees' as before
+  const bushShadowKeep = () => { const { k } = slotParts(); return k.lessThan(0.5).or(ditherNoise().lessThan(float(1).sub(rampTo(lodD, float(BUSH_SHADOW.end), float(BUSH_SHADOW.band))))); };
+  // the bush's leaf colour on the trees' palette (rgb x, then toward its grey); trees x 1
+  const tintOf = (c) => {
+    const t = bushTint.element(slotParts().k.toInt()), m = c.mul(t.xyz);
+    return mix(m, vec3(dot(m, vec3(0.2126, 0.7152, 0.0722))), t.w);
+  };
+  // the bushes' sway (world metres): the crown leans with the wind (height in the bush squared) + each card flutters;
+  // built eagerly (windPrev rebuilds it at last frame's time for the motion vectors), evaluated for bushes only
+  const bushWindOf = () => {
+    const foot = attribute("treePos", "vec3"), card = attribute("card", "vec4");
+    const w = windAt(foot.xz), hW = positionLocal.y.sub(foot.y).max(0), hA = card.w.clamp(0, 1);
+    const ph = positionLocal.x.mul(3.1).add(positionLocal.z.mul(2.3)).add(positionLocal.y.mul(1.7));
+    const fl = sin(wind.uTime.mul(6.0).add(ph)).mul(w.z.mul(0.25).add(0.08)).mul(wind.uStrength).mul(hW).mul(0.05);
+    const lean = w.xy.mul(hA.mul(hA)).mul(hW.add(0.2)).mul(0.16);
+    return vec3(lean.x.add(fl), fl.mul(0.4), lean.y.sub(fl.mul(0.6)));
+  };
+  const onlyBush = (node) => Fn(() => { const o = vec3(0, 0, 0).toVar(); If(slotParts().k.greaterThan(0.5), () => { o.assign(node); }); return o; })();
+  const bushWind = NB ? onlyBush(bushWindOf()) : null;
+  const bushMotion = NB ? (() => { const [o0, o1] = windPrev(bushWindOf); return onlyBush(o1.sub(o0)); })() : null;
   const own = (base, name) => { const m = cloneMaterial(base); m.name = name; m.userData.shared = true; m.userData.noFade = true; return m; };
   const and = (a, b) => (a ? a.and(b) : b);
   const mats = [shared.leafMat, shared.leafFar].map((leaf, far) => {
     const pm = prepassMaterials(leaf), tr = far ? shared.trunkFar : shared.trunkMat;
     const depth = own(pm.depth, `${pm.depth.name}:pool`); depth.maskNode = and(pm.depth.maskNode, slotKeep());
     const colour = own(pm.colour, `${pm.colour.name}:pool`); colour.maskShadowNode = and(pm.colour.maskShadowNode, slotKeep());
+    if (NB && !far) {
+      // (the depth pass and the EQUAL colour pass: the same position graph)
+      depth.positionNode = pm.depth.positionNode.add(bushWind);
+      colour.positionNode = pm.colour.positionNode.add(bushWind);
+      setMotionDelta(colour, bushMotion);
+      colour.maskShadowNode = colour.maskShadowNode.and(bushShadowKeep());
+      colour.colorNode = tintOf(pm.colour.colorNode);
+      // (the bushes' sunlit tips: their light through the leaves + fill at BUSH_GLOW: not yellow-white next to the trees)
+      if (pm.colour.emissiveNode) colour.emissiveNode = tintOf(pm.colour.emissiveNode).mul(select(slotParts().k.greaterThan(0.5), float(BUSH_GLOW), float(1)));
+    }
     const bark = own(tr, `${tr.name || "stylized-bark"}:pool`); bark.maskNode = and(tr.maskNode, slotKeep()); bark.maskShadowNode = and(tr.maskShadowNode, slotKeep());
     return { depth, colour, bark };
   });
+  // the bush crowns: the vendor's builder with the bush shapes, the trees' uniforms and materials (no new material)
+  let bushGeoms = null;
+  const bushH = [];
+  if (NB) {
+    const bs = { U: shared.U, leafMat: shared.leafMat, trunkMat: shared.trunkMat, leafFar: shared.leafFar, trunkFar: shared.trunkFar, geoms: new Map() };
+    createStylizedTrees({ scene: new THREE.Group(), trees: [], shared: bs, variants: NB, params: { ...P, shape: bushShape, seed: BUSH_SEED } });
+    bushGeoms = bs.geoms;
+    for (let v = 0; v < NB; v++) bushH[v] = bushExtent(bushGeoms.get(`${v}:0`).leaves).top;
+  }
   const group = new THREE.Group(); group.name = "trees-pool";
   const attrs = [["instanceMatrix", 16], ["treeXf", 3], ["treePos", 3], ["treeSlot", 1]];
   const sets = [0, 1, 2].map((l) => {
-    const set = new MultiDrawSet({ name: `trees-lod${l}`, parts: VARIANTS, attrs, cap0: l === 2 ? 1024 : 256 });
+    const set = new MultiDrawSet({ name: `trees-lod${l}`, parts: VARIANTS + NB, attrs, cap0: l === 2 ? 1024 : 256 });
     set.pad = 26;
     const M = mats[l === 2 ? 1 : 0], cast = l <= SHADOW_LODS;
-    const leaves = set.addView({ geoms: Array.from({ length: VARIANTS }, (_, v) => shared.geoms.get(`${v}:${l}`).leaves), material: M.colour, castShadow: cast, name: `trees-leaves-lod${l}` });
+    // (bushes: LOD 0 and 1 only; no bark)
+    const bushLeaves = Array.from({ length: NB }, (_, v) => (l < 2 ? bushGeoms.get(`${v}:${l}`).leaves : null));
+    const leaves = set.addView({ geoms: [...Array.from({ length: VARIANTS }, (_, v) => shared.geoms.get(`${v}:${l}`).leaves), ...bushLeaves], material: M.colour, castShadow: cast, name: `trees-leaves-lod${l}` });
     const twin = set.addView({ shareOf: leaves, material: M.depth, castShadow: false, receiveShadow: false, renderOrder: -1, name: `trees-leaves-depth-lod${l}` });
     twin.mesh.userData.depthPrepass = true;
-    const bark = set.addView({ geoms: Array.from({ length: VARIANTS }, (_, v) => shared.geoms.get(`${v}:${l}`).trunk), material: M.bark, castShadow: cast, name: `trees-bark-lod${l}` });
+    const bark = set.addView({ geoms: [...Array.from({ length: VARIANTS }, (_, v) => shared.geoms.get(`${v}:${l}`).trunk), ...new Array(NB).fill(null)], material: M.bark, castShadow: cast, name: `trees-bark-lod${l}` });
     for (const v of [leaves, twin, bark]) group.add(v.mesh);
     return set;
   });
@@ -648,13 +736,17 @@ function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
   const B0 = bands();
   // (StreamPool margin 0: one LOD per tree; the streamer's margin is only its outrun check: past it a gather is finished at once)
   const pools = Array.from({ length: VARIANTS }, (_, v) => new MultiStreamPool(`tree${v}`, B0.map(([l0, l1], l) => ({ set: sets[l], part: v, l0, l1, attrs: cols })), 0, 0));
-  const streamer = new Streamer({ name: "trees", pools, fades: treeFades, margin: 6, trigger: RELOD_DUE, budget: 0.3 });
+  // the bushes: LOD 0 to the trees' first switch (the same card morph before it), LOD 1 to the furthest bush end
+  // (each bush dithers out at its own end in the shader)
+  const bushBands = (B) => [B[0], [B[0][1], BUSH_END_MAX + (P.lodSlack ?? 0)]];
+  const bushPools = Array.from({ length: NB }, (_, v) => new MultiStreamPool(`bush${v}`, bushBands(B0).map(([l0, l1], l) => ({ set: sets[l], part: VARIANTS + v, l0, l1, attrs: cols })), 0, 0));
+  const streamer = new Streamer({ name: "trees", pools: [...pools, ...bushPools], fades: treeFades, margin: 6, trigger: RELOD_DUE, budget: 0.3 });
   let bandKey = B0.flat().join(",");
   // the vendor field of no trees: its update() writes the shared uniforms from the params every frame (as each tile's did)
   const uni = createStylizedTrees({ scene: new THREE.Group(), trees: [], shared, variants: VARIANTS, params: P });
   uni.stats = () => {
     let trees = 0, tris = 0;
-    sets.forEach((s, l) => s.parts.forEach((p, v) => { const g = shared.geoms.get(`${v}:${l}`); trees += p.n; tris += p.n * (g.leaves.index.count + g.trunk.index.count) / 3; }));
+    sets.forEach((s, l) => s.parts.forEach((p, v) => { if (v >= VARIANTS) return; const g = shared.geoms.get(`${v}:${l}`); trees += p.n; tris += p.n * (g.leaves.index.count + g.trunk.index.count) / 3; }));
     return { trees, tris: Math.round(tris) };
   };
   window.__stylizedTrees = [uni];
@@ -701,6 +793,8 @@ function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
     if (key !== bandKey) {
       bandKey = key;
       for (const pl of pools) pl.meshes.forEach((m, l) => { m.d0 = B[l][0]; m.d1 = B[l][1]; });
+      const BB = bushBands(B);
+      for (const pl of bushPools) pl.meshes.forEach((m, l) => { m.d0 = BB[l][0]; m.d1 = BB[l][1]; });
       streamer.dirty = true;
     }
     // the tile fades: the holder's (lodFade.js Fader sets userData.fade on the tile's objects), 0 under a hidden ancestor
@@ -721,7 +815,39 @@ function makeTreePool(shared, P, VARIANTS, { kitRegister = null } = {}) {
     holder.dispose = dispose;
     return { group: holder, update: tick, count: placements.length, field: uni, imp: null, placements, dispose };
   }
-  const api = { group, sets, pools, streamer, fields, addField, tick, stats: () => sets.map((s) => s.stats()) };
+  /** a tile's bushes (viewer/plants/cityPlants.js): list = [x, y (the foot), z, yaw, height (m), variant, kind 1..6,
+   *  end (m)] x n; group: the tile's plants group (its fade, as the plants' own streamer reads it) */
+  function bushSources(list, slot) {
+    const by = Array.from({ length: NB }, () => []);
+    for (let o = 0; o < list.length; o += 8) by[list[o + 5]].push(o);
+    const out = {};
+    by.forEach((offs, v) => {
+      const n = offs.length; if (!n) return;
+      const M = new Float32Array(n * 16), X = new Float32Array(n * 3), Q = new Float32Array(n * 3), S = new Float32Array(n), C = new Float32Array(n * 4);
+      offs.forEach((o, i) => {
+        const x = list[o], y = list[o + 1], z = list[o + 2], rot = list[o + 3], s = list[o + 4] / bushH[v];
+        m4.makeRotationY(rot); m4.scale(sc.set(s, s, s)); m4.setPosition(x, y, z);
+        M.set(m4.elements, i * 16);
+        X[i * 3] = Math.cos(rot); X[i * 3 + 1] = Math.sin(rot); X[i * 3 + 2] = s;
+        Q[i * 3] = x; Q[i * 3 + 1] = y; Q[i * 3 + 2] = z;
+        S[i] = slot + 128 * list[o + 6] + 1024 * Math.round(list[o + 7]);
+        C[i * 4] = x; C[i * 4 + 1] = y; C[i * 4 + 2] = z; C[i * 4 + 3] = 0;
+      });
+      out[`bush${v}`] = buildSource(n, { instanceMatrix: [M, 16], treeXf: [X, 3], treePos: [Q, 3], treeSlot: [S, 1] }, C);
+    });
+    return out;
+  }
+  const addBushes = (id, grp, list) => { if (NB && list.length) streamer.addTile(`bush:${id}`, grp, (slot) => bushSources(list, slot)); };
+  const removeBushes = (id) => streamer.removeTile(`bush:${id}`);
+  /** the scene the pool draws in (the bushes can come before any tree tile) */
+  const attach = (scene) => { if (!group.parent && scene) scene.add(group); };
+  /** bushes held per LOD and their triangles */
+  const bushStats = () => {
+    const held = [0, 0], tris = [0, 0];
+    for (let l = 0; l < 2; l++) for (let v = 0; v < NB; v++) { const n = sets[l].parts[VARIANTS + v].n; held[l] += n; tris[l] += n * bushGeoms.get(`${v}:${l}`).leaves.index.count / 3; }
+    return { held, tris, heights: bushH.map((h) => +h.toFixed(2)) };
+  };
+  const api = { group, sets, pools, bushPools, streamer, fields, addField, tick, addBushes, removeBushes, attach, bushStats, bushes: NB > 0, stats: () => sets.map((s) => s.stats()) };
   window.__treePool = api;
   return api;
 }

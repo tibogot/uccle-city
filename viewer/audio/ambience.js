@@ -11,6 +11,7 @@ export class AmbienceBank {
   gusts() { return (this.c.gust ??= gustBuffer(this.ctx)); }
   playground(seed) { return (this.c["pg" + seed] ??= playgroundBuffer(this.ctx, seed)); }
   bark(seed, size = 1) { return (this.c["bk" + seed + "_" + size] ??= barkBuffer(this.ctx, seed, size)); }
+  murmur(seed) { return (this.c["mm" + seed] ??= murmurBuffer(this.ctx, seed)); }
   cubeCurve() { return (this.c.cube ??= Float32Array.from({ length: 257 }, (_, i) => { const x = i / 128 - 1; return x * x * x * 1.6; })); }
   // Leaf flutter: a control-rate random envelope (8 kHz) with 15-60 ms "flicks" (many leaves moving).
   flutter() {
@@ -113,6 +114,7 @@ export function createHumBed(bank) {
 
 // ---- rain bed ---------------------------------------------------------------------------------------------------
 // params: intensity 0..1 (light..heavy), mix of ground / roof / trees (by where the listener stands).
+const RAIN_SURF = ["ground", "roof", "trees"], RAIN_KEY = ["ground0", "ground1", "roof0", "roof1", "trees0", "trees1"];
 export function createRainBed(bank) {
   return (ctx, out) => {
     // Layers (surface x light/heavy) are built only while their weight is > 0 and torn down 3 s after it
@@ -129,8 +131,9 @@ export function createRainBed(bank) {
       params: { intensity: 0, ground: 1, roof: 0, trees: 0 },
       update(t) {
         const p = this.params, i = clamp(p.intensity), on = i > 0.01 ? 1 : 0, hv = clamp((i - 0.3) / 0.6);
-        for (const sf of ["ground", "roof", "trees"]) for (const h of [0, 1]) {
-          const w = (h ? hv * (0.4 + i) * 0.8 : (1 - hv) * on * (0.3 + i) * 0.7) * p[sf], key = sf + h;
+        for (let q = 0; q < 6; q++) {
+          const sf = RAIN_SURF[q >> 1], h = q & 1, key = RAIN_KEY[q];   // (no array / string made per update)
+          const w = (h ? hv * (0.4 + i) * 0.8 : (1 - hv) * on * (0.3 + i) * 0.7) * p[sf];
           if (w > 0.001) { const L = (layers[key] ??= layer(key, sf, h)); L.set(w, t); L.last = t; }
           else if (layers[key]) { layers[key].set(0, t); if (t - layers[key].last > 3) { layers[key].kill(t); delete layers[key]; } }
         }
@@ -352,6 +355,40 @@ export function playgroundBuffer(ctx, seed = 1) {
     }
   }, { seed: 1300 + seed, rms: 0.18, loop: true });
 }
+// ---- people: the murmur of a busy square / shopping street ----------------------------------------------------
+// Adults talking at a distance (the city's squares, shops, the market): slop-newyork's speech fragments with adult
+// speakers (f0 105-215 Hz, formants x0.92-1.12), ~7 conversations overlapping at random with turn-taking gaps, now and
+// then a laugh ("ha" pulses) or a call; low-passed ~2.6 kHz and decorrelated so up close it never resolves into words
+// (formant babble is the weakest synthesis: kept as a bed, at 10+ m, never a voice near the ear). 8 s loop.
+export function murmurBuffer(ctx, seed = 1) {
+  const talkers = [0, 1, 2, 3, 4, 5].map((k) => ({ pitch: [110, 125, 145, 185, 200, 215][k] * (0.95 + ((seed * 37 + k * 11) % 10) / 100), formants: k < 3 ? 0.92 + k * 0.04 : 1.04 + (k - 3) * 0.04, breath: 0.1 + k * 0.03 }));
+  const frags = [];
+  for (let i = 0; i < 18; i++) frags.push(speechFragment(ctx, talkers[i % talkers.length], 2100 + seed * 53 + i));
+  return bake(ctx, 8, ([d], sr, r) => {
+    const n = d.length;
+    const add = (buf, t0, g, rate = 1) => { const s = buf.getChannelData(0), i0 = Math.floor(t0 * sr); for (let j = 0; (j * rate) < s.length - 1; j++) { const i = (i0 + j) % n, x = j * rate, k = Math.floor(x); d[i] += (s[k] + (s[k + 1] - s[k]) * (x - k)) * g; } };
+    // conversations: each a run of fragments by two talkers, gaps of 0.1-0.6 s, then a pause
+    for (let c = 0; c < 7; c++) {
+      let t = r() * 8; const level = 0.25 + r() * 0.6, a = Math.floor(r() * frags.length);
+      for (let k = 0, m = 4 + Math.floor(r() * 6); k < m; k++) { add(frags[(a + k * 7 + (k % 2) * 3) % frags.length], t, level * (0.8 + r() * 0.4), 0.95 + r() * 0.1); t += 0.55 + r() * 0.6; }
+    }
+    // a laugh or two (voiced "ha" pulses ~5 / s, falling)
+    for (let k = 0; k < 2; k++) {
+      const t0 = r() * 7.2, f0 = 150 + r() * 90, i0 = Math.floor(t0 * sr), m = Math.floor(0.7 * sr), F1 = new Biquad("bandpass", 750, 3, sr), F2 = new Biquad("bandpass", 1250, 4, sr);
+      let ph = 0;
+      for (let j = 0; j < m; j++) {
+        const u = j / m; ph += f0 * (1.1 - 0.2 * u) / sr;
+        const x = ((ph % 1) < 0.4 ? 1 : -0.6) + (r() - 0.5) * 0.6, e = Math.max(0, Math.sin(TAU * 4.8 * u * 0.7)) ** 2 * (1 - u);
+        d[(i0 + j) % n] += (F1.run(x) + F2.run(x) * 0.6) * e * 0.3;
+      }
+    }
+    // distance: low-pass ~2.6 kHz, a little room smear (two short echoes)
+    const lp = new Biquad("lowpass", 2600, 0.7, sr), e1 = Math.floor(0.023 * sr), e2 = Math.floor(0.041 * sr);
+    const dry = Float32Array.from(d);
+    for (let i = 0; i < n; i++) d[i] = lp.run(dry[i] + 0.35 * dry[(i - e1 + n) % n] + 0.22 * dry[(i - e2 + n) % n]);
+  }, { seed: 1900 + seed, rms: 0.16, loop: true });
+}
+
 export function createPlaygroundVoice(ctx, buf, out, src, now) {
   const s = loopSource(ctx, buf, 1, (src.seed || 0) * 8), g = makeGain(ctx, 0); s.connect(g).connect(out);
   const G = smoothParam(g.gain, 0.6);

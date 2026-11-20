@@ -124,7 +124,7 @@ export function createTramVoice(ctx, bank, out, src, now) {
     const fan = own(makeFilter(ctx, "bandpass", 300, 0.8)), hum = osc("sine", 100), auxG = own(makeGain(ctx, 0.035)), humG = own(makeGain(ctx, 0.006));
     pink.connect(fan).connect(auxG).connect(mix); hum.connect(humG).connect(mix);
   }
-  let stick = 0, stickUntil = 0, stickB = 0, stickBUntil = 0;
+  const K = new Float64Array(4);          // the stick-slip state: stick, until, stickB, untilB (no heap number per write)
   return {
     update(t, s) {
       const v = Math.abs(s.speed || 0), roll = Math.pow(clamp(v / 12, 0, 1.4), 1.5);
@@ -134,8 +134,9 @@ export function createTramVoice(ctx, bank, out, src, now) {
       P.hiss(k * 0.05 + roll * 0.006, t);
       if (k > 0) {
         const Q = squeal.on(t);
-        if (t >= stickUntil) { stick = Math.random() < 0.5 ? 0.4 + Math.random() * 0.5 : 0; stickUntil = t + 0.2 + Math.random() * 1.6; }
-        if (t >= stickBUntil) { stickB = Math.random() < 0.35 ? Math.random() : 0; stickBUntil = t + 0.15 + Math.random() * 1.0; }
+        if (t >= K[1]) { K[0] = Math.random() < 0.5 ? 0.4 + Math.random() * 0.5 : 0; K[1] = t + 0.2 + Math.random() * 1.6; }
+        if (t >= K[3]) { K[2] = Math.random() < 0.35 ? Math.random() : 0; K[3] = t + 0.15 + Math.random() * 1.0; }
+        const stick = K[0], stickB = K[2];
         const [fa, fb] = s.squealHz || [1250, 3240], wander = 1 + (Math.random() - 0.5) * 0.008;
         Q.af(fa * wander, t); Q.hf(fa * 2 * wander, t); Q.bf(fb * (1 + (Math.random() - 0.5) * 0.006), t);
         Q.a(k * stick * 0.22, t); Q.h(k * stick * 0.05, t); Q.b(k * stickB * 0.1, t);

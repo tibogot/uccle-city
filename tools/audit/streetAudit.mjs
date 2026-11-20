@@ -28,6 +28,7 @@ const { tramPoleSites } = await imp("viewer/streets/tramPoles.js");
 const { placedLampSites } = await imp("viewer/streets/lampPlace.js");
 const { carSites, parkingClear, widthParking } = await imp("viewer/streets/parkPlace.js");
 const { buildTrafficGraph } = await imp("viewer/traffic/trafficGraph.js");
+const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");   // (one builder with the worker, rule 38)
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
@@ -129,7 +130,7 @@ for (const T of TILES) {
   // the width rule (parkPlace.js widthParking, the default since the coordinator's call): its cars vs the traffic lanes
   // and the free width left
   const wp = widthParking(roads, feats, bounds, fit);
-  const graphW = buildTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: wp.sites });   // as the worker builds it
+  const graphW = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: wp.sites, roofs: tile.roofs });   // as the worker builds it
   const wpLane = parkingClear(wp.sites, { graph: graphW }).onLane;
   const narrowStretches = graphW.nOff ? graphW.nOff[graphW.paths] : 0;
   const wpNarrow = parkingClear(wp.sites, { inside: (x, z) => driven.inside(x, z), nearest: driven.nearest }).narrow;

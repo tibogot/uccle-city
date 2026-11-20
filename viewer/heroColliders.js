@@ -23,6 +23,17 @@ export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvenda
 const CELL = 0.25, STEP = 0.12, BAND = [0.30, 1.30];
 const SLICE_OLD = new URLSearchParams(location.search).get("heroslice") === "old";
 const BAND_OLD = new URLSearchParams(location.search).get("colband") === "old";
+/** drivecheck (docs/DRIVECHECK.md, rule 27 provisional; ?heroground=old: as before): the car band (0.30-1.30 m over the
+ *  drive surface) was measured from driveMode.ground, which answers with the surface layer NEAREST THE CAR (state.y): built
+ *  in a poll while the car drove elsewhere, a car lower than ~73 m made the Verrewinkel bridge's band start on the
+ *  railway cutting 7.5 m under its deck: the abutments' and piers' feet became car walls with no height (1e4 / -1e4),
+ *  standing across Rue de Verrewinkel at both deck ends; and whatever the car's height, "the lowest surface within 1 m"
+ *  near the deck's edges was that cutting: spandrels, slab and road surface in the band, walls on the deck (136 / 99 m of
+ *  lanes blocked, tools/audit/driveCheck.mjs). Now the band is measured from the place's own layers
+ *  (viewer/drive/surfaceLayers.js): one pass over the top surface (blocks carry base = their lowest sample: a car on a
+ *  layer under them passes), one over the lower layer where there is one (top = their highest sample: a car on the deck
+ *  over them passes); on a deck only the deck (blockerSteps deckAt). */
+export const HERO_GROUND_OLD = new URLSearchParams(location.search).get("heroground") === "old";
 /** falcon2 (docs/perf/FALCON_STUTTER.md round 2, rule 22; ?heropoll=old: as before): the 2 s poll was one 37-66 ms task
  *  when a landmark's tiles came in: a scene.getObjectByName walk of the WHOLE scene per root name (~40 a poll, every
  *  2 s), a Box3 of the LOD0 per root per poll, the LOD0's world triangles in one go (heroTriangles: every vertex through
@@ -30,6 +41,14 @@ const BAND_OLD = new URLSearchParams(location.search).get("colband") === "old";
  *  their meshes and tiles cached), the triangles in <= POLL_MS slices, the blockers yield after POLL_MS. */
 export const HERO_POLL = new URLSearchParams(location.search).get("heropoll") !== "old";
 export const POLL_MS = 3;
+/** CLASS T (rule 39 + rule 25, docs/RAIL_T.md; ?rail=old: as before): a hero's car blockers exist exactly while the hero
+ *  is DRAWN. They were built as soon as ONE tile under the model was in and kept for the session, while the model itself
+ *  is hidden until its HOME tile is loaded (main.js: a bridge's group.visible follows its home tile; a landmark's root
+ *  leaves the scene with its tile): the Stalle viaduct (home D5) collided from C5 with nothing drawn. Now the poll
+ *  takes a built set out of the driver while its root is hidden / detached and puts it back when it shows again. */
+export const HERO_SHOWN = new URLSearchParams(location.search).get("rail") !== "old";
+/** the root and every parent visible, up to the scene */
+export const shownIn = (o, scene) => { for (let k = 0; o && k < 64; k++, o = o.parent) { if (!o.visible) return false; if (o === scene) return true; } return false; };
 
 // (falcon2: the LOD0 triangle soup moved to viewer/heroTris.js, a generator: sliced while playing, node-testable)
 export { soft, lod0, heroTriangles, heroTrianglesGen } from "./heroTris.js";
@@ -59,23 +78,77 @@ export function carBlockersSync(T, ground, opts = {}) {
   while (!r.done) r = it.next();
   return r.value;
 }
-function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
+/**
+ * drivecheck: the blockers of a soup from the place's surface layers (no car in it). layers(x, z) -> { top, low }
+ * (viewer/drive/surfaceLayers.js; low NaN where there is one layer). Async (yields like carBlockers).
+ */
+export async function layeredBlockers(T, layers, opts = {}) {
+  const [top, low, deckAt] = layerFns(layers);
+  const a = await carBlockers(T, top, { ...opts, heights: "top", deckAt });
+  return a.concat(await carBlockers(T, low, { ...opts, heights: "low" }));
+}
+export function layeredBlockersSync(T, layers, opts = {}) {
+  const [top, low, deckAt] = layerFns(layers);
+  return carBlockersSync(T, top, { ...opts, heights: "top", deckAt }).concat(carBlockersSync(T, low, { ...opts, heights: "low" }));
+}
+/** top / low / deck of layers(x, z), the last point's answer kept (the lattice asks each point twice in a row) */
+function layerFns(layers) {
+  let lx = NaN, lz = NaN, l = null;
+  const at = (x, z) => { if (x !== lx || z !== lz) { lx = x; lz = z; l = layers(x, z); } return l; };
+  return [(x, z) => at(x, z).top, (x, z) => { const v = at(x, z).low; return Number.isFinite(v) ? v : Infinity; }, (x, z) => at(x, z).deck];
+}
+// heights: null = walls with no height (as before); "top" = base at the rect's lowest sample (a car on a layer under it
+// passes, carEnv heightClear); "low" = top at the rect's highest sample (a car on a layer over it passes). A rect then
+// merges only cells of one 0.5 m height step, so its span stays the wall's own.
+// deckAt(x, z) -> true on a road deck: there the band is measured from the deck (and the street that joins it level),
+// never from the cutting / ground beside or under it (drivecheck, rule 27).
+function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall, heights = null, deckAt = null } = {}) {
   const b = boxOf(T), x0 = b.x0 - 0.5, z0 = b.z0 - 0.5;
   const nx = Math.ceil((b.x1 + 0.5 - x0) / CELL), nz = Math.ceil((b.z1 + 0.5 - z0) / CELL);
   const grid = new Uint8Array(nx * nz);
+  const lo = heights ? new Float32Array(nx * nz).fill(Infinity) : null, hi = heights ? new Float32Array(nx * nz).fill(-Infinity) : null;
   // the drive surface on a 0.5 m lattice over the box
   const gx = Math.ceil(nx / 2) + 1, gz = Math.ceil(nz / 2) + 1, G = new Float32Array(gx * gz);
-  for (let k = 0; k < gz; k++) for (let i = 0; i < gx; i++) G[k * gx + i] = ground(x0 + i * 0.5, z0 + k * 0.5);
+  const DK = deckAt ? new Uint8Array(gx * gz) : null;
+  const budget = HERO_POLL ? POLL_MS : 6;
+  let slice = performance.now(), nTri = 0;
+  for (let k = 0; k < gz; k++) {
+    // (drivecheck: the lattice in slices too, a row at a time: a landmark's box is up to ~25k points, rule 22)
+    if (heights && performance.now() - slice > budget) { yield; slice = performance.now(); }
+    for (let i = 0; i < gx; i++) { const x = x0 + i * 0.5, z = z0 + k * 0.5; G[k * gx + i] = ground(x, z); if (DK) DK[k * gx + i] = deckAt(x, z) ? 1 : 0; }
+  }
+  if (DK) {                            // a lattice point at a deck's edge (a deck point 0.5 m away, > 1.5 m over it) takes
+    const D0 = DK.slice(), G0 = G.slice();   // the deck: a sample of the edge (its parapet) rounds to it, not to the cutting
+    for (let k = 0; k < gz; k++) for (let i = 0; i < gx; i++) {
+      const q0 = k * gx + i; if (D0[q0]) continue;
+      let best = -Infinity;
+      for (let dk = -1; dk <= 1; dk++) for (let di = -1; di <= 1; di++) {
+        const ii = i + di, kk = k + dk; if (ii < 0 || kk < 0 || ii >= gx || kk >= gz) continue;
+        const q = kk * gx + ii; if (D0[q] && G0[q] > G0[q0] + 1.5 && G0[q] > best) best = G0[q];
+      }
+      if (best > -Infinity) { G[q0] = best; DK[q0] = 1; }
+    }
+  }
   {                                    // the LOWEST surface within 1 m: a wall stops a car from its lower side
+    // (drivecheck: on a deck only surfaces within 0.1 m of it: the deck itself, the street that joins it level. The
+    // lowest surface within 1 m of a deck's edge was the railway cutting 4-7 m under it (and the footbridge 0.3 m under
+    // the road deck): the bridge's own brick spandrels, slab and road surface came into the band, car walls across Rue
+    // de Verrewinkel on the Verrewinkel bridge)
     const L = G.slice();
     for (let k = 0; k < gz; k++) for (let i = 0; i < gx; i++) {
+      if (heights && i === 0 && performance.now() - slice > budget) { yield; slice = performance.now(); }
       let v = Infinity;
-      for (let dk = -2; dk <= 2; dk++) for (let di = -2; di <= 2; di++) { const ii = i + di, kk = k + dk; if (ii >= 0 && kk >= 0 && ii < gx && kk < gz) v = Math.min(v, L[kk * gx + ii]); }
-      G[k * gx + i] = v;
+      const q0 = k * gx + i, on = DK && DK[q0], c0 = L[q0];
+      for (let dk = -2; dk <= 2; dk++) for (let di = -2; di <= 2; di++) {
+        const ii = i + di, kk = k + dk; if (ii < 0 || kk < 0 || ii >= gx || kk >= gz) continue;
+        const q = kk * gx + ii;
+        if (on && L[q] < c0 - 0.1) continue;
+        v = Math.min(v, L[q]);
+      }
+      G[q0] = v;
     }
   }
   const gAt = (x, z) => G[Math.min(gz - 1, Math.max(0, Math.round((z - z0) / 0.5))) * gx + Math.min(gx - 1, Math.max(0, Math.round((x - x0) / 0.5)))];
-  let slice = performance.now(), nTri = 0;
   for (let t = 0; t < T.length; t += 9) {
     // (perf audit 2026-11-14: was `(t & 0x3fff) === 0` with t stepping by 9 = a time check every 16,384 triangles: one
     // landmark slice ran 90-120 ms. Now every 64 triangles; ?heroslice=old: as before)
@@ -91,7 +164,7 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
       const h = y - gAt(x, z);
       if (h < band[0] || h > band[1]) return;
       const ci = Math.floor((x - x0) / CELL), ck = Math.floor((z - z0) / CELL);
-      if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) grid[ck * nx + ci] = 1;
+      if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) { const q = ck * nx + ci; grid[q] = 1; if (lo) { if (y < lo[q]) lo[q] = y; if (y > hi[q]) hi[q] = y; } }
     };
     if (BAND_OLD) { for (let i = 0; i <= n1; i++) for (let j = 0; j <= n2; j++) sample(i, j); continue; }
     // boot3 (docs/BOOT.md section 5; ?colband=old = every sample, as before): only the rows of j whose height can be in the
@@ -113,12 +186,15 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
   // rectangles: runs along x per row, then equal runs of consecutive rows merged
   const runs = new Map();          // "i0,i1" -> open rect { i0, i1, k0, k1 }
   const rects = [];
+  const step = !heights ? null : heights === "low" ? (q) => Math.floor(hi[q] / 0.5) : (q) => Math.floor(lo[q] / 0.5);
   for (let k = 0; k <= nz; k++) {
     const row = new Set();
     if (k < nz) for (let i = 0; i < nx; i++) {
       if (!grid[k * nx + i]) continue;
-      let j = i; while (j + 1 < nx && grid[k * nx + j + 1]) j++;
-      row.add(`${i},${j}`); i = j;
+      let j = i;
+      if (step) { const s0 = step(k * nx + i); while (j + 1 < nx && grid[k * nx + j + 1] && step(k * nx + j + 1) === s0) j++; row.add(`${i},${j},${s0}`); }
+      else { while (j + 1 < nx && grid[k * nx + j + 1]) j++; row.add(`${i},${j}`); }
+      i = j;
     }
     for (const [key, r] of runs) if (!row.has(key)) { rects.push(r); runs.delete(key); }
     for (const key of row) {
@@ -128,7 +204,10 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall } = {}) {
   }
   return rects.map(({ i0, i1, k0, k1 }) => {
     const ax = x0 + i0 * CELL, bx = x0 + (i1 + 1) * CELL, az = z0 + k0 * CELL, bz = z0 + (k1 + 1) * CELL;
-    return { rings: [[[ax, az], [bx, az], [bx, bz], [ax, bz]]], kind };
+    if (!heights) return { rings: [[[ax, az], [bx, az], [bx, bz], [ax, bz]]], kind };
+    let l = Infinity, h = -Infinity;
+    for (let k = k0; k <= k1; k++) for (let i = i0; i <= i1; i++) { const q = k * nx + i; if (lo[q] < l) l = lo[q]; if (hi[q] > h) h = hi[q]; }
+    return heights === "low" ? { rings: [[[ax, az], [bx, az], [bx, bz], [ax, bz]]], kind, top: h, base: -1e4 } : { rings: [[[ax, az], [bx, az], [bx, bz], [ax, bz]]], kind, top: 1e4, base: l };
   });
 }
 
@@ -174,6 +253,12 @@ export function createHeroColliders({ scene, world, manifest, driver, log = () =
       busy = true;
       try {
         if (HERO_POLL) findRoots();
+        if (HERO_SHOWN) for (const [name, d] of done) {          // (rule 39) colliders only while drawn
+          const root = HERO_POLL ? (roots.get(name) || d.root) : scene.getObjectByName(name);
+          const shown = !!root && shownIn(root, scene);
+          if (!shown && d.set) { driver.removeStatic(d.set); d.off = d.set; d.set = null; }      // (the built set kept: no rebuild)
+          else if (shown && !d.set && d.polys) { if (d.off && driver.extra) { driver.extra.push(d.off); d.set = d.off; d.off = null; } else d.set = driver.addStatic(d.polys); }
+        }
         for (const name of HERO_ROOTS) {
           const prev = done.get(name);
           if (prev?.complete) continue;
@@ -190,10 +275,10 @@ export function createHeroColliders({ scene, world, manifest, driver, log = () =
           if (!inN || (prev && inN < tiles.length)) continue;
           const t0 = performance.now();
           const tris = prev?.tris ?? (HERO_POLL ? await sliced(heroTrianglesGen(root), POLL_MS) : heroTriangles(root));
-          const polys = await carBlockers(tris, driver.ground);
+          const polys = !HERO_GROUND_OLD && driver.groundLayers ? await layeredBlockers(tris, driver.groundLayers) : await carBlockers(tris, driver.ground);
           if (prev?.set) driver.removeStatic(prev.set);
-          const set = driver.addStatic(polys);
-          done.set(name, { tris, polys, tiles, set, complete: inN === tiles.length });
+          const set = !HERO_SHOWN || shownIn(root, scene) ? driver.addStatic(polys) : null;
+          done.set(name, { tris, polys, tiles, set, root, complete: inN === tiles.length });
           if (!prev) for (const fn of listeners) fn(name, tris);
           log(`colliders from ${name}'s LOD0: ${tris.length / 9} triangles (walk / third person), ${polys.length} car blocks${inN < tiles.length ? ` (${inN}/${tiles.length} tiles in)` : ""}; ${(performance.now() - t0).toFixed(0)} ms in slices`);
         }

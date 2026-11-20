@@ -22,6 +22,7 @@ import { lineCode } from "../../vendor/roads/mesh/laneRoadMesh.js";
 import { markingStyle } from "../../vendor/roads/roadMarkings.js";
 import { hashPhase } from "../roadData.js";
 import { approachSpan } from "./inventory.js";
+import { GLYPH, CHEVRON_AT, glyphHalf } from "./bikeGlyph.js";
 import earcut from "three/src/extras/lib/earcut.js";
 
 export const PAINT_LIFT = 0.022;     // decal paint above H (the engine layer is LIFT 6 mm + 3 tiers 4.5 mm + DEV 8 mm = 18.5 mm at most: 3.5 mm clear)
@@ -33,6 +34,7 @@ const OSM_MAX_ACROSS = 14;
 const PHOTO_NO = 0.4;                // orthophoto bar score under which the photo shows no zebra (pipeline/verify_crossings.mjs)
 const PHOTO_OSM = 0.4;               // an OSM-only crossing needs at least this
 const PHOTO_YES = 0.5;               // clear bars
+const ZEBRA_OPEN = 1.5;               // m: a surveyed zebra ending this far short of the kerb ends in the open road
 const OSM_NEAR = 8;                  // m: an OSM node this close to a kept measured outline is that crossing           // m: wider than this kerb to kerb, an OSM crossing node is inside a junction
 const STRIPE = 0.5, STRIPE_PERIOD = 1.0;
 const TOOTH = { base: 0.5, gap: 0.25, tall: 0.7 };
@@ -253,9 +255,34 @@ export function afterNetworkV2(net, ctx, surf) {
     }
     // stripes kerb to kerb on the MEASURED carriageway (not past it), centred so the leftover splits evenly
     const kp = ray(cx, cz, bx, bz, 30), km = ray(cx, cz, -bx, -bz, 30);
-    const lo = km != null ? Math.max(v0, -km + 0.15) : v0, hi = kp != null ? Math.min(v1, kp - 0.15) : v1;
-    const width = hi - lo, n = Math.max(1, Math.floor((width + STRIPE) / STRIPE_PERIOD));
-    const start = lo + (width - ((2 * n - 1) * STRIPE)) / 2;
+    // class R (rule 38, docs/ROADS_R.md 8): a surveyed outline that ENDS in the open roadway (its end > ZEBRA_OPEN m
+    // short of the kerb, the carriageway going on to it: no island, no median in between) is a survey that stopped
+    // half way (Ch. de Saint-Job / Rue Papenkasteel, bm:14036: 7.0 m of a 14 m street, the owner's "zebra cut short"):
+    // a zebra is never painted to the middle of a road; it goes on to the kerb (ctx.zebraKerb, ?roads=old: as surveyed)
+    // (class R: a crossing CUT BY THE TILE SEAM: the kerb ray leaves this tile's class raster before it meets a kerb
+    // (the raster ends at the tile's edge), so each tile stopped the stripes at its own edge and the zebra on the seam
+    // was drawn half (Ch. de Saint-Job / Rue Papenkasteel bm:14036 at z = 1000, E6 | E7: the owner's "zebra cut short").
+    // There, the stripes run on to the outline's end on that side, and their phase is anchored to the outline's own
+    // start (v0 + k x period), the same in both tiles, so the two halves meet; each tile draws its part (paintMeshV2
+    // clips to the tile). Crossings the seam does not cut keep their centred kerb-to-kerb layout)
+    const offR = (x, z) => x < bounds.x0 || x >= bounds.x1 || z < bounds.z0 || z >= bounds.z1;
+    const exits = (sg, d) => d != null && offR(cx + bx * sg * (d + 0.05), cz + bz * sg * (d + 0.05)) && !offR(cx, cz) || (offR(cx, cz) && d != null && d <= 0.15);
+    const seamP = ctx.zebraKerb && c.poly && exits(1, kp), seamM = ctx.zebraKerb && c.poly && exits(-1, km);
+    if (seamP || seamM) inv.stats.crossingsSeam = (inv.stats.crossingsSeam || 0) + 1;
+    if (ctx.zebraKerb && c.poly && !seamP && !seamM) {
+      let grow = false;
+      // (never into another surveyed outline: Brussels Mobility draws a zebra across tram tracks as pieces, one outline
+      // per carriageway part; growing one over the next drew the stripes twice, out of phase: tour brugmann-maisons)
+      const own = hull(c.poly);
+      const freeTo = (from, to) => { const sg = Math.sign(to - from); for (let v = from; sg * (to - v) > 0; v += sg * 0.25) { const x = cx + bx * v, z = cz + bz * v; if (measuredPolys.some((m) => m !== own && pip(x, z, m) && !pip(x, z, own))) return v - sg * 0.4; } return to; };
+      if (km != null && v0 > -km + ZEBRA_OPEN) { const t = freeTo(v0, -km + 0.15); if (v0 - t > ZEBRA_OPEN) { v0 = t; grow = true; } }
+      if (kp != null && v1 < kp - ZEBRA_OPEN) { const t = freeTo(v1, kp - 0.15); if (t - v1 > ZEBRA_OPEN) { v1 = t; grow = true; } }
+      if (grow) { poly = [[cx + ax * u0 + bx * v0, cz + az * u0 + bz * v0], [cx + ax * u1 + bx * v0, cz + az * u1 + bz * v0], [cx + ax * u1 + bx * v1, cz + az * u1 + bz * v1], [cx + ax * u0 + bx * v1, cz + az * u0 + bz * v1]]; drawnPolys[drawnPolys.length - 1] = poly; inv.stats.crossingsToKerb = (inv.stats.crossingsToKerb || 0) + 1; }
+    }
+    const lo = km != null && !seamM ? Math.max(v0, -km + 0.15) : v0, hi = kp != null && !seamP ? Math.min(v1, kp - 0.15) : v1;
+    let width = hi - lo, n = Math.max(1, Math.floor((width + STRIPE) / STRIPE_PERIOD));
+    let start = lo + (width - ((2 * n - 1) * STRIPE)) / 2;
+    if (seamP || seamM) { start = v0 + Math.ceil((lo - v0) / STRIPE_PERIOD - 1e-6) * STRIPE_PERIOD; n = Math.max(1, Math.floor((hi - start + (STRIPE_PERIOD - STRIPE)) / STRIPE_PERIOD)); width = hi - lo; }
     const am = armOf(cx, cz);
     items.push({ kind: "zebra", poly, frame: { o: [cx, cz], a: [ax, az], b: [bx, bz], u0, u1, v0: start, n } });
     const rec = { id: c.id, src: c.src, poly, c: [cx, cz], axis, along: u1 - u0, across: hi - lo, vSpan: [lo, hi], drawn: "decal", confirm: c.confirm, rule: c.rule || false,
@@ -405,7 +432,19 @@ export function afterNetworkV2(net, ctx, surf) {
       let sxx = 0, szz = 0, sxz = 0;
       for (const [x, z] of g.poly) { const dx = x - c[0], dz = z - c[1]; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; }
       const th = 0.5 * Math.atan2(2 * sxz, sxx - szz);
-      items.push(...sharrow(c[0] + Math.cos(th) * 0.3, c[1] + Math.sin(th) * 0.3, th, false));
+      if (ctx.bikeMark === false) items.push(...sharrow(c[0] + Math.cos(th) * 0.3, c[1] + Math.sin(th) * 0.3, th, false));
+      else {
+        // markings (rule 33): the surveyed outline is the bicycle painted upright for the road user coming toward it,
+        // its frame on the far side of the wheels' middle: the way of travel is the axis end the frame's paint is on
+        // (the outline's inside along the axis, |across| < 0.08 m: the gap between the two wheels)
+        const ux = Math.cos(th), uz = Math.sin(th);
+        let sum = 0, k = 0;
+        for (let a = -0.75; a <= 0.75; a += 0.05) for (const b of [-0.06, -0.02, 0.02, 0.06]) {
+          const x = c[0] + ux * a - uz * b, z = c[1] + uz * a + ux * b;
+          if (pip(x, z, g.poly)) { sum += a; k++; }
+        }
+        items.push(...bikeGlyphs(c[0], c[1], k && sum < 0 ? th + Math.PI : th, false, 0));
+      }
       inv.symbols.push({ id: g.id, src: "bm", kind: "glyph:P09", x: c[0], z: c[1] });
       glyphs++;
       continue;
@@ -440,7 +479,7 @@ export function afterNetworkV2(net, ctx, surf) {
         const x = rr.smp.x[i] + nx * t, z = rr.smp.z[i] + nz * t;
         if (!MARKABLE.has(cls(x, z))) continue;
         const dir = side === "right" ? th : th + Math.PI;
-        items.push(...sharrow(x, z, dir));
+        items.push(...(ctx.bikeMark === false ? sharrow(x, z, dir) : bikeGlyphs(x, z, dir, true, -1.2)));
         inv.symbols.push({ id: `v2:sharrow:${rr.id}:${side}:${Math.round(s)}`, src: "osm", kind: "sharrow", x, z, dir, road: rr.id });
       }
     }
@@ -455,8 +494,23 @@ function lineItem(kind, p, q, dx, dz, w) {
   return { kind: kind === "stop" ? "solid" : "teeth", poly: hull(poly), frame: { o: p, a: [dx, dz], b: [bx, bz], u0: 0, u1: w, v0: 0, vLen: len } };
 }
 
-/** The Belgian shared-lane symbol: a bicycle (two wheels, a frame) and two chevrons ahead, ~1.0 x 2.6 m. */
-function sharrow(x, z, dir, chevrons = true) {
+/** markings (rule 33, viewer/streets/bikeGlyph.js): the Brussels bicycle marking (upright for the road user coming
+ *  toward it, 1.50 x 0.92 m) centred `at` m along `dir` from (x, z), and with `chevrons` the two shared-lane chevrons
+ *  ahead of it; each one decal quad whose shape the paint shader draws as an analytic signed distance (kind "glyph") */
+function bikeGlyphs(x, z, dir, chevrons, at = 0) {
+  const fx = Math.cos(dir), fz = Math.sin(dir), lx = -fz, lz = fx;
+  const quad = (kind, u) => {
+    const [hu, hv] = glyphHalf(kind), o = [x + fx * u, z + fz * u];
+    const P = (a, b) => [o[0] + fx * a + lx * b, o[1] + fz * a + lz * b];
+    return { kind: "glyph", poly: [P(-hu, -hv), P(hu, -hv), P(hu, hv), P(-hu, hv)], frame: { o, a: [fx, fz], b: [lx, lz], u0: 0, u1: hu, v0: 0, vLen: hv, n: kind } };
+  };
+  const out = [quad(GLYPH.bike, at)];
+  if (chevrons) for (const d of CHEVRON_AT) out.push(quad(GLYPH.chevron, at + d));
+  return out;
+}
+
+/** ?bikemark=old: the shared-lane symbol as before: a bicycle of straight bars (decagon wheels) and two chevrons ahead. */
+export function sharrow(x, z, dir, chevrons = true) {
   const fx = Math.cos(dir), fz = Math.sin(dir), lx = -fz, lz = fx;
   const P = (u, v) => [x + fx * u + lx * v, z + fz * u + lz * v];
   const bar = (u0, v0, u1, v1, w) => {
@@ -509,7 +563,7 @@ export function paintMeshV2(items, prep, bounds) {
       }
   });
   const tile = [[bounds.x0, bounds.z0], [bounds.x1, bounds.z0], [bounds.x1, bounds.z1], [bounds.x0, bounds.z1]];
-  const KIND = { solid: 0, zebra: 1, teeth: 2 };
+  const KIND = { solid: 0, zebra: 1, teeth: 2, glyph: 3 };
   for (const it of items) {
     let poly = clipConvex(it.poly, tile);
     if (poly.length < 3) continue;

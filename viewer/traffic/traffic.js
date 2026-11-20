@@ -86,7 +86,7 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
     T.cpu.max = Math.max(T.cpu.max * 0.995, t2 - t0);
   };
   /** Oriented boxes of the cars within r of (x, z): out = Float32Array chunks of 7 (x, z, yaw, hw, hl, y, h); -> count. */
-  T.boxesNear = (x, z, r, out) => {
+  T.boxesNear = (x, z, r, out, idx = null) => {          // (idx: Int32Array <- each box's sim index, carhit)
     // (collisions round 2: no boxes before the fleet can draw the cars: while its models load the sim already runs, and
     // its cars were solid and invisible: the bike's "traffic box where no car was drawn")
     if (!BOX_OLD && !fleet.ready) return 0;
@@ -107,6 +107,7 @@ export function createTraffic({ scene, renderer, camera, ground, night, cap = 76
         out[o] = sim.px[i] * b + sim.x[i] * a; out[o + 1] = sim.pz[i] * b + sim.z[i] * a; out[o + 2] = sim.pyaw[i] + dy * a;
       }
       out[o + 3] = ty.w / 2; out[o + 4] = ty.len / 2; out[o + 5] = sim.y[i]; out[o + 6] = ty.h;
+      if (idx) idx[n] = i;
       n++;
     }
     return n;

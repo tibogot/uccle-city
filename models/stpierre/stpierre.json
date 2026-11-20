@@ -1,29 +1,29 @@
 {
  "asset": "Eglise Saint-Pierre d'Uccle, Parvis Saint-Pierre (tools/blender/stpierre.py)",
- "triangles_lod0": 30922,
- "triangles_far": 4089,
+ "triangles_lod0": 31626,
+ "triangles_far": 4256,
  "triangles_per_slot_lod0": {
-  "brick_red_brussels": 723,
-  "stone_white": 17506,
+  "brick_red_brussels": 759,
+  "stone_white": 18092,
   "stone_blue": 1694,
   "slate": 50,
   "copper_brown": 1932,
   "copper_patina": 2566,
   "zinc_roof": 187,
   "wood_frame_dark": 1499,
-  "glass_window": 343,
-  "cast_iron_green": 4422
+  "glass_window": 371,
+  "cast_iron_green": 4476
  },
  "triangles_per_slot_far": {
-  "brick_red_brussels": 713,
-  "stone_white": 2313,
+  "brick_red_brussels": 747,
+  "stone_white": 2418,
   "stone_blue": 146,
   "slate": 50,
   "copper_brown": 168,
   "copper_patina": 66,
   "zinc_roof": 23,
   "wood_frame_dark": 282,
-  "glass_window": 288,
+  "glass_window": 316,
   "cast_iron_green": 40
  },
  "slots": [
@@ -73,11 +73,11 @@
    0.86,
    1.0
   ],
-  "lod0_px_per_m": 23.9,
+  "lod0_px_per_m": 24.1,
   "far_px_per_m": 10.5,
   "thin_faces_vertex_ao": [
-   8758,
-   115
+   8945,
+   121
   ]
  },
  "frame": "glTF Y up; three.js local (u, m TAW - OY, w); node at the city position of the frame origin, height OY, rotation.y = -rotation",
@@ -435,5 +435,5 @@
    "corn": 54.8
   }
  },
- "estimated": "the east end (main block's east wall, the apse's walls and windows), the annexes' walls and windows, the north-east block's roof, the fourth nave's north wall (4 bays with the south side's window type), the porch's sides and door, the window over the porch, the dial sizes on the N / E / S faces, the cartouche and the urns (stylised), the wall thicknesses"
+ "estimated": "the east end (main block's east wall, the apse's walls and windows), the annexes' walls and windows, the north-east block's roof, the fourth nave's north wall (4 bays with the south side's window type), the porch's sides and door, the window over the porch, the main block's south wall over the south-east annex (one bay with a short window, claude/heroshell), the dial sizes on the N / E / S faces, the cartouche and the urns (stylised), the wall thicknesses"
 }

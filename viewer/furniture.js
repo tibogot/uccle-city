@@ -11,11 +11,11 @@
 // same red (?traffic=1).
 import * as THREE from "three/webgpu";
 import { attribute, vec3, mix, float, select, uniform } from "three/tsl";
-import { nearestRoad, phaseOfDir, signalClock, signalState } from "./traffic/signals.js";
+import { nearestRoad, phaseOfDir, signalClock, signalState, walkState } from "./traffic/signals.js";
 import { ROAD_TYPES } from "../vendor/roads/roadCrossSection.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { env } from "./lighting.js";
-import { signalSites, SIGNALS_OLD } from "./streets/signalPlace.js";
+import { signalSites, SIGNALS_OLD, TLIGHTS_OLD } from "./streets/signalPlace.js";
 
 const C = {
   iron: [0.03, 0.035, 0.035], steel: [0.32, 0.33, 0.34], red: [0.5, 0.03, 0.02], white: [0.8, 0.8, 0.78],
@@ -106,8 +106,10 @@ export function buildFurniture(feats, roads, ground, bounds, opts = {}) {
       inst.bench.push({ x: p.x, z: p.z, yaw: atKerb(nr, nr.side).yaw });
     }
   }
-  // signal posts: one per approach on its right kerb, facing the traffic (viewer/streets/signalPlace.js; ?signals=old)
-  inst.signal.push(...signalSites(feats.points, roads, { ...opts, old: SIGNALS_OLD }));
+  // signal posts: one per approach on its right kerb, facing the traffic (viewer/streets/signalPlace.js; ?signals=old);
+  // drawn here only with ?tlights=old (opts.noSignals: the Blender kit draws them, viewer/tlights/cityTLights.js)
+  const signals = signalSites(feats.points, roads, { ...opts, old: SIGNALS_OLD, pre: TLIGHTS_OLD });
+  if (!opts.noSignals) inst.signal.push(...signals);
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.55, metalness: 0.2 });
   const col = attribute("aCol", "vec3"), em = attribute("aEm", "float");
   mat.colorNode = col;
@@ -131,16 +133,20 @@ export function buildFurniture(feats, roads, ground, bounds, opts = {}) {
     m.name = `furniture-${kind}`;
     group.add(m);
   }
-  return { group, counts };
+  return { group, counts, signals };
 }
 
 // ---------------------------------------------------------------- the signal heads' cycle (uniforms, no lights)
 /** Phase A / B states (GREEN 0, AMBER 1, RED 2), set once per frame by updateSignals(). */
 export const SIGNAL_STATE = { A: uniform(2), B: uniform(2) };
+/** Pedestrian heads (viewer/tlights/): walk 1 / wait 0 per phase (signals.js walkState: the crossing of the road whose
+ *  cars have that phase's red) */
+export const WALK_STATE = { A: uniform(0), B: uniform(0) };
 /** Main loop: the lens uniforms from the shared clock (viewer/traffic/signals.js). */
 export function updateSignals() {
   const t = signalClock.now();
   SIGNAL_STATE.A.value = signalState(0, t); SIGNAL_STATE.B.value = signalState(1, t);
+  WALK_STATE.A.value = walkState(0, t) ? 1 : 0; WALK_STATE.B.value = walkState(1, t) ? 1 : 0;
 }
 let SIGNAL_MAT = null;
 function signalMaterial() {

@@ -1,0 +1,77 @@
+{
+ "when": "2026-11-18T09:41:59.867Z",
+ "old": false,
+ "sum": {
+  "tiles": 33,
+  "trackM": 36010,
+  "raisedM": 26,
+  "kerbM": 1,
+  "squareM": 0,
+  "runs": 7
+ },
+ "runs": [
+  {
+   "tile": "H6",
+   "len": 9.5,
+   "at": "872.4, 524.1",
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "raised": 4.5,
+   "kerb": 0.3,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "B5",
+   "len": 6,
+   "at": "-2213.5, 351.3",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 5.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "B5",
+   "len": 4.5,
+   "at": "-2220.5, 349.6",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 4,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "B5",
+   "len": 4.5,
+   "at": "-2217, 352.4",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 4.3,
+   "kerb": 0.3,
+   "what": "sidewalk/kerb"
+  },
+  {
+   "tile": "B5",
+   "len": 3.5,
+   "at": "-2216.7, 349.7",
+   "street": "Rue de Stalle - Stallestraat",
+   "raised": 2.8,
+   "kerb": 0.3,
+   "what": "kerb/sidewalk"
+  },
+  {
+   "tile": "F1",
+   "len": 1.5,
+   "at": "-43.9, -1572.5",
+   "street": "Avenue Winston Churchill - Winston Churchilllaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "sidewalk"
+  },
+  {
+   "tile": "H6",
+   "len": 1,
+   "at": "931.7, 533.6",
+   "street": "Avenue Jean et Pierre Carsoel - Jean en Pierre Carsoellaan",
+   "raised": 0.5,
+   "kerb": 0,
+   "what": "ramp"
+  }
+ ]
+}
