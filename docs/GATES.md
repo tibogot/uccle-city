@@ -3,14 +3,9 @@
 Owner, 2026-11-19: "most people around their house are supposed to have gates; I feel you miss many". Also: regular
 Google Maps / Street View reality checks (look only: never store, trace or ship imagery).
 
-> **WIP (2026-11-19, stopped for the owner's play session).** The committed data/gardens is the gate-passing state of
-> 7d561ad2 (+ the foundation merge). The browser turn's two build fixes are in `tools/gardens/build_gardens.py` but NOT
-> applied to the data yet: (1) a terraced front's driveway gate 1 in 8 (Street View: 6 of 6 row garage drives open),
-> (2) a gate beside a driveway keeps its shared pier (444 doubled piers city-wide, F7 Rue de Verrewinkel 87). The counts in
-> section 4 and the villa / row driveway lines were measured on a test rebuild with fix (1) only; the gate row's
-> ceilings in tools/audit/mergeGate.mjs are still the committed data's. To finish: rebuild all tiles, fitGardens
-> --lanes until it reports nothing, --steps, --check, the census, re-set the gates ceilings (villaDriveGatedPm /
-> rowDriveGatedPm in place of driveGatedPm), the full gate, the city browser checks.
+> **Browser-turn fixes applied (2026-11-20):** a terraced front's driveway gate 1 in 8 (Street View: 6 of 6 row garage
+> drives open) and a gate beside a driveway keeping its shared pier (near-doubled piers 1,047 -> 830; the old data had
+> 603). Data rebuilt, fitGardens lanes x3 / steps / check, census and ceilings re-set.
 
 `?gates=old` = the garden data before this job (data/gardens/old/<T>.json, a frozen copy: same blobs in git). Rule house-front-garden-closed
 (docs/QUALITY_RULES.md), gate row `gates`. Census class G: `tools/audit/census/gates.mjs`; reports
@@ -166,22 +161,22 @@ frontages are the same 15,316 houses (the census's geometry does not depend on t
 | | before | after |
 |---|---|---|
 | house frontages with a garden (villa + terraced) | 8,035 | 8,004 (31 drawn paved to the facade) |
-| of them open by mistake | 879 (10.9 %) | 321 (4.0 %) |
+| of them open by mistake | 879 (10.9 %) | 320 (4.0 %) |
 | villas open | 189 / 1,579 | 57 / 1,578 |
 | rows open | 705 / 6,456 | 268 / 6,426 |
 | apartment blocks open | 86 / 853 | 31 / 849 |
-| door paths with a gate at the line (all types) | 4,355 / 8,646 (50.4 %) | 7,104 / 8,618 (82.4 %) |
+| door paths with a gate at the line (all types) | 4,355 / 8,646 (50.4 %) | 7,099 / 8,618 (82.4 %) |
 | villas | 742 / 1,466 | 1,250 / 1,465 |
 | rows | 3,125 / 6,309 | 5,485 / 6,284 |
 | apartment blocks | 488 / 813 | 675 / 811 |
 | driveways with a driveway gate: villas | 258 / 1,107 (23.3 %) | 350 / 1,058 (33.1 %) |
-| driveways with a driveway gate: rows / semis (Street View: 6 of 6 open) | 1,615 / 5,755 (28.1 %) | 436 / 6,373 (6.8 %) |
-| gates drawn | 6,153 (3,556 pedestrian, 2,597 closed pairs) | 11,429 (10,140 pedestrian, 1,274 closed + 15 open pairs) |
+| driveways with a driveway gate: rows / semis (Street View: 6 of 6 open) | 1,615 / 5,755 (28.1 %) | 436 / 6,370 (6.8 %) |
+| gates drawn | 6,153 (3,556 pedestrian, 2,597 closed pairs) | 11,413 (10,124 pedestrian, 1,274 closed + 15 open pairs) |
 | closed driveway gates across a used way | 14 | 0 |
-| piers | 41,754 | 53,045 |
-| house paths still without a gate | 4,291 | 1,514 (inDrive 593: the walk through an open row drive; frontOpen 232, gap 220, noOpening 144, leafMissing 128) |
+| piers | 41,754 | 52,570 |
+| house paths still without a gate | 4,291 | 1,519 (inDrive 594: the walk through an open row drive; frontOpen 233, gap 222, noOpening 144, leafMissing 129) |
 
-The gate row with `--old` fails on openByMistake 879 > 321, houseOpenPm 109 > 40, pathUngated 4,291 > 1,514,
+The gate row with `--old` fails on openByMistake 879 > 320, houseOpenPm 109 > 40, pathUngated 4,291 > 1,519,
 pathGatedPm 504 < 824, villaDriveGatedPm 233 < 331, rowDriveGatedPm 281 > 100 and gateAcrossDriven 14 > 0.
 
 Before the census learned driveways (a ray through a UrbIS CR42L line counted open), the old data read 2,777 open:
@@ -250,7 +245,7 @@ data's to fix (the drive check's own cause a), not the gardens'. Ceiling 142 (be
 ### Ground (rule 31 census, the `ground` row)
 
 The garden rebuild moves the tile worker's retaining walls (they follow the garden fronts and open at gates):
-foundation -> gates over 310 -> 305, bareBank 575 -> 553, lump 867 -> 868 (E4 Rue du Doyenne 118: no garden piece
+foundation -> gates over 310 -> 305, bareBank 575 -> 554, lump 867 -> 868 (E4 Rue du Doyenne 118: no garden piece
 within 10 m, a group boundary), spike 171 -> 174 (small weld spikes beside moved walls: D3 Asselbergs 74, H5 Equateur
 20A, G10 Chantemerle 4), gardenVoid 0, gateNoSteps 0. Ceilings set to these.
 
@@ -262,8 +257,8 @@ the same clearing; ceiling 1,853.
 ## 5. Perf
 
 Everything is instances in the kit's existing pools (gate_*, cargate_*, pillar, pcap: the same 3-LOD / thin-bar card
-pieces, viewer/thinBars.js rule 35): **no new piece, no new draw call, no new material**. City-wide +5,276 gates
-and +11,291 piers; the per-tile budget is in the gate row (the busiest tile: 353 leaves, 1,428 piers; ceilings 460 /
+pieces, viewer/thinBars.js rule 35): **no new piece, no new draw call, no new material**. City-wide +5,260 gates
+and +10,816 piers; the per-tile budget is in the gate row (the busiest tile: 352 leaves, 1,428 piers; ceilings 460 /
 1,430). The streamer gathers near the camera only (gates end at 150 m, the modelled bars within 6 m, cards of 2
 triangles beyond); the tile's garden add stays sliced (rule 22). data/gardens/old is a byte copy of the committed files
 (the same git blobs).
