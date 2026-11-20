@@ -121,7 +121,7 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
 
   // ---- the ring and its pending span (segments written since the last render)
   let seg = 0, filled = 0, spanStart = -1, spanCount = 0;
-  const stats = { segs: 0, frames: 0, uploads: 0, ms: 0, lastRanges: 0 };
+  const stats = { segs: 0, frames: 0, uploads: 0, ms: 0, lastRanges: 0, byWheel: [0, 0, 0, 0] };
   mesh.onBeforeRender = () => {
     if (spanCount <= 0) return;
     const n = Math.min(spanCount, MAX_SEG), a0 = n === MAX_SEG ? 0 : spanStart;
@@ -152,7 +152,7 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
     _ry = Number.isFinite(gr) && Math.abs(gr - c) < M.step ? gr : c;
   }
 
-  function writeSeg(st, cx, cz, cy, sx, sz, k, len, t) {
+  function writeSeg(st, wi, cx, cz, cy, sx, sz, k, len, t) {
     sideHeights(cx, cz, sx, sz, cy);
     const clx = cx + sx, cly = _ly + M.lift, clz = cz + sz, crx = cx - sx, cry = _ry + M.lift, crz = cz - sz;
     if (!(Number.isFinite(cly) && Number.isFinite(cry))) return false;
@@ -174,12 +174,13 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
     seg = (seg + 1) % MAX_SEG;
     if (filled < MAX_SEG) { filled++; geometry.setDrawRange(0, filled * VERTS); }
     mesh.visible = true;
-    stats.segs++;
+    stats.segs++; stats.byWheel[wi]++;
     return true;
   }
 
   /** one wheel: k = strength 0..1 this frame at contact (x, z) (y: its height if known, else NaN) */
-  function track(st, x, z, y, k, hw, t) {
+  function track(wi, x, z, y, k, hw, t) {
+    const st = states[wi];
     if (k <= 0.02) { st.active = false; return; }
     if (!st.active || (x - st.px) * (x - st.px) + (z - st.pz) * (z - st.pz) > M.restart * M.restart) {
       st.active = true; st.edge = false; st.px = x; st.pz = z; st.dist = 0; st.alpha = 0;
@@ -195,7 +196,7 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
       if (!(Number.isFinite(st.ly) && Number.isFinite(st.ry))) { st.px = x; st.pz = z; return; }
       st.edge = true;
     }
-    if (writeSeg(st, x, z, y, sx, sz, k, len, t)) { st.px = x; st.pz = z; }
+    if (writeSeg(st, wi, x, z, y, sx, sz, k, len, t)) { st.px = x; st.pz = z; }
   }
 
   /** the slide at a wheel at (lx left, lz forward) of the body (u forward, v left, r yaw rate), into S (no object) */
@@ -277,7 +278,7 @@ export function createTyreMarks({ scene = null, ground, wet = uniform(0), snow =
       if (kind !== lastKind) { for (const st of states) { st.active = false; st.touch = 0; st.touchN = -1; } lastKind = kind; }
       if (kind === "car") sampleCar(c, dt); else sampleMoto(c, kind, H, dt);
       const t = now();
-      for (let i = 0; i < W.n; i++) track(states[i], W.x[i], W.z[i], W.y[i], W.k[i], W.hw[i], t);
+      for (let i = 0; i < W.n; i++) track(i, W.x[i], W.z[i], W.y[i], W.k[i], W.hw[i], t);
       stats.frames++;
       stats.ms = stats.ms * 0.95 + (performance.now() - t0) * 0.05;
     },

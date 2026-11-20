@@ -207,9 +207,14 @@ export function stepCtl(c, input, dt, env, F = CTL) {
     let axP = (uT - u) / h;
     if (hb && Math.abs(u) > 0.05) axP -= Math.sign(u) * Math.min(Math.abs(u) / h, F.hbDecel);
     const axMax = mu * G * Math.max(0.05, grounded) * 1.05;
-    // (tyre marks) the pedals past the tyres' lengthwise grip: braking locks all four, the gas spins the driven axle
-    const over = clamp((Math.abs(axP) / axMax - 0.85) / 0.15, 0, 1);
-    if (over > 0) { const lock = axP * u < 0; for (let i = 0; i < 4; i++) if (lock || (WZ[i] > 0) === F.frontDrive) T.over[i] = Math.max(T.over[i], over); }
+    // (tyre marks) the pedals past the tyres' lengthwise grip (of the car on all four: a wheel lifting on the dive does
+    // not count): braking locks all four, the gas spins the driven axle. A full brake on dry asphalt (92 %) leaves a
+    // faint mark (ABS); the handbrake on top, grass / soil (less grip): a full one
+    // (what the pedals ASK, not axP: at the stop axP takes the last of the speed in one substep)
+    const locks = braking || (hb && Math.abs(u) > 0.5);
+    const askA = (braking ? Math.abs(throttle) * F.brake : throttle ? Math.abs(throttle) * F.power * F.powerSpeed / Math.max(F.powerSpeed, m) : 0) + (hb ? F.hbDecel : 0);
+    const over = Math.abs(u) > 0.5 ? clamp((askA / (mu * G * 1.05) - 0.88) / 0.12, 0, 1) : 0;
+    if (over > 0) for (let i = 0; i < 4; i++) if (locks || (WZ[i] > 0) === F.frontDrive) T.over[i] = Math.max(T.over[i], over);
     axP = clamp(axP, -axMax, axMax);
     const gx = -F.gravity * Math.sin(Pg), gy = -F.gravity * Math.sin(Rg) * 0.5;
     const hold = !throttle && !hb && Math.abs(u) < 0.3 && Math.abs(Pg) < 0.38;
