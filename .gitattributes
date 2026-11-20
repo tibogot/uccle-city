@@ -1,0 +1,3 @@
+# viewer/features.js: one switch row a line, order inside a section does not matter (devPanel groups by sub):
+# two branches adding rows merge by keeping both lines. The meta gate row checks the result (one row a line, no key twice).
+viewer/features.js merge=union

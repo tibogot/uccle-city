@@ -14,6 +14,7 @@
 //   2. viewer/features.js: it imports, every row on ONE line (git merges it with merge=union, .gitattributes), no key twice
 //   3. every viewer/, debug/ and tools/ .js / .mjs file parses as an ES module and its static imports link (esbuild bundles
 //      them all, bare packages external): a missing export or an unclosed comment fails here, not on the browser turn.
+//   4. docs/QUALITY_RULES.md and docs/CENSUS.md are what tools/docs/rulesIndex.mjs makes from docs/rules/, docs/census/
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -124,6 +125,16 @@ ok(nMeta > 0, `${nMeta} rows declare meta checks`);
         } }] });
     } catch (e) { errors = e.errors || [{ text: e.message }]; }
     ok(!errors.length, `${files.length} viewer/ debug/ tools/ modules parse and link (${((Date.now() - t0) / 1000).toFixed(1)} s)${errors.length ? ": " + errors.slice(0, 6).map((x) => `${x.location ? `${x.location.file}:${x.location.line}` : ""} ${x.text}`).join(" / ") : ""}`);
+  }
+}
+
+
+// ------------------------------------------------------------------ 4. the generated indexes are current
+{
+  const { rulesIndex, censusIndex } = await import("../docs/rulesIndex.mjs");
+  for (const [out, make] of [["docs/QUALITY_RULES.md", rulesIndex], ["docs/CENSUS.md", censusIndex]]) {
+    const have = existsSync(path.join(ROOT, out)) ? rd(out).replace(/\r\n/g, "\n") : "";
+    ok(have === make(ROOT), `${out} is what docs/${out.includes("RULES") ? "rules" : "census"}/*.md make (else: node tools/docs/rulesIndex.mjs; never edit the index by hand)`);
   }
 }
 
