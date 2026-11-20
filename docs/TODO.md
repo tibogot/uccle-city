@@ -176,9 +176,10 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Christmas (on 1 Dec - 6 Jan)**
 - [x] Fir round 2 MERGED 2026-11-17 (needle cards, round bulbs; docs/CHRISTMAS.md "NEEDLE CARDS").
-- [ ] Before 1 Dec: fir cards cost +0.26 ms at 8 m (budget 0.1; try the shadow from the middle level, fewer / smaller
-  cards near the trunk); the middle level (45-150 m) still reads as flat tiers next to the needle crown (cards there
-  too, or an impostor); re-measure the whole layer on GREEN (+0.33-0.59 ms on YELLOW vs +0.00 on GREEN before).
+- [ ] Before 1 Dec: fir round 3 on claude/xmasfir3 (OFFLINE done, docs/CHRISTMAS.md "FIR ROUND 3": cards' depth pre-pass,
+  the shadow from the far level's solid fronds, the middle level = a card shell; model 0.26 -> 0.094 ms at 8 m): the
+  BROWSER turn on GREEN (A/B ?firprepass=0, ?firshadow=cards at 8 / 21 / 45 m; holes / specks; the 30 -> 70 m walk;
+  re-measure the whole layer, +0.33-0.59 ms on YELLOW vs +0.00 on GREEN before), then merge.
 - [ ] Owner review of the market + garlands + fir in game (?xmas=1); more decorations if the owner asks.
 
 **City content (open from the archive)**
