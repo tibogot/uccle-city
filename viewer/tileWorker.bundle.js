@@ -13345,6 +13345,10 @@ var MIN_SHARE = 0.45;
 var EDGE_IN = 0.3;
 var PARK_W = 2;
 var EDGE_WIN = 3;
+var X_OFF = 1.5;
+var EDGE_TOL = 0.25;
+var NEAR_KERB = 0.5;
+var LAG = 0.5;
 function lineGrid(lines) {
   const g = /* @__PURE__ */ new Map(), K = (i, j) => i * 65536 + j;
   for (const l of lines) for (let k = 1; k < l.length; k++) {
@@ -13388,6 +13392,7 @@ function interval(classAt, lg, x, z, nx, nz, parkL = true, parkR = true) {
     else if (C(-d)) t0 = -d;
   }
   if (t0 == null) return null;
+  const tc = t0;
   let hi = t0, lo = t0;
   while (hi < t0 + REACH && CL(hi + STEP5)) hi += STEP5;
   while (lo > t0 - REACH && CR(lo - STEP5)) lo -= STEP5;
@@ -13406,7 +13411,7 @@ function interval(classAt, lg, x, z, nx, nz, parkL = true, parkR = true) {
     const t = lg.hit(x, z, nx, nz, e - 0.6, e + 0.6, e + dir * STEP5 / 2);
     return t ?? e + dir * STEP5 / 2;
   };
-  return { lo: cLo != null ? cLo : lo <= t0 - REACH ? null : ref(lo, -1), hi: cHi != null ? cHi : hi >= t0 + REACH ? null : ref(hi, 1) };
+  return { t0: tc, lo: cLo != null ? cLo : lo <= t0 - REACH ? null : ref(lo, -1), hi: cHi != null ? cHi : hi >= t0 + REACH ? null : ref(hi, 1) };
 }
 function smooth3(s, v) {
   const n = s.length, med = new Array(n).fill(null);
@@ -13485,27 +13490,34 @@ function smoothTrend(s, v) {
   return out;
 }
 function measureLineFit(net, prep, surf, opts = {}) {
-  const R38 = opts.roadsR !== false;
+  const R38 = opts.roadsR !== false, INV = opts.streetInv !== false;
   const st = { roads: 0, fitted: 0, moved: 0, meanShift: 0, maxShift: 0, edgeIn: 0, lanes: 0, lanePts: 0 };
   const fitOf = /* @__PURE__ */ new Map();
-  const unpaint = /* @__PURE__ */ new Set();
-  if (!prep) return { fitOf, st, unpaint };
+  const unpaint = /* @__PURE__ */ new Set(), edgeOff = /* @__PURE__ */ new Map();
+  if (!prep) return { fitOf, st, unpaint, edgeOff };
   const lg = lineGrid([...surf?.kerbs || [], ...(surf?.edges || []).map((e) => e.line)]);
   net.roads.forEach((rr, ri) => {
     const S3 = rr.smp;
     if (!S3 || !rr.lays || !rr.al || S3.s.length < 2) return;
     st.roads++;
     const n = S3.s.length, dL = new Array(n).fill(null), dR = new Array(n).fill(null), eL = new Float64Array(n), eR = new Float64Array(n);
+    const rL = new Array(n).fill(null), rR = new Array(n).fill(null), X = new Uint8Array(n);
     let any = 0;
     for (let i = 0; i < n; i++) {
       const e = layoutEdges(rr.lays[i]);
       eL[i] = e.curbL;
       eR[i] = e.curbR;
       if (!prep.inside(S3.x[i], S3.z[i])) continue;
-      if (S3.s[i] - S3.s[0] < MOUTH || S3.s[n - 1] - S3.s[i] < MOUTH) continue;
+      const mouth = S3.s[i] - S3.s[0] < MOUTH || S3.s[n - 1] - S3.s[i] < MOUTH;
+      if (mouth && !INV) continue;
       const park = (side) => (rr.lays[i][side] || []).some((l) => l.present && l.type === "parking");
       const iv = interval(prep.classAt, lg, S3.x[i], S3.z[i], Math.sin(S3.th[i]), -Math.cos(S3.th[i]), park("left"), park("right"));
-      if (!iv) continue;
+      if (INV) {
+        if (prep.classAt(S3.x[i], S3.z[i]) >= 0 && (!iv || Math.abs(iv.t0) > X_OFF)) X[i] = 1;
+        if (iv?.hi != null && Math.abs(iv.hi - e.curbL) < MAX_D) rL[i] = iv.hi - e.curbL;
+        if (iv?.lo != null && Math.abs(iv.lo - e.curbR) < MAX_D) rR[i] = iv.lo - e.curbR;
+      }
+      if (!iv || mouth) continue;
       if (iv.hi != null && Math.abs(iv.hi - e.curbL) < MAX_D) {
         dL[i] = iv.hi - e.curbL;
         any++;
@@ -13516,7 +13528,14 @@ function measureLineFit(net, prep, surf, opts = {}) {
       }
     }
     if (any < Math.max(2, 2 * n / 3)) {
-      if (R38 && S3.s[n - 1] - S3.s[0] < SHORT_ROAD) {
+      let xs = 0, ins = 0;
+      if (INV) {
+        for (let i = 0; i < n; i++) if (prep.inside(S3.x[i], S3.z[i]) && prep.classAt(S3.x[i], S3.z[i]) >= 0) {
+          ins++;
+          xs += X[i];
+        }
+      }
+      if (R38 && (S3.s[n - 1] - S3.s[0] < SHORT_ROAD || INV && ins && xs >= ins / 3)) {
         let on = 0, inside3 = 0;
         for (let i = 0; i < n; i++) {
           if (!prep.inside(S3.x[i], S3.z[i])) continue;
@@ -13524,6 +13543,14 @@ function measureLineFit(net, prep, surf, opts = {}) {
           if (prep.classAt(S3.x[i], S3.z[i]) >= 0) on++;
         }
         if (inside3 && on >= inside3 / 3) unpaint.add(ri);
+      } else if (INV && R38) {
+        let on = 0, inside3 = 0;
+        for (let i = 0; i < n; i++) {
+          if (!prep.inside(S3.x[i], S3.z[i])) continue;
+          inside3++;
+          if (prep.classAt(S3.x[i], S3.z[i]) >= 0) on++;
+        }
+        if (inside3 && on >= inside3 / 3) edgeOff.set(ri, { eL, eR });
       }
       return;
     }
@@ -13573,7 +13600,24 @@ function measureLineFit(net, prep, surf, opts = {}) {
         st.funnels = (st.funnels || 0) + 1;
       }
     }
-    fitOf.set(ri, { L: L2, R: R2, eL, eR, kL: near(dL, L2), kR: near(dR, R2), funnel });
+    const kL = near(dL, L2), kR = near(dR, R2);
+    const okOf = (raw, k) => {
+      const ok = new Uint8Array(n);
+      for (let i = 0; i < n; i++) {
+        if (X[i]) continue;
+        for (let j = 0; j < n; j++) if (raw[j] != null && Math.abs(S3.s[j] - S3.s[i]) <= EDGE_WIN && Math.abs(raw[j] - k[i]) <= EDGE_TOL) {
+          ok[i] = 1;
+          break;
+        }
+      }
+      return ok;
+    };
+    const lag = new Uint8Array(n);
+    if (INV) for (let i = 0; i < n; i++) {
+      const a = kL[i] - L2[i], b = kR[i] - R2[i];
+      if (a * b > 0 && Math.min(Math.abs(a), Math.abs(b)) > LAG) lag[i] = 1;
+    }
+    fitOf.set(ri, { L: L2, R: R2, eL, eR, kL, kR, funnel, ...INV ? { okL: okOf(rL, kL), okR: okOf(rR, kR), X, lag } : {} });
     st.fitted++;
   });
   const ends = /* @__PURE__ */ new Map();
@@ -13649,7 +13693,8 @@ function measureLineFit(net, prep, surf, opts = {}) {
     });
   }
   st.unpainted = unpaint.size;
-  return { fitOf, st, unpaint };
+  st.edgeOffRoads = edgeOff.size;
+  return { fitOf, st, unpaint, edgeOff, lg, classAt: prep.classAt };
 }
 function shiftI(f, i, t) {
   const B = f.B?.[i];
@@ -13727,9 +13772,17 @@ function paintedLaneCentre(net, fit, rr, x, z) {
   }
   return null;
 }
+function noWidth(v) {
+  const code = Math.floor(v + 1e-4);
+  if (code <= 0) return v;
+  let c = code >= 1e3 ? code - 1e3 : code;
+  if (c >= 500) c -= 500;
+  const dash = Math.floor((c + 0.5) / 50);
+  return v - (c - dash * 50);
+}
 function fitLinesToStreet(net, part, fit) {
   const { fitOf, st } = fit;
-  if (!part?.position || !part.uv || !fitOf.size && !fit.unpaint?.size) return st;
+  if (!part?.position || !part.uv || !fitOf.size && !fit.unpaint?.size && !fit.edgeOff?.size) return st;
   const P = part.position, U2 = part.uv, A = part.attributes?.aPiece?.array, E = part.attributes?.aEdges?.array, nv = P.length / 3;
   const member = roadMembers(net, part);
   const byPhase = /* @__PURE__ */ new Map();
@@ -13761,6 +13814,24 @@ function fitLinesToStreet(net, part, fit) {
       } else if (c) st.unmatched = (st.unmatched || 0) + 1;
     }
     const f = ri >= 0 ? fitOf.get(ri) : null;
+    const eo = !f && ri >= 0 && E ? fit.edgeOff?.get(ri) : null;
+    if (eo) {
+      const S3 = net.roads[ri].smp;
+      let i = 0;
+      while (i < S3.s.length - 1 && S3.s[i] < s) i++;
+      const al = evalAlignment(net.roads[ri].al, s), nx = Math.sin(al.th), nz = -Math.cos(al.th);
+      for (let k = 0; k < 2; k++) {
+        if (E[v * 4 + 2 + k] < 1) continue;
+        const lt = E[v * 4 + k], atEdge = Math.abs(lt - eo.eL[i]) < 0.03 || Math.abs(lt - eo.eR[i]) < 0.03;
+        const x = P[v * 3] + nx * (lt - t), z = P[v * 3 + 2] + nz * (lt - t), c = fit.classAt(x, z);
+        const atKerb = fit.lg.hit(x, z, nx, nz, -NEAR_KERB, NEAR_KERB, 0) != null || c >= 0 && !CARR.has(c);
+        if (atEdge || atKerb) {
+          E[v * 4 + 2 + k] = noWidth(E[v * 4 + 2 + k]);
+          st.invEdgeCut = (st.invEdgeCut || 0) + 1;
+        }
+      }
+      continue;
+    }
     if (!f && ri >= 0 && E && fit.unpaint?.has(ri)) {
       if (E[v * 4 + 2] || E[v * 4 + 3]) st.unpaintedVerts = (st.unpaintedVerts || 0) + 1;
       E[v * 4 + 2] = 0;
@@ -13769,6 +13840,12 @@ function fitLinesToStreet(net, part, fit) {
     }
     if (!f) continue;
     const { d, eL, eR, lerp, at: at2 } = shiftAt(f, net.roads[ri].smp, s, t);
+    let i1 = 1;
+    if (f.X) {
+      const S3 = net.roads[ri].smp;
+      while (i1 < S3.s.length - 1 && S3.s[i1] < s) i1++;
+    }
+    const both = (q) => q[i1 - 1] && q[i1], xHere = f.X ? !!(f.X[i1 - 1] || f.X[i1]) : false, lagHere = f.lag ? !!(f.lag[i1 - 1] || f.lag[i1]) : false;
     if (E && eL - eR > 2 * EDGE_IN + 1) for (let k = 0; k < 2; k++) {
       if (E[v * 4 + 2 + k] < 1) continue;
       const lt = E[v * 4 + k], other = E[v * 4 + 1 - k];
@@ -13778,7 +13855,17 @@ function fitLinesToStreet(net, part, fit) {
         st.funnelLines = (st.funnelLines || 0) + 1;
         continue;
       }
+      if (!side && (xHere || lagHere)) {
+        E[v * 4 + 2 + k] = noWidth(E[v * 4 + 2 + k]);
+        st.invLaneCut = (st.invLaneCut || 0) + 1;
+        continue;
+      }
       if (!side) continue;
+      if (f.X && !both(side > 0 ? f.okL : f.okR)) {
+        E[v * 4 + 2 + k] = noWidth(E[v * 4 + 2 + k]);
+        st.invEdgeCut = (st.invEdgeCut || 0) + 1;
+        continue;
+      }
       const target = side > 0 ? eL + lerp(f.kL) - EDGE_IN : eR + lerp(f.kR) + EDGE_IN;
       let a0 = eR - 1, a1 = eL + 1;
       for (let it = 0; it < 30; it++) {
@@ -13788,9 +13875,16 @@ function fitLinesToStreet(net, part, fit) {
       }
       let tt = (a0 + a1) / 2;
       const lo = Math.min(lt, other) + 0.08, hi = Math.max(lt, other) - 0.08;
+      const want = tt;
       if (side > 0) tt = Math.min(tt, eL - 0.08);
       else tt = Math.max(tt, eR + 0.08);
-      E[v * 4 + k] = Math.max(lo, Math.min(hi, tt));
+      tt = Math.max(lo, Math.min(hi, tt));
+      if (f.X && Math.abs(tt - want) > EDGE_TOL) {
+        E[v * 4 + 2 + k] = noWidth(E[v * 4 + 2 + k]);
+        st.invEdgeCut = (st.invEdgeCut || 0) + 1;
+        continue;
+      }
+      E[v * 4 + k] = tt;
       st.edgeIn++;
     }
     if (E) for (let k = 0; k < 2; k++) E[v * 4 + k] += at2(E[v * 4 + k]);
@@ -13883,7 +13977,7 @@ function buildRoadData(o) {
   const pv = v2 ? afterNetworkV2(net, ctx, surf) : null;
   if (v2) lap("measured paint");
   const roadLines = o.roadLines !== false;
-  const lineFitData = prep && roadLines ? measureLineFit(net, prep, surf, { roadsR: o.roadsR !== false }) : null;
+  const lineFitData = prep && roadLines ? measureLineFit(net, prep, surf, { roadsR: o.roadsR !== false, streetInv: o.streetInv !== false }) : null;
   if (lineFitData) net.lineFit = lineFitData;
   const laneGraph = v2 ? refineLaneGraph(net, prep, pv.inventory, { ...lineFitData && o.laneFit !== false ? { laneShift: laneShifter(net, lineFitData) } : {}, roadsR: o.roadsR !== false }) : null;
   if (v2) {
@@ -19622,6 +19716,7 @@ async function buildTileData(entry, base) {
     recentre: entry.recentre === true,
     roadBend: entry.roadBend !== false,
     roadLines: entry.roadLines !== false,
+    streetInv: entry.streetInv !== false,
     laneFit: entry.laneFit !== false,
     bikeMark: entry.bikeMark !== false,
     weldNearest: entry.groundWeld !== false,
@@ -20381,4 +20476,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "5be7be018fb4dd82";
+self.__TILE_CODE_HASH = "7049a67785506c2d";

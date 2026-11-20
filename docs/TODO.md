@@ -102,6 +102,12 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 - [x] GATE PARSE (props job finding; DONE claude/speed1: the `meta` row bundles every viewer/ debug/ tools/ module with esbuild): a branch that did not boot (a comment swallowed an export) passed the gate; the gate must parse every viewer/ and tools/ file as an ES module.
 - [x] Christmas firs (xmasfir3) MERGED 2026-11-20 (fast lane); the perf saving is not measurable on a busy machine.
 - [ ] CLOSED 2026-11-20: claude/carshadow: no mode measurably reduced the rear shimmer (blur noise ±18 %, less sharp); the verdict is in that branch's docs/CARSHADOW.md; branch kept, worktree removed.
+- [ ] LATER (owner 2026-11-20): a HERO VILLA / mansion around Av. du Prince d'Orange:
+  - a real villa there (Street View, look only), modelled in Blender at the hero quality bar;
+  - a big driveway gate that OPENS, which the player can drive through with the car into the grounds;
+  - an awesome-looking house, maybe with an interior later.
+- [ ] GO (owner 2026-11-20): the street model plan (docs/STREET_MODEL_PLAN.md) and shops v2 (docs/SHOPS_V2_PLAN.md, "if confident") are approved.
+- [ ] LOOK: Neverness to Everness as the art reference (memory art-direction-nte): reference shots in data/raw/refs/nte/ (outside git); fine-tune, don't change the look.
 - [ ] LATER (owner 2026-11-20): shop interiors look flat at street level. Plan: docs/SHOPS_V2_PLAN.md (layered baked interior mapping in the Forza Horizon style + 2-4 hero café cells). Also: shopInteriors.py bakes on the CPU (breaks the OptiX rule).
 - [ ] GATE FLAKE: stutter2 fails under load on a different sub-check each run (clearRoads, heroTrianglesGen, hero triangle slices) and passes alone. A flaky gate row hides real regressions: make it load-robust (median of N runs, or measure CPU time not wall time) or isolate it.
 - [ ] OWNER QUESTION (roads 2026-11-19): front hedges are soft for the car by design (it pushes through, slowed); walls stop it. Should a hedge over ~1 m stop the car?

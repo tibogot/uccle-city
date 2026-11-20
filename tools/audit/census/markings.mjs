@@ -16,20 +16,26 @@
 // to the markable base triangles by construction (road_audit C4 checks it) and is counted as info only.
 // Findings = runs of flagged stroke samples (1 m apart, gaps < 3 m merged), sized in metres.
 //
-// Gate (claude/markings, rule 33 provisional): --max offStreet=N,atKerb=N,skew=N fails above those metres (city-wide
-// ceilings at the after-count); --old = ?roadlines=old (the lines where the median width fit put them, kept on
+// Gate (claude/markings, rule 33 provisional; claude/street1, rule gap-register): --register judges every finding of
+// offStreet / atKerb / skew / zebraShort against data/gaps.json by its stable id (tools/audit/gaps.mjs: a finding not
+// registered fails, a registered one no longer found is stale and fails; no city-wide sums), --write-register rewrites
+// those entries from this run; --max laneP95=N (a quality threshold, not a sum); --old = ?roadlines=old (the lines where the median width fit put them, kept on
 // sidewalks); the parent also runs the bicycle glyph's geometry test (viewer/streets/bikeGlyph.js): round wheels (the
 // painted edge a true circle in the sign frame, every 0.5 deg, vs the old decagons), the survey's footprint (1.50 x 0.92
 // m), round seen from a cyclist's eye, the chevron's inside / outside, the shader using the same shapes.
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/markings.mjs [--all | T ...] [--out FILE] [--old]
-//        [--max offStreet=N,atKerb=N,skew=N] [--quiet]
+//        [--register] [--write-register] [--max laneP95=N] [--quiet]
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, at, ROOT, SC, CLASS_NAME, lineIndex } from "./lib_street.mjs";
+import { findCtx, roadRuns } from "./lib_find.mjs";
+import { judge, report, rewrite } from "../gaps.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, opt, flag } = cli();
-const OLD = flag("--old"), ROADS_OLD = flag("--roadsold"), QUIET = flag("--quiet"), MAX = opt("--max", null);
+const OLD = flag("--old"), ROADS_OLD = flag("--roadsold"), QUIET = flag("--quiet"), MAX = opt("--max", null), REG = flag("--register"), WREG = flag("--write-register");
+/** the invariants the register holds for this row (the others are reported only) */
+const GATED = ["markings.offStreet", "markings.atKerb", "markings.skew", "markings.zebraShort"];
 const ceil = MAX ? Object.fromEntries(MAX.split(",").map((kv) => kv.split("=")).map(([k, v]) => [k, +v])) : null;
 
 /** the bicycle / chevron glyph geometry test: [{ name, ok, info }] */
@@ -106,6 +112,7 @@ if (!CHILD) {
     for (const x of r.runs) runs.push({ tile: r.tile, ...x });
     for (const x of r.zebraShortAt || []) runs.push({ tile: r.tile, len: 0, why: "zebraShort", ...x });
   }
+  const findings = res.flatMap((r) => r.findings || []);
   for (const k of ["strokeM", "unmeasuredM", "offStreetM", "atKerbM", "skewM", "laneSkewM", "tickM", "tickSkewM", "tickLaneM"]) sum[k] = Math.round(sum[k]);
   // traffic lanes vs the painted lanes: |lane centre - painted lane centre| histogram (cm bins) over all tiles -> p95
   const hist = new Array(301).fill(0);
@@ -124,6 +131,9 @@ if (!CHILD) {
   let bad = gt.filter((t) => !t.ok).length;
   const errs = res.filter((r) => r.error).length;
   if (errs) { console.log(`FAIL ${errs} tile(s) did not build`); bad++; }
+  const done = res.filter((r) => !r.error).map((r) => r.tile);
+  if (WREG) { const w = rewrite(findings, { invariants: GATED, tiles: done, date: new Date().toISOString().slice(0, 10), decision: (f) => `open (${f.cause}); report-only until the street model job named by the cause` }); console.log(`  register rewritten: ${w.written} entries of ${GATED.join(" / ")}, ${w.kept} others kept`); }
+  else if (REG) bad += report("markings", judge(findings, { invariants: GATED, tiles: done }));
   if (ceil) for (const [k, v] of Object.entries(ceil)) {
     const got = sum[`${k}M`] !== undefined ? sum[`${k}M`] : sum[k];
     if (got == null) { console.log(`FAIL unknown ceiling ${k}`); bad++; continue; }
@@ -255,6 +265,11 @@ if (fit && A) {
     if (why.length) flagged.push({ ...s, why });
   }
   for (const b of tickBad) flagged.push(b);
+  // stable ids (rule gap-register): per invariant and OSM road, runs along its stations
+  {
+    const ctx = findCtx(S);
+    out.findings = roadRuns(flagged.map((f) => ({ x: f.x, z: f.z, why: [...new Set(f.why.map((w) => (w.startsWith("on ") ? "offStreet" : w)))], m: f.why.some((w) => w.startsWith("tick")) ? 0.25 : 1 })), ctx, { prefix: "markings", tile: T, nameAt, at });
+  }
   // runs: chain flagged samples within 3 m (greedy over a 3 m grid)
   const grid = new Map(), gk = (x, z) => `${Math.floor(x / 3)},${Math.floor(z / 3)}`;
   flagged.forEach((f, i) => { const k = gk(f.x, f.z); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(i); });
@@ -293,7 +308,10 @@ for (const r of rd.inventory?.crossings || []) {
   // (an end meeting another drawn crossing's outline (Brussels Mobility's pieces across tram tracks) is not open)
   const others = (rd.inventory?.crossings || []).filter((o) => o !== r && o.poly);
   const open = (v, sg) => { let d = 0; for (; d < 3; d += 0.25) { const x = r.c[0] + bx * (v + sg * (d + 0.25)), z = r.c[1] + bz * (v + sg * (d + 0.25)); if (!MARKABLE.has(classAt(x, z)) || others.some((o) => pipPoly(x, z, o.poly))) break; } return d >= 1.5 + 0.15; };
-  if (open(r.vSpan[0], -1) || open(r.vSpan[1], 1)) { out.zebraShort++; out.zebraShortAt.push({ id: r.id, at: at(r.c[0], r.c[1]), street: nameAt(r.c[0], r.c[1]) }); }
+  if (open(r.vSpan[0], -1) || open(r.vSpan[1], 1)) {
+    out.zebraShort++; out.zebraShortAt.push({ id: r.id, at: at(r.c[0], r.c[1]), street: nameAt(r.c[0], r.c[1]) });
+    (out.findings ??= []).push({ id: `markings.zebraShort:${String(r.id).replace(/[:\s]/g, "_")}:0-0`, tile: T, inv: "zebraShort", at: at(r.c[0], r.c[1]), street: nameAt(r.c[0], r.c[1]), cause: "junction-unmodelled" });
+  }
 }
 if (process.env.CENSUS_DBG) console.error(JSON.stringify(globalThis.H));
 // traffic lanes vs paint (markings round 2): every driven lane point of a fitted road, 12 m and more from its path's

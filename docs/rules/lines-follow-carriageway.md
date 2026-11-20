@@ -1,7 +1,7 @@
 ---
 number: 33
 status: provisional
-check: `markings`: tools/audit/census/markings.mjs --all (ceilings offStreet / atKerb / skew, lane centre vs painted lane centre p95 <= 0.25 m; `--old` = ?roadlines=old) + the glyph geometry test (round wheels, footprint, chevron); `drivecheck` tree=0
+check: `markings`: tools/audit/census/markings.mjs --all (offStreet / atKerb / skew / zebraShort findings by id in the gap register data/gaps.json, rule gap-register; lane centre vs painted lane centre p95 <= 0.10 m; `--old` = ?roadlines=old) + the glyph geometry test (round wheels, footprint, chevron); `drivecheck` tree=0
 ---
 **Rule.** A line painted along a road follows the MEASURED carriageway, never the guessed stack: where UrbIS maps the street, the lane strips carrying the lines are fitted to the measured kerbs station by station (the carriage ends measured along the road's normal, smoothed along it, the stack stretched between them; edge lines 0.3 m inside the kerb), and any line piece left on a sidewalk, dropped kerb, tree pit, median, square or tram site carries no paint. A painted glyph (bicycle, chevron, arrow) is the real marking at its surveyed size and orientation, drawn as a crisp analytic shape (a signed distance box-filtered by its own pixel footprint, or a pre-filtered texture): never a polygon fan (facets) nor overlapping transparent pieces (doubled paint). The lanes traffic drives on take the SAME fit as the paint (one measurement, both applied): cars centred between the painted lines; nothing that stands (a tree) inside a painted driving lane.
 

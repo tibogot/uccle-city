@@ -238,12 +238,14 @@ function timeFrames(which, cams, frames) {
   return (performance.now() - t0) / frames;
 }
 place(3);
-// (15 interleaved rounds between two calibrations, again while the machine changed speed; the absolute sort budget * k:
+// (interleaved rounds between two calibrations, again while the machine changed speed; the absolute sort budget * k:
 // tools/gate/timing.mjs)
 const MT = await measure(() => {
   const R = { old: [], neu: [], neuU: [], vS: [], vU: [] };
-  for (let r = 0; r < 15; r++) {
-    R.old.push(timeFrames("old", [viewCam, sunCam, lampCam], 200)); R.neu.push(timeFrames("neu", [viewCam, sunCam, lampCam], 200)); R.neuU.push(timeFrames("neuU", [viewCam, sunCam, lampCam], 200));
+  // (short windows, interleaved: 120 rounds of 20 frames, the best of each; 15 windows of 200 frames each held another
+  // process's time slice on a busy machine: the ratio swung 1.5-2.04 x)
+  for (let r = 0; r < 120; r++) {
+    R.old.push(timeFrames("old", [viewCam, sunCam, lampCam], 20)); R.neu.push(timeFrames("neu", [viewCam, sunCam, lampCam], 20)); R.neuU.push(timeFrames("neuU", [viewCam, sunCam, lampCam], 20));
   }
   // the sort: many short windows (30 frames, a few ms: most of them see no preemption), sorted and unsorted back to
   // back; the best of each (a 300-frame window always held some other process's time slice: the difference of two

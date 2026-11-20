@@ -19,6 +19,7 @@ const SHADOW_FAR = typeof location === "undefined" || new URLSearchParams(locati
 const RAYS_WARM = typeof location === "undefined" || new URLSearchParams(location.search).get("rayswarm") !== "old";   // perfgame
 import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
 import { createVolumetricFog } from "../vendor/volumetric-fog/volumetricFog.js";
+import { NTE, NTE_SKY, NTE_FOG_BLUE } from "./lookNte.js";
 
 // FIRMAMENT (default; ?sky=old = the Preetham SkyMesh below): the owner's engine sky (vendor/firmament):
 // physical atmosphere, cumulus + cirrus, the real sun (and moon) for Brussels, the sky's own
@@ -332,6 +333,7 @@ export class Lighting {
     this.uFogFloor = uniform(40.0);
     this.uFogHeight = uniform(900.0);
     this.uFogColor = uniform(new THREE.Vector3(0.5, 0.6, 0.7));
+    this.uFogBlue = uniform(0);        // ?grade=nte: the aerial fog toward a pale blue (viewer/lookNte.js)
     this.day = DAY;                    // day of the year (live: the dev panel)
     this.hourOverride = null;          // solar hour set by the dev panel (null = the preset's)
     this.urlHour = qp.get("hour") != null ? +qp.get("hour") : null;   // ?hour= (the dev panel drops it on a preset change)
@@ -367,6 +369,7 @@ export class Lighting {
     this.sky.params.coverage = this.firm.coverage;
     this.sky.params.cloudType = this.firm.cloudType;
     if (STILL) this.sky.params.windSpeed = 0;          // ?still=1: the clouds stand still (docs/TOUR.md)
+    if (NTE) { const P = this.sky.params; this.nteBase = { haze: P.haze, nightEV: P.nightEV, nightBlue: P.nightBlue }; this.nteSky(); }
     this.sky.update(0, { sunDir: this.firmSunDir() });
     this.skyX?.afterUpdate();
     this.syncFirmament();
@@ -444,6 +447,20 @@ export class Lighting {
     env.uNight.value = L.night || 0;
     env.uInteriorGlow.value = 0.3 + 1.3 * (L.night || 0);
     env.uWetness.value = this.firm.wetness;
+    // ?grade=nte (docs/LOOK_NTE.md steps 2-3): the sky environment's fill (more by day, a blue hour at night) and the
+    // blue far air; uniforms only (scene.environmentIntensity is a reference node), no light added
+    if (NTE) {
+      const n = this.nteSkyP ?? {}, night = L.night || 0, e = n.env ?? 1;
+      this.scene.environmentIntensity = e + ((n.envNight ?? e) - e) * night;
+      this.uFogBlue.value = n.fogBlue ?? 0;
+    }
+  }
+
+  /** ?grade=nte: the time preset's sky params (Firmament's haze / night look), back to the boot's for a preset without */
+  nteSky() {
+    const n = this.nteSkyP = NTE_SKY[this.preset] ?? {}, P = this.sky?.params, B = this.nteBase;
+    if (!P || !B) return;
+    P.haze = n.haze ?? B.haze; P.nightEV = n.nightEV ?? B.nightEV; P.nightBlue = n.nightBlue ?? B.nightBlue;
   }
 
   fogNode() {
@@ -454,7 +471,10 @@ export class Lighting {
     // Firmament: the fog takes the sky's own horizon radiance (sky.light().horizon, every frame). A PMREM
     // lookup of its environment kept the FIRST sky's light (the texture is re-rendered in place and the
     // PMREM never refreshed): far tiles were fogged with the golden-hour sky at midnight.
-    const skyColor = this.firmament ? vec3(this.uFogColor) : pmremTexture(this.envTarget.texture, horizon, float(0)).rgb;
+    const skyColor0 = this.firmament ? vec3(this.uFogColor) : pmremTexture(this.envTarget.texture, horizon, float(0)).rgb;
+    // ?grade=nte: the far air a pale blue of the same brightness (aerial perspective: the far city in layers); built
+    // only with the switch (the default shader as before)
+    const skyColor = NTE ? mix(skyColor0, vec3(skyColor0.dot(vec3(0.2126, 0.7152, 0.0722))).mul(vec3(...NTE_FOG_BLUE)), this.uFogBlue) : skyColor0;
     const H = this.uFogHeight;
     const ya = max(positionWorld.y.sub(this.uFogFloor), 0), yb = max(cameraPosition.y.sub(this.uFogFloor), 0);
     const dy = yb.sub(ya), ea = exp(ya.div(H).negate()), eb = exp(yb.div(H).negate());
@@ -488,6 +508,12 @@ export class Lighting {
       Object.assign(this.firm, t, { wetness: p.wetness });
       this.vfogOn = /[?&]vfog=1/.test(location.search);   // volumetric fog: opt-in only for now (owner, 2026-11-04)
       this.uFogDensity.value = p.fogDensity;
+      if (NTE) {                                         // ?grade=nte: bigger cumulus, denser far air (viewer/lookNte.js)
+        const n = NTE_SKY[id] ?? {};
+        if (n.coverage != null) this.firm.coverage = n.coverage;
+        this.uFogDensity.value = p.fogDensity * (n.fogMul ?? 1);
+        this.nteSky();
+      }
       return;
     }
     this.sun.color.setHex(p.sunColor);
