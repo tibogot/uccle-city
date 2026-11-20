@@ -102,17 +102,11 @@ for (const piece of TL_PIECES) for (let lod = 0; lod < 3; lod++) {
 say(`kit: ${Object.entries(kit).map(([k, v]) => `${k} ${v.tris} tris (lenses ${v.lenses}, audit ${v.blocking})`).join(", ")}`);
 
 // ------------------------------------------------------------------------------------------------ static rules
-for (const f of readdirSync(join(ROOT, "viewer/tlights"))) {
-  const s = readFileSync(join(ROOT, "viewer/tlights", f), "utf8");
-  if (/THREE\.DynamicDrawUsage|\.setUsage\(/.test(s)) FAIL(`code: viewer/tlights/${f} uses DynamicDrawUsage (rule 8)`);
-  if (/new THREE\.\w*Light\(|PointLight|SpotLight|RectAreaLight/.test(s)) FAIL(`code: viewer/tlights/${f} adds a light (rule 7: the lit aspect is emissive)`);
-}
-if (!/old\("tlights"/.test(readFileSync(join(ROOT, "viewer/features.js"), "utf8"))) FAIL("code: no ?tlights switch row in viewer/features.js");
-const mainSrc = readFileSync(join(ROOT, "viewer/main.js"), "utf8");
+// (no light / DynamicDrawUsage in viewer/tlights, the ?tlights features row, main.js wiring: the meta row,
+// tools/audit/gate.d/tlights.mjs)
 // (browser turn 2026-11-19) the eye adaptation raised the grade's exposure to ~2.2 in the street and a green aspect came
 // out mint white: the emissive is divided by the frame's exposure (main.js sets tlightExposure from the post chain)
-if (!/\.div\(tlightExposure/.test(kitSrc) || !/tlightExposure\.value = /.test(mainSrc)) FAIL("code: the lit aspects are not exposure-compensated (tlightKit.js emissive / tlightExposure, set in main.js)");
-if (!/noSignals: cityTLights\.drawing/.test(mainSrc) || !/cityTLights\.addTile\(/.test(mainSrc) || !/cityTLights\.removeTile\(/.test(mainSrc)) FAIL("code: main.js does not hand the signal sites to cityTLights (add / remove / furniture.js noSignals)");
+if (!/\.div\(tlightExposure/.test(kitSrc)) FAIL("code: the lit aspects are not exposure-compensated (tlightKit.js emissive / tlightExposure)");
 
 // ------------------------------------------------------------------------------------------------ the lit aspect on screen
 // three's ACESFilmicToneMapping (r187 ToneMappingFunctions), then sRGB: the rim of each lit colour at its strength must keep

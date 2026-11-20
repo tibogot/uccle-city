@@ -1,4 +1,4 @@
-# Physics props (branch claude/props, 2026-11-19, rule 44)
+# Physics props (branch claude/props, 2026-11-19, rule physics-props)
 
 Owner playtest 2026-11-18 (docs/TODO.md CLASS P): "we should have more objects we could hit with the car: the parked
 motorbikes and other things". Until now only the cars were two-way (docs/CARHIT.md): every bin, sign post, bollard,
@@ -10,7 +10,7 @@ parked motorbike / scooter, Villo bike and café terrace was a static wall (a 1.
 | (default) | the props: viewer/props/propWorld.js (physics) + viewer/props/cityProps.js (the city's glue) |
 | `?props=old` | the street furniture as static walls, the cones without a collider, as before (row in `viewer/features.js`, A/B > Collisions) |
 
-Automated check: `node tools/propsTest.mjs` (rule 44, gate row `props` in `tools/audit/mergeGate.mjs`; `--old` = `?props=old`
+Automated check: `node tools/propsTest.mjs` (rule physics-props, gate row `props` in `tools/audit/mergeGate.mjs`; `--old` = `?props=old`
 fails it). The city glue alone on real three.js: `node --import ./tools/christmas/hook.mjs tools/props/glueSmoke.mjs`
 (run by the gate row too). Inventory: `node --import ./tools/road_audit/register.mjs tools/props/inventory.mjs --all`.
 

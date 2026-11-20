@@ -1,4 +1,4 @@
-// PHYSICS PROPS IN THE CITY (docs/PROPS.md, rule 44; ?props=old = the street furniture as static colliders, as before).
+// PHYSICS PROPS IN THE CITY (docs/PROPS.md, rule physics-props; ?props=old = the street furniture as static colliders, as before).
 // The physics is viewer/props/propWorld.js (one world on the Driver: the car and the two-wheelers hit through carEnv.js).
 // This file is the main-thread glue:
 //   registry  each layer makes its hittable pieces props when a tile lands (make(): class, tile, foot, MEMBERS = the

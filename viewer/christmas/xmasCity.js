@@ -13,7 +13,7 @@
 //     the levels cross-fade per pixel (xmasKit.js bandMask): shared materials, no pop.
 // Lights are emissive only (no new light: the fixed light count). Cost and checks: docs/CHRISTMAS.md.
 import * as THREE from "three/webgpu";
-import { loadXmasKit, spanMaterial, xmasLook } from "./xmasKit.js";
+import { loadXmasKit, spanMaterial, xmasLook, FIR, XMAS_SHADOW_LAYER } from "./xmasKit.js";
 import { lampSiteSets, lampSitesVersion } from "../lamps.js";
 import * as lampsMod from "../lamps.js";
 import { frontFamily } from "../shops/shopLayout.js";
@@ -35,8 +35,15 @@ const hash01 = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) {
 // ------------------------------------------------------------------------------------------------ the instanced field
 /** every instance of every piece; per piece and level ONE instance-matrix buffer and ONE band buffer shared by the slots' meshes */
 const SHADOW_SLOTS = new Set(["fir_needles", "fir_cards", "fir_bark", "chalet_wood", "chalet_trim", "roof_felt"]);
+/** FIR ROUND 3 (docs/CHRISTMAS.md, rule 19): the tree's level whose solid fronds cast the shadow of every level */
+export const FIR_SHADOW_LEVEL = 2;
 export class XmasField {
-  constructor(kit, { shadows = {} } = {}) {
+  /** prepass: the needle cards as a depth twin + an EQUAL-depth lit pass (xmasKit.js FIR); firShadow: "far" = the tree's
+   *  shadow from its FAR level's solid fronds + trunk for all three levels, "cards" = each level its own (before). The
+   *  tree's casters are then shadow-only copies on XMAS_SHADOW_LAYER (the sun's shadow camera draws that layer; the view
+   *  camera does not): the drawn meshes cast nothing (an EQUAL-depth lit pass must never draw into the sun's map). */
+  constructor(kit, { shadows = {}, prepass = FIR.prepass, firShadow = FIR.shadow } = {}) {
+    this.prepass = prepass; this.firShadow = firShadow;
     this.kit = kit; this.group = new THREE.Group(); this.group.name = "christmas";
     this.list = {};                    // piece -> [{ m, p, h }]
     this.levels = {};                  // piece -> [{ mat, band, meshes, sphere, n }]
@@ -58,16 +65,41 @@ export class XmasField {
             for (const [an, at] of Object.entries(geometry.attributes)) if (an !== "xlod") g.setAttribute(an, at);
             g.setIndex(geometry.index); g.boundingSphere = geometry.boundingSphere; g.userData.shared = true;
             g.setAttribute("xlod", band);
-            const im = new THREE.InstancedMesh(g, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true, mask: fade }), cap);
+            const cards = slot === "fir_cards" && prepass;
+            const im = new THREE.InstancedMesh(g, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true, mask: fade, pass: cards ? "colour" : null }), cap);
             im.instanceMatrix = mat;                      // (static usage: uploaded on needsUpdate, the used range only)
             im.count = 0; im.visible = false; im.boundingSphere = sphere; im.frustumCulled = true;
             // (shadows: the big parts only: a bulb, bauble, hook or sign adds a shadow draw for a few texels; the chalets'
             // garland and the fir's planter are inside other shadows; measured 2026-11-17: 27 -> 6 shadow draws)
-            im.castShadow = !!shadows[name] && SHADOW_SLOTS.has(slot); im.receiveShadow = true;
-            im.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""}`; im.userData.slot = slot;
+            im.castShadow = !!shadows[name] && SHADOW_SLOTS.has(slot) && name !== "tree"; im.receiveShadow = true;
+            im.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""}${cards ? " lit" : ""}`; im.userData.slot = slot;
             this.group.add(im);
             return im;
           });
+          // the cards' depth pre-pass twins: the same geometry wrapper and instances, drawn before the opaque city
+          for (const im of meshes.filter((x) => x.userData.slot === "fir_cards" && prepass)) {
+            const tw = new THREE.InstancedMesh(im.geometry, kit.slotMaterial("fir_cards", { uvs: true, instanced: true, mask: fade, pass: "depth" }), cap);
+            tw.instanceMatrix = mat; tw.count = 0; tw.visible = false; tw.boundingSphere = sphere; tw.frustumCulled = true;
+            tw.castShadow = tw.receiveShadow = false; tw.renderOrder = -1; tw.userData.depthPrepass = true; tw.userData.slot = "fir_cards";
+            tw.name = `xmas ${name} lod${k} fir_cards${fade ? " fade" : ""} depth`;
+            this.group.add(tw); meshes.push(tw);
+          }
+          // the tree's shadow: shadow-only copies (this level's instances and band) of the FAR level's solid fronds +
+          // trunk ("far") or of this level's own casters ("cards"), on XMAS_SHADOW_LAYER
+          if (name === "tree" && shadows[name]) {
+            const src = firShadow === "far" ? P.lods[Math.min(FIR_SHADOW_LEVEL, P.lods.length - 1)] : prims;
+            for (const { slot, geometry } of src.filter((x) => SHADOW_SLOTS.has(x.slot))) {
+              const g = new THREE.BufferGeometry();
+              for (const [an, at] of Object.entries(geometry.attributes)) if (an !== "xlod") g.setAttribute(an, at);
+              g.setIndex(geometry.index); g.boundingSphere = geometry.boundingSphere; g.userData.shared = true;
+              g.setAttribute("xlod", band);
+              const sh = new THREE.InstancedMesh(g, kit.slotMaterial(slot, { uvs: !!geometry.attributes.uv, instanced: true, mask: fade }), cap);
+              sh.instanceMatrix = mat; sh.count = 0; sh.visible = false; sh.boundingSphere = sphere; sh.frustumCulled = true;
+              sh.castShadow = true; sh.receiveShadow = false; sh.layers.set(XMAS_SHADOW_LAYER); sh.userData.slot = slot; sh.userData.shadowOnly = true;
+              sh.name = `xmas ${name} lod${k} ${slot}${fade ? " fade" : ""} shadow (${firShadow === "far" ? `lod${FIR_SHADOW_LEVEL}` : "own"})`;
+              this.group.add(sh); meshes.push(sh);
+            }
+          }
           return { cap, mat, band, meshes, sphere, n: 0, box: null };
         };
         return { solid: set(false), fade: set(true) };
@@ -189,6 +221,12 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
   const tLoad = performance.now() - t0;
   const field = new XmasField(kit, { shadows: { tree: true, chalet: true } });
   scene.add(field.group);
+  // the tree's shadow-only casters (XMAS_SHADOW_LAYER): the sun's shadow camera draws that layer too (re-asserted below:
+  // the interior portal sets the camera's layers back to 0 on the way out; while it is sealed (layer 0 off) left alone)
+  const suns = [];
+  scene.traverse((o) => { if (o.isDirectionalLight && o.castShadow) suns.push(o); });
+  const sunLayer = () => { for (const L of suns) if (L.shadow.camera.layers.isEnabled(0) && !L.shadow.camera.layers.isEnabled(XMAS_SHADOW_LAYER)) L.shadow.camera.layers.enable(XMAS_SHADOW_LAYER); };
+  sunLayer();
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), S = new THREE.Vector3();
   const place = (x, y, z, yaw, sx = 1, sy = 1, sz = 1) => M.compose(new THREE.Vector3(x, y, z), Q.setFromAxisAngle(Y, yaw), S.set(sx, sy, sz));
 
@@ -294,11 +332,11 @@ export async function addChristmas({ scene, updaters, world, manifest, log, comp
 
   let frame = 0;
   updaters.push((eye) => {
-    if (frame++ % 30 === 0) { if (placeTrees()) field.dirty = true; decorateLamps(); }
+    if (frame++ % 30 === 0) { if (placeTrees()) field.dirty = true; decorateLamps(); sunLayer(); }
     field.update(eye);
   });
   log(`christmas: ${trees.length} trees, ${site.spans.length} street garlands (${spans.counts.bulbs} LEDs, ${spans.mid.length} stars), ${chalets.length} market chalets, ${nSwag} shopfront swags, ${site.wreaths.length} wreaths, lamp snowflakes along ${site.streets.length} street lines; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms (?xmas=0: without)`);
-  const api = { site, kit, field, spans, trees, chalets, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
+  const api = { fir: { ...FIR, shadowLevel: FIR_SHADOW_LEVEL, suns: suns.length }, site, kit, field, spans, trees, chalets, look: xmasLook, group: field.group, tLoad, tComp, stats: () => field.stats };
   window.xmas = api;
   return api;
 }

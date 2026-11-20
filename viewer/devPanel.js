@@ -95,7 +95,11 @@ export function createDevPanel(ctx) {
   const rows = new Map();                     // key -> { f, ctrl, folder, boot }
   const folderOf = new Map();                 // group -> folder
   function switches(folder, group) {
-    const list = FEATURES.filter((f) => f.group === group && f.ui !== false && !f.live);
+    // grouped by sub-heading (first appearance), file order inside one: a row's place in features.js only orders it
+    // within its sub (features.js merges with merge=union, so two branches' rows may land in either order)
+    const all = FEATURES.filter((f) => f.group === group && f.ui !== false && !f.live);
+    const subs = [...new Set(all.map((f) => f.sub))];
+    const list = subs.flatMap((s) => all.filter((f) => f.sub === s));
     if (!list.length) return;
     folderOf.set(group, folder);
     folder.heading("Switches", "(read at boot: change, then Apply & reload)");

@@ -1,4 +1,4 @@
-// PHYSICS PROPS (docs/PROPS.md, rule 44; ?props=old = the street furniture as static colliders, as before).
+// PHYSICS PROPS (docs/PROPS.md, rule physics-props; ?props=old = the street furniture as static colliders, as before).
 // Owner playtest 2026-11-18: "we should have more objects we could hit with the car: the parked motorbikes and other
 // things". A small 3D rigid-body world for the street's movable things, pure JS (no three.js: the gate runs it headless),
 // fixed-size typed arrays, no allocation per step (carHit.js's style):

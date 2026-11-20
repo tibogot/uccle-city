@@ -1,6 +1,6 @@
 # Mesh audit: christmas lampmotif_lod0 (needle-vs-needle overlaps exempt: 0)
 
-1,716 triangles, 929 welded vertices, 0 open edges, 0 rays, 47 ms.
+1,716 triangles, 929 welded vertices, 0 open edges, 0 rays, 46 ms.
 
 **0 blocking**, 84 warnings. Clean (no blocking item).
 

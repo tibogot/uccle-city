@@ -1,4 +1,4 @@
-// node tools/propsTest.mjs [--quiet] [--old]: physics props without a browser (docs/PROPS.md, rule 44, gate row `props`).
+// node tools/propsTest.mjs [--quiet] [--old]: physics props without a browser (docs/PROPS.md, rule physics-props, gate row `props`).
 // The player's car is the real one (carCtl.js stepCtl through carEnv.js with the PropWorld, 60 fps frames, 120 Hz
 // substeps); the props are viewer/props/propWorld.js bodies on a flat ground with their drive colliders as the city
 // builds them (colliders.js: a box / post with a `ref` carrying the prop), shapes from the real pieces' sizes.
@@ -375,6 +375,6 @@ check("colliders follow (rule 25)", !OLD && colTally.props > 300 && !colTally.ba
   check("glue", ok, msg);
 }
 
-console.log(`\n## propsTest${OLD ? " --old (?props=old)" : ""} (docs/PROPS.md, rule 44)\n| check | result | measured |\n|---|---|---|\n${out.join("\n")}`);
+console.log(`\n## propsTest${OLD ? " --old (?props=old)" : ""} (docs/PROPS.md, rule physics-props)\n| check | result | measured |\n|---|---|---|\n${out.join("\n")}`);
 if (!QUIET || fails) console.log(fails ? `\n${fails} check(s) FAILED` : "\nall checks pass");
 process.exitCode = fails ? 1 : 0;

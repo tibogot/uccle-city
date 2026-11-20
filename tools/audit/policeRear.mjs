@@ -55,18 +55,7 @@ const check = (name, ok, info = "") => { rows.push([name, ok ? "PASS" : "FAIL", 
   check("rear thin features, marked police estate <= 9", tex.police.missTotal <= 9, `clamp miss ${tex.police.missTotal}`);
 }
 
-// ---- 4. switches + code rules
-{
-  const feat = fs.readFileSync(path.join(ROOT, "viewer/features.js"), "utf8");
-  check("switch ?carplate=old is a features.js row", /old\("carplate"/.test(feat));
-  const bad = [];
-  for (const f of ["viewer/police/plateDecal.js", "viewer/drive/carPacks.js", "debug/rearCheck.js"]) {
-    const t = fs.readFileSync(path.join(ROOT, f), "utf8");
-    if (/DynamicDrawUsage/.test(t)) bad.push(`${f}: DynamicDrawUsage`);
-    if (/new THREE\.\w*Light\(/.test(t)) bad.push(`${f}: a light`);
-  }
-  check("no light, no DynamicDrawUsage", !bad.length, bad.join(", "));
-}
+// ---- 4. (the ?carplate features row, no light / DynamicDrawUsage: the meta row, tools/audit/gate.d/policerear.mjs)
 
 const failed = rows.filter((r) => r[1] !== "PASS");
 if (!quiet || failed.length) for (const r of rows) console.log(`${r[1]}  ${r[0]}${r[2] ? `  (${r[2]})` : ""}`);
