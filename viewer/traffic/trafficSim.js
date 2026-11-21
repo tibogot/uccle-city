@@ -18,7 +18,7 @@
 //                see (outside the frustum, or beyond the fleet's 420 m fade): never popping in sight
 //   pose         rear and front axle points on the route (smooth heading through curves, the rear cuts in like a real
 //                car), height + pitch from the ground under the axles, front-wheel steer from the path ahead
-import { signalClock, signalState, untilGreen, RED, AMBER } from "./signals.js";
+import { signalClock, signalState, untilGreen, RED, AMBER, CYCLE, CYCLE_T } from "./signals.js";
 import { CTRL } from "./trafficGraph.js";
 import { TWIN_OLD } from "./trafficWorld.js";
 import { ROLE, routeProject, routePoint } from "./trafMix.js";   // TRAFMIX (docs/TRAFMIX.md): the service roles
@@ -41,10 +41,11 @@ const TP_TOUCH = 0.05;
 const TP_BLOCK = 0.96;          // m: a parked box this close to a lane's line blocks it (the widest traffic type: 0.975 half width; built lanes keep 0.98)          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
 const FAIR_T = 20;               // s: held this long for room on an exit, a car claims it (rule junction-entry-room)
 const ROOM_GAP = 2;             // m: the room a car needs past a junction turn beyond its own length (rule junction-entry-room)
-const CYCLE_T = 10, CREEP_T = 3;  // s: a wait this old is checked for a wait-for loop; a car breaking one creeps on this long
+const LOOP_T = 10, CREEP_T = 3;  // s: a wait this old is checked for a wait-for loop; a car breaking one creeps on this long
 const RUN_ROOM = 0.4, RUN_OUT = 0.5;    // m: a car pulled over this far is passed by a run, which eases this far out
 const PROGRESS = 3;             // m: moved this far since a wait began, the wait starts over (a queue, not a stuck car)
 const PATIENCE = 8, NEAR_ONC = 14;      // s refused before the far oncoming traffic lets a car out; m: the near ones still hold it
+const GAP_T = 4;                // s: a car on a conflicting turn this near the conflict point in time is in the way
 const CF_SHORT = 1.5;           // m: a standing car's front this far short of a conflict point leaves it free
 const PASS_GAP = 0.6;           // m: easing out past a parked car, the least gap kept to a car in the other half of the street
 const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
@@ -58,6 +59,18 @@ const OBS_MAX = 512, OBS_ENTRIES = 8192;          // (trafpark: parked-car obsta
 const CAR_HALF_W = 0.95;          // m: a traffic car's half width (the box obstacles' lane test)
 // density (cars per km of lane at the busiest hour) per road class rank (0 alley .. 4 boulevard)
 export const DENSITY = [1.5, 10, 18, 24, 26, 26];
+/** SIGNAL APPROACH CAPACITY (claude/street4, rule signal-demand): a lane into a traffic light carries at most
+ *  SAT_FLOW x its green share (veh/h); at the peak the spawned density on it is held to DEMAND_MAX of that, as a flow
+ *  of density x the lane's speed limit: k <= DEMAND_MAX x SAT_FLOW x g / C / v. SAT_FLOW 1,800 veh/h/lane: the base
+ *  saturation flow of the Highway Capacity Manual (HCM 6th ed., ch. 19, 1,900 pc/h/ln base, ~1,800 for an urban lane
+ *  with heavy vehicles and turns); no counts of Uccle's 8 h traffic are in the data */
+export const SAT_FLOW = 1800, DEMAND_MAX = 0.9;
+export function laneDensity(g, i) {
+  const base = DENSITY[Math.min(5, g.rank[i])];
+  if (g.ctrl[i] !== 1) return base;
+  const kmh = Math.max(10, g.speed[i] * 3.6), cap = (DEMAND_MAX * SAT_FLOW * (CYCLE.green / CYCLE_T)) / kmh;
+  return Math.min(base, cap);
+}
 /** share of the peak density at hour h (0..24), Brussels weekday shape */
 export function hourFactor(h) {
   const P = [[0, 0.1], [5, 0.06], [6.5, 0.35], [8, 1], [9.5, 0.7], [12, 0.6], [16, 0.75], [17.5, 1], [19, 0.7], [21, 0.4], [23, 0.18], [24, 0.1]];
@@ -631,7 +644,7 @@ export class TrafficSim {
     const wide = Math.max(0, Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2) - 0.92), PASS = TP_PASS + wide;
     // (only for a vehicle wider than a car: a car's own estimate is the lane's, as before; no extra cost for the cars)
     if (wide > 0 && !(this.pwT[i] > 0)) {
-      if ((this.steps + i) % 4 && this.pcOk?.[i] !== undefined) { if (this.pcOk[i]) return true; }
+      if ((this.steps + i) % 8 && this.pcOk?.[i] !== undefined) { if (this.pcOk[i]) return true; }
       else { const ok = corridor(this.room[i], 0.05); (this.pcOk ||= new Uint8Array(this.cap))[i] = ok ? 1 : 0; if (ok) return true; }
     }
     if (Math.abs(need) > PASS + 0.3) return false;
@@ -677,7 +690,7 @@ export class TrafficSim {
     // (from the least shift up: the entry's need is the lane's estimate round the parked car's bounding disc (r = its half
     // length), well over what a body passing beside it needs; starting there, a bus with a car parked across the street
     // too found no clear corridor and waited for good: trafmix, D6)
-    for (let sv = wide > 0 ? 0.1 : Math.max(0.1, Math.abs(need) - 0.3); sv <= PASS + 1e-3; sv += 0.15) {
+    for (let sv = wide > 0 ? 0.1 : Math.max(0.1, Math.abs(need) - 0.3); sv <= PASS + 1e-3; sv += wide > 0 ? 0.3 : 0.15) {
       if (!corridor(sg * sv, 0.08)) continue;
       this.pw[i] = sg * sv; this.pwT[i] = 1.5; this.pwSum[i] = 0; this.stats.parkPasses = (this.stats.parkPasses || 0) + 1;
       return false;
@@ -713,7 +726,16 @@ export class TrafficSim {
         // not in the way: a queue waiting at the next junction's red light, its tail inside this junction's turn, held
         // the crossing ambulance for good (D7 Ch. d'Alsemberg, two signals a few metres apart); a moving one, or one at
         // the conflict point, still is)
-        if (!(this.creep[i] > 0)) for (let j = gc.head[gc.cfOther[k]]; j >= 0; j = this.nxt[j]) { const pj = this.posOn(j); if (pj - this.half[j] < atO + 1.2 && !(this.v[j] < 0.5 && pj + this.half[j] < atO - CF_SHORT)) { this._blk = j; return HOLD.busy; } }
+        // (claude/street4, GAP ACCEPTANCE: a car still short of the conflict point is in the way only if it is near it in
+        // TIME: within GAP_T s at its speed, or within CF_SHORT m standing; one entering the other turn 30 m back held a
+        // car at a priority junction for good under a steady flow, E4 / E5 (trafmix "stuck", hold 4))
+        if (!(this.creep[i] > 0)) for (let j = gc.head[gc.cfOther[k]]; j >= 0; j = this.nxt[j]) {
+          const pj = this.posOn(j);
+          if (!(pj - this.half[j] < atO + 1.2)) continue;                  // (cleared the conflict point)
+          const gapM = atO - (pj + this.half[j]);
+          if (gapM > (this.v[j] < 0.5 ? CF_SHORT : this.v[j] * GAP_T)) continue;
+          this._blk = j; return HOLD.busy;
+        }
         if (yl !== 1 || courtesy) continue;
         // (b) the ones with priority that will be there soon: cars on the other connector's entry lane heading for it
         const E = gc.prevOff[gc.cfOther[k]] < gc.prevOff[gc.cfOther[k] + 1] ? gc.prevIdx[gc.prevOff[gc.cfOther[k]]] : -1;
@@ -966,13 +988,13 @@ export class TrafficSim {
   }
 
   /** Advance one fixed step. ctx: { visible(x, y, z, r) -> bool, fx, fz (the focus: player / camera) } */
-  /** THE CYCLE BREAKER (rule junction-entry-room, a safety net): a car waiting CYCLE_T s whose wait-for chain (the car
+  /** THE CYCLE BREAKER (rule junction-entry-room, a safety net): a car waiting LOOP_T s whose wait-for chain (the car
    *  its hold names, else the stopped car it follows) loops back to it: the car of that loop with the oldest wait,
    *  inside a junction turn where one is, creeps on for CREEP_T s (its busy / full holds waived); counted in
    *  stats.cycleBreaks (the trafmix gate keeps it near 0) */
   breakCycles() {
     for (let i = 0; i < this.cap; i++) {
-      if (!this.alive[i] || this.holdT[i] < CYCLE_T || this.wf[i] < 0 || this.creep[i] > 0) continue;
+      if (!this.alive[i] || this.holdT[i] < LOOP_T || this.wf[i] < 0 || this.creep[i] > 0) continue;
       const m = ++this._wfM;
       let j = i, n = 0;
       while (j >= 0 && n < 64 && this.wfMark[j] !== m) { this.wfMark[j] = m; j = this.alive[j] ? this.wf[j] : -1; n++; }
@@ -1333,7 +1355,7 @@ export class TrafficSim {
         if (g.kind[i] || !g.core[i]) continue;
         const dx = g.mid[i * 2] - fx, dz = g.mid[i * 2 + 1] - fz;
         if (dx * dx + dz * dz > R * R) continue;
-        want += g.len[i] * DENSITY[Math.min(5, g.rank[i])] / 1000;
+        want += g.len[i] * laneDensity(g, i) / 1000;
         km += g.len[i] / 1000;
       }
     }
@@ -1406,7 +1428,7 @@ export class TrafficSim {
     for (let i = 0; i < g.paths; i++) {
       const m = this.W.midOf(g, i);
       g.mid[i * 2] = m[0]; g.mid[i * 2 + 1] = m[1];
-      if (!g.kind[i] && g.core[i] && g.len[i] > 12) s += g.len[i] * DENSITY[Math.min(5, g.rank[i])];
+      if (!g.kind[i] && g.core[i] && g.len[i] > 12) s += g.len[i] * laneDensity(g, i);
       g.wsum[i] = s;
     }
   }

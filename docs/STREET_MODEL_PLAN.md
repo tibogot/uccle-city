@@ -393,3 +393,26 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
 - **Seed 7, old lanes:** the 8 h mix share fails (cars 90.0 %). That happens with the old lanes only; noted, not fixed.
 - **Status:** the row fails with both lane sets. It needs the traffic job in TODO: real 8 h demand on the Alsemberg
   corridor and signal coordination between the close D6 / D7 junctions.
+
+**Round 6 (2026-11-22): the D6 / D7 traffic job.**
+- **(A) D6:**
+  - OSM has traffic_signals at the 5-arm node n140341699 and round it (5 posts). The node is already signal-controlled
+    in the sim.
+  - The D7 spot (-1098, 1079) has no signals in OSM: priority to the right, as the data say.
+  - The G2 turns at n140341699 are as long as the old ones (18 turns, 13-48 m vs 15-47 m).
+- **(B) Signals and demand:**
+  - Approach demand is capped at 0.9 x 1,800 veh/h x green share (rule signal-demand, assertion "signal approaches
+    under capacity": 85 approaches, 0 over).
+  - Close pairs share the cycle. The coordination assertion fails: 3 of 15 through movements are on different phases.
+  - Gap acceptance at conflicting turns: a car short of the conflict point is in the way only within 4 s at its speed.
+  - The old-lanes police car at (-666, -339) was held behind a car entering the conflicting turn far back, at a priority
+    junction under steady flow (E4). Gap acceptance clears it: old lanes, seed 7 stuck 0.
+- **trafmix true-stuck** (model lanes):
+
+  | seed | stuck |
+  |---|---|
+  | 7 | 0 |
+  | 11 | 3: D7 signal pair, the second junction's give-way inside the first's turn |
+  | 23 | 1: an ambulance held by a parked car at (-996, 827) |
+
+  The sim-cost check reads 1.10-1.11 x (limit 1.10). **The row still fails**; what is left is listed in TODO.

@@ -273,6 +273,31 @@ for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS
 {
   const rem = Object.entries(stuckRemoved).map(([k, v]) => `${k} ${v}`);
   // (rule junction-entry-room: the cycle breaker is a safety net; the entry-room rule must keep gridlocks from forming)
+  // (rule signal-demand: every signal approach of the run's tiles at most DEMAND_MAX of its green-time capacity at the
+  // peak, as configured; every pair of signal junctions under 150 m apart on one road: one shared cycle (signals.js CYCLE,
+  // city-wide) and the through movement on the same phase at both: a green wave of offset 0, its link run in under a
+  // green)
+  {
+    const { laneDensity, SAT_FLOW, DEMAND_MAX } = await import(pathToFileURL(join(ROOT, "viewer/traffic/trafficSim.js")).href);
+    const { CYCLE, CYCLE_T } = await import(pathToFileURL(join(ROOT, "viewer/traffic/signals.js")).href);
+    let over = 0, appr = 0, pairs = 0, off = [];
+    for (const g of W.slots) { if (!g) continue;
+      for (let L = 0; L < g.paths; L++) {
+        if (g.kind[L] || g.ctrl[L] !== 1) continue;
+        appr++;
+        const kmh = Math.max(10, g.speed[L] * 3.6), flow = laneDensity(g, L) * kmh;
+        if (flow > DEMAND_MAX * SAT_FLOW * (CYCLE.green / CYCLE_T) + 1e-6) over++;
+        for (let q = g.prevOff[L]; q < g.prevOff[L + 1]; q++) {
+          const C = g.prevIdx[q]; if (!g.kind[C] || g.turn[C] !== 0 || g.nodeOf[C] < 0 || g.jnode[L] < 0) continue;
+          const A = g.jnodes[g.nodeOf[C]], B = g.jnodes[g.jnode[L]]; if (!A.signal || A === B || Math.hypot(A.x - B.x, A.z - B.z) > 150) continue;
+          const La = g.prevIdx[g.prevOff[C]]; if (La == null || g.ctrl[La] !== 1) continue;
+          pairs++; if (g.phase[La] !== g.phase[L]) off.push(`${A.id}->${B.id}`);
+        }
+      }
+    }
+    check("signal approaches under capacity", appr > 0 && over === 0, `${appr} signal approaches, ${over} over ${DEMAND_MAX} x ${SAT_FLOW} veh/h x green share at the peak`);
+    check("close signal pairs coordinated", off.length === 0, `${pairs} through movements between signal junctions < 150 m apart, one cycle (${CYCLE_T} s); on different phases: ${off.length ? off.slice(0, 4).join(", ") : "none"}`);
+  }
   check("junction entry room", (sim.stats.cycleBreaks || 0) <= CYCLE_MAX, `wait-for loops broken: ${sim.stats.cycleBreaks || 0} (<= ${CYCLE_MAX}: cars start a junction turn only with room past it, reserved against the cars already turning there)`);
   check("service vehicles never stuck", !stuckTrue.length && Object.keys(standMax).length > 0, `stuck (it and the queue ahead of it still ${STUCK_T} s, not a planned stop): ${stuckTrue.length}${stuckTrue.length ? " -- " + stuckTrue.slice(0, 3).map((q) => `${q.nm} at ${q.at} (hold ${q.hold}, chain ${q.chain})`).join("; ") : ""}`);
   console.log(`(info) the sim's removal timer (held 60 s in total, also in a moving queue): ${rem.length ? rem.join(", ") : "none"}; longest standstill: ${Object.entries(standMax).map(([k, v]) => `${k} ${v.toFixed(0)} s`).join(", ") || "none seen"}`);
