@@ -38,6 +38,7 @@ const TP_OLD = typeof location !== "undefined" && /[?&]trafpark=old(&|$)/.test(l
 /** the parking rate (pull-outs / reverse-ins) for a page's query string: 0 under ?still=1 (the tour), else 1 */
 export const parkRateFor = (search) => (/[?&]still=1(&|$)/.test(search || "") ? 0 : 1);
 const TP_TOUCH = 0.05;
+const ROOM_AHEAD = 0.25;   // m: a sideways move out stops when its corridor ahead (the stopping distance) comes this near a parked car (claude/street4)
 const TP_BLOCK = 0.96;          // m: a parked box this close to a lane's line blocks it (the widest traffic type: 0.975 half width; built lanes keep 0.98)          // m: a parked car's box within CAR_HALF_W - TP_TOUCH of a lane's line blocks it (built: >= 0.9 m clear)
 const FAIR_T = 20;               // s: held this long for room on an exit, a car claims it (rule junction-entry-room)
 const ROOM_GAP = 2;             // m: the room a car needs past a junction turn beyond its own length (rule junction-entry-room)
@@ -1086,7 +1087,19 @@ export class TrafficSim {
     // trafpark: easing out round a parked car standing into the lane (passing()), held 1.5 s after the last ask
     if (this.pwT[i] > 0) { this.pwT[i] -= STEP; if (driving) want = this.pw[i]; if (this.pwT[i] <= 0) this.pw[i] = 0; }
     const d = want - this.room[i], m = (want ? (this.ctl[i] === 1 ? 1.6 : 0.6) : 0.35) * STEP;
-    const next = this.room[i] + (d > m ? m : d < -m ? -m : d);
+    let next = this.room[i] + (d > m ? m : d < -m ? -m : d);
+    // (claude/street4, trafparksim: a car pulling over at 8 m/s eased 0.42 m right into a corridor with a parked car
+    // 5 m ahead, inside its stopping distance, and braked into it: the clamp below judged its position only. The
+    // shifted corridor AHEAD, half and all of its stopping distance, is judged too: no move out toward a parked car
+    // there within ROOM_AHEAD, and a car whose shifted corridor runs into one eases back toward its lane line. A run
+    // (ctl 4) keeps its line)
+    if (!TP_OLD && driving && this.pk.grid.size && this.v[i] > 1 && this.ctl[i] !== 4 && (next || this.room[i]) && (Math.abs(next) > Math.abs(this.room[i]) || ((this.steps + i) & 3) === 0)) {
+      const v = this.v[i], L = Math.min(20, (v * v) / 6 + 2);
+      const ahead = (r) => Math.min(this.parkClear(i, r, L * 0.5), this.parkClear(i, r, L));
+      if (Math.abs(next) > Math.abs(this.room[i]) && ahead(next) < ROOM_AHEAD) next = this.room[i];
+      if (next === this.room[i] && this.room[i] && ahead(this.room[i]) < TP_TOUCH) { const r = this.room[i]; next = r - Math.sign(r) * Math.min(Math.abs(r), 0.6 * STEP); }
+      if (next === this.room[i]) return;
+    }
     // trafpark: no sideways move (pull over, yield right, the bike's room, back from a pass) into a parked car: a move
     // that brings the body within TP_TOUCH of one, closer than it is, waits
     if (!TP_OLD && this.pk.grid.size && next !== this.room[i]) {
