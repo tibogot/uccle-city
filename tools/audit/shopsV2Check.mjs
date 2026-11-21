@@ -15,12 +15,15 @@
 //   5. The neighbour rule: no two windows of the same type within NEIGHBOUR_M facing the same way (in one tile, the
 //      layout's unit) show the same variant when the type has more than one (types with one variant: counted, waiting).
 //   6. The sticker sheet: shopScale.js STICKERS inside the 1024 x 512 layer, not overlapping; tools/shops/stickers.py.
+//   7. (shops6) The gains: shopScale.js V2_GAIN has a day and a night gain for every variant, inside V2_GAIN_RANGE;
+//      day gain x the variant's measured luminance (V2_LUM) within V2_DAY_TOL of V2_DAY_TARGET (every room the same
+//      mean by day); shopWindow.js applies them per variant (gDay / gNight) and the closed look stays closedV2 0.1.
 //
 //   node tools/audit/shopsV2Check.mjs [--quiet]
 import { readFileSync, statSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { V2, V2_FETCH, V2_BUDGET, V2_SLOT, DEPTH, TYPES, acrossScale, variantsOfType, NEIGHBOUR_M, STICKERS } from "../../viewer/shops/shopScale.js";
+import { V2, V2_FETCH, V2_BUDGET, V2_SLOT, DEPTH, TYPES, acrossScale, variantsOfType, NEIGHBOUR_M, STICKERS, V2_GAIN, V2_LUM, V2_GAIN_RANGE, V2_DAY_TARGET, V2_DAY_TOL } from "../../viewer/shops/shopScale.js";
 import { auditWindows } from "../shops/shopScaleAudit.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -151,8 +154,24 @@ for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++
 }
 if (!existsSync(join(ROOT, "tools/shops/stickers.py"))) fail("tools/shops/stickers.py missing (the sticker sheet is made by script)");
 
+// 7. the per-variant gains (shops6)
+const gainTxt = [];
+for (const v of V2.VARIANTS) {
+  for (const l of ["day", "night"]) {
+    const g = V2_GAIN[l]?.[v], [lo, hi] = V2_GAIN_RANGE[l];
+    if (!(typeof g === "number" && g >= lo && g <= hi)) fail(`V2_GAIN.${l}.${v} = ${g}: missing or outside [${lo}, ${hi}]`);
+    if (!(V2_LUM[l]?.[v] > 0)) fail(`V2_LUM.${l}.${v} missing (measure the composite: docs/assets/SHOPS.md §3d)`);
+  }
+  const y = V2_GAIN.day[v] * V2_LUM.day[v];
+  if (!(Math.abs(y / V2_DAY_TARGET - 1) <= V2_DAY_TOL)) fail(`${v} by day: gain ${V2_GAIN.day[v]} x lum ${V2_LUM.day[v]} = ${y.toFixed(4)}, want ${V2_DAY_TARGET} +-${V2_DAY_TOL * 100} %`);
+  gainTxt.push(`${v} ${V2_GAIN.day[v]}/${V2_GAIN.night[v]}`);
+}
+for (const k of Object.keys(V2_GAIN.day)) if (!V2.VARIANTS.includes(k)) fail(`V2_GAIN.day.${k}: not a variant`);
+if (!/c\.mul\(gNight\)/.test(src) || !/look\(0\)\.mul\(gDay\)/.test(src)) fail("shopWindow.js: the v2 day / night colour is not multiplied by the per-variant gains (gDay / gNight)");
+if (!/closedV2: uniform\(0\.1\)/.test(src) || !/c\.mul\(U\.closedV2\)/.test(src)) fail("shopWindow.js: the closed look changed (want the night bake x closedV2 0.1)");
+
 const nVar = V2.VARIANTS.map((_, i) => Wn.filter((a) => a.variant === i).length);
 const closed = Wn.filter((a) => a.lit < 0.5).length;
-const head = `shopsv2: arrays A ${KD.layers} + C ${KC.layers} x ${KD.W} x ${KD.H}, N ${KN.layers} x ${KN.W} x ${KN.H} (full mips): ${(gpu / MB).toFixed(2)} MB GPU (<= ${V2_BUDGET.gpuMB}), ${(fileBytes / MB).toFixed(2)} MB download (<= ${V2_BUDGET.fileMB}); fetches near ${nNear} + ${nDress} sticker / far ${nFar} per pixel (dusk / the ${V2.FAR - V2.BAND}-${V2.FAR + V2.BAND} m band: x2); ${Wn.length} windows (${V2.VARIANTS.map((v, i) => `${v} ${nVar[i]}`).join(", ")}; closed at night ${closed}); generic ${(generic * 100).toFixed(1)} % (<= ${GENERIC_MAX * 100}); neighbour pairs: ${clash} clashes, ${waiting} same-type pairs waiting for a 2nd variant`;
+const head = `shopsv2: arrays A ${KD.layers} + C ${KC.layers} x ${KD.W} x ${KD.H}, N ${KN.layers} x ${KN.W} x ${KN.H} (full mips): ${(gpu / MB).toFixed(2)} MB GPU (<= ${V2_BUDGET.gpuMB}), ${(fileBytes / MB).toFixed(2)} MB download (<= ${V2_BUDGET.fileMB}); fetches near ${nNear} + ${nDress} sticker / far ${nFar} per pixel (dusk / the ${V2.FAR - V2.BAND}-${V2.FAR + V2.BAND} m band: x2); ${Wn.length} windows (${V2.VARIANTS.map((v, i) => `${v} ${nVar[i]}`).join(", ")}; closed at night ${closed}); generic ${(generic * 100).toFixed(1)} % (<= ${GENERIC_MAX * 100}); neighbour pairs: ${clash} clashes, ${waiting} same-type pairs waiting for a 2nd variant; gains day/night ${gainTxt.join(", ")}`;
 if (fails.length) { console.log(`${head}\nFAIL (rule shop-room-layers):`); for (const f of fails) console.log("  " + f); process.exit(1); }
 console.log(`${head}\nPASS`);

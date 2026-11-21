@@ -1476,6 +1476,11 @@ def office_chair(C, x, y, rot, col=(0.06, 0.06, 0.07)):
     C.box(blk, bx - 0.22 * abs(c) - 0.03 * abs(s), bx + 0.22 * abs(c) + 0.03 * abs(s), by - 0.22 * abs(s) - 0.03 * abs(c), by + 0.22 * abs(s) + 0.03 * abs(c), 0.58, 1.0, bevel=0.03)
 
 
+# (shops6) the estate-agent listing board in the office window display (L3): A4 pockets (0.24 x 0.32 m with the
+# acrylic), 3 across x 2 high, the bottom row 0.6 m up, its left post at x0
+OFFICE_BOARD = {"cols": 3, "rows": 2, "w": 0.24, "h": 0.32, "gap": 0.06, "z0": 0.6, "x0": -2.4}
+
+
 def v2_office(L):
     """a bank / agency / estate agent, 4.5 m deep: cool grey walls, a deep blue feature wall at the back with framed
     listings and a wall screen, carpet tiles, a brochure rack and a tall plant; two desks with screens and task chairs
@@ -1525,18 +1530,23 @@ def v2_office(L):
     C.cyl(mat("table_base_contact", (0.06, 0.06, 0.06), 0.3, 0.6), -1.5, 0.75, 0.0, 0.18, 0.02, segs=24); C.cyl(blk, -1.5, 0.75, 0.02, 0.03, 0.4, segs=10)
     C.cyl(mat("marble_top", (0.85, 0.84, 0.8), 0.2), -1.5, 0.75, 0.42, 0.3, 0.03, segs=32)
     for k in range(3): C.box(ph, -1.6 + k * 0.06, -1.38 + k * 0.06, 0.65 + k * 0.03, 0.85 + k * 0.03, 0.45 + k * 0.006, 0.455 + k * 0.006, jitter(pick(GOODS)))
-    D = L.A[3]                                               # L3: two listing boards on steel posts, plants
+    D = L.A[3]                                               # L3: a listing board on steel posts, plants
     st = mat("steel", (0.75, 0.75, 0.74), 0.2, 1.0)
-    for x0, x1 in ((-2.6, -0.9),):
-        for x in (x0 + 0.05, x1 - 0.05):
-            D.box(mat("post_foot_contact", (0.2, 0.2, 0.2), 0.3, 0.6), x - 0.12, x + 0.12, 0.2, 0.44, 0, 0.015); D.cyl(st, x, 0.32, 0.015, 0.012, 1.4, segs=8)
-        for row in range(2):
-            for k in range(int((x1 - x0) / 0.42)):
-                x = x0 + 0.14 + k * 0.42; z = 0.55 + row * 0.44
-                D.box(mat("acrylic", (0.92, 0.92, 0.92), 0.1), x, x + 0.34, 0.31, 0.33, z, z + 0.4, bevel=0.004)
-                D.box(ph, x + 0.02, x + 0.32, 0.305, 0.31, z + 0.18, z + 0.38, jitter(pick([(0.45, 0.55, 0.65), (0.6, 0.5, 0.4), (0.35, 0.45, 0.3)])))
-                D.box(ph, x + 0.02, x + 0.32, 0.305, 0.31, z + 0.02, z + 0.16, (0.92, 0.92, 0.9))
-                D.box(ph, x + 0.04, x + 0.2, 0.303, 0.305, z + 0.11, z + 0.14, (0.15, 0.15, 0.16))
+    # (shops6) the board: OFFICE_BOARD (A4 pockets, 3 x 2, ~1 m wide; was 4 x 2 A3-size pockets on a 1.7 m frame, which
+    # read as a wall of white boxes at 2 m). Shipped arrays still hold the old board until the next full --v2 bake.
+    cols, rows, cw, ch, gap, zb = OFFICE_BOARD["cols"], OFFICE_BOARD["rows"], OFFICE_BOARD["w"], OFFICE_BOARD["h"], OFFICE_BOARD["gap"], OFFICE_BOARD["z0"]
+    x0 = OFFICE_BOARD["x0"]; x1 = x0 + 0.1 + cols * cw + (cols - 1) * gap + 0.1
+    for x0_, x1_ in ((x0, x1),):
+        for x in (x0_ + 0.05, x1_ - 0.05):
+            D.box(mat("post_foot_contact", (0.2, 0.2, 0.2), 0.3, 0.6), x - 0.12, x + 0.12, 0.2, 0.44, 0, 0.015)
+            D.cyl(st, x, 0.32, 0.015, 0.012, zb + rows * ch + (rows - 1) * gap + 0.05, segs=8)
+        for row in range(rows):
+            for k in range(cols):
+                x = x0_ + 0.1 + k * (cw + gap); z = zb + row * (ch + gap); s_ = cw / 0.34
+                D.box(mat("acrylic", (0.92, 0.92, 0.92), 0.1), x, x + cw, 0.31, 0.33, z, z + ch, bevel=0.004)
+                D.box(ph, x + 0.02 * s_, x + cw - 0.02 * s_, 0.305, 0.31, z + ch * 0.45, z + ch * 0.95, jitter(pick([(0.45, 0.55, 0.65), (0.6, 0.5, 0.4), (0.35, 0.45, 0.3)])))
+                D.box(ph, x + 0.02 * s_, x + cw - 0.02 * s_, 0.305, 0.31, z + ch * 0.05, z + ch * 0.4, (0.92, 0.92, 0.9))
+                D.box(ph, x + 0.04 * s_, x + cw * 0.6, 0.303, 0.305, z + ch * 0.27, z + ch * 0.35, (0.15, 0.15, 0.16))
     potted(D, -0.4, 0.3, 0.0, r=0.15, h=0.6, pot=mat("pot_dark_contact", (0.12, 0.12, 0.12), 0.6))
     return [], None
 

@@ -22,13 +22,15 @@ import {
   step, mix, clamp, select, fwidth, log2, pow, normalize, smoothstep, length, reflect, Fn, If, vec4, sin,
 } from "three/tsl";
 import { ktxLoader } from "../materials/scans.js";
-import { RW, RD, RH, F, CARD_Y, DEPTH_BY_INDEX, OLD_DEPTH, STRETCH_MAX, V2, STICKERS, STICKER_PPM } from "./shopScale.js";
+import { RW, RD, RH, F, CARD_Y, DEPTH_BY_INDEX, OLD_DEPTH, STRETCH_MAX, V2, STICKERS, STICKER_PPM, V2_GAIN, V2_GAIN_OLD } from "./shopScale.js";
 
 /** the viewer's room: ceiling height above the shop floor (= the render's room height: metric up) */
 const CEIL = RH;
 /** (shops1, rule shop-room-metric) ?shopscale=old: the room stretched over the glass (nx = hx / w), 4 m deep for every
  *  type, the old fresnel; default: the glass's x in metres on the 6 m room (shopScale.js) */
 const SCALE_OLD = typeof location !== "undefined" && /[?&]shopscale=old(&|$)/.test(location.search);
+/** (shops6) ?shopgain=old: every v2 room at the café's day / night gain (0.2 / 0.7); default: shopScale.js V2_GAIN */
+const GAIN_OLD = typeof location !== "undefined" && /[?&]shopgain=old(&|$)/.test(location.search);
 export const INTERIOR_TYPES = ["bakery", "pharmacy", "cafe", "boutique", "grocery", "office", "salon", "shop"];
 /** (shops3, rule shop-room-layers) ?shopsv2=old: every window on the v1 atlas (the café's single room + one card) */
 const V2_OFF = typeof location !== "undefined" && /[?&]shopsv2=old(&|$)/.test(location.search);
@@ -45,10 +47,11 @@ export const windowUniforms = {
   // lamps (3000-3500 K), so the shelves and the floor read again; colourful rooms (pharmacy, grocery) barely change
   nightWhite: uniform(/[?&]shopnight=old(&|$)/.test(location.search) ? 0 : 0.8),
   nightWarm: uniform(/[?&]shopnight=old(&|$)/.test(location.search) ? 0 : 1),
-  // v2 (café / restaurant): the baked day / night images' gains (the day bake has its own sun and sky: brighter than
-  // the v1 room x 0.24), the closed shop's share of the night bake and its security light, the layers on / off (lab)
-  dayV2: uniform(0.2),
-  nightV2: uniform(0.7),
+  // v2: master scales on the baked day / night images' per-variant gains (shopScale.js V2_GAIN, shops6: each room
+  // tuned to the same mean by day), the closed shop's share of the night bake and its security light, the layers on /
+  // off (lab)
+  dayV2: uniform(1),
+  nightV2: uniform(1),
   closedV2: uniform(0.1),
   securityV2: uniform(1),
   layersV2: uniform(1),
@@ -245,12 +248,20 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
     // night closed (iWin.w < 0.5: the opening hours end before 19:00) = the night bake at 10 % + a security light (a
     // cool glow and a green exit sign on the back wall). No light added: it is all emission.
     const open = step(0.5, lit).toVar();
-    const dayC = () => look(0).mul(U.dayV2);
+    // (shops6) the variant's own day / night gain (shopScale.js V2_GAIN: a select chain on vI, like rd above)
+    const gainOf = (tab, old) => {
+      if (GAIN_OLD) return float(old);
+      let g = float(tab[V2.VARIANTS[V2.VARIANTS.length - 1]]);
+      for (let i = V2.VARIANTS.length - 2; i >= 0; i--) g = select(vI.lessThan(i + 0.5), float(tab[V2.VARIANTS[i]]), g);
+      return g;
+    };
+    const gDay = gainOf(V2_GAIN.day, V2_GAIN_OLD.day).mul(U.dayV2).toVar(), gNight = gainOf(V2_GAIN.night, V2_GAIN_OLD.night).mul(U.nightV2).toVar();
+    const dayC = () => look(0).mul(gDay);
     const nightC = () => {
       const c = look(1);
       const glowSec = vec3(0.35, 0.55, 0.75).mul(0.05).mul(smoothstep(0.32, 0.0, length(ruv2.sub(vec2(0.5, 0.62)).mul(vec2(1, 1.6)))));
       const exitSign = vec3(0.05, 0.9, 0.3).mul(0.6).mul(step(abs(ruv2.x.sub(0.628)), 0.009)).mul(step(abs(ruv2.y.sub(0.6)), 0.007)).mul(step(D.mul(0.95), t));
-      return mix(c.mul(U.closedV2).add(glowSec.add(exitSign).mul(U.securityV2)), c.mul(U.nightV2), open);
+      return mix(c.mul(U.closedV2).add(glowSec.add(exitSign).mul(U.securityV2)), c.mul(gNight), open);
     };
     const room = () => {
       If(night.lessThanEqual(0.001), () => { out.assign(dayC()); })
