@@ -378,7 +378,9 @@ if (S.rd.model?.lineItems) {
   const COS = Math.cos((20 * Math.PI) / 180);
   const { parkedBoxDist } = await import("../../../viewer/traffic/trafficGraph.js");
   const cars = g.parkedKept ?? parked?.sites ?? [];
-  const nearCar = (x, z) => cars.some((c) => Math.abs(c.x - x) < 4 && Math.abs(c.z - z) < 4 && parkedBoxDist(c, x, z) < 1.6);
+  // (a car the lane keeps clear of: across the lane within the lanes' parked clearance (viewer/street/lanes.js
+  // PARK_CLEAR) + 0.4 m of its box side, along it within the profile's hold (gaps under 30 m between two cars held))
+  const nearCar = (x, z, tx, tz) => cars.some((c) => { const dx = c.x - x, dz = c.z - z; if (dx * dx + dz * dz > 20 * 20) return false; const along = Math.abs(dx * tx + dz * tz), across = Math.abs(-dx * tz + dz * tx); return along < 17 && across - 0.925 < 1.45 + 0.4; });
   for (let i = 0; i < g.paths; i++) {
     if (g.model[i] !== 1 || g.kind[i] !== 0) continue;
     const o = g.off[i], n = g.off[i + 1] - o, L = g.len[i];
@@ -404,7 +406,7 @@ if (S.rd.model?.lineItems) {
       if (w < 2.5) { out.laneNarrow++; continue; }
       // (a parked car in the painted lane (the width parking does not know the paint yet: STREET_MODEL_PLAN job 6) moves
       // the driven lane round it: counted apart)
-      if (nearCar(x, z)) { out.laneParked = (out.laneParked || 0) + 1; continue; }
+      if (nearCar(x, z, tx, tz)) { out.laneParked = (out.laneParked || 0) + 1; continue; }
       if (w > LANE_MAX) { out.laneOffPaint++; continue; }
       out.laneHist[Math.min(300, Math.round(Math.abs(dl - dr) * 50))]++;
       if (Math.abs(dl - dr) > 0.5) (out.laneOffAt ??= []).push(at(x, z));

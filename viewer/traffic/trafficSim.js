@@ -652,7 +652,7 @@ export class TrafficSim {
 
   // ------------------------------------------------------------------ junction decisions
   /** Should car i wait at the hold point of lane `L` (gid) before connector `C` (gid, may be -1)? -> HOLD.* */
-  decide(i, L, C, X, dStop) {
+  decide(i, L, C, X, dStop, depth = 0) {
     const g = this.W.slots[L >>> 16], li = L & 0xffff, c = g.ctrl[li], v = this.v[i];
     // POLICE GAME: a fleeing car runs about 2 lights / stop signs / give-ways in 3 (decided per car x lane: stable)
     const runs = (this.ctl[i] === 1 && (((L * 2654435761) ^ (i * 40503)) >>> 0) % 100 < 65) || this.ctl[i] === 4;   // (TRAFMIX: a run)
@@ -689,6 +689,17 @@ export class TrafficSim {
       const gx = this.W.slots[X >>> 16];
       const j = gx.head[X & 0xffff];
       if (j >= 0 && j !== i && this.posOn(j) - this.half[j] < this.half[i] * 2 + 3 && this.v[j] < 2.5) return HOLD.full;
+      // (claude/street4, DON'T BLOCK THE BOX: the lane after the turn too short to wait on (its own hold point nearer its
+      // start than the car is long: two junctions a few metres apart, Ch. d'Alsemberg D7): the car only goes when the
+      // NEXT junction lets it through as well, else it waits here, not in the turn across the other traffic)
+      const xi = X & 0xffff;
+      if (!depth && !gx.kind[xi] && gx.holdAt[xi] >= 0 && gx.holdAt[xi] < this.half[i] * 2 + 2) {
+        const R = this.route, o = i * ROUTE;
+        let k = 0; while (k < ROUTE && R[o + k] !== X) k++;
+        const C2 = k + 1 < ROUTE ? R[o + k + 1] : -1, X2 = k + 2 < ROUTE ? R[o + k + 2] : -1;
+        const h2 = this.decide(i, X, C2, X2, gx.holdAt[xi], 1);
+        if (h2) return HOLD.full;
+      }
     }
     return 0;
   }

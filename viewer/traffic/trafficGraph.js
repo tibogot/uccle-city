@@ -28,7 +28,7 @@ import { joinLaneGraph } from "../streets/laneGraph.js";
 import { NOT_DRIVEN } from "../streets/carriageway.js";
 import { laneOffsetProfile } from "../streets/laneOffset.js";
 import { roadFrameOf } from "../streets/lineFit.js";
-import { modelLaneStage } from "../street/lanes.js";
+import { modelLaneStage, repairTurns, blockedTest } from "../street/lanes.js";
 
 const TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
 export const CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
@@ -183,7 +183,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   let covered = null;
   if (opts.model) {
     const tM = performance.now();
-    const M = modelLaneStage(net, opts.model, raw, opts.parked?.length ? opts.parked : null, net.streetKerbs ?? null, opts.inBuilding ?? null, grid ? drivableOn(grid) : null);
+    const M = modelLaneStage(net, opts.model, raw, opts.parked?.length ? opts.parked : null, net.streetKerbs ?? null, opts.inBuilding ?? null, grid ? drivableOn(grid) : null, feats?.trees ?? null);
     raw = M.paths; covered = M.covered;
     fitStatsPre.model = { ...M.stats, ms: Math.round(performance.now() - tM) };
     if (opts.trace) opts.trace.afterModel = raw.filter((p) => covered.has(p.id)).map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
@@ -207,6 +207,8 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const tK = performance.now();
   const src = roundKinks(fitted, keepClear);
   fitStats.kinkMs = Math.round(performance.now() - tK);
+  // (claude/street4: no junction turn through a building, a street tree or over the pavement, whichever fit laid it)
+  if (opts.model) fitStats.turnsRepaired = repairTurns(src.map((p, i) => (p === fitted[i] ? (src[i] = { ...p, pts: p.pts.map((v) => [v[0], v[1]]) }) : p)), blockedTest(opts.inBuilding ?? null, feats?.trees ?? null), grid ? drivableOn(grid) : null);
   if (opts.trace) { opts.trace.src = src; opts.trace.raw = raw2; }
   // trafpark: the check along every driven path, junction connectors too: a parked car any path still touches goes
   let parkedKept = opts.parked || null;

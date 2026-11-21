@@ -2,9 +2,9 @@
 // job 4 / invariant 3, rule street-lanes), judged on the graph the tile worker drives (viewer/traffic/tileTraffic.js,
 // the one builder) against what the city DRAWS and MEASURES, not against the model the lanes come from:
 //   kerb      a model lane point (every 0.5 m, in the tile) nearer than KERB m to a measured kerb / street-edge line
-//             (UrbIS, the drawn street's boundary: kerbs, refuge islands, build-outs), unless the carriageway across it is
-//             narrower than lanes.js NARROW_TWO (4 m) + NARROW_TOL and the point lies within CENTRE_TOL of its middle (a narrow street's one
-//             centred lane, rule street-lanes)
+//             (UrbIS, the drawn street's boundary: kerbs, refuge islands, build-outs), where the carriageway across it is
+//             narrower than 2 KERB + 2 x 0.9 m (3.8 m): then the street's own clearance, half the carriageway less a car's
+//             half width (a narrow street, rule street-lanes)
 //   carriage  a model lane point not on the measured carriageway (UrbIS roadway / tram roadway / parking), or off the
 //             drawn street where UrbIS maps nothing (viewer/streets/carriageway.js: the band)
 //   turn      a model junction turn point (the G2 curve) outside its junction's polygon / floor disc (+ 0.3 m)
@@ -30,7 +30,7 @@ const { CHILD, TILES, OUT, JOBS, WORST, flag } = cli();
 const QUIET = flag("--quiet"), REG = flag("--register"), WREG = flag("--write-register"), LANES_OLD = flag("--lanesold");
 const CHECKS = ["kerb", "carriage", "turn", "building"];
 const GATED = CHECKS.map((c) => `streetlanes.${c}`);
-export const KERB = 1.0, KERB_TOL = 0.05, NARROW_TOL = 0.3, CENTRE_TOL = 0.3;
+export const KERB = 1.0, KERB_TOL = 0.05, CENTRE_TOL = 0.3, CAR_HW = 0.9;
 const CARR = new Set([SC.roadway, SC.tramRoad, SC.parking]);
 
 if (!CHILD) {
@@ -43,6 +43,8 @@ if (!CHILD) {
   for (const c of CHECKS) byCheck[c] = Math.round(byCheck[c] * 10) / 10;
   const findings = res.flatMap((r) => r.findings || []);
   const byInv = {}, byCause = {}; for (const f of findings) { byInv[f.inv] = (byInv[f.inv] || 0) + 1; byCause[f.cause] = (byCause[f.cause] || 0) + 1; }
+  const byKerb = {}; for (const r of res) for (const [k, v] of Object.entries(r.byKerb || {})) byKerb[k] = (byKerb[k] || 0) + v;
+  console.log(`  kerb metres by kind: ${JSON.stringify(byKerb)}`);
   console.log(`streetlanes: ${JSON.stringify(sum)}\n  flagged metres by check: ${JSON.stringify(byCheck)}\n  findings by check: ${JSON.stringify(byInv)}\n  findings by cause: ${JSON.stringify(byCause)}`);
   findings.sort((a, b) => b.m - a.m);
   for (const f of findings.slice(0, WORST)) console.log(`  ${f.id} ${f.m} m ${f.at} ${f.street} (${f.cause})`);
@@ -60,7 +62,7 @@ const S = await streetTile(T, {});
 const { rd, roads, feats, bounds, fit, driven, inB, nameAt, classAt } = S;
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
 const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");
-const { inJunction, NARROW_TWO } = await imp("viewer/street/lanes.js");
+const { inJunction } = await imp("viewer/street/lanes.js");
 const parked = rd.surfaceData ? widthParking(roads, feats, bounds, fit) : null;
 const trace = {};
 const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roofs: S.tile.roofs, entry: LANES_OLD ? { streetLanes: false } : {} });
@@ -102,9 +104,19 @@ for (let i = 0; i < g.paths; i++) {
       else {
         const k = kerbs.dist(x, z, KERB - KERB_TOL);
         if (k) {
-          // (a narrow carriageway: one centred lane is the rule)
-          const dl = kerbRay(x, z, nx, nz), dr = kerbRay(x, z, -nx, -nz);
-          if (!(dl + dr < NARROW_TWO + NARROW_TOL && Math.abs(dl - dr) <= 2 * CENTRE_TOL)) why.push("kerb");
+          // (the street's own allowed clearance: KERB, or where the carriageway across is narrower than two clearances
+          // and two car widths (3.8 m: no room for two lanes each KERB off its kerb), half the carriageway less a car's
+          // half width (the coordinator's rule; kerbs not crossed square, a build-out's end or a corner, keep KERB))
+          const dl = kerbRay(x, z, nx, nz), dr = kerbRay(x, z, -nx, -nz), W = dl + dr;
+          const need = Number.isFinite(W) && W < 2 * KERB + 2 * CAR_HW ? Math.max(0.1, Math.min(KERB, W / 2 - CAR_HW)) : KERB;
+          if (!kerbs.dist(x, z, need - KERB_TOL)) { out.byCheck.narrowOk = (out.byCheck.narrowOk || 0) + 0.5; }
+          else {
+            why.push("kerb");
+            // (why, for the report: a narrow street, by a junction, a kerb crossed square (a build-out / island beside),
+            // or a kerb not across the lane at all (a corner / build-out end ahead))
+            const kb = (out.byKerb ??= {}), w = Number.isFinite(W) && W < 2 * KERB + 1.8 ? "narrow" : ctx.junctionAt(x, z, 3) ? "junction" : Math.min(dl, dr) < KERB ? "beside" : "ahead";
+            kb[w] = (kb[w] || 0) + 0.5;
+          }
         }
       }
     } else {

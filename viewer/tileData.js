@@ -26,7 +26,7 @@ import { tileTrafficGraph } from "./traffic/tileTraffic.js";
 import { widthParking } from "./streets/parkPlace.js";
 import { streetFit } from "./streets/fitCore.js";
 import { carriageway } from "./streets/carriageway.js";
-import { treesOffCarriageway, paintedDriveLanes, pathCorridor } from "./streets/roadTrees.js";
+import { treesOffCarriageway, paintedDriveLanes, pathCorridor, trunkMargin } from "./streets/roadTrees.js";
 import { paintedLaneCentre, roadFrameOf } from "./streets/lineFit.js";
 import { squeezeDeckLanes } from "./rail/roadDeck.js";
 import { loadTunnels, tunnelRoads, tunnelCut, tunnelRecut, tunnelGround, tunnelTrees, tunnelTerrain, tunnelSurface, tunnelFenceRings } from "./rail/tunnels.js";
@@ -524,7 +524,7 @@ export async function buildTileData(entry, base) {
     if (corridor) {
       const fitT = road.surfaceData ? streetFit(road.surfaceData) : null;
       const avoid = carriageway(roads, { classAt: fitT?.classAt, onDeck: null, bandOnMeasured: true });
-      const r3 = treesOffCarriageway(feats.trees, corridor, { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z) || onCar(x, z), ground: (x, z) => hm.ground(x, z), avoid });
+      const r3 = treesOffCarriageway(feats.trees, corridor, { inTile: (x, z) => x >= x0 && x < x1 && z >= z0 && z < z1, inBuilding: (x, z) => onRoof(roofs, x, z) || onCar(x, z), ground: (x, z) => hm.ground(x, z), avoid, margin: entry.streetLanes !== false ? trunkMargin : null });   // (claude/street4: each trunk's own radius)
       feats.trees = r3.trees; roadTrees.pathMoved = r3.moved; roadTrees.pathDropped = r3.dropped;
     }
   }

@@ -220,6 +220,48 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
 - Cost: the traffic graph stage is unchanged or cheaper. The model stage takes 40-70 ms a tile; fitToSurface is skipped
   on covered lanes. The road stage (1.4-2.9 s) is unchanged.
 
+**Round 2 (the coordinator's review, 2026-11-21): the two failing rows fixed by cause, no ceiling raised.**
+- drivecheck walked the raw OSM centre lines as the player's proxy, the very proxy this plan retires. Now:
+  - on model-covered roads it walks the model's axis, only where the car's whole width is over roadway / parking (not a
+    tram reservation's tree rows, Av. Churchill);
+  - elsewhere, and under `?streetlanes=old`, it walks the OSM centre lines as before;
+  - the driven lanes and turns come from tileTraffic, as before.
+- The tree places had four causes:
+  - The path tree clearing (roadTrees.js pathCorridor) assumed a 0.35 m trunk; the drive colliders give trunks up to
+    0.5 m. It now takes each trunk's own radius (`trunkMargin`).
+  - G2 turns crossed a corner's street tree. Trunks now score against a turn, after buildings, like a point off the
+    drawn street. Where every handle still meets a trunk, the two lanes stop 1 m earlier, up to 8 m (F8).
+  - A dual carriageway drawn as one OSM way (Av. Churchill): one roadway's segment put both directions on it, and the
+    turn then crossed the corner tree. Such halves keep the old fit: the OSM line lies beyond the measured half width
+    + 1.5 m while both directions are driven.
+  - Two lane-end issues (M5 Ch. de La Hulpe):
+    - a lane end at a junction the tile's model does not hold could sit at the engine's trim, 135 m up the road (now
+      at most 15 m from the node);
+    - a long old-fit turn faded by a model lane's moved end slid over the pavement. A long turn now takes each end's
+      move over its last 20 m only.
+- A final pass re-lays every junction turn of the graph (old-fit ones too) as a G2 curve where that keeps the body out
+  of buildings, trunks and the pavement.
+- Result: drivecheck 109 places (ceiling 147), hero 1 (ceiling 3), hedge 3 (ceiling 5), tree 0. The extra hero and hedge
+  places seen before came from the old centre-line proxy and corner-cutting turns; both are gone.
+- trafmix:
+  - **Don't block the box** (trafficSim.js decide). When the lane after a turn is too short to wait on (its hold point
+    nearer its start than the car is long), a car enters the turn only if the next junction lets it through as well.
+    Otherwise it waits at its own line: the D7 signal pair on Ch. d'Alsemberg.
+  - A car inside a junction turn clears the junction before yielding to an ambulance (the D6 deadlock).
+  - Buses were blocked by parked cars 0.15 m off their body. The lanes now keep 1.45 m from a parked car's box (a bus's
+    half width + 0.18).
+  - The 'emergency run passes a queue' part was not needed: the stuck check passes without it.
+- kerb < 1 m rose 1,681 → 1,906 m, almost all on narrow streets. Under the street's own clearance the coordinator asked
+  for (half the carriageway less a car's half width where it is under 3.8 m), the same metres split as:
+
+  | lanes | narrow | beside (build-outs, islands) | ahead (kerb ends, corners) | junction |
+  |---|---|---|---|---|
+  | old lanes | 551 | 693 | 137 | 67 |
+  | model lanes, first round | 745 | 631 | 116 | 36 |
+  | model lanes now (1,151 m) | 249 | 673 | 151 | 79 |
+
+  The rise was two-way lanes in 2.6-3.8 m streets held exactly 1.0 m off each kerb.
+
 **Gate (2026-11-21, meta + streetlanes + markings + the 27 auto rows).** 27 rows pass. Two fail:
 - `trafmix`: one ambulance is removed as stuck at a signal pair on Ch. d'Alsemberg (D7, -1326, 1238). Cars stand at a
   red light still inside the previous junction's turn, because the lane between the two junctions is very short. The
@@ -232,3 +274,44 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
     no longer follow. The likely cause is that the tree clearing (pathCorridor) now follows the moved lanes, not the
     OSM line; not checked further.
   - The other extra places are one hero and one hedge place.
+
+**Resume (paused 2026-11-21: the owner closed the laptop; WIP, not ready to merge).**
+- **Working tree at the pause:** BOX 5, PARK_CLEAR 1.13, building bounds on unmeasured stations, inner lanes kept
+  2.5 m off the lane outside them (LANE_GAP), trunk-only turn cutback.
+- **Last full roads census** (ceilings in parentheses):
+  - slalom 5,173 (5,207) — passes;
+  - wobble 2,845 (2,800) — **fails**;
+  - in a building 17 places (17), off the carriageway 186 places (192), snapCreated 0, headP999 4.47 — all pass.
+  - Foundation before: 7,908 / 4,272 / 32 / 332.
+- **drivecheck** (last full run, with PARK_CLEAR 1.45 and before the later lane changes): 109 places (147), hero 1,
+  hedge 3, tree 0. The I2 / F8 / J11 / H2 / M5 tree spots are 0 with the current code.
+- **trafmix:**
+  - The stuck check passed with PARK_CLEAR 1.45 (buses blocked by parked cars at 1.13).
+  - With 1.13 (the current tree) it is not re-run: a bus may get stuck again.
+  - The sim-cost check swings 1.08-1.12 x around its 1.10 limit (timing noise; once 1.122 in the gate).
+- **kerb < 1 m** under the street's own clearance: 1,151 m (narrow 249, beside 673, ahead 151, junction 79). The old
+  lanes give 1,447 m under the same rule.
+- **laneP95** vs the drawn strokes: 0.13 m (ceiling 0.45).
+- **motofeel** with BOX 5: one crash, Av. De Fré (F3, -190.6, -510.4), back-late moto into a kerb tree. That run was
+  before LANE_GAP: two same-direction lanes had collapsed 0.3 m apart there. The city rides with BOX 6 had 0 crashes.
+  Not re-run since.
+- **Fixed:**
+  - the drivecheck proxy (model axis on covered roads);
+  - the trunk radius in pathCorridor;
+  - G2 turns scored against trunks, buildings and the pavement, plus the trunk cutback;
+  - the final repairTurns pass;
+  - dual-carriageway halves on the old fit;
+  - lane ends at unknown junctions capped at 15 m, and the local fade for long turns;
+  - the sim's don't-block-the-box rule and clear-the-junction-before-yielding;
+  - the narrow-street kerb clearance in the streetlanes census.
+- **Left:**
+  - pick PARK_CLEAR. 1.45 makes trafmix pass but costs about 60 m of wobble; 1.13 brings back the bus stuck. Try 1.45
+    for rank-0 lanes only on bus routes, or a sim fix for buses passing parked cars.
+  - wobble ≤ 2,800. BOX 6 gives 2,611 / 4,606 but adds 3 in-building places: I6 Venelle de Saint-Job, a UrbIS
+    footprint overhanging the 7 m alley, too fine for the 2 m roof grid.
+  - re-run motofeel, trafmix and drivecheck;
+  - `node tools/docs/rulesIndex.mjs` (done; check meta);
+  - rewrite the streetlanes register: `--write-register`.
+- **Next commands (in the worktree):**
+  - `node --import ./tools/road_audit/register.mjs tools/audit/census/streetLanes.mjs --all --jobs 4 --quiet --worst 0 --write-register`
+  - then `node tools/audit/mergeGate.mjs --changed --base af03a1ca`.
