@@ -506,9 +506,9 @@ function edgeField(meshes, h, { reach = 4, minWidth = 0, collect = null } = {}) 
     start[q + 1]++;
   });
   for (let q = 0; q < GW * GH; q++) start[q + 1] += start[q];
-  const fill = start.slice(0, GW * GH), TC = new Float32Array(start[GW * GH] * 6);
+  const fill2 = start.slice(0, GW * GH), TC = new Float32Array(start[GW * GH] * 6);
   eachBucket((q, mi, t) => {
-    const o = fill[q]++, { position: P, index: I2 } = meshes[mi], a = I2[t] * 3, b = I2[t + 1] * 3, c = I2[t + 2] * 3;
+    const o = fill2[q]++, { position: P, index: I2 } = meshes[mi], a = I2[t] * 3, b = I2[t + 1] * 3, c = I2[t + 2] * 3;
     TC[o * 6] = P[a];
     TC[o * 6 + 1] = P[a + 2];
     TC[o * 6 + 2] = P[b];
@@ -3289,7 +3289,7 @@ var MeshoptSimplifier = (function() {
     }
     return result;
   }
-  function simplify2(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, target_index_count, target_error, options) {
+  function simplify3(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, target_index_count, target_error, options) {
     var sbrk = instance.exports.sbrk;
     var te = sbrk(4);
     var ti = sbrk(index_count * 4);
@@ -3509,7 +3509,7 @@ var MeshoptSimplifier = (function() {
         options |= simplifyOptions[flags[i]];
       }
       var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
-      var result = simplify2(
+      var result = simplify3(
         instance.exports.meshopt_simplify,
         indices32,
         indices.length,
@@ -3781,11 +3781,11 @@ function indexCells(col2) {
     for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) count[j * nx + i + 1]++;
   }
   for (let k = 1; k < count.length; k++) count[k] += count[k - 1];
-  const items = new Uint32Array(count[count.length - 1]), fill = count.slice(0, -1);
+  const items = new Uint32Array(count[count.length - 1]), fill2 = count.slice(0, -1);
   for (let k = 0; k < P + C; k++) {
     const s = span(k);
     if (!keep(s)) continue;
-    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) items[fill[j * nx + i]++] = k;
+    for (let j = cj(s[1]); j <= cj(s[3]); j++) for (let i = ci(s[0]); i <= ci(s[2]); i++) items[fill2[j * nx + i]++] = k;
   }
   Object.assign(col2, { nx, nz, cellStart: count, cellItems: items, P, C });
   col2.seen = new Uint32Array(P + C);
@@ -4157,7 +4157,7 @@ function driveGround(hm, parts) {
       }
     }
   }
-  const fill = [];
+  const fill2 = [];
   for (let r = 1; r < rows - 1; r++) for (let k = 1; k < cols - 1; k++) {
     const q = r * cols + k;
     if (top[q] > -1e8) continue;
@@ -4171,9 +4171,9 @@ function driveGround(hm, parts) {
       lo = Math.min(lo, y);
       hi = Math.max(hi, y);
     }
-    if (n >= 6 && hi - lo < 0.5) fill.push(q, s / n);
+    if (n >= 6 && hi - lo < 0.5) fill2.push(q, s / n);
   }
-  for (let i = 0; i < fill.length; i += 2) top[fill[i]] = fill[i + 1];
+  for (let i = 0; i < fill2.length; i += 2) top[fill2[i]] = fill2[i + 1];
   const delta = new Uint16Array(cols * rows), delta2 = new Uint16Array(cols * rows).fill(65535);
   for (let q = 0; q < delta.length; q++) {
     if (top[q] > -1e8) delta[q] = Math.max(0, Math.min(65534, Math.round((top[q] - Y[q]) * 100)));
@@ -4290,11 +4290,11 @@ var TREAD = 0.3;
 var STEPS_MIN = 0.12;
 var fr = (x) => x - Math.floor(x);
 function segGrid(C = 4) {
-  const g = /* @__PURE__ */ new Map(), K = (i, j) => (i + 5e4) * 1e5 + (j + 5e4);
+  const g = /* @__PURE__ */ new Map(), K2 = (i, j) => (i + 5e4) * 1e5 + (j + 5e4);
   return {
     add(e) {
       for (let i = Math.floor(Math.min(e[0], e[3]) / C); i <= Math.floor(Math.max(e[0], e[3]) / C); i++) for (let j = Math.floor(Math.min(e[2], e[5]) / C); j <= Math.floor(Math.max(e[2], e[5]) / C); j++) {
-        const k = K(i, j);
+        const k = K2(i, j);
         if (!g.has(k)) g.set(k, []);
         g.get(k).push(e);
       }
@@ -4302,7 +4302,7 @@ function segGrid(C = 4) {
     near(x, z, r, out = []) {
       out.length = 0;
       for (let i = Math.floor((x - r) / C); i <= Math.floor((x + r) / C); i++) for (let j = Math.floor((z - r) / C); j <= Math.floor((z + r) / C); j++) {
-        const c = g.get(K(i, j));
+        const c = g.get(K2(i, j));
         if (c) for (let q = 0; q < c.length; q++) out.push(c[q]);
       }
       return out;
@@ -4426,11 +4426,11 @@ function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile = () =>
     }
   }
   {
-    const idx2 = [], B = 4, g = /* @__PURE__ */ new Map(), NB = 16, K = (i, j) => (i + 5e4) * 1e5 + (j + 5e4);
+    const idx2 = [], B = 4, g = /* @__PURE__ */ new Map(), NB = 16, K2 = (i, j) => (i + 5e4) * 1e5 + (j + 5e4);
     const bin = (e) => Math.floor((Math.atan2(e[7], e[6]) + Math.PI) / (2 * Math.PI) * NB) % NB;
     edges.forEach((e, i) => {
       if (!on[i]) return;
-      const mx = (e[0] + e[3]) / 2, mz = (e[2] + e[5]) / 2, k = K(Math.floor(mx / B), Math.floor(mz / B));
+      const mx = (e[0] + e[3]) / 2, mz = (e[2] + e[5]) / 2, k = K2(Math.floor(mx / B), Math.floor(mz / B));
       let c = g.get(k);
       if (!c) g.set(k, c = Array.from({ length: NB }, () => null));
       const b = bin(e);
@@ -4446,7 +4446,7 @@ function retainingWalls(edges, ground, gardenNear, { slope = 0.6, inTile = () =>
       cand.length = 0;
       const eb = bin(e), ux = (e[3] - e[0]) / (L2 || 1), uz = (e[5] - e[2]) / (L2 || 1);
       for (let ga = ia; ga <= ib; ga++) for (let gc = ja; gc <= jb; gc++) {
-        const cell = g.get(K(ga, gc));
+        const cell = g.get(K2(ga, gc));
         if (!cell) continue;
         for (let ab = eb - 2; ab <= eb + 2; ab++) {
           const L22 = cell[(ab + NB) % NB];
@@ -4768,8 +4768,8 @@ function appendToPart(part, G2, ex = {}) {
 }
 function gardenIndex(doc, { gatesOnly = false, span = false } = {}) {
   if (!doc) return () => false;
-  const B = 5, grid = /* @__PURE__ */ new Map(), K = (i, j) => (i + 5e4) * 1e5 + (j + 5e4), add = (x, z) => {
-    const k = K(Math.floor(x / B), Math.floor(z / B));
+  const B = 5, grid = /* @__PURE__ */ new Map(), K2 = (i, j) => (i + 5e4) * 1e5 + (j + 5e4), add = (x, z) => {
+    const k = K2(Math.floor(x / B), Math.floor(z / B));
     let L2 = grid.get(k);
     if (!L2) grid.set(k, L2 = []);
     L2.push(x, z);
@@ -4794,7 +4794,7 @@ function gardenIndex(doc, { gatesOnly = false, span = false } = {}) {
   }) : null;
   const near = (x, z, r) => {
     for (let i = Math.floor((x - r) / B); i <= Math.floor((x + r) / B); i++) for (let j = Math.floor((z - r) / B); j <= Math.floor((z + r) / B); j++) {
-      const L2 = grid.get(K(i, j));
+      const L2 = grid.get(K2(i, j));
       if (!L2) continue;
       for (let k = 0; k < L2.length; k += 2) if ((L2[k] - x) ** 2 + (L2[k + 1] - z) ** 2 <= r * r) return true;
     }
@@ -5274,21 +5274,21 @@ function sampleAlignment(al, s0, s1, o = {}) {
   const maxAngle = o.maxAngle ?? 0.035;
   s0 = clamp(s0, 0, al.length);
   s1 = clamp(s1, s0, al.length);
-  const stations = [s0];
+  const stations2 = [s0];
   for (const seg of al.segments) {
     const a = Math.max(s0, seg.s0), b = Math.min(s1, seg.s0 + seg.len);
     if (b <= a) continue;
     const kmax = Math.max(Math.abs(seg.k0), Math.abs(seg.k1));
     const step = kmax > 1e-9 ? Math.min(maxStep, maxAngle / kmax) : maxStep;
     const cnt = Math.max(1, Math.ceil((b - a) / step));
-    for (let i = 1; i <= cnt; i++) stations.push(a + (b - a) * i / cnt);
+    for (let i = 1; i <= cnt; i++) stations2.push(a + (b - a) * i / cnt);
   }
   if (o.breaks) {
-    for (const b of o.breaks) if (b > s0 && b < s1) stations.push(b);
+    for (const b of o.breaks) if (b > s0 && b < s1) stations2.push(b);
   }
-  stations.sort((p, q) => p - q);
+  stations2.sort((p, q) => p - q);
   const S3 = [];
-  for (const v of stations) if (!S3.length || v - S3[S3.length - 1] > 1e-4) S3.push(v);
+  for (const v of stations2) if (!S3.length || v - S3[S3.length - 1] > 1e-4) S3.push(v);
   if (S3.length === 1) S3.push(Math.min(al.length, s0 + 1e-3));
   const N2 = S3.length;
   const out = { s: new Float64Array(N2), x: new Float64Array(N2), z: new Float64Array(N2), th: new Float64Array(N2), k: new Float64Array(N2) };
@@ -5807,9 +5807,9 @@ function buildJunctionGeometry(node, arms, { straightOnly = false } = {}) {
   }
   for (let i = 0; i < n; i++) {
     const before = corners[(i - 1 + n) % n], after = corners[i];
-    let trim = Math.max(0, before.curb.sJ, after.curb.sI, before.prop.sJ, after.prop.sI);
-    if (!straightOnly && n >= 3) trim = Math.max(trim, 1);
-    arms[i].trim = trim;
+    let trim2 = Math.max(0, before.curb.sJ, after.curb.sI, before.prop.sJ, after.prop.sI);
+    if (!straightOnly && n >= 3) trim2 = Math.max(trim2, 1);
+    arms[i].trim = trim2;
   }
   finishLineCorners(node, arms, corners);
   node.corners = corners;
@@ -7584,7 +7584,7 @@ function buildRoadLanes(rr, addPath, link) {
   const { stack, L: L2, smp, lays } = rr;
   const events = sectionEventStations(stack, L2).filter((s) => s > rr.s0 + 0.5 && s < rr.s1 - 0.5);
   const cuts = [rr.s0, ...events, rr.s1];
-  const K = cuts.length - 1;
+  const K2 = cuts.length - 1;
   rr.laneEnds = { a: { in: {}, out: {} }, b: { in: {}, out: {} } };
   const speed = rr.type.speed / 3.6;
   for (const side of ["left", "right"]) {
@@ -7596,8 +7596,8 @@ function buildRoadLanes(rr, addPath, link) {
     const pieces = /* @__PURE__ */ new Map();
     for (const b of drive) {
       const lane = lanes[b];
-      const arr = new Array(K).fill(null);
-      for (let k = 0; k < K; k++) {
+      const arr = new Array(K2).fill(null);
+      for (let k = 0; k < K2; k++) {
         const mid = (cuts[k] + cuts[k + 1]) / 2;
         const w = laneWidthAt(lane, mid, L2);
         if (w < Math.max(1, lane.full * 0.5)) continue;
@@ -7615,7 +7615,7 @@ function buildRoadLanes(rr, addPath, link) {
       pieces.set(b, arr);
     }
     const order = [];
-    for (let k = 0; k < K; k++) order.push(k);
+    for (let k = 0; k < K2; k++) order.push(k);
     if (side === "left") order.reverse();
     const neighbour = (b, k) => {
       let best = null, bd = Infinity;
@@ -7640,11 +7640,11 @@ function buildRoadLanes(rr, addPath, link) {
     for (const [b, arr] of pieces) {
       const id = lanes[b].id;
       if (side === "right") {
-        if (arr[K - 1]) rr.laneEnds.b.in[id] = arr[K - 1].id;
+        if (arr[K2 - 1]) rr.laneEnds.b.in[id] = arr[K2 - 1].id;
         if (arr[0]) rr.laneEnds.a.out[id] = arr[0].id;
       } else {
         if (arr[0]) rr.laneEnds.a.in[id] = arr[0].id;
-        if (arr[K - 1]) rr.laneEnds.b.out[id] = arr[K - 1].id;
+        if (arr[K2 - 1]) rr.laneEnds.b.out[id] = arr[K2 - 1].id;
       }
     }
   }
@@ -8729,11 +8729,11 @@ function asphaltRows(rr, extra) {
   const S3 = rr.smp, N2 = S3.s.length;
   const rows = [];
   const fromSample = (i) => ({ s: S3.s[i], x: S3.x[i], z: S3.z[i], th: S3.th[i], k: S3.k[i], lay: rr.lays[i] });
-  const stations = [...new Set(extra.filter((s) => s > S3.s[0] + 0.05 && s < S3.s[N2 - 1] - 0.05))].sort((a, b) => a - b);
+  const stations2 = [...new Set(extra.filter((s) => s > S3.s[0] + 0.05 && s < S3.s[N2 - 1] - 0.05))].sort((a, b) => a - b);
   let e = 0;
   for (let i = 0; i < N2; i++) {
-    while (e < stations.length && stations[e] < S3.s[i] - 0.05) {
-      const st = stations[e++];
+    while (e < stations2.length && stations2[e] < S3.s[i] - 0.05) {
+      const st = stations2[e++];
       if (i === 0) continue;
       const f = (st - S3.s[i - 1]) / (S3.s[i] - S3.s[i - 1]);
       const a = rr.lays[i - 1], b = rr.lays[i];
@@ -8752,7 +8752,7 @@ function asphaltRows(rr, extra) {
         lay: { cw: a.cw + (b.cw - a.cw) * f, left: lerpSide("left"), right: lerpSide("right") }
       });
     }
-    while (e < stations.length && Math.abs(stations[e] - S3.s[i]) <= 0.05) e++;
+    while (e < stations2.length && Math.abs(stations2[e] - S3.s[i]) <= 0.05) e++;
     rows.push(fromSample(i));
   }
   for (const r of rows) {
@@ -11242,15 +11242,15 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     }
   }
   const skirtTris = (C.idx.length - triAtSkirts) / 3;
-  const fill = { len: 0, tris: 0, gapLen: 0 };
+  const fill2 = { len: 0, tris: 0, gapLen: 0 };
   if (opts.wallRay) {
-    const FILL_GAP = 1.8, STEP7 = 0.5, INTO = 0.15;
+    const FILL_GAP = 1.8, STEP8 = 0.5, INTO = 0.15;
     for (const e of surf.edges) {
       if (!e.raised) continue;
       const pts = [];
       const L0 = e.line;
       for (let k = 1; k < L0.length; k++) {
-        const [ax, az] = L0[k - 1], [bx, bz] = L0[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP7));
+        const [ax, az] = L0[k - 1], [bx, bz] = L0[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / STEP8));
         for (let q = k === 1 ? 0 : 1; q <= n; q++) pts.push([ax + (bx - ax) * q / n, az + (bz - az) * q / n, k]);
       }
       let prev = null;
@@ -11269,14 +11269,14 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
               b: C.vert(qx, y, qz, UP2, ks2 ? ks2.s : qx, ks2 ? ks2.d : qz, ex(ks2)),
               t
             };
-            fill.gapLen += STEP7;
+            fill2.gapLen += STEP8;
           }
         }
         if (cur && prev) {
           C.tri(prev.a, cur.a, cur.b, UP2);
           C.tri(prev.a, cur.b, prev.b, UP2);
-          fill.tris += 2;
-          fill.len += STEP7;
+          fill2.tris += 2;
+          fill2.len += STEP8;
         }
         prev = cur;
       }
@@ -11303,7 +11303,7 @@ function buildSurfaceRoads(prep, built, engineSurf, roads, onBuilding = () => fa
     droppedEngineTris: droppedTris,
     kerbTris,
     skirtTris,
-    sidewalkFill: fill,
+    sidewalkFill: fill2,
     foldDropped,
     linesCutAtCrossings: linesCut,
     baseHiddenUnderLayer: baseHidden,
@@ -11991,9 +11991,9 @@ function sharrow(x, z, dir, chevrons = true) {
   };
   const out = [];
   const ring2 = (cu, cv, r, w) => {
-    const K = 10;
-    for (let k = 0; k < K; k++) {
-      const a0 = k / K * Math.PI * 2, a1 = (k + 1) / K * Math.PI * 2;
+    const K2 = 10;
+    for (let k = 0; k < K2; k++) {
+      const a0 = k / K2 * Math.PI * 2, a1 = (k + 1) / K2 * Math.PI * 2;
       out.push(bar(cu + Math.cos(a0) * r, cv + Math.sin(a0) * r, cu + Math.cos(a1) * r, cv + Math.sin(a1) * r, w));
     }
   };
@@ -12070,7 +12070,7 @@ function paintMeshV2(items, prep, bounds) {
             const [u, v] = uvOf(p);
             uv.push(u, v);
             a1.push(u, v, kind, F.n ?? 0);
-            a2.push(ext[0], ext[1], 0, 0);
+            a2.push(ext[0], ext[1], it.line ?? 0, it.line ? 1 : 0);
           }
           for (let k = 1; k + 1 < piece.length; k++) {
             if (ccw2) idx2.push(v0, v0 + k + 1, v0 + k);
@@ -13020,9 +13020,9 @@ var CARRIAGE4 = /* @__PURE__ */ new Set([0, 1, 2, 3]);
 function recentreRoads(roads, prep) {
   const N2 = new Map(roads.nodes.map((n) => [n.id, n]));
   const st = { moved: 0, maxShift: 0, samples: 0 };
-  const carr = (x, z) => CARRIAGE4.has(prep.classAt(x, z));
+  const carr2 = (x, z) => CARRIAGE4.has(prep.classAt(x, z));
   const ray = (x, z, sx, sz) => {
-    for (let d = 0.25; d < RAY; d += 0.25) if (!carr(x + sx * d, z + sz * d)) return d;
+    for (let d = 0.25; d < RAY; d += 0.25) if (!carr2(x + sx * d, z + sz * d)) return d;
     return null;
   };
   for (const r of roads.roads) {
@@ -13046,7 +13046,7 @@ function recentreRoads(roads, prep) {
       const x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t, dx = (b.x - a.x) / L2, dz = (b.z - a.z) / L2;
       const lx = dz, lz = -dx;
       let off = null, w = null;
-      if (carr(x, z)) {
+      if (carr2(x, z)) {
         const l = ray(x, z, lx, lz), rr = ray(x, z, -lx, -lz);
         if (l != null && rr != null) {
           off = (l - rr) / 2;
@@ -13055,7 +13055,7 @@ function recentreRoads(roads, prep) {
       } else {
         for (let d = 0.5; d <= MAX_SHIFT + 2 && off == null; d += 0.5) for (const sg of [1, -1]) {
           const qx = x + lx * d * sg, qz = z + lz * d * sg;
-          if (!carr(qx, qz)) continue;
+          if (!carr2(qx, qz)) continue;
           const l = ray(qx, qz, lx, lz), rr = ray(qx, qz, -lx, -lz);
           if (l != null && rr != null) {
             off = d * sg + (l - rr) / 2;
@@ -13367,19 +13367,19 @@ var EDGE_TOL = 0.25;
 var NEAR_KERB = 0.5;
 var LAG = 0.5;
 function lineGrid(lines) {
-  const g = /* @__PURE__ */ new Map(), K = (i, j) => i * 65536 + j;
+  const g = /* @__PURE__ */ new Map(), K2 = (i, j) => i * 65536 + j;
   for (const l of lines) for (let k = 1; k < l.length; k++) {
     const [ax, az] = l[k - 1], [bx, bz] = l[k];
     for (let i = Math.floor(Math.min(ax, bx) / 8); i <= Math.floor(Math.max(ax, bx) / 8); i++)
       for (let j = Math.floor(Math.min(az, bz) / 8); j <= Math.floor(Math.max(az, bz) / 8); j++) {
-        const q = K(i, j);
+        const q = K2(i, j);
         (g.get(q) || g.set(q, []).get(q)).push([ax, az, bx, bz]);
       }
   }
   const hit = (x, z, nx, nz, t0, t1, tc) => {
     const px = x + nx * tc, pz = z + nz * tc, i0 = Math.floor(px / 8), j0 = Math.floor(pz / 8);
     let best = null, bd = Infinity;
-    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const [ax, az, bx, bz] of g.get(K(i0 + di, j0 + dj)) || []) {
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const [ax, az, bx, bz] of g.get(K2(i0 + di, j0 + dj)) || []) {
       const sx = bx - ax, sz = bz - az, d = nx * sz - nz * sx;
       if (Math.abs(d) < 1e-9) continue;
       const qx = ax - x, qz = az - z, t = (qx * sz - qz * sx) / d, w = (qx * nz - qz * nx) / d;
@@ -13919,6 +13919,1223 @@ function fitLinesToStreet(net, part, fit) {
   return st;
 }
 
+// viewer/street/model.js
+var MODEL_VERSION = 1;
+var TILE = 500;
+var STEP6 = 1;
+var NWIN = 4;
+var REACH2 = 25;
+var NEAR_R = 12;
+var FIND2 = 6;
+var X_OFF2 = 1.5;
+var SNAP = 0.25;
+var JUMP = 0.75;
+var JUMP_WIN = 10;
+var INTERP = 15;
+var STABLE_W = 0.4;
+var STABLE_LEN = 30;
+var PARK_W2 = 2;
+var MIN_LANE = 2.5;
+var TOPO_SNAP = 1;
+var TOPO_COS = Math.cos(10 * Math.PI / 180);
+var TOPO_WIN = 10;
+var TOPO_DEV = 0.15;
+var MOUTH_MAX = 40;
+var CROSS_PAD = 0.5;
+var CONF = { M: 0, D: 1, O: 2, G: 3, X: 4, E: 5 };
+var KERB_KIND = { none: 0, kerb: 1, edgeRaised: 2, edgeFlush: 3, parking: 4 };
+var ROLE = { lane: 0, centre: 1, edgeR: 2, edgeL: 3 };
+var KERB_H = 0.13;
+var DRIVE = /* @__PURE__ */ new Set([0, 1]);
+var PARK = /* @__PURE__ */ new Set([3]);
+var RESIDENTIAL2 = /* @__PURE__ */ new Set(["local", "oneWay", "alley"]);
+var tileOf = (x, z) => String.fromCharCode("E".charCodeAt(0) + Math.floor(x / TILE) + 2) + (Math.floor(z / TILE) + 5);
+var tileBounds = (name) => {
+  const i = name.charCodeAt(0) - "E".charCodeAt(0) - 2, j = parseInt(name.slice(1), 10) - 5;
+  return { x0: i * TILE, x1: (i + 1) * TILE, z0: j * TILE, z1: (j + 1) * TILE };
+};
+function tilesOfBox(x0, x1, z0, z1) {
+  const out = [];
+  for (let i = Math.floor(x0 / TILE); i <= Math.floor(x1 / TILE); i++) for (let j = Math.floor(z0 / TILE); j <= Math.floor(z1 / TILE); j++)
+    out.push(String.fromCharCode("E".charCodeAt(0) + i + 2) + (j + 5));
+  return out;
+}
+var pipRing = (x, z, R2) => {
+  let ins = false;
+  for (let i = 0, n = R2.length / 2, j = n - 1; i < n; j = i++) {
+    const xi = R2[2 * i], zi = R2[2 * i + 1], xj = R2[2 * j], zj = R2[2 * j + 1];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) ins = !ins;
+  }
+  return ins;
+};
+var pipPoly = (x, z, rings) => {
+  let ins = false;
+  for (const R2 of rings) if (pipRing(x, z, R2)) ins = !ins;
+  return ins;
+};
+var pip22 = (x, z, P) => {
+  let ins = false;
+  for (let i = 0, n = P.length / 2, j = n - 1; i < n; j = i++) {
+    const xi = P[2 * i], zi = P[2 * i + 1], xj = P[2 * j], zj = P[2 * j + 1];
+    if (zi > z !== zj > z && x < (xj - xi) * (z - zi) / (zj - zi) + xi) ins = !ins;
+  }
+  return ins;
+};
+var CELL4 = 8;
+var K = (i, j) => i * 131071 + j;
+function rayCells(x, z, nx, nz, t0, t1, out) {
+  let px = x + nx * t0, pz = z + nz * t0;
+  let i = Math.floor(px / CELL4), j = Math.floor(pz / CELL4);
+  const L2 = t1 - t0, si2 = nx > 0 ? 1 : -1, sj = nz > 0 ? 1 : -1;
+  const dI = Math.abs(nx) > 1e-12 ? CELL4 / Math.abs(nx) : Infinity, dJ = Math.abs(nz) > 1e-12 ? CELL4 / Math.abs(nz) : Infinity;
+  let tI = Math.abs(nx) > 1e-12 ? (nx > 0 ? (i + 1) * CELL4 - px : px - i * CELL4) / Math.abs(nx) : Infinity;
+  let tJ = Math.abs(nz) > 1e-12 ? (nz > 0 ? (j + 1) * CELL4 - pz : pz - j * CELL4) / Math.abs(nz) : Infinity;
+  out.push(K(i, j));
+  while (Math.min(tI, tJ) <= L2) {
+    if (tI < tJ) {
+      i += si2;
+      tI += dI;
+    } else {
+      j += sj;
+      tJ += dJ;
+    }
+    out.push(K(i, j));
+  }
+  return out;
+}
+function tileInputs(name, surf, markings) {
+  const polys = [], edgeGrid = /* @__PURE__ */ new Map(), polyGrid = /* @__PURE__ */ new Map(), lineGrid2 = /* @__PURE__ */ new Map(), topoGrid = /* @__PURE__ */ new Map();
+  const cls = (s) => s.c === 2 && s.photo?.look === "asphalt" ? 1 : s.c;
+  const add = (g, k, v) => {
+    let l = g.get(k);
+    if (!l) g.set(k, l = []);
+    l.push(v);
+  };
+  (surf?.surfaces || []).forEach((s, si2) => {
+    const c = cls(s);
+    if (!DRIVE.has(c) && !PARK.has(c)) return;
+    const rings = (s.rings || []).filter((r) => r.length >= 3).map((r) => Float64Array.from(r.flat()));
+    if (!rings.length) return;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const R2 of rings) for (let k = 0; k < R2.length; k += 2) {
+      x0 = Math.min(x0, R2[k]);
+      x1 = Math.max(x1, R2[k]);
+      z0 = Math.min(z0, R2[k + 1]);
+      z1 = Math.max(z1, R2[k + 1]);
+    }
+    const pi = polys.push({ pid: `${name}:${si2}`, src: s.id ?? `${name}:${si2}`, park: PARK.has(c), rings, x0, x1, z0, z1 }) - 1;
+    for (const R2 of rings) for (let k = 0, n = R2.length / 2; k < n; k++) {
+      const ax = R2[2 * k], az = R2[2 * k + 1], bx = R2[2 * ((k + 1) % n)], bz = R2[2 * ((k + 1) % n) + 1], e = [pi, ax, az, bx, bz, 0];
+      for (let i = Math.floor(Math.min(ax, bx) / CELL4); i <= Math.floor(Math.max(ax, bx) / CELL4); i++)
+        for (let j = Math.floor(Math.min(az, bz) / CELL4); j <= Math.floor(Math.max(az, bz) / CELL4); j++) add(edgeGrid, K(i, j), e);
+    }
+    for (let i = Math.floor(x0 / 32); i <= Math.floor(x1 / 32); i++) for (let j = Math.floor(z0 / 32); j <= Math.floor(z1 / 32); j++) add(polyGrid, K(i, j), pi);
+  });
+  const segsOf = (g, line, kind) => {
+    for (let k = 1; k < line.length; k++) {
+      const [ax, az] = line[k - 1], [bx, bz] = line[k], e = [kind, ax, az, bx, bz];
+      for (let i = Math.floor(Math.min(ax, bx) / CELL4); i <= Math.floor(Math.max(ax, bx) / CELL4); i++) for (let j = Math.floor(Math.min(az, bz) / CELL4); j <= Math.floor(Math.max(az, bz) / CELL4); j++) add(g, K(i, j), e);
+    }
+  };
+  for (const l of surf?.kerbs || []) segsOf(lineGrid2, l, KERB_KIND.kerb);
+  for (const e of surf?.edges || []) if (e?.line) segsOf(lineGrid2, e.line, e.raised ? KERB_KIND.edgeRaised : KERB_KIND.edgeFlush);
+  for (const l of markings?.lines || []) if ((l.kind === "solid" || l.kind === "dashed") && l.line?.length >= 2) segsOf(topoGrid, l.line, 0);
+  const crossings = (markings?.crossings || []).filter((c) => c.poly?.length >= 3).map((c) => {
+    const P = Float64Array.from(c.poly.flat());
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let k = 0; k < P.length; k += 2) {
+      x0 = Math.min(x0, P[k]);
+      x1 = Math.max(x1, P[k]);
+      z0 = Math.min(z0, P[k + 1]);
+      z1 = Math.max(z1, P[k + 1]);
+    }
+    return { id: c.id, P, x0, x1, z0, z1 };
+  });
+  return { name, bounds: tileBounds(name), polys, edgeGrid, polyGrid, lineGrid: lineGrid2, topoGrid, crossings, has: !!surf };
+}
+var STAMP = 0;
+function inputSet(list) {
+  const T3 = list.filter(Boolean);
+  const intervals = (x, z, nx, nz, R2) => {
+    const ev = [], cand = /* @__PURE__ */ new Map();
+    const cells = rayCells(x, z, nx, nz, -R2, R2, []);
+    for (let ti = 0; ti < T3.length; ti++) {
+      const I2 = T3[ti], b = I2.bounds;
+      if (x < b.x0 - R2 - 1 || x > b.x1 + R2 + 1 || z < b.z0 - R2 - 1 || z > b.z1 + R2 + 1) continue;
+      const st = ++STAMP;
+      for (const c of cells) for (const e of I2.edgeGrid.get(c) || []) {
+        if (e[5] === st) continue;
+        e[5] = st;
+        const pi = e[0], ax = e[1], az = e[2], bx = e[3], bz = e[4], sx2 = bx - ax, sz2 = bz - az, d = nx * sz2 - nz * sx2;
+        if (Math.abs(d) < 1e-12) continue;
+        const qx = ax - x, qz = az - z, t = (qx * sz2 - qz * sx2) / d, w = (qx * nz - qz * nx) / d;
+        if (w < 0 || w >= 1 || t < -R2 || t > R2) continue;
+        const key = ti * 1e6 + pi;
+        ev.push([t, key]);
+        cand.set(key, I2.polys[pi]);
+      }
+      for (const pi of I2.polyGrid.get(K(Math.floor(x / 32), Math.floor(z / 32))) || []) {
+        const key = ti * 1e6 + pi;
+        if (!cand.has(key)) {
+          const P = I2.polys[pi];
+          if (x >= P.x0 && x <= P.x1 && z >= P.z0 && z <= P.z1) cand.set(key, P);
+        }
+      }
+    }
+    if (!cand.size) return [];
+    const sx = x - nx * R2, sz = z - nz * R2, state = /* @__PURE__ */ new Map();
+    let drive = 0, park = 0;
+    for (const [key, P] of cand) {
+      const ins = pipPoly(sx, sz, P.rings);
+      state.set(key, ins);
+      if (ins) {
+        if (P.park) park++;
+        else drive++;
+      }
+    }
+    ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const out = [];
+    let t0 = -R2, src = null;
+    const cur = () => {
+      for (const [key, ins] of state) if (ins) return cand.get(key).src;
+      return null;
+    };
+    src = cur();
+    for (const [t, key] of ev) {
+      if (t > t0) out.push({ a: t0, b: t, drive: drive > 0, park: park > 0, src });
+      const P = cand.get(key), ins = !state.get(key);
+      state.set(key, ins);
+      if (P.park) park += ins ? 1 : -1;
+      else drive += ins ? 1 : -1;
+      t0 = t;
+      src = cur();
+    }
+    out.push({ a: t0, b: R2, drive: drive > 0, park: park > 0, src });
+    return out;
+  };
+  const lineHit = (x, z, nx, nz, tc) => {
+    let best = null, bd = SNAP;
+    const cells = rayCells(x, z, nx, nz, tc - SNAP, tc + SNAP, []);
+    for (const I2 of T3) for (const c of cells) for (const [kind, ax, az, bx, bz] of I2.lineGrid.get(c) || []) {
+      const sx = bx - ax, sz = bz - az, d = nx * sz - nz * sx;
+      if (Math.abs(d) < 1e-12) continue;
+      const qx = ax - x, qz = az - z, t = (qx * sz - qz * sx) / d, w = (qx * nz - qz * nx) / d;
+      if (w < 0 || w > 1 || Math.abs(t - tc) > bd) continue;
+      if (!best || Math.abs(t - tc) < bd - 1e-9 || Math.abs(Math.abs(t - tc) - bd) <= 1e-9 && kind < best.kind) {
+        bd = Math.abs(t - tc);
+        best = { t, kind };
+      }
+    }
+    return best;
+  };
+  const topoHit = (x, z, nx, nz, tc, tx, tz) => {
+    let best = null, bd = TOPO_SNAP;
+    const cells = rayCells(x, z, nx, nz, tc - TOPO_SNAP, tc + TOPO_SNAP, []);
+    for (const I2 of T3) for (const c of cells) for (const [, ax, az, bx, bz] of I2.topoGrid.get(c) || []) {
+      const sx = bx - ax, sz = bz - az, L2 = Math.hypot(sx, sz), d = nx * sz - nz * sx;
+      if (L2 < 1e-6 || Math.abs(d) < 1e-12 || Math.abs((sx * tx + sz * tz) / L2) < TOPO_COS) continue;
+      const qx = ax - x, qz = az - z, t = (qx * sz - qz * sx) / d, w = (qx * nz - qz * nx) / d;
+      if (w < 0 || w > 1 || Math.abs(t - tc) >= bd) continue;
+      bd = Math.abs(t - tc);
+      best = t;
+    }
+    return best;
+  };
+  const crossingAt = (x, z) => {
+    for (const I2 of T3) for (const c of I2.crossings) if (x >= c.x0 - CROSS_PAD && x <= c.x1 + CROSS_PAD && z >= c.z0 - CROSS_PAD && z <= c.z1 + CROSS_PAD && (pip22(x, z, c.P) || nearPoly(x, z, c.P, CROSS_PAD))) return true;
+    return false;
+  };
+  const covered = (x, z) => T3.some((I2) => I2.has && x >= I2.bounds.x0 && x < I2.bounds.x1 && z >= I2.bounds.z0 && z < I2.bounds.z1);
+  return { intervals, lineHit, topoHit, crossingAt, covered };
+}
+var nearPoly = (x, z, P, r) => {
+  for (let i = 0, n = P.length / 2, j = n - 1; i < n; j = i++) {
+    const ax = P[2 * j], az = P[2 * j + 1], bx = P[2 * i], bz = P[2 * i + 1], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-12, u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
+    if (Math.hypot(x - ax - dx * u, z - az - dz * u) < r) return true;
+  }
+  return false;
+};
+var NETS = /* @__PURE__ */ new WeakMap();
+function networkIndex(network, overrides2 = null) {
+  let N2 = NETS.get(network);
+  if (N2) return N2;
+  const nodes = new Map(network.nodes.map((n) => [n.id, n]));
+  const deg = /* @__PURE__ */ new Map(), at2 = /* @__PURE__ */ new Map();
+  for (const r of network.roads) for (const [nd, end] of [[r.a, 0], [r.b, 1]]) {
+    deg.set(nd, (deg.get(nd) || 0) + 1);
+    (at2.get(nd) || at2.set(nd, []).get(nd)).push({ r, end });
+  }
+  const pass = (nd) => deg.get(nd) === 2 && !nodes.get(nd)?.meta?.cut && at2.get(nd)[0].r !== at2.get(nd)[1].r;
+  const used = /* @__PURE__ */ new Set(), chains = [], byRoad = /* @__PURE__ */ new Map();
+  const walk = (r0, fromEnd) => {
+    const parts = [];
+    let r = r0, rev = fromEnd === 1, nd = rev ? r.a : r.b;
+    for (; ; ) {
+      used.add(r.id);
+      parts.push({ r, rev });
+      if (!pass(nd)) break;
+      const nx = at2.get(nd).find((q) => q.r !== r);
+      if (!nx || used.has(nx.r.id)) break;
+      r = nx.r;
+      rev = nx.end === 1;
+      nd = rev ? r.a : r.b;
+    }
+    return parts;
+  };
+  const sorted = [...network.roads].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  for (const r of sorted) {
+    if (used.has(r.id)) continue;
+    let s = r, rev = false, guard = 0;
+    for (; ; ) {
+      const nd = rev ? s.b : s.a;
+      if (!pass(nd) || guard++ > 1e4) break;
+      const pv = at2.get(nd).find((q) => q.r !== s);
+      if (!pv || pv.r === r) break;
+      rev = pv.end === 0;
+      s = pv.r;
+      if (s === r) break;
+    }
+    chains.push(walk(s, rev ? 1 : 0));
+  }
+  const out = [];
+  for (const parts of chains) {
+    const pts = [], sub = [];
+    for (const { r, rev } of parts) {
+      const P = [nodes.get(r.a), ...r.pts || [], nodes.get(r.b)].filter(Boolean).map((p) => [p.x, p.z]);
+      if (rev) P.reverse();
+      const k0 = pts.length ? 1 : 0;
+      sub.push({ r, rev, from: Math.max(0, pts.length - 1) });
+      for (let k = k0; k < P.length; k++) pts.push(P[k]);
+    }
+    const A = parts[0].rev ? parts[0].r.b : parts[0].r.a, last = parts[parts.length - 1], B = last.rev ? last.r.a : last.r.b;
+    const way = parts[0].r.meta?.osm ?? /^r([^_]+)_/.exec(parts[0].r.id)?.[1] ?? parts[0].r.id;
+    const id = `s:${way}:${String(A).replace(/^n/, "")}-${String(B).replace(/^n/, "")}`;
+    const ways = [...new Set(parts.flatMap(({ r }) => (r.meta?.osmWays?.length ? r.meta.osmWays : [r.meta?.osm ?? way]).map(String)))];
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const [x, z] of pts) {
+      x0 = Math.min(x0, x);
+      x1 = Math.max(x1, x);
+      z0 = Math.min(z0, z);
+      z1 = Math.max(z1, z);
+    }
+    const c = { id, A, B, parts: sub, pts, ways, roads: parts.map((p) => p.r.id), x0, x1, z0, z1 };
+    out.push(c);
+    for (const p of parts) byRoad.set(p.r.id, c);
+  }
+  const ids = /* @__PURE__ */ new Map();
+  for (const c of out) {
+    const n = (ids.get(c.id) || 0) + 1;
+    ids.set(c.id, n);
+    if (n > 1) c.id += `~${n}`;
+  }
+  const junctions = /* @__PURE__ */ new Map();
+  for (const c of out) for (const [nd, end] of [[c.A, 0], [c.B, 1]]) if ((deg.get(nd) || 0) >= 3 && nodes.has(nd)) (junctions.get(nd) || junctions.set(nd, []).get(nd)).push({ c, end });
+  N2 = { chains: out, byRoad, nodes, deg, junctions, overrides: overrides2, grid: null };
+  const g = /* @__PURE__ */ new Map();
+  out.forEach((c, k) => {
+    for (let i = Math.floor(c.x0 / 64); i <= Math.floor(c.x1 / 64); i++) for (let j = Math.floor(c.z0 / 64); j <= Math.floor(c.z1 / 64); j++) (g.get(K(i, j)) || g.set(K(i, j), []).get(K(i, j))).push(k);
+  });
+  N2.grid = g;
+  NETS.set(network, N2);
+  return N2;
+}
+function chainsNear(N2, b, pad) {
+  const out = /* @__PURE__ */ new Set();
+  for (let i = Math.floor((b.x0 - pad) / 64); i <= Math.floor((b.x1 + pad) / 64); i++) for (let j = Math.floor((b.z0 - pad) / 64); j <= Math.floor((b.z1 + pad) / 64); j++)
+    for (const k of N2.grid.get(K(i, j)) || []) {
+      const c = N2.chains[k];
+      if (c.x1 >= b.x0 - pad && c.x0 <= b.x1 + pad && c.z1 >= b.z0 - pad && c.z0 <= b.z1 + pad) out.add(c);
+    }
+  return [...out].sort((a, b2) => a.id < b2.id ? -1 : 1);
+}
+function chainTiles(N2, c) {
+  const pad = REACH2 + FIND2 + 2, set = new Set(tilesOfBox(c.x0 - pad, c.x1 + pad, c.z0 - pad, c.z1 + pad));
+  return [...set].sort();
+}
+function neededTiles(N2, bounds) {
+  const set = /* @__PURE__ */ new Set();
+  for (const c of chainsNear(N2, bounds, REACH2 + 2)) {
+    for (const t of chainTiles(N2, c)) set.add(t);
+    for (const nd of [c.A, c.B]) if ((N2.deg.get(nd) || 0) >= 3) for (const a of N2.junctions.get(nd) || []) for (const t of chainTiles(N2, a.c)) set.add(t);
+  }
+  return [...set].sort();
+}
+var clone2 = (o) => JSON.parse(JSON.stringify(o));
+function stackOf2(r, overrides2) {
+  const t = ROAD_TYPES[r.type] || ROAD_TYPES.local;
+  const st = r.lanes ? clone2(r.lanes) : { center: { ...t.center, ...t.center.kind === "line" ? { guess: true } : {} }, left: t.left.map((l) => ({ ...l, ...l.type === "bike" || l.type === "parking" ? { guess: true } : {} })), right: t.right.map((l) => ({ ...l, ...l.type === "bike" || l.type === "parking" ? { guess: true } : {} })), _default: true };
+  const way = /^r(\d+)_/.exec(r.id)?.[1];
+  if (way && overrides2?.centreLine?.[way] === "none") st.center = { ...st.center || {}, kind: "none" };
+  for (const side of ["left", "right"]) st[side] = (st[side] || []).filter((l) => !(l.type === "bike" && (l.guess || l.sharrow)));
+  st.rank = t.rank ?? 1;
+  st.residential = RESIDENTIAL2.has(r.type);
+  st.type = r.type;
+  return st;
+}
+var carr = (l) => !!LANE_TYPES[l.type]?.carriage;
+var MIN_W = { driving: 2.6, turn: 2.6, bus: 2.9, bike: 1, parking: 1.8, shoulder: 0.3 };
+function fitStack(st, W2) {
+  const cw = st.center?.width || 0, sw = (side) => (st[side] || []).filter(carr).reduce((a, l) => a + l.width, 0);
+  const tot = sw("left") + sw("right");
+  if (!(tot > 0)) return 0;
+  let dropped = 0;
+  for (const side of ["left", "right"]) {
+    const lanes = st[side] || [], target = Math.max(0.5, W2 - cw) * sw(side) / tot;
+    if (!sw(side)) continue;
+    const minSum = () => lanes.filter(carr).reduce((a, l) => a + (MIN_W[l.type] ?? 1), 0);
+    for (const ty of ["parking", "bike", "driving"]) {
+      while (minSum() > target) {
+        const drives = lanes.filter((l) => LANE_TYPES[l.type]?.drive).length;
+        let idx2 = -1;
+        for (let q = lanes.length - 1; q >= 0; q--) if (lanes[q].type === ty && (ty !== "driving" || drives > 1)) {
+          idx2 = q;
+          break;
+        }
+        if (idx2 < 0) break;
+        lanes.splice(idx2, 1);
+        dropped++;
+      }
+    }
+  }
+  return dropped;
+}
+function stackBoundaries(st) {
+  const R2 = (st.right || []).filter((l) => l.present !== false), L2 = (st.left || []).filter((l) => l.present !== false);
+  const Rc = R2.filter(carr), Lc = L2.filter(carr), cw = st.center?.width || 0;
+  const code = (kind) => kind && kind !== "curb" && kind !== "paveEdge" ? lineCode(markingStyle(kind, "eu", st.rank)) : 0;
+  const out = [];
+  let t = -cw / 2 - Rc.reduce((a, l) => a + l.width, 0);
+  for (let k = Rc.length - 1; k >= 0; k--) {
+    const outer = k === Rc.length - 1 ? R2[R2.indexOf(Rc[k]) + 1] ?? null : Rc[k + 1];
+    const kind = boundaryKind(Rc[k], outer);
+    const guessPark = Rc[k].type === "parking" && Rc[k].guess || outer?.type === "parking" && outer.guess;
+    out.push({ t, code: guessPark && kind !== "edge" ? 0 : code(kind), role: k === Rc.length - 1 ? ROLE.edgeR : ROLE.lane, kind, lane: Rc[k] });
+    t += Rc[k].width;
+  }
+  {
+    const kind = cw > 0 ? null : centerKind(Lc[0], Rc[0], st.center?.kind ?? "line");
+    const role = kind === "leftEdge" ? !Lc.length ? ROLE.edgeL : !Rc.length ? ROLE.edgeR : ROLE.lane : ROLE.centre;
+    const residentialGuess = st.residential && st.center?.kind === "line" && (st.center.guess || st._default);
+    out.push({ t, code: code(kind), role, kind, topoOnly: residentialGuess && role === ROLE.centre, centreW: cw });
+    t += cw;
+  }
+  for (let k = 0; k < Lc.length; k++) {
+    t += Lc[k].width;
+    const outer = k === Lc.length - 1 ? L2[L2.indexOf(Lc[k]) + 1] ?? null : Lc[k + 1];
+    const kind = boundaryKind(Lc[k], outer);
+    const guessPark = Lc[k].type === "parking" && Lc[k].guess || outer?.type === "parking" && outer.guess;
+    out.push({ t, code: guessPark && kind !== "edge" ? 0 : code(kind), role: k === Lc.length - 1 ? ROLE.edgeL : ROLE.lane, kind, lane: Lc[k] });
+  }
+  const lanes = [...[...Rc].reverse(), ...cw > 0 ? [{ type: "centre", width: cw }] : [], ...Lc];
+  return { bounds: out, lanes, cw, W: out[out.length - 1].t - out[0].t, nR: Rc.length, nL: Lc.length };
+}
+function stations(pts) {
+  const cum = [0];
+  for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+  const L2 = cum[cum.length - 1], n = Math.max(2, Math.round(L2 / STEP6) + 1);
+  const s = new Float64Array(n), x = new Float64Array(n), z = new Float64Array(n), nx = new Float64Array(n), nz = new Float64Array(n), part = new Int32Array(n);
+  const at2 = (d) => {
+    let k = 1;
+    while (k < pts.length - 1 && cum[k] < d) k++;
+    const a = pts[k - 1], b = pts[k], f = cum[k] > cum[k - 1] ? (d - cum[k - 1]) / (cum[k] - cum[k - 1]) : 0;
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, k - 1];
+  };
+  for (let i = 0; i < n; i++) {
+    const d = L2 * i / (n - 1);
+    const [px, pz, k] = at2(d);
+    s[i] = d;
+    x[i] = px;
+    z[i] = pz;
+    part[i] = k;
+  }
+  for (let i = 0; i < n; i++) {
+    const [ax, az] = at2(Math.max(0, s[i] - NWIN)), [bx, bz] = at2(Math.min(L2, s[i] + NWIN));
+    let tx = bx - ax, tz = bz - az, l = Math.hypot(tx, tz);
+    if (l < 1e-6) {
+      const k = Math.min(pts.length - 2, part[i]);
+      tx = pts[k + 1][0] - pts[k][0];
+      tz = pts[k + 1][1] - pts[k][1];
+      l = Math.hypot(tx, tz) || 1;
+    }
+    tx /= l;
+    tz /= l;
+    nx[i] = tz;
+    nz[i] = -tx;
+  }
+  return { s, x, z, nx, nz, part, L: L2, n };
+}
+function runMedian(s, v, win) {
+  const n = s.length, out = new Float64Array(n).fill(NaN), w = [];
+  let lo = 0, hi = 0;
+  for (let i = 0; i < n; i++) {
+    while (s[lo] < s[i] - win) lo++;
+    while (hi < n && s[hi] <= s[i] + win) hi++;
+    w.length = 0;
+    for (let j = lo; j < hi; j++) if (!Number.isNaN(v[j])) w.push(v[j]);
+    if (w.length) {
+      w.sort((a, b) => a - b);
+      out[i] = w[w.length >> 1];
+    }
+  }
+  return out;
+}
+function measure(c, Q, N2) {
+  const S3 = stations(c.pts), n = S3.n;
+  const spans = c.parts.map(({ r, rev }) => {
+    const b = stackBoundaries(stackOf2(r, N2.overrides)).bounds;
+    const lo = b[0].t, hi = b[b.length - 1].t;
+    return rev ? [-hi, -lo] : [lo, hi];
+  });
+  const span = Array.from({ length: n }, (_, i) => {
+    let p = 0;
+    while (p + 1 < c.parts.length && c.parts[p + 1].from <= S3.part[i]) p++;
+    return spans[p];
+  });
+  const kL = new Float64Array(n).fill(NaN), kR = new Float64Array(n).fill(NaN), dL = new Float64Array(n).fill(NaN), dR = new Float64Array(n).fill(NaN);
+  const kindL = new Uint8Array(n), kindR = new Uint8Array(n), X = new Uint8Array(n), cov = new Uint8Array(n), bare = new Uint8Array(n).fill(1);
+  const srcs = /* @__PURE__ */ new Set();
+  for (let i = 0; i < n; i++) {
+    const x = S3.x[i], z = S3.z[i], nx = S3.nx[i], nz = S3.nz[i];
+    cov[i] = Q.covered(x, z) ? 1 : 0;
+    if (!cov[i]) continue;
+    let iv = Q.intervals(x, z, nx, nz, NEAR_R);
+    if (iv.length && (iv[0].drive || iv[0].park || (iv[iv.length - 1].drive || iv[iv.length - 1].park))) iv = Q.intervals(x, z, nx, nz, REACH2);
+    if (!iv.length) continue;
+    if (iv.some((q) => q.drive || q.park)) bare[i] = 0;
+    const [spLo, spHi] = span[i];
+    let best = -1, bd = Infinity, ovBest = -1, dOv = Infinity, near = -1, dNear = Infinity;
+    for (let k = 0; k < iv.length; k++) {
+      if (!iv[k].drive || k > 0 && iv[k - 1].drive) continue;
+      let e = k;
+      while (e < iv.length - 1 && iv[e + 1].drive) e++;
+      const ga = iv[k].a, gb = iv[e].b, ov = Math.min(gb, spHi) - Math.max(ga, spLo), d = ga > 0 ? ga : gb < 0 ? -gb : 0;
+      if (ov > 1 && ov > ovBest) {
+        ovBest = ov;
+        best = k;
+        dOv = d;
+      }
+      if (d < dNear) {
+        dNear = d;
+        near = k;
+      }
+    }
+    if (best >= 0) bd = dOv;
+    else {
+      best = near;
+      bd = dNear;
+    }
+    const onSurf = iv.some((q) => q.a <= 0 && q.b >= 0 && (q.drive || q.park));
+    if (best < 0 || bd > FIND2) {
+      if (onSurf) X[i] = 1;
+      continue;
+    }
+    let lo = best, hi = best;
+    while (lo > 0 && iv[lo - 1].drive) lo--;
+    while (hi < iv.length - 1 && iv[hi + 1].drive) hi++;
+    let klo = lo, khi = hi;
+    while (klo > 0 && (iv[klo - 1].drive || iv[klo - 1].park)) klo--;
+    while (khi < iv.length - 1 && (iv[khi + 1].drive || iv[khi + 1].park)) khi++;
+    const a = iv[lo].a, b = iv[hi].b, ka = iv[klo].a, kb = iv[khi].b;
+    X[i] = bd > X_OFF2 ? 1 : 0;
+    if (iv[best].src) srcs.add(iv[best].src);
+    const R2 = Math.abs(iv[0].a);
+    const end = (t) => {
+      if (Math.abs(t) >= R2 - 1e-6) return [NaN, 0];
+      const h = Q.lineHit(x, z, nx, nz, t);
+      return h ? [h.t, h.kind] : [NaN, 0];
+    };
+    [kR[i], kindR[i]] = end(ka);
+    [kL[i], kindL[i]] = end(kb);
+    dR[i] = klo < lo ? Math.abs(a) < R2 ? a : NaN : kR[i];
+    dL[i] = khi > hi ? Math.abs(b) < R2 ? b : NaN : kL[i];
+  }
+  const prune = (v) => {
+    const med = runMedian(S3.s, v, JUMP_WIN);
+    for (let i = 0; i < n; i++) if (!Number.isNaN(v[i]) && !(Math.abs(v[i] - med[i]) <= JUMP)) v[i] = NaN;
+  };
+  prune(kL);
+  prune(kR);
+  prune(dL);
+  prune(dR);
+  return { S: S3, kL, kR, dL, dR, kindL, kindR, X, cov, bare, srcs: [...srcs].sort() };
+}
+function fill(S3, v, fb, fbConf) {
+  const n = S3.n, out = new Float64Array(n), conf = new Uint8Array(n);
+  let prev = -1;
+  const nextM = new Int32Array(n).fill(-1);
+  for (let i = n - 1, nx = -1; i >= 0; i--) {
+    if (!Number.isNaN(v[i])) nx = i;
+    nextM[i] = nx;
+  }
+  for (let i = 0; i < n; i++) {
+    if (!Number.isNaN(v[i])) {
+      out[i] = v[i];
+      conf[i] = CONF.M;
+      prev = i;
+      continue;
+    }
+    const nx = nextM[i];
+    if (prev >= 0 && nx >= 0 && S3.s[nx] - S3.s[prev] <= INTERP) {
+      const f = (S3.s[i] - S3.s[prev]) / (S3.s[nx] - S3.s[prev]);
+      out[i] = v[prev] + (v[nx] - v[prev]) * f;
+      conf[i] = CONF.D;
+    } else {
+      out[i] = fb[i];
+      conf[i] = fbConf[i];
+    }
+  }
+  return { v: out, conf };
+}
+function buildSegment(c, Mz, N2, Q) {
+  const { S: S3 } = Mz, n = S3.n;
+  const partOf = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    let p = 0;
+    while (p + 1 < c.parts.length && c.parts[p + 1].from <= S3.part[i]) p++;
+    partOf[i] = p;
+  }
+  const stacks = c.parts.map(({ r, rev }, p) => {
+    const st = stackOf2(r, N2.overrides), W2 = [];
+    for (let i = 0; i < n; i++) if (partOf[i] === p && !Number.isNaN(Mz.dL[i]) && !Number.isNaN(Mz.dR[i])) W2.push(Mz.dL[i] - Mz.dR[i]);
+    let dropped = 0;
+    if (W2.length >= 3) {
+      W2.sort((a, b) => a - b);
+      dropped = fitStack(st, W2[W2.length >> 1]);
+    }
+    return { st, sb: stackBoundaries(st), rev, tagged: !!r.lanes, dropped };
+  });
+  for (const P of stacks) if (P.rev) {
+    const b = P.sb.bounds.map((q) => ({ ...q, t: -q.t, role: q.role === ROLE.edgeR ? ROLE.edgeL : q.role === ROLE.edgeL ? ROLE.edgeR : q.role })).reverse();
+    P.sb = { ...P.sb, bounds: b, lanes: [...P.sb.lanes].reverse(), nR: P.sb.nL, nL: P.sb.nR };
+  }
+  const fbL = new Float64Array(n), fbR = new Float64Array(n), fbC = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const P = stacks[partOf[i]], b = P.sb.bounds;
+    fbR[i] = b[0].t;
+    fbL[i] = b[b.length - 1].t;
+    fbC[i] = P.tagged ? CONF.O : CONF.G;
+  }
+  const KL = fill(S3, Mz.kL, fbL, fbC), KR = fill(S3, Mz.kR, fbR, fbC), DL = fill(S3, Mz.dL, fbL, fbC), DR = fill(S3, Mz.dR, fbR, fbC);
+  const order = (A, B2) => {
+    for (let i = 0; i < n; i++) {
+      if (A.v[i] > B2.v[i] + 0.1) continue;
+      const W2 = Math.max(0.5, fbL[i] - fbR[i]), mA = A.conf[i] <= CONF.D, mB = B2.conf[i] <= CONF.D;
+      if (mA && !mB) B2.v[i] = A.v[i] - W2;
+      else if (mB && !mA) A.v[i] = B2.v[i] + W2;
+      else {
+        A.v[i] = fbL[i];
+        B2.v[i] = fbR[i];
+        A.conf[i] = B2.conf[i] = Mz.X[i] ? CONF.X : fbC[i];
+      }
+    }
+  };
+  order(KL, KR);
+  order(DL, DR);
+  for (let i = 0; i < n; i++) {
+    if (DL.v[i] > KL.v[i]) DL.v[i] = KL.v[i];
+    if (DR.v[i] < KR.v[i]) DR.v[i] = KR.v[i];
+  }
+  const axOff = new Float64Array(n), axConf = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const mL = KL.conf[i] <= CONF.D, mR = KR.conf[i] <= CONF.D;
+    if (mL && mR) {
+      axOff[i] = (KL.v[i] + KR.v[i]) / 2;
+      axConf[i] = Mz.X[i] ? CONF.X : KL.conf[i] === CONF.M && KR.conf[i] === CONF.M ? CONF.M : CONF.D;
+    } else {
+      axOff[i] = 0;
+      axConf[i] = Mz.X[i] ? CONF.X : Mz.bare[i] ? CONF.E : fbC[i];
+    }
+  }
+  const f32 = (a) => Float32Array.from(a);
+  const kerb = (Kf, kind) => {
+    const off = new Float32Array(n), h = new Float32Array(n), kd = new Uint8Array(n), conf = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      off[i] = Kf.v[i] - axOff[i];
+      conf[i] = Kf.conf[i];
+      kd[i] = Kf.conf[i] === CONF.M ? kind[i] : KERB_KIND.none;
+      h[i] = kd[i] === KERB_KIND.kerb || kd[i] === KERB_KIND.edgeRaised ? KERB_H : 0;
+    }
+    return { off, conf, h, kind: kd };
+  };
+  const kerbL = kerb(KL, Mz.kindL), kerbR = kerb(KR, Mz.kindR);
+  const drive = { offL: f32(Array.from(DL.v, (v, i) => v - axOff[i])), offR: f32(Array.from(DR.v, (v, i) => v - axOff[i])), confL: DL.conf, confR: DR.conf };
+  return { c, S: S3, partOf, stacks, axOff, axConf, kerbL, kerbR, drive, X: Mz.X, bare: Mz.bare, srcs: Mz.srcs };
+}
+function placeLanes(seg, mouthA, mouthB, Q) {
+  const { S: S3, stacks, partOf, kerbL, kerbR, drive, axOff } = seg, n = S3.n;
+  const B = Math.max(...stacks.map((P) => P.sb.bounds.length));
+  const off = new Float32Array(n * B).fill(NaN), code = new Float32Array(n * B), role = new Uint8Array(n * B), bconf = new Uint8Array(n * B).fill(CONF.O);
+  const conf = new Uint8Array(n), topo = new Float64Array(n * B).fill(NaN);
+  const ok = new Uint8Array(n);
+  for (let i = 0; i < n; i++) ok[i] = drive.confL[i] === CONF.M && drive.confR[i] === CONF.M ? 1 : 0;
+  const stable = new Uint8Array(n);
+  for (let i = 0; i < n; ) {
+    if (!ok[i]) {
+      i++;
+      continue;
+    }
+    let j = i, lo = Infinity, hi = -Infinity;
+    while (j < n && ok[j]) {
+      const w = drive.offL[j] - drive.offR[j];
+      const nlo = Math.min(lo, w), nhi = Math.max(hi, w);
+      if (nhi - nlo > 2 * STABLE_W) break;
+      lo = nlo;
+      hi = nhi;
+      j++;
+    }
+    if (S3.s[j - 1] - S3.s[i] >= STABLE_LEN) {
+      for (let k = i; k < j; k++) stable[k] = 1;
+      i = j;
+    } else i++;
+  }
+  for (let i = 0; i < n; i++) {
+    const P = stacks[partOf[i]], bnd = P.sb.bounds, lanes = P.sb.lanes;
+    const inJ = S3.s[i] < mouthA || S3.s[i] > S3.L - mouthB;
+    const lo = drive.offR[i], hi = drive.offL[i], W1 = hi - lo;
+    const bayR = kerbR.off[i] < lo - 0.3, bayL = kerbL.off[i] > hi + 0.3;
+    const wid = lanes.map((l, k) => l.type === "parking" && (k < P.sb.nR && bayR || k >= P.sb.nR && bayL) ? 0 : l.width);
+    const fixed = lanes.map((l, k) => l.type === "parking" && wid[k] ? Math.min(wid[k], PARK_W2) : null);
+    const fx = fixed.reduce((a, w) => a + (w ?? 0), 0), rest0 = wid.reduce((a, w, k) => a + (fixed[k] == null ? w : 0), 0);
+    const scale = rest0 > 0 ? (W1 - fx) / rest0 : 1;
+    const linear = scale < 0.5 || !(W1 > 0);
+    const tot = wid.reduce((a, w) => a + w, 0) || 1;
+    const pos = [lo];
+    for (let k = 0; k < lanes.length; k++) pos.push(pos[k] + (linear ? wid[k] * W1 / tot : fixed[k] ?? wid[k] * scale));
+    let narrow = false;
+    for (let k = 0; k < lanes.length; k++) if (LANE_TYPES[lanes[k].type]?.drive && pos[k + 1] - pos[k] < MIN_LANE && wid[k] > 0) narrow = true;
+    const cb = P.sb.cw > 0 ? 1 : 0;
+    for (let k = 0; k < bnd.length; k++) {
+      const q = bnd[k], idx2 = i * B + k;
+      const t = cb && q.role === ROLE.centre ? (pos[k] + pos[k + 1]) / 2 : pos[Math.min(k + (cb && k > P.sb.nR ? 1 : 0), pos.length - 1)];
+      off[idx2] = t;
+      code[idx2] = q.code;
+      role[idx2] = q.role;
+      let bc;
+      if (q.role === ROLE.edgeR || q.role === ROLE.edgeL) bc = (q.role === ROLE.edgeR ? kerbR.conf[i] : kerbL.conf[i]) === CONF.M && (q.role === ROLE.edgeR ? !bayR : !bayL) ? CONF.M : CONF.O;
+      else {
+        const tx = -S3.nz[i], tz = S3.nx[i];
+        const th = Q.topoHit(S3.x[i], S3.z[i], S3.nx[i], S3.nz[i], t + axOff[i], tx, tz);
+        if (th != null) topo[idx2] = th - axOff[i] - t;
+        bc = q.topoOnly ? CONF.O : narrow && q.role === ROLE.lane ? CONF.X : stable[i] ? CONF.D : seg.X[i] ? CONF.X : CONF.O;
+      }
+      if (inJ) bc = Math.max(bc, CONF.O);
+      bconf[idx2] = bc;
+    }
+    conf[i] = inJ ? CONF.O : narrow ? CONF.X : stable[i] ? CONF.D : seg.X[i] ? CONF.X : drive.confL[i] <= CONF.D && drive.confR[i] <= CONF.D ? CONF.D : Math.max(drive.confL[i], drive.confR[i]);
+  }
+  for (let b = 0; b < B; b++) {
+    const v = new Float64Array(n);
+    for (let i = 0; i < n; i++) v[i] = topo[i * B + b];
+    if (!v.some((q) => !Number.isNaN(q))) continue;
+    const med = runMedian(S3.s, v, TOPO_WIN);
+    for (let i = 0; i < n; i++) {
+      const idx2 = i * B + b;
+      if (Number.isNaN(v[i]) || !(Math.abs(v[i] - med[i]) <= TOPO_DEV) || bconf[idx2] === CONF.O && (S3.s[i] < mouthA || S3.s[i] > S3.L - mouthB)) continue;
+      let k = 0;
+      for (let j = Math.max(0, i - TOPO_WIN); j <= Math.min(n - 1, i + TOPO_WIN); j++) if (!Number.isNaN(v[j]) && Math.abs(v[j] - med[i]) <= TOPO_DEV) k++;
+      if (k < TOPO_WIN) continue;
+      off[idx2] += med[i];
+      bconf[idx2] = CONF.M;
+    }
+  }
+  return { B, off, code, role, bconf, conf };
+}
+function stackWidthAt(c, end, N2) {
+  const p = c.parts[end ? c.parts.length - 1 : 0];
+  const sb = stackBoundaries(stackOf2(p.r, N2.overrides));
+  return Math.max(2, sb.W);
+}
+function mouthOf(seg, end, floor) {
+  const { S: S3, kerbL, kerbR } = seg, n = S3.n, L2 = S3.L;
+  const W2 = [];
+  for (let i = 0; i < n; i++) if (kerbL.conf[i] === CONF.M && kerbR.conf[i] === CONF.M) W2.push(kerbL.off[i] - kerbR.off[i]);
+  const cap2 = Math.min(MOUTH_MAX, L2 / 2);
+  if (W2.length < 5) return { s: Math.min(floor, cap2), m: false };
+  W2.sort((a, b) => a - b);
+  const med = W2[W2.length >> 1];
+  let run = 0;
+  for (let q = 0; q < n; q++) {
+    const i = end ? n - 1 - q : q, d = end ? L2 - S3.s[i] : S3.s[i];
+    if (d > cap2) break;
+    if (d < floor) continue;
+    const good = kerbL.conf[i] === CONF.M && kerbR.conf[i] === CONF.M && Math.abs(kerbL.off[i] - kerbR.off[i] - med) <= 0.5;
+    run = good ? run + STEP6 : 0;
+    if (run >= 3) return { s: Math.max(floor, d - 3 + STEP6), m: true };
+  }
+  return { s: Math.min(Math.max(floor, cap2), cap2), m: false };
+}
+function buildStreetModel({ network, overrides: overrides2, tile, bounds, inputsOf, store: store2 = /* @__PURE__ */ new Map() }) {
+  const N2 = networkIndex(network, overrides2);
+  const t0 = (globalThis.performance ?? Date).now();
+  const near = chainsNear(N2, bounds, REACH2 + 2);
+  const meas = (c) => {
+    const k = `m|${c.id}`;
+    let m = store2.get(k);
+    if (!m) {
+      const Q = inputSet(chainTiles(N2, c).map(inputsOf));
+      m = { M: measure(c, Q, N2), Q };
+      m.seg = buildSegment(c, m.M, N2, Q);
+      store2.set(k, m);
+    }
+    return m;
+  };
+  const junction = (nd) => {
+    const k = `j|${nd}`;
+    let J = store2.get(k);
+    if (J) return J;
+    const arms = N2.junctions.get(nd) || [];
+    const ws = arms.map((a) => stackWidthAt(a.c, a.end, N2)).sort((a, b) => b - a);
+    const floor = ws.length >= 2 ? Math.hypot(ws[0] / 2, ws[1] / 2) : 0;
+    const node = N2.nodes.get(nd);
+    const A = arms.map((a) => {
+      const m = meas(a.c);
+      const mo = mouthOf(m.seg, a.end, floor);
+      return { a, m, mo };
+    });
+    const pts = [];
+    for (const { a, m, mo } of A) {
+      const sg = m.seg, S3 = sg.S, i = a.end ? Math.max(0, Math.min(S3.n - 1, Math.round((S3.L - mo.s) / STEP6))) : Math.max(0, Math.min(S3.n - 1, Math.round(mo.s / STEP6)));
+      for (const off of [sg.kerbL.off[i] + sg.axOff[i], sg.kerbR.off[i] + sg.axOff[i]]) pts.push([S3.x[i] + S3.nx[i] * off, S3.z[i] + S3.nz[i] * off]);
+    }
+    pts.sort((p, q) => Math.atan2(p[1] - node.z, p[0] - node.x) - Math.atan2(q[1] - node.z, q[0] - node.x));
+    const poly = Float32Array.from(pts.flat());
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const [x, z] of pts) {
+      x0 = Math.min(x0, x);
+      x1 = Math.max(x1, x);
+      z0 = Math.min(z0, z);
+      z1 = Math.max(z1, z);
+    }
+    const conf = A.every((q) => q.mo.m) ? CONF.M : A.some((q) => q.mo.m) ? CONF.D : CONF.O;
+    J = {
+      kind: "junction",
+      id: `j:${String(nd).replace(/^n/, "")}`,
+      node: nd,
+      owner: tileOf(node.x, node.z),
+      x: node.x,
+      z: node.z,
+      floor,
+      poly,
+      conf,
+      arms: A.map(({ a, mo }) => ({ seg: a.c.id, end: a.end, mouth: Math.round(mo.s * 1e3) / 1e3, conf: mo.m ? CONF.M : CONF.O })),
+      x0,
+      x1,
+      z0,
+      z1
+    };
+    store2.set(k, J);
+    return J;
+  };
+  const element = (c) => {
+    const k = `e|${c.id}`;
+    let E = store2.get(k);
+    if (E) return E;
+    const m = meas(c), sg = m.seg;
+    const jA = (N2.deg.get(c.A) || 0) >= 3 && N2.nodes.has(c.A) ? junction(c.A) : null, jB = (N2.deg.get(c.B) || 0) >= 3 && N2.nodes.has(c.B) ? junction(c.B) : null;
+    const mouthA = jA ? jA.arms.find((q) => q.seg === c.id && q.end === 0)?.mouth ?? 0 : 0, mouthB = jB ? jB.arms.find((q) => q.seg === c.id && q.end === 1)?.mouth ?? 0 : 0;
+    const lanes = placeLanes(sg, mouthA, mouthB, m.Q);
+    const S3 = sg.S, n = S3.n;
+    const ax = new Float64Array(n), az = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      ax[i] = S3.x[i] + S3.nx[i] * sg.axOff[i];
+      az[i] = S3.z[i] + S3.nz[i] * sg.axOff[i];
+    }
+    const ring2 = new Float32Array(4 * n);
+    for (let i = 0; i < n; i++) {
+      ring2[2 * i] = ax[i] + S3.nx[i] * sg.kerbR.off[i];
+      ring2[2 * i + 1] = az[i] + S3.nz[i] * sg.kerbR.off[i];
+      const j = 2 * n - 1 - i;
+      ring2[2 * j] = ax[i] + S3.nx[i] * sg.kerbL.off[i];
+      ring2[2 * j + 1] = az[i] + S3.nz[i] * sg.kerbL.off[i];
+    }
+    const cross3 = new Uint8Array(n);
+    for (let i = 0; i < n; i++) if (m.Q.crossingAt(ax[i], az[i])) cross3[i] = 1;
+    const L2 = S3.L, mi = Math.min(n - 1, Math.round(L2 / 2 / STEP6));
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let k2 = 0; k2 < ring2.length; k2 += 2) {
+      x0 = Math.min(x0, ring2[k2]);
+      x1 = Math.max(x1, ring2[k2]);
+      z0 = Math.min(z0, ring2[k2 + 1]);
+      z1 = Math.max(z1, ring2[k2 + 1]);
+    }
+    E = {
+      kind: "segment",
+      v: MODEL_VERSION,
+      id: c.id,
+      owner: tileOf(S3.x[mi], S3.z[mi]),
+      A: c.A,
+      B: c.B,
+      length: Math.round(L2 * 1e3) / 1e3,
+      sources: { osm: c.ways, roads: c.roads, urbis: sg.srcs },
+      stacks: sg.stacks.map((P) => ({ type: P.st.type, rank: P.st.rank, tagged: P.tagged, rev: P.rev, dropped: P.dropped })),
+      junctionA: jA?.id ?? null,
+      junctionB: jB?.id ?? null,
+      mouthA,
+      mouthB,
+      n,
+      s: Float32Array.from(S3.s),
+      nx: Float32Array.from(S3.nx),
+      nz: Float32Array.from(S3.nz),
+      ax: Float32Array.from(ax),
+      az: Float32Array.from(az),
+      axConf: sg.axConf,
+      part: Uint8Array.from(sg.partOf),
+      bare: sg.bare,
+      kerbL: sg.kerbL,
+      kerbR: sg.kerbR,
+      drive: sg.drive,
+      ring: ring2,
+      cross: cross3,
+      lanes,
+      x0,
+      x1,
+      z0,
+      z1
+    };
+    store2.set(k, E);
+    return E;
+  };
+  const touches = (o) => o.x1 >= bounds.x0 && o.x0 <= bounds.x1 && o.z1 >= bounds.z0 && o.z0 <= bounds.z1;
+  const segments = [], junctions = /* @__PURE__ */ new Map();
+  for (const c of near) {
+    const E = element(c);
+    if (!touches(E)) continue;
+    segments.push(E);
+    for (const jid of [E.junctionA, E.junctionB]) if (jid) {
+      const J = store2.get(`j|${jid === E.junctionA ? E.A : E.B}`);
+      if (J && touches(J)) junctions.set(J.id, J);
+    }
+  }
+  const own = segments.filter((e) => e.owner === tile).length;
+  return {
+    tile,
+    version: MODEL_VERSION,
+    segments,
+    junctions: [...junctions.values()].sort((a, b) => a.id < b.id ? -1 : 1),
+    junctionAt: junctionTest([...junctions.values()]),
+    stats: { segments: segments.length, own, copies: segments.length - own, junctions: junctions.size, ms: Math.round((globalThis.performance ?? Date).now() - t0) }
+  };
+}
+function junctionTest(J) {
+  return (x, z) => {
+    for (const j of J) {
+      if ((x - j.x) ** 2 + (z - j.z) ** 2 < j.floor * j.floor) return j;
+      if (x >= j.x0 && x <= j.x1 && z >= j.z0 && z <= j.z1 && pip22(x, z, j.poly)) return j;
+    }
+    return null;
+  };
+}
+
+// viewer/street/markings.js
+var EDGE_IN2 = 0.3;
+var MIN_RUN = 6;
+var NARROW = 0.5;
+var LANE_SLOPE = 0.07;
+var STEP_OFF = 0.15;
+var MIN_PIECE2 = 0.3;
+var JUMP_RUN = 1.6;
+var DP_TOL = 0.02;
+var CROSS_COS = Math.cos(30 * Math.PI / 180);
+var STEADY = 0.3;
+var STEADY_N = 7;
+function steady(E, i) {
+  const side = (K2, j) => (E.ax[j] + E.nx[j] * K2.off[j]) * E.nx[i] + (E.az[j] + E.nz[j] * K2.off[j]) * E.nz[i];
+  const l0 = side(E.kerbL, i), r0 = side(E.kerbR, i);
+  for (let j = Math.max(0, i - STEADY_N); j <= Math.min(E.n - 1, i + STEADY_N); j++)
+    if (Math.abs(side(E.kerbL, j) - l0) > STEADY || Math.abs(side(E.kerbR, j) - r0) > STEADY) return false;
+  return true;
+}
+function simplify2(P, tol) {
+  if (P.length <= 2) return P;
+  const keep = new Uint8Array(P.length);
+  keep[0] = keep[P.length - 1] = 1;
+  const st = [[0, P.length - 1]];
+  while (st.length) {
+    const [a, b] = st.pop();
+    let bi = -1, bd = tol;
+    const ax = P[a][0], az = P[a][1], dx = P[b][0] - ax, dz = P[b][1] - az, L2 = Math.hypot(dx, dz) || 1e-9;
+    for (let i = a + 1; i < b; i++) {
+      const d = Math.abs((P[i][0] - ax) * dz - (P[i][1] - az) * dx) / L2;
+      if (d > bd) {
+        bd = d;
+        bi = i;
+      }
+    }
+    if (bi >= 0) {
+      keep[bi] = 1;
+      st.push([a, bi], [bi, b]);
+    }
+  }
+  return P.filter((_, i) => keep[i]);
+}
+function dashes(P, dash) {
+  if (!dash) return [P];
+  const [on, off] = dash, per = on + off, onAt = (s) => (s % per + per) % per < on, out = [];
+  let cur = null;
+  for (let k = 1; k < P.length; k++) {
+    const a = P[k - 1], b = P[k], ds = b[2] - a[2];
+    if (!(ds > 1e-9)) continue;
+    const cuts = [a[2], b[2]];
+    for (let q = Math.floor(a[2] / per); q <= Math.floor(b[2] / per); q++) for (const e of [q * per, q * per + on]) if (e > a[2] && e < b[2]) cuts.push(e);
+    cuts.sort((x, y) => x - y);
+    const at2 = (s) => {
+      const f = (s - a[2]) / ds;
+      return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, s];
+    };
+    for (let m = 1; m < cuts.length; m++) {
+      if (onAt((cuts[m - 1] + cuts[m]) / 2)) {
+        if (!cur) cur = [at2(cuts[m - 1])];
+        cur.push(at2(cuts[m]));
+      } else if (cur) {
+        out.push(cur);
+        cur = null;
+      }
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+function quads(P, w, id, items) {
+  const n = P.length, cum = [0];
+  for (let k = 1; k < n; k++) cum.push(cum[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]));
+  const L2 = cum[n - 1];
+  if (L2 < 0.05) return;
+  const dir = [];
+  for (let k = 0; k + 1 < n; k++) {
+    const dx = P[k + 1][0] - P[k][0], dz = P[k + 1][1] - P[k][1], l = Math.hypot(dx, dz) || 1e-9;
+    dir.push([dx / l, dz / l]);
+  }
+  const off = P.map((_, k) => {
+    const a = dir[Math.max(0, k - 1)], b = dir[Math.min(dir.length - 1, k)];
+    let mx = a[1] + b[1], mz = -(a[0] + b[0]);
+    const ml = Math.hypot(mx, mz);
+    if (ml < 1e-6) {
+      mx = b[1];
+      mz = -b[0];
+    } else {
+      mx /= ml;
+      mz /= ml;
+    }
+    const c = Math.max(0.5, mx * b[1] + mz * -b[0]);
+    return [mx * w / 2 / c, mz * w / 2 / c];
+  });
+  for (let k = 0; k + 1 < n; k++) {
+    const [ux, uz] = dir[k], bx = uz, bz = -ux;
+    const p0 = P[k], p1 = P[k + 1];
+    const R0 = [p0[0] - off[k][0], p0[1] - off[k][1]], R1 = [p1[0] - off[k + 1][0], p1[1] - off[k + 1][1]];
+    const L1 = [p1[0] + off[k + 1][0], p1[1] + off[k + 1][1]], L0 = [p0[0] + off[k][0], p0[1] + off[k][1]];
+    const o = [p0[0] - bx * w / 2, p0[1] - bz * w / 2];
+    items.push({ kind: "solid", poly: [R0, R1, L1, L0], frame: { o, a: [ux, uz], b: [bx, bz], u0: -cum[k], u1: L2 - cum[k], v0: 0, vLen: w }, line: id });
+  }
+}
+function modelLineItems(model, opts = {}) {
+  const items = [], stats = { runs: 0, metres: 0, edgeM: 0, laneM: 0, byConf: { M: 0, D: 0 } };
+  const inJ = model.junctionAt;
+  const G2 = /* @__PURE__ */ new Map(), GK = (i, j) => i * 131071 + j;
+  model.segments.forEach((E, k) => {
+    for (let i = Math.floor(E.x0 / 32); i <= Math.floor(E.x1 / 32); i++) for (let j = Math.floor(E.z0 / 32); j <= Math.floor(E.z1 / 32); j++) {
+      const q = GK(i, j);
+      let l = G2.get(q);
+      if (!l) G2.set(q, l = []);
+      l.push(k);
+    }
+  });
+  const crossOther = (self2, x, z, tx, tz) => {
+    for (const k of G2.get(GK(Math.floor(x / 32), Math.floor(z / 32))) || []) {
+      const O = model.segments[k];
+      if (O === self2 || x < O.x0 || x > O.x1 || z < O.z0 || z > O.z1 || !pip22(x, z, O.ring)) continue;
+      let bi = 0, bd = Infinity;
+      for (let i = 0; i < O.n; i++) {
+        const d = (O.ax[i] - x) ** 2 + (O.az[i] - z) ** 2;
+        if (d < bd) {
+          bd = d;
+          bi = i;
+        }
+      }
+      if (Math.abs(-O.nz[bi] * tx + O.nx[bi] * tz) < CROSS_COS) return true;
+    }
+    return false;
+  };
+  const near = opts.near ?? (() => true);
+  let id = 1;
+  for (const E of model.segments) {
+    const { n, lanes } = E, B = lanes.B;
+    for (let b = 0; b < B; b++) {
+      let run = [], code = 0, role = 0;
+      const flush = () => {
+        if (run.length >= 2 && run[run.length - 1][2] - run[0][2] >= MIN_RUN && run.some((p) => near(p[0], p[1]))) {
+          const st = decodeLineCode(code), Ps = role === ROLE.edgeR || role === ROLE.edgeL ? edgeCurves(E, run, role, opts.drawn ?? null) : [run.map((q) => [q[0], q[1], q[2]])];
+          for (const P of Ps) {
+            if (P[P.length - 1][2] - P[0][2] < MIN_RUN / 2) continue;
+            for (const piece of dashes(simplify2(P, DP_TOL), st.dash)) {
+              let len = 0;
+              for (let k = 1; k < piece.length; k++) len += Math.hypot(piece[k][0] - piece[k - 1][0], piece[k][1] - piece[k - 1][1]);
+              if (len < MIN_PIECE2) continue;
+              quads(piece, st.width, id++, items);
+              stats.metres += len;
+              if (role === ROLE.edgeR || role === ROLE.edgeL) stats.edgeM += len;
+              else stats.laneM += len;
+            }
+          }
+          stats.runs++;
+        }
+        run = [];
+      };
+      for (let i = 0; i < n; i++) {
+        const k = i * B + b, c = lanes.code[k], bc = lanes.bconf[k], r = lanes.role[k];
+        const edge = r === ROLE.edgeR || r === ROLE.edgeL;
+        const off = lanes.off[k];
+        const x = E.ax[i] + E.nx[i] * off, z = E.az[i] + E.nz[i] * off;
+        const K2 = r === ROLE.edgeL ? E.kerbL : E.kerbR;
+        const lat = (j) => (E.ax[j] + E.nx[j] * lanes.off[j * B + b]) * E.nx[i] + (E.az[j] + E.nz[j] * lanes.off[j * B + b]) * E.nz[i];
+        const slope = !edge && i > 0 && i < n - 1 ? Math.abs(lat(i + 1) - lat(i - 1)) / Math.max(1e-6, E.s[i + 1] - E.s[i - 1]) : 0;
+        let paint = c > 0 && !Number.isNaN(off) && (edge ? bc === CONF.M && (K2.kind[i] === 1 || K2.kind[i] === 2) : bc <= CONF.D && !(slope > LANE_SLOPE) && steady(E, i)) && !E.cross[i] && !inJ(x, z) && !crossOther(E, x, z, -E.nz[i], E.nx[i]);
+        if (paint && !edge && opts.drawn) {
+          const want = Math.min(off - E.kerbR.off[i], E.kerbL.off[i] - off);
+          if (want > NARROW) {
+            const d = opts.drawn(x, z, want - NARROW);
+            if (d) paint = false;
+          }
+        }
+        const last = run[run.length - 1];
+        if (!paint || run.length && (c !== code || r !== role || Math.hypot(x - last[0], z - last[1]) > JUMP_RUN || !edge && Math.abs((x - last[0]) * E.nx[i] + (z - last[1]) * E.nz[i]) > STEP_OFF)) flush();
+        if (!paint) continue;
+        code = c;
+        role = r;
+        run.push([x, z, E.s[i], i, off]);
+        if (bc === CONF.M) stats.byConf.M++;
+        else stats.byConf.D++;
+      }
+      flush();
+    }
+  }
+  stats.metres = Math.round(stats.metres);
+  stats.edgeM = Math.round(stats.edgeM);
+  stats.laneM = Math.round(stats.laneM);
+  return { items, stats };
+}
+var REFINE = 0.5;
+function edgeCurves(E, run, role, drawn) {
+  const K2 = role === ROLE.edgeL ? E.kerbL : E.kerbR, out = [];
+  let cur = [];
+  const P = run.map(([, , s, i]) => [E.ax[i] + E.nx[i] * K2.off[i], E.az[i] + E.nz[i] * K2.off[i], s, i]);
+  for (let k = 0; k < P.length; k++) {
+    const i = P[k][3];
+    let qx, qz, kx = P[k][0], kz = P[k][1];
+    const d = drawn ? drawn(kx, kz, REFINE) : null;
+    if (drawn && !d) {
+      if (cur.length >= 2) out.push(cur);
+      cur = [];
+      continue;
+    }
+    if (d) {
+      kx = d.x;
+      kz = d.z;
+      qx = d.uz;
+      qz = -d.ux;
+    } else {
+      const a = P[Math.max(0, k - 1)], b = P[Math.min(P.length - 1, k + 1)];
+      let tx = b[0] - a[0], tz = b[1] - a[1];
+      const l = Math.hypot(tx, tz) || 1e-9;
+      qx = tz / l;
+      qz = -tx / l;
+    }
+    if (qx * (E.ax[i] - kx) + qz * (E.az[i] - kz) < 0) {
+      qx = -qx;
+      qz = -qz;
+    }
+    cur.push([kx + qx * EDGE_IN2, kz + qz * EDGE_IN2, P[k][2]]);
+  }
+  if (cur.length >= 2) out.push(cur);
+  return out;
+}
+function lineQuery(lines, CELL6 = 4) {
+  const segs = [], grid = /* @__PURE__ */ new Map(), key = (i, j) => i * 131071 + j;
+  for (const pts of lines) for (let k = 1; k < pts.length; k++) {
+    const [ax, az] = pts[k - 1], [bx, bz] = pts[k], id = segs.push([ax, az, bx, bz]) - 1;
+    for (let i = Math.floor(Math.min(ax, bx) / CELL6); i <= Math.floor(Math.max(ax, bx) / CELL6); i++)
+      for (let j = Math.floor(Math.min(az, bz) / CELL6); j <= Math.floor(Math.max(az, bz) / CELL6); j++) {
+        const q = key(i, j);
+        let l = grid.get(q);
+        if (!l) grid.set(q, l = []);
+        l.push(id);
+      }
+  }
+  return (x, z, reach) => {
+    let best = null;
+    for (let i = Math.floor((x - reach) / CELL6); i <= Math.floor((x + reach) / CELL6); i++) for (let j = Math.floor((z - reach) / CELL6); j <= Math.floor((z + reach) / CELL6); j++)
+      for (const id of grid.get(key(i, j)) || []) {
+        const [ax, az, bx, bz] = segs[id], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+        if (L2 < 1e-10) continue;
+        const u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)), px = ax + dx * u, pz = az + dz * u, d = Math.hypot(x - px, z - pz);
+        if (d <= reach && (!best || d < best.d)) {
+          const L3 = Math.sqrt(L2);
+          best = { x: px, z: pz, ux: dx / L3, uz: dz / L3, d };
+        }
+      }
+    return best;
+  };
+}
+function engineLineCodes(net, part, model) {
+  const st = { bareRoads: 0, centreVerts: 0, edgeVerts: 0, cut: 0, ids: [] };
+  const E = part?.attributes?.aEdges?.array;
+  if (!E) return st;
+  const U2 = part.uv, P = part.position, nv = P.length / 3;
+  const segOf = /* @__PURE__ */ new Map();
+  for (const S3 of model.segments) S3.sources.roads.forEach((id, p) => segOf.set(id, [S3, p]));
+  const bare = net.roads.map((rr) => {
+    const q = segOf.get(rr.id);
+    if (!q) return false;
+    const [S3, p] = q;
+    let any = false;
+    for (let i = 0; i < S3.n; i++) if (S3.part[i] === p) {
+      any = true;
+      if (!S3.bare[i] || S3.axConf[i] === CONF.X) return false;
+    }
+    return any;
+  });
+  net.roads.forEach((rr, ri) => {
+    if (bare[ri]) {
+      st.bareRoads++;
+      st.ids.push(rr.id);
+    }
+  });
+  const member = st.bareRoads ? roadMembers(net, part) : null;
+  for (let v = 0; v < nv; v++) {
+    const ri = member ? member[v] : -1;
+    if (ri < 0 || !bare[ri] || model.junctionAt(P[v * 3], P[v * 3 + 2])) {
+      if (E[v * 4 + 2] || E[v * 4 + 3]) st.cut++;
+      E[v * 4 + 2] = 0;
+      E[v * 4 + 3] = 0;
+      continue;
+    }
+    const rr = net.roads[ri], S0 = rr.smp, s = U2[v * 2];
+    let lo = 0, hi = S0.s.length - 1;
+    while (hi - lo > 1) {
+      const m = lo + hi >> 1;
+      if (S0.s[m] < s) lo = m;
+      else hi = m;
+    }
+    const e = layoutEdges(rr.lays[Math.abs(S0.s[hi] - s) < Math.abs(S0.s[lo] - s) ? hi : lo]);
+    for (let k = 0; k < 2; k++) {
+      if (E[v * 4 + 2 + k] < 1) continue;
+      const lt = E[v * 4 + k];
+      if (Math.abs(lt - e.curbL) < 0.03) {
+        E[v * 4 + k] = lt - EDGE_IN2;
+        st.edgeVerts++;
+      } else if (Math.abs(lt - e.curbR) < 0.03) {
+        E[v * 4 + k] = lt + EDGE_IN2;
+        st.edgeVerts++;
+      } else if (Math.abs(lt) < 0.05) st.centreVerts++;
+      else {
+        E[v * 4 + 2 + k] = 0;
+        st.cut++;
+      }
+    }
+  }
+  return st;
+}
+
 // viewer/roadBuild.js
 var CARVE = 0.12;
 var BANK_SLOPE = 0.6;
@@ -14021,6 +15238,12 @@ function buildRoadData(o) {
   if (o.engineOnly) return { net, built, prep, roadBend: bend, times };
   const lineFit = lineFitData ? fitLinesToStreet(net, built.asphalt, lineFitData) : null;
   lap("line fit");
+  let streetModel = null;
+  if (v2 && o.streetModel) {
+    streetModel = buildStreetModel({ ...o.streetModel, bounds });
+    streetModel.stats.engine = engineLineCodes(net, built.asphalt, streetModel);
+    lap("street model");
+  }
   let priority = null;
   if (v2) {
     const pr = /* @__PURE__ */ new Map();
@@ -14106,7 +15329,10 @@ function buildRoadData(o) {
   const atlas = compactAtlas(built.atlas);
   lap("terrain weld");
   if (v2) {
-    const paintPart = paintMeshV2(pv.items, prep, bounds);
+    const PAD2 = 15, inT = (x, z) => x >= bounds.x0 - PAD2 && x < bounds.x1 + PAD2 && z >= bounds.z0 - PAD2 && z < bounds.z1 + PAD2;
+    const ml = streetModel ? modelLineItems(streetModel, { near: inT, drawn: lineQuery([...surf.kerbs || [], ...(surf.edges || []).map((e) => e.line).filter(Boolean)]) }) : null;
+    if (ml) streetModel.stats.paint = ml.stats;
+    const paintPart = paintMeshV2(ml ? pv.items.concat(ml.items) : pv.items, prep, bounds);
     if (paintPart) {
       parts.paint = paintPart;
       triangles += paintPart.index.length / 3;
@@ -14118,9 +15344,67 @@ function buildRoadData(o) {
     }
     lap("paint decal");
   }
-  const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1" };
-  if (o.keep) Object.assign(out, { prep, built });
+  const out = {
+    parts,
+    atlas,
+    carvedCells,
+    weldedCells,
+    clampedCells,
+    triangles,
+    surfaceStats,
+    surfaceData,
+    netInfo,
+    roadBend: bend,
+    times,
+    net,
+    inventory: pv?.inventory ?? null,
+    paint: v2 ? "v2" : "v1",
+    streetModel: streetModel ? { stats: { ...streetModel.stats, engine: { ...streetModel.stats.engine, ids: void 0 } }, bareRoads: streetModel.stats.engine?.ids ?? [] } : null
+  };
+  if (o.keep) Object.assign(out, { prep, built, model: streetModel });
   return out;
+}
+
+// viewer/street/inputs.js
+var LRU_TILES = 24;
+var STORE_MAX = 8e3;
+var tiles = /* @__PURE__ */ new Map();
+var store = /* @__PURE__ */ new Map();
+var touch = (name) => {
+  const v = tiles.get(name);
+  tiles.delete(name);
+  tiles.set(name, v);
+  return v;
+};
+var trim = (keep) => {
+  for (const k of tiles.keys()) {
+    if (tiles.size <= LRU_TILES) break;
+    if (!keep.has(k)) tiles.delete(k);
+  }
+  if (store.size > STORE_MAX) store = /* @__PURE__ */ new Map();
+};
+var netP = null;
+async function streetModelInputs({ base, name, bounds, overrides: overrides2, ver = "" }) {
+  netP ??= fetch(new URL("../roads/network.json", base)).then((r) => r.ok ? r.json() : null).catch(() => null);
+  const network = await netP;
+  if (!network) return null;
+  const N2 = networkIndex(network, overrides2);
+  const need = neededTiles(N2, bounds);
+  const q = ver ? `?${ver}` : "";
+  const get = (p) => fetch(new URL(p, base)).then((r) => r.ok ? r.json() : null).catch(() => null);
+  const snap = /* @__PURE__ */ new Map();
+  await Promise.all(need.map(async (t) => {
+    if (tiles.has(t)) {
+      snap.set(t, touch(t));
+      return;
+    }
+    const [surf, mk] = await Promise.all([get(`${t}/surfaces.json${q}`), get(`${t}/markings.json${q}`)]);
+    const v = surf ? tileInputs(t, surf, mk) : null;
+    tiles.set(t, v);
+    snap.set(t, v);
+  }));
+  trim(new Set(need));
+  return { network, overrides: overrides2, tile: name, inputsOf: (t) => snap.get(t) ?? null, store, need };
 }
 
 // viewer/streets/bridgeDecks.js
@@ -14132,8 +15416,8 @@ function widths(r) {
   const side = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
   const road = (a) => (a || []).filter((l) => l.type !== "sidewalk").reduce((s, l) => s + (+l.width || 0), 0);
   const half2 = Math.max(side(r.lanes?.left), side(r.lanes?.right));
-  const carr = Math.max(road(r.lanes?.left), road(r.lanes?.right));
-  return half2 > 1 ? { half: Math.min(14, half2 + SLAB.parapetW), carr: Math.min(half2, carr || half2) } : { half: HALF, carr: HALF - 2 };
+  const carr2 = Math.max(road(r.lanes?.left), road(r.lanes?.right));
+  return half2 > 1 ? { half: Math.min(14, half2 + SLAB.parapetW), carr: Math.min(half2, carr2 || half2) } : { half: HALF, carr: HALF - 2 };
 }
 function centreLine(r, nodes) {
   const a = nodes.get(r.a), b = nodes.get(r.b);
@@ -14164,7 +15448,7 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
       x1 = Math.max(x1, x);
       z1 = Math.max(z1, z);
     }
-    const { half: half2, carr } = widths(r);
+    const { half: half2, carr: carr2 } = widths(r);
     const d = {
       id: r.id,
       name: r.meta?.name || "",
@@ -14174,7 +15458,7 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
       h0,
       h1,
       half: half2,
-      carr,
+      carr: carr2,
       span: [EXT, cum[cum.length - 1] - EXT],
       box: [x0 - half2, z0 - half2, x1 + half2, z1 + half2]
     };
@@ -15242,9 +16526,9 @@ function tramTracks(feats, fit) {
 // viewer/streets/tramPlatforms.js
 var EDGE = 1.25;
 var W = 2.6;
-var MIN_W = 1.2;
-var REACH2 = 6;
-var STEP6 = 1;
+var MIN_W2 = 1.2;
+var REACH3 = 6;
+var STEP7 = 1;
 function densify(line, step) {
   const out = [];
   for (let k = 1; k < line.length; k++) {
@@ -15265,15 +16549,15 @@ function trackIndex(tracks) {
   tracks.forEach((l, li) => {
     for (let k = 1; k < l.length; k++) {
       const s = [l[k - 1][0], l[k - 1][1], l[k][0], l[k][1], li];
-      for (let i = Math.floor((Math.min(s[0], s[2]) - REACH2) / C); i <= Math.floor((Math.max(s[0], s[2]) + REACH2) / C); i++)
-        for (let j = Math.floor((Math.min(s[1], s[3]) - REACH2) / C); j <= Math.floor((Math.max(s[1], s[3]) + REACH2) / C); j++) {
+      for (let i = Math.floor((Math.min(s[0], s[2]) - REACH3) / C); i <= Math.floor((Math.max(s[0], s[2]) + REACH3) / C); i++)
+        for (let j = Math.floor((Math.min(s[1], s[3]) - REACH3) / C); j <= Math.floor((Math.max(s[1], s[3]) + REACH3) / C); j++) {
           const q = key(i, j);
           if (!grid.has(q)) grid.set(q, []);
           grid.get(q).push(s);
         }
     }
   });
-  return (x, z, r = REACH2) => {
+  return (x, z, r = REACH3) => {
     const best = /* @__PURE__ */ new Map();
     for (const [ax, az, bx, bz, li] of grid.get(key(Math.floor(x / C), Math.floor(z / C))) || []) {
       const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
@@ -15302,7 +16586,7 @@ function fitPlatforms(feats) {
     out.platforms++;
     l.fitted = true;
     const ring2 = isRing(l.line);
-    const P = densify(l.line, STEP6), Q = P.map((p) => p.slice());
+    const P = densify(l.line, STEP7), Q = P.map((p) => p.slice());
     let cx = 0, cz = 0;
     for (const [x, z] of P) {
       cx += x / P.length;
@@ -15311,7 +16595,7 @@ function fitPlatforms(feats) {
     if (ring2) {
       const side = /* @__PURE__ */ new Map();
       for (const [x, z] of P) for (const t of near(x, z)) side.set(t.li, (side.get(t.li) || 0) + Math.sign(t.d));
-      for (const t of near(cx, cz, REACH2 * 2)) if (Math.abs(t.d) > 0.3) side.set(t.li, Math.sign(t.d) * 1e6);
+      for (const t of near(cx, cz, REACH3 * 2)) if (Math.abs(t.d) > 0.3) side.set(t.li, Math.sign(t.d) * 1e6);
       for (let pass = 0; pass < 2; pass++) for (let i = 0; i < Q.length; i++) {
         for (const t of near(Q[i][0], Q[i][1])) {
           const s = Math.sign(side.get(t.li) || 1);
@@ -15342,7 +16626,7 @@ function fitPlatforms(feats) {
         }
         if (a && b && a.par > 0.9 && b.par > 0.9 && b.v - a.v < 2 * EDGE + w) {
           const wi = b.v - a.v - 2 * EDGE;
-          if (wi < MIN_W) continue;
+          if (wi < MIN_W2) continue;
           w = Math.min(w, wi);
           const m2 = (a.v + b.v) / 2;
           Q[i][0] += nx * m2;
@@ -16095,7 +17379,7 @@ function roofCollector(opts = {}) {
       if (A >= 25 && r() < 0.08) flatSolar(spots, y, r, taken, free, 0.5 + r() * 0.5, tx, tz);
     }
   }
-  function flatSolar(spots, y, r, taken, free, fill, ax = 1, az = 0) {
+  function flatSolar(spots, y, r, taken, free, fill2, ax = 1, az = 0) {
     let ex = 1, ez = 0;
     if (Math.abs(az) < 0.574) {
       ex = ax;
@@ -16121,7 +17405,7 @@ function roofCollector(opts = {}) {
       cells.get(k).n++;
     }
     const full = [...cells.values()].filter((c) => c.n >= 6).sort((a, b) => Math.hypot(a.i, a.j) - Math.hypot(b.i, b.j));
-    const n = Math.max(2, Math.round(full.length * fill));
+    const n = Math.max(2, Math.round(full.length * fill2));
     const tl = 13 * Math.PI / 180, ct = Math.cos(tl), st = Math.sin(tl);
     let placed = 0;
     for (const c of full.slice(0, n)) {
@@ -16447,11 +17731,11 @@ function abutmentFill(heroes, grids, hdr) {
         const xc = Math.max(zn.xa, Math.min(zn.xb, X));
         return xc === X && Yb >= zn.ya(X) && Yb <= zn.yb(X);
       });
-      let fill = Math.max(inside3, around);
-      if (under && grids.length) fill = Math.min(fill, ...zones.slice(0, f ? 4 : 2).filter((zn) => X >= zn.xa && X <= zn.xb && Yb >= zn.ya(X) && Yb <= zn.yb(X)).map((zn) => zn.top(X) - 0.06));
+      let fill2 = Math.max(inside3, around);
+      if (under && grids.length) fill2 = Math.min(fill2, ...zones.slice(0, f ? 4 : 2).filter((zn) => X >= zn.xa && X <= zn.xb && Yb >= zn.ya(X) && Yb <= zn.yb(X)).map((zn) => zn.top(X) - 0.06));
       const k = rr * cols + c;
       grids.forEach((G2, gi) => {
-        const v = gi === 0 ? fill : Math.max(inside3, around);
+        const v = gi === 0 ? fill2 : Math.max(inside3, around);
         if (G2[k] < v) {
           G2[k] = v;
           moved++;
@@ -17142,9 +18426,9 @@ function railTileData(doc, bounds, heroes = [], { deckCap = null, skipDeck = nul
       bal.u.push(d);
       bal.s.push(f.s);
     }
-    const K = PROFILE.length;
-    for (let i = 0; i < F.length - 1; i++) for (let k = 0; k < K - 1; k++) {
-      const a = v0 + i * K + k, b = a + 1, c = a + K, d = c + 1;
+    const K2 = PROFILE.length;
+    for (let i = 0; i < F.length - 1; i++) for (let k = 0; k < K2 - 1; k++) {
+      const a = v0 + i * K2 + k, b = a + 1, c = a + K2, d = c + 1;
       bal.i.push(a, b, c, b, d, c);
     }
     for (const side of [-1, 1]) {
@@ -17365,7 +18649,7 @@ function nearestRoad(roads, N2, x, z) {
 var NOT_DRIVEN = /* @__PURE__ */ new Set(["footway", "path", "cycleway", "steps", "pedestrian", "bridleway", "track", "service", "corridor", "platform"]);
 var CARRIAGE5 = /* @__PURE__ */ new Set([0, 1, 3]);
 var LANES = /* @__PURE__ */ new Set([0, 1]);
-var CELL4 = 16;
+var CELL5 = 16;
 function carriageHalf(r) {
   const sum = (a) => (a || []).filter((l) => l.type !== "sidewalk" && l.type !== "verge" && l.type !== "green").reduce((s, l) => s + (+l.width || 0), 0);
   if (r.lanes?.left || r.lanes?.right) {
@@ -17387,8 +18671,8 @@ function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false, 
     for (let k = 1; k < pts.length; k++) {
       const a = pts[k - 1], b = pts[k], s = { ax: a.x, az: a.z, bx: b.x, bz: b.z, hl, hr, road: r };
       const id = segs.push(s) - 1;
-      for (let i = Math.floor((Math.min(a.x, b.x) - h) / CELL4); i <= Math.floor((Math.max(a.x, b.x) + h) / CELL4); i++)
-        for (let j = Math.floor((Math.min(a.z, b.z) - h) / CELL4); j <= Math.floor((Math.max(a.z, b.z) + h) / CELL4); j++) {
+      for (let i = Math.floor((Math.min(a.x, b.x) - h) / CELL5); i <= Math.floor((Math.max(a.x, b.x) + h) / CELL5); i++)
+        for (let j = Math.floor((Math.min(a.z, b.z) - h) / CELL5); j <= Math.floor((Math.max(a.z, b.z) + h) / CELL5); j++) {
           const kk = key(i, j);
           if (!grid.has(kk)) grid.set(kk, []);
           grid.get(kk).push(id);
@@ -17397,7 +18681,7 @@ function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false, 
   }
   const near = (x, z, all = false) => {
     let best = null;
-    for (const id of grid.get(key(Math.floor(x / CELL4), Math.floor(z / CELL4))) || []) {
+    for (const id of grid.get(key(Math.floor(x / CELL5), Math.floor(z / CELL5))) || []) {
       const s = segs[id], dx = s.bx - s.ax, dz = s.bz - s.az, L2 = dx * dx + dz * dz;
       if (L2 < 1e-6) continue;
       const t = Math.max(0, Math.min(1, ((x - s.ax) * dx + (z - s.az) * dz) / L2));
@@ -17422,7 +18706,7 @@ function carriageway(roads, { classAt = null, onDeck = null, lanesOnly = false, 
       }
     }
     const bandOk = (px, pz) => bandOnMeasured || !classAt || classAt(px, pz) < 0 || !!onDeck?.(px, pz) || !!drawn?.(x, z);
-    for (const id of grid.get(key(Math.floor(x / CELL4), Math.floor(z / CELL4))) || []) {
+    for (const id of grid.get(key(Math.floor(x / CELL5), Math.floor(z / CELL5))) || []) {
       const s = segs[id], dx = s.bx - s.ax, dz = s.bz - s.az, L2 = dx * dx + dz * dz;
       if (L2 < 1e-6) continue;
       const t = ((x - s.ax) * dx + (z - s.az) * dz) / L2;
@@ -17927,9 +19211,9 @@ function nearestOnLane(list, p, back, r) {
   return best;
 }
 var CARRIAGE6 = [true, true, false, true, false, false, false, false, false, false];
-var NARROW = 2.3;
+var NARROW2 = 2.3;
 var END_SKIP = 6;
-var MIN_RUN = 4;
+var MIN_RUN2 = 4;
 var MERGE = 15;
 function narrowStretches(src, P) {
   const pts = [], grid = /* @__PURE__ */ new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
@@ -17952,7 +19236,7 @@ function narrowStretches(src, P) {
     for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const f of grid.get(key(i0 + di, j0 + dj)) || []) {
       if (f.i === e.i || e.tx * f.tx + e.tz * f.tz > -0.6) continue;
       if (e.s < END_SKIP || e.s > src[e.i].len - END_SKIP || f.s < END_SKIP || f.s > src[f.i].len - END_SKIP) continue;
-      if (Math.hypot(f.x - e.x, f.z - e.z) > NARROW) continue;
+      if (Math.hypot(f.x - e.x, f.z - e.z) > NARROW2) continue;
       const h = `${e.i},${f.i}`;
       if (!hits.has(h)) hits.set(h, { i: e.i, j: f.i, s: [], o: [] });
       const H = hits.get(h);
@@ -17970,7 +19254,7 @@ function narrowStretches(src, P) {
         return;
       }
       const s0 = run[0][0], s1 = run[run.length - 1][0], os = run.map((r) => r[1]);
-      if (s1 - s0 >= MIN_RUN) per[H.i].push([s0, s1, H.j, Math.min(...os), Math.max(...os)]);
+      if (s1 - s0 >= MIN_RUN2) per[H.i].push([s0, s1, H.j, Math.min(...os), Math.max(...os)]);
       run = [];
     };
     for (let k = 1; k < ord.length; k++) {
@@ -18350,9 +19634,9 @@ function widthParking(roads, feats, bounds, fit, opts = {}) {
     const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
     return (ax + dx * t - x) ** 2 + (az + dz * t - z) ** 2 < r * r;
   });
-  const carr = (x, z) => PARK_CLASSES.has(fit.classAt(x, z));
+  const carr2 = (x, z) => PARK_CLASSES.has(fit.classAt(x, z));
   const ray = (x, z, sx, sz) => {
-    for (let d = 0.25; d < 20; d += 0.25) if (!carr(x + sx * d, z + sz * d)) return d;
+    for (let d = 0.25; d < 20; d += 0.25) if (!carr2(x + sx * d, z + sz * d)) return d;
     return null;
   };
   const driveway = (x, z, tx, tz, ox, oz) => {
@@ -18389,9 +19673,9 @@ function widthParking(roads, feats, bounds, fit, opts = {}) {
       const lx = tz, lz = -tx;
       stats.slots++;
       let cx = x, cz = z;
-      if (!carr(cx, cz)) {
+      if (!carr2(cx, cz)) {
         let found = false;
-        for (let o = 0.5; o <= 4 && !found; o += 0.5) for (const sg of [1, -1]) if (carr(x + lx * o * sg, z + lz * o * sg)) {
+        for (let o = 0.5; o <= 4 && !found; o += 0.5) for (const sg of [1, -1]) if (carr2(x + lx * o * sg, z + lz * o * sg)) {
           cx = x + lx * o * sg;
           cz = z + lz * o * sg;
           found = true;
@@ -18600,7 +19884,7 @@ function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = 
 function paintedDriveLanes(net, paintedLaneCentre2, roadFrameOf2, margin = 0.3) {
   const fit = net?.lineFit;
   if (!fit?.fitOf?.size) return null;
-  const C = 16, cells = /* @__PURE__ */ new Map(), K = (i, j) => i * 65536 + j;
+  const C = 16, cells = /* @__PURE__ */ new Map(), K2 = (i, j) => i * 65536 + j;
   for (const [ri] of fit.fitOf) {
     const rr = net.roads[ri], S3 = rr.smp, r = 12;
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
@@ -18612,18 +19896,18 @@ function paintedDriveLanes(net, paintedLaneCentre2, roadFrameOf2, margin = 0.3) 
     }
     for (let i = Math.floor((x0 - r) / C); i <= Math.floor((x1 + r) / C); i++)
       for (let j = Math.floor((z0 - r) / C); j <= Math.floor((z1 + r) / C); j++) {
-        const k = K(i, j);
+        const k = K2(i, j);
         (cells.get(k) || cells.set(k, []).get(k)).push(rr);
       }
   }
-  const DRIVE = /* @__PURE__ */ new Set(["driving", "bus", "turn"]);
+  const DRIVE2 = /* @__PURE__ */ new Set(["driving", "bus", "turn"]);
   return (x, z) => {
-    for (const rr of cells.get(K(Math.floor(x / C), Math.floor(z / C))) || []) {
+    for (const rr of cells.get(K2(Math.floor(x / C), Math.floor(z / C))) || []) {
       const q = roadFrameOf2(rr, x, z);
       if (q.s < rr.smp.s[0] - 0.5 || q.s > rr.smp.s[rr.smp.s.length - 1] + 0.5) continue;
       for (const d of [0, margin, -margin]) {
         const p = paintedLaneCentre2(net, fit, rr, x + q.nx * d, z + q.nz * d);
-        if (p && DRIVE.has(p.type)) return true;
+        if (p && DRIVE2.has(p.type)) return true;
       }
     }
     return false;
@@ -18632,18 +19916,18 @@ function paintedDriveLanes(net, paintedLaneCentre2, roadFrameOf2, margin = 0.3) 
 var PATH_HALF = 1.25;
 function pathCorridor(traffic, half2 = PATH_HALF) {
   if (!traffic?.xy || !traffic.paths) return null;
-  const C = 4, cells = /* @__PURE__ */ new Map(), K = (i, j) => i * 65536 + j, xy = traffic.xy, off = traffic.off;
+  const C = 4, cells = /* @__PURE__ */ new Map(), K2 = (i, j) => i * 65536 + j, xy = traffic.xy, off = traffic.off;
   for (let p = 0; p < traffic.paths; p++) for (let k = off[p]; k < off[p + 1] - 1; k++) {
     const ax = xy[2 * k], az = xy[2 * k + 1], bx = xy[2 * k + 2], bz = xy[2 * k + 3];
     for (let i = Math.floor((Math.min(ax, bx) - half2 - 1) / C); i <= Math.floor((Math.max(ax, bx) + half2 + 1) / C); i++)
       for (let j = Math.floor((Math.min(az, bz) - half2 - 1) / C); j <= Math.floor((Math.max(az, bz) + half2 + 1) / C); j++) {
-        const q = K(i, j);
+        const q = K2(i, j);
         (cells.get(q) || cells.set(q, []).get(q)).push(k);
       }
   }
   return { inside: (x, z, m = 0) => {
     const r = half2 + m;
-    for (const k of cells.get(K(Math.floor(x / C), Math.floor(z / C))) || []) {
+    for (const k of cells.get(K2(Math.floor(x / C), Math.floor(z / C))) || []) {
       const ax = xy[2 * k], az = xy[2 * k + 1], dx = xy[2 * k + 2] - ax, dz = xy[2 * k + 3] - az, L2 = dx * dx + dz * dz;
       const t = L2 > 1e-9 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)) : 0;
       const ex = ax + dx * t - x, ez = az + dz * t - z;
@@ -19741,7 +21025,9 @@ async function buildTileData(entry, base) {
   const roadGround = tunnelGround(tunnels, rail && entry.underpassLevel !== false ? underpassGround(rail.heroes, roadGround0) : roadGround0);
   const gardenDoc0 = entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? await step("fetch gardens", () => gardenDocNear(base, entry.name, bounds, !!entry.gatesOld)) : null;
   const gardenNear = gardenDoc0 !== null || entry.sidewalkLevel !== false && entry.retainWalls !== false && surf ? gardenIndex(gardenDoc0) : null, gateNear = gardenNear ? gardenIndex(gardenDoc0, { gatesOnly: true, span: !entry.gatesOld }) : null;
+  const streetModel = surf && paint === "v2" && entry.streetModel !== false ? await step("street model inputs", () => streetModelInputs({ base, name: entry.name, bounds, overrides: ov, ver: (entry.files.surfaces || "").split("?")[1] || "" })) : null;
   const rd = await step("roads", () => buildRoadData({
+    streetModel,
     roads,
     surf,
     markings,
@@ -20169,7 +21455,7 @@ function unpackTile(ab) {
   const skel = JSON.parse(new TextDecoder().decode(u8.subarray(4, 4 + len)));
   const head = 4 + len + 7 & ~7;
   const made = /* @__PURE__ */ new Map(), byId = /* @__PURE__ */ new Map(), viewsMade = /* @__PURE__ */ new Map();
-  const fill = (v, id) => {
+  const fill2 = (v, id) => {
     if (Array.isArray(v)) {
       const a = [];
       if (id >= 0) byId.set(id, a);
@@ -20195,7 +21481,7 @@ function unpackTile(ab) {
   };
   const dec = (v) => {
     if (v === null || typeof v !== "object") return v;
-    if (Array.isArray(v)) return fill(v, -1);
+    if (Array.isArray(v)) return fill2(v, -1);
     if (T2 in v) {
       const bl = v[T2] === "ArrayBuffer" ? v.n : v.bl;
       let buf = made.get(v.o);
@@ -20210,8 +21496,8 @@ function unpackTile(ab) {
     if (N in v) return Number(v[N]);
     if (U in v) return void 0;
     if (R in v) return byId.get(v[R]);
-    if (I in v) return fill(v[V], v[I]);
-    return fill(v, -1);
+    if (I in v) return fill2(v[V], v[I]);
+    return fill2(v, -1);
   };
   return dec(skel);
 }
@@ -20515,4 +21801,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "2ce5a361e42444b8";
+self.__TILE_CODE_HASH = "3749b32d4ade32ef";
