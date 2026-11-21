@@ -29,11 +29,11 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, at, ROOT, SC, CLASS_NAME, lineIndex } from "./lib_street.mjs";
-import { findCtx, roadRuns } from "./lib_find.mjs";
+import { findCtx, roadRuns, ownKerb } from "./lib_find.mjs";
 import { judge, report, rewrite } from "../gaps.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, opt, flag } = cli();
-const OLD = flag("--old"), ROADS_OLD = flag("--roadsold"), QUIET = flag("--quiet"), MAX = opt("--max", null), REG = flag("--register"), WREG = flag("--write-register");
+const OLD = flag("--old"), ROADS_OLD = flag("--roadsold"), MODEL_OLD = flag("--modelold"), QUIET = flag("--quiet"), MAX = opt("--max", null), REG = flag("--register"), WREG = flag("--write-register");
 /** the invariants the register holds for this row (the others are reported only) */
 const GATED = ["markings.offStreet", "markings.atKerb", "markings.skew", "markings.zebraShort"];
 const ceil = MAX ? Object.fromEntries(MAX.split(",").map((kv) => kv.split("=")).map(([k, v]) => [k, +v])) : null;
@@ -103,7 +103,7 @@ if (!CHILD) {
   if (!TILES.length) { console.error("usage: markings.mjs [--all | T ...] [--out FILE]"); process.exit(2); }
   const gt = await glyphTest();
   for (const t of gt) console.log(`  glyph ${t.ok ? "ok  " : "FAIL"} ${t.name}: ${t.info}`);
-  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(ROADS_OLD ? ["--roadsold"] : [])], log: !QUIET });
+  const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: [...(OLD ? ["--old"] : []), ...(ROADS_OLD ? ["--roadsold"] : []), ...(MODEL_OLD ? ["--modelold"] : [])], log: !QUIET });
   const sum = { tiles: 0, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, laneSkewM: 0, tickM: 0, tickSkewM: 0, tickLaneM: 0, zebraShort: 0, runs: 0, decalTris: 0, decalOff: 0 }, runs = [];
   for (const r of res) {
     if (r.error) continue;
@@ -127,7 +127,7 @@ if (!CHILD) {
   console.log(`class F: ${JSON.stringify(sum)}\n  runs by why: ${JSON.stringify(byWhy)}`);
   if (WORST) console.log(`worst ${WORST}:`);
   for (const x of runs.slice(0, WORST)) console.log(`  ${x.tile} ${JSON.stringify(x)}`);
-  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byWhy, runs, perTile: res.filter((r) => !r.error).map((r) => ({ tile: r.tile, offStreetM: r.offStreetM, atKerbM: r.atKerbM, skewM: r.skewM })) }, null, 1));
+  if (OUT) writeFileSync(join(ROOT, OUT), JSON.stringify({ when: new Date().toISOString(), old: OLD, sum, byWhy, runs, findings, done: res.filter((r) => !r.error).map((r) => r.tile), perTile: res.filter((r) => !r.error).map((r) => ({ tile: r.tile, offStreetM: r.offStreetM, atKerbM: r.atKerbM, skewM: r.skewM })) }, null, 1));
   let bad = gt.filter((t) => !t.ok).length;
   const errs = res.filter((r) => r.error).length;
   if (errs) { console.log(`FAIL ${errs} tile(s) did not build`); bad++; }
@@ -145,7 +145,8 @@ if (!CHILD) {
 
 const T = TILES[0];
 // (--roadsold: ?roads=old, claude/roads rule 38: the line fit's running median as before)
-const S = await streetTile(T, { build: { ...(OLD ? { roadLines: false } : {}), ...(ROADS_OLD ? { roadsR: false } : {}) } });
+// (claude/street2: --old / --roadsold also ?streetmodel=old: those A/Bs are of the engine strips' lines; --modelold alone = the step-1 lines)
+const S = await streetTile(T, { build: { ...(OLD ? { roadLines: false, streetModel: false } : {}), ...(ROADS_OLD ? { roadsR: false, streetModel: false } : {}), ...(MODEL_OLD ? { streetModel: false } : {}) } });
 const { rd, fit, classAt, inB, nameAt, roads } = S;
 const out = { tile: T, strokeM: 0, unmeasuredM: 0, offStreetM: 0, atKerbM: 0, skewM: 0, laneSkewM: 0, tickM: 0, tickSkewM: 0, tickLaneM: 0, decalTris: 0, decalOff: 0, runs: [] };
 const A = rd.parts.asphalt;
@@ -174,6 +175,29 @@ if (fit && A) {
         const x = p[0] + ux * d, z = p[1] + uz * d, key = `${kind}${Math.round(x)},${Math.round(z)}`;   // (one sample per 1 m cell and side, whatever strip / copy drew it: the lateral uv is planar now, claude/markings)
         if (!inB(x, z) || seen.has(key)) continue; seen.add(key);
         samples.push({ x, z, ux, uz, kind });
+      }
+    }
+  }
+  // (claude/street2) the street model's lines (paint decal, aPaint2.w = 1: viewer/street/markings.js) are the lines
+  // along the roads now: traced the same way (the iso-line at their mid-width v = vLen / 2 in each triangle)
+  const DP = rd.parts.paint;
+  if (DP?.attributes?.aPaint2) {
+    const PP = DP.position, a1 = DP.attributes.aPaint.array, a2 = DP.attributes.aPaint2.array, II = DP.index;
+    for (let t = 0; t < II.length; t += 3) {
+      const v = [II[t], II[t + 1], II[t + 2]];
+      if (!v.every((q) => a2[q * 4 + 3] > 0.5)) continue;
+      const half = a2[v[0] * 4 + 1] / 2, pts = [];
+      for (let q = 0; q < 3; q++) {
+        const a = v[q], b = v[(q + 1) % 3], ta = a1[a * 4 + 1] - half, tb = a1[b * 4 + 1] - half;
+        if ((ta <= 0) !== (tb <= 0) && ta !== tb) { const f = ta / (ta - tb); pts.push([PP[a * 3] + (PP[b * 3] - PP[a * 3]) * f, PP[a * 3 + 2] + (PP[b * 3 + 2] - PP[a * 3 + 2]) * f]); }
+      }
+      if (pts.length < 2) continue;
+      const [p, q] = pts, L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 0.02) continue;
+      const ux = (q[0] - p[0]) / L, uz = (q[1] - p[1]) / L;
+      for (let d = 0; d <= L; d += 0.5) {
+        const x = p[0] + ux * d, z = p[1] + uz * d, key = `model${a2[v[0] * 4 + 2]}|${Math.round(x)},${Math.round(z)}`;
+        if (!inB(x, z) || seen.has(key)) continue; seen.add(key);
+        samples.push({ x, z, ux, uz, kind: "model" });
       }
     }
   }
@@ -245,13 +269,20 @@ if (fit && A) {
   }
   // classify
   const flagged = [];
+  // (claude/street2: a sample ON the tile edge (a stroke the decal clipped there) reads the class raster 5 cm inside the
+  // tile: the raster's last column is empty exactly on the edge)
+  const b0 = S.bounds, inX = (x) => Math.min(b0.x1 - 0.05, Math.max(b0.x0 + 0.05, x)), inZ = (z) => Math.min(b0.z1 - 0.05, Math.max(b0.z0 + 0.05, z));
   for (const s of samples) {
-    const c = classAt(s.x, s.z), why = [];
+    const c = classAt(inX(s.x), inZ(s.z)), why = [];
     const k = fit.nearKerb(s.x, s.z, NEAR_KERB);
     // (no measured surface and no measured kerb within 4 m: a street UrbIS does not map (Flanders, private roads):
     // nothing to judge the line against, not counted)
     if (c < 0 && !k) { out.unmeasuredM++; continue; }
-    if (!MARKABLE.has(c) && c !== SC.tramSite) { why.push(c < 0 ? "offStreet" : `on ${CLASS_NAME[c]}`); out.offStreetM++; }
+    // (claude/street2: within a raster cell of a kerb the side of the EXACT kerb line decides, as markings2: the 0.5 m
+    // class raster blurs the kerb, and an edge line 0.30 m inside it read as "on sidewalk")
+    const kk = fit.nearKerb(s.x, s.z, 0.5);
+    const off = kk ? (s.x - kk.x) * kk.lx + (s.z - kk.z) * kk.lz >= 0 : !MARKABLE.has(c) && c !== SC.tramSite;
+    if (off) { why.push(c < 0 || MARKABLE.has(c) || c === SC.tramSite ? "offStreet" : `on ${CLASS_NAME[c]}`); out.offStreetM++; }
     if (k && k.d < KERB_D) { why.push("atKerb"); out.atKerbM++; }
     else if (k && !nearJ(s.x, s.z)) {
       // kerb straight there: the tangent 2 m along both ways agrees with it
@@ -259,7 +290,10 @@ if (fit && A) {
       const straight = k1 && k2 && Math.abs(k1.tx * k.tx + k1.tz * k.tz) > 0.98 && Math.abs(k2.tx * k.tx + k2.tz * k.tz) > 0.98;
       const ang = (Math.acos(Math.min(1, Math.abs(s.ux * k.tx + s.uz * k.tz))) * 180) / Math.PI;
       if (process.env.CENSUS_DBG) { (globalThis.H ??= {})[`${straight ? "S" : "c"}${Math.min(9, Math.floor(ang / 5))}`] = ((globalThis.H[`${straight ? "S" : "c"}${Math.min(9, Math.floor(ang / 5))}`]) || 0) + 1; }
-      if (straight && ang > SKEW) { why.push("skew"); out.skewM++; }
+      // (claude/street2: judged against the stroke's OWN kerb, the one across from it, not a step or island ahead)
+      const own = straight && ang > SKEW ? ownKerb(fit, s.x, s.z, s.ux, s.uz, NEAR_KERB) : null;
+      const angOwn = own ? (Math.acos(Math.min(1, Math.abs(s.ux * own.tx + s.uz * own.tz))) * 180) / Math.PI : ang;
+      if (straight && ang > SKEW && angOwn > SKEW) { why.push("skew"); out.skewM++; }
     }
     if (!why.includes("skew") && (c >= 0 || k) && laneSkew(s)) { why.push("laneSkew"); out.laneSkewM++; }
     if (why.length) flagged.push({ ...s, why });
