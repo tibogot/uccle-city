@@ -151,6 +151,10 @@ export function buildRoadData(o) {
     streetModel = buildStreetModel({ ...o.streetModel, bounds });
     // (the engine's own centre / edge lines kept only on roads UrbIS does not measure at all: D-engine, markings.js)
     streetModel.stats.engine = engineLineCodes(net, built.asphalt, streetModel);
+    // (claude/street4: the traffic graph's lanes and turns come from it too, viewer/traffic/tileTraffic.js; the network
+    // stays in the worker, so the model does too)
+    net.streetModel = streetModel;
+    net.streetKerbs = [...(surf?.kerbs || []), ...(surf?.edges || []).map((e) => e.line).filter(Boolean)];   // (the measured kerb / street-edge lines the lanes keep clear of)
     lap("street model");
   }
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
@@ -243,6 +247,7 @@ export function buildRoadData(o) {
     const PAD = 15, inT = (x, z) => x >= bounds.x0 - PAD && x < bounds.x1 + PAD && z >= bounds.z0 - PAD && z < bounds.z1 + PAD;
     const ml = streetModel ? modelLineItems(streetModel, { near: inT, drawn: lineQuery([...(surf.kerbs || []), ...(surf.edges || []).map((e) => e.line).filter(Boolean)]) }) : null;
     if (ml) streetModel.stats.paint = ml.stats;
+    if (ml && o.keep) streetModel.lineItems = ml.items;          // (the audits: the drawn model strokes, tools/audit/census/markings.mjs laneP95)
     const paintPart = paintMeshV2(ml ? pv.items.concat(ml.items) : pv.items, prep, bounds);
     if (paintPart) { parts.paint = paintPart; triangles += paintPart.index.length / 3; }
     // (cortenbosch2) words painted on the street (data/overrides.json roadTexts: "Private Weg" / "Cortenbosch")

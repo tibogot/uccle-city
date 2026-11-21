@@ -75,7 +75,7 @@ function dashes(P, dash) {
 }
 
 /** a polyline [[x, z]] of width w -> mitered quads as paint items with a continuous u (run id `id`) */
-function quads(P, w, id, items) {
+function quads(P, w, id, items, role = 0) {
   const n = P.length, cum = [0];
   for (let k = 1; k < n; k++) cum.push(cum[k - 1] + Math.hypot(P[k][0] - P[k - 1][0], P[k][1] - P[k - 1][1]));
   const L = cum[n - 1];
@@ -96,7 +96,7 @@ function quads(P, w, id, items) {
     const R0 = [p0[0] - off[k][0], p0[1] - off[k][1]], R1 = [p1[0] - off[k + 1][0], p1[1] - off[k + 1][1]];
     const L1 = [p1[0] + off[k + 1][0], p1[1] + off[k + 1][1]], L0 = [p0[0] + off[k][0], p0[1] + off[k][1]];
     const o = [p0[0] - (bx * w) / 2, p0[1] - (bz * w) / 2];
-    items.push({ kind: "solid", poly: [R0, R1, L1, L0], frame: { o, a: [ux, uz], b: [bx, bz], u0: -cum[k], u1: L - cum[k], v0: 0, vLen: w }, line: id });
+    items.push({ kind: "solid", poly: [R0, R1, L1, L0], frame: { o, a: [ux, uz], b: [bx, bz], u0: -cum[k], u1: L - cum[k], v0: 0, vLen: w }, line: id, role });
   }
 }
 
@@ -135,7 +135,7 @@ export function modelLineItems(model, opts = {}) {
             for (const piece of dashes(simplify(P, DP_TOL), st.dash)) {
             let len = 0; for (let k = 1; k < piece.length; k++) len += Math.hypot(piece[k][0] - piece[k - 1][0], piece[k][1] - piece[k - 1][1]);
             if (len < MIN_PIECE) continue;
-            quads(piece, st.width, id++, items);
+            quads(piece, st.width, id++, items, role);
             stats.metres += len; if (role === ROLE.edgeR || role === ROLE.edgeL) stats.edgeM += len; else stats.laneM += len;
             }
           }

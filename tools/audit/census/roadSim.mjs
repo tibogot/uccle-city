@@ -8,7 +8,7 @@
 //
 //   node --import ./tools/road_audit/register.mjs tools/audit/census/roadSim.mjs [T ...] [--secs S] [--old] [--max k=v,...]
 //   default tiles: I6 (Saint-Job), E7 (Ch. de Saint-Job / Engeland), J6 (Ch. de Waterloo), D6 (Ch. d'Alsemberg)
-//   --old: ?roads=old (the graph as before); --max perKm=N,...: the gate (sum over the tiles)
+//   --old: ?roads=old (the graph as before); --lanesold: ?streetlanes=old (claude/street4: the fitted engine lanes); --max perKm=N,...: the gate (sum over the tiles)
 import { streetTile, imp, at, ROOT } from "./lib_street.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -17,7 +17,7 @@ import { resample, judge1 } from "./lib_path.mjs";
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const flag = (k) => { const i = argv.indexOf(k); if (i >= 0) argv.splice(i, 1); return i >= 0; };
-const OLD = flag("--old"), SECS = +opt("--secs", 120), MAX = opt("--max", null), QUIET = flag("--quiet");
+const OLD = flag("--old"), LANES_OLD = flag("--lanesold"), SECS = +opt("--secs", 120), MAX = opt("--max", null), QUIET = flag("--quiet");
 const TILES = argv.filter((a) => /^[A-Z]\d+$/i.test(a)).map((t) => t.toUpperCase());
 if (!TILES.length) TILES.push("I6", "E7", "J6", "D6");
 
@@ -34,7 +34,7 @@ for (const T of TILES) {
   const { rd, roads, feats, bounds, fit } = S;
   const parked = rd.surfaceData ? widthParking(roads, feats, bounds, fit) : null;
   const trace = {};
-  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roofs: S.tile.roofs, entry: OLD ? { roadsR: false } : {} });
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData?.grid, { parked: parked?.sites, trace, roofs: S.tile.roofs, entry: OLD ? { roadsR: false } : LANES_OLD ? { streetLanes: false } : {} });
   const sites = g.parkedKept ?? parked?.sites ?? [];
   const cars = sites.map((c) => ({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { setRGB() {} }, room: 6 }));
   const W = new TrafficWorld(); W.add(T, g);
@@ -78,7 +78,7 @@ for (const T of TILES) {
 }
 tot.perKm = +((1000 * tot.slalomM) / Math.max(1, tot.metres)).toFixed(1);
 tot.wobblePerKm = +((1000 * tot.wobbleM) / Math.max(1, tot.metres)).toFixed(1);
-console.log(`class R sim${OLD ? " (--old)" : ""}, ${SECS} s on ${TILES.join(" ")}: ${JSON.stringify(tot)}`);
+console.log(`class R sim${OLD ? " (--old)" : LANES_OLD ? " (--lanesold)" : ""}, ${SECS} s on ${TILES.join(" ")}: ${JSON.stringify(tot)}`);
 let bad = 0;
 if (MAX) for (const kv of MAX.split(",")) { const [k, v] = kv.split("="); const n = tot[k] ?? 0; if (n > +v) { console.log(`FAIL ${k} ${n} > ${v}`); bad++; } else console.log(`ok ${k} ${n} <= ${v}`); }
 process.exit(bad ? 1 : 0);

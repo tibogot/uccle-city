@@ -549,6 +549,10 @@ function placeLanes(seg, mouthA, mouthB, Q) {
   const B = Math.max(...stacks.map((P) => P.sb.bounds.length));
   const off = new Float32Array(n * B).fill(NaN), code = new Float32Array(n * B), role = new Uint8Array(n * B), bconf = new Uint8Array(n * B).fill(CONF.O);
   const conf = new Uint8Array(n), topo = new Float64Array(n * B).fill(NaN);
+  // (claude/street4) the DRIVING lanes' centres, chain frame right -> left: ctr[i * D + j] (offset from the axis), cdir
+  // +1 = with the chain (a right-hand lane), -1 = against it; NaN / 0 = none (the traffic lanes, viewer/street/lanes.js)
+  const D = Math.max(1, ...stacks.map((P) => P.sb.lanes.filter((l) => LANE_TYPES[l.type]?.drive).length));
+  const ctr = new Float32Array(n * D).fill(NaN), cdir = new Int8Array(n * D);
   // stable runs of the driving width (both drive ends M): width within +-STABLE_W over >= STABLE_LEN m
   const ok = new Uint8Array(n);
   for (let i = 0; i < n; i++) ok[i] = drive.confL[i] === CONF.M && drive.confR[i] === CONF.M ? 1 : 0;
@@ -577,6 +581,7 @@ function placeLanes(seg, mouthA, mouthB, Q) {
     // a centre of width 0: one boundary; with a width: its two boundaries share the centre lane's span (only the first carries the centre code)
     let narrow = false;
     for (let k = 0; k < lanes.length; k++) if (LANE_TYPES[lanes[k].type]?.drive && pos[k + 1] - pos[k] < MIN_LANE && wid[k] > 0) narrow = true;
+    for (let k = 0, j = 0; k < lanes.length; k++) if (LANE_TYPES[lanes[k].type]?.drive) { ctr[i * D + j] = (pos[k] + pos[k + 1]) / 2; cdir[i * D + j] = k < P.sb.nR ? 1 : -1; j++; }
     const cb = P.sb.cw > 0 ? 1 : 0;
     for (let k = 0; k < bnd.length; k++) {
       const q = bnd[k], idx = i * B + k;
@@ -612,7 +617,19 @@ function placeLanes(seg, mouthA, mouthB, Q) {
       off[idx] += med[i]; bconf[idx] = CONF.M;
     }
   }
-  return { B, off, code, role, bconf, conf };
+  // (claude/street4) a driving lane between two boundaries (no centre lane of its own width) is centred between them as
+  // they stand now: a boundary snapped onto a measured lane line (above) moves its lanes' centres with it
+  for (let i = 0; i < n; i++) {
+    const P = stacks[partOf[i]];
+    if (P.sb.cw > 0) continue;
+    for (let k = 0, j = 0; k < P.sb.lanes.length; k++) {
+      if (!LANE_TYPES[P.sb.lanes[k].type]?.drive) continue;
+      const a = off[i * B + k], b = off[i * B + k + 1];
+      if (Number.isFinite(a) && Number.isFinite(b) && (bconf[i * B + k] === CONF.M || bconf[i * B + k + 1] === CONF.M)) ctr[i * D + j] = (a + b) / 2;
+      j++;
+    }
+  }
+  return { B, off, code, role, bconf, conf, D, ctr, cdir };
 }
 
 // ---------------------------------------------------------------- junctions
@@ -709,7 +726,7 @@ export function buildStreetModel({ network, overrides, tile, bounds, inputsOf, s
       sources: { osm: c.ways, roads: c.roads, urbis: sg.srcs },
       stacks: sg.stacks.map((P) => ({ type: P.st.type, rank: P.st.rank, tagged: P.tagged, rev: P.rev, dropped: P.dropped })),
       junctionA: jA?.id ?? null, junctionB: jB?.id ?? null, mouthA, mouthB,
-      n, s: Float32Array.from(S.s), nx: Float32Array.from(S.nx), nz: Float32Array.from(S.nz), ax: Float32Array.from(ax), az: Float32Array.from(az), axConf: sg.axConf, part: Uint8Array.from(sg.partOf), bare: sg.bare,
+      n, s: Float32Array.from(S.s), nx: Float32Array.from(S.nx), nz: Float32Array.from(S.nz), ax: Float32Array.from(ax), az: Float32Array.from(az), axOff: Float32Array.from(sg.axOff), axConf: sg.axConf, part: Uint8Array.from(sg.partOf), bare: sg.bare,
       kerbL: sg.kerbL, kerbR: sg.kerbR, drive: sg.drive, ring, cross, lanes, x0, x1, z0, z1,
     };
     store.set(k, E);
@@ -737,12 +754,12 @@ function junctionTest(J) {
 
 // ---------------------------------------------------------------- canonical bytes (seam identity, rule street-model)
 
-const ARRAYS_SEG = ["s", "nx", "nz", "ax", "az", "axConf", "part", "bare", "ring", "cross"];
+const ARRAYS_SEG = ["s", "nx", "nz", "ax", "az", "axOff", "axConf", "part", "bare", "ring", "cross"];
 /** the canonical byte form of an element: its meta JSON + every typed array in a fixed order */
 export function elementBytes(E) {
   const parts = [];
   const meta = E.kind === "segment"
-    ? { kind: E.kind, v: E.v, id: E.id, owner: E.owner, A: E.A, B: E.B, length: E.length, sources: E.sources, stacks: E.stacks, junctionA: E.junctionA, junctionB: E.junctionB, mouthA: E.mouthA, mouthB: E.mouthB, n: E.n, B: E.lanes.B }
+    ? { kind: E.kind, v: E.v, id: E.id, owner: E.owner, A: E.A, B: E.B, length: E.length, sources: E.sources, stacks: E.stacks, junctionA: E.junctionA, junctionB: E.junctionB, mouthA: E.mouthA, mouthB: E.mouthB, n: E.n, B: E.lanes.B, D: E.lanes.D }
     : { kind: E.kind, id: E.id, node: E.node, owner: E.owner, x: E.x, z: E.z, floor: E.floor, conf: E.conf, arms: E.arms };
   parts.push(new TextEncoder().encode(JSON.stringify(meta)));
   const push = (a) => parts.push(new Uint8Array(a.buffer, a.byteOffset, a.byteLength));
@@ -750,7 +767,7 @@ export function elementBytes(E) {
     for (const k of ARRAYS_SEG) push(E[k]);
     for (const K2 of [E.kerbL, E.kerbR]) for (const k of ["off", "conf", "h", "kind"]) push(K2[k]);
     for (const k of ["offL", "offR", "confL", "confR"]) push(E.drive[k]);
-    for (const k of ["off", "code", "role", "bconf", "conf"]) push(E.lanes[k]);
+    for (const k of ["off", "code", "role", "bconf", "conf", "ctr", "cdir"]) push(E.lanes[k]);
   } else push(E.poly);
   return parts;
 }

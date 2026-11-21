@@ -121,7 +121,8 @@ if (!CHILD) {
   let acc = 0, p95 = 0; for (let k = 0; k < hist.length; k++) { acc += hist[k]; if (acc >= 0.95 * nLane) { p95 = k / 100; break; } }
   let acc2 = 0, p50 = 0; for (let k = 0; k < hist.length; k++) { acc2 += hist[k]; if (acc2 >= 0.5 * nLane) { p50 = k / 100; break; } }
   sum.laneP95 = nLane ? p95 : null; sum.laneP50 = nLane ? p50 : null; sum.lanePts = nLane;
-  sum.laneOutside = res.reduce((a, r) => a + (r.laneOutside || 0), 0); sum.laneOffPaint = res.reduce((a, r) => a + (r.laneOffPaint || 0), 0); sum.laneNarrow = res.reduce((a, r) => a + (r.laneNarrow || 0), 0);
+  if (process.env.LANE_DBG) for (const r of res) if (r.laneOffAt?.length) console.log(`  lane off its painted lane by > 0.25 m: ${r.tile} ${r.laneOffAt.length} e.g. ${r.laneOffAt.slice(0, 3).join(' | ')}`);
+  sum.laneOutside = res.reduce((a, r) => a + (r.laneOutside || 0), 0); sum.laneParked = res.reduce((a, r) => a + (r.laneParked || 0), 0); sum.laneOffPaint = res.reduce((a, r) => a + (r.laneOffPaint || 0), 0); sum.laneNarrow = res.reduce((a, r) => a + (r.laneNarrow || 0), 0);
   runs.sort((a, b) => b.len - a.len);
   const byWhy = {}; for (const x of runs) for (const w of x.why.split("/")) byWhy[w] = (byWhy[w] || 0) + 1;
   console.log(`class F: ${JSON.stringify(sum)}\n  runs by why: ${JSON.stringify(byWhy)}`);
@@ -348,10 +349,68 @@ for (const r of rd.inventory?.crossings || []) {
   }
 }
 if (process.env.CENSUS_DBG) console.error(JSON.stringify(globalThis.H));
-// traffic lanes vs paint (markings round 2): every driven lane point of a fitted road, 12 m and more from its path's
-// ends (the junction blends), in the tile and on the carriageway, whose painted lane lies on the carriageway: its offset from the centre of the painted lane it
-// lies in (viewer/streets/lineFit.js paintedLaneCentre), in cm bins; points in no painted drive lane are counted apart
-{
+// traffic lanes vs paint. claude/street4 (rule street-lanes): with the street model, the lanes the traffic DRIVES (the
+// tile's graph, viewer/traffic/tileTraffic.js) against the lane strokes the city DRAWS from the model (viewer/street/
+// markings.js modelLineItems, the decal's along-road lines): every model lane point 12 m and more from its piece's ends,
+// in the tile, on the carriageway, with a drawn stroke running with it on each side within 6 m (a dash gap bridged up
+// to 6 m along), at least one of them a lane / centre line: its offset from the middle between them, in cm bins. An edge line stands EDGE_IN inside the kerb it
+// marks, so its lane boundary is the kerb (the stroke + EDGE_IN outward). Points with a stroke on one side only (an
+// unpainted centre, a residential street) are counted apart (laneOutside), so are painted lanes narrower than 2.5 m
+// (laneNarrow), beside a parked car (laneParked), or wider than LANE_MAX = 4.5 m (laneOffPaint: two lanes with the lane line between them unpainted, the
+// model paints a lane line only where it is measured or derived: one painted 'lane' holds two driven ones).
+// Without the model (?streetmodel=old): as markings round 2, the refined engine lanes vs the fitted painted lanes.
+const LANE_MAX = 4.5;
+if (S.rd.model?.lineItems) {
+  const { tileTrafficGraph } = await import("../../../viewer/traffic/tileTraffic.js");
+  const { widthParking } = await import("../../../viewer/streets/parkPlace.js");
+  const { EDGE_IN } = await import("../../../viewer/street/markings.js");
+  const parked = rd.surfaceData ? widthParking(roads, S.feats, S.bounds, fit) : null;
+  const g = tileTrafficGraph(rd.net, roads, S.feats, S.bounds, rd.surfaceData?.grid, { parked: parked?.sites, roofs: S.tile.roofs });
+  out.laneHist = new Array(301).fill(0); out.laneOutside = 0; out.laneNarrow = 0; out.laneOffPaint = 0;
+  // the drawn strokes: each quad's centre segment, its role (edge: the kerb is EDGE_IN further out)
+  const segs = [], grid = new Map(), C = 4, key = (i2, j2) => i2 * 131071 + j2;
+  for (const it of S.rd.model.lineItems) {
+    const [R0, R1, L1, L0] = it.poly, ax = (R0[0] + L0[0]) / 2, az = (R0[1] + L0[1]) / 2, bx = (R1[0] + L1[0]) / 2, bz = (R1[1] + L1[1]) / 2, L = Math.hypot(bx - ax, bz - az);
+    if (L < 0.05) continue;
+    const id = segs.push({ ax, az, ux: (bx - ax) / L, uz: (bz - az) / L, L, edge: it.role === 2 || it.role === 3 }) - 1;
+    for (let i2 = Math.floor((Math.min(ax, bx) - 6) / C); i2 <= Math.floor((Math.max(ax, bx) + 6) / C); i2++) for (let j2 = Math.floor((Math.min(az, bz) - 6) / C); j2 <= Math.floor((Math.max(az, bz) + 6) / C); j2++) { const q = key(i2, j2); let l = grid.get(q); if (!l) grid.set(q, (l = [])); l.push(id); }
+  }
+  const COS = Math.cos((20 * Math.PI) / 180);
+  const { parkedBoxDist } = await import("../../../viewer/traffic/trafficGraph.js");
+  const cars = g.parkedKept ?? parked?.sites ?? [];
+  const nearCar = (x, z) => cars.some((c) => Math.abs(c.x - x) < 4 && Math.abs(c.z - z) < 4 && parkedBoxDist(c, x, z) < 1.6);
+  for (let i = 0; i < g.paths; i++) {
+    if (g.model[i] !== 1 || g.kind[i] !== 0) continue;
+    const o = g.off[i], n = g.off[i + 1] - o, L = g.len[i];
+    for (let k = 0; k < n; k++) {
+      const c = g.cum[o + k]; if (c < 12 || L - c < 12) continue;
+      const x = g.xy[(o + k) * 2], z = g.xy[(o + k) * 2 + 1];
+      if (!inB(x, z) || !MARKABLE.has(classAt(x, z))) continue;
+      const a = Math.max(0, k - 1), b = Math.min(n - 1, k + 1), tx0 = g.xy[(o + b) * 2] - g.xy[(o + a) * 2], tz0 = g.xy[(o + b) * 2 + 1] - g.xy[(o + a) * 2 + 1], tl = Math.hypot(tx0, tz0) || 1, tx = tx0 / tl, tz = tz0 / tl;
+      let dl = Infinity, dr = Infinity, el = false, er = false;
+      for (const id of grid.get(key(Math.floor(x / C), Math.floor(z / C))) || []) {
+        const sg = segs[id]; if (Math.abs(sg.ux * tx + sg.uz * tz) < COS) continue;
+        const qx = x - sg.ax, qz = z - sg.az, u = qx * sg.ux + qz * sg.uz;
+        if (u < -6 || u > sg.L + 6) continue;
+        // (the stroke's side of the lane point: + = left of travel)
+        let lat = -(qx * -sg.uz + qz * sg.ux) * Math.sign(sg.ux * tx + sg.uz * tz);
+        const d = Math.abs(lat) + (sg.edge ? EDGE_IN : 0);
+        if (d > 6) continue;
+        if (lat >= 0) { if (d < dl) { dl = d; el = sg.edge; } } else if (d < dr) { dr = d; er = sg.edge; }
+      }
+      // (two edge lines and no lane / centre line between: no painted lane, a residential street's two-way carriageway)
+      if (!(dl < Infinity && dr < Infinity) || (el && er)) { out.laneOutside++; continue; }
+      const w = dl + dr;
+      if (w < 2.5) { out.laneNarrow++; continue; }
+      // (a parked car in the painted lane (the width parking does not know the paint yet: STREET_MODEL_PLAN job 6) moves
+      // the driven lane round it: counted apart)
+      if (nearCar(x, z)) { out.laneParked = (out.laneParked || 0) + 1; continue; }
+      if (w > LANE_MAX) { out.laneOffPaint++; continue; }
+      out.laneHist[Math.min(300, Math.round(Math.abs(dl - dr) * 50))]++;
+      if (Math.abs(dl - dr) > 0.5) (out.laneOffAt ??= []).push(at(x, z));
+    }
+  }
+} else {
   const net = S.rd.net, fit = net.lineFit;
   out.laneHist = new Array(301).fill(0); out.laneOutside = 0;
   if (fit && net.graph) {

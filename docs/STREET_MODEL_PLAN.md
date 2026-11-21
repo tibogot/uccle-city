@@ -142,7 +142,7 @@ Alternative spot if the owner was further west: D7 (-1004.5, 1098.6), the seam-c
 | 1 | Drawn-output detectors, report-only first: edge-to-kerb offset, ≤ 3° with no exclusions, "unmeasured" judged; mover ground vs the drawn triangles | markings2, moverground | 1-1.5 d |
 | 2 | Street model v0: chains, axis, kerbs, carriageway with confidence, seam ownership | model | 2-3 d |
 | 3 | Markings from the model: edge lines as kerb offsets, lane lines only from M / D, own decal strips; retire fitLinesToStreet | markings2 at 0 + register | 2-3 d |
-| 4 | Traffic lanes and turns from the model; retire laneShifter / the fitToSurface snap | roads in-building / off-carriage 0 + register; roadsim | 2 d |
+| 4 | Traffic lanes and turns from the model; retire laneShifter / the fitToSurface snap (**done**, claude/street4: see "Job 4" below) | roads in-building / off-carriage 0 + register; roadsim; streetlanes | 2 d |
 | 5 | One ground: layered heights from the drawn triangles for every mover and parked car (claude/ground has started this) | moverground 0 | 1.5-2 d |
 | 6 | Keep-out from the model for props / plants / gardens / trees / lamps | streetprops 0, drivecheck lane-data part | 1.5 d |
 | 7 | Junction polygons, arms, turns; crossings and stop lines anchored to them | junctions | 2-3 d |
@@ -162,3 +162,60 @@ Alternative spot if the owner was further west: D7 (-1004.5, 1098.6), the seam-c
 - Recomputing neighbours' roads from clipped rasters.
 - Keeping `=old` paths forever.
 - Treating the tour as a correctness check.
+
+## Job 4: traffic lanes and turns from the model (claude/street4, 2026-11-21)
+
+Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `?streetlanes=old` (viewer/features.js).
+
+**What changed.**
+- viewer/street/lanes.js `modelLaneStage`, called by viewer/traffic/trafficGraph.js buildTrafficGraph. The ONE builder,
+  viewer/traffic/tileTraffic.js, gets the model through the network (viewer/roadBuild.js `net.streetModel`,
+  `net.streetKerbs`), so the runtime and every audit drive the same lanes.
+- The engine's lane graph keeps its topology: links, junction control, conflicts. Only the geometry changes.
+- On model-covered roads, a lane is an offset curve of the segment axis at the model's driving-lane centre
+  (model.js placeLanes now stores `ctr` / `cdir`, re-centred on boundaries snapped to measured lane lines).
+- Smoothing along the whole segment: a running median over +-5 m, then two box passes over +-5 m.
+- Then ONE smooth offset profile (laneOffset.js) keeps every lane:
+  - >= 1.0 m inside the measured driving ends, the measured kerb / street-edge lines and the drawn carriageway's
+    classes (a tram reservation inside the measured span);
+  - 1.13 m clear of the parked cars (gaps under 30 m held);
+  - out of buildings where UrbIS maps nothing (E stations).
+- On X stations: one lane per direction, centred in its half of the measured carriageway.
+- A two-way carriageway narrower than 3.2 m carries one centred lane.
+- Lane ends:
+  - at a measured junction mouth (never further out than the engine's trim);
+  - at an unmeasured arm, at the engine's trim, at most the floor disc + 2 m from the node;
+  - a degree-2 node inside a segment is one continuous curve.
+- Junction turns are quintic Hermite curves (G2: end tangents and curvatures matched). The handle length is chosen to
+  keep the car body out of buildings, on the drawn carriageway and inside the junction polygon, with the lowest peak
+  curvature. Turns with one end on an old-fit lane are laid the same way.
+- These keep the old fit (fitToSurface, laneShifter output, the far snap):
+  - pieces under 50 % measured;
+  - an axis that jumps between two carriageways (a dual carriageway drawn as one OSM way);
+  - E stations whose OSM line runs through a building;
+  - roundabout arms.
+  That is 470 of ~4,900 lanes in the tile cores.
+
+**Counts (all 120 tiles, before = foundation af03a1ca / `--lanesold`, after = this branch).**
+
+| | before | after |
+|---|---|---|
+| roads: slalom / wobble metres | 7,908 / 4,272 | 5,207 / 2,800 |
+| roads: heading change p99.9 on straight roads | 6.2 deg/m | 4.9 deg/m |
+| roads: traffic in a building | 32 places (556 m) | 17 places (337 m) |
+| roads: traffic off the carriageway | 332 places (10.6 km) | 192 places (3.2 km) |
+| roadsim (I6 E7 J6 D6, 120 s): slalom / wobble per km | 10.7 / 7.5 | 9.3 / 5.6 |
+| streetlanes kerb / carriage / turn / building metres | 1,681 / 7,814 / 18,917 / 541 (all lanes judged) | 1,906 / 1,004 / 114 / 91 (model lanes) |
+| parked cars kept | 11,592 | 11,670 |
+
+- The 545 streetlanes findings are register entries by cause:
+  - stack-lag 213: kerb build-outs and flares the smoothed lane cuts;
+  - fit-lost 140: unmeasured stretches, mostly the Flemish fringe;
+  - junction-unmodelled 113: corners next to junctions, job 7;
+  - osm-contradiction 51;
+  - short-piece 18;
+  - seam-rebuild 10.
+- markings laneP95 now compares the driven lanes with the DRAWN model strokes: p50 0.01 m, p95 0.41 m (ceiling 0.45).
+  The tail is parked cars in painted bike lanes, held 30 m (job 6).
+- Cost: the traffic graph stage is unchanged or cheaper. The model stage takes 40-70 ms a tile; fitToSurface is skipped
+  on covered lanes. The road stage (1.4-2.9 s) is unchanged.
