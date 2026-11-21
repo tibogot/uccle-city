@@ -87,5 +87,10 @@ Causes:
    night and dirt procedural. interiorType() extended: generic 17.9 % -> 10.0 %. The neighbour rule is in (café type
    only has two variants; 15 same-type pairs wait for job 7's variants).
 7. Variants + the neighbour rule; Street View check (look only).
+
+   **Done on claude/shops7 (2026-11-21)** (docs/assets/SHOPS.md §3e): a second room for every type (16 variants), picked
+   by a hash, the neighbour rule at 0 clashes / 0 waiting; the boutique / salon / shop relit (night 0.01 -> 0.23-0.31);
+   the smaller office board baked; four arrays 38.0 MB GPU / 11.33 MB download (the night array ETC1S); V2_LUM / V2_GAIN
+   re-measured. A/B `Downloads/uccle-shops-ab/v5/index.html`. The Street View check is still open.
 8. Optional: hero café cells.
 9. Perf pass on a GREEN preflight.

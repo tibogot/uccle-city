@@ -70,8 +70,8 @@ export function loadInteriors(renderer, base = new URL("../../", import.meta.url
   return (texP ??= (async () => {
     const t0 = performance.now();
     const ktxOff = new URLSearchParams(location.search).get("shopsktx") === "0";
-    // v2: three arrays (shopScale.js V2_SLOT): A day L0 + L3 / composite + the L4 sticker sheet (1024 px), C day L2
-    // (1024 px), N day L1 + night L0-L3 (512 px)
+    // v2: (shops7) four arrays (shopScale.js V2_ARRAYS / V2_SLOT): A day L0 + the L4 sticker sheet, C day L3 +
+    // composite (1024 px); N day L1 + L2, M night L0-L3 (512 px)
     let v2 = null;
     if (!V2_OFF && !ktxOff && renderer) {
       try {
@@ -83,9 +83,10 @@ export function loadInteriors(renderer, base = new URL("../../", import.meta.url
           t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 8; t.needsUpdate = true;
           return t;
         };
-        const [tA, tC, tN] = await Promise.all([arr("interiors_v2.ktx2", V2.LAYERS, V2.PX), arr("interiors_v2c.ktx2", V2.LAYERS_C, V2.PX), arr("interiors_v2n.ktx2", V2.LAYERS_N, V2.PXN)]);
+        const [tA, tC, tN, tM] = await Promise.all([arr("interiors_v2.ktx2", V2.LAYERS, V2.PX), arr("interiors_v2c.ktx2", V2.LAYERS_C, V2.PX),
+          arr("interiors_v2n.ktx2", V2.LAYERS_N, V2.PXN), arr("interiors_v2m.ktx2", V2.LAYERS_M, V2.PXN)]);
         const bytes = (px, n) => Math.round(px[0] * px[1] * n * 4 / 3);
-        v2 = { tex: tA, texC: tC, texN: tN, W: V2.PX[0], H: V2.PX[1], WN: V2.PXN[0], bytesGPU: bytes(V2.PX, V2.LAYERS + V2.LAYERS_C) + bytes(V2.PXN, V2.LAYERS_N) };
+        v2 = { tex: tA, texC: tC, texN: tN, texM: tM, W: V2.PX[0], H: V2.PX[1], WN: V2.PXN[0], bytesGPU: bytes(V2.PX, V2.LAYERS + V2.LAYERS_C) + bytes(V2.PXN, V2.LAYERS_N + V2.LAYERS_M) };
       } catch (e) { console.warn(`[shops] interiors v2: ${e.message}; every window v1`); v2 = null; }
     }
     if (v2) return { tex: null, flipV: 1, format: "ktx2", W: 0, H: 0, v2, bytesGPU: v2.bytesGPU, ms: performance.now() - t0 };
@@ -204,8 +205,8 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
     // only where its plane is in front of the room's hit (step(d, t)). Beyond V2.FAR + V2.BAND one fetch: the
     // composite (the upper half of the L3 layer, half height). The arrays' rows are top first: t = 1 - v.
     // (shops5) every type: each variant's render is as deep as its type's room (rd = DEPTH by type: metric), the card
-    // planes are absolute metres; the layers come from three arrays (slot(): shopScale.js V2_SLOT), the 512 px ones
-    // (the day mid card, all the night layers) one mip less (lodN).
+    // planes are absolute metres; the layers come from (shops7) four arrays (slot(): shopScale.js V2_SLOT), the 512 px
+    // ones (the day mid and near cards, all the night layers) one mip less (lodN).
     const ALL_V2 = INTERIOR_TYPES.every((n) => V2.TYPES.includes(n)) || !I.tex;
     const isV2 = V2.TYPES.map((name) => type.equal(INTERIOR_TYPES.indexOf(name))).reduce((a, b) => a.or(b));
     let rd = float(DEPTH_BY_INDEX[7]);
@@ -218,8 +219,8 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
     const dist = length(cameraPosition.sub(positionWorld)).toVar();
     const fetchV2 = (T, q, layer, lv) => texture(T, q).depth(layer).level(lv);
     // [array, layer, level] of card k (0 L0 .. 3 L3 + composite) by day (light 0) / night (1) = shopScale.js V2_SLOT
-    const slot = (light, k) => light ? [J.texN, vI.mul(5).add(1 + k), lodN]
-      : [[J.tex, vI.mul(2), lod2], [J.texN, vI.mul(5), lodN], [J.texC, vI, lod2], [J.tex, vI.mul(2).add(1), lod2]][k];
+    const slot = (light, k) => light ? [J.texM, vI.mul(4).add(k), lodN]
+      : [[J.tex, vI, lod2], [J.texN, vI.mul(2), lodN], [J.texN, vI.mul(2).add(1), lodN], [J.texC, vI, lod2]][k];
     const cardAt = (light, k) => {                              // card k (1..3) at its plane, masked, premultiplied
       const d = float(V2.PLANES[k - 1]).div(rd).mul(D);
       const q = proj(d, rd);

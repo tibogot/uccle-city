@@ -4,11 +4,12 @@ Blender 5.0, headless (Cycles on the OptiX GPU, gpu_setup):
 
     "C:/Program Files/Blender Foundation/Blender 5.0/blender.exe" --factory-startup -b -P tools/blender/shopInteriors.py -- textures/shops [--samples=48] [--only=bakery,...]
 
-V2 (Shops v2, the layered café / restaurant: see the V2 section below, docs/assets/SHOPS.md §3b), ~2 min on the RTX 4050:
+V2 (Shops v2, the layered rooms: see the V2 section below, docs/assets/SHOPS.md §3b-3e), 16 variants x day / night x
+5 renders, ~18 min on the RTX 4050:
 
     blender.exe --factory-startup -b -P tools/blender/shopInteriors.py -- textures/shops --v2 --samples=128 [--only=cafe] [--layers=L0,comp]
-    python tools/shops/pack_v2.py
-    node tools/shops/encode_array.mjs textures/shops/_work/v2/slices textures/shops/interiors_v2.ktx2      (~3 min, RDO)
+    python tools/shops/stickers.py && python tools/shops/pack_v2.py && python tools/shops/v2_lum.py   (V2_LUM + V2_GAIN)
+    node tools/shops/encode_array.mjs textures/shops/_work/v2/<slices|slicesC|slicesN|slicesM> textures/shops/interiors_v2<|c|n|m>.ktx2
 
 Each room: 6 m wide (x), 5 m deep (+y, into the shop), 3 m high, the shop window = its open front face (y = 0).
   ROOM image  rendered by a pinhole camera F = 3 m in FRONT of the window (on the street side) whose frustum is exactly
@@ -655,8 +656,10 @@ V2 = any(a == "--v2" for a in ARGS)
 RD2 = 6.0                                                 # the room's depth: the café's; each variant's in V2_DEPTH
 # (shops5) the variants in array order (viewer/shopScale.js V2.VARIANTS) and each one's room depth = the viewer's depth
 # of its interior type (shopScale.js DEPTH: metric, no depth scaling)
-V2_VARIANTS = ["cafe", "brasserie", "bakery", "pharmacy", "boutique", "grocery", "office", "salon", "shop"]
-V2_DEPTH = {"cafe": 6.0, "brasserie": 6.0, "bakery": 4.0, "pharmacy": 4.5, "boutique": 5.0, "grocery": 5.5, "office": 4.5, "salon": 3.5, "shop": 4.5}
+# (shops7) + a second variant of every other type (patisserie = bakery, officine = pharmacy, concept = boutique,
+# epicerie = grocery, bank = office, barber = salon, bookshop = shop)
+V2_VARIANTS = ["cafe", "brasserie", "bakery", "pharmacy", "boutique", "grocery", "office", "salon", "shop", "patisserie", "officine", "concept", "epicerie", "bank", "barber", "bookshop"]
+V2_DEPTH = {"cafe": 6.0, "brasserie": 6.0, "bakery": 4.0, "pharmacy": 4.5, "boutique": 5.0, "grocery": 5.5, "office": 4.5, "salon": 3.5, "shop": 4.5, "patisserie": 4.0, "officine": 4.5, "concept": 5.0, "epicerie": 5.5, "bank": 4.5, "barber": 3.5, "bookshop": 4.5}
 V2_LIGHTS = ["day", "night"]
 V2_SLABS = [(1.8, 3.5), (0.6, 1.8), (0.0, 0.6)]          # L1, L2, L3 (group centre depth, m)
 V2_PLANES = [2.6, 1.2, 0.3]                               # where the viewer draws them (viewer/shops/shopScale.js V2)
@@ -771,7 +774,8 @@ def v2_lights(globes, light, fill=("warm", 240)):
         ld = bpy.data.lights.new("globe", "POINT"); ld.energy = 45; ld.shadow_soft_size = 0.16; ld.color = (1.0, 0.8, 0.58)
         lo = bpy.data.objects.new("globe", ld); lo.location = (x, y, z); lo.visible_camera = False; s.collection.objects.link(lo)
     for y in ((RD2 * 0.25, RD2 * 0.7) if fill else ()):
-        ld = bpy.data.lights.new("fill", "AREA"); ld.energy = fill[1]; ld.size = 3.0; ld.color = (1.0, 0.84, 0.66) if fill[0] == "warm" else (0.95, 0.97, 1.0)
+        ld = bpy.data.lights.new("fill", "AREA"); ld.energy = fill[1]; ld.size = 3.0
+        ld.color = {"warm": (1.0, 0.84, 0.66), "neutral": (1.0, 0.93, 0.84)}.get(fill[0], (0.95, 0.97, 1.0))
         lo = bpy.data.objects.new("fill", ld); lo.location = (0, y, RH - 0.05)      # (an area light shines down its -Z)
         lo.visible_camera = False; lo.visible_glossy = False; s.collection.objects.link(lo)
     bg = s.world.node_tree.nodes["Background"]
@@ -819,7 +823,7 @@ def v2_cafe(L):
     zinc = mat("zinc", (0.62, 0.63, 0.62), 0.25, 1.0)
     A.box(zinc, -2.75, 1.75, bar0 - 0.05, bar1 + 0.02, 1.04, 1.09, bevel=0.012)
     brass = mat("brass", (0.6, 0.45, 0.2), 0.3, 1.0)
-    A.cyl(brass, -2.7, bar0 - 0.15, 0.15, 0.022, 4.4, axis="X")
+    A.cyl(brass, -0.5, bar0 - 0.15, 0.15, 0.022, 4.4, axis="X")      # (shops7) x -2.7..1.7 (a cyl along X / Y is centred)
     for x in (-1.3, -1.05, -0.8): A.cyl(mat("chrome", (0.8, 0.8, 0.8), 0.15, 1.0), x, bar1 - 0.1, 1.09, 0.025, 0.38)
     mirror = mat("mirror", (0.8, 0.8, 0.8), 0.05, 1.0)
     A.box(panel, -2.6, 1.6, RD2 - 0.05, RD2 - 0.02, 1.25, 2.55, bevel=0.01)
@@ -1002,6 +1006,31 @@ def v2_downlights(A, pts, color=WARM, energy=32, cone=80, track=False):
         for y in sorted(set(p[1] for p in pts)):
             xs = [p[0] for p in pts if p[1] == y]
             A.box(blk, min(xs) - 0.3, max(xs) + 0.3, y - 0.018, y + 0.018, RH - 0.035, RH)
+
+
+# (shops7) a Blender spot of P watts is as bright as a point of P watts, only masked to its cone: the shops5 rooms'
+# 30-45 W spots left the boutique / salon / generic shop near black at night (mean 0.008-0.02 against the café's 0.18,
+# which has two 240 W fills). Shop lighting is layered: ceiling spots for the floor, display lights on the goods
+# (strips under the shelves, lit niches), a warm general fill.
+def v2_strip(A, fr, u0, u1, d, z, color=WARM, energy=60, emit=6.0, width=0.05):
+    """an LED strip under a shelf board / a cornice along a run (frame fr, u0..u1 at d out from the wall, z): a lit bar
+    in the room + a rectangular area light shining down along it (the display light on the goods below)"""
+    e = mat(f"strip_{color}", color, 0.4, emit=emit, ecol=color)
+    lbox(A, fr, e, u0, u1, d - width / 2, d + width / 2, z - 0.008, z)
+    (xa, ya), (xb, yb) = fr(u0, d), fr(u1, d)
+    ld = bpy.data.lights.new("strip", "AREA"); ld.energy = energy; ld.color = color; ld.shape = "RECTANGLE"
+    along_x = abs(xb - xa) > abs(yb - ya)
+    ld.size = max(abs(xb - xa), width) if along_x else width; ld.size_y = width if along_x else max(abs(yb - ya), width)
+    lo = bpy.data.objects.new("strip", ld); lo.location = ((xa + xb) / 2, (ya + yb) / 2, z - 0.012)
+    lo.visible_camera = False; lo.visible_glossy = False; bpy.context.scene.collection.objects.link(lo)
+
+
+def v2_wash(loc, size, energy, color=WARM, aim=(0, 0, -1)):
+    """a soft area light aimed along aim (a wall washer / a mirror's face light), invisible to camera and mirrors"""
+    ld = bpy.data.lights.new("wash", "AREA"); ld.energy = energy; ld.color = color; ld.shape = "RECTANGLE"; ld.size, ld.size_y = size
+    lo = bpy.data.objects.new("wash", ld); lo.location = loc
+    lo.rotation_euler = Vector(aim).to_track_quat("-Z", "Y").to_euler()
+    lo.visible_camera = False; lo.visible_glossy = False; bpy.context.scene.collection.objects.link(lo)
 
 
 # a local frame for things against a wall or on a free-standing unit: (u along, d out from the back) -> (x, y)
@@ -1339,7 +1368,7 @@ def v2_boutique(L):
     rail = mat("chrome", (0.8, 0.8, 0.8), 0.15, 1.0); oakb = mat("shelf_oak", (0.5, 0.35, 0.2), 0.45)
     for s, fr in ((-1, F_left()), (1, F_right())):
         x = s * (RW / 2 - 0.28)
-        A.cyl(rail, x, 0.5, 1.62, 0.014, RD2 - 1.0, axis="Y"); [A.cyl(rail, s * (RW / 2 - 0.14), y, 1.62, 0.01, 0.28 * 1, axis="X") for y in (0.5, RD2 - 0.5)]
+        A.cyl(rail, x, RD2 / 2, 1.62, 0.014, RD2 - 1.0, axis="Y"); [A.cyl(rail, s * (RW / 2 - 0.14), y, 1.62, 0.01, 0.28 * 1, axis="X") for y in (0.5, RD2 - 0.5)]
         y = 0.7
         while y < RD2 - 0.6:
             garment(A, x, y, 1.62, "x", jitter(pick(FABRIC)), w=0.42); y += R.uniform(0.08, 0.13)
@@ -1356,7 +1385,11 @@ def v2_boutique(L):
     cur = mat("curtain_linen", (0.62, 0.58, 0.5), 0.9)
     for k in range(16): A.cyl(cur, 1.6 + k * 0.07, RD2 - 0.08 - 0.02 * (k % 2), 0.02, 0.045, 2.3, segs=10)
     A.cyl(rail, 2.1, RD2 - 0.08, 2.35, 0.012, 1.2, axis="X")
-    v2_downlights(A, [(x, y) for x in (-2.0, -0.7, 0.7, 2.0) for y in (1.2, 3.2)], WARM, 45, cone=55, track=True)
+    # (shops7) the lights: track spots strong enough for the floor and the tables, strips under the folded-stack shelves
+    # on the rails, a washer on the back wall's mirror and stacks, a warm fill (was 8 x 45 W spots only: black at night)
+    v2_downlights(A, [(x, y) for x in (-2.0, -0.7, 0.7, 2.0) for y in (1.2, 3.2)], WARM, 140, cone=65, track=True)
+    for fr in (F_left(), F_right()): v2_strip(A, fr, 0.5, RD2 - 0.5, 0.34, 1.928, NEUTRAL, 110)
+    v2_wash((0, RD2 - 1.2, RH - 0.08), (3.5, 0.3), 160, NEUTRAL, aim=(0, 0.75, -0.65))
     C = L.put(2.8)                                           # L1: the round table, the free-standing rail
     t = mat("display_table", (0.55, 0.4, 0.25), 0.4, wood=((0.48, 0.34, 0.2), (0.6, 0.45, 0.28)))
     C.cyl(mat("table_base_contact", (0.06, 0.06, 0.06), 0.3, 0.6), 0.3, 2.8, 0, 0.3, 0.025, segs=28); C.cyl(mat("steel_black", (0.06, 0.06, 0.06), 0.3, 0.6), 0.3, 2.8, 0.025, 0.05, 0.7, segs=12)
@@ -1365,7 +1398,7 @@ def v2_boutique(L):
         a = k * 2 * math.pi / 5; px, py = 0.3 + 0.36 * math.cos(a), 2.8 + 0.3 * math.sin(a)
         product(C, F_front(py + 0.12), "folded", px - 0.14, 0.3, 0.0, 0.25, 0.76, 0.3, FABRIC)
     for x in (-1.9, -0.5): C.box(mat("rail_foot_contact", (0.7, 0.7, 0.7), 0.2, 1.0), x - 0.03, x + 0.03, 3.0, 3.3, 0, 0.02); C.cyl(rail, x, 3.15, 0.02, 0.014, 1.55, segs=10)
-    C.cyl(rail, -1.95, 3.15, 1.57, 0.014, 1.5, axis="X")
+    C.cyl(rail, -1.2, 3.15, 1.57, 0.014, 1.5, axis="X")
     x = -1.8
     while x < -0.6: garment(C, x, 3.15, 1.57, "y", jitter(pick(FABRIC)), w=0.44); x += R.uniform(0.07, 0.11)
     C = L.put(1.3)                                           # L2: a mannequin, a bench
@@ -1386,7 +1419,7 @@ def v2_boutique(L):
     for k in range(9):
         a = math.pi * k / 8; D.sphere(mat("bag_leather", (0.42, 0.22, 0.1), 0.45), 0.69 - 0.13 * math.cos(a), 0.31, 0.78 + 0.13 * math.sin(a), 0.012, segs=6)
     mannequin(D, -1.7, 0.3, scale=0.85, floor=True)
-    return [], None
+    return [], ("warm", 130)
 
 
 def v2_grocery(L):
@@ -1533,7 +1566,7 @@ def v2_office(L):
     D = L.A[3]                                               # L3: a listing board on steel posts, plants
     st = mat("steel", (0.75, 0.75, 0.74), 0.2, 1.0)
     # (shops6) the board: OFFICE_BOARD (A4 pockets, 3 x 2, ~1 m wide; was 4 x 2 A3-size pockets on a 1.7 m frame, which
-    # read as a wall of white boxes at 2 m). Shipped arrays still hold the old board until the next full --v2 bake.
+    # read as a wall of white boxes at 2 m). Baked into the shipped arrays by shops7.
     cols, rows, cw, ch, gap, zb = OFFICE_BOARD["cols"], OFFICE_BOARD["rows"], OFFICE_BOARD["w"], OFFICE_BOARD["h"], OFFICE_BOARD["gap"], OFFICE_BOARD["z0"]
     x0 = OFFICE_BOARD["x0"]; x1 = x0 + 0.1 + cols * cw + (cols - 1) * gap + 0.1
     for x0_, x1_ in ((x0, x1),):
@@ -1596,8 +1629,14 @@ def v2_salon(L):
         A.box(mat("salon_leather", (0.05, 0.05, 0.055), 0.4), x - 0.26, x + 0.26, RD2 - 0.7, RD2 - 0.55, 0.5, 0.95, bevel=0.05)
     glass = mat("glass_shelf", (0.7, 0.75, 0.75), 0.1)
     v2_shelves(A, fb, -2.3, 2.3, [1.35, 1.75, 2.15], 0.22, glass, PHARMA + BOTTLE, "pump", 0.85, strip=False, wmin=0.07, wmax=0.1)
-    lbox(A, fb, mat("led_strip", (1.0, 0.9, 0.75), 0.4, emit=4.0), -2.3, 2.3, 0.2, 0.21, 2.6, 2.62)
-    v2_downlights(A, [(x, y) for x in (-1.8, 0.0, 1.8) for y in (0.7, 1.75, 2.8)], WARM, 32)
+    # (shops7) the lights: a lit strip over the basins' product shelves, a light bar over every mirror (the station's
+    # face light), downlights strong enough for the floor, a warm fill (was 9 x 32 W downlights: near black at night)
+    v2_strip(A, fb, -2.3, 2.3, 0.2, 2.62, NEUTRAL, 120)
+    for frm in (F_left(), F_right()):
+        for y in stations:
+            lbox(A, frm, mat("frame_brass", (0.55, 0.4, 0.15), 0.3, 1.0), y - 0.42, y + 0.42, 0.0, 0.14, 2.1, 2.14, bevel=0.006)
+            v2_strip(A, frm, y - 0.36, y + 0.36, 0.11, 2.1, NEUTRAL, 45)
+    v2_downlights(A, [(x, y) for x in (-1.8, 0.0, 1.8) for y in (0.7, 1.75, 2.8)], WARM, 85)
     for y in stations:
         C = L.put(y)
         for s in (-1, 1): salon_chair(C, s * (RW / 2 - 0.8), y, -s * math.pi / 2)
@@ -1618,7 +1657,7 @@ def v2_salon(L):
         for k in range(8): product(D, F_front(0.43), "pump" if k % 3 == 0 else "bottles", -2.55 + k * 0.17, 0.09, 0.02, 0.26, z, 0.3, PHARMA + [(0.08, 0.08, 0.08), (0.75, 0.6, 0.3)])
     for x in (-2.58, -1.22): D.box(mat("ledge_oak_contact", (0.4, 0.25, 0.12), 0.45), x - 0.02, x + 0.02, 0.15, 0.45, 0, 0.75)
     potted(D, 1.6, 0.3, 0.0, r=0.17, h=0.75, n=60, pot=mat("pot_dark_contact", (0.1, 0.1, 0.1), 0.6))
-    return [], None
+    return [], ("warm", 120)
 
 
 def v2_shop(L):
@@ -1634,7 +1673,12 @@ def v2_shop(L):
     v2_shelves(A, F_left(), 0.3, RD2 - 0.4, zs, 0.34, wood, GOODS, "books", 0.92, back=wood, plinth=0.1, strip=False)
     v2_shelves(A, F_right(), 0.3, RD2 - 0.4, zs, 0.34, wood, GOODS, "mixed", 0.9, back=wood, plinth=0.1, strip=False)
     v2_shelves(A, F_back(), -2.6, 2.6, zs, 0.34, wood, GOODS + PASTRY, "mixed", 0.9, back=wood, plinth=0.1, strip=False)
-    v2_downlights(A, [(x, y) for x in (-1.9, -0.6, 0.6, 1.9) for y in (1.0, 2.9)], WARM, 30)
+    # (shops7) the lights: downlights strong enough for the floor, a strip under the top board of every wall run (the
+    # display light on the goods), a warm fill (was 8 x 30 W downlights: near black at night)
+    v2_downlights(A, [(x, y) for x in (-1.9, -0.6, 0.6, 1.9) for y in (1.0, 2.9)], WARM, 90)
+    for fr, a0, a1 in ((F_left(), 0.3, RD2 - 0.4), (F_right(), 0.3, RD2 - 0.4), (F_back(), -2.6, 2.6)):
+        v2_strip(A, fr, a0 + 0.05, a1 - 0.05, 0.3, zs[-1] - 0.022, NEUTRAL, 90)
+        v2_strip(A, fr, a0 + 0.05, a1 - 0.05, 0.3, zs[-3] - 0.022, NEUTRAL, 50, emit=4.0)
     C = L.put(2.6)                                           # L1: the display table
     t = mat("display_table", (0.42, 0.27, 0.14), 0.5, wood=((0.35, 0.21, 0.1), (0.5, 0.33, 0.17)))
     C.box(t, -1.5, 0.5, 2.3, 2.95, 0.72, 0.78, bevel=0.01)
@@ -1672,11 +1716,607 @@ def v2_shop(L):
     potted(D, 1.4, 0.3, 0.0, r=0.16, h=0.7, n=55, pot=mat("terracotta_contact", (0.55, 0.25, 0.12), 0.7))
     D.box(mat("goods_contact", (0.6, 0.1, 0.1), 0.45), 0.2, 0.42, 0.15, 0.45, 0.0, 0.03)
     for k in range(1, 4): D.box(g, 0.2 + k * 0.03, 0.42 + k * 0.03, 0.15, 0.45, k * 0.035 - 0.004, 0.027 + k * 0.035, jitter(pick(GOODS)), bevel=0.003)
-    return [], None
+    return [], ("warm", 120)
+
+
+# ------------------------------------------------------------------------------------------------ v2: second variants
+# (shops7, Shops v2 job 7) a second room for every type but the café's (which has the brasserie), different in layout,
+# colours and props, so the neighbour rule (viewer/shops/shopScale.js neighbourVariants) can keep two same-type windows
+# within 12 m apart. Same method: L0 wall-standing only, free-standing groups by depth into L1 / L2, L3 the display.
+PASTEL = [(0.92, 0.72, 0.76), (0.72, 0.86, 0.8), (0.95, 0.9, 0.78), (0.78, 0.8, 0.92), (0.98, 0.97, 0.95), (0.85, 0.62, 0.45)]
+BOOKS = [(0.45, 0.06, 0.06), (0.06, 0.18, 0.12), (0.08, 0.12, 0.3), (0.62, 0.5, 0.3), (0.1, 0.1, 0.1), (0.85, 0.8, 0.68), (0.55, 0.3, 0.1), (0.3, 0.12, 0.25), (0.9, 0.6, 0.15), (0.5, 0.6, 0.65)]
+DELI = [(0.95, 0.85, 0.5), (0.9, 0.75, 0.35), (0.6, 0.15, 0.12), (0.78, 0.35, 0.3), (0.92, 0.9, 0.82), (0.55, 0.35, 0.15)]
+
+
+def pendant_dome(C, x, y, z, col=(0.04, 0.04, 0.04), r=0.2, name="dome"):
+    """a pendant shade (a cone of enamel / metal on a cord from the ceiling, a canopy flush on it: _contact), a warm bulb;
+    returns the bulb's position (v2_lights puts a point light there)"""
+    C.cyl(mat("cord", (0.02, 0.02, 0.02), 0.6), x, y, z + 0.15, 0.004, RH - z - 0.15, segs=6)
+    C.cyl(mat("pendant_contact", (0.02, 0.02, 0.02), 0.5), x, y, RH - 0.02, 0.04, 0.02, segs=12)
+    C.cyl(mat(f"{name}_{col}", col, 0.35, 0.3), x, y, z, r, 0.16, r2=0.04, segs=28)
+    C.sphere(mat("bulb_warm", (1.0, 0.86, 0.66), 0.4, emit=9.0), x, y, z + 0.02, 0.05, segs=12)
+    return x, y, z
+
+
+def wainscot(A, col, h=1.0, sides=(-1, 1), back=True, name="wainscot"):
+    """raised-panel wainscot on the side walls (and the back wall): a board, a rail, bevelled panels"""
+    m = mat(name, col, 0.45)
+    runs = [(F_left(), 0.0, RD2)] * (-1 in sides) + [(F_right(), 0.0, RD2)] * (1 in sides) + [(F_back(), -RW / 2, RW / 2)] * back
+    for fr, a0, a1 in runs:
+        lbox(A, fr, m, a0, a1, 0.0, 0.02, 0.0, h)
+        lbox(A, fr, m, a0, a1, 0.0, 0.04, h - 0.04, h, bevel=0.01)
+        n = max(1, int((a1 - a0) / 0.7))
+        for k in range(n):
+            u = a0 + 0.08 + k * (a1 - a0 - 0.16) / n
+            lbox(A, fr, m, u + 0.04, u + (a1 - a0 - 0.16) / n - 0.04, 0.02, 0.032, 0.18, h - 0.14, bevel=0.008)
+
+
+def cake(C, x, y, z, r=0.12, h=0.1, col=None, top=None):
+    g = mat("goods", (1, 1, 1), 0.45, attr=True)
+    C.cyl(g, x, y, z, r, h, col or jitter(pick(PASTEL), 0.05), 28)
+    C.cyl(g, x, y, z + h, r * 0.96, 0.012, top or jitter(pick(PASTRY)), 28)
+    for k in range(8):
+        a = k * math.pi / 4; C.sphere(g, x + r * 0.75 * math.cos(a), y + r * 0.75 * math.sin(a), z + h + 0.02, 0.016, (0.75, 0.1, 0.15), segs=8)
+
+
+def cloche(C, x, y, z, r=0.15, h=0.2):
+    """a glass dome on a porcelain plate"""
+    C.cyl(mat("porcelain", (0.92, 0.91, 0.88), 0.2), x, y, z, r + 0.03, 0.012, segs=28)
+    C.sphere(mat("cloche", (0.8, 0.85, 0.85), 0.05), x, y, z + 0.012, r, scale=(1, 1, h / r), segs=24)
+    C.sphere(mat("cloche", (0.8, 0.85, 0.85), 0.05), x, y, z + 0.012 + h + 0.015, 0.02, segs=10)
+
+
+def v2_patisserie(L):
+    """(shops7, bakery type) a pâtisserie / salon de thé, 4 m deep: mint walls over white raised-panel wainscot, a
+    terrazzo floor, a marble-topped counter along the LEFT wall with cakes under glass domes, a lit glass cabinet and
+    open shelves of pastel cake boxes at the back; a marble table for two (L1), a short glass vitrine of tarts on the right
+    (L2) under opal globes; a macaron tower, cakes under cloches and a plant in the window (L3)"""
+    A = L.A[0]
+    wall = mat("wall_mint", (0.42, 0.6, 0.5), 0.75)
+    v2_shell(A, wall, mat("floor_terrazzo", (0.76, 0.68, 0.64), 0.3, mottle=(60.0, (0.62, 0.52, 0.5), (0.86, 0.8, 0.76))), mat("ceil_white", (0.9, 0.9, 0.88), 0.8))
+    wainscot(A, (0.86, 0.83, 0.76))
+    # the left counter (wall-standing): white panelled body, a marble top, cakes under domes, the coffee machine
+    fl = F_left()
+    lbox(A, fl, mat("counter_white", (0.9, 0.89, 0.86), 0.45), 0.6, 3.4, 0.0, 0.62, 0.1, 0.9, bevel=0.012)
+    lbox(A, fl, mat("plinth_dark", (0.12, 0.12, 0.12), 0.5), 0.62, 3.38, 0.0, 0.58, 0.0, 0.1)
+    lbox(A, fl, mat("marble_top", (0.88, 0.87, 0.84), 0.18), 0.58, 3.42, 0.0, 0.66, 0.9, 0.94, bevel=0.008)
+    for k in range(4):
+        u = 0.75 + k * 0.6
+        lbox(A, fl, mat("counter_white", (0.9, 0.89, 0.86), 0.45), u, u + 0.5, 0.62, 0.635, 0.22, 0.8, bevel=0.006)
+    for u in (0.95, 1.65, 2.35):
+        x, y = fl(u, 0.33); cake(A, x, y, 0.95, r=0.13, h=0.09); cloche(A, x, y, 0.94, r=0.17, h=0.24)
+    x, y = fl(3.0, 0.33)
+    A.box(mat("coffee_machine", (0.7, 0.7, 0.7), 0.2, 1.0), x - 0.2, x + 0.15, y - 0.3, y + 0.3, 0.94, 1.38, bevel=0.03)
+    # the back: a lit glass cabinet (left), open shelves of cake boxes and jars (right)
+    fb = F_back(); wood = mat("cabinet_white", (0.9, 0.89, 0.86), 0.4)
+    lbox(A, fb, wood, -2.7, -0.5, 0.0, 0.45, 0.0, 0.9, bevel=0.01)                      # the base, then a hollow case
+    lbox(A, fb, wood, -2.7, -0.5, 0.0, 0.45, 2.3, 2.4, bevel=0.01)
+    for a0 in (-2.7, -0.6): lbox(A, fb, wood, a0, a0 + 0.1, 0.0, 0.45, 0.9, 2.3)
+    lbox(A, fb, mat("cabinet_inside", (0.72, 0.8, 0.74), 0.6), -2.6, -0.6, 0.0, 0.02, 0.9, 2.3)
+    gl = mat("display_glass", (0.9, 0.95, 0.95), 0.02, trans=1.0); g = mat("goods", (1, 1, 1), 0.45, attr=True)
+    lbox(A, fb, gl, -2.6, -0.6, 0.43, 0.437, 0.95, 2.3)
+    for z in (1.3, 1.65, 1.98):
+        lbox(A, fb, gl, -2.6, -0.6, 0.02, 0.4, z - 0.012, z)
+        u = -2.5
+        while u < -0.75:
+            if R.random() < 0.6: product(A, fb, "jars", u, 0.13, 0.05, 0.32, z, 0.28, PASTEL + PASTRY)
+            else: x, y = fb(u + 0.08, 0.2); cake(A, x, y, z, r=0.08, h=0.07)
+            u += 0.17
+    v2_strip(A, fb, -2.6, -0.6, 0.3, 2.3, WARM, 70)
+    for x in (-2.67, -1.6, -0.53): lbox(A, fb, wood, x - 0.03, x + 0.03, 0.42, 0.46, 0.95, 2.3)
+    lbox(A, fb, wood, -2.7, -0.5, 0.42, 0.46, 0.9, 0.95)
+    v2_shelves(A, fb, 0.0, 2.8, [0.6, 1.0, 1.4, 1.8, 2.2], 0.32, mat("shelf_white", (0.9, 0.9, 0.88), 0.4), PASTEL, "boxes", 0.85, strip=False, wmin=0.18, wmax=0.3)
+    lbox(A, fb, wood, 0.0, 2.8, 0.0, 0.42, 0.0, 0.58, bevel=0.01)
+    v2_strip(A, fb, 0.05, 2.75, 0.25, 2.178, WARM, 60, emit=4.0)
+    v2_downlights(A, [(x, y) for x in (-1.6, 0.4, 2.0) for y in (0.8, 2.6)], WARM, 70)
+    globes = []
+    C = L.put(2.5)                                            # L1: a marble table for two
+    marble_table(C, 0.9, 2.55, r=0.3); bentwood_chair(C, 0.4, 2.55, -math.pi / 2, (0.85, 0.83, 0.78), (0.6, 0.7, 0.62)); bentwood_chair(C, 1.4, 2.6, math.pi / 2, (0.85, 0.83, 0.78), (0.6, 0.7, 0.62))
+    globes.append(pendant_globe(C, 0.9, 2.55, drop=0.8))
+    C = L.put(1.35)                                           # L2: the tart vitrine on the right
+    v2_counter(C, 0.5, 2.7, 1.1, 1.65, 0.88, body=(0.9, 0.89, 0.86), top=(0.88, 0.87, 0.84), name="pvitrine")
+    C.plate(gl, (0.5, 1.1, 0.88), (2.7, 1.1, 0.88), (2.7, 1.25, 1.3), (0.5, 1.25, 1.3), 0.008)
+    C.box(gl, 0.5, 2.7, 1.25, 1.6, 1.3, 1.31)
+    for x in (0.5, 2.7): C.box(gl, x - 0.005, x + 0.005, 1.1, 1.6, 0.88, 1.3)
+    C.box(mat("display_light", (1, 0.92, 0.78), 0.4, emit=5.0), 0.6, 2.6, 1.35, 1.55, 1.295, 1.3)
+    for x0 in (0.6, 1.3, 2.0): pastry_tray(C, x0, x0 + 0.62, 1.2, 1.55, 0.89, PASTEL + PASTRY)
+    for x in (0.9, 2.2): globes.append(pendant_globe(C, x, 1.35, drop=0.85))
+    D = L.A[3]                                                # L3: a macaron tower, cloches, a bouquet
+    plinth_cube(D, -2.6, -1.7, 0.12, 0.5, 0.55, (0.9, 0.89, 0.86))
+    porc = mat("porcelain", (0.92, 0.91, 0.88), 0.2)
+    D.cyl(porc, -2.15, 0.31, 0.55, 0.16, 0.012, segs=28)
+    for k in range(9):                                        # the tower: rings of macarons tapering up
+        z = 0.57 + k * 0.05; r = 0.14 * (1 - k / 10)
+        n = max(5, int(2 * math.pi * r / 0.045))
+        for j in range(n):
+            a = j * 2 * math.pi / n + k * 0.3; D.sphere(g, -2.15 + r * math.cos(a), 0.31 + r * math.sin(a), z + 0.02, 0.022, jitter(pick(PASTEL), 0.05), (1.0, 1.0, 0.75), segs=10)
+    plinth_cube(D, -1.5, -0.7, 0.12, 0.5, 0.38, (0.9, 0.89, 0.86))
+    for x in (-1.3, -0.9): cake(D, x, 0.31, 0.392, r=0.1, h=0.08); cloche(D, x, 0.31, 0.38, r=0.14, h=0.2)
+    potted(D, 1.7, 0.3, 0.0, r=0.13, h=0.55, n=40, pot=mat("pot_white_contact", (0.88, 0.88, 0.86), 0.35))
+    return globes, ("warm", 110)
+
+
+def v2_officine(L):
+    """(shops7, pharmacy type) a classic Brussels officine, 4.5 m deep: walnut cabinetry on three walls (drawers below,
+    glass-fronted lit cabinets above with boxes and porcelain apothecary jars), a cream / terracotta mosaic floor, a
+    walnut arch at the back with the green cross; a glass-topped walnut display island (L1), the serving counter on the
+    LEFT with a brass rail and two tills (L2); a walnut étagère of boxes and jars, a big jar on a plinth (L3)"""
+    A = L.A[0]
+    wall = mat("wall_cream", (0.84, 0.8, 0.7), 0.7)
+    v2_shell(A, wall, mat("floor_mosaic", (0.8, 0.72, 0.6), 0.35, tiles=(0.08, (0.86, 0.8, 0.68), (0.62, 0.34, 0.2), (0.5, 0.45, 0.4))), mat("ceil_cream", (0.86, 0.83, 0.76), 0.8))
+    wal = mat("walnut", (0.26, 0.15, 0.08), 0.4, wood=((0.2, 0.11, 0.05), (0.34, 0.2, 0.1)))
+    dr = mat("walnut_drawer", (0.3, 0.18, 0.09), 0.4); brass = mat("brass", (0.6, 0.45, 0.2), 0.3, 1.0)
+    gl = mat("display_glass", (0.9, 0.95, 0.95), 0.02, trans=1.0); white = mat("shelf_white", (0.88, 0.88, 0.86), 0.4)
+    jar = mat("apothecary", (0.93, 0.92, 0.88), 0.15); g = mat("goods", (1, 1, 1), 0.45, attr=True)
+    for fr, a0, a1 in ((F_left(), 0.3, RD2 - 0.05), (F_right(), 0.3, RD2 - 0.05), (F_back(), -2.45, -0.75), (F_back(), 0.75, 2.45)):
+        lbox(A, fr, wal, a0, a1, 0.0, 0.5, 0.0, 0.92, bevel=0.01)
+        lbox(A, fr, mat("marble_top", (0.85, 0.84, 0.8), 0.2), a0, a1, 0.0, 0.53, 0.92, 0.96, bevel=0.006)
+        n = max(1, int((a1 - a0) / 0.45))
+        for k in range(n):
+            u = a0 + k * (a1 - a0) / n
+            for j in range(3):
+                lbox(A, fr, dr, u + 0.02, u + (a1 - a0) / n - 0.02, 0.5, 0.515, 0.08 + j * 0.27, 0.32 + j * 0.27, bevel=0.005)
+                c = fr(u + (a1 - a0) / n / 2, 0.53); A.sphere(brass, c[0], c[1], 0.2 + j * 0.27, 0.014, segs=8)
+        # the upper cabinets: a walnut carcass, lit white shelves behind glass doors, jars on the top shelf
+        lbox(A, fr, wal, a0, a1, 0.0, 0.36, 1.3, 1.34, bevel=0.006); lbox(A, fr, wal, a0, a1, 0.0, 0.36, 2.58, 2.62, bevel=0.006)
+        for e0 in (a0, a1 - 0.04): lbox(A, fr, wal, e0, e0 + 0.04, 0.0, 0.36, 1.34, 2.58)
+        lbox(A, fr, mat("cabinet_back", (0.92, 0.9, 0.84), 0.6), a0 + 0.04, a1 - 0.04, 0.0, 0.02, 1.34, 2.58)
+        zs = [1.36, 1.68, 2.0, 2.3]
+        for i, z in enumerate(zs):
+            lbox(A, fr, white, a0 + 0.04, a1 - 0.04, 0.02, 0.32, z - 0.015, z)
+            u = a0 + 0.08
+            while u < a1 - 0.15:
+                if i == 3:
+                    x, y = fr(u + 0.07, 0.17); A.cyl(jar, x, y, z, 0.065, 0.16, segs=20); A.cyl(jar, x, y, z + 0.16, 0.05, 0.03, segs=20)
+                    A.sphere(jar, x, y, z + 0.2, 0.025, segs=10); A.cyl(mat("jar_label", (0.85, 0.75, 0.4), 0.5), x, y, z + 0.06, 0.067, 0.05, segs=20)
+                    u += 0.19
+                else:
+                    w = R.uniform(0.06, 0.13); product(A, fr, "boxes", u, w, 0.03, 0.3, z, 0.28, PHARMA); u += w
+        n = max(1, int((a1 - a0) / 0.6))
+        for k in range(n + 1):
+            u = a0 + k * (a1 - a0) / n
+            lbox(A, fr, wal, u - 0.025, u + 0.025, 0.34, 0.38, 1.3, 2.62)
+        lbox(A, fr, gl, a0, a1, 0.36, 0.368, 1.34, 2.58)
+        lbox(A, fr, wal, a0, a1, 0.0, 0.42, 2.62, 2.72, bevel=0.012)                  # the cornice
+        v2_strip(A, fr, a0 + 0.05, a1 - 0.05, 0.2, 2.58, WARM, 55, emit=5.0)
+    # the arch at the back: a walnut frame round a dark green panel with the lit cross, a clock-like dial above
+    fb = F_back()
+    lbox(A, fb, wal, -0.75, 0.75, 0.0, 0.08, 0.0, 2.72, bevel=0.012)
+    lbox(A, fb, mat("panel_green", (0.05, 0.2, 0.13), 0.5), -0.6, 0.6, 0.08, 0.09, 0.15, 2.4)
+    green = mat("pharma_green", (0.05, 0.5, 0.15), 0.3, emit=3.0)
+    lbox(A, fb, green, -0.3, 0.3, 0.09, 0.11, 1.62, 1.82, bevel=0.01); lbox(A, fb, green, -0.1, 0.1, 0.09, 0.11, 1.42, 2.02, bevel=0.01)
+    v2_downlights(A, [(x, y) for x in (-1.6, 0.0, 1.6) for y in (1.0, 3.0)], WARM, 55)
+    globes = []
+    C = L.put(2.6)                                            # L1: the display island
+    C.box(mat("island_kick_contact", (0.1, 0.06, 0.03), 0.5), -1.3, 0.3, 2.35, 2.85, 0, 0.1)
+    C.box(wal, -1.35, 0.35, 2.3, 2.9, 0.1, 0.8, bevel=0.012)
+    C.box(wal, -1.35, 0.35, 2.3, 2.9, 0.8, 0.84, bevel=0.006)
+    for y in (2.33, 2.862): C.box(gl, -1.32, 0.32, y, y + 0.008, 0.84, 1.08)              # thin panes, not a glass block
+    for x in (-1.32, 0.312): C.box(gl, x, x + 0.008, 2.338, 2.862, 0.84, 1.08)
+    C.box(gl, -1.34, 0.34, 2.31, 2.89, 1.08, 1.088)
+    for x in (-1.34, 0.32):
+        for y in (2.31, 2.87): C.box(wal, x, x + 0.02, y, y + 0.02, 0.84, 1.08)
+    for k in range(10): product(C, F_front(2.82), "boxes" if k % 3 else "pump", -1.25 + k * 0.155, 0.12, 0.0, 0.4, 0.84, 0.2, PHARMA)
+    for x in (-1.0, 0.0): globes.append(pendant_globe(C, x, 2.6, drop=0.9))
+    C = L.put(1.4)                                            # L2: the counter on the left, a brass rail
+    v2_counter(C, -2.7, -0.3, 1.15, 1.7, 0.96, body=(0.26, 0.15, 0.08), top=(0.85, 0.84, 0.8), name="offcounter")
+    C.cyl(brass, -1.5, 1.08, 0.2, 0.015, 2.3, axis="X")
+    v2_till(C, -2.1, 1.45, 0.96); v2_till(C, -0.9, 1.45, 0.96)
+    for k in range(6): C.box(g, -1.65 + k * 0.08, -1.59 + k * 0.08, 1.3, 1.42, 0.96, 0.96 + R.uniform(0.07, 0.16), jitter(pick(PHARMA)), bevel=0.003)
+    D = L.A[3]                                                # L3: an étagère, a big jar on a plinth, a plant
+    for x in (-2.6, -1.4):
+        D.box(mat("etagere_contact", (0.26, 0.15, 0.08), 0.4), x - 0.03, x + 0.03, 0.15, 0.45, 0.0, 0.02)
+        D.box(wal, x - 0.025, x + 0.025, 0.15, 0.45, 0.02, 1.2, bevel=0.006)
+    for z in (0.3, 0.65, 1.0):
+        D.box(wal, -2.62, -1.38, 0.15, 0.45, z - 0.025, z, bevel=0.006)
+        for k in range(6): product(D, F_front(0.43), "boxes" if k % 2 else "pump", -2.55 + k * 0.19, 0.12, 0.02, 0.25, z, 0.2, PHARMA)
+    plinth_cube(D, 0.9, 1.5, 0.12, 0.5, 0.5, (0.26, 0.15, 0.08), name="walnut_plinth")
+    D.cyl(jar, 1.2, 0.31, 0.5, 0.15, 0.4, segs=28); D.cyl(jar, 1.2, 0.31, 0.9, 0.11, 0.06, segs=28); D.sphere(jar, 1.2, 0.31, 0.99, 0.05, segs=12)
+    D.cyl(mat("jar_label", (0.85, 0.75, 0.4), 0.5), 1.2, 0.31, 0.62, 0.152, 0.12, segs=28)
+    potted(D, 2.3, 0.3, 0.0, r=0.15, h=0.6, pot=mat("terracotta_contact", (0.55, 0.25, 0.12), 0.7))
+    return globes, ("warm", 120)
+
+
+def v2_concept(L):
+    """(shops7, boutique type) a bright concept store, 5 m deep: white walls, a pale polished concrete floor, a birch
+    slatted back wall with floating shelves of shoes, garments on a black steel rail hung from the ceiling down the
+    LEFT wall, white floating shelves of bags and shoes on the right, linear LED pendants; a long low plinth table of
+    bags and folded tees (L1), a free-standing black rail + a pouf (L2); a big plant, plinths with shoes and a bag (L3)"""
+    A = L.A[0]
+    wall = mat("wall_white", (0.9, 0.9, 0.89), 0.6)
+    v2_shell(A, wall, mat("floor_concrete_pale", (0.7, 0.69, 0.66), 0.3, mottle=(5.0, (0.64, 0.63, 0.6), (0.76, 0.75, 0.72))), mat("ceil_white", (0.9, 0.9, 0.88), 0.8))
+    fb = F_back(); birch = mat("birch_slat", (0.78, 0.66, 0.5), 0.5)
+    lbox(A, fb, mat("slat_shadow", (0.2, 0.16, 0.12), 0.8), -RW / 2, RW / 2, 0.0, 0.01, 0.0, RH)
+    for u in np.arange(-2.97, 2.97, 0.07): lbox(A, fb, birch, u, u + 0.045, 0.01, 0.04, 0.0, RH, bevel=0.004)
+    shoe = mat("goods", (1, 1, 1), 0.35, attr=True); white = mat("shelf_white", (0.92, 0.92, 0.9), 0.35)
+    SHOES = [(0.05, 0.05, 0.05), (0.92, 0.91, 0.88), (0.4, 0.24, 0.12), (0.7, 0.62, 0.5), (0.15, 0.2, 0.35), (0.6, 0.1, 0.1)]
+    for z in (0.9, 1.3, 1.7, 2.1):
+        for a0, a1 in ((-2.4, -0.6), (0.6, 2.4)):
+            lbox(A, fb, white, a0, a1, 0.04, 0.34, z - 0.03, z, bevel=0.006)
+            for k in range(int((a1 - a0) / 0.36)):
+                x, y = fb(a0 + 0.18 + k * 0.36, 0.19); c = jitter(pick(SHOES))
+                A.sphere(shoe, x, y, z + 0.035, 0.05, c, (2.5, 1.0, 0.75), segs=12); A.box(shoe, x - 0.12, x + 0.13, y - 0.04, y + 0.04, z, z + 0.012, (0.1, 0.08, 0.06))
+    # the left rail: a black steel pipe hung from the ceiling, garments facing the room
+    blk = mat("steel_black", (0.06, 0.06, 0.06), 0.3, 0.6)
+    x = -RW / 2 + 0.4
+    A.cyl(blk, x, RD2 / 2, 1.75, 0.016, RD2 - 1.2, axis="Y")
+    for y in (0.7, RD2 - 0.7): A.cyl(blk, x, y, 1.75, 0.01, RH - 1.75)
+    y = 0.8
+    while y < RD2 - 0.75:
+        garment(A, x, y, 1.75, "x", jitter(pick(FABRIC + [(0.92, 0.9, 0.85), (0.7, 0.55, 0.4)])), w=0.44); y += R.uniform(0.09, 0.14)
+    # the right: floating white shelves of bags and folded stacks
+    fr = F_right()
+    for z in (0.95, 1.45, 1.95):
+        lbox(A, fr, white, 0.6, RD2 - 0.6, 0.0, 0.36, z - 0.03, z, bevel=0.006)
+        u = 0.75
+        while u < RD2 - 0.9:
+            if R.random() < 0.5:
+                x, y = fr(u + 0.15, 0.18); c = jitter(pick([(0.42, 0.22, 0.1), (0.05, 0.05, 0.05), (0.75, 0.7, 0.62), (0.45, 0.06, 0.08)]))
+                A.box(mat("bag_leather", (0.42, 0.22, 0.1), 0.45), x - 0.08, x + 0.08, y - 0.14, y + 0.14, z, z + 0.24, bevel=0.03)
+            else: product(A, fr, "folded", u, 0.3, 0.02, 0.34, z, 0.3, FABRIC)
+            u += 0.42
+    for y0 in (1.0, 3.0):                                     # linear LED pendants (bars hung on wires: in the cards)
+        P = L.put(y0)
+        P.box(mat("linear_black", (0.05, 0.05, 0.05), 0.4, 0.5), -1.6, 1.6, y0 - 0.04, y0 + 0.04, RH - 0.62, RH - 0.56, bevel=0.01)
+        P.box(mat("linear_lit", NEUTRAL, 0.4, emit=10.0, ecol=NEUTRAL), -1.58, 1.58, y0 - 0.03, y0 + 0.03, RH - 0.625, RH - 0.62)
+        for x in (-1.5, 1.5): P.cyl(blk, x, y0, RH - 0.56, 0.002, 0.56, segs=4)
+        v2_wash((0, y0, RH - 0.64), (3.1, 0.08), 170, NEUTRAL)
+    v2_downlights(A, [(x, y) for x in (-2.3, 2.3) for y in (1.0, 2.4, 3.8)], NEUTRAL, 120, cone=60, track=True)
+    v2_strip(A, fb, -2.4, 2.4, 0.3, 2.62, NEUTRAL, 120)
+    C = L.put(2.9)                                            # L1: the long low plinth table
+    plinth_cube(C, -1.5, 1.3, 2.6, 3.2, 0.45, (0.9, 0.9, 0.88))
+    for k in range(6):
+        x = -1.35 + k * 0.45
+        if k % 2: product(C, F_front(3.0), "folded", x, 0.32, 0.0, 0.3, 0.45, 0.3, FABRIC)
+        else:
+            c = jitter(pick([(0.42, 0.22, 0.1), (0.05, 0.05, 0.05), (0.75, 0.7, 0.62)]))
+            C.box(mat("bag_leather", (0.42, 0.22, 0.1), 0.45), x, x + 0.3, 2.82, 2.98, 0.45, 0.7, bevel=0.035)
+    C = L.put(1.4)                                            # L2: a black rail, a pouf
+    for x in (0.8, 2.2):
+        C.box(mat("rail_foot_contact", (0.06, 0.06, 0.06), 0.3, 0.6), x - 0.2, x + 0.2, 1.38, 1.42, 0, 0.02)
+        C.cyl(blk, x, 1.4, 0.02, 0.014, 1.52, segs=10)
+    C.cyl(blk, 1.5, 1.4, 1.54, 0.014, 1.44, axis="X")
+    x = 0.9
+    while x < 2.1: garment(C, x, 1.4, 1.54, "y", jitter(pick(FABRIC)), w=0.44); x += R.uniform(0.08, 0.12)
+    C.cyl(mat("pouf_contact", (0.55, 0.5, 0.42), 0.9), -1.2, 1.3, 0.0, 0.3, 0.02, segs=28)
+    C.cyl(mat("pouf", (0.55, 0.5, 0.42), 0.9), -1.2, 1.3, 0.02, 0.3, 0.38, r2=0.28, segs=28)
+    D = L.A[3]                                                # L3: a big plant, plinths of shoes, a bag
+    potted(D, -2.3, 0.3, 0.0, r=0.2, h=0.75, n=70, pot=mat("terracotta_contact", (0.55, 0.25, 0.12), 0.7))
+    for x0, x1, h in ((-1.3, -0.6, 0.4), (-0.5, 0.3, 0.22), (1.2, 1.8, 0.55)):
+        plinth_cube(D, x0, x1, 0.12, 0.5, h, (0.92, 0.92, 0.9))
+    for x, h in ((-1.1, 0.4), (-0.8, 0.4), (-0.3, 0.22), (0.05, 0.22)):
+        c = jitter(pick(SHOES)); D.sphere(shoe, x, 0.3, h + 0.035, 0.05, c, (2.6, 1.0, 0.75), segs=14); D.box(shoe, x - 0.12, x + 0.13, 0.26, 0.34, h, h + 0.01, (0.1, 0.08, 0.06))
+    D.box(mat("bag_leather", (0.42, 0.22, 0.1), 0.45), 1.32, 1.68, 0.22, 0.4, 0.55, 0.82, bevel=0.035)
+    return [], ("neutral", 120)
+
+
+def v2_epicerie(L):
+    """(shops7, grocery type) a Brussels épicerie fine, 5.5 m deep: deep green walls over dark wood shelving packed to
+    2.4 m on the left, a diagonal wine rack on the right, a refrigerated deli vitrine of cheeses and charcuterie across
+    the back, worn wood boards, black enamel pendants; a table of produce crates and bread baskets (L1), the wooden till
+    counter on the left and stacked crates (L2); crates of vegetables and a bench of jars in the window (L3)"""
+    A = L.A[0]
+    wall = mat("wall_green", (0.12, 0.26, 0.2), 0.75)
+    v2_shell(A, wall, mat("floor_boards", (0.36, 0.24, 0.14), 0.45, wood=((0.28, 0.18, 0.1), (0.44, 0.3, 0.17))), mat("ceil_cream", (0.84, 0.8, 0.72), 0.8))
+    dark = mat("shelf_darkwood", (0.24, 0.15, 0.08), 0.45, wood=((0.18, 0.11, 0.05), (0.3, 0.19, 0.1)))
+    zs = [0.12, 0.5, 0.86, 1.22, 1.58, 1.94, 2.3]
+    v2_shelves(A, F_left(), 0.3, RD2 - 1.3, zs, 0.36, dark, GOODS + BOTTLE + DELI, "mixed", 0.97, back=dark, plinth=0.1, strip=False)
+    v2_strip(A, F_left(), 0.35, RD2 - 1.35, 0.3, zs[-1] - 0.022, WARM, 90)
+    # the wine rack on the right: a dark wood case of diagonal cells, bottles lying in them
+    fr = F_right(); wine = mat("goods", (1, 1, 1), 0.2, attr=True)
+    lbox(A, fr, dark, 0.4, RD2 - 1.3, 0.0, 0.42, 0.0, 0.1, bevel=0.01); lbox(A, fr, dark, 0.4, RD2 - 1.3, 0.0, 0.42, 2.2, 2.3, bevel=0.01)
+    for e0 in (0.4, RD2 - 1.35): lbox(A, fr, dark, e0, e0 + 0.05, 0.0, 0.42, 0.1, 2.2)       # a hollow case
+    lbox(A, fr, mat("rack_inside", (0.1, 0.07, 0.04), 0.7), 0.45, RD2 - 1.35, 0.0, 0.02, 0.1, 2.2)
+    for u in np.arange(0.5, RD2 - 1.4, 0.12):
+        for j in range(15):
+            if R.random() < 0.85:
+                x, y = fr(u + 0.06, 0.2); A.cyl(wine, x - 0.02, y, 0.18 + j * 0.135, 0.036, 0.36, jitter(pick(BOTTLE)), 12, axis="X")
+    for u in np.linspace(0.45, RD2 - 1.35, 7): lbox(A, fr, dark, u - 0.012, u + 0.012, 0.38, 0.42, 0.1, 2.2)
+    for j in range(16): lbox(A, fr, dark, 0.45, RD2 - 1.35, 0.38, 0.42, 0.1 + j * 0.135, 0.112 + j * 0.135)
+    v2_strip(A, fr, 0.45, RD2 - 1.35, 0.3, 2.3, WARM, 70, emit=4.0)
+    # the deli vitrine across the back: a cream body, a slanted glass front, lit trays of cheese / charcuterie, a back
+    # shelf of oils and jars over it
+    fb = F_back()
+    lbox(A, fb, mat("deli_body", (0.85, 0.82, 0.74), 0.4), -2.55, 2.55, 0.6, 1.4, 0.1, 0.85, bevel=0.012)
+    lbox(A, fb, mat("plinth_dark", (0.12, 0.12, 0.12), 0.5), -2.55, 2.55, 0.62, 1.38, 0.0, 0.1)
+    gl = mat("display_glass", (0.9, 0.95, 0.95), 0.02, trans=1.0); g = mat("goods", (1, 1, 1), 0.45, attr=True)
+    xa, ya = fb(-2.55, 1.4); xb, yb = fb(2.55, 1.15)
+    A.plate(gl, (-2.55, ya, 0.85), (2.55, ya, 0.85), (2.55, yb, 1.3), (-2.55, yb, 1.3), 0.008)
+    A.box(gl, -2.55, 2.55, fb(0, 1.15)[1], fb(0, 0.6)[1], 1.3, 1.31)
+    lbox(A, fb, mat("display_light", (1, 0.92, 0.78), 0.4, emit=5.0), -2.45, 2.45, 0.7, 1.0, 1.295, 1.3)
+    lbox(A, fb, mat("tray_steel", (0.75, 0.75, 0.74), 0.25, 1.0), -2.5, 2.5, 0.65, 1.35, 0.85, 0.86)
+    u = -2.45
+    while u < 2.3:
+        x, y = fb(u + 0.12, 1.0); c = jitter(pick(DELI))
+        if R.random() < 0.5: A.cyl(g, x, y, 0.86, 0.11, 0.08, c, 24); A.box(g, x - 0.11, x, y - 0.11, y, 0.86, 0.94, lighter(c, 0.2))
+        else: A.sphere(g, x, y, 0.9, 0.05, c, (2.2, 1.0, 0.8), segs=14)
+        u += 0.26
+    v2_shelves(A, fb, -2.55, 2.55, [1.6, 1.95, 2.3], 0.25, dark, BOTTLE + DELI, "bottles", 0.9, strip=False, wmin=0.08, wmax=0.12)
+    v2_strip(A, fb, -2.5, 2.5, 0.2, 2.278, WARM, 60, emit=4.0)
+    globes = []
+    C = L.put(3.0)                                            # L1: a produce table
+    C.box(dark, -1.4, 0.9, 2.7, 3.3, 0.7, 0.75, bevel=0.01)
+    for x in (-1.35, 0.85):
+        for y in (2.75, 3.25): C.box(mat("table_leg_contact", (0.24, 0.15, 0.08), 0.45), x - 0.03, x + 0.03, y - 0.03, y + 0.03, 0, 0.7)
+    crate = mat("crate_wood", (0.5, 0.36, 0.2), 0.7, wood=((0.44, 0.3, 0.16), (0.58, 0.43, 0.25)))
+    FRUIT = [(0.8, 0.35, 0.03), (0.75, 0.08, 0.05), (0.85, 0.75, 0.1), (0.35, 0.6, 0.12), (0.2, 0.45, 0.1), (0.45, 0.1, 0.25)]
+    for k, x0 in enumerate((-1.35, -0.75, -0.15)):
+        C.box(crate, x0, x0 + 0.55, 2.75, 3.15, 0.75, 0.9, bevel=0.008); c = jitter(pick(FRUIT), 0.05)
+        for i in range(5):
+            for j in range(3): C.sphere(g, x0 + 0.07 + i * 0.1, 2.83 + j * 0.12, 0.92, 0.045, jitter(c, 0.08), segs=10)
+    wicker_basket(C, 0.55, 2.95, 0.75, r=0.18, h=0.15)
+    for x in (-1.0, 0.4): globes.append(pendant_dome(C, x, 3.0, 1.85, r=0.22, name="enamel_black"))
+    C = L.put(1.35)                                           # L2: the till counter on the left, stacked crates
+    v2_counter(C, -2.75, -1.25, 1.1, 1.65, 0.92, body=(0.3, 0.19, 0.1), top=(0.42, 0.28, 0.15), name="epicounter")
+    v2_till(C, -1.8, 1.4, 0.92)
+    for k in range(4): C.box(mat("paper_bag", (0.78, 0.66, 0.48), 0.8), -2.6, -2.3, 1.25, 1.5, 0.92 + k * 0.012, 0.93 + k * 0.012)
+    C.box(mat("crate_contact", (0.5, 0.36, 0.2), 0.7), 1.6, 2.4, 1.15, 1.65, 0.0, 0.02)
+    for j in range(3):
+        C.box(crate, 1.6, 2.4, 1.15, 1.65, 0.02 + j * 0.3, 0.3 + j * 0.3, bevel=0.008)
+    for i in range(6):
+        for k in range(4): C.sphere(g, 1.7 + i * 0.13, 1.25 + k * 0.12, 0.95, 0.05, jitter((0.72, 0.5, 0.2), 0.12), segs=10)
+    globes.append(pendant_dome(C, -2.0, 1.35, 1.95, r=0.22, name="enamel_black"))
+    D = L.A[3]                                                # L3: crates of vegetables, a bench of jars
+    for x0, h in ((-2.7, 0.0), (-2.1, 0.0), (-2.4, 0.3)):
+        if h == 0: D.box(mat("crate_contact", (0.5, 0.36, 0.2), 0.7), x0, x0 + 0.55, 0.1, 0.5, 0.0, 0.02)
+        D.box(crate, x0, x0 + 0.55, 0.1, 0.5, h + (0.02 if h == 0 else 0), h + 0.28, bevel=0.008); c = jitter(pick(FRUIT), 0.05)
+        for i in range(5):
+            for j in range(3): D.sphere(g, x0 + 0.07 + i * 0.1, 0.18 + j * 0.12, h + 0.3, 0.045, jitter(c, 0.08), segs=10)
+    for x in (0.6, 1.9): D.box(mat("bench_leg_contact", (0.24, 0.15, 0.08), 0.45), x - 0.03, x + 0.03, 0.15, 0.45, 0, 0.45)
+    D.box(dark, 0.5, 2.0, 0.12, 0.48, 0.45, 0.5, bevel=0.008)
+    for k in range(9): product(D, F_front(0.45), "jars" if k % 3 else "bottles", 0.58 + k * 0.155, 0.13, 0.02, 0.3, 0.5, 0.3, DELI + BOTTLE)
+    return globes, ("warm", 150)
+
+
+def v2_bank(L):
+    """(shops7, office type) a bank branch, 4.5 m deep: white walls, large light grey floor tiles, an oak-slatted back
+    wall with two cash machines set into it and a glass-walled meeting room on the right, linear slot lights; a standing
+    reception pod with a screen and two stools (L1), a round table with two lounge chairs and a leaflet stand (L2); a
+    plain roll-up banner, a bench and a plant in the window (L3)"""
+    A = L.A[0]
+    wall = mat("wall_offwhite", (0.84, 0.83, 0.8), 0.6)
+    v2_shell(A, wall, mat("floor_bigtile", (0.5, 0.48, 0.45), 0.25, tiles=(0.8, (0.52, 0.5, 0.47), (0.48, 0.46, 0.43), (0.36, 0.35, 0.34))), mat("ceil_white", (0.9, 0.9, 0.88), 0.8))
+    fl = F_left()                                              # a navy dado and a large abstract print on the left wall
+    lbox(A, fl, mat("dado_navy", (0.08, 0.13, 0.25), 0.6), 0.0, RD2, 0.0, 0.012, 0.0, 1.0)
+    lbox(A, fl, mat("frame_black", (0.04, 0.04, 0.04), 0.4), 1.2, 2.8, 0.012, 0.03, 1.3, 2.3)
+    for k, c in enumerate(((0.75, 0.55, 0.3), (0.2, 0.4, 0.45), (0.85, 0.82, 0.75))):
+        lbox(A, fl, mat(f"print_{k}", c, 0.7), 1.25 + k * 0.5, 1.25 + k * 0.5 + 0.5, 0.03, 0.033, 1.35, 2.25)
+    fb = F_back(); oak = mat("oak_slat", (0.66, 0.5, 0.32), 0.5)
+    lbox(A, fb, mat("slat_shadow", (0.2, 0.16, 0.12), 0.8), -RW / 2, 0.8, 0.0, 0.01, 0.0, RH)
+    for u in np.arange(-2.97, 0.78, 0.08): lbox(A, fb, oak, u, u + 0.05, 0.01, 0.04, 0.0, RH, bevel=0.004)
+    atm = mat("atm_body", (0.22, 0.23, 0.25), 0.35, 0.5); scr = mat("atm_screen", (0.25, 0.45, 0.6), 0.2, emit=2.2, ecol=(0.4, 0.6, 0.85))
+    for x in (-2.0, -0.9):                                     # the cash machines in a grey surround
+        lbox(A, fb, mat("atm_surround", (0.35, 0.36, 0.38), 0.4), x - 0.42, x + 0.42, 0.0, 0.06, 0.0, 2.1, bevel=0.01)
+        lbox(A, fb, atm, x - 0.3, x + 0.3, 0.06, 0.3, 0.85, 1.05, bevel=0.01)
+        lbox(A, fb, atm, x - 0.3, x + 0.3, 0.06, 0.12, 1.05, 1.75, bevel=0.01)
+        lbox(A, fb, scr, x - 0.17, x + 0.17, 0.12, 0.125, 1.3, 1.55)
+        lbox(A, fb, mat("atm_keys", (0.6, 0.6, 0.62), 0.3, 0.6), x - 0.14, x + 0.14, 0.2, 0.28, 1.05, 1.07)
+        lbox(A, fb, mat("atm_light", (0.9, 0.95, 1.0), 0.4, emit=4.0), x - 0.36, x + 0.36, 0.06, 0.07, 1.95, 2.0)
+    # the meeting room: a glass partition with a frosted band, a desk and chairs inside, a door
+    gx0, gy = 0.9, RD2 - 1.6
+    gl = mat("partition_glass", (0.9, 0.95, 0.95), 0.03, trans=1.0); fro = mat("frosted", (0.92, 0.94, 0.95), 0.4)
+    alu = mat("alu", (0.75, 0.76, 0.77), 0.3, 1.0)
+    A.box(gl, gx0, RW / 2, gy, gy + 0.012, 0.0, 2.6); A.box(gl, gx0, gx0 + 0.012, gy, RD2, 0.0, 2.6)
+    A.box(fro, gx0, RW / 2, gy - 0.002, gy, 1.0, 1.5)
+    for x in np.linspace(gx0, RW / 2, 4): A.box(alu, x - 0.02, x + 0.02, gy - 0.02, gy + 0.03, 0.0, 2.6)
+    A.box(alu, gx0, RW / 2, gy - 0.02, gy + 0.03, 2.6, RH)
+    A.box(mat("desk", (0.86, 0.86, 0.85), 0.4), 1.4, 2.8, gy + 0.5, gy + 1.2, 0.72, 0.75, bevel=0.006)
+    for x in (1.45, 2.75): A.box(mat("desk_leg", (0.7, 0.7, 0.7), 0.3, 0.6), x - 0.02, x + 0.02, gy + 0.55, gy + 1.15, 0, 0.72)
+    A.box(mat("till", (0.08, 0.08, 0.09), 0.3, 0.3), 1.9, 2.4, gy + 1.0, gy + 1.03, 0.86, 1.15)
+    A.box(mat("screen_on", (0.3, 0.5, 0.7), 0.2, emit=2.5), 1.92, 2.38, gy + 0.995, gy + 1.0, 0.88, 1.13)
+    for x in (1.7, 2.5): office_chair(A, x, gy + 0.3, 0.0, (0.3, 0.32, 0.36))
+    A.box(mat("art_blue", (0.35, 0.5, 0.65), 0.6), RW / 2 - 0.02, RW / 2, gy + 0.3, gy + 1.3, 1.3, 2.0)
+    # linear slot lights + a panel in the meeting room
+    for x in (-1.8, -0.4, 1.0):
+        A.box(mat("slot_lit", NEUTRAL, 0.4, emit=6.0, ecol=NEUTRAL), x - 0.03, x + 0.03, 0.5, RD2 - 0.4 if x < 0.8 else gy - 0.1, RH - 0.01, RH)
+        v2_wash((x, (0.5 + (RD2 - 0.4 if x < 0.8 else gy - 0.1)) / 2, RH - 0.02), (0.06, (RD2 - 0.9 if x < 0.8 else gy - 0.6)), 150, NEUTRAL)
+    v2_panels(A, [(2.0, gy + 0.8)], NEUTRAL, 60, 0.6)
+    globes = []
+    C = L.put(2.5)                                            # L1: a reception pod, two stools
+    C.box(mat("pod_kick_contact", (0.15, 0.15, 0.15), 0.5), -0.7, 0.3, 2.45, 2.85, 0, 0.08)
+    C.box(mat("pod_white", (0.92, 0.92, 0.9), 0.35), -0.75, 0.35, 2.4, 2.9, 0.08, 1.05, bevel=0.03)
+    C.box(oak, -0.8, 0.4, 2.35, 2.95, 1.05, 1.09, bevel=0.01)
+    C.box(mat("till", (0.08, 0.08, 0.09), 0.3, 0.3), -0.45, 0.05, 2.75, 2.78, 1.15, 1.45, bevel=0.006)
+    C.box(mat("screen_on", (0.3, 0.5, 0.7), 0.2, emit=2.5), -0.43, 0.03, 2.745, 2.75, 1.17, 1.43)
+    for x in (-0.5, 0.1):
+        C.cyl(mat("stool_base_contact", (0.6, 0.6, 0.6), 0.2, 1.0), x, 2.15, 0, 0.2, 0.02, segs=20)
+        C.cyl(mat("chrome", (0.8, 0.8, 0.8), 0.15, 1.0), x, 2.15, 0.02, 0.025, 0.62, segs=10)
+        C.cyl(mat("stool_seat", (0.25, 0.3, 0.38), 0.7), x, 2.15, 0.64, 0.18, 0.06, segs=20)
+    C = L.put(1.2)                                            # L2: a round table, two lounge chairs, a leaflet stand
+    up = mat("lounge_teal", (0.2, 0.36, 0.4), 0.85)
+    C.cyl(mat("table_base_contact", (0.06, 0.06, 0.06), 0.3, 0.6), 1.5, 1.2, 0.0, 0.2, 0.02, segs=24); C.cyl(mat("steel_black", (0.06, 0.06, 0.06), 0.3, 0.6), 1.5, 1.2, 0.02, 0.03, 0.68, segs=10)
+    C.cyl(oak, 1.5, 1.2, 0.7, 0.38, 0.03, segs=32)
+    for x, rot in ((0.85, -1), (2.15, 1)):
+        C.box(up, x - 0.3, x + 0.3, 0.95, 1.45, 0.2, 0.44, bevel=0.06)
+        bx = x + rot * 0.24; C.box(up, bx - 0.08, bx + 0.08, 0.95, 1.45, 0.44, 0.85, bevel=0.05)
+        for dx in (-0.25, 0.25):
+            for dy in (1.0, 1.4): C.cyl(mat("lounge_leg", (0.35, 0.24, 0.13), 0.4), x + dx, dy, 0.0, 0.018, 0.2, r2=0.012, segs=8)
+    st = mat("steel", (0.75, 0.75, 0.74), 0.2, 1.0); g = mat("goods", (1, 1, 1), 0.45, attr=True)
+    C.box(mat("stand_contact", (0.2, 0.2, 0.2), 0.3, 0.6), -2.4, -1.9, 1.1, 1.4, 0, 0.02)
+    C.box(st, -2.4, -1.9, 1.22, 1.28, 0.02, 1.35, bevel=0.006)
+    for k in range(4):
+        z = 0.5 + k * 0.22
+        C.box(st, -2.4, -1.9, 1.12, 1.22, z, z + 0.01)
+        for j in range(3): C.box(g, -2.38 + j * 0.16, -2.24 + j * 0.16, 1.15 + 0.01 * j, 1.16 + 0.01 * j, z + 0.01, z + 0.2, jitter(pick([(0.2, 0.35, 0.6), (0.9, 0.9, 0.88), (0.3, 0.55, 0.45)])))
+    D = L.A[3]                                                # L3: a plain roll-up banner, a bench, a plant
+    D.box(mat("banner_base_contact", (0.7, 0.7, 0.72), 0.3, 0.6), -2.55, -1.75, 0.22, 0.4, 0.0, 0.08)
+    D.box(mat("banner_white", (0.92, 0.92, 0.9), 0.5), -2.5, -1.8, 0.3, 0.31, 0.08, 1.42)
+    D.box(mat("banner_blue", (0.12, 0.25, 0.5), 0.5), -2.5, -1.8, 0.298, 0.3, 0.75, 1.42)
+    D.box(mat("banner_teal", (0.2, 0.55, 0.55), 0.5), -2.5, -1.8, 0.297, 0.298, 0.45, 0.62)
+    D.box(oak, -1.2, 0.4, 0.15, 0.5, 0.4, 0.45, bevel=0.008)
+    for x in (-1.1, 0.3): D.box(mat("bench_leg_contact", (0.06, 0.06, 0.06), 0.3, 0.6), x - 0.025, x + 0.025, 0.18, 0.47, 0, 0.4)
+    potted(D, 1.8, 0.3, 0.0, r=0.18, h=0.8, n=60, pot=mat("pot_white_contact", (0.88, 0.88, 0.86), 0.35))
+    return globes, ("neutral", 120)
+
+
+def barber_chair(C, x, y, rot):
+    """a heavy barber's chair: a round chrome base (floor-flush: _contact), a column, an oxblood leather seat with a
+    deep back and a head rest, chrome arms, a foot rest"""
+    lea = mat("barber_leather", (0.28, 0.06, 0.05), 0.4); chrome = mat("chrome", (0.8, 0.8, 0.8), 0.15, 1.0)
+    C.cyl(mat("salon_base_contact", (0.8, 0.8, 0.8), 0.15, 1.0), x, y, 0.0, 0.3, 0.03, segs=28)
+    C.cyl(chrome, x, y, 0.03, 0.07, 0.38, segs=16)
+    C.box(lea, x - 0.28, x + 0.28, y - 0.28, y + 0.28, 0.41, 0.58, bevel=0.06)
+    c, s = math.cos(rot), math.sin(rot)
+    bx, by = x - 0.27 * s, y + 0.27 * c
+    hw, hd = 0.26 * abs(c) + 0.06 * abs(s), 0.26 * abs(s) + 0.06 * abs(c)
+    C.box(lea, bx - hw, bx + hw, by - hd, by + hd, 0.58, 1.2, bevel=0.06)
+    C.box(lea, bx - hw * 0.5 - 0.03 * abs(s), bx + hw * 0.5 + 0.03 * abs(s), by - hd * 0.5 - 0.03 * abs(c), by + hd * 0.5 + 0.03 * abs(c), 1.24, 1.38, bevel=0.04)
+    for k in (-1, 1):
+        ax, ay = x + k * 0.3 * c, y + k * 0.3 * s
+        C.box(chrome, ax - 0.03 - 0.2 * abs(s), ax + 0.03 + 0.2 * abs(s), ay - 0.03 - 0.2 * abs(c), ay + 0.03 + 0.2 * abs(c), 0.66, 0.7, bevel=0.015)
+    fx, fy = x + 0.45 * s, y - 0.45 * c
+    C.box(chrome, fx - 0.18, fx + 0.18, fy - 0.08, fy + 0.08, 0.14, 0.17, bevel=0.01)
+
+
+def v2_barber(L):
+    """(shops7, salon type) a barbershop, 3.5 m deep: white metro tiles to 1.4 m under deep teal walls, a black and white
+    checker floor, ONE long mirror down the left wall over a walnut shelf of products, a leather waiting bench and framed
+    prints on the right, a walnut shelf unit and a basin at the back; two barber chairs (L1, L2) under black dome lamps;
+    a stool with a stack of magazines, a shelf of products and a plant in the window (L3)"""
+    A = L.A[0]
+    wall = mat("wall_teal", (0.1, 0.28, 0.3), 0.7)
+    v2_shell(A, wall, mat("floor_checker", (0.5, 0.5, 0.5), 0.3, checker=(0.3, (0.06, 0.06, 0.06), (0.82, 0.81, 0.78))), mat("ceil_white", (0.9, 0.9, 0.88), 0.8))
+    for fr, a0, a1, al in ((F_left(), 0.0, RD2, "y"), (F_right(), 0.0, RD2, "y"), (F_back(), -RW / 2, RW / 2, "x")):
+        lbox(A, fr, mat(f"tile_metro_{al}", (0.9, 0.9, 0.88), 0.25, metro=(0.075, (0.92, 0.92, 0.9), (0.88, 0.88, 0.86), (0.6, 0.6, 0.58), al)), a0, a1, 0.0, 0.015, 0.0, 1.4)
+        lbox(A, fr, mat("tile_cap", (0.1, 0.1, 0.1), 0.3), a0, a1, 0.0, 0.03, 1.4, 1.44, bevel=0.008)
+    wal = mat("walnut", (0.26, 0.15, 0.08), 0.4, wood=((0.2, 0.11, 0.05), (0.34, 0.2, 0.1)))
+    mirror = mat("mirror", (0.8, 0.8, 0.8), 0.05, 1.0); g = mat("goods", (1, 1, 1), 0.4, attr=True)
+    fl = F_left()
+    lbox(A, fl, wal, 0.3, RD2 - 0.3, 0.0, 0.04, 1.0, 2.3, bevel=0.01); lbox(A, fl, mirror, 0.36, RD2 - 0.36, 0.04, 0.045, 1.06, 2.24)
+    lbox(A, fl, wal, 0.3, RD2 - 0.3, 0.0, 0.3, 0.86, 0.92, bevel=0.008)
+    for u in np.arange(0.4, RD2 - 0.45, 0.13):
+        if R.random() < 0.7: product(A, fl, pick(["pump", "bottles", "jars"]), u, 0.09, 0.1, 0.24, 0.92, 0.22, PHARMA + [(0.08, 0.08, 0.08), (0.75, 0.6, 0.3), (0.35, 0.18, 0.06)])
+    v2_strip(A, fl, 0.35, RD2 - 0.35, 0.12, 2.38, WARM, 100)
+    lbox(A, fl, wal, 0.3, RD2 - 0.3, 0.0, 0.16, 2.38, 2.44, bevel=0.008)
+    fr = F_right(); lea = mat("barber_leather", (0.28, 0.06, 0.05), 0.4)
+    lbox(A, fr, wal, 0.5, 2.6, 0.0, 0.5, 0.0, 0.42, bevel=0.01)
+    lbox(A, fr, lea, 0.52, 2.58, 0.02, 0.5, 0.42, 0.52, bevel=0.04); lbox(A, fr, lea, 0.52, 2.58, 0.0, 0.12, 0.52, 1.0, bevel=0.04)
+    for u in (0.8, 1.55, 2.3):
+        lbox(A, fr, mat("frame_black", (0.04, 0.04, 0.04), 0.4), u - 0.25, u + 0.25, 0.0, 0.02, 1.6, 2.2)
+        lbox(A, fr, g, u - 0.21, u + 0.21, 0.02, 0.023, 1.64, 2.16, jitter(pick([(0.6, 0.55, 0.45), (0.3, 0.28, 0.25), (0.75, 0.7, 0.6)])))
+    for u in (0.4, 0.7): x, y = fr(u, 0.05); A.cyl(mat("brass", (0.6, 0.45, 0.2), 0.3, 1.0), x, y, 1.62, 0.012, 0.06)  # coat hooks
+    fb = F_back()
+    v2_shelves(A, fb, -2.8, -0.4, [0.5, 0.9, 1.3, 1.7, 2.1], 0.3, wal, PHARMA + BOTTLE, "pump", 0.85, back=wal, strip=False, wmin=0.08, wmax=0.11)
+    lbox(A, fb, wal, 0.4, 2.0, 0.0, 0.5, 0.0, 0.85, bevel=0.01)
+    lbox(A, fb, mat("basin_white", (0.9, 0.9, 0.88), 0.2), 0.8, 1.6, 0.02, 0.48, 0.85, 0.97, bevel=0.04)
+    A.cyl(mat("chrome", (0.8, 0.8, 0.8), 0.15, 1.0), 1.2, RD2 - 0.06, 0.97, 0.015, 0.25, segs=10)
+    lbox(A, fb, mat("frame_black", (0.04, 0.04, 0.04), 0.4), 0.75, 1.65, 0.0, 0.02, 1.25, 2.05)       # a framed print
+    lbox(A, fb, mat("print_cream", (0.82, 0.76, 0.62), 0.7), 0.79, 1.61, 0.02, 0.023, 1.29, 2.01)
+    lbox(A, fb, mat("print_red", (0.5, 0.1, 0.08), 0.7), 0.95, 1.45, 0.023, 0.025, 1.5, 1.85)
+    v2_strip(A, fb, -2.8, -0.4, 0.2, 2.25, WARM, 60, emit=4.0)
+    v2_downlights(A, [(x, y) for x in (-0.3, 1.8) for y in (0.8, 2.6)], WARM, 80)
+    globes = []
+    for y in (2.3, 1.1):                                      # L1 (2.3 m), L2 (1.1 m): a barber chair each, a dome lamp
+        C = L.put(y)
+        barber_chair(C, -RW / 2 + 0.95, y, -math.pi / 2)
+        globes.append(pendant_dome(C, -RW / 2 + 0.95, y, 2.05, r=0.2, name="dome_black"))
+    C = L.put(2.3)
+    tro = mat("trolley_black", (0.06, 0.06, 0.06), 0.4)       # a trolley by the back chair
+    for k in range(3): C.box(tro, -1.45, -1.1, 2.6, 2.95, 0.12 + k * 0.3, 0.14 + k * 0.3, bevel=0.01)
+    for dx in (-1.43, -1.12): C.cyl(tro, dx, 2.78, 0.06, 0.012, 0.74, segs=8); C.sphere(mat("caster_contact", (0.06, 0.06, 0.06), 0.4), dx, 2.78, 0.03, 0.03, segs=8)
+    D = L.A[3]                                                # L3: a stool with magazines, a product shelf, a plant
+    D.cyl(mat("stool_contact", (0.3, 0.18, 0.09), 0.4), -0.5, 0.3, 0.0, 0.18, 0.02, segs=20)
+    D.cyl(wal, -0.5, 0.3, 0.02, 0.03, 0.42, segs=10); D.cyl(wal, -0.5, 0.3, 0.44, 0.18, 0.04, segs=24)
+    for k in range(4): D.box(g, -0.62 + k * 0.01, -0.36 + k * 0.01, 0.2, 0.4, 0.48 + k * 0.008, 0.486 + k * 0.008, jitter(pick(GOODS)))
+    for z in (0.4, 0.8):
+        D.box(wal, 0.4, 1.8, 0.15, 0.42, z - 0.03, z, bevel=0.006)
+        for k in range(8): product(D, F_front(0.4), "pump" if k % 3 == 0 else pick(["bottles", "jars"]), 0.45 + k * 0.17, 0.09, 0.02, 0.24, z, 0.3, PHARMA + [(0.08, 0.08, 0.08), (0.75, 0.6, 0.3)])
+    for x in (0.42, 1.78): D.box(mat("ledge_walnut_contact", (0.26, 0.15, 0.08), 0.4), x - 0.02, x + 0.02, 0.15, 0.42, 0, 0.8)
+    potted(D, 2.4, 0.3, 0.0, r=0.16, h=0.7, n=55, pot=mat("pot_dark_contact", (0.1, 0.1, 0.1), 0.6))
+    return globes, ("warm", 110)
+
+
+def v2_bookshop(L):
+    """(shops7, generic shop type) a bookshop, 4.5 m deep: teal-painted bookcases to the cornice on three walls, packed
+    spines, a rolling library ladder on the left, a dark herringbone-look oak floor, brass picture lights over the cases;
+    a table of stacked and face-up books (L1), a low two-sided case and a reading chair (L2); books on stepped boxes and
+    easels, a stack on the floor and a lamp in the window (L3)"""
+    A = L.A[0]
+    wall = mat("wall_warmwhite", (0.86, 0.84, 0.8), 0.7)
+    v2_shell(A, wall, mat("floor_darkoak", (0.3, 0.2, 0.12), 0.4, wood=((0.22, 0.14, 0.08), (0.36, 0.24, 0.14))), mat("ceil_cream", (0.84, 0.8, 0.72), 0.8))
+    teal = mat("case_teal", (0.12, 0.3, 0.32), 0.45)
+    zs = [0.12, 0.48, 0.84, 1.2, 1.56, 1.92, 2.28, 2.64]
+    for fr, a0, a1 in ((F_left(), 0.3, RD2 - 0.3), (F_right(), 0.3, RD2 - 0.3), (F_back(), -2.7, 2.7)):
+        v2_shelves(A, fr, a0, a1, zs, 0.3, teal, BOOKS, "books", 0.95, back=teal, plinth=0.1, strip=False)
+        lbox(A, fr, teal, a0 - 0.03, a1 + 0.03, 0.0, 0.36, 2.68, 2.8, bevel=0.012)               # the cornice
+        for u in np.linspace(a0 + 0.5, a1 - 0.5, max(2, int((a1 - a0) / 1.2))):                  # brass picture lights
+            x, y = fr(u, 0.38); A.cyl(mat("brass", (0.6, 0.45, 0.2), 0.3, 1.0), x, y, 2.6, 0.03, 0.4, axis="X" if fr(0, 0)[1] == fr(1, 0)[1] else "Y")
+        v2_strip(A, fr, a0 + 0.05, a1 - 0.05, 0.3, 2.675, WARM, 90, emit=5.0)
+        v2_strip(A, fr, a0 + 0.05, a1 - 0.05, 0.28, zs[3] - 0.022, WARM, 40, emit=3.0)
+    # the library ladder on its rail (left wall)
+    fl = F_left(); oak = mat("ladder_oak", (0.45, 0.3, 0.16), 0.45)
+    lbox(A, fl, mat("brass", (0.6, 0.45, 0.2), 0.3, 1.0), 0.3, RD2 - 0.3, 0.32, 0.34, 2.5, 2.52)
+    for u in (1.6, 2.05):
+        b = bmesh.new(); bmesh.ops.create_cube(b, size=1.0); bmesh.ops.scale(b, vec=(0.04, 0.05, 2.62), verts=b.verts)
+        bmesh.ops.rotate(b, verts=b.verts, matrix=Matrix.Rotation(-0.25, 3, "Y")); x, y = fl(u, 0.0)
+        bmesh.ops.translate(b, vec=(-RW / 2 + 0.33 + 1.3 * math.sin(0.25), y, 1.27), verts=b.verts); A.merge(oak, b, (1, 1, 1))
+    for k in range(8):
+        z = 0.2 + k * 0.3; d = 0.33 + (2.52 - z) * math.tan(0.25)
+        lbox(A, fl, oak, 1.6, 2.05, d - 0.02, d + 0.02, z, z + 0.03)
+    v2_downlights(A, [(x, y) for x in (-1.3, 1.3) for y in (1.0, 2.8)], WARM, 70)
+    globes = []
+    C = L.put(2.5)                                            # L1: a table of books
+    tb = mat("table_oak", (0.4, 0.26, 0.13), 0.45, wood=((0.34, 0.21, 0.1), (0.48, 0.32, 0.16)))
+    C.box(tb, -1.2, 1.2, 2.2, 2.85, 0.74, 0.79, bevel=0.01)
+    for x in (-1.14, 1.14):
+        for y in (2.26, 2.79): C.box(mat("table_leg_contact", (0.34, 0.21, 0.1), 0.45), x - 0.03, x + 0.03, y - 0.03, y + 0.03, 0, 0.74)
+    g = mat("goods", (1, 1, 1), 0.45, attr=True)
+    for k in range(7):
+        x = -1.1 + k * 0.32
+        if k % 3 == 1:                                         # a book face up on a small stand
+            c = jitter(pick(BOOKS)); C.plate(g, (x, 2.55, 0.79), (x + 0.22, 2.55, 0.79), (x + 0.22, 2.62, 1.08), (x, 2.62, 1.08), 0.025, c)
+        else:
+            for j in range(R.randint(3, 7)): C.box(g, x, x + 0.2, 2.35, 2.65, 0.79 + j * 0.028, 0.815 + j * 0.028, jitter(pick(BOOKS)), bevel=0.003)
+    globes.append(pendant_dome(C, 0.0, 2.5, 1.9, col=(0.55, 0.42, 0.18), r=0.22, name="dome_brass"))
+    C = L.put(1.3)                                            # L2: a low two-sided case, a reading chair
+    C.box(mat("case_kick_contact", (0.08, 0.18, 0.2), 0.45), -2.3, -0.7, 1.1, 1.5, 0, 0.08)
+    C.box(teal, -2.3, -0.7, 1.07, 1.53, 0.08, 0.1)
+    C.box(teal, -2.3, -0.7, 1.29, 1.31, 0.1, 0.9)                                         # the spine
+    v2_shelves(C, F_front(1.29), -2.3, -0.7, [0.122, 0.5, 0.88], 0.22, teal, BOOKS, "books", 0.9, strip=False)
+    v2_shelves(C, F_rear(1.31), -2.3, -0.7, [0.122, 0.5, 0.88], 0.22, teal, BOOKS, "books", 0.7, strip=False)
+    up = mat("armchair_rust", (0.45, 0.18, 0.08), 0.8)
+    C.box(up, 1.2, 1.9, 1.0, 1.65, 0.12, 0.45, bevel=0.06); C.box(up, 1.2, 1.9, 1.5, 1.7, 0.45, 1.0, bevel=0.06)
+    for x in (1.2, 1.78): C.box(up, x, x + 0.12, 1.0, 1.65, 0.45, 0.66, bevel=0.04)
+    for x in (1.25, 1.85):
+        for y in (1.05, 1.6): C.cyl(mat("chair_leg_contact", (0.2, 0.12, 0.06), 0.4), x, y, 0.0, 0.02, 0.12, segs=8)
+    D = L.A[3]                                                # L3: stepped boxes of books, easels, a lamp
+    for k, (y0, h) in enumerate(((0.1, 0.22), (0.25, 0.45), (0.4, 0.68))):
+        D.box(tb, -2.6, -0.8, y0, 0.55 if k == 2 else y0 + 0.2, 0.02, h, bevel=0.008)
+        x = -2.5
+        while x < -1.0:
+            c = jitter(pick(BOOKS)); D.plate(g, (x, y0 + 0.06, h), (x + 0.2, y0 + 0.06, h), (x + 0.2, y0 + 0.1, h + 0.27), (x, y0 + 0.1, h + 0.27), 0.022, c)
+            x += 0.3
+    D.box(mat("step_contact", (0.4, 0.26, 0.13), 0.45), -2.6, -0.8, 0.1, 0.55, 0.0, 0.02)
+    D.box(mat("stack_contact", (0.45, 0.06, 0.06), 0.45), 0.2, 0.45, 0.15, 0.45, 0.0, 0.03)
+    for j in range(1, 9): D.box(g, 0.2 + (j % 2) * 0.02, 0.45 + (j % 2) * 0.02, 0.15, 0.45, j * 0.035 - 0.005, j * 0.035 + 0.025, jitter(pick(BOOKS)), bevel=0.003)
+    for x in (1.2, 2.0):                                      # easels with a book each
+        D.box(mat("easel_contact", (0.3, 0.2, 0.1), 0.5), x - 0.15, x + 0.15, 0.25, 0.4, 0, 0.015)
+        D.plate(tb, (x - 0.02, 0.38, 0.015), (x + 0.02, 0.38, 0.015), (x + 0.02, 0.3, 0.8), (x - 0.02, 0.3, 0.8), 0.02)
+        D.box(tb, x - 0.16, x + 0.16, 0.28, 0.34, 0.42, 0.45); c = jitter(pick(BOOKS))
+        D.plate(g, (x - 0.13, 0.31, 0.45), (x + 0.13, 0.31, 0.45), (x + 0.13, 0.33, 0.82), (x - 0.13, 0.33, 0.82), -0.022, c)
+    return globes, ("warm", 120)
 
 
 V2_BUILD = {"cafe": v2_cafe, "brasserie": v2_brasserie, "bakery": v2_bakery, "pharmacy": v2_pharmacy, "boutique": v2_boutique,
-            "grocery": v2_grocery, "office": v2_office, "salon": v2_salon, "shop": v2_shop}
+            "grocery": v2_grocery, "office": v2_office, "salon": v2_salon, "shop": v2_shop,
+            "patisserie": v2_patisserie, "officine": v2_officine, "concept": v2_concept, "epicerie": v2_epicerie,
+            "bank": v2_bank, "barber": v2_barber, "bookshop": v2_bookshop}
+
+
+def room_bounds_check(variant, objs):
+    """(shops7) every v2 mesh stays inside the room box (+ the shell's 0.2 m overlap). Why: Acc.cyl along X / Y is
+    CENTRED on its position (along Z it starts there); the café's foot rail and the boutique's wall rails were placed as
+    if they started there, so they ran 2 m into the wall / 1.5 m out through the glass (a stray line across the window
+    near the camera). A piece outside the box stops the bake."""
+    lim = ((-RW / 2 - 0.21, RW / 2 + 0.21), (-0.21, RD2 + 0.21), (-0.11, RH + 0.11))
+    bad = []
+    for layer in objs:
+        for o in layer:
+            co = np.empty(len(o.data.vertices) * 3); o.data.vertices.foreach_get("co", co); co = co.reshape(-1, 3)
+            for a in range(3):
+                lo, hi = float(co[:, a].min()), float(co[:, a].max())
+                if lo < lim[a][0] or hi > lim[a][1]: bad.append(f"{o.name} {'xyz'[a]} {lo:.2f}..{hi:.2f} outside {lim[a][0]:.2f}..{lim[a][1]:.2f}")
+    if bad: sys.exit(f"v2 {variant}: pieces outside the room box (shops7 room_bounds_check):\n  " + "\n  ".join(bad))
 
 
 def v2_render(variant, light):
@@ -1690,6 +2330,7 @@ def v2_render(variant, light):
     res = V2_BUILD[variant](L)
     globes, fill = (res, ("warm", 240)) if isinstance(res, list) else res      # (the café / brasserie: globes + the warm fills)
     objs = [L.A[k].build(f"{variant}_L{k}", True) for k in range(4)]
+    room_bounds_check(variant, objs)
     v2_front_occluder()
     v2_lights(globes, light, fill)
     camera()
@@ -1724,7 +2365,7 @@ if V2:
         for li in V2_LIGHTS:
             if V2_LIGHT_ONLY and li not in V2_LIGHT_ONLY: continue
             v2_render(v, li)
-    print(f"v2 done {time.time() - T0:.0f}s: next python tools/shops/pack_v2.py && node tools/shops/encode_array.mjs textures/shops/_work/v2/slices textures/shops/interiors_v2.ktx2")
+    print(f"v2 done {time.time() - T0:.0f}s: next stickers.py, pack_v2.py, v2_lum.py, then encode_array.mjs per array (this file's header)")
     sys.exit(0)
 
 os.makedirs(os.path.join(OUT, "_work"), exist_ok=True)
