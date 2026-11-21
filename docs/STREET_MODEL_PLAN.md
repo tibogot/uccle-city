@@ -376,3 +376,20 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
 - **The stuck vehicles left are not loops:** queues standing 36 m and more before a red light behind a jam, and
   priority-to-the-right waits at D7. The network is oversaturated at 8 h round Ch. d'Alsemberg. See the report.
 - **Rows the sim touches:** meta, trafparksim and roadsim pass.
+
+**Round 5 (2026-11-21): what the trafmix row measures as "stuck".**
+- **New definition:** a service vehicle is stuck when it and the queue ahead of it (its wait-for chain) have not moved
+  1 m for 60 s, outside a planned stop. The sim's removal timer is now reported as info only.
+- **Stuck count:**
+
+  | seed | model lanes | `?streetlanes=old` |
+  |---|---|---|
+  | 7 | 4 | 1 |
+  | 11 | 2 | 1 |
+  | 23 | 1 | 1 |
+
+  The model-lane cases are mostly round the D6 5-arm Ch. d'Alsemberg junction and D7; one chain of 7 standing cars.
+  Old lanes: 1 stuck vehicle per seed, two of them at D7 (-1098, 1079).
+- **Seed 7, old lanes:** the 8 h mix share fails (cars 90.0 %). That happens with the old lanes only; noted, not fixed.
+- **Status:** the row fails with both lane sets. It needs the traffic job in TODO: real 8 h demand on the Alsemberg
+  corridor and signal coordination between the close D6 / D7 junctions.

@@ -138,7 +138,7 @@ export class TrafficSim {
     this.pwWait = new Float32Array(this.cap);        // a refused pass is not asked again for 0.6 s (perf)
     this.pwSum = new Float32Array(this.cap);
     this.claims = new Map();                         // (claude/street4) exit path gid -> the car that waited longest for room on it
-    this.wf = new Int32Array(this.cap).fill(-1); this.creep = new Float32Array(this.cap); this.wfMark = new Uint32Array(this.cap); this._wfM = 0; this._blk = -1;   // (claude/street4) the wait-for links and the cycle breaker
+    this.wf = new Int32Array(this.cap).fill(-1); this.lastBlk = new Int32Array(this.cap).fill(-1); this.creep = new Float32Array(this.cap); this.wfMark = new Uint32Array(this.cap); this._wfM = 0; this._blk = -1;   // (claude/street4) the wait-for links and the cycle breaker
     this.holdP = new Int32Array(this.cap).fill(-1); this.holdD = new Float32Array(this.cap);   // (claude/street4) where a car's current wait began         // (claude/street4) how long this car has been refused a pass, in a row
     this.tpLA = new Float64Array(this.cap).fill(-1); // the shifted-body look-ahead's hit (m along its route, -1 none), every 4th step   // a car's pass shift round a parked car, its timer
     this.tmp = new Float64Array(4); this.tmp2 = new Float64Array(4); this.tmp3 = new Float64Array(4);
@@ -250,7 +250,7 @@ export class TrafficSim {
     this.knock[i] = 0; this.dmg[i] = 0; this.kT[i] = 0;
     this.role[i] = 0; this.rst[i] = 0; this.rT[i] = 0; this.wide[i] = 0; this.bv[i] = -1; this.rp[i] = 0; this.ns[i] = 0; this.offT[i] = 0; this.indT[i] = 0;
     this.half[i] = T.len / 2 + Math.abs(T.zc || 0);         // (TRAFMIX: a long vehicle's longer end, its body off the axles' middle)
-    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.pwSum[i] = 0; this.tpLA[i] = -1; this.creep[i] = 0; this.wf[i] = -1; }
+    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.pwSum[i] = 0; this.tpLA[i] = -1; this.creep[i] = 0; this.wf[i] = -1; this.lastBlk[i] = -1; }
     this.y[i] = NaN;                                 // (rule mover-ground: no height yet: pose() takes the top layer)
     this.pose(i); this.copyPrev(i);
     this.count++;
@@ -944,6 +944,9 @@ export class TrafficSim {
     this.hold[i] = hold; this.gap[i] = gap; this.lead[i] = gap < Infinity ? lead : 0;
     // (who this car waits for, for the cycle breaker: the car its hold names, else the stopped car it follows)
     this.wf[i] = hold === HOLD.busy || hold === HOLD.full ? this._blk : lead === 1 && v < 0.3 ? this.nxt[i] : -1;
+    // (and the last car a hold named, kept while it waits on at the same line: a red phase between two "full" checks
+    // still waits on that queue; the audits follow it, tools/audit/trafmixGate.mjs)
+    if (this._blk >= 0) this.lastBlk[i] = this._blk; else if (!hold) this.lastBlk[i] = -1;
     // (claude/street4: a car that has moved on PROGRESS m (or onto another path) since its wait began is in a slow queue,
     // not stuck: the wait starts over. Before, a minute of creeping through a congested junction's queue (D6 Ch.
     // d'Alsemberg at 8 h) counted as stuck and the car was taken away, trafmix "removed as stuck")
@@ -1547,7 +1550,7 @@ export class TrafficSim {
     this.fillRoute(i);
     this.hold[i] = 0; this.holdT[i] = 0; this.stopDone[i] = -1; this.committed[i] = -1; this.waitT[i] = 0;
     this.room[i] = 0; this.offX[i] = this.offZ[i] = 0; this.yr[i] = 0; this.overT[i] = 0;
-    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.pwSum[i] = 0; this.tpLA[i] = -1; this.creep[i] = 0; this.wf[i] = -1; }
+    if (this.pw) { this.pw[i] = 0; this.pwT[i] = 0; this.pwWait[i] = 0; this.pwSum[i] = 0; this.tpLA[i] = -1; this.creep[i] = 0; this.wf[i] = -1; this.lastBlk[i] = -1; }
     this.W.point(gid, at, this.tmp);
     this.bezier(i, x, z, hx, hz, this.tmp[0], this.tmp[1], this.tmp[2], this.tmp[3], 3, 3.5);
     this.manDir[i] = 1; this.manT[i] = 0; this.slot[i] = null;

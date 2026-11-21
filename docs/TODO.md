@@ -142,6 +142,8 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 ## NOW (2026-11-17, one current list; newest owner notes win)
 
+- traffic job: D6/D7 Alsemberg 8 h oversaturation — real demand + signal coordination between the close junctions (claude/street4 round 5: the trafmix row's true-stuck count is 4 / 2 / 1 on seeds 7 / 11 / 23 with the model lanes, 1 / 1 / 1 with ?streetlanes=old; docs/rules/junction-entry-room.md)
+
 **Running:** bmx (scripted 90s BMX, Blender), kid (stylised kid on the UAL rig + get on / off the bike in the bike lab), carshadow (waits for a quiet machine). Bike lab branch claude/bike (not merged; lab served for the owner). Merged 2026-11-17/18: falconstutter, policerear, curvedroads, collisions, lycee, falcon2, deckrail. Open from deckrail: the Carsoel west street sags 1.2 m into the bank (0.6 m ledge eastbound), a pit in the drive surface on the Carsoel deck (883-884, 521), the Kasteelstraat service deck 0.7-1 m low.
 
 **Police car rear (2026-11-17):** policerear merged: the plate is now a pre-filtered texture (plate shimmer -15..-44 %); spec AA / no SSR / shut-line filter measured nothing (dropped). Next job: the low sun's TREE SHADOWS sliding over the moving player car are the main remaining shimmer (car receiving no shadow: -43 %): a smoother received sun shadow on the player car / nearby movers, measured with debug/rearCheck.js (docs/POLICEREAR.md).
