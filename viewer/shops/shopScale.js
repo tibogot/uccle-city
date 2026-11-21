@@ -88,6 +88,29 @@ export const V2_SLOT = (variant, light, k) => light
  *  all v2 textures together <= 40 MB GPU and <= 12 MB download (docs/SHOPS_V2_PLAN.md) */
 export const V2_FETCH = { near: 4, dress: 1, far: 1 };
 export const V2_BUDGET = { fetchNear: 5, fetchFar: 1, gpuMB: 40, fileMB: 12 };
+/** (shops6) THE V2 GAINS PER VARIANT (V2.VARIANTS order): the shader multiplies the day / night bake by these (the
+ *  closed-shop look stays the night bake x shopWindow.js closedV2 0.1, unchanged). Before, every room took the café's
+ *  0.2 / 0.7, so the dark rooms (boutique, salon, generic shop) read at 0.03 by day next to a pharmacy at 0.12.
+ *  V2_LUM = the mean LINEAR luminance of each variant's composite (the whole room, array A / N layer "L3 + composite",
+ *  upper half), on the window crop (rows 20-95 % from the top, columns 10-90 %: the ceiling left out), measured from the
+ *  shipped KTX2 arrays with three's Basis transcoder (2026-11-21). Day: gain = V2_DAY_TARGET / lum (every type reads the
+ *  same mean through the glass; the café a little brighter than its old 0.2). Night: half-way in log
+ *  (0.7 x sqrt(target / (0.7 lum))), clamped to V2_GAIN_RANGE.night, so the white rooms (pharmacy, office) are toned
+ *  down and the dark ones lifted while each keeps some of its character. The boutique / salon / shop NIGHT bakes are
+ *  nearly black (0.007-0.02: their track spots / downlights are too weak at night); the clamp leaves them dim, the
+ *  next bake should give them more lamp power. Gate row `shopsv2` checks every variant has both gains in range and
+ *  that day gain x lum is within V2_DAY_TOL of the target. ?shopgain=old = the old 0.2 / 0.7 for every room. */
+export const V2_LUM = {
+  day: { cafe: 0.2723, brasserie: 0.4478, bakery: 0.3348, pharmacy: 0.5991, boutique: 0.1338, grocery: 0.4806, office: 0.4756, salon: 0.1215, shop: 0.1465 },
+  night: { cafe: 0.1826, brasserie: 0.3463, bakery: 0.1874, pharmacy: 0.4570, boutique: 0.0075, grocery: 0.3589, office: 0.3607, salon: 0.0212, shop: 0.0123 },
+};
+export const V2_DAY_TARGET = 0.075, V2_NIGHT_TARGET = 0.15, V2_DAY_TOL = 0.05;
+export const V2_GAIN_RANGE = { day: [0.08, 0.8], night: [0.3, 2.0] };
+export const V2_GAIN = {
+  day: { cafe: 0.275, brasserie: 0.167, bakery: 0.224, pharmacy: 0.125, boutique: 0.56, grocery: 0.156, office: 0.158, salon: 0.617, shop: 0.512 },
+  night: { cafe: 0.76, brasserie: 0.55, bakery: 0.75, pharmacy: 0.48, boutique: 2.0, grocery: 0.54, office: 0.54, salon: 2.0, shop: 2.0 },
+};
+export const V2_GAIN_OLD = { day: 0.2, night: 0.7 };
 /** the café / restaurant variant (shops3): a restaurant / fast food -> the brasserie (1), else the café (0) */
 export const v2Variant = (kind, cat = "") => (kind === "restaurant" || kind === "fastfood" || cat === "restaurant" || cat === "fast_food") ? 1 : 0;
 /** the variants (indices into V2.VARIANTS) of an interior type (index into TYPES) */

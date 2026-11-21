@@ -242,6 +242,37 @@ Left: more variants per type (the neighbour rule is ready for them); the v2 room
 (the café's `dayV2` 0.2 for every type); the salon's charcoal back wall is dark by day; the baked sun patch is still
 fixed.
 
+## 3d. Shops v2 gains per variant (claude/shops6, rule shop-room-layers)
+
+Every v2 room used the café's day / night gain (0.2 / 0.7), so by day the dark rooms read at ~0.03 mean luminance
+(boutique, salon with its charcoal back wall, generic shop) next to a pharmacy at 0.12. Now each variant has its own
+gain (`viewer/shops/shopScale.js` V2_GAIN, a select chain on the variant in shopWindow.js; `dayV2` / `nightV2` are now
+master scales at 1; `?shopgain=old` = the old 0.2 / 0.7):
+- **measured**: the mean linear luminance of each variant's composite (the "L3 + composite" layer of arrays A / N,
+  upper half) on a window crop (rows 20-95 %, columns 10-90 %: no ceiling), transcoded from the shipped KTX2 with three's
+  Basis transcoder (V2_LUM). Day: café 0.27, brasserie 0.45, bakery 0.33, pharmacy 0.60, boutique 0.13, grocery 0.48,
+  office 0.48, salon 0.12, shop 0.15;
+- **day** gain = 0.075 / lum: every room the same mean (café 0.275, brasserie 0.167, bakery 0.224, pharmacy 0.125,
+  boutique 0.56, grocery 0.156, office 0.158, salon 0.617, shop 0.512);
+- **night** (open) = 0.7 x sqrt(0.15 / (0.7 lum)) clamped to 0.3-2: half-way in log, the white rooms toned down (pharmacy
+  0.48, office / grocery 0.54), the café / bakery about as before (0.76 / 0.75);
+- **closed** unchanged (the night bake x closedV2 0.1 + the security light).
+
+Gate row `shopsv2` adds: both gains for every variant, day in 0.08-0.8, night in 0.3-2; day gain x V2_LUM within 5 %
+of the target; the shader multiplies by gDay / gNight; closedV2 still 0.1.
+
+A/B (outside the repo): `Downloads/uccle-shops-ab/v4/index.html` (bakery, office, boutique, pharmacy, salon at 2 / 5 m
+by day; boutique + pharmacy at night: both closed, unchanged). Salon and boutique read clearly brighter, the pharmacy
+less washed out, the bakery about the same.
+
+Left: the boutique / salon / generic shop NIGHT bakes are nearly black (mean 0.007-0.02: their track spots and
+downlights are too weak at night); the night gain is clamped at 2, so they stay dim when open: the next `--v2` bake
+should give them more lamp power. **The office listing board** in the window display (L3) was a 1.7 m frame of eight
+A3-size pockets that read as a wall of white boxes at 2 m: `shopInteriors.py` OFFICE_BOARD now makes it 3 x 2 A4
+pockets (~1 m wide, posts ~1.3 m). **Not re-baked**: the `_work` renders are not kept, so even one layer means the full
+90-render bake + the three arrays re-encoded (or a lossy decode / re-encode of the other 72 layers); the shipped
+arrays keep the old board until the next full `--v2` bake (then re-measure V2_LUM: the gate holds gain x lum).
+
 ## 4. Terraces
 
 `layoutTerrace`: square bistro tables with two chairs (three on a single deep row: the street-life kit's rattan bistro
