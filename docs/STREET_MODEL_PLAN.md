@@ -352,3 +352,8 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
   zero tolerance; see the report for the decision it needs.
 - **trafmix sim cost:** 1.05-1.07 x now. It measures through tools/gate/timing.mjs `measure`. The 1.14 seen once came
   from the clear-corridor test, which ran for every car; it now runs for vehicles wider than a car only.
+- **Gate** (`--changed --base af03a1ca`, 30 rows): 29 pass. trafmix fails one check: one bus removed as stuck (hold 5,
+  "full"). It waits at its line because the exit lane is full, and that queue waits on a busy junction downstream: a
+  gridlock among the close Ch. d'Alsemberg junctions in D6 / D7 at 8 h. Not fixed; it needs a decision (see the
+  report). Everything else in the trafmix check passes. Sim cost 1.01-1.07 x.
+
