@@ -1,6 +1,7 @@
 // GARDEN PIECES CLEARED FROM THE STREET (three-free, shared by viewer/gardens/cityGardens.js and the node collider audit
 // tools/audit/colliderAudit.mjs): the plot restyles (data/overrides.json gardenRestyle) and the pieces standing on a
 // carriageway / in a cleared yard or gate mouth (blocked(x, z) -> true) left out of a tile's garden doc.
+import { HEDGE_WALL_H } from "../drive/colliders.js";   // (three-free: the hedge-wall height, rule hedge-wall)
 
 /** the doc without the pieces standing on a carriageway (blocked(x, z) -> true): segments and closed car gates by
  *  points every SEG_STEP m along their axis and both faces of their 0.30 m stand-in, pillars by their base and their
@@ -96,7 +97,8 @@ export function restyleHedges(doc, restyle, blocked) {
 /** The plan footprints of a garden doc's collision stand-ins, as viewer/gardens/gardenKit.js gardenInstances makes them
  *  (pure data, for the node collider audit): each wall / railing segment one box 0.30 m thick over its whole height
  *  (wall + coping + railing), each pillar a PILLAR_W square (h + 0.12), each CLOSED driveway gate a box across its width
- *  (the pedestrian gates are drawn open: not solid), each hedge a band of its width (soft for the car: KIND.hedge).
+ *  (the pedestrian gates are drawn open: not solid), each hedge a band of its width (soft for the car: KIND.hedge; one
+ *  drawn over HEDGE_WALL_H a wall: KIND.hedgeWall, rule hedge-wall).
  *  -> [{ rings: [[x, z] x 4], kind, base, top, what }] (the doc's baked y, before the kit settles it on the drawn ground) */
 export function gardenPieces(doc, { CAP_T = 0.08, PILLAR_W = 0.36, T = 0.3 } = {}) {
   const out = [], styles = doc.styles || [];
@@ -121,7 +123,7 @@ export function gardenPieces(doc, { CAP_T = 0.08, PILLAR_W = 0.36, T = 0.3 } = {
   }
   for (const hd of doc.hedges || []) {
     const P = hd.points || [];
-    for (let i = 1; i < P.length; i++) out.push({ rings: [band(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1], (hd.width || 0.6) / 2)], kind: 8, base: -1e4, top: 1e4, what: "hedge" });
+    for (let i = 1; i < P.length; i++) out.push({ rings: [band(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1], (hd.width || 0.6) / 2)], kind: (hd.height || 1.2) > HEDGE_WALL_H ? 9 : 8, base: -1e4, top: 1e4, what: "hedge" });   // (9 = KIND.hedgeWall: rule hedge-wall)
   }
   return out;
 }

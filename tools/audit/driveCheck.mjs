@@ -246,7 +246,7 @@ const near = (x, z) => { let best = null, bd = 60; for (const [px, pz, nm] of RN
 
 // ---- the walk
 const lanesAt = carriageway(d.roads, { classAt: fit?.classAt, onDeck: null, lanesOnly: true });
-const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture]);
+const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture, KIND.hedgeWall]);   // (hedgeWall: rule hedge-wall)
 const contact = {}, out = [], hits = new Map(), info = {};
 const intrudeMemo = new Map();
 function intrudes(id) {

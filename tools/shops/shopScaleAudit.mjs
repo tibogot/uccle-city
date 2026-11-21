@@ -27,7 +27,7 @@ export function auditWindows() {
       if (m.length !== WIN_STRIDE) throw new Error(`${tile}: window record of ${m.length} floats`);
       const w = m[16], h = m[17], seed = m[18], type = Math.round(m[20]), gb = m[21];
       const R = roomLayout(w, seed);
-      out.push({ tile, x: m[12], y: m[13], z: m[14], nx: m[8], nz: m[10], w, h, seed, lit: m[19], type, typeName: TYPES[type], gb, mirror: m[22],
+      out.push({ tile, x: m[12], y: m[13], z: m[14], nx: m[8], nz: m[10], w, h, seed, lit: m[19], type, typeName: TYPES[type], gb, mirror: m[22], variant: m[23],
         stretchOld: acrossScale(w, true), stretch: acrossScale(w), rooms: R.rooms, roomW: R.roomW, offset: R.o, partitions: R.partitions,
         depthOld: OLD_DEPTH, depth: DEPTH_BY_INDEX[type] });
     }

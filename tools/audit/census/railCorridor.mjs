@@ -154,7 +154,7 @@ for (const name of HERO_ROOTS) {
   if (tri.length) for (const p of layeredBlockersSync(Float32Array.from(tri), layers)) extra.push(p);
 }
 const col = extendColliders(d.drive.col, extra, []);
-const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture]);
+const HARD = new Set([KIND.building, KIND.wall, KIND.tree, KIND.lamp, KIND.post, KIND.furniture, KIND.hedgeWall]);   // (hedgeWall: rule hedge-wall)
 const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
 const lanesAt = carriageway(d.roads, { classAt: fit?.classAt, onDeck: null, lanesOnly: true });
 

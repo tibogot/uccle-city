@@ -54,3 +54,22 @@ export function roomLayout(w, seed) {
 
 /** metres of the RENDER's room per metre of glass, across: 1 = metric; old = RW / w (the room stretched to the glass) */
 export const acrossScale = (w, old = false) => RW / (old ? w : roomLayout(w, 0).roomW);
+
+// ---- Shops v2 (docs/SHOPS_V2_PLAN.md jobs 3-4, rule shop-room-layers): the layered café / restaurant interiors
+// (tools/blender/shopInteriors.py --v2 -> tools/shops/pack_v2.py -> textures/shops/interiors_v2.ktx2, a KTX2 2D ARRAY).
+/** the v2 render: the room is RD deep (= DEPTH.cafe: the viewer's room is the render's, depth scale 1), the card planes
+ *  (m behind the glass, L1 L2 L3) and the slabs of free-standing furniture each card holds; PX = one layer's size */
+export const V2 = {
+  RD: 6.0, PLANES: [2.6, 1.2, 0.3], SLABS: [[1.8, 3.5], [0.6, 1.8], [0.0, 0.6]], PX: [1024, 512],
+  VARIANTS: ["cafe", "brasserie"], LIGHTS: ["day", "night"], LAYERS: 16,
+  TYPES: ["cafe"],          // the interior types drawn by v2 (the café / restaurant / bar room); the rest stay v1
+  FAR: 40, BAND: 5,         // all layers within FAR - BAND, the single composite fetch beyond FAR + BAND, both between
+};
+/** the array layer: variant (0 café, 1 brasserie) x light (0 day, 1 night) x k (0 L0, 1 L1, 2 L2, 3 L3 + composite) */
+export const v2Layer = (variant, light, k) => variant * 8 + light * 4 + k;
+/** texture fetches per window pixel at one lighting (shopWindow.js nearV2 / farV2 call fetchV2 this many times) and
+ *  the budgets the gate row `shopsv2` holds them to (plan: ~5 fetches; one composite fetch far away; <= 12 MB GPU) */
+export const V2_FETCH = { near: 4, far: 1 };
+export const V2_BUDGET = { fetchNear: 5, fetchFar: 1, gpuMB: 12, fileMB: 4 };
+/** the café / restaurant variant of a shop (iWinT.w): a restaurant / fast food -> the brasserie, else the café */
+export const v2Variant = (kind, cat = "") => (kind === "restaurant" || kind === "fastfood" || cat === "restaurant" || cat === "fast_food") ? 1 : 0;
