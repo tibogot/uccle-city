@@ -416,3 +416,15 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
   | 23 | 1: an ambulance held by a parked car at (-996, 827) |
 
   The sim-cost check reads 1.10-1.11 x (limit 1.10). **The row still fails**; what is left is listed in TODO.
+
+**Round 7 (2026-11-22): accepted at a ratchet; the sim cost by cause.**
+- trafmix now runs seeds 7 / 11 / 23 (two child processes) and allows STUCK_MAX 4 stuck service vehicles in all (now
+  0 / 2 / 1 = 3; old lanes 0 / 3 / 0). Each stuck place is a gap-register entry (trafmix.stuck, causes signal-phases /
+  parking-both-sides); off-phase close signal pairs <= PHASE_MAX 3. Both go to 0 in the SIGNALS and PARKING jobs (TODO).
+- Sim cost: the "wrong map" deopts were the cause. Fields and stats counters added lazily, in a traffic-dependent order
+  (a bus line first, a wide vehicle first), and three type-object shapes (car / heavy / two-wheeler) gave every sim its
+  own hidden classes; every hot method went polymorphic. All declared in the constructor, types copied into one shape:
+  the step is ~2x cheaper (2.05 -> 0.9 us per car per step, mix and no mix alike).
+- The row's one-to-one timing measured a sim's place in memory: two identical plain sims came out 0.87-1.15 x apart, while
+  the mix's own work, timed in sequence, was ~1 %. The row now times two sims of each (built A B B A) and prints the twin
+  ratio: x1.02-1.05.

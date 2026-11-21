@@ -29,6 +29,8 @@ export const CAUSES = {
   "tram-envelope": "a piece inside the tram envelope where the platform / tram data disagree: job 6",
   "sign-data": "a sign whose facing comes from the source data (one per spot, no model of the street it addresses yet): job 6",
   "source-data": "the source data itself is wrong / incomplete there (survey, OSM): a data fix",
+  "signal-phases": "two signal junctions a few metres apart on different phases (a queue waiting at the second one stands inside the first one's turn, a yield inside that turn): the SIGNALS job (docs/TODO.md: one phase along the road for the close pairs)",
+  "parking-both-sides": "an emergency vehicle on a street parked on both sides, no room to pass the oncoming / yielding cars: the PARKING job (docs/TODO.md: its route avoids such streets, or the parking leaves a gap)",
 };
 export const ID_RE = /^[a-z0-9]+\.[A-Za-z0-9]+:[^:\s]+:\d+-\d+$/;
 

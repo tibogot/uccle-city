@@ -85,6 +85,10 @@ export class TrafficSim {
    *   seed }
    */
   constructor(world, { cap = 768, types, paints, ground, seed = 1 } = {}) {
+    // (claude/street4, perf: ONE type shape) the types copied into one field order (a car, a bus with zc / heavy, a
+    // two-wheeler with two / accel / speed were three hidden classes: every this.types[..].x read in the hot loop went
+    // polymorphic once the mix spawned its heavies; the trafmix "sim cost" row)
+    types = types.map((t) => Object.assign({ name: t.name, len: t.len, w: t.w, h: t.h, wb: t.wb, wheelR: t.wheelR, weight: t.weight, zc: t.zc ?? 0, heavy: !!t.heavy, two: !!t.two, accel: t.accel ?? 1, speed: t.speed ?? 1 }, t));
     this.W = world; this.cap = cap; this.types = types; this.paints = paints; this.ground = ground;
     this.rs = seed >>> 0 || 1;
     const F = (n = 1) => new Float32Array(cap * n), I = (n = 1, v = 0) => new Int32Array(cap * n).fill(v), U = (n = 1) => new Uint8Array(cap * n);
@@ -150,6 +154,12 @@ export class TrafficSim {
     this.pw = new Float32Array(this.cap); this.pwT = new Float32Array(this.cap);
     this.pwWait = new Float32Array(this.cap);        // a refused pass is not asked again for 0.6 s (perf)
     this.pwSum = new Float32Array(this.cap);
+    // (claude/street4, perf: ONE object shape) every field the methods add later declared here, in one order: fields
+    // added lazily, in an order that depended on the traffic (a bus line, a wide vehicle first), gave each sim its own
+    // hidden class, and every hot method went polymorphic ("wrong map" deopts: the trafmix "sim cost" row, mix vs none)
+    this.parked = null; this.typeIndex = null; this._wver = undefined; this._rec = null; this._need = 0; this._pickAt = 0; this._oaCar = -1;
+    this._busN = null; this._busU = null; this._busUT = -1e9; this._pcF = null; this._pcR = null; this.pcOk = null; this.pwOk = null;
+    this.gapR = 0; this.gapA = null; this.gapB = null; this.gap2 = null;
     this.claims = new Map();                         // (claude/street4) exit path gid -> the car that waited longest for room on it
     this.wf = new Int32Array(this.cap).fill(-1); this.lastBlk = new Int32Array(this.cap).fill(-1); this.creep = new Float32Array(this.cap); this.wfMark = new Uint32Array(this.cap); this._wfM = 0; this._blk = -1;   // (claude/street4) the wait-for links and the cycle breaker
     this.holdP = new Int32Array(this.cap).fill(-1); this.holdD = new Float32Array(this.cap);   // (claude/street4) where a car's current wait began         // (claude/street4) how long this car has been refused a pass, in a row
@@ -160,7 +170,9 @@ export class TrafficSim {
       runs: parkRateFor(typeof location !== "undefined" ? location.search : ""),   // (TRAFMIX: emergency runs; 0 under ?still=1, the tour)
       signals: true, maxCars: cap,
       narrow: !(typeof location !== "undefined" && /[?&]narrow=0/.test(location.search)) };   // one way at a time on narrow stretches
-    this.stats = { yielding: 0, cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0 };
+    this.stats = { yielding: 0, cars: 0, target: 0, spawned: 0, removed: 0, stepMs: 0, stepMsMax: 0, holds: [0, 0, 0, 0, 0, 0, 0], pullOuts: 0, parkIns: 0, handovers: 0, laneKm: 0,
+      // (claude/street4, perf: one shape) the counters the methods bump, declared here (added lazily they gave each sim its own stats map)
+      parkBorderHidden: 0, rerouted: 0, parkWaits: 0, parkPasses: 0, narrowWaits: 0, cycleBreaks: 0, parkClamped: 0, twinEntries: 0, busMissed: 0, busStops: 0, roleStops: 0, busOff: 0, busEnd: 0, busSpawned: 0, pullOutsSkipped: 0, parkInsSkipped: 0 };
     this.freeSlots = [];         // parking slots vacated by pull-outs (viewer/carFleet.js car objects)
     this._projCtx = { k: 0 };
     this._proj = (gid, along, lat, tx, tz) => this.addObsEntry(gid, along, lat, tx, tz);
@@ -644,7 +656,7 @@ export class TrafficSim {
     const wide = Math.max(0, Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2) - 0.92), PASS = TP_PASS + wide;
     // (only for a vehicle wider than a car: a car's own estimate is the lane's, as before; no extra cost for the cars)
     if (wide > 0 && !(this.pwT[i] > 0)) {
-      if ((this.steps + i) % 8 && this.pcOk?.[i] !== undefined) { if (this.pcOk[i]) return true; }
+      if ((this.steps + i) % 16 && this.pcOk?.[i] !== undefined) { if (this.pcOk[i]) return true; }     // (every 16th step: perf, the mix's cost row)
       else { const ok = corridor(this.room[i], 0.05); (this.pcOk ||= new Uint8Array(this.cap))[i] = ok ? 1 : 0; if (ok) return true; }
     }
     if (Math.abs(need) > PASS + 0.3) return false;
