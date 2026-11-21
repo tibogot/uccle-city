@@ -40,7 +40,7 @@ const renderer = new THREE.WebGPURenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;      // (r18x: PCFSoft is gone, it warned and fell back to this)
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.domElement.id = "view";
 document.body.prepend(renderer.domElement);
@@ -357,7 +357,7 @@ const fc = ui.addFolder("Camera", { open: false });
 for (const [k, a, b, st] of [["distance", 1.5, 10, 0.1], ["height", 0.2, 4, 0.05], ["lookHeight", 0, 2, 0.05], ["lookAhead", 0, 4, 0.1], ["yawRate", 0.5, 15, 0.1],
   ["followXZ", 1, 30, 0.5], ["followY", 0.5, 20, 0.5], ["fov", 40, 90, 1], ["fovKick", 0, 30, 1], ["roll", 0, 0.6, 0.01], ["shake", 0, 3, 0.1], ["minClear", 0.1, 1, 0.05],
   ["lookTime", 0, 1, 0.01], ["turnLook", 0, 1, 0.01], ["speedLow", 0, 10, 0.5], ["speedHigh", 2, 20, 0.5], ["speedEase", 0.05, 2, 0.05], ["speedDrop", 0, 0.5, 0.01], ["speedIn", 0, 0.3, 0.01],
-  ["dip", 0, 1.5, 0.01], ["dipMax", 0, 6, 0.1], ["dipHz", 0.5, 6, 0.1], ["wallClear", 0, 1, 0.05], ["pullOut", 0.5, 10, 0.1]])
+  ["dip", 0, 1.5, 0.01], ["dipMax", 0, 6, 0.1], ["dipHz", 0.5, 6, 0.1], ["wallClear", 0, 1, 0.05], ["pullOut", 0.5, 10, 0.1], ["pullAhead", 0, 1, 0.05], ["pullIn", 1, 30, 0.5]])
   fc.add(BIKE_CAMERA, k, a, b, st).name(k);
 fc.add(BIKE_CAMERA, "mode", ["chase", "far", "low", "side"]).name("mode").onChange(() => chase.reset());
 const fsd = ui.addFolder("Sound", { id: "bike-sound", open: false });

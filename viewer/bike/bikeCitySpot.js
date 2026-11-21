@@ -60,12 +60,43 @@ function rasterSurfaces(surf, win, res) {
   return { grid, W, H: Hh, res, win };
 }
 
+/** THE VERGE (browser check 2026-11-21): a raised surface (sidewalk / median / square) meets the ground OUTSIDE the street
+ *  surfaces (grass, a park path, a stair's foot) eased down over `verge` m instead of as a 13 cm face: only a kerb (the
+ *  raised surface against the roadway) stays a face the bike must hop. Why: D6's own flight ended 1 m short of the
+ *  pavement's back edge, so riding down it ended over the bars every time. -> Uint8Array of mm to add (0 = none) */
+function vergeRaise(R, verge) {
+  const { grid, W, H } = R, n = Math.round(verge / R.res), out = new Uint8Array(W * H);
+  if (n < 1) return out;
+  const d = new Uint8Array(W * H).fill(254);
+  const raised = (c) => c && RAISE[c - 1] >= KERB_H * 0.9;
+  for (let k = 0; k < W * H; k++) if (raised(grid[k])) d[k] = 0;
+  // two-pass chamfer (cells; a diagonal counts 1: enough at this scale), capped; inlined (4 M cells)
+  for (let j = 0; j < H; j++) for (let i = 0, k = j * W; i < W; i++, k++) {
+    let v = d[k]; if (!v) continue;
+    if (i && d[k - 1] + 1 < v) v = d[k - 1] + 1;
+    if (j) { const u = k - W; if (d[u] + 1 < v) v = d[u] + 1; if (i && d[u - 1] + 1 < v) v = d[u - 1] + 1; if (i < W - 1 && d[u + 1] + 1 < v) v = d[u + 1] + 1; }
+    d[k] = v;
+  }
+  for (let j = H - 1; j >= 0; j--) for (let i = W - 1, k = j * W + W - 1; i >= 0; i--, k--) {
+    let v = d[k]; if (!v) continue;
+    if (i < W - 1 && d[k + 1] + 1 < v) v = d[k + 1] + 1;
+    if (j < H - 1) { const u = k + W; if (d[u] + 1 < v) v = d[u] + 1; if (i < W - 1 && d[u + 1] + 1 < v) v = d[u + 1] + 1; if (i && d[u - 1] + 1 < v) v = d[u - 1] + 1; }
+    d[k] = v;
+  }
+  for (let k = 0; k < W * H; k++) {
+    if (grid[k] || d[k] > n) continue;                // (only the ground outside the street surfaces; the roadway keeps its kerb)
+    const t = 1 - d[k] / (n + 1), e = t * t * (3 - 2 * t);
+    out[k] = Math.round(KERB_H * 1000 * e);
+  }
+  return out;
+}
+
 /**
  * docs: { terrainJson, terrain (Uint16Array), surfaces, features, furniture, gardens, buildings } (buildings.json)
  * at: [x, z] the spot's centre; half: the window's half size (m); res: the raster (m)
  * -> { height(x, z), surface(x, z), polys, circles, bounds, lines, edges (layer), counts, win, ms }
  */
-export function buildCitySpot(docs, at, { half = 80, res = 0.08, SURF = { asphalt: 0, setts: 1, grass: 3 }, KIND = { building: 0, furniture: 7, hedge: 8 } } = {}) {
+export function buildCitySpot(docs, at, { half = 80, res = 0.08, verge = 0.6, SURF = { asphalt: 0, setts: 1, grass: 3 }, KIND = { building: 0, furniture: 7, hedge: 8 } } = {}) {
   const t0 = typeof performance !== "undefined" ? performance.now() : 0;
   const dtm = terrainHeight(docs.terrainJson, docs.terrain);
   const win = { x0: at[0] - half, x1: at[0] + half, z0: at[1] - half, z1: at[1] + half };
@@ -74,11 +105,23 @@ export function buildCitySpot(docs, at, { half = 80, res = 0.08, SURF = { asphal
     const i = Math.floor((x - win.x0) / res), j = Math.floor((z - win.z0) / res);
     return i < 0 || j < 0 || i >= R.W || j >= R.H ? 0 : R.grid[j * R.W + i];
   };
-  const base = (x, z) => { const c = cls(x, z); return dtm(x, z) + (c ? RAISE[c - 1] || 0 : 0); };
+  const VG = vergeRaise(R, verge);
+  const base = (x, z) => {
+    const i = Math.floor((x - win.x0) / res), j = Math.floor((z - win.z0) / res);
+    if (i < 0 || j < 0 || i >= R.W || j >= R.H) return dtm(x, z);
+    const k = j * R.W + i, c = R.grid[k];
+    return dtm(x, z) + (c ? RAISE[c - 1] || 0 : VG[k] * 0.001);
+  };
   // (object forms: pt.x, pt.z in; the raster read inline)
   const RW = R.W, RH = R.H, gr = R.grid, wx0 = win.x0, wz0 = win.z0, dtmP = dtm.P;
   const clsP = (pt) => { const i = Math.floor((pt.x - wx0) / res), j = Math.floor((pt.z - wz0) / res); return i < 0 || j < 0 || i >= RW || j >= RH ? 0 : gr[j * RW + i]; };
-  base.P = (pt) => { dtmP(pt); const c = clsP(pt); if (c) pt.h += RAISE[c - 1] || 0; };
+  base.P = (pt) => {
+    dtmP(pt);
+    const i = Math.floor((pt.x - wx0) / res), j = Math.floor((pt.z - wz0) / res);
+    if (i < 0 || j < 0 || i >= RW || j >= RH) return;
+    const k = j * RW + i, c = gr[k];
+    if (c) pt.h += RAISE[c - 1] || 0; else pt.h += VG[k] * 0.001;
+  };
   // the edges (kerb / stair heights from the ground just built: the kerb's top on the raised side = the DTM + KERB_H)
   const inWin = (l) => l.pts.some((p) => p[0] > win.x0 && p[0] < win.x1 && p[2] > win.z0 && p[2] < win.z1);
   const lines = [

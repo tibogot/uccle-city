@@ -105,7 +105,7 @@ dirt (packed) 0.70 / 0.018 / 0 / 8 mm, grass 0.55 / 0.060 / 0.06 / 10 mm, sand 0
 roots 0.50 / 0.045 / 0.03 / 22 mm.
 
 ## Targets = the node checks (`node --import ./tools/heap/register.mjs tools/bike/bikeTest.mjs`, gate row `bike`)
-93 checks, all pass (~8 s; feel rounds 1-4: 16 + 16 + 8 + 6 below): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
+95 checks, all pass (~8 s; feel rounds 1-4: 16 + 16 + 8 + 6 below, + 2 from the browser check of 2026-11-21): determinism (same input twice bit-identical; 60 fps vs an uneven 30-144 fps split = the same
 steps and state); speeds above; never tunnels (kicker / table / kerb / rollers entered at 58 km/h: deepest wheel 0.11 m =
 the bottom-out, 0 steps under; the wall at 58 km/h: never through, a crash; at walking pace: stopped, no crash); the
 15 cm kerb: a timed hop rides onto the pavement, no hop at 2.5 m/s = stopped, at 22 km/h = over the bars; a 6 cm kerb
@@ -392,6 +392,38 @@ feature closures are called megamorphically: a test ground, not the city's).
 
 **Needs the browser** (on the coordinator's go): the weight on the kid (landings, braking, turns), the head; the camera's
 speed sense, turn look, dip, the pull-in at walls / kerbs (side mode), the stairs.
+
+## Browser check after the foundation merge (2026-11-21, the lab + ?city=D6, silent)
+The branch's first browser turn since rounds 2-4 (claude/foundation merged in, converted: gate rows `bike`, `kid`, `bmx`
+in tools/audit/gate.d, rules kid-bike-meets-numbers / kid-keeps-ual-rig). Driven by key events from a script, 60 Hz
+screen, one tab; frames 16.7 ms median, p95 18-19 ms, worst 22-31 ms (another job's gate was running on the CPU); the
+lab's `phys` 0.08-0.19 ms a frame (physics + mount + rider; the target "<< 0.1 ms" is met only on a quiet machine).
+Console: 0 errors (the one warning, PCFSoftShadowMap, removed). Found and fixed:
+- **A held rear brake at a stop reared the bike up and looped out** (S held after braking to a stop: pitch 0 -> 48 deg in
+  0.6 s, "looped out"). Why: the brake's pitch torque used `sgn(vF)` with the FULL brake force; at a stop vF dithers
+  around 0 (-1e-6 on a tiny roll-back) and every negative sign flipped the whole torque nose-UP. Now scaled by
+  vF / 0.3 under 0.3 m/s (a held brake at rest carries no force). Check: "a brake held at a stop" (old code: 49 deg, 3 crashes).
+- **The camera modes leaked**: after cycling V through `side`, `chase` stayed a side camera (cfgNow merged the modes into
+  one scratch object and `side` was never reset). Fixed (MODE_RESET).
+- **The side camera snapped 1.8-2.1 m in one frame** entering the lab's walled stairs (the pull-in is at once, never
+  inside). Now the line of sight is also tested where the bike will be in `pullAhead` 0.3 s (moved by the ground's
+  change: down a flight it drops too) and the camera eases in early (`pullIn` 8 /s): biggest pull-in a frame 26 cm.
+  Both camera items: check "modes cycle cleanly; the side camera eases in before the stairs' walls"; sliders in the
+  Camera folder.
+- **D6: riding down the flight always ended over the bars**: the flight's foot is 1 m of grass short of the pavement's
+  BACK edge, a 13 cm face. The city spot now eases a raised surface (sidewalk / median / square) down to the ground
+  OUTSIDE the street surfaces over `verge` 0.6 m (bikeCitySpot.js vergeRaise); a kerb (raised against the roadway)
+  stays a face to hop. Down the flight now: ridden, over the pavement, off the kerb onto the road.
+- The sound follows the speaker button (rule 42) instead of the lab's own switch (the merge's meta check).
+- The zero-garbage check now takes the best of up to 2 fresh processes: about 1 run in 15 measured the D6 spot at 12
+  young collections (the usual 6, budget 8) with the brake fix in, from the same code (V8's tiering picks per process).
+Seen working: on foot -> E -> riding; the kicker (clean, sketchy "over the bars" hands-off at 20 km/h, bail with Z in
+the air, sketchy "looped out" with X); a timed hop onto the 15 cm kerb at 15-17 km/h (a ~0.3 s window with a 0.35 s
+preload; early or late = "front wheel hit the kerb"); bench + ledge grinds from the spots at 4 m/s (3 / 3 each, 0
+crashes; the ledge grind slows to a stall after ~8 m, then drops off); the lab stairs down (no air, no crash); the camera
+in all 4 modes along the ledge, the stairs, the bench and the wall: 0 frames inside a solid. NOT checked: the sound
+(stopped on the owner's request: the owner heard it and found it annoying; the node checks cover the graph) and the
+rider's weight by eye beyond stills.
 
 ## Into the city (next jobs, not done here)
 - Ground: `ground(x, z, out)` from the drive surface (viewer/drive/colliders.js `driveHeight` + central differences:

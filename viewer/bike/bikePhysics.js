@@ -611,7 +611,11 @@ function contactPhase(s, w, env, B, S) {
     retard += r + brake;
     // a brake force backward under the CoM: nose down. The kid shifts back on a hard front brake (the torque arm
     // shrinks) unless leaning forward: then the front brake is an endo.
-    alpha += RU[i] * brake * sgn(vF) * (i === 0 ? (leanIn < -0.2 ? 1.15 : 1 - 0.3 * bF) : 1);
+    // (scaled down under 0.3 m/s: at a stop a held brake carries no force, so no torque. Browser check 2026-11-21:
+    // with sgn(vF), S held after braking to a stop flipped the full brake torque nose-UP on every tiny roll-back
+    // (vF ~ -1e-6): the bike reared up and looped out at a standstill)
+    let vS = sgn(vF); if (vF < 0.3 && vF > -0.3) vS = vF / 0.3;
+    alpha += RU[i] * brake * vS * (i === 0 ? (leanIn < -0.2 ? 1.15 : 1 - 0.3 * bF) : 1);
   }
   alpha /= B.pitchInertia;
   const contactNow = nCount > 0;

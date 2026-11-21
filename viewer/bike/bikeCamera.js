@@ -36,6 +36,8 @@ export const BIKE_CAMERA = {
   minClear: 0.35,      // m over the ground under the camera
   wallClear: 0.25,     // m kept from a solid along the line of sight
   pullOut: 3,          // 1/s: easing back out after a wall moved the camera in
+  pullAhead: 0.3,      // s: the line of sight is also tested where the bike will be this soon (a wall coming up)...
+  pullIn: 8,           // 1/s: ...and the camera eases in toward it ahead of time, so the at-once pull-in is small
 };
 export const CAMERA_MODES = {
   chase: {},
@@ -43,6 +45,7 @@ export const CAMERA_MODES = {
   low: { distance: 2.4, height: 0.45, lookHeight: 0.7, lookAhead: 1.5, roll: 0.05 },
   side: { distance: 4, height: 1.1, lookHeight: 0.8, lookAhead: 0, side: true, turnLook: 0 },
 };
+const MODE_RESET = { side: false };
 const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const RING = [[0.3, 0], [-0.3, 0], [0, 0.3], [0, -0.3]];
 
@@ -56,7 +59,19 @@ export class CameraRig {
     this.free = 1; this.blocked = 0; this.want = { x: 0, y: 0, z: 0 }; this._c = {};
   }
   reset() { this.first = true; }
-  cfgNow() { return Object.assign(this._c, this.cfg, CAMERA_MODES[this.cfg.mode]); }
+  // (side: false first: a mode-only flag must not stick in the scratch object after leaving that mode; browser check
+  // 2026-11-21: chase after cycling through side stayed a side camera)
+  cfgNow() { return Object.assign(this._c, this.cfg, MODE_RESET, CAMERA_MODES[this.cfg.mode]); }
+  /** the free fraction of the line of sight from (hx, hy, hz) to the wanted spot moved by (dx, dz) */
+  sight(hx, hy, hz, dx, dy, dz, c, ground, solid) {
+    if (!solid && !ground) return 1;
+    const ex = this.want.x + dx - hx, ey = this.want.y + dy - hy, ez = this.want.z + dz - hz, L = Math.sqrt(ex * ex + ey * ey + ez * ez) || 1, N = Math.max(8, Math.ceil(L / 0.2));
+    for (let i = 1; i <= N; i++) {
+      const f = i / N, x = hx + ex * f, y = hy + ey * f, z = hz + ez * f;
+      if ((solid && solid(x, y, z)) || (ground && y < ground(x, z) + 0.12)) return Math.max(0, (i - 1) / N - c.wallClear / L);
+    }
+    return 1;
+  }
   update(s, pose, dt, ground = null, solid = null) {
     const c = this.cfgNow(), v = Math.sqrt(s.vx * s.vx + s.vz * s.vz);
     this.t += dt;
@@ -91,17 +106,19 @@ export class CameraRig {
     }
     // ---- never inside things: march the line of sight from the kid's head to the wanted spot
     const hx = pose.x, hy = base + 1.2, hz = pose.z;
-    let freeTo = 1;
-    if (solid || ground) {
-      const ex = this.want.x - hx, ey = this.want.y - hy, ez = this.want.z - hz, L = Math.sqrt(ex * ex + ey * ey + ez * ez) || 1, N = Math.max(8, Math.ceil(L / 0.2));
-      for (let i = 1; i <= N; i++) {
-        const f = i / N, x = hx + ex * f, y = hy + ey * f, z = hz + ez * f;
-        if ((solid && solid(x, y, z)) || (ground && y < ground(x, z) + 0.12)) { freeTo = Math.max(0, (i - 1) / N - c.wallClear / L); break; }
-      }
+    const freeTo = this.sight(hx, hy, hz, 0, 0, 0, c, ground, solid);
+    // (and where the bike will be in pullAhead s: a wall coming up starts the camera in early, eased, instead of a
+    // pull-in of metres in one frame; browser check 2026-11-21: 1.8 m in a frame entering the lab's walled stairs)
+    // (the head and the camera both moved by the travel, and by the ground's change there: down a flight they drop too)
+    let freeAhead = 1;
+    if (c.pullAhead > 0 && v > 0.5) {
+      const ax = s.vx * c.pullAhead, az = s.vz * c.pullAhead, ay = ground ? ground(hx + ax, hz + az) - ground(hx, hz) : (s.vy || 0) * c.pullAhead;
+      freeAhead = this.sight(hx + ax, hy + ay, hz + az, ax, ay, az, c, ground, solid);
     }
     this.blocked = freeTo < 1 ? 1 : 0;
-    if (freeTo < this.free || this.first) this.free = freeTo;                       // in at once
-    else this.free += (freeTo - this.free) * (1 - Math.exp(-c.pullOut * dt));      // out eased
+    if (freeTo < this.free || this.first) this.free = freeTo;                       // in at once (never inside)
+    else if (freeAhead < this.free) this.free += (freeAhead - this.free) * (1 - Math.exp(-c.pullIn * dt));   // in early, eased
+    else this.free += (Math.min(freeTo, freeAhead) - this.free) * (1 - Math.exp(-c.pullOut * dt));      // out eased
     const f = this.free;
     const px = hx + (this.want.x - hx) * f, pz = hz + (this.want.z - hz) * f;
     let py = hy + (this.want.y - hy) * f + this.dipY;
