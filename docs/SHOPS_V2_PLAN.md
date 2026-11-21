@@ -78,6 +78,14 @@ Causes:
    rule shop-room-layers. A/B: `Downloads/uccle-shops-ab/v2/index.html`. GPU ms not measured (preflight RED).
 5. Glass dressing.
 6. Roll out the types, 4 per job.
+
+   **Jobs 5 + 6 done on claude/shops5 (2026-11-21)**, all seven other types in one job (docs/assets/SHOPS.md §3c):
+   bakery, pharmacy, boutique, grocery, office, salon, generic shop baked v2 at their own depth (one variant each); three
+   KTX2 arrays (the encoder's heap caps a 1024 px array at ~24 layers): 26.2 MB GPU, 7.85 MB download for all v2 layers;
+   the v1 atlas no longer loads with v2. L4 glass dressing: a scripted sticker sheet (hours, OUVERT / GEOPEND / SOLDES /
+   SOLDEN / NOUVEAU / WELKOM, plain payment marks, lace) = 1 fetch near; blinds, a half-down shutter on closed shops at
+   night and dirt procedural. interiorType() extended: generic 17.9 % -> 10.0 %. The neighbour rule is in (café type
+   only has two variants; 15 same-type pairs wait for job 7's variants).
 7. Variants + the neighbour rule; Street View check (look only).
 8. Optional: hero café cells.
 9. Perf pass on a GREEN preflight.

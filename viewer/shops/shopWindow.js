@@ -19,10 +19,10 @@
 import * as THREE from "three/webgpu";
 import {
   attribute, uniform, texture, vec2, vec3, float, uv, positionWorld, positionLocal, cameraPosition, normalWorld, dot, max, min, abs,
-  step, mix, clamp, select, fwidth, log2, pow, normalize, smoothstep, length, reflect, Fn, If,
+  step, mix, clamp, select, fwidth, log2, pow, normalize, smoothstep, length, reflect, Fn, If, vec4, sin,
 } from "three/tsl";
 import { ktxLoader } from "../materials/scans.js";
-import { RW, RD, RH, F, CARD_Y, DEPTH_BY_INDEX, OLD_DEPTH, STRETCH_MAX, V2 } from "./shopScale.js";
+import { RW, RD, RH, F, CARD_Y, DEPTH_BY_INDEX, OLD_DEPTH, STRETCH_MAX, V2, STICKERS, STICKER_PPM } from "./shopScale.js";
 
 /** the viewer's room: ceiling height above the shop floor (= the render's room height: metric up) */
 const CEIL = RH;
@@ -52,15 +52,40 @@ export const windowUniforms = {
   closedV2: uniform(0.1),
   securityV2: uniform(1),
   layersV2: uniform(1),
+  // (shops5) L4 glass dressing on / off (lab): the stickers + lace + blinds, the half-down shutter, the dirt
+  dressV2: uniform(1),
+  shutterV2: uniform(1),
+  dirtV2: uniform(1),
   farV2: uniform(V2.FAR),      // the near / far hand-over distance (m; the lab moves it to look at the composite)
 };
 
 let texP = null;
-/** the atlas: KTX2 (UASTC -> BC7 / ASTC, 1 byte a texel) or the WebP (?shopsktx=0); flipV = 1 when v = 0 is the image's top */
+/** the interiors. (shops5) v2 first: every type has its layered room, so when the two v2 arrays load the v1 atlas is
+ *  not loaded at all (-10.7 MB GPU, -3.4 MB download); v1 (KTX2, or the WebP with ?shopsktx=0) only for ?shopsv2=old or
+ *  when the arrays fail. flipV = 1 when v = 0 is the image's top. */
 export function loadInteriors(renderer, base = new URL("../../", import.meta.url)) {
   return (texP ??= (async () => {
     const t0 = performance.now();
     const ktxOff = new URLSearchParams(location.search).get("shopsktx") === "0";
+    // v2: three arrays (shopScale.js V2_SLOT): A day L0 + L3 / composite + the L4 sticker sheet (1024 px), C day L2
+    // (1024 px), N day L1 + night L0-L3 (512 px)
+    let v2 = null;
+    if (!V2_OFF && !ktxOff && renderer) {
+      try {
+        const arr = async (name, n, px) => {
+          const t = await ktxLoader(renderer).loadAsync(new URL(`textures/shops/${name}`, base).href);
+          const d = t.image?.depth ?? 1;
+          if (!t.isCompressedArrayTexture || d !== n) throw new Error(`${name}: not a ${n}-layer array (${d})`);
+          if (t.image.width !== px[0] || t.image.height !== px[1]) throw new Error(`${name}: ${t.image.width} x ${t.image.height}, want ${px.join(" x ")}`);
+          t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 8; t.needsUpdate = true;
+          return t;
+        };
+        const [tA, tC, tN] = await Promise.all([arr("interiors_v2.ktx2", V2.LAYERS, V2.PX), arr("interiors_v2c.ktx2", V2.LAYERS_C, V2.PX), arr("interiors_v2n.ktx2", V2.LAYERS_N, V2.PXN)]);
+        const bytes = (px, n) => Math.round(px[0] * px[1] * n * 4 / 3);
+        v2 = { tex: tA, texC: tC, texN: tN, W: V2.PX[0], H: V2.PX[1], WN: V2.PXN[0], bytesGPU: bytes(V2.PX, V2.LAYERS + V2.LAYERS_C) + bytes(V2.PXN, V2.LAYERS_N) };
+      } catch (e) { console.warn(`[shops] interiors v2: ${e.message}; every window v1`); v2 = null; }
+    }
+    if (v2) return { tex: null, flipV: 1, format: "ktx2", W: 0, H: 0, v2, bytesGPU: v2.bytesGPU, ms: performance.now() - t0 };
     let tex = null, flipV = 0, format = "png";
     if (!ktxOff && renderer) {
       try {
@@ -78,20 +103,7 @@ export function loadInteriors(renderer, base = new URL("../../", import.meta.url
     tex.anisotropy = 8;
     tex.needsUpdate = true;
     const W = tex.image?.width ?? 4096, H = tex.image?.height ?? 2048;
-    // v2: the café / restaurant layers, a KTX2 2D ARRAY (CompressedArrayTexture; no WebP twin: without it, or with
-    // ?shopsktx=0 / ?shopsv2=old, the cafés stay on the v1 atlas)
-    let v2 = null;
-    if (!V2_OFF && !ktxOff && renderer && format === "ktx2") {
-      try {
-        const t2 = await ktxLoader(renderer).loadAsync(new URL("textures/shops/interiors_v2.ktx2", base).href);
-        const n = t2.image?.depth ?? 1;
-        if (!t2.isCompressedArrayTexture || n !== V2.LAYERS) throw new Error(`not a ${V2.LAYERS}-layer array (${n})`);
-        t2.colorSpace = THREE.SRGBColorSpace; t2.wrapS = t2.wrapT = THREE.ClampToEdgeWrapping; t2.anisotropy = 8; t2.needsUpdate = true;
-        const w2 = t2.image.width, h2 = t2.image.height;
-        v2 = { tex: t2, W: w2, H: h2, layers: n, bytesGPU: Math.round(w2 * h2 * n * 4 / 3) };
-      } catch (e) { console.warn(`[shops] interiors_v2.ktx2: ${e.message}; the cafes stay v1`); v2 = null; }
-    }
-    return { tex, flipV, format, W, H, v2, bytesGPU: (format === "ktx2" ? Math.round(W * H * 4 / 3) : Math.round(W * H * 4 * 4 / 3)) + (v2?.bytesGPU ?? 0), ms: performance.now() - t0 };
+    return { tex, flipV, format, W, H, v2: null, bytesGPU: format === "ktx2" ? Math.round(W * H * 4 / 3) : Math.round(W * H * 4 * 4 / 3), ms: performance.now() - t0 };
   })());
 }
 
@@ -152,7 +164,7 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
       let nx = hx.sub(xL).div(roomW).mul(2).sub(1);
       nx = select(flipF.greaterThan(0.5), nx.negate(), nx);
       const ny = hy.add(gb).div(CEIL).mul(2).sub(1);
-      const s = float(1).div(float(1).add(tt.div(D).mul(rd / F)));
+      const s = float(1).div(float(1).add(tt.div(D).mul(typeof rd === "number" ? float(rd / F) : rd.div(F))));
       return vec2(nx.mul(s).mul(0.5).add(0.5), ny.mul(s).mul(0.5).add(0.5));
     };
     // mip level: the footprint on the GLASS (metres per pixel) x texels per metre at the front of the room (a cell is a
@@ -187,33 +199,46 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
     // ---- v2 (rule shop-room-layers): the room (L0) and three cards (L1 2.6 m, L2 1.2 m, L3 the window display 0.3 m)
     // composited front to back, premultiplied: c = L3 + (1 - a3) (L2 + (1 - a2) (L1 + (1 - a1) L0)); a card is drawn
     // only where its plane is in front of the room's hit (step(d, t)). Beyond V2.FAR + V2.BAND one fetch: the
-    // composite (the upper half of the L3 layer, half height). The array's rows are top first: t = 1 - v.
+    // composite (the upper half of the L3 layer, half height). The arrays' rows are top first: t = 1 - v.
+    // (shops5) every type: each variant's render is as deep as its type's room (rd = DEPTH by type: metric), the card
+    // planes are absolute metres; the layers come from three arrays (slot(): shopScale.js V2_SLOT), the 512 px ones
+    // (the day mid card, all the night layers) one mip less (lodN).
+    const ALL_V2 = INTERIOR_TYPES.every((n) => V2.TYPES.includes(n)) || !I.tex;
     const isV2 = V2.TYPES.map((name) => type.equal(INTERIOR_TYPES.indexOf(name))).reduce((a, b) => a.or(b));
-    const ruv2 = clamp(proj(t, V2.RD), 0.001, 0.999).toVar();
+    let rd = float(DEPTH_BY_INDEX[7]);
+    for (let i = 6; i >= 0; i--) rd = select(type.lessThan(i + 0.5), float(DEPTH_BY_INDEX[i]), rd);
+    rd = rd.toVar();
+    const ruv2 = clamp(proj(t, rd), 0.001, 0.999).toVar();
     const lod2 = clamp(log2(fw.mul(float(J.W)).div(roomW).mul(0.8).max(1)), 0, 10).toVar();
-    const base = clamp(iWinT.w.add(0.5).floor(), 0, V2.VARIANTS.length - 1).mul(8).toVar();
+    const lodN = max(lod2.sub(1), 0).toVar();
+    const vI = clamp(iWinT.w.add(0.5).floor(), 0, V2.VARIANTS.length - 1).toVar();
     const dist = length(cameraPosition.sub(positionWorld)).toVar();
-    const fetchV2 = (q, layer) => texture(J.tex, q).depth(layer).level(lod2);
-    const cardAt = (k, lo) => {                                 // card k (1..3) at its plane, masked, premultiplied
-      const d = float(V2.PLANES[k - 1] / V2.RD).mul(D);
-      const q = proj(d, V2.RD);
+    const fetchV2 = (T, q, layer, lv) => texture(T, q).depth(layer).level(lv);
+    // [array, layer, level] of card k (0 L0 .. 3 L3 + composite) by day (light 0) / night (1) = shopScale.js V2_SLOT
+    const slot = (light, k) => light ? [J.texN, vI.mul(5).add(1 + k), lodN]
+      : [[J.tex, vI.mul(2), lod2], [J.texN, vI.mul(5), lodN], [J.texC, vI, lod2], [J.tex, vI.mul(2).add(1), lod2]][k];
+    const cardAt = (light, k) => {                              // card k (1..3) at its plane, masked, premultiplied
+      const d = float(V2.PLANES[k - 1]).div(rd).mul(D);
+      const q = proj(d, rd);
       const vMax = k === 3 ? 0.499 : 1;                         // L3 lives in the lower half only
       const inside = step(0, q.x).mul(step(q.x, 1)).mul(step(0, q.y)).mul(step(q.y, vMax)).mul(step(d, t)).mul(U.layersV2);
       const qq = vec2(clamp(q.x, 0.001, 0.999), float(1).sub(clamp(q.y, 0.001, vMax)));
-      return fetchV2(qq, base.add(lo + k)).mul(inside);
+      const [T, layer, lv] = slot(light, k);
+      return fetchV2(T, qq, layer, lv).mul(inside);
     };
-    const nearV2 = (lo) => {
-      const c0 = fetchV2(vec2(ruv2.x, float(1).sub(ruv2.y)), base.add(lo)).rgb;
-      const c1 = cardAt(1, lo), c2 = cardAt(2, lo), c3 = cardAt(3, lo);
+    const nearV2 = (light) => {
+      const [T0, l0, v0] = slot(light, 0);
+      const c0 = fetchV2(T0, vec2(ruv2.x, float(1).sub(ruv2.y)), l0, v0).rgb;
+      const c1 = cardAt(light, 1), c2 = cardAt(light, 2), c3 = cardAt(light, 3);
       return c3.rgb.add(float(1).sub(c3.a).mul(c2.rgb.add(float(1).sub(c2.a).mul(c1.rgb.add(float(1).sub(c1.a).mul(c0))))));
     };
-    const farV2 = (lo) => fetchV2(vec2(ruv2.x, clamp(float(0.5).sub(ruv2.y.mul(0.5)), 0.004, 0.496)), base.add(lo + 3)).rgb;
+    const farV2 = (light) => { const [T, layer, lv] = slot(light, 3); return fetchV2(T, vec2(ruv2.x, clamp(float(0.5).sub(ruv2.y.mul(0.5)), 0.004, 0.496)), layer, lv).rgb; };
     const wFar = smoothstep(U.farV2.sub(V2.BAND), U.farV2.add(V2.BAND), dist).toVar();
-    const look = (lo) => {                                      // near / far / the band between (a cross-fade: no pop)
+    const look = (light) => {                                   // near / far / the band between (a cross-fade: no pop)
       const c = vec3(0).toVar();
-      If(wFar.lessThanEqual(0), () => { c.assign(nearV2(lo)); })
-        .ElseIf(wFar.greaterThanEqual(1), () => { c.assign(farV2(lo)); })
-        .Else(() => { c.assign(mix(nearV2(lo), farV2(lo), wFar)); });
+      If(wFar.lessThanEqual(0), () => { c.assign(nearV2(light)); })
+        .ElseIf(wFar.greaterThanEqual(1), () => { c.assign(farV2(light)); })
+        .Else(() => { c.assign(mix(nearV2(light), farV2(light), wFar)); });
       return c;
     };
     // the light: day = the day bake (sun patch + sky + the shop lights); night open = the night bake (lamps only);
@@ -222,15 +247,70 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
     const open = step(0.5, lit).toVar();
     const dayC = () => look(0).mul(U.dayV2);
     const nightC = () => {
-      const c = look(4);
+      const c = look(1);
       const glowSec = vec3(0.35, 0.55, 0.75).mul(0.05).mul(smoothstep(0.32, 0.0, length(ruv2.sub(vec2(0.5, 0.62)).mul(vec2(1, 1.6)))));
       const exitSign = vec3(0.05, 0.9, 0.3).mul(0.6).mul(step(abs(ruv2.x.sub(0.628)), 0.009)).mul(step(abs(ruv2.y.sub(0.6)), 0.007)).mul(step(D.mul(0.95), t));
       return mix(c.mul(U.closedV2).add(glowSec.add(exitSign).mul(U.securityV2)), c.mul(U.nightV2), open);
     };
-    If(isV2.not(), () => { v1(); })
-      .ElseIf(night.lessThanEqual(0.001), () => { out.assign(dayC()); })
-      .ElseIf(night.greaterThanEqual(0.999), () => { out.assign(nightC()); })
-      .Else(() => { out.assign(mix(dayC(), nightC(), night)); });
+    const room = () => {
+      If(night.lessThanEqual(0.001), () => { out.assign(dayC()); })
+        .ElseIf(night.greaterThanEqual(0.999), () => { out.assign(nightC()); })
+        .Else(() => { out.assign(mix(dayC(), nightC(), night)); });
+    };
+    if (ALL_V2) room();
+    else If(isV2.not(), () => { v1(); }).Else(room);
+    // ---- L4, the glass dressing (shops5, rule shop-room-layers): stickers on the glass's inner face from the sticker
+    // sheet (array A's last layer, tools/shops/stickers.py), ONE fetch a pixel, within V2.FAR + V2.BAND only
+    // (faded over the band). Per shop by hashes of the window seed: the opening-hours vinyl (75 %) and the payment marks
+    // (60 %) at one end at eye height, a promo sign at the other end (OUVERT / GEOPEND / SOLDES / SOLDEN / NOUVEAU /
+    // WELKOM by type; taken in on a closed shop at night), a lace café curtain along the bottom (cafés, bakeries: 45 %).
+    // The zones never overlap, so the pixel's cell is a select chain, not several fetches. The blinds, the half-down
+    // shutter and the dirt are procedural (glassDress below: no fetch).
+    If(U.dressV2.greaterThan(0).and(wFar.lessThan(1)), () => {
+      const S = STICKERS, PPM = STICKER_PPM;
+      const hsh = (k, c) => iWin.z.mul(k).add(c).fract();
+      const cell = (n) => vec4(...S[n]);
+      const end = hsh(17.13, 0.11).greaterThan(0.5);
+      const pick2 = hsh(31.1, 0.7).lessThan(0.5);
+      const tIs = (...names) => names.map((nm) => type.equal(INTERIOR_TYPES.indexOf(nm))).reduce((a2, b2) => a2.or(b2));
+      // the hours + payment column at one end, the promo slot at the other
+      const hW = S.hoursFR[2] / PPM, hH = S.hoursFR[3] / PPM, pW = S.pay[2] / PPM, pH = S.pay[3] / PPM;
+      const colX = select(end, w.sub(0.12 + hW), float(0.12));
+      const hY = float(1.22).sub(gb), pY = float(1.08).sub(gb);
+      const hoursOn = hsh(23.7, 0.31).lessThan(0.75), payOn = hsh(41.3, 0.17).lessThan(0.6);
+      const k3 = hsh(53.9, 0.43).mul(3).floor();
+      const shopG = tIs("boutique", "shop"), foodG = tIs("cafe", "bakery");
+      const pc = (a3, b3, c3) => select(k3.lessThan(0.5), cell(a3), select(k3.lessThan(1.5), cell(b3), cell(c3)));
+      const promoC = select(shopG, pc("sale", "saleNL", "newFR"), select(foodG, pc("open", "openBI", "welcome"), pc("openBI", "welcome", "newFR"))).toVar();
+      const prW = promoC.z.div(PPM), prH = promoC.w.div(PPM);
+      const prP = select(tIs("boutique"), float(0.6), select(tIs("shop"), float(0.35), float(0.4)));
+      const promoOn = hsh(61.7, 0.29).lessThan(prP).and(w.greaterThan(prW.add(hW).add(0.5)));
+      const prX = select(end, float(0.15), w.sub(prW).sub(0.15)), prY = float(1.62).sub(gb);
+      const laceTop = float(1.0).sub(gb);
+      const laceOn = foodG.and(hsh(71.3, 0.53).lessThan(0.45)).and(laceTop.greaterThan(0.25));
+      const inR = (X, Y, RWm, RHm) => x0.greaterThanEqual(X).and(x0.lessThanEqual(X.add(RWm))).and(y0.greaterThanEqual(Y)).and(y0.lessThanEqual(Y.add(RHm)));
+      const zH = hoursOn.and(inR(colX, hY, float(hW), float(hH)));
+      const zP = payOn.and(inR(colX, pY, float(pW), float(pH)));
+      const zR = promoOn.and(inR(prX, prY, prW, prH));
+      const zL = laceOn.and(y0.lessThanEqual(laceTop));
+      If(zH.or(zP).or(zR).or(zL), () => {
+        // the pixel's cell (px rect) and its local (u, v from the top)
+        const px = select(zH, select(pick2, cell("hoursFR"), cell("hoursBI")), select(zP, select(pick2, cell("pay"), cell("pay2")), select(zR, promoC, cell("lace"))));
+        const X = select(zH.or(zP), colX, select(zR, prX, float(0))), Y = select(zH, hY, select(zP, pY, select(zR, prY, float(0))));
+        const Wm = px.z.div(PPM), Hm = select(zL, laceTop, px.w.div(PPM));
+        const u = select(zL, x0.mul(PPM / S.lace[2]).fract(), x0.sub(X).div(Wm));
+        const v = float(1).sub(y0.sub(Y).div(Hm));
+        const q = vec2(px.x.add(clamp(u, 0.004, 0.996).mul(px.z)).div(V2.PX[0]), px.y.add(clamp(v, 0.004, 0.996).mul(px.w)).div(V2.PX[1]));
+        const lodS = clamp(log2(fw.mul(PPM).max(1)), 0, 9);
+        const st = fetchV2(J.tex, q, float(V2.STICKER_LAYER), lodS);
+        // faded beyond FAR; a promo sign taken in on a closed shop at night; the lace lets 45 % of the room through
+        const fade = float(1).sub(wFar).mul(select(zR, mix(float(1), open, night), float(1)));
+        const kOp = select(zL, float(0.55), float(1));
+        const lumIn = dot(out, vec3(0.2126, 0.7152, 0.0722));
+        const litS = mix(float(0.16), lumIn.mul(0.7).add(0.004), night);          // the vinyl: daylight / backlit by the room
+        out.assign(out.mul(float(1).sub(st.a.mul(fade).mul(kOp).mul(U.dressV2))).add(st.rgb.mul(fade).mul(litS).mul(U.dressV2)));
+      });
+    });
     return out;
   })();
   // the glass: a street-side mirror (sky above the horizon, the street's grey below, mostly at grazing views) over the
@@ -248,12 +328,51 @@ export function shopWindowMaterial(I, { night, glow, shrink }) {
   const fres = float(0.1).add(float(0.9).mul(pow(cosV, expo)));
   const rv = reflect(view.negate(), n);
   const sky = mix(vec3(0.07, 0.07, 0.072), vec3(0.42, 0.5, 0.6), smoothstep(-0.05, 0.4, rv.y));
-  m.colorNode = vec3(0.004, 0.0045, 0.005);
-  m.roughnessNode = float(0.03);
-  m.metalnessNode = float(0);
+  const glassCol = vec3(0.004, 0.0045, 0.005);
   m.specularIntensityNode = U.reflect;
   const mirror = sky.mul(fres).mul(U.mirror).mul(float(1).sub(night.mul(0.85)));
-  m.emissiveNode = insideNode.mul(float(1).sub(fres)).add(mirror).mul(glow);
+  if (!J) {
+    m.colorNode = glassCol;
+    m.roughnessNode = float(0.03);
+    m.metalnessNode = float(0);
+    m.emissiveNode = insideNode.mul(float(1).sub(fres)).add(mirror).mul(glow);
+  } else {
+    // ---- L4, the procedural glass dressing (shops5, no fetch): a roller shutter half down on a shop closed at night
+    // (it rolls down with the dusk: 42-62 % of the glass, galvanised slats, a bottom bar; lit by the street lights as a
+    // surface, the glass's mirror gone where it is), venetian blinds let down at the top of some offices / pharmacies /
+    // salons (35 %: 0.25-0.7 m, never below 1.95 m), light dirt (a grime band along the sill and the jambs, streaked).
+    // The slats fade to their mean where they are finer than ~2 pixels (no moiré far away).
+    const gx = uv().x.mul(w), gy = uv().y.mul(h), gbw = iWinT.y, gtype = iWinT.x.add(0.5).floor();
+    const hs = (k, c) => iWin.z.mul(k).add(c).fract();
+    const fwg = max(fwidth(gx), fwidth(gy)).max(1e-5);
+    const slats = (pitch, edge) => {
+      const f = gy.div(pitch).fract();
+      const ln = smoothstep(0, edge, f).mul(smoothstep(1, 1 - edge, f));
+      return mix(ln, float(1 - edge), clamp(fwg.div(pitch).mul(2).sub(0.5), 0, 1));
+    };
+    const shutDrop = h.mul(hs(83.1, 0.2).mul(0.2).add(0.42)).mul(smoothstep(0.35, 0.75, night)).mul(float(1).sub(step(0.5, lit))).mul(U.shutterV2);
+    const shut = step(h.sub(shutDrop), gy).mul(step(0.001, shutDrop)).toVar();
+    const bar = step(gy, h.sub(shutDrop).add(0.05));
+    const shAlb = mix(vec3(0.34, 0.35, 0.36).mul(mix(float(0.55), float(1), slats(0.075, 0.18))), vec3(0.06, 0.06, 0.065), bar);
+    const tB = (...names) => names.map((nm) => gtype.equal(INTERIOR_TYPES.indexOf(nm))).reduce((a, b) => a.or(b));
+    const blindDrop = clamp(hs(97.3, 0.61).mul(0.45).add(0.25), 0, max(h.sub(float(1.95).sub(gbw)), 0));
+    const blind = select(tB("office", "pharmacy", "salon").and(hs(91.7, 0.37).lessThan(0.35)), step(h.sub(blindDrop), gy), float(0)).mul(U.dressV2).toVar();
+    const blAlb = vec3(0.8, 0.8, 0.78).mul(mix(float(0.7), float(1), slats(0.025, 0.12)));
+    const edge = min(gx, w.sub(gx));
+    const dirt = smoothstep(0.3, 0, gy).mul(0.7).add(smoothstep(0.12, 0, edge).mul(0.4))
+      .mul(sin(gx.mul(7.3).add(iWin.z.mul(40))).mul(sin(gx.mul(2.1).add(gy.mul(3.7)))).mul(0.25).add(0.75))
+      .mul(hs(101.1, 0.77).mul(0.5).add(0.25)).mul(U.dirtV2).toVar();
+    const cover = max(shut, blind.mul(0.88)).toVar();
+    const alb = select(shut.greaterThan(0.5), shAlb, blAlb);
+    m.colorNode = mix(mix(glassCol, vec3(0.16, 0.15, 0.13), dirt.mul(0.35)), alb, cover);
+    m.roughnessNode = mix(mix(float(0.03), float(0.22), dirt), select(shut.greaterThan(0.5), float(0.55), float(0.7)), cover);
+    m.metalnessNode = shut.mul(0.35);
+    const ins = insideNode.toVar();
+    const lumIn = dot(ins, vec3(0.2126, 0.7152, 0.0722));
+    const leak = blAlb.mul(lumIn.mul(0.35)).mul(blind).mul(float(1).sub(shut));      // the blinds glow from the room behind
+    m.emissiveNode = ins.mul(float(1).sub(fres)).mul(float(1).sub(cover)).mul(float(1).sub(dirt.mul(0.25))).add(leak)
+      .add(mirror.mul(float(1).sub(shut))).mul(glow);
+  }
   m.positionNode = shrink(attribute("iWinC", "vec4"));
   m.name = "shops-window";
   m.userData.shared = true;

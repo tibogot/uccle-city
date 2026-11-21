@@ -14,7 +14,7 @@
 // Frame per front: X = right along the wall seen from the street, Y = up, Z = the wall's outward normal; the kit's
 // local +z is Z. Records: SHOP_STRIDE floats (x y z yaw, dW dH ys stripes, r g b amount).
 import { W0, PIECES } from "./shopPieces.js";
-import { v2Variant } from "./shopScale.js";
+import { v2Slot } from "./shopScale.js";
 
 export const SHOP_PIECES = Object.keys(PIECES);
 
@@ -36,16 +36,33 @@ const AWNING_CATS = new Set(["greengrocer", "butcher", "florist", "deli", "chees
 const PROJECT_KINDS = new Set(["cafe", "bar", "restaurant", "hotel", "bakery", "bank", "fastfood"]);
 const TERRACE_KINDS = new Set(["cafe", "bar", "restaurant"]);
 
-/** the interior atlas type (viewer/shops/shopWindow.js INTERIOR_TYPES) of a shop */
+/** the interior atlas type (viewer/shops/shopWindow.js INTERIOR_TYPES) of a shop. (shops5) more OSM shop / amenity /
+ *  craft values (the POI's `cat`) mapped to the room they look like inside, so fewer fall to the generic shop: second
+ *  hand / department store / fabric / tailor / dry cleaning (rails of clothes) -> boutique; health food, tea, tobacco,
+ *  pet, variety store -> grocery (shelves of goods); e-cigarette, supplements, herbalist -> pharmacy (small boxes behind
+ *  a counter); phone / electronics repair, funeral directors, photographers, garages' and craftsmen's front offices,
+ *  surgeries, notaries, guest houses -> office (desks, screens, a reception); pet grooming -> salon. Bikes, books,
+ *  furniture, toys, hardware, gifts ... stay generic (shelves of goods + a counter). */
+const T_CAFE_K = new Set(["cafe", "bar", "restaurant", "fastfood"]);
+const T_CAFE = new Set(["pub", "ice_cream", "fast_food", "cafe", "restaurant", "bar", "biergarten", "food_court"]);
+const T_BAKERY = new Set(["bakery", "pastry", "chocolate", "confectionery", "butcher", "cheese", "deli", "seafood", "caterer", "beekeeper", "coffee"]);
+const T_PHARMA = new Set(["pharmacy", "optician", "cosmetics", "perfumery", "chemist", "hearing_aids", "medical_supply", "e-cigarette", "nutrition_supplements", "herbalist"]);
+const T_BOUTIQUE = new Set(["clothes", "shoes", "jewelry", "watches", "leather", "bag", "fashion_accessories", "boutique", "sports", "department_store", "second_hand", "fabric", "tailor", "dry_cleaning", "bridal", "baby_goods", "charity", "fashion"]);
+const T_GROCERY = new Set(["florist", "garden_centre", "supermarket", "convenience", "greengrocer", "general", "frozen_food", "alcohol", "wine", "newsagent", "farm", "organic", "health_food", "food", "tea", "tobacco", "pet", "variety_store", "dairy", "spices", "kiosk", "beverages"]);
+const T_OFFICE = new Set(["bank", "travel_agency", "estate_agent", "insurance", "telecommunication", "copyshop", "post_office", "driving_school", "veterinary", "employment_agency",
+  "mobile_phone", "electronics_repair", "electronics", "computer", "hifi", "radiotechnics", "appliance", "funeral_directors", "photographer", "studio", "car", "car_repair", "tyres",
+  "roofer", "metal_construction", "electrician", "plumber", "carpenter", "builder", "locksmith", "dentist", "doctors", "clinic", "lawyer", "notary", "accountant", "architect",
+  "coworking", "guest_house", "hotel", "money_lender", "bureau_de_change", "lottery"]);
+const T_SALON = new Set(["hairdresser", "beauty", "massage", "wellness", "tattoo", "nails", "pet_grooming", "hairdresser_supply"]);
 export function interiorType(p) {
   const k = p.kind, c = p.cat || "";
-  if (["cafe", "bar", "restaurant", "fastfood"].includes(k) || ["pub", "ice_cream", "fast_food", "cafe", "restaurant", "bar"].includes(c)) return 2;
-  if (k === "bakery" || ["bakery", "pastry", "chocolate", "confectionery", "butcher", "cheese", "deli", "seafood", "caterer", "beekeeper"].includes(c)) return 0;
-  if (k === "pharmacy" || ["pharmacy", "optician", "cosmetics", "perfumery", "chemist", "hearing_aids", "medical_supply"].includes(c)) return 1;
-  if (["clothes", "shoes", "jewelry", "watches", "leather", "bag", "fashion_accessories", "boutique", "sports"].includes(c)) return 3;
-  if (k === "supermarket" || ["florist", "garden_centre", "supermarket", "convenience", "greengrocer", "general", "frozen_food", "alcohol", "wine", "newsagent", "farm", "organic"].includes(c)) return 4;
-  if (k === "bank" || k === "post" || ["bank", "travel_agency", "estate_agent", "insurance", "telecommunication", "copyshop", "post_office", "driving_school", "veterinary", "employment_agency"].includes(c)) return 5;
-  if (["hairdresser", "beauty", "massage", "wellness", "tattoo", "nails"].includes(c)) return 6;
+  if (T_CAFE_K.has(k) || T_CAFE.has(c)) return 2;
+  if (k === "bakery" || T_BAKERY.has(c)) return 0;
+  if (k === "pharmacy" || T_PHARMA.has(c)) return 1;
+  if (T_BOUTIQUE.has(c)) return 3;
+  if (k === "supermarket" || T_GROCERY.has(c)) return 4;
+  if (k === "bank" || k === "post" || k === "hotel" || T_OFFICE.has(c)) return 5;
+  if (T_SALON.has(c)) return 6;
   return 7;
 }
 
@@ -132,8 +149,10 @@ export function layoutShop(p, f, frame, lit, env) {
     const m = new Float32Array(WIN_STRIDE);
     m.set([X[0] * wW, X[1] * wW, X[2] * wW, 0, 0, wH, 0, 0, Z[0], 0, Z[2], 0, o[0], o[1], o[2], 1]);
     m.set([wW, wH, hash01(id + "w"), lit], 16);
-    // (curated interior: Lefevre's office); w = the v2 variant (shopScale.js v2Variant: 0 café, 1 brasserie)
-    m.set([cf.interior ?? interiorType(p), gb, hash01(id + "m") < 0.5 ? 1 : 0, v2Variant(p.kind, p.cat || "")], 20);
+    // (curated interior: Lefevre's office); w = the v2 variant (shopScale.js v2Slot: the café type by kind, café /
+    // brasserie; the other types their room; the neighbour rule may change it afterwards: layout.js)
+    const itype = cf.interior ?? interiorType(p);
+    m.set([itype, gb, hash01(id + "m") < 0.5 ? 1 : 0, v2Slot(itype, p.kind, p.cat || "")], 20);
     windows.push(m);
     night.shops.push(o[0] + Z[0] * 0.6, f.y + 1.6, o[2] + Z[2] * 0.6);
     // ?night=1 (viewer/nightLights/cityNight.js): the lit window as a light through its opening, in the facade's own
