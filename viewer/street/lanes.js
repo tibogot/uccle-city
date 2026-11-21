@@ -31,6 +31,11 @@ import { laneOffsetProfile } from "../streets/laneOffset.js";
  *  two directions' lanes would not fit; the sim's narrow-stretch rule lets one direction through at a time) */
 export const NARROW_TWO = 3.2;
 const narrowW = (two) => (two ? NARROW_TWO : 2 * KERB_CLEAR);
+/** how far a lane may sit off the carriageway's middle, as a share of its normal room (0 = centred), by width W: a
+ *  CONTINUOUS ramp over NARROW_BAND m above the narrow width (a hard switch flipped lanes between centred and split on a
+ *  street whose measured width hovers round it: Boomgaardstraat A5, a slalom of 100 m) */
+const NARROW_BAND = 1.0, NARROW_FREE = 0.5, CENTRE_FREE = 0.3;
+const narrowF = (W, two) => Math.max(0, Math.min(1, (W - narrowW(two)) / NARROW_BAND));
 export const KERB_CLEAR = 1.0;           // m: a lane centre this far inside the measured driving ends (plan 4 invariant 3)
 const BODY = 0.9, BLD_REACH = 5;         // m: a car body's half width; how far a lane in a building looks for a clear offset
 const FADE = 20;                         // m: a long faded turn takes each end's move over this much of it
@@ -41,13 +46,12 @@ const MIXED_MOVE = 3;                    // m: a mixed turn's end moved further 
 const CUT_MAX = 8;                       // m: the most a lane end is cut back for a blocked turn
 const DUAL_OFF = 1.5;                    // m: the OSM line this far outside a two-way segment's measured carriageway: a dual carriageway's half
 const AX_JUMP = 1.5;                     // m per station: a measured axis moving faster than this has jumped carriageways
-const LANE_GAP = 2.5;                    // m: an inner lane's centre at least this from the lane outside it (where the carriageway allows)
 const SUPPORT = 0.5;                     // a lane piece is built from the model where at least this share of its stations is measured
 const SLIP = 1.5;                        // m: how far a lane point off the drawn carriageway looks for it
 const RAY = 4;                           // m: how far a lane point looks sideways for a kerb line
-const PARK_CLEAR = 1.13;                 // m: a lane centre this far from a parked car's box (a bus's half width 1.27 + 0.18: the widest that drives the lanes; a car keeps 0.47 m)
+const PARK_CLEAR = 1.13;                 // m: a lane centre this far from a parked car's box (trafficGraph.js TP_HALF + TP_FIT: a car; a wider vehicle moves out round it in the sim, trafficSim.js)
 const BOX_HW = 0.925, BOX_HL = 2.365;    // m: a parked car's plan box (trafficGraph.js TP_BOX_HW / TP_BOX_HL)
-const MED = 5, BOX = 5, END_N = 0, END_W = 4;                 // m: running median, then two box passes, over +-these
+const MED = 7, BOX = 5, END_N = 0, END_W = 4;                 // m: running median, then two box passes, over +-these
 const MIN_PIECE = 3;                     // m: a lane piece shorter than this between its junction mouths is not rebuilt
 const CONT_GAP = 0.5;                    // m: at a continuation node with a connector, each lane stops this short of it
 const IN_TOL = 0.3;                      // m: a turn point this near the junction polygon counts as inside
@@ -101,8 +105,7 @@ function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null
       }
       c = a + ((b - a) * (Math.min(r, mi - 1) + 0.5)) / mi;
     } else c = own[Math.min(r, own.length - 1)];
-    if (hi - lo < narrowW(two)) c = (lo + hi) / 2;
-    else c = Math.max(lo + KERB_CLEAR, Math.min(hi - KERB_CLEAR, c));
+    { const m = (lo + hi) / 2, f = narrowF(hi - lo, two); c = Math.max(lo + KERB_CLEAR, Math.min(hi - KERB_CLEAR, c)); if (hi - lo < 2 * KERB_CLEAR) c = m; c = m + (c - m) * f; }
     raw[i] = E.axOff[i] + c; any = true;
   }
   if (!any) return null;
@@ -130,7 +133,7 @@ function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null
   const kA = new Float64Array(n).fill(-Infinity), kB = new Float64Array(n).fill(Infinity);
   // (the drawn carriageway's classes too (drv: roadway / tram roadway / parking on the tile's class raster): a tram
   // reservation inside the measured drive span, a median the kerb lines do not outline)
-  const NW = narrowW(mo.some((v2) => v2 > 0));
+  const two0 = mo.some((v2) => v2 > 0);
   const dRay = (x, z, nx, nz) => { for (let t = 0.25; t <= RAY; t += 0.25) if (!drv(x + nx * t, z + nz * t)) return t - 0.125; return Infinity; };
   for (let i = 0; i < n; i++) {
     if (!K && !drv) break;
@@ -145,7 +148,14 @@ function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null
     if (drv && !(drv(x + nx * KERB_CLEAR, z + nz * KERB_CLEAR) && drv(x - nx * KERB_CLEAR, z - nz * KERB_CLEAR))) { dl = dRay(x, z, nx, nz); dr = dRay(x, z, -nx, -nz); }
     if (K && K.near(x, z, KERB_CLEAR + 0.05)) { dl = Math.min(dl, K.ray(x, z, nx, nz, RAY)); dr = Math.min(dr, K.ray(x, z, -nx, -nz, RAY)); }
     if (dl === Infinity && dr === Infinity) continue;
-    if (dl + dr < NW) { kA[i] = kB[i] = v[i] + (dl - dr) / 2; continue; }      // (too narrow for two lanes: centred)
+    // (a carriageway about two clearances wide or less: no per-station need (its lane is the model's centred one; held
+    // to each station's middle between the two lines, the lane copied their noise: Rue des Pecheurs F6, 108 m slalom))
+    if (dl + dr < 2 * KERB_CLEAR + NARROW_FREE) continue;
+    if (dl < RAY && dr < RAY) {
+      // (between two lines: their middle, narrowed toward it continuously below NARROW_TWO + NARROW_BAND)
+      const ctr = v[i] + (dl - dr) / 2, hw = Math.max(0, (dl + dr) / 2 - KERB_CLEAR) * narrowF(dl + dr, two0);
+      kA[i] = ctr - hw; kB[i] = ctr + hw; continue;
+    }
     if (dr < RAY) kA[i] = v[i] - dr + KERB_CLEAR;
     if (dl < RAY) kB[i] = v[i] + dl - KERB_CLEAR;
   }
@@ -165,7 +175,10 @@ function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null
     if (!meas && lbC[i] === -Infinity && ubC[i] === Infinity && kA[i] === -Infinity && kB[i] === Infinity && bA[i] === -Infinity && bB[i] === Infinity) continue;
     const lo = E.axOff[i] + E.drive.offR[i], hi = E.axOff[i] + E.drive.offL[i];
     let a = meas ? lo + KERB_CLEAR : -Infinity, b = meas ? hi - KERB_CLEAR : Infinity, want;
-    if (a > b || (meas && hi - lo < NW)) { a = b = (lo + hi) / 2; }
+    if (a > b) { a = b = (lo + hi) / 2; }
+    // (a narrow carriageway: its middle, within +-CENTRE_FREE x (1 - f): pinned to each station's own middle, the lane copied
+    // the noise of the measured edges, F6 Rue des Pecheurs)
+    else if (meas) { const m = (lo + hi) / 2, f = narrowF(hi - lo, two0), t = CENTRE_FREE * (1 - f); a = m + (a - m) * f - t; b = m + (b - m) * f + t; }
     // (the kerb lines are the harder truth: where they and the driving ends disagree, the lines)
     if (Math.max(a, kA[i]) <= Math.min(b, kB[i])) { a = Math.max(a, kA[i]); b = Math.min(b, kB[i]); }
     else if (kA[i] > -Infinity || kB[i] < Infinity) { a = kA[i] > -Infinity ? kA[i] : -Infinity; b = kB[i] < Infinity ? kB[i] : Infinity; if (a > b) a = b = (a + b) / 2; }
@@ -422,19 +435,9 @@ export function modelLaneStage(net, model, paths, parked = null, kerbs = null, i
       cars.push({ i0, i1, t: E.axOff[q.i] + q.t, half });          // (t: from the station line)
     }
     stats.cars = (stats.cars || 0) + cars.length;
-    // (rank 0, the lane at its kerb, keeps clear of the parked cars; an inner lane keeps LANE_GAP from the lane outside
-    // it: both held off the same row of cars collapsed onto one line, two lanes 0.3 m apart, Av. De Fré F3)
-    const profOf = (d, r) => {
-      const k = `${d}|${r}`;
-      if (profs.has(k)) return profs.get(k);
-      let v = laneProfile(E, d, r, d > 0 ? mF : mB, d > 0 ? mB : mF, r === 0 ? cars : [], K, inBuilding0, drivable);
-      if (v && r > 0) {
-        const o = profOf(d, r - 1);
-        if (o) v = v.map((x, i) => { const room = d > 0 ? E.axOff[i] + E.drive.offL[i] - KERB_CLEAR : E.axOff[i] + E.drive.offR[i] + KERB_CLEAR; const want = o[i] + d * LANE_GAP; return d > 0 ? (x < want ? Math.min(want, Math.max(x, room)) : x) : (x > want ? Math.max(want, Math.min(x, room)) : x); });
-      }
-      profs.set(k, v);
-      return v;
-    };
+    // (rank 0, the lane at its kerb, keeps clear of the parked cars; an inner lane keeps the model's own lane centre:
+    // both held off the same row of cars collapsed onto one line, two lanes 0.3 m apart, Av. De Fré F3)
+    const profOf = (d, r) => { const k = `${d}|${r}`; if (!profs.has(k)) profs.set(k, laneProfile(E, d, r, d > 0 ? mF : mB, d > 0 ? mB : mF, r === 0 ? cars : [], K, inBuilding0, drivable)); return profs.get(k); };
     // the part boundaries (halfway between the last station of a part and the first of the next)
     const partS = (part) => { let i0 = -1, i1 = -1; for (let i = 0; i < n; i++) if (E.part[i] === part) { if (i0 < 0) i0 = i; i1 = i; } return [i0 > 0 ? (E.s[i0] + E.s[i0 - 1]) / 2 : 0, i1 < n - 1 ? (E.s[i1] + E.s[i1 + 1]) / 2 : L]; };
     for (const q of list) {

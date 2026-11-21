@@ -218,14 +218,18 @@ function run(where, hour, secs, rounds = 14) {
   for (let s = 0, n = Math.round(secs / STEP); s < n; s++) stepOnce(ctx);
   return T;
 }
-const share = (T, k) => (T.by[k] || 0) / Math.max(1, T.n);
+// (claude/street4: the shares of what the MIX draws: the buses are not drawn from it (trafMix.js: every line on its
+// route, its own timetable), so they are left out of the count. Counted in, a run where the buses got through faster
+// (and so spawned more often) "lowered" the car share: 75 % vs 86 %, a measurement artefact)
+const mixN = (T) => Math.max(1, T.n - (T.by.bus || 0));
+const share = (T, k) => (T.by[k] || 0) / mixN(T);
 const pct = (v) => (v * 100).toFixed(1) + " %";
 const res = {};
 for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS], ["13 h Rue Rouge", "station", 13, SECS], ["18 h Alsemberg", "alsemberg", 18, Math.round(SECS / 2)]]) {
   const T = run(where, hour, secs), s = shares(hour, true);
   res[label] = T;
   const tCar = s.hatch_s + s.hatch_c + s.estate + s.saloon + s.suv, tVan = s.van_c + s.van_p;
-  const tol = (p) => 3 * Math.sqrt((p * (1 - p)) / Math.max(1, T.n)) + 0.02;
+  const tol = (p) => 3 * Math.sqrt((p * (1 - p)) / mixN(T)) + 0.02;
   const bad = [];
   if (Math.abs(share(T, "car") - tCar) > tol(tCar)) bad.push(`cars ${pct(share(T, "car"))} (target ${pct(tCar)})`);
   if (Math.abs(share(T, "van") - tVan) > tol(tVan)) bad.push(`vans ${pct(share(T, "van"))} (target ${pct(tVan)})`);

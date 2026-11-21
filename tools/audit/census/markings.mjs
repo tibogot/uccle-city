@@ -380,7 +380,7 @@ if (S.rd.model?.lineItems) {
   const cars = g.parkedKept ?? parked?.sites ?? [];
   // (a car the lane keeps clear of: across the lane within the lanes' parked clearance (viewer/street/lanes.js
   // PARK_CLEAR) + 0.4 m of its box side, along it within the profile's hold (gaps under 30 m between two cars held))
-  const nearCar = (x, z, tx, tz) => cars.some((c) => { const dx = c.x - x, dz = c.z - z; if (dx * dx + dz * dz > 20 * 20) return false; const along = Math.abs(dx * tx + dz * tz), across = Math.abs(-dx * tz + dz * tx); return along < 17 && across - 0.925 < 1.45 + 0.4; });
+  const nearCar = (x, z, tx, tz) => cars.some((c) => { const dx = c.x - x, dz = c.z - z; if (dx * dx + dz * dz > 20 * 20) return false; const along = Math.abs(dx * tx + dz * tz), across = Math.abs(-dx * tz + dz * tx); return along < 17 && across - 0.925 < 1.13 + 0.4; });
   for (let i = 0; i < g.paths; i++) {
     if (g.model[i] !== 1 || g.kind[i] !== 0) continue;
     const o = g.off[i], n = g.off[i + 1] - o, L = g.len[i];

@@ -315,3 +315,40 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
 - **Next commands (in the worktree):**
   - `node --import ./tools/road_audit/register.mjs tools/audit/census/streetLanes.mjs --all --jobs 4 --quiet --worst 0 --write-register`
   - then `node tools/audit/mergeGate.mjs --changed --base af03a1ca`.
+
+**Round 3 (resumed 2026-11-21, the coordinator's decisions).**
+- **Parked-car clearance stays at 1.13 m globally; the sim was fixed by cause** (viewer/traffic/trafficSim.js):
+  - A vehicle wider than a car tests its own corridor before taking the lane's estimated need, may ease out by its extra
+    half width, and searches the least clear shift. The estimated need comes from the parked car's bounding disc and
+    started the search too far out.
+  - Oncoming traffic holds a pass only within its real reach (both widths). After 8 s refused, only the near oncoming
+    cars still hold it.
+  - A car standing on a conflicting turn with its front 1.5 m or more short of the conflict point does not hold the
+    crossing traffic.
+  - A car that has moved 3 m since its wait began is in a queue, not stuck.
+  - A run (ambulance / fire engine) passes cars that pulled over for it.
+  - The room check after a turn continues past an exit lane shorter than the room needed.
+  - The trafmix mix shares no longer count the timetabled buses (they are not drawn from the mix).
+- **Wobble with BOX 5, by cause:**
+  - The narrow-street switch is now a continuous ramp over 1 m of width.
+  - A narrow carriageway's lane is held only within 0.3 m of its middle; it was pinned to each station's measured
+    middle and copied the edges' noise (F6 Rue des Pêcheurs).
+  - No per-station kerb-line need where the carriageway is about two clearances wide or less.
+  - Venelle de Saint-Job is documented as a data case in the rule doc. With BOX 5 it is not in a building.
+- **LANE_GAP removed.** The round-2 rule kept an inner lane 2.5 m from the lane outside it; it pushed inner lanes off
+  their paint (laneP95 0.83). The lane collapse it guarded against (Av. De Fré) is fixed by cause: only the kerb-side
+  lane keeps clear of the parked cars. motofeel city rides still have 0 crashes.
+- **Numbers** (all 120 tiles; ceilings in parentheses):
+  - roads: slalom 4,717 (5,207), wobble 2,707 (2,800), in a building 16 places (17), off the carriageway 181 places
+    (192), headP999 4.28 (5.0), snapCreated 0;
+  - markings laneP95 0.11 m (0.45);
+  - drivecheck: 96 places (147), hero 1 (3), tree 0 (0), hedge 2 (5);
+  - motofeel: ok.
+- **streetlanes:** kerb 984 m (narrow 199, beside 570, ahead 143, junction 72), carriage 1,037 m, turn 346 m,
+  building 58 m. The register holds 489 entries.
+- **trafmix** still fails "never stuck": one bus and one bin lorry are removed, held busy in a gridlock at the D6 5-arm
+  Ch. d'Alsemberg junction. Cars queue inside its long turns because their exit is full. Each sim fix moves the
+  gridlock elsewhere: the same check failed with `?streetlanes=old` once the sim rules changed. The check is chaotic at
+  zero tolerance; see the report for the decision it needs.
+- **trafmix sim cost:** 1.05-1.07 x now. It measures through tools/gate/timing.mjs `measure`. The 1.14 seen once came
+  from the clear-corridor test, which ran for every car; it now runs for vehicles wider than a car only.
