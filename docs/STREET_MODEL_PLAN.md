@@ -219,3 +219,16 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
   The tail is parked cars in painted bike lanes, held 30 m (job 6).
 - Cost: the traffic graph stage is unchanged or cheaper. The model stage takes 40-70 ms a tile; fitToSurface is skipped
   on covered lanes. The road stage (1.4-2.9 s) is unchanged.
+
+**Gate (2026-11-21, meta + streetlanes + markings + the 27 auto rows).** 27 rows pass. Two fail:
+- `trafmix`: one ambulance is removed as stuck at a signal pair on Ch. d'Alsemberg (D7, -1326, 1238). Cars stand at a
+  red light still inside the previous junction's turn, because the lane between the two junctions is very short. The
+  ambulance waits for them (HOLD.busy).
+  - A first deadlock is fixed in viewer/traffic/trafficSim.js: a car inside a junction turn no longer crawls for an
+    ambulance behind it.
+  - `?streetlanes=old` passes this check.
+- `drivecheck`: 154 places, ceiling 147.
+  - Six of the extra places are LiDAR trees: the census finds them on the OSM centre-line paths, which the model lanes
+    no longer follow. The likely cause is that the tree clearing (pathCorridor) now follows the moved lanes, not the
+    OSM line; not checked further.
+  - The other extra places are one hero and one hedge place.

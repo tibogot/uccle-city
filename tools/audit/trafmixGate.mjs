@@ -129,7 +129,7 @@ const parked = [];
 for (const T of TILES) {
   const { roads, feats, bounds, rd, roofs } = loadTile(T);
   const wp = widthParking(roads, feats, bounds, streetFit(rd.surfaceData));
-  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, roofs });
+  const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, roofs, entry: process.env.LANES_OLD ? { streetLanes: false } : {} });
   for (const c of g.parkedKept ?? wp.sites) parked.push({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { setRGB() {} }, room: 6 });
   W.add(T, g);
 }

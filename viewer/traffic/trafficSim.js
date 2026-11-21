@@ -747,12 +747,16 @@ export class TrafficSim {
         if (dx * dx + dz * dz >= 95 * 95) continue;
         const ex = Math.sin(eh), ez = Math.cos(eh), along = dx * ex + dz * ez, lat = Math.abs(dx * ez - dz * ex);
         const dir = Math.sin(this.yaw[i]) * ex + Math.cos(this.yaw[i]) * ez;
+        // (claude/street4: a car INSIDE a junction turn clears the junction first, as a driver does: crawling there for an
+        // ambulance behind it held the ambulance itself, which waits until nobody stands before its conflict point
+        // (decide HOLD.busy): a deadlock the trafmix gate saw on Ch. d'Alsemberg D6 once the turns were laid anew)
+        const inTurn = g.kind[pi] === 1;
         if (dir > 0.6 && along > 2 && along < 80 && lat < 7) {                 // ahead, same way: pull right, stop
           this.yr[i] = -0.8;                                                   // (as far right as parked cars allow)
-          yieldCap = Math.min(yieldCap, along < 45 ? Math.max(0.05, v * 0.8) : 4);
+          if (!inTurn) yieldCap = Math.min(yieldCap, along < 45 ? Math.max(0.05, v * 0.8) : 4);
           this.stats.yielding++;
         } else if (dir < -0.6 && along > 0 && along < 70 && lat < 12) {       // oncoming: slow, keep right
-          this.yr[i] = Math.min(this.yr[i], -0.5); yieldCap = Math.min(yieldCap, 3.5); this.stats.yielding++;
+          this.yr[i] = Math.min(this.yr[i], -0.5); if (!inTurn) yieldCap = Math.min(yieldCap, 3.5); this.stats.yielding++;
         } else if (dir <= 0.6 && dir >= -0.6 && along > -25 && along < 75) yieldHold = true;   // across: wait at the line
       }
     }
