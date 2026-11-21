@@ -154,7 +154,10 @@ function makeSim(withMix, seed = 7) {
   return sim;
 }
 const FOCUS = { alsemberg: { fx: -1200, fz: 900 }, station: { fx: -514, fz: -340 } };
-const sim = makeSim(true);
+// (--seed N: the main run's seed, the same table judged on another day of traffic; rule junction-entry-room asks 3)
+const CYCLE_MAX = 3;
+const SEED = +(process.argv.find((a, k) => process.argv[k - 1] === "--seed") ?? 7);
+const sim = makeSim(true, SEED);
 // what every car is, counted when it appears (gen changes) and how long each service vehicle has stood
 const seenGen = new Uint32Array(sim.cap), stand = new Float32Array(sim.cap), lastHold = new Float32Array(sim.cap);
 const tally = () => ({ n: 0, by: {}, role: {} });
@@ -252,6 +255,8 @@ for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS
 {
   const bad = Object.entries(standMax).filter(([, v]) => v > 90).map(([k, v]) => `${k} ${v.toFixed(0)} s`);
   const rem = Object.entries(stuckRemoved).map(([k, v]) => `${k} ${v}`);
+  // (rule junction-entry-room: the cycle breaker is a safety net; the entry-room rule must keep gridlocks from forming)
+  check("junction entry room", (sim.stats.cycleBreaks || 0) <= CYCLE_MAX, `wait-for loops broken: ${sim.stats.cycleBreaks || 0} (<= ${CYCLE_MAX}: cars start a junction turn only with room past it, reserved against the cars already turning there)`);
   check("service vehicles never stuck", !bad.length && !rem.length && Object.keys(standMax).length > 0, `longest standstill (not a planned stop): ${Object.entries(standMax).map(([k, v]) => `${k} ${v.toFixed(0)} s`).join(", ") || "none seen"}${rem.length ? "; removed as stuck: " + rem.join(", ") : ""}`);
   // (the delivery vans are the street's vans on a round: held at a junction like any car; their stops never make them
   // stuck more often than the other cars: x2 + 1 for the small sample)

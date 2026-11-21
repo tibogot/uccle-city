@@ -357,3 +357,22 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
   gridlock among the close Ch. d'Alsemberg junctions in D6 / D7 at 8 h. Not fixed; it needs a decision (see the
   report). Everything else in the trafmix check passes. Sim cost 1.01-1.07 x.
 
+
+**Round 4 (2026-11-21): junction entry room (rule junction-entry-room).**
+- **What was added:**
+  - the exit-room reservation at turn entry, with fair claims after 20 s;
+  - the wait-for cycle breaker, counted, with the trafmix assertion "wait-for loops broken <= 3";
+  - `--seed N` on trafmixGate.
+- **Breaks used:** 1-2 per run.
+- **trafmix "never stuck"** (removals; the stuck vehicles are buses and bin lorries):
+
+  | seed | model lanes | `?streetlanes=old` |
+  |---|---|---|
+  | 7 | 4 | 0 removals, but the 8 h mix share failed (cars 90.0 %, target 85.4 ± 4.5 %) |
+  | 11 | 2 | 2 |
+  | 23 | 1 | not run |
+
+  The committed sim on old lanes also has 3 removals at the default seed.
+- **The stuck vehicles left are not loops:** queues standing 36 m and more before a red light behind a jam, and
+  priority-to-the-right waits at D7. The network is oversaturated at 8 h round Ch. d'Alsemberg. See the report.
+- **Rows the sim touches:** meta, trafparksim and roadsim pass.
