@@ -22,7 +22,7 @@ import { edgeField, onceEdgeList } from "./heightmap.js";
 import { retainingWalls, appendToPart } from "./streets/retainWalls.js";
 import { measureLineFit, fitLinesToStreet, laneShifter } from "./streets/lineFit.js";
 import { buildStreetModel } from "./street/model.js";
-import { modelLineItems, lineQuery } from "./street/markings.js";
+import { modelLineItems, lineQuery, engineLineCodes } from "./street/markings.js";
 
 export const CARVE = 0.12;         // terrain is pushed this far under any road surface
 // (claude/sidewalk, ?sidewalk=old = 0) the terrain higher than a street banks down to its outer edge at this slope (m per m,
@@ -149,8 +149,8 @@ export function buildRoadData(o) {
   let streetModel = null;
   if (v2 && o.streetModel) {
     streetModel = buildStreetModel({ ...o.streetModel, bounds });
-    const E = built.asphalt?.attributes?.aEdges?.array;
-    if (E) for (let v = 0; v < E.length; v += 4) { E[v + 2] = 0; E[v + 3] = 0; }
+    // (the engine's own centre / edge lines kept only on roads UrbIS does not measure at all: D-engine, markings.js)
+    streetModel.stats.engine = engineLineCodes(net, built.asphalt, streetModel);
     lap("street model");
   }
   // paint v2: engine pieces that overlap get lift tiers (junction pads on top, then the higher road rank)
@@ -251,7 +251,7 @@ export function buildRoadData(o) {
     lap("paint decal");
   }
   const out = { parts, atlas, carvedCells, weldedCells, clampedCells, triangles, surfaceStats, surfaceData, netInfo, roadBend: bend, times, net, inventory: pv?.inventory ?? null, paint: v2 ? "v2" : "v1",
-    streetModel: streetModel ? { stats: streetModel.stats } : null };
+    streetModel: streetModel ? { stats: { ...streetModel.stats, engine: { ...streetModel.stats.engine, ids: undefined } }, bareRoads: streetModel.stats.engine?.ids ?? [] } : null };
   if (o.keep) Object.assign(out, { prep, built, model: streetModel });
   return out;
 }

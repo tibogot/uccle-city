@@ -31,7 +31,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, at, ROOT, SC, lineIndex } from "./lib_street.mjs";
-import { findCtx, roadRuns } from "./lib_find.mjs";
+import { findCtx, roadRuns, ownKerb } from "./lib_find.mjs";
 import { judge, report, rewrite } from "../gaps.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, flag } = cli();
@@ -50,15 +50,15 @@ if (!CHILD) {
   let bad = 0;
   if (TILES.length) {
     const res = await runTiles(new URL(import.meta.url), TILES, { jobs: JOBS, extra: OLD ? ["--old"] : MODEL_OLD ? ["--modelold"] : [], log: !QUIET });
-    const sum = { tiles: 0, strokeM: 0, decalM: 0, decalUnjudged: 0 }, byCheck = Object.fromEntries(CHECKS.map((c) => [c, 0])), streets = {};
+    const sum = { tiles: 0, strokeM: 0, decalM: 0, decalUnjudged: 0, engineM: 0 }, byCheck = Object.fromEntries(CHECKS.map((c) => [c, 0])), streets = {};
     for (const r of res) {
       if (r.error) { bad++; continue; }
-      sum.tiles++; sum.strokeM += r.strokeM; sum.decalM += r.decalM; sum.decalUnjudged += r.decalUnjudged;
+      sum.tiles++; sum.strokeM += r.strokeM; sum.decalM += r.decalM; sum.decalUnjudged += r.decalUnjudged; sum.engineM += r.engineM || 0;
       for (const c of CHECKS) byCheck[c] += r.byCheck[c];
       for (const [k, v] of Object.entries(r.streets)) streets[k] = (streets[k] || 0) + v;
     }
     for (const c of CHECKS) byCheck[c] = Math.round(byCheck[c]);
-    sum.strokeM = Math.round(sum.strokeM); sum.decalM = Math.round(sum.decalM);
+    sum.strokeM = Math.round(sum.strokeM); sum.decalM = Math.round(sum.decalM); sum.engineM = Math.round(sum.engineM);
     const findings = res.flatMap((r) => r.findings || []);
     const byInv = {}; for (const f of findings) byInv[f.inv] = (byInv[f.inv] || 0) + 1;
     const byCause = {}; for (const f of findings) byCause[f.cause] = (byCause[f.cause] || 0) + 1;
@@ -163,21 +163,55 @@ if (D?.attributes?.aPaint) {
 }
 // ---- judge
 const flagged = [];
+// (claude/street2: D-ENGINE strokes, on roads UrbIS does not measure at all (rd.streetModel.bareRoads: the drawn road is
+// the engine's strip from this OSM line): judged against that drawn strip, not against a measured kerb: inside it by
+// half the width + MARGIN, within ANGLE of its alignment, an edge line at its edge - 0.30 +- 0.10 m, none in a junction)
+const bareIds = new Set(rd.streetModel?.bareRoads || []);
+const { roadFrameOf } = await import("../../../viewer/streets/lineFit.js");
+const { layoutEdges } = await import("../../../vendor/roads/roadCrossSection.js");
+out.engineM = 0;
+const engineWhy = (s) => {
+  const q = bareIds.size ? ctx.roadAt(s.x, s.z) : null;
+  if (!q || !bareIds.has(q.id) || kIdx.dist(s.x, s.z, REACH)) return null;
+  const rr = q.r, f = roadFrameOf(rr, s.x, s.z), S0 = rr.smp;
+  let i = 0; while (i < S0.s.length - 1 && S0.s[i] < f.s) i++;
+  const e = layoutEdges(rr.lays[i]), why = [];
+  if (ctx.junctionAt(s.x, s.z)) why.push("junction");
+  const tx = -f.nz, tz = f.nx, ang = (Math.acos(Math.min(1, Math.abs(s.ux * tx + s.uz * tz))) * 180) / Math.PI;
+  if (ang > ANGLE) why.push("angle");
+  if (f.t < e.curbR + s.hw + MARGIN || f.t > e.curbL - s.hw - MARGIN) why.push("margin");
+  const dE = Math.min(e.curbL - f.t, f.t - e.curbR);
+  if (dE < EDGE_ZONE && Math.abs(dE - EDGE_AT) > EDGE_TOL) why.push("edge");
+  return why;
+};
 for (const s of samples) {
   out.strokeM += s.m;
+  const ew = engineWhy(s);
+  if (ew) {
+    out.engineM += s.m;
+    const st = nameAt(s.x, s.z); out.streets[st] = (out.streets[st] || 0) + s.m;
+    for (const w of ew) out.byCheck[w] += s.m;
+    if (ew.length) flagged.push({ x: s.x, z: s.z, why: ew, m: s.m });
+    continue;
+  }
   const why = [];
   const k = kIdx.dist(s.x, s.z, REACH);
   if (!k) why.push("noKerb");
   if (ctx.junctionAt(s.x, s.z)) why.push("junction");
   if (k) {
     const ang = (Math.acos(Math.min(1, Math.abs(s.ux * k.ux + s.uz * k.uz))) * 180) / Math.PI;
-    if (ang > ANGLE) why.push("angle");
+    // (claude/street2: an angle over ANGLE is judged again against the stroke's OWN kerb, the first one square to it,
+    // not the nearest one anywhere: a kerb step, build-out or island ahead is nearer than the kerb across the lane)
+    const own = ang > ANGLE && S.fit ? ownKerb(S.fit, s.x, s.z, s.ux, s.uz, REACH) : null;
+    const angOwn = own ? (Math.acos(Math.min(1, Math.abs(s.ux * own.tx + s.uz * own.tz))) * 180) / Math.PI : ang;
+    if (ang > ANGLE && angOwn > ANGLE) why.push("angle");
     if (k.d < EDGE_ZONE && Math.abs(k.d - EDGE_AT) > EDGE_TOL) why.push("edge");
   }
   // margin: the stroke on the carriageway (within a raster cell of a kerb: on its road side, exact; else the 0.5 m class
   // raster) and its paint MARGIN m clear of the kerb / street edge (exact lines)
   const kk = S.fit?.nearKerb(s.x, s.z, 0.75);
-  const onCarr = kk ? (s.x - kk.x) * kk.lx + (s.z - kk.z) * kk.lz < 0 : CARR.has(classAt(s.x, s.z));
+  // (a sample on the tile edge reads the raster 5 cm inside: its last column is empty exactly on the edge)
+  const onCarr = kk ? (s.x - kk.x) * kk.lx + (s.z - kk.z) * kk.lz < 0 : CARR.has(classAt(Math.min(S.bounds.x1 - 0.05, Math.max(S.bounds.x0 + 0.05, s.x)), Math.min(S.bounds.z1 - 0.05, Math.max(S.bounds.z0 + 0.05, s.z))));
   if (!onCarr || (k && k.d < s.hw + MARGIN)) why.push("margin");
   const st = nameAt(s.x, s.z); out.streets[st] = (out.streets[st] || 0) + s.m;
   for (const w of why) out.byCheck[w] += s.m;

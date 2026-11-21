@@ -29,7 +29,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { streetTile, runTiles, cli, at, ROOT, SC, CLASS_NAME, lineIndex } from "./lib_street.mjs";
-import { findCtx, roadRuns } from "./lib_find.mjs";
+import { findCtx, roadRuns, ownKerb } from "./lib_find.mjs";
 import { judge, report, rewrite } from "../gaps.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, opt, flag } = cli();
@@ -269,8 +269,11 @@ if (fit && A) {
   }
   // classify
   const flagged = [];
+  // (claude/street2: a sample ON the tile edge (a stroke the decal clipped there) reads the class raster 5 cm inside the
+  // tile: the raster's last column is empty exactly on the edge)
+  const b0 = S.bounds, inX = (x) => Math.min(b0.x1 - 0.05, Math.max(b0.x0 + 0.05, x)), inZ = (z) => Math.min(b0.z1 - 0.05, Math.max(b0.z0 + 0.05, z));
   for (const s of samples) {
-    const c = classAt(s.x, s.z), why = [];
+    const c = classAt(inX(s.x), inZ(s.z)), why = [];
     const k = fit.nearKerb(s.x, s.z, NEAR_KERB);
     // (no measured surface and no measured kerb within 4 m: a street UrbIS does not map (Flanders, private roads):
     // nothing to judge the line against, not counted)
@@ -287,7 +290,10 @@ if (fit && A) {
       const straight = k1 && k2 && Math.abs(k1.tx * k.tx + k1.tz * k.tz) > 0.98 && Math.abs(k2.tx * k.tx + k2.tz * k.tz) > 0.98;
       const ang = (Math.acos(Math.min(1, Math.abs(s.ux * k.tx + s.uz * k.tz))) * 180) / Math.PI;
       if (process.env.CENSUS_DBG) { (globalThis.H ??= {})[`${straight ? "S" : "c"}${Math.min(9, Math.floor(ang / 5))}`] = ((globalThis.H[`${straight ? "S" : "c"}${Math.min(9, Math.floor(ang / 5))}`]) || 0) + 1; }
-      if (straight && ang > SKEW) { why.push("skew"); out.skewM++; }
+      // (claude/street2: judged against the stroke's OWN kerb, the one across from it, not a step or island ahead)
+      const own = straight && ang > SKEW ? ownKerb(fit, s.x, s.z, s.ux, s.uz, NEAR_KERB) : null;
+      const angOwn = own ? (Math.acos(Math.min(1, Math.abs(s.ux * own.tx + s.uz * own.tz))) * 180) / Math.PI : ang;
+      if (straight && ang > SKEW && angOwn > SKEW) { why.push("skew"); out.skewM++; }
     }
     if (!why.includes("skew") && (c >= 0 || k) && laneSkew(s)) { why.push("laneSkew"); out.laneSkewM++; }
     if (why.length) flagged.push({ ...s, why });

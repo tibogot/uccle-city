@@ -14,6 +14,8 @@
 // u runs along the whole run, so the joins between pieces draw no seam; paintMeshV2 marks them as along-road lines).
 import { decodeLineCode } from "../../vendor/roads/mesh/laneRoadMesh.js";
 import { CONF, ROLE, pip2 } from "./model.js";
+import { layoutEdges } from "../../vendor/roads/roadCrossSection.js";
+import { roadMembers } from "../streets/roadBends.js";
 
 export const EDGE_IN = 0.30;             // m: an edge line's centre inside the kerb (plan 3: "kerb - 0.30 m")
 const MIN_RUN = 6;                       // m: a shorter run is not painted (a stub of line is no marking: a mouth, a gap end)
@@ -211,4 +213,46 @@ export function lineQuery(lines, CELL = 4) {
       }
     return best;
   };
+}
+
+/**
+ * D-ENGINE LINES (coordinator 2026-11-21, rule street-model): where UrbIS measures nothing at all along a road (every
+ * station of its segment part bare, none X: the Flemish fringe, unmapped private lanes) the DRAWN road is the engine's
+ * own strip swept from this OSM line, so lines laid on that strip cannot disagree with what is drawn. On those roads
+ * the engine asphalt keeps its centre line (t = 0, the engine's own style) and its edge lines (the engine paints one only
+ * where its stack has no kerb), moved EDGE_IN inside the strip's edge; every other line code (lane, bike, parking) and
+ * every line inside a model junction goes. Every other road: no line code (its lines come from the model). In place on
+ * the engine asphalt (aEdges), before the measured overlay. -> stats
+ */
+export function engineLineCodes(net, part, model) {
+  const st = { bareRoads: 0, centreVerts: 0, edgeVerts: 0, cut: 0, ids: [] };
+  const E = part?.attributes?.aEdges?.array;
+  if (!E) return st;
+  const U = part.uv, P = part.position, nv = P.length / 3;
+  const segOf = new Map();
+  for (const S of model.segments) S.sources.roads.forEach((id, p) => segOf.set(id, [S, p]));
+  const bare = net.roads.map((rr) => {
+    const q = segOf.get(rr.id); if (!q) return false;
+    const [S, p] = q; let any = false;
+    for (let i = 0; i < S.n; i++) if (S.part[i] === p) { any = true; if (!S.bare[i] || S.axConf[i] === CONF.X) return false; }
+    return any;
+  });
+  net.roads.forEach((rr, ri) => { if (bare[ri]) { st.bareRoads++; st.ids.push(rr.id); } });
+  const member = st.bareRoads ? roadMembers(net, part) : null;
+  for (let v = 0; v < nv; v++) {
+    const ri = member ? member[v] : -1;
+    if (ri < 0 || !bare[ri] || model.junctionAt(P[v * 3], P[v * 3 + 2])) { if (E[v * 4 + 2] || E[v * 4 + 3]) st.cut++; E[v * 4 + 2] = 0; E[v * 4 + 3] = 0; continue; }
+    const rr = net.roads[ri], S0 = rr.smp, s = U[v * 2];
+    let lo = 0, hi = S0.s.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (S0.s[m] < s) lo = m; else hi = m; }
+    const e = layoutEdges(rr.lays[Math.abs(S0.s[hi] - s) < Math.abs(S0.s[lo] - s) ? hi : lo]);
+    for (let k = 0; k < 2; k++) {
+      if (E[v * 4 + 2 + k] < 1) continue;
+      const lt = E[v * 4 + k];
+      if (Math.abs(lt - e.curbL) < 0.03) { E[v * 4 + k] = lt - EDGE_IN; st.edgeVerts++; }
+      else if (Math.abs(lt - e.curbR) < 0.03) { E[v * 4 + k] = lt + EDGE_IN; st.edgeVerts++; }
+      else if (Math.abs(lt) < 0.05) st.centreVerts++;
+      else { E[v * 4 + 2 + k] = 0; st.cut++; }
+    }
+  }
+  return st;
 }

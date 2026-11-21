@@ -98,3 +98,12 @@ export function roadRuns(samples, ctx, { prefix, tile, nameAt, at, GAP = 3, MIN 
   }
   return out;
 }
+
+/** claude/street2: the kerb a stroke at (x, z) running (ux, uz) is ALONG: the first kerb crossed going square to the
+ *  stroke, either side, within reach (0.25 m steps; a kerb within 0.15 m of the probe). Not the nearest kerb anywhere:
+ *  a step / build-out / island ahead of the stroke is nearer than its own kerb across the lane. -> fit.nearKerb result | null */
+export function ownKerb(fit, x, z, ux, uz, reach) {
+  const nx = -uz, nz = ux;
+  for (let d = 0.25; d <= reach; d += 0.25) for (const sg of [1, -1]) { const k = fit.nearKerb(x + nx * d * sg, z + nz * d * sg, 0.15); if (k) return k; }
+  return null;
+}

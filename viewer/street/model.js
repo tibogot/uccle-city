@@ -48,8 +48,8 @@ const TOPO_SNAP = 1.0, TOPO_COS = Math.cos((10 * Math.PI) / 180);   // a UrbIS T
 const TOPO_WIN = 10, TOPO_DEV = 0.15;    // m: ... where its offset holds within 0.15 m of its +-10 m median
 const MOUTH_MAX = 40;                    // m: the farthest a mouth line is looked for along an arm
 const CROSS_PAD = 0.5;                   // m: lines stop this far before a measured crossing
-export const CONF = { M: 0, D: 1, O: 2, G: 3, X: 4 };
-export const CONF_NAME = "MDOGX";
+export const CONF = { M: 0, D: 1, O: 2, G: 3, X: 4, E: 5 };
+export const CONF_NAME = "MDOGXE";       // E = "D-engine": no UrbIS surface at all, the drawn road IS the engine's strip from this OSM line
 export const KERB_KIND = { none: 0, kerb: 1, edgeRaised: 2, edgeFlush: 3, parking: 4 };
 export const ROLE = { lane: 0, centre: 1, edgeR: 2, edgeL: 3 };
 const KERB_H = 0.13;                     // m: = viewer/surfaces.js KERB (not imported: this module stays small for the bake)
@@ -417,7 +417,7 @@ function measure(c, Q, N) {
   const spans = c.parts.map(({ r, rev }) => { const b = stackBoundaries(stackOf(r, N.overrides)).bounds; const lo = b[0].t, hi = b[b.length - 1].t; return rev ? [-hi, -lo] : [lo, hi]; });
   const span = Array.from({ length: n }, (_, i) => { let p = 0; while (p + 1 < c.parts.length && c.parts[p + 1].from <= S.part[i]) p++; return spans[p]; });
   const kL = new Float64Array(n).fill(NaN), kR = new Float64Array(n).fill(NaN), dL = new Float64Array(n).fill(NaN), dR = new Float64Array(n).fill(NaN);
-  const kindL = new Uint8Array(n), kindR = new Uint8Array(n), X = new Uint8Array(n), cov = new Uint8Array(n);
+  const kindL = new Uint8Array(n), kindR = new Uint8Array(n), X = new Uint8Array(n), cov = new Uint8Array(n), bare = new Uint8Array(n).fill(1);
   const srcs = new Set();
   for (let i = 0; i < n; i++) {
     const x = S.x[i], z = S.z[i], nx = S.nx[i], nz = S.nz[i];
@@ -427,6 +427,7 @@ function measure(c, Q, N) {
     let iv = Q.intervals(x, z, nx, nz, NEAR_R);
     if (iv.length && ((iv[0].drive || iv[0].park) || (iv[iv.length - 1].drive || iv[iv.length - 1].park))) iv = Q.intervals(x, z, nx, nz, REACH);
     if (!iv.length) continue;
+    if (iv.some((q) => q.drive || q.park)) bare[i] = 0;          // (a measured carriageway within reach: not bare)
     // the driving carriageway of THIS road: the one overlapping its stack's carriage span most (a one-way half of a dual
     // carriageway, its OSM line at its left edge, takes its own half, not the other one as near), else the one holding
     // t = 0, else the nearest within FIND
@@ -466,7 +467,7 @@ function measure(c, Q, N) {
   // mouths / bays / build-outs: an end JUMP off its side's running median is not M (no edge line along a side street's mouth)
   const prune = (v) => { const med = runMedian(S.s, v, JUMP_WIN); for (let i = 0; i < n; i++) if (!Number.isNaN(v[i]) && !(Math.abs(v[i] - med[i]) <= JUMP)) v[i] = NaN; };
   prune(kL); prune(kR); prune(dL); prune(dR);
-  return { S, kL, kR, dL, dR, kindL, kindR, X, cov, srcs: [...srcs].sort() };
+  return { S, kL, kR, dL, dR, kindL, kindR, X, cov, bare, srcs: [...srcs].sort() };
 }
 
 /** fill: conf M where measured, D across gaps <= INTERP between M stations, else the fallback (O / G) */
@@ -524,7 +525,7 @@ function buildSegment(c, Mz, N, Q) {
   for (let i = 0; i < n; i++) {
     const mL = KL.conf[i] <= CONF.D, mR = KR.conf[i] <= CONF.D;
     if (mL && mR) { axOff[i] = (KL.v[i] + KR.v[i]) / 2; axConf[i] = Mz.X[i] ? CONF.X : KL.conf[i] === CONF.M && KR.conf[i] === CONF.M ? CONF.M : CONF.D; }
-    else { axOff[i] = 0; axConf[i] = Mz.X[i] ? CONF.X : fbC[i]; }
+    else { axOff[i] = 0; axConf[i] = Mz.X[i] ? CONF.X : Mz.bare[i] ? CONF.E : fbC[i]; }
   }
   // kerbs relative to the axis; height / kind
   const f32 = (a) => Float32Array.from(a);
@@ -539,7 +540,7 @@ function buildSegment(c, Mz, N, Q) {
   };
   const kerbL = kerb(KL, Mz.kindL), kerbR = kerb(KR, Mz.kindR);
   const drive = { offL: f32(Array.from(DL.v, (v, i) => v - axOff[i])), offR: f32(Array.from(DR.v, (v, i) => v - axOff[i])), confL: DL.conf, confR: DR.conf };
-  return { c, S, partOf, stacks, axOff, axConf, kerbL, kerbR, drive, X: Mz.X, srcs: Mz.srcs };
+  return { c, S, partOf, stacks, axOff, axConf, kerbL, kerbR, drive, X: Mz.X, bare: Mz.bare, srcs: Mz.srcs };
 }
 
 /** the lanes of a built segment, given its mouth stations at both ends (junction clip) */
@@ -708,7 +709,7 @@ export function buildStreetModel({ network, overrides, tile, bounds, inputsOf, s
       sources: { osm: c.ways, roads: c.roads, urbis: sg.srcs },
       stacks: sg.stacks.map((P) => ({ type: P.st.type, rank: P.st.rank, tagged: P.tagged, rev: P.rev, dropped: P.dropped })),
       junctionA: jA?.id ?? null, junctionB: jB?.id ?? null, mouthA, mouthB,
-      n, s: Float32Array.from(S.s), nx: Float32Array.from(S.nx), nz: Float32Array.from(S.nz), ax: Float32Array.from(ax), az: Float32Array.from(az), axConf: sg.axConf, part: Uint8Array.from(sg.partOf),
+      n, s: Float32Array.from(S.s), nx: Float32Array.from(S.nx), nz: Float32Array.from(S.nz), ax: Float32Array.from(ax), az: Float32Array.from(az), axConf: sg.axConf, part: Uint8Array.from(sg.partOf), bare: sg.bare,
       kerbL: sg.kerbL, kerbR: sg.kerbR, drive: sg.drive, ring, cross, lanes, x0, x1, z0, z1,
     };
     store.set(k, E);
@@ -736,7 +737,7 @@ function junctionTest(J) {
 
 // ---------------------------------------------------------------- canonical bytes (seam identity, rule street-model)
 
-const ARRAYS_SEG = ["s", "nx", "nz", "ax", "az", "axConf", "part", "ring", "cross"];
+const ARRAYS_SEG = ["s", "nx", "nz", "ax", "az", "axConf", "part", "bare", "ring", "cross"];
 /** the canonical byte form of an element: its meta JSON + every typed array in a fixed order */
 export function elementBytes(E) {
   const parts = [];
@@ -766,13 +767,14 @@ const SEG_RE = /^s:[^:\s]+:[^:\s]+-[^:\s]+(~\d+)?$/, JUN_RE = /^j:[^:\s]+$/;
 /** the problems of one element (schema + a confidence on every station): [string] */
 export function validateElement(E) {
   const bad = [], w = (m) => bad.push(`${E.id}: ${m}`);
-  const conf = (a, what) => { if (!(a instanceof Uint8Array)) return w(`${what} is not a Uint8Array`); for (let i = 0; i < a.length; i++) if (a[i] > CONF.X) return w(`${what}[${i}] = ${a[i]} is no confidence`); };
+  const conf = (a, what) => { if (!(a instanceof Uint8Array)) return w(`${what} is not a Uint8Array`); for (let i = 0; i < a.length; i++) if (a[i] > CONF.E) return w(`${what}[${i}] = ${a[i]} is no confidence`); };
   if (!/^[A-Z]\d+$/.test(E.owner || "")) w("no owner tile");
   if (E.kind === "segment") {
     if (!SEG_RE.test(E.id)) w("id is not s:<way>:<nodeA>-<nodeB>");
     const n = E.n;
     if (!(n >= 2)) w("fewer than 2 stations");
     for (const k of ["s", "nx", "nz", "ax", "az"]) if (!(E[k] instanceof Float32Array) || E[k].length !== n) w(`${k} is not Float32[${n}]`);
+    if (!(E.bare instanceof Uint8Array) || E.bare.length !== n) w("bare is not Uint8[n]");
     for (let i = 1; i < n; i++) if (!(E.s[i] > E.s[i - 1])) { w("stations not increasing"); break; }
     conf(E.axConf, "axConf");
     for (const [nm, K2] of [["kerbL", E.kerbL], ["kerbR", E.kerbR]]) {
