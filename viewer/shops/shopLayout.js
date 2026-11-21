@@ -150,9 +150,10 @@ export function layoutShop(p, f, frame, lit, env) {
     m.set([X[0] * wW, X[1] * wW, X[2] * wW, 0, 0, wH, 0, 0, Z[0], 0, Z[2], 0, o[0], o[1], o[2], 1]);
     m.set([wW, wH, hash01(id + "w"), lit], 16);
     // (curated interior: Lefevre's office); w = the v2 variant (shopScale.js v2Slot: the café type by kind, café /
-    // brasserie; the other types their room; the neighbour rule may change it afterwards: layout.js)
+    // brasserie; (shops7) the other types one of their two rooms by a hash; the neighbour rule may change it
+    // afterwards: layout.js)
     const itype = cf.interior ?? interiorType(p);
-    m.set([itype, gb, hash01(id + "m") < 0.5 ? 1 : 0, v2Slot(itype, p.kind, p.cat || "")], 20);
+    m.set([itype, gb, hash01(id + "m") < 0.5 ? 1 : 0, v2Slot(itype, p.kind, p.cat || "", hash01(id + "v"))], 20);
     windows.push(m);
     night.shops.push(o[0] + Z[0] * 0.6, f.y + 1.6, o[2] + Z[2] * 0.6);
     // ?night=1 (viewer/nightLights/cityNight.js): the lit window as a light through its opening, in the facade's own

@@ -273,6 +273,62 @@ pockets (~1 m wide, posts ~1.3 m). **Not re-baked**: the `_work` renders are not
 90-render bake + the three arrays re-encoded (or a lossy decode / re-encode of the other 72 layers); the shipped
 arrays keep the old board until the next full `--v2` bake (then re-measure V2_LUM: the gate holds gain x lum).
 
+## 3e. Shops v2 job 7: lit night bakes, the office board, a second room per type (claude/shops7, rule shop-room-layers)
+
+One full `--v2` bake (OptiX 128 spp + denoise, 16 variants x day / night x 5 renders = 160 renders, ~18 min) covers
+three leftovers:
+- **Night lighting.** The boutique / salon / generic shop night bakes were near black (mean 0.008-0.02 against the
+  café's 0.18: 30-45 W spots only; a Blender spot of P W is a point of P W masked to its cone). Now layered shop
+  lighting (`v2_strip`: an LED strip + a rectangular area light under shelves / over mirrors; `v2_wash`; stronger spots;
+  a warm fill): boutique 0.31, salon 0.23, shop 0.25 at night. Gate: no night lum under `V2_NIGHT_MIN` 0.05.
+- **The office board** (OFFICE_BOARD, 3 x 2 A4 pockets) is now in the shipped arrays.
+- **A second room for every type** (shopInteriors.py `v2_patisserie` ... `v2_bookshop`, each at its type's depth, the
+  same layer method): bakery -> *patisserie* (mint walls over a white wainscot, terrazzo, a marble counter along the left
+  wall with cakes under domes, a lit glass cabinet, a tart vitrine, a macaron tower); pharmacy -> *officine* (walnut
+  cabinetry with lit glass-fronted cases and apothecary jars, a mosaic floor, the green cross in a walnut arch, a display
+  island, the counter on the left); boutique -> *concept* (white, birch slats with shoe shelves, a ceiling-hung rail,
+  linear pendants, a plinth table); grocery -> *epicerie* (green walls, packed dark-wood shelving, a wine rack, a deli
+  vitrine, enamel pendants, produce crates); office -> *bank* (oak slats with two cash machines, a glass meeting room, a
+  reception pod, a lounge table, a plain roll-up banner); salon -> *barber* (metro tiles under teal, a checker floor, one
+  long mirror, oxblood barber chairs, a leather bench); shop -> *bookshop* (teal cases to the cornice, a library ladder,
+  a table of books, a reading chair, books on easels). No brands.
+- **Pick + neighbour rule.** Non-café shops pick one of their type's two rooms by `hash01(id + "v")` (shopScale.js
+  `v2Slot`), then the neighbour rule: **0 clashes, 0 pairs waiting** (was 15). Windows per variant: café 30, brasserie
+  105, bakery 29 / patisserie 31, pharmacy 29 / officine 15, boutique 20 / concept 30, grocery 38 / epicerie 41, office
+  28 / bank 24, salon 21 / barber 11, shop 22 / bookshop 28.
+- **Root cause fixed on the way:** `Acc.cyl` along X / Y is centred on its position (along Z it starts there): the
+  café's foot rail ran 2 m into the wall, the boutique's wall rails ran 1.5 m out through the glass (a stray line near
+  the camera). `room_bounds_check` stops the bake when any piece leaves the room box (checked by the gate).
+
+**Arrays** (shopScale.js `V2_ARRAYS` / `V2_SLOT`, pack_v2.py `SLOT_ARR`):
+
+| file | size | layers | codec | download | GPU |
+|---|---|---|---|---|---|
+| `interiors_v2.ktx2` (A) | 1024 x 512 | 17: day L0 per variant + the sticker sheet | UASTC + zstd | 6.08 MB | 11.33 MB |
+| `interiors_v2c.ktx2` (C) | 1024 x 512 | 16: day L3 + composite | UASTC + zstd | 4.06 MB | 10.67 MB |
+| `interiors_v2n.ktx2` (N) | 512 x 256 | 32: day L1, day L2 | UASTC + zstd | 0.35 MB | 5.33 MB |
+| `interiors_v2m.ktx2` (M) | 512 x 256 | 64: night L0-L3 | **ETC1S** (BasisLZ, q 255) | 0.84 MB | 10.67 MB |
+| total | | 129 | | **11.33 MB** (<= 12) | **38.00 MB** (<= 40) |
+
+Budget choices: the day near card (L2) dropped to 512 px like the mid card and every night layer (16 variants at
+shops5's layout would be ~46 MB GPU). All-UASTC came to 13.75 MB download; UASTC's RDO level (1 -> 3) and a 32 KB RDO
+dictionary only took 3-5 % off, so the night array is ETC1S (3.27 -> 0.84 MB; three's KTX2Loader transcodes it to BC3 on
+desktop, <= 1 byte a texel; no visible blocking in the night A/B). `encode_array.mjs --etc1s=255` / `--rdo=` / `--dict=`.
+
+**Gains** (V2_LUM by `tools/shops/v2_lum.py` on the packed slices: on the unchanged rooms it gives shops6's transcoded
+numbers within 0.1 %; it prints V2_GAIN too). Day lum: boutique 0.42, salon 0.32, shop 0.38 (brighter: the new lamps
+light by day too), patisserie 0.53, officine 0.29, concept 0.58, epicerie 0.25, bank 0.59, barber 0.32, bookshop 0.22;
+night: 0.13-0.48, no gain clamped any more (the boutique / salon / shop were at the 2.0 clamp). Gate row `shopsv2` now
+also holds the night gain to the formula on the night lum (+-5 %), the codec per array (KTX2 supercompression scheme),
+2 variants per type, every variant shown somewhere, slot() = V2_SLOT, and the bounds check.
+
+A/B (outside the repo): `Downloads/uccle-shops-ab/v5/index.html` (6 shops OPEN at night: two boutiques (one now the
+concept room), two generic shops (one now the bookshop), an office (the board), a salon; 2 / 5 m head-on, day 13:00 /
+night 22:00; before = claude/foundation). No GPU ms claimed (+1 sampled array binding, the same fetch count).
+
+Left: the baked sun patch is still fixed; L2 at 512 px is a little softer at 2 m than before; a florist / optician /
+shoe room of their own would need a third variant (budget: ~2.4 MB GPU and ~0.7 MB download a variant).
+
 ## 4. Terraces
 
 `layoutTerrace`: square bistro tables with two chairs (three on a single deep row: the street-life kit's rattan bistro
