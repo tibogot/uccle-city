@@ -13,6 +13,7 @@
 // Frame per façade POI: X = right along the wall seen from the street, Y = up, Z = the wall's outward normal.
 
 import { layoutShop, layoutTerrace, SHOP_PIECES } from "../shops/shopLayout.js";
+import { neighbourVariants } from "../shops/shopScale.js";
 
 // WIN_STRIDE: the matrix, (w, h, seed, lit), (interior type, floor below the glass, mirror, 0) (viewer/shops/shopWindow.js)
 export const BOX_STRIDE = 40, PROP_STRIDE = 8, WIN_STRIDE = 24, GLASS_STRIDE = 16;
@@ -393,6 +394,12 @@ export function layoutTile(doc, measure, stopsDoc = null, opts = {}) {
     used.numbers.push(nb.n);
     const h = 0.15, w = Math.max(0.15, Math.min(0.42, h * lab.aspect * 0.8));
     box([nb.x + Z[0] * 0.007, nb.y + 2.25, nb.z + Z[2] * 0.007], X, UP, Z, w, h, 0.005, { board: PLATE_BLUE, ink: WHITE, lab, pad: 0.12, border: 0.006, rough: 0.25, kind: 7 });
+  }
+  // (shops5) the neighbour rule (viewer/shops/shopScale.js neighbourVariants, rule shop-room-layers): two shop windows
+  // of the same type side by side never show the same v2 variant when the type has more than one
+  if (SHOPS && windows.length > 1) {
+    const recs = windows.map((m) => ({ x: m[12], z: m[14], nx: m[8], nz: m[10], type: Math.round(m[20]), variant: m[23] }));
+    if (neighbourVariants(recs)) recs.forEach((r, i) => { windows[i][23] = r.variant; });
   }
   return { boxes, props, windows, glass, labels, night, used, shops, colliders };
 }

@@ -168,6 +168,80 @@ Left: L4 glass dressing (job 5); the other types (job 6); more variants + the ne
 room, 108 restaurants the other); the baked sun patch does not follow the city's sun (north-facing cafés too); 1024 px
 across 6 m is soft at 2 m (a 2048 layer set would be 43 MB: over budget).
 
+## 3c. Shops v2 rollout + glass dressing (claude/shops5, jobs 5-6, rule shop-room-layers)
+
+Every interior type is now v2 (9 rooms); the v1 atlas is no longer loaded when the v2 arrays load (-10.7 MB GPU,
+-3.4 MB download), only for `?shopsv2=old`, `?shopsktx=0` or a failed load.
+
+**Rooms** (`tools/blender/shopInteriors.py --v2`, OptiX 128 spp, 90 renders in ~10 min), each as deep as the viewer's
+room of its type (`V2_DEPTH` = shopScale.js `DEPTH`, metric), the café's method (L0 shell, free-standing groups hidden
+from the camera but shadowing, L1 / L2 cards by group depth, L3 the window display below 1.45 m, floor-flush pieces
+`_contact`), one variant each:
+- bakery (4 m): cream metro tiles, checker floor, oak bread racks with slanted boards, jars, chalk price board; L1 the
+  work counter (slicer, coffee machine); L2 the glass vitrine (slanted front glass, two tiers of pastry trays) + till,
+  enamel pendants; L3 a tiered cake, pastry tray, baguette basket, bread crates;
+- pharmacy (4.5 m): white shelving on three walls over drawers, a lit band + green cross, LED panels; L1 a gondola; L2
+  the counter with two tills; L3 white plinths with boxes and pump bottles, a poster stand, a plant;
+- boutique (5 m): rails of garments under folded stacks, a taupe back wall with a tall brass mirror, a fitting-room
+  curtain, track spots; L1 a round table + a free-standing rail; L2 a dressed mannequin, a bench; L3 plinths with shoes
+  and a bag, a dress form;
+- grocery (5.5 m): grey shelving, a crate stand of fruit, glass-door drinks fridges; L1 a gondola; L2 the checkout +
+  baskets; L3 a stepped fruit display, buckets of flowers;
+- office / bank / agency (4.5 m): a navy feature wall with framed listings and a wall screen, carpet tiles, a brochure
+  rack; L1 two desks with screens and task chairs; L2 a lounge corner; L3 a listing board on steel posts;
+- salon (3.5 m): brass-framed mirror stations, washbasins at the back under a glass shelf of products; stylist chairs
+  by depth (L1 / L2), a trolley, the reception desk; L3 a shelf of products, a plant;
+- generic shop (4.5 m): oak shelving with books / boxes / jars, a sage back wall; L1 a display table; L2 the counter, a
+  postcard spinner; L3 a stepped display of gift boxes.
+Smooth cylinders now keep flat caps (edges over 40 deg sharp: rule no-bad-shading-topology).
+
+**Arrays** (`tools/shops/pack_v2.py` + `encode_array.mjs`; ktx2-encoder is `tools/textures`' dependency: `cd
+tools/textures && npm ci`). The Basis WASM encoder has a 2 GB heap and fails beyond ~24 layers of 1024 x 512 in one
+file, so three arrays (shopScale.js `V2_SLOT`):
+
+| file | size | layers | download | GPU (BC7 + mips) |
+|---|---|---|---|---|
+| `interiors_v2.ktx2` (A) | 1024 x 512 | 19: day L0 + day L3 / composite per variant, the sticker sheet | 5.63 MB | 12.67 MB |
+| `interiors_v2c.ktx2` (C) | 1024 x 512 | 9: day L2 | 0.38 MB | 6.00 MB |
+| `interiors_v2n.ktx2` (N) | 512 x 256 | 45: day L1 + night L0-L3 | 1.84 MB | 7.50 MB |
+| total | | 73 | **7.85 MB** (<= 12) | **26.17 MB** (<= 40) |
+
+The night layers and the day mid card are half size (one mip coarser, `lodN`).
+
+**Glass dressing L4** (shopWindow.js; one more fetch within 40 m, none beyond): a sticker sheet drawn by
+`tools/shops/stickers.py` (Pillow's Aileron, CC0; no brand, no real logo): opening-hours vinyl (FR; FR / NL), OUVERT /
+OUVERT - OPEN - GEOPEND, SOLDES / SOLDEN -50 %, NOUVEAU - NIEUW, BIENVENUE - WELKOM, two strips of plain payment marks
+(a card with a chip, a phone, a euro coin), a tileable lace curtain. Per shop by hashes of the window seed: the hours
+(75 %) and payment marks (60 %) at one end at eye height (1.22 / 1.08 m over the shop floor), a promo sign at the other
+end (by type: sale signs for boutiques / shops, open / welcome for food; taken in on a closed shop at night), lace along
+the bottom of cafés and bakeries (45 %). The zones never overlap: one fetch through a select chain. Procedural (no
+fetch): venetian blinds let down 0.25-0.7 m at the top of 35 % of offices / pharmacies / salons (never below 1.95 m), a
+roller shutter half down (42-62 %, rolling with the dusk) on a shop closed at night (galvanised slats, a bottom bar, lit
+as a surface, no glass reflection there), light dirt (a grime band along the sill and jambs, streaked). Slats fade to
+their mean when finer than ~2 px. Lab uniforms `dressV2`, `shutterV2`, `dirtV2`.
+
+**Types from tags.** interiorType() maps more OSM shop / amenity / craft values (second hand, department store,
+fabric, tailor, dry cleaning -> boutique; health food, tea, tobacco, pet, variety store -> grocery; e-cigarette,
+supplements, herbalist -> pharmacy; phone / electronics repair, funeral directors, photographers, garages, craftsmen,
+surgeries, notaries, guest houses -> office; pet grooming -> salon): **the generic room 90 -> 50 of 502 windows
+(17.9 % -> 10.0 %)**; bikes, books, furniture, toys, hardware, gifts stay generic.
+
+**Neighbour rule** (shopScale.js `neighbourVariants`, in viewer/streetlife/layout.js per tile): two same-type windows
+within 12 m facing the same way never show the same variant when the type has more than one. Today only the café type
+has two (café / brasserie: 30 / 105 after the rule, was 27 / 108); the gate counts **15 same-type pairs waiting for a
+second variant** of their type. Cross-tile pairs are not seen (the layout runs per tile).
+
+Gate row `shopsv2` (rewritten): the three arrays' headers / mips / budgets and `V2_SLOT`; fetches 4 + 1 sticker near,
+1 far; the procedural dressing fetches nothing; each variant's bake depth = DEPTH of its type; every window's variant
+belongs to its type; generic <= 12 %; 0 neighbour clashes; the sticker cells inside the layer and not overlapping.
+
+A/B (outside the repo): `Downloads/uccle-shops-ab/v3/index.html` (8 non-café shops, 2 / 5 / 15 m head-on + 5 m at
+45 deg, day / night; before = claude/foundation). No GPU ms claimed (not measured on a GREEN preflight).
+
+Left: more variants per type (the neighbour rule is ready for them); the v2 rooms read a little darker than v1 by day
+(the café's `dayV2` 0.2 for every type); the salon's charcoal back wall is dark by day; the baked sun patch is still
+fixed.
+
 ## 4. Terraces
 
 `layoutTerrace`: square bistro tables with two chairs (three on a single deep row: the street-life kit's rattan bistro
