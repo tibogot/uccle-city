@@ -11,7 +11,7 @@ const ARGV = process.argv.slice(2);
 const EXT = {
   name: "villa",
   groups: [{ name: "lod0", nodes: ["Villa", "Villa_gateL", "Villa_gateR", "Villa_door", "Villa_water"] }, { name: "far", nodes: ["Villa_far"] }],
-  range: { Villa: 80, Villa_gateL: 80, Villa_gateR: 80, Villa_door: 80, Villa_water: 400, Villa_far: 2000, Villa_lod1: 260, Villa_lod2: 2000 },
+  range: { Villa_ivy: 80, Villa: 80, Villa_gateL: 80, Villa_gateR: 80, Villa_door: 80, Villa_water: 400, Villa_far: 2000, Villa_lod1: 260, Villa_lod2: 2000 },
   ignoreBelow: GROUND_MIN, offset: [0, OY, 0], reportDir: "models/villa/audit", allowFile: "models/villa/audit/villa.allow.json",
 };
 const INT = {
@@ -22,6 +22,8 @@ if (!ARGV.includes("--no-audit")) {
   process.argv.push(...(ARGV.includes("--force-audit") ? [] : []));
   await auditGroups("models/villa/villa.raw.glb", EXT);
   await auditGroups("models/villa/interior.raw.glb", INT);
+  // the climbers' leaf cards (round 3): overlapping, crossing cards by design; checked for normals / flips only
+  await auditGroups("models/villa/villa.raw.glb", { ...EXT, name: "ivy", groups: [{ name: "ivy", nodes: ["Villa_ivy"] }], skip: ["crossing", "coplanar", "near", "leak", "depth", "seam", "opening", "backtoback", "sliver", "tjunction", "nonmanifold"] });
   // the soft furnishings (smooth by design): every check but streak / bentflat (they guard flat architecture)
   await auditGroups("models/villa/interior.raw.glb", { ...INT, name: "soft", groups: [{ name: "soft", nodes: ["Soft"] }], skip: ["streak", "bentflat", "sliver"], set: { maxItemsPerCheck: 1e6 } });
 }

@@ -14,14 +14,14 @@
  },
  "Villa_lod1": {
   "from": "Villa",
-  "sourceTris": 58914,
-  "tris": 16005
+  "sourceTris": 56994,
+  "tris": 16006
  },
  "Villa_lod2": {
   "from": "Villa_far",
   "sourceTris": 102,
   "tris": 102
  },
- "glbBytes": 1237016,
- "rawBytes": 5486020
+ "glbBytes": 1229768,
+ "rawBytes": 5495980
 }

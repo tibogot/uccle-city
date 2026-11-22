@@ -22,7 +22,7 @@ import { env } from "../lighting.js";
 import { fadeVariant, SMOOTH } from "../lodFade.js";
 import { libSource } from "../materials/libSwitch.js";
 
-export const VILLA_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water"];
+export const VILLA_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"];
 export const VILLA_CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen", "channel", "rug"];
 const C = Object.fromEntries(VILLA_CODES.map((n, i) => [n, i]));
 /** LOD switch distances (m, camera to the villa's box) and the half-width of each cross-fade band */
@@ -80,6 +80,19 @@ const TEMP = {
     return noSSR(m);
   },
   // clipped hedge (hornbeam / yew): two-scale leaf clumps, a bumped surface, darker in the clefts
+  // round 3: the climbers' LEAF CARDS: the leaf's outline cut in the fragment (maskNode, a smooth pointed-oval SDF
+  // on the card's own UV), alpha-hash free: the edge is a polygon-smooth curve the TAAU resolves, no raster step
+  leaves: () => {
+    const m = std({ roughness: 0.7 });
+    const p = uv().mul(2).sub(1).toVar();
+    const half = float(1).sub(p.y.mul(p.y)).max(0).pow(0.75).mul(0.62);
+    const inside = abs(p.x).lessThan(half).and(p.y.abs().lessThan(0.98));
+    m.maskNode = inside; m.maskShadowNode = inside;
+    const q = positionWorld;
+    m.colorNode = mix(lin(0x22401a), lin(0x4f7a2c), vnoise(vec2(q.x.add(q.z), q.y).mul(2.3))).mul(float(0.8).add(abs(p.x).mul(-0.3).add(0.3)));
+    m.side = THREE.FrontSide;
+    return m;
+  },
   hedge: () => {
     const m = std({ roughness: 0.82 });
     m.colorNode = Fn(() => {
@@ -174,6 +187,7 @@ function wrapAO(src, slot) {
     m.colorNode = base.mul(mix(float(1), ao, villaLook.aoDirect));
   }
   if (src.emissiveNode) m.emissiveNode = src.emissiveNode;
+  if (src.maskNode) { m.maskNode = src.maskNode; m.maskShadowNode = src.maskShadowNode ?? src.maskNode; }
   m.userData.shared = true; m.userData.slot = slot;
   return m;
 }
@@ -189,7 +203,7 @@ export function loadVilla() {
       fetch(base + "villa.json").then((r) => r.json()),
       SOURCE === "temp" ? null : import("../materials/shipped.js").catch((e) => { console.warn("[villa] material library not loaded:", e.message); return null; }),
     ]);
-    const names = [["Villa"], ["Villa_lod1"], ["Villa_lod2"]];
+    const names = [["Villa", "Villa_ivy"], ["Villa_lod1"], ["Villa_lod2"]];
     const lods = names.map(() => []);
     const nodes = {};
     gltf.scene.traverse((o) => { if (o.name) nodes[o.name] = nodes[o.name] ?? o; });

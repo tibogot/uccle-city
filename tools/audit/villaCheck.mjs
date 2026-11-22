@@ -121,6 +121,37 @@ check(hits.length === 0 && kept.length < feats.trees.length, "no kept tree crown
   check(nv > 100 && dev < 0.005 && poke <= 0.0 && deep <= 0.75 && slope <= 0.12, "the drive + garage floor are one designed surface over the terrain (a single slope <= 12 %, then flat)",
     `${nv} vertices, max deviation ${(dev * 1000).toFixed(1)} mm, terrain over the plane ${(poke * 100).toFixed(1)} cm (<= 0), deepest ${deep.toFixed(2)} m, slope ${(slope * 100).toFixed(1)} %`);
 }
+// ---- 3d. every placed vehicle touches the paving: its wheels within 5 cm of the drawn surface (rule
+// vehicles-touch-ground; viewer/villa/villaPlace.js, the same fit the viewer uses; the pack's wheels at y = 0)
+{
+  const VP = await imp("viewer/villa/villaPlace.js");
+  const cars = await readGlb(new URL("models/cars/cars2.glb", ROOT).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
+  const size = (id) => cars.json.nodes.find((n) => n.name === id)?.extras?.size;
+  const bottom = (id) => { let mn = Infinity; for (const p of cars.parts) if (p.name === id && !/_L\d/.test(p.node)) for (let k = 1; k < p.positions.length; k += 3) mn = Math.min(mn, p.positions[k]); return mn; };
+  const dp = notes.drive_plane, rings = dp.zones.map((z) => notes.grounds[z]);
+  const inR = (r, u, w) => { let c = false; for (let a = 0, b = r.length - 1; a < r.length; b = a++) { const [ua, wa] = r[a], [ub, wb] = r[b]; if ((wa > w) !== (wb > w) && u < ((ub - ua) * (w - wa)) / (wb - wa) + ua) c = !c; } return c; };
+  const surf = (x, z) => { const [u, w] = frameOfC(x, z); return (rings.some((r) => inR(r, u, w)) ? GG.drivePlane(dp, u) : groundAt(x, z)) + GG.LIFT; };
+  const picks = ["saloon", "suv"]; let ci = 0; const rows = [];
+  for (const P of notes.garage.places) {
+    const id = P.kind === "car" ? picks[ci++ % 2] : null;
+    const sz = id ? size(id) : [0.5, 1.1, 2.0];
+    vv.set(P.u, 0, P.w).applyMatrix4(rootM);
+    const sg = P.nose[0] === "-" ? -1 : 1, r = notes.placement.rotation_y_rad;
+    const [ax, az] = P.nose[1] === "u" ? [Math.cos(r), -Math.sin(r)] : [Math.sin(r), Math.cos(r)];
+    const pl = VP.placeVehicle({ x: vv.x, z: vv.z, heading: Math.atan2(sg * ax, sg * az), size: sz }, surf);
+    const gap = Math.max(...pl.gaps.map(Math.abs)) + (id ? Math.abs(bottom(id)) : 0);
+    rows.push(`${id ?? "moto"} ${(gap * 100).toFixed(1)} cm`);
+    if (!(gap <= 0.05)) fails.push("vehicle " + (id ?? "moto"));
+  }
+  check(rows.length === notes.garage.places.length && !fails.some((f) => f.startsWith("vehicle")), "every placed vehicle's wheels within 5 cm of the paving", rows.join(", "));
+}
+// ---- 3e. the climbers are leaf cards with their own UV (round 3): no cell-grid blanket on the hedge slot
+{
+  const ivy = ext.parts.filter((p) => p.node === "Villa_ivy");
+  const nTri = ivy.reduce((s2, p) => s2 + p.index.length / 3, 0);
+  const villaHedgeNearFront = ext.parts.filter((p) => p.node === "Villa" && p.slot === "hedge").some((p) => { for (let k = 0; k < p.positions.length; k += 3) if (Math.abs(p.positions[k] - 13.9) < 0.15 && p.positions[k + 2] > -20 && p.positions[k + 2] < -8 && p.positions[k + 1] + 100 > notes.levels_taw.ground + 1.5) return true; return false; });
+  check(nTri > 500 && ivy.every((p) => p.slot === "leaves") && !villaHedgeNearFront, "the climbers are leaf cards (Villa_ivy, `leaves` slot), no hedge-slot blanket on the facade", `${nTri} card triangles`);
+}
 // ---- 4. colliders
 const H = await imp("viewer/heroColliders.js");
 const T = [];

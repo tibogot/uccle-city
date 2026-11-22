@@ -40,7 +40,8 @@
   "concrete_soffit",
   "glow",
   "hedge",
-  "pool_water"
+  "pool_water",
+  "leaves"
  ],
  "interior_slots": [
   "plaster_white",
@@ -319,7 +320,7 @@
   ]
  },
  "tris": {
-  "lod0": 58914,
+  "lod0": 56994,
   "far": 102,
   "gate": 1672,
   "door": 216

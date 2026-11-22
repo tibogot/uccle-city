@@ -198,7 +198,13 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
         st.t.loaded = performance.now();
         cell.root.visible = false;
         scene.add(cell.root);
-        await (await waitCompiler())([cell.root]);
+        // (round 3, the stream-in hitch: the cell's pipelines compiled ONE material at a time, 4 frames apart: all of
+        // them at once (16 async pipelines + shader modules) stalled the GPU process: 50 ms frames with no main-thread
+        // long task, measured with ?dynres=0; rule interior-stream-paced)
+        const comp = await waitCompiler(), frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+        const seen = new Set();
+        const meshes = []; cell.root.traverse((o) => { if (o.isMesh && !seen.has(o.material)) { seen.add(o.material); meshes.push(o); } });
+        for (const o of meshes) { await comp([o]); for (let k = 0; k < 4; k++) await frame(); }
         st.t.compiled = performance.now();
         st.cell = cell;
         log(`Villa interior: fetched + decoded ${Math.round(st.t.loaded - st.t.start)} ms, shaders ${Math.round(st.t.compiled - st.t.loaded)} ms (background), ${cell.stats.triangles} tris, ${cell.stats.draws} draws, ${cell.info.ambientCubes.probes.length} probes; long tasks while streaming: ${st.longTasks.length ? st.longTasks.join(", ") + " ms" : "none"}`);

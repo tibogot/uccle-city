@@ -84,7 +84,7 @@ GATE = dict(w0=17.2, w1=23.2, h=1.9)
 STAIR = dict(u0=21.42, w0=9.8, w1=11.0, n=22, going=0.28)       # the hall's floating stair (22 risers GL -> F1)
 RISE = (F1 - GL) / STAIR["n"]
 
-EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water"]
+EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water", "leaves"]
 INT_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "fabric_white", "fabric_grey", "leather", "brass",
              "metal_black", "glow", "plant", "ceramic_white", "books", "art", "glass_window"]
 CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen",
@@ -259,6 +259,7 @@ def frames(acc, axis, c, hole, mull=1.6, transom=None, t=0.06, d=0.10, slot="met
 
 # ================================================================================================ THE EXTERIOR (LOD0)
 EX = Acc("Villa", EXT_SLOTS)
+IVY = Acc("Villa_ivy", EXT_SLOTS)                # (the climbers' leaf cards: their own node, audited apart: cards overlap by design)
 GLS = Acc("Villa_glass_tmp", EXT_SLOTS)          # (merged into EX: kept apart only to count)
 ML = 0.7                                         # exterior densify (per-vertex AO)
 
@@ -302,25 +303,32 @@ def hedge(axis, c, a0, a1, thick=1.0, hgt=2.3):
             bbox(EX, c - thick / 2, c + thick / 2, x0, x1 + 0.001, gb_, gt, "hedge", 0, 0.12, 2)
 
 def climber(acc, c, w0, w1, h0, h1, seed=0):
-    """a climbing plant on the plane u = c (facing -u): a leafy blanket 2-12 cm off the wall on a 0.12 m grid whose
-    outline follows a smooth noise field (clumps and tendrils, never a square pixel edge), every vertex pushed in and out"""
-    rnd = random.Random(seed); st = 0.12
-    nu = max(1, int((w1 - w0) / st)); nh = max(1, int((h1 - h0) / st))
+    """a climbing plant on the plane u = c (facing -u), round 3: LEAF CARDS (7-13 cm, each with its own 0..1 UV: the
+    `leaves` slot cuts the leaf's outline in the fragment with a smooth edge, the TAAU resolves it) scattered where a
+    smooth noise field allows (clumps and tendrils thinning at the sides and the top), 2-14 cm off the wall, turned in
+    the wall's plane and tipped out a little. No cell grid anywhere: no raster stair-step (rule no-sawtooth-terrain)"""
+    rnd = random.Random(seed)
     ph = [rnd.uniform(0, 6.28) for _ in range(6)]
-    def field(i, j):
-        x, y = i * st, j * st
+    W, H = w1 - w0, h1 - h0
+    def field(x, y):
         n = (math.sin(x * 2.1 + ph[0]) + math.sin(y * 1.7 + ph[1]) + 0.6 * math.sin((x + y) * 3.9 + ph[2]) + 0.5 * math.sin((x - y) * 5.3 + ph[3])) / 3.1
-        edge = min(x, (nu - i) * st, y * 0.6, 0.9) / 0.9                       # thinner toward the sides and the foot
-        top = 1.0 - max(0.0, (y - (h1 - h0) * (0.55 + 0.35 * math.sin(x * 1.3 + ph[4]))) / 0.8)
+        edge = min(x, W - x, y * 0.6, 0.9) / 0.9
+        top = 1.0 - max(0.0, (y - H * (0.55 + 0.35 * math.sin(x * 1.3 + ph[4]))) / 0.8)
         return n * 0.5 + 0.55 * edge + 0.35 * top - 0.25
-    off = {}
-    def V(i, j):
-        if (i, j) not in off: off[(i, j)] = rnd.uniform(0.02, 0.12)
-        return P(c - off[(i, j)], w0 + i * (w1 - w0) / nu, h0 + j * (h1 - h0) / nh)
-    for i in range(nu):
-        for j in range(nh):
-            if field(i + 0.5, j + 0.5) < 0.3: continue
-            acc.poly([V(i, j), V(i + 1, j), V(i + 1, j + 1), V(i, j + 1)], "hedge", 0, (-1, 0, 0))
+    n = int(W * H * 70)
+    for _ in range(n):
+        x, y = rnd.uniform(0, W), rnd.uniform(0, H)
+        if field(x, y) < 0.3 + rnd.uniform(-0.08, 0.08): continue
+        sz = rnd.uniform(0.07, 0.13); a = rnd.uniform(0, 6.283); tip = rnd.uniform(0.15, 0.6)
+        off = rnd.uniform(0.02, 0.14)
+        ca_, sa_ = math.cos(a), math.sin(a)
+        # card corners in (along-wall w, up h, out -u): its long axis turned by a, its top tipped out by `tip`
+        pts = []
+        for (cx, cy) in ((-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)):
+            dw = (cx * ca_ - cy * sa_) * sz * 0.8; dh = (cx * sa_ + cy * ca_) * sz
+            out = off + max(0.0, cy) * sz * tip
+            pts.append(P(c - out, w0 + x + dw, h0 + y + dh))
+        acc.poly(pts, "leaves", 0, (-1, 0, 0), uvs=[(0, 0), (1, 0), (1, 1), (0, 1)])
 
 SEG7 = {"1": "bc", "8": "abcdefg"}
 def digits(acc, c, wm, h0, hgt, txt="18"):
@@ -504,7 +512,7 @@ def exterior():
         hedge("u", WALL_U + 0.8, a, b, thick=0.9, hgt=1.9)
     hedge("u", 13.55, -22.8, -1.2, thick=0.7, hgt=0.85)
     for (w0_, w1_, ht) in ((-19.6, -17.3, 4.8), (-15.5, -12.9, 5.6), (-11.1, -8.4, 3.6)):
-        climber(EX, GF["u0"], w0_, w1_, GL - 0.1, GL + ht, seed=int(-w0_ * 10))
+        climber(IVY, GF["u0"], w0_, w1_, GL - 0.1, GL + ht, seed=int(-w0_ * 10))
     # ---- the terrace (blue stone) with the pool, its steps down to the lawn, the pergola
     t = TER; p = POOL
     tb = lambda x0, x1, axis, c: None
@@ -1190,7 +1198,7 @@ EX.v += GLS.v and []
 # the exterior glass into LOD0 (same object, its own slot)
 off = len(EX.v)
 EX.v.extend(GLS.v); EX.f.extend([tuple(i + off for i in f) for f in GLS.f]); EX.fs.extend(GLS.fs); EX.fc.extend(GLS.fc); EX.fuv.extend(GLS.fuv); EX.sm.extend(GLS.sm)
-ob_ext = make(EX, EXT_M); ob_far = make(FAR, EXT_M)
+ob_ext = make(EX, EXT_M); ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M)
 ob_gl = make(GATE_L, EXT_M, GATE_L_O); ob_gr = make(GATE_R, EXT_M, GATE_R_O); ob_door = make(DOOR_A, EXT_M, DOOR_O); ob_water = make(WATER, EXT_M)
 # the soft furnishings (cushions, rugs, leather, plants: smooth-shaded) in their own node "Soft": the audit checks them
 # without the streak / bentflat checks (those guard architecture: a cushion's normals turn round its rounded edges by design)
@@ -1254,7 +1262,7 @@ if BAKE:
     nt = glow.node_tree; nt.nodes.remove(nt.nodes["Principled BSDF"]); em = nt.nodes.new("ShaderNodeEmission")
     em.inputs["Color"].default_value = (1.0, 0.8, 0.55, 1); em.inputs["Strength"].default_value = 0.0
     nt.links.new(em.outputs[0], nt.nodes["Material Output"].inputs["Surface"])
-    for o in (ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_water, ob_cell, ob_soft, ob_iglass):
+    for o in (ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
         me = o.data
         for i, mt in enumerate(me.materials):
             nm = mt.name
@@ -1426,7 +1434,7 @@ if BAKE:
     for o in list(scn.objects):
         if o.type in ("LIGHT", "CAMERA") or o.name in ("Ground", "Neighbours", "ProbeCubes"): bpy.data.objects.remove(o)
     # back to the named slots for export
-    for o, mats in ((ob_ext, EXT_M), (ob_far, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
+    for o, mats in ((ob_ext, EXT_M), (ob_far, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
         for i in range(len(o.data.materials)): o.data.materials[i] = mats[i]
 else:
     weld([ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
@@ -1445,7 +1453,7 @@ def export(objs, path):
                               export_all_vertex_colors=False, export_attributes=True, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
     print("exported", path, os.path.getsize(path) // 1024, "KB")
 # drop unused material slots per object (the exporter writes one primitive per used slot only)
-export([ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_water], os.path.join(OUT, "villa.raw.glb"))
+export([ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
 export([ob_cell, ob_soft, ob_iglass, ob_col], os.path.join(OUT, "interior.raw.glb"))
 
 def loc(u, w, h): return [u, h - OY, w]
