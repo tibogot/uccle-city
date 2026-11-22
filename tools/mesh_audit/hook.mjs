@@ -29,9 +29,9 @@ export async function auditGroups(file, opts, after = false) {
   return out;
 }
 
-export async function auditBeforePack(file, { name, nodes = null, noExit = false, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [] } = {}) {
+export async function auditBeforePack(file, { name, nodes = null, noExit = false, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [], set: extra = {} } = {}) {
   if (allowFile && fs.existsSync(allowFile)) allow = [...allow, ...JSON.parse(fs.readFileSync(allowFile))];
-  const set = ignoreBelow != null ? { ignoreBelow } : {};
+  const set = { ...extra, ...(ignoreBelow != null ? { ignoreBelow } : {}) };   // (extra: audit.js DEFAULTS overrides, e.g. maxItemsPerCheck when an allow list must see every item)
   const r = await auditGlb(file, { nodes, range, allow, skip, offset, set, out: reportDir, title: `Mesh audit (before pack): ${name}` });
   rename(reportDir, file, `${name}.audit`);
   if (r.summary.blocking && !FORCE && !noExit) {
@@ -42,9 +42,9 @@ export async function auditBeforePack(file, { name, nodes = null, noExit = false
   return r;
 }
 
-export async function auditAfterPack(file, { name, nodes = null, noExit = false, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [] } = {}) {
+export async function auditAfterPack(file, { name, nodes = null, noExit = false, range = {}, ignoreBelow, offset = [0, 0, 0], allow = [], allowFile = null, reportDir = "docs/audit", skip = [], set: extra = {} } = {}) {
   if (allowFile && fs.existsSync(allowFile)) allow = [...allow, ...JSON.parse(fs.readFileSync(allowFile))];
-  const set = ignoreBelow != null ? { ignoreBelow } : {};
+  const set = { ...extra, ...(ignoreBelow != null ? { ignoreBelow } : {}) };   // (extra: audit.js DEFAULTS overrides, e.g. maxItemsPerCheck when an allow list must see every item)
   const r = await auditGlb(file, { nodes, range, allow, skip, offset, set, out: reportDir, title: `Mesh audit (packed): ${name}` });
   rename(reportDir, file, `${name}.packed.audit`);
   if (r.summary.blocking) console.warn(`[mesh audit] ${name} (packed): ${r.summary.blocking} blocking item(s) after quantization: see ${reportDir}/${name}.packed.audit.md`);

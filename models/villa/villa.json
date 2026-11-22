@@ -1,0 +1,314 @@
+{
+ "about": "tools/blender/villa.py (claude/villa1): a FICTIONAL modern villa on a real plot (Avenue du Prince d'Orange, the house UrbIS solid 543176); no real owner, no brand",
+ "placement": {
+  "hides_solids": [
+   "543176"
+  ],
+  "hides_bu_ids": [
+   "1588559"
+  ],
+  "city_local_position": [
+   909.874,
+   100,
+   2037.15
+  ],
+  "rotation_y_rad": -2.624849841366921,
+  "frame": {
+   "origin_city": [
+    909.874,
+    2037.15
+   ],
+   "u": [
+    -0.8694330052667172,
+    0.4940508570510578
+   ],
+   "w": [
+    -0.4940508570510578,
+    -0.8694330052667172
+   ],
+   "rotation_y_rad": -2.624849841366921,
+   "oy": 100,
+   "note": "three local (x, y, z) = (u, TAW - oy, w); city = origin + u * U + w * W; Blender (X, Y, Z) = (u, -w, TAW - oy)"
+  }
+ },
+ "slots": [
+  "render_white",
+  "stone_blue",
+  "wood_cladding",
+  "metal_dark",
+  "glass_window",
+  "concrete_soffit",
+  "glow",
+  "hedge",
+  "pool_water"
+ ],
+ "interior_slots": [
+  "plaster_white",
+  "oak_plank",
+  "walnut",
+  "marble_white",
+  "stone_floor",
+  "fabric_white",
+  "fabric_grey",
+  "leather",
+  "brass",
+  "metal_black",
+  "glow",
+  "plant",
+  "glass_window"
+ ],
+ "codes": [
+  "plain",
+  "reveal",
+  "plinth",
+  "coping",
+  "step",
+  "slat",
+  "frame",
+  "door",
+  "soffit",
+  "roof",
+  "garage",
+  "led",
+  "fire",
+  "screen",
+  "channel",
+  "rug"
+ ],
+ "levels_taw": {
+  "ground": 118.4,
+  "first": 122.4,
+  "ceil0": 122.0,
+  "ceil1": 125.4,
+  "roof": 126.3
+ },
+ "parts": {
+  "gateL": {
+   "hinge_uw": [
+    9.75,
+    17.22
+   ],
+   "bottom": 115.89084000000001,
+   "top": 117.79084000000002,
+   "length": 2.97,
+   "side": -1,
+   "node": "Villa_gateL",
+   "origin": [
+    9.75,
+    15.890840000000011,
+    17.22
+   ],
+   "open_deg": 90
+  },
+  "gateR": {
+   "hinge_uw": [
+    9.75,
+    23.18
+   ],
+   "bottom": 115.89084000000001,
+   "top": 117.79084000000002,
+   "length": 2.97,
+   "side": 1,
+   "node": "Villa_gateR",
+   "origin": [
+    9.75,
+    15.890840000000011,
+    23.18
+   ],
+   "open_deg": 90
+  },
+  "door": {
+   "pivot_uw": [
+    14.15,
+    7.1
+   ],
+   "w": [
+    6.3,
+    8.7
+   ],
+   "h": [
+    118.4,
+    121.4
+   ],
+   "node": "Villa_door",
+   "origin": [
+    14.15,
+    18.400000000000006,
+    7.1
+   ],
+   "open_deg": 90
+  }
+ },
+ "gate": {
+  "w": [
+   17.2,
+   23.2
+  ],
+  "u": 9.6,
+  "center_local": [
+   9.75,
+   16.0,
+   20.2
+  ]
+ },
+ "garage": {
+  "door_w": [
+   18.0,
+   22.6
+  ],
+  "zone_a": [
+   14.3,
+   19.5,
+   18.0,
+   22.6
+  ],
+  "zone_b": [
+   19.5,
+   31.0,
+   16.0,
+   22.6
+  ],
+  "ceil": 118.05,
+  "places": [
+   {
+    "kind": "car",
+    "u": 26.6,
+    "w": 17.6,
+    "nose": "-u"
+   },
+   {
+    "kind": "car",
+    "u": 25.8,
+    "w": 20.9,
+    "nose": "-u"
+   },
+   {
+    "kind": "moto",
+    "u": 29.6,
+    "w": 21.4,
+    "nose": "-u"
+   }
+  ]
+ },
+ "grounds": {
+  "drive": [
+   [
+    9.35,
+    17.2
+   ],
+   [
+    14.0,
+    17.2
+   ],
+   [
+    14.0,
+    23.2
+   ],
+   [
+    9.35,
+    23.2
+   ]
+  ],
+  "forecourt": [
+   [
+    9.9,
+    -0.5
+   ],
+   [
+    14.0,
+    -0.5
+   ],
+   [
+    14.0,
+    17.2
+   ],
+   [
+    9.9,
+    17.2
+   ]
+  ],
+  "garage_floor": [
+   [
+    14.0,
+    18.0
+   ],
+   [
+    19.5,
+    18.0
+   ],
+   [
+    19.5,
+    16.0
+   ],
+   [
+    31.0,
+    16.0
+   ],
+   [
+    31.0,
+    22.6
+   ],
+   [
+    14.0,
+    22.6
+   ]
+  ],
+  "path_back": [
+   [
+    14.0,
+    23.0
+   ],
+   [
+    36.0,
+    23.0
+   ],
+   [
+    36.0,
+    24.6
+   ],
+   [
+    14.0,
+    24.6
+   ]
+  ]
+ },
+ "pool": {
+  "u0": 38.5,
+  "u1": 43.0,
+  "w0": -15.0,
+  "w1": 1.0,
+  "water": 118.28,
+  "floor": 117.05000000000001
+ },
+ "terrace": {
+  "u0": 36.0,
+  "u1": 44.5,
+  "w0": -17.0,
+  "w1": 16.0
+ },
+ "entrance_steps": {
+  "n": 11,
+  "rise": 0.17181454545454694,
+  "bottom": 116.51003999999999
+ },
+ "bounds_uw": {
+  "u": [
+   9.299999999999999,
+   58
+  ],
+  "w": [
+   -34,
+   30
+  ],
+  "h": [
+   113.949,
+   126.39999999999999
+  ]
+ },
+ "tris": {
+  "lod0": 52336,
+  "far": 102,
+  "gate": 1672,
+  "door": 216
+ }
+}

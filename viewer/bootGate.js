@@ -25,7 +25,7 @@ const EARLY = params.get("landmarksearly") === "1";   // (round 3 measured: the 
 export const GATED = {
   augustin: [-896, -1961], calevoet: [-1225, 790], papenkasteel: [-637, 1154], heros: [-533, -484], observatory: [654, 60], police: [-514, -340],
   rosaire: [1279, -1254], sacrecoeur: [-264, -1631], saintmarc: [454, -620], latourdefrein: [112, 2310], russian: [-354, -468], stalle: [-1150, 57], stpierre: [-709, -493], townhall: [-1148, -506],
-  vanbuuren: [303, -1230], wolvendael: [-469, -366],
+  vanbuuren: [303, -1230], wolvendael: [-469, -366], villa: [881, 2056],
   // the hero rail bridges / road tunnels (models/rail/<name>.json)
   bigarreaux: [-1106, 1636], "rail:calevoet": [-1125, 1123], engeland: [-691, 1795], engeland_chord: [-701, 1787],
   kauwberg: [273, 869], linkebeek: [-1328, 2304], ruestalle: [-1489, 276], "rail:stjob": [417, 791], verrewinkel: [-269, 1308],
