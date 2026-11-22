@@ -39,6 +39,19 @@
       ]
     },
     {
+      "source": "/(.*)\\.br",
+      "headers": [
+        {
+          "key": "Content-Encoding",
+          "value": "br"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.uccle.br-sibling"
+        }
+      ]
+    },
+    {
       "source": "/(sw\\.js|asset_hashes\\.json)",
       "headers": [
         {

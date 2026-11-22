@@ -111,6 +111,13 @@ separable on this machine. On the live site the cold / warm difference includes 
   To test return visits locally: `node tools/asset_hashes.mjs` once, boot twice; delete the file afterwards (or a data
   edit is served stale from the cache until the list is regenerated).
 - `/sw.js` and `/asset_hashes.json` are served `no-cache` (vercel.json).
+- Brotli siblings (claude/assetgz, rule asset-compression): the Vercel build also writes `<file>.br` (brotli 11) for
+  glb / bin / json / u16 ..., listed in the json's `br` map; the worker takes a sibling only if its decoded bytes match
+  the content hash (else the plain file, siblings off until the next load). Its answers carry ETag `"h-<hash>"` and it
+  answers HEADs of listed files from the list (the tile cache's dependency check). A lone `?v=` stamp (the tiles) is
+  handled like the bare path. `?assetbr=old`: as before. After a deploy, check the CDN really sends the siblings:
+  `node tools/audit/assetGzCheck.mjs --live https://uccle-city-pipeline.vercel.app` (a few siblings fetched, decoded
+  bytes == the listed hash; if not, the worker already falls back, but the build time is wasted).
 
 ## 3. Measure on the live site (coordinator)
 
