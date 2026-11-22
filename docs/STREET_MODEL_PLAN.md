@@ -427,4 +427,7 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
   the step is ~2x cheaper (2.05 -> 0.9 us per car per step, mix and no mix alike).
 - The row's one-to-one timing measured a sim's place in memory: two identical plain sims came out 0.87-1.15 x apart, while
   the mix's own work, timed in sequence, was ~1 %. The row now times two sims of each (built A B B A) and prints the twin
-  ratio: x1.02-1.05.
+  ratio: x1.03-1.08.
+- trafparksim (I6) had failed since round 6: a car pulling over at 8 m/s eased 0.42 m into a corridor with a parked car
+  5 m ahead. makeRoom now judges the shifted corridor ahead (ROOM_AHEAD 0.25 m); that also cleared the E6 ambulance and
+  the old-lanes D7 stuck. Left: D7 signal pair (2) + an E4 patrol starved at a priority junction (1) = 3 <= 4.
