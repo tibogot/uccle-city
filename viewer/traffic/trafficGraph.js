@@ -26,7 +26,7 @@ import { cumulative } from "../../vendor/roads/roadMath.js";
 import { signalPhases } from "./signals.js";
 import { joinLaneGraph } from "../streets/laneGraph.js";
 import { NOT_DRIVEN } from "../streets/carriageway.js";
-import { laneOffsetProfile, OFF_SLOPE, OFF_H } from "../streets/laneOffset.js";
+import { laneOffsetProfile } from "../streets/laneOffset.js";
 import { roadFrameOf } from "../streets/lineFit.js";
 import { modelLaneStage, repairTurns, blockedTest, kerbIndex, KERB_CLEAR } from "../street/lanes.js";
 
@@ -747,26 +747,6 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
         if (!bad) break;
         st.tpRounds = (st.tpRounds || 0) + 1;
         sm = R38 ? laneOffsetProfile(off, p.cum || cumulative(q)) : smooth(hard);
-      }
-    }
-    // (claude/lanes5: no shift's ramp moves the car body into a building it was clear of on the line as it came (the
-    // kerb push looks up to 9 m for the raster's carriageway and its 1:10 ramp reaches 30 m: Ch. de Waterloo K11, 24 m
-    // into a house). Each such point caps every need of that side by its own clear offset plus the ramp's reach, as the
-    // model lanes' needs are capped by their measured room (viewer/street/lanes.js); then the profile is laid again)
-    if (R38 && inBuilding) {
-      const cum = p.cum || cumulative(q);
-      const bodyAt = (k, o) => { const [tx, tz] = tangent(q, k), nx = -tz, nz = tx; return [0, 0.9, -0.9].some((w) => inBuilding(q[k][0] + nx * (o + w), q[k][1] + nz * (o + w))); };
-      for (let it = 0; it < 3; it++) {
-        const caps = [];
-        for (let k = 0; k < n; k++) {
-          if (Math.abs(sm[k]) < 0.25 || !bodyAt(k, sm[k]) || bodyAt(k, 0)) continue;
-          let v = sm[k]; const sg = Math.sign(v); while (Math.abs(v) > 0 && bodyAt(k, v)) v -= sg * 0.25;
-          caps.push([cum[k], Math.max(0, Math.abs(v)), sg]);
-        }
-        if (!caps.length) break;
-        for (let j = 0; j < n; j++) for (const [ck, r, sg] of caps) if (off[j] * sg > 0) { const lim = r + OFF_SLOPE * Math.max(0, Math.abs(cum[j] - ck) - 4 * OFF_H); if (Math.abs(off[j]) > lim) off[j] = sg * lim; }
-        sm = laneOffsetProfile(off, cum);
-        st.bldCapped = (st.bldCapped || 0) + caps.length;
       }
     }
     const pts = q.map((pt, k) => {

@@ -514,8 +514,8 @@ lanes' findings; the roads census judges every driven path, old fit included):
 
 | roads census | before: places / m by class | after: places / m by class |
 |---|---|---|
-| inBuilding (16 → 16 places) | a footprint-over-street 3 / 15.5; a no-room-between-footprints 1 / 51; a osm-through-buildings 2 / 37.5; a sliver 2 / 34.5; b osm-band 2 / 2.5; c lane-dragged 1 / 7.5; c old-fit 5 / 141 | a footprint-over-street 7 / 37; a no-room-between-footprints 1 / 37; b osm-band 1 / 1.5; c after-model 1 / 1.5; c old-fit 6 / 85.5 |
-| offCarriage (181 → 166 places) | a no-roadway-polygon 5 / 214.5; a sliver 2 / 76; b estimated-carriageway 14 / 101.5; b osm-band 6 / 42.5; c after-model 8 / 25.5; c lane-dragged 9 / 63; c lane-end 8 / 54; c old-fit 83 / 2009.5; c turn-corner 46 / 431.5 | a no-roadway-polygon 4 / 221; a sliver 1 / 14; b estimated-carriageway 19 / 88.5; b osm-band 3 / 20.5; c after-model 6 / 22.5; c lane-end 8 / 54.5; c old-fit 75 / 1804.5; c turn-corner 50 / 461 |
+| inBuilding (16 → 16 places) | a footprint-over-street 3 / 15.5; a no-room-between-footprints 1 / 51; a osm-through-buildings 2 / 37.5; a sliver 2 / 34.5; b osm-band 2 / 2.5; c lane-dragged 1 / 7.5; c old-fit 5 / 141 | a footprint-over-street 7 / 37; a no-room-between-footprints 1 / 37; b osm-band 1 / 1.5; c after-model 1 / 1.5; c old-fit 6 / 104 |
+| offCarriage (181 → 167 places) | a no-roadway-polygon 5 / 214.5; a sliver 2 / 76; b estimated-carriageway 14 / 101.5; b osm-band 6 / 42.5; c after-model 8 / 25.5; c lane-dragged 9 / 63; c lane-end 8 / 54; c old-fit 83 / 2009.5; c turn-corner 46 / 431.5 | a no-roadway-polygon 4 / 221; a sliver 1 / 14; b estimated-carriageway 19 / 88.5; b osm-band 3 / 20.5; c after-model 6 / 22.5; c lane-end 8 / 54.5; c old-fit 76 / 1817; c turn-corner 50 / 461 |
 
 Per tile, after (streetlanes findings, places / m; a · b · c):
 
@@ -550,11 +550,11 @@ Per tile, after (streetlanes findings, places / m; a · b · c):
 3. *turn-corner* (330 → 165.5 m): the trunk cutback shortened both lanes 1 m at a time up to 8 m even where no cut
    took the turn off the trunk (Av. de Saturne H4, I10, J10): the turn then ran 8 m along the street outside its
    junction. A cut that helps none of its turns is undone.
-4. *old fit in a building* (roads census class c 141 m → 85.5 m in buildings): a piece whose OSM line grazed a
+4. *old fit in a building* (roads census class c 141 m → 104 m in buildings): a piece whose OSM line grazed a
    building at two unmeasured stations went to the old fit, whose far snap put Clos des Myosotis (C6) 13 m into the
-   houses (88.5 m). The fallback is now judged on the model lane itself. The old fit's own kerb push (up to 9 m, ramped
-   30 m) is capped where it would put a car body into a building it was clear of (Ch. de Waterloo K11: the lane is out;
-   the turn into it is still faded through the corner house, 5.5 m).
+   houses (88.5 m). The fallback is now judged on the model lane itself. (A cap on the old fit's own kerb push, up to
+   9 m ramped 30 m, took Ch. de Waterloo K11 out of its house but put Montagne de Saint-Job I6 onto a street tree
+   (drivecheck tree 1) and moved the trafmix gridlock; not kept: the old fit is to be retired, not patched.)
 
 **Left, by cause** (each place a gap-register entry with its class in `evidence.class`, data/gaps.json; a new place
 fails the `streetlanes` row; the roads census rows `inBuildingCPlaces` / `offCarriageCPlaces` ceiling the builder's):
@@ -564,7 +564,9 @@ fails the `streetlanes` row; the roads census rows `inBuildingCPlaces` / `offCar
 - c (our builder, not yet removed): lane ends at mouths (lane-end 270 m: the mouths' kerb corners, job 7), turns
   outside junction polygons (149.5 m, job 7), the build-out lag (stack-lag 89 m), and the old fit in buildings: G6
   Kauwberg (the engine's two lanes in a 4 m street between houses, no UrbIS), F6 Rue Geleytsbeek, E6 Ch. de Saint-Job
-  (an OSM way through a building block, no UrbIS: the old fit's lane), K11 / F1 turns faded past a corner house; one
+  (an OSM way through a building block, no UrbIS: the old fit's lane), K11 Ch. de Waterloo (the old fit's kerb push),
+  F1 a turn faded past a corner house; one
   1.5 m model-lane place (D8 Rue de la Cueillette) finer than the builder's 2 m roof grid.
-- Cost: slalom 4,717 → 4,600 m, wobble 2,707 → 2,696 m, headP999 4.28 → 4.64 (ceiling 5.0), parked cars kept
-  11,638 → 11,633.
+- Cost / side effects: slalom 4,717 → 4,564 m, wobble 2,707 → 2,694 m, headP999 4.28 → 4.61 (ceiling 5.0), parked cars
+  kept 11,638 → 11,633; roads census off the carriageway 181 / 3,018 m → 167 / 2,699 m, in a building 16 / 289.5 m → 16 /
+  181 m.
