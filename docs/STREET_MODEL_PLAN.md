@@ -570,3 +570,16 @@ fails the `streetlanes` row; the roads census rows `inBuildingCPlaces` / `offCar
 - Cost / side effects: slalom 4,717 → 4,564 m, wobble 2,707 → 2,694 m, headP999 4.28 → 4.61 (ceiling 5.0), parked cars
   kept 11,638 → 11,633; roads census off the carriageway 181 / 3,018 m → 167 / 2,699 m, in a building 16 / 289.5 m → 16 /
   181 m.
+
+**Gate (2026-11-22, `--changed --base ae17ba81`, 30 rows): 28 pass, 2 fail; not ready to merge.**
+- `trafmix` "never stuck": seed 23 has 2 stuck service vehicles (ceiling 1): a bus at D6 (-1182.6, 845.3) held "full" at
+  its signal (its exit lane's queue does not move) behind a car standing "busy" for > 60 s inside the D7 priority
+  junction's turn (-1334, 1240), with a police car behind it. The registered E6 ambulance is gone (stale). The gridlock
+  is chaotic: turning off either the need cap or the kerb-run rule alone gives 0 on seed 23; exempting the parked-car
+  needs from the cap moves it elsewhere (a bus held by a parked car, -1153, 923). The D7 priority-starved approach is
+  the SIGNALS / traffic job's (cause priority-starved); the row needs that decision, not a lane tweak.
+- `trafparksim` (I6, shoved parked cars): a traffic car 0.06-0.13 m into a parked car, which passed with the dropped
+  old-fit cap (the same chaos: the old fit's I6 lanes moved by centimetres).
+- Everything else passes: roads (ceilings at this count), streetlanes (register 421, class-c ceilings), markings
+  laneP95, markings2, drivecheck (94 places, tree 0, hero 0), roadsim, motofeel, model, moverground, gates, tlights.
+
