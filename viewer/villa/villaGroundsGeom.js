@@ -38,6 +38,8 @@ function subdivide(tris, maxLen) {
   return out;
 }
 
+/** the designed drive / garage surface at frame u (without LIFT): a single slope from u0 to u1, flat beyond */
+export const drivePlane = (dp, u) => dp.h0 + (dp.h1 - dp.h0) * Math.min(1, Math.max(0, (u - dp.u0) / (dp.u1 - dp.u0)));
 /** toWorld(u, w) -> [x, z] (city), groundAt(x, z) -> the terrain's height */
 export function groundsGeometry({ notes, toWorld, groundAt }) {
   const P = [], N = [], Z = [], UW = [], I = [], rings = [];
@@ -45,7 +47,10 @@ export function groundsGeometry({ notes, toWorld, groundAt }) {
     const zone = ZONES[name] ?? 0;
     // the garage's floor: the DTM there is the old basement ramp, bumpy by 0.2-0.8 m; its drape is SMOOTHED (a 1.5 m
     // box average) and never under the terrain (max), so the slab reads as a floor and nothing of the ground shows
-    const surf = zone === 1 ? smoothGround(groundAt) : groundAt;
+    // round 2 (the drive rolled up at the garage's mouth, the floor followed the old ramp): the drive and the garage
+    // are ONE designed surface (notes.drive_plane: a single slope from the sidewalk, then flat), never the bumpy DTM
+    const dp = notes.drive_plane && notes.drive_plane.zones.includes(name) ? notes.drive_plane : null;
+    const surf = zone === 1 && !dp ? smoothGround(groundAt) : groundAt;
     const first = I.length;
     const key = new Map();
     const vert = (u, w, drop = 0) => {
@@ -53,7 +58,9 @@ export function groundsGeometry({ notes, toWorld, groundAt }) {
       let i = key.get(k);
       if (i != null) return i;
       const [x, z] = toWorld(u, w);
-      P.push(x, surf(x, z) + LIFT - drop, z); N.push(0, 1, 0); Z.push(zone); UW.push(u, w);
+      // (a designed plane stands up to 0.65 m over the old ramp: its skirt goes down to the terrain, 5 cm into it)
+      const top = (dp ? drivePlane(dp, u) : surf(x, z)) + LIFT;
+      P.push(x, drop && dp ? Math.min(top - drop, groundAt(x, z) - 0.05) : top - drop, z); N.push(0, 1, 0); Z.push(zone); UW.push(u, w);
       i = P.length / 3 - 1; key.set(k, i);
       return i;
     };

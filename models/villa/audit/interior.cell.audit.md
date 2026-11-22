@@ -1,22 +1,22 @@
 # Mesh audit (before pack): interior.cell
 
-77,840 triangles, 40,738 welded vertices, 3,214 open edges, 366,076 rays, 7862 ms.
+112,228 triangles, 62,562 welded vertices, 9,124 open edges, 587,376 rays, 20889 ms.
 
-**0 blocking**, 4846 warnings. Clean (no blocking item).
+**0 blocking**, 7325 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| near | warn | 63 |
-| sliver | warn | 4462 |
-| nonmanifold | warn | 111 |
-| tjunction | warn | 210 |
-| seam | info | 296 |
-| opening | info | 564 |
-| backtoback | info | 4193 |
+| near | warn | 387 |
+| sliver | warn | 6570 |
+| nonmanifold | warn | 135 |
+| tjunction | warn | 233 |
+| seam | info | 1930 |
+| opening | info | 647 |
+| backtoback | info | 7341 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## near (warn, 63)
+## near (warn, 387)
 
 | at | parts | separation_mm | overlap_cm2 | angle_deg | maxDistance | need_mm | sameComponent | normal |
 |---|---|---|---|---|---|---|---|---|
@@ -61,9 +61,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 24.79, 120.69, 10.39 | Cell/walnut + Cell/glow | 2 | 112 | 0 | 35 | 0.27 | false | 0 + -1 + 0 |
 | 25.07, 120.88, 10.93 | Cell/walnut + Cell/glow | 2 | 11.9 | 0 | 35 | 0.27 | false | 0 + -1 + 0 |
 
-(23 more in the JSON)
+(347 more in the JSON)
 
-## sliver (warn, 4462)
+## sliver (warn, 6570)
 
 | at | part | aspect | longest |
 |---|---|---|---|
@@ -108,9 +108,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 22.54, 125.40, -7.99 | Cell/plaster_white | 42 | 0.42 |
 | 22.40, 125.40, -7.98 | Cell/plaster_white | 42 | 0.42 |
 
-(4422 more in the JSON)
+(6530 more in the JSON)
 
-## nonmanifold (warn, 111)
+## nonmanifold (warn, 135)
 
 | at | part | uses |
 |---|---|---|
@@ -155,22 +155,24 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 20.85, 119.95, -7.98 | Cell/plaster_white | 4 |
 | 20.85, 120.37, -7.98 | Cell/plaster_white | 4 |
 
-(71 more in the JSON)
+(95 more in the JSON)
 
-## tjunction (warn, 210)
+## tjunction (warn, 233)
 
 | at | part | edge_m |
 |---|---|---|
 | 14.30, 124.80, -21.20 | Cell/plaster_white | 0.42 |
 | 14.30, 124.80, -19.90 | Cell/plaster_white | 0.42 |
+| 14.30, 124.80, -17.00 | Cell/plaster_white | 0.42 |
+| 14.30, 124.80, -15.80 | Cell/plaster_white | 0.42 |
+| 14.30, 124.80, -12.60 | Cell/plaster_white | 0.42 |
+| 14.30, 124.80, -11.40 | Cell/plaster_white | 0.42 |
 | 14.30, 122.00, -8.00 | Cell/plaster_white | 0.42 |
 | 14.30, 122.40, -8.00 | Cell/plaster_white | 0.42 |
 | 14.30, 118.40, -7.85 | Cell/plaster_white | 0.42 |
 | 14.30, 118.40, 3.85 | Cell/plaster_white | 0.42 |
 | 14.30, 121.40, 4.50 | Cell/plaster_white | 0.42 |
 | 14.30, 121.40, 5.50 | Cell/plaster_white | 0.42 |
-| 14.30, 121.40, 6.30 | Cell/plaster_white | 0.42 |
-| 14.30, 121.40, 8.70 | Cell/plaster_white | 0.42 |
 | 14.30, 118.40, 11.00 | Cell/plaster_white | 0.42 |
 | 14.30, 122.00, 11.00 | Cell/plaster_white | 0.42 |
 | 14.30, 122.00, 11.60 | Cell/plaster_white | 0.42 |
@@ -180,6 +182,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 121.40, 21.50 | Cell/plaster_white | 0.42 |
 | 14.30, 122.00, 22.40 | Cell/plaster_white | 0.42 |
 | 14.30, 121.75, 22.70 | Cell/plaster_white | 0.42 |
+| 15.50, 121.40, 6.30 | Cell/plaster_white | 0.42 |
+| 15.50, 121.40, 8.70 | Cell/plaster_white | 0.42 |
 | 22.00, 118.40, -22.70 | Cell/plaster_white | 0.42 |
 | 28.00, 118.85, -22.70 | Cell/plaster_white | 0.42 |
 | 28.00, 120.80, -22.70 | Cell/plaster_white | 0.42 |
@@ -197,66 +201,66 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.70, 121.95, 4.90 | Cell/plaster_white | 0.16 |
 | 35.70, 121.95, 7.90 | Cell/plaster_white | 0.16 |
 | 35.70, 121.95, 8.00 | Cell/plaster_white | 0.16 |
-| 35.70, 122.00, 11.00 | Cell/plaster_white | 0.42 |
-| 35.70, 122.00, 11.60 | Cell/plaster_white | 0.42 |
-| 35.70, 122.00, 22.40 | Cell/plaster_white | 0.42 |
-| 35.70, 118.40, 4.00 | Cell/plaster_white | 0.42 |
 
-(170 more in the JSON)
+(193 more in the JSON)
 
-## seam (info, 296)
+## seam (info, 1930)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | 14.50, 122.40, -7.98 | Cell/oak_plank + Glass/glass_window | 47.45 | 201 | 90 |
-| 18.01, 118.44, -22.70 | Cell/plaster_white + Cell/marble_white | 37.1 | 180 | 22.5 |
+| 12.30, 122.40, 11.34 | Cell/plaster_white + Cell/stone_floor | 38.7 | 194 | 45 |
+| 12.30, 122.40, 11.34 | Cell/oak_plank + Cell/stone_floor | 35.16 | 177 | 45 |
+| 16.21, 118.43, -22.70 | Cell/plaster_white + Cell/marble_white | 31.52 | 158 | 22.5 |
 | 12.30, 122.65, 11.00 | Cell/plaster_white + Cell/marble_white | 27.16 | 139 | 90 |
 | 21.15, 118.44, -7.59 | Cell/plaster_white + Cell/walnut | 26.47 | 134 | 22.5 |
 | 12.15, 123.31, -6.00 | Cell/plaster_white + Glass/glass_window | 56.28 | 134 | 90 |
-| 18.01, 118.40, -22.68 | Cell/oak_plank + Cell/marble_white | 24.28 | 126 | 22.5 |
 | 20.85, 122.00, -7.99 | Cell/plaster_white + Cell/plaster_white | 24.3 | 121 | 90 |
+| 16.21, 118.40, -22.68 | Cell/oak_plank + Cell/marble_white | 22.68 | 118 | 22.5 |
 | 22.60, 117.95, -20.28 | Cell/oak_plank + Cell/stone_floor | 23.4 | 113 | 90 |
 | 37.35, 122.89, 0.00 | Cell/plaster_white + Glass/glass_window | 46.62 | 112 | 90 |
 | 21.16, 118.40, -7.57 | Cell/walnut + Cell/stone_floor | 21.97 | 110 | 22.5 |
+| 20.40, 122.60, 23.20 | Cell/plaster_white + Cell/plaster_white | 20.76 | 108 | 90 |
 | 14.30, 118.47, 3.85 | Cell/plaster_white + Cell/plaster_white | 20.6 | 105 | 90 |
+| 20.40, 122.41, 13.37 | Cell/plaster_white + Cell/stone_floor | 19.81 | 104 | 45 |
+| 20.40, 122.40, 13.37 | Cell/plaster_white + Cell/oak_plank | 19.64 | 100 | 90 |
 | 35.85, 118.69, -22.70 | Cell/plaster_white + Glass/glass_window | 41.16 | 98 | 90 |
 | 29.93, 125.40, 1.23 | Cell/plaster_white + Cell/plaster_white | 19.03 | 94 | 90 |
 | 15.01, 118.40, 22.18 | Cell/oak_plank + Cell/walnut | 17.15 | 88 | 22.5 |
+| 14.30, 118.47, 11.00 | Cell/plaster_white + Cell/marble_white | 17.5 | 87 | 90 |
 | 23.01, 118.45, 22.70 | Cell/plaster_white + Cell/walnut | 18.2 | 85 | 22.5 |
 | 35.85, 118.69, 8.00 | Cell/plaster_white + Glass/glass_window | 35.28 | 84 | 90 |
 | 29.01, 122.40, 13.43 | Cell/oak_plank + Cell/walnut | 15.99 | 83 | 22.5 |
 | 29.40, 122.40, 11.15 | Cell/plaster_white + Cell/oak_plank | 16.2 | 78 | 90 |
 | 29.93, 122.40, 1.23 | Cell/plaster_white + Cell/oak_plank | 15.28 | 77 | 90 |
+| 22.60, 117.95, -20.39 | Cell/marble_white + Cell/stone_floor | 2.24 | 76 | 83.6 |
 | 12.57, 122.40, 11.00 | Cell/oak_plank + Cell/marble_white | 14.76 | 74 | 90 |
 | 29.61, 118.40, -5.48 | Cell/walnut + Cell/stone_floor | 14.35 | 74 | 22.5 |
+| 12.46, 122.41, 11.30 | Cell/marble_white + Cell/stone_floor | 14.53 | 74 | 45 |
 | 35.85, 118.69, -7.85 | Cell/plaster_white + Glass/glass_window | 30.03 | 72 | 90 |
 | 37.20, 122.40, 11.15 | Cell/plaster_white + Cell/plaster_white | 14.82 | 71 | 90 |
 | 15.11, 119.30, 4.15 | Cell/plaster_white + Cell/brass | 12.37 | 66 | 45 |
-| 14.30, 118.44, 11.30 | Cell/plaster_white + Cell/marble_white | 13.14 | 64 | 90 |
+| 22.60, 117.95, -12.89 | Cell/marble_white + Cell/stone_floor | 1.62 | 58 | 83.6 |
 | 29.93, 122.40, -5.48 | Cell/plaster_white + Cell/oak_plank | 11.3 | 56 | 90 |
 | 14.15, 119.11, 12.00 | Cell/plaster_white + Glass/glass_window | 22.68 | 54 | 90 |
 | 14.30, 118.47, -7.85 | Cell/plaster_white + Cell/plaster_white | 10.28 | 53 | 90 |
 | 26.41, 118.40, 22.18 | Cell/oak_plank + Cell/walnut | 9.55 | 52 | 22.5 |
+| 14.30, 118.73, -19.39 | Cell/plaster_white + Cell/walnut | 8.89 | 51 | 22.5 |
 | 29.93, 125.40, -5.48 | Cell/plaster_white + Cell/plaster_white | 10.17 | 51 | 90 |
-| 24.00, 119.95, 22.85 | Cell/plaster_white + Glass/glass_window | 19.32 | 46 | 90 |
-| 12.30, 122.57, -7.59 | Cell/plaster_white + Cell/walnut | 7.15 | 42 | 22.5 |
-| 37.20, 122.49, -5.60 | Cell/plaster_white + Cell/plaster_white | 7.53 | 41 | 90 |
-| 20.85, 118.41, 3.85 | Cell/plaster_white + Cell/plaster_white | 7.2 | 40 | 90 |
-| 23.01, 118.40, 22.18 | Cell/oak_plank + Cell/walnut | 7.45 | 40 | 22.5 |
-| 23.01, 118.40, 22.57 | Cell/oak_plank + Cell/walnut | 7.25 | 40 | 22.5 |
-| 37.20, 122.40, -5.45 | Cell/plaster_white + Cell/plaster_white | 7.4 | 39 | 90 |
-| 32.61, 118.40, 22.18 | Cell/oak_plank + Cell/walnut | 5.95 | 36 | 22.5 |
-| 15.50, 119.23, 4.15 | Cell/plaster_white + Cell/walnut | 6.47 | 35 | 22.5 |
-| 20.85, 118.40, 4.11 | Cell/plaster_white + Cell/stone_floor | 6.7 | 34 | 90 |
+| 16.67, 119.48, 11.30 | Cell/marble_white + Cell/metal_black | 9.34 | 48 | 45 |
 
-(256 more in the JSON)
+(1890 more in the JSON)
 
-## opening (info, 564)
+## opening (info, 647)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
 | 14.30, 125.15, -21.20 | Cell/plaster_white | 1 + 0 + 0 | 0.4 |
 | 14.30, 125.15, -19.90 | Cell/plaster_white | 1 + 0 + 0 | 0.4 |
+| 14.30, 125.15, -17.00 | Cell/plaster_white | 1 + 0 + 0 | 0.4 |
+| 14.30, 125.15, -15.80 | Cell/plaster_white | 1 + 0 + 0 | 0.4 |
+| 14.30, 125.15, -12.60 | Cell/plaster_white | 1 + 0 + 0 | 0.4 |
+| 14.30, 125.15, -11.40 | Cell/plaster_white | 1 + 0 + 0 | 0.4 |
 | 14.30, 123.57, -8.00 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 | 14.30, 123.99, -8.00 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 | 14.30, 124.41, -8.00 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
@@ -265,6 +269,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 124.79, -19.90 | Cell/plaster_white | 0 + 0 + -1 | 0.02 |
 | 14.30, 118.40, -21.15 | Cell/plaster_white | 0 + 1 + 0 | 0.2 |
 | 14.30, 118.40, -19.94 | Cell/plaster_white | 0 + 1 + 0 | 0.26 |
+| 14.30, 124.79, -17.00 | Cell/plaster_white | 0 + 0 + 1 | 0.02 |
+| 14.30, 124.79, -15.80 | Cell/plaster_white | 0 + 0 + -1 | 0.02 |
+| 14.30, 124.79, -12.60 | Cell/plaster_white | 0 + 0 + 1 | 0.02 |
+| 14.30, 124.79, -11.40 | Cell/plaster_white | 0 + 0 + -1 | 0.02 |
 | 14.30, 118.40, -7.99 | Cell/plaster_white | 1 + 0 + 0 | 0.02 |
 | 14.30, 118.40, -7.51 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 | 14.30, 118.40, -7.09 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
@@ -287,63 +295,55 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 118.40, 0.05 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 | 14.30, 118.40, 0.47 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 | 14.30, 118.40, 0.89 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
-| 14.30, 118.40, 1.31 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
-| 14.30, 118.40, 1.73 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
-| 14.30, 118.40, 2.15 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
-| 14.30, 118.40, 2.57 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
-| 14.30, 118.40, 2.99 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
-| 14.30, 118.40, 3.41 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
-| 14.30, 121.41, 4.50 | Cell/plaster_white | 1 + 0 + 0 | 0.02 |
-| 14.30, 121.41, 5.50 | Cell/plaster_white | 1 + 0 + 0 | 0.02 |
 
-(524 more in the JSON)
+(607 more in the JSON)
 
-## backtoback (info, 4193)
+## backtoback (info, 7341)
 
 | at | parts | area |
 |---|---|---|
-| 14.30, 118.44, 11.25 | Cell/plaster_white + Cell/marble_white | 0.00573 |
-| 14.30, 118.47, 11.11 | Cell/plaster_white + Cell/marble_white | 0.00741 |
-| 14.30, 118.41, 11.19 | Cell/plaster_white + Cell/marble_white | 0.00627 |
-| 14.30, 118.43, 11.04 | Cell/plaster_white + Cell/marble_white | 0.00459 |
-| 14.30, 118.75, 11.26 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 118.83, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 118.54, 11.19 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 118.66, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 119.12, 11.25 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 119.25, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 118.95, 11.15 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 119.08, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 119.59, 11.26 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 119.67, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 119.38, 11.19 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 119.50, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 119.96, 11.25 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 120.08, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 119.79, 11.15 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 119.92, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 120.38, 11.25 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 120.50, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 120.22, 11.19 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 120.34, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 120.85, 11.26 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 120.92, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 120.64, 11.19 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 120.76, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 121.22, 11.25 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 121.34, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 121.06, 11.19 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 121.18, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 121.64, 11.25 | Cell/plaster_white + Cell/marble_white | 0.03008 |
-| 14.30, 121.77, 11.11 | Cell/plaster_white + Cell/marble_white | 0.03892 |
-| 14.30, 121.48, 11.19 | Cell/plaster_white + Cell/marble_white | 0.03292 |
-| 14.30, 121.60, 11.05 | Cell/plaster_white + Cell/marble_white | 0.02408 |
-| 14.30, 121.92, 11.25 | Cell/plaster_white + Cell/marble_white | 0.01146 |
-| 14.30, 121.97, 11.11 | Cell/plaster_white + Cell/marble_white | 0.01483 |
-| 14.30, 121.86, 11.19 | Cell/plaster_white + Cell/marble_white | 0.01254 |
-| 14.30, 121.91, 11.05 | Cell/plaster_white + Cell/marble_white | 0.00917 |
+| 14.30, 118.51, -19.33 | Cell/plaster_white + Cell/walnut | 0.00008 |
+| 14.30, 118.67, -19.36 | Cell/plaster_white + Cell/walnut | 0.02792 |
+| 14.30, 118.51, -19.36 | Cell/plaster_white + Cell/walnut | 0.00005 |
+| 14.30, 118.52, -19.38 | Cell/plaster_white + Cell/walnut | 0.0011 |
+| 14.30, 118.98, -19.36 | Cell/plaster_white + Cell/walnut | 0.0057 |
+| 14.30, 118.92, -19.37 | Cell/plaster_white + Cell/walnut | 0.00274 |
+| 14.30, 118.52, -18.92 | Cell/plaster_white + Cell/walnut | 0.00086 |
+| 14.30, 118.71, -19.02 | Cell/plaster_white + Cell/walnut | 0.087 |
+| 14.30, 118.51, -19.13 | Cell/plaster_white + Cell/walnut | 0.00497 |
+| 14.30, 118.65, -19.20 | Cell/plaster_white + Cell/walnut | 0.07265 |
+| 14.30, 118.98, -18.94 | Cell/plaster_white + Cell/walnut | 0.0065 |
+| 14.30, 118.96, -19.14 | Cell/plaster_white + Cell/walnut | 0.04138 |
+| 14.30, 118.53, -18.50 | Cell/plaster_white + Cell/walnut | 0.00204 |
+| 14.30, 118.72, -18.60 | Cell/plaster_white + Cell/walnut | 0.08582 |
+| 14.30, 118.52, -18.71 | Cell/plaster_white + Cell/walnut | 0.01242 |
+| 14.30, 118.66, -18.78 | Cell/plaster_white + Cell/walnut | 0.0652 |
+| 14.30, 118.98, -18.52 | Cell/plaster_white + Cell/walnut | 0.0065 |
+| 14.30, 118.96, -18.72 | Cell/plaster_white + Cell/walnut | 0.04138 |
+| 14.30, 118.54, -18.09 | Cell/plaster_white + Cell/walnut | 0.00363 |
+| 14.30, 118.73, -18.19 | Cell/plaster_white + Cell/walnut | 0.08423 |
+| 14.30, 118.53, -18.30 | Cell/plaster_white + Cell/walnut | 0.01946 |
+| 14.30, 118.67, -18.37 | Cell/plaster_white + Cell/walnut | 0.05816 |
+| 14.30, 118.98, -18.10 | Cell/plaster_white + Cell/walnut | 0.0065 |
+| 14.30, 118.96, -18.30 | Cell/plaster_white + Cell/walnut | 0.04138 |
+| 14.30, 118.55, -17.67 | Cell/plaster_white + Cell/walnut | 0.00562 |
+| 14.30, 118.75, -17.77 | Cell/plaster_white + Cell/walnut | 0.08224 |
+| 14.30, 118.54, -17.88 | Cell/plaster_white + Cell/walnut | 0.02609 |
+| 14.30, 118.69, -17.96 | Cell/plaster_white + Cell/walnut | 0.05152 |
+| 14.30, 118.98, -17.68 | Cell/plaster_white + Cell/walnut | 0.0065 |
+| 14.30, 118.96, -17.88 | Cell/plaster_white + Cell/walnut | 0.04138 |
+| 14.30, 118.56, -17.26 | Cell/plaster_white + Cell/walnut | 0.00801 |
+| 14.30, 118.75, -17.36 | Cell/plaster_white + Cell/walnut | 0.07985 |
+| 14.30, 118.55, -17.47 | Cell/plaster_white + Cell/walnut | 0.03233 |
+| 14.30, 118.70, -17.54 | Cell/plaster_white + Cell/walnut | 0.04529 |
+| 14.30, 118.98, -17.26 | Cell/plaster_white + Cell/walnut | 0.0065 |
+| 14.30, 118.96, -17.46 | Cell/plaster_white + Cell/walnut | 0.04138 |
+| 14.30, 118.56, -17.02 | Cell/plaster_white + Cell/walnut | 0.00505 |
+| 14.30, 118.76, -17.07 | Cell/plaster_white + Cell/walnut | 0.04097 |
+| 14.30, 118.56, -17.13 | Cell/plaster_white + Cell/walnut | 0.01952 |
+| 14.30, 118.71, -17.17 | Cell/plaster_white + Cell/walnut | 0.02113 |
 
-(4153 more in the JSON)
+(7301 more in the JSON)
 
 
 Nodes: Cell, Glass. Distances: {"*":35}. Quantum 0.000 mm. Offset 0,100,0.

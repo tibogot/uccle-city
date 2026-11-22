@@ -14,7 +14,8 @@
 //    by the baked probes inside. No light is added anywhere (rule fixed-light-count).
 import * as THREE from "three/webgpu";
 import { loadVilla, VILLA_LODS, setLodFades, villaLodState, villaLook } from "./villaModel.js";
-import { buildVillaGrounds, smoothGround } from "./villaGrounds.js";
+import { buildVillaGrounds } from "./villaGrounds.js";
+import { drivePlane, LIFT } from "./villaGroundsGeom.js";
 import { buildVillaCars } from "./villaCars.js";
 import { villaInLook } from "./villaInterior.js";
 import { SMOOTH, fadeProxies } from "../lodFade.js";
@@ -72,7 +73,17 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     const gateL = m.part("Villa_gateL"), gateR = m.part("Villa_gateR"), door = m.part("Villa_door");
     for (const p of [gateL, gateR, door]) if (p) { p.userData.closedY = p.rotation.y; parts.add(p); }
     const grounds = buildVillaGrounds({ notes, rootM: m.rootM, groundAt });
-    const cars = await buildVillaCars({ notes, rootM: m.rootM, rotationY: m.placement.rotationY, groundAt: smoothGround(groundAt) }).catch((e) => { log(`villa cars: ${e.message}`); return null; });
+    // THE DRIVE + GARAGE SURFACE (round 2, rule villa-drive-plane): the designed plane (a single slope, then flat), not
+    // the DTM: the car drives on it (a deck in world.decks: moverGround.js), the walker stands on it (a TriBVH + the
+    // terrain off there), the parked cars stand on it
+    const inv = m.inv, q = new THREE.Vector3();
+    const dp = notes.drive_plane, dRings = dp.zones.map((z) => notes.grounds[z]);
+    const inRingUW = (r, u, w) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [ui, wi] = r[i], [uj, wj] = r[j]; if ((wi > w) !== (wj > w) && u < ((uj - ui) * (w - wi)) / (wj - wi) + ui) c = !c; } return c; };
+    const onDrive = (x, z) => { q.set(x, 0, z).applyMatrix4(inv); return dRings.some((r) => inRingUW(r, q.x, q.z)) ? q.x : null; };
+    const driveDeck = (x, z) => { const u = onDrive(x, z); return u == null ? null : drivePlane(dp, u) + LIFT; };
+    const standAt = (x, z) => driveDeck(x, z) ?? groundAt(x, z);
+    if (world.decks) world.decks.push(driveDeck);
+    const cars = await buildVillaCars({ notes, rootM: m.rootM, rotationY: m.placement.rotationY, groundAt: (x, z) => { const d = driveDeck(x, z); return d == null ? groundAt(x, z) : d - LIFT; } }).catch((e) => { log(`villa cars: ${e.message}`); return null; });
     for (const o of [root, parts, grounds.mesh, cars?.group]) if (o) { o.visible = false; scene.add(o); o.updateMatrixWorld(true); }
     const tc = performance.now();
     const compile = await waitCompiler();
@@ -128,6 +139,17 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
       }
     };
     import("../character/index.js").then((c) => { chr = c; }).catch(() => {});
+    // the walker on the paved drive / garage: the grounds' triangles + the terrain ignored over the drive's rings
+    let groundsHooked = null;
+    const hookGrounds = (third) => {
+      if (!chr || !third?.world || groundsHooked === third) return;
+      const g = grounds.mesh.geometry, P = g.attributes.position, I = g.index, T = new Float32Array(I.count * 3);
+      for (let i = 0; i < I.count; i++) { const k = I.getX(i); T[i * 3] = P.getX(k); T[i * 3 + 1] = P.getY(k); T[i * 3 + 2] = P.getZ(k); }
+      third.world.add(new chr.TriBVH(T));
+      const hf = third.world.sources.find((s) => s instanceof chr.Heightfield);
+      if (hf) { const orig = hf.height; hf.height = (x, z) => (onDrive(x, z) != null ? -1e4 : orig(x, z)); }
+      groundsHooked = third;
+    };
     const inner = interior(m, root, extGlass, door, state);
     let n = 0, home = false, last = performance.now();
     const player = new THREE.Vector3(), tmp = new THREE.Vector3();
@@ -155,6 +177,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
       if (gateL) gateL.rotation.y = gateL.userData.closedY + a;
       if (gateR) gateR.rotation.y = gateR.userData.closedY - a;
       setGateColliders(state.gate <= 0.001 ? "closed" : state.gate >= 0.999 ? "open" : null);
+      if (third?.on) hookGrounds(third);
       inner.update(dt, camPos, player, third);
     });
     log(`Villa (Av. du Prince d'Orange): scripted, LODs ${m.tris.map(Math.round).join(" / ")} triangles, ${m.drawCalls.join("/")} draws; grounds ${grounds.tris} tris; cars ${cars ? cars.tris : 0} tris; loaded ${tLoad.toFixed(0)} ms, shaders ${tComp.toFixed(0)} ms + shadow pass ${tWarm.toFixed(0)} ms (background)`);

@@ -1,80 +1,85 @@
 # Mesh audit (before pack): soft.soft
 
-51,536 triangles, 28,860 welded vertices, 4,692 open edges, 115,452 rays, 6356 ms.
+67,192 triangles, 38,632 welded vertices, 7,820 open edges, 199,188 rays, 13326 ms.
 
-**0 blocking**, 615 warnings. Clean (no blocking item).
+**0 blocking**, 1073 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
-| tjunction | warn | 9 |
-| seam | info | 729 |
-| opening | info | 732 |
-| backtoback | info | 1258 |
+| tjunction | warn | 14 |
+| seam | info | 1135 |
+| opening | info | 1439 |
+| backtoback | info | 1262 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
-## tjunction (warn, 9)
+## tjunction (warn, 14)
 
 | at | part | edge_m |
 |---|---|---|
+| 34.90, 119.32, -9.61 | Soft/plant | 0.012 |
+| 34.90, 119.32, -9.59 | Soft/plant | 0.012 |
+| 35.05, 120.19, -9.70 | Soft/plant | 0.022 |
+| 35.05, 120.19, -9.70 | Soft/plant | 0.022 |
+| 34.90, 119.32, -9.59 | Soft/plant | 0.012 |
+| 34.90, 119.32, -9.61 | Soft/plant | 0.012 |
 | 15.39, 118.88, -21.51 | Soft/plant | 0.012 |
 | 15.40, 118.88, -21.49 | Soft/plant | 0.012 |
 | 15.39, 118.88, -21.51 | Soft/plant | 0.012 |
 | 15.40, 118.88, -21.49 | Soft/plant | 0.012 |
-| 34.50, 119.54, 12.03 | Soft/plant | 0.032 |
 | 36.40, 122.76, -6.81 | Soft/plant | 0.012 |
 | 36.40, 122.76, -6.79 | Soft/plant | 0.012 |
 | 36.40, 122.76, -6.81 | Soft/plant | 0.012 |
 | 36.40, 122.76, -6.79 | Soft/plant | 0.012 |
 
-## seam (info, 729)
+## seam (info, 1135)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | 29.43, 118.22, -13.49 | Soft/fabric_white + Soft/fabric_white | 2.19 | 106 | 27.5 |
-| 30.47, 118.22, -18.57 | Soft/fabric_white + Soft/fabric_white | 2.19 | 104 | 27.4 |
+| 30.48, 118.22, -18.56 | Soft/fabric_white + Soft/fabric_white | 2.19 | 104 | 27.4 |
 | 22.44, 118.67, 15.72 | Soft/fabric_white + Soft/fabric_white | 2.19 | 104 | 27.5 |
 | 23.67, 118.22, -13.47 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.2 |
 | 29.53, 118.22, -14.57 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.7 |
-| 26.83, 118.67, 16.66 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.5 |
+| 26.83, 118.67, 16.67 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.5 |
+| 24.05, 118.23, -13.11 | Soft/fabric_white + Soft/fabric_grey | 2.03 | 101 | 12.8 |
+| 29.89, 118.23, -15.06 | Soft/fabric_white + Soft/fabric_grey | 2.03 | 100 | 14.2 |
+| 23.50, 118.23, -13.11 | Soft/fabric_white + Soft/leather | 1.19 | 99 | 58.6 |
+| 29.09, 118.23, -13.11 | Soft/fabric_white + Soft/fabric_grey | 2.13 | 98 | 12.4 |
+| 29.89, 118.23, -17.93 | Soft/fabric_white + Soft/fabric_grey | 2.02 | 96 | 13.4 |
+| 23.83, 118.71, 15.97 | Soft/fabric_white + Soft/fabric_grey | 1.46 | 93 | 19.8 |
+| 25.68, 118.71, 15.97 | Soft/fabric_white + Soft/fabric_grey | 1.48 | 93 | 20.7 |
+| 24.17, 118.71, 15.98 | Soft/fabric_white + Soft/fabric_grey | 1.47 | 92 | 20.6 |
 | 32.85, 122.96, -2.34 | Soft/fabric_white + Soft/fabric_grey | 4.01 | 86 | 6.6 |
 | 30.30, 122.96, 16.58 | Soft/fabric_white + Soft/fabric_grey | 4.23 | 86 | 6.6 |
+| 30.16, 122.97, 18.25 | Soft/fabric_grey + Soft/fabric_grey | 1.01 | 77 | 51.9 |
+| 30.16, 122.97, 16.55 | Soft/fabric_grey + Soft/fabric_grey | 1.01 | 71 | 55 |
 | 23.31, 118.33, -19.26 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
 | 23.31, 118.33, -14.26 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
-| 28.29, 118.78, 18.86 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
+| 21.11, 118.78, 17.14 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
+| 21.11, 118.78, 19.34 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
 | 14.39, 122.78, 2.76 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
 | 20.31, 122.78, -3.26 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
 | 20.31, 122.78, -0.26 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
 | 35.39, 122.78, 21.57 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
+| 30.16, 122.97, 17.54 | Soft/fabric_grey + Soft/fabric_grey | 1.02 | 67 | 51.5 |
 | 22.58, 118.31, -18.71 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
-| 22.58, 118.31, -13.74 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
-| 29.02, 118.76, 18.31 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
+| 22.58, 118.31, -13.71 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
+| 20.38, 118.76, 17.69 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
+| 20.38, 118.76, 19.89 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 15.12, 122.76, 2.21 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 19.58, 122.76, -2.71 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
-| 19.58, 122.76, 0.29 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
+| 19.58, 122.76, 0.26 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 36.30, 122.76, 21.69 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 32.34, 122.96, -2.32 | Soft/fabric_white + Soft/fabric_white | 1.44 | 47 | 5.1 |
 | 29.79, 122.96, 16.60 | Soft/fabric_white + Soft/fabric_white | 1.57 | 47 | 5.1 |
 | 29.29, 118.30, -12.87 | Soft/fabric_white + Soft/fabric_white | 0.97 | 46 | 7.1 |
 | 30.13, 118.30, -18.39 | Soft/fabric_white + Soft/fabric_white | 0.97 | 46 | 7.1 |
 | 22.61, 118.75, 16.07 | Soft/fabric_white + Soft/fabric_white | 0.97 | 46 | 7.1 |
-| 30.12, 118.23, -14.80 | Soft/fabric_white + Soft/fabric_white | 1.58 | 45 | 5.2 |
-| 30.12, 118.23, -17.91 | Soft/fabric_white + Soft/fabric_white | 1.54 | 43 | 5 |
-| 23.71, 118.29, -12.87 | Soft/fabric_white + Soft/fabric_white | 0.92 | 40 | 8 |
-| 30.13, 118.29, -14.61 | Soft/fabric_white + Soft/fabric_white | 0.95 | 40 | 6.4 |
-| 26.79, 118.74, 16.07 | Soft/fabric_white + Soft/fabric_white | 0.95 | 40 | 6.4 |
-| 24.94, 118.41, -12.57 | Soft/fabric_white + Soft/fabric_white | 0.69 | 38 | 17.1 |
-| 24.32, 118.43, -12.52 | Soft/fabric_white + Soft/fabric_white | 0.69 | 38 | 16.6 |
-| 32.14, 122.96, -1.01 | Soft/fabric_white + Soft/fabric_white | 1.22 | 37 | 5.3 |
-| 29.59, 122.96, 18.06 | Soft/fabric_white + Soft/fabric_white | 1.31 | 37 | 5.3 |
-| 29.09, 118.42, -12.57 | Soft/fabric_white + Soft/fabric_white | 0.67 | 36 | 14 |
-| 28.89, 118.41, -12.57 | Soft/fabric_white + Soft/fabric_white | 0.68 | 36 | 15.6 |
-| 28.68, 118.42, -12.57 | Soft/fabric_white + Soft/fabric_white | 0.67 | 36 | 15.4 |
-| 28.47, 118.41, -12.57 | Soft/fabric_white + Soft/fabric_white | 0.7 | 36 | 15.8 |
 
-(689 more in the JSON)
+(1095 more in the JSON)
 
-## opening (info, 732)
+## opening (info, 1439)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -119,9 +124,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 20.09, 119.78, 5.08 | Soft/plant | -0.55 + 0.82 + 0.17 | 0.025 |
 | 20.09, 119.78, 5.07 | Soft/plant | -0.48 + 0.82 + -0.31 | 0.025 |
 
-(692 more in the JSON)
+(1399 more in the JSON)
 
-## backtoback (info, 1258)
+## backtoback (info, 1262)
 
 | at | parts | area |
 |---|---|---|
@@ -134,6 +139,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 24.00, 118.23, -13.01 | Soft/fabric_white + Soft/fabric_white | 0.00174 |
 | 23.98, 118.23, -13.16 | Soft/fabric_white + Soft/fabric_white | 0.00608 |
 | 24.04, 118.23, -13.15 | Soft/fabric_white + Soft/fabric_white | 0.00676 |
+| 23.53, 118.22, -13.15 | Soft/fabric_white + Soft/leather | 0.00078 |
 | 24.03, 118.23, -13.22 | Soft/fabric_white + Soft/fabric_white | 0.00448 |
 | 24.05, 118.23, -13.27 | Soft/fabric_white + Soft/fabric_white | 0.00641 |
 | 24.01, 118.23, -13.21 | Soft/fabric_white + Soft/fabric_white | 0.00227 |
@@ -155,18 +161,17 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 27.17, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00083 |
 | 27.21, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00043 |
 | 27.31, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00423 |
+| 27.67, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00029 |
 | 27.45, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00035 |
 | 27.56, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00392 |
-| 27.67, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00029 |
 | 27.15, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00135 |
 | 27.21, 118.23, -12.88 | Soft/fabric_white + Soft/fabric_white | 0.00005 |
 | 26.64, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00322 |
 | 26.75, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00037 |
 | 26.86, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00443 |
 | 26.00, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00143 |
-| 26.16, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00415 |
 
-(1218 more in the JSON)
+(1222 more in the JSON)
 
 
 Nodes: Soft. Distances: {"*":35}. Quantum 0.000 mm. Offset 0,100,0.

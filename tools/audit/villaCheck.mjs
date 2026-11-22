@@ -24,7 +24,8 @@ const fails = [], rows = [];
 const check = (ok, what, detail = "") => { rows.push(`${ok ? "PASS" : "FAIL"} ${what}${detail ? ": " + detail : ""}`); if (!ok) fails.push(what); };
 
 // budgets (round 1, 2026-11-22): measured + headroom; raising one is a reviewed change
-const B = { mb: 5.0, lod0: 60000, lod1: 20000, lod2: 1500, draws: 9, cellTris: 140000, cellDraws: 16 };
+// (round 2: the furnished interior, 200k triangles / 16 draws; the coordinator's cap, 2026-11-22)
+const B = { mb: 6.0, lod0: 62000, lod1: 20000, lod2: 1500, draws: 9, cellTris: 200000, cellDraws: 16 };
 
 const site = J("models/villa/site.json"), notes = J("models/villa/villa.json"), info = J("models/villa/interior.json");
 const plot = await imp("viewer/villa/villaPlot.js");
@@ -94,6 +95,32 @@ const cnt = (k) => (rc.items || []).filter((x) => x.kind === k).length;
 const floating = rc.summary?.floating ?? cnt("floating"), overhang = rc.summary?.overhang ?? cnt("overhang");
 check(floating === 0 && overhang === 0, "joins: LOD0 + gate + grounds meet the terrain (contact.js: 0 floating, 0 overhang)", `floating ${floating}, overhang ${overhang}${floating + overhang ? " at (u, h, w) " + JSON.stringify((rc.items || []).filter((x) => x.kind !== "opening").slice(0, 30).map((x) => { const [u, w] = frameOfC(x.at[0], x.at[2]); return [x.kind[0], +u.toFixed(2), +x.at[1].toFixed(2), +w.toFixed(2), x.part ?? ""]; })) : ""}`);
 
+// ---- 3b. trees: no kept crown reaches the house or the terrace (rule tree-crowns-clear-villa)
+const feats = J("data/tiles/H9/features.json");
+const kept = plot.villaTreesClear(feats.trees);
+const hits = kept.filter((t) => plot.crownHits(t));
+check(hits.length === 0 && kept.length < feats.trees.length, "no kept tree crown within 0.5 m of the house / the terrace", `${feats.trees.length - kept.length} trees cleared, ${hits.length} crowns still reaching: ${JSON.stringify(hits.slice(0, 3).map((t) => t.id))}`);
+// ---- 3c. the drive and the garage floor: ONE designed surface (a single slope, then flat), above the terrain everywhere
+// (rule villa-drive-plane): the drawn paving's height = the plane (+ LIFT) at every vertex of those zones, and the
+// terrain never higher than the plane (it would show through) nor more than 0.75 m under it
+{
+  const dp = notes.drive_plane;
+  let dev = 0, poke = -Infinity, deep = 0, nv = 0;
+  for (let i = 0; i < gg.P.length / 3; i++) {
+    const zoneName = null;
+    const u = gg.UW[i * 2], w = gg.UW[i * 2 + 1], y = gg.P[i * 3 + 1];
+    const inZone = dp.zones.some((z) => { const r = notes.grounds[z]; let c = false; for (let a = 0, b = r.length - 1; a < r.length; b = a++) { const [ua, wa] = r[a], [ub, wb] = r[b]; if ((wa > w) !== (wb > w) && u < ((ub - ua) * (w - wa)) / (wb - wa) + ua) c = !c; } return c || r.some(([ru, rw]) => Math.abs(ru - u) < 1e-6 && Math.abs(rw - w) < 1e-6); });
+    if (!inZone || y < GG.drivePlane(dp, u) + GG.LIFT - 0.01) continue;          // (skirt feet)
+    nv++;
+    const want = GG.drivePlane(dp, u) + GG.LIFT;
+    dev = Math.max(dev, Math.abs(y - want));
+    const g = groundAt(gg.P[i * 3], gg.P[i * 3 + 2]);
+    poke = Math.max(poke, g - GG.drivePlane(dp, u)); deep = Math.max(deep, GG.drivePlane(dp, u) - g);
+  }
+  const slope = Math.abs(dp.h1 - dp.h0) / (dp.u1 - dp.u0);
+  check(nv > 100 && dev < 0.005 && poke <= 0.0 && deep <= 0.75 && slope <= 0.12, "the drive + garage floor are one designed surface over the terrain (a single slope <= 12 %, then flat)",
+    `${nv} vertices, max deviation ${(dev * 1000).toFixed(1)} mm, terrain over the plane ${(poke * 100).toFixed(1)} cm (<= 0), deepest ${deep.toFixed(2)} m, slope ${(slope * 100).toFixed(1)} %`);
+}
 // ---- 4. colliders
 const H = await imp("viewer/heroColliders.js");
 const T = [];
@@ -103,13 +130,13 @@ for (const p of model.slice(0, -1)) {
 }
 const blocks = H.carBlockersSync(Float32Array.from(T), groundAt);
 const frameOf = (x, z) => [(x - F.origin_city[0]) * F.u[0] + (z - F.origin_city[1]) * F.u[1], (x - F.origin_city[0]) * F.w[0] + (z - F.origin_city[1]) * F.w[1]];
-const inLane = (u, w) => u > 7.0 && u < 30.0 && w > 19.3 && w < 21.3;
+const inLane = (u, w) => u > 7.0 && u < notes.garage.zone_b[1] - 0.4 && w > 19.3 && w < 21.3;   // (to the garage's back wall, villa.json)
 let laneHits = 0, garageWall = 0;
 for (const b of blocks) for (const r of b.rings) {
   const c = r.reduce((s, [x, z]) => [s[0] + x / r.length, s[1] + z / r.length], [0, 0]);
   const [u, w] = frameOf(...c);
-  if (inLane(u, w)) laneHits++;
-  if (u > 19.6 && u < 30.8 && Math.abs(w - 22.75) < 0.4) garageWall++;
+  if (inLane(u, w)) { laneHits++; if (!QUIET) console.log("  lane blocker at u", u.toFixed(2), "w", w.toFixed(2), JSON.stringify(b.base ?? b.y0 ?? null)); }
+  if (u > 19.6 && u < notes.garage.zone_b[1] && Math.abs(w - (notes.garage.zone_b[3] + 0.15)) < 0.4) garageWall++;
 }
 check(laneHits === 0, "the drive lane gate -> garage right bay is free of car blockers", `${laneHits} blocker cells in it`);
 check(garageWall > 0, "the garage's south wall stops the car", `${garageWall} cells`);

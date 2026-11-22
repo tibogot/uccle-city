@@ -35,10 +35,22 @@ export function inRing(r, x, z) {
 }
 /** main.js clearRings: the plot (gardens / plants) */
 export const villaClearRings = () => (VILLA_ON ? [CLEAR_RING] : []);
-/** the LiDAR / OSM trees standing where the villa is built (the rest of the garden keeps its trees) */
+/** city (x, z) -> frame (u, w) */
+export const toFrame = (x, z) => { const dx = x - FRAME.origin[0], dz = z - FRAME.origin[1]; return [dx * ca - dz * sa, dx * sa + dz * ca]; };
+/** round 2 (leaves inside the living room: a kept tree's CROWN reached through the north wall): the house and the
+ *  terrace keep every canopy out: no kept tree's crown disc (radius t.crown, else CROWN_DEFAULT) comes within
+ *  CROWN_MARGIN of these rectangles (rule tree-crowns-clear-villa) */
+export const CROWN_UW = [[11.6, 38.0, -23.5, 24.0], [36.0, 46.2, -17.5, 16.5]];
+export const CROWN_MARGIN = 0.5, CROWN_DEFAULT = 3.0;
+export function crownHits(t) {
+  const [u, w] = toFrame(t.x, t.z), r = (t.crown ?? CROWN_DEFAULT) + CROWN_MARGIN;
+  return CROWN_UW.some(([u0, u1, w0, w1]) => Math.hypot(Math.max(u0 - u, 0, u - u1), Math.max(w0 - w, 0, w - w1)) < r);
+}
+/** the LiDAR / OSM trees standing where the villa is built or whose crown would reach the house / the terrace (the
+ *  rest of the garden keeps its trees) */
 export function villaTreesClear(trees) {
   if (!VILLA_ON || !trees?.length) return trees;
-  return trees.filter((t) => !BUILT_RINGS.some((r) => inRing(r, t.x, t.z)));
+  return trees.filter((t) => !BUILT_RINGS.some((r) => inRing(r, t.x, t.z)) && !crownHits(t));
 }
 /** a flat proxy of the built rings on the ground (the grass field's "solids": no blade through the paving / garage) */
 export function villaGrassSolid(THREE, surface, bounds) {

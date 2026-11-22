@@ -20,7 +20,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { env } from "../lighting.js";
 
 export const VILLA_IN_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "fabric_white", "fabric_grey", "leather", "brass",
-  "metal_black", "glow", "plant", "glass_window"];
+  "metal_black", "glow", "plant", "ceramic_white", "books", "art", "glass_window"];
 const CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen", "channel", "rug"];
 const C = Object.fromEntries(CODES.map((n, i) => [n, i]));
 
@@ -104,6 +104,26 @@ const ALBEDO = {
   metal_black: () => mix(lin(0x1b1b1d), lin(0x060708), isC(C.screen)),
   glow: () => lin(0xf3efe6),
   plant: () => mix(mix(lin(0x2c5a26), lin(0x4f7a33), vnoise(uv().mul(14.0))), lin(0x8a8580), isC(1)),
+  // round 2: glazed ceramic / honed stone (the tub, the basins, vases, planters)
+  ceramic_white: () => lin(0xe9e6e0).mul(vnoise(uv().mul(5.0)).mul(0.04).add(0.97)),
+  // book spines and bottles: a muted palette by code (0-5 cloth / paper spines, 6-7 dark glass), a band near the top
+  books: () => Fn(() => {
+    const cd = codeF();
+    const pal = [0x7b3b2e, 0x2f4a5c, 0xc9b99a, 0x3e5a43, 0x8c6c3c, 0x2b2b2e, 0x1e3a22, 0x4a2a10];
+    let col = lin(pal[0]);
+    for (let k = 1; k < 8; k++) col = mix(col, lin(pal[k]), isC(k));
+    const band = smoothstep(0.004, 0.0, abs(fract(uv().y.mul(4.2)).sub(0.85))).mul(0.25);
+    return col.mul(vnoise(uv().mul(30.0)).mul(0.1).add(0.92)).add(lin(0xb08746).mul(band).mul(float(1).sub(isC(6)).mul(float(1).sub(isC(7)))));
+  })(),
+  // abstract canvases (invented, by code): soft colour fields and a few gestural strokes, low noise
+  art: () => Fn(() => {
+    const w = uv().toVar(), cd = codeF();
+    const f1 = vnoise(w.mul(1.1).add(cd.mul(3.7))), f2 = vnoise(w.mul(2.3).add(cd.mul(1.3)).add(9.0));
+    const a = mix(lin(0xd9cbb0), lin(0x1f2a38), isC(1)), b = mix(lin(0xb4562f), lin(0xc8a56a), isC(2)), c = mix(lin(0x2f4f5a), lin(0xe5ddd0), isC(3));
+    const fields = mix(mix(a, b, smoothstep(0.35, 0.65, f1)), c, smoothstep(0.55, 0.8, f2));
+    const stroke = float(1).sub(smoothstep(0.0, 0.025, abs(vnoise(w.mul(0.8).add(cd)).sub(0.5)))).mul(0.6);
+    return mix(fields, lin(0x15151a), stroke);
+  })(),
 };
 
 function bakedMaterial(slot) {

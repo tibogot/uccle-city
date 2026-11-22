@@ -73,7 +73,10 @@ GF = dict(u0=14.0, u1=36.0, w0=-23.0, w1=23.0)  # ground floor outer faces
 UB = dict(u0=12.0, u1=37.5, w0=-8.0, w1=23.5)   # the cantilevered upper box
 T_W = 0.30                       # outer walls
 GLASS_IN = 0.15                  # the glass plane from the outer face
-GAR = dict(door_w=(18.0, 22.6), top=118.0, ceil=118.05, a=(14.3, 19.5, 18.0, 22.6), b=(19.5, 31.0, 16.0, 22.6))
+# round 2: the garage narrowed to where the old ramp's floor is lowest (max 115.78 m TAW), so ONE flat floor covers the
+# terrain everywhere; the drive is a single slope from the sidewalk to it (rule villa-drive-plane)
+GAR = dict(door_w=(18.3, 22.0), top=118.0, ceil=118.05, a=(14.3, 19.5, 18.3, 22.0), b=(19.5, 30.0, 16.3, 22.0))
+DRIVE_PLANE = dict(u0=9.35, h0=115.74, u1=14.0, h1=115.80)
 POOL = dict(u0=38.5, u1=43.0, w0=-15.0, w1=1.0, water=GL - 0.12, floor=GL - 1.35)
 TER = dict(u0=36.0, u1=44.5, w0=-17.0, w1=16.0)
 WALL_U = 9.6                     # the front wall on the property line (the avenue's half width 9.2 m)
@@ -83,7 +86,7 @@ RISE = (F1 - GL) / STAIR["n"]
 
 EXT_SLOTS = ["render_white", "stone_blue", "wood_cladding", "metal_dark", "glass_window", "concrete_soffit", "glow", "hedge", "pool_water"]
 INT_SLOTS = ["plaster_white", "oak_plank", "walnut", "marble_white", "stone_floor", "fabric_white", "fabric_grey", "leather", "brass",
-             "metal_black", "glow", "plant", "glass_window"]
+             "metal_black", "glow", "plant", "ceramic_white", "books", "art", "glass_window"]
 CODES = ["plain", "reveal", "plinth", "coping", "step", "slat", "frame", "door", "soffit", "roof", "garage", "led", "fire", "screen",
          "channel", "rug"]
 C = {n: i for i, n in enumerate(CODES)}
@@ -261,8 +264,12 @@ ML = 0.7                                         # exterior densify (per-vertex 
 
 # openings (outer faces): (axis, plane, out, hole (a0, a1, h0, h1), kind)
 DOOR = (6.3, 8.7, GL, GL + 3.0)
+DU = 15.2                        # round 2: the entrance recessed 1.2 m into the house (the door's outer plane)
+RECESS = (5.9, 9.1, GL, GL + 3.4)
+RECESS_IN = (5.6, 9.4, GL, C0)   # its hole in the inner face (the recess walls are 0.3 m thick)
 OPEN = {
-    "front_gf": [DOOR, (4.5, 5.5, GL, GL + 3.0), (12.0, 21.5, GL + 0.3, GL + 3.0), (-21.2, -19.9, GL + 0.0, GL + 6.4)],
+    "front_gf": [RECESS, (4.5, 5.5, GL, GL + 3.0), (12.0, 21.5, GL + 0.3, GL + 3.0), (-21.2, -19.9, GL + 0.0, GL + 6.4),
+                 (-17.0, -15.8, GL + 0.0, GL + 6.4), (-12.6, -11.4, GL + 0.0, GL + 6.4)],
     "back_liv": [(-22.7, -8.15, GL, LIVC)],
     "back_gf": [(-7.85, 4.9, GL, C0 - 0.05), (5.0, 7.9, GL, C0 - 0.05), (8.0, 22.7, GL, C0 - 0.05)],
     "north": [(28.0, 33.0, GL + 0.45, GL + 2.4)],
@@ -280,12 +287,56 @@ def plinth_bot(axis, c, out):
         return gmin(x0, x1, min(c, c - out * 0.6), max(c, c - out * 0.6), pad=0.05) - SINK
     return f
 
+# ---- clipped hedges along the sides and the back of the plot (on the ground, sunk)
+def hedge(axis, c, a0, a1, thick=1.0, hgt=2.3):
+    n_ = max(1, math.ceil((a1 - a0) / 2.0))
+    for k in range(n_):
+        x0, x1 = a0 + (a1 - a0) * k / n_, a0 + (a1 - a0) * (k + 1) / n_
+        if axis == "w":
+            gb_ = gmin(x0, x1, c - thick / 2, c + thick / 2, pad=0.1) - SINK
+            gt = gmax(x0, x1, c - thick / 2, c + thick / 2) + hgt
+            bbox(EX, x0, x1 + 0.001, c - thick / 2, c + thick / 2, gb_, gt, "hedge", 0, 0.12, 2)
+        else:
+            gb_ = gmin(c - thick / 2, c + thick / 2, x0, x1, pad=0.1) - SINK
+            gt = gmax(c - thick / 2, c + thick / 2, x0, x1) + hgt
+            bbox(EX, c - thick / 2, c + thick / 2, x0, x1 + 0.001, gb_, gt, "hedge", 0, 0.12, 2)
+
+def climber(acc, c, w0, w1, h0, h1, seed=0):
+    """a climbing plant on the plane u = c (facing -u): a leafy blanket 3-9 cm off the wall on a 0.22 m grid, its cells
+    dropped at random near the edges and the top (an organic outline), every vertex pushed in and out (clumps)"""
+    rnd = random.Random(seed); st = 0.22
+    nu = max(1, int((w1 - w0) / st)); nh = max(1, int((h1 - h0) / st))
+    top = [h1 - rnd.uniform(0, 1.6) for _ in range(nu + 1)]
+    off = {}
+    def V(i, j):
+        if (i, j) not in off: off[(i, j)] = rnd.uniform(0.03, 0.09)
+        return P(c - off[(i, j)], w0 + i * (w1 - w0) / nu, h0 + j * (h1 - h0) / nh)
+    for i in range(nu):
+        for j in range(nh):
+            hm = h0 + (j + 0.5) * (h1 - h0) / nh
+            edge = min(i, nu - 1 - i)
+            if hm > min(top[i], top[i + 1]) or (edge == 0 and rnd.random() < 0.45) or rnd.random() < 0.06: continue
+            acc.poly([V(i, j), V(i + 1, j), V(i + 1, j + 1), V(i, j + 1)], "hedge", 0, (-1, 0, 0))
+
+SEG7 = {"1": "bc", "8": "abcdefg"}
+def digits(acc, c, wm, h0, hgt, txt="18"):
+    """a house number from bright bars (seven segments) on the plane u = c facing -u, centred on wm"""
+    wd = hgt * 0.5; t = hgt * 0.12; gap = hgt * 0.22
+    n = len(txt); x0 = wm - (n * wd + (n - 1) * gap) / 2
+    for k, ch in enumerate(txt):
+        a = x0 + k * (wd + gap); b = a + wd; m = h0 + hgt / 2
+        seg = {"a": (a, b, h0 + hgt - t, h0 + hgt), "g": (a + t, b - t, m - t / 2, m + t / 2), "d": (a, b, h0, h0 + t),
+               "f": (a, a + t, m + t / 2, h0 + hgt - t), "b": (b - t, b, m + t / 2, h0 + hgt - t), "e": (a, a + t, h0 + t, m - t / 2), "c": (b - t, b, h0 + t, m - t / 2)}
+        for sg in SEG7[ch]:
+            wa, wb, ha, hb = seg[sg]
+            bbox(acc, c - 0.012, c, wa, wb, ha, hb, "glow", C["frame"], 0.002, 1, False)
+
 def exterior():
     g0, g1 = GF["w0"], GF["w1"]
     # ---- the plinth (blue stone), from the sunk foot to GL - 0.0, round the ground floor (the terrace covers it behind)
     gd = GAR["door_w"]
     edges = lambda keys: [x for k in keys for h in OPEN[k] for x in h[:2]] + [UB["w0"]]
-    wall(EX, "u", GF["u0"], g0, g1, plinth_bot("u", GF["u0"], -1), GL, [(gd[0], gd[1], -1e3, GAR["top"]), (DOOR[0], DOOR[1], GL - 0.06, GL + 1)], -1, "stone_blue", C["plinth"], ML, extra=edges(["front_gf"]))
+    wall(EX, "u", GF["u0"], g0, g1, plinth_bot("u", GF["u0"], -1), GL, [(gd[0], gd[1], -1e3, GAR["top"]), (RECESS[0], RECESS[1], GL - 0.3, GL + 1)], -1, "stone_blue", C["plinth"], ML, extra=edges(["front_gf"]))
     wall(EX, "w", g0, GF["u0"], GF["u1"], plinth_bot("w", g0, -1), GL, [], -1, "stone_blue", C["plinth"], ML, extra=edges(["north"]))
     wall(EX, "w", g1, GF["u0"], GF["u1"], plinth_bot("w", g1, 1), GL, [], 1, "stone_blue", C["plinth"], ML, extra=edges(["south_gf"]))
     wall(EX, "u", GF["u1"], g0, g1, plinth_bot("u", GF["u1"], 1), GL, [], 1, "stone_blue", C["plinth"], ML, extra=edges(["back_liv", "back_gf"]) + [TER["w0"], TER["w1"]])   # (under the terrace too: it closes the deck's house-side edge)
@@ -302,7 +353,7 @@ def exterior():
     for key, axis, c, out in (("front_gf", "u", GF["u0"], -1), ("back_liv", "u", GF["u1"], 1), ("back_gf", "u", GF["u1"], 1),
                               ("north", "w", g0, -1), ("south_gf", "w", g1, 1)):
         for hole in OPEN[key]:
-            if hole == DOOR: continue
+            if hole == DOOR or hole == RECESS: continue
             # a door-height opening (from GL) gets a blue-stone sill instead of the bottom reveal: 2 cm proud, 3 cm over
             # the face: it closes the seam where the plinth, the terrace and the glass meet (rule welded-seams)
             at_gl = abs(hole[2] - GL) < 1e-6
@@ -320,11 +371,22 @@ def exterior():
     sb = OPEN["back_gf"][2]
     bbox(EX, GF["u1"] - GLASS_IN + 0.06, GF["u1"] - GLASS_IN + 0.11, OPEN_BAY[0] + 2.6, OPEN_BAY[0] + 2.6 + 0.05, GL + 0.02, C0 - 0.08, "metal_dark", C["frame"], 0.004, 1, False)
     # the front door's reveal + frame (the leaf: Villa_door), the stop behind the leaf, a stone threshold
-    reveal(EX, "u", GF["u0"], 0.30, DOOR, "metal_dark", C["frame"], 0.0, "lrt")
+    # round 2: THE RECESSED ENTRANCE (1.2 m deep, walnut-lined, a downlight), a fascia canopy under the overhang
+    r0, r1, _, rt = RECESS
+    wall(EX, "w", r0, GF["u0"], DU, GL, rt, [], 1, "wood_cladding", C["door"], ML)
+    wall(EX, "w", r1, GF["u0"], DU, GL, rt, [], -1, "wood_cladding", C["door"], ML)
+    EX.rect(P(GF["u0"], r0, rt), P(DU, r0, rt), P(DU, r1, rt), P(GF["u0"], r1, rt), "wood_cladding", C["door"], (0, 0, -1), ML)
+    wall(EX, "u", DU, r0, r1, GL, rt, [DOOR], -1, "wood_cladding", C["door"], ML)
+    EX.rect(P(14.5, 7.43, rt - 0.004), P(14.7, 7.43, rt - 0.004), P(14.7, 7.57, rt - 0.004), P(14.5, 7.57, rt - 0.004), "glow", C["led"], (0, 0, -1))
+    bbox(EX, GF["u0"], DU, r0, r1, GL - 0.3, GL, "stone_blue", C["step"], 0.004, 1, False)
+    reveal(EX, "u", DU, 0.30, DOOR, "metal_dark", C["frame"], 0.0, "lrt")
     a0, a1, h0, h1 = DOOR
     for (wa, wb, ha, hb) in ((a0, a0 + 0.04, h0 + 0.015, h1), (a1 - 0.04, a1, h0 + 0.015, h1), (a0 + 0.04, a1 - 0.04, h1 - 0.04, h1)):
-        bbox(EX, GF["u0"] + 0.19, GF["u0"] + 0.23, wa, wb, ha, hb, "metal_dark", C["frame"], 0.003, 1, False)
-    bbox(EX, GF["u0"], GF["u0"] + T_W, a0, a1, GL - 0.06, GL + 0.015, "stone_blue", C["step"], 0.004, 1, False)
+        bbox(EX, DU + 0.19, DU + 0.23, wa, wb, ha, hb, "metal_dark", C["frame"], 0.003, 1, False)
+    bbox(EX, DU, DU + T_W, a0, a1, GL - 0.06, GL + 0.015, "stone_blue", C["step"], 0.004, 1, False)
+    box(EX, 11.8, GF["u0"], 5.2, 12.6, C0 - 0.24, C0, "metal_dark", C["frame"], skip=("+h",), maxlen=ML)
+    for w in (6.6, 8.4, 10.2, 11.8):
+        EX.rect(P(12.8, w - 0.06, C0 - 0.244), P(12.92, w - 0.06, C0 - 0.244), P(12.92, w + 0.06, C0 - 0.244), P(12.8, w + 0.06, C0 - 0.244), "glow", C["led"], (0, 0, -1))
     # ---- the upper box (dark timber: slats on the front and the south side), its slab edge and soffits
     u0, u1, w0, w1 = UB["u0"], UB["u1"], UB["w0"], UB["w1"]
     wall(EX, "u", u0, w0, w1, C0, PAR1, OPEN["front_f1"], -1, "wood_cladding", 0, ML)
@@ -411,9 +473,12 @@ def exterior():
         bbox(EX, lu0 - 0.25, lu0 + 0.0 if k == 0 else 12.2, wa_, wb_, gmin(lu0 - 0.25, 12.2, wa_, wb_) - SINK, top, "render_white", 0, 0.008, 1)
     STEPS_INFO.update(dict(n=n, rise=rise, bottom=gbot))
     # ---- the boundary wall on the property line, the gate's piers (lights), stepped tops
-    segs = [(-34.0, -20.0), (-20.0, -6.0), (-6.0, 6.0), (6.0, GATE["w0"] - 0.5), (GATE["w1"] + 0.5, 30.0)]
+    # round 2 (the street side read as a 40 m blank wall): a LOW wall (0.75 m) with a clipped hedge behind it, the
+    # forecourt open to the street; low box hedges along the living wing's plinth, climbers between its slot windows;
+    # a mailbox and the house number on the gate's piers
+    segs = [(-34.0, -20.0), (-20.0, -6.0), (-6.0, -0.8), (-0.8, 6.0), (6.0, GATE["w0"] - 0.5), (GATE["w1"] + 0.5, 30.0)]
     for (a, b) in segs:
-        top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 1.75, 2)
+        top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 0.75, 2)
         bot = lambda x0, x1: gmin(WALL_U, WALL_U + 0.3, x0, x1, pad=0.3) - SINK
         wall(EX, "u", WALL_U, a, b, bot, top - 0.06, [], -1, "render_white", 0, ML)
         wall(EX, "u", WALL_U + 0.3, a, b, bot, top - 0.06, [], 1, "render_white", 0, ML)
@@ -421,10 +486,21 @@ def exterior():
             endbot = lambda x0, x1, x=x: gmin(x0, x1, x - 0.3, x + 0.3, pad=0.05) - SINK
             wall(EX, "w", x, WALL_U, WALL_U + 0.3, endbot, top - 0.06, [], -o, "render_white", 0)
         bbox(EX, WALL_U - 0.03, WALL_U + 0.33, a - (0.03 if a == -34.0 else 0), b + (0.03 if b == 30.0 else 0), top - 0.06, top, "stone_blue", C["coping"], 0.008, 1, False)
-    for (a, b) in ((GATE["w0"] - 0.5, GATE["w0"]), (GATE["w1"], GATE["w1"] + 0.5)):
+    for k, (a, b) in enumerate(((GATE["w0"] - 0.5, GATE["w0"]), (GATE["w1"], GATE["w1"] + 0.5))):
         top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 2.05, 2)
         bbox(EX, WALL_U - 0.1, WALL_U + 0.4, a, b, gmin(WALL_U - 0.1, WALL_U + 0.4, a, b) - SINK, top, "stone_blue", C["plinth"], 0.01, 2)
-        bbox(EX, WALL_U - 0.11, WALL_U - 0.1 + 0.001, a + 0.15, b - 0.15, top - 0.55, top - 0.45, "glow", C["led"], 0.0, 1, False)
+        bbox(EX, WALL_U - 0.11, WALL_U - 0.1 + 0.001, a + 0.15, b - 0.15, top - 0.25, top - 0.2, "glow", C["led"], 0.0, 1, False)
+        if k == 0:      # the mailbox: a dark box proud of the pier, a lit slot
+            bbox(EX, WALL_U - 0.36, WALL_U - 0.1, a + 0.06, b - 0.06, top - 1.25, top - 0.8, "metal_dark", C["frame"], 0.008, 2, False)
+            bbox(EX, WALL_U - 0.375, WALL_U - 0.36, a + 0.12, b - 0.12, top - 0.93, top - 0.88, "glow", C["led"], 0.002, 1, False)
+        else:           # the house number "18" (fictional) in bright bars on a dark plate
+            bbox(EX, WALL_U - 0.13, WALL_U - 0.1, a + 0.05, b - 0.05, top - 0.95, top - 0.55, "metal_dark", C["frame"], 0.004, 1, False)
+            digits(EX, WALL_U - 0.13, (a + b) / 2, top - 0.9, 0.3)
+    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)):
+        hedge("u", WALL_U + 0.8, a, b, thick=0.9, hgt=1.9)
+    hedge("u", 13.55, -22.8, -1.2, thick=0.7, hgt=0.85)
+    for (w0_, w1_, ht) in ((-19.6, -17.3, 4.8), (-15.5, -12.9, 5.6), (-11.1, -8.4, 3.6)):
+        climber(EX, GF["u0"], w0_, w1_, GL - 0.1, GL + ht, seed=int(-w0_ * 10))
     # ---- the terrace (blue stone) with the pool, its steps down to the lawn, the pergola
     t = TER; p = POOL
     tb = lambda x0, x1, axis, c: None
@@ -460,19 +536,6 @@ def exterior():
     for u in (39.5, 41.8):
         for w in (8.5, 11.0, 13.5):
             EX.rect(P(u - 0.07, w - 0.07, ph - 0.004), P(u + 0.07, w - 0.07, ph - 0.004), P(u + 0.07, w + 0.07, ph - 0.004), P(u - 0.07, w + 0.07, ph - 0.004), "glow", C["led"], (0, 0, -1))
-    # ---- clipped hedges along the sides and the back of the plot (on the ground, sunk)
-    def hedge(axis, c, a0, a1, thick=1.0, hgt=2.3):
-        n_ = max(1, math.ceil((a1 - a0) / 2.0))
-        for k in range(n_):
-            x0, x1 = a0 + (a1 - a0) * k / n_, a0 + (a1 - a0) * (k + 1) / n_
-            if axis == "w":
-                gb_ = gmin(x0, x1, c - thick / 2, c + thick / 2, pad=0.1) - SINK
-                gt = gmax(x0, x1, c - thick / 2, c + thick / 2) + hgt
-                bbox(EX, x0, x1 + 0.001, c - thick / 2, c + thick / 2, gb_, gt, "hedge", 0, 0.12, 2)
-            else:
-                gb_ = gmin(c - thick / 2, c + thick / 2, x0, x1, pad=0.1) - SINK
-                gt = gmax(c - thick / 2, c + thick / 2, x0, x1) + hgt
-                bbox(EX, c - thick / 2, c + thick / 2, x0, x1 + 0.001, gb_, gt, "hedge", 0, 0.12, 2)
     plot = SITE["plot"]
     hedge("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"])
     hedge("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"])
@@ -535,7 +598,7 @@ def gate_leaf(side):
 def front_door():
     A_ = Acc("Villa_door", EXT_SLOTS)
     a0, a1, h0, h1 = DOOR
-    uc = GF["u0"] + 0.15
+    uc = DU + 0.15
     bbox(A_, uc - 0.04, uc + 0.04, a0 + 0.006, a1 - 0.006, h0 + 0.02, h1 - 0.006, "wood_cladding", C["door"], 0.008, 2, False)
     bbox(A_, uc - 0.07, uc - 0.04, a1 - 0.35, a1 - 0.31, h0 + 0.6, h0 + 2.2, "metal_dark", C["frame"], 0.008, 2, False)   # a long bar pull
     pivot_w = a0 + 0.8
@@ -641,14 +704,18 @@ def interior():
     def inner_wall(axis, c, a0, a1, h0, h1, holes, out, glass_c):
         wall(IN, axis, c, a0, a1, h0, h1, holes, out, "plaster_white", 0, MI)
         for hole in holes:
-            if hole == DOOR:                 # to the door stop (u0 + 0.23): the leaf closes against it
-                reveal(IN, axis, c, (GF["u0"] + 0.23) - c, hole, "plaster_white", C["reveal"], MI, "lrt"); continue
+            if hole == DOOR:                 # to the door stop (DU + 0.23): the leaf closes against it
+                reveal(IN, axis, c, (DU + 0.23) - c, hole, "plaster_white", C["reveal"], MI, "lrt"); continue
+            if hole == RECESS_IN: continue   # (the recess's own faces below)
             reveal(IN, axis, c, glass_c - c, hole, "plaster_white", C["reveal"], MI)
             if not (hole[0] == OPEN_BAY[0]): pane(IG, axis, glass_c, hole, out, "glass_window")
         colgaps = sorted(holes)
     liv_h = LIVC
     inner_wall("u", IU0, IW0, -8.0, GL, liv_h, [h for h in OPEN["front_gf"] if h[1] <= -8.0], 1, GF["u0"] + GLASS_IN)
-    inner_wall("u", IU0, -8.0, IW1, GL, C0, [h for h in OPEN["front_gf"] if h[0] >= -8.0], 1, GF["u0"] + GLASS_IN)
+    inner_wall("u", IU0, -8.0, IW1, GL, C0, [RECESS_IN if h == RECESS else h for h in OPEN["front_gf"] if h[0] >= -8.0], 1, GF["u0"] + GLASS_IN)
+    inner_wall("u", DU + 0.3, RECESS_IN[0], RECESS_IN[1], GL, C0, [DOOR], 1, DU + GLASS_IN)        # the recess's back, inside
+    wall(IN, "w", RECESS_IN[0], IU0, DU + 0.3, GL, C0, [], -1, "plaster_white", 0, MI)
+    wall(IN, "w", RECESS_IN[1], IU0, DU + 0.3, GL, C0, [], 1, "plaster_white", 0, MI)
     inner_wall("w", IW0, IU0, IU1, GL, liv_h, OPEN["north"], 1, GF["w0"] + GLASS_IN)
     inner_wall("w", IW1, IU0, IU1, GL, LOUNGE_CEIL, OPEN["south_gf"], -1, GF["w1"] - GLASS_IN)
     inner_wall("u", IU1, IW0, -8.0, GL, liv_h, OPEN["back_liv"], -1, GF["u1"] - GLASS_IN)
@@ -711,11 +778,23 @@ def interior():
     colbox(15.4, 18.6, 4.15, 4.6, GL, GL + 0.84)
     put(K.plant(1.6, 0.25, seed=3, kind="ficus", spread=0.7), 20.0, 5.0, GL, (0, 1), colb=(0.3, 0.3, 1.2))
     # ---------------------------------------------------------------- the living room: fireplace wall, the pit's sofas
-    bbox(IN, 18.0, 30.0, IW0, IW0 + 0.18, GL, GL + 4.6, "marble_white", 0, 0.01, 2)
-    bbox(IN, 20.5, 27.5, IW0 + 0.17, IW0 + 0.185, GL + 0.45, GL + 0.95, "metal_black", C["fire"], 0.004, 1, False)
-    IN.rect(P(20.6, IW0 + 0.19, GL + 0.5), P(27.4, IW0 + 0.19, GL + 0.5), P(27.4, IW0 + 0.19, GL + 0.9), P(20.6, IW0 + 0.19, GL + 0.9), "glow", C["fire"], (0, -1, 0))
-    LIGHTS.append(("fire", P(24.0, IW0 + 0.4, GL + 0.7), 60.0, (1.0, 0.55, 0.22), 0.3, None))
-    colbox(18.0, 30.0, IW0, IW0 + 0.2, GL, GL + 4.6)
+    # (round 2: the marble wall stopped short of the north window, u 28 .. 33)
+    bbox(IN, 16.2, 27.4, IW0, IW0 + 0.18, GL, GL + 4.6, "marble_white", 0, 0.01, 2)
+    bbox(IN, 18.3, 25.3, IW0 + 0.17, IW0 + 0.185, GL + 0.45, GL + 0.95, "metal_black", C["fire"], 0.004, 1, False)
+    IN.rect(P(18.4, IW0 + 0.19, GL + 0.5), P(25.2, IW0 + 0.19, GL + 0.5), P(25.2, IW0 + 0.19, GL + 0.9), P(18.4, IW0 + 0.19, GL + 0.9), "glow", C["fire"], (0, -1, 0))
+    LIGHTS.append(("fire", P(21.8, IW0 + 0.4, GL + 0.7), 60.0, (1.0, 0.55, 0.22), 0.3, None))
+    colbox(16.2, 27.4, IW0, IW0 + 0.2, GL, GL + 4.6)
+    # art: a tall canvas between the front slot windows, a wide one beside the north window
+    art(IN, "u", IU0, 1, -15.4, -13.0, GL + 1.1, GL + 4.3, code=1)
+    art(IN, "w", IW0, 1, 33.4, 35.4, GL + 1.0, GL + 2.6, code=2)
+    # a long low credenza under it (walnut, books and objects on top), plants in big stone planters
+    credenza(IN, "u", IU0, 1, -19.4, -9.0, 0.5, 0.62)
+    planter(26.6, -9.4, GL, 2.4, 11); planter(34.9, -9.6, GL, 1.8, 13)
+    # the pit: cushions on the sofas, side tables with lamps, a throw
+    for (u_, w_, f) in ((23.4, PIT["w1"] - 1.15, (0, -1)), (24.2, PIT["w1"] - 1.15, (0, -1)), (29.0, PIT["w1"] - 1.15, (0, -1)), (PIT["u1"] - 1.15, -18.0, (-1, 0)), (PIT["u1"] - 1.15, -15.2, (-1, 0))):
+        cushion(u_, w_, PIT["h"] + 0.5, f)
+    for (u_, w_) in ((PIT["u0"] + 0.55, PIT["w1"] - 0.9), (PIT["u0"] + 0.55, PIT["w0"] + 0.6)):
+        side_table(u_, w_, PIT["h"]); table_lamp(u_, w_, PIT["h"] + 0.55)
     tufted = lambda w_, seats: channel_sofa(w_, seats)
     put(channel_sofa(6.0, 4), 26.5, PIT["w1"] - 1.0, PIT["h"], (0, -1), colb=(3.0, 0.5, 0.75))
     put(channel_sofa(4.2, 3), PIT["u1"] - 1.0, -16.5, PIT["h"], (-1, 0), colb=(0.5, 2.1, 0.75))
@@ -770,11 +849,41 @@ def interior():
     bbox(IN, 31.2, 31.6, IW1 - 0.45, IW1 - 0.1, GL + 0.9, GL + 1.3, "metal_black", 0, 0.01, 2)          # the coffee machine
     for k in range(4): bbox(IN, 31.9 + k * 0.13, 31.98 + k * 0.13, IW1 - 0.4, IW1 - 0.32, GL + 0.9, GL + 0.99, "plaster_white", C["plain"], 0.01, 1)   # cups
     colbox(cu0, cu1, IW1 - 0.6, IW1, GL, LOUNGE_CEIL)
+    # round 2 (the owner: "a huge room with one sofa"): a walnut shelving wall at u 27.5 (books and objects both
+    # sides, a 4 m opening) splits it: the media lounge in front, a dining room for 8 and a bar behind
+    PU = 27.5
+    for (a, b) in ((11.3, 15.0), (19.0, IW1 - 0.6)):
+        ibox(PU - 0.15, PU + 0.15, a, b, GL, LOUNGE_CEIL, "walnut", C["door"], skip=("-h", "+h"))
+        for side in (-1, 1):
+            shelves(IN, "u", PU + side * 0.15, side, a + 0.05, b - 0.05, GL + 0.35, LOUNGE_CEIL - 0.3, seed=int(a * 7 + side * 3))
     put(channel_sofa(4.6, 3), 24.7, 16.2, GL, (0, 1), colb=(2.3, 0.5, 0.75))
+    for (u_, f) in ((23.6, (0, 1)), (24.4, (0, 1)), (25.9, (0, 1))): cushion(u_, 16.0, GL + 0.5, f)
     put(coffee_table_stone(1.6, 0.9), 24.7, 18.6, GL, (0, 1), colb=(0.8, 0.45, 0.38))
-    put([(K.box(4.0, 0.012, 3.0, 0.004, 1), "fabric_grey", C["rug"])], 24.7, 18.2, GL, (0, 1), smooth=False)
-    put(lounge_chair(), 28.6, 18.6, GL, (-1, 0), colb=(0.45, 0.45, 0.8))
-    put(K.plant(1.5, 0.24, seed=17, kind="ficus", spread=0.6), 34.6, 12.0, GL, (0, 1), colb=(0.3, 0.3, 1.2))
+    put([(K.box(5.0, 0.012, 3.6, 0.004, 1), "fabric_grey", C["rug"])], 24.2, 18.0, GL, (0, 1), smooth=False)
+    for w_ in (17.4, 19.6):
+        put(lounge_chair(), 20.8, w_, GL, (1, 0), colb=(0.45, 0.45, 0.8))
+    for (u_, w_) in ((21.9, 15.9),):
+        side_table(u_, w_, GL); table_lamp(u_, w_, GL + 0.55)
+    put(floor_lamp_arc(), 20.0, 21.4, GL, (0, -1))
+    LIGHTS.append(("larc", P(20.6, 19.8, GL + 2.0), 30.0, WARM, 0.15, None))
+    planter(14.9, 12.0, GL, 1.9, 17); planter(14.9, 21.7, GL, 2.1, 19)
+    art(IN, "w", 11.3, 1, 16.4, 19.6, GL + 1.1, GL + 2.5, code=3)
+    # behind: the dining table for 8 under three pendants, a bar (counter, stools, back shelves of bottles)
+    put(dining_table(3.2, 1.1), 31.4, 17.0, GL, (1, 0), colb=(0.55, 1.6, 0.76))
+    for k in range(4):
+        w_ = 15.65 + k * 0.9
+        put(dining_chair(), 30.55, w_, GL, (1, 0), colb=(0.25, 0.25, 0.9))
+        put(dining_chair(), 32.25, w_, GL, (-1, 0), colb=(0.25, 0.25, 0.9))
+    for w_ in (16.0, 17.0, 18.0):
+        put(pendant_globe(), 31.4, w_, LOUNGE_CEIL, (0, 1))
+        LIGHTS.append((f"dp{len(LIGHTS)}", P(31.4, w_, LOUNGE_CEIL - 0.95), 14.0, WARM, 0.08, None))
+    bbox(IN, 28.4, 30.2, 11.9, 12.6, GL, GL + 1.05, "walnut", C["door"], 0.006, 2)
+    bbox(IN, 28.3, 30.3, 11.85, 12.7, GL + 1.05, GL + 1.1, "marble_white", 0, 0.006, 2)
+    colbox(28.3, 30.3, 11.85, 12.7, GL, GL + 1.1)
+    for u_ in (28.8, 29.8): put(bar_stool(), u_, 13.25, GL, (0, -1), colb=(0.22, 0.22, 0.75))
+    bottles(IN, 28.4, 30.2, 11.3, GL + 1.6, 3)
+    put(K.plant(1.6, 0.26, seed=21, kind="ficus", spread=0.7), 35.0, 12.2, GL, (0, 1), colb=(0.3, 0.3, 1.2))
+    art(IN, "w", 11.3, 1, 32.4, 35.2, GL + 1.2, GL + 2.6, code=0)
     # ---------------------------------------------------------------- first floor
     # floor (oak) with the voids; the gallery edge (glass balustrade); walls' inner faces; ceiling at C1
     floor_rect(JU0, JU1, -8.0, JW1, F1, "oak_plank", 0, holes=[(21.0, 27.3, 9.6, 11.3)])
@@ -832,7 +941,33 @@ def interior():
         bbox(IN, 29.3, 29.8, w_ - 0.3, w_ + 0.3, F1, F1 + 0.5, "walnut", C["door"], 0.006, 2)
     put([(K.box(4.0, 0.012, 3.2, 0.004, 1), "fabric_grey", C["rug"])], 31.2, 17.4, F1, (1, 0), smooth=False)
     put(lounge_chair(), 35.8, 21.6, F1, (-1, -1), colb=(0.45, 0.45, 0.8))
-    put(K.plant(1.4, 0.24, seed=23, kind="ficus", spread=0.6), 13.4, 22.4, F1, (0, 1), colb=(0.3, 0.3, 1.1))
+    # round 2: THE BATHROOM (u 12.3 .. 20.5, a partition with a doorway by the marble wall): stone floor, a freestanding
+    # tub, a double basin on a walnut vanity with a mirror, a towel ladder, a plant
+    ibox(20.4, 20.6, 13.3, JW1, F1, C1, "plaster_white", 0, skip=("-h", "+h"))
+    ibox(20.4, 20.6, 11.3, 12.1, F1, C1, "plaster_white", 0, skip=("-h", "+h"))
+    ibox(20.4, 20.6, 12.1, 13.3, F1 + 2.4, C1, "plaster_white", 0, skip=("+h",), col=False)
+    bbox(IN, JU0, 20.4, 11.3, JW1, F1, F1 + 0.012, "stone_floor", 0, 0.002, 1)
+    put([(K.lathe([(0.0, 0.0), (0.88, 0.0), (0.97, 0.08), (1.0, 0.56), (0.97, 0.6), (0.9, 0.6), (0.86, 0.16), (0.0, 0.14)], seg=36, sx=0.86, sz=0.42), "ceramic_white", 0)],
+        16.4, 17.3, F1 + 0.012, (1, 0), smooth=True, colb=(0.86, 0.42, 0.6))
+    bbox(IN, 13.0, 13.04, 16.6, 16.64, F1, F1 + 0.95, "brass", 0, 0.004, 1)
+    bbox(IN, 13.0, 15.2, 22.55, JW1, F1 + 0.3, F1 + 0.85, "walnut", C["door"], 0.006, 2)
+    bbox(IN, 12.95, 15.25, 22.5, JW1, F1 + 0.85, F1 + 0.9, "marble_white", 0, 0.004, 1)
+    colbox(12.95, 15.25, 22.5, JW1, F1, F1 + 0.9)
+    for u_ in (13.55, 14.65):
+        put([(K.lathe([(0.0, 0.0), (0.17, 0.005), (0.2, 0.12), (0.185, 0.125), (0.15, 0.03), (0.0, 0.03)], seg=28), "ceramic_white", 0)], u_, 22.86, F1 + 0.9, (0, -1))
+        bbox(IN, u_ - 0.015, u_ + 0.015, 23.0, JW1, F1 + 0.9, F1 + 1.2, "brass", 0, 0.004, 1)
+        bbox(IN, u_ - 0.011, u_ + 0.011, 22.95, 23.0, F1 + 1.165, F1 + 1.19, "brass", 0, 0.003, 1)
+    bbox(IN, 12.9, 15.3, JW1 - 0.03, JW1, F1 + 1.3, F1 + 2.4, "metal_black", C["screen"], 0.004, 1, False)
+    led_strip(P(12.95, JW1 - 0.06, F1 + 2.43), P(15.25, JW1 - 0.06, F1 + 2.43), normal=(0, 0, -1), width=0.03)
+    LIGHTS.append(("vanity", P(14.1, JW1 - 0.3, F1 + 2.3), 12.0, WARM, 0.15, None))
+    for (u_, w_) in ((14.2, 19.0), (17.5, 19.0), (14.2, 14.0), (17.5, 14.0)): downlight(u_, w_, C1, 8.0)
+    put(K.plant(1.4, 0.24, seed=23, kind="ficus", spread=0.6), 19.7, 22.5, F1, (0, 1), colb=(0.3, 0.3, 1.1))
+    # the bed set: cushions, a folded throw, a leather bench at its foot, lamps on the bedsides, art
+    for (w_, f) in ((16.7, (1, 0)), (17.4, (1, 0)), (18.1, (1, 0))): cushion(30.15, w_, F1 + 0.8, f)
+    put([(K.soft(2.1, 0.05, 0.55, r=0.02, n=(8, 2, 4), puff=0.01, seed=9, oy=0.62), "leather", 0)], 31.6, 17.4, F1, (1, 0))
+    put([(K.soft(0.45, 0.42, 1.5, r=0.05, n=(3, 4, 7), puff=0.01, oy=0.02), "leather", 0)], 32.9, 17.4, F1, (0, 1), colb=(0.23, 0.75, 0.42))
+    for w_ in (15.6, 19.2): table_lamp(29.55, w_, F1 + 0.5)
+    art(IN, "w", 11.3, 1, 31.0, 33.6, F1 + 1.0, F1 + 2.4, code=2)
     put(K.plant(1.4, 0.24, seed=29, kind="ficus", spread=0.6), 36.4, -6.8, F1, (0, 1), colb=(0.3, 0.3, 1.1))
     # the pool's floor and its entry steps (the walker's), the water's own shader draws it
     p = POOL
@@ -842,6 +977,97 @@ def interior():
         colbox(p["u0"] + 0.0, p["u0"] + 1.6, p["w1"] - (k + 1) * 0.35, p["w1"] - k * 0.35, p["floor"], GL - 0.3 - k * 0.27)
 
 # ------------------------------------------------------------------------------------------------ interior pieces
+def _ab(acc, axis, a0, a1, d0, d1, h0, h1, slot, code=0, bevel=0.004, seg=1):
+    """a block given along a wall plane: a (along), d (out from the wall, either order), h"""
+    d0, d1 = min(d0, d1), max(d0, d1)
+    if bevel <= 0:          # (books: a plain block, its bottom on the board left out: 10 triangles)
+        if axis == "u": box(acc, d0, d1, a0, a1, h0, h1, slot, code, skip=("-h",))
+        else: box(acc, a0, a1, d0, d1, h0, h1, slot, code, skip=("-h",))
+        return
+    if axis == "u": bbox(acc, d0, d1, a0, a1, h0, h1, slot, code, bevel, seg, False)
+    else: bbox(acc, a0, a1, d0, d1, h0, h1, slot, code, bevel, seg, False)
+
+def art(acc, axis, c, out, a0, a1, h0, h1, code=0):
+    """a canvas on a wall (the plane axis = c, facing out): 4 cm deep, a thin black float frame; the painting is the
+    `art` slot's TSL (a palette per code), never a texture"""
+    _ab(acc, axis, a0 - 0.02, a1 + 0.02, c, c + out * 0.035, h0 - 0.02, h1 + 0.02, "metal_black", 0, 0.003, 1)
+    _ab(acc, axis, a0, a1, c + out * 0.01, c + out * 0.045, h0, h1, "art", code, 0.004, 1)
+
+def shelves(acc, axis, c, out, a0, a1, h0, h1, seed=0, depth=0.26):
+    """open walnut shelves on a wall: boards every ~0.38 m, uprights every ~0.9 m, books (the `books` slot, a colour
+    per code) in runs with gaps, a few ceramic vases and boxes"""
+    rnd = random.Random(seed)
+    n = max(1, round((a1 - a0) / 0.9)); hs = []; h = h0
+    while h < h1 - 0.1: hs.append(h); h += 0.38
+    for k in range(n + 1):
+        x = a0 + (a1 - a0) * k / n
+        _ab(acc, axis, x - 0.015, x + 0.015, c + out * 0.002, c + out * depth, h0 - 0.35, h1, "walnut", 0, 0.003, 1)
+    for hb in hs:                           # (boards 1 cm shallower than the uprights: no shared front plane)
+        _ab(acc, axis, a0, a1, c + out * 0.004, c + out * (depth - 0.01), hb - 0.03, hb, "walnut", 0, 0.003, 1)
+    for k in range(n):
+        xa, xb = a0 + (a1 - a0) * k / n + 0.03, a0 + (a1 - a0) * (k + 1) / n - 0.03
+        for hb in hs:
+            if hb + 0.32 > h1: continue
+            x = xa
+            if rnd.random() < 0.22:          # a vase / an object instead of books
+                xm = (xa + xb) / 2 + rnd.uniform(-0.2, 0.2)
+                vase(axis, c + out * depth / 2, xm, hb, rnd)
+                continue
+            while x < xb - 0.05:
+                wd = rnd.uniform(0.022, 0.055); ht = rnd.uniform(0.18, 0.3)
+                if rnd.random() < 0.08: x += rnd.uniform(0.05, 0.15); continue
+                if x + wd > xb: break
+                _ab(acc, axis, x, x + wd, c + out * 0.02, c + out * (0.02 + rnd.uniform(0.15, 0.2)), hb, hb + ht, "books", rnd.randrange(8), 0.0, 1)
+                x += wd + 0.002
+
+def vase(axis, d, a, h, rnd):
+    u_, w_ = (d, a) if axis == "u" else (a, d)
+    hh = rnd.uniform(0.16, 0.28)
+    put([(K.lathe([(0.0, 0.0), (0.05, 0.0), (0.075, hh * 0.35), (0.045, hh * 0.85), (0.035, hh), (0.0, hh)], seg=16), "ceramic_white", 0)], u_, w_, h, (0, 1))
+
+def bottles(acc, u0, u1, w, h, rows):
+    """the bar's back shelves on the wall w (facing +w): walnut boards, bottles (the `books` slot's dark glass codes)"""
+    rnd = random.Random(5)
+    for r in range(rows):
+        hb = h + r * 0.4
+        bbox(acc, u0, u1, w, w + 0.24, hb - 0.03, hb, "walnut", 0, 0.003, 1, False)
+        u_ = u0 + 0.12
+        while u_ < u1 - 0.1:
+            ht = rnd.uniform(0.24, 0.32)
+            put([(K.lathe([(0.0, 0.0), (0.038, 0.0), (0.04, ht * 0.62), (0.014, ht * 0.8), (0.012, ht), (0.0, ht)], seg=12), "books", 6 + rnd.randrange(2))], u_, w + 0.12, hb, (0, 1))
+            u_ += rnd.uniform(0.1, 0.16)
+
+def credenza(acc, axis, c, out, a0, a1, depth, hgt):
+    _ab(acc, axis, a0, a1, c, c + out * depth, GL + 0.1, GL + hgt, "walnut", C["door"], 0.006, 2)
+    for x in (a0 + 0.1, a1 - 0.12): _ab(acc, axis, x, x + 0.03, c + out * 0.05, c + out * (depth - 0.05), GL, GL + 0.1, "metal_black", 0, 0.003, 1)
+    rnd = random.Random(int(a0 * 10))
+    x = a0 + 0.4
+    for k in range(5):
+        wd = rnd.uniform(0.22, 0.3)
+        for j in range(rnd.randrange(2, 5)):
+            _ab(acc, axis, x, x + wd, c + out * 0.08, c + out * 0.3, GL + hgt + j * 0.035, GL + hgt + (j + 1) * 0.035 - 0.003, "books", rnd.randrange(8), 0.0, 1)
+        x += wd + 0.5
+        vase(axis, c + out * depth / 2, x, GL + hgt, rnd); x += 0.6
+    if axis == "u": colbox(c, c + out * depth, a0, a1, GL, GL + hgt) if out > 0 else colbox(c + out * depth, c, a0, a1, GL, GL + hgt)
+    else: colbox(a0, a1, min(c, c + out * depth), max(c, c + out * depth), GL, GL + hgt)
+
+def planter(u, w, h, plant_h, seed):
+    """a big plant in a cylindrical stone planter"""
+    put([(K.lathe([(0.0, 0.0), (0.3, 0.0), (0.32, 0.02), (0.32, 0.55), (0.29, 0.55), (0.29, 0.5), (0.0, 0.5)], seg=28), "ceramic_white", 0)], u, w, h, (0, 1), colb=(0.32, 0.32, 0.55))
+    put(K.plant(plant_h, 0.28, seed=seed, kind="ficus", spread=plant_h * 0.42), u, w, h + 0.5, (0, 1))
+
+def cushion(u, w, h, face):
+    put([(K.soft(0.48, 0.46, 0.14, r=0.07, n=(5, 5, 3), puff_side=0.03, seed=int(u * 13 + w * 7), oy=-0.23), "fabric_grey" if int(u * 10) % 3 else "leather", 0)],
+        u, w, h, face)
+
+def side_table(u, w, h):
+    put([(K.lathe([(0.0, 0.0), (0.24, 0.0), (0.24, 0.5), (0.0, 0.5)], seg=28), "marble_white", 0)], u, w, h, (0, 1), colb=(0.24, 0.24, 0.5))
+
+def table_lamp(u, w, h):
+    put([(K.lathe([(0.0, 0.0), (0.08, 0.0), (0.06, 0.05), (0.02, 0.08), (0.02, 0.34), (0.0, 0.34)], seg=18), "brass", 0),
+         (K.xform(K.lathe([(0.16, 0.0), (0.12, 0.22), (0.0, 0.22)], seg=24, cap_top=True), K.T(0, 0.3, 0)), "glow", C["led"])], u, w, h, (0, 1))
+    LIGHTS.append((f"tl{len(LIGHTS)}", P(u, w, h + 0.42), 10.0, WARM, 0.1, None))
+
 def channel_sofa(w, seats):
     """the channel-tufted sofa: a low plinth, a deep seat, a back of vertical channels (rounded tubes), slim arms"""
     P_ = []
@@ -1233,11 +1459,12 @@ notes = {
     },
     "gate": {"w": [GATE["w0"], GATE["w1"]], "u": WALL_U, "center_local": loc(WALL_U + 0.15, (GATE["w0"] + GATE["w1"]) / 2, 116.0)},
     "garage": {"door_w": list(GAR["door_w"]), "zone_a": list(GAR["a"]), "zone_b": list(GAR["b"]), "ceil": GAR["ceil"],
-               "places": [{"kind": "car", "u": 25.6, "w": 17.35, "nose": "-u"}, {"kind": "car", "u": 12.05, "w": 2.3, "nose": "+w"}, {"kind": "moto", "u": 29.4, "w": 21.7, "nose": "-u"}]},   # (the garage's right bay, in line with the door, is the player's: the white SUV waits on the forecourt)
-    "grounds": {"drive": [[WALL_U - 0.25, GATE["w0"]], [GF["u0"], GATE["w0"]], [GF["u0"], GATE["w1"]], [WALL_U - 0.25, GATE["w1"]]],
-                "forecourt": [[WALL_U + 0.3, -0.5], [GF["u0"], -0.5], [GF["u0"], GATE["w0"]], [WALL_U + 0.3, GATE["w0"]]],
+               "places": [{"kind": "car", "u": 25.6, "w": 17.35, "nose": "-u"}, {"kind": "car", "u": 12.05, "w": 2.3, "nose": "+w"}, {"kind": "moto", "u": 28.6, "w": 21.2, "nose": "-u"}]},   # (the garage's right bay, in line with the door, is the player's: the white SUV waits on the forecourt)
+    "grounds": {"drive": [[WALL_U - 0.25, 18.0], [GF["u0"], 18.0], [GF["u0"], GATE["w1"]], [WALL_U - 0.25, GATE["w1"]]],
+                "forecourt": [[WALL_U + 0.3, -0.5], [GF["u0"], -0.5], [GF["u0"], 18.0], [WALL_U + 0.3, 18.0]],
                 "garage_floor": [[GF["u0"], GAR["a"][2]], [GAR["b"][0], GAR["a"][2]], [GAR["b"][0], GAR["b"][2]], [GAR["b"][1], GAR["b"][2]], [GAR["b"][1], GAR["b"][3]], [GF["u0"], GAR["b"][3]]],
                 "path_back": [[GF["u0"] - 0.0, GF["w1"]], [TER["u0"], GF["w1"]], [TER["u0"], GF["w1"] + 1.6], [GF["u0"], GF["w1"] + 1.6]]},
+    "drive_plane": {**DRIVE_PLANE, "zones": ["drive", "garage_floor"]},
     "pool": {**POOL},
     "terrace": {**TER},
     "entrance_steps": STEPS_INFO,
@@ -1260,7 +1487,7 @@ info = {
 json.dump(info, open(os.path.join(OUT, "interior.json"), "w"), indent=1)
 # the mesh audit's allow list: the kit plants' leaves are open blades by design (leak / crossing / seam round them)
 os.makedirs(os.path.join(OUT, "audit"), exist_ok=True)
-allow = [{"check": ck, "at": [u, h + 0.9, w], "radius": 1.6, "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"}
+allow = [{"check": ck, "at": [u, h + 1.3, w], "radius": 2.4, "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"}
          for (u, w, h) in PLANTS for ck in ("leak", "crossing", "near", "coplanar")]
 json.dump(allow, open(os.path.join(OUT, "audit", "interior.allow.json"), "w"), indent=1)
 print(f"done ({time.time() - T0:.1f}s)")

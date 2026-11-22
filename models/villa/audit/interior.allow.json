@@ -3,240 +3,400 @@
   "check": "leak",
   "at": [
    20.0,
-   119.30000000000001,
+   119.7,
    5.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "crossing",
   "at": [
    20.0,
-   119.30000000000001,
+   119.7,
    5.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "near",
   "at": [
    20.0,
-   119.30000000000001,
+   119.7,
    5.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "coplanar",
   "at": [
    20.0,
-   119.30000000000001,
+   119.7,
    5.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "leak",
+  "at": [
+   26.6,
+   120.2,
+   -9.4
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "crossing",
+  "at": [
+   26.6,
+   120.2,
+   -9.4
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "near",
+  "at": [
+   26.6,
+   120.2,
+   -9.4
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "coplanar",
+  "at": [
+   26.6,
+   120.2,
+   -9.4
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "leak",
+  "at": [
+   34.9,
+   120.2,
+   -9.6
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "crossing",
+  "at": [
+   34.9,
+   120.2,
+   -9.6
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "near",
+  "at": [
+   34.9,
+   120.2,
+   -9.6
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "coplanar",
+  "at": [
+   34.9,
+   120.2,
+   -9.6
+  ],
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "leak",
   "at": [
    15.4,
-   119.30000000000001,
+   119.7,
    -21.5
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "crossing",
   "at": [
    15.4,
-   119.30000000000001,
+   119.7,
    -21.5
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "near",
   "at": [
    15.4,
-   119.30000000000001,
+   119.7,
    -21.5
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "coplanar",
   "at": [
    15.4,
-   119.30000000000001,
+   119.7,
    -21.5
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "leak",
   "at": [
    34.8,
-   119.30000000000001,
+   119.7,
    -21.4
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "crossing",
   "at": [
    34.8,
-   119.30000000000001,
+   119.7,
    -21.4
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "near",
   "at": [
    34.8,
-   119.30000000000001,
+   119.7,
    -21.4
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "coplanar",
   "at": [
    34.8,
-   119.30000000000001,
+   119.7,
    -21.4
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "leak",
   "at": [
-   34.6,
-   119.30000000000001,
+   14.9,
+   120.2,
    12.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "crossing",
   "at": [
-   34.6,
-   119.30000000000001,
+   14.9,
+   120.2,
    12.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "near",
   "at": [
-   34.6,
-   119.30000000000001,
+   14.9,
+   120.2,
    12.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "coplanar",
   "at": [
-   34.6,
-   119.30000000000001,
+   14.9,
+   120.2,
    12.0
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "leak",
   "at": [
-   13.4,
-   123.30000000000001,
-   22.4
+   14.9,
+   120.2,
+   21.7
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "crossing",
   "at": [
-   13.4,
-   123.30000000000001,
-   22.4
+   14.9,
+   120.2,
+   21.7
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "near",
   "at": [
-   13.4,
-   123.30000000000001,
-   22.4
+   14.9,
+   120.2,
+   21.7
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "coplanar",
   "at": [
-   13.4,
-   123.30000000000001,
-   22.4
+   14.9,
+   120.2,
+   21.7
   ],
-  "radius": 1.6,
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "leak",
+  "at": [
+   35.0,
+   119.7,
+   12.2
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "crossing",
+  "at": [
+   35.0,
+   119.7,
+   12.2
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "near",
+  "at": [
+   35.0,
+   119.7,
+   12.2
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "coplanar",
+  "at": [
+   35.0,
+   119.7,
+   12.2
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "leak",
+  "at": [
+   19.7,
+   123.7,
+   22.5
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "crossing",
+  "at": [
+   19.7,
+   123.7,
+   22.5
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "near",
+  "at": [
+   19.7,
+   123.7,
+   22.5
+  ],
+  "radius": 2.4,
+  "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
+ },
+ {
+  "check": "coplanar",
+  "at": [
+   19.7,
+   123.7,
+   22.5
+  ],
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "leak",
   "at": [
    36.4,
-   123.30000000000001,
+   123.7,
    -6.8
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "crossing",
   "at": [
    36.4,
-   123.30000000000001,
+   123.7,
    -6.8
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "near",
   "at": [
    36.4,
-   123.30000000000001,
+   123.7,
    -6.8
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  },
  {
   "check": "coplanar",
   "at": [
    36.4,
-   123.30000000000001,
+   123.7,
    -6.8
   ],
-  "radius": 1.6,
+  "radius": 2.4,
   "why": "a kit plant (tools/blender/interior_kit.py plant): open leaf blades crossing each other and the pot, by design"
  }
 ]

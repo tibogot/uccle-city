@@ -71,7 +71,19 @@ car's blockers and the walker's triangles; the gate leaves and the door live out
 See the report of claude/villa1 (numbers at the villa vs ?villa=0, same camera, GREEN preflight). Gate row `villa`
 (tools/audit/villaCheck.mjs) holds the budgets; the browser row `villa` the stream-in hitch.
 
-## Left for round 2
+## Round 2 (2026-11-22, the coordinator's review)
+
+| defect | why | fix | rule / check |
+|---|---|---|---|
+| leaves inside the living room | trees were cleared by trunk only; a 9.5 m tree 2.7 m north of the living wing kept its crown | trees whose crown disc (+0.5 m) reaches the house or the terrace are cleared too (villaPlot.js crownHits): 23 more trees | tree-crowns-clear-villa, `villa` row |
+| the drive rolled up at the garage, the floor followed the old ramp | the paving was draped on the DTM, which is the old basement ramp there | the drive + garage floor are ONE designed surface (villa.json drive_plane: 115.74 -> 115.80 m over 4.65 m, then flat); the car drives it (world.decks), the walker stands on it, the cars park on it; the garage narrowed to where the ramp is lowest | villa-drive-plane, `villa` row |
+| rooms too empty for their size | round 1 furnished only the essentials | the lounge split by a double-sided walnut shelving wall (books, vases): a media lounge (sofa, cushions, two armchairs, side table + lamp, arc lamp, rug, planters, art) and a dining room for 8 under three pendants with a bar (counter, stools, bottle shelves); the living room: art, a credenza with books and objects, planters, side tables + lamps, cushions, the fireplace wall off the north window; first floor: a bathroom (freestanding tub, double basin vanity, mirror, stone floor) and the master bed set (cushions, throw, bench, lamps, art) | villa-budgets (200k tris, 16 draws) |
+| a 40 m blank wall on the street | a 1.75 m rendered wall along the whole front | a low wall (0.75 m) with clipped hedges behind, the forecourt open; box hedges along the living wing's plinth; climbers between three slot windows; the entrance recessed 1.2 m (walnut-lined) under a dark fascia canopy with downlights; a mailbox and the house number on the gate's piers | `villa` row (joins, budgets) |
+
+New interior slots: ceramic_white, books (a palette per code: spines, bottles), art (abstract canvases per code): 15 + glass
+= 16 draws. Repeated items (books, chairs, bottles) are merged per slot at build time (one draw per slot).
+
+## Left for round 3
 
 - Luxury car models; a garage door; the pedestrian gate; interior doors.
 - The interior's first floor rooms are sparse (no bathrooms, no wardrobes); the master suite needs a dressing / bath.
