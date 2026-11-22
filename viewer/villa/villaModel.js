@@ -103,7 +103,7 @@ export function poolMaterial(pool, rootInv) {
   const uInv = uniform(rootInv.clone());
   const W = pool.water - 100, D = pool.water - pool.floor;
   const b0 = vec3(pool.u0, W - D, pool.w0), b1 = vec3(pool.u1, W, pool.w1);
-  const col = Fn(() => {
+  const col = (which) => Fn(() => {
     const pW = positionWorld, eW = cameraPosition;
     const p = uInv.mul(vec4(pW, 1.0)).xyz.toVar(), e = uInv.mul(vec4(eW, 1.0)).xyz.toVar();
     const t = time.mul(0.6);
@@ -135,22 +135,21 @@ export function poolMaterial(pool, rootInv) {
     const caust = pow(float(1).sub(abs(c1.sub(c2))), 6.0).mul(1.6);
     const sunK = smoothstep(0.02, 0.2, env.uSunDir.y).mul(float(1).sub(env.uNight));
     const day = vec3(env.uSkyTop).mul(0.35).add(vec3(0.55, 0.58, 0.6)).mul(float(1).sub(env.uNight)).add(vec3(0.02, 0.03, 0.05));
-    const lightC = day.add(vec3(env.uSunColor).mul(caust.mul(sunK).mul(0.7)));
-    const ledNight = lin(0x7fd8ff).mul(env.uNight.mul(0.9));
-    const lit = tile.mul(lightC.add(ledNight));
+    // (lit by the scene like any surface: the albedo here is the basin seen through the water; the night LEDs emissive)
+    const lightC = vec3(1.0).add(vec3(env.uSunColor).mul(caust.mul(sunK).mul(0.8)));
+    const ledNight = lin(0x7fd8ff).mul(env.uNight.mul(0.25));
+    const lit = tile.mul(lightC);
     // absorption over the in-water path
     const path = tt.add(e.y.greaterThan(W).select(float(0), float(0)));
     const absorb = vec3(0.28, 0.07, 0.045);
     const trans = vec3(absorb.x.mul(path).negate().exp(), absorb.y.mul(path).negate().exp(), absorb.z.mul(path).negate().exp());
-    const deep = lin(0x0f4e63).mul(lightC.add(ledNight)).mul(0.6);
-    const under = mix(deep, lit, trans);
-    // reflection of the sky (fresnel)
-    const fres = pow(float(1).sub(cosi.abs().clamp(0, 1)), 5.0).mul(0.95).add(0.02);
-    const sky = mix(vec3(env.uSkyHorizon), vec3(env.uSkyTop), v.y.negate().clamp(0, 1)).mul(float(1).sub(env.uNight.mul(0.92)));
-    return mix(under, sky, fres);
+    const deep = lin(0x0b3c4c);
+    const under = mix(deep, lit, trans).mul(0.55);
+    return which === "under" ? under : mix(deep, tile, trans).mul(ledNight);
   })();
-  m.colorNode = vec3(0);
-  m.emissiveNode = col;                         // the water's look is its own (unlit by the scene: the shader lights it)
+  const r = { under: col("under"), glow: col("glow") };
+  m.colorNode = r.under;                        // lit by the scene; the sky's fresnel reflection is the env map's (roughness 0.05)
+  m.emissiveNode = r.glow;                      // the underwater LEDs at night
   m.userData.uInv = uInv;
   m.name = "villa pool_water";
   return m;

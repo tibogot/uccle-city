@@ -12,7 +12,11 @@ const ca = Math.cos(FRAME.rotationY), sa = Math.sin(FRAME.rotationY);
 export const toCity = (u, w) => [FRAME.origin[0] + u * ca + w * sa, FRAME.origin[1] - u * sa + w * ca];
 const rect = (u0, u1, w0, w1) => [toCity(u0, w0), toCity(u1, w0), toCity(u1, w1), toCity(u0, w1)];
 export const PLOT_UW = { u0: 9.3, u1: 58.3, w0: -34.3, w1: 30.3 };
+// the garden-pieces clear ring reaches 2.5 m over the property line: the old house's front wall / pillars / hedge stood
+// on the sidewalk's back edge (u 8.6 .. 9.3), in front of the villa's own wall (seen 2026-11-22)
+export const CLEAR_UW = { ...PLOT_UW, u0: 6.8 };
 export const PLOT_RING = rect(PLOT_UW.u0, PLOT_UW.u1, PLOT_UW.w0, PLOT_UW.w1);
+export const CLEAR_RING = rect(CLEAR_UW.u0, CLEAR_UW.u1, CLEAR_UW.w0, CLEAR_UW.w1);
 export const BUILT_UW = [
   [11.6, 38.0, -23.5, 24.8],          // the house (+ the entrance landing / flight, the garage, the south path)
   [36.0, 46.2, -17.5, 16.5],          // the terrace, the pool, the pergola, the steps to the lawn
@@ -30,7 +34,7 @@ export function inRing(r, x, z) {
   return c;
 }
 /** main.js clearRings: the plot (gardens / plants) */
-export const villaClearRings = () => (VILLA_ON ? [PLOT_RING] : []);
+export const villaClearRings = () => (VILLA_ON ? [CLEAR_RING] : []);
 /** the LiDAR / OSM trees standing where the villa is built (the rest of the garden keeps its trees) */
 export function villaTreesClear(trees) {
   if (!VILLA_ON || !trees?.length) return trees;

@@ -14,7 +14,7 @@
 //    by the baked probes inside. No light is added anywhere (rule fixed-light-count).
 import * as THREE from "three/webgpu";
 import { loadVilla, VILLA_LODS, setLodFades, villaLodState, villaLook } from "./villaModel.js";
-import { buildVillaGrounds } from "./villaGrounds.js";
+import { buildVillaGrounds, smoothGround } from "./villaGrounds.js";
 import { buildVillaCars } from "./villaCars.js";
 import { villaInLook } from "./villaInterior.js";
 import { SMOOTH, fadeProxies } from "../lodFade.js";
@@ -72,7 +72,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     const gateL = m.part("Villa_gateL"), gateR = m.part("Villa_gateR"), door = m.part("Villa_door");
     for (const p of [gateL, gateR, door]) if (p) { p.userData.closedY = p.rotation.y; parts.add(p); }
     const grounds = buildVillaGrounds({ notes, rootM: m.rootM, groundAt });
-    const cars = await buildVillaCars({ notes, rootM: m.rootM, rotationY: m.placement.rotationY, groundAt }).catch((e) => { log(`villa cars: ${e.message}`); return null; });
+    const cars = await buildVillaCars({ notes, rootM: m.rootM, rotationY: m.placement.rotationY, groundAt: smoothGround(groundAt) }).catch((e) => { log(`villa cars: ${e.message}`); return null; });
     for (const o of [root, parts, grounds.mesh, cars?.group]) if (o) { o.visible = false; scene.add(o); o.updateMatrixWorld(true); }
     const tc = performance.now();
     const compile = await waitCompiler();

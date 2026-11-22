@@ -59,7 +59,7 @@ const plot = { u0: 9.6, u1: 58.0, w0: -34.0, w1: 30.0 };
 const plotRing = [[plot.u0, plot.w0], [plot.u1, plot.w0], [plot.u1, plot.w1], [plot.u0, plot.w1]];
 const out = {
   about: "tools/villa/site.mjs (claude/villa1): the villa's plot frame + the city's terrain in it (heightmap.js surface, tile H9)",
-  tile: TILE, hides_solids: [SOLID], hides_bu_ids: [BU], replaced,
+  tile: TILE, hides_solids: [`https://databrussels.be/id/buildingsolid/${SOLID}`], hides_bu_ids: [`https://databrussels.be/id/building/${BU}`], replaced,   // (full UrbIS URIs: tileData.js hideBuildings matches them as given)
   frame: { origin_city: O.map((v) => Math.round(v * 1000) / 1000), u: U, w: W, rotation_y_rad: rotY, oy: OY,
     note: "three local (x, y, z) = (u, TAW - oy, w); city = origin + u * U + w * W; Blender (X, Y, Z) = (u, -w, TAW - oy)" },
   plot, plot_ring_uw: plotRing, plot_ring_city: plotRing.map(([u, w]) => world(u, w).map((v) => Math.round(v * 1000) / 1000)),

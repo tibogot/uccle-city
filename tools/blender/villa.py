@@ -113,16 +113,17 @@ class Acc:
         self.f.append(tuple(range(b, b + len(pts))))
         self.fs.append(self.slots.index(slot) if isinstance(slot, str) else slot); self.fc.append(code)
         self.fuv.append(uvs or [box_uv_frame(p, nn) for p in pts]); self.sm.append(smooth)
-    def rect(self, a, b, c, d, slot, code=0, normal=None, maxlen=0.0):
-        """a quad a b c d (a grid of quads when maxlen > 0: per-vertex AO / light need corners)"""
+    def rect(self, a, b, c, d, slot, code=0, normal=None, maxlen=0.0, extra_s=(), extra_t=()):
+        """a quad a b c d (a grid of quads when maxlen > 0: per-vertex AO / light need corners). The cuts sit on a
+        WORLD grid (multiples of maxlen along the edge's axis), so two faces meeting along an edge split it at the same
+        points: no T-junction, a welded seam (mesh_audit contact / tjunction)"""
         a, b, c, d = Vector(a), Vector(b), Vector(c), Vector(d)
         if maxlen <= 0:
             self.poly([a, b, c, d], slot, code, normal); return
-        nu = max(1, math.ceil((b - a).length / maxlen)); nv = max(1, math.ceil((d - a).length / maxlen))
-        for i in range(nu):
-            for j in range(nv):
-                q = lambda s, t: a.lerp(b, s).lerp(d.lerp(c, s), t)
-                s0, s1, t0, t1 = i / nu, (i + 1) / nu, j / nv, (j + 1) / nv
+        S = grid_cuts(a, b, maxlen, extra_s); T = grid_cuts(a, d, maxlen, extra_t)
+        q = lambda s, t: a.lerp(b, s).lerp(d.lerp(c, s), t)
+        for s0, s1 in zip(S, S[1:]):
+            for t0, t1 in zip(T, T[1:]):
                 self.poly([q(s0, t0), q(s1, t0), q(s1, t1), q(s0, t1)], slot, code, normal)
     def emit(self, bm, slot, code, M, smooth=False):
         """a kit piece (bmesh in its own frame) placed by M; UV0 box-projected in the piece frame"""
@@ -134,6 +135,24 @@ class Acc:
             self.poly(pts, sl, code, None, uvs, smooth)
             # (winding kept as the piece's: recalc_face_normals made it outward)
         bm.free()
+
+def grid_cuts(p0, p1, step, extra=()):
+    """[0, ..., 1]: the edge p0 -> p1 cut where its coordinate (on its main axis) crosses a multiple of step; an oblique
+    edge: uniform cuts"""
+    d = p1 - p0; L = d.length
+    if L < 1e-9: return [0.0, 1.0]
+    k = max(range(3), key=lambda i: abs(d[i]))
+    if any(abs(d[i]) > 1e-6 for i in range(3) if i != k):
+        n = max(1, math.ceil(L / step)); return [i / n for i in range(n + 1)]
+    v0, v1 = p0[k], p1[k]; lo, hi = min(v0, v1), max(v0, v1)
+    g = math.floor(lo / step + 1e-6) + 1; out = [0.0]
+    while g * step < hi - 1e-4:
+        if g * step > lo + 1e-4: out.append((g * step - v0) / (v1 - v0))
+        g += 1
+    for x in extra:                 # extra cut values on the edge's axis (Blender coordinates)
+        if lo + 1e-4 < x < hi - 1e-4: out.append((x - v0) / (v1 - v0))
+    out.append(1.0)
+    return sorted(set(round(f, 9) for f in out))
 
 # kit frame (x right, y up, z forward) -> Blender (X = x, Y = -z, Z = y): kit forward = +w
 R_KIT = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))
@@ -167,18 +186,20 @@ def bbox(acc, u0, u1, w0, w1, h0, h1, slot, code=0, bevel=0.01, seg=2, skip_down
         bmesh.ops.delete(bm, geom=down, context="FACES")
     acc.emit(bm, slot, code, M_at((u0 + u1) / 2, (w0 + w1) / 2, h0))
 
-def wall(acc, axis, c, a0, a1, bot, top, holes, out, slot, code=0, maxlen=0.0, col=1.0):
+def wall(acc, axis, c, a0, a1, bot, top, holes, out, slot, code=0, maxlen=0.0, col=0.7, extra=()):
     """a flat wall face on the plane axis = c ('u': the plane u = c, running along w; 'w': w = c, along u), from a0 to
     a1 along it, between bot(a) and top(a) (numbers or callables: evaluated per column, so a sunk foot follows the
     ground), with rectangular holes [(a0, a1, h0, h1)], facing out (+1 / -1 along the axis). Columns of <= col m."""
-    cuts = {a0, a1}
+    cuts = {a0, a1} | {x for x in extra if a0 < x < a1}     # (extra: where a face meeting this one's edge has a vertex)
     for (h_a0, h_a1, _, _) in holes:
         if a0 < h_a0 < a1: cuts.add(h_a0)
         if a0 < h_a1 < a1: cuts.add(h_a1)
-    xs = sorted(cuts); full = []
-    for x0, x1 in zip(xs, xs[1:]):
-        n = max(1, math.ceil((x1 - x0) / col)) if (callable(bot) or callable(top)) else 1
-        for k in range(n): full.append((x0 + (x1 - x0) * k / n, x0 + (x1 - x0) * (k + 1) / n))
+    if callable(bot) or callable(top):            # columns on the world grid too (multiples of col): welded seams
+        g = math.floor(a0 / col) + 1
+        while g * col < a1 - 1e-4:
+            if g * col > a0 + 1e-4: cuts.add(g * col)
+            g += 1
+    xs = sorted(cuts); full = list(zip(xs, xs[1:]))
     nrm = (out, 0, 0) if axis == "u" else (0, -out, 0)
     def pt(a, h): return P(c, a, h) if axis == "u" else P(a, c, h)
     for x0, x1 in full:
@@ -263,11 +284,11 @@ def exterior():
     g0, g1 = GF["w0"], GF["w1"]
     # ---- the plinth (blue stone), from the sunk foot to GL - 0.0, round the ground floor (the terrace covers it behind)
     gd = GAR["door_w"]
-    wall(EX, "u", GF["u0"], g0, g1, plinth_bot("u", GF["u0"], -1), GL, [(gd[0], gd[1], -1e3, GAR["top"]), (DOOR[0], DOOR[1], GL - 0.06, GL + 1)], -1, "stone_blue", C["plinth"], ML)
-    wall(EX, "w", g0, GF["u0"], GF["u1"], plinth_bot("w", g0, -1), GL, [], -1, "stone_blue", C["plinth"], ML)
-    wall(EX, "w", g1, GF["u0"], GF["u1"], plinth_bot("w", g1, 1), GL, [], 1, "stone_blue", C["plinth"], ML)
-    for (a0, a1) in ((g0, TER["w0"]), (TER["w1"], g1)):
-        wall(EX, "u", GF["u1"], a0, a1, plinth_bot("u", GF["u1"], 1), GL, [], 1, "stone_blue", C["plinth"], ML)
+    edges = lambda keys: [x for k in keys for h in OPEN[k] for x in h[:2]] + [UB["w0"]]
+    wall(EX, "u", GF["u0"], g0, g1, plinth_bot("u", GF["u0"], -1), GL, [(gd[0], gd[1], -1e3, GAR["top"]), (DOOR[0], DOOR[1], GL - 0.06, GL + 1)], -1, "stone_blue", C["plinth"], ML, extra=edges(["front_gf"]))
+    wall(EX, "w", g0, GF["u0"], GF["u1"], plinth_bot("w", g0, -1), GL, [], -1, "stone_blue", C["plinth"], ML, extra=edges(["north"]))
+    wall(EX, "w", g1, GF["u0"], GF["u1"], plinth_bot("w", g1, 1), GL, [], 1, "stone_blue", C["plinth"], ML, extra=edges(["south_gf"]))
+    wall(EX, "u", GF["u1"], g0, g1, plinth_bot("u", GF["u1"], 1), GL, [], 1, "stone_blue", C["plinth"], ML, extra=edges(["back_liv", "back_gf"]) + [TER["w0"], TER["w1"]])   # (under the terrace too: it closes the deck's house-side edge)
     # the plinth's top edge: a 4 cm blue-stone band proud of the render (a shadow line at GL)
     # ---- ground floor walls (render), living pavilion higher
     liv_top = LPAR
@@ -282,7 +303,13 @@ def exterior():
                               ("north", "w", g0, -1), ("south_gf", "w", g1, 1)):
         for hole in OPEN[key]:
             if hole == DOOR: continue
-            reveal(EX, axis, c, -out * GLASS_IN, hole, "render_white", C["reveal"], ML)
+            # a door-height opening (from GL) gets a blue-stone sill instead of the bottom reveal: 2 cm proud, 3 cm over
+            # the face: it closes the seam where the plinth, the terrace and the glass meet (rule welded-seams)
+            at_gl = abs(hole[2] - GL) < 1e-6
+            reveal(EX, axis, c, -out * GLASS_IN, hole, "render_white", C["reveal"], ML, "lrt" if at_gl else "lrtb")
+            if at_gl:
+                if axis == "u": bbox(EX, *sorted((c - out * GLASS_IN, c + out * 0.03)), hole[0] + 0.004, hole[1] - 0.004, GL - 0.02, GL + 0.02, "stone_blue", C["coping"], 0.004, 1, False)
+                else: bbox(EX, hole[0] + 0.004, hole[1] - 0.004, *sorted((c - out * GLASS_IN, c + out * 0.03)), GL - 0.02, GL + 0.02, "stone_blue", C["coping"], 0.004, 1, False)
             gp = c - out * GLASS_IN
             tr = [C0 - 0.05 - 0.0] if key == "back_liv" else None
             if key == "back_liv": tr = [C0]
@@ -391,7 +418,8 @@ def exterior():
         wall(EX, "u", WALL_U, a, b, bot, top - 0.06, [], -1, "render_white", 0, ML)
         wall(EX, "u", WALL_U + 0.3, a, b, bot, top - 0.06, [], 1, "render_white", 0, ML)
         for (x, o) in ((a, 1), (b, -1)):
-            wall(EX, "w", x, WALL_U, WALL_U + 0.3, bot, top - 0.06, [], -o, "render_white", 0)
+            endbot = lambda x0, x1, x=x: gmin(x0, x1, x - 0.3, x + 0.3, pad=0.05) - SINK
+            wall(EX, "w", x, WALL_U, WALL_U + 0.3, endbot, top - 0.06, [], -o, "render_white", 0)
         bbox(EX, WALL_U - 0.03, WALL_U + 0.33, a - (0.03 if a == -34.0 else 0), b + (0.03 if b == 30.0 else 0), top - 0.06, top, "stone_blue", C["coping"], 0.008, 1, False)
     for (a, b) in ((GATE["w0"] - 0.5, GATE["w0"]), (GATE["w1"], GATE["w1"] + 0.5)):
         top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 2.05, 2)
@@ -403,11 +431,17 @@ def exterior():
     top_ = GL
     # the deck top split round the pool (and the coping band 0.35 m)
     cp = 0.35
-    for (a, b, c_, d) in ((t["u0"], p["u0"] - cp, t["w0"], t["w1"]), (p["u1"] + cp, t["u1"], t["w0"], t["w1"]),
-                          (p["u0"] - cp, p["u1"] + cp, t["w0"], p["w0"] - cp), (p["u0"] - cp, p["u1"] + cp, p["w1"] + cp, t["w1"])):
-        EX.rect(P(a, c_, top_), P(b, c_, top_), P(b, d, top_), P(a, d, top_), "stone_blue", C["plain"], (0, 0, 1), ML)
+    ci = 0.05                    # (the deck runs on under the coping, 5 cm short of the water: its edge is inside the stone)
+    back_edges = [x for k in ("back_liv", "back_gf") for h in OPEN[k] for x in h[:2]] + [UB["w0"]]
+    for (a, b, c_, d) in ((t["u0"], p["u0"] - ci, t["w0"], t["w1"]), (p["u1"] + ci, t["u1"], t["w0"], -1.0), (p["u1"] + ci, t["u1"], -1.0, 5.0), (p["u1"] + ci, t["u1"], 5.0, t["w1"]),
+                          (p["u0"] - ci, p["u1"] + ci, t["w0"], p["w0"] - ci), (p["u0"] - ci, p["u1"] + ci, p["w1"] + ci, t["w1"])):
+        EX.rect(P(a, c_, top_), P(b, c_, top_), P(b, d, top_), P(a, d, top_), "stone_blue", C["plain"], (0, 0, 1), ML, extra_t=(-(p["w0"] - ci), -(p["w1"] + ci)))   # (Blender Y = -w: the pool band ends welded)
+    gl_ = gmin(t["u1"], t["u1"] + 1.4, -1.0, 5.0, pad=0.0)
+    ns = max(2, round((GL - gl_) / 0.18)); rs = (GL - gl_) / ns
+    # (the steps' opening in the deck's side wall stops one riser down: the wall itself is the first riser, no slit)
     for (ax_, c, a0, a1, o) in (("u", t["u1"], t["w0"], t["w1"], 1), ("w", t["w0"], t["u0"], t["u1"], -1), ("w", t["w1"], t["u0"], t["u1"], 1)):
-        wall(EX, ax_, c, a0, a1, plinth_bot(ax_, c, o), top_, [(-1.0, 5.0, -1e3, 1e3)] if (ax_ == "u") else [], o, "stone_blue", C["plinth"], ML)
+        wall(EX, ax_, c, a0, a1, plinth_bot(ax_, c, o), top_, [(-1.0, 5.0, -1e3, GL - rs)] if (ax_ == "u") else [], o, "stone_blue", C["plinth"], ML,
+             extra=[p["w0"] - ci, p["w1"] + ci] if ax_ == "u" else [p["u0"] - ci, p["u1"] + ci])
     # coping round the pool (bevelled, 2 cm proud, 3 cm over the water's edge)
     for (a, b, c_, d) in ((p["u0"] - cp, p["u1"] + cp, p["w0"] - cp, p["w0"] + 0.03), (p["u0"] - cp, p["u1"] + cp, p["w1"] - 0.03, p["w1"] + cp),
                           (p["u0"] - cp, p["u0"] + 0.03, p["w0"] + 0.03, p["w1"] - 0.03), (p["u1"] - 0.03, p["u1"] + cp, p["w0"] + 0.03, p["w1"] - 0.03)):
@@ -416,8 +450,6 @@ def exterior():
     for (ax_, c, a0, a1, o) in (("u", p["u0"], p["w0"], p["w1"], 1), ("u", p["u1"], p["w0"], p["w1"], -1), ("w", p["w0"], p["u0"], p["u1"], 1), ("w", p["w1"], p["u0"], p["u1"], -1)):
         wall(EX, ax_, c, a0, a1, p["water"] - 0.06, top_ - 0.04, [], o, "stone_blue", C["coping"])
     # steps down to the lawn (u1 side, w -1 .. 5)
-    gl_ = gmin(t["u1"], t["u1"] + 1.4, -1.0, 5.0, pad=0.0)
-    ns = max(2, round((GL - gl_) / 0.18)); rs = (GL - gl_) / ns
     for k in range(1, ns):
         bbox(EX, t["u1"] + (k - 1) * 0.36 - 0.02, t["u1"] + k * 0.36, -1.0, 5.0, gmin(t["u1"], t["u1"] + k * 0.36, -1.0, 5.0) - SINK, GL - k * rs, "stone_blue", C["step"], 0.01, 2)
     # the pergola: two dark columns and a thin slab off the upper box, downlights
@@ -668,9 +700,9 @@ def interior():
         led_strip(P(u_ + 0.01, s["w0"] + 0.04, top - 0.072), P(u_ + 0.01, s["w1"] - 0.04, top - 0.072), normal=(0, 0, -1), width=0.02)
         colbox(u_ - 0.02, u_ + s["going"], s["w0"], s["w1"], top - 0.25, top)
         if k % 3 == 0: LIGHTS.append((f"st{k}", P(u_ + 0.05, (s["w0"] + s["w1"]) / 2, top - 0.1), 3.0, WARM, 0.08, None))
-    for k in range(int((27.3 - 21.0) / 0.11)):
-        u_ = 21.05 + k * 0.11
-        bbox(IN, u_ - 0.02, u_ + 0.02, 9.62, 9.68, GL, C1, "walnut", C["slat"], 0.005, 1, False)
+    for k in range(int((27.3 - 21.0) / 0.16)):          # (16 cm: the stair reads through the screen)
+        u_ = 21.08 + k * 0.16
+        bbox(IN, u_ - 0.017, u_ + 0.017, 9.62, 9.68, GL, C1, "walnut", C["slat"], 0.005, 1, False)
     colbox(21.0, 27.3, 9.6, 9.7, GL, C1)
     # the brass mesh panel and a console on the service wall's hall face (w 4.15), a plant
     bbox(IN, 15.0, 19.0, 4.15, 4.19, GL + 0.9, GL + 3.1, "brass", C["screen"], 0.004, 1, False)
@@ -1201,7 +1233,7 @@ notes = {
     },
     "gate": {"w": [GATE["w0"], GATE["w1"]], "u": WALL_U, "center_local": loc(WALL_U + 0.15, (GATE["w0"] + GATE["w1"]) / 2, 116.0)},
     "garage": {"door_w": list(GAR["door_w"]), "zone_a": list(GAR["a"]), "zone_b": list(GAR["b"]), "ceil": GAR["ceil"],
-               "places": [{"kind": "car", "u": 26.6, "w": 17.6, "nose": "-u"}, {"kind": "car", "u": 25.8, "w": 20.9, "nose": "-u"}, {"kind": "moto", "u": 29.6, "w": 21.4, "nose": "-u"}]},
+               "places": [{"kind": "car", "u": 25.6, "w": 17.35, "nose": "-u"}, {"kind": "car", "u": 12.05, "w": 2.3, "nose": "+w"}, {"kind": "moto", "u": 29.4, "w": 21.7, "nose": "-u"}]},   # (the garage's right bay, in line with the door, is the player's: the white SUV waits on the forecourt)
     "grounds": {"drive": [[WALL_U - 0.25, GATE["w0"]], [GF["u0"], GATE["w0"]], [GF["u0"], GATE["w1"]], [WALL_U - 0.25, GATE["w1"]]],
                 "forecourt": [[WALL_U + 0.3, -0.5], [GF["u0"], -0.5], [GF["u0"], GATE["w0"]], [WALL_U + 0.3, GATE["w0"]]],
                 "garage_floor": [[GF["u0"], GAR["a"][2]], [GAR["b"][0], GAR["a"][2]], [GAR["b"][0], GAR["b"][2]], [GAR["b"][1], GAR["b"][2]], [GAR["b"][1], GAR["b"][3]], [GF["u0"], GAR["b"][3]]],

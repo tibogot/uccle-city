@@ -24,8 +24,10 @@ export async function buildVillaCars({ notes, rootM, rotationY, groundAt, lift =
     v.set(P.u, 0, P.w).applyMatrix4(rootM);
     const x = v.x, z = v.z;
     // the nose along the frame's -u / +u: local (-1, 0, 0) rotated by the villa's rotationY
-    const sg = P.nose === "-u" ? -1 : 1;
-    const dx = sg * Math.cos(rotationY), dz = -sg * Math.sin(rotationY);
+    const sg = P.nose[0] === "-" ? -1 : 1;
+    // frame axes in the city: u = (cos, -sin), w = (sin, cos) of rotationY
+    const [ax, az] = P.nose[1] === "u" ? [Math.cos(rotationY), -Math.sin(rotationY)] : [Math.sin(rotationY), Math.cos(rotationY)];
+    const dx = sg * ax, dz = sg * az;
     const heading = Math.atan2(dx, dz);
     const y = groundAt(x, z) + lift;
     if (P.kind === "car") {

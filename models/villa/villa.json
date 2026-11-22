@@ -2,10 +2,10 @@
  "about": "tools/blender/villa.py (claude/villa1): a FICTIONAL modern villa on a real plot (Avenue du Prince d'Orange, the house UrbIS solid 543176); no real owner, no brand",
  "placement": {
   "hides_solids": [
-   "543176"
+   "https://databrussels.be/id/buildingsolid/543176"
   ],
   "hides_bu_ids": [
-   "1588559"
+   "https://databrussels.be/id/building/1588559"
   ],
   "city_local_position": [
    909.874,
@@ -172,20 +172,20 @@
   "places": [
    {
     "kind": "car",
-    "u": 26.6,
-    "w": 17.6,
+    "u": 25.6,
+    "w": 17.35,
     "nose": "-u"
    },
    {
     "kind": "car",
-    "u": 25.8,
-    "w": 20.9,
-    "nose": "-u"
+    "u": 12.05,
+    "w": 2.3,
+    "nose": "+w"
    },
    {
     "kind": "moto",
-    "u": 29.6,
-    "w": 21.4,
+    "u": 29.4,
+    "w": 21.7,
     "nose": "-u"
    }
   ]
@@ -306,7 +306,7 @@
   ]
  },
  "tris": {
-  "lod0": 52336,
+  "lod0": 52912,
   "far": 102,
   "gate": 1672,
   "door": 216

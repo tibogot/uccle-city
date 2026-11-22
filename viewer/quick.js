@@ -28,7 +28,7 @@ const LANDMARKS = {
   stjob: [1216, 561], townhall: [-1148, -506], vanbuuren: [303, -1230], wolvendael: [-469, -366], police: [-514, -340],
   calevoet: [-1225, 790], papenkasteel: [-637, 1154], stpierre: [-709, -493], russian: [-354, -468], heros: [-533, -484],
   rosaire: [1279, -1254], observatory: [654, 60], augustin: [-896, -1961], sacrecoeur: [-264, -1631], saintmarc: [454, -620],
-  latourdefrein: [112, 2310], stalle: [-1150, 57],
+  latourdefrein: [112, 2310], stalle: [-1150, 57], villa: [881, 2056],
 };
 const OFF_VALUE = { heros: "old" };                 // ?heros=old = the setts plaza; the others: ?<name>=0 = the UrbIS solid
 const ART = [[-2240, 376], [-651, -280], [-503, -440], [1376, -1320], [1824, -90], [865, 663], [2577, 1167], [65, 1154]];

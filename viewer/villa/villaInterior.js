@@ -63,7 +63,8 @@ const ALBEDO = {
     const col = floor(w.x.add(off).div(2.2));
     const h = hash2(vec2(row, col)).toVar();
     const grain = vnoise(vec2(w.x.mul(3.0), w.y.mul(90.0).add(h.mul(13.0)))).mul(0.5).add(vnoise(vec2(w.x.mul(18.0), w.y.mul(260.0))).mul(0.2));
-    const base = mix(lin(0x8e6b4b), lin(0xb48b62), h.mul(0.55).add(grain.mul(0.45)));
+    // (round 1 look: warm mid oak, low plank-to-plank contrast: the first pass read orange and stripy)
+    const base = mix(lin(0x6f5843), lin(0x86694d), h.mul(0.35).add(grain.mul(0.4)));
     const fy = fract(w.y.div(0.22)), fx = fract(w.x.add(off).div(2.2));
     const fw = max(fwidth(w.y.div(0.22)), 0.002);
     const seam = smoothstep(0.0, fw.mul(1.5).max(0.012), min(fy, float(1).sub(fy))).mul(smoothstep(0.0, 0.002, min(fx, float(1).sub(fx)))).mul(0.3).add(0.7);
@@ -80,10 +81,10 @@ const ALBEDO = {
   // calacatta: warm white with drifting grey veins and a little gold
   marble_white: () => Fn(() => {
     const w = uv().toVar();
-    const warp = vec2(vnoise(w.mul(0.9)), vnoise(w.mul(0.9).add(5.2))).mul(1.6);
-    const q = w.mul(0.55).add(warp);
-    const v1 = float(1).sub(smoothstep(0.0, 0.035, abs(vnoise(q).sub(0.5))));
-    const v2 = float(1).sub(smoothstep(0.0, 0.015, abs(vnoise(q.mul(2.3).add(3.1)).sub(0.5))));
+    const warp = vec2(vnoise(w.mul(1.3)), vnoise(w.mul(1.3).add(5.2))).mul(0.7);
+    const q = w.mul(1.4).add(warp);
+    const v1 = float(1).sub(smoothstep(0.0, 0.014, abs(vnoise(q).sub(0.5)))).mul(vnoise(w.mul(0.8)).mul(0.8).add(0.2));
+    const v2 = float(1).sub(smoothstep(0.0, 0.007, abs(vnoise(q.mul(2.7).add(3.1)).sub(0.5))));
     const base = lin(0xece8e1).mul(vnoise(w.mul(6.0)).mul(0.04).add(0.97));
     return mix(mix(base, lin(0x8e8b86), v1.mul(0.55)), lin(0xb39a6a), v2.mul(0.35));
   })(),
