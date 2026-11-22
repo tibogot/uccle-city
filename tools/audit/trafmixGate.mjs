@@ -183,8 +183,10 @@ const SEED = +(process.argv.find((a, k) => process.argv[k - 1] === "--seed") ?? 
 // and the E4 priority junction not seen on seeds 7 / 11 / 23 / 31 / 41)
 // claude/parking1 (rule service-vehicle-passage: parked cars leave 3 m, none within 5 m of a junction mouth, the gate's
 // parked cars as main.js draws them, service vehicles routed off lanes they cannot pass, a run's way through a narrow
-// stretch): STUCK_MAX = MEASURED_AFTER_MERGE
-const STUCK_MAX = 1, MORE_SEEDS = [11, 23];
+// stretch), after claude/signals1: model lanes 0 / 1 / 1 = 2 (the E4 priority junction, the SIGNALS job's follow-up; a
+// patrol before a 72 m narrow street at E6, cause narrow-starved, the PARKING follow-up), the measured value; the
+// parking-both-sides places gone (the E6 ambulance, Dieweg, Rue Engeland)
+const STUCK_MAX = 2, MORE_SEEDS = [11, 23];
 const CHILD = argv.includes("--child"), ONE_SEED = process.argv.includes("--seed"), REG = argv.includes("--register");
 const kids = CHILD || ONE_SEED ? [] : MORE_SEEDS.map((sd) => new Promise((res) => {
   // (started now: they load their tiles and run their sims while this one runs; awaited before the timed part)

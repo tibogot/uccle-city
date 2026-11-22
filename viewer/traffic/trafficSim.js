@@ -52,8 +52,8 @@ const PASS_GAP = 0.6;           // m: easing out past a parked car, the least ga
 const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
 const RUN_SQUEEZE = 0.15, SQUEEZE_V = 2.5;   // m: a run squeezes past standing oncoming cars in a narrow stretch that its body clears by this, at most SQUEEZE_V m/s (rule service-vehicle-passage)
 const RUN_SQUEEZE_OLD = typeof location !== "undefined" && /[?&]runsqueeze=old(&|$)/.test(location.search);
-const PARK_STOP = 0.25;         // m: the extra room a car keeps behind a parked box it waits at (trafparksim)
-const PARK_STOP_OLD = typeof location !== "undefined" && /[?&]parkstop=old(&|$)/.test(location.search);
+const EASE_BACK_OLD = typeof location !== "undefined" && /[?&]easeback=old(&|$)/.test(location.search);   // (trafparksim: a move back to the lane judged ahead)
+const LA_PRE_OLD = typeof location !== "undefined" && /[?&]lapre=old(&|$)/.test(location.search);   // (the look-ahead's one-body pre-test, the sim cost row)
 const SERVICE_MARGIN = 0.2;     // m each side: a service vehicle's lane must be its width + 2 x this clear (rule service-vehicle-passage)
 const CLEARW_OLD = typeof location !== "undefined" && /[?&]clearroute=old(&|$)/.test(location.search);
 const YIELD_KEEP_OLD = typeof location !== "undefined" && /[?&]yieldkeep=old(&|$)/.test(location.search);   // (rule service-vehicle-passage)
@@ -514,10 +514,7 @@ export class TrafficSim {
     while (e >= 0) {
       const edge = E.d[e] - E.r[e];
       // (trafpark: a parked car this car is already passing, eased out beside it, is not in its way)
-      // (claude/parking1: behind a parked box, PARK_STOP m more: a car easing out past it is turned off its lane and its
-      // front corner reached 7 cm into a shoved, turned parked car at the box's along-lane edge: trafparksim I6)
-      const ed = E.need[e] && !PARK_STOP_OLD ? edge - PARK_STOP : edge;
-      if (E.d[e] + E.r[e] > from && ed - from < best && !(car >= 0 && E.need[e] && this.passingEntry(car, g.ohead[gid & 0xffff], e, from))) { best = Math.max(0, ed - from); bv = Math.max(0, E.v[e]); be = e; }
+      if (E.d[e] + E.r[e] > from && edge - from < best && !(car >= 0 && E.need[e] && this.passingEntry(car, g.ohead[gid & 0xffff], e, from))) { best = Math.max(0, edge - from); bv = Math.max(0, E.v[e]); be = e; }
       e = E.nxt[e];
     }
     out[0] = best; out[1] = bv; out[2] = be;
@@ -639,16 +636,21 @@ export class TrafficSim {
     const i0 = Math.floor(x0 / 8), j0 = Math.floor(z0 / 8);
     for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of this.pk.grid.get((i0 + di + 4096) * 8192 + j0 + dj + 4096) || []) {
       if (c.hidden || c === skip) continue;
-      const [w, l] = this.parkWL(c), reach = hl + hw + l / 2 + 0.6, ddx = c.x - x0, ddz = c.z - z0;
+      // (claude/parking1, the sim cost row: the box's size and axis kept on the car, renewed when its type or heading
+      // changes (a shove), not a new [w, l] array and two trig calls per car per probe: the mix's buses / runs probe the
+      // parked cars ~40,000 times per 4,500 steps, the plain traffic never)
+      let B = c._bc;
+      if (!B || B.t !== c.type || B.h !== c.heading) { const [w0, l0] = this.parkWL(c); B = c._bc = { t: c.type, h: c.heading, hw: w0 / 2, hl: l0 / 2, ax: Math.sin(c.heading), az: Math.cos(c.heading) }; }
+      const reach = hl + hw + B.hl + 0.6, ddx = c.x - x0, ddz = c.z - z0;
       if (ddx * ddx + ddz * ddz > reach * reach) continue;                 // (far: no test)
-      const ax = Math.sin(c.heading), az = Math.cos(c.heading);
+      const ax = B.ax, az = B.az, bl = B.hl, bw = B.hw;
       // the car's axis sampled every 0.4 m or less, each a disc of its half width, against the parked box
       const span = Math.max(0, hl - hw), nT = Math.max(1, Math.ceil((2 * span) / 0.4));
       for (let m = 0; m <= nT; m++) {
         const t = -span + (2 * span * m) / nT;
         const px = x0 + fx * t - c.x, pz = z0 + fz * t - c.z;
-        const u = Math.abs(px * ax + pz * az) - l / 2, v = Math.abs(px * az - pz * ax) - w / 2;
-        const d = Math.hypot(Math.max(u, 0), Math.max(v, 0)) + Math.min(Math.max(u, v), 0) - hw;
+        const u = Math.abs(px * ax + pz * az) - bl, v = Math.abs(px * az - pz * ax) - bw;
+        const uu = u > 0 ? u : 0, vv = v > 0 ? v : 0, d = Math.sqrt(uu * uu + vv * vv) + Math.min(u > v ? u : v, 0) - hw;
         if (d < best) best = d;
       }
     }
@@ -1028,7 +1030,22 @@ export class TrafficSim {
         // (TRAFMIX: a body wider than the lanes' design car is looked along at the design width: the lanes are fitted
         // round the parked cars for a car; a bus beside them would otherwise stop for good)
         const hwL = this.types[this.type[i]].w > 2.1 ? 0.95 : Infinity;
-        for (let a2 = 1; a2 <= look; a2 += 1) if (this.parkClear(i, this.room[i], a2, hwL) < 0.02) { this.tpLA[i] = d + a2; break; }
+        // (claude/parking1, the sim cost row: a straight stretch ahead (the route's heading change x the look < 0.2 m) is
+        // first judged as ONE body as long as the look; nothing within 0.3 m of it: no probe per metre; ?lapre=old)
+        let any = true;
+        if (!LA_PRE_OLD) {
+          const F = this._laF ||= new Float64Array(4), R = this._laR ||= new Float64Array(4), Q = this._laQ ||= new Float64Array(4), hw2 = this.wb[i] / 2;
+          this.routePoint(i, d + hw2, F); this.routePoint(i, d - hw2, R); this.routePoint(i, d + look + hw2, Q);
+          const y0 = Math.atan2(F[0] - R[0], F[1] - R[1]), y1 = Math.atan2(Q[0] - F[0], Q[1] - F[1]);
+          let dy = y1 - y0; dy -= Math.round(dy / 6.283185307) * 6.283185307;
+          if (Math.abs(dy) * look < 0.2) {                                    // (a bend's offset over the look < 0.2 m, inside the 0.3 m margin)
+            const lx = Math.cos(y0), lz = -Math.sin(y0), sx = Math.sin(y0), sz = Math.cos(y0), r = this.room[i];
+            const mx = (F[0] + R[0]) / 2 + sx * (look / 2) + lx * r + this.offX[i], mz = (F[1] + R[1]) / 2 + sz * (look / 2) + lz * r + this.offZ[i];
+            const hw = Math.min(hwL, Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2));
+            if (this.bodyClear(mx, mz, y0, this.half[i] + look / 2, hw) > 0.3) any = false;
+          }
+        }
+        if (any) for (let a2 = 1; a2 <= look; a2 += 1) if (this.parkClear(i, this.room[i], a2, hwL) < 0.02) { this.tpLA[i] = d + a2; break; }
       }
       // (claude/parking1, rule service-vehicle-passage: a car keeping right for a run (yr, not a pass) whose shifted body
       // runs into a parked car ahead keeps its lane instead (the lane is clear of the parked cars) and drives on past it
@@ -1169,8 +1186,15 @@ export class TrafficSim {
       const yw = this.yaw[i], sx = Math.sin(yw), sz = Math.cos(yw), lx = Math.cos(yw), lz = -Math.sin(yw), hw = Math.max(0.92, this.types[this.type[i]].w / 2), hl = this.half[i];
       const x0 = this.x[i] - lx * this.room[i], z0 = this.z[i] - lz * this.room[i];
       const ahead = (r) => Math.min(this.bodyClear(x0 + sx * L * 0.5 + lx * r, z0 + sz * L * 0.5 + lz * r, yw, hl, hw), this.bodyClear(x0 + sx * L + lx * r, z0 + sz * L + lz * r, yw, hl, hw));
+      let aR = NaN;                                                          // (ahead(room), probed once)
+      const aRoom = () => (aR === aR ? aR : (aR = ahead(this.room[i])));
       if (Math.abs(next) > Math.abs(this.room[i]) && ahead(next) < ROOM_AHEAD) next = this.room[i];
-      if (next === this.room[i] && this.room[i] && ahead(this.room[i]) < TP_TOUCH) { const r = this.room[i]; next = r - Math.sign(r) * Math.min(Math.abs(r), 0.6 * STEP); }
+      if (next === this.room[i] && this.room[i] && aRoom() < TP_TOUCH) { const r = this.room[i]; next = r - Math.sign(r) * Math.min(Math.abs(r), 0.6 * STEP); }
+      // (claude/parking1, trafparksim --shove 60: a car eased out past a shoved car, its corridor ahead into a second one,
+      // eased BACK toward its lane line unchecked: back there the car it was passing stood 1.3 m ahead at 6.6 m/s and it
+      // ran 11 cm into it. A move IN is judged like a move out: not into a corridor worse than this one within
+      // ROOM_AHEAD; it holds its offset and the shifted-body look-ahead (tpLA) stops it)
+      if (!EASE_BACK_OLD && next !== this.room[i] && Math.abs(next) < Math.abs(this.room[i])) { const an = ahead(next); if (an < ROOM_AHEAD && an < aRoom()) next = this.room[i]; }
       if (next === this.room[i]) return;
     }
     // trafpark: no sideways move (pull over, yield right, the bike's room, back from a pass) into a parked car: a move
