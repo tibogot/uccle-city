@@ -168,6 +168,10 @@ fs.rmSync(SCRATCH, { recursive: true, force: true });
 fs.rmSync(SCRATCH, { recursive: true, force: true });
 
 // ------------------------------------------------------------------------------------------------ B: parity on real tiles
+// (this row tests the cache, so it runs it even in a --no-tile-cache gate: then in a scratch store, cold, removed after)
+const PARITY_SCRATCH = /^(0|off)$/.test(process.env.TILE_CACHE || "") ? path.join(SCRATCH, "parity") : null;
+if (PARITY_SCRATCH) { process.env.TILE_CACHE = ""; process.env.TILE_CACHE_DIR = PARITY_SCRATCH; }
+process.on("exit", () => { if (PARITY_SCRATCH) fs.rmSync(SCRATCH, { recursive: true, force: true }); });
 {
   const tc = await import("../gate/tileCache.mjs");
   const tb = await import("../gate/tileBuild.mjs");
