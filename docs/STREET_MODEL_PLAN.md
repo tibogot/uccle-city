@@ -571,15 +571,13 @@ fails the `streetlanes` row; the roads census rows `inBuildingCPlaces` / `offCar
   kept 11,638 → 11,633; roads census off the carriageway 181 / 3,018 m → 167 / 2,699 m, in a building 16 / 289.5 m → 16 /
   181 m.
 
-**Gate (2026-11-22, `--changed --base ae17ba81`, 30 rows): 28 pass, 2 fail; not ready to merge.**
-- `trafmix` "never stuck": seed 23 has 2 stuck service vehicles (ceiling 1): a bus at D6 (-1182.6, 845.3) held "full" at
-  its signal (its exit lane's queue does not move) behind a car standing "busy" for > 60 s inside the D7 priority
-  junction's turn (-1334, 1240), with a police car behind it. The registered E6 ambulance is gone (stale). The gridlock
-  is chaotic: turning off either the need cap or the kerb-run rule alone gives 0 on seed 23; exempting the parked-car
-  needs from the cap moves it elsewhere (a bus held by a parked car, -1153, 923). The D7 priority-starved approach is
-  the SIGNALS / traffic job's (cause priority-starved); the row needs that decision, not a lane tweak.
-- `trafparksim` (I6, shoved parked cars): a traffic car 0.06-0.13 m into a parked car, which passed with the dropped
-  old-fit cap (the same chaos: the old fit's I6 lanes moved by centimetres).
-- Everything else passes: roads (ceilings at this count), streetlanes (register 421, class-c ceilings), markings
-  laneP95, markings2, drivecheck (94 places, tree 0, hero 0), roadsim, motofeel, model, moverground, gates, tlights.
-
+**Gate after merging claude/parking1 (358ec924; per-sim signal clock, ease-back check, CPU-time sim cost):**
+`--changed --base 358ec924`, 31 rows: 29 pass; `streetlanes` and `roads` failed only on this branch's own ceilings,
+which the parking merge moved (wobble 2,694 → 2,708 m; streetlanes carriage c 100 → 102 m, kerb c 308 → 298.5, turn c
+165.5 → 161; the register re-measured: 415 entries). Ceilings reset to the merged count, both rows re-run: pass.
+- trafmix: 0 stuck on seeds 7 / 11 / 23 (the D6 / D7 gridlock was the shared signal clock); the E4 / E6 entries were
+  stale and are gone. Its sim cost passed in the gate. Alone, seed 7, interleaved: foundation x1.08-1.11, this branch
+  x1.06-1.18 (twin x0.87-1.01). Rank-0 lanes held off parked cars less where the need cap applies: the mix's
+  `parkClamped` 509 → 2,796 on seed 7. Leaving parked-car needs uncapped took it to 187 but brought back one stuck bus
+  at the D6 Ch. d'Alsemberg / Engeland junction (an oversaturated junction: its exits stand "full"), so it is not kept.
+- trafparksim / trafparkshove pass.
