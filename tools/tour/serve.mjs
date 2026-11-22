@@ -58,6 +58,8 @@ function serveFile(req, res, file) {
     // views' memory that was 14 GB held after navigating away)
     const head = { "content-type": MIME[path.extname(file).toLowerCase()] ?? "application/octet-stream", "cache-control": file.endsWith("tour.html") ? "no-store" : "no-cache",
       etag, "last-modified": st.mtime.toUTCString() };
+    // a brotli sibling (tools/asset_hashes.mjs --br, rule asset-compression): served as vercel.json does
+    if (file.endsWith(".br")) Object.assign(head, { "content-encoding": "br", "content-type": "application/vnd.uccle.br-sibling" });
     if (req.headers["if-none-match"] === etag) { res.writeHead(304, head); return res.end(); }
     res.writeHead(200, { ...head, "content-length": st.size });
     if (req.method === "HEAD") return res.end();

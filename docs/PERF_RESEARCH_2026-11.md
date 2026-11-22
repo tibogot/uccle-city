@@ -95,6 +95,13 @@ Gains are estimates. The "why" column gives the arithmetic. The effort scale is 
 
 ### Job A: compressed binaries on the live site (idea 1, loading)
 
+> **Done differently (claude/assetgz, 2026-11-22; rule docs/rules/asset-compression.md).** Measured live: Vercel DOES
+> compress glb / bin / u16 / json (brotli on the fly, about level 3); only KTX2 / images / wav go raw, and ours are
+> compressed inside (all 113 KTX2 are zstd). gzip-9 would have saved ~2 %. Shipped instead: brotli-11 `<file>.br`
+> siblings from the Vercel build, taken by sw.js only after a content-hash check (-24..-37 % on those types; cold
+> boot before the cover 118 -> 96 MB on a local 50 Mbit/s stand-in). The cold boot is 64 % KTX2 bytes (92 of 145 MB),
+> and 40 GLBs (56 MB) have no meshopt: those are the next download levers.
+
 - **Do:**
   - In the Vercel build step (`vercel.json` buildCommand), gzip -9 every hashed file of type
     glb / bin / u16 / i16 / u8 / f32 / dat / ktx2 over 32 KB into a `.gz` sibling. Use node zlib, in the same script
