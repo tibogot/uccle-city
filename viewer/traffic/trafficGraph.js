@@ -234,11 +234,23 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
         parked.each(body.x, body.z, 2.6, (ci) => { if (!drop.has(ci) && boxesOverlap(body, parked.sites[ci])) drop.add(ci); });
       }
     }
+    // (claude/parking1, rule service-vehicle-passage: no parked car within MOUTH_CLEAR m of a junction, as the Belgian
+    // highway code has it (art. 24: 5 m from the crossing carriageway): measured from each junction turn's ends, the
+    // lane mouths, to the parked box. The width parking keeps 12 m off a WAY's end, but a big junction (a dual
+    // carriageway's merged node) has its mouths further out: Rue Engeland D7 had a car 1.9 m from a lane's end, inside
+    // the posed turn's sweep; the car behind waited for it for good and a bus with it (trafmix, seed 23, old lanes))
+    let mouthDropped = 0;
+    const notJunction = new Set((net.nodes || []).filter((n) => n.kind === "continuation" || n.kind === "split" || n.kind === "end").map((n) => n.id));
+    if (!MOUTH_OLD && opts.mouth !== false) for (const p of src) {
+      if (p.kind !== "connector" || p.pts.length < 2 || notJunction.has(p.nodeId)) continue;      // (a junction's turns only)
+      for (const e of [p.pts[0], p.pts[p.pts.length - 1]]) parked.within(e[0], e[1], MOUTH_CLEAR, (ci) => { if (!drop.has(ci)) { drop.add(ci); mouthDropped++; } });
+    }
+    fitStats.parkMouth = mouthDropped + (opts.mouthBefore || 0);
     fitStats.parkDropped = drop.size + (opts.droppedBefore || 0);
     fitStats.checkMs = Math.round(performance.now() - tC);
     if (drop.size) parkedKept = opts.parked.filter((c, ci) => !drop.has(ci));
     // the lanes were bent round cars that are now gone: built once more around the kept ones (then checked again)
-    if (drop.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop.size });
+    if (drop.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop.size, mouthBefore: mouthDropped });
   }
   const idx = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
@@ -407,11 +419,13 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   cfOff[P] = list.length;
   const cfOther = Int32Array.from(list, (c) => c[0]), cfAt = Float32Array.from(list, (c) => c[1]), cfOtherAt = Float32Array.from(list, (c) => c[2]);
   const cfYield = Int8Array.from(list, (c) => c[3]);
+  const tW = performance.now(), clearW = laneClearWidths(src, P, grid, parkedKept);
+  fitStats.clearMs = Math.round(performance.now() - tW);
   return {
     paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, model, nextOff, nextIdx, prevOff, prevIdx,
     holdAt, ctrl, phase, jnode, nodeOf, cfOff, cfOther, cfAt, cfOtherAt, cfYield,
     jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })), parkedKept,
-    ...narrowStretches(src, P),
+    ...narrowStretches(src, P), clearW,
     bounds, stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) },
   };
 }
@@ -511,7 +525,59 @@ function narrowStretches(src, P) {
     nO0: Float32Array.from(list, (r) => r[3]), nO1: Float32Array.from(list, (r) => r[4]) };
 }
 
+// THE CLEAR WIDTH OF EVERY LANE (claude/parking1, rule service-vehicle-passage): what a vehicle on it can physically
+// pass through. Every CW_STEP m along a lane piece (not its first / last CW_END m: the junction mouths), the open width
+// across the lane point: rays left and right over the drawn carriageway (roadway / tram road / parking) until a class the
+// traffic does not drive on (an unsurveyed cell beside the carriageway too) or a parked car's box. The lane's clearW is
+// the least over two stations in a row of the wider one (Infinity: a junction turn, or nothing measured: a lane point off the carriageway,
+// a ray leaving the tile's raster). The router keeps
+// service vehicles (runs, buses, bin lorries) off a lane narrower than their width + 2 x 0.2 m (trafficSim.js
+// clearWeight) and the trafmix gate counts the entries into a lane narrower than the vehicle itself: 0.
+const CW_STEP = 3, CW_END = 6, CW_RAY = 8, CW_DR = 0.25;
+function laneClearWidths(src, P, grid, parkedKept) {
+  const out = new Float32Array(P).fill(Infinity);
+  if (!grid) return out;
+  const cls = (x, z) => { const i = Math.floor((x - grid.x0) / grid.step), j = Math.floor((z - grid.z0) / grid.step); if (i < 0 || j < 0 || i >= grid.nx || j >= grid.nz) return -2; return grid.data[j * grid.nx + i] - 1; };
+  // the parked cars in 8 m cells; per station the ones within reach, tested as boxes
+  const G = new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
+  for (const c of parkedKept || []) { const k = key(Math.floor(c.x / 8), Math.floor(c.z / 8)); if (!G.has(k)) G.set(k, []); G.get(k).push(c); }
+  const near = [];
+  // the open distance from (x, z) along (nx, nz): an unsurveyed cell next to the carriageway is its edge too; off the
+  // tile's raster: NaN (unknown)
+  const ray = (x, z, nx, nz) => {
+    for (let t = CW_DR; t <= CW_RAY; t += CW_DR) {
+      const px = x + nx * t, pz = z + nz * t, c = cls(px, pz);
+      if (c === -2) return NaN;
+      if (c < 0 || !CARRIAGE[c]) return t - CW_DR / 2;
+      for (let q = 0; q < near.length; q++) if (parkedBoxDist(near[q], px, pz) <= 0) return t - CW_DR / 2;
+    }
+    return CW_RAY;
+  };
+  src.forEach((p, i) => {
+    if (p.kind === "connector") return;
+    const c = p.cum || cumulative(p.pts), L = c[c.length - 1];
+    let best = Infinity, prev = NaN;
+    for (let sd = CW_END; sd <= L - CW_END; sd += CW_STEP) {
+      const A = pointAt(p.pts, c, sd - 0.5), B = pointAt(p.pts, c, sd + 0.5), x = (A[0] + B[0]) / 2, z = (A[1] + B[1]) / 2;
+      const k0 = cls(x, z); if (k0 < 0 || !CARRIAGE[k0]) continue;
+      near.length = 0;
+      const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8);
+      for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) for (const q of G.get(key(i0 + di, j0 + dj)) || []) if ((q.x - x) ** 2 + (q.z - z) ** 2 < (CW_RAY + 2.5) ** 2) near.push(q);
+      const tx = B[0] - A[0], tz = B[1] - A[1], tl = Math.hypot(tx, tz) || 1, nx = tz / tl, nz = -tx / tl;
+      const w = ray(x, z, nx, nz) + ray(x, z, -nx, -nz);
+      // (a narrowing holds over two stations in a row: one 0.5 m raster cell at one station is not the street)
+      const m = Math.max(w, prev);
+      if (m < best) best = m;                                    // (NaN never wins)
+      prev = w;
+    }
+    out[i] = best;
+  });
+  return out;
+}
+
 const PARK_CLEAR = 1.95;          // m: lane centre to a parked car's centre (two half widths + 0.15)
+export const MOUTH_CLEAR = 5;     // m: a junction turn's end (a lane mouth) to the nearest parked box (rule service-vehicle-passage)
+const MOUTH_OLD = typeof location !== "undefined" && /[?&]parkmouth=old(&|$)/.test(location.search);
 // trafpark (2026-11-17, owner: "the traffic cars can go through the parked cars"): the parked car as its plan box (the
 // widest / longest common type, 1.85 x 4.73 m: viewer/carFleet.js SIZES) and the traffic car as its half width: a lane
 // point is clear when its distance to the box is >= TP_HALF + TP_FIT; the built graph is then checked along every path
@@ -556,6 +622,11 @@ function parkedGrid(sites, boxed = false) {
     },
     /** the nearest box distance (<= 4 m reach) */
     dist(x, z) { let b = Infinity; near(x, z, (c) => { const d = parkedBoxDist(c, x, z); if (d < b) b = d; return false; }); return b; },
+    /** every car whose box comes within r of (x, z), any r (the cells its centre can be in): f(ci) */
+    within(x, z, r, f) {
+      const n = Math.ceil((r + 2.5) / 4), i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) if (parkedBoxDist(sites[ci], x, z) < r) f(ci);
+    },
     /** every car whose box comes within r of (x, z): f(ci) */
     each(x, z, r, f) { near(x, z, (c, ci) => { if (parkedBoxDist(c, x, z) < r) f(ci); return false; }); },
     clear(x, z) {
