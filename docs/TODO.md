@@ -133,6 +133,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Step 3: places (compare with photos, look only)**
 - [ ] Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).
+- [ ] Stunt area (owner 2026-11-22, for later): a construction site or waste ground with ramps, pipes, sand piles, containers, scaffolding for stunts with the car, the moto and the bike. Place not chosen: candidates to check on Google Maps / Street View (look only): the Calevoet / Stalle industrial and rail-side land, open or vacant plots in the Kauwberg / Engeland area (next to the kid game's sand quarries and the Dieweg bike park, docs/KIDGAME.md), any real building site. Pick one that is real and drivable; scripted props only.
 - [ ] Parc de la Sauvagère (owner 2026-11-22): fences all round, a few gates and entrances; check the line and the gates on Street View (look only). Same job as Wolvendael (one park-fence kit, both parks).
 - [ ] Place Saint-Pierre: the restaurant Le Petit Pont.
 - [ ] Restaurant De Hoef: far better.
