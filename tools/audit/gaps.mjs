@@ -31,6 +31,7 @@ export const CAUSES = {
   "source-data": "the source data itself is wrong / incomplete there (survey, OSM): a data fix",
   "signal-phases": "two signal junctions a few metres apart on different phases (a queue waiting at the second one stands inside the first one's turn, a yield inside that turn): the SIGNALS job (docs/TODO.md: one phase along the road for the close pairs)",
   "priority-starved": "a give-way approach starved by a steady conflicting flow (no gap of GAP_T s for 60 s, a priority junction at the peak): the SIGNALS job (docs/TODO.md: junction control + demand)",
+  "old-lanes": "?streetlanes=old only (the A/B fallback, not the city's default lanes, which have none there): an old-lanes mechanism the PARKING job did not own (claude/parking1: a twinless buffer-copy lane through a neighbour's parked car; a long signal hold), reached after the parking change reshuffled the seed",
   "parking-both-sides": "an emergency vehicle on a street parked on both sides, no room to pass the oncoming / yielding cars: the PARKING job (docs/TODO.md: its route avoids such streets, or the parking leaves a gap)",
 };
 export const ID_RE = /^[a-z0-9]+\.[A-Za-z0-9]+:[^:\s]+:\d+-\d+$/;

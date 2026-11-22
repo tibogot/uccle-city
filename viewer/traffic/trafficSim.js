@@ -50,6 +50,13 @@ const GAP_T = 4;                // s: a car on a conflicting turn this near the 
 const CF_SHORT = 1.5;           // m: a standing car's front this far short of a conflict point leaves it free
 const PASS_GAP = 0.6;           // m: easing out past a parked car, the least gap kept to a car in the other half of the street
 const TP_PASS = 1.3;            // m: the most a car eases sideways to pass a parked car standing into its lane
+const RUN_SQUEEZE = 0.15, SQUEEZE_V = 2.5;   // m: a run squeezes past standing oncoming cars in a narrow stretch that its body clears by this, at most SQUEEZE_V m/s (rule service-vehicle-passage)
+const RUN_SQUEEZE_OLD = typeof location !== "undefined" && /[?&]runsqueeze=old(&|$)/.test(location.search);
+const PARK_STOP = 0.25;         // m: the extra room a car keeps behind a parked box it waits at (trafparksim)
+const PARK_STOP_OLD = typeof location !== "undefined" && /[?&]parkstop=old(&|$)/.test(location.search);
+const SERVICE_MARGIN = 0.2;     // m each side: a service vehicle's lane must be its width + 2 x this clear (rule service-vehicle-passage)
+const CLEARW_OLD = typeof location !== "undefined" && /[?&]clearroute=old(&|$)/.test(location.search);
+const YIELD_KEEP_OLD = typeof location !== "undefined" && /[?&]yieldkeep=old(&|$)/.test(location.search);   // (rule service-vehicle-passage)
 // (carhit, docs/CARHIT.md: knocked = hit by the player, off its lane: viewer/drive/carHit.js drives its pose, the sim
 // skips it; it rejoins through rejoin() below, or stays as a wreck)
 const ST = { drive: 0, outWait: 1, out: 2, inStop: 3, inRev: 4, knocked: 5 };
@@ -191,9 +198,9 @@ export class TrafficSim {
     const i = gid & 0xffff, a = g.nextOff[i], b = g.nextOff[i + 1];
     if (a === b) return -1;
     let tot = 0;
-    for (let k = a; k < b; k++) tot += this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]);
+    for (let k = a; k < b; k++) tot += this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]) * this.clearWeight(g, g.nextIdx[k]);
     let r = this.rand() * tot, j = g.nextIdx[a];
-    for (let k = a; k < b; k++) { const w = this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]); if (r < w) { j = g.nextIdx[k]; break; } r -= w; }
+    for (let k = a; k < b; k++) { const w = this.nextWeight(g, g.nextIdx[k]) * this.fleeWeight(g, g.nextIdx[k]) * this.busWeight(g, g.nextIdx[k]) * this.clearWeight(g, g.nextIdx[k]); if (r < w) { j = g.nextIdx[k]; break; } r -= w; }
     const gj = (g.slot << 16) | j;
     this._pickAt = 0;
     if (g.core[j] || g.twin[j] < 0) return gj;
@@ -234,6 +241,17 @@ export class TrafficSim {
     routePoint(r, Q[0], Q);
     const al = T[2] * Q[2] + T[3] * Q[3];
     return Math.exp(-((d / 4) ** 2)) * (al > 0.3 ? 1 : 0.02) + 1e-6;
+  }
+  /** claude/parking1 (rule service-vehicle-passage): a service vehicle (a run, a bus, a bin lorry: wider than a car)
+   *  is not routed onto a lane (or through a turn onto one) whose clear width (trafficGraph.js laneClearWidths) is under
+   *  its own width + 2 x SERVICE_MARGIN: x 0.001 (still taken when it is the only way on); 1 for everybody else */
+  clearWeight(g, j) {
+    const i = this._fi;
+    if (i < 0 || CLEARW_OLD || !g.clearW) return 1;
+    const role = this.role[i];
+    if (role !== ROLE.ambulance && role !== ROLE.fire && role !== ROLE.bus && role !== ROLE.bin) return 1;
+    const L = g.kind[j] && g.nextOff[j] < g.nextOff[j + 1] ? g.nextIdx[g.nextOff[j]] : j;
+    return g.clearW[L] < (this.types[this.type[i]]?.w ?? 1.84) + 2 * SERVICE_MARGIN ? 1e-3 : 1;
   }
   fillRoute(i) {
     this._fi = i;
@@ -496,7 +514,10 @@ export class TrafficSim {
     while (e >= 0) {
       const edge = E.d[e] - E.r[e];
       // (trafpark: a parked car this car is already passing, eased out beside it, is not in its way)
-      if (E.d[e] + E.r[e] > from && edge - from < best && !(car >= 0 && E.need[e] && this.passingEntry(car, g.ohead[gid & 0xffff], e, from))) { best = Math.max(0, edge - from); bv = Math.max(0, E.v[e]); be = e; }
+      // (claude/parking1: behind a parked box, PARK_STOP m more: a car easing out past it is turned off its lane and its
+      // front corner reached 7 cm into a shoved, turned parked car at the box's along-lane edge: trafparksim I6)
+      const ed = E.need[e] && !PARK_STOP_OLD ? edge - PARK_STOP : edge;
+      if (E.d[e] + E.r[e] > from && ed - from < best && !(car >= 0 && E.need[e] && this.passingEntry(car, g.ohead[gid & 0xffff], e, from))) { best = Math.max(0, ed - from); bv = Math.max(0, E.v[e]); be = e; }
       e = E.nxt[e];
     }
     out[0] = best; out[1] = bv; out[2] = be;
@@ -711,6 +732,26 @@ export class TrafficSim {
     return refuse();
   }
 
+  /** a run (car i on path p, a gid) and the narrow stretch [s0, s1] of p, opposed by [o0, o1] of path op (an index in
+   *  the same tile graph g): every car in the opposing interval stands (v < 0.5) and its body is RUN_SQUEEZE m or more
+   *  clear of car i's body on p beside it? */
+  runSqueeze(i, p, g, op, s0, s1, o0, o1) {
+    const T = this.tmp4, hwI = Math.max(0.92, (this.types[this.type[i]]?.w ?? 1.84) / 2);
+    let any = false;
+    for (let j = g.head[op]; j >= 0; j = this.nxt[j]) {
+      const pj = this.posOn(j), hj = this.half[j];
+      if (pj + hj < o0 || pj - hj > o1) continue;
+      if (this.v[j] >= 0.5) return false;
+      any = true;
+      // (the other way: its place on the opposing interval, mirrored onto this path's)
+      const f = o1 > o0 ? (o1 - pj) / (o1 - o0) : 0.5;
+      this.W.point(p, s0 + Math.max(0, Math.min(1, f)) * (s1 - s0), T);
+      const lat = Math.abs((this.x[j] - T[0]) * T[3] - (this.z[j] - T[1]) * T[2]);
+      if (lat - hwI - Math.max(0.92, (this.types[this.type[j]]?.w ?? 1.84) / 2) < RUN_SQUEEZE) return false;
+    }
+    return any;
+  }
+
   // ------------------------------------------------------------------ junction decisions
   /** Should car i wait at the hold point of lane `L` (gid) before connector `C` (gid, may be -1)? -> HOLD.* */
   decide(i, L, C, X, dStop) {
@@ -840,7 +881,7 @@ export class TrafficSim {
     const tmp = this.tmp;
     // POLICE GAME: control (flee / pull over / stopped) and yielding to the emergency car
     const ctl = this.ctl[i];
-    let yieldCap = Infinity, yieldHold = false;
+    let yieldCap = Infinity, yieldHold = false, runNear = false, runYield = false;
     this.yr[i] = 0;
     if (ctl === 1) { v0 = Math.max(v0 * 1.75, 15); if (this.overT[i] > 0) { this.overT[i] -= STEP; this.yr[i] = 2.7; } }
     else if (ctl === 2) { v0 = Math.max(0.05, v * 0.78); this.yr[i] = -0.9; if (v < 0.4) { this.ctl[i] = 3; this.v[i] = 0; } }
@@ -854,6 +895,7 @@ export class TrafficSim {
         else { if (this.emI[q] === i) continue; ex0 = this.emX[q]; ez0 = this.emZ[q]; eh = this.emH[q]; }
         const dx = this.x[i] - ex0, dz = this.z[i] - ez0;
         if (dx * dx + dz * dz >= 95 * 95) continue;
+        if (q >= 0) runNear = true;                                            // (a run within 95 m: the narrow stretches below)
         const ex = Math.sin(eh), ez = Math.cos(eh), along = dx * ex + dz * ez, lat = Math.abs(dx * ez - dz * ex);
         const dir = Math.sin(this.yaw[i]) * ex + Math.cos(this.yaw[i]) * ez;
         // (claude/street4: a car INSIDE a junction turn clears the junction first, as a driver does: crawling there for an
@@ -862,10 +904,11 @@ export class TrafficSim {
         const inTurn = g.kind[pi] === 1;
         if (dir > 0.6 && along > 2 && along < 80 && lat < 7) {                 // ahead, same way: pull right, stop
           this.yr[i] = -0.8;                                                   // (as far right as parked cars allow)
+          runYield = true;
           if (!inTurn) yieldCap = Math.min(yieldCap, along < 45 ? Math.max(0.05, v * 0.8) : 4);
           this.stats.yielding++;
         } else if (dir < -0.6 && along > 0 && along < 70 && lat < 12) {       // oncoming: slow, keep right
-          this.yr[i] = Math.min(this.yr[i], -0.5); if (!inTurn) yieldCap = Math.min(yieldCap, 3.5); this.stats.yielding++;
+          this.yr[i] = Math.min(this.yr[i], -0.5); if (!inTurn) yieldCap = Math.min(yieldCap, 3.5); this.stats.yielding++; runYield = true;
         } else if (dir <= 0.6 && dir >= -0.6 && along > -25 && along < 75) yieldHold = true;   // across: wait at the line
       }
     }
@@ -918,6 +961,15 @@ export class TrafficSim {
           if (pj + hj > o0 && pj - hj < o1) blocked = true;                                   // inside it
           else if (pj + hj <= o0 && o0 - (pj + hj) < 6 && this.v[jj] > 0.5 && jj < i) blocked = true;   // entering, has the turn
         }
+        // (claude/parking1, rule service-vehicle-passage: a run has the stretch. A car does not enter it while a run comes
+        // the other way (on the opposing lane, before or in its part of the stretch); a run does not wait for oncoming
+        // cars that STAND there (queued at a light, pulled over for it) when its own body clears every one of them by
+        // RUN_SQUEEZE m: it squeezes past at a walking pace, as drivers let an ambulance through. Before, cars kept entering toward a run
+        // waiting at a 100 m narrow street (4.75 m clear) while the queue there stood at a red light: D6, seed 11)
+        if (!blocked && runNear && !RUN_SQUEEZE_OLD) for (let jj = g.head[op]; jj >= 0; jj = this.nxt[jj]) {
+          if (this.ctl[jj] === 4 && this.posOn(jj) - this.half[jj] < o1 && this.posOn(jj) + this.half[jj] > o0 - 45) { blocked = true; break; }
+        }
+        if (blocked && ctl === 4 && !RUN_SQUEEZE_OLD && this.runSqueeze(i, p, g, op, g.nS0[k], g.nS1[k], o0, o1)) { blocked = false; v0 = Math.min(v0, SQUEEZE_V); this.stats.runSqueezes = (this.stats.runSqueezes || 0) + 1; }
         if (blocked) { gap = Math.max(0.05, dStop - 0.5); vL = 0; lead = 3; hold = HOLD.yield; this.stats.narrowWaits = (this.stats.narrowWaits || 0) + 1; break; }
       }
     }
@@ -967,7 +1019,14 @@ export class TrafficSim {
         const hwL = this.types[this.type[i]].w > 2.1 ? 0.95 : Infinity;
         for (let a2 = 1; a2 <= look; a2 += 1) if (this.parkClear(i, this.room[i], a2, hwL) < 0.02) { this.tpLA[i] = d + a2; break; }
       }
-      if (this.tpLA[i] >= 0) { const g2 = this.tpLA[i] - d - 1; if (g2 < gap) { gap = Math.max(0.05, g2); vL = 0; lead = 2; } }
+      // (claude/parking1, rule service-vehicle-passage: a car keeping right for a run (yr, not a pass) whose shifted body
+      // runs into a parked car ahead keeps its lane instead (the lane is clear of the parked cars) and drives on past it
+      // as the run allows: it pulls in behind the parked car, never into it. Before, it stood there shifted for good and
+      // the run waited for it to leave the narrow stretch: Dieweg E6, seed 7, ?streetlanes=old)
+      // (the look-ahead's answer is kept, not reset: a reset re-ran its 30 probes every step while the car eased back)
+      let kept = false;
+      if (this.tpLA[i] >= 0 && runYield && !YIELD_KEEP_OLD && !(this.pwT[i] > 0) && this.yr[i] * this.room[i] > 0) { this.yr[i] = 0; kept = true; this.stats.yieldKept = (this.stats.yieldKept || 0) + 1; }
+      if (this.tpLA[i] >= 0 && !kept) { const g2 = this.tpLA[i] - d - 1; if (g2 < gap) { gap = Math.max(0.05, g2); vL = 0; lead = 2; } }
     } else this.tpLA[i] = -1;
     if (ctl === 1) v0 = Math.max(v0, Math.min(15, v0 * 1.4));                // (police game: a fleeing car takes the bends faster)
     if (ctl === 4 && (g.kind[pi] || g.len[pi] - d < 25)) v0 = Math.min(v0, 7);   // (TRAFMIX: a run slows through junctions)
