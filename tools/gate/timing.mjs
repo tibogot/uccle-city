@@ -94,3 +94,41 @@ export function cleanSteps(makeGen, runs = 5) {
   const sim = (ms) => { let s = 0, n = 1, longest = 0; for (const d of mins) { s += d; if (s > ms) { longest = Math.max(longest, s); n++; s = 0; } } return { slices: n, longest: Math.max(longest, s) }; };
   return { value, steps: mins.length, maxStep: Math.max(...mins), slices: (ms) => sim(ms).slices, longest: (ms) => sim(ms).longest };
 }
+
+/**
+ * A COST RATIO that holds on a loaded machine (claude/parking1, rule timing-rows): A's cost per unit of work over B's,
+ * in this process's CPU time, not wall time. A wall-time A/B counts the time another process held the core as the
+ * code's own: the trafmix "sim cost" row read x1.04-1.17 for the same code depending on what ran beside it (x1.138 on
+ * claude/foundation with two jobs on the laptop, a pass alone). Here:
+ *   - a and b: n runners each (n even), run() does one fixed batch of work and returns its work units (cars x steps);
+ *   - rounds of A B B A blocks (a0 b0 b1 a1, a2 b2 b3 a3, ...), the order rotated each round, each block `batches`
+ *     calls of run(): the same work, so the same traffic, every time the check runs;
+ *   - each runner's CPU time (process.cpuUsage, user + system) is SUMMED over its blocks: a block of 150 steps is
+ *     ~40 ms, too short to time on its own with Windows' 15.6 ms ticks, but a tick's error is random per reading and
+ *     averages out over the rounds (30 blocks: ~2 %); the time another process takes the core is not this process's
+ *     CPU time at all;
+ *   - ratio = the a runners' costs (CPU per unit, each runner's total) summed over the b runners'.
+ *   - `reps` times on fresh runners (make()): the same traffic again, the CPU summed: more of it against the ticks.
+ * Returns { ratio, twin (b0 against b1: the floor of what this measures), a, b (us per unit, the runners' mean), cpuMs,
+ * ms (wall) }.
+ */
+export function cpuAB({ make, reps = 4, rounds = 30, batches = 3 }) {
+  // (make(): fresh runners { a: [...], b: [...] } (n of each, n even), built the same each time: every rep repeats the
+  // same work on the same traffic; the CPU time and the units are summed over the reps (4 reps: ~2 % tick error))
+  let us = null, units = null, kind = null, n = 0;
+  const t0 = performance.now();
+  for (let rep = 0; rep < reps; rep++) {
+    const { a, b } = make(), R = [], kd = [];
+    n = Math.min(a.length, b.length);
+    for (let p = 0; p + 1 < n; p += 2) { R.push(a[p], b[p], b[p + 1], a[p + 1]); kd.push(0, 1, 1, 0); }
+    if (!us) { us = new Float64Array(R.length); units = new Float64Array(R.length); kind = kd; }
+    for (let r = 0; r < rounds; r++) for (let q = 0; q < R.length; q++) {
+      const k = (q + r) % R.length, c0 = process.cpuUsage();
+      for (let m = 0; m < batches; m++) units[k] += R[k]();
+      const c = process.cpuUsage(c0); us[k] += c.user + c.system;
+    }
+  }
+  const cost = Array.from(us, (u, k) => u / Math.max(1, units[k]));
+  let sa = 0, sb = 0, na = 0, nb = 0; cost.forEach((c, k) => { if (kind[k]) { sb += c; nb++; } else { sa += c; na++; } });
+  return { ratio: sa / sb, twin: cost[1] / cost[2], a: sa / na, b: sb / nb, cpuMs: us.reduce((x, y) => x + y, 0) / 1000, reps, rounds, runners: us.length, ms: performance.now() - t0 };
+}

@@ -19,7 +19,7 @@ import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
-import { measure } from "../gate/timing.mjs";
+import { cpuAB } from "../gate/timing.mjs";
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const OLD = argv.includes("--old"), QUIET = argv.includes("--quiet");
@@ -40,7 +40,10 @@ const { signalClock } = await imp("viewer/traffic/signals.js");
 let simClock = 0;
 signalClock.now = () => simClock;
 const _step = TrafficSim.prototype.step;
-TrafficSim.prototype.step = function (ctx) { simClock += STEP; return _step.call(this, ctx); };
+// (claude/parking1: each sim keeps ITS OWN clock: one shared clock, advanced by every sim's step, gave two identical
+// sims stepped in turn different signal phases, so different traffic: the sim-cost row's "two identical plain sims"
+// came out 0.87-1.21 x apart and its ratio moved with them)
+TrafficSim.prototype.step = function (ctx) { simClock = this._clk = (this._clk ?? 0) + STEP; return _step.call(this, ctx); };
 const M = await imp("viewer/traffic/trafMix.js");
 const { HEAVY, HEAVY_TYPES, TrafMix, ROLE, shares, TRAFMIX_OLD } = M;
 
@@ -259,7 +262,7 @@ function stepOnce(ctx) {
           svc.entries++;
           let alt = false;
           const gf = from >= 0 ? sim.W.slots[from >>> 16] : null, f = from & 0xffff;
-          if (gf && gf === g) for (let q = gf.nextOff[f]; q < gf.nextOff[f + 1]; q++) { const c = gf.nextIdx[q], L = gf.kind[c] && gf.nextOff[c] < gf.nextOff[c + 1] ? gf.nextIdx[gf.nextOff[c]] : c; if (L !== j && !(gf.clearW[L] < w + 0.4)) alt = true; }
+          if (gf && gf === g) for (let q = gf.nextOff[f]; q < gf.nextOff[f + 1]; q++) { const c = gf.nextIdx[q], L = gf.kind[c] && gf.nextOff[c] < gf.nextOff[c + 1] ? gf.nextIdx[gf.nextOff[c]] : c; if (L !== j && !(gf.clearW?.[L] < w + 0.4)) alt = true; }
           if (cw < w) { if (alt || !gf) { svc.narrow++; svc.where.push(`${nm} ${cw.toFixed(2)} m at ${sim.x[i].toFixed(0)}, ${sim.z[i].toFixed(0)}`); } else svc.forced++; }
           else if (cw < w + 0.4) svc.tight++;
         }
@@ -468,26 +471,21 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
 // the 1.10 limit while the mix's own work, timed in sequence, was ~1 %. The twin pair's ratio is printed as the floor)
 {
   const ctx = { visible: () => false, ...FOCUS.alsemberg };
-  const A = makeSim(true, 11), B = makeSim(false, 11), B2 = makeSim(false, 11), A2 = makeSim(true, 11);
-  const ALL = [A, B, B2, A2];
-  for (const S of ALL) { S.params.hour = 8; for (let s = 0; s < Math.round(40 / STEP); s++) { S.clearObstacles(); S.step(ctx); } }
-  const tt = ALL.map(() => []);
-  // (30 rounds of 150 steps per sim, the order rotated each round; the median of the rounds' own ratios: each round
-  // times all four back to back, so they see the machine in the same state)
-  // (between two calibrations, again while the machine changed speed: tools/gate/timing.mjs; a ratio, so no k)
-  const MT = await measure(() => {
-    for (const t of tt) t.length = 0;
-    for (let r = 0; r < 30; r++) for (let q = 0; q < 4; q++) {
-      const k = (q + r) % 4, S = ALL[k], t = performance.now();
-      let cars = 0;
-      for (let s = 0; s < 150; s++) { S.clearObstacles(); S.step(ctx); cars += S.count; }
-      tt[k].push(((performance.now() - t) / cars) * 1000);            // (us per car per step)
-    }
-  }, { tries: 3 });
-  const med = (f) => { const v = tt[0].map((_, i) => f(i)).sort((x, y) => x - y); return v[v.length >> 1]; };
-  const ratio = med((i) => (tt[0][i] + tt[3][i]) / (tt[1][i] + tt[2][i])), twin = med((i) => tt[1][i] / tt[2][i]);
-  const ra = Math.min(...tt[0], ...tt[3]), rb = Math.min(...tt[1], ...tt[2]);
-  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${ra.toFixed(2)} us per car per step with the mix vs ${rb.toFixed(2)} without (x${ratio.toFixed(3)}, the median of 30 rounds, two sims of each; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${MT.note})`);
+  // (the four sims built afresh for each of 4 reps: the same traffic again, each sim's CPU summed over the reps)
+  let A, B, B2, A2;
+  const make = () => {
+    A = makeSim(true, 11); B = makeSim(false, 11); B2 = makeSim(false, 11); A2 = makeSim(true, 11);
+    for (const S of [A, B, B2, A2]) { S.params.hour = 8; for (let s = 0; s < Math.round(40 / STEP); s++) { S.clearObstacles(); S.step(ctx); } }
+    return { a: [batch(A), batch(A2)], b: [batch(B), batch(B2)] };
+  };
+  // (claude/parking1, rule timing-rows: in CPU TIME, not wall time: tools/gate/timing.mjs cpuAB, the same 30 rounds of
+  // A B B A blocks of 150 steps (two sims of each, seed 11), each sim's CPU time summed over its blocks and 4 reps. The
+  // wall-time version read x1.04-1.17 for the same code with other jobs on the laptop: their time on the core was
+  // counted as the mix's (claude/foundation failed it at x1.138 under load and passed alone))
+  const batch = (S) => () => { let cars = 0; for (let s = 0; s < 50; s++) { S.clearObstacles(); S.step(ctx); cars += S.count; } return cars; };
+  const MT = cpuAB({ make, reps: 4, rounds: 30, batches: 3 });
+  const ratio = MT.ratio, twin = MT.twin;
+  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");
 process.exitCode = fails ? 1 : 0;
