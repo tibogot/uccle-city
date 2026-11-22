@@ -833,6 +833,10 @@ export class TrafficSim {
           if (red >= 0) { free += red; break; }
           free += gq.len[pq];
           if (q === ROUTE - 1) free = Infinity;
+          // (claude/lanes5: the route ends on this path (no next path: the car leaves the sim at its end), so nothing
+          // queues past it; counted as a finite room, a 14.6 m dead-end exit held a 13 m bus "full" for good at the D6
+          // Ch. d'Alsemberg / Engeland junction, trafmix seed 23)
+          else if (R[o + q + 1] < 0) free = Infinity;
         }
         if (k >= ROUTE) free = Infinity;
       }

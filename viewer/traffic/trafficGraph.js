@@ -228,6 +228,17 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   if (parked && TP) {
     const tC = performance.now();
     const drop = new Set();
+    // (claude/lanes5, rule street-lanes: a parked car a street-model lane cannot hold PARK_CLEAR from (its station's
+    // measured room is too narrow for both) is not parked there: dropped as data, not squeezed past by the sim)
+    if (covered) for (const p of src) {
+      if (p.kind !== "lane" || !covered.has(p.id)) continue;
+      const q = p.pts;
+      for (let k = 1; k < q.length; k++) {
+        const a = q[k - 1], b = q[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.5));
+        if (!parked.anyNear((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, L / 2 + 5.5)) continue;
+        for (let m = 0; m <= n; m++) { const t = m / n; parked.each(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, LANE_PARK_DROP, (ci) => { if (!drop.has(ci)) { drop.add(ci); fitStats.laneClearDropped = (fitStats.laneClearDropped || 0) + 1; } }); }
+      }
+    }
     for (const p of src) {
       const q = p.pts;
       let any = false;
@@ -597,6 +608,7 @@ const MOUTH_OLD = typeof location !== "undefined" && /[?&]parkmouth=old(&|$)/.te
 // (lanes AND junction connectors, every 0.25 m) and a car any path still comes within TP_HALF of is not parked
 // (parkedKept). tools/audit/trafParkAudit.mjs measures the same; ?trafpark=old: the point test above, no check.
 export const TP_HALF = 0.98, TP_FIT = 0.15, RAMP = 0.2, TP_BOX_HW = 0.925, TP_BOX_HL = 2.365;
+const LANE_PARK_DROP = TP_HALF + TP_FIT - 0.05;      // m: a model lane this near a parked car's box drops the car (claude/lanes5)
 export const TP_WB = 2.8, TP_BODY_HL = 2.37;   // a traffic car's wheelbase and half length (the longest common type)
 /** a traffic body (centre, unit axis ax/az, half length TP_BODY_HL, half width TP_HALF) vs a parked site's box: SAT */
 function boxesOverlap(b, c) {

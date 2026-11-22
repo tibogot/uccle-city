@@ -581,3 +581,22 @@ which the parking merge moved (wobble 2,694 → 2,708 m; streetlanes carriage c 
   `parkClamped` 509 → 2,796 on seed 7. Leaving parked-car needs uncapped took it to 187 but brought back one stuck bus
   at the D6 Ch. d'Alsemberg / Engeland junction (an oversaturated junction: its exits stand "full"), so it is not kept.
 - trafparksim / trafparkshove pass.
+
+**Round 3 (2026-11-23): the parked-car clamp regression, by cause.**
+- The need cap also capped parked-car needs: rank-0 lanes ran 0.1-0.4 m nearer the cars, and the mix's wide vehicles
+  clamped beside them 5x as often (`parkClamped` 509 on foundation → 2,796; the sim-cost median about x1.15). A parked
+  car is a certain obstacle: its need is now held only by its own station's measured room. A car a model lane still
+  passes nearer than 1.08 m is dropped as data (trafficGraph.js LANE_PARK_DROP): 25 more parked cars dropped
+  city-wide (10,503 → 10,478 kept). `parkClamped` is now 415, with a new trafmix ceiling of 660 (1.3 x 509). Sim cost
+  x1.06 / 1.06 / 1.09 / 1.13 (median about x1.08).
+- The cost: kerb < 1 m class c 298.5 → 362.5 m, where a lane keeps its clearance from a parked car toward the far
+  kerb; the streetlanes ceiling follows. Roads: wobble 2,700, slalom 4,540, 163 places off the carriageway.
+- The D6 bus was a sim cause, not a lane cause: its route ended on a 14.6 m dead-end exit, and the junction entry
+  room counted only that length, so a 13 m bus stood "full" through every green. A route that ends there now has
+  room (trafficSim.js, rule junction-entry-room).
+- trafmix stuck, seeds 7 / 11 / 23 / 31 / 41: lanes5 1 / 0 / 0 / 1 / 2, foundation 358ec924 0 / 1 / 1 / 0 / 1.
+  - Seed 7: an ambulance at a narrow-stretch wait at D6 (-1151, 837), cause narrow-starved (the parking follow-up),
+    registered.
+  - Seed 31: police at E4, priority-starved, the same place as on foundation.
+  - Seed 41: a bus at D6 (-1284, 742) held "full", plus one more; not registered (the gate runs seeds 7 / 11 / 23).
+

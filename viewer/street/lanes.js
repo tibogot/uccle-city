@@ -223,7 +223,11 @@ function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null
       up.push([E.s[k], Math.max(0, b - v[k]), k]); dn.push([E.s[k], Math.max(0, v[k] - a), k]);
     }
     if (up.length) for (let i = 0; i < n; i++) {
-      if (!need[i]) continue;
+      // (a parked car is a certain obstacle, not a noisy ray: its need is held by its own station's room only (applied
+      // above); where that room cannot give the car its clearance, the car goes (trafficGraph.js: the lane-clearance
+      // drop), the lane is not squeezed past it: capped here, rank-0 lanes ran 0.1-0.4 m nearer the cars and the mix's
+      // wide vehicles clamped beside them 5x as often (trafmix parkClamped 509 -> 2,796, claude/lanes5))
+      if (!need[i] || lbC[i] > -Infinity || ubC[i] < Infinity) continue;
       const L = need[i] > 0 ? up : dn;
       let cap = Infinity; for (const [sk, r, k] of L) if (k !== i) cap = Math.min(cap, r + OFF_SLOPE * Math.max(0, Math.abs(E.s[i] - sk) - 4 * OFF_H));
       if (Math.abs(need[i]) > cap) { need[i] = Math.sign(need[i]) * cap; if (stats) stats.capped = (stats.capped || 0) + 1; }
