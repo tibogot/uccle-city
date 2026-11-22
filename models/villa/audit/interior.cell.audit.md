@@ -1,6 +1,6 @@
 # Mesh audit (before pack): interior.cell
 
-112,228 triangles, 62,562 welded vertices, 9,124 open edges, 587,376 rays, 18242 ms.
+106,772 triangles, 59,766 welded vertices, 9,124 open edges, 587,472 rays, 15074 ms.
 
 **0 blocking**, 7325 warnings. Clean (no blocking item).
 
@@ -10,9 +10,9 @@
 | sliver | warn | 6570 |
 | nonmanifold | warn | 135 |
 | tjunction | warn | 233 |
-| seam | info | 1930 |
-| opening | info | 647 |
-| backtoback | info | 7341 |
+| seam | info | 1898 |
+| opening | info | 653 |
+| backtoback | info | 6471 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -204,7 +204,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (193 more in the JSON)
 
-## seam (info, 1930)
+## seam (info, 1898)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -249,9 +249,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 29.93, 125.40, -5.48 | Cell/plaster_white + Cell/plaster_white | 10.17 | 51 | 90 |
 | 16.67, 119.48, 11.30 | Cell/marble_white + Cell/metal_black | 9.34 | 48 | 45 |
 
-(1890 more in the JSON)
+(1858 more in the JSON)
 
-## opening (info, 647)
+## opening (info, 653)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -296,9 +296,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 118.40, 0.47 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 | 14.30, 118.40, 0.89 | Cell/plaster_white | 1 + 0 + 0 | 0.42 |
 
-(607 more in the JSON)
+(613 more in the JSON)
 
-## backtoback (info, 7341)
+## backtoback (info, 6471)
 
 | at | parts | area |
 |---|---|---|
@@ -343,7 +343,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 118.56, -17.13 | Cell/plaster_white + Cell/walnut | 0.01952 |
 | 14.30, 118.71, -17.17 | Cell/plaster_white + Cell/walnut | 0.02113 |
 
-(7301 more in the JSON)
+(6431 more in the JSON)
 
 
 Nodes: Cell, Glass. Distances: {"*":35}. Quantum 0.000 mm. Offset 0,100,0.

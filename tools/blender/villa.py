@@ -667,7 +667,7 @@ def put(parts, u, w, h, face=(0.0, 1.0), smooth=True, s=None, colb=None):
     if kit_piece(parts): PLANTS.append((u, w, h))
     if colb: colbox(u - colb[0], u + colb[0], w - colb[1], w + colb[1], h, h + colb[2])
 
-SOFT_SLOTS = ("fabric_white", "fabric_grey", "leather", "plant", "glow")     # smooth-shaded; everything else flat
+SOFT_SLOTS = ("fabric_white", "fabric_grey", "leather", "plant", "glow", "ceramic_white")     # smooth-shaded; everything else flat
 PLANTS = []                                          # the kit plants (their open leaves: listed in the audit's allow file)
 kit_piece = lambda parts: any(p[1] in ("Hard", "Wood", "Fabric", "Glow", "Plaster", "Glass", "plant") for p in parts)
 LIGHTS = []                                         # night bake: (name, pos, watts, colour, radius, aim or None)
@@ -1195,7 +1195,7 @@ ob_gl = make(GATE_L, EXT_M, GATE_L_O); ob_gr = make(GATE_R, EXT_M, GATE_R_O); ob
 # the soft furnishings (cushions, rugs, leather, plants: smooth-shaded) in their own node "Soft": the audit checks them
 # without the streak / bentflat checks (those guard architecture: a cushion's normals turn round its rounded edges by design)
 SOFT = Acc("Soft", INT_SLOTS); HARD = Acc("Cell", INT_SLOTS)
-SOFT_IDX = {INT_SLOTS.index(n) for n in ("fabric_white", "fabric_grey", "leather", "plant")}
+SOFT_IDX = {INT_SLOTS.index(n) for n in ("fabric_white", "fabric_grey", "leather", "plant", "ceramic_white")}
 for fi, f in enumerate(IN.f):
     A_ = SOFT if IN.fs[fi] in SOFT_IDX else HARD
     b = len(A_.v); A_.v.extend(IN.v[i] for i in f); A_.f.append(tuple(range(b, b + len(f))))

@@ -1,15 +1,15 @@
 # Mesh audit (before pack): soft.soft
 
-67,192 triangles, 38,632 welded vertices, 7,820 open edges, 199,188 rays, 15636 ms.
+72,648 triangles, 41,424 welded vertices, 7,820 open edges, 199,188 rays, 8580 ms.
 
 **0 blocking**, 1073 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
 | tjunction | warn | 14 |
-| seam | info | 1135 |
+| seam | info | 1139 |
 | opening | info | 1439 |
-| backtoback | info | 1262 |
+| backtoback | info | 1374 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -32,16 +32,16 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 36.40, 122.76, -6.81 | Soft/plant | 0.012 |
 | 36.40, 122.76, -6.79 | Soft/plant | 0.012 |
 
-## seam (info, 1135)
+## seam (info, 1139)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
 | 29.43, 118.22, -13.49 | Soft/fabric_white + Soft/fabric_white | 2.19 | 106 | 27.5 |
-| 30.48, 118.22, -18.56 | Soft/fabric_white + Soft/fabric_white | 2.19 | 104 | 27.4 |
+| 30.47, 118.22, -18.57 | Soft/fabric_white + Soft/fabric_white | 2.19 | 104 | 27.4 |
 | 22.44, 118.67, 15.72 | Soft/fabric_white + Soft/fabric_white | 2.19 | 104 | 27.5 |
 | 23.67, 118.22, -13.47 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.2 |
 | 29.53, 118.22, -14.57 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.7 |
-| 26.83, 118.67, 16.67 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.5 |
+| 26.83, 118.67, 16.66 | Soft/fabric_white + Soft/fabric_white | 2.19 | 103 | 28.5 |
 | 24.05, 118.23, -13.11 | Soft/fabric_white + Soft/fabric_grey | 2.03 | 101 | 12.8 |
 | 29.89, 118.23, -15.06 | Soft/fabric_white + Soft/fabric_grey | 2.03 | 100 | 14.2 |
 | 23.50, 118.23, -13.11 | Soft/fabric_white + Soft/leather | 1.19 | 99 | 58.6 |
@@ -62,14 +62,14 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 20.31, 122.78, -3.26 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
 | 20.31, 122.78, -0.26 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
 | 35.39, 122.78, 21.57 | Soft/fabric_grey + Soft/fabric_grey | 2.26 | 68 | 8.6 |
-| 30.16, 122.97, 17.54 | Soft/fabric_grey + Soft/fabric_grey | 1.02 | 67 | 51.5 |
-| 22.58, 118.31, -18.71 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
+| 30.16, 122.97, 17.42 | Soft/fabric_grey + Soft/fabric_grey | 1.02 | 67 | 51.5 |
+| 22.58, 118.31, -18.74 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 22.58, 118.31, -13.71 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 20.38, 118.76, 17.69 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 20.38, 118.76, 19.89 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 15.12, 122.76, 2.21 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
-| 19.58, 122.76, -2.71 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
-| 19.58, 122.76, 0.26 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
+| 19.58, 122.76, -2.74 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
+| 19.58, 122.76, 0.29 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 36.30, 122.76, 21.69 | Soft/fabric_grey + Soft/fabric_grey | 1.49 | 54 | 8.3 |
 | 32.34, 122.96, -2.32 | Soft/fabric_white + Soft/fabric_white | 1.44 | 47 | 5.1 |
 | 29.79, 122.96, 16.60 | Soft/fabric_white + Soft/fabric_white | 1.57 | 47 | 5.1 |
@@ -77,7 +77,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 30.13, 118.30, -18.39 | Soft/fabric_white + Soft/fabric_white | 0.97 | 46 | 7.1 |
 | 22.61, 118.75, 16.07 | Soft/fabric_white + Soft/fabric_white | 0.97 | 46 | 7.1 |
 
-(1095 more in the JSON)
+(1099 more in the JSON)
 
 ## opening (info, 1439)
 
@@ -126,7 +126,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (1399 more in the JSON)
 
-## backtoback (info, 1262)
+## backtoback (info, 1374)
 
 | at | parts | area |
 |---|---|---|
@@ -171,7 +171,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 26.86, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00443 |
 | 26.00, 118.23, -12.89 | Soft/fabric_white + Soft/fabric_white | 0.00143 |
 
-(1222 more in the JSON)
+(1334 more in the JSON)
 
 
 Nodes: Soft. Distances: {"*":35}. Quantum 0.000 mm. Offset 0,100,0.
