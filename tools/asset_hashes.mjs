@@ -96,7 +96,7 @@ async function compressAll(jobs, n) {
   return { kept, raw, packed };
 }
 
-export async function build({ root = ROOT, out = root, br = false, only = null, jobs = Math.max(1, os.cpus().length - 1), quiet = false, cache = null } = {}) {
+export async function build({ root = ROOT, out = root, br = false, only = null, jobs = os.cpus().length, quiet = false, cache = null } = {}) {
   const t0 = Date.now();
   let list = listFiles(root);
   if (only) { const s = new Set(only); list = list.filter(([site]) => s.has(site)); }
