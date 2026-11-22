@@ -3,7 +3,7 @@
 //   ~5 s, then: (await import('/debug/villaStream.js')).run()  -> { over33, worst, longTasks, ... }
 // The camera flies from frame u -60 to u 4 (w 5, 125 m TAW) in 41 steps of 200 ms: the interior fetches (< 60 m),
 // compiles (paced), shows (< 30 m); rAF intervals and long tasks are recorded until 6 s after it shows. Pass: 0 frames
-// over 33.4 ms and no long task, in each of 3 runs (a reload between runs: the cell is cached once loaded).
+// over 34 ms (two vsyncs: 33.3 + jitter) and no long task, in each of 3 runs (a reload between runs: the cell is cached once loaded).
 export async function run() {
   const o = [909.874, 2037.15], r = -2.624849841366921, c = Math.cos(r), s = Math.sin(r);
   const uw = (u, w) => [o[0] + u * c + w * s, o[1] - u * s + w * c];
@@ -19,7 +19,7 @@ export async function run() {
   for (let i = 0; i < 60 && !window.villa.inner.state.shown; i++) await new Promise((q) => setTimeout(q, 500));
   await new Promise((q) => setTimeout(q, 6000));
   on = false; po.disconnect();
-  const after = dts.filter(([t]) => t > t0), over = after.filter(([, d]) => d > 33.4);
+  const after = dts.filter(([t]) => t > t0), over = after.filter(([, d]) => d > 34);   // (> two 60 Hz vsyncs + 0.7 ms of rAF jitter)
   const st = window.villa.inner.state;
   return { pass: over.length === 0 && !lt.some(([t]) => t > t0), over33: over.length, worst: +Math.max(...after.map((a) => a[1])).toFixed(1),
     overAt: over.map(([t, d]) => [Math.round(t - t0), +d.toFixed(1)]), longTasks: lt.filter(([t]) => t > t0).map(([t, d]) => [Math.round(t - t0), Math.round(d)]),
