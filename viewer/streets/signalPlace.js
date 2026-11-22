@@ -1,5 +1,5 @@
 // SIGNAL POST SITES (no three.js: viewer/furniture.js draws them, tools/audit/streetAudit.mjs checks them in node).
-import { nearestRoad, phaseOfDir } from "../traffic/signals.js";
+import { nearestRoad, phaseOfDir, signalPhases } from "../traffic/signals.js";
 import { ROAD_TYPES } from "../../vendor/roads/roadCrossSection.js";
 import { carriageHalf } from "./carriageway.js";
 
@@ -144,18 +144,29 @@ export function signalSites(points, roads, opts = {}) {
   const deg = new Map();
   for (const r of roads.roads) for (const e of [r.a, r.b]) deg.set(e, (deg.get(e) || 0) + 1);
   const out = [];
+  // (rule signal-phase-road) a post's phase is the phase of the approach it faces: the signal node its traffic meets
+  // along its road (signals.js signalPhases: the table the traffic graph reads), else the nearest signal node at its
+  // road's ends within 40 m, else the old direction rule
+  const PT = signalPhases(roads);
+  const phaseFor = (nr, tx, tz) => {
+    const r = nr.road, fwd = tx * nr.ux + tz * nr.uz >= 0;
+    const h = PT.ahead(r.id, fwd ? r.b : r.a);
+    if (h) return PT.phaseAt(h.node, h.road, tx, tz);
+    let best = null, bd = 40;
+    for (const e of [r.a, r.b]) { const S = PT.nodes.get(e); if (!S) continue; const d = Math.hypot(S.x - nr.px, S.z - nr.pz); if (d < bd) { bd = d; best = e; } }
+    return best ? PT.phaseAt(best, r.id, tx, tz) : phaseOfDir(nr.ux, nr.uz);
+  };
   for (const p of points || []) {
     if (p.kind !== "traffic_signals" || +(p.tags?.layer || 0) > 0) continue;
     const nr = nearestRoad(roads, N, p.x, p.z);
     if (!nr || nr.d > 30) continue;
-    const phase = phaseOfDir(nr.ux, nr.uz);
     const j = junctionAhead(nr.road, N, deg, nr);
     if (opts.old) {
       // (old: two posts, the type's kerb, 4 m along either way, the head turned across the road toward its centre)
       for (const sd of [1, -1]) {
         const nx = -nr.uz * sd, nz = nr.ux * sd, off = kerbType(nr.road.type, sd) + 0.4;
         const tr = j && j.d > 1.5 ? [j.ux, j.uz] : [nr.ux * sd, nr.uz * sd];
-        out.push({ x: nr.px + nx * off + nr.ux * sd * 4, z: nr.pz + nz * off + nr.uz * sd * 4, yaw: Math.atan2(nx, nz), phase, tx: tr[0], tz: tr[1] });
+        out.push({ x: nr.px + nx * off + nr.ux * sd * 4, z: nr.pz + nz * off + nr.uz * sd * 4, yaw: Math.atan2(nx, nz), phase: phaseFor(nr, tr[0], tr[1]), tx: tr[0], tz: tr[1] });
       }
       continue;
     }
@@ -165,7 +176,7 @@ export function signalSites(points, roads, opts = {}) {
     const post = (tx, tz) => {
       const s = signalPost(nr.road, nr.px, nr.pz, tx, tz, o);
       if (!opts.pre) s.yaw = aimYaw(s, nr.road, N, nr.px, nr.pz, tx, tz);
-      return { ...s, phase, tx, tz, ...at };
+      return { ...s, phase: phaseFor(nr, tx, tz), tx, tz, ...at };
     };
     // (claude/tlights) a one-way street has one approach, its own flow (roads.json keeps the OSM way's a -> b): a point
     // near the junction at its EXIT got a post for traffic that never comes (K11: heads 60 deg off the cars that do)
