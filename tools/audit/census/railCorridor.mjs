@@ -97,7 +97,7 @@ globalThis.fetch = async (u, o) => {
 };
 if (!globalThis.OffscreenCanvas) globalThis.OffscreenCanvas = class { constructor(w, h) { this.width = w; this.height = h; }
   getContext() { return new Proxy({}, { get: (t, k) => (k === "getImageData" ? (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) : () => {}), set: () => true }); } };
-const { buildTileData } = await imp("viewer/tileData.js");
+const { tileData: buildTileData } = await imp("tools/gate/tileBuild.mjs");     // (the worker build through the gate tile cache, rule tile-cache)
 const { Heightmap } = await imp("viewer/heightmap.js");
 const { KIND, driveHeight, gather, heightClear, extendColliders, inRing2 } = await imp("viewer/drive/colliders.js");
 const { surfaceLayers } = await imp("viewer/drive/surfaceLayers.js");

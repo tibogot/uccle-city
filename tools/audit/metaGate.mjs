@@ -142,6 +142,32 @@ ok(nMeta > 0, `${nMeta} rows declare meta checks`);
   }
 }
 
+// ------------------------------------------------------------------ 5. the tile cache's code key covers the worker bundle
+// (rule tile-cache: the gate's tile cache keys a worker build on the import closure of viewer/tileWorker.js,
+// tools/gate/tileCache.mjs codeClosure; every file esbuild bundles into viewer/tileWorker.bundle.js must be in it, else
+// an edit to that file would not change the key and the cache would serve a stale tile)
+{
+  const req = createRequire(path.join(ROOT, "tools/worker/package.json"));
+  let esbuild = null;
+  try { esbuild = req("esbuild"); } catch {}
+  if (esbuild) {
+    const { codeClosure } = await import("../gate/tileCache.mjs");
+    const { CODE } = await import("../gate/tileBuild.mjs");
+    const mine = codeClosure(CODE);
+    let inputs = [], err = null;
+    try {
+      const r = await esbuild.build({ entryPoints: ["viewer/tileWorker.js"], bundle: true, write: false, metafile: true, format: "esm", target: "es2022", outfile: "meta-out/w.js", nodePaths: ["tools/worker/node_modules"], logLevel: "silent", absWorkingDir: ROOT });
+      inputs = Object.keys(r.metafile.inputs).map((f) => f.split(path.sep).join("/"));
+    } catch (e) { err = e.message; }
+    // a package file counts as its package.json (the closure keys a package by its version)
+    // (tools/worker/node_modules may be a junction: esbuild names its real path; a package is "pkg:<name>" on both sides)
+    const asKey = (f) => { const i = f.lastIndexOf("node_modules/"); if (i < 0) return f; const rest = f.slice(i + 13).split("/"); return `pkg:${rest[0].startsWith("@") ? rest.slice(0, 2).join("/") : rest[0]}`; };
+    const have = new Set(mine.files.map(asKey));
+    const missing = [...new Set(inputs.map(asKey))].filter((f) => !have.has(f));
+    ok(!err && inputs.length > 0 && !missing.length && !mine.missing.length, `the tile cache's code key (tools/gate/tileBuild.mjs CODE, ${mine.files.length} files) covers all ${inputs.length} inputs of the worker bundle (rule tile-cache)${err ? `: esbuild: ${err}` : ""}${missing.length ? `: not in the key: ${missing.slice(0, 5).join(", ")}` : ""}${mine.missing.length ? `; unresolved imports: ${mine.missing.slice(0, 5).join(", ")}` : ""}`);
+  }
+}
+
 // ------------------------------------------------------------------ 4. the generated indexes are current
 {
   const { rulesIndex, censusIndex } = await import("../docs/rulesIndex.mjs");

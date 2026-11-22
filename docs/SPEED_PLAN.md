@@ -65,7 +65,7 @@ Also: 5 rule renumberings, and 23 hand commits that only rebuild the worker bund
 5. row memo + `--changed` (done)
 6. timing robustness (done)
 7. parallel runner (done)
-8. tile cache / shared pass (measured, plan below; not built)
+8. tile cache (done, claude/tilecache: the worker build; the road stage still to do)
 9. bundle freshness + merge script (done, claude/speed1)
 10. headless runner (BIRDS, TRAFPARK, HEAP, JITTER first)
 11. old-switch retirement
@@ -151,34 +151,90 @@ See docs/WORKFLOW.md "Memo and --changed" and "Timing rows" for the how-to.
   stutter2's garden slices 11-20 ms, engine's idle garbage.
 
 
-## Job 8 (tile cache): measured, not built
+## Job 8 (tile cache): done in claude/tilecache
 
-Measured on 2026-11-20 (tools/road_audit/tile.mjs `loadTile`, I6 / E4 / B6 / F3, on a busy laptop):
-- **Cost.** The road stage (`buildRoadData`) takes 7.7-13 s a tile. It is about all of `loadTile`; reading the tile's
-  files is about 0.1 s. The gate builds it ~579 times for 120 distinct tiles.
-- **Size.** On I6 the data-only parts of the result serialize (v8) to 26.6 MB: `built` 15.4 MB, `parts` 8.9 MB,
-  `atlas` 1.2 MB, `surfaceData` 1.05 MB. That is ~3 GB for 120 tiles, per option set.
-- **Why it is not cloneable as is:**
-  - `net` holds `locate`, a closure;
-  - `prep` holds 11 closures (`classAt`, `nearKerb`, `rampAt`, `inside`...);
-  - the build **carves the heightmap in place** (`carvedCells` / `weldedCells`), so a cached result also needs the
-    carved `hm`;
-  - the rows call it with different options (`engineOnly`, `roadBend: false`, `paint`, `bandOnMeasured`, `tramfit`).
+See docs/WORKFLOW.md "Tile cache" for the how-to, docs/rules/tile-cache.md for the rule.
 
-**The plan, when it is worth the risk:**
-1. Split `buildRoadData` into a data stage (typed arrays + JSON, carved heights included) and a cheap `rehydrate(data)`
-   that rebuilds `net.locate` and `prep`'s closures from the data.
-2. `tools/audit/tileCache.mjs`:
-   - key = sha256(the tile core's source closure from the tracer's module list + the tile's input files + the canonical
-     options + node version);
-   - value = `v8.serialize(data)` in `.cache/tiles/`, capped at ~4 GB, LRU.
-3. A parity check: for 3 tiles, every field of rehydrated == fresh build. It fails the gate on any difference.
-4. Wire `ground`, `drivecheck` and `railcorridor` first.
+- **What is cached:** the tile worker's whole build in node (`viewer/tileData.js` `buildTileData`), through
+  `tools/gate/tileBuild.mjs` `tileData(entry, base)`. Wired: drivecheck, moverground, ground, gardenlanes,
+  railcorridor, colliders, balconies, zfight, motofeel, deckrails, deckjoins (driveCheck.mjs, colliderAudit.mjs,
+  census/railCorridor.mjs, census/moverGround.mjs, census/lib_mesh.mjs `buildTile`, roadfix/tile.mjs `buildTile`,
+  moto/feelTest.mjs). They share one entry (the boot3 default): one build of a tile serves them all.
+- **Key** (`tools/gate/tileCache.mjs`): the import closure of `viewer/tileWorker.js` (the bundle's inputs; `meta`
+  checks it against esbuild's metafile), the canonical entry (keepNet out: it only adds), node version,
+  `location.search`, the OffscreenCanvas stand-in's behaviour, and every file the build fetched / read / listed /
+  tested, recorded while it built and re-hashed at each lookup (the last 8 input sets per entry).
+- **Value:** plain data only (v8 structured clone, deflated level 1: a 45-60 MB tile is 12-15 MB; 120 tiles 1.1 GB).
+  keepNet's live objects are not plain: `deckRings`, `net.streetModel.segments` and `hm` (`Heightmap.from`) are kept;
+  any other `net.*` throws.
+- **Safety:** atomic temp + rename; a per-tile build lock (the rows walk the tiles in the same order: without it they
+  all built A5 together); no store when an input changed mid-build or the disk has < 10 GB free; LRU cap 4 GB
+  (`TILE_CACHE_MB`); `--no-tile-cache` / `TILE_CACHE=0`; `TILE_CACHE=verify`.
+- **Checks:** the `tilecache` row (20 mechanism checks on a synthetic build + I6 / H6 / E9 cached == fresh byte for
+  byte, canonical sha256 with wall-time fields left out); `meta` (code key covers the bundle). Every wired row's output
+  is the same with the cache off, cold and warm (2-tile runs of each, 2026-11-22; only colliders' ms column differs).
+- **Not cached: the road stage** (`tools/road_audit/tile.mjs` `loadTile`, used by roads, streetlanes, gates, markings,
+  markings2, tramrails, streetprops, trafpark, tlights, trafmix...). Its result holds closures (`net.locate`,
+  `net.lineFit`, `prep`'s 11, `model.junctionAt`) over local state; rebuilding them is most of the stage. Caching it
+  needs the data / rehydrate split inside roadBuild.js ("Next: the road stage" below), its own job.
 
-When the tile core did not change, the memo (job 5) already skips every tile row, so a cache adds nothing there. Its
-gain is on core runs: the same tile built ~4.8 times inside one gate run (8-12 min). That needs step 1 inside the
-worker's own code path, and that path is what every row tests. So it waits for its own job, with the parity check
-first.
+**Hit cost:** 0.08-0.16 s a tile (read + sha1 + inflate + deserialize) against 4-10 s to build it.
+
+**Numbers** (2026-11-22, the 16 GB laptop, two other jobs' gates running all along: 100 % CPU, ~2 GB free; the gate's
+own defaults, heavy <= 3):
+
+The `--changed --base 22051e84` set of this branch (19 rows), wall time in s:
+
+| row | no cache | cold (empty cache) | warm |
+|---|---|---|---|
+| drivecheck | 1073.5 | 590.2 | 86.4 |
+| ground | 986.7 | 86.0 | 100.4 |
+| moverground | 938.6 | 35.9 | 70.5 |
+| gardenlanes | 757.2 | 37.2 | 57.3 |
+| railcorridor | 424.4 | 229.7 | 38.8 |
+| motofeel | 272.4 | 59.0 | 52.3 |
+| deckrails | 192.7 | 77.9 | 9.6 |
+| zfight | 152.5 | 32.7 | 31.0 |
+| balconies | 123.4 | 33.4 | 6.9 |
+| colliders | 60.7 | 7.8 | 8.3 |
+| deckjoins | 57.3 | 37.0 | 2.1 |
+| tilecache | (n/a) | 137.3 | 69.0 |
+| roads (not cached) | 693.8 | 252.0 | 310.6 |
+| streetlanes (not cached) | 631.3 | 320.1 | 279.9 |
+| gates (not cached) | 458.1 | 244.5 | 266.1 |
+| heroshell (not cached) | 295.4 | 137.2 | 122.2 |
+| **gate wall** | **3042** | **1329** | **990** |
+
+- The no-cache run was the most loaded: the rows that do not use the cache (roads, streetlanes, gates, heroshell) ran
+  1.9-2.8x slower in it than in the two cache runs. Part of that is the cache itself (the tile rows no longer all build
+  at once, so the others get the CPU), part the other jobs; this laptop cannot separate the two, so read the no-cache
+  column as an upper bound.
+- Cold, the row that reaches a tile first builds it (drivecheck, railcorridor: little or no gain) and the rows behind
+  it read it (ground, moverground, gardenlanes, zfight, colliders: 5-20x even after a 2.2x load correction). Warm,
+  every wired row is 4-25x faster after that correction (drivecheck 1073 -> 86 s, railcorridor 424 -> 39 s).
+- Cold: 572 tile builds asked, 431 from the cache, 141 built (120 tiles + the roadfix entry's 21). Warm: 572 / 572.
+- What is left of the warm gate is the road-stage rows (roads, streetlanes, gates: ~5 min each) and drivecheck's
+  own walking.
+
+The full set (`--full`, 64 rows, all PASS both times), wall time:
+
+| mode | wall | tile builds |
+|---|---|---|
+| `--full`, cold (empty cache) | 2222 s (37.0 min) | 572 asked, 431 from the cache, 141 built |
+| `--full`, warm | 1288 s (21.5 min) | 572 / 572 from the cache |
+| (`--full` on 2026-11-20 before this job, another day's load) | (73.2 min) | (every tile built by every row) |
+
+Per wired row, cold -> warm (s): drivecheck 579 -> 56, railcorridor 276 -> 20, moverground 241 -> 32, deckrails
+127 -> 10, ground 138 -> 90, gardenlanes 53 -> 45, tilecache 81 -> 39; the rows that do not use the cache move with
+the load only (roads 437 -> 303, markings 183 -> 299, tramrails 146 -> 270). The full table of both runs: the gate's
+own output (`node tools/audit/mergeGate.mjs --full`, its last lines say `tile cache: ...`).
+
+**Next: the road stage.** It is the warm gate's longest rows now (roads, gates, streetlanes, markings, tramrails,
+trafpark, streetprops: 4-5 min each). Caching it needs `buildRoadData` split into a data stage (typed arrays + JSON,
+carved heights included) and a cheap `rehydrate(data)` that rebuilds `net.locate`, `net.lineFit`, `prep`'s closures
+and `model.junctionAt`, inside the worker's own code path, then `cached({ kind: "road", ... })` in
+tools/road_audit/tile.mjs with the same parity row (the rows call it with different options: `engineOnly`,
+`roadBend: false`, `paint`, `bandOnMeasured`, `tramfit`, each its own key).
 
 ## Branch conversion
 
