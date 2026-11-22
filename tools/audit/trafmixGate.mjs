@@ -322,23 +322,34 @@ for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS
     // claude/signals1 took it to 0: the phase from the road, rule signal-phase-road (signals.js signalPhases); never raise)
     const PHASE_MAX = 0;
     // (rule signal-phase-road: the drawn posts and the sim read ONE table: every post of the tiles' cores shows the
-    // phase of the sim's signal approach it faces, the lane ending within 25 m of the post's stop point, heading its way)
+    // phase of the sim's signal approach it faces: the lane into the signal node its traffic meets (signals.js ahead)
+    // running along that node's arm road (the least mean distance of its last 20 m to the road), heading its way)
     {
       const { signalSites } = await import(pathToFileURL(join(ROOT, "viewer/streets/signalPlace.js")).href);
+      const { signalPhases, nearestRoad } = await import(pathToFileURL(join(ROOT, "viewer/traffic/signals.js")).href);
       let posts = 0, met = 0; const bad = [];
-      for (const { T, g, roads, feats, bounds: B } of tileG) for (const st of signalSites(feats.points, roads, {})) {
-        if (!(st.x >= B.x0 && st.x < B.x1 && st.z >= B.z0 && st.z < B.z1)) continue;
-        posts++;
-        let best = -1, bd = 25 * 25;
-        for (let L = 0; L < g.paths; L++) {
-          if (g.kind[L] || g.ctrl[L] !== 1) continue;
-          const e = g.off[L + 1] - 1, ex = g.xy[2 * e], ez = g.xy[2 * e + 1], dx = ex - g.xy[2 * e - 2], dz = ez - g.xy[2 * e - 1], dl = Math.hypot(dx, dz) || 1;
-          if ((dx * st.tx + dz * st.tz) / dl < 0.7) continue;
-          const d = (ex - st.stop[0]) ** 2 + (ez - st.stop[1]) ** 2;
-          if (d < bd) { bd = d; best = L; }
+      for (const { T, g, roads, feats, bounds: B } of tileG) {
+        const PT = signalPhases(roads), N = new Map(roads.nodes.map((n) => [n.id, n])), byId = new Map(roads.roads.map((r) => [r.id, r]));
+        for (const st of signalSites(feats.points, roads, {})) {
+          if (!(st.x >= B.x0 && st.x < B.x1 && st.z >= B.z0 && st.z < B.z1)) continue;
+          posts++;
+          const nr = nearestRoad(roads, N, st.stop[0], st.stop[1]); if (!nr) continue;
+          const h = PT.ahead(nr.road.id, st.tx * nr.ux + st.tz * nr.uz >= 0 ? nr.road.b : nr.road.a), R = h && byId.get(h.road);
+          if (!R) continue;
+          const poly = [N.get(R.a), ...R.pts, N.get(R.b)].filter(Boolean);
+          const dRoad = (x, z) => { let m = Infinity; for (let k = 1; k < poly.length; k++) { const ax = poly[k - 1].x, az = poly[k - 1].z, dx = poly[k].x - ax, dz = poly[k].z - az, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)); m = Math.min(m, Math.hypot(ax + dx * t - x, az + dz * t - z)); } return m; };
+          let best = -1, bd = 8;
+          for (let L = 0; L < g.paths; L++) {
+            if (g.kind[L] || g.ctrl[L] !== 1 || g.jnode[L] < 0 || g.jnodes[g.jnode[L]].id !== h.node) continue;
+            const e = g.off[L + 1] - 1, dx = g.xy[2 * e] - g.xy[2 * e - 2], dz = g.xy[2 * e + 1] - g.xy[2 * e - 1];
+            if ((dx * st.tx + dz * st.tz) / (Math.hypot(dx, dz) || 1) < 0.3) continue;
+            let sum = 0, n = 0;
+            for (let k = e; k >= g.off[L] && g.cum[e] - g.cum[k] <= 20; k--) { sum += dRoad(g.xy[2 * k], g.xy[2 * k + 1]); n++; }
+            if (n && sum / n < bd) { bd = sum / n; best = L; }
+          }
+          if (best < 0) continue;
+          met++; if (g.phase[best] !== st.phase) bad.push(`${T} (${st.x.toFixed(0)}, ${st.z.toFixed(0)})`);
         }
-        if (best < 0) continue;
-        met++; if (g.phase[best] !== st.phase) bad.push(`${T} (${st.x.toFixed(0)}, ${st.z.toFixed(0)})`);
       }
       check("posts and lanes on one phase", met > posts * 0.5 && !bad.length, `${posts} posts in the tile cores, ${met} facing a signal approach lane, ${bad.length} showing another phase than it${bad.length ? ": " + bad.slice(0, 6).join(", ") : ""}`);
     }
