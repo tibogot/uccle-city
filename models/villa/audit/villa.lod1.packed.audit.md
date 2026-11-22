@@ -1,26 +1,26 @@
 # Mesh audit (packed): villa.lod1
 
-16,002 triangles, 10,693 welded vertices, 2,754 open edges, 667,654 rays, 9754 ms.
+16,005 triangles, 10,684 welded vertices, 2,694 open edges, 651,452 rays, 9156 ms.
 
-**7794 blocking**, 5761 warnings. NOT CLEAN.
+**7683 blocking**, 5722 warnings. NOT CLEAN.
 
 | check | severity | count |
 |---|---|---|
 | coplanar | block | 18 |
 | depth | block | 3 |
 | crossing | block | 2 |
-| leak | block | 32 |
+| leak | block | 27 |
 | flipped | block | 7 |
-| streak | block | 6475 |
-| bentflat | block | 1257 |
+| streak | block | 6379 |
+| bentflat | block | 1247 |
 | near | warn | 3 |
-| sliver | warn | 5361 |
-| nonmanifold | warn | 69 |
-| tjunction | warn | 326 |
-| degenerate | warn | 2 |
-| seam | info | 264 |
-| opening | info | 1135 |
-| backtoback | info | 417 |
+| sliver | warn | 5345 |
+| nonmanifold | warn | 70 |
+| tjunction | warn | 301 |
+| degenerate | warn | 3 |
+| seam | info | 258 |
+| opening | info | 1137 |
+| backtoback | info | 391 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -32,9 +32,10 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 26.25, 121.85, 23.00 | Villa_lod1/render_white + Villa_lod1/render_white | 0 | 0.7 | 0 | 260 | 2.43 | true | 0 + 0 + 1 |
 | 14.13, 118.41, -11.40 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0 | 4.5 | 0 | 260 | 2.43 | false | 0 + 0 + 1 |
 | 35.88, 118.41, -7.85 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0 | 3.4 | 2.5 | 260 | 2.43 | false | 0 + 0 + -1 |
-| 43.16, 118.41, -14.96 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 8.4 | 1 | 260 | 2.43 | false | 0 + 1 + -0.01 |
+| 43.16, 118.41, -14.96 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 8.4 | 0.7 | 260 | 2.43 | false | 0 + 1 + 0 |
 | 38.34, 118.37, 0.96 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 9.2 | 0 | 260 | 2.43 | false | 0 + -1 + 0 |
 | 38.34, 118.39, 0.96 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 0.4 | 0.9 | 260 | 2.43 | true | 0 + 0 + 1 |
+| 44.85, 117.69, 4.99 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 20.7 | 3.6 | 260 | 2.43 | false | -0.67 + 0 + 0.74 |
 | 45.22, 117.88, -0.99 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 0.8 | 0 | 260 | 2.43 | false | 0 + 0 + -1 |
 | 45.22, 117.51, -0.99 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 35.1 | 1.3 | 260 | 2.43 | false | 0 + 0 + -1 |
 | 45.21, 117.88, -0.99 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 0 | 3.1 | 1.5 | 260 | 2.43 | false | 0.03 + 0 + -1 |
@@ -45,7 +46,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.20, 118.73, 12.06 | Villa_lod1/metal_dark + Villa_lod1/metal_dark | 0 | 0.7 | 0 | 260 | 2.43 | false | 1 + 0 + 0 |
 | 14.10, 124.77, -19.96 | Villa_lod1/metal_dark + Villa_lod1/metal_dark | 0 | 1.1 | 3.8 | 260 | 2.43 | false | -1 + 0 + -0.07 |
 | 37.36, 126.31, -7.70 | Villa_lod1/metal_dark + Villa_lod1/metal_dark | 0 | 9 | 0 | 260 | 2.43 | false | 0 + -1 + 0 |
-| 13.92, 118.76, -14.79 | Villa_lod1/hedge + Villa_lod1/hedge | 0 | 1.9 | 5 | 260 | 2.43 | true | -1 + 0 + -0.03 |
 
 ## depth (block, 3)
 
@@ -62,7 +62,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.90, 118.41, -7.85 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 6.3 | 0 |
 | 38.43, 118.40, 0.96 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 7 | 0.4 |
 
-## leak (block, 32)
+## leak (block, 27)
 
 | at | part | slit_mm | facing | edge_m |
 |---|---|---|---|---|
@@ -82,22 +82,17 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 9.90, 117.04, 11.25 | Villa_lod1/render_white | 4 | 1 + 0 + 0 | 7.3 |
 | 9.90, 117.04, 13.35 | Villa_lod1/render_white | 4 | 1 + 0 + 0 | 3.4 |
 | 14.00, 118.35, 9.10 | Villa_lod1/stone_blue | 4 | -1 + 0 + 0 | 0.301 |
-| 44.50, 117.85, 5.00 | Villa_lod1/stone_blue | 4 | 1 + 0 + 0 | 0.7 |
+| 35.85, 118.40, -23.00 | Villa_lod1/stone_blue | 4 | 0 + 0 + -1 | 2.4 |
 | 37.50, 126.30, 2.15 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 1.4 |
 | 37.50, 126.30, 2.85 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 0.7 |
-| 37.50, 126.30, 3.55 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 2.1 |
-| 37.50, 126.30, 5.65 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 4.2 |
+| 37.50, 126.30, 3.55 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 6.3 |
 | 37.50, 126.30, 9.85 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 3.5 |
-| 37.50, 126.30, 13.35 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 1.4 |
-| 37.50, 126.30, 14.75 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 1.399 |
-| 21.65, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 2.101 |
-| 18.55, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 2.8 |
-| 21.75, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 4.2 |
-| 25.95, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 2.8 |
+| 37.50, 126.30, 13.35 | Villa_lod1/wood_cladding | 4 | 1 + 0 + 0 | 2.8 |
+| 18.55, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 9.7 |
+| 21.75, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 7 |
 | 28.75, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 5.3 |
 | 37.35, 126.30, 23.50 | Villa_lod1/wood_cladding | 4 | 0 + 0 + 1 | 0.4 |
-| 18.55, 126.30, -8.00 | Villa_lod1/wood_cladding | 4 | 0 + 0 + -1 | 9.1 |
-| 29.35, 126.30, -8.00 | Villa_lod1/wood_cladding | 4 | 0 + 0 + -1 | 12.9 |
+| 18.55, 126.30, -8.00 | Villa_lod1/wood_cladding | 4 | 0 + 0 + -1 | 22 |
 
 ## flipped (block, 7)
 
@@ -107,11 +102,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 13.40, 117.88, 9.60 | Villa_lod1/stone_blue | -0.53 | 0.00613 |
 | 12.80, 116.01, 11.10 | Villa_lod1/stone_blue | -0.82 | 0.00702 |
 | 13.39, 115.95, 11.71 | Villa_lod1/stone_blue | -0.92 | 0.00665 |
-| 41.62, 118.40, -14.96 | Villa_lod1/stone_blue | -0.61 | 0.12748 |
+| 41.62, 118.40, -14.96 | Villa_lod1/stone_blue | -0.61 | 0.12752 |
 | 9.47, 117.04, 23.51 | Villa_lod1/glow | -0.56 | 0.00147 |
 | 9.47, 117.07, 23.50 | Villa_lod1/glow | -0.38 | 0.0017 |
 
-## streak (block, 6475)
+## streak (block, 6379)
 
 | at | part | why | deg | area | spread | aspect | longest |
 |---|---|---|---|---|---|---|---|
@@ -126,10 +121,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 29.80, 114.83, 16.30 | Villa_lod1/render_white | corner normal faces away | 90 | 0.0003 |  |  |  |
 | 29.60, 115.02, 16.30 | Villa_lod1/render_white | corner normal faces away | 90 | 0.1713 |  |  |  |
 | 29.60, 115.44, 16.30 | Villa_lod1/render_white | corner normal faces away | 90 | 0.2098 |  |  |  |
-| 29.80, 115.91, 16.30 | Villa_lod1/render_white | corner normal faces away | 90 | 0.5907 |  |  |  |
+| 29.60, 115.91, 16.30 | Villa_lod1/render_white | corner normal faces away | 90 | 0.2099 |  |  |  |
+| 29.80, 116.56, 16.30 | Villa_lod1/render_white | corner normal faces away | 90 | 0.9654 |  |  |  |
 | 30.00, 115.28, 21.90 | Villa_lod1/render_white | corner normal faces away | 90 | 0.012 |  |  |  |
 | 30.00, 115.33, 21.80 | Villa_lod1/render_white | corner normal faces away | 90 | 0.0213 |  |  |  |
-| 30.00, 115.85, 21.90 | Villa_lod1/render_white | corner normal faces away | 90 | 0.2191 |  |  |  |
+| 30.00, 115.61, 21.90 | Villa_lod1/render_white | corner normal faces away | 90 | 0.1142 |  |  |  |
 | 11.66, 117.10, 5.50 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 60 | 419 | 3.37 |
 | 11.81, 118.22, 5.50 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 45 | 14 | 3.37 |
 | 11.74, 117.10, 5.50 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 45 | 14 | 3.37 |
@@ -149,16 +145,15 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 12.20, 118.10, 9.20 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 60 | 11 | 3.21 |
 | 12.20, 117.04, 9.10 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 60 | 11 | 3.21 |
 | 11.65, 116.97, 9.60 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 60 | 366 | 3.04 |
+| 12.19, 115.96, 9.50 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 60 | 38 | 0.29 |
 | 11.65, 116.97, 9.50 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 45 | 11 | 3.05 |
 | 11.65, 117.99, 9.40 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 90 | 11 | 3.05 |
-| 12.20, 117.99, 9.50 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 90 | 10 | 3.04 |
-| 12.20, 116.97, 9.40 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 60 | 11 | 3.04 |
-| 11.83, 115.95, 9.89 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 60 | 66 | 0.54 |
-| 11.65, 116.91, 9.80 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 45 | 10 | 2.89 |
+| 12.19, 117.99, 9.50 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 90 | 10 | 3.05 |
+| 12.19, 116.97, 9.40 | Villa_lod1/render_white | stretched triangle with diverging corner normals |  |  | 90 | 10 | 3.05 |
 
-(6435 more in the JSON)
+(6339 more in the JSON)
 
-## bentflat (block, 1257)
+## bentflat (block, 1247)
 
 | at | part | deg | area | region_m2 |
 |---|---|---|---|---|
@@ -170,7 +165,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 11.84, 116.97, 9.31 | Villa_lod1/render_white | 45 | 0.8132 | 1.62 |
 | 11.83, 117.99, 9.60 | Villa_lod1/render_white | 44.1 | 0.8214 | 1.63 |
 | 12.01, 117.87, 9.61 | Villa_lod1/render_white | 45 | 0.7912 | 1.56 |
-| 11.83, 116.91, 9.61 | Villa_lod1/render_white | 45 | 0.7673 | 1.56 |
+| 11.83, 116.91, 9.61 | Villa_lod1/render_white | 45.8 | 0.7651 | 1.56 |
 | 11.83, 117.87, 9.89 | Villa_lod1/render_white | 45 | 0.7889 | 1.57 |
 | 12.01, 116.91, 9.89 | Villa_lod1/render_white | 45 | 0.7793 | 1.57 |
 | 12.01, 117.75, 9.90 | Villa_lod1/render_white | 45 | 0.7261 | 1.45 |
@@ -203,7 +198,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.80, 118.30, 5.90 | Villa_lod1/stone_blue | 44.8 | 0.1775 | 0.35 |
 | 14.40, 118.20, 5.90 | Villa_lod1/stone_blue | 45 | 0.1752 | 0.35 |
 
-(1217 more in the JSON)
+(1207 more in the JSON)
 
 ## near (warn, 3)
 
@@ -213,22 +208,19 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.88, 118.41, -22.69 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 2.87 | 2 | 1.3 | 260 | 2.43 | false | -0.02 + 0 + -1 |
 | 35.87, 118.41, -22.69 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 2.87 | 4.8 | 1.3 | 260 | 2.43 | false | -0.02 + 0 + -1 |
 
-## sliver (warn, 5361)
+## sliver (warn, 5345)
 
 | at | part | aspect | longest |
 |---|---|---|---|
 | 34.00, 121.07, -23.00 | Villa_lod1/render_white | 49 | 8.124 |
 | 25.90, 121.70, 23.00 | Villa_lod1/render_white | 7917 | 1.522 |
-| 36.00, 125.93, -17.93 | Villa_lod1/render_white | 167 | 8.3 |
+| 36.00, 125.93, -17.83 | Villa_lod1/render_white | 161 | 8 |
 | 36.00, 125.93, -10.60 | Villa_lod1/render_white | 135 | 6.7 |
-| 36.00, 120.23, -8.10 | Villa_lod1/render_white | 46 | 3.603 |
-| 36.00, 122.87, -8.05 | Villa_lod1/render_white | 42 | 2.105 |
-| 36.00, 121.98, -3.60 | Villa_lod1/render_white | 256 | 12.75 |
-| 36.00, 121.97, 0.65 | Villa_lod1/render_white | 256 | 12.75 |
+| 36.00, 125.92, -11.20 | Villa_lod1/render_white | 900 | 5.6 |
+| 36.00, 121.97, -3.60 | Villa_lod1/render_white | 256 | 12.75 |
+| 36.00, 121.98, 0.65 | Villa_lod1/render_white | 256 | 12.75 |
 | 36.00, 121.98, 5.97 | Villa_lod1/render_white | 58 | 2.9 |
-| 36.00, 119.43, 7.93 | Villa_lod1/render_white | 52 | 1.902 |
-| 36.00, 119.90, 7.93 | Villa_lod1/render_white | 97 | 2.602 |
-| 36.00, 120.37, 7.93 | Villa_lod1/render_white | 156 | 3.301 |
+| 36.00, 120.77, 7.93 | Villa_lod1/render_white | 63 | 2.103 |
 | 36.00, 121.98, 12.90 | Villa_lod1/render_white | 295 | 14.7 |
 | 36.00, 121.97, 17.70 | Villa_lod1/render_white | 301 | 14.7 |
 | 14.05, 118.70, 15.17 | Villa_lod1/render_white | 63 | 9.501 |
@@ -247,20 +239,23 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.10, 122.67, -12.60 | Villa_lod1/render_white | 43 | 6.401 |
 | 14.05, 120.53, -11.40 | Villa_lod1/render_white | 43 | 6.401 |
 | 14.10, 122.67, -11.40 | Villa_lod1/render_white | 43 | 6.401 |
-| 35.90, 122.93, -22.70 | Villa_lod1/render_white | 45 | 6.801 |
 | 35.95, 120.67, -22.70 | Villa_lod1/render_white | 45 | 6.801 |
+| 35.90, 122.93, -22.70 | Villa_lod1/render_white | 45 | 6.801 |
 | 35.95, 119.90, -8.15 | Villa_lod1/render_white | 64 | 2.604 |
 | 35.95, 120.37, -8.15 | Villa_lod1/render_white | 104 | 3.303 |
-| 35.90, 121.53, -8.15 | Villa_lod1/render_white | 41 | 6.1 |
+| 35.95, 121.77, -8.15 | Villa_lod1/render_white | 88 | 6.801 |
+| 35.90, 122.93, -8.15 | Villa_lod1/render_white | 45 | 6.801 |
 | 35.90, 125.20, -20.63 | Villa_lod1/render_white | 69 | 3.803 |
 | 35.95, 125.20, -18.53 | Villa_lod1/render_white | 58 | 8.7 |
 | 35.90, 125.20, -16.80 | Villa_lod1/render_white | 114 | 4.903 |
-| 35.95, 121.32, -7.85 | Villa_lod1/render_white | 73 | 1.657 |
-| 35.95, 121.95, -3.60 | Villa_lod1/render_white | 85 | 12.751 |
+| 35.90, 125.20, -11.20 | Villa_lod1/render_white | 114 | 4.902 |
+| 35.90, 125.20, -10.27 | Villa_lod1/render_white | 58 | 3.503 |
+| 35.95, 125.20, -9.02 | Villa_lod1/render_white | 147 | 2.355 |
+| 35.95, 120.07, 4.90 | Villa_lod1/render_white | 42 | 2.105 |
 
-(5321 more in the JSON)
+(5305 more in the JSON)
 
-## nonmanifold (warn, 69)
+## nonmanifold (warn, 70)
 
 | at | part | uses |
 |---|---|---|
@@ -270,7 +265,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 13.10, 115.95, 11.71 | Villa_lod1/stone_blue | 4 |
 | 43.35, 118.39, -14.96 | Villa_lod1/stone_blue | 4 |
 | 43.35, 118.39, 0.97 | Villa_lod1/stone_blue | 4 |
-| 14.15, 118.43, 4.56 | Villa_lod1/metal_dark | 4 |
+| 44.85, 117.75, 4.99 | Villa_lod1/stone_blue | 4 |
+| 14.15, 118.40, 4.56 | Villa_lod1/metal_dark | 4 |
 | 14.15, 121.40, 4.56 | Villa_lod1/metal_dark | 4 |
 | 14.15, 121.40, 5.44 | Villa_lod1/metal_dark | 4 |
 | 14.15, 118.40, 5.44 | Villa_lod1/metal_dark | 4 |
@@ -303,34 +299,32 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.85, 121.95, 7.84 | Villa_lod1/metal_dark | 4 |
 | 35.85, 118.40, 7.84 | Villa_lod1/metal_dark | 4 |
 | 35.85, 118.40, 8.06 | Villa_lod1/metal_dark | 4 |
-| 35.85, 121.95, 8.06 | Villa_lod1/metal_dark | 4 |
 
-(29 more in the JSON)
+(30 more in the JSON)
 
-## tjunction (warn, 326)
+## tjunction (warn, 301)
 
 | at | part | edge_m |
 |---|---|---|
-| 14.00, 122.00, 5.20 | Villa_lod1/render_white | 13.9 |
+| 14.00, 118.40, -8.40 | Villa_lod1/render_white | 15.9 |
+| 14.00, 122.00, -7.00 | Villa_lod1/render_white | 13.9 |
 | 14.00, 121.80, 5.90 | Villa_lod1/render_white | 3.6 |
 | 14.00, 122.00, 7.70 | Villa_lod1/render_white | 3.2 |
 | 14.00, 121.80, 9.10 | Villa_lod1/render_white | 0.3 |
-| 14.00, 119.60, 9.10 | Villa_lod1/render_white | 2.6 |
-| 14.00, 122.00, 12.60 | Villa_lod1/render_white | 5.6 |
-| 14.00, 118.40, 15.40 | Villa_lod1/render_white | 9.5 |
+| 14.00, 118.40, 12.60 | Villa_lod1/render_white | 9.5 |
+| 14.00, 122.00, 12.60 | Villa_lod1/render_white | 2.8 |
 | 14.00, 121.40, 21.50 | Villa_lod1/render_white | 0.7 |
-| 25.90, 118.40, -23.00 | Villa_lod1/render_white | 7 |
-| 30.10, 118.40, -23.00 | Villa_lod1/render_white | 5 |
+| 14.00, 122.00, 20.30 | Villa_lod1/render_white | 9 |
+| 30.80, 118.40, -23.00 | Villa_lod1/render_white | 5 |
+| 33.60, 118.40, -23.00 | Villa_lod1/render_white | 3 |
 | 14.70, 118.40, 23.00 | Villa_lod1/render_white | 1.4 |
-| 21.70, 118.40, 23.00 | Villa_lod1/render_white | 1.4 |
+| 22.40, 122.00, 23.00 | Villa_lod1/render_white | 3.7 |
 | 24.00, 121.40, 23.00 | Villa_lod1/render_white | 0.7 |
 | 32.90, 118.40, 23.00 | Villa_lod1/render_white | 0.801 |
 | 33.00, 118.70, 23.00 | Villa_lod1/render_white | 0.5 |
-| 33.60, 122.00, 23.00 | Villa_lod1/render_white | 2.799 |
-| 36.00, 121.95, -7.85 | Villa_lod1/render_white | 0.3 |
 | 36.00, 122.00, -7.70 | Villa_lod1/render_white | 12.75 |
 | 36.00, 121.95, 5.00 | Villa_lod1/render_white | 0.3 |
-| 36.00, 122.00, 5.60 | Villa_lod1/render_white | 2.9 |
+| 36.00, 122.00, 6.30 | Villa_lod1/render_white | 2.9 |
 | 36.00, 121.95, 8.00 | Villa_lod1/render_white | 0.3 |
 | 36.00, 122.00, 8.40 | Villa_lod1/render_white | 14.7 |
 | 12.30, 126.00, -4.00 | Villa_lod1/render_white | 30.9 |
@@ -351,95 +345,102 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 19.50, 114.95, 17.50 | Villa_lod1/render_white | 0.457 |
 | 19.50, 114.95, 18.30 | Villa_lod1/render_white | 0.455 |
 | 19.60, 115.03, 16.30 | Villa_lod1/render_white | 0.527 |
+| 20.30, 114.87, 16.30 | Villa_lod1/render_white | 0.558 |
 
-(286 more in the JSON)
+(261 more in the JSON)
 
-## degenerate (warn, 2)
+## degenerate (warn, 3)
 
 | at | part | edge |
 |---|---|---|
-| 24.73, 115.40, 16.30 | Villa_lod1/render_white | 2.8008 |
+| 30.00, 115.40, 21.00 | Villa_lod1/render_white | 1.4004 |
+| 25.03, 118.20, 23.00 | Villa_lod1/stone_blue | 1.9004 |
 | 14.30, 125.70, -21.57 | Villa_lod1/concrete_soffit | 2.7002 |
 
-## seam (info, 264)
+## seam (info, 258)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
-| 36.00, 118.39, -7.84 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 25.56 | 65 | 83.8 |
-| 14.00, 122.00, 9.45 | Villa_lod1/render_white + Villa_lod1/concrete_soffit | 50.85 | 60 | 90 |
-| 36.00, 118.38, -17.00 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 17.77 | 53 | 82.2 |
-| 36.00, 118.38, 8.38 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 16.08 | 47 | 88.7 |
-| 12.00, 122.00, -6.30 | Villa_lod1/wood_cladding + Villa_lod1/concrete_soffit | 60.3 | 41 | 90 |
-| 38.15, 118.40, -14.80 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 16.52 | 38 | 84.9 |
+| 36.00, 118.39, -7.84 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 25.56 | 66 | 83.8 |
+| 14.00, 122.00, -0.55 | Villa_lod1/render_white + Villa_lod1/concrete_soffit | 68.95 | 56 | 90 |
+| 36.00, 118.38, -17.00 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 17.77 | 51 | 82.2 |
+| 36.00, 118.38, 8.38 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 16.08 | 48 | 88.7 |
+| 38.15, 118.40, -14.54 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 16.52 | 44 | 83.3 |
+| 12.00, 122.00, 5.95 | Villa_lod1/wood_cladding + Villa_lod1/concrete_soffit | 54 | 39 | 90 |
+| 38.40, 118.40, -14.97 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 6.54 | 31 | 78.4 |
 | 12.30, 126.00, 0.00 | Villa_lod1/render_white + Villa_lod1/concrete_soffit | 88 | 28 | 90 |
 | 45.57, 117.27, 4.99 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 7.42 | 24 | 25.5 |
 | 36.00, 118.39, 5.01 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 5.86 | 23 | 83.4 |
-| 38.35, 118.40, -14.97 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 6.54 | 22 | 78.4 |
 | 45.21, 117.27, 4.99 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 13.22 | 22 | 27.1 |
-| 14.00, 118.39, -12.59 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 1.22 | 19 | 88.6 |
-| 15.05, 118.05, 18.30 | Villa_lod1/render_white + Villa_lod1/concrete_soffit | 16.2 | 18 | 90 |
-| 43.35, 118.40, -7.30 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 16.54 | 17 | 82.7 |
-| 38.30, 118.40, 0.97 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 6.53 | 15 | 76.9 |
-| 36.00, 118.38, 16.00 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 6.71 | 14 | 90 |
-| 35.85, 118.41, -22.64 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 28.98 | 14 | 80.8 |
-| 14.10, 118.42, 5.35 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 1.87 | 13 | 85 |
-| 14.10, 118.42, -20.10 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 2.47 | 13 | 82.7 |
+| 15.05, 118.05, 18.30 | Villa_lod1/render_white + Villa_lod1/concrete_soffit | 17.6 | 20 | 90 |
+| 14.00, 118.38, -11.44 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 1.22 | 19 | 88.6 |
+| 43.35, 118.40, -8.02 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 16.54 | 17 | 82.7 |
+| 38.30, 118.40, 0.97 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 6.53 | 16 | 76.9 |
+| 14.10, 118.42, 5.34 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 1.88 | 13 | 84.4 |
+| 14.10, 118.42, -20.09 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 2.48 | 13 | 82.7 |
 | 14.10, 118.42, -15.99 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 2.28 | 13 | 81.4 |
 | 14.10, 118.42, -11.58 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 2.27 | 13 | 83.1 |
+| 35.85, 118.41, -22.64 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 28.98 | 13 | 80.8 |
 | 35.85, 118.40, 2.18 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 25.38 | 13 | 80.6 |
 | 35.85, 118.40, 7.32 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 5.69 | 13 | 81.2 |
 | 35.85, 118.40, 19.86 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 29.28 | 13 | 83.1 |
-| 14.00, 121.88, 5.20 | Villa_lod1/render_white + Villa_lod1/metal_dark | 4.68 | 12 | 90 |
-| 35.90, 118.57, 22.70 | Villa_lod1/render_white + Villa_lod1/metal_dark | 3.59 | 12 | 45 |
 | 24.00, 118.70, 22.87 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.15 | 12 | 89.8 |
+| 36.00, 118.38, 16.00 | Villa_lod1/stone_blue + Villa_lod1/stone_blue | 6.71 | 12 | 90 |
 | 35.85, 118.40, -22.65 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.24 | 12 | 81.5 |
-| 37.35, 125.40, 23.20 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 6.11 | 12 | 87.4 |
+| 14.00, 121.88, 5.20 | Villa_lod1/render_white + Villa_lod1/metal_dark | 4.68 | 11 | 90 |
 | 14.30, 125.70, -19.00 | Villa_lod1/render_white + Villa_lod1/concrete_soffit | 28 | 11 | 90 |
 | 14.10, 118.41, 5.50 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.22 | 11 | 88.6 |
-| 14.10, 118.41, -19.91 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.23 | 11 | 79.7 |
+| 14.10, 118.41, -19.91 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.22 | 11 | 83.1 |
 | 35.90, 118.41, 5.01 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.22 | 11 | 85.5 |
 | 35.90, 118.41, 8.00 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.22 | 11 | 83.1 |
-| 37.35, 122.40, 8.05 | Villa_lod1/wood_cladding + Villa_lod1/glass_window | 37.1 | 11 | 90 |
-| 14.15, 118.41, 4.56 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 6.1 | 11 | 87.4 |
-| 14.15, 121.34, 16.78 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 5.26 | 11 | 87.6 |
-| 35.85, 121.89, 11.30 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 6.96 | 11 | 87.4 |
 | 35.85, 118.46, 16.14 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 6.96 | 11 | 90 |
 | 32.94, 120.78, -22.85 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 4 | 11 | 87.7 |
+| 32.94, 121.40, 22.85 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 17.87 | 11 | 87.1 |
+| 37.35, 122.40, 23.20 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 6.11 | 11 | 87.4 |
+| 37.35, 125.34, 7.17 | Villa_lod1/metal_dark + Villa_lod1/glass_window | 5.86 | 11 | 87.4 |
+| 14.10, 118.41, -15.81 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.22 | 10 | 87.3 |
+| 14.10, 118.41, -11.40 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.22 | 10 | 87.7 |
+| 35.85, 118.41, -8.21 | Villa_lod1/stone_blue + Villa_lod1/metal_dark | 0.22 | 10 | 80.8 |
 
-(224 more in the JSON)
+(218 more in the JSON)
 
-## opening (info, 1135)
+## opening (info, 1137)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
 | 14.00, 118.40, -22.95 | Villa_lod1/render_white | -1 + 0 + 0 | 1.8 |
 | 14.00, 118.40, -19.85 | Villa_lod1/render_white | -1 + 0 + 0 | 2.9 |
 | 14.00, 118.40, -15.75 | Villa_lod1/render_white | -1 + 0 + 0 | 3.2 |
-| 14.00, 118.40, -11.35 | Villa_lod1/render_white | -1 + 0 + 0 | 15.9 |
-| 14.00, 121.05, 9.10 | Villa_lod1/render_white | -1 + 0 + 0 | 0.7 |
+| 14.00, 118.85, 9.10 | Villa_lod1/render_white | -1 + 0 + 0 | 0.5 |
+| 14.00, 118.95, 9.10 | Villa_lod1/render_white | -1 + 0 + 0 | 2.8 |
 | 14.00, 118.40, 9.15 | Villa_lod1/render_white | -1 + 0 + 0 | 2.9 |
 | 14.00, 121.45, 21.50 | Villa_lod1/render_white | -1 + 0 + 0 | 0.3 |
 | 14.00, 118.40, 21.55 | Villa_lod1/render_white | -1 + 0 + 0 | 1.5 |
-| 14.05, 118.40, -23.00 | Villa_lod1/render_white | 0 + 0 + -1 | 7 |
-| 33.05, 118.40, -23.00 | Villa_lod1/render_white | 0 + 0 + -1 | 3 |
+| 14.05, 118.40, -23.00 | Villa_lod1/render_white | 0 + 0 + -1 | 9.1 |
+| 23.15, 118.40, -23.00 | Villa_lod1/render_white | 0 + 0 + -1 | 3.5 |
+| 26.65, 118.40, -23.00 | Villa_lod1/render_white | 0 + 0 + -1 | 1.4 |
 | 16.85, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
+| 16.15, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
 | 17.55, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
+| 18.25, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
+| 20.35, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
 | 22.45, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.699 |
+| 21.05, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 1.4 |
 | 23.15, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
 | 23.85, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.2 |
 | 29.45, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.699 |
 | 30.15, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
 | 33.00, 118.65, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.3 |
 | 24.00, 121.65, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.3 |
+| 33.65, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.701 |
+| 33.05, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.6 |
 | 34.35, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.699 |
 | 35.05, 118.40, 23.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.699 |
 | 36.00, 118.40, -22.95 | Villa_lod1/render_white | 1 + 0 + 0 | 0.3 |
-| 36.00, 121.97, -7.85 | Villa_lod1/render_white | 1 + 0 + 0 | 0.05 |
 | 36.00, 121.97, 5.00 | Villa_lod1/render_white | 1 + 0 + 0 | 0.05 |
 | 36.00, 121.97, 8.00 | Villa_lod1/render_white | 1 + 0 + 0 | 0.05 |
 | 36.00, 118.40, 22.95 | Villa_lod1/render_white | 1 + 0 + 0 | 0.3 |
 | 14.00, 121.35, 21.50 | Villa_lod1/render_white | 0 + 0 + -1 | 0.4 |
-| 36.00, 121.74, -7.85 | Villa_lod1/render_white | 0 + 0 + 1 | 0.25 |
 | 36.00, 121.74, 5.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.25 |
 | 36.00, 121.74, 8.00 | Villa_lod1/render_white | 0 + 0 + 1 | 0.25 |
 | 24.00, 121.05, 23.00 | Villa_lod1/render_white | 1 + 0 + 0 | 0.4 |
@@ -447,60 +448,55 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.70, 125.95, -8.05 | Villa_lod1/render_white | -1 + 0 + 0 | 14.7 |
 | 24.85, 125.95, -22.70 | Villa_lod1/render_white | 0 + 0 + 1 | 21.399 |
 | 14.05, 115.23, 18.30 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
-| 14.75, 115.19, 18.30 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
-| 15.45, 115.15, 18.30 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
-| 16.15, 115.08, 18.30 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
-| 16.85, 115.05, 18.30 | Villa_lod1/render_white | 0 + 0 + 1 | 0.7 |
-| 16.80, 115.07, 18.30 | Villa_lod1/render_white | 0 + 0 + 1 | 0.039 |
 
-(1095 more in the JSON)
+(1097 more in the JSON)
 
-## backtoback (info, 417)
+## backtoback (info, 391)
 
 | at | parts | area |
 |---|---|---|
-| 14.00, 121.87, 5.38 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.08513 |
-| 14.00, 121.98, 5.63 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.01565 |
-| 14.00, 121.86, 5.68 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.04626 |
-| 14.00, 121.98, 5.87 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00187 |
-| 14.00, 121.85, 5.86 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00795 |
-| 14.00, 121.97, 5.89 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00038 |
-| 14.00, 121.86, 5.82 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00736 |
-| 14.00, 121.97, 5.89 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00034 |
-| 14.00, 121.85, 5.89 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00305 |
-| 14.00, 121.97, 5.90 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00015 |
-| 14.00, 121.87, 6.26 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.0792 |
-| 14.00, 121.95, 6.97 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.24114 |
-| 14.00, 121.82, 6.91 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.06599 |
-| 14.00, 121.88, 8.54 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.25434 |
-| 14.00, 121.91, 9.66 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.0252 |
-| 14.00, 121.79, 9.48 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.02196 |
-| 14.00, 121.90, 9.34 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.09152 |
-| 14.00, 121.78, 9.20 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00922 |
-| 14.00, 121.89, 9.75 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00683 |
-| 14.00, 121.80, 9.71 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00775 |
-| 14.00, 121.93, 9.91 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.04142 |
-| 14.00, 121.81, 10.12 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.07007 |
-| 14.00, 121.97, 11.09 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.18535 |
-| 14.00, 121.85, 11.54 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.38149 |
+| 14.00, 121.88, 5.41 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.10044 |
+| 14.00, 121.76, 5.30 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00034 |
+| 14.00, 121.89, 5.72 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.04363 |
+| 14.00, 121.77, 5.54 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00449 |
+| 14.00, 121.89, 5.87 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00695 |
+| 14.00, 121.77, 5.84 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00139 |
+| 14.00, 121.89, 5.84 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00654 |
+| 14.00, 121.77, 5.78 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00116 |
+| 14.00, 121.89, 5.89 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00264 |
+| 14.00, 121.77, 5.89 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00057 |
+| 14.00, 121.93, 6.97 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.32033 |
+| 14.00, 121.90, 7.93 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.2049 |
+| 14.00, 121.83, 8.21 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.11544 |
+| 14.00, 121.97, 11.09 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00865 |
+| 14.00, 121.85, 10.63 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.17394 |
+| 14.00, 121.96, 10.05 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.15767 |
+| 14.00, 121.84, 9.63 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.14471 |
+| 14.00, 121.97, 11.21 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00204 |
+| 14.00, 121.86, 11.25 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.05601 |
+| 14.00, 121.98, 11.69 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.03049 |
+| 14.00, 121.87, 11.99 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.26732 |
 | 25.73, 121.63, 23.00 | Villa_lod1/render_white + Villa_lod1/render_white | 0.00007 |
 | 25.90, 121.70, 23.00 | Villa_lod1/render_white + Villa_lod1/render_white | 0.00015 |
 | 26.25, 121.85, 23.00 | Villa_lod1/render_white + Villa_lod1/render_white | 0.00007 |
 | 14.13, 118.61, 4.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.01926 |
-| 14.13, 119.77, 4.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.07587 |
+| 14.12, 119.11, 4.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.02108 |
 | 14.13, 119.58, 5.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.03932 |
 | 14.13, 118.90, 5.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.03433 |
 | 14.12, 120.18, 5.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.01827 |
 | 14.13, 120.93, 5.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.04274 |
 | 14.12, 120.48, 5.50 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00281 |
 | 14.13, 121.40, 4.54 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00179 |
-| 14.13, 121.40, 4.51 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.0006 |
+| 14.13, 121.40, 4.51 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00064 |
 | 14.13, 121.40, 5.13 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.02589 |
-| 14.13, 121.40, 4.70 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.01014 |
+| 14.13, 121.40, 4.70 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.0101 |
 | 14.13, 121.40, 5.47 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00186 |
 | 14.14, 121.03, 12.00 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.02852 |
+| 14.13, 119.90, 12.00 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.07644 |
+| 14.12, 121.36, 12.00 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00242 |
+| 14.11, 121.32, 12.00 | Villa_lod1/render_white + Villa_lod1/metal_dark | 0.00022 |
 
-(377 more in the JSON)
+(351 more in the JSON)
 
 
 Nodes: Villa_lod1. Distances: {"Villa":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.443 mm. Offset 0,100,0.

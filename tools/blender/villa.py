@@ -302,20 +302,24 @@ def hedge(axis, c, a0, a1, thick=1.0, hgt=2.3):
             bbox(EX, c - thick / 2, c + thick / 2, x0, x1 + 0.001, gb_, gt, "hedge", 0, 0.12, 2)
 
 def climber(acc, c, w0, w1, h0, h1, seed=0):
-    """a climbing plant on the plane u = c (facing -u): a leafy blanket 3-9 cm off the wall on a 0.22 m grid, its cells
-    dropped at random near the edges and the top (an organic outline), every vertex pushed in and out (clumps)"""
-    rnd = random.Random(seed); st = 0.22
+    """a climbing plant on the plane u = c (facing -u): a leafy blanket 2-12 cm off the wall on a 0.12 m grid whose
+    outline follows a smooth noise field (clumps and tendrils, never a square pixel edge), every vertex pushed in and out"""
+    rnd = random.Random(seed); st = 0.12
     nu = max(1, int((w1 - w0) / st)); nh = max(1, int((h1 - h0) / st))
-    top = [h1 - rnd.uniform(0, 1.6) for _ in range(nu + 1)]
+    ph = [rnd.uniform(0, 6.28) for _ in range(6)]
+    def field(i, j):
+        x, y = i * st, j * st
+        n = (math.sin(x * 2.1 + ph[0]) + math.sin(y * 1.7 + ph[1]) + 0.6 * math.sin((x + y) * 3.9 + ph[2]) + 0.5 * math.sin((x - y) * 5.3 + ph[3])) / 3.1
+        edge = min(x, (nu - i) * st, y * 0.6, 0.9) / 0.9                       # thinner toward the sides and the foot
+        top = 1.0 - max(0.0, (y - (h1 - h0) * (0.55 + 0.35 * math.sin(x * 1.3 + ph[4]))) / 0.8)
+        return n * 0.5 + 0.55 * edge + 0.35 * top - 0.25
     off = {}
     def V(i, j):
-        if (i, j) not in off: off[(i, j)] = rnd.uniform(0.03, 0.09)
+        if (i, j) not in off: off[(i, j)] = rnd.uniform(0.02, 0.12)
         return P(c - off[(i, j)], w0 + i * (w1 - w0) / nu, h0 + j * (h1 - h0) / nh)
     for i in range(nu):
         for j in range(nh):
-            hm = h0 + (j + 0.5) * (h1 - h0) / nh
-            edge = min(i, nu - 1 - i)
-            if hm > min(top[i], top[i + 1]) or (edge == 0 and rnd.random() < 0.45) or rnd.random() < 0.06: continue
+            if field(i + 0.5, j + 0.5) < 0.3: continue
             acc.poly([V(i, j), V(i + 1, j), V(i + 1, j + 1), V(i, j + 1)], "hedge", 0, (-1, 0, 0))
 
 SEG7 = {"1": "bc", "8": "abcdefg"}

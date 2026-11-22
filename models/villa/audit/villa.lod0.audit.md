@@ -1,6 +1,6 @@
 # Mesh audit (before pack): villa.lod0
 
-59,796 triangles, 33,349 welded vertices, 4,294 open edges, 645,236 rays, 14161 ms.
+60,804 triangles, 33,872 welded vertices, 4,314 open edges, 636,412 rays, 10401 ms.
 
 **0 blocking**, 12458 warnings. Clean (no blocking item).
 
@@ -9,8 +9,8 @@
 | sliver | warn | 11676 |
 | nonmanifold | warn | 98 |
 | tjunction | warn | 684 |
-| seam | info | 749 |
-| opening | info | 1280 |
+| seam | info | 747 |
+| opening | info | 1279 |
 | backtoback | info | 3179 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -156,7 +156,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (644 more in the JSON)
 
-## seam (info, 749)
+## seam (info, 747)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -201,9 +201,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.15, 118.42, 4.56 | Villa/stone_blue + Villa/metal_dark | 1.89 | 25 | 90 |
 | 14.15, 118.42, -21.14 | Villa/stone_blue + Villa/metal_dark | 2.49 | 25 | 90 |
 
-(709 more in the JSON)
+(707 more in the JSON)
 
-## opening (info, 1280)
+## opening (info, 1279)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -248,7 +248,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 124.55, -12.60 | Villa/render_white | 0 + 0 + 1 | 0.3 |
 | 14.00, 124.75, -11.40 | Villa/render_white | 0 + 0 + -1 | 0.3 |
 
-(1240 more in the JSON)
+(1239 more in the JSON)
 
 ## backtoback (info, 3179)
 
@@ -289,7 +289,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 121.91, 9.72 | Villa/render_white + Villa/metal_dark | 0.03733 |
 | 14.00, 121.80, 9.51 | Villa/render_white + Villa/metal_dark | 0.02987 |
 | 14.00, 121.97, 9.55 | Villa/render_white + Villa/metal_dark | 0.04667 |
-| 14.00, 121.88, 9.21 | Villa/render_white + Villa/metal_dark | 0.05413 |
+| 14.00, 121.85, 9.23 | Villa/render_white + Villa/metal_dark | 0.05413 |
 | 14.00, 121.91, 10.42 | Villa/render_white + Villa/metal_dark | 0.03733 |
 | 14.00, 121.80, 10.21 | Villa/render_white + Villa/metal_dark | 0.02987 |
 | 14.00, 121.97, 10.25 | Villa/render_white + Villa/metal_dark | 0.04667 |

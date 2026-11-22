@@ -209,7 +209,14 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
       if (!st.cell || st.shown === v) return;
       st.shown = v;
       st.watch = performance.now() + 2000;          // (the stream-in hitch check: long tasks in the 2 s after a swap)
-      if (v) { villaInLook.glassIn.value = 1; st.cell.root.visible = true; for (const o of extGlass) o.visible = false; }
+      if (v) {
+        // (round 2, the stream-in hitch: the first draw of a mesh uploads its buffers: the cell's meshes come in one a
+        // frame behind its glass, which starts opaque, so nothing pops and no frame uploads 4 MB at once)
+        villaInLook.glassIn.value = 1; st.cell.root.visible = true; for (const o of extGlass) o.visible = false;
+        const ms = []; st.cell.root.traverse((o) => { if (o.isMesh && o.userData.slot !== "glass_window") { o.visible = false; ms.push(o); } });
+        let i = 0; const next = () => { if (!st.shown) return; if (i < ms.length) { ms[i++].visible = true; requestAnimationFrame(next); } };
+        requestAnimationFrame(next);
+      }
       else { for (const o of extGlass) o.visible = true; st.cell.root.visible = false; unhook(); }
     }
     function hook(third) {

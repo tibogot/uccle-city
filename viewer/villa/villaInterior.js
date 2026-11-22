@@ -173,7 +173,11 @@ export function loadVillaInterior({ placement }) {
     const mats = {};
     const matFor = (slot) => (mats[slot] ??= slot === "glass_window" ? glassMaterial() : bakedMaterial(slot));
     let tris = 0, draws = 0, colliders = null;
+    // (round 2, the stream-in hitch: the cell's set-up runs in slices, a frame between nodes and every few materials)
+    const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+    await frame();
     for (const node of [...gltf.scene.children]) {
+      await frame();
       if (node.name === "Collider") {
         const g = node.geometry ?? node.children[0]?.geometry;
         node.updateMatrixWorld(true);
@@ -184,15 +188,16 @@ export function loadVillaInterior({ placement }) {
         colliders = out;
         continue;
       }
-      node.traverse((o) => {
-        if (!o.isMesh) return;
+      const meshes = []; node.traverse((o) => { if (o.isMesh) meshes.push(o); });
+      for (const [k, o] of meshes.entries()) {
+        if (k % 3 === 2) await frame();
         const slot = o.material.name;
         o.material = matFor(slot);
         o.userData.slot = slot; o.castShadow = false; o.receiveShadow = false;
         o.geometry.computeBoundingSphere();
         if (slot === "glass_window") o.renderOrder = 2;
         tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; draws++;
-      });
+      }
       root.add(node);
     }
     root.updateMatrixWorld(true);
