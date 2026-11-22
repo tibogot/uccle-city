@@ -67,6 +67,27 @@ into `.cache/gate/deps/<row>.json` (git-ignored). Files the row writes are its o
 
 `tools/merge.mjs` `auto` runs `mergeGate --changed --base <the pre-merge commit>`; `full` runs `--full`.
 
+## Tile cache
+
+A row that builds tiles with the tile worker's code calls `tileData(entry, base)` from `tools/gate/tileBuild.mjs`, not
+`buildTileData` (rule tile-cache). The tile lands in `.cache/tiles/` (git-ignored); every later row, and every later
+gate run, reads it back in ~0.1 s instead of rebuilding it (4-10 s a tile).
+- **Key.** The import closure of `viewer/tileWorker.js` (the worker bundle's own inputs; `meta` checks this against
+  esbuild's list), the canonical entry, the node version, and every file the build read (recorded while it built,
+  re-hashed at each lookup). Edit any of those and the tile is rebuilt; nothing else to invalidate by hand.
+- **What comes back** is what the worker would post (plain data). With `keepNet`, only `d.deckRings`,
+  `d.net.streetModel.segments` and `d.hm` (a `Heightmap.from`) are there; any other `d.net.*` throws. Need more of the
+  network? Add it to `pack` / `unpack` in tileBuild.mjs as plain data.
+- **Off.** `node tools/audit/mergeGate.mjs --no-tile-cache ...`, or `--no-tile-cache` on a row script, or
+  `TILE_CACHE=0`. `TILE_CACHE=verify` also builds every hit fresh and throws on a difference.
+- **Size.** Capped at `TILE_CACHE_MB` (default 4096) with LRU eviction; no store while the disk has < 10 GB free.
+- **Check.** The `tilecache` row (tools/audit/tileCacheCheck.mjs) tests the mechanism and compares I6 / H6 / E9 through
+  the cache with a fresh build, byte for byte. The gate prints a `tile cache:` line (hits per row) after the table;
+  every lookup is a line in `.cache/tiles/log.jsonl`.
+- Another builder (the road stage, `tools/road_audit/tile.mjs` `loadTile`) can use `cached()` from
+  `tools/gate/tileCache.mjs` once its result is plain data; today it holds closures (`net.locate`, `prep`), so it is
+  not cached (docs/SPEED_PLAN.md job 8).
+
 ## Timing rows
 
 A row that asserts a wall time is `timing: true` and uses `tools/gate/timing.mjs` (rule timing-rows):
