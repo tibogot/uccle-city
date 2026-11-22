@@ -28,6 +28,7 @@ import { joinLaneGraph } from "../streets/laneGraph.js";
 import { NOT_DRIVEN } from "../streets/carriageway.js";
 import { laneOffsetProfile } from "../streets/laneOffset.js";
 import { roadFrameOf } from "../streets/lineFit.js";
+import { modelLaneStage, repairTurns, blockedTest } from "../street/lanes.js";
 
 const TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
 export const CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
@@ -174,6 +175,19 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
       fitStatsPre.serviceLanes = off.size; fitStatsPre.serviceTurns = dropT.size;
     }
   }
+  // claude/street4 (rule street-lanes, docs/STREET_MODEL_PLAN.md job 4): on the roads the street model covers, the lanes
+  // are offset curves inside the measured carriageway and the junction turns G2 curves inside the junction polygons
+  // (viewer/street/lanes.js, clear of the parked cars by one smooth profile); those paths skip the old fit below
+  // (fitToSurface's kerb push, parked-car shifts and far snap; laneShifter / roadFollowTurns ran on the engine lanes
+  // before and are replaced). opts.model: the street model (null = ?streetlanes=old, or no model on this tile)
+  let covered = null;
+  if (opts.model) {
+    const tM = performance.now();
+    const M = modelLaneStage(net, opts.model, raw, opts.parked?.length ? opts.parked : null, net.streetKerbs ?? null, opts.inBuilding ?? null, grid ? drivableOn(grid) : null, feats?.trees ?? null);
+    raw = M.paths; covered = M.covered;
+    fitStatsPre.model = { ...M.stats, ms: Math.round(performance.now() - tM) };
+    if (opts.trace) opts.trace.afterModel = raw.filter((p) => covered.has(p.id)).map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
+  }
   const fitStats = { points: 0, moved: 0, maxShift: 0, ...fitStatsPre };
   // citydefects: the parked cars (viewer/streets/parkPlace.js widthParking, built in the worker too) are kept clear of:
   // each lane slides sideways to pass them by PARK_CLEAR where the measured carriageway lets it
@@ -181,7 +195,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const parked = opts.parked?.length ? parkedGrid(opts.parked, TP) : null;
   const raw2 = parked && TP ? densify(raw, 1.5) : raw;
   const tF = performance.now();
-  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP, opts.roadsR !== false, opts.inBuilding ? laneOffOf(net) : null, opts.inBuilding) : raw2;
+  const fitted = grid ? fitToSurface(raw2, grid, fitStats, parked, opts.trace, TP, opts.roadsR !== false, opts.inBuilding && !opts.noSnap ? laneOffOf(net) : null, opts.noSnap ? null : opts.inBuilding, covered) : raw2;
   fitStats.fitMs = Math.round(performance.now() - tF);
   if (opts.trace) opts.trace.afterFit = fitted.map((p) => ({ id: p.id, kind: p.kind, pts: p.pts.map((v) => [v[0], v[1]]) }));
   // round 5: fitToSurface moves each lane on its own; lane-to-lane joins (continuations) are closed again
@@ -193,6 +207,8 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const tK = performance.now();
   const src = roundKinks(fitted, keepClear);
   fitStats.kinkMs = Math.round(performance.now() - tK);
+  // (claude/street4: no junction turn through a building, a street tree or over the pavement, whichever fit laid it)
+  if (opts.model) fitStats.turnsRepaired = repairTurns(src.map((p, i) => (p === fitted[i] ? (src[i] = { ...p, pts: p.pts.map((v) => [v[0], v[1]]) }) : p)), blockedTest(opts.inBuilding ?? null, feats?.trees ?? null), grid ? drivableOn(grid) : null);
   if (opts.trace) { opts.trace.src = src; opts.trace.raw = raw2; }
   // trafpark: the check along every driven path, junction connectors too: a parked car any path still touches goes
   let parkedKept = opts.parked || null;
@@ -230,7 +246,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   for (const p of src) nPts += p.pts.length;
   const xy = new Float32Array(nPts * 2), cum = new Float32Array(nPts), off = new Uint32Array(P + 1), pv = new Float32Array(nPts);
   const len = new Float32Array(P), speed = new Float32Array(P), kind = new Uint8Array(P), turn = new Uint8Array(P);
-  const rank = new Uint8Array(P), tram = new Uint8Array(P), core = new Uint8Array(P);
+  const rank = new Uint8Array(P), tram = new Uint8Array(P), core = new Uint8Array(P), model = new Uint8Array(P);
   const holdAt = new Float32Array(P).fill(-1), ctrl = new Uint8Array(P), phase = new Uint8Array(P), jnode = new Int32Array(P).fill(-1);
   const nodeOf = new Int32Array(P).fill(-1);
   const roadOf = (p) => net.roadsById.get(p.roadId);
@@ -244,6 +260,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
     len[i] = p.len;
     kind[i] = p.kind === "connector" ? 1 : 0;
     turn[i] = TURN[p.turn] ?? 0;
+    model[i] = covered?.has(p.id) ? (p.model === 2 ? 2 : 1) : 0;          // (claude/street4: 1 a model lane, 2 a G2 turn, 1 a connector between model lanes)
     const [mx, mz] = pointAt(p.pts, c, p.len / 2);
     core[i] = mx >= bounds.x0 && mx < bounds.x1 && mz >= bounds.z0 && mz < bounds.z1 ? 1 : 0;
   });
@@ -385,7 +402,7 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   const cfOther = Int32Array.from(list, (c) => c[0]), cfAt = Float32Array.from(list, (c) => c[1]), cfOtherAt = Float32Array.from(list, (c) => c[2]);
   const cfYield = Int8Array.from(list, (c) => c[3]);
   return {
-    paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, nextOff, nextIdx, prevOff, prevIdx,
+    paths: P, xy, cum, off, pv, len, speed, kind, turn, rank, tram, core, model, nextOff, nextIdx, prevOff, prevIdx,
     holdAt, ctrl, phase, jnode, nodeOf, cfOff, cfOther, cfAt, cfOtherAt, cfYield,
     jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })), parkedKept,
     ...narrowStretches(src, P),
@@ -449,6 +466,8 @@ function nearestOnLane(list, p, back, r) {
 // their entry lane at their start and of their exit lane at their end, blended along their length. The graph's
 // geometry only: the drawn markings stay the engine's.
 const CARRIAGE = [true, true, false, true, false, false, false, false, false, false];
+/** (x, z) on the drawn carriageway of class raster G (off the raster: unknown, true) */
+const drivableOn = (G) => (x, z) => { const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step); if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true; const c = G.data[j * G.nx + i] - 1; return c >= 0 && CARRIAGE[c]; };
 
 // NARROW STRETCHES (citydefects 2026-11-16): where the two directions of a street come closer than NARROW m (a street
 // whose free width beside its parked cars is under ~5.5 m: the lanes, kept clear of the cars, overlap), the sim lets ONE
@@ -580,7 +599,7 @@ function densify(paths, step) {
 }
 
 const FAR_SNAP = 14, FAR_RUN = 6;           // m: how far a lane off its street looks for the measured carriageway (class R)
-function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38 = false, laneOff = null, inBuilding = null) {
+function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38 = false, laneOff = null, inBuilding = null, skip = null) {
   const ok = (x, z) => {
     const i = Math.floor((x - G.x0) / G.step), j = Math.floor((z - G.z0) / G.step);
     if (i < 0 || j < 0 || i >= G.nx || j >= G.nz) return true;          // off the raster: leave it
@@ -599,7 +618,7 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
   };
   const fitsPark = (x, z, nx, nz, s) => fitsRoad(x, z, nx, nz, s) && parked.clear(x + nx * s, z + nz * s);
   for (const p of paths) {
-    if (p.kind === "connector") continue;
+    if (p.kind === "connector" || skip?.has(p.id)) continue;           // (claude/street4: a model lane is final)
     const q = p.pts, n = q.length, off = new Float32Array(n), far = new Uint8Array(n);
     const how = trace || (TP && parked) ? new Uint8Array(n) : null;          // (audit: 0 no shift, 1 shifted clear of cars, 2 road-only fit, 3 none)
     if (trace) (trace.fit ??= new Map()).set(p.id, how);
@@ -740,13 +759,14 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
     out.set(p.id, pts);
   }
   for (const p of paths) {
-    if (p.kind !== "connector") continue;
+    if (p.kind !== "connector" || skip?.has(p.id)) continue;
     const a = shift.get(p.prev[0]), b = shift.get(p.next[0]);
     const s0 = a ? [a[2], a[3]] : [0, 0], s1 = b ? [b[0], b[1]] : [0, 0];
     const c = p.cum || cumulative(p.pts), L = c[c.length - 1] || 1;
     out.set(p.id, p.pts.map((pt, k) => { const f = c[k] / L; return [pt[0] + s0[0] * (1 - f) + s1[0] * f, pt[1] + s0[1] * (1 - f) + s1[1] * f]; }));
   }
   return paths.map((p) => {
+    if (skip?.has(p.id)) return p;
     const pts = out.get(p.id) || p.pts, cum = cumulative(pts), len = cum[cum.length - 1];
     const stop = p.stop ? { ...p.stop, at: Math.max(0, len - (p.len - p.stop.at)) } : undefined;
     return { ...p, pts, cum, len, stop };

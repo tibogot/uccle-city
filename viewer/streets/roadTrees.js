@@ -18,15 +18,17 @@
 export const CLEAR = 0.6, MOVE_MIN = 1.5, MOVE_MAX = 4, DUP = 1.8;
 const DIRS = 24;
 
-export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null, keep = null, avoid = null } = {}) {
+export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuilding = () => false, ground = null, keep = null, avoid = null, margin = null } = {}) {
   if (!trees?.length) return { trees, moved: 0, dropped: 0 };
   const ring = Array.from({ length: 8 }, (_, k) => [Math.cos(k / 8 * 2 * Math.PI) * CLEAR, Math.sin(k / 8 * 2 * Math.PI) * CLEAR]);
   // (avoid: another driven test the new spot keeps off too: the path pass never moves a trunk onto the carriageway)
-  const off = (x, z) => driven.inside(x, z, 0) || (avoid ? avoid.inside(x, z, 0) : false);
+  // (margin(t): the path pass's extra reach for THIS trunk (its collider radius past the corridor's assumed one))
+  let mT = 0;
+  const off = (x, z) => driven.inside(x, z, mT) || (avoid ? avoid.inside(x, z, 0) : false);
   const touches = (x, z) => off(x, z) || ring.some(([dx, dz]) => off(x + dx, z + dz));
   // (browser turn: also moving trunks that only REACH 0.3 m in moved the real tree rows in narrow medians and kerb pits,
   // Avenue Churchill's central reservation: the point alone decides, as the pipeline's rule)
-  const intrudes = (t) => driven.inside(t.x, t.z, 0);
+  const intrudes = (t) => driven.inside(t.x, t.z, margin ? margin(t) : 0);
   // the other trees, on a 4 m grid (duplicates)
   const G = new Map(), key = (x, z) => `${Math.floor(x / 4)},${Math.floor(z / 4)}`;
   const add = (t) => { const k = key(t.x, t.z); if (!G.has(k)) G.set(k, []); G.get(k).push(t); };
@@ -42,6 +44,7 @@ export function treesOffCarriageway(trees, driven, { inTile = () => true, inBuil
   for (const [i, t] of trees.entries()) {
     if (!bad.has(t)) { out.push(t); t.vi = t.vi ?? i; continue; }
     const maxR = Math.min(MOVE_MAX, Math.max(MOVE_MIN, 0.8 * (t.crown || 3)));
+    mT = margin ? margin(t) : 0;
     let spot = null;
     for (let r = 0.25; r <= maxR + 1e-6 && !spot; r += 0.25) {
       for (let k = 0; k < DIRS; k++) {
@@ -104,6 +107,9 @@ export function paintedDriveLanes(net, paintedLaneCentre, roadFrameOf, margin = 
  * LiDAR trees in this corridor too (half = a car's half width 0.9 + a trunk ~0.3 m).
  */
 export const PATH_HALF = 1.25;
+/** claude/street4: the trunk's collider radius (viewer/drive/colliders.js: 0.16 + 0.012 x height, 0.22-0.5 m) past the
+ *  ~0.35 m PATH_HALF assumes: the path pass's margin per tree (drivecheck met trunks of 0.4-0.5 m 1.3 m from a lane) */
+export const trunkMargin = (t) => Math.max(0, Math.min(0.5, Math.max(0.22, 0.16 + 0.012 * (t.height || 10))) - (PATH_HALF - 0.9));
 export function pathCorridor(traffic, half = PATH_HALF) {
   if (!traffic?.xy || !traffic.paths) return null;
   const C = 4, cells = new Map(), K = (i, j) => i * 65536 + j, xy = traffic.xy, off = traffic.off;
