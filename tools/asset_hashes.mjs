@@ -15,7 +15,7 @@
 //              deploy only compresses what changed; default in the Vercel build: .vercel/cache/assetbr (Vercel keeps
 //              .vercel/cache between builds for a month). A first build is ~1000 CPU-s (331 MB at brotli 11).
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync, existsSync, renameSync } from "node:fs";
+import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync, existsSync, renameSync, unlinkSync } from "node:fs";
 import { join, relative, sep, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Worker, isMainThread, parentPort } from "node:worker_threads";
@@ -100,13 +100,21 @@ export async function build({ root = ROOT, out = root, br = false, only = null, 
   const t0 = Date.now();
   let list = listFiles(root);
   if (only) { const s = new Set(only); list = list.filter(([site]) => s.has(site)); }
-  const files = {}; let bytes = 0;
-  for (const [site, file, size] of list) { files[site] = hash12(readFileSync(file)); bytes += size; }
+  const files = {}, full = new Map(); let bytes = 0;
+  for (const [site, file, size] of list) {
+    const h = createHash("sha1").update(readFileSync(file)).digest("hex");
+    files[site] = h.slice(0, 12); full.set(site, h); bytes += size;
+  }
   let brMap = null, stat = null;
   if (br) {
     const todo = list.filter(([site, , size]) => brEligible(site, size)).map(([site, file, size]) => ({ site, file, size, cache, dest: join(out, site.slice(1) + ".br") }));
     stat = await compressAll(todo, jobs);
     brMap = Object.fromEntries([...stat.kept].sort());
+    // the cache keeps only this build's entries (Vercel uploads the whole folder after every build)
+    if (cache && !only && existsSync(cache)) {
+      const used = new Set(todo.map((t) => `${full.get(t.site)}.${BR_KEY}.br`));
+      for (const n of readdirSync(cache)) if (!used.has(n)) { try { unlinkSync(join(cache, n)); } catch { /* fine */ } }
+    }
   }
   mkdirSync(out, { recursive: true });
   const json = { made: new Date().toISOString(), files, ...(brMap ? { br: brMap } : {}) };
