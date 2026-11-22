@@ -133,6 +133,7 @@ Owner's point: don't fix these one by one; find the CLASS of each defect, fix it
 
 **Step 3: places (compare with photos, look only)**
 - [ ] Wolvendael: big metal fences all round + several big gates (one at the Dieweg tram terminus).
+- [ ] Parc de la Sauvagère (owner 2026-11-22): fences all round, a few gates and entrances; check the line and the gates on Street View (look only). Same job as Wolvendael (one park-fence kit, both parks).
 - [ ] Place Saint-Pierre: the restaurant Le Petit Pont.
 - [ ] Restaurant De Hoef: far better.
 - [ ] Notre-Dame des Champs school: better, with its fences.
