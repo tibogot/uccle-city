@@ -9,6 +9,7 @@
 //     --serial            one row at a time (default: the timing rows alone first, then the rest in parallel)
 //     --jobs N            the parallel CPU budget (default: the logical cores); --mem MB the memory budget (60 % of RAM)
 //     --list              the row names, one a line
+//     --no-tile-cache     the rows build every tile fresh (TILE_CACHE=0; tools/gate/tileCache.mjs, rule tile-cache)
 // Every row runs traced (tools/gate/trace.mjs): its deps land in .cache/gate/deps/<row>.json, a PASS's memo key in
 // .cache/gate/pass/<row>.json, its full output in .cache/gate/logs/<row>.txt (docs/SPEED_PLAN.md jobs 4-7).
 import { spawn, spawnSync } from "node:child_process";
@@ -28,6 +29,7 @@ const argv = process.argv.slice(2);
 if (argv.includes("--list")) { for (const c of CHECKS) console.log(c.name); process.exit(0); }
 const VALUED = new Set(["--base", "--jobs", "--mem"]);
 const opt = (k, d = null) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
+const NO_TILE_CACHE = argv.includes("--no-tile-cache");
 const FULL = argv.includes("--full"), CHANGED = argv.includes("--changed"), SERIAL = argv.includes("--serial");
 const CPU = Math.max(1, +opt("--jobs", 0) || os.cpus().length);
 const MEM = +opt("--mem", 0) || Math.round((os.totalmem() / 2 ** 20) * 0.6);
@@ -85,7 +87,7 @@ function treeKill(p) {
 function runRow(c, { timeoutScale = 1 } = {}) {
   return new Promise((done) => {
     const raw = rawDir(c.name), t0 = Date.now(), limit = c.timeout * timeoutScale;
-    const env = { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ""} --import=${TRACE}`.trim(), GATE_TRACE_OUT: raw, GATE_TRACE_ROOT: ROOT, GATE_TRACE_LINKS: JSON.stringify(LINKS) };
+    const env = { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ""} --import=${TRACE}`.trim(), GATE_TRACE_OUT: raw, GATE_TRACE_ROOT: ROOT, GATE_TRACE_LINKS: JSON.stringify(LINKS), GATE_ROW: c.name, ...(NO_TILE_CACHE ? { TILE_CACHE: "0" } : {}) };
     const p = spawn(process.execPath, [...c.node, path.join(ROOT, c.script), ...c.args], { cwd: ROOT, env, stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32", windowsHide: true });
     let out = "", timedOut = false;
     p.stdout.on("data", (b) => { out += b; }); p.stderr.on("data", (b) => { out += b; });
@@ -185,6 +187,11 @@ for (const c of CHECKS) {
   else if (s) console.log(`| ${c.name} | SKIP | - | ${s.why} |`);
 }
 console.log(`\nbrowser gates (run on a browser turn):\n  ${BROWSER.join("\n  ")}`);
-console.log(`\n${RUN.length} run, ${SKIP.length} skipped, ${((Date.now() - T0) / 1000).toFixed(0)} s wall`);
+{ // the tile cache this run (tools/gate/tileCache.mjs: .cache/tiles/log.jsonl)
+  const { runSummary } = await import("../gate/tileCache.mjs");
+  const t = runSummary(T0);
+  if (t) console.log(`\ntile cache${NO_TILE_CACHE ? " (--no-tile-cache: off)" : ""}: ${t}`);
+}
+console.log(`\n${RUN.length} run, ${SKIP.length} skipped,${((Date.now() - T0) / 1000).toFixed(0)} s wall`);
 console.log(failed ? `${failed} gate check(s) FAILED` : "all gate checks pass");
 process.exitCode = failed ? 1 : 0;
