@@ -127,7 +127,7 @@ const GROUP = (n) => (["hatch_s", "hatch_c", "estate", "saloon", "suv"].includes
 const TILES = ["D5", "D6", "D7", "E4", "E5", "E6"];
 const t0 = Date.now();
 const W = new TrafficWorld();
-const parked = [], tileB = [], kept = [], graphs = new Map();
+const parked = [], tileB = [], tileG = [], kept = [], graphs = new Map();
 for (const T of TILES) {
   const { roads, feats, bounds, rd, roofs } = loadTile(T);
   tileB.push([T, bounds]);
@@ -137,6 +137,7 @@ for (const T of TILES) {
   // shape)
   kept.push([T, g.parkedKept ?? wp.sites]); graphs.set(T, { ...g });
   W.add(T, g);
+  tileG.push({ T, g, roads, feats, bounds });
 }
 // (claude/parking1: as main.js draws them: a tile's parked cars under a LOADED neighbour's core lane are not drawn
 // (viewer/traffic/borderPark.js laneHits, all six tiles loaded). Before, the gate kept them and the sim made them
@@ -177,12 +178,13 @@ const SEED = +(process.argv.find((a, k) => process.argv[k - 1] === "--seed") ?? 
 // (the D7 pair: one phase along the road for the close pairs, the 3 phase mismatches below, a yield inside the first
 // junction's turn) and the PARKING job (an emergency vehicle on a street parked on both sides: its route avoids it or the
 // parking leaves a gap). Each stuck place is also a gap-register entry (trafmix.stuck / trafmix.stuckOld for the old
-// lanes, --register): a new place fails, a fixed one is stale. Lower STUCK_MAX as those jobs land; never raise it
-// (claude/parking1: the PARKING job landed (rule service-vehicle-passage: parked cars leave 3 m, none within 5 m of a
-// junction mouth, the gate's parked cars as main.js draws them, service vehicles routed off lanes they cannot pass, a
-// run's way through a narrow stretch): model lanes 0 / 0 / 0, ?streetlanes=old 0 / 0 / 3 (three new old-lanes places,
-// trafmix.stuckOld, explained; the Dieweg E6 and Rue Engeland D7 ones gone). 4 -> 3: the parking share of the ceiling)
-const STUCK_MAX = 3, MORE_SEEDS = [11, 23];
+// lanes, --register): a new place fails, a fixed one is stale. Lower STUCK_MAX as those jobs land; never raise it.
+// claude/signals1: 1 (seeds 7 / 11 / 23: 0 / 0 / 1, the E6 ambulance behind a parked car, the PARKING job; the D7 pair
+// and the E4 priority junction not seen on seeds 7 / 11 / 23 / 31 / 41)
+// claude/parking1 (rule service-vehicle-passage: parked cars leave 3 m, none within 5 m of a junction mouth, the gate's
+// parked cars as main.js draws them, service vehicles routed off lanes they cannot pass, a run's way through a narrow
+// stretch): STUCK_MAX = MEASURED_AFTER_MERGE
+const STUCK_MAX = 1, MORE_SEEDS = [11, 23];
 const CHILD = argv.includes("--child"), ONE_SEED = process.argv.includes("--seed"), REG = argv.includes("--register");
 const kids = CHILD || ONE_SEED ? [] : MORE_SEEDS.map((sd) => new Promise((res) => {
   // (started now: they load their tiles and run their sims while this one runs; awaited before the timed part)
@@ -351,9 +353,41 @@ for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS
     }
     check("signal approaches under capacity", appr > 0 && over === 0, `${appr} signal approaches, ${over} over ${DEMAND_MAX} x ${SAT_FLOW} veh/h x green share at the peak`);
     // (the baseline at the street4 merge: 3 (n140271967 <-> n2448080511 both ways at D7, n30151287 -> n254921174);
-    // the SIGNALS job (docs/TODO.md) takes it to 0: lower PHASE_MAX with it, never raise it)
-    const PHASE_MAX = 3;
-    check("close signal pairs coordinated", off.length <= PHASE_MAX, `${pairs} through movements between signal junctions < 150 m apart, one cycle (${CYCLE_T} s); on different phases: ${off.length ? off.slice(0, 4).join(", ") : "none"} (${off.length}, ceiling ${PHASE_MAX}: the signals job takes it to 0)`);
+    // claude/signals1 took it to 0: the phase from the road, rule signal-phase-road (signals.js signalPhases); never raise)
+    const PHASE_MAX = 0;
+    // (rule signal-phase-road: the drawn posts and the sim read ONE table: every post of the tiles' cores shows the
+    // phase of the sim's signal approach it faces: the lane into the signal node its traffic meets (signals.js ahead)
+    // running along that node's arm road (the least mean distance of its last 20 m to the road), heading its way)
+    {
+      const { signalSites } = await import(pathToFileURL(join(ROOT, "viewer/streets/signalPlace.js")).href);
+      const { signalPhases, nearestRoad } = await import(pathToFileURL(join(ROOT, "viewer/traffic/signals.js")).href);
+      let posts = 0, met = 0; const bad = [];
+      for (const { T, g, roads, feats, bounds: B } of tileG) {
+        const PT = signalPhases(roads), N = new Map(roads.nodes.map((n) => [n.id, n])), byId = new Map(roads.roads.map((r) => [r.id, r]));
+        for (const st of signalSites(feats.points, roads, {})) {
+          if (!(st.x >= B.x0 && st.x < B.x1 && st.z >= B.z0 && st.z < B.z1)) continue;
+          posts++;
+          const nr = nearestRoad(roads, N, st.stop[0], st.stop[1]); if (!nr) continue;
+          const h = PT.ahead(nr.road.id, st.tx * nr.ux + st.tz * nr.uz >= 0 ? nr.road.b : nr.road.a), R = h && byId.get(h.road);
+          if (!R) continue;
+          const poly = [N.get(R.a), ...R.pts, N.get(R.b)].filter(Boolean);
+          const dRoad = (x, z) => { let m = Infinity; for (let k = 1; k < poly.length; k++) { const ax = poly[k - 1].x, az = poly[k - 1].z, dx = poly[k].x - ax, dz = poly[k].z - az, L2 = dx * dx + dz * dz || 1e-9, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)); m = Math.min(m, Math.hypot(ax + dx * t - x, az + dz * t - z)); } return m; };
+          let best = -1, bd = 8;
+          for (let L = 0; L < g.paths; L++) {
+            if (g.kind[L] || g.ctrl[L] !== 1 || g.jnode[L] < 0 || g.jnodes[g.jnode[L]].id !== h.node) continue;
+            const e = g.off[L + 1] - 1, dx = g.xy[2 * e] - g.xy[2 * e - 2], dz = g.xy[2 * e + 1] - g.xy[2 * e - 1];
+            if ((dx * st.tx + dz * st.tz) / (Math.hypot(dx, dz) || 1) < 0.3) continue;
+            let sum = 0, n = 0;
+            for (let k = e; k >= g.off[L] && g.cum[e] - g.cum[k] <= 20; k--) { sum += dRoad(g.xy[2 * k], g.xy[2 * k + 1]); n++; }
+            if (n && sum / n < bd) { bd = sum / n; best = L; }
+          }
+          if (best < 0) continue;
+          met++; if (g.phase[best] !== st.phase) bad.push(`${T} (${st.x.toFixed(0)}, ${st.z.toFixed(0)})`);
+        }
+      }
+      check("posts and lanes on one phase", met > posts * 0.5 && !bad.length, `${posts} posts in the tile cores, ${met} facing a signal approach lane, ${bad.length} showing another phase than it${bad.length ? ": " + bad.slice(0, 6).join(", ") : ""}`);
+    }
+    check("close signal pairs coordinated", off.length <= PHASE_MAX, `${pairs} through movements between signal junctions < 150 m apart, one cycle (${CYCLE_T} s); on different phases: ${off.length ? off.slice(0, 4).join(", ") : "none"} (${off.length}, ceiling ${PHASE_MAX}: one phase along the road, rule signal-phase-road)`);
   }
   check("junction entry room", (sim.stats.cycleBreaks || 0) <= CYCLE_MAX, `wait-for loops broken: ${sim.stats.cycleBreaks || 0} (<= ${CYCLE_MAX}: cars start a junction turn only with room past it, reserved against the cars already turning there)`);
   // (a child: its stuck list, then done: the parent judges the three seeds)
@@ -367,7 +401,7 @@ for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS
   }
   const bad = runs.filter((r) => r.error), all = runs.flatMap((r) => (r.stuck || []).map((q) => ({ ...q, seed: r.seed })));
   for (const r of runs.slice(1)) if (!r.error) check(`junction entry room (seed ${r.seed})`, r.cycles <= CYCLE_MAX, `wait-for loops broken: ${r.cycles}`);
-  check(`service vehicles stuck (seeds ${runs.map((r) => r.seed).join(" / ")})`, !bad.length && all.length <= STUCK_MAX && Object.keys(standMax).length > 0, `${bad.length ? bad.map((r) => `seed ${r.seed} ${r.error}`).join("; ") + "; " : ""}stuck (it and the queue ahead of it still ${STUCK_T} s, not a planned stop): ${runs.map((r) => `seed ${r.seed} ${r.stuck ? r.stuck.length : "?"}`).join(", ")} = ${all.length} (ceiling ${STUCK_MAX}: the signals job takes it to 0)${all.length ? " -- " + all.map((q) => `${q.nm} at ${q.at} (seed ${q.seed}, hold ${q.hold}, chain ${q.chain})`).join("; ") : ""}`);
+  check(`service vehicles stuck (seeds ${runs.map((r) => r.seed).join(" / ")})`, !bad.length && all.length <= STUCK_MAX && Object.keys(standMax).length > 0, `${bad.length ? bad.map((r) => `seed ${r.seed} ${r.error}`).join("; ") + "; " : ""}stuck (it and the queue ahead of it still ${STUCK_T} s, not a planned stop): ${runs.map((r) => `seed ${r.seed} ${r.stuck ? r.stuck.length : "?"}`).join(", ")} = ${all.length} (ceiling ${STUCK_MAX}: the remaining causes take it to 0)${all.length ? " -- " + all.map((q) => `${q.nm} at ${q.at} (seed ${q.seed}, hold ${q.hold}, chain ${q.chain})`).join("; ") : ""}`);
   // (the register: one entry per stuck PLACE, a 50 m cell, whatever vehicle stands there; three seeds only)
   if (REG && !ONE_SEED) {
     const { judge, report } = await import("./gaps.mjs");

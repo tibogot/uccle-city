@@ -809,7 +809,11 @@ export class TrafficSim {
       const gx = this.W.slots[X >>> 16], xi = X & 0xffff, need = this.half[i] * 2 + ROOM_GAP;
       let free = 0, blk = -1;
       // the exit's free length from its start to its last car (a moving last car leaves room growing), on along the
-      // route past an exit lane too short to hold the car
+      // route past an exit lane too short to hold the car; (claude/signals1, rule signal-phase-road) up to a signal's
+      // stop line showing red / amber now on the way: a car turning at D7 n150588281 into the Ch. d'Alsemberg exit
+      // stopped at the crossing signal 0 m past its turn, inside the junction (on green it goes: close signals share
+      // the phase along the road, offset 0); not past FAIR_T s held: a turn whose exit signal is red whenever its own
+      // green shows (the other phase), on a link shorter than a bus, would starve it (trafmix: a bus at E4, hold 5)
       {
         const R = this.route, o = i * ROUTE;
         let k = 0; while (k < ROUTE && R[o + k] !== X) k++;
@@ -817,7 +821,14 @@ export class TrafficSim {
           const gq = this.W.slots[R[o + q] >>> 16]; if (!gq) { free = Infinity; break; }
           const pq = R[o + q] & 0xffff;
           let m = gq.head[pq]; if (m === i) m = this.nxt[m];
-          if (m >= 0) { if (this.v[m] >= 2.5) free = Infinity; else { free += this.posOn(m) - this.half[m]; blk = m; } break; }
+          const red = !gq.kind[pq] && gq.ctrl[pq] === CTRL.signal && this.params.signals && this.holdT[i] <= FAIR_T && signalState(gq.phase[pq], this.t) !== 0 ? gq.holdAt[pq] : -1;
+          if (m >= 0 && !(red >= 0 && this.posOn(m) - this.half[m] > red)) {
+            // (a moving last car: room growing, or, before a red line, the room left behind it once it stands there)
+            if (this.v[m] >= 2.5) { if (red >= 0) free += Math.max(0, red - 2 * this.half[m]); else free = Infinity; }
+            else { free += this.posOn(m) - this.half[m]; blk = m; }
+            break;
+          }
+          if (red >= 0) { free += red; break; }
           free += gq.len[pq];
           if (q === ROUTE - 1) free = Infinity;
         }

@@ -431,3 +431,23 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
 - trafparksim (I6) had failed since round 6: a car pulling over at 8 m/s eased 0.42 m into a corridor with a parked car
   5 m ahead. makeRoom now judges the shifted corridor ahead (ROOM_AHEAD 0.25 m); that also cleared the E6 ambulance and
   the old-lanes D7 stuck. With the probe along the heading (cost): stuck 0 / 0 / 0 (model lanes), 1 / 0 / 1 (old lanes, registered); sim cost x1.04-1.07.
+
+**Round 8 (2026-11-22, claude/signals1): one signal phase along the road.**
+- Cause of the off-phase pairs: a post's phase was phaseOfDir of its OSM point's nearest segment, and each approach took
+  its post's phase. Roads that bend or run near 45 deg flipped between two posts of one road (Rue du Wagon at D5,
+  n140271967 <-> n2448080511; Avenue Brugmann / Rue du Doyenne at E4, n30151287 -> n254921174; 5 of 54 through movements
+  city-wide).
+- Now one table, signals.js signalPhases(roads), for the traffic graph AND the drawn posts (rule signal-phase-road): two
+  arm groups per signal node (the most opposite arms and those within 45 deg of them), a parity union-find over the
+  links < 150 m (through 2-arm nodes), each cluster oriented as the old rule would mostly have it. Trafmix off-phase
+  pairs 3 -> 0 (PHASE_MAX 0); city-wide (new row sigphase) 0 off, 1 odd ring (E1 Coghen / Vanderkindere / Alsemberg: its
+  one-way link left off phase), 0 disagreements across tile borders, 249 posts all on their approach's phase.
+- D7 (n150588281): OSM has its signals on the approach nodes only. It is grouped like a signal node and linked to them;
+  cars from such an approach keep apart from the other approaches by phase (no priority-to-the-right yield across
+  phases: the car that yielded 0.4 m past the Rue du Chateau d'Or signal, inside its turn), and the approach signals no
+  longer hold the traffic coming OUT of the junction (no head faces it; it stopped 0-3 m past its turn).
+- Entry room: up to a red / amber exit signal's line (not past FAIR_T held).
+- Green-wave offset: none other than 0 (two city-wide phases; a two-way green wave needs 0 or half a cycle; links under
+  150 m run inside the 22 s green).
+- trafmix stuck: 0 / 0 / 1 (seeds 7 / 11 / 23; the E6 ambulance behind a parked car, PARKING job), STUCK_MAX 4 -> 1.
+  D7 and E4 (priority-starved) not seen on seeds 7 / 11 / 23 / 31 / 41.

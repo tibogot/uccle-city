@@ -14,7 +14,7 @@
 //              neighbour's own copy at run time, viewer/traffic/trafficWorld.js)
 //   hold       where a car waits on this lane before the junction it leads into: holdAt[i] (m along, -1 = none),
 //              ctrl[i] 0 none, 1 signal, 2 stop sign, 3 give way, 4 priority to the right (Belgian default),
-//              phase[i] (signals: 0 A / 1 B, the phase of the OSM post on this approach), jnode[i] (junction id)
+//              phase[i] (signals: 0 A / 1 B, signals.js signalPhases: the phase of this approach's road at the node), jnode[i] (junction id)
 //   conflicts  per connector, CSR (cfOff / cfOther / cfAt / cfOtherAt / cfYield): the connectors it crosses or merges
 //              with, where along each, and whether THIS one yields (1), the other yields (-1) or neither (0: the
 //              signal phases keep them apart; still never entered while the other is inside)
@@ -23,7 +23,7 @@
 // guessed stop / yield lines are NOT obeyed (no data says they exist); their stop-line stations are used as the
 // place to wait when there is one.
 import { cumulative } from "../../vendor/roads/roadMath.js";
-import { nearestRoad, phaseOfDir } from "./signals.js";
+import { signalPhases } from "./signals.js";
 import { joinLaneGraph } from "../streets/laneGraph.js";
 import { NOT_DRIVEN } from "../streets/carriageway.js";
 import { laneOffsetProfile } from "../streets/laneOffset.js";
@@ -312,12 +312,9 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   });
 
   // ---- junctions: control per approach from data, conflicts between connectors
-  const N = new Map(roads.nodes.map((n) => [n.id, n]));
   const pts = (feats.points || []);
-  const sigPts = pts.filter((q) => q.kind === "traffic_signals").map((q) => {
-    const nr = nearestRoad(roads, N, q.x, q.z);
-    return { x: q.x, z: q.z, phase: nr ? phaseOfDir(nr.ux, nr.uz) : 0, road: nr?.road?.id };
-  });
+  // the phases: one table per tile's roads, the one the drawn posts read too (rule signal-phase-road, signals.js)
+  const PT = signalPhases(roads);
   const signPts = pts.filter((q) => q.kind === "stop" || q.kind === "give_way");
   const jnodes = [];
   const stats = { junctions: 0, signal: 0, stop: 0, yield: 0, priority: 0, conflicts: 0, pedSignals: 0 };
@@ -330,9 +327,9 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
       for (const a of node.arms) for (const lane of a.approach) {
         const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx.get(pid);
         if (i == null) continue;
-        const s = nearestSig(sigPts, node.x, node.z, 30);
+        if (PT.junctionOf(node.id, a.road.id)) continue;   // (coming out of the junction it is a signal of: not held, rule signal-phase-road)
         holdAt[i] = Math.max(0, len[i] - 4.5); ctrl[i] = CTRL.signal; jnode[i] = jnodes.length;
-        phase[i] = s ? s.phase : phaseOfDir(Math.cos(a.th), Math.sin(a.th));
+        phase[i] = PT.phaseAt(node.id, a.road.id, ...dirAtEnd(src[i], 20));
         stats.pedSignals++;
       }
       jnodes.push({ id: node.id, x: node.x, z: node.z, kind: "crossing", signal: true, cons: [] });
@@ -358,18 +355,27 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
     for (const li of lanes) {
       const lp = src[li];
       const arm = node.arms.find((a) => a.road.id === lp.roadId) || null;
-      let c = CTRL.priority, ph = 0;
+      let c = CTRL.priority, ph = 0, ce = 0;
       if (node.kind === "roundabout") c = CTRL.yield;
-      else if (osmSignal) {
+      else if (osmSignal && !PT.junctionOf(node.id, lp.roadId)) {
         c = CTRL.signal;
-        // the phase of the OSM post this approach passes (the signal point nearest the last 30 m of the lane);
-        // an approach with no post drawn takes the same rule from its own direction
-        const s = nearestOnLane(sigPts.filter((q) => q.road === lp.roadId), lp, 30, 14);   // a post of THIS road (its drawn head faces this approach)
-        ph = s ? s.phase : phaseOfDir(...dirAtEnd(lp, 20));
+        // the phase of the road this approach belongs to at this node: the posts facing it read the same table
+        ph = PT.phaseAt(node.id, lp.roadId, ...dirAtEnd(lp, 20));
+      } else if (osmSignal) {
+        // (rule signal-phase-road) an approach signal of the junction this lane comes FROM (D7 n11224569284 / n169231590
+        // round n150588281: its heads face the traffic going into that junction): not held here; a car that turned
+        // there stopped 0-3 m on, inside the junction's turn, at a red no head showed it (trafmix stuck, D7)
+        c = CTRL.priority;
       } else if (signOf.has(li)) c = signOf.get(li).kind === "stop" ? CTRL.stop : CTRL.yield;
+      else if (PT.approachSignal(node.id, lp.roadId)) {
+        // a junction whose signals are on its approaches: the cars from such an approach passed its green; against the
+        // other approaches they keep apart by phase (no priority-to-the-right yield across phases, the D7 car that
+        // yielded 0.4 m past the Rue du Chateau d'Or signal, inside its turn); still uncontrolled here (no second stop)
+        ce = 1; ph = PT.phaseAt(node.id, lp.roadId, ...dirAtEnd(lp, 20));
+      }
       // where to wait: the engine's stop line on this lane when it drew one, else the junction mouth
       const at = lp.stop ? lp.stop.at : Math.max(0, lp.len - 0.6);
-      entries.set(li, { arm, c, ph });
+      entries.set(li, { arm, c: ce ? CTRL.signal : c, ph });
       holdAt[li] = at; ctrl[li] = c; phase[li] = ph; jnode[li] = J;
       stats[c === CTRL.signal ? "signal" : c === CTRL.stop ? "stop" : c === CTRL.yield ? "yield" : "priority"]++;
     }
@@ -439,11 +445,6 @@ function dirAtEnd(p, back = 1) {
   const q = p.pts, n = q.length, [ax, az] = pointAt(q, p.cum, Math.max(0, p.len - back));
   return norm([q[n - 1][0] - ax, q[n - 1][1] - az]);
 }
-function nearestSig(list, x, z, r) {
-  let best = null, bd = r * r;
-  for (const s of list) { const d = (s.x - x) ** 2 + (s.z - z) ** 2; if (d < bd) { bd = d; best = s; } }
-  return best;
-}
 /** Squared distance of point q to the last `back` m of lane piece p (or its end, extended 15 m into the junction). */
 function distToLaneEnd(p, q, back) {
   let bd = Infinity;
@@ -456,20 +457,6 @@ function distToLaneEnd(p, q, back) {
   const [ux, uz] = dirAtEnd(p, 5);
   seg(pts[n - 1][0], pts[n - 1][1], pts[n - 1][0] + ux * 15, pts[n - 1][1] + uz * 15);
   return bd;
-}
-/** The point of `list` nearest the last `back` m of lane piece p, within r of it. */
-function nearestOnLane(list, p, back, r) {
-  let best = null, bd = r * r;
-  const q = p.pts, c = p.cum;
-  for (const s of list) {
-    for (let i = q.length - 1; i > 0 && c[i] > p.len - back - 10; i--) {
-      const ax = q[i - 1][0], az = q[i - 1][1], bx = q[i][0], bz = q[i][1], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
-      const t = Math.max(0, Math.min(1, ((s.x - ax) * dx + (s.z - az) * dz) / L2));
-      const d = (ax + dx * t - s.x) ** 2 + (az + dz * t - s.z) ** 2;
-      if (d < bd) { bd = d; best = s; }
-    }
-  }
-  return best;
 }
 
 // ---------------------------------------------------------------- lanes onto the MEASURED carriageway
