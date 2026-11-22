@@ -19957,10 +19957,22 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
         });
       }
     }
+    let mouthDropped = 0;
+    const notJunction = new Set((net.nodes || []).filter((n) => n.kind === "continuation" || n.kind === "split" || n.kind === "end").map((n) => n.id));
+    if (!MOUTH_OLD && opts.mouth !== false) for (const p of src) {
+      if (p.kind !== "connector" || p.pts.length < 2 || notJunction.has(p.nodeId)) continue;
+      for (const e of [p.pts[0], p.pts[p.pts.length - 1]]) parked.within(e[0], e[1], MOUTH_CLEAR, (ci) => {
+        if (!drop2.has(ci)) {
+          drop2.add(ci);
+          mouthDropped++;
+        }
+      });
+    }
+    fitStats.parkMouth = mouthDropped + (opts.mouthBefore || 0);
     fitStats.parkDropped = drop2.size + (opts.droppedBefore || 0);
     fitStats.checkMs = Math.round(performance.now() - tC);
     if (drop2.size) parkedKept = opts.parked.filter((c, ci) => !drop2.has(ci));
-    if (drop2.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop2.size });
+    if (drop2.size && !opts.droppedBefore) return buildTrafficGraph(net, roads, feats, bounds, grid, { ...opts, parked: parkedKept, droppedBefore: drop2.size, mouthBefore: mouthDropped });
   }
   const idx2 = new Map(src.map((p, i) => [p.id, i]));
   const P = src.length;
@@ -20151,6 +20163,8 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
   cfOff[P] = list.length;
   const cfOther = Int32Array.from(list, (c) => c[0]), cfAt = Float32Array.from(list, (c) => c[1]), cfOtherAt = Float32Array.from(list, (c) => c[2]);
   const cfYield = Int8Array.from(list, (c) => c[3]);
+  const tW = performance.now(), clearW = laneClearWidths(src, P, grid, parkedKept);
+  fitStats.clearMs = Math.round(performance.now() - tW);
   return {
     paths: P,
     xy,
@@ -20182,6 +20196,7 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     jnodes: jnodes.map((j) => ({ id: j.id, x: j.x, z: j.z, kind: j.kind, signal: !!j.signal })),
     parkedKept,
     ...narrowStretches(src, P),
+    clearW,
     bounds,
     stats: { ...stats, paths: P, fit: fitStats, ms: Math.round(performance.now() - t0) }
   };
@@ -20291,7 +20306,58 @@ function narrowStretches(src, P) {
     nO1: Float32Array.from(list, (r) => r[4])
   };
 }
+var CW_STEP = 3;
+var CW_END = 6;
+var CW_RAY = 8;
+var CW_DR = 0.25;
+function laneClearWidths(src, P, grid, parkedKept) {
+  const out = new Float32Array(P).fill(Infinity);
+  if (!grid) return out;
+  const cls = (x, z) => {
+    const i = Math.floor((x - grid.x0) / grid.step), j = Math.floor((z - grid.z0) / grid.step);
+    if (i < 0 || j < 0 || i >= grid.nx || j >= grid.nz) return -2;
+    return grid.data[j * grid.nx + i] - 1;
+  };
+  const G2 = /* @__PURE__ */ new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096);
+  for (const c of parkedKept || []) {
+    const k = key(Math.floor(c.x / 8), Math.floor(c.z / 8));
+    if (!G2.has(k)) G2.set(k, []);
+    G2.get(k).push(c);
+  }
+  const near = [];
+  const ray = (x, z, nx, nz) => {
+    for (let t = CW_DR; t <= CW_RAY; t += CW_DR) {
+      const px = x + nx * t, pz = z + nz * t, c = cls(px, pz);
+      if (c === -2) return NaN;
+      if (c < 0 || !CARRIAGE6[c]) return t - CW_DR / 2;
+      for (let q = 0; q < near.length; q++) if (parkedBoxDist(near[q], px, pz) <= 0) return t - CW_DR / 2;
+    }
+    return CW_RAY;
+  };
+  src.forEach((p, i) => {
+    if (p.kind === "connector") return;
+    const c = p.cum || cumulative(p.pts), L2 = c[c.length - 1];
+    let best = Infinity, prev = NaN;
+    for (let sd = CW_END; sd <= L2 - CW_END; sd += CW_STEP) {
+      const A = pointAt2(p.pts, c, sd - 0.5), B = pointAt2(p.pts, c, sd + 0.5), x = (A[0] + B[0]) / 2, z = (A[1] + B[1]) / 2;
+      const k0 = cls(x, z);
+      if (k0 < 0 || !CARRIAGE6[k0]) continue;
+      near.length = 0;
+      const i0 = Math.floor(x / 8), j0 = Math.floor(z / 8);
+      for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) for (const q of G2.get(key(i0 + di, j0 + dj)) || []) if ((q.x - x) ** 2 + (q.z - z) ** 2 < (CW_RAY + 2.5) ** 2) near.push(q);
+      const tx = B[0] - A[0], tz = B[1] - A[1], tl = Math.hypot(tx, tz) || 1, nx = tz / tl, nz = -tx / tl;
+      const w = ray(x, z, nx, nz) + ray(x, z, -nx, -nz);
+      const m = Math.max(w, prev);
+      if (m < best) best = m;
+      prev = w;
+    }
+    out[i] = best;
+  });
+  return out;
+}
 var PARK_CLEAR2 = 1.95;
+var MOUTH_CLEAR = 5;
+var MOUTH_OLD = typeof location !== "undefined" && /[?&]parkmouth=old(&|$)/.test(location.search);
 var TP_HALF = 0.98;
 var TP_FIT = 0.15;
 var RAMP = 0.2;
@@ -20348,6 +20414,11 @@ function parkedGrid(sites, boxed = false) {
         return false;
       });
       return b;
+    },
+    /** every car whose box comes within r of (x, z), any r (the cells its centre can be in): f(ci) */
+    within(x, z, r, f) {
+      const n = Math.ceil((r + 2.5) / 4), i0 = Math.floor(x / 4), j0 = Math.floor(z / 4);
+      for (let di = -n; di <= n; di++) for (let dj = -n; dj <= n; dj++) for (const ci of g.get(key(i0 + di, j0 + dj)) || []) if (parkedBoxDist(sites[ci], x, z) < r) f(ci);
     },
     /** every car whose box comes within r of (x, z): f(ci) */
     each(x, z, r, f) {
@@ -20629,6 +20700,9 @@ var hash = (a, b) => {
   const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
   return s - Math.floor(s);
 };
+var SERVICE_CLEAR = 3;
+var PARK_HALF_W = 0.925;
+var SERVICE_OLD = typeof location !== "undefined" && /[?&]parkservice=old(&|$)/.test(location.search);
 var SLOT = 5.6;
 var BOTH = 8;
 var ONE = 5.6;
@@ -20718,9 +20792,9 @@ function widthParking(roads, feats, bounds, fit, opts = {}) {
       W2.samples.push(q);
     }
   }
-  const sites = [];
+  const sites = [], cand = [];
   let k = 0;
-  for (const [, W2] of ways) {
+  for (const [wayId, W2] of ways) {
     for (const p of avoid) for (const q of W2.samples) {
       const dl = (p[0] - q.x) * q.lx + (p[1] - q.z) * q.lz;
       if (Math.hypot(p[0] - q.x, p[1] - q.z) < p[2] + 4) W2.obst[dl > 0 ? 0 : 1] += 0.5;
@@ -20766,11 +20840,69 @@ function widthParking(roads, feats, bounds, fit, opts = {}) {
         const pl = fit.placeCar(x0, z0, yaw0);
         if (!pl || pl.x < bounds.x0 || pl.x > bounds.x1 || pl.z < bounds.z0 || pl.z > bounds.z1) continue;
         if (sites.some((o) => (o.x - pl.x) ** 2 + (o.z - pl.z) ** 2 < 20)) continue;
-        sites.push({ x: pl.x, z: pl.z, yaw: pl.yaw + (hv - 0.3) * 0.02, c: Math.floor(hash(pl.z, pl.x) * (opts.nColours ?? 8)), w: q.w, side, road: q.r.id });
+        const site = { x: pl.x, z: pl.z, yaw: pl.yaw + (hv - 0.3) * 0.02, c: Math.floor(hash(pl.z, pl.x) * (opts.nColours ?? 8)), w: q.w, side, road: q.r.id };
+        sites.push(site);
+        cand.push({ site, first: side === oneSide, way: wayId });
       }
     }
   }
-  return { sites, stats };
+  if (SERVICE_OLD || opts.service === false) return { sites, stats };
+  const kept = serviceClear(cand, fit, stats);
+  return { sites: kept, stats };
+}
+function serviceClear(cand, fit, stats) {
+  const S3 = stats.service = { cars: cand.length, dropped: 0, edge: 0, car: 0, ways: 0, waysBoth: 0 };
+  const G2 = /* @__PURE__ */ new Map(), key = (i, j) => (i + 4096) * 8192 + (j + 4096), CELL6 = 8;
+  const inBox = (c, x, z) => {
+    const fx = Math.cos(c.yaw), fz = -Math.sin(c.yaw), dx = x - c.x, dz = z - c.z;
+    return Math.abs(dx * fx + dz * fz) <= 2.365 && Math.abs(dx * fz - dz * fx) <= PARK_HALF_W;
+  };
+  const nearCar = (x, z, self2 = null) => {
+    const i0 = Math.floor(x / CELL6), j0 = Math.floor(z / CELL6);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const c of G2.get(key(i0 + di, j0 + dj)) || []) if (c !== self2 && inBox(c, x, z)) return true;
+    return false;
+  };
+  const order = [...cand.filter((c) => c.first), ...cand.filter((c) => !c.first)];
+  const keep = /* @__PURE__ */ new Set(), changed = /* @__PURE__ */ new Set(), both = /* @__PURE__ */ new Set();
+  const short = (site) => {
+    const ax = -Math.sin(site.yaw), az = -Math.cos(site.yaw), x0 = site.x + ax * PARK_HALF_W, z0 = site.z + az * PARK_HALF_W;
+    for (let t = 0.25; t <= SERVICE_CLEAR + 1e-6; t += 0.25) {
+      const x = x0 + ax * t, z = z0 + az * t, k = fit.classAt(x, z);
+      if (k >= 0 && !PARK_CLASSES.has(k)) return "edge";
+      if (nearCar(x, z, site)) return "car";
+    }
+    return null;
+  };
+  const add = (site) => {
+    const kk = key(Math.floor(site.x / CELL6), Math.floor(site.z / CELL6));
+    if (!G2.has(kk)) G2.set(kk, []);
+    G2.get(kk).push(site);
+  };
+  for (const c of order) {
+    const why = short(c.site);
+    if (why) {
+      S3.dropped++;
+      S3[why]++;
+      changed.add(c.way);
+      if (why === "car") both.add(c.way);
+      continue;
+    }
+    keep.add(c.site);
+    add(c.site);
+  }
+  for (const c of [...order].reverse()) {
+    if (!keep.has(c.site) || !short(c.site)) continue;
+    keep.delete(c.site);
+    S3.dropped++;
+    S3.car++;
+    changed.add(c.way);
+    both.add(c.way);
+    const l = G2.get(key(Math.floor(c.site.x / CELL6), Math.floor(c.site.z / CELL6)));
+    l.splice(l.indexOf(c.site), 1);
+  }
+  S3.ways = changed.size;
+  S3.waysBoth = both.size;
+  return cand.length ? cand.map((c) => c.site).filter((s) => keep.has(s)) : [];
 }
 
 // viewer/streets/fitCore.js
@@ -22820,4 +22952,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "8416101442ec0416";
+self.__TILE_CODE_HASH = "bbf73c8dffc3edd5";

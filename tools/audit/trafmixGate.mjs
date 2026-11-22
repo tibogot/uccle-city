@@ -19,7 +19,7 @@ import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
-import { measure } from "../gate/timing.mjs";
+import { cpuAB } from "../gate/timing.mjs";
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
 const OLD = argv.includes("--old"), QUIET = argv.includes("--quiet");
@@ -30,6 +30,7 @@ const imp = (p) => import(pathToFileURL(join(ROOT, p)).href);
 const { streetFit } = await imp("viewer/streets/fitCore.js");
 const { widthParking } = await imp("viewer/streets/parkPlace.js");
 const { tileTrafficGraph } = await imp("viewer/traffic/tileTraffic.js");
+const { laneHits } = await imp("viewer/traffic/borderPark.js");
 const { TrafficWorld } = await imp("viewer/traffic/trafficWorld.js");
 const { TrafficSim, STEP } = await imp("viewer/traffic/trafficSim.js");
 const { parseCarGlb } = await imp("viewer/drive/carLod.js");
@@ -39,7 +40,10 @@ const { signalClock } = await imp("viewer/traffic/signals.js");
 let simClock = 0;
 signalClock.now = () => simClock;
 const _step = TrafficSim.prototype.step;
-TrafficSim.prototype.step = function (ctx) { simClock += STEP; return _step.call(this, ctx); };
+// (claude/parking1: each sim keeps ITS OWN clock: one shared clock, advanced by every sim's step, gave two identical
+// sims stepped in turn different signal phases, so different traffic: the sim-cost row's "two identical plain sims"
+// came out 0.87-1.21 x apart and its ratio moved with them)
+TrafficSim.prototype.step = function (ctx) { simClock = this._clk = (this._clk ?? 0) + STEP; return _step.call(this, ctx); };
 const M = await imp("viewer/traffic/trafMix.js");
 const { HEAVY, HEAVY_TYPES, TrafMix, ROLE, shares, TRAFMIX_OLD } = M;
 
@@ -126,17 +130,27 @@ const GROUP = (n) => (["hatch_s", "hatch_c", "estate", "saloon", "suv"].includes
 const TILES = ["D5", "D6", "D7", "E4", "E5", "E6"];
 const t0 = Date.now();
 const W = new TrafficWorld();
-const parked = [], tileB = [], tileG = [];
+const parked = [], tileB = [], tileG = [], kept = [], graphs = new Map();
 for (const T of TILES) {
   const { roads, feats, bounds, rd, roofs } = loadTile(T);
   tileB.push([T, bounds]);
   const wp = widthParking(roads, feats, bounds, streetFit(rd.surfaceData));
   const g = tileTrafficGraph(rd.net, roads, feats, bounds, rd.surfaceData.grid, { parked: wp.sites, roofs, entry: process.env.LANES_OLD ? { streetLanes: false } : {} });
-  for (const c of g.parkedKept ?? wp.sites) parked.push({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { setRGB() {} }, room: 6 });
+  // (a shallow copy for laneHits: it caches its lane hash ON the graph (_tpHash); the sim's own graph objects keep their
+  // shape)
+  kept.push([T, g.parkedKept ?? wp.sites]); graphs.set(T, { ...g });
   W.add(T, g);
   tileG.push({ T, g, roads, feats, bounds });
 }
-log(`tiles ${TILES.join(" ")} loaded in ${((Date.now() - t0) / 1000).toFixed(1)} s, ${parked.length} parked cars`);
+// (claude/parking1: as main.js draws them: a tile's parked cars under a LOADED neighbour's core lane are not drawn
+// (viewer/traffic/borderPark.js laneHits, all six tiles loaded). Before, the gate kept them and the sim made them
+// obstacles in the neighbour's lane: queues behind cars the city never shows (D6 (-1150, 930), D7 Rue Engeland))
+let borderDropped = 0;
+for (const [T, sites] of kept) {
+  const drop = laneHits(sites, graphs, T); borderDropped += drop.size;
+  sites.forEach((c, i) => { if (!drop.has(i)) parked.push({ x: c.x, z: c.z, y: 0, heading: c.yaw + Math.PI / 2, type: "estate", hidden: false, col: { setRGB() {} }, room: 6 }); });
+}
+log(`tiles ${TILES.join(" ")} loaded in ${((Date.now() - t0) / 1000).toFixed(1)} s, ${parked.length} parked cars (${borderDropped} under a neighbour's lane, not drawn)`);
 // the street types as the city's traffic.js makes them (sizes / wheels from the cars2 GLB, the mix's weights)
 const fleetSrc = readFileSync(join(ROOT, "viewer/carFleet.js"), "utf8");
 const TYPE_MIX = JSON.parse(/export const TYPE_MIX = (\[.*?\]);/s.exec(fleetSrc)[1]);
@@ -170,7 +184,12 @@ const SEED = +(process.argv.find((a, k) => process.argv[k - 1] === "--seed") ?? 
 // lanes, --register): a new place fails, a fixed one is stale. Lower STUCK_MAX as those jobs land; never raise it.
 // claude/signals1: 1 (seeds 7 / 11 / 23: 0 / 0 / 1, the E6 ambulance behind a parked car, the PARKING job; the D7 pair
 // and the E4 priority junction not seen on seeds 7 / 11 / 23 / 31 / 41)
-const STUCK_MAX = 1, MORE_SEEDS = [11, 23];
+// claude/parking1 (rule service-vehicle-passage: parked cars leave 3 m, none within 5 m of a junction mouth, the gate's
+// parked cars as main.js draws them, service vehicles routed off lanes they cannot pass, a run's way through a narrow
+// stretch), after claude/signals1: model lanes 0 / 1 / 1 = 2 (the E4 priority junction, the SIGNALS job's follow-up; a
+// patrol before a 72 m narrow street at E6, cause narrow-starved, the PARKING follow-up), the measured value; the
+// parking-both-sides places gone (the E6 ambulance, Dieweg, Rue Engeland)
+const STUCK_MAX = 2, MORE_SEEDS = [11, 23];
 const CHILD = argv.includes("--child"), ONE_SEED = process.argv.includes("--seed"), REG = argv.includes("--register");
 const kids = CHILD || ONE_SEED ? [] : MORE_SEEDS.map((sd) => new Promise((res) => {
   // (started now: they load their tiles and run their sims while this one runs; awaited before the timed part)
@@ -202,6 +221,7 @@ function stuckStep(i, nm) {
 }
 let cur = tally(), standMax = {}, stuckRemoved = {}, busT = 0, busOnT = 0, doors = [], scrape = {}, stuckDel = 0, stuckCars = 0, nDel = 0, nCars = 0;
 const busNs = new Int16Array(sim.cap).fill(-1), busRst = new Uint8Array(sim.cap);
+const lastPath = new Int32Array(sim.cap).fill(-1), lastLane = new Int32Array(sim.cap).fill(-1), lastGen = new Uint32Array(sim.cap), svc = { entries: 0, narrow: 0, tight: 0, forced: 0, where: [] };
 function stepOnce(ctx) {
   sim.clearObstacles(); sim.step(ctx);
   for (let i = 0; i < sim.cap; i++) {
@@ -228,6 +248,25 @@ function stepOnce(ctx) {
       standMax[key] = Math.max(standMax[key] || 0, stand[i]);
       if ((sim.steps + i) % 10 === 0) stuckStep(i, nm);
       if (process.env.TMV && stand[i] > 60 && Math.abs(stand[i] % 20 - 0) < STEP / 2) { const j = sim.nxt[i]; console.log(`  [stand] ${key} ${stand[i].toFixed(0)} s at ${sim.x[i].toFixed(1)},${sim.z[i].toFixed(1)} hold ${sim.hold[i]} lead ${sim.lead[i]} gap ${sim.gap[i].toFixed(1)} ctl ${sim.ctl[i]} rst ${sim.rst[i]} room ${sim.room[i].toFixed(2)} pw ${sim.pw[i].toFixed(2)}/${sim.pwT[i].toFixed(1)} next ${j >= 0 ? types[sim.type[j]].name + " v " + sim.v[j].toFixed(1) + " rst " + sim.rst[j] + " role " + sim.role[j] + " hold " + sim.hold[j] : "-"} path ${sim.path[i] & 0xffff} d ${sim.d[i].toFixed(1)}`); }
+    }
+    // (rule service-vehicle-passage: every lane a service vehicle enters, against its clear width: narrower than the
+    // vehicle = it cannot physically pass (must be 0); narrower than it + 2 x 0.2 m = the router should have kept it off)
+    // (the lane it spawned on is not a choice; a lane that was the only way on from the last one is 'forced': reported)
+    if (HEAVY[nm] && nm !== "police_t" && (lastGen[i] !== sim.gen[i] || sim.path[i] !== lastPath[i])) {
+      const fresh = lastGen[i] !== sim.gen[i];
+      lastGen[i] = sim.gen[i]; lastPath[i] = sim.path[i];
+      const g = sim.W.slots[sim.path[i] >>> 16], j = sim.path[i] & 0xffff, cw = g?.clearW?.[j] ?? Infinity, w = types[sim.type[i]].w;
+      if (g && !g.kind[j]) {
+        const from = lastLane[i]; lastLane[i] = sim.path[i];
+        if (!fresh) {
+          svc.entries++;
+          let alt = false;
+          const gf = from >= 0 ? sim.W.slots[from >>> 16] : null, f = from & 0xffff;
+          if (gf && gf === g) for (let q = gf.nextOff[f]; q < gf.nextOff[f + 1]; q++) { const c = gf.nextIdx[q], L = gf.kind[c] && gf.nextOff[c] < gf.nextOff[c + 1] ? gf.nextIdx[gf.nextOff[c]] : c; if (L !== j && !(gf.clearW?.[L] < w + 0.4)) alt = true; }
+          if (cw < w) { if (alt || !gf) { svc.narrow++; svc.where.push(`${nm} ${cw.toFixed(2)} m at ${sim.x[i].toFixed(0)}, ${sim.z[i].toFixed(0)}`); } else svc.forced++; }
+          else if (cw < w + 0.4) svc.tight++;
+        }
+      }
     }
     if (HEAVY[nm] && (sim.steps + i) % 4 === 0 && sim.pk.grid.size) {
       // the long bodies against the parked cars (a report: the lanes are fitted round the parked cars for a car's width)
@@ -357,11 +396,17 @@ for (const [label, where, hour, secs] of [["8 h Alsemberg", "alsemberg", 8, SECS
   }
   check("junction entry room", (sim.stats.cycleBreaks || 0) <= CYCLE_MAX, `wait-for loops broken: ${sim.stats.cycleBreaks || 0} (<= ${CYCLE_MAX}: cars start a junction turn only with room past it, reserved against the cars already turning there)`);
   // (a child: its stuck list, then done: the parent judges the three seeds)
-  if (CHILD) { console.log(`SEEDRESULT ${JSON.stringify({ seed: SEED, stuck: stuckTrue, cycles: sim.stats.cycleBreaks || 0 })}`); process.exit(0); }
-  const runs = [{ seed: SEED, stuck: stuckTrue, cycles: sim.stats.cycleBreaks || 0 }, ...(await Promise.all(kids))];
+  if (CHILD) { console.log(`SEEDRESULT ${JSON.stringify({ seed: SEED, stuck: stuckTrue, cycles: sim.stats.cycleBreaks || 0, svc })}`); process.exit(0); }
+  const runs = [{ seed: SEED, stuck: stuckTrue, cycles: sim.stats.cycleBreaks || 0, svc }, ...(await Promise.all(kids))];
+  {
+    // (rule service-vehicle-passage: the lanes' clear widths exist, and no service vehicle entered a lane narrower than itself)
+    let lanes = 0, measured = 0; for (const g of W.slots) if (g?.clearW) for (let j = 0; j < g.paths; j++) if (!g.kind[j]) { lanes++; if (Number.isFinite(g.clearW[j])) measured++; }
+    const S = runs.filter((r) => r.svc).map((r) => r.svc), ent = S.reduce((a, o) => a + o.entries, 0), nar = S.reduce((a, o) => a + o.narrow, 0), ti = S.reduce((a, o) => a + o.tight, 0), fo = S.reduce((a, o) => a + o.forced, 0);
+    check("service vehicles fit their lanes", measured > 0.25 * lanes && ent > 0 && nar === 0, `${measured} of ${lanes} lanes with a measured clear width; service vehicles (runs, buses, bin lorries) entered ${ent} lanes over seeds ${runs.map((r) => r.seed).join(" / ")}: ${nar} narrower than the vehicle with a wider way on${nar ? " (" + S.flatMap((o) => o.where).slice(0, 4).join("; ") + ")" : ""}, ${fo} narrower as the only way on (info), ${ti} within 0.4 m of it`);
+  }
   const bad = runs.filter((r) => r.error), all = runs.flatMap((r) => (r.stuck || []).map((q) => ({ ...q, seed: r.seed })));
   for (const r of runs.slice(1)) if (!r.error) check(`junction entry room (seed ${r.seed})`, r.cycles <= CYCLE_MAX, `wait-for loops broken: ${r.cycles}`);
-  check(`service vehicles stuck (seeds ${runs.map((r) => r.seed).join(" / ")})`, !bad.length && all.length <= STUCK_MAX && Object.keys(standMax).length > 0, `${bad.length ? bad.map((r) => `seed ${r.seed} ${r.error}`).join("; ") + "; " : ""}stuck (it and the queue ahead of it still ${STUCK_T} s, not a planned stop): ${runs.map((r) => `seed ${r.seed} ${r.stuck ? r.stuck.length : "?"}`).join(", ")} = ${all.length} (ceiling ${STUCK_MAX}: the parking job takes it to 0)${all.length ? " -- " + all.map((q) => `${q.nm} at ${q.at} (seed ${q.seed}, hold ${q.hold}, chain ${q.chain})`).join("; ") : ""}`);
+  check(`service vehicles stuck (seeds ${runs.map((r) => r.seed).join(" / ")})`, !bad.length && all.length <= STUCK_MAX && Object.keys(standMax).length > 0, `${bad.length ? bad.map((r) => `seed ${r.seed} ${r.error}`).join("; ") + "; " : ""}stuck (it and the queue ahead of it still ${STUCK_T} s, not a planned stop): ${runs.map((r) => `seed ${r.seed} ${r.stuck ? r.stuck.length : "?"}`).join(", ")} = ${all.length} (ceiling ${STUCK_MAX}: the remaining causes take it to 0)${all.length ? " -- " + all.map((q) => `${q.nm} at ${q.at} (seed ${q.seed}, hold ${q.hold}, chain ${q.chain})`).join("; ") : ""}`);
   // (the register: one entry per stuck PLACE, a 50 m cell, whatever vehicle stands there; three seeds only)
   if (REG && !ONE_SEED) {
     const { judge, report } = await import("./gaps.mjs");
@@ -426,26 +471,21 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
 // the 1.10 limit while the mix's own work, timed in sequence, was ~1 %. The twin pair's ratio is printed as the floor)
 {
   const ctx = { visible: () => false, ...FOCUS.alsemberg };
-  const A = makeSim(true, 11), B = makeSim(false, 11), B2 = makeSim(false, 11), A2 = makeSim(true, 11);
-  const ALL = [A, B, B2, A2];
-  for (const S of ALL) { S.params.hour = 8; for (let s = 0; s < Math.round(40 / STEP); s++) { S.clearObstacles(); S.step(ctx); } }
-  const tt = ALL.map(() => []);
-  // (30 rounds of 150 steps per sim, the order rotated each round; the median of the rounds' own ratios: each round
-  // times all four back to back, so they see the machine in the same state)
-  // (between two calibrations, again while the machine changed speed: tools/gate/timing.mjs; a ratio, so no k)
-  const MT = await measure(() => {
-    for (const t of tt) t.length = 0;
-    for (let r = 0; r < 30; r++) for (let q = 0; q < 4; q++) {
-      const k = (q + r) % 4, S = ALL[k], t = performance.now();
-      let cars = 0;
-      for (let s = 0; s < 150; s++) { S.clearObstacles(); S.step(ctx); cars += S.count; }
-      tt[k].push(((performance.now() - t) / cars) * 1000);            // (us per car per step)
-    }
-  }, { tries: 3 });
-  const med = (f) => { const v = tt[0].map((_, i) => f(i)).sort((x, y) => x - y); return v[v.length >> 1]; };
-  const ratio = med((i) => (tt[0][i] + tt[3][i]) / (tt[1][i] + tt[2][i])), twin = med((i) => tt[1][i] / tt[2][i]);
-  const ra = Math.min(...tt[0], ...tt[3]), rb = Math.min(...tt[1], ...tt[2]);
-  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${ra.toFixed(2)} us per car per step with the mix vs ${rb.toFixed(2)} without (x${ratio.toFixed(3)}, the median of 30 rounds, two sims of each; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${MT.note})`);
+  // (the four sims built afresh for each of 4 reps: the same traffic again, each sim's CPU summed over the reps)
+  let A, B, B2, A2;
+  const make = () => {
+    A = makeSim(true, 11); B = makeSim(false, 11); B2 = makeSim(false, 11); A2 = makeSim(true, 11);
+    for (const S of [A, B, B2, A2]) { S.params.hour = 8; for (let s = 0; s < Math.round(40 / STEP); s++) { S.clearObstacles(); S.step(ctx); } }
+    return { a: [batch(A), batch(A2)], b: [batch(B), batch(B2)] };
+  };
+  // (claude/parking1, rule timing-rows: in CPU TIME, not wall time: tools/gate/timing.mjs cpuAB, the same 30 rounds of
+  // A B B A blocks of 150 steps (two sims of each, seed 11), each sim's CPU time summed over its blocks and 4 reps. The
+  // wall-time version read x1.04-1.17 for the same code with other jobs on the laptop: their time on the core was
+  // counted as the mix's (claude/foundation failed it at x1.138 under load and passed alone))
+  const batch = (S) => () => { let cars = 0; for (let s = 0; s < 50; s++) { S.clearObstacles(); S.step(ctx); cars += S.count; } return cars; };
+  const MT = cpuAB({ make, reps: 4, rounds: 30, batches: 3 });
+  const ratio = MT.ratio, twin = MT.twin;
+  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");
 process.exitCode = fails ? 1 : 0;

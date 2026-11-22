@@ -37,6 +37,7 @@ export const CAUSES = {
   "after-model": "our builder: a model lane / turn moved after the model stage (lane joins, kink rounding, the turn repair): STREET_MODEL_PLAN job 4b",
   "lane-end": "our builder: within 4 m of a model lane's end (its cap at a junction mouth or a corner): STREET_MODEL_PLAN job 4b / job 7",
   "turn-corner": "our builder: a G2 junction turn leaving its junction / meeting a kerb or a building: STREET_MODEL_PLAN job 4b / job 7",
+  "narrow-starved": "a car before a long narrow stretch (the two directions' lanes within 2.3 m) never gets its turn: the oncoming cars come through the junction straight into a stretch that starts a few metres into their lane, where the narrow-stretch wait (trafficSim.js, the car's own lane only) does not hold them; the follow-up: judge the stretch on the route's next lane too (claude/parking1)",
   "parking-both-sides": "an emergency vehicle on a street parked on both sides, no room to pass the oncoming / yielding cars: the PARKING job (docs/TODO.md: its route avoids such streets, or the parking leaves a gap)",
 };
 export const ID_RE = /^[a-z0-9]+\.[A-Za-z0-9]+:[^:\s]+:\d+-\d+$/;
