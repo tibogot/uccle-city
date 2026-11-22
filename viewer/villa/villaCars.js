@@ -11,7 +11,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const PICKS = [{ ids: ["saloon", "estate"], paint: 0x0b0c0f }, { ids: ["suv", "estate"], paint: 0xe4e4df }];
 
-export async function buildVillaCars({ notes, rootM, rotationY, groundAt, lift = 0.035 }) {
+export async function buildVillaCars({ notes, rootM, rotationY, groundAt, lift = 0.07 }) {
   const group = new THREE.Group(); group.name = "villa-cars";
   const rings = [];
   const places = notes.garage.places;

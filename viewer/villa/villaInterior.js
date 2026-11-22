@@ -26,7 +26,7 @@ const C = Object.fromEntries(CODES.map((n, i) => [n, i]));
 
 /** live look: the bakes' gains, the eye adaptation inside, the glass fade-in, debug views (0 final, 1 light, 2 albedo) */
 export const villaInLook = {
-  dayGain: uniform(0.9), sunGain: uniform(0.8), nightGain: uniform(0.55), adapt: uniform(1), adaptInside: 3.2, adaptNight: 1.6,
+  dayGain: uniform(0.9), sunGain: uniform(0.8), nightGain: uniform(0.85), adapt: uniform(1), adaptInside: 3.2, adaptNight: 1.6,
   glassIn: uniform(1), dayOverride: uniform(-1), view: uniform(0), warm: uniform(new THREE.Color(1.04, 0.99, 0.93)),
 };
 
@@ -64,7 +64,7 @@ const ALBEDO = {
     const h = hash2(vec2(row, col)).toVar();
     const grain = vnoise(vec2(w.x.mul(3.0), w.y.mul(90.0).add(h.mul(13.0)))).mul(0.5).add(vnoise(vec2(w.x.mul(18.0), w.y.mul(260.0))).mul(0.2));
     // (round 1 look: warm mid oak, low plank-to-plank contrast: the first pass read orange and stripy)
-    const base = mix(lin(0x6f5843), lin(0x86694d), h.mul(0.35).add(grain.mul(0.4)));
+    const base = mix(lin(0x5e5246), lin(0x74624f), h.mul(0.35).add(grain.mul(0.4)));
     const fy = fract(w.y.div(0.22)), fx = fract(w.x.add(off).div(2.2));
     const fw = max(fwidth(w.y.div(0.22)), 0.002);
     const seam = smoothstep(0.0, fw.mul(1.5).max(0.012), min(fy, float(1).sub(fy))).mul(smoothstep(0.0, 0.002, min(fx, float(1).sub(fx)))).mul(0.3).add(0.7);
@@ -81,8 +81,8 @@ const ALBEDO = {
   // calacatta: warm white with drifting grey veins and a little gold
   marble_white: () => Fn(() => {
     const w = uv().toVar();
-    const warp = vec2(vnoise(w.mul(1.3)), vnoise(w.mul(1.3).add(5.2))).mul(0.7);
-    const q = w.mul(1.4).add(warp);
+    const warp = vec2(vnoise(w.mul(0.45)), vnoise(w.mul(0.45).add(5.2))).mul(1.1);
+    const q = w.mul(0.5).add(warp);
     const v1 = float(1).sub(smoothstep(0.0, 0.014, abs(vnoise(q).sub(0.5)))).mul(vnoise(w.mul(0.8)).mul(0.8).add(0.2));
     const v2 = float(1).sub(smoothstep(0.0, 0.007, abs(vnoise(q.mul(2.7).add(3.1)).sub(0.5))));
     const base = lin(0xece8e1).mul(vnoise(w.mul(6.0)).mul(0.04).add(0.97));

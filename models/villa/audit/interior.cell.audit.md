@@ -1,6 +1,6 @@
 # Mesh audit (before pack): interior.cell
 
-77,840 triangles, 40,738 welded vertices, 3,214 open edges, 366,076 rays, 3081 ms.
+77,840 triangles, 40,738 welded vertices, 3,214 open edges, 366,076 rays, 7862 ms.
 
 **0 blocking**, 4846 warnings. Clean (no blocking item).
 
@@ -11,7 +11,7 @@
 | nonmanifold | warn | 111 |
 | tjunction | warn | 210 |
 | seam | info | 296 |
-| opening | info | 618 |
+| opening | info | 564 |
 | backtoback | info | 4193 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
@@ -251,7 +251,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (256 more in the JSON)
 
-## opening (info, 618)
+## opening (info, 564)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -296,7 +296,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.30, 121.41, 4.50 | Cell/plaster_white | 1 + 0 + 0 | 0.02 |
 | 14.30, 121.41, 5.50 | Cell/plaster_white | 1 + 0 + 0 | 0.02 |
 
-(578 more in the JSON)
+(524 more in the JSON)
 
 ## backtoback (info, 4193)
 

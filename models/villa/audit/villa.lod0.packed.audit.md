@@ -1,6 +1,6 @@
 # Mesh audit (packed): villa.lod0
 
-54,802 triangles, 30,529 welded vertices, 3,712 open edges, 594,074 rays, 2980 ms.
+54,802 triangles, 30,529 welded vertices, 3,712 open edges, 594,074 rays, 7733 ms.
 
 **0 blocking**, 12203 warnings. Clean (no blocking item).
 

@@ -789,7 +789,7 @@ def interior():
     colbox(JU0, IU0, -8.0, -7.7, F1, C1); colbox(IU1, JU1, -8.0, -7.7, F1, C1)
     ceil_rect(JU0, JU1, -7.7, JW1, C1, holes=[]) if False else None
     ceil_rect(JU0, JU1, -8.0, JW1, C1, holes=[(IU0, IU1, -8.0, -7.99)])
-    wall(IN, "w", -8.0, IU0, IU1, LIVC, C1, [], -1, "plaster_white", 0, MI)        # the step between the two ceilings
+    wall(IN, "w", -8.0, IU0, IU1, LIVC, C1, [], 1, "plaster_white", 0, MI)         # the step between the two ceilings (seen from the gallery: facing +w)
     # glass balustrades: the gallery (w -7.95), the stairwell (w 9.6 is the slat screen; its front end u 21)
     for (u0_, u1_, w0_, w1_) in ((IU0, IU1, -7.98, -7.93), (21.0, 21.05, 9.68, 11.0)):
         box(IG, u0_, u1_, w0_, w1_, F1, F1 + 1.05, "glass_window", 0)

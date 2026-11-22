@@ -137,7 +137,7 @@ export function poolMaterial(pool, rootInv) {
     const day = vec3(env.uSkyTop).mul(0.35).add(vec3(0.55, 0.58, 0.6)).mul(float(1).sub(env.uNight)).add(vec3(0.02, 0.03, 0.05));
     // (lit by the scene like any surface: the albedo here is the basin seen through the water; the night LEDs emissive)
     const lightC = vec3(1.0).add(vec3(env.uSunColor).mul(caust.mul(sunK).mul(0.8)));
-    const ledNight = lin(0x7fd8ff).mul(env.uNight.mul(0.25));
+    const ledNight = lin(0x7fd8ff).mul(env.uNight.mul(0.09));
     const lit = tile.mul(lightC);
     // absorption over the in-water path
     const path = tt.add(e.y.greaterThan(W).select(float(0), float(0)));

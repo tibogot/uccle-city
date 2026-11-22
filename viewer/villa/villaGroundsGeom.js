@@ -1,7 +1,7 @@
 // THE VILLA'S PAVED GROUNDS, the geometry alone (pure JS, no three: the viewer's villaGrounds.js and the gate row
 // tools/audit/villaCheck.mjs build the SAME triangles): each polygon of villa.json grounds (frame u / w) triangulated
 // (ear clipping), split to <= MAX_EDGE, draped LIFT over the ground, a skirt SKIRT down round every edge, facing out.
-export const LIFT = 0.035, SKIRT = 0.2, MAX_EDGE = 0.5;
+export const LIFT = 0.07, SKIRT = 0.25, MAX_EDGE = 0.5;   // (LIFT 7 cm: the city draws a SIMPLIFIED terrain, up to ~5 cm over the DTM: the lawn showed through the drive at 3.5 cm)
 export const ZONES = { drive: 0, forecourt: 0, garage_floor: 1, path_back: 0 };
 /** the garage floor's height (without LIFT): a 1.5 m box average of the terrain, never under it (the cars stand on it) */
 export const smoothGround = (groundAt) => (x, z) => { let a = 0, n = 0; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { a += groundAt(x + i * 0.75, z + j * 0.75); n++; } return Math.max(a / n, groundAt(x, z)); };

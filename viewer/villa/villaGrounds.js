@@ -34,10 +34,10 @@ export function groundsMaterial() {
     const h = hash2(c);
     const paver = mix(lin(0x8f8b83), lin(0x9e9a91), h).mul(vnoise(p.mul(7.0)).mul(0.08).add(0.95));
     const pav = mix(paver, lin(0x6d6a64), joint.mul(0.7));
-    const conc = mix(lin(0x4a4a48), lin(0x5c5b58), vnoise(p.mul(0.7))).mul(vnoise(p.mul(11.0)).mul(0.05).add(0.97));
+    const conc = mix(lin(0x3a3a39), lin(0x4b4a48), vnoise(p.mul(0.7))).mul(vnoise(p.mul(11.0)).mul(0.05).add(0.97));
     return mix(pav, conc, zone);
   })();
-  m.roughnessNode = mix(float(0.72), float(0.32), zone);
+  m.roughnessNode = mix(float(0.72), float(0.55), zone);
   return m;
 }
 
