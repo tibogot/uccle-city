@@ -31,6 +31,12 @@ export const CAUSES = {
   "source-data": "the source data itself is wrong / incomplete there (survey, OSM): a data fix",
   "signal-phases": "two signal junctions a few metres apart on different phases (a queue waiting at the second one stands inside the first one's turn, a yield inside that turn): the SIGNALS job (docs/TODO.md: one phase along the road for the close pairs)",
   "priority-starved": "a give-way approach starved by a steady conflicting flow (no gap of GAP_T s for 60 s, a priority junction at the peak): the SIGNALS job (docs/TODO.md: junction control + demand)",
+  "carriageway-estimated": "the carriageway there is only estimated (driving ends D / O / G, or no UrbIS at all: the OSM band), so the check judges the lane against a guess: the measure (STREET_MODEL_PLAN job 2, more measured inputs)",
+  "lane-old-fit": "our builder: a lane / turn the street model does not build (kept on the old fit: dual-carriageway halves, roundabout arms, pieces under 50 % measured): STREET_MODEL_PLAN job 4b",
+  "lane-dragged": "our builder: a model lane outside the model's own room at a measured station (a need from another station ramped in): STREET_MODEL_PLAN job 4b",
+  "after-model": "our builder: a model lane / turn moved after the model stage (lane joins, kink rounding, the turn repair): STREET_MODEL_PLAN job 4b",
+  "lane-end": "our builder: within 4 m of a model lane's end (its cap at a junction mouth or a corner): STREET_MODEL_PLAN job 4b / job 7",
+  "turn-corner": "our builder: a G2 junction turn leaving its junction / meeting a kerb or a building: STREET_MODEL_PLAN job 4b / job 7",
   "parking-both-sides": "an emergency vehicle on a street parked on both sides, no room to pass the oncoming / yielding cars: the PARKING job (docs/TODO.md: its route avoids such streets, or the parking leaves a gap)",
 };
 export const ID_RE = /^[a-z0-9]+\.[A-Za-z0-9]+:[^:\s]+:\d+-\d+$/;

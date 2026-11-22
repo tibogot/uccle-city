@@ -25,7 +25,7 @@
 // the drawn road is the engine's own strip, X with measured ends). Everything else keeps the old fit (fitToSurface,
 // laneShifter, roadFollowTurns) as ?streetlanes=old does everywhere.
 import { CONF, pip2 } from "./model.js";
-import { laneOffsetProfile } from "../streets/laneOffset.js";
+import { laneOffsetProfile, OFF_H, OFF_SLOPE } from "../streets/laneOffset.js";
 
 /** a carriageway narrower than this carries ONE centred lane (two-way: two clearances and a car's width between the
  *  two directions' lanes would not fit; the sim's narrow-stretch rule lets one direction through at a time) */
@@ -49,6 +49,7 @@ const AX_JUMP = 1.5;                     // m per station: a measured axis movin
 const SUPPORT = 0.5;                     // a lane piece is built from the model where at least this share of its stations is measured
 const SLIP = 1.5;                        // m: how far a lane point off the drawn carriageway looks for it
 const RAY = 4;                           // m: how far a lane point looks sideways for a kerb line
+const KERB_RUN = 2;                      // m: a kerb line counts where it is seen over at least this much of the lane (3 stations)
 const PARK_CLEAR = 1.13;                 // m: a lane centre this far from a parked car's box (trafficGraph.js TP_HALF + TP_FIT: a car; a wider vehicle moves out round it in the sim, trafficSim.js)
 const BOX_HW = 0.925, BOX_HL = 2.365;    // m: a parked car's plan box (trafficGraph.js TP_BOX_HW / TP_BOX_HL)
 const MED = 7, BOX = 5, END_N = 0, END_W = 4;                 // m: running median, then two box passes, over +-these
@@ -85,7 +86,7 @@ const isX = (E, i) => E.lanes.conf[i] === CONF.X || E.axConf[i] === CONF.X;
  * segment, -1 against it) and rank r (0 = the lane nearest its kerb) when the engine drives m(i) lanes that way and
  * mo(i) the other way at station i. -> Float64Array(n) | null (no measured station)
  */
-function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null) {
+function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null, stats = null) {
   const n = E.n, D = E.lanes.D, raw = new Float64Array(n).fill(NaN);
   let any = false;
   for (let i = 0; i < n; i++) {
@@ -159,6 +160,15 @@ function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null
     if (dr < RAY) kA[i] = v[i] - dr + KERB_CLEAR;
     if (dl < RAY) kB[i] = v[i] + dl - KERB_CLEAR;
   }
+  // (a kerb line seen from fewer than KERB_RUN stations in a row is a kerb CROSSING the lane's sideways rays (a side
+  // street's corner, a driveway's dropped kerb, a build-out's end), not one along it: a single station's ray to the
+  // corner of a mouth asked 1.9 m and the ramp carried it 30 m (H10 Av. des Muses, claude/lanes5 "lane-dragged"))
+  for (const K2 of [kA, kB]) for (let i = 0; i < n; ) {
+    if (!Number.isFinite(K2[i])) { i++; continue; }
+    let j = i; while (j + 1 < n && Number.isFinite(K2[j + 1])) j++;
+    if (E.s[j] - E.s[i] < KERB_RUN - 1e-6) for (let k = i; k <= j; k++) K2[k] = K2 === kA ? -Infinity : Infinity;
+    i = j + 1;
+  }
   // (and its car body (+- BODY m) out of the drawn buildings: the nearest clear offset within BLD_REACH m, the harder
   // truth still: an OSM line through the houses where UrbIS has no carriageway to say where the street is)
   const bA = new Float64Array(n).fill(-Infinity), bB = new Float64Array(n).fill(Infinity);
@@ -196,7 +206,30 @@ function laneProfile(E, d, r, m, mo, cars = [], K = null, inB = null, drv = null
     need[i] = want - v[i];
     if (Math.abs(need[i]) > 0.02) anyNeed = true; else need[i] = 0;
   }
-  if (anyNeed) { const p = laneOffsetProfile(need, E.s); v = v.map((x, i) => x + p[i]); }
+  // (a need at one station (a building at a dead end, a kerb line beside a gap, a parked car where the lane's own centre
+  // flares into a junction mouth) moves the lane only as far as its ramp leaves every OTHER measured station of the lane
+  // inside the model's own room there (Ancien Dieweg D6: a car at the mouth asked 3 m, the ramp put the lane 0.2 m off
+  // the far kerb 10 m back); one
+  // station's 3.2 m building need at Carre Cassimans' dead end (F1) ramped 1:10 over 30 m dragged the whole lane off
+  // its measured 1.8 m roadway into the houses (claude/lanes5, rule street-lanes "lane-dragged"). The ramp's reach:
+  // the profile's plateau (2 OFF_H) and its two box passes (2 OFF_H), then OFF_SLOPE per m)
+  if (anyNeed) {
+    const up = [], dn = [];
+    for (let k = 0; k < n; k++) {
+      if (!measured(E, k)) continue;
+      const lo = E.axOff[k] + E.drive.offR[k], hi = E.axOff[k] + E.drive.offL[k], m = (lo + hi) / 2, f = narrowF(hi - lo, two0);
+      let a = lo + KERB_CLEAR, b = hi - KERB_CLEAR;
+      if (a > b) a = b = m; else { const t = CENTRE_FREE * (1 - f); a = m + (a - m) * f - t; b = m + (b - m) * f + t; }
+      up.push([E.s[k], Math.max(0, b - v[k]), k]); dn.push([E.s[k], Math.max(0, v[k] - a), k]);
+    }
+    if (up.length) for (let i = 0; i < n; i++) {
+      if (!need[i]) continue;
+      const L = need[i] > 0 ? up : dn;
+      let cap = Infinity; for (const [sk, r, k] of L) if (k !== i) cap = Math.min(cap, r + OFF_SLOPE * Math.max(0, Math.abs(E.s[i] - sk) - 4 * OFF_H));
+      if (Math.abs(need[i]) > cap) { need[i] = Math.sign(need[i]) * cap; if (stats) stats.capped = (stats.capped || 0) + 1; }
+    }
+    const p = laneOffsetProfile(need, E.s); v = v.map((x, i) => x + p[i]);
+  }
   return v;
 }
 
@@ -258,6 +291,12 @@ export function kerbIndex(lines, C = 4) {
     near(x, z, r) {
       for (const id of cells(x - r, z - r, x + r, z + r)) { const [ax, az, bx, bz] = segs[id], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-12, u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)); if (Math.hypot(x - ax - dx * u, z - az - dz * u) < r) return true; }
       return false;
+    },
+    /** the distance to the nearest line within R (R when none is nearer) */
+    dist(x, z, R) {
+      let m = R;
+      for (const id of cells(x - R, z - R, x + R, z + R)) { const [ax, az, bx, bz] = segs[id], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-12, u = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)); m = Math.min(m, Math.hypot(x - ax - dx * u, z - az - dz * u)); }
+      return m;
     },
     ray(x, z, nx, nz, R) {
       let best = Infinity;
@@ -437,7 +476,7 @@ export function modelLaneStage(net, model, paths, parked = null, kerbs = null, i
     stats.cars = (stats.cars || 0) + cars.length;
     // (rank 0, the lane at its kerb, keeps clear of the parked cars; an inner lane keeps the model's own lane centre:
     // both held off the same row of cars collapsed onto one line, two lanes 0.3 m apart, Av. De Fré F3)
-    const profOf = (d, r) => { const k = `${d}|${r}`; if (!profs.has(k)) profs.set(k, laneProfile(E, d, r, d > 0 ? mF : mB, d > 0 ? mB : mF, r === 0 ? cars : [], K, inBuilding0, drivable)); return profs.get(k); };
+    const profOf = (d, r) => { const k = `${d}|${r}`; if (!profs.has(k)) profs.set(k, laneProfile(E, d, r, d > 0 ? mF : mB, d > 0 ? mB : mF, r === 0 ? cars : [], K, inBuilding0, drivable, stats)); return profs.get(k); };
     // the part boundaries (halfway between the last station of a part and the first of the next)
     const partS = (part) => { let i0 = -1, i1 = -1; for (let i = 0; i < n; i++) if (E.part[i] === part) { if (i0 < 0) i0 = i; i1 = i; } return [i0 > 0 ? (E.s[i0] + E.s[i0 - 1]) / 2 : 0, i1 < n - 1 ? (E.s[i1] + E.s[i1 + 1]) / 2 : L]; };
     for (const q of list) {
@@ -482,14 +521,18 @@ export function modelLaneStage(net, model, paths, parked = null, kerbs = null, i
       // (a piece the model barely measures (one kerb found, the other side a guess: a tram reservation between two
       // carriageways, a street UrbIS maps in part) keeps the old fit)
       // (E stations whose OSM line runs through a building (a block's inner way, an OSM line off a street UrbIS maps
-      // beyond the model's reach): the data contradict each other there, the old fit's far snap looks further)
+      // beyond the model's reach): the data contradict each other there, the old fit's far snap looks further. Judged
+      // on the model lane itself, after its building need (bA / bB): only where ITS body still meets a building (2
+      // points or more) does the piece keep the old fit. Judged on the OSM line (2 grazed stations), Clos des
+      // Myosotis (C6: 4 of 116 stations, the 2 m roof grid at a 4 m gap between two houses) went to the old fit, whose
+      // far snap put it 13 m into the houses: 88 m in buildings (claude/lanes5))
       const bodyIn = (i) => inBuilding0 && [0, BODY, -BODY].some((w) => inBuilding0(E.ax[i] + E.nx[i] * w, E.az[i] + E.nz[i] * w));
       // (and a station whose OSM line lies outside its measured carriageway by more than X_OFF while the engine drives
       // both ways on it: one roadway of a dual carriageway drawn as one OSM way (Av. Churchill I2, the tram between),
       // the other direction's roadway is not this one)
       const dual = (i) => twoWay && Math.abs(E.axOff[i]) > (E.drive.offL[i] - E.drive.offR[i]) / 2 + DUAL_OFF;
       let sup = 0, tot = 0, eIn = 0; for (let i = 0; i < n; i++) if (E.s[i] >= sa && E.s[i] <= sb) { tot++; if (E.axConf[i] === CONF.E && bodyIn(i)) eIn++; else if (validAt(E, i) && !dual(i)) sup++; }
-      if (!tot || sup < SUPPORT * tot || eIn >= 2) { stats.unsupported = (stats.unsupported || 0) + 1; continue; }
+      if (!tot || sup < SUPPORT * tot) { stats.unsupported = (stats.unsupported || 0) + 1; continue; }
       // (an axis that jumps between two measured carriageways (a dual carriageway drawn as one OSM way: the model takes
       // one roadway here, the other there) is no lane line either: the old fit)
       // (a piece into / out of an engine roundabout: the ring is the engine's (its connectors run round the node, refined
@@ -499,7 +542,13 @@ export function modelLaneStage(net, model, paths, parked = null, kerbs = null, i
       if (jump) { stats.axisJump = (stats.axisJump || 0) + 1; continue; }
       const prof = profOf(d, rankOf.get(`${part}|${d}|${p.laneId}`) ?? 0);
       if (!prof) { stats.lanesKept++; continue; }
-      newPts.set(p.id, laneLine(E, prof, sa, sb, d));
+      const LL = laneLine(E, prof, sa, sb, d);
+      if (eIn >= 2 && inBuilding0) {
+        let hit = 0;
+        for (let k = 1; k + 1 < LL.length && hit < 2; k++) { const a = LL[k - 1], b = LL[k + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / l, nz = (b[0] - a[0]) / l; if ([0, BODY, -BODY].some((w) => inBuilding0(LL[k][0] + nx * w, LL[k][1] + nz * w))) hit++; }
+        if (hit >= 2) { stats.unsupported = (stats.unsupported || 0) + 1; stats.eBuilding = (stats.eBuilding || 0) + 1; continue; }
+      }
+      newPts.set(p.id, LL);
       covered.add(p.id); stats.lanes++;
     }
   }
@@ -552,6 +601,19 @@ export function modelLaneStage(net, model, paths, parked = null, kerbs = null, i
         if (room(b, 0) && (T.trk > 0 || stays(B2, false))) { cut.set(key(b.id, 0), (cut.get(key(b.id, 0)) || 0) + 1); changed = true; }
       }
       if (!changed) break;
+    }
+    // (a cut that did not take any of its turns off a trunk is undone: cut back the full CUT_MAX with the trunk still
+    // in the way, the lanes ended 8 m short of the junction and the turn ran 8 m along the street outside it, H4 Av. de
+    // Saturne, I10, J10: 316 m of "turn outside its junction", claude/lanes5 "turn-corner")
+    if (cut.size) {
+      const trkOf = (c, withCut) => { const a = byO.get(c.prev[0]), b = byO.get(c.next[0]); return g2Turn(withCut ? trimmed(a) : a.pts, withCut ? trimmed(b) : b.pts, jOf.get(c.nodeId) ?? null, inBuilding, drivable).trk; };
+      const helped = new Set();
+      for (const c of turnsJ) {
+        const ka = key(c.prev[0], 1), kb = key(c.next[0], 0);
+        if (!cut.get(ka) && !cut.get(kb)) continue;
+        if (trkOf(c, true) < trkOf(c, false)) { helped.add(ka); helped.add(kb); }
+      }
+      for (const k2 of [...cut.keys()]) if (!helped.has(k2)) { cut.delete(k2); stats.cutsUndone = (stats.cutsUndone || 0) + 1; }
     }
     for (const [k2, m] of cut) { if (!m) continue; stats.turnCuts = (stats.turnCuts || 0) + 1; stats.cutMetres = (stats.cutMetres || 0) + m; }
     for (let k = 0; k < out.length; k++) {

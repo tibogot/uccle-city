@@ -26,9 +26,9 @@ import { cumulative } from "../../vendor/roads/roadMath.js";
 import { signalPhases } from "./signals.js";
 import { joinLaneGraph } from "../streets/laneGraph.js";
 import { NOT_DRIVEN } from "../streets/carriageway.js";
-import { laneOffsetProfile } from "../streets/laneOffset.js";
+import { laneOffsetProfile, OFF_SLOPE, OFF_H } from "../streets/laneOffset.js";
 import { roadFrameOf } from "../streets/lineFit.js";
-import { modelLaneStage, repairTurns, blockedTest } from "../street/lanes.js";
+import { modelLaneStage, repairTurns, blockedTest, kerbIndex, KERB_CLEAR } from "../street/lanes.js";
 
 const TURN = { straight: 0, left: 1, right: 2, uturn: 3, ring: 4 };
 export const CTRL = { none: 0, signal: 1, stop: 2, yield: 3, priority: 4 };
@@ -78,7 +78,7 @@ function crossing(A, cA, B, cB) {
  * gentle curves keep their measured centre line; true ends (dead ends, tile edges) stay put.
  */
 const KINK_DEG = 8, KINK_REACH = 3, KINK_ITER = 30, JOIN_TOL = 0.05;
-function roundKinks(paths, keep = null) {
+function roundKinks(paths, keep = null, pinned = null, pinKeep = null) {
   const P = paths.length, base = new Int32Array(P + 1);
   for (let i = 0; i < P; i++) base[i + 1] = base[i] + paths[i].pts.length;
   const N = base[P];
@@ -127,6 +127,12 @@ function roundKinks(paths, keep = null) {
       if (d <= KINK_REACH && d < dist[m]) { dist[m] = d; queue.push(m); }
     }
   }
+  // (claude/lanes5: a street-model lane's points move only as far as they keep clear of the measured kerb lines
+  // (pinKeep): the Laplacian shrank its bends toward their chords, 0.9-1.4 m inward on the winding Rue Jean d'Osta (B4)
+  // and Rue Professeur Hustin (B6), onto the kerb. Not pinned outright: it also takes the measured axis' station noise
+  // out of the lane, which the slalom census counts (pinned: 2.8x the slalom metres on C3 B4 E3 K12))
+  const pin = new Uint8Array(M);
+  if (pinned) for (let i = 0; i < P; i++) if (pinned(paths[i])) for (let k = base[i]; k < base[i + 1]; k++) pin[node[k]] = 1;
   const free = []; for (let n = 0; n < M; n++) if (dist[n] <= KINK_REACH && ins[n].length && outs[n].length) free.push(n);
   let X = Float64Array.from(x), Z = Float64Array.from(z);
   for (let it = 0; it < KINK_ITER; it++) {
@@ -136,9 +142,10 @@ function roundKinks(paths, keep = null) {
       for (const m of ins[n]) { sx += X[m]; sz += Z[m]; c++; }
       for (const m of outs[n]) { sx += X[m]; sz += Z[m]; c++; }
       nX[n] = X[n] + 0.5 * (sx / c - X[n]); nZ[n] = Z[n] + 0.5 * (sz / c - Z[n]);
-      if (keep && !keep(X[n], Z[n], nX[n], nZ[n])) {       // (trafpark: never into a parked car: as far as it stays clear)
+      const ok = pin[n] && pinKeep ? (a, b, c2, d) => (!keep || keep(a, b, c2, d)) && pinKeep(a, b, c2, d) : keep;
+      if (ok && !ok(X[n], Z[n], nX[n], nZ[n])) {       // (trafpark: never into a parked car: as far as it stays clear)
         let f = 0.5;
-        while (f > 0.1 && !keep(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
+        while (f > 0.1 && !ok(X[n], Z[n], X[n] + (nX[n] - X[n]) * f, Z[n] + (nZ[n] - Z[n]) * f)) f *= 0.5;
         if (f <= 0.1) f = 0;
         nX[n] = X[n] + (nX[n] - X[n]) * f; nZ[n] = Z[n] + (nZ[n] - Z[n]) * f;
       }
@@ -205,7 +212,13 @@ export function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts =
   // a node does not move closer to a parked car than the fit's clearance)
   const keepClear = parked && TP ? (x0, z0, x1, z1) => { const d1 = parked.dist(x1, z1); return d1 >= TP_HALF + TP_FIT * 0.5 || d1 >= parked.dist(x0, z0); } : null;
   const tK = performance.now();
-  const src = roundKinks(fitted, keepClear);
+  // (claude/lanes5: a model lane's point never moves nearer than KERB_CLEAR to a measured kerb line it was clear of)
+  const KI = covered && net.streetKerbs?.length ? kerbIndex(net.streetKerbs) : null;
+  // (and never into a drawn building it was clear of, a car body's half width round it: Rue de la Cueillette D8)
+  const bodyIn = opts.inBuilding ? (x, z) => [[0, 0], [0.9, 0], [-0.9, 0], [0, 0.9], [0, -0.9]].some(([a, b]) => opts.inBuilding(x + a, z + b)) : null;
+  const kerbOk = KI ? (x0, z0, x1, z1) => { const d1 = KI.dist(x1, z1, KERB_CLEAR + 0.5); return d1 >= KERB_CLEAR || d1 >= KI.dist(x0, z0, KERB_CLEAR + 0.5); } : null;
+  const kerbKeep = covered && (kerbOk || bodyIn) ? (x0, z0, x1, z1) => (!kerbOk || kerbOk(x0, z0, x1, z1)) && (!bodyIn || !bodyIn(x1, z1) || bodyIn(x0, z0)) : null;
+  const src = roundKinks(fitted, keepClear, covered ? (p) => p.kind === "lane" && covered.has(p.id) : null, kerbKeep);
   fitStats.kinkMs = Math.round(performance.now() - tK);
   // (claude/street4: no junction turn through a building, a street tree or over the pavement, whichever fit laid it)
   if (opts.model) fitStats.turnsRepaired = repairTurns(src.map((p, i) => (p === fitted[i] ? (src[i] = { ...p, pts: p.pts.map((v) => [v[0], v[1]]) }) : p)), blockedTest(opts.inBuilding ?? null, feats?.trees ?? null), grid ? drivableOn(grid) : null);
@@ -734,6 +747,26 @@ function fitToSurface(paths, G, st, parked = null, trace = null, TP = false, R38
         if (!bad) break;
         st.tpRounds = (st.tpRounds || 0) + 1;
         sm = R38 ? laneOffsetProfile(off, p.cum || cumulative(q)) : smooth(hard);
+      }
+    }
+    // (claude/lanes5: no shift's ramp moves the car body into a building it was clear of on the line as it came (the
+    // kerb push looks up to 9 m for the raster's carriageway and its 1:10 ramp reaches 30 m: Ch. de Waterloo K11, 24 m
+    // into a house). Each such point caps every need of that side by its own clear offset plus the ramp's reach, as the
+    // model lanes' needs are capped by their measured room (viewer/street/lanes.js); then the profile is laid again)
+    if (R38 && inBuilding) {
+      const cum = p.cum || cumulative(q);
+      const bodyAt = (k, o) => { const [tx, tz] = tangent(q, k), nx = -tz, nz = tx; return [0, 0.9, -0.9].some((w) => inBuilding(q[k][0] + nx * (o + w), q[k][1] + nz * (o + w))); };
+      for (let it = 0; it < 3; it++) {
+        const caps = [];
+        for (let k = 0; k < n; k++) {
+          if (Math.abs(sm[k]) < 0.25 || !bodyAt(k, sm[k]) || bodyAt(k, 0)) continue;
+          let v = sm[k]; const sg = Math.sign(v); while (Math.abs(v) > 0 && bodyAt(k, v)) v -= sg * 0.25;
+          caps.push([cum[k], Math.max(0, Math.abs(v)), sg]);
+        }
+        if (!caps.length) break;
+        for (let j = 0; j < n; j++) for (const [ck, r, sg] of caps) if (off[j] * sg > 0) { const lim = r + OFF_SLOPE * Math.max(0, Math.abs(cum[j] - ck) - 4 * OFF_H); if (Math.abs(off[j]) > lim) off[j] = sg * lim; }
+        sm = laneOffsetProfile(off, cum);
+        st.bldCapped = (st.bldCapped || 0) + caps.length;
       }
     }
     const pts = q.map((pt, k) => {

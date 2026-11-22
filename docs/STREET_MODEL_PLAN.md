@@ -451,3 +451,120 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
   150 m run inside the 22 s green).
 - trafmix stuck: 0 / 0 / 1 (seeds 7 / 11 / 23; the E6 ambulance behind a parked car, PARKING job), STUCK_MAX 4 -> 1.
   D7 and E4 (priority-starved) not seen on seeds 7 / 11 / 23 / 31 / 41.
+
+## Job 4b: why the lane counts are not 0 (claude/lanes5, 2026-11-22)
+
+The owner asked why the lanes built from the street model still had, city-wide, 16 places in a building, 181 places
+off the measured carriageway, 346 m of turns outside their junction and 984 m closer than 1 m to a kerb. Every place is
+now classified from the evidence at its own points (tools/audit/census/laneCause.mjs, used by the `streetlanes` and
+`roads` censuses), first rule that holds over most of a place's points:
+
+| class | reason | evidence |
+|---|---|---|
+| a source data | footprint-over-street | the car body is on the MEASURED roadway (UrbIS class roadway / tram / parking) and still inside a footprint: the footprint overhangs the street (Carré Cassimans F1: a 1.8 m UrbIS roadway between footprints; Square Coghen E3) |
+| a | no-room-between-footprints | the footprints across the point leave no 2 m gap within +-6 m and UrbIS maps no roadway (Kauwberg x Ch. de Saint-Job G6) |
+| a | osm-through-buildings | no UrbIS street, and the OSM centre line itself (a car body across it) runs through footprints, the lane within 3 m of it |
+| a | no-roadway-polygon | no measured carriageway within reach, the point on UrbIS sidewalk / square / tram site (Av. Paul Stroobant F4, Place Olivier Strebelle F8) |
+| a | sliver | the "measured carriageway" is narrower than 2.3 m and the OSM line > 1.5 m off it (a UrbIS strip at the region edge) |
+| b the measure | estimated-carriageway | the driving ends there are D / O / G, not both M: "off the carriageway" / "near the kerb" is judged against a guess |
+| b | osm-band | no UrbIS at all: the carriageway is the OSM band |
+| b | estimated-junction | a turn at a junction with no measured arm mouth (its polygon is the floor disc) |
+| c our builder | old-fit | a lane / turn the model does not build (the old fit: fitToSurface, the engine's lane stack) |
+| c | lane-dragged | at a measured station, outside the model's own room (1 m inside the driving ends, or 0.5 m of the middle of a narrow one) |
+| c | after-model | more than 0.3 m from where the model laid it (joins, kink rounding, the turn repair) |
+| c | turn-corner | a junction turn (outside its polygon, in a building) |
+| c | lane-end | within 4 m of a lane's end (its cap at a mouth / a corner) |
+| c | lane-fit | inside the model's room on a measured street: the smoothed lane vs the kerb lines (build-outs) |
+
+**Before / after** (all 120 tiles; before = foundation ae17ba81 classified by the same rules; streetlanes = the model
+lanes' findings; the roads census judges every driven path, old fit included):
+
+| check | class | reason (gaps.mjs cause) | before: places / m | after: places / m |
+|---|---|---|---|---|
+| building | a | footprint-over-street (source-data) | 4 / 15.5 | 7 / 36.5 |
+| building | a | sliver (source-data) | 2 / 34.5 | - |
+| building | b | osm-band (carriageway-estimated) | 2 / 2.5 | 1 / 1.5 |
+| building | c | after-model (after-model) | - | 1 / 1.5 |
+| building | c | lane-dragged (lane-dragged) | 1 / 5.5 | - |
+| carriage | a | no-roadway-polygon (source-data) | 7 / 239.5 | 9 / 238 |
+| carriage | a | sliver (source-data) | 5 / 114 | 1 / 26 |
+| carriage | b | estimated-carriageway (carriageway-estimated) | 17 / 143.5 | 29 / 177 |
+| carriage | b | osm-band (carriageway-estimated) | 12 / 131 | 8 / 78 |
+| carriage | c | after-model (after-model) | 14 / 28.5 | 9 / 11 |
+| carriage | c | lane-dragged (lane-dragged) | 32 / 258.5 | 3 / 4.5 |
+| carriage | c | lane-end (lane-end) | 20 / 56.5 | 23 / 77 |
+| carriage | c | lane-fit (stack-lag) | 2 / 2 | 4 / 7.5 |
+| kerb | a | sliver (source-data) | 3 / 5.5 | 4 / 6 |
+| kerb | b | estimated-carriageway (carriageway-estimated) | 80 / 230.5 | 108 / 309.5 |
+| kerb | b | osm-band (carriageway-estimated) | 3 / 9.5 | 1 / 2 |
+| kerb | c | after-model (after-model) | 34 / 100.5 | 2 / 4.5 |
+| kerb | c | lane-dragged (lane-dragged) | 48 / 322.5 | 7 / 21.5 |
+| kerb | c | lane-end (lane-end) | 81 / 172 | 97 / 193 |
+| kerb | c | lane-fit (stack-lag) | 36 / 120.5 | 36 / 89 |
+| turn | b | estimated-junction (junction-unmodelled) | 5 / 16 | 5 / 16 |
+| turn | c | after-model (after-model) | 14 / 14.5 | 13 / 16 |
+| turn | c | turn-corner (turn-corner) | 67 / 315.5 | 53 / 149.5 |
+
+| check | before a / b / c (places / m) | after a / b / c (places / m) |
+|---|---|---|
+| building | 6 / 50 · 2 / 2.5 · 1 / 5.5 | 7 / 36.5 · 1 / 1.5 · 1 / 1.5 |
+| carriage | 12 / 353.5 · 29 / 274.5 · 68 / 345.5 | 10 / 264 · 37 / 255 · 39 / 100 |
+| turn | 0 / 0 · 5 / 16 · 81 / 330 | 0 / 0 · 5 / 16 · 66 / 165.5 |
+| kerb | 3 / 5.5 · 83 / 240 · 199 / 715.5 | 4 / 6 · 109 / 311.5 · 142 / 308 |
+
+| roads census | before: places / m by class | after: places / m by class |
+|---|---|---|
+| inBuilding (16 → 16 places) | a footprint-over-street 3 / 15.5; a no-room-between-footprints 1 / 51; a osm-through-buildings 2 / 37.5; a sliver 2 / 34.5; b osm-band 2 / 2.5; c lane-dragged 1 / 7.5; c old-fit 5 / 141 | a footprint-over-street 7 / 37; a no-room-between-footprints 1 / 37; b osm-band 1 / 1.5; c after-model 1 / 1.5; c old-fit 6 / 85.5 |
+| offCarriage (181 → 166 places) | a no-roadway-polygon 5 / 214.5; a sliver 2 / 76; b estimated-carriageway 14 / 101.5; b osm-band 6 / 42.5; c after-model 8 / 25.5; c lane-dragged 9 / 63; c lane-end 8 / 54; c old-fit 83 / 2009.5; c turn-corner 46 / 431.5 | a no-roadway-polygon 4 / 221; a sliver 1 / 14; b estimated-carriageway 19 / 88.5; b osm-band 3 / 20.5; c after-model 6 / 22.5; c lane-end 8 / 54.5; c old-fit 75 / 1804.5; c turn-corner 50 / 461 |
+
+Per tile, after (streetlanes findings, places / m; a · b · c):
+
+| tile a · b · c | tile a · b · c | tile a · b · c | tile a · b · c | tile a · b · c | tile a · b · c |
+| --- | --- | --- | --- | --- | --- |
+| A5 - · 3/18 · 5/11.5 | B4 1/1 · 9/43.5 · 10/21 | B5 - · - · 2/4.5 | B6 2/27.5 · 2/17 · 6/21 | B7 1/0.5 · 2/3.5 · 6/14 | B8 - · 3/14 · 1/0.5 |
+| C3 - · 2/2.5 · 5/11.5 | C4 - · - · 7/15 | C5 1/5 · 2/3 · 8/12 | C6 3/7.5 · 1/4.5 · 3/7.5 | C7 1/1 · 2/7 · 1/8 | C8 - · 2/11 · 3/5.5 |
+| C9 - · - · 5/13 | D2 - · 8/63.5 · - | D4 - · 3/7.5 · - | D5 - · 2/11.5 · 4/7 | D6 - · 3/22 · 7/13.5 | D7 - · 1/13 · 1/5 |
+| D8 - · 2/3 · 2/5.5 | D9 - · 2/11 · 7/19 | D10 - · 4/24 · 4/8 | E2 - · 2/4 · - | E3 3/14 · 3/22 · 4/5.5 | E4 - · 1/1.5 · 6/10 |
+| E5 - · 2/4.5 · 2/4 | E6 - · 2/3.5 · 1/4 | E7 - · - · 4/6 | E8 - · 2/5.5 · - | E9 - · 1/2 · - | E10 - · - · 11/18 |
+| F1 2/21 · - · 3/6 | F3 - · - · 2/8 | F4 1/137 · 1/1 · 4/9.5 | F5 - · 2/4.5 · 3/4 | F6 - · 2/4.5 · 3/3 | F7 - · 1/1.5 · 4/7.5 |
+| F8 1/50 · 5/11 · 14/32 | F9 - · 1/1 · 13/58.5 | F10 - · - · 1/1 | G1 - · 1/5.5 · 2/2.5 | G3 - · - · 1/1.5 | G4 - · 1/5.5 · 3/5.5 |
+| G5 - · 2/5.5 · 4/12 | G6 1/1 · 2/4 · 5/9.5 | G7 - · - · 3/8 | G9 - · - · 1/1.5 | G10 - · - · 1/2.5 | H2 - · - · 1/0.5 |
+| H3 - · 5/7 · 3/2.5 | H4 - · - · 1/1 | H5 - · 4/5 · 6/8.5 | H6 - · 1/5.5 · 2/2 | H7 - · 3/21 · 2/11 | H8 - · - · 2/4.5 |
+| H10 - · 3/17 · 1/2 | H11 - · 1/12 · - | I3 - · 8/20.5 · 3/11.5 | I4 - · 2/2 · - | I6 - · 2/4 · 3/9.5 | I7 - · - · 1/1 |
+| I8 - · 1/1.5 · 2/11 | I10 - · - · 2/8 | I11 - · - · 1/1 | J4 1/2 · 8/32.5 · 5/10 | J5 - · 2/6.5 · 4/6.5 | J6 - · 1/1.5 · 1/2.5 |
+| J7 - · 2/4 · - | K4 - · - · 1/1 | K6 1/1 · - · 3/4 | K8 - · 14/38 · 10/32.5 | K11 - · 1/4 · 6/9.5 | K12 - · 1/6 · 2/2.5 |
+| L10 - · - · 1/1 | M5 1/35.5 · 3/7.5 · 2/5 | N5 - · 5/20 · 1/3.5 | N6 - · 1/2 · - | N11 1/2.5 · - · - |
+
+**Fixes (class c), by cause** (WHY / RULE in docs/rules/street-lanes.md "Job 4b"):
+1. *lane-dragged* (345.5 → 26 m streetlanes carriage + kerb): one station's need, laid by the smooth offset profile at
+   1:10 over 30 m, dragged the whole lane out of its measured room. Three sources: a building need at an unmeasured
+   dead end (Carré Cassimans F1, B6 Sterstraat), a single ray hitting a side street's corner (Av. des Muses H10), a
+   parked car where the lane's own centre flares into the mouth (Ancien Dieweg D6). Now every need is capped by every
+   other measured station's room plus the ramp's reach, and a kerb line seen over < 2 m of the lane asks nothing
+   (viewer/street/lanes.js laneProfile).
+2. *after-model* (kerb 100.5 → 4.5 m): the graph's kink rounding (trafficGraph.js roundKinks, a Laplacian) shrank
+   model-lane bends 0.9-1.4 m onto the kerb (Rue Jean d'Osta B4, Rue Professeur Hustin B6). A model lane's point now
+   moves only while it keeps >= 1 m from a measured kerb line (or does not get nearer), and never into a building it
+   was clear of. (Pinning model lanes outright was tried: the Laplacian also takes the measured axis' station noise
+   out, and pinned the slalom metres on C3 B4 E3 K12 rose 2.8x; a Taubin smoother did not recover it.)
+3. *turn-corner* (330 → 165.5 m): the trunk cutback shortened both lanes 1 m at a time up to 8 m even where no cut
+   took the turn off the trunk (Av. de Saturne H4, I10, J10): the turn then ran 8 m along the street outside its
+   junction. A cut that helps none of its turns is undone.
+4. *old fit in a building* (roads census class c 141 m → 85.5 m in buildings): a piece whose OSM line grazed a
+   building at two unmeasured stations went to the old fit, whose far snap put Clos des Myosotis (C6) 13 m into the
+   houses (88.5 m). The fallback is now judged on the model lane itself. The old fit's own kerb push (up to 9 m, ramped
+   30 m) is capped where it would put a car body into a building it was clear of (Ch. de Waterloo K11: the lane is out;
+   the turn into it is still faded through the corner house, 5.5 m).
+
+**Left, by cause** (each place a gap-register entry with its class in `evidence.class`, data/gaps.json; a new place
+fails the `streetlanes` row; the roads census rows `inBuildingCPlaces` / `offCarriageCPlaces` ceiling the builder's):
+- a (source data, a data fix): footprints over the measured roadway (Cassimans, Coghen), the G6 Kauwberg gap, the
+  streets UrbIS draws without a roadway (F4 Av. Paul Stroobant 145 m, F8, M5), one sliver (B6).
+- b (the measure, STREET_MODEL_PLAN job 2): 152 findings / 584 m judged against D / O / G driving ends or the OSM band.
+- c (our builder, not yet removed): lane ends at mouths (lane-end 270 m: the mouths' kerb corners, job 7), turns
+  outside junction polygons (149.5 m, job 7), the build-out lag (stack-lag 89 m), and the old fit in buildings: G6
+  Kauwberg (the engine's two lanes in a 4 m street between houses, no UrbIS), F6 Rue Geleytsbeek, E6 Ch. de Saint-Job
+  (an OSM way through a building block, no UrbIS: the old fit's lane), K11 / F1 turns faded past a corner house; one
+  1.5 m model-lane place (D8 Rue de la Cueillette) finer than the builder's 2 m roof grid.
+- Cost: slalom 4,717 → 4,600 m, wobble 2,707 → 2,696 m, headP999 4.28 → 4.64 (ceiling 5.0), parked cars kept
+  11,638 → 11,633.

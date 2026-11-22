@@ -72,7 +72,7 @@ export function findCtx(S) {
  * Samples [{ x, z, why: [inv...], m }] -> findings: per invariant and road, station runs (gaps < GAP m, >= MIN samples),
  * id `<prefix>.<inv>:<roadId>:<s0-s1>`; samples with no road within reach get the element `none@<x>,<z>` (5 m cells).
  */
-export function roadRuns(samples, ctx, { prefix, tile, nameAt, at, GAP = 3, MIN = 2 }) {
+export function roadRuns(samples, ctx, { prefix, tile, nameAt, at, GAP = 3, MIN = 2, keep = false }) {
   const groups = new Map();
   for (const p of samples) {
     const q = ctx.roadAt(p.x, p.z);
@@ -90,7 +90,9 @@ export function roadRuns(samples, ctx, { prefix, tile, nameAt, at, GAP = 3, MIN 
     const flush = () => {
       if (run.length >= MIN) {
         const mid = run[run.length >> 1], s0 = run[0].s, s1 = run[run.length - 1].s, m = Math.round(run.reduce((a, p) => a + (p.m ?? 1), 0) * 10) / 10;
-        out.push({ id: `${prefix}.${w}:${el}:${span(s0, s1)}`, tile, inv: w, m, at: at(mid.x, mid.z), street: nameAt(mid.x, mid.z), cause: ctx.causeOf({ x: mid.x, z: mid.z, r: mid.q?.r, ri: mid.q?.ri, s0, s1 }) });
+        const f = { id: `${prefix}.${w}:${el}:${span(s0, s1)}`, tile, inv: w, m, at: at(mid.x, mid.z), street: nameAt(mid.x, mid.z), cause: ctx.causeOf({ x: mid.x, z: mid.z, r: mid.q?.r, ri: mid.q?.ri, s0, s1 }) };
+        if (keep) Object.defineProperty(f, "members", { value: run, enumerable: false });     // (the samples, not serialised)
+        out.push(f);
       }
     };
     for (let i = 1; i < L.length; i++) { if (L[i].s - L[i - 1].s > GAP) { flush(); run = []; } run.push(L[i]); }

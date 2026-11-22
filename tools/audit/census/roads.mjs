@@ -35,6 +35,7 @@ import { join } from "node:path";
 import { streetTile, runTiles, cli, json, at, ROOT, imp, SC } from "./lib_street.mjs";
 import { footprintIndex } from "./lib_mesh.mjs";
 import { resample, wobble, judge, judge1, STRAIGHT_R } from "./lib_path.mjs";
+import { laneCtx } from "./laneCause.mjs";
 
 const { CHILD, TILES, OUT, JOBS, WORST, flag, opt } = cli();
 const OLD = flag("--old"), LANES_OLD = flag("--lanesold"), MAX = opt("--max", null), QUIET = flag("--quiet");
@@ -63,6 +64,10 @@ if (!CHILD) {
   console.log(`class R, ${res.length} tiles${res.some((r) => r.error) ? ` (${res.filter((r) => r.error).length} failed)` : ""}${OLD ? " (--old: ?roads=old)" : ""}`);
   console.log(JSON.stringify(sum));
   console.log("wobble / slalom metres by first stage:", JSON.stringify(byCause));
+  for (const k of ["inBuilding", "offCarriage"]) {
+    const by = {}; for (const it of items[k] || []) { const c = `${it.klass} ${it.why}`, e = (by[c] ??= { n: 0, m: 0 }); e.n++; e.m = r1(e.m + it.m); }
+    console.log(`${k} places by class / reason: ${JSON.stringify(by)}`);
+  }
   for (const k of Object.keys(items)) {
     console.log(`worst ${k} (${items[k].length}):`);
     for (const it of items[k].slice(0, WORST)) console.log(`  ${it.tile} ${JSON.stringify(it)}`);
@@ -205,6 +210,7 @@ function inBuildingPts(G) {
 }
 {
   const inPts = [], offPts = [];
+  const LC = laneCtx(S, g, trace, rd.net.streetModel);
   const carrDist = (x, z) => { for (let d = 0.25; d <= 6; d += 0.25) for (let a = 0; a < 16; a++) { const th = (a / 16) * Math.PI * 2; if (driven.inside(x + Math.cos(th) * d, z + Math.sin(th) * d)) return d; } return 6; };
   for (let i = 0; i < g.paths; i++) {
     const P = pathPts(g, i), { Q } = resample(P, 0.5);
@@ -213,8 +219,8 @@ function inBuildingPts(G) {
       const a = Q[Math.max(0, q - 1)], b = Q[Math.min(Q.length - 1, q + 1)], tl = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / tl, nz = (b[0] - a[0]) / tl;
       let deep = 0, bi = -1;
       for (const w of [0, 0.9, -0.9]) { const px = x + nx * w, pz = z + nz * w, k = FI.at(px, pz); if (k >= 0) { const dd = ringDist(px, pz, blds[k].footprint[0]); if (dd > deep) { deep = dd; bi = k; } } }
-      if (deep > 0.05) inPts.push({ x, z, deep, path: i, b: blds[bi].attrs?.BU_ID ?? blds[bi].id });
-      if (!driven.inside(x, z)) { const d = carrDist(x, z); if (d > OFF_TOL) offPts.push({ x, z, deep: d, path: i }); }
+      if (deep > 0.05) inPts.push({ x, z, deep, path: i, b: blds[bi].attrs?.BU_ID ?? blds[bi].id, sd: q * 0.5, nx, nz });
+      if (!driven.inside(x, z)) { const d = carrDist(x, z); if (d > OFF_TOL) offPts.push({ x, z, deep: d, path: i, sd: q * 0.5, nx, nz }); }
     }
   }
   counts.inBuildingM = inPts.length * 0.5; counts.offCarriageM = offPts.length * 0.5;
@@ -228,11 +234,15 @@ function inBuildingPts(G) {
   }
   for (const [list, key] of [[inPts, "inBuilding"], [offPts, "offCarriage"]]) {
     const places = groupPlaces(list, 6);
-    counts[`${key}Places`] = places.length;
+    counts[`${key}Places`] = places.length; counts[`${key}CPlaces`] = 0; counts[`${key}CM`] = 0;
     for (const mem of places) {
       const w = mem.reduce((a, b) => (b.deep > a.deep ? b : a));
       const kinds = [...new Set(mem.map((q) => (g.kind[q.path] ? `turn${g.turn[q.path]}` : "lane")))].join(",");
-      items[key].push({ m: mem.length * 0.5, deep: r1(w.deep), at: at(w.x, w.z), street: nameAt(w.x, w.z), kinds, ...(w.b ? { building: String(w.b) } : {}) });
+      // (claude/lanes5: the place's cause from its points' evidence, tools/audit/census/laneCause.mjs: a source data, b the
+      // measure, c our builder)
+      const c = LC.classify(key === "inBuilding" ? "building" : "carriage", mem.map((q) => LC.at(q.x, q.z, q.path, q.sd, q.nx, q.nz)));
+      items[key].push({ m: mem.length * 0.5, deep: r1(w.deep), at: at(w.x, w.z), street: nameAt(w.x, w.z), kinds, klass: c.klass, why: c.why, ...(w.b ? { building: String(w.b) } : {}) });
+      if (c.klass === "c") { counts[`${key}CPlaces`]++; counts[`${key}CM`] += mem.length * 0.5; }
     }
   }
 }
