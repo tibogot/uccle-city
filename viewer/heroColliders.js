@@ -23,6 +23,10 @@ export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvenda
 const CELL = 0.25, STEP = 0.12, BAND = [0.30, 1.30];
 const SLICE_OLD = new URLSearchParams(location.search).get("heroslice") === "old";
 const BAND_OLD = new URLSearchParams(location.search).get("colband") === "old";
+// (allocrate, ?blockflat=old: a new sample() closure per triangle, the triangle's corners in a fresh scope each) one sample
+// function for the whole walk, the corners in its outer variables: a landmark's tens of thousands of triangles made
+// ~60 KB of garbage a frame of the falcon flight while their colliders were built (tools/perf/allocSample.mjs)
+const BLOCK_FLAT = new URLSearchParams(location.search).get("blockflat") !== "old";
 /** drivecheck (docs/DRIVECHECK.md, rule 27 provisional; ?heroground=old: as before): the car band (0.30-1.30 m over the
  *  drive surface) was measured from driveMode.ground, which answers with the surface layer NEAREST THE CAR (state.y): built
  *  in a poll while the car drove elsewhere, a car lower than ~73 m made the Verrewinkel bridge's band start on the
@@ -149,15 +153,25 @@ function* blockerSteps(T, ground, { band = BAND, kind = KIND.wall, heights = nul
     }
   }
   const gAt = (x, z) => G[Math.min(gz - 1, Math.max(0, Math.round((z - z0) / 0.5))) * gx + Math.min(gx - 1, Math.max(0, Math.round((x - x0) / 0.5)))];
+  let ax = 0, ay = 0, az = 0, bx = 0, by = 0, bz = 0, cx = 0, cy = 0, cz = 0, n1 = 1, n2 = 1;
+  const sampleT = (i, j) => {
+      let u = i / n1, w = j / n2;
+      if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) return; const s = u + w; u /= s; w /= s; }
+      const x = ax + (bx - ax) * u + (cx - ax) * w, y = ay + (by - ay) * u + (cy - ay) * w, z = az + (bz - az) * u + (cz - az) * w;
+      const h = y - gAt(x, z);
+      if (h < band[0] || h > band[1]) return;
+      const ci = Math.floor((x - x0) / CELL), ck = Math.floor((z - z0) / CELL);
+      if (ci >= 0 && ck >= 0 && ci < nx && ck < nz) { const q = ck * nx + ci; grid[q] = 1; if (lo) { if (y < lo[q]) lo[q] = y; if (y > hi[q]) hi[q] = y; } }
+  };
   for (let t = 0; t < T.length; t += 9) {
     // (perf audit 2026-11-14: was `(t & 0x3fff) === 0` with t stepping by 9 = a time check every 16,384 triangles: one
     // landmark slice ran 90-120 ms. Now every 64 triangles; ?heroslice=old: as before)
     if ((SLICE_OLD ? (t & 0x3fff) === 0 : (++nTri & 63) === 0) && performance.now() - slice > (HERO_POLL ? POLL_MS : 6)) { yield; slice = performance.now(); }
-    const ax = T[t], ay = T[t + 1], az = T[t + 2], bx = T[t + 3], by = T[t + 4], bz = T[t + 5], cx = T[t + 6], cy = T[t + 7], cz = T[t + 8];
+    ax = T[t]; ay = T[t + 1]; az = T[t + 2]; bx = T[t + 3]; by = T[t + 4]; bz = T[t + 5]; cx = T[t + 6]; cy = T[t + 7]; cz = T[t + 8];
     const g = gAt((ax + bx + cx) / 3, (az + bz + cz) / 3);
     if (Math.min(ay, by, cy) > g + band[1] + 1 || Math.max(ay, by, cy) < g + band[0] - 1) continue;
-    const n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / STEP)), n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / STEP));
-    const sample = (i, j) => {
+    n1 = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / STEP)); n2 = Math.max(1, Math.ceil(Math.hypot(cx - ax, cy - ay, cz - az) / STEP));
+    const sample = BLOCK_FLAT ? sampleT : (i, j) => {
       let u = i / n1, w = j / n2;
       if (u + w > 1) { if (u + w > 1 + 1 / Math.max(n1, n2)) return; const s = u + w; u /= s; w /= s; }
       const x = ax + (bx - ax) * u + (cx - ax) * w, y = ay + (by - ay) * u + (cy - ay) * w, z = az + (bz - az) * u + (cz - az) * w;

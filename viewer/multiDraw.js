@@ -15,7 +15,7 @@
 // Notes: renderer.info.render.drawCalls / triangles do not count indirect draws (r187 counts only direct ones): the
 // perf helpers count render objects (debug/drawBreakdown.js) and MultiDrawSet.stats() gives the GPU draw commands.
 import * as THREE from "three/webgpu";
-import { StreamPool, Streamer } from "./instanceStream.js";
+import { StreamPool, Streamer, STREAM_COPY } from "./instanceStream.js";
 
 const qs = new URLSearchParams(location.search);
 /** ?multidraw=0: every caller keeps its old one-mesh-per-piece pools (A/B) */
@@ -166,9 +166,10 @@ export class MultiDrawSet {
   write(k, n, cols, box, runs = null) {
     const P = this.parts[k];
     if (n > P.cap) this.grow(k, n);
-    if (n) for (const [name, w] of this.attrs) {
-      const a = this.buf[name];
-      a.array.set(cols[name].subarray(0, n * w), P.off * w);
+    if (n) for (let t = 0; t < this.attrs.length; t++) {
+      const name = this.attrs[t][0], w = this.attrs[t][1], a = this.buf[name], col = cols[name];
+      // (allocrate: the whole column when it is exactly n long, no view; ?streamcopy=old: always a view)
+      a.array.set(STREAM_COPY && col.length === n * w ? col : col.subarray(0, n * w), P.off * w);
       a.addUpdateRange(P.off * w, n * w); a.needsUpdate = true;
     }
     P.n = n; P.box.set(box);
@@ -191,6 +192,30 @@ export class MultiDrawSet {
       a = end; cur = null; return true;
     };
     let prevEnd = 0;
+    if (typeof runs[0] === "number") {                      // (allocrate: flat runs [end, box, end, box, ...], a reused box)
+      const cb = (this._chCur ||= new Float64Array(6));
+      let has = false;
+      const flushF = (end) => {
+        if (P.nch >= CHMAX) return false;
+        const c = P.nch++; P.ch[c * 2] = a; P.ch[c * 2 + 1] = end - a;
+        for (let i = 0; i < 6; i++) P.chBox[c * 6 + i] = cb[i];
+        a = end; has = false; return true;
+      };
+      for (let r = 0; r < runs.length; r += 2) {
+        const end = runs[r], b = runs[r + 1];
+        if (end === prevEnd) continue;                      // (a cell that gave nothing)
+        if (has) {
+          const x0 = Math.min(cb[0], b[0]), z0 = Math.min(cb[2], b[2]), x1 = Math.max(cb[3], b[3]), z1 = Math.max(cb[5], b[5]);
+          if (x1 - x0 > lim || z1 - z0 > lim) { if (!flushF(prevEnd)) return this.chunk(P, n, box, runs, lim * 1.5); }
+        }
+        if (!has) { for (let i = 0; i < 6; i++) cb[i] = b[i]; has = true; }
+        else for (let i = 0; i < 3; i++) { cb[i] = Math.min(cb[i], b[i]); cb[i + 3] = Math.max(cb[i + 3], b[i + 3]); }
+        prevEnd = end;
+      }
+      if (has && !flushF(prevEnd)) return this.chunk(P, n, box, runs, lim * 1.5);
+      if (prevEnd !== n) { P.nch = 1; P.ch[0] = 0; P.ch[1] = n; for (let i = 0; i < 6; i++) P.chBox[i] = box[i]; }
+      return;
+    }
     for (const [end, b] of runs) {
       if (end === prevEnd) continue;                        // (a cell that gave nothing)
       if (cur) {
@@ -352,7 +377,7 @@ export class MultiStreamPool extends StreamPool {
     for (const m of this.meshes) m.runs.length = 0;
     yield* super.gather(srcs, c, over);
   }
-  boxAdd(m, b) { super.boxAdd(m, b); m.runs.push([m.n, b]); }
+  boxAdd(m, b) { super.boxAdd(m, b); if (STREAM_COPY) m.runs.push(m.n, b); else m.runs.push([m.n, b]); }
   commit(c) {
     this.at.copy(c); this.commitT = performance.now();
     for (const m of this.meshes) { m.mesh.count = m.n; m.mesh.visible = m.n > 0; m.set.write(m.part, m.n, m.back, m.box, m.runs); }
@@ -412,7 +437,7 @@ function patchPool(p) {
   p.__mergedPatch = true;
   const growAttr = p.growAttr, boxAdd = p.boxAdd, gather = p.gather, commitOne = StreamPool.prototype.commit;
   p.growAttr = function (m, n) { if (!m.merged) growAttr.call(this, m, n); };
-  p.boxAdd = function (m, b) { boxAdd.call(this, m, b); if (m.runs) m.runs.push([m.n, b]); };
+  p.boxAdd = function (m, b) { boxAdd.call(this, m, b); if (m.runs) { if (STREAM_COPY) m.runs.push(m.n, b); else m.runs.push([m.n, b]); } };
   p.gather = function* (srcs, c, over) { for (const m of this.meshes) if (m.runs) m.runs.length = 0; yield* gather.call(this, srcs, c, over); };
   p.commit = function (c) {
     // the merged entries into their sets; the others as StreamPool.commit does (on a view of this pool with only them)

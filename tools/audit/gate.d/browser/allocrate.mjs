@@ -1,0 +1,5 @@
+// browser gate row `allocrate` (run on a browser turn; docs/WORKFLOW.md)
+export default {
+  name: "allocrate",
+  text: "ALLOC RATE (docs/rules/alloc-rate.md): (1) node tools/perf/allocSample.mjs --mode falcon and --mode police, 40 s each, alternated A B B A with B = --query \"&ringtest=old&liftcache=old&streamcopy=old&fleetflat=old&meterpace=old&blockflat=old\" (its own Chrome, sound off, MB per frame is robust to load): the sampled JS KB a frame of A <= 80 % of B's, and no OUR function above 45 KB a frame in A's 'ours' table; (2) ?game=falcon after the play loader, (await import('/debug/falconStutter.js')).run({ seconds: 60 }), the same A B B A page loads: summary.allocMB a minute of A <= 92 % of B's and gc (count) lower. The doc's goal (<= 1750 MB a minute = 50 % of 3.5 GB, no GC drop > 300 MB) is NOT reached yet (claude/allocrate: ~3.2-3.4 GB/min, drops up to 470 MB): what is left is three's own per-render-object work and the tiles' ArrayBuffers; tighten these limits as the next fixes land (claude/allocrate)",
+};
