@@ -1095,7 +1095,10 @@ export class TrafficSim {
     // (ctl 4) keeps its line)
     if (!TP_OLD && driving && this.pk.grid.size && this.v[i] > 1 && this.ctl[i] !== 4 && (next || this.room[i]) && (Math.abs(next) > Math.abs(this.room[i]) || ((this.steps + i) & 3) === 0)) {
       const v = this.v[i], L = Math.min(20, (v * v) / 6 + 2);
-      const ahead = (r) => Math.min(this.parkClear(i, r, L * 0.5), this.parkClear(i, r, L));
+      // (along its heading, not its route: no routePoint per probe, the cost row; parked cars stand on straights)
+      const yw = this.yaw[i], sx = Math.sin(yw), sz = Math.cos(yw), lx = Math.cos(yw), lz = -Math.sin(yw), hw = Math.max(0.92, this.types[this.type[i]].w / 2), hl = this.half[i];
+      const x0 = this.x[i] - lx * this.room[i], z0 = this.z[i] - lz * this.room[i];
+      const ahead = (r) => Math.min(this.bodyClear(x0 + sx * L * 0.5 + lx * r, z0 + sz * L * 0.5 + lz * r, yw, hl, hw), this.bodyClear(x0 + sx * L + lx * r, z0 + sz * L + lz * r, yw, hl, hw));
       if (Math.abs(next) > Math.abs(this.room[i]) && ahead(next) < ROOM_AHEAD) next = this.room[i];
       if (next === this.room[i] && this.room[i] && ahead(this.room[i]) < TP_TOUCH) { const r = this.room[i]; next = r - Math.sign(r) * Math.min(Math.abs(r), 0.6 * STEP); }
       if (next === this.room[i]) return;

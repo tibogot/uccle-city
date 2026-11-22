@@ -430,4 +430,4 @@ Rule street-lanes (docs/rules/street-lanes.md), gate row `streetlanes`, switch `
   ratio: x1.03-1.08.
 - trafparksim (I6) had failed since round 6: a car pulling over at 8 m/s eased 0.42 m into a corridor with a parked car
   5 m ahead. makeRoom now judges the shifted corridor ahead (ROOM_AHEAD 0.25 m); that also cleared the E6 ambulance and
-  the old-lanes D7 stuck. Left: D7 signal pair (2) + an E4 patrol starved at a priority junction (1) = 3 <= 4.
+  the old-lanes D7 stuck. With the probe along the heading (cost): stuck 0 / 0 / 0 (model lanes), 1 / 0 / 1 (old lanes, registered); sim cost x1.04-1.07.
