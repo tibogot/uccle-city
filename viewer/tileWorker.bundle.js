@@ -18647,23 +18647,218 @@ function railTileData(doc, bounds, heroes = [], { deckCap = null, skipDeck = nul
 var CYCLE = { green: 22, amber: 3, allRed: 2 };
 var CYCLE_T = (CYCLE.green + CYCLE.amber + CYCLE.allRed) * 2;
 var phaseOfDir = (ux, uz) => Math.abs(uz) > Math.abs(ux) ? 1 : 0;
-function nearestRoad(roads, N2, x, z) {
-  let best = null;
+var NOT_CAR2 = /* @__PURE__ */ new Set(["footway", "path", "cycleway", "pedestrian", "steps", "bridleway", "corridor", "platform"]);
+var SIGNAL_LINK = 150;
+var ARM_PROBE = 15;
+var APPROACH = 40;
+var phaseCache = /* @__PURE__ */ new WeakMap();
+var TYPE_RANK = { avenue: 3, collector: 2, local: 1, oneWay: 1, alley: 0 };
+var isOneWay = (r) => {
+  const o = r.meta?.oneway;
+  return o === "yes" || o === "1" || o === "true" || o === "-1";
+};
+var linkRank = (r) => 2 * (TYPE_RANK[r.type] ?? 1) + (isOneWay(r) ? 0 : 1);
+function signalPhases(roads) {
+  let T3 = phaseCache.get(roads);
+  if (T3) return T3;
+  const N2 = new Map(roads.nodes.map((n) => [n.id, n]));
+  const byId = new Map(roads.roads.map((r) => [r.id, r]));
+  const inc = /* @__PURE__ */ new Map();
   for (const r of roads.roads) {
-    if (r.meta?.highway === "footway" || r.meta?.highway === "service") continue;
-    const pts = [N2.get(r.a), ...r.pts, N2.get(r.b)].filter(Boolean);
-    for (let k = 1; k < pts.length; k++) {
-      const a = pts[k - 1], b = pts[k], dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz;
-      if (L2 < 1e-6) continue;
-      const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L2));
-      const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(x - px, z - pz);
-      if (!best || d < best.d) {
-        const L3 = Math.sqrt(L2), ux = dx / L3, uz = dz / L3;
-        best = { d, px, pz, ux, uz, side: -uz * (x - px) + ux * (z - pz) >= 0 ? 1 : -1, road: r };
-      }
+    if (NOT_CAR2.has(r.meta?.highway)) continue;
+    for (const e of [r.a, r.b]) {
+      let l = inc.get(e);
+      if (!l) inc.set(e, l = []);
+      if (!l.includes(r)) l.push(r);
     }
   }
-  return best;
+  const polyFrom = (r, id) => {
+    const p = [N2.get(r.a), ...r.pts, N2.get(r.b)].filter(Boolean);
+    return r.a === id ? p : p.reverse();
+  };
+  const armDir = (r, id) => {
+    const p = polyFrom(r, id);
+    let acc = 0, q = p[p.length - 1];
+    for (let k = 1; k < p.length; k++) {
+      const d = Math.hypot(p[k].x - p[k - 1].x, p[k].z - p[k - 1].z);
+      if (acc + d >= ARM_PROBE) {
+        const f = (ARM_PROBE - acc) / d;
+        q = { x: p[k - 1].x + (p[k].x - p[k - 1].x) * f, z: p[k - 1].z + (p[k].z - p[k - 1].z) * f };
+        break;
+      }
+      acc += d;
+    }
+    const dx = q.x - p[0].x, dz = q.z - p[0].z, L2 = Math.hypot(dx, dz) || 1;
+    return [dx / L2, dz / L2];
+  };
+  const roadLen = (r) => {
+    const p = polyFrom(r, r.a);
+    let L2 = 0;
+    for (let k = 1; k < p.length; k++) L2 += Math.hypot(p[k].x - p[k - 1].x, p[k].z - p[k - 1].z);
+    return L2;
+  };
+  const nodes = /* @__PURE__ */ new Map();
+  const addNode = (n, rs, virtual) => {
+    const arms = rs.map((r) => {
+      const [ux, uz] = armDir(r, n.id);
+      return { road: r.id, ux, uz, g: 0 };
+    });
+    let bi = 0, bj = -1, bd = Infinity;
+    for (let i = 0; i < arms.length; i++) for (let j = i + 1; j < arms.length; j++) {
+      const d = arms[i].ux * arms[j].ux + arms[i].uz * arms[j].uz;
+      if (d < bd - 1e-9) {
+        bd = d;
+        bi = i;
+        bj = j;
+      }
+    }
+    let ax = arms[bi].ux, az = arms[bi].uz;
+    if (bj >= 0) {
+      ax -= arms[bj].ux;
+      az -= arms[bj].uz;
+      const L2 = Math.hypot(ax, az) || 1;
+      ax /= L2;
+      az /= L2;
+    }
+    for (const a of arms) a.g = Math.abs(a.ux * ax + a.uz * az) >= Math.SQRT1_2 ? 0 : 1;
+    nodes.set(n.id, { id: n.id, x: n.x, z: n.z, arms, nat: phaseOfDir(ax, az), f: 0, virtual });
+  };
+  for (const n of roads.nodes) {
+    const rs = inc.get(n.id) || [];
+    if (n.control === "signal" && rs.length) addNode(n, rs, false);
+  }
+  const flows = (r, from) => {
+    const o = r.meta?.oneway;
+    return o === "yes" || o === "1" || o === "true" ? r.a === from : o === "-1" ? r.b === from : true;
+  };
+  const follow = (r, id, maxLen) => {
+    let len = 0, at2 = id, cur = r, out = true, back = true;
+    for (let hop = 0; hop < 16; hop++) {
+      const nxt = cur.a === at2 ? cur.b : cur.a;
+      len += roadLen(cur);
+      out &&= flows(cur, at2);
+      back &&= flows(cur, nxt);
+      if (len > maxLen) return null;
+      if (nodes.has(nxt)) return { end: nxt, road: cur.id, len, out, back };
+      const rs = inc.get(nxt) || [];
+      if (rs.length !== 2) return null;
+      cur = rs[0] === cur ? rs[1] : rs[0];
+      at2 = nxt;
+    }
+    return null;
+  };
+  const virt = [];
+  for (const n of roads.nodes) {
+    const rs = inc.get(n.id) || [];
+    if (nodes.has(n.id) || rs.length < 3) continue;
+    const near = /* @__PURE__ */ new Set();
+    for (const r of rs) {
+      const c = follow(r, n.id, APPROACH * 1.5), S3 = c && c.back && nodes.get(c.end);
+      if (S3 && Math.hypot(S3.x - n.x, S3.z - n.z) <= APPROACH) near.add(S3.id);
+    }
+    if (near.size >= 2) virt.push([n, rs]);
+  }
+  for (const [n, rs] of virt) addNode(n, rs, true);
+  const links = [];
+  for (const A of nodes.values()) for (const a of A.arms) {
+    const r = byId.get(a.road), c = follow(r, A.id, 2 * SIGNAL_LINK);
+    if (!c || c.end === A.id || A.id > c.end) continue;
+    const B = nodes.get(c.end);
+    if (Math.hypot(A.x - B.x, A.z - B.z) > SIGNAL_LINK) continue;
+    const b = B.arms.find((q) => q.road === c.road);
+    if (!b) continue;
+    links.push({ a: A.id, ra: a.road, ga: a.g, b: B.id, rb: b.road, gb: b.g, len: c.len, rank: linkRank(r), ab: c.out, ba: c.back });
+  }
+  links.sort((p, q) => q.rank - p.rank || p.len - q.len || (p.a < q.a ? -1 : p.a > q.a ? 1 : p.b < q.b ? -1 : p.b > q.b ? 1 : 0));
+  const par = /* @__PURE__ */ new Map(), pty = /* @__PURE__ */ new Map();
+  for (const id of nodes.keys()) {
+    par.set(id, id);
+    pty.set(id, 0);
+  }
+  const find = (x) => {
+    let p = 0, y = x;
+    while (par.get(y) !== y) {
+      p ^= pty.get(y);
+      y = par.get(y);
+    }
+    return [y, p];
+  };
+  const conflicts = [];
+  for (const L2 of links) {
+    const [ra, pa] = find(L2.a), [rb, pb] = find(L2.b), want = L2.ga ^ L2.gb;
+    if (ra === rb) {
+      if ((pa ^ pb) !== want) conflicts.push(L2);
+      continue;
+    }
+    par.set(rb, ra);
+    pty.set(rb, pa ^ pb ^ want);
+  }
+  const comp = /* @__PURE__ */ new Map();
+  for (const id of [...nodes.keys()].sort()) {
+    const [r, p] = find(id);
+    let c = comp.get(r);
+    if (!c) comp.set(r, c = []);
+    c.push([id, p]);
+  }
+  for (const list of comp.values()) {
+    let agree = 0;
+    for (const [id, p] of list) agree += nodes.get(id).nat === p ? 1 : -1;
+    const v = agree > 0 ? 0 : agree < 0 ? 1 : nodes.get(list[0][0]).nat ^ list[0][1];
+    for (const [id, p] of list) nodes.get(id).f = p ^ v;
+  }
+  const viaArm = (id, road, wantVirtual) => {
+    const S3 = nodes.get(id);
+    if (!S3) return null;
+    for (const L2 of links) {
+      const [me, mr, ot] = L2.a === id ? [L2.a, L2.ra, L2.b] : L2.b === id ? [L2.b, L2.rb, L2.a] : [];
+      if (me !== id || mr !== road) continue;
+      const O = nodes.get(ot);
+      const intoJ = L2.a === (wantVirtual ? ot : id) ? L2.ba : L2.ab;
+      if (O.virtual === wantVirtual && S3.virtual !== wantVirtual && intoJ && Math.hypot(O.x - S3.x, O.z - S3.z) <= APPROACH) return ot;
+    }
+    return null;
+  };
+  T3 = {
+    nodes,
+    links,
+    conflicts,
+    /** junction `nodeId` has its signals on its approaches (no signal on the node: the cars stopped at that approach's
+     *  signal): the approach signal node on arm `roadId`, or null */
+    approachSignal: (nodeId, roadId) => viaArm(nodeId, roadId, false),
+    /** signal node `nodeId` is an approach signal of the junction APPROACH m along its arm `roadId`: that junction's
+     *  id (its traffic coming FROM that junction is not held here: the heads face the traffic going into it), or null */
+    junctionOf: (nodeId, roadId) => viaArm(nodeId, roadId, true),
+    /** phase 0 (A) / 1 (B) of the approach to signal node `nodeId` along road `roadId`; (ux, uz): the travel
+     *  direction INTO the node, used when the road is not one of its arms (the nearest arm) and off the table
+     *  (phaseOfDir, the old rule) */
+    phaseAt(nodeId, roadId, ux = 1, uz = 0) {
+      const S3 = nodes.get(nodeId);
+      if (!S3) return phaseOfDir(ux, uz);
+      let a = S3.arms.find((q) => q.road === roadId);
+      if (!a) {
+        let bd = Infinity;
+        for (const q of S3.arms) {
+          const d = q.ux * ux + q.uz * uz;
+          if (d < bd) {
+            bd = d;
+            a = q;
+          }
+        }
+      }
+      return S3.f ^ a.g;
+    },
+    /** the signal node a car on road `roadId` heading to its end `endId` meets (that end, or through plain 2-arm nodes
+     *  within 60 m): { node, road (the arm it arrives on) } or null */
+    ahead(roadId, endId) {
+      if (nodes.has(endId)) return { node: endId, road: roadId };
+      const rs = inc.get(endId) || [], r = byId.get(roadId);
+      if (rs.length !== 2 || !r || !rs.includes(r)) return null;
+      const c = follow(rs[0] === r ? rs[1] : rs[0], endId, 60);
+      return c ? { node: c.end, road: c.road } : null;
+    }
+  };
+  phaseCache.set(roads, T3);
+  return T3;
 }
 
 // viewer/streets/carriageway.js
@@ -19843,12 +20038,8 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     tram[i] = tr;
     for (let k = off[i]; k < off[i + 1]; k++) pv[k] = speed[i];
   });
-  const N2 = new Map(roads.nodes.map((n) => [n.id, n]));
   const pts = feats.points || [];
-  const sigPts = pts.filter((q) => q.kind === "traffic_signals").map((q) => {
-    const nr = nearestRoad(roads, N2, q.x, q.z);
-    return { x: q.x, z: q.z, phase: nr ? phaseOfDir(nr.ux, nr.uz) : 0, road: nr?.road?.id };
-  });
+  const PT = signalPhases(roads);
   const signPts = pts.filter((q) => q.kind === "stop" || q.kind === "give_way");
   const jnodes = [];
   const stats = { junctions: 0, signal: 0, stop: 0, yield: 0, priority: 0, conflicts: 0, pedSignals: 0 };
@@ -19860,11 +20051,11 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
       for (const a of node.arms) for (const lane of a.approach) {
         const pid = a.road.laneEnds?.[a.end]?.in[lane.laneId], i = idx2.get(pid);
         if (i == null) continue;
-        const s = nearestSig(sigPts, node.x, node.z, 30);
+        if (PT.junctionOf(node.id, a.road.id)) continue;
         holdAt[i] = Math.max(0, len[i] - 4.5);
         ctrl[i] = CTRL.signal;
         jnode[i] = jnodes.length;
-        phase[i] = s ? s.phase : phaseOfDir(Math.cos(a.th), Math.sin(a.th));
+        phase[i] = PT.phaseAt(node.id, a.road.id, ...dirAtEnd(src[i], 20));
         stats.pedSignals++;
       }
       jnodes.push({ id: node.id, x: node.x, z: node.z, kind: "crossing", signal: true, cons: [] });
@@ -19897,15 +20088,20 @@ function buildTrafficGraph(net, roads, feats, bounds, grid = null, opts = {}) {
     for (const li of lanes) {
       const lp = src[li];
       const arm = node.arms.find((a) => a.road.id === lp.roadId) || null;
-      let c = CTRL.priority, ph = 0;
+      let c = CTRL.priority, ph = 0, ce = 0;
       if (node.kind === "roundabout") c = CTRL.yield;
-      else if (osmSignal) {
+      else if (osmSignal && !PT.junctionOf(node.id, lp.roadId)) {
         c = CTRL.signal;
-        const s = nearestOnLane(sigPts.filter((q) => q.road === lp.roadId), lp, 30, 14);
-        ph = s ? s.phase : phaseOfDir(...dirAtEnd(lp, 20));
+        ph = PT.phaseAt(node.id, lp.roadId, ...dirAtEnd(lp, 20));
+      } else if (osmSignal) {
+        c = CTRL.priority;
       } else if (signOf.has(li)) c = signOf.get(li).kind === "stop" ? CTRL.stop : CTRL.yield;
+      else if (PT.approachSignal(node.id, lp.roadId)) {
+        ce = 1;
+        ph = PT.phaseAt(node.id, lp.roadId, ...dirAtEnd(lp, 20));
+      }
       const at2 = lp.stop ? lp.stop.at : Math.max(0, lp.len - 0.6);
-      entries.set(li, { arm, c, ph });
+      entries.set(li, { arm, c: ce ? CTRL.signal : c, ph });
       holdAt[li] = at2;
       ctrl[li] = c;
       phase[li] = ph;
@@ -20007,17 +20203,6 @@ function dirAtEnd(p, back = 1) {
   const q = p.pts, n = q.length, [ax, az] = pointAt2(q, p.cum, Math.max(0, p.len - back));
   return norm4([q[n - 1][0] - ax, q[n - 1][1] - az]);
 }
-function nearestSig(list, x, z, r) {
-  let best = null, bd = r * r;
-  for (const s of list) {
-    const d = (s.x - x) ** 2 + (s.z - z) ** 2;
-    if (d < bd) {
-      bd = d;
-      best = s;
-    }
-  }
-  return best;
-}
 function distToLaneEnd(p, q, back) {
   let bd = Infinity;
   const pts = p.pts, c = p.cum, n = pts.length;
@@ -20029,22 +20214,6 @@ function distToLaneEnd(p, q, back) {
   const [ux, uz] = dirAtEnd(p, 5);
   seg(pts[n - 1][0], pts[n - 1][1], pts[n - 1][0] + ux * 15, pts[n - 1][1] + uz * 15);
   return bd;
-}
-function nearestOnLane(list, p, back, r) {
-  let best = null, bd = r * r;
-  const q = p.pts, c = p.cum;
-  for (const s of list) {
-    for (let i = q.length - 1; i > 0 && c[i] > p.len - back - 10; i--) {
-      const ax = q[i - 1][0], az = q[i - 1][1], bx = q[i][0], bz = q[i][1], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1e-9;
-      const t = Math.max(0, Math.min(1, ((s.x - ax) * dx + (s.z - az) * dz) / L2));
-      const d = (ax + dx * t - s.x) ** 2 + (az + dz * t - s.z) ** 2;
-      if (d < bd) {
-        bd = d;
-        best = s;
-      }
-    }
-  }
-  return best;
 }
 var CARRIAGE6 = [true, true, false, true, false, false, false, false, false, false];
 var drivableOn = (G2) => (x, z) => {
@@ -22651,4 +22820,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "de634cfeb7ba3cb2";
+self.__TILE_CODE_HASH = "8416101442ec0416";
