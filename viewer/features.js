@@ -188,6 +188,7 @@ export const FEATURES = [
   on("latourdefrein", "world", "Latour de Frein", "Château Latour de Frein (Rue Engeland 555); off: the UrbIS block.", { sub: "Landmarks" }),
   on("stalle", "world", "Stalle chapel", "Chapelle de Stalle (+ interior).", { sub: "Landmarks" }),
   on("vanbuuren", "world", "van Buuren house", "Musée van Buuren.", { sub: "Landmarks" }),
+  on("villa", "world", "villa (Prince d'Orange)", "A fictional modern villa on Av. du Prince d'Orange (UrbIS solid 543176 replaced): swing gate that opens, garage with cars, pool terrace, an interior streamed within 30 m (viewer/villa/, docs/VILLA.md); off: the UrbIS house.", { sub: "Landmarks" }),
   on("calevoet", "world", "Calevoet station", "Uccle-Calevoet station.", { sub: "Landmarks" }),
   on("papenkasteel", "world", "Papenkasteel", "Papenkasteel / château de Stalle (Rue Papenkasteel 99), the castle on the Geleytsbeek; off: the UrbIS blocks.", { sub: "Landmarks" }),
   on("geleytsbeek", "world", "Geleytsbeek castle (alias)", "Same switch as ?papenkasteel (the castle on the Geleytsbeek).", { sub: "Landmarks", ui: false }),

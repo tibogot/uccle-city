@@ -20,6 +20,8 @@ import { loadStJob, STJOB_LODS, STJOB_BU_ID, stjobColliders } from "./stjobModel
 import { addStalle } from "./stalleCity.js";
 import { addTownHall } from "./townhallCity.js";
 import { addVanBuuren } from "./vanbuurenCity.js";
+import { addVilla } from "./villa/villaCity.js";
+import { VILLA_ON, villaClearRings, villaTreesClear, villaGrassSolid } from "./villa/villaPlot.js";   // the villa on Av. du Prince d'Orange (claude/villa1; ?villa=0 off)
 import { addWolvendael } from "./wolvendaelCity.js";
 import { addPolice } from "./policeCity.js";
 import { addCalevoet } from "./calevoetCity.js";
@@ -891,7 +893,7 @@ async function loadLiteTile(entry, group) {
   if (SMOOTH && entry.files.features) {
     const f = await getJSON(entry.files.features).catch(() => null);
     const b = { x0: entry.bounds.x[0], x1: entry.bounds.x[1], z0: entry.bounds.z[0], z1: entry.bounds.z[1] };
-    if (f?.trees) f.trees = cityFuel.treesClear(f.trees);              // as the full tile (viewer/fuel/cityFuel.js)
+    if (f?.trees) f.trees = villaTreesClear(cityFuel.treesClear(f.trees));   // as the full tile (viewer/fuel/cityFuel.js; the villa's built rings)
     const ys = new Map((f?.trees || []).map((t) => [`${t.x},${t.z}`, t.y]));
     trees = f?.trees?.length && ys.values().next().value != null
       ? buildFarTreeField(f.trees, (x, z) => ys.get(`${x},${z}`), (x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) : null;
@@ -997,14 +999,14 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   own.buildings.add(...B.meshes);
   // ?grass=1: our grass (viewer/grass/) reads this tile's terrain, street surfaces and buildings (docs/GRASS.md)
   let plantDoc = await plantsP;
-  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z)), grounds.mesh].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
+  if (cityGrass.on) { await cityGrass.addTile(entry, DATA, { terrain: terr, roads: [...R.meshes, ...deckMeshes], buildings: B.meshes, feats, bounds, cover: terr.userData.textures[0], types: d.grassTypes, extraSolids: [cityPlants.bedSolid(plantDoc, (x, z) => hm.surface(x, z)), grounds.mesh, villaGrassSolid(THREE, (x, z) => hm.surface(x, z), bounds)].filter(Boolean) }); await frame("grass field"); }   // (no grass in the plants' mulch beds)
   await frame("buildings");
   // rails 1.2 cm above the road; with ?roads=surface 2 cm above H (the engine's markings layer sits up to 1.8 cm above it)
   // ?roads=surface: lamps, parked cars, the walker, the trees and the bollards on the measured street (viewer/streetFit.js)
   const fit = d.road.surfaceData ? streetFit(d.road.surfaceData) : null;
   // a tree on measured ground stands on it (in its pit, viewer/surfaces.js), not on the terrain carved under it
   const treeGround = fit ? (x, z) => (fit.classAt(x, z) >= 0 ? hm.surface(x, z) + CARVE + fit.lift(x, z) : hm.surface(x, z)) : undefined;
-  if (feats?.trees) feats.trees = cityFuel.treesClear(feats.trees);   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js)
+  if (feats?.trees) feats.trees = villaTreesClear(cityFuel.treesClear(feats.trees));   // no LiDAR "tree" on a petrol canopy (viewer/fuel/cityFuel.js) nor in the villa's house / terrace / drive (viewer/villa/villaPlot.js)
   const fo = featureObjects(feats, hm, bounds, d.road.surfaceStats ? 0.02 : 0.012, treeGround);
   own.features.add(fo);
   await frame("rails");
@@ -1089,7 +1091,7 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   const fuelCounts = cityFuel.addTile(entry.name, await fuelP, own.features);
   if (fuelCounts) say(`fuel: ${fuelCounts.stations} petrol station(s) (data/fuel, viewer/fuel)`);
   // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
-  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : []);   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
+  const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
   const inClear = (x, z) => clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });
   // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
   // the police station's vehicle gate)
@@ -1387,6 +1389,7 @@ async function main() {
   const setupPipe = async () => {
     await lighting.attach(camera);                      // Firmament's sky needs the camera (no-op for ?sky=old)
     pipe = fx ? createPipeline(renderer, scene, camera, { aoOn: params.get("ao") !== "0", ssrOn: params.get("ssr") !== "0", upscale: UPSCALE ? createUpscaler(renderer, camera) : null }) : null;   // ?ao=0 ?ssr=0: A/B
+    window.__pipe = pipe;                              // (debug handle: the dynres probes, debug/dynresHitch.js)
     cityQuality._pipe = pipe; if (params.get("quality")) cityQuality.set(params.get("quality"));   // --- upscale: the settings menu's quality presets
     if (pipe) { pipe.setExposureScale(lighting.exposureScale); pipe.look(timeId); }
     if (params.get("precompile") !== "0") compileFor = (roots, o) => precompile(renderer, roots, camera, scene, { target: pipe?.passTarget ?? null, mrt: pipe?.passMRT ?? null, first: !!o?.first, names: o?.names ?? null, last: !!o?.last });   // ?precompile=0: A/B
@@ -1477,6 +1480,9 @@ async function main() {
   // The Villa van Buuren (tools/blender/vanbuuren.py, viewer/vanbuurenCity.js) in place of UrbIS solid 550409 only,
   // behind ?vanbuuren=1 for now
   if (params.get("vanbuuren") !== "0") heroes.push(() => addVanBuuren({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer }));
+  // The villa on Avenue du Prince d'Orange (tools/blender/villa.py, viewer/villa/villaCity.js): a fictional modern villa
+  // in place of UrbIS solid 543176; gate, garage, pool, a streamed interior; ?villa=0 off
+  if (VILLA_ON) heroes.push(() => addVilla({ scene, updaters, hide: HIDE_BU_IDS, world, manifest, log, compiler: heroCompiler, renderer, getView: () => ({ camera, lighting }), getThird: () => third }));
   // The Château de Wolvendael (tools/blender/wolvendael_chateau.py, viewer/wolvendaelCity.js) in place of UrbIS solids
   // 537523 + 538880, and its pond (viewer/water/), behind ?wolvendael=1 for now
   if (params.get("wolvendael") !== "0") heroes.push(() => addWolvendael({ scene, updaters, hide: HIDE_BU_IDS, ponds: PONDS, world, manifest, log, compiler: heroCompiler, renderer, lighting }));

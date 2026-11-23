@@ -16,7 +16,7 @@ import { TUNNEL_ROOTS } from "./rail/tunnels.js";
 import { ART_ROOTS } from "./publicart/artRoots.js";
 import { sliced } from "./slices.js";
 
-export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "wolvendael", "police", "calevoet", "papenkasteel", "stpierre", "observatory", "augustin", "russian", "rosaire", "sacrecoeur", "saintmarc", "latourdefrein", "heros",
+export const HERO_ROOTS = ["stjob", "townhall", "stalle", "vanbuuren", "villa", "wolvendael", "police", "calevoet", "papenkasteel", "stpierre", "observatory", "augustin", "russian", "rosaire", "sacrecoeur", "saintmarc", "latourdefrein", "heros",
   "bridge-verrewinkel", "bridge-stjob", "bridge-calevoet",
   "bridge-ruestalle", "bridge-engeland", "bridge-engeland_chord", "bridge-bigarreaux", "bridge-kauwberg", "bridge-linkebeek",
   ...TUNNEL_ROOTS, ...ART_ROOTS];                                   // the road tunnels (viewer/rail/tunnels.js), the public art (viewer/publicart/)
