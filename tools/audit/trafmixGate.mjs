@@ -484,13 +484,25 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // wall-time version read x1.04-1.17 for the same code with other jobs on the laptop: their time on the core was
   // counted as the mix's (claude/foundation failed it at x1.138 under load and passed alone))
   const batch = (S) => () => { let cars = 0; for (let s = 0; s < 50; s++) { S.clearObstacles(); S.step(ctx); cars += S.count; } return cars; };
-  // (coordinator 2026-11-23, rule timing-rows: ONE reading over the limit is not a verdict. claude/lanes5 read
-  // x1.177 inside a gate while other agents' jobs loaded the laptop, then x1.003 / 1.107 / 1.045 alone: a single
-  // measure flaps round 1.10 by load, not by code. So: one measure; over the limit, two more, and the MEDIAN of the
-  // three is judged. A real regression is over the limit in at least two of three and still fails)
-  let MT = cpuAB({ make, reps: 4, rounds: 30, batches: 3 });
-  const reads = [MT];
-  if (MT.ratio > 1.10 && !TRAFMIX_OLD) { reads.push(cpuAB({ make, reps: 4, rounds: 30, batches: 3 }), cpuAB({ make, reps: 4, rounds: 30, batches: 3 })); MT = [...reads].sort((p, q) => p.ratio - q.ratio)[1]; }
+  // (coordinator 2026-11-23, rule timing-rows: ONE reading over the limit is not a verdict, and neither is a reading
+  // taken while the laptop is too noisy to tell. The twin pair (two IDENTICAL plain sims timed the same way) IS the
+  // noise meter: under another agent's load it swung x0.92-1.125 while the mix ratio swung x1.08-1.17 with it
+  // (claude/allocrate's merge, 2026-11-23: 1.116 / 1.030 / 1.139 in the gate, 1.046 alone). So a read COUNTS only if
+  // its twin is within TWIN_TOL of 1; up to 6 reads are taken until 3 count (one clean read under the limit is
+  // enough), the MEDIAN of the counted reads is judged, and too few clean reads is an honest FAIL 'too noisy to
+  // measure: rerun on a quiet machine', never a fake regression)
+  const TWIN_TOL = 0.04, clean = (r) => Math.abs(r.twin - 1) <= TWIN_TOL;
+  const reads = [];
+  let MT = null;
+  for (let k = 0; k < 6 && !TRAFMIX_OLD; k++) {
+    reads.push(cpuAB({ make, reps: 4, rounds: 30, batches: 3 }));
+    const ok = reads.filter(clean);
+    if (ok.length === 1 && ok[0].ratio <= 1.10 && reads.length === 1) { MT = ok[0]; break; }
+    if (ok.length >= 3) { MT = [...ok].sort((p, q) => p.ratio - q.ratio)[1]; break; }
+  }
+  if (TRAFMIX_OLD) { MT = cpuAB({ make, reps: 4, rounds: 30, batches: 3 }); reads.push(MT); }
+  const noisy = !MT;
+  if (noisy) MT = [...reads].sort((p, q) => Math.abs(p.twin - 1) - Math.abs(q.twin - 1))[0];
   const ratio = MT.ratio, twin = MT.twin;
   // (claude/lanes5, rule street-lanes: how often the mix's wide vehicles clamp beside a parked car (trafficSim.js
   // parkClamped, the cost sims, seed 11). Capping parked-car needs by the other stations' room put the rank-0 lanes
@@ -498,7 +510,7 @@ console.log(`(report) long bodies vs parked cars: ${Object.entries(scrape).map((
   // dropped. Ceiling 1.3 x the foundation's 509)
   const clamps = A.stats.parkClamped || 0;
   check("wide vehicles clamped beside parked cars", clamps <= PARK_CLAMP_MAX, `parkClamped ${clamps} (ceiling ${PARK_CLAMP_MAX}: 1.3 x claude/foundation 358ec924's 509; claude/lanes5 before its fix 2,796)`);
-  check("sim cost", TRAFMIX_OLD || ratio <= 1.10, `${reads.length > 1 ? `median of 3 reads (x${reads.map((r) => r.ratio.toFixed(3)).join(" / ")}): ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
+  check("sim cost", TRAFMIX_OLD || (!noisy && ratio <= 1.10), `${noisy ? `TOO NOISY TO MEASURE: rerun on a quiet machine (no clean read: twin within ${TWIN_TOL} of 1 in ${reads.filter(clean).length} of ${reads.length}): ` : ""}${reads.length > 1 ? `reads x${reads.map((r) => `${r.ratio.toFixed(3)}${clean(r) ? "" : `(twin ${r.twin.toFixed(3)}: noisy)`}`).join(" / ")}, median of the clean ones: ` : ""}${MT.a.toFixed(2)} us of CPU per car per step with the mix vs ${MT.b.toFixed(2)} without (x${ratio.toFixed(3)}, 30 rounds of A B B A blocks of 150 steps, two sims of each, each sim's CPU summed over ${MT.reps} reps: ${(MT.cpuMs / 1000).toFixed(1)} s; two identical plain sims x${twin.toFixed(3)}), ${A.count} + ${A2.count} / ${B.count} + ${B2.count} cars (${(MT.ms / 1000).toFixed(0)} s wall)`);
 }
 console.log(fails ? `${fails} trafmix check(s) FAILED${OLD ? " (?trafmix=old: expected)" : ""}` : "all trafmix checks pass");
 process.exitCode = fails ? 1 : 0;

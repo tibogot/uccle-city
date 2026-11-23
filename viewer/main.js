@@ -46,7 +46,7 @@ import { landCoverTexture, groundMaterial, proceduralGround, setGroundTextures, 
 import { loadGroundTextures } from "./materials/groundTex.js";
 import { Heightmap } from "./heightmap.js";
 import { createTramLine } from "./tramline.js";
-import { loadTrackProfile } from "./trackProfile.js";
+import { loadTrackProfile, LIFT_CACHE } from "./trackProfile.js";   // (LIFT_CACHE, allocrate: the trams' partial rail lift kept until the loaded tiles change, ?liftcache=old)
 import { asphaltMaterial, concreteMaterial, vergeMaterial, paintMaterial, roadTextMaterial } from "./roadPaint.js";
 import { createMaterial as libMaterial } from "./materials/library.js";
 import { buildingMeshes as facadeMeshes } from "./facades.js";
@@ -106,6 +106,7 @@ import { NIGHT } from "./nightLights/nightMode.js";   // ?night=1: the clustered
 import { hud, hudLog, setupHud } from "./devHud.js";   // the HUD top left: stats + the searchable dev log
 import { cityWeather } from "./weather/cityWeather.js";   // WEATHER: rain, snow, fog, seasons (docs/WEATHER.md "City hookup"; ?weather=old none, ?wx=rain)
 import { farBuildingMaterial } from "./farLook.js";   // farcity: the far tiles' façades (docs/FARCITY.md)
+import { RING_TEST, ringSet } from "./ringTest.js";   // allocrate: point-in-ring tests without iterator garbage (?ringtest=old)
 import { setBootStart, coverLifted, whenNeeded, neededAtReveal, setRevealCamera, nearModel, gatesPending } from "./bootGate.js";   // boot2: ?bootdefer=1: far landmarks / bridges after the cover (off by default)
 
 const DATA = new URL("../data/tiles/", import.meta.url);
@@ -318,6 +319,24 @@ function railMaterial() {
 /** the road's lift over the bare-earth DTM at (x, z), for trackProfile.railTop: this tile's grid inside it (it is not in
  *  the world yet while it is built), else the loaded tile there, else null; bridge = the track profile stands > 0.3 m over the DTM */
 function roadOffFor(hm, inTile) {
+  if (LIFT_CACHE) {
+    // (allocrate, ?liftcache=old: below) one answer object reused (trackProfile liftOf reads it at once), the tile found
+    // by a loop (no closure a call), and gen(): the loaded tiles' generation, so trackProfile may keep a partial lift
+    const out = { off: 0, bridge: false };
+    let gN = -1, gA = null, gB = null, gen = 0;
+    const f = (x, z) => {
+      let h = null;
+      if (inTile(x, z)) h = hm;
+      else { const ts = worldRef?.tiles; if (ts) for (let i = 0; i < ts.length; i++) { const b = ts[i].bounds; if (x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1) { h = ts[i].hm; break; } } }
+      if (!h) return null;                               // not loaded: unknown (never a clamped edge sample)
+      const g = h.ground(x, z), t = trackProf?.y(x, z, 2.5);
+      out.off = h.surface(x, z) + CARVE - g; out.bridge = t != null && t - g > 0.3;
+      return out;
+    };
+    // (world.tiles is pushed to / spliced from: its length or its ends change with every add or removal)
+    f.gen = () => { const ts = worldRef?.tiles; const n = ts ? ts.length : 0, a = n ? ts[0] : null, b = n ? ts[n - 1] : null; if (n !== gN || a !== gA || b !== gB) { gN = n; gA = a; gB = b; gen++; } return gen; };
+    return f;
+  }
   return (x, z) => {
     const tl = inTile(x, z) ? null : worldRef?.tiles.find((q) => x >= q.bounds.x0 && x <= q.bounds.x1 && z >= q.bounds.z0 && z <= q.bounds.z1);
     const h = inTile(x, z) ? hm : tl?.hm;
@@ -337,6 +356,7 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
   // rail, 13.5 cm wide, whose cross-section is painted by railMaterial() (lip | groove | head | asphalt seam), so it
   // is one mesh and one draw for every rail of the tile and stays clean at a distance (no thin black lines).
   const GAUGE = 1.435, W = RAIL_W;
+  const tileRoadOff = LIFT_CACHE && trackProf ? roadOffFor(hm, inTile) : null;   // (allocrate: one for the tile, not one a point; ?liftcache=old)
   const pos = [], uvs = [], nrm = [];
   const ribbon = (pts, side) => {
     // side -1 / +1: the strip runs from the gauge side (lip) outward
@@ -364,7 +384,7 @@ function featureObjects(f, hm, bounds, railLift = 0.012, treeGround = (x, z) => 
       // (rule mover-ground) on a road deck the rails lie on its drawn top (the Carsoel deck, H6: the profile, interpolated
       // between the bridge's ends, ran 0.1-0.2 m under the deck's asphalt and 0.16 m over it); ?movground=old: the profile
       const dk = MOVGROUND ? oneDeckY(x, z) : null;
-      return [x, z, -dz / L, dx / L, dk ?? (trackProf ? trackProf.railTop(x, z, roadOffFor(hm, inTile)) : null)];
+      return [x, z, -dz / L, dx / L, dk ?? (trackProf ? trackProf.railTop(x, z, tileRoadOff ?? roadOffFor(hm, inTile)) : null)];
     });
     if (pts.length < 2) continue;
     for (const side of [-1, 1]) ribbon(pts, side);
@@ -1095,7 +1115,9 @@ async function loadTile(entry, { layers, contourOn, verbose }) {
   // (citydefects) no generated plant in a yard / gate mouth (data/overrides.json plantsClear; ?plantsclear=old)
   const clearRings = params.get("plantsclear") === "old" ? [] : Object.entries((await loadOverrides(DATA)).plantsClear || {}).filter(([k]) => !k.startsWith("_")).map(([, v]) => v.ring).concat(grounds.rings, CORTENBOSCH ? lyceeFront.clearRings() : [], villaClearRings());   // (+ the grounds' yards, viewer/grounds.js; the Lycée's railing strip)
   const pfClear = PARKFENCE ? await parkFence.clearTest() : null;   // (parkfence) no garden piece / generated plant on a park's fence line
-  const inClear = (x, z) => !!pfClear?.(x, z) || clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });
+  // (allocrate, ?ringtest=old: the destructuring loop over every ring) index reads + a bounding box per ring (viewer/ringTest.js)
+  const clearSet = RING_TEST ? ringSet(clearRings) : null;
+  const inClear = clearSet ? (x, z) => clearSet.has(x, z) || !!pfClear?.(x, z) : (x, z) => !!pfClear?.(x, z) || clearRings.some((r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; });   // (+ the park fence line, parkfence)
   // (policefeel 2026-11-17: the garden pieces too, as plantsClear's _doc says: a garden wall + pillar + hedge stood across
   // the police station's vehicle gate)
   // (falcon2, ?gardenslice=old: in one go): in <= 3 ms slices (cityGardens.addTileSliced, viewer/slices.js)

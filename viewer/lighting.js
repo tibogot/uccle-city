@@ -17,6 +17,12 @@ import { createFirmamentSky } from "../vendor/firmament/firmamentSky.js";
 import { createSkyExtras } from "./skyExtras.js";
 const SHADOW_FAR = typeof location === "undefined" || new URLSearchParams(location.search).get("shadowfar") !== "old";   // perfgame round 2
 const RAYS_WARM = typeof location === "undefined" || new URLSearchParams(location.search).get("rayswarm") !== "old";   // perfgame
+// (allocrate, ?meterpace=old: the meter called every frame, Firmament reads back every 4th = 15 a second) the eye
+// adaptation's meter called every METER_EVERY-th frame: Firmament's own 1-in-4 then reads back every 8th frame (133 ms at
+// 60 fps; its time constants are 0.6-0.9 s): each readback is a new GPU staging buffer + a ~48 KB array in three r187
+// (readRenderTargetPixelsAsync), so half the readbacks is half that garbage (vendor/ is read-only: paced from here)
+export const METER_PACE = typeof location === "undefined" || new URLSearchParams(location.search).get("meterpace") !== "old";
+export const METER_EVERY = 2;
 import { sunDirection } from "../vendor/firmament/firmamentCelestial.js";
 import { createVolumetricFog } from "../vendor/volumetric-fog/volumetricFog.js";
 import { NTE, NTE_SKY, NTE_FOG_BLUE } from "./lookNte.js";
@@ -416,7 +422,7 @@ export class Lighting {
         cascades: shadowDepth ? [{ matrix: this._shM, depthTex: shadowDepth }] : [] });
       this._vfT = now;
     }
-    this.sky.meter(rt);
+    if (!METER_PACE || (this._meterN = ((this._meterN ?? -1) + 1) % METER_EVERY) === 0) this.sky.meter(rt);
   }
 
   /** This frame's exposure factor (Firmament's eye adaptation, x0.6..x6, at most x2 at night); 1 for the old sky. */
