@@ -561,20 +561,46 @@ print(f"exterior LOD0: {len(EX.f)} faces + glass {len(GLS.f)} ({time.time() - T0
 
 # ------------------------------------------------------------------------------------------------ the far variant
 FAR = Acc("Villa_far", EXT_SLOTS)
+# villa2: the slat screens of the upper box (front, south) drawn by the shader on ONE plane at LOD1 / LOD2 (anti-aliased
+# stripes: the 4 cm battens alias at 70+ m): code screen = slats over the cladding, channel = slats over the ribbon
+# windows (dark glass in the gaps, lit at night). Interior codes, free on the exterior's wood_cladding.
+SCR_WALL, SCR_GLASS = C["screen"], C["channel"]
+def screen_face(acc, axis, c, a0, a1, h0, h1, out, hole, maxlen=0.0):
+    """a slat screen's plane (axis = c, a0..a1, h0..h1, facing out): bands below / at / above the ribbon window behind it"""
+    ha0, ha1, hh0, hh1 = hole
+    def r(x0, x1, y0, y1, code):
+        if x1 - x0 < 1e-6 or y1 - y0 < 1e-6: return
+        if axis == "u": acc.rect(P(c, x0, y0), P(c, x1, y0), P(c, x1, y1), P(c, x0, y1), "wood_cladding", code, (out, 0, 0), maxlen)
+        else: acc.rect(P(x0, c, y0), P(x1, c, y0), P(x1, c, y1), P(x0, c, y1), "wood_cladding", code, (0, -out, 0), maxlen)
+    r(a0, a1, h0, hh0, SCR_WALL); r(a0, a1, hh1, h1, SCR_WALL)
+    r(a0, max(a0, ha0), hh0, hh1, SCR_WALL); r(max(a0, ha0), min(a1, ha1), hh0, hh1, SCR_GLASS); r(min(a1, ha1), a1, hh0, hh1, SCR_WALL)
+
 def far():
+    """LOD2 (> 240 m): the masses, closed; villa2: the street-side openings as FLUSH dark panes (the front glass, the
+    entrance recess, the side windows), the slat screens as screen codes, no duplicate roof face"""
     g0, g1 = GF["w0"], GF["w1"]
     bot = gmin(GF["u0"], GF["u1"], g0, g1, pad=0.2) - SINK
     box(FAR, GF["u0"], GF["u1"], g0, g1, bot, GL, "stone_blue", C["plinth"], skip=("-h", "+h"))
-    box(FAR, GF["u0"], GF["u1"], UB["w0"], g1, GL, C0, "render_white", 0, skip=("-h", "+u", "+h"))
+    # the ground floor's front / north / south faces: walls with the openings, each opening a flush pane
+    for (axis, c, a0, a1, top, key, out) in (("u", GF["u0"], g0, UB["w0"], LPAR, "front_gf", -1), ("u", GF["u0"], UB["w0"], g1, C0, "front_gf", -1),
+                                            ("w", g0, GF["u0"], GF["u1"], LPAR, "north", -1), ("w", g1, GF["u0"], GF["u1"], C0, "south_gf", 1)):
+        holes = [h for h in OPEN[key] if h[0] >= a0 - 1e-6 and h[1] <= a1 + 1e-6]
+        wall(FAR, axis, c, a0, a1, GL, top, holes, out, "render_white", 0)
+        for h in holes:
+            if h == RECESS: pane(FAR, axis, c, h, out, "wood_cladding", C["door"])
+            else: pane(FAR, axis, c, h, out, "glass_window")
     FAR.rect(P(GF["u1"], UB["w0"], GL), P(GF["u1"], g1, GL), P(GF["u1"], g1, C0), P(GF["u1"], UB["w0"], C0), "glass_window", 0, (1, 0, 0))
-    box(FAR, GF["u0"], GF["u1"], g0, UB["w0"], GL, LPAR, "render_white", 0, skip=("-h", "+u", "+w"))
     FAR.rect(P(GF["u1"], g0, GL), P(GF["u1"], UB["w0"], GL), P(GF["u1"], UB["w0"], LIVC), P(GF["u1"], g0, LIVC), "glass_window", 0, (1, 0, 0))
     wall(FAR, "u", GF["u1"], g0, UB["w0"], LIVC, LPAR, [], 1, "render_white", 0)
-    box(FAR, UB["u0"], UB["u1"], UB["w0"], UB["w1"], C0, PAR1, "wood_cladding", 0, skip=("+u",))
+    # the upper box: soffit, north side, top as before; its front and south faces = the slat screens' codes
+    box(FAR, UB["u0"], UB["u1"], UB["w0"], UB["w1"], C0, PAR1, "wood_cladding", 0, skip=("+u", "-u", "+w"))
+    screen_face(FAR, "u", UB["u0"], UB["w0"], UB["w1"], C0, PAR1, -1, OPEN["front_f1"][0])
+    screen_face(FAR, "w", UB["w1"], UB["u0"], UB["u1"], C0, PAR1, 1, OPEN["side_f1"][0])
     FAR.rect(P(UB["u1"], UB["w0"], C0), P(UB["u1"], 0.0, C0), P(UB["u1"], 0.0, PAR1), P(UB["u1"], UB["w0"], PAR1), "wood_cladding", 0, (1, 0, 0))
     FAR.rect(P(UB["u1"], 0.0, C0), P(UB["u1"], UB["w1"], C0), P(UB["u1"], UB["w1"], F1), P(UB["u1"], 0.0, F1), "wood_cladding", 0, (1, 0, 0))
     FAR.rect(P(UB["u1"], 0.0, F1), P(UB["u1"], UB["w1"], F1), P(UB["u1"], UB["w1"], C1), P(UB["u1"], 0.0, C1), "glass_window", 0, (1, 0, 0))
     FAR.rect(P(UB["u1"], 0.0, C1), P(UB["u1"], UB["w1"], C1), P(UB["u1"], UB["w1"], PAR1), P(UB["u1"], 0.0, PAR1), "wood_cladding", 0, (1, 0, 0))
+    # (villa2: the living box's own +h face duplicated this roof rect: a coplanar pair, gone with the box)
     FAR.rect(P(GF["u0"], g0, LPAR), P(GF["u1"], g0, LPAR), P(GF["u1"], UB["w0"], LPAR), P(GF["u0"], UB["w0"], LPAR), "concrete_soffit", C["roof"], (0, 0, 1))
     t = TER
     box(FAR, t["u0"], t["u1"], t["w0"], t["w1"], gmin(t["u0"], t["u1"], t["w0"], t["w1"], 0.2) - SINK, GL, "stone_blue", 0, skip=("-h", "-u"))
@@ -585,6 +611,199 @@ def far():
         if ax_ == "w": box(FAR, a0, a1, c - 0.5, c + 0.5, gmin(a0, a1, c - 0.5, c + 0.5, 0.1) - SINK, gmax(a0, a1, c - 0.5, c + 0.5) + 2.3, "hedge", 0, skip=("-h",))
         else: box(FAR, c - 0.5, c + 0.5, a0, a1, gmin(c - 0.5, c + 0.5, a0, a1, 0.1) - SINK, gmax(c - 0.5, c + 0.5, a0, a1) + 2.3, "hedge", 0, skip=("-h",))
 far()
+
+# ------------------------------------------------------------------------------------------------ the open bay's far pane
+# villa2 (heroshell, 2026-11-23): the hall's back bay stands OPEN (its sliding panel parked: the walker steps out onto the
+# terrace) and the interior closes it only once it shows (< 30 m): from 30 to 70 m (LOD0 drawn) one saw through the bay
+# to the front wall's inside (6 back hits, heroshell L0). A pane in its own node "Villa_bay": drawn with the exterior's
+# far glass, hidden with it when the interior shows (villaCity.js extGlass), outside the root (the walker's colliders read
+# the root's LOD0: the pane never blocks the open bay).
+BAY = Acc("Villa_bay", EXT_SLOTS)
+pane(BAY, "u", GF["u1"] - GLASS_IN, (OPEN_BAY[0], OPEN_BAY[1], GL, C0 - 0.05), 1, "glass_window")
+
+# ------------------------------------------------------------------------------------------------ LOD1 (scripted)
+# villa2: LOD1 (70-240 m) was LOD0 simplified by meshopt (tools/hero_pack.mjs): the simplifier collapsed reveals and the
+# entrance recess (the door leaf is its own node: the recess's back wall had the door's hole open: back faces seen from
+# the street, heroshell L1 23.2 m2) and bent the flat faces (packed audit: 6.5k streak, 1.2k bentflat, 40 leaks). Now a
+# SCRIPTED middle level from the same design numbers: the walls with their openings (rectangle grids, flat normals),
+# reveals, glass panes (the open bay closed too), frames and mullions as plain boxes, the recess's back wall closed, the
+# slat screens as one plane each (codes screen / channel: the stripes drawn anti-aliased by the shader), hedges as stepped
+# boxes, no LEDs / climbers / house number. Every face outward, nothing open (rule villa-lod-shells).
+L1 = Acc("Villa_lod1", EXT_SLOTS)
+ML1 = 2.1                                        # (per-vertex AO: coarser than LOD0's 0.7)
+
+def lframes(acc, axis, c, hole, mull, transom=None, t=0.06, d=0.10):
+    """frame + mullions + transoms as plain boxes at the glass plane c; pieces that meet leave out the touching faces
+    (no back-to-back pair), the outer sides lie on the reveals (left out too)"""
+    a0, a1, h0, h1 = hole
+    lo, hi = ("-u", "+u") if axis == "w" else ("-w", "+w")         # (the along-axis faces)
+    def bx(x0, x1, y0, y1, skip, dd=d):
+        if axis == "u": box(acc, c - dd / 2, c + dd / 2, x0, x1, y0, y1, "metal_dark", C["frame"], skip=skip)
+        else: box(acc, x0, x1, c - dd / 2, c + dd / 2, y0, y1, "metal_dark", C["frame"], skip=skip)
+    bx(a0, a0 + t, h0, h1, (lo,)); bx(a1 - t, a1, h0, h1, (hi,))
+    bx(a0 + t, a1 - t, h0, h0 + t, (lo, hi, "-h")); bx(a0 + t, a1 - t, h1 - t, h1, (lo, hi, "+h"))
+    n = max(1, round((a1 - a0) / mull))
+    xs = [a0 + (a1 - a0) * k / n for k in range(1, n)]
+    for x in xs: bx(x - t / 2, x + t / 2, h0 + t, h1 - t, ("-h", "+h"))
+    for y in (transom or []):
+        edges = [a0 + t] + [v for x in xs for v in (x - t / 2, x + t / 2)] + [a1 - t]
+        for xa, xb in zip(edges[0::2], edges[1::2]): bx(xa, xb, y - t / 2, y + t / 2, (lo, hi), d * 0.84)
+
+def lbox_run(axis, c, a0, a1, thick, hgt, slot="hedge", code=0, seg=2.0):
+    """a hedge along a line on the ground: boxes of <= seg m stepping with the ground, the step faces between two boxes
+    kept (from the lower top to the higher one), the shared end faces left out"""
+    n_ = max(1, math.ceil((a1 - a0) / seg)); xs = [a0 + (a1 - a0) * k / n_ for k in range(n_ + 1)]
+    tops, bots = [], []
+    for x0, x1 in zip(xs, xs[1:]):
+        if axis == "w": bots.append(gmin(x0, x1, c - thick / 2, c + thick / 2, pad=0.1) - SINK); tops.append(gmax(x0, x1, c - thick / 2, c + thick / 2) + hgt)
+        else: bots.append(gmin(c - thick / 2, c + thick / 2, x0, x1, pad=0.1) - SINK); tops.append(gmax(c - thick / 2, c + thick / 2, x0, x1) + hgt)
+    bot = min(bots)
+    lo, hi = ("-u", "+u") if axis == "w" else ("-w", "+w")
+    for k, (x0, x1) in enumerate(zip(xs, xs[1:])):
+        skip = ["-h"] + ([lo] if k > 0 else []) + ([hi] if k < n_ - 1 else [])
+        if axis == "w": box(L1, x0, x1, c - thick / 2, c + thick / 2, bot, tops[k], slot, code, skip=tuple(skip), maxlen=ML1)
+        else: box(L1, c - thick / 2, c + thick / 2, x0, x1, bot, tops[k], slot, code, skip=tuple(skip), maxlen=ML1)
+        if k < n_ - 1 and abs(tops[k] - tops[k + 1]) > 1e-4:        # the step between this box and the next
+            ya, yb = sorted((tops[k], tops[k + 1])); xe = x1; o = 1 if tops[k] > tops[k + 1] else -1
+            if axis == "w": L1.rect(P(xe, c - thick / 2, ya), P(xe, c + thick / 2, ya), P(xe, c + thick / 2, yb), P(xe, c - thick / 2, yb), slot, code, (o, 0, 0))
+            else: L1.rect(P(c - thick / 2, xe, ya), P(c + thick / 2, xe, ya), P(c + thick / 2, xe, yb), P(c - thick / 2, xe, yb), slot, code, (0, -o, 0))
+
+def lod1():
+    g0, g1 = GF["w0"], GF["w1"]
+    gd = GAR["door_w"]
+    edges = lambda keys: [x for k in keys for h in OPEN[k] for x in h[:2]] + [UB["w0"]]
+    # ---- the plinth (the garage mouth, the recess's step) and the ground floor's walls: LOD0's calls, coarser
+    wall(L1, "u", GF["u0"], g0, g1, plinth_bot("u", GF["u0"], -1), GL, [(gd[0], gd[1], -1e3, GAR["top"]), (RECESS[0], RECESS[1], GL - 0.3, GL + 1)], -1, "stone_blue", C["plinth"], ML1, col=ML1, extra=edges(["front_gf"]))
+    wall(L1, "w", g0, GF["u0"], GF["u1"], plinth_bot("w", g0, -1), GL, [], -1, "stone_blue", C["plinth"], ML1, col=ML1, extra=edges(["north"]))
+    wall(L1, "w", g1, GF["u0"], GF["u1"], plinth_bot("w", g1, 1), GL, [], 1, "stone_blue", C["plinth"], ML1, col=ML1, extra=edges(["south_gf"]))
+    wall(L1, "u", GF["u1"], g0, g1, plinth_bot("u", GF["u1"], 1), GL, [], 1, "stone_blue", C["plinth"], ML1, col=ML1, extra=edges(["back_liv", "back_gf"]) + [TER["w0"], TER["w1"]])
+    wall(L1, "u", GF["u0"], g0, UB["w0"], GL, LPAR, OPEN["front_gf"], -1, "render_white", 0, ML1)
+    wall(L1, "u", GF["u0"], UB["w0"], g1, GL, C0, OPEN["front_gf"], -1, "render_white", 0, ML1)
+    wall(L1, "w", g0, GF["u0"], GF["u1"], GL, LPAR, OPEN["north"], -1, "render_white", 0, ML1)
+    wall(L1, "w", g1, GF["u0"], GF["u1"], GL, C0, OPEN["south_gf"], 1, "render_white", 0, ML1)
+    wall(L1, "u", GF["u1"], g0, UB["w0"], GL, LPAR, OPEN["back_liv"], 1, "render_white", 0, ML1)
+    wall(L1, "u", GF["u1"], UB["w0"], g1, GL, C0, OPEN["back_gf"], 1, "render_white", 0, ML1)
+    for key, axis, c, out in (("front_gf", "u", GF["u0"], -1), ("back_liv", "u", GF["u1"], 1), ("back_gf", "u", GF["u1"], 1),
+                              ("north", "w", g0, -1), ("south_gf", "w", g1, 1)):
+        for hole in OPEN[key]:
+            if hole == DOOR or hole == RECESS: continue
+            gp = c - out * GLASS_IN
+            reveal(L1, axis, c, -out * GLASS_IN, hole, "render_white", C["reveal"], ML1)
+            lframes(L1, axis, gp, hole, 1.6 if key.startswith("back") else 1.2, [C0] if key == "back_liv" else None)
+            pane(L1, axis, gp, hole, out, "glass_window")             # (the open bay too: LOD1 is drawn > 60 m, the interior never)
+    # ---- the recessed entrance: its walls, ceiling, the back wall CLOSED (the leaf, Villa_door, stands just behind it)
+    r0, r1, _, rt = RECESS
+    wall(L1, "w", r0, GF["u0"], DU, GL, rt, [], 1, "wood_cladding", C["door"])
+    wall(L1, "w", r1, GF["u0"], DU, GL, rt, [], -1, "wood_cladding", C["door"])
+    L1.rect(P(GF["u0"], r0, rt), P(DU, r0, rt), P(DU, r1, rt), P(GF["u0"], r1, rt), "wood_cladding", C["door"], (0, 0, -1))
+    wall(L1, "u", DU, r0, r1, GL, rt, [], -1, "wood_cladding", C["door"])
+    box(L1, GF["u0"], DU, r0, r1, GL - 0.3, GL, "stone_blue", C["step"], skip=("-h", "-w", "+w", "+u"))
+    box(L1, 11.8, GF["u0"], 5.2, 12.6, C0 - 0.24, C0, "metal_dark", C["frame"], skip=("+h", "+u"))
+    # ---- the upper box: cladding walls, the back ribbon (glass), the slat screens on the front and the south side
+    u0, u1, w0, w1 = UB["u0"], UB["u1"], UB["w0"], UB["w1"]
+    wall(L1, "u", u0, w0, w1, C0, PAR1, [], -1, "wood_cladding", 0, ML1)
+    wall(L1, "u", u1, w0, w1, C0, PAR1, OPEN["back_f1"], 1, "wood_cladding", 0, ML1)
+    wall(L1, "w", w1, u0, u1, C0, PAR1, [], 1, "wood_cladding", 0, ML1)
+    wall(L1, "w", w0, u0, GF["u0"], C0, PAR1, [], -1, "wood_cladding", 0, ML1)
+    wall(L1, "w", w0, GF["u1"], u1, C0, PAR1, [], -1, "wood_cladding", 0, ML1)
+    wall(L1, "w", w0, GF["u0"], GF["u1"], LPAR, PAR1, [], -1, "wood_cladding", 0, ML1)
+    for hole in OPEN["back_f1"]:
+        reveal(L1, "u", u1, -GLASS_IN, hole, "wood_cladding", C["reveal"], ML1)
+        lframes(L1, "u", u1 - GLASS_IN, hole, 1.8)
+        pane(L1, "u", u1 - GLASS_IN, hole, 1, "glass_window")
+    # the screens: a plane at the battens' outer face, its four edges closed (the slats' ends seen from below / the side)
+    sh0, sh1 = C0 + 0.02, PAR1 - 0.04
+    for (axis, c, a0, a1, out, hole) in (("u", u0, w0 + 0.3, w1 - 0.3, -1, OPEN["front_f1"][0]), ("w", w1, u0 + 0.3, u1 - 0.3, 1, OPEN["side_f1"][0])):
+        f = c + out * 0.09
+        screen_face(L1, axis, f, a0, a1, sh0, sh1, out, hole, ML1)
+        lo_, hi_ = sorted((c, f))
+        if axis == "u": box(L1, lo_, hi_, a0, a1, sh0, sh1, "wood_cladding", C["slat"], skip=("-u", "+u"))
+        else: box(L1, a0, a1, lo_, hi_, sh0, sh1, "wood_cladding", C["slat"], skip=("-w", "+w"))
+    # soffits under the overhangs
+    for (a, b, c_, d) in ((u0, GF["u0"], w0, w1), (GF["u1"], u1, w0, w1), (GF["u0"], GF["u1"], GF["w1"], w1)):
+        L1.rect(P(a, c_, C0), P(b, c_, C0), P(b, d, C0), P(a, d, C0), "concrete_soffit", C["soffit"], (0, 0, -1), ML1)
+    # ---- roofs inside their parapets, copings as boxes
+    def roof(ua, ub, wa, wb, top, par, closed_w1=True):
+        wb_in = wb - T_W if closed_w1 else wb
+        L1.rect(P(ua + T_W, wa + T_W, top), P(ub - T_W, wa + T_W, top), P(ub - T_W, wb_in, top), P(ua + T_W, wb_in, top), "concrete_soffit", C["roof"], (0, 0, 1), ML1)
+        wall(L1, "u", ua + T_W, wa + T_W, wb_in, top, par, [], 1, "render_white", 0)
+        wall(L1, "u", ub - T_W, wa + T_W, wb_in, top, par, [], -1, "render_white", 0)
+        wall(L1, "w", wa + T_W, ua + T_W, ub - T_W, top, par, [], 1, "render_white", 0)
+        if closed_w1: wall(L1, "w", wb - T_W, ua + T_W, ub - T_W, top, par, [], -1, "render_white", 0)
+        cop = [(ua - 0.02, ub + 0.02, wa - 0.02, wa + T_W), (ua - 0.02, ua + T_W, wa + T_W, wb_in), (ub - T_W, ub + 0.02, wa + T_W, wb_in)]
+        if closed_w1: cop.append((ua - 0.02, ub + 0.02, wb - T_W, wb + 0.02))
+        for (a, b, c_, d) in cop: box(L1, a, b, c_, d, par, par + 0.05, "metal_dark", C["coping"])
+    roof(u0, u1, w0, w1, ROOF1, PAR1)
+    roof(GF["u0"], GF["u1"], g0, w0, LROOF, LPAR, closed_w1=False)
+    # ---- the garage behind its mouth: walls, ceiling, the lintel's underside
+    A, B = GAR["a"], GAR["b"]
+    def gb(axis, c):
+        def f(x0, x1):
+            if axis == "u": return gmin(c - 0.05, c + 0.05, x0, x1, pad=0.3) - SINK
+            return gmin(x0, x1, c - 0.05, c + 0.05, pad=0.3) - SINK
+        return f
+    wall(L1, "w", A[2], GF["u0"], A[1], gb("w", A[2]), GAR["ceil"], [], 1, "render_white", C["garage"], ML1, col=ML1)
+    wall(L1, "u", B[0], B[2], A[2], gb("u", B[0]), GAR["ceil"], [], 1, "render_white", C["garage"], ML1, col=ML1)
+    wall(L1, "w", B[2], B[0], B[1], gb("w", B[2]), GAR["ceil"], [], 1, "render_white", C["garage"], ML1, col=ML1)
+    wall(L1, "w", A[3], GF["u0"], B[1], gb("w", A[3]), GAR["ceil"], [], -1, "render_white", C["garage"], ML1, col=ML1)
+    wall(L1, "u", B[1], B[2], B[3], gb("u", B[1]), GAR["ceil"], [], -1, "render_white", C["garage"], ML1, col=ML1)
+    for (ua_, ub_, wa_, wb_) in ((GF["u0"], A[1], A[2], A[3]), (B[0], B[1], B[2], B[3])):
+        L1.rect(P(ua_, wa_, GAR["ceil"]), P(ub_, wa_, GAR["ceil"]), P(ub_, wb_, GAR["ceil"]), P(ua_, wb_, GAR["ceil"]), "concrete_soffit", C["garage"], (0, 0, -1), ML1)
+    L1.rect(P(GF["u0"], gd[0], GAR["top"]), P(GF["u0"], gd[1], GAR["top"]), P(GF["u0"], gd[1], GAR["ceil"]), P(GF["u0"], gd[0], GAR["ceil"]), "stone_blue", C["plinth"], (1, 0, 0))
+    # ---- the entrance landing, its flight and cheek wall (boxes, sunk)
+    lu0 = 11.9; n = STEPS_INFO["n"]; rise = STEPS_INFO["rise"]
+    box(L1, lu0, GF["u0"], 5.5, 9.0, gmin(lu0, GF["u0"], 5.5, 9.0) - SINK, GL, "stone_blue", C["step"], skip=("-h", "+u"))
+    for k in range(1, n):
+        wa_ = 9.0 + (k - 1) * 0.30; wb_ = wa_ + 0.30
+        box(L1, 12.2, GF["u0"], wa_, wb_, gmin(12.2, GF["u0"], wa_, wb_) - SINK, GL - k * rise, "stone_blue", C["step"], skip=("-h", "+u"))
+    for k in range(0, n):
+        wa_ = 5.5 if k == 0 else 9.0 + (k - 1) * 0.30; wb_ = 9.0 if k == 0 else wa_ + 0.30
+        top = (GL if k == 0 else GL - k * rise) + 0.95
+        box(L1, lu0 - 0.25, lu0 if k == 0 else 12.2, wa_, wb_, gmin(lu0 - 0.25, 12.2, wa_, wb_) - SINK, top, "render_white", 0, skip=("-h",))
+    # ---- the boundary wall, the gate's piers, the hedges
+    segs = [(-34.0, -20.0), (-20.0, -6.0), (-6.0, -0.8), (-0.8, 6.0), (6.0, GATE["w0"] - 0.5), (GATE["w1"] + 0.5, 30.0)]
+    for (a, b) in segs:
+        top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 0.75, 2)
+        bot = lambda x0, x1: gmin(WALL_U, WALL_U + 0.3, x0, x1, pad=0.3) - SINK
+        wall(L1, "u", WALL_U, a, b, bot, top - 0.06, [], -1, "render_white", 0, ML1, col=ML1)
+        wall(L1, "u", WALL_U + 0.3, a, b, bot, top - 0.06, [], 1, "render_white", 0, ML1, col=ML1)
+        for (x, o) in ((a, 1), (b, -1)):
+            endbot = lambda x0, x1, x=x: gmin(x0, x1, x - 0.3, x + 0.3, pad=0.05) - SINK
+            wall(L1, "w", x, WALL_U, WALL_U + 0.3, endbot, top - 0.06, [], -o, "render_white", 0)
+        box(L1, WALL_U - 0.03, WALL_U + 0.33, a - (0.03 if a == -34.0 else 0), b + (0.03 if b == 30.0 else 0), top - 0.06, top, "stone_blue", C["coping"])
+    for (a, b) in ((GATE["w0"] - 0.5, GATE["w0"]), (GATE["w1"], GATE["w1"] + 0.5)):
+        top = round(gmax(WALL_U, WALL_U + 0.3, a, b) + 2.05, 2)
+        box(L1, WALL_U - 0.1, WALL_U + 0.4, a, b, gmin(WALL_U - 0.1, WALL_U + 0.4, a, b) - SINK, top, "stone_blue", C["plinth"], skip=("-h",))
+    for (a, b) in ((-32.95, -0.9), (GATE["w1"] + 0.6, 28.95)):
+        lbox_run("u", WALL_U + 0.8, a, b, 0.9, 1.9)
+    lbox_run("u", 13.55, -22.8, -1.2, 0.7, 0.85)
+    plot = SITE["plot"]
+    lbox_run("w", plot["w0"] + 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
+    lbox_run("w", plot["w1"] - 0.5, WALL_U + 0.35, plot["u1"], 1.0, 2.3)
+    lbox_run("u", plot["u1"] - 0.5, plot["w0"] + 1.0, plot["w1"] - 1.0, 1.0, 2.3)
+    # ---- the terrace, the pool's coping and basin rim, the steps to the lawn, the pergola
+    t = TER; p = POOL; cp = 0.35; ci = 0.05
+    for (a, b, c_, d) in ((t["u0"], p["u0"] - ci, t["w0"], t["w1"]), (p["u1"] + ci, t["u1"], t["w0"], -1.0), (p["u1"] + ci, t["u1"], -1.0, 5.0), (p["u1"] + ci, t["u1"], 5.0, t["w1"]),
+                          (p["u0"] - ci, p["u1"] + ci, t["w0"], p["w0"] - ci), (p["u0"] - ci, p["u1"] + ci, p["w1"] + ci, t["w1"])):
+        L1.rect(P(a, c_, GL), P(b, c_, GL), P(b, d, GL), P(a, d, GL), "stone_blue", C["plain"], (0, 0, 1), ML1, extra_t=(-(p["w0"] - ci), -(p["w1"] + ci)))
+    gl_ = gmin(t["u1"], t["u1"] + 1.4, -1.0, 5.0, pad=0.0)
+    ns = max(2, round((GL - gl_) / 0.18)); rs = (GL - gl_) / ns
+    for (ax_, c, a0, a1, o) in (("u", t["u1"], t["w0"], t["w1"], 1), ("w", t["w0"], t["u0"], t["u1"], -1), ("w", t["w1"], t["u0"], t["u1"], 1)):
+        wall(L1, ax_, c, a0, a1, plinth_bot(ax_, c, o), GL, [(-1.0, 5.0, -1e3, GL - rs)] if (ax_ == "u") else [], o, "stone_blue", C["plinth"], ML1, col=ML1,
+             extra=[p["w0"] - ci, p["w1"] + ci] if ax_ == "u" else [p["u0"] - ci, p["u1"] + ci])
+    for (a, b, c_, d) in ((p["u0"] - cp, p["u1"] + cp, p["w0"] - cp, p["w0"] + 0.03), (p["u0"] - cp, p["u1"] + cp, p["w1"] - 0.03, p["w1"] + cp),
+                          (p["u0"] - cp, p["u0"] + 0.03, p["w0"] + 0.03, p["w1"] - 0.03), (p["u1"] - 0.03, p["u1"] + cp, p["w0"] + 0.03, p["w1"] - 0.03)):
+        box(L1, a, b, c_, d, GL - 0.04, GL + 0.02, "stone_blue", C["coping"], skip=("-h",))
+    for (ax_, c, a0, a1, o) in (("u", p["u0"], p["w0"], p["w1"], 1), ("u", p["u1"], p["w0"], p["w1"], -1), ("w", p["w0"], p["u0"], p["u1"], 1), ("w", p["w1"], p["u0"], p["u1"], -1)):
+        wall(L1, ax_, c, a0, a1, p["water"] - 0.06, GL - 0.04, [], o, "stone_blue", C["coping"])
+    for k in range(1, ns):
+        box(L1, t["u1"] + (k - 1) * 0.36, t["u1"] + k * 0.36, -1.0, 5.0, gmin(t["u1"], t["u1"] + k * 0.36, -1.0, 5.0) - SINK, GL - k * rs, "stone_blue", C["step"], skip=("-h",) if k == 1 else ("-h", "-u"))   # (butted, not overlapped: no coplanar sides)
+    for w in (7.0, 15.0):
+        box(L1, t["u1"] - 0.85, t["u1"] - 0.55, w - 0.15, w + 0.15, GL - 0.02, GL + 2.85, "metal_dark", C["frame"], skip=("-h", "+h"))
+    pu0, pu1, pw0, pw1, ph = UB["u1"], t["u1"] - 0.4, 6.4, 15.6, GL + 2.85
+    box(L1, pu0, pu1, pw0, pw1, ph, ph + 0.22, "concrete_soffit", C["soffit"], skip=("-u",), maxlen=ML1)
+lod1()
+print(f"LOD1 (scripted): {len(L1.f)} faces; bay pane {len(BAY.f)}")
 
 # ------------------------------------------------------------------------------------------------ the animated parts
 def gate_leaf(side):
@@ -1198,7 +1417,7 @@ EX.v += GLS.v and []
 # the exterior glass into LOD0 (same object, its own slot)
 off = len(EX.v)
 EX.v.extend(GLS.v); EX.f.extend([tuple(i + off for i in f) for f in GLS.f]); EX.fs.extend(GLS.fs); EX.fc.extend(GLS.fc); EX.fuv.extend(GLS.fuv); EX.sm.extend(GLS.sm)
-ob_ext = make(EX, EXT_M); ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M)
+ob_ext = make(EX, EXT_M); ob_far = make(FAR, EXT_M); ob_ivy = make(IVY, EXT_M); ob_lod1 = make(L1, EXT_M); ob_bay = make(BAY, EXT_M)
 ob_gl = make(GATE_L, EXT_M, GATE_L_O); ob_gr = make(GATE_R, EXT_M, GATE_R_O); ob_door = make(DOOR_A, EXT_M, DOOR_O); ob_water = make(WATER, EXT_M)
 # the soft furnishings (cushions, rugs, leather, plants: smooth-shaded) in their own node "Soft": the audit checks them
 # without the streak / bentflat checks (those guard architecture: a cushion's normals turn round its rounded edges by design)
@@ -1213,7 +1432,7 @@ cm = bpy.data.meshes.new("Collider")
 cm.from_pydata([tuple(v) for v in COL], [], [(i, i + 1, i + 2) for i in range(0, len(COL), 3)]); cm.update()
 ob_col = bpy.data.objects.new("Collider", cm); scn.collection.objects.link(ob_col); cm.materials.append(bpy.data.materials.new("collider"))
 tri = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
-print(f"meshes: LOD0 {tri(ob_ext)} tris, far {tri(ob_far)}, gate {tri(ob_gl) + tri(ob_gr)}, door {tri(ob_door)}, cell {tri(ob_cell)} + soft {tri(ob_soft)}, glass {tri(ob_iglass)} ({time.time() - T0:.1f}s)")
+print(f"meshes: LOD0 {tri(ob_ext)} tris, LOD1 {tri(ob_lod1)}, far {tri(ob_far)}, gate {tri(ob_gl) + tri(ob_gr)}, door {tri(ob_door)}, cell {tri(ob_cell)} + soft {tri(ob_soft)}, glass {tri(ob_iglass)} ({time.time() - T0:.1f}s)")
 
 def weld(objs):
     """merge the builder's duplicate corners (1e-4 m), then WEIGHTED NORMALS on the smooth (soft) faces: face-area
@@ -1262,7 +1481,7 @@ if BAKE:
     nt = glow.node_tree; nt.nodes.remove(nt.nodes["Principled BSDF"]); em = nt.nodes.new("ShaderNodeEmission")
     em.inputs["Color"].default_value = (1.0, 0.8, 0.55, 1); em.inputs["Strength"].default_value = 0.0
     nt.links.new(em.outputs[0], nt.nodes["Material Output"].inputs["Surface"])
-    for o in (ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
+    for o in (ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy, ob_cell, ob_soft, ob_iglass):
         me = o.data
         for i, mt in enumerate(me.materials):
             nm = mt.name
@@ -1308,12 +1527,14 @@ if BAKE:
     wbg.inputs["Color"].default_value = (1, 1, 1, 1); wbg.inputs["Strength"].default_value = 1.0
     t = time.time()
     hide = lambda objs, v: [setattr(o, "hide_render", v) for o in objs]
-    hide([ob_cell, ob_soft, ob_iglass, ob_far], True)
+    hide([ob_cell, ob_soft, ob_iglass, ob_far, ob_lod1], True)
     scn.cycles.samples = min(SAMPLES, 128)
-    bake_vc([ob_ext, ob_gl, ob_gr, ob_door], "ao", "AO")
-    hide([ob_far], False); hide([ob_ext, ob_gl, ob_gr, ob_door], True)
+    bake_vc([ob_ext, ob_bay, ob_gl, ob_gr, ob_door], "ao", "AO")
+    hide([ob_far], False); hide([ob_ext, ob_bay, ob_gl, ob_gr, ob_door], True)
     bake_vc([ob_far], "ao", "AO")
-    hide([ob_ext, ob_gl, ob_gr, ob_door, ob_cell, ob_soft, ob_iglass], False); hide([ob_far], True)
+    hide([ob_far], True); hide([ob_lod1], False)            # (villa2: the scripted LOD1 baked alone, as the far variant)
+    bake_vc([ob_lod1], "ao", "AO")
+    hide([ob_ext, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft, ob_iglass], False); hide([ob_far, ob_lod1], True)
     print(f"bake AO: {time.time() - t:.1f}s")
     def smooth_corners(me, name, iters=8):
         """per-corner bake noise -> one value per (vertex, shading normal), then Laplacian passes over the faces' corners
@@ -1341,8 +1562,8 @@ if BAKE:
             kv = np.where(deg > 0, 0.5 * kv + 0.5 * nb_ / np.maximum(deg, 1), kv)
         ca.data.foreach_set("color", kv[keys].astype(np.float32).ravel())
     # weld duplicates for the AO smoothing (the builder emits every face with its own corners)
-    weld([ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
-    for o in (ob_ext, ob_far, ob_gl, ob_gr, ob_door):
+    weld([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    for o in (ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door):
         me = o.data
         smooth_corners(me, "ao", 3)
         a = np.zeros(len(me.loops) * 4, dtype=np.float32); me.color_attributes["ao"].data.foreach_get("color", a)
@@ -1434,10 +1655,10 @@ if BAKE:
     for o in list(scn.objects):
         if o.type in ("LIGHT", "CAMERA") or o.name in ("Ground", "Neighbours", "ProbeCubes"): bpy.data.objects.remove(o)
     # back to the named slots for export
-    for o, mats in ((ob_ext, EXT_M), (ob_far, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
+    for o, mats in ((ob_ext, EXT_M), (ob_far, EXT_M), (ob_lod1, EXT_M), (ob_bay, EXT_M), (ob_gl, EXT_M), (ob_gr, EXT_M), (ob_door, EXT_M), (ob_water, EXT_M), (ob_ivy, EXT_M), (ob_cell, INT_M), (ob_soft, INT_M), (ob_iglass, INT_M)):
         for i in range(len(o.data.materials)): o.data.materials[i] = mats[i]
 else:
-    weld([ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
+    weld([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_cell, ob_soft])
     for me in (ob_cell.data, ob_soft.data):
         for mode in ("SKY", "SUN", "NIGHT"):
             at = me.attributes.new("_L" + mode, "FLOAT_VECTOR", "CORNER")
@@ -1453,7 +1674,7 @@ def export(objs, path):
                               export_all_vertex_colors=False, export_attributes=True, export_materials="EXPORT", export_image_format="NONE", export_extras=False)
     print("exported", path, os.path.getsize(path) // 1024, "KB")
 # drop unused material slots per object (the exporter writes one primitive per used slot only)
-export([ob_ext, ob_far, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
+export([ob_ext, ob_far, ob_lod1, ob_bay, ob_gl, ob_gr, ob_door, ob_water, ob_ivy], os.path.join(OUT, "villa.raw.glb"))
 export([ob_cell, ob_soft, ob_iglass, ob_col], os.path.join(OUT, "interior.raw.glb"))
 
 def loc(u, w, h): return [u, h - OY, w]
@@ -1467,6 +1688,7 @@ notes = {
     "parts": {
         "gateL": {**GATE_L_INFO, "node": "Villa_gateL", "origin": loc(GATE_L_INFO["hinge_uw"][0], GATE_L_INFO["hinge_uw"][1], GATE_L_INFO["bottom"]), "open_deg": 90},
         "gateR": {**GATE_R_INFO, "node": "Villa_gateR", "origin": loc(GATE_R_INFO["hinge_uw"][0], GATE_R_INFO["hinge_uw"][1], GATE_R_INFO["bottom"]), "open_deg": 90},
+        "bay": {"node": "Villa_bay", "w": list(OPEN_BAY), "why": "the open bay's pane, drawn with the far glass (hidden when the interior shows)"},
         "door": {**DOOR_INFO, "node": "Villa_door", "origin": loc(DOOR_INFO["pivot_uw"][0], DOOR_INFO["pivot_uw"][1], DOOR_INFO["h"][0]), "open_deg": 90},
     },
     "gate": {"w": [GATE["w0"], GATE["w1"]], "u": WALL_U, "center_local": loc(WALL_U + 0.15, (GATE["w0"] + GATE["w1"]) / 2, 116.0)},
@@ -1481,7 +1703,7 @@ notes = {
     "terrace": {**TER},
     "entrance_steps": STEPS_INFO,
     "bounds_uw": {"u": [WALL_U - 0.3, SITE["plot"]["u1"]], "w": [SITE["plot"]["w0"], SITE["plot"]["w1"]], "h": [GR and min(GR["h"]) - 1, PAR1 + 0.1]},
-    "tris": {"lod0": tri(ob_ext), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
+    "tris": {"lod0": tri(ob_ext), "lod1": tri(ob_lod1), "far": tri(ob_far), "gate": tri(ob_gl) + tri(ob_gr), "door": tri(ob_door)},
 }
 json.dump(notes, open(os.path.join(OUT, "villa.json"), "w"), indent=1)
 info = {

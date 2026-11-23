@@ -100,8 +100,19 @@ const run = (name) => new Promise((ok) => {
 });
 await Promise.all(Array.from({ length: Math.min(JOBS, queue.length) }, async () => { while (queue.length) await run(queue.shift()); }));
 
+// villa2 (2026-11-23): an entry may be a SEGMENT (`to`: a capsule from `at` to `to`, plan distance, with its yRange) for an
+// opening that runs along a front (the villa's cantilever overhangs), and `noBack: true` = a cluster with ANY back-face
+// hit is never allowed by it (a ray under an overhang that meets nothing is open air; one that sees a wall's inside is a
+// hole, whatever the entry says)
+const planDist = (a, c) => {
+  if (!a.to) return Math.hypot(c.x - a.at[0], c.z - a.at[2]);
+  const dx = a.to[0] - a.at[0], dz = a.to[2] - a.at[2], L2 = dx * dx + dz * dz;
+  const t = L2 ? Math.max(0, Math.min(1, ((c.x - a.at[0]) * dx + (c.z - a.at[2]) * dz) / L2)) : 0;
+  return Math.hypot(c.x - a.at[0] - t * dx, c.z - a.at[2] - t * dz);
+};
 const allowedBy = (hero, level, c) => allow.find((a) => a.hero === hero && (a.level === undefined || a.level === "*" || (Array.isArray(a.level) ? a.level.includes(level) : a.level === level))
-  && (a.yRange ? c.y >= a.yRange[0] && c.y <= a.yRange[1] && Math.hypot(c.x - a.at[0], c.z - a.at[2]) <= a.radius
+  && (!a.noBack || !c.back)
+  && (a.yRange ? c.y >= a.yRange[0] && c.y <= a.yRange[1] && planDist(a, c) <= a.radius
               : Math.hypot(c.x - a.at[0], c.y - a.at[1], c.z - a.at[2]) <= a.radius));
 let fails = 0;
 const newCeil = {};

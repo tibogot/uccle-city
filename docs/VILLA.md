@@ -57,7 +57,7 @@ node tools/villa/pack.mjs
 | file | what |
 |---|---|
 | villaPlot.js | the frame + rings, synchronous for main.js: the plot clears the generated garden pieces / shrubs (and 2.5 m over the property line: the old house's front wall), the built rings clear the LiDAR trees and the grass |
-| villaModel.js | the exterior GLB, its materials, LOD0 < 70 m, LOD1 < 240 m, LOD2 (dithered cross-fades), the animated parts, the pool water |
+| villaModel.js | the exterior GLB, its materials, LOD0 < 70 m, LOD1 < 240 m (scripted), LOD2 (dithered cross-fades), the animated parts, the open bay's far pane, the pool water |
 | villaGrounds.js + villaGroundsGeom.js | the paved grounds (one mesh, one draw; the garage floor's drape smoothed) |
 | villaCars.js | the parked cars (one merged mesh each) + the bike; their rings for the car's colliders |
 | villaInterior.js | the interior cell: per-corner baked light, the glass fading in over the exterior's, probes for the walker |
@@ -88,31 +88,21 @@ New interior slots: ceramic_white, books (a palette per code: spines, bottles), 
 - Luxury car models; a garage door; the pedestrian gate; interior doors.
 - The interior's first floor rooms are sparse (no bathrooms, no wardrobes); the master suite needs a dressing / bath.
 - The slat façade aliases at 40-80 m (thin bars: a pack-side prefilter like docs/JITTER.md §2).
-- LOD1 is meshopt of LOD0 (its packed audit reports normal streaks): a scripted mid level would be cleaner.
+- (done in round 3a: LOD1 scripted.)
 - Night: the interior's night bake and the exterior glow are set by eye; a night pass against NTE's blue hour.
 - The pool: an infinity edge; a swimming animation for the walker.
 
-## Resume notes (claude/villa2, paused 2026-11-23)
+## Round 3a (claude/villa2, 2026-11-23): every level closed (gate `heroshell`)
 
-Done (analysis only, no code changed yet): the `heroshell` clusters classified with a ray diagnostic (copy of
-openMeshes probeAround printing each failing ray's entry / exit / hit in the villa frame):
-- L0 17.7 m2: almost all "through" rays (0 back) grazing UNDER THE CANTILEVERED UPPER BOX (front overhang u 12..14 x
-  w -8..23.5, the south strip w 23..23.5, the back overhang u 36..37.5 + the pergola slab): open undercroft by design.
-  One real see-through: the hall's OPEN BAY (w 5.0..7.9, back): 6 back hits (1.2 m2) on the front wall's inside, seen
-  30-70 m away (LOD0 drawn, interior not shown yet).
-- L1 23.2 m2: the same overhang rays + back hits through the entrance recess's DOOR hole (the leaf is Villa_door, not in
-  LOD1) and meshopt collapses (packed audit 7847 blocking: streak / bentflat / leak / coplanar / crossing).
-- L2 6.8 m2: only overhang "through" rays (0 back); the far box is closed. (far(): the living box's +h face duplicates the
-  LPAR roof rect: a coplanar pair to fix.)
+The `heroshell` probe read the villa for the first time (rule gate-dir-deps): 17.7 / 23.2 / 6.8 m2 open at L0 / L1 / L2.
+A diagnostic copy of the probe (each failing ray's entry / exit / hit in the villa frame) sorted the clusters:
 
-Next (plan):
-1. heroShell.allow.json: villa capsule entries (new `to` end point = a segment, and `noBack: true` = a cluster with back
-   hits is never allowed) along the three overhang strips, yRange 115..122.2; document in heroShell.mjs.
-2. villa.py: a "Villa_bay" glass pane node for the open bay (outside the root like the door: not a walker collider),
-   added to villaCity's extGlass (hidden when the interior shows) and shown only while LOD0 is; pack.mjs lod0 group += it.
-3. villa.py: scripted Villa_lod1 (walls + holes, reveals, panes, box frames, recess back wall solid, slat screens as one
-   plane with codes screen/channel drawn as anti-aliased stripes in villaModel.js wood_cladding, hedges as stepped boxes,
-   AO baked alone like far); hero_pack.mjs: keep a raw <Name>_lod1 instead of simplifying.
-4. far(): front / side openings as flush dark panes, the upper box front + south as screen codes, drop the duplicate face.
-5. Rebuild (OptiX), pack (LOD1 packed audit clean), heroshell ceilings -> 0, villa row, rule note docs/rules/villa-lod-shells.md
-   (+ tools/docs/rulesIndex.mjs), browser LOD cross-fade check, metaGate + mergeGate --changed --base 3626f42e.
+| cluster | cause | done | rule / check |
+|---|---|---|---|
+| L0-L2: front u 12..14, the south strip, the back overhang, the pergola (16.5 m2 at L0, all "through", 0 back) | open air under the cantilevered upper box: rays graze under the soffit and come out at its ends | allowed: 4 capsule entries in heroShell.allow.json (new `to` = a segment, `noBack` = never excuses a cluster with a back hit) | villa-lod-shells, `heroshell` |
+| L0: 1.2 m2, 6 back hits at the back (u 37.8, w 7.1) | the hall's OPEN BAY (its panel parked open for the walker): from 30 to 70 m the interior is not shown and the street saw the front wall's inside | a far pane in its own node `Villa_bay` (outside the root: never a collider), drawn while LOD0 is, hidden with the far glass when the interior shows (villaCity.js) | villa-lod-shells, `villa` row |
+| L1: back hits through the entrance; packed audit 7,847 blocking | LOD1 was meshopt of LOD0: the recess's back wall kept the door's hole (the leaf is Villa_door), reveals collapsed, flat faces bent | a SCRIPTED LOD1 (villa.py lod1, 8.1k tris, 7 draws, its own AO bake): walls with openings, reveals, glass panes (the bay too), box frames and mullions, the recess closed, the slat screens as one plane (codes screen / channel: anti-aliased stripes in the wood_cladding TSL, dark glass in the gaps over the ribbon windows, lit at night), stepped hedge boxes; hero_pack.mjs keeps a raw <Name>_lod1. Raw and packed audits 0 blocking | villa-lod-shells, `villa` row (LOD1 scripted) |
+| L2: the overhang rays only (the far box was closed) | (a duplicate roof face: the living box's top under the LPAR rect) | the far box's street side: flush dark panes in the front / side openings, the recess as walnut, the upper box's front + south as the screen codes; the duplicate face removed (170 tris) | villa-lod-shells |
+
+Ceilings (heroShell.ceil.json): villa L0 0, L1 0, L2 0. Budgets: LOD0 56,994 tris / 8 draws, LOD1 8,098 / 7, LOD2 170 / 6,
+download 5.50 MB, interior 179,420 / 16.

@@ -72,6 +72,11 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     parts.position.copy(root.position); parts.rotation.copy(root.rotation);
     const gateL = m.part("Villa_gateL"), gateR = m.part("Villa_gateR"), door = m.part("Villa_door");
     for (const p of [gateL, gateR, door]) if (p) { p.userData.closedY = p.rotation.y; parts.add(p); }
+    // villa2 (heroshell): the open bay's pane: the far glass of the hall's open back bay, outside the root (the walker's
+    // colliders read the root's LOD0: it never blocks the bay), drawn while LOD0 is, hidden with the far glass when the
+    // interior shows (before: the street saw through the bay to the front wall's inside from 30 to 70 m)
+    const bay = m.part("Villa_bay");
+    if (bay) { bay.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.userData.slot = "glass_window"; } }); parts.add(bay); }
     const grounds = buildVillaGrounds({ notes, rootM: m.rootM, groundAt });
     // THE DRIVE + GARAGE SURFACE (round 2, rule villa-drive-plane): the designed plane (a single slope, then flat), not
     // the DTM: the car drives on it (a deck in world.decks: moverGround.js), the walker stands on it (a TriBVH + the
@@ -98,6 +103,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
     const homes = manifest.tiles.filter((t) => t.bounds.x[0] < m.boundsWorld.max.x && t.bounds.x[1] > m.boundsWorld.min.x &&
       t.bounds.z[0] < m.boundsWorld.max.z && t.bounds.z[1] > m.boundsWorld.min.z).map((t) => t.name);
     const extGlass = levels[0].children.filter((o) => o.userData.slot === "glass_window");
+    bay?.traverse((o) => { if (o.isMesh) extGlass.push(o); });
     const state = { d: 0, shown: [], fades: [], gate: 0, gateWant: 0, door: 0, inner: null };
     // ---- the gate's colliders: the car's rings (driver.addStatic) and the walker's leaves (TriBVH), per state
     const local = (u, w) => new THREE.Vector3(u, 0, w).applyMatrix4(m.rootM);
@@ -164,6 +170,7 @@ export async function addVilla({ scene, updaters, hide, world, manifest, log, co
       state.d = d;
       if (SMOOTH) { const s = villaLodState(d); setLodFades(levels, s.shown, s.fades); state.shown = s.shown; state.fades = s.fades; }
       else { const k = VILLA_LODS.findIndex((l) => d < l.until); levels.forEach((lv, i) => { lv.visible = i === k; }); }
+      if (bay) bay.visible = levels[0].visible;
       // who is near: the car, the third-person walker, else the camera (walk / fly)
       const driver = window.__driver, third = getThird?.();
       if (driver?.on && driver.state) player.set(driver.state.x, 0, driver.state.z);

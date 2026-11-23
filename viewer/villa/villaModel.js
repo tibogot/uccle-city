@@ -8,7 +8,7 @@
 //   wood_cladding, metal_dark, glass_window, concrete_soffit, glow, hedge  stand-ins here (TSL, sin-free hashes);
 //   pool_water  ONE cheap opaque TSL material: the basin (tiles, depth, caustics) ray-marched in the fragment against the
 //               pool's box (a fake interior: no refraction pass, no render target, the terrain under it never shows).
-// Levels: LOD0 (Villa) < 70 m, LOD1 (Villa_lod1: meshopt of LOD0) < 240 m, LOD2 (Villa_lod2: the far masses); dithered
+// Levels: LOD0 (Villa) < 70 m, LOD1 (Villa_lod1: scripted in villa.py, villa2) < 240 m, LOD2 (Villa_lod2: the far masses); dithered
 // cross-fades through FADING COPIES drawn only inside the bands (lodFade.js), as the other heroes.
 //   const m = await loadVilla();  m.make(k) -> Group;  m.parts.gateL / gateR / door / water (Object3D);  m.distance(p)
 import * as THREE from "three/webgpu";
@@ -44,6 +44,13 @@ const vnoise = (p) => {           // value noise (smooth), sin-free
   const a = hash2(i), b = hash2(i.add(vec2(1, 0))), c = hash2(i.add(vec2(0, 1))), d = hash2(i.add(vec2(1, 1)));
   return mix(mix(a, b, u2.x), mix(c, d, u2.x), u2.y);
 };
+/** villa2: the share of a pixel covered by the screens' battens (4 cm every 11 cm along the facade, metres in x):
+ *  a smoothed box pulse widened by the pixel footprint, the mean (0.36) once a period is under ~2 pixels: no moire */
+const slatCover = (x) => {
+  const s = x.div(0.11), f = fract(s), e = fwidth(s).mul(0.75).max(1e-3);
+  const bar = smoothstep(float(0.32).sub(e), float(0.32).add(e), f).sub(smoothstep(float(0.68).sub(e), float(0.68).add(e), f));
+  return mix(bar, float(0.36), smoothstep(0.3, 0.6, fwidth(s)));
+};
 const std = (o) => Object.assign(new THREE.MeshStandardNodeMaterial(), o);
 const noSSR = (m) => { m.mrtNode = mrt({ metalRough: vec3(0, roughness, float(1)) }); return m; };
 
@@ -60,8 +67,15 @@ const TEMP = {
       const base = mix(lin(0x2e221b), lin(0x46342a), h.mul(0.6).add(grain));
       const seam = smoothstep(0.0, max(fwidth(w.x.div(0.105)).mul(1.5), 0.03), fract(w.x.div(0.105))).mul(0.35).add(0.65);
       const slat = isC(C.slat), door = isC(C.door);
-      return mix(mix(base.mul(seam), base.mul(1.12), slat), mix(lin(0x3a271c), lin(0x5a3d2a), grain.mul(1.6)), door);
+      const wood = mix(mix(base.mul(seam), base.mul(1.12), slat), mix(lin(0x3a271c), lin(0x5a3d2a), grain.mul(1.6)), door);
+      // villa2: the SLAT SCREEN of LOD1 / LOD2 (one plane): the battens' stripes, box-filtered (their pixel coverage), the
+      // gaps = the cladding in their shadow (screen) or the ribbon window's dark glass (channel)
+      const cov = slatCover(w.x), glassGap = isC(C.channel);
+      const gap = mix(base.mul(seam).mul(0.55), lin(0x0c1215), glassGap);
+      return mix(wood, mix(gap, base.mul(1.12), cov), isC(C.screen).add(glassGap));
     })(),
+    // (the ribbon window seen between the battens: lit at night like the far glass)
+    emissiveNode: lin(0xffc58a).mul(0.45).mul(env.uNight.mul(villaLook.windowsNight).mul(0.55)).mul(isC(C.channel)).mul(float(1).sub(slatCover(uv().x))),
     roughness: 0.62,
   }),
   metal_dark: () => std({ color: new THREE.Color(0x2a2c2f), roughness: 0.34, metalness: 0.55 }),

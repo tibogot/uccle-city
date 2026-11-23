@@ -82,9 +82,9 @@
   "L1": 0
  },
  "villa": {
-  "L0": 17.7,
-  "L1": 23.2,
-  "L2": 6.8,
-  "_note": "ratchet 2026-11-23 (coordinator): the villa was never probed (rule gate-dir-deps); classify the glass wall / garage mouth as allowed openings, fix LOD1 back-faces + LOD2 holes, then lower"
+  "L0": 0,
+  "L1": 0,
+  "L2": 0,
+  "_note": "villa2 2026-11-23: the overhang undercrofts + pergola allowed (noBack capsules, heroShell.allow.json); the open bay closed by Villa_bay; LOD1 scripted (villa.py); far box closed with flush panes"
  }
 }

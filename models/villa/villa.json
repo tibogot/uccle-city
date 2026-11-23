@@ -121,6 +121,14 @@
    ],
    "open_deg": 90
   },
+  "bay": {
+   "node": "Villa_bay",
+   "w": [
+    5.0,
+    7.9
+   ],
+   "why": "the open bay's pane, drawn with the far glass (hidden when the interior shows)"
+  },
   "door": {
    "pivot_uw": [
     15.35,
@@ -321,7 +329,8 @@
  },
  "tris": {
   "lod0": 56994,
-  "far": 102,
+  "lod1": 8098,
+  "far": 170,
   "gate": 1672,
   "door": 216
  }

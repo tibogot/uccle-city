@@ -1,17 +1,17 @@
 # Mesh audit (packed): villa.lod0
 
-58,884 triangles, 32,737 welded vertices, 3,974 open edges, 623,804 rays, 3424 ms.
+58,886 triangles, 32,737 welded vertices, 3,978 open edges, 624,036 rays, 3493 ms.
 
-**0 blocking**, 12453 warnings. Clean (no blocking item).
+**0 blocking**, 12456 warnings. Clean (no blocking item).
 
 | check | severity | count |
 |---|---|---|
 | sliver | warn | 11672 |
 | nonmanifold | warn | 99 |
-| tjunction | warn | 682 |
-| seam | info | 801 |
-| opening | info | 1273 |
-| backtoback | info | 3240 |
+| tjunction | warn | 685 |
+| seam | info | 808 |
+| opening | info | 1272 |
+| backtoback | info | 3242 |
 
 Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
@@ -109,7 +109,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 
 (59 more in the JSON)
 
-## tjunction (warn, 682)
+## tjunction (warn, 685)
 
 | at | part | edge_m |
 |---|---|---|
@@ -154,9 +154,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 35.70, 125.70, -22.00 | Villa/render_white | 14.7 |
 | 16.00, 125.70, -22.70 | Villa/render_white | 21.399 |
 
-(642 more in the JSON)
+(645 more in the JSON)
 
-## seam (info, 801)
+## seam (info, 808)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -201,9 +201,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.10, 118.58, -21.20 | Villa/render_white + Villa/metal_dark | 6.63 | 26 | 45 |
 | 14.10, 118.58, -17.00 | Villa/render_white + Villa/metal_dark | 6.63 | 26 | 45 |
 
-(761 more in the JSON)
+(768 more in the JSON)
 
-## opening (info, 1273)
+## opening (info, 1272)
 
 | at | part | facing | edge_m |
 |---|---|---|---|
@@ -248,9 +248,9 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 124.55, -12.60 | Villa/render_white | 0 + 0 + 1 | 0.3 |
 | 14.00, 124.75, -11.40 | Villa/render_white | 0 + 0 + -1 | 0.3 |
 
-(1233 more in the JSON)
+(1232 more in the JSON)
 
-## backtoback (info, 3240)
+## backtoback (info, 3242)
 
 | at | parts | area |
 |---|---|---|
@@ -295,7 +295,7 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 14.00, 121.97, 10.25 | Villa/render_white + Villa/metal_dark | 0.04669 |
 | 14.00, 121.88, 9.90 | Villa/render_white + Villa/metal_dark | 0.05413 |
 
-(3200 more in the JSON)
+(3202 more in the JSON)
 
 
-Nodes: Villa, Villa_gateL, Villa_gateR, Villa_door, Villa_water. Distances: {"Villa_ivy":80,"Villa":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.443 mm. Offset 0,100,0.
+Nodes: Villa, Villa_bay, Villa_gateL, Villa_gateR, Villa_door, Villa_water. Distances: {"Villa_ivy":80,"Villa":80,"Villa_bay":80,"Villa_gateL":80,"Villa_gateR":80,"Villa_door":80,"Villa_water":400,"Villa_far":2000,"Villa_lod1":260,"Villa_lod2":2000}. Quantum 0.443 mm. Offset 0,100,0.
