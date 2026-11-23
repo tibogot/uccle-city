@@ -4254,12 +4254,20 @@ function tramPlatformSurface(feats, hm, ground, bounds, carve) {
   }
   return raised;
 }
+var ALLOC_SMALL = new URLSearchParams(globalThis.location?.search || "").get("allocsmall") !== "old";
+function layerY(Y, d1, d2, near, k) {
+  const a = Y[k] + d1[k] * 0.01;
+  if (!d2 || near == null || d2[k] === 65535) return a;
+  const b = Y[k] + d2[k] * 0.01;
+  return Math.abs(b - near) < Math.abs(a - near) ? b : a;
+}
 function driveHeight(hm, delta, x, z, near = null) {
   const d2 = delta?.delta2, d1 = delta?.delta ?? delta;
   const h = hm.h, Y = hm.y;
   const c = Math.min(Math.max((x - h.x0) / h.step, 0), h.cols - 1), r = Math.min(Math.max((z - h.z0) / h.step, 0), h.rows - 1);
   const c0 = Math.min(Math.floor(c), h.cols - 2), r0 = Math.min(Math.floor(r), h.rows - 2);
   const fc = c - c0, fr2 = r - r0, i = r0 * h.cols + c0, j = i + h.cols;
+  if (ALLOC_SMALL) return (layerY(Y, d1, d2, near, i) * (1 - fc) + layerY(Y, d1, d2, near, i + 1) * fc) * (1 - fr2) + (layerY(Y, d1, d2, near, j) * (1 - fc) + layerY(Y, d1, d2, near, j + 1) * fc) * fr2;
   const v = (k) => {
     const a = Y[k] + d1[k] * 0.01;
     if (!d2 || near == null || d2[k] === 65535) return a;
@@ -23091,4 +23099,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "e824a60d259a9c8f";
+self.__TILE_CODE_HASH = "6c4ebbe5d136d072";
