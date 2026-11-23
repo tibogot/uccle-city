@@ -18,7 +18,9 @@
 //      buffer, no DynamicDrawUsage); sort CPU <= 0.02 ms a frame; the whole cull (all cameras) <= 2 x the 160 m one
 import * as THREE from "three/webgpu";
 import { measure } from "../gate/timing.mjs";
-globalThis.window = globalThis; globalThis.location = { search: "" };
+// (?indpool=old: each view keeps its own indirect buffer, so records sit at k * chMax * 5 and offsets decode from 0;
+// the pooled layout (one buffer, a slot base per view) is checked by tools/audit/indirectPoolCheck.mjs, row indirectpool)
+globalThis.window = globalThis; globalThis.location = { search: "?indpool=old" };
 const MD = await import("../../viewer/multiDraw.js");
 const { MultiDrawSet, setMultiDrawViewCamera, nearBucket, CHUNK_M, CHUNK_MAX, MD_SORT } = MD;
 const QUIET = process.argv.includes("--quiet");
