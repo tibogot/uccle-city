@@ -4,7 +4,8 @@
 //     Dawn's indirect-args VALIDATION runs in its own compute work before each render pass, outside three's timestamps,
 //     so this clock does not see it.
 //   - `wall`: `reps` renders submitted back to back, then queue.onSubmittedWorkDone(): ms a render while the GPU is the
-//     bottleneck, validation included (the main thread's encode cost is in it too: compare `cpu`).
+//     bottleneck, validation included (the main thread's encode cost is in it too: compare `cpu`; when wall ~ cpu the
+//     CPU is the bottleneck: raise `scale` (the target's size x scale) until wall > cpu, so the GPU limits it).
 //   const B = await import("/debug/indirectBench.js");
 //   await B.run({ view: "street" | "45m", rounds: 6, reps: 24 })   -> { ts, wall, cpu, distinct }
 import * as THREE from "three/webgpu";
@@ -19,7 +20,7 @@ export async function put(view) {
   return A.at(VIEWS[view] || view, { settle: 6 });
 }
 
-export async function run({ view = "street", rounds = 6, reps = 24 } = {}) {
+export async function run({ view = "street", rounds = 6, reps = 24, scale = 1 } = {}) {
   await put(view);
   const V = window.viewer, R = V.renderer, cam = V.camera, dev = R.backend.device;
   const G = await import("/debug/groupBench.js");
@@ -29,7 +30,7 @@ export async function run({ view = "street", rounds = 6, reps = 24 } = {}) {
   const ts = await G.bench({ cur: () => {} }, { rounds, reps: 16, full: true });
   // wall clock: back-to-back renders of the scene into an off-screen target, the render loop paused
   const anim = R._animation, loop = anim._animationLoop, dpr = R.getPixelRatio();
-  const rt = new THREE.RenderTarget(Math.round(innerWidth * dpr), Math.round(innerHeight * dpr), { samples: 4, type: THREE.HalfFloatType, depthBuffer: true });
+  const rt = new THREE.RenderTarget(Math.round(innerWidth * dpr * scale), Math.round(innerHeight * dpr * scale), { samples: 4, type: THREE.HalfFloatType, depthBuffer: true });
   const wall = [], cpu = [];
   R.setAnimationLoop(null);
   try {
@@ -49,7 +50,7 @@ export async function run({ view = "street", rounds = 6, reps = 24 } = {}) {
     }
   } finally { rt.dispose(); R.setAnimationLoop(loop); }
   return {
-    view, indpool: new URLSearchParams(location.search).get("indpool") || "default",
+    view, scale, indpool: new URLSearchParams(location.search).get("indpool") || "default",
     distinct: main.map((b) => b.bufsAvg), indDraws: main.map((b) => b.indAvg),
     ts: ts.cur.med, tsAll: ts.cur.all, wall: med(wall), wallAll: wall.map((x) => +x.toFixed(3)), cpu: med(cpu),
     pool: window.__indirectPool?.stats?.() || null,
