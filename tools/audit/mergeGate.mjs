@@ -1,6 +1,6 @@
 // node tools/audit/mergeGate.mjs: every gate check before a merge, one table. Each check is a node script that exits
 // non-zero on failure. One file per row: tools/audit/gate.d/<name>.mjs (export default { name, script, node?, args,
-// guards, deps?, timing?, heavy?, timeout? (s, default 600), meta? }); browser-side gates (need the viewer running) are
+// guards, deps?, timing?, alone?, heavy?, timeout? (s, default 600), meta? }); browser-side gates (need the viewer running) are
 // tools/audit/gate.d/browser/<name>.mjs ({ name, text }): the merger runs them on a browser turn. docs/WORKFLOW.md.
 //   node tools/audit/mergeGate.mjs [name ...]     every row (or only those), the memo on
 //     --full              ignore the memo: run every picked row
@@ -129,7 +129,8 @@ function cost(c) {
   return { mem: Math.min(mem, MEM), cpu, heavy, secs: t?.secs || (guessHeavy ? 300 : 20) };
 }
 
-const timing = RUN.filter((c) => c.timing), rest = RUN.filter((c) => !c.timing);
+// (alone: a row that runs in the alone group without a wall-time assert, e.g. allocbudget: it drives a city page; claude/allocrate2)
+const timing = RUN.filter((c) => c.timing || c.alone), rest = RUN.filter((c) => !c.timing && !c.alone);
 if (timing.length) console.log(`\n== timing group (alone, one at a time): ${timing.map((c) => c.name).join(" ")}`);
 for (const c of timing) await runRow(c);
 if (SERIAL) {

@@ -3,7 +3,8 @@ export default {
   name: "allocbudget",
   script: "tools/perf/allocBudget.mjs",
   args: ["--quiet"],
-  timing: true,       // (alone, one at a time: it drives a city page; it takes browser.lock itself)
+  alone: true,        // (in the alone group, one at a time, like the timing rows: it drives a city page and takes browser.lock
+                      // itself; no wall-time assert: KB a frame holds up under load)
   heavy: true,
   timeout: 2400,      // (s: it may wait for browser.lock, then two city boots under the sampler)
   deps: ["viewer/", "models/", "debug/falconStutter.js", "debug/gamePerf.js", "tools/perf/allocSample.mjs", "tools/perf/allocBudget.json", "tools/tour/serve.mjs", "tools/tour/freshBundle.mjs"],
