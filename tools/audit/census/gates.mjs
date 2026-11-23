@@ -183,6 +183,10 @@ const forecourts = [];
   const fj = json(join(ROOT, "data/raw/osm/forecourts.json"));
   if (fj) for (const e of fj.elements) { if (e.type !== "way" || (e.geometry || []).length < 4) continue; forecourts.push({ ring: e.geometry.map((g) => toLocal(g.lon, g.lat)), tags: e.tags || {} }); }
 }
+// (claude/places1, rule curated-place-placed) + the hard grounds the city draws (data/overrides.json grounds: Brico
+// Sint-Job's car park, White Night's lot, the school yards): an open front onto a drawn car park is the real thing, as
+// an OSM forecourt is (the garden kit's walls there were cleared on purpose)
+for (const g of overrides.grounds || []) if (g?.ring?.length >= 3) forecourts.push({ ring: g.ring, tags: { ground: g.id } });
 const inForecourt = (x, z) => forecourts.some((f) => pip(x, z, f.ring));
 const shops = (feats.points || []).filter((p) => p.kind === "shop");
 

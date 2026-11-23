@@ -107,6 +107,16 @@ function drawPaint(x, p, F, ox, oy) {
       const um = (u0 + u1) / 2;
       x.beginPath(); x.moveTo(...P(um, c - r0)); x.lineTo(...P(um, c + r0)); x.stroke();
       if (m.circle) { x.beginPath(); x.arc(...P(um + (m.circle.du || 0), c + (m.circle.dv || 0)), m.circle.r * PX, 0, Math.PI * 2); x.stroke(); }
+    } else if (m.kind === "bays") {
+      // (claude/places1) a row of painted parking bays: n + 1 white separators `w` m apart, `depth` m long, from `at`
+      // ([u, v] in the frame) along the direction `deg` (degrees from the frame's u axis toward its v axis); the bays
+      // open toward the row's left-hand normal (+v when deg = 0): Brico Sint-Job's lot (UrbIS orthophoto 2024)
+      x.strokeStyle = "rgb(255,0,0)"; x.lineWidth = lw(m.line ?? 0.1);
+      const a = ((m.deg || 0) * Math.PI) / 180, du = [Math.cos(a), Math.sin(a)], dv = [-Math.sin(a), Math.cos(a)];
+      for (let k = 0; k <= m.n; k++) {
+        const s = k * m.w, p0 = [m.at[0] + du[0] * s, m.at[1] + du[1] * s];
+        x.beginPath(); x.moveTo(...P(...p0)); x.lineTo(...P(p0[0] + dv[0] * m.depth, p0[1] + dv[1] * m.depth)); x.stroke();
+      }
     }
   }
 }
@@ -226,14 +236,17 @@ export function buildGrounds(list, bounds, ground) {
     const contour = ring.map(([x, z]) => new THREE.Vector2(x, z));
     if (THREE.ShapeUtils.isClockWise(contour)) contour.reverse();
     const tri = THREE.ShapeUtils.triangulateShape(contour, []);
-    const tris = subdivide(tri.map((t) => t.map((i) => [contour[i].x, contour[i].y])), MAX_EDGE);
+    // (claude/places1) a ground over a bumpy lawn DTM (a garden turned car park: Brico's lot) needs finer triangles and
+    // a little more lift, else the 1 m terrain pokes through between the 1.2 m vertices: p.edge / p.lift (m)
+    const EDGE = p.edge ?? MAX_EDGE, UP = p.lift ?? LIFT;
+    const tris = subdivide(tri.map((t) => t.map((i) => [contour[i].x, contour[i].y])), EDGE);
     const vid = new Map();
     const V = (x, z, drop = 0, tag = 0) => {        // (tag 1: the skirt's own top vertices, so the top keeps its normals)
       const key = `${Math.round(x * 1000)},${Math.round(z * 1000)},${drop},${tag}`;
       let k = vid.get(key);
       if (k === undefined) {
         k = pos.length / 3; vid.set(key, k);
-        pos.push(x, ground(x, z) + LIFT - drop, z);
+        pos.push(x, ground(x, z) + UP - drop, z);
         uvs.push(...uvOf(x, z)); rect.push(...R); surfA.push(SURF); courseA.push(cs, sn);
       }
       return k;
@@ -246,7 +259,7 @@ export function buildGrounds(list, bounds, ground) {
     for (let i = 0; i < C.length; i++) {
       const p0 = C[i], p1 = C[(i + 1) % C.length];
       if (cut(p0, p1)) continue;
-      const L = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), n = Math.max(1, Math.ceil(L / MAX_EDGE));
+      const L = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), n = Math.max(1, Math.ceil(L / EDGE));
       for (let k = 0; k < n; k++) {
         const a = [p0[0] + ((p1[0] - p0[0]) * k) / n, p0[1] + ((p1[1] - p0[1]) * k) / n], b = [p0[0] + ((p1[0] - p0[0]) * (k + 1)) / n, p0[1] + ((p1[1] - p0[1]) * (k + 1)) / n];
         const ta = V(...a, 0, 1), tb = V(...b, 0, 1), da = V(...a, SKIRT, 1), db = V(...b, SKIRT, 1);
