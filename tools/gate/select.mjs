@@ -34,6 +34,11 @@ export function selectRows(rows, { only = [], changes = null, full = false } = {
   const named = changes ? changes.filter((c) => /^(data|models)\//.test(c.path) && !rows.some((r) => touches(depsOf(r), c.path, c.status))) : [];
   for (const row of rows) {
     if (only.length && !only.includes(row.name)) continue;
+    // (coordinator 2026-11-23, rule gate-failed-reruns: a row whose LAST run failed runs again until it passes. A failed
+    // run's trace holds only what it read before it failed, so judging "touched?" on it skipped a failing row as "not
+    // touched" (claude/indpool: a row FAILed in one --changed run, the next --changed run skipped it))
+    const last = readTrace(row.name);
+    if (last && last.ok === false) { row.because = `it FAILED at its last run (${String(last.at || "").slice(0, 16).replace("T", " ")}): re-run until it passes`; row.memoWhy = "no memo: last run failed"; run.push(row); continue; }
     if (changes && row.name !== "meta") {
       const deps = depsOf(row);
       const hit = changes.find((c) => touches(deps, c.path, c.status));

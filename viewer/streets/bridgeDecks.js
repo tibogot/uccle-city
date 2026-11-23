@@ -35,8 +35,31 @@ function centreLine(r, nodes) {
   return pts.length >= 2 ? pts : null;
 }
 
+// (claude/places1, rule deck-profile-measured) a band deck's top through its MEASURED profile (data/overrides.json
+// bridgeProfiles: the UrbIS DSM along the centre line, tools/bridges/deckProfiles.py) instead of the straight line
+// between the ends' ground: a long bridge rises in a curve. Avenue des Tilleuls (D9 / E9, 164 m over L26 and the L26/5
+// chord) was drawn up to 0.95 m under its real top, its soffit 4 m over the chord's rails and the contact wire pulled
+// down to 3.6 m over them (owner playtest: "wire clearance too low under Av. des Tilleuls"). Within PROF_BLEND m of each
+// end the measured top blends into the old profile (the street the deck meets there: no step at the joint), never
+// under the ground on the centre line. ?bridgeprof=old (profiles = null): the straight line, as before.
+const PROF_BLEND = 8, PROF_NEAR = 3;
+/** (x, z) -> the measured top there (the nearest segment of the profile's line within PROF_NEAR m), or null */
+export function measuredTop(line) {
+  const n = Math.floor((line?.length || 0) / 3);
+  if (n < 2) return null;
+  return (x, z) => {
+    let best = PROF_NEAR, y = null;
+    for (let i = 1; i < n; i++) {
+      const ax = line[i * 3 - 3], az = line[i * 3 - 2], bx = line[i * 3], bz = line[i * 3 + 1], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist = Math.hypot(ax + dx * t - x, az + dz * t - z);
+      if (dist < best) { best = dist; y = line[i * 3 - 1] + (line[i * 3 + 2] - line[i * 3 - 1]) * t; }
+    }
+    return y;
+  };
+}
+
 /** descriptors of the bridge decks in a roads.json document (plain data: goes from the worker to the page) */
-export function bridgeDescriptors(roadsDoc, ground, plans = null) {
+export function bridgeDescriptors(roadsDoc, ground, plans = null, profiles = null) {
   const nodes = new Map((roadsDoc.nodes || []).map((n) => [n.id, n]));
   const out = [];
   for (const r of roadsDoc.roads || []) {
@@ -71,13 +94,17 @@ export function bridgeDescriptors(roadsDoc, ground, plans = null) {
     // on the bridge's centre line (a hump the DTM keeps, e.g. Avenue des Hospices, E10: the straight deck ran up to
     // 0.6 m UNDER the drawn road there, its parapets 0.35 m proud of the street, still 1 m walls for the car)
     const L = cum[cum.length - 1] || 1, n = Math.max(1, Math.ceil(L / PROF));
+    const meas = !d.plan ? measuredTop(profiles?.[String(r.meta?.osm)]?.line) : null;
     d.prof = [];
     for (let k = 0; k <= n; k++) {
       const sk = (L * k) / n, line = h0 + (h1 - h0) * (sk / L);
       if (d.plan?.plane) { const q = at(d, sk); d.prof.push(planeY(d.plan.plane, q.x, q.z)); continue; }
       if (sk < d.span[0] || sk > d.span[1]) { d.prof.push(line); continue; }
-      const q = at(d, sk);
-      d.prof.push(Math.max(line, ground(q.x, q.z)));
+      const q = at(d, sk), g = ground(q.x, q.z), y0 = Math.max(line, g), m = meas ? meas(q.x, q.z) : null;
+      if (m == null) { d.prof.push(y0); continue; }
+      const u = Math.min(1, Math.min(sk - d.span[0], d.span[1] - sk) / PROF_BLEND), w = u * u * (3 - 2 * u);
+      d.prof.push(Math.max(g, y0 + (m - y0) * w));
+      d.measured = true;
     }
     out.push(d);
   }
@@ -784,8 +811,8 @@ export function deckAbutments(decks, grids, hdr) {
 }
 
 /** the bridge decks of a roads.json document, and the road stage's ground with them */
-export function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null) {
-  const decks = bridgeDescriptors(roadsDoc, ground, plans).filter(keep);
+export function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null, profiles = null) {
+  const decks = bridgeDescriptors(roadsDoc, ground, plans, profiles).filter(keep);
   const fns = decks.map((d) => deckHeight(d, ground));
   const wrap = (g) => (fns.length ? (x, z) => { for (const f of fns) { const y = f(x, z); if (y != null) return y; } return g(x, z); } : g);
   return { decks, wrap };

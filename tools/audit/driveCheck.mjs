@@ -169,6 +169,8 @@ for (const name of HERO_ROOTS) {
 // world.decks: the tile's OSM decks (main.js addBridgeDecks) + the hero road decks (main.js: deckHeightFn per road bridge)
 const decks = [];
 for (const dk of d.bridgeDecks || []) decks.push(Object.assign(deckHeight(dk, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }));
+// (claude/places1, rule deck-owner-checks) + the decks a neighbour draws over this tile (the city holds them in world.decks)
+for (const dk of d.neighbourDecks || []) decks.push(Object.assign(deckHeight(dk, (x, z) => hm.ground(x, z), { drawn: true }), { osm: true }));
 for (const h of heroes) if (h.info.kind === "road_over_rail") decks.push(deckHeightFn(h.info));
 const layers = (x, z) => surfaceLayers(decks, hm, ground, x, z);
 // a hero road deck's carriageway is its drawn roadway between the parapets (the OSM band is wider: Rue de Verrewinkel's

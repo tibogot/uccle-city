@@ -36,7 +36,7 @@ const MIN_CLUSTER = 1.0;  // m2: a hole cluster smaller than this is not listed
 export const HERO_LIST = ["augustin/augustin", "calevoet_station/calevoet", "latourdefrein/latourdefrein", "observatory/observatory", "papenkasteel/papenkasteel",
   "police_rouge/police", "rosaire/rosaire", "russian/russian", "sacrecoeur/sacrecoeur", "saintmarc/saintmarc", "stalle/stalle", "stjob/stjob",
   "stpierre/stpierre", "townhall/townhall", "vanbuuren/vanbuuren", "wolvendael_chateau/wolvendael",
-  "heros/heros"];          // heroshell 2026-11-18: the Square des Heros monument (it hides solid 534309) was never probed
+  "heros/heros", "villa/villa"];          // heroshell 2026-11-18: the Square des Heros monument (it hides solid 534309) was never probed
 /** LOD level of a GLB node: 0 the model (+ its _door / _slates / _courses), 1 _lod1 (else _far), 2 _lod2 / _xfar */
 export function levelsOf(nodes) {
   const has = (re) => nodes.some((n) => re.test(n));

@@ -15446,7 +15446,25 @@ function centreLine(r, nodes) {
   const pts = [[a.x, a.z], ...(r.pts || []).map((p) => [p.x, p.z]), [b.x, b.z]];
   return pts.length >= 2 ? pts : null;
 }
-function bridgeDescriptors(roadsDoc, ground, plans = null) {
+var PROF_BLEND = 8;
+var PROF_NEAR = 3;
+function measuredTop(line) {
+  const n = Math.floor((line?.length || 0) / 3);
+  if (n < 2) return null;
+  return (x, z) => {
+    let best = PROF_NEAR, y = null;
+    for (let i = 1; i < n; i++) {
+      const ax = line[i * 3 - 3], az = line[i * 3 - 2], bx = line[i * 3], bz = line[i * 3 + 1], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)), dist3 = Math.hypot(ax + dx * t - x, az + dz * t - z);
+      if (dist3 < best) {
+        best = dist3;
+        y = line[i * 3 - 1] + (line[i * 3 + 2] - line[i * 3 - 1]) * t;
+      }
+    }
+    return y;
+  };
+}
+function bridgeDescriptors(roadsDoc, ground, plans = null, profiles = null) {
   const nodes = new Map((roadsDoc.nodes || []).map((n) => [n.id, n]));
   const out = [];
   for (const r of roadsDoc.roads || []) {
@@ -15495,6 +15513,7 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
       if (plan.fit) d.plan.plane = fitPlane(plan.ring, d.plan.free, ground);
     }
     const L2 = cum[cum.length - 1] || 1, n = Math.max(1, Math.ceil(L2 / PROF));
+    const meas = !d.plan ? measuredTop(profiles?.[String(r.meta?.osm)]?.line) : null;
     d.prof = [];
     for (let k = 0; k <= n; k++) {
       const sk = L2 * k / n, line2 = h0 + (h1 - h0) * (sk / L2);
@@ -15507,8 +15526,14 @@ function bridgeDescriptors(roadsDoc, ground, plans = null) {
         d.prof.push(line2);
         continue;
       }
-      const q = at(d, sk);
-      d.prof.push(Math.max(line2, ground(q.x, q.z)));
+      const q = at(d, sk), g = ground(q.x, q.z), y0 = Math.max(line2, g), m = meas ? meas(q.x, q.z) : null;
+      if (m == null) {
+        d.prof.push(y0);
+        continue;
+      }
+      const u = Math.min(1, Math.min(sk - d.span[0], d.span[1] - sk) / PROF_BLEND), w = u * u * (3 - 2 * u);
+      d.prof.push(Math.max(g, y0 + (m - y0) * w));
+      d.measured = true;
     }
     out.push(d);
   }
@@ -16183,8 +16208,8 @@ function deckAbutments(decks, grids, hdr) {
   }
   return moved;
 }
-function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null) {
-  const decks = bridgeDescriptors(roadsDoc, ground, plans).filter(keep);
+function bridgeDecks(roadsDoc, ground, keep = () => true, plans = null, profiles = null) {
+  const decks = bridgeDescriptors(roadsDoc, ground, plans, profiles).filter(keep);
   const fns = decks.map((d) => deckHeight(d, ground));
   const wrap = (g) => fns.length ? (x, z) => {
     for (const f of fns) {
@@ -22244,7 +22269,7 @@ async function buildTileData(entry, base) {
   const baseGround = pad ? pad.ground : hm.ground;
   const known = pad ? (p) => onGrid(p) || !pad.noData(p[0], p[1]) : onGrid;
   const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
-  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans);
+  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans, entry.bridgeProf === false ? null : ov.bridgeProfiles);
   osmBridges.decks = osmBridges.decks.filter((d) => {
     const m = d.pts[Math.floor(d.pts.length / 2)];
     return Number.isNaN(heroDeck(m[0], m[1]));
@@ -22523,7 +22548,15 @@ async function buildTileData(entry, base) {
       return { ...d, ...tops ? { plan: { ...d.plan, tops } } : {}, mesh };
     }),
     // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
-    ...entry.keepNet ? { net, hm, deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)) } : {}
+    ...entry.keepNet ? {
+      net,
+      hm,
+      deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)),
+      // (claude/places1, rule deck-owner-checks) the decks this tile's roads carry that a NEIGHBOUR draws (its middle is
+      // there): the city's world.decks holds them once that tile is loaded; a node check of this tile alone must too
+      // (driveCheck saw "no deck" over the L26/5 chord at E9 Avenue des Tilleuls: D9 draws that deck, 1.5 m past the border)
+      neighbourDecks: osmBridges.decks.filter((d) => !ownDeck(d))
+    } : {}
   };
 }
 var WALL = [[0.29, 0.085, 0.05], [0.17, 0.075, 0.045], [0.4, 0.27, 0.14], [0.62, 0.6, 0.55], [0.56, 0.47, 0.32], [0.3, 0.29, 0.27]];
@@ -23058,4 +23091,4 @@ self.onmessage = async (e) => {
     self.postMessage({ id, error: String(err?.stack || err) });
   }
 };
-self.__TILE_CODE_HASH = "572ea2a0fcef64e0";
+self.__TILE_CODE_HASH = "e824a60d259a9c8f";

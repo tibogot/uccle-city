@@ -155,6 +155,51 @@ Gains are estimates. The "why" column gives the arithmetic. The effort scale is 
 - **Measure:** `debug/groupBench.js` GPU ms at the street + 45 m views, `?indpool=old` vs default, 6-10 alternated rounds.
   Expect -0.3..-2 ms if step 1 saw validation, ~0 otherwise.
 
+### Job C result (claude/indpool, 2026-11-23)
+
+**Step 1, the count** (`debug/indirectCount.js`, prototype wraps of the pass encoder; local server, RTX 4050 laptop, D3D12):
+
+| where | pass | indirect draws a pass | distinct indirect buffers a pass |
+|---|---|---|---|
+| Saint-Job street view (`stjob-street`) | main scene (MRT, 4 targets) | ~2,320-2,510 | 65-69 |
+| same | sun shadow cache redraw | up to 2,087 | up to 41 |
+| police drive (`gamePerf.police`, 10 s) | main scene | ~2,250 (max 2,526) | 55 avg, 63 max |
+| same | shadow redraws | up to 1,973 | up to 36 |
+
+Where they came from (police drive, 94 attributes in the scene): ~55 multi-draw kit views (one buffer each: trees,
+roofs, façade kit, parked cars, street kit, shops, gardens, stops...), ~35 cell-culled tile meshes (walls, roofs,
+flat roofs, details: 4 a tile), plus grass and the sky birds (GPU-written). So far over the ~10 threshold: step 2 built.
+
+**The trace** (`tools/perf/gpuTrace.mjs`: its own Chrome over CDP, browser-wide categories gpu, dawn,
+disabled-by-default-gpu.dawn, webgpu): Dawn emits NO named event for the indirect validation; it runs inside the
+`DawnCommands` / `WebGPUDecoderImpl::HandleDawnCommands` tasks and as compute work on the GPU. So the trace cannot
+show it on its own; the A/B below measures it.
+
+**Step 2** (`viewer/indirectPool.js`, rule docs/rules/indirect-pool.md, gate row `indirectpool`, `?indpool=old`): one
+growing `IndirectStorageBufferAttribute` (32,768 records, 640 KB; 28-30 k used in the city and the police drive, 0
+growths seen). Multi-draw views and cell-culled meshes take slots; offsets = (slot base + record) x 20 bytes; a
+growth keeps the bases and re-points the bound geometries. GPU-written args (grass x2, plants, sky flocks: compute
+atomics) keep their own buffers. **Distinct buffers a main pass: 65-69 -> 3 (street), 55-63 -> 3 (police); shadow
+redraws 36-41 -> 1.** No console error; the street view looks the same.
+
+**A/B** (preflight YELLOW: CPU 14 % busy at rest, 3.9 GB free, other city servers listening; no other city page
+open, browser.lock held). `debug/indirectBench.js`: `wall` = 24 back-to-back renders of the full scene into a 2x
+off-screen target (GPU-bound: wall 12-14 ms against 4-9 ms of encode), until `queue.onSubmittedWorkDone`, median of
+6; three's timestamp queries (`ts`, groupBench) do not see Dawn's validation dispatches, so only `wall` can.
+8 page loads, A = default, B = `?indpool=old`, order A B B A A B B A:
+
+| view | A wall ms (4 loads) | B wall ms (4 loads) | A - B, per ABBA block |
+|---|---|---|---|
+| street (`stjob-street`) | 12.12 / 13.27 / 13.07 / 13.35 | 13.59 / 13.26 / 13.43 / 14.45 | -0.73, -0.73 |
+| 45 m (`stjob`) | 11.97 / 13.14 / 11.45 / 14.30 | 12.70 / 14.28 / 12.84 / 14.38 | -0.93, -0.73 |
+
+**About -0.7..-0.9 ms of GPU a frame** at both views, same sign in all 4 blocks. Run-to-run noise is ±1 ms on this
+YELLOW machine, so read it as "about 0.5-1 ms", not a precise number. The validation cost depends on draws and buffers,
+not on pixels, so the native-resolution frame saves the same absolute time when the GPU limits it (the police drive:
+GPU 13-15 ms under dynamic resolution). `ts` stayed at 4-5 ms in both (as expected).
+**Left:** the GPU-written args could share a second, fixed-size pool (their compute nodes bind the attribute, so
+it must never grow); that would take the main pass from 3 to 2 buffers, for very little.
+
 ## Sources (all fetched 2026-11-22 unless marked)
 
 - three.js releases r181-r187 (compileAsync fixes, parallel compile #34816, render bundles + InstancedMesh #33839,

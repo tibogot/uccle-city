@@ -10,6 +10,7 @@
 // ?cellcull=old: the meshes draw whole (as before).
 import * as THREE from "three/webgpu";
 import { multiDrawOK } from "./multiDraw.js";
+import { POOL_ON, indirectPool } from "./indirectPool.js";
 export { cellSort } from "./cellSort.js";
 
 const qs = new URLSearchParams(typeof location === "undefined" ? "" : location.search);
@@ -52,8 +53,16 @@ export function cellCull(mesh, { cell = 40, minTris = 2000, sunReach = Infinity 
 function apply(mesh, { I, rec, boxes, n }, sunReach) {
   const g = mesh.geometry, cc = mesh.userData.cellCull;
   g.setIndex(new THREE.BufferAttribute(I, 1));
-  const all = Array.from({ length: n }, (_, r) => r * 20);
-  g.setIndirect(new THREE.IndirectStorageBufferAttribute(rec, 5), all);
+  // (indpool: the records are a slot of the page's one indirect buffer, freed with the geometry; ?indpool=old: own buffer)
+  let base = 0;
+  if (POOL_ON) {
+    const IP = indirectPool(), s = IP.alloc(n);
+    base = s.base; IP.array.set(rec.subarray(0, n * 5), base * 5); IP.touch(s, 0, n);
+    IP.bind(s, g, null);
+    g.addEventListener("dispose", () => IP.free(s));
+  }
+  const all = Array.from({ length: n }, (_, r) => (base + r) * 20);
+  if (POOL_ON) g.indirectOffset = all; else g.setIndirect(new THREE.IndirectStorageBufferAttribute(rec, 5), all);
   const culls = cc.culls;
   // per pass camera: the records in its frustum (cached per camera and frame)
   mesh.onBeforeRender = (renderer, scene, camera, geometry) => {
@@ -70,7 +79,7 @@ function apply(mesh, { I, rec, boxes, n }, sunReach) {
         const o = r * 6;
         _box.min.set(boxes[o], boxes[o + 1], boxes[o + 2]); _box.max.set(boxes[o + 3], boxes[o + 4], boxes[o + 5]);
         if (reach && _box.distanceToPoint(EYE.value) > reach) continue;      // (its shadow dithered out already)
-        if (_frustum.intersectsBox(_box)) { e.list.push(r * 20); tris += rec[r * 5] / 3; }
+        if (_frustum.intersectsBox(_box)) { e.list.push((base + r) * 20); tris += rec[r * 5] / 3; }
       }
       e.tris = tris;
     }

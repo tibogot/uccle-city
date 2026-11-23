@@ -141,6 +141,35 @@
    "tags": {},
    "_moves": "n1769486879",
    "_source": "Street View Oct 2020 (newest there; looked at, not kept): the vet's CABINET VÉTÉRINAIRE panel is on the red-brick house LEFT of Le Relais' corner, facing the Place (as Le Relais); OSM's point put it on the building's side facing the lawn. Moved 1 m out from that front (local 1102.2, 553.6)"
+  },
+  {
+   "type": "node",
+   "id": "agam-nightshop",
+   "lon": 4.3617643,
+   "lat": 50.7929538,
+   "tags": {
+    "shop": "convenience",
+    "name": "Agam nightshop",
+    "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+    "addr:housenumber": "701"
+   },
+   "_source": "claude/places1 (owner: 'Chaussée de Saint-Job night shop and Brico Job opposite it'): Google Maps listing 'Agam nightshop', Sint-Jobsesteenweg 701 (looked at 2026-11-23, not kept); Street View Apr 2024: the white-painted two-storey corner house on the path beside n. 699, a red fascia board 'NIGHT SHOP' in white capitals over the ground floor with a white line of goods under it, black barred windows and door, a black plinth. Position: the UrbIS address point of n. 701 (CC0), local (864.36, 673.14)",
+   "_status": "open (listing, opening hours)"
+  },
+  {
+   "type": "node",
+   "id": "brico-sint-job",
+   "lon": 4.3619388,
+   "lat": 50.7932206,
+   "tags": {
+    "shop": "doityourself",
+    "name": "Brico",
+    "brand": "Brico",
+    "addr:street": "Chaussée de Saint-Job - Sint-Jobsesteenweg",
+    "addr:housenumber": "594"
+   },
+   "_source": "claude/places1: Google Maps listing 'Brico Sint-Job', Sint-Jobsesteenweg 594 (looked at 2026-11-23, not kept); Street View Apr 2024: a low anthracite metal-clad shed set back behind its own car park, the yellow Brico logo letters over the glazed entrance on a grey fascia, garden goods outside. Position: the UrbIS address point of n. 594 (CC0), local (876.67, 643.47)",
+   "_status": "open (listing)"
   }
  ]
 }

@@ -6,6 +6,7 @@
 // What comes back is the build as the worker would post it (plain data). keepNet (the node checks' live objects) is NOT
 // cacheable as it is (net holds closures, hm is a Heightmap); what the rows use of it is kept as plain data:
 //   d.deckRings                    (deckRails, deckJoins)
+//   d.neighbourDecks               (driveCheck: the decks a neighbour draws over the tile, rule deck-owner-checks)
 //   d.net.streetModel.segments     (driveCheck)
 //   d.hm                           a Heightmap rebuilt from d.hdr / d.y / d.orig (Heightmap.from, as the rows do)
 // Any other d.net.* is a loud error ("not kept by the tile cache"), never a silent undefined: a row that needs more of
@@ -43,13 +44,13 @@ export async function tileData(entry, base) {
     // (always built with keepNet: it only ADDS net / hm / deckRings to the result, so one entry serves both callers)
     build: () => buildTileData({ ...entry, keepNet: true }, base),
     pack: (d) => {
-      const { net, hm, deckRings, ...plain } = d;
-      return { plain, kept: { deckRings: deckRings ?? null, segments: net?.streetModel?.segments ?? null, streetModel: !!net?.streetModel } };
+      const { net, hm, deckRings, neighbourDecks, ...plain } = d;
+      return { plain, kept: { deckRings: deckRings ?? null, neighbourDecks: neighbourDecks ?? null, segments: net?.streetModel?.segments ?? null, streetModel: !!net?.streetModel } };
     },
     unpack: (p) => {
       if (!wantNet) return p.plain;
       const k = p.kept, d = p.plain;
-      return { ...d, deckRings: k.deckRings,
+      return { ...d, deckRings: k.deckRings, neighbourDecks: k.neighbourDecks ?? [],
         net: guarded(k.streetModel ? { streetModel: guarded({ segments: k.segments }, "d.net.streetModel") } : { streetModel: null }, "d.net"),
         hm: Heightmap.from(d.hdr, d.y, d.orig) };
     },
