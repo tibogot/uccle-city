@@ -140,6 +140,7 @@ const lookSet = (looks, entry) => {
     if (!v || typeof v !== "object") { out[k] = v; continue; }
     if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
     if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
+    if (entry.carrefour === false && v.set === "carrefour") continue;           // (claude/carrefour) ?carrefour=old
     out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
   }
   return out;

@@ -13,6 +13,12 @@
 //    marks (bays) inside its frame; the two lots of this job present (brico_lot with its 2 bay rows, white_night_lot)
 // N  the night shop and Brico: their curated fronts carry the sign text the owner recognises (NIGHT SHOP, Brico) and
 //    their houses their looks (buildingLooks 556438 white render, 540950 grey)
+// W  (claude/carrefour) every curated front wider than the build's slot (front.w, moved by front.du): its POI placed, and
+//    both ends of the drawn front (and of its canopy) on its own building's wall (within 0.6 m of the footprint ring): a
+//    wide front past the wall's end floats in the air
+// S  (claude/carrefour, rule curated-shed-look) every look with shed: true names its place (_name) and a set with a switch
+//    (the Carrefour: set carrefour, ?carrefour=old); the Carrefour Market by Square Marlow: its box (529267) is a shed,
+//    its front says Carrefour, has the glazing (w >= 12) and the canopy, its car park (carrefour_lot) has its 3 bay rows
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -84,6 +90,44 @@ if (!/Brico/.test(signOf("extra:brico-sint-job"))) fail("N extra:brico-sint-job:
 const looks = ov.buildingLooks || {};
 if (looks["556438"]?.style !== 3) fail("N buildingLooks 556438 (Ch. de Saint-Job 701, the night shop): not the white render (style 3)");
 if (looks["540950"]?.style !== 5) fail("N buildingLooks 540950 (Brico's shed): not grey (style 5)");
+
+// ---- W: wide curated fronts on their wall
+const segD = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / L2)); return Math.hypot(px - ax - dx * t, pz - az - dz * t); };
+const ringD = (r, x, z) => { let d = Infinity; for (let i = 0, j = r.length - 1; i < r.length; j = i++) d = Math.min(d, segD(x, z, r[j][0], r[j][1], r[i][0], r[i][1])); return d; };
+const solidsOf = new Map();
+const solids = (T) => { if (!solidsOf.has(T)) solidsOf.set(T, existsSync(join(ROOT, `data/tiles/${T}/buildings.json`)) ? json(`data/tiles/${T}/buildings.json`).buildings : []); return solidsOf.get(T); };
+let wide = 0;
+for (const [k, c] of Object.entries(cur)) {
+  const fr = c?.front;
+  if (!fr || !(fr.w || fr.du)) continue;
+  wide++;
+  let poi = null, T = null;
+  for (const t of manifest.tiles) { const p = (slOf(t.name)?.pois || []).find((q) => q.id === k); if (p) { poi = p; T = t.name; break; } }
+  if (!poi?.face) { fail(`W curated wide front ${k}: its POI is not placed on a face in any street-life tile`); continue; }
+  const f = poi.face, X = [f.nz, -f.nx], du = fr.du || 0, W = fr.w ?? f.w;
+  const own = solids(T).filter((b) => b.attrs?.BU_ID === f.bu).map((b) => b.footprint[0]);
+  if (!own.length) { fail(`W ${k}: its building ${f.bu} not in ${T}`); continue; }
+  const spans = [["front", W / 2]];
+  if (fr.canopy) spans.push(["canopy", (W + (fr.canopy.extra ?? 0.4)) / 2]);
+  for (const [what, half] of spans) for (const s of [-1, 1]) {
+    const x = f.x + X[0] * (du + s * half), z = f.z + X[1] * (du + s * half);
+    const d = Math.min(...own.map((r) => ringD(r, x, z)));
+    if (d > 0.6) fail(`W ${k}: the ${what}'s ${s < 0 ? "left" : "right"} end (${x.toFixed(1)}, ${z.toFixed(1)}) is ${d.toFixed(2)} m off its wall`);
+  }
+}
+say(`ok   W ${wide} wide curated fronts on their walls`);
+
+// ---- S: retail boxes (shed looks) and the Carrefour Market by Square Marlow
+for (const [id, v] of Object.entries(looks)) if (v && v.shed) {
+  if (!v._name) fail(`S buildingLooks ${id}: shed without a _name (the place and its Street View check)`);
+  if (!v.set) fail(`S buildingLooks ${id}: shed without a set (its switch)`);
+}
+if (!looks["529267"]?.shed || looks["529267"]?.set !== "carrefour") fail("S buildingLooks 529267 (the Carrefour Market by Square Marlow): not the retail box (shed, set carrefour)");
+const cm = cur["osm:n255033292"]?.front;
+if (!/Carrefour/.test([].concat(cm?.sign ?? [], ...(cm?.plaques || []).map((p) => p.text ?? [])).join(" "))) fail("S osm:n255033292: the curated front does not say Carrefour");
+if (!(cm?.w >= 12) || !cm?.canopy) fail("S osm:n255033292: not the supermarket's glazed run (w >= 12) under its canopy");
+const cl = grounds.find((g) => g.id === "carrefour_lot");
+if (!cl || cl.switch !== "?carrefour=old" || (cl.marks || []).filter((m) => m.kind === "bays").length !== 3) fail("S carrefour_lot: missing, not on ?carrefour=old, or not its 3 bay rows");
 
 console.log(fails ? `CURATED PLACES: FAIL (${fails})` : `CURATED PLACES: PASS (${extra.length} extra POIs placed, ${grounds.length} hard grounds clear of buildings)`);
 process.exit(fails ? 1 : 0);

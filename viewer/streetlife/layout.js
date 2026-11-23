@@ -115,7 +115,10 @@ export function layoutTile(doc, measure, stopsDoc = null, opts = {}) {
 
   // ------------------------------------------------------------------------------------------ façade POIs
   for (const p of doc.pois) {
-    const f = p.face;
+    // (claude/carrefour) a curated front wider than the build's 6.5 m slot (a supermarket's glazing: front.w) and / or
+    // moved along its wall (front.du, m to the right seen from the street): the face as the whole layout sees it
+    const cf0 = curated[p.id]?.front, f0 = p.face;
+    const f = f0 && (cf0?.w || cf0?.du) ? { ...f0, w: cf0.w ?? f0.w, x: f0.x + f0.nz * (cf0.du || 0), z: f0.z - f0.nx * (cf0.du || 0) } : f0;
     if (!f) continue;
     const { X, Y, Z } = frameOf(f.nx, f.nz);
     const base = [f.x, f.y, f.z];

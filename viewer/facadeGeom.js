@@ -9,6 +9,11 @@ import { classify, TYPE, typedStyle, typedCode } from "./buildingTypes.js";   //
 // and builds the detail geometry (cornices, ridge caps, buttresses, chimneys, eaves, shop fascias).
 // The materials that draw all this are in facades.js.
 const PARTY_PROBE = 0.35, STREET_REACH = 30;
+// (claude/carrefour, rule curated-shed-look) a curated look's shed: true (a retail box: the Carrefour Market by Square
+// Marlow): every outer face carries aBld.y = SHED_PARTY: the painted grid's `party` mask is on over the whole face (no
+// window, door, dress, cornice of a house) but under 998, so the blind party wall's ghost / flashing / streaks stay off: a
+// plain clad wall. The shop kit's front (data/shops/terraces.json) gives the glazing. facades.js / farLook.js unchanged.
+export const SHED_PARTY = 997;
 
 export function hash01(str) {
   let h = 2166136261;
@@ -742,7 +747,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
     }
     for (const f of live) {
-      const { tx, tz, u0, u1, cx, cz, top, width, partyH, street, topMin } = f.pre;
+      const { tx, tz, u0, u1, cx, cz, top, width, topMin } = f.pre;
+      let { partyH, street } = f.pre;
+      const shed = !!look?.shed && !landmark && partyH < 999;                       // (a curated retail box: SHED_PARTY)
+      if (shed) { partyH = SHED_PARTY; street = 0; stats.shedFaces = (stats.shedFaces || 0) + 1; }
       // landmarks: windows sized to each wall's own top (a church's LoD2 walls stop low; drums and towers are separate faces);
       // houses: the face's own eaves line, never under the building's (?storeys=old: the building's lowest roof point)
       const faceEaves = landmark ? top - base : Number.isFinite(topMin) ? Math.max(eaves, topMin - base) : eaves;
@@ -791,10 +799,12 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           stats.shops++;
         }
       }
+      // (claude/carrefour) a retail box's front is the shop kit's own (its curated width / place): no painted span on its wall
+      if (shed) { shopU = 0; shopW = 0; }
 
       // ---- detail geometry: cornices along the eaves, buttresses on landmarks
       const faceH = top - base;
-      if (partyH < 999 && width > 1.2 && faceH > 3) {
+      if ((partyH < 999 || shed) && width > 1.2 && faceH > 3) {
         const seen = new Set();
         for (const { p } of f.tris) for (let e = 0; e < 3; e++) {
           const A = p[e], B = p[(e + 1) % 3];
@@ -804,7 +814,10 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
           if (L < 0.6 || seen.has(key)) continue;
           seen.add(key);
           const col = landmark ? [0.5, 0.47, 0.42] : style >= 3 ? [0.6, 0.58, 0.54] : [0.52, 0.5, 0.46];
-          if (btype === TYPE.NINETIES) {
+          if (shed) {
+            // (claude/carrefour) the retail box: a thin dark metal coping, no moulding
+            addStrip(SD, "cu", A, B, top + 0.01, 0.14, 0.05, f.nx, f.nz, [0.06, 0.062, 0.065]);
+          } else if (btype === TYPE.NINETIES) {
             // (cortenbosch2) the 1990s house: a fascia board over a 35 cm soffit (cream-painted / dark-stained timber, grey
             // fibre-cement: the style's code, buildingTypes.js typedStyle), no moulding
             const fc = [[0.62, 0.58, 0.48], [0.075, 0.05, 0.035], [0.36, 0.365, 0.36], [0.2, 0.1, 0.048]][Math.floor(typedCode(style) % 12 / 3)] || [0.62, 0.58, 0.48];
@@ -897,7 +910,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       // and the lit-window lights follow the scale; ?looks=old: none)
       const bsl = look?.bayScale, bs = bsl && f.nx * bsl[1] + f.nz * bsl[2] > 0.85 ? bsl[0] : 1;
       // the façade kit takes this face? (street faces of eligible buildings, every opening on the wall)
-      const k = kit && bs === 1 ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, type: btype, garage: bgar, landmark: !!landmark, rnd, width, eaves: faceEaves, eavesBld: landmark ? top - base : eaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
+      const k = kit && bs === 1 && !shed ? kit.face({ key, building: b, doorFace: f === doorFace, wallStyle: style, type: btype, garage: bgar, landmark: !!landmark, rnd, width, eaves: faceEaves, eavesBld: landmark ? top - base : eaves, partyH, street, roofAt: (x, z) => roofAt(bi, x, z),
         shopU, shopW, base, top, nx: f.nx, nz: f.nz, tx, tz, u0, tris: f.tris }) : null;
       const T = k?.on ? WK : W;
       // (ground fit) the painted façade has a door on EVERY street face: one whose door bay stands off the ground (a
@@ -911,9 +924,9 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
         const gd = opts.ground(tx * (u0 + du) + f.nx * dd, tz * (u0 + du) + f.nz * dd);
         if (Number.isFinite(gd) && Math.abs(gd - base) > 0.25) { streetA = 0; stats.doorsOff = (stats.doorsOff || 0) + 1; }
       }
-      const cel = !landmark && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
+      const cel = !landmark && !shed && partyH < 999 ? cellarOf(f, base, u0, width, tx, tz) : 0;
       if (cel > 1.5) { stats.cellarFaces = (stats.cellarFaces || 0) + 1; if (cel > 2.4) stats.lowerGround = (stats.lowerGround || 0) + 1; }
-      if (cls && btype && partyH < 999 && bs === 1) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
+      if (cls && btype && !shed && partyH < 999 && bs === 1) typeDetails(f, { btype, street: streetA, kitOn: !!k?.on, width, faceEaves, base, u0, tx, tz, rnd, key, shopW });
       for (const { p, n: nn, src } of f.tris) for (const q of p) {
         T.aCel.push(cel);
         T.position.push(q[0], q[1], q[2]);
@@ -926,7 +939,7 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
       }
       // (night round 3, docs/NIGHT_HOOKUP.md step 6) this face's LIT windows, the shader's own hash (litHash.js): the
       // night pool's window lights and the ground light map's window spill
-      if (!landmark && partyH < 999) {
+      if (!landmark && !shed && partyH < 999) {
         let dd = 0, nq = 0;
         for (const { p } of f.tris) for (const q of p) { dd += q[0] * f.nx + q[2] * f.nz; nq++; }
         const fr = Math.fround;
