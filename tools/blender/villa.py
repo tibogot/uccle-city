@@ -593,7 +593,9 @@ def far():
     FAR.rect(P(GF["u1"], g0, GL), P(GF["u1"], UB["w0"], GL), P(GF["u1"], UB["w0"], LIVC), P(GF["u1"], g0, LIVC), "glass_window", 0, (1, 0, 0))
     wall(FAR, "u", GF["u1"], g0, UB["w0"], LIVC, LPAR, [], 1, "render_white", 0)
     # the upper box: soffit, north side, top as before; its front and south faces = the slat screens' codes
-    box(FAR, UB["u0"], UB["u1"], UB["w0"], UB["w1"], C0, PAR1, "wood_cladding", 0, skip=("+u", "-u", "+w"))
+    box(FAR, UB["u0"], UB["u1"], UB["w0"], UB["w1"], C0, PAR1, "wood_cladding", 0, skip=("+u", "-u", "+w", "+h"))
+    # (villa2, the 240 m cross-fade: its top was wood_cladding, a brown roof popping in over LOD1's grey one)
+    FAR.rect(P(UB["u0"], UB["w0"], PAR1), P(UB["u1"], UB["w0"], PAR1), P(UB["u1"], UB["w1"], PAR1), P(UB["u0"], UB["w1"], PAR1), "concrete_soffit", C["roof"], (0, 0, 1))
     screen_face(FAR, "u", UB["u0"], UB["w0"], UB["w1"], C0, PAR1, -1, OPEN["front_f1"][0])
     screen_face(FAR, "w", UB["w1"], UB["u0"], UB["u1"], C0, PAR1, 1, OPEN["side_f1"][0])
     FAR.rect(P(UB["u1"], UB["w0"], C0), P(UB["u1"], 0.0, C0), P(UB["u1"], 0.0, PAR1), P(UB["u1"], UB["w0"], PAR1), "wood_cladding", 0, (1, 0, 0))

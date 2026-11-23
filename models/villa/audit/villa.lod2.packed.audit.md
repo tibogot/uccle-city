@@ -1,6 +1,6 @@
 # Mesh audit (packed): villa.lod2
 
-170 triangles, 150 welded vertices, 178 open edges, 368,640 rays, 288 ms.
+170 triangles, 150 welded vertices, 178 open edges, 368,640 rays, 299 ms.
 
 **0 blocking**, 49 warnings. Clean (no blocking item).
 
@@ -8,7 +8,7 @@
 |---|---|---|
 | sliver | warn | 10 |
 | tjunction | warn | 39 |
-| seam | info | 28 |
+| seam | info | 29 |
 | opening | info | 104 |
 | backtoback | info | 6 |
 
@@ -58,7 +58,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 36.00, 118.40, -8.00 | Villa_lod2/stone_blue | 33 |
 | 12.00, 123.00, -8.00 | Villa_lod2/wood_cladding | 4.3 |
 | 37.50, 122.00, 0.00 | Villa_lod2/wood_cladding | 31.5 |
-| 37.50, 126.30, 0.00 | Villa_lod2/wood_cladding | 31.5 |
 | 12.00, 123.00, -6.00 | Villa_lod2/wood_cladding | 31.5 |
 | 12.00, 125.00, -6.00 | Villa_lod2/wood_cladding | 31.5 |
 | 37.50, 122.40, 23.50 | Villa_lod2/wood_cladding | 1 |
@@ -70,10 +69,11 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 36.00, 122.00, -8.00 | Villa_lod2/glass_window | 6.8 |
 | 36.00, 118.40, -17.00 | Villa_lod2/glass_window | 15 |
 | 37.50, 123.00, 23.50 | Villa_lod2/glass_window | 3 |
+| 37.50, 126.30, 0.00 | Villa_lod2/concrete_soffit | 31.5 |
 | 28.00, 125.95, -23.00 | Villa_lod2/concrete_soffit | 22 |
 | 14.00, 125.95, -21.20 | Villa_lod2/concrete_soffit | 15 |
 
-## seam (info, 28)
+## seam (info, 29)
 
 | at | parts | length_m | pieces | min_angle_deg |
 |---|---|---|---|---|
@@ -85,7 +85,6 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 25.04, 125.95, -8.00 | Villa_lod2/wood_cladding + Villa_lod2/concrete_soffit | 22 | 2 | 90 |
 | 36.00, 123.73, -8.00 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 3.2 | 2 | 90 |
 | 36.00, 122.00, 6.82 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 31 | 2 | 90 |
-| 37.50, 122.70, 23.50 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 1 | 2 | 90 |
 | 14.00, 125.95, -20.55 | Villa_lod2/render_white + Villa_lod2/concrete_soffit | 1.3 | 1 | 90 |
 | 14.00, 125.95, -18.45 | Villa_lod2/render_white + Villa_lod2/concrete_soffit | 2.9 | 1 | 90 |
 | 14.00, 125.95, -16.40 | Villa_lod2/render_white + Villa_lod2/concrete_soffit | 1.2 | 1 | 90 |
@@ -104,6 +103,8 @@ Positions: the file's scene coordinates (glTF, Y up, node transforms applied).
 | 36.00, 118.40, -12.50 | Villa_lod2/stone_blue + Villa_lod2/glass_window | 9 | 1 | 90 |
 | 36.00, 118.40, 4.00 | Villa_lod2/stone_blue + Villa_lod2/glass_window | 24 | 1 | 90 |
 | 12.00, 124.00, -8.00 | Villa_lod2/wood_cladding + Villa_lod2/wood_cladding | 2 | 1 | 90 |
+| 37.50, 122.70, 23.50 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 0.6 | 1 | 90 |
+| 37.50, 125.20, 23.50 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 0.4 | 1 | 90 |
 | 37.50, 124.00, 23.50 | Villa_lod2/wood_cladding + Villa_lod2/glass_window | 2 | 1 | 90 |
 
 ## opening (info, 104)
