@@ -16,6 +16,7 @@
 // perf helpers count render objects (debug/drawBreakdown.js) and MultiDrawSet.stats() gives the GPU draw commands.
 import * as THREE from "three/webgpu";
 import { StreamPool, Streamer, STREAM_COPY } from "./instanceStream.js";
+import { POOL_ON, indirectPool } from "./indirectPool.js";
 
 const qs = new URLSearchParams(location.search);
 /** ?multidraw=0: every caller keeps its old one-mesh-per-piece pools (A/B) */
@@ -140,12 +141,14 @@ export class MultiDrawSet {
   /** a view = one InstancedMesh: geoms[k] the part's geometry (null: not drawn by this view); shareOf: draw the
    *  geometry (and so the indirect draws) of an earlier view (a depth pre-pass twin) */
   addView({ geoms = null, material, castShadow = false, receiveShadow = true, name = this.name, renderOrder = 0, shareOf = null }) {
-    let geo, ranges, indirect;
-    if (shareOf) ({ geo, ranges, indirect } = shareOf);
+    let geo, ranges, indirect, slot = null;
+    if (shareOf) ({ geo, ranges, indirect, slot } = shareOf);
     else {
       ({ geo, ranges } = mergeGeoms(geoms));
-      indirect = new THREE.IndirectStorageBufferAttribute(new Uint32Array(this.parts.length * this.chMax * 5), 5);
-      geo.setIndirect(indirect, []);
+      // (indpool: the view's records are a slot of the page's one indirect buffer, viewer/indirectPool.js;
+      // ?indpool=old: its own buffer)
+      if (POOL_ON) { const IP = indirectPool(); slot = IP.alloc(this.parts.length * this.chMax); IP.bind(slot, geo, []); }
+      else { indirect = new THREE.IndirectStorageBufferAttribute(new Uint32Array(this.parts.length * this.chMax * 5), 5); geo.setIndirect(indirect, []); }
       for (const [a] of this.attrs) if (a !== "instanceMatrix") geo.setAttribute(a, this.buf[a]);
     }
     const mesh = new THREE.InstancedMesh(geo, material, 1);
@@ -155,7 +158,8 @@ export class MultiDrawSet {
     mesh.frustumCulled = true; mesh.boundingSphere = this.sphere;
     mesh.renderOrder = renderOrder; mesh.name = name; mesh.visible = false;
     mesh.userData.multiDraw = this;
-    const v = { mesh, geo, ranges, indirect, shared: !!shareOf };
+    const v = { mesh, geo, ranges, indirect, slot, base: slot ? slot.base : 0, shared: !!shareOf };
+    if (slot) Object.defineProperty(v, "indirect", { get: () => geo.indirect, enumerable: true });   // (the pool's current attribute)
     // the pass's camera picks the records (ranges: this view's parts; a part not in the view has no records)
     mesh.onBeforeRender = (renderer, scene, camera, geometry) => { geometry.indirectOffset = this.cull(camera, renderer.info.frame, v); };
     this.views.push(v);
@@ -251,10 +255,10 @@ export class MultiDrawSet {
     const P = this.parts[k], CHMAX = this.chMax;
     for (const v of this.views) {
       if (v.shared || !v.ranges[k]) continue;
-      const A = v.indirect.array, [first, count] = v.ranges[k];
-      for (let c = 0; c < P.nch; c++) { const o = (k * CHMAX + c) * 5; A[o] = count; A[o + 1] = P.ch[c * 2 + 1]; A[o + 2] = first; A[o + 3] = 0; A[o + 4] = P.off + P.ch[c * 2]; }
+      const A = v.indirect.array, [first, count] = v.ranges[k], b5 = v.base * 5;
+      for (let c = 0; c < P.nch; c++) { const o = b5 + (k * CHMAX + c) * 5; A[o] = count; A[o + 1] = P.ch[c * 2 + 1]; A[o + 2] = first; A[o + 3] = 0; A[o + 4] = P.off + P.ch[c * 2]; }
       // only this part's written records go up (the ones past nch are never drawn: a cull lists c < nch only)
-      if (P.nch) { v.indirect.addUpdateRange(k * CHMAX * 5, P.nch * 5); v.indirect.needsUpdate = true; }
+      if (P.nch) { v.indirect.addUpdateRange(b5 + k * CHMAX * 5, P.nch * 5); v.indirect.needsUpdate = true; }
     }
     this.culls.length = 0;
   }
@@ -316,9 +320,9 @@ export class MultiDrawSet {
     if (!L) lists.set(v.ranges, (L = { gen: -1, list: [] }));
     if (L.gen !== e.gen) {
       L.gen = e.gen;
-      const src = e.sorted && !blend ? e.near : e.all, list = L.list, R = v.ranges, nn = e.all.length;
+      const src = e.sorted && !blend ? e.near : e.all, list = L.list, R = v.ranges, nn = e.all.length, base = v.base;
       list.length = 0;
-      for (let i = 0; i < nn; i += 2) if (R[src[i]]) list.push((src[i] * CHMAX + src[i + 1]) * 20);
+      for (let i = 0; i < nn; i += 2) if (R[src[i]]) list.push((base + src[i] * CHMAX + src[i + 1]) * 20);
     }
     return L.list;
   }
