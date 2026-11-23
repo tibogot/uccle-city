@@ -5,6 +5,8 @@
 //             debug/tour.js, tools/tour/views.json) always come from THIS repo, so the same tour runs against any
 //             checkout (a foundation baseline, a branch, a merge result in a temp worktree)
 //     --out   where runs go (default: <this repo>/.tour, git-ignored): <out>/<run>/<view>.png + run.json
+//     --committed-bundle  serve the checkout's committed viewer/tileWorker.bundle.js (default: a fresh in-memory build
+//             of its own viewer/tileWorker.js, rule tour-fresh-bundle: a branch never rebuilds the committed one)
 // Then open http://localhost:8837/debug/tour.html?run=<name> in ONE Chrome tab.
 // Caching: every response carries an ETag (size + mtime + file id) and Last-Modified with Cache-Control: no-cache, so
 // the browser revalidates (304s, fast) and never shows another checkout's file after a --root switch; the tile cache
@@ -13,6 +15,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildBundle, committedHash } from "./freshBundle.mjs";
 
 const HERE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
@@ -28,6 +31,13 @@ const MIME = {
   ".md": "text/markdown; charset=utf-8", ".geojson": "application/geo+json", ".hdr": "application/octet-stream", ".exr": "application/octet-stream",
 };
 const SAFE = /^[A-Za-z0-9_.-]+$/;
+// rule tour-fresh-bundle: build the served checkout's tile worker from its own sources (--committed-bundle: serve the
+// committed file as before, e.g. to reproduce what the live site draws)
+const BUNDLE = process.argv.includes("--committed-bundle") ? null : await buildBundle(ROOT);
+if (BUNDLE) {
+  const was = await committedHash(ROOT);
+  console.log(`[tour] tile worker built from ${ROOT}'s sources: code hash ${BUNDLE.hash}${was === BUNDLE.hash ? " (= its committed bundle)" : ` (its committed bundle is ${was}: STALE, the tour uses the fresh build)`}`);
+}
 
 function save(req, res, u) {
   const run = u.searchParams.get("run") ?? "", name = u.searchParams.get("name") ?? "";
@@ -74,6 +84,11 @@ const server = http.createServer((req, res) => {
   let p;
   try { p = decodeURIComponent(u.pathname); } catch { res.writeHead(400); return res.end(); }
   if (p === "/") p = "/debug/tour.html";
+  // rule tour-fresh-bundle: the tile worker built from the SERVED checkout's sources, not its committed (stale) bundle
+  if (p === "/viewer/tileWorker.bundle.js" && BUNDLE) {
+    res.writeHead(200, { "content-type": "text/javascript", "cache-control": "no-cache", etag: `"fresh-${BUNDLE.hash}"`, "content-length": Buffer.byteLength(BUNDLE.code) });
+    return res.end(req.method === "HEAD" ? undefined : BUNDLE.code);
+  }
   const base = OVERLAY.has(p) ? HERE : ROOT;
   const file = path.join(base, p);
   if (!file.startsWith(base)) { res.writeHead(403); return res.end(); }
