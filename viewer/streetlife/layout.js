@@ -12,7 +12,7 @@
 // colours, no logos).
 // Frame per façade POI: X = right along the wall seen from the street, Y = up, Z = the wall's outward normal.
 
-import { layoutShop, layoutTerrace, SHOP_PIECES } from "../shops/shopLayout.js";
+import { layoutShop, layoutTerrace, SHOP_PIECES, frontFace } from "../shops/shopLayout.js";
 import { neighbourVariants } from "../shops/shopScale.js";
 
 // WIN_STRIDE: the matrix, (w, h, seed, lit), (interior type, floor below the glass, mirror, 0) (viewer/shops/shopWindow.js)
@@ -117,8 +117,8 @@ export function layoutTile(doc, measure, stopsDoc = null, opts = {}) {
   for (const p of doc.pois) {
     // (claude/carrefour) a curated front wider than the build's 6.5 m slot (a supermarket's glazing: front.w) and / or
     // moved along its wall (front.du, m to the right seen from the street): the face as the whole layout sees it
-    const cf0 = curated[p.id]?.front, f0 = p.face;
-    const f = f0 && (cf0?.w || cf0?.du) ? { ...f0, w: cf0.w ?? f0.w, x: f0.x + f0.nz * (cf0.du || 0), z: f0.z - f0.nx * (cf0.du || 0) } : f0;
+    // (shopLayout.js frontFace: one rule with the Christmas swags, claude/xmas1)
+    const f = frontFace(p.face, curated[p.id]?.front);
     if (!f) continue;
     const { X, Y, Z } = frameOf(f.nx, f.nz);
     const base = [f.x, f.y, f.z];

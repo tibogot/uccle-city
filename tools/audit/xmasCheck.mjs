@@ -1,4 +1,4 @@
-// node tools/audit/xmasCheck.mjs [--quiet]
+// node --import ./tools/christmas/hook.mjs tools/audit/xmasCheck.mjs [--quiet]
 // RULE 19 (docs/QUALITY_RULES.md): the seasonal layer (viewer/christmas/, models/christmas/site.json) stands where the
 // city can hold it and adds no light:
 //   - every fir and market chalet stands on paving (UrbIS square / sidewalk surface under its whole footprint, never a
@@ -14,6 +14,8 @@
 //     solid foliage and the cards' cores; the 45 m switch matched (silhouette, brightness, colour, see-through: the
 //     Blender review renders, tools/christmas/fir_review.py); the cost model (tools/christmas/firCost.mjs) re-run for
 //     this kit and its estimate for the shipped switches within the 0.1 ms budget at 8 m;
+//   - the site fits the CURRENT city (rule xmas-fit-current-city, tools/christmas/siteFit.mjs): fronts, swags (inside the
+//     drawn front: the shared frontFace / frontWidth), wreaths, spans (never on a hidden solid), lamps, park fences;
 //   - NO LIGHT: no three.js light is constructed or added under viewer/christmas/ (rule 7: emissive only), no
 //     DynamicDrawUsage (rule 8).
 // Exit 1 on any failure.
@@ -134,6 +136,17 @@ for (const [i, c] of (site.chalets ?? []).entries()) standsWell(`chalet ${i}`, r
   const ok = /prepass: QS\.get\("firprepass"\) !== "0"/.test(kitSrc) && /shadow: QS\.get\("firshadow"\) === "cards" \? "cards" : "far"/.test(kitSrc)
     && /export const FIR_SHADOW_LEVEL = 2;/.test(citySrc) && /shadow\.camera\.layers\.enable\(XMAS_SHADOW_LAYER\)/.test(citySrc);
   out(ok, "fir: depth pre-pass on by default (?firprepass=0), the shadow from the far level's solid fronds (?firshadow=cards), its layer enabled on the sun's shadow camera");
+}
+// THE SITE FITS THE CURRENT CITY (rule xmas-fit-current-city, claude/xmas1: tools/christmas/siteFit.mjs). site.json is
+// baked; the data under it moves (street-life extras, scripted models hiding UrbIS solids, curated wide fronts). Fronts
+// = the current street life's (complete, unmoved, on a drawn wall); every swag run inside the front the shop kit DRAWS
+// (one helper: shopLayout.js frontFace / frontWidth; the Carrefour's 18 m and a synthetic 18 m front); wreaths on current
+// address points of drawn house walls, >= 3 m from every shop; spans hooked on drawn walls at their height, never on a
+// hidden solid or across a park fence; the firs and chalets clear of the street lamps and park fences
+{
+  const { siteFit } = await import(new URL("../christmas/siteFit.mjs", import.meta.url).href);
+  const { rows } = await siteFit(site);
+  for (const r of rows) out(r.ok, `site fit: ${r.msg}`);
 }
 // (no light, no DynamicDrawUsage in viewer/christmas/: the meta row, tools/audit/gate.d/xmas.mjs)
 console.log(fails ? `xmasCheck: ${fails} FAIL` : "xmasCheck: all PASS");

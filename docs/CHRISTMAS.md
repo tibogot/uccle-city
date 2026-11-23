@@ -369,6 +369,34 @@ From the city's own data only:
 - **Lamp snowflakes:** decided in the city from the loaded tiles' own lamp sites (viewer/lamps.js now exports
   `lampSiteSets` / `lampSitesVersion`): lamps within 9 m of a decorated street line, two in three (hash).
 
+### 4.1 Rebuild after the data restore (claude/xmas1, 2026-11-23, plan jobs 0-1)
+
+`python tools/christmas/build_site.py` on the current foundation (OSM 2026-11-23 snapshot in data/raw; the committed tiles
+and street life read by the build are unchanged by the restore). site.json is NOT byte-identical; every difference is
+explained, none comes from the restore itself:
+- **Fronts 107 -> 109:** + Agam nightshop (Ch. de Saint-Job 701) and + Brico (Ch. de Saint-Job 594), street-life extras
+  added by claude/places1 after site.json was baked (stale, never rebuilt).
+- **Wreaths 120 -> 119:** - Ch. de Saint-Job 701: its address point is now the night shop's front (0 m; the 3 m shop rule).
+- **Spans 56 -> 52 (Saint-Pierre 43 -> 39):** - 4 garlands across the Parvis Saint-Pierre whose east end hooked on the
+  UrbIS church solid 1594643, which models/stpierre hides (the generator never read the hide lists). The generator now
+  drops hidden solids (and keeps wreaths off retail boxes, `shed: true`).
+- Trees, chalets, street lines, config: identical.
+- site.json now carries `select` (areas, shop kinds, tree radius) so the gate re-derives the fronts from the current street
+  life.
+
+**Swag width (job 1):** xmasCity.js sized each swag from site.json's slot width (<= 6.5 m) and never read the curated
+front.w / front.du. Now viewer/christmas/xmasSwag.js `swagRun` takes width and centre from viewer/shops/shopLayout.js
+`frontFace` / `frontWidth`, the helper streetlife/layout.js and `layoutShop` use too. A front under a curated canopy (the
+Carrefour, a `shed: true` box) gets its swag along the canopy's band over the glazed run (18 m, 11 modules); it is not on a
+decorated street today, so nothing changes in the city until the decorated area reaches it. Unchanged fronts give the
+same modules as before (`?xmas=1` / `?xmas=0` unchanged).
+
+**Checks:** gate row `xmas`, "site fit" rows (tools/christmas/siteFit.mjs, rule xmas-fit-current-city): fronts complete +
+unmoved + on drawn walls, every swag inside the front the shop kit draws (+ the Carrefour + a synthetic 18 m front),
+wreaths, spans on drawn walls at their height (not hidden, not across a park fence), firs and chalets >= 1 m from street
+lamps and park fences. `node --import ./tools/christmas/hook.mjs tools/christmas/siteFit.mjs [old site.json]` prints the
+audit (the pre-rebuild file: 2 fronts missing, 1 wreath on a shop, 4 spans on a hidden solid).
+
 ## 5. The city code
 
 `viewer/christmas/xmasCity.js` (`addChristmas`, `xmasActive`), `viewer/christmas/xmasKit.js` (loader + materials),
