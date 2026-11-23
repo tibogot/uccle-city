@@ -80,5 +80,11 @@
  "heros": {
   "L0": 0,
   "L1": 0
+ },
+ "villa": {
+  "L0": 17.7,
+  "L1": 23.2,
+  "L2": 6.8,
+  "_note": "ratchet 2026-11-23 (coordinator): the villa was never probed (rule gate-dir-deps); classify the glass wall / garage mouth as allowed openings, fix LOD1 back-faces + LOD2 holes, then lower"
  }
 }
