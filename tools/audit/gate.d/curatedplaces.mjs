@@ -3,11 +3,11 @@ export default {
   name: "curatedplaces",
   script: "tools/audit/curatedPlacesCheck.mjs",
   args: ["--quiet"],
-  guards: "the owner's places the open data lacks (rule curated-place-placed, claude/places1): every extra POI (tools/streetlife/extra_pois.json) sourced and placed in its tile's street life, every curated 'extra:' front with its POI, every hard ground (data/overrides.json grounds) with why / source / switch, at most 10 % under buildings, its bay rows inside its paint frame; Agam nightshop (Ch. de Saint-Job 701: NIGHT SHOP, white house) and Brico Sint-Job (594: Brico, grey shed, its car park with 2 bay rows), White Night's lot. ?bricolot=old: the lots as lawn. (claude/carrefour, rule curated-shed-look) every wide curated front (front.w / du) and its canopy on its own wall; every shed look named with a set; the Carrefour Market by Square Marlow: retail box 529267, front saying Carrefour with its glazing and canopy, car park carrefour_lot with 3 bay rows (?carrefour=old)",
+  guards: "the owner's places the open data lacks (rule curated-place-placed, claude/places1): every extra POI (tools/streetlife/extra_pois.json) sourced and placed in its tile's street life, every curated 'extra:' front with its POI, every hard ground (data/overrides.json grounds) with why / source / switch, at most 10 % under buildings, its bay rows inside its paint frame; Agam nightshop (Ch. de Saint-Job 701: NIGHT SHOP, white house) and Brico Sint-Job (594: Brico, grey shed, its car park with 2 bay rows), White Night's lot. ?bricolot=old: the lots as lawn. (claude/carrefour, rule curated-shed-look) every wide curated front (front.w / du) and its canopy on its own wall; every shed look named with a set; the Carrefour Market by Square Marlow: retail box 529267, front saying Carrefour with its glazing and canopy, car park carrefour_lot with 3 bay rows (?carrefour=old). (claude/places2, rule curated-render-tone) every moved OSM point with an address placed on its address street (Le Pigeon Noir on Rue Geleytsbeek, its LE PIGEON NOIR awning), every render-toned look on a render style with a name and a set (Le Pigeon Noir's mustard, ?places2=old); every playground (data/overrides.json playgrounds) sourced, its kit pieces inside its sand ring and out of buildings, the Chênaie garden in front of Le Pigeon Noir with >= 3 pieces",
   timeout: 120,
-  deps: ["tools/streetlife/extra_pois.json", "data/streetlife/", "data/shops/terraces.json", "data/overrides.json", "viewer/grounds.js", "viewer/facadeGeom.js", "viewer/farLookData.js", "viewer/shops/shopLayout.js", "viewer/streetlife/layout.js"],
+  deps: ["tools/streetlife/extra_pois.json", "data/streetlife/", "data/shops/terraces.json", "data/overrides.json", "viewer/grounds.js", "viewer/facadeGeom.js", "viewer/farLookData.js", "viewer/shops/shopLayout.js", "viewer/streetlife/layout.js", "viewer/buildingTypes.js", "viewer/facades.js", "viewer/farLook.js", "tools/streetlife/build_streetlife.py", "viewer/playgroundCity.js", "viewer/main.js", "models/parkkit/playgroundkit.json"],
   meta: {
-    features: [{ key: "bricolot", type: "old" }, { key: "carrefour", type: "old" }],
+    features: [{ key: "bricolot", type: "old" }, { key: "carrefour", type: "old" }, { key: "places2", type: "old" }],
     clean: ["viewer/grounds.js"],
     text: [
       { file: "viewer/grounds.js", what: "paints the parking bay rows of a hard ground", test: (s) => /m\.kind === "bays"/.test(s) },
@@ -15,6 +15,13 @@ export default {
       { file: "viewer/farLookData.js", what: "the far tiles draw a shed look plain too", test: (s) => /look\?\.shed/.test(s) },
       { file: "viewer/shops/shopLayout.js", what: "a curated front's width past 9.9 m and its canopy", test: (s) => /cf\.w \? 40 : 9\.9/.test(s) && /cf\.canopy/.test(s) },
       { file: "viewer/streetlife/layout.js", what: "a curated front moved along its wall (front.du)", test: (s) => /cf0\?\.du/.test(s) },
+      { file: "viewer/facades.js", what: "a curated render tone tints a rendered house (isRT)", test: (s) => /const isRT = /.test(s) && /band\(nTone, 7\)/.test(s) },
+      { file: "viewer/farLook.js", what: "the far tiles tint a render-toned house too", test: (s) => /claude\/places2\) a curated render tone/.test(s) },
+      { file: "viewer/facadeGeom.js", what: "the near tiles put the render tone in the style (renderToneStyle)", test: (s) => /renderToneStyle\(/.test(s) },
+      { file: "viewer/farLookData.js", what: "the far tiles put the render tone in the style (renderToneStyle)", test: (s) => /renderToneStyle\(/.test(s) },
+      { file: "viewer/main.js", what: "the playground kit drawn in the city (addPlaygrounds, ?places2=old none)", test: (s) => /addPlaygrounds\(/.test(s) && /params\.get\("places2"\) !== "old"\) heroes\.push/.test(s) },
+      { file: "viewer/playgroundCity.js", what: "the playgrounds built once their tiles are in, compiled before shown", test: (s) => /state === "wait"/.test(s) && /await c\(\[field\.group\]\)/.test(s) },
+      { file: "tools/streetlife/build_streetlife.py", what: "a moved OSM point carries its address tags", test: (s) => /o\["tags"\] = \{\*\*\(o\.get\("tags"\)/.test(s) },
     ],
   },
 };

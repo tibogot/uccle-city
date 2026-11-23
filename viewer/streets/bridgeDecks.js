@@ -13,18 +13,33 @@
 //   const B = bridgeDecks(roadsDoc, hm.ground)   ->  { decks: [descriptor...], wrap(ground) -> ground' }
 //   deckHeight(descriptor, ground)               ->  (x, z) -> m TAW on the deck, or null off it
 
+import { ROAD_TYPES } from "../../vendor/roads/roadCrossSection.js";   // (claude/places2) a lane-less road's drawn width
+
 const EXT = 6;        // m beyond each end where the deck's height is taken (past the abutment)
 const HALF = 6;       // m either side of the centre line when the road has no lane widths
 const SLAB = { depth: 0.9, parapetW: 0.3, parapetH: 1.0, sink: 0.03, step: 2 };
 const COL = { asphalt: [0.115, 0.118, 0.125], sidewalk: [0.36, 0.35, 0.33], concrete: [0.42, 0.41, 0.38], soffit: [0.25, 0.245, 0.23] };
 
+// (claude/places2, rule deck-width-drawn) a road with no lane widths: its deck as wide as the street the road engine draws
+// for its type (vendor/roads/roadCrossSection.js ROAD_TYPES: an alley 2 x (2.6 + 1.2) m), never wider than HALF. Before,
+// every lane-less deck took HALF (6 m: 12 m between the parapets' outsides): Avenue de la Chênaie's bridge over L26 (a
+// living street drawn 7.6 m wide, the real bridge ~5 m between brick parapets) stood 2.2 m wider than its street on
+// each side, parapets out in the air. ?deckwidth=old (tileData.js setDeckWidthOld): HALF as before
+let DECK_WIDTH_OLD = false;
+export const setDeckWidthOld = (v) => { DECK_WIDTH_OLD = !!v; };
 /** the road's half width on its wider side, and its carriageway's (driving / parking / tram lanes; sidewalks outside) */
-function widths(r) {
+export function widths(r) {
   const side = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
   const road = (a) => (a || []).filter((l) => l.type !== "sidewalk").reduce((s, l) => s + (+l.width || 0), 0);
   const half = Math.max(side(r.lanes?.left), side(r.lanes?.right));
   const carr = Math.max(road(r.lanes?.left), road(r.lanes?.right));
-  return half > 1 ? { half: Math.min(14, half + SLAB.parapetW), carr: Math.min(half, carr || half) } : { half: HALF, carr: HALF - 2 };
+  if (half > 1) return { half: Math.min(14, half + SLAB.parapetW), carr: Math.min(half, carr || half) };
+  const t = !DECK_WIDTH_OLD && ROAD_TYPES[r.type];
+  if (t) {
+    const th = Math.max(side(t.left), side(t.right)), tc = Math.max(road(t.left), road(t.right));
+    if (th > 1 && th + SLAB.parapetW < HALF) return { half: th + SLAB.parapetW, carr: Math.min(th, tc || th) };
+  }
+  return { half: HALF, carr: HALF - 2 };
 }
 
 /** the road's centre line as [[x, z], ...] from roads.json (node a, control points, node b) */

@@ -50,10 +50,14 @@ export function* clearRoadsGen(doc, blocked, { old = false } = {}) {
 /** (cortenbosch) data/overrides.json gardenRestyle: inside each polygon the walls / railings become clipped hedges of the
  *  polygon's species (consecutive segments chained into one run, set back half the hedge's width + 5 cm from the street:
  *  the side where blocked(x, z) answers, else the run's left), the pillars and gates go (the driveways stay open), the
- *  kit's own hedges there take the species. -> { doc, segs, hedges } | 0 */
+ *  kit's own hedges there take the species. -> { doc, segs, hedges } | 0
+ *  (claude/places2) an entry with a `line` ([[x, z], ...]) instead of a ring is a hedge the kit did not plan (the
+ *  Papenkasteel's tall beech hedge on Rue Papenkasteel, the castle's grounds have no house front): added to the tile
+ *  holding its middle point (doc.tile), { hedge, height, width } as above */
 export function restyleHedges(doc, restyle, blocked) {
   const polys = Object.entries(restyle || {}).filter(([k, v]) => !k.startsWith("_") && v?.ring?.length >= 3).map(([, v]) => v);
-  if (!polys.length) return 0;
+  const lines = Object.entries(restyle || {}).filter(([k, v]) => !k.startsWith("_") && v?.line?.length >= 2 && inTile(doc.tile, v.line[Math.floor(v.line.length / 2)])).map(([, v]) => v);
+  if (!polys.length && !lines.length) return 0;
   const inR = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
   const polyAt = (x, z) => polys.find((p) => inR(p.ring, x, z));
   const out = { ...doc, segs: [], pillars: [], gates: [], hedges: [] };
@@ -91,7 +95,14 @@ export function restyleHedges(doc, restyle, blocked) {
     const c = h.points[Math.floor(h.points.length / 2)], P = c && polyAt(c[0], c[1]);
     out.hedges.push(P ? { ...h, species: P.hedge || h.species } : h);
   }
+  for (const L of lines) { out.hedges.push({ points: L.line.map((p) => [p[0], p[1]]), species: L.hedge || "beech", height: L.height ?? 1.4, width: L.width ?? 0.6 }); nHedge++; }
   return { doc: out, segs: nSeg, hedges: nHedge };
+}
+/** is (x, z) in tile `name` (500 m tiles: E7 = x [-1000, -500), z [1000, 1500); viewer/street/model.js tileBounds) */
+function inTile(name, p) {
+  if (!name || !p) return false;
+  const i = name.charCodeAt(0) - "E".charCodeAt(0) - 2, j = parseInt(name.slice(1), 10) - 5;
+  return p[0] >= i * 500 && p[0] < (i + 1) * 500 && p[1] >= j * 500 && p[1] < (j + 1) * 500;
 }
 
 /** The plan footprints of a garden doc's collision stand-ins, as viewer/gardens/gardenKit.js gardenInstances makes them

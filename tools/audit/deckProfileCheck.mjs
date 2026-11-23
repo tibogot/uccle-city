@@ -14,6 +14,9 @@
 // O  deck owners: a deck whose drawn span crosses a tile it is not drawn by (its middle is in a neighbour) is in that
 //    tile's node build as neighbourDecks (tileData.js keepNet) and driveCheck.mjs walks on it (the E9 Tilleuls false
 //    "missing deck", drivecheck place 158): checked on the code's text, the decks concerned listed
+// W  (claude/places2, rule deck-width-drawn) every band deck (no plan) is no wider than the street the road engine draws
+//    for it plus its parapet: its lanes' widths, or (no lanes) its road type's stack (ROAD_TYPES), never over 6.3 m half;
+//    Avenue de la Chênaie over L26 (way 28030785, an alley: a 7.6 m street) <= 4.2 m half (it was 6: 12 m wide)
 import "../road_audit/register.mjs";
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -130,6 +133,27 @@ const td = readFileSync(join(ROOT, "viewer/tileData.js"), "utf8"), dc = readFile
 if (!/neighbourDecks: osmBridges\.decks\.filter\(\(d\) => !ownDeck\(d\)\)/.test(td)) fail("O viewer/tileData.js: the keepNet build no longer lists neighbourDecks (the decks a neighbour draws over this tile)");
 if (!/for \(const dk of d\.neighbourDecks \|\| \[\]\) decks\.push/.test(dc)) fail("O tools/audit/driveCheck.mjs: the drive walk no longer stands on the neighbours' decks (world.decks holds them in the city)");
 say(`     O decks a tile's roads carry but a neighbour draws: ${foreign.length}${foreign.length ? " (" + foreign.join("; ") + ")" : ""}`);
+
+// ---- W: band decks as wide as their drawn street (claude/places2)
+{
+  const { ROAD_TYPES } = await import(pathToFileURL(join(ROOT, "vendor/roads/roadCrossSection.js")).href);
+  const sum = (a) => (a || []).reduce((s, l) => s + (+l.width || 0), 0);
+  let nW = 0; const seen = new Set();
+  for (const { t, descs } of perTile) {
+    const roads = json(`data/tiles/${t.name}/roads.json`), byId = new Map((roads.roads || []).map((r) => [r.id, r]));
+    for (const d of descs) {
+      if (d.plan || seen.has(d.id)) continue;
+      seen.add(d.id); nW++;
+      const r = byId.get(d.id), lanes = r?.lanes?.left || r?.lanes?.right, ty = ROAD_TYPES[r?.type];
+      const street = lanes ? Math.max(sum(r.lanes.left), sum(r.lanes.right)) : ty ? Math.max(sum(ty.left), sum(ty.right)) : 6;
+      const want = Math.min(lanes ? 14 : 6.3, street + 0.3);
+      if (d.half > want + 0.01) fail(`W deck ${d.id} "${d.name}": half ${d.half.toFixed(2)} m, wider than its drawn street (${street.toFixed(2)} m + 0.3 parapet)`);
+      if (r?.meta?.osm === 28030785 && d.half > 4.2) fail(`W Avenue de la Chênaie over L26 (${d.id}): half ${d.half.toFixed(2)} m (> 4.2: the 12 m lane-less deck)`);
+    }
+  }
+  if (![...seen].some((id) => perTile.some(({ descs }) => descs.some((d) => d.id === id && /Chênaie/.test(d.name))))) fail("W Avenue de la Chênaie's deck not found");
+  say(`ok   W ${nW} band decks no wider than their drawn streets`);
+}
 
 console.log(`deck profiles: ${measured} measured of ${ways.size} bridge ways (${Object.keys(SKIPPED).length} listed as not measurable), ${checked} samples checked, worst ${worst.toFixed(2)} m off the measured top; ${foreign.length} neighbour-drawn deck(s) seen by their other tiles' node checks`);
 console.log(fails ? `DECK PROFILES: FAIL (${fails})` : "DECK PROFILES: PASS");

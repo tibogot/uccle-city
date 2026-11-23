@@ -3,7 +3,7 @@ import { repairWalls } from "./wallRepair.js";
 import { coplanarCleaner } from "./coplanarClean.js";   // census class G (rule 34): overlapping coplanar UrbIS triangles cut (?zfight=old: off)   // citydefects: partial UrbIS walls rebuilt (?wallfix=old: off)
 import { faceBays, storeyFit } from "./interior/facadeWindows.js";
 import { litWindows } from "./nightLights/litHash.js";
-import { classify, TYPE, typedStyle, typedCode } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
+import { classify, TYPE, typedStyle, typedCode, renderToneStyle } from "./buildingTypes.js";   // building types (docs/STYLES.md; opts.styles === false / ?styles=old: none)   // ?night=1 round 3: the lit windows as night light sources
 // Façade analysis, pure JS (no three.js), so it can run in the tile worker (viewer/tileWorker.js).
 // Groups UrbIS wall triangles into faces with façade coordinates, party walls, street faces, shopfronts,
 // and builds the detail geometry (cornices, ridge caps, buttresses, chimneys, eaves, shop fascias).
@@ -502,7 +502,8 @@ export function analyseBuildings(doc, buf, roads, feats, opts = {}) {
     const look = opts.looks?.[b.id.split("/").pop()];
     const btype = look?.type != null ? look.type : cls && !landmark ? cls.type[bi] : 0, bgar = look?.garage === false ? 0 : look?.garage === true ? 1 : cls && !landmark ? cls.garage[bi] : 0;   // (a curated look's type: the police school's blocks as the station's 1960s fronts; garage true: a garage door the classifier did not give)
     // (cortenbosch2) the 1990s house / the curtain wall carry their sub-look in the style's fraction (buildingTypes.js typedStyle)
-    const style = (cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height));
+    // (claude/places2) a curated render tone (buildingTypes.js renderToneStyle: Le Pigeon Noir's ochre-mustard) in the fraction
+    const style = renderToneStyle((cls && typedStyle(btype, look, key)) ?? (look?.style != null ? look.style : landmark ? (ext < 11 && b.height > 16 ? 6.25 : 6) : cls ? cls.style[bi] : wallStyle(hash01(key + "s"), b.height)), btype, look);
     if (cls) { stats.types = stats.types || [0, 0, 0, 0, 0, 0, 0, 0]; stats.types[btype]++; }
     const roofStyle = hash01(key + "r") + (look?.roofTile === "concrete" ? 2 : 0);   // (cortenbosch2) + 2: concrete interlocking tiles (facades.js roofMaterial)
     // real roof colour from the orthophoto (build_roofcolors.py), else a guess from the hash

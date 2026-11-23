@@ -170,6 +170,18 @@
    },
    "_source": "claude/places1: Google Maps listing 'Brico Sint-Job', Sint-Jobsesteenweg 594 (looked at 2026-11-23, not kept); Street View Apr 2024: a low anthracite metal-clad shed set back behind its own car park, the yellow Brico logo letters over the glazed entrance on a grey fascia, garden goods outside. Position: the UrbIS address point of n. 594 (CC0), local (876.67, 643.47)",
    "_status": "open (listing)"
+  },
+  {
+   "type": "node",
+   "id": "pigeon-noir-move",
+   "lon": 4.3482204,
+   "lat": 50.7920285,
+   "tags": {
+    "addr:street": "Rue Geleytsbeek - Geleytsbeekstraat",
+    "addr:housenumber": "2"
+   },
+   "_moves": "n4388790239",
+   "_source": "claude/places2 (owner playtest: 'Le Pigeon Noir: entrance on the wrong side'): Street View Apr 2024 (looked at, not kept): the restaurant's door, its navy awning with LE PIGEON NOIR in white and its windows are on the house's NORTH face, on Rue Geleytsbeek (its address, Rue Geleytsbeek 2: the UrbIS address point of building 1713722 faces that street); the east gable on Avenue de la Chênaie only carries a pigeon emblem plaque. OSM's point has no addr:street, so the façade attach took the nearest wall (the Chênaie gable). Moved 1 m out from the north face, 5 m along it from its west end (local -90.6, 775.9), with the address"
   }
  ]
 }

@@ -16,7 +16,7 @@ import { buildRoadData, applyRoadOverrides, CARVE } from "./roadBuild.js";
 import { streetModelInputs } from "./street/inputs.js";
 import { surfaceVote } from "./streetNames.js";   // surfvote (docs/SURFVOTE.md)
 import { SURFACE } from "./roadData.js";
-import { bridgeDecks, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
+import { bridgeDecks, setDeckWidthOld, deckMesh, parapetRings, deckAbutments, deckHeight, deckUnderCut, ringPlans, deckSoffitCap, deckFootprint, deckTopGrid, meshTopNodes, onCarriageway, deckContinuation, markRailCuts } from "./streets/bridgeDecks.js";
 import { tramTracks } from "./track.js";
 import { fitPlatforms } from "./streets/tramPlatforms.js";
 import { kitCollector } from "./facadeKit/placement.js";
@@ -141,6 +141,7 @@ const lookSet = (looks, entry) => {
     if (entry.cortenbosch === false && (v.set === "cortenbosch" || v.set === "cortenbosch2")) continue;
     if (entry.cortenbosch2 === false && v.set === "cortenbosch2") continue;
     if (entry.carrefour === false && v.set === "carrefour") continue;           // (claude/carrefour) ?carrefour=old
+    if (entry.places2 === false && v.set === "places2") continue;               // (claude/places2) ?places2=old
     out[k] = entry.cortenbosch2 !== false && v.v2 ? { ...v, ...v.v2 } : v;
   }
   return out;
@@ -410,6 +411,7 @@ export async function buildTileData(entry, base) {
   // the cutting (bridgeDecks.js ringPlans: the Chaussee de Waterloo at Vivier d'Oie)
   const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
   // (claude/places1, rule deck-profile-measured; ?bridgeprof=old: the straight line) the band decks' measured tops
+  setDeckWidthOld(entry.deckWidth === false);                  // (claude/places2) ?deckwidth=old: every lane-less deck 12 m wide
   const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans, entry.bridgeProf === false ? null : ov.bridgeProfiles);
   osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
   const mid = (d) => { const L = d.cum[d.cum.length - 1] / 2; let i = 1; while (i < d.pts.length - 1 && d.cum[i] < L) i++;

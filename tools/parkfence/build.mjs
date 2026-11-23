@@ -35,6 +35,11 @@ export const TYPES = {
   bars: { panel: "pf_bars", h: 1.6, paint: 0, post: true },
   grand: { panel: "pf_rail", h: 1.8, paint: 0, plinth: 0.8, pierEvery: 3, pier: [0.7, 3.0] },
   wall: { panel: null, h: 1.1, plinth: 1.1, pierEvery: 0 },
+  // (claude/places2) an old garden wall in brick ~2.3 m (the Papenkasteel's on Rue Kinsendael: the plinth piece in the
+  // brick tone, viewer/parkFence.js STONES[3]); none: a stretch the obs file says is closed by something else (a hedge
+  // the garden kit draws, the castle's own range on the street, woods): no piece, a listed gap (reason "obs")
+  brickwall: { panel: null, h: 2.3, plinth: 2.3, pierEvery: 0, stone: 3 },
+  none: { panel: null, h: 0, none: true },
 };
 export const MODULE = 2.5;                 // the kit's panel module (m)
 const PIER_GAP = 0.02;                     // a leaf's hinge gap at the pier face
@@ -120,6 +125,13 @@ export async function build() {
     let ring = segs.shift();
     while (segs.length) { const last = ring[ring.length - 1]; const i = segs.findIndex((s) => s[0] === last || s[s.length - 1] === last); if (i < 0) throw new Error("sauvagere: outer ring breaks"); let s = segs.splice(i, 1)[0]; if (s[0] !== last) s = s.reverse(); ring = ring.concat(s.slice(1)); }
     rings.sauvagere = ring.map(ll);
+  }
+  // (claude/places2) a private ground with no OSM polygon (the Papenkasteel's grounds): its line is written in its obs
+  // file ("ring", city x / z: the street frontages a few metres in from the centre lines, closed through the grounds by
+  // a "none" stretch), from the look-only Street View check
+  for (const f of fs.readdirSync(path.join(ROOT, "data/parkfence")).filter((n) => n.endsWith(".obs.json")).sort()) {
+    const o = J(`data/parkfence/${f}`);
+    if (o.ring && !rings[o.park]) rings[o.park] = o.ring.map(P2);
   }
   // every OSM highway way crossing a ring: where, which way, its type
   const crossings = {};
@@ -254,6 +266,11 @@ export async function build() {
       cuts.push(s1);
       for (let k = 0; k < cuts.length - 1; k++) {
         const a = cuts[k], b = cuts[k + 1], type = typeAt(A.wrap((a + b) / 2)), T = TYPES[type];
+        if (T.none) {        // (claude/places2) closed by what the obs file says (a hedge, a building, woods): a listed gap
+          const pl = simplify(A.sub(a, b), 0.3);
+          for (let q = 0; q < pl.length - 1; q++) gaps.push({ a: P2(pl[q]), b: P2(pl[q + 1]), reason: "obs", t: tile(pl[q]) });
+          continue;
+        }
         const atEntrance0 = k === 0, atEntrance1 = k === cuts.length - 2;
         const atEntranceFix0 = atEntrance0, atEntranceFix1 = atEntrance1;
         const poly = simplify(A.sub(a, b), 0.3);
@@ -342,7 +359,7 @@ export async function build() {
         runPanels.forEach((pn, j) => {
           if (!pn) return;
           if (T.panel) panels.push(pn);
-          if (T.plinth) plinths.push({ a: pn.a, b: pn.b, n: pn.n, h: T.plinth, stone: type === "wall" ? 1 : stone, t: pn.t });
+          if (T.plinth) plinths.push({ a: pn.a, b: pn.b, n: pn.n, h: T.plinth, stone: T.stone ?? (type === "wall" ? 1 : stone), t: pn.t });
           const prev = runPanels[j - 1], next = runPanels[j + 1];
           if (T.post) {
             // the panel module carries its own post at x = 0 (its start): a post is added only at a run's free END
@@ -365,7 +382,7 @@ export async function build() {
     const panelM = panels.reduce((s, p) => s + Math.hypot(p.b[0] - p.a[0], p.b[1] - p.a[1]), 0) + plinths.filter((q) => q.h > 1).reduce((s, p) => s + Math.hypot(p.b[0] - p.a[0], p.b[1] - p.a[1]), 0);
     say(`${park}: ring ${A.L.toFixed(0)} m, ${ents.length} entrances, ${panels.length} panels (${panelM.toFixed(0)} m), ${plinths.length} plinths, ${posts.length} posts, ${piers.length} piers, ${leaves.length} leaves, inset ${insetTotal.toFixed(0)} m, ${treeCuts.length} trees cut round, ${gaps.length} gaps (${gaps.map((g) => g.reason).join(",")})`);
     out.parks[park] = {
-      ring: rings[park].map(P2), length: r2(A.L), stone,
+      ring: rings[park].map(P2), length: r2(A.L), stone, ...(obs.set ? { set: obs.set } : {}),
       entrances: ents.map((e) => ({ osm: e.osm, inset: e.inset, ...(e.pierSkipped ? { pierSkipped: e.pierSkipped } : {}), ...(e.opensOnto ? { opensOnto: e.opensOnto } : {}), name: e.name || "", at: e.at, s: r2(e.s), kind: e.kind, state: e.state, w: e.w, pier: e.pier, half: r2(e.half), from: e.from, ways: e.ways, note: e.note || "" })),
       panels, plinths, posts, piers, leaves, gaps, treeCuts,
     };

@@ -31,12 +31,12 @@ export const TYPE_NAMES = ["generic", "maison de maître", "art deco / modernist
 // Their sub-look rides in the wall style's fraction (the style stays in its band: 2 = brick for 6, 5 = render /
 // concrete for 7, so the material library's set, the far colours and every style test keep working):
 //   6: style = 2 (face brick) or 4 (render) + code / 200 (< 0.42: the style stays in its band), code = tone x 12 + frame + 3 x fascia
-//      tone 0 buff, 1 salmon, 2 cream-white, 3 orange-red, 4 brown-buff (mixed) bricks; 5 ochre, 6 white renders;
+//      tone 0 buff, 1 salmon, 2 cream-white, 3 orange-red, 4 brown-buff (mixed) bricks; 5 ochre, 6 white, 7 mustard renders;
 //      frame 0 white, 1 brown, 2 anthracite; fascia 0 cream-painted timber, 1 dark-stained timber, 2 grey fibre-cement,
 //      3 varnished timber (warm brown)
 //   7: style = 5 + code / 200, code = grid + 4 x spandrel; grid 0 burgundy, 1 anthracite, 2 silver, 3 dark green;
 //      spandrel 0 dark enamelled glass, 1 metal in the grid's colour, 2 light grey panel
-export const NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown", "ochre", "white"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre", "varnished"] };
+export const NINETIES = { tones: ["buff", "salmon", "cream", "orange", "brown", "ochre", "white", "mustard"], frames: ["white", "brown", "anthracite"], fascias: ["cream", "stained", "fibre", "varnished"] };
 export const CURTAIN = { grids: ["burgundy", "anthracite", "silver", "green"], spandrels: ["glass", "metal", "grey"] };
 const idx = (list, v, dflt) => { const i = list.indexOf(v); return i >= 0 ? i : dflt; };
 /** the wall style (with its sub-look code) of a type-6 / -7 building from its look ({ tone, frame, fascia } /
@@ -50,6 +50,16 @@ export function typedStyle(type, look, key) {
   }
   if (type === TYPE.CURTAIN) return 5 + (idx(CURTAIN.grids, look?.grid, 1) + 4 * idx(CURTAIN.spandrels, look?.spandrel, 0)) / 200;
   return null;
+}
+/** (claude/places2) a RENDER TONE on any rendered house (not a typed 6 / 7 one): a curated look's { style: 3 | 4, tone }
+ *  (tone a render tone of NINETIES.tones: "ochre", "white", "mustard") rides in the style's fraction like the 1990s
+ *  house's (code = tone x 12, < 0.5: the style stays in its band); facades.js / farLook.js tint the render with it (Le
+ *  Pigeon Noir's ochre-mustard render: the style palette's cream was a pale tan). Off with ?places2=old (looks.tone
+ *  dropped by tileData.js lookSet). Other cases: the style unchanged */
+export function renderToneStyle(style, type, look) {
+  if (type === TYPE.NINETIES || type === TYPE.CURTAIN || !look?.tone || style == null) return style;
+  const s = Math.floor(style + 1e-4), t = NINETIES.tones.indexOf(look.tone);
+  return (s === 3 || s === 4) && t >= 5 ? s + (t * 12) / 200 : style;
 }
 /** the sub-look code of a typed style (inverse of typedStyle: 0-83) */
 export const typedCode = (style) => Math.round((style - Math.floor(style + 1e-4)) * 200);
