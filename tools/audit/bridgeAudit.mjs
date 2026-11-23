@@ -70,7 +70,7 @@ const plansOf = (roads, T) => (OLD ? ov.bridgePlans : ringPlans(ov.bridgePlans, 
 const decks = new Map();
 for (const t of tiles) {
   const roads = json(`data/tiles/${t.name}/roads.json`);
-  for (const d of bridgeDescriptors(roads, ground, plansOf(roads, t.name))) {
+  for (const d of bridgeDescriptors(roads, ground, plansOf(roads, t.name), OLD ? null : ov.bridgeProfiles)) {
     if (decks.has(d.id)) continue;
     // the tile holding the deck's middle draws it (tileData.js ownDeck: a road clipped by another tile's buffer, Avenue
     // des Tilleuls in D8 / E8, is a shorter copy under the same id)

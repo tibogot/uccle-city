@@ -408,7 +408,8 @@ export async function buildTileData(entry, base) {
   // (vivier 2026-11-17, ?vivier=old: off) + a plan from the UrbIS polygon for a road bridge its band leaves half open over
   // the cutting (bridgeDecks.js ringPlans: the Chaussee de Waterloo at Vivier d'Oie)
   const plans = entry.bridgePlan === false ? null : entry.vivier !== false && rail ? ringPlans(ov.bridgePlans, roads, rail.doc, baseGround, surf) : ov.bridgePlans;
-  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans);
+  // (claude/places1, rule deck-profile-measured; ?bridgeprof=old: the straight line) the band decks' measured tops
+  const osmBridges = bridgeDecks(roads, baseGround, (d) => known(d.pts[0]) && known(d.pts[d.pts.length - 1]), plans, entry.bridgeProf === false ? null : ov.bridgeProfiles);
   osmBridges.decks = osmBridges.decks.filter((d) => { const m = d.pts[Math.floor(d.pts.length / 2)]; return Number.isNaN(heroDeck(m[0], m[1])); });
   const mid = (d) => { const L = d.cum[d.cum.length - 1] / 2; let i = 1; while (i < d.pts.length - 1 && d.cum[i] < L) i++;
     const t = (L - d.cum[i - 1]) / ((d.cum[i] - d.cum[i - 1]) || 1); return [d.pts[i - 1][0] + (d.pts[i][0] - d.pts[i - 1][0]) * t, d.pts[i - 1][1] + (d.pts[i][1] - d.pts[i - 1][1]) * t]; };
@@ -638,7 +639,11 @@ export async function buildTileData(entry, base) {
       const tops = entry.movGround === false ? (v && d.plan && measuredAt ? deckTopGrid(d, cov, streetTop) : null)
         : d.plan ? deckTopGrid(d, cov ?? (() => false), v ? streetTop : null, meshTopNodes(mesh)) : null;
       return { ...d, ...(tops ? { plan: { ...d.plan, tops } } : {}), mesh }; }),   // (vivier: + the drawn top grid the walker / the car stand on)   // OSM road bridges: heights for walk / car + their drawn deck
-    ...(entry.keepNet ? { net, hm, deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)) } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
+    ...(entry.keepNet ? { net, hm, deckRings: osmBridges.decks.filter(ownDeck).map((d) => parapetRings(d, hm.ground)),
+      // (claude/places1, rule deck-owner-checks) the decks this tile's roads carry that a NEIGHBOUR draws (its middle is
+      // there): the city's world.decks holds them once that tile is loaded; a node check of this tile alone must too
+      // (driveCheck saw "no deck" over the L26/5 chord at E9 Avenue des Tilleuls: D9 draws that deck, 1.5 m past the border)
+      neighbourDecks: osmBridges.decks.filter((d) => !ownDeck(d)) } : {}) };    // (node checks, tools/roadfix/: the live road network; never posted from the worker)
 }
 
 // ---------------------------------------------------------------- far level of detail
