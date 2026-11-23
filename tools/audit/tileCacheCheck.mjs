@@ -196,11 +196,11 @@ process.on("exit", () => { if (PARITY_SCRATCH) fs.rmSync(SCRATCH, { recursive: t
     const t1 = performance.now();
     const live = await quiet(() => buildTileData({ ...entry, keepNet: true }, base));
     const tFresh = performance.now() - t1;
-    const { net, hm, deckRings, ...plainLive } = live;
-    const { net: cNet, hm: cHm, deckRings: cRings, ...plainCached } = viaCache;
+    const { net, hm, deckRings, neighbourDecks, ...plainLive } = live;
+    const { net: cNet, hm: cHm, deckRings: cRings, neighbourDecks: cNb, ...plainCached } = viaCache;
     const hA = tc.canonicalHash(plainCached), hB = tc.canonicalHash(plainLive);
     ok(hA === hB, `${T}: the build through the cache (${first.hit ? "a hit" : "a miss, stored"}, ${(tCache / 1000).toFixed(1)} s) == a fresh build (${(tFresh / 1000).toFixed(1)} s), byte for byte (sha256 ${hA.slice(0, 12)}${hA === hB ? "" : ` vs ${hB.slice(0, 12)}`})`);
-    ok(tc.canonicalHash(cRings) === tc.canonicalHash(deckRings ?? null) && tc.canonicalHash(cNet.streetModel?.segments ?? null) === tc.canonicalHash(net?.streetModel?.segments ?? null),
+    ok(tc.canonicalHash(cRings) === tc.canonicalHash(deckRings ?? null) && tc.canonicalHash(cNb ?? []) === tc.canonicalHash(neighbourDecks ?? []) && tc.canonicalHash(cNet.streetModel?.segments ?? null) === tc.canonicalHash(net?.streetModel?.segments ?? null),
       `${T}: keepNet's kept parts == the live ones (deckRings: ${deckRings?.length ?? 0}, net.streetModel.segments: ${net?.streetModel?.segments?.length ?? 0})`);
     const hmKeys = (m) => Object.keys(m).sort().join(",");
     ok(tc.canonicalHash({ h: cHm.h, y: cHm.y, orig: cHm.orig }) === tc.canonicalHash({ h: hm.h, y: hm.y, orig: hm.orig }) && hmKeys(cHm) === hmKeys(hm) && cHm.ground(entry.bounds.x[0] + 37.3, entry.bounds.z[0] + 51.7) === hm.ground(entry.bounds.x[0] + 37.3, entry.bounds.z[0] + 51.7),
@@ -210,7 +210,7 @@ process.on("exit", () => { if (PARITY_SCRATCH) fs.rmSync(SCRATCH, { recursive: t
     ok(threw, `${T}: a part of keepNet's net the cache does not keep (net.locate) is a loud error, not undefined`);
     if (i === 0) {
       const plain = await quiet(() => buildTileData(entry, base));
-      ok(tc.canonicalHash(plain) === hB, `${T}: keepNet changes nothing but net / hm / deckRings (so both askers share one cache entry)`);
+      ok(tc.canonicalHash(plain) === hB, `${T}: keepNet changes nothing but net / hm / deckRings / neighbourDecks (so both askers share one cache entry)`);
     }
     const again = await quiet(() => tb.tileData(entry, base));
     ok(tb.lastInfo.hit && tc.canonicalHash(again) === hA, `${T}: the second ask is a hit (${tb.lastInfo.ms.toFixed(0)} ms) with the same bytes`);
